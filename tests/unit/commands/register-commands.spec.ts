@@ -42,6 +42,7 @@ vi.mock("../../../src/cli/commands/contracts.js", () => ({ runContracts: vi.fn()
 vi.mock("../../../src/cli/commands/claim.js", () => ({ runClaim: vi.fn(), runRelease: vi.fn() }));
 vi.mock("../../../src/cli/commands/create.js", () => ({ runCreate: vi.fn() }));
 vi.mock("../../../src/cli/commands/copy.js", () => ({ runCopy: vi.fn() }));
+vi.mock("../../../src/cli/commands/focus.js", () => ({ runFocus: vi.fn() }));
 vi.mock("../../../src/cli/commands/update.js", () => ({ runUpdate: vi.fn() }));
 vi.mock("../../../src/cli/commands/update-many.js", () => ({ runUpdateMany: vi.fn() }));
 vi.mock("../../../src/cli/commands/close.js", () => ({ runClose: vi.fn() }));
@@ -124,6 +125,7 @@ import { runContracts } from "../../../src/cli/commands/contracts.js";
 import { runClaim, runRelease } from "../../../src/cli/commands/claim.js";
 import { runCreate } from "../../../src/cli/commands/create.js";
 import { runCopy } from "../../../src/cli/commands/copy.js";
+import { runFocus } from "../../../src/cli/commands/focus.js";
 import { runUpdate } from "../../../src/cli/commands/update.js";
 import { runUpdateMany } from "../../../src/cli/commands/update-many.js";
 import { runClose } from "../../../src/cli/commands/close.js";
@@ -243,6 +245,7 @@ beforeEach(() => {
   vi.mocked(runRelease).mockResolvedValue({ id: "pm-1", released: true } as never);
   vi.mocked(runCreate).mockResolvedValue({ id: "pm-2" } as never);
   vi.mocked(runCopy).mockResolvedValue({ id: "pm-3" } as never);
+  vi.mocked(runFocus).mockResolvedValue({ action: "set", focused_item: "pm-1" } as never);
   vi.mocked(runUpdate).mockResolvedValue({ id: "pm-1" } as never);
   vi.mocked(runUpdateMany).mockResolvedValue({ ids: ["pm-1"] } as never);
   vi.mocked(runClose).mockResolvedValue({ id: "pm-1", status: "closed" } as never);
@@ -908,6 +911,17 @@ describe("mutation command actions", () => {
     expect(lastCallArg<Record<string, unknown>>(vi.mocked(runAppend) as never, 1).body).toBe("more detail");
     await expect(runCli("append", "pm-1", "x", "--body", "y")).rejects.toThrow("exactly one source");
     await expect(runCli("append", "pm-1")).rejects.toThrow("Missing append text");
+  });
+
+  it("maps focus set/show/clear option surfaces", async () => {
+    await runCli("focus", "pm-1");
+    expect(vi.mocked(runFocus)).toHaveBeenCalledWith("pm-1", { clear: false }, expect.anything());
+
+    await runCli("focus");
+    expect(lastCallArg<string | undefined>(vi.mocked(runFocus) as never, 0)).toBeUndefined();
+
+    await runCli("focus", "--clear");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runFocus) as never, 1).clear).toBe(true);
   });
 
   it("maps bulk update/close filters and mutation payloads", async () => {
@@ -1782,6 +1796,7 @@ describe("mutation command actions", () => {
     // search-cache skip branches.
     await runCliRaw("create", "task", "No profile");
     await runCliRaw("copy", "pm-1");
+    await runCliRaw("focus", "pm-1");
     await runCliRaw("update", "pm-1", "--title", "X");
     await runCliRaw("update-many", "--filter-status", "open", "--title", "Y");
     await runCliRaw("close", "pm-1", "done");

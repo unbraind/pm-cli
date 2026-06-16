@@ -16,6 +16,7 @@ coverage/
 .agents/pm/runtime/metadata-cache-bodies.json
 .agents/pm/runtime/metadata-cache-collections.json
 .agents/pm/runtime/history-drift-cache.json
+.agents/pm/runtime/session.json
 .agents/pm/runtime/telemetry/
 
 # Local profiling artifacts must not be committed.

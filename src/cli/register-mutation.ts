@@ -363,6 +363,26 @@ export function registerMutationCommands(program: Command): void {
       }
     });
 
+  program
+    .command("focus")
+    .argument("[id]", "Item id to focus (omit to show current focus)")
+    .option("--clear", "Clear the focused item")
+    .description("Set/clear/show the session focused item that new items default --parent to.")
+    .action(async (id: string | undefined, options: Record<string, unknown>, command) => {
+      const globalOptions = getGlobalOptions(command);
+      const startedAt = Date.now();
+      const { runFocus } = await import("./commands/focus.js");
+      const result = await runFocus(
+        id,
+        { clear: options.clear === true },
+        globalOptions,
+      );
+      printResult(result, globalOptions);
+      if (globalOptions.profile) {
+        printError(`profile:command=focus took_ms=${Date.now() - startedAt}`);
+      }
+    });
+
   const updateCommand = program
     .command("update")
     .argument("<id>", "Item id")

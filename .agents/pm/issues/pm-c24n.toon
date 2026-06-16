@@ -2,10 +2,14 @@ id: pm-c24n
 title: Track open Dependabot alerts #39/#40/#41 (vite and @opentelemetry/core)
 description: "Open Dependabot alerts on default branch after PR #246 merge: #39 (vite high: server.fs.deny bypass on Windows alternate paths), #40 (vite medium: launch-editor NTLMv2 hash disclosure via UNC path handling on Windows), #41 (@opentelemetry/core medium: unbounded memory allocation in W3C baggage propagation). Triage remediation path: determine direct vs transitive ownership, bump/override patched versions, verify via CI coverage+compat gates, and close alerts."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: dependabot,security,vulnerability
 created_at: "2026-06-16T12:33:02.641Z"
-updated_at: "2026-06-16T12:33:02.641Z"
+updated_at: "2026-06-16T21:35:17.670Z"
 author: codex-sdk-cli-consolidation-20260616
+resolution: "Alerts #39/#40/#41 reached state=fixed on default branch via earlier dependency bumps (vite, @opentelemetry/core); verified no open Dependabot alerts remain."
+expected_result: No open Dependabot alerts on default branch.
+actual_result: Three open alerts tracked after PR #246 merge.
+close_reason: "Fixed: Dependabot alerts #39/#40/#41 (vite high/medium, @opentelemetry/core medium) confirmed state=fixed on default branch after the PR #246/#247 dependency bumps; no remaining open alerts."
 body: ""

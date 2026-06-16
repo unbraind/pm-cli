@@ -4,6 +4,7 @@
 
 ### Added
 
+- pm focus: session default parent/context inheritance for new items \(GH-161\) ([pm-72xf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-72xf.toon))
 - GH-235: detect duplicate logical issue code prefixes ([pm-rpag](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-rpag.toon))
 - GH-243: comments edit/delete lifecycle commands ([pm-4swf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-4swf.toon))
 - GH-244: surface provider/vector-store resolution source in pm health ([pm-gnu2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gnu2.toon))
@@ -37,6 +38,7 @@
 
 ### Fixed
 
+- GH-256: update-many --dry-run skips field validation \(priority/type/status/deadline\) ([pm-v4tb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v4tb.toon))
 - GH-253: invalid --type create error hardcodes .agents/pm path, ignoring active --pm-path ([pm-nd08](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nd08.toon))
 - GH-252: pm get --json places body outside item \(parity with list --include-body\) ([pm-hofv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hofv.toon))
 - GH-248: fix schema add-type silent slug-collision overwrite + malformed-name acceptance ([pm-3l0f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3l0f.toon))
@@ -47,6 +49,10 @@
 - c8 ignore end \(invalid keyword\) silently masked source coverage; literal-100% gate passed on hidden code ([pm-dg8j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dg8j.toon))
 - GH-205: surface telemetry flush/probe + OTEL export diagnostics in pm health ([pm-hx5a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hx5a.toon))
 - GH-209 follow-up: OTEL span export keeps the CLI alive ~10s \(and can exit 13\) when the traces endpoint is unreachable ([pm-25se](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-25se.toon))
+
+### Security
+
+- Track open Dependabot alerts \#39/\#40/\#41 \(vite and @opentelemetry/core\) ([pm-c24n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-c24n.toon))
 
 ### Other
 

@@ -8,9 +8,13 @@ import {
 } from "../../core/checkpoint/mutation-checkpoint.js";
 import { toItemRecord } from "../../core/item/item-record.js";
 import { applyTagRemovals, mergeAdditiveTags, parseTags } from "../../core/item/parse.js";
+import { resolvePriority } from "../../core/item/priority.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
+import { resolveItemTypeRegistry, resolveTypeName } from "../../core/item/type-registry.js";
 import { collectRuntimeUpdateFieldValues } from "../../core/schema/runtime-field-values.js";
+import { buildInvalidTypeError } from "../../core/schema/item-types-file.js";
 import {
+  resolveItemTypesFilePath,
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
   type RuntimeFieldRegistry,
@@ -21,7 +25,9 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { toErrorMessage } from "../../core/shared/primitives.js";
 import { stableValueEquals } from "../../core/shared/serialization.js";
-import { nowIso } from "../../core/shared/time.js";
+import { nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
+import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import type { PmSettings } from "../../types/index.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { resolveAuthor } from "../../core/shared/author.js";
@@ -524,6 +530,45 @@ function rejectBlankIdsFilter(list: ListOptions | undefined): void {
   }
 }
 
+// GH-256: validate planned scalar enum/format fields up front so a `--dry-run`
+// preview rejects globally-invalid values exactly as apply would (true
+// preview==apply parity), and so apply itself fails fast before creating an
+// orphan checkpoint. Only VALUE/ENUM/FORMAT correctness is checked here — these
+// are invalid regardless of the matched item. Per-item governance and
+// workflow-transition rules stay in the apply path (runUpdate). Each field is
+// validated only when the caller actually provided it, reusing the exact same
+// resolvers and error messages runUpdate raises so single/bulk/dry-run stay
+// consistent.
+function assertPlannedUpdateValuesValid(
+  update: UpdateCommandOptions,
+  settings: PmSettings,
+  statusRegistry: RuntimeStatusRegistry,
+  pmRoot: string,
+): void {
+  if (update.priority !== undefined) {
+    resolvePriority(update.priority);
+  }
+  if (update.type !== undefined) {
+    const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+    if (!resolveTypeName(update.type, typeRegistry)) {
+      throw new PmCliError(
+        buildInvalidTypeError(update.type, typeRegistry.types, resolveItemTypesFilePath(pmRoot, settings.schema)),
+        EXIT_CODE.USAGE,
+      );
+    }
+  }
+  if (update.status !== undefined && !normalizeStatusInput(update.status, statusRegistry)) {
+    const allowedStatuses = statusRegistry.definitions.map((definition) => definition.id);
+    throw new PmCliError(
+      `Invalid --status value "${update.status}". Allowed: ${allowedStatuses.join(", ")}`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (update.deadline !== undefined) {
+    resolveIsoOrRelative(update.deadline, new Date(), "deadline");
+  }
+}
+
 
 export async function runUpdateMany(options: UpdateManyCommandOptions, global: GlobalOptions): Promise<UpdateManyResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
@@ -593,6 +638,10 @@ export async function runUpdateMany(options: UpdateManyCommandOptions, global: G
       EXIT_CODE.USAGE,
     );
   }
+
+  // GH-256: validate planned scalar values before listing/checkpointing so
+  // dry-run previews and apply both reject globally-invalid enum/format input.
+  assertPlannedUpdateValuesValid(options.update, settings, statusRegistry, pmRoot);
 
   const statusFilter = normalizeStatusFilter(options.status, statusRegistry);
   const listed = await runList(statusFilter, { ...options.list, includeBody: true }, global);
@@ -719,6 +768,7 @@ export async function runUpdateMany(options: UpdateManyCommandOptions, global: G
 }
 
 export const _testOnlyUpdateManyCommand = {
+  assertPlannedUpdateValuesValid,
   buildCollectionMutationPlans,
   buildPlannedItemDiff,
   buildTagMutationPlan,

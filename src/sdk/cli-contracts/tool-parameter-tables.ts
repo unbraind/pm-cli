@@ -279,6 +279,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   allowAuditRelease: { type: "boolean" },
   dryRun: { type: "boolean" },
   all: { type: "boolean" },
+  clear: { type: "boolean" },
   cliOnly: { type: "boolean" },
   packagesOnly: { type: "boolean" },
   repair: { type: "boolean" },
@@ -801,6 +802,9 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   all: {
     description:
       "For history-repair action: scan every stream for drift and repair each drifted stream in one audited pass (mutually exclusive with id).",
+  },
+  clear: {
+    description: "For focus action: clear the session focused item instead of setting it (mutually exclusive with id).",
   },
   gcScope: {
     description: "Repeatable gc scope selector values (index, embeddings, runtime, locks).",

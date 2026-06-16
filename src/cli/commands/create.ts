@@ -9,6 +9,7 @@ import {
 import { validateSprintOrReleaseValue } from "../../core/item/sprint-release-format.js";
 import { createStdinTokenResolver, mergeAdditiveTags, parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
 import { resolvePriority } from "../../core/item/priority.js";
+import { getFocusedItem } from "../../core/session/session-state.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import { CREATE_DIRECT_CLOSE_REASON_DEFAULT } from "../../core/shared/constants.js";
 import {
@@ -175,6 +176,9 @@ export interface CreateResult {
   item: ItemMetadata;
   changed_fields: string[];
   warnings: string[];
+  // GH-161: set to "focus" when the item's parent was inherited from the
+  // session focused item (`pm focus <id>`) rather than an explicit --parent.
+  parent_source?: "focus";
 }
 
 type CreateMode = "strict" | "progressive";
@@ -1684,6 +1688,24 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     unsetTargets.frontMatterKeys.has("parent") || resolvedOptions.parent === undefined
       ? undefined
       : parseOptionalString(resolvedOptions.parent);
+  // GH-161 (pm-72xf): when no explicit --parent was given (and parent is not
+  // being unset), default the parent to the session "focused" item set via
+  // `pm focus <id>`. An explicit --parent (even `--parent ""` to unset)
+  // overrides focus. The inherited value flows through the same locateItem /
+  // validateMissingParentReference path below, so a stale focus produces the
+  // same clear missing-parent error/warning as an explicit stale --parent.
+  let parentSource: "focus" | undefined;
+  if (
+    parent === undefined &&
+    !unsetTargets.frontMatterKeys.has("parent") &&
+    resolvedOptions.parent === undefined
+  ) {
+    const focused = await getFocusedItem(pmRoot);
+    if (focused !== undefined) {
+      parent = focused;
+      parentSource = "focus";
+    }
+  }
   const reviewer =
     unsetTargets.frontMatterKeys.has("reviewer") || resolvedOptions.reviewer === undefined
       ? undefined
@@ -2035,6 +2057,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     item: outputItem,
     changed_fields: changedFields,
     warnings: [...validationWarnings, ...hookWarnings],
+    ...(parentSource !== undefined ? { parent_source: parentSource } : {}),
   };
 }
 

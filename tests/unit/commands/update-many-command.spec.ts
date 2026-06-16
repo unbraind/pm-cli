@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -362,7 +362,7 @@ describe("runUpdateMany", () => {
         {
           list: { tag: "bulk-scalar-preview", includeBody: true },
           update: {
-            priority: "not-numeric",
+            priority: "3",
             estimatedMinutes: "45",
             order: "2.5",
             regression: "true",
@@ -375,12 +375,131 @@ describe("runUpdateMany", () => {
 
       expect(dryRun.item_plans?.[0]?.changes).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ field: "priority", after: "not-numeric" }),
+          expect.objectContaining({ field: "priority", after: 3 }),
           expect.objectContaining({ field: "estimated_minutes", after: 45 }),
           expect.objectContaining({ field: "order", after: 2.5 }),
           expect.objectContaining({ field: "regression", after: true }),
         ]),
       );
+    });
+  });
+
+  // GH-256: dry-run must validate scalar enum/format fields identically to apply
+  // so previews never show a false-positive plan that then fails on apply. The
+  // up-front gate runs before the dry-run early-return AND before checkpoint
+  // creation, so both modes reject the same way and apply never leaves an orphan
+  // checkpoint behind.
+  describe("rejects globally-invalid scalar values in dry-run and apply (GH-256)", () => {
+    const invalidCases: Array<{
+      name: string;
+      update: Record<string, unknown>;
+      message: string;
+    }> = [
+      {
+        name: "invalid priority",
+        update: { priority: "99" },
+        message: 'Invalid priority "99"',
+      },
+      {
+        name: "invalid type",
+        update: { type: "BogusType" },
+        message: 'Invalid type value "BogusType"',
+      },
+      {
+        name: "invalid status",
+        update: { status: "BogusStatus" },
+        message: 'Invalid --status value "BogusStatus"',
+      },
+      {
+        name: "invalid deadline",
+        update: { deadline: "not-a-date" },
+        message: 'Invalid deadline value "not-a-date"',
+      },
+    ];
+
+    for (const testCase of invalidCases) {
+      it(`rejects ${testCase.name} in dry-run and apply with the same error`, async () => {
+        await withTempPmPath(async (context) => {
+          const id = createTask(context, `gh256-${testCase.name.replace(/\s+/g, "-")}`, {
+            tags: "gh256-reject",
+          });
+          const beforePriority = getItemPriority(context, id);
+
+          for (const dryRun of [true, false]) {
+            await expect(
+              runUpdateMany(
+                {
+                  list: { tag: "gh256-reject", includeBody: true },
+                  update: { ...testCase.update, message: "gh256 reject" },
+                  dryRun,
+                },
+                { path: context.pmPath },
+              ),
+            ).rejects.toMatchObject<PmCliError>({
+              exitCode: EXIT_CODE.USAGE,
+              message: expect.stringContaining(testCase.message),
+            });
+          }
+
+          // No checkpoint file is created when the apply-mode gate throws before
+          // any mutation/checkpoint write.
+          const checkpointDir = path.join(context.pmPath, "checkpoints", "update-many");
+          await expect(readdir(checkpointDir)).rejects.toMatchObject({ code: "ENOENT" });
+          // The matched item is untouched.
+          expect(getItemPriority(context, id)).toBe(beforePriority);
+        });
+      });
+    }
+
+    it("accepts valid priority/type/status/deadline in dry-run and apply", async () => {
+      await withTempPmPath(async (context) => {
+        const id = createTask(context, "gh256-valid", { tags: "gh256-valid" });
+
+        const dryRun = await runUpdateMany(
+          {
+            list: { tag: "gh256-valid", includeBody: true },
+            update: {
+              priority: "3",
+              type: "Feature",
+              status: "in_progress",
+              deadline: "2027-01-15T00:00:00.000Z",
+              message: "gh256 valid dry-run",
+            },
+            dryRun: true,
+          },
+          { path: context.pmPath },
+        );
+        expect(dryRun.mode).toBe("dry_run");
+        expect(dryRun.item_plans?.[0]?.changes).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ field: "priority", after: 3 }),
+            expect.objectContaining({ field: "type", after: "Feature" }),
+            expect.objectContaining({ field: "status", after: "in_progress" }),
+            expect.objectContaining({ field: "deadline", after: "2027-01-15T00:00:00.000Z" }),
+          ]),
+        );
+
+        const apply = await runUpdateMany(
+          {
+            list: { tag: "gh256-valid", includeBody: true },
+            update: {
+              priority: "3",
+              type: "Feature",
+              status: "in_progress",
+              deadline: "2027-01-15T00:00:00.000Z",
+              message: "gh256 valid apply",
+            },
+          },
+          { path: context.pmPath },
+        );
+        expect(apply.mode).toBe("apply");
+        expect(apply.updated_count).toBe(1);
+        expect(apply.failed_count).toBe(0);
+        expect(getItemPriority(context, id)).toBe(3);
+        expect(getItemMetadataValue(context, id, "type")).toBe("Feature");
+        expect(getItemMetadataValue(context, id, "status")).toBe("in_progress");
+        expect(getItemMetadataValue(context, id, "deadline")).toBe("2027-01-15T00:00:00.000Z");
+      });
     });
   });
 
@@ -862,14 +981,29 @@ describe("runUpdateMany", () => {
 
   it("records failed rows when an item update is rejected during apply", async () => {
     await withTempPmPath(async (context) => {
-      const id = createTask(context, "bulk-invalid-status", { tags: "bulk-invalid-status" });
+      // GH-256: the up-front value-validation gate now rejects globally-invalid
+      // scalar values (e.g. a bad --status) before apply, so a per-item apply
+      // failure must come from a genuinely per-item condition. Strict ownership
+      // enforcement on a foreign-assigned item produces exactly that: the value
+      // is valid, the gate passes, but runUpdate rejects the individual item.
+      const settings = await readSettings(context.pmPath);
+      // A non-custom preset's knobs win over raw overrides, so switch to the
+      // custom preset to actually enable strict ownership enforcement.
+      settings.governance.preset = "custom";
+      settings.governance.ownership_enforcement = "strict";
+      await writeSettings(context.pmPath, settings);
+      const id = createTask(context, "bulk-ownership-fail", {
+        tags: "bulk-ownership-fail",
+        assignee: "foreign-assignee",
+      });
 
       const result = await runUpdateMany(
         {
-          list: { tag: "bulk-invalid-status" },
+          list: { tag: "bulk-ownership-fail" },
           update: {
-            status: "not-a-real-status",
-            message: "invalid status update",
+            description: "ownership-blocked update",
+            author: "different-author",
+            message: "ownership-blocked update",
           },
           checkpoint: false,
         },
@@ -883,7 +1017,7 @@ describe("runUpdateMany", () => {
         expect.objectContaining({
           id,
           status: "failed",
-          error: expect.stringContaining("Invalid --status"),
+          error: expect.stringContaining("assigned to foreign-assignee"),
         }),
       ]);
     });

@@ -280,6 +280,19 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "Use --type <value> to load type-aware policy guidance in --help output.",
     ],
   },
+  focus: {
+    why: "Sets a session focused item so new pm create items default their --parent to it (project management = context management).",
+    examples: [
+      "pm focus pm-epic1",
+      "pm focus",
+      "pm focus --clear",
+    ],
+    tips: [
+      "Focus is session-local (stored in .agents/pm/runtime/session.json, gitignored) — it never affects teammates.",
+      "An explicit --parent on pm create always overrides the focused item; use --parent \"\" to create with no parent.",
+      "A stale focused item produces the same missing-parent validation as an explicit stale --parent.",
+    ],
+  },
   update: {
     why: "Mutates existing item fields while preserving history and lock safety.",
     examples: [

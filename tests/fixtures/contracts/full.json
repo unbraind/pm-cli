@@ -341,6 +341,16 @@
       "requires_extension": false
     },
     {
+      "action": "focus",
+      "available": true,
+      "cli_exposed": true,
+      "command_path": "focus",
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
       "action": "gc",
       "available": true,
       "cli_exposed": true,
@@ -845,6 +855,7 @@
     "extension-reload",
     "extension-uninstall",
     "files",
+    "focus",
     "gc",
     "get",
     "health",
@@ -2515,6 +2526,11 @@
         }
       ],
       "provider": "core"
+    },
+    {
+      "command": "focus",
+      "flags": [],
+      "provider": "extension"
     },
     {
       "command": "gc",
@@ -7799,6 +7815,7 @@
     "extension reload",
     "extension uninstall",
     "files",
+    "focus",
     "gc",
     "get",
     "health",
@@ -8686,6 +8703,42 @@
       ]
     },
     {
+      "description": "Set, clear, or show the session focused item. When focused, pm_create defaults its parent to the focused item (an explicit parent still overrides). Pass id to focus an item, options.clear=true to clear, or neither to show current focus.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "clear": {
+            "description": "Clear the focused item (cannot be combined with id).",
+            "type": "boolean"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "id": {
+            "description": "pm item id, for example pm-abc1.",
+            "type": "string"
+          },
+          "options": {
+            "description": "Focus options such as clear (boolean).",
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "pm_focus",
+      "required": []
+    },
+    {
       "description": "Read one pm item. Pass options.depth='brief' or options.fields='id,title,status' for low-token inspection.",
       "input_schema": {
         "additionalProperties": true,
@@ -8959,7 +9012,7 @@
         "additionalProperties": true,
         "properties": {
           "action": {
-            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, aggregate, context, ctx, get, search, history, history-redact, history-repair, history-compact, schema, activity, restore, update, update-many, close, close-many, delete, append, comments, plan, notes, learnings, files, docs, deps, test, test-all, telemetry, stats, health, validate, gc, contracts, claim, release, start-task, pause-task, close-task. Package-owned actions (for example calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume) are available dynamically when installed.",
+            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, focus, list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, aggregate, context, ctx, get, search, history, history-redact, history-repair, history-compact, schema, activity, restore, update, update-many, close, close-many, delete, append, comments, plan, notes, learnings, files, docs, deps, test, test-all, telemetry, stats, health, validate, gc, contracts, claim, release, start-task, pause-task, close-task. Package-owned actions (for example calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume) are available dynamically when installed.",
             "type": "string"
           },
           "author": {
@@ -13131,6 +13184,80 @@
           "id"
         ],
         "title": "pm action \"copy\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "required": [
+                "id",
+                "clear"
+              ]
+            }
+          }
+        ],
+        "properties": {
+          "action": {
+            "const": "focus",
+            "description": "Tool action to execute."
+          },
+          "clear": {
+            "description": "For focus action: clear the session focused item instead of setting it (mutually exclusive with id).",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "Item identifier for read or mutation actions.",
+            "examples": [
+              "pm-a1b2"
+            ],
+            "type": "string"
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Pm Executable.",
+            "type": "string"
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "pm action \"focus\" parameters",
         "type": "object"
       },
       {
