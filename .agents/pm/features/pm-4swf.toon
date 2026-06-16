@@ -2,11 +2,18 @@ id: pm-4swf
 title: "GH-243: comments edit/delete lifecycle commands"
 description: "Tracks GitHub issue #243: add pm comments edit/delete support for obsolete orchestration-note cleanup."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-06-16T11:28:29.875Z"
-updated_at: "2026-06-16T11:28:29.875Z"
+updated_at: "2026-06-16T19:40:35.929Z"
 author: codex-sdk-cli-consolidation-20260616
 parent: pm-mpbb
+resolution: "Extended annotation-command with edit/delete modes + comment_edit/comment_delete ops; surfaced on comments command, MCP, completion, contracts, docs."
+expected_result: Agents can fix/remove obsolete comments via CLI/MCP.
+actual_result: comments supported only list/add; no edit or delete.
+comments[2]{created_at,author,text}:
+  "2026-06-16T17:23:23.003Z",claude-code-agent,"Design decisions for GH-243 (pm comments edit/delete): (1) 1-based index matching list order. (2) Flags: --delete <index> and --edit <index>; replacement text from positional [text]/--add/--stdin/--file. (3) New ops comment_edit, comment_delete; allowlisted in bypassesAssigneeConflict under --allow-audit-comment. (4) Edit preserves original created_at+author, sets edited_at=nowIso(). (5) Extend runAnnotationCommand mode union with edit/delete; surface only on comments command."
+  "2026-06-16T19:30:07.545Z",maintainer-agent,"Integration (lead): wired shared surfaces the sub-agent flagged — register-mutation comments command (--edit/--delete via new parsePositiveIntOption argParser), MCP pm_comments (isListing guard + description + param tables), completion bash/zsh, COMMENTS_FLAG_CONTRACTS + contracts golden, docs/COMMANDS.md. Refactored resolveCommentInput to reuse resolveCommentTextSource (removed duplication). Added full edit/delete + resolveAnnotationIndex + op-fallback + CLI-registration tests for 100% coverage."
+close_reason: "Added: pm comments --edit/--delete lifecycle commands for obsolete-note cleanup."
 body: ""

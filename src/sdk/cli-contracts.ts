@@ -303,6 +303,8 @@ export const COMMENTS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--add", aliases: ["--comment"] },
   { flag: "--stdin" },
   { flag: "--file" },
+  { flag: "--edit" },
+  { flag: "--delete" },
   { flag: "--limit" },
   { flag: "--author" },
   { flag: "--message" },

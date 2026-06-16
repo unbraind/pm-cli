@@ -28,6 +28,7 @@ import { resolveTypeSynonym } from "../../core/item/type-synonyms.js";
 import { collectRuntimeCreateFieldValues } from "../../core/schema/runtime-field-values.js";
 import {
   type RuntimeFieldRegistry,
+  resolveItemTypesFilePath,
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
   type RuntimeStatusRegistry,
@@ -1277,7 +1278,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
       resolvedTypeName = synonymResolved;
     } else {
       throw new PmCliError(
-        buildInvalidTypeError(resolvedOptions.type, typeRegistry.types),
+        buildInvalidTypeError(resolvedOptions.type, typeRegistry.types, resolveItemTypesFilePath(pmRoot, settings.schema)),
         EXIT_CODE.USAGE,
       );
     }

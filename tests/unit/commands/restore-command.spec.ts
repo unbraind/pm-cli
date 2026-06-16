@@ -168,9 +168,9 @@ describe("runRestore", () => {
 
       const get = context.runCli(["get", id, "--json"], { expectJson: true });
       expect(get.code).toBe(0);
-      const getJson = get.json as { item: { status: string }; body: string };
+      const getJson = get.json as { item: { status: string; body: string } };
       expect(getJson.item.status).toBe(restoreCreateSeedFixture.status);
-      expect(getJson.body).toBe(restoreCreateSeedFixture.body);
+      expect(getJson.item.body).toBe(restoreCreateSeedFixture.body);
 
       const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
       expect(history.code).toBe(0);
@@ -240,9 +240,9 @@ describe("runRestore", () => {
 
       const get = context.runCli(["get", id, "--json"], { expectJson: true });
       expect(get.code).toBe(0);
-      const getJson = get.json as { item: { status: string }; body: string };
+      const getJson = get.json as { item: { status: string; body: string } };
       expect(getJson.item.status).toBe("in_progress");
-      expect(getJson.body).toBe(restoreCreateSeedFixture.body);
+      expect(getJson.item.body).toBe(restoreCreateSeedFixture.body);
     });
   });
 
@@ -398,9 +398,9 @@ describe("runRestore", () => {
 
       const get = context.runCli(["get", id, "--json"], { expectJson: true });
       expect(get.code).toBe(0);
-      const getJson = get.json as { item: { status: string }; body: string };
+      const getJson = get.json as { item: { status: string; body: string } };
       expect(getJson.item.status).toBe(restoreCreateSeedFixture.status);
-      expect(getJson.body).toBe(restoreCreateSeedFixture.body);
+      expect(getJson.item.body).toBe(restoreCreateSeedFixture.body);
     });
   });
 
@@ -424,9 +424,9 @@ describe("runRestore", () => {
 
       const get = context.runCli(["get", id, "--json"], { expectJson: true });
       expect(get.code).toBe(0);
-      const getJson = get.json as { item: { status: string }; body: string };
+      const getJson = get.json as { item: { status: string; body: string } };
       expect(getJson.item.status).toBe("in_progress");
-      expect(getJson.body).toContain("second body section");
+      expect(getJson.item.body).toContain("second body section");
 
       const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
       expect(history.code).toBe(0);
@@ -440,13 +440,13 @@ describe("runRestore", () => {
       const id = createRestoreFixture(context, "Mismatched ID Item");
       const get = context.runCli(["get", id, "--json"], { expectJson: true });
       expect(get.code).toBe(0);
-      const getJson = get.json as { item: ItemMetadata; body: string };
+      const getJson = get.json as { item: ItemMetadata & { body: string } };
       const mismatchedDocument = {
         metadata: {
           ...getJson.item,
           id: "pm-different",
         },
-        body: getJson.body,
+        body: getJson.item.body,
       };
       const entry = createHistoryEntry({
         nowIso: new Date().toISOString(),
@@ -568,7 +568,7 @@ describe("runRestore", () => {
       const id = createRestoreFixture(context, "Rollback Restore Item");
       const before = context.runCli(["get", id, "--json"], { expectJson: true });
       expect(before.code).toBe(0);
-      const beforeJson = before.json as { item: { status: string }; body: string };
+      const beforeJson = before.json as { item: { status: string; body: string } };
 
       const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
       await chmod(historyPath, 0o444);
@@ -577,9 +577,9 @@ describe("runRestore", () => {
 
       const after = context.runCli(["get", id, "--json"], { expectJson: true });
       expect(after.code).toBe(0);
-      const afterJson = after.json as { item: { status: string }; body: string };
+      const afterJson = after.json as { item: { status: string; body: string } };
       expect(afterJson.item.status).toBe(beforeJson.item.status);
-      expect(afterJson.body).toBe(beforeJson.body);
+      expect(afterJson.item.body).toBe(beforeJson.item.body);
     });
   });
 

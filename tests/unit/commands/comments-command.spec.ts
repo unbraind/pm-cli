@@ -7,6 +7,7 @@ import {
   limitAnnotationEntries,
   parseAnnotationTextInput,
   readAnnotationEntries,
+  resolveAnnotationIndex,
   runAnnotationCommand,
   wrapOwnershipConflict,
 } from "../../../src/cli/commands/annotation-command.js";
@@ -770,6 +771,235 @@ describe("runComments", () => {
         exitCode: EXIT_CODE.USAGE,
         message: "--full-history cannot be combined with --latest",
       });
+    });
+  });
+});
+
+describe("resolveAnnotationIndex", () => {
+  it("converts a valid 1-based index to a 0-based array index", () => {
+    expect(resolveAnnotationIndex(1, 3, "comments")).toBe(0);
+    expect(resolveAnnotationIndex(3, 3, "comments")).toBe(2);
+  });
+
+  it("rejects out-of-range, missing, and non-integer indexes with a clear message", () => {
+    expect(() => resolveAnnotationIndex(0, 3, "comments")).toThrow("Comment index 0 out of range (item has 3 comments)");
+    expect(() => resolveAnnotationIndex(4, 3, "comments")).toThrow("Comment index 4 out of range (item has 3 comments)");
+    expect(() => resolveAnnotationIndex(2.5, 3, "comments")).toThrow("Comment index 2.5 out of range (item has 3 comments)");
+    expect(() => resolveAnnotationIndex(undefined, 3, "comments")).toThrow("Comment index (missing) out of range (item has 3 comments)");
+  });
+
+  it("uses a singular noun and a capitalized singular label when the collection has one entry", () => {
+    expect(() => resolveAnnotationIndex(5, 1, "comments")).toThrow("Comment index 5 out of range (item has 1 comment)");
+    expect(() => resolveAnnotationIndex(5, 0, "notes")).toThrow("Note index 5 out of range (item has 0 notes)");
+  });
+});
+
+describe("runComments edit/delete (GH-243)", () => {
+  it("edits a comment in place, preserving created_at/author and stamping edited_at", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-edit-inplace");
+      await runComments(id, { add: "first", author: "ann" }, { path: context.pmPath });
+      await runComments(id, { add: "second to fix", author: "bob" }, { path: context.pmPath });
+
+      const original = await runComments(id, {}, { path: context.pmPath });
+      const secondCreatedAt = original.comments[1].created_at;
+
+      const edited = await runComments(id, { edit: 2, add: "second fixed", author: "carol" }, { path: context.pmPath });
+      expect(edited.comments).toHaveLength(2);
+      expect(edited.comments[1].text).toBe("second fixed");
+      // created_at + original author are preserved; edited_at is stamped.
+      expect(edited.comments[1].created_at).toBe(secondCreatedAt);
+      expect(edited.comments[1].author).toBe("bob");
+      expect(typeof (edited.comments[1] as { edited_at?: string }).edited_at).toBe("string");
+      // the untouched comment is unchanged.
+      expect(edited.comments[0].text).toBe("first");
+    });
+  });
+
+  it("deletes a comment at a 1-based index", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-delete-index");
+      await runComments(id, { add: "keep-me" }, { path: context.pmPath });
+      await runComments(id, { add: "remove-me" }, { path: context.pmPath });
+      await runComments(id, { add: "keep-me-too" }, { path: context.pmPath });
+
+      const afterDelete = await runComments(id, { delete: 2 }, { path: context.pmPath });
+      expect(afterDelete.comments.map((entry) => entry.text)).toEqual(["keep-me", "keep-me-too"]);
+    });
+  });
+
+  it("rejects an edit with empty replacement text", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-edit-empty");
+      await runComments(id, { add: "original" }, { path: context.pmPath });
+      await expect(runComments(id, { edit: 1, add: "   " }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
+  it("rejects an out-of-range edit or delete index", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-index-range");
+      await runComments(id, { add: "only one" }, { path: context.pmPath });
+      await expect(runComments(id, { delete: 5 }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: "Comment index 5 out of range (item has 1 comment)",
+      });
+      await expect(runComments(id, { edit: 9, add: "x" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: "Comment index 9 out of range (item has 1 comment)",
+      });
+    });
+  });
+
+  it("rejects conflicting --edit and --delete, text on delete, and missing text on edit", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-edit-delete-guards");
+      await runComments(id, { add: "seed" }, { path: context.pmPath });
+
+      await expect(runComments(id, { edit: 1, delete: 1, add: "x" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: "Specify only one of --edit or --delete",
+      });
+      await expect(runComments(id, { delete: 1, add: "text" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: "--delete does not take comment text",
+      });
+      await expect(runComments(id, { edit: 1 }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: "--edit requires replacement text via positional [text], --add, --stdin, or --file",
+      });
+    });
+  });
+
+  it("resolves edit replacement text from --stdin and --file sources", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-edit-sources");
+      await runComments(id, { add: "seed" }, { path: context.pmPath });
+
+      const stdin = new PassThrough();
+      stdin.end("edited via stdin\n");
+      Object.defineProperty(stdin, "isTTY", { value: false, configurable: true });
+      vi.spyOn(process, "stdin", "get").mockReturnValue(stdin as unknown as NodeJS.ReadStream);
+      const viaStdin = await runComments(id, { edit: 1, stdin: true }, { path: context.pmPath });
+      expect(viaStdin.comments[0].text).toBe("edited via stdin");
+
+      const filePath = path.join(context.pmPath, "edit.md");
+      await writeFile(filePath, "edited via file", "utf8");
+      const viaFile = await runComments(id, { edit: 1, file: filePath }, { path: context.pmPath });
+      expect(viaFile.comments[0].text).toBe("edited via file");
+    });
+  });
+
+  it("validates edit text-source errors (multiple sources, missing file, blank file)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-edit-source-errors");
+      await runComments(id, { add: "seed" }, { path: context.pmPath });
+
+      await expect(runComments(id, { edit: 1, add: "a", stdin: true }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: "Specify comment text using only one input source: --add, --stdin, or --file",
+      });
+      await expect(
+        runComments(id, { edit: 1, file: path.join(context.pmPath, "nope.md") }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--file path not found"),
+      });
+      await expect(runComments(id, { edit: 1, file: "   " }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: "--file path cannot be empty",
+      });
+      await expect(runComments(id, { edit: 1, file: context.pmPath }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Failed to read --file path"),
+      });
+    });
+  });
+
+  it("honors ownership rules for edit/delete: blocked without bypass, allowed with --allow-audit-comment", async () => {
+    await withTempPmPath(async (context) => {
+      setGovernancePreset(context, "strict");
+      const id = createTask(context, "comments-edit-ownership");
+      await runComments(id, { add: "owner comment", author: "owner-a" }, { path: context.pmPath });
+      const assigned = context.runCli(
+        ["update", id, "--assignee", "owner-a", "--author", "owner-a", "--message", "assign owner", "--json"],
+        { expectJson: true },
+      );
+      expect(assigned.code).toBe(0);
+
+      await expect(runComments(id, { edit: 1, add: "hijack", author: "owner-b" }, { path: context.pmPath })).rejects.toMatchObject<
+        PmCliError
+      >({
+        exitCode: EXIT_CODE.CONFLICT,
+        context: expect.objectContaining({ code: "ownership_conflict" }),
+      });
+
+      const edited = await runComments(
+        id,
+        { edit: 1, add: "audited fix", author: "owner-b", allowAuditComment: true },
+        { path: context.pmPath },
+      );
+      expect(edited.comments[0].text).toBe("audited fix");
+
+      const deleted = await runComments(
+        id,
+        { delete: 1, author: "owner-b", allowAuditComment: true },
+        { path: context.pmPath },
+      );
+      expect(deleted.comments).toHaveLength(0);
+    });
+  });
+
+  it("falls back to the base op when editOp/deleteOp are not configured", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-op-fallback");
+      await runComments(id, { add: "original" }, { path: context.pmPath });
+
+      type CommentEntry = { created_at: string; author: string; text: string };
+      const baseConfig = {
+        collectionKey: "comments" as const,
+        op: "comment_add" as const,
+        parseText: (raw: string) => raw,
+        allowAuditBypass: false,
+        conflictGuidance: { required: "required", examples: [], nextSteps: [] },
+      };
+
+      const edited = await runAnnotationCommand<"comments", CommentEntry>(
+        id,
+        {},
+        { path: context.pmPath },
+        { ...baseConfig, input: { mode: "edit", index: 1, value: "edited via base op" } },
+      );
+      expect(edited.comments[0].text).toBe("edited via base op");
+
+      const deleted = await runAnnotationCommand<"comments", CommentEntry>(
+        id,
+        {},
+        { path: context.pmPath },
+        { ...baseConfig, input: { mode: "delete", index: 1 } },
+      );
+      expect(deleted.comments).toHaveLength(0);
+    });
+  });
+
+  it("exposes --edit/--delete through the comments command registration", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-cli-edit-delete");
+      context.runCli(["comments", id, "first", "--json"], { expectJson: true });
+      context.runCli(["comments", id, "second", "--json"], { expectJson: true });
+
+      const edited = context.runCli(["comments", id, "--edit", "2", "second-fixed", "--json"], { expectJson: true });
+      expect(edited.code).toBe(0);
+      expect((edited.json as { comments: Array<{ text: string }> }).comments[1].text).toBe("second-fixed");
+
+      const deleted = context.runCli(["comments", id, "--delete", "1", "--json"], { expectJson: true });
+      expect(deleted.code).toBe(0);
+      expect((deleted.json as { comments: Array<{ text: string }> }).comments.map((entry) => entry.text)).toEqual(["second-fixed"]);
+
+      const badIndex = context.runCli(["comments", id, "--delete", "0"]);
+      expect(badIndex.code).toBe(EXIT_CODE.USAGE);
     });
   });
 });

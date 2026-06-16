@@ -417,12 +417,30 @@ describe("buildInvalidTypeHint", () => {
       'To register a custom type, run: pm schema add-type "Wei\\"rd\\$" (writes .agents/pm/schema/types.json).',
     );
   });
+
+  it("uses the resolved types-file path when one is provided (custom --pm-path)", () => {
+    expect(buildInvalidTypeHint("Spike", "/tmp/hunt/schema/types.json")).toBe(
+      'To register a custom type, run: pm schema add-type "Spike" (writes /tmp/hunt/schema/types.json).',
+    );
+  });
+
+  it("falls back to the default path when the provided path is blank", () => {
+    expect(buildInvalidTypeHint("Spike", "   ")).toBe(
+      'To register a custom type, run: pm schema add-type "Spike" (writes .agents/pm/schema/types.json).',
+    );
+  });
 });
 
 describe("buildInvalidTypeError", () => {
   it("combines the allowed-list line with the discoverable hint", () => {
     expect(buildInvalidTypeError("Spike", ["Task", "Feature"])).toBe(
       'Invalid type value "Spike". Allowed: Task, Feature. To register a custom type, run: pm schema add-type "Spike" (writes .agents/pm/schema/types.json).',
+    );
+  });
+
+  it("threads the resolved types-file path into the hint", () => {
+    expect(buildInvalidTypeError("Spike", ["Task", "Feature"], "/srv/proj/schema/types.json")).toBe(
+      'Invalid type value "Spike". Allowed: Task, Feature. To register a custom type, run: pm schema add-type "Spike" (writes /srv/proj/schema/types.json).',
     );
   });
 });

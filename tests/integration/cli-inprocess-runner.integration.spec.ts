@@ -20,7 +20,7 @@ describe("create/update --body-file (GH-214)", () => {
       const createdId = (created.json as { item: { id: string; body?: string } }).item.id;
 
       const fetched = await context.runCliInProcess(["get", createdId, "--json"], { expectJson: true });
-      expect((fetched.json as { body?: string }).body).toBe(bodyContent);
+      expect((fetched.json as { item: { body?: string } }).item.body).toBe(bodyContent);
 
       const updatedPath = path.join(context.tempRoot, "updated.md");
       await writeFile(updatedPath, "updated from file", "utf8");
@@ -30,7 +30,7 @@ describe("create/update --body-file (GH-214)", () => {
       );
       expect(updated.code).toBe(0);
       const refetched = await context.runCliInProcess(["get", createdId, "--json"], { expectJson: true });
-      expect((refetched.json as { body?: string }).body).toBe("updated from file");
+      expect((refetched.json as { item: { body?: string } }).item.body).toBe("updated from file");
     });
   });
 

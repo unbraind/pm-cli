@@ -233,6 +233,8 @@ function bypassesAssigneeConflict(
     op === "claim" ||
     (bypassAssigneeConflict === true &&
       (op === "comment_add" ||
+        op === "comment_edit" ||
+        op === "comment_delete" ||
         op === "note_add" ||
         op === "learning_add" ||
         op === "release" ||

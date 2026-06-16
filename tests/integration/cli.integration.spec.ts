@@ -1410,7 +1410,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const getAfterSet = context.runCli(["get", id, "--json"], { expectJson: true });
       expect(getAfterSet.code).toBe(0);
-      expect((getAfterSet.json as { body: string }).body).toBe("Backfilled body content");
+      expect((getAfterSet.json as { item: { body: string } }).item.body).toBe("Backfilled body content");
 
       const clearBodyResult = context.runCli(
         [
@@ -1430,7 +1430,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const getAfterClear = context.runCli(["get", id, "--json"], { expectJson: true });
       expect(getAfterClear.code).toBe(0);
-      expect((getAfterClear.json as { body: string }).body).toBe("");
+      expect((getAfterClear.json as { item: { body: string } }).item.body).toBe("");
     });
   });
 
@@ -4797,10 +4797,10 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const getCreated = context.runCli(["get", createdId, "--json"], { expectJson: true });
       expect(getCreated.code).toBe(0);
-      const getCreatedJson = getCreated.json as { item: Record<string, unknown>; body: string };
+      const getCreatedJson = getCreated.json as { item: Record<string, unknown> & { body: string } };
       await writeFile(
         markdownPath,
-        `${JSON.stringify(getCreatedJson.item, null, 2)}\n\n${getCreatedJson.body}\n`,
+        `${JSON.stringify(getCreatedJson.item, null, 2)}\n\n${getCreatedJson.item.body}\n`,
         "utf8",
       );
       await expect(readFile(markdownPath, "utf8")).resolves.toContain(createdId);
@@ -5771,14 +5771,13 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const importedItem = context.runCli(["get", "pm-todo-cli-one", "--json"], { expectJson: true });
       expect(importedItem.code).toBe(0);
       const importedItemJson = importedItem.json as {
-        item: { type: string; status: string; priority: number; description: string };
-        body: string;
+        item: { type: string; status: string; priority: number; description: string; body: string };
       };
       expect(importedItemJson.item.type).toBe("Task");
       expect(importedItemJson.item.status).toBe("open");
       expect(importedItemJson.item.priority).toBe(2);
       expect(importedItemJson.item.description).toBe("");
-      expect(importedItemJson.body).toBe("Todos CLI body.");
+      expect(importedItemJson.item.body).toBe("Todos CLI body.");
 
       const destinationFolder = path.join(context.tempRoot, "todos-cli-export");
       const exported = context.runCli(["todos", "export", "--json", "--folder", destinationFolder], { expectJson: true });
@@ -5871,9 +5870,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const item = context.runCli(["get", "pm-legacy.1.2", "--json"], { expectJson: true });
       expect(item.code).toBe(0);
-      const itemJson = item.json as { item: { id: string }; body: string };
+      const itemJson = item.json as { item: { id: string; body: string } };
       expect(itemJson.item.id).toBe("pm-legacy.1.2");
-      expect(itemJson.body).toBe("Hierarchical CLI body.");
+      expect(itemJson.item.body).toBe("Hierarchical CLI body.");
     });
   });
 
@@ -6146,10 +6145,10 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const first = context.runCli(["get", "pm-beads-integration-1", "--json"], { expectJson: true });
       expect(first.code).toBe(0);
-      const firstJson = first.json as { item: { type: string; status: string }; body: string };
+      const firstJson = first.json as { item: { type: string; status: string; body: string } };
       expect(firstJson.item.type).toBe("Task");
       expect(firstJson.item.status).toBe("open");
-      expect(firstJson.body).toBe("integration-body-1");
+      expect(firstJson.item.body).toBe("integration-body-1");
 
       const second = context.runCli(["get", "pm-beads-integration-2", "--json"], { expectJson: true });
       expect(second.code).toBe(0);
@@ -6668,9 +6667,9 @@ it("restores a deleted item from history-only state through CLI", async () => {
 
     const get = context.runCli(["get", id, "--json"], { expectJson: true });
     expect(get.code).toBe(0);
-    const getJson = get.json as { item: { status: string }; body: string };
+    const getJson = get.json as { item: { status: string; body: string } };
     expect(getJson.item.status).toBe("in_progress");
-    expect(getJson.body).toBe("seed-body");
+    expect(getJson.item.body).toBe("seed-body");
   });
 }, 120_000);
 
@@ -6981,9 +6980,9 @@ it("restores an item by version through CLI", async () => {
 
       const get = context.runCli(["get", id, "--json"], { expectJson: true });
       expect(get.code).toBe(0);
-      const getJson = get.json as { item: { status: string }; body: string };
+      const getJson = get.json as { item: { status: string; body: string } };
       expect(getJson.item.status).toBe("open");
-      expect(getJson.body).toBe("body-v1");
+      expect(getJson.item.body).toBe("body-v1");
 
       const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
       expect(history.code).toBe(0);

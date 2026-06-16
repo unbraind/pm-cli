@@ -1560,6 +1560,12 @@
           "flag": "--file"
         },
         {
+          "flag": "--edit"
+        },
+        {
+          "flag": "--delete"
+        },
+        {
           "flag": "--limit"
         },
         {
@@ -8348,7 +8354,7 @@
       ]
     },
     {
-      "description": "List or add comments on a pm item. Use options.add to append. List calls default to the most recent 20 comments with total_count/has_more metadata for token efficiency. Pass options.limit=N to choose a page size, options.limit=0 for summary-only metadata, or options.full=true for full history.",
+      "description": "List, add, edit, or delete comments on a pm item. Use options.add to append, options.edit=<1-based index> with replacement text to fix a comment, or options.delete=<1-based index> to remove one. List calls default to the most recent 20 comments with total_count/has_more metadata for token efficiency. Pass options.limit=N to choose a page size, options.limit=0 for summary-only metadata, or options.full=true for full history.",
       "input_schema": {
         "additionalProperties": true,
         "properties": {
@@ -19887,7 +19893,7 @@
             "type": "array"
           },
           "allowAuditComment": {
-            "description": "For comments action, allow non-owner append-only comment audits without requiring --force.",
+            "description": "For comments action, allow non-owner append-only comment audits (add/edit/delete) without requiring --force.",
             "type": "boolean"
           },
           "author": {
@@ -20455,7 +20461,7 @@
             "type": "array"
           },
           "allowAuditComment": {
-            "description": "For comments action, allow non-owner append-only comment audits without requiring --force.",
+            "description": "For comments action, allow non-owner append-only comment audits (add/edit/delete) without requiring --force.",
             "type": "boolean"
           },
           "allowAuditNote": {
@@ -20561,7 +20567,7 @@
             "type": "array"
           },
           "allowAuditComment": {
-            "description": "For comments action, allow non-owner append-only comment audits without requiring --force.",
+            "description": "For comments action, allow non-owner append-only comment audits (add/edit/delete) without requiring --force.",
             "type": "boolean"
           },
           "allowAuditLearning": {

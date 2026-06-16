@@ -123,14 +123,13 @@ describe("built-in todos extension import/export", () => {
       const getImported = context.runCli(["get", "pm-todo-one", "--json"], { expectJson: true });
       expect(getImported.code).toBe(0);
       const getImportedJson = getImported.json as {
-        item: { type: string; status: string; priority: number; description: string };
-        body: string;
+        item: { type: string; status: string; priority: number; description: string; body: string };
       };
       expect(getImportedJson.item.type).toBe("Task");
       expect(getImportedJson.item.status).toBe("blocked");
       expect(getImportedJson.item.priority).toBe(2);
       expect(getImportedJson.item.description).toBe("");
-      expect(getImportedJson.body).toBe("Imported body one.");
+      expect(getImportedJson.item.body).toBe("Imported body one.");
 
       const history = context.runCli(["history", "pm-todo-one", "--json", "--full"], { expectJson: true });
       expect(history.code).toBe(0);
@@ -398,7 +397,7 @@ describe("built-in todos extension import/export", () => {
 
       const result = context.runCli(["get", "pm-full-metadata", "--json"], { expectJson: true });
       expect(result.code).toBe(0);
-      const item = (result.json as { item: Record<string, unknown>; body: string }).item;
+      const item = (result.json as { item: Record<string, unknown> & { body: string } }).item;
       expect(item.type).toBe("Issue");
       expect(item.status).toBe("blocked");
       expect(item.deadline).toBe("2026-02-10T00:00:00.000Z");
@@ -436,7 +435,7 @@ describe("built-in todos extension import/export", () => {
       expect(item.regression).toBe(true);
       expect(item.customer_impact).toBe("customer blocked");
       expect(item.close_reason).toBe("not closed yet");
-      expect((result.json as { body: string }).body).toBe("metadata body");
+      expect((result.json as { item: { body: string } }).item.body).toBe("metadata body");
     });
   });
 
@@ -554,8 +553,8 @@ describe("built-in todos extension import/export", () => {
             created_at: string;
             updated_at: string;
             confidence?: number | "low" | "medium" | "high";
+            body: string;
           };
-          body: string;
         };
         expect(generatedItem.item.type).toBe("Task");
         expect(generatedItem.item.status).toBe("open");
@@ -566,7 +565,7 @@ describe("built-in todos extension import/export", () => {
         expect(generatedItem.item.description).toBe("");
         expect(generatedItem.item.confidence).toBe(73);
         expect(generatedItem.item.created_at).toBe(generatedItem.item.updated_at);
-        expect(generatedItem.body).toBe("  generated body with trailing spaces");
+        expect(generatedItem.item.body).toBe("  generated body with trailing spaces");
 
         const typed = context.runCli(["get", "pm-typed-item", "--json"], { expectJson: true });
         expect(typed.code).toBe(0);
@@ -584,8 +583,8 @@ describe("built-in todos extension import/export", () => {
             acceptance_criteria?: string;
             close_reason?: string;
             estimated_minutes?: number;
+            body: string;
           };
-          body: string;
         };
         expect(typedItem.item.type).toBe("Issue");
         expect(typedItem.item.status).toBe("closed");
@@ -599,7 +598,7 @@ describe("built-in todos extension import/export", () => {
         expect(typedItem.item.acceptance_criteria).toBe("Typed acceptance");
         expect(typedItem.item.close_reason).toBe("done");
         expect(typedItem.item.estimated_minutes).toBe(20);
-        expect(typedItem.body).toBe("typed body");
+        expect(typedItem.item.body).toBe("typed body");
       } finally {
         await releaseConflictLock();
         if (previousPmAuthor === undefined) {

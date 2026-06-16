@@ -475,6 +475,16 @@ export function filePathForSchemaSection(pmRoot: string, configuredPath: string 
   return path.join(pmRoot, normalized);
 }
 
+/**
+ * Resolves the active tracker's `schema/types.json` path so user-facing hints
+ * (e.g. the invalid-type error) point at the real `--pm-path` location instead
+ * of the hardcoded `.agents/pm` default. Mirrors how `pm schema add/remove-type`
+ * report their target path.
+ */
+export function resolveItemTypesFilePath(pmRoot: string, schema: RuntimeSchemaSettings): string {
+  return filePathForSchemaSection(pmRoot, schema.files.types, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.types);
+}
+
 export async function ensureRuntimeSchemaFileScaffold(
   pmRoot: string,
   schema: RuntimeSchemaSettings,

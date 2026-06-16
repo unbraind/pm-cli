@@ -272,6 +272,8 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   allowAuditNote: { type: "boolean" },
   allowAuditLearning: { type: "boolean" },
   allowAuditComment: { type: "boolean" },
+  edit: { type: "number" },
+  delete: { type: "number" },
   allowAuditUpdate: { type: "boolean" },
   allowAuditDepUpdate: { type: "boolean" },
   allowAuditRelease: { type: "boolean" },
@@ -947,7 +949,13 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     description: "For learnings action, allow non-owner append-only learning audits without requiring --force.",
   },
   allowAuditComment: {
-    description: "For comments action, allow non-owner append-only comment audits without requiring --force.",
+    description: "For comments action, allow non-owner append-only comment audits (add/edit/delete) without requiring --force.",
+  },
+  edit: {
+    description: "For comments action, replace the comment at this 1-based index with the supplied replacement text (add/stdin/file).",
+  },
+  delete: {
+    description: "For comments action, delete the comment at this 1-based index.",
   },
   stdin: {
     description: "When true for comments action, read comment text from piped stdin (supports multiline markdown).",

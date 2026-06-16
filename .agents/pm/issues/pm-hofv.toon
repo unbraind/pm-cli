@@ -1,0 +1,18 @@
+id: pm-hofv
+title: "GH-252: pm get --json places body outside item (parity with list --include-body)"
+description: ""
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-06-16T17:15:13.345Z"
+updated_at: "2026-06-16T19:40:35.087Z"
+author: maintainer-agent
+parent: pm-mpbb
+resolution: Moved body into the item object in GetResult; removed top-level sibling.
+expected_result: pm get --json exposes body at .item.body alongside description.
+actual_result: body was a top-level sibling of item; .item.body was null.
+comments[1]{created_at,author,text}:
+  "2026-06-16T19:30:04.217Z",maintainer-agent,"Fixed: pm get --json now places body INSIDE the item object (.item.body), matching pm list --include-body and where description/acceptance_criteria live. Removed top-level result.body. Updated get.ts GetResult type + assignment, MCP forwards automatically, docs/COMMANDS.md, and ~20 test files that asserted top-level .body across unit+integration."
+close_reason: "Fixed: pm get --json now returns body inside .item (parity with list --include-body)."
+body: "pm get --json emits body as a SIBLING of item (top-level result.body), while description/acceptance_criteria live INSIDE item and pm list --include-body --json places body INSIDE each row. Agents read .item.body and find it null. Fix: include body inside the item object for both JSON and TOON get output, matching list, so .item.body works. Drop the top-level duplicate to stay token-efficient. Update MCP pm_get contract + golden + docs + tests."

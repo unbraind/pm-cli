@@ -13,6 +13,7 @@ import { normalizeParentReferencePolicy } from "../../core/item/parent-reference
 import { normalizeSprintReleaseFormatPolicy } from "../../core/item/sprint-release-format.js";
 import { resolveItemTypeRegistry, resolveTypeName } from "../../core/item/type-registry.js";
 import { buildInvalidTypeError } from "../../core/schema/item-types-file.js";
+import { resolveItemTypesFilePath } from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -1772,7 +1773,10 @@ export async function runConfig(
     const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
     const resolvedType = resolveTypeName(rawType, typeRegistry);
     if (!resolvedType) {
-      throw new PmCliError(buildInvalidTypeError(rawType, typeRegistry.types), EXIT_CODE.USAGE);
+      throw new PmCliError(
+        buildInvalidTypeError(rawType, typeRegistry.types, resolveItemTypesFilePath(target.pmRoot, settings.schema)),
+        EXIT_CODE.USAGE,
+      );
     }
     const changed = settings.governance.create_default_type !== resolvedType;
     settings.governance.create_default_type = resolvedType;

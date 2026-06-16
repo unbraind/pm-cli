@@ -97,6 +97,7 @@ import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-s
 import {
   registerMutationCommands,
   parseSchemaOrderOption,
+  parsePositiveIntOption,
   registerCommanderOptionContracts,
 } from "../../../src/cli/register-mutation.js";
 import { registerSetupCommands } from "../../../src/cli/register-setup.js";
@@ -1141,6 +1142,15 @@ describe("mutation command actions", () => {
     await runCli("comments", "pm-1", "--limit", "3");
     expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(1);
 
+    // --edit/--delete are coerced to numbers and forwarded; both are mutations that refresh.
+    await runCli("comments", "pm-1", "--edit", "2", "fixed text");
+    const editArgs = lastCallArg<Record<string, unknown>>(vi.mocked(runComments) as never, 1);
+    expect(editArgs.edit).toBe(2);
+    expect(editArgs.add).toBe("fixed text");
+    await runCli("comments", "pm-1", "--delete", "1");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runComments) as never, 1).delete).toBe(1);
+    expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(3);
+
     await runCli("notes", "pm-1", "--add", "note text");
     expect(lastCallArg<Record<string, unknown>>(vi.mocked(runNotes) as never, 1).add).toBe("note text");
     await expect(runCli("notes", "pm-1", "a", "--add", "b")).rejects.toThrow("not both");
@@ -1263,6 +1273,16 @@ describe("mutation command actions", () => {
     expect(() => parseSchemaOrderOption("abc")).toThrow("--order must be a finite integer");
     // A non-number, non-string value (e.g. boolean) reaches the trailing throw.
     expect(() => parseSchemaOrderOption(true)).toThrow("--order must be a finite integer");
+  });
+
+  it("coerces a positive 1-based integer option and rejects non-positive/non-integer values", () => {
+    const parse = parsePositiveIntOption("--edit");
+    expect(parse("1")).toBe(1);
+    expect(parse("42")).toBe(42);
+    expect(() => parse("0")).toThrow("--edit must be a positive integer (1-based index).");
+    expect(() => parse("-3")).toThrow("--edit must be a positive integer (1-based index).");
+    expect(() => parse("2.5")).toThrow("--edit must be a positive integer (1-based index).");
+    expect(() => parse("abc")).toThrow("--edit must be a positive integer (1-based index).");
   });
 
   it("resolves --body-file content for create and update and rejects --body + --body-file", async () => {

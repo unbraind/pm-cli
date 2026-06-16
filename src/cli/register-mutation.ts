@@ -74,6 +74,22 @@ export function parseSchemaOrderOption(raw: unknown): number | undefined {
   throw new PmCliError("--order must be a finite integer.", EXIT_CODE.USAGE);
 }
 
+/**
+ * Build a commander argParser that coerces a flag value into a positive
+ * (1-based) integer, throwing a usage error when the supplied value is not a
+ * whole number >= 1. Used by `pm comments --edit/--delete <index>` so an
+ * invalid index fails fast with a clear message instead of silently coercing.
+ */
+export function parsePositiveIntOption(flag: string): (value: string) => number {
+  return (value: string): number => {
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed) || parsed < 1) {
+      throw new PmCliError(`${flag} must be a positive integer (1-based index).`, EXIT_CODE.USAGE);
+    }
+    return parsed;
+  };
+}
+
 // Bulk content-field selection filters (GH-242) shared by update-many and
 // close-many. Each pair mirrors the list-family presence/absence flags but uses
 // the `--filter-` prefix so they live in the bulk-selection namespace. The
@@ -1297,15 +1313,19 @@ export function registerMutationCommands(program: Command): void {
     .option("--add <text>", "Add one comment entry (plain text fallback, text=<value>, markdown pairs, or - for stdin; CSV-like key fragments are preserved as plain text unless text is explicit)")
     .option("--stdin", "Read comment text from stdin (supports multiline markdown)")
     .option("--file <path>", "Read comment text from file (supports multiline markdown)")
+    .option("--edit <index>", "Replace the comment at 1-based <index> (replacement text from positional [text], --add, --stdin, or --file)", parsePositiveIntOption("--edit"))
+    .option("--delete <index>", "Delete the comment at 1-based <index>", parsePositiveIntOption("--delete"))
     .option("--limit <n>", "Return only latest n comments")
     .option("--author [value]", "Comment author (optional; falls back to PM_AUTHOR/settings)")
     .option("--message <value>", "History message")
-    .option("--allow-audit-comment", "Allow non-owner append-only comment audits without requiring --force")
+    .option("--allow-audit-comment", "Allow non-owner append-only comment audits (add/edit/delete) without requiring --force")
     .option("--force", "Force ownership override")
-    .description("List or add comments for an item.")
+    .description("List, add, edit, or delete comments for an item.")
     .action(async (id: string, text: string | undefined, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
+      const editIndex = typeof options.edit === "number" ? options.edit : undefined;
+      const deleteIndex = typeof options.delete === "number" ? options.delete : undefined;
       const addFromOption = typeof options.add === "string" ? options.add : undefined;
       const addFromPositional = typeof text === "string" ? text : undefined;
       const readFromStdin = options.stdin === true;
@@ -1330,13 +1350,17 @@ export function registerMutationCommands(program: Command): void {
         add,
         stdin: readFromStdin,
         file: readFromFile,
+        edit: editIndex,
+        delete: deleteIndex,
         limit: typeof options.limit === "string" ? options.limit : undefined,
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
         allowAuditComment: Boolean(options.allowAuditComment),
         force: Boolean(options.force),
       }, globalOptions);
-      if (typeof add === "string" || readFromStdin || readFromFile !== undefined) {
+      const isMutation =
+        typeof add === "string" || readFromStdin || readFromFile !== undefined || editIndex !== undefined || deleteIndex !== undefined;
+      if (isMutation) {
         await invalidateSearchCachesForMutation(globalOptions, result);
       }
       printResult(result, globalOptions);

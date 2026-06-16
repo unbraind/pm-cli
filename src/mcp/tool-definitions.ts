@@ -242,7 +242,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "pm_comments",
     description:
-      "List or add comments on a pm item. Use options.add to append. " +
+      "List, add, edit, or delete comments on a pm item. Use options.add to append, options.edit=<1-based index> with replacement text to fix a comment, or options.delete=<1-based index> to remove one. " +
       "List calls default to the most recent 20 comments with total_count/has_more metadata for token efficiency. " +
       "Pass options.limit=N to choose a page size, options.limit=0 for summary-only metadata, or options.full=true for full history.",
     inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id"]),

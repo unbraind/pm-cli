@@ -28,6 +28,7 @@ import { resolvePriority } from "../../core/item/priority.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import { collectRuntimeUpdateFieldValues } from "../../core/schema/runtime-field-values.js";
 import {
+  resolveItemTypesFilePath,
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
   type RuntimeFieldRegistry,
@@ -1753,7 +1754,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         const resolvedTypeName = resolveTypeName(options.type, typeRegistry);
         if (!resolvedTypeName) {
           throw new PmCliError(
-            buildInvalidTypeError(options.type, typeRegistry.types),
+            buildInvalidTypeError(options.type, typeRegistry.types, resolveItemTypesFilePath(pmRoot, settings.schema)),
             EXIT_CODE.USAGE,
           );
         }

@@ -829,7 +829,7 @@ describe("runUpdate", () => {
       expect(item.customer_impact).toBe("triage reports missing details");
       const loaded = context.runCli(["get", id, "--json"], { expectJson: true });
       expect(loaded.code).toBe(0);
-      expect((loaded.json as { body: string }).body).toBe("updated body content");
+      expect((loaded.json as { item: { body: string } }).item.body).toBe("updated body content");
       expect(item.reminders).toEqual([
         { at: "2026-03-03T12:00:00.000Z", text: "reminder alpha" },
         { at: "2026-03-03T12:00:00.000Z", text: "reminder beta" },
@@ -3043,7 +3043,7 @@ describe("runUpdate", () => {
 
       expect(updated.changed_fields).toContain("body");
       const loaded = context.runCli(["get", id, "--json"], { expectJson: true });
-      expect((loaded.json as { body: string }).body).toBe("body from stdin token");
+      expect((loaded.json as { item: { body: string } }).item.body).toBe("body from stdin token");
     });
   });
 
