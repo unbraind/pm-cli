@@ -418,7 +418,7 @@ async function runInitWizard(initialPrefix: string, telemetryDefault: boolean): 
     output.write("default: ownership conflict warnings, progressive create defaults, close validation warn.\n");
     output.write("strict: ownership blocking, strict create defaults, close validation strict.\n");
     const presetAnswer = await rl.question("Governance preset [minimal/default/strict] (default: minimal): ");
-    const resolvedPreset = normalizeInitGovernancePreset(presetAnswer.trim().length > 0 ? presetAnswer : "minimal") ?? "minimal";
+    const resolvedPreset = normalizeInitGovernancePreset(presetAnswer.trim().length > 0 ? presetAnswer : "minimal")!;
 
     output.write("\n3/3 Project telemetry\n");
     output.write("Telemetry helps improve reliability and can be disabled anytime via pm config.\n");

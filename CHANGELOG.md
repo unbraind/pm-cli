@@ -4,6 +4,7 @@
 
 ### Added
 
+- Module-mirrored test reorganization: retire lane/wave naming, add shared script harness ([pm-m449](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-m449.toon))
 - Search: persistent search.hybrid\_semantic\_weight setting as default for pm search --semantic-weight ([pm-2xwh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-2xwh.toon))
 - Configurable min-score threshold for pm search: --min-score per-query override of search.score\_threshold ([pm-cstl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-cstl.toon))
 - Search corpus: include type, priority, parent, assignee fields in keyword and semantic corpus ([pm-jyie](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-jyie.toon))
@@ -29,6 +30,18 @@
 
 ### Other
 
+- Test-suite dedup & best-practice audit \(post module-mirror reorg\) ([pm-2nqx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-2nqx.toon))
+- Source-correctness audit of all-source-100%-coverage branch src/ edits ([pm-e2jt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-e2jt.toon))
+- tests/unit is at exactly 120/120 spec files: zero headroom before Gates\(static\) fails; consolidation candidates identified ([pm-vks9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-vks9.toon))
+- ADR: test organization convention — module-mirrored spec files, no lane/wave naming ([pm-kjmx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-kjmx.toon))
+- ADR: literal all-src coverage supersedes curated include/exclude allowlist ([pm-w13j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-w13j.toon))
+- Literal 100% all-source test coverage & module-mirrored test reorganization ([pm-xau3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-xau3.toon))
+- Coverage to 100%: packages, plugins, and docs examples ([pm-6tch](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-6tch.toon))
+- Coverage to 100%: src/core, src/mcp, and src/sdk modules ([pm-krwu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-krwu.toon))
+- Coverage to 100%: src/cli command handlers \(group B — query, search, calendar, test, init, extension\) ([pm-7v9s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-7v9s.toon))
+- Coverage to 100%: src/cli command handlers \(group A — mutation, history, storage, schema\) ([pm-ud1x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ud1x.toon))
+- Coverage to 100%: src/cli infrastructure \(registration, bootstrap, help, main\) ([pm-uvxc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-uvxc.toon))
+- Coverage to 100%: build, release, and smoke scripts ([pm-f2ne](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-f2ne.toon))
 - Document and test telemetry env-var surface: PM\_TELEMETRY\_DISABLED, PM\_NO\_TELEMETRY, PM\_TELEMETRY\_SOURCE\_CONTEXT, PM\_TELEMETRY\_OTEL\_DISABLED, PM\_TELEMETRY\_INLINE\_FLUSH ([pm-r7md](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-r7md.toon))
 - pm validate: --all-affected-ids flag + never truncate ID lists in JSON mode \(GH-224\) ([pm-o0d2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-o0d2.toon))
 - pm aggregate: explicit \(unassigned\)/\(none\) labels for blank group keys in all output modes \(GH-225\) ([pm-zcx9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-zcx9.toon))

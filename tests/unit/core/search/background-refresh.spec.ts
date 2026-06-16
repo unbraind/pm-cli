@@ -238,6 +238,30 @@ describe("background-refresh", () => {
         expect(await drainPromise).toEqual([]);
       });
     });
+
+    it("keeps awaited queue-gate backoff timers referenced so CLI top-level await can settle", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        const gatePath = path.join(pmPath, "search", "pending-refresh.gate.lock");
+        await fs.mkdir(gatePath, { recursive: true });
+        const realSetTimeout = globalThis.setTimeout;
+        const unrefCalls: number[] = [];
+        const timeoutSpy = vi.spyOn(globalThis, "setTimeout").mockImplementation(((handler: TimerHandler, timeout?: number, ...args: unknown[]) => {
+          const timer = realSetTimeout(handler, timeout, ...args);
+          const originalUnref = timer.unref?.bind(timer);
+          timer.unref = (() => {
+            unrefCalls.push(timeout ?? 0);
+            return originalUnref ? originalUnref() : timer;
+          }) as typeof timer.unref;
+          return timer;
+        }) as typeof setTimeout);
+        try {
+          await drainPendingRefreshIds(pmPath);
+          expect(unrefCalls).toEqual([]);
+        } finally {
+          timeoutSpy.mockRestore();
+        }
+      });
+    });
   });
 
   describe("dispatchRefreshChild (via scheduleBackgroundSemanticRefresh)", () => {
@@ -312,6 +336,33 @@ describe("background-refresh", () => {
         expect(result.rounds).toBe(1);
         expect(result.warnings).toEqual(["w1"]);
         expect(await drainPendingRefreshIds(pmPath)).toEqual([]);
+      });
+    });
+
+    it("returns immediately when the queue is empty", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        const result = await runSemanticRefreshWorker(pmPath, async () => {
+          throw new Error("refresh should not run for an empty queue");
+        });
+        expect(result.rounds).toBe(0);
+        expect(result.processed).toEqual([]);
+      });
+    });
+
+    it("processes ids enqueued mid-refresh in a follow-up round", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        await enqueuePendingRefreshIds(pmPath, ["pm-1"]);
+        let enqueuedFollowUp = false;
+        const result = await runSemanticRefreshWorker(pmPath, async (root, ids) => {
+          if (!enqueuedFollowUp) {
+            enqueuedFollowUp = true;
+            await enqueuePendingRefreshIds(root, ["pm-2"]);
+          }
+          return { refreshed: ids, skipped: [], warnings: [] };
+        });
+
+        expect(result.rounds).toBe(2);
+        expect(result.processed).toEqual(["pm-1", "pm-2"]);
       });
     });
 

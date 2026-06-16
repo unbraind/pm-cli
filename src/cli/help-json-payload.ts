@@ -167,14 +167,13 @@ function compactHelpOptionAliases(options: HelpOptionSummary[]): HelpOptionSumma
     }
   }
   for (const aliasOption of aliasOptions) {
-    if (!aliasOption.alias_for || !aliasOption.long) {
-      continue;
-    }
-    const canonical = canonicalByLong.get(aliasOption.alias_for);
+    const aliasFor = aliasOption.alias_for as string;
+    const canonical = canonicalByLong.get(aliasFor);
     if (!canonical) {
       continue;
     }
-    const aliases = new Set([...(canonical.aliases ?? []), aliasOption.long]);
+    const aliasLong = aliasOption.long as string;
+    const aliases = new Set<string>([...(canonical.aliases ?? []), aliasLong]);
     canonical.aliases = [...aliases].sort((left, right) => left.localeCompare(right));
   }
   return options.filter((option) => {
@@ -430,4 +429,10 @@ export function attachCreateUpdatePolicyHelpText(
 export const _testOnly = {
   attachCreateUpdatePolicyHelpText,
   buildCreateUpdatePolicyHelpText,
+  buildHelpArgumentSummaries,
+  buildHelpOptionSummaries,
+  buildHelpSubcommandSummaries,
+  buildOptionAliasMap,
+  compactHelpOptionAliases,
+  readOptionAttributeName,
 };

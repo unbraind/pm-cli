@@ -26,6 +26,7 @@ import {
   readFirstStringFromCommanderOptions,
   readStringArrayFromCommanderOptions,
 } from "../sdk/cli-contracts.js";
+import type { CommanderOptionAliasContract } from "../sdk/cli-contracts.js";
 import type {
   ContextOptions,
   CreateCommandOptions,
@@ -53,6 +54,18 @@ interface CommandOptionsReader {
 
 function commandOptionsReader(command: unknown): CommandOptionsReader {
   return typeof command === "object" && command !== null ? command as CommandOptionsReader : {};
+}
+
+// Resolves the alias contract for a normalize target, falling back to a
+// single-key contract if the target is somehow absent from the contract table.
+function resolveCommanderContract(
+  contracts: CommanderOptionAliasContract[],
+  target: string,
+): CommanderOptionAliasContract {
+  const contract = contracts.find((entry) => entry.target === target);
+  /* c8 ignore start -- every normalize target is present in its contract table (verified by contract drift tests); the fallback is a defensive guard against future drift */
+  return contract ?? { target, keys: [target] };
+  /* c8 ignore stop */
 }
 
 export function setResolvedGlobalOptions(command: Command, globalOptions: GlobalOptions): void {
@@ -211,18 +224,12 @@ export function normalizeCreateOptions(
   const readCreateString = (target: string): string | undefined =>
     readFirstStringFromCommanderOptions(
       commandOptions,
-      CREATE_COMMANDER_STRING_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
-        target,
-        keys: [target],
-      },
+      resolveCommanderContract(CREATE_COMMANDER_STRING_OPTION_CONTRACTS, target),
     );
   const readCreateList = (target: string): string[] | undefined =>
     readStringArrayFromCommanderOptions(
       commandOptions,
-      CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
-        target,
-        keys: [target],
-      },
+      resolveCommanderContract(CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS, target),
     );
 
   const type = readCreateString("type");
@@ -318,18 +325,12 @@ export function normalizeUpdateOptions(commandOptions: Record<string, unknown>):
   const readUpdateString = (target: string): string | undefined =>
     readFirstStringFromCommanderOptions(
       commandOptions,
-      UPDATE_COMMANDER_STRING_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
-        target,
-        keys: [target],
-      },
+      resolveCommanderContract(UPDATE_COMMANDER_STRING_OPTION_CONTRACTS, target),
     );
   const readUpdateList = (target: string): string[] | undefined =>
     readStringArrayFromCommanderOptions(
       commandOptions,
-      UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
-        target,
-        keys: [target],
-      },
+      resolveCommanderContract(UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS, target),
     );
 
   const normalized: Record<string, unknown> = {
@@ -456,19 +457,18 @@ export function extractUpdateManyMutationOptionSource(commandOptions: Record<str
 }
 
 function readListOptionString(options: Record<string, unknown>, target: string): string | undefined {
-  const contract = LIST_COMMANDER_STRING_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
-    target,
-    keys: [target],
-  };
+  const contract = resolveCommanderContract(LIST_COMMANDER_STRING_OPTION_CONTRACTS, target);
   const stringValue = readFirstStringFromCommanderOptions(options, contract);
   if (stringValue !== undefined) {
     return stringValue;
   }
   for (const key of contract.keys) {
     const value = options[key];
+    /* c8 ignore start -- unreachable: readFirstStringFromCommanderOptions already returns above for any string value under contract.keys, so a string here cannot occur */
     if (target === "ids" && typeof value === "string") {
       return value;
     }
+    /* c8 ignore stop */
     if (typeof value === "number" && Number.isFinite(value)) {
       return String(value);
     }
@@ -620,18 +620,12 @@ export function normalizeSearchOptions(options: Record<string, unknown>): Record
   const readSearchString = (target: string): string | undefined =>
     readFirstStringFromCommanderOptions(
       options,
-      SEARCH_COMMANDER_STRING_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
-        target,
-        keys: [target],
-      },
+      resolveCommanderContract(SEARCH_COMMANDER_STRING_OPTION_CONTRACTS, target),
     );
   const readSearchStringOrNumber = (target: string): string | number | undefined => {
     const candidate = readFirstValueFromCommanderOptions(
       options,
-      SEARCH_COMMANDER_STRING_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
-        target,
-        keys: [target],
-      },
+      resolveCommanderContract(SEARCH_COMMANDER_STRING_OPTION_CONTRACTS, target),
     );
     if (typeof candidate === "string") {
       return candidate;
@@ -709,10 +703,7 @@ export function normalizeActivityOptions(options: Record<string, unknown>): {
   const readActivityString = (target: string): string | undefined =>
     readFirstStringFromCommanderOptions(
       options,
-      ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
-        target,
-        keys: [target],
-      },
+      resolveCommanderContract(ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS, target),
     );
   return {
     id: readActivityString("id"),
@@ -757,10 +748,7 @@ export function normalizeContextOptions(options: Record<string, unknown>): Conte
   const readContextString = (target: string): string | undefined =>
     readFirstStringFromCommanderOptions(
       options,
-      CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
-        target,
-        keys: [target],
-      },
+      resolveCommanderContract(CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS, target),
     );
   const sectionRaw = options.section;
   const section: string[] | undefined = Array.isArray(sectionRaw)

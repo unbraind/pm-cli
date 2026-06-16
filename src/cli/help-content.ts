@@ -773,3 +773,8 @@ export function attachRichHelpText(program: Command, argv: string[] = process.ar
     attachBundleByPath(program, commandPath, bundle, detailMode);
   }
 }
+
+export const _testOnly = {
+  renderCompactHelpBundle,
+  renderDetailedHelpBundle,
+};

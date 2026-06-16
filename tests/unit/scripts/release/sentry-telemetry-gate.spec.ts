@@ -247,6 +247,20 @@ describe("scripts/release/sentry-telemetry-gate: telemetry modes", () => {
     expect(logs.join("\n")).toContain("Sentry/telemetry gate passed");
   });
 
+  it("handles malformed issue entries while still tallying high-priority items", async () => {
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off", "--max-high", "1"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: buildSentryFetch([
+        "raw issue payload",
+        { shortId: "PM-11", priority: "high" },
+      ]),
+    });
+    expect(json.sentry.total).toBe(2);
+    expect(json.sentry.high).toBe(1);
+    expect(json.sentry.threshold_ok).toBe(true);
+  });
+
   it("prints the text failure line when thresholds are exceeded without --json", async () => {
     const { errors } = await runSentryGate({
       argv: ["--telemetry-mode", "off", "--max-high", "0"],
@@ -330,6 +344,37 @@ describe("scripts/release/sentry-telemetry-gate: telemetry metric parsing", () =
       runCommand: (command) => (command === "bash" ? { status: 0, stdout: csv, stderr: "" } : { status: 0, stdout: "", stderr: "" }),
     });
     expect(json.telemetry.warning).toBe("invalid_finish_error_rate_value");
+  });
+
+  it("flags telemetry as not-ok when finish_error_rate_pct is missing", async () => {
+    const csv = [
+      "### overall finish error rate",
+      "different_metric,sample_size",
+      "1,50",
+      "(1 rows)",
+    ].join("\n");
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "best-effort", "--telemetry-command", "telemetry.sh"],
+      existsSync: true,
+      runCommand: (command) => (command === "bash" ? { status: 0, stdout: csv, stderr: "" } : { status: 0, stdout: "", stderr: "" }),
+    });
+    expect(json.telemetry.warning).toBe("invalid_finish_error_rate_value");
+  });
+
+  it("defaults missing-error-code rows to zero when that section is absent", async () => {
+    const csv = [
+      "### overall finish error rate",
+      "finish_error_rate_pct,sample_size",
+      "1,50",
+      "(1 rows)",
+    ].join("\n");
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "best-effort", "--telemetry-command", "telemetry.sh"],
+      existsSync: true,
+      runCommand: (command) => (command === "bash" ? { status: 0, stdout: csv, stderr: "" } : { status: 0, stdout: "", stderr: "" }),
+    });
+    expect(json.telemetry.failures_without_error_code_rows).toBe(0);
+    expect(json.telemetry.ok).toBe(true);
   });
 
   it("uses an explicit non-.sh telemetry command and counts missing-coverage rows", async () => {
@@ -498,6 +543,36 @@ describe("scripts/release/sentry-telemetry-gate: sentry fetch fallbacks", () => 
     expect(String(json.sentry.warning ?? "")).toContain("sentry_cli_json_parse_failed");
   });
 
+  it("sentry CLI fallback stringifies non-Error JSON parse failures", async () => {
+    const realParse = JSON.parse;
+    vi.spyOn(JSON, "parse").mockImplementation(((...parseArgs: Parameters<typeof JSON.parse>) => {
+      const [payload] = parseArgs;
+      if (typeof payload === "string" && payload.includes("\"PM-98\"")) {
+        // eslint-disable-next-line no-throw-literal
+        throw "raw cli parse failure";
+      }
+      return realParse(...parseArgs);
+    }) as typeof JSON.parse);
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "required", "--telemetry-command", "telemetry.sh"],
+      existsSync: true,
+      runCommand: (command, args) => {
+        if (command === "sentry" && args[0] === "issue") {
+          return {
+            status: 0,
+            stdout: JSON.stringify([{ shortId: "PM-98", level: "info" }]),
+            stderr: "",
+          };
+        }
+        if (command === "bash") {
+          return { status: 0, stdout: TELEMETRY_CSV, stderr: "" };
+        }
+        return { status: 0, stdout: "", stderr: "" };
+      },
+    });
+    expect(String(json.sentry.warning ?? "")).toContain("sentry_cli_json_parse_failed:raw cli parse failure");
+  });
+
   it("sentry CLI fallback treats empty stdout as an empty issue list", async () => {
     const { json } = await runSentryGate({
       argv: ["--json", "--telemetry-mode", "required", "--telemetry-command", "telemetry.sh"],
@@ -546,6 +621,18 @@ describe("scripts/release/sentry-telemetry-gate: sentry fetch fallbacks", () => 
     expect(String(json.sentry.warning ?? "")).toContain("sentry_query_error:network boom");
   });
 
+  it("token fetch stringifies non-Error failures", async () => {
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: vi.fn(async () => {
+        // eslint-disable-next-line no-throw-literal
+        throw "raw fetch boom";
+      }) as unknown as typeof fetch,
+    });
+    expect(String(json.sentry.warning ?? "")).toContain("sentry_query_error:raw fetch boom");
+  });
+
   it("token fetch parses an empty body as an empty issue list", async () => {
     const { json } = await runSentryGate({
       argv: ["--json", "--telemetry-mode", "off"],
@@ -566,6 +653,32 @@ describe("scripts/release/sentry-telemetry-gate: sentry fetch fallbacks", () => 
         text: async () => JSON.stringify({ data: [{ shortId: "PM-77", level: "warning" }] }),
       })) as unknown as typeof fetch,
     });
+    expect(json.sentry.total).toBe(1);
+  });
+
+  it("handles parser-overridden function-shaped issue entries", async () => {
+    const realParse = JSON.parse;
+    const functionIssue = Object.assign(function syntheticIssue() {}, {
+      logger: "console",
+      title: "non-pattern console issue",
+    });
+    vi.spyOn(JSON, "parse").mockImplementation(((...parseArgs: Parameters<typeof JSON.parse>) => {
+      const [payload] = parseArgs;
+      if (payload === "FUNCTION_ISSUE_PAYLOAD") {
+        return [functionIssue];
+      }
+      return realParse(...parseArgs);
+    }) as typeof JSON.parse);
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        text: async () => "FUNCTION_ISSUE_PAYLOAD",
+      })) as unknown as typeof fetch,
+    });
+    expect(json.sentry.checked).toBe(true);
     expect(json.sentry.total).toBe(1);
   });
 

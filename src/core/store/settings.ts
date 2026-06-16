@@ -655,6 +655,18 @@ function normalizeValidationPatternList(values: string[] | undefined): string[] 
   );
 }
 
+function valueOrDefault<T>(value: T | undefined, fallback: T): T {
+  return value === undefined ? fallback : value;
+}
+
+function recordOrEmpty(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function arrayOrEmpty<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
 export function normalizeItemTypeDefinitions(definitions: ItemTypeDefinition[] | undefined): ItemTypeDefinition[] {
   const normalized = (definitions ?? [])
     .map((definition) => normalizeItemTypeDefinition(definition))
@@ -769,37 +781,55 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
 }
 
 export function serializeSettings(settings: PmSettings, options: SerializeSettingsOptions = {}): string {
-  const governance = resolveGovernanceKnobs(settings);
-  const normalizedSchema = normalizeRuntimeSchemaSettings(settings.schema);
-  const persistedFileBackedSections = resolvePersistedFileBackedSchemaSections(settings, options.persist_source);
-  const normalizedSettings: PmSettings = {
+  const baseSettings = {
     ...settings,
+    locks: valueOrDefault(settings.locks, SETTINGS_DEFAULTS.locks),
+    output: valueOrDefault(settings.output, SETTINGS_DEFAULTS.output),
+    history: valueOrDefault(settings.history, SETTINGS_DEFAULTS.history),
+    validation: valueOrDefault(settings.validation, SETTINGS_DEFAULTS.validation),
+    workflow: valueOrDefault(settings.workflow, SETTINGS_DEFAULTS.workflow),
+    testing: valueOrDefault(settings.testing, SETTINGS_DEFAULTS.testing),
+    telemetry: valueOrDefault(settings.telemetry, SETTINGS_DEFAULTS.telemetry),
+    agent_guidance: valueOrDefault(settings.agent_guidance, SETTINGS_DEFAULTS.agent_guidance),
+    item_types: valueOrDefault(settings.item_types, SETTINGS_DEFAULTS.item_types),
+    schema: valueOrDefault(settings.schema, SETTINGS_DEFAULTS.schema),
+    context: valueOrDefault(settings.context, SETTINGS_DEFAULTS.context),
+    extensions: valueOrDefault(settings.extensions, SETTINGS_DEFAULTS.extensions),
+    search: valueOrDefault(settings.search, SETTINGS_DEFAULTS.search),
+    providers: valueOrDefault(settings.providers, SETTINGS_DEFAULTS.providers),
+    vector_store: valueOrDefault(settings.vector_store, SETTINGS_DEFAULTS.vector_store),
+  } as PmSettings;
+  const governance = resolveGovernanceKnobs(baseSettings);
+  const normalizedSchema = normalizeRuntimeSchemaSettings(baseSettings.schema);
+  const persistedFileBackedSections = resolvePersistedFileBackedSchemaSections(baseSettings, options.persist_source);
+  const normalizedSettings: PmSettings = {
+    ...baseSettings,
     item_format: "toon",
     validation: {
-      ...settings.validation,
+      ...baseSettings.validation,
       parent_reference: governance.parent_reference,
       metadata_profile: governance.metadata_profile,
-      metadata_required_fields: normalizeValidationMetadataRequiredFields(settings.validation?.metadata_required_fields),
+      metadata_required_fields: normalizeValidationMetadataRequiredFields(baseSettings.validation?.metadata_required_fields),
       lifecycle_stale_blocker_reason_patterns: normalizeValidationPatternList(
-        settings.validation?.lifecycle_stale_blocker_reason_patterns ??
+        baseSettings.validation?.lifecycle_stale_blocker_reason_patterns ??
           SETTINGS_DEFAULTS.validation.lifecycle_stale_blocker_reason_patterns,
       ),
       lifecycle_closure_like_blocked_reason_patterns: normalizeValidationPatternList(
-        settings.validation?.lifecycle_closure_like_blocked_reason_patterns ??
+        baseSettings.validation?.lifecycle_closure_like_blocked_reason_patterns ??
           SETTINGS_DEFAULTS.validation.lifecycle_closure_like_blocked_reason_patterns,
       ),
       lifecycle_closure_like_resolution_patterns: normalizeValidationPatternList(
-        settings.validation?.lifecycle_closure_like_resolution_patterns ??
+        baseSettings.validation?.lifecycle_closure_like_resolution_patterns ??
           SETTINGS_DEFAULTS.validation.lifecycle_closure_like_resolution_patterns,
       ),
       lifecycle_closure_like_actual_result_patterns: normalizeValidationPatternList(
-        settings.validation?.lifecycle_closure_like_actual_result_patterns ??
+        baseSettings.validation?.lifecycle_closure_like_actual_result_patterns ??
           SETTINGS_DEFAULTS.validation.lifecycle_closure_like_actual_result_patterns,
       ),
-      estimate_defaults_by_type: normalizeEstimateDefaultOverrides(settings.validation?.estimate_defaults_by_type),
+      estimate_defaults_by_type: normalizeEstimateDefaultOverrides(baseSettings.validation?.estimate_defaults_by_type),
     },
     governance,
-    agent_guidance: normalizeAgentGuidanceSettings(settings.agent_guidance),
+    agent_guidance: normalizeAgentGuidanceSettings(baseSettings.agent_guidance),
     item_types: {
       definitions: persistedFileBackedSections.item_type_definitions,
     },
@@ -811,42 +841,42 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
     },
     search: {
       ...SETTINGS_DEFAULTS.search,
-      ...settings.search,
-      mutation_refresh_policy: normalizeSearchMutationRefreshPolicy(settings.search?.mutation_refresh_policy),
+      ...baseSettings.search,
+      mutation_refresh_policy: normalizeSearchMutationRefreshPolicy(baseSettings.search?.mutation_refresh_policy),
       query_expansion: {
         ...SETTINGS_DEFAULTS.search.query_expansion,
-        ...(settings.search?.query_expansion ?? {}),
-        enabled: normalizeSearchQueryExpansionEnabled(settings.search?.query_expansion?.enabled),
-        provider: normalizeSearchQueryExpansionProvider(settings.search?.query_expansion?.provider),
+        ...(baseSettings.search?.query_expansion ?? {}),
+        enabled: normalizeSearchQueryExpansionEnabled(baseSettings.search?.query_expansion?.enabled),
+        provider: normalizeSearchQueryExpansionProvider(baseSettings.search?.query_expansion?.provider),
       },
       rerank: {
         ...SETTINGS_DEFAULTS.search.rerank,
-        ...(settings.search?.rerank ?? {}),
-        enabled: normalizeSearchRerankEnabled(settings.search?.rerank?.enabled),
-        model: normalizeSearchRerankModel(settings.search?.rerank?.model),
-        top_k: normalizeSearchRerankTopK(settings.search?.rerank?.top_k),
+        ...(baseSettings.search?.rerank ?? {}),
+        enabled: normalizeSearchRerankEnabled(baseSettings.search?.rerank?.enabled),
+        model: normalizeSearchRerankModel(baseSettings.search?.rerank?.model),
+        top_k: normalizeSearchRerankTopK(baseSettings.search?.rerank?.top_k),
       },
     },
     context: {
-      default_depth: settings.context?.default_depth ?? SETTINGS_DEFAULTS.context.default_depth,
-      activity_limit: settings.context?.activity_limit ?? SETTINGS_DEFAULTS.context.activity_limit,
-      stale_threshold_days: settings.context?.stale_threshold_days ?? SETTINGS_DEFAULTS.context.stale_threshold_days,
+      default_depth: baseSettings.context?.default_depth ?? SETTINGS_DEFAULTS.context.default_depth,
+      activity_limit: baseSettings.context?.activity_limit ?? SETTINGS_DEFAULTS.context.activity_limit,
+      stale_threshold_days: baseSettings.context?.stale_threshold_days ?? SETTINGS_DEFAULTS.context.stale_threshold_days,
       sections: {
         ...SETTINGS_DEFAULTS.context.sections,
-        ...(settings.context?.sections ?? {}),
+        ...(baseSettings.context?.sections ?? {}),
       },
     },
     extensions: {
-      enabled: normalizeStringList(settings.extensions?.enabled),
-      disabled: normalizeStringList(settings.extensions?.disabled),
-      policy: normalizeExtensionPolicySettings(settings.extensions?.policy),
+      enabled: normalizeStringList(baseSettings.extensions?.enabled),
+      disabled: normalizeStringList(baseSettings.extensions?.disabled),
+      policy: normalizeExtensionPolicySettings(baseSettings.extensions?.policy),
     },
     vector_store: {
-      ...(settings.vector_store ?? {}),
-      adapter: settings.vector_store?.adapter ?? SETTINGS_DEFAULTS.vector_store.adapter,
-      collection_name: normalizeVectorStoreCollectionName(settings.vector_store?.collection_name),
-      qdrant: { ...(settings.vector_store?.qdrant ?? {}) },
-      lancedb: { ...(settings.vector_store?.lancedb ?? {}) },
+      ...baseSettings.vector_store,
+      adapter: baseSettings.vector_store?.adapter ?? SETTINGS_DEFAULTS.vector_store.adapter,
+      collection_name: normalizeVectorStoreCollectionName(baseSettings.vector_store?.collection_name),
+      qdrant: { ...(baseSettings.vector_store?.qdrant ?? {}) },
+      lancedb: { ...(baseSettings.vector_store?.lancedb ?? {}) },
     },
   };
   const ordered = orderObject(
@@ -932,11 +962,11 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
     "unknown_field_policy",
   ]);
   (ordered.schema as Record<string, unknown>).files = orderObject(
-    ((ordered.schema as Record<string, unknown>).files ?? {}) as Record<string, unknown>,
+    recordOrEmpty((ordered.schema as Record<string, unknown>).files),
     ["types", "statuses", "fields", "workflows"],
   );
   (ordered.schema as Record<string, unknown>).workflow = orderObject(
-    ((ordered.schema as Record<string, unknown>).workflow ?? {}) as Record<string, unknown>,
+    recordOrEmpty((ordered.schema as Record<string, unknown>).workflow),
     ["draft_status", "open_status", "in_progress_status", "blocked_status", "close_status", "canceled_status"],
   );
   ordered.context = orderObject(ordered.context as Record<string, unknown>, [
@@ -946,12 +976,12 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
     "sections",
   ]);
   (ordered.context as Record<string, unknown>).sections = orderObject(
-    ((ordered.context as Record<string, unknown>).sections ?? {}) as Record<string, unknown>,
+    recordOrEmpty((ordered.context as Record<string, unknown>).sections),
     ["hierarchy", "activity", "progress", "blockers", "files", "workload", "staleness", "tests"],
   );
   ordered.extensions = orderObject(ordered.extensions as Record<string, unknown>, ["enabled", "disabled", "policy"]);
   (ordered.extensions as Record<string, unknown>).policy = orderObject(
-    (((ordered.extensions as Record<string, unknown>).policy ?? {}) as Record<string, unknown>),
+    recordOrEmpty((ordered.extensions as Record<string, unknown>).policy),
     [
       "mode",
       "trust_mode",
@@ -975,9 +1005,9 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
     ],
   );
   ((ordered.extensions as Record<string, unknown>).policy as Record<string, unknown>).extension_overrides = (
-    (((ordered.extensions as Record<string, unknown>).policy as Record<string, unknown>).extension_overrides ?? []) as unknown[]
+    arrayOrEmpty(((ordered.extensions as Record<string, unknown>).policy as Record<string, unknown>).extension_overrides)
   ).map((entry) =>
-    orderObject((entry ?? {}) as Record<string, unknown>, [
+    orderObject(recordOrEmpty(entry), [
       "name",
       "disabled",
       "require_trusted",
@@ -1010,20 +1040,20 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
     "rerank",
   ]);
   (ordered.search as Record<string, unknown>).query_expansion = orderObject(
-    ((ordered.search as Record<string, unknown>).query_expansion ?? {}) as Record<string, unknown>,
+    recordOrEmpty((ordered.search as Record<string, unknown>).query_expansion),
     ["enabled", "provider"],
   );
   (ordered.search as Record<string, unknown>).rerank = orderObject(
-    ((ordered.search as Record<string, unknown>).rerank ?? {}) as Record<string, unknown>,
+    recordOrEmpty((ordered.search as Record<string, unknown>).rerank),
     ["enabled", "model", "top_k"],
   );
   ordered.providers = orderObject(ordered.providers as Record<string, unknown>, ["openai", "ollama"]);
   (ordered.providers as Record<string, unknown>).openai = orderObject(
-    ((ordered.providers as Record<string, unknown>).openai ?? {}) as Record<string, unknown>,
+    recordOrEmpty((ordered.providers as Record<string, unknown>).openai),
     ["base_url", "api_key", "model"],
   );
   (ordered.providers as Record<string, unknown>).ollama = orderObject(
-    ((ordered.providers as Record<string, unknown>).ollama ?? {}) as Record<string, unknown>,
+    recordOrEmpty((ordered.providers as Record<string, unknown>).ollama),
     ["base_url", "model"],
   );
   ordered.vector_store = orderObject(ordered.vector_store as Record<string, unknown>, [
@@ -1033,11 +1063,11 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
     "lancedb",
   ]);
   (ordered.vector_store as Record<string, unknown>).qdrant = orderObject(
-    ((ordered.vector_store as Record<string, unknown>).qdrant ?? {}) as Record<string, unknown>,
+    recordOrEmpty((ordered.vector_store as Record<string, unknown>).qdrant),
     ["url", "api_key"],
   );
   (ordered.vector_store as Record<string, unknown>).lancedb = orderObject(
-    ((ordered.vector_store as Record<string, unknown>).lancedb ?? {}) as Record<string, unknown>,
+    recordOrEmpty((ordered.vector_store as Record<string, unknown>).lancedb),
     ["path"],
   );
 
@@ -1103,7 +1133,7 @@ export async function readSettingsWithMetadata(pmRoot: string): Promise<Settings
       item_types: {
         definitions: normalizeItemTypeDefinitions([
           ...mergedSettings.item_types.definitions,
-          ...(loadedSchemaSections.type_definitions_from_file ?? []),
+          ...arrayOrEmpty<ItemTypeDefinition>(loadedSchemaSections.type_definitions_from_file),
         ]),
       },
       schema: loadedSchemaSections.schema,
@@ -1170,14 +1200,23 @@ export async function writeSettings(pmRoot: string, settings: PmSettings, op = S
 export const settingsStoreTestOnly = {
   hasExplicitItemFormat,
   buildSettingsPersistSourceSnapshot,
+  cacheSettingsReadResultIfStable,
+  cacheSettingsReadResultSafe,
+  mergeSettings,
+  normalizeExtensionPolicySettings,
   normalizeExtensionPolicyOverride,
   normalizeExtensionPolicyOverrides,
   normalizeExtensionPolicyMode,
+  normalizePmMaxVersionExceededModeSetting,
   normalizeExtensionSandboxProfile,
   normalizeExtensionTrustMode,
   normalizeLowerStringList,
   normalizeStringList,
+  valueOrDefault,
+  arrayOrEmpty,
+  normalizeValidationPatternList,
   normalizeValidationMetadataRequiredFields,
+  resolveSettingsReadTrackedPaths,
   resolvePersistedFileBackedSchemaSections,
   selectedSettingsReadCacheSignaturesEqual,
 };

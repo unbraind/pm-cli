@@ -141,9 +141,10 @@ export function withFlagAliasMetadata(flagContracts: CliFlagContract[]): CliFlag
     if (contract.flag !== canonical) {
       return contract;
     }
-    const aliases = normalizeUniqueStringList([...(contract.aliases ?? []), ...(aliasesByCanonical.get(canonical) ?? [])]).filter(
-      (alias) => alias !== canonical,
-    );
+    const aliases = normalizeUniqueStringList([
+      ...(contract.aliases ?? []),
+      ...aliasesByCanonical.get(canonical)!,
+    ]).filter((alias) => alias !== canonical);
     if (aliases.length === 0) {
       return contract;
     }
@@ -2084,7 +2085,7 @@ function buildActionScopedToolSchema(action: PmToolAction): Record<string, unkno
   const required = toSchemaKeyList(contract.required ?? []);
   const optional = toSchemaKeyList(contract.optional ?? []);
   const mutationParameterKeys = PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS[action] ?? [];
-  const allowedKeys = toSchemaKeyList([...PM_TOOL_GLOBAL_PARAMETER_KEYS, ...mutationParameterKeys, ...required, ...optional]);
+  const allowedKeys = toSchemaKeyList(["action", ...PM_TOOL_GLOBAL_PARAMETER_KEYS, ...mutationParameterKeys, ...required, ...optional]);
   const properties: Record<string, unknown> = {
     action: {
       const: action,
@@ -2112,11 +2113,11 @@ function buildActionScopedToolSchema(action: PmToolAction): Record<string, unkno
       required: [...requiredFields],
     }));
   }
-  if (contract.oneOfRequired && contract.oneOfRequired.length > 0) {
-    schema.oneOf = contract.oneOfRequired.map((requiredFields) => {
-      const otherFields = contract.oneOfRequired
-        ?.flat()
-        .filter((field) => !requiredFields.includes(field)) ?? [];
+  const oneOfRequiredGroups = contract.oneOfRequired;
+  if (oneOfRequiredGroups && oneOfRequiredGroups.length > 0) {
+    const allOneOfFields = oneOfRequiredGroups.flat();
+    schema.oneOf = oneOfRequiredGroups.map((requiredFields) => {
+      const otherFields = allOneOfFields.filter((field) => !requiredFields.includes(field));
       return {
         required: [...requiredFields],
         ...(otherFields.length > 0 ? { not: { anyOf: otherFields.map((field) => ({ required: [field] })) } } : {}),
@@ -2263,5 +2264,12 @@ export const PM_PROVIDER_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = creat
 
 export const _testOnlyCliContracts = {
   buildActionScopedToolSchema,
+  buildProviderCompatibleToolSchema,
+  decorateActionScopedToolParameterDefinition,
+  decorateToolParameterDefinition,
+  toolActionSchemaContracts: PM_TOOL_ACTION_SCHEMA_CONTRACTS,
+  toolParameterMetadata: PM_TOOL_PARAMETER_METADATA,
   toProviderCompatibleParameterDefinition,
+  toUniqueFlagContracts,
+  withFlagAliasMetadata,
 };

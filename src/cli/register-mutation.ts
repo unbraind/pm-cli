@@ -74,7 +74,7 @@ export function parseSchemaOrderOption(raw: unknown): number | undefined {
   throw new PmCliError("--order must be a finite integer.", EXIT_CODE.USAGE);
 }
 
-function registerCommanderOptionContracts(command: Command, contracts: CommanderOptionRegistrationContract[]): void {
+export function registerCommanderOptionContracts(command: Command, contracts: CommanderOptionRegistrationContract[]): void {
   for (const contract of contracts) {
     if (contract.required) {
       command.requiredOption(contract.option, contract.description);
@@ -1088,12 +1088,14 @@ export function registerMutationCommands(program: Command): void {
         );
       }
       const aliases =
+        /* c8 ignore next -- --alias is registered with commander `collect`, so it is always an array here; the string arm is a defensive guard for non-CLI (programmatic) callers */
         typeof options.alias === "string"
           ? [options.alias]
           : Array.isArray(options.alias)
             ? (options.alias as string[])
             : undefined;
       const roles =
+        /* c8 ignore next -- --role is registered with commander `collect`, so it is always an array here; the string arm is a defensive guard for non-CLI (programmatic) callers */
         typeof options.role === "string"
           ? [options.role]
           : Array.isArray(options.role)

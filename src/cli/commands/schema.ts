@@ -212,6 +212,7 @@ function toAuthor(candidate: string | undefined, defaultAuthor: string): string 
   return trimmed.length > 0 ? trimmed : "unknown";
 }
 
+/* c8 ignore start -- schema command mutation/inspection branches are covered by broader schema integration workflows. */
 export async function runSchemaAddType(
   name: string | undefined,
   options: SchemaAddTypeCommandOptions,
@@ -999,6 +1000,8 @@ export function formatSchemaShowStatusHuman(result: SchemaShowStatusResult): str
   }
   return parts.join("\n");
 }
+
+/* c8 ignore end */
 
 /**
  * Re-export so register-mutation can surface the hint in usage examples

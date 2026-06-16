@@ -215,14 +215,14 @@ function buildGuideIndex(depth: GuideDepth): GuideIndexResult {
   };
 }
 
-function ensureGuideTopic(topic: string | undefined): GuideTopicDefinition {
+function ensureGuideTopic(topic: string): GuideTopicDefinition {
   const resolved = resolveGuideTopic(topic);
   if (resolved) {
     return resolved;
   }
   const available = listGuideTopicIds().join(", ");
   throw new PmCliError(
-    `Unknown guide topic "${topic ?? ""}". Available topics: ${available}. Use "pm guide --list" to browse.`,
+    `Unknown guide topic "${topic}". Available topics: ${available}. Use "pm guide --list" to browse.`,
     EXIT_CODE.USAGE,
   );
 }
@@ -252,6 +252,10 @@ export async function runGuide(options: GuideOptions, global: GlobalOptions): Pr
     warnings,
   };
 }
+
+export const _testOnlyGuide = {
+  ensureGuideTopic,
+};
 
 function markdownCodeFence(content: string): string {
   return content.replaceAll("```", "``\\`");

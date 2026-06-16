@@ -183,4 +183,74 @@ describe("extension-policy evaluation fall-through and override-scoped surfaces"
     expect(allowed.allowed).toBe(true);
     expect(allowed.warning).toBeNull();
   });
+
+  it("allows strict sandbox profiles when no blocked permissions are requested", () => {
+    const policy = basePolicy({
+      mode: "warn",
+      default_sandbox_profile: "strict",
+    });
+    const extension: PolicyExtensionRef = {
+      layer: "project",
+      name: "strict-clean",
+      permissions: {
+        network: false,
+        process_spawn: false,
+        fs_write: false,
+        env_write: false,
+      },
+    };
+    expect(evaluateExtensionPolicyForExtension(policy, extension)).toEqual({
+      allowed: true,
+      warning: null,
+    });
+  });
+
+  it("includes capability, command, action, and service details in registration warnings", () => {
+    const policy = basePolicy({
+      mode: "warn",
+      allowed_capabilities: ["read"],
+    });
+    const extension: PolicyExtensionRef = {
+      layer: "project",
+      name: "details-ext",
+    };
+
+    const result = evaluateExtensionPolicyForRegistration(
+      policy,
+      extension,
+      "commands.override",
+      "register override",
+      "write",
+      {
+        command: "List Items",
+        action: "Item Create",
+        service: "Output Format",
+      },
+    );
+
+    expect(result.allowed).toBe(true);
+    expect(result.warning).toContain("reason=capability_not_allowlisted");
+    expect(result.warning).toContain("capability=write");
+    expect(result.warning).toContain("command=list items");
+    expect(result.warning).toContain("action=item-create");
+    expect(result.warning).toContain("service=output format");
+  });
+
+  it("respects extension-level sandbox profiles over policy defaults", () => {
+    const policy = basePolicy({
+      mode: "warn",
+      default_sandbox_profile: "restricted",
+    });
+    const extension: PolicyExtensionRef = {
+      layer: "project",
+      name: "sandbox-override-ext",
+      sandboxProfile: "strict",
+      permissions: {
+        network: true,
+      },
+    };
+    const result = evaluateExtensionPolicyForExtension(policy, extension);
+    expect(result.allowed).toBe(true);
+    expect(result.warning).toContain("reason=sandbox_strict_disallows_network");
+  });
 });

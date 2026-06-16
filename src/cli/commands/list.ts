@@ -688,6 +688,14 @@ function projectListItems(items: ListedItem[], projection: ListProjectionConfig,
   });
 }
 
+function runtimeMetadataKeysForProjection(definitions: Array<{ metadata_key: string }>): string[] {
+  const keys: string[] = [];
+  for (const field of definitions) {
+    keys.push(field.metadata_key);
+  }
+  return keys;
+}
+
 export async function runList(status: ItemStatus | undefined, options: ListOptions, global: GlobalOptions): Promise<ListResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
@@ -699,7 +707,8 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
   const runtimeFieldFilters = collectRuntimeFilterValues(options as Record<string, unknown>, runtimeFieldRegistry, "list");
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const projection = parseProjectionConfig(options);
-  validateListProjectionFields(projection, runtimeFieldRegistry.definitions.map((field) => field.metadata_key));
+  const runtimeMetadataKeys = runtimeMetadataKeysForProjection(runtimeFieldRegistry.definitions);
+  validateListProjectionFields(projection, runtimeMetadataKeys);
   const listWarnings: string[] = [];
   const projectionNeedsBody = projection.fields.some((field) => normalizeProjectionField(field) === "body");
   // The heavy collection fields are only emitted by `--full` (verbatim items) or an
@@ -825,6 +834,7 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
 }
 
 export const _testOnly = {
+  applyFilters,
   buildCompactListFilterSummary,
   compareBySortField,
   compareDefaultSort,
@@ -841,6 +851,7 @@ export const _testOnly = {
   orderItemsAsTree,
   projectListItems,
   readListFieldValue,
+  runtimeMetadataKeysForProjection,
   sortItems,
   trimNonEmpty,
   withTreeMetadata,

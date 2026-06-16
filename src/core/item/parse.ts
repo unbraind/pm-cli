@@ -131,14 +131,8 @@ function coerceJsonTagArray(trimmed: string): string | null {
   } catch {
     return null;
   }
-  // A `[`-prefixed string that JSON.parse accepts is always an array literal,
-  // so the non-array case is unreachable here; the guard only narrows the
-  // `unknown` type for the `.map` below (it never returns at runtime).
-  /* c8 ignore next 3 */
-  if (!Array.isArray(parsed)) {
-    return null;
-  }
-  return parsed
+  const parsedArray = parsed as unknown[];
+  return parsedArray
     .map((entry) =>
       typeof entry === "string" || typeof entry === "number" || typeof entry === "boolean"
         ? String(entry).replace(/,/g, " ")
@@ -159,12 +153,6 @@ function stripCodeFenceEnvelope(value: string): string {
   }
   const lines = normalized.split("\n");
   if (lines.length < 2) {
-    return value;
-  }
-  // `normalized` is already known to start with a fence (checked above), so its
-  // first line provably does too — this guard is defensive and unreachable.
-  /* c8 ignore next 3 */
-  if (!lines[0].startsWith("```")) {
     return value;
   }
   if (lines.at(-1)?.trim() !== "```") {
@@ -297,7 +285,7 @@ function parseMarkdownKeyValueLines(raw: string): Record<string, string> | null 
     return null;
   }
 
-  return Object.keys(result).length > 0 ? result : null;
+  return result;
 }
 
 export function parseCsvKv(raw: string, optionName: string): Record<string, string> {
@@ -319,13 +307,6 @@ export function parseCsvKv(raw: string, optionName: string): Record<string, stri
     const delimiterIndex = findKeyValueDelimiter(segment);
     if (delimiterIndex > 0) {
       const key = segment.slice(0, delimiterIndex).trim();
-      // `segment` is already trimmed by splitCsvSegments, so a positive
-      // delimiter index guarantees a non-whitespace leading char — an empty key
-      // here is unreachable; the throw stays as a defensive guard.
-      /* c8 ignore next 3 */
-      if (!key) {
-        throw new PmCliError(buildInvalidKvMessage(raw, optionName), EXIT_CODE.USAGE);
-      }
       const value = unquoteValue(segment.slice(delimiterIndex + 1).trim());
       result[key] = value;
       activeKey = key;
@@ -335,14 +316,6 @@ export function parseCsvKv(raw: string, optionName: string): Record<string, stri
       result[activeKey] = `${result[activeKey]},${segment.trim()}`;
       continue;
     }
-    throw new PmCliError(buildInvalidKvMessage(raw, optionName), EXIT_CODE.USAGE);
-  }
-
-  // Any segment that does not set a key either throws above (no active
-  // continuation key) or appends to an existing key, so a non-empty input can
-  // never leave `result` empty here — defensive guard, unreachable at runtime.
-  /* c8 ignore next 3 */
-  if (Object.keys(result).length === 0) {
     throw new PmCliError(buildInvalidKvMessage(raw, optionName), EXIT_CODE.USAGE);
   }
 

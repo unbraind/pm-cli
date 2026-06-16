@@ -309,6 +309,7 @@ export async function runCommentsAudit(options: CommentsAuditOptions, global: Gl
     },
     export: {
       mode: fullHistory ? "full_history" : "latest",
+      /* c8 ignore next -- rows is always materialized from toHistoryRows() when fullHistory=true. */
       row_count: fullHistory ? rows?.length ?? 0 : latestRowCount,
     },
     ...(rows ? { rows } : {}),

@@ -9,6 +9,7 @@
  */
 
 const EMBEDDINGS_SUFFIX = "/v1/embeddings";
+const QDRANT_COLLECTION_SUFFIX = "/collections/pm_items";
 const QDRANT_UPSERT_SUFFIX = "/collections/pm_items/points?wait=true";
 const QDRANT_DELETE_SUFFIX = "/collections/pm_items/points/delete?wait=true";
 
@@ -83,6 +84,8 @@ export interface SemanticFetchMockOptions {
    * default deterministic vectors.
    */
   embeddings?: EmbeddingsHandler;
+  /** Qdrant collection lifecycle (`/collections/pm_items`) handler. Defaults to acknowledged. */
+  qdrantCollection?: () => Response | Promise<Response>;
   /** Qdrant upsert (`/points?wait=true`) handler. Defaults to acknowledged. */
   qdrantUpsert?: () => Response | Promise<Response>;
   /** Qdrant delete (`/points/delete?wait=true`) handler. Defaults to acknowledged. */
@@ -109,6 +112,7 @@ export function installSemanticFetchMock(options: SemanticFetchMockOptions = {})
   const inputLengths: number[] = [];
 
   const embeddings = options.embeddings ?? ((request: EmbeddingsRequest) => embeddingsResponse(request.inputCount));
+  const qdrantCollection = options.qdrantCollection ?? qdrantAckResponse;
   const qdrantUpsert = options.qdrantUpsert ?? qdrantAckResponse;
   const qdrantDelete = options.qdrantDelete ?? qdrantAckResponse;
 
@@ -119,6 +123,9 @@ export function installSemanticFetchMock(options: SemanticFetchMockOptions = {})
       const request = parseEmbeddingsRequest(init);
       inputLengths.push(...request.inputs.map((entry) => entry.length));
       return embeddings(request);
+    }
+    if (target.endsWith(QDRANT_COLLECTION_SUFFIX)) {
+      return qdrantCollection();
     }
     if (target.endsWith(QDRANT_UPSERT_SUFFIX)) {
       return qdrantUpsert();

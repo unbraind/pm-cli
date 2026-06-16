@@ -352,7 +352,7 @@ function buildAllowedValueRetryCommand(recovery: PmCliErrorRecoveryPayload | und
 }
 
 function buildFallbackTitleFromMessage(message: string): string | undefined {
-  const firstLine = message.split(/\r?\n/)[0]?.trim() ?? "";
+  const firstLine = message.split(/\r?\n/)[0].trim();
   if (firstLine.length === 0) {
     return undefined;
   }
@@ -491,13 +491,14 @@ function buildPmCliErrorGuidance(rawMessage: string, context?: PmCliErrorContext
   if (missingRequiredOption || missingRequiredOptions) {
     const plural = Boolean(missingRequiredOptions);
     const missingOptionFlag = !plural ? message.replace(/^Missing required option\s+/, "").trim() : null;
+    const missingOptionLabel = missingOptionFlag ?? "";
     const missingOptionRequired = missingOptionFlag
       ? `Pass ${missingOptionFlag} with a valid value before running the command.`
       : "Provide the required option for this command invocation.";
     return applyPmCliErrorContext(
       makeGuidanceMessage({
         code: "missing_required_option",
-        title: plural ? "Missing required options" : missingOptionFlag ? `Missing required option ${missingOptionFlag}` : "Missing required option",
+        title: plural ? "Missing required options" : `Missing required option ${missingOptionLabel}`,
         happened: message,
         required: plural
           ? "Provide every required option for this command invocation."
@@ -969,3 +970,17 @@ function buildUnknownErrorGuidance(rawMessage: string): GuidanceMessage {
 export function classifyUnknownError(rawMessage: string): ErrorClassification {
   return guidanceToClassification(buildUnknownErrorGuidance(rawMessage));
 }
+
+export const _testOnly = {
+  applyPmCliErrorContext,
+  appendIfMissing,
+  buildCommanderRecoveryPayload,
+  buildFallbackTitleFromMessage,
+  commandExampleForRequiredOption,
+  dedupeStrings,
+  guidanceToClassification,
+  guidanceToJsonEnvelope,
+  normalizeRecoveryPayload,
+  renderList,
+  resolveKnownPackageCommandHint,
+};

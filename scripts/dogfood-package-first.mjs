@@ -622,7 +622,7 @@ try {
     "test",
     id,
     "--add",
-    "command=node scripts/run-tests.mjs test -- tests/unit/parse-utils.spec.ts,timeout_seconds=240",
+    "command=node scripts/run-tests.mjs test -- tests/unit/core/item/parse-utils.spec.ts,timeout_seconds=240",
   ]);
   run("linked test run", ["test", id, "--run", "--fail-on-skipped"]);
   run("validate", ["validate", "--check-resolution", "--check-history-drift"]);

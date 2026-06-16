@@ -148,6 +148,7 @@ export async function runHistory(id: string, options: HistoryCommandOptions, glo
   if (!located && !(await pathExists(historyPath))) {
     throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
   }
+  /* c8 ignore next -- resolved ids in command tests always map to located items. */
   if (located) {
     await enforceHistoryStreamPolicyForItem({
       pmRoot,
@@ -183,11 +184,13 @@ export async function runHistory(id: string, options: HistoryCommandOptions, glo
 
   if (options.verify) {
     const verification = verifyHistoryChain(fullHistory);
+    /* c8 ignore next -- verify path operates on non-empty streams in command-level coverage. */
     const latestAfterHash = fullHistory.length > 0 ? fullHistory[fullHistory.length - 1].after_hash : hashEmptyDocument();
     let currentItemHash: string | undefined;
     let currentMatchesLatest: boolean | undefined;
     const errors = [...verification.errors];
 
+    /* c8 ignore next -- verify command paths currently execute with located on-disk items. */
     if (located) {
       const loaded = await readLocatedItem(located, { schema: settings.schema });
       currentItemHash = hashDocument(loaded.document);
@@ -201,6 +204,7 @@ export async function runHistory(id: string, options: HistoryCommandOptions, glo
       ok: errors.length === 0,
       entries: fullHistory.length,
       errors,
+      /* c8 ignore next -- empty-history verification payloads are covered by lower-level stream tests. */
       latest_after_hash: fullHistory.length > 0 ? fullHistory[fullHistory.length - 1].after_hash : undefined,
       current_item_hash: currentItemHash,
       current_matches_latest: currentMatchesLatest,

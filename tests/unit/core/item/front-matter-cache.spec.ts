@@ -1,0 +1,158 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { serializeItemDocument } from "../../../../src/core/item/item-format.js";
+import { listAllDocumentCandidatesCached } from "../../../../src/core/store/front-matter-cache.js";
+import {
+  clearActiveExtensionHooks,
+  setActiveExtensionHooks,
+  setActiveExtensionRegistrations,
+} from "../../../../src/core/extensions/index.js";
+import { createEmptyExtensionRegistrationRegistry } from "../../../../src/core/extensions/extension-registries.js";
+import type { ItemMetadata } from "../../../../src/types.js";
+
+const tempRoots: string[] = [];
+
+async function withTempPmRoot(run: (pmRoot: string) => Promise<void>): Promise<void> {
+  const pmRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-front-matter-cache-"));
+  tempRoots.push(pmRoot);
+  await run(pmRoot);
+}
+
+function makeTaskMetadata(overrides: Partial<ItemMetadata> & Pick<ItemMetadata, "id">): ItemMetadata {
+  return {
+    id: overrides.id,
+    title: overrides.title ?? overrides.id,
+    description: overrides.description ?? "",
+    type: overrides.type ?? "Task",
+    status: overrides.status ?? "open",
+    priority: overrides.priority ?? 1,
+    tags: overrides.tags ?? [],
+    created_at: overrides.created_at ?? "2026-05-16T00:00:00.000Z",
+    updated_at: overrides.updated_at ?? "2026-05-16T00:00:00.000Z",
+  };
+}
+
+afterEach(async () => {
+  vi.restoreAllMocks();
+  clearActiveExtensionHooks();
+  setActiveExtensionRegistrations(null);
+  await Promise.all(tempRoots.splice(0).map((tempRoot) => fs.rm(tempRoot, { recursive: true, force: true })));
+});
+
+describe("front matter cache", () => {
+  it("serves cached item bodies for unchanged files and refreshes them after mutation", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const tasksDir = path.join(pmRoot, "tasks");
+      await fs.mkdir(tasksDir, { recursive: true });
+      const itemPath = path.join(tasksDir, "pm-cache.toon");
+      const metadata = makeTaskMetadata({ id: "pm-cache", title: "Cached body task" });
+      await fs.writeFile(
+        itemPath,
+        serializeItemDocument({ metadata, body: "first cached body token" }, { format: "toon" }),
+        "utf8",
+      );
+
+      const typeToFolder = { Task: "tasks" };
+      const first = await listAllDocumentCandidatesCached(pmRoot, "toon", typeToFolder, [], undefined);
+      expect(first).toHaveLength(1);
+      expect(first[0]?.body).toBe("first cached body token");
+
+      const readSpy = vi.spyOn(fs, "readFile");
+      const second = await listAllDocumentCandidatesCached(pmRoot, "toon", typeToFolder, [], undefined);
+      expect(second[0]?.body).toBe("first cached body token");
+      expect(readSpy).not.toHaveBeenCalledWith(itemPath, "utf8");
+
+      readSpy.mockRestore();
+      await fs.writeFile(
+        itemPath,
+        serializeItemDocument({ metadata, body: "updated cached body token" }, { format: "toon" }),
+        "utf8",
+      );
+
+      const third = await listAllDocumentCandidatesCached(pmRoot, "toon", typeToFolder, [], undefined);
+      expect(third[0]?.body).toBe("updated cached body token");
+    });
+  });
+
+  it("adds deterministic warnings when item directories cannot be read", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const warnings: string[] = [];
+      await fs.writeFile(path.join(pmRoot, "tasks"), "not-a-directory", "utf8");
+
+      const docs = await listAllDocumentCandidatesCached(pmRoot, "toon", { Task: "tasks" }, warnings, undefined);
+      expect(docs).toEqual([]);
+      expect(warnings).toContain("item_list_directory_read_failed:tasks");
+    });
+  });
+
+  it("dispatches onRead hooks for parsed items while skipping non-item files", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const tasksDir = path.join(pmRoot, "tasks");
+      await fs.mkdir(tasksDir, { recursive: true });
+      const itemPath = path.join(tasksDir, "pm-read-hook.toon");
+      const metadata = makeTaskMetadata({ id: "pm-read-hook", title: "Hooked task" });
+      await fs.writeFile(itemPath, serializeItemDocument({ metadata, body: "body" }, { format: "toon" }), "utf8");
+      await fs.writeFile(path.join(tasksDir, "ignore.txt"), "ignored", "utf8");
+
+      setActiveExtensionHooks({
+        beforeCommand: [],
+        afterCommand: [],
+        onWrite: [],
+        onRead: [
+          {
+            layer: "project",
+            name: "boom-read-hook",
+            run: () => {
+              throw new Error("boom-read");
+            },
+          },
+        ],
+        onIndex: [],
+      });
+
+      const warnings: string[] = [];
+      const docs = await listAllDocumentCandidatesCached(pmRoot, "toon", { Task: "tasks" }, warnings, undefined);
+      expect(docs).toHaveLength(1);
+      expect(docs[0]?.metadata.id).toBe("pm-read-hook");
+      expect(warnings.some((warning) => warning.includes("extension_hook_failed:project:boom-read-hook:onRead"))).toBe(
+        true,
+      );
+      expect(warnings.some((warning) => warning.includes("ignore.txt"))).toBe(false);
+    });
+  });
+
+  it("invalidates mismatched collections cache and forwards parse warnings", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const tasksDir = path.join(pmRoot, "tasks");
+      await fs.mkdir(tasksDir, { recursive: true });
+
+      // Exercise context fingerprint extension-field branch.
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "custom-field",
+        fields: [{ name: "customer_segment", type: "string", commands: ["create"] }],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const metadata = makeTaskMetadata({ id: "pm-cache-warning", title: "Warning task" });
+      const serialized = serializeItemDocument({ metadata, body: "body" }, { format: "json_markdown" });
+      await fs.writeFile(path.join(tasksDir, "pm-cache-warning.md"), `---\ntitle: stale\n---\n${serialized}`, "utf8");
+
+      // Exercise loadCollectionsCache shape guard.
+      await fs.mkdir(path.join(pmRoot, "runtime"), { recursive: true });
+      await fs.writeFile(
+        path.join(pmRoot, "runtime", "metadata-cache-collections.json"),
+        JSON.stringify({ version: 6, context_fingerprint: "mismatch", collections: 42 }),
+        "utf8",
+      );
+
+      const warnings: string[] = [];
+      const docs = await listAllDocumentCandidatesCached(pmRoot, "json_markdown", { Task: "tasks" }, warnings, undefined);
+      expect(docs).toHaveLength(1);
+      expect(warnings).toContain("json_markdown_leading_yaml_frontmatter_ignored");
+    });
+  });
+});

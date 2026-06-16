@@ -102,6 +102,10 @@ function parseNonNegativeInteger(raw: string | undefined, flag: string): number 
   return parsed;
 }
 
+function formatTrackingError(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 function resolveTrackedRunId(): string {
   const fromEnv = process.env.PM_BACKGROUND_TEST_RUN_ID?.trim();
   if (fromEnv && fromEnv.length > 0) {
@@ -354,7 +358,7 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
           },
         });
       } catch (error: unknown) {
-        trackingWarnings.push(`test_result_tracking_failed:${item.id}:${error instanceof Error ? error.message : String(error)}`);
+        trackingWarnings.push(`test_result_tracking_failed:${item.id}:${formatTrackingError(error)}`);
       }
     }
     results.push({
@@ -400,3 +404,7 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
     results,
   };
 }
+
+export const _testOnlyTestAll = {
+  formatTrackingError,
+};

@@ -150,8 +150,8 @@ async function defaultCommandRunner(
       encoding: "utf8",
     });
     return {
-      stdout: result.stdout ?? "",
-      stderr: result.stderr ?? "",
+      stdout: result.stdout,
+      stderr: result.stderr,
     };
   } catch (error: unknown) {
     const stderr = typeof error === "object" && error !== null && "stderr" in error

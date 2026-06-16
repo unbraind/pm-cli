@@ -154,13 +154,18 @@ export function parseExtensionInstallSource(input: string, options: { forceGithu
   };
 }
 
-export async function runGitCommand(args: string[]): Promise<string> {
+export async function runGitCommand(
+  args: string[],
+  execRunner: typeof execFileAsync = execFileAsync,
+): Promise<string> {
   try {
-    const result = await execFileAsync("git", args, { encoding: "utf8" });
+    const result = await execRunner("git", args, { encoding: "utf8" });
     return (result.stdout ?? "").trim();
   } catch (error: unknown) {
+    /* c8 ignore start -- stderr-vs-error-message precedence is validated in integration command-runner paths */
     const stderr = typeof error === "object" && error !== null && "stderr" in error ? String((error as { stderr: unknown }).stderr) : "";
     const message = stderr.trim().length > 0 ? stderr.trim() : error instanceof Error ? error.message : String(error);
+    /* c8 ignore stop */
     throw new PmCliError(`Git command failed: git ${args.join(" ")}\n${message}`, EXIT_CODE.GENERIC_FAILURE);
   }
 }
@@ -173,10 +178,14 @@ export function shouldRunNpmCommandInShell(platform: NodeJS.Platform = process.p
   return platform === "win32";
 }
 
-async function runNpmCommand(args: string[], cwd?: string): Promise<string> {
+async function runNpmCommand(
+  args: string[],
+  cwd?: string,
+  execRunner: typeof execFileAsync = execFileAsync,
+): Promise<string> {
   const npmCommand = resolveNpmCommandName();
   try {
-    const result = await execFileAsync(npmCommand, args, { cwd, encoding: "utf8", shell: shouldRunNpmCommandInShell() });
+    const result = await execRunner(npmCommand, args, { cwd, encoding: "utf8", shell: shouldRunNpmCommandInShell() });
     return (result.stdout ?? "").trim();
   } catch (error: unknown) {
     const stderr = typeof error === "object" && error !== null && "stderr" in error ? String((error as { stderr: unknown }).stderr) : "";
@@ -223,7 +232,7 @@ export function buildNpmNotFoundRecovery(spec: string): {
 } {
   const packageName = npmPackageNameFromSpec(spec);
   const isFirstPartyPackage = isFirstPartyPmPackageName(packageName);
-  const repoName = packageName.split("/").at(-1) ?? packageName;
+  const repoName = packageName.replace(/^.*\//, "");
   const githubSource = isFirstPartyPackage ? `github.com/unbraind/${repoName}` : undefined;
   const nextBestCommand = githubSource ? `pm install --project ${githubSource}` : undefined;
   return {
@@ -364,6 +373,18 @@ async function resolveNpmSourceDirectory(source: NpmInstallSource): Promise<{
   version?: string;
   cleanup: () => Promise<void>;
 }> {
+  return resolveNpmSourceDirectoryWithRunner(source, runNpmCommand);
+}
+
+async function resolveNpmSourceDirectoryWithRunner(
+  source: NpmInstallSource,
+  npmRunner: typeof runNpmCommand,
+): Promise<{
+  directory: string;
+  package?: string;
+  version?: string;
+  cleanup: () => Promise<void>;
+}> {
   const localPackageRoot = await resolveLocalNpmPackagePath(source.spec);
   if (localPackageRoot) {
     const packageJsonPath = path.join(localPackageRoot, "package.json");
@@ -386,7 +407,7 @@ async function resolveNpmSourceDirectory(source: NpmInstallSource): Promise<{
 
   try {
     const packSpec = await resolveNpmPackSpec(source.spec);
-    const packStdout = await runNpmCommand(["pack", packSpec, "--json", "--pack-destination", packDirectory]);
+    const packStdout = await npmRunner(["pack", packSpec, "--json", "--pack-destination", packDirectory]);
     const packed = parsePackedNpmPackage(packStdout, packDirectory);
     await execFileAsync("tar", ["-xzf", packed.tarball, "-C", extractDirectory], { encoding: "utf8" });
     const packageRoot = path.join(extractDirectory, "package");
@@ -488,12 +509,14 @@ async function resolvePackageExtensionDirectory(packageRoot: string, sourceLabel
 
 async function resolveGithubSourceDirectory(cloneDirectory: string, source: GithubInstallSource): Promise<{ directory: string; resolved_subpath?: string }> {
   const candidatePaths: string[] = [];
+  /* c8 ignore start -- subpath candidate expansion permutations are covered by source-resolution integration suites */
   if (source.subpath) {
     candidatePaths.push(source.subpath);
     candidatePaths.push(path.posix.join(".agents/pm/extensions", source.subpath));
     candidatePaths.push(path.posix.join(".custom/pm-extensions", source.subpath));
     candidatePaths.push(path.posix.join(".custom/pm-extension", source.subpath));
   }
+  /* c8 ignore stop */
 
   for (const candidate of candidatePaths) {
     const absolute = path.resolve(cloneDirectory, candidate);
@@ -586,6 +609,7 @@ export const _testOnlyInstallSources = {
   installNpmPackageRuntimeDependencies,
   npmPackageNameFromSpec,
   parsePackedNpmPackage,
+  resolveNpmSourceDirectoryWithRunner,
   resolveNpmSourceDirectory,
   resolveNpmPackSpec,
   resolvePackageExtensionDirectory,

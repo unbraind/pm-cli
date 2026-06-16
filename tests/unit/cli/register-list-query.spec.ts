@@ -8,6 +8,12 @@ vi.mock("../../../src/cli/commands/get.js", () => ({ runGet: vi.fn() }));
 vi.mock("../../../src/cli/commands/history.js", () => ({ runHistory: vi.fn() }));
 vi.mock("../../../src/cli/commands/activity.js", () => ({ runActivity: vi.fn() }));
 vi.mock("../../../src/cli/commands/search.js", () => ({ runSearch: vi.fn() }));
+vi.mock("../../../src/cli/commands/aggregate.js", () => ({ runAggregate: vi.fn() }));
+vi.mock("../../../src/cli/commands/context.js", () => ({
+  runContext: vi.fn(),
+  resolveContextOutputFormat: vi.fn(),
+  renderContextMarkdown: vi.fn(),
+}));
 
 vi.mock("../../../src/cli/registration-helpers.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../../src/cli/registration-helpers.js")>();
@@ -26,7 +32,9 @@ import { runGet } from "../../../src/cli/commands/get.js";
 import { runHistory } from "../../../src/cli/commands/history.js";
 import { runActivity } from "../../../src/cli/commands/activity.js";
 import { runSearch } from "../../../src/cli/commands/search.js";
-import { printActivityJsonStream } from "../../../src/cli/registration-helpers.js";
+import { runAggregate } from "../../../src/cli/commands/aggregate.js";
+import { renderContextMarkdown, resolveContextOutputFormat, runContext } from "../../../src/cli/commands/context.js";
+import { printActivityJsonStream, printResult } from "../../../src/cli/registration-helpers.js";
 
 let tmpRoot: string;
 
@@ -72,6 +80,10 @@ beforeEach(() => {
   vi.mocked(runHistory).mockResolvedValue({ entries: [] } as never);
   vi.mocked(runActivity).mockResolvedValue({ count: 0, activity: [] } as never);
   vi.mocked(runSearch).mockResolvedValue({ hits: [] } as never);
+  vi.mocked(runAggregate).mockResolvedValue({ rows: [] } as never);
+  vi.mocked(runContext).mockResolvedValue({ summary: {} } as never);
+  vi.mocked(resolveContextOutputFormat).mockReturnValue("json" as never);
+  vi.mocked(renderContextMarkdown).mockReturnValue("# Context" as never);
 });
 
 describe("register-list-query get options", () => {
@@ -107,8 +119,25 @@ describe("register-list-query activity streaming", () => {
     await expect(runRaw("activity", "--stream")).rejects.toThrow(/--stream requires --json/);
   });
 
+  it("prints non-stream activity output through printResult", async () => {
+    await runRaw("activity");
+    expect(vi.mocked(printResult)).toHaveBeenCalledTimes(1);
+  });
+
   it("emits a JSON stream when --stream and --json are set", async () => {
     await runProfiled("activity", "--json", "--stream", "rows");
     expect(vi.mocked(printActivityJsonStream)).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("register-list-query profile false branches", () => {
+  it("runs aggregate and search without profile output", async () => {
+    await runRaw("aggregate", "--group-by", "type", "--count");
+    await runRaw("search", "coverage");
+  });
+
+  it("skips markdown write when context output is quiet", async () => {
+    vi.mocked(resolveContextOutputFormat).mockReturnValue("markdown" as never);
+    await runRaw("context", "--format", "markdown", "--quiet");
   });
 });

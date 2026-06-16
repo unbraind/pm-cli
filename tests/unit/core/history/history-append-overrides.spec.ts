@@ -71,6 +71,40 @@ describe("createHistoryEntry empty-metadata patch branch", () => {
     expect(entry.op).toBe("delete");
     expect(Array.isArray(entry.patch)).toBe(true);
   });
+
+  it("normalizes missing body values to empty strings when building patch documents", () => {
+    const before = fullDoc({ id: "pm-history-missing-body" });
+    const after = fullDoc({ id: "pm-history-missing-body", title: "after title" });
+    delete (before as { body?: string }).body;
+    delete (after as { body?: string }).body;
+
+    const entry = createHistoryEntry({
+      nowIso: FIXED_TS,
+      author: "test-agent",
+      op: "update",
+      before,
+      after,
+    });
+
+    expect(entry.op).toBe("update");
+    expect(Array.isArray(entry.patch)).toBe(true);
+  });
+
+  it("normalizes tombstone documents with neither metadata nor body", () => {
+    const before = fullDoc({ id: "pm-history-tombstone-missing-body" }, "before body");
+    const after = {} as unknown as ItemDocument;
+
+    const entry = createHistoryEntry({
+      nowIso: FIXED_TS,
+      author: "test-agent",
+      op: "delete",
+      before,
+      after,
+    });
+
+    expect(entry.op).toBe("delete");
+    expect(Array.isArray(entry.patch)).toBe(true);
+  });
 });
 
 describe("appendHistoryEntry object service override", () => {
@@ -169,6 +203,43 @@ describe("appendHistoryEntry object service override", () => {
       await expect(fs.access(requestedPath)).rejects.toMatchObject({ code: "ENOENT" });
       const written = await fs.readFile(redirectedPath, "utf8");
       expect(written.trim()).toBe("custom-line");
+    } finally {
+      clearActiveExtensionHooks();
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("writes object-supplied entry payloads when no explicit line is provided", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "pm-history-override-"));
+    try {
+      const requestedPath = path.join(dir, "requested-entry.jsonl");
+      const redirectedPath = path.join(dir, "redirected-entry.jsonl");
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            name: "history-entry",
+            service: "history_append",
+            run: () => ({
+              history_path: redirectedPath,
+              entry: { op: "override", marker: "custom-entry" },
+            }),
+          },
+        ],
+      });
+
+      const entry = createHistoryEntry({
+        nowIso: FIXED_TS,
+        author: "test-agent",
+        op: "update",
+        before: fullDoc({ id: "pm-redirect-entry", title: "a" }),
+        after: fullDoc({ id: "pm-redirect-entry", title: "b" }),
+      });
+
+      await appendHistoryEntry(requestedPath, entry);
+      await expect(fs.access(requestedPath)).rejects.toMatchObject({ code: "ENOENT" });
+      const written = await fs.readFile(redirectedPath, "utf8");
+      expect(JSON.parse(written.trim())).toEqual({ op: "override", marker: "custom-entry" });
     } finally {
       clearActiveExtensionHooks();
       await fs.rm(dir, { recursive: true, force: true });

@@ -5,6 +5,17 @@ import readline from "node:readline";
 import { describe, expect, it, vi } from "vitest";
 import { _testOnly as mcpServerTestOnly, handleRequest, processRpcLine, startMcpServer } from "../../src/mcp/server.js";
 import { TOOLS, buildMcpToolContracts } from "../../src/mcp/tool-definitions.js";
+import * as extensionLoader from "../../src/core/extensions/loader.js";
+import * as extensionRuntime from "../../src/core/extensions/index.js";
+import {
+  createEmptyExtensionCommandRegistry,
+  createEmptyExtensionHookRegistry,
+  createEmptyExtensionParserRegistry,
+  createEmptyExtensionPreflightRegistry,
+  createEmptyExtensionRegistrationRegistry,
+  createEmptyExtensionRendererRegistry,
+  createEmptyExtensionServiceRegistry,
+} from "../../src/core/extensions/extension-registries.js";
 import { createSerialQueue } from "../../src/core/shared/serial-queue.js";
 import { PM_TOOL_ACTIONS } from "../../src/sdk/cli-contracts/enum-contracts.js";
 import { assertPmContextDepthProjection } from "../helpers/mcp-context-depth.js";
@@ -1093,6 +1104,99 @@ describe("MCP protocol handshake", () => {
         spy.mockRestore();
       }
       expect(result?.structuredContent?.warnings).toBeUndefined();
+    });
+  });
+
+  it("covers dynamic native-action guardrails and fallback resolution paths", async () => {
+    await expect(
+      mcpServerTestOnly.runAction({
+        action: "dynamic-tool",
+        path: path.join(process.cwd(), "tmp", "missing-pm-root"),
+      }),
+    ).rejects.toThrow("Unsupported native pm action: dynamic-tool");
+
+    await withTempPmPath(async (context) => {
+      await expect(
+        mcpServerTestOnly.runAction({
+          action: "dynamic-tool",
+          path: context.pmPath,
+          noExtensions: true,
+        }),
+      ).rejects.toThrow("Unsupported native pm action: dynamic-tool");
+    });
+
+    await withTempPmPath(async (context) => {
+      const loadSpy = vi.spyOn(extensionLoader, "loadExtensions").mockResolvedValue({
+        loaded: [],
+        failed: [],
+        warnings: [],
+      } as never);
+      const deactivateSpy = vi.spyOn(extensionLoader, "deactivateExtensions").mockRejectedValue(new Error("deactivate failed"));
+      const activateSpy = vi.spyOn(extensionLoader, "activateExtensions").mockResolvedValue({
+        hooks: createEmptyExtensionHookRegistry(),
+        commands: {
+          ...createEmptyExtensionCommandRegistry(),
+          handlers: [
+            {
+              layer: "project",
+              name: "late-handler",
+              command: "dynamic tool",
+              run: async () => ({ ok: true }),
+            },
+          ],
+        },
+        parsers: createEmptyExtensionParserRegistry(),
+        preflight: createEmptyExtensionPreflightRegistry(),
+        services: createEmptyExtensionServiceRegistry(),
+        renderers: createEmptyExtensionRendererRegistry(),
+        registrations: createEmptyExtensionRegistrationRegistry(),
+      } as never);
+      const handlerSpy = vi.spyOn(extensionRuntime, "runActiveCommandHandler").mockResolvedValue({
+        handled: false,
+        result: null,
+        warnings: ["missing-handler"],
+      });
+
+      try {
+        await expect(
+          mcpServerTestOnly.runAction({
+            action: "dynamic-tool",
+            path: context.pmPath,
+          }),
+        ).rejects.toThrow("Unsupported native pm action: dynamic-tool (missing-handler)");
+      } finally {
+        handlerSpy.mockRestore();
+        activateSpy.mockRestore();
+        deactivateSpy.mockRestore();
+        loadSpy.mockRestore();
+      }
+    });
+  });
+
+  it("covers init, history-redact, and schema-show action dispatch branches", async () => {
+    await withTempPmPath(async (context) => {
+      const initResult = (await mcpServerTestOnly.runAction({
+        action: "init",
+        path: context.pmPath,
+        prefix: "pm-",
+      })) as Record<string, unknown>;
+      expect(typeof initResult).toBe("object");
+
+      await expect(
+        mcpServerTestOnly.runAction({
+          action: "history-redact",
+          path: context.pmPath,
+          id: "pm-missing-history",
+        }),
+      ).rejects.toBeInstanceOf(Error);
+
+      const schemaShow = (await mcpServerTestOnly.runAction({
+        action: "schema",
+        path: context.pmPath,
+        subcommand: "show",
+        name: "Task",
+      })) as { action?: string };
+      expect(schemaShow.action).toBe("show");
     });
   });
 

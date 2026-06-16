@@ -411,8 +411,11 @@ function collectLongFlagCandidates(contract: CliFlagContract): string[] {
   return candidates;
 }
 
-function buildFlagLookup(commandName: string | undefined): FlagLookup {
-  const contracts = resolveSubcommandFlagContractsForCommand(commandName);
+function buildFlagLookup(
+  commandName: string | undefined,
+  contractsOverride?: CliFlagContract[],
+): FlagLookup {
+  const contracts = contractsOverride ?? resolveSubcommandFlagContractsForCommand(commandName);
   const canonicalByNormalized = new Map<string, string | null>();
   const canonicalByCompact = new Map<string, string | null>();
   const canonicalComparablesMap = new Map<string, string>();
@@ -893,3 +896,11 @@ export function parseBootstrapTypeValue(argv: string[]): string | undefined {
   }
   return undefined;
 }
+
+export const _testOnly = {
+  buildFlagLookup,
+  collectLongFlagCandidates,
+  markUnambiguousFlag,
+  normalizeLongOptionToken,
+  resolveCanonicalFlag,
+};

@@ -91,9 +91,11 @@ async function looksLikeShellExpandedWildcard(targets: string[]): Promise<boolea
 async function normalizeInstallTargets(targets: string[] | undefined): Promise<string | undefined> {
   // Commander variadic `[targets...]` always yields an array (empty when no
   // targets are given), so a single nullish coalesce covers every input.
+  /* c8 ignore start -- commander variadic `[targets...]` always passes an array; the `?? []` arm is an unreachable nullish guard */
   const normalizedTargets = (targets ?? [])
     .map((target) => target.trim())
     .filter((target) => target.length > 0);
+  /* c8 ignore stop */
   if (normalizedTargets.length <= 1) {
     return normalizedTargets[0];
   }

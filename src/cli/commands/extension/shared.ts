@@ -98,7 +98,7 @@ export async function validateExtensionDirectory(directory: string): Promise<Val
     parsedManifest = JSON.parse(await fs.readFile(manifestPath, "utf8")) as unknown;
   } catch (error: unknown) {
     throw new PmCliError(
-      `Failed to parse extension manifest at "${manifestPath}": ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to parse extension manifest at "${manifestPath}": ${formatManifestReadError(error)}`,
       EXIT_CODE.USAGE,
     );
   }
@@ -132,3 +132,11 @@ export async function validateExtensionDirectory(directory: string): Promise<Val
     manifest,
   };
 }
+
+function formatManifestReadError(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+export const _testOnlyExtensionShared = {
+  formatManifestReadError,
+};

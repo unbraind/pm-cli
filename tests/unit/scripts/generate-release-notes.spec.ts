@@ -168,6 +168,25 @@ describe("generate-release-notes", () => {
     expect(out).not.toContain("pm-cancel");
   });
 
+  it("falls back to PM_AUTHOR=release-notes when PM_AUTHOR is empty", async () => {
+    const execFileSync = vi.fn((command: string, args: string[]) => {
+      if (command === "git" && args[0] === "tag") return "";
+      if (command === "git" && args[0] === "log") return "";
+      return JSON.stringify({ items: [] });
+    });
+    vi.doMock("node:child_process", () => ({ execFileSync }));
+    mockFs(changelogAndPackage(), vi.fn(), () => true);
+    const stdoutWrite = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    process.env.PM_AUTHOR = "";
+    process.argv = ["node", "scripts/generate-release-notes.mjs"];
+    await harness.importModule("scripts/generate-release-notes.mjs");
+    expect(stdoutWrite).toHaveBeenCalled();
+
+    const pmCall = execFileSync.mock.calls.find(([command]) => command === process.execPath);
+    const pmEnv = (pmCall?.[2] as { env?: Record<string, string | undefined> } | undefined)?.env;
+    expect(pmEnv?.PM_AUTHOR).toBe("release-notes");
+  });
+
   it("reports no items and tolerates git tag/log failures plus invalid pm output", async () => {
     const execFileSync = vi.fn((command: string, args: string[]) => {
       if (command === "git" && args[0] === "tag") {

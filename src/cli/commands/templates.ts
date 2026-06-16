@@ -69,6 +69,7 @@ export const _testOnly = {
   extractTemplateOptions,
   parseStoredTemplateDocument,
   builtinTemplateDocument,
+  readStoredTemplateDocument,
 };
 
 export interface TemplatesSaveResult {

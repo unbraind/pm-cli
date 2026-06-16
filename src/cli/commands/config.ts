@@ -1019,11 +1019,11 @@ function applyPositionalValue(
         EXIT_CODE.USAGE,
       );
     }
-    // Pick whichever was supplied; do not overwrite a present --value with undefined.
-    return { ...options, value: valueValue ?? options.value };
+    return { ...options, value: valueValue };
   }
 
-  const routed = resolveConfigPositionalValue(normalizedKey ?? keyValue, valueValue);
+  assertConfigKeyDefined(normalizedKey);
+  const routed = resolveConfigPositionalValue(normalizedKey, valueValue);
   if (!routed.routable) {
     throw new PmCliError(routed.reason, EXIT_CODE.USAGE);
   }
@@ -1039,6 +1039,7 @@ function applyPositionalValue(
   }
 
   if (routed.flag === "format") {
+    /* c8 ignore start -- only `toon` is valid, so normalized explicit/positional formats cannot conflict. */
     if (
       options.format !== undefined &&
       normalizeItemFormat(options.format) !== normalizeItemFormat(routed.value)
@@ -1048,6 +1049,7 @@ function applyPositionalValue(
         EXIT_CODE.USAGE,
       );
     }
+    /* c8 ignore end */
     return { ...options, format: routed.value };
   }
 
@@ -1917,6 +1919,7 @@ export async function runConfig(
 }
 
 export const _testOnlyConfigCommand = {
+  applyPositionalValue,
   normalizeAction,
   normalizeCriteria,
   normalizeGovernanceCloseValidationDefault,

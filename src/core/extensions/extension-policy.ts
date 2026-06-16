@@ -542,19 +542,18 @@ function resolvePolicySandboxReason(policy: NormalizedExtensionPolicy, extension
     return null;
   }
 
-  if (profile === "strict") {
-    if (hasPermission("process_spawn")) {
-      return "sandbox_strict_disallows_process_spawn";
-    }
-    if (hasPermission("network")) {
-      return "sandbox_strict_disallows_network";
-    }
-    if (hasPermission("fs_write")) {
-      return "sandbox_strict_disallows_fs_write";
-    }
-    if (hasPermission("env_write")) {
-      return "sandbox_strict_disallows_env_write";
-    }
+  // Remaining profile branch is strict (none/restricted returned above).
+  if (hasPermission("process_spawn")) {
+    return "sandbox_strict_disallows_process_spawn";
+  }
+  if (hasPermission("network")) {
+    return "sandbox_strict_disallows_network";
+  }
+  if (hasPermission("fs_write")) {
+    return "sandbox_strict_disallows_fs_write";
+  }
+  if (hasPermission("env_write")) {
+    return "sandbox_strict_disallows_env_write";
   }
   return null;
 }

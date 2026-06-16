@@ -49,4 +49,40 @@ describe("check-secrets-lib", () => {
     const included = mod.scanContent("src/foo.txt", homePath);
     expect(included.some((finding) => finding.rule === "absolute-home-path")).toBe(true);
   });
+
+  it("flags every GitHub token prefix, not just personal access tokens", async () => {
+    const mod = await harness.importModule<CheckSecretsLibModule>("scripts/check-secrets-lib.mjs");
+    const rulesFor = (file: string, content: string): string[] =>
+      mod.scanContent(file, content).map((finding) => finding.rule);
+    for (const prefix of ["ghp_", "gho_", "ghu_", "ghs_", "ghr_"]) {
+      const token = `${prefix}${"A1b2C3d4".repeat(5)}`;
+      expect(rulesFor("notes.md", `token ${token}`)).toContain("github-token");
+    }
+    expect(rulesFor("notes.md", `pat github_pat_${"x".repeat(30)}`)).toContain("github-token");
+  });
+
+  it("flags other high-risk credential shapes", async () => {
+    const mod = await harness.importModule<CheckSecretsLibModule>("scripts/check-secrets-lib.mjs");
+    const rulesFor = (file: string, content: string): string[] =>
+      mod.scanContent(file, content).map((finding) => finding.rule);
+    // Fixtures are assembled at runtime so the scanner never flags this spec's own source.
+    const privateKey = `-----BEGIN OPENSSH ${"PRIVATE KEY"}-----`;
+    const privateIp = `192.168.${"1.183"}`;
+    expect(rulesFor("a.txt", privateKey)).toContain("private-key");
+    expect(rulesFor("a.txt", `AKIA${"ABCDEFGH12345678"}`)).toContain("aws-access-key");
+    expect(rulesFor("a.txt", `sntrys_${"y".repeat(40)}`)).toContain("sentry-org-token");
+    expect(rulesFor("a.txt", `ssh user@${privateIp}`)).toContain("private-ssh-target");
+    expect(rulesFor("a.txt", privateIp)).toContain("private-ip");
+  });
+
+  it("does not flag clean documentation content", async () => {
+    const mod = await harness.importModule<CheckSecretsLibModule>("scripts/check-secrets-lib.mjs");
+    expect(mod.scanContent("README.md", "Install via npm and run pm health.")).toHaveLength(0);
+  });
+
+  it("exposes a non-empty rule set for the secret scanner", async () => {
+    const mod = await harness.importModule<CheckSecretsLibModule>("scripts/check-secrets-lib.mjs");
+    expect(Array.isArray(mod.RULES)).toBe(true);
+    expect(mod.RULES.length).toBeGreaterThan(10);
+  });
 });

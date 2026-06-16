@@ -2,11 +2,11 @@ id: pm-w13j
 title: "ADR: literal all-src coverage supersedes curated include/exclude allowlist"
 description: "Supersede pm-7sq6 coverage governance by requiring literal 100% coverage across all src/**/*.ts modules, with maintainability controls implemented via test architecture and module extraction rather than coverage gating exclusions."
 type: Decision
-status: in_progress
+status: closed
 priority: 1
 tags[4]: adr,"area:ci","area:tests",coverage
 created_at: "2026-06-09T22:05:03.764Z"
-updated_at: "2026-06-15T05:10:06.071Z"
+updated_at: "2026-06-16T07:23:51.189Z"
 author: codex-active-pm-cycle-20260610
 parent: pm-m2u1
 comments[176]{created_at,author,text}:
@@ -438,4 +438,5 @@ docs[3]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,clarified semantic/hybrid --full reindex guidance from review
   docs/ARCHITECTURE.md,project,testing architecture section now states all-src coverage governance
   docs/TESTING.md,project,coverage governance docs updated to literal all-src policy intent
-body: ""
+close_reason: "Accepted & live: literal all-src 100/100/100/100 gate in vitest.config.ts, verified green (26190 stmts, 20463 branches, 4402 funcs, 25166 lines)."
+body: "## ADR: Literal all-source coverage supersedes the curated include/exclude allowlist\n\n### Context\nHistorically vitest.config.ts gated coverage on a hand-maintained allowlist (curated include[] plus a long exclude[] of large/complex files such as create/update/settings/item-store). Thresholds were aggregate (e.g. 92/84/94/92). This let untested code hide behind exclude entries and made the gate drift from reality: a file could regress to 0% simply by being on the exclude list.\n\n### Decision\nAdopt a LITERAL all-source coverage model. coverage.include globs every source path (src/**, packages/**, scripts/**/*.mjs, plugins/**, docs/examples/**); coverage.exclude is reduced to only generated artifacts (src/**/*.d.ts). Thresholds are 100/100/100/100 (lines/branches/functions/statements) enforced for the WHOLE tree — no per-file allowlist, no curated excludes.\n\n### Consequences\n- Every executable line/branch/function in the repository is gated at 100%; new code cannot merge uncovered.\n- Provably-unreachable defensive guards are removed or annotated with /* c8 ignore */ with a justifying comment, rather than hidden by exclude entries.\n- The model is self-verifying: the gate reflects true coverage, so it cannot silently drift.\n- Achieved and verified green: 26190/26190 statements, 20463/20463 branches, 4402/4402 functions, 25166/25166 lines.\n\n### Status\nAccepted and live (vitest.config.ts allSourceCoverageThresholds). Supersedes the curated include/exclude + aggregate-threshold approach. Related: epic pm-xau3, ADR pm-kjmx (test organization)."
