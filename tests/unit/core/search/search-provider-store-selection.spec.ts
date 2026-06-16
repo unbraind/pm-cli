@@ -140,4 +140,11 @@ describe("resolveProviderConfigSource (GH-244)", () => {
     expect(resolveProviderConfigSource("ollama", "")).toBe("auto-detected");
     expect(resolveProviderConfigSource("lancedb", null)).toBe("auto-detected");
   });
+
+  it("reports 'auto-detected' when the persisted value does not match the active resolution", () => {
+    // A configured-but-unhonored value (typo/unsupported) that the runtime fell
+    // back from must not be reported as "configured".
+    expect(resolveProviderConfigSource("ollama", "openai")).toBe("auto-detected");
+    expect(resolveProviderConfigSource("lancedb", "qdrant")).toBe("auto-detected");
+  });
 });

@@ -3789,6 +3789,25 @@ describe("repeatable metadata parser helpers", () => {
       });
     });
 
+    it("prefers --message over --resolution when both are provided", async () => {
+      await withTempPmPath(async (context) => {
+        const result = await runCreate(
+          {
+            title: "direct-closed-message-precedence",
+            description: "message should win over resolution",
+            type: "Task",
+            status: "closed",
+            message: "message wins",
+            resolution: "resolution should not win",
+            createMode: "progressive",
+          },
+          { path: context.pmPath },
+        );
+        expect(result.item.close_reason).toBe("message wins");
+        expect(result.warnings).not.toContain("close_reason_defaulted");
+      });
+    });
+
     it("records no close reason when governance.require_close_reason is disabled", async () => {
       await withTempPmPath(async (context) => {
         const settingsPath = path.join(context.pmPath, "settings.json");

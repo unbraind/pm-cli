@@ -217,10 +217,24 @@ function resolveDefinitionFolder(name: string, folder: unknown): string {
  * same-named definition being upserted is ignored (folder reuse on re-run is
  * expected). Resolving the collision is a matter of passing a distinct
  * `--folder`, so the error says so.
+ *
+ * `reservedFolders` carries the folders already owned by built-in and extension
+ * types (folder-slug → owner name); a custom type whose slug matches one of
+ * those (e.g. "Tasks" → "tasks", owned by the built-in Task) is just as
+ * corrupting as a custom-vs-custom collision, so both are checked.
  */
-export function assertTypeFolderAvailable(input: NormalizedAddTypeInput, existing: ItemTypesFile): void {
+export function assertTypeFolderAvailable(
+  input: NormalizedAddTypeInput,
+  existing: ItemTypesFile,
+  reservedFolders?: ReadonlyMap<string, string>,
+): void {
   const selfLower = input.name.toLowerCase();
   const inputFolder = resolveDefinitionFolder(input.name, input.folder);
+  const fail = (ownerName: string): never => {
+    throw new Error(
+      `Item type "${input.name}" would store items in folder "${inputFolder}", which already belongs to existing item type "${ownerName}". Pass a distinct --folder to keep their storage separate.`,
+    );
+  };
   for (const definition of existing.definitions) {
     if (typeof definition.name !== "string") {
       continue;
@@ -230,10 +244,12 @@ export function assertTypeFolderAvailable(input: NormalizedAddTypeInput, existin
       continue;
     }
     if (resolveDefinitionFolder(definitionName, definition.folder) === inputFolder) {
-      throw new Error(
-        `Item type "${input.name}" would store items in folder "${inputFolder}", which already belongs to existing item type "${definitionName}". Pass a distinct --folder to keep their storage separate.`,
-      );
+      fail(definitionName);
     }
+  }
+  const reservedOwner = reservedFolders?.get(inputFolder);
+  if (reservedOwner !== undefined && reservedOwner.toLowerCase() !== selfLower) {
+    fail(reservedOwner);
   }
 }
 

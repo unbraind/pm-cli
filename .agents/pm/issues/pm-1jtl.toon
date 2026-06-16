@@ -1,12 +1,12 @@
 id: pm-1jtl
-title: "GH-250: pm close validates close-reason before item existence"
+title: "GH-250: pm close checks item existence before the close-reason gate"
 description: "pm close checks governance.require_close_reason before verifying the target item exists, so a typo'd id with no reason reports 'Close reason text is required' instead of 'Item not found'. Validate existence before the close-reason gate in runClose (and keep close-many consistent)."
 type: Issue
 status: closed
 priority: 2
 tags[3]: close,governance,ux
 created_at: "2026-06-16T14:46:43.757Z"
-updated_at: "2026-06-16T15:26:30.492Z"
+updated_at: "2026-06-16T15:57:32.597Z"
 author: claude-code-agent
 parent: pm-mpbb
 resolution: Locate item via buildItemNotFoundError before normalizeCloseReason.

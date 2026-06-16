@@ -133,6 +133,26 @@ describe("assertTypeFolderAvailable", () => {
   it("ignores the same-named definition being upserted (recase/idempotent re-run)", () => {
     expect(() => assertTypeFolderAvailable({ name: "spike", aliases: [] }, existing)).not.toThrow();
   });
+
+  it("rejects a folder collision with a reserved (built-in/extension) folder", () => {
+    // "Tasks" slugs to folder "tasks", owned by the built-in Task.
+    const reserved = new Map<string, string>([["tasks", "Task"]]);
+    expect(() => assertTypeFolderAvailable({ name: "Tasks", aliases: [] }, { definitions: [] }, reserved)).toThrow(
+      /folder "tasks", which already belongs to existing item type "Task"/,
+    );
+  });
+
+  it("passes when the reserved folder is owned by the same-named definition", () => {
+    // Re-registering a custom type whose folder is already reserved under its own
+    // name (case-insensitive) is a no-op, not a collision.
+    const reserved = new Map<string, string>([["spikes", "Spike"]]);
+    expect(() => assertTypeFolderAvailable({ name: "spike", aliases: [] }, { definitions: [] }, reserved)).not.toThrow();
+  });
+
+  it("passes when no reserved folder collides", () => {
+    const reserved = new Map<string, string>([["tasks", "Task"]]);
+    expect(() => assertTypeFolderAvailable({ name: "Bug", aliases: [] }, { definitions: [] }, reserved)).not.toThrow();
+  });
 });
 
 describe("assertAliasesAvailable", () => {

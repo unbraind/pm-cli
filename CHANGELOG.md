@@ -36,7 +36,7 @@
 
 ### Fixed
 
-- GH-250: pm close validates close-reason before item existence ([pm-1jtl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1jtl.toon))
+- GH-250: pm close checks item existence before the close-reason gate ([pm-1jtl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1jtl.toon))
 - GH-249: create --status closed bypasses governance.require\_close\_reason ([pm-4a1p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4a1p.toon))
 - Extension activation failure is invisible outside pm health --json: extension list shows ok, no stderr hint, commands partially registered ([pm-yffj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yffj.toon))
 - pm create <type\> --title X silently ignores positional type, defaults to Task ([pm-8sr3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8sr3.toon))

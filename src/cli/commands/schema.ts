@@ -267,7 +267,17 @@ export async function runSchemaAddType(
       // GH-248: reject distinct type names that would slug to the same storage
       // folder (e.g. "Spike"/"Spikes") so item files never silently share a
       // directory. Same-named upserts (recase/idempotent re-runs) are exempt.
-      assertTypeFolderAvailable(normalized, parsed);
+      // reservedFolders covers built-in + extension + settings-resolved custom
+      // folders so a slug like "Tasks" can't collide with the built-in Task.
+      const reservedFolders = new Map<string, string>();
+      const resolvedRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+      for (const [typeName, folder] of Object.entries(resolvedRegistry.type_to_folder)) {
+        const folderKey = folder.trim().toLowerCase();
+        if (folderKey.length > 0 && !reservedFolders.has(folderKey)) {
+          reservedFolders.set(folderKey, typeName);
+        }
+      }
+      assertTypeFolderAvailable(normalized, parsed, reservedFolders);
     } catch (error) {
       throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.USAGE);
     }
