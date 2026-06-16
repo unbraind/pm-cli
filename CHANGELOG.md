@@ -5,7 +5,6 @@
 ### Added
 
 - GH-244: surface provider/vector-store resolution source in pm health ([pm-gnu2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gnu2.toon))
-- GH-248: schema add-type slug-collision overwrite + malformed name validation ([pm-3l0f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3l0f.toon))
 - GH-236: governance metadata missing-field filters ([pm-mfl1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-mfl1.toon))
 - GH-242: field-existence filters for list/search ([pm-hntj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hntj.toon))
 - GH-241: stats content-field utilization metrics ([pm-7snq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-7snq.toon))
@@ -36,6 +35,7 @@
 
 ### Fixed
 
+- GH-248: fix schema add-type silent slug-collision overwrite + malformed-name acceptance ([pm-3l0f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3l0f.toon))
 - GH-250: pm close checks item existence before the close-reason gate ([pm-1jtl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1jtl.toon))
 - GH-249: create --status closed bypasses governance.require\_close\_reason ([pm-4a1p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4a1p.toon))
 - Extension activation failure is invisible outside pm health --json: extension list shows ok, no stderr hint, commands partially registered ([pm-yffj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yffj.toon))

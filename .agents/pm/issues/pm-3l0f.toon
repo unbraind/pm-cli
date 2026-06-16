@@ -1,12 +1,12 @@
 id: pm-3l0f
-title: "GH-248: schema add-type slug-collision overwrite + malformed name validation"
+title: "GH-248: fix schema add-type silent slug-collision overwrite + malformed-name acceptance"
 description: "pm schema add-type silently overwrites an existing type on case/slug collision and accepts malformed names (spaces, non-identifier chars). Add malformed-name rejection in normalizeAddTypeInput, folder/slug collision detection against different-named existing definitions, and a recase warning when an upsert changes the canonical name's case."
 type: Issue
 status: closed
 priority: 1
 tags[3]: governance,schema,validation
 created_at: "2026-06-16T14:46:32.798Z"
-updated_at: "2026-06-16T15:26:27.663Z"
+updated_at: "2026-06-16T16:27:24.649Z"
 author: claude-code-agent
 parent: pm-8jdc
 resolution: "Added name-token validation, assertTypeFolderAvailable folder-collision guard, and type_recased warning; 100% covered."
