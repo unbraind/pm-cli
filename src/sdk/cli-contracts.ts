@@ -1629,6 +1629,13 @@ export interface PmActionSchemaContract {
     value: string;
     required: string[];
   }>;
+  /**
+   * Groups of parameters that must not be supplied together. Each group emits a
+   * JSON Schema `not: { required: [...] }` constraint so MCP clients validating
+   * against the contract reject the same combinations the runtime rejects
+   * (e.g. focus `id` + `clear`), keeping schema and runtime in lock-step.
+   */
+  mutuallyExclusive?: Array<string[]>;
 }
 
 function toSchemaKeyList(values: string[]): string[] {
@@ -1824,7 +1831,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
     optional: CREATE_CONTRACT_PARAMETER_KEYS,
   },
   copy: { required: ["id"], optional: ["title", "author", "message"] },
-  focus: { optional: ["id", "clear"] },
+  focus: { optional: ["id", "clear"], mutuallyExclusive: [["id", "clear"]] },
   list: { optional: LIST_CONTRACT_PARAMETER_KEYS },
   "list-all": { optional: LIST_CONTRACT_PARAMETER_KEYS },
   "list-draft": { optional: LIST_CONTRACT_PARAMETER_KEYS },
@@ -2251,6 +2258,13 @@ function buildActionScopedToolSchema(action: PmToolAction): Record<string, unkno
           })),
         },
       });
+    }
+    schema.allOf = allOf;
+  }
+  if (contract.mutuallyExclusive && contract.mutuallyExclusive.length > 0) {
+    const allOf = Array.isArray(schema.allOf) ? [...(schema.allOf as Array<Record<string, unknown>>)] : [];
+    for (const group of contract.mutuallyExclusive) {
+      allOf.push({ not: { required: toSchemaKeyList(group) } });
     }
     schema.allOf = allOf;
   }

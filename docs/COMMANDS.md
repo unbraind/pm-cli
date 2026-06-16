@@ -319,7 +319,9 @@ Behavior and guarantees:
 - An explicit `--parent` always overrides focus, including `--parent none` (create with no parent). An explicit but unresolvable focused parent produces the same missing-parent error/warning as an explicit stale `--parent` (it flows through the same `validation.parent_reference` policy).
 - `pm focus <id>` validates the item exists and fails fast with a not-found error otherwise. `pm focus --clear <id>` is a usage error (choose either set or clear).
 
-Over MCP the equivalent tool is `pm_focus` (`id` to set, `options.clear=true` to clear, neither to show current focus).
+Over MCP the equivalent tool is `pm_focus` (`id` to set, `clear=true` to clear, neither to show current focus).
+
+Tracker references: [pm-72xf](../.agents/pm/features/pm-72xf.toon).
 
 ## Templates
 

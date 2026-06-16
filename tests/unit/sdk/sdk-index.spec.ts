@@ -141,12 +141,24 @@ describe("SDK CLI contract helper tails", () => {
     const previousOneOf = getContract.oneOfRequired;
     const previousConditional = getContract.conditionalRequired;
     const previousDependent = getContract.dependentAnyOfRequired;
+    const previousMutuallyExclusive = getContract.mutuallyExclusive;
     try {
       getContract.optional = undefined;
       getContract.conditionalRequired = [{ property: "full", value: true, required: ["id"] }];
       getContract.dependentAnyOfRequired = [{ property: "mode", anyOfRequired: [["id"], ["query"]] }];
       const schemaWithAllOf = _testOnlyCliContracts.buildActionScopedToolSchema("get") as { allOf?: unknown[] };
       expect(Array.isArray(schemaWithAllOf.allOf)).toBe(true);
+
+      // mutuallyExclusive appends to a pre-existing allOf (populated above by
+      // conditionalRequired + dependentAnyOfRequired).
+      getContract.mutuallyExclusive = [["id", "query"]];
+      const schemaWithExclusiveAllOf = _testOnlyCliContracts.buildActionScopedToolSchema("get") as {
+        allOf?: Array<{ not?: { required?: string[] } }>;
+      };
+      expect(
+        schemaWithExclusiveAllOf.allOf?.some((entry) => entry.not?.required?.includes("query") === true),
+      ).toBe(true);
+      getContract.mutuallyExclusive = undefined;
 
       getContract.conditionalRequired = undefined;
       const schemaWithoutConditional = _testOnlyCliContracts.buildActionScopedToolSchema("get") as { allOf?: unknown[] };
@@ -168,7 +180,17 @@ describe("SDK CLI contract helper tails", () => {
       getContract.oneOfRequired = previousOneOf;
       getContract.conditionalRequired = previousConditional;
       getContract.dependentAnyOfRequired = previousDependent;
+      getContract.mutuallyExclusive = previousMutuallyExclusive;
     }
+
+    const focusSchema = _testOnlyCliContracts.buildActionScopedToolSchema("focus") as {
+      allOf?: Array<{ not?: { required?: string[] } }>;
+    };
+    expect(
+      focusSchema.allOf?.some(
+        (entry) => entry.not?.required?.includes("id") === true && entry.not?.required?.includes("clear") === true,
+      ),
+    ).toBe(true);
 
     const historyRepairSchema = _testOnlyCliContracts.buildActionScopedToolSchema("history-repair") as {
       oneOf?: Array<{ required?: string[]; properties?: Record<string, unknown> }>;

@@ -188,6 +188,7 @@ export const TOOLS: ToolDefinition[] = [
     inputSchema: objectSchema(
       {
         id: idSchema,
+        clear: { type: "boolean", description: "Clear the focused item (cannot be combined with id)." },
         options: { type: "object", description: "Focus options such as clear (boolean)." },
       },
       [],

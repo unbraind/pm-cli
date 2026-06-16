@@ -8711,6 +8711,10 @@
             "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
             "type": "string"
           },
+          "clear": {
+            "description": "Clear the focused item (cannot be combined with id).",
+            "type": "boolean"
+          },
           "cwd": {
             "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
             "type": "string"
@@ -13184,6 +13188,16 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "required": [
+                "id",
+                "clear"
+              ]
+            }
+          }
+        ],
         "properties": {
           "action": {
             "const": "focus",
