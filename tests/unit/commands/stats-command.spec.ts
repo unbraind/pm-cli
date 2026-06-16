@@ -297,6 +297,46 @@ describe("runStats", () => {
     });
   });
 
+  it("attaches content-field utilization only when requested and uses the with-body reader", async () => {
+    await withTempPmPath(async (context) => {
+      const noteId = createItem(context, {
+        title: "Utilization With Note",
+        type: "Task",
+        status: "open",
+      });
+      createItem(context, {
+        title: "Utilization Bare",
+        type: "Task",
+        status: "open",
+      });
+
+      // Populate a heavy collection (notes) on one item so the with-body reader
+      // surfaces it — the light reader drops these fields entirely.
+      const noteAdd = context.runCli(
+        ["notes", noteId, "--add", "a real note", "--json", "--author", "test-author"],
+        { expectJson: true },
+      );
+      expect(noteAdd.code).toBe(0);
+
+      const withoutUtilization = await runStats({ path: context.pmPath });
+      expect(withoutUtilization.field_utilization).toBeUndefined();
+
+      const stats = await runStats({ path: context.pmPath }, { fieldUtilization: true });
+      const report = stats.field_utilization;
+      expect(report).toBeDefined();
+      expect(report!.total_items).toBe(2);
+      // Both items seed a non-empty body via createItem (--body "seed body").
+      expect(report!.fields.body).toEqual({ present: 2, total: 2, percent: 100 });
+      expect(report!.body_populated).toEqual({ present: 2, total: 2, percent: 100 });
+      expect(report!.empty_body).toEqual({ present: 0, total: 2, percent: 0 });
+      // Notes are a heavy collection: the with-body reader sees the one item we
+      // appended a note to, proving the light path was NOT taken.
+      expect(report!.fields.notes).toEqual({ present: 1, total: 2, percent: 50 });
+      // A field nothing populates stays at 0% — the dormant-feature signal GH-241 targets.
+      expect(report!.fields.learnings).toEqual({ present: 0, total: 2, percent: 0 });
+    });
+  });
+
   it("dispatches active onRead hooks for history scans without changing output shape", async () => {
     await withTempPmPath(async (context) => {
       const itemId = createItem(context, {

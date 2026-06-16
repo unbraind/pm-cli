@@ -1442,6 +1442,88 @@ describe("mutation command actions", () => {
     });
   });
 
+  it("maps every bulk content + governance filter flag to its selector field (true branch)", async () => {
+    // Presence + governance-missing flags through update-many's selector builder.
+    await runCli(
+      "update-many",
+      "--filter-has-notes",
+      "--filter-has-learnings",
+      "--filter-has-files",
+      "--filter-has-docs",
+      "--filter-has-tests",
+      "--filter-has-comments",
+      "--filter-has-deps",
+      "--filter-has-body",
+      "--filter-has-linked-command",
+      "--filter-reviewer-missing",
+      "--filter-risk-missing",
+      "--filter-confidence-missing",
+      "--filter-sprint-missing",
+      "--filter-release-missing",
+      "--title", "Bulk",
+    );
+    const presenceList = lastCallArg<Record<string, unknown>>(vi.mocked(runUpdateMany) as never, 0).list as Record<
+      string,
+      unknown
+    >;
+    expect(presenceList).toMatchObject({
+      hasNotes: true,
+      hasLearnings: true,
+      hasFiles: true,
+      hasDocs: true,
+      hasTests: true,
+      hasComments: true,
+      hasDeps: true,
+      hasBody: true,
+      hasLinkedCommand: true,
+      filterReviewerMissing: true,
+      filterRiskMissing: true,
+      filterConfidenceMissing: true,
+      filterSprintMissing: true,
+      filterReleaseMissing: true,
+    });
+
+    // Absence flags + empty-body through close-many's selector builder.
+    await runCli(
+      "close-many",
+      "--filter-no-notes",
+      "--filter-no-learnings",
+      "--filter-no-files",
+      "--filter-no-docs",
+      "--filter-no-tests",
+      "--filter-no-comments",
+      "--filter-no-deps",
+      "--filter-empty-body",
+      "--filter-no-linked-command",
+      "--reason", "cleanup",
+    );
+    const absenceList = lastCallArg<Record<string, unknown>>(vi.mocked(runCloseMany) as never, 0).list as Record<
+      string,
+      unknown
+    >;
+    expect(absenceList).toMatchObject({
+      noNotes: true,
+      noLearnings: true,
+      noFiles: true,
+      noDocs: true,
+      noTests: true,
+      noComments: true,
+      noDeps: true,
+      emptyBody: true,
+      noLinkedCommand: true,
+    });
+  });
+
+  it("rejects a both-present-and-absent bulk content filter with the --filter-* flag names", async () => {
+    // The conflict is caught in mapBulkContentAndGovernanceFilters so the message
+    // names the bulk flags the user typed (not the downstream --has-/--no- flags),
+    // and runUpdateMany is never reached.
+    await expect(
+      runCli("update-many", "--filter-has-notes", "--filter-no-notes", "--title", "X"),
+    ).rejects.toThrow("Cannot combine --filter-has-notes with --filter-no-notes for the same field.");
+    expect(vi.mocked(runUpdateMany)).not.toHaveBeenCalled();
+  });
+
   it("maps the full close option surface including duplicate-of and validate string mode", async () => {
     await runCli(
       "close", "pm-1", "shipped it",

@@ -24,7 +24,9 @@ import {
   PM_EXTENSION_TRUST_MODE_CONTRACTS,
   PM_TOOL_PARAMETERS_SCHEMA_MAJOR,
   PM_TOOL_PARAMETERS_SCHEMA_VERSION,
+  resolveSubcommandFlagContractsForCommand,
 } from "../../../src/sdk/cli-contracts.js";
+import { PM_TOOL_PARAMETER_PROPERTIES } from "../../../src/sdk/cli-contracts/tool-parameter-tables.js";
 import { writeTestExtension } from "../../helpers/extensions.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -34,6 +36,84 @@ const GLOBAL_OPTIONS: GlobalOptions = {
   noExtensions: false,
   profile: false,
 };
+
+describe("content + governance filter contract surface", () => {
+  const CONTENT_PRESENCE_FLAGS = [
+    "--has-notes",
+    "--no-notes",
+    "--has-learnings",
+    "--no-learnings",
+    "--has-files",
+    "--no-files",
+    "--has-docs",
+    "--no-docs",
+    "--has-tests",
+    "--no-tests",
+    "--has-comments",
+    "--no-comments",
+    "--has-deps",
+    "--no-deps",
+    "--has-body",
+    "--empty-body",
+    "--has-linked-command",
+    "--no-linked-command",
+  ];
+  const GOVERNANCE_MISSING_FLAGS = [
+    "--filter-reviewer-missing",
+    "--filter-risk-missing",
+    "--filter-confidence-missing",
+    "--filter-sprint-missing",
+    "--filter-release-missing",
+  ];
+
+  function flagSet(command: string): Set<string> {
+    return new Set(resolveSubcommandFlagContractsForCommand(command).map((entry) => entry.flag));
+  }
+
+  it("exposes content-presence + governance-missing flags on list and search", () => {
+    for (const command of ["list", "list-open", "list-all", "search"]) {
+      const flags = flagSet(command);
+      for (const flag of [...CONTENT_PRESENCE_FLAGS, ...GOVERNANCE_MISSING_FLAGS]) {
+        expect(flags.has(flag), `${command} should declare ${flag}`).toBe(true);
+      }
+    }
+  });
+
+  it("exposes --filter- prefixed content + governance flags on update-many and close-many", () => {
+    const prefixed = [
+      ...CONTENT_PRESENCE_FLAGS.map((flag) => `--filter-${flag.slice(2)}`),
+      ...GOVERNANCE_MISSING_FLAGS,
+    ];
+    for (const command of ["update-many", "close-many"]) {
+      const flags = flagSet(command);
+      for (const flag of prefixed) {
+        expect(flags.has(flag), `${command} should declare ${flag}`).toBe(true);
+      }
+    }
+  });
+
+  it("exposes --field-utilization on stats", () => {
+    expect(flagSet("stats").has("--field-utilization")).toBe(true);
+  });
+
+  it("declares MCP parameter properties for the new content/governance/stats params", () => {
+    for (const param of [
+      "hasNotes",
+      "noNotes",
+      "emptyBody",
+      "hasLinkedCommand",
+      "filterReviewerMissing",
+      "filterHasNotes",
+      "filterNoDeps",
+      "filterEmptyBody",
+      "fieldUtilization",
+    ]) {
+      expect(PM_TOOL_PARAMETER_PROPERTIES[param], `${param} should be a declared MCP parameter`).toEqual({
+        type: "boolean",
+      });
+    }
+  });
+});
 
 describe("contracts command helper coverage", () => {
   it("maps package-owned and prefixed actions back to command paths", () => {

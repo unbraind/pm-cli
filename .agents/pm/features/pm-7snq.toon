@@ -2,11 +2,15 @@ id: pm-7snq
 title: "GH-241: stats content-field utilization metrics"
 description: "Tracks GitHub issue #241: report notes/learnings/files/docs/tests/comments/empty-body utilization in pm stats for governance audits."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-06-16T11:28:30.828Z"
-updated_at: "2026-06-16T11:28:30.828Z"
+updated_at: "2026-06-16T13:40:31.294Z"
 author: codex-sdk-cli-consolidation-20260616
 parent: pm-mpbb
+resolution: "Shipped pm stats --field-utilization: content-field utilization report (notes/learnings/files/docs/tests/comments/deps/body/linked_command present vs total + percent, body_populated/empty_body aliases). Stats switches to the with-body reader when requested. New pure primitive computeContentFieldUtilization in core/governance/content-fields.ts. MCP pm_stats forwards fieldUtilization."
+comments[1]{created_at,author,text}:
+  "2026-06-16T13:05:52.305Z",claude-code-agent,"Implemented `pm stats --field-utilization` (GH-241). Added `fieldUtilization?: boolean` to StatsCommandOptions and `field_utilization?: ContentFieldUtilizationReport` to StatsResult (JSDoc: present only with --field-utilization, spread conditionally into the return). Light->WithBody path switch: utilization needs the heavy collections (notes/learnings/files/docs/tests/comments/deps) AND body, both dropped by listAllFrontMatterLight, so when options.fieldUtilization is true a single `items` var loads via listAllFrontMatterWithBody and feeds EVERY section (by_type/by_status, metadata_coverage, breakdowns work fine on the heavier rows); otherwise the light path is unchanged. Registered --field-utilization on the stats command in register-operations.ts and passed `fieldUtilization: options.fieldUtilization === true` to runStats. Tests: extended tests/unit/commands/stats-command.spec.ts with a present/absent + with-body-reader case (appends a note to one of two items, asserts fields.notes 1/2/50%, body 2/2/100%, body_populated/empty_body aliases, learnings 0/2/0% dormant-feature signal). typecheck clean for my files (pre-existing unrelated list.ts errors from in-progress branch work). Full suite: 216 files / 4275 tests pass. Did not touch contracts/MCP/docs/completion (owned by another agent)."
+close_reason: "Shipped pm stats --field-utilization: content-field utilization report (notes/learnings/files/docs/tests/comments/deps/body/linked_command present vs total + percent, body_populated/empty_body aliases). Stats switches to the with-body reader when requested. New pure primitive computeContentFieldUtilization in core/governance/content-fields.ts. MCP pm_stats forwards fieldUtilization."
 body: ""

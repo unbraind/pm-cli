@@ -154,17 +154,36 @@ pm list-open --json --include-body         # full fields + body for every return
 
 Every `list*` command also accepts metadata-presence filters for governance backfill: `--filter-ac-missing` (no `acceptance_criteria`), `--filter-estimates-missing` (no `estimated_minutes`; singular `--filter-estimate-missing` is an alias), `--filter-resolution-missing` (terminal items with no `resolution`), and `--filter-metadata-missing` (the union — missing *any* of those). Specific flags AND together; combine them with any other filter. They surface in the result's `filters` echo (`filter_ac_missing` etc.).
 
+The same `list*` commands and `pm search` extend this with governance-field presence selectors — `--filter-reviewer-missing`, `--filter-risk-missing`, `--filter-confidence-missing`, `--filter-sprint-missing`, and `--filter-release-missing` — each selecting items where that single field is unset.
+
 ```bash
 # Find open Tasks that still need acceptance criteria
 pm list-open --type Task --filter-ac-missing --brief
 
 # Closed items that were never given a resolution
 pm list-closed --filter-resolution-missing --json
+
+# Open items that still need a reviewer assigned
+pm list-open --filter-reviewer-missing --brief
+```
+
+### Content-field presence filters
+
+`list*` and `pm search` also accept paired presence/absence selectors for each content field, so you can scope to items that *have* a given field populated or that are *missing* it: `--has-notes`/`--no-notes`, `--has-learnings`/`--no-learnings`, `--has-files`/`--no-files`, `--has-docs`/`--no-docs`, `--has-tests`/`--no-tests`, `--has-comments`/`--no-comments`, `--has-deps`/`--no-deps`, `--has-body`/`--empty-body`, and `--has-linked-command`/`--no-linked-command`. Requesting both the present and absent variant for the same field is a usage error. Multiple content filters AND together and compose with any other filter.
+
+```bash
+# Closed items that shipped no documented learnings
+pm list-closed --no-learnings --brief
+
+# Open work that has linked tests but no linked files yet
+pm list-open --has-tests --no-files --json
 ```
 
 ## Bulk Operations
 
 `update-many` and `close-many` apply one change across a matched set with a dry-run preview and a rollback checkpoint. Both share the `--filter-*` scoping family (`--filter-status/-type/-tag/-priority/-sprint/-release/-parent/-assignee/-deadline-before|after/-updated-after|before/-created-after|before`) plus `--ids` for an explicit comma-separated allowlist intersected with the other filters. `update-many` additionally accepts the missing-metadata selectors `--filter-ac-missing`/`--filter-estimates-missing`/`--filter-resolution-missing`/`--filter-metadata-missing` for bulk metadata backfill.
+
+Both `update-many` and `close-many` also accept the governance-field selectors `--filter-reviewer-missing`/`--filter-risk-missing`/`--filter-confidence-missing`/`--filter-sprint-missing`/`--filter-release-missing` and the content-field presence selectors under the `--filter-` prefix: `--filter-has-notes`/`--filter-no-notes`, `--filter-has-learnings`/`--filter-no-learnings`, `--filter-has-files`/`--filter-no-files`, `--filter-has-docs`/`--filter-no-docs`, `--filter-has-tests`/`--filter-no-tests`, `--filter-has-comments`/`--filter-no-comments`, `--filter-has-deps`/`--filter-no-deps`, `--filter-has-body`/`--filter-empty-body`, and `--filter-has-linked-command`/`--filter-no-linked-command`. These mirror the list/search presence filters and intersect with the rest of the scoping family, so you can bulk-select (for example) closed Tasks with no documented learnings before applying a change.
 
 ```bash
 # Bulk metadata update by explicit id allowlist (compose with search --json | jq)
@@ -508,10 +527,11 @@ History is append-only. Restore appends a new restore event instead of rewriting
 pm stats
 pm stats --storage --json
 pm stats --metadata-coverage --json
+pm stats --field-utilization --json
 pm stats --by-assignee --by-priority
 pm stats --by-tag --tag-prefix domain: --json
 ```
-For governance dashboards, `--metadata-coverage` adds a `metadata_coverage` block reporting per-field `present`/`applicable`/`percent` for `acceptance_criteria`, `estimated_minutes`, `resolution`, `tags`, and `parent` — overall and `by_type` (resolution coverage is scoped to terminal items, its only applicable population). `--by-assignee`, `--by-tag`, and `--by-priority` add a `breakdowns` block with lifecycle-bucketed rows (`open`/`in_progress`/`blocked`/`draft`/`closed`/`canceled`/`other` + `total`) per group; blank keys render an explicit `(unassigned)`/`(untagged)` label. `--by-tag` accepts `--tag-prefix` to restrict counting to a tag namespace (for example `domain:`). All of these sections are gated behind their flags so the default `pm stats` stays token-light; the per-status/per-type distributions (already in `by_status`/`by_type`) zero-fill every configured state so underutilized lifecycle states and item types are visible at a glance.
+For governance dashboards, `--metadata-coverage` adds a `metadata_coverage` block reporting per-field `present`/`applicable`/`percent` for `acceptance_criteria`, `estimated_minutes`, `resolution`, `tags`, and `parent` — overall and `by_type` (resolution coverage is scoped to terminal items, its only applicable population). `--field-utilization` adds a `field_utilization` block reporting `present`/`total`/`percent` for each content field (`notes`, `learnings`, `files`, `docs`, `tests`, `comments`, `deps`, `body`, `linked_command`) across all items, so under-documented content dimensions are visible at a glance and pair naturally with the `--has-*`/`--no-*` list filters for drill-down. `--by-assignee`, `--by-tag`, and `--by-priority` add a `breakdowns` block with lifecycle-bucketed rows (`open`/`in_progress`/`blocked`/`draft`/`closed`/`canceled`/`other` + `total`) per group; blank keys render an explicit `(unassigned)`/`(untagged)` label. `--by-tag` accepts `--tag-prefix` to restrict counting to a tag namespace (for example `domain:`). All of these sections are gated behind their flags so the default `pm stats` stays token-light; the per-status/per-type distributions (already in `by_status`/`by_type`) zero-fill every configured state so underutilized lifecycle states and item types are visible at a glance.
 `history-redact` rewrites matching history payloads deterministically, recomputes hash chains, and appends an auditable `history_redact` marker entry when changes are applied.
 `history-compact` rewrites long streams into a synthetic checkpoint baseline plus a retained tail (`--before` accepts a 1-based version or ISO timestamp), re-anchors hashes, verifies integrity, and appends an auditable `history_compact` marker when applied.
 `history-repair` re-anchors a drifted history chain when `pm health`/`pm validate --check-history-drift` report stale hashes: it replays the stream, recomputes every before/after hash, repairs legacy patch ops that no longer strictly apply, reconciles the latest hash with the on-disk item, and appends an auditable `history_repair` marker. It never modifies item content and is a safe no-op on a clean stream.

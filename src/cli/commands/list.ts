@@ -13,6 +13,14 @@ import {
   type MissingMetadataFilters,
 } from "../../core/governance/metadata-coverage.js";
 import {
+  contentFiltersNeedBody,
+  contentFiltersNeedCollections,
+  hasContentFieldFilter,
+  itemMatchesContentFilters,
+  type ContentField,
+  type ContentFieldFilters,
+} from "../../core/governance/content-fields.js";
+import {
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
   type RuntimeStatusRegistry,
@@ -61,6 +69,34 @@ export interface ListOptions {
   filterEstimatesMissing?: boolean;
   filterResolutionMissing?: boolean;
   filterMetadataMissing?: boolean;
+  filterReviewerMissing?: boolean;
+  filterRiskMissing?: boolean;
+  filterConfidenceMissing?: boolean;
+  filterSprintMissing?: boolean;
+  filterReleaseMissing?: boolean;
+  // Content-field presence filters (GH-242). The has*/no* companions mirror the
+  // commander flag camelCase (e.g. --no-notes → noNotes, --empty-body → emptyBody)
+  // so the MCP param names and ListOptions fields stay identical (the MCP path
+  // forwards params verbatim, unlike the CLI which normalizes first). A field may
+  // be requested present XOR absent — a both-set request is a usage error.
+  hasNotes?: boolean;
+  hasLearnings?: boolean;
+  hasFiles?: boolean;
+  hasDocs?: boolean;
+  hasTests?: boolean;
+  hasComments?: boolean;
+  hasDeps?: boolean;
+  hasBody?: boolean;
+  hasLinkedCommand?: boolean;
+  noNotes?: boolean;
+  noLearnings?: boolean;
+  noFiles?: boolean;
+  noDocs?: boolean;
+  noTests?: boolean;
+  noComments?: boolean;
+  noDeps?: boolean;
+  emptyBody?: boolean;
+  noLinkedCommand?: boolean;
   [key: string]: unknown;
 }
 
@@ -70,13 +106,71 @@ export function resolveMissingMetadataFilters(options: {
   filterEstimatesMissing?: boolean;
   filterResolutionMissing?: boolean;
   filterMetadataMissing?: boolean;
+  filterReviewerMissing?: boolean;
+  filterRiskMissing?: boolean;
+  filterConfidenceMissing?: boolean;
+  filterSprintMissing?: boolean;
+  filterReleaseMissing?: boolean;
 }): MissingMetadataFilters {
   return {
     acMissing: options.filterAcMissing === true,
     estimatesMissing: options.filterEstimatesMissing === true,
     resolutionMissing: options.filterResolutionMissing === true,
     metadataMissing: options.filterMetadataMissing === true,
+    reviewerMissing: options.filterReviewerMissing === true,
+    riskMissing: options.filterRiskMissing === true,
+    confidenceMissing: options.filterConfidenceMissing === true,
+    sprintMissing: options.filterSprintMissing === true,
+    releaseMissing: options.filterReleaseMissing === true,
   };
+}
+
+/** Per content field: the present flag and the absence flag on the options shape. */
+interface ContentFieldFlagMapping {
+  field: ContentField;
+  presentKey: string;
+  absentKey: string;
+  /** Human flag names used in the conflict error message. */
+  presentFlag: string;
+  absentFlag: string;
+}
+
+const CONTENT_FIELD_FLAG_MAPPINGS: readonly ContentFieldFlagMapping[] = [
+  { field: "notes", presentKey: "hasNotes", absentKey: "noNotes", presentFlag: "--has-notes", absentFlag: "--no-notes" },
+  { field: "learnings", presentKey: "hasLearnings", absentKey: "noLearnings", presentFlag: "--has-learnings", absentFlag: "--no-learnings" },
+  { field: "files", presentKey: "hasFiles", absentKey: "noFiles", presentFlag: "--has-files", absentFlag: "--no-files" },
+  { field: "docs", presentKey: "hasDocs", absentKey: "noDocs", presentFlag: "--has-docs", absentFlag: "--no-docs" },
+  { field: "tests", presentKey: "hasTests", absentKey: "noTests", presentFlag: "--has-tests", absentFlag: "--no-tests" },
+  { field: "comments", presentKey: "hasComments", absentKey: "noComments", presentFlag: "--has-comments", absentFlag: "--no-comments" },
+  { field: "deps", presentKey: "hasDeps", absentKey: "noDeps", presentFlag: "--has-deps", absentFlag: "--no-deps" },
+  { field: "body", presentKey: "hasBody", absentKey: "emptyBody", presentFlag: "--has-body", absentFlag: "--empty-body" },
+  { field: "linked_command", presentKey: "hasLinkedCommand", absentKey: "noLinkedCommand", presentFlag: "--has-linked-command", absentFlag: "--no-linked-command" },
+] as const;
+
+/**
+ * Resolve the content-field presence/absence selections from list/search
+ * options. A field requested both present AND absent is a usage error (the two
+ * selections are mutually exclusive). Returns an empty object when no
+ * content-field filter is active.
+ */
+export function resolveContentFieldFilters(options: Record<string, unknown>): ContentFieldFilters {
+  const filters: ContentFieldFilters = {};
+  for (const mapping of CONTENT_FIELD_FLAG_MAPPINGS) {
+    const present = options[mapping.presentKey] === true;
+    const absent = options[mapping.absentKey] === true;
+    if (present && absent) {
+      throw new PmCliError(
+        `Cannot combine ${mapping.presentFlag} with ${mapping.absentFlag} for the same field.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    if (present) {
+      filters[mapping.field] = "present";
+    } else if (absent) {
+      filters[mapping.field] = "absent";
+    }
+  }
+  return filters;
 }
 
 export type ListedItem = ItemFrontMatter | (ItemFrontMatter & { body: string });
@@ -137,6 +231,68 @@ export type ListResult = ListCompactResult | ListVerboseResult;
 
 function isNonEmptyRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value) && Object.keys(value).length > 0;
+}
+
+// Active content-field filter flags, keyed by the options dest and the snake_case
+// summary key emitted in the filters echo (GH-242). Presence and absence are
+// distinct echo keys (has_notes vs no_notes; has_body vs empty_body).
+const CONTENT_FILTER_ECHO_ENTRIES: ReadonlyArray<{ key: string; summaryKey: string }> = [
+  { key: "hasNotes", summaryKey: "has_notes" },
+  { key: "hasLearnings", summaryKey: "has_learnings" },
+  { key: "hasFiles", summaryKey: "has_files" },
+  { key: "hasDocs", summaryKey: "has_docs" },
+  { key: "hasTests", summaryKey: "has_tests" },
+  { key: "hasComments", summaryKey: "has_comments" },
+  { key: "hasDeps", summaryKey: "has_deps" },
+  { key: "hasBody", summaryKey: "has_body" },
+  { key: "hasLinkedCommand", summaryKey: "has_linked_command" },
+  { key: "noNotes", summaryKey: "no_notes" },
+  { key: "noLearnings", summaryKey: "no_learnings" },
+  { key: "noFiles", summaryKey: "no_files" },
+  { key: "noDocs", summaryKey: "no_docs" },
+  { key: "noTests", summaryKey: "no_tests" },
+  { key: "noComments", summaryKey: "no_comments" },
+  { key: "noDeps", summaryKey: "no_deps" },
+  { key: "emptyBody", summaryKey: "empty_body" },
+  { key: "noLinkedCommand", summaryKey: "no_linked_command" },
+] as const;
+
+// Active governance-missing filter flags (GH-236), keyed by options dest and the
+// snake_case summary key emitted in the filters echo.
+const GOVERNANCE_MISSING_ECHO_ENTRIES: ReadonlyArray<{ key: string; summaryKey: string }> = [
+  { key: "filterReviewerMissing", summaryKey: "filter_reviewer_missing" },
+  { key: "filterRiskMissing", summaryKey: "filter_risk_missing" },
+  { key: "filterConfidenceMissing", summaryKey: "filter_confidence_missing" },
+  { key: "filterSprintMissing", summaryKey: "filter_sprint_missing" },
+  { key: "filterReleaseMissing", summaryKey: "filter_release_missing" },
+] as const;
+
+function applyContentFilterEcho(filters: Record<string, unknown>, options: Record<string, unknown>): void {
+  for (const entry of CONTENT_FILTER_ECHO_ENTRIES) {
+    if (options[entry.key] === true) {
+      filters[entry.summaryKey] = true;
+    }
+  }
+}
+
+function applyGovernanceMissingFilterEcho(filters: Record<string, unknown>, options: Record<string, unknown>): void {
+  for (const entry of GOVERNANCE_MISSING_ECHO_ENTRIES) {
+    if (options[entry.key] === true) {
+      filters[entry.summaryKey] = true;
+    }
+  }
+}
+
+export function buildContentFilterEcho(options: Record<string, unknown>): Record<string, true> {
+  const echo: Record<string, true> = {};
+  applyContentFilterEcho(echo, options);
+  return echo;
+}
+
+export function buildGovernanceMissingFilterEcho(options: Record<string, unknown>): Record<string, true> {
+  const echo: Record<string, true> = {};
+  applyGovernanceMissingFilterEcho(echo, options);
+  return echo;
 }
 
 function buildCompactListFilterSummary(params: {
@@ -218,6 +374,8 @@ function buildCompactListFilterSummary(params: {
   if (options.filterMetadataMissing === true) {
     filters.filter_metadata_missing = true;
   }
+  applyGovernanceMissingFilterEcho(filters, options);
+  applyContentFilterEcho(filters, options);
   if (options.limit !== undefined) {
     filters.limit = options.limit;
   }
@@ -484,6 +642,8 @@ function applyFilters(
   const missingMetadataFilters = resolveMissingMetadataFilters(options);
   const missingMetadataActive = hasMissingMetadataFilter(missingMetadataFilters);
   const lifecycleClassifier = lifecycleClassifierFromStatusRegistry(statusRegistry);
+  const contentFieldFilters = resolveContentFieldFilters(options as Record<string, unknown>);
+  const contentFiltersActive = hasContentFieldFilter(contentFieldFilters);
 
   if (assigneeFilter && (assigneeFilter.toLowerCase() === "none" || assigneeFilter.toLowerCase() === "null")) {
     throw new PmCliError(
@@ -517,6 +677,9 @@ function applyFilters(
     if (sprintFilter !== undefined && item.sprint !== sprintFilter) return false;
     if (releaseFilter !== undefined && item.release !== releaseFilter) return false;
     if (missingMetadataActive && !itemMatchesMissingMetadata(item, missingMetadataFilters, lifecycleClassifier)) {
+      return false;
+    }
+    if (contentFiltersActive && !itemMatchesContentFilters(item, contentFieldFilters)) {
       return false;
     }
     if (!matchesRuntimeFilters(item as Record<string, unknown>, runtimeFieldFilters)) {
@@ -718,10 +881,17 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
   const projectionNeedsCollections =
     projection.mode === "full" ||
     projection.fields.some((field) => HEAVY_PROJECTION_FIELDS.has(normalizeProjectionField(field)));
+  // Content-field filters (GH-242) inspect the heavy collection arrays and/or the
+  // body, so they force the matching load path even when the projection alone
+  // would take the light path. notes/learnings/files/docs/tests/comments/deps/
+  // linked_command live in the heavy collections; body needs the body load.
+  const contentFieldFilters = resolveContentFieldFilters(options as Record<string, unknown>);
+  const contentNeedsCollections = contentFiltersNeedCollections(contentFieldFilters);
+  const contentNeedsBody = contentFiltersNeedBody(contentFieldFilters);
   let items: ListedItem[];
-  if (options.includeBody || projectionNeedsBody) {
+  if (options.includeBody || projectionNeedsBody || contentNeedsBody) {
     items = await listAllFrontMatterWithBody(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings, settings.schema);
-  } else if (projectionNeedsCollections) {
+  } else if (projectionNeedsCollections || contentNeedsCollections) {
     items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings, settings.schema);
   } else {
     items = await listAllFrontMatterLight(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings, settings.schema);
@@ -809,6 +979,8 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
       ...(options.filterEstimatesMissing === true ? { filter_estimates_missing: true } : {}),
       ...(options.filterResolutionMissing === true ? { filter_resolution_missing: true } : {}),
       ...(options.filterMetadataMissing === true ? { filter_metadata_missing: true } : {}),
+      ...buildGovernanceMissingFilterEcho(options),
+      ...buildContentFilterEcho(options),
       limit: options.limit ?? null,
       offset: options.offset ?? null,
       ...(noTruncate ? { no_truncate: true } : {}),
@@ -836,6 +1008,10 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
 export const _testOnly = {
   applyFilters,
   buildCompactListFilterSummary,
+  buildContentFilterEcho,
+  buildGovernanceMissingFilterEcho,
+  resolveContentFieldFilters,
+  resolveMissingMetadataFilters,
   compareBySortField,
   compareDefaultSort,
   compareNullableString,

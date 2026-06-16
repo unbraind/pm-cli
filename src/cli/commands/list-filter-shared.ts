@@ -36,6 +36,29 @@ export function hasListFilters(
     list?.filterEstimatesMissing === true ||
     list?.filterResolutionMissing === true ||
     list?.filterMetadataMissing === true ||
+    list?.filterReviewerMissing === true ||
+    list?.filterRiskMissing === true ||
+    list?.filterConfidenceMissing === true ||
+    list?.filterSprintMissing === true ||
+    list?.filterReleaseMissing === true ||
+    list?.hasNotes === true ||
+    list?.hasLearnings === true ||
+    list?.hasFiles === true ||
+    list?.hasDocs === true ||
+    list?.hasTests === true ||
+    list?.hasComments === true ||
+    list?.hasDeps === true ||
+    list?.hasBody === true ||
+    list?.hasLinkedCommand === true ||
+    list?.noNotes === true ||
+    list?.noLearnings === true ||
+    list?.noFiles === true ||
+    list?.noDocs === true ||
+    list?.noTests === true ||
+    list?.noComments === true ||
+    list?.noDeps === true ||
+    list?.emptyBody === true ||
+    list?.noLinkedCommand === true ||
     (includePagination && isActiveListFilterValue(list?.limit)) ||
     (includePagination && isActiveListFilterValue(list?.offset))
   );

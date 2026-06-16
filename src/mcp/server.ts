@@ -970,6 +970,7 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       return runStats(global, {
         storage: options.storage === true,
         metadataCoverage: options.metadataCoverage === true,
+        fieldUtilization: options.fieldUtilization === true,
         byAssignee: options.byAssignee === true,
         byTag: options.byTag === true,
         byPriority: options.byPriority === true,

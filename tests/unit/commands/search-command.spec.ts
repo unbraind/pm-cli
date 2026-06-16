@@ -171,6 +171,51 @@ describe("runSearch", () => {
     });
   });
 
+  it("applies active content and governance-missing filters in the search predicate (kept vs excluded)", async () => {
+    // Two items both match the keyword query so both reach the filter predicate.
+    // One carries notes + reviewer (governance-present), the other carries neither.
+    const withNotes: ItemFrontMatter = {
+      ...makeFrontMatter({
+        id: "pm-search-filter-rich",
+        title: "token rich",
+        description: "token rich description",
+        tags: ["token"],
+        notes: [{ author: "a", created_at: "2026-02-18T00:00:00.000Z", text: "a note" }],
+      }),
+      // makeFrontMatter does not copy reviewer; attach it explicitly so the
+      // serialized document carries governance-present metadata.
+      reviewer: "rev",
+    };
+    const bare = makeFrontMatter({
+      id: "pm-search-filter-bare",
+      title: "token bare",
+      description: "token bare description",
+      tags: ["token"],
+    });
+    listAllFrontMatterMock.mockResolvedValue([withNotes, bare]);
+    readFileMock.mockImplementation(async (targetPath: string) => {
+      if (targetPath.includes("pm-search-filter-rich")) {
+        return serializeDocument(withNotes, "token body");
+      }
+      return serializeDocument(bare, "token body");
+    });
+
+    const { runSearch } = await import("../../../src/cli/commands/search.js");
+
+    // Content filter active: --has-notes keeps the noted item, excludes the bare one.
+    const hasNotes = await runSearch("token", { hasNotes: true }, { path: "/tmp/pm-search" });
+    expect(hasNotes.items.map((hit) => hit.item.id)).toEqual(["pm-search-filter-rich"]);
+
+    // Governance-missing filter active: --filter-reviewer-missing keeps the bare item,
+    // excludes the one carrying a reviewer.
+    const reviewerMissing = await runSearch(
+      "token",
+      { filterReviewerMissing: true },
+      { path: "/tmp/pm-search" },
+    );
+    expect(reviewerMissing.items.map((hit) => hit.item.id)).toEqual(["pm-search-filter-bare"]);
+  });
+
   it("resolves search max-results and score-threshold fallbacks deterministically", async () => {
     const { resolveSearchMaxResults, resolveSearchScoreThreshold, resolveHybridSemanticWeight } = await import(
       "../../../src/cli/commands/search.js"

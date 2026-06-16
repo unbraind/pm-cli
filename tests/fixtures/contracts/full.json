@@ -1404,6 +1404,75 @@
           "flag": "--filter-release"
         },
         {
+          "flag": "--filter-reviewer-missing"
+        },
+        {
+          "flag": "--filter-risk-missing"
+        },
+        {
+          "flag": "--filter-confidence-missing"
+        },
+        {
+          "flag": "--filter-sprint-missing"
+        },
+        {
+          "flag": "--filter-release-missing"
+        },
+        {
+          "flag": "--filter-has-notes"
+        },
+        {
+          "flag": "--filter-no-notes"
+        },
+        {
+          "flag": "--filter-has-learnings"
+        },
+        {
+          "flag": "--filter-no-learnings"
+        },
+        {
+          "flag": "--filter-has-files"
+        },
+        {
+          "flag": "--filter-no-files"
+        },
+        {
+          "flag": "--filter-has-docs"
+        },
+        {
+          "flag": "--filter-no-docs"
+        },
+        {
+          "flag": "--filter-has-tests"
+        },
+        {
+          "flag": "--filter-no-tests"
+        },
+        {
+          "flag": "--filter-has-comments"
+        },
+        {
+          "flag": "--filter-no-comments"
+        },
+        {
+          "flag": "--filter-has-deps"
+        },
+        {
+          "flag": "--filter-no-deps"
+        },
+        {
+          "flag": "--filter-has-body"
+        },
+        {
+          "flag": "--filter-empty-body"
+        },
+        {
+          "flag": "--filter-has-linked-command"
+        },
+        {
+          "flag": "--filter-no-linked-command"
+        },
+        {
           "flag": "--ids",
           "list": true
         },
@@ -2787,6 +2856,75 @@
           "flag": "--filter-metadata-missing"
         },
         {
+          "flag": "--filter-reviewer-missing"
+        },
+        {
+          "flag": "--filter-risk-missing"
+        },
+        {
+          "flag": "--filter-confidence-missing"
+        },
+        {
+          "flag": "--filter-sprint-missing"
+        },
+        {
+          "flag": "--filter-release-missing"
+        },
+        {
+          "flag": "--has-notes"
+        },
+        {
+          "flag": "--no-notes"
+        },
+        {
+          "flag": "--has-learnings"
+        },
+        {
+          "flag": "--no-learnings"
+        },
+        {
+          "flag": "--has-files"
+        },
+        {
+          "flag": "--no-files"
+        },
+        {
+          "flag": "--has-docs"
+        },
+        {
+          "flag": "--no-docs"
+        },
+        {
+          "flag": "--has-tests"
+        },
+        {
+          "flag": "--no-tests"
+        },
+        {
+          "flag": "--has-comments"
+        },
+        {
+          "flag": "--no-comments"
+        },
+        {
+          "flag": "--has-deps"
+        },
+        {
+          "flag": "--no-deps"
+        },
+        {
+          "flag": "--has-body"
+        },
+        {
+          "flag": "--empty-body"
+        },
+        {
+          "flag": "--has-linked-command"
+        },
+        {
+          "flag": "--no-linked-command"
+        },
+        {
           "flag": "--limit"
         },
         {
@@ -2908,6 +3046,75 @@
         },
         {
           "flag": "--filter-metadata-missing"
+        },
+        {
+          "flag": "--filter-reviewer-missing"
+        },
+        {
+          "flag": "--filter-risk-missing"
+        },
+        {
+          "flag": "--filter-confidence-missing"
+        },
+        {
+          "flag": "--filter-sprint-missing"
+        },
+        {
+          "flag": "--filter-release-missing"
+        },
+        {
+          "flag": "--has-notes"
+        },
+        {
+          "flag": "--no-notes"
+        },
+        {
+          "flag": "--has-learnings"
+        },
+        {
+          "flag": "--no-learnings"
+        },
+        {
+          "flag": "--has-files"
+        },
+        {
+          "flag": "--no-files"
+        },
+        {
+          "flag": "--has-docs"
+        },
+        {
+          "flag": "--no-docs"
+        },
+        {
+          "flag": "--has-tests"
+        },
+        {
+          "flag": "--no-tests"
+        },
+        {
+          "flag": "--has-comments"
+        },
+        {
+          "flag": "--no-comments"
+        },
+        {
+          "flag": "--has-deps"
+        },
+        {
+          "flag": "--no-deps"
+        },
+        {
+          "flag": "--has-body"
+        },
+        {
+          "flag": "--empty-body"
+        },
+        {
+          "flag": "--has-linked-command"
+        },
+        {
+          "flag": "--no-linked-command"
         },
         {
           "flag": "--limit"
@@ -3033,6 +3240,75 @@
           "flag": "--filter-metadata-missing"
         },
         {
+          "flag": "--filter-reviewer-missing"
+        },
+        {
+          "flag": "--filter-risk-missing"
+        },
+        {
+          "flag": "--filter-confidence-missing"
+        },
+        {
+          "flag": "--filter-sprint-missing"
+        },
+        {
+          "flag": "--filter-release-missing"
+        },
+        {
+          "flag": "--has-notes"
+        },
+        {
+          "flag": "--no-notes"
+        },
+        {
+          "flag": "--has-learnings"
+        },
+        {
+          "flag": "--no-learnings"
+        },
+        {
+          "flag": "--has-files"
+        },
+        {
+          "flag": "--no-files"
+        },
+        {
+          "flag": "--has-docs"
+        },
+        {
+          "flag": "--no-docs"
+        },
+        {
+          "flag": "--has-tests"
+        },
+        {
+          "flag": "--no-tests"
+        },
+        {
+          "flag": "--has-comments"
+        },
+        {
+          "flag": "--no-comments"
+        },
+        {
+          "flag": "--has-deps"
+        },
+        {
+          "flag": "--no-deps"
+        },
+        {
+          "flag": "--has-body"
+        },
+        {
+          "flag": "--empty-body"
+        },
+        {
+          "flag": "--has-linked-command"
+        },
+        {
+          "flag": "--no-linked-command"
+        },
+        {
           "flag": "--limit"
         },
         {
@@ -3154,6 +3430,75 @@
         },
         {
           "flag": "--filter-metadata-missing"
+        },
+        {
+          "flag": "--filter-reviewer-missing"
+        },
+        {
+          "flag": "--filter-risk-missing"
+        },
+        {
+          "flag": "--filter-confidence-missing"
+        },
+        {
+          "flag": "--filter-sprint-missing"
+        },
+        {
+          "flag": "--filter-release-missing"
+        },
+        {
+          "flag": "--has-notes"
+        },
+        {
+          "flag": "--no-notes"
+        },
+        {
+          "flag": "--has-learnings"
+        },
+        {
+          "flag": "--no-learnings"
+        },
+        {
+          "flag": "--has-files"
+        },
+        {
+          "flag": "--no-files"
+        },
+        {
+          "flag": "--has-docs"
+        },
+        {
+          "flag": "--no-docs"
+        },
+        {
+          "flag": "--has-tests"
+        },
+        {
+          "flag": "--no-tests"
+        },
+        {
+          "flag": "--has-comments"
+        },
+        {
+          "flag": "--no-comments"
+        },
+        {
+          "flag": "--has-deps"
+        },
+        {
+          "flag": "--no-deps"
+        },
+        {
+          "flag": "--has-body"
+        },
+        {
+          "flag": "--empty-body"
+        },
+        {
+          "flag": "--has-linked-command"
+        },
+        {
+          "flag": "--no-linked-command"
         },
         {
           "flag": "--limit"
@@ -3279,6 +3624,75 @@
           "flag": "--filter-metadata-missing"
         },
         {
+          "flag": "--filter-reviewer-missing"
+        },
+        {
+          "flag": "--filter-risk-missing"
+        },
+        {
+          "flag": "--filter-confidence-missing"
+        },
+        {
+          "flag": "--filter-sprint-missing"
+        },
+        {
+          "flag": "--filter-release-missing"
+        },
+        {
+          "flag": "--has-notes"
+        },
+        {
+          "flag": "--no-notes"
+        },
+        {
+          "flag": "--has-learnings"
+        },
+        {
+          "flag": "--no-learnings"
+        },
+        {
+          "flag": "--has-files"
+        },
+        {
+          "flag": "--no-files"
+        },
+        {
+          "flag": "--has-docs"
+        },
+        {
+          "flag": "--no-docs"
+        },
+        {
+          "flag": "--has-tests"
+        },
+        {
+          "flag": "--no-tests"
+        },
+        {
+          "flag": "--has-comments"
+        },
+        {
+          "flag": "--no-comments"
+        },
+        {
+          "flag": "--has-deps"
+        },
+        {
+          "flag": "--no-deps"
+        },
+        {
+          "flag": "--has-body"
+        },
+        {
+          "flag": "--empty-body"
+        },
+        {
+          "flag": "--has-linked-command"
+        },
+        {
+          "flag": "--no-linked-command"
+        },
+        {
           "flag": "--limit"
         },
         {
@@ -3400,6 +3814,75 @@
         },
         {
           "flag": "--filter-metadata-missing"
+        },
+        {
+          "flag": "--filter-reviewer-missing"
+        },
+        {
+          "flag": "--filter-risk-missing"
+        },
+        {
+          "flag": "--filter-confidence-missing"
+        },
+        {
+          "flag": "--filter-sprint-missing"
+        },
+        {
+          "flag": "--filter-release-missing"
+        },
+        {
+          "flag": "--has-notes"
+        },
+        {
+          "flag": "--no-notes"
+        },
+        {
+          "flag": "--has-learnings"
+        },
+        {
+          "flag": "--no-learnings"
+        },
+        {
+          "flag": "--has-files"
+        },
+        {
+          "flag": "--no-files"
+        },
+        {
+          "flag": "--has-docs"
+        },
+        {
+          "flag": "--no-docs"
+        },
+        {
+          "flag": "--has-tests"
+        },
+        {
+          "flag": "--no-tests"
+        },
+        {
+          "flag": "--has-comments"
+        },
+        {
+          "flag": "--no-comments"
+        },
+        {
+          "flag": "--has-deps"
+        },
+        {
+          "flag": "--no-deps"
+        },
+        {
+          "flag": "--has-body"
+        },
+        {
+          "flag": "--empty-body"
+        },
+        {
+          "flag": "--has-linked-command"
+        },
+        {
+          "flag": "--no-linked-command"
         },
         {
           "flag": "--limit"
@@ -3525,6 +4008,75 @@
           "flag": "--filter-metadata-missing"
         },
         {
+          "flag": "--filter-reviewer-missing"
+        },
+        {
+          "flag": "--filter-risk-missing"
+        },
+        {
+          "flag": "--filter-confidence-missing"
+        },
+        {
+          "flag": "--filter-sprint-missing"
+        },
+        {
+          "flag": "--filter-release-missing"
+        },
+        {
+          "flag": "--has-notes"
+        },
+        {
+          "flag": "--no-notes"
+        },
+        {
+          "flag": "--has-learnings"
+        },
+        {
+          "flag": "--no-learnings"
+        },
+        {
+          "flag": "--has-files"
+        },
+        {
+          "flag": "--no-files"
+        },
+        {
+          "flag": "--has-docs"
+        },
+        {
+          "flag": "--no-docs"
+        },
+        {
+          "flag": "--has-tests"
+        },
+        {
+          "flag": "--no-tests"
+        },
+        {
+          "flag": "--has-comments"
+        },
+        {
+          "flag": "--no-comments"
+        },
+        {
+          "flag": "--has-deps"
+        },
+        {
+          "flag": "--no-deps"
+        },
+        {
+          "flag": "--has-body"
+        },
+        {
+          "flag": "--empty-body"
+        },
+        {
+          "flag": "--has-linked-command"
+        },
+        {
+          "flag": "--no-linked-command"
+        },
+        {
           "flag": "--limit"
         },
         {
@@ -3646,6 +4198,75 @@
         },
         {
           "flag": "--filter-metadata-missing"
+        },
+        {
+          "flag": "--filter-reviewer-missing"
+        },
+        {
+          "flag": "--filter-risk-missing"
+        },
+        {
+          "flag": "--filter-confidence-missing"
+        },
+        {
+          "flag": "--filter-sprint-missing"
+        },
+        {
+          "flag": "--filter-release-missing"
+        },
+        {
+          "flag": "--has-notes"
+        },
+        {
+          "flag": "--no-notes"
+        },
+        {
+          "flag": "--has-learnings"
+        },
+        {
+          "flag": "--no-learnings"
+        },
+        {
+          "flag": "--has-files"
+        },
+        {
+          "flag": "--no-files"
+        },
+        {
+          "flag": "--has-docs"
+        },
+        {
+          "flag": "--no-docs"
+        },
+        {
+          "flag": "--has-tests"
+        },
+        {
+          "flag": "--no-tests"
+        },
+        {
+          "flag": "--has-comments"
+        },
+        {
+          "flag": "--no-comments"
+        },
+        {
+          "flag": "--has-deps"
+        },
+        {
+          "flag": "--no-deps"
+        },
+        {
+          "flag": "--has-body"
+        },
+        {
+          "flag": "--empty-body"
+        },
+        {
+          "flag": "--has-linked-command"
+        },
+        {
+          "flag": "--no-linked-command"
         },
         {
           "flag": "--limit"
@@ -4757,6 +5378,75 @@
         },
         {
           "flag": "--parent"
+        },
+        {
+          "flag": "--filter-reviewer-missing"
+        },
+        {
+          "flag": "--filter-risk-missing"
+        },
+        {
+          "flag": "--filter-confidence-missing"
+        },
+        {
+          "flag": "--filter-sprint-missing"
+        },
+        {
+          "flag": "--filter-release-missing"
+        },
+        {
+          "flag": "--has-notes"
+        },
+        {
+          "flag": "--no-notes"
+        },
+        {
+          "flag": "--has-learnings"
+        },
+        {
+          "flag": "--no-learnings"
+        },
+        {
+          "flag": "--has-files"
+        },
+        {
+          "flag": "--no-files"
+        },
+        {
+          "flag": "--has-docs"
+        },
+        {
+          "flag": "--no-docs"
+        },
+        {
+          "flag": "--has-tests"
+        },
+        {
+          "flag": "--no-tests"
+        },
+        {
+          "flag": "--has-comments"
+        },
+        {
+          "flag": "--no-comments"
+        },
+        {
+          "flag": "--has-deps"
+        },
+        {
+          "flag": "--no-deps"
+        },
+        {
+          "flag": "--has-body"
+        },
+        {
+          "flag": "--empty-body"
+        },
+        {
+          "flag": "--has-linked-command"
+        },
+        {
+          "flag": "--no-linked-command"
         }
       ],
       "provider": "core"
@@ -4784,6 +5474,9 @@
         },
         {
           "flag": "--metadata-coverage"
+        },
+        {
+          "flag": "--field-utilization"
         },
         {
           "flag": "--by-assignee"
@@ -5321,6 +6014,75 @@
         },
         {
           "flag": "--filter-metadata-missing"
+        },
+        {
+          "flag": "--filter-reviewer-missing"
+        },
+        {
+          "flag": "--filter-risk-missing"
+        },
+        {
+          "flag": "--filter-confidence-missing"
+        },
+        {
+          "flag": "--filter-sprint-missing"
+        },
+        {
+          "flag": "--filter-release-missing"
+        },
+        {
+          "flag": "--filter-has-notes"
+        },
+        {
+          "flag": "--filter-no-notes"
+        },
+        {
+          "flag": "--filter-has-learnings"
+        },
+        {
+          "flag": "--filter-no-learnings"
+        },
+        {
+          "flag": "--filter-has-files"
+        },
+        {
+          "flag": "--filter-no-files"
+        },
+        {
+          "flag": "--filter-has-docs"
+        },
+        {
+          "flag": "--filter-no-docs"
+        },
+        {
+          "flag": "--filter-has-tests"
+        },
+        {
+          "flag": "--filter-no-tests"
+        },
+        {
+          "flag": "--filter-has-comments"
+        },
+        {
+          "flag": "--filter-no-comments"
+        },
+        {
+          "flag": "--filter-has-deps"
+        },
+        {
+          "flag": "--filter-no-deps"
+        },
+        {
+          "flag": "--filter-has-body"
+        },
+        {
+          "flag": "--filter-empty-body"
+        },
+        {
+          "flag": "--filter-has-linked-command"
+        },
+        {
+          "flag": "--filter-no-linked-command"
         },
         {
           "flag": "--ids",
@@ -12415,6 +13177,10 @@
             "description": "Deadline Before.",
             "type": "string"
           },
+          "emptyBody": {
+            "description": "Empty Body.",
+            "type": "boolean"
+          },
           "fields": {
             "description": "Comma-separated projection fields for get, search, or list-family outputs.",
             "examples": [
@@ -12427,6 +13193,10 @@
             "description": "Filter Ac Missing.",
             "type": "boolean"
           },
+          "filterConfidenceMissing": {
+            "description": "Filter Confidence Missing.",
+            "type": "boolean"
+          },
           "filterEstimatesMissing": {
             "description": "Filter Estimates Missing.",
             "type": "boolean"
@@ -12435,12 +13205,64 @@
             "description": "Filter Metadata Missing.",
             "type": "boolean"
           },
+          "filterReleaseMissing": {
+            "description": "Filter Release Missing.",
+            "type": "boolean"
+          },
           "filterResolutionMissing": {
             "description": "Filter Resolution Missing.",
             "type": "boolean"
           },
+          "filterReviewerMissing": {
+            "description": "Filter Reviewer Missing.",
+            "type": "boolean"
+          },
+          "filterRiskMissing": {
+            "description": "Filter Risk Missing.",
+            "type": "boolean"
+          },
+          "filterSprintMissing": {
+            "description": "Filter Sprint Missing.",
+            "type": "boolean"
+          },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
+          "hasBody": {
+            "description": "Has Body.",
+            "type": "boolean"
+          },
+          "hasComments": {
+            "description": "Has Comments.",
+            "type": "boolean"
+          },
+          "hasDeps": {
+            "description": "Has Deps.",
+            "type": "boolean"
+          },
+          "hasDocs": {
+            "description": "Has Docs.",
+            "type": "boolean"
+          },
+          "hasFiles": {
+            "description": "Has Files.",
+            "type": "boolean"
+          },
+          "hasLearnings": {
+            "description": "Has Learnings.",
+            "type": "boolean"
+          },
+          "hasLinkedCommand": {
+            "description": "Has Linked Command.",
+            "type": "boolean"
+          },
+          "hasNotes": {
+            "description": "Has Notes.",
+            "type": "boolean"
+          },
+          "hasTests": {
+            "description": "Has Tests.",
             "type": "boolean"
           },
           "ids": {
@@ -12467,12 +13289,44 @@
             ],
             "description": "Limit."
           },
+          "noComments": {
+            "description": "No Comments.",
+            "type": "boolean"
+          },
+          "noDeps": {
+            "description": "No Deps.",
+            "type": "boolean"
+          },
+          "noDocs": {
+            "description": "No Docs.",
+            "type": "boolean"
+          },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
             "type": "boolean"
           },
+          "noFiles": {
+            "description": "No Files.",
+            "type": "boolean"
+          },
+          "noLearnings": {
+            "description": "No Learnings.",
+            "type": "boolean"
+          },
+          "noLinkedCommand": {
+            "description": "No Linked Command.",
+            "type": "boolean"
+          },
+          "noNotes": {
+            "description": "No Notes.",
+            "type": "boolean"
+          },
           "noPager": {
             "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "noTests": {
+            "description": "No Tests.",
             "type": "boolean"
           },
           "noTruncate": {
@@ -12700,6 +13554,10 @@
             "description": "Deadline Before.",
             "type": "string"
           },
+          "emptyBody": {
+            "description": "Empty Body.",
+            "type": "boolean"
+          },
           "fields": {
             "description": "Comma-separated projection fields for get, search, or list-family outputs.",
             "examples": [
@@ -12712,6 +13570,10 @@
             "description": "Filter Ac Missing.",
             "type": "boolean"
           },
+          "filterConfidenceMissing": {
+            "description": "Filter Confidence Missing.",
+            "type": "boolean"
+          },
           "filterEstimatesMissing": {
             "description": "Filter Estimates Missing.",
             "type": "boolean"
@@ -12720,12 +13582,64 @@
             "description": "Filter Metadata Missing.",
             "type": "boolean"
           },
+          "filterReleaseMissing": {
+            "description": "Filter Release Missing.",
+            "type": "boolean"
+          },
           "filterResolutionMissing": {
             "description": "Filter Resolution Missing.",
             "type": "boolean"
           },
+          "filterReviewerMissing": {
+            "description": "Filter Reviewer Missing.",
+            "type": "boolean"
+          },
+          "filterRiskMissing": {
+            "description": "Filter Risk Missing.",
+            "type": "boolean"
+          },
+          "filterSprintMissing": {
+            "description": "Filter Sprint Missing.",
+            "type": "boolean"
+          },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
+          "hasBody": {
+            "description": "Has Body.",
+            "type": "boolean"
+          },
+          "hasComments": {
+            "description": "Has Comments.",
+            "type": "boolean"
+          },
+          "hasDeps": {
+            "description": "Has Deps.",
+            "type": "boolean"
+          },
+          "hasDocs": {
+            "description": "Has Docs.",
+            "type": "boolean"
+          },
+          "hasFiles": {
+            "description": "Has Files.",
+            "type": "boolean"
+          },
+          "hasLearnings": {
+            "description": "Has Learnings.",
+            "type": "boolean"
+          },
+          "hasLinkedCommand": {
+            "description": "Has Linked Command.",
+            "type": "boolean"
+          },
+          "hasNotes": {
+            "description": "Has Notes.",
+            "type": "boolean"
+          },
+          "hasTests": {
+            "description": "Has Tests.",
             "type": "boolean"
           },
           "ids": {
@@ -12752,12 +13666,44 @@
             ],
             "description": "Limit."
           },
+          "noComments": {
+            "description": "No Comments.",
+            "type": "boolean"
+          },
+          "noDeps": {
+            "description": "No Deps.",
+            "type": "boolean"
+          },
+          "noDocs": {
+            "description": "No Docs.",
+            "type": "boolean"
+          },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
             "type": "boolean"
           },
+          "noFiles": {
+            "description": "No Files.",
+            "type": "boolean"
+          },
+          "noLearnings": {
+            "description": "No Learnings.",
+            "type": "boolean"
+          },
+          "noLinkedCommand": {
+            "description": "No Linked Command.",
+            "type": "boolean"
+          },
+          "noNotes": {
+            "description": "No Notes.",
+            "type": "boolean"
+          },
           "noPager": {
             "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "noTests": {
+            "description": "No Tests.",
             "type": "boolean"
           },
           "noTruncate": {
@@ -12985,6 +13931,10 @@
             "description": "Deadline Before.",
             "type": "string"
           },
+          "emptyBody": {
+            "description": "Empty Body.",
+            "type": "boolean"
+          },
           "fields": {
             "description": "Comma-separated projection fields for get, search, or list-family outputs.",
             "examples": [
@@ -12997,6 +13947,10 @@
             "description": "Filter Ac Missing.",
             "type": "boolean"
           },
+          "filterConfidenceMissing": {
+            "description": "Filter Confidence Missing.",
+            "type": "boolean"
+          },
           "filterEstimatesMissing": {
             "description": "Filter Estimates Missing.",
             "type": "boolean"
@@ -13005,12 +13959,64 @@
             "description": "Filter Metadata Missing.",
             "type": "boolean"
           },
+          "filterReleaseMissing": {
+            "description": "Filter Release Missing.",
+            "type": "boolean"
+          },
           "filterResolutionMissing": {
             "description": "Filter Resolution Missing.",
             "type": "boolean"
           },
+          "filterReviewerMissing": {
+            "description": "Filter Reviewer Missing.",
+            "type": "boolean"
+          },
+          "filterRiskMissing": {
+            "description": "Filter Risk Missing.",
+            "type": "boolean"
+          },
+          "filterSprintMissing": {
+            "description": "Filter Sprint Missing.",
+            "type": "boolean"
+          },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
+          "hasBody": {
+            "description": "Has Body.",
+            "type": "boolean"
+          },
+          "hasComments": {
+            "description": "Has Comments.",
+            "type": "boolean"
+          },
+          "hasDeps": {
+            "description": "Has Deps.",
+            "type": "boolean"
+          },
+          "hasDocs": {
+            "description": "Has Docs.",
+            "type": "boolean"
+          },
+          "hasFiles": {
+            "description": "Has Files.",
+            "type": "boolean"
+          },
+          "hasLearnings": {
+            "description": "Has Learnings.",
+            "type": "boolean"
+          },
+          "hasLinkedCommand": {
+            "description": "Has Linked Command.",
+            "type": "boolean"
+          },
+          "hasNotes": {
+            "description": "Has Notes.",
+            "type": "boolean"
+          },
+          "hasTests": {
+            "description": "Has Tests.",
             "type": "boolean"
           },
           "ids": {
@@ -13037,12 +14043,44 @@
             ],
             "description": "Limit."
           },
+          "noComments": {
+            "description": "No Comments.",
+            "type": "boolean"
+          },
+          "noDeps": {
+            "description": "No Deps.",
+            "type": "boolean"
+          },
+          "noDocs": {
+            "description": "No Docs.",
+            "type": "boolean"
+          },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
             "type": "boolean"
           },
+          "noFiles": {
+            "description": "No Files.",
+            "type": "boolean"
+          },
+          "noLearnings": {
+            "description": "No Learnings.",
+            "type": "boolean"
+          },
+          "noLinkedCommand": {
+            "description": "No Linked Command.",
+            "type": "boolean"
+          },
+          "noNotes": {
+            "description": "No Notes.",
+            "type": "boolean"
+          },
           "noPager": {
             "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "noTests": {
+            "description": "No Tests.",
             "type": "boolean"
           },
           "noTruncate": {
@@ -13270,6 +14308,10 @@
             "description": "Deadline Before.",
             "type": "string"
           },
+          "emptyBody": {
+            "description": "Empty Body.",
+            "type": "boolean"
+          },
           "fields": {
             "description": "Comma-separated projection fields for get, search, or list-family outputs.",
             "examples": [
@@ -13282,6 +14324,10 @@
             "description": "Filter Ac Missing.",
             "type": "boolean"
           },
+          "filterConfidenceMissing": {
+            "description": "Filter Confidence Missing.",
+            "type": "boolean"
+          },
           "filterEstimatesMissing": {
             "description": "Filter Estimates Missing.",
             "type": "boolean"
@@ -13290,12 +14336,64 @@
             "description": "Filter Metadata Missing.",
             "type": "boolean"
           },
+          "filterReleaseMissing": {
+            "description": "Filter Release Missing.",
+            "type": "boolean"
+          },
           "filterResolutionMissing": {
             "description": "Filter Resolution Missing.",
             "type": "boolean"
           },
+          "filterReviewerMissing": {
+            "description": "Filter Reviewer Missing.",
+            "type": "boolean"
+          },
+          "filterRiskMissing": {
+            "description": "Filter Risk Missing.",
+            "type": "boolean"
+          },
+          "filterSprintMissing": {
+            "description": "Filter Sprint Missing.",
+            "type": "boolean"
+          },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
+          "hasBody": {
+            "description": "Has Body.",
+            "type": "boolean"
+          },
+          "hasComments": {
+            "description": "Has Comments.",
+            "type": "boolean"
+          },
+          "hasDeps": {
+            "description": "Has Deps.",
+            "type": "boolean"
+          },
+          "hasDocs": {
+            "description": "Has Docs.",
+            "type": "boolean"
+          },
+          "hasFiles": {
+            "description": "Has Files.",
+            "type": "boolean"
+          },
+          "hasLearnings": {
+            "description": "Has Learnings.",
+            "type": "boolean"
+          },
+          "hasLinkedCommand": {
+            "description": "Has Linked Command.",
+            "type": "boolean"
+          },
+          "hasNotes": {
+            "description": "Has Notes.",
+            "type": "boolean"
+          },
+          "hasTests": {
+            "description": "Has Tests.",
             "type": "boolean"
           },
           "ids": {
@@ -13322,12 +14420,44 @@
             ],
             "description": "Limit."
           },
+          "noComments": {
+            "description": "No Comments.",
+            "type": "boolean"
+          },
+          "noDeps": {
+            "description": "No Deps.",
+            "type": "boolean"
+          },
+          "noDocs": {
+            "description": "No Docs.",
+            "type": "boolean"
+          },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
             "type": "boolean"
           },
+          "noFiles": {
+            "description": "No Files.",
+            "type": "boolean"
+          },
+          "noLearnings": {
+            "description": "No Learnings.",
+            "type": "boolean"
+          },
+          "noLinkedCommand": {
+            "description": "No Linked Command.",
+            "type": "boolean"
+          },
+          "noNotes": {
+            "description": "No Notes.",
+            "type": "boolean"
+          },
           "noPager": {
             "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "noTests": {
+            "description": "No Tests.",
             "type": "boolean"
           },
           "noTruncate": {
@@ -13555,6 +14685,10 @@
             "description": "Deadline Before.",
             "type": "string"
           },
+          "emptyBody": {
+            "description": "Empty Body.",
+            "type": "boolean"
+          },
           "fields": {
             "description": "Comma-separated projection fields for get, search, or list-family outputs.",
             "examples": [
@@ -13567,6 +14701,10 @@
             "description": "Filter Ac Missing.",
             "type": "boolean"
           },
+          "filterConfidenceMissing": {
+            "description": "Filter Confidence Missing.",
+            "type": "boolean"
+          },
           "filterEstimatesMissing": {
             "description": "Filter Estimates Missing.",
             "type": "boolean"
@@ -13575,12 +14713,64 @@
             "description": "Filter Metadata Missing.",
             "type": "boolean"
           },
+          "filterReleaseMissing": {
+            "description": "Filter Release Missing.",
+            "type": "boolean"
+          },
           "filterResolutionMissing": {
             "description": "Filter Resolution Missing.",
             "type": "boolean"
           },
+          "filterReviewerMissing": {
+            "description": "Filter Reviewer Missing.",
+            "type": "boolean"
+          },
+          "filterRiskMissing": {
+            "description": "Filter Risk Missing.",
+            "type": "boolean"
+          },
+          "filterSprintMissing": {
+            "description": "Filter Sprint Missing.",
+            "type": "boolean"
+          },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
+          "hasBody": {
+            "description": "Has Body.",
+            "type": "boolean"
+          },
+          "hasComments": {
+            "description": "Has Comments.",
+            "type": "boolean"
+          },
+          "hasDeps": {
+            "description": "Has Deps.",
+            "type": "boolean"
+          },
+          "hasDocs": {
+            "description": "Has Docs.",
+            "type": "boolean"
+          },
+          "hasFiles": {
+            "description": "Has Files.",
+            "type": "boolean"
+          },
+          "hasLearnings": {
+            "description": "Has Learnings.",
+            "type": "boolean"
+          },
+          "hasLinkedCommand": {
+            "description": "Has Linked Command.",
+            "type": "boolean"
+          },
+          "hasNotes": {
+            "description": "Has Notes.",
+            "type": "boolean"
+          },
+          "hasTests": {
+            "description": "Has Tests.",
             "type": "boolean"
           },
           "ids": {
@@ -13607,12 +14797,44 @@
             ],
             "description": "Limit."
           },
+          "noComments": {
+            "description": "No Comments.",
+            "type": "boolean"
+          },
+          "noDeps": {
+            "description": "No Deps.",
+            "type": "boolean"
+          },
+          "noDocs": {
+            "description": "No Docs.",
+            "type": "boolean"
+          },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
             "type": "boolean"
           },
+          "noFiles": {
+            "description": "No Files.",
+            "type": "boolean"
+          },
+          "noLearnings": {
+            "description": "No Learnings.",
+            "type": "boolean"
+          },
+          "noLinkedCommand": {
+            "description": "No Linked Command.",
+            "type": "boolean"
+          },
+          "noNotes": {
+            "description": "No Notes.",
+            "type": "boolean"
+          },
           "noPager": {
             "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "noTests": {
+            "description": "No Tests.",
             "type": "boolean"
           },
           "noTruncate": {
@@ -13840,6 +15062,10 @@
             "description": "Deadline Before.",
             "type": "string"
           },
+          "emptyBody": {
+            "description": "Empty Body.",
+            "type": "boolean"
+          },
           "fields": {
             "description": "Comma-separated projection fields for get, search, or list-family outputs.",
             "examples": [
@@ -13852,6 +15078,10 @@
             "description": "Filter Ac Missing.",
             "type": "boolean"
           },
+          "filterConfidenceMissing": {
+            "description": "Filter Confidence Missing.",
+            "type": "boolean"
+          },
           "filterEstimatesMissing": {
             "description": "Filter Estimates Missing.",
             "type": "boolean"
@@ -13860,12 +15090,64 @@
             "description": "Filter Metadata Missing.",
             "type": "boolean"
           },
+          "filterReleaseMissing": {
+            "description": "Filter Release Missing.",
+            "type": "boolean"
+          },
           "filterResolutionMissing": {
             "description": "Filter Resolution Missing.",
             "type": "boolean"
           },
+          "filterReviewerMissing": {
+            "description": "Filter Reviewer Missing.",
+            "type": "boolean"
+          },
+          "filterRiskMissing": {
+            "description": "Filter Risk Missing.",
+            "type": "boolean"
+          },
+          "filterSprintMissing": {
+            "description": "Filter Sprint Missing.",
+            "type": "boolean"
+          },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
+          "hasBody": {
+            "description": "Has Body.",
+            "type": "boolean"
+          },
+          "hasComments": {
+            "description": "Has Comments.",
+            "type": "boolean"
+          },
+          "hasDeps": {
+            "description": "Has Deps.",
+            "type": "boolean"
+          },
+          "hasDocs": {
+            "description": "Has Docs.",
+            "type": "boolean"
+          },
+          "hasFiles": {
+            "description": "Has Files.",
+            "type": "boolean"
+          },
+          "hasLearnings": {
+            "description": "Has Learnings.",
+            "type": "boolean"
+          },
+          "hasLinkedCommand": {
+            "description": "Has Linked Command.",
+            "type": "boolean"
+          },
+          "hasNotes": {
+            "description": "Has Notes.",
+            "type": "boolean"
+          },
+          "hasTests": {
+            "description": "Has Tests.",
             "type": "boolean"
           },
           "ids": {
@@ -13892,12 +15174,44 @@
             ],
             "description": "Limit."
           },
+          "noComments": {
+            "description": "No Comments.",
+            "type": "boolean"
+          },
+          "noDeps": {
+            "description": "No Deps.",
+            "type": "boolean"
+          },
+          "noDocs": {
+            "description": "No Docs.",
+            "type": "boolean"
+          },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
             "type": "boolean"
           },
+          "noFiles": {
+            "description": "No Files.",
+            "type": "boolean"
+          },
+          "noLearnings": {
+            "description": "No Learnings.",
+            "type": "boolean"
+          },
+          "noLinkedCommand": {
+            "description": "No Linked Command.",
+            "type": "boolean"
+          },
+          "noNotes": {
+            "description": "No Notes.",
+            "type": "boolean"
+          },
           "noPager": {
             "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "noTests": {
+            "description": "No Tests.",
             "type": "boolean"
           },
           "noTruncate": {
@@ -14125,6 +15439,10 @@
             "description": "Deadline Before.",
             "type": "string"
           },
+          "emptyBody": {
+            "description": "Empty Body.",
+            "type": "boolean"
+          },
           "fields": {
             "description": "Comma-separated projection fields for get, search, or list-family outputs.",
             "examples": [
@@ -14137,6 +15455,10 @@
             "description": "Filter Ac Missing.",
             "type": "boolean"
           },
+          "filterConfidenceMissing": {
+            "description": "Filter Confidence Missing.",
+            "type": "boolean"
+          },
           "filterEstimatesMissing": {
             "description": "Filter Estimates Missing.",
             "type": "boolean"
@@ -14145,12 +15467,64 @@
             "description": "Filter Metadata Missing.",
             "type": "boolean"
           },
+          "filterReleaseMissing": {
+            "description": "Filter Release Missing.",
+            "type": "boolean"
+          },
           "filterResolutionMissing": {
             "description": "Filter Resolution Missing.",
             "type": "boolean"
           },
+          "filterReviewerMissing": {
+            "description": "Filter Reviewer Missing.",
+            "type": "boolean"
+          },
+          "filterRiskMissing": {
+            "description": "Filter Risk Missing.",
+            "type": "boolean"
+          },
+          "filterSprintMissing": {
+            "description": "Filter Sprint Missing.",
+            "type": "boolean"
+          },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
+          "hasBody": {
+            "description": "Has Body.",
+            "type": "boolean"
+          },
+          "hasComments": {
+            "description": "Has Comments.",
+            "type": "boolean"
+          },
+          "hasDeps": {
+            "description": "Has Deps.",
+            "type": "boolean"
+          },
+          "hasDocs": {
+            "description": "Has Docs.",
+            "type": "boolean"
+          },
+          "hasFiles": {
+            "description": "Has Files.",
+            "type": "boolean"
+          },
+          "hasLearnings": {
+            "description": "Has Learnings.",
+            "type": "boolean"
+          },
+          "hasLinkedCommand": {
+            "description": "Has Linked Command.",
+            "type": "boolean"
+          },
+          "hasNotes": {
+            "description": "Has Notes.",
+            "type": "boolean"
+          },
+          "hasTests": {
+            "description": "Has Tests.",
             "type": "boolean"
           },
           "ids": {
@@ -14177,12 +15551,44 @@
             ],
             "description": "Limit."
           },
+          "noComments": {
+            "description": "No Comments.",
+            "type": "boolean"
+          },
+          "noDeps": {
+            "description": "No Deps.",
+            "type": "boolean"
+          },
+          "noDocs": {
+            "description": "No Docs.",
+            "type": "boolean"
+          },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
             "type": "boolean"
           },
+          "noFiles": {
+            "description": "No Files.",
+            "type": "boolean"
+          },
+          "noLearnings": {
+            "description": "No Learnings.",
+            "type": "boolean"
+          },
+          "noLinkedCommand": {
+            "description": "No Linked Command.",
+            "type": "boolean"
+          },
+          "noNotes": {
+            "description": "No Notes.",
+            "type": "boolean"
+          },
           "noPager": {
             "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "noTests": {
+            "description": "No Tests.",
             "type": "boolean"
           },
           "noTruncate": {
@@ -14410,6 +15816,10 @@
             "description": "Deadline Before.",
             "type": "string"
           },
+          "emptyBody": {
+            "description": "Empty Body.",
+            "type": "boolean"
+          },
           "fields": {
             "description": "Comma-separated projection fields for get, search, or list-family outputs.",
             "examples": [
@@ -14422,6 +15832,10 @@
             "description": "Filter Ac Missing.",
             "type": "boolean"
           },
+          "filterConfidenceMissing": {
+            "description": "Filter Confidence Missing.",
+            "type": "boolean"
+          },
           "filterEstimatesMissing": {
             "description": "Filter Estimates Missing.",
             "type": "boolean"
@@ -14430,12 +15844,64 @@
             "description": "Filter Metadata Missing.",
             "type": "boolean"
           },
+          "filterReleaseMissing": {
+            "description": "Filter Release Missing.",
+            "type": "boolean"
+          },
           "filterResolutionMissing": {
             "description": "Filter Resolution Missing.",
             "type": "boolean"
           },
+          "filterReviewerMissing": {
+            "description": "Filter Reviewer Missing.",
+            "type": "boolean"
+          },
+          "filterRiskMissing": {
+            "description": "Filter Risk Missing.",
+            "type": "boolean"
+          },
+          "filterSprintMissing": {
+            "description": "Filter Sprint Missing.",
+            "type": "boolean"
+          },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
+          "hasBody": {
+            "description": "Has Body.",
+            "type": "boolean"
+          },
+          "hasComments": {
+            "description": "Has Comments.",
+            "type": "boolean"
+          },
+          "hasDeps": {
+            "description": "Has Deps.",
+            "type": "boolean"
+          },
+          "hasDocs": {
+            "description": "Has Docs.",
+            "type": "boolean"
+          },
+          "hasFiles": {
+            "description": "Has Files.",
+            "type": "boolean"
+          },
+          "hasLearnings": {
+            "description": "Has Learnings.",
+            "type": "boolean"
+          },
+          "hasLinkedCommand": {
+            "description": "Has Linked Command.",
+            "type": "boolean"
+          },
+          "hasNotes": {
+            "description": "Has Notes.",
+            "type": "boolean"
+          },
+          "hasTests": {
+            "description": "Has Tests.",
             "type": "boolean"
           },
           "ids": {
@@ -14462,12 +15928,44 @@
             ],
             "description": "Limit."
           },
+          "noComments": {
+            "description": "No Comments.",
+            "type": "boolean"
+          },
+          "noDeps": {
+            "description": "No Deps.",
+            "type": "boolean"
+          },
+          "noDocs": {
+            "description": "No Docs.",
+            "type": "boolean"
+          },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
             "type": "boolean"
           },
+          "noFiles": {
+            "description": "No Files.",
+            "type": "boolean"
+          },
+          "noLearnings": {
+            "description": "No Learnings.",
+            "type": "boolean"
+          },
+          "noLinkedCommand": {
+            "description": "No Linked Command.",
+            "type": "boolean"
+          },
+          "noNotes": {
+            "description": "No Notes.",
+            "type": "boolean"
+          },
           "noPager": {
             "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "noTests": {
+            "description": "No Tests.",
             "type": "boolean"
           },
           "noTruncate": {
@@ -15419,6 +16917,10 @@
             "description": "Deadline Before.",
             "type": "string"
           },
+          "emptyBody": {
+            "description": "Empty Body.",
+            "type": "boolean"
+          },
           "fields": {
             "description": "Comma-separated projection fields for get, search, or list-family outputs.",
             "examples": [
@@ -15427,8 +16929,64 @@
             ],
             "type": "string"
           },
+          "filterConfidenceMissing": {
+            "description": "Filter Confidence Missing.",
+            "type": "boolean"
+          },
+          "filterReleaseMissing": {
+            "description": "Filter Release Missing.",
+            "type": "boolean"
+          },
+          "filterReviewerMissing": {
+            "description": "Filter Reviewer Missing.",
+            "type": "boolean"
+          },
+          "filterRiskMissing": {
+            "description": "Filter Risk Missing.",
+            "type": "boolean"
+          },
+          "filterSprintMissing": {
+            "description": "Filter Sprint Missing.",
+            "type": "boolean"
+          },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
+          "hasBody": {
+            "description": "Has Body.",
+            "type": "boolean"
+          },
+          "hasComments": {
+            "description": "Has Comments.",
+            "type": "boolean"
+          },
+          "hasDeps": {
+            "description": "Has Deps.",
+            "type": "boolean"
+          },
+          "hasDocs": {
+            "description": "Has Docs.",
+            "type": "boolean"
+          },
+          "hasFiles": {
+            "description": "Has Files.",
+            "type": "boolean"
+          },
+          "hasLearnings": {
+            "description": "Has Learnings.",
+            "type": "boolean"
+          },
+          "hasLinkedCommand": {
+            "description": "Has Linked Command.",
+            "type": "boolean"
+          },
+          "hasNotes": {
+            "description": "Has Notes.",
+            "type": "boolean"
+          },
+          "hasTests": {
+            "description": "Has Tests.",
             "type": "boolean"
           },
           "hybrid": {
@@ -15476,12 +17034,44 @@
             ],
             "type": "string"
           },
+          "noComments": {
+            "description": "No Comments.",
+            "type": "boolean"
+          },
+          "noDeps": {
+            "description": "No Deps.",
+            "type": "boolean"
+          },
+          "noDocs": {
+            "description": "No Docs.",
+            "type": "boolean"
+          },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
             "type": "boolean"
           },
+          "noFiles": {
+            "description": "No Files.",
+            "type": "boolean"
+          },
+          "noLearnings": {
+            "description": "No Learnings.",
+            "type": "boolean"
+          },
+          "noLinkedCommand": {
+            "description": "No Linked Command.",
+            "type": "boolean"
+          },
+          "noNotes": {
+            "description": "No Notes.",
+            "type": "boolean"
+          },
           "noPager": {
             "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "noTests": {
+            "description": "No Tests.",
             "type": "boolean"
           },
           "parent": {
@@ -17227,6 +18817,10 @@
             ],
             "type": "string"
           },
+          "filterConfidenceMissing": {
+            "description": "Filter Confidence Missing.",
+            "type": "boolean"
+          },
           "filterCreatedAfter": {
             "description": "Filter Created After.",
             "type": "string"
@@ -17242,6 +18836,78 @@
           "filterDeadlineBefore": {
             "description": "Filter Deadline Before.",
             "type": "string"
+          },
+          "filterEmptyBody": {
+            "description": "Filter Empty Body.",
+            "type": "boolean"
+          },
+          "filterHasBody": {
+            "description": "Filter Has Body.",
+            "type": "boolean"
+          },
+          "filterHasComments": {
+            "description": "Filter Has Comments.",
+            "type": "boolean"
+          },
+          "filterHasDeps": {
+            "description": "Filter Has Deps.",
+            "type": "boolean"
+          },
+          "filterHasDocs": {
+            "description": "Filter Has Docs.",
+            "type": "boolean"
+          },
+          "filterHasFiles": {
+            "description": "Filter Has Files.",
+            "type": "boolean"
+          },
+          "filterHasLearnings": {
+            "description": "Filter Has Learnings.",
+            "type": "boolean"
+          },
+          "filterHasLinkedCommand": {
+            "description": "Filter Has Linked Command.",
+            "type": "boolean"
+          },
+          "filterHasNotes": {
+            "description": "Filter Has Notes.",
+            "type": "boolean"
+          },
+          "filterHasTests": {
+            "description": "Filter Has Tests.",
+            "type": "boolean"
+          },
+          "filterNoComments": {
+            "description": "Filter No Comments.",
+            "type": "boolean"
+          },
+          "filterNoDeps": {
+            "description": "Filter No Deps.",
+            "type": "boolean"
+          },
+          "filterNoDocs": {
+            "description": "Filter No Docs.",
+            "type": "boolean"
+          },
+          "filterNoFiles": {
+            "description": "Filter No Files.",
+            "type": "boolean"
+          },
+          "filterNoLearnings": {
+            "description": "Filter No Learnings.",
+            "type": "boolean"
+          },
+          "filterNoLinkedCommand": {
+            "description": "Filter No Linked Command.",
+            "type": "boolean"
+          },
+          "filterNoNotes": {
+            "description": "Filter No Notes.",
+            "type": "boolean"
+          },
+          "filterNoTests": {
+            "description": "Filter No Tests.",
+            "type": "boolean"
           },
           "filterParent": {
             "description": "Filter Parent.",
@@ -17262,9 +18928,25 @@
             "description": "Filter Release.",
             "type": "string"
           },
+          "filterReleaseMissing": {
+            "description": "Filter Release Missing.",
+            "type": "boolean"
+          },
+          "filterReviewerMissing": {
+            "description": "Filter Reviewer Missing.",
+            "type": "boolean"
+          },
+          "filterRiskMissing": {
+            "description": "Filter Risk Missing.",
+            "type": "boolean"
+          },
           "filterSprint": {
             "description": "Filter Sprint.",
             "type": "string"
+          },
+          "filterSprintMissing": {
+            "description": "Filter Sprint Missing.",
+            "type": "boolean"
           },
           "filterStatus": {
             "description": "Filter Status.",
@@ -17755,6 +19437,10 @@
             ],
             "type": "string"
           },
+          "filterConfidenceMissing": {
+            "description": "Filter Confidence Missing.",
+            "type": "boolean"
+          },
           "filterCreatedAfter": {
             "description": "Filter Created After.",
             "type": "string"
@@ -17770,6 +19456,78 @@
           "filterDeadlineBefore": {
             "description": "Filter Deadline Before.",
             "type": "string"
+          },
+          "filterEmptyBody": {
+            "description": "Filter Empty Body.",
+            "type": "boolean"
+          },
+          "filterHasBody": {
+            "description": "Filter Has Body.",
+            "type": "boolean"
+          },
+          "filterHasComments": {
+            "description": "Filter Has Comments.",
+            "type": "boolean"
+          },
+          "filterHasDeps": {
+            "description": "Filter Has Deps.",
+            "type": "boolean"
+          },
+          "filterHasDocs": {
+            "description": "Filter Has Docs.",
+            "type": "boolean"
+          },
+          "filterHasFiles": {
+            "description": "Filter Has Files.",
+            "type": "boolean"
+          },
+          "filterHasLearnings": {
+            "description": "Filter Has Learnings.",
+            "type": "boolean"
+          },
+          "filterHasLinkedCommand": {
+            "description": "Filter Has Linked Command.",
+            "type": "boolean"
+          },
+          "filterHasNotes": {
+            "description": "Filter Has Notes.",
+            "type": "boolean"
+          },
+          "filterHasTests": {
+            "description": "Filter Has Tests.",
+            "type": "boolean"
+          },
+          "filterNoComments": {
+            "description": "Filter No Comments.",
+            "type": "boolean"
+          },
+          "filterNoDeps": {
+            "description": "Filter No Deps.",
+            "type": "boolean"
+          },
+          "filterNoDocs": {
+            "description": "Filter No Docs.",
+            "type": "boolean"
+          },
+          "filterNoFiles": {
+            "description": "Filter No Files.",
+            "type": "boolean"
+          },
+          "filterNoLearnings": {
+            "description": "Filter No Learnings.",
+            "type": "boolean"
+          },
+          "filterNoLinkedCommand": {
+            "description": "Filter No Linked Command.",
+            "type": "boolean"
+          },
+          "filterNoNotes": {
+            "description": "Filter No Notes.",
+            "type": "boolean"
+          },
+          "filterNoTests": {
+            "description": "Filter No Tests.",
+            "type": "boolean"
           },
           "filterParent": {
             "description": "Filter Parent.",
@@ -17790,9 +19548,25 @@
             "description": "Filter Release.",
             "type": "string"
           },
+          "filterReleaseMissing": {
+            "description": "Filter Release Missing.",
+            "type": "boolean"
+          },
+          "filterReviewerMissing": {
+            "description": "Filter Reviewer Missing.",
+            "type": "boolean"
+          },
+          "filterRiskMissing": {
+            "description": "Filter Risk Missing.",
+            "type": "boolean"
+          },
           "filterSprint": {
             "description": "Filter Sprint.",
             "type": "string"
+          },
+          "filterSprintMissing": {
+            "description": "Filter Sprint Missing.",
+            "type": "boolean"
           },
           "filterStatus": {
             "description": "Filter Status.",
@@ -19771,6 +21545,10 @@
           },
           "byTag": {
             "description": "By Tag.",
+            "type": "boolean"
+          },
+          "fieldUtilization": {
+            "description": "For stats action: include a field_utilization block reporting present/total/percent for content fields (notes, learnings, files, docs, tests, comments, deps, body, linked_command) across all items so under-documented dimensions are visible at a glance.",
             "type": "boolean"
           },
           "json": {

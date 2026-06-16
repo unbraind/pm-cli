@@ -400,6 +400,35 @@ describe("generateBashScript", () => {
     expect(script).toContain("--phrase-exact");
   });
 
+  it("includes content-field and governance-missing filters across completion scripts", () => {
+    // list/search expose the bare content-field presence flags and the
+    // governance-missing selectors; update-many/close-many expose the
+    // --filter- prefixed bulk-selection variants; stats exposes
+    // --field-utilization. bash/zsh emit literal `--flag` tokens; fish emits
+    // `-l flag` (no leading --), so assert per-shell with the right rendering.
+    const representativeFlags = [
+      "has-notes",
+      "no-notes",
+      "has-linked-command",
+      "no-linked-command",
+      "empty-body",
+      "filter-reviewer-missing",
+      "filter-confidence-missing",
+      "filter-has-notes",
+      "filter-no-deps",
+      "filter-empty-body",
+      "field-utilization",
+    ];
+    const bash = generateBashScript();
+    const zsh = generateZshScript();
+    const fish = generateFishScript();
+    for (const flag of representativeFlags) {
+      expect(bash, `bash should contain --${flag}`).toContain(`--${flag}`);
+      expect(zsh, `zsh should contain --${flag}`).toContain(`--${flag}`);
+      expect(fish, `fish should contain -l ${flag}`).toContain(`-l ${flag}`);
+    }
+  });
+
   it("includes deterministic tag suggestions for --tag completion", () => {
     const script = generateBashScript(["Task"], ["beta", "alpha", "alpha"]);
     expect(script).toContain('"$prev" == "--tag" || "$prev" == "--tags"');

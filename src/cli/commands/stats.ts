@@ -2,6 +2,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { getActiveExtensionRegistrations, runActiveOnReadHooks } from "../../core/extensions/index.js";
 import {
+  computeContentFieldUtilization,
+  type ContentFieldUtilizationReport,
+} from "../../core/governance/content-fields.js";
+import {
   computeMetadataCoverage,
   groupItemsByDimension,
   lifecycleClassifierFromStatusRegistry,
@@ -17,7 +21,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
-import { listAllFrontMatterLight } from "../../core/store/item-store.js";
+import { listAllFrontMatterLight, listAllFrontMatterWithBody } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemStatus, ItemType } from "../../types/index.js";
@@ -35,6 +39,8 @@ export interface StatsCommandOptions {
   byPriority?: boolean;
   /** With --by-tag: only consider tags starting with this prefix (e.g. "domain:"). */
   tagPrefix?: string;
+  /** Include a content-field utilization breakdown (notes/learnings/files/docs/tests/comments/deps/body usage rates). */
+  fieldUtilization?: boolean;
 }
 
 export interface StatsResult {
@@ -55,6 +61,8 @@ export interface StatsResult {
   };
   /** Present only with --storage: aggregate history-stream metrics for compaction/planning. */
   storage?: HistoryStorageStats;
+  /** Present only with --field-utilization: content-field utilization rates across all items. */
+  field_utilization?: ContentFieldUtilizationReport;
   generated_at: string;
 }
 
@@ -132,7 +140,12 @@ export async function runStats(global: GlobalOptions, options: StatsCommandOptio
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-  const items = await listAllFrontMatterLight(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema);
+  // Field utilization needs the heavy collections (notes/learnings/files/docs/
+  // tests/comments/deps) AND the body, which the light reader drops — so when it
+  // is requested we read the WithBody rows and use them for every section.
+  const items = options.fieldUtilization
+    ? await listAllFrontMatterWithBody(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema)
+    : await listAllFrontMatterLight(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema);
   await enforceHistoryStreamPolicyForItems({
     pmRoot,
     settings,
@@ -171,6 +184,7 @@ export async function runStats(global: GlobalOptions, options: StatsCommandOptio
     breakdowns.priority = groupItemsByDimension(items, "priority", classifier);
   }
   const hasBreakdowns = Object.keys(breakdowns).length > 0;
+  const fieldUtilization = options.fieldUtilization ? computeContentFieldUtilization(items) : undefined;
 
   return {
     totals: {
@@ -183,6 +197,7 @@ export async function runStats(global: GlobalOptions, options: StatsCommandOptio
     ...(metadataCoverage ? { metadata_coverage: metadataCoverage } : {}),
     ...(hasBreakdowns ? { breakdowns } : {}),
     ...(storage ? { storage } : {}),
+    ...(fieldUtilization ? { field_utilization: fieldUtilization } : {}),
     generated_at: nowIso(),
   };
 }

@@ -4,6 +4,9 @@
 
 ### Added
 
+- GH-236: governance metadata missing-field filters ([pm-mfl1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-mfl1.toon))
+- GH-242: field-existence filters for list/search ([pm-hntj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hntj.toon))
+- GH-241: stats content-field utilization metrics ([pm-7snq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-7snq.toon))
 - Finalize literal 100% coverage: close c8-ignore-masked gaps & remediate PR \#240 bot review ([pm-0xix](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-0xix.toon))
 - Apply Gemini correctness fixes & cover new branches \(config/init/reindex/register-mutation\) ([pm-bw70](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-bw70.toon))
 - Module-mirrored test reorganization: retire lane/wave naming, add shared script harness ([pm-m449](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-m449.toon))
@@ -23,16 +26,24 @@
 
 ### Changed
 
+- Small verified cross-file duplications \(4 pairs\) + static-gate duplicate scan does not cover src/cli ([pm-z2gi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-z2gi.toon))
+- LOC growth watch: 5 src files back over 2000 lines \(cap 3400\) after 2026-05-25 barrel splits ([pm-k1im](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-k1im.toon))
+- health.ts re-implements doctor.ts capability-guidance helpers verbatim instead of importing the exported versions ([pm-aabt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-aabt.toon))
+- Dedupe history-rewrite orchestration block triplicated across history-redact/repair/compact ([pm-bzgt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-bzgt.toon))
 - pm update-many: --filter-ac-missing/--filter-estimates-missing/--filter-resolution-missing selection filters for bulk backfill \(GH-220\) ([pm-wbak](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wbak.toon))
 
 ### Fixed
 
+- Extension activation failure is invisible outside pm health --json: extension list shows ok, no stderr hint, commands partially registered ([pm-yffj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yffj.toon))
+- pm create <type\> --title X silently ignores positional type, defaults to Task ([pm-8sr3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8sr3.toon))
 - c8 ignore end \(invalid keyword\) silently masked source coverage; literal-100% gate passed on hidden code ([pm-dg8j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dg8j.toon))
 - GH-205: surface telemetry flush/probe + OTEL export diagnostics in pm health ([pm-hx5a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hx5a.toon))
 - GH-209 follow-up: OTEL span export keeps the CLI alive ~10s \(and can exit 13\) when the traces endpoint is unreachable ([pm-25se](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-25se.toon))
 
 ### Other
 
+- GitHub issue triage 2026-06-12 ([pm-tk1z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-tk1z.toon))
+- Slim guided-error boilerplate in agent contexts; lead unknown-command Examples with the did-you-mean candidate ([pm-q0kr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-q0kr.toon))
 - PR \#240 review: applied vs declined Gemini findings \(with rationale\) ([pm-lg65](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-lg65.toon))
 - Close c8-exposed coverage gaps in src/cli/commands/create.ts to 100% ([pm-eifq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-eifq.toon))
 - Close c8-exposed coverage gaps in src/cli/commands/contracts.ts and restore.ts to 100% ([pm-dmuq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-dmuq.toon))

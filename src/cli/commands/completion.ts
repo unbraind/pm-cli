@@ -428,7 +428,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--dry-run --scope --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    stats)",
-    `      COMPREPLY=(${compgen("--storage --metadata-coverage --by-assignee --by-tag --by-priority --tag-prefix --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--storage --metadata-coverage --field-utilization --by-assignee --by-tag --by-priority --tag-prefix --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    close|close-task)",
     `      COMPREPLY=(${compgen(CLOSE_MUTATION_FLAGS)})`,
@@ -612,6 +612,29 @@ _pm() {
             '--assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
             '--sprint[Filter by sprint]:sprint' \\
             '--release[Filter by release]:release' \\
+            '--filter-reviewer-missing[Select only items missing reviewer]' \\
+            '--filter-risk-missing[Select only items missing risk]' \\
+            '--filter-confidence-missing[Select only items missing confidence]' \\
+            '--filter-sprint-missing[Select only items missing sprint]' \\
+            '--filter-release-missing[Select only items missing release]' \\
+            '--has-notes[Select only items that have notes]' \\
+            '--no-notes[Select only items with no notes]' \\
+            '--has-learnings[Select only items that have learnings]' \\
+            '--no-learnings[Select only items with no learnings]' \\
+            '--has-files[Select only items that have linked files]' \\
+            '--no-files[Select only items with no linked files]' \\
+            '--has-docs[Select only items that have linked docs]' \\
+            '--no-docs[Select only items with no linked docs]' \\
+            '--has-tests[Select only items that have linked tests]' \\
+            '--no-tests[Select only items with no linked tests]' \\
+            '--has-comments[Select only items that have comments]' \\
+            '--no-comments[Select only items with no comments]' \\
+            '--has-deps[Select only items that have dependencies]' \\
+            '--no-deps[Select only items with no dependencies]' \\
+            '--has-body[Select only items with non-empty body]' \\
+            '--empty-body[Select only items with empty body]' \\
+            '--has-linked-command[Select only items that have a linked command]' \\
+            '--no-linked-command[Select only items with no linked command]' \\
             '--limit[Limit returned item count]:number' \\
             '--offset[Skip the first n matching rows before limit]:number' \\
             '--no-truncate[Return every matched row, overriding --limit]' \\
@@ -780,6 +803,29 @@ ${zshUpdateRuntimeFieldFlags}            '--allow-audit-update[Allow non-owner m
             '--filter-estimates-missing[Select only items missing estimated_minutes]' \\
             '--filter-resolution-missing[Select only terminal items missing resolution]' \\
             '--filter-metadata-missing[Select only items missing any tracked metadata]' \\
+            '--filter-reviewer-missing[Select only items missing reviewer]' \\
+            '--filter-risk-missing[Select only items missing risk]' \\
+            '--filter-confidence-missing[Select only items missing confidence]' \\
+            '--filter-sprint-missing[Select only items missing sprint]' \\
+            '--filter-release-missing[Select only items missing release]' \\
+            '--filter-has-notes[Select only items that have notes]' \\
+            '--filter-no-notes[Select only items with no notes]' \\
+            '--filter-has-learnings[Select only items that have learnings]' \\
+            '--filter-no-learnings[Select only items with no learnings]' \\
+            '--filter-has-files[Select only items that have linked files]' \\
+            '--filter-no-files[Select only items with no linked files]' \\
+            '--filter-has-docs[Select only items that have linked docs]' \\
+            '--filter-no-docs[Select only items with no linked docs]' \\
+            '--filter-has-tests[Select only items that have linked tests]' \\
+            '--filter-no-tests[Select only items with no linked tests]' \\
+            '--filter-has-comments[Select only items that have comments]' \\
+            '--filter-no-comments[Select only items with no comments]' \\
+            '--filter-has-deps[Select only items that have dependencies]' \\
+            '--filter-no-deps[Select only items with no dependencies]' \\
+            '--filter-has-body[Select only items with non-empty body]' \\
+            '--filter-empty-body[Select only items with empty body]' \\
+            '--filter-has-linked-command[Select only items that have a linked command]' \\
+            '--filter-no-linked-command[Select only items with no linked command]' \\
             '--ids[Explicit comma-separated ID allowlist]:ids' \\
             '--limit[Limit matched item count]:number' \\
             '--offset[Skip first n matched rows]:number' \\
@@ -872,6 +918,29 @@ ${zshUpdateManyRuntimeFieldFlags}            '--allow-audit-update[Allow non-own
             '--filter-parent[Filter by parent item ID]:parent' \\
             '--filter-sprint[Filter by sprint]:sprint' \\
             '--filter-release[Filter by release]:release' \\
+            '--filter-reviewer-missing[Select only items missing reviewer]' \\
+            '--filter-risk-missing[Select only items missing risk]' \\
+            '--filter-confidence-missing[Select only items missing confidence]' \\
+            '--filter-sprint-missing[Select only items missing sprint]' \\
+            '--filter-release-missing[Select only items missing release]' \\
+            '--filter-has-notes[Select only items that have notes]' \\
+            '--filter-no-notes[Select only items with no notes]' \\
+            '--filter-has-learnings[Select only items that have learnings]' \\
+            '--filter-no-learnings[Select only items with no learnings]' \\
+            '--filter-has-files[Select only items that have linked files]' \\
+            '--filter-no-files[Select only items with no linked files]' \\
+            '--filter-has-docs[Select only items that have linked docs]' \\
+            '--filter-no-docs[Select only items with no linked docs]' \\
+            '--filter-has-tests[Select only items that have linked tests]' \\
+            '--filter-no-tests[Select only items with no linked tests]' \\
+            '--filter-has-comments[Select only items that have comments]' \\
+            '--filter-no-comments[Select only items with no comments]' \\
+            '--filter-has-deps[Select only items that have dependencies]' \\
+            '--filter-no-deps[Select only items with no dependencies]' \\
+            '--filter-has-body[Select only items with non-empty body]' \\
+            '--filter-empty-body[Select only items with empty body]' \\
+            '--filter-has-linked-command[Select only items that have a linked command]' \\
+            '--filter-no-linked-command[Select only items with no linked command]' \\
             '--ids[Explicit comma-separated ID allowlist]:ids' \\
             '--limit[Limit matched item count]:number' \\
             '--offset[Skip first n matched rows]:number' \\
@@ -990,6 +1059,29 @@ ${zshContextRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--sprint[Filter by sprint]:value' \\
             '--release[Filter by release]:value' \\
             '--parent[Filter by parent item ID]:value' \\
+            '--filter-reviewer-missing[Select only items missing reviewer]' \\
+            '--filter-risk-missing[Select only items missing risk]' \\
+            '--filter-confidence-missing[Select only items missing confidence]' \\
+            '--filter-sprint-missing[Select only items missing sprint]' \\
+            '--filter-release-missing[Select only items missing release]' \\
+            '--has-notes[Select only items that have notes]' \\
+            '--no-notes[Select only items with no notes]' \\
+            '--has-learnings[Select only items that have learnings]' \\
+            '--no-learnings[Select only items with no learnings]' \\
+            '--has-files[Select only items that have linked files]' \\
+            '--no-files[Select only items with no linked files]' \\
+            '--has-docs[Select only items that have linked docs]' \\
+            '--no-docs[Select only items with no linked docs]' \\
+            '--has-tests[Select only items that have linked tests]' \\
+            '--no-tests[Select only items with no linked tests]' \\
+            '--has-comments[Select only items that have comments]' \\
+            '--no-comments[Select only items with no comments]' \\
+            '--has-deps[Select only items that have dependencies]' \\
+            '--no-deps[Select only items with no dependencies]' \\
+            '--has-body[Select only items with non-empty body]' \\
+            '--empty-body[Select only items with empty body]' \\
+            '--has-linked-command[Select only items that have a linked command]' \\
+            '--no-linked-command[Select only items with no linked command]' \\
 ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -1130,6 +1222,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           _arguments \\
             '--storage[Include aggregate history-stream storage metrics]' \\
             '--metadata-coverage[Include metadata coverage percentages overall and by type]' \\
+            '--field-utilization[Include content-field utilization rates across all items]' \\
             '--by-assignee[Lifecycle-bucketed breakdown grouped by assignee]' \\
             '--by-tag[Lifecycle-bucketed breakdown grouped by tag]' \\
             '--by-priority[Lifecycle-bucketed breakdown grouped by priority]' \\
@@ -1618,6 +1711,29 @@ for list_cmd in ${listCmds}
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l updated-before -d 'Filter by updated_at upper bound (ISO/relative)' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l created-after  -d 'Filter by created_at lower bound (ISO/relative)' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l created-before -d 'Filter by created_at upper bound (ISO/relative)' -r
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l filter-reviewer-missing   -d 'Select only items missing reviewer'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l filter-risk-missing       -d 'Select only items missing risk'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l filter-confidence-missing -d 'Select only items missing confidence'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l filter-sprint-missing     -d 'Select only items missing sprint'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l filter-release-missing    -d 'Select only items missing release'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l has-notes            -d 'Select only items that have notes'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l no-notes             -d 'Select only items with no notes'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l has-learnings        -d 'Select only items that have learnings'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l no-learnings         -d 'Select only items with no learnings'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l has-files            -d 'Select only items that have linked files'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l no-files             -d 'Select only items with no linked files'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l has-docs             -d 'Select only items that have linked docs'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l no-docs              -d 'Select only items with no linked docs'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l has-tests            -d 'Select only items that have linked tests'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l no-tests             -d 'Select only items with no linked tests'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l has-comments         -d 'Select only items that have comments'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l no-comments          -d 'Select only items with no comments'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l has-deps             -d 'Select only items that have dependencies'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l no-deps              -d 'Select only items with no dependencies'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l has-body             -d 'Select only items with non-empty body'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l empty-body           -d 'Select only items with empty body'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l has-linked-command   -d 'Select only items that have a linked command'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l no-linked-command    -d 'Select only items with no linked command'
 end
 ${fishListRuntimeFieldFlags}
 
@@ -1757,6 +1873,29 @@ complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-ac-missing
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-estimates-missing -d 'Select only items missing estimated_minutes'
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-resolution-missing -d 'Select only terminal items missing resolution'
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-metadata-missing  -d 'Select only items missing any tracked metadata'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-reviewer-missing   -d 'Select only items missing reviewer'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-risk-missing       -d 'Select only items missing risk'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-confidence-missing -d 'Select only items missing confidence'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-sprint-missing     -d 'Select only items missing sprint'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-release-missing    -d 'Select only items missing release'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-has-notes          -d 'Select only items that have notes'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-no-notes           -d 'Select only items with no notes'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-has-learnings      -d 'Select only items that have learnings'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-no-learnings       -d 'Select only items with no learnings'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-has-files          -d 'Select only items that have linked files'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-no-files           -d 'Select only items with no linked files'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-has-docs           -d 'Select only items that have linked docs'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-no-docs            -d 'Select only items with no linked docs'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-has-tests          -d 'Select only items that have linked tests'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-no-tests           -d 'Select only items with no linked tests'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-has-comments       -d 'Select only items that have comments'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-no-comments        -d 'Select only items with no comments'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-has-deps           -d 'Select only items that have dependencies'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-no-deps            -d 'Select only items with no dependencies'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-has-body           -d 'Select only items with non-empty body'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-empty-body         -d 'Select only items with empty body'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-has-linked-command -d 'Select only items that have a linked command'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-no-linked-command  -d 'Select only items with no linked command'
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l ids                     -d 'Explicit comma-separated ID allowlist' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l limit                   -d 'Limit matched item count' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l offset                  -d 'Skip first n matched rows' -r
@@ -1872,6 +2011,29 @@ complete -c pm -n '__fish_seen_subcommand_from search' -l assignee       -d 'Fil
 complete -c pm -n '__fish_seen_subcommand_from search' -l sprint         -d 'Filter by sprint' -r
 complete -c pm -n '__fish_seen_subcommand_from search' -l release        -d 'Filter by release' -r
 complete -c pm -n '__fish_seen_subcommand_from search' -l parent         -d 'Filter by parent item ID' -r
+complete -c pm -n '__fish_seen_subcommand_from search' -l filter-reviewer-missing   -d 'Select only items missing reviewer'
+complete -c pm -n '__fish_seen_subcommand_from search' -l filter-risk-missing       -d 'Select only items missing risk'
+complete -c pm -n '__fish_seen_subcommand_from search' -l filter-confidence-missing -d 'Select only items missing confidence'
+complete -c pm -n '__fish_seen_subcommand_from search' -l filter-sprint-missing     -d 'Select only items missing sprint'
+complete -c pm -n '__fish_seen_subcommand_from search' -l filter-release-missing    -d 'Select only items missing release'
+complete -c pm -n '__fish_seen_subcommand_from search' -l has-notes          -d 'Select only items that have notes'
+complete -c pm -n '__fish_seen_subcommand_from search' -l no-notes           -d 'Select only items with no notes'
+complete -c pm -n '__fish_seen_subcommand_from search' -l has-learnings      -d 'Select only items that have learnings'
+complete -c pm -n '__fish_seen_subcommand_from search' -l no-learnings       -d 'Select only items with no learnings'
+complete -c pm -n '__fish_seen_subcommand_from search' -l has-files          -d 'Select only items that have linked files'
+complete -c pm -n '__fish_seen_subcommand_from search' -l no-files           -d 'Select only items with no linked files'
+complete -c pm -n '__fish_seen_subcommand_from search' -l has-docs           -d 'Select only items that have linked docs'
+complete -c pm -n '__fish_seen_subcommand_from search' -l no-docs            -d 'Select only items with no linked docs'
+complete -c pm -n '__fish_seen_subcommand_from search' -l has-tests          -d 'Select only items that have linked tests'
+complete -c pm -n '__fish_seen_subcommand_from search' -l no-tests           -d 'Select only items with no linked tests'
+complete -c pm -n '__fish_seen_subcommand_from search' -l has-comments       -d 'Select only items that have comments'
+complete -c pm -n '__fish_seen_subcommand_from search' -l no-comments        -d 'Select only items with no comments'
+complete -c pm -n '__fish_seen_subcommand_from search' -l has-deps           -d 'Select only items that have dependencies'
+complete -c pm -n '__fish_seen_subcommand_from search' -l no-deps            -d 'Select only items with no dependencies'
+complete -c pm -n '__fish_seen_subcommand_from search' -l has-body           -d 'Select only items with non-empty body'
+complete -c pm -n '__fish_seen_subcommand_from search' -l empty-body         -d 'Select only items with empty body'
+complete -c pm -n '__fish_seen_subcommand_from search' -l has-linked-command -d 'Select only items that have a linked command'
+complete -c pm -n '__fish_seen_subcommand_from search' -l no-linked-command  -d 'Select only items with no linked command'
 ${fishSearchRuntimeFieldFlags}
 
 # calendar flags
@@ -2081,6 +2243,7 @@ complete -c pm -n '__fish_seen_subcommand_from gc' -l scope -d 'Limit cleanup to
 # stats flags
 complete -c pm -n '__fish_seen_subcommand_from stats' -l storage -d 'Include aggregate history-stream storage metrics'
 complete -c pm -n '__fish_seen_subcommand_from stats' -l metadata-coverage -d 'Include metadata coverage percentages overall and by type'
+complete -c pm -n '__fish_seen_subcommand_from stats' -l field-utilization -d 'Include content-field utilization rates across all items'
 complete -c pm -n '__fish_seen_subcommand_from stats' -l by-assignee -d 'Lifecycle-bucketed breakdown grouped by assignee'
 complete -c pm -n '__fish_seen_subcommand_from stats' -l by-tag -d 'Lifecycle-bucketed breakdown grouped by tag'
 complete -c pm -n '__fish_seen_subcommand_from stats' -l by-priority -d 'Lifecycle-bucketed breakdown grouped by priority'
@@ -2123,6 +2286,29 @@ complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-assignee-fi
 complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-parent          -d 'Filter by parent item ID' -r
 complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-sprint          -d 'Filter by sprint before closing' -r
 complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-release         -d 'Filter by release before closing' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-reviewer-missing   -d 'Select only items missing reviewer'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-risk-missing       -d 'Select only items missing risk'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-confidence-missing -d 'Select only items missing confidence'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-sprint-missing     -d 'Select only items missing sprint'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-release-missing    -d 'Select only items missing release'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-has-notes          -d 'Select only items that have notes'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-no-notes           -d 'Select only items with no notes'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-has-learnings      -d 'Select only items that have learnings'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-no-learnings       -d 'Select only items with no learnings'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-has-files          -d 'Select only items that have linked files'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-no-files           -d 'Select only items with no linked files'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-has-docs           -d 'Select only items that have linked docs'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-no-docs            -d 'Select only items with no linked docs'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-has-tests          -d 'Select only items that have linked tests'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-no-tests           -d 'Select only items with no linked tests'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-has-comments       -d 'Select only items that have comments'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-no-comments        -d 'Select only items with no comments'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-has-deps           -d 'Select only items that have dependencies'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-no-deps            -d 'Select only items with no dependencies'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-has-body           -d 'Select only items with non-empty body'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-empty-body         -d 'Select only items with empty body'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-has-linked-command -d 'Select only items that have a linked command'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-no-linked-command  -d 'Select only items with no linked command'
 complete -c pm -n '__fish_seen_subcommand_from close-many' -l ids                    -d 'Explicit comma-separated ID allowlist' -r
 complete -c pm -n '__fish_seen_subcommand_from close-many' -l limit                  -d 'Limit matched item count' -r
 complete -c pm -n '__fish_seen_subcommand_from close-many' -l offset                 -d 'Skip first n matched rows' -r

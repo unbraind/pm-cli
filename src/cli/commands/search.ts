@@ -46,6 +46,22 @@ import { isTerminalStatus } from "../../core/item/status.js";
 import { parseStatusFilterCsv } from "../../core/item/status-filter.js";
 import { collectRuntimeFilterValues, matchesRuntimeFilters } from "../../core/schema/runtime-field-filters.js";
 import {
+  hasMissingMetadataFilter,
+  itemMatchesMissingMetadata,
+  lifecycleClassifierFromStatusRegistry,
+  type LifecycleClassifier,
+} from "../../core/governance/metadata-coverage.js";
+import {
+  hasContentFieldFilter,
+  itemMatchesContentFilters,
+} from "../../core/governance/content-fields.js";
+import {
+  buildContentFilterEcho,
+  buildGovernanceMissingFilterEcho,
+  resolveContentFieldFilters,
+  resolveMissingMetadataFilters,
+} from "./list.js";
+import {
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
   type RuntimeFieldRegistry,
@@ -89,6 +105,31 @@ export interface SearchOptions {
   compact?: boolean;
   full?: boolean;
   fields?: string;
+  // Governance-missing selection filters (GH-236).
+  filterReviewerMissing?: boolean;
+  filterRiskMissing?: boolean;
+  filterConfidenceMissing?: boolean;
+  filterSprintMissing?: boolean;
+  filterReleaseMissing?: boolean;
+  // Content-field presence/absence selection filters (GH-242).
+  hasNotes?: boolean;
+  hasLearnings?: boolean;
+  hasFiles?: boolean;
+  hasDocs?: boolean;
+  hasTests?: boolean;
+  hasComments?: boolean;
+  hasDeps?: boolean;
+  hasBody?: boolean;
+  hasLinkedCommand?: boolean;
+  noNotes?: boolean;
+  noLearnings?: boolean;
+  noFiles?: boolean;
+  noDocs?: boolean;
+  noTests?: boolean;
+  noComments?: boolean;
+  noDeps?: boolean;
+  emptyBody?: boolean;
+  noLinkedCommand?: boolean;
   [key: string]: unknown;
 }
 
@@ -295,6 +336,8 @@ function buildCompactSearchFilterSummary(params: {
   if (options.parent !== undefined) {
     filters.parent = options.parent;
   }
+  Object.assign(filters, buildGovernanceMissingFilterEcho(options as Record<string, unknown>));
+  Object.assign(filters, buildContentFilterEcho(options as Record<string, unknown>));
   if (matchMode !== "or") {
     filters.match_mode = matchMode;
   }
@@ -367,6 +410,8 @@ function buildVerboseSearchFilters(params: {
     sprint: options.sprint ?? null,
     release: options.release ?? null,
     parent: options.parent ?? null,
+    ...buildGovernanceMissingFilterEcho(options as Record<string, unknown>),
+    ...buildContentFilterEcho(options as Record<string, unknown>),
     include_linked: includeLinked,
     title_exact: titleExact,
     phrase_exact: phraseExact,
@@ -828,6 +873,7 @@ function applyFilters(
   typeRegistry: ItemTypeRegistry,
   runtimeFieldFilters: Record<string, unknown>,
   statusFilter: ItemStatus[] | undefined,
+  lifecycleClassifier: LifecycleClassifier,
 ): ItemDocument[] {
   const typeFilter = parseType(options.type, typeRegistry);
   const tagFilter = options.tag?.trim().toLowerCase();
@@ -843,6 +889,10 @@ function applyFilters(
   const releaseFilter = options.release?.trim();
   const parentFilter = options.parent?.trim();
   const statusSet = statusFilter && statusFilter.length > 0 ? new Set<ItemStatus>(statusFilter) : undefined;
+  const missingMetadataFilters = resolveMissingMetadataFilters(options);
+  const missingMetadataActive = hasMissingMetadataFilter(missingMetadataFilters);
+  const contentFieldFilters = resolveContentFieldFilters(options as Record<string, unknown>);
+  const contentFiltersActive = hasContentFieldFilter(contentFieldFilters);
 
   // Match pm list: --assignee no longer accepts none/null (unassigned filtering
   // belongs to a dedicated flag there; pm search has no presence flag so reject
@@ -870,6 +920,12 @@ function applyFilters(
     if (parentFilter !== undefined && item.parent !== parentFilter) return false;
     /* c8 ignore stop */
     if (!matchesRuntimeFilters(item as Record<string, unknown>, runtimeFieldFilters)) return false;
+    if (missingMetadataActive && !itemMatchesMissingMetadata(item, missingMetadataFilters, lifecycleClassifier)) {
+      return false;
+    }
+    if (contentFiltersActive && !itemMatchesContentFilters(item, contentFieldFilters)) {
+      return false;
+    }
     return true;
   });
 }
@@ -1941,7 +1997,15 @@ export async function runSearch(query: string, options: SearchOptions, global: G
     warnings.push("search_hybrid_semantic_weight_override_invalid:using_settings_default");
   }
   const allDocuments = loadedDocuments.documents;
-  const metadataFilteredDocuments = applyFilters(allDocuments, options, typeRegistry, runtimeFieldFilters, statusFilter);
+  const lifecycleClassifier = lifecycleClassifierFromStatusRegistry(statusRegistry);
+  const metadataFilteredDocuments = applyFilters(
+    allDocuments,
+    options,
+    typeRegistry,
+    runtimeFieldFilters,
+    statusFilter,
+    lifecycleClassifier,
+  );
   const filteredDocuments = applyExactQueryFilters(metadataFilteredDocuments, normalizedQuery, {
     titleExact,
     // --match-mode exact reuses the exact-phrase containment logic so the whole
