@@ -443,6 +443,25 @@ describe("history-compact command", () => {
     });
   });
 
+  it("deletes history from applyRewrite when executeHistoryRewrite reports no prior snapshot", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Compact Execute Rewrite Delete");
+      const executeSpy = vi.spyOn(historyRewriteModule, "executeHistoryRewrite").mockImplementation(async (params) => {
+        await params.applyRewrite({ historyRawUnderLock: null } as never);
+        return [];
+      });
+      const writeSpy = vi.spyOn(fsUtilsModule, "writeFileAtomic").mockRejectedValueOnce(new Error("synthetic write failure"));
+      try {
+        await expect(runHistoryCompact(id, { author: "test-author" }, { path: context.pmPath })).rejects.toThrow(
+          "synthetic write failure",
+        );
+      } finally {
+        executeSpy.mockRestore();
+        writeSpy.mockRestore();
+      }
+    });
+  });
+
   it("rolls back by restoring prior history when write fails mid-flight", async () => {
     await withTempPmPath(async (context) => {
       const id = createItem(context, "Compact Rollback Restore");

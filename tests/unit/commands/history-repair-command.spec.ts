@@ -369,9 +369,12 @@ describe("history-repair command", () => {
       await tamperChain(historyPath(context, id));
       const historyFile = historyPath(context, id);
       const originalWriteFileAtomic = fsUtilsModule.writeFileAtomic;
-      const driftSpy = vi.spyOn(historyRewriteModule, "verifyHistoryRewriteNoDrift").mockResolvedValue({
-        historyRawUnderLock: null,
-      } as Awaited<ReturnType<typeof historyRewriteModule.verifyHistoryRewriteNoDrift>>);
+      const executeSpy = vi.spyOn(historyRewriteModule, "executeHistoryRewrite").mockImplementation(async (params) => {
+        await params.applyRewrite({
+          historyRawUnderLock: null,
+        } as Awaited<ReturnType<typeof historyRewriteModule.verifyHistoryRewriteNoDrift>>);
+        return [];
+      });
       const writeSpy = vi.spyOn(fsUtilsModule, "writeFileAtomic").mockImplementation(async (target, content) => {
         if (target === historyFile) {
           throw new Error("synthetic repair write failure without snapshot");
@@ -385,7 +388,7 @@ describe("history-repair command", () => {
         );
         await expect(readFile(historyFile, "utf8")).rejects.toThrow();
       } finally {
-        driftSpy.mockRestore();
+        executeSpy.mockRestore();
         writeSpy.mockRestore();
       }
     });

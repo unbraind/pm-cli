@@ -5,12 +5,8 @@ import { pathExists, readFileIfExists } from "../../core/fs/fs-utils.js";
 import { activateExtensions, getActiveExtensionRegistrations, loadExtensions, runActiveOnReadHooks } from "../../core/extensions/index.js";
 import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
 import {
-  EXTENSION_CAPABILITY_CONTRACT,
   KNOWN_EXTENSION_CAPABILITIES,
-  parseLegacyExtensionCapabilityAliasWarning,
-  parseUnknownExtensionCapabilityWarning,
   type LoadedExtension,
-  type UnknownExtensionCapabilityWarningDetails,
 } from "../../core/extensions/loader.js";
 import { enforceHistoryStreamPolicyForItems } from "../../core/history/history-stream-policy.js";
 import { scanHistoryDrift } from "../../core/history/drift-scan.js";
@@ -53,7 +49,11 @@ import { readSettingsWithMetadata } from "../../core/store/settings.js";
 import { buildRemediationMap } from "../../core/diagnostics/remediation.js";
 import type { ItemFormat, ItemMetadata, PmSettings } from "../../types/index.js";
 import { readManagedExtensionState } from "./extension.js";
-import { buildRegistrationCollisionRemediation } from "./extension/doctor.js";
+import {
+  buildCapabilityContractMetadata,
+  buildRegistrationCollisionRemediation,
+  collectUnknownCapabilityGuidance,
+} from "./extension/doctor.js";
 
 type HealthStatus = "ok" | "warn";
 type MigrationRuntimeStatus = "pending" | "failed" | "applied";
@@ -174,41 +174,6 @@ function warningCode(value: string): string {
     return normalized;
   }
   return normalized.slice(0, separator);
-}
-
-function collectUnknownCapabilityGuidance(warnings: string[]): UnknownExtensionCapabilityWarningDetails[] {
-  const seen = new Set<string>();
-  const guidance: UnknownExtensionCapabilityWarningDetails[] = [];
-  for (const warning of warnings) {
-    const parsedDetails = (() => {
-      const unknownWarning = parseUnknownExtensionCapabilityWarning(warning);
-      if (unknownWarning) {
-        return [unknownWarning];
-      }
-      return parseLegacyExtensionCapabilityAliasWarning(warning);
-    })();
-    for (const parsed of parsedDetails) {
-      const key = `${parsed.layer}:${parsed.name}:${parsed.capability}`;
-      if (seen.has(key)) {
-        continue;
-      }
-      seen.add(key);
-      guidance.push(parsed);
-    }
-  }
-  return guidance;
-}
-
-function buildCapabilityContractMetadata(): {
-  version: number;
-  capabilities: string[];
-  legacy_aliases: Record<string, string>;
-} {
-  return {
-    version: EXTENSION_CAPABILITY_CONTRACT.version,
-    capabilities: [...EXTENSION_CAPABILITY_CONTRACT.capabilities],
-    legacy_aliases: { ...EXTENSION_CAPABILITY_CONTRACT.legacy_aliases },
-  };
 }
 
 function normalizeExtensionNameForMatch(value: string): string {

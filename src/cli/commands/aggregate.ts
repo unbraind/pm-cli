@@ -8,6 +8,7 @@ import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../
 import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { type ItemStatus } from "../../types/index.js";
+import { buildListQueryFilters } from "./list-filter-shared.js";
 import { runList } from "./list.js";
 
 type AggregateGroupField = "parent" | "type" | "priority" | "status" | "assignee" | "tags" | "sprint" | "release";
@@ -337,18 +338,7 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
 
   const listed = await runList(
     status,
-    {
-      type: options.type,
-      tag: options.tag,
-      priority: options.priority,
-      deadlineBefore: options.deadlineBefore,
-      deadlineAfter: options.deadlineAfter,
-      assignee: options.assignee,
-      assigneeFilter: options.assigneeFilter,
-      parent: options.parent,
-      sprint: options.sprint,
-      release: options.release,
-    },
+    buildListQueryFilters(options),
     global,
   );
 

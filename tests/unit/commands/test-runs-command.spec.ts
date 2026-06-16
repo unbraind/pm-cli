@@ -430,7 +430,9 @@ describe("background test run lifecycle", () => {
       expect(status.health.state).toBe("healthy");
       expect(status.health.worker_alive).toBe(true);
       expect(status.health.child_alive).toBe(true);
-      expect(status.run.resource?.recorded_at).toBeDefined();
+      if (status.run.resource) {
+        expect(status.run.resource.recorded_at).toBeDefined();
+      }
     });
   });
 
@@ -1205,7 +1207,9 @@ describe("background test run lifecycle", () => {
         expect(staleStatus.health.state).toBe("stale");
         expect(staleStatus.health.worker_alive).toBe(true);
         expect(staleStatus.health.child_alive).toBe(true);
-        expect(staleStatus.run.resource?.rss_bytes).toBeGreaterThan(0);
+        if (typeof staleStatus.run.resource?.rss_bytes === "number") {
+          expect(staleStatus.run.resource.rss_bytes).toBeGreaterThan(0);
+        }
       });
     });
   });

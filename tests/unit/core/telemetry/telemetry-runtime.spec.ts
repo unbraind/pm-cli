@@ -1448,7 +1448,7 @@ describe("core/telemetry/runtime", () => {
       process.env.PM_TELEMETRY_FLUSH_CHILD = "yes";
       expect(_testOnly.shouldFlushInline()).toBe(true);
 
-      expect(_testOnly.telemetryFlushRunnerPath()).toMatch(/dist\/cli\/telemetry-flush\.js$/);
+      expect(_testOnly.telemetryFlushRunnerPath().replaceAll("\\", "/")).toMatch(/dist\/cli\/telemetry-flush\.js$/);
       expect(_testOnly.isRetryableQueueRewriteError({ code: "EACCES" })).toBe(true);
       expect(_testOnly.isRetryableQueueRewriteError({ code: "EBUSY" })).toBe(true);
       expect(_testOnly.isRetryableQueueRewriteError({ code: "EPERM" })).toBe(true);

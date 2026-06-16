@@ -26,6 +26,7 @@ import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { resolveAuthor } from "../../core/shared/author.js";
 import type { ItemStatus } from "../../types/index.js";
+import { hasListFilters } from "./list-filter-shared.js";
 import { runList, type ListOptions, type ListedItem } from "./list.js";
 import { runRestore } from "./restore.js";
 import { runUpdate, type UpdateCommandOptions } from "./update.js";
@@ -515,36 +516,6 @@ function normalizeStatusFilter(value: string | undefined, statusRegistry: Runtim
     );
   }
   return normalized;
-}
-
-function hasListFilters(list: ListOptions | undefined, status: string | undefined): boolean {
-  const isActive = (value: unknown): boolean =>
-    value != null && (typeof value !== "string" || value.split(",").some((entry) => entry.trim().length > 0));
-  return (
-    isActive(status) ||
-    isActive(list?.status) ||
-    isActive(list?.type) ||
-    isActive(list?.tag) ||
-    isActive(list?.priority) ||
-    isActive(list?.deadlineBefore) ||
-    isActive(list?.deadlineAfter) ||
-    isActive(list?.updatedAfter) ||
-    isActive(list?.updatedBefore) ||
-    isActive(list?.createdAfter) ||
-    isActive(list?.createdBefore) ||
-    isActive(list?.ids) ||
-    isActive(list?.assignee) ||
-    isActive(list?.assigneeFilter) ||
-    isActive(list?.parent) ||
-    isActive(list?.sprint) ||
-    isActive(list?.release) ||
-    list?.filterAcMissing === true ||
-    list?.filterEstimatesMissing === true ||
-    list?.filterResolutionMissing === true ||
-    list?.filterMetadataMissing === true ||
-    isActive(list?.limit) ||
-    isActive(list?.offset)
-  );
 }
 
 function rejectBlankIdsFilter(list: ListOptions | undefined): void {

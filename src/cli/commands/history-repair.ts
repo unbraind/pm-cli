@@ -1,10 +1,7 @@
 import fs from "node:fs/promises";
 import jsonPatch from "fast-json-patch";
 import { pathExists, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
-import {
-  checkHistoryRewriteOwnership,
-  verifyHistoryRewriteNoDrift,
-} from "../../core/history/history-rewrite.js";
+import { executeHistoryRewrite } from "../../core/history/history-rewrite.js";
 import {
   historyEntriesToRaw,
   reanchorHistoryEntries,
@@ -15,7 +12,6 @@ import {
 } from "../../core/history/replay.js";
 import { scanHistoryDrift } from "../../core/history/drift-scan.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { acquireLock } from "../../core/lock/lock.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -175,25 +171,7 @@ export async function runHistoryRepair(
 
   if (changed && !dryRun) {
     warnings.push(
-      ...checkHistoryRewriteOwnership({
-        itemDocument: loadedItem?.document ?? null,
-        subjectId: subject.id,
-        author,
-        force: options.force,
-        settings,
-      }),
-    );
-
-    const releaseLock = await acquireLock(
-      pmRoot,
-      subject.id,
-      settings.locks.ttl_seconds,
-      author,
-      Boolean(options.force),
-      settings.governance.force_required_for_stale_lock,
-    );
-    try {
-      const { historyRawUnderLock } = await verifyHistoryRewriteNoDrift({
+      ...(await executeHistoryRewrite({
         pmRoot,
         subject,
         settings,
@@ -201,27 +179,29 @@ export async function runHistoryRepair(
         historyRawBeforeLock,
         currentItemRawBeforeLock,
         operation: "history-repair",
-      });
-      try {
-        await writeFileAtomic(subject.historyPath, historyEntriesToRaw(rewrittenEntries));
-      } catch (error) {
-        if (historyRawUnderLock === null) {
-          await fs.rm(subject.historyPath, { force: true });
-        } else {
-          await writeFileAtomic(subject.historyPath, historyRawUnderLock);
-        }
-        throw error;
-      }
-      warnings.push(
-        ...(await runActiveOnWriteHooks({
-          path: subject.historyPath,
-          scope: "project",
-          op: "history_repair:history",
-        })),
-      );
-    } finally {
-      await releaseLock();
-    }
+        author,
+        force: options.force,
+        itemDocument: loadedItem?.document ?? null,
+        applyRewrite: async ({ historyRawUnderLock }) => {
+          try {
+            await writeFileAtomic(subject.historyPath, historyEntriesToRaw(rewrittenEntries));
+          } catch (error) {
+            if (historyRawUnderLock === null) {
+              await fs.rm(subject.historyPath, { force: true });
+            } else {
+              await writeFileAtomic(subject.historyPath, historyRawUnderLock);
+            }
+            throw error;
+          }
+        },
+        applyPostRewrite: async () =>
+          runActiveOnWriteHooks({
+            path: subject.historyPath,
+            scope: "project",
+            op: "history_repair:history",
+          }),
+      })),
+    );
   }
 
   return {

@@ -1,0 +1,12 @@
+id: pm-mcxr
+title: "GH-206: test-all silent run process-liveness regression"
+description: "Tracks GitHub issue #206: pm test-all can run silently and leave parent process alive after child activity."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-06-16T11:28:40.523Z"
+updated_at: "2026-06-16T11:28:40.523Z"
+author: codex-sdk-cli-consolidation-20260616
+parent: pm-mpbb
+body: ""

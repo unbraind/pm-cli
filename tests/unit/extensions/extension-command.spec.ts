@@ -14,7 +14,7 @@ import {
 } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   _testOnly as extensionCommandTestOnly,
@@ -806,6 +806,64 @@ describe("extension command runtime", () => {
     expect(neutralPolicyTriage.policy_warning_count).toBe(1);
   });
 
+  it("sorts activation failure diagnostics deterministically", () => {
+    const diagnostics = extensionCommandTestOnly.collectActivationFailureDiagnostics([
+      {
+        layer: "project",
+        name: "zeta",
+        entry_path: "/tmp/zeta/index.js",
+        error: "zeta failed",
+      },
+      {
+        layer: "global",
+        name: "alpha",
+        entry_path: "/tmp/alpha/index.js",
+        error: "alpha failed",
+        trace: {
+          method: "registerItemFields",
+          registration_index: 1,
+          expected_schema: "item_fields",
+          missing_capability: "schema",
+          hint: "Add schema capability.",
+        },
+      },
+      {
+        layer: "project",
+        name: "beta",
+        entry_path: "/tmp/beta/index.js",
+        error: "beta failed",
+        trace: {
+          method: "registerCommand",
+          registration_index: 2,
+          expected_schema: "commands",
+          command: "beta ping",
+          capability: "commands",
+        },
+      },
+    ] as never);
+    expect(diagnostics.map((entry: { layer: string; name: string }) => `${entry.layer}:${entry.name}`)).toEqual([
+      "global:alpha",
+      "project:beta",
+      "project:zeta",
+    ]);
+    expect(diagnostics[0]).toMatchObject({
+      missing_capability: "schema",
+      hint: "Add schema capability.",
+      trace: expect.objectContaining({
+        method: "registerItemFields",
+        missing_capability: "schema",
+      }),
+    });
+    expect(diagnostics[1]).toMatchObject({
+      name: "beta",
+      trace: expect.objectContaining({
+        command: "beta ping",
+        capability: "commands",
+      }),
+    });
+    expect(diagnostics[1]).not.toHaveProperty("hint");
+  });
+
   it("parses, validates, coerces, and strips loose extension command options", () => {
     const definitions = [
       { long: "--count", short: "-c", value_type: "number", required: true },
@@ -1304,9 +1362,8 @@ describe("extension command runtime", () => {
       const cwd = process.cwd();
       process.chdir(tempRoot);
       try {
-        await expect(_testOnlyInstallSources.resolveNpmPackSpec("./package-root")).resolves.toBe(
-          pathToFileURL(packageRoot).href,
-        );
+        const resolvedRelativePackSpec = await _testOnlyInstallSources.resolveNpmPackSpec("./package-root");
+        await expect(realpath(fileURLToPath(resolvedRelativePackSpec))).resolves.toBe(await realpath(packageRoot));
         await expect(_testOnlyInstallSources.resolveNpmPackSpec("./missing-package-root")).resolves.toBe(
           "./missing-package-root",
         );
@@ -1314,9 +1371,8 @@ describe("extension command runtime", () => {
         await expect(_testOnlyInstallSources.resolveNpmPackSpec("alias@file://server/share")).resolves.toBe(
           "alias@file://server/share",
         );
-        await expect(_testOnlyInstallSources.resolveNpmPackSpec(pathToFileURL(packageRoot).href)).resolves.toBe(
-          pathToFileURL(packageRoot).href,
-        );
+        const resolvedFileUrlPackSpec = await _testOnlyInstallSources.resolveNpmPackSpec(pathToFileURL(packageRoot).href);
+        await expect(realpath(fileURLToPath(resolvedFileUrlPackSpec))).resolves.toBe(await realpath(packageRoot));
         const missingFileUrlSpec = pathToFileURL(path.join(tempRoot, "missing-file-url-package")).href;
         await expect(_testOnlyInstallSources.resolveNpmPackSpec(missingFileUrlSpec)).resolves.toBe(missingFileUrlSpec);
         await expect(_testOnlyInstallSources.resolveNpmPackSpec("alias@file:./package-root")).resolves.toBe(
@@ -4801,6 +4857,79 @@ describe("extension command runtime", () => {
         requested: true,
         executed: true,
         reason: "explore_defaults_to_runtime_probe",
+      });
+    });
+  });
+
+  it("surfaces activation failure diagnostics in install and explore flows", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "activation-diag-source");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(
+        path.join(sourceDir, "manifest.json"),
+        JSON.stringify(
+          {
+            name: "activation-diag-ext",
+            version: "1.0.0",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(
+        path.join(sourceDir, "index.js"),
+        [
+          "export function activate(api) {",
+          "  api.registerCommand('activation-diag ping', () => ({ ok: true }));",
+          "  api.registerItemFields([]);",
+          "}",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const install = await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
+      expect(install.warnings).toEqual(expect.arrayContaining(["extension_activate_failed:project:activation-diag-ext"]));
+      expect(install.details).toMatchObject({
+        runtime_activation_status: "failed",
+        activation_diagnostics: {
+          failed_count: 1,
+          installed_extension_failed: expect.objectContaining({
+            name: "activation-diag-ext",
+            missing_capability: "schema",
+          }),
+        },
+      });
+
+      const installedFailure = (install.details as { activation_diagnostics?: { installed_extension_failed?: { hint?: unknown } } })
+        .activation_diagnostics?.installed_extension_failed;
+      expect(typeof installedFailure?.hint).toBe("string");
+      expect((installedFailure?.hint as string).toLowerCase()).toContain("schema");
+
+      const explore = await runExtension(undefined, { explore: true, project: true }, { path: context.pmPath });
+      const listed = (explore.details.extensions as Array<Record<string, unknown>>) ?? [];
+      expect(listed).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: "activation-diag-ext",
+            runtime_active: false,
+            activation_status: "failed",
+          }),
+        ]),
+      );
+      expect(explore.details).toMatchObject({
+        activation_diagnostics: {
+          failed_count: 1,
+          failed: [
+            expect.objectContaining({
+              name: "activation-diag-ext",
+              missing_capability: "schema",
+            }),
+          ],
+        },
       });
     });
   });

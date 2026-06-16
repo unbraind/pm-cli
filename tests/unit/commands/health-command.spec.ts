@@ -3,6 +3,10 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { _testOnlyHealthCommand as healthInternals, runHealth } from "../../../src/cli/commands/health.js";
+import {
+  buildCapabilityContractMetadata as doctorBuildCapabilityContractMetadata,
+  collectUnknownCapabilityGuidance as doctorCollectUnknownCapabilityGuidance,
+} from "../../../src/cli/commands/extension/doctor.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../../src/core/extensions/index.js";
 import { writeVectorizationStatusLedger } from "../../../src/core/search/cache.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
@@ -132,6 +136,8 @@ describe("runHealth", () => {
       sample: ["a", "b"],
       truncated: true,
     });
+    expect(healthInternals.buildCapabilityContractMetadata).toBe(doctorBuildCapabilityContractMetadata);
+    expect(healthInternals.collectUnknownCapabilityGuidance).toBe(doctorCollectUnknownCapabilityGuidance);
     expect(healthInternals.buildCapabilityContractMetadata().capabilities.length).toBeGreaterThan(0);
   });
 

@@ -1,9 +1,6 @@
 import fs from "node:fs/promises";
 import { createHistoryEntry } from "../../core/history/history.js";
-import {
-  checkHistoryRewriteOwnership,
-  verifyHistoryRewriteNoDrift,
-} from "../../core/history/history-rewrite.js";
+import { executeHistoryRewrite } from "../../core/history/history-rewrite.js";
 import {
   cloneEmptyReplayDocument,
   historyEntriesToRaw,
@@ -15,7 +12,6 @@ import {
   type ReplayDocument,
 } from "../../core/history/replay.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { acquireLock } from "../../core/lock/lock.js";
 import { pathExists, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -319,24 +315,7 @@ export async function runHistoryCompact(
 
   if (changed && !dryRun) {
     warnings.push(
-      ...checkHistoryRewriteOwnership({
-        itemDocument: loadedItem?.document ?? null,
-        subjectId: subject.id,
-        author,
-        force: options.force,
-        settings,
-      }),
-    );
-    const releaseLock = await acquireLock(
-      pmRoot,
-      subject.id,
-      settings.locks.ttl_seconds,
-      author,
-      Boolean(options.force),
-      settings.governance.force_required_for_stale_lock,
-    );
-    try {
-      const { historyRawUnderLock } = await verifyHistoryRewriteNoDrift({
+      ...(await executeHistoryRewrite({
         pmRoot,
         subject,
         settings,
@@ -344,27 +323,29 @@ export async function runHistoryCompact(
         historyRawBeforeLock,
         currentItemRawBeforeLock,
         operation: "history-compact",
-      });
-      try {
-        await writeFileAtomic(historyPath, historyEntriesToRaw(rewrittenEntries));
-      } catch (error) {
-        if (historyRawUnderLock === null) {
-          await fs.rm(historyPath, { force: true });
-        } else {
-          await writeFileAtomic(historyPath, historyRawUnderLock);
-        }
-        throw error;
-      }
-      warnings.push(
-        ...(await runActiveOnWriteHooks({
-          path: historyPath,
-          scope: "project",
-          op: "history_compact:history",
-        })),
-      );
-    } finally {
-      await releaseLock();
-    }
+        author,
+        force: options.force,
+        itemDocument: loadedItem?.document ?? null,
+        applyRewrite: async ({ historyRawUnderLock }) => {
+          try {
+            await writeFileAtomic(historyPath, historyEntriesToRaw(rewrittenEntries));
+          } catch (error) {
+            if (historyRawUnderLock === null) {
+              await fs.rm(historyPath, { force: true });
+            } else {
+              await writeFileAtomic(historyPath, historyRawUnderLock);
+            }
+            throw error;
+          }
+        },
+        applyPostRewrite: async () =>
+          runActiveOnWriteHooks({
+            path: historyPath,
+            scope: "project",
+            op: "history_compact:history",
+          }),
+      })),
+    );
   }
 
   const firstRetainedEntry = boundary.retainedCount > 0 ? boundary.compactCount + 1 : null;

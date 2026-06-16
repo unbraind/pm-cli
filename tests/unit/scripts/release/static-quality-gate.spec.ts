@@ -469,6 +469,41 @@ describe("static-quality-gate", () => {
       expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("duplicate_chunks violations"))).toBe(true);
     });
 
+    it("includes src/cli files in duplicate scope", async () => {
+      const root = await harness.createTempRoot("pm-static-quality-dup-cli-");
+      await seedRoots(root);
+      const { mkdir, writeFile } = await import("node:fs/promises");
+      await mkdir(`${root}/src/cli`, { recursive: true });
+      const block = [
+        "export const sharedCliOne = 1;",
+        "export const sharedCliTwo = 2;",
+        "export const sharedCliThree = 3;",
+        "export const sharedCliFour = 4;",
+        "export const sharedCliFive = 5;",
+        "export const sharedCliSix = 6;",
+      ].join("\n");
+      await writeFile(`${root}/src/cli/one.ts`, `${block}\n`, "utf8");
+      await writeFile(`${root}/src/cli/two.ts`, `${block}\n`, "utf8");
+      mockUtils(root);
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      process.argv = [
+        "node",
+        "x",
+        "--max-lines",
+        "500",
+        "--max-lines-tests",
+        "500",
+        "--duplicate-window",
+        "5",
+        "--max-duplicate-chunks",
+        "0",
+      ];
+      mod.main();
+      expect(process.exitCode).toBe(1);
+      expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("duplicate_chunks violations"))).toBe(true);
+    });
+
     it("reports orphan_modules violations in text mode", async () => {
       const root = await harness.createTempRoot("pm-static-quality-orphan-");
       await seedRoots(root);

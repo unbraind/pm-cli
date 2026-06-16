@@ -165,7 +165,9 @@ describe("runFiles", () => {
   it("covers file discovery pure helper edges", async () => {
     expect(filesInternals.cleanupPathToken("`./src/file.ts:12`;")).toBe("./src/file.ts");
     expect(filesInternals.normalizeCandidatePathForOutput(path.join("src", "nested", "..", "file.ts"))).toBe("src/file.ts");
-    expect(filesInternals.linkedFileResolvedKey({ path: "README.md", scope: "project" }, "/repo")).toBe("/repo/README.md::project");
+    expect(filesInternals.linkedFileResolvedKey({ path: "README.md", scope: "project" }, "/repo")).toBe(
+      `${path.resolve("/repo", "README.md").replaceAll("\\", "/")}::project`,
+    );
     await expect(filesInternals.realpathForContainment("/definitely/missing/path.ts")).resolves.toBe(
       path.resolve("/definitely/missing/path.ts"),
     );

@@ -1,0 +1,12 @@
+id: pm-hntj
+title: "GH-242: field-existence filters for list/search"
+description: "Tracks GitHub issue #242: add has-notes/has-learnings/has-files/has-comments/empty-body style filters to pm list and pm search."
+type: Feature
+status: open
+priority: 2
+tags: []
+created_at: "2026-06-16T11:28:30.336Z"
+updated_at: "2026-06-16T11:28:30.336Z"
+author: codex-sdk-cli-consolidation-20260616
+parent: pm-mpbb
+body: ""

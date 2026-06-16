@@ -417,7 +417,12 @@ export function buildUnknownCommandGuidanceFromRuntime(
   const fallbackTopLevel = [...new Set(commandPaths.map((commandPath) => commandPath.split(" ")[0]).filter((segment) => segment.length > 0))];
   fallbackTopLevel.sort((left, right) => left.localeCompare(right));
   const suggestedPaths = (combinedCandidates.length > 0 ? combinedCandidates : fallbackTopLevel).slice(0, 3);
-  const examples = [...new Set(["pm --help", ...suggestedPaths.map((path) => `pm ${path} --help`)])];
+  const suggestedExamples = suggestedPaths.map((path) => `pm ${path} --help`);
+  // When we have a concrete did-you-mean candidate, lead examples with that
+  // candidate and keep the broader "pm --help" fallback after it.
+  const examples = combinedCandidates.length > 0
+    ? [...new Set([...suggestedExamples, "pm --help"])]
+    : [...new Set(["pm --help", ...suggestedExamples])];
   const optionalPackageHint = resolveOptionalPackageInstallHint(normalizedUnknown);
   const didYouMean = combinedCandidates.length > 0 ? `Did you mean: ${combinedCandidates.slice(0, 3).join(", ")}?` : null;
 

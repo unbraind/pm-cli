@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import * as cliCommands from "../../../src/cli/commands/index.js";
 import * as coreFs from "../../../src/core/fs/fs-utils.js";
 import * as coreFsIndex from "../../../src/core/fs/index.js";
@@ -84,10 +85,10 @@ describe("module boundaries export surface", () => {
       expect(findPmPackageRootFromPath(path.join(tempRoot, "missing.js"))).toBeUndefined();
       // Passing an existing directory resolves it directly rather than via dirname of a file.
       expect(findPmPackageRootFromPath(path.join(packageRoot, "dist"))).toBe(packageRoot);
-      expect(resolvePmPackageRootFromModule(new URL(nestedFile, "file://").href)).toBe(packageRoot);
-      expect(resolvePmCliVersion(new URL(nestedFile, "file://").href)).toBe("1.2.3");
+      expect(resolvePmPackageRootFromModule(pathToFileURL(nestedFile).href)).toBe(packageRoot);
+      expect(resolvePmCliVersion(pathToFileURL(nestedFile).href)).toBe("1.2.3");
       expect(resolveConfiguredPmPackageRoot({ PM_CLI_PACKAGE_ROOT: ` ${packageRoot} ` })).toBe(packageRoot);
-      expect(resolveConfiguredPmPackageRoot({}, "PM_CLI_PACKAGE_ROOT", new URL(nestedFile, "file://").href)).toBe(packageRoot);
+      expect(resolveConfiguredPmPackageRoot({}, "PM_CLI_PACKAGE_ROOT", pathToFileURL(nestedFile).href)).toBe(packageRoot);
 
       const malformedRoot = path.join(tempRoot, "bad");
       const malformedFile = path.join(malformedRoot, "dist", "cli.js");
@@ -95,10 +96,10 @@ describe("module boundaries export surface", () => {
       await writeFile(path.join(malformedRoot, "package.json"), "{bad", "utf8");
       await writeFile(malformedFile, "", "utf8");
       expect(findPmPackageRootFromPath(malformedFile)).toBeUndefined();
-      expect(resolvePmPackageRootFromModule(new URL(malformedFile, "file://").href, ["fallback"])).toBe(
+      expect(resolvePmPackageRootFromModule(pathToFileURL(malformedFile).href, ["fallback"])).toBe(
         path.join(malformedRoot, "dist", "fallback"),
       );
-      expect(resolvePmCliVersion(new URL(malformedFile, "file://").href, ["fallback"])).toBeUndefined();
+      expect(resolvePmCliVersion(pathToFileURL(malformedFile).href, ["fallback"])).toBeUndefined();
       expect(resolvePmCliVersion("not-a-file-url")).toBeUndefined();
 
       // package.json present and named correctly but with a blank/non-string version → undefined.
@@ -111,7 +112,7 @@ describe("module boundaries export surface", () => {
         "utf8",
       );
       await writeFile(blankVersionFile, "", "utf8");
-      expect(resolvePmCliVersion(new URL(blankVersionFile, "file://").href)).toBeUndefined();
+      expect(resolvePmCliVersion(pathToFileURL(blankVersionFile).href)).toBeUndefined();
       expect(resolveConfiguredPmPackageRoot({}, "PM_CLI_PACKAGE_ROOT")).toBe(process.cwd());
     } finally {
       await rm(tempRoot, { recursive: true, force: true });

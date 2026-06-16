@@ -9,6 +9,7 @@ import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { type ItemStatus } from "../../types/index.js";
 import { parseIntegerLimit } from "../shared-parsers.js";
+import { buildListQueryFilters } from "./list-filter-shared.js";
 import { runList } from "./list.js";
 
 export const DEDUPE_AUDIT_MODES = ["title_exact", "title_fuzzy", "parent_scope"] as const;
@@ -378,18 +379,7 @@ export async function runDedupeAudit(options: DedupeAuditOptions, global: Global
 
   const listed = await runList(
     status,
-    {
-      type: options.type,
-      tag: options.tag,
-      priority: options.priority,
-      deadlineBefore: options.deadlineBefore,
-      deadlineAfter: options.deadlineAfter,
-      assignee: options.assignee,
-      assigneeFilter: options.assigneeFilter,
-      parent: options.parent,
-      sprint: options.sprint,
-      release: options.release,
-    },
+    buildListQueryFilters(options),
     global,
   );
 
