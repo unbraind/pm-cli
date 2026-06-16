@@ -36,7 +36,7 @@ import type {
   ValidateMetadataProfile,
   ValidateMetadataRequiredField,
 } from "../../types/index.js";
-import { CONTEXT_DEPTH_VALUES, CONTEXT_SECTION_VALUES } from "../../types/index.js";
+import { CONTEXT_DEPTH_VALUES } from "../../types/index.js";
 
 const CONFIG_SCOPE_VALUES = ["project", "global"] as const;
 type ConfigScope = (typeof CONFIG_SCOPE_VALUES)[number];
@@ -743,6 +743,20 @@ function normalizeKeyForAction(action: ConfigAction, value: string | undefined):
   return normalizeKey(value);
 }
 
+/**
+ * Narrows the `ConfigKey | undefined` carried into the get/set branches back to
+ * a concrete `ConfigKey`. By the time those branches run, `normalizeKeyForAction`
+ * has already thrown on a missing key and nested settings have returned earlier,
+ * so the `undefined` case is unreachable at runtime — the throw is a defensive
+ * type-narrowing guard only.
+ */
+function assertConfigKeyDefined(key: ConfigKey | undefined): asserts key is ConfigKey {
+  /* c8 ignore next 3 -- defensive: get/set always carry a key (see normalizeKeyForAction). */
+  if (!key) {
+    throw new PmCliError("Config action requires <key>", EXIT_CODE.USAGE);
+  }
+}
+
 function readConfigValue(settings: {
   workflow: { definition_of_done: string[] };
   item_format: ItemFormat;
@@ -1005,11 +1019,13 @@ function applyPositionalValue(
         EXIT_CODE.USAGE,
       );
     }
-    // Pick whichever was supplied; do not overwrite a present --value with undefined.
-    return { ...options, value: valueValue ?? options.value };
+    // valueValue is guaranteed defined here (the valueValue === undefined early return
+    // above preserves a pre-existing --value), so this never overwrites --value.
+    return { ...options, value: valueValue };
   }
 
-  const routed = resolveConfigPositionalValue(normalizedKey ?? keyValue, valueValue);
+  assertConfigKeyDefined(normalizedKey);
+  const routed = resolveConfigPositionalValue(normalizedKey, valueValue);
   if (!routed.routable) {
     throw new PmCliError(routed.reason, EXIT_CODE.USAGE);
   }
@@ -1025,6 +1041,7 @@ function applyPositionalValue(
   }
 
   if (routed.flag === "format") {
+    /* c8 ignore start -- only `toon` is valid, so normalized explicit/positional formats cannot conflict. */
     if (
       options.format !== undefined &&
       normalizeItemFormat(options.format) !== normalizeItemFormat(routed.value)
@@ -1034,6 +1051,7 @@ function applyPositionalValue(
         EXIT_CODE.USAGE,
       );
     }
+    /* c8 ignore stop */
     return { ...options, format: routed.value };
   }
 
@@ -1205,10 +1223,10 @@ export async function runConfig(
     );
   }
 
+  // For get/set (non-nested) `normalizeKeyForAction` already guaranteed a key above,
+  // so `key` is defined here. list/export return before reaching these branches.
   if (action === "get") {
-    if (!key) {
-      throw new PmCliError('Config action "get" requires <key>', EXIT_CODE.USAGE);
-    }
+    assertConfigKeyDefined(key);
     if (key === "item_format") {
       return withWarnings({
         scope,
@@ -1431,9 +1449,7 @@ export async function runConfig(
     }, warnings);
   }
 
-  if (!key) {
-    throw new PmCliError('Config action "set" requires <key>', EXIT_CODE.USAGE);
-  }
+  assertConfigKeyDefined(key);
   if (options.clearCriteria === true && !isCriteriaConfigKey(key)) {
     throw new PmCliError(
       "--clear-criteria is only supported with config set criteria-list keys",
@@ -1905,6 +1921,7 @@ export async function runConfig(
 }
 
 export const _testOnlyConfigCommand = {
+  applyPositionalValue,
   normalizeAction,
   normalizeCriteria,
   normalizeGovernanceCloseValidationDefault,

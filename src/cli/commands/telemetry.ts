@@ -78,8 +78,10 @@ function normalizeTelemetrySubcommand(value: string | undefined): TelemetrySubco
   if ((TELEMETRY_SUBCOMMANDS as readonly string[]).includes(normalized)) {
     return normalized as TelemetrySubcommand;
   }
+  // `value` is always a defined string here: an undefined subcommand normalizes
+  // to "status" above (a valid value) and never reaches this throw.
   throw new PmCliError(
-    `Unknown pm telemetry subcommand "${value ?? ""}". Allowed: ${TELEMETRY_SUBCOMMANDS.join(", ")}`,
+    `Unknown pm telemetry subcommand "${value}". Allowed: ${TELEMETRY_SUBCOMMANDS.join(", ")}`,
     EXIT_CODE.USAGE,
     {
       code: "unknown_subcommand",

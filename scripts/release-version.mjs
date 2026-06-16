@@ -30,12 +30,10 @@ function parseDateKey(input) {
     return null;
   }
 
+  // VERSION_PATTERN only matches digit runs, so Number() always yields integers here.
   const year = Number(match[1]);
   const month = Number(match[2]);
   const day = Number(match[3]);
-  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
-    return null;
-  }
   if (month < 1 || month > 12 || day < 1 || day > 31) {
     return null;
   }
@@ -138,8 +136,8 @@ function listPublishedVersions(packageName) {
   try {
     parsed = JSON.parse(trimmed);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    fail(`Failed to parse npm versions JSON: ${message}`);
+    // JSON.parse only throws SyntaxError, so `error.message` is always defined.
+    fail(`Failed to parse npm versions JSON: ${(error).message}`);
   }
 
   if (Array.isArray(parsed)) {

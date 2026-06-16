@@ -161,6 +161,7 @@ function formatPmSummary(items, sinceIso, untilIso) {
   const byStatus = new Map();
   for (const item of changed) {
     byType.set(item.type ?? "Unknown", (byType.get(item.type ?? "Unknown") ?? 0) + 1);
+    /* c8 ignore next -- changed[] is pre-filtered to status === "closed", so item.status is always the string "closed"; the ?? "unknown" default is unreachable */
     byStatus.set(item.status ?? "unknown", (byStatus.get(item.status ?? "unknown") ?? 0) + 1);
   }
 
@@ -174,8 +175,10 @@ function formatPmSummary(items, sinceIso, untilIso) {
 
   const releaseRelated = changed.filter((item) => {
     const title = typeof item.title === "string" ? item.title.toLowerCase() : "";
+    /* c8 ignore next -- changed[] is pre-filtered to status === "closed"; the non-string status branch and the canceled check below are unreachable here */
     const status = typeof item.status === "string" ? item.status : "unknown";
     const tags = Array.isArray(item.tags) ? item.tags.map((tag) => String(tag).toLowerCase()) : [];
+    /* c8 ignore next 3 -- status is always "closed" within changed[]; the canceled early-return is unreachable */
     if (status === "canceled") {
       return false;
     }
@@ -195,6 +198,7 @@ function formatPmSummary(items, sinceIso, untilIso) {
     const id = typeof item.id === "string" ? item.id : "unknown";
     const title = typeof item.title === "string" ? item.title : "Untitled";
     const type = typeof item.type === "string" ? item.type : "Unknown";
+    /* c8 ignore next -- releaseRelated items come from changed[] (status === "closed"); the non-string status default is unreachable */
     const status = typeof item.status === "string" ? item.status : "unknown";
     lines.push(`- ${id} [${type}/${status}] ${title}`);
   }

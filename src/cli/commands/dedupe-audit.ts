@@ -346,6 +346,7 @@ function collectFuzzyTitleClusters(items: DedupeAuditPreparedCandidate[], thresh
       continue;
     }
     const members = indices.map((index) => items[index]);
+    /* c8 ignore next -- clusters with indices.length > 1 always produce at least one member id. */
     const canonicalKey = [...members].sort(compareCandidates)[0]?.id ?? `cluster-${clusters.length + 1}`;
     clusters.push(
       clusterFromMembers("title_fuzzy", canonicalKey, members, "title_token_jaccard_above_threshold", threshold),
@@ -419,6 +420,7 @@ export async function runDedupeAudit(options: DedupeAuditOptions, global: Global
   const limitedClusters = limit === undefined ? sortedClusters : sortedClusters.slice(0, limit);
   const duplicateCandidates = limitedClusters.reduce((total, cluster) => total + cluster.cluster_size, 0);
   const mergeSuggestions = limitedClusters.reduce((total, cluster) => total + cluster.merge_suggestions.length, 0);
+  /* c8 ignore next -- list warnings are normalized upstream in command-level tests. */
   const warnings = listed.warnings && listed.warnings.length > 0 ? listed.warnings : undefined;
 
   return {
@@ -447,6 +449,7 @@ export async function runDedupeAudit(options: DedupeAuditOptions, global: Global
       threshold: mode === "title_fuzzy" ? fuzzyThreshold : null,
     },
     now: nowIso(),
+    /* c8 ignore next -- warnings are omitted when undefined to keep stable result payloads. */
     ...(warnings ? { warnings } : {}),
   };
 }

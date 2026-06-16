@@ -3,9 +3,10 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import ts from "typescript";
+import { fileURLToPath } from "node:url";
 import { fail, flagBool, flagString, parseFlags, repoRoot } from "./utils.mjs";
 
-function walkFiles(directory, matcher, out = []) {
+export function walkFiles(directory, matcher, out = []) {
   if (!statSync(directory).isDirectory()) {
     return out;
   }
@@ -22,22 +23,22 @@ function walkFiles(directory, matcher, out = []) {
   return out;
 }
 
-function relativeToRepo(absolutePath) {
+export function relativeToRepo(absolutePath) {
   return path.relative(repoRoot, absolutePath).replaceAll(path.sep, "/");
 }
 
-function loadText(absolutePath) {
+export function loadText(absolutePath) {
   return readFileSync(absolutePath, "utf8");
 }
 
-function collectTypeScriptFiles() {
+export function collectTypeScriptFiles() {
   const roots = ["src", "tests", "packages"].map((segment) => path.join(repoRoot, segment));
   const matchesTs = (absolutePath) => absolutePath.endsWith(".ts") && !absolutePath.endsWith(".d.ts");
   const files = roots.flatMap((root) => walkFiles(root, matchesTs));
   return files.sort((left, right) => left.localeCompare(right));
 }
 
-function checkFileLength(files, maxSrcLines, maxTestLines) {
+export function checkFileLength(files, maxSrcLines, maxTestLines) {
   const violations = [];
   for (const absolutePath of files) {
     const relativePath = relativeToRepo(absolutePath);
@@ -54,7 +55,7 @@ function checkFileLength(files, maxSrcLines, maxTestLines) {
   return violations;
 }
 
-function checkDirectoryLoad(files, maxFilesPerDirectory) {
+export function checkDirectoryLoad(files, maxFilesPerDirectory) {
   const counts = new Map();
   for (const absolutePath of files) {
     const relativeDirectory = relativeToRepo(path.dirname(absolutePath));
@@ -73,7 +74,7 @@ function checkDirectoryLoad(files, maxFilesPerDirectory) {
   return violations.sort((left, right) => right.file_count - left.file_count);
 }
 
-function normalizeLine(rawLine) {
+export function normalizeLine(rawLine) {
   const trimmed = rawLine.trim();
   if (trimmed.length === 0) {
     return "";
@@ -89,7 +90,7 @@ function normalizeLine(rawLine) {
   return trimmed.replaceAll(/\s+/g, " ");
 }
 
-function checkDuplicateChunks(files, duplicateWindowLines, maxDuplicateChunks) {
+export function checkDuplicateChunks(files, duplicateWindowLines, maxDuplicateChunks) {
   const windowMap = new Map();
   const duplicates = [];
 
@@ -137,7 +138,7 @@ function checkDuplicateChunks(files, duplicateWindowLines, maxDuplicateChunks) {
   return duplicates;
 }
 
-function resolveRelativeImport(fromAbsolute, specifier) {
+export function resolveRelativeImport(fromAbsolute, specifier) {
   if (!specifier.startsWith(".")) {
     return null;
   }
@@ -167,11 +168,11 @@ function resolveRelativeImport(fromAbsolute, specifier) {
   return null;
 }
 
-function sourceFilesOnly(files) {
+export function sourceFilesOnly(files) {
   return files.filter((absolutePath) => relativeToRepo(absolutePath).startsWith("src/"));
 }
 
-function checkOrphanSourceModules(files) {
+export function checkOrphanSourceModules(files) {
   const sourceFiles = sourceFilesOnly(files);
   const incoming = new Map(sourceFiles.map((file) => [file, 0]));
 
@@ -185,6 +186,7 @@ function checkOrphanSourceModules(files) {
       ) {
         const resolved = resolveRelativeImport(absolutePath, statement.moduleSpecifier.text);
         if (resolved && incoming.has(resolved)) {
+          /* c8 ignore next -- `incoming.has(resolved)` guarantees a numeric entry; the `?? 0` fallback is unreachable */
           incoming.set(resolved, (incoming.get(resolved) ?? 0) + 1);
         }
       }
@@ -226,7 +228,7 @@ function checkOrphanSourceModules(files) {
   return violations.sort((left, right) => left.path.localeCompare(right.path));
 }
 
-function complexityContribution(node) {
+export function complexityContribution(node) {
   if (ts.isIfStatement(node)) return 1;
   if (ts.isForStatement(node)) return 1;
   if (ts.isForInStatement(node)) return 1;
@@ -248,7 +250,7 @@ function complexityContribution(node) {
   return 0;
 }
 
-function functionLikeName(node, sourceFile) {
+export function functionLikeName(node, sourceFile) {
   if ("name" in node && node.name && ts.isIdentifier(node.name)) {
     return node.name.text;
   }
@@ -256,7 +258,7 @@ function functionLikeName(node, sourceFile) {
   return `<anonymous@${position.line + 1}>`;
 }
 
-function computeFunctionComplexity(node) {
+export function computeFunctionComplexity(node) {
   let complexity = 1;
   const visit = (child) => {
     complexity += complexityContribution(child);
@@ -266,7 +268,7 @@ function computeFunctionComplexity(node) {
   return complexity;
 }
 
-function checkFunctionComplexity(files, maxComplexity) {
+export function checkFunctionComplexity(files, maxComplexity) {
   const violations = [];
   for (const absolutePath of files) {
     const sourceText = loadText(absolutePath);
@@ -297,7 +299,7 @@ function checkFunctionComplexity(files, maxComplexity) {
   return violations.sort((left, right) => right.complexity - left.complexity);
 }
 
-function usage() {
+export function usage() {
   console.log(`Usage:
   node scripts/release/static-quality-gate.mjs [--json]
     [--max-lines 3400]
@@ -312,7 +314,7 @@ file-length limits, and directory organization density.
 `);
 }
 
-function parseNumberFlag(flags, key, fallback) {
+export function parseNumberFlag(flags, key, fallback) {
   const raw = flagString(flags, key, null);
   if (raw === null) {
     return fallback;
@@ -324,7 +326,7 @@ function parseNumberFlag(flags, key, fallback) {
   return parsed;
 }
 
-function main() {
+export function main() {
   const { flags } = parseFlags(process.argv.slice(2));
   if (flags.get("help") || flags.get("h")) {
     usage();
@@ -410,4 +412,8 @@ function main() {
   }
 }
 
-main();
+/* c8 ignore start -- CLI auto-run guard; logic covered via exported main() */
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main();
+}
+/* c8 ignore stop */

@@ -177,17 +177,19 @@ export function validateLooseCommandOptionsWithFlagDefinitions(
   for (const definition of definitions) {
     const keys = collectLooseOptionKeys(definition);
     const label = formatLooseOptionLabel(definition);
-    if (label) {
-      labels.push(label);
+    const fallbackLabel = keys.length > 0 ? `--${keys[0]}` : null;
+    const normalizedLabel = label ?? fallbackLabel;
+    if (normalizedLabel) {
+      labels.push(normalizedLabel);
     }
     for (const key of keys) {
       allowed.add(key);
       if (definition.enabled === false) {
-        disabled.set(key, label ?? `--${key}`);
+        disabled.set(key, normalizedLabel as string);
       }
     }
     if (definition.required === true && definition.enabled !== false && keys.length > 0) {
-      required.push({ keys, label: label ?? `--${keys[0]}` });
+      required.push({ keys, label: normalizedLabel as string });
     }
   }
   for (const key of Object.keys(options)) {
@@ -373,7 +375,7 @@ export function stripLooseCommandOptionTokens(
     if (parsed) {
       const normalizedKey = toLooseOptionKey(parsed.key);
       if (knownKeys.has(normalizedKey)) {
-        const token = args[index] ?? "";
+        const token = args[index] as string;
         const consumed = booleanKeys.has(normalizedKey) && !token.includes("=") ? 1 : parsed.consumed;
         index += consumed;
         continue;

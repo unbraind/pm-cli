@@ -266,7 +266,7 @@ export async function runGet(id: string, global: GlobalOptions, options: GetOpti
   if (claimState) {
     result.claim_state = claimState;
   }
-  const itemType = loaded.document.metadata.type?.trim().toLowerCase() ?? "";
+  const itemType = loaded.document.metadata.type.trim().toLowerCase();
   const includeChildren = fieldProjection
     ? fieldsIncludeRoot(fields, "children")
     : depth !== "brief" && CHILD_ROLLUP_TYPES.has(itemType);
@@ -280,8 +280,7 @@ export async function runGet(id: string, global: GlobalOptions, options: GetOpti
     for (const candidate of corpus) {
       const parentId = typeof candidate.parent === "string" ? candidate.parent.trim().toLowerCase() : "";
       if (parentId !== locatedId) continue;
-      const candidateStatus =
-        typeof candidate.status === "string" && candidate.status.trim().length > 0 ? candidate.status.trim().toLowerCase() : "unknown";
+      const candidateStatus = candidate.status.trim().toLowerCase();
       count += 1;
       byStatus[candidateStatus] = (byStatus[candidateStatus] ?? 0) + 1;
       if (!isTerminalStatus(candidateStatus, statusRegistry)) {

@@ -115,7 +115,8 @@ function parseJsonOutput(result, label) {
   try {
     return JSON.parse(result.stdout);
   } catch (error) {
-    throw new Error(`${label} did not emit JSON: ${error instanceof Error ? error.message : String(error)}`);
+    // JSON.parse only throws SyntaxError, so `error.message` is always defined.
+    throw new Error(`${label} did not emit JSON: ${(error).message}`);
   }
 }
 
@@ -180,8 +181,9 @@ function runPm(label, args, env, options) {
   try {
     return { entry, payload: parseJsonOutput(result, label) };
   } catch (error) {
+    // parseJsonOutput only ever throws an Error, so `error.message` is always defined.
     entry.code = 1;
-    entry.error = error instanceof Error ? error.message : String(error);
+    entry.error = (error).message;
     return { entry, payload: null };
   }
 }
@@ -190,6 +192,9 @@ function smokePackage(packageName, options) {
   const tempRoot = mkdtempSync(path.join(tmpdir(), "pm-external-package-smoke-"));
   const commands = [];
   const startedAt = Date.now();
+  // Shared so the success and failure returns expose the same temp-root policy
+  // through a single branch (kept temp roots are surfaced only when requested).
+  const reportedTempRoot = options.keepTemp ? tempRoot : undefined;
 
   try {
     const projectRoot = path.join(tempRoot, "project");
@@ -240,7 +245,7 @@ function smokePackage(packageName, options) {
       package: packageName,
       ok: true,
       took_ms: Date.now() - startedAt,
-      temp_root: options.keepTemp ? tempRoot : undefined,
+      temp_root: reportedTempRoot,
       installed_count: install?.details?.installed_count ?? null,
       activation_failure_count: activationFailures,
       blocking_failure_count: blockingFailures,
@@ -253,8 +258,9 @@ function smokePackage(packageName, options) {
       package: packageName,
       ok: false,
       took_ms: Date.now() - startedAt,
-      temp_root: options.keepTemp ? tempRoot : undefined,
-      error: error instanceof Error ? error.message : String(error),
+      temp_root: reportedTempRoot,
+      // Everything thrown inside the try above is an Error, so `error.message` always exists.
+      error: (error).message,
       commands,
     };
   } finally {

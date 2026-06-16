@@ -51,7 +51,7 @@ function addHiddenOption(command: Command, flags: string, description: string, r
  * supplied but does not parse to a finite integer (rather than silently dropping
  * it). Returns `undefined` only when the flag was genuinely not provided.
  */
-function parseSchemaOrderOption(raw: unknown): number | undefined {
+export function parseSchemaOrderOption(raw: unknown): number | undefined {
   if (raw === undefined || raw === null) {
     return undefined;
   }
@@ -74,7 +74,7 @@ function parseSchemaOrderOption(raw: unknown): number | undefined {
   throw new PmCliError("--order must be a finite integer.", EXIT_CODE.USAGE);
 }
 
-function registerCommanderOptionContracts(command: Command, contracts: CommanderOptionRegistrationContract[]): void {
+export function registerCommanderOptionContracts(command: Command, contracts: CommanderOptionRegistrationContract[]): void {
   for (const contract of contracts) {
     if (contract.required) {
       command.requiredOption(contract.option, contract.description);
@@ -1088,12 +1088,14 @@ export function registerMutationCommands(program: Command): void {
         );
       }
       const aliases =
+        /* c8 ignore next -- --alias is registered with commander `collect`, so it is always an array here; the string arm is a defensive guard for non-CLI (programmatic) callers */
         typeof options.alias === "string"
           ? [options.alias]
           : Array.isArray(options.alias)
             ? (options.alias as string[])
             : undefined;
       const roles =
+        /* c8 ignore next -- --role is registered with commander `collect`, so it is always an array here; the string arm is a defensive guard for non-CLI (programmatic) callers */
         typeof options.role === "string"
           ? [options.role]
           : Array.isArray(options.role)
@@ -1464,10 +1466,14 @@ export function registerMutationCommands(program: Command): void {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
       const { runDeps } = await import("./commands/deps.js");
+      // --format and --collapse carry commander defaults ("tree"/"none"), so
+      // they are always strings by the time the action runs; --maxDepth has no
+      // default and may be unset. Use `as string` rather than String(...) so an
+      // omitted option stays undefined instead of becoming the literal "undefined".
       const result = await runDeps(id, {
-        format: typeof options.format === "string" ? options.format : undefined,
+        format: options.format as string,
         maxDepth: typeof options.maxDepth === "string" ? options.maxDepth : undefined,
-        collapse: typeof options.collapse === "string" ? options.collapse : undefined,
+        collapse: options.collapse as string,
         summary: options.summary === true,
       }, globalOptions);
       printResult(result, globalOptions);

@@ -22,6 +22,7 @@ function parseJson(stdout, context) {
   try {
     return JSON.parse(stdout.trim());
   } catch (error) {
+    /* c8 ignore next -- JSON.parse only throws SyntaxError (an Error); the String(error) fallback is unreachable */
     const message = error instanceof Error ? error.message : String(error);
     fail(`Failed to parse JSON for ${context}: ${message}`);
   }

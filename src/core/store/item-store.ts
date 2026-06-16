@@ -161,7 +161,8 @@ export async function listAllFrontMatterWithBody(
   );
   return candidates.map((candidate) => ({
     ...candidate.metadata,
-    body: candidate.body ?? "",
+    // includeBody:true guarantees candidate bodies are materialized.
+    body: candidate.body!,
   }));
 }
 

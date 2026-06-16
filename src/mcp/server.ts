@@ -224,6 +224,7 @@ function globalOptions(args: Record<string, unknown>): GlobalOptions {
     json: true,
     quiet: true,
     path: readString(args, "path"),
+    noExtensions: args.noExtensions === true || args.no_extensions === true,
     noPager: true,
   };
 }
@@ -705,7 +706,6 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
         ...runnerOptions,
         ...(runnerOptions.title === undefined && typeof args.title === "string" ? { title: args.title } : {}),
         ...(runnerOptions.message === undefined && typeof args.message === "string" ? { message: args.message } : {}),
-        ...(runnerOptions.author === undefined && typeof args.author === "string" ? { author: args.author } : {}),
       };
       return projectMutationResult(
         await runCopy(
@@ -1200,6 +1200,7 @@ export function isInvokedAsMcpMainModule(argvPath: string | undefined, moduleUrl
 export const _testOnly = {
   closeManyOptionsFromFlat,
   detectUnexpectedTopLevelKeys,
+  errorContent,
   extensionOptionsFromArgs,
   globalOptions,
   mutationListOptions,
@@ -1218,8 +1219,11 @@ export const _testOnly = {
   withAddNoteOption,
   withFilesDiscoveryOptions,
   withMutationCompaction,
+  writeError,
 };
 
+/* c8 ignore start */
 if (isInvokedAsMcpMainModule(process.argv[1], import.meta.url)) {
   startMcpServer();
 }
+/* c8 ignore stop */

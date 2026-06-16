@@ -2,6 +2,7 @@
 
 import { lstat, mkdir, readdir, readFile, rename, rm, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 
 const repoRoot = process.cwd();
@@ -14,11 +15,11 @@ const lockTimeoutMs = 120_000;
 const staleLockMs = 10 * 60_000;
 const bundleStaleRetentionMs = 10 * 60_000;
 
-function sleep(ms) {
+export function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function acquireBundleBuildLock() {
+export async function acquireBundleBuildLock() {
   await mkdir(path.dirname(lockDir), { recursive: true });
   const startedAt = Date.now();
   while (true) {
@@ -65,7 +66,7 @@ async function acquireBundleBuildLock() {
   }
 }
 
-async function collectFiles(directory) {
+export async function collectFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true }).catch((error) => {
     if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
       return [];
@@ -86,7 +87,7 @@ async function collectFiles(directory) {
   return files;
 }
 
-async function removeStaleBundleFiles(outputs) {
+export async function removeStaleBundleFiles(outputs) {
   const expectedFiles = new Set(
     Object.keys(outputs).map((outputPath) => path.resolve(repoRoot, outputPath)),
   );
@@ -105,39 +106,47 @@ async function removeStaleBundleFiles(outputs) {
   );
 }
 
-// Do not delete the live bundle before rebuilding. Agents often run docs,
-// dogfood, and build gates concurrently in one checkout; removing this folder
-// creates a transient broken `dist/cli.js` runtime.
-const releaseBundleBuildLock = await acquireBundleBuildLock();
-try {
-  const buildResult = await build({
-    entryPoints: [entryPoint],
-    outdir: outputDir,
-    bundle: true,
-    splitting: true,
-    format: "esm",
-    platform: "node",
-    target: ["node20"],
-    packages: "external",
-    sourcemap: true,
-    metafile: true,
-    entryNames: "[name]",
-    chunkNames: "chunks/[name]-[hash]",
-    logLevel: "warning",
-  });
-  await removeStaleBundleFiles(buildResult.metafile.outputs);
-} finally {
-  await releaseBundleBuildLock();
+export async function main() {
+  // Do not delete the live bundle before rebuilding. Agents often run docs,
+  // dogfood, and build gates concurrently in one checkout; removing this folder
+  // creates a transient broken `dist/cli.js` runtime.
+  const releaseBundleBuildLock = await acquireBundleBuildLock();
+  try {
+    const buildResult = await build({
+      entryPoints: [entryPoint],
+      outdir: outputDir,
+      bundle: true,
+      splitting: true,
+      format: "esm",
+      platform: "node",
+      target: ["node20"],
+      packages: "external",
+      sourcemap: true,
+      metafile: true,
+      entryNames: "[name]",
+      chunkNames: "chunks/[name]-[hash]",
+      logLevel: "warning",
+    });
+    await removeStaleBundleFiles(buildResult.metafile.outputs);
+  } finally {
+    await releaseBundleBuildLock();
+  }
+
+  const binSource = await readFile(binPath, "utf8");
+  const sourceImport = 'await import("./cli/main.js")';
+  const bundledImport = 'await import("./cli-bundle/main.js")';
+  if (binSource.includes(bundledImport)) {
+    process.exit(0);
+  }
+  const bundledBinSource = binSource.replace(sourceImport, bundledImport);
+  if (bundledBinSource === binSource) {
+    throw new Error("Unable to rewrite dist/cli.js to use the bundled CLI entrypoint.");
+  }
+  await writeFile(binPath, bundledBinSource, "utf8");
 }
 
-const binSource = await readFile(binPath, "utf8");
-const sourceImport = 'await import("./cli/main.js")';
-const bundledImport = 'await import("./cli-bundle/main.js")';
-if (binSource.includes(bundledImport)) {
-  process.exit(0);
+/* c8 ignore start -- CLI auto-run guard; logic covered via exported main() */
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  await main();
 }
-const bundledBinSource = binSource.replace(sourceImport, bundledImport);
-if (bundledBinSource === binSource) {
-  throw new Error("Unable to rewrite dist/cli.js to use the bundled CLI entrypoint.");
-}
-await writeFile(binPath, bundledBinSource, "utf8");
+/* c8 ignore stop */

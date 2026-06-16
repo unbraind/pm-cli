@@ -4,6 +4,9 @@
 
 ### Added
 
+- Finalize literal 100% coverage: close c8-ignore-masked gaps & remediate PR \#240 bot review ([pm-0xix](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-0xix.toon))
+- Apply Gemini correctness fixes & cover new branches \(config/init/reindex/register-mutation\) ([pm-bw70](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-bw70.toon))
+- Module-mirrored test reorganization: retire lane/wave naming, add shared script harness ([pm-m449](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-m449.toon))
 - Search: persistent search.hybrid\_semantic\_weight setting as default for pm search --semantic-weight ([pm-2xwh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-2xwh.toon))
 - Configurable min-score threshold for pm search: --min-score per-query override of search.score\_threshold ([pm-cstl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-cstl.toon))
 - Search corpus: include type, priority, parent, assignee fields in keyword and semantic corpus ([pm-jyie](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-jyie.toon))
@@ -24,11 +27,28 @@
 
 ### Fixed
 
+- c8 ignore end \(invalid keyword\) silently masked source coverage; literal-100% gate passed on hidden code ([pm-dg8j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dg8j.toon))
 - GH-205: surface telemetry flush/probe + OTEL export diagnostics in pm health ([pm-hx5a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hx5a.toon))
 - GH-209 follow-up: OTEL span export keeps the CLI alive ~10s \(and can exit 13\) when the traces endpoint is unreachable ([pm-25se](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-25se.toon))
 
 ### Other
 
+- PR \#240 review: applied vs declined Gemini findings \(with rationale\) ([pm-lg65](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-lg65.toon))
+- Close c8-exposed coverage gaps in src/cli/commands/create.ts to 100% ([pm-eifq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-eifq.toon))
+- Close c8-exposed coverage gaps in src/cli/commands/contracts.ts and restore.ts to 100% ([pm-dmuq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-dmuq.toon))
+- Close c8-exposed coverage gaps in src/cli/commands/history-redact.ts and normalize.ts to 100% ([pm-byl1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-byl1.toon))
+- Test-suite dedup & best-practice audit \(post module-mirror reorg\) ([pm-2nqx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-2nqx.toon))
+- Source-correctness audit of all-source-100%-coverage branch src/ edits ([pm-e2jt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-e2jt.toon))
+- tests/unit is at exactly 120/120 spec files: zero headroom before Gates\(static\) fails; consolidation candidates identified ([pm-vks9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-vks9.toon))
+- ADR: test organization convention — module-mirrored spec files, no lane/wave naming ([pm-kjmx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-kjmx.toon))
+- ADR: literal all-src coverage supersedes curated include/exclude allowlist ([pm-w13j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-w13j.toon))
+- Literal 100% all-source test coverage & module-mirrored test reorganization ([pm-xau3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-xau3.toon))
+- Coverage to 100%: packages, plugins, and docs examples ([pm-6tch](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-6tch.toon))
+- Coverage to 100%: src/core, src/mcp, and src/sdk modules ([pm-krwu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-krwu.toon))
+- Coverage to 100%: src/cli command handlers \(group B — query, search, calendar, test, init, extension\) ([pm-7v9s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-7v9s.toon))
+- Coverage to 100%: src/cli command handlers \(group A — mutation, history, storage, schema\) ([pm-ud1x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ud1x.toon))
+- Coverage to 100%: src/cli infrastructure \(registration, bootstrap, help, main\) ([pm-uvxc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-uvxc.toon))
+- Coverage to 100%: build, release, and smoke scripts ([pm-f2ne](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-f2ne.toon))
 - Document and test telemetry env-var surface: PM\_TELEMETRY\_DISABLED, PM\_NO\_TELEMETRY, PM\_TELEMETRY\_SOURCE\_CONTEXT, PM\_TELEMETRY\_OTEL\_DISABLED, PM\_TELEMETRY\_INLINE\_FLUSH ([pm-r7md](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-r7md.toon))
 - pm validate: --all-affected-ids flag + never truncate ID lists in JSON mode \(GH-224\) ([pm-o0d2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-o0d2.toon))
 - pm aggregate: explicit \(unassigned\)/\(none\) labels for blank group keys in all output modes \(GH-225\) ([pm-zcx9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-zcx9.toon))

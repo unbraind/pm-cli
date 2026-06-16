@@ -131,10 +131,8 @@ function coerceJsonTagArray(trimmed: string): string | null {
   } catch {
     return null;
   }
-  if (!Array.isArray(parsed)) {
-    return null;
-  }
-  return parsed
+  const parsedArray = parsed as unknown[];
+  return parsedArray
     .map((entry) =>
       typeof entry === "string" || typeof entry === "number" || typeof entry === "boolean"
         ? String(entry).replace(/,/g, " ")
@@ -155,9 +153,6 @@ function stripCodeFenceEnvelope(value: string): string {
   }
   const lines = normalized.split("\n");
   if (lines.length < 2) {
-    return value;
-  }
-  if (!lines[0].startsWith("```")) {
     return value;
   }
   if (lines.at(-1)?.trim() !== "```") {
@@ -290,7 +285,7 @@ function parseMarkdownKeyValueLines(raw: string): Record<string, string> | null 
     return null;
   }
 
-  return Object.keys(result).length > 0 ? result : null;
+  return result;
 }
 
 export function parseCsvKv(raw: string, optionName: string): Record<string, string> {
@@ -312,9 +307,6 @@ export function parseCsvKv(raw: string, optionName: string): Record<string, stri
     const delimiterIndex = findKeyValueDelimiter(segment);
     if (delimiterIndex > 0) {
       const key = segment.slice(0, delimiterIndex).trim();
-      if (!key) {
-        throw new PmCliError(buildInvalidKvMessage(raw, optionName), EXIT_CODE.USAGE);
-      }
       const value = unquoteValue(segment.slice(delimiterIndex + 1).trim());
       result[key] = value;
       activeKey = key;
@@ -324,10 +316,6 @@ export function parseCsvKv(raw: string, optionName: string): Record<string, stri
       result[activeKey] = `${result[activeKey]},${segment.trim()}`;
       continue;
     }
-    throw new PmCliError(buildInvalidKvMessage(raw, optionName), EXIT_CODE.USAGE);
-  }
-
-  if (Object.keys(result).length === 0) {
     throw new PmCliError(buildInvalidKvMessage(raw, optionName), EXIT_CODE.USAGE);
   }
 

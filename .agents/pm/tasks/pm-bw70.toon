@@ -1,0 +1,15 @@
+id: pm-bw70
+title: Apply Gemini correctness fixes & cover new branches (config/init/reindex/register-mutation)
+description: ""
+type: Task
+status: closed
+priority: 1
+tags[3]: "area:cli",coverage,pr-240
+created_at: "2026-06-16T08:40:14.428Z"
+updated_at: "2026-06-16T09:18:14.566Z"
+author: maintainer-agent
+parent: pm-0xix
+comments[1]{created_at,author,text}:
+  "2026-06-16T09:18:13.602Z",maintainer-agent,"Completed. Net VALID source fixes from the Gemini review: (1) init.ts wizard now tolerates an invalid governance-preset typo — catches and defaults to minimal with a notice instead of throwing and aborting mid-setup (genuine UX improvement, fully covered by a new init-command.spec test); (2) register-mutation.ts deps action uses 'options.format/collapse as string' instead of String(...) so an omitted option stays undefined rather than the literal 'undefined' (cosmetic safety). config.ts and reindex.ts changes were REVERTED as false positives (see Decision pm-lg65 correction comment): config's line 1002 early-return makes Gemini's '?? options.value' a dead/unneeded branch; reindex's matched-registration invariant makes '?? providerName' unreachable. Added a config-command.spec regression guard proving --value is preserved on the nested no-positional path. New branches introduced by the kept fixes are covered; typecheck clean."
+close_reason: "Applied 2 valid Gemini fixes (init tolerant-preset UX, register-mutation as-string), reverted 2 false positives with rationale, added regression guard; new branches covered, tsc clean."
+body: ""

@@ -34,8 +34,9 @@ export async function runAppend(id: string, options: AppendCommandOptions, globa
   }
   const settings = await readSettings(pmRoot);
   const author = resolveAuthor(options.author, settings.author_default);
+  // options.body is guaranteed defined by the guard above, so resolveValue returns a defined string.
   const bodyInput = await stdinResolver.resolveValue(options.body, "--body");
-  const appended = (bodyInput ?? "").trim();
+  const appended = (bodyInput as string).trim();
 
   const result = await mutateItem({
     pmRoot,

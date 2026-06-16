@@ -33,11 +33,13 @@ Use focused runs while iterating, then run coverage before closure when risk or 
 
 ## Coverage Governance
 
-Coverage gating now targets literal source coverage for `src/`:
+Coverage gating now targets literal all-source coverage across runtime code families:
 
-- `vitest.config.ts` includes `src/*.ts` and `src/**/*.ts`.
-- Thresholds are explicit ratchet baselines for the measured all-source corpus and should only move upward until they reach 100%.
-- Avoid reintroducing a curated `include`/`exclude` allowlist for production `src` modules.
+- `vitest.config.ts` includes canonical authoring sources across `src`, `packages` (`.ts`), `scripts`, `plugins`, and `docs/examples`.
+- Generated package JavaScript mirrors are not separately gated; coverage is enforced on their TypeScript sources.
+- Thresholds are strict `100/100/100/100` for lines, branches, functions, and statements.
+- Avoid reintroducing curated coverage allowlists; keep the full all-source corpus measurable and gated.
+- Prefer extending existing test files and shared helpers so new coverage remains fast and non-duplicative.
 - Prefer extracting deterministic pure helpers (and unit-testing them) when an orchestration-heavy file is difficult to cover directly.
 
 ## Search Quality Evaluation

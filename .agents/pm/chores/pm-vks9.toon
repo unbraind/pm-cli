@@ -2,11 +2,21 @@ id: pm-vks9
 title: "tests/unit is at exactly 120/120 spec files: zero headroom before Gates(static) fails; consolidation candidates identified"
 description: "ls tests/unit/*.spec.ts = 120, and static-quality-gate.mjs --max-files-per-dir defaults to 120, so the NEXT spec file added to tests/unit/ breaks CI Gates(static). Relates pm-wc0d (adds a contract test for the cap) but this is the remediation side: free headroom by consolidating duplicated coverage or moving specs into the existing tests/unit/commands/ + tests/unit/core/ subdirectories (each counted separately, far under cap). Verified consolidation candidate: the author-resolution fallback chain (explicit -> env -> settings -> unknown) is asserted end-to-end in at least 5 places: tests/unit/notes-learnings-command.spec.ts:119, tests/unit/comments-command.spec.ts:174, tests/unit/files-docs-command.spec.ts:331 and :824 (files + docs, via shared assertAuthorResolution). The chain could be unit-tested once against the core resolver, with command specs keeping only a single wiring assertion each."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[3]: audit-2026-06-13,governance,tests
 created_at: "2026-06-12T22:47:56.332Z"
-updated_at: "2026-06-12T22:47:56.332Z"
+updated_at: "2026-06-16T07:23:52.191Z"
 author: audit-quality-agent
 parent: pm-y7sc
-body: ""
+comments[1]{created_at,author,text}:
+  "2026-06-14T19:36:47.273Z",lane-d-subagent-20260614,"Evidence: Consolidated lane-specific duplicate specs into existing suites by deleting tests/unit/lane-b-package-runtime-coverage.spec.ts tests/unit/lane-b-scripts-coverage.spec.ts and tests/unit/lane-c-scripts-coverage.spec.ts. Added targeted runtime coverage to tests/unit/builtin-extension-entrypoints.spec.ts for guide-shell linked-test-adapters and templates package command/runtime smoke and added runtime-loader candidate/error coverage in tests/unit/beads-command.spec.ts and tests/unit/todos-extension.spec.ts. Verification: node scripts/run-tests.mjs test -- tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/beads-command.spec.ts tests/unit/todos-extension.spec.ts passed with 3 files and 63 tests in 24.86 seconds. node scripts/release/static-quality-gate.mjs --json returned ok true with no violations and max_files_per_dir gate satisfied. Expected efficiency impact: fewer duplicate suites and less redundant setup/import overhead while preserving package runtime coverage signal inside existing files."
+files[3]{path,scope,note}:
+  tests/unit/beads-command.spec.ts,project,Added beads runtime loader coverage in existing suite
+  tests/unit/builtin-extension-entrypoints.spec.ts,project,Merged runtime coverage into existing entrypoint suite
+  tests/unit/todos-extension.spec.ts,project,Added todos runtime loader coverage in existing suite
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/release/static-quality-gate.mjs --json,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/beads-command.spec.ts tests/unit/todos-extension.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Resolved: 126 flat specs nested into src-mirrored subdirs; all dirs well under the 120 cap; static gate directory_load=0."
+body: "## tests/unit directory-density pressure — RESOLVED by module-mirrored nesting\n\n### Problem (as filed)\ntests/unit/ held spec files flat in a single directory, reaching 126 files against the static-quality-gate cap of --max-files-per-dir 120. CI Gates(static) (scripts/release/static-quality-gate.mjs checkDirectoryLoad) fails when any directory exceeds the cap. Zero headroom remained; every new spec risked breaking CI.\n\n### Resolution\nImplemented ADR pm-kjmx: all 126 root specs were nested into src-mirrored subdirectories (commands/, cli/, core/<sub>/, extensions/, mcp/, sdk/, packages/, scripts/). Post-reorg per-directory counts are all well under the cap (largest: tests/unit/commands at 50, tests/unit/core/item at 14). The cap is now satisfied structurally rather than by ad-hoc consolidation. Static quality gate verified green (ok: true, directory_load violations = 0).\n\n### Follow-up\nConvention is documented in ADR pm-kjmx so future specs are placed in the correct src-mirrored subdirectory and density stays bounded by design."

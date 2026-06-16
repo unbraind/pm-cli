@@ -9,7 +9,11 @@ import {
   getActiveExtensionRegistrations,
   runActiveServiceOverride,
 } from "../core/extensions/index.js";
-import { PM_CORE_COMMAND_NAMES, resolveSubcommandFlagContractsForCommand } from "../sdk/cli-contracts.js";
+import {
+  PM_CORE_COMMAND_NAMES,
+  resolveSubcommandFlagContractsForCommand,
+  type CliFlagContract,
+} from "../sdk/cli-contracts.js";
 import {
   type CommanderGuidanceContext,
   formatCommanderErrorForDisplay,
@@ -236,9 +240,12 @@ function collectInstalledPackageCommandPathHints(
   return [...new Set(hints)].sort((left, right) => left.localeCompare(right));
 }
 
-function collectKnownLongFlags(commandName: string | undefined): string[] {
+function collectKnownLongFlags(
+  commandName: string | undefined,
+  contractsOverride?: CliFlagContract[],
+): string[] {
   const flags = new Set<string>();
-  const contracts = resolveSubcommandFlagContractsForCommand(commandName);
+  const contracts = contractsOverride ?? resolveSubcommandFlagContractsForCommand(commandName);
   for (const contract of contracts) {
     if (contract.flag.startsWith("--")) {
       flags.add(normalizeLongFlag(contract.flag));
@@ -381,7 +388,7 @@ export function buildUnknownCommandGuidanceFromRuntime(
     return undefined;
   }
 
-  const primaryToken = normalizedUnknown.split(" ")[0] ?? normalizedUnknown;
+  const primaryToken = normalizedUnknown.split(" ")[0];
   const rankedCandidates = commandPaths
     .map((commandPath) => {
       const directScore = scoreCommandPathMatch(commandPath, normalizedUnknown);
@@ -621,3 +628,10 @@ export async function formatCommanderUsageJson(
   );
   return JSON.stringify(envelope, null, 2);
 }
+
+export const _testOnly = {
+  collectKnownLongFlags,
+  collectInstalledPackageCommandPathHints,
+  resolveOptionalPackageInstallHint,
+  suggestNearestLongFlags,
+};

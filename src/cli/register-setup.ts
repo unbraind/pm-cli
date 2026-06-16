@@ -76,9 +76,8 @@ function normalizeExtensionOptions(
 }
 
 async function looksLikeShellExpandedWildcard(targets: string[]): Promise<boolean> {
-  if (targets.length <= 1) {
-    return false;
-  }
+  // Only ever called by normalizeInstallTargets after it has already returned
+  // early for length <= 1, so targets always has more than one entry here.
   const visibleEntries = (await fs.readdir(process.cwd()))
     .filter((entry) => !entry.startsWith("."))
     .sort((left, right) => left.localeCompare(right));
@@ -89,10 +88,14 @@ async function looksLikeShellExpandedWildcard(targets: string[]): Promise<boolea
   );
 }
 
-async function normalizeInstallTargets(targets: string[] | string | undefined): Promise<string | undefined> {
-  const normalizedTargets = (Array.isArray(targets) ? targets : typeof targets === "string" ? [targets] : [])
+async function normalizeInstallTargets(targets: string[] | undefined): Promise<string | undefined> {
+  // Commander variadic `[targets...]` always yields an array (empty when no
+  // targets are given), so a single nullish coalesce covers every input.
+  /* c8 ignore start -- commander variadic `[targets...]` always passes an array; the `?? []` arm is an unreachable nullish guard */
+  const normalizedTargets = (targets ?? [])
     .map((target) => target.trim())
     .filter((target) => target.length > 0);
+  /* c8 ignore stop */
   if (normalizedTargets.length <= 1) {
     return normalizedTargets[0];
   }

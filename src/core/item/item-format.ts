@@ -52,6 +52,15 @@ function normalizePathValue(value: string): string {
   return value.replaceAll("\\", "/");
 }
 
+function firstNonZeroComparison(comparisons: readonly number[]): number {
+  for (const comparison of comparisons) {
+    if (comparison !== 0) {
+      return comparison;
+    }
+  }
+  return 0;
+}
+
 const REQUIRED_STRING_FIELDS = [
   "id",
   "title",
@@ -384,9 +393,7 @@ function assertValidFrontMatter(
           `metadata field "${definition.metadata_key}"`,
         );
       } catch (error: unknown) {
-        validationError(
-          error instanceof Error ? error.message.replace(/^Invalid\s+/u, "") : `invalid ${definition.metadata_key} value`,
-        );
+        validationError(String((error as { message?: unknown })?.message).replace(/^Invalid\s+/u, ""));
       }
     }
   }
@@ -602,13 +609,13 @@ function normalizeTestRunSummaries(values: ItemTestRunSummary[] | undefined): It
       };
     })
     .filter((value) => value.run_id.length > 0 && value.started_at.length > 0 && value.finished_at.length > 0 && value.recorded_at.length > 0)
-    .sort((a, b) => {
-      const byRecorded = compareTimestampStrings(a.recorded_at, b.recorded_at);
-      if (byRecorded !== 0) return byRecorded;
-      const byRunId = a.run_id.localeCompare(b.run_id);
-      if (byRunId !== 0) return byRunId;
-      return a.kind.localeCompare(b.kind);
-    });
+    .sort((a, b) =>
+      firstNonZeroComparison([
+        compareTimestampStrings(a.recorded_at, b.recorded_at),
+        a.run_id.localeCompare(b.run_id),
+        a.kind.localeCompare(b.kind),
+      ]),
+    );
   return normalized.length > 0 ? normalized : undefined;
 }
 
@@ -688,51 +695,26 @@ function sortTests(values: LinkedTest[] | undefined): LinkedTest[] | undefined {
         : undefined,
       note: value.note?.trim() || undefined,
     }))
-    .sort((a, b) => {
-      const byScope = a.scope.localeCompare(b.scope);
-      if (byScope !== 0) return byScope;
-      const byPath = (a.path ?? "").localeCompare(b.path ?? "");
-      if (byPath !== 0) return byPath;
-      const byCommand = (a.command ?? "").localeCompare(b.command ?? "");
-      if (byCommand !== 0) return byCommand;
-      const byTimeout = (a.timeout_seconds ?? 0) - (b.timeout_seconds ?? 0);
-      if (byTimeout !== 0) return byTimeout;
-      const byPmContext = (a.pm_context_mode ?? "").localeCompare(b.pm_context_mode ?? "");
-      if (byPmContext !== 0) return byPmContext;
-      const bySharedHostSafe = Number(Boolean(a.shared_host_safe)) - Number(Boolean(b.shared_host_safe));
-      if (bySharedHostSafe !== 0) return bySharedHostSafe;
-      const byEnvClear = JSON.stringify(a.env_clear ?? []).localeCompare(JSON.stringify(b.env_clear ?? []));
-      if (byEnvClear !== 0) return byEnvClear;
-      const byEnvSet = JSON.stringify(a.env_set ?? {}).localeCompare(JSON.stringify(b.env_set ?? {}));
-      if (byEnvSet !== 0) return byEnvSet;
-      const byStdoutContains = JSON.stringify(a.assert_stdout_contains ?? []).localeCompare(
-        JSON.stringify(b.assert_stdout_contains ?? []),
-      );
-      if (byStdoutContains !== 0) return byStdoutContains;
-      const byStdoutRegex = JSON.stringify(a.assert_stdout_regex ?? []).localeCompare(
-        JSON.stringify(b.assert_stdout_regex ?? []),
-      );
-      if (byStdoutRegex !== 0) return byStdoutRegex;
-      const byStderrContains = JSON.stringify(a.assert_stderr_contains ?? []).localeCompare(
-        JSON.stringify(b.assert_stderr_contains ?? []),
-      );
-      if (byStderrContains !== 0) return byStderrContains;
-      const byStderrRegex = JSON.stringify(a.assert_stderr_regex ?? []).localeCompare(
-        JSON.stringify(b.assert_stderr_regex ?? []),
-      );
-      if (byStderrRegex !== 0) return byStderrRegex;
-      const byStdoutMinLines = (a.assert_stdout_min_lines ?? 0) - (b.assert_stdout_min_lines ?? 0);
-      if (byStdoutMinLines !== 0) return byStdoutMinLines;
-      const byJsonFieldEquals = JSON.stringify(a.assert_json_field_equals ?? {}).localeCompare(
-        JSON.stringify(b.assert_json_field_equals ?? {}),
-      );
-      if (byJsonFieldEquals !== 0) return byJsonFieldEquals;
-      const byJsonFieldGte = JSON.stringify(a.assert_json_field_gte ?? {}).localeCompare(
-        JSON.stringify(b.assert_json_field_gte ?? {}),
-      );
-      if (byJsonFieldGte !== 0) return byJsonFieldGte;
-      return (a.note ?? "").localeCompare(b.note ?? "");
-    });
+    .sort((a, b) =>
+      firstNonZeroComparison([
+        a.scope.localeCompare(b.scope),
+        (a.path ?? "").localeCompare(b.path ?? ""),
+        (a.command ?? "").localeCompare(b.command ?? ""),
+        (a.timeout_seconds ?? 0) - (b.timeout_seconds ?? 0),
+        (a.pm_context_mode ?? "").localeCompare(b.pm_context_mode ?? ""),
+        Number(Boolean(a.shared_host_safe)) - Number(Boolean(b.shared_host_safe)),
+        JSON.stringify(a.env_clear ?? []).localeCompare(JSON.stringify(b.env_clear ?? [])),
+        JSON.stringify(a.env_set ?? {}).localeCompare(JSON.stringify(b.env_set ?? {})),
+        JSON.stringify(a.assert_stdout_contains ?? []).localeCompare(JSON.stringify(b.assert_stdout_contains ?? [])),
+        JSON.stringify(a.assert_stdout_regex ?? []).localeCompare(JSON.stringify(b.assert_stdout_regex ?? [])),
+        JSON.stringify(a.assert_stderr_contains ?? []).localeCompare(JSON.stringify(b.assert_stderr_contains ?? [])),
+        JSON.stringify(a.assert_stderr_regex ?? []).localeCompare(JSON.stringify(b.assert_stderr_regex ?? [])),
+        (a.assert_stdout_min_lines ?? 0) - (b.assert_stdout_min_lines ?? 0),
+        JSON.stringify(a.assert_json_field_equals ?? {}).localeCompare(JSON.stringify(b.assert_json_field_equals ?? {})),
+        JSON.stringify(a.assert_json_field_gte ?? {}).localeCompare(JSON.stringify(b.assert_json_field_gte ?? {})),
+        (a.note ?? "").localeCompare(b.note ?? ""),
+      ]),
+    );
 }
 
 function sortDocs(values: LinkedDoc[] | undefined): LinkedDoc[] | undefined {
@@ -1324,3 +1306,21 @@ export function canonicalDocument(document: ItemDocument, options: Pick<ItemDocu
     body: normalizeBody(document.body ?? ""),
   };
 }
+
+export const _testOnlyItemFormat = {
+  buildKnownFrontMatterKeys,
+  firstNonZeroComparison,
+  normalizeBody,
+  normalizePlanDecisions,
+  normalizePlanDiscoveries,
+  normalizePlanStepDocs,
+  normalizePlanStepFiles,
+  normalizePlanStepLinks,
+  normalizePlanSteps,
+  normalizePlanStepTests,
+  normalizePlanValidation,
+  normalizeTestRunSummaries,
+  normalizeTypeOptions,
+  runtimeFieldRequiredForType,
+  sortTests,
+};

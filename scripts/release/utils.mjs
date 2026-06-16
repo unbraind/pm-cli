@@ -56,6 +56,7 @@ export function runCommandJson(command, args, options = {}) {
   try {
     return JSON.parse(result.stdout);
   } catch (error) {
+    /* c8 ignore next -- JSON.parse only throws SyntaxError (an Error); the String(error) fallback is unreachable */
     const message = error instanceof Error ? error.message : String(error);
     fail(`Failed to parse JSON output from ${command}: ${message}`);
   }

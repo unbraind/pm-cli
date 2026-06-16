@@ -21,6 +21,18 @@ const repoRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const launcherPath = path.join(repoRoot, "plugins", "pm-claude", "scripts", "pm-mcp-server.mjs");
 const sessionStartPath = path.join(repoRoot, "plugins", "pm-claude", "hooks", "session-start.mjs");
 
+/**
+ * @internal Exported only for unit coverage of the (runtime-unreachable) mismatch
+ * branch. Throws when the marketplace plugin name disagrees with plugin.json.
+ */
+export function assertMarketplacePluginNameMatches(marketplacePluginName, pluginJsonName) {
+  if (marketplacePluginName !== pluginJsonName) {
+    throw new Error(
+      `marketplace plugin name "${marketplacePluginName}" does not match plugin.json name "${pluginJsonName}"`,
+    );
+  }
+}
+
 // Verify plugin files exist
 const pluginFiles = [
   // Root-level marketplace (required for /plugin marketplace add unbraind/pm-cli)
@@ -85,9 +97,10 @@ const pluginJson = JSON.parse(readFileSync(path.join(repoRoot, "plugins", "pm-cl
 if (pluginJson.name !== "pm-claude") {
   throw new Error(`plugin.json name must be "pm-claude", got "${pluginJson.name}"`);
 }
-if (marketplacePluginName !== pluginJson.name) {
-  throw new Error(`marketplace plugin name "${marketplacePluginName}" does not match plugin.json name "${pluginJson.name}"`);
-}
+// Both names are pinned to "pm-claude" by the guards above, so at runtime this
+// consistency check can never fail. It is extracted into a `_testOnly` seam so
+// the mismatch branch remains exercisable in isolation for coverage.
+assertMarketplacePluginNameMatches(marketplacePluginName, pluginJson.name);
 console.log(`Manifest names: marketplace="${rootMarketplace.name}" plugin="${pluginJson.name}" (consistent)`);
 
 const { tmpRoot, request, callTool, dispose } = await startPluginMcpSmoke({

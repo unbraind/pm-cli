@@ -89,8 +89,16 @@ vi.mock("../../../src/cli/commands/extension.js", () => ({ runExtension: vi.fn()
 vi.mock("../../../src/cli/commands/upgrade.js", () => ({ runUpgrade: vi.fn() }));
 
 import { registerListQueryCommands } from "../../../src/cli/register-list-query.js";
-import { registerOperationCommands } from "../../../src/cli/register-operations.js";
-import { registerMutationCommands } from "../../../src/cli/register-mutation.js";
+import {
+  registerOperationCommands,
+  resolveStartTaskInProgressStatus,
+} from "../../../src/cli/register-operations.js";
+import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
+import {
+  registerMutationCommands,
+  parseSchemaOrderOption,
+  registerCommanderOptionContracts,
+} from "../../../src/cli/register-mutation.js";
 import { registerSetupCommands } from "../../../src/cli/register-setup.js";
 import { runList } from "../../../src/cli/commands/list.js";
 import { runAggregate } from "../../../src/cli/commands/aggregate.js";
@@ -152,7 +160,8 @@ import { runInit, summarizeInitResult } from "../../../src/cli/commands/init.js"
 import { runConfig } from "../../../src/cli/commands/config.js";
 import { runExtension } from "../../../src/cli/commands/extension.js";
 import { runUpgrade } from "../../../src/cli/commands/upgrade.js";
-import { EXIT_CODE } from "../../../src/core/shared/constants.js";
+import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
+import { writeSettings } from "../../../src/core/store/settings.js";
 
 let tmpRoot: string;
 
@@ -436,6 +445,24 @@ describe("operation command actions", () => {
     expect(process.exitCode).toBe(EXIT_CODE.DEPENDENCY_FAILED);
   });
 
+  it("marks skipped-linked-test failures as dependency exits", async () => {
+    vi.mocked(runTest).mockResolvedValue({
+      run_results: [{ status: "passed" }],
+      fail_on_skipped_triggered: true,
+    } as never);
+    await runCli("test", "pm-1", "--run");
+    expect(process.exitCode).toBe(EXIT_CODE.DEPENDENCY_FAILED);
+    process.exitCode = undefined;
+
+    vi.mocked(runTestAll).mockResolvedValue({
+      results: [{ id: "pm-1" }],
+      failed: 0,
+      fail_on_skipped_triggered: true,
+    } as never);
+    await runCli("test-all");
+    expect(process.exitCode).toBe(EXIT_CODE.DEPENDENCY_FAILED);
+  });
+
   it("routes pm test --background through the background run starter", async () => {
     await expect(runCli("test", "pm-1", "--background")).rejects.toThrow("--background requires --run");
     await expect(runCli("test", "pm-1", "--background", "--run", "--add", "x")).rejects.toThrow(
@@ -487,7 +514,105 @@ describe("operation command actions", () => {
     expect(options.subcommand).toBe("stats");
     expect(options.limit).toBe("10");
 
+    await runCli("telemetry", "local-analytics", "flush");
+    options = lastCallArg<Record<string, unknown>>(vi.mocked(runTelemetry) as never, 0);
+    expect(options.subcommand).toBe("flush");
+
     await expect(runCli("telemetry", "status", "extra")).rejects.toThrow("Unknown pm telemetry path");
+  });
+
+  it("routes test/test-all background variants and omits profile timing when not requested", async () => {
+    // Background test without an explicit author exercises the author-absent
+    // branch of the background-run request builder.
+    await runCliRaw("test", "pm-1", "--background", "--run");
+    const testRequest = lastCallArg<Record<string, unknown>>(vi.mocked(runStartBackgroundRun) as never, 0);
+    expect(testRequest.kind).toBe("test");
+    expect(testRequest.author).toBeUndefined();
+
+    // Background test-all without --status exercises the statusFilter-absent branch.
+    await runCliRaw("test-all", "--background");
+    const testAllRequest = lastCallArg<Record<string, unknown>>(vi.mocked(runStartBackgroundRun) as never, 0);
+    expect(testAllRequest.kind).toBe("test-all");
+    expect(testAllRequest.statusFilter).toBeUndefined();
+
+    // Without --profile the trailing profile-timing branch is skipped across the
+    // operation handlers; running them via runCliRaw covers those else paths.
+    await runCliRaw("test", "pm-1", "--list");
+    await runCliRaw("test-all");
+    await runCliRaw("telemetry");
+    await runCliRaw("stats");
+    await runCliRaw("gc");
+    await runCliRaw("contracts");
+    await runCliRaw("claim", "pm-1");
+    await runCliRaw("release", "pm-1");
+    await runCliRaw("start-task", "pm-1");
+    await runCliRaw("pause-task", "pm-1");
+    await runCliRaw("close-task", "pm-1");
+    await runCliRaw("health");
+    await runCliRaw("validate");
+    expect(vi.mocked(runContracts)).toHaveBeenCalled();
+  });
+
+  it("threads author/message and metadata-profile string options through operation handlers", async () => {
+    await runCli("test", "pm-1", "--background", "--run", "--author", "agent");
+    const backgroundRequest = lastCallArg<Record<string, unknown>>(vi.mocked(runStartBackgroundRun) as never, 0);
+    expect(backgroundRequest.author).toBe("agent");
+
+    await runCli("validate", "--check-metadata", "--metadata-profile", "strict");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runValidate) as never, 0).metadataProfile).toBe("strict");
+
+    await runCli("claim", "pm-1", "--message", "claiming");
+    expect(vi.mocked(runClaim)).toHaveBeenLastCalledWith("pm-1", false, expect.anything(), {
+      author: undefined,
+      message: "claiming",
+      ifAvailable: false,
+    });
+
+    await runCli("release", "pm-1", "--author", "agent", "--message", "handoff");
+    expect(vi.mocked(runRelease)).toHaveBeenLastCalledWith("pm-1", false, expect.anything(), {
+      author: "agent",
+      message: "handoff",
+      allowAuditRelease: false,
+    });
+
+    await runCli("start-task", "pm-1", "--message", "begin");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runUpdate) as never, 1).message).toBe("begin");
+
+    await runCli("pause-task", "pm-1", "--author", "agent", "--message", "pause");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runUpdate) as never, 1).author).toBe("agent");
+
+    await runCli("close-task", "pm-1", "wrapped", "--author", "agent", "--message", "closing");
+    expect(vi.mocked(runClose)).toHaveBeenLastCalledWith(
+      "pm-1",
+      "wrapped",
+      expect.objectContaining({ author: "agent", message: "closing" }),
+      expect.anything(),
+    );
+  });
+
+  it("resolves start-task to the registry's in_progress status when defined", () => {
+    // The default registry defines in_progress, so the strict registry lookup
+    // resolves it directly (the main branch of resolveStartTaskInProgressStatus).
+    const registry = resolveRuntimeStatusRegistry(structuredClone(SETTINGS_DEFAULTS).schema);
+    expect(resolveStartTaskInProgressStatus(registry)).toBe("in_progress");
+  });
+
+  it("falls back to the open status when the registry omits in_progress", () => {
+    // A custom workflow whose statuses do not include in_progress makes the
+    // strict registry lookup return undefined, exercising the
+    // `?? statusRegistry.open_status` fallback. The registry is built directly
+    // (not persisted via writeSettings, which re-seeds the built-in statuses).
+    const registry = resolveRuntimeStatusRegistry({
+      statuses: [
+        { id: "open", roles: ["active", "default_open"] },
+        { id: "review", roles: ["active"] },
+        { id: "done", roles: ["terminal", "terminal_done", "default_close"] },
+        { id: "canceled", roles: ["terminal", "terminal_canceled", "default_cancel"] },
+      ],
+      workflow: { open_status: "open", close_status: "done" },
+    } as never);
+    expect(registry.alias_to_id.has("in_progress")).toBe(false);
+    expect(resolveStartTaskInProgressStatus(registry)).toBe("open");
   });
 
   it("maps stats, gc, and contracts options", async () => {
@@ -504,6 +629,193 @@ describe("operation command actions", () => {
     expect(contractsOptions.command).toBe("create");
     expect(contractsOptions.flagsOnly).toBe(true);
     expect(contractsOptions.runtimeOnly).toBe(true);
+  });
+
+  it("maps expanded operation option booleans and string payloads", async () => {
+    await runCli(
+      "test",
+      "pm-1",
+      "--run",
+      "--add-json",
+      "{\"command\":\"pnpm test\"}",
+      "--remove",
+      "path=tests/unit/a.spec.ts",
+      "--only-index",
+      "2",
+      "--only-last",
+      "--timeout",
+      "45",
+      "--progress",
+      "--env-set",
+      "A=1",
+      "--env-clear",
+      "B",
+      "--shared-host-safe",
+      "--pm-context",
+      "tracker",
+      "--override-linked-pm-context",
+      "--fail-on-context-mismatch",
+      "--fail-on-skipped",
+      "--fail-on-empty-test-run",
+      "--require-assertions-for-pm",
+      "--check-context",
+      "--auto-pm-context",
+      "--author",
+      "agent",
+      "--message",
+      "run linked tests",
+      "--force",
+    );
+    const testOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runTest) as never, 1);
+    expect(testOptions.addJson).toEqual(["{\"command\":\"pnpm test\"}"]);
+    expect(testOptions.remove).toEqual(["path=tests/unit/a.spec.ts"]);
+    expect(testOptions.onlyIndex).toBe("2");
+    expect(testOptions.onlyLast).toBe(true);
+    expect(testOptions.timeout).toBe("45");
+    expect(testOptions.progress).toBe(true);
+    expect(testOptions.envSet).toEqual(["A=1"]);
+    expect(testOptions.envClear).toEqual(["B"]);
+    expect(testOptions.sharedHostSafe).toBe(true);
+    expect(testOptions.pmContext).toBe("tracker");
+    expect(testOptions.overrideLinkedPmContext).toBe(true);
+    expect(testOptions.failOnContextMismatch).toBe(true);
+    expect(testOptions.failOnSkipped).toBe(true);
+    expect(testOptions.failOnEmptyTestRun).toBe(true);
+    expect(testOptions.requireAssertionsForPm).toBe(true);
+    expect(testOptions.checkContext).toBe(true);
+    expect(testOptions.autoPmContext).toBe(true);
+    expect(testOptions.author).toBe("agent");
+    expect(testOptions.message).toBe("run linked tests");
+    expect(testOptions.force).toBe(true);
+
+    await runCli(
+      "test-all",
+      "--offset",
+      "1",
+      "--timeout",
+      "30",
+      "--progress",
+      "--env-set",
+      "K=V",
+      "--env-clear",
+      "NOPE",
+      "--shared-host-safe",
+      "--pm-context",
+      "schema",
+      "--override-linked-pm-context",
+      "--fail-on-context-mismatch",
+      "--fail-on-skipped",
+      "--fail-on-empty-test-run",
+      "--require-assertions-for-pm",
+      "--check-context",
+      "--auto-pm-context",
+    );
+    const testAllOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runTestAll) as never, 0);
+    expect(testAllOptions.offset).toBe("1");
+    expect(testAllOptions.timeout).toBe("30");
+    expect(testAllOptions.progress).toBe(true);
+    expect(testAllOptions.envSet).toEqual(["K=V"]);
+    expect(testAllOptions.envClear).toEqual(["NOPE"]);
+    expect(testAllOptions.sharedHostSafe).toBe(true);
+    expect(testAllOptions.pmContext).toBe("schema");
+    expect(testAllOptions.overrideLinkedPmContext).toBe(true);
+    expect(testAllOptions.failOnContextMismatch).toBe(true);
+    expect(testAllOptions.failOnSkipped).toBe(true);
+    expect(testAllOptions.failOnEmptyTestRun).toBe(true);
+    expect(testAllOptions.requireAssertionsForPm).toBe(true);
+    expect(testAllOptions.checkContext).toBe(true);
+    expect(testAllOptions.autoPmContext).toBe(true);
+
+    await runCli("stats", "--metadata-coverage", "--by-assignee", "--by-tag", "--by-priority", "--tag-prefix", "area:");
+    const statsOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runStats) as never, 1);
+    expect(statsOptions.metadataCoverage).toBe(true);
+    expect(statsOptions.byAssignee).toBe(true);
+    expect(statsOptions.byTag).toBe(true);
+    expect(statsOptions.byPriority).toBe(true);
+    expect(statsOptions.tagPrefix).toBe("area:");
+
+    await runCli(
+      "health",
+      "--strict-directories",
+      "--check-only",
+      "--check-telemetry",
+      "--no-refresh",
+      "--refresh-vectors",
+      "--verbose-stale-items",
+      "--brief",
+      "--summary",
+      "--skip-vectors",
+      "--skip-integrity",
+      "--skip-drift",
+      "--full",
+      "--fail-on-warn",
+    );
+    const healthOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runHealth) as never, 1);
+    expect(healthOptions.strictDirectories).toBe(true);
+    expect(healthOptions.checkOnly).toBe(true);
+    expect(healthOptions.checkTelemetry).toBe(true);
+    expect(healthOptions.noRefresh).toBe(false);
+    expect(healthOptions.refreshVectors).toBe(true);
+    expect(healthOptions.verboseStaleItems).toBe(true);
+    expect(healthOptions.brief).toBe(true);
+    expect(healthOptions.summary).toBe(true);
+    expect(healthOptions.skipVectors).toBe(true);
+    expect(healthOptions.skipIntegrity).toBe(true);
+    expect(healthOptions.skipDrift).toBe(true);
+    expect(healthOptions.full).toBe(true);
+
+    await runCli(
+      "validate",
+      "--check-resolution",
+      "--check-lifecycle",
+      "--check-stale-blockers",
+      "--dependency-cycle-severity",
+      "error",
+      "--check-files",
+      "--check-command-references",
+      "--scan-mode",
+      "tracked-all",
+      "--include-pm-internals",
+      "--verbose-file-lists",
+      "--verbose-diagnostics",
+      "--all-affected-ids",
+      "--strict-exit",
+      "--fix-hints",
+      "--auto-fix",
+      "--dry-run",
+      "--fix-scope",
+      "metadata",
+      "--fix-scope",
+      "lifecycle",
+      "--prune-missing",
+      "--check-history-drift",
+    );
+    const validateOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runValidate) as never, 0);
+    expect(validateOptions.checkResolution).toBe(true);
+    expect(validateOptions.checkLifecycle).toBe(true);
+    expect(validateOptions.checkStaleBlockers).toBe(true);
+    expect(validateOptions.dependencyCycleSeverity).toBe("error");
+    expect(validateOptions.checkFiles).toBe(true);
+    expect(validateOptions.checkCommandReferences).toBe(true);
+    expect(validateOptions.scanMode).toBe("tracked-all");
+    expect(validateOptions.includePmInternals).toBe(true);
+    expect(validateOptions.verboseFileLists).toBe(true);
+    expect(validateOptions.verboseDiagnostics).toBe(true);
+    expect(validateOptions.allAffectedIds).toBe(true);
+    expect(validateOptions.fixHints).toBe(true);
+    expect(validateOptions.autoFix).toBe(true);
+    expect(validateOptions.dryRun).toBe(true);
+    expect(validateOptions.fixScope).toEqual(["metadata", "lifecycle"]);
+    expect(validateOptions.pruneMissing).toBe(true);
+    expect(validateOptions.checkHistoryDrift).toBe(true);
+
+    await runCli("contracts", "--action", "create", "--schema-only", "--availability-only", "--runtime-only", "--full");
+    const contractsOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runContracts) as never, 0);
+    expect(contractsOptions.action).toBe("create");
+    expect(contractsOptions.schemaOnly).toBe(true);
+    expect(contractsOptions.availabilityOnly).toBe(true);
+    expect(contractsOptions.runtimeOnly).toBe(true);
+    expect(contractsOptions.full).toBe(true);
   });
 
   it("escalates health and validate findings under strict exit", async () => {
@@ -857,6 +1169,538 @@ describe("mutation command actions", () => {
     expect(lastCallArg<Record<string, unknown>>(vi.mocked(runDocs) as never, 1).list).toBe(true);
     expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(2);
   });
+
+  it("routes docs mutations and close fallback fields", async () => {
+    await runCli("close", "pm-1", "done via positional");
+    const closeOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runClose) as never, 2);
+    expect(closeOptions.expectedResult).toBeUndefined();
+    expect(closeOptions.actualResult).toBeUndefined();
+
+    await runCli(
+      "docs",
+      "pm-1",
+      "--add",
+      "path=docs/a.md",
+      "--add-glob",
+      "pattern=docs/**/*.md",
+      "--remove",
+      "path=docs/old.md",
+      "--migrate",
+      "from=docs,to=guides",
+      "--note",
+      "batch docs migration",
+    );
+    const docsOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runDocs) as never, 1);
+    expect(docsOptions.add).toEqual(["path=docs/a.md"]);
+    expect(docsOptions.addGlob).toEqual(["pattern=docs/**/*.md"]);
+    expect(docsOptions.remove).toEqual(["path=docs/old.md"]);
+    expect(docsOptions.migrate).toEqual(["from=docs,to=guides"]);
+    expect(docsOptions.note).toBe("batch docs migration");
+
+    await runCli("schema", "list");
+    expect(vi.mocked(runSchemaList)).toHaveBeenCalledTimes(1);
+    expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(2);
+  });
+
+  it("registers required and repeatable-aliased commander option contracts", () => {
+    const command = new Command("demo").exitOverride().configureOutput({ writeOut: () => {}, writeErr: () => {} });
+    registerCommanderOptionContracts(command, [
+      {
+        target: "must",
+        keys: ["must"],
+        option: "--must <value>",
+        description: "A required option",
+        required: true,
+      },
+      {
+        target: "tag",
+        keys: ["tag"],
+        option: "--tag <value>",
+        description: "Repeatable with a semantically distinct alias",
+        repeatable: true,
+        aliasOptions: [{ target: "label", keys: ["label"], option: "--label <value>", description: "Alias for --tag" }],
+      },
+    ] as never);
+    const optionFlags = command.options.map((option) => option.flags);
+    expect(optionFlags).toContain("--must <value>");
+    expect(optionFlags).toContain("--tag <value>");
+    expect(optionFlags).toContain("--label <value>");
+  });
+
+  it("handles create with no positionals and with both a positional and a --title flag", async () => {
+    // No positional title/type: the positional-resolution else branches are taken.
+    await runCli("create", "--title", "Flag title", "--type", "Task");
+    let normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runCreate) as never, 0);
+    expect(normalized.title).toBe("Flag title");
+
+    // A positional title plus an explicit --title: the --title flag wins (title already set).
+    await runCli("create", "task", "Positional title", "--title", "Flag wins");
+    normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runCreate) as never, 0);
+    expect(normalized.title).toBe("Flag wins");
+    expect(normalized.type).toBe("task");
+  });
+
+  it("suggests list alternatives for a plan ls/list subcommand", async () => {
+    await expect(runCli("plan", "ls")).rejects.toThrow("Unknown pm plan subcommand");
+    await runCliRaw("plan", "show", "pm-1");
+    expect(vi.mocked(runPlan)).toHaveBeenCalled();
+  });
+
+  it("parses the schema --order option from numbers, numeric strings, and rejects non-integers", () => {
+    expect(parseSchemaOrderOption(undefined)).toBeUndefined();
+    expect(parseSchemaOrderOption(null)).toBeUndefined();
+    expect(parseSchemaOrderOption(7)).toBe(7);
+    expect(() => parseSchemaOrderOption(2.5)).toThrow("--order must be a finite integer");
+    expect(parseSchemaOrderOption("   ")).toBeUndefined();
+    expect(parseSchemaOrderOption("9")).toBe(9);
+    expect(() => parseSchemaOrderOption("abc")).toThrow("--order must be a finite integer");
+    // A non-number, non-string value (e.g. boolean) reaches the trailing throw.
+    expect(() => parseSchemaOrderOption(true)).toThrow("--order must be a finite integer");
+  });
+
+  it("resolves --body-file content for create and update and rejects --body + --body-file", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "pm-register-bodyfile-"));
+    try {
+      const bodyPath = path.join(dir, "body.md");
+      await writeFile(bodyPath, "# From file\n\nLong body.", "utf8");
+
+      await runCli("create", "task", "Titled", "--body-file", bodyPath);
+      const createNormalized = lastCallArg<Record<string, unknown>>(vi.mocked(runCreate) as never, 0);
+      expect(createNormalized.body).toBe("# From file\n\nLong body.");
+
+      await runCli("update", "pm-1", "--body-file", bodyPath);
+      const updateOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runUpdate) as never, 1);
+      expect(updateOptions.body).toBe("# From file\n\nLong body.");
+
+      // --body + --body-file are mutually exclusive on both create and update.
+      await expect(runCli("create", "task", "X", "--body", "inline", "--body-file", bodyPath)).rejects.toThrow(
+        "mutually exclusive",
+      );
+      await expect(runCli("update", "pm-1", "--body", "inline", "--body-file", bodyPath)).rejects.toThrow(
+        "mutually exclusive",
+      );
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("forwards copy/delete/append/restore author and message option values", async () => {
+    await runCli("copy", "pm-1", "--title", "Cloned", "--author", "agent", "--message", "cloned it");
+    expect(vi.mocked(runCopy)).toHaveBeenCalledWith(
+      "pm-1",
+      { title: "Cloned", author: "agent", message: "cloned it" },
+      expect.anything(),
+    );
+
+    await runCli("delete", "pm-1", "--author", "agent", "--message", "removing");
+    const deleteOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runDelete) as never, 1);
+    expect(deleteOptions).toMatchObject({ author: "agent", message: "removing" });
+
+    await runCli("append", "pm-1", "--text", "appended via alias", "--author", "agent", "--message", "note");
+    const appendOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runAppend) as never, 1);
+    expect(appendOptions).toMatchObject({ body: "appended via alias", author: "agent", message: "note" });
+
+    await runCli("append", "pm-1", "--body", "via body flag");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runAppend) as never, 1).body).toBe("via body flag");
+
+    await runCli("restore", "pm-1", "3", "--author", "agent", "--message", "rollback");
+    expect(vi.mocked(runRestore)).toHaveBeenCalledWith(
+      "pm-1",
+      "3",
+      { author: "agent", message: "rollback", force: false },
+      expect.anything(),
+    );
+  });
+
+  it("maps the full update-many and close-many filter/mutation surfaces", async () => {
+    await runCli(
+      "update-many",
+      "--filter-status", "open",
+      "--filter-type", "Task",
+      "--filter-tag", "infra",
+      "--filter-priority", "1",
+      "--filter-deadline-before", "2026-12-31",
+      "--filter-deadline-after", "2026-01-01",
+      "--filter-updated-after", "2026-01-01",
+      "--filter-updated-before", "2026-12-31",
+      "--filter-created-after", "2026-01-01",
+      "--filter-created-before", "2026-12-31",
+      "--filter-assignee", "alice",
+      "--filter-assignee-filter", "assigned",
+      "--filter-parent", "pm-epic",
+      "--filter-sprint", "s1",
+      "--filter-release", "r1",
+      "--ids", "pm-1,pm-2",
+      "--limit", "10",
+      "--offset", "2",
+      "--filter-ac-missing",
+      "--filter-estimate-missing",
+      "--filter-resolution-missing",
+      "--filter-metadata-missing",
+      "--rollback", "ckpt-1",
+      "--no-checkpoint",
+      "--title", "Bulk",
+    );
+    const umRequest = lastCallArg<Record<string, unknown>>(vi.mocked(runUpdateMany) as never, 0);
+    const umList = umRequest.list as Record<string, unknown>;
+    expect(umRequest.status).toBe("open");
+    expect(umList).toMatchObject({
+      type: "Task",
+      tag: "infra",
+      priority: "1",
+      deadlineBefore: "2026-12-31",
+      deadlineAfter: "2026-01-01",
+      updatedAfter: "2026-01-01",
+      updatedBefore: "2026-12-31",
+      createdAfter: "2026-01-01",
+      createdBefore: "2026-12-31",
+      assignee: "alice",
+      assigneeFilter: "assigned",
+      parent: "pm-epic",
+      sprint: "s1",
+      release: "r1",
+      ids: "pm-1,pm-2",
+      limit: "10",
+      offset: "2",
+      filterAcMissing: true,
+      filterEstimatesMissing: true,
+      filterResolutionMissing: true,
+      filterMetadataMissing: true,
+    });
+    expect(umRequest.rollback).toBe("ckpt-1");
+    expect(umRequest.checkpoint).toBe(false);
+
+    await runCli(
+      "close-many",
+      "--filter-status", "open",
+      "--filter-type", "Task",
+      "--filter-tag", "infra",
+      "--filter-priority", "1",
+      "--filter-deadline-before", "2026-12-31",
+      "--filter-deadline-after", "2026-01-01",
+      "--filter-updated-after", "2026-01-01",
+      "--filter-updated-before", "2026-12-31",
+      "--filter-created-after", "2026-01-01",
+      "--filter-created-before", "2026-12-31",
+      "--filter-assignee", "alice",
+      "--filter-assignee-filter", "assigned",
+      "--filter-parent", "pm-epic",
+      "--filter-sprint", "s1",
+      "--filter-release", "r1",
+      "--ids", "pm-1,pm-2",
+      "--limit", "10",
+      "--offset", "2",
+      "--reason", "cleanup",
+      "--resolution", "fixed",
+      "--expected-result", "pass",
+      "--actual-result", "passed",
+      "--validate-close", "strict",
+      "--author", "agent",
+      "--message", "bulk close",
+      "--rollback", "ckpt-2",
+      "--no-checkpoint",
+    );
+    const cmRequest = lastCallArg<Record<string, unknown>>(vi.mocked(runCloseMany) as never, 0);
+    const cmList = cmRequest.list as Record<string, unknown>;
+    expect(cmRequest.status).toBe("open");
+    expect(cmList).toMatchObject({
+      type: "Task",
+      tag: "infra",
+      priority: "1",
+      deadlineBefore: "2026-12-31",
+      deadlineAfter: "2026-01-01",
+      updatedAfter: "2026-01-01",
+      updatedBefore: "2026-12-31",
+      createdAfter: "2026-01-01",
+      createdBefore: "2026-12-31",
+      assignee: "alice",
+      assigneeFilter: "assigned",
+      parent: "pm-epic",
+      sprint: "s1",
+      release: "r1",
+      ids: "pm-1,pm-2",
+      limit: "10",
+      offset: "2",
+    });
+    expect(cmRequest).toMatchObject({
+      reason: "cleanup",
+      resolution: "fixed",
+      expectedResult: "pass",
+      actualResult: "passed",
+      validateClose: "strict",
+      author: "agent",
+      message: "bulk close",
+      rollback: "ckpt-2",
+      checkpoint: false,
+    });
+  });
+
+  it("maps the full close option surface including duplicate-of and validate string mode", async () => {
+    await runCli(
+      "close", "pm-1", "shipped it",
+      "--author", "agent",
+      "--message", "closing",
+      "--validate-close", "strict",
+      "--duplicate-of", "pm-canonical",
+      "--resolution", "fixed",
+      "--expected-result", "pass",
+      "--actual-result", "passed",
+    );
+    const closeOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runClose) as never, 2);
+    expect(closeOptions).toMatchObject({
+      author: "agent",
+      message: "closing",
+      validateClose: "strict",
+      duplicateOf: "pm-canonical",
+      resolution: "fixed",
+      expectedResult: "pass",
+      actualResult: "passed",
+    });
+  });
+
+  it("maps full history-redact/compact options and resolves close reason from --close-reason", async () => {
+    await runCli(
+      "history-redact", "pm-1",
+      "--literal", "secret",
+      "--regex", "/token/gi",
+      "--replacement", "[x]",
+      "--author", "agent",
+      "--message", "redacting",
+      "--force",
+    );
+    expect(vi.mocked(runHistoryRedact)).toHaveBeenCalledWith(
+      "pm-1",
+      expect.objectContaining({ replacement: "[x]", author: "agent", message: "redacting", force: true }),
+      expect.anything(),
+    );
+
+    await runCli(
+      "history-compact", "pm-1",
+      "--before", "12",
+      "--author", "agent",
+      "--message", "compacting",
+      "--force",
+    );
+    expect(vi.mocked(runHistoryCompact)).toHaveBeenCalledWith(
+      "pm-1",
+      expect.objectContaining({ before: "12", author: "agent", message: "compacting", force: true }),
+      expect.anything(),
+    );
+
+    // --close-reason alias supplies the close reason when no positional/--reason is present.
+    await runCli("close", "pm-1", "--close-reason", "closed via alias");
+    expect(vi.mocked(runClose)).toHaveBeenLastCalledWith(
+      "pm-1",
+      "closed via alias",
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
+  it("covers remaining close/close-many/history/files-discover option arms", async () => {
+    // close --validate-close with no value coerces to "warn".
+    await runCli("close", "pm-1", "done", "--validate-close");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runClose) as never, 2).validateClose).toBe("warn");
+
+    // close-many with --dry-run and no reason.
+    await runCli("close-many", "--filter-status", "open", "--dry-run");
+    const cm = lastCallArg<Record<string, unknown>>(vi.mocked(runCloseMany) as never, 0);
+    expect(cm.dryRun).toBe(true);
+    expect(cm.reason).toBeUndefined();
+
+    // history-redact with no --literal/--regex leaves them undefined.
+    await runCli("history-redact", "pm-1", "--replacement", "[x]");
+    const redact = lastCallArg<Record<string, unknown>>(vi.mocked(runHistoryRedact) as never, 1);
+    expect(redact.literal).toBeUndefined();
+    expect(redact.regex).toBeUndefined();
+
+    // history-repair single-target with --author.
+    await runCli("history-repair", "pm-1", "--author", "agent");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runHistoryRepair) as never, 1).author).toBe("agent");
+
+    // history-repair --all where no streams failed leaves the exit code clean.
+    vi.mocked(runHistoryRepairAll).mockResolvedValueOnce({ totals: { failed: 0 } } as never);
+    await runCli("history-repair", "--all");
+    expect(process.exitCode).toBeUndefined();
+
+    // history-compact with no author/message.
+    await runCli("history-compact", "pm-1", "--before", "3");
+    const compact = lastCallArg<Record<string, unknown>>(vi.mocked(runHistoryCompact) as never, 1);
+    expect(compact.author).toBeUndefined();
+
+    // files discover with --author/--message merged from the parent command opts.
+    await runCli("files", "discover", "pm-1", "--apply", "--author", "agent", "--message", "discovered");
+    const discover = lastCallArg<Record<string, unknown>>(vi.mocked(runFilesDiscover) as never, 1);
+    expect(discover).toMatchObject({ apply: true, author: "agent", message: "discovered" });
+
+    // update-many with no --filter-status leaves status undefined.
+    await runCli("update-many", "--filter-tag", "infra", "--title", "Z");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runUpdateMany) as never, 0).status).toBeUndefined();
+
+    // history-compact with no --before leaves before undefined.
+    await runCli("history-compact", "pm-1", "--force");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runHistoryCompact) as never, 1).before).toBeUndefined();
+
+    // An unknown plan subcommand that is not list/ls carries no did-you-mean examples.
+    await expect(runCli("plan", "frobnicate")).rejects.toThrow("Unknown pm plan subcommand");
+  });
+
+  it("maps full schema add-status/add-type options and string-form alias/role inputs", async () => {
+    await runCliRaw(
+      "schema", "add-status", "review",
+      "--role", "active",
+      "--alias", "in_review",
+      "--description", "Code review",
+      "--order", "5",
+      "--author", "agent",
+      "--force",
+    );
+    expect(vi.mocked(runSchemaAddStatus)).toHaveBeenCalledWith(
+      "review",
+      expect.objectContaining({
+        role: ["active"],
+        alias: ["in_review"],
+        description: "Code review",
+        order: 5,
+        author: "agent",
+        force: true,
+      }),
+      expect.anything(),
+    );
+
+    // --default-status (kebab) provides defaultStatus as a direct string.
+    await runCliRaw("schema", "add-type", "Spike", "--description", "Investigation", "--folder", "spikes", "--default-status", "open", "--author", "agent");
+    expect(vi.mocked(runSchemaAddType)).toHaveBeenCalledWith(
+      "Spike",
+      expect.objectContaining({ description: "Investigation", folder: "spikes", defaultStatus: "open", author: "agent" }),
+      expect.anything(),
+    );
+
+    // add-type with neither --description nor --folder leaves both undefined.
+    await runCliRaw("schema", "add-type", "Bare");
+    const bareAddType = lastCallArg<Record<string, unknown>>(vi.mocked(runSchemaAddType) as never, 1);
+    expect(bareAddType.description).toBeUndefined();
+    expect(bareAddType.folder).toBeUndefined();
+  });
+
+  it("maps full comments/notes/learnings/files/docs option surfaces", async () => {
+    await runCli(
+      "comments", "pm-1",
+      "--add", "looks good",
+      "--limit", "5",
+      "--author", "agent",
+      "--message", "review",
+      "--allow-audit-comment",
+      "--force",
+    );
+    const commentsOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runComments) as never, 1);
+    expect(commentsOptions).toMatchObject({
+      add: "looks good",
+      limit: "5",
+      author: "agent",
+      message: "review",
+      allowAuditComment: true,
+      force: true,
+    });
+
+    await runCli("comments", "pm-1", "--file", "/tmp/comment.md");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runComments) as never, 1).file).toBe("/tmp/comment.md");
+
+    await runCli("notes", "pm-1", "--add", "noted", "--limit", "3", "--author", "agent", "--message", "m");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runNotes) as never, 1)).toMatchObject({
+      add: "noted",
+      limit: "3",
+      author: "agent",
+      message: "m",
+    });
+
+    await runCli("learnings", "pm-1", "--add", "learned", "--limit", "2", "--author", "agent", "--message", "m");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runLearnings) as never, 1)).toMatchObject({
+      add: "learned",
+      limit: "2",
+      author: "agent",
+      message: "m",
+    });
+
+    await runCli(
+      "files", "pm-1",
+      "--add", "path=src/a.ts",
+      "--add-glob", "pattern=src/**/*.ts",
+      "--remove", "path=src/old.ts",
+      "--migrate", "from=src,to=lib",
+      "--note", "linking",
+      "--append-stable",
+      "--audit",
+      "--author", "agent",
+      "--message", "files",
+      "--force",
+    );
+    const filesOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runFiles) as never, 1);
+    expect(filesOptions).toMatchObject({
+      add: ["path=src/a.ts"],
+      addGlob: ["pattern=src/**/*.ts"],
+      remove: ["path=src/old.ts"],
+      migrate: ["from=src,to=lib"],
+      note: "linking",
+      appendStable: true,
+      audit: true,
+      author: "agent",
+      message: "files",
+      force: true,
+    });
+
+    await runCli(
+      "docs", "pm-1",
+      "--note", "doc note",
+      "--audit",
+      "--author", "agent",
+      "--message", "docs",
+      "--force",
+    );
+    const docsOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runDocs) as never, 1);
+    expect(docsOptions).toMatchObject({ note: "doc note", audit: true, author: "agent", message: "docs", force: true });
+
+    await runCli("deps", "pm-1", "--collapse", "repeated", "--max-depth", "3");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runDeps) as never, 1)).toMatchObject({
+      collapse: "repeated",
+      maxDepth: "3",
+    });
+  });
+
+  it("runs every mutation command without --profile and skips refresh for read-only listings", async () => {
+    // runCliRaw omits --profile so each handler's profiling guard takes its
+    // else branch; read-only invocations (no --add/--remove) also exercise the
+    // search-cache skip branches.
+    await runCliRaw("create", "task", "No profile");
+    await runCliRaw("copy", "pm-1");
+    await runCliRaw("update", "pm-1", "--title", "X");
+    await runCliRaw("update-many", "--filter-status", "open", "--title", "Y");
+    await runCliRaw("close", "pm-1", "done");
+    await runCliRaw("close-many", "--filter-status", "open", "--reason", "done");
+    await runCliRaw("delete", "pm-1", "--force");
+    await runCliRaw("append", "pm-1", "text");
+    await runCliRaw("restore", "pm-1", "2");
+    await runCliRaw("history-redact", "pm-1", "--literal", "x");
+    await runCliRaw("history-repair", "pm-1");
+    await runCliRaw("history-compact", "pm-1", "--before", "2");
+
+    // Read-only annotation listings (no --add) skip search-cache invalidation.
+    await runCliRaw("comments", "pm-1");
+    await runCliRaw("notes", "pm-1");
+    await runCliRaw("learnings", "pm-1");
+    // Read-only file/doc listings (no add/remove/migrate) skip invalidation.
+    await runCliRaw("files", "pm-1", "--list");
+    await runCliRaw("docs", "pm-1", "--list");
+    await runCliRaw("deps", "pm-1");
+
+    // history-redact with no change and files discover with no change skip invalidation.
+    vi.mocked(runHistoryRedact).mockResolvedValueOnce({ id: "pm-1", changed: false, dry_run: false } as never);
+    await runCliRaw("history-redact", "pm-1", "--literal", "y");
+    vi.mocked(runFilesDiscover).mockResolvedValueOnce({ id: "pm-1", changed: false } as never);
+    await runCliRaw("files", "discover", "pm-1");
+
+    expect(vi.mocked(runCreate)).toHaveBeenCalled();
+  });
 });
 
 describe("setup command actions", () => {
@@ -910,6 +1754,111 @@ describe("setup command actions", () => {
     );
   });
 
+  it("forwards every typed config flag through to runConfig", async () => {
+    await runCli(
+      "config",
+      "set",
+      "context",
+      "--format",
+      "toon",
+      "--policy",
+      "warn",
+      "--value",
+      "ollama",
+      "--clear-criteria",
+      "--default-depth",
+      "deep",
+      "--activity-limit",
+      "5",
+      "--stale-threshold-days",
+      "30",
+      "--section-hierarchy",
+      "true",
+      "--section-activity",
+      "false",
+      "--section-progress",
+      "true",
+      "--section-blockers",
+      "false",
+      "--section-files",
+      "true",
+      "--section-workload",
+      "false",
+      "--section-staleness",
+      "true",
+      "--section-tests",
+      "false",
+    );
+    const options = lastCallArg<Record<string, unknown>>(vi.mocked(runConfig) as never, 3);
+    expect(options).toMatchObject({
+      format: "toon",
+      policy: "warn",
+      value: "ollama",
+      clearCriteria: true,
+      defaultDepth: "deep",
+      activityLimit: "5",
+      staleThresholdDays: "30",
+      sectionHierarchy: "true",
+      sectionActivity: "false",
+      sectionProgress: "true",
+      sectionBlockers: "false",
+      sectionFiles: "true",
+      sectionWorkload: "false",
+      sectionStaleness: "true",
+      sectionTests: "false",
+    });
+  });
+
+  it("forwards all init setup options through to runInit", async () => {
+    await runCli(
+      "init",
+      "demo",
+      "--preset",
+      "strict",
+      "--author",
+      "agent",
+      "--agent-guidance",
+      "add",
+      "--type-preset",
+      "agile",
+      "--with-packages",
+      "--force",
+    );
+    expect(vi.mocked(runInit)).toHaveBeenLastCalledWith(
+      "demo",
+      expect.anything(),
+      expect.objectContaining({
+        preset: "strict",
+        author: "agent",
+        agentGuidance: "add",
+        typePreset: "agile",
+        withPackages: true,
+        force: true,
+      }),
+    );
+  });
+
+  it("emits the full init tree for --json and skips profiling without --profile", async () => {
+    await runCliRaw("init", "--json");
+    expect(vi.mocked(summarizeInitResult)).not.toHaveBeenCalled();
+    expect(vi.mocked(runInit)).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips profiling for config without --profile", async () => {
+    await runCliRaw("config", "list");
+    expect(vi.mocked(runConfig)).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips profiling for extension and upgrade commands without --profile", async () => {
+    await runCliRaw("extension", "--explore");
+    expect(vi.mocked(runExtension)).toHaveBeenCalledTimes(1);
+
+    vi.mocked(runUpgrade).mockResolvedValue({ ok: true } as never);
+    await runCliRaw("upgrade");
+    expect(process.exitCode).toBeUndefined();
+    expect(vi.mocked(runUpgrade)).toHaveBeenCalledTimes(1);
+  });
+
   it("routes lifecycle subcommands to forced extension actions", async () => {
     // Scope flags shared between the lifecycle parent and its subcommands
     // (--global/--strict-exit/...) are hoisted onto the parent by commander;
@@ -949,6 +1898,82 @@ describe("setup command actions", () => {
     await runCli("package", "--catalog");
     normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
     expect(normalized.catalog).toBe(true);
+  });
+
+  it("routes adopt/adopt-all/activate/deactivate lifecycle subcommands", async () => {
+    await runCli("extension", "adopt", "ext-managed", "--github", "owner/repo", "--ref", "main");
+    expect(lastCallArg(vi.mocked(runExtension) as never, 0)).toBe("ext-managed");
+    let normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
+    expect(normalized).toMatchObject({
+      adopt: true,
+      github: "owner/repo",
+      ref: "main",
+      vocabulary: "extension",
+    });
+
+    await runCli("extension", "adopt-all");
+    expect(lastCallArg(vi.mocked(runExtension) as never, 0)).toBeUndefined();
+    normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
+    expect(normalized).toMatchObject({
+      adoptAll: true,
+      vocabulary: "extension",
+    });
+
+    await runCli("extension", "activate", "ext-managed");
+    expect(lastCallArg(vi.mocked(runExtension) as never, 0)).toBe("ext-managed");
+    normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
+    expect(normalized).toMatchObject({
+      activate: true,
+      vocabulary: "extension",
+    });
+
+    await runCli("package", "deactivate", "pkg-managed", "--global");
+    expect(lastCallArg(vi.mocked(runExtension) as never, 0)).toBe("pkg-managed");
+    normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
+    expect(normalized).toMatchObject({
+      deactivate: true,
+      global: true,
+      vocabulary: "package",
+    });
+  });
+
+  it("routes uninstall/manage/reload/catalog lifecycle subcommands", async () => {
+    await runCli("extension", "uninstall", "ext-managed", "--global");
+    expect(lastCallArg(vi.mocked(runExtension) as never, 0)).toBe("ext-managed");
+    let normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
+    expect(normalized).toMatchObject({ uninstall: true, global: true, vocabulary: "extension" });
+
+    await runCli("package", "manage", "--runtime-probe", "--fix-managed-state");
+    normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
+    expect(normalized).toMatchObject({
+      manage: true,
+      runtimeProbe: true,
+      fixManagedState: true,
+      vocabulary: "package",
+    });
+
+    await runCli("extension", "reload", "--watch");
+    normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
+    expect(normalized).toMatchObject({ reload: true, watch: true, vocabulary: "extension" });
+
+    await runCli("package", "catalog", "--fields", "alias,installed");
+    normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
+    expect(normalized).toMatchObject({
+      catalog: true,
+      fields: "alias,installed",
+      vocabulary: "package",
+    });
+  });
+
+  it("supports package install with no explicit target", async () => {
+    await runCli("package", "install", "--project");
+    expect(lastCallArg(vi.mocked(runExtension) as never, 0)).toBeUndefined();
+    const normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
+    expect(normalized).toMatchObject({
+      install: true,
+      project: true,
+      vocabulary: "package",
+    });
   });
 
   it("rejects multiple install targets unless they are a shell-expanded wildcard", async () => {
@@ -996,6 +2021,14 @@ describe("setup command actions", () => {
     await runCli("extension", "--doctor", "--strict-exit");
     expect(process.exitCode).toBe(EXIT_CODE.GENERIC_FAILURE);
     process.exitCode = undefined;
+
+    vi.mocked(runExtension).mockResolvedValue({
+      action: "doctor",
+      details: { summary: { status: "ok" } },
+      warnings: ["advisory"],
+    } as never);
+    await runCli("extension", "--doctor", "--strict-exit");
+    expect(process.exitCode).toBeUndefined();
 
     vi.mocked(runUpgrade).mockResolvedValue({ ok: false } as never);
     await runCli("upgrade", "--dry-run", "--cli-only");

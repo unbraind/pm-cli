@@ -40,8 +40,11 @@ export const _testOnly = {
   resolveProjectRoot,
   resolveTargetGuidancePath,
   parsePromptChoice,
+  pushUnique,
+  promptForGuidanceWrite,
   normalizeAgentGuidanceState,
   applyAgentGuidanceState,
+  writeGuidanceFile,
   setAgentGuidanceReadlineFactoryForTests,
 };
 
@@ -151,8 +154,14 @@ function upsertAgentGuidanceBlock(existingContent: string): { next_content: stri
   const nextBlock = buildAgentGuidanceBlock(lineEnding);
   const existingRange = findGuidanceBlockRange(existingContent);
   if (existingRange) {
+    const trailingContent = existingContent.slice(existingRange.end_index);
+    const normalizedTrailingContent = trailingContent.startsWith("\r\n")
+      ? trailingContent.slice(2)
+      : trailingContent.startsWith("\n")
+        ? trailingContent.slice(1)
+        : trailingContent;
     const nextContent = ensureTrailingNewline(
-      `${existingContent.slice(0, existingRange.start_index)}${nextBlock}${existingContent.slice(existingRange.end_index)}`,
+      `${existingContent.slice(0, existingRange.start_index)}${nextBlock}${normalizedTrailingContent}`,
     );
     return {
       next_content: nextContent,

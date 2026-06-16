@@ -26,7 +26,7 @@ const SKILLS_ROOT = ".agents/skills";
 const REQUIRED_HARNESS_DOC = ".agents/skills/HARNESS_COMPATIBILITY.md";
 const DOC_LINE_LIMITS = new Map([["docs/EXTENSIONS.md", 450]]);
 
-function usage() {
+export function usage() {
   console.log(`Usage:
   node scripts/release/docs-skills-gate.mjs [--json] [--links-only]
 
@@ -39,20 +39,21 @@ Validates docs and .agents/skills freshness gates:
 `);
 }
 
-function parseJson(text, context) {
+export function parseJson(text, context) {
   try {
     return JSON.parse(text);
   } catch (error) {
+    /* c8 ignore next -- JSON.parse always throws a SyntaxError (Error instance); String(error) fallback is unreachable */
     const message = error instanceof Error ? error.message : String(error);
     fail(`Failed to parse JSON for ${context}: ${message}`);
   }
 }
 
-function isMissingError(error) {
+export function isMissingError(error) {
   return Boolean(error && typeof error === "object" && "code" in error && error.code === "ENOENT");
 }
 
-async function fileExists(relativePath) {
+export async function fileExists(relativePath) {
   const absolutePath = path.resolve(REPO_ROOT, relativePath);
   try {
     const stats = await stat(absolutePath);
@@ -65,7 +66,7 @@ async function fileExists(relativePath) {
   }
 }
 
-async function pathExists(relativePath) {
+export async function pathExists(relativePath) {
   const absolutePath = path.resolve(REPO_ROOT, relativePath);
   try {
     await stat(absolutePath);
@@ -78,7 +79,7 @@ async function pathExists(relativePath) {
   }
 }
 
-async function requireFiles(filePaths, failures) {
+export async function requireFiles(filePaths, failures) {
   for (const filePath of filePaths) {
     if (!(await fileExists(filePath))) {
       failures.push(`Missing required file: ${filePath}`);
@@ -86,7 +87,7 @@ async function requireFiles(filePaths, failures) {
   }
 }
 
-async function readUtf8(relativePath) {
+export async function readUtf8(relativePath) {
   const absolutePath = path.resolve(REPO_ROOT, relativePath);
   return readFile(absolutePath, "utf8");
 }
@@ -157,7 +158,7 @@ export function validateSkillFrontmatter(skillName, rawContent, failures) {
   }
 }
 
-function extractRelativeMarkdownLinks(content) {
+export function extractRelativeMarkdownLinks(content) {
   const links = [];
   const linkPattern = /\[[^\]]+\]\(([^)]+)\)/g;
   for (const match of content.matchAll(linkPattern)) {
@@ -178,7 +179,7 @@ function extractRelativeMarkdownLinks(content) {
   return links;
 }
 
-async function collectMarkdownFiles(relativeDirectory) {
+export async function collectMarkdownFiles(relativeDirectory) {
   const absoluteDirectory = path.resolve(REPO_ROOT, relativeDirectory);
   const files = [];
 
@@ -199,7 +200,7 @@ async function collectMarkdownFiles(relativeDirectory) {
   return files;
 }
 
-async function validateSkillLinks(skillName, failures) {
+export async function validateSkillLinks(skillName, failures) {
   const skillRoot = `${SKILLS_ROOT}/${skillName}`;
   const markdownFiles = await collectMarkdownFiles(skillRoot);
   for (const markdownFile of markdownFiles) {
@@ -217,7 +218,7 @@ async function validateSkillLinks(skillName, failures) {
   }
 }
 
-function resolveMarkdownLink(markdownFile, linkTarget) {
+export function resolveMarkdownLink(markdownFile, linkTarget) {
   const cleaned = linkTarget.trim().replace(/^<|>$/g, "");
   if (!cleaned) {
     return null;
@@ -232,7 +233,7 @@ function resolveMarkdownLink(markdownFile, linkTarget) {
   return path.posix.normalize(path.posix.join(path.posix.dirname(markdownFile), pathWithoutQueryOrAnchor));
 }
 
-async function validateDocsLinks(failures) {
+export async function validateDocsLinks(failures) {
   const docsMarkdownFiles = await collectMarkdownFiles("docs");
   const filesToCheck = [...new Set([...DOC_LINK_CHECK_ROOT_FILES, ...docsMarkdownFiles])];
   for (const markdownFile of filesToCheck) {
@@ -256,6 +257,7 @@ export function resolveExampleCommandPath(example, availableCommands) {
     return null;
   }
   const tokens = normalized.split(/\s+/).slice(1);
+  /* c8 ignore next 3 -- unreachable: a "pm " prefix always leaves >=1 token after slice(1) */
   if (tokens.length === 0) {
     return null;
   }
@@ -288,7 +290,7 @@ export function resolveExampleCommandPath(example, availableCommands) {
   return "";
 }
 
-function validateGuideCommands(topicResult, availableCommands, failures) {
+export function validateGuideCommands(topicResult, availableCommands, failures) {
   const commandSamples = [
     ...topicResult.topic.commands,
     ...topicResult.topic.workflows.flatMap((workflow) => workflow.commands),
@@ -301,7 +303,7 @@ function validateGuideCommands(topicResult, availableCommands, failures) {
   }
 }
 
-async function runGuideChecks(failures) {
+export async function runGuideChecks(failures) {
   const tempRoot = await mkdtemp(path.join(tmpdir(), "pm-docs-skills-gate-"));
   const runtimeEnv = {
     PM_PATH: path.join(tempRoot, "project", ".agents", "pm"),
@@ -384,7 +386,7 @@ async function runGuideChecks(failures) {
   }
 }
 
-async function validateRequiredGuideMentions(failures) {
+export async function validateRequiredGuideMentions(failures) {
   for (const filePath of REQUIRED_PM_GUIDE_DOCS) {
     const content = await readUtf8(filePath);
     if (!content.includes("pm guide")) {
@@ -396,7 +398,7 @@ async function validateRequiredGuideMentions(failures) {
   }
 }
 
-async function validatePublicDocBudgets(failures) {
+export async function validatePublicDocBudgets(failures) {
   for (const [filePath, maxLines] of DOC_LINE_LIMITS) {
     const content = await readUtf8(filePath);
     const lineCount = content.split(/\r?\n/).length;
@@ -421,7 +423,7 @@ async function validatePublicDocBudgets(failures) {
   }
 }
 
-async function runSkillChecks(failures) {
+export async function runSkillChecks(failures) {
   if (!(await fileExists(REQUIRED_HARNESS_DOC))) {
     failures.push(`Missing required harness compatibility guide: ${REQUIRED_HARNESS_DOC}`);
   }
@@ -437,7 +439,7 @@ async function runSkillChecks(failures) {
   }
 }
 
-async function main() {
+export async function main() {
   const { flags } = parseFlags(process.argv.slice(2));
   if (flags.get("help") || flags.get("h")) {
     usage();
@@ -485,9 +487,11 @@ async function main() {
   }
 }
 
+/* c8 ignore start -- CLI auto-run guard; logic covered via exported main() */
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main().catch((error) => {
     const message = error instanceof Error ? error.message : String(error);
     fail(`Docs/skills gate crashed: ${message}`, 1);
   });
 }
+/* c8 ignore stop */

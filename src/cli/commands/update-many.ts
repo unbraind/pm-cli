@@ -110,9 +110,9 @@ const UPDATE_OPTION_TO_ITEM_KEY: Partial<Record<keyof UpdateCommandOptions, stri
 
 interface CollectionMutationPlanDefinition {
   field: string;
-  addKey?: keyof UpdateCommandOptions;
+  addKey: keyof UpdateCommandOptions;
   removeKey?: keyof UpdateCommandOptions;
-  clearKey?: keyof UpdateCommandOptions;
+  clearKey: keyof UpdateCommandOptions;
   replaceKey?: keyof UpdateCommandOptions;
 }
 
@@ -375,11 +375,11 @@ function collectionValueCount(field: string, value: unknown): number {
 function buildCollectionMutationPlans(row: Record<string, unknown>, update: UpdateCommandOptions): PlannedChange[] {
   const changes: PlannedChange[] = [];
   for (const definition of COLLECTION_MUTATION_PLAN_DEFINITIONS) {
-    const addValues = definition.addKey ? update[definition.addKey] : undefined;
+    const addValues = update[definition.addKey];
     const removeValues = definition.removeKey ? update[definition.removeKey] : undefined;
     const addCount = Array.isArray(addValues) ? addValues.length : 0;
     const removeCount = Array.isArray(removeValues) ? removeValues.length : 0;
-    const clear = definition.clearKey ? update[definition.clearKey] === true : false;
+    const clear = update[definition.clearKey] === true;
     const replace = definition.replaceKey ? update[definition.replaceKey] === true : false;
     if (!clear && !replace && addCount === 0 && removeCount === 0) {
       continue;
@@ -424,7 +424,7 @@ function buildTagMutationPlan(row: Record<string, unknown>, update: UpdateComman
     return undefined;
   }
   const existing = normalizeExistingTags(row.tags);
-  const baseTags = hasReplace ? parseTags(update.tags ?? "") : existing;
+  const baseTags = hasReplace ? parseTags(update.tags as string) : existing;
   const withAdditions = mergeAdditiveTags(baseTags, update.addTags);
   const after = applyTagRemovals(withAdditions, update.removeTags).slice().sort((a, b) => a.localeCompare(b));
   const before = existing.slice().sort((a, b) => a.localeCompare(b));
@@ -436,10 +436,10 @@ function buildTagMutationPlan(row: Record<string, unknown>, update: UpdateComman
 
 function buildPlannedItemDiff(
   item: ListedItem,
-  update: UpdateCommandOptions | undefined,
+  update: UpdateCommandOptions = {},
   runtimeFieldRegistry: RuntimeFieldRegistry,
 ): PlannedItemDiff {
-  const safeUpdate = update ?? {};
+  const safeUpdate = update;
   const row = toItemRecord(item);
   const changes: PlannedChange[] = [];
   const tagPlan = buildTagMutationPlan(row, safeUpdate);

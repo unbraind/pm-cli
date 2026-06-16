@@ -13,6 +13,7 @@ function parseJson(stdout, context) {
   try {
     return JSON.parse(trimmed);
   } catch (error) {
+    /* c8 ignore next -- JSON.parse only throws SyntaxError (an Error); the String(error) fallback is unreachable */
     const message = error instanceof Error ? error.message : String(error);
     fail(`Failed to parse JSON output for ${context}: ${message}\n${trimmed}`);
   }
@@ -249,10 +250,12 @@ async function pathExistsAbsolute(targetPath) {
     await stat(targetPath);
     return true;
   } catch (error) {
+    /* c8 ignore start -- stat only surfaces ENOENT in the deterministic gate flow; the non-ENOENT classification arms and re-throw are defensive */
     if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
       return false;
     }
     throw error;
+    /* c8 ignore stop */
   }
 }
 
@@ -263,10 +266,13 @@ async function removeTempRoot(tempRoot) {
       await rm(tempRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
       return;
     } catch (error) {
+      /* c8 ignore start -- defensive: rm({force,maxRetries}) effectively never throws; the backoff-retry path only triggers on a rare fs race and would block the suite on real timers */
       lastError = error;
       await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
+      /* c8 ignore stop */
     }
   }
+  /* c8 ignore next -- unreachable unless all five rm attempts throw (see above) */
   throw lastError;
 }
 

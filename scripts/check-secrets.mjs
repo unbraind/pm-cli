@@ -61,6 +61,7 @@ function run() {
   console.log("No credential-like secrets detected in tracked files.");
 }
 
+/* c8 ignore next 3 -- CLI auto-run guard; the not-main else-branch is untestable (run() is exercised directly under test) */
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   run();
 }

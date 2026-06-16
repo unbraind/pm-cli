@@ -495,7 +495,7 @@ function summarizeCandidate(candidate: ExtensionCandidate): EffectiveExtension {
     capabilities: [...candidate.manifest.capabilities],
     activation: candidate.manifest.activation
       ? {
-          commands: [...(candidate.manifest.activation.commands ?? [])],
+          commands: [...(candidate.manifest.activation.commands as string[])],
         }
       : undefined,
   };
@@ -807,7 +807,7 @@ function formatUnknownError(error: unknown): string {
 
 function parseComparableVersion(value: string): number[] | null {
   const normalized = value.trim().replace(/^>=\s*/, "").replace(/^v/i, "");
-  const release = normalized.split(/[+-]/, 1)[0] ?? "";
+  const release = normalized.split(/[+-]/, 1)[0];
   if (!/^\d+(?:[.-]\d+)*$/.test(release)) {
     return null;
   }
@@ -1146,9 +1146,7 @@ async function runExtensionDeactivateWithTimeout(
       }),
     ]);
   } finally {
-    if (timeoutHandle) {
-      clearTimeout(timeoutHandle);
-    }
+    clearTimeout(timeoutHandle as ReturnType<typeof setTimeout>);
   }
 }
 
@@ -1406,26 +1404,19 @@ function normalizeCommandDefinitionArguments(value: unknown): ExtensionCommandAr
       definition.variadic = true;
     }
     if (typeof record.description === "string") {
-      const trimmedDescription = record.description.trim();
-      if (trimmedDescription.length > 0) {
-        definition.description = trimmedDescription;
-      }
+      definition.description = record.description.trim();
     }
     normalized.push(definition);
   }
 
-  let variadicCount = 0;
-  for (const [index, argument] of normalized.entries()) {
-    if (!argument.variadic) {
-      continue;
-    }
-    variadicCount += 1;
-    if (variadicCount > 1) {
-      throw new TypeError("registerCommand definition.arguments supports at most one variadic argument");
-    }
-    if (index !== normalized.length - 1) {
-      throw new TypeError("registerCommand definition.arguments variadic argument must be the final argument");
-    }
+  const variadicIndexes = normalized
+    .map((argument, index) => (argument.variadic ? index : -1))
+    .filter((index) => index >= 0);
+  if (variadicIndexes.length > 1) {
+    throw new TypeError("registerCommand definition.arguments supports at most one variadic argument");
+  }
+  if (variadicIndexes.length === 1 && variadicIndexes[0] !== normalized.length - 1) {
+    throw new TypeError("registerCommand definition.arguments variadic argument must be the final argument");
   }
 
   return normalized;
@@ -1643,7 +1634,7 @@ function assertExtensionCapability(extension: LoadedExtension, capability: Exten
         capability,
         missing_capability: capability,
         expected_schema: `"capabilities": [..., "${capability}"]`,
-        received: extension.capabilities ?? [],
+        received: extension.capabilities,
         hint: `Add "${capability}" to ${extension.name} manifest capabilities, or remove the ${method} registration call.`,
       },
     );
@@ -1872,7 +1863,7 @@ function createExtensionApi(
       }
       registrations.commands.push(registration);
     } catch (error: unknown) {
-      const reason = error instanceof Error ? error.message : "registerCommand definition validation failed";
+      const reason = formatUnknownError(error);
       const trace = registerCommandTrace(
         "definition",
         normalizedCommand,
@@ -2297,7 +2288,7 @@ function collectCommandCollisionWarnings(commands: ExtensionCommandRegistry): st
       grouped.set(entry.command, bucket);
     }
     for (const command of [...grouped.keys()].sort((left, right) => left.localeCompare(right))) {
-      const bucket = grouped.get(command) ?? [];
+      const bucket = grouped.get(command)!;
       if (bucket.length <= 1) {
         continue;
       }
@@ -2314,9 +2305,10 @@ function collectCommandCollisionWarnings(commands: ExtensionCommandRegistry): st
   collectByCommand(commands.overrides, "extension_command_override_collision");
 
   const handlerCommands = new Set(commands.handlers.map((entry) => entry.command));
-  const overlapCommands = [...new Set(commands.overrides.map((entry) => entry.command))]
-    .filter((command) => handlerCommands.has(command))
-    .sort((left, right) => left.localeCompare(right));
+  const overlapCommands = [...new Set(commands.overrides.map((entry) => entry.command))].filter((command) =>
+    handlerCommands.has(command),
+  );
+  overlapCommands.sort((left, right) => left.localeCompare(right));
   for (const command of overlapCommands) {
     const handlers = commands.handlers.filter((entry) => entry.command === command);
     const overrides = commands.overrides.filter((entry) => entry.command === command);
@@ -2341,7 +2333,7 @@ function collectRendererCollisionWarnings(renderers: ExtensionRendererRegistry):
   }
   const warnings: string[] = [];
   for (const format of [...grouped.keys()].sort((left, right) => left.localeCompare(right))) {
-    const bucket = grouped.get(format) ?? [];
+    const bucket = grouped.get(format)!;
     if (bucket.length <= 1) {
       continue;
     }
@@ -2364,7 +2356,7 @@ function collectParserCollisionWarnings(parsers: ExtensionParserRegistry): strin
     grouped.set(entry.command, bucket);
   }
   for (const command of [...grouped.keys()].sort((left, right) => left.localeCompare(right))) {
-    const bucket = grouped.get(command) ?? [];
+    const bucket = grouped.get(command)!;
     if (bucket.length <= 1) {
       continue;
     }
@@ -2404,7 +2396,7 @@ function collectServiceCollisionWarnings(services: ExtensionServiceRegistry): st
     grouped.set(entry.service, bucket);
   }
   for (const service of [...grouped.keys()].sort((left, right) => left.localeCompare(right))) {
-    const bucket = grouped.get(service) ?? [];
+    const bucket = grouped.get(service)!;
     if (bucket.length <= 1) {
       continue;
     }
@@ -2504,12 +2496,36 @@ export async function activateExtensions(loadResult: ExtensionLoadResult): Promi
 }
 
 export const _testOnlyLoader = {
+  assertFlagValueTypeAndDefault,
+  assertOptionalStringField,
   compareComparableVersions,
+  collectCommandCollisionWarnings,
+  collectParserCollisionWarnings,
+  collectRendererCollisionWarnings,
+  collectServiceCollisionWarnings,
+  createExtensionApi,
+  createRegistrationValidationError,
   evaluatePmMaxVersionCompatibility,
   evaluatePmMinVersionCompatibility,
+  extractRegistrationValidationTrace,
+  fingerprintPath,
+  getRegistrationCounts,
   normalizeCommandDefinitionArguments,
+  normalizeExtensionDeactivateTimeout,
+  normalizeOptionalStringArrayField,
+  normalizeRegistrationRecord,
+  normalizeRegistrationRecordList,
+  normalizeRuntimeRegistrationRecord,
   parseComparableVersion,
+  parseManifest,
+  readCurrentPmCliVersion,
   readManagedExtensionSourcePackages,
+  resolveExtensionImportHref,
+  resolveCurrentPmCliVersion,
   resolveCommandDefinitionAction,
   sanitizeRegistrationValue,
+  validateItemFieldDefinitions,
+  resetCurrentPmCliVersionCacheForTest: () => {
+    currentPmCliVersionPromise = null;
+  },
 };

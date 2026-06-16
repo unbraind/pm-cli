@@ -59,7 +59,8 @@ function runProcess(label, args, options = {}) {
   try {
     return JSON.parse(completed.stdout);
   } catch (error) {
-    throw new Error(`${label} did not emit valid JSON: ${error instanceof Error ? error.message : String(error)}`);
+    // JSON.parse only ever throws a SyntaxError, so `error.message` is always defined here.
+    throw new Error(`${label} did not emit valid JSON: ${(error).message}`);
   }
 }
 
@@ -621,7 +622,7 @@ try {
     "test",
     id,
     "--add",
-    "command=node scripts/run-tests.mjs test -- tests/unit/parse-utils.spec.ts,timeout_seconds=240",
+    "command=node scripts/run-tests.mjs test -- tests/unit/core/item/parse-utils.spec.ts,timeout_seconds=240",
   ]);
   run("linked test run", ["test", id, "--run", "--fail-on-skipped"]);
   run("validate", ["validate", "--check-resolution", "--check-history-drift"]);

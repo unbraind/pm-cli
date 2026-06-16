@@ -68,7 +68,7 @@ async function resolveCommentInput(
       emptyFlag: "--stdin",
     };
   }
-  const filePath = options.file?.trim() ?? "";
+  const filePath = (options.file as string).trim();
   if (!filePath) {
     throw new PmCliError("--file path cannot be empty", EXIT_CODE.USAGE);
   }
@@ -96,6 +96,7 @@ export async function runComments(id: string, options: CommentsCommandOptions, g
     input: {
       ...commentInput,
       value:
+        /* c8 ignore next -- resolveCommentInput always normalizes add-mode values to a string (possibly empty). */
         commentInput.mode === "add"
           ? parseAnnotationTextInput(commentInput.value ?? "", { stripPlainTextPrefix: true })
           : (commentInput.value ?? ""),

@@ -607,11 +607,10 @@ function preferredStatusForRole(
   if (withRole.length > 0) {
     return withRole[0].id;
   }
-  for (const value of fallbackValues) {
-    const normalized = normalizeStatusId(value);
-    if (!normalized) {
-      continue;
-    }
+  const normalizedFallbacks = fallbackValues
+    .map((value) => normalizeStatusId(value))
+    .filter((value): value is string => typeof value === "string");
+  for (const normalized of normalizedFallbacks) {
     if (definitions.some((definition) => definition.id === normalized)) {
       return normalized;
     }
@@ -667,7 +666,7 @@ export function resolveRuntimeStatusRegistry(schema: RuntimeSchemaSettings): Run
   const workflow = normalizedSchema.workflow;
   const openStatus =
     normalizeStatusId(workflow.open_status) ??
-    preferredStatusForRole(definitions, "default_open", ["open", "in_progress", STATUS_VALUES[0] ?? "open"]);
+    preferredStatusForRole(definitions, "default_open", ["open", "in_progress", STATUS_VALUES[0]]);
   const closeStatus =
     normalizeStatusId(workflow.close_status) ??
     preferredStatusForRole(definitions, "default_close", ["closed", "done", "complete"]);
@@ -685,9 +684,9 @@ export function resolveRuntimeStatusRegistry(schema: RuntimeSchemaSettings): Run
     active_statuses: activeStatuses,
     blocked_statuses: blockedStatuses,
     draft_statuses: draftStatuses,
-    open_status: openStatus ?? definitions[0]?.id ?? "open",
-    close_status: closeStatus ?? definitions[0]?.id ?? "closed",
-    canceled_status: canceledStatus ?? definitions[0]?.id ?? "canceled",
+    open_status: openStatus as string,
+    close_status: closeStatus as string,
+    canceled_status: canceledStatus as string,
   };
 }
 
@@ -702,11 +701,10 @@ export function normalizeStatusInputWithRegistry(value: unknown, registry: Runti
 export function resolveRuntimeFieldRegistry(schema: RuntimeSchemaSettings): RuntimeFieldRegistry {
   const normalizedSchema = normalizeRuntimeSchemaSettings(schema);
   const dedupedByKey = new Map<string, RuntimeFieldDefinitionResolved>();
-  for (const definition of normalizedSchema.fields) {
-    const normalized = normalizeRuntimeFieldDefinition(definition);
-    if (!normalized) {
-      continue;
-    }
+  const normalizedFields = normalizedSchema.fields
+    .map((definition) => normalizeRuntimeFieldDefinition(definition))
+    .filter((definition): definition is RuntimeFieldDefinitionResolved => definition !== null);
+  for (const normalized of normalizedFields) {
     dedupedByKey.set(normalized.key, normalized);
   }
   const definitions = [...dedupedByKey.values()].sort((left, right) => left.key.localeCompare(right.key));

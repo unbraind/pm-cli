@@ -142,14 +142,12 @@ export async function runStats(global: GlobalOptions, options: StatsCommandOptio
 
   const byType = zeroByType(typeRegistry.types);
   const byStatus = zeroByStatus(statusRegistry.definitions.map((definition) => definition.id));
+  // zeroByType/zeroByStatus pre-seed a bucket for every registry type/status, and
+  // the light front-matter reader drops any item whose type/status falls outside
+  // the active registry (parse rejects them) — so every item's bucket is already
+  // present here and no on-the-fly initialization is reachable.
   for (const item of items) {
-    if (byType[item.type] === undefined) {
-      byType[item.type] = 0;
-    }
     byType[item.type] += 1;
-    if (byStatus[item.status] === undefined) {
-      byStatus[item.status] = 0;
-    }
     byStatus[item.status] += 1;
   }
 

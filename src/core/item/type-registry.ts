@@ -487,7 +487,6 @@ function coerceTypeDefinitionFromUnknown(raw: unknown): ItemTypeDefinition | nul
 function applyTypeDefinitions(
   source: ItemTypeDefinition[],
   target: Map<string, ResolvedItemTypeDefinition>,
-  preserveBuiltinDefaults: boolean,
 ): void {
   for (const rawDefinition of source) {
     const normalizedDefinition = normalizeTypeDefinition(rawDefinition);
@@ -504,12 +503,10 @@ function applyTypeDefinitions(
     ]);
     const requiredCreateFields = normalizedDefinition.required_create_fields
       ? normalizeItemTypeStringList(normalizedDefinition.required_create_fields)
-      : existing?.required_create_fields ??
-        (preserveBuiltinDefaults ? [...DEFAULT_REQUIRED_CREATE_FIELDS] : []);
+      : existing?.required_create_fields ?? [];
     const requiredCreateRepeatables = normalizedDefinition.required_create_repeatables
       ? normalizeItemTypeStringList(normalizedDefinition.required_create_repeatables)
-      : existing?.required_create_repeatables ??
-        (preserveBuiltinDefaults ? [...DEFAULT_REQUIRED_CREATE_REPEATABLES] : []);
+      : existing?.required_create_repeatables ?? [];
     const options = normalizedDefinition.options
       ? normalizedDefinition.options
       : existing?.options
@@ -573,8 +570,8 @@ export function resolveItemTypeRegistry(
     });
   }
 
-  applyTypeDefinitions(settings.item_types?.definitions ?? [], byLowerName, false);
-  applyTypeDefinitions(collectExtensionTypeDefinitions(extensionRegistrations), byLowerName, false);
+  applyTypeDefinitions(settings.item_types?.definitions ?? [], byLowerName);
+  applyTypeDefinitions(collectExtensionTypeDefinitions(extensionRegistrations), byLowerName);
 
   const definitions = [...byLowerName.values()].sort((left, right) => left.name.localeCompare(right.name));
   const byType: Record<string, ResolvedItemTypeDefinition> = {};

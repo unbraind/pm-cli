@@ -90,9 +90,11 @@ function normalizeErrorCode(errorCode: string | undefined): string | undefined {
 
 export function deriveTelemetryCommandTaxonomy(commandPath: string): TelemetryCommandTaxonomy {
   const normalizedPath = normalizeCommandPath(commandPath);
+  // tokens always has at least one element (the fallback ["<unknown>"]), so the
+  // first/last lookups are never undefined.
   const tokens = normalizedPath.length > 0 ? normalizedPath.split(" ") : ["<unknown>"];
-  const root = tokens[0] ?? "<unknown>";
-  const leaf = tokens[tokens.length - 1] ?? root;
+  const root = tokens[0] as string;
+  const leaf = tokens[tokens.length - 1] as string;
 
   let family: TelemetryCommandTaxonomy["command_family"] = "other";
   if (SETUP_ROOT_COMMANDS.has(root)) {
@@ -168,14 +170,14 @@ export function inferTelemetryErrorCode(params: InferTelemetryErrorCodeParams): 
   if (message.startsWith("invalid ") || message.includes(" must be ") || message.includes(" requires ")) {
     return "invalid_argument_value";
   }
-  if (message.includes("strict create mode requires concrete values for --")) {
-    return "missing_required_option";
-  }
+  // NOTE: A "strict create mode requires concrete values for --" message is always
+  // classified as invalid_argument_value by the ` requires ` check above, so a
+  // dedicated branch here would be unreachable and is intentionally omitted.
   if (message.includes("either as positional") && message.includes("not both")) {
     return "invalid_command_usage";
   }
 
-  const exitCode = Number.isFinite(params.exitCode) ? Math.max(0, Math.trunc(params.exitCode ?? 0)) : undefined;
+  const exitCode = Number.isFinite(params.exitCode) ? Math.max(0, Math.trunc(params.exitCode as number)) : undefined;
   if (exitCode === EXIT_CODE.USAGE) {
     return "invalid_command_usage";
   }

@@ -224,6 +224,131 @@ describe("runTelemetry", () => {
     });
   });
 
+  it("rejects an empty-string subcommand and falls back to an empty value in the error", async () => {
+    await withTempGlobalRoot("pm-cli-telemetry-empty-sub-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      await expect(runTelemetry({ subcommand: "   " }, {})).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
+  it("defaults to status when subcommand is omitted", async () => {
+    await withTempGlobalRoot("pm-cli-telemetry-default-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      const result = await runTelemetry({}, {});
+      expect(result.subcommand).toBe("status");
+    });
+  });
+
+  it("accepts a numeric stats limit and rejects non-positive numeric limits", async () => {
+    await withTempGlobalRoot("pm-cli-telemetry-numeric-limit-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      await writeQueue(globalRoot, [
+        JSON.stringify({ attempts: 0, event: { event_type: "command_start", command: "list-open" } }),
+      ]);
+      const result = await runTelemetry({ subcommand: "stats", limit: 5 }, {});
+      expect(result.limit).toBe(5);
+
+      await expect(runTelemetry({ subcommand: "stats", limit: 0 }, {})).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runTelemetry({ subcommand: "stats", limit: 2.5 }, {})).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runTelemetry({ subcommand: "stats", limit: "0" }, {})).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
+  it("uses the default stats limit when no limit is provided", async () => {
+    await withTempGlobalRoot("pm-cli-telemetry-default-limit-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      await writeQueue(globalRoot, [
+        JSON.stringify({ attempts: 0, event: { event_type: "command_start", command: "list-open" } }),
+      ]);
+      const result = await runTelemetry({ subcommand: "stats" }, {});
+      expect(result.limit).toBe(20);
+    });
+  });
+
+  it("counts JSON rows that fail the queue-entry shape check as invalid", async () => {
+    await withTempGlobalRoot("pm-cli-telemetry-invalid-shape-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      await writeQueue(globalRoot, [
+        // valid JSON object but missing numeric attempts / event object → invalid row
+        JSON.stringify({ attempts: "nope", event: { command: "x" } }),
+        JSON.stringify({ attempts: 0, event: null }),
+        JSON.stringify([1, 2, 3]),
+      ]);
+      const result = await runTelemetry({ subcommand: "status" }, {});
+      expect(result.status).toMatchObject({
+        queue_entries: 0,
+        queue_invalid_rows: 3,
+        queue_rows_total: 3,
+      });
+    });
+  });
+
+  it("ignores a non-object runtime state file", async () => {
+    await withTempGlobalRoot("pm-cli-telemetry-state-array-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      await fs.mkdir(path.dirname(statePath(globalRoot)), { recursive: true });
+      await fs.writeFile(statePath(globalRoot), "[1, 2, 3]\n", "utf8");
+      const result = await runTelemetry({ subcommand: "status" }, {});
+      expect(result.status).toMatchObject({
+        last_attempted_flush_at: null,
+        last_successful_flush_at: null,
+        last_failed_flush_at: null,
+        last_failed_flush_error: null,
+      });
+    });
+  });
+
+  it("buckets entries with missing/blank command + event metadata and sorts schema versions", async () => {
+    await withTempGlobalRoot("pm-cli-telemetry-fallbacks-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      await writeQueue(globalRoot, [
+        // blank command + blank event_type + non-finite/absent schema versions → fallbacks
+        JSON.stringify({ attempts: -3, event: { command: "   ", event_type: "  ", schema_version: Number.NaN } }),
+        JSON.stringify({ attempts: 0, client_schema_version: Number.POSITIVE_INFINITY, event: {} }),
+        // same fallback command bucket with two distinct schema versions to exercise the sort comparators
+        JSON.stringify({ client_schema_version: 3, attempts: 0, event: { schema_version: 2 } }),
+        JSON.stringify({ client_schema_version: 1, attempts: 0, event: { schema_version: 5 } }),
+      ]);
+      const result = await runTelemetry({ subcommand: "stats", limit: 10 }, {}) as {
+        stats: Array<{
+          command: string;
+          event_type_counts: Record<string, number>;
+          max_attempts: number;
+          event_schema_versions: number[];
+          client_schema_versions: number[];
+        }>;
+      };
+      const unknownBucket = result.stats.find((bucket) => bucket.command === "<unknown>");
+      expect(unknownBucket).toBeDefined();
+      expect(unknownBucket?.event_type_counts).toMatchObject({ unknown: expect.any(Number) });
+      expect(unknownBucket?.max_attempts).toBe(0);
+      expect(unknownBucket?.event_schema_versions).toEqual([2, 5]);
+      expect(unknownBucket?.client_schema_versions).toEqual([1, 3]);
+    });
+  });
+
+  it("sorts equal-count command buckets alphabetically", async () => {
+    await withTempGlobalRoot("pm-cli-telemetry-tiebreak-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      await writeQueue(globalRoot, [
+        JSON.stringify({ attempts: 0, event: { event_type: "command_start", command: "zeta" } }),
+        JSON.stringify({ attempts: 0, event: { event_type: "command_start", command: "alpha" } }),
+      ]);
+      const result = (await runTelemetry({ subcommand: "stats", limit: 10 }, {})) as {
+        stats: Array<{ command: string }>;
+      };
+      expect(result.stats.map((bucket) => bucket.command)).toEqual(["alpha", "zeta"]);
+    });
+  });
+
   it("runs the telemetry-flush entrypoint against the runtime flush helper", async () => {
     const flushSpy = vi.spyOn(telemetryRuntime, "flushTelemetryQueueNow").mockResolvedValue({
       attempted: false,

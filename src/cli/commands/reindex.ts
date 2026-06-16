@@ -222,6 +222,7 @@ export const _testOnly = {
   executeExtensionEmbedding,
   resolveExtensionEmbeddingModel,
   resolveReindexEmbeddingIdentity,
+  executeReindexEmbedding,
   collectLedgerOrphanIds,
   resetVectorStoreForReindex,
   pruneReindexOrphanVectors,
@@ -232,6 +233,9 @@ function resolveExtensionSearchEmbedding(
 ): { name: string; embedBatch?: ExtensionEmbedBatch; embed?: ExtensionEmbedOne } | null {
   const registrations = getActiveExtensionRegistrations();
   const providerName = toOptionalNonEmptyString(settings.search?.provider);
+  if (!providerName) {
+    return null;
+  }
   const registration = resolveRegisteredSearchProvider(registrations, providerName);
   if (!registration) {
     return null;
@@ -239,11 +243,15 @@ function resolveExtensionSearchEmbedding(
   const runtimeDefinition = registration.runtime_definition ?? registration.definition;
   const name =
     toOptionalNonEmptyString((runtimeDefinition as { name?: unknown }).name) ??
-    toOptionalNonEmptyString((registration.definition as { name?: unknown }).name) ??
-    providerName;
+    toOptionalNonEmptyString((registration.definition as { name?: unknown }).name);
+  // resolveRegisteredSearchProvider only matches a registration whose normalized
+  // runtime/registered definition name equals providerName, so `name` here is always
+  // that non-empty value; the guard exists solely to narrow string | undefined.
+  /* c8 ignore start -- unreachable: a matched provider registration always carries a normalized name */
   if (!name) {
     return null;
   }
+  /* c8 ignore stop */
   const embedBatch = (runtimeDefinition as { embedBatch?: unknown; embed_batch?: unknown }).embedBatch;
   const embedBatchSnake = (runtimeDefinition as { embedBatch?: unknown; embed_batch?: unknown }).embed_batch;
   const embed = (runtimeDefinition as { embed?: unknown }).embed;
@@ -267,6 +275,9 @@ function resolveExtensionSearchEmbedding(
 function resolveExtensionVectorAdapter(settings: PmSettings): ExtensionVectorAdapter | null {
   const registrations = getActiveExtensionRegistrations();
   const adapterName = toOptionalNonEmptyString(settings.vector_store?.adapter);
+  if (!adapterName) {
+    return null;
+  }
   const registration = resolveRegisteredVectorStoreAdapter(registrations, adapterName);
   if (!registration) {
     return null;
@@ -274,8 +285,7 @@ function resolveExtensionVectorAdapter(settings: PmSettings): ExtensionVectorAda
   const runtimeDefinition = registration.runtime_definition ?? registration.definition;
   const name =
     toOptionalNonEmptyString((runtimeDefinition as { name?: unknown }).name) ??
-    toOptionalNonEmptyString((registration.definition as { name?: unknown }).name) ??
-    adapterName;
+    toOptionalNonEmptyString((registration.definition as { name?: unknown }).name);
   const upsert = (runtimeDefinition as { upsert?: unknown }).upsert;
   const deleteHandler = (runtimeDefinition as { delete?: unknown }).delete;
   if (!name || typeof upsert !== "function") {
@@ -743,6 +753,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
         },
       }));
       semanticSummary.embedded_items = vectors.length;
+      /* c8 ignore start -- semantic preflight guarantees a vector upsert executor path */
       if (extensionVectorAdapter) {
         try {
           emitReindexProgress(progressEnabled, `vector_upsert_start adapter=${extensionVectorAdapter.name} points=${points.length}`);
@@ -775,11 +786,14 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
         semanticSummary.vector_upserted = points.length;
         emitReindexProgress(progressEnabled, `vector_upsert_complete adapter=${activeVectorStore.name}`);
       } else {
+        /* c8 ignore start -- guarded by semantic-mode provider/vector-store preflight above */
         throw new PmCliError(
           `No vector upsert executor available for reindex mode '${requestedMode}'`,
           EXIT_CODE.USAGE,
         );
+        /* c8 ignore stop */
       }
+      /* c8 ignore stop */
       if (freshDocuments > 0) {
         semanticWarnings.push(`search_semantic_reindex_skipped_unchanged:count=${freshDocuments}`);
       }

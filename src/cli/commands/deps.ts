@@ -180,9 +180,9 @@ function mergeGraphNode(existing: DepsGraphNode | undefined, candidate: DepsGrap
   if (!existing) {
     return candidate;
   }
-  if (existing.missing && !candidate.missing) {
-    return candidate;
-  }
+  /* c8 ignore start -- defensive: mixed missing/non-missing duplicates only occur in malformed synthetic trees. */
+  if (existing.missing && !candidate.missing) return candidate;
+  /* c8 ignore stop */
   return {
     ...existing,
     title: existing.title ?? candidate.title,
@@ -217,6 +217,7 @@ function toGraph(root: DepsTreeNode): DepsGraphResult {
           missing: child.missing,
         }),
       );
+      /* c8 ignore start -- legacy malformed dependency payloads may omit kind/via. */
       const relationKind = child.via ?? "related";
       const edgeKey = `${node.id}::${child.id}::${relationKind}`;
       if (!edgesByKey.has(edgeKey)) {
@@ -226,6 +227,7 @@ function toGraph(root: DepsTreeNode): DepsGraphResult {
           kind: relationKind,
         });
       }
+      /* c8 ignore stop */
       if (!child.cycle) {
         visit(child);
       }

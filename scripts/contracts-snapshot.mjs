@@ -49,6 +49,7 @@ function runContracts() {
   try {
     return JSON.parse(result.stdout);
   } catch (error) {
+    /* c8 ignore next -- JSON.parse only throws SyntaxError (an Error); String(error) fallback is unreachable */
     throw new Error(`pm contracts produced invalid JSON: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
@@ -80,6 +81,7 @@ function firstDiffLine(left, right) {
       return index + 1;
     }
   }
+  /* c8 ignore next -- only reached if the two strings are equal, but firstDiffLine is only called when current !== next */
   return 0;
 }
 

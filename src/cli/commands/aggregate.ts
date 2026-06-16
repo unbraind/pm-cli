@@ -139,7 +139,7 @@ function parseNumericAggregation(options: AggregateOptions): NumericAggregation 
     throw new PmCliError("Aggregate --sum and --avg must target the same numeric field", EXIT_CODE.USAGE);
   }
   return {
-    field: normalizedSum ?? normalizedAvg ?? "",
+    field: normalizedSum ?? normalizedAvg!,
     sum: normalizedSum !== undefined,
     avg: normalizedAvg !== undefined,
   };

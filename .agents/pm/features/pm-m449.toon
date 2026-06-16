@@ -1,0 +1,18 @@
+id: pm-m449
+title: "Module-mirrored test reorganization: retire lane/wave naming, add shared script harness"
+description: Extract duplicated dynamic-import boilerplate into tests/helpers/scriptModule.ts. Move every test out of the lane-*/ directories into properly named per-module files and delete the lane directories. Clean describe() titles that reference 'lane-c wave6' etc.
+type: Feature
+status: closed
+priority: 1
+tags[3]: "area:tests",refactor,test-architecture
+created_at: "2026-06-15T05:09:50.874Z"
+updated_at: "2026-06-16T07:22:39.577Z"
+author: maintainer-agent
+goal: "Replace tests/unit/lane-a|b|c/*waveN*.spec.ts grab-bag files with module-mirrored specs: tests/unit/scripts/**, tests/unit/packages/**, tests/unit/plugins/**, tests/unit/docs-examples/**, tests/unit/core/**, one module per file, conventional describe titles."
+value: "Discoverable, deduplicated, fast suite aligned with the existing tests/unit/<area>/<module>.spec.ts convention; no transient lane/wave vocabulary leaks into the repo."
+parent: pm-xau3
+comments[2]{created_at,author,text}:
+  "2026-06-15T14:49:12.197Z",claude-code-agent,"Reorg executed (claude-code-agent 2026-06-15): deleted all tests/unit/lane-{a,b,c}/ dirs (10 wave files; backed up to /tmp/lane-backup). Controlled coverage diff (all-present 98.08L/92.42B vs no-lanes 97.66L/91.87B) pinpoints the lane-UNIQUE coverage that must be re-homed into module-mirrored specs (NO content elsewhere): docs/examples [policy-restricted-extension/index.js, sdk-app-embedding/run-embedded-pm.mjs, sdk-contract-consumer/inspect-contracts.mjs, starter-extension/index.js] -> tests/unit/docs-examples/*; packages [pm-beads runtime-loader.ts, pm-todos runtime-loader.ts, pm-todos runtime.ts, pm-linked-test-adapters runtime.ts, pm-templates runtime.ts] -> tests/unit/packages/*; scripts [plugin-mcp-smoke-harness.mjs +8L/10B, smoke-external-packages.mjs +1B] -> extend existing tests/unit/scripts specs. lane-a (core/) and lane-c scripts/ blocks for calendar/governance-audit/guide-shell were already fully mirrored (no regression) — their lane copies were redundant dupes, correctly dropped. Migration of the 11 lost modules folded into the per-area coverage agents (pm-6tch packages/docs, pm-f2ne scripts)."
+  "2026-06-16T07:22:39.577Z",maintainer-agent,"Completion pass (finalization 2026-06-16): module-mirrored reorg now FULLY realized. Prior pass left 126 specs flat in tests/unit/ (over 120 static-gate cap); this session nested all into src-mirrored subdirs per ADR pm-kjmx (commands 50, cli 11, core/<sub> item 14/search 12/shared 10/store 5/telemetry 4/history 7/schema 3/output 2/config 2/sentry 2, extensions 10, packages 13, scripts 19+release 9, mcp 1, sdk 1). Import depth corrected per nesting level (all relative imports verified resolvable). Reorg-induced breakages fixed: import-specifier depth, import.meta.url path-resolution in package-manifest + starter-extension specs, ~19 sandbox-escape DATA fixtures a blanket sed over-corrected (reverted to HEAD), external refs to moved spec paths (run-tests-script + cli.integration + dogfood-package-first.mjs). Suite green 216/4236; static gate ok:true. Also reverted accidental builtin-governance-audit extension install pollution."
+close_reason: Module-mirrored test organization is in place with lane/wave naming retired and final coverage gate passing at 100/100/100/100.
+body: ""

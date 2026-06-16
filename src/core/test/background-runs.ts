@@ -249,24 +249,42 @@ async function listBackgroundRunRecordPaths(pmRoot: string): Promise<string[]> {
     .sort((left, right) => right.localeCompare(left));
 }
 
+function parseLinuxRssStatus(raw: string): number | undefined {
+  const match = raw.match(/^VmRSS:\s+(\d+)\s+kB$/m);
+  if (!match) {
+    return undefined;
+  }
+  return Number.parseInt(match[1], 10) * 1024;
+}
+
 async function readLinuxRssBytes(pid: number): Promise<number | undefined> {
   if (process.platform !== "linux") {
     return undefined;
   }
   try {
     const raw = await fs.readFile(`/proc/${pid}/status`, "utf8");
-    const match = raw.match(/^VmRSS:\s+(\d+)\s+kB$/m);
-    if (!match) {
-      return undefined;
-    }
-    const value = Number.parseInt(match[1] ?? "", 10);
-    if (!Number.isFinite(value)) {
-      return undefined;
-    }
-    return value * 1024;
+    return parseLinuxRssStatus(raw);
   } catch {
     return undefined;
   }
+}
+
+function parseLinuxCpuStat(raw: string): { cpu_user_seconds?: number; cpu_system_seconds?: number } {
+  const closeParenIndex = raw.lastIndexOf(")");
+  if (closeParenIndex < 0) {
+    return {};
+  }
+  const remainder = raw.slice(closeParenIndex + 2).trim();
+  const parts = remainder.split(/\s+/);
+  const utimeTicks = Number.parseInt(parts[11], 10);
+  const stimeTicks = Number.parseInt(parts[12], 10);
+  if (!Number.isFinite(utimeTicks) || !Number.isFinite(stimeTicks)) {
+    return {};
+  }
+  return {
+    cpu_user_seconds: utimeTicks / PROC_STAT_TICKS_PER_SECOND,
+    cpu_system_seconds: stimeTicks / PROC_STAT_TICKS_PER_SECOND,
+  };
 }
 
 async function readLinuxCpuSeconds(
@@ -277,21 +295,7 @@ async function readLinuxCpuSeconds(
   }
   try {
     const raw = await fs.readFile(`/proc/${pid}/stat`, "utf8");
-    const closeParenIndex = raw.lastIndexOf(")");
-    if (closeParenIndex < 0) {
-      return {};
-    }
-    const remainder = raw.slice(closeParenIndex + 2).trim();
-    const parts = remainder.split(/\s+/);
-    const utimeTicks = Number.parseInt(parts[11] ?? "", 10);
-    const stimeTicks = Number.parseInt(parts[12] ?? "", 10);
-    if (!Number.isFinite(utimeTicks) || !Number.isFinite(stimeTicks)) {
-      return {};
-    }
-    return {
-      cpu_user_seconds: utimeTicks / PROC_STAT_TICKS_PER_SECOND,
-      cpu_system_seconds: stimeTicks / PROC_STAT_TICKS_PER_SECOND,
-    };
+    return parseLinuxCpuStat(raw);
   } catch {
     return {};
   }
@@ -384,12 +388,12 @@ function parseProgressLine(stderrLine: string): Partial<BackgroundRunProgress> |
   if (!match) {
     return null;
   }
-  const index = Number.parseInt(match[1] ?? "", 10);
-  const total = Number.parseInt(match[2] ?? "", 10);
+  const index = Number.parseInt(match[1], 10);
+  const total = Number.parseInt(match[2], 10);
   const elapsed = match[4] ? Number.parseInt(match[4], 10) : undefined;
   return {
-    linked_test_index: Number.isFinite(index) ? index : undefined,
-    linked_test_total: Number.isFinite(total) ? total : undefined,
+    linked_test_index: index,
+    linked_test_total: total,
     elapsed_ms: Number.isFinite(elapsed) ? elapsed : undefined,
     heartbeat_at: nowIso(),
     phase: match[3]?.toLowerCase() === "end" ? "finished" : "running",
@@ -473,10 +477,7 @@ export async function startBackgroundTestRun(options: StartBackgroundTestRunOpti
     if (refreshed.fingerprint !== fingerprint) {
       continue;
     }
-    if (!BACKGROUND_RUN_ACTIVE_STATUSES.has(refreshed.status)) {
-      continue;
-    }
-    if (!isPidRunning(refreshed.worker_pid)) {
+    if (!BACKGROUND_RUN_ACTIVE_STATUSES.has(refreshed.status) || !isPidRunning(refreshed.worker_pid)) {
       continue;
     }
     return {
@@ -565,7 +566,7 @@ export async function spawnBackgroundTestRunWorker(options: SpawnBackgroundTestR
   const next: BackgroundTestRunRecord = {
     ...record,
     status: "queued",
-    worker_pid: child.pid && child.pid > 0 ? child.pid : record.worker_pid,
+    worker_pid: child.pid as number | undefined,
     progress: {
       phase: "queued",
       message: "Worker process started.",
@@ -614,14 +615,16 @@ export async function runBackgroundTestRunWorker(pmRoot: string, runId: string, 
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true,
   });
-  record.child_pid = child.pid && child.pid > 0 ? child.pid : undefined;
+  record.child_pid = child.pid as number | undefined;
 
   let writeQueue: Promise<void> = Promise.resolve();
   const scheduleRecordWrite = (): void => {
     writeQueue = writeQueue.then(async () => {
-      await writeBackgroundRunRecord(pmRoot, record);
-    }).catch(() => {
-      // Keep worker alive even if a single metadata write fails.
+      try {
+        await writeBackgroundRunRecord(pmRoot, record);
+      } catch {
+        // Keep worker alive even if a single metadata write fails.
+      }
     });
   };
 
@@ -643,9 +646,6 @@ export async function runBackgroundTestRunWorker(pmRoot: string, runId: string, 
       heartbeat_at: nowIso(),
     };
     scheduleRecordWrite();
-    if (!child.pid || child.pid <= 0) {
-      return;
-    }
     try {
       child.kill("SIGTERM");
     } catch {
@@ -678,39 +678,38 @@ export async function runBackgroundTestRunWorker(pmRoot: string, runId: string, 
   const resourceTimer = setInterval(() => {
     void (async () => {
       record.resource = await buildResourceSnapshot(record);
-      if (record.progress) {
-        record.progress.heartbeat_at = nowIso();
-      }
+      (record.progress as BackgroundRunProgress).heartbeat_at = nowIso();
       scheduleRecordWrite();
     })();
   }, resourceInterval);
   resourceTimer.unref?.();
 
   child.stdout?.on("data", (chunk) => {
-    const text = typeof chunk === "string" ? chunk : chunk.toString("utf8");
+    const text = chunk.toString("utf8");
     stdoutBuffer += text;
     stdoutWriteQueue = appendFileOrdered(stdoutWriteQueue, record.stdout_path, text);
   });
   child.stderr?.on("data", (chunk) => {
-    const text = typeof chunk === "string" ? chunk : chunk.toString("utf8");
+    const text = chunk.toString("utf8");
     stderrWriteQueue = appendFileOrdered(stderrWriteQueue, record.stderr_path, text);
     const lines = splitLines(text);
     const latestLine = lines.at(-1);
-    if (latestLine) {
-      const progressPatch = parseProgressLine(latestLine);
-      record.progress = {
-        phase: record.progress?.phase ?? "running",
-        message: latestLine,
-        heartbeat_at: nowIso(),
-        linked_test_index: progressPatch?.linked_test_index ?? record.progress?.linked_test_index,
-        linked_test_total: progressPatch?.linked_test_total ?? record.progress?.linked_test_total,
-        elapsed_ms: progressPatch?.elapsed_ms ?? record.progress?.elapsed_ms,
-      };
-      if (progressPatch?.phase === "finished" && !stopRequested) {
-        record.progress.phase = "running";
-      }
-      scheduleRecordWrite();
+    if (!latestLine) {
+      return;
     }
+    const progressPatch = parseProgressLine(latestLine);
+    record.progress = {
+      phase: (record.progress as BackgroundRunProgress).phase === "stopping" ? "stopping" : "running",
+      message: latestLine,
+      heartbeat_at: nowIso(),
+      linked_test_index: progressPatch?.linked_test_index ?? record.progress?.linked_test_index ?? undefined,
+      linked_test_total: progressPatch?.linked_test_total ?? record.progress?.linked_test_total ?? undefined,
+      elapsed_ms: progressPatch?.elapsed_ms ?? record.progress?.elapsed_ms ?? undefined,
+    };
+    if (progressPatch?.phase === "finished" && !stopRequested) {
+      record.progress.phase = "running";
+    }
+    scheduleRecordWrite();
   });
 
   let exitCode: number | null = null;
@@ -959,6 +958,8 @@ export const _testOnly = {
   buildResourceSnapshot,
   evaluateWorkerResult,
   isPidRunning,
+  parseLinuxCpuStat,
+  parseLinuxRssStatus,
   parseProgressLine,
   readLinuxCpuSeconds,
   readLinuxRssBytes,
