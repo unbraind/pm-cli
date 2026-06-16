@@ -880,6 +880,35 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("resolves install runtime activation status from runtime probe with fallback", () => {
+    const runtimeInstalled = [
+      {
+        name: "runtime-status-ext",
+        scope: "project",
+        activation_status: "not_loaded",
+      },
+    ] as never;
+    expect(
+      extensionCommandTestOnly.resolveInstallRuntimeActivationStatus(
+        "runtime-status-ext",
+        "project",
+        runtimeInstalled,
+        undefined,
+      ),
+    ).toBe("not_loaded");
+    expect(
+      extensionCommandTestOnly.resolveInstallRuntimeActivationStatus("missing-ext", "project", [] as never, {
+        layer: "project",
+        name: "missing-ext",
+        entry_path: "/tmp/missing-ext",
+        error: "failed",
+      } as never),
+    ).toBe("failed");
+    expect(
+      extensionCommandTestOnly.resolveInstallRuntimeActivationStatus("missing-ext", "project", [] as never, undefined),
+    ).toBe("unknown");
+  });
+
   it("parses, validates, coerces, and strips loose extension command options", () => {
     const definitions = [
       { long: "--count", short: "-c", value_type: "number", required: true },

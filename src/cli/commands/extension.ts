@@ -847,6 +847,19 @@ function findActivationFailureByName(
   );
 }
 
+function resolveInstallRuntimeActivationStatus(
+  extensionName: string,
+  scope: ExtensionScope,
+  runtimeInstalled: ManagedExtensionSummary[],
+  installActivationFailure: ActivationFailureDiagnostic | undefined,
+): ExtensionActivationStatus {
+  const runtimeInstalledExtension = runtimeInstalled.find(
+    (entry) =>
+      entry.scope === scope && normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(extensionName),
+  );
+  return runtimeInstalledExtension?.activation_status ?? (installActivationFailure ? "failed" : "unknown");
+}
+
 async function probeRuntimeCommandPathsForInstall(
   pmRoot: string,
   settings: PmSettings,
@@ -1367,13 +1380,12 @@ export async function runExtension(
           runtimeProbe.activation_failures,
           scope,
         );
-        const runtimeInstalledExtension = runtimeProbe.installed.find(
-          (entry) =>
-            entry.scope === scope &&
-            normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(validated.manifest.name),
+        const runtimeActivationStatus = resolveInstallRuntimeActivationStatus(
+          validated.manifest.name,
+          scope,
+          runtimeProbe.installed,
+          installActivationFailure,
         );
-        const runtimeActivationStatus: ExtensionActivationStatus =
-          runtimeInstalledExtension?.activation_status ?? (installActivationFailure ? "failed" : "unknown");
 
         return withResult({
           extension: {
@@ -2024,6 +2036,7 @@ export const _testOnly = {
   clearExtensionState,
   collectActivationFailureDiagnostics,
   findActivationFailureByName,
+  resolveInstallRuntimeActivationStatus,
   collectGlobalOutputOverrideDoctorWarnings,
   copyExtensionDirectoryWithoutSelfNesting,
   isErrnoCode,
