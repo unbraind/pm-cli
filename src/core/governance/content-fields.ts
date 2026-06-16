@@ -103,9 +103,13 @@ export function isContentFieldPresent(item: ContentFieldItem, field: ContentFiel
       return hasEntries(item.dependencies);
     case "body":
       return hasBody(item.body);
-    default:
+    case "linked_command":
       return hasLinkedCommand(item.tests);
   }
+  // No default: every ContentField has an explicit case above, so TypeScript
+  // enforces exhaustiveness here — adding a new field without a case is a
+  // compile error rather than a silent fall-through (and no unreachable branch
+  // to dent the literal-100% coverage gate).
 }
 
 /** Per-field selection: 'present' requires the field populated, 'absent' requires it empty. */
