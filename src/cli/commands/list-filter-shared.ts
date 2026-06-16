@@ -56,5 +56,16 @@ export type ListQueryFilters = Pick<
 >;
 
 export function buildListQueryFilters(filters: ListQueryFilters): ListOptions {
-  return { ...filters };
+  return {
+    type: filters.type,
+    tag: filters.tag,
+    priority: filters.priority,
+    deadlineBefore: filters.deadlineBefore,
+    deadlineAfter: filters.deadlineAfter,
+    assignee: filters.assignee,
+    assigneeFilter: filters.assigneeFilter,
+    parent: filters.parent,
+    sprint: filters.sprint,
+    release: filters.release,
+  };
 }
