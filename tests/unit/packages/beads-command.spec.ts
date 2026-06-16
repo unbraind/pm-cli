@@ -214,8 +214,8 @@ describe("runBeadsImport", () => {
           files: Array<{ path: string; scope: string; note?: string }>;
           tests: Array<{ command?: string; path?: string; scope: string; timeout_seconds?: number; note?: string }>;
           docs: Array<{ path: string; scope: string; note?: string }>;
+          body: string;
         };
-        body: string;
       };
       expect(firstJson.item.type).toBe("Feature");
       expect(firstJson.item.status).toBe("blocked");
@@ -238,7 +238,7 @@ describe("runBeadsImport", () => {
         { path: "docs/design.md", scope: "project" },
         { path: "docs/readme.md", scope: "project" },
       ]);
-      expect(firstJson.body).toBe("beads-body");
+      expect(firstJson.item.body).toBe("beads-body");
 
       const second = context.runCli(["get", "pm-legacy.2", "--json"], { expectJson: true });
       expect(second.code).toBe(0);
@@ -272,18 +272,18 @@ describe("runBeadsImport", () => {
         },
       ]);
       expect(ninthJson.item.author).toBe("original_creator");
-      expect(ninthJson.body).toBe("## Design\n\nThis is the design doc\n\n## External Reference\nJIRA-123");
+      expect(ninthJson.item.body).toBe("## Design\n\nThis is the design doc\n\n## External Reference\nJIRA-123");
 
       const tenth = context.runCli(["get", "pm-legacy.10", "--json"], { expectJson: true });
       expect(tenth.code).toBe(0);
-      const tenthJson = tenth.json as { body: string };
-      expect(tenthJson.body).toBe("Existing body\n\n## Design\n\nDesign details\n\n## External Reference\nEXT-456");
+      const tenthJson = tenth.json as { item: { body: string } };
+      expect(tenthJson.item.body).toBe("Existing body\n\n## Design\n\nDesign details\n\n## External Reference\nEXT-456");
 
       const eleventh = context.runCli(["get", "pm-legacy.11", "--json"], { expectJson: true });
       expect(eleventh.code).toBe(0);
-      const eleventhJson = eleventh.json as { item: { external_ref: string }; body: string };
+      const eleventhJson = eleventh.json as { item: { external_ref: string; body: string } };
       expect(eleventhJson.item.external_ref).toBe("EXT-ONLY");
-      expect(eleventhJson.body).toBe("## External Reference\nEXT-ONLY");
+      expect(eleventhJson.item.body).toBe("## External Reference\nEXT-ONLY");
 
       const twelfth = context.runCli(["get", "pm-legacy.12", "--json"], { expectJson: true });
       expect(twelfth.code).toBe(0);

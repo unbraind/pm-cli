@@ -150,6 +150,8 @@ JSON output is compact by default (id/status/type/title) for token efficiency. T
 pm list-open --json --include-body         # full fields + body for every returned row
 ```
 
+`pm get <id> --json` returns the item's `body` **inside** the `item` object (i.e. `.item.body`), matching where `list --include-body` places it and the long-form `description`/`acceptance_criteria` fields — so a single read exposes every field at a consistent path. Body is included at the default `standard` depth and above; `--depth brief` omits it.
+
 ### Missing-metadata filters
 
 Every `list*` command also accepts metadata-presence filters for governance backfill: `--filter-ac-missing` (no `acceptance_criteria`), `--filter-estimates-missing` (no `estimated_minutes`; singular `--filter-estimate-missing` is an alias), `--filter-resolution-missing` (terminal items with no `resolution`), and `--filter-metadata-missing` (the union — missing *any* of those). Specific flags AND together; combine them with any other filter. They surface in the result's `filters` echo (`filter_ac_missing` etc.).
@@ -340,11 +342,13 @@ pm release <id> --allow-audit-release --author <you>
 pm comments <id> "Implemented command parsing fix."
 printf '%s\n' '## Verification summary' '- Linux pass' '- macOS pass' | pm comments <id> --stdin
 pm comments <id> --file docs/release-evidence.md
+pm comments <id> --edit 2 "Corrected: the regression was in the parser, not the renderer."
+pm comments <id> --delete 3
 pm notes <id> --add "Keep renderer changes isolated to TOON output."
 pm learnings <id> --add "Use runtime contracts instead of duplicating flag lists."
 ```
 
-Use comments for progress and evidence, notes for implementation context, and learnings for durable future guidance. For comments, choose exactly one input source (`[text]`, `--add`, `--stdin`, or `--file`) per invocation.
+Use comments for progress and evidence, notes for implementation context, and learnings for durable future guidance. For comments, choose exactly one input source (`[text]`, `--add`, `--stdin`, or `--file`) per invocation. To clean up obsolete orchestration notes, `--edit <index>` rewrites the comment at a 1-based index (replacement text from `[text]`/`--add`/`--stdin`/`--file`) and `--delete <index>` removes it; both record history and honor ownership rules (`--allow-audit-comment` for non-owner audits).
 
 ## Linked Artifacts
 

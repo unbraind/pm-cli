@@ -2,16 +2,17 @@ id: pm-php4
 title: Content-field & governance introspection (GH-241/242/236)
 description: "Combine GH-241 (pm-7snq stats field-utilization), GH-242 (pm-hntj field-existence filters), GH-236 (pm-mfl1 governance missing-field filters). Shared primitive in core/governance. Philosophy: project management = context management — make under-contextualized items queryable."
 type: Plan
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-06-16T12:42:27.592Z"
-updated_at: "2026-06-16T13:43:31.604Z"
+updated_at: "2026-06-16T17:14:57.414Z"
 author: claude-code-agent
 resolution: All 3 child features shipped (pm-7snq/pm-hntj/pm-mfl1) in one PR. Plan type excluded from changelog.
 comments[2]{created_at,author,text}:
   "2026-06-16T12:51:39.813Z",claude-code-agent,"Core primitives done. metadata-coverage.ts NEW exports: isReviewerMissing/isRiskMissing/isConfidenceMissing/isSprintMissing/isReleaseMissing; MissingMetadataFilters extended with reviewerMissing/riskMissing/confidenceMissing/sprintMissing/releaseMissing; hasMissingMetadataFilter + itemMatchesMissingMetadata (per-flag AND, governance fields added to metadataMissing union); CoverageItem gained reviewer/risk/confidence(string|number)/sprint/release. content-fields.ts exports verbatim per spec: ContentField, CONTENT_FIELD_ORDER, ContentFieldItem, isContentFieldPresent, ContentFieldSelection, ContentFieldFilters, hasContentFieldFilter, itemMatchesContentFilters, filterByContentFields, contentFiltersNeedCollections, contentFiltersNeedBody, ContentFieldUtilization, ContentFieldUtilizationReport, computeContentFieldUtilization. DEVIATIONS: (1) confidence typed string|number because ItemMetadata.confidence is ConfidenceValue=number|string and pure-string broke consumer assignability in stats.ts; isConfidenceMissing treats a finite number as present. (2) vitest.config include is already a literal src-glob so content-fields.ts is auto coverage-gated; no edit needed. (3) Did NOT fix tests/unit/commands/metadata-governance-commands.spec.ts:79 (outside my scope) which now FAILS as an intended consequence of widening the metadataMissing union to governance fields; the command-layer sub-agent must reconcile that expectation. typecheck green; the two governance specs pass (48 tests)."
   "2026-06-16T13:43:31.604Z",claude-code-agent,Work fully shipped (pm-7snq/pm-hntj/pm-mfl1 all closed). Kept open as orchestration record so the Plan rollup stays out of the changelog (the 3 child Features carry the clean Added entries).
+close_reason: All 3 child features (pm-7snq/pm-hntj/pm-mfl1) shipped in PR #251 and verified present in 2026.6.13 (--has-* / --filter-*-missing filters + stats utilization). Plan complete.
 plan_mode: draft
 plan_steps[1]{id,order,title,status,created_at,updated_at}:
   plan-step-001,1,"Core primitives: content-field presence + governance-missing predicates + utilization",pending,"2026-06-16T12:42:27.616Z","2026-06-16T12:42:27.616Z"

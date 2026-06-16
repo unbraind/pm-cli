@@ -40,6 +40,7 @@ import {
   type TerminalParentFixRow,
   type ValidateFixRecord,
 } from "../../core/validate/fix-planning.js";
+import { findDuplicateIssueCodes, type DuplicateIssueCode } from "../../core/governance/issue-codes.js";
 import { buildMissingByTypeCounts, type MissingFieldOccurrence } from "../../core/validate/missing-by-type.js";
 import {
   classifyStaleLinkedPaths,
@@ -779,6 +780,39 @@ function resolveRequestedChecks(options: ValidateCommandOptions): Set<ValidateCh
   return requested;
 }
 
+const DUPLICATE_ISSUE_CODE_WARNING_TOKEN = "validate_metadata_duplicate_issue_codes";
+
+/**
+ * Project the duplicate logical issue-code findings (GH-235) into the
+ * metadata-check `details` shape plus an advisory warning token. Duplicate
+ * codes are advisory (warn), never an error — matching every other metadata
+ * finding — so an otherwise clean tracker that simply reuses a title prefix is
+ * not failed by `pm validate`. Kept outside the c8-ignored builder block so the
+ * projection/remediation logic is fully covered by unit tests.
+ */
+function summarizeDuplicateIssueCodes(
+  duplicates: DuplicateIssueCode[],
+  verboseDiagnostics: boolean,
+): { rows: Array<Record<string, unknown>>; truncated: boolean; warnings: string[] } {
+  if (duplicates.length === 0) {
+    return { rows: [], truncated: false, warnings: [] };
+  }
+  const limit = verboseDiagnostics ? duplicates.length : DIAGNOSTIC_LIST_SUMMARY_LIMIT;
+  const shown = duplicates.slice(0, limit);
+  const rows = shown.map((duplicate) => ({
+    code: duplicate.code,
+    count: duplicate.count,
+    ids: duplicate.ids,
+    titles: duplicate.titles,
+    remediation_hint: `Items ${duplicate.ids.join(", ")} share issue code "${duplicate.code}"; rename or merge so each logical code maps to one item.`,
+  }));
+  return {
+    rows,
+    truncated: shown.length < duplicates.length,
+    warnings: [`${DUPLICATE_ISSUE_CODE_WARNING_TOKEN}:${duplicates.length}`],
+  };
+}
+
 /* c8 ignore start -- metadata diagnostics/backfill planning permutations are covered by validate integration suites */
 function buildMetadataCheck(
   items: ItemWithBody[],
@@ -813,6 +847,12 @@ function buildMetadataCheck(
     }
     warningTokens.push(`${METADATA_WARNING_TOKEN_BY_FIELD[field]}:${missingItems.length}`);
   }
+
+  // Duplicate logical issue-code detection (GH-235): advisory warning when two
+  // or more items share a leading title issue code (e.g. `ISSUE-004`).
+  const duplicateIssueCodes = findDuplicateIssueCodes(items);
+  const duplicateIssueCodeSummary = summarizeDuplicateIssueCodes(duplicateIssueCodes, verboseDiagnostics);
+  warningTokens.push(...duplicateIssueCodeSummary.warnings);
 
   // Zero-suppress counts to reduce agent token cost (telemetry pm-tylj).
   // Only emit counts for the ACTIVE required fields of the resolved profile so a
@@ -850,6 +890,9 @@ function buildMetadataCheck(
     supported_required_fields: [...SUPPORTED_METADATA_REQUIRED_FIELDS],
     counts,
     missing_by_type: missingByType,
+    duplicate_issue_codes_count: duplicateIssueCodes.length,
+    duplicate_issue_codes: duplicateIssueCodeSummary.rows,
+    duplicate_issue_codes_truncated: duplicateIssueCodeSummary.truncated,
   };
   if (metadataPolicy.configured_custom_fields.length > 0) {
     details.configured_custom_required_fields = [...metadataPolicy.configured_custom_fields];
@@ -1730,6 +1773,7 @@ export const _testOnlyValidateCommand = {
   resolveRequestedChecks,
   resolveValidateMetadataProfile,
   resolveWorkspaceRoot,
+  summarizeDuplicateIssueCodes,
   toMeaningfulString,
 };
 

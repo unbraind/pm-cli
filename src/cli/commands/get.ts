@@ -45,8 +45,10 @@ interface ChildRollupContext {
 const CHILD_ROLLUP_TYPES = new Set(["milestone", "epic"]);
 
 export interface GetResult {
-  item: Partial<ItemFrontMatter>;
-  body?: string;
+  // `body` lives inside `item` (alongside `description`/`acceptance_criteria`)
+  // for parity with `pm list --include-body`, so agents reliably find it at
+  // `.item.body` in JSON output instead of a top-level sibling.
+  item: Partial<ItemFrontMatter> & { body?: string };
   linked?: {
     files: LinkedFile[];
     tests: LinkedTest[];
@@ -254,7 +256,7 @@ export async function runGet(id: string, global: GlobalOptions, options: GetOpti
       : projectItemForDepth(loaded.document.metadata, depth),
   };
   if (includeBody) {
-    result.body = loaded.document.body;
+    result.item.body = loaded.document.body;
   }
   if (includeLinked || includeLinkedFiles || includeLinkedTests || includeLinkedDocs) {
     result.linked = {

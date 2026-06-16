@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   ensureRuntimeSchemaFileScaffold,
   filePathForSchemaSection,
+  resolveItemTypesFilePath,
   loadRuntimeSchemaFromOptionalFiles,
   normalizeRuntimeSchemaSettings,
   normalizeStatusInputWithRegistry,
@@ -334,6 +335,15 @@ describe("runtime schema command flag registration", () => {
       expect(filePathForSchemaSection(tempRoot, absoluteFieldsPath, "fallback.json")).toBe(absoluteFieldsPath);
       expect(filePathForSchemaSection(tempRoot, " relative.json ", "fallback.json")).toBe(path.join(tempRoot, "relative.json"));
       expect(filePathForSchemaSection(tempRoot, "   ", "fallback.json")).toBe(path.join(tempRoot, "fallback.json"));
+
+      // resolveItemTypesFilePath threads the active tracker root into the configured types path,
+      // so invalid-type hints reflect a custom --pm-path instead of the default `.agents/pm`.
+      expect(resolveItemTypesFilePath(tempRoot, normalizeRuntimeSchemaSettings({ files: { types: "custom/types.json" } }))).toBe(
+        path.join(tempRoot, "custom", "types.json"),
+      );
+      expect(resolveItemTypesFilePath(tempRoot, normalizeRuntimeSchemaSettings(undefined))).toBe(
+        path.join(tempRoot, "schema", "types.json"),
+      );
 
       await writeFile(
         path.join(tempRoot, "custom", "types.json"),

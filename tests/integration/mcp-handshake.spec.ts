@@ -817,8 +817,8 @@ describe("MCP protocol handshake", () => {
         id: 41,
         method: "tools/call",
         params: { name: "pm_get", arguments: { path: context.pmPath, id, options: { depth: "full" } } },
-      })) as { structuredContent?: { result?: { body?: string } } };
-      expect(got.structuredContent?.result?.body).toContain("Evidence: append narrow tool works.");
+      })) as { structuredContent?: { result?: { item?: { body?: string } } } };
+      expect(got.structuredContent?.result?.item?.body).toContain("Evidence: append narrow tool works.");
     });
   });
 

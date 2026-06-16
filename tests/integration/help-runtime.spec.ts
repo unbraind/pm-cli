@@ -632,16 +632,16 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
       const brief = context.runCli(["get", id, "--depth", "brief", "--json"], { expectJson: true });
       expect(brief.code).toBe(0);
-      const payload = brief.json as { item?: { id?: string }; body?: string; linked?: { files?: unknown[] } };
+      const payload = brief.json as { item?: { id?: string; body?: string }; linked?: { files?: unknown[] } };
       expect(payload.item?.id).toBe(id);
-      expect(payload.body).toBeUndefined();
+      expect(payload.item?.body).toBeUndefined();
       expect(payload.linked).toBeUndefined();
 
       const depthFull = context.runCli(["get", id, "--depth", "full", "--json"], { expectJson: true });
       expect(depthFull.code).toBe(0);
-      const depthFullPayload = depthFull.json as { item?: { id?: string }; body?: string };
+      const depthFullPayload = depthFull.json as { item?: { id?: string; body?: string } };
       expect(depthFullPayload.item?.id).toBe(id);
-      expect(depthFullPayload.body).toBe("");
+      expect(depthFullPayload.item?.body).toBe("");
 
       const fields = context.runCli(["get", id, "--fields", "id,title,status,parent,type", "--json"], { expectJson: true });
       expect(fields.code).toBe(0);

@@ -16,6 +16,7 @@ interface AnnotationEntry {
   created_at: string;
   author: string;
   text: string;
+  edited_at?: string;
 }
 
 interface AnnotationCommandOptions {
@@ -27,9 +28,10 @@ interface AnnotationCommandOptions {
 }
 
 interface AnnotationInput {
-  mode: "list" | "add" | "stdin" | "file";
+  mode: "list" | "add" | "stdin" | "file" | "edit" | "delete";
   value?: string;
   emptyFlag?: string;
+  index?: number;
 }
 
 interface OwnershipConflictGuidance {
@@ -42,6 +44,8 @@ interface AnnotationCommandConfig<TKey extends string> {
   input: AnnotationInput;
   collectionKey: TKey;
   op: Parameters<typeof mutateItem>[0]["op"];
+  editOp?: Parameters<typeof mutateItem>[0]["op"];
+  deleteOp?: Parameters<typeof mutateItem>[0]["op"];
   parseText: (raw: string) => string;
   allowAuditBypass: boolean;
   conflictGuidance: OwnershipConflictGuidance;
@@ -137,9 +141,71 @@ export async function runAnnotationCommand<TKey extends string, TEntry extends A
   }
 
   const author = resolveAuthor(options.author, settings.author_default);
+
+  if (config.input.mode === "delete") {
+    const op = config.deleteOp ?? config.op;
+    let result: Awaited<ReturnType<typeof mutateItem>>;
+    try {
+      result = await mutateItem({
+        pmRoot,
+        settings,
+        id,
+        op,
+        author,
+        message: options.message,
+        force: options.force,
+        bypassAssigneeConflict: config.allowAuditBypass,
+        mutate(document) {
+          const entries = readAnnotationEntries<TEntry>(document.metadata, config.collectionKey);
+          const arrayIndex = resolveAnnotationIndex(config.input.index, entries.length, config.collectionKey);
+          entries.splice(arrayIndex, 1);
+          document.metadata[config.collectionKey] = entries as never;
+          return { changedFields: [config.collectionKey] };
+        },
+      });
+    } catch (error: unknown) {
+      wrapOwnershipConflict(error, config.conflictGuidance);
+    }
+    const allEntries = readAnnotationEntries<TEntry>(result.item, config.collectionKey);
+    return renderAnnotationResult(result.item.id, config.collectionKey, allEntries, limit, options.includeMeta === true);
+  }
+
   const text = config.parseText(config.input.value ?? "");
   if (!text.trim()) {
     throw new PmCliError(`${config.input.emptyFlag ?? "--add"} text cannot be empty`, EXIT_CODE.USAGE);
+  }
+
+  if (config.input.mode === "edit") {
+    const op = config.editOp ?? config.op;
+    let result: Awaited<ReturnType<typeof mutateItem>>;
+    try {
+      result = await mutateItem({
+        pmRoot,
+        settings,
+        id,
+        op,
+        author,
+        message: options.message,
+        force: options.force,
+        bypassAssigneeConflict: config.allowAuditBypass,
+        mutate(document) {
+          const entries = readAnnotationEntries<TEntry>(document.metadata, config.collectionKey);
+          const arrayIndex = resolveAnnotationIndex(config.input.index, entries.length, config.collectionKey);
+          const existing = entries[arrayIndex];
+          entries[arrayIndex] = {
+            ...existing,
+            text,
+            edited_at: nowIso(),
+          } as TEntry;
+          document.metadata[config.collectionKey] = entries as never;
+          return { changedFields: [config.collectionKey] };
+        },
+      });
+    } catch (error: unknown) {
+      wrapOwnershipConflict(error, config.conflictGuidance);
+    }
+    const allEntries = readAnnotationEntries<TEntry>(result.item, config.collectionKey);
+    return renderAnnotationResult(result.item.id, config.collectionKey, allEntries, limit, options.includeMeta === true);
   }
 
   let result: Awaited<ReturnType<typeof mutateItem>>;
@@ -170,6 +236,23 @@ export async function runAnnotationCommand<TKey extends string, TEntry extends A
 
   const allEntries = readAnnotationEntries<TEntry>(result.item, config.collectionKey);
   return renderAnnotationResult(result.item.id, config.collectionKey, allEntries, limit, options.includeMeta === true);
+}
+
+export function resolveAnnotationIndex(
+  oneBasedIndex: number | undefined,
+  count: number,
+  collectionKey: string,
+): number {
+  if (oneBasedIndex === undefined || !Number.isInteger(oneBasedIndex) || oneBasedIndex < 1 || oneBasedIndex > count) {
+    const singular = collectionKey.replace(/s$/, "");
+    const label = `${singular.charAt(0).toUpperCase()}${singular.slice(1)}`;
+    const noun = count === 1 ? `1 ${singular}` : `${count} ${collectionKey}`;
+    throw new PmCliError(
+      `${label} index ${oneBasedIndex ?? "(missing)"} out of range (item has ${noun})`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  return oneBasedIndex - 1;
 }
 
 function renderAnnotationResult<TKey extends string, TEntry extends AnnotationEntry>(

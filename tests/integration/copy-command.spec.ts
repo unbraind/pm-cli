@@ -86,7 +86,7 @@ describe("runCopy", () => {
 
       const copiedItem = context.runCli(["get", result.item.id, "--json", "--full"], { expectJson: true });
       expect(copiedItem.code).toBe(0);
-      expect((copiedItem.json as { body?: string }).body).toBe(source.body);
+      expect((copiedItem.json as { item: { body?: string } }).item.body).toBe(source.body);
 
       const copiedHistory = context.runCli(["history", result.item.id, "--json", "--full"], { expectJson: true });
       expect(copiedHistory.code).toBe(0);

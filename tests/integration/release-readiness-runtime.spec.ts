@@ -1370,10 +1370,11 @@ describe("release readiness runtime coverage", () => {
 
       const getResult = context.runCli(["get", createdId, "--json"], { expectJson: true });
       expect(getResult.code).toBe(0);
-      expectTopLevelKeyOrder(getResult.json, ["item", "body", "linked", "claim_state"]);
-      const getJson = getResult.json as { item: Record<string, unknown>; body: string };
-      expect(typeof getJson.body).toBe("string");
-      expect(getJson.item).not.toHaveProperty("body");
+      expectTopLevelKeyOrder(getResult.json, ["item", "linked", "claim_state"]);
+      const getJson = getResult.json as { item: Record<string, unknown> & { body?: string } };
+      // body now lives inside item (parity with `pm list --include-body`), not as a top-level sibling.
+      expect(typeof getJson.item.body).toBe("string");
+      expect(getResult.json).not.toHaveProperty("body");
 
       const reindexResult = context.runCli(["reindex", "--mode", "keyword", "--json"]);
       expect(reindexResult.code).toBe(2);

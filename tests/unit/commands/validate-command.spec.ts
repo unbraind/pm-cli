@@ -261,6 +261,38 @@ describe("runValidate", () => {
     expect(validateInternals.resolveWorkspaceRoot(missingWorkspace).length).toBeGreaterThan(0);
   });
 
+  it("summarizes duplicate logical issue codes as advisory warnings with truncation (GH-235)", () => {
+    // No duplicates → empty projection, no warning.
+    expect(validateInternals.summarizeDuplicateIssueCodes([], false)).toEqual({ rows: [], truncated: false, warnings: [] });
+
+    const oneDuplicate = [{ code: "ISSUE-4", count: 2, ids: ["pm-a", "pm-b"], titles: ["ISSUE-4: a", "ISSUE-4: b"] }];
+    const summarized = validateInternals.summarizeDuplicateIssueCodes(oneDuplicate, false);
+    expect(summarized.truncated).toBe(false);
+    expect(summarized.warnings).toEqual(["validate_metadata_duplicate_issue_codes:1"]);
+    expect(summarized.rows[0]).toMatchObject({
+      code: "ISSUE-4",
+      count: 2,
+      ids: ["pm-a", "pm-b"],
+      remediation_hint: expect.stringContaining('share issue code "ISSUE-4"'),
+    });
+
+    // More than the diagnostic summary limit (5) → truncated unless verbose.
+    const many = Array.from({ length: 7 }, (_unused, index) => ({
+      code: `CODE-${index}`,
+      count: 2,
+      ids: [`pm-${index}-a`, `pm-${index}-b`],
+      titles: [`CODE-${index}: a`, `CODE-${index}: b`],
+    }));
+    const compact = validateInternals.summarizeDuplicateIssueCodes(many, false);
+    expect(compact.rows).toHaveLength(5);
+    expect(compact.truncated).toBe(true);
+    expect(compact.warnings).toEqual(["validate_metadata_duplicate_issue_codes:7"]);
+
+    const verbose = validateInternals.summarizeDuplicateIssueCodes(many, true);
+    expect(verbose.rows).toHaveLength(7);
+    expect(verbose.truncated).toBe(false);
+  });
+
   it("reports lifecycle drift for active closure-like metadata and terminal parents", async () => {
     await withTempPmPath(async (context) => {
       const parentId = createTask(context, "validate-lifecycle-terminal-parent");

@@ -1560,6 +1560,12 @@
           "flag": "--file"
         },
         {
+          "flag": "--edit"
+        },
+        {
+          "flag": "--delete"
+        },
+        {
           "flag": "--limit"
         },
         {
@@ -8348,7 +8354,7 @@
       ]
     },
     {
-      "description": "List or add comments on a pm item. Use options.add to append. List calls default to the most recent 20 comments with total_count/has_more metadata for token efficiency. Pass options.limit=N to choose a page size, options.limit=0 for summary-only metadata, or options.full=true for full history.",
+      "description": "List, add, edit, or delete comments on a pm item. Use options.add to append, options.edit=<1-based index> with replacement text to fix a comment, or options.delete=<1-based index> to remove one. List calls default to the most recent 20 comments with total_count/has_more metadata for token efficiency. Pass options.limit=N to choose a page size, options.limit=0 for summary-only metadata, or options.full=true for full history.",
       "input_schema": {
         "additionalProperties": true,
         "properties": {
@@ -19896,6 +19902,16 @@
               "codex-agent"
             ],
             "type": "string"
+          },
+          "delete": {
+            "description": "For comments action, delete the comment at this 1-based index.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "edit": {
+            "description": "For comments action, replace the comment at this 1-based index with the supplied replacement text (add/stdin/file).",
+            "minimum": 1,
+            "type": "integer"
           },
           "file": {
             "description": "Path to input file for actions that read payload text, such as comments --file.",

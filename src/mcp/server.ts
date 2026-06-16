@@ -747,7 +747,11 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
     case "comments": {
       const commentOptions: Record<string, unknown> = { ...options };
       const isListing =
-        commentOptions.add === undefined && commentOptions.stdin === undefined && commentOptions.file === undefined;
+        commentOptions.add === undefined &&
+        commentOptions.stdin === undefined &&
+        commentOptions.file === undefined &&
+        commentOptions.edit === undefined &&
+        commentOptions.delete === undefined;
       if (isListing) {
         commentOptions.includeMeta = true;
         if (commentOptions.limit === undefined && commentOptions.full !== true) {

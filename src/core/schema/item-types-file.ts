@@ -407,15 +407,19 @@ export function serializeItemTypesFile(file: ItemTypesFile): string {
  * custom types exist and how to register one. Quotes are chosen so the printed
  * line is copy-pasteable as a shell command.
  */
-export function buildInvalidTypeHint(name: string): string {
+export function buildInvalidTypeHint(name: string, typesFilePath?: string): string {
   const safeName = name.trim().length > 0 ? name.trim() : name;
-  return `To register a custom type, run: pm schema add-type "${escapeForDoubleQuotes(safeName)}" (writes .agents/pm/schema/types.json).`;
+  const target = typesFilePath?.trim() || ".agents/pm/schema/types.json";
+  return `To register a custom type, run: pm schema add-type "${escapeForDoubleQuotes(safeName)}" (writes ${target}).`;
 }
 
 /**
  * Builds the full invalid-type error message used by create/update: the
  * existing "Invalid type ... Allowed: ..." line plus the discoverable hint.
+ * `typesFilePath` should be the resolved schema/types.json path for the active
+ * tracker (see {@link resolveItemTypesFilePath}) so the hint reflects a custom
+ * `--pm-path` instead of the hardcoded `.agents/pm` default.
  */
-export function buildInvalidTypeError(name: string, allowedTypes: readonly string[]): string {
-  return `Invalid type value "${name}". Allowed: ${allowedTypes.join(", ")}. ${buildInvalidTypeHint(name)}`;
+export function buildInvalidTypeError(name: string, allowedTypes: readonly string[], typesFilePath?: string): string {
+  return `Invalid type value "${name}". Allowed: ${allowedTypes.join(", ")}. ${buildInvalidTypeHint(name, typesFilePath)}`;
 }

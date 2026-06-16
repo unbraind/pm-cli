@@ -2,11 +2,17 @@ id: pm-rpag
 title: "GH-235: detect duplicate logical issue code prefixes"
 description: "Tracks GitHub issue #235: pm validate should detect duplicate logical issue code prefixes (e.g. ISSUE-####)."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-06-16T11:28:31.513Z"
-updated_at: "2026-06-16T11:28:31.513Z"
+updated_at: "2026-06-16T19:40:36.461Z"
 author: codex-sdk-cli-consolidation-20260616
 parent: pm-mpbb
+resolution: New core/governance/issue-codes.ts + metadata-check advisory warning (details.duplicate_issue_codes).
+expected_result: validate flags codes like ISSUE-004 shared by 2+ items.
+actual_result: duplicate logical codes went undetected.
+comments[1]{created_at,author,text}:
+  "2026-06-16T19:30:11.283Z",maintainer-agent,"Integration (lead): validate dup issue-code detection shipped via new core/governance/issue-codes.ts (extractIssueCode/findDuplicateIssueCodes) + buildMetadataCheck advisory warning + summarizeDuplicateIssueCodes projection (details.duplicate_issue_codes). Added summarize unit test for truncation/verbose branches."
+close_reason: "Added: pm validate detects duplicate logical issue-code prefixes (advisory)."
 body: ""

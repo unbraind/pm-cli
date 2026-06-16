@@ -106,7 +106,7 @@ describe("runGet and runAppend", () => {
       });
       const linkedResult = await runGet(linkedId, { path: context.pmPath });
       expect(linkedResult.item.id).toBe(linkedId);
-      expect(linkedResult.body).toBe("linked body");
+      expect(linkedResult.item.body).toBe("linked body");
       expect(linkedResult.linked.files).toEqual([
         { path: "src/cli/commands/get.ts", scope: "project", note: "get-link" },
       ]);
@@ -146,19 +146,19 @@ describe("runGet and runAppend", () => {
       expect(defaultRead.item.comments).toBeUndefined();
       expect(defaultRead.item.notes).toBeUndefined();
       expect(defaultRead.linked.files).toHaveLength(1);
-      expect(defaultRead.body).toBe("depth body");
+      expect(defaultRead.item.body).toBe("depth body");
 
       const explicitFull = await runGet(id, { path: context.pmPath }, { full: true });
       expect(explicitFull.item.comments).toBeDefined();
       expect(explicitFull.item.notes).toBeDefined();
       expect(explicitFull.linked.files).toHaveLength(1);
-      expect(explicitFull.body).toBe("depth body");
+      expect(explicitFull.item.body).toBe("depth body");
 
       const depthFullAlias = await runGet(id, { path: context.pmPath }, { depth: "full" });
       expect(depthFullAlias.item.comments).toBeDefined();
       expect(depthFullAlias.item.notes).toBeDefined();
       expect(depthFullAlias.linked.files).toHaveLength(1);
-      expect(depthFullAlias.body).toBe("depth body");
+      expect(depthFullAlias.item.body).toBe("depth body");
 
       const standard = await runGet(id, { path: context.pmPath }, { depth: "standard" });
       expect(standard.item.id).toBe(id);
@@ -166,13 +166,13 @@ describe("runGet and runAppend", () => {
       expect(standard.item.notes).toBeUndefined();
       expect(standard.item.files).toBeUndefined();
       expect(standard.linked.files).toHaveLength(1);
-      expect(standard.body).toBe("depth body");
+      expect(standard.item.body).toBe("depth body");
 
       const brief = await runGet(id, { path: context.pmPath }, { depth: "brief" });
       expect(brief.item.id).toBe(id);
       expect(brief.item.comments).toBeUndefined();
       expect(brief.linked).toBeUndefined();
-      expect(brief.body).toBeUndefined();
+      expect(brief.item.body).toBeUndefined();
       expect(brief.claim_state).toBeUndefined();
 
       await expect(runGet(id, { path: context.pmPath }, { depth: "verbose" })).rejects.toMatchObject<PmCliError>({
@@ -203,13 +203,13 @@ describe("runGet and runAppend", () => {
         parent: undefined,
         type: "Task",
       });
-      expect(focused.body).toBeUndefined();
+      expect(focused.item.body).toBeUndefined();
       expect(focused.linked).toBeUndefined();
       expect(focused.claim_state).toBeUndefined();
 
       const withBodyAndFiles = await runGet(id, { path: context.pmPath }, { fields: "item.id,body,linked.files" });
-      expect(withBodyAndFiles.item).toEqual({ id });
-      expect(withBodyAndFiles.body).toBe("fields body");
+      expect(withBodyAndFiles.item).toEqual({ id, body: "fields body" });
+      expect(withBodyAndFiles.item.body).toBe("fields body");
       expect(withBodyAndFiles.linked.files).toHaveLength(1);
       expect(withBodyAndFiles.linked.tests).toEqual([]);
 
@@ -605,7 +605,7 @@ describe("runGet and runAppend", () => {
       expect(appendResult.changed_fields).toEqual([]);
 
       const getResult = await runGet(id, { path: context.pmPath });
-      expect(getResult.body).toBe("seed body");
+      expect(getResult.item.body).toBe("seed body");
     });
   });
 
@@ -626,7 +626,7 @@ describe("runGet and runAppend", () => {
       expect(firstAppend.appended).toBe("first entry");
       expect(firstAppend.changed_fields).toContain("body");
       const afterFirstAppend = await runGet(emptyBodyId, { path: context.pmPath });
-      expect(afterFirstAppend.body).toBe("first entry");
+      expect(afterFirstAppend.item.body).toBe("first entry");
       const firstHistory = context.runCli(["history", emptyBodyId, "--json", "--full"], { expectJson: true });
       expect(firstHistory.code).toBe(0);
       const firstHistoryJson = firstHistory.json as { history: Array<{ op: string; author: string }> };
@@ -659,7 +659,7 @@ describe("runGet and runAppend", () => {
         expect(secondAppend.changed_fields).toContain("body");
 
         const afterSecondAppend = await runGet(spacedBodyId, { path: context.pmPath });
-        expect(afterSecondAppend.body).toBe("existing body\n\nsecond entry");
+        expect(afterSecondAppend.item.body).toBe("existing body\n\nsecond entry");
 
         const history = context.runCli(["history", spacedBodyId, "--json", "--full"], { expectJson: true });
         expect(history.code).toBe(0);
@@ -718,7 +718,7 @@ describe("runGet and runAppend", () => {
       const appendResult = await runAppend(id, { body: "-", message: "append stdin payload" }, { path: context.pmPath });
       expect(appendResult.changed_fields).toContain("body");
       const getResult = await runGet(id, { path: context.pmPath });
-      expect(getResult.body).toBe("existing body\n\nmarkdown from stdin");
+      expect(getResult.item.body).toBe("existing body\n\nmarkdown from stdin");
     });
   });
 
