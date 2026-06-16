@@ -1019,6 +1019,8 @@ function applyPositionalValue(
         EXIT_CODE.USAGE,
       );
     }
+    // valueValue is guaranteed defined here (the valueValue === undefined early return
+    // above preserves a pre-existing --value), so this never overwrites --value.
     return { ...options, value: valueValue };
   }
 
@@ -1049,7 +1051,7 @@ function applyPositionalValue(
         EXIT_CODE.USAGE,
       );
     }
-    /* c8 ignore end */
+    /* c8 ignore stop */
     return { ...options, format: routed.value };
   }
 

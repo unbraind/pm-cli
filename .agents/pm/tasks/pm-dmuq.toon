@@ -1,0 +1,15 @@
+id: pm-dmuq
+title: Close c8-exposed coverage gaps in src/cli/commands/contracts.ts and restore.ts to 100%
+description: ""
+type: Task
+status: closed
+priority: 1
+tags[3]: "area:cli",coverage,pr-240
+created_at: "2026-06-16T08:40:15.913Z"
+updated_at: "2026-06-16T09:07:46.500Z"
+author: maintainer-agent
+parent: pm-0xix
+comments[1]{created_at,author,text}:
+  "2026-06-16T09:07:36.910Z",claude-code-agent,"contracts.ts: branch 1326 (provider 'mixed') now covered by a real test — new 'marks a core command with extension-registered flags as mixed provider' spec registers an extension flag via api.registerFlags('list', ...) so a core command surfaces both core + extension flags. Statements 1661/1666 (return null) and branches 1660/1665/1669 (schema-branch defensive guards over PM_TOOL_PARAMETERS_SCHEMA) are provably unreachable (the hardcoded schema always yields well-formed action branches with string const); fixed the mis-placed single-line c8 ignore markers by wrapping each defensive if-body and the ternary fallback in c8 ignore start/stop with PM_TOOL_PARAMETERS_SCHEMA-specific justifications. restore.ts: branch 218 falsy arm (empty reasonSuffix) is provably unreachable through applyHistoryPatch — jsonPatch/structuredClone/normalizeReplayPatchOps only throw Error instances with non-empty messages, so extractPatchFailureContext always sets reason; replaced the mis-placed c8 ignore next with a c8 ignore start/stop around the reasonSuffix ternary. Both files: zero-uncovered in isolated focused coverage (contracts single-spec; restore across restore+history-activity+close-many+register-commands specs — 152/153/261 are single-spec over-reports covered by history-activity-command.spec). Also corrected the invalid 'c8 ignore end' -> 'c8 ignore stop' markers within both files (the masking bug). No test-only exports added (reused existing _testOnlyContractsCommand/_testOnlyRestoreCommand seams). tsc clean; both specs pass (55 tests)."
+close_reason: "All assigned coverage targets closed to genuine 100%. contracts.ts: branch 1326 ('mixed' provider) covered by a new real test (extension registerFlags on core 'list' command); stmts 1661/1666 + branches 1660/1665/1669 are provably-unreachable PM_TOOL_PARAMETERS_SCHEMA defensive guards, annotated with corrected c8 ignore start/stop. restore.ts: branch 218 (empty reasonSuffix) is provably unreachable via applyHistoryPatch, annotated with c8 ignore start/stop. Both files zero-uncovered in focused mode; invalid 'c8 ignore end' markers corrected to 'stop'. No source files outside contracts.ts/restore.ts touched (test added to contracts spec only); no test-only exports added. tsc clean, 55 tests pass."
+body: ""

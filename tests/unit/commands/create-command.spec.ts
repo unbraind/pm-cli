@@ -3314,6 +3314,405 @@ describe("create command helper coverage", () => {
   });
 });
 
+describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
+  afterEach(() => {
+    clearActiveExtensionHooks();
+    setActiveExtensionCommands(null);
+    setActiveExtensionRegistrations(null);
+    vi.restoreAllMocks();
+  });
+
+  it("accepts plain-text comment/note/learning seeds that are not key=value structured", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runCreate(
+        baseCreateOptions({
+          title: "create-plaintext-log-seeds",
+          comment: ["just a plain comment without kv"],
+          note: ["just a plain note"],
+          learning: ["just a plain learning"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(result.item.comments?.at(0)?.text).toBe("just a plain comment without kv");
+      expect(result.item.notes?.at(0)?.text).toBe("just a plain note");
+      expect(result.item.learnings?.at(0)?.text).toBe("just a plain learning");
+    });
+  });
+
+  it("falls back to the configured governance default type when --type is omitted", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        governance?: { create_default_type?: string };
+      };
+      settings.governance = {
+        ...(settings.governance ?? {}),
+        create_default_type: "Feature",
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const result = await runCreate(
+        {
+          title: "create-default-type-from-governance",
+          description: "governance default type fallback",
+          type: undefined,
+          createMode: "progressive",
+        },
+        { path: context.pmPath },
+      );
+      expect(result.item.type).toBe("Feature");
+    });
+  });
+
+  it("falls back to the built-in Task type when no governance default is configured", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runCreate(
+        {
+          title: "create-default-task-fallback",
+          description: "Task fallback when --type omitted",
+          type: undefined,
+          createMode: "progressive",
+        },
+        { path: context.pmPath },
+      );
+      expect(result.item.type).toBe("Task");
+    });
+  });
+
+  it("suppresses the default-type fallback under explicit strict mode and demands --type", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runCreate(
+          {
+            title: "create-strict-no-type",
+            description: "explicit strict mode skips default-type fallback",
+            type: undefined,
+            createMode: "strict",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--type"),
+      });
+    });
+  });
+
+  it("creates with an empty description when --description is omitted", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runCreate(
+        {
+          title: "create-no-description",
+          type: "Task",
+          createMode: "progressive",
+        },
+        { path: context.pmPath },
+      );
+      expect(result.item.description).toBe("");
+    });
+  });
+
+  it("rejects strict create when a required option is targeted by --unset", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        item_types?: { definitions?: Array<Record<string, unknown>> };
+      };
+      settings.item_types = {
+        definitions: [
+          {
+            name: "Task",
+            folder: "tasks",
+            command_option_policies: [
+              { command: "create", option: "assignee", required: true },
+              { command: "create", option: "reviewer", required: true },
+            ],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      await expect(
+        runCreate(
+          {
+            title: "create-strict-required-clear",
+            description: "strict required clear conflict",
+            type: "Task",
+            createMode: "strict",
+            assignee: undefined,
+            reviewer: undefined,
+            unset: ["assignee", "reviewer"],
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Strict create mode requires concrete values"),
+      });
+    });
+  });
+
+  it("rejects combining a repeatable clear flag with its value flag", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            title: "create-clear-deps-conflict",
+            clearDeps: true,
+            dep: ["id=a1b2,kind=related"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Cannot combine --clear-deps with --dep"),
+      });
+    });
+  });
+
+  it("rejects combining --unset for a scalar field with that field's value flag", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            title: "create-scalar-unset-conflict",
+            deadline: "2026-03-01T00:00:00.000Z",
+            unset: ["deadline"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Cannot combine --unset deadline"),
+      });
+    });
+  });
+
+  it("persists runtime schema field values into the created item", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        schema?: { fields?: Array<Record<string, unknown>> };
+      };
+      settings.schema = {
+        ...(settings.schema ?? {}),
+        fields: [
+          {
+            key: "reviewUrl",
+            metadata_key: "review_url",
+            type: "string",
+            cli_flag: "review-url",
+            commands: ["create"],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const result = await runCreate(
+        baseCreateOptions({
+          title: "create-runtime-field-value",
+          reviewUrl: "https://example.test/runtime",
+        } as Partial<CreateCommandOptions>),
+        { path: context.pmPath },
+      );
+      expect((result.item as Record<string, unknown>).review_url).toBe("https://example.test/runtime");
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["review_url"]));
+    });
+  });
+
+  it("surfaces extension item-field allowed-value validation failures as usage errors", async () => {
+    await withTempPmPath(async (context) => {
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "enum-importer",
+        fields: [{ name: "github_stage", type: "string", values: ["alpha", "beta"] }],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            title: "create-extension-field-bad-enum",
+            field: ["github_stage=gamma"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("github_stage"),
+      });
+    });
+  });
+
+  it("reports an unresolved template (without warnings) when no handler matches", async () => {
+    await withTempPmPath(async (context) => {
+      setActiveExtensionRegistrations({
+        commands: [{ layer: "project", name: "templates", command: "templates show", action: "templates-show" }],
+        flags: [],
+        hooks: [],
+        importers: [],
+        exporters: [],
+        item_fields: [],
+        item_types: [],
+      });
+      // hasTemplatesShowHandler() is true via the registration above, but no command
+      // handler matches "templates show" => handled:false with empty warnings.
+      setActiveExtensionCommands({ overrides: [], handlers: [] });
+
+      await expect(
+        runCreate(
+          {
+            title: "create-template-unresolved",
+            type: "Task",
+            createMode: "progressive",
+            template: "missing-template",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining('Unable to resolve template "missing-template"'),
+      });
+    });
+  });
+
+  it("merges template options resolved from an active templates show handler", async () => {
+    await withTempPmPath(async (context) => {
+      setActiveExtensionRegistrations({
+        commands: [{ layer: "project", name: "templates", command: "templates show", action: "templates-show" }],
+        flags: [],
+        hooks: [],
+        importers: [],
+        exporters: [],
+        item_fields: [],
+        item_types: [],
+      });
+      setActiveExtensionCommands({
+        overrides: [],
+        handlers: [
+          {
+            layer: "project",
+            name: "templates",
+            command: "templates show",
+            run: () => ({ options: { description: "from template", tags: "template-tag" } }),
+          },
+        ],
+      });
+
+      const result = await runCreate(
+        {
+          title: "create-from-template",
+          type: "Task",
+          createMode: "progressive",
+          template: "bug-report",
+        },
+        { path: context.pmPath },
+      );
+      expect(result.item.description).toBe("from template");
+      expect(result.item.tags).toEqual(["template-tag"]);
+    });
+  });
+
+  it("derives a non-default blocked status when blocking a located dependency", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        schema?: { statuses?: Array<Record<string, unknown>> };
+      };
+      const customStatuses = [
+        { id: "open", roles: ["default_open", "active"] },
+        { id: "waiting", roles: ["blocked"] },
+        { id: "stalled", roles: ["blocked"] },
+        { id: "closed", roles: ["terminal", "terminal_done", "default_close"] },
+      ];
+      settings.schema = {
+        ...(settings.schema ?? {}),
+        statuses: customStatuses,
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      // The file-backed status set is merged into the runtime registry, so it must
+      // also omit the built-in "blocked" id for the non-default blocked-status path.
+      await writeFile(
+        path.join(context.pmPath, "schema", "statuses.json"),
+        `${JSON.stringify({ statuses: customStatuses }, null, 2)}\n`,
+        "utf8",
+      );
+
+      const blocker = await runCreate(
+        {
+          title: "create-blocker-target",
+          description: "blocking target",
+          type: "Task",
+          createMode: "progressive",
+        },
+        { path: context.pmPath },
+      );
+
+      const blocked = await runCreate(
+        {
+          title: "create-blocked-derived-status",
+          description: "blocked-by derives the non-default blocked status",
+          type: "Task",
+          createMode: "progressive",
+          blockedBy: blocker.item.id,
+        },
+        { path: context.pmPath },
+      );
+      // Two blocked-role statuses with no "blocked" id force the sorted-first fallback ("stalled" < "waiting").
+      expect(blocked.item.status).toBe("stalled");
+      expect(blocked.item.dependencies?.some((dep) => dep.kind === "blocked_by")).toBe(true);
+    });
+  });
+
+  it("degrades to the open status when blocking with no blocked-role statuses configured", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        schema?: { statuses?: Array<Record<string, unknown>> };
+      };
+      const noBlockedStatuses = [
+        { id: "open", roles: ["default_open", "active"] },
+        { id: "closed", roles: ["terminal", "terminal_done", "default_close"] },
+      ];
+      settings.schema = {
+        ...(settings.schema ?? {}),
+        statuses: noBlockedStatuses,
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeFile(
+        path.join(context.pmPath, "schema", "statuses.json"),
+        `${JSON.stringify({ statuses: noBlockedStatuses }, null, 2)}\n`,
+        "utf8",
+      );
+
+      const blocker = await runCreate(
+        {
+          title: "create-no-blocked-blocker",
+          description: "blocking target without blocked statuses",
+          type: "Task",
+          createMode: "progressive",
+        },
+        { path: context.pmPath },
+      );
+
+      const blocked = await runCreate(
+        {
+          title: "create-no-blocked-derived",
+          description: "blocked-by with no blocked statuses degrades to open",
+          type: "Task",
+          createMode: "progressive",
+          blockedBy: blocker.item.id,
+        },
+        { path: context.pmPath },
+      );
+      // No blocked-role status exists, so the sorted-first lookup is undefined and falls back to open_status.
+      expect(blocked.item.status).toBe("open");
+      expect(blocked.item.dependencies?.some((dep) => dep.kind === "blocked_by")).toBe(true);
+    });
+  });
+});
+
 describe("repeatable metadata parser helpers", () => {
   it("parses type-option entries from compact, colon, and structured forms", () => {
     expect(

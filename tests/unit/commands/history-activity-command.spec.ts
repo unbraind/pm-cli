@@ -665,6 +665,140 @@ describe("runHistory and runActivity", () => {
     });
   });
 
+  it("redacts via the history-stream fallback when the item file is absent (prefixed and bare ids)", async () => {
+    await withTempPmPath(async (context) => {
+      const leakedToken = "fallback-token-789";
+
+      // Prefixed-id path: normalizeItemId === normalizeRawItemId -> single candidate.
+      const prefixedId = createItem(context, "History Redact Fallback Prefixed");
+      context.runCli(
+        ["append", prefixedId, "--json", "--body", `secret ${leakedToken}`, "--author", "test-author", "--message", "append fallback token"],
+        { expectJson: true },
+      );
+      await rm(path.join(context.pmPath, "tasks", `${prefixedId}.toon`), { force: true });
+
+      const prefixedResult = await runHistoryRedact(
+        prefixedId,
+        {
+          literal: leakedToken,
+          replacement: "[redacted_token]",
+          author: "test-author",
+        },
+        { path: context.pmPath },
+      );
+      expect(prefixedResult.changed).toBe(true);
+      expect(prefixedResult.item.existed_before).toBe(false);
+      expect(prefixedResult.item.path_before).toBeNull();
+      const prefixedHistory = await readFile(path.join(context.pmPath, "history", `${prefixedId}.jsonl`), "utf8");
+      expect(prefixedHistory).not.toContain(leakedToken);
+      expect(prefixedHistory).toContain("[redacted_token]");
+
+      // Bare-id path: normalizeItemId !== normalizeRawItemId -> two candidates probed.
+      const bareSourceId = createItem(context, "History Redact Fallback Bare");
+      context.runCli(
+        ["append", bareSourceId, "--json", "--body", `secret ${leakedToken}`, "--author", "test-author", "--message", "append fallback token"],
+        { expectJson: true },
+      );
+      await rm(path.join(context.pmPath, "tasks", `${bareSourceId}.toon`), { force: true });
+      const bareId = bareSourceId.replace(/^pm-/, "");
+      expect(bareId).not.toBe(bareSourceId);
+
+      const bareResult = await runHistoryRedact(
+        bareId,
+        {
+          literal: leakedToken,
+          replacement: "[redacted_token]",
+          author: "test-author",
+        },
+        { path: context.pmPath },
+      );
+      expect(bareResult.id).toBe(bareSourceId);
+      expect(bareResult.changed).toBe(true);
+      expect(bareResult.item.existed_before).toBe(false);
+    });
+  });
+
+  it("redacts patch values for history entries that carry no message field", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "History Redact No Message Entry");
+      const leakedToken = "no-message-token-321";
+      context.runCli(
+        ["append", id, "--json", "--body", `secret ${leakedToken}`, "--author", "test-author", "--message", `append ${leakedToken}`],
+        { expectJson: true },
+      );
+
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const lines = (await readFile(historyPath, "utf8"))
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+      // Strip the `message` field from every entry so the message-redaction branch is skipped
+      // and only the patch-value redaction path runs.
+      const stripped = lines.map((line) => {
+        const entry = JSON.parse(line) as Record<string, unknown>;
+        delete entry.message;
+        return JSON.stringify(entry);
+      });
+      await writeFile(historyPath, `${stripped.join("\n")}\n`, "utf8");
+
+      const result = await runHistoryRedact(
+        id,
+        {
+          literal: leakedToken,
+          replacement: "[redacted_token]",
+          author: "test-author",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.changed).toBe(true);
+      const historyRaw = await readFile(historyPath, "utf8");
+      expect(historyRaw).not.toContain(leakedToken);
+      expect(historyRaw).toContain("[redacted_token]");
+    });
+  });
+
+  it("redacts a deleted item's history when the replayed document has no metadata", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "History Redact Deleted Item");
+      const leakedToken = "deleted-item-token-456";
+      context.runCli(
+        ["append", id, "--json", "--body", `secret ${leakedToken}`, "--author", "test-author", "--message", `append ${leakedToken}`],
+        { expectJson: true },
+      );
+      const deleted = context.runCli(
+        ["delete", id, "--json", "--author", "test-author", "--message", "delete for redaction fixture"],
+        { expectJson: true },
+      );
+      expect(deleted.code).toBe(0);
+
+      // The item file is gone; the history stream (incl. the leaked append) remains.
+      const itemPath = path.join(context.pmPath, "tasks", `${id}.toon`);
+      await expect(readFile(itemPath, "utf8")).rejects.toThrow();
+
+      const result = await runHistoryRedact(
+        id,
+        {
+          literal: leakedToken,
+          replacement: "[redacted_token]",
+          author: "test-author",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.changed).toBe(true);
+      expect(result.history.audit_entry_added).toBe(true);
+      // Replayed final document is a tombstone -> no item is recreated.
+      expect(result.item.path_after).toBeNull();
+      expect(result.item.exists_after).toBe(false);
+      await expect(readFile(itemPath, "utf8")).rejects.toThrow();
+
+      const historyRaw = await readFile(path.join(context.pmPath, "history", `${id}.jsonl`), "utf8");
+      expect(historyRaw).not.toContain(leakedToken);
+      expect(historyRaw).toContain("[redacted_token]");
+    });
+  });
+
   it("reports preexisting hash mismatches before successful redaction", async () => {
     await withTempPmPath(async (context) => {
       const id = createItem(context, "History Redact Preexisting Hash Mismatch");

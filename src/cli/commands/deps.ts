@@ -182,7 +182,7 @@ function mergeGraphNode(existing: DepsGraphNode | undefined, candidate: DepsGrap
   }
   /* c8 ignore start -- defensive: mixed missing/non-missing duplicates only occur in malformed synthetic trees. */
   if (existing.missing && !candidate.missing) return candidate;
-  /* c8 ignore end */
+  /* c8 ignore stop */
   return {
     ...existing,
     title: existing.title ?? candidate.title,
@@ -227,7 +227,7 @@ function toGraph(root: DepsTreeNode): DepsGraphResult {
           kind: relationKind,
         });
       }
-      /* c8 ignore end */
+      /* c8 ignore stop */
       if (!child.cycle) {
         visit(child);
       }

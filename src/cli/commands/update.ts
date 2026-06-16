@@ -369,7 +369,7 @@ function normalizeLegacyNoneUpdateOptions(options: UpdateCommandOptions): Update
     }
     normalized.unset = current;
   };
-  /* c8 ignore end */
+  /* c8 ignore stop */
 
   const scalarOptionKeys = new Set<string>([...UPDATE_OPTION_KEY_TO_UNSET_CANONICAL.keys(), "rank"]);
   for (const optionKey of scalarOptionKeys) {
@@ -381,7 +381,7 @@ function normalizeLegacyNoneUpdateOptions(options: UpdateCommandOptions): Update
     const canonicalUnset = optionKey === "rank" ? "order" : (UPDATE_OPTION_KEY_TO_UNSET_CANONICAL.get(optionKey) ?? optionKey);
     appendUnsetTarget(canonicalUnset);
     normalized[optionKey] = undefined;
-    /* c8 ignore end */
+    /* c8 ignore stop */
   }
 
   for (const definition of UPDATE_LEGACY_NONE_COLLECTION_NORMALIZERS) {
@@ -718,7 +718,7 @@ function enforceAllowAuditUpdateScope(id: string, options: UpdateCommandOptions,
     .filter((field) => AUDIT_UPDATE_DISALLOWED_UNSET_FRONT_MATTER_KEYS.has(field))
     .sort((left, right) => left.localeCompare(right))
     .map((field) => `--unset ${field.replaceAll("_", "-")}`);
-  /* c8 ignore end */
+  /* c8 ignore stop */
   disallowedFlags.push(...disallowedUnset);
 
   if (disallowedFlags.length > 0) {
@@ -2113,7 +2113,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   };
 }
 
-/* c8 ignore end */
+/* c8 ignore stop */
 export const _testOnlyUpdateCommand = {
   collectProvidedUpdatePolicyOptions,
   buildAuditScopeRestrictedOptionsError,

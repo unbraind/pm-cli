@@ -1870,4 +1870,43 @@ describe("contracts command runtime", () => {
       expect(schema.additionalProperties).toBe(true);
     }
   });
+
+  it("marks a core command with extension-registered flags as mixed provider", async () => {
+    await withTempPmPath(async (context) => {
+      await writeTestExtension({
+        root: context.pmPath,
+        placement: "projectRoot",
+        directory: "list-flag-augment",
+        manifest: {
+          name: "list-flag-augment",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["commands", "schema"],
+        },
+        entryFilename: "index.mjs",
+        entrySource: [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerFlags('list', [",
+          "      { long: '--augment', value_name: 'value', value_type: 'string', description: 'Extension-registered list flag.' },",
+          "    ]);",
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+      });
+
+      const result = await runContracts(
+        { command: "list", flagsOnly: true },
+        { ...GLOBAL_OPTIONS, path: context.pmPath },
+      );
+      const listSurface = result.command_flags?.find(
+        (entry) => entry.command === "list",
+      );
+      expect(listSurface?.provider).toBe("mixed");
+      expect(listSurface?.flags.some((entry) => entry.flag === "--augment")).toBe(true);
+      // Core flags survive the merge alongside the extension-registered one.
+      expect(listSurface?.flags.some((entry) => entry.flag === "--status")).toBe(true);
+    });
+  });
 });

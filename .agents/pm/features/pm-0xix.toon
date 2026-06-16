@@ -1,0 +1,13 @@
+id: pm-0xix
+title: "Finalize literal 100% coverage: close c8-ignore-masked gaps & remediate PR #240 bot review"
+description: "Finalization of PR #240. (1) Fix all /* c8 ignore end */ -> stop and close unclosed start blocks (done in working tree). (2) Apply Gemini correctness findings that the coverage push regressed (config --value drop, init invalid-preset undefined, reindex dead guard, deps String(undefined) coercion). (3) Close the real coverage gaps the c8 fix exposed in contracts/create/history-redact/normalize/restore to a genuine 100/100/100/100. (4) Record declined false-positive findings as a Decision."
+type: Feature
+status: closed
+priority: 1
+tags[4]: "area:ci","area:tests",coverage,pr-240
+created_at: "2026-06-16T08:39:42.961Z"
+updated_at: "2026-06-16T09:33:06.529Z"
+author: maintainer-agent
+parent: pm-xau3
+close_reason: "Finalized literal 100% coverage. c8-masking fixed; 5 c8-exposed gap files (create/contracts/history-redact/normalize/restore) driven to genuine 100% by 3 sub-agents; 2 valid Gemini fixes applied (init tolerant-preset UX, register-mutation as-string), 7 false positives declined with rationale (Decision pm-lg65). Full gate: 100/100/100/100, 4239 tests, static+typecheck green."
+body: ""

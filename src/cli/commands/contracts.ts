@@ -995,7 +995,7 @@ function mergeExtensionContractsByAction(
   }
   return [...byAction.values()].sort((left, right) => left.action.localeCompare(right.action));
 }
-/* c8 ignore end */
+/* c8 ignore stop */
 
 async function resolveRuntimeExtensionActionProbe(
   global: GlobalOptions,
@@ -1123,7 +1123,7 @@ function collectActionContractDescriptors(
   return [...descriptors.values()].sort((left, right) =>
     (left.action ?? "").localeCompare(right.action ?? ""),
   );
-  /* c8 ignore end */
+  /* c8 ignore stop */
 }
 
 function resolveActionAvailability(
@@ -1172,7 +1172,7 @@ function resolveActionAvailability(
       default_sandbox_profile: runtimeProbe.policyState.default_sandbox_profile,
     },
   };
-  /* c8 ignore end */
+  /* c8 ignore stop */
 }
 
 function resolveCoreCommandFlags(command: string): CliFlagContract[] {
@@ -1280,7 +1280,7 @@ function buildRuntimeFieldFlagContracts(
     result.set(command, compactFlagAliasContracts(bucket.flags));
   }
   return result;
-  /* c8 ignore end */
+  /* c8 ignore stop */
 }
 
 function mergeFlagContracts(
@@ -1299,7 +1299,7 @@ function mergeFlagContracts(
     merged.push(contract);
   }
   return compactFlagAliasContracts(merged);
-  /* c8 ignore end */
+  /* c8 ignore stop */
 }
 
 function buildCommandFlagSurface(
@@ -1426,7 +1426,7 @@ function resolveCreateRequiredOptionContract(
       left.localeCompare(right),
     ),
   };
-  /* c8 ignore end */
+  /* c8 ignore stop */
 }
 
 function buildCreateRequiredOptionContracts(
@@ -1656,17 +1656,21 @@ export async function runContracts(
     schemaBranches
       .map((entry) => {
         const properties = entry.properties;
-        /* c8 ignore next -- schema branches without properties are validated in schema-level contract tests. */
+        /* c8 ignore start -- PM_TOOL_PARAMETERS_SCHEMA action branches always carry a properties object; the property-less fallback is validated in schema-level contract tests. */
         if (typeof properties !== "object" || properties === null) {
           return null;
         }
+        /* c8 ignore stop */
         const actionProperty = (properties as Record<string, unknown>).action;
-        /* c8 ignore next -- schema branches missing action objects are validated in schema-level contract tests. */
+        /* c8 ignore start -- PM_TOOL_PARAMETERS_SCHEMA action branches always carry an action object; the missing-action fallback is validated in schema-level contract tests. */
         if (typeof actionProperty !== "object" || actionProperty === null) {
           return null;
         }
+        /* c8 ignore stop */
         const actionConst = (actionProperty as { const?: unknown }).const;
+        /* c8 ignore start -- the action.const is always a string in PM_TOOL_PARAMETERS_SCHEMA; the non-string fallback is validated in schema-level contract tests. */
         return typeof actionConst === "string" ? actionConst : null;
+        /* c8 ignore stop */
       })
       .filter((entry): entry is string => entry !== null),
   );

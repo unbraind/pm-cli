@@ -244,7 +244,10 @@ function resolveExtensionSearchEmbedding(
   const name =
     toOptionalNonEmptyString((runtimeDefinition as { name?: unknown }).name) ??
     toOptionalNonEmptyString((registration.definition as { name?: unknown }).name);
-  /* c8 ignore start -- resolved provider registrations always carry a normalized name */
+  // resolveRegisteredSearchProvider only matches a registration whose normalized
+  // runtime/registered definition name equals providerName, so `name` here is always
+  // that non-empty value; the guard exists solely to narrow string | undefined.
+  /* c8 ignore start -- unreachable: a matched provider registration always carries a normalized name */
   if (!name) {
     return null;
   }

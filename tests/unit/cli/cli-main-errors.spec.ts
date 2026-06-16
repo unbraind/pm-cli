@@ -6,6 +6,20 @@ import { pathToFileURL } from "node:url";
 import { Command } from "commander";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+// `node:module.enableCompileCache` is a Node 22+ API. The CI coverage gate runs on
+// Node 20, where it is absent and src/cli.ts's compile-cache startup block
+// early-returns, leaving its cache-key branches unexecuted. Supply a no-op stub when
+// the real API is missing so the block is exercised version-agnostically; on Node 22+
+// the real implementation is preserved unchanged. Only src/cli.ts reads node:module.
+vi.mock("node:module", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:module")>();
+  const enableCompileCache =
+    typeof (actual as { enableCompileCache?: unknown }).enableCompileCache === "function"
+      ? actual.enableCompileCache
+      : (_cacheDir?: string) => ({ status: 0 });
+  return { ...actual, enableCompileCache };
+});
+
 import { _testOnly } from "../../../src/cli/main.js";
 import {
   clearActiveExtensionHooks,

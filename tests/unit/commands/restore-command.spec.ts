@@ -505,6 +505,27 @@ describe("runRestore", () => {
     });
   });
 
+  it("restores an assignee-conflicting item without warnings when enforcement is none", async () => {
+    await withTempPmPath(async (context) => {
+      setGovernancePreset(context, "minimal");
+      const enforcement = context.runCli(["config", "set", "governance_ownership_enforcement", "none", "--json"], {
+        expectJson: true,
+      });
+      expect(enforcement.code).toBe(0);
+
+      const id = createRestoreFixture(context, "Assigned Author None Item");
+      const assign = context.runCli(
+        ["update", id, "--json", "--assignee", "other-author", "--author", "test-author", "--message", "assign other"],
+        { expectJson: true },
+      );
+      expect(assign.code).toBe(0);
+
+      // enforcement=none takes neither the strict (throw) nor warn (push) arm: restore succeeds silently.
+      const restored = await runRestore(id, "1", {}, { path: context.pmPath });
+      expect(restored.warnings.some((warning) => warning.startsWith("ownership_warning:assignee_conflict"))).toBe(false);
+    });
+  });
+
   it("restores across type-folder moves and rolls back both paths when history append fails", async () => {
     await withTempPmPath(async (context) => {
       const id = createRestoreFixture(context, "Restore Type Move Rollback");

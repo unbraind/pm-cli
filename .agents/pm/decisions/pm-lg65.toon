@@ -1,0 +1,15 @@
+id: pm-lg65
+title: "PR #240 review: applied vs declined Gemini findings (with rationale)"
+description: "APPLIED: config.ts set --value drop (value: valueValue ?? options.value); init.ts invalid-preset undefined (?? 'minimal'); reindex.ts dead name guard removed via ?? providerName fallback; register-mutation.ts deps String(undefined)->'undefined' replaced with 'as string'. DECLINED (false positives): help-json-payload.ts:177 — the preceding loop only pushes options where (alias_for && long) are truthy, so 'as string' is safe and the suggested guard would be uncoverable dead code; comments.ts:71 — reached only when typeof options.file==='string' (hasFile branch), so the cast is guaranteed and a ?? '' guard would be dead; verify-published-release.mjs:31 — Node permits Atomics.wait on the main thread (unlike browsers), so the current synchronous-sleep idiom is correct and does NOT throw; item-format.ts:396 — coerceRuntimeFieldValue always throws an Error with a message, the non-Error arm is theoretical; item-format.ts firstNonZeroComparison lazy-eval — declined: would add 19 arrow-functions requiring fabricated cascading-tie fixtures across 16 fields to satisfy the 100% function gate, for negligible real perf on tiny bounded sort keys (conflicts with the lean-suite goal)."
+type: Decision
+status: closed
+priority: 2
+tags[4]: adr,"area:tests",coverage,pr-240
+created_at: "2026-06-16T08:40:13.786Z"
+updated_at: "2026-06-16T09:33:19.392Z"
+author: maintainer-agent
+parent: pm-0xix
+comments[1]{created_at,author,text}:
+  "2026-06-16T08:50:33.220Z",maintainer-agent,"CORRECTION after sandbox verification: config.ts:1022 and reindex.ts:247 are NOW DECLINED as false positives (not applied). config.ts has an early 'if (valueValue === undefined) return options' guard (line 1002) so line 1022 is only reached with a defined valueValue — the original 'value: valueValue' never drops a --value, and Gemini's '?? options.value' is a dead branch. reindex.ts: resolveRegisteredSearchProvider only matches a registration whose normalized definition name EQUALS the provider key, so 'name' is provably non-empty; Gemini's '?? providerName' fallback is unreachable. Both reverted; original c8-ignored guard retained for reindex. init.ts: rather than Gemini's (also-dead) '?? minimal', applied a genuine UX improvement — the wizard now CATCHES an invalid preset typo and defaults to minimal with a notice instead of throwing and aborting mid-setup (fully coverable). register-mutation.ts 'as string' applied (harmless cleanup). NET valid source fixes from this review: 2 (init UX, register-mutation cast). All other 7 findings are false positives/declined."
+close_reason: "Accepted & applied: 2 valid Gemini findings fixed (init tolerant-preset UX, register-mutation as-string); 7 false positives declined with documented rationale (config early-return, reindex matched-registration invariant, help-json/comments type-guards, Atomics.wait Node-main-thread, item-format theoretical-throw + lazy-sort coverage-bloat)."
+body: ""

@@ -1437,7 +1437,7 @@ async function planMaterialize(
   };
 }
 
-/* c8 ignore end */
+/* c8 ignore stop */
 export interface PlanDispatchInput {
   subcommand: PlanSubcommand;
   id?: string;

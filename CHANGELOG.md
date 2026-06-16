@@ -4,6 +4,8 @@
 
 ### Added
 
+- Finalize literal 100% coverage: close c8-ignore-masked gaps & remediate PR \#240 bot review ([pm-0xix](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-0xix.toon))
+- Apply Gemini correctness fixes & cover new branches \(config/init/reindex/register-mutation\) ([pm-bw70](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-bw70.toon))
 - Module-mirrored test reorganization: retire lane/wave naming, add shared script harness ([pm-m449](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-m449.toon))
 - Search: persistent search.hybrid\_semantic\_weight setting as default for pm search --semantic-weight ([pm-2xwh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-2xwh.toon))
 - Configurable min-score threshold for pm search: --min-score per-query override of search.score\_threshold ([pm-cstl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-cstl.toon))
@@ -25,11 +27,16 @@
 
 ### Fixed
 
+- c8 ignore end \(invalid keyword\) silently masked source coverage; literal-100% gate passed on hidden code ([pm-dg8j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dg8j.toon))
 - GH-205: surface telemetry flush/probe + OTEL export diagnostics in pm health ([pm-hx5a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hx5a.toon))
 - GH-209 follow-up: OTEL span export keeps the CLI alive ~10s \(and can exit 13\) when the traces endpoint is unreachable ([pm-25se](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-25se.toon))
 
 ### Other
 
+- PR \#240 review: applied vs declined Gemini findings \(with rationale\) ([pm-lg65](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-lg65.toon))
+- Close c8-exposed coverage gaps in src/cli/commands/create.ts to 100% ([pm-eifq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-eifq.toon))
+- Close c8-exposed coverage gaps in src/cli/commands/contracts.ts and restore.ts to 100% ([pm-dmuq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-dmuq.toon))
+- Close c8-exposed coverage gaps in src/cli/commands/history-redact.ts and normalize.ts to 100% ([pm-byl1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-byl1.toon))
 - Test-suite dedup & best-practice audit \(post module-mirror reorg\) ([pm-2nqx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-2nqx.toon))
 - Source-correctness audit of all-source-100%-coverage branch src/ edits ([pm-e2jt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-e2jt.toon))
 - tests/unit is at exactly 120/120 spec files: zero headroom before Gates\(static\) fails; consolidation candidates identified ([pm-vks9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-vks9.toon))

@@ -144,7 +144,7 @@ function parseRegexRule(spec: string): RegexRule {
       source = trimmed.slice(1, slashIndex);
       flags = normalizeRegexFlags(trimmed.slice(slashIndex + 1));
     }
-    /* c8 ignore end */
+    /* c8 ignore stop */
   }
   if (source.length === 0) {
     throw new PmCliError("history-redact --regex cannot use an empty pattern.", EXIT_CODE.USAGE);
@@ -157,7 +157,7 @@ function parseRegexRule(spec: string): RegexRule {
       `Invalid --regex value "${spec}": ${error instanceof Error ? error.message : String(error)}`,
       EXIT_CODE.USAGE,
     );
-    /* c8 ignore end */
+    /* c8 ignore stop */
   }
 
   return {
@@ -299,7 +299,7 @@ function applyHistoryPatch(current: ReplayDocument, patch: HistoryPatchOp[], ent
       EXIT_CODE.GENERIC_FAILURE,
     );
   }
-  /* c8 ignore end */
+  /* c8 ignore stop */
   return result.document;
 }
 
@@ -317,7 +317,7 @@ function inspectHistoryIntegrity(entries: HistoryEntry[]): HistoryIntegritySnaps
     if (replayHash(replay) !== entry.after_hash) {
       hashMismatchesAfter += 1;
     }
-    /* c8 ignore end */
+    /* c8 ignore stop */
   }
   return {
     hashMismatchesBefore,
@@ -349,7 +349,7 @@ function redactHistoryEntry(entry: HistoryEntry, rules: RedactionRule[], replace
     if (!Object.prototype.hasOwnProperty.call(operation, "value")) {
       return operation;
     }
-    /* c8 ignore end */
+    /* c8 ignore stop */
     const redactedValue = redactUnknownValue(operation.value, rules, replacement);
     replacements += redactedValue.replacements;
     if (redactedValue.replacements > 0) {
@@ -546,7 +546,7 @@ export async function runHistoryRedact(
       EXIT_CODE.GENERIC_FAILURE,
     );
   }
-  /* c8 ignore end */
+  /* c8 ignore stop */
 
   if (!dryRun && changed) {
     warnings.push(
@@ -605,7 +605,7 @@ export async function runHistoryRedact(
         } else {
           await writeFileAtomic(subject.historyPath, historyRawUnderLock);
         }
-        /* c8 ignore end */
+        /* c8 ignore stop */
         for (const itemPath of affectedItemPaths) {
           const snapshot = itemSnapshots.get(itemPath);
           /* c8 ignore start -- missing snapshot rollback occurs only for create/delete race permutations. */
@@ -614,7 +614,7 @@ export async function runHistoryRedact(
           } else {
             await writeFileAtomic(itemPath, snapshot);
           }
-          /* c8 ignore end */
+          /* c8 ignore stop */
         }
         throw error;
       }

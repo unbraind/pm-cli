@@ -418,7 +418,18 @@ async function runInitWizard(initialPrefix: string, telemetryDefault: boolean): 
     output.write("default: ownership conflict warnings, progressive create defaults, close validation warn.\n");
     output.write("strict: ownership blocking, strict create defaults, close validation strict.\n");
     const presetAnswer = await rl.question("Governance preset [minimal/default/strict] (default: minimal): ");
-    const resolvedPreset = normalizeInitGovernancePreset(presetAnswer.trim().length > 0 ? presetAnswer : "minimal")!;
+    const presetChoice = presetAnswer.trim().length > 0 ? presetAnswer.trim() : "minimal";
+    // The wizard is forgiving: a typo'd/unknown preset defaults to minimal with a
+    // notice instead of throwing and aborting an in-progress interactive setup.
+    // normalizeInitGovernancePreset returns a concrete preset for valid input and
+    // throws (never returns undefined) for invalid non-empty input, so the result is
+    // always a BuiltinGovernancePreset on the success path.
+    let resolvedPreset: BuiltinGovernancePreset = "minimal";
+    try {
+      resolvedPreset = normalizeInitGovernancePreset(presetChoice) as BuiltinGovernancePreset;
+    } catch {
+      output.write(`Unrecognized governance preset "${presetChoice}"; using minimal.\n`);
+    }
 
     output.write("\n3/3 Project telemetry\n");
     output.write("Telemetry helps improve reliability and can be disabled anytime via pm config.\n");

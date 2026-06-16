@@ -154,6 +154,21 @@ describe("config command helper coverage", () => {
       ),
     ).toThrow(usageError);
   });
+
+  it("preserves a pre-existing --value for nested settings when no positional value is given", () => {
+    // nestedSetting=true with only --value (no positional): the --value must be kept,
+    // not overwritten with undefined (regression guard for config.ts value coalescing).
+    expect(
+      _testOnlyConfigCommand.applyPositionalValue("set", "search.provider", undefined, true, undefined, {
+        value: "qdrant",
+      }),
+    ).toEqual({ value: "qdrant" });
+
+    // A positional value still wins when provided alongside no --value.
+    expect(
+      _testOnlyConfigCommand.applyPositionalValue("set", "search.provider", undefined, true, "ollama", {}),
+    ).toEqual({ value: "ollama" });
+  });
 });
 
 describe("runConfig", () => {

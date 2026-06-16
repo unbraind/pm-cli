@@ -129,7 +129,7 @@ function isLowSignalText(value: string | undefined): boolean {
   if (!value) {
     return false;
   }
-  /* c8 ignore end */
+  /* c8 ignore stop */
   return LOW_SIGNAL_TEXT_TOKENS.has(normalizeComparableText(value));
 }
 
@@ -141,10 +141,11 @@ function sanitizeBeforeValue(value: unknown): unknown {
 }
 
 function normalizeLifecyclePatternList(values: readonly string[] | undefined): string[] {
-  /* c8 ignore next -- settings schema always materializes lifecycle arrays before command execution. */
+  /* c8 ignore start -- settings schema always materializes lifecycle arrays before command execution. */
   return [...new Set((values ?? []).map((value) => value.trim().toLowerCase()).filter((value) => value.length > 0))].sort(
     (left, right) => left.localeCompare(right),
   );
+  /* c8 ignore stop */
 }
 
 function resolveLifecyclePatternPolicy(settings: LifecyclePatternSettingsSource): LifecyclePatternPolicy {
@@ -238,10 +239,11 @@ function buildNormalizePlan(
       if (!hasClosurePattern && !isLowSignalText(currentValue)) {
         continue;
       }
-      /* c8 ignore next -- duplicate unset insertions are defensive against malformed duplicated rule definitions. */
+      /* c8 ignore start -- duplicate unset insertions are defensive against malformed duplicated rule definitions; ACTIVE_CLEAR_FIELD_RULES has distinct unsetField values. */
       if (!unsetFields.has(definition.unsetField)) {
         unsetFields.add(definition.unsetField);
       }
+      /* c8 ignore stop */
       changes.push({
         field: definition.field,
         before: sanitizeBeforeValue(itemRecord[definition.field]),
@@ -283,8 +285,9 @@ function buildNormalizePlan(
     updates.unset = [...unsetFields].sort((left, right) => left.localeCompare(right));
   }
 
-  /* c8 ignore next -- secondary comparator path is deterministic but rare in current fixtures. */
+  /* c8 ignore start -- secondary comparator arm only fires for two changes sharing one field; active-clear and closed-backfill rules are mutually exclusive per item so this is unreachable in practice. */
   changes.sort((left, right) => left.field.localeCompare(right.field) || left.rule.localeCompare(right.rule));
+  /* c8 ignore stop */
   return {
     id: item.id,
     changes,

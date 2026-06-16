@@ -856,6 +856,33 @@ describe("runInit", () => {
     }
   });
 
+  it("defaults an unrecognized governance preset answer to minimal instead of aborting the wizard", async () => {
+    const writes: string[] = [];
+    const close = vi.fn();
+    const question = vi.fn()
+      .mockResolvedValueOnce("pm-")
+      .mockResolvedValueOnce("totally-bogus-preset")
+      .mockResolvedValueOnce("y");
+    initInternals.setInitReadlineFactoryForTests(() => ({
+      question,
+      close,
+    } as unknown as ReturnType<typeof readline.createInterface>));
+    const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation((chunk: string | Uint8Array) => {
+      writes.push(String(chunk));
+      return true;
+    });
+
+    try {
+      const choices = await initInternals.runInitWizard("pm-", true);
+      expect(choices.preset).toBe("minimal");
+      expect(writes.join("")).toContain('Unrecognized governance preset "totally-bogus-preset"; using minimal.');
+      expect(close).toHaveBeenCalledTimes(1);
+    } finally {
+      writeSpy.mockRestore();
+      initInternals.setInitReadlineFactoryForTests(undefined);
+    }
+  });
+
   it("falls back to wizard defaults on blank answers and restores readline fallback factory", async () => {
     const close = vi.fn();
     const question = vi.fn()

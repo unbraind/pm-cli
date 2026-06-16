@@ -1468,11 +1468,12 @@ export function registerMutationCommands(program: Command): void {
       const { runDeps } = await import("./commands/deps.js");
       // --format and --collapse carry commander defaults ("tree"/"none"), so
       // they are always strings by the time the action runs; --maxDepth has no
-      // default and may be unset (String(...) preserves the prior string shape).
+      // default and may be unset. Use `as string` rather than String(...) so an
+      // omitted option stays undefined instead of becoming the literal "undefined".
       const result = await runDeps(id, {
-        format: String(options.format),
+        format: options.format as string,
         maxDepth: typeof options.maxDepth === "string" ? options.maxDepth : undefined,
-        collapse: String(options.collapse),
+        collapse: options.collapse as string,
         summary: options.summary === true,
       }, globalOptions);
       printResult(result, globalOptions);

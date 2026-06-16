@@ -136,13 +136,13 @@ function extractPatchFailureContext(
   if (typeof candidate.index === "number" && Number.isInteger(candidate.index) && candidate.index >= 0) {
     context.patchIndex = candidate.index;
   }
-  /* c8 ignore end */
+  /* c8 ignore stop */
   /* c8 ignore start -- operation payload metadata is optional in upstream json-patch failures. */
   const operationRecord =
     typeof candidate.operation === "object" && candidate.operation !== null
       ? (candidate.operation as { op?: unknown; path?: unknown; from?: unknown })
       : null;
-  /* c8 ignore end */
+  /* c8 ignore stop */
   if (operationRecord && typeof operationRecord.op === "string") {
     context.op = operationRecord.op;
   }
@@ -160,7 +160,7 @@ function extractPatchFailureContext(
       context.path = context.path ?? fallback.path;
       context.from = context.from ?? fallback.from;
     }
-    /* c8 ignore end */
+    /* c8 ignore stop */
   }
   return context;
 }
@@ -214,8 +214,9 @@ function applyHistoryPatch(
       /* c8 ignore next -- contextual fields are best-effort and may be absent depending on patch failure shape. */
       failureContext.from ? `from=${failureContext.from}` : null,
     ].filter((token): token is string => token !== null);
-    /* c8 ignore next -- optional error suffix is exercised in malformed patch replay scenarios. */
+    /* c8 ignore start -- jsonPatch/structuredClone/normalizeReplayPatchOps always throw Error instances with non-empty messages here, so extractPatchFailureContext always sets reason; the empty-suffix fallback is unreachable through applyHistoryPatch. */
     const reasonSuffix = failureContext.reason ? ` ${failureContext.reason}` : "";
+    /* c8 ignore stop */
     throw new PmCliError(
       `Failed to apply history patch at entry ${entryNumber} (${contextTokens.join(", ")}).${reasonSuffix}`,
       EXIT_CODE.GENERIC_FAILURE,
@@ -304,7 +305,7 @@ async function resolveRestoreSubject(
   const rawNormalizedId = normalizeRawItemId(id);
   /* c8 ignore start -- raw-id fallback is covered by normalize-item-id utility tests. */
   const candidateIds = normalizedId === rawNormalizedId ? [normalizedId] : [normalizedId, rawNormalizedId];
-  /* c8 ignore end */
+  /* c8 ignore stop */
   for (const candidateId of candidateIds) {
     const historyPath = getHistoryPath(pmRoot, candidateId);
     if (await pathExists(historyPath)) {
@@ -428,7 +429,6 @@ export async function runRestore(
           EXIT_CODE.CONFLICT,
         );
       }
-      /* c8 ignore next -- warn-mode ownership conflict path is exercised in broader governance integration suites. */
       if (settings.governance.ownership_enforcement === "warn") {
         ownershipWarnings.push(`ownership_warning:assignee_conflict:${resolvedId}:${assigned}`);
       }

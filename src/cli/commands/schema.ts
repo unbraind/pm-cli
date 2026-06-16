@@ -1001,7 +1001,7 @@ export function formatSchemaShowStatusHuman(result: SchemaShowStatusResult): str
   return parts.join("\n");
 }
 
-/* c8 ignore end */
+/* c8 ignore stop */
 
 /**
  * Re-export so register-mutation can surface the hint in usage examples
