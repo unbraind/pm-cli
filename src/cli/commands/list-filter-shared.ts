@@ -41,30 +41,20 @@ export function hasListFilters(
   );
 }
 
-export interface ListQueryFilters {
-  type?: string;
-  tag?: string;
-  priority?: string;
-  deadlineBefore?: string;
-  deadlineAfter?: string;
-  assignee?: string;
-  assigneeFilter?: string;
-  parent?: string;
-  sprint?: string;
-  release?: string;
-}
+export type ListQueryFilters = Pick<
+  ListOptions,
+  | "type"
+  | "tag"
+  | "priority"
+  | "deadlineBefore"
+  | "deadlineAfter"
+  | "assignee"
+  | "assigneeFilter"
+  | "parent"
+  | "sprint"
+  | "release"
+>;
 
 export function buildListQueryFilters(filters: ListQueryFilters): ListOptions {
-  return {
-    type: filters.type,
-    tag: filters.tag,
-    priority: filters.priority,
-    deadlineBefore: filters.deadlineBefore,
-    deadlineAfter: filters.deadlineAfter,
-    assignee: filters.assignee,
-    assigneeFilter: filters.assigneeFilter,
-    parent: filters.parent,
-    sprint: filters.sprint,
-    release: filters.release,
-  };
+  return { ...filters };
 }

@@ -119,13 +119,13 @@ export interface ExecuteHistoryRewriteParams {
  * lock sequencing contract.
  */
 export async function executeHistoryRewrite(params: ExecuteHistoryRewriteParams): Promise<string[]> {
-  const warnings = checkHistoryRewriteOwnership({
+  const warnings = [...checkHistoryRewriteOwnership({
     itemDocument: params.itemDocument,
     subjectId: params.subject.id,
     author: params.author,
     force: params.force,
     settings: params.settings,
-  });
+  })];
   const releaseLock = await acquireLock(
     params.pmRoot,
     params.subject.id,

@@ -22,7 +22,7 @@ async function cleanupTempDirWithRetries(tempDir: string): Promise<void> {
       if (!isRetryableTempDirCleanupError(error) || attempt === TEMP_DIR_CLEANUP_MAX_RETRIES) {
         throw error;
       }
-      await new Promise((resolve) => setTimeout(resolve, 25 * (attempt + 1)));
+      await new Promise<void>((resolve) => queueMicrotask(resolve));
     }
   }
 }
