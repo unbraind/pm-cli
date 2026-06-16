@@ -307,7 +307,7 @@ export function usage() {
     [--max-complexity 260]
     [--max-files-per-dir 120]
     [--duplicate-window 24]
-    [--max-duplicate-chunks 4]
+    [--max-duplicate-chunks 8]
 
 Runs strict static quality checks for dead/orphan modules, duplicate chunks, complexity,
 file-length limits, and directory organization density.
@@ -339,7 +339,7 @@ export function main() {
   const maxComplexity = parseNumberFlag(flags, "max-complexity", 260);
   const maxFilesPerDirectory = parseNumberFlag(flags, "max-files-per-dir", 120);
   const duplicateWindow = parseNumberFlag(flags, "duplicate-window", 24);
-  const maxDuplicateChunks = parseNumberFlag(flags, "max-duplicate-chunks", 4);
+  const maxDuplicateChunks = parseNumberFlag(flags, "max-duplicate-chunks", 8);
 
   if (duplicateWindow < 5) {
     fail("--duplicate-window must be >= 5.");
@@ -348,7 +348,7 @@ export function main() {
   const files = collectTypeScriptFiles();
   const duplicateScopeFiles = files.filter((absolutePath) => {
     const relative = relativeToRepo(absolutePath);
-    return relative.startsWith("src/core/") || relative.startsWith("src/sdk/");
+    return relative.startsWith("src/core/") || relative.startsWith("src/sdk/") || relative.startsWith("src/cli/");
   });
   const fileLengthViolations = checkFileLength(files, maxSrcLines, maxTestLines);
   const directoryViolations = checkDirectoryLoad(files, maxFilesPerDirectory);

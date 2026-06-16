@@ -1238,6 +1238,13 @@ describe("mutation command actions", () => {
     normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runCreate) as never, 0);
     expect(normalized.title).toBe("Flag wins");
     expect(normalized.type).toBe("task");
+
+    // A single positional plus explicit --title should treat the positional as
+    // type (pm-8sr3), not as a discarded title.
+    await runCli("create", "feature", "--title", "Flag title");
+    normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runCreate) as never, 0);
+    expect(normalized.title).toBe("Flag title");
+    expect(normalized.type).toBe("feature");
   });
 
   it("suggests list alternatives for a plan ls/list subcommand", async () => {

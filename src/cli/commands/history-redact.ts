@@ -1,10 +1,7 @@
 import fs from "node:fs/promises";
 import { pathExists, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { createHistoryEntry } from "../../core/history/history.js";
-import {
-  checkHistoryRewriteOwnership,
-  verifyHistoryRewriteNoDrift,
-} from "../../core/history/history-rewrite.js";
+import { executeHistoryRewrite } from "../../core/history/history-rewrite.js";
 import {
   EMPTY_REPLAY_DOCUMENT,
   historyEntriesToRaw,
@@ -17,7 +14,6 @@ import {
 import { normalizeItemId, normalizeRawItemId } from "../../core/item/id.js";
 import { canonicalDocument, serializeItemDocument } from "../../core/item/item-format.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { acquireLock } from "../../core/lock/lock.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -550,25 +546,7 @@ export async function runHistoryRedact(
 
   if (!dryRun && changed) {
     warnings.push(
-      ...checkHistoryRewriteOwnership({
-        itemDocument: currentItemDocument,
-        subjectId: subject.id,
-        author,
-        force: options.force,
-        settings,
-      }),
-    );
-
-    const releaseLock = await acquireLock(
-      pmRoot,
-      subject.id,
-      settings.locks.ttl_seconds,
-      author,
-      Boolean(options.force),
-      settings.governance.force_required_for_stale_lock,
-    );
-    try {
-      const { historyRawUnderLock } = await verifyHistoryRewriteNoDrift({
+      ...(await executeHistoryRewrite({
         pmRoot,
         subject,
         settings,
@@ -576,69 +554,75 @@ export async function runHistoryRedact(
         historyRawBeforeLock,
         currentItemRawBeforeLock: currentItemRaw,
         operation: "history-redact",
-      });
-      const affectedItemPaths = new Set<string>();
-      if (currentItemPath) {
-        affectedItemPaths.add(currentItemPath);
-      }
-      if (nextItemPath) {
-        affectedItemPaths.add(nextItemPath);
-      }
-      const itemSnapshots = new Map<string, string>();
-      if (currentItemPath && currentItemRaw !== null) {
-        itemSnapshots.set(currentItemPath, currentItemRaw);
-      }
-
-      try {
-        /* c8 ignore next -- item-write diff branch requires path and content divergence under lock races. */
-        if (nextItemPath && nextItemRaw !== null && nextItemRaw !== currentItemRaw) {
-          await writeFileAtomic(nextItemPath, nextItemRaw);
-        }
-        if (currentItemPath && (!nextItemPath || nextItemPath !== currentItemPath)) {
-          await fs.rm(currentItemPath, { force: true });
-        }
-        await writeFileAtomic(subject.historyPath, historyEntriesToRaw(rewrittenEntries));
-      } catch (error) {
-        /* c8 ignore start -- no-history-under-lock rollback path is exercised in lock-race integration tests. */
-        if (historyRawUnderLock === null) {
-          await fs.rm(subject.historyPath, { force: true });
-        } else {
-          await writeFileAtomic(subject.historyPath, historyRawUnderLock);
-        }
-        /* c8 ignore stop */
-        for (const itemPath of affectedItemPaths) {
-          const snapshot = itemSnapshots.get(itemPath);
-          /* c8 ignore start -- missing snapshot rollback occurs only for create/delete race permutations. */
-          if (snapshot === undefined) {
-            await fs.rm(itemPath, { force: true });
-          } else {
-            await writeFileAtomic(itemPath, snapshot);
+        author,
+        force: options.force,
+        itemDocument: currentItemDocument,
+        applyRewrite: async ({ historyRawUnderLock }) => {
+          const affectedItemPaths = new Set<string>();
+          if (currentItemPath) {
+            affectedItemPaths.add(currentItemPath);
           }
-          /* c8 ignore stop */
-        }
-        throw error;
-      }
+          if (nextItemPath) {
+            affectedItemPaths.add(nextItemPath);
+          }
+          const itemSnapshots = new Map<string, string>();
+          if (currentItemPath && currentItemRaw !== null) {
+            itemSnapshots.set(currentItemPath, currentItemRaw);
+          }
 
-      const itemHookPath = nextItemPath ?? currentItemPath;
-      if (itemHookPath) {
-        warnings.push(
-          ...(await runActiveOnWriteHooks({
-            path: itemHookPath,
-            scope: "project",
-            op: "history_redact",
-          })),
-        );
-      }
-      warnings.push(
-        ...(await runActiveOnWriteHooks({
-          path: subject.historyPath,
-          scope: "project",
-          op: "history_redact:history",
-        })),
-      );
-    } finally {
-      await releaseLock();
-    }
+          try {
+            /* c8 ignore next -- item-write diff branch requires path and content divergence under lock races. */
+            if (nextItemPath && nextItemRaw !== null && nextItemRaw !== currentItemRaw) {
+              await writeFileAtomic(nextItemPath, nextItemRaw);
+            }
+            if (currentItemPath && (!nextItemPath || nextItemPath !== currentItemPath)) {
+              await fs.rm(currentItemPath, { force: true });
+            }
+            await writeFileAtomic(subject.historyPath, historyEntriesToRaw(rewrittenEntries));
+          } catch (error) {
+            /* c8 ignore start -- no-history-under-lock rollback path is exercised in lock-race integration tests. */
+            if (historyRawUnderLock === null) {
+              await fs.rm(subject.historyPath, { force: true });
+            } else {
+              await writeFileAtomic(subject.historyPath, historyRawUnderLock);
+            }
+            /* c8 ignore stop */
+            for (const itemPath of affectedItemPaths) {
+              const snapshot = itemSnapshots.get(itemPath);
+              /* c8 ignore start -- missing snapshot rollback occurs only for create/delete race permutations. */
+              if (snapshot === undefined) {
+                await fs.rm(itemPath, { force: true });
+              } else {
+                await writeFileAtomic(itemPath, snapshot);
+              }
+              /* c8 ignore stop */
+            }
+            throw error;
+          }
+        },
+        applyPostRewrite: async () => {
+          const hookWarnings: string[] = [];
+          const itemHookPath = nextItemPath ?? currentItemPath;
+          if (itemHookPath) {
+            hookWarnings.push(
+              ...(await runActiveOnWriteHooks({
+                path: itemHookPath,
+                scope: "project",
+                op: "history_redact",
+              })),
+            );
+          }
+          hookWarnings.push(
+            ...(await runActiveOnWriteHooks({
+              path: subject.historyPath,
+              scope: "project",
+              op: "history_redact:history",
+            })),
+          );
+          return hookWarnings;
+        },
+      })),
+    );
   }
 
   return {

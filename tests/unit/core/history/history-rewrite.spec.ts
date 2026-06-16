@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   checkHistoryRewriteOwnership,
+  executeHistoryRewrite,
   verifyHistoryRewriteNoDrift,
 } from "../../../../src/core/history/history-rewrite.js";
 import { writeFileAtomic } from "../../../../src/core/fs/fs-utils.js";
@@ -235,5 +236,107 @@ describe("verifyHistoryRewriteNoDrift", () => {
     });
     expect(result.locatedUnderLock).toBeNull();
     expect(result.loadedItemUnderLock).toBeNull();
+  });
+});
+
+describe("executeHistoryRewrite", () => {
+  let tempRoot: string;
+  let typeRegistry: ItemTypeRegistry;
+  let settings: PmSettings;
+  const subjectId = "pm-rwt1";
+
+  beforeEach(async () => {
+    settings = freshSettings();
+    tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-history-rewrite-exec-"));
+    typeRegistry = resolveItemTypeRegistry(settings, []);
+    const tasksDir = path.join(tempRoot, "tasks");
+    const historyDir = path.join(tempRoot, "history");
+    await fs.mkdir(tasksDir, { recursive: true });
+    await fs.mkdir(historyDir, { recursive: true });
+    const itemPath = path.join(tasksDir, `${subjectId}.toon`);
+    const document = makeDocument({ assignee: "bob" });
+    const raw = serializeItemDocument(document, { format: "toon", schema: settings.schema });
+    await writeFileAtomic(itemPath, raw);
+    await writeFileAtomic(path.join(historyDir, `${subjectId}.jsonl`), "{}\n");
+  });
+
+  afterEach(async () => {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  });
+
+  it("combines ownership and post-write warnings on success", async () => {
+    settings = freshSettings({
+      governance: { ...SETTINGS_DEFAULTS.governance, preset: "custom", ownership_enforcement: "warn" },
+    });
+    typeRegistry = resolveItemTypeRegistry(settings, []);
+    const historyPath = path.join(tempRoot, "history", `${subjectId}.jsonl`);
+    const itemPath = path.join(tempRoot, "tasks", `${subjectId}.toon`);
+    const historyRawBeforeLock = await fs.readFile(historyPath, "utf8");
+    const currentItemRawBeforeLock = await fs.readFile(itemPath, "utf8");
+
+    const warnings = await executeHistoryRewrite({
+      pmRoot: tempRoot,
+      subject: { id: subjectId, historyPath },
+      settings,
+      typeRegistry,
+      historyRawBeforeLock,
+      currentItemRawBeforeLock,
+      operation: "history-repair",
+      author: "alice",
+      force: false,
+      itemDocument: makeDocument({ assignee: "bob" }),
+      applyRewrite: async () => {},
+      applyPostRewrite: async () => ["hook_warning:history"],
+    });
+
+    expect(warnings).toEqual([
+      "ownership_warning:assignee_conflict:pm-rwt1:bob",
+      "hook_warning:history",
+    ]);
+  });
+
+  it("releases the lock when applyRewrite throws", async () => {
+    settings = freshSettings({
+      governance: { ...SETTINGS_DEFAULTS.governance, preset: "custom", ownership_enforcement: "none" },
+    });
+    typeRegistry = resolveItemTypeRegistry(settings, []);
+    const historyPath = path.join(tempRoot, "history", `${subjectId}.jsonl`);
+    const itemPath = path.join(tempRoot, "tasks", `${subjectId}.toon`);
+    const historyRawBeforeLock = await fs.readFile(historyPath, "utf8");
+    const currentItemRawBeforeLock = await fs.readFile(itemPath, "utf8");
+
+    await expect(
+      executeHistoryRewrite({
+        pmRoot: tempRoot,
+        subject: { id: subjectId, historyPath },
+        settings,
+        typeRegistry,
+        historyRawBeforeLock,
+        currentItemRawBeforeLock,
+        operation: "history-redact",
+        author: "alice",
+        force: false,
+        itemDocument: makeDocument({ assignee: "bob" }),
+        applyRewrite: async () => {
+          throw new Error("rewrite failed");
+        },
+      }),
+    ).rejects.toThrow("rewrite failed");
+
+    await expect(
+      executeHistoryRewrite({
+        pmRoot: tempRoot,
+        subject: { id: subjectId, historyPath },
+        settings,
+        typeRegistry,
+        historyRawBeforeLock,
+        currentItemRawBeforeLock,
+        operation: "history-redact",
+        author: "alice",
+        force: false,
+        itemDocument: makeDocument({ assignee: "bob" }),
+        applyRewrite: async () => {},
+      }),
+    ).resolves.toEqual([]);
   });
 });

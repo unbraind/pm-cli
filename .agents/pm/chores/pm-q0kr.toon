@@ -2,11 +2,20 @@ id: pm-q0kr
 title: Slim guided-error boilerplate in agent contexts; lead unknown-command Examples with the did-you-mean candidate
 description: "agent-UX audit F8/F9: every guided error injects a constant 'Why' line + generic 'pm --help' Examples (150-210 tokens of noise). Drop/shorten the constant Why in --json/agent contexts; when a did-you-mean candidate exists lead Examples with it instead of an alphabetical command dump."
 type: Chore
-status: open
+status: in_progress
 priority: 3
 tags[3]: agent-ux,"area:cli",token-efficiency
 created_at: "2026-06-07T17:04:17.997Z"
-updated_at: "2026-06-07T17:04:17.997Z"
+updated_at: "2026-06-16T11:19:46.735Z"
 author: maintainer-agent
 parent: pm-mpbb
+comments[1]{created_at,author,text}:
+  "2026-06-16T11:19:38.704Z",codex-sdk-cli-consolidation-20260616,"Evidence: commander unknown-command guidance now leads examples with the top candidate and structured JSON/classification payloads suppress boilerplate why for common guidance codes."
+files[4]{path,scope,note}:
+  src/cli/commander-usage.ts,project,Prioritize did-you-mean candidate in unknown-command examples
+  src/cli/error-guidance.ts,project,Trim structured JSON/classification boilerplate by suppressing generic why for common commander envelopes
+  tests/unit/cli/cli-main-errors.spec.ts,project,Assert unknown-command runtime guidance examples lead with did-you-mean candidate
+  tests/unit/cli/error-guidance.spec.ts,project,Assert structured unknown-command envelopes omit boilerplate why
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/unit/cli/cli-main-errors.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
 body: ""

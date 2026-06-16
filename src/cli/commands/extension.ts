@@ -744,6 +744,25 @@ interface GithubUpdateStatus {
   remote_commit?: string;
   error?: string;
 }
+type ActivationFailureEntry = Awaited<ReturnType<typeof activateExtensions>>["failed"][number];
+
+interface ActivationFailureDiagnostic {
+  layer: string;
+  name: string;
+  entry_path: string;
+  error: string;
+  missing_capability?: string;
+  hint?: string;
+  trace?: {
+    method: string;
+    registration_index: number;
+    expected_schema: string;
+    command?: string;
+    capability?: string;
+    missing_capability?: string;
+    hint?: string;
+  };
+}
 
 function summarizeRuntimeCommandPathsForExtension(
   extensionName: string,
@@ -786,12 +805,67 @@ function buildInstallCommandDiscovery(
   };
 }
 
+function summarizeActivationFailureForDiagnostics(failure: ActivationFailureEntry): ActivationFailureDiagnostic {
+  const trace = failure.trace
+    ? {
+        method: failure.trace.method,
+        registration_index: failure.trace.registration_index,
+        expected_schema: failure.trace.expected_schema,
+        ...(failure.trace.command ? { command: failure.trace.command } : {}),
+        ...(failure.trace.capability ? { capability: failure.trace.capability } : {}),
+        ...(failure.trace.missing_capability ? { missing_capability: failure.trace.missing_capability } : {}),
+        ...(failure.trace.hint ? { hint: failure.trace.hint } : {}),
+      }
+    : undefined;
+  return {
+    layer: failure.layer,
+    name: failure.name,
+    entry_path: failure.entry_path,
+    error: failure.error,
+    ...(failure.trace?.missing_capability ? { missing_capability: failure.trace.missing_capability } : {}),
+    ...(failure.trace?.hint ? { hint: failure.trace.hint } : {}),
+    ...(trace ? { trace } : {}),
+  };
+}
+
+function collectActivationFailureDiagnostics(failures: ActivationFailureEntry[]): ActivationFailureDiagnostic[] {
+  return failures
+    .map((failure) => summarizeActivationFailureForDiagnostics(failure))
+    .sort((left, right) => `${left.layer}:${left.name}`.localeCompare(`${right.layer}:${right.name}`));
+}
+
+function findActivationFailureByName(
+  extensionName: string,
+  failures: ActivationFailureDiagnostic[],
+  layer?: ExtensionScope,
+): ActivationFailureDiagnostic | undefined {
+  const normalizedName = normalizeExtensionNameForMatch(extensionName);
+  return failures.find(
+    (failure) =>
+      (layer === undefined || failure.layer === layer) &&
+      normalizeExtensionNameForMatch(failure.name) === normalizedName,
+  );
+}
+
+function resolveInstallRuntimeActivationStatus(
+  extensionName: string,
+  scope: ExtensionScope,
+  runtimeInstalled: ManagedExtensionSummary[],
+  installActivationFailure: ActivationFailureDiagnostic | undefined,
+): ExtensionActivationStatus {
+  const runtimeInstalledExtension = runtimeInstalled.find(
+    (entry) =>
+      entry.scope === scope && normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(extensionName),
+  );
+  return runtimeInstalledExtension?.activation_status ?? (installActivationFailure ? "failed" : "unknown");
+}
+
 async function probeRuntimeCommandPathsForInstall(
   pmRoot: string,
   settings: PmSettings,
   refreshedInstalled: ManagedExtensionSummary[],
   global: GlobalOptions,
-): Promise<{ installed: ManagedExtensionSummary[]; warnings: string[] }> {
+): Promise<{ installed: ManagedExtensionSummary[]; warnings: string[]; activation_failures: ActivationFailureDiagnostic[] }> {
   const loadResult = await loadExtensions({
     pmRoot,
     settings,
@@ -807,6 +881,7 @@ async function probeRuntimeCommandPathsForInstall(
   return {
     installed: applyDoctorRuntimeActivationState(refreshedInstalled, loadResult, activationResult),
     warnings: [...loadResult.warnings, ...activationResult.warnings],
+    activation_failures: collectActivationFailureDiagnostics(activationResult.failed),
   };
 }
 
@@ -1300,6 +1375,17 @@ export async function runExtension(
         );
         warnings.push(...runtimeProbe.warnings);
         const commandSummary = summarizeRuntimeCommandPathsForExtension(validated.manifest.name, runtimeProbe.installed);
+        const installActivationFailure = findActivationFailureByName(
+          validated.manifest.name,
+          runtimeProbe.activation_failures,
+          scope,
+        );
+        const runtimeActivationStatus = resolveInstallRuntimeActivationStatus(
+          validated.manifest.name,
+          scope,
+          runtimeProbe.installed,
+          installActivationFailure,
+        );
 
         return withResult({
           extension: {
@@ -1315,9 +1401,15 @@ export async function runExtension(
           installed_in_place: installInPlace,
           activated: true,
           settings_changed: activationChanged,
+          runtime_activation_status: runtimeActivationStatus,
           command_paths: commandSummary.command_paths,
           action_paths: commandSummary.action_paths,
           command_discovery: buildInstallCommandDiscovery(validated.manifest.name, sourceRecord, commandSummary),
+          activation_diagnostics: {
+            failed_count: runtimeProbe.activation_failures.length,
+            failed: runtimeProbe.activation_failures,
+            installed_extension_failed: installActivationFailure ?? null,
+          },
         });
       });
     } finally {
@@ -1856,6 +1948,7 @@ export async function runExtension(
     }
     let runtimeProbeSummary: Record<string, unknown> | undefined;
     let runtimeInstalledExtensions = refreshedInstalled.extensions;
+    let runtimeActivationFailures: ActivationFailureDiagnostic[] | undefined;
     if (action === "explore" || options.runtimeProbe === true) {
       const loadResult = await loadExtensions({
         pmRoot: resolvedRoots.pm_root,
@@ -1870,6 +1963,7 @@ export async function runExtension(
       warnings.push(...loadResult.warnings);
       warnings.push(...activationResult.warnings);
       runtimeInstalledExtensions = applyDoctorRuntimeActivationState(refreshedInstalled.extensions, loadResult, activationResult);
+      runtimeActivationFailures = collectActivationFailureDiagnostics(activationResult.failed);
       runtimeProbeSummary = {
         requested: true,
         executed: true,
@@ -1897,6 +1991,12 @@ export async function runExtension(
       triage,
       policy: configuredPolicy,
     };
+    if (runtimeActivationFailures !== undefined) {
+      details.activation_diagnostics = {
+        failed_count: runtimeActivationFailures.length,
+        failed: runtimeActivationFailures,
+      };
+    }
     if (action === "explore") {
       details.runtime_probe = runtimeProbeSummary;
     }
@@ -1934,6 +2034,9 @@ export const _testOnly = {
   buildInstallCommandDiscovery,
   checkGithubUpdate,
   clearExtensionState,
+  collectActivationFailureDiagnostics,
+  findActivationFailureByName,
+  resolveInstallRuntimeActivationStatus,
   collectGlobalOutputOverrideDoctorWarnings,
   copyExtensionDirectoryWithoutSelfNesting,
   isErrnoCode,

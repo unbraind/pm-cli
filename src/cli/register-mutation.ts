@@ -169,7 +169,14 @@ export function registerMutationCommands(program: Command): void {
         positionalType = typeOrTitle;
         positionalTitle = secondTitle;
       } else if (typeof typeOrTitle === "string" && typeOrTitle.length > 0) {
-        positionalTitle = typeOrTitle;
+        // Honor `pm create <type> --title ...` by treating the lone positional as
+        // type when an explicit --title is already present.
+        const explicitTitleProvided = typeof options.title === "string" && options.title.trim().length > 0;
+        if (explicitTitleProvided && options.type === undefined) {
+          positionalType = typeOrTitle;
+        } else {
+          positionalTitle = typeOrTitle;
+        }
       }
       // pm-edge #1 (2026-05-28): when the sole positional matches a known
       // item type AND no --title was supplied, refuse early instead of

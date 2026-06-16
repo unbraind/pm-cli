@@ -20,6 +20,7 @@ import { listAllFrontMatterLight } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { runClose, type CloseCommandOptions } from "./close.js";
+import { hasListFilters } from "./list-filter-shared.js";
 import { runList, type ListOptions, type ListedItem } from "./list.js";
 import { runRestore } from "./restore.js";
 
@@ -97,35 +98,11 @@ export interface CloseManyResult {
 }
 
 function hasCloseManyFilters(list: ListOptions | undefined, status: string | undefined): boolean {
-  const isActive = (value: unknown): boolean =>
-    value != null && (typeof value !== "string" || value.split(",").some((entry) => entry.trim().length > 0));
-  return (
-    isActive(status) ||
-    isActive(list?.status) ||
-    isActive(list?.type) ||
-    isActive(list?.tag) ||
-    isActive(list?.priority) ||
-    isActive(list?.deadlineBefore) ||
-    isActive(list?.deadlineAfter) ||
-    isActive(list?.updatedAfter) ||
-    isActive(list?.updatedBefore) ||
-    isActive(list?.createdAfter) ||
-    isActive(list?.createdBefore) ||
-    isActive(list?.ids) ||
-    isActive(list?.assignee) ||
-    isActive(list?.assigneeFilter) ||
-    isActive(list?.parent) ||
-    isActive(list?.sprint) ||
-    isActive(list?.release)
-  );
+  return hasListFilters(list, status, { includePagination: false });
 }
 
 function hasCloseManyRollbackConflicts(list: ListOptions | undefined, status: string | undefined): boolean {
-  return (
-    hasCloseManyFilters(list, status) ||
-    (list?.limit != null && String(list.limit).trim().length > 0) ||
-    (list?.offset != null && String(list.offset).trim().length > 0)
-  );
+  return hasListFilters(list, status);
 }
 
 function rejectBlankIdsFilter(list: ListOptions | undefined): void {

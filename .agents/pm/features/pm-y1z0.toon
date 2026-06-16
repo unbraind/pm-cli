@@ -1,0 +1,12 @@
+id: pm-y1z0
+title: "GH-216: default lifecycle transition suggestions"
+description: "Tracks GitHub issue #216: improve lifecycle-state adoption with default workflow transitions for in_progress/blocked/draft."
+type: Feature
+status: open
+priority: 2
+tags: []
+created_at: "2026-06-16T11:28:39.448Z"
+updated_at: "2026-06-16T11:28:39.448Z"
+author: codex-sdk-cli-consolidation-20260616
+parent: pm-mpbb
+body: ""

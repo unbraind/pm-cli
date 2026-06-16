@@ -2,11 +2,23 @@ id: pm-k1im
 title: "LOC growth watch: 5 src files back over 2000 lines (cap 3400) after 2026-05-25 barrel splits"
 description: "All src files were brought under 2000 LOC on 2026-05-25 (pm-mbdu); five have regrown past it: src/core/extensions/loader.ts 2504, src/cli/main.ts 2428, src/sdk/cli-contracts.ts 2231, src/cli/commands/completion.ts 2214, src/cli/commands/update.ts 2060. All still pass the 3400 static-gate cap, but loader.ts (+500 since split) and main.ts are trending fastest. Concrete splits: loader.ts -> move manifest/catalog parsing + capability normalization into src/core/extensions/ siblings (extension-types.ts pattern); main.ts -> extract the global-flag extraction/normalization block (extractCommandScopedOptions and friends) into src/cli/global-options.ts; cli-contracts.ts -> continue the existing src/sdk/cli-contracts/ directory split (tool-parameter-tables.ts already lives there); completion.ts -> separate zsh/fish hand-maintained generators from the bash auto-generator. update.ts is already covered by the open runUpdate table-driven refactor item -- do that one there, not here."
 type: Chore
-status: open
+status: in_progress
 priority: 3
 tags[3]: audit-2026-06-13,governance,refactor
 created_at: "2026-06-12T22:48:07.980Z"
-updated_at: "2026-06-12T22:48:07.980Z"
+updated_at: "2026-06-16T11:10:41.110Z"
 author: audit-quality-agent
 parent: pm-y7sc
+comments[1]{created_at,author,text}:
+  "2026-06-16T11:10:29.716Z",codex-sdk-cli-consolidation-20260616,"Evidence: helper extraction trimmed repeated orchestration/filter code in touched command modules without broad rewrites; focused command/history tests and static quality gate pass after refactor."
+files[6]{path,scope,note}:
+  src/cli/commands/close-many.ts,project,Reduced inline filter helper footprint via extracted shared list-filter helper
+  src/cli/commands/health.ts,project,Reduced local helper footprint by importing shared doctor helpers
+  src/cli/commands/history-compact.ts,project,Reduced orchestration LOC via executeHistoryRewrite extraction
+  src/cli/commands/history-redact.ts,project,Reduced orchestration LOC via executeHistoryRewrite extraction
+  src/cli/commands/history-repair.ts,project,Reduced orchestration LOC via executeHistoryRewrite extraction
+  src/cli/commands/update-many.ts,project,Reduced inline filter helper footprint via extracted shared list-filter helper
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/commands/health-command.spec.ts tests/unit/commands/update-many-command.spec.ts tests/unit/commands/close-command.spec.ts tests/unit/core/history/history-rewrite.spec.ts,null,project,1500,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:static",null,project,1200,null,null,null,null,null,null,null,null,null,null,null,null
 body: ""

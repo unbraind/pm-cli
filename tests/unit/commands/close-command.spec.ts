@@ -59,6 +59,7 @@ describe("runClose", () => {
     expect(closeManyInternals.hasCloseManyFilters(undefined, undefined)).toBe(false);
     expect(closeManyInternals.hasCloseManyFilters({ ids: " , " }, undefined)).toBe(false);
     expect(closeManyInternals.hasCloseManyFilters({ ids: "pm-a" }, undefined)).toBe(true);
+    expect(closeManyInternals.hasCloseManyFilters({ limit: "10" }, undefined)).toBe(false);
     expect(closeManyInternals.hasCloseManyRollbackConflicts({ limit: "10" }, undefined)).toBe(true);
     expect(closeManyInternals.resolveReason("  done  ", true)).toBe("done");
     expect(closeManyInternals.resolveReason(undefined, false)).toBeUndefined();

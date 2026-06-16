@@ -2,11 +2,26 @@ id: pm-z2gi
 title: Small verified cross-file duplications (4 pairs) + static-gate duplicate scan does not cover src/cli
 description: "Verified by reading both sites in each pair: (1) toSlugToken + default-folder derivation duplicated verbatim between src/core/item/type-registry.ts:369-398 and src/core/store/paths.ts:82-111 (toDefaultFolder vs deriveDefaultTypeFolder, identical bodies); (2) type-workflow normalization loop (deny-all empty-array handling, pair validation, dedupe, sort) duplicated between src/core/schema/runtime-schema.ts:195-236 and src/core/schema/type-workflows.ts:85-117; (3) hasListFilters isActive-chain duplicated between src/cli/commands/update-many.ts:520-543 and src/cli/commands/close-many.ts:99-121 (close-many copy already drifted: missing limit/offset); (4) the 11-field runList filter-forwarding object literal duplicated between src/cli/commands/dedupe-audit.ts:377-393 and src/cli/commands/aggregate.ts:297-313. Also: scripts/release/static-quality-gate.mjs:346-349 restricts duplicate-chunk scanning to src/core/ + src/sdk/, which is exactly where it finds nothing -- all real dups this audit found live in src/cli; consider widening the scope (possibly with a higher chunk allowance) so pairs 3-4 and the pm-aabt finding get caught automatically."
 type: Chore
-status: open
+status: in_progress
 priority: 3
 tags[3]: audit-2026-06-13,dedup,refactor
 created_at: "2026-06-12T22:47:49.912Z"
-updated_at: "2026-06-12T22:47:49.912Z"
+updated_at: "2026-06-16T11:10:40.513Z"
 author: audit-quality-agent
 parent: pm-y7sc
+comments[1]{created_at,author,text}:
+  "2026-06-16T11:10:26.525Z",codex-sdk-cli-consolidation-20260616,"Evidence: deduped shared list filter/query forwarding helpers across update-many/close-many and aggregate/dedupe-audit, and widened static duplicate scan scope to src/cli with max-duplicate-chunks default adjusted to 8 for practical gating. Verified with focused command/static-gate tests plus pnpm quality:static."
+files[9]{path,scope,note}:
+  scripts/release/static-quality-gate.mjs,project,Expand duplicate chunk scan scope to include src/cli and raise default practical chunk cap
+  src/cli/commands/aggregate.ts,project,Use shared buildListQueryFilters helper for runList forwarding
+  src/cli/commands/close-many.ts,project,Use shared hasListFilters helper with/without pagination mode
+  src/cli/commands/dedupe-audit.ts,project,Use shared buildListQueryFilters helper for runList forwarding
+  src/cli/commands/list-filter-shared.ts,project,Extract shared list-filter detection and runList query filter mapping helpers
+  src/cli/commands/update-many.ts,project,Use shared hasListFilters helper
+  tests/unit/commands/close-command.spec.ts,project,Cover pagination-excluded close-many filter detection and rollback conflict path
+  tests/unit/commands/update-many-command.spec.ts,project,Cover shared filter helper pagination-inclusive behavior
+  tests/unit/scripts/release/static-quality-gate.spec.ts,project,Verify duplicate scope includes src/cli
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/commands/update-many-command.spec.ts tests/unit/commands/close-command.spec.ts tests/integration/aggregate-dedupe.integration.spec.ts tests/unit/scripts/release/static-quality-gate.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:static",null,project,1200,null,null,null,null,null,null,null,null,null,null,null,null
 body: ""

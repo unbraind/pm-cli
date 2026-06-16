@@ -1,0 +1,12 @@
+id: pm-52eh
+title: "GH-208: linked test sandbox ergonomics"
+description: "Tracks GitHub issue #208: make linked test sandbox constraints easier to satisfy for normal package scripts."
+type: Feature
+status: open
+priority: 2
+tags: []
+created_at: "2026-06-16T11:28:40.145Z"
+updated_at: "2026-06-16T11:28:40.145Z"
+author: codex-sdk-cli-consolidation-20260616
+parent: pm-mpbb
+body: ""

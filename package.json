@@ -133,7 +133,7 @@
   },
   "devDependencies": {
     "@sentry/cli": "^3.5.0",
-    "@types/node": "^25.9.2",
+    "@types/node": "^25.9.3",
     "@vitest/coverage-v8": "^4.1.8",
     "esbuild": "0.28.1",
     "tsx": "^4.22.4",

@@ -1625,16 +1625,21 @@ export default {
     }
   });
 
-  it("caches null extension snapshots when the tracker root cannot be traversed", async () => {
+  it("caches extension snapshots when the tracker root cannot be traversed", async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-runtime-file-root-"));
     const fileRoot = path.join(tempRoot, "not-a-directory");
     try {
       await writeFile(fileRoot, "not a tracker directory", "utf8");
 
-      await expect(_testOnly.loadRuntimeExtensionDiscoverySnapshot(fileRoot)).resolves.toBeNull();
-      await expect(_testOnly.loadRuntimeExtensionDiscoverySnapshot(fileRoot)).resolves.toBeNull();
-      await expect(_testOnly.loadRuntimeExtensionSnapshot(fileRoot)).resolves.toBeNull();
-      await expect(_testOnly.loadRuntimeExtensionSnapshot(fileRoot)).resolves.toBeNull();
+      const firstDiscovery = await _testOnly.loadRuntimeExtensionDiscoverySnapshot(fileRoot);
+      const secondDiscovery = await _testOnly.loadRuntimeExtensionDiscoverySnapshot(fileRoot);
+      expect(secondDiscovery).toBe(firstDiscovery);
+      const firstSnapshot = await _testOnly.loadRuntimeExtensionSnapshot(fileRoot);
+      const secondSnapshot = await _testOnly.loadRuntimeExtensionSnapshot(fileRoot);
+      expect(secondSnapshot).toBe(firstSnapshot);
+      if (firstDiscovery === null) {
+        expect(firstSnapshot).toBeNull();
+      }
       await expect(_testOnly.loadRuntimeExtensionCommandDescriptorsForRecovery(fileRoot)).resolves.toBeInstanceOf(Map);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
@@ -3505,6 +3510,7 @@ describe("CLI Commander usage recovery helpers", () => {
 
     const aliasGuidance = buildUnknownCommandGuidanceFromRuntime("unknown command 'show'", program, descriptors);
     expect(aliasGuidance?.unknownCommandNextSteps?.[0]).toContain("get");
+    expect(aliasGuidance?.unknownCommandExamples?.[0]).toBe("pm get --help");
     expect(aliasGuidance?.unknownCommandExamples).toContain("pm get --help");
 
     const packageGuidance = buildUnknownCommandGuidanceFromRuntime("unknown command 'pm-standup'", program, descriptors);

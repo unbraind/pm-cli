@@ -183,6 +183,7 @@ describe("pm cli error guidance context plumbing", () => {
       'Run "pm --help" to inspect available command paths in this runtime.',
       'Use one of the suggested command paths with "--help".',
     ]);
+    expect(envelope.why).toBeUndefined();
 
     const guidance = formatCommanderErrorForDisplay("unknown command 'beads'", "help", "Task|Issue", {
       unknownCommandExamples: ["pm --help", "pm list-open --help"],

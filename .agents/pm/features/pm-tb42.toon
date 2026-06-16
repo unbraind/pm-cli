@@ -1,0 +1,12 @@
+id: pm-tb42
+title: "GH-245: schema add-type --infer from title prefixes"
+description: "Tracks GitHub issue #245: infer custom item types from existing title-prefix conventions via pm schema add-type --infer."
+type: Feature
+status: open
+priority: 2
+tags: []
+created_at: "2026-06-16T11:28:28.621Z"
+updated_at: "2026-06-16T11:28:28.621Z"
+author: codex-sdk-cli-consolidation-20260616
+parent: pm-8jdc
+body: ""

@@ -161,7 +161,7 @@ describe("runReindex", () => {
         expect.objectContaining({ metadata: expect.objectContaining({ id: "pm-cached" }), body: "cached body" }),
         expect.objectContaining({ metadata: expect.objectContaining({ id: "pm-unreadable" }), body: "" }),
       ]);
-      expect(hydrateWarnings[0]).toContain("item_list_item_read_failed:tasks/pm-missing.toon");
+      expect(hydrateWarnings[0]?.replaceAll("\\", "/")).toContain("item_list_item_read_failed:tasks/pm-missing.toon");
 
       const itemFormatModule = await import("../../../src/core/item/item-format.js");
       const warningItemPath = path.join(context.pmPath, "tasks", "pm-warning.toon");

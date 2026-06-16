@@ -49,6 +49,29 @@ export interface CommanderGuidanceContext {
   suggestedRetryCommand?: string;
 }
 
+// JSON/classification payloads are consumed heavily by agents; suppress common
+// boilerplate rationale text there to reduce token overhead. Human display
+// guidance still renders "Why" unchanged.
+const STRUCTURED_WHY_SUPPRESSION_CODES = new Set<string>([
+  "unknown_command",
+  "unknown_option",
+  "missing_required_option",
+  "missing_required_argument",
+  "invalid_argument_value",
+  "invalid_command_usage",
+  "command_failed",
+]);
+
+function includeWhyInStructuredGuidance(message: GuidanceMessage): boolean {
+  if (!message.why) {
+    return false;
+  }
+  if (message.recovery?.recovery_mode === "compact") {
+    return false;
+  }
+  return !STRUCTURED_WHY_SUPPRESSION_CODES.has(message.code);
+}
+
 function errorType(code: string): string {
   return `urn:pm-cli:error:${code}`;
 }
@@ -240,7 +263,7 @@ function guidanceToJsonEnvelope(message: GuidanceMessage, exitCode: number): Jso
     required: message.required,
     exit_code: exitCode,
   };
-  if (message.why) {
+  if (includeWhyInStructuredGuidance(message)) {
     payload.why = message.why;
   }
   if (message.examples && message.examples.length > 0) {
@@ -263,7 +286,7 @@ function guidanceToClassification(message: GuidanceMessage): ErrorClassification
     detail: message.happened,
     required: message.required,
   };
-  if (message.why) {
+  if (includeWhyInStructuredGuidance(message)) {
     payload.why = message.why;
   }
   if (message.examples && message.examples.length > 0) {

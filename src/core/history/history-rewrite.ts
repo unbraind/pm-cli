@@ -1,5 +1,6 @@
 import { readFileIfExists } from "../fs/fs-utils.js";
 import type { ItemTypeRegistry } from "../item/type-registry.js";
+import { acquireLock } from "../lock/lock.js";
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { locateItem, readLocatedItem } from "../store/item-store.js";
@@ -93,4 +94,62 @@ export async function verifyHistoryRewriteNoDrift(
     );
   }
   return { historyRawUnderLock, locatedUnderLock, loadedItemUnderLock };
+}
+
+export interface ExecuteHistoryRewriteParams {
+  pmRoot: string;
+  subject: HistoryRewriteSubject;
+  settings: PmSettings;
+  typeRegistry: ItemTypeRegistry;
+  historyRawBeforeLock: string | null;
+  currentItemRawBeforeLock: string | null;
+  /** Short operation name used in conflict guidance (e.g. "history-redact"). */
+  operation: string;
+  author: string;
+  force: boolean | undefined;
+  itemDocument: ItemDocument | null;
+  applyRewrite: (verified: VerifiedHistoryRewriteState) => Promise<void>;
+  applyPostRewrite?: (verified: VerifiedHistoryRewriteState) => Promise<string[]>;
+}
+
+/**
+ * Shared lock/verify/ownership orchestration for history-rewrite commands.
+ * Callers provide the operation-specific write/rollback logic and optional
+ * post-write hook execution while this helper enforces the common governance +
+ * lock sequencing contract.
+ */
+export async function executeHistoryRewrite(params: ExecuteHistoryRewriteParams): Promise<string[]> {
+  const warnings = [...checkHistoryRewriteOwnership({
+    itemDocument: params.itemDocument,
+    subjectId: params.subject.id,
+    author: params.author,
+    force: params.force,
+    settings: params.settings,
+  })];
+  const releaseLock = await acquireLock(
+    params.pmRoot,
+    params.subject.id,
+    params.settings.locks.ttl_seconds,
+    params.author,
+    Boolean(params.force),
+    params.settings.governance.force_required_for_stale_lock,
+  );
+  try {
+    const verified = await verifyHistoryRewriteNoDrift({
+      pmRoot: params.pmRoot,
+      subject: params.subject,
+      settings: params.settings,
+      typeRegistry: params.typeRegistry,
+      historyRawBeforeLock: params.historyRawBeforeLock,
+      currentItemRawBeforeLock: params.currentItemRawBeforeLock,
+      operation: params.operation,
+    });
+    await params.applyRewrite(verified);
+    if (params.applyPostRewrite) {
+      warnings.push(...(await params.applyPostRewrite(verified)));
+    }
+    return warnings;
+  } finally {
+    await releaseLock();
+  }
 }

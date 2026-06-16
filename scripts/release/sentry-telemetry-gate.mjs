@@ -112,6 +112,9 @@ const KNOWN_IGNORED_CONSOLE_ISSUE_PATTERNS = [
 ];
 const KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS = [
   "authentication required, not authenticated",
+  // Count-agnostic handled apply failures from issue-sync/dogfood paths:
+  // "All N item(s) failed to apply ...; no issues were created or updated."
+  "item(s) failed to apply",
   "csv is missing required 'title' column",
   "dependency cycle",
   "failed to fetch issues from jira",
@@ -499,6 +502,14 @@ async function main() {
       critical: sentrySummary.critical,
       high: sentrySummary.high,
       total: sentrySummary.total,
+      blocking_short_ids: sentryPartition.relevant
+        .map((issue) => issue?.shortId)
+        .filter((value) => typeof value === "string")
+        .slice(0, 25),
+      blocking_titles: sentryPartition.relevant
+        .map((issue) => issue?.title)
+        .filter((value) => typeof value === "string")
+        .slice(0, 8),
       ignored_noise_total: sentryPartition.ignoredNoise.length,
       ignored_noise_short_ids: sentryPartition.ignoredNoise
         .map((issue) => issue?.shortId)

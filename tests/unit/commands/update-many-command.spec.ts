@@ -106,6 +106,7 @@ describe("update-many command helper coverage", () => {
     expect(_testOnlyUpdateManyCommand.hasListFilters(undefined, undefined)).toBe(false);
     expect(_testOnlyUpdateManyCommand.hasListFilters({ ids: " , " }, undefined)).toBe(false);
     expect(_testOnlyUpdateManyCommand.hasListFilters({ ids: "pm-a" }, undefined)).toBe(true);
+    expect(_testOnlyUpdateManyCommand.hasListFilters({ limit: "10" }, undefined)).toBe(true);
 
     expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("priority", " 3 ")).toBe(3);
     expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("priority", "high")).toBe("high");
