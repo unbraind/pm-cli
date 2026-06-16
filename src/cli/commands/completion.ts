@@ -10,6 +10,7 @@ import {
   CONTRACTS_FLAG_CONTRACTS,
   CONTEXT_FLAG_CONTRACTS,
   COPY_FLAG_CONTRACTS,
+  FOCUS_FLAG_CONTRACTS,
   CREATE_FLAG_CONTRACTS,
   DEPS_FLAG_CONTRACTS,
   GET_FLAG_CONTRACTS,
@@ -54,6 +55,7 @@ const LIST_FLAGS = toCompletionFlagString(LIST_FILTER_FLAG_CONTRACTS);
 const AGGREGATE_FLAGS = toCompletionFlagString(AGGREGATE_FLAG_CONTRACTS);
 const APPEND_FLAGS = toCompletionFlagString(APPEND_FLAG_CONTRACTS);
 const COPY_FLAGS = toCompletionFlagString(COPY_FLAG_CONTRACTS);
+const FOCUS_FLAGS = toCompletionFlagString(FOCUS_FLAG_CONTRACTS);
 const CREATE_FLAGS = toCompletionFlagString(CREATE_FLAG_CONTRACTS);
 const GET_FLAGS = toCompletionFlagString(GET_FLAG_CONTRACTS);
 const UPDATE_FLAGS = toCompletionFlagString(UPDATE_FLAG_CONTRACTS);
@@ -325,6 +327,9 @@ export function generateBashScript(
     "    copy)",
     `      COMPREPLY=(${compgen(COPY_FLAGS)})`,
     "      ;;",
+    "    focus)",
+    `      COMPREPLY=(${compgen(FOCUS_FLAGS)})`,
+    "      ;;",
     "    update)",
     `      COMPREPLY=(${compgen(updateFlags)})`,
     "      ;;",
@@ -514,6 +519,7 @@ _pm_commands() {
     'extension:Manage extension lifecycle operations'
     'create:Create a new project management item'
     'copy:Copy an existing item to a new ID'
+    'focus:Set/clear/show the session focused parent for new items'
     'list:List active items with optional filters'
     'list-all:List all items with optional filters'
     'list-draft:List draft items with optional filters'
@@ -737,6 +743,12 @@ ${zshCreateRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--force[Force ownership override]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        focus)
+          _arguments \\
+            '--clear[Clear the focused item]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -1629,6 +1641,7 @@ complete -c pm -n __pm_no_subcommand -a config        -d 'Read or update pm sett
 complete -c pm -n __pm_no_subcommand -a extension     -d 'Manage extension lifecycle operations'
 complete -c pm -n __pm_no_subcommand -a create        -d 'Create a new project management item'
 complete -c pm -n __pm_no_subcommand -a copy          -d 'Copy an existing item to a new ID'
+complete -c pm -n __pm_no_subcommand -a focus         -d 'Set/clear/show the session focused parent for new items'
 complete -c pm -n __pm_no_subcommand -a list          -d 'List active items with optional filters'
 complete -c pm -n __pm_no_subcommand -a list-all      -d 'List all items with optional filters'
 complete -c pm -n __pm_no_subcommand -a list-draft    -d 'List draft items with optional filters'
@@ -1813,6 +1826,9 @@ complete -c pm -n '__fish_seen_subcommand_from copy' -l title   -d 'Override cop
 complete -c pm -n '__fish_seen_subcommand_from copy' -l author  -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from copy' -l message -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from copy' -l force   -d 'Force ownership override'
+
+# focus flags
+complete -c pm -n '__fish_seen_subcommand_from focus' -l clear -d 'Clear the focused item'
 
 # update flags
 complete -c pm -n '__fish_seen_subcommand_from update' -s t -l title              -d 'Item title' -r

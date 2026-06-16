@@ -21,7 +21,7 @@ For a published package install, keep `@unbrained/pm-cli` available through npm.
 
 ## Native Tools
 
-Prefer the narrow tools when they match the task: `pm_context`, `pm_search`, `pm_list`, `pm_get`, `pm_create`, `pm_copy`, `pm_update`, `pm_append`, `pm_claim`, `pm_release`, `pm_close`, `pm_comments`, `pm_files`, `pm_docs`, `pm_notes`, `pm_learnings`, `pm_deps`, `pm_test`, `pm_validate`, `pm_health`, `pm_contracts`, `pm_schema`, `pm_config`, and `pm_plan`.
+Prefer the narrow tools when they match the task: `pm_context`, `pm_search`, `pm_list`, `pm_get`, `pm_create`, `pm_copy`, `pm_focus`, `pm_update`, `pm_append`, `pm_claim`, `pm_release`, `pm_close`, `pm_comments`, `pm_files`, `pm_docs`, `pm_notes`, `pm_learnings`, `pm_deps`, `pm_test`, `pm_validate`, `pm_health`, `pm_contracts`, `pm_schema`, `pm_config`, and `pm_plan`.
 
 Use `pm_run` for the remaining pm surface. Supported actions include `init`, `calendar`, `activity`, `aggregate`, `dedupe-audit`, `normalize`, `reindex`, `extension`, `history`, `history-redact`, `stats`, `test-all`, `comments-audit`, `gc`, templates, and test-runs controls.
 

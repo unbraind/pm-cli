@@ -15,6 +15,7 @@ const REQUIRED_TOOLS = [
   "pm_get",
   "pm_create",
   "pm_copy",
+  "pm_focus",
   "pm_update",
   "pm_append",
   "pm_claim",

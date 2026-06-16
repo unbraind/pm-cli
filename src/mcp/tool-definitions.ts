@@ -181,6 +181,19 @@ export const TOOLS: ToolDefinition[] = [
     ),
   },
   {
+    name: "pm_focus",
+    description:
+      "Set, clear, or show the session focused item. When focused, pm_create defaults its parent to the focused item " +
+      "(an explicit parent still overrides). Pass id to focus an item, options.clear=true to clear, or neither to show current focus.",
+    inputSchema: objectSchema(
+      {
+        id: idSchema,
+        options: { type: "object", description: "Focus options such as clear (boolean)." },
+      },
+      [],
+    ),
+  },
+  {
     name: "pm_update",
     description:
       "Update pm item metadata/body/dependencies/log seeds natively. " +

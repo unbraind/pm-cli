@@ -24,7 +24,7 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 |--------|----------|---------|
 | Bootstrap | `init`, `config`, `health`, `telemetry` | create and inspect tracker setup |
 | Triage | `context`, `search`, `list*`, `aggregate`, `dedupe-audit`* | find work and audit decomposition |
-| Lifecycle | `create`, `claim`, `update`, `append`, `close`, `release`, `delete`, `start-task`, `pause-task`, `close-task` | mutate item state |
+| Lifecycle | `create`, `copy`, `focus`, `claim`, `update`, `append`, `close`, `release`, `delete`, `start-task`, `pause-task`, `close-task` | mutate item state |
 | Planning | `plan create`, `plan add-step`, `plan update-step`, `plan complete-step`, `plan link`, `plan approve`, `plan materialize` | agent-optimized living plans with ordered steps, evidence, decisions, validation, and materialization |
 | Logs | `comments`, `notes`, `learnings`, `comments-audit` | record progress and durable context |
 | Links | `files`, `docs`, `test`, `deps` | connect items to artifacts, tests, and relationships |
@@ -301,6 +301,25 @@ Use `pm close <duplicate-id> --duplicate-of <canonical-id>` to close duplicates.
 `pm close` accepts short aliases for the common flags: `-m` (`--message`), `-r` (`--reason`), and `-d` (`--duplicate-of`). When `governance.require_close_reason` is enabled and no positional/`--reason` text is given, the close reason is derived from the next-best signal in priority order — explicit reason text, then `--duplicate-of` (`Duplicate of <id>`), then `--resolution` — so a single `pm close <id> --resolution "<summary>"` no longer hard-blocks. The resolution is still written to the item's `resolution` field.
 
 Over MCP the mutation tools (`pm_create`/`pm_update`/`pm_close`/`pm_run` append/update-many) are compact by default; pass `fullChangedFields=true` to restore the full `changed_fields` delta, or `idOnly=true` for single-item id/status output.
+
+## Focus (session default parent)
+
+`pm focus` sets a session "focused" item so subsequent `pm create` calls default their `--parent` to it — project management is context management, and focus keeps new work attached to the active parent without restating `--parent` every time.
+
+```bash
+pm focus pm-epic1     # focus an item (validates it exists)
+pm focus              # show the current focus (or a no-focus hint)
+pm focus --clear      # clear focus; new items stop inheriting a parent
+```
+
+Behavior and guarantees:
+
+- Focus is **session-local**: it is stored in `.agents/pm/runtime/session.json`, which is gitignored, so it never affects teammates or the tracker's git history.
+- When a focus is set and `pm create` is run **without** `--parent`, the new item inherits the focused item as its parent and the result includes `"parent_source": "focus"` so agents can see the parent was inherited.
+- An explicit `--parent` always overrides focus, including `--parent none` (create with no parent). An explicit but unresolvable focused parent produces the same missing-parent error/warning as an explicit stale `--parent` (it flows through the same `validation.parent_reference` policy).
+- `pm focus <id>` validates the item exists and fails fast with a not-found error otherwise. `pm focus --clear <id>` is a usage error (choose either set or clear).
+
+Over MCP the equivalent tool is `pm_focus` (`id` to set, `options.clear=true` to clear, neither to show current focus).
 
 ## Templates
 

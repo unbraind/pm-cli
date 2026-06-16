@@ -35,6 +35,7 @@ const EXPECTED_TOOL_NAMES = [
   "pm_get",
   "pm_create",
   "pm_copy",
+  "pm_focus",
   "pm_update",
   "pm_append",
   "pm_claim",
@@ -112,7 +113,7 @@ describe("MCP protocol handshake", () => {
     })) as { tools?: Array<{ name?: string; description?: string; inputSchema?: unknown }> };
 
     const tools = result.tools ?? [];
-    expect(tools).toHaveLength(25);
+    expect(tools).toHaveLength(26);
 
     const names = tools.map((tool) => tool.name);
     expect(new Set(names)).toEqual(new Set(EXPECTED_TOOL_NAMES));

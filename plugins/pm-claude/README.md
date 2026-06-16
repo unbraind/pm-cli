@@ -6,7 +6,7 @@ Native pm CLI integration for Claude Code. Use pm project management tools direc
 
 | Component | What it provides |
 |-----------|----------------|
-| **25 MCP tools** | Full pm surface: context, search, list, get, create, copy, update, claim, release, close, comments, files, docs, notes, learnings, deps, test, validate, health, contracts, plan, append, schema, config + `pm_run` for everything else |
+| **26 MCP tools** | Full pm surface: context, search, list, get, create, copy, focus, update, claim, release, close, comments, files, docs, notes, learnings, deps, test, validate, health, contracts, plan, append, schema, config + `pm_run` for everything else |
 | **5 skills** | `pm-workflow`, `pm-developer`, `pm-release`, `pm-audit`, `pm-planner` — auto-loaded as Claude Code skills |
 | **14 slash commands** | Full lifecycle coverage — status, start, close, triage, audit, search, new, list, calendar, developer, planner, release, workflow, init |
 | **4 subagents** | `pm-coordinator` (batch/multi-item), `pm-triage-agent` (duplicate-safe item creation), `pm-verification-agent` (evidence + close readiness), and `pm-delivery-chain` (orchestrated delivery) |
@@ -29,7 +29,7 @@ claude plugin marketplace add /path/to/pm-cli
 # claude plugin marketplace add unbraind/pm-cli
 ```
 
-This installs all 25 MCP tools, 5 skills, 14 slash commands, 4 subagents, hybrid TUI tracking, and the session hook in one step. (`pm-claude` is the plugin name; `pm` is the marketplace name from `marketplace.json`.)
+This installs all 26 MCP tools, 5 skills, 14 slash commands, 4 subagents, hybrid TUI tracking, and the session hook in one step. (`pm-claude` is the plugin name; `pm` is the marketplace name from `marketplace.json`.)
 
 ### Option B: Global MCP server via Claude Code CLI (MCP tools only)
 
@@ -37,7 +37,7 @@ This installs all 25 MCP tools, 5 skills, 14 slash commands, 4 subagents, hybrid
 claude mcp add --transport stdio pm-mcp -- npx -y --package=@unbrained/pm-cli@latest pm-mcp
 ```
 
-This gives you the 25 MCP tools but not the skills, slash commands, or session hook.
+This gives you the 26 MCP tools but not the skills, slash commands, or session hook.
 
 ### Option C: Direct `.mcp.json` (project-scoped MCP only)
 

@@ -957,6 +957,10 @@ export const COPY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--message" },
 ];
 
+export const FOCUS_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--clear" },
+];
+
 export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { short: "-t", flag: "--title" },
   { short: "-d", flag: "--description" },
@@ -1490,6 +1494,8 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(CREATE_FLAG_CONTRACTS);
     case "copy":
       return withSubcommandGlobalFlags(COPY_FLAG_CONTRACTS);
+    case "focus":
+      return withSubcommandGlobalFlags(FOCUS_FLAG_CONTRACTS);
     case "aggregate":
       return withSubcommandGlobalFlags(AGGREGATE_FLAG_CONTRACTS);
     case "calendar":
@@ -1818,6 +1824,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
     optional: CREATE_CONTRACT_PARAMETER_KEYS,
   },
   copy: { required: ["id"], optional: ["title", "author", "message"] },
+  focus: { optional: ["id", "clear"] },
   list: { optional: LIST_CONTRACT_PARAMETER_KEYS },
   "list-all": { optional: LIST_CONTRACT_PARAMETER_KEYS },
   "list-draft": { optional: LIST_CONTRACT_PARAMETER_KEYS },

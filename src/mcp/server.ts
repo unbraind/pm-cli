@@ -52,6 +52,7 @@ import {
   runContext,
   runCreate,
   runCopy,
+  runFocus,
   runConfig,
   runDelete,
   runDeps,
@@ -716,6 +717,10 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
         { changedFields, idOnly },
       );
     }
+    case "focus": {
+      const clear = options.clear === true || args.clear === true;
+      return runFocus(id, { clear }, global);
+    }
     case "update": {
       const { changedFields, idOnly, runnerOptions } = withMutationCompaction(args, options);
       return projectMutationResult(
@@ -1018,6 +1023,7 @@ const HANDLERS: Record<string, ToolHandler> = {
   pm_get: (args) => runAction({ ...args, action: "get" }),
   pm_create: (args) => runAction({ ...args, action: "create" }),
   pm_copy: (args) => runAction({ ...args, action: "copy" }),
+  pm_focus: (args) => runAction({ ...args, action: "focus" }),
   pm_update: (args) => runAction({ ...args, action: "update" }),
   pm_append: (args) => runAction({ ...args, action: "append" }),
   pm_claim: (args) => runAction({ ...args, action: "claim" }),
@@ -1086,7 +1092,7 @@ export async function handleRequest(request: JsonRpcRequest): Promise<Record<str
       instructions:
         "You have access to native pm CLI tools for git-based project management. " +
         "Use pm_context or pm_search before creating new work. " +
-        "Prefer narrow tools (pm_context, pm_list, pm_get, pm_search, pm_create, pm_copy, pm_update, pm_append, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_notes, pm_learnings, pm_deps, pm_test, pm_validate, pm_health, pm_contracts, pm_schema, pm_config, pm_plan) over pm_run when they cover the operation. " +
+        "Prefer narrow tools (pm_context, pm_list, pm_get, pm_search, pm_create, pm_copy, pm_focus, pm_update, pm_append, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_notes, pm_learnings, pm_deps, pm_test, pm_validate, pm_health, pm_contracts, pm_schema, pm_config, pm_plan) over pm_run when they cover the operation. " +
         "Use pm_plan for agent harness Plan workflows: it provides Codex/Claude/Cursor-style planning with durable steps, dependencies, decisions, discoveries, validation, and materialization. " +
         "Use pm_schema and pm_config for workspace configuration: pm_schema manages custom item types/statuses and pm_config reads or writes settings keys. " +
         "Use pm_run with an explicit action for package-owned operations (calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume), plus activity, aggregate, history, stats, test-all, and gc. " +

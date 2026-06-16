@@ -13,6 +13,7 @@ function buildCommandMocks() {
   return {
     runGet: vi.fn(async () => ({ action: "get" })),
     runCopy: vi.fn(async () => ({ action: "copy" })),
+    runFocus: vi.fn(async () => ({ action: "focus" })),
     runUpdate: vi.fn(async () => ({ action: "update" })),
     runClaim: vi.fn(async () => ({ action: "claim" })),
     runRelease: vi.fn(async () => ({ action: "release" })),
@@ -121,6 +122,9 @@ describe("mcp server branch residual coverage", () => {
       author: "inject-author",
       options: { id: "pm-2b" },
     });
+    await runAction({ action: "focus", id: "pm-2c" });
+    await runAction({ action: "focus", options: { clear: true } });
+    await runAction({ action: "focus", clear: true });
     await runAction({ action: "update", options: { id: "pm-3", description: "updated" } });
     await runAction({ action: "claim", options: { id: "pm-4" } });
     await runAction({ action: "release", options: { id: "pm-5" } });
@@ -205,6 +209,14 @@ describe("mcp server branch residual coverage", () => {
         method: undefined,
       } as never),
     ).rejects.toThrow(/Unsupported MCP method: \(missing\)/);
+
+    await server.handleRequest({
+      jsonrpc: "2.0",
+      id: 42,
+      method: "tools/call",
+      params: { name: "pm_focus", arguments: { id: "pm-foc" } },
+    } as never);
+    expect(commandMocks.runFocus).toHaveBeenCalled();
 
     expect(server._testOnly.errorContent(new Error("plain-error"))).toMatchObject({ isError: true });
     expect(server._testOnly.errorContent("primitive-error")).toMatchObject({ isError: true });
