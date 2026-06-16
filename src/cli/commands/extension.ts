@@ -837,9 +837,14 @@ function collectActivationFailureDiagnostics(failures: ActivationFailureEntry[])
 function findActivationFailureByName(
   extensionName: string,
   failures: ActivationFailureDiagnostic[],
+  layer?: ExtensionScope,
 ): ActivationFailureDiagnostic | undefined {
   const normalizedName = normalizeExtensionNameForMatch(extensionName);
-  return failures.find((failure) => normalizeExtensionNameForMatch(failure.name) === normalizedName);
+  return failures.find(
+    (failure) =>
+      (layer === undefined || failure.layer === layer) &&
+      normalizeExtensionNameForMatch(failure.name) === normalizedName,
+  );
 }
 
 async function probeRuntimeCommandPathsForInstall(
@@ -1360,7 +1365,15 @@ export async function runExtension(
         const installActivationFailure = findActivationFailureByName(
           validated.manifest.name,
           runtimeProbe.activation_failures,
+          scope,
         );
+        const runtimeInstalledExtension = runtimeProbe.installed.find(
+          (entry) =>
+            entry.scope === scope &&
+            normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(validated.manifest.name),
+        );
+        const runtimeActivationStatus: ExtensionActivationStatus =
+          runtimeInstalledExtension?.activation_status ?? (installActivationFailure ? "failed" : "unknown");
 
         return withResult({
           extension: {
@@ -1376,7 +1389,7 @@ export async function runExtension(
           installed_in_place: installInPlace,
           activated: true,
           settings_changed: activationChanged,
-          runtime_activation_status: installActivationFailure ? "failed" : "ok",
+          runtime_activation_status: runtimeActivationStatus,
           command_paths: commandSummary.command_paths,
           action_paths: commandSummary.action_paths,
           command_discovery: buildInstallCommandDiscovery(validated.manifest.name, sourceRecord, commandSummary),
@@ -2010,6 +2023,7 @@ export const _testOnly = {
   checkGithubUpdate,
   clearExtensionState,
   collectActivationFailureDiagnostics,
+  findActivationFailureByName,
   collectGlobalOutputOverrideDoctorWarnings,
   copyExtensionDirectoryWithoutSelfNesting,
   isErrnoCode,

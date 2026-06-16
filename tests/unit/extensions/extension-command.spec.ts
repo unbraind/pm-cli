@@ -864,6 +864,22 @@ describe("extension command runtime", () => {
     expect(diagnostics[1]).not.toHaveProperty("hint");
   });
 
+  it("matches activation failures by name and optional scope", () => {
+    const failures = [
+      { layer: "project", name: "same-name", entry_path: "/tmp/project", error: "project fail" },
+      { layer: "global", name: "same-name", entry_path: "/tmp/global", error: "global fail" },
+    ] as never;
+    expect(extensionCommandTestOnly.findActivationFailureByName("same-name", failures, "project")).toMatchObject({
+      layer: "project",
+    });
+    expect(extensionCommandTestOnly.findActivationFailureByName("same-name", failures, "global")).toMatchObject({
+      layer: "global",
+    });
+    expect(extensionCommandTestOnly.findActivationFailureByName("same-name", failures)).toMatchObject({
+      layer: "project",
+    });
+  });
+
   it("parses, validates, coerces, and strips loose extension command options", () => {
     const definitions = [
       { long: "--count", short: "-c", value_type: "number", required: true },
@@ -4930,6 +4946,42 @@ describe("extension command runtime", () => {
             }),
           ],
         },
+      });
+    });
+  });
+
+  it("reports install runtime activation status from scoped runtime probe", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "runtime-status-source");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(
+        path.join(sourceDir, "manifest.json"),
+        JSON.stringify(
+          {
+            name: "runtime-status-ext",
+            version: "1.0.0",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(
+        path.join(sourceDir, "index.js"),
+        [
+          "export function activate(api) {",
+          "  api.registerCommand('runtime-status ping', () => ({ ok: true }));",
+          "}",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const install = await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath, noExtensions: true });
+      expect(install.details).toMatchObject({
+        runtime_activation_status: "not_loaded",
       });
     });
   });

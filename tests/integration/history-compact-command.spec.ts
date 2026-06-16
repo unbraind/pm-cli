@@ -451,10 +451,12 @@ describe("history-compact command", () => {
         return [];
       });
       const writeSpy = vi.spyOn(fsUtilsModule, "writeFileAtomic").mockRejectedValueOnce(new Error("synthetic write failure"));
+      const historyPath = getHistoryPath(context, id);
       try {
         await expect(runHistoryCompact(id, { author: "test-author" }, { path: context.pmPath })).rejects.toThrow(
           "synthetic write failure",
         );
+        await expect(readFile(historyPath, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
       } finally {
         executeSpy.mockRestore();
         writeSpy.mockRestore();
