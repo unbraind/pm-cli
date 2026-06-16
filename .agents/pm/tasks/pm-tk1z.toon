@@ -2,20 +2,21 @@ id: pm-tk1z
 title: GitHub issue triage 2026-06-12
 description: Reconcile all OPEN GitHub issues with the pm tracker (system of record). Progress logged as comments here.
 type: Task
-status: in_progress
+status: closed
 priority: 2
 tags[1]: gh-triage-2026-06-12
 created_at: "2026-06-12T16:05:05.652Z"
-updated_at: "2026-06-16T11:46:33.520Z"
-assignee: codex-sdk-cli-consolidation-20260616
+updated_at: "2026-06-16T12:31:59.230Z"
 author: maintainer-agent
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-06-12T16:10:43.395Z",maintainer-agent,"Triage complete: 18 open GH issues reconciled. CLOSED AS SHIPPED (verified in /tmp/pm-triage-sandbox on v2026.6.12): GH-153/167/168/170/171/172/174/179/184 (all v2026.6.12) + GH-185 (v2026.6.10). ALREADY TRACKED by open pm items (each references its GH number): GH-154=pm-1lll, GH-155=pm-gcm3, GH-156=pm-j0vc, GH-157=pm-cstl (added Tracks GH-157 comment), GH-158=pm-aer3, GH-161=pm-72xf, GH-163=pm-jmld. NEW: pm-i1z6 for GH-181 remainder (--match-mode and/or/exact + keyword default limit + --count; core no-ranking complaint already fixed by weighted scoring). Quick wins for today: pm-i1z6 default-limit part, pm-cstl --min-score, pm-1lll csv/table, pm-gcm3 child rollup. Leaving this task open for the PR session to close (changelog regen is the last step)."
   "2026-06-12T16:11:30.311Z",maintainer-agent,"Addendum: GH-203 filed mid-triage (validate --check-files classifies existing DIRECTORY links as deleted; prune/auto-fix would remove valid links). Root cause confirmed at src/cli/commands/validate.ts:1287 (!stats.isFile() => missing). Created pm-b1ni (P1, regression of GH-184/pm-0v2m). This is the #1 quick win for today's PR."
   "2026-06-16T11:26:55.094Z",codex-sdk-cli-consolidation-20260616,"Nightly cross-platform regressions hardened: path/url assertions now platform-safe and temp cleanup retries handle transient EBUSY/ENOTEMPTY/EPERM on Windows. Targeted nightly regression subset passes locally (326 tests), plus release/script subset passes (373 tests)."
   "2026-06-16T11:28:52.539Z",codex-sdk-cli-consolidation-20260616,"GitHub reconciliation refresh (2026-06-16): open security/dependency alerts remain 0/0/0; open PR #239 is clean/mergeable. Existing GH->pm mappings confirmed: GH-207->pm-kanu, GH-163->pm-jmld, GH-161->pm-72xf, GH-158->pm-aer3, GH-157->pm-ldr1. Created missing tracker items (no duplicates found via pm search): GH-245->pm-tb42, GH-244->pm-28cf, GH-243->pm-4swf, GH-242->pm-hntj, GH-241->pm-7snq, GH-236->pm-mfl1, GH-235->pm-rpag, GH-217->pm-76r5, GH-216->pm-y1z0, GH-215->pm-u42x, GH-208->pm-52eh, GH-206->pm-mcxr."
   "2026-06-16T11:29:08.146Z",codex-sdk-cli-consolidation-20260616,"Integrated open Dependabot PR #239 equivalent directly in branch: @types/node bumped 25.9.2 -> 25.9.3 using pnpm add -D @types/node@latest."
   "2026-06-16T11:46:33.520Z",codex-sdk-cli-consolidation-20260616,"Full verification complete: pnpm build/typecheck/quality:static/security:scan all pass; coverage gate passes at strict 100/100/100/100 (statements 28029/28029, branches 21883/21883, functions 4637/4637, lines 26936/26936). Manual isolated temp-dir E2E validation executed with PM_PATH and PM_GLOBAL_PATH sandbox roots: init/create/update/list/search/contracts/extension-explore/test-run/validate/health/close/release all succeeded."
+  "2026-06-16T12:30:30.661Z",codex-sdk-cli-consolidation-20260616,"Merged via PR #246 (Consolidate SDK/CLI core primitives, UX diagnostics, and release reliability). Post-review follow-up commits addressed bot feedback; CI gates are green including strict coverage 100/100/100/100 and CodeQL/compat/smoke checks."
+  "2026-06-16T12:31:59.230Z",codex-sdk-cli-consolidation-20260616,"Residual follow-up backlog carried forward after PR #246 merge: pm-4swf (GH-243), pm-52eh (GH-208), pm-76r5 (GH-217), pm-7snq (GH-241), pm-hntj (GH-242), pm-mfl1 (GH-236), pm-rpag (GH-235), pm-tb42 (GH-245), pm-y1z0 (GH-216), pm-28cf (GH-244), pm-mcxr (GH-206), pm-u42x (GH-215)."
 files[10]{path,scope,note}:
   package.json,project,Integrated Dependabot PR #239 by updating @types/node to latest
   pnpm-lock.yaml,project,Lockfile refresh for @types/node bump
@@ -34,4 +35,5 @@ tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   "pnpm quality:static",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   "pnpm security:scan",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Merged in PR #246 with linked implementation + verification evidence; no remaining blockers in this scope.
 body: ""

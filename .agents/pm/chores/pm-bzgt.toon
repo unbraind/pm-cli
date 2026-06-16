@@ -2,15 +2,16 @@ id: pm-bzgt
 title: Dedupe history-rewrite orchestration block triplicated across history-redact/repair/compact
 description: "Follow-up to closed pm-kbm9 (PR#74), which dedup'd checkHistoryRewriteOwnership + verifyHistoryRewriteNoDrift as helpers but left the surrounding ~50-line orchestration triplicated: verifyHistoryChain error -> ownership warnings -> acquireLock(pmRoot, subject.id, ttl, author, force, force_required_for_stale_lock) -> verifyHistoryRewriteNoDrift -> writeFileAtomic(historyEntriesToRaw) with rollback -> release. Sites: src/cli/commands/history-redact.ts ~525-600, src/cli/commands/history-repair.ts ~165-240, src/cli/commands/history-compact.ts ~310-380. Extract an executeHistoryRewrite({operation, subject, rewrittenEntries, itemDocument, author, force, settings, typeRegistry, historyRawBeforeLock, currentItemRawBeforeLock, dryRun}) helper in src/core/history (next to replay.ts/history-rewrite helpers); each command keeps only its rewrite computation. Bonus: a small 100%-coverable core module per the coverage tactic."
 type: Chore
-status: in_progress
+status: closed
 priority: 2
 tags[4]: audit-2026-06-13,dedup,history,refactor
 created_at: "2026-06-12T22:47:32.675Z"
-updated_at: "2026-06-16T11:10:40.815Z"
+updated_at: "2026-06-16T12:30:26.206Z"
 author: audit-quality-agent
 parent: pm-y7sc
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-06-16T11:10:22.325Z",codex-sdk-cli-consolidation-20260616,"Evidence: extracted executeHistoryRewrite in core/history/history-rewrite.ts and switched history-redact/repair/compact to the shared orchestration while preserving per-command rollback/hook behavior. Verified with focused history unit/integration tests."
+  "2026-06-16T12:30:25.507Z",codex-sdk-cli-consolidation-20260616,"Merged via PR #246 (Consolidate SDK/CLI core primitives, UX diagnostics, and release reliability). Post-review follow-up commits addressed bot feedback; CI gates are green including strict coverage 100/100/100/100 and CodeQL/compat/smoke checks."
 files[6]{path,scope,note}:
   src/cli/commands/history-compact.ts,project,Route history-compact lock/verify/ownership flow through executeHistoryRewrite
   src/cli/commands/history-redact.ts,project,Route history-redact lock/verify/ownership flow through executeHistoryRewrite
@@ -20,4 +21,5 @@ files[6]{path,scope,note}:
   tests/unit/core/history/history-rewrite.spec.ts,project,Add executeHistoryRewrite unit coverage
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/core/history/history-rewrite.spec.ts tests/unit/commands/history-activity-command.spec.ts tests/unit/commands/history-repair-command.spec.ts tests/integration/history-compact-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Merged in PR #246 with linked implementation + verification evidence; no remaining blockers in this scope.
 body: ""
