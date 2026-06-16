@@ -1,3 +1,5 @@
+import { fileURLToPath } from "node:url";
+
 import { defineConfig } from "vitest/config";
 
 const coverageReporters = process.env.CI
@@ -13,6 +15,20 @@ const allSourceCoverageThresholds = {
 
 export default defineConfig({
   cacheDir: ".cache/vitest",
+  resolve: {
+    alias: [
+      // The docs/examples reference scripts import the published package by its
+      // bare specifier (`@unbrained/pm-cli/sdk`). Under test that resolves only
+      // via the workspace self-link in node_modules, which is absent in a clean
+      // CI `pnpm install`. Resolve the bare SDK specifier to source so the
+      // example coverage specs are independent of the self-link and the built
+      // dist artifact. The published SDK shape itself is covered by sdk-index.
+      {
+        find: /^@unbrained\/pm-cli\/sdk$/,
+        replacement: fileURLToPath(new URL("./src/sdk/index.ts", import.meta.url)),
+      },
+    ],
+  },
   test: {
     include: ["tests/**/*.spec.ts"],
     testTimeout: 30_000,

@@ -1767,7 +1767,14 @@ describe("search background refresh", () => {
     base.search.provider = "ollama";
     base.vector_store.adapter = "lancedb";
     base.providers.ollama.base_url = "";
-    base.providers.ollama.model = "";
+    // Pre-set the model so resolveSettingsWithSemanticRuntimeDefaults does not probe
+    // for a locally-installed Ollama binary (isOllamaInstalled spawns `ollama
+    // --version`). Without this the assertion is host-dependent: it activates only
+    // where Ollama is installed (dev box) and fails in clean CI. base_url stays empty
+    // so the provider is inactive without runtime defaults; applyRuntimeDefaults then
+    // fills base_url + lancedb path + embedding model to activate it. The Ollama-probe
+    // branch itself is covered by tests/unit/core/search/semantic-defaults.spec.ts.
+    base.providers.ollama.model = "nomic-embed-text";
     base.search.embedding_model = "";
     base.vector_store.lancedb.path = "";
 
