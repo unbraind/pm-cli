@@ -21,6 +21,26 @@ if (!existsSync(cliPath)) {
   process.exit(1);
 }
 
+function sleepSync(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+function removeTempDirectory(path) {
+  const attempts = 8;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      rmSync(path, { recursive: true, force: true, maxRetries: 3, retryDelay: 50 });
+      return;
+    } catch (error) {
+      const code = error && typeof error === "object" && "code" in error ? error.code : undefined;
+      if (!["ENOTEMPTY", "EBUSY", "EPERM"].includes(code) || attempt === attempts) {
+        throw error;
+      }
+      sleepSync(50 * attempt);
+    }
+  }
+}
+
 function runContracts() {
   const isolatedGlobalPath = mkdtempSync(resolve(tmpdir(), "pm-cli-contracts-global-"));
   let result;
@@ -32,11 +52,13 @@ function runContracts() {
         ...process.env,
         NO_COLOR: "1",
         PM_GLOBAL_PATH: isolatedGlobalPath,
+        PM_NO_TELEMETRY: "1",
+        PM_TELEMETRY_DISABLED: "1",
       },
       maxBuffer: 50 * 1024 * 1024,
     });
   } finally {
-    rmSync(isolatedGlobalPath, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+    removeTempDirectory(isolatedGlobalPath);
   }
   if (result.error !== undefined) {
     throw new Error(`pm contracts --full --json failed to start: ${result.error.message}`);

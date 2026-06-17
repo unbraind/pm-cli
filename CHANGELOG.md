@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- CI contracts snapshot temp cleanup can fail with ENOTEMPTY ([pm-c61g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-c61g.toon))
 - pm templates: unknown subcommand + flags silently fall back to 'list' \(exit 0\) instead of erroring ([pm-r2kd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r2kd.toon))
 - GH-265: schema unknown subcommands must not create custom types ([pm-ablm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ablm.toon))
 - GH-262: prevent path-like pm init from corrupting caller tracker settings ([pm-jek2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jek2.toon))

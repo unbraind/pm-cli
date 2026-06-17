@@ -1,0 +1,23 @@
+id: pm-c61g
+title: CI contracts snapshot temp cleanup can fail with ENOTEMPTY
+description: "PR #266 static gate failed in scripts/contracts-snapshot.mjs cleanup: rmSync ENOTEMPTY on /tmp/pm-cli-contracts-global-* after pm contracts --full --json. Duplicate check found older closed cleanup issues (pm-i2xg, pm-u43m) but no open item for contracts-snapshot cleanup. Fix should disable telemetry/background writes for the snapshot child and make temp cleanup retry ENOTEMPTY/EBUSY robustly."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-06-17T23:22:24.131Z"
+updated_at: "2026-06-17T23:28:46.894Z"
+author: codex-audit-agent
+parent: pm-u9d0
+resolution: Made contracts snapshot temp cleanup deterministic for CI by disabling telemetry in the child CLI and retrying transient cleanup errors.
+expected_result: "pnpm contracts:check should not fail the static CI gate with ENOTEMPTY while removing temporary PM_GLOBAL_PATH directories."
+actual_result: "contracts-snapshot now sets PM_NO_TELEMETRY/PM_TELEMETRY_DISABLED and retries ENOTEMPTY/EBUSY/EPERM cleanup; pnpm contracts:check and the full static CI block pass locally."
+comments[1]{created_at,author,text}:
+  "2026-06-17T23:28:37.986Z",codex-audit-agent,"Evidence: PR #266 static gate failed in contracts:check cleanup with ENOTEMPTY removing /tmp/pm-cli-contracts-global-*. Fixed scripts/contracts-snapshot.mjs to set PM_NO_TELEMETRY=1 and PM_TELEMETRY_DISABLED=1 for the child contracts command and retry ENOTEMPTY/EBUSY/EPERM temp cleanup. Local verification passed: pnpm contracts:check; full CI static block (version, changelog check, contracts check, security scan, static quality, npm pack --dry-run)."
+files[1]{path,scope,note}:
+  scripts/contracts-snapshot.mjs,project,Disable telemetry for contracts snapshot child and retry temp global cleanup
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "pnpm contracts:check",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm version:check && pnpm changelog:pm:check && pnpm contracts:check && pnpm security:scan && pnpm quality:static && npm pack --dry-run",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Resolved CI contracts snapshot temp cleanup ENOTEMPTY failure
+body: ""
