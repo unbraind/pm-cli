@@ -53,6 +53,12 @@ export function extractTitlePrefix(title: string): string | undefined {
   if (token.length < 2) {
     return undefined;
   }
+  // Reject sequence/index-style prefixes — a single leading letter followed by
+  // only digits (e.g. "S001-", "E12-", "V1-"). These index items rather than
+  // mark a type boundary, matching the convention documented above.
+  if (/^[A-Za-z]\d+$/.test(token)) {
+    return undefined;
+  }
   return token.toLowerCase();
 }
 

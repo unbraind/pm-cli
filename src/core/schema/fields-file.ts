@@ -297,9 +297,13 @@ export function serializeFieldsFile(file: FieldsFile): string {
  * to the same front-matter column.
  */
 export function upsertField(file: FieldsFile, input: NormalizedAddFieldInput): UpsertFieldResult {
-  const fields = file.fields.slice();
-  const existingIndex = fields.findIndex((definition) => normalizeFieldKey(definition.key) === input.key);
-  const existing = existingIndex >= 0 ? fields[existingIndex] : undefined;
+  // Match by normalized key. A hand-authored file may carry more than one entry
+  // for the same key, so drop ALL matches and re-insert a single merged result
+  // (collapsing duplicates) rather than only rewriting the first occurrence. The
+  // first existing match seeds preserved attributes (e.g. metadata_key).
+  const existing = file.fields.find((definition) => normalizeFieldKey(definition.key) === input.key);
+  const replaced = existing !== undefined;
+  const fields = file.fields.filter((definition) => normalizeFieldKey(definition.key) !== input.key);
 
   const next: RuntimeFieldDefinition = {
     ...(existing ?? {}),
@@ -328,17 +332,13 @@ export function upsertField(file: FieldsFile, input: NormalizedAddFieldInput): U
     delete next.required_types;
   }
 
-  if (existingIndex >= 0) {
-    fields[existingIndex] = next;
-  } else {
-    fields.push(next);
-  }
+  fields.push(next);
   fields.sort((left, right) => normalizeFieldKey(left.key).localeCompare(normalizeFieldKey(right.key)));
 
   return {
     file: { fields },
     definition: next,
-    replaced: existingIndex >= 0,
+    replaced,
   };
 }
 
@@ -353,13 +353,20 @@ export function removeField(file: FieldsFile, key: string | undefined): RemoveFi
   if (normalizedKey.length === 0) {
     throw new Error("Field key must not be empty.");
   }
-  const fields = file.fields.slice();
-  const existingIndex = fields.findIndex((definition) => normalizeFieldKey(definition.key) === normalizedKey);
-  if (existingIndex < 0) {
+  // Remove ALL matches (a hand-authored file may carry duplicate entries for the
+  // same normalized key) so no stale duplicate survives the removal.
+  const removed: RuntimeFieldDefinition[] = [];
+  const fields = file.fields.filter((definition) => {
+    if (normalizeFieldKey(definition.key) === normalizedKey) {
+      removed.push(definition);
+      return false;
+    }
+    return true;
+  });
+  if (removed.length === 0) {
     return { file: { fields }, removed: false };
   }
-  const [definition] = fields.splice(existingIndex, 1);
-  return { file: { fields }, removed: true, definition };
+  return { file: { fields }, removed: true, definition: removed[0] };
 }
 
 function applyOptionalString(definition: RuntimeFieldDefinition, key: string, value: string | undefined): void {

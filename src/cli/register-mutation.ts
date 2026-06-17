@@ -220,7 +220,7 @@ function renderSchemaResultHuman(schema: SchemaCommandModule, result: SchemaComm
       break;
     case "infer-types":
       writeStdout(`${schema.formatSchemaInferTypesHuman(result)}\n`);
-      return;
+      break;
     case "add-field":
       writeStdout(`${schema.formatSchemaAddFieldHuman(result)}\n`);
       break;

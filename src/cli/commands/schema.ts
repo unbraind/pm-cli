@@ -1418,7 +1418,13 @@ export async function runSchemaInferTypes(
   const settings = await readSettings(pmRoot);
   const schema = normalizeRuntimeSchemaSettings(settings.schema);
   const typesPath = typesPathFor(pmRoot, schema);
-  const minCount = typeof options.minCount === "number" && options.minCount > 0 ? Math.trunc(options.minCount) : 10;
+  let minCount = 10;
+  if (options.minCount !== undefined) {
+    if (!Number.isInteger(options.minCount) || options.minCount < 1) {
+      throw new PmCliError("--min-count must be a positive integer (>= 1).", EXIT_CODE.USAGE);
+    }
+    minCount = options.minCount;
+  }
 
   const registry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const items = await listAllFrontMatterLight(pmRoot, settings.item_format, registry.type_to_folder, [], schema);
@@ -1433,7 +1439,12 @@ export async function runSchemaInferTypes(
 
   // Dry-run preview by default: only --apply mutates schema/types.json.
   if (!options.apply) {
-    const parsed = parseItemTypesFile(await readFileIfExists(typesPath));
+    let parsed;
+    try {
+      parsed = parseItemTypesFile(await readFileIfExists(typesPath));
+    } catch (error) {
+      throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.GENERIC_FAILURE);
+    }
     definitionsCount = parsed.definitions.length;
     return {
       action: "infer-types",

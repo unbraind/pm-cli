@@ -4,11 +4,11 @@
 
 ### Added
 
-- Expose schema.unknown\_field\_policy via pm config set schema-unknown-field-policy ([pm-nnaq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-nnaq.toon))
-- Expose id\_prefix, author\_default, output.default\_format, locks.ttl\_seconds via pm config set ([pm-9byd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-9byd.toon))
-- GH-245: schema add-type --infer from title prefixes ([pm-tb42](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-tb42.toon))
-- pm schema apply-preset <agile\|ops\|research\>: standalone type-preset for already-initialized projects ([pm-86ob](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-86ob.toon))
+- Expose schema.unknown\_field\_policy via pm config set schema\_unknown\_field\_policy ([pm-nnaq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-nnaq.toon))
 - pm schema list-fields / show-field / add-field / remove-field: CLI management of schema/fields.json ([pm-vhbf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-vhbf.toon))
+- GH-245: schema add-type --infer from title prefixes ([pm-tb42](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-tb42.toon))
+- Expose id\_prefix, author\_default, output.default\_format, locks.ttl\_seconds via pm config set ([pm-9byd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-9byd.toon))
+- pm schema apply-preset <agile\|ops\|research\>: standalone type-preset for already-initialized projects ([pm-86ob](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-86ob.toon))
 
 ### Other
 

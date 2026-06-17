@@ -28,6 +28,14 @@ describe("extractTitlePrefix", () => {
     expect(extractTitlePrefix("123- numeric")).toBeUndefined();
   });
 
+  it("rejects single-letter-plus-digits sequence/index prefixes", () => {
+    expect(extractTitlePrefix("S001- provision")).toBeUndefined();
+    expect(extractTitlePrefix("E12- migrate")).toBeUndefined();
+    expect(extractTitlePrefix("V1: release")).toBeUndefined();
+    // A multi-letter token that merely ends in digits is still a valid type.
+    expect(extractTitlePrefix("BUG2: regression")).toBe("bug2");
+  });
+
   it("accepts internal hyphens/underscores in the token", () => {
     expect(extractTitlePrefix("CODE-REVIEW: ship it")).toBe("code-review");
   });

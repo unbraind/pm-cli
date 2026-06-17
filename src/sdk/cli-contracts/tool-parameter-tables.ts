@@ -581,8 +581,8 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   },
   name: {
     description:
-      "Custom item type name (schema add-type/remove-type/show) or custom status id (schema show-status/add-status/remove-status).",
-    examples: ["Spike", "review"],
+      "Custom item type name (schema add-type/remove-type/show), custom status id (schema show-status/add-status/remove-status), or custom field key (schema add-field/remove-field/show-field).",
+    examples: ["Spike", "review", "component"],
   },
   defaultStatus: {
     description: "Default status hint recorded for a custom item type.",
@@ -1029,7 +1029,8 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     description: "When true for files action, use `pm files discover <id>` to scan item text for referenced file paths.",
   },
   apply: {
-    description: "When true for files discovery, add missing discovered file links instead of returning a dry-run preview.",
+    description:
+      "Persist changes instead of returning a dry-run preview: for files discovery, add the missing discovered file links; for schema add-type --infer, register the inferred custom item types.",
   },
   discoveryNote: {
     description: "Note attached to file links added by files discovery.",
