@@ -2349,6 +2349,31 @@ describe("runCreate", () => {
       );
       expect(withPlusDuration.item.events?.[0]?.end_at).toBe("2026-03-05T10:00:00.000Z");
 
+      const withMinuteDuration = await runCreate(
+        baseCreateOptions({
+          event: ["start=2026-03-04T10:00:00.000Z,duration=30min,title=standup"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(withMinuteDuration.item.events?.[0]?.end_at).toBe("2026-03-04T10:30:00.000Z");
+
+      const withIsoDuration = await runCreate(
+        baseCreateOptions({
+          event: ["start=2026-03-04T10:00:00.000Z,duration=PT30M,title=iso-window"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(withIsoDuration.item.events?.[0]?.end_at).toBe("2026-03-04T10:30:00.000Z");
+
+      // Keep legacy semantics where bare `m` means months for relative durations.
+      const withMonthDuration = await runCreate(
+        baseCreateOptions({
+          event: ["start=2026-03-04T10:00:00.000Z,duration=45m,title=legacy-months"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(withMonthDuration.item.events?.[0]?.end_at).toBe("2029-12-04T10:00:00.000Z");
+
       await expect(
         runCreate(
           baseCreateOptions({

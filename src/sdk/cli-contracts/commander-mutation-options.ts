@@ -215,7 +215,8 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
     target: "event",
     keys: ["event"],
     option: "--event <value>",
-    description: "Seed event entry start=<iso|relative>,end=<iso|relative>,title=<text>,all_day=<true|false>,recur_* fields (also accepts markdown pairs and - for stdin; repeatable)",
+    description:
+      "Seed event entry start=<iso|relative>,end=<iso|relative>,duration=<relative|30min|PT30M>,title=<text>,all_day=<true|false>,recur_* fields (also accepts markdown pairs and - for stdin; repeatable)",
     repeatable: true,
   },
   {
@@ -503,7 +504,8 @@ export const UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
     target: "event",
     keys: ["event"],
     option: "--event <value>",
-    description: "Set events start=<iso|relative>,end=<iso|relative>,title=<text>,all_day=<true|false>,recur_* fields (also accepts markdown pairs and - for stdin; repeatable)",
+    description:
+      "Set events start=<iso|relative>,end=<iso|relative>,duration=<relative|30min|PT30M>,title=<text>,all_day=<true|false>,recur_* fields (also accepts markdown pairs and - for stdin; repeatable)",
     repeatable: true,
   },
   {

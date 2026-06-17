@@ -186,6 +186,75 @@ describe("core/item/parse", () => {
     ).toThrow("--event end must be strictly after start");
   });
 
+  it("accepts minute-aware event duration forms without changing global relative parsing", () => {
+    expect(
+      resolveEventEndAt(
+        "2026-04-01T09:00:00.000Z",
+        undefined,
+        "30min",
+        new Date("2026-04-01T08:00:00.000Z"),
+      ),
+    ).toBe("2026-04-01T09:30:00.000Z");
+
+    expect(
+      resolveEventEndAt(
+        "2026-04-01T09:00:00.000Z",
+        undefined,
+        "PT30M",
+        new Date("2026-04-01T08:00:00.000Z"),
+      ),
+    ).toBe("2026-04-01T09:30:00.000Z");
+  });
+
+  it("keeps bare m duration tokens as months for backward compatibility", () => {
+    expect(
+      resolveEventEndAt(
+        "2026-04-01T09:00:00.000Z",
+        undefined,
+        "45m",
+        new Date("2026-04-01T08:00:00.000Z"),
+      ),
+    ).toBe("2030-01-01T09:00:00.000Z");
+  });
+
+  it("covers ISO duration edge branches and negative minute durations", () => {
+    expect(
+      resolveEventEndAt(
+        "2026-04-01T09:00:00.000Z",
+        undefined,
+        "PT1H",
+        new Date("2026-04-01T08:00:00.000Z"),
+      ),
+    ).toBe("2026-04-01T10:00:00.000Z");
+
+    expect(() =>
+      resolveEventEndAt(
+        "2026-04-01T09:00:00.000Z",
+        undefined,
+        "-30min",
+        new Date("2026-04-01T08:00:00.000Z"),
+      ),
+    ).toThrow("--event end must be strictly after start");
+
+    expect(() =>
+      resolveEventEndAt(
+        "2026-04-01T09:00:00.000Z",
+        undefined,
+        "-PT30M",
+        new Date("2026-04-01T08:00:00.000Z"),
+      ),
+    ).toThrow("--event end must be strictly after start");
+
+    expect(() =>
+      resolveEventEndAt(
+        "2026-04-01T09:00:00.000Z",
+        undefined,
+        "PT",
+        new Date("2026-04-01T08:00:00.000Z"),
+      ),
+    ).toThrow("Invalid event.duration value");
+  });
+
   it("adds path and preview guidance for malformed key-value input", () => {
     expect(() => parseCsvKv("README.md", "--add")).toThrow("For file/doc paths use: path=<file-path>");
     const longValue = "x".repeat(200);
