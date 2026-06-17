@@ -24,9 +24,27 @@ import {
   type RuntimeStatusDefinition,
 } from "../../core/schema/status-defs-file.js";
 import {
+  BUILTIN_FIELD_KEYS,
+  normalizeAddFieldInput,
+  normalizeFieldKey,
+  parseFieldsFile,
+  removeField,
+  serializeFieldsFile,
+  upsertField,
+  type RuntimeFieldDefinition,
+} from "../../core/schema/fields-file.js";
+import {
+  normalizeTypePresetName,
+  resolveTypePresetDefinitions,
+  TYPE_PRESET_NAMES,
+  type TypePresetName,
+} from "../../core/schema/type-presets.js";
+import { inferTypesFromTitles, type InferredTypeCandidate } from "../../core/schema/type-inference.js";
+import {
   DEFAULT_RUNTIME_SCHEMA_FILE_PATHS,
   filePathForSchemaSection,
   normalizeRuntimeSchemaSettings,
+  resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
 } from "../../core/schema/runtime-schema.js";
 import { resolveItemTypeRegistry, type ResolvedItemTypeDefinition } from "../../core/item/type-registry.js";
@@ -45,6 +63,11 @@ export const SCHEMA_SUBCOMMANDS = [
   "remove-type",
   "add-status",
   "remove-status",
+  "add-field",
+  "remove-field",
+  "list-fields",
+  "show-field",
+  "apply-preset",
   "list",
   "show",
   "show-status",
@@ -53,6 +76,7 @@ export type SchemaSubcommand = (typeof SCHEMA_SUBCOMMANDS)[number];
 
 const SCHEMA_TYPES_LOCK_ID = "schema-types";
 const SCHEMA_STATUSES_LOCK_ID = "schema-statuses";
+const SCHEMA_FIELDS_LOCK_ID = "schema-fields";
 
 export interface SchemaAddTypeCommandOptions {
   description?: string;
@@ -132,6 +156,125 @@ export interface SchemaRemoveStatusResult {
   generated_at: string;
 }
 
+export interface SchemaAddFieldCommandOptions {
+  type?: string;
+  commands?: string[];
+  description?: string;
+  cliFlag?: string;
+  alias?: string[];
+  required?: boolean;
+  requiredOnCreate?: boolean;
+  allowUnset?: boolean;
+  requiredTypes?: string[];
+  author?: string;
+  force?: boolean;
+}
+
+export interface SchemaRemoveFieldCommandOptions {
+  author?: string;
+  force?: boolean;
+}
+
+export interface SchemaApplyPresetCommandOptions {
+  author?: string;
+  force?: boolean;
+}
+
+export interface SchemaAddTypeInferCommandOptions {
+  minCount?: number;
+  apply?: boolean;
+  author?: string;
+  force?: boolean;
+}
+
+export interface SchemaFieldSummary {
+  key: string;
+  type: string;
+  commands: string[];
+  cli_flag: string;
+  cli_aliases: string[];
+  description?: string;
+  required: boolean;
+  required_on_create: boolean;
+  allow_unset: boolean;
+  required_types: string[];
+}
+
+export interface SchemaAddFieldResult {
+  action: "add-field";
+  registered: boolean;
+  replaced: boolean;
+  field: RuntimeFieldDefinition;
+  file: {
+    path: string;
+    fields: number;
+  };
+  warnings: string[];
+  generated_at: string;
+}
+
+export interface SchemaRemoveFieldResult {
+  action: "remove-field";
+  removed: boolean;
+  field?: RuntimeFieldDefinition;
+  file: {
+    path: string;
+    fields: number;
+  };
+  warnings: string[];
+  generated_at: string;
+}
+
+export interface SchemaListFieldsResult {
+  action: "list-fields";
+  fields: SchemaFieldSummary[];
+  counts: {
+    total: number;
+  };
+  file: {
+    path: string;
+  };
+  generated_at: string;
+}
+
+export interface SchemaShowFieldResult {
+  action: "show-field";
+  field: SchemaFieldSummary;
+  file: {
+    path: string;
+  };
+  generated_at: string;
+}
+
+export interface SchemaApplyPresetResult {
+  action: "apply-preset";
+  preset: TypePresetName;
+  registered: string[];
+  replaced: string[];
+  file: {
+    path: string;
+    definitions: number;
+  };
+  warnings: string[];
+  generated_at: string;
+}
+
+export interface SchemaAddTypeInferResult {
+  action: "infer-types";
+  applied: boolean;
+  min_count: number;
+  candidates: InferredTypeCandidate[];
+  registered: string[];
+  replaced: string[];
+  skipped: Array<{ name: string; reason: string }>;
+  file: {
+    path: string;
+    definitions: number;
+  };
+  warnings: string[];
+  generated_at: string;
+}
+
 export interface SchemaTypeSummary {
   name: string;
   folder: string;
@@ -181,6 +324,12 @@ export interface SchemaListResult {
       total: number;
     };
   };
+  fields: {
+    custom: SchemaFieldSummary[];
+    counts: {
+      total: number;
+    };
+  };
   file: {
     path: string;
   };
@@ -205,7 +354,12 @@ export interface SchemaShowStatusResult {
   generated_at: string;
 }
 
-export type SchemaInspectResult = SchemaListResult | SchemaShowResult | SchemaShowStatusResult;
+export type SchemaInspectResult =
+  | SchemaListResult
+  | SchemaShowResult
+  | SchemaShowStatusResult
+  | SchemaListFieldsResult
+  | SchemaShowFieldResult;
 
 function toAuthor(candidate: string | undefined, defaultAuthor: string): string {
   const resolved = candidate ?? process.env.PM_AUTHOR ?? defaultAuthor;
@@ -475,6 +629,29 @@ export async function runSchemaRemoveType(
 
 function statusesPathFor(pmRoot: string, schema: ReturnType<typeof normalizeRuntimeSchemaSettings>): string {
   return filePathForSchemaSection(pmRoot, schema.files.statuses, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.statuses);
+}
+
+function fieldsPathFor(pmRoot: string, schema: ReturnType<typeof normalizeRuntimeSchemaSettings>): string {
+  return filePathForSchemaSection(pmRoot, schema.files.fields, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.fields);
+}
+
+function typesPathFor(pmRoot: string, schema: ReturnType<typeof normalizeRuntimeSchemaSettings>): string {
+  return filePathForSchemaSection(pmRoot, schema.files.types, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.types);
+}
+
+function toSchemaFieldSummary(field: ReturnType<typeof resolveRuntimeFieldRegistry>["definitions"][number]): SchemaFieldSummary {
+  return {
+    key: field.key,
+    type: field.type,
+    commands: [...field.commands],
+    cli_flag: `--${field.cli_flag}`,
+    cli_aliases: field.cli_aliases.map((alias) => `--${alias}`),
+    ...(field.description ? { description: field.description } : {}),
+    required: field.required,
+    required_on_create: field.required_on_create,
+    allow_unset: field.allow_unset,
+    required_types: [...field.required_types],
+  };
 }
 
 export async function runSchemaAddStatus(
@@ -780,6 +957,7 @@ function buildSchemaStatusSummaries(
 }
 
 async function loadSchemaInspectionContext(global: GlobalOptions): Promise<{
+  pmRoot: string;
   typesPath: string;
   statusesPath: string;
   byType: Record<string, ResolvedItemTypeDefinition>;
@@ -803,6 +981,7 @@ async function loadSchemaInspectionContext(global: GlobalOptions): Promise<{
       .filter((name) => name.length > 0 && !extensionProvenance.has(name)),
   );
   return {
+    pmRoot,
     typesPath,
     statusesPath,
     byType: registry.by_type,
@@ -829,6 +1008,7 @@ export async function runSchemaList(global: GlobalOptions): Promise<SchemaListRe
     }
   }
   const statusSummaries = buildSchemaStatusSummaries(context.schema);
+  const fieldSummaries = resolveRuntimeFieldRegistry(context.schema).definitions.map(toSchemaFieldSummary);
   return {
     action: "list",
     builtin,
@@ -847,6 +1027,12 @@ export async function runSchemaList(global: GlobalOptions): Promise<SchemaListRe
         builtin: statusSummaries.builtin.length,
         custom: statusSummaries.custom.length,
         total: statusSummaries.builtin.length + statusSummaries.custom.length,
+      },
+    },
+    fields: {
+      custom: fieldSummaries,
+      counts: {
+        total: fieldSummaries.length,
       },
     },
     file: {
@@ -919,6 +1105,420 @@ export async function runSchemaShowStatus(
   };
 }
 
+export async function runSchemaAddField(
+  key: string | undefined,
+  options: SchemaAddFieldCommandOptions,
+  global: GlobalOptions,
+): Promise<SchemaAddFieldResult> {
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  await ensureInitialized(pmRoot);
+
+  let normalized;
+  try {
+    normalized = normalizeAddFieldInput({
+      key,
+      type: options.type,
+      commands: options.commands,
+      description: options.description,
+      cliFlag: options.cliFlag,
+      aliases: options.alias,
+      required: options.required,
+      requiredOnCreate: options.requiredOnCreate,
+      allowUnset: options.allowUnset,
+      requiredTypes: options.requiredTypes,
+    });
+  } catch (error) {
+    throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.USAGE);
+  }
+
+  const settings = await readSettings(pmRoot);
+  const schema = normalizeRuntimeSchemaSettings(settings.schema);
+  const fieldsPath = fieldsPathFor(pmRoot, schema);
+
+  const warnings: string[] = [];
+  const author = toAuthor(options.author, settings.author_default);
+  const governance = resolveGovernanceKnobs(settings);
+
+  const releaseLock = await acquireLock(
+    pmRoot,
+    SCHEMA_FIELDS_LOCK_ID,
+    settings.locks.ttl_seconds,
+    author,
+    Boolean(options.force),
+    governance.force_required_for_stale_lock,
+  );
+  let upsert;
+  try {
+    const previousRaw = await readFileIfExists(fieldsPath);
+    let parsed;
+    try {
+      parsed = parseFieldsFile(previousRaw);
+    } catch (error) {
+      throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.GENERIC_FAILURE);
+    }
+    upsert = upsertField(parsed, normalized);
+    await writeFileAtomic(fieldsPath, serializeFieldsFile(upsert.file));
+    warnings.push(
+      ...(await runActiveOnWriteHooks({
+        path: fieldsPath,
+        scope: "project",
+        op: "schema:add-field",
+      })),
+    );
+  } finally {
+    await releaseLock();
+  }
+
+  return {
+    action: "add-field",
+    registered: true,
+    replaced: upsert.replaced,
+    field: upsert.definition,
+    file: {
+      path: fieldsPath,
+      fields: upsert.file.fields.length,
+    },
+    warnings: [...new Set(warnings)].sort((left, right) => left.localeCompare(right)),
+    generated_at: nowIso(),
+  };
+}
+
+/**
+ * Counts items carrying a non-empty value for the custom field's metadata key.
+ * Advisory only (non-blocking) so remove-field can surface how many items would
+ * lose a managed column. Reuses the already-loaded settings (no disk re-read).
+ */
+async function countItemsUsingField(
+  pmRoot: string,
+  settings: PmSettings,
+  schema: ReturnType<typeof normalizeRuntimeSchemaSettings>,
+  metadataKey: string,
+): Promise<number> {
+  const registry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const items = await listAllFrontMatterLight(pmRoot, settings.item_format, registry.type_to_folder, [], schema);
+  return items.filter((item) => {
+    const value = (item as unknown as Record<string, unknown>)[metadataKey];
+    if (value === undefined || value === null) {
+      return false;
+    }
+    if (Array.isArray(value)) {
+      return value.length > 0;
+    }
+    if (typeof value === "string") {
+      return value.trim().length > 0;
+    }
+    return true;
+  }).length;
+}
+
+export async function runSchemaRemoveField(
+  key: string | undefined,
+  options: SchemaRemoveFieldCommandOptions,
+  global: GlobalOptions,
+): Promise<SchemaRemoveFieldResult> {
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  await ensureInitialized(pmRoot);
+
+  const settings = await readSettings(pmRoot);
+  const schema = normalizeRuntimeSchemaSettings(settings.schema);
+  const fieldsPath = fieldsPathFor(pmRoot, schema);
+
+  const warnings: string[] = [];
+  const author = toAuthor(options.author, settings.author_default);
+  const governance = resolveGovernanceKnobs(settings);
+
+  const releaseLock = await acquireLock(
+    pmRoot,
+    SCHEMA_FIELDS_LOCK_ID,
+    settings.locks.ttl_seconds,
+    author,
+    Boolean(options.force),
+    governance.force_required_for_stale_lock,
+  );
+  let removal;
+  try {
+    const previousRaw = await readFileIfExists(fieldsPath);
+    let parsed;
+    try {
+      parsed = parseFieldsFile(previousRaw);
+    } catch (error) {
+      throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.GENERIC_FAILURE);
+    }
+    try {
+      removal = removeField(parsed, key);
+    } catch (error) {
+      throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.USAGE);
+    }
+    if (removal.removed) {
+      const removedKey = normalizeFieldKey(removal.definition?.key ?? key);
+      const metadataKey = normalizeFieldKey(removal.definition?.metadata_key ?? removal.definition?.front_matter_key ?? removedKey);
+      if (metadataKey.length > 0) {
+        const usingField = await countItemsUsingField(pmRoot, settings, schema, metadataKey);
+        if (usingField > 0) {
+          warnings.push(`items_using_field:${usingField}`);
+        }
+      }
+      await writeFileAtomic(fieldsPath, serializeFieldsFile(removal.file));
+      warnings.push(
+        ...(await runActiveOnWriteHooks({
+          path: fieldsPath,
+          scope: "project",
+          op: "schema:remove-field",
+        })),
+      );
+    }
+  } finally {
+    await releaseLock();
+  }
+
+  return {
+    action: "remove-field",
+    removed: removal.removed,
+    ...(removal.definition ? { field: removal.definition } : {}),
+    file: {
+      path: fieldsPath,
+      fields: removal.file.fields.length,
+    },
+    warnings: [...new Set(warnings)].sort((left, right) => left.localeCompare(right)),
+    generated_at: nowIso(),
+  };
+}
+
+export async function runSchemaListFields(global: GlobalOptions): Promise<SchemaListFieldsResult> {
+  const context = await loadSchemaInspectionContext(global);
+  const fields = resolveRuntimeFieldRegistry(context.schema).definitions.map(toSchemaFieldSummary);
+  return {
+    action: "list-fields",
+    fields,
+    counts: {
+      total: fields.length,
+    },
+    file: {
+      path: fieldsPathFor(context.pmRoot, context.schema),
+    },
+    generated_at: nowIso(),
+  };
+}
+
+export async function runSchemaShowField(
+  key: string | undefined,
+  global: GlobalOptions,
+): Promise<SchemaShowFieldResult> {
+  const fieldKey = normalizeFieldKey(key);
+  if (fieldKey.length === 0) {
+    throw new PmCliError("Field key must not be empty.", EXIT_CODE.USAGE);
+  }
+  const context = await loadSchemaInspectionContext(global);
+  const match = resolveRuntimeFieldRegistry(context.schema).by_key.get(fieldKey);
+  if (!match) {
+    throw new PmCliError(
+      `Unknown custom field "${key}". Run pm schema list-fields to inspect registered fields, or pm schema add-field "${escapeForDoubleQuotes(
+        key ?? "",
+      )}" to register it.`,
+      EXIT_CODE.NOT_FOUND,
+      { code: "unknown_field" },
+    );
+  }
+  return {
+    action: "show-field",
+    field: toSchemaFieldSummary(match),
+    file: {
+      path: fieldsPathFor(context.pmRoot, context.schema),
+    },
+    generated_at: nowIso(),
+  };
+}
+
+export async function runSchemaApplyPreset(
+  preset: string | undefined,
+  options: SchemaApplyPresetCommandOptions,
+  global: GlobalOptions,
+): Promise<SchemaApplyPresetResult> {
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  await ensureInitialized(pmRoot);
+
+  let presetName: TypePresetName;
+  try {
+    const normalized = normalizeTypePresetName(preset);
+    if (normalized === undefined) {
+      throw new Error(`Type preset name is required. Allowed: ${TYPE_PRESET_NAMES.join(", ")}.`);
+    }
+    presetName = normalized;
+  } catch (error) {
+    throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.USAGE);
+  }
+
+  const settings = await readSettings(pmRoot);
+  const schema = normalizeRuntimeSchemaSettings(settings.schema);
+  const typesPath = typesPathFor(pmRoot, schema);
+
+  const warnings: string[] = [];
+  const author = toAuthor(options.author, settings.author_default);
+  const governance = resolveGovernanceKnobs(settings);
+
+  const registered: string[] = [];
+  const replaced: string[] = [];
+  let definitionsCount = 0;
+  const releaseLock = await acquireLock(
+    pmRoot,
+    SCHEMA_TYPES_LOCK_ID,
+    settings.locks.ttl_seconds,
+    author,
+    Boolean(options.force),
+    governance.force_required_for_stale_lock,
+  );
+  try {
+    const previousRaw = await readFileIfExists(typesPath);
+    let parsed;
+    try {
+      parsed = parseItemTypesFile(previousRaw);
+    } catch (error) {
+      throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.GENERIC_FAILURE);
+    }
+    let nextFile = parsed;
+    for (const normalized of resolveTypePresetDefinitions(presetName)) {
+      const upsert = upsertItemType(nextFile, normalized);
+      nextFile = upsert.file;
+      (upsert.replaced ? replaced : registered).push(upsert.definition.name);
+    }
+    definitionsCount = nextFile.definitions.length;
+    await writeFileAtomic(typesPath, serializeItemTypesFile(nextFile));
+    warnings.push(
+      ...(await runActiveOnWriteHooks({
+        path: typesPath,
+        scope: "project",
+        op: "schema:apply-preset",
+      })),
+    );
+  } finally {
+    await releaseLock();
+  }
+
+  return {
+    action: "apply-preset",
+    preset: presetName,
+    registered,
+    replaced,
+    file: {
+      path: typesPath,
+      definitions: definitionsCount,
+    },
+    warnings: [...new Set(warnings)].sort((left, right) => left.localeCompare(right)),
+    generated_at: nowIso(),
+  };
+}
+
+export async function runSchemaInferTypes(
+  options: SchemaAddTypeInferCommandOptions,
+  global: GlobalOptions,
+): Promise<SchemaAddTypeInferResult> {
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  await ensureInitialized(pmRoot);
+
+  const settings = await readSettings(pmRoot);
+  const schema = normalizeRuntimeSchemaSettings(settings.schema);
+  const typesPath = typesPathFor(pmRoot, schema);
+  const minCount = typeof options.minCount === "number" && options.minCount > 0 ? Math.trunc(options.minCount) : 10;
+
+  const registry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const items = await listAllFrontMatterLight(pmRoot, settings.item_format, registry.type_to_folder, [], schema);
+  const titles = items.map((item) => (typeof item.title === "string" ? item.title : ""));
+  const candidates = inferTypesFromTitles(titles, { minCount });
+
+  const warnings: string[] = [];
+  const registered: string[] = [];
+  const replaced: string[] = [];
+  const skipped: Array<{ name: string; reason: string }> = [];
+  let definitionsCount: number;
+
+  // Dry-run preview by default: only --apply mutates schema/types.json.
+  if (!options.apply) {
+    const parsed = parseItemTypesFile(await readFileIfExists(typesPath));
+    definitionsCount = parsed.definitions.length;
+    return {
+      action: "infer-types",
+      applied: false,
+      min_count: minCount,
+      candidates,
+      registered,
+      replaced,
+      skipped,
+      file: {
+        path: typesPath,
+        definitions: definitionsCount,
+      },
+      warnings,
+      generated_at: nowIso(),
+    };
+  }
+
+  const author = toAuthor(options.author, settings.author_default);
+  const governance = resolveGovernanceKnobs(settings);
+  const releaseLock = await acquireLock(
+    pmRoot,
+    SCHEMA_TYPES_LOCK_ID,
+    settings.locks.ttl_seconds,
+    author,
+    Boolean(options.force),
+    governance.force_required_for_stale_lock,
+  );
+  try {
+    const previousRaw = await readFileIfExists(typesPath);
+    let parsed;
+    try {
+      parsed = parseItemTypesFile(previousRaw);
+    } catch (error) {
+      throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.GENERIC_FAILURE);
+    }
+    let nextFile = parsed;
+    for (const candidate of candidates) {
+      if (candidate.shadows_builtin) {
+        skipped.push({ name: candidate.name, reason: "shadows_builtin" });
+        continue;
+      }
+      let normalized;
+      try {
+        normalized = normalizeAddTypeInput({ name: candidate.name });
+      } catch {
+        // A title prefix that does not normalize to a valid type token (rare,
+        // given the inference pattern) is skipped rather than aborting the batch.
+        skipped.push({ name: candidate.name, reason: "invalid_type_token" });
+        continue;
+      }
+      const upsert = upsertItemType(nextFile, normalized);
+      nextFile = upsert.file;
+      (upsert.replaced ? replaced : registered).push(upsert.definition.name);
+    }
+    definitionsCount = nextFile.definitions.length;
+    await writeFileAtomic(typesPath, serializeItemTypesFile(nextFile));
+    warnings.push(
+      ...(await runActiveOnWriteHooks({
+        path: typesPath,
+        scope: "project",
+        op: "schema:infer-types",
+      })),
+    );
+  } finally {
+    await releaseLock();
+  }
+
+  return {
+    action: "infer-types",
+    applied: true,
+    min_count: minCount,
+    candidates,
+    registered,
+    replaced,
+    skipped,
+    file: {
+      path: typesPath,
+      definitions: definitionsCount,
+    },
+    warnings: [...new Set(warnings)].sort((left, right) => left.localeCompare(right)),
+    generated_at: nowIso(),
+  };
+}
+
 export function formatSchemaAddTypeHuman(result: SchemaAddTypeResult): string {
   const verb = result.replaced ? "Updated" : "Registered";
   const aliasSuffix =
@@ -977,8 +1577,13 @@ export function formatSchemaListHuman(result: SchemaListResult): string {
     }
     lines.push(`${label}: ${entries.map((entry) => entry.id).join(", ")}`);
   }
+  lines.push(`custom fields: ${result.fields.counts.total} total`);
+  if (result.fields.custom.length > 0) {
+    lines.push(`fields: ${result.fields.custom.map((field) => `${field.key} (${field.type}, ${field.cli_flag})`).join(", ")}`);
+  }
   lines.push(`Inspect one: pm schema show <Type>`);
   lines.push(`Inspect one status: pm schema show-status <status>`);
+  lines.push(`Inspect one field: pm schema show-field <key>`);
   return lines.join("\n");
 }
 
@@ -1021,6 +1626,103 @@ export function formatSchemaShowStatusHuman(result: SchemaShowStatusResult): str
     parts.push(`order: ${result.status.order}`);
   }
   return parts.join("\n");
+}
+
+function formatFieldSummaryLine(field: SchemaFieldSummary): string {
+  const flags: string[] = [];
+  if (field.required) {
+    flags.push("required");
+  }
+  if (field.required_on_create) {
+    flags.push("required_on_create");
+  }
+  if (!field.allow_unset) {
+    flags.push("no_unset");
+  }
+  const flagSuffix = flags.length > 0 ? ` [${flags.join(", ")}]` : "";
+  return `${field.key} (${field.type}) ${field.cli_flag} commands=${field.commands.join("/")}${flagSuffix}`;
+}
+
+export function formatSchemaAddFieldHuman(result: SchemaAddFieldResult): string {
+  const verb = result.replaced ? "Updated" : "Registered";
+  return `${verb} custom field "${result.field.key}" in ${result.file.path}. Use it: pm create "<title>" --${(result.field.cli_flag ?? result.field.key).replaceAll("_", "-")} <value>`;
+}
+
+export function formatSchemaRemoveFieldHuman(result: SchemaRemoveFieldResult): string {
+  if (!result.removed) {
+    return `No custom field matched; nothing removed from ${result.file.path}.`;
+  }
+  const key = result.field?.key ?? "(unknown)";
+  return `Removed custom field "${key}" from ${result.file.path}.`;
+}
+
+export function formatSchemaListFieldsHuman(result: SchemaListFieldsResult): string {
+  const lines = [`Custom fields: ${result.counts.total} total`];
+  for (const field of result.fields) {
+    lines.push(`  ${formatFieldSummaryLine(field)}`);
+  }
+  lines.push(`Inspect one: pm schema show-field <key>`);
+  return lines.join("\n");
+}
+
+export function formatSchemaShowFieldHuman(result: SchemaShowFieldResult): string {
+  const field = result.field;
+  const parts = [
+    `field: ${field.key}`,
+    `type: ${field.type}`,
+    `cli_flag: ${field.cli_flag}`,
+    `commands: ${field.commands.join(", ")}`,
+  ];
+  if (field.cli_aliases.length > 0) {
+    parts.push(`cli_aliases: ${field.cli_aliases.join(", ")}`);
+  }
+  if (field.description) {
+    parts.push(`description: ${field.description}`);
+  }
+  if (field.required) {
+    parts.push(`required: true`);
+  }
+  if (field.required_on_create) {
+    parts.push(`required_on_create: true`);
+  }
+  if (!field.allow_unset) {
+    parts.push(`allow_unset: false`);
+  }
+  if (field.required_types.length > 0) {
+    parts.push(`required_types: ${field.required_types.join(", ")}`);
+  }
+  return parts.join("\n");
+}
+
+export function formatSchemaApplyPresetHuman(result: SchemaApplyPresetResult): string {
+  const registered = result.registered.length > 0 ? `registered: ${result.registered.join(", ")}` : "";
+  const replaced = result.replaced.length > 0 ? `updated: ${result.replaced.join(", ")}` : "";
+  const detail = [registered, replaced].filter((part) => part.length > 0).join("; ");
+  return `Applied "${result.preset}" type preset to ${result.file.path}${detail.length > 0 ? ` (${detail})` : ""}.`;
+}
+
+export function formatSchemaInferTypesHuman(result: SchemaAddTypeInferResult): string {
+  if (result.candidates.length === 0) {
+    return `No title-prefix conventions found with at least ${result.min_count} items. Lower the threshold with --min-count <n>.`;
+  }
+  const lines = result.applied
+    ? [`Inferred and registered custom types from title prefixes (min-count ${result.min_count}):`]
+    : [`Inferred custom type candidates from title prefixes (min-count ${result.min_count}, dry-run):`];
+  for (const candidate of result.candidates) {
+    const note = candidate.shadows_builtin ? " [shadows built-in, skipped]" : "";
+    lines.push(`  ${candidate.name} <- "${candidate.prefix}" (${candidate.count} items)${note}`);
+  }
+  if (!result.applied) {
+    lines.push(`Re-run with --apply to register the non-shadowing candidates.`);
+  } else {
+    if (result.registered.length > 0) {
+      lines.push(`registered: ${result.registered.join(", ")}`);
+    }
+    if (result.replaced.length > 0) {
+      lines.push(`updated: ${result.replaced.join(", ")}`);
+    }
+  }
+  return lines.join("\n");
 }
 
 /* c8 ignore stop */

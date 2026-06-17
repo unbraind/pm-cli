@@ -77,10 +77,16 @@ import {
   runRelease,
   runSchemaAddStatus,
   runSchemaAddType,
+  runSchemaAddField,
+  runSchemaApplyPreset,
+  runSchemaInferTypes,
   runSchemaList,
+  runSchemaListFields,
   runSchemaRemoveStatus,
   runSchemaRemoveType,
+  runSchemaRemoveField,
   runSchemaShow,
+  runSchemaShowField,
   runSchemaShowStatus,
   runSearch,
   runStats,
@@ -914,11 +920,48 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       if (normalizedSubcommand === "show-status") {
         return runSchemaShowStatus(schemaName, global);
       }
+      if (normalizedSubcommand === "list-fields") {
+        return runSchemaListFields(global);
+      }
+      if (normalizedSubcommand === "show-field") {
+        return runSchemaShowField(schemaName, global);
+      }
       if (normalizedSubcommand === "remove-type") {
         return runSchemaRemoveType(schemaName, { author: schemaAuthor, force: schemaForce }, global);
       }
+      if (normalizedSubcommand === "remove-field") {
+        return runSchemaRemoveField(schemaName, { author: schemaAuthor, force: schemaForce }, global);
+      }
+      if (normalizedSubcommand === "apply-preset") {
+        const presetSource = readString(args, "typePreset") ?? readString(options, "typePreset");
+        return runSchemaApplyPreset(presetSource, { author: schemaAuthor, force: schemaForce }, global);
+      }
       const aliasSource = args.alias ?? options.alias;
       const aliases = aliasSource === undefined ? undefined : readStringArray(aliasSource);
+      if (normalizedSubcommand === "add-field") {
+        const commandsSource = args.commands ?? options.commands;
+        const commands = commandsSource === undefined ? undefined : readStringArray(commandsSource);
+        const requiredTypesSource = args.requiredTypes ?? options.requiredTypes;
+        const requiredTypes = requiredTypesSource === undefined ? undefined : readStringArray(requiredTypesSource);
+        return runSchemaAddField(
+          schemaName,
+          {
+            type: readString(args, "fieldType") ?? readString(options, "fieldType"),
+            commands,
+            description: readString(args, "description") ?? readString(options, "description"),
+            cliFlag: readString(args, "cliFlag") ?? readString(options, "cliFlag"),
+            alias: aliases,
+            required: args.required === true || options.required === true,
+            requiredOnCreate: args.requiredOnCreate === true || options.requiredOnCreate === true,
+            // allow_unset defaults true; only an explicit false disables it.
+            allowUnset: !(args.allowUnset === false || options.allowUnset === false),
+            requiredTypes,
+            author: schemaAuthor,
+            force: schemaForce,
+          },
+          global,
+        );
+      }
       if (normalizedSubcommand === "add-status") {
         const roleSource = args.role ?? options.role;
         const roles = roleSource === undefined ? undefined : readStringArray(roleSource);
@@ -954,8 +997,26 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       }
       if (normalizedSubcommand !== "add-type") {
         throw new PmCliError(
-          `Unknown pm schema subcommand "${subcommand}". Allowed: add-type, remove-type, add-status, remove-status, list, show, show-status`,
+          `Unknown pm schema subcommand "${subcommand}". Allowed: add-type, remove-type, add-status, remove-status, add-field, remove-field, list-fields, show-field, apply-preset, list, show, show-status`,
           64,
+        );
+      }
+      if (args.infer === true || options.infer === true) {
+        const minCountSource = args.minCount ?? options.minCount;
+        const minCount =
+          typeof minCountSource === "number"
+            ? minCountSource
+            : typeof minCountSource === "string" && minCountSource.trim().length > 0
+              ? Number(minCountSource)
+              : undefined;
+        return runSchemaInferTypes(
+          {
+            minCount,
+            apply: args.apply === true || options.apply === true,
+            author: schemaAuthor,
+            force: schemaForce,
+          },
+          global,
         );
       }
       return runSchemaAddType(

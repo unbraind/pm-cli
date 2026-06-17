@@ -2,11 +2,14 @@ id: pm-tb42
 title: "GH-245: schema add-type --infer from title prefixes"
 description: "Tracks GitHub issue #245: infer custom item types from existing title-prefix conventions via pm schema add-type --infer."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-06-16T11:28:28.621Z"
-updated_at: "2026-06-16T11:28:28.621Z"
+updated_at: "2026-06-17T05:22:45.660Z"
 author: codex-sdk-cli-consolidation-20260616
 parent: pm-8jdc
+comments[1]{created_at,author,text}:
+  "2026-06-17T05:14:02.886Z",claude-code-agent,"Implemented schema add-type --infer (GH-245). New pure-logic core module src/core/schema/type-inference.ts: extractTitlePrefix (matches letter-led PREFIX-/PREFIX: conventions, rejects single-char and numeric-led sequence markers), prefixToTypeName (PascalCase), inferTypesFromTitles (groups titles by prefix, threshold via min-count default 10, sorted by count desc then name, flags shadows_builtin via matchBuiltinTypeName, caps examples). New runSchemaInferTypes in schema.ts scans titles via listAllFrontMatterLight; DRY-RUN/preview by default, only --apply mutates schema/types.json (under SCHEMA_TYPES_LOCK_ID); skips built-in-shadowing candidates (reason:shadows_builtin) and invalid-token candidates (reason:invalid_type_token); reports candidates/registered/replaced/skipped. Conservative per the issue: never mutates without --apply. Flags: --infer/--min-count/--apply on add-type. Surfaces wired: commander flags, SCHEMA_FLAG_CONTRACTS, MCP pm_schema infer/minCount/apply props + PM_TOOL_ACTION_SCHEMA_CONTRACTS optional, server.ts add-type infer branch (args+options, number+string minCount), completion bash/zsh/fish, COMMANDS.md. Coverage 100/100/100/100 (type-inference.ts/schema.ts/server.ts). Tests: type-inference.spec.ts, schema-command infer describe (preview+apply+shadow-skip+empty), register-commands routing (apply + bare), mcp-handshake infer. Lead closes."
+close_reason: "Added: pm schema add-type --infer scans existing item title prefixes (e.g. BUG:, SPIKE:) and infers custom item types; preview by default, --apply to register, --min-count threshold. Closes GH-245."
 body: ""

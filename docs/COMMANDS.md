@@ -30,7 +30,7 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 | Links | `files`, `docs`, `test`, `deps` | connect items to artifacts, tests, and relationships |
 | Verification | `test`, `test-all`, `test-runs`, `validate`, `gc` | run linked tests and repository checks |
 | History | `history`, `history-compact`, `history-redact`, `history-repair`, `activity`, `restore`, `stats` | inspect, compact, redact, re-anchor, and recover item state |
-| Schema | `schema add-type` / `remove-type` / `add-status` / `remove-status` | manage config-driven custom item types (`.agents/pm/schema/types.json`) and statuses (`.agents/pm/schema/statuses.json`) |
+| Schema | `schema add-type` / `remove-type` / `add-status` / `remove-status` / `add-field` / `remove-field` / `apply-preset` | manage config-driven custom item types (`.agents/pm/schema/types.json`), statuses (`.agents/pm/schema/statuses.json`), and custom metadata fields (`.agents/pm/schema/fields.json`); `apply-preset` adopts a domain type preset; `add-type --infer` derives types from title-prefix conventions |
 | Calendar | `calendar`, `cal` | project deadlines, reminders, and events |
 | Packages | `install`, `upgrade`, `package`, `packages`, `extension`, package/extension command groups | install, upgrade, manage, and run package-backed extension commands |
 | Machines | `contracts`, `help`, optional `guide`/`completion` | command contracts plus optional guide-shell docs routing and shell helpers |
@@ -577,10 +577,17 @@ pm schema add-type Spike --alias spike --alias research --folder spikes
 pm schema remove-type Spike
 pm schema add-status review --role active --alias in_review --description "Awaiting review" --order 25
 pm schema remove-status review
+pm schema add-field severity_level --type string --commands create,update --description "Bug severity" --required-on-create
+pm schema list-fields
+pm schema show-field severity_level
+pm schema remove-field severity_level
+pm schema apply-preset agile
+pm schema add-type --infer --min-count 10
+pm schema add-type --infer --apply
 pm create Spike "Investigate retry backoff"
 ```
 
-- `pm schema list --json` returns `{ builtin, custom, extension, counts, statuses: { builtin, custom, counts } }` for compact machine parsing. Each status entry includes `id`, `source` (`builtin`/`custom`), `roles`, and `aliases`.
+- `pm schema list --json` returns `{ builtin, custom, extension, counts, statuses: { builtin, custom, counts }, fields: { custom, counts } }` for compact machine parsing. Each status entry includes `id`, `source` (`builtin`/`custom`), `roles`, and `aliases`; each field entry includes `key`, `type`, `commands`, `cli_flag`, `cli_aliases`, and the required/allow_unset flags.
 - `pm schema show <Type> --json` returns the resolved definition, including folder, aliases, default status, required create options, type options, command-option policies, and extension provenance when applicable.
 - `pm schema show-status <id> --json` returns one resolved status definition (builtin or custom) including `id`, `source`, `roles`, `aliases`, optional `description`, and optional `order`. Status aliases resolve automatically.
 - `add-type` is an idempotent UPSERT keyed on the type name (case-insensitive); re-running it merges aliases and overrides supplied fields while preserving everything else.
@@ -588,6 +595,10 @@ pm create Spike "Investigate retry backoff"
 - `add-status <id>` writes a custom lifecycle status (idempotent UPSERT keyed on the normalized id; re-adding sets `replaced: true`). Roles are validated against the runtime status roles: `draft`, `active`, `blocked`, `terminal`, `terminal_done`, `terminal_canceled`, `default_open`, `default_close`, `default_cancel`.
 - `remove-status <id>` removes a custom status. The five built-in default statuses (`open`, `in_progress`, `blocked`, `closed`, `canceled`, plus `draft`) are refused. It WARNS (non-blocking) with `items_using_status:<N>` when items currently use that status.
 - Built-in types (Chore, Decision, Epic, Event, Feature, Issue, Meeting, Milestone, Plan, Reminder, Task) are reserved and cannot be redefined or removed.
+- `add-field <key>` registers a custom metadata field in `.agents/pm/schema/fields.json` (shape: `{ "fields": [RuntimeFieldDefinition...] }`). Each custom field dynamically registers a CLI flag on create/update (and any other commands you list) so projects can capture typed project-specific metadata without hand-editing JSON. It is an idempotent UPSERT keyed on the normalized key, and refuses keys that shadow a built-in field. `list-fields` / `show-field <key>` inspect registered fields; `remove-field <key>` drops one and WARNS (non-blocking) with `items_using_field:<N>` when items still carry a value. See [CONFIGURATION.md](CONFIGURATION.md) for the full `schema/fields.json` format.
+- `apply-preset <agile|ops|research>` batch-registers a domain type preset into an already-initialized project (the same vocabulary `pm init --type-preset` seeds); it is idempotent (re-running reports `replaced` entries) and shares its definitions with init.
+- `add-type --infer` scans existing item titles for stable `PREFIX-`/`PREFIX:` conventions and proposes them as custom types. It previews candidates by default (dry-run); pass `--apply` to register the non-shadowing candidates and `--min-count <n>` to tune the per-prefix threshold (default 10). Candidates whose name resolves to a built-in type are reported and skipped.
+- Field flags (`add-field`): `--type <string|number|boolean|string_array>`, `--commands <list>` (repeatable/comma; defaults to create,update), `--cli-flag <flag>`, `--alias <flag>` (extra CLI flag aliases), `--required`, `--required-on-create`, `--no-allow-unset`, `--required-types <list>`.
 - Flags: `--description <text>`, `--default-status <status>`, `--folder <dir>`, `--alias <name>` (repeatable), `--role <value>` (repeatable; add-status), `--order <n>` (add-status), plus `--author`/`--force` governance flags. Add `--json` for the machine envelope.
 - When `pm create`/`pm update` reject an unknown type, the error now points back here: `To register a custom type, run: pm schema add-type "X" (writes .agents/pm/schema/types.json).`
 
@@ -597,7 +608,7 @@ pm create Spike "Investigate retry backoff"
 - `ops`: Incident, Runbook
 - `research`: Experiment, Hypothesis
 
-The option composes with `--defaults`, `--preset`, `--author`, `--agent-guidance`, and `--with-packages`; re-running it is idempotent and reports `registered_type_preset` in JSON output.
+The option composes with `--defaults`, `--preset`, `--author`, `--agent-guidance`, and `--with-packages`; re-running it is idempotent and reports `registered_type_preset` in JSON output. Already-initialized projects can adopt the same presets without re-running init via `pm schema apply-preset agile|ops|research`.
 
 ## Plan Workflow
 

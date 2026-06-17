@@ -73,6 +73,16 @@ When `settings.json` cannot be loaded, `pm` falls back to built-in defaults and 
 
 Runtime item types are context primitives. Use `pm schema list` to inspect the merged registry and `pm schema show <Type>` to inspect one type's folder, aliases, defaults, required options, and extension provenance. `pm init --type-preset agile|ops|research` writes reusable domain types into `.agents/pm/schema/types.json`; this is equivalent to persisted project schema, not an extension-only runtime overlay.
 
+Each scalar setting above is settable via `pm config set <key> <value>` (no hand-editing of `settings.json`). The dotted `settings.json` path is shown in parentheses where it differs from the CLI key:
+
+```bash
+pm config project set id_prefix task                       # (id_prefix) IDs become task-xxxx
+pm config project set author_default release-bot           # (author_default) default mutation author
+pm config project set output_default_format json           # (output.default_format) toon | json
+pm config project set locks_ttl_seconds 60                 # (locks.ttl_seconds) integer >= 1
+pm config project set schema_unknown_field_policy reject   # (schema.unknown_field_policy) allow | warn | reject
+```
+
 ## Environment Variables
 
 | Variable | Use |
@@ -351,6 +361,79 @@ Use runtime contracts for exact active types:
 ```bash
 pm contracts --json
 pm create --help --type Task
+```
+
+## Custom Runtime Fields
+
+Custom runtime fields add typed flags to `pm create`/`pm update` (and optionally `list`/`search`/`context`) and persist their values into item metadata. They are the most powerful customization primitive: a field defined here becomes a first-class `--flag` with validation, completions, and `--help` text, with no code changes.
+
+> The preferred way to add a field is the CLI — `pm schema add-field` writes a well-formed entry for you and validates collisions. Hand-authoring `schema/fields.json` (below) is equivalent and useful for bulk edits or version-controlled review.
+
+Fields live in `.agents/pm/schema/fields.json` with the shape `{ "fields": [RuntimeFieldDefinition...] }`:
+
+```jsonc
+// .agents/pm/schema/fields.json
+{
+  "fields": [
+    {
+      "key": "component",                 // required: canonical field name (snake_case)
+      "type": "string",                   // string | number | boolean | string_array (default string)
+      "metadata_key": "component",        // item metadata key (defaults to `key`)
+      "cli_flag": "component",            // long flag, used as --component (defaults to key)
+      "cli_aliases": ["comp"],            // extra accepted flag spellings (--comp)
+      "commands": ["create", "update", "list"], // create | update | update_many | list | search | calendar | context
+      "description": "Owning component",  // shown in --help
+      "required": false,                  // required on every mutation when true
+      "required_on_create": false,        // required only on create
+      "allow_unset": true,                // allow clearing via --component "" / --no-component
+      "required_types": ["Task"]          // only required for these item types (subset of required*)
+    }
+  ]
+}
+```
+
+`RuntimeFieldDefinition` properties:
+
+- `key` (**required**) — canonical field name. Empty/invalid keys are dropped.
+- `type` — `string` (default), `number`, `boolean`, or `string_array`. A `string_array` field is repeatable (accepts the flag multiple times).
+- `metadata_key` — the item metadata key written/read. Defaults to `key`.
+- `cli_flag` — the long flag name (rendered as `--<cli_flag>`). Defaults to a normalized form of `key`.
+- `cli_aliases` — additional flag spellings; duplicates of `cli_flag` are ignored.
+- `commands` — which commands expose the flag. Defaults to `["create", "update"]`.
+- `required` — value must be present on every accepted mutation.
+- `required_on_create` — value must be present on `pm create` (but not on later updates).
+- `allow_unset` — when `true` (default), the field can be cleared; when `false`, an explicit unset is rejected.
+- `required_types` — narrows `required`/`required_on_create` to only the listed item types.
+- `description` — surfaced in `--help`.
+
+End-to-end example — add a required-on-create `component` string field on `Task` items:
+
+```jsonc
+// .agents/pm/schema/fields.json
+{
+  "fields": [
+    {
+      "key": "component",
+      "type": "string",
+      "cli_flag": "component",
+      "commands": ["create", "update", "list"],
+      "description": "Owning component (auth, billing, ...).",
+      "required_on_create": true,
+      "required_types": ["Task"]
+    }
+  ]
+}
+```
+
+```bash
+pm create Task "Fix token refresh" --component auth   # stored in item metadata
+pm list --component auth                              # filter by the custom field
+```
+
+**Governance note:** how item I/O treats metadata keys that are not in the field registry is controlled by `schema.unknown_field_policy` — `allow` (default, keeps unknown keys), `warn` (keeps them but emits a warning), or `reject`. Set `reject` to catch field-name typos once your field registry is stable:
+
+```bash
+pm config project set schema_unknown_field_policy reject   # allow | warn | reject
 ```
 
 ## Public Documentation Boundary

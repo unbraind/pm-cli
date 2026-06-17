@@ -203,6 +203,44 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     kind: "string",
     summary: "LanceDB storage path (relative to pm root or absolute).",
   },
+  // General workspace leaves (id/author/output/locks/schema governance). These
+  // are documented user-facing settings in CONFIGURATION.md that previously
+  // required hand-editing settings.json.
+  {
+    key: "id_prefix",
+    path: "id_prefix",
+    kind: "string",
+    non_empty: true,
+    summary: "Prefix for generated item IDs (e.g. \"pm\" produces pm-xxxx).",
+  },
+  {
+    key: "author_default",
+    path: "author_default",
+    kind: "string",
+    non_empty: true,
+    summary: "Default author recorded on mutations when --author is not supplied.",
+  },
+  {
+    key: "output_default_format",
+    path: "output.default_format",
+    kind: "string",
+    choices: ["toon", "json"],
+    summary: "Default output format for commands that support it: toon or json.",
+  },
+  {
+    key: "locks_ttl_seconds",
+    path: "locks.ttl_seconds",
+    kind: "integer",
+    min: 1,
+    summary: "Claim/lock time-to-live in seconds before a stale lock can be reclaimed.",
+  },
+  {
+    key: "schema_unknown_field_policy",
+    path: "schema.unknown_field_policy",
+    kind: "string",
+    choices: ["allow", "warn", "reject"],
+    summary: "How item I/O handles metadata keys not in the field registry: allow, warn, or reject.",
+  },
 ];
 
 const DESCRIPTOR_BY_KEY: ReadonlyMap<string, NestedSettingDescriptor> = new Map(

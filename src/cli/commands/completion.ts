@@ -418,7 +418,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--all --dry-run --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    schema)",
-    `      COMPREPLY=(${compgen("list show show-status add-type remove-type add-status remove-status --description --default-status --folder --alias --role --order --author --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("list show show-status add-type remove-type add-status remove-status add-field remove-field list-fields show-field apply-preset --description --default-status --folder --alias --role --order --type --commands --cli-flag --required --required-on-create --no-allow-unset --required-types --infer --min-count --apply --author --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    plan)",
     `      COMPREPLY=(${compgen(`${PLAN_SUBCOMMANDS_LIST} ${PLAN_FLAGS}`)})`,
@@ -1159,13 +1159,23 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         schema)
           _arguments \\
-            '1:subcommand:(list show show-status add-type remove-type add-status remove-status)' \\
-            '--description[Human description for the custom item type or status]:text' \\
+            '1:subcommand:(list show show-status add-type remove-type add-status remove-status add-field remove-field list-fields show-field apply-preset)' \\
+            '--description[Human description for the custom item type, status, or field]:text' \\
             '--default-status[Default status hint for the custom item type]:status' \\
             '--folder[Storage folder for items of this custom type]:dir' \\
-            '--alias[Alias for the custom type or status (repeatable)]:name' \\
+            '--alias[Alias for the custom type, status, or field flag (repeatable)]:name' \\
             '--role[Lifecycle role for a custom status (repeatable)]:role' \\
             '--order[Display/sort order for a custom status]:n' \\
+            '--type[Value type for a custom field]:type:(string number boolean string_array)' \\
+            '--commands[Commands a custom field is wired onto (repeatable)]:commands' \\
+            '--cli-flag[Override the auto-derived CLI flag for a custom field]:flag' \\
+            '--required[Mark a custom field as always required]' \\
+            '--required-on-create[Mark a custom field as required at create time]' \\
+            '--no-allow-unset[Disallow clearing a custom field via --unset]' \\
+            '--required-types[Restrict a custom field requirement to specific item types (repeatable)]:types' \\
+            '--infer[Infer item types from title-prefix conventions (add-type)]' \\
+            '--min-count[Minimum items sharing a prefix for --infer]:n' \\
+            '--apply[Register inferred types (with --infer)]' \\
             '--author[Mutation author]:author' \\
             '--force[Force ownership/lock override]' \\
             '--json[Output JSON]' \\
@@ -2136,13 +2146,23 @@ complete -c pm -n '__fish_seen_subcommand_from history-repair' -l dry-run -d 'Pr
 complete -c pm -n '__fish_seen_subcommand_from history-repair' -l author -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from history-repair' -l message -d 'Audit history message' -r
 complete -c pm -n '__fish_seen_subcommand_from history-repair' -l force -d 'Force ownership/lock override'
-complete -c pm -n '__fish_seen_subcommand_from schema' -a 'list show show-status add-type remove-type add-status remove-status' -d 'Schema subcommand'
-complete -c pm -n '__fish_seen_subcommand_from schema' -l description -d 'Human description for the custom item type or status' -r
+complete -c pm -n '__fish_seen_subcommand_from schema' -a 'list show show-status add-type remove-type add-status remove-status add-field remove-field list-fields show-field apply-preset' -d 'Schema subcommand'
+complete -c pm -n '__fish_seen_subcommand_from schema' -l description -d 'Human description for the custom item type, status, or field' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l default-status -d 'Default status hint for the custom item type' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l folder -d 'Storage folder for items of this custom type' -r
-complete -c pm -n '__fish_seen_subcommand_from schema' -l alias -d 'Alias for the custom type or status (repeatable)' -r
+complete -c pm -n '__fish_seen_subcommand_from schema' -l alias -d 'Alias for the custom type, status, or field flag (repeatable)' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l role -d 'Lifecycle role for a custom status (repeatable)' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l order -d 'Display/sort order for a custom status' -r
+complete -c pm -n '__fish_seen_subcommand_from schema' -l type -d 'Value type for a custom field' -r -a 'string number boolean string_array'
+complete -c pm -n '__fish_seen_subcommand_from schema' -l commands -d 'Commands a custom field is wired onto (repeatable)' -r
+complete -c pm -n '__fish_seen_subcommand_from schema' -l cli-flag -d 'Override the auto-derived CLI flag for a custom field' -r
+complete -c pm -n '__fish_seen_subcommand_from schema' -l required -d 'Mark a custom field as always required'
+complete -c pm -n '__fish_seen_subcommand_from schema' -l required-on-create -d 'Mark a custom field as required at create time'
+complete -c pm -n '__fish_seen_subcommand_from schema' -l no-allow-unset -d 'Disallow clearing a custom field via --unset'
+complete -c pm -n '__fish_seen_subcommand_from schema' -l required-types -d 'Restrict a custom field requirement to specific item types (repeatable)' -r
+complete -c pm -n '__fish_seen_subcommand_from schema' -l infer -d 'Infer item types from title-prefix conventions (add-type)'
+complete -c pm -n '__fish_seen_subcommand_from schema' -l min-count -d 'Minimum items sharing a prefix for --infer' -r
+complete -c pm -n '__fish_seen_subcommand_from schema' -l apply -d 'Register inferred types (with --infer)'
 complete -c pm -n '__fish_seen_subcommand_from schema' -l author -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l force -d 'Force ownership/lock override'
 complete -c pm -n '__fish_seen_subcommand_from plan' -a 'create show add-step update-step complete-step block-step reorder-step remove-step link unlink decision discovery validation resume approve materialize' -d 'Plan subcommand'

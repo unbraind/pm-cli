@@ -62,11 +62,30 @@ vi.mock("../../../src/cli/commands/history-repair.js", () => ({
 }));
 vi.mock("../../../src/cli/commands/history-compact.js", () => ({ runHistoryCompact: vi.fn() }));
 vi.mock("../../../src/cli/commands/schema.js", () => ({
-  SCHEMA_SUBCOMMANDS: ["list", "show", "show-status", "add-type", "remove-type", "add-status", "remove-status"],
+  SCHEMA_SUBCOMMANDS: [
+    "add-type",
+    "remove-type",
+    "add-status",
+    "remove-status",
+    "add-field",
+    "remove-field",
+    "list-fields",
+    "show-field",
+    "apply-preset",
+    "list",
+    "show",
+    "show-status",
+  ],
   runSchemaAddType: vi.fn(),
   runSchemaRemoveType: vi.fn(),
   runSchemaAddStatus: vi.fn(),
   runSchemaRemoveStatus: vi.fn(),
+  runSchemaAddField: vi.fn(),
+  runSchemaRemoveField: vi.fn(),
+  runSchemaListFields: vi.fn(),
+  runSchemaShowField: vi.fn(),
+  runSchemaApplyPreset: vi.fn(),
+  runSchemaInferTypes: vi.fn(),
   runSchemaList: vi.fn(),
   runSchemaShow: vi.fn(),
   runSchemaShowStatus: vi.fn(),
@@ -74,6 +93,12 @@ vi.mock("../../../src/cli/commands/schema.js", () => ({
   formatSchemaRemoveTypeHuman: vi.fn(() => "removed type"),
   formatSchemaAddStatusHuman: vi.fn(() => "added status"),
   formatSchemaRemoveStatusHuman: vi.fn(() => "removed status"),
+  formatSchemaAddFieldHuman: vi.fn(() => "added field"),
+  formatSchemaRemoveFieldHuman: vi.fn(() => "removed field"),
+  formatSchemaListFieldsHuman: vi.fn(() => "schema fields"),
+  formatSchemaShowFieldHuman: vi.fn(() => "schema field"),
+  formatSchemaApplyPresetHuman: vi.fn(() => "applied preset"),
+  formatSchemaInferTypesHuman: vi.fn(() => "inferred types"),
   formatSchemaListHuman: vi.fn(() => "schema list"),
   formatSchemaShowHuman: vi.fn(() => "schema show"),
   formatSchemaShowStatusHuman: vi.fn(() => "schema status"),
@@ -140,6 +165,12 @@ import { runHistoryCompact } from "../../../src/cli/commands/history-compact.js"
 import {
   formatSchemaAddStatusHuman,
   formatSchemaAddTypeHuman,
+  formatSchemaAddFieldHuman,
+  formatSchemaRemoveFieldHuman,
+  formatSchemaListFieldsHuman,
+  formatSchemaShowFieldHuman,
+  formatSchemaApplyPresetHuman,
+  formatSchemaInferTypesHuman,
   formatSchemaListHuman,
   formatSchemaRemoveStatusHuman,
   formatSchemaRemoveTypeHuman,
@@ -147,6 +178,12 @@ import {
   formatSchemaShowStatusHuman,
   runSchemaAddStatus,
   runSchemaAddType,
+  runSchemaAddField,
+  runSchemaRemoveField,
+  runSchemaListFields,
+  runSchemaShowField,
+  runSchemaApplyPreset,
+  runSchemaInferTypes,
   runSchemaList,
   runSchemaRemoveStatus,
   runSchemaRemoveType,
@@ -263,6 +300,12 @@ beforeEach(() => {
   vi.mocked(runSchemaRemoveType).mockResolvedValue({ action: "remove-type", warnings: [] } as never);
   vi.mocked(runSchemaAddStatus).mockResolvedValue({ action: "add-status", warnings: [] } as never);
   vi.mocked(runSchemaRemoveStatus).mockResolvedValue({ action: "remove-status", warnings: [] } as never);
+  vi.mocked(runSchemaAddField).mockResolvedValue({ action: "add-field", warnings: [] } as never);
+  vi.mocked(runSchemaRemoveField).mockResolvedValue({ action: "remove-field", warnings: [] } as never);
+  vi.mocked(runSchemaListFields).mockResolvedValue({ action: "list-fields" } as never);
+  vi.mocked(runSchemaShowField).mockResolvedValue({ action: "show-field" } as never);
+  vi.mocked(runSchemaApplyPreset).mockResolvedValue({ action: "apply-preset", warnings: [] } as never);
+  vi.mocked(runSchemaInferTypes).mockResolvedValue({ action: "infer-types", warnings: [] } as never);
   vi.mocked(runSchemaList).mockResolvedValue({ action: "list" } as never);
   vi.mocked(runSchemaShow).mockResolvedValue({ action: "show" } as never);
   vi.mocked(runSchemaShowStatus).mockResolvedValue({ action: "show-status" } as never);
@@ -1141,6 +1184,86 @@ describe("mutation command actions", () => {
     expect(vi.mocked(formatSchemaListHuman)).toHaveBeenCalledTimes(1);
     await expect(runCli("schema", "add-status", "bad", "--order", "not-a-number")).rejects.toThrow(
       "--order must be a finite integer",
+    );
+
+    await runCliRaw(
+      "schema",
+      "add-field",
+      "severity_level",
+      "--type",
+      "string",
+      "--commands",
+      "create,update",
+      "--cli-flag",
+      "--sev",
+      "--alias",
+      "severity",
+      "--required",
+      "--required-on-create",
+      "--no-allow-unset",
+      "--required-types",
+      "Bug,Story",
+    );
+    expect(vi.mocked(runSchemaAddField)).toHaveBeenCalledWith(
+      "severity_level",
+      expect.objectContaining({
+        type: "string",
+        commands: ["create", "update"],
+        cliFlag: "--sev",
+        alias: ["severity"],
+        required: true,
+        requiredOnCreate: true,
+        allowUnset: false,
+        requiredTypes: ["Bug", "Story"],
+      }),
+      expect.anything(),
+    );
+    expect(vi.mocked(formatSchemaAddFieldHuman)).toHaveBeenCalledTimes(1);
+
+    // add-field with neither --type nor --cli-flag exercises the optional-flag fallbacks.
+    await runCliRaw("schema", "add-field", "owner");
+    expect(vi.mocked(runSchemaAddField)).toHaveBeenLastCalledWith(
+      "owner",
+      expect.objectContaining({ type: undefined, cliFlag: undefined, allowUnset: true }),
+      expect.anything(),
+    );
+
+    await runCliRaw("schema", "list-fields");
+    expect(vi.mocked(runSchemaListFields)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(formatSchemaListFieldsHuman)).toHaveBeenCalledTimes(1);
+
+    await runCliRaw("schema", "show-field", "severity_level");
+    expect(vi.mocked(runSchemaShowField)).toHaveBeenCalledWith("severity_level", expect.anything());
+    expect(vi.mocked(formatSchemaShowFieldHuman)).toHaveBeenCalledTimes(1);
+
+    await runCliRaw("schema", "remove-field", "severity_level", "--force");
+    expect(vi.mocked(runSchemaRemoveField)).toHaveBeenCalledWith(
+      "severity_level",
+      { author: undefined, force: true },
+      expect.anything(),
+    );
+    expect(vi.mocked(formatSchemaRemoveFieldHuman)).toHaveBeenCalledTimes(1);
+
+    await runCliRaw("schema", "apply-preset", "agile");
+    expect(vi.mocked(runSchemaApplyPreset)).toHaveBeenCalledWith(
+      "agile",
+      { author: undefined, force: false },
+      expect.anything(),
+    );
+    expect(vi.mocked(formatSchemaApplyPresetHuman)).toHaveBeenCalledTimes(1);
+
+    await runCliRaw("schema", "add-type", "--infer", "--min-count", "5", "--apply");
+    expect(vi.mocked(runSchemaInferTypes)).toHaveBeenCalledWith(
+      expect.objectContaining({ minCount: 5, apply: true }),
+      expect.anything(),
+    );
+    expect(vi.mocked(formatSchemaInferTypesHuman)).toHaveBeenCalledTimes(1);
+
+    // Bare --infer exercises the apply-false / minCount-undefined fallbacks.
+    await runCliRaw("schema", "add-type", "--infer");
+    expect(vi.mocked(runSchemaInferTypes)).toHaveBeenLastCalledWith(
+      expect.objectContaining({ apply: false, minCount: undefined }),
+      expect.anything(),
     );
   });
 
