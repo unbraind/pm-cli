@@ -352,7 +352,12 @@ export function looksLikeGenericKeyValueEntry(raw: string): boolean {
  *
  * Comparison is case-insensitive so a key the downstream reader would accept
  * (e.g. `Path`) is never falsely rejected; the emitted "Allowed keys" list
- * preserves the canonical casing the caller passes in.
+ * preserves the canonical casing the caller passes in. Recognized keys are then
+ * normalized in-place to their lowercase canonical form so downstream readers
+ * (`kv.path`, `kv.id`, `kv.at`, …) see the value even when the input used mixed
+ * casing — otherwise `Path=README.md` would pass validation yet read back as an
+ * undefined `path` and surface a confusing "requires path" error. A key that
+ * collides with another after normalization (e.g. `path=a,Path=b`) is rejected.
  *
  * Parsers with an intentional plaintext fallback (`--comment`/`--note`/
  * `--learning`, annotation `--add`) deliberately do NOT call this — there an
@@ -365,15 +370,28 @@ export function assertNoUnknownCsvKeys(
 ): void {
   const allowed = new Set(allowedKeys.map((key) => key.toLowerCase()));
   const unknownKeys = Object.keys(kv).filter((key) => !allowed.has(key.toLowerCase()));
-  if (unknownKeys.length === 0) {
-    return;
+  if (unknownKeys.length > 0) {
+    throw new PmCliError(
+      `${optionName} does not recognize key${unknownKeys.length > 1 ? "s" : ""} ${unknownKeys
+        .map((key) => `"${key}"`)
+        .join(", ")}. Allowed keys: ${allowedKeys.join(", ")}.`,
+      EXIT_CODE.USAGE,
+    );
   }
-  throw new PmCliError(
-    `${optionName} does not recognize key${unknownKeys.length > 1 ? "s" : ""} ${unknownKeys
-      .map((key) => `"${key}"`)
-      .join(", ")}. Allowed keys: ${allowedKeys.join(", ")}.`,
-    EXIT_CODE.USAGE,
-  );
+  for (const key of Object.keys(kv)) {
+    const normalizedKey = key.toLowerCase();
+    if (normalizedKey === key) {
+      continue;
+    }
+    if (Object.hasOwn(kv, normalizedKey)) {
+      throw new PmCliError(
+        `${optionName} provides key "${key}" more than once after case normalization.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    kv[normalizedKey] = kv[key];
+    delete kv[key];
+  }
 }
 
 async function readStdinText(optionName: string): Promise<string> {

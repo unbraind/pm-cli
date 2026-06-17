@@ -110,6 +110,17 @@ describe("core/item/parse", () => {
     }
   });
 
+  it("assertNoUnknownCsvKeys normalizes recognized keys to lowercase so downstream reads work (GH-258)", () => {
+    // Mixed-case recognized key is rewritten in place to its lowercase canonical form.
+    const kv: Record<string, string> = { Path: "README.md", scope: "project" };
+    assertNoUnknownCsvKeys(kv, "--add", ["path", "scope", "note"]);
+    expect(kv).toEqual({ path: "README.md", scope: "project" });
+    // A key that collides with another only after normalization is rejected.
+    expect(() => assertNoUnknownCsvKeys({ path: "a", Path: "b" }, "--add", ["path", "scope"])).toThrow(
+      '--add provides key "Path" more than once after case normalization.',
+    );
+  });
+
   it("looksLikeGenericKeyValueEntry detects first-key typos but not bare/Windows paths (GH-258)", () => {
     // Generic `key=` opener (even an unknown key) is structured so it gets validated.
     expect(looksLikeGenericKeyValueEntry("boguskey=x,path=README.md")).toBe(true);

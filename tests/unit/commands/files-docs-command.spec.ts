@@ -391,6 +391,9 @@ describe("runFiles", () => {
       // A Windows absolute path is still stored as a bare path, not misread as a `C=…` entry.
       const windows = await runFiles(id, { add: ["C:\\Users\\me\\readme.md"] }, { path: context.pmPath });
       expect(windows.files.some((file) => file.path === "C:/Users/me/readme.md")).toBe(true);
+      // A mixed-case recognized key is normalized so the value is read (not a confusing "requires path").
+      const mixedCase = await runFiles(id, { add: ["Path=docs/MixedCase.md,Scope=project"] }, { path: context.pmPath });
+      expect(mixedCase.files.some((file) => file.path === "docs/MixedCase.md")).toBe(true);
     });
   });
 
