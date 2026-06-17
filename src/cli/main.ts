@@ -2098,10 +2098,49 @@ function shouldAttachRichHelpTextForInvocation(invocationArgv: string[]): boolea
   );
 }
 
+const IDEMPOTENT_TOP_LEVEL_REGISTRATION = Symbol("pmCliIdempotentTopLevelRegistration");
+
+/**
+ * The root `program` is a module-level singleton. Any path that enters
+ * `runPmCli` a second time in the same process (an embedding host, a long-lived
+ * plugin runtime, or a retry) re-runs core command registration against it, and
+ * Commander throws `cannot add command 'X' as already have command 'X'` on the
+ * second pass. That is a raw `Error` (not a `CommandError`), so it escapes the
+ * Sentry release-gate CLI-error allowlist and can silently block the daily
+ * auto-release (Sentry PM-CLI-1R / pm-zyez — the fragility class pm-nb08 warns
+ * about).
+ *
+ * Make top-level registration idempotent: a duplicate `program.command(name)`
+ * returns a throwaway `Command`, so its chained `.argument()/.option()/.action()`
+ * builders apply harmlessly while the already-wired original command is
+ * preserved. The guard is installed once per program (Symbol flag) and only
+ * short-circuits exact duplicates — every first-time registration still flows
+ * through Commander untouched.
+ */
+function ensureIdempotentTopLevelCommandRegistration(rootProgram: Command): void {
+  const guarded = rootProgram as Command & { [IDEMPOTENT_TOP_LEVEL_REGISTRATION]?: true };
+  if (guarded[IDEMPOTENT_TOP_LEVEL_REGISTRATION]) {
+    return;
+  }
+  guarded[IDEMPOTENT_TOP_LEVEL_REGISTRATION] = true;
+  const registerOriginalCommand = rootProgram.command.bind(rootProgram) as (
+    nameAndArgs: string,
+    ...rest: unknown[]
+  ) => Command;
+  rootProgram.command = ((nameAndArgs: string, ...rest: unknown[]): Command => {
+    const commandName = nameAndArgs.split(/\s+/u)[0];
+    if (rootProgram.commands.some((existing) => existing.name() === commandName)) {
+      return new Command(commandName);
+    }
+    return registerOriginalCommand(nameAndArgs, ...rest);
+  }) as typeof rootProgram.command;
+}
+
 async function registerCoreCommandFamilies(
   rootProgram: Command,
   selection: CoreCommandRegistrationSelection,
 ): Promise<void> {
+  ensureIdempotentTopLevelCommandRegistration(rootProgram);
   if (selection.setup) {
     const { registerSetupCommands } = await loadSetupRegistrationModule();
     registerSetupCommands(rootProgram);
@@ -2556,6 +2595,7 @@ export const _testOnly = {
   emitExtensionProfile,
   emitExtensionSkippedProfile,
   emitSettingsReadWarnings,
+  ensureIdempotentTopLevelCommandRegistration,
   enforceExplicitRetryForFlagTypos,
   envFlagEnabled,
   executeRegisteredRuntimeMigrations,

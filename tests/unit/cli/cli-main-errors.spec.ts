@@ -258,6 +258,32 @@ describe("CLI main error helpers", () => {
     expect(_testOnly.isCommanderError(new Error("plain"))).toBe(false);
   });
 
+  it("makes top-level command registration idempotent so re-entry never throws (pm-zyez / PM-CLI-1R)", () => {
+    const program = new Command();
+    _testOnly.ensureIdempotentTopLevelCommandRegistration(program);
+
+    // First registration of `init` behaves exactly like Commander.
+    const init = program.command("init").description("Initialize");
+    expect(init.name()).toBe("init");
+    expect(program.commands.filter((entry) => entry.name() === "init")).toHaveLength(1);
+
+    // A second `program.command("init")` (a re-entrant registration on the same
+    // singleton) no longer throws "cannot add command 'init'..."; it returns a
+    // throwaway command and leaves the original in place.
+    expect(() => program.command("init").argument("[prefix]").description("dup")).not.toThrow();
+    expect(program.commands.filter((entry) => entry.name() === "init")).toHaveLength(1);
+
+    // Distinct names with arguments still register normally through the guard.
+    const list = program.command("list <id>").description("List");
+    expect(list.name()).toBe("list");
+    expect(program.commands.some((entry) => entry.name() === "list")).toBe(true);
+
+    // Re-installing the guard on the same program is a no-op (Symbol flag).
+    _testOnly.ensureIdempotentTopLevelCommandRegistration(program);
+    expect(() => program.command("init")).not.toThrow();
+    expect(program.commands.filter((entry) => entry.name() === "init")).toHaveLength(1);
+  });
+
   it("reads finite numeric thrown exit codes only", () => {
     expect(_testOnly.readThrownExitCode({ exitCode: EXIT_CODE.CONFLICT })).toBe(EXIT_CODE.CONFLICT);
     expect(_testOnly.readThrownExitCode({ exitCode: 2.8 })).toBe(2.8);
