@@ -4,6 +4,8 @@
 
 ### Added
 
+- GH-216: default lifecycle transition suggestions ([pm-y1z0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-y1z0.toon))
+- GH-217: scheduling type creation shortcuts ([pm-76r5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-76r5.toon))
 - Sentry PM-CLI-1R: 'cannot add command init as already have command init' — top-level init double-registration throws raw Commander error ([pm-zyez](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zyez.toon))
 - GH-258: strict unknown-key rejection across all structured CSV/markdown link & metadata parsers \(validation parity with test --add\) ([pm-0v9k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-0v9k.toon))
 - Expose schema.unknown\_field\_policy via pm config set schema\_unknown\_field\_policy ([pm-nnaq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-nnaq.toon))

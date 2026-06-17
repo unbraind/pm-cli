@@ -2,11 +2,15 @@ id: pm-76r5
 title: "GH-217: scheduling type creation shortcuts"
 description: "Tracks GitHub issue #217: improve streamlined creation flows for scheduling-oriented types (Event/Meeting/Reminder)."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-06-16T11:28:39.146Z"
-updated_at: "2026-06-16T11:28:39.146Z"
+updated_at: "2026-06-17T16:02:57.720Z"
 author: codex-sdk-cli-consolidation-20260616
 parent: pm-mpbb
+comments[2]{created_at,author,text}:
+  "2026-06-17T15:28:20.104Z",claude-code-agent,"Design (GH-217 scheduling shortcuts): NEW top-level commands pm meet/pm remind/pm event in src/cli/commands/scheduling-shortcuts.ts (runMeet/runEvent/runRemind). Thin translators building CreateOptions delegating to runCreate with schedulePreset:lightweight. Friendly flags map to existing fields: meet/event --start/--duration/--end/--location/--timezone/--all-day -> --event CSV; remind --at/--text -> --reminder CSV. Defaults: meet start=now duration=1h; event start=now duration=1h; remind at=+1d text=title. Passthrough --parent/--tags/--priority/--body/--description/--author/--message. Reuses resolveIsoOrRelative. Full surface wiring + 100% cov."
+  "2026-06-17T15:59:21.084Z",claude-code-agent,"Implemented (GH-217). New file src/cli/commands/scheduling-shortcuts.ts: runMeet/runEvent/runRemind delegate to runCreate. pm meet/pm event take --start/--duration/--end/--location/--timezone/--all-day; pm remind takes --at/--text. Defaults: meet+event start=now duration=1h; remind at=+1d text=title. Free-text location/text are double-quoted (quoteCsvValue) so commas survive the --event/--reminder CSV round-trip. DECISION: --duration keeps identical unit semantics to --event duration= (h/d/w/m where m=MONTHS, no minutes) to avoid forking time-parse behavior; documented the m=months caveat in COMMANDS.md + filed follow-up for sub-hour granularity. Wired: register-operations.ts (registerSchedulingShortcutCommands), enum-contracts PM_CORE_COMMAND_NAMES, cli-contracts MEET/EVENT/REMIND_FLAG_CONTRACTS + switch, completion.ts (bash/zsh/fish), help-content.ts, COMMANDS.md (Scheduling section + family table), commands/index.ts barrel (avoids orphan_modules), golden regenerated. Tests: scheduling-shortcuts.spec.ts (7) + register-commands delegation. 100/100/100/100 on new files. Manual sandbox: meet/event/remind all create well-formed items; validate+health ok."
+close_reason: "Added pm meet/pm event/pm remind scheduling shortcuts: low-friction creation of Meeting/Event/Reminder items from friendly time flags (--start/--duration/--end/--at) that translate to the canonical scheduling fields and delegate to pm create (GH-217)."
 body: ""

@@ -25,6 +25,7 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 | Bootstrap | `init`, `config`, `health`, `telemetry` | create and inspect tracker setup |
 | Triage | `context`, `search`, `list*`, `aggregate`, `dedupe-audit`* | find work and audit decomposition |
 | Lifecycle | `create`, `copy`, `focus`, `claim`, `update`, `append`, `close`, `release`, `delete`, `start-task`, `pause-task`, `close-task` | mutate item state |
+| Scheduling | `meet`, `event`, `remind` | low-friction Meeting/Event/Reminder creation |
 | Planning | `plan create`, `plan add-step`, `plan update-step`, `plan complete-step`, `plan link`, `plan approve`, `plan materialize` | agent-optimized living plans with ordered steps, evidence, decisions, validation, and materialization |
 | Logs | `comments`, `notes`, `learnings`, `comments-audit` | record progress and durable context |
 | Links | `files`, `docs`, `test`, `deps` | connect items to artifacts, tests, and relationships |
@@ -346,6 +347,24 @@ pm start-task <id>             # claim + move to in_progress
 pm pause-task <id>             # move to open + release claim
 pm close-task <id> "<reason>"  # close + release assignment
 ```
+
+After `pm create` of a workable item type, the result includes a non-binding `next_transition` hint (`pm start-task <id>` → `in_progress`) when the workflow defines a distinct in-progress status. This nudges agents to move work through `in_progress` instead of jumping straight from `open` to `closed`. Scheduling/reference types (Event, Meeting, Reminder, Milestone, Decision) never receive the hint. (GH-216)
+
+## Scheduling Shortcuts
+
+Low-friction creation for the scheduling item types so time-based tracking feels native. Each command translates friendly time flags into the canonical `--event`/`--reminder` fields and delegates to `pm create` (parent/focus inheritance, governance, and validation all still apply). The `lightweight` schedule preset is applied so progressive scheduling fields are not demanded up front. (GH-217)
+
+```bash
+pm meet "Sprint Planning" --start +1h --duration 1h          # Meeting (start defaults to now, duration to 1h)
+pm event "Release v2" --start 2026-07-01T10:00:00Z --duration 2h --location "Room A"
+pm remind "Review PR" --at +2d                               # Reminder (--at defaults to +1d, text defaults to the title)
+```
+
+- `--start`/`--at`/`--end` accept ISO timestamps, `now`, or relative tokens (`+1h`, `+2d`, `+2w`, `+6m`).
+- `pm meet`/`pm event` take `--start`, `--duration` (or `--end`), `--location`, `--timezone`, and `--all-day`; passing `--end` overrides `--duration`.
+- `--duration` uses the same relative units as `--event duration=`: `h` (hours), `d` (days), `w` (weeks), `m` (**months**, not minutes). For sub-hour spans set an explicit `--end`.
+- `pm remind` takes `--at` and `--text` (text defaults to the title).
+- Common create flags also apply: `--parent`, `--allow-missing-parent`, `--tags`, `--priority`, `--body`, `--description`, `--author`, `--message`.
 
 ## Ownership
 

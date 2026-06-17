@@ -1,0 +1,12 @@
+id: pm-zoe4
+title: "Sub-hour duration granularity for scheduling: support minutes in --duration / event duration="
+description: "The relative-time parser (RELATIVE_DEADLINE) supports h/d/w/m where m=MONTHS; there is no minutes unit, so 'pm meet --duration 30m' resolves to +30 months and sub-hour meetings can only be expressed via an explicit --end ISO. Add a minutes-capable duration form (e.g. accept '30min' or ISO-8601 PT30M) in resolveEventEndAt's duration path, shared by pm create --event duration= and the pm meet/event shortcuts. Surfaced while implementing GH-217 (pm-76r5)."
+type: Feature
+status: open
+priority: 4
+tags[3]: agent-ux,backlog,scheduling
+created_at: "2026-06-17T15:59:46.213Z"
+updated_at: "2026-06-17T15:59:46.213Z"
+author: claude-code-agent
+parent: pm-mpbb
+body: "Scope: resolveEventEndAt + the relative-offset parser. Keep --deadline/relative-token semantics (m=months) unchanged for backward compat; introduce a distinct minutes token only for durations, or accept ISO-8601 duration. Update docs + completions. 100% cov."

@@ -2173,6 +2173,11 @@
       "provider": "core"
     },
     {
+      "command": "event",
+      "flags": [],
+      "provider": "extension"
+    },
+    {
       "command": "extension",
       "flags": [
         {
@@ -4340,6 +4345,11 @@
       "provider": "core"
     },
     {
+      "command": "meet",
+      "flags": [],
+      "provider": "extension"
+    },
+    {
       "command": "notes",
       "flags": [
         {
@@ -5260,6 +5270,11 @@
         }
       ],
       "provider": "core"
+    },
+    {
+      "command": "remind",
+      "flags": [],
+      "provider": "extension"
     },
     {
       "command": "restore",
@@ -7831,6 +7846,7 @@
     "delete",
     "deps",
     "docs",
+    "event",
     "extension",
     "extension activate",
     "extension adopt",
@@ -7865,6 +7881,7 @@
     "list-draft",
     "list-in-progress",
     "list-open",
+    "meet",
     "notes",
     "package",
     "package activate",
@@ -7895,6 +7912,7 @@
     "pause-task",
     "plan",
     "release",
+    "remind",
     "restore",
     "schema",
     "search",

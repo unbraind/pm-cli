@@ -69,6 +69,10 @@ import {
 } from "./metadata-normalizers.js";
 import { assertNoLegacyNoneToken, assertNoLegacyNoneTokens, isLegacyNoneToken } from "./legacy-none-tokens.js";
 import {
+  suggestNextLifecycleTransition,
+  type LifecycleTransitionSuggestion,
+} from "./lifecycle-transitions.js";
+import {
   parseLinkedTestAssertionEqualsMap,
   parseLinkedTestAssertionGteMap,
   parseLinkedTestBoolean,
@@ -187,6 +191,9 @@ export interface CreateResult {
   // GH-161: set to "focus" when the item's parent was inherited from the
   // session focused item (`pm focus <id>`) rather than an explicit --parent.
   parent_source?: "focus";
+  // GH-216: optional non-binding nudge toward the next lifecycle transition
+  // (e.g. `pm start-task <id>`), present only when a richer transition exists.
+  next_transition?: LifecycleTransitionSuggestion;
 }
 
 type CreateMode = "strict" | "progressive";
@@ -2066,6 +2073,11 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
 
   const outputItem = structuredClone(frontMatter);
 
+  // GH-216: nudge agents toward the underutilized in_progress state instead of
+  // jumping open -> closed. Only surfaces for workable types created in the open
+  // status when the workflow defines a distinct in_progress status to move to.
+  const nextTransition = suggestNextLifecycleTransition(id, type, status, statusRegistry);
+
   // After the create has committed (so the ID is real and shows up in the suggestion),
   // emit a single non-blocking stderr hint when the new item would be invisible on `pm
   // calendar`. The structured `calendar_item_without_schedule:*` warning above is what
@@ -2082,6 +2094,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     changed_fields: changedFields,
     warnings: [...validationWarnings, ...hookWarnings],
     ...(parentSource !== undefined ? { parent_source: parentSource } : {}),
+    ...(nextTransition !== undefined ? { next_transition: nextTransition } : {}),
   };
 }
 

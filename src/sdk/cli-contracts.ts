@@ -748,6 +748,36 @@ export const CLOSE_TASK_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--force" },
 ];
 
+/** Shared create-passthrough flags for every scheduling shortcut (GH-217). */
+const SCHEDULING_SHORTCUT_COMMON_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--parent" },
+  { flag: "--allow-missing-parent" },
+  { flag: "--tags" },
+  { flag: "--priority" },
+  { flag: "--body" },
+  { flag: "--description" },
+  { flag: "--author" },
+  { flag: "--message" },
+];
+
+export const MEET_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--start" },
+  { flag: "--duration" },
+  { flag: "--end" },
+  { flag: "--location" },
+  { flag: "--timezone" },
+  { flag: "--all-day" },
+  ...SCHEDULING_SHORTCUT_COMMON_FLAG_CONTRACTS,
+];
+
+export const EVENT_FLAG_CONTRACTS: CliFlagContract[] = MEET_FLAG_CONTRACTS;
+
+export const REMIND_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--at" },
+  { flag: "--text" },
+  ...SCHEDULING_SHORTCUT_COMMON_FLAG_CONTRACTS,
+];
+
 export const TEST_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--add" },
   { flag: "--add-json" },
@@ -1586,6 +1616,12 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(PAUSE_TASK_FLAG_CONTRACTS);
     case "close-task":
       return withSubcommandGlobalFlags(CLOSE_TASK_FLAG_CONTRACTS);
+    case "meet":
+      return withSubcommandGlobalFlags(MEET_FLAG_CONTRACTS);
+    case "event":
+      return withSubcommandGlobalFlags(EVENT_FLAG_CONTRACTS);
+    case "remind":
+      return withSubcommandGlobalFlags(REMIND_FLAG_CONTRACTS);
     default:
       return withSubcommandGlobalFlags([]);
   }

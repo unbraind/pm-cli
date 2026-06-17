@@ -1237,7 +1237,7 @@ describe("release readiness runtime coverage", () => {
         { expectJson: true },
       );
       expect(createResult.code).toBe(0);
-      expectTopLevelKeyOrder(createResult.json, ["item", "changed_fields", "warnings"]);
+      expectTopLevelKeyOrder(createResult.json, ["item", "changed_fields", "warnings", "next_transition"]);
 
       const createdId = (createResult.json as { item: { id: string } }).item.id;
 
