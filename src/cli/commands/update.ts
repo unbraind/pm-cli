@@ -18,6 +18,7 @@ import {
 import { validateSprintOrReleaseValue } from "../../core/item/sprint-release-format.js";
 import {
   applyTagRemovals,
+  assertNoUnknownCsvKeys,
   createStdinTokenResolver,
   mergeAdditiveTags,
   parseCsvKv,
@@ -810,6 +811,11 @@ function parseOptionalDependencyString(value: string | undefined): string | unde
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
+/** Allowed CSV/markdown keys for the update `--dep` addition seed (GH-258). */
+const DEP_ADDITION_KEYS = ["id", "kind", "type", "author", "created_at", "source_kind"] as const;
+/** Allowed CSV/markdown keys for the `--dep-remove` selector (GH-258). */
+const DEP_REMOVE_KEYS = ["id", "kind", "type", "source_kind"] as const;
+
 function looksLikeStructuredDependencyEntry(raw: string): boolean {
   if (raw.startsWith("```") || raw.includes("\n")) {
     return true;
@@ -846,7 +852,11 @@ function parseDependencyAdditions(raw: string[] | undefined, prefix: string, now
   assertNoLegacyNoneTokens(raw, "--dep", "Use --clear-deps to clear dependencies.");
   const additions: Dependency[] = raw.map((entry) => {
     const trimmedEntry = entry.trim();
-    const kv = looksLikeStructuredDependencyEntry(trimmedEntry) ? parseCsvKv(entry, "--dep") : { id: trimmedEntry, kind: "related" };
+    const isStructured = looksLikeStructuredDependencyEntry(trimmedEntry);
+    const kv = isStructured ? parseCsvKv(entry, "--dep") : { id: trimmedEntry, kind: "related" };
+    if (isStructured) {
+      assertNoUnknownCsvKeys(kv, "--dep", DEP_ADDITION_KEYS);
+    }
     const id = kv.id?.trim();
     const kind = normalizeDependencyKindInput((kv.kind ?? kv.type)?.trim());
     if (!id || !kind) {
@@ -882,6 +892,7 @@ function parseDependencyRemovals(raw: string[] | undefined, prefix: string): Dep
     }
     if (trimmed.includes("=") || /^(?:[-*+]\s+)?(?:id|kind|type|source_kind)\s*[:=]/i.test(trimmed) || trimmed.startsWith("```")) {
       const kv = parseCsvKv(trimmed, "--dep-remove");
+      assertNoUnknownCsvKeys(kv, "--dep-remove", DEP_REMOVE_KEYS);
       const idRaw = kv.id?.trim();
       if (!idRaw) {
         throw new PmCliError("--dep-remove key/value form requires id=<value>", EXIT_CODE.USAGE);

@@ -3,7 +3,7 @@ import path from "node:path";
 import fg from "fast-glob";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
-import { createStdinTokenResolver, parseCsvKv } from "../../core/item/parse.js";
+import { assertNoUnknownCsvKeys, createStdinTokenResolver, parseCsvKv } from "../../core/item/parse.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -20,6 +20,12 @@ export type LinkedArtifact = {
   scope: LinkScope;
   note?: string;
 };
+
+/** Allowed CSV/markdown keys for each structured linked-artifact option (GH-258). */
+export const LINKED_ARTIFACT_ADD_KEYS = ["path", "scope", "note"] as const;
+export const LINKED_ARTIFACT_ADD_GLOB_KEYS = ["pattern", "glob", "path", "scope", "note"] as const;
+export const LINKED_ARTIFACT_REMOVE_KEYS = ["path"] as const;
+export const LINKED_ARTIFACT_MIGRATE_KEYS = ["from", "to"] as const;
 
 export interface LinkedArtifactCommandOptions {
   add?: string[];
@@ -118,6 +124,7 @@ export function parseAddEntries(raw: string[] | undefined, bareNoun: "file" | "d
   return raw.map((entry) => {
     const trimmed = entry.trim();
     const kv = looksLikeStructuredPathEntry(trimmed) ? parseCsvKv(entry, "--add") : { path: trimmed };
+    assertNoUnknownCsvKeys(kv, "--add", LINKED_ARTIFACT_ADD_KEYS);
     if (!kv.path) {
       throw new PmCliError(`--add requires path=<value> or a bare ${bareNoun} path`, EXIT_CODE.USAGE);
     }
@@ -138,6 +145,7 @@ export function parseAddGlobEntries(raw: string[] | undefined): AddGlobEntry[] {
     }
     if (trimmed.includes("=") || /^(?:[-*+]\s+)?(?:pattern|glob|path)\s*[:=]/i.test(trimmed) || trimmed.startsWith("```")) {
       const kv = parseCsvKv(trimmed, "--add-glob");
+      assertNoUnknownCsvKeys(kv, "--add-glob", LINKED_ARTIFACT_ADD_GLOB_KEYS);
       const pattern = kv.pattern?.trim() || kv.glob?.trim() || kv.path?.trim();
       if (!pattern) {
         throw new PmCliError("--add-glob key/value form requires pattern=<glob>", EXIT_CODE.USAGE);
@@ -164,6 +172,7 @@ export function parseRemoveEntries(raw: string[] | undefined): string[] {
     }
     if (trimmed.includes("=") || /^(?:[-*+]\s+)?path\s*[:=]/i.test(trimmed) || trimmed.startsWith("```")) {
       const kv = parseCsvKv(trimmed, "--remove");
+      assertNoUnknownCsvKeys(kv, "--remove", LINKED_ARTIFACT_REMOVE_KEYS);
       if (!kv.path) {
         throw new PmCliError("--remove key/value form requires path=<value>", EXIT_CODE.USAGE);
       }
@@ -177,6 +186,7 @@ export function parseMigrateEntries(raw: string[] | undefined): PathMigration[] 
   if (!raw) return [];
   return raw.map((entry) => {
     const kv = parseCsvKv(entry, "--migrate");
+    assertNoUnknownCsvKeys(kv, "--migrate", LINKED_ARTIFACT_MIGRATE_KEYS);
     const from = kv.from?.trim();
     const to = kv.to?.trim();
     if (!from || !to) {

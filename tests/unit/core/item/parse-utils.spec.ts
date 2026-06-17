@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   _testOnly as parseTestOnly,
   applyTagRemovals,
+  assertNoUnknownCsvKeys,
   collectTagFlagValues,
   createStdinTokenResolver,
   mergeAdditiveTags,
@@ -83,6 +84,29 @@ describe("core/item/parse", () => {
       scope: "project",
       note: 'alpha, "beta"',
     });
+  });
+
+  it("assertNoUnknownCsvKeys accepts known keys and is case-insensitive (GH-258)", () => {
+    expect(() => assertNoUnknownCsvKeys({ path: "a", scope: "project" }, "--add", ["path", "scope", "note"])).not.toThrow();
+    // Case-insensitive: a key the downstream reader accepts must never be falsely rejected.
+    expect(() => assertNoUnknownCsvKeys({ Path: "a" }, "--add", ["path", "scope", "note"])).not.toThrow();
+    expect(() => assertNoUnknownCsvKeys({}, "--add", ["path"])).not.toThrow();
+  });
+
+  it("assertNoUnknownCsvKeys rejects unknown keys with the test --add message format (GH-258)", () => {
+    expect(() => assertNoUnknownCsvKeys({ path: "a", boguskey: "v" }, "--add", ["path", "scope", "note"])).toThrow(
+      '--add does not recognize key "boguskey". Allowed keys: path, scope, note.',
+    );
+    expect(() => assertNoUnknownCsvKeys({ label: "m", boguskey: "v" }, "--add", ["path", "scope", "note"])).toThrow(
+      '--add does not recognize keys "label", "boguskey". Allowed keys: path, scope, note.',
+    );
+    try {
+      assertNoUnknownCsvKeys({ zzz: "1" }, "--migrate", ["from", "to"]);
+      expect.unreachable("should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(PmCliError);
+      expect((error as PmCliError).exitCode).toBe(2);
+    }
   });
 
   it("covers parse helper rejection edges", () => {

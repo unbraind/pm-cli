@@ -322,6 +322,39 @@ export function parseCsvKv(raw: string, optionName: string): Record<string, stri
   return result;
 }
 
+/**
+ * Reject any key in a parsed CSV/markdown key/value map that is not part of the
+ * caller's allowed-key contract, mirroring the strict `test --add` behavior
+ * (see linked-test-parsers). This closes the cross-command consistency defect
+ * (GH-258) where structured link/metadata parsers silently DROPPED typoed keys
+ * (e.g. `lable=` instead of `label=`), storing data the author never intended.
+ *
+ * Comparison is case-insensitive so a key the downstream reader would accept
+ * (e.g. `Path`) is never falsely rejected; the emitted "Allowed keys" list
+ * preserves the canonical casing the caller passes in.
+ *
+ * Parsers with an intentional plaintext fallback (`--comment`/`--note`/
+ * `--learning`, annotation `--add`) deliberately do NOT call this — there an
+ * unrecognized key means "treat the whole entry as plaintext", not an error.
+ */
+export function assertNoUnknownCsvKeys(
+  kv: Record<string, string>,
+  optionName: string,
+  allowedKeys: readonly string[],
+): void {
+  const allowed = new Set(allowedKeys.map((key) => key.toLowerCase()));
+  const unknownKeys = Object.keys(kv).filter((key) => !allowed.has(key.toLowerCase()));
+  if (unknownKeys.length === 0) {
+    return;
+  }
+  throw new PmCliError(
+    `${optionName} does not recognize key${unknownKeys.length > 1 ? "s" : ""} ${unknownKeys
+      .map((key) => `"${key}"`)
+      .join(", ")}. Allowed keys: ${allowedKeys.join(", ")}.`,
+    EXIT_CODE.USAGE,
+  );
+}
+
 async function readStdinText(optionName: string): Promise<string> {
   if (process.stdin.isTTY === true) {
     throw new PmCliError(
