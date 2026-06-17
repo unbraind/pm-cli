@@ -765,6 +765,40 @@ ${zshCreateRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
+        meet|event)
+          _arguments \\
+            '--start[Start time (ISO, now, or relative)]:start' \\
+            '--duration[Duration from start (default 1h)]:duration' \\
+            '--end[End time (overrides --duration)]:end' \\
+            '--location[Location]:location' \\
+            '--timezone[IANA timezone]:timezone' \\
+            '--all-day[Mark as an all-day event]' \\
+            '--parent[Parent item id]:parent' \\
+            '--allow-missing-parent[Permit a parent id that does not exist yet]' \\
+            '--tags[Comma-separated tags]:tags' \\
+            '(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)' \\
+            '(-b --body)'{-b,--body}'[Item body]:body' \\
+            '(-d --description)'{-d,--description}'[Short description]:description' \\
+            '--author[Mutation author]:author' \\
+            '--message[History message]:message' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        remind)
+          _arguments \\
+            '--at[Reminder time (default +1d)]:at' \\
+            '--text[Reminder text (defaults to title)]:text' \\
+            '--parent[Parent item id]:parent' \\
+            '--allow-missing-parent[Permit a parent id that does not exist yet]' \\
+            '--tags[Comma-separated tags]:tags' \\
+            '(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)' \\
+            '(-b --body)'{-b,--body}'[Item body]:body' \\
+            '(-d --description)'{-d,--description}'[Short description]:description' \\
+            '--author[Mutation author]:author' \\
+            '--message[History message]:message' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
         update)
           _arguments \\
             '(-t --title)'{-t,--title}'[Item title]:title' \\

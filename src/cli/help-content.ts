@@ -722,9 +722,12 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Shortcut to create a Meeting from friendly time flags (start/duration) without structured --event CSV.",
     examples: [
       'pm meet "Sprint Planning" --start +1h --duration 1h',
-      'pm meet "1:1" --start 2026-07-01T15:00:00Z --duration 30m --location "Room A"',
+      'pm meet "1:1" --start 2026-07-01T15:00:00Z --end 2026-07-01T15:30:00Z --location "Room A"',
     ],
-    tips: ["Start defaults to now and duration to 1h; pass --end to set an explicit end instead of --duration."],
+    tips: [
+      "Start defaults to now and duration to 1h; pass --end to set an explicit end instead of --duration.",
+      "--duration units are h/d/w/m where m is months (not minutes); use --end for sub-hour spans.",
+    ],
   },
   event: {
     why: "Shortcut to create an Event from friendly time flags (start/duration) without structured --event CSV.",

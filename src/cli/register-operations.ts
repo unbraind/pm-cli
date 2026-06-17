@@ -661,9 +661,9 @@ function buildShortcutCommonOptions(options: Record<string, unknown>): {
  * scheduling type.
  */
 function registerSchedulingShortcutCommands(program: Command): void {
-  for (const { name, type, describe } of [
-    { name: "meet", type: "Meeting", describe: "Shortcut: create a Meeting with a start time and duration." },
-    { name: "event", type: "Event", describe: "Shortcut: create an Event with a start time and duration." },
+  for (const { name, describe } of [
+    { name: "meet", describe: "Shortcut: create a Meeting with a start time and duration." },
+    { name: "event", describe: "Shortcut: create an Event with a start time and duration." },
   ] as const) {
     program
       .command(name)
