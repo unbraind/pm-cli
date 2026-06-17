@@ -11,6 +11,8 @@ import {
   CONTEXT_FLAG_CONTRACTS,
   COPY_FLAG_CONTRACTS,
   FOCUS_FLAG_CONTRACTS,
+  MEET_FLAG_CONTRACTS,
+  REMIND_FLAG_CONTRACTS,
   CREATE_FLAG_CONTRACTS,
   DEPS_FLAG_CONTRACTS,
   GET_FLAG_CONTRACTS,
@@ -56,6 +58,8 @@ const AGGREGATE_FLAGS = toCompletionFlagString(AGGREGATE_FLAG_CONTRACTS);
 const APPEND_FLAGS = toCompletionFlagString(APPEND_FLAG_CONTRACTS);
 const COPY_FLAGS = toCompletionFlagString(COPY_FLAG_CONTRACTS);
 const FOCUS_FLAGS = toCompletionFlagString(FOCUS_FLAG_CONTRACTS);
+const MEET_FLAGS = toCompletionFlagString(MEET_FLAG_CONTRACTS);
+const REMIND_FLAGS = toCompletionFlagString(REMIND_FLAG_CONTRACTS);
 const CREATE_FLAGS = toCompletionFlagString(CREATE_FLAG_CONTRACTS);
 const GET_FLAGS = toCompletionFlagString(GET_FLAG_CONTRACTS);
 const UPDATE_FLAGS = toCompletionFlagString(UPDATE_FLAG_CONTRACTS);
@@ -450,6 +454,12 @@ export function generateBashScript(
     "    claim|restore|start-task|pause-task)",
     `      COMPREPLY=(${compgen(MUTATION_FLAGS)})`,
     "      ;;",
+    "    meet|event)",
+    `      COMPREPLY=(${compgen(MEET_FLAGS)})`,
+    "      ;;",
+    "    remind)",
+    `      COMPREPLY=(${compgen(REMIND_FLAGS)})`,
+    "      ;;",
     "    completion)",
     `      COMPREPLY=(${compgen(COMPLETION_SHELL_CHOICES)})`,
     "      ;;",
@@ -573,6 +583,9 @@ _pm_commands() {
     'start-task:Lifecycle alias to claim and set in_progress'
     'pause-task:Lifecycle alias to reopen and release claim'
     'close-task:Lifecycle alias to close and release claim'
+    'meet:Shortcut to create a Meeting with scheduling defaults'
+    'event:Shortcut to create an Event with scheduling defaults'
+    'remind:Shortcut to create a Reminder from a point in time'
     'templates:Manage reusable create templates'
     'completion:Generate shell completion'
     'help:Display help for a command'
@@ -1705,6 +1718,9 @@ complete -c pm -n __pm_no_subcommand -a release       -d 'Release the active cla
 complete -c pm -n __pm_no_subcommand -a start-task    -d 'Lifecycle alias to claim and set in-progress'
 complete -c pm -n __pm_no_subcommand -a pause-task    -d 'Lifecycle alias to reopen and release claim'
 complete -c pm -n __pm_no_subcommand -a close-task    -d 'Lifecycle alias to close and release claim'
+complete -c pm -n __pm_no_subcommand -a meet          -d 'Shortcut to create a Meeting with scheduling defaults'
+complete -c pm -n __pm_no_subcommand -a event         -d 'Shortcut to create an Event with scheduling defaults'
+complete -c pm -n __pm_no_subcommand -a remind        -d 'Shortcut to create a Reminder from a point in time'
 complete -c pm -n __pm_no_subcommand -a templates     -d 'Manage reusable create templates'
 complete -c pm -n __pm_no_subcommand -a completion    -d 'Generate shell completion'
 
@@ -2309,6 +2325,24 @@ complete -c pm -n '__fish_seen_subcommand_from close' -l expected -d 'Short alia
 complete -c pm -n '__fish_seen_subcommand_from close' -l actual -d 'Short alias for --actual-result' -r
 complete -c pm -n '__fish_seen_subcommand_from release' -l allow-audit-release -d 'Allow non-owner release handoffs without requiring --force'
 complete -c pm -n '__fish_seen_subcommand_from delete' -l dry-run -d 'Preview the item file that would be deleted without mutating'
+
+# scheduling shortcut flags (meet/event/remind)
+complete -c pm -n '__fish_seen_subcommand_from meet event' -l start -d 'Start time (ISO, now, or relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from meet event' -l duration -d 'Duration from start (default 1h)' -r
+complete -c pm -n '__fish_seen_subcommand_from meet event' -l end -d 'End time (overrides --duration)' -r
+complete -c pm -n '__fish_seen_subcommand_from meet event' -l location -d 'Location' -r
+complete -c pm -n '__fish_seen_subcommand_from meet event' -l timezone -d 'IANA timezone' -r
+complete -c pm -n '__fish_seen_subcommand_from meet event' -l all-day -d 'Mark as an all-day event'
+complete -c pm -n '__fish_seen_subcommand_from remind' -l at -d 'Reminder time (default +1d)' -r
+complete -c pm -n '__fish_seen_subcommand_from remind' -l text -d 'Reminder text (defaults to title)' -r
+complete -c pm -n '__fish_seen_subcommand_from meet event remind' -l parent -d 'Parent item id' -r
+complete -c pm -n '__fish_seen_subcommand_from meet event remind' -l allow-missing-parent -d 'Permit a parent id that does not exist yet'
+complete -c pm -n '__fish_seen_subcommand_from meet event remind' -l tags -d 'Comma-separated tags' -r
+complete -c pm -n '__fish_seen_subcommand_from meet event remind' -l priority -d 'Priority (0-4)' -r -a '0 1 2 3 4'
+complete -c pm -n '__fish_seen_subcommand_from meet event remind' -l body -d 'Item body' -r
+complete -c pm -n '__fish_seen_subcommand_from meet event remind' -l description -d 'Short description' -r
+complete -c pm -n '__fish_seen_subcommand_from meet event remind' -l author -d 'Mutation author' -r
+complete -c pm -n '__fish_seen_subcommand_from meet event remind' -l message -d 'History message' -r
 
 # close-many flags
 complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-status          -d 'Filter by status before closing' -r -a '${statusChoices}'

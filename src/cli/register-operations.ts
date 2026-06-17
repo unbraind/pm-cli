@@ -620,4 +620,126 @@ export function registerOperationCommands(program: Command): void {
       }
     });
 
+  registerSchedulingShortcutCommands(program);
+}
+
+/**
+ * Optional string accessor for loosely-typed commander option bags.
+ */
+function optionalString(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+/**
+ * Common create-passthrough options shared by every scheduling shortcut.
+ */
+function buildShortcutCommonOptions(options: Record<string, unknown>): {
+  parent?: string;
+  allowMissingParent?: boolean;
+  tags?: string;
+  priority?: string;
+  body?: string;
+  description?: string;
+  author?: string;
+  message?: string;
+} {
+  return {
+    parent: optionalString(options.parent),
+    allowMissingParent: options.allowMissingParent === true ? true : undefined,
+    tags: optionalString(options.tags),
+    priority: optionalString(options.priority),
+    body: optionalString(options.body),
+    description: optionalString(options.description),
+    author: optionalString(options.author),
+    message: optionalString(options.message),
+  };
+}
+
+/**
+ * GH-217: register the `pm meet`/`pm event`/`pm remind` scheduling shortcuts.
+ * Each is a thin friendly-flag wrapper over `runCreate` for an otherwise-unused
+ * scheduling type.
+ */
+function registerSchedulingShortcutCommands(program: Command): void {
+  for (const { name, type, describe } of [
+    { name: "meet", type: "Meeting", describe: "Shortcut: create a Meeting with a start time and duration." },
+    { name: "event", type: "Event", describe: "Shortcut: create an Event with a start time and duration." },
+  ] as const) {
+    program
+      .command(name)
+      .argument("<title>", "Item title")
+      .option("--start <when>", "Start time (ISO, 'now', or relative like +1h/+2d); defaults to now")
+      .option("--duration <span>", "Duration from start (relative like 1h/2d); defaults to 1h when --end is omitted")
+      .option("--end <when>", "End time (ISO or relative); overrides --duration")
+      .option("--location <value>", "Location")
+      .option("--timezone <value>", "IANA timezone (for example America/New_York)")
+      .option("--all-day", "Mark as an all-day event")
+      .option("--parent <id>", "Parent item id")
+      .option("--allow-missing-parent", "Permit a parent id that does not exist yet")
+      .option("--tags <list>", "Comma-separated tags")
+      .option("--priority <value>", "Priority")
+      .option("--body <text>", "Body/markdown content")
+      .option("--description <text>", "Short description")
+      .option("--author <value>", "Mutation author")
+      .option("--message <value>", "History message")
+      .description(describe)
+      .action(async (title: string, options: Record<string, unknown>, command) => {
+        const globalOptions = getGlobalOptions(command);
+        const startedAt = Date.now();
+        const { runMeet, runEvent } = await import("./commands/scheduling-shortcuts.js");
+        const run = name === "meet" ? runMeet : runEvent;
+        const result = await run(
+          title,
+          {
+            ...buildShortcutCommonOptions(options),
+            start: optionalString(options.start),
+            duration: optionalString(options.duration),
+            end: optionalString(options.end),
+            location: optionalString(options.location),
+            timezone: optionalString(options.timezone),
+            allDay: options.allDay === true ? true : undefined,
+          },
+          globalOptions,
+        );
+        await invalidateSearchCachesForMutation(globalOptions, result);
+        printResult(result, globalOptions);
+        if (globalOptions.profile) {
+          printError(`profile:command=${name} took_ms=${Date.now() - startedAt}`);
+        }
+      });
+  }
+
+  program
+    .command("remind")
+    .argument("<title>", "Item title")
+    .option("--at <when>", "Reminder time (ISO, 'now', or relative like +2d); defaults to +1d")
+    .option("--text <value>", "Reminder text; defaults to the title")
+    .option("--parent <id>", "Parent item id")
+    .option("--allow-missing-parent", "Permit a parent id that does not exist yet")
+    .option("--tags <list>", "Comma-separated tags")
+    .option("--priority <value>", "Priority")
+    .option("--body <text>", "Body/markdown content")
+    .option("--description <text>", "Short description")
+    .option("--author <value>", "Mutation author")
+    .option("--message <value>", "History message")
+    .description("Shortcut: create a Reminder from a single point in time.")
+    .action(async (title: string, options: Record<string, unknown>, command) => {
+      const globalOptions = getGlobalOptions(command);
+      const startedAt = Date.now();
+      const { runRemind } = await import("./commands/scheduling-shortcuts.js");
+      const result = await runRemind(
+        title,
+        {
+          ...buildShortcutCommonOptions(options),
+          at: optionalString(options.at),
+          text: optionalString(options.text),
+        },
+        globalOptions,
+      );
+      await invalidateSearchCachesForMutation(globalOptions, result);
+      printResult(result, globalOptions);
+      if (globalOptions.profile) {
+        printError(`profile:command=remind took_ms=${Date.now() - startedAt}`);
+      }
+    });
 }

@@ -718,6 +718,27 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Lifecycle alias that closes with reason text and clears assignment metadata.",
     examples: ['pm close-task pm-a1b2 "All acceptance criteria met" --author "codex-agent" --message "Close and handoff"'],
   },
+  meet: {
+    why: "Shortcut to create a Meeting from friendly time flags (start/duration) without structured --event CSV.",
+    examples: [
+      'pm meet "Sprint Planning" --start +1h --duration 1h',
+      'pm meet "1:1" --start 2026-07-01T15:00:00Z --duration 30m --location "Room A"',
+    ],
+    tips: ["Start defaults to now and duration to 1h; pass --end to set an explicit end instead of --duration."],
+  },
+  event: {
+    why: "Shortcut to create an Event from friendly time flags (start/duration) without structured --event CSV.",
+    examples: [
+      'pm event "Release v2" --start 2026-07-01T10:00:00Z --duration 2h',
+      'pm event "Conference" --start 2026-08-01 --all-day',
+    ],
+    tips: ["Start defaults to now and duration to 1h; pass --end to set an explicit end instead of --duration."],
+  },
+  remind: {
+    why: "Shortcut to create a Reminder from a single point in time without structured --reminder CSV.",
+    examples: ['pm remind "Review PR" --at +2d', 'pm remind "Follow up" --at 2026-07-01T09:00:00Z --text "Ping the team"'],
+    tips: ["The reminder time defaults to +1d and the reminder text defaults to the title."],
+  },
   completion: {
     why: "Generates shell completion scripts for faster and more reliable command entry.",
     examples: ["pm completion bash", "pm completion zsh", "pm completion fish", "pm completion bash --eager-tags"],

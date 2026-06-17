@@ -84,6 +84,22 @@ describe("runCreate", () => {
     ]);
   });
 
+  it("surfaces a next_transition lifecycle hint for workable open items, but not reference types (GH-216)", async () => {
+    await withTempPmPath(async (context) => {
+      const task = await runCreate(
+        { title: "workable", type: "Task", status: "open", createMode: "progressive", author: "agent" },
+        { path: context.pmPath },
+      );
+      expect(task.next_transition).toEqual({ command: `pm start-task ${task.item.id}`, to_status: "in_progress" });
+
+      const decision = await runCreate(
+        { title: "reference", type: "Decision", status: "open", createMode: "progressive", author: "agent" },
+        { path: context.pmPath },
+      );
+      expect(decision.next_transition).toBeUndefined();
+    });
+  });
+
   it("rejects unknown keys in dep/file/doc/reminder/event/type-option seeds (GH-258)", async () => {
     await withTempPmPath(async (context) => {
       const seed = (overrides: Partial<CreateCommandOptions>): CreateCommandOptions => ({

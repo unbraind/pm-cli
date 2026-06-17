@@ -82,6 +82,9 @@ export const PM_CORE_COMMAND_NAMES = [
   "start-task",
   "pause-task",
   "close-task",
+  "meet",
+  "event",
+  "remind",
   "help",
 ] as const;
 

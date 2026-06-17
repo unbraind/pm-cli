@@ -2,11 +2,15 @@ id: pm-y1z0
 title: "GH-216: default lifecycle transition suggestions"
 description: "Tracks GitHub issue #216: improve lifecycle-state adoption with default workflow transitions for in_progress/blocked/draft."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-06-16T11:28:39.448Z"
-updated_at: "2026-06-16T11:28:39.448Z"
+updated_at: "2026-06-17T16:02:58.173Z"
 author: codex-sdk-cli-consolidation-20260616
 parent: pm-mpbb
+comments[2]{created_at,author,text}:
+  "2026-06-17T15:28:20.704Z",claude-code-agent,"Design (GH-216 lifecycle transitions): NON-BREAKING next-step suggestion. New helper suggestNextLifecycleTransition in src/cli/commands/lifecycle-transitions.ts returns {command,to_status} when a natural next transition exists. Surface as optional next_transition in CreateResult ONLY for workable types in open_status (skip Event/Meeting/Reminder/Milestone/Decision). Hint pm start-task <id> -> in_progress. Token-light. Declined default-to-draft (breaking). Docs lifecycle section. 100% cov."
+  "2026-06-17T15:59:22.014Z",claude-code-agent,"Implemented (GH-216). New file src/cli/commands/lifecycle-transitions.ts: suggestNextLifecycleTransition(id,type,status,registry) -> {command,to_status} or undefined. Surfaced as optional CreateResult.next_transition in create.ts (single return). Present ONLY for workable types in open_status when workflow defines a distinct in_progress status; undefined for scheduling/reference types (Event/Meeting/Reminder/Milestone/Decision/ADR) and workflows that collapse in_progress onto open. Non-binding nudge (no governance). Declined default-to-draft (breaking). Docs: Lifecycle Aliases section note. Tests: lifecycle-transitions.spec.ts (5 branch cases) + create-command.spec next_transition present/absent + updated release-readiness key-order golden. 100% on new file; create.ts stays 100%."
+close_reason: "Added a non-binding next_transition lifecycle hint to pm create output (pm start-task <id> to move a workable item to in_progress), nudging agents away from open->closed and toward the underutilized in_progress state (GH-216)."
 body: ""
