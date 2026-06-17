@@ -12220,7 +12220,18 @@
             ]
           },
           "event": {
-            "description": "Event.",
+            "description": "Repeatable event seed entries start=<iso|relative> with end=<iso|relative> or duration=<relative|30min|PT30M>. Bare `m` remains months for backward compatibility.",
+            "examples": [
+              [
+                "start=2026-07-01T10:00:00Z,duration=2h,title=planning"
+              ],
+              [
+                "start=2026-07-01T10:00:00Z,duration=30min,title=standup"
+              ],
+              [
+                "start=2026-07-01T10:00:00Z,duration=PT30M,title=window"
+              ]
+            ],
             "items": {
               "type": "string"
             },
@@ -12389,7 +12400,12 @@
             "type": "string"
           },
           "reminder": {
-            "description": "Reminder.",
+            "description": "Repeatable reminder seed entries at=<iso|relative>,text=<text>.",
+            "examples": [
+              [
+                "at=+2d,text=Review PR"
+              ]
+            ],
             "items": {
               "type": "string"
             },
@@ -18687,7 +18703,18 @@
             ]
           },
           "event": {
-            "description": "Event.",
+            "description": "Repeatable event seed entries start=<iso|relative> with end=<iso|relative> or duration=<relative|30min|PT30M>. Bare `m` remains months for backward compatibility.",
+            "examples": [
+              [
+                "start=2026-07-01T10:00:00Z,duration=2h,title=planning"
+              ],
+              [
+                "start=2026-07-01T10:00:00Z,duration=30min,title=standup"
+              ],
+              [
+                "start=2026-07-01T10:00:00Z,duration=PT30M,title=window"
+              ]
+            ],
             "items": {
               "type": "string"
             },
@@ -18867,7 +18894,12 @@
             "type": "string"
           },
           "reminder": {
-            "description": "Reminder.",
+            "description": "Repeatable reminder seed entries at=<iso|relative>,text=<text>.",
+            "examples": [
+              [
+                "at=+2d,text=Review PR"
+              ]
+            ],
             "items": {
               "type": "string"
             },
@@ -19202,7 +19234,18 @@
             ]
           },
           "event": {
-            "description": "Event.",
+            "description": "Repeatable event seed entries start=<iso|relative> with end=<iso|relative> or duration=<relative|30min|PT30M>. Bare `m` remains months for backward compatibility.",
+            "examples": [
+              [
+                "start=2026-07-01T10:00:00Z,duration=2h,title=planning"
+              ],
+              [
+                "start=2026-07-01T10:00:00Z,duration=30min,title=standup"
+              ],
+              [
+                "start=2026-07-01T10:00:00Z,duration=PT30M,title=window"
+              ]
+            ],
             "items": {
               "type": "string"
             },
@@ -19569,7 +19612,12 @@
             "type": "string"
           },
           "reminder": {
-            "description": "Reminder.",
+            "description": "Repeatable reminder seed entries at=<iso|relative>,text=<text>.",
+            "examples": [
+              [
+                "at=+2d,text=Review PR"
+              ]
+            ],
             "items": {
               "type": "string"
             },
