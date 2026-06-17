@@ -14,7 +14,7 @@ const MILLIS_PER_SECOND = 1000;
 const MILLIS_PER_MINUTE = 60 * MILLIS_PER_SECOND;
 const MILLIS_PER_HOUR = 60 * MILLIS_PER_MINUTE;
 
-function toIsoDurationOrThrow(timestampMs: number, durationRaw: string): string {
+function toIsoTimestampOrThrow(timestampMs: number, durationRaw: string): string {
   const resolved = new Date(timestampMs);
   if (!Number.isFinite(resolved.getTime())) {
     throw new PmCliError(
@@ -33,7 +33,7 @@ function resolveDurationAgainstStart(startAt: string, durationRaw: string): stri
   if (minuteDuration) {
     const sign = minuteDuration[1] === "-" ? -1 : 1;
     const amount = Number.parseInt(minuteDuration[2], 10) * sign;
-    return toIsoDurationOrThrow(start.getTime() + amount * MILLIS_PER_MINUTE, trimmedDuration);
+    return toIsoTimestampOrThrow(start.getTime() + amount * MILLIS_PER_MINUTE, trimmedDuration);
   }
 
   const isoDuration = ISO_8601_TIME_DURATION.exec(trimmedDuration);
@@ -46,7 +46,7 @@ function resolveDurationAgainstStart(startAt: string, durationRaw: string): stri
       const minutes = Number.parseInt(minutesToken ?? "0", 10);
       const seconds = Number.parseInt(secondsToken ?? "0", 10);
       const totalMillis = hours * MILLIS_PER_HOUR + minutes * MILLIS_PER_MINUTE + seconds * MILLIS_PER_SECOND;
-      return toIsoDurationOrThrow(start.getTime() + sign * totalMillis, trimmedDuration);
+      return toIsoTimestampOrThrow(start.getTime() + sign * totalMillis, trimmedDuration);
     }
   }
 
