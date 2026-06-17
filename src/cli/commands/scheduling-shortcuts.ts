@@ -59,9 +59,16 @@ function quoteCsvValue(value: string): string {
   return `"${value.replace(/\\/g, "\\\\").replace(/"/g, "\\\"")}"`;
 }
 
+/**
+ * Append a `key="value"` pair. EVERY value is double-quoted (not just free-text
+ * fields) so a comma or `=` in any token — `start`, `duration`, `at`, etc. —
+ * cannot inject extra CSV key/value pairs into the `--event`/`--reminder`
+ * entry. The parser's `parseCsvKv` unquotes every value before use, so quoting
+ * is transparent to ISO/relative/timezone tokens.
+ */
 function appendPair(pairs: string[], key: string, value: string | undefined): void {
   if (value !== undefined) {
-    pairs.push(`${key}=${value}`);
+    pairs.push(`${key}=${quoteCsvValue(value)}`);
   }
 }
 
@@ -93,9 +100,7 @@ function buildEventEntry(options: MeetingEventShortcutOptions): string {
   } else {
     appendPair(pairs, "duration", options.duration ?? DEFAULT_DURATION);
   }
-  if (options.location !== undefined) {
-    appendPair(pairs, "location", quoteCsvValue(options.location));
-  }
+  appendPair(pairs, "location", options.location);
   appendPair(pairs, "timezone", options.timezone);
   if (options.allDay === true) {
     appendPair(pairs, "all_day", "true");
@@ -139,8 +144,9 @@ export function runRemind(
   global: GlobalOptions,
 ): Promise<CreateResult> {
   const createOptions = buildCommonOptions("Reminder", title, options);
-  const at = options.at ?? DEFAULT_REMINDER_AT;
-  const text = options.text ?? title;
-  createOptions.reminder = [`at=${at},text=${quoteCsvValue(text)}`];
+  const pairs: string[] = [];
+  appendPair(pairs, "at", options.at ?? DEFAULT_REMINDER_AT);
+  appendPair(pairs, "text", options.text ?? title);
+  createOptions.reminder = [pairs.join(",")];
   return runCreate(createOptions, global);
 }

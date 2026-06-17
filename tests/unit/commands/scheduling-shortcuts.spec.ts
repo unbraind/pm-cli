@@ -103,6 +103,25 @@ describe("scheduling shortcuts", () => {
     });
   });
 
+  it("quotes structured tokens so a comma/equals cannot inject CSV fields", async () => {
+    await withTempPmPath(async (context) => {
+      // A malicious --at that tries to inject a second key is treated as one
+      // opaque (and therefore invalid) time token, never as extra CSV pairs.
+      await expect(
+        runRemind("x", { at: "+1d,text=spoofed" }, { path: context.pmPath }),
+      ).rejects.toThrow();
+
+      // A timezone carrying a comma is quoted, so it stays a single field and
+      // does not silently spawn an unexpected key.
+      const result = await runMeet(
+        "tz",
+        { start: "2026-07-01T10:00:00Z", duration: "1h", timezone: "Europe/Paris" },
+        { path: context.pmPath },
+      );
+      expect(events(result.item)[0].timezone).toBe("Europe/Paris");
+    });
+  });
+
   it("forwards common create options (parent inheritance, tags, priority)", async () => {
     await withTempPmPath(async (context) => {
       const parent = await runMeet("Parent meeting", {}, { path: context.pmPath });
