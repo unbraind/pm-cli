@@ -50,10 +50,13 @@ const DEFAULT_REMINDER_AT = "+1d";
 /**
  * Wrap a free-text value (reminder text, event location) in double quotes so
  * commas and colons survive the CSV round-trip into `--reminder`/`--event`.
- * Embedded quotes are backslash-escaped to match the parser's `unquoteValue`.
+ * Backslashes are escaped first, then embedded quotes — escaping quotes alone
+ * would let a trailing backslash escape the closing quote and break out of the
+ * quoted field (CSV injection). The parser's `unquoteValue` strips the wrapping
+ * quotes and unescapes `\"` back to `"`.
  */
 function quoteCsvValue(value: string): string {
-  return `"${value.replace(/"/g, "\\\"")}"`;
+  return `"${value.replace(/\\/g, "\\\\").replace(/"/g, "\\\"")}"`;
 }
 
 function appendPair(pairs: string[], key: string, value: string | undefined): void {

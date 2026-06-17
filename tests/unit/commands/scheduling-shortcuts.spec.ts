@@ -87,6 +87,22 @@ describe("scheduling shortcuts", () => {
     });
   });
 
+  it("escapes a trailing backslash so it cannot break out of the quoted CSV field", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runRemind(
+        "x",
+        { at: "2026-09-01T09:00:00Z", text: "evil\\" },
+        { path: context.pmPath },
+      );
+      const reminded = reminders(result.item);
+      // The backslash must not escape the closing quote and merge fields:
+      // exactly one reminder, with the `at` value intact.
+      expect(reminded).toHaveLength(1);
+      expect(reminded[0].at).toBe("2026-09-01T09:00:00.000Z");
+      expect(reminded[0].text.startsWith("evil")).toBe(true);
+    });
+  });
+
   it("forwards common create options (parent inheritance, tags, priority)", async () => {
     await withTempPmPath(async (context) => {
       const parent = await runMeet("Parent meeting", {}, { path: context.pmPath });
