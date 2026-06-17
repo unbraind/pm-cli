@@ -409,6 +409,20 @@ export const SCHEMA_FLAG_CONTRACTS: CliFlagContract[] = [
   // values.
   { flag: "--role" },
   { flag: "--order" },
+  // add-field flags (custom runtime fields). --commands/--required-types are
+  // repeatable Commander collect flags (comma-splitting handled in the action),
+  // so they stay off the comma-list contract for the same reason as --alias.
+  { flag: "--type" },
+  { flag: "--commands" },
+  { flag: "--cli-flag" },
+  { flag: "--required" },
+  { flag: "--required-on-create" },
+  { flag: "--no-allow-unset" },
+  { flag: "--required-types" },
+  // add-type --infer flags (title-prefix type inference).
+  { flag: "--infer" },
+  { flag: "--min-count" },
+  { flag: "--apply" },
   { flag: "--author" },
   { flag: "--force" },
 ];
@@ -1869,7 +1883,28 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   schema: {
     required: ["subcommand"],
     // No --message: schema mutations write config files, not item history.
-    optional: ["name", "description", "defaultStatus", "folder", "alias", "role", "order", "author", "force"],
+    optional: [
+      "name",
+      "description",
+      "defaultStatus",
+      "folder",
+      "alias",
+      "role",
+      "order",
+      "fieldType",
+      "commands",
+      "cliFlag",
+      "required",
+      "requiredOnCreate",
+      "allowUnset",
+      "requiredTypes",
+      "typePreset",
+      "infer",
+      "minCount",
+      "apply",
+      "author",
+      "force",
+    ],
     conditionalRequired: [
       { property: "subcommand", value: "show", required: ["name"] },
       { property: "subcommand", value: "show-status", required: ["name"] },
@@ -1878,6 +1913,12 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
       // show-status/add-status/remove-status pass the status id as `name`.
       { property: "subcommand", value: "add-status", required: ["name"] },
       { property: "subcommand", value: "remove-status", required: ["name"] },
+      // field subcommands pass the field key as `name`.
+      { property: "subcommand", value: "add-field", required: ["name"] },
+      { property: "subcommand", value: "remove-field", required: ["name"] },
+      { property: "subcommand", value: "show-field", required: ["name"] },
+      // apply-preset passes the preset name as `typePreset`.
+      { property: "subcommand", value: "apply-preset", required: ["typePreset"] },
     ],
   },
   plan: {

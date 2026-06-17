@@ -311,6 +311,15 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   defaultStatus: { type: "string" },
   alias: { type: "array", items: { type: "string" } },
   role: { type: "array", items: { type: "string" } },
+  fieldType: { type: "string", enum: ["string", "number", "boolean", "string_array"] },
+  commands: { type: "array", items: { type: "string" } },
+  cliFlag: { type: "string" },
+  required: { type: "boolean" },
+  requiredOnCreate: { type: "boolean" },
+  allowUnset: { type: "boolean" },
+  requiredTypes: { type: "array", items: { type: "string" } },
+  infer: { type: "boolean" },
+  minCount: { type: "number" },
   text: { type: "string" },
   add: { type: "array", items: { type: "string" } },
   addGlob: { type: "array", items: { type: "string" } },
@@ -572,8 +581,8 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   },
   name: {
     description:
-      "Custom item type name (schema add-type/remove-type/show) or custom status id (schema show-status/add-status/remove-status).",
-    examples: ["Spike", "review"],
+      "Custom item type name (schema add-type/remove-type/show), custom status id (schema show-status/add-status/remove-status), or custom field key (schema add-field/remove-field/show-field).",
+    examples: ["Spike", "review", "component"],
   },
   defaultStatus: {
     description: "Default status hint recorded for a custom item type.",
@@ -587,6 +596,38 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     description:
       "Lifecycle roles for a custom status (schema add-status): draft, active, blocked, terminal, terminal_done, terminal_canceled, default_open, default_close, default_cancel.",
     examples: [["active"], ["terminal", "terminal_done"]],
+  },
+  fieldType: {
+    description: "Value type for a custom field (schema add-field): string, number, boolean, or string_array.",
+    examples: ["string", "number", "string_array"],
+  },
+  commands: {
+    description: "Commands a custom field is wired onto (schema add-field): create, update, update_many, list, search, calendar, context.",
+    examples: [["create", "update"], ["create", "update", "list"]],
+  },
+  cliFlag: {
+    description: "Override the auto-derived CLI flag for a custom field (schema add-field).",
+    examples: ["--owner"],
+  },
+  required: {
+    description: "Mark a custom field as always required (schema add-field).",
+  },
+  requiredOnCreate: {
+    description: "Mark a custom field as required at create time (schema add-field).",
+  },
+  allowUnset: {
+    description: "Whether a custom field may be cleared via --unset (schema add-field); defaults to true.",
+  },
+  requiredTypes: {
+    description: "Restrict a custom field's requirement to specific item types (schema add-field).",
+    examples: [["Bug"], ["Story", "Spike"]],
+  },
+  infer: {
+    description: "Infer custom item types from title-prefix conventions (schema add-type); previews unless apply is true.",
+  },
+  minCount: {
+    description: "Minimum number of items sharing a title prefix for schema add-type inference (default 10).",
+    examples: [10, 25],
   },
   preset: {
     description: "Governance preset for initialization flows.",
@@ -988,7 +1029,8 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     description: "When true for files action, use `pm files discover <id>` to scan item text for referenced file paths.",
   },
   apply: {
-    description: "When true for files discovery, add missing discovered file links instead of returning a dry-run preview.",
+    description:
+      "Persist changes instead of returning a dry-run preview: for files discovery, add the missing discovered file links; for schema add-type --infer, register the inferred custom item types.",
   },
   discoveryNote: {
     description: "Note attached to file links added by files discovery.",

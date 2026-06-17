@@ -5301,6 +5301,36 @@
           "flag": "--order"
         },
         {
+          "flag": "--type"
+        },
+        {
+          "flag": "--commands"
+        },
+        {
+          "flag": "--cli-flag"
+        },
+        {
+          "flag": "--required"
+        },
+        {
+          "flag": "--required-on-create"
+        },
+        {
+          "flag": "--no-allow-unset"
+        },
+        {
+          "flag": "--required-types"
+        },
+        {
+          "flag": "--infer"
+        },
+        {
+          "flag": "--min-count"
+        },
+        {
+          "flag": "--apply"
+        },
+        {
           "flag": "--author"
         },
         {
@@ -9071,20 +9101,39 @@
       ]
     },
     {
-      "description": "Inspect or modify the workspace item-type/status schema (pm schema). subcommand selects the operation; name carries the item type name (show/add-type/remove-type) or status id (show-status/add-status/remove-status). Schema mutations write workspace config files, not item history.",
+      "description": "Inspect or modify the workspace item-type/status/field schema (pm schema). subcommand selects the operation; name carries the item type name (show/add-type/remove-type), status id (show-status/add-status/remove-status), or field key (show-field/add-field/remove-field). apply-preset adopts a domain type preset; add-type with infer=true derives types from title-prefix conventions. Schema mutations write workspace config files, not item history.",
       "input_schema": {
         "additionalProperties": true,
         "properties": {
           "alias": {
-            "description": "Aliases for add-type/add-status.",
+            "description": "Aliases for add-type/add-status, or extra CLI flag aliases for add-field.",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
+          "allowUnset": {
+            "description": "Whether a custom field may be cleared via --unset (add-field); defaults to true.",
+            "type": "boolean"
+          },
+          "apply": {
+            "description": "Register inferred types (add-type infer); without it the call previews only.",
+            "type": "boolean"
+          },
           "author": {
             "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
             "type": "string"
+          },
+          "cliFlag": {
+            "description": "Override the auto-derived CLI flag for a custom field (add-field).",
+            "type": "string"
+          },
+          "commands": {
+            "description": "Commands a custom field is wired onto (add-field): create, update, update_many, list, search, calendar, context.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "cwd": {
             "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
@@ -9095,7 +9144,17 @@
             "type": "string"
           },
           "description": {
-            "description": "Custom item type or status description for add-type/add-status.",
+            "description": "Custom item type, status, or field description for add-type/add-status/add-field.",
+            "type": "string"
+          },
+          "fieldType": {
+            "description": "Value type for a custom field (add-field).",
+            "enum": [
+              "string",
+              "number",
+              "boolean",
+              "string_array"
+            ],
             "type": "string"
           },
           "folder": {
@@ -9106,8 +9165,16 @@
             "description": "Override removal guardrails for destructive schema changes when supported.",
             "type": "boolean"
           },
+          "infer": {
+            "description": "Infer item types from title-prefix conventions (add-type); previews unless apply is true.",
+            "type": "boolean"
+          },
+          "minCount": {
+            "description": "Minimum items sharing a prefix for add-type inference (default 10).",
+            "type": "number"
+          },
           "name": {
-            "description": "Item type name for show/add-type/remove-type, or status id for show-status/add-status/remove-status. Required for every subcommand except list.",
+            "description": "Item type name (show/add-type/remove-type), status id (show-status/add-status/remove-status), or custom field key (show-field/add-field/remove-field). Required for those subcommands.",
             "type": "string"
           },
           "options": {
@@ -9121,6 +9188,21 @@
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
             "type": "string"
+          },
+          "required": {
+            "description": "Mark a custom field as always required (add-field).",
+            "type": "boolean"
+          },
+          "requiredOnCreate": {
+            "description": "Mark a custom field as required at create time (add-field).",
+            "type": "boolean"
+          },
+          "requiredTypes": {
+            "description": "Restrict a custom field's requirement to specific item types (add-field).",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "role": {
             "description": "Lifecycle roles for add-status: draft, active, blocked, terminal, terminal_done, terminal_canceled, default_open, default_close, default_cancel.",
@@ -9149,7 +9231,21 @@
               "add-type",
               "remove-type",
               "add-status",
-              "remove-status"
+              "remove-status",
+              "add-field",
+              "remove-field",
+              "list-fields",
+              "show-field",
+              "apply-preset"
+            ],
+            "type": "string"
+          },
+          "typePreset": {
+            "description": "Domain type preset to adopt (apply-preset).",
+            "enum": [
+              "agile",
+              "ops",
+              "research"
             ],
             "type": "string"
           }
@@ -17853,6 +17949,74 @@
                 "name"
               ]
             }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "add-field"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "name"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "remove-field"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "name"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "show-field"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "name"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "apply-preset"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "typePreset"
+              ]
+            }
           }
         ],
         "properties": {
@@ -17873,12 +18037,45 @@
             },
             "type": "array"
           },
+          "allowUnset": {
+            "description": "Whether a custom field may be cleared via --unset (schema add-field); defaults to true.",
+            "type": "boolean"
+          },
+          "apply": {
+            "description": "Persist changes instead of returning a dry-run preview: for files discovery, add the missing discovered file links; for schema add-type --infer, register the inferred custom item types.",
+            "type": "boolean"
+          },
           "author": {
             "description": "Mutation author identity.",
             "examples": [
               "codex-agent"
             ],
             "type": "string"
+          },
+          "cliFlag": {
+            "description": "Override the auto-derived CLI flag for a custom field (schema add-field).",
+            "examples": [
+              "--owner"
+            ],
+            "type": "string"
+          },
+          "commands": {
+            "description": "Commands a custom field is wired onto (schema add-field): create, update, update_many, list, search, calendar, context.",
+            "examples": [
+              [
+                "create",
+                "update"
+              ],
+              [
+                "create",
+                "update",
+                "list"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "defaultStatus": {
             "description": "Default status hint recorded for a custom item type.",
@@ -17891,6 +18088,21 @@
             "description": "Item description text.",
             "type": "string"
           },
+          "fieldType": {
+            "description": "Value type for a custom field (schema add-field): string, number, boolean, or string_array.",
+            "enum": [
+              "string",
+              "number",
+              "boolean",
+              "string_array"
+            ],
+            "examples": [
+              "string",
+              "number",
+              "string_array"
+            ],
+            "type": "string"
+          },
           "folder": {
             "description": "Folder.",
             "type": "string"
@@ -17899,16 +18111,29 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "infer": {
+            "description": "Infer custom item types from title-prefix conventions (schema add-type); previews unless apply is true.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
             "type": "boolean"
           },
+          "minCount": {
+            "description": "Minimum number of items sharing a title prefix for schema add-type inference (default 10).",
+            "examples": [
+              10,
+              25
+            ],
+            "type": "number"
+          },
           "name": {
-            "description": "Custom item type name (schema add-type/remove-type/show) or custom status id (schema show-status/add-status/remove-status).",
+            "description": "Custom item type name (schema add-type/remove-type/show), custom status id (schema show-status/add-status/remove-status), or custom field key (schema add-field/remove-field/show-field).",
             "examples": [
               "Spike",
-              "review"
+              "review",
+              "component"
             ],
             "type": "string"
           },
@@ -17957,6 +18182,30 @@
             "description": "Suppress stdout payload output.",
             "type": "boolean"
           },
+          "required": {
+            "description": "Mark a custom field as always required (schema add-field).",
+            "type": "boolean"
+          },
+          "requiredOnCreate": {
+            "description": "Mark a custom field as required at create time (schema add-field).",
+            "type": "boolean"
+          },
+          "requiredTypes": {
+            "description": "Restrict a custom field's requirement to specific item types (schema add-field).",
+            "examples": [
+              [
+                "Bug"
+              ],
+              [
+                "Story",
+                "Spike"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "role": {
             "description": "Lifecycle roles for a custom status (schema add-status): draft, active, blocked, terminal, terminal_done, terminal_canceled, default_open, default_close, default_cancel.",
             "examples": [
@@ -17983,6 +18232,20 @@
               120000
             ],
             "type": "number"
+          },
+          "typePreset": {
+            "description": "Domain item-type preset registered during initialization.",
+            "enum": [
+              "agile",
+              "ops",
+              "research"
+            ],
+            "examples": [
+              "agile",
+              "ops",
+              "research"
+            ],
+            "type": "string"
           }
         },
         "required": [
@@ -20851,7 +21114,7 @@
             "type": "boolean"
           },
           "apply": {
-            "description": "When true for files discovery, add missing discovered file links instead of returning a dry-run preview.",
+            "description": "Persist changes instead of returning a dry-run preview: for files discovery, add the missing discovered file links; for schema add-type --infer, register the inferred custom item types.",
             "type": "boolean"
           },
           "audit": {

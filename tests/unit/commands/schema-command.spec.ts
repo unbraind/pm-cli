@@ -15,6 +15,7 @@ import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { readSettings, writeSettings } from "../../../src/core/store/settings.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
+import { runCreate } from "../../../src/cli/commands/create.js";
 
 function typesPath(context: TempPmContext): string {
   return path.join(context.pmPath, "schema", "types.json");
@@ -757,6 +758,22 @@ describe("schema remove-type command", () => {
           custom: [{ id: "review", source: "custom", roles: ["active"], aliases: [] }],
           counts: { builtin: 1, custom: 1, total: 2 },
         },
+        fields: {
+          custom: [
+            {
+              key: "owner",
+              type: "string",
+              commands: ["create", "update"],
+              cli_flag: "--owner",
+              cli_aliases: [],
+              required: false,
+              required_on_create: false,
+              allow_unset: true,
+              required_types: [],
+            },
+          ],
+          counts: { total: 1 },
+        },
         file: { path: "/tmp/schema/types.json" },
         generated_at: "2026-06-13T00:00:00.000Z",
       }),
@@ -778,6 +795,10 @@ describe("schema remove-type command", () => {
           custom: [],
           counts: { builtin: 0, custom: 0, total: 0 },
         },
+        fields: {
+          custom: [],
+          counts: { total: 0 },
+        },
         file: { path: "/tmp/schema/types.json" },
         generated_at: "2026-06-13T00:00:00.000Z",
       }),
@@ -785,8 +806,10 @@ describe("schema remove-type command", () => {
       [
         "Schema types: 0 total (0 builtin, 0 custom, 0 extension)",
         "statuses: 0 total (0 builtin, 0 custom)",
+        "custom fields: 0 total",
         "Inspect one: pm schema show <Type>",
         "Inspect one status: pm schema show-status <status>",
+        "Inspect one field: pm schema show-field <key>",
       ].join("\n"),
     );
 
@@ -1391,6 +1414,155 @@ describe("schema add-status / remove-status commands", () => {
       expect(none.stderr).toContain("show-status");
       expect(none.stderr).toContain("add-status");
       expect(none.stderr).toContain("remove-status");
+    });
+  });
+});
+
+describe("schema custom field commands (GH-vhbf)", () => {
+  it("upserts, lists, shows, and removes a custom field", async () => {
+    await withTempPmPath(async (context) => {
+      const schema = await import("../../../src/cli/commands/schema.js");
+
+      const added = await schema.runSchemaAddField(
+        "severity_level",
+        {
+          type: "string",
+          commands: ["create", "update", "list"],
+          description: "Bug severity",
+          cliFlag: "--sev",
+          alias: ["severity"],
+          required: true,
+          requiredOnCreate: true,
+          allowUnset: false,
+          requiredTypes: ["Bug"],
+          author: "schema-test",
+        },
+        { path: context.pmPath },
+      );
+      expect(added.action).toBe("add-field");
+      expect(added.registered).toBe(true);
+      expect(added.replaced).toBe(false);
+      expect(added.field.key).toBe("severity_level");
+      expect(added.file.fields).toBe(1);
+
+      // Idempotent re-run reports replaced; supplying the same flags keeps them.
+      const again = await schema.runSchemaAddField(
+        "severity_level",
+        { type: "string", cliFlag: "--sev", alias: ["severity"] },
+        { path: context.pmPath },
+      );
+      expect(again.replaced).toBe(true);
+
+      const listed = await schema.runSchemaListFields({ path: context.pmPath });
+      expect(listed.action).toBe("list-fields");
+      expect(listed.counts.total).toBe(1);
+      expect(listed.fields[0]).toMatchObject({ key: "severity_level", type: "string", cli_flag: "--sev" });
+      expect(listed.fields[0].cli_aliases).toContain("--severity");
+
+      // list also surfaces the fields section.
+      const fullList = await schema.runSchemaList({ path: context.pmPath });
+      expect(fullList.fields.counts.total).toBe(1);
+      expect(fullList.fields.custom[0].key).toBe("severity_level");
+
+      const shown = await schema.runSchemaShowField("Severity-Level", { path: context.pmPath });
+      expect(shown.action).toBe("show-field");
+      expect(shown.field.key).toBe("severity_level");
+
+      const removed = await schema.runSchemaRemoveField("severity_level", {}, { path: context.pmPath });
+      expect(removed.action).toBe("remove-field");
+      expect(removed.removed).toBe(true);
+      expect(removed.file.fields).toBe(0);
+
+      // Removing a missing field is an idempotent no-op.
+      const noop = await schema.runSchemaRemoveField("severity_level", {}, { path: context.pmPath });
+      expect(noop.removed).toBe(false);
+    });
+  });
+
+  it("rejects an invalid add-field key and an empty show-field key", async () => {
+    await withTempPmPath(async (context) => {
+      const schema = await import("../../../src/cli/commands/schema.js");
+      await expect(schema.runSchemaAddField("status", {}, { path: context.pmPath })).rejects.toBeInstanceOf(PmCliError);
+      await expect(schema.runSchemaShowField("  ", { path: context.pmPath })).rejects.toThrow(/Field key must not be empty/);
+      await expect(schema.runSchemaShowField("missing", { path: context.pmPath })).rejects.toThrow(/Unknown custom field/);
+    });
+  });
+
+  it("warns when removing a field that items still use", async () => {
+    await withTempPmPath(async (context) => {
+      const schema = await import("../../../src/cli/commands/schema.js");
+      await schema.runSchemaAddField("owner", { type: "string" }, { path: context.pmPath });
+      await runCreate({ title: "has owner", owner: "alice" } as never, { path: context.pmPath });
+      const removed = await schema.runSchemaRemoveField("owner", {}, { path: context.pmPath });
+      expect(removed.removed).toBe(true);
+      expect(removed.warnings).toContain("items_using_field:1");
+    });
+  });
+});
+
+describe("schema apply-preset (GH-86ob)", () => {
+  it("registers a preset and is idempotent on re-run", async () => {
+    await withTempPmPath(async (context) => {
+      const schema = await import("../../../src/cli/commands/schema.js");
+      const applied = await schema.runSchemaApplyPreset("agile", { author: "schema-test" }, { path: context.pmPath });
+      expect(applied.action).toBe("apply-preset");
+      expect(applied.preset).toBe("agile");
+      expect(applied.registered.sort()).toEqual(["Spike", "Story"]);
+      expect(applied.replaced).toEqual([]);
+
+      const again = await schema.runSchemaApplyPreset("agile", {}, { path: context.pmPath });
+      expect(again.registered).toEqual([]);
+      expect(again.replaced.sort()).toEqual(["Spike", "Story"]);
+
+      const listed = await schema.runSchemaList({ path: context.pmPath });
+      expect(listed.custom.map((entry) => entry.name).sort()).toEqual(expect.arrayContaining(["Spike", "Story"]));
+    });
+  });
+
+  it("rejects a missing/unknown preset", async () => {
+    await withTempPmPath(async (context) => {
+      const schema = await import("../../../src/cli/commands/schema.js");
+      await expect(schema.runSchemaApplyPreset(undefined, {}, { path: context.pmPath })).rejects.toBeInstanceOf(PmCliError);
+      await expect(schema.runSchemaApplyPreset("kanban", {}, { path: context.pmPath })).rejects.toThrow(/Invalid type preset/);
+    });
+  });
+});
+
+describe("schema add-type --infer (GH-245)", () => {
+  it("previews candidates by default and registers them with apply", async () => {
+    await withTempPmPath(async (context) => {
+      const schema = await import("../../../src/cli/commands/schema.js");
+      for (let i = 0; i < 3; i += 1) {
+        await runCreate({ title: `INFRA- provision ${i}` } as never, { path: context.pmPath });
+        await runCreate({ title: `SECURITY- finding ${i}` } as never, { path: context.pmPath });
+      }
+      // Seed a built-in-shadowing prefix to exercise the skip path.
+      await runCreate({ title: "TASK- shadow one" } as never, { path: context.pmPath });
+      await runCreate({ title: "TASK- shadow two" } as never, { path: context.pmPath });
+
+      const preview = await schema.runSchemaInferTypes({ minCount: 2 }, { path: context.pmPath });
+      expect(preview.action).toBe("infer-types");
+      expect(preview.applied).toBe(false);
+      expect(preview.candidates.map((c) => c.name).sort()).toEqual(["Infra", "Security", "Task"]);
+      expect(preview.registered).toEqual([]);
+
+      const applied = await schema.runSchemaInferTypes(
+        { minCount: 2, apply: true, author: "schema-test" },
+        { path: context.pmPath },
+      );
+      expect(applied.applied).toBe(true);
+      expect(applied.registered.sort()).toEqual(["Infra", "Security"]);
+      expect(applied.skipped).toContainEqual({ name: "Task", reason: "shadows_builtin" });
+    });
+  });
+
+  it("reports no candidates when nothing meets the threshold", async () => {
+    await withTempPmPath(async (context) => {
+      const schema = await import("../../../src/cli/commands/schema.js");
+      await runCreate({ title: "plain title, no prefix" } as never, { path: context.pmPath });
+      const result = await schema.runSchemaInferTypes({ minCount: 10 }, { path: context.pmPath });
+      expect(result.candidates).toEqual([]);
+      expect(result.applied).toBe(false);
     });
   });
 });

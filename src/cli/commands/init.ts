@@ -13,11 +13,16 @@ import {
   normalizeRuntimeSchemaSettings,
 } from "../../core/schema/runtime-schema.js";
 import {
-  normalizeAddTypeInput,
   parseItemTypesFile,
   serializeItemTypesFile,
   upsertItemType,
 } from "../../core/schema/item-types-file.js";
+import {
+  normalizeTypePresetName,
+  resolveTypePresetDefinitions,
+  TYPE_PRESET_NAMES,
+  type TypePresetName,
+} from "../../core/schema/type-presets.js";
 import { EXIT_CODE, GOVERNANCE_PRESET_DEFAULTS, PM_REQUIRED_SUBDIRS, SETTINGS_DEFAULTS } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -41,7 +46,7 @@ export interface InitInstalledPackagesSummary {
   }>;
 }
 
-export type InitTypePresetName = "agile" | "ops" | "research";
+export type InitTypePresetName = TypePresetName;
 
 export interface InitRegisteredTypePresetSummary {
   name: InitTypePresetName;
@@ -154,59 +159,6 @@ function cloneDefaults(): PmSettings {
 
 type BuiltinGovernancePreset = Exclude<GovernancePreset, "custom">;
 const BUILTIN_GOVERNANCE_PRESETS: BuiltinGovernancePreset[] = ["minimal", "default", "strict"];
-const INIT_TYPE_PRESET_NAMES: InitTypePresetName[] = ["agile", "ops", "research"];
-
-const INIT_TYPE_PRESET_DEFINITIONS: Record<InitTypePresetName, Array<Parameters<typeof normalizeAddTypeInput>[0]>> = {
-  agile: [
-    {
-      name: "Story",
-      description: "User-facing outcome or capability slice expressed from a stakeholder perspective.",
-      defaultStatus: "open",
-      folder: "stories",
-      aliases: ["user-story"],
-    },
-    {
-      name: "Spike",
-      description: "Time-boxed investigation used to reduce uncertainty before implementation.",
-      defaultStatus: "open",
-      folder: "spikes",
-      aliases: ["research-spike"],
-    },
-  ],
-  ops: [
-    {
-      name: "Incident",
-      description: "Operational disruption, degradation, or support escalation with recovery tracking.",
-      defaultStatus: "open",
-      folder: "incidents",
-      aliases: ["outage"],
-    },
-    {
-      name: "Runbook",
-      description: "Repeatable operational procedure, diagnostic path, or response playbook.",
-      defaultStatus: "open",
-      folder: "runbooks",
-      aliases: ["playbook"],
-    },
-  ],
-  research: [
-    {
-      name: "Experiment",
-      description: "Validated-learning activity with hypothesis, method, and outcome tracking.",
-      defaultStatus: "open",
-      folder: "experiments",
-      aliases: ["study"],
-    },
-    {
-      name: "Hypothesis",
-      description: "Testable claim or assumption that should be supported, rejected, or refined.",
-      defaultStatus: "open",
-      folder: "hypotheses",
-      aliases: ["assumption"],
-    },
-  ],
-};
-
 function normalizeInitGovernancePreset(rawValue: string | undefined): BuiltinGovernancePreset | undefined {
   if (rawValue === undefined) {
     return undefined;
@@ -231,17 +183,20 @@ function normalizeInitTypePreset(rawValue: string | undefined): InitTypePresetNa
   if (rawValue === undefined) {
     return undefined;
   }
-  const normalized = rawValue.trim().toLowerCase().replaceAll("-", "_");
-  if (normalized.length === 0) {
+  if (rawValue.trim().length === 0) {
     throw new PmCliError("--type-preset must not be empty", EXIT_CODE.USAGE);
   }
-  if (normalized === "agile" || normalized === "ops" || normalized === "research") {
-    return normalized;
+  try {
+    // Non-undefined input never returns undefined; the shared normalizer throws
+    // a plain Error for empty/unknown values, which we re-map to init's --type-preset
+    // PmCliError wording for a consistent CLI surface.
+    return normalizeTypePresetName(rawValue) as InitTypePresetName;
+  } catch {
+    throw new PmCliError(
+      `Invalid --type-preset value "${rawValue}". Allowed: ${TYPE_PRESET_NAMES.join(", ")}`,
+      EXIT_CODE.USAGE,
+    );
   }
-  throw new PmCliError(
-    `Invalid --type-preset value "${rawValue}". Allowed: ${INIT_TYPE_PRESET_NAMES.join(", ")}`,
-    EXIT_CODE.USAGE,
-  );
 }
 
 function normalizeOptionalInitAuthor(rawValue: string | undefined): string | undefined {
@@ -332,8 +287,7 @@ async function registerInitTypePreset(
   let nextFile = parsed;
   const registered: string[] = [];
   const updated: string[] = [];
-  for (const rawDefinition of INIT_TYPE_PRESET_DEFINITIONS[preset]) {
-    const normalized = normalizeAddTypeInput(rawDefinition);
+  for (const normalized of resolveTypePresetDefinitions(preset)) {
     const upsert = upsertItemType(nextFile, normalized);
     nextFile = upsert.file;
     (upsert.replaced ? updated : registered).push(upsert.definition.name);

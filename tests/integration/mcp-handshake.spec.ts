@@ -952,6 +952,176 @@ describe("MCP protocol handshake", () => {
       expect(removeType?.isError).not.toBe(true);
       expect(removeType?.structuredContent?.result?.removed).toBe(true);
 
+      // GH-vhbf: custom field management over MCP (add-field/list-fields/show-field/remove-field).
+      const addField = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 520,
+        method: "tools/call",
+        params: {
+          name: "pm_schema",
+          arguments: {
+            path: context.pmPath,
+            subcommand: "add-field",
+            name: "severity_level",
+            fieldType: "string",
+            commands: ["create", "update"],
+            cliFlag: "--sev",
+            alias: ["severity"],
+            required: true,
+            requiredOnCreate: true,
+            allowUnset: false,
+            requiredTypes: ["Bug"],
+            author: "mcp-test",
+          },
+        },
+      })) as { isError?: boolean; structuredContent?: { result?: { registered?: boolean; field?: { key?: string } } } };
+      expect(addField?.isError).not.toBe(true);
+      expect(addField?.structuredContent?.result?.registered).toBe(true);
+      expect(addField?.structuredContent?.result?.field?.key).toBe("severity_level");
+
+      // add-field via the nested options bag exercises the options-source arms.
+      const addFieldFromOptions = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 519,
+        method: "tools/call",
+        params: {
+          name: "pm_schema",
+          arguments: {
+            path: context.pmPath,
+            options: {
+              subcommand: "add-field",
+              name: "owner",
+              fieldType: "string",
+              commands: ["create"],
+              cliFlag: "--lead",
+              requiredTypes: ["Story"],
+              required: true,
+              requiredOnCreate: true,
+              allowUnset: false,
+              author: "mcp-test",
+            },
+          },
+        },
+      })) as { isError?: boolean; structuredContent?: { result?: { registered?: boolean } } };
+      expect(addFieldFromOptions?.isError).not.toBe(true);
+      expect(addFieldFromOptions?.structuredContent?.result?.registered).toBe(true);
+
+      // add-field with neither commands nor requiredTypes exercises the
+      // undefined-source arms (defaults applied downstream).
+      const addFieldMinimal = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 518,
+        method: "tools/call",
+        params: {
+          name: "pm_schema",
+          arguments: {
+            path: context.pmPath,
+            subcommand: "add-field",
+            name: "reviewer_team",
+            fieldType: "string",
+            author: "mcp-test",
+          },
+        },
+      })) as { isError?: boolean; structuredContent?: { result?: { registered?: boolean } } };
+      expect(addFieldMinimal?.isError).not.toBe(true);
+      expect(addFieldMinimal?.structuredContent?.result?.registered).toBe(true);
+
+      const listFields = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 521,
+        method: "tools/call",
+        params: { name: "pm_schema", arguments: { path: context.pmPath, subcommand: "list-fields" } },
+      })) as { isError?: boolean; structuredContent?: { result?: { counts?: { total?: number } } } };
+      expect(listFields?.isError).not.toBe(true);
+      expect(listFields?.structuredContent?.result?.counts?.total).toBeGreaterThanOrEqual(1);
+
+      const showField = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 522,
+        method: "tools/call",
+        params: {
+          name: "pm_schema",
+          arguments: { path: context.pmPath, options: { subcommand: "show-field", name: "severity_level" } },
+        },
+      })) as { isError?: boolean; structuredContent?: { result?: { field?: { key?: string } } } };
+      expect(showField?.isError).not.toBe(true);
+      expect(showField?.structuredContent?.result?.field?.key).toBe("severity_level");
+
+      const removeField = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 523,
+        method: "tools/call",
+        params: {
+          name: "pm_schema",
+          arguments: { path: context.pmPath, subcommand: "remove-field", name: "severity_level", author: "mcp-test" },
+        },
+      })) as { isError?: boolean; structuredContent?: { result?: { removed?: boolean } } };
+      expect(removeField?.isError).not.toBe(true);
+      expect(removeField?.structuredContent?.result?.removed).toBe(true);
+
+      // GH-86ob: standalone apply-preset over MCP (typePreset via the options bag).
+      const applyPreset = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 524,
+        method: "tools/call",
+        params: {
+          name: "pm_schema",
+          arguments: {
+            path: context.pmPath,
+            options: { subcommand: "apply-preset", typePreset: "agile", author: "mcp-test" },
+          },
+        },
+      })) as { isError?: boolean; structuredContent?: { result?: { preset?: string; registered?: unknown[] } } };
+      expect(applyPreset?.isError).not.toBe(true);
+      expect(applyPreset?.structuredContent?.result?.preset).toBe("agile");
+      expect(Array.isArray(applyPreset?.structuredContent?.result?.registered)).toBe(true);
+
+      // GH-245: add-type infer (dry-run preview) over MCP (top-level args; minCount number).
+      const inferTypes = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 525,
+        method: "tools/call",
+        params: {
+          name: "pm_schema",
+          arguments: { path: context.pmPath, subcommand: "add-type", infer: true, minCount: 1, options: { apply: false } },
+        },
+      })) as { isError?: boolean; structuredContent?: { result?: { action?: string; applied?: boolean } } };
+      expect(inferTypes?.isError).not.toBe(true);
+      expect(inferTypes?.structuredContent?.result?.action).toBe("infer-types");
+      expect(inferTypes?.structuredContent?.result?.applied).toBe(false);
+
+      // infer via the options bag with a string minCount + apply exercises the
+      // options-source and string-parse arms of the dispatcher.
+      const inferApply = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 526,
+        method: "tools/call",
+        params: {
+          name: "pm_schema",
+          arguments: {
+            path: context.pmPath,
+            subcommand: "add-type",
+            options: { infer: true, minCount: "1", apply: true },
+            author: "mcp-test",
+          },
+        },
+      })) as { isError?: boolean; structuredContent?: { result?: { applied?: boolean } } };
+      expect(inferApply?.isError).not.toBe(true);
+      expect(inferApply?.structuredContent?.result?.applied).toBe(true);
+
+      // infer with no minCount exercises the default (undefined) min-count arm.
+      const inferDefault = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 527,
+        method: "tools/call",
+        params: {
+          name: "pm_schema",
+          arguments: { path: context.pmPath, subcommand: "add-type", infer: true },
+        },
+      })) as { isError?: boolean; structuredContent?: { result?: { min_count?: number } } };
+      expect(inferDefault?.isError).not.toBe(true);
+      expect(inferDefault?.structuredContent?.result?.min_count).toBe(10);
+
       await expect(
         handleRequest({
           jsonrpc: "2.0",

@@ -312,31 +312,45 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "pm_schema",
     description:
-      "Inspect or modify the workspace item-type/status schema (pm schema). " +
-      "subcommand selects the operation; name carries the item type name (show/add-type/remove-type) or status id (show-status/add-status/remove-status). " +
+      "Inspect or modify the workspace item-type/status/field schema (pm schema). " +
+      "subcommand selects the operation; name carries the item type name (show/add-type/remove-type), status id (show-status/add-status/remove-status), or field key (show-field/add-field/remove-field). " +
+      "apply-preset adopts a domain type preset; add-type with infer=true derives types from title-prefix conventions. " +
       "Schema mutations write workspace config files, not item history.",
     inputSchema: objectSchema(
       {
         subcommand: {
           type: "string",
-          enum: ["list", "show", "show-status", "add-type", "remove-type", "add-status", "remove-status"],
+          enum: [
+            "list",
+            "show",
+            "show-status",
+            "add-type",
+            "remove-type",
+            "add-status",
+            "remove-status",
+            "add-field",
+            "remove-field",
+            "list-fields",
+            "show-field",
+            "apply-preset",
+          ],
           description: "Schema subcommand to run.",
         },
         name: {
           type: "string",
           description:
-            "Item type name for show/add-type/remove-type, or status id for show-status/add-status/remove-status. Required for every subcommand except list.",
+            "Item type name (show/add-type/remove-type), status id (show-status/add-status/remove-status), or custom field key (show-field/add-field/remove-field). Required for those subcommands.",
         },
         description: {
           type: "string",
-          description: "Custom item type or status description for add-type/add-status.",
+          description: "Custom item type, status, or field description for add-type/add-status/add-field.",
         },
         defaultStatus: { type: "string", description: "Default status for add-type." },
         folder: { type: "string", description: "Storage folder for add-type." },
         alias: {
           type: "array",
           items: { type: "string" },
-          description: "Aliases for add-type/add-status.",
+          description: "Aliases for add-type/add-status, or extra CLI flag aliases for add-field.",
         },
         role: {
           type: "array",
@@ -344,6 +358,33 @@ export const TOOLS: ToolDefinition[] = [
           description: `Lifecycle roles for add-status: ${RUNTIME_STATUS_ROLE_VALUES.join(", ")}.`,
         },
         order: { type: "number", description: "Display/sort order for add-status." },
+        fieldType: {
+          type: "string",
+          enum: ["string", "number", "boolean", "string_array"],
+          description: "Value type for a custom field (add-field).",
+        },
+        commands: {
+          type: "array",
+          items: { type: "string" },
+          description: "Commands a custom field is wired onto (add-field): create, update, update_many, list, search, calendar, context.",
+        },
+        cliFlag: { type: "string", description: "Override the auto-derived CLI flag for a custom field (add-field)." },
+        required: { type: "boolean", description: "Mark a custom field as always required (add-field)." },
+        requiredOnCreate: { type: "boolean", description: "Mark a custom field as required at create time (add-field)." },
+        allowUnset: { type: "boolean", description: "Whether a custom field may be cleared via --unset (add-field); defaults to true." },
+        requiredTypes: {
+          type: "array",
+          items: { type: "string" },
+          description: "Restrict a custom field's requirement to specific item types (add-field).",
+        },
+        typePreset: {
+          type: "string",
+          enum: ["agile", "ops", "research"],
+          description: "Domain type preset to adopt (apply-preset).",
+        },
+        infer: { type: "boolean", description: "Infer item types from title-prefix conventions (add-type); previews unless apply is true." },
+        minCount: { type: "number", description: "Minimum items sharing a prefix for add-type inference (default 10)." },
+        apply: { type: "boolean", description: "Register inferred types (add-type infer); without it the call previews only." },
         force: { type: "boolean", description: "Override removal guardrails for destructive schema changes when supported." },
         options: { type: "object", description: "Additional schema options using camelCase keys." },
       },

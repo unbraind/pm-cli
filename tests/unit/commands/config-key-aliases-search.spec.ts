@@ -46,6 +46,21 @@ const EXPECTED_ALIASES: Record<string, string> = {
   lancedb_path: "vector_store.lancedb.path",
 };
 
+// pm-9byd / pm-nnaq — general workspace leaves (id/author/output/locks/schema
+// governance) exposed via the same nested-setting descriptor table.
+const EXPECTED_GENERAL_ALIASES: Record<string, string> = {
+  id_prefix: "id_prefix",
+  author_default: "author_default",
+  output_default_format: "output.default_format",
+  locks_ttl_seconds: "locks.ttl_seconds",
+  schema_unknown_field_policy: "schema.unknown_field_policy",
+};
+
+const ALL_EXPECTED_ALIASES: Record<string, string> = {
+  ...EXPECTED_ALIASES,
+  ...EXPECTED_GENERAL_ALIASES,
+};
+
 describe("config nested-setting aliases (pm-7ilo)", () => {
   it("registers all search/provider/vector-store aliases with the expected settings paths", () => {
     const descriptorByKey = new Map(NESTED_SETTING_DESCRIPTORS.map((d) => [d.key, d]));
@@ -232,9 +247,199 @@ describe("config nested-setting aliases (pm-7ilo)", () => {
       const result = await runConfig("project", "list", undefined, {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot });
 
       expect(result.nested_settings).toBeDefined();
-      expect(result.nested_settings).toHaveLength(24);
+      expect(result.nested_settings).toHaveLength(Object.keys(ALL_EXPECTED_ALIASES).length);
       const keys = (result.nested_settings ?? []).map((entry) => entry.key).sort();
-      expect(keys).toEqual(Object.keys(EXPECTED_ALIASES).sort());
+      expect(keys).toEqual(Object.keys(ALL_EXPECTED_ALIASES).sort());
+    });
+  });
+});
+
+describe("config general-setting aliases (pm-9byd / pm-nnaq)", () => {
+  it("registers all general workspace aliases with the expected settings paths", () => {
+    const descriptorByKey = new Map(NESTED_SETTING_DESCRIPTORS.map((d) => [d.key, d]));
+    for (const [alias, expectedPath] of Object.entries(EXPECTED_GENERAL_ALIASES)) {
+      const descriptor = descriptorByKey.get(alias);
+      expect(descriptor, `missing nested-setting alias: ${alias}`).toBeDefined();
+      expect(descriptor!.path).toBe(expectedPath);
+    }
+    expect(Object.keys(EXPECTED_GENERAL_ALIASES)).toHaveLength(5);
+  });
+
+  it("resolves both kebab-case and snake_case forms of each general alias", () => {
+    for (const alias of Object.keys(EXPECTED_GENERAL_ALIASES)) {
+      expect(resolveNestedSettingDescriptor(alias)).toBeDefined();
+      expect(resolveNestedSettingDescriptor(alias.replaceAll("_", "-"))).toBeDefined();
+    }
+  });
+
+  it("`pm config project set id_prefix <value>` writes the top-level leaf and round-trips", async () => {
+    await withTempRoot("pm-cli-9byd-aliases-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      const setResult = await runConfig(
+        "project",
+        "set",
+        "id_prefix",
+        {},
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        "task",
+      );
+      expect(setResult).toMatchObject({
+        key: "id_prefix",
+        nested_setting: { key: "id_prefix", path: "id_prefix", kind: "string", value: "task" },
+        changed: true,
+      });
+
+      const getResult = await runConfig(
+        "project",
+        "get",
+        "id_prefix",
+        {},
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(getResult.nested_setting).toMatchObject({ key: "id_prefix", value: "task" });
+    });
+  });
+
+  it("`pm config project set author_default <value>` round-trips", async () => {
+    await withTempRoot("pm-cli-9byd-aliases-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      const setResult = await runConfig(
+        "project",
+        "set",
+        "author_default",
+        {},
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        "release-bot",
+      );
+      expect(setResult.nested_setting).toEqual({
+        key: "author_default",
+        path: "author_default",
+        kind: "string",
+        value: "release-bot",
+      });
+    });
+  });
+
+  it("rejects empty author_default (non_empty descriptor)", async () => {
+    await withTempRoot("pm-cli-9byd-aliases-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      await expect(
+        runConfig("project", "set", "author_default", {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot }, "   "),
+      ).rejects.toThrow(/non-empty/);
+    });
+  });
+
+  it("`pm config project set output_default_format json` accepts a valid choice", async () => {
+    await withTempRoot("pm-cli-9byd-aliases-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      const result = await runConfig(
+        "project",
+        "set",
+        "output_default_format",
+        {},
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        "json",
+      );
+      expect(result.nested_setting).toEqual({
+        key: "output_default_format",
+        path: "output.default_format",
+        kind: "string",
+        value: "json",
+      });
+    });
+  });
+
+  it("rejects an invalid output_default_format choice", async () => {
+    await withTempRoot("pm-cli-9byd-aliases-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      await expect(
+        runConfig(
+          "project",
+          "set",
+          "output_default_format",
+          {},
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+          "human",
+        ),
+      ).rejects.toThrow(/toon\|json/);
+    });
+  });
+
+  it("`pm config project set locks_ttl_seconds 60` parses integers and rejects 0", async () => {
+    await withTempRoot("pm-cli-9byd-aliases-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      const accepted = await runConfig(
+        "project",
+        "set",
+        "locks_ttl_seconds",
+        {},
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        "60",
+      );
+      expect(accepted.nested_setting).toEqual({
+        key: "locks_ttl_seconds",
+        path: "locks.ttl_seconds",
+        kind: "integer",
+        value: 60,
+      });
+
+      await expect(
+        runConfig("project", "set", "locks_ttl_seconds", {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot }, "0"),
+      ).rejects.toThrow(/>= 1/);
+    });
+  });
+
+  it("`pm config project set schema_unknown_field_policy reject` accepts valid policies", async () => {
+    await withTempRoot("pm-cli-nnaq-aliases-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      for (const policy of ["allow", "warn", "reject"]) {
+        const result = await runConfig(
+          "project",
+          "set",
+          "schema_unknown_field_policy",
+          {},
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+          policy,
+        );
+        expect(result.nested_setting).toEqual({
+          key: "schema_unknown_field_policy",
+          path: "schema.unknown_field_policy",
+          kind: "string",
+          value: policy,
+        });
+      }
+    });
+  });
+
+  it("rejects an invalid schema_unknown_field_policy choice", async () => {
+    await withTempRoot("pm-cli-nnaq-aliases-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      await expect(
+        runConfig(
+          "project",
+          "set",
+          "schema_unknown_field_policy",
+          {},
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+          "strict",
+        ),
+      ).rejects.toThrow(/allow\|warn\|reject/);
     });
   });
 });
