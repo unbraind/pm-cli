@@ -275,8 +275,14 @@ describe("CLI main error helpers", () => {
 
     // Distinct names with arguments still register normally through the guard.
     const list = program.command("list <id>").description("List");
+    list.alias("ls");
     expect(list.name()).toBe("list");
     expect(program.commands.some((entry) => entry.name() === "list")).toBe(true);
+
+    // A duplicate registration that matches an existing command's ALIAS (not just
+    // its name) is also guarded, matching Commander's own dedup semantics.
+    expect(() => program.command("ls").description("dup alias")).not.toThrow();
+    expect(program.commands.filter((entry) => entry.name() === "list" || entry.name() === "ls")).toHaveLength(1);
 
     // Re-installing the guard on the same program is a no-op (Symbol flag).
     _testOnly.ensureIdempotentTopLevelCommandRegistration(program);

@@ -2129,7 +2129,10 @@ function ensureIdempotentTopLevelCommandRegistration(rootProgram: Command): void
   ) => Command;
   rootProgram.command = ((nameAndArgs: string, ...rest: unknown[]): Command => {
     const commandName = nameAndArgs.split(/\s+/u)[0];
-    if (rootProgram.commands.some((existing) => existing.name() === commandName)) {
+    // Match Commander's own dedup, which collides on an existing command's name
+    // OR any of its aliases, so a re-entrant registration can never reach the
+    // raw "cannot add command" throw.
+    if (rootProgram.commands.some((existing) => existing.name() === commandName || existing.aliases().includes(commandName))) {
       return new Command(commandName);
     }
     return registerOriginalCommand(nameAndArgs, ...rest);
