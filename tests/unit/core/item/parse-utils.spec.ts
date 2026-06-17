@@ -253,6 +253,15 @@ describe("core/item/parse", () => {
         new Date("2026-04-01T08:00:00.000Z"),
       ),
     ).toThrow("Invalid event.duration value");
+
+    expect(() =>
+      resolveEventEndAt(
+        "2026-04-01T09:00:00.000Z",
+        undefined,
+        "P1D",
+        new Date("2026-04-01T08:00:00.000Z"),
+      ),
+    ).toThrow("Invalid event.duration value");
   });
 
   it("adds path and preview guidance for malformed key-value input", () => {

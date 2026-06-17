@@ -9,11 +9,10 @@ export const EVENT_END_DURATION_MUTUALLY_EXCLUSIVE_MESSAGE =
   "--event end and duration are mutually exclusive; provide only one (use duration=<relative> like duration=2h, duration=30min, or duration=PT30M, or set an explicit end).";
 
 const MINUTE_DURATION = /^([+-]?)(\d+)(min|mins|minute|minutes)$/i;
-const ISO_8601_DURATION = /^([+-]?)[Pp](?:(\d+)[Dd])?(?:[Tt](?:(\d+)[Hh])?(?:(\d+)[Mm])?(?:(\d+)[Ss])?)?$/;
+const ISO_8601_TIME_DURATION = /^([+-]?)[Pp][Tt](?:(\d+)[Hh])?(?:(\d+)[Mm])?(?:(\d+)[Ss])?$/;
 const MILLIS_PER_SECOND = 1000;
 const MILLIS_PER_MINUTE = 60 * MILLIS_PER_SECOND;
 const MILLIS_PER_HOUR = 60 * MILLIS_PER_MINUTE;
-const MILLIS_PER_DAY = 24 * MILLIS_PER_HOUR;
 
 function resolveDurationAgainstStart(startAt: string, durationRaw: string): string {
   const start = new Date(startAt);
@@ -26,18 +25,16 @@ function resolveDurationAgainstStart(startAt: string, durationRaw: string): stri
     return new Date(start.getTime() + amount * MILLIS_PER_MINUTE).toISOString();
   }
 
-  const isoDuration = ISO_8601_DURATION.exec(trimmedDuration);
+  const isoDuration = ISO_8601_TIME_DURATION.exec(trimmedDuration);
   if (isoDuration) {
-    const [, signToken, daysToken, hoursToken, minutesToken, secondsToken] = isoDuration;
-    const hasComponent = daysToken || hoursToken || minutesToken || secondsToken;
+    const [, signToken, hoursToken, minutesToken, secondsToken] = isoDuration;
+    const hasComponent = hoursToken || minutesToken || secondsToken;
     if (hasComponent) {
       const sign = signToken === "-" ? -1 : 1;
-      const days = Number.parseInt(daysToken ?? "0", 10);
       const hours = Number.parseInt(hoursToken ?? "0", 10);
       const minutes = Number.parseInt(minutesToken ?? "0", 10);
       const seconds = Number.parseInt(secondsToken ?? "0", 10);
-      const totalMillis =
-        days * MILLIS_PER_DAY + hours * MILLIS_PER_HOUR + minutes * MILLIS_PER_MINUTE + seconds * MILLIS_PER_SECOND;
+      const totalMillis = hours * MILLIS_PER_HOUR + minutes * MILLIS_PER_MINUTE + seconds * MILLIS_PER_SECOND;
       return new Date(start.getTime() + sign * totalMillis).toISOString();
     }
   }
