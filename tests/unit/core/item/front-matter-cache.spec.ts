@@ -3,7 +3,10 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { serializeItemDocument } from "../../../../src/core/item/item-format.js";
-import { listAllDocumentCandidatesCached } from "../../../../src/core/store/front-matter-cache.js";
+import {
+  listAllDocumentCandidatesCached,
+  shouldReplaceCachedDocumentCandidate,
+} from "../../../../src/core/store/front-matter-cache.js";
 import {
   clearActiveExtensionHooks,
   setActiveExtensionHooks,
@@ -153,6 +156,43 @@ describe("front matter cache", () => {
       const docs = await listAllDocumentCandidatesCached(pmRoot, "json_markdown", { Task: "tasks" }, warnings, undefined);
       expect(docs).toHaveLength(1);
       expect(warnings).toContain("json_markdown_leading_yaml_frontmatter_ignored");
+    });
+  });
+
+  it("decides cross-format duplicate winners deterministically regardless of read order", () => {
+    // No preferred format: toon wins over any non-toon format, never the reverse.
+    expect(shouldReplaceCachedDocumentCandidate("json_markdown", "toon", undefined)).toBe(true);
+    expect(shouldReplaceCachedDocumentCandidate("toon", "json_markdown", undefined)).toBe(false);
+    expect(shouldReplaceCachedDocumentCandidate("toon", "toon", undefined)).toBe(false);
+    // Explicit preferred format wins; a candidate that is not preferred never replaces.
+    expect(shouldReplaceCachedDocumentCandidate("toon", "json_markdown", "json_markdown")).toBe(true);
+    expect(shouldReplaceCachedDocumentCandidate("json_markdown", "toon", "json_markdown")).toBe(false);
+    expect(shouldReplaceCachedDocumentCandidate("json_markdown", "json_markdown", "json_markdown")).toBe(false);
+  });
+
+  it("prefers the toon file when an item id exists in both toon and markdown formats", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const tasksDir = path.join(pmRoot, "tasks");
+      await fs.mkdir(tasksDir, { recursive: true });
+      const metadata = makeTaskMetadata({ id: "pm-dup", title: "Duplicate across formats" });
+      // Same id present as both .md (fallback) and .toon (canonical); the toon
+      // candidate must win deterministically no matter which read resolves first.
+      await fs.writeFile(
+        path.join(tasksDir, "pm-dup.md"),
+        serializeItemDocument({ metadata, body: "markdown body" }, { format: "json_markdown" }),
+        "utf8",
+      );
+      await fs.writeFile(
+        path.join(tasksDir, "pm-dup.toon"),
+        serializeItemDocument({ metadata, body: "toon body" }, { format: "toon" }),
+        "utf8",
+      );
+
+      const docs = await listAllDocumentCandidatesCached(pmRoot, "toon", { Task: "tasks" }, [], undefined);
+      const deduped = docs.filter((doc) => doc.metadata.id === "pm-dup");
+      expect(deduped).toHaveLength(1);
+      expect(deduped[0]?.item_format).toBe("toon");
+      expect(deduped[0]?.body).toBe("toon body");
     });
   });
 });

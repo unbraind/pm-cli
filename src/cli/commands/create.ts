@@ -7,7 +7,15 @@ import {
   validateMissingParentReference,
 } from "../../core/item/parent-reference-policy.js";
 import { validateSprintOrReleaseValue } from "../../core/item/sprint-release-format.js";
-import { createStdinTokenResolver, mergeAdditiveTags, parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
+import {
+  assertNoUnknownCsvKeys,
+  createStdinTokenResolver,
+  looksLikeGenericKeyValueEntry,
+  mergeAdditiveTags,
+  parseCsvKv,
+  parseOptionalNumber,
+  parseTags,
+} from "../../core/item/parse.js";
 import { resolvePriority } from "../../core/item/priority.js";
 import { getFocusedItem } from "../../core/session/session-state.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
@@ -527,6 +535,11 @@ function parseCreateUnsetTargets(
   return { frontMatterKeys, optionKeys };
 }
 
+/** Allowed CSV/markdown keys for the create `--dep` seed (GH-258). */
+const DEP_SEED_KEYS = ["id", "kind", "type", "author", "created_at"] as const;
+/** Allowed CSV/markdown keys for create `--file`/`--doc` seeds (GH-258). */
+const LINKED_ARTIFACT_SEED_KEYS = ["path", "scope", "note"] as const;
+
 function parseDependencies(
   raw: string[] | undefined,
   nowValue: string,
@@ -536,9 +549,11 @@ function parseDependencies(
   assertNoLegacyNoneTokens(raw, "--dep", "Use --clear-deps to clear dependencies.");
   const values: Dependency[] = raw.map((entry) => {
     const trimmedEntry = entry.trim();
-    const kv = looksLikeStructuredEntry(trimmedEntry, ["id", "kind", "type", "author", "created_at"])
-      ? parseCsvKv(entry, "--dep")
-      : { id: trimmedEntry, kind: "related" };
+    const isStructured = looksLikeStructuredEntry(trimmedEntry, DEP_SEED_KEYS);
+    const kv = isStructured ? parseCsvKv(entry, "--dep") : { id: trimmedEntry, kind: "related" };
+    if (isStructured) {
+      assertNoUnknownCsvKeys(kv, "--dep", DEP_SEED_KEYS);
+    }
     const id = parseOptionalString(kv.id);
     const kind = normalizeDependencyKindInput(parseOptionalString(kv.kind ?? kv.type));
     if (!id || !kind) {
@@ -579,7 +594,12 @@ function looksLikeStructuredEntry(raw: string, keys: readonly string[]): boolean
     return true;
   }
   const keyPattern = keys.map((key) => key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
-  return new RegExp(`^(?:[-*+]\\s+)?(?:${keyPattern})\\s*[:=]`, "i").test(raw);
+  if (new RegExp(`^(?:[-*+]\\s+)?(?:${keyPattern})\\s*[:=]`, "i").test(raw)) {
+    return true;
+  }
+  // A first-key typo (e.g. `bogus=v,id=pm-2`) must still be parsed so the unknown
+  // key is rejected rather than swallowed as a bare id/path value (GH-258).
+  return looksLikeGenericKeyValueEntry(raw);
 }
 
 export function parseLogSeed(
@@ -647,9 +667,11 @@ export function parseFiles(raw: string[] | undefined): { values: LinkedFile[] | 
   assertNoLegacyNoneTokens(raw, "--file", "Use --clear-files to clear linked files.");
   const values = raw.map((entry) => {
     const trimmedEntry = entry.trim();
-    const kv = looksLikeStructuredEntry(trimmedEntry, ["path", "scope", "note"])
-      ? parseCsvKv(entry, "--file")
-      : { path: trimmedEntry };
+    const isStructured = looksLikeStructuredEntry(trimmedEntry, LINKED_ARTIFACT_SEED_KEYS);
+    const kv = isStructured ? parseCsvKv(entry, "--file") : { path: trimmedEntry };
+    if (isStructured) {
+      assertNoUnknownCsvKeys(kv, "--file", LINKED_ARTIFACT_SEED_KEYS);
+    }
     if (!kv.path) {
       throw new PmCliError("--file requires path=<value> or a bare file path", EXIT_CODE.USAGE);
     }
@@ -708,9 +730,11 @@ export function parseDocs(raw: string[] | undefined): { values: LinkedDoc[] | un
   assertNoLegacyNoneTokens(raw, "--doc", "Use --clear-docs to clear linked docs.");
   const values = raw.map((entry) => {
     const trimmedEntry = entry.trim();
-    const kv = looksLikeStructuredEntry(trimmedEntry, ["path", "scope", "note"])
-      ? parseCsvKv(entry, "--doc")
-      : { path: trimmedEntry };
+    const isStructured = looksLikeStructuredEntry(trimmedEntry, LINKED_ARTIFACT_SEED_KEYS);
+    const kv = isStructured ? parseCsvKv(entry, "--doc") : { path: trimmedEntry };
+    if (isStructured) {
+      assertNoUnknownCsvKeys(kv, "--doc", LINKED_ARTIFACT_SEED_KEYS);
+    }
     if (!kv.path) {
       throw new PmCliError("--doc requires path=<value> or a bare doc path", EXIT_CODE.USAGE);
     }

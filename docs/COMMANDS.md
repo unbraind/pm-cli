@@ -384,6 +384,8 @@ pm deps <id> --format tree
 
 Linked files and docs keep reviews reproducible. `deps` is read-only and projects item relationships. The standalone `--note <text>` flag annotates every link added by `--add`/`--add-glob` in the same invocation (a per-entry embedded `note=` wins); `--note` without an add is a usage error.
 
+Structured key/value forms reject unrecognized keys with an `Allowed keys: …` error (matching `test --add`), so a typoed key (`lable=` instead of `label=`) fails fast instead of being silently dropped: `--add`/`--file`/`--doc` accept `path,scope,note`; `--add-glob` accepts `pattern,glob,path,scope,note`; `--remove` accepts `path`; `--migrate` accepts `from,to`; `--dep` accepts `id,kind,type,author,created_at` (plus `source_kind` on update); `--reminder` accepts `at,date,text,title`; `--event` accepts `start,date,end,duration,title,description,location,timezone,all_day` and the `recur_*` recurrence keys. Bare values (`--add src/cli/main.ts`) skip key validation.
+
 ## Linked Tests
 
 ```bash

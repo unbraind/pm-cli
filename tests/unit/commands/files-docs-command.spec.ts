@@ -327,10 +327,13 @@ describe("runFiles", () => {
       await expect(runFiles(id, { remove: ["   "] }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runFiles(id, { remove: ["scope=project"] }, { path: context.pmPath })).rejects.toMatchObject<
+      // `path=` passes the unknown-key check but has an empty value, hitting the
+      // "requires path=<value>" branch (an unknown key like scope= is now rejected earlier).
+      await expect(runFiles(id, { remove: ["path="] }, { path: context.pmPath })).rejects.toMatchObject<
         PmCliError
       >({
         exitCode: EXIT_CODE.USAGE,
+        message: "--remove key/value form requires path=<value>",
       });
       await expect(runFiles(id, { addGlob: ["   "] }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
@@ -341,6 +344,56 @@ describe("runFiles", () => {
       await expect(runFiles(id, { migrate: ["from=docs/old/"] }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
+    });
+  });
+
+  it("rejects unknown keys in add/add-glob/remove/migrate matching test --add (GH-258)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "files-unknown-keys");
+      await expect(
+        runFiles(id, { add: ["path=README.md,label=main,boguskey=v"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: '--add does not recognize keys "label", "boguskey". Allowed keys: path, scope, note.',
+      });
+      await expect(
+        runFiles(id, { addGlob: ["pattern=src/*.ts,boguskey=v"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: '--add-glob does not recognize key "boguskey". Allowed keys: pattern, glob, path, scope, note.',
+      });
+      await expect(
+        runFiles(id, { remove: ["path=README.md,boguskey=v"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: '--remove does not recognize key "boguskey". Allowed keys: path.',
+      });
+      await expect(
+        runFiles(id, { migrate: ["from=a/,to=b/,boguskey=v"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: '--migrate does not recognize key "boguskey". Allowed keys: from, to.',
+      });
+      // docs --add shares the same parser core.
+      await expect(
+        runDocs(id, { add: ["path=README.md,boguskey=v"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: '--add does not recognize key "boguskey". Allowed keys: path, scope, note.',
+      });
+      // A FIRST-key typo must not bypass validation by being read as a bare path (GH-258).
+      await expect(
+        runFiles(id, { add: ["boguskey=v,path=README.md"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: '--add does not recognize key "boguskey". Allowed keys: path, scope, note.',
+      });
+      // A Windows absolute path is still stored as a bare path, not misread as a `C=…` entry.
+      const windows = await runFiles(id, { add: ["C:\\Users\\me\\readme.md"] }, { path: context.pmPath });
+      expect(windows.files.some((file) => file.path === "C:/Users/me/readme.md")).toBe(true);
+      // A mixed-case recognized key is normalized so the value is read (not a confusing "requires path").
+      const mixedCase = await runFiles(id, { add: ["Path=docs/MixedCase.md,Scope=project"] }, { path: context.pmPath });
+      expect(mixedCase.files.some((file) => file.path === "docs/MixedCase.md")).toBe(true);
     });
   });
 

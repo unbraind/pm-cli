@@ -3,8 +3,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   _testOnly as parseTestOnly,
   applyTagRemovals,
+  assertNoUnknownCsvKeys,
   collectTagFlagValues,
   createStdinTokenResolver,
+  looksLikeGenericKeyValueEntry,
   mergeAdditiveTags,
   parseCsvKv,
   parseOptionalNumber,
@@ -83,6 +85,53 @@ describe("core/item/parse", () => {
       scope: "project",
       note: 'alpha, "beta"',
     });
+  });
+
+  it("assertNoUnknownCsvKeys accepts known keys and is case-insensitive (GH-258)", () => {
+    expect(() => assertNoUnknownCsvKeys({ path: "a", scope: "project" }, "--add", ["path", "scope", "note"])).not.toThrow();
+    // Case-insensitive: a key the downstream reader accepts must never be falsely rejected.
+    expect(() => assertNoUnknownCsvKeys({ Path: "a" }, "--add", ["path", "scope", "note"])).not.toThrow();
+    expect(() => assertNoUnknownCsvKeys({}, "--add", ["path"])).not.toThrow();
+  });
+
+  it("assertNoUnknownCsvKeys rejects unknown keys with the test --add message format (GH-258)", () => {
+    expect(() => assertNoUnknownCsvKeys({ path: "a", boguskey: "v" }, "--add", ["path", "scope", "note"])).toThrow(
+      '--add does not recognize key "boguskey". Allowed keys: path, scope, note.',
+    );
+    expect(() => assertNoUnknownCsvKeys({ label: "m", boguskey: "v" }, "--add", ["path", "scope", "note"])).toThrow(
+      '--add does not recognize keys "label", "boguskey". Allowed keys: path, scope, note.',
+    );
+    try {
+      assertNoUnknownCsvKeys({ zzz: "1" }, "--migrate", ["from", "to"]);
+      expect.unreachable("should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(PmCliError);
+      expect((error as PmCliError).exitCode).toBe(2);
+    }
+  });
+
+  it("assertNoUnknownCsvKeys normalizes recognized keys to lowercase so downstream reads work (GH-258)", () => {
+    // Mixed-case recognized key is rewritten in place to its lowercase canonical form.
+    const kv: Record<string, string> = { Path: "README.md", scope: "project" };
+    assertNoUnknownCsvKeys(kv, "--add", ["path", "scope", "note"]);
+    expect(kv).toEqual({ path: "README.md", scope: "project" });
+    // A key that collides with another only after normalization is rejected.
+    expect(() => assertNoUnknownCsvKeys({ path: "a", Path: "b" }, "--add", ["path", "scope"])).toThrow(
+      '--add provides key "Path" more than once after case normalization.',
+    );
+  });
+
+  it("looksLikeGenericKeyValueEntry detects first-key typos but not bare/Windows paths (GH-258)", () => {
+    // Generic `key=` opener (even an unknown key) is structured so it gets validated.
+    expect(looksLikeGenericKeyValueEntry("boguskey=x,path=README.md")).toBe(true);
+    expect(looksLikeGenericKeyValueEntry("- lable: ignored")).toBe(false); // colon form is handled by known-key/markdown paths
+    expect(looksLikeGenericKeyValueEntry("path=README.md")).toBe(true);
+    // Bare paths (no leading key=) stay bare.
+    expect(looksLikeGenericKeyValueEntry("docs/plain.md")).toBe(false);
+    expect(looksLikeGenericKeyValueEntry("README.md")).toBe(false);
+    // Windows absolute paths must never be misread as a `C=…` entry.
+    expect(looksLikeGenericKeyValueEntry("C:\\Users\\readme.md")).toBe(false);
+    expect(looksLikeGenericKeyValueEntry("d:/projects/notes.md")).toBe(false);
   });
 
   it("covers parse helper rejection edges", () => {

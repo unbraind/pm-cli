@@ -499,6 +499,31 @@ describe("runUpdate", () => {
     });
   });
 
+  it("rejects unknown keys in --dep and --dep-remove matching test --add (GH-258)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-unknown-dep-keys");
+      await expect(
+        runUpdate(id, { dep: ["id=pm-2,kind=related,boguskey=v"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: '--dep does not recognize key "boguskey". Allowed keys: id, kind, type, author, created_at, source_kind.',
+      });
+      await expect(
+        runUpdate(id, { depRemove: ["id=pm-2,boguskey=v"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: '--dep-remove does not recognize key "boguskey". Allowed keys: id, kind, type, source_kind.',
+      });
+      // A FIRST-key typo must not bypass validation by being read as a bare item id (GH-258).
+      await expect(
+        runUpdate(id, { dep: ["boguskey=v,id=pm-2,kind=related"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: '--dep does not recognize key "boguskey". Allowed keys: id, kind, type, author, created_at, source_kind.',
+      });
+    });
+  });
+
   it("returns NOT_FOUND for unknown id with did-you-mean suggestion (pm-99x5)", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "did-you-mean-seed");

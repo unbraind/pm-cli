@@ -322,6 +322,78 @@ export function parseCsvKv(raw: string, optionName: string): Record<string, stri
   return result;
 }
 
+const WINDOWS_ABSOLUTE_PATH_PATTERN = /^[A-Za-z]:[\\/]/;
+const GENERIC_LEADING_KV_KEY_PATTERN = /^(?:[-*+]\s+)?[A-Za-z_][A-Za-z0-9_.-]*\s*=/;
+
+/**
+ * Detect a CSV/markdown entry that opens with a generic `key=` token even when
+ * that key is unknown (e.g. a typo like `lable=main,path=README.md`). Callers
+ * combine this with their known-key prefix check so a first-key typo is routed
+ * through structured parsing and rejected by {@link assertNoUnknownCsvKeys}
+ * (GH-258) instead of being silently swallowed as a bare path/value.
+ *
+ * Windows absolute paths (`C:\…`) are excluded so a drive-lettered bare path is
+ * never misread as a `C=…` key/value entry.
+ */
+export function looksLikeGenericKeyValueEntry(raw: string): boolean {
+  const trimmed = raw.trim();
+  if (WINDOWS_ABSOLUTE_PATH_PATTERN.test(trimmed)) {
+    return false;
+  }
+  return GENERIC_LEADING_KV_KEY_PATTERN.test(trimmed);
+}
+
+/**
+ * Reject any key in a parsed CSV/markdown key/value map that is not part of the
+ * caller's allowed-key contract, mirroring the strict `test --add` behavior
+ * (see linked-test-parsers). This closes the cross-command consistency defect
+ * (GH-258) where structured link/metadata parsers silently DROPPED typoed keys
+ * (e.g. `lable=` instead of `label=`), storing data the author never intended.
+ *
+ * Comparison is case-insensitive so a key the downstream reader would accept
+ * (e.g. `Path`) is never falsely rejected; the emitted "Allowed keys" list
+ * preserves the canonical casing the caller passes in. Recognized keys are then
+ * normalized in-place to their lowercase canonical form so downstream readers
+ * (`kv.path`, `kv.id`, `kv.at`, …) see the value even when the input used mixed
+ * casing — otherwise `Path=README.md` would pass validation yet read back as an
+ * undefined `path` and surface a confusing "requires path" error. A key that
+ * collides with another after normalization (e.g. `path=a,Path=b`) is rejected.
+ *
+ * Parsers with an intentional plaintext fallback (`--comment`/`--note`/
+ * `--learning`, annotation `--add`) deliberately do NOT call this — there an
+ * unrecognized key means "treat the whole entry as plaintext", not an error.
+ */
+export function assertNoUnknownCsvKeys(
+  kv: Record<string, string>,
+  optionName: string,
+  allowedKeys: readonly string[],
+): void {
+  const allowed = new Set(allowedKeys.map((key) => key.toLowerCase()));
+  const unknownKeys = Object.keys(kv).filter((key) => !allowed.has(key.toLowerCase()));
+  if (unknownKeys.length > 0) {
+    throw new PmCliError(
+      `${optionName} does not recognize key${unknownKeys.length > 1 ? "s" : ""} ${unknownKeys
+        .map((key) => `"${key}"`)
+        .join(", ")}. Allowed keys: ${allowedKeys.join(", ")}.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  for (const key of Object.keys(kv)) {
+    const normalizedKey = key.toLowerCase();
+    if (normalizedKey === key) {
+      continue;
+    }
+    if (Object.hasOwn(kv, normalizedKey)) {
+      throw new PmCliError(
+        `${optionName} provides key "${key}" more than once after case normalization.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    kv[normalizedKey] = kv[key];
+    delete kv[key];
+  }
+}
+
 async function readStdinText(optionName: string): Promise<string> {
   if (process.stdin.isTTY === true) {
     throw new PmCliError(

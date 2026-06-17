@@ -1,4 +1,4 @@
-import { parseCsvKv } from "../../core/item/parse.js";
+import { assertNoUnknownCsvKeys, parseCsvKv } from "../../core/item/parse.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { resolveIsoOrRelative } from "../../core/shared/time.js";
@@ -7,8 +7,31 @@ import { resolveEventEndAt } from "./event-validation-messages.js";
 import {
   parseEventBoolean,
   parseRecurrenceRule,
+  RECURRENCE_CSV_KEYS,
   type RecurrenceEmptyNumericGuard,
 } from "./recurrence-parsers.js";
+
+/** Allowed CSV/markdown keys for `--reminder` (GH-258). */
+const REMINDER_KEYS = ["at", "date", "text", "title"] as const;
+/**
+ * Allowed CSV/markdown keys for `--event` (GH-258). Recurrence keys are spread
+ * from the authoritative RECURRENCE_CSV_KEYS next to parseRecurrenceRule so the
+ * allow-list can never drift from what the recurrence parser actually reads.
+ */
+const EVENT_KEYS = [
+  "start",
+  "date",
+  "end",
+  "duration",
+  "title",
+  "description",
+  "location",
+  "timezone",
+  "all_day",
+  ...RECURRENCE_CSV_KEYS,
+] as const;
+/** Allowed CSV/markdown keys for the `--type-option` structured form (GH-258). */
+const TYPE_OPTION_KEYS = ["key", "value"] as const;
 
 type EmptyValueGuard = "defined" | "truthy";
 type ReminderValueMode = "raw" | "trimmed";
@@ -33,6 +56,7 @@ function isProvided(value: string | undefined, guard: EmptyValueGuard): boolean 
 export function parseReminderEntries(raw: string[], nowValue: Date, options: ParseReminderEntriesOptions): Reminder[] {
   return raw.map((entry) => {
     const kv = parseCsvKv(entry, "--reminder");
+    assertNoUnknownCsvKeys(kv, "--reminder", REMINDER_KEYS);
     const atRaw = optionalString(kv.at ?? kv.date, options.valueMode);
     const textRaw = optionalString(kv.text ?? kv.title, options.valueMode);
     if (!atRaw || !textRaw) {
@@ -52,6 +76,7 @@ export function parseReminderEntries(raw: string[], nowValue: Date, options: Par
 export function parseEventEntries(raw: string[], nowValue: Date, options: ParseEventEntriesOptions): CalendarEvent[] {
   return raw.map((entry) => {
     const kv = parseCsvKv(entry, "--event");
+    assertNoUnknownCsvKeys(kv, "--event", EVENT_KEYS);
     const startRaw = (kv.start ?? kv.date)?.trim();
     if (!startRaw) {
       throw new PmCliError("--event requires start=<iso|relative> or date=<iso|relative>", EXIT_CODE.USAGE);
@@ -118,6 +143,7 @@ export function parseTypeOptionEntries(raw: string[]): Record<string, string> {
       /^(?:[-*+]\s+)?(?:key|value)\s*[:=]/i.test(trimmedEntry);
     if (prefersStructuredKv) {
       const kv = parseCsvKv(trimmedEntry, "--type-option");
+      assertNoUnknownCsvKeys(kv, "--type-option", TYPE_OPTION_KEYS);
       key = kv.key?.trim();
       value = kv.value?.trim();
     } else {

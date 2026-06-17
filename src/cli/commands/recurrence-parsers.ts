@@ -60,6 +60,24 @@ export function ensureEnumValue<T extends string>(value: string, allowed: readon
  */
 export type RecurrenceEmptyNumericGuard = "defined" | "truthy";
 
+/**
+ * Authoritative list of the CSV/markdown recurrence keys this parser reads.
+ * Co-located with {@link parseRecurrenceRule} so adding a recurrence field
+ * updates the reads AND the strict unknown-key allow-list in one place — the
+ * `--event` validator (repeatable-metadata-parsers EVENT_KEYS) spreads this, so
+ * a new recur key can never be silently rejected (GH-258). Keep in sync with
+ * the `kv.recur_*` reads below.
+ */
+export const RECURRENCE_CSV_KEYS = [
+  "recur_freq",
+  "recur_interval",
+  "recur_count",
+  "recur_until",
+  "recur_by_weekday",
+  "recur_by_month_day",
+  "recur_exdates",
+] as const;
+
 export function parseRecurrenceRule(
   kv: Record<string, string>,
   startAt: string,

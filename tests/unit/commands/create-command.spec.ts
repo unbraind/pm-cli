@@ -84,6 +84,51 @@ describe("runCreate", () => {
     ]);
   });
 
+  it("rejects unknown keys in dep/file/doc/reminder/event/type-option seeds (GH-258)", async () => {
+    await withTempPmPath(async (context) => {
+      const seed = (overrides: Partial<CreateCommandOptions>): CreateCommandOptions => ({
+        title: "gh258-seed",
+        type: "Task",
+        author: "seed-author",
+        ...overrides,
+      });
+      const cases: Array<[Partial<CreateCommandOptions>, string]> = [
+        [{ dep: ["id=a1b2,kind=related,boguskey=v"] }, '--dep does not recognize key "boguskey". Allowed keys: id, kind, type, author, created_at.'],
+        [{ file: ["path=src/cli.ts,boguskey=v"] }, '--file does not recognize key "boguskey". Allowed keys: path, scope, note.'],
+        [{ doc: ["path=README.md,boguskey=v"] }, '--doc does not recognize key "boguskey". Allowed keys: path, scope, note.'],
+        [{ reminder: ["at=2026-03-02T09:00:00.000Z,text=hi,boguskey=v"] }, '--reminder does not recognize key "boguskey". Allowed keys: at, date, text, title.'],
+        [{ event: ["start=2026-03-03T08:00:00.000Z,title=t,boguskey=v"] }, '--event does not recognize key "boguskey". Allowed keys: start, date, end, duration, title, description, location, timezone, all_day, recur_freq, recur_interval, recur_count, recur_until, recur_by_weekday, recur_by_month_day, recur_exdates.'],
+        [{ typeOption: ["key=color,value=red,boguskey=v"] }, '--type-option does not recognize key "boguskey". Allowed keys: key, value.'],
+      ];
+      for (const [overrides, message] of cases) {
+        await expect(runCreate(seed(overrides), { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.USAGE,
+          message,
+        });
+      }
+      // A FIRST-key typo must not bypass validation by being read as a bare id/path (GH-258).
+      await expect(
+        runCreate(seed({ dep: ["boguskey=v,id=a1b2,kind=related"] }), { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: '--dep does not recognize key "boguskey". Allowed keys: id, kind, type, author, created_at.',
+      });
+      await expect(
+        runCreate(seed({ file: ["boguskey=v,path=src/cli.ts"] }), { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: '--file does not recognize key "boguskey". Allowed keys: path, scope, note.',
+      });
+
+      // Bare (non-structured) forms remain valid and skip key validation.
+      const ok = await runCreate(seed({ dep: ["pm-related-1"], file: ["docs/plain.md"], doc: ["docs/guide.md"] }), {
+        path: context.pmPath,
+      });
+      expect(ok.item.files).toEqual([{ path: "docs/plain.md", scope: "project" }]);
+      expect(ok.item.docs).toEqual([{ path: "docs/guide.md", scope: "project" }]);
+    });
+  });
+
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-create-not-init-"));
     try {
