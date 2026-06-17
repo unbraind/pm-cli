@@ -136,6 +136,8 @@ export const _testOnly = {
   normalizeInitTypePreset,
   normalizeOptionalInitAuthor,
   normalizeInitAgentGuidanceMode,
+  isPathLikeInitTarget,
+  resolveInitInvocation,
   parseYesNoChoice,
   applyGovernancePreset,
   runInitWizard,
@@ -208,6 +210,36 @@ function normalizeOptionalInitAuthor(rawValue: string | undefined): string | und
     throw new PmCliError("--author must not be empty", EXIT_CODE.USAGE);
   }
   return normalized;
+}
+
+function isPathLikeInitTarget(rawValue: string | undefined): boolean {
+  if (rawValue === undefined) {
+    return false;
+  }
+  const trimmed = rawValue.trim();
+  if (trimmed.length === 0) {
+    return false;
+  }
+  return path.isAbsolute(trimmed) || trimmed.startsWith(".") || trimmed.includes("/") || trimmed.includes("\\");
+}
+
+function resolveInitInvocation(
+  cwd: string,
+  global: GlobalOptions,
+  prefixArg: string | undefined,
+): { pmRoot: string; prefixArg: string | undefined; positional_target?: string } {
+  if (global.path === undefined && isPathLikeInitTarget(prefixArg)) {
+    const positionalTarget = path.resolve(cwd, prefixArg!.trim());
+    return {
+      pmRoot: positionalTarget,
+      prefixArg: undefined,
+      positional_target: positionalTarget,
+    };
+  }
+  return {
+    pmRoot: resolvePmRoot(cwd, global.path),
+    prefixArg,
+  };
 }
 
 function normalizeInitAgentGuidanceMode(rawValue: string | undefined): InitAgentGuidanceMode {
@@ -408,7 +440,9 @@ export async function runInit(
   options: InitCommandOptions = {},
 ): Promise<InitResult> {
   const cwd = process.cwd();
-  const pmRoot = resolvePmRoot(cwd, global.path);
+  const invocation = resolveInitInvocation(cwd, global, prefixArg);
+  const pmRoot = invocation.pmRoot;
+  prefixArg = invocation.prefixArg;
   await assertExplicitTrackerPathIsNotWorkspaceRoot(pmRoot, global, options.force === true);
   const createdDirs: string[] = [];
   const warnings: string[] = [];
@@ -449,20 +483,45 @@ export async function runInit(
     settings = await readSettings(pmRoot);
     warnings.push(`already_exists:${settingsPath}`);
     let changed = false;
+    const blockedChanges: string[] = [];
     if (prefixArg !== undefined && settings.id_prefix !== normalizedPrefix) {
+      blockedChanges.push("id_prefix");
       settings.id_prefix = normalizedPrefix;
       warnings.push(`updated:id_prefix:${normalizedPrefix}`);
       changed = true;
     }
     if (presetFromOption !== undefined && settings.governance.preset !== presetFromOption) {
+      blockedChanges.push("governance_preset");
       applyGovernancePreset(settings, presetFromOption);
       warnings.push(`updated:governance_preset:${presetFromOption}`);
       changed = true;
     }
     if (authorFromOption !== undefined && settings.author_default !== authorFromOption) {
+      blockedChanges.push("author_default");
       settings.author_default = authorFromOption;
       warnings.push(`updated:author_default:${authorFromOption}`);
       changed = true;
+    }
+    if (changed && options.force !== true) {
+      throw new PmCliError(
+        `Refusing to update existing tracker settings at ${settingsPath} without --force.`,
+        EXIT_CODE.USAGE,
+        {
+          code: "init_existing_settings_requires_force",
+          type: "urn:pm-cli:error:init_existing_settings_requires_force",
+          required: `--force for ${blockedChanges.join(", ")}`,
+          why: "pm init is safe to rerun, but changing id prefix, governance preset, or default author on an existing tracker can corrupt long-lived project context when an agent meant to initialize a sandbox path.",
+          examples: [
+            "pm init --yes",
+            "pm init ./sandbox-pm --yes",
+            "pm init acme --yes --force",
+          ],
+          nextSteps: [
+            "If you meant to initialize a sandbox tracker, pass a path-like positional such as ./sandbox-pm or /tmp/pm-test.",
+            "If you intentionally want to rewrite this existing tracker's init-managed settings, rerun with --force.",
+          ],
+        },
+      );
     }
     if (changed) {
       await writeSettings(pmRoot, settings);

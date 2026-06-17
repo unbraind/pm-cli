@@ -3237,7 +3237,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
   it("accepts agent-friendly non-interactive init defaults and author", async () => {
     await withTempPmPath(async (context) => {
-      const initResult = context.runCli(["init", "--defaults", "--author", "dogfood-agent", "--json"], { expectJson: true });
+      const initResult = context.runCli(["init", "--defaults", "--author", "dogfood-agent", "--force", "--json"], { expectJson: true });
       expect(initResult.code).toBe(0);
       expect(initResult.json).toMatchObject({
         ok: true,
@@ -3286,7 +3286,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
   it("treats --yes/-y as alias for --defaults during init", async () => {
     await withTempPmPath(async (context) => {
-      const initResult = context.runCli(["init", "--yes", "--author", "dogfood-agent", "--json"], { expectJson: true });
+      const initResult = context.runCli(["init", "--yes", "--author", "dogfood-agent", "--force", "--json"], { expectJson: true });
       expect(initResult.code).toBe(0);
       expect(initResult.json).toMatchObject({
         ok: true,
@@ -3294,7 +3294,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       });
     });
     await withTempPmPath(async (context) => {
-      const initResult = context.runCli(["init", "-y", "--author", "dogfood-agent", "--json"], { expectJson: true });
+      const initResult = context.runCli(["init", "-y", "--author", "dogfood-agent", "--force", "--json"], { expectJson: true });
       expect(initResult.code).toBe(0);
       expect(initResult.json).toMatchObject({
         ok: true,
@@ -3306,7 +3306,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
   it("initializes and installs bundled packages in one agent-friendly command", async () => {
     await withTempPmPath(async (context) => {
       const initResult = context.runCli(
-        ["init", "--defaults", "--author", "dogfood-agent", "--with-packages", "--json"],
+        ["init", "--defaults", "--author", "dogfood-agent", "--with-packages", "--force", "--json"],
         { expectJson: true },
       );
       expect(initResult.code).toBe(0);
@@ -4940,7 +4940,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(reindexResult.code).toBe(2);
       expect(reindexResult.stderr).toContain("Unknown command reindex");
 
-      const initRewriteResult = context.runCli(["init", "zz-", "--json"], { expectJson: true });
+      const initRewriteResult = context.runCli(["init", "zz-", "--force", "--json"], { expectJson: true });
       expect(initRewriteResult.code).toBe(0);
 
       const hookLog = await readFile(hookLogPath, "utf8");
@@ -5611,7 +5611,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
   it("returns generic failure when a matched extension command handler throws", async () => {
     await withTempPmPath(async (context) => {
-      const extensionDir = path.join(context.pmPath, "extensions", "beads-command-handler-fail-ext");
+      const extensionDir = path.join(context.tempRoot, "beads-command-handler-fail-ext");
       await mkdir(extensionDir, { recursive: true });
 
       await writeFile(
@@ -5621,7 +5621,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
             name: "beads-command-handler-fail-ext",
             version: "1.0.0",
             entry: "./index.mjs",
-            capabilities: ["commands"],
+            capabilities: ["commands", "schema"],
           },
           null,
           2,
@@ -5636,6 +5636,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "  activate(api) {",
           "    api.registerCommand({",
           "      name: 'beads import',",
+          "      flags: [{ long: '--file', value_name: 'path', value_type: 'string' }],",
           "      run: () => { throw new Error('handler-boom'); }",
           "    });",
           "  }",
@@ -5644,6 +5645,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         ].join("\n"),
         "utf8",
       );
+
+      const install = context.runCli(["extension", "install", extensionDir, "--project", "--json"], { expectJson: true });
+      expect(install.code).toBe(0);
 
       const imported = context.runCli(["beads", "import", "--json", "--file", path.join(context.tempRoot, "missing.jsonl")]);
       expect(imported.code).toBe(1);

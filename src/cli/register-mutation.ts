@@ -46,6 +46,28 @@ function addHiddenOption(command: Command, flags: string, description: string, r
   command.addOption(option);
 }
 
+const SCHEMA_SHORTHAND_RESERVED_PREFIXES = ["add-", "apply-", "list-", "remove-", "show-"] as const;
+const SCHEMA_SHORTHAND_RESERVED_TOKENS = new Set([
+  "field",
+  "fields",
+  "help",
+  "status",
+  "statuses",
+  "type",
+  "types",
+]);
+
+export function looksLikeSchemaSubcommandTypo(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  if (normalized.length === 0) {
+    return false;
+  }
+  return (
+    SCHEMA_SHORTHAND_RESERVED_TOKENS.has(normalized) ||
+    SCHEMA_SHORTHAND_RESERVED_PREFIXES.some((prefix) => normalized.startsWith(prefix))
+  );
+}
+
 /**
  * Parse the `--order` value for `pm schema add-status`. Accepts a value that is
  * already a number or a numeric string; throws a usage error when the flag was
@@ -1423,7 +1445,11 @@ export function registerMutationCommands(program: Command): void {
       const commands = splitCommaList(options.commands);
       const requiredTypes = splitCommaList(options.requiredTypes);
       const minCount = parseSchemaOrderOption(options.minCount);
-      if (!SCHEMA_SUBCOMMANDS.includes(normalizedSubcommand as typeof SCHEMA_SUBCOMMANDS[number]) && typeName === undefined) {
+      if (
+        !SCHEMA_SUBCOMMANDS.includes(normalizedSubcommand as typeof SCHEMA_SUBCOMMANDS[number]) &&
+        typeName === undefined &&
+        !looksLikeSchemaSubcommandTypo(normalizedSubcommand)
+      ) {
         typeName = subcommand;
         normalizedSubcommand = "add-type";
       }

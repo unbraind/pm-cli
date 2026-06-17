@@ -47,6 +47,20 @@ describe("runInit", () => {
     expect(initInternals.normalizeOptionalInitAuthor(undefined)).toBeUndefined();
     expect(initInternals.normalizeOptionalInitAuthor(" agent ")).toBe("agent");
     expect(() => initInternals.normalizeOptionalInitAuthor(" ")).toThrow(/--author must not be empty/);
+    expect(initInternals.isPathLikeInitTarget(undefined)).toBe(false);
+    expect(initInternals.isPathLikeInitTarget("  ")).toBe(false);
+    expect(initInternals.isPathLikeInitTarget("acme")).toBe(false);
+    expect(initInternals.isPathLikeInitTarget("./sandbox")).toBe(true);
+    expect(initInternals.isPathLikeInitTarget("/tmp/pm-test")).toBe(true);
+    expect(initInternals.resolveInitInvocation("/repo", {}, "./sandbox")).toEqual({
+      pmRoot: path.resolve("/repo", "sandbox"),
+      prefixArg: undefined,
+      positional_target: path.resolve("/repo", "sandbox"),
+    });
+    expect(initInternals.resolveInitInvocation("/repo", { path: "/repo/.agents/pm" }, "./sandbox")).toEqual({
+      pmRoot: "/repo/.agents/pm",
+      prefixArg: "./sandbox",
+    });
 
     expect(initInternals.normalizeInitAgentGuidanceMode(undefined)).toBe("ask");
     expect(initInternals.normalizeInitAgentGuidanceMode("status")).toBe("status");
@@ -487,14 +501,22 @@ describe("runInit", () => {
     }
   });
 
-  it("emits already-exists warnings and updates id prefix only when changed", async () => {
+  it("emits already-exists warnings and requires force before updating init-managed existing settings", async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-reinit-"));
     try {
       const initial = await runInit("pm", { path: tempRoot });
       expect(initial.settings.id_prefix).toBe("pm-");
 
-      const updated = await runInit("next", { path: tempRoot });
       const expectedSettingsPath = path.join(tempRoot, "settings.json");
+      await expect(runInit("next", { path: tempRoot })).rejects.toMatchObject<PmCliError>({
+        context: expect.objectContaining({
+          code: "init_existing_settings_requires_force",
+          required: "--force for id_prefix",
+        }),
+      });
+      expect((await readSettings(tempRoot)).id_prefix).toBe("pm-");
+
+      const updated = await runInit("next", { path: tempRoot }, { force: true });
 
       expect(updated.created_dirs).toEqual([]);
       expect(updated.settings.id_prefix).toBe("next-");
@@ -693,7 +715,14 @@ describe("runInit", () => {
         close_validation_default: "strict",
       });
 
-      const minimalInit = await runInit("pm", { path: tempRoot }, { preset: "minimal" });
+      await expect(runInit("pm", { path: tempRoot }, { preset: "minimal" })).rejects.toMatchObject<PmCliError>({
+        context: expect.objectContaining({
+          code: "init_existing_settings_requires_force",
+          required: "--force for governance_preset",
+        }),
+      });
+
+      const minimalInit = await runInit("pm", { path: tempRoot }, { preset: "minimal", force: true });
       expect(minimalInit.governance_preset).toBe("minimal");
       expect(minimalInit.warnings).toContain("updated:governance_preset:minimal");
       expect(minimalInit.settings.governance).toMatchObject({

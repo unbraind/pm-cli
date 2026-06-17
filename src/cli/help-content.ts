@@ -112,12 +112,15 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     examples: [
       "pm init",
       "pm init acme",
+      "pm init ./pm-sandbox --defaults",
       "pm init --preset minimal",
       "pm init --agent-guidance add",
       "pm init --defaults --with-packages",
     ],
     tips: [
       "Run this once per repository before create/list/update commands.",
+      "A path-like positional (`./dir`, `/tmp/dir`) initializes that tracker path; a plain word remains an id prefix.",
+      "Rewriting id prefix, governance preset, or default author on an existing tracker requires --force.",
       "Use --preset for non-interactive automation; omit it in a TTY to use the setup wizard.",
       "Use --agent-guidance add to inject compact AGENTS/CLAUDE workflow guidance, or --agent-guidance status to inspect missing guidance without modifying files.",
       "Use --with-packages when agents need bundled commands such as calendar and templates available immediately.",

@@ -536,6 +536,21 @@ describe("schema add-type command", () => {
     });
   });
 
+  it("rejects read-like unknown schema tokens without mutating custom types", async () => {
+    await withTempPmPath(async (context) => {
+      const before = await readTypes(context);
+
+      for (const token of ["list-statuses", "list-types", "show-all", "types", "help"]) {
+        const result = context.runCli(["schema", token]);
+        expect(result.code).toBe(EXIT_CODE.USAGE);
+        expect(result.stderr).toContain(`Unknown pm schema subcommand "${token}"`);
+      }
+
+      const after = await readTypes(context);
+      expect(after).toEqual(before);
+    });
+  });
+
   it("fails schema commands when the tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-schema-not-init-"));
     try {

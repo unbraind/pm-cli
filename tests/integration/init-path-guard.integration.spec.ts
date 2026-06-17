@@ -1,10 +1,42 @@
-import { mkdir, readdir, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { expectJsonErrorEnvelope } from "../helpers/jsonErrorEnvelope.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("init tracker-path guardrails", () => {
+  it("treats path-like init positionals as target tracker paths without mutating the caller tracker", async () => {
+    await withTempPmPath(async (context) => {
+      const projectRoot = path.join(context.tempRoot, "caller-project");
+      const callerPmPath = path.join(projectRoot, ".agents", "pm");
+      const targetPmPath = path.join(context.tempRoot, "target-pm");
+      await mkdir(projectRoot, { recursive: true });
+
+      const callerInit = context.runCli(["--pm-path", callerPmPath, "init", "pm", "--json", "--yes"], {
+        expectJson: true,
+        cwd: projectRoot,
+      });
+      expect(callerInit.code).toBe(0);
+      const callerSettingsBefore = await readFile(path.join(callerPmPath, "settings.json"), "utf8");
+
+      const targetInit = context.runCli(["init", targetPmPath, "--json", "--yes", "--author", "sandbox-agent"], {
+        expectJson: true,
+        cwd: projectRoot,
+      });
+      expect(targetInit.code).toBe(0);
+      expect(targetInit.json.path).toBe(targetPmPath);
+
+      const callerSettingsAfter = await readFile(path.join(callerPmPath, "settings.json"), "utf8");
+      const targetSettings = JSON.parse(await readFile(path.join(targetPmPath, "settings.json"), "utf8")) as {
+        id_prefix?: string;
+        author_default?: string;
+      };
+      expect(callerSettingsAfter).toBe(callerSettingsBefore);
+      expect(targetSettings.id_prefix).toBe("pm-");
+      expect(targetSettings.author_default).toBe("sandbox-agent");
+    });
+  });
+
   it("guards explicit --pm-path values that point at a workspace root", async () => {
     await withTempPmPath(async (context) => {
       const workspaceRoot = path.join(context.tempRoot, "workspace-root-path-trap");

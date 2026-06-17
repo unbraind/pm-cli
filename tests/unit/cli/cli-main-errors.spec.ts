@@ -1271,6 +1271,75 @@ describe("CLI main bootstrap helper coverage", () => {
     expect(extensionScoped.score).toBe(42);
   });
 
+  it("validates descriptor-backed dynamic command arity and unknown options", () => {
+    const descriptor = {
+      command: "tools export",
+      action: "tools-export",
+      arguments: [{ name: "target", required: true, variadic: false }],
+      flags: [{ long: "--format", value_type: "string" }],
+      examples: [],
+      failure_hints: [],
+    };
+
+    expect(() =>
+      _testOnly.validateDynamicExtensionCommandInvocation(descriptor, [], {}, [{ long: "--format", value_type: "string" }]),
+    ).toThrow(/Missing required argument.*pm tools export <target>/);
+    expect(() =>
+      _testOnly.validateDynamicExtensionCommandInvocation(
+        descriptor,
+        ["report", "extra"],
+        {},
+        [{ long: "--format", value_type: "string" }],
+      ),
+    ).toThrow(/Too many arguments.*extra.*pm tools export <target>/);
+    expect(() =>
+      _testOnly.validateDynamicExtensionCommandInvocation(
+        { ...descriptor, command: "tools", arguments: [], flags: [] },
+        ["extra"],
+        {},
+        [],
+      ),
+    ).toThrow(/Too many arguments.*extra.*Usage: pm tools$/);
+    expect(() =>
+      _testOnly.validateDynamicExtensionCommandInvocation(
+        {
+          ...descriptor,
+          arguments: [
+            { name: "target", required: true, variadic: false },
+            { name: "extras", required: false, variadic: true },
+          ],
+        },
+        [],
+        {},
+        [{ long: "--format", value_type: "string" }],
+      ),
+    ).toThrow(/Missing required argument.*pm tools export <target> \[extras\.\.\.\]/);
+    expect(() =>
+      _testOnly.validateDynamicExtensionCommandInvocation(
+        { ...descriptor, command: "tools", arguments: [], flags: [] },
+        [],
+        {},
+        [],
+      ),
+    ).not.toThrow();
+    expect(() =>
+      _testOnly.validateDynamicExtensionCommandInvocation(
+        { ...descriptor, command: "tools", arguments: [], flags: [] },
+        [],
+        { definitelyNotReal: true },
+        [],
+      ),
+    ).toThrow(/Unknown option '--definitelyNotReal'.*does not define extension flags/);
+    expect(() =>
+      _testOnly.validateDynamicExtensionCommandInvocation(
+        { ...descriptor, arguments: [{ name: "target", required: true, variadic: true }] },
+        ["report", "extra"],
+        { format: "json" },
+        [{ long: "--format", value_type: "string" }],
+      ),
+    ).not.toThrow();
+  });
+
   it("registers runtime field options while avoiding duplicate short and long flags", () => {
     const command = new Command("create");
     command.option("--customer-segment <value>", "Existing runtime field");

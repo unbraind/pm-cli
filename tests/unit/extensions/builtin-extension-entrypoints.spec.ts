@@ -1310,6 +1310,15 @@ describe("built-in extension entrypoints", () => {
         });
         expect(listedExplicit).toBeTypeOf("object");
         await expect(
+          commands[0]!.run({
+            command: "test-runs",
+            args: ["nope"],
+            options: {},
+            global: runtimeGlobal,
+            pm_root: context.pmPath,
+          }),
+        ).rejects.toThrow("test-runs does not accept positional arguments");
+        await expect(
           commands[2]!.run({
             command: "test-runs status",
             args: [],
@@ -1318,6 +1327,24 @@ describe("built-in extension entrypoints", () => {
             pm_root: context.pmPath,
           }),
         ).rejects.toThrow("requires a runId argument");
+        await expect(
+          commands[2]!.run({
+            command: "test-runs status",
+            args: ["run-1", "extra"],
+            options: {},
+            global: runtimeGlobal,
+            pm_root: context.pmPath,
+          }),
+        ).rejects.toThrow("accepts exactly one runId argument");
+        await expect(
+          commands[2]!.run({
+            command: "test-runs status",
+            args: ["run-1"],
+            options: {},
+            global: runtimeGlobal,
+            pm_root: context.pmPath,
+          }),
+        ).rejects.not.toThrow("accepts exactly one runId argument");
         await expect(
           commands[3]!.run({
             command: "test-runs logs",
@@ -1402,6 +1429,26 @@ describe("built-in extension entrypoints", () => {
         });
         expect((listedExplicit as { templates?: string[] }).templates).toContain("entrypoint-template");
 
+        await expect(
+          commands[0]!.run({
+            command: "templates",
+            args: ["apply", "entrypoint-template"],
+            options: {},
+            global: runtimeGlobal,
+            pm_root: context.pmPath,
+          }),
+        ).rejects.toThrow(/Unknown pm templates subcommand "apply".*pm create <type> <title> --template <name>/);
+
+        await expect(
+          commands[1]!.run({
+            command: "templates list",
+            args: [],
+            options: { title: "Crash on logout" },
+            global: runtimeGlobal,
+            pm_root: context.pmPath,
+          }),
+        ).rejects.toThrow(/pm templates list does not accept options: --title/);
+
         const shown = await commands[3]!.run({
           command: "templates show",
           args: ["entrypoint-template"],
@@ -1420,6 +1467,15 @@ describe("built-in extension entrypoints", () => {
             pm_root: context.pmPath,
           }),
         ).rejects.toThrow("requires a template name argument");
+        await expect(
+          commands[2]!.run({
+            command: "templates save",
+            args: ["entrypoint-template", "extra"],
+            options: { type: "Task" },
+            global: runtimeGlobal,
+            pm_root: context.pmPath,
+          }),
+        ).rejects.toThrow("accepts exactly one template name argument");
       } finally {
         if (previousPackageRoot === undefined) {
           delete process.env[PM_PACKAGE_ROOT_ENV];

@@ -1,0 +1,27 @@
+id: pm-nt1y
+title: Dynamic package commands should reject excess args and unknown parent tokens
+description: Package audit found descriptor-backed dynamic commands ignoring excess positionals and parent/list aliases accepting unknown child tokens (for example templates show bug extra-token and test-runs nope). Enforce registered command argument metadata at runtime so package authors get safe SDK defaults.
+type: Issue
+status: closed
+priority: 2
+tags[4]: agent-ux,dogfood-2026-06-12,packages,sdk
+created_at: "2026-06-17T22:07:26.015Z"
+updated_at: "2026-06-17T23:12:42.115Z"
+author: codex-audit-20260618
+parent: pm-ugqx
+resolution: Added descriptor-backed dynamic command validation plus linked-test-adapter arity guards.
+expected_result: "Dynamic extension/package commands reject missing required args, extra positionals, and unknown options with agent-actionable usage errors."
+actual_result: src/cli/main.ts validates descriptor arity/options; test-runs commands validate run IDs; focused tests/full coverage/dogfood passed.
+comments[1]{created_at,author,text}:
+  "2026-06-17T23:12:22.029Z",codex-audit-agent,"Final evidence: descriptor-backed dynamic extension validation plus linked-test-adapter arity checks reject unknown extra args/options; verified by cli-main dynamic validation tests, builtin extension entrypoint tests, full coverage 100%, dogfood package-first, release gates, security scan, and validation history_drift ok."
+files[4]{path,scope,note}:
+  packages/pm-linked-test-adapters/extensions/linked-test-adapters/index.js,project,shipped linked-test-adapters entrypoint sync
+  packages/pm-linked-test-adapters/extensions/linked-test-adapters/index.ts,project,linked-test-adapters arity guards
+  src/cli/main.ts,project,generic descriptor-backed dynamic command validation
+  tests/integration/cli.integration.spec.ts,project,dynamic command validation integration contract
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/extensions/builtin-extension-entrypoints.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqimmhem-94saeq,test,passed,"2026-06-17T22:11:56.156Z","2026-06-17T22:12:22.558Z","2026-06-17T22:12:22.558Z",null,null,1,0,0,null,null,null
+close_reason: Resolved dynamic package command arity and unknown option validation
+body: ""

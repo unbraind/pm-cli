@@ -2,13 +2,26 @@ id: pm-krgd
 title: "Dogfood audit 2026-06-12: ecosystem verification (CLI+SDK+packages)"
 description: ""
 type: Task
-status: open
+status: closed
 priority: 2
 tags[1]: dogfood-2026-06-12
 created_at: "2026-06-12T16:04:17.196Z"
-updated_at: "2026-06-12T16:20:08.659Z"
+updated_at: "2026-06-17T23:12:58.341Z"
 author: maintainer-agent
-comments[2]{created_at,author,text}:
+resolution: "Completed the 2026-06-17/18 ecosystem audit pass with fixes for GH #262, GH #265, templates invalid fallback, and dynamic package command arity."
+expected_result: "Audit current CLI/SDK/packages/GitHub/security/telemetry/Sentry state in temporary projects, fix high-impact agent UX issues found, and record evidence in PM."
+actual_result: "Subagents audited packages and performance; fixed init, templates, dynamic command validation, linked-test-adapters, and schema shorthand; updated compatible dependencies; verified with full coverage, dogfood package-first, security/audit, validation, GitHub alert checks, Sentry issue list, and telemetry health."
+comments[4]{created_at,author,text}:
   "2026-06-12T16:20:08.407Z",maintainer-agent,"Sandbox /tmp/pm-ecosystem-audit-2026-06-12 exercised: core lifecycle (create all types incl custom Experiment via schema add-type, update, close w/ structured fields, comments/files/docs/notes/learnings, claim/release, deps via update --dep, list/search/context, validate --fix-hints, health --json, stats --storage, history --diff, gc, plan create/complete-step/materialize, aggregate, activity) all WORKING. Error UX verified strong: command did-you-mean (lsit->list), flag nearest-option + suggested_retry (create --desc -> --description), cross-command option hints (--depends-on -> plan), allowed-value lists w/ schema add-type hint, calendar unknown-command install hint. All 10 first-party packages installed from local paths and exercised OK (templates save/show + create --template, calendar agenda/day, todos export+import, beads import --file, guide, dedupe-audit/comments-audit/normalize, search-advanced, command-kit echo/parser-alias/injected flag, test-runs, lifecycle-hooks inert-by-design). pm-changelog installed locally, generated sane CHANGELOG from closed sandbox items."
   "2026-06-12T16:20:08.659Z",maintainer-agent,"SDK: pm extension scaffold -> extended with registerCommand + registerItemFields + registerImporter; capability-gating error payload (health --json activation.failed error+trace+hint) is excellent; --field set/reject works; importer surfaces as 'pm auditcsv import'. MCP: node dist/mcp/server.js serves 25 tools, pm_list call OK against sandbox. FINDINGS FILED: pm-qtbc (P1: pm-mcp bin silent-exits via symlinked argv[1] main-module guard — npm-installed binary dead), pm-r2kd (P2: templates unknown subcommand silently lists), pm-yffj (P2: extension activation failure invisible outside health --json), pm-i35t (P3: alias typos shwo/veiw get no did-you-mean), pm-90hp (P3: todos import positional ignored + error omits --folder), pm-7x8d (P3: close could accept --resolution as reason under require_close_reason). No secret/private-info leaks observed in any output; telemetry defaults to capture_level redacted in fresh init."
+  "2026-06-17T22:05:08.826Z",codex-audit-20260618,"Sub-agent package audit evidence: templates parent command exits 0 for invalid invocations; dynamic package commands also ignore excess positionals (templates show bug extra-token, templates save demo --type Task extra-token) and another parent/list alias shows same ambiguity (test-runs nope lists). Recommended tests: negative dynamic parser coverage and dogfood expected-failure probes. pm-r2kd covers templates fallback; broader arity enforcement may need a separate item if fixed centrally."
+  "2026-06-17T23:12:20.930Z",codex-audit-agent,"Final audit evidence: GitHub scan found no open PRs, no open Dependabot alerts, no open code-scanning alerts; open issues reviewed and GH #262/#265 fixed in this branch. Sentry issue list returned recent unresolved pm-cli issues; telemetry status enabled with recent successful flush and pm health --check-telemetry --summary --json returned ok with warning_count=0. Post-change gates: pnpm build; node scripts/run-tests.mjs coverage (225 files, 4488 tests, 100%); pnpm dogfood:package-first (87 commands); pnpm security:scan && pnpm audit --audit-level moderate; pm validate --check-resolution --check-history-drift (history_drift ok, only 188 old missing-resolution warnings)."
+files[2]{path,scope,note}:
+  package.json,project,compatible Vitest/Sentry dependency updates from audit
+  pnpm-lock.yaml,project,lockfile for compatible dependency updates
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm dogfood:package-first",null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm security:scan && pnpm audit --audit-level moderate",null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Completed ecosystem audit pass with fixes, package dogfood, security/GitHub/Sentry/telemetry checks, and PM evidence"
 body: ""
