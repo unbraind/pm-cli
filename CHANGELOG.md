@@ -4,6 +4,7 @@
 
 ### Added
 
+- Sentry PM-CLI-1R: 'cannot add command init as already have command init' — top-level init double-registration throws raw Commander error ([pm-zyez](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zyez.toon))
 - GH-258: strict unknown-key rejection across all structured CSV/markdown link & metadata parsers \(validation parity with test --add\) ([pm-0v9k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-0v9k.toon))
 - Expose schema.unknown\_field\_policy via pm config set schema\_unknown\_field\_policy ([pm-nnaq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-nnaq.toon))
 - pm schema list-fields / show-field / add-field / remove-field: CLI management of schema/fields.json ([pm-vhbf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-vhbf.toon))
