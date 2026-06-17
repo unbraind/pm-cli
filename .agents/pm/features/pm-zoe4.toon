@@ -6,15 +6,17 @@ status: in_progress
 priority: 4
 tags[3]: agent-ux,backlog,scheduling
 created_at: "2026-06-17T15:59:46.213Z"
-updated_at: "2026-06-17T18:42:48.658Z"
+updated_at: "2026-06-17T18:50:55.471Z"
 assignee: codex-agent-pm-sdk-cli
 author: claude-code-agent
 parent: pm-mpbb
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-06-17T18:25:42.626Z",codex-agent-pm-sdk-cli,"Implementation + verification evidence (2026-06-17):\n- Added duration-only minute support in resolveEventEndAt via explicit forms: `30min|mins|minute|minutes` and ISO-8601 duration `PT...` (including PT30M), while preserving global relative token semantics where bare `m` remains months.\n- Updated UX/contracts/docs surfaces:\n  - src/cli/help-content.ts\n  - src/sdk/cli-contracts/commander-mutation-options.ts\n  - src/sdk/cli-contracts/tool-parameter-tables.ts\n  - docs/COMMANDS.md\n- Expanded tests:\n  - tests/unit/core/item/parse-utils.spec.ts\n  - tests/unit/commands/create-command.spec.ts\n  - tests/unit/commands/update-command.spec.ts\n  - tests/unit/commands/scheduling-shortcuts.spec.ts\n  - tests/unit/commands/register-commands.spec.ts\n- Verification:\n  - pnpm build (pass)\n  - node scripts/run-tests.mjs test -- tests/unit/core/item/parse-utils.spec.ts tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/unit/commands/scheduling-shortcuts.spec.ts tests/unit/commands/register-commands.spec.ts (pass)\n  - node scripts/run-tests.mjs coverage (pass, 100/100/100/100)\n  - manual temp-dir validation (pass): meet/event/remind + create/update parity + validate/health checks.\n- GitHub intake snapshot via gh:\n  - open PRs: 0\n  - open issues: 8\n  - open dependabot alerts: 0\n  - open code-scanning alerts: 0\n  - pnpm audit --prod --json: 0 vulnerabilities\n  - pnpm outdated: @vitest/coverage-v8 4.1.8->4.1.9, vitest 4.1.8->4.1.9, @sentry/cli 3.5.0->3.5.1, @sentry/node 10.57.0->10.58.0, commander 14.0.3->15.0.0.\n- Follow-up mapping: linked-test coverage under pm test sandbox contexts still reports historical non-100 totals for unrelated files; this aligns with existing linked-test ergonomics scope (pm-52eh / GH-208), so no duplicate item created."
   "2026-06-17T18:29:56.185Z",codex-agent-pm-sdk-cli,"Bugbot follow-up: regenerated tests/fixtures/contracts/full.json via pnpm contracts:update and confirmed with pnpm contracts:check so contracts snapshot gate stays green."
   "2026-06-17T18:42:48.658Z",codex-agent-pm-sdk-cli,"Review follow-up: narrowed ISO-8601 duration parsing to time-only PT forms (hours/minutes/seconds) to avoid ambiguous day semantics and keep DST behavior out-of-scope for this scheduling-minute feature. Added regression expectation that P1D is rejected for event.duration, then re-ran targeted tests + full coverage (100/100/100/100)."
-files[11]{path,scope,note}:
+  "2026-06-17T18:50:55.471Z",codex-agent-pm-sdk-cli,"CI follow-up: fixed failing Gates (static) run by adding rmSync retry options in scripts/contracts-snapshot.mjs cleanup path (ENOTEMPTY on temp schema dir in GitHub runner). Verified with pnpm contracts:check."
+files[12]{path,scope,note}:
+  scripts/contracts-snapshot.mjs,project,Harden temp cleanup with rmSync retries to avoid ENOTEMPTY CI flakes
   src/cli/commands/event-validation-messages.ts,project,Add duration-only minute parsing support
   src/cli/commands/scheduling-shortcuts.ts,project,Validate shortcut duration forwarding and compatibility
   src/cli/help-content.ts,project,Update duration guidance for minute forms
