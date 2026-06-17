@@ -262,6 +262,24 @@ describe("core/item/parse", () => {
         new Date("2026-04-01T08:00:00.000Z"),
       ),
     ).toThrow("Invalid event.duration value");
+
+    expect(() =>
+      resolveEventEndAt(
+        "2026-04-01T09:00:00.000Z",
+        undefined,
+        "999999999999999999999min",
+        new Date("2026-04-01T08:00:00.000Z"),
+      ),
+    ).toThrow("Duration is out of supported timestamp range");
+
+    expect(() =>
+      resolveEventEndAt(
+        "2026-04-01T09:00:00.000Z",
+        undefined,
+        "PT999999999999999999999H",
+        new Date("2026-04-01T08:00:00.000Z"),
+      ),
+    ).toThrow("Duration is out of supported timestamp range");
   });
 
   it("adds path and preview guidance for malformed key-value input", () => {
