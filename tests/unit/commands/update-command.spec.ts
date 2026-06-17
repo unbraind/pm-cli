@@ -2179,6 +2179,40 @@ describe("runUpdate", () => {
         title: "window",
       });
 
+      const withMinuteDuration = await runUpdate(
+        id,
+        { event: ["start=2026-03-03T12:00:00.000Z,duration=30min,title=minute-window"], message: "30min window" },
+        { path: context.pmPath },
+      );
+      expect(withMinuteDuration.item.events?.[0]).toMatchObject({
+        start_at: "2026-03-03T12:00:00.000Z",
+        end_at: "2026-03-03T12:30:00.000Z",
+        title: "minute-window",
+      });
+
+      const withIsoDuration = await runUpdate(
+        id,
+        { event: ["start=2026-03-03T12:00:00.000Z,duration=PT30M,title=iso-window"], message: "iso 30m window" },
+        { path: context.pmPath },
+      );
+      expect(withIsoDuration.item.events?.[0]).toMatchObject({
+        start_at: "2026-03-03T12:00:00.000Z",
+        end_at: "2026-03-03T12:30:00.000Z",
+        title: "iso-window",
+      });
+
+      // Keep legacy semantics where bare `m` means months.
+      const withMonthDuration = await runUpdate(
+        id,
+        { event: ["start=2026-03-03T12:00:00.000Z,duration=45m,title=month-window"], message: "legacy month window" },
+        { path: context.pmPath },
+      );
+      expect(withMonthDuration.item.events?.[0]).toMatchObject({
+        start_at: "2026-03-03T12:00:00.000Z",
+        end_at: "2029-12-03T12:00:00.000Z",
+        title: "month-window",
+      });
+
       await expect(
         runUpdate(
           id,

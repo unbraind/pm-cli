@@ -691,6 +691,19 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     description: "ISO/date timestamp or relative offset (+6h/+1d/+2w/+6m).",
     examples: ["2026-04-01T00:00:00.000Z", "+1d"],
   },
+  reminder: {
+    description: "Repeatable reminder seed entries at=<iso|relative>,text=<text>.",
+    examples: [["at=+2d,text=Review PR"]],
+  },
+  event: {
+    description:
+      "Repeatable event seed entries start=<iso|relative> with end=<iso|relative> or duration=<relative|30min|PT30M>. Bare `m` remains months for backward compatibility.",
+    examples: [
+      ["start=2026-07-01T10:00:00Z,duration=2h,title=planning"],
+      ["start=2026-07-01T10:00:00Z,duration=30min,title=standup"],
+      ["start=2026-07-01T10:00:00Z,duration=PT30M,title=window"],
+    ],
+  },
   estimate: {
     description: "Estimated effort in minutes.",
     examples: [60, "120"],

@@ -2,11 +2,42 @@ id: pm-zoe4
 title: "Sub-hour duration granularity for scheduling: support minutes in --duration / event duration="
 description: "The relative-time parser (RELATIVE_DEADLINE) supports h/d/w/m where m=MONTHS; there is no minutes unit, so 'pm meet --duration 30m' resolves to +30 months and sub-hour meetings can only be expressed via an explicit --end ISO. Add a minutes-capable duration form (e.g. accept '30min' or ISO-8601 PT30M) in resolveEventEndAt's duration path, shared by pm create --event duration= and the pm meet/event shortcuts. Surfaced while implementing GH-217 (pm-76r5)."
 type: Feature
-status: open
+status: in_progress
 priority: 4
 tags[3]: agent-ux,backlog,scheduling
 created_at: "2026-06-17T15:59:46.213Z"
-updated_at: "2026-06-17T15:59:46.213Z"
+updated_at: "2026-06-17T19:11:38.641Z"
+assignee: codex-agent-pm-sdk-cli
 author: claude-code-agent
 parent: pm-mpbb
+comments[7]{created_at,author,text}:
+  "2026-06-17T18:25:42.626Z",codex-agent-pm-sdk-cli,"Implementation + verification evidence (2026-06-17):\n- Added duration-only minute support in resolveEventEndAt via explicit forms: `30min|mins|minute|minutes` and ISO-8601 duration `PT...` (including PT30M), while preserving global relative token semantics where bare `m` remains months.\n- Updated UX/contracts/docs surfaces:\n  - src/cli/help-content.ts\n  - src/sdk/cli-contracts/commander-mutation-options.ts\n  - src/sdk/cli-contracts/tool-parameter-tables.ts\n  - docs/COMMANDS.md\n- Expanded tests:\n  - tests/unit/core/item/parse-utils.spec.ts\n  - tests/unit/commands/create-command.spec.ts\n  - tests/unit/commands/update-command.spec.ts\n  - tests/unit/commands/scheduling-shortcuts.spec.ts\n  - tests/unit/commands/register-commands.spec.ts\n- Verification:\n  - pnpm build (pass)\n  - node scripts/run-tests.mjs test -- tests/unit/core/item/parse-utils.spec.ts tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/unit/commands/scheduling-shortcuts.spec.ts tests/unit/commands/register-commands.spec.ts (pass)\n  - node scripts/run-tests.mjs coverage (pass, 100/100/100/100)\n  - manual temp-dir validation (pass): meet/event/remind + create/update parity + validate/health checks.\n- GitHub intake snapshot via gh:\n  - open PRs: 0\n  - open issues: 8\n  - open dependabot alerts: 0\n  - open code-scanning alerts: 0\n  - pnpm audit --prod --json: 0 vulnerabilities\n  - pnpm outdated: @vitest/coverage-v8 4.1.8->4.1.9, vitest 4.1.8->4.1.9, @sentry/cli 3.5.0->3.5.1, @sentry/node 10.57.0->10.58.0, commander 14.0.3->15.0.0.\n- Follow-up mapping: linked-test coverage under pm test sandbox contexts still reports historical non-100 totals for unrelated files; this aligns with existing linked-test ergonomics scope (pm-52eh / GH-208), so no duplicate item created."
+  "2026-06-17T18:29:56.185Z",codex-agent-pm-sdk-cli,"Bugbot follow-up: regenerated tests/fixtures/contracts/full.json via pnpm contracts:update and confirmed with pnpm contracts:check so contracts snapshot gate stays green."
+  "2026-06-17T18:42:48.658Z",codex-agent-pm-sdk-cli,"Review follow-up: narrowed ISO-8601 duration parsing to time-only PT forms (hours/minutes/seconds) to avoid ambiguous day semantics and keep DST behavior out-of-scope for this scheduling-minute feature. Added regression expectation that P1D is rejected for event.duration, then re-ran targeted tests + full coverage (100/100/100/100)."
+  "2026-06-17T18:50:55.471Z",codex-agent-pm-sdk-cli,"CI follow-up: fixed failing Gates (static) run by adding rmSync retry options in scripts/contracts-snapshot.mjs cleanup path (ENOTEMPTY on temp schema dir in GitHub runner). Verified with pnpm contracts:check."
+  "2026-06-17T19:03:41.474Z",codex-agent-pm-sdk-cli,"Review follow-up: added duration overflow guard (toIsoDurationOrThrow) so very large minute/PT durations return a usage error instead of throwing RangeError. Added regression tests for huge  and  values, then re-ran targeted suite and full coverage (100/100/100/100)."
+  "2026-06-17T19:03:50.266Z",codex-agent-pm-sdk-cli,"Correction: overflow regression tests cover huge values 999999999999999999999min and PT999999999999999999999H, confirming out-of-range durations now fail with a usage error instead of RangeError."
+  "2026-06-17T19:11:38.641Z",codex-agent-pm-sdk-cli,"Final polish from latest review: renamed toIsoDurationOrThrow -> toIsoTimestampOrThrow for naming clarity; behavior unchanged. Re-ran focused parser/scheduling tests."
+files[12]{path,scope,note}:
+  scripts/contracts-snapshot.mjs,project,Harden temp cleanup with rmSync retries to avoid ENOTEMPTY CI flakes
+  src/cli/commands/event-validation-messages.ts,project,Add duration-only minute parsing support
+  src/cli/commands/scheduling-shortcuts.ts,project,Validate shortcut duration forwarding and compatibility
+  src/cli/help-content.ts,project,Update duration guidance for minute forms
+  src/sdk/cli-contracts/commander-mutation-options.ts,project,Align SDK option descriptions with duration forms
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,Align tool parameter docs for event duration inputs
+  tests/fixtures/contracts/full.json,project,Regenerate contracts fixture after adding event/reminder parameter metadata
+  tests/unit/commands/create-command.spec.ts,project,Create command coverage for duration minute forms
+  tests/unit/commands/register-commands.spec.ts,project,Ensure command registration supports duration flag forwarding
+  tests/unit/commands/scheduling-shortcuts.spec.ts,project,Shortcut coverage for 30min and PT30M
+  tests/unit/commands/update-command.spec.ts,project,Update command coverage for duration minute forms
+  tests/unit/core/item/parse-utils.spec.ts,project,Cover resolveEventEndAt minute and ISO duration behavior
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/core/item/parse-utils.spec.ts tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/unit/commands/scheduling-shortcuts.spec.ts tests/unit/commands/register-commands.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqiec75m-zsylwn,test,failed,"2026-06-17T18:16:17.770Z","2026-06-17T18:20:25.786Z","2026-06-17T18:20:25.786Z",null,null,2,1,0,null,null,null
+  test-local-mqieigc1-up0ec6,test,failed,"2026-06-17T18:20:38.263Z","2026-06-17T18:25:17.617Z","2026-06-17T18:25:17.617Z",null,null,2,1,0,null,null,null
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,Document accepted sub-hour duration forms for scheduling
 body: "Scope: resolveEventEndAt + the relative-offset parser. Keep --deadline/relative-token semantics (m=months) unchanged for backward compat; introduce a distinct minutes token only for durations, or accept ISO-8601 duration. Update docs + completions. 100% cov."

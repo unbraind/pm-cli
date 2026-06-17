@@ -36,7 +36,7 @@ function runContracts() {
       maxBuffer: 50 * 1024 * 1024,
     });
   } finally {
-    rmSync(isolatedGlobalPath, { recursive: true, force: true });
+    rmSync(isolatedGlobalPath, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
   }
   if (result.error !== undefined) {
     throw new Error(`pm contracts --full --json failed to start: ${result.error.message}`);

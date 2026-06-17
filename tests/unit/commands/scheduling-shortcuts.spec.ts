@@ -63,6 +63,31 @@ describe("scheduling shortcuts", () => {
     });
   });
 
+  it("runMeet/runEvent accept minute forms while keeping bare m as months", async () => {
+    await withTempPmPath(async (context) => {
+      const withMinutes = await runMeet(
+        "Standup",
+        { start: "2026-07-01T10:00:00Z", duration: "30min" },
+        { path: context.pmPath },
+      );
+      expect(events(withMinutes.item)[0].end_at).toBe("2026-07-01T10:30:00.000Z");
+
+      const withIsoMinutes = await runEvent(
+        "Window",
+        { start: "2026-07-01T10:00:00Z", duration: "PT30M" },
+        { path: context.pmPath },
+      );
+      expect(events(withIsoMinutes.item)[0].end_at).toBe("2026-07-01T10:30:00.000Z");
+
+      const withLegacyMonths = await runEvent(
+        "Legacy months",
+        { start: "2026-07-01T10:00:00Z", duration: "45m" },
+        { path: context.pmPath },
+      );
+      expect(events(withLegacyMonths.item)[0].end_at).toBe("2030-04-01T10:00:00.000Z");
+    });
+  });
+
   it("runRemind creates a Reminder, defaulting text to a comma-bearing title", async () => {
     await withTempPmPath(async (context) => {
       const result = await runRemind("Review PR, then merge", { at: "+2d" }, { path: context.pmPath });

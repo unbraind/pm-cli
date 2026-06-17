@@ -726,7 +726,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     ],
     tips: [
       "Start defaults to now and duration to 1h; pass --end to set an explicit end instead of --duration.",
-      "--duration units are h/d/w/m where m is months (not minutes); use --end for sub-hour spans.",
+      "--duration accepts relative tokens (h/d/w/m where m is months) plus sub-hour forms like 30min or PT30M.",
     ],
   },
   event: {
@@ -735,7 +735,10 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       'pm event "Release v2" --start 2026-07-01T10:00:00Z --duration 2h',
       'pm event "Conference" --start 2026-08-01 --all-day',
     ],
-    tips: ["Start defaults to now and duration to 1h; pass --end to set an explicit end instead of --duration."],
+    tips: [
+      "Start defaults to now and duration to 1h; pass --end to set an explicit end instead of --duration.",
+      "--duration accepts relative tokens (h/d/w/m where m is months) plus sub-hour forms like 30min or PT30M.",
+    ],
   },
   remind: {
     why: "Shortcut to create a Reminder from a single point in time without structured --reminder CSV.",

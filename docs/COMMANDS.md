@@ -362,7 +362,7 @@ pm remind "Review PR" --at +2d                               # Reminder (--at de
 
 - `--start`/`--at`/`--end` accept ISO timestamps, `now`, or relative tokens (`+1h`, `+2d`, `+2w`, `+6m`).
 - `pm meet`/`pm event` take `--start`, `--duration` (or `--end`), `--location`, `--timezone`, and `--all-day`; passing `--end` overrides `--duration`.
-- `--duration` uses the same relative units as `--event duration=`: `h` (hours), `d` (days), `w` (weeks), `m` (**months**, not minutes). For sub-hour spans set an explicit `--end`.
+- `--duration` accepts relative units (`h` hours, `d` days, `w` weeks, `m` months) plus sub-hour forms (`30min`, `PT30M`). Bare `m` remains months for backward compatibility (`45m` = 45 months).
 - `pm remind` takes `--at` and `--text` (text defaults to the title).
 - Common create flags also apply: `--parent`, `--allow-missing-parent`, `--tags`, `--priority`, `--body`, `--description`, `--author`, `--message`.
 

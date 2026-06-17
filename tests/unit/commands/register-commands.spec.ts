@@ -711,6 +711,16 @@ describe("operation command actions", () => {
       expect.anything(),
     );
 
+    await runCli("event", "Release window", "--duration", "PT30M");
+    expect(vi.mocked(runEvent)).toHaveBeenLastCalledWith(
+      "Release window",
+      expect.objectContaining({
+        duration: "PT30M",
+        end: undefined,
+      }),
+      expect.anything(),
+    );
+
     await runCli("remind", "Review PR", "--at", "+2d", "--text", "ping");
     expect(vi.mocked(runRemind)).toHaveBeenLastCalledWith(
       "Review PR",
