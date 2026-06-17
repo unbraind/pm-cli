@@ -10,6 +10,7 @@ import { validateSprintOrReleaseValue } from "../../core/item/sprint-release-for
 import {
   assertNoUnknownCsvKeys,
   createStdinTokenResolver,
+  looksLikeGenericKeyValueEntry,
   mergeAdditiveTags,
   parseCsvKv,
   parseOptionalNumber,
@@ -593,7 +594,12 @@ function looksLikeStructuredEntry(raw: string, keys: readonly string[]): boolean
     return true;
   }
   const keyPattern = keys.map((key) => key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
-  return new RegExp(`^(?:[-*+]\\s+)?(?:${keyPattern})\\s*[:=]`, "i").test(raw);
+  if (new RegExp(`^(?:[-*+]\\s+)?(?:${keyPattern})\\s*[:=]`, "i").test(raw)) {
+    return true;
+  }
+  // A first-key typo (e.g. `bogus=v,id=pm-2`) must still be parsed so the unknown
+  // key is rejected rather than swallowed as a bare id/path value (GH-258).
+  return looksLikeGenericKeyValueEntry(raw);
 }
 
 export function parseLogSeed(

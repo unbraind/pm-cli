@@ -6,6 +6,7 @@ import {
   assertNoUnknownCsvKeys,
   collectTagFlagValues,
   createStdinTokenResolver,
+  looksLikeGenericKeyValueEntry,
   mergeAdditiveTags,
   parseCsvKv,
   parseOptionalNumber,
@@ -107,6 +108,19 @@ describe("core/item/parse", () => {
       expect(error).toBeInstanceOf(PmCliError);
       expect((error as PmCliError).exitCode).toBe(2);
     }
+  });
+
+  it("looksLikeGenericKeyValueEntry detects first-key typos but not bare/Windows paths (GH-258)", () => {
+    // Generic `key=` opener (even an unknown key) is structured so it gets validated.
+    expect(looksLikeGenericKeyValueEntry("boguskey=x,path=README.md")).toBe(true);
+    expect(looksLikeGenericKeyValueEntry("- lable: ignored")).toBe(false); // colon form is handled by known-key/markdown paths
+    expect(looksLikeGenericKeyValueEntry("path=README.md")).toBe(true);
+    // Bare paths (no leading key=) stay bare.
+    expect(looksLikeGenericKeyValueEntry("docs/plain.md")).toBe(false);
+    expect(looksLikeGenericKeyValueEntry("README.md")).toBe(false);
+    // Windows absolute paths must never be misread as a `C=…` entry.
+    expect(looksLikeGenericKeyValueEntry("C:\\Users\\readme.md")).toBe(false);
+    expect(looksLikeGenericKeyValueEntry("d:/projects/notes.md")).toBe(false);
   });
 
   it("covers parse helper rejection edges", () => {

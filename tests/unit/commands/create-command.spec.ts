@@ -106,6 +106,20 @@ describe("runCreate", () => {
           message,
         });
       }
+      // A FIRST-key typo must not bypass validation by being read as a bare id/path (GH-258).
+      await expect(
+        runCreate(seed({ dep: ["boguskey=v,id=a1b2,kind=related"] }), { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: '--dep does not recognize key "boguskey". Allowed keys: id, kind, type, author, created_at.',
+      });
+      await expect(
+        runCreate(seed({ file: ["boguskey=v,path=src/cli.ts"] }), { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: '--file does not recognize key "boguskey". Allowed keys: path, scope, note.',
+      });
+
       // Bare (non-structured) forms remain valid and skip key validation.
       const ok = await runCreate(seed({ dep: ["pm-related-1"], file: ["docs/plain.md"], doc: ["docs/guide.md"] }), {
         path: context.pmPath,

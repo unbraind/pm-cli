@@ -20,6 +20,7 @@ import {
   applyTagRemovals,
   assertNoUnknownCsvKeys,
   createStdinTokenResolver,
+  looksLikeGenericKeyValueEntry,
   mergeAdditiveTags,
   parseCsvKv,
   parseOptionalNumber,
@@ -820,7 +821,12 @@ function looksLikeStructuredDependencyEntry(raw: string): boolean {
   if (raw.startsWith("```") || raw.includes("\n")) {
     return true;
   }
-  return /^(?:[-*+]\s+)?(?:id|kind|type|author|created_at|source_kind)\s*[:=]/i.test(raw);
+  if (/^(?:[-*+]\s+)?(?:id|kind|type|author|created_at|source_kind)\s*[:=]/i.test(raw)) {
+    return true;
+  }
+  // A first-key typo (e.g. `bogus=v,id=pm-2`) must still be parsed so the unknown
+  // key is rejected rather than swallowed as a bare item id (GH-258).
+  return looksLikeGenericKeyValueEntry(raw);
 }
 
 // pm-fl0c #4 (2026-05-28): `pm plan` accepts `depends_on` as a link kind

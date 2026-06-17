@@ -381,6 +381,16 @@ describe("runFiles", () => {
         exitCode: EXIT_CODE.USAGE,
         message: '--add does not recognize key "boguskey". Allowed keys: path, scope, note.',
       });
+      // A FIRST-key typo must not bypass validation by being read as a bare path (GH-258).
+      await expect(
+        runFiles(id, { add: ["boguskey=v,path=README.md"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: '--add does not recognize key "boguskey". Allowed keys: path, scope, note.',
+      });
+      // A Windows absolute path is still stored as a bare path, not misread as a `C=…` entry.
+      const windows = await runFiles(id, { add: ["C:\\Users\\me\\readme.md"] }, { path: context.pmPath });
+      expect(windows.files.some((file) => file.path === "C:/Users/me/readme.md")).toBe(true);
     });
   });
 

@@ -7,12 +7,17 @@ import { resolveEventEndAt } from "./event-validation-messages.js";
 import {
   parseEventBoolean,
   parseRecurrenceRule,
+  RECURRENCE_CSV_KEYS,
   type RecurrenceEmptyNumericGuard,
 } from "./recurrence-parsers.js";
 
 /** Allowed CSV/markdown keys for `--reminder` (GH-258). */
 const REMINDER_KEYS = ["at", "date", "text", "title"] as const;
-/** Allowed CSV/markdown keys for `--event`, including recurrence keys (GH-258). */
+/**
+ * Allowed CSV/markdown keys for `--event` (GH-258). Recurrence keys are spread
+ * from the authoritative RECURRENCE_CSV_KEYS next to parseRecurrenceRule so the
+ * allow-list can never drift from what the recurrence parser actually reads.
+ */
 const EVENT_KEYS = [
   "start",
   "date",
@@ -23,13 +28,7 @@ const EVENT_KEYS = [
   "location",
   "timezone",
   "all_day",
-  "recur_freq",
-  "recur_interval",
-  "recur_count",
-  "recur_until",
-  "recur_by_weekday",
-  "recur_by_month_day",
-  "recur_exdates",
+  ...RECURRENCE_CSV_KEYS,
 ] as const;
 /** Allowed CSV/markdown keys for the `--type-option` structured form (GH-258). */
 const TYPE_OPTION_KEYS = ["key", "value"] as const;

@@ -192,6 +192,29 @@ async function persistCache(
   await writeFileAtomic(cachePath, JSON.stringify(envelope));
 }
 
+/**
+ * Decide whether a freshly parsed document candidate should replace the one
+ * already recorded for the same item id when both an explicit-format file and a
+ * fallback-format file exist (e.g. `pm-x.toon` and `pm-x.md`). An explicit
+ * `preferredFormat` wins; otherwise `toon` wins over any non-toon format.
+ *
+ * This is a pure decision so the winner is fully deterministic regardless of the
+ * order in which the concurrent per-file reads resolve — the inline call site
+ * populates the map as each async read completes, so without a pure rule the
+ * branch taken (and thus its coverage) would race. Keep this exported and
+ * unit-tested across every format combination.
+ */
+export function shouldReplaceCachedDocumentCandidate(
+  existingFormat: ItemFormat,
+  candidateFormat: ItemFormat,
+  preferredFormat: ItemFormat | undefined,
+): boolean {
+  if (preferredFormat) {
+    return candidateFormat === preferredFormat && existingFormat !== preferredFormat;
+  }
+  return candidateFormat === "toon" && existingFormat !== "toon";
+}
+
 function appendWarning(warnings: string[] | undefined, warning: string): void {
   if (warnings && !warnings.includes(warning)) {
     warnings.push(warning);
@@ -377,15 +400,8 @@ export async function listAllDocumentCandidatesCached(
               item_format: itemFormat,
               item_path: filePath,
             };
-            if (!existing) {
+            if (!existing || shouldReplaceCachedDocumentCandidate(existing.itemFormat, itemFormat, preferredFormat)) {
               documentsById.set(metadata.id, { candidate, itemFormat });
-            } else {
-              const shouldReplace = preferredFormat
-                ? itemFormat === preferredFormat && existing.itemFormat !== preferredFormat
-                : itemFormat === "toon" && existing.itemFormat !== "toon";
-              if (shouldReplace) {
-                documentsById.set(metadata.id, { candidate, itemFormat });
-              }
             }
           } catch {
             appendWarning(warnings, `item_list_item_read_failed:${folder}/${file}`);

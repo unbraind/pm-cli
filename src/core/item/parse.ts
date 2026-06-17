@@ -322,6 +322,27 @@ export function parseCsvKv(raw: string, optionName: string): Record<string, stri
   return result;
 }
 
+const WINDOWS_ABSOLUTE_PATH_PATTERN = /^[A-Za-z]:[\\/]/;
+const GENERIC_LEADING_KV_KEY_PATTERN = /^(?:[-*+]\s+)?[A-Za-z_][A-Za-z0-9_.-]*\s*=/;
+
+/**
+ * Detect a CSV/markdown entry that opens with a generic `key=` token even when
+ * that key is unknown (e.g. a typo like `lable=main,path=README.md`). Callers
+ * combine this with their known-key prefix check so a first-key typo is routed
+ * through structured parsing and rejected by {@link assertNoUnknownCsvKeys}
+ * (GH-258) instead of being silently swallowed as a bare path/value.
+ *
+ * Windows absolute paths (`C:\…`) are excluded so a drive-lettered bare path is
+ * never misread as a `C=…` key/value entry.
+ */
+export function looksLikeGenericKeyValueEntry(raw: string): boolean {
+  const trimmed = raw.trim();
+  if (WINDOWS_ABSOLUTE_PATH_PATTERN.test(trimmed)) {
+    return false;
+  }
+  return GENERIC_LEADING_KV_KEY_PATTERN.test(trimmed);
+}
+
 /**
  * Reject any key in a parsed CSV/markdown key/value map that is not part of the
  * caller's allowed-key contract, mirroring the strict `test --add` behavior
