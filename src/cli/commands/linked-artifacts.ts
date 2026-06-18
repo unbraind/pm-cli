@@ -31,6 +31,12 @@ export const LINKED_ARTIFACT_ADD_KEYS = ["path", "scope", "note"] as const;
 export const LINKED_ARTIFACT_ADD_GLOB_KEYS = ["pattern", "glob", "path", "scope", "note"] as const;
 export const LINKED_ARTIFACT_REMOVE_KEYS = ["path"] as const;
 export const LINKED_ARTIFACT_MIGRATE_KEYS = ["from", "to"] as const;
+/**
+ * Keys that are valid on --add but meaningless on --remove (GH-277). Rejected
+ * with audit-trail guidance (--message) rather than the generic unknown-key
+ * error so agents are not left believing a removal note was recorded.
+ */
+const LINKED_ARTIFACT_REMOVE_UNSUPPORTED_KEYS: ReadonlySet<string> = new Set(["note", "scope"]);
 
 export interface LinkedArtifactCommandOptions {
   add?: string[];
@@ -183,12 +189,11 @@ export function parseRemoveEntries(raw: string[] | undefined): string[] {
     if (trimmed.includes("=") || /^(?:[-*+]\s+)?path\s*[:=]/i.test(trimmed) || trimmed.startsWith("```")) {
       const kv = parseCsvKv(trimmed, "--remove");
       // GH-277: --remove identifies an existing link by path only; it does not
-      // attach per-link metadata. note=/scope= are valid on --add but meaningless
-      // on a removal, so reject them with guidance toward the audit-trail path
-      // (--message) rather than the generic "unrecognized key" error, which left
-      // agents believing they had recorded a removal note.
-      const unsupportedRemoveKeys = Object.keys(kv).filter(
-        (key) => key.toLowerCase() === "note" || key.toLowerCase() === "scope",
+      // attach per-link metadata. Reject the --add-only keys with guidance toward
+      // the audit-trail path (--message) rather than the generic "unrecognized
+      // key" error, which left agents believing they had recorded a removal note.
+      const unsupportedRemoveKeys = Object.keys(kv).filter((key) =>
+        LINKED_ARTIFACT_REMOVE_UNSUPPORTED_KEYS.has(key.toLowerCase()),
       );
       if (unsupportedRemoveKeys.length > 0) {
         throw new PmCliError(
