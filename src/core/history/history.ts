@@ -165,7 +165,7 @@ function withHistoryTimestamp(value: Record<string, unknown>, fallbackTs: string
   if (typeof ts === "string" && ts.trim().length > 0) {
     return value;
   }
-  return { ts: fallbackTs, ...value };
+  return { ...value, ts: fallbackTs };
 }
 
 function serializeHistoryLine(value: unknown, fallbackEntry: Pick<HistoryEntry, "ts">): string {

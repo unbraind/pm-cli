@@ -222,7 +222,7 @@ describe("appendHistoryEntry object service override", () => {
             service: "history_append",
             run: () => ({
               history_path: redirectedPath,
-              entry: { op: "override", marker: "custom-entry" },
+              entry: { ts: "", op: "override", marker: "custom-entry" },
             }),
           },
         ],
@@ -293,7 +293,7 @@ describe("appendHistoryEntry object service override", () => {
             layer: "project",
             name: "history-line-entry",
             service: "history_append",
-            run: () => JSON.stringify({ op: "line-override", marker: "custom-line-entry" }),
+            run: () => JSON.stringify({ ts: "", op: "line-override", marker: "custom-line-entry" }),
           },
         ],
       });
