@@ -1228,14 +1228,19 @@ function detectLifecycleDependencyCycles(activeItems: ItemWithBody[], idPrefix =
 // (not just active ones) because a parent cycle among closed items is still
 // structural corruption of the hierarchy.
 function buildLifecycleParentGraph(items: ItemWithBody[]): Map<string, string[]> {
-  const knownItemIds = new Set(items.map((item) => item.id));
+  // PR #279 made parent matching case-insensitive (e.g. `parent: PM-FK49`
+  // resolves to `id: pm-fk49`). Resolve parent references to their canonical
+  // item id the same way so a casing mismatch can never silently drop a cycle
+  // edge and hide a parent cycle (false negative).
+  const canonicalIdByLowercase = new Map(items.map((item) => [item.id.toLowerCase(), item.id]));
   const graph = new Map<string, string[]>();
   const sortedItems = [...items].sort((left, right) => left.id.localeCompare(right.id));
   for (const item of sortedItems) {
     const edges: string[] = [];
     const parentId = toMeaningfulString(item.parent);
-    if (parentId && knownItemIds.has(parentId)) {
-      edges.push(parentId);
+    const canonicalParentId = parentId ? canonicalIdByLowercase.get(parentId.toLowerCase()) : undefined;
+    if (canonicalParentId) {
+      edges.push(canonicalParentId);
     }
     graph.set(item.id, edges);
   }

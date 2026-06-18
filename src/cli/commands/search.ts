@@ -1564,7 +1564,9 @@ function forceExactIdHitsToTop(rankedHits: SearchHit[], keywordHits: SearchHit[]
   }
   const exactIdIds = new Set(exactIdHits.map((hit) => hit.item.id));
   const remaining = rankedHits.filter((hit) => !exactIdIds.has(hit.item.id));
-  const maxRemainingScore = Math.max(0, ...remaining.map((hit) => hit.score));
+  // reduce (not Math.max(...spread)) so a very large pre-truncation candidate
+  // set can never overflow the call stack.
+  const maxRemainingScore = remaining.reduce((max, hit) => Math.max(max, hit.score), 0);
   // Full-ID hits (score 1000) must rank above short-ID hits (score 900): rank
   // within the exact-ID band by the original keyword score (descending) so a
   // full-ID match always precedes a short-ID match for the same query, then
@@ -1573,11 +1575,13 @@ function forceExactIdHitsToTop(rankedHits: SearchHit[], keywordHits: SearchHit[]
   const orderedExactHits = [...exactIdHits].sort((left, right) => right.score - left.score);
   const bandBase = maxRemainingScore + orderedExactHits.length + 1;
   const promoted = orderedExactHits.map((hit, index) => ({
-    item: hit.item,
+    // Spread the original keyword hit so flags like matched_all_terms /
+    // exact_id_match are preserved; only the band-slot score and the id-only
+    // matched_fields are overridden.
+    ...hit,
     // Higher band slot for earlier (higher original keyword score) hits.
     score: bandBase - index,
     matched_fields: ["id"],
-    exact_id_match: true,
   }));
   return [...promoted, ...remaining];
 }

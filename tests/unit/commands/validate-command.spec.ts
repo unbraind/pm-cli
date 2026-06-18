@@ -243,12 +243,17 @@ describe("runValidate", () => {
       { id: "pm-pc", parent: "none" },
       { id: "pm-pd", parent: "pm-missing" },
       { id: "pm-pe" },
+      // Case-insensitive parent resolution (matches PR #279): an uppercase
+      // parent ref must still resolve to its canonical lowercase item id so a
+      // casing mismatch can never hide a cycle edge.
+      { id: "pm-pf", parent: "PM-PA" },
     ] as never);
     expect(parentGraph.get("pm-pa")).toEqual(["pm-pb"]);
     expect(parentGraph.get("pm-pb")).toEqual(["pm-pa"]);
     expect(parentGraph.get("pm-pc")).toEqual([]);
     expect(parentGraph.get("pm-pd")).toEqual([]);
     expect(parentGraph.get("pm-pe")).toEqual([]);
+    expect(parentGraph.get("pm-pf")).toEqual(["pm-pa"]);
     const parentCycles = validateInternals.detectLifecycleParentCycles([
       { id: "pm-pa", parent: "pm-pb" },
       { id: "pm-pb", parent: "pm-pa" },
