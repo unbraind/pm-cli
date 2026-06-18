@@ -1067,11 +1067,16 @@ function scoreDocument(
   normalizedQuery: string,
   linkedCorpus: string,
   tuning: SearchTuning,
+  idPrefix: string,
   applyCoverageBonus = false,
 ): SearchHit | null {
   const item = document.metadata;
   const normalizedId = item.id.trim().toLowerCase();
-  const normalizedShortId = normalizedId.startsWith("pm-") ? normalizedId.slice(3) : normalizedId;
+  const normalizedIdPrefix = typeof idPrefix === "string" ? idPrefix.trim().toLowerCase() : "";
+  const normalizedShortId =
+    normalizedIdPrefix.length > 0 && normalizedId.startsWith(normalizedIdPrefix)
+      ? normalizedId.slice(normalizedIdPrefix.length)
+      : normalizedId;
   if (normalizedQuery === normalizedId || normalizedQuery === normalizedShortId) {
     return {
       item,
@@ -1187,6 +1192,7 @@ function buildHybridLexicalScore(
   includeLinked: boolean,
   linkedCorpusById: Map<string, string>,
   tuning: SearchTuning,
+  idPrefix: string,
   applyCoverageBonus = false,
 ): SearchHit | null {
   /* c8 ignore start -- linked corpus presence branch is covered by keyword/hybrid integration query tests */
@@ -1196,6 +1202,7 @@ function buildHybridLexicalScore(
     normalizedQuery,
     includeLinked ? linkedCorpusById.get(document.metadata.id) ?? "" : "",
     tuning,
+    idPrefix,
     applyCoverageBonus,
   );
   /* c8 ignore stop */
@@ -2071,6 +2078,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
         includeLinked,
         linkedCorpusById,
         tuning,
+        settings.id_prefix,
         applyCoverageBonus,
       ),
     )

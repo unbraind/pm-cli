@@ -6,15 +6,16 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-06-18T00:09:30.023Z"
-updated_at: "2026-06-18T00:40:14.928Z"
+updated_at: "2026-06-18T01:06:30.231Z"
 author: codex-audit-agent
 parent: pm-mpbb
 resolution: "Exact and short ID search now returns matching items, list-blocked defaults to the same compact status-list projection as sibling commands, and context markdown section metadata is limited to sections with rendered markdown bodies."
 expected_result: GitHub #268-#270 should be resolved without expanding command verbosity or breaking existing list/search/context contracts.
 actual_result: "Focused tests passed; manual temp-project dist/cli.js smoke confirmed id search, list-blocked compact projection, and context markdown section metadata behavior."
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-06-18T00:14:34.662Z",codex-audit-agent,"Evidence: fixed GitHub #268, #269, and #270. Manual temp-project check with dist/cli.js confirmed pm search <id> and short id return the matching item with matched_fields:[id], list-blocked --json uses projection.mode compact, and context --format markdown --depth deep no longer advertises an empty blockers section. Focused suite passed: node scripts/run-tests.mjs test -- tests/unit/commands/search-command.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/commands/context-command.spec.ts plus prior review/cleanup suites (8 files / 323 tests)."
   "2026-06-18T00:40:14.928Z",codex-audit-agent,"Final coverage evidence: after adding GH #268-#270 fixes, node scripts/run-tests.mjs coverage passed with 226 test files, 4495 tests, and 100% statements/branches/functions/lines."
+  "2026-06-18T01:06:30.231Z",codex-audit-agent,"Review follow-up evidence: CodeRabbit noted short-ID search stripped a hardcoded pm- prefix. Updated search scoring to strip the configured settings.id_prefix and added a custom-prefix short-ID regression. Verification: node scripts/run-tests.mjs test -- tests/unit/commands/search-command.spec.ts passed; node scripts/run-tests.mjs coverage passed with 226 test files, 4495 tests, and 100% statements/branches/functions/lines."
 files[6]{path,scope,note}:
   src/cli/commands/context.ts,project,Report only markdown-rendered sections in context markdown metadata
   src/cli/commands/search.ts,project,Treat exact and short item IDs as high-confidence search matches

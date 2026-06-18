@@ -17,8 +17,8 @@
 
 ### Other
 
-- Dogfood audit 2026-06-12: ecosystem verification \(CLI+SDK+packages\) ([pm-krgd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-krgd.toon))
 - GH \#268-\#270 agent lookup and context output polish ([pm-x7g1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-x7g1.toon))
+- Dogfood audit 2026-06-12: ecosystem verification \(CLI+SDK+packages\) ([pm-krgd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-krgd.toon))
 
 ## 2026.6.17 - 2026-06-17
 

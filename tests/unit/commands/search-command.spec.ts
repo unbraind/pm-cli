@@ -250,9 +250,10 @@ describe("runSearch", () => {
       title: "Custom prefix item",
       description: "No literal id token in content",
     });
+    readSettingsMock.mockResolvedValue({ ...makeDefaultSettings(), id_prefix: "custom-" } as never);
     listAllFrontMatterMock.mockResolvedValue([customIdTarget]);
     readFileMock.mockResolvedValue(serializeDocument(customIdTarget, "body without lookup token"));
-    const custom = await runSearch("custom-fk49", {}, { path: "/tmp/pm-search" });
+    const custom = await runSearch("fk49", {}, { path: "/tmp/pm-search" });
     expect(custom.items[0]?.item.id).toBe("custom-fk49");
     expect(custom.items[0]?.matched_fields).toEqual(["id"]);
   });
