@@ -6,13 +6,13 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-16T11:28:40.523Z"
-updated_at: "2026-06-18T19:54:55.676Z"
+updated_at: "2026-06-18T20:08:57.608Z"
 author: codex-sdk-cli-consolidation-20260616
 parent: pm-mpbb
 resolution: Resolved GH-206 test-all liveness UX by preserving every stderr progress line in background workers and exposing current test-all item plus linked command state in compact background status.
 expected_result: Background test-all runs provide visible current item/test-command progress and no stale non-runnable linked-test metadata remains on the item.
 actual_result: "Background records include item_index, item_total, item_id, linked_test_index, linked_test_total, and current_command; temp tarball smoke passed with test-runs status and full coverage remained 100/100/100/100."
-comments[10]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-06-18T12:21:55.941Z",codex-gpt5,"Partial implementation evidence: strict --fail-on-empty-test-run now marks zero-linked-test aggregate selections as failed with an explicit empty_run category and warning. Broader GH-206 liveness/progress work remains open intentionally."
   "2026-06-18T12:41:26.890Z",codex-gpt5,"Review follow-up evidence: updated PRD test-all foreground contract to include fail_on_empty_test_run_triggered alongside the strict empty-run runtime result field."
   "2026-06-18T14:47:47.581Z",codex-gpt5,"Duplicate check before continuation: pm context/list/search found no in-progress items; canonical live lineages are pm-mcxr for GH-206 and pm-u8y9 for SDK.md resource-kind drift. No new pm item created."
@@ -23,6 +23,7 @@ comments[10]{created_at,author,text}:
   "2026-06-18T19:26:19.741Z",codex-gpt5,"Review follow-up evidence: addressed Gemini/CodeRabbit stale progress-field feedback by clearing linked-test index/total/current_command/elapsed_ms when a test-all item progress line arrives; focused tests, build, static quality, and full coverage 100/100/100/100 passed after the fix."
   "2026-06-18T19:49:27.303Z",codex-gpt5,"Review follow-up evidence: addressed remaining CodeRabbit/Gemini parser feedback by buffering partial stderr lines, ignoring non-progress stderr for structured progress updates, covering trailing no-newline progress, and simplifying item-progress phase handling. Focused test, static quality, and full coverage 100/100/100/100 passed."
   "2026-06-18T19:54:55.676Z",codex-gpt5,"Evidence: regenerated package-owned CHANGELOG.md with pm-changelog after final tracker evidence updates; diff is limited to the top Fixed ordering plus managed extension install timestamp."
+  "2026-06-18T20:08:57.608Z",codex-gpt5,"Review follow-up evidence: addressed final Gemini feedback by preserving stopping phase when test-all item progress arrives after stop request and parsing escaped quoted command labels. Verified focused test-runs command regression, static quality, and full coverage 100/100/100/100 (29418 statements, 23073 branches, 4877 functions, 28281 lines)."
 files[5]{path,scope,note}:
   docs/TESTING.md,project,Document strict empty-run gate behavior
   src/cli/commands/test-all.ts,project,Fail strict test-all empty selections under --fail-on-empty-test-run

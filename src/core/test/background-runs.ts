@@ -467,11 +467,12 @@ function parseProgressLine(stderrLine: string): Partial<BackgroundRunProgress> |
   const index = Number.parseInt(linkedTestMatch[1], 10);
   const total = Number.parseInt(linkedTestMatch[2], 10);
   const elapsed = linkedTestMatch[4] ? Number.parseInt(linkedTestMatch[4], 10) : undefined;
-  const commandMatch = line.match(/\scommand="([^"]*)"/);
+  const commandMatch = line.match(/\scommand="((?:\\.|[^"\\])*)"/);
+  const currentCommand = commandMatch?.[1].replaceAll('\\"', '"').replaceAll("\\\\", "\\");
   return {
     linked_test_index: index,
     linked_test_total: total,
-    current_command: commandMatch?.[1],
+    current_command: currentCommand,
     elapsed_ms: Number.isFinite(elapsed) ? elapsed : undefined,
     heartbeat_at: nowIso(),
     phase: linkedTestMatch[3]?.toLowerCase() === "end" ? "finished" : "running",
@@ -785,7 +786,7 @@ export async function runBackgroundTestRunWorker(pmRoot: string, runId: string, 
     }
     if (progressPatch.item_id) {
       record.progress = {
-        phase: "running",
+        phase: (record.progress as BackgroundRunProgress).phase === "stopping" ? "stopping" : "running",
         message: line,
         heartbeat_at: nowIso(),
         item_index: progressPatch.item_index,

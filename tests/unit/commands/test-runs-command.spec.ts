@@ -765,8 +765,16 @@ describe("background test run lifecycle", () => {
       await writeFile(
         cliEntry,
         [
-          "process.on('SIGTERM', () => {});",
-          "setInterval(() => process.stderr.write('[pm test] linked-test 1/1 running elapsed_ms=15\\n'), 1);",
+          "let stopped = false;",
+          "process.on('SIGTERM', () => {",
+          "  stopped = true;",
+          "  process.stderr.write('[pm test-all] item 1/1 end id=pm-stop status=failed\\n');",
+          "});",
+          "setInterval(() => {",
+          "  if (!stopped) {",
+          "    process.stderr.write('[pm test] linked-test 1/1 running elapsed_ms=15\\n');",
+          "  }",
+          "}, 1);",
           "setTimeout(() => {",
           "  process.kill(process.ppid, 'SIGTERM');",
           "  process.kill(process.ppid, 'SIGINT');",
@@ -793,10 +801,11 @@ describe("background test run lifecycle", () => {
             expect(stopped.progress).toMatchObject({
               phase: "finished",
               message: "Background run stopped.",
-              linked_test_index: 1,
-              linked_test_total: 1,
-              elapsed_ms: 15,
+              item_id: "pm-stop",
             });
+            expect(stopped.progress?.linked_test_index).toBeUndefined();
+            expect(stopped.progress?.linked_test_total).toBeUndefined();
+            expect(stopped.progress?.elapsed_ms).toBeUndefined();
             if (stopped.resource) {
               expect(stopped.resource.recorded_at).toBeDefined();
             }
@@ -882,6 +891,11 @@ describe("background test run lifecycle", () => {
       current_command: "node spec.js",
       elapsed_ms: 120,
       phase: "running",
+    });
+    expect(
+      backgroundRunsTestOnly.parseProgressLine('[pm test] linked-test 3/5 start command="node \\"quoted\\" \\\\path"'),
+    ).toMatchObject({
+      current_command: 'node "quoted" \\path',
     });
     expect(backgroundRunsTestOnly.splitLines("one\n\ntwo  \n")).toEqual(["one", "two"]);
     expect(backgroundRunsTestOnly.tailLines("one\ntwo\n", 10)).toEqual(["one", "two"]);
