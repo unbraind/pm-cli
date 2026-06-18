@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/gc
+ *
+ * Implements the pm gc command surface and its agent-facing runtime behavior.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { runActiveOnIndexHooks, runActiveOnReadHooks, runActiveOnWriteHooks } from "../../core/extensions/index.js";
@@ -52,17 +57,26 @@ const GC_TARGETS: readonly GcTarget[] = [
   },
 ] as const;
 
+/**
+ * Documents the gc command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface GcCommandOptions {
   dryRun?: boolean;
   scope?: string[];
 }
 
+/**
+ * Documents the gc locks summary payload exchanged by command, SDK, and package integrations.
+ */
 export interface GcLocksSummary {
   scanned: number;
   removed: number;
   retained: number;
 }
 
+/**
+ * Documents the gc result payload exchanged by command, SDK, and package integrations.
+ */
 export interface GcResult {
   ok: boolean;
   dry_run: boolean;
@@ -188,6 +202,9 @@ function buildGcGuidance(params: {
   return guidance;
 }
 
+/**
+ * Implements run gc for the public runtime surface of this module.
+ */
 export async function runGc(global: GlobalOptions, options: GcCommandOptions = {}): Promise<GcResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {

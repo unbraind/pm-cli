@@ -1,3 +1,8 @@
+/**
+ * @module core/item/toon-decode
+ *
+ * Defines item parsing, formatting, and lifecycle helpers for Toon Decode.
+ */
 import { decode as decodeToon } from "@toon-format/toon";
 
 export const TOON_SCALAR_BRACKET_ESCAPE_UPSTREAM_PR = "https://github.com/toon-format/toon/pull/314" as const;
@@ -10,6 +15,9 @@ export const TOON_SCALAR_BRACKET_ESCAPE_TRACKING = {
     "Remove escapeBracketsInQuotedScalars retry once the upstream strict decoder fix ships in a released @toon-format/toon version and this repository upgrades to it.",
 } as const;
 
+/**
+ * Documents the toon decode result payload exchanged by command, SDK, and package integrations.
+ */
 export interface ToonDecodeResult {
   /** The decoded TOON document. */
   value: unknown;

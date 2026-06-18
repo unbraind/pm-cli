@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/delete
+ *
+ * Implements the pm delete command surface and its agent-facing runtime behavior.
+ */
 import path from "node:path";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
@@ -9,6 +14,9 @@ import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { resolveAuthor } from "../../core/shared/author.js";
 
+/**
+ * Documents the delete command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface DeleteCommandOptions {
   author?: string;
   message?: string;
@@ -16,6 +24,9 @@ export interface DeleteCommandOptions {
   dryRun?: boolean;
 }
 
+/**
+ * Documents the delete result payload exchanged by command, SDK, and package integrations.
+ */
 export interface DeleteResult {
   item: Record<string, unknown>;
   changed_fields: string[];
@@ -24,6 +35,9 @@ export interface DeleteResult {
   warnings: string[];
 }
 
+/**
+ * Implements run delete for the public runtime surface of this module.
+ */
 export async function runDelete(id: string, options: DeleteCommandOptions, global: GlobalOptions): Promise<DeleteResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {

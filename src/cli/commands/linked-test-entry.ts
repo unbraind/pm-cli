@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/linked-test-entry
+ *
+ * Implements the pm linked test entry command surface and its agent-facing runtime behavior.
+ */
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 
@@ -33,6 +38,9 @@ const STRUCTURED_LINKED_TEST_ENTRY_PATTERN = new RegExp(
   "i",
 );
 
+/**
+ * Implements looks like structured linked test entry for the public runtime surface of this module.
+ */
 export function looksLikeStructuredLinkedTestEntry(raw: string): boolean {
   if (raw.startsWith("```") || raw.includes("\n")) {
     return true;
@@ -40,6 +48,9 @@ export function looksLikeStructuredLinkedTestEntry(raw: string): boolean {
   return STRUCTURED_LINKED_TEST_ENTRY_PATTERN.test(raw);
 }
 
+/**
+ * Implements normalize structured linked test entry for the public runtime surface of this module.
+ */
 export function normalizeStructuredLinkedTestEntry(
   kv: Record<string, string>,
   optionName: "--add" | "--test",

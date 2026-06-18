@@ -172,6 +172,162 @@ export function sourceFilesOnly(files) {
   return files.filter((absolutePath) => relativeToRepo(absolutePath).startsWith("src/"));
 }
 
+function stripShebang(sourceText) {
+  if (!sourceText.startsWith("#!")) {
+    return sourceText;
+  }
+  const newlineIndex = sourceText.indexOf("\n");
+  return newlineIndex === -1 ? "" : sourceText.slice(newlineIndex + 1);
+}
+
+export function hasModuleDocstring(sourceText) {
+  return stripShebang(sourceText).trimStart().startsWith("/**");
+}
+
+export function checkSourceDocstringCoverage(files, minCoveragePercent) {
+  const sourceFiles = sourceFilesOnly(files);
+  const missing = [];
+  for (const absolutePath of sourceFiles) {
+    if (!hasModuleDocstring(loadText(absolutePath))) {
+      missing.push({ path: relativeToRepo(absolutePath), reason: "missing_module_docstring" });
+    }
+  }
+  const documented = sourceFiles.length - missing.length;
+  const coveragePercent = sourceFiles.length === 0 ? 100 : (documented / sourceFiles.length) * 100;
+  return {
+    ok: coveragePercent >= minCoveragePercent,
+    total: sourceFiles.length,
+    documented,
+    missing: missing.sort((left, right) => left.path.localeCompare(right.path)),
+    coverage_percent: Number(coveragePercent.toFixed(2)),
+    min_coverage_percent: minCoveragePercent,
+  };
+}
+
+function hasExportModifier(node) {
+  return node.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword) === true;
+}
+
+function exportedDocstringTarget(node) {
+  if (
+    (ts.isFunctionDeclaration(node) ||
+      ts.isClassDeclaration(node) ||
+      ts.isInterfaceDeclaration(node) ||
+      ts.isTypeAliasDeclaration(node) ||
+      ts.isEnumDeclaration(node)) &&
+    hasExportModifier(node)
+  ) {
+    return node;
+  }
+  if (ts.isVariableStatement(node) && hasExportModifier(node)) {
+    const hasFunctionInitializer = node.declarationList.declarations.some(
+      (declaration) =>
+        declaration.initializer &&
+        (ts.isArrowFunction(declaration.initializer) || ts.isFunctionExpression(declaration.initializer)),
+    );
+    if (hasFunctionInitializer) {
+      return node;
+    }
+  }
+  return undefined;
+}
+
+function declarationName(node) {
+  if (ts.isVariableStatement(node)) {
+    const declaration = node.declarationList.declarations[0];
+    /* c8 ignore next -- exported variable-function targets require an identifier declaration name */
+    return declaration && ts.isIdentifier(declaration.name) ? declaration.name.text : "exported_value";
+  }
+  return node.name && ts.isIdentifier(node.name) ? node.name.text : "exported_declaration";
+}
+
+function hasNodeDocstring(sourceFile, node) {
+  const fullText = sourceFile.getFullText();
+  const strippedText = stripShebang(fullText);
+  const moduleDocRelativeStart = strippedText.trimStart().startsWith("/**") ? strippedText.indexOf("/**") : -1;
+  const moduleDocStart = moduleDocRelativeStart === -1 ? -1 : fullText.length - strippedText.length + moduleDocRelativeStart;
+  const ranges = ts.getLeadingCommentRanges(fullText, node.pos) ?? [];
+  return ranges.some((range) => {
+    if (range.pos === moduleDocStart) {
+      return false;
+    }
+    const comment = fullText.slice(range.pos, range.end);
+    return comment.startsWith("/**") && !comment.includes("@module");
+  });
+}
+
+export function checkExportedDocstringCoverage(files, minCoveragePercent) {
+  const missing = [];
+  let total = 0;
+  let documented = 0;
+  for (const absolutePath of sourceFilesOnly(files)) {
+    const sourceText = loadText(absolutePath);
+    const sourceFile = ts.createSourceFile(absolutePath, sourceText, ts.ScriptTarget.Latest, true);
+    for (const node of sourceFile.statements) {
+      const target = exportedDocstringTarget(node);
+      if (!target) {
+        continue;
+      }
+      total += 1;
+      if (hasNodeDocstring(sourceFile, target)) {
+        documented += 1;
+        continue;
+      }
+      const start = sourceFile.getLineAndCharacterOfPosition(target.getStart(sourceFile));
+      missing.push({
+        path: relativeToRepo(absolutePath),
+        line: start.line + 1,
+        name: declarationName(target),
+        reason: "missing_exported_docstring",
+      });
+    }
+  }
+  const coveragePercent = total === 0 ? 100 : (documented / total) * 100;
+  return {
+    ok: coveragePercent >= minCoveragePercent,
+    total,
+    documented,
+    missing: missing.sort((left, right) => left.path.localeCompare(right.path) || left.line - right.line),
+    coverage_percent: Number(coveragePercent.toFixed(2)),
+    min_coverage_percent: minCoveragePercent,
+  };
+}
+
+const BOILERPLATE_DOCSTRING_PATTERNS = [
+  /Provides the exported .+ operation used by the pm CLI runtime and integration tests\./u,
+  /Describes the exported .+ data contract used across command and SDK boundaries\./u,
+  /Defines the exported .+ type contract used to keep command and SDK surfaces type-safe\./u,
+];
+
+export function checkDocstringBoilerplate(files) {
+  const violations = [];
+  for (const absolutePath of sourceFilesOnly(files)) {
+    const sourceText = loadText(absolutePath);
+    const sourceFile = ts.createSourceFile(absolutePath, sourceText, ts.ScriptTarget.Latest, true);
+    const scanner = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.Standard, sourceText);
+    let token = scanner.scan();
+    while (token !== ts.SyntaxKind.EndOfFileToken) {
+      if (token === ts.SyntaxKind.MultiLineCommentTrivia) {
+        const commentStart = scanner.getTokenPos();
+        const comment = sourceText.slice(commentStart, scanner.getTextPos());
+        if (comment.startsWith("/**")) {
+          const matched = BOILERPLATE_DOCSTRING_PATTERNS.find((pattern) => pattern.test(comment));
+          if (matched) {
+            const start = sourceFile.getLineAndCharacterOfPosition(commentStart);
+            violations.push({
+              path: relativeToRepo(absolutePath),
+              line: start.line + 1,
+              reason: "boilerplate_docstring",
+            });
+          }
+        }
+      }
+      token = scanner.scan();
+    }
+  }
+  return violations.sort((left, right) => left.path.localeCompare(right.path) || left.line - right.line);
+}
+
 export function checkOrphanSourceModules(files) {
   const sourceFiles = sourceFilesOnly(files);
   const incoming = new Map(sourceFiles.map((file) => [file, 0]));
@@ -308,9 +464,11 @@ export function usage() {
     [--max-files-per-dir 120]
     [--duplicate-window 24]
     [--max-duplicate-chunks 8]
+    [--min-docstring-coverage 100]
+    [--min-exported-docstring-coverage 100]
 
 Runs strict static quality checks for dead/orphan modules, duplicate chunks, complexity,
-file-length limits, and directory organization density.
+file-length limits, source-file/exported declaration docstring coverage, and directory organization density.
 `);
 }
 
@@ -340,6 +498,8 @@ export function main() {
   const maxFilesPerDirectory = parseNumberFlag(flags, "max-files-per-dir", 120);
   const duplicateWindow = parseNumberFlag(flags, "duplicate-window", 24);
   const maxDuplicateChunks = parseNumberFlag(flags, "max-duplicate-chunks", 8);
+  const minDocstringCoverage = parseNumberFlag(flags, "min-docstring-coverage", 100);
+  const minExportedDocstringCoverage = parseNumberFlag(flags, "min-exported-docstring-coverage", 100);
 
   if (duplicateWindow < 5) {
     fail("--duplicate-window must be >= 5.");
@@ -355,6 +515,9 @@ export function main() {
   const duplicateViolations = checkDuplicateChunks(duplicateScopeFiles, duplicateWindow, maxDuplicateChunks);
   const orphanViolations = checkOrphanSourceModules(files);
   const complexityViolations = checkFunctionComplexity(files, maxComplexity);
+  const sourceDocstringCoverage = checkSourceDocstringCoverage(files, minDocstringCoverage);
+  const exportedDocstringCoverage = checkExportedDocstringCoverage(files, minExportedDocstringCoverage);
+  const boilerplateDocstringViolations = checkDocstringBoilerplate(files);
 
   const report = {
     ok:
@@ -362,11 +525,16 @@ export function main() {
       directoryViolations.length === 0 &&
       duplicateViolations.length <= maxDuplicateChunks &&
       orphanViolations.length === 0 &&
-      complexityViolations.length === 0,
+      complexityViolations.length === 0 &&
+      sourceDocstringCoverage.ok &&
+      exportedDocstringCoverage.ok &&
+      boilerplateDocstringViolations.length === 0,
     scanned: {
       file_count: files.length,
       duplicate_scope_file_count: duplicateScopeFiles.length,
       duplicate_window_lines: duplicateWindow,
+      source_docstring_coverage_percent: sourceDocstringCoverage.coverage_percent,
+      exported_docstring_coverage_percent: exportedDocstringCoverage.coverage_percent,
     },
     thresholds: {
       max_src_lines: maxSrcLines,
@@ -374,6 +542,8 @@ export function main() {
       max_complexity: maxComplexity,
       max_files_per_dir: maxFilesPerDirectory,
       max_duplicate_chunks: maxDuplicateChunks,
+      min_docstring_coverage_percent: minDocstringCoverage,
+      min_exported_docstring_coverage_percent: minExportedDocstringCoverage,
     },
     violations: {
       file_length: fileLengthViolations,
@@ -381,7 +551,12 @@ export function main() {
       duplicate_chunks: duplicateViolations,
       orphan_modules: orphanViolations,
       complexity: complexityViolations,
+      source_docstrings: sourceDocstringCoverage.missing,
+      exported_docstrings: exportedDocstringCoverage.missing,
+      boilerplate_docstrings: boilerplateDocstringViolations,
     },
+    source_docstrings: sourceDocstringCoverage,
+    exported_docstrings: exportedDocstringCoverage,
   };
 
   if (outputJson) {
@@ -404,6 +579,21 @@ export function main() {
     }
     if (complexityViolations.length > 0) {
       console.error(`- complexity violations: ${complexityViolations.length}`);
+    }
+    if (!sourceDocstringCoverage.ok) {
+      console.error(
+        `- source_docstring coverage: ${sourceDocstringCoverage.coverage_percent}% ` +
+          `< ${sourceDocstringCoverage.min_coverage_percent}% (${sourceDocstringCoverage.missing.length} missing)`,
+      );
+    }
+    if (!exportedDocstringCoverage.ok) {
+      console.error(
+        `- exported_docstring coverage: ${exportedDocstringCoverage.coverage_percent}% ` +
+          `< ${exportedDocstringCoverage.min_coverage_percent}% (${exportedDocstringCoverage.missing.length} missing)`,
+      );
+    }
+    if (boilerplateDocstringViolations.length > 0) {
+      console.error(`- boilerplate_docstring violations: ${boilerplateDocstringViolations.length}`);
     }
   }
 

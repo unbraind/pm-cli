@@ -1,3 +1,8 @@
+/**
+ * @module core/extensions/extension-hook-runtime
+ *
+ * Implements extension runtime contracts and governance for Extension Hook Runtime.
+ */
 import {
   cloneCommandOptionsSnapshot,
   cloneContextSnapshot,
@@ -50,6 +55,9 @@ async function executeRegisteredHooks<TContext>(
   return warnings;
 }
 
+/**
+ * Implements run before command hooks for the public runtime surface of this module.
+ */
 export async function runBeforeCommandHooks(
   hooks: ExtensionHookRegistry,
   context: BeforeCommandHookContext,
@@ -57,6 +65,9 @@ export async function runBeforeCommandHooks(
   return executeRegisteredHooks(hooks.beforeCommand, "beforeCommand", context);
 }
 
+/**
+ * Implements run after command hooks for the public runtime surface of this module.
+ */
 export async function runAfterCommandHooks(
   hooks: ExtensionHookRegistry,
   context: AfterCommandHookContext,
@@ -64,14 +75,23 @@ export async function runAfterCommandHooks(
   return executeRegisteredHooks(hooks.afterCommand, "afterCommand", context);
 }
 
+/**
+ * Implements run on write hooks for the public runtime surface of this module.
+ */
 export async function runOnWriteHooks(hooks: ExtensionHookRegistry, context: OnWriteHookContext): Promise<string[]> {
   return executeRegisteredHooks(hooks.onWrite, "onWrite", context);
 }
 
+/**
+ * Implements run on read hooks for the public runtime surface of this module.
+ */
 export async function runOnReadHooks(hooks: ExtensionHookRegistry, context: OnReadHookContext): Promise<string[]> {
   return executeRegisteredHooks(hooks.onRead, "onRead", context);
 }
 
+/**
+ * Implements run on index hooks for the public runtime surface of this module.
+ */
 export async function runOnIndexHooks(hooks: ExtensionHookRegistry, context: OnIndexHookContext): Promise<string[]> {
   return executeRegisteredHooks(hooks.onIndex, "onIndex", context);
 }
@@ -106,6 +126,9 @@ function describeHandlerError(error: unknown): string {
   return normalized.length > maxLength ? `${normalized.slice(0, maxLength - 1)}…` : normalized;
 }
 
+/**
+ * Implements run command handler for the public runtime surface of this module.
+ */
 export async function runCommandHandler(
   commands: ExtensionCommandRegistry,
   context: CommandHandlerContext,
@@ -159,6 +182,9 @@ export async function runCommandHandler(
 }
 
 
+/**
+ * Implements run parser override for the public runtime surface of this module.
+ */
 export async function runParserOverride(
   parsers: ExtensionParserRegistry,
   context: ParserOverrideContext,
@@ -233,6 +259,9 @@ export async function runParserOverride(
 }
 
 
+/**
+ * Implements run preflight override for the public runtime surface of this module.
+ */
 export async function runPreflightOverride(
   preflight: ExtensionPreflightRegistry,
   context: PreflightOverrideContext,
@@ -316,6 +345,9 @@ function resolveDefaultServiceResult(context: ServiceOverrideContext): ServiceOv
   };
 }
 
+/**
+ * Implements run service override sync for the public runtime surface of this module.
+ */
 export function runServiceOverrideSync(
   services: ExtensionServiceRegistry,
   context: ServiceOverrideContext,
@@ -361,6 +393,9 @@ export function runServiceOverrideSync(
   };
 }
 
+/**
+ * Implements run service override for the public runtime surface of this module.
+ */
 export async function runServiceOverride(
   services: ExtensionServiceRegistry,
   context: ServiceOverrideContext,
@@ -402,6 +437,9 @@ export async function runServiceOverride(
   };
 }
 
+/**
+ * Implements run command override for the public runtime surface of this module.
+ */
 export function runCommandOverride(
   commands: ExtensionCommandRegistry,
   context: CommandOverrideContext,
@@ -457,6 +495,9 @@ export function runCommandOverride(
 }
 
 
+/**
+ * Implements run renderer override for the public runtime surface of this module.
+ */
 export function runRendererOverride(
   renderers: ExtensionRendererRegistry,
   context: RendererOverrideContext,

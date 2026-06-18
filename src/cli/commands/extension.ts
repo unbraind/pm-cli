@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/extension
+ *
+ * Implements the pm extension command surface and its agent-facing runtime behavior.
+ */
 import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -85,6 +90,9 @@ const EXTENSION_INSTALL_LOCK_ATTEMPTS = 120;
 const EXTENSION_INSTALL_LOCK_DELAY_MS = 250;
 const EXTENSION_INSTALL_LOCK_STALE_MS = 120_000;
 
+/**
+ * Restricts extension command action values accepted by command, SDK, and storage contracts.
+ */
 export type ExtensionCommandAction =
   | "install"
   | "uninstall"
@@ -98,9 +106,18 @@ export type ExtensionCommandAction =
   | "activate"
   | "deactivate"
   | "init";
+/**
+ * Restricts extension scope values accepted by command, SDK, and storage contracts.
+ */
 export type ExtensionScope = "project" | "global";
+/**
+ * Restricts extension activation status values accepted by command, SDK, and storage contracts.
+ */
 export type ExtensionActivationStatus = "ok" | "failed" | "not_loaded" | "unknown";
 
+/**
+ * Documents the extension command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface ExtensionCommandOptions {
   install?: boolean;
   uninstall?: boolean;
@@ -132,6 +149,9 @@ export interface ExtensionCommandOptions {
   vocabulary?: "extension" | "package";
 }
 
+/**
+ * Documents the managed extension summary payload exchanged by command, SDK, and package integrations.
+ */
 export interface ManagedExtensionSummary {
   name: string;
   directory: string;
@@ -155,6 +175,9 @@ export interface ManagedExtensionSummary {
   update_check_reason: string;
 }
 
+/**
+ * Documents the extension command result payload exchanged by command, SDK, and package integrations.
+ */
 export interface ExtensionCommandResult {
   ok: boolean;
   action: ExtensionCommandAction;
@@ -171,6 +194,9 @@ export interface ExtensionCommandResult {
 
 const NATIVE_OUTPUT_MARKER = "__pm_native_output";
 
+/**
+ * Documents the extension triage summary payload exchanged by command, SDK, and package integrations.
+ */
 export interface ExtensionTriageSummary {
   status: "ok" | "warn";
   warning_count: number;
@@ -199,6 +225,9 @@ export interface ExtensionTriageSummary {
   collision_plan?: ExtensionCollisionPlan;
 }
 
+/**
+ * Documents the extension collision plan payload exchanged by command, SDK, and package integrations.
+ */
 export interface ExtensionCollisionPlan {
   status: "ok" | "conflicts_detected";
   collision_count: number;
@@ -222,6 +251,9 @@ export interface ExtensionCollisionPlan {
   }>;
 }
 
+/**
+ * Restricts extension update check status values accepted by command, SDK, and storage contracts.
+ */
 export type ExtensionUpdateCheckStatus = "checked" | "skipped_unmanaged" | "skipped_non_github" | "failed" | "not_checked";
 
 interface ExtensionUpdateCheckResolution {
@@ -229,6 +261,9 @@ interface ExtensionUpdateCheckResolution {
   reason: string;
 }
 
+/**
+ * Restricts extension doctor detail mode values accepted by command, SDK, and storage contracts.
+ */
 export type ExtensionDoctorDetailMode = "summary" | "deep";
 function buildExtensionPolicyDetails(policy: PmSettings["extensions"]["policy"]): {
   mode: "off" | "warn" | "enforce";
@@ -342,6 +377,9 @@ function sleep(ms: number): Promise<void> {
   });
 }
 
+/**
+ * Implements copy extension directory for install for the public runtime surface of this module.
+ */
 export async function copyExtensionDirectoryForInstall(
   sourceDirectory: string,
   destinationDirectory: string,
@@ -1079,6 +1117,9 @@ function collectGlobalOutputOverrideDoctorWarnings(
   return [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
 }
 
+/**
+ * Implements run extension for the public runtime surface of this module.
+ */
 export async function runExtension(
   target: string | undefined,
   options: ExtensionCommandOptions,

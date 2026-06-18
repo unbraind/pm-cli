@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/copy
+ *
+ * Implements the pm copy command surface and its agent-facing runtime behavior.
+ */
 import { pathExists, removeFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { appendHistoryEntry, createHistoryEntry } from "../../core/history/history.js";
 import { generateItemId } from "../../core/item/id.js";
@@ -21,12 +26,18 @@ import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemDocument, ItemMetadata } from "../../types/index.js";
 
+/**
+ * Documents the copy options payload exchanged by command, SDK, and package integrations.
+ */
 export interface CopyOptions {
   title?: string;
   author?: string;
   message?: string;
 }
 
+/**
+ * Documents the copy result payload exchanged by command, SDK, and package integrations.
+ */
 export interface CopyResult {
   source_id: string;
   item: ItemMetadata;
@@ -60,6 +71,9 @@ function buildCopyMessage(sourceId: string, message: string | undefined): string
   return trimmed.length > 0 ? `${trimmed} | ${suffix}` : suffix;
 }
 
+/**
+ * Implements run copy for the public runtime surface of this module.
+ */
 export async function runCopy(sourceId: string, options: CopyOptions, global: GlobalOptions): Promise<CopyResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {

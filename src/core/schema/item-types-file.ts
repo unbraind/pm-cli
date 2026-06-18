@@ -1,3 +1,8 @@
+/**
+ * @module core/schema/item-types-file
+ *
+ * Resolves configurable schema, fields, statuses, and workflows for Item Types File.
+ */
 import { BUILTIN_ITEM_TYPE_VALUES } from "../../types/index.js";
 import type { ItemTypeDefinition } from "../../types/index.js";
 import { toDefaultFolder } from "../item/type-registry.js";
@@ -22,6 +27,9 @@ export interface ItemTypesFile {
   definitions: ItemTypeDefinition[];
 }
 
+/**
+ * Documents the normalized add type input payload exchanged by command, SDK, and package integrations.
+ */
 export interface NormalizedAddTypeInput {
   name: string;
   description?: string;
@@ -30,6 +38,9 @@ export interface NormalizedAddTypeInput {
   aliases: string[];
 }
 
+/**
+ * Documents the raw add type input payload exchanged by command, SDK, and package integrations.
+ */
 export interface RawAddTypeInput {
   name: string | undefined;
   description?: string;
@@ -38,6 +49,9 @@ export interface RawAddTypeInput {
   aliases?: string[];
 }
 
+/**
+ * Documents the upsert item type result payload exchanged by command, SDK, and package integrations.
+ */
 export interface UpsertItemTypeResult {
   file: ItemTypesFile;
   /** The definition as stored after the upsert (existing fields preserved). */
@@ -70,6 +84,9 @@ function assertValidTypeToken(value: string, label: string): void {
   }
 }
 
+/**
+ * Documents the remove item type result payload exchanged by command, SDK, and package integrations.
+ */
 export interface RemoveItemTypeResult {
   file: ItemTypesFile;
   /** True when a matching definition existed and was dropped from the file. */

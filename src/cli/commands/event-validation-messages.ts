@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/event-validation-messages
+ *
+ * Implements the pm event validation messages command surface and its agent-facing runtime behavior.
+ */
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { resolveIsoOrRelative } from "../../core/shared/time.js";
@@ -60,6 +65,9 @@ function resolveDurationAgainstStart(startAt: string, durationRaw: string): stri
 // either an explicit `end` or a relative `duration` (mutually exclusive).
 // Equal start/end (including a zero-length duration) collapses to an instant
 // event (end dropped); an end earlier than start is rejected.
+/**
+ * Implements resolve event end at for the public runtime surface of this module.
+ */
 export function resolveEventEndAt(
   startAt: string,
   endRaw: string | undefined,

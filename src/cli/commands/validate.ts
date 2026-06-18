@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/validate
+ *
+ * Implements the pm validate command surface and its agent-facing runtime behavior.
+ */
 import fs from "node:fs/promises";
 import { realpathSync } from "node:fs";
 import type { Dirent } from "node:fs";
@@ -157,6 +162,9 @@ const FILE_LIST_SUMMARY_LIMIT = 40;
 const DIAGNOSTIC_LIST_SUMMARY_LIMIT = 5;
 const execFileAsync = promisify(execFile);
 
+/**
+ * Documents the validate command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface ValidateCommandOptions {
   checkMetadata?: boolean;
   checkResolution?: boolean;
@@ -181,12 +189,18 @@ export interface ValidateCommandOptions {
   pruneMissing?: boolean;
 }
 
+/**
+ * Documents the validate check payload exchanged by command, SDK, and package integrations.
+ */
 export interface ValidateCheck {
   name: ValidateCheckName;
   status: ValidateStatus;
   details: Record<string, unknown>;
 }
 
+/**
+ * Documents the validate fixes summary payload exchanged by command, SDK, and package integrations.
+ */
 export interface ValidateFixesSummary {
   mode: "apply" | "dry_run";
   auto_fix: boolean;
@@ -202,6 +216,9 @@ export interface ValidateFixesSummary {
   failed_fixes: Array<Record<string, unknown>>;
 }
 
+/**
+ * Documents the validate result payload exchanged by command, SDK, and package integrations.
+ */
 export interface ValidateResult {
   ok: boolean;
   has_warnings: boolean;
@@ -2057,6 +2074,9 @@ export const _testOnlyValidateCommand = {
 };
 
 /* c8 ignore start -- validate orchestration + fix-application matrices are covered by end-to-end command integration runs */
+/**
+ * Implements run validate for the public runtime surface of this module.
+ */
 export async function runValidate(options: ValidateCommandOptions, global: GlobalOptions): Promise<ValidateResult> {
   const fixesRequested = options.autoFix === true || options.pruneMissing === true;
   if (options.dryRun === true && !fixesRequested) {

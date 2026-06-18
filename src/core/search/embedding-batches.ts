@@ -1,3 +1,8 @@
+/**
+ * @module core/search/embedding-batches
+ *
+ * Powers search, embeddings, and semantic retrieval behavior for Embedding Batches.
+ */
 import type { PmSettings } from "../../types/index.js";
 import { executeEmbeddingRequest } from "./providers.js";
 import type { EmbeddingProviderConfig } from "./providers.js";
@@ -8,11 +13,17 @@ import {
   resolveSemanticCorpusCharacterLimit,
 } from "./corpus.js";
 
+/**
+ * Documents the embedding batch execution result payload exchanged by command, SDK, and package integrations.
+ */
 export interface EmbeddingBatchExecutionResult {
   vectors: number[][];
   warnings: string[];
 }
 
+/**
+ * Documents the embedding batch progress event payload exchanged by command, SDK, and package integrations.
+ */
 export interface EmbeddingBatchProgressEvent {
   batch_index: number;
   batch_total: number;
@@ -23,6 +34,9 @@ export interface EmbeddingBatchProgressEvent {
   phase: "start" | "complete";
 }
 
+/**
+ * Documents the embedding batch execution options payload exchanged by command, SDK, and package integrations.
+ */
 export interface EmbeddingBatchExecutionOptions {
   onProgress?: (event: EmbeddingBatchProgressEvent) => void;
 }
@@ -157,6 +171,9 @@ async function executeBatchWithAdaptiveSplit(
   throw new Error(buildEmbeddingFailureMessage(provider, batchLabel, batch.length, timeoutMs, maxRetries + 1, lastError));
 }
 
+/**
+ * Implements execute embedding batches with retry for the public runtime surface of this module.
+ */
 export async function executeEmbeddingBatchesWithRetry(
   provider: EmbeddingProviderConfig,
   settings: PmSettings,

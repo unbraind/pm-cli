@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/guide
+ *
+ * Implements the pm guide command surface and its agent-facing runtime behavior.
+ */
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { resolveConfiguredPmPackageRoot } from "../../core/packages/root.js";
@@ -12,11 +17,20 @@ import {
 } from "../guide-topics.js";
 
 export const GUIDE_OUTPUT_VALUES = ["markdown", "toon", "json"] as const;
+/**
+ * Restricts guide output format values accepted by command, SDK, and storage contracts.
+ */
 export type GuideOutputFormat = (typeof GUIDE_OUTPUT_VALUES)[number];
 
 export const GUIDE_DEPTH_VALUES = ["brief", "standard", "deep"] as const;
+/**
+ * Restricts guide depth values accepted by command, SDK, and storage contracts.
+ */
 export type GuideDepth = (typeof GUIDE_DEPTH_VALUES)[number];
 
+/**
+ * Documents the guide options payload exchanged by command, SDK, and package integrations.
+ */
 export interface GuideOptions {
   topic?: string;
   list?: boolean;
@@ -25,6 +39,9 @@ export interface GuideOptions {
   [key: string]: unknown;
 }
 
+/**
+ * Documents the guide doc render payload exchanged by command, SDK, and package integrations.
+ */
 export interface GuideDocRender {
   path: string;
   purpose: string;
@@ -36,6 +53,9 @@ export interface GuideDocRender {
   truncated: boolean;
 }
 
+/**
+ * Documents the guide index result payload exchanged by command, SDK, and package integrations.
+ */
 export interface GuideIndexResult {
   output_default: "toon";
   mode: "index";
@@ -53,6 +73,9 @@ export interface GuideIndexResult {
   suggested_next_steps: string[];
 }
 
+/**
+ * Documents the guide topic result payload exchanged by command, SDK, and package integrations.
+ */
 export interface GuideTopicResult {
   output_default: "toon";
   mode: "topic";
@@ -63,6 +86,9 @@ export interface GuideTopicResult {
   warnings: string[];
 }
 
+/**
+ * Restricts guide result values accepted by command, SDK, and storage contracts.
+ */
 export type GuideResult = GuideIndexResult | GuideTopicResult;
 
 function parseGuideOutputFormat(raw: string | undefined): GuideOutputFormat | undefined {
@@ -76,6 +102,9 @@ function parseGuideOutputFormat(raw: string | undefined): GuideOutputFormat | un
   return normalized as GuideOutputFormat;
 }
 
+/**
+ * Implements resolve guide output format for the public runtime surface of this module.
+ */
 export function resolveGuideOutputFormat(options: GuideOptions, global: GlobalOptions): GuideOutputFormat {
   const commandFormat = parseGuideOutputFormat(options.format);
   if (global.json && commandFormat && commandFormat !== "json") {
@@ -227,6 +256,9 @@ function ensureGuideTopic(topic: string): GuideTopicDefinition {
   );
 }
 
+/**
+ * Implements run guide for the public runtime surface of this module.
+ */
 export async function runGuide(options: GuideOptions, global: GlobalOptions): Promise<GuideResult> {
   const depth = parseGuideDepth(typeof options.depth === "string" ? options.depth : undefined);
   const listRequested = options.list === true;
@@ -261,6 +293,9 @@ function markdownCodeFence(content: string): string {
   return content.replaceAll("```", "``\\`");
 }
 
+/**
+ * Implements render guide markdown for the public runtime surface of this module.
+ */
 export function renderGuideMarkdown(result: GuideResult): string {
   if (result.mode === "index") {
     const lines: string[] = [

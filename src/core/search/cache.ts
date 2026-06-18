@@ -1,3 +1,8 @@
+/**
+ * @module core/search/cache
+ *
+ * Powers search, embeddings, and semantic retrieval behavior for Cache.
+ */
 import path from "node:path";
 import { getActiveExtensionRegistrations } from "../extensions/index.js";
 import { pathExists, readFileIfExists, removeFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
@@ -36,17 +41,26 @@ import type { ItemDocument, ItemFrontMatter } from "../../types/index.js";
 export const SEARCH_CACHE_ARTIFACT_PATHS = ["index/manifest.json", "search/embeddings.jsonl"] as const;
 export const VECTORIZATION_STATUS_LEDGER_PATH = "search/vectorization-status.json";
 
+/**
+ * Documents the search cache invalidation result payload exchanged by command, SDK, and package integrations.
+ */
 export interface SearchCacheInvalidationResult {
   invalidated: string[];
   warnings: string[];
 }
 
+/**
+ * Documents the semantic mutation refresh result payload exchanged by command, SDK, and package integrations.
+ */
 export interface SemanticMutationRefreshResult {
   refreshed: string[];
   skipped: string[];
   warnings: string[];
 }
 
+/**
+ * Documents the search mutation artifact refresh result payload exchanged by command, SDK, and package integrations.
+ */
 export interface SearchMutationArtifactRefreshResult extends SearchCacheInvalidationResult {
   refreshed: string[];
   skipped: string[];
@@ -54,6 +68,9 @@ export interface SearchMutationArtifactRefreshResult extends SearchCacheInvalida
   scheduled?: boolean;
 }
 
+/**
+ * Documents the refresh search artifacts for mutation options payload exchanged by command, SDK, and package integrations.
+ */
 export interface RefreshSearchArtifactsForMutationOptions {
   /**
    * When true and semantic search is active, the (slow) embedding refresh is
@@ -64,11 +81,17 @@ export interface RefreshSearchArtifactsForMutationOptions {
   background?: boolean;
 }
 
+/**
+ * Documents the semantic refresh options payload exchanged by command, SDK, and package integrations.
+ */
 export interface SemanticRefreshOptions {
   settings?: Awaited<ReturnType<typeof readSettings>>;
   apply_runtime_defaults?: boolean;
 }
 
+/**
+ * Documents the vectorization status ledger read result payload exchanged by command, SDK, and package integrations.
+ */
 export interface VectorizationStatusLedgerReadResult {
   entries: Record<string, string>;
   embedding: VectorizationEmbeddingMetadata | null;
@@ -101,6 +124,9 @@ function normalizeVectorizationLedgerEntries(entries: Record<string, string>): R
   return Object.fromEntries([...normalized.entries()].sort((left, right) => left[0].localeCompare(right[0])));
 }
 
+/**
+ * Implements read vectorization status ledger for the public runtime surface of this module.
+ */
 export async function readVectorizationStatusLedger(pmRoot: string): Promise<VectorizationStatusLedgerReadResult> {
   const ledgerPath = path.join(pmRoot, VECTORIZATION_STATUS_LEDGER_PATH);
   const raw = await readFileIfExists(ledgerPath);
@@ -175,6 +201,9 @@ export async function readVectorizationStatusLedger(pmRoot: string): Promise<Vec
   };
 }
 
+/**
+ * Implements write vectorization status ledger for the public runtime surface of this module.
+ */
 export async function writeVectorizationStatusLedger(
   pmRoot: string,
   entries: Record<string, string>,
@@ -412,6 +441,9 @@ async function pruneMissingSemanticVectors(
   }
 }
 
+/**
+ * Implements invalidate search cache artifacts for the public runtime surface of this module.
+ */
 export async function invalidateSearchCacheArtifacts(pmRoot: string): Promise<SearchCacheInvalidationResult> {
   const invalidated: string[] = [];
   const warnings: string[] = [];
@@ -435,6 +467,9 @@ export async function invalidateSearchCacheArtifacts(pmRoot: string): Promise<Se
   };
 }
 
+/**
+ * Implements refresh semantic embeddings for mutated items for the public runtime surface of this module.
+ */
 export async function refreshSemanticEmbeddingsForMutatedItems(
   pmRoot: string,
   itemIds: string[],
@@ -556,6 +591,9 @@ export function isSemanticRefreshActive(
   return Boolean(resolveEmbeddingProviders(effectiveSettings).active && resolveVectorStores(effectiveSettings).active);
 }
 
+/**
+ * Implements refresh search artifacts for mutation for the public runtime surface of this module.
+ */
 export async function refreshSearchArtifactsForMutation(
   pmRoot: string,
   itemIds: string[],

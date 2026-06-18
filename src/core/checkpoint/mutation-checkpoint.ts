@@ -1,3 +1,8 @@
+/**
+ * @module core/checkpoint/mutation-checkpoint
+ *
+ * Provides mutation checkpoint primitives for reversible multi-item operations.
+ */
 import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathExists, writeFileAtomic } from "../fs/fs-utils.js";
@@ -13,11 +18,17 @@ import { nowIso } from "../shared/time.js";
 // matched item's pre-mutation updated_at, then restore-to-timestamp on
 // rollback — stays identical across commands and is not duplicated.
 
+/**
+ * Documents the mutation checkpoint item payload exchanged by command, SDK, and package integrations.
+ */
 export interface MutationCheckpointItem {
   id: string;
   target_updated_at: string;
 }
 
+/**
+ * Documents the loaded mutation checkpoint payload exchanged by command, SDK, and package integrations.
+ */
 export interface LoadedMutationCheckpoint {
   /** The full on-disk record so callers can read their command-specific fields. */
   record: Record<string, unknown>;
@@ -30,6 +41,9 @@ export interface LoadedMutationCheckpoint {
   author: string;
 }
 
+/**
+ * Documents the checkpoint rollback row payload exchanged by command, SDK, and package integrations.
+ */
 export interface CheckpointRollbackRow {
   id: string;
   status: "restored" | "failed";
@@ -38,6 +52,9 @@ export interface CheckpointRollbackRow {
   error?: string;
 }
 
+/**
+ * Documents the checkpoint rollback result payload exchanged by command, SDK, and package integrations.
+ */
 export interface CheckpointRollbackResult {
   rows: CheckpointRollbackRow[];
   restored_ids: string[];
@@ -50,6 +67,9 @@ export type CheckpointRestoreFn = (
   targetUpdatedAt: string,
 ) => Promise<{ changed_fields?: string[]; warnings?: string[] }>;
 
+/**
+ * Implements normalize checkpoint id for the public runtime surface of this module.
+ */
 export function normalizeCheckpointId(raw: string): string {
   const trimmed = raw.trim();
   if (!trimmed) {
@@ -61,20 +81,32 @@ export function normalizeCheckpointId(raw: string): string {
   return trimmed;
 }
 
+/**
+ * Implements create checkpoint id for the public runtime surface of this module.
+ */
 export function createCheckpointId(prefix: string, nowValue: string): string {
   const compactTimestamp = nowValue.replace(/[-:.TZ]/g, "").slice(0, 14);
   const randomSuffix = Math.random().toString(36).slice(2, 8);
   return `${prefix}-${compactTimestamp}-${randomSuffix}`;
 }
 
+/**
+ * Implements checkpoint directory path for the public runtime surface of this module.
+ */
 export function checkpointDirectoryPath(pmRoot: string, subdir: string): string {
   return path.join(pmRoot, "checkpoints", subdir);
 }
 
+/**
+ * Implements checkpoint file path for the public runtime surface of this module.
+ */
 export function checkpointFilePath(pmRoot: string, subdir: string, checkpointId: string): string {
   return path.join(checkpointDirectoryPath(pmRoot, subdir), `${checkpointId}.json`);
 }
 
+/**
+ * Implements write mutation checkpoint for the public runtime surface of this module.
+ */
 export async function writeMutationCheckpoint(
   pmRoot: string,
   subdir: string,
@@ -110,6 +142,9 @@ function parseCheckpointItems(record: Record<string, unknown>, checkpointId: str
   });
 }
 
+/**
+ * Implements load mutation checkpoint for the public runtime surface of this module.
+ */
 export async function loadMutationCheckpoint(
   pmRoot: string,
   subdir: string,

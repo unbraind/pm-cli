@@ -1,3 +1,8 @@
+/**
+ * @module core/history/replay
+ *
+ * Implements append-only history and replay behavior for Replay.
+ */
 import jsonPatch from "fast-json-patch";
 import { FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
 import { canonicalDocument } from "../item/item-format.js";
@@ -25,10 +30,16 @@ export const EMPTY_REPLAY_DOCUMENT: ReplayDocument = {
   body: "",
 };
 
+/**
+ * Implements clone empty replay document for the public runtime surface of this module.
+ */
 export function cloneEmptyReplayDocument(): ReplayDocument {
   return structuredClone(EMPTY_REPLAY_DOCUMENT);
 }
 
+/**
+ * Implements replay hash for the public runtime surface of this module.
+ */
 export function replayHash(document: ReplayDocument): string {
   try {
     return hashDocument({
@@ -46,6 +57,9 @@ export function replayHash(document: ReplayDocument): string {
   }
 }
 
+/**
+ * Implements replay to item document for the public runtime surface of this module.
+ */
 export function replayToItemDocument(document: ReplayDocument): ItemDocument {
   return {
     metadata: document.metadata as unknown as ItemMetadata,
@@ -71,6 +85,9 @@ export function toReplayDocument(document: ItemDocument): ReplayDocument {
   };
 }
 
+/**
+ * Implements normalize replay patch path for the public runtime surface of this module.
+ */
 export function normalizeReplayPatchPath(path: string): string {
   if (path === "/front_matter") {
     return "/metadata";
@@ -90,6 +107,9 @@ function isHistoryPatchOp(value: unknown): value is HistoryPatchOp {
   );
 }
 
+/**
+ * Implements normalize replay patch ops for the public runtime surface of this module.
+ */
 export function normalizeReplayPatchOps(patch: HistoryPatchOp[] | unknown): HistoryPatchOp[] {
   if (!Array.isArray(patch)) {
     return [];
@@ -113,6 +133,9 @@ function isReplayDocumentShape(value: unknown): value is { metadata: Record<stri
   );
 }
 
+/**
+ * Restricts replay apply result values accepted by command, SDK, and storage contracts.
+ */
 export type ReplayApplyResult =
   | { ok: true; document: ReplayDocument }
   | { ok: false; error: unknown };
@@ -173,6 +196,9 @@ export function verifyHistoryChain(entries: HistoryEntry[]): { ok: boolean; erro
   return { ok: true, errors: [] };
 }
 
+/**
+ * Documents the lenient apply result payload exchanged by command, SDK, and package integrations.
+ */
 export interface LenientApplyResult {
   document: ReplayDocument;
   convertedReplaceToAdd: number;
@@ -232,6 +258,9 @@ export function lenientApplyReplayPatch(current: ReplayDocument, patch: HistoryP
   return { document, convertedReplaceToAdd, skippedOps };
 }
 
+/**
+ * Documents the reanchor entry detail payload exchanged by command, SDK, and package integrations.
+ */
 export interface ReanchorEntryDetail {
   index: number;
   rehashed: boolean;
@@ -240,6 +269,9 @@ export interface ReanchorEntryDetail {
   skipped_ops: number;
 }
 
+/**
+ * Documents the reanchor result payload exchanged by command, SDK, and package integrations.
+ */
 export interface ReanchorResult {
   entries: HistoryEntry[];
   finalDocument: ReplayDocument;
@@ -324,6 +356,9 @@ export function reanchorHistoryEntries(entries: HistoryEntry[]): ReanchorResult 
   };
 }
 
+/**
+ * Implements history entries to raw for the public runtime surface of this module.
+ */
 export function historyEntriesToRaw(entries: HistoryEntry[]): string {
   if (entries.length === 0) {
     return "";

@@ -1,3 +1,8 @@
+/**
+ * @module core/item/status
+ *
+ * Defines item parsing, formatting, and lifecycle helpers for Status.
+ */
 import { STATUS_VALUES } from "../../types/index.js";
 import type { ItemStatus } from "../../types/index.js";
 import { normalizeStatusInputWithRegistry, type RuntimeStatusRegistry } from "../schema/runtime-schema.js";
@@ -7,6 +12,9 @@ const STATUS_ALIAS_MAP: Readonly<Record<string, ItemStatus>> = {
   cancelled: "canceled",
 };
 
+/**
+ * Implements normalize status input for the public runtime surface of this module.
+ */
 export function normalizeStatusInput(value: unknown, registry?: RuntimeStatusRegistry): ItemStatus | undefined {
   if (registry) {
     const normalizedFromRegistry = normalizeStatusInputWithRegistry(value, registry);

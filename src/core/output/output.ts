@@ -1,3 +1,8 @@
+/**
+ * @module core/output/output
+ *
+ * Formats compact human and machine output for Output.
+ */
 import {
   runActiveCommandOverride,
   runActiveRendererOverride,
@@ -7,6 +12,9 @@ import {
 import { EXIT_CODE } from "../shared/constants.js";
 import { projectMutationResult } from "./mutation-projection.js";
 
+/**
+ * Documents the output options payload exchanged by command, SDK, and package integrations.
+ */
 export interface OutputOptions {
   json?: boolean;
   quiet?: boolean;
@@ -116,10 +124,16 @@ function writeToStream(target: OutputStreamTarget, text: string): boolean {
   }
 }
 
+/**
+ * Implements write stdout for the public runtime surface of this module.
+ */
 export function writeStdout(text: string): boolean {
   return writeToStream("stdout", text);
 }
 
+/**
+ * Implements write stderr for the public runtime surface of this module.
+ */
 export function writeStderr(text: string): boolean {
   return writeToStream("stderr", text);
 }
@@ -228,6 +242,9 @@ function renderDefaultMarkdownResult(value: unknown): string | null {
   return `${lines.join("\n")}\n`;
 }
 
+/**
+ * Implements format output for the public runtime surface of this module.
+ */
 export function formatOutput(result: unknown, options: OutputOptions): string {
   const commandOverride = runActiveCommandOverride(result);
   const nativeOutput = shouldUseNativeOutput(commandOverride.result);
@@ -275,6 +292,9 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
   return `${renderToonValue(compactedToon, 0)}\n`;
 }
 
+/**
+ * Implements print result for the public runtime surface of this module.
+ */
 export function printResult(result: unknown, options: OutputOptions): void {
   const projected = options.idOnly
     ? projectMutationResult(result, { idOnly: true })
@@ -288,6 +308,9 @@ export function printResult(result: unknown, options: OutputOptions): void {
   writeStdout(rendered);
 }
 
+/**
+ * Implements print error for the public runtime surface of this module.
+ */
 export function printError(message: string): void {
   const override = runActiveServiceOverrideSync("error_format", {
     message,

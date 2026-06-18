@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/docs
+ *
+ * Implements the pm docs command surface and its agent-facing runtime behavior.
+ */
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import type { LinkedDoc } from "../../types/index.js";
 import {
@@ -8,6 +13,9 @@ import {
   type LinkedPathValidation,
 } from "./linked-artifacts.js";
 
+/**
+ * Documents the docs command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface DocsCommandOptions {
   add?: string[];
   addGlob?: string[];
@@ -23,6 +31,9 @@ export interface DocsCommandOptions {
   force?: boolean;
 }
 
+/**
+ * Documents the docs result payload exchanged by command, SDK, and package integrations.
+ */
 export interface DocsResult {
   id: string;
   docs: LinkedDoc[];
@@ -33,6 +44,9 @@ export interface DocsResult {
   audit?: LinkedPathAuditEntry[];
 }
 
+/**
+ * Implements run docs for the public runtime surface of this module.
+ */
 export async function runDocs(id: string, options: DocsCommandOptions, global: GlobalOptions): Promise<DocsResult> {
   const result: LinkedArtifactResult = await runLinkedArtifacts(id, options, global, {
     metadataKey: "docs",

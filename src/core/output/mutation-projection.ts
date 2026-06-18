@@ -19,8 +19,12 @@
  * MCP server, and returns the original reference unchanged when nothing is compacted.
  */
 
+/** Controls whether mutation output keeps full changed fields or compact counts. */
 export type ChangedFieldsMode = "full" | "compact";
 
+/**
+ * Documents the mutation projection options payload exchanged by command, SDK, and package integrations.
+ */
 export interface MutationProjectionOptions {
   /** Defaults to "full" (unchanged output). "compact" drops the array, keeping a count. */
   changedFields?: ChangedFieldsMode;

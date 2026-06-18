@@ -1,3 +1,8 @@
+/**
+ * @module core/search/background-refresh
+ *
+ * Powers search, embeddings, and semantic retrieval behavior for Background Refresh.
+ */
 import { spawn } from "node:child_process";
 import { mkdirSync, rmSync, statSync } from "node:fs";
 import path from "node:path";
@@ -227,6 +232,9 @@ export async function scheduleBackgroundSemanticRefresh(pmRoot: string, itemIds:
   dispatchRefreshChild(pmRoot);
 }
 
+/**
+ * Documents the semantic refresh worker result payload exchanged by command, SDK, and package integrations.
+ */
 export interface SemanticRefreshWorkerResult {
   processed: string[];
   rounds: number;

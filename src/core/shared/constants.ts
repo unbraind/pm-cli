@@ -1,3 +1,8 @@
+/**
+ * @module core/shared/constants
+ *
+ * Provides shared primitives and utilities for Constants.
+ */
 import type {
   BuiltinItemType,
   GovernancePreset,
@@ -380,6 +385,9 @@ export const EXIT_CODE = {
   DEPENDENCY_FAILED: 5,
 } as const;
 
+/**
+ * Restricts telemetry error category values accepted by command, SDK, and storage contracts.
+ */
 export type TelemetryErrorCategory = "usage" | "validation" | "conflict" | "runtime" | "unknown";
 
 export const TELEMETRY_ERROR_CATEGORY_BY_CODE: Readonly<Record<string, TelemetryErrorCategory>> = Object.freeze({
@@ -405,6 +413,9 @@ export const TELEMETRY_ERROR_CATEGORY_BY_CODE: Readonly<Record<string, Telemetry
   unknown_error: "runtime",
 });
 
+/**
+ * Implements resolve telemetry error category for the public runtime surface of this module.
+ */
 export function resolveTelemetryErrorCategory(errorCode: string | undefined): TelemetryErrorCategory {
   const normalized = (errorCode ?? "").trim().toLowerCase();
   if (normalized.length === 0) {

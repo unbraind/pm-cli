@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/restore
+ *
+ * Implements the pm restore command surface and its agent-facing runtime behavior.
+ */
 import jsonPatch from "fast-json-patch";
 import fs from "node:fs/promises";
 import { pathExists, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
@@ -44,12 +49,18 @@ interface ResolvedRestoreSubject {
   historyPolicyWarnings: string[];
 }
 
+/**
+ * Documents the restore command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface RestoreCommandOptions {
   author?: string;
   message?: string;
   force?: boolean;
 }
 
+/**
+ * Documents the restore result payload exchanged by command, SDK, and package integrations.
+ */
 export interface RestoreResult {
   item: ItemMetadata;
   restored_from: {
@@ -339,6 +350,9 @@ function changedFields(beforeDocument: ItemDocument, afterDocument: ItemDocument
   return Array.from(fields).sort((a, b) => a.localeCompare(b));
 }
 
+/**
+ * Implements run restore for the public runtime surface of this module.
+ */
 export async function runRestore(
   id: string,
   target: string,

@@ -1,3 +1,8 @@
+/**
+ * @module core/schema/status-defs-file
+ *
+ * Resolves configurable schema, fields, statuses, and workflows for Status Defs File.
+ */
 import { RUNTIME_STATUS_ROLE_VALUES } from "../../types/index.js";
 import type { RuntimeStatusDefinition, RuntimeStatusRole } from "../../types/index.js";
 import { DEFAULT_RUNTIME_STATUS_DEFINITIONS } from "./runtime-schema.js";
@@ -38,6 +43,9 @@ export interface StatusDefsFile {
   statuses: RuntimeStatusDefinition[];
 }
 
+/**
+ * Documents the raw add status input payload exchanged by command, SDK, and package integrations.
+ */
 export interface RawAddStatusInput {
   id: string | undefined;
   roles?: string[];
@@ -46,6 +54,9 @@ export interface RawAddStatusInput {
   order?: number;
 }
 
+/**
+ * Documents the normalized add status input payload exchanged by command, SDK, and package integrations.
+ */
 export interface NormalizedAddStatusInput {
   id: string;
   /**
@@ -61,6 +72,9 @@ export interface NormalizedAddStatusInput {
   order?: number;
 }
 
+/**
+ * Documents the upsert status def result payload exchanged by command, SDK, and package integrations.
+ */
 export interface UpsertStatusDefResult {
   file: StatusDefsFile;
   /** The definition as stored after the upsert (existing fields preserved). */
@@ -69,6 +83,9 @@ export interface UpsertStatusDefResult {
   replaced: boolean;
 }
 
+/**
+ * Documents the remove status def result payload exchanged by command, SDK, and package integrations.
+ */
 export interface RemoveStatusDefResult {
   file: StatusDefsFile;
   /** True when a matching definition existed and was dropped from the file. */

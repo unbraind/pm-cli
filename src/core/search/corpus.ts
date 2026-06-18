@@ -1,3 +1,8 @@
+/**
+ * @module core/search/corpus
+ *
+ * Powers search, embeddings, and semantic retrieval behavior for Corpus.
+ */
 import type { ItemDocument, ItemMetadata, PmSettings } from "../../types/index.js";
 import { coercePositiveInteger } from "../shared/primitives.js";
 
@@ -82,10 +87,16 @@ function compactParts(parts: Array<string | boolean | number | null | undefined>
     .join(" ");
 }
 
+/**
+ * Implements build reminder corpus for the public runtime surface of this module.
+ */
 export function buildReminderCorpus(item: ItemMetadata): string[] {
   return (item.reminders ?? []).map((reminder) => compactParts([reminder.at, reminder.text]));
 }
 
+/**
+ * Implements build event corpus for the public runtime surface of this module.
+ */
 export function buildEventCorpus(item: ItemMetadata): string[] {
   return (item.events ?? []).map((event) =>
     compactParts([
@@ -107,6 +118,9 @@ export function buildEventCorpus(item: ItemMetadata): string[] {
   );
 }
 
+/**
+ * Implements build plan flat corpus for the public runtime surface of this module.
+ */
 export function buildPlanFlatCorpus(item: ItemMetadata): string {
   const segments: Array<string | undefined> = [];
   segments.push(item.plan_mode, item.plan_scope, item.plan_harness, item.plan_resume_context);
@@ -131,6 +145,9 @@ export function buildPlanFlatCorpus(item: ItemMetadata): string {
   return segments.filter((segment): segment is string => typeof segment === "string" && segment.length > 0).join(" ");
 }
 
+/**
+ * Implements build plan corpus for the public runtime surface of this module.
+ */
 export function buildPlanCorpus(item: ItemMetadata): Record<string, unknown> | undefined {
   const steps = (item.plan_steps ?? []).map((step) =>
     compactParts([
@@ -184,6 +201,9 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
+/**
+ * Documents the search corpus options payload exchanged by command, SDK, and package integrations.
+ */
 export interface SearchCorpusOptions {
   /**
    * Field names to include. When omitted, the full default set is used.
@@ -240,6 +260,9 @@ const CORPUS_FIELD_BUILDERS: Record<string, (document: ItemDocument) => unknown>
   plan: (document) => buildPlanCorpus(document.metadata),
 };
 
+/**
+ * Implements build search corpus for the public runtime surface of this module.
+ */
 export function buildSearchCorpus(document: ItemDocument, options: SearchCorpusOptions = {}): Record<string, unknown> {
   const fields = options.fields ?? DEFAULT_SEARCH_CORPUS_FIELDS;
   const corpus: Record<string, unknown> = {};
@@ -257,6 +280,9 @@ export function buildSearchCorpus(document: ItemDocument, options: SearchCorpusO
   return corpus;
 }
 
+/**
+ * Implements resolve semantic corpus input character limit for the public runtime surface of this module.
+ */
 export function resolveSemanticCorpusInputCharacterLimit(providerName: string | undefined): number {
   if (providerName?.trim().toLowerCase() === "ollama") {
     return OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS;
@@ -264,11 +290,17 @@ export function resolveSemanticCorpusInputCharacterLimit(providerName: string | 
   return DEFAULT_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS;
 }
 
+/**
+ * Documents the semantic corpus character limit resolution payload exchanged by command, SDK, and package integrations.
+ */
 export interface SemanticCorpusCharacterLimitResolution {
   maxCharacters: number;
   warning: string | null;
 }
 
+/**
+ * Implements resolve semantic corpus character limit for the public runtime surface of this module.
+ */
 export function resolveSemanticCorpusCharacterLimit(
   providerName: string | undefined,
   configuredMaxCharacters: unknown,
@@ -290,6 +322,9 @@ export function resolveSemanticCorpusCharacterLimit(
   };
 }
 
+/**
+ * Documents the semantic corpus input options payload exchanged by command, SDK, and package integrations.
+ */
 export interface SemanticCorpusInputOptions {
   providerName?: string;
   maxCharacters?: number;
@@ -302,6 +337,9 @@ export interface SemanticCorpusInputOptions {
   fields?: string[];
 }
 
+/**
+ * Implements build semantic corpus input for the public runtime surface of this module.
+ */
 export function buildSemanticCorpusInput(document: ItemDocument, options: SemanticCorpusInputOptions = {}): string {
   const serialized = JSON.stringify(buildSearchCorpus(document, { fields: options.fields }));
   const maxCharacters = resolveSemanticCorpusCharacterLimit(options.providerName, options.maxCharacters)

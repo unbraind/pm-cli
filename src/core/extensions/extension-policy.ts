@@ -1,3 +1,8 @@
+/**
+ * @module core/extensions/extension-policy
+ *
+ * Implements extension runtime contracts and governance for Extension Policy.
+ */
 import {
   KNOWN_EXTENSION_POLICY_MODES,
   KNOWN_EXTENSION_POLICY_SURFACES,
@@ -43,6 +48,9 @@ export interface NormalizedPmMaxVersionExceededMode {
   project: PmMaxVersionExceededMode;
 }
 
+/**
+ * Documents the normalized extension policy payload exchanged by command, SDK, and package integrations.
+ */
 export interface NormalizedExtensionPolicy {
   mode: ExtensionPolicyMode;
   trustMode: ExtensionTrustMode;
@@ -66,6 +74,9 @@ export interface NormalizedExtensionPolicy {
   warnings: string[];
 }
 
+/**
+ * Documents the policy extension ref payload exchanged by command, SDK, and package integrations.
+ */
 export interface PolicyExtensionRef {
   layer: ExtensionLayer;
   name: string;
@@ -132,6 +143,9 @@ function normalizePolicyTrustMode(value: string | undefined): ExtensionTrustMode
   return "off";
 }
 
+/**
+ * Implements normalize policy sandbox profile for the public runtime surface of this module.
+ */
 export function normalizePolicySandboxProfile(value: string | undefined): ExtensionSandboxProfile {
   const normalized = normalizePolicyName(value);
   if ((KNOWN_EXTENSION_SANDBOX_PROFILES as readonly string[]).includes(normalized)) {
@@ -227,6 +241,9 @@ function collectExtensionPolicyOverrides(
   return overridesByName;
 }
 
+/**
+ * Implements normalize extension policy for the public runtime surface of this module.
+ */
 export function normalizeExtensionPolicy(settings: PmSettings): NormalizedExtensionPolicy {
   const policy = settings.extensions.policy as ExtensionGovernancePolicy | undefined;
   const mode = normalizePolicyMode(policy?.mode);
@@ -300,6 +317,9 @@ export function normalizeExtensionPolicy(settings: PmSettings): NormalizedExtens
   };
 }
 
+/**
+ * Implements serialize extension policy for the public runtime surface of this module.
+ */
 export function serializeExtensionPolicy(policy: NormalizedExtensionPolicy): ExtensionGovernancePolicy {
   const overrides = [...policy.overridesByName.values()]
     .sort((left, right) => left.name.localeCompare(right.name))
@@ -343,6 +363,9 @@ export function serializeExtensionPolicy(policy: NormalizedExtensionPolicy): Ext
   };
 }
 
+/**
+ * Implements hydrate extension policy for the public runtime surface of this module.
+ */
 export function hydrateExtensionPolicy(policy: ExtensionGovernancePolicy): NormalizedExtensionPolicy {
   const overridesByName = collectExtensionPolicyOverrides(policy.extension_overrides);
   return {
@@ -573,6 +596,9 @@ function buildPolicyWarning(
   return `extension_policy_${mode}_${scope}:${extension.layer}:${extension.name}:reason=${reason}${suffix}`;
 }
 
+/**
+ * Implements evaluate extension policy for extension for the public runtime surface of this module.
+ */
 export function evaluateExtensionPolicyForExtension(
   policy: NormalizedExtensionPolicy,
   extension: PolicyExtensionRef,
@@ -631,6 +657,9 @@ export function evaluateExtensionPolicyForExtension(
   };
 }
 
+/**
+ * Implements evaluate extension policy for capability for the public runtime surface of this module.
+ */
 export function evaluateExtensionPolicyForCapability(
   policy: NormalizedExtensionPolicy,
   extension: PolicyExtensionRef,
@@ -655,6 +684,9 @@ export function evaluateExtensionPolicyForCapability(
   };
 }
 
+/**
+ * Implements evaluate extension policy for registration for the public runtime surface of this module.
+ */
 export function evaluateExtensionPolicyForRegistration(
   policy: NormalizedExtensionPolicy,
   extension: PolicyExtensionRef,

@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/test-all
+ *
+ * Implements the pm test all command surface and its agent-facing runtime behavior.
+ */
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
@@ -23,6 +28,9 @@ import {
   type TestRunResult,
 } from "./test.js";
 
+/**
+ * Documents the test all command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface TestAllCommandOptions {
   status?: string;
   limit?: string;
@@ -42,6 +50,9 @@ export interface TestAllCommandOptions {
   autoPmContext?: boolean;
 }
 
+/**
+ * Documents the test all item result payload exchanged by command, SDK, and package integrations.
+ */
 export interface TestAllItemResult {
   ok: boolean;
   id: string;
@@ -54,6 +65,9 @@ export interface TestAllItemResult {
   failure_categories: Record<LinkedTestFailureCategory, number>;
 }
 
+/**
+ * Documents the test all result payload exchanged by command, SDK, and package integrations.
+ */
 export interface TestAllResult {
   ok: boolean;
   totals: {
@@ -209,6 +223,20 @@ function mergeFailureCategoryCounts(
   }
 }
 
+function emitTestAllProgress(options: TestAllCommandOptions, message: string): void {
+  if (options.progress !== true) {
+    return;
+  }
+  try {
+    process.stderr.write(`[pm test-all] ${message}\n`);
+  } catch {
+    // Ignore transient stderr write failures.
+  }
+}
+
+/**
+ * Implements run test all for the public runtime surface of this module.
+ */
 export async function runTestAll(options: TestAllCommandOptions, global: GlobalOptions): Promise<TestAllResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
@@ -267,6 +295,13 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
     linkedTests += readResult.tests.length;
     itemTests.push({ item, tests: readResult.tests });
   }
+  emitTestAllProgress(
+    options,
+    `selection items=${filteredItems.length} linked_tests=${linkedTests}` +
+      `${statusFilter ? ` status=${statusFilter}` : ""}` +
+      `${limitFilter === undefined ? "" : ` limit=${limitFilter}`}` +
+      `${offsetFilter > 0 ? ` offset=${offsetFilter}` : ""}`,
+  );
 
   const failOnEmptyTestRunTriggered = options.failOnEmptyTestRun === true && linkedTests === 0;
   if (failOnEmptyTestRunTriggered) {
@@ -289,7 +324,8 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
     }
   }
 
-  for (const { item, tests } of itemTests) {
+  for (const [itemIndex, { item, tests }] of itemTests.entries()) {
+    emitTestAllProgress(options, `item ${itemIndex + 1}/${itemTests.length} start id=${item.id} linked_tests=${tests.length}`);
     const testsToRun: LinkedTest[] = [];
     const keyedTests = tests.map((test) => {
       const key = buildLinkedTestKey(test);
@@ -382,6 +418,12 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
       run_results: runResults,
       failure_categories: itemFailureCategories,
     });
+    emitTestAllProgress(
+      options,
+      `item ${itemIndex + 1}/${itemTests.length} end id=${item.id}` +
+        ` status=${summary.failed === 0 ? "passed" : "failed"}` +
+        ` passed=${summary.passed} failed=${summary.failed} skipped=${summary.skipped}`,
+    );
   }
 
   const failOnSkippedTriggered = options.failOnSkipped === true && skipped > 0;
@@ -396,8 +438,15 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
     );
   }
 
+  const ok = failed === 0 && failOnSkippedTriggered !== true && failOnEmptyTestRunTriggered !== true;
+  emitTestAllProgress(
+    options,
+    `end status=${ok ? "passed" : "failed"} items=${filteredItems.length} linked_tests=${linkedTests}` +
+      ` passed=${passed} failed=${failed} skipped=${skipped}`,
+  );
+
   return {
-    ok: failed === 0 && failOnSkippedTriggered !== true && failOnEmptyTestRunTriggered !== true,
+    ok,
     totals: {
       items: filteredItems.length,
       linked_tests: linkedTests,

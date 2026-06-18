@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/index
+ *
+ * Implements the pm command index command surface and its agent-facing runtime behavior.
+ */
 export { runAppend } from "./append.js";
 export { runAggregate, type AggregateOptions, type AggregateResult } from "./aggregate.js";
 export { runActivity } from "./activity.js";

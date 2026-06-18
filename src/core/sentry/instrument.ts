@@ -1,3 +1,8 @@
+/**
+ * @module core/sentry/instrument
+ *
+ * Integrates Sentry instrumentation and release diagnostics for Instrument.
+ */
 import { resolvePmCliVersion } from "../packages/root.js";
 
 const OPT_OUT_VALUES = new Set(["1", "true", "yes", "on"]);
@@ -196,6 +201,9 @@ function resolveEnvironment(): string {
   return "production";
 }
 
+/**
+ * Implements ensure sentry init for the public runtime surface of this module.
+ */
 export async function ensureSentryInit(): Promise<SentryLike | undefined> {
   if (_initDone) return _sentry;
   _initDone = true;
@@ -336,6 +344,9 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
   return SentryModule;
 }
 
+/**
+ * Implements get sentry for the public runtime surface of this module.
+ */
 export function getSentry(): SentryLike | undefined {
   return _sentry;
 }

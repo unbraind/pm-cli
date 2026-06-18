@@ -1,3 +1,8 @@
+/**
+ * @module core/item/parse
+ *
+ * Defines item parsing, formatting, and lifecycle helpers for Parse.
+ */
 import { PmCliError } from "../shared/errors.js";
 import { EXIT_CODE } from "../shared/constants.js";
 
@@ -25,6 +30,9 @@ const CONTINUABLE_VALUE_KEYS = new Set([
   "why_now",
 ]);
 
+/**
+ * Implements parse tags for the public runtime surface of this module.
+ */
 export function parseTags(raw: string): string[] {
   const trimmed = raw.trim();
   if (trimmed === "") {
@@ -288,6 +296,9 @@ function parseMarkdownKeyValueLines(raw: string): Record<string, string> | null 
   return result;
 }
 
+/**
+ * Implements parse csv kv for the public runtime surface of this module.
+ */
 export function parseCsvKv(raw: string, optionName: string): Record<string, string> {
   const trimmed = stripCodeFenceEnvelope(raw).trim();
   if (!trimmed) {
@@ -416,11 +427,17 @@ async function readStdinText(optionName: string): Promise<string> {
   });
 }
 
+/**
+ * Documents the stdin token resolver payload exchanged by command, SDK, and package integrations.
+ */
 export interface StdinTokenResolver {
   resolveValue(value: string | undefined, optionName: string): Promise<string | undefined>;
   resolveList(values: string[] | undefined, optionName: string): Promise<string[] | undefined>;
 }
 
+/**
+ * Implements create stdin token resolver for the public runtime surface of this module.
+ */
 export function createStdinTokenResolver(): StdinTokenResolver {
   let stdinValuePromise: Promise<string> | undefined;
   let stdinConsumerOption: string | undefined;
@@ -477,6 +494,9 @@ export function createStdinTokenResolver(): StdinTokenResolver {
   };
 }
 
+/**
+ * Implements parse optional number for the public runtime surface of this module.
+ */
 export function parseOptionalNumber(raw: string, optionName: string): number {
   const value = Number(raw);
   if (!Number.isFinite(value)) {

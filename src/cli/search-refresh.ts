@@ -1,4 +1,9 @@
 #!/usr/bin/env node
+/**
+ * @module cli/search-refresh
+ *
+ * Provides CLI runtime support for Search Refresh.
+ */
 import { resolvePmRoot } from "../core/store/paths.js";
 import { refreshSemanticEmbeddingsForMutatedItems } from "../core/search/cache.js";
 import { runSemanticRefreshWorker } from "../core/search/background-refresh.js";

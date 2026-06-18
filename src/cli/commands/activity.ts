@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/activity
+ *
+ * Implements the pm activity command surface and its agent-facing runtime behavior.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getActiveExtensionRegistrations, runActiveOnReadHooks } from "../../core/extensions/index.js";
@@ -15,6 +20,9 @@ import { readHistoryEntries } from "./history.js";
 import { parseLimit } from "../shared-parsers.js";
 import type { HistoryEntry } from "../../types/index.js";
 
+/**
+ * Documents the activity command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface ActivityCommandOptions {
   id?: string;
   op?: string;
@@ -25,10 +33,16 @@ export interface ActivityCommandOptions {
   compact?: boolean;
 }
 
+/**
+ * Documents the activity entry payload exchanged by command, SDK, and package integrations.
+ */
 export interface ActivityEntry extends HistoryEntry {
   id: string;
 }
 
+/**
+ * Documents the compact activity entry payload exchanged by command, SDK, and package integrations.
+ */
 export interface CompactActivityEntry {
   id: string;
   op: string;
@@ -37,6 +51,9 @@ export interface CompactActivityEntry {
   msg?: string;
 }
 
+/**
+ * Documents the activity result payload exchanged by command, SDK, and package integrations.
+ */
 export interface ActivityResult {
   activity: ActivityEntry[];
   compact_activity?: CompactActivityEntry[];
@@ -133,6 +150,9 @@ export const _testOnly = {
   listHistoryFiles,
 };
 
+/**
+ * Implements run activity for the public runtime surface of this module.
+ */
 export async function runActivity(options: ActivityCommandOptions, global: GlobalOptions): Promise<ActivityResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {

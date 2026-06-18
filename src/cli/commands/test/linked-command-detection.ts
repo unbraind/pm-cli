@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/test/linked-command-detection
+ *
+ * Parses linked-test command invocations for sandbox and context-safety checks.
+ */
 // Pure, leaf-level helpers for detecting how linked-test shell commands invoke
 // the pm CLI (directly, via npx/pnpm/npm exec, or a launcher subcommand) and for
 // pulling structured context (subcommand, referenced item ids, runner) out of a
@@ -22,6 +27,9 @@ export const NPM_EXEC_SUBCOMMANDS = new Set(["exec", "x"]);
 export const SCRIPT_RUN_SUBCOMMANDS = new Set(["run", "run-script"]);
 export const SCRIPT_RUN_FLAGS_WITH_VALUE = new Set(["-C", "--dir", "--cwd", "-w", "--workspace", "--filter"]);
 
+/**
+ * Implements split normalized command segments for the public runtime surface of this module.
+ */
 export function splitNormalizedCommandSegments(normalizedCommand: string): string[] {
   return normalizedCommand
     .split(/&&|\|\||\||;/)
@@ -29,6 +37,9 @@ export function splitNormalizedCommandSegments(normalizedCommand: string): strin
     .filter((segment) => segment.length > 0);
 }
 
+/**
+ * Implements strip leading env assignments for the public runtime surface of this module.
+ */
 export function stripLeadingEnvAssignments(tokens: string[]): string[] {
   let start = 0;
   if (tokens[start] === "env") {
@@ -45,6 +56,9 @@ export function stripLeadingEnvAssignments(tokens: string[]): string[] {
   return tokens.slice(start);
 }
 
+/**
+ * Implements first pm subcommand for the public runtime surface of this module.
+ */
 export function firstPmSubcommand(args: string[]): string | undefined {
   let index = 0;
   while (index < args.length) {
@@ -66,6 +80,9 @@ export function firstPmSubcommand(args: string[]): string | undefined {
   return undefined;
 }
 
+/**
+ * Implements check whether pm executable token for the public runtime surface of this module.
+ */
 export function isPmExecutableToken(token: string): boolean {
   return (
     token === "pm" ||
@@ -77,6 +94,9 @@ export function isPmExecutableToken(token: string): boolean {
   );
 }
 
+/**
+ * Implements normalize package specifier for the public runtime surface of this module.
+ */
 export function normalizePackageSpecifier(token: string): string {
   const trimmed = token.trim();
   if (!trimmed.startsWith("@")) {
@@ -91,6 +111,9 @@ export function normalizePackageSpecifier(token: string): string {
   return versionSeparator === -1 ? trimmed : trimmed.slice(0, versionSeparator);
 }
 
+/**
+ * Implements check whether pm cli package token for the public runtime surface of this module.
+ */
 export function isPmCliPackageToken(token: string): boolean {
   const normalizedSpecifier = normalizePackageSpecifier(token);
   return (
@@ -101,10 +124,16 @@ export function isPmCliPackageToken(token: string): boolean {
   );
 }
 
+/**
+ * Implements check whether pm cli script token for the public runtime surface of this module.
+ */
 export function isPmCliScriptToken(token: string): boolean {
   return token === "dist/cli.js" || token === "./dist/cli.js" || token.endsWith("/dist/cli.js");
 }
 
+/**
+ * Implements parse npx command for the public runtime surface of this module.
+ */
 export function parseNpxCommand(tokens: string[]): { command: string; args: string[] } | null {
   let index = 0;
   while (index < tokens.length) {
@@ -136,6 +165,9 @@ export function parseNpxCommand(tokens: string[]): { command: string; args: stri
   };
 }
 
+/**
+ * Implements parse launcher subcommand for the public runtime surface of this module.
+ */
 export function parseLauncherSubcommand(
   tokens: string[],
   flagsWithValue: Set<string>,
@@ -167,6 +199,9 @@ export function parseLauncherSubcommand(
   return null;
 }
 
+/**
+ * Implements parse pnpm dlx command for the public runtime surface of this module.
+ */
 export function parsePnpmDlxCommand(tokens: string[]): { command: string; args: string[] } | null {
   const parsed = parseLauncherSubcommand(tokens, PNPM_GLOBAL_FLAGS_WITH_VALUE);
   if (parsed?.subcommand !== "dlx") {
@@ -175,6 +210,9 @@ export function parsePnpmDlxCommand(tokens: string[]): { command: string; args: 
   return parseNpxCommand(parsed.args);
 }
 
+/**
+ * Implements parse npm exec command for the public runtime surface of this module.
+ */
 export function parseNpmExecCommand(tokens: string[]): { command: string; args: string[] } | null {
   const parsed = parseLauncherSubcommand(tokens, NPM_GLOBAL_FLAGS_WITH_VALUE);
   if (!parsed || !NPM_EXEC_SUBCOMMANDS.has(parsed.subcommand)) {
@@ -183,6 +221,9 @@ export function parseNpmExecCommand(tokens: string[]): { command: string; args: 
   return parseNpxCommand(parsed.args);
 }
 
+/**
+ * Implements resolve pm subcommand context for the public runtime surface of this module.
+ */
 export function resolvePmSubcommandContext(args: string[]): { subcommand: string; remaining: string[] } | null {
   let index = 0;
   while (index < args.length) {
@@ -207,6 +248,9 @@ export function resolvePmSubcommandContext(args: string[]): { subcommand: string
   return null;
 }
 
+/**
+ * Implements first positional token for the public runtime surface of this module.
+ */
 export function firstPositionalToken(tokens: string[]): string | undefined {
   for (const token of tokens) {
     if (!token.startsWith("-")) {

@@ -1,3 +1,8 @@
+/**
+ * @module core/search/semantic-defaults
+ *
+ * Powers search, embeddings, and semantic retrieval behavior for Semantic Defaults.
+ */
 import { spawnSync } from "node:child_process";
 import type { PmSettings } from "../../types/index.js";
 import { toNonEmptyString } from "../shared/primitives.js";
@@ -12,6 +17,9 @@ const OLLAMA_LIST_TIMEOUT_MS = 2_500;
 const QWEN_EMBEDDING_MODEL_PATTERN = /qwen.*(?:embed|embedding)|(?:embed|embedding).*qwen/i;
 const EMBEDDING_MODEL_PATTERN = /embed|embedding/i;
 
+/**
+ * Documents the semantic runtime defaults resolution payload exchanged by command, SDK, and package integrations.
+ */
 export interface SemanticRuntimeDefaultsResolution {
   settings: PmSettings;
   auto_ollama_defaults_applied: boolean;
@@ -116,6 +124,9 @@ function resolveAutoOllamaModel(settings: PmSettings): string {
   return DEFAULT_OLLAMA_MODEL;
 }
 
+/**
+ * Implements resolve settings with semantic runtime defaults for the public runtime surface of this module.
+ */
 export function resolveSettingsWithSemanticRuntimeDefaults(settings: PmSettings): SemanticRuntimeDefaultsResolution {
   const unchanged: SemanticRuntimeDefaultsResolution = {
     settings,

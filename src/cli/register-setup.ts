@@ -1,3 +1,8 @@
+/**
+ * @module cli/register-setup
+ *
+ * Provides CLI runtime support for Register Setup.
+ */
 import type { Command } from "commander";
 import fs from "node:fs/promises";
 import type { GlobalOptions } from "../core/shared/command-types.js";
@@ -327,6 +332,9 @@ function registerLifecycleCommand(
   });
 }
 
+/**
+ * Implements register setup commands for the public runtime surface of this module.
+ */
 export function registerSetupCommands(program: Command): void {
   program
     .command("init")

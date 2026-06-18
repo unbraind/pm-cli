@@ -1,18 +1,32 @@
+/**
+ * @module cli/commands/metadata-normalizers
+ *
+ * Implements the pm metadata normalizers command surface and its agent-facing runtime behavior.
+ */
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { parseOptionalNumber } from "../../core/item/parse.js";
 import { CONFIDENCE_TEXT_VALUES } from "../../types/index.js";
 
+/**
+ * Implements normalize risk input for the public runtime surface of this module.
+ */
 export function normalizeRiskInput(value: string): string {
   const trimmed = value.trim();
   return trimmed.toLowerCase() === "med" ? "medium" : trimmed;
 }
 
+/**
+ * Implements normalize severity input for the public runtime surface of this module.
+ */
 export function normalizeSeverityInput(value: string): string {
   const trimmed = value.trim();
   return trimmed.toLowerCase() === "med" ? "medium" : trimmed;
 }
 
+/**
+ * Implements parse confidence input for the public runtime surface of this module.
+ */
 export function parseConfidenceInput(value: string): number | "low" | "medium" | "high" {
   const trimmed = value.trim().toLowerCase();
   if (trimmed === "med") {
@@ -28,6 +42,9 @@ export function parseConfidenceInput(value: string): number | "low" | "medium" |
   return parsed;
 }
 
+/**
+ * Implements parse regression input for the public runtime surface of this module.
+ */
 export function parseRegressionInput(value: string): boolean {
   const normalized = value.trim().toLowerCase();
   if (normalized === "true" || normalized === "1") {

@@ -1,3 +1,8 @@
+/**
+ * @module core/shared/time
+ *
+ * Provides shared primitives and utilities for Time.
+ */
 import { PmCliError } from "./errors.js";
 import { EXIT_CODE } from "./constants.js";
 
@@ -8,14 +13,23 @@ const COMPACT_DATETIME = /^(\d{4})(\d{2})(\d{2})(?:[T\s]?)(\d{2})(\d{2})(\d{2})?
 const HYPHEN_TIME = /^(\d{4}-\d{2}-\d{2})[T\s](\d{2})-(\d{2})(?:-(\d{2}))?([.,]\d{1,3})?(Z|[+-]\d{2}:?\d{2})?$/i;
 const COMPACT_TIME = /^(\d{4}-\d{2}-\d{2})[T\s](\d{2})(\d{2})(\d{2})?([.,]\d{1,3})?(Z|[+-]\d{2}:?\d{2})?$/i;
 
+/**
+ * Implements now iso for the public runtime surface of this module.
+ */
 export function nowIso(): string {
   return new Date().toISOString();
 }
 
+/**
+ * Implements check whether timestamp literal for the public runtime surface of this module.
+ */
 export function isTimestampLiteral(input: string): boolean {
   return Number.isFinite(Date.parse(input));
 }
 
+/**
+ * Implements compare timestamp strings for the public runtime surface of this module.
+ */
 export function compareTimestampStrings(left: string, right: string): number {
   const leftMs = Date.parse(left);
   const rightMs = Date.parse(right);
@@ -211,6 +225,9 @@ function addUtcMonths(now: Date, amount: number): Date {
   return result;
 }
 
+/**
+ * Implements resolve iso or relative for the public runtime surface of this module.
+ */
 export function resolveIsoOrRelative(
   input: string,
   now: Date = new Date(),

@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/history-repair
+ *
+ * Implements the pm history repair command surface and its agent-facing runtime behavior.
+ */
 import fs from "node:fs/promises";
 import jsonPatch from "fast-json-patch";
 import { pathExists, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
@@ -24,6 +29,9 @@ import type { HistoryEntry, HistoryPatchOp, ItemMetadata } from "../../types/ind
 import { readHistoryEntries } from "./history.js";
 import { resolveHistorySubject } from "./history-redact.js";
 
+/**
+ * Documents the history repair command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistoryRepairCommandOptions {
   dryRun?: boolean;
   author?: string;
@@ -31,6 +39,9 @@ export interface HistoryRepairCommandOptions {
   force?: boolean;
 }
 
+/**
+ * Documents the history repair result payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistoryRepairResult {
   id: string;
   dry_run: boolean;
@@ -64,6 +75,9 @@ function toAuthor(candidate: string | undefined, defaultAuthor: string): string 
   return trimmed.length > 0 ? trimmed : "unknown";
 }
 
+/**
+ * Implements run history repair for the public runtime surface of this module.
+ */
 export async function runHistoryRepair(
   id: string,
   options: HistoryRepairCommandOptions,
@@ -231,6 +245,9 @@ export async function runHistoryRepair(
   };
 }
 
+/**
+ * Documents the history repair all stream result payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistoryRepairAllStreamResult {
   id: string;
   outcome: "repaired" | "skipped_clean" | "failed";
@@ -240,6 +257,9 @@ export interface HistoryRepairAllStreamResult {
   error?: string;
 }
 
+/**
+ * Documents the history repair all result payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistoryRepairAllResult {
   all: true;
   dry_run: boolean;

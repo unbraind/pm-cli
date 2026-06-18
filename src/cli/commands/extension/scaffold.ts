@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/extension/scaffold
+ *
+ * Implements extension package-management support for Scaffold.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathExists } from "../../../core/fs/fs-utils.js";
@@ -26,6 +31,9 @@ interface ExtensionScaffoldResult {
 }
 
 
+/**
+ * Implements build starter extension scaffold files for the public runtime surface of this module.
+ */
 export function buildStarterExtensionScaffoldFiles(
   extensionName: string,
   commandName: string,
@@ -166,6 +174,9 @@ export function buildStarterExtensionScaffoldFiles(
   };
 }
 
+/**
+ * Implements scaffold extension project for the public runtime surface of this module.
+ */
 export async function scaffoldExtensionProject(
   target: string,
   vocabulary: "extension" | "package" = "extension",

@@ -1,3 +1,8 @@
+/**
+ * @module core/schema/runtime-field-values
+ *
+ * Resolves configurable schema, fields, statuses, and workflows for Runtime Field Values.
+ */
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { runtimeFieldOptionTarget, type RuntimeFieldDefinitionResolved, type RuntimeFieldRegistry } from "./runtime-schema.js";
@@ -25,6 +30,9 @@ function resolveCandidateOptionKeys(definition: RuntimeFieldDefinitionResolved):
   ])];
 }
 
+/**
+ * Implements read runtime field option value for the public runtime surface of this module.
+ */
 export function readRuntimeFieldOptionValue(
   options: Record<string, unknown>,
   definition: RuntimeFieldDefinitionResolved,
@@ -96,6 +104,9 @@ function parseNumberValue(raw: unknown, label: string): number {
   return parsed;
 }
 
+/**
+ * Implements coerce runtime field value for the public runtime surface of this module.
+ */
 export function coerceRuntimeFieldValue(
   definition: RuntimeFieldDefinitionResolved,
   rawValue: unknown,
@@ -139,6 +150,9 @@ function shouldRequireFieldOnCreate(definition: RuntimeFieldDefinitionResolved, 
   return definition.required_types.map((value) => value.toLowerCase()).includes(itemTypeName.trim().toLowerCase());
 }
 
+/**
+ * Implements collect runtime create field values for the public runtime surface of this module.
+ */
 export function collectRuntimeCreateFieldValues(
   options: Record<string, unknown>,
   fieldRegistry: RuntimeFieldRegistry,
@@ -162,6 +176,9 @@ export function collectRuntimeCreateFieldValues(
   };
 }
 
+/**
+ * Implements collect runtime update field values for the public runtime surface of this module.
+ */
 export function collectRuntimeUpdateFieldValues(
   options: Record<string, unknown>,
   fieldRegistry: RuntimeFieldRegistry,

@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/comments
+ *
+ * Implements the pm comments command surface and its agent-facing runtime behavior.
+ */
 import { readFile } from "node:fs/promises";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -6,6 +11,9 @@ import { createStdinTokenResolver } from "../../core/item/parse.js";
 import type { Comment } from "../../types/index.js";
 import { parseAnnotationTextInput, runAnnotationCommand } from "./annotation-command.js";
 
+/**
+ * Documents the comments command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface CommentsCommandOptions {
   add?: string;
   stdin?: boolean;
@@ -20,6 +28,9 @@ export interface CommentsCommandOptions {
   allowAuditComment?: boolean;
 }
 
+/**
+ * Documents the comments result payload exchanged by command, SDK, and package integrations.
+ */
 export interface CommentsResult {
   id: string;
   comments: Comment[];
@@ -123,6 +134,9 @@ async function resolveCommentInput(
   return { mode, value: textSource.value, emptyFlag: textSource.emptyFlag };
 }
 
+/**
+ * Implements run comments for the public runtime surface of this module.
+ */
 export async function runComments(id: string, options: CommentsCommandOptions, global: GlobalOptions): Promise<CommentsResult> {
   const stdinResolver = createStdinTokenResolver();
   const commentInput = await resolveCommentInput(options, stdinResolver);

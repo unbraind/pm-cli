@@ -1,3 +1,8 @@
+/**
+ * @module core/item/item-format
+ *
+ * Defines item parsing, formatting, and lifecycle helpers for Item Format.
+ */
 import { encode as encodeToon } from "@toon-format/toon";
 import type {
   CalendarEvent,
@@ -79,6 +84,9 @@ interface RuntimeSchemaValidationContext {
   onWarning?: (warning: string) => void;
 }
 
+/**
+ * Documents the item document format options payload exchanged by command, SDK, and package integrations.
+ */
 export interface ItemDocumentFormatOptions {
   format?: ItemFormat;
   schema?: RuntimeSchemaSettings;
@@ -971,6 +979,9 @@ function normalizeSeverityValue(value: ItemMetadata["severity"] | undefined): It
   return undefined;
 }
 
+/**
+ * Implements normalize front matter for the public runtime surface of this module.
+ */
 export function normalizeFrontMatter(
   frontMatter: ItemMetadata,
   options: Pick<ItemDocumentFormatOptions, "schema" | "extensionFieldNames" | "onWarning"> = {},
@@ -1136,6 +1147,9 @@ function findJsonObjectEnd(content: string): number {
   return -1;
 }
 
+/**
+ * Implements split front matter for the public runtime surface of this module.
+ */
 export function splitFrontMatter(content: string): { frontMatter: string; body: string } {
   if (!content.startsWith("{")) {
     return { frontMatter: "", body: content };
@@ -1273,6 +1287,9 @@ function serializeToonItemDocument(
   return `${encodeToon({ ...orderedFrontMatter, body: normalizedBody })}\n`;
 }
 
+/**
+ * Implements parse item document for the public runtime surface of this module.
+ */
 export function parseItemDocument(content: string, options: ItemDocumentFormatOptions = {}): ItemDocument {
   const conflictMarker = findFirstMergeConflictMarker(content);
   if (conflictMarker) {
@@ -1295,11 +1312,17 @@ export function parseItemDocument(content: string, options: ItemDocumentFormatOp
     : parseJsonMarkdownItemDocument(content, runtimeContext, options);
 }
 
+/**
+ * Implements serialize item document for the public runtime surface of this module.
+ */
 export function serializeItemDocument(document: ItemDocument, options: ItemDocumentFormatOptions = {}): string {
   const format = options.format ?? "toon";
   return format === "toon" ? serializeToonItemDocument(document, options) : serializeJsonMarkdownItemDocument(document, options);
 }
 
+/**
+ * Implements canonical document for the public runtime surface of this module.
+ */
 export function canonicalDocument(document: ItemDocument, options: Pick<ItemDocumentFormatOptions, "schema" | "extensionFieldNames" | "onWarning"> = {}): ItemDocument {
   return {
     metadata: normalizeFrontMatter(document.metadata, options),

@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/repeatable-metadata-parsers
+ *
+ * Implements the pm repeatable metadata parsers command surface and its agent-facing runtime behavior.
+ */
 import { assertNoUnknownCsvKeys, parseCsvKv } from "../../core/item/parse.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -53,6 +58,9 @@ function isProvided(value: string | undefined, guard: EmptyValueGuard): boolean 
   return guard === "defined" ? value !== undefined : Boolean(value);
 }
 
+/**
+ * Implements parse reminder entries for the public runtime surface of this module.
+ */
 export function parseReminderEntries(raw: string[], nowValue: Date, options: ParseReminderEntriesOptions): Reminder[] {
   return raw.map((entry) => {
     const kv = parseCsvKv(entry, "--reminder");
@@ -73,6 +81,9 @@ export function parseReminderEntries(raw: string[], nowValue: Date, options: Par
   });
 }
 
+/**
+ * Implements parse event entries for the public runtime surface of this module.
+ */
 export function parseEventEntries(raw: string[], nowValue: Date, options: ParseEventEntriesOptions): CalendarEvent[] {
   return raw.map((entry) => {
     const kv = parseCsvKv(entry, "--event");
@@ -127,6 +138,9 @@ export function parseEventEntries(raw: string[], nowValue: Date, options: ParseE
   });
 }
 
+/**
+ * Implements parse type option entries for the public runtime surface of this module.
+ */
 export function parseTypeOptionEntries(raw: string[]): Record<string, string> {
   const values: Record<string, string> = {};
   for (const entry of raw) {

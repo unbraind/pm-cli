@@ -1,3 +1,8 @@
+/**
+ * @module core/schema/fields-file
+ *
+ * Resolves configurable schema, fields, statuses, and workflows for Fields File.
+ */
 import {
   RUNTIME_FIELD_COMMAND_VALUES,
   RUNTIME_FIELD_TYPE_VALUES,
@@ -68,6 +73,9 @@ export interface FieldsFile {
   fields: RuntimeFieldDefinition[];
 }
 
+/**
+ * Documents the raw add field input payload exchanged by command, SDK, and package integrations.
+ */
 export interface RawAddFieldInput {
   key: string | undefined;
   type?: string;
@@ -81,6 +89,9 @@ export interface RawAddFieldInput {
   requiredTypes?: string[];
 }
 
+/**
+ * Documents the normalized add field input payload exchanged by command, SDK, and package integrations.
+ */
 export interface NormalizedAddFieldInput {
   key: string;
   type: RuntimeFieldType;
@@ -94,6 +105,9 @@ export interface NormalizedAddFieldInput {
   requiredTypes: string[];
 }
 
+/**
+ * Documents the upsert field result payload exchanged by command, SDK, and package integrations.
+ */
 export interface UpsertFieldResult {
   file: FieldsFile;
   /** The definition as stored after the upsert. */
@@ -102,6 +116,9 @@ export interface UpsertFieldResult {
   replaced: boolean;
 }
 
+/**
+ * Documents the remove field result payload exchanged by command, SDK, and package integrations.
+ */
 export interface RemoveFieldResult {
   file: FieldsFile;
   /** True when a matching definition existed and was dropped from the file. */

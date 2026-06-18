@@ -1,3 +1,8 @@
+/**
+ * @module cli/register-operations
+ *
+ * Provides CLI runtime support for Register Operations.
+ */
 import type { Command } from "commander";
 import {
   normalizeStatusInputWithRegistry,
@@ -59,6 +64,9 @@ function resolveTelemetrySubcommand(namespaceOrSubcommand: string | undefined, s
 
 
 
+/**
+ * Implements register operation commands for the public runtime surface of this module.
+ */
 export function registerOperationCommands(program: Command): void {
   program
     .command("test")

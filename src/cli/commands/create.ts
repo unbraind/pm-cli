@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/create
+ *
+ * Implements the pm create command surface and its agent-facing runtime behavior.
+ */
 import { pathExists, removeFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { appendHistoryEntry, createHistoryEntry } from "../../core/history/history.js";
 import { generateItemId, normalizeItemId } from "../../core/item/id.js";
@@ -110,6 +115,9 @@ import {
   SCOPE_VALUES,
 } from "../../types/index.js";
 
+/**
+ * Documents the create command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface CreateCommandOptions {
   title?: string;
   description?: string;
@@ -184,6 +192,9 @@ export interface CreateCommandOptions {
   [key: string]: unknown;
 }
 
+/**
+ * Documents the create result payload exchanged by command, SDK, and package integrations.
+ */
 export interface CreateResult {
   item: ItemMetadata;
   changed_fields: string[];
@@ -609,6 +620,9 @@ function looksLikeStructuredEntry(raw: string, keys: readonly string[]): boolean
   return looksLikeGenericKeyValueEntry(raw);
 }
 
+/**
+ * Implements parse log seed for the public runtime surface of this module.
+ */
 export function parseLogSeed(
   optionName: "--comment" | "--note" | "--learning",
   raw: string[] | undefined,
@@ -669,6 +683,9 @@ export function parseLogSeed(
   return { values, explicitEmpty: false };
 }
 
+/**
+ * Implements parse files for the public runtime surface of this module.
+ */
 export function parseFiles(raw: string[] | undefined): { values: LinkedFile[] | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
   assertNoLegacyNoneTokens(raw, "--file", "Use --clear-files to clear linked files.");
@@ -691,6 +708,9 @@ export function parseFiles(raw: string[] | undefined): { values: LinkedFile[] | 
   return { values, explicitEmpty: false };
 }
 
+/**
+ * Implements parse tests for the public runtime surface of this module.
+ */
 export function parseTests(raw: string[] | undefined): { values: LinkedTest[] | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
   assertNoLegacyNoneTokens(raw, "--test", "Use --clear-tests to clear linked tests.");
@@ -732,6 +752,9 @@ export function parseTests(raw: string[] | undefined): { values: LinkedTest[] | 
   return { values, explicitEmpty: false };
 }
 
+/**
+ * Implements parse docs for the public runtime surface of this module.
+ */
 export function parseDocs(raw: string[] | undefined): { values: LinkedDoc[] | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
   assertNoLegacyNoneTokens(raw, "--doc", "Use --clear-docs to clear linked docs.");
@@ -1256,6 +1279,9 @@ function ensureInitHasRun(pmRoot: string): Promise<void> {
   });
 }
 
+/**
+ * Implements run create for the public runtime surface of this module.
+ */
 export async function runCreate(options: CreateCommandOptions, global: GlobalOptions): Promise<CreateResult> {
   let resolvedOptions = normalizeLegacyNoneCreateOptions(await resolveCreateStdinInputs(options));
   const pmRoot = resolvePmRoot(process.cwd(), global.path);

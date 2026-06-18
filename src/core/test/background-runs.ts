@@ -1,3 +1,8 @@
+/**
+ * @module core/test/background-runs
+ *
+ * Runs and records linked-test orchestration for Background Runs.
+ */
 import fs from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
@@ -26,12 +31,24 @@ const DEFAULT_BACKGROUND_RUN_HEARTBEAT_STALE_MS = 30000;
 const DEFAULT_BACKGROUND_RUN_LOG_TAIL_LINES = 100;
 const PROC_STAT_TICKS_PER_SECOND = 100;
 
+/**
+ * Restricts background test run kind values accepted by command, SDK, and storage contracts.
+ */
 export type BackgroundTestRunKind = "test" | "test-all";
 
+/**
+ * Restricts background test run status values accepted by command, SDK, and storage contracts.
+ */
 export type BackgroundTestRunStatus = "queued" | "running" | "passed" | "failed" | "stopped" | "canceled";
 
+/**
+ * Restricts background log stream values accepted by command, SDK, and storage contracts.
+ */
 export type BackgroundLogStream = "stdout" | "stderr" | "both";
 
+/**
+ * Documents the background run progress payload exchanged by command, SDK, and package integrations.
+ */
 export interface BackgroundRunProgress {
   phase: "queued" | "running" | "stopping" | "finished";
   message?: string;
@@ -41,6 +58,9 @@ export interface BackgroundRunProgress {
   heartbeat_at?: string;
 }
 
+/**
+ * Documents the background run resource snapshot payload exchanged by command, SDK, and package integrations.
+ */
 export interface BackgroundRunResourceSnapshot {
   recorded_at: string;
   rss_bytes?: number;
@@ -49,6 +69,9 @@ export interface BackgroundRunResourceSnapshot {
   uptime_seconds?: number;
 }
 
+/**
+ * Documents the background run summary payload exchanged by command, SDK, and package integrations.
+ */
 export interface BackgroundRunSummary {
   items?: number;
   linked_tests?: number;
@@ -58,6 +81,9 @@ export interface BackgroundRunSummary {
   fail_on_skipped_triggered?: boolean;
 }
 
+/**
+ * Documents the background test run record payload exchanged by command, SDK, and package integrations.
+ */
 export interface BackgroundTestRunRecord {
   id: string;
   kind: BackgroundTestRunKind;
@@ -92,6 +118,9 @@ export interface BackgroundTestRunRecord {
   error?: string;
 }
 
+/**
+ * Documents the start background test run options payload exchanged by command, SDK, and package integrations.
+ */
 export interface StartBackgroundTestRunOptions {
   pmRoot: string;
   globalPmRoot: string;
@@ -105,28 +134,43 @@ export interface StartBackgroundTestRunOptions {
   attempt?: number;
 }
 
+/**
+ * Documents the start background test run result payload exchanged by command, SDK, and package integrations.
+ */
 export interface StartBackgroundTestRunResult {
   started: boolean;
   run: BackgroundTestRunRecord;
   duplicate_of?: string;
 }
 
+/**
+ * Documents the spawn background test run worker options payload exchanged by command, SDK, and package integrations.
+ */
 export interface SpawnBackgroundTestRunWorkerOptions {
   pmRoot: string;
   runId: string;
   noExtensions?: boolean;
 }
 
+/**
+ * Documents the stop background test run result payload exchanged by command, SDK, and package integrations.
+ */
 export interface StopBackgroundTestRunResult {
   run: BackgroundTestRunRecord;
   signal_sent: "SIGTERM" | "SIGKILL" | "none";
 }
 
+/**
+ * Documents the list background test run options payload exchanged by command, SDK, and package integrations.
+ */
 export interface ListBackgroundTestRunOptions {
   status?: BackgroundTestRunStatus;
   limit?: number;
 }
 
+/**
+ * Documents the background run health payload exchanged by command, SDK, and package integrations.
+ */
 export interface BackgroundRunHealth {
   state: "healthy" | "stale" | "inactive";
   last_heartbeat_at?: string;
@@ -135,11 +179,17 @@ export interface BackgroundRunHealth {
   child_alive: boolean;
 }
 
+/**
+ * Documents the background run status view payload exchanged by command, SDK, and package integrations.
+ */
 export interface BackgroundRunStatusView {
   run: BackgroundTestRunRecord;
   health: BackgroundRunHealth;
 }
 
+/**
+ * Documents the background run logs result payload exchanged by command, SDK, and package integrations.
+ */
 export interface BackgroundRunLogsResult {
   run: BackgroundTestRunRecord;
   stream: BackgroundLogStream;
@@ -175,6 +225,9 @@ function buildRunId(): string {
   return `tr-${timePart}-${randomPart}`;
 }
 
+/**
+ * Implements build background test run fingerprint for the public runtime surface of this module.
+ */
 export function buildBackgroundTestRunFingerprint(kind: BackgroundTestRunKind, commandArgs: string[], pmRoot: string): string {
   const payload = {
     kind,
@@ -228,6 +281,9 @@ async function writeBackgroundRunRecord(pmRoot: string, record: BackgroundTestRu
   await writeFileAtomic(getTestRunRecordPath(pmRoot, record.id), `${JSON.stringify(next, null, 2)}\n`);
 }
 
+/**
+ * Implements read background test run record for the public runtime surface of this module.
+ */
 export async function readBackgroundTestRunRecord(pmRoot: string, runId: string): Promise<BackgroundTestRunRecord | null> {
   const recordPath = getTestRunRecordPath(pmRoot, runId);
   const raw = await readFileIfExists(recordPath);
@@ -464,6 +520,9 @@ async function refreshRunIfStale(pmRoot: string, record: BackgroundTestRunRecord
   return next;
 }
 
+/**
+ * Implements start background test run for the public runtime surface of this module.
+ */
 export async function startBackgroundTestRun(options: StartBackgroundTestRunOptions): Promise<StartBackgroundTestRunResult> {
   await ensureBackgroundRunStorage(options.pmRoot);
   const normalizedArgs = normalizeCommandArgs(options.commandArgs);
@@ -532,6 +591,9 @@ export async function startBackgroundTestRun(options: StartBackgroundTestRunOpti
   };
 }
 
+/**
+ * Implements spawn background test run worker for the public runtime surface of this module.
+ */
 export async function spawnBackgroundTestRunWorker(options: SpawnBackgroundTestRunWorkerOptions): Promise<BackgroundTestRunRecord> {
   const record = await readBackgroundTestRunRecord(options.pmRoot, options.runId);
   if (!record) {
@@ -582,6 +644,9 @@ async function appendFileOrdered(queue: Promise<void>, filePath: string, text: s
   await fs.appendFile(filePath, text, "utf8");
 }
 
+/**
+ * Implements run background test run worker for the public runtime surface of this module.
+ */
 export async function runBackgroundTestRunWorker(pmRoot: string, runId: string, noExtensions = false): Promise<BackgroundTestRunRecord> {
   const loaded = await readBackgroundTestRunRecord(pmRoot, runId);
   if (!loaded) {
@@ -778,6 +843,9 @@ export async function runBackgroundTestRunWorker(pmRoot: string, runId: string, 
   return record;
 }
 
+/**
+ * Implements list background test runs for the public runtime surface of this module.
+ */
 export async function listBackgroundTestRuns(
   pmRoot: string,
   options: ListBackgroundTestRunOptions,
@@ -808,6 +876,9 @@ export async function listBackgroundTestRuns(
   return limit === undefined ? sorted : sorted.slice(0, limit);
 }
 
+/**
+ * Implements get background test run status for the public runtime surface of this module.
+ */
 export async function getBackgroundTestRunStatus(pmRoot: string, runId: string): Promise<BackgroundRunStatusView> {
   const loaded = await readBackgroundTestRunRecord(pmRoot, runId);
   if (!loaded) {
@@ -848,6 +919,9 @@ export async function getBackgroundTestRunStatus(pmRoot: string, runId: string):
   };
 }
 
+/**
+ * Implements stop background test run for the public runtime surface of this module.
+ */
 export async function stopBackgroundTestRun(pmRoot: string, runId: string, force = false): Promise<StopBackgroundTestRunResult> {
   const loaded = await readBackgroundTestRunRecord(pmRoot, runId);
   if (!loaded) {
@@ -890,6 +964,9 @@ export async function stopBackgroundTestRun(pmRoot: string, runId: string, force
   };
 }
 
+/**
+ * Implements resume background test run for the public runtime surface of this module.
+ */
 export async function resumeBackgroundTestRun(
   pmRoot: string,
   runId: string,
@@ -932,6 +1009,9 @@ export async function resumeBackgroundTestRun(
   return spawned;
 }
 
+/**
+ * Implements read background test run logs for the public runtime surface of this module.
+ */
 export async function readBackgroundTestRunLogs(
   pmRoot: string,
   runId: string,

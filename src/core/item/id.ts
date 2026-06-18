@@ -1,14 +1,25 @@
+/**
+ * @module core/item/id
+ *
+ * Defines item parsing, formatting, and lifecycle helpers for Id.
+ */
 import crypto from "node:crypto";
 import path from "node:path";
 import { TYPE_TO_FOLDER } from "../shared/constants.js";
 import { pathExists } from "../fs/fs-utils.js";
 
+/**
+ * Implements normalize prefix for the public runtime surface of this module.
+ */
 export function normalizePrefix(input: string | undefined): string {
   const normalized = (input ?? "").trim().toLowerCase();
   if (!normalized) return "pm-";
   return normalized.endsWith("-") ? normalized : `${normalized}-`;
 }
 
+/**
+ * Implements normalize raw item id for the public runtime surface of this module.
+ */
 export function normalizeRawItemId(input: string): string {
   let normalized = input.trim().toLowerCase();
   if (normalized.startsWith("#")) {
@@ -17,6 +28,9 @@ export function normalizeRawItemId(input: string): string {
   return normalized;
 }
 
+/**
+ * Implements normalize item id for the public runtime surface of this module.
+ */
 export function normalizeItemId(input: string, prefix: string): string {
   const canonicalPrefix = normalizePrefix(prefix);
   const normalized = normalizeRawItemId(input);
@@ -47,6 +61,9 @@ async function idExists(pmRoot: string, id: string): Promise<boolean> {
   return false;
 }
 
+/**
+ * Implements generate item id for the public runtime surface of this module.
+ */
 export async function generateItemId(pmRoot: string, prefix: string): Promise<string> {
   let tokenLength = 4;
   let attempts = 0;

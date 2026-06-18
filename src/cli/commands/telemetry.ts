@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/telemetry
+ *
+ * Implements the pm telemetry command surface and its agent-facing runtime behavior.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathExists, readFileIfExists } from "../../core/fs/fs-utils.js";
@@ -15,6 +20,9 @@ const TELEMETRY_RUNTIME_RELATIVE_PATH = path.join("runtime", "telemetry");
 const DEFAULT_STATS_LIMIT = 20;
 
 export const TELEMETRY_SUBCOMMANDS = ["status", "flush", "stats", "clear"] as const;
+/**
+ * Restricts telemetry subcommand values accepted by command, SDK, and storage contracts.
+ */
 export type TelemetrySubcommand = (typeof TELEMETRY_SUBCOMMANDS)[number];
 
 interface TelemetryRuntimeStateRecord {
@@ -60,6 +68,9 @@ interface TelemetryStatusSummary {
   last_failed_flush_error: string | null;
 }
 
+/**
+ * Documents the telemetry command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface TelemetryCommandOptions {
   subcommand?: string;
   limit?: string | number;
@@ -343,6 +354,9 @@ function buildTelemetryStatsBuckets(entries: QueuedTelemetryEventRecord[]): Tele
     .sort((left, right) => right.count - left.count || left.command.localeCompare(right.command));
 }
 
+/**
+ * Implements run telemetry for the public runtime surface of this module.
+ */
 export async function runTelemetry(options: TelemetryCommandOptions, _global: GlobalOptions): Promise<Record<string, unknown>> {
   void _global;
   const subcommand = normalizeTelemetrySubcommand(options.subcommand);

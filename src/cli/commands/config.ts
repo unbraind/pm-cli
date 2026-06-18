@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/config
+ *
+ * Implements the pm config command surface and its agent-facing runtime behavior.
+ */
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { resolveConfigPositionalValue } from "../../core/config/positional-value.js";
 import {
@@ -157,6 +162,9 @@ interface ConfigKeyDescriptor {
   value: ConfigValue;
 }
 
+/**
+ * Documents the config command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface ConfigCommandOptions {
   criterion?: string[];
   format?: string;
@@ -176,6 +184,9 @@ export interface ConfigCommandOptions {
   sectionTests?: string;
 }
 
+/**
+ * Documents the nested setting result value payload exchanged by command, SDK, and package integrations.
+ */
 export interface NestedSettingResultValue {
   key: string;
   path: string;
@@ -183,6 +194,9 @@ export interface NestedSettingResultValue {
   value: string | number | boolean | null;
 }
 
+/**
+ * Documents the config result payload exchanged by command, SDK, and package integrations.
+ */
 export interface ConfigResult {
   scope: ConfigScope;
   key?: ConfigKey | string;
@@ -1070,6 +1084,9 @@ function applyPositionalValue(
   return { ...options, policy: routed.value };
 }
 
+/**
+ * Implements run config for the public runtime surface of this module.
+ */
 export async function runConfig(
   scopeValue: string,
   actionValue: string,

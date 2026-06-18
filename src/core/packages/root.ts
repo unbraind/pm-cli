@@ -1,3 +1,8 @@
+/**
+ * @module core/packages/root
+ *
+ * Discovers and validates pm package manifests for Root.
+ */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,6 +18,9 @@ function packageJsonNamesPmCli(packageJsonPath: string): boolean {
   }
 }
 
+/**
+ * Implements find pm package root from path for the public runtime surface of this module.
+ */
 export function findPmPackageRootFromPath(startPath: string): string | undefined {
   let current = fs.existsSync(startPath) && fs.statSync(startPath).isDirectory()
     ? path.resolve(startPath)
@@ -32,6 +40,9 @@ export function findPmPackageRootFromPath(startPath: string): string | undefined
   }
 }
 
+/**
+ * Implements resolve pm package root from module for the public runtime surface of this module.
+ */
 export function resolvePmPackageRootFromModule(metaUrl: string, fallbackRelativeSegments: string[] = []): string {
   const modulePath = fileURLToPath(metaUrl);
   const discovered = findPmPackageRootFromPath(modulePath);
@@ -63,6 +74,9 @@ export function resolvePmCliVersion(metaUrl: string, fallbackRelativeSegments: s
   }
 }
 
+/**
+ * Implements resolve configured pm package root for the public runtime surface of this module.
+ */
 export function resolveConfiguredPmPackageRoot(
   env: NodeJS.ProcessEnv = process.env,
   envName = "PM_CLI_PACKAGE_ROOT",

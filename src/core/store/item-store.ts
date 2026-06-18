@@ -1,3 +1,8 @@
+/**
+ * @module core/store/item-store
+ *
+ * Reads and writes tracker storage with format-aware helpers for Item Store.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
@@ -25,6 +30,9 @@ import { resolveGovernanceKnobs } from "./settings.js";
 import { nowIso } from "../shared/time.js";
 import type { ItemDocument, ItemFormat, ItemFrontMatter, ItemType, PmSettings, RuntimeSchemaSettings } from "../../types/index.js";
 
+/**
+ * Documents the located item payload exchanged by command, SDK, and package integrations.
+ */
 export interface LocatedItem {
   id: string;
   type: ItemType;
@@ -68,6 +76,9 @@ function resolveItemFormatSearchOrder(preferredFormat?: ItemFormat): ItemFormat[
   return ["toon", "json_markdown"];
 }
 
+/**
+ * Implements locate item for the public runtime surface of this module.
+ */
 export async function locateItem(
   pmRoot: string,
   rawId: string,
@@ -98,6 +109,9 @@ export async function locateItem(
   return null;
 }
 
+/**
+ * Implements read located item for the public runtime surface of this module.
+ */
 export async function readLocatedItem(
   item: LocatedItem,
   options: { schema?: RuntimeSchemaSettings; extensionFieldNames?: readonly string[]; warnings?: string[] } = {},
@@ -116,6 +130,9 @@ export async function readLocatedItem(
   return { raw, document };
 }
 
+/**
+ * Implements list all front matter for the public runtime surface of this module.
+ */
 export async function listAllFrontMatter(
   pmRoot: string,
   preferredFormat?: ItemFormat,
@@ -144,6 +161,9 @@ export async function listAllFrontMatterLight(
   return documents.map((document) => document.metadata);
 }
 
+/**
+ * Implements list all front matter with body for the public runtime surface of this module.
+ */
 export async function listAllFrontMatterWithBody(
   pmRoot: string,
   preferredFormat?: ItemFormat,
@@ -211,6 +231,9 @@ async function buildDidYouMeanSuggestions(
   return scored;
 }
 
+/**
+ * Implements build item not found error for the public runtime surface of this module.
+ */
 export async function buildItemNotFoundError(
   pmRoot: string,
   badId: string,
@@ -333,6 +356,9 @@ async function prepareLockedItem(params: {
   }
 }
 
+/**
+ * Implements mutate item for the public runtime surface of this module.
+ */
 export async function mutateItem(params: {
   pmRoot: string;
   settings: PmSettings;
@@ -530,6 +556,9 @@ export const itemStoreTestOnly = {
   isErrno,
 };
 
+/**
+ * Implements delete item for the public runtime surface of this module.
+ */
 export async function deleteItem(params: {
   pmRoot: string;
   settings: PmSettings;

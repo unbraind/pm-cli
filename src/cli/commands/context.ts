@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/context
+ *
+ * Implements the pm context command surface and its agent-facing runtime behavior.
+ */
 import { SETTINGS_DEFAULTS, EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -25,12 +30,18 @@ import { runActivity, type CompactActivityEntry } from "./activity.js";
 // ---------------------------------------------------------------------------
 
 export const CONTEXT_OUTPUT_VALUES = ["markdown", "toon", "json"] as const;
+/**
+ * Restricts context output format values accepted by command, SDK, and storage contracts.
+ */
 export type ContextOutputFormat = (typeof CONTEXT_OUTPUT_VALUES)[number];
 
 // ---------------------------------------------------------------------------
 // Options
 // ---------------------------------------------------------------------------
 
+/**
+ * Documents the context options payload exchanged by command, SDK, and package integrations.
+ */
 export interface ContextOptions {
   date?: string;
   from?: string;
@@ -57,6 +68,9 @@ export interface ContextOptions {
 // Focus item (unchanged from original)
 // ---------------------------------------------------------------------------
 
+/**
+ * Documents the context focus item payload exchanged by command, SDK, and package integrations.
+ */
 export interface ContextFocusItem {
   id: string;
   title: string;
@@ -78,6 +92,9 @@ export interface ContextFocusItem {
 // Section data types
 // ---------------------------------------------------------------------------
 
+/**
+ * Documents the hierarchy child payload exchanged by command, SDK, and package integrations.
+ */
 export interface HierarchyChild {
   id: string;
   title: string;
@@ -87,6 +104,9 @@ export interface HierarchyChild {
   children_closed: number;
 }
 
+/**
+ * Documents the hierarchy node payload exchanged by command, SDK, and package integrations.
+ */
 export interface HierarchyNode {
   id: string;
   title: string;
@@ -100,6 +120,9 @@ export interface HierarchyNode {
   children: HierarchyChild[];
 }
 
+/**
+ * Documents the progress entry payload exchanged by command, SDK, and package integrations.
+ */
 export interface ProgressEntry {
   id: string;
   title: string;
@@ -112,6 +135,9 @@ export interface ProgressEntry {
   completion_pct: number;
 }
 
+/**
+ * Documents the blocker entry payload exchanged by command, SDK, and package integrations.
+ */
 export interface BlockerEntry {
   id: string;
   title: string;
@@ -122,12 +148,18 @@ export interface BlockerEntry {
   unblock_note: string | null;
 }
 
+/**
+ * Documents the hot file payload exchanged by command, SDK, and package integrations.
+ */
 export interface HotFile {
   path: string;
   references: number;
   items: string[];
 }
 
+/**
+ * Documents the workload entry payload exchanged by command, SDK, and package integrations.
+ */
 export interface WorkloadEntry {
   assignee: string | null;
   active: number;
@@ -135,6 +167,9 @@ export interface WorkloadEntry {
   items: string[];
 }
 
+/**
+ * Documents the stale entry payload exchanged by command, SDK, and package integrations.
+ */
 export interface StaleEntry {
   id: string;
   title: string;
@@ -143,10 +178,16 @@ export interface StaleEntry {
   stale_days: number;
 }
 
+/**
+ * Documents the recent context item payload exchanged by command, SDK, and package integrations.
+ */
 export interface RecentContextItem extends ContextFocusItem {
   created_at?: string;
 }
 
+/**
+ * Documents the test health summary payload exchanged by command, SDK, and package integrations.
+ */
 export interface TestHealthSummary {
   items_with_tests: number;
   items_with_recent_runs: number;
@@ -188,6 +229,9 @@ interface ContextSummary {
 // Result
 // ---------------------------------------------------------------------------
 
+/**
+ * Documents the context result payload exchanged by command, SDK, and package integrations.
+ */
 export interface ContextResult {
   output_default: "toon";
   now: string;
@@ -268,6 +312,9 @@ function parseOutputFormat(raw: string | undefined): ContextOutputFormat | undef
   return normalized as ContextOutputFormat;
 }
 
+/**
+ * Implements resolve context output format for the public runtime surface of this module.
+ */
 export function resolveContextOutputFormat(options: ContextOptions, global: GlobalOptions): ContextOutputFormat {
   const commandFormat = parseOutputFormat(options.format);
   if (global.json && commandFormat && commandFormat !== "json") {
@@ -285,6 +332,9 @@ function parseContextLimit(raw: string | undefined, depth: ContextDepth): number
   return parseIntegerLimit(raw, "--limit") ?? (depth === "full" ? Number.MAX_SAFE_INTEGER : DEFAULT_CONTEXT_LIMIT);
 }
 
+/**
+ * Implements parse context depth for the public runtime surface of this module.
+ */
 export function parseContextDepth(raw: string | undefined, settings: ContextSettings): ContextDepth {
   if (!raw) return settings.default_depth;
   const normalized = raw.trim().toLowerCase();
@@ -294,6 +344,9 @@ export function parseContextDepth(raw: string | undefined, settings: ContextSett
   return normalized as ContextDepth;
 }
 
+/**
+ * Implements parse context sections for the public runtime surface of this module.
+ */
 export function parseContextSections(
   raw: string[] | undefined,
   depth: ContextDepth,
@@ -990,6 +1043,9 @@ function formatAgendaLine(event: CalendarRow): string {
   return base;
 }
 
+/**
+ * Implements render context markdown for the public runtime surface of this module.
+ */
 export function renderContextMarkdown(result: ContextResult): string {
   const lines: string[] = [];
   lines.push("# pm context");
@@ -1167,6 +1223,9 @@ export function renderContextMarkdown(result: ContextResult): string {
 // Main runner
 // ---------------------------------------------------------------------------
 
+/**
+ * Implements run context for the public runtime surface of this module.
+ */
 export async function runContext(options: ContextOptions, global: GlobalOptions): Promise<ContextResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settings = await readSettings(pmRoot);

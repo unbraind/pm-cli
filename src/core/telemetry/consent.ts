@@ -1,3 +1,8 @@
+/**
+ * @module core/telemetry/consent
+ *
+ * Captures consent-aware telemetry and observability events for Consent.
+ */
 import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import type { GlobalOptions } from "../shared/command-types.js";
@@ -78,6 +83,9 @@ async function promptTelemetryConsent(currentDefault: boolean): Promise<boolean>
   }
 }
 
+/**
+ * Implements maybe run first use telemetry prompt for the public runtime surface of this module.
+ */
 export async function maybeRunFirstUseTelemetryPrompt(commandPath: string, globalOptions: GlobalOptions): Promise<void> {
   if (shouldSkipTelemetryPrompt(commandPath, globalOptions)) {
     return;

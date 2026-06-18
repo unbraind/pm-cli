@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/linked-artifacts
+ *
+ * Implements the pm linked artifacts command surface and its agent-facing runtime behavior.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import fg from "fast-glob";
@@ -20,6 +25,9 @@ import { SCOPE_VALUES } from "../../types/index.js";
 import { resolveAuthor } from "../../core/shared/author.js";
 import type { LinkScope } from "../../types/index.js";
 
+/**
+ * Restricts linked artifact values accepted by command, SDK, and storage contracts.
+ */
 export type LinkedArtifact = {
   path: string;
   scope: LinkScope;
@@ -38,6 +46,9 @@ export const LINKED_ARTIFACT_MIGRATE_KEYS = ["from", "to"] as const;
  */
 const LINKED_ARTIFACT_REMOVE_UNSUPPORTED_KEYS: ReadonlySet<string> = new Set(["note", "scope"]);
 
+/**
+ * Documents the linked artifact command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface LinkedArtifactCommandOptions {
   add?: string[];
   addGlob?: string[];
@@ -59,17 +70,26 @@ export interface LinkedArtifactCommandOptions {
   force?: boolean;
 }
 
+/**
+ * Documents the path migration payload exchanged by command, SDK, and package integrations.
+ */
 export interface PathMigration {
   from: string;
   to: string;
 }
 
+/**
+ * Documents the add glob entry payload exchanged by command, SDK, and package integrations.
+ */
 export interface AddGlobEntry {
   pattern: string;
   scope: LinkScope;
   note?: string;
 }
 
+/**
+ * Documents the linked path validation payload exchanged by command, SDK, and package integrations.
+ */
 export interface LinkedPathValidation {
   checked: number;
   existing_files: string[];
@@ -77,12 +97,18 @@ export interface LinkedPathValidation {
   non_file_paths: string[];
 }
 
+/**
+ * Documents the linked path audit entry payload exchanged by command, SDK, and package integrations.
+ */
 export interface LinkedPathAuditEntry {
   path: string;
   linked_by_count: number;
   linked_item_ids: string[];
 }
 
+/**
+ * Documents the linked artifact result payload exchanged by command, SDK, and package integrations.
+ */
 export interface LinkedArtifactResult {
   id: string;
   changed: boolean;
@@ -112,6 +138,9 @@ export interface LinkedArtifactKindConfig {
   supportsAppendStable: boolean;
 }
 
+/**
+ * Implements ensure scope for the public runtime surface of this module.
+ */
 export function ensureScope(raw: string | undefined): LinkScope {
   const value = (raw ?? "project") as LinkScope;
   if (!SCOPE_VALUES.includes(value)) {
@@ -123,6 +152,9 @@ export function ensureScope(raw: string | undefined): LinkScope {
   return value;
 }
 
+/**
+ * Implements looks like structured path entry for the public runtime surface of this module.
+ */
 export function looksLikeStructuredPathEntry(raw: string): boolean {
   if (raw.startsWith("```") || raw.includes("\n")) {
     return true;
@@ -135,6 +167,9 @@ export function looksLikeStructuredPathEntry(raw: string): boolean {
   return looksLikeGenericKeyValueEntry(raw);
 }
 
+/**
+ * Implements parse add entries for the public runtime surface of this module.
+ */
 export function parseAddEntries(raw: string[] | undefined, bareNoun: "file" | "doc"): LinkedArtifact[] {
   if (!raw) return [];
   return raw.map((entry) => {
@@ -152,6 +187,9 @@ export function parseAddEntries(raw: string[] | undefined, bareNoun: "file" | "d
   });
 }
 
+/**
+ * Implements parse add glob entries for the public runtime surface of this module.
+ */
 export function parseAddGlobEntries(raw: string[] | undefined): AddGlobEntry[] {
   if (!raw) return [];
   return raw.map((entry) => {
@@ -179,6 +217,9 @@ export function parseAddGlobEntries(raw: string[] | undefined): AddGlobEntry[] {
   });
 }
 
+/**
+ * Implements parse remove entries for the public runtime surface of this module.
+ */
 export function parseRemoveEntries(raw: string[] | undefined): string[] {
   if (!raw) return [];
   return raw.map((entry) => {
@@ -213,6 +254,9 @@ export function parseRemoveEntries(raw: string[] | undefined): string[] {
   });
 }
 
+/**
+ * Implements parse migrate entries for the public runtime surface of this module.
+ */
 export function parseMigrateEntries(raw: string[] | undefined): PathMigration[] {
   if (!raw) return [];
   return raw.map((entry) => {
@@ -227,6 +271,9 @@ export function parseMigrateEntries(raw: string[] | undefined): PathMigration[] 
   });
 }
 
+/**
+ * Implements apply path migrations for the public runtime surface of this module.
+ */
 export function applyPathMigrations(artifactPath: string, migrations: PathMigration[]): string {
   let next = artifactPath;
   for (const migration of migrations) {
@@ -237,10 +284,16 @@ export function applyPathMigrations(artifactPath: string, migrations: PathMigrat
   return next;
 }
 
+/**
+ * Implements normalize linked path for the public runtime surface of this module.
+ */
 export function normalizeLinkedPath(value: string): string {
   return value.split(path.sep).join("/");
 }
 
+/**
+ * Implements expand add glob entries for the public runtime surface of this module.
+ */
 export async function expandAddGlobEntries(entries: AddGlobEntry[]): Promise<LinkedArtifact[]> {
   const expanded: LinkedArtifact[] = [];
   for (const entry of entries) {
@@ -298,10 +351,16 @@ export function applyStandaloneNote(
   return adds.map((entry) => (entry.note === undefined ? { ...entry, note: trimmed } : entry));
 }
 
+/**
+ * Implements artifact key for the public runtime surface of this module.
+ */
 export function artifactKey(value: Pick<LinkedArtifact, "path" | "scope">): string {
   return `${value.path}::${value.scope}`;
 }
 
+/**
+ * Implements sort linked artifacts for the public runtime surface of this module.
+ */
 export function sortLinkedArtifacts(artifacts: LinkedArtifact[]): LinkedArtifact[] {
   return [...artifacts].sort((left, right) => {
     const byPath = left.path.localeCompare(right.path);
@@ -310,6 +369,9 @@ export function sortLinkedArtifacts(artifacts: LinkedArtifact[]): LinkedArtifact
   });
 }
 
+/**
+ * Implements dedupe linked artifacts for the public runtime surface of this module.
+ */
 export function dedupeLinkedArtifacts(artifacts: LinkedArtifact[]): LinkedArtifact[] {
   return [...new Map(artifacts.map((entry) => [artifactKey(entry), entry])).values()].map((entry) => ({
     ...entry,
@@ -317,6 +379,9 @@ export function dedupeLinkedArtifacts(artifacts: LinkedArtifact[]): LinkedArtifa
   }));
 }
 
+/**
+ * Implements validate linked paths for the public runtime surface of this module.
+ */
 export async function validateLinkedPaths(paths: string[]): Promise<LinkedPathValidation> {
   const uniquePaths = [...new Set(paths)].sort((left, right) => left.localeCompare(right));
   const existingFiles: string[] = [];
@@ -347,6 +412,9 @@ export async function validateLinkedPaths(paths: string[]): Promise<LinkedPathVa
   };
 }
 
+/**
+ * Implements build linked path audit for the public runtime surface of this module.
+ */
 export function buildLinkedPathAudit(
   paths: string[],
   allItems: Array<{ id: string; artifacts?: LinkedArtifact[] }>,

@@ -1,3 +1,8 @@
+/**
+ * @module core/history/drift-scan
+ *
+ * Implements append-only history and replay behavior for Drift Scan.
+ */
 import fs from "fs/promises";
 import { createHash } from "node:crypto";
 import path from "node:path";
@@ -7,6 +12,9 @@ import { hashDocument } from "./history.js";
 import { verifyHistoryChain } from "./replay.js";
 import type { HistoryEntry, ItemMetadata } from "../../types/index.js";
 
+/**
+ * Documents the drift scan result payload exchanged by command, SDK, and package integrations.
+ */
 export interface DriftScanResult {
   missingStreams: string[];
   unreadableStreams: string[];

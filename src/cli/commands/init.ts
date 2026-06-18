@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/init
+ *
+ * Implements the pm init command surface and its agent-facing runtime behavior.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import readline from "node:readline/promises";
@@ -37,6 +42,9 @@ import {
   type InitAgentGuidanceSummary,
 } from "./init-agent-guidance.js";
 
+/**
+ * Documents the init installed packages summary payload exchanged by command, SDK, and package integrations.
+ */
 export interface InitInstalledPackagesSummary {
   installed_all: boolean;
   installed_count: number;
@@ -46,8 +54,14 @@ export interface InitInstalledPackagesSummary {
   }>;
 }
 
+/**
+ * Restricts init type preset name values accepted by command, SDK, and storage contracts.
+ */
 export type InitTypePresetName = TypePresetName;
 
+/**
+ * Documents the init registered type preset summary payload exchanged by command, SDK, and package integrations.
+ */
 export interface InitRegisteredTypePresetSummary {
   name: InitTypePresetName;
   registered: string[];
@@ -55,6 +69,9 @@ export interface InitRegisteredTypePresetSummary {
   file: string;
 }
 
+/**
+ * Documents the init result payload exchanged by command, SDK, and package integrations.
+ */
 export interface InitResult {
   ok: boolean;
   path: string;
@@ -69,6 +86,9 @@ export interface InitResult {
   agent_guidance: InitAgentGuidanceSummary;
 }
 
+/**
+ * Documents the init command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface InitCommandOptions {
   preset?: string;
   defaults?: boolean;
@@ -108,6 +128,9 @@ export interface InitConciseResult {
   hint: string;
 }
 
+/**
+ * Implements summarize init result for the public runtime surface of this module.
+ */
 export function summarizeInitResult(result: InitResult): InitConciseResult {
   return {
     ok: result.ok,
@@ -434,6 +457,9 @@ async function runInitWizard(initialPrefix: string, telemetryDefault: boolean): 
   }
 }
 
+/**
+ * Implements run init for the public runtime surface of this module.
+ */
 export async function runInit(
   prefixArg: string | undefined,
   global: GlobalOptions,

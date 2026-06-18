@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/plan
+ *
+ * Implements the pm plan command surface and its agent-facing runtime behavior.
+ */
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { resolveItemTypeRegistry, resolveTypeName } from "../../core/item/type-registry.js";
@@ -52,11 +57,20 @@ export const PLAN_SUBCOMMANDS = [
   "approve",
   "materialize",
 ] as const;
+/**
+ * Restricts plan subcommand values accepted by command, SDK, and storage contracts.
+ */
 export type PlanSubcommand = (typeof PLAN_SUBCOMMANDS)[number];
 
 export const PLAN_SHOW_DEPTH_VALUES = ["brief", "standard", "deep"] as const;
+/**
+ * Restricts plan show depth values accepted by command, SDK, and storage contracts.
+ */
 export type PlanShowDepth = (typeof PLAN_SHOW_DEPTH_VALUES)[number];
 
+/**
+ * Documents the plan command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface PlanCommandOptions {
   title?: string;
   description?: string;
@@ -116,6 +130,9 @@ export interface PlanCommandOptions {
   force?: boolean;
 }
 
+/**
+ * Documents the plan command result payload exchanged by command, SDK, and package integrations.
+ */
 export interface PlanCommandResult {
   action: PlanSubcommand;
   plan: PlanResultPlan;
@@ -132,6 +149,9 @@ export interface PlanCommandResult {
   generated_at: string;
 }
 
+/**
+ * Documents the plan result plan payload exchanged by command, SDK, and package integrations.
+ */
 export interface PlanResultPlan {
   id: string;
   title: string;
@@ -151,6 +171,9 @@ export interface PlanResultPlan {
   linked_items?: { id: string; kind: DependencyKind }[];
 }
 
+/**
+ * Documents the plan step summary payload exchanged by command, SDK, and package integrations.
+ */
 export interface PlanStepSummary {
   total: number;
   pending: number;
@@ -1438,6 +1461,9 @@ async function planMaterialize(
 }
 
 /* c8 ignore stop */
+/**
+ * Documents the plan dispatch input payload exchanged by command, SDK, and package integrations.
+ */
 export interface PlanDispatchInput {
   subcommand: PlanSubcommand;
   id?: string;
@@ -1447,6 +1473,9 @@ export interface PlanDispatchInput {
   global: GlobalOptions;
 }
 
+/**
+ * Implements run plan for the public runtime surface of this module.
+ */
 export async function runPlan(input: PlanDispatchInput): Promise<PlanCommandResult> {
   const ctx = await loadContext(input.global);
   // pm-6mit: --step accumulates ordered step titles on create. For every other

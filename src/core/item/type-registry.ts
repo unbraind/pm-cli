@@ -1,3 +1,8 @@
+/**
+ * @module core/item/type-registry
+ *
+ * Defines item parsing, formatting, and lifecycle helpers for Type Registry.
+ */
 import { TYPE_TO_FOLDER } from "../shared/constants.js";
 import type { ExtensionRegistrationRegistry } from "../extensions/loader.js";
 import type {
@@ -30,6 +35,9 @@ export const DEFAULT_REQUIRED_CREATE_FIELDS = [
 
 export const DEFAULT_REQUIRED_CREATE_REPEATABLES = ["dep", "comment", "note", "learning", "file", "test", "doc"] as const;
 
+/**
+ * Restricts command option policy command values accepted by command, SDK, and storage contracts.
+ */
 export type CommandOptionPolicyCommand = "create" | "update";
 
 const CREATE_COMMAND_OPTION_KEYS = [
@@ -305,6 +313,9 @@ const UPDATE_COMMAND_OPTION_FLAG_LABELS: Record<string, string> = {
   force: "--force",
 };
 
+/**
+ * Documents the command option policy state payload exchanged by command, SDK, and package integrations.
+ */
 export interface CommandOptionPolicyState {
   required: string[];
   hidden: string[];
@@ -312,6 +323,9 @@ export interface CommandOptionPolicyState {
   errors: string[];
 }
 
+/**
+ * Documents the resolved item type definition payload exchanged by command, SDK, and package integrations.
+ */
 export interface ResolvedItemTypeDefinition {
   name: string;
   /** Optional human description carried from the type definition. */
@@ -326,6 +340,9 @@ export interface ResolvedItemTypeDefinition {
   command_option_policies: ItemTypeCommandOptionPolicy[];
 }
 
+/**
+ * Documents the item type registry payload exchanged by command, SDK, and package integrations.
+ */
 export interface ItemTypeRegistry {
   types: string[];
   folders: string[];
@@ -346,6 +363,9 @@ function commandOptionAliases(command: CommandOptionPolicyCommand): Record<strin
   return command === "create" ? CREATE_COMMAND_OPTION_ALIASES : UPDATE_COMMAND_OPTION_ALIASES;
 }
 
+/**
+ * Implements canonicalize command option key for the public runtime surface of this module.
+ */
 export function canonicalizeCommandOptionKey(
   command: CommandOptionPolicyCommand,
   rawOption: string,
@@ -361,11 +381,17 @@ export function canonicalizeCommandOptionKey(
   return commandOptionKeys(command).find((candidate) => candidate.toLowerCase() === normalizedToken);
 }
 
+/**
+ * Implements command option flag label for the public runtime surface of this module.
+ */
 export function commandOptionFlagLabel(command: CommandOptionPolicyCommand, optionKey: string): string {
   const labels = command === "create" ? CREATE_COMMAND_OPTION_FLAG_LABELS : UPDATE_COMMAND_OPTION_FLAG_LABELS;
   return labels[optionKey] ?? `--${optionKey.replace(/([A-Z])/g, "-$1").toLowerCase()}`;
 }
 
+/**
+ * Implements to default folder for the public runtime surface of this module.
+ */
 export function toDefaultFolder(name: string): string {
   const normalized = toSlugToken(name);
   if (normalized.length === 0) {
@@ -553,6 +579,9 @@ function collectExtensionTypeDefinitions(registrations: ExtensionRegistrationReg
   return definitions;
 }
 
+/**
+ * Implements resolve item type registry for the public runtime surface of this module.
+ */
 export function resolveItemTypeRegistry(
   settings: PmSettings,
   extensionRegistrations: ExtensionRegistrationRegistry | null | undefined = null,
@@ -595,6 +624,9 @@ export function resolveItemTypeRegistry(
   };
 }
 
+/**
+ * Implements resolve type name for the public runtime surface of this module.
+ */
 export function resolveTypeName(rawType: string | undefined, registry: ItemTypeRegistry): string | undefined {
   if (rawType === undefined) {
     return undefined;
@@ -602,6 +634,9 @@ export function resolveTypeName(rawType: string | undefined, registry: ItemTypeR
   return registry.alias_to_type[rawType.trim().toLowerCase()];
 }
 
+/**
+ * Implements resolve type definition for the public runtime surface of this module.
+ */
 export function resolveTypeDefinition(
   typeName: string | undefined,
   registry: ItemTypeRegistry,
@@ -613,6 +648,9 @@ export function resolveTypeDefinition(
   return registry.by_type[resolvedName];
 }
 
+/**
+ * Implements resolve command option policy state for the public runtime surface of this module.
+ */
 export function resolveCommandOptionPolicyState(
   typeDefinition: ResolvedItemTypeDefinition,
   command: CommandOptionPolicyCommand,
@@ -684,6 +722,9 @@ export function resolveCommandOptionPolicyState(
   };
 }
 
+/**
+ * Implements validate type options for the public runtime surface of this module.
+ */
 export function validateTypeOptions(
   typeName: string,
   rawTypeOptions: Record<string, string> | undefined,

@@ -23,8 +23,12 @@
  * already-validated PmSettings shape.
  */
 
+/** Supported coercion shapes for nested settings exposed through `pm config`. */
 export type NestedSettingKind = "string" | "boolean" | "integer" | "number" | "ratio";
 
+/**
+ * Documents the nested setting descriptor payload exchanged by command, SDK, and package integrations.
+ */
 export interface NestedSettingDescriptor {
   /** CLI key (snake_case). Kebab-case form is accepted by normalizing `-` → `_`. */
   key: string;
@@ -274,6 +278,9 @@ export interface NestedSettingParseError {
   message: string;
 }
 
+/**
+ * Restricts nested setting parse result values accepted by command, SDK, and storage contracts.
+ */
 export type NestedSettingParseResult =
   | { ok: true; parsed: NestedSettingParsedValue }
   | { ok: false; error: NestedSettingParseError };

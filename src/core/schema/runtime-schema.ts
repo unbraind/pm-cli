@@ -1,3 +1,8 @@
+/**
+ * @module core/schema/runtime-schema
+ *
+ * Resolves configurable schema, fields, statuses, and workflows for Runtime Schema.
+ */
 import path from "node:path";
 import { pathExists, readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
 import { DEFAULT_STATUS_DEFINITIONS, DEFAULT_WORKFLOW_DEFINITION } from "../shared/constants.js";
@@ -38,6 +43,9 @@ export const DEFAULT_RUNTIME_STATUS_DEFINITIONS: ReadonlyArray<RuntimeStatusDefi
 
 const DEFAULT_RUNTIME_FIELD_COMMANDS: RuntimeFieldCommand[] = ["create", "update"];
 
+/**
+ * Documents the runtime status definition resolved payload exchanged by command, SDK, and package integrations.
+ */
 export interface RuntimeStatusDefinitionResolved {
   id: string;
   aliases: string[];
@@ -46,6 +54,9 @@ export interface RuntimeStatusDefinitionResolved {
   order: number;
 }
 
+/**
+ * Documents the runtime field definition resolved payload exchanged by command, SDK, and package integrations.
+ */
 export interface RuntimeFieldDefinitionResolved {
   key: string;
   metadata_key: string;
@@ -61,6 +72,9 @@ export interface RuntimeFieldDefinitionResolved {
   allow_unset: boolean;
 }
 
+/**
+ * Documents the runtime status registry payload exchanged by command, SDK, and package integrations.
+ */
 export interface RuntimeStatusRegistry {
   definitions: RuntimeStatusDefinitionResolved[];
   by_id: Map<string, RuntimeStatusDefinitionResolved>;
@@ -76,6 +90,9 @@ export interface RuntimeStatusRegistry {
   canceled_status: string;
 }
 
+/**
+ * Documents the runtime field registry payload exchanged by command, SDK, and package integrations.
+ */
 export interface RuntimeFieldRegistry {
   definitions: RuntimeFieldDefinitionResolved[];
   by_key: Map<string, RuntimeFieldDefinitionResolved>;
@@ -83,10 +100,16 @@ export interface RuntimeFieldRegistry {
   command_to_fields: Map<RuntimeFieldCommand, RuntimeFieldDefinitionResolved[]>;
 }
 
+/**
+ * Documents the runtime schema file bootstrap result payload exchanged by command, SDK, and package integrations.
+ */
 export interface RuntimeSchemaFileBootstrapResult {
   created_paths: string[];
 }
 
+/**
+ * Documents the loaded runtime schema sections payload exchanged by command, SDK, and package integrations.
+ */
 export interface LoadedRuntimeSchemaSections {
   schema: RuntimeSchemaSettings;
   type_definitions_from_file: ItemTypeDefinition[] | undefined;
@@ -277,6 +300,9 @@ function normalizeRuntimeFieldDefinition(definition: RuntimeFieldDefinition): Ru
   };
 }
 
+/**
+ * Implements normalize runtime schema settings for the public runtime surface of this module.
+ */
 export function normalizeRuntimeSchemaSettings(schema: Partial<RuntimeSchemaSettings> | undefined): RuntimeSchemaSettings {
   const files = {
     ...DEFAULT_RUNTIME_SCHEMA_FILE_PATHS,
@@ -467,6 +493,9 @@ function readTypeWorkflowsFromSchemaFile(parsed: unknown): TypeWorkflowDefinitio
   return undefined;
 }
 
+/**
+ * Implements file path for schema section for the public runtime surface of this module.
+ */
 export function filePathForSchemaSection(pmRoot: string, configuredPath: string | undefined, fallbackPath: string): string {
   const normalized = configuredPath?.trim() || fallbackPath;
   if (path.isAbsolute(normalized)) {
@@ -485,6 +514,9 @@ export function resolveItemTypesFilePath(pmRoot: string, schema: RuntimeSchemaSe
   return filePathForSchemaSection(pmRoot, schema.files.types, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.types);
 }
 
+/**
+ * Implements ensure runtime schema file scaffold for the public runtime surface of this module.
+ */
 export async function ensureRuntimeSchemaFileScaffold(
   pmRoot: string,
   schema: RuntimeSchemaSettings,
@@ -521,6 +553,9 @@ export async function ensureRuntimeSchemaFileScaffold(
   };
 }
 
+/**
+ * Implements load runtime schema from optional files for the public runtime surface of this module.
+ */
 export async function loadRuntimeSchemaFromOptionalFiles(
   pmRoot: string,
   schema: RuntimeSchemaSettings,
@@ -628,6 +663,9 @@ function preferredStatusForRole(
   return definitions[0]?.id;
 }
 
+/**
+ * Implements resolve runtime status registry for the public runtime surface of this module.
+ */
 export function resolveRuntimeStatusRegistry(schema: RuntimeSchemaSettings): RuntimeStatusRegistry {
   const normalizedSchema = normalizeRuntimeSchemaSettings(schema);
   const definitions = normalizedSchema.statuses.map((definition, index) =>
@@ -700,6 +738,9 @@ export function resolveRuntimeStatusRegistry(schema: RuntimeSchemaSettings): Run
   };
 }
 
+/**
+ * Implements normalize status input with registry for the public runtime surface of this module.
+ */
 export function normalizeStatusInputWithRegistry(value: unknown, registry: RuntimeStatusRegistry): string | undefined {
   const normalized = normalizeStatusToken(value);
   if (!normalized) {
@@ -708,6 +749,9 @@ export function normalizeStatusInputWithRegistry(value: unknown, registry: Runti
   return registry.alias_to_id.get(normalized);
 }
 
+/**
+ * Implements resolve runtime field registry for the public runtime surface of this module.
+ */
 export function resolveRuntimeFieldRegistry(schema: RuntimeSchemaSettings): RuntimeFieldRegistry {
   const normalizedSchema = normalizeRuntimeSchemaSettings(schema);
   const dedupedByKey = new Map<string, RuntimeFieldDefinitionResolved>();
@@ -745,10 +789,16 @@ export function resolveRuntimeFieldRegistry(schema: RuntimeSchemaSettings): Runt
   };
 }
 
+/**
+ * Implements runtime field option target for the public runtime surface of this module.
+ */
 export function runtimeFieldOptionTarget(field: RuntimeFieldDefinitionResolved): string {
   return toCamelCase(field.key);
 }
 
+/**
+ * Implements status is terminal for the public runtime surface of this module.
+ */
 export function statusIsTerminal(status: string, registry: RuntimeStatusRegistry): boolean {
   const normalized = normalizeStatusInputWithRegistry(status, registry);
   if (!normalized) {

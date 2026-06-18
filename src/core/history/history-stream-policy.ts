@@ -1,3 +1,8 @@
+/**
+ * @module core/history/history-stream-policy
+ *
+ * Implements append-only history and replay behavior for History Stream Policy.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { runActiveOnWriteHooks } from "../extensions/index.js";
@@ -21,6 +26,9 @@ interface HistoryStreamPolicyManyParams {
   commandLabel: string;
 }
 
+/**
+ * Documents the history stream policy result payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistoryStreamPolicyResult {
   auto_created_ids: string[];
   warnings: string[];
@@ -48,6 +56,9 @@ async function createStream(historyPath: string, commandLabel: string): Promise<
   });
 }
 
+/**
+ * Implements enforce history stream policy for item for the public runtime surface of this module.
+ */
 export async function enforceHistoryStreamPolicyForItem(params: HistoryStreamPolicyParams): Promise<HistoryStreamPolicyResult> {
   return enforceHistoryStreamPolicyForItems({
     pmRoot: params.pmRoot,
@@ -57,6 +68,9 @@ export async function enforceHistoryStreamPolicyForItem(params: HistoryStreamPol
   });
 }
 
+/**
+ * Implements enforce history stream policy for items for the public runtime surface of this module.
+ */
 export async function enforceHistoryStreamPolicyForItems(
   params: HistoryStreamPolicyManyParams,
 ): Promise<HistoryStreamPolicyResult> {

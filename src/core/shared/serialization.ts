@@ -1,3 +1,8 @@
+/**
+ * @module core/shared/serialization
+ *
+ * Provides shared primitives and utilities for Serialization.
+ */
 import crypto from "node:crypto";
 
 type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
@@ -45,10 +50,16 @@ function sortObjectKeys(value: unknown): JsonValue {
   return result;
 }
 
+/**
+ * Implements stable stringify for the public runtime surface of this module.
+ */
 export function stableStringify(value: unknown): string {
   return JSON.stringify(sortObjectKeys(value));
 }
 
+/**
+ * Implements stable value equals for the public runtime surface of this module.
+ */
 export function stableValueEquals(left: unknown, right: unknown): boolean {
   if (Object.is(left, right)) {
     return true;
@@ -134,10 +145,16 @@ export function stableValueEquals(left: unknown, right: unknown): boolean {
   return true;
 }
 
+/**
+ * Implements sha256 hex for the public runtime surface of this module.
+ */
 export function sha256Hex(value: string): string {
   return crypto.createHash("sha256").update(value, "utf8").digest("hex");
 }
 
+/**
+ * Implements order object for the public runtime surface of this module.
+ */
 export function orderObject<T extends Record<string, unknown>>(
   value: T,
   keyOrder: ReadonlyArray<string>,

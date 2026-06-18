@@ -1,4 +1,9 @@
 #!/usr/bin/env node
+/**
+ * @module cli/main
+ *
+ * Provides CLI runtime support for Main.
+ */
 import { Command } from "commander";
 import {
   activateExtensions,
@@ -2304,6 +2309,9 @@ function enforceExplicitRetryForFlagTypos(
   );
 }
 
+/**
+ * Implements run pm cli for the public runtime surface of this module.
+ */
 export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promise<void> {
   const bootstrapInvocation = normalizeBootstrapInvocation(rawArgv);
   const invocationArgv = bootstrapInvocation.argv;

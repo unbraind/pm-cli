@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/close
+ *
+ * Implements the pm close command surface and its agent-facing runtime behavior.
+ */
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { toItemRecord } from "../../core/item/item-record.js";
 import { isTerminalStatus } from "../../core/item/status.js";
@@ -17,6 +22,9 @@ import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter } from "../../types/index.js";
 
+/**
+ * Documents the close command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface CloseCommandOptions {
   author?: string;
   message?: string;
@@ -32,6 +40,9 @@ export interface CloseCommandOptions {
   duplicateOf?: string;
 }
 
+/**
+ * Documents the close result payload exchanged by command, SDK, and package integrations.
+ */
 export interface CloseResult {
   item: Record<string, unknown>;
   changed_fields: string[];
@@ -320,6 +331,9 @@ export const _testOnlyCloseCommand = {
   blockedByIds,
 };
 
+/**
+ * Implements run close for the public runtime surface of this module.
+ */
 export async function runClose(
   id: string,
   closeReasonText: string | undefined,

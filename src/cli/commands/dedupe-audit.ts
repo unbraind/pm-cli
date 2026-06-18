@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/dedupe-audit
+ *
+ * Implements the pm dedupe audit command surface and its agent-facing runtime behavior.
+ */
 import { isTerminalStatus, normalizeStatusInput } from "../../core/item/status.js";
 import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
@@ -14,6 +19,9 @@ import { runList } from "./list.js";
 
 export const DEDUPE_AUDIT_MODES = ["title_exact", "title_fuzzy", "parent_scope"] as const;
 
+/**
+ * Restricts dedupe audit mode values accepted by command, SDK, and storage contracts.
+ */
 export type DedupeAuditMode = (typeof DEDUPE_AUDIT_MODES)[number];
 
 interface DedupeAuditPreparedCandidate {
@@ -29,6 +37,9 @@ interface DedupeAuditPreparedCandidate {
   title_tokens: string[];
 }
 
+/**
+ * Documents the dedupe audit candidate payload exchanged by command, SDK, and package integrations.
+ */
 export interface DedupeAuditCandidate {
   id: string;
   title: string;
@@ -40,6 +51,9 @@ export interface DedupeAuditCandidate {
   updated_at: string;
 }
 
+/**
+ * Documents the dedupe merge suggestion payload exchanged by command, SDK, and package integrations.
+ */
 export interface DedupeMergeSuggestion {
   duplicate_id: string;
   canonical_id: string;
@@ -48,6 +62,9 @@ export interface DedupeMergeSuggestion {
   suggested_command: string;
 }
 
+/**
+ * Documents the dedupe audit cluster payload exchanged by command, SDK, and package integrations.
+ */
 export interface DedupeAuditCluster {
   mode: DedupeAuditMode;
   key: string;
@@ -64,6 +81,9 @@ export interface DedupeAuditCluster {
   };
 }
 
+/**
+ * Documents the dedupe audit options payload exchanged by command, SDK, and package integrations.
+ */
 export interface DedupeAuditOptions {
   mode?: string;
   status?: string;
@@ -81,6 +101,9 @@ export interface DedupeAuditOptions {
   threshold?: string;
 }
 
+/**
+ * Documents the dedupe audit result payload exchanged by command, SDK, and package integrations.
+ */
 export interface DedupeAuditResult {
   mode: DedupeAuditMode;
   clusters: DedupeAuditCluster[];
@@ -364,6 +387,9 @@ function compareClusters(left: DedupeAuditCluster, right: DedupeAuditCluster): n
   return left.canonical.id.localeCompare(right.canonical.id);
 }
 
+/**
+ * Implements run dedupe audit for the public runtime surface of this module.
+ */
 export async function runDedupeAudit(options: DedupeAuditOptions, global: GlobalOptions): Promise<DedupeAuditResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settings = await readSettings(pmRoot);

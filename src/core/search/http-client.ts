@@ -1,7 +1,15 @@
+/**
+ * @module core/search/http-client
+ *
+ * Powers search, embeddings, and semantic retrieval behavior for Http Client.
+ */
 import { toErrorMessage } from "../shared/primitives.js";
 
 export const DEFAULT_SEARCH_HTTP_TIMEOUT_MS = 30_000;
 
+/**
+ * Documents the search http response payload exchanged by command, SDK, and package integrations.
+ */
 export interface SearchHttpResponse {
   ok: boolean;
   status: number;
@@ -10,6 +18,9 @@ export interface SearchHttpResponse {
   text(): Promise<string>;
 }
 
+/**
+ * Documents the search http request init payload exchanged by command, SDK, and package integrations.
+ */
 export interface SearchHttpRequestInit {
   method: "DELETE" | "POST" | "PUT";
   headers: Record<string, string>;
@@ -17,11 +28,17 @@ export interface SearchHttpRequestInit {
   signal: AbortSignal;
 }
 
+/**
+ * Restricts search http fetcher values accepted by command, SDK, and storage contracts.
+ */
 export type SearchHttpFetcher<ResponseType extends SearchHttpResponse = SearchHttpResponse> = (
   url: string,
   init: SearchHttpRequestInit,
 ) => Promise<ResponseType>;
 
+/**
+ * Documents the execute search json request options payload exchanged by command, SDK, and package integrations.
+ */
 export interface ExecuteSearchJsonRequestOptions<ResponseType extends SearchHttpResponse = SearchHttpResponse> {
   endpoint: string;
   method: "DELETE" | "POST" | "PUT";
@@ -33,6 +50,9 @@ export interface ExecuteSearchJsonRequestOptions<ResponseType extends SearchHttp
   responseLabel: string;
 }
 
+/**
+ * Implements normalize search http timeout ms for the public runtime surface of this module.
+ */
 export function normalizeSearchHttpTimeoutMs(
   timeoutMs: number | undefined,
   requestLabel: string,
@@ -45,6 +65,9 @@ export function normalizeSearchHttpTimeoutMs(
   return Math.floor(resolved);
 }
 
+/**
+ * Implements resolve search http fetcher for the public runtime surface of this module.
+ */
 export function resolveSearchHttpFetcher<ResponseType extends SearchHttpResponse>(
   fetcher: SearchHttpFetcher<ResponseType> | undefined,
   requestLabel: string,
@@ -58,6 +81,9 @@ export function resolveSearchHttpFetcher<ResponseType extends SearchHttpResponse
   throw new Error(`${requestLabel} execution requires a fetch implementation`);
 }
 
+/**
+ * Implements read failed search http response body for the public runtime surface of this module.
+ */
 export async function readFailedSearchHttpResponseBody(response: SearchHttpResponse): Promise<string> {
   try {
     return (await response.text()).replaceAll(/\s+/g, " ").trim();
@@ -66,6 +92,9 @@ export async function readFailedSearchHttpResponseBody(response: SearchHttpRespo
   }
 }
 
+/**
+ * Implements execute search json request for the public runtime surface of this module.
+ */
 export async function executeSearchJsonRequest<ResponseType extends SearchHttpResponse>(
   options: ExecuteSearchJsonRequestOptions<ResponseType>,
 ): Promise<unknown> {

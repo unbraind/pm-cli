@@ -1,3 +1,11 @@
+/**
+ * @module core/shared/errors
+ *
+ * Provides shared primitives and utilities for Errors.
+ */
+/**
+ * Carries structured recovery guidance attached to expected pm CLI errors.
+ */
 export interface PmCliErrorRecoveryPayload {
   recovery_mode?: "compact";
   attempted_command?: string;
@@ -15,6 +23,9 @@ export interface PmCliErrorRecoveryPayload {
   next_best_command?: string;
 }
 
+/**
+ * Documents the pm cli error context payload exchanged by command, SDK, and package integrations.
+ */
 export interface PmCliErrorContext {
   code?: string;
   type?: string;
@@ -25,6 +36,9 @@ export interface PmCliErrorContext {
   recovery?: PmCliErrorRecoveryPayload;
 }
 
+/**
+ * Implements the exported pm cli error runtime abstraction for core/shared/errors.ts.
+ */
 export class PmCliError extends Error {
   public readonly exitCode: number;
   public readonly context: PmCliErrorContext;

@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/comments-audit
+ *
+ * Implements the pm comments audit command surface and its agent-facing runtime behavior.
+ */
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -9,6 +14,9 @@ import { readSettings } from "../../core/store/settings.js";
 import { type Comment, type ItemStatus } from "../../types/index.js";
 import { runList } from "./list.js";
 
+/**
+ * Documents the comments audit options payload exchanged by command, SDK, and package integrations.
+ */
 export interface CommentsAuditOptions {
   status?: string;
   type?: string;
@@ -25,6 +33,9 @@ export interface CommentsAuditOptions {
   fullHistory?: boolean;
 }
 
+/**
+ * Documents the comments audit entry payload exchanged by command, SDK, and package integrations.
+ */
 export interface CommentsAuditEntry {
   id: string;
   title: string;
@@ -36,6 +47,9 @@ export interface CommentsAuditEntry {
   comments: Comment[];
 }
 
+/**
+ * Documents the comments audit result payload exchanged by command, SDK, and package integrations.
+ */
 export interface CommentsAuditResult {
   items: CommentsAuditEntry[];
   count: number;
@@ -63,6 +77,9 @@ export interface CommentsAuditResult {
   warnings?: string[];
 }
 
+/**
+ * Documents the comments audit summary payload exchanged by command, SDK, and package integrations.
+ */
 export interface CommentsAuditSummary {
   totals: {
     items_scanned: number;
@@ -78,6 +95,9 @@ export interface CommentsAuditSummary {
   by_type: CommentsAuditTypeSummary[];
 }
 
+/**
+ * Documents the comments audit type summary payload exchanged by command, SDK, and package integrations.
+ */
 export interface CommentsAuditTypeSummary {
   type: string;
   items_scanned: number;
@@ -89,6 +109,9 @@ export interface CommentsAuditTypeSummary {
   items_with_comments_percent: number;
 }
 
+/**
+ * Documents the comments audit history row payload exchanged by command, SDK, and package integrations.
+ */
 export interface CommentsAuditHistoryRow {
   item_id: string;
   item_title: string;
@@ -235,6 +258,9 @@ function buildCommentsAuditSummary(items: CommentsAuditEntry[]): CommentsAuditSu
   };
 }
 
+/**
+ * Implements run comments audit for the public runtime surface of this module.
+ */
 export async function runCommentsAudit(options: CommentsAuditOptions, global: GlobalOptions): Promise<CommentsAuditResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settings = await readSettings(pmRoot);

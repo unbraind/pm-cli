@@ -954,9 +954,13 @@ describe("runTestAll", () => {
         expect(result.skipped).toBe(0);
 
         const stderrOutput = stderrWriteSpy.mock.calls.map((entry) => String(entry[0])).join("");
+        expect(stderrOutput).toContain("[pm test-all] selection items=1 linked_tests=1 status=open");
+        expect(stderrOutput).toMatch(/\[pm test-all\] item 1\/1 start id=pm-[a-z0-9]+ linked_tests=1/);
         expect(stderrOutput).toContain("[pm test] linked-test 1/1 start");
         expect(stderrOutput).toContain("[pm test] linked-test 1/1 running");
         expect(stderrOutput).toContain("[pm test] linked-test 1/1 end status=passed");
+        expect(stderrOutput).toMatch(/\[pm test-all\] item 1\/1 end id=pm-[a-z0-9]+ status=passed passed=1 failed=0 skipped=0/);
+        expect(stderrOutput).toContain("[pm test-all] end status=passed items=1 linked_tests=1 passed=1 failed=0 skipped=0");
       } finally {
         if (previousHeartbeatInterval === undefined) {
           delete process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;

@@ -1,4 +1,9 @@
 #!/usr/bin/env node
+/**
+ * @module mcp/server
+ *
+ * Runs the MCP server adapter that exposes pm actions and contracts to external agents.
+ */
 import { realpathSync } from "node:fs";
 import readline from "node:readline";
 import { fileURLToPath } from "node:url";
@@ -1138,6 +1143,9 @@ function errorContent(error: unknown): Record<string, unknown> {
   };
 }
 
+/**
+ * Implements handle request for the public runtime surface of this module.
+ */
 export async function handleRequest(request: JsonRpcRequest): Promise<Record<string, unknown> | undefined> {
   if (!request.id && request.method?.startsWith("notifications/")) {
     return undefined;
@@ -1204,6 +1212,9 @@ function writeError(id: JsonRpcRequest["id"], error: unknown): void {
 // pm-3puw: parse one JSON-RPC line, dispatch it, and write the response. Kept
 // as a standalone async unit so the stdio loop can enqueue it onto a serial
 // queue (process lines in arrival order) and tests can drive it directly.
+/**
+ * Implements process rpc line for the public runtime surface of this module.
+ */
 export async function processRpcLine(line: string): Promise<void> {
   if (line.trim().length === 0) {
     return;
@@ -1238,6 +1249,9 @@ export async function processRpcLine(line: string): Promise<void> {
   }
 }
 
+/**
+ * Implements start mcp server for the public runtime surface of this module.
+ */
 export function startMcpServer(): void {
   const rl = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
   // pm-3puw: serialize line handling so pipelined requests are processed in
@@ -1254,6 +1268,9 @@ export function startMcpServer(): void {
 // so argv[1] must be realpath-resolved before comparing against this module's
 // path — a plain equality check made the published `pm-mcp` bin exit 0 without
 // ever starting the server (pm-qtbc).
+/**
+ * Implements check whether invoked as mcp main module for the public runtime surface of this module.
+ */
 export function isInvokedAsMcpMainModule(argvPath: string | undefined, moduleUrl: string): boolean {
   if (!argvPath) {
     return false;

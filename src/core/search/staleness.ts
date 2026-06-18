@@ -13,6 +13,7 @@
  * (query-time staleness warning) without re-importing each other.
  */
 
+/** Minimal item shape required to compare vectorization freshness. */
 export interface ItemWithUpdatedAt {
   id: string;
   updated_at: string;

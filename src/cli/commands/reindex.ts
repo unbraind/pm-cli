@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/reindex
+ *
+ * Implements the pm reindex command surface and its agent-facing runtime behavior.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
@@ -48,12 +53,18 @@ const EMBEDDINGS_PATH = "search/embeddings.jsonl";
 const EMBEDDING_MIGRATION_REINDEX_HINT =
   "Provider or model has changed since last index. Run pm reindex --mode semantic to rebuild.";
 
+/**
+ * Documents the reindex options payload exchanged by command, SDK, and package integrations.
+ */
 export interface ReindexOptions {
   mode?: string;
   progress?: boolean;
   full?: boolean;
 }
 
+/**
+ * Documents the reindex result payload exchanged by command, SDK, and package integrations.
+ */
 export interface ReindexResult {
   ok: boolean;
   mode: "keyword" | "semantic" | "hybrid";
@@ -524,6 +535,9 @@ async function pruneReindexOrphanVectors(
   }
 }
 
+/**
+ * Implements run reindex for the public runtime surface of this module.
+ */
 export async function runReindex(options: ReindexOptions, global: GlobalOptions): Promise<ReindexResult> {
   const requestedMode = parseMode(options.mode);
   const progressEnabled = shouldEmitReindexProgress(options);

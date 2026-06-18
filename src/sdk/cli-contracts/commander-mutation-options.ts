@@ -1,3 +1,8 @@
+/**
+ * @module sdk/cli-contracts/commander-mutation-options
+ *
+ * Defines SDK command-contract metadata for Commander Mutation Options.
+ */
 import type { CommanderOptionAliasContract, CommanderOptionRegistrationContract } from "./commander-types.js";
 
 export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegistrationContract[] = [

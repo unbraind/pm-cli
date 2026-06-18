@@ -1,3 +1,8 @@
+/**
+ * @module core/telemetry/runtime
+ *
+ * Captures consent-aware telemetry and observability events for Runtime.
+ */
 import crypto from "node:crypto";
 import { spawn } from "node:child_process";
 import { mkdirSync, rmSync, statSync } from "node:fs";
@@ -165,6 +170,9 @@ interface ResolvedTelemetrySourceContext {
   source_context_source: TelemetrySourceContextSource;
 }
 
+/**
+ * Documents the active telemetry command payload exchanged by command, SDK, and package integrations.
+ */
 export interface ActiveTelemetryCommand {
   started_at: string;
   started_at_ms: number;
@@ -185,6 +193,9 @@ export interface ActiveTelemetryCommand {
   otel_span_id?: string;
 }
 
+/**
+ * Documents the telemetry command context payload exchanged by command, SDK, and package integrations.
+ */
 export interface TelemetryCommandContext {
   command: string;
   pm_version: string;
@@ -194,6 +205,9 @@ export interface TelemetryCommandContext {
   pm_root: string;
 }
 
+/**
+ * Documents the telemetry command outcome payload exchanged by command, SDK, and package integrations.
+ */
 export interface TelemetryCommandOutcome {
   ok: boolean;
   error?: string;
@@ -205,6 +219,9 @@ export interface TelemetryCommandOutcome {
   resolution_stage?: TelemetryResolutionStage;
 }
 
+/**
+ * Documents the telemetry error event context payload exchanged by command, SDK, and package integrations.
+ */
 export interface TelemetryErrorEventContext {
   command: string;
   args: string[];
@@ -1923,6 +1940,9 @@ function scheduleTelemetryFlush(globalPmRoot: string, endpoint: string, retentio
   }
 }
 
+/**
+ * Implements flush telemetry queue now for the public runtime surface of this module.
+ */
 export async function flushTelemetryQueueNow(globalPmRoot = resolveGlobalPmRoot(process.cwd())): Promise<void> {
   if (telemetryDisabledByEnvironment()) {
     return;
@@ -1939,6 +1959,9 @@ export async function flushTelemetryQueueNow(globalPmRoot = resolveGlobalPmRoot(
   }
 }
 
+/**
+ * Implements start telemetry command for the public runtime surface of this module.
+ */
 export async function startTelemetryCommand(context: TelemetryCommandContext): Promise<ActiveTelemetryCommand | null> {
   if (telemetryDisabledByEnvironment()) {
     return null;
@@ -2009,6 +2032,9 @@ export async function startTelemetryCommand(context: TelemetryCommandContext): P
   }
 }
 
+/**
+ * Implements finish telemetry command for the public runtime surface of this module.
+ */
 export async function finishTelemetryCommand(
   activeCommand: ActiveTelemetryCommand | null,
   outcome: TelemetryCommandOutcome,
@@ -2093,6 +2119,9 @@ export async function finishTelemetryCommand(
   }
 }
 
+/**
+ * Implements emit telemetry error event for the public runtime surface of this module.
+ */
 export async function emitTelemetryErrorEvent(context: TelemetryErrorEventContext): Promise<void> {
   if (telemetryDisabledByEnvironment()) {
     return;

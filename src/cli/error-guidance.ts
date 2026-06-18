@@ -1,3 +1,8 @@
+/**
+ * @module cli/error-guidance
+ *
+ * Provides CLI runtime support for Error Guidance.
+ */
 import type { PmCliErrorContext, PmCliErrorRecoveryPayload } from "../core/shared/errors.js";
 import { renderPmCommand } from "./argv-utils.js";
 
@@ -13,6 +18,9 @@ interface GuidanceMessage {
   recovery?: PmCliErrorRecoveryPayload;
 }
 
+/**
+ * Documents the json error envelope payload exchanged by command, SDK, and package integrations.
+ */
 export interface JsonErrorEnvelope {
   type: string;
   code: string;
@@ -26,6 +34,9 @@ export interface JsonErrorEnvelope {
   recovery?: PmCliErrorRecoveryPayload;
 }
 
+/**
+ * Documents the error classification payload exchanged by command, SDK, and package integrations.
+ */
 export interface ErrorClassification {
   type: string;
   code: string;
@@ -38,6 +49,9 @@ export interface ErrorClassification {
   recovery?: PmCliErrorRecoveryPayload;
 }
 
+/**
+ * Documents the commander guidance context payload exchanged by command, SDK, and package integrations.
+ */
 export interface CommanderGuidanceContext {
   unknownCommandExamples?: string[];
   unknownCommandNextSteps?: string[];
@@ -224,6 +238,9 @@ function renderRecoveryBundle(recovery: PmCliErrorRecoveryPayload | undefined): 
   return lines;
 }
 
+/**
+ * Implements render guidance message for the public runtime surface of this module.
+ */
 export function renderGuidanceMessage(message: GuidanceMessage): string {
   const lines: string[] = [
     `Error: ${message.title}`,
@@ -917,18 +934,30 @@ function buildCommanderErrorGuidance(
   });
 }
 
+/**
+ * Implements format pm cli error for display for the public runtime surface of this module.
+ */
 export function formatPmCliErrorForDisplay(rawMessage: string, context?: PmCliErrorContext): string {
   return renderGuidanceMessage(buildPmCliErrorGuidance(rawMessage, context));
 }
 
+/**
+ * Implements classify pm cli error for the public runtime surface of this module.
+ */
 export function classifyPmCliError(rawMessage: string, context?: PmCliErrorContext): ErrorClassification {
   return guidanceToClassification(buildPmCliErrorGuidance(rawMessage, context));
 }
 
+/**
+ * Implements format pm cli error for json for the public runtime surface of this module.
+ */
 export function formatPmCliErrorForJson(rawMessage: string, exitCode: number, context?: PmCliErrorContext): JsonErrorEnvelope {
   return guidanceToJsonEnvelope(buildPmCliErrorGuidance(rawMessage, context), exitCode);
 }
 
+/**
+ * Implements format commander error for display for the public runtime surface of this module.
+ */
 export function formatCommanderErrorForDisplay(
   rawMessage: string,
   commandName: string | undefined,
@@ -938,6 +967,9 @@ export function formatCommanderErrorForDisplay(
   return renderGuidanceMessage(buildCommanderErrorGuidance(rawMessage, commandName, allowedTypes, context));
 }
 
+/**
+ * Implements classify commander error for the public runtime surface of this module.
+ */
 export function classifyCommanderError(
   rawMessage: string,
   commandName: string | undefined,
@@ -947,6 +979,9 @@ export function classifyCommanderError(
   return guidanceToClassification(buildCommanderErrorGuidance(rawMessage, commandName, allowedTypes, context));
 }
 
+/**
+ * Implements format commander error for json for the public runtime surface of this module.
+ */
 export function formatCommanderErrorForJson(
   rawMessage: string,
   commandName: string | undefined,
@@ -957,6 +992,9 @@ export function formatCommanderErrorForJson(
   return guidanceToJsonEnvelope(buildCommanderErrorGuidance(rawMessage, commandName, allowedTypes, context), exitCode);
 }
 
+/**
+ * Implements format unknown error for json for the public runtime surface of this module.
+ */
 export function formatUnknownErrorForJson(rawMessage: string, exitCode: number): JsonErrorEnvelope {
   const guidance = buildUnknownErrorGuidance(rawMessage);
   return guidanceToJsonEnvelope(guidance, exitCode);
@@ -990,6 +1028,9 @@ function buildUnknownErrorGuidance(rawMessage: string): GuidanceMessage {
   });
 }
 
+/**
+ * Implements classify unknown error for the public runtime surface of this module.
+ */
 export function classifyUnknownError(rawMessage: string): ErrorClassification {
   return guidanceToClassification(buildUnknownErrorGuidance(rawMessage));
 }

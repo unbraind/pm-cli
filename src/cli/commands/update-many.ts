@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/update-many
+ *
+ * Implements the pm update many command surface and its agent-facing runtime behavior.
+ */
 import { pathExists } from "../../core/fs/fs-utils.js";
 import {
   createCheckpointId,
@@ -247,6 +252,9 @@ interface UpdateManyCheckpoint {
   items: MutationCheckpointItem[];
 }
 
+/**
+ * Documents the update many command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface UpdateManyCommandOptions {
   status?: string;
   list: ListOptions;
@@ -283,6 +291,9 @@ interface UpdateManyRollbackResultRow {
   error?: string;
 }
 
+/**
+ * Documents the update many result payload exchanged by command, SDK, and package integrations.
+ */
 export interface UpdateManyResult {
   mode: "dry_run" | "apply" | "rollback";
   matched_count: number;
@@ -570,6 +581,9 @@ function assertPlannedUpdateValuesValid(
 }
 
 
+/**
+ * Implements run update many for the public runtime surface of this module.
+ */
 export async function runUpdateMany(options: UpdateManyCommandOptions, global: GlobalOptions): Promise<UpdateManyResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {

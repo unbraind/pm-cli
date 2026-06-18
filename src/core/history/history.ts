@@ -1,3 +1,8 @@
+/**
+ * @module core/history/history
+ *
+ * Implements append-only history and replay behavior for History.
+ */
 import jsonPatch from "fast-json-patch";
 import { FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
 import { runActiveServiceOverride } from "../extensions/index.js";
@@ -117,14 +122,23 @@ function canonicalPatchDocument(document: ItemDocument): { metadata: Record<stri
   };
 }
 
+/**
+ * Implements hash document for the public runtime surface of this module.
+ */
 export function hashDocument(document: ItemDocument): string {
   return sha256Hex(stableStringify(canonicalHashDocument(document)));
 }
 
+/**
+ * Implements hash empty document for the public runtime surface of this module.
+ */
 export function hashEmptyDocument(): string {
   return sha256Hex(stableStringify(EMPTY_LEGACY_HASH_DOCUMENT));
 }
 
+/**
+ * Implements create history entry for the public runtime surface of this module.
+ */
 export function createHistoryEntry(params: {
   nowIso: string;
   author: string;
@@ -187,6 +201,9 @@ function serializeHistoryLine(value: unknown, fallbackEntry: Pick<HistoryEntry, 
   return JSON.stringify(value);
 }
 
+/**
+ * Implements append history entry for the public runtime surface of this module.
+ */
 export async function appendHistoryEntry(historyPath: string, entry: HistoryEntry): Promise<void> {
   const override = await runActiveServiceOverride("history_append", {
     history_path: historyPath,

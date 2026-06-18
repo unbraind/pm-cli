@@ -1,3 +1,8 @@
+/**
+ * @module core/search/vector-stores
+ *
+ * Powers search, embeddings, and semantic retrieval behavior for Vector Stores.
+ */
 import type { PmSettings } from "../../types/index.js";
 import { mkdir, readFile, stat, unlink } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
@@ -15,8 +20,14 @@ import {
 } from "../shared/primitives.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
 
+/**
+ * Restricts vector store name values accepted by command, SDK, and storage contracts.
+ */
 export type VectorStoreName = "qdrant" | "lancedb";
 
+/**
+ * Documents the qdrant vector store config payload exchanged by command, SDK, and package integrations.
+ */
 export interface QdrantVectorStoreConfig {
   name: "qdrant";
   url: string;
@@ -24,25 +35,40 @@ export interface QdrantVectorStoreConfig {
   api_key?: string;
 }
 
+/**
+ * Documents the lance db vector store config payload exchanged by command, SDK, and package integrations.
+ */
 export interface LanceDbVectorStoreConfig {
   name: "lancedb";
   path: string;
   collection_name?: string;
 }
 
+/**
+ * Restricts vector store config values accepted by command, SDK, and storage contracts.
+ */
 export type VectorStoreConfig = QdrantVectorStoreConfig | LanceDbVectorStoreConfig;
 
+/**
+ * Documents the vector store resolution payload exchanged by command, SDK, and package integrations.
+ */
 export interface VectorStoreResolution {
   active: VectorStoreConfig | null;
   available: VectorStoreConfig[];
 }
 
+/**
+ * Documents the vector store request target payload exchanged by command, SDK, and package integrations.
+ */
 export interface VectorStoreRequestTarget {
   store: VectorStoreName;
   query_target: string;
   upsert_target: string;
 }
 
+/**
+ * Documents the vector query plan payload exchanged by command, SDK, and package integrations.
+ */
 export interface VectorQueryPlan {
   target: VectorStoreRequestTarget;
   method: "POST" | "LOCAL";
@@ -50,12 +76,18 @@ export interface VectorQueryPlan {
   body: Record<string, unknown>;
 }
 
+/**
+ * Documents the vector record payload exchanged by command, SDK, and package integrations.
+ */
 export interface VectorRecord {
   id: string;
   vector: number[];
   payload?: Record<string, unknown>;
 }
 
+/**
+ * Documents the vector upsert plan payload exchanged by command, SDK, and package integrations.
+ */
 export interface VectorUpsertPlan {
   target: VectorStoreRequestTarget;
   method: "POST" | "LOCAL";
@@ -63,6 +95,9 @@ export interface VectorUpsertPlan {
   body: Record<string, unknown>;
 }
 
+/**
+ * Documents the vector delete plan payload exchanged by command, SDK, and package integrations.
+ */
 export interface VectorDeletePlan {
   target: VectorStoreRequestTarget;
   method: "POST" | "LOCAL";
@@ -70,20 +105,35 @@ export interface VectorDeletePlan {
   body: Record<string, unknown>;
 }
 
+/**
+ * Documents the vector query hit payload exchanged by command, SDK, and package integrations.
+ */
 export interface VectorQueryHit {
   id: string;
   score: number;
   payload?: Record<string, unknown>;
 }
 
+/**
+ * Documents the vector upsert result payload exchanged by command, SDK, and package integrations.
+ */
 export interface VectorUpsertResult {
   status: string;
 }
 
+/**
+ * Restricts vector http response values accepted by command, SDK, and storage contracts.
+ */
 export type VectorHttpResponse = SearchHttpResponse;
 
+/**
+ * Restricts vector request fetcher values accepted by command, SDK, and storage contracts.
+ */
 export type VectorRequestFetcher = SearchHttpFetcher<VectorHttpResponse>;
 
+/**
+ * Documents the execute vector request options payload exchanged by command, SDK, and package integrations.
+ */
 export interface ExecuteVectorRequestOptions {
   timeout_ms?: number;
   fetcher?: VectorRequestFetcher;
@@ -500,6 +550,9 @@ function cosineSimilarity(left: number[], right: number[]): number {
   return dotProd / (leftNorm * rightNorm);
 }
 
+/**
+ * Implements resolve vector stores for the public runtime surface of this module.
+ */
 export function resolveVectorStores(settings: PmSettings | VectorSettingsInput): VectorStoreResolution {
   const qdrant = resolveQdrantStore(settings);
   const lancedb = resolveLanceDbStore(settings);
@@ -521,6 +574,9 @@ export function resolveVectorStores(settings: PmSettings | VectorSettingsInput):
   };
 }
 
+/**
+ * Implements resolve vector store request target for the public runtime surface of this module.
+ */
 export function resolveVectorStoreRequestTarget(store: VectorStoreConfig): VectorStoreRequestTarget {
   const collectionName = resolveStoreCollectionName(store);
   if (store.name === "qdrant") {
@@ -541,6 +597,9 @@ export function resolveVectorStoreRequestTarget(store: VectorStoreConfig): Vecto
   };
 }
 
+/**
+ * Implements build vector query plan for the public runtime surface of this module.
+ */
 export function buildVectorQueryPlan(store: VectorStoreConfig, vector: number[], limit: number): VectorQueryPlan {
   const target = resolveVectorStoreRequestTarget(store);
   const normalizedVector = normalizeVector(vector);
@@ -569,6 +628,9 @@ export function buildVectorQueryPlan(store: VectorStoreConfig, vector: number[],
   };
 }
 
+/**
+ * Implements build vector upsert plan for the public runtime surface of this module.
+ */
 export function buildVectorUpsertPlan(store: VectorStoreConfig, records: VectorRecord[]): VectorUpsertPlan {
   const target = resolveVectorStoreRequestTarget(store);
   const normalizedRecords = normalizeVectorRecords(records);
@@ -593,6 +655,9 @@ export function buildVectorUpsertPlan(store: VectorStoreConfig, records: VectorR
   };
 }
 
+/**
+ * Implements build vector delete plan for the public runtime surface of this module.
+ */
 export function buildVectorDeletePlan(store: VectorStoreConfig, ids: string[]): VectorDeletePlan {
   const target = resolveVectorStoreRequestTarget(store);
   const normalizedIds = normalizeVectorDeleteIds(ids);
@@ -617,6 +682,9 @@ export function buildVectorDeletePlan(store: VectorStoreConfig, ids: string[]): 
   };
 }
 
+/**
+ * Implements execute vector query for the public runtime surface of this module.
+ */
 export async function executeVectorQuery(
   store: VectorStoreConfig,
   vector: number[],
@@ -679,6 +747,9 @@ export async function executeVectorQuery(
   return normalizeQdrantQueryResponse(payload);
 }
 
+/**
+ * Implements execute vector upsert for the public runtime surface of this module.
+ */
 export async function executeVectorUpsert(
   store: VectorStoreConfig,
   records: VectorRecord[],
@@ -722,6 +793,9 @@ export async function executeVectorUpsert(
   return normalizeQdrantUpsertResponse(payload);
 }
 
+/**
+ * Implements execute vector delete for the public runtime surface of this module.
+ */
 export async function executeVectorDelete(
   store: VectorStoreConfig,
   ids: string[],
@@ -772,6 +846,9 @@ export async function executeVectorDelete(
   return normalizeQdrantUpsertResponse(payload);
 }
 
+/**
+ * Implements execute vector reset for the public runtime surface of this module.
+ */
 export async function executeVectorReset(
   store: VectorStoreConfig,
   knownIds: string[] = [],

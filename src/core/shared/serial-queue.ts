@@ -1,3 +1,8 @@
+/**
+ * @module core/shared/serial-queue
+ *
+ * Provides shared primitives and utilities for Serial Queue.
+ */
 // pm-3puw: a minimal FIFO async queue. Tasks enqueued onto a single instance run
 // strictly one-at-a-time in arrival order — the next task does not start until
 // the previous one has fully settled. The MCP stdio transport uses this to
@@ -5,6 +10,9 @@
 // mutations on the same item (without awaiting the first response) no longer
 // races into a lock conflict on the second.
 
+/**
+ * Defines the FIFO queue contract used to serialize asynchronous mutation-sensitive work.
+ */
 export interface SerialQueue {
   /**
    * Schedule `task` to run after every previously-enqueued task has settled.
@@ -17,6 +25,9 @@ export interface SerialQueue {
   idle(): Promise<void>;
 }
 
+/**
+ * Implements create serial queue for the public runtime surface of this module.
+ */
 export function createSerialQueue(): SerialQueue {
   // `tail` is the error-isolated chain the next task waits on; it is kept
   // separate from the per-task promise returned to callers so one rejection

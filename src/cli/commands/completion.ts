@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/completion
+ *
+ * Implements the pm completion command surface and its agent-facing runtime behavior.
+ */
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import {
@@ -32,8 +37,14 @@ import {
 import { BUILTIN_ITEM_TYPE_VALUES, STATUS_VALUES } from "../../types/index.js";
 import { listGuideTopicIds } from "../guide-topics.js";
 
+/**
+ * Restricts completion shell values accepted by command, SDK, and storage contracts.
+ */
 export type CompletionShell = "bash" | "zsh" | "fish";
 
+/**
+ * Documents the completion result payload exchanged by command, SDK, and package integrations.
+ */
 export interface CompletionResult {
   shell: CompletionShell;
   script: string;
@@ -46,6 +57,9 @@ const DEFAULT_STATUS_VALUES = [...STATUS_VALUES];
 
 type CompletionFlagCommand = "list" | "create" | "update" | "update-many" | "search" | "calendar" | "context";
 
+/**
+ * Documents the completion runtime config payload exchanged by command, SDK, and package integrations.
+ */
 export interface CompletionRuntimeConfig {
   item_types?: string[];
   statuses?: string[];
@@ -234,6 +248,9 @@ end
 `;
 }
 
+/**
+ * Implements generate bash script for the public runtime surface of this module.
+ */
 export function generateBashScript(
   itemTypes: string[] = [],
   tags: string[] = [],
@@ -477,6 +494,9 @@ export function generateBashScript(
   ].join("\n");
 }
 
+/**
+ * Implements generate zsh script for the public runtime surface of this module.
+ */
 export function generateZshScript(
   itemTypes: string[] = [],
   tags: string[] = [],
@@ -1616,6 +1636,9 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
 compdef _pm pm`;
 }
 
+/**
+ * Implements generate fish script for the public runtime surface of this module.
+ */
 export function generateFishScript(
   itemTypes: string[] = [],
   tags: string[] = [],
@@ -2535,6 +2558,9 @@ const SETUP_HINTS: Record<CompletionShell, string> = {
   fish: "Run: pm completion fish > ~/.config/fish/completions/pm.fish",
 };
 
+/**
+ * Implements run completion for the public runtime surface of this module.
+ */
 export function runCompletion(
   shell: string,
   itemTypes: string[] = [],

@@ -4,6 +4,7 @@
  * This module has no Node imports; Buffer is available as a global.
  */
 
+/** Per-history-stream size and timestamp summary used by storage diagnostics. */
 export interface HistoryStreamStat {
   id: string;
   bytes: number;
@@ -12,11 +13,17 @@ export interface HistoryStreamStat {
   newest_ts: string | null; // max parseable ts in this stream, else null
 }
 
+/**
+ * Documents the history storage entry ref payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistoryStorageEntryRef {
   id: string;
   ts: string;
 }
 
+/**
+ * Documents the history storage stats payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistoryStorageStats {
   total_streams: number;
   total_lines: number;
@@ -78,6 +85,9 @@ function parseStreamStat(id: string, raw: string): HistoryStreamStat {
   return { id, bytes, lines, oldest_ts: oldestTs, newest_ts: newestTs };
 }
 
+/**
+ * Implements compute history storage stats for the public runtime surface of this module.
+ */
 export function computeHistoryStorageStats(
   streams: Array<{ id: string; raw: string }>,
   options?: { topN?: number },

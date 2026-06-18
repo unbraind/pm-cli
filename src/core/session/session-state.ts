@@ -1,3 +1,8 @@
+/**
+ * @module core/session/session-state
+ *
+ * Maintains lightweight agent session state for contextual workflows.
+ */
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
@@ -18,10 +23,16 @@ export interface SessionState {
 
 const SESSION_FILENAME = "session.json";
 
+/**
+ * Implements get session state path for the public runtime surface of this module.
+ */
 export function getSessionStatePath(pmRoot: string): string {
   return path.join(getRuntimePath(pmRoot), SESSION_FILENAME);
 }
 
+/**
+ * Implements read session state for the public runtime surface of this module.
+ */
 export async function readSessionState(pmRoot: string): Promise<SessionState> {
   try {
     const raw = await fs.readFile(getSessionStatePath(pmRoot), "utf8");
@@ -45,16 +56,25 @@ async function writeSessionState(pmRoot: string, state: SessionState): Promise<v
   await writeFileAtomic(target, JSON.stringify(state));
 }
 
+/**
+ * Implements get focused item for the public runtime surface of this module.
+ */
 export async function getFocusedItem(pmRoot: string): Promise<string | undefined> {
   const state = await readSessionState(pmRoot);
   return state.focused_item;
 }
 
+/**
+ * Implements set focused item for the public runtime surface of this module.
+ */
 export async function setFocusedItem(pmRoot: string, id: string): Promise<void> {
   const state = await readSessionState(pmRoot);
   await writeSessionState(pmRoot, { ...state, focused_item: id });
 }
 
+/**
+ * Implements clear focused item for the public runtime surface of this module.
+ */
 export async function clearFocusedItem(pmRoot: string): Promise<void> {
   const state = await readSessionState(pmRoot);
   const next: SessionState = { ...state };

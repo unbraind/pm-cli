@@ -13,8 +13,12 @@
  * the already-collected stale-link rows plus a metadata `lookup` closure.
  */
 
+/** Classification assigned to a stale linked path during files validation. */
 export type StaleLinkClassification = "moved" | "deleted";
 
+/**
+ * Documents the stale link owner input payload exchanged by command, SDK, and package integrations.
+ */
 export interface StaleLinkOwnerInput {
   item_id: string;
   /** Normalized workspace-relative path that no longer resolves. */
@@ -24,6 +28,9 @@ export interface StaleLinkOwnerInput {
   classification: StaleLinkClassification;
 }
 
+/**
+ * Documents the missing linked path owner payload exchanged by command, SDK, and package integrations.
+ */
 export interface MissingLinkedPathOwner {
   id: string;
   /** Owning item type, `"Unknown"` if metadata is absent. */
@@ -36,12 +43,18 @@ export interface MissingLinkedPathOwner {
   field: "files" | "docs";
 }
 
+/**
+ * Documents the missing linked path row payload exchanged by command, SDK, and package integrations.
+ */
 export interface MissingLinkedPathRow {
   path: string;
   classification: StaleLinkClassification;
   items: MissingLinkedPathOwner[];
 }
 
+/**
+ * Documents the owner item metadata payload exchanged by command, SDK, and package integrations.
+ */
 export interface OwnerItemMetadata {
   type?: string;
   title?: string;

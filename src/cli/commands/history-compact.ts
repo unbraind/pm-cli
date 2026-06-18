@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/history-compact
+ *
+ * Implements the pm history compact command surface and its agent-facing runtime behavior.
+ */
 import fs from "node:fs/promises";
 import { createHistoryEntry } from "../../core/history/history.js";
 import { executeHistoryRewrite } from "../../core/history/history-rewrite.js";
@@ -26,6 +31,9 @@ import type { HistoryEntry } from "../../types/index.js";
 import { readHistoryEntries } from "./history.js";
 import { resolveHistorySubject } from "./history-redact.js";
 
+/**
+ * Documents the history compact command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistoryCompactCommandOptions {
   before?: string;
   dryRun?: boolean;
@@ -43,6 +51,9 @@ interface HistoryCompactBoundary {
   retainedCount: number;
 }
 
+/**
+ * Documents the history compact result payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistoryCompactResult {
   id: string;
   dry_run: boolean;
@@ -207,6 +218,9 @@ function reanchorRetainedEntries(
   };
 }
 
+/**
+ * Implements run history compact for the public runtime surface of this module.
+ */
 export async function runHistoryCompact(
   id: string,
   options: HistoryCompactCommandOptions,

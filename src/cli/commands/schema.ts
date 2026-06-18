@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/schema
+ *
+ * Implements the pm schema command surface and its agent-facing runtime behavior.
+ */
 import path from "node:path";
 import { mkdir } from "node:fs/promises";
 import { pathExists, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
@@ -74,12 +79,18 @@ export const SCHEMA_SUBCOMMANDS = [
   "show",
   "show-status",
 ] as const;
+/**
+ * Restricts schema subcommand values accepted by command, SDK, and storage contracts.
+ */
 export type SchemaSubcommand = (typeof SCHEMA_SUBCOMMANDS)[number];
 
 const SCHEMA_TYPES_LOCK_ID = "schema-types";
 const SCHEMA_STATUSES_LOCK_ID = "schema-statuses";
 const SCHEMA_FIELDS_LOCK_ID = "schema-fields";
 
+/**
+ * Documents the schema add type command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaAddTypeCommandOptions {
   description?: string;
   defaultStatus?: string;
@@ -89,11 +100,17 @@ export interface SchemaAddTypeCommandOptions {
   force?: boolean;
 }
 
+/**
+ * Documents the schema remove type command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaRemoveTypeCommandOptions {
   author?: string;
   force?: boolean;
 }
 
+/**
+ * Documents the schema add status command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaAddStatusCommandOptions {
   role?: string[];
   alias?: string[];
@@ -103,11 +120,17 @@ export interface SchemaAddStatusCommandOptions {
   force?: boolean;
 }
 
+/**
+ * Documents the schema remove status command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaRemoveStatusCommandOptions {
   author?: string;
   force?: boolean;
 }
 
+/**
+ * Documents the schema add type result payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaAddTypeResult {
   action: "add-type";
   registered: boolean;
@@ -121,6 +144,9 @@ export interface SchemaAddTypeResult {
   generated_at: string;
 }
 
+/**
+ * Documents the schema remove type result payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaRemoveTypeResult {
   action: "remove-type";
   removed: boolean;
@@ -133,6 +159,9 @@ export interface SchemaRemoveTypeResult {
   generated_at: string;
 }
 
+/**
+ * Documents the schema add status result payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaAddStatusResult {
   action: "add-status";
   registered: boolean;
@@ -146,6 +175,9 @@ export interface SchemaAddStatusResult {
   generated_at: string;
 }
 
+/**
+ * Documents the schema remove status result payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaRemoveStatusResult {
   action: "remove-status";
   removed: boolean;
@@ -158,6 +190,9 @@ export interface SchemaRemoveStatusResult {
   generated_at: string;
 }
 
+/**
+ * Documents the schema add field command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaAddFieldCommandOptions {
   type?: string;
   commands?: string[];
@@ -172,16 +207,25 @@ export interface SchemaAddFieldCommandOptions {
   force?: boolean;
 }
 
+/**
+ * Documents the schema remove field command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaRemoveFieldCommandOptions {
   author?: string;
   force?: boolean;
 }
 
+/**
+ * Documents the schema apply preset command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaApplyPresetCommandOptions {
   author?: string;
   force?: boolean;
 }
 
+/**
+ * Documents the schema add type infer command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaAddTypeInferCommandOptions {
   minCount?: number;
   apply?: boolean;
@@ -189,6 +233,9 @@ export interface SchemaAddTypeInferCommandOptions {
   force?: boolean;
 }
 
+/**
+ * Documents the schema field summary payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaFieldSummary {
   key: string;
   type: string;
@@ -202,6 +249,9 @@ export interface SchemaFieldSummary {
   required_types: string[];
 }
 
+/**
+ * Documents the schema add field result payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaAddFieldResult {
   action: "add-field";
   registered: boolean;
@@ -215,6 +265,9 @@ export interface SchemaAddFieldResult {
   generated_at: string;
 }
 
+/**
+ * Documents the schema remove field result payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaRemoveFieldResult {
   action: "remove-field";
   removed: boolean;
@@ -227,6 +280,9 @@ export interface SchemaRemoveFieldResult {
   generated_at: string;
 }
 
+/**
+ * Documents the schema list fields result payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaListFieldsResult {
   action: "list-fields";
   fields: SchemaFieldSummary[];
@@ -239,6 +295,9 @@ export interface SchemaListFieldsResult {
   generated_at: string;
 }
 
+/**
+ * Documents the schema show field result payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaShowFieldResult {
   action: "show-field";
   field: SchemaFieldSummary;
@@ -248,6 +307,9 @@ export interface SchemaShowFieldResult {
   generated_at: string;
 }
 
+/**
+ * Documents the schema apply preset result payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaApplyPresetResult {
   action: "apply-preset";
   preset: TypePresetName;
@@ -261,6 +323,9 @@ export interface SchemaApplyPresetResult {
   generated_at: string;
 }
 
+/**
+ * Documents the schema add type infer result payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaAddTypeInferResult {
   action: "infer-types";
   applied: boolean;
@@ -277,6 +342,9 @@ export interface SchemaAddTypeInferResult {
   generated_at: string;
 }
 
+/**
+ * Documents the schema type summary payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaTypeSummary {
   name: string;
   folder: string;
@@ -285,6 +353,9 @@ export interface SchemaTypeSummary {
   description?: string;
 }
 
+/**
+ * Documents the schema status summary payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaStatusSummary {
   id: string;
   source: "builtin" | "custom";
@@ -294,6 +365,9 @@ export interface SchemaStatusSummary {
   order?: number;
 }
 
+/**
+ * Documents the schema type definition result payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaTypeDefinitionResult extends SchemaTypeSummary {
   source: "builtin" | "custom" | "extension";
   extension?: {
@@ -306,6 +380,9 @@ export interface SchemaTypeDefinitionResult extends SchemaTypeSummary {
   command_option_policies: ResolvedItemTypeDefinition["command_option_policies"];
 }
 
+/**
+ * Documents the schema list result payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaListResult {
   action: "list";
   builtin: SchemaTypeSummary[];
@@ -338,6 +415,9 @@ export interface SchemaListResult {
   generated_at: string;
 }
 
+/**
+ * Documents the schema show result payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaShowResult {
   action: "show";
   type: SchemaTypeDefinitionResult;
@@ -347,6 +427,9 @@ export interface SchemaShowResult {
   generated_at: string;
 }
 
+/**
+ * Documents the schema show status result payload exchanged by command, SDK, and package integrations.
+ */
 export interface SchemaShowStatusResult {
   action: "show-status";
   status: SchemaStatusSummary;
@@ -356,6 +439,9 @@ export interface SchemaShowStatusResult {
   generated_at: string;
 }
 
+/**
+ * Restricts schema inspect result values accepted by command, SDK, and storage contracts.
+ */
 export type SchemaInspectResult =
   | SchemaListResult
   | SchemaShowResult
@@ -370,6 +456,9 @@ function toAuthor(candidate: string | undefined, defaultAuthor: string): string 
 }
 
 /* c8 ignore start -- schema command mutation/inspection branches are covered by broader schema integration workflows. */
+/**
+ * Implements run schema add type for the public runtime surface of this module.
+ */
 export async function runSchemaAddType(
   name: string | undefined,
   options: SchemaAddTypeCommandOptions,
@@ -552,6 +641,9 @@ function workflowSlotsReferencing(
     .map(([slot]) => slot);
 }
 
+/**
+ * Implements run schema remove type for the public runtime surface of this module.
+ */
 export async function runSchemaRemoveType(
   name: string | undefined,
   options: SchemaRemoveTypeCommandOptions,
@@ -680,6 +772,9 @@ function toSchemaFieldSummary(field: ReturnType<typeof resolveRuntimeFieldRegist
   };
 }
 
+/**
+ * Implements run schema add status for the public runtime surface of this module.
+ */
 export async function runSchemaAddStatus(
   id: string | undefined,
   options: SchemaAddStatusCommandOptions,
@@ -805,6 +900,9 @@ export async function runSchemaAddStatus(
   };
 }
 
+/**
+ * Implements run schema remove status for the public runtime surface of this module.
+ */
 export async function runSchemaRemoveStatus(
   id: string | undefined,
   options: SchemaRemoveStatusCommandOptions,
@@ -1017,6 +1115,9 @@ async function loadSchemaInspectionContext(global: GlobalOptions): Promise<{
   };
 }
 
+/**
+ * Implements run schema list for the public runtime surface of this module.
+ */
 export async function runSchemaList(global: GlobalOptions): Promise<SchemaListResult> {
   const context = await loadSchemaInspectionContext(global);
   const builtin: SchemaTypeSummary[] = [];
@@ -1068,6 +1169,9 @@ export async function runSchemaList(global: GlobalOptions): Promise<SchemaListRe
   };
 }
 
+/**
+ * Implements run schema show for the public runtime surface of this module.
+ */
 export async function runSchemaShow(name: string | undefined, global: GlobalOptions): Promise<SchemaShowResult> {
   const typeName = (name ?? "").trim();
   if (typeName.length === 0) {
@@ -1100,6 +1204,9 @@ export async function runSchemaShow(name: string | undefined, global: GlobalOpti
   };
 }
 
+/**
+ * Implements run schema show status for the public runtime surface of this module.
+ */
 export async function runSchemaShowStatus(
   id: string | undefined,
   global: GlobalOptions,
@@ -1131,6 +1238,9 @@ export async function runSchemaShowStatus(
   };
 }
 
+/**
+ * Implements run schema add field for the public runtime surface of this module.
+ */
 export async function runSchemaAddField(
   key: string | undefined,
   options: SchemaAddFieldCommandOptions,
@@ -1237,6 +1347,9 @@ async function countItemsUsingField(
   }).length;
 }
 
+/**
+ * Implements run schema remove field for the public runtime surface of this module.
+ */
 export async function runSchemaRemoveField(
   key: string | undefined,
   options: SchemaRemoveFieldCommandOptions,
@@ -1310,6 +1423,9 @@ export async function runSchemaRemoveField(
   };
 }
 
+/**
+ * Implements run schema list fields for the public runtime surface of this module.
+ */
 export async function runSchemaListFields(global: GlobalOptions): Promise<SchemaListFieldsResult> {
   const context = await loadSchemaInspectionContext(global);
   const fields = resolveRuntimeFieldRegistry(context.schema).definitions.map(toSchemaFieldSummary);
@@ -1326,6 +1442,9 @@ export async function runSchemaListFields(global: GlobalOptions): Promise<Schema
   };
 }
 
+/**
+ * Implements run schema show field for the public runtime surface of this module.
+ */
 export async function runSchemaShowField(
   key: string | undefined,
   global: GlobalOptions,
@@ -1355,6 +1474,9 @@ export async function runSchemaShowField(
   };
 }
 
+/**
+ * Implements run schema apply preset for the public runtime surface of this module.
+ */
 export async function runSchemaApplyPreset(
   preset: string | undefined,
   options: SchemaApplyPresetCommandOptions,
@@ -1440,6 +1562,9 @@ export async function runSchemaApplyPreset(
   };
 }
 
+/**
+ * Implements run schema infer types for the public runtime surface of this module.
+ */
 export async function runSchemaInferTypes(
   options: SchemaAddTypeInferCommandOptions,
   global: GlobalOptions,
@@ -1568,6 +1693,9 @@ export async function runSchemaInferTypes(
   };
 }
 
+/**
+ * Implements format schema add type human for the public runtime surface of this module.
+ */
 export function formatSchemaAddTypeHuman(result: SchemaAddTypeResult): string {
   const verb = result.replaced ? "Updated" : "Registered";
   const aliasSuffix =
@@ -1575,6 +1703,9 @@ export function formatSchemaAddTypeHuman(result: SchemaAddTypeResult): string {
   return `${verb} custom item type "${result.type.name}"${aliasSuffix} in ${result.file.path}. Run: pm create "${escapeForDoubleQuotes(result.type.name)}" "<title>"`;
 }
 
+/**
+ * Implements format schema remove type human for the public runtime surface of this module.
+ */
 export function formatSchemaRemoveTypeHuman(result: SchemaRemoveTypeResult): string {
   if (!result.removed) {
     return `No custom item type matched; nothing removed from ${result.file.path}.`;
@@ -1583,6 +1714,9 @@ export function formatSchemaRemoveTypeHuman(result: SchemaRemoveTypeResult): str
   return `Removed custom item type "${name}" from ${result.file.path}.`;
 }
 
+/**
+ * Implements format schema add status human for the public runtime surface of this module.
+ */
 export function formatSchemaAddStatusHuman(result: SchemaAddStatusResult): string {
   const verb = result.replaced ? "Updated" : "Registered";
   const roleSuffix =
@@ -1592,6 +1726,9 @@ export function formatSchemaAddStatusHuman(result: SchemaAddStatusResult): strin
   return `${verb} status "${result.status.id}"${roleSuffix}${aliasSuffix} in ${result.file.path}.`;
 }
 
+/**
+ * Implements format schema remove status human for the public runtime surface of this module.
+ */
 export function formatSchemaRemoveStatusHuman(result: SchemaRemoveStatusResult): string {
   if (!result.removed) {
     return `No custom status matched; nothing removed from ${result.file.path}.`;
@@ -1600,6 +1737,9 @@ export function formatSchemaRemoveStatusHuman(result: SchemaRemoveStatusResult):
   return `Removed custom status "${id}" from ${result.file.path}.`;
 }
 
+/**
+ * Implements format schema list human for the public runtime surface of this module.
+ */
 export function formatSchemaListHuman(result: SchemaListResult): string {
   const lines = [
     `Schema types: ${result.counts.total} total (${result.counts.builtin} builtin, ${result.counts.custom} custom, ${result.counts.extension} extension)`,
@@ -1636,6 +1776,9 @@ export function formatSchemaListHuman(result: SchemaListResult): string {
   return lines.join("\n");
 }
 
+/**
+ * Implements format schema show human for the public runtime surface of this module.
+ */
 export function formatSchemaShowHuman(result: SchemaShowResult): string {
   const parts = [
     `type: ${result.type.name}`,
@@ -1657,6 +1800,9 @@ export function formatSchemaShowHuman(result: SchemaShowResult): string {
   return parts.join("\n");
 }
 
+/**
+ * Implements format schema show status human for the public runtime surface of this module.
+ */
 export function formatSchemaShowStatusHuman(result: SchemaShowStatusResult): string {
   const parts = [
     `status: ${result.status.id}`,
@@ -1692,11 +1838,17 @@ function formatFieldSummaryLine(field: SchemaFieldSummary): string {
   return `${field.key} (${field.type}) ${field.cli_flag} commands=${field.commands.join("/")}${flagSuffix}`;
 }
 
+/**
+ * Implements format schema add field human for the public runtime surface of this module.
+ */
 export function formatSchemaAddFieldHuman(result: SchemaAddFieldResult): string {
   const verb = result.replaced ? "Updated" : "Registered";
   return `${verb} custom field "${result.field.key}" in ${result.file.path}. Use it: pm create "<title>" --${(result.field.cli_flag ?? result.field.key).replaceAll("_", "-")} <value>`;
 }
 
+/**
+ * Implements format schema remove field human for the public runtime surface of this module.
+ */
 export function formatSchemaRemoveFieldHuman(result: SchemaRemoveFieldResult): string {
   if (!result.removed) {
     return `No custom field matched; nothing removed from ${result.file.path}.`;
@@ -1705,6 +1857,9 @@ export function formatSchemaRemoveFieldHuman(result: SchemaRemoveFieldResult): s
   return `Removed custom field "${key}" from ${result.file.path}.`;
 }
 
+/**
+ * Implements format schema list fields human for the public runtime surface of this module.
+ */
 export function formatSchemaListFieldsHuman(result: SchemaListFieldsResult): string {
   const lines = [`Custom fields: ${result.counts.total} total`];
   for (const field of result.fields) {
@@ -1714,6 +1869,9 @@ export function formatSchemaListFieldsHuman(result: SchemaListFieldsResult): str
   return lines.join("\n");
 }
 
+/**
+ * Implements format schema show field human for the public runtime surface of this module.
+ */
 export function formatSchemaShowFieldHuman(result: SchemaShowFieldResult): string {
   const field = result.field;
   const parts = [
@@ -1743,6 +1901,9 @@ export function formatSchemaShowFieldHuman(result: SchemaShowFieldResult): strin
   return parts.join("\n");
 }
 
+/**
+ * Implements format schema apply preset human for the public runtime surface of this module.
+ */
 export function formatSchemaApplyPresetHuman(result: SchemaApplyPresetResult): string {
   const registered = result.registered.length > 0 ? `registered: ${result.registered.join(", ")}` : "";
   const replaced = result.replaced.length > 0 ? `updated: ${result.replaced.join(", ")}` : "";
@@ -1750,6 +1911,9 @@ export function formatSchemaApplyPresetHuman(result: SchemaApplyPresetResult): s
   return `Applied "${result.preset}" type preset to ${result.file.path}${detail.length > 0 ? ` (${detail})` : ""}.`;
 }
 
+/**
+ * Implements format schema infer types human for the public runtime surface of this module.
+ */
 export function formatSchemaInferTypesHuman(result: SchemaAddTypeInferResult): string {
   if (result.candidates.length === 0) {
     return `No title-prefix conventions found with at least ${result.min_count} items. Lower the threshold with --min-count <n>.`;

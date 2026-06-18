@@ -1,3 +1,8 @@
+/**
+ * @module core/search/providers
+ *
+ * Powers search, embeddings, and semantic retrieval behavior for Providers.
+ */
 import type { PmSettings } from "../../types/index.js";
 import {
   executeSearchJsonRequest,
@@ -11,8 +16,14 @@ import {
   trimTrailingSlashes,
 } from "../shared/primitives.js";
 
+/**
+ * Restricts embedding provider name values accepted by command, SDK, and storage contracts.
+ */
 export type EmbeddingProviderName = "openai" | "ollama";
 
+/**
+ * Documents the embedding provider config payload exchanged by command, SDK, and package integrations.
+ */
 export interface EmbeddingProviderConfig {
   name: EmbeddingProviderName;
   base_url: string;
@@ -20,6 +31,9 @@ export interface EmbeddingProviderConfig {
   api_key?: string;
 }
 
+/**
+ * Documents the embedding provider resolution payload exchanged by command, SDK, and package integrations.
+ */
 export interface EmbeddingProviderResolution {
   active: EmbeddingProviderConfig | null;
   available: EmbeddingProviderConfig[];
@@ -56,12 +70,18 @@ export function resolveProviderConfigSource(
   return configuredValue && configuredValue.toLowerCase() === active.toLowerCase() ? "configured" : "auto-detected";
 }
 
+/**
+ * Documents the embedding request target payload exchanged by command, SDK, and package integrations.
+ */
 export interface EmbeddingRequestTarget {
   provider: EmbeddingProviderName;
   endpoint: string;
   model: string;
 }
 
+/**
+ * Documents the embedding request plan payload exchanged by command, SDK, and package integrations.
+ */
 export interface EmbeddingRequestPlan {
   target: EmbeddingRequestTarget;
   method: "POST";
@@ -69,10 +89,19 @@ export interface EmbeddingRequestPlan {
   body: Record<string, unknown>;
 }
 
+/**
+ * Restricts embedding http response values accepted by command, SDK, and storage contracts.
+ */
 export type EmbeddingHttpResponse = SearchHttpResponse;
 
+/**
+ * Restricts embedding request fetcher values accepted by command, SDK, and storage contracts.
+ */
 export type EmbeddingRequestFetcher = SearchHttpFetcher<EmbeddingHttpResponse>;
 
+/**
+ * Documents the execute embedding request options payload exchanged by command, SDK, and package integrations.
+ */
 export interface ExecuteEmbeddingRequestOptions {
   timeout_ms?: number;
   fetcher?: EmbeddingRequestFetcher;
@@ -210,6 +239,9 @@ function buildOrderedOpenAiEntries(data: unknown[]): OpenAiEmbeddingResponseEntr
   return openAiEntries;
 }
 
+/**
+ * Implements resolve embedding providers for the public runtime surface of this module.
+ */
 export function resolveEmbeddingProviders(settings: PmSettings | ProviderSettingsInput): EmbeddingProviderResolution {
   const openAi = resolveOpenAiProvider(settings);
   const ollama = resolveOllamaProvider(settings);
@@ -231,6 +263,9 @@ export function resolveEmbeddingProviders(settings: PmSettings | ProviderSetting
   };
 }
 
+/**
+ * Implements resolve embedding request target for the public runtime surface of this module.
+ */
 export function resolveEmbeddingRequestTarget(provider: EmbeddingProviderConfig): EmbeddingRequestTarget {
   const baseUrl = trimTrailingSlashes(provider.base_url);
   if (provider.name === "openai") {
@@ -247,6 +282,9 @@ export function resolveEmbeddingRequestTarget(provider: EmbeddingProviderConfig)
   };
 }
 
+/**
+ * Implements build embedding request plan for the public runtime surface of this module.
+ */
 export function buildEmbeddingRequestPlan(provider: EmbeddingProviderConfig, input: string | string[]): EmbeddingRequestPlan {
   const normalizedInputs = normalizeEmbeddingInputs(input);
   if (provider.name === "openai") {
@@ -276,6 +314,9 @@ export function buildEmbeddingRequestPlan(provider: EmbeddingProviderConfig, inp
   };
 }
 
+/**
+ * Implements normalize embedding response for the public runtime surface of this module.
+ */
 export function normalizeEmbeddingResponse(provider: EmbeddingProviderConfig, response: unknown): number[][] {
   if (provider.name === "openai") {
     const data = (response as { data?: unknown }).data;
@@ -311,6 +352,9 @@ export function normalizeEmbeddingResponse(provider: EmbeddingProviderConfig, re
   throw new Error("Ollama embedding response must include embedding or embeddings vectors");
 }
 
+/**
+ * Implements execute embedding request for the public runtime surface of this module.
+ */
 export async function executeEmbeddingRequest(
   provider: EmbeddingProviderConfig,
   input: string | string[],

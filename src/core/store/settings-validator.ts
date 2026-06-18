@@ -117,6 +117,9 @@ export interface ParsedSettings {
   };
 }
 
+/**
+ * Restricts settings validation result values accepted by command, SDK, and storage contracts.
+ */
 export type SettingsValidationResult = { success: true; data: ParsedSettings } | { success: false };
 
 type Outcome<T> = { ok: true; value: T } | { ok: false };

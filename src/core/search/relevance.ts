@@ -1,3 +1,8 @@
+/**
+ * @module core/search/relevance
+ *
+ * Powers search, embeddings, and semantic retrieval behavior for Relevance.
+ */
 import type { PmSettings } from "../../types.js";
 import { coercePositiveInteger, toNonEmptyString } from "../shared/primitives.js";
 import { tokenizeAlphaNumeric } from "../shared/text-normalization.js";
@@ -23,23 +28,35 @@ const QUERY_EXPANSION_STOP_WORDS = new Set([
   "with",
 ]);
 
+/**
+ * Documents the query expansion config payload exchanged by command, SDK, and package integrations.
+ */
 export interface QueryExpansionConfig {
   enabled: boolean;
   provider: string | null;
   max_queries: number;
 }
 
+/**
+ * Documents the rerank config payload exchanged by command, SDK, and package integrations.
+ */
 export interface RerankConfig {
   enabled: boolean;
   model: string;
   top_k: number;
 }
 
+/**
+ * Documents the rerank candidate payload exchanged by command, SDK, and package integrations.
+ */
 export interface RerankCandidate {
   id: string;
   text: string;
 }
 
+/**
+ * Documents the rerank scored hit payload exchanged by command, SDK, and package integrations.
+ */
 export interface RerankScoredHit {
   id: string;
   score: number;
@@ -114,6 +131,9 @@ function pluralizeSimple(token: string): string {
   return normalizedToken;
 }
 
+/**
+ * Implements build deterministic query expansions for the public runtime surface of this module.
+ */
 export function buildDeterministicQueryExpansions(
   query: string,
   maxQueries = DEFAULT_QUERY_EXPANSION_MAX_QUERIES,
@@ -141,6 +161,9 @@ export function buildDeterministicQueryExpansions(
   );
 }
 
+/**
+ * Implements normalize query expansion output for the public runtime surface of this module.
+ */
 export function normalizeQueryExpansionOutput(raw: unknown): string[] {
   const rawQueries = Array.isArray(raw)
     ? raw
@@ -154,10 +177,16 @@ export function normalizeQueryExpansionOutput(raw: unknown): string[] {
   );
 }
 
+/**
+ * Implements merge query expansions for the public runtime surface of this module.
+ */
 export function mergeQueryExpansions(base: string[], extra: string[], maxQueries: number): string[] {
   return dedupeQueries([...base, ...extra], Math.max(1, maxQueries));
 }
 
+/**
+ * Implements resolve query expansion config for the public runtime surface of this module.
+ */
 export function resolveQueryExpansionConfig(
   settings: PmSettings,
   fallbackProviderName: string | null,
@@ -172,6 +201,9 @@ export function resolveQueryExpansionConfig(
   };
 }
 
+/**
+ * Implements resolve rerank config for the public runtime surface of this module.
+ */
 export function resolveRerankConfig(settings: PmSettings, fallbackModel: string): RerankConfig {
   const search = (settings as { search?: { rerank?: { enabled?: unknown; model?: unknown; top_k?: unknown } } }).search;
   const rerank = search?.rerank;
@@ -185,6 +217,9 @@ export function resolveRerankConfig(settings: PmSettings, fallbackModel: string)
   };
 }
 
+/**
+ * Implements normalize rerank output for the public runtime surface of this module.
+ */
 export function normalizeRerankOutput(raw: unknown): RerankScoredHit[] {
   const rawHits = Array.isArray(raw)
     ? raw
@@ -257,6 +292,9 @@ function cosineSimilarityWithKnownLeftNorm(
   return Math.max(-1, Math.min(1, numerator / denominator));
 }
 
+/**
+ * Implements rerank candidates with embeddings for the public runtime surface of this module.
+ */
 export async function rerankCandidatesWithEmbeddings(
   provider: EmbeddingProviderConfig,
   model: string,

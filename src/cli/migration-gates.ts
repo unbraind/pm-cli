@@ -1,3 +1,8 @@
+/**
+ * @module cli/migration-gates
+ *
+ * Provides CLI runtime support for Migration Gates.
+ */
 import { pathExists } from "../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations, type PreflightRuntimeDecision } from "../core/extensions/index.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
@@ -9,6 +14,9 @@ import { PmCliError } from "../core/shared/errors.js";
 import { toNonEmptyStringOrUndefined } from "../core/shared/primitives.js";
 import { printError } from "../core/output/output.js";
 
+/**
+ * Documents the mandatory migration blocker payload exchanged by command, SDK, and package integrations.
+ */
 export interface MandatoryMigrationBlocker {
   layer: "global" | "project";
   name: string;
@@ -16,12 +24,18 @@ export interface MandatoryMigrationBlocker {
   status: string;
 }
 
+/**
+ * Documents the write gate decision payload exchanged by command, SDK, and package integrations.
+ */
 export interface WriteGateDecision {
   isMutation: boolean;
   forceCapable: boolean;
   forceRequested: boolean;
 }
 
+/**
+ * Implements resolve migration id for the public runtime surface of this module.
+ */
 export function resolveMigrationId(definition: Record<string, unknown>, fallbackIndex: number): string {
   const explicit = toNonEmptyStringOrUndefined(definition.id);
   if (explicit) {
@@ -30,6 +44,9 @@ export function resolveMigrationId(definition: Record<string, unknown>, fallback
   return `migration-${String(fallbackIndex + 1).padStart(3, "0")}`;
 }
 
+/**
+ * Implements resolve normalized migration status for the public runtime surface of this module.
+ */
 export function resolveNormalizedMigrationStatus(definition: Record<string, unknown>): string {
   const normalized = toNonEmptyStringOrUndefined(definition.status)?.toLowerCase();
   return normalized ?? "pending";
@@ -51,6 +68,9 @@ function compareMandatoryMigrationBlockers(left: MandatoryMigrationBlocker, righ
   return left.id.localeCompare(right.id);
 }
 
+/**
+ * Implements collect mandatory migration blockers for the public runtime surface of this module.
+ */
 export function collectMandatoryMigrationBlockers(
   migrations: Array<{
     layer: "global" | "project";
@@ -82,6 +102,9 @@ function hasMutatingListValues(value: unknown): boolean {
   return Array.isArray(value) && value.length > 0;
 }
 
+/**
+ * Implements decide write gate for the public runtime surface of this module.
+ */
 export function decideWriteGate(commandPath: string, options: Record<string, unknown>): WriteGateDecision {
   const forceRequested = options.force === true;
   switch (commandPath) {
@@ -130,6 +153,9 @@ export function decideWriteGate(commandPath: string, options: Record<string, unk
   }
 }
 
+/**
+ * Implements enforce mandatory migration write gate for the public runtime surface of this module.
+ */
 export function enforceMandatoryMigrationWriteGate(
   commandPath: string,
   options: Record<string, unknown>,
@@ -157,6 +183,9 @@ export function enforceMandatoryMigrationWriteGate(
   );
 }
 
+/**
+ * Implements enforce item format write gate and preflight migration for the public runtime surface of this module.
+ */
 export async function enforceItemFormatWriteGateAndPreflightMigration(
   commandPath: string,
   options: Record<string, unknown>,

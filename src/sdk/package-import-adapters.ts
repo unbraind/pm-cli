@@ -137,6 +137,9 @@ export function emptyImportedDocument(): ItemDocument {
   };
 }
 
+/**
+ * Documents the commit imported item params payload exchanged by command, SDK, and package integrations.
+ */
 export interface CommitImportedItemParams {
   pmRoot: string;
   id: string;
@@ -149,6 +152,9 @@ export interface CommitImportedItemParams {
   conflictWarningPrefix: string;
 }
 
+/**
+ * Restricts commit imported item result values accepted by command, SDK, and storage contracts.
+ */
 export type CommitImportedItemResult =
   | { committed: true; writeWarnings: string[] }
   | { committed: false; conflictWarning: string };

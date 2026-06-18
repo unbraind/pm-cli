@@ -1,3 +1,8 @@
+/**
+ * @module core/history/history-rewrite
+ *
+ * Implements append-only history and replay behavior for History Rewrite.
+ */
 import { readFileIfExists } from "../fs/fs-utils.js";
 import type { ItemTypeRegistry } from "../item/type-registry.js";
 import { acquireLock } from "../lock/lock.js";
@@ -9,11 +14,17 @@ import type { ItemDocument, PmSettings } from "../../types/index.js";
 
 type LoadedItem = Awaited<ReturnType<typeof readLocatedItem>>;
 
+/**
+ * Documents the history rewrite subject payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistoryRewriteSubject {
   id: string;
   historyPath: string;
 }
 
+/**
+ * Documents the history rewrite ownership params payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistoryRewriteOwnershipParams {
   itemDocument: ItemDocument | null;
   subjectId: string;
@@ -45,6 +56,9 @@ export function checkHistoryRewriteOwnership(params: HistoryRewriteOwnershipPara
   return [];
 }
 
+/**
+ * Documents the verify history rewrite drift params payload exchanged by command, SDK, and package integrations.
+ */
 export interface VerifyHistoryRewriteDriftParams {
   pmRoot: string;
   subject: HistoryRewriteSubject;
@@ -56,6 +70,9 @@ export interface VerifyHistoryRewriteDriftParams {
   operation: string;
 }
 
+/**
+ * Documents the verified history rewrite state payload exchanged by command, SDK, and package integrations.
+ */
 export interface VerifiedHistoryRewriteState {
   historyRawUnderLock: string | null;
   locatedUnderLock: Awaited<ReturnType<typeof locateItem>>;
@@ -96,6 +113,9 @@ export async function verifyHistoryRewriteNoDrift(
   return { historyRawUnderLock, locatedUnderLock, loadedItemUnderLock };
 }
 
+/**
+ * Documents the execute history rewrite params payload exchanged by command, SDK, and package integrations.
+ */
 export interface ExecuteHistoryRewriteParams {
   pmRoot: string;
   subject: HistoryRewriteSubject;

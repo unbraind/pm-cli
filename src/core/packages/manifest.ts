@@ -1,3 +1,8 @@
+/**
+ * @module core/packages/manifest
+ *
+ * Discovers and validates pm package manifests for Manifest.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathExists } from "../fs/fs-utils.js";
@@ -13,10 +18,19 @@ export const PM_PACKAGE_RESOURCE_KINDS = [
   "prompts",
 ] as const;
 
+/**
+ * Restricts pm package resource kind values accepted by command, SDK, and storage contracts.
+ */
 export type PmPackageResourceKind = (typeof PM_PACKAGE_RESOURCE_KINDS)[number];
 
+/**
+ * Restricts pm package resource map values accepted by command, SDK, and storage contracts.
+ */
 export type PmPackageResourceMap = Partial<Record<PmPackageResourceKind, string[]>>;
 
+/**
+ * Documents the pm package catalog link map payload exchanged by command, SDK, and package integrations.
+ */
 export interface PmPackageCatalogLinkMap {
   docs?: string;
   npm?: string;
@@ -24,11 +38,17 @@ export interface PmPackageCatalogLinkMap {
   report?: string;
 }
 
+/**
+ * Documents the pm package catalog media map payload exchanged by command, SDK, and package integrations.
+ */
 export interface PmPackageCatalogMediaMap {
   image?: string;
   video?: string;
 }
 
+/**
+ * Documents the pm package catalog metadata payload exchanged by command, SDK, and package integrations.
+ */
 export interface PmPackageCatalogMetadata {
   display_name?: string;
   category?: string;
@@ -38,6 +58,9 @@ export interface PmPackageCatalogMetadata {
   tags?: string[];
 }
 
+/**
+ * Documents the pm package manifest payload exchanged by command, SDK, and package integrations.
+ */
 export interface PmPackageManifest {
   source: "pm" | "convention";
   package_json_path?: string;
@@ -188,6 +211,9 @@ function normalizePackageCatalogMetadata(raw: unknown): PmPackageCatalogMetadata
   return Object.values(catalog).some((value) => value !== undefined) ? catalog : undefined;
 }
 
+/**
+ * Implements read pm package manifest for the public runtime surface of this module.
+ */
 export async function readPmPackageManifest(packageRoot: string): Promise<PmPackageManifest> {
   const packageJsonPath = path.join(packageRoot, "package.json");
   if (!(await pathExists(packageJsonPath))) {
@@ -251,6 +277,9 @@ async function listExtensionManifestDirectories(parentDirectory: string): Promis
   return candidates.sort((left, right) => left.localeCompare(right));
 }
 
+/**
+ * Implements collect package extension directories for the public runtime surface of this module.
+ */
 export async function collectPackageExtensionDirectories(packageRoot: string): Promise<string[]> {
   if (await pathExists(path.join(packageRoot, "manifest.json"))) {
     return [packageRoot];

@@ -1,3 +1,8 @@
+/**
+ * @module core/item/item-record
+ *
+ * Defines item parsing, formatting, and lifecycle helpers for Item Record.
+ */
 import type { ItemMetadata } from "../../types/index.js";
 
 /**
