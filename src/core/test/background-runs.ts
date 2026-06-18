@@ -718,6 +718,7 @@ export async function runBackgroundTestRunWorker(pmRoot: string, runId: string, 
   let stdoutWriteQueue: Promise<void> = Promise.resolve();
   let stderrWriteQueue: Promise<void> = Promise.resolve();
   let stdoutBuffer = "";
+  let stderrBuffer = "";
   let stopRequested = false;
 
   const requestStop = async (): Promise<void> => {
@@ -776,37 +777,61 @@ export async function runBackgroundTestRunWorker(pmRoot: string, runId: string, 
     stdoutBuffer += text;
     stdoutWriteQueue = appendFileOrdered(stdoutWriteQueue, record.stdout_path, text);
   });
+
+  const applyProgressLine = (line: string): boolean => {
+    const progressPatch = parseProgressLine(line);
+    if (!progressPatch) {
+      return false;
+    }
+    if (progressPatch.item_id) {
+      record.progress = {
+        phase: "running",
+        message: line,
+        heartbeat_at: nowIso(),
+        item_index: progressPatch.item_index,
+        item_total: progressPatch.item_total,
+        item_id: progressPatch.item_id,
+        linked_test_index: undefined,
+        linked_test_total: undefined,
+        current_command: undefined,
+        elapsed_ms: undefined,
+      };
+      return true;
+    }
+    record.progress = {
+      phase: (record.progress as BackgroundRunProgress).phase === "stopping" ? "stopping" : "running",
+      message: line,
+      heartbeat_at: nowIso(),
+      item_index: progressPatch.item_index ?? record.progress?.item_index,
+      item_total: progressPatch.item_total ?? record.progress?.item_total,
+      item_id: progressPatch.item_id ?? record.progress?.item_id,
+      linked_test_index: progressPatch.linked_test_index,
+      linked_test_total: progressPatch.linked_test_total,
+      current_command: progressPatch.current_command,
+      elapsed_ms: progressPatch.elapsed_ms,
+    };
+    if (progressPatch.phase === "finished" && !stopRequested) {
+      record.progress.phase = "running";
+    }
+    return true;
+  };
+
   child.stderr?.on("data", (chunk) => {
     const text = chunk.toString("utf8");
     stderrWriteQueue = appendFileOrdered(stderrWriteQueue, record.stderr_path, text);
-    const lines = splitLines(text);
-    for (const line of lines) {
-      const progressPatch = parseProgressLine(line);
-      record.progress = {
-        phase: (record.progress as BackgroundRunProgress).phase === "stopping" ? "stopping" : "running",
-        message: line,
-        heartbeat_at: nowIso(),
-        item_index: progressPatch?.item_index ?? record.progress?.item_index ?? undefined,
-        item_total: progressPatch?.item_total ?? record.progress?.item_total ?? undefined,
-        item_id: progressPatch?.item_id ?? record.progress?.item_id ?? undefined,
-        linked_test_index: progressPatch && "linked_test_index" in progressPatch
-          ? progressPatch.linked_test_index
-          : record.progress?.linked_test_index ?? undefined,
-        linked_test_total: progressPatch && "linked_test_total" in progressPatch
-          ? progressPatch.linked_test_total
-          : record.progress?.linked_test_total ?? undefined,
-        current_command: progressPatch && "current_command" in progressPatch
-          ? progressPatch.current_command
-          : record.progress?.current_command ?? undefined,
-        elapsed_ms: progressPatch && "elapsed_ms" in progressPatch
-          ? progressPatch.elapsed_ms
-          : record.progress?.elapsed_ms ?? undefined,
-      };
-      if (progressPatch?.phase === "finished" && !stopRequested) {
-        record.progress.phase = "running";
+    stderrBuffer += text;
+    const parts = stderrBuffer.split(/\r?\n/);
+    stderrBuffer = parts.pop()!;
+    let progressChanged = false;
+    for (const part of parts) {
+      const line = part.trimEnd();
+      if (line.length > 0 && applyProgressLine(line)) {
+        progressChanged = true;
       }
     }
-    scheduleRecordWrite();
+    if (progressChanged) {
+      scheduleRecordWrite();
+    }
   });
 
   let exitCode: number | null = null;
@@ -825,6 +850,11 @@ export async function runBackgroundTestRunWorker(pmRoot: string, runId: string, 
 
   await stdoutWriteQueue;
   await stderrWriteQueue;
+  const trailingStderrLine = stderrBuffer.trimEnd();
+  if (trailingStderrLine.length > 0 && applyProgressLine(trailingStderrLine)) {
+    scheduleRecordWrite();
+  }
+  stderrBuffer = "";
 
   let parsedResult: unknown | null = null;
   if (stdoutBuffer.trim().length > 0) {

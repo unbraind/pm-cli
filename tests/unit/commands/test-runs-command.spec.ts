@@ -1105,7 +1105,7 @@ describe("background test run lifecycle", () => {
     });
   });
 
-  it("covers linked progress fallback branches for non-progress stderr lines", async () => {
+  it("keeps structured progress stable across plain stderr and split progress lines", async () => {
     await withTempPmPath(async (context) => {
       const cliEntry = path.join(context.tempRoot, "worker-non-progress-entry.cjs");
       await writeFile(
@@ -1119,6 +1119,19 @@ describe("background test run lifecycle", () => {
           "    process.stdout.write(JSON.stringify({ run_results: [{ status: 'passed' }] }));",
           "    process.exit(0);",
           "  }, 0);",
+          "  return;",
+          "} else if (mode === 'split') {",
+          "  process.stderr.write('[pm test-all] item 1/1 start id=pm-split');",
+          "  setTimeout(() => {",
+          "    process.stderr.write(' linked_tests=1\\n');",
+          "    process.stdout.write(JSON.stringify({ totals: { items: 1, linked_tests: 1, passed: 1, failed: 0, skipped: 0 } }));",
+          "    process.exit(0);",
+          "  }, 0);",
+          "  return;",
+          "} else if (mode === 'trailing') {",
+          "  process.stderr.write('[pm test-all] item 1/1 start id=pm-trailing linked_tests=1');",
+          "  process.stdout.write(JSON.stringify({ totals: { items: 1, linked_tests: 1, passed: 1, failed: 0, skipped: 0 } }));",
+          "  process.exit(0);",
           "  return;",
           "} else {",
           "  process.stderr.write('another plain stderr message\\n');",
@@ -1141,6 +1154,31 @@ describe("background test run lifecycle", () => {
         });
         const seededRun = await runBackgroundTestRunWorker(context.pmPath, seeded.run.id);
         expect(seededRun.status).toBe("passed");
+        expect(seededRun.progress?.linked_test_index).toBe(1);
+        expect(seededRun.progress?.elapsed_ms).toBe(9);
+
+        const split = await startBackgroundTestRun({
+          pmRoot: context.pmPath,
+          globalPmRoot: context.globalPmPath,
+          kind: "test-all",
+          commandArgs: ["split"],
+          requestedBy: "unit",
+        });
+        const splitRun = await runBackgroundTestRunWorker(context.pmPath, split.run.id);
+        expect(splitRun.status).toBe("passed");
+        expect(splitRun.progress?.item_id).toBe("pm-split");
+        expect(splitRun.progress?.item_index).toBe(1);
+
+        const trailing = await startBackgroundTestRun({
+          pmRoot: context.pmPath,
+          globalPmRoot: context.globalPmPath,
+          kind: "test-all",
+          commandArgs: ["trailing"],
+          requestedBy: "unit",
+        });
+        const trailingRun = await runBackgroundTestRunWorker(context.pmPath, trailing.run.id);
+        expect(trailingRun.status).toBe("passed");
+        expect(trailingRun.progress?.item_id).toBe("pm-trailing");
 
         const plain = await startBackgroundTestRun({
           pmRoot: context.pmPath,
