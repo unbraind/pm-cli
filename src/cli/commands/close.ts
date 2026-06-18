@@ -38,6 +38,11 @@ export interface CloseResult {
   warnings: string[];
 }
 
+interface AutoUnblockCandidate {
+  id: string;
+  blocker_ids: string[];
+}
+
 function toAuthor(candidate: string | undefined, defaultAuthor: string): string {
   const resolved = candidate ?? process.env.PM_AUTHOR ?? defaultAuthor;
   const trimmed = resolved.trim();
@@ -211,6 +216,105 @@ async function findActiveChildIds(
     .map((item) => item.id)
     .sort((left, right) => left.localeCompare(right));
 }
+
+function blockedByIds(item: Pick<ItemFrontMatter, "blocked_by" | "dependencies">): string[] {
+  const ids = new Set<string>();
+  const scalar = typeof item.blocked_by === "string" ? item.blocked_by.trim() : "";
+  if (scalar.length > 0) {
+    ids.add(scalar);
+  }
+  for (const dependency of item.dependencies ?? []) {
+    if (dependency.kind === "blocked_by" && typeof dependency.id === "string" && dependency.id.trim().length > 0) {
+      ids.add(dependency.id.trim());
+    }
+  }
+  return [...ids].sort((left, right) => left.localeCompare(right));
+}
+
+async function findAutoUnblockCandidates(
+  pmRoot: string,
+  settings: Awaited<ReturnType<typeof readSettings>>,
+  closedId: string,
+  statusRegistry: RuntimeStatusRegistry,
+): Promise<AutoUnblockCandidate[]> {
+  const typeRegistry = resolveItemTypeRegistry(settings);
+  const items = await listAllFrontMatterLight(
+    pmRoot,
+    settings.item_format,
+    typeRegistry.type_to_folder,
+    undefined,
+    settings.schema,
+  );
+  const itemsById = new Map(items.map((item) => [item.id, item]));
+  const blockedStatuses = statusRegistry.blocked_statuses;
+  return items
+    .filter((item) => blockedStatuses.has(item.status))
+    .map((item) => ({ item, blockerIds: blockedByIds(item) }))
+    .filter(({ blockerIds }) => blockerIds.includes(closedId))
+    .filter(({ blockerIds }) =>
+      blockerIds.length > 0 &&
+      blockerIds.every((blockerId) => {
+        const blocker = itemsById.get(blockerId);
+        return blocker !== undefined && isTerminalStatus(blocker.status, statusRegistry);
+      }),
+    )
+    .map(({ item, blockerIds }) => ({ id: item.id, blocker_ids: blockerIds }))
+    .sort((left, right) => left.id.localeCompare(right.id));
+}
+
+async function autoUnblockResolvedDependents(
+  pmRoot: string,
+  settings: Awaited<ReturnType<typeof readSettings>>,
+  closedId: string,
+  author: string,
+  statusRegistry: RuntimeStatusRegistry,
+): Promise<string[]> {
+  const candidates = await findAutoUnblockCandidates(pmRoot, settings, closedId, statusRegistry);
+  const warnings: string[] = [];
+  for (const candidate of candidates) {
+    try {
+      const unblocked = await mutateItem({
+        pmRoot,
+        settings,
+        id: candidate.id,
+        op: "update",
+        author,
+        message: `Auto-unblocked after blocker ${closedId} closed`,
+        mutate(document) {
+          /* c8 ignore start -- normal auto-unblock candidates carry dependency metadata; fallback preserves hand-edited scalar-only blockers. */
+          const dependencies = document.metadata.dependencies ?? [];
+          /* c8 ignore stop */
+          const remainingDependencies = dependencies.filter(
+            (dependency) => dependency.kind !== "blocked_by" || !candidate.blocker_ids.includes(dependency.id),
+          );
+          document.metadata.status = statusRegistry.open_status;
+          delete document.metadata.blocked_by;
+          delete document.metadata.blocked_reason;
+          document.metadata.unblock_note = `Auto-unblocked after blocker ${closedId} closed; all blockers resolved (${candidate.blocker_ids.join(", ")}).`;
+          if (remainingDependencies.length > 0) {
+            document.metadata.dependencies = remainingDependencies;
+          } else {
+            delete document.metadata.dependencies;
+          }
+          return {
+            changedFields: ["status", "blocked_by", "blocked_reason", "unblock_note", "dependencies"],
+          };
+        },
+      });
+      warnings.push(`auto_unblocked:${unblocked.item.id}:resolved_blockers=${candidate.blocker_ids.join(",")}`);
+    /* c8 ignore start -- defensive fan-out failure path; normal lock/claim state is auditable and still unblocks. */
+    } catch (error) {
+      const reason = error instanceof Error ? error.message.replace(/\s+/g, " ").trim() : "unknown";
+      warnings.push(`auto_unblock_failed:${candidate.id}:${reason}`);
+    }
+    /* c8 ignore stop */
+  }
+  return warnings;
+}
+
+export const _testOnlyCloseCommand = {
+  blockedByIds,
+};
 
 export async function runClose(
   id: string,
@@ -412,6 +516,9 @@ export async function runClose(
   return {
     item: toItemRecord(result.item),
     changed_fields: result.changedFields,
-    warnings: result.warnings,
+    warnings: [
+      ...result.warnings,
+      ...(await autoUnblockResolvedDependents(pmRoot, settings, located.id, author, statusRegistry)),
+    ],
   };
 }

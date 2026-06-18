@@ -371,6 +371,7 @@ export const HISTORY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--diff" },
   { flag: "--field" },
   { flag: "--verify" },
+  { flag: "--format" },
 ];
 
 export const HISTORY_REDACT_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -1337,6 +1338,7 @@ export const GET_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--tree" },
   { flag: "--tree-depth" },
   { flag: "--tree_depth" },
+  { flag: "--format" },
 ];
 
 export const GUIDE_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -1366,6 +1368,7 @@ export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--compact" },
   { flag: "--full" },
   { flag: "--fields", list: true },
+  { flag: "--format" },
   { flag: "--limit" },
   { flag: "--status", list: true },
   { flag: "--type" },
@@ -1895,13 +1898,13 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   guide: { optional: ["format", "depth"] },
   context: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
   ctx: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
-  get: { required: ["id"], optional: ["depth", "full", "fields", "tree", "treeDepth"] },
+  get: { required: ["id"], optional: ["depth", "full", "fields", "tree", "treeDepth", "format"] },
   search: {
     optional: SEARCH_CONTRACT_PARAMETER_KEYS,
     anyOfRequired: [["query"], ["keywords"]],
   },
   reindex: { optional: ["mode", "progress"] },
-  history: { required: ["id"], optional: ["limit", "compact", "full", "diff", "verify"] },
+  history: { required: ["id"], optional: ["limit", "compact", "full", "diff", "verify", "format"] },
   "history-redact": {
     required: ["id"],
     optional: ["literal", "regex", "replacement", "dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],

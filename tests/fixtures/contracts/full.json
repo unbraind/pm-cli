@@ -2570,6 +2570,9 @@
             "--tree_depth"
           ],
           "flag": "--tree-depth"
+        },
+        {
+          "flag": "--format"
         }
       ],
       "provider": "core"
@@ -2647,6 +2650,9 @@
         },
         {
           "flag": "--verify"
+        },
+        {
+          "flag": "--format"
         }
       ],
       "provider": "core"
@@ -5396,6 +5402,9 @@
         {
           "flag": "--fields",
           "list": true
+        },
+        {
+          "flag": "--format"
         },
         {
           "flag": "--limit"
@@ -17052,6 +17061,10 @@
             ],
             "type": "string"
           },
+          "format": {
+            "description": "Format.",
+            "type": "string"
+          },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
@@ -17479,6 +17492,10 @@
           "diff": {
             "description": "Diff.",
             "type": "boolean"
+          },
+          "format": {
+            "description": "Format.",
+            "type": "string"
           },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
