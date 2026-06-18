@@ -145,6 +145,7 @@ describe("runValidate", () => {
         { id: "pm-confidence", confidence: Number.POSITIVE_INFINITY } as never,
         "confidence",
         statusRegistry,
+        false,
       ),
     ).toBe(true);
     expect([...validateInternals.resolveRequestedChecks({ checkMetadata: true, pruneMissing: true })]).toEqual([
@@ -395,6 +396,127 @@ describe("runValidate", () => {
     const verbose = validateInternals.summarizeDuplicateIssueCodes(many, true);
     expect(verbose.rows).toHaveLength(7);
     expect(verbose.truncated).toBe(false);
+  });
+
+  it("exempts terminal items from planning-field gaps unless strict enforcement is requested (GH-276)", () => {
+    const statusRegistry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
+    const closedBare = { id: "pm-closed", status: "closed" } as never;
+    const canceledBare = { id: "pm-canceled", status: "canceled" } as never;
+    const openBare = { id: "pm-open", status: "open" } as never;
+
+    for (const field of ["acceptance_criteria", "estimated_minutes"] as const) {
+      // core profile (enforcePlanningFieldsOnTerminal = false): closed + canceled
+      // items short-circuit to "not missing" — terminal_done AND terminal_canceled.
+      expect(validateInternals.isMetadataFieldMissing(closedBare, field, statusRegistry, false)).toBe(false);
+      expect(validateInternals.isMetadataFieldMissing(canceledBare, field, statusRegistry, false)).toBe(false);
+      // strict profile (enforcePlanningFieldsOnTerminal = true): the short-circuit
+      // is skipped, so a terminal item missing the field IS still reported.
+      expect(validateInternals.isMetadataFieldMissing(closedBare, field, statusRegistry, true)).toBe(true);
+      // open/active items are never exempt regardless of enforcement flag.
+      expect(validateInternals.isMetadataFieldMissing(openBare, field, statusRegistry, false)).toBe(true);
+    }
+
+    // A NON-exempt field (author) on a terminal item is still reported under core:
+    // TERMINAL_EXEMPT_PLANNING_FIELDS.has("author") is false, so the short-circuit
+    // never fires.
+    expect(validateInternals.isMetadataFieldMissing(closedBare, "author", statusRegistry, false)).toBe(true);
+  });
+
+  it("does not flag closed/canceled items for missing planning fields under the core profile (GH-276)", async () => {
+    await withTempPmPath(async (context) => {
+      const closedId = createTask(context, "validate-terminal-exempt-closed");
+      const canceledId = createTask(context, "validate-terminal-exempt-canceled");
+      await runClose(closedId, "done", {}, { path: context.pmPath });
+      const canceled = context.runCli(
+        ["update", canceledId, "--json", "--status", "canceled", "--message", "Cancel for terminal-exempt test"],
+        { expectJson: true },
+      );
+      expect(canceled.code).toBe(0);
+
+      // Strip the planning fields from both terminal items so they would be
+      // flagged if the terminal exemption did not apply.
+      for (const id of [closedId, canceledId]) {
+        const itemPath = path.join(context.pmPath, "tasks", `${id}.toon`);
+        const before = await readFile(itemPath, "utf8");
+        const withoutEstimate = before.replace(/^estimated_minutes:.*\n/m, "");
+        const after = withoutEstimate.replace(/^acceptance_criteria:.*\n/m, "");
+        expect(after).not.toBe(before);
+        await writeFile(itemPath, after, "utf8");
+      }
+
+      const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });
+      expect(
+        result.warnings.some((warning) => warning.startsWith("validate_metadata_missing_estimate:")),
+      ).toBe(false);
+      expect(
+        result.warnings.some((warning) => warning.startsWith("validate_metadata_missing_acceptance_criteria:")),
+      ).toBe(false);
+      const metadataCheck = checkByName(result, "metadata");
+      const details = metadataCheck.details as {
+        counts: Record<string, number>;
+        missing_estimated_minutes_item_ids?: string[];
+        missing_acceptance_criteria_item_ids?: string[];
+      };
+      expect(details.counts.missing_estimated_minutes).toBeUndefined();
+      expect(details.counts.missing_acceptance_criteria).toBeUndefined();
+      expect(details.missing_estimated_minutes_item_ids ?? []).not.toContain(closedId);
+      expect(details.missing_estimated_minutes_item_ids ?? []).not.toContain(canceledId);
+      expect(details.missing_acceptance_criteria_item_ids ?? []).not.toContain(closedId);
+      expect(details.missing_acceptance_criteria_item_ids ?? []).not.toContain(canceledId);
+    });
+  });
+
+  it("still flags closed items for missing planning fields under the strict profile (GH-276)", async () => {
+    await withTempPmPath(async (context) => {
+      const closedId = createTask(context, "validate-terminal-strict-closed");
+      await runClose(closedId, "done", {}, { path: context.pmPath });
+
+      const itemPath = path.join(context.pmPath, "tasks", `${closedId}.toon`);
+      const before = await readFile(itemPath, "utf8");
+      const withoutEstimate = before.replace(/^estimated_minutes:.*\n/m, "");
+      const after = withoutEstimate.replace(/^acceptance_criteria:.*\n/m, "");
+      expect(after).not.toBe(before);
+      await writeFile(itemPath, after, "utf8");
+
+      const result = await runValidate(
+        { checkMetadata: true, metadataProfile: "strict" },
+        { path: context.pmPath },
+      );
+      expect(result.warnings).toContain("validate_metadata_missing_estimate:1");
+      expect(result.warnings).toContain("validate_metadata_missing_acceptance_criteria:1");
+      const details = checkByName(result, "metadata").details as {
+        counts: { missing_estimated_minutes: number; missing_acceptance_criteria: number };
+        missing_estimated_minutes_item_ids: string[];
+        missing_acceptance_criteria_item_ids: string[];
+      };
+      expect(details.counts.missing_estimated_minutes).toBe(1);
+      expect(details.counts.missing_acceptance_criteria).toBe(1);
+      expect(details.missing_estimated_minutes_item_ids).toContain(closedId);
+      expect(details.missing_acceptance_criteria_item_ids).toContain(closedId);
+    });
+  });
+
+  it("still flags open items for missing planning fields under the core profile (GH-276)", async () => {
+    await withTempPmPath(async (context) => {
+      const openId = createTask(context, "validate-terminal-open-active");
+
+      const itemPath = path.join(context.pmPath, "tasks", `${openId}.toon`);
+      const before = await readFile(itemPath, "utf8");
+      const withoutEstimate = before.replace(/^estimated_minutes:.*\n/m, "");
+      const after = withoutEstimate.replace(/^acceptance_criteria:.*\n/m, "");
+      expect(after).not.toBe(before);
+      await writeFile(itemPath, after, "utf8");
+
+      const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });
+      expect(result.warnings).toContain("validate_metadata_missing_estimate:1");
+      expect(result.warnings).toContain("validate_metadata_missing_acceptance_criteria:1");
+      const details = checkByName(result, "metadata").details as {
+        missing_estimated_minutes_item_ids: string[];
+        missing_acceptance_criteria_item_ids: string[];
+      };
+      expect(details.missing_estimated_minutes_item_ids).toContain(openId);
+      expect(details.missing_acceptance_criteria_item_ids).toContain(openId);
+    });
   });
 
   it("reports lifecycle drift for active closure-like metadata and terminal parents", async () => {
@@ -800,7 +922,7 @@ describe("runValidate", () => {
     });
   });
 
-  it("reports metadata warnings for missing estimate and closed close_reason", async () => {
+  it("reports closed close_reason gaps while exempting a closed item's planning estimate (GH-276)", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "validate-metadata-missing-fields");
       await runClose(id, "done", {}, { path: context.pmPath });
@@ -815,14 +937,20 @@ describe("runValidate", () => {
       const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });
       expect(result.ok).toBe(true);
       expect(result.has_warnings).toBe(true);
-      expect(result.warnings).toContain("validate_metadata_missing_estimate:1");
+      // GH-276: estimated_minutes is a planning field exempt on terminal items
+      // under the core profile, so a closed item's missing estimate is no longer
+      // reported. close_reason is closure metadata (not a planning field) and is
+      // still flagged.
+      expect(
+        result.warnings.some((warning) => warning.startsWith("validate_metadata_missing_estimate:")),
+      ).toBe(false);
       expect(result.warnings).toContain("validate_metadata_missing_close_reason:1");
       const metadataCheck = checkByName(result, "metadata");
       expect(metadataCheck.status).toBe("warn");
       const details = metadataCheck.details as {
-        counts: { missing_estimated_minutes: number; closed_missing_close_reason: number };
+        counts: { missing_estimated_minutes?: number; closed_missing_close_reason: number };
       };
-      expect(details.counts.missing_estimated_minutes).toBe(1);
+      expect(details.counts.missing_estimated_minutes).toBeUndefined();
       expect(details.counts.closed_missing_close_reason).toBe(1);
     });
   });

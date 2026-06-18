@@ -1,0 +1,15 @@
+id: pm-k8ld
+title: "GH-277: files --remove path-only input clarity"
+description: Improve --remove error + help so agents know it accepts path identifiers only and audit context goes via --message; reject note=/scope= with a guiding message.
+type: Task
+status: closed
+priority: 1
+tags: []
+created_at: "2026-06-18T09:15:17.685Z"
+updated_at: "2026-06-18T09:31:22.354Z"
+author: claude-code-agent
+parent: pm-6bz1
+comments[1]{created_at,author,text}:
+  "2026-06-18T09:22:18.792Z",claude-code-agent,"Added focused unit spec tests/unit/cli/linked-artifacts-remove.spec.ts covering GH-277 parseRemoveEntries note/scope guidance branch (lines ~190-200): rejects note=/scope= with 'path only' + '--message' guidance, case-insensitive (Note/SCOPE), both-keys lists \"note\"+\"scope\", PmCliError USAGE exitCode; regressions: bare path, path=, undefined=[], empty=requires-path-value, truly-unknown key still routes to assertNoUnknownCsvKeys (NOT path-only msg). 6 tests, all pass via node scripts/run-tests.mjs."
+close_reason: "GH-277 fixed: files/docs --remove rejects note=/scope= with guidance toward --message for audit context; help text clarified; 6 new parser tests."
+body: ""

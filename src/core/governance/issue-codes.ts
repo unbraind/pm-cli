@@ -16,6 +16,21 @@
 export interface IssueCodeItem {
   id: string;
   title?: string | null;
+  /**
+   * The id of this item's parent, when it is a child in a hierarchy. Used to
+   * suppress false positives where a child intentionally reuses its parent's
+   * code prefix (the `PARENT` + `PARENT-T0n` task-breakdown convention, GH-275):
+   * when an item's parent is another item in the same code group, the shared
+   * code is by design and the child does not constitute a collision.
+   */
+  parent?: string | null;
+  /**
+   * The id of the canonical item this one was closed as a duplicate of, when
+   * set. A closed-as-duplicate item has already been adjudicated, so it is
+   * excluded from collision detection entirely (GH-278) — re-flagging a
+   * resolved duplicate is permanent noise that erodes trust in `validate`.
+   */
+  duplicate_of?: string | null;
 }
 
 /** A logical issue code shared by two or more items. */
@@ -63,11 +78,29 @@ export function extractIssueCode(title: string | null | undefined): string | nul
   return match ? match[1] : null;
 }
 
+/** Test whether a value is a usable (non-empty after trim) item-id reference. */
+function isNonEmptyIdReference(value: string | null | undefined): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
 /**
  * Find logical issue codes used by 2+ items. Any item whose title begins with a
  * conventional issue code contributes; codes used by a single item are not
- * reported. Status is intentionally NOT considered — a closed item and an open
- * item sharing a code still collide for audit purposes, so both are flagged.
+ * reported. Status is intentionally NOT considered for genuine collisions — a
+ * closed item and an open item sharing a code still collide for audit purposes.
+ *
+ * Two adjudicated/by-design cases are excluded so `validate` output stays
+ * trustworthy in real trackers (GH-275, GH-278):
+ *
+ * - **Closed-as-duplicate** (GH-278): an item with a non-empty `duplicate_of`
+ *   has already been resolved against its canonical keeper, so it is dropped
+ *   before grouping and never contributes to a collision.
+ * - **Parent/child prefix sharing** (GH-275): the `PARENT` + `PARENT-T0n`
+ *   task-breakdown convention makes a child's title share the parent's code.
+ *   Within each code group, any item whose `parent` is another item in the same
+ *   group is dropped, because the shared code is intentional hierarchy, not a
+ *   collision. A genuine duplicate (two items with the same code, neither the
+ *   parent of the other) still surfaces after this filtering.
  *
  * Results are deterministic: duplicate groups are sorted by code, and the
  * `ids`/`titles` within each group are sorted by id. The first-seen title for a
@@ -75,11 +108,15 @@ export function extractIssueCode(title: string | null | undefined): string | nul
  * de-duplicated so an item never inflates its own code's count.
  */
 export function findDuplicateIssueCodes(items: readonly IssueCodeItem[]): DuplicateIssueCode[] {
-  const byCode = new Map<string, Array<{ id: string; title: string }>>();
+  const byCode = new Map<string, Array<{ id: string; title: string; parent: string | null }>>();
   for (const item of items) {
     // A non-string title can never carry a code, so skip it before extraction;
     // this also guarantees every stored title below is a real string.
     if (typeof item.title !== "string") {
+      continue;
+    }
+    // GH-278: an item closed as a duplicate of another is already adjudicated.
+    if (isNonEmptyIdReference(item.duplicate_of)) {
       continue;
     }
     const code = extractIssueCode(item.title);
@@ -92,7 +129,7 @@ export function findDuplicateIssueCodes(items: readonly IssueCodeItem[]): Duplic
       byCode.set(code, entries);
     }
     if (!entries.some((entry) => entry.id === item.id)) {
-      entries.push({ id: item.id, title: item.title });
+      entries.push({ id: item.id, title: item.title, parent: isNonEmptyIdReference(item.parent) ? item.parent.trim() : null });
     }
   }
 
@@ -101,7 +138,22 @@ export function findDuplicateIssueCodes(items: readonly IssueCodeItem[]): Duplic
     if (entries.length < 2) {
       continue;
     }
-    const sorted = [...entries].sort((left, right) => left.id.localeCompare(right.id));
+    // GH-275: drop children whose parent is another item carrying the same code
+    // (intentional `PARENT` + `PARENT-T0n` breakdown), then re-check the group.
+    // The parent reference is resolved only against the same-code group on
+    // purpose: a child is by-design noise solely when its parent shares the code
+    // (resolving against the full corpus would suppress genuinely colliding
+    // siblings whose parent merely exists elsewhere). Comparison is
+    // case-insensitive so a `parent` reference recorded in a different case than
+    // the canonical id (e.g. an upper-case `id_prefix`) still matches.
+    const idsInGroup = new Set(entries.map((entry) => entry.id.toLowerCase()));
+    const collisionEntries = entries.filter(
+      (entry) => entry.parent === null || !idsInGroup.has(entry.parent.toLowerCase()),
+    );
+    if (collisionEntries.length < 2) {
+      continue;
+    }
+    const sorted = [...collisionEntries].sort((left, right) => left.id.localeCompare(right.id));
     duplicates.push({
       code,
       count: sorted.length,

@@ -116,4 +116,132 @@ describe("findDuplicateIssueCodes", () => {
     const result = findDuplicateIssueCodes(items);
     expect(result[0].titles).toEqual(["RFC-3: real title", "RFC-3: second"]);
   });
+
+  // GH-278: a closed-as-duplicate item is already adjudicated and must not collide.
+  it("excludes an item with a non-empty duplicate_of so its code no longer collides", () => {
+    const items: IssueCodeItem[] = [
+      { id: "pm-keep", title: "BUG-7: canonical" },
+      { id: "pm-dup", title: "BUG-7: closed as dup", duplicate_of: "pm-keep" },
+    ];
+    expect(findDuplicateIssueCodes(items)).toEqual([]);
+  });
+
+  it("does NOT exclude an item whose duplicate_of is empty or whitespace (still collides)", () => {
+    const items: IssueCodeItem[] = [
+      { id: "pm-a", title: "BUG-8: first", duplicate_of: "" },
+      { id: "pm-b", title: "BUG-8: second", duplicate_of: "   " },
+    ];
+    const result = findDuplicateIssueCodes(items);
+    expect(result).toEqual([
+      {
+        code: "BUG-8",
+        count: 2,
+        ids: ["pm-a", "pm-b"],
+        titles: ["BUG-8: first", "BUG-8: second"],
+      },
+    ]);
+  });
+
+  // GH-275: PARENT + PARENT-T0n breakdown convention is intentional, not a collision.
+  it("does not flag a child whose parent is another item sharing the same code", () => {
+    const items: IssueCodeItem[] = [
+      { id: "pm-parent", title: "TASK-3: parent epic" },
+      { id: "pm-child", title: "TASK-3: child breakdown", parent: "pm-parent" },
+    ];
+    expect(findDuplicateIssueCodes(items)).toEqual([]);
+  });
+
+  it("does not flag a parent with several children all carrying the shared code", () => {
+    const items: IssueCodeItem[] = [
+      { id: "pm-parent", title: "TASK-4: parent" },
+      { id: "pm-c1", title: "TASK-4: child one", parent: "pm-parent" },
+      { id: "pm-c2", title: "TASK-4: child two", parent: "pm-parent" },
+      { id: "pm-c3", title: "TASK-4: child three", parent: "pm-parent" },
+    ];
+    expect(findDuplicateIssueCodes(items)).toEqual([]);
+  });
+
+  it("still flags a genuine collision when neither item is the parent of the other", () => {
+    const items: IssueCodeItem[] = [
+      { id: "pm-x", title: "TASK-5: independent one", parent: null },
+      { id: "pm-y", title: "TASK-5: independent two", parent: "pm-outside" },
+    ];
+    const result = findDuplicateIssueCodes(items);
+    expect(result).toEqual([
+      {
+        code: "TASK-5",
+        count: 2,
+        ids: ["pm-x", "pm-y"],
+        titles: ["TASK-5: independent one", "TASK-5: independent two"],
+      },
+    ]);
+  });
+
+  it("counts a child whose parent points to an id not in the group (parent outside)", () => {
+    const items: IssueCodeItem[] = [
+      { id: "pm-a", title: "TASK-6: first" },
+      { id: "pm-b", title: "TASK-6: second", parent: "pm-elsewhere" },
+    ];
+    const result = findDuplicateIssueCodes(items);
+    expect(result).toEqual([
+      {
+        code: "TASK-6",
+        count: 2,
+        ids: ["pm-a", "pm-b"],
+        titles: ["TASK-6: first", "TASK-6: second"],
+      },
+    ]);
+  });
+
+  it("treats an empty/whitespace parent string as no parent (still collides)", () => {
+    const items: IssueCodeItem[] = [
+      { id: "pm-a", title: "TASK-7: first", parent: "" },
+      { id: "pm-b", title: "TASK-7: second", parent: "   " },
+    ];
+    const result = findDuplicateIssueCodes(items);
+    expect(result).toEqual([
+      {
+        code: "TASK-7",
+        count: 2,
+        ids: ["pm-a", "pm-b"],
+        titles: ["TASK-7: first", "TASK-7: second"],
+      },
+    ]);
+  });
+
+  it("trims a padded parent reference before comparing it to group ids", () => {
+    const items: IssueCodeItem[] = [
+      { id: "pm-parent", title: "TASK-8: parent" },
+      { id: "pm-child", title: "TASK-8: child", parent: "  pm-parent  " },
+    ];
+    expect(findDuplicateIssueCodes(items)).toEqual([]);
+  });
+
+  it("matches a parent reference case-insensitively against group ids (GH-275 review)", () => {
+    const items: IssueCodeItem[] = [
+      { id: "PM-PARENT", title: "TASK-11: parent" },
+      { id: "pm-child", title: "TASK-11: child", parent: "pm-parent" },
+    ];
+    // Child's lower-case `parent` resolves to the upper-case canonical id, so
+    // the intentional prefix sharing is suppressed rather than flagged.
+    expect(findDuplicateIssueCodes(items)).toEqual([]);
+  });
+
+  it("resolves a mixed group: closed-dup excluded, child collapsed, two genuine dups survive", () => {
+    const items: IssueCodeItem[] = [
+      { id: "pm-parent", title: "TASK-10: parent epic" },
+      { id: "pm-child", title: "TASK-10: child breakdown", parent: "pm-parent" },
+      { id: "pm-closeddup", title: "TASK-10: closed as dup", duplicate_of: "pm-parent" },
+      { id: "pm-indep", title: "TASK-10: independent dup", parent: null },
+    ];
+    const result = findDuplicateIssueCodes(items);
+    expect(result).toEqual([
+      {
+        code: "TASK-10",
+        count: 2,
+        ids: ["pm-indep", "pm-parent"],
+        titles: ["TASK-10: independent dup", "TASK-10: parent epic"],
+      },
+    ]);
+  });
 });
