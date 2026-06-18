@@ -394,6 +394,13 @@ describe("list-query command actions", () => {
     expect(lastCallArg(vi.mocked(runList) as never, 0)).toBeUndefined();
   });
 
+  it("defaults pm list-blocked to the compact status-list projection", async () => {
+    await runCli("list-blocked");
+    const options = lastCallArg<Record<string, unknown>>(vi.mocked(runList) as never, 1);
+    expect(options.brief).toBe(true);
+    expect(lastCallArg(vi.mocked(runList) as never, 0)).toBe("blocked");
+  });
+
   it("does not force brief when an explicit projection is requested", async () => {
     await runCli("list", "--fields", "id,title", "--status", "open", "--limit", "5");
     const options = lastCallArg<Record<string, unknown>>(vi.mocked(runList) as never, 1);

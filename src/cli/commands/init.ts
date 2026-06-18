@@ -482,34 +482,27 @@ export async function runInit(
   if (settingsExists) {
     settings = await readSettings(pmRoot);
     warnings.push(`already_exists:${settingsPath}`);
-    let changed = false;
-    const blockedChanges: string[] = [];
-    if (prefixArg !== undefined && settings.id_prefix !== normalizedPrefix) {
-      blockedChanges.push("id_prefix");
-      settings.id_prefix = normalizedPrefix;
-      warnings.push(`updated:id_prefix:${normalizedPrefix}`);
-      changed = true;
+    const pendingChanges: string[] = [];
+    const shouldUpdatePrefix = prefixArg !== undefined && settings.id_prefix !== normalizedPrefix;
+    const shouldUpdatePreset = presetFromOption !== undefined && settings.governance.preset !== presetFromOption;
+    const shouldUpdateAuthor = authorFromOption !== undefined && settings.author_default !== authorFromOption;
+    if (shouldUpdatePrefix) {
+      pendingChanges.push("id_prefix");
     }
-    if (presetFromOption !== undefined && settings.governance.preset !== presetFromOption) {
-      blockedChanges.push("governance_preset");
-      applyGovernancePreset(settings, presetFromOption);
-      warnings.push(`updated:governance_preset:${presetFromOption}`);
-      changed = true;
+    if (shouldUpdatePreset) {
+      pendingChanges.push("governance_preset");
     }
-    if (authorFromOption !== undefined && settings.author_default !== authorFromOption) {
-      blockedChanges.push("author_default");
-      settings.author_default = authorFromOption;
-      warnings.push(`updated:author_default:${authorFromOption}`);
-      changed = true;
+    if (shouldUpdateAuthor) {
+      pendingChanges.push("author_default");
     }
-    if (changed && options.force !== true) {
+    if (pendingChanges.length > 0 && options.force !== true) {
       throw new PmCliError(
         `Refusing to update existing tracker settings at ${settingsPath} without --force.`,
         EXIT_CODE.USAGE,
         {
           code: "init_existing_settings_requires_force",
           type: "urn:pm-cli:error:init_existing_settings_requires_force",
-          required: `--force for ${blockedChanges.join(", ")}`,
+          required: `--force for ${pendingChanges.join(", ")}`,
           why: "pm init is safe to rerun, but changing id prefix, governance preset, or default author on an existing tracker can corrupt long-lived project context when an agent meant to initialize a sandbox path.",
           examples: [
             "pm init --yes",
@@ -522,6 +515,22 @@ export async function runInit(
           ],
         },
       );
+    }
+    let changed = false;
+    if (shouldUpdatePrefix) {
+      settings.id_prefix = normalizedPrefix;
+      warnings.push(`updated:id_prefix:${normalizedPrefix}`);
+      changed = true;
+    }
+    if (shouldUpdatePreset) {
+      applyGovernancePreset(settings, presetFromOption!);
+      warnings.push(`updated:governance_preset:${presetFromOption}`);
+      changed = true;
+    }
+    if (shouldUpdateAuthor) {
+      settings.author_default = authorFromOption!;
+      warnings.push(`updated:author_default:${authorFromOption}`);
+      changed = true;
     }
     if (changed) {
       await writeSettings(pmRoot, settings);

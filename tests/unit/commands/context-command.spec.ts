@@ -477,6 +477,62 @@ describe("context command module", () => {
     expect(markdown).toContain('- pm-u1 "Unassigned" blocked_by:-');
     expect(markdown).toContain("- (unassigned) active:1 wip:0 items:[pm-u1]");
 
+    const emptyBlockersMarkdown = renderContextMarkdown({
+      now: "2026-05-01T00:00:00.000Z",
+      depth: "deep",
+      filters: {},
+      sections_included: ["hierarchy", "blockers"],
+      summary: {
+        active_items: 0,
+        in_progress: 0,
+        open: 0,
+        blocked: 0,
+        blocked_fallback_used: false,
+        agenda_events: 0,
+      },
+      high_level: [],
+      low_level: [],
+      blocked_fallback: [],
+      agenda: { summary: { events: 0, deadlines: 0, reminders: 0, scheduled: 0 }, events: [] },
+      hierarchy: [
+        {
+          id: "pm-parent",
+          title: "Parent",
+          type: "Epic",
+          status: "open",
+          children_total: 0,
+          children_closed: 0,
+          children_open: 0,
+          children_in_progress: 0,
+          children_blocked: 0,
+          children: [],
+        },
+      ],
+      blockers: [],
+    } as never);
+    expect(emptyBlockersMarkdown).toContain("- sections: hierarchy");
+    expect(emptyBlockersMarkdown).not.toContain("- sections: hierarchy, blockers");
+
+    const omittedBlockersMarkdown = renderContextMarkdown({
+      now: "2026-05-01T00:00:00.000Z",
+      depth: "deep",
+      filters: {},
+      sections_included: ["blockers"],
+      summary: {
+        active_items: 0,
+        in_progress: 0,
+        open: 0,
+        blocked: 0,
+        blocked_fallback_used: false,
+        agenda_events: 0,
+      },
+      high_level: [],
+      low_level: [],
+      blocked_fallback: [],
+      agenda: { summary: { events: 0, deadlines: 0, reminders: 0, scheduled: 0 }, events: [] },
+    } as never);
+    expect(omittedBlockersMarkdown).not.toContain("- sections:");
+
     const activityModule = await import("../../../src/cli/commands/activity.js");
     const runActivitySpy = vi.spyOn(activityModule, "runActivity").mockResolvedValue({ compact_activity: undefined } as never);
     try {

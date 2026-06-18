@@ -220,6 +220,8 @@ const LONG_QUERY_PHRASE_MULTIPLIER = 6;
 // items covering all terms outrank items matching only a subset. This is a
 // RANKING preference, not a hard filter (use --match-mode and for that).
 const ALL_TERMS_COVERAGE_BONUS = 40;
+const EXACT_ID_MATCH_SCORE = 1_000;
+const SHORT_ID_MATCH_SCORE = 900;
 const IMPLICIT_HYBRID_EMBEDDING_TIMEOUT_MS = 8_000;
 const IMPLICIT_HYBRID_VECTOR_TIMEOUT_MS = 8_000;
 
@@ -1068,6 +1070,16 @@ function scoreDocument(
   applyCoverageBonus = false,
 ): SearchHit | null {
   const item = document.metadata;
+  const normalizedId = item.id.trim().toLowerCase();
+  const normalizedShortId = normalizedId.startsWith("pm-") ? normalizedId.slice(3) : normalizedId;
+  if (normalizedQuery === normalizedId || normalizedQuery === normalizedShortId) {
+    return {
+      item,
+      score: normalizedQuery === normalizedId ? EXACT_ID_MATCH_SCORE : SHORT_ID_MATCH_SCORE,
+      matched_fields: ["id"],
+      matched_all_terms: true,
+    };
+  }
   const titleTokenCounts = new Map<string, number>();
   for (const token of tokenizeForExactTokenMatch(item.title)) {
     titleTokenCounts.set(token, (titleTokenCounts.get(token) ?? 0) + 1);

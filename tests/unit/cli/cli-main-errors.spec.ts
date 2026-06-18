@@ -1329,7 +1329,15 @@ describe("CLI main bootstrap helper coverage", () => {
         { definitelyNotReal: true },
         [],
       ),
-    ).toThrow(/Unknown option '--definitelyNotReal'.*does not define extension flags/);
+    ).toThrow(/Unknown option '--definitely-not-real'.*does not define extension flags/);
+    expect(() =>
+      _testOnly.validateDynamicExtensionCommandInvocation(
+        { ...descriptor, command: "tools", arguments: [], flags: [] },
+        [],
+        { noDefinitelyNotReal: false },
+        [],
+      ),
+    ).toThrow(/Unknown option '--no-definitely-not-real'.*does not define extension flags/);
     expect(() =>
       _testOnly.validateDynamicExtensionCommandInvocation(
         { ...descriptor, arguments: [{ name: "target", required: true, variadic: true }] },

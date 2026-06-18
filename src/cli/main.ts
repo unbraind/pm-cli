@@ -822,6 +822,13 @@ function validateDynamicExtensionCommandArgs(
   }
 }
 
+function formatDynamicOptionFlag(optionKey: string): string {
+  return `--${optionKey
+    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+    .replace(/_/g, "-")
+    .toLowerCase()}`;
+}
+
 function validateDynamicExtensionCommandOptions(
   descriptor: ExtensionCommandHelpDescriptor,
   options: Record<string, unknown>,
@@ -831,12 +838,12 @@ function validateDynamicExtensionCommandOptions(
     validateLooseCommandOptionsWithFlagDefinitions(options, extensionFlagDefinitions, descriptor.command);
     return;
   }
-  const unknownOptions = Object.keys(options).filter((key) => options[key] !== undefined && options[key] !== false).sort();
+  const unknownOptions = Object.keys(options).filter((key) => options[key] !== undefined).sort();
   if (unknownOptions.length === 0) {
     return;
   }
   throw new PmCliError(
-    `Unknown option '${unknownOptions.map((key) => `--${key}`).join(", ")}' for extension command '${descriptor.command}'. This command does not define extension flags.`,
+    `Unknown option '${unknownOptions.map(formatDynamicOptionFlag).join(", ")}' for extension command '${descriptor.command}'. This command does not define extension flags.`,
     EXIT_CODE.USAGE,
   );
 }
