@@ -622,6 +622,8 @@ describe("runTest", () => {
         "command=npx -- pm-cli --json test-all,scope=project",
         "command=npx --package=pm-cli pm --json test-all,scope=project",
         "command=npx -p pm-cli pm --json test-all,scope=project",
+        "command=bunx pm-cli@latest --json test-all,scope=project",
+        "command=bunx --bun pm-cli@latest --json test-all,scope=project",
         "command=pnpm dlx pm-cli@latest --json test-all,scope=project",
         "command=pnpm dlx @scope/pm-cli@latest --json test-all,scope=project",
         "command=pnpm -- dlx pm-cli@latest --json test-all,scope=project",
@@ -704,6 +706,9 @@ describe("runTest", () => {
     expect(
       extractReferencedPmItemIdsFromCommand("npx @unbrained/pm-cli@latest update pm-b2c3 --status open --json"),
     ).toEqual(["pm-b2c3"]);
+    expect(
+      extractReferencedPmItemIdsFromCommand("bunx @unbrained/pm-cli@latest update pm-b2c4 --status open --json"),
+    ).toEqual(["pm-b2c4"]);
     expect(
       extractReferencedPmItemIdsFromCommand("npm exec -- @unbrained/pm-cli@latest test pm-t123 --run --json"),
     ).toEqual(["pm-t123"]);
@@ -806,11 +811,17 @@ describe("runTest", () => {
     expect(testInternals.resolveDirectRunnerSubcommand({ subcommand: "vitest", args: [] })).toBe("vitest");
     expect(testInternals.resolveDirectRunnerSubcommand(null)).toBeUndefined();
     expect(testInternals.firstDirectTestRunnerSubcommand("npx", ["--yes", "vitest", "run"])).toBe("vitest");
+    expect(testInternals.firstDirectTestRunnerSubcommand("bunx", ["--bun", "vitest", "run"])).toBe("vitest");
     expect(testInternals.firstDirectTestRunnerSubcommand("pmx", ["test"])).toBeUndefined();
     expect(testInternals.extractPmInvocationArgsFromSegment("echo nothing")).toBeNull();
     expect(testInternals.extractPmInvocationArgsFromSegment("npx --yes pm get pm-a1b2 --json")).toEqual([
       "get",
       "pm-a1b2",
+      "--json",
+    ]);
+    expect(testInternals.extractPmInvocationArgsFromSegment("bunx --bun pm get pm-a1b3 --json")).toEqual([
+      "get",
+      "pm-a1b3",
       "--json",
     ]);
     expect(
@@ -946,6 +957,7 @@ describe("runTest", () => {
         "command=pnpm dlx vitest run,scope=project",
         "command=npm exec -- vitest run,scope=project",
         "command=npx --yes vitest run,scope=project",
+        "command=bunx --bun vitest run,scope=project",
         "command=vitest run,scope=project",
         "command=PM_PATH=/tmp/pm-only vitest run,scope=project",
         "command=./node_modules/.bin/vitest run,scope=project",

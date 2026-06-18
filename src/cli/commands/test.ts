@@ -463,7 +463,7 @@ function extractPmInvocationArgsFromSegment(segment: string): string[] | null {
   if (executable === "node" && args.length > 0 && isPmCliScriptToken(args[0])) {
     return args.slice(1);
   }
-  if (executable === "npx") {
+  if (executable === "npx" || executable === "bunx") {
     const parsed = parseNpxCommand(args);
     /* c8 ignore start -- npx launcher edge permutations are covered by command-parser integration suites */
     if (parsed && (isPmExecutableToken(parsed.command) || isPmCliPackageToken(parsed.command))) {
@@ -545,7 +545,7 @@ function resolveDirectRunnerSubcommand(parsed: { subcommand: string; args: strin
 }
 
 function firstDirectTestRunnerSubcommand(executable: string, args: string[]): string | undefined {
-  if (executable === "npx") {
+  if (executable === "npx" || executable === "bunx") {
     return parseNpxCommand(args)?.command;
   }
   if (executable === "pnpm") {
@@ -596,7 +596,7 @@ function segmentInvokesRecursiveTestAll(segment: string): boolean {
     return firstPmSubcommand(args.slice(1)) === "test-all";
   }
 
-  if (executable === "npx") {
+  if (executable === "npx" || executable === "bunx") {
     return parsedLauncherInvokesRecursiveTestAll(parseNpxCommand(args));
   }
 
@@ -663,7 +663,7 @@ function segmentInvokesUnsafeDirectTestRunner(normalizedSegment: string): boolea
   if (executable === "node") {
     return args.includes("--test") || args.some((arg) => arg.endsWith("/vitest") || arg.endsWith("/vitest.mjs"));
   }
-  if (executable === "npx") {
+  if (executable === "npx" || executable === "bunx") {
     return isDirectTestRunnerSubcommand(parseNpxCommand(args)?.command);
   }
   if (executable === "pnpm") {
