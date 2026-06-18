@@ -3204,3 +3204,220 @@ describe("classifyImplicitSemanticFallbackReason", () => {
     });
   });
 });
+
+describe("inline query syntax and highlighting (GH-157)", () => {
+  function makeDoc(
+    overrides: Partial<ItemFrontMatter> & Pick<ItemFrontMatter, "id">,
+    body = "",
+  ): { metadata: ItemFrontMatter; body: string } {
+    return { metadata: makeFrontMatter(overrides), body };
+  }
+
+  describe("parseInlineQueryFilters", () => {
+    it("extracts recognized field:value tokens, keeps colon-bearing values, and returns the residual query", async () => {
+      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
+      const result = _testOnlySearchCommand.parseInlineQueryFilters("auth tag:area:search status:open relevance");
+      expect(result.residualQuery).toBe("auth relevance");
+      expect(result.inlineFilters).toEqual({ tag: "area:search", status: "open" });
+    });
+
+    it("captures the first occurrence per field and leaves later duplicates plus unknown prefixes in the residual", async () => {
+      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
+      const result = _testOnlySearchCommand.parseInlineQueryFilters("type:Task type:Bug foo:bar plain status:");
+      // First type wins; the duplicate, the unknown field, the bare word, and the
+      // empty-valued token all fall through to the residual query.
+      expect(result.inlineFilters).toEqual({ type: "Task" });
+      expect(result.residualQuery).toBe("type:Bug foo:bar plain status:");
+    });
+
+    it("returns an empty filter set for a query with no inline tokens", async () => {
+      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
+      const result = _testOnlySearchCommand.parseInlineQueryFilters("just plain words");
+      expect(result.inlineFilters).toEqual({});
+      expect(result.residualQuery).toBe("just plain words");
+    });
+  });
+
+  describe("applyInlineQueryFilters", () => {
+    it("applies an inline value only when the flag is unset and never mutates the input", async () => {
+      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
+      const warnings: string[] = [];
+      const options = { priority: "2" } as Record<string, unknown>;
+      const merged = _testOnlySearchCommand.applyInlineQueryFilters(
+        options,
+        { tag: "area:search", priority: "1" },
+        warnings,
+      );
+      expect(merged.tag).toBe("area:search");
+      // Explicit flag wins; the conflicting inline token is recorded, not silent.
+      expect(merged.priority).toBe("2");
+      expect(warnings).toEqual(["search_inline_filter_ignored:priority:flag_takes_precedence"]);
+      expect(options).toEqual({ priority: "2" });
+    });
+  });
+
+  describe("markTokenRuns", () => {
+    it("wraps case-insensitive matches and escapes regex metacharacters in tokens", async () => {
+      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
+      expect(_testOnlySearchCommand.markTokenRuns("Auth and AUTH", ["auth"])).toBe("«Auth» and «AUTH»");
+      // A token carrying regex-special characters must match literally.
+      expect(_testOnlySearchCommand.markTokenRuns("c++ and c++", ["c++"])).toBe("«c++» and «c++»");
+    });
+
+    it("returns the text unchanged when there are no non-empty tokens", async () => {
+      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
+      expect(_testOnlySearchCommand.markTokenRuns("unchanged", [""])).toBe("unchanged");
+    });
+  });
+
+  describe("highlightFieldSnippet", () => {
+    it("returns null for empty text and for text with no token match", async () => {
+      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
+      expect(_testOnlySearchCommand.highlightFieldSnippet("", ["auth"])).toBeNull();
+      expect(_testOnlySearchCommand.highlightFieldSnippet("nothing here", ["auth", ""])).toBeNull();
+    });
+
+    it("wraps the match without ellipsis when the field fits the window", async () => {
+      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
+      expect(_testOnlySearchCommand.highlightFieldSnippet("Fix auth login bug", ["auth"])).toBe(
+        "Fix «auth» login bug",
+      );
+    });
+
+    it("anchors the window on the earliest matching token across the token set", async () => {
+      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
+      // "alpha" is listed first but appears later than "beta"; the window must
+      // anchor on the earliest match (beta) regardless of token order.
+      expect(_testOnlySearchCommand.highlightFieldSnippet("zzz beta yyy alpha", ["alpha", "beta"])).toBe(
+        "zzz «beta» yyy «alpha»",
+      );
+    });
+
+    it("windows long text around the first match with leading and trailing ellipsis", async () => {
+      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
+      const long = `${"x".repeat(80)} needle ${"y".repeat(80)}`;
+      const snippet = _testOnlySearchCommand.highlightFieldSnippet(long, ["needle"]);
+      expect(snippet).not.toBeNull();
+      expect(snippet?.startsWith("…")).toBe(true);
+      expect(snippet?.endsWith("…")).toBe(true);
+      expect(snippet).toContain("«needle»");
+    });
+  });
+
+  describe("buildHitHighlights", () => {
+    it("emits snippets for matched document fields in order and skips synthetic and unmatched fields", async () => {
+      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
+      const document = makeDoc({ id: "pm-hl", title: "Auth flow", tags: ["area:auth"] }, "auth body");
+      const highlights = _testOnlySearchCommand.buildHitHighlights(
+        document,
+        // "semantic" is synthetic (no document field), "description" has no match.
+        ["description", "semantic", "tags", "title"],
+        ["auth"],
+      );
+      expect(highlights).toEqual([
+        { field: "tags", snippet: "area:«auth»" },
+        { field: "title", snippet: "«Auth» flow" },
+      ]);
+    });
+  });
+
+  describe("runSearch wiring", () => {
+    beforeEach(() => {
+      pathExistsMock.mockReset();
+      readSettingsMock.mockReset();
+      listAllFrontMatterMock.mockReset();
+      readFileMock.mockReset();
+      realpathMock.mockReset();
+      runActiveOnReadHooksMock.mockReset();
+      spawnSyncMock.mockReset();
+      activeExtensionRegistrations = null;
+      pathExistsMock.mockResolvedValue(true);
+      readSettingsMock.mockResolvedValue({ id_prefix: "pm-" });
+      realpathMock.mockImplementation(async (targetPath) => targetPath);
+      runActiveOnReadHooksMock.mockResolvedValue([]);
+      spawnSyncMock.mockReturnValue({ status: 1, stdout: "", stderr: "" });
+    });
+
+    function seedAuthCorpus(): void {
+      const authItem = makeFrontMatter({
+        id: "pm-lgn1",
+        title: "Fix auth login bug",
+        description: "auth handling",
+        tags: ["area:auth"],
+      });
+      const searchItem = makeFrontMatter({
+        id: "pm-rnk2",
+        title: "Improve auth in search",
+        description: "auth ranking",
+        tags: ["area:search"],
+      });
+      listAllFrontMatterMock.mockResolvedValue([authItem, searchItem]);
+      readFileMock.mockImplementation(async (targetPath: string) =>
+        targetPath.includes("pm-lgn1") ? serializeDocument(authItem, "auth body") : serializeDocument(searchItem, "auth body"),
+      );
+    }
+
+    it("parses an inline tag token from the query string and applies it as a filter", async () => {
+      seedAuthCorpus();
+      const { runSearch } = await import("../../../src/cli/commands/search.js");
+      const result = await runSearch("auth tag:area:auth", {}, { path: "/tmp/pm-search" });
+      expect(result.query).toBe("auth");
+      expect(result.filters).toMatchObject({ tag: "area:auth" });
+      expect(result.items.map((hit) => (hit as { item: ItemFrontMatter }).item.id)).toEqual(["pm-lgn1"]);
+    });
+
+    it("lets an explicit flag win over a conflicting inline token and warns", async () => {
+      seedAuthCorpus();
+      const { runSearch } = await import("../../../src/cli/commands/search.js");
+      const result = await runSearch("auth tag:area:search", { tag: "area:auth" }, { path: "/tmp/pm-search" });
+      expect(result.filters).toMatchObject({ tag: "area:auth" });
+      expect(result.warnings).toContain("search_inline_filter_ignored:tag:flag_takes_precedence");
+    });
+
+    it("rejects a query whose inline tokens consume every search term", async () => {
+      seedAuthCorpus();
+      const { runSearch } = await import("../../../src/cli/commands/search.js");
+      await expect(runSearch("tag:area:auth", {}, { path: "/tmp/pm-search" })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+
+    it("attaches per-field highlights on full hits when --highlight is set", async () => {
+      seedAuthCorpus();
+      const { runSearch } = await import("../../../src/cli/commands/search.js");
+      const result = await runSearch("auth", { full: true, highlight: true }, { path: "/tmp/pm-search" });
+      const first = result.items[0] as { highlights?: Array<{ field: string; snippet: string }> };
+      expect(
+        first.highlights?.some((entry) => entry.field === "title" && entry.snippet.toLowerCase().includes("«auth»")),
+      ).toBe(true);
+    });
+
+    it("adds highlights to the compact projection field set and echoes it", async () => {
+      seedAuthCorpus();
+      const { runSearch } = await import("../../../src/cli/commands/search.js");
+      const result = await runSearch("auth", { compact: true, highlight: true }, { path: "/tmp/pm-search" });
+      const first = result.items[0] as Record<string, unknown>;
+      expect(first).toHaveProperty("highlights");
+    });
+
+    it("does not duplicate highlights in an explicit --fields projection that already requests it", async () => {
+      seedAuthCorpus();
+      const { runSearch } = await import("../../../src/cli/commands/search.js");
+      const result = await runSearch(
+        "auth",
+        { fields: "id,highlights", highlight: true },
+        { path: "/tmp/pm-search" },
+      );
+      const verbose = result as { projection?: { fields: string[] | null } };
+      expect(verbose.projection?.fields).toEqual(["id", "highlights"]);
+    });
+
+    it("omits highlights entirely when --highlight is not set", async () => {
+      seedAuthCorpus();
+      const { runSearch } = await import("../../../src/cli/commands/search.js");
+      const result = await runSearch("auth", { full: true }, { path: "/tmp/pm-search" });
+      const first = result.items[0] as Record<string, unknown>;
+      expect(first).not.toHaveProperty("highlights");
+    });
+  });
+});

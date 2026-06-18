@@ -113,6 +113,9 @@ export interface SearchOptions {
   compact?: boolean;
   full?: boolean;
   fields?: string;
+  // GH-157: emit per-field matched-text snippets on each hit (off by default for
+  // token efficiency). Highlighted spans are wrapped with the «…» markers.
+  highlight?: boolean;
   // Governance-missing selection filters (GH-236).
   filterReviewerMissing?: boolean;
   filterRiskMissing?: boolean;
@@ -165,7 +168,7 @@ const DEFAULT_COMPACT_SEARCH_FIELDS = [
   "matched_fields",
 ] as const;
 
-const SEARCH_HIT_FIELD_KEYS = new Set(["score", "matched_fields"]);
+const SEARCH_HIT_FIELD_KEYS = new Set(["score", "matched_fields", "highlights"]);
 const SEARCH_ITEM_FIELD_KEYS = new Set([
   "id",
   "title",
@@ -236,6 +239,23 @@ const SHORT_ID_MATCH_SCORE = 900;
 const IMPLICIT_HYBRID_EMBEDDING_TIMEOUT_MS = 8_000;
 const IMPLICIT_HYBRID_VECTOR_TIMEOUT_MS = 8_000;
 
+// GH-157 matched-text highlighting (--highlight): markers wrapping each matching
+// token run, and the number of characters of surrounding context retained on
+// each side of the first match in a field. The «…» guillemets are single
+// characters with negligible collision risk against item text, keeping the
+// snippet token-cheap while staying visually unambiguous for agents.
+const HIGHLIGHT_OPEN = "«";
+const HIGHLIGHT_CLOSE = "»";
+const HIGHLIGHT_SNIPPET_RADIUS = 60;
+
+// GH-157 inline query syntax: bare `field:value` tokens parsed out of the query
+// string and applied as the equivalent filter. The value may itself contain
+// colons (e.g. `tag:area:search`), so only the FIRST colon delimits field from
+// value. Explicit --field flags take precedence over an inline token (see
+// resolveInlineQueryFilters).
+const INLINE_QUERY_FILTER_FIELDS = ["tag", "status", "type", "priority"] as const;
+type InlineQueryFilterField = (typeof INLINE_QUERY_FILTER_FIELDS)[number];
+
 /**
  * Documents the search hit payload exchanged by command, SDK, and package integrations.
  */
@@ -255,6 +275,20 @@ export interface SearchHit {
   // full-ID matches keep score=1000, so sortHits still orders full above short.
   // Not projected into output rows.
   exact_id_match?: boolean;
+  // GH-157: per-field matched-text snippets, populated only when the caller
+  // passes --highlight. Each entry pairs a matched field name with a snippet of
+  // its text where the matching token runs are wrapped in the «…» markers.
+  highlights?: SearchHitHighlight[];
+}
+
+/**
+ * Pairs a matched field name with a snippet of its text where every matching
+ * token run is wrapped in the {@link HIGHLIGHT_OPEN}/{@link HIGHLIGHT_CLOSE}
+ * markers. Emitted on {@link SearchHit.highlights} when `--highlight` is set.
+ */
+export interface SearchHitHighlight {
+  field: string;
+  snippet: string;
 }
 
 /**
@@ -767,6 +801,8 @@ function parseProjectionConfig(options: SearchOptions): SearchProjectionConfig {
 export const _testOnlySearchCommand = {
   applyFilters,
   applyExactQueryFilters,
+  applyInlineQueryFilters,
+  buildHitHighlights,
   buildVerboseSearchFilters,
   buildExplicitSemanticFallbackWarning,
   buildCompactSearchFilterSummary,
@@ -784,7 +820,10 @@ export const _testOnlySearchCommand = {
   dependencyEntries,
   documentContainsExactPhrase,
   emptySearchResult,
+  highlightFieldSnippet,
   loadDocuments,
+  markTokenRuns,
+  parseInlineQueryFilters,
   maybeEmitVectorIndexStaleWarning,
   loadLinkedCorpus,
   mergeVectorHitsById,
@@ -835,6 +874,75 @@ function parseTokens(query: string): string[] {
     throw new PmCliError("Search query must not be empty", EXIT_CODE.USAGE);
   }
   return normalized.split(/\s+/).filter(Boolean);
+}
+
+/**
+ * Result of extracting inline `field:value` tokens from a raw search query.
+ */
+interface InlineQueryParse {
+  /** The query with all recognized inline filter tokens removed. */
+  residualQuery: string;
+  /** Recognized inline filters keyed by field name; first occurrence per field wins. */
+  inlineFilters: Partial<Record<InlineQueryFilterField, string>>;
+}
+
+/**
+ * Split a raw search query into its residual keyword text and any inline
+ * `field:value` filter tokens (GH-157). Recognized fields are
+ * {@link INLINE_QUERY_FILTER_FIELDS}; the value runs to the end of the token so
+ * colon-bearing values like `tag:area:search` parse as `{ tag: "area:search" }`.
+ * Only the first occurrence of each field is captured — later duplicates are left
+ * in the residual query so they are never silently dropped. Tokens whose prefix
+ * is not a recognized field (`foo:bar`) stay in the residual query verbatim.
+ */
+function parseInlineQueryFilters(query: string): InlineQueryParse {
+  const inlineFilters: Partial<Record<InlineQueryFilterField, string>> = {};
+  const residualTokens: string[] = [];
+  for (const token of query.split(/\s+/).filter((entry) => entry.length > 0)) {
+    const separatorIndex = token.indexOf(":");
+    const field = separatorIndex > 0 ? token.slice(0, separatorIndex).toLowerCase() : "";
+    const value = separatorIndex > 0 ? token.slice(separatorIndex + 1) : "";
+    const matchedField = (INLINE_QUERY_FILTER_FIELDS as ReadonlyArray<string>).includes(field)
+      ? (field as InlineQueryFilterField)
+      : undefined;
+    if (matchedField && value.length > 0 && inlineFilters[matchedField] === undefined) {
+      inlineFilters[matchedField] = value;
+      continue;
+    }
+    residualTokens.push(token);
+  }
+  return {
+    residualQuery: residualTokens.join(" "),
+    inlineFilters,
+  };
+}
+
+/**
+ * Merge inline `field:value` filters into a search options object (GH-157).
+ * Explicit `--field` flags always win: an inline token is applied only when the
+ * corresponding option is not already set, and a conflicting inline token is
+ * recorded as a `search_inline_filter_ignored:<field>:flag_takes_precedence`
+ * warning so the override is observable rather than silent. Returns a fresh
+ * options object — the caller's input is never mutated.
+ */
+function applyInlineQueryFilters(
+  options: SearchOptions,
+  inlineFilters: Partial<Record<InlineQueryFilterField, string>>,
+  warnings: string[],
+): SearchOptions {
+  const merged: SearchOptions = { ...options };
+  for (const field of INLINE_QUERY_FILTER_FIELDS) {
+    const inlineValue = inlineFilters[field];
+    if (inlineValue === undefined) {
+      continue;
+    }
+    if (toNonEmptyStringOrUndefined(merged[field]) !== undefined) {
+      warnings.push(`search_inline_filter_ignored:${field}:flag_takes_precedence`);
+      continue;
+    }
+    merged[field] = inlineValue;
+  }
+  return merged;
 }
 
 function stringArray(value: unknown): string[] {
@@ -1098,6 +1206,131 @@ export interface SearchTuning {
   linked_content_weight: number;
 }
 
+/**
+ * Canonical definition of the document-derived searchable fields shared by the
+ * lexical scorer ({@link scoreDocument}) and the matched-text highlighter
+ * ({@link buildHitHighlights}). Keeping a single source of field name → text
+ * extractor → tuning weight guarantees the highlighter can only ever produce
+ * snippets for fields the scorer actually inspected. The `linked_content` field
+ * is appended separately by the scorer because its text is supplied per-query
+ * rather than derived from the document.
+ */
+const SEARCHABLE_FIELD_BUILDERS: ReadonlyArray<{
+  name: string;
+  weightKey: keyof SearchTuning;
+  value: (document: ItemDocument) => string;
+}> = [
+  { name: "title", weightKey: "title_weight", value: (document) => document.metadata.title },
+  { name: "description", weightKey: "description_weight", value: (document) => document.metadata.description },
+  { name: "tags", weightKey: "tags_weight", value: (document) => stringArray(document.metadata.tags).join(" ") },
+  {
+    name: "status",
+    weightKey: "status_weight",
+    value: (document) => (typeof document.metadata.status === "string" ? document.metadata.status : ""),
+  },
+  { name: "body", weightKey: "body_weight", value: (document) => document.body },
+  {
+    name: "comments",
+    weightKey: "comments_weight",
+    value: (document) => textEntries(document.metadata.comments).map((entry) => entry.text).join(" "),
+  },
+  {
+    name: "notes",
+    weightKey: "notes_weight",
+    value: (document) => textEntries(document.metadata.notes).map((entry) => entry.text).join(" "),
+  },
+  {
+    name: "learnings",
+    weightKey: "learnings_weight",
+    value: (document) => textEntries(document.metadata.learnings).map((entry) => entry.text).join(" "),
+  },
+  { name: "reminders", weightKey: "reminders_weight", value: (document) => buildReminderCorpus(document.metadata).join(" ") },
+  { name: "events", weightKey: "events_weight", value: (document) => buildEventCorpus(document.metadata).join(" ") },
+  {
+    name: "dependencies",
+    weightKey: "dependencies_weight",
+    value: (document) => dependencyEntries(document.metadata.dependencies).map((entry) => `${entry.id} ${entry.kind}`).join(" "),
+  },
+  { name: "plan", weightKey: "body_weight", value: (document) => buildPlanFlatCorpus(document.metadata) },
+];
+
+function escapeRegExpLiteral(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Wrap every case-insensitive occurrence of any query token in `text` with the
+ * {@link HIGHLIGHT_OPEN}/{@link HIGHLIGHT_CLOSE} markers. Token boundaries follow
+ * the same substring semantics as the lexical scorer (a token highlights inside
+ * longer words, matching how it scored), and overlapping matches are coalesced
+ * by the single combined alternation so markers never nest.
+ */
+function markTokenRuns(text: string, tokens: string[]): string {
+  const escaped = tokens.filter((token) => token.length > 0).map(escapeRegExpLiteral);
+  if (escaped.length === 0) {
+    return text;
+  }
+  const pattern = new RegExp(escaped.join("|"), "gi");
+  return text.replace(pattern, (match) => `${HIGHLIGHT_OPEN}${match}${HIGHLIGHT_CLOSE}`);
+}
+
+/**
+ * Build a single highlighted snippet for one field value (GH-157), or null when
+ * no token matches. The snippet is a window of {@link HIGHLIGHT_SNIPPET_RADIUS}
+ * characters on each side of the first match with the matching token runs
+ * wrapped in markers, prefixed/suffixed with an ellipsis when the field text was
+ * trimmed. Returning null lets the caller skip fields with no concrete textual
+ * match (e.g. a field flagged purely by the phrase-coverage bonus).
+ */
+function highlightFieldSnippet(text: string, tokens: string[]): string | null {
+  if (text.length === 0) {
+    return null;
+  }
+  const lowerText = text.toLowerCase();
+  let firstMatchIndex = -1;
+  for (const token of tokens) {
+    if (token.length === 0) {
+      continue;
+    }
+    const index = lowerText.indexOf(token);
+    if (index >= 0 && (firstMatchIndex < 0 || index < firstMatchIndex)) {
+      firstMatchIndex = index;
+    }
+  }
+  if (firstMatchIndex < 0) {
+    return null;
+  }
+  const windowStart = Math.max(0, firstMatchIndex - HIGHLIGHT_SNIPPET_RADIUS);
+  const windowEnd = Math.min(text.length, firstMatchIndex + HIGHLIGHT_SNIPPET_RADIUS);
+  const marked = markTokenRuns(text.slice(windowStart, windowEnd), tokens);
+  const prefix = windowStart > 0 ? "…" : "";
+  const suffix = windowEnd < text.length ? "…" : "";
+  return `${prefix}${marked}${suffix}`;
+}
+
+/**
+ * Produce per-field matched-text snippets for a hit (GH-157, `--highlight`).
+ * Iterates the hit's already-sorted `matched_fields`, retains only the
+ * document-derived searchable fields (skipping synthetic markers like `id`,
+ * `semantic`, `rerank`, and `linked_content`), and emits a snippet for each
+ * field that still contains a concrete token match.
+ */
+function buildHitHighlights(document: ItemDocument, matchedFields: string[], tokens: string[]): SearchHitHighlight[] {
+  const fieldValues = new Map(SEARCHABLE_FIELD_BUILDERS.map((builder) => [builder.name, builder.value(document)]));
+  const highlights: SearchHitHighlight[] = [];
+  for (const field of matchedFields) {
+    const value = fieldValues.get(field);
+    if (value === undefined) {
+      continue;
+    }
+    const snippet = highlightFieldSnippet(value, tokens);
+    if (snippet !== null) {
+      highlights.push({ field, snippet });
+    }
+  }
+  return highlights;
+}
+
 function scoreDocument(
   document: ItemDocument,
   tokens: string[],
@@ -1128,22 +1361,11 @@ function scoreDocument(
     titleTokenCounts.set(token, (titleTokenCounts.get(token) ?? 0) + 1);
   }
   const searchableFields: Array<{ name: string; value: string; weight: number }> = [
-    { name: "title", value: item.title, weight: tuning.title_weight },
-    { name: "description", value: item.description, weight: tuning.description_weight },
-    { name: "tags", value: stringArray(item.tags).join(" "), weight: tuning.tags_weight },
-    { name: "status", value: typeof item.status === "string" ? item.status : "", weight: tuning.status_weight },
-    { name: "body", value: document.body, weight: tuning.body_weight },
-    { name: "comments", value: textEntries(item.comments).map((entry) => entry.text).join(" "), weight: tuning.comments_weight },
-    { name: "notes", value: textEntries(item.notes).map((entry) => entry.text).join(" "), weight: tuning.notes_weight },
-    { name: "learnings", value: textEntries(item.learnings).map((entry) => entry.text).join(" "), weight: tuning.learnings_weight },
-    { name: "reminders", value: buildReminderCorpus(item).join(" "), weight: tuning.reminders_weight },
-    { name: "events", value: buildEventCorpus(item).join(" "), weight: tuning.events_weight },
-    {
-      name: "dependencies",
-      value: dependencyEntries(item.dependencies).map((entry) => `${entry.id} ${entry.kind}`).join(" "),
-      weight: tuning.dependencies_weight,
-    },
-    { name: "plan", value: buildPlanFlatCorpus(item), weight: tuning.body_weight },
+    ...SEARCHABLE_FIELD_BUILDERS.map((builder) => ({
+      name: builder.name,
+      value: builder.value(document),
+      weight: tuning[builder.weightKey],
+    })),
     { name: "linked_content", value: linkedCorpus, weight: tuning.linked_content_weight },
   ];
 
@@ -2042,7 +2264,29 @@ function projectSearchHits(hits: SearchHit[], projection: SearchProjectionConfig
 /**
  * Implements run search for the public runtime surface of this module.
  */
-export async function runSearch(query: string, options: SearchOptions, global: GlobalOptions): Promise<SearchResult> {
+export async function runSearch(rawQuery: string, rawOptions: SearchOptions, global: GlobalOptions): Promise<SearchResult> {
+  // GH-157 inline query syntax: pull `field:value` filter tokens out of the raw
+  // query before any other parsing. Explicit flags win — an inline token only
+  // applies when its flag is unset, and a conflicting token surfaces as a
+  // warning. The residual keyword text drives tokenization/scoring as usual.
+  const inlineWarnings: string[] = [];
+  const inlineParse = parseInlineQueryFilters(rawQuery);
+  const hasInlineFilters = Object.keys(inlineParse.inlineFilters).length > 0;
+  if (hasInlineFilters && inlineParse.residualQuery.trim().length === 0) {
+    throw new PmCliError(
+      "Inline field:value tokens consumed the entire query, leaving no search terms.",
+      EXIT_CODE.USAGE,
+      {
+        examples: ["pm search auth tag:area:search", "pm list --tag area:search --status open"],
+        nextSteps: [
+          "Add keyword terms alongside the inline filters, or use pm list for pure tag/status/type/priority filtering.",
+        ],
+      },
+    );
+  }
+  const query = hasInlineFilters ? inlineParse.residualQuery : rawQuery;
+  const options = applyInlineQueryFilters(rawOptions, inlineParse.inlineFilters, inlineWarnings);
+  const highlight = options.highlight === true;
   const includeLinked = parseIncludeLinked(options.includeLinked);
   const titleExact = parseTitleExact(options.titleExact);
   const phraseExact = parsePhraseExact(options.phraseExact);
@@ -2111,6 +2355,9 @@ export async function runSearch(query: string, options: SearchOptions, global: G
     settings.schema,
   );
   const warnings = loadedDocuments.warnings;
+  if (inlineWarnings.length > 0) {
+    warnings.push(...inlineWarnings);
+  }
   if (effectiveMode === "hybrid" && semanticWeightProvided && semanticWeightOverride === undefined) {
     warnings.push("search_hybrid_semantic_weight_override_invalid:using_settings_default");
   }
@@ -2382,7 +2629,24 @@ export async function runSearch(query: string, options: SearchOptions, global: G
     };
   }
 
-  const projectedItems = projectSearchHits(limited, projection);
+  // GH-157 --highlight: attach per-field matched-text snippets to the returned
+  // page of hits (only the post-limit slice pays the cost). In compact/fields
+  // projections we add "highlights" to the projected field set so the snippets
+  // are actually emitted; full mode already carries them on the hit.
+  let projectedHits: SearchHit[] = limited;
+  let effectiveProjection = projection;
+  if (highlight) {
+    const documentById = new Map(filteredDocuments.map((document) => [document.metadata.id, document]));
+    projectedHits = limited.map((hit) => ({
+      ...hit,
+      highlights: buildHitHighlights(documentById.get(hit.item.id)!, hit.matched_fields, tokens),
+    }));
+    if (projection.mode !== "full" && !projection.fields.includes("highlights")) {
+      effectiveProjection = { mode: projection.mode, fields: [...projection.fields, "highlights"] };
+    }
+  }
+  const projectedItems = projectSearchHits(projectedHits, effectiveProjection);
+  const finalProjectionFields = effectiveProjection.mode === "full" ? null : [...effectiveProjection.fields];
   // Surface the pre-limit total only when the limit actually dropped rows.
   const truncationExtras = limited.length < total ? { total } : {};
   if (compactSummaryMode) {
@@ -2429,8 +2693,8 @@ export async function runSearch(query: string, options: SearchOptions, global: G
       runtimeFieldFilters,
     }),
     projection: {
-      mode: projection.mode,
-      fields: projectionFields,
+      mode: effectiveProjection.mode,
+      fields: finalProjectionFields,
     },
     now: nowIso(),
     ...(warnings.length > 0 ? { warnings } : {}),

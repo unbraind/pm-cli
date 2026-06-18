@@ -143,6 +143,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   hybrid: { type: "boolean" },
   titleExact: { type: "boolean" },
   phraseExact: { type: "boolean" },
+  highlight: { type: "boolean" },
   includeBody: { type: "boolean" },
   noTruncate: { type: "boolean" },
   tag: { type: "string" },
@@ -1106,6 +1107,9 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   },
   phraseExact: {
     description: "For search action, require exact normalized query phrase match in item text fields.",
+  },
+  highlight: {
+    description: "For search action, emit per-field matched-text snippets (wrapped in «…») on each hit. Off by default.",
   },
   includeBody: {
     description: "When true for list-family actions, include item body text in projected rows.",

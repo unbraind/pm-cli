@@ -1124,6 +1124,7 @@ ${zshContextRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--min-score[Per-query minimum score threshold]:number' \\
             '--count[Return only the match count]' \\
             '--include-linked[Include linked content in scoring]' \\
+            '--highlight[Emit per-field matched-text snippets on each hit]' \\
             '--limit[Max results]:number' \\
             '--status[Filter by status (open/closed/canceled, csv)]:(${statusChoices})' \\
             '--type[Filter by type]:(${typeChoices})' \\
@@ -2104,6 +2105,7 @@ complete -c pm -n '__fish_seen_subcommand_from search' -l match-mode    -d 'Toke
 complete -c pm -n '__fish_seen_subcommand_from search' -l min-score     -d 'Per-query minimum score threshold' -r
 complete -c pm -n '__fish_seen_subcommand_from search' -l count          -d 'Return only the match count'
 complete -c pm -n '__fish_seen_subcommand_from search' -l include-linked -d 'Include linked content in scoring'
+complete -c pm -n '__fish_seen_subcommand_from search' -l highlight      -d 'Emit per-field matched-text snippets on each hit'
 complete -c pm -n '__fish_seen_subcommand_from search' -l limit          -d 'Max results' -r
 complete -c pm -n '__fish_seen_subcommand_from search' -l status         -d 'Filter by status (open/closed/canceled, csv)' -r -a '${statusChoices}'
 complete -c pm -n '__fish_seen_subcommand_from search' -l type           -d 'Filter by type' -r -a '${typeChoices}'
