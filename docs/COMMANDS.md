@@ -140,7 +140,7 @@ pm search "calendar" --min-score 5                              # this-query thr
 pm search "reminder" --count                                    # just the number
 ```
 
-### Inline filter syntax and matched-text highlighting (GH-157)
+### Inline filter syntax and matched-text highlighting (GH-157, pm-ldr1)
 
 Inline `field:value` tokens can be embedded directly in the query string and are parsed out as the equivalent filter. Recognized fields are `tag:`, `status:`, `type:`, and `priority:`; the value runs to the end of the token, so colon-bearing values like `tag:area:search` parse correctly. The remaining words drive keyword/semantic matching as usual:
 

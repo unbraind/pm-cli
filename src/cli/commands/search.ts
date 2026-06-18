@@ -1254,6 +1254,11 @@ const SEARCHABLE_FIELD_BUILDERS: ReadonlyArray<{
   { name: "plan", weightKey: "body_weight", value: (document) => buildPlanFlatCorpus(document.metadata) },
 ];
 
+// Name → builder index so the highlighter can resolve a matched field to its
+// text extractor in O(1) and evaluate ONLY the matched fields' values, instead
+// of materializing all twelve (several of which join/build corpora) per hit.
+const SEARCHABLE_FIELD_BUILDER_BY_NAME = new Map(SEARCHABLE_FIELD_BUILDERS.map((builder) => [builder.name, builder]));
+
 function escapeRegExpLiteral(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -1266,7 +1271,15 @@ function escapeRegExpLiteral(value: string): string {
  * by the single combined alternation so markers never nest.
  */
 function markTokenRuns(text: string, tokens: string[]): string {
-  const escaped = tokens.filter((token) => token.length > 0).map(escapeRegExpLiteral);
+  // Sort by length descending before building the alternation so a longer token
+  // wins over a shorter token that is its prefix (regex alternation is greedy
+  // left-to-right, so `auth|authority` would mark «auth»ority instead of
+  // «authority»). `.filter` already returns a fresh array, so the in-place sort
+  // never mutates the caller's token list.
+  const escaped = tokens
+    .filter((token) => token.length > 0)
+    .sort((left, right) => right.length - left.length)
+    .map(escapeRegExpLiteral);
   if (escaped.length === 0) {
     return text;
   }
@@ -1316,14 +1329,13 @@ function highlightFieldSnippet(text: string, tokens: string[]): string | null {
  * field that still contains a concrete token match.
  */
 function buildHitHighlights(document: ItemDocument, matchedFields: string[], tokens: string[]): SearchHitHighlight[] {
-  const fieldValues = new Map(SEARCHABLE_FIELD_BUILDERS.map((builder) => [builder.name, builder.value(document)]));
   const highlights: SearchHitHighlight[] = [];
   for (const field of matchedFields) {
-    const value = fieldValues.get(field);
-    if (value === undefined) {
+    const builder = SEARCHABLE_FIELD_BUILDER_BY_NAME.get(field);
+    if (builder === undefined) {
       continue;
     }
-    const snippet = highlightFieldSnippet(value, tokens);
+    const snippet = highlightFieldSnippet(builder.value(document), tokens);
     if (snippet !== null) {
       highlights.push({ field, snippet });
     }

@@ -3268,6 +3268,15 @@ describe("inline query syntax and highlighting (GH-157)", () => {
       const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
       expect(_testOnlySearchCommand.markTokenRuns("unchanged", [""])).toBe("unchanged");
     });
+
+    it("prefers the longest token so a prefix token does not shadow a longer match", async () => {
+      const { _testOnlySearchCommand } = await import("../../../src/cli/commands/search.js");
+      // "auth" is a prefix of "authority"; length-descending ordering must mark
+      // the full "authority" rather than «auth»ority.
+      expect(_testOnlySearchCommand.markTokenRuns("authority check", ["auth", "authority"])).toBe(
+        "«authority» check",
+      );
+    });
   });
 
   describe("highlightFieldSnippet", () => {
