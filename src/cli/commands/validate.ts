@@ -1051,8 +1051,8 @@ function buildLifecycleDependencyGraph(activeItems: ItemWithBody[], idPrefix = "
 
 function extractItemIds(value: string, idPrefix = "pm"): string[] {
   const normalizedPrefix = (idPrefix.trim().toLowerCase() || "pm").replace(/-+$/g, "");
-  const pattern = new RegExp(`\\b${escapeRegExp(normalizedPrefix)}-[a-z0-9][a-z0-9-]*\\b`, "gi");
-  return [...new Set(value.match(pattern)?.map((id) => id.toLowerCase()) ?? [])].sort(
+  const pattern = new RegExp(`(?:^|[^a-z0-9-])(${escapeRegExp(normalizedPrefix)}-[a-z0-9][a-z0-9-]*)`, "gi");
+  return [...new Set([...value.matchAll(pattern)].map((match) => match[1]!.toLowerCase()))].sort(
     (left, right) => left.localeCompare(right),
   );
 }
@@ -1253,7 +1253,7 @@ function findOrphanOwnerCandidate(
       if (!isDirectoryPrefix && !sameDirectory && sharedPrefixLength === 0) {
         continue;
       }
-      const score = isDirectoryPrefix ? linkedPath.length + 1000 : sharedPrefixLength;
+      const score = isDirectoryPrefix ? linkedPath.length + 1000 : sameDirectory ? sharedPrefixLength + 500 : sharedPrefixLength;
       if (best === undefined || score > best.score || (score === best.score && item.id.localeCompare(best.item.id) < 0)) {
         best = {
           item,
