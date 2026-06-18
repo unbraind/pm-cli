@@ -34,6 +34,7 @@ interface QueuedTelemetryEventRecord {
     event_type?: string;
     schema_version?: number;
     command?: string;
+    payload?: Record<string, unknown>;
   };
 }
 
@@ -71,6 +72,37 @@ interface TelemetryStatsBucket {
   max_attempts: number;
   event_schema_versions: number[];
   client_schema_versions: number[];
+  /**
+   * Latency percentiles (nearest-rank) over `duration_ms` from the bucket's
+   * `command_finish` events. Present only when at least one finish event carries
+   * a finite `duration_ms`; `command_start`/`command_error` events are excluded.
+   */
+  duration_p50_ms?: number;
+  duration_p95_ms?: number;
+  duration_max_ms?: number;
+  /**
+   * Success/failure tally derived from `command_finish` payload `ok`. A finish
+   * event whose `ok` is missing or not strictly `true` is counted as an error
+   * (conservative). Present only when the bucket has at least one finish event;
+   * `ok_count + error_count` equals that finish-event count.
+   */
+  ok_count?: number;
+  error_count?: number;
+  error_rate?: number;
+  /** Distribution of `command_resolution` over `command_finish` events; present only when non-empty. */
+  command_resolution_counts?: Record<string, number>;
+}
+
+/**
+ * Returns the nearest-rank percentile of an ascending-sorted, non-empty array.
+ *
+ * Uses the nearest-rank method (rank = ceil(fraction × n), 1-based, clamped into
+ * range) so the result is always an observed sample value with no interpolation.
+ */
+function nearestRankPercentile(sortedAscending: number[], fraction: number): number {
+  const rank = Math.ceil(fraction * sortedAscending.length);
+  const index = Math.min(sortedAscending.length - 1, Math.max(0, rank - 1));
+  return sortedAscending[index];
 }
 
 function normalizeTelemetrySubcommand(value: string | undefined): TelemetrySubcommand {
@@ -207,6 +239,10 @@ function buildTelemetryStatsBuckets(entries: QueuedTelemetryEventRecord[]): Tele
       event_type_counts: Record<string, number>;
       event_schema_versions: Set<number>;
       client_schema_versions: Set<number>;
+      finish_durations_ms: number[];
+      ok_count: number;
+      error_count: number;
+      resolution_counts: Record<string, number>;
     }
   >();
   for (const entry of entries) {
@@ -229,6 +265,10 @@ function buildTelemetryStatsBuckets(entries: QueuedTelemetryEventRecord[]): Tele
       event_type_counts: {},
       event_schema_versions: new Set<number>(),
       client_schema_versions: new Set<number>(),
+      finish_durations_ms: [],
+      ok_count: 0,
+      error_count: 0,
+      resolution_counts: {},
     };
     current.count += 1;
     current.max_attempts = Math.max(current.max_attempts, Math.max(0, Math.trunc(entry.attempts)));
@@ -239,19 +279,67 @@ function buildTelemetryStatsBuckets(entries: QueuedTelemetryEventRecord[]): Tele
     if (clientSchemaVersion !== undefined) {
       current.client_schema_versions.add(clientSchemaVersion);
     }
+    // Latency + outcome distribution come from command_finish payloads only:
+    // command_finish always carries duration_ms/ok/command_resolution at every
+    // capture level, while start/error events do not.
+    if (eventType === "command_finish") {
+      const payload = entry.event.payload;
+      const durationMs = typeof payload?.duration_ms === "number" && Number.isFinite(payload.duration_ms)
+        ? payload.duration_ms
+        : undefined;
+      if (durationMs !== undefined) {
+        current.finish_durations_ms.push(durationMs);
+      }
+      // Conservative: a finish event whose ok is missing/malformed counts as an error.
+      if (payload?.ok === true) {
+        current.ok_count += 1;
+      } else {
+        current.error_count += 1;
+      }
+      const resolution = typeof payload?.command_resolution === "string" && payload.command_resolution.trim().length > 0
+        ? payload.command_resolution
+        : undefined;
+      if (resolution !== undefined) {
+        current.resolution_counts[resolution] = (current.resolution_counts[resolution] ?? 0) + 1;
+      }
+    }
     grouped.set(command, current);
   }
   return [...grouped.entries()]
-    .map(([command, value]) => ({
-      command,
-      count: value.count,
-      event_type_counts: Object.fromEntries(
-        Object.entries(value.event_type_counts).sort((left, right) => left[0].localeCompare(right[0])),
-      ),
-      max_attempts: value.max_attempts,
-      event_schema_versions: [...value.event_schema_versions].sort((left, right) => left - right),
-      client_schema_versions: [...value.client_schema_versions].sort((left, right) => left - right),
-    }))
+    .map(([command, value]) => {
+      const finishCount = value.ok_count + value.error_count;
+      const sortedDurations = [...value.finish_durations_ms].sort((left, right) => left - right);
+      const resolutionEntries = Object.entries(value.resolution_counts).sort((left, right) =>
+        left[0].localeCompare(right[0]),
+      );
+      return {
+        command,
+        count: value.count,
+        event_type_counts: Object.fromEntries(
+          Object.entries(value.event_type_counts).sort((left, right) => left[0].localeCompare(right[0])),
+        ),
+        max_attempts: value.max_attempts,
+        event_schema_versions: [...value.event_schema_versions].sort((left, right) => left - right),
+        client_schema_versions: [...value.client_schema_versions].sort((left, right) => left - right),
+        ...(sortedDurations.length > 0
+          ? {
+              duration_p50_ms: nearestRankPercentile(sortedDurations, 0.5),
+              duration_p95_ms: nearestRankPercentile(sortedDurations, 0.95),
+              duration_max_ms: sortedDurations[sortedDurations.length - 1],
+            }
+          : {}),
+        ...(finishCount > 0
+          ? {
+              ok_count: value.ok_count,
+              error_count: value.error_count,
+              error_rate: value.error_count / finishCount,
+            }
+          : {}),
+        ...(resolutionEntries.length > 0
+          ? { command_resolution_counts: Object.fromEntries(resolutionEntries) }
+          : {}),
+      };
+    })
     .sort((left, right) => right.count - left.count || left.command.localeCompare(right.command));
 }
 

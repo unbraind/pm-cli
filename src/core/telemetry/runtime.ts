@@ -57,6 +57,7 @@ const PM_TELEMETRY_OTEL_DISABLED_VALUES = new Set(["1", "true", "yes", "on"]);
 const PM_TELEMETRY_INLINE_FLUSH_ENV = "PM_TELEMETRY_INLINE_FLUSH";
 const PM_TELEMETRY_FLUSH_CHILD_ENV = "PM_TELEMETRY_FLUSH_CHILD";
 const PM_TELEMETRY_SOURCE_CONTEXT_ENV = "PM_TELEMETRY_SOURCE_CONTEXT";
+const PM_AUTHOR_ENV = "PM_AUTHOR";
 export const PM_TELEMETRY_SOURCE_CONTEXT_VALUES = ["user", "automation", "test", "dogfood", "audit_smoke"] as const;
 
 let _lastFlushPromise: Promise<void> = Promise.resolve();
@@ -599,6 +600,30 @@ function hashWithInstallationId(installationId: string, value: string): string {
   return crypto.createHash("sha256").update(`${installationId}:${value}`).digest("hex");
 }
 
+/**
+ * Builds the agent-identity dimension for a telemetry payload from `PM_AUTHOR`.
+ *
+ * The raw `PM_AUTHOR` value (e.g. `claude-code-agent`) is never emitted. At
+ * non-minimal capture levels a stable `author_context_hash` is attached — the
+ * same installation-id-keyed one-way hash used for `pm_root_hash`/`cwd_hash`, so
+ * agent-driven invocations can be segmented in Sentry/dashboards while the same
+ * author hashes differently across installations. Because the field is a one-way
+ * hash, it intentionally bypasses the {@link SENSITIVE_KEYWORDS} redaction path.
+ * At minimal capture only a `has_author_context` boolean is surfaced.
+ */
+function buildAuthorContextPayloadFields(
+  captureLevel: TelemetryCaptureLevel,
+  installationId: string,
+): Record<string, unknown> {
+  const author = (process.env[PM_AUTHOR_ENV] ?? "").trim();
+  if (captureLevel === "minimal") {
+    return { has_author_context: author.length > 0 };
+  }
+  return author.length > 0
+    ? { author_context_hash: hashWithInstallationId(installationId, author) }
+    : {};
+}
+
 function normalizeForHash(value: unknown, depth = 0): unknown {
   if (value === null || value === undefined) {
     return value;
@@ -870,6 +895,7 @@ function buildCommandStartPayload(params: {
   const commandInvocationDigest = hashWithInstallationId(installationId, `${context.command}\u0000${context.args.join("\u0000")}`);
   const commandOptionsDigest = hashTelemetryValue(installationId, context.options);
   const globalOptionsDigest = hashTelemetryValue(installationId, context.global);
+  const authorContextFields = buildAuthorContextPayloadFields(captureLevel, installationId);
   if (captureLevel === "minimal") {
     return {
       capture_level: captureLevel,
@@ -881,6 +907,7 @@ function buildCommandStartPayload(params: {
       command_invocation_digest: commandInvocationDigest,
       command_options_digest: commandOptionsDigest,
       global_options_digest: globalOptionsDigest,
+      ...authorContextFields,
     };
   }
   return {
@@ -888,6 +915,7 @@ function buildCommandStartPayload(params: {
     source_context: sourceContext.source_context,
     source_context_source: sourceContext.source_context_source,
     command_taxonomy: commandTaxonomy,
+    ...authorContextFields,
     command_args: sanitizeCommandArgs(context.args, captureLevel),
     command_args_hashes: hashedArgs.hashes,
     command_args_digest: hashedArgs.digest,
@@ -946,6 +974,7 @@ function buildCommandFinishPayload(params: {
     outcome.ok === false
       ? hashTelemetryErrorFingerprint(installationId, command, errorCode, outcome.error)
       : undefined;
+  const authorContextFields = buildAuthorContextPayloadFields(captureLevel, installationId);
   if (captureLevel === "minimal") {
     return {
       capture_level: captureLevel,
@@ -962,6 +991,7 @@ function buildCommandFinishPayload(params: {
       error: outcome.error ? sanitizeString(outcome.error, "redacted") : undefined,
       error_fingerprint: errorFingerprint,
       duration_ms: durationMs,
+      ...authorContextFields,
     };
   }
   return {
@@ -972,6 +1002,7 @@ function buildCommandFinishPayload(params: {
     command_taxonomy: commandTaxonomy,
     command_resolution: commandResolution,
     resolution_stage: resolutionStage,
+    ...authorContextFields,
     ok: outcome.ok,
     exit_code: exitCode,
     error_code: errorCode,
@@ -1783,6 +1814,7 @@ function releaseTelemetryFlushSpawnGate(globalPmRoot: string): void {
 export const _testOnly = {
   acquireTelemetryFlushSpawnGate,
   acquireTelemetryFlushLock,
+  buildAuthorContextPayloadFields,
   buildCommandErrorPayload,
   buildCommandFinishPayload,
   buildCommandStartPayload,

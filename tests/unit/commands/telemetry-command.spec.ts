@@ -118,8 +118,131 @@ describe("runTelemetry", () => {
           max_attempts: 2,
           event_schema_versions: [1],
           client_schema_versions: [1],
+          // The finish event carries no payload, so ok is treated as not-ok
+          // (conservative) and no duration/resolution fields are emitted.
+          ok_count: 0,
+          error_count: 1,
+          error_rate: 1,
         },
       ]);
+    });
+  });
+
+  it("derives latency percentiles, ok/error rates, and resolution counts from command_finish payloads", async () => {
+    await withTempGlobalRoot("pm-cli-telemetry-finish-metrics-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      await writeQueue(globalRoot, [
+        JSON.stringify({ attempts: 0, event: { event_type: "command_start", command: "list" } }),
+        JSON.stringify({
+          attempts: 0,
+          event: {
+            event_type: "command_finish",
+            command: "list",
+            payload: { duration_ms: 100, ok: true, command_resolution: "success" },
+          },
+        }),
+        JSON.stringify({
+          attempts: 0,
+          event: {
+            event_type: "command_finish",
+            command: "list",
+            payload: { duration_ms: 300, ok: false, command_resolution: "error_usage" },
+          },
+        }),
+        JSON.stringify({
+          attempts: 0,
+          event: {
+            event_type: "command_finish",
+            command: "list",
+            payload: { duration_ms: 200, ok: true, command_resolution: "success" },
+          },
+        }),
+      ]);
+      const result = (await runTelemetry({ subcommand: "stats", limit: 10 }, {})) as {
+        stats: Array<Record<string, unknown>>;
+      };
+      const bucket = result.stats.find((entry) => entry.command === "list");
+      expect(bucket).toMatchObject({
+        // sorted durations [100, 200, 300]: nearest-rank p50 -> 200, p95 -> 300.
+        duration_p50_ms: 200,
+        duration_p95_ms: 300,
+        duration_max_ms: 300,
+        ok_count: 2,
+        error_count: 1,
+        error_rate: 1 / 3,
+        command_resolution_counts: { error_usage: 1, success: 2 },
+      });
+    });
+  });
+
+  it("computes a single-entry percentile and treats malformed payload.ok as an error", async () => {
+    await withTempGlobalRoot("pm-cli-telemetry-single-finish-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      await writeQueue(globalRoot, [
+        JSON.stringify({
+          attempts: 0,
+          event: {
+            event_type: "command_finish",
+            command: "solo",
+            // duration_ms present but ok is a non-boolean string and resolution is blank.
+            payload: { duration_ms: 42, ok: "yes", command_resolution: "   " },
+          },
+        }),
+      ]);
+      const result = (await runTelemetry({ subcommand: "stats", limit: 10 }, {})) as {
+        stats: Array<Record<string, unknown>>;
+      };
+      const bucket = result.stats.find((entry) => entry.command === "solo");
+      expect(bucket).toMatchObject({
+        duration_p50_ms: 42,
+        duration_p95_ms: 42,
+        duration_max_ms: 42,
+        ok_count: 0,
+        error_count: 1,
+        error_rate: 1,
+      });
+      expect(bucket).not.toHaveProperty("command_resolution_counts");
+    });
+  });
+
+  it("omits finish-only metrics for buckets without command_finish events", async () => {
+    await withTempGlobalRoot("pm-cli-telemetry-no-finish-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      await writeQueue(globalRoot, [
+        JSON.stringify({ attempts: 0, event: { event_type: "command_start", command: "startonly" } }),
+        // A finish event with a non-finite duration must not register a percentile.
+        JSON.stringify({
+          attempts: 0,
+          event: { event_type: "command_error", command: "startonly", payload: { duration_ms: Number.NaN } },
+        }),
+      ]);
+      const result = (await runTelemetry({ subcommand: "stats", limit: 10 }, {})) as {
+        stats: Array<Record<string, unknown>>;
+      };
+      const bucket = result.stats.find((entry) => entry.command === "startonly");
+      expect(bucket).toBeDefined();
+      expect(bucket).not.toHaveProperty("duration_p50_ms");
+      expect(bucket).not.toHaveProperty("ok_count");
+      expect(bucket).not.toHaveProperty("error_rate");
+      expect(bucket).not.toHaveProperty("command_resolution_counts");
+    });
+  });
+
+  it("emits ok/error tallies without percentiles when finish events omit duration_ms", async () => {
+    await withTempGlobalRoot("pm-cli-telemetry-finish-no-duration-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      await writeQueue(globalRoot, [
+        JSON.stringify({
+          attempts: 0,
+          event: { event_type: "command_finish", command: "noduration", payload: { ok: true } },
+        }),
+      ]);
+      const result = (await runTelemetry({ subcommand: "stats", limit: 10 }, {})) as {
+        stats: Array<Record<string, unknown>>;
+      };
+      const bucket = result.stats.find((entry) => entry.command === "noduration");
+      expect(bucket).toMatchObject({ ok_count: 1, error_count: 0, error_rate: 0 });
+      expect(bucket).not.toHaveProperty("duration_p50_ms");
     });
   });
 
