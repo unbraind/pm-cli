@@ -661,7 +661,10 @@ function segmentInvokesUnsafeDirectTestRunner(normalizedSegment: string): boolea
     return true;
   }
   if (executable === "node") {
-    return args.includes("--test") || args.some((arg) => arg.endsWith("/vitest") || arg.endsWith("/vitest.mjs"));
+    return (
+      args.includes("--test") ||
+      args.some((arg) => arg === "vitest" || arg === "vitest.mjs" || arg.endsWith("/vitest") || arg.endsWith("/vitest.mjs"))
+    );
   }
   if (executable === "npx" || executable === "bunx") {
     return isDirectTestRunnerSubcommand(parseNpxCommand(args)?.command);

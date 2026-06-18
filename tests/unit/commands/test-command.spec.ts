@@ -963,6 +963,8 @@ describe("runTest", () => {
         "command=./node_modules/.bin/vitest run,scope=project",
         "command=node --test tests/unit/example.test.js,scope=project",
         "command=node --no-warnings --test tests/unit/example.test.js,scope=project",
+        "command=node vitest run,scope=project",
+        "command=node C:\\repo\\node_modules\\.bin\\vitest run,scope=project",
         "command=node ./scripts/run-tests.mjs coverage; vitest run,scope=project",
       ];
 
