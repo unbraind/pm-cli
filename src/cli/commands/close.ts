@@ -252,7 +252,6 @@ async function findAutoUnblockCandidates(
     .map((item) => ({ item, blockerIds: blockedByIds(item) }))
     .filter(({ blockerIds }) => blockerIds.includes(closedId))
     .filter(({ blockerIds }) =>
-      blockerIds.length > 0 &&
       blockerIds.every((blockerId) => {
         const blocker = itemsById.get(blockerId);
         return blocker !== undefined && isTerminalStatus(blocker.status, statusRegistry);
@@ -296,8 +295,12 @@ async function autoUnblockResolvedDependents(
           } else {
             delete document.metadata.dependencies;
           }
+          const changedFields = ["status", "blocked_by", "blocked_reason", "unblock_note"];
+          if (remainingDependencies.length !== dependencies.length) {
+            changedFields.push("dependencies");
+          }
           return {
-            changedFields: ["status", "blocked_by", "blocked_reason", "unblock_note", "dependencies"],
+            changedFields,
           };
         },
       });

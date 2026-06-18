@@ -869,7 +869,7 @@ describe("runClose", () => {
       const blockerId = createTask(context, "close-auto-unblock-blocker");
       const relatedId = createTask(context, "close-auto-unblock-related");
       const blockedId = createTask(context, "close-auto-unblock-blocked");
-      const secondBlockedId = createTask(context, "close-auto-unblock-blocked-b");
+      const secondBlockedId = createTask(context, "close-auto-unblock-blocked-b", { status: "blocked" });
       const updated = context.runCli(
         [
           "update",
@@ -887,11 +887,12 @@ describe("runClose", () => {
         { expectJson: true },
       );
       expect(updated.code).toBe(0);
-      const secondUpdated = context.runCli(
-        ["update", secondBlockedId, "--status", "blocked", "--blocked-by", blockerId, "--json"],
-        { expectJson: true },
+      await patchTaskToon(context, secondBlockedId, (content) =>
+        content.replace(
+          "status: blocked\n",
+          `status: blocked\nblocked_by: ${blockerId}\nblocked_reason: scalar blocker only\n`,
+        ),
       );
-      expect(secondUpdated.code).toBe(0);
 
       const result = await runClose(blockerId, "blocker resolved", { author: "closer" }, { path: context.pmPath });
       expect(result.warnings).toContain(`auto_unblocked:${blockedId}:resolved_blockers=${blockerId}`);
@@ -925,6 +926,16 @@ describe("runClose", () => {
           }),
         ]),
       );
+      const scalarHistory = context.runCli(["history", secondBlockedId, "--json", "--compact"], { expectJson: true });
+      expect(scalarHistory.code).toBe(0);
+      const scalarHistoryJson = scalarHistory.json as {
+        compact_history: Array<{ index: number; changed_fields: string[] }>;
+      };
+      const autoUnblockEntry = scalarHistoryJson.compact_history.at(-1);
+      expect(autoUnblockEntry?.changed_fields).toEqual(
+        expect.arrayContaining(["status", "blocked_by", "blocked_reason", "unblock_note"]),
+      );
+      expect(autoUnblockEntry?.changed_fields).not.toContain("dependencies");
     });
   });
 

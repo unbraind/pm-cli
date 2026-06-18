@@ -230,6 +230,9 @@ describe("runValidate", () => {
     expect(lifecycleResult.warnings).toContain("validate_lifecycle_stale_blockers:1");
 
     expect(validateInternals.classifyOrphanedPath("src/demo.ts")).toBe("source_unowned");
+    expect(validateInternals.classifyOrphanedPath("src/README.md")).toBe("source_unowned");
+    expect(validateInternals.classifyOrphanedPath("tests/fixtures.md")).toBe("tests_unowned");
+    expect(validateInternals.classifyOrphanedPath("README.md")).toBe("docs_unowned");
     expect(validateInternals.sharedDirectoryPrefixLength("docs/a/b/orphan.md", "docs/a/c/owned.md")).toBe(2);
     const orphanRows = validateInternals.buildOrphanedPathRows(
       ["docs/ops/nested/orphan.md", "docs/tie/orphan.md"],
@@ -263,6 +266,18 @@ describe("runValidate", () => {
     );
     expect(orphanRows[0]?.owner_candidate).toMatchObject({ id: "pm-owner", confidence: "path_prefix" });
     expect(orphanRows[1]?.owner_candidate).toMatchObject({ id: "pm-tie-a", confidence: "same_directory" });
+    expect(
+      validateInternals.summarizeOrphanedPathRows([
+        {
+          path: "docs/quote.md",
+          classification: "docs_unowned",
+          owner_candidate: null,
+          remediation_hint: 'pm docs <id> --add path=docs/quote.md,note="backslash \\\\ and quote"',
+        },
+      ]),
+    ).toEqual([
+      'docs/quote.md:docs_unowned owner_candidate=unowned hint="pm docs <id> --add path=docs/quote.md,note=\\"backslash \\\\\\\\ and quote\\""',
+    ]);
 
     await withTempPmPath(async (context) => {
       const filesResult = await validateInternals.buildFilesCheck(

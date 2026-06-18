@@ -1185,7 +1185,7 @@ interface OrphanedPathRow {
 }
 
 function classifyOrphanedPath(pathValue: string): OrphanedPathClassification {
-  if (pathValue.startsWith("docs/") || pathValue.endsWith(".md")) {
+  if (pathValue.startsWith("docs/")) {
     return "docs_unowned";
   }
   if (pathValue.startsWith("tests/")) {
@@ -1193,6 +1193,9 @@ function classifyOrphanedPath(pathValue: string): OrphanedPathClassification {
   }
   if (pathValue.startsWith("src/")) {
     return "source_unowned";
+  }
+  if (pathValue.endsWith(".md")) {
+    return "docs_unowned";
   }
   return "unlinked_existing";
 }
@@ -1283,7 +1286,7 @@ function buildOrphanedPathRows(orphanedFiles: readonly string[], items: readonly
 function summarizeOrphanedPathRows(rows: readonly OrphanedPathRow[]): string[] {
   return rows.map(
     (row) =>
-      `${row.path}:${row.classification} owner_candidate=${row.owner_candidate?.id ?? "unowned"} hint="${row.remediation_hint.replace(/"/g, '\\"')}"`,
+      `${row.path}:${row.classification} owner_candidate=${row.owner_candidate?.id ?? "unowned"} hint=${JSON.stringify(row.remediation_hint)}`,
   );
 }
 
@@ -1923,6 +1926,7 @@ export const _testOnlyValidateCommand = {
   resolveValidateMetadataProfile,
   resolveWorkspaceRoot,
   sharedDirectoryPrefixLength,
+  summarizeOrphanedPathRows,
   summarizeDuplicateIssueCodes,
   toMeaningfulString,
 };
