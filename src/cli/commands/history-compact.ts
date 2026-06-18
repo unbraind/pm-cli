@@ -531,16 +531,32 @@ export async function runHistoryCompactBulk(
 
   const historyDir = path.join(pmRoot, "history");
   const candidates: HistoryCompactBulkCandidate[] = [];
+  // A stream that cannot be read during enumeration is isolated as an errored
+  // row (mirroring per-stream compaction failures) rather than aborting the pass.
+  const preselectionErrors: HistoryCompactBulkItemResult[] = [];
   if (await pathExists(historyDir)) {
     const historyFiles = (await fs.readdir(historyDir))
       .filter((entry) => entry.endsWith(".jsonl"))
       .sort((left, right) => left.localeCompare(right));
     for (const fileName of historyFiles) {
       const historyPath = path.join(historyDir, fileName);
-      const raw = await fs.readFile(historyPath, "utf8");
-      await runActiveOnReadHooks({ path: historyPath, scope: "project" });
       const id = fileName.slice(0, -".jsonl".length);
-      candidates.push({ id, entries: countHistoryStreamEntries(raw), bucket: bucketById.get(id) ?? null });
+      try {
+        const raw = await fs.readFile(historyPath, "utf8");
+        await runActiveOnReadHooks({ path: historyPath, scope: "project" });
+        candidates.push({ id, entries: countHistoryStreamEntries(raw), bucket: bucketById.get(id) ?? null });
+      } catch (error) {
+        preselectionErrors.push({
+          id,
+          outcome: "errored",
+          entries_before: 0,
+          entries_after: null,
+          skip_reason: null,
+          changed: false,
+          /* c8 ignore next -- non-Error throws are normalized in defensive fallback. */
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
     }
   }
 
@@ -558,8 +574,14 @@ export async function runHistoryCompactBulk(
   });
 
   const dryRun = Boolean(options.dryRun);
-  const results: HistoryCompactBulkItemResult[] = [];
-  const totals = { streams_considered: candidates.length, selected: 0, items_compacted: 0, items_skipped: 0, items_errored: 0 };
+  const results: HistoryCompactBulkItemResult[] = [...preselectionErrors];
+  const totals = {
+    streams_considered: candidates.length + preselectionErrors.length,
+    selected: 0,
+    items_compacted: 0,
+    items_skipped: 0,
+    items_errored: preselectionErrors.length,
+  };
   for (const row of selection) {
     if (!row.selected) {
       totals.items_skipped += 1;

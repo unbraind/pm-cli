@@ -1,4 +1,4 @@
-import { readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { runHistory } from "../../src/cli/commands/history.js";
@@ -715,6 +715,23 @@ describe("history-compact bulk mode", () => {
       const result = await runHistoryCompactBulk({ scope: "closed", author: "test-author" }, { path: context.pmPath });
 
       expect(result.results.find((row) => row.id === orphan)).toMatchObject({ skip_reason: "scope_mismatch" });
+    });
+  });
+
+  it("isolates an unreadable stream as an errored row without aborting the pass", async () => {
+    await withTempPmPath(async (context) => {
+      const healthy = createItem(context, "Bulk Preselect Healthy");
+      deepenStream(context, healthy, 6);
+      // A directory named like a stream makes fs.readFile throw (EISDIR) during enumeration.
+      await mkdir(path.join(context.pmPath, "history", "pm-unreadable.jsonl"));
+
+      const result = await runHistoryCompactBulk({ scope: "all-streams", author: "test-author" }, { path: context.pmPath });
+
+      expect(result.totals.items_compacted).toBe(1);
+      expect(result.totals.items_errored).toBe(1);
+      const errored = result.results.find((row) => row.id === "pm-unreadable");
+      expect(errored).toMatchObject({ outcome: "errored", entries_before: 0 });
+      expect(errored!.error).not.toBeNull();
     });
   });
 
