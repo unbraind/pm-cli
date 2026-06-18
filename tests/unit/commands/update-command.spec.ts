@@ -2362,6 +2362,7 @@ describe("runUpdate", () => {
           comment: ["author=audit-bot,created_at=2026-03-01T00:00:00.000Z,text=audit note"],
           file: ["path=src/cli/commands/update.ts,scope=project,note=audit file"],
           doc: ["path=docs/COMMANDS.md,scope=project,note=audit doc"],
+          author: "actual-audit-owner",
           message: "append audit evidence without claiming",
         },
         { path: context.pmPath },
@@ -2375,7 +2376,7 @@ describe("runUpdate", () => {
         files?: Array<{ path: string; note?: string }>;
         docs?: Array<{ path: string; note?: string }>;
       };
-      expect(item.comments?.at(-1)).toMatchObject({ author: "audit-bot", text: "audit note" });
+      expect(item.comments?.at(-1)).toMatchObject({ author: "actual-audit-owner", text: "audit note" });
       expect(item.files).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ path: "src/cli/commands/update.ts", note: "audit file" }),
