@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import * as readline from "node:readline/promises";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { runHealth } from "../../../src/cli/commands/health.js";
 import { _testOnly as initInternals, runInit, summarizeInitResult } from "../../../src/cli/commands/init.js";
 import {
   _testOnly as initGuidanceInternals,
@@ -496,6 +497,40 @@ describe("runInit", () => {
         registered: [],
         updated: ["Story", "Spike"],
       });
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("repairs missing folders for runtime schema item types on re-run", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-schema-folders-"));
+    try {
+      await runInit("pm", { path: tempRoot }, { defaults: true, agentGuidance: "skip" });
+      await writeFile(
+        path.join(tempRoot, "schema", "types.json"),
+        `${JSON.stringify(
+          {
+            definitions: [
+              { name: "ShowType" },
+              { name: "Type" },
+            ],
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+
+      const before = await runHealth({ path: tempRoot }, { checkOnly: true });
+      const beforeDirectories = before.checks.find((check) => check.name === "directories");
+      expect(beforeDirectories?.details.missing_required).toEqual(["showtypes", "types"]);
+
+      const repaired = await runInit("pm", { path: tempRoot }, { defaults: true, agentGuidance: "skip" });
+      expect(repaired.created_dirs).toEqual([path.join(tempRoot, "showtypes"), path.join(tempRoot, "types")]);
+
+      const after = await runHealth({ path: tempRoot }, { checkOnly: true });
+      const afterDirectories = after.checks.find((check) => check.name === "directories");
+      expect(afterDirectories?.details.missing_required).toEqual([]);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

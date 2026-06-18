@@ -1,3 +1,5 @@
+import path from "node:path";
+import { mkdir } from "node:fs/promises";
 import { pathExists, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { acquireLock } from "../../core/lock/lock.js";
 import {
@@ -47,7 +49,7 @@ import {
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
 } from "../../core/schema/runtime-schema.js";
-import { resolveItemTypeRegistry, type ResolvedItemTypeDefinition } from "../../core/item/type-registry.js";
+import { resolveItemTypeRegistry, toDefaultFolder, type ResolvedItemTypeDefinition } from "../../core/item/type-registry.js";
 import { listAllFrontMatterLight } from "../../core/store/item-store.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -446,6 +448,7 @@ export async function runSchemaAddType(
     // writeFileAtomic writes to a temp file then renames, so a failure leaves the
     // existing types.json untouched; no manual rollback is needed.
     await writeFileAtomic(typesPath, serializeItemTypesFile(upsert.file));
+    await ensureTypeFolderScaffold(pmRoot, [upsert.definition], warnings, "schema:add-type-folder");
     warnings.push(
       ...(await runActiveOnWriteHooks({
         path: typesPath,
@@ -637,6 +640,29 @@ function fieldsPathFor(pmRoot: string, schema: ReturnType<typeof normalizeRuntim
 
 function typesPathFor(pmRoot: string, schema: ReturnType<typeof normalizeRuntimeSchemaSettings>): string {
   return filePathForSchemaSection(pmRoot, schema.files.types, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.types);
+}
+
+async function ensureTypeFolderScaffold(
+  pmRoot: string,
+  definitions: readonly ItemTypeDefinition[],
+  warnings: string[],
+  op: string,
+): Promise<void> {
+  for (const definition of definitions) {
+    const folder = definition.folder ?? toDefaultFolder(definition.name);
+    const target = path.join(pmRoot, folder);
+    if (await pathExists(target)) {
+      continue;
+    }
+    await mkdir(target, { recursive: true });
+    warnings.push(
+      ...(await runActiveOnWriteHooks({
+        path: target,
+        scope: "project",
+        op,
+      })),
+    );
+  }
 }
 
 function toSchemaFieldSummary(field: ReturnType<typeof resolveRuntimeFieldRegistry>["definitions"][number]): SchemaFieldSummary {
@@ -1383,6 +1409,12 @@ export async function runSchemaApplyPreset(
     }
     definitionsCount = nextFile.definitions.length;
     await writeFileAtomic(typesPath, serializeItemTypesFile(nextFile));
+    await ensureTypeFolderScaffold(
+      pmRoot,
+      resolveTypePresetDefinitions(presetName),
+      warnings,
+      "schema:apply-preset-folder",
+    );
     warnings.push(
       ...(await runActiveOnWriteHooks({
         path: typesPath,
@@ -1502,6 +1534,12 @@ export async function runSchemaInferTypes(
     }
     definitionsCount = nextFile.definitions.length;
     await writeFileAtomic(typesPath, serializeItemTypesFile(nextFile));
+    await ensureTypeFolderScaffold(
+      pmRoot,
+      nextFile.definitions.filter((definition) => registered.includes(definition.name) || replaced.includes(definition.name)),
+      warnings,
+      "schema:infer-types-folder",
+    );
     warnings.push(
       ...(await runActiveOnWriteHooks({
         path: typesPath,

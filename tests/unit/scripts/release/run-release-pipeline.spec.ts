@@ -27,6 +27,7 @@ type PipelineModule = {
     skipCompatibility: boolean;
     skipTelemetrySentry: boolean;
   }) => { ok: boolean; telemetry_mode: string };
+  pushReleaseRefs: (tagName: string, options?: { env?: Record<string, string> }) => { retried: boolean };
   runPipeline: () => void;
 };
 
@@ -417,6 +418,132 @@ describe("run-release-pipeline", () => {
       expect(gitCalls.some((c) => c[0] === "git" && c[1] === "commit")).toBe(true);
       expect(gitCalls.some((c) => c[0] === "git" && c[1] === "push")).toBe(true);
       expect(fs.existsSync(path.join(root, "CHANGELOG.md"))).toBe(true);
+    });
+
+    it("rebases and retargets the tag when release push sees origin/main advance", async () => {
+      const gitCalls: string[][] = [];
+      let pushAttempts = 0;
+      const runCommand = vi.fn((command: string, args: string[]) => {
+        gitCalls.push([command, ...args]);
+        if (command === "git" && args[0] === "push") {
+          pushAttempts += 1;
+          if (pushAttempts === 1) {
+            return {
+              status: 1,
+              stdout: "",
+              stderr: "! [rejected] HEAD -> main (fetch first)\nerror: failed to push some refs",
+            };
+          }
+        }
+        return { status: 0, stdout: "", stderr: "" };
+      });
+      mockUtils(runCommand);
+
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
+      expect(mod.pushReleaseRefs("v2026.6.18")).toEqual({ retried: true });
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("origin/main advanced"));
+      expect(gitCalls).toEqual([
+        ["git", "push", "--atomic", "origin", "HEAD", "v2026.6.18"],
+        ["git", "fetch", "origin", "main"],
+        ["git", "rebase", "origin/main"],
+        ["git", "tag", "-f", "v2026.6.18", "HEAD"],
+        ["git", "push", "--atomic", "origin", "HEAD", "v2026.6.18"],
+      ]);
+    });
+
+    it("returns retried false when release push succeeds on the first attempt", async () => {
+      const runCommand = vi.fn(() => ({ status: 0, stdout: "", stderr: "" }));
+      mockUtils(runCommand);
+
+      const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
+      expect(mod.pushReleaseRefs("v2026.6.18")).toEqual({ retried: false });
+      expect(runCommand).toHaveBeenCalledWith(
+        "git",
+        ["push", "--atomic", "origin", "HEAD", "v2026.6.18"],
+        expect.objectContaining({ allowFailure: true }),
+      );
+    });
+
+    it("aborts and fails when release push rebase cannot replay cleanly", async () => {
+      const gitCalls: string[][] = [];
+      const runCommand = vi.fn((command: string, args: string[]) => {
+        gitCalls.push([command, ...args]);
+        if (command === "git" && args[0] === "push") {
+          return {
+            status: 1,
+            stdout: "",
+            stderr: "Updates were rejected because the tip of your current branch is behind",
+          };
+        }
+        if (command === "git" && args[0] === "rebase" && args[1] === "origin/main") {
+          return {
+            status: 1,
+            stdout: "",
+            stderr: "CONFLICT (content): Merge conflict in package.json",
+          };
+        }
+        return { status: 0, stdout: "", stderr: "" };
+      });
+      mockUtils(runCommand);
+
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
+      expect(() => mod.pushReleaseRefs("v2026.6.18", { env: { GIT_AUTHOR_NAME: "release-bot" } })).toThrow(
+        "FAIL:1:Command failed: git rebase origin/main\nCONFLICT (content): Merge conflict in package.json",
+      );
+      expect(gitCalls).toEqual([
+        ["git", "push", "--atomic", "origin", "HEAD", "v2026.6.18"],
+        ["git", "fetch", "origin", "main"],
+        ["git", "rebase", "origin/main"],
+        ["git", "rebase", "--abort"],
+      ]);
+    });
+
+    it("fails immediately when release push fails for a non-retryable reason", async () => {
+      const gitCalls: string[][] = [];
+      const runCommand = vi.fn((command: string, args: string[]) => {
+        gitCalls.push([command, ...args]);
+        if (command === "git" && args[0] === "push") {
+          return {
+            status: 1,
+            stdout: "",
+            stderr: "remote: permission denied\nerror: failed to push some refs to 'origin'",
+          };
+        }
+        return { status: 0, stdout: "", stderr: "" };
+      });
+      mockUtils(runCommand);
+
+      const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
+      expect(() => mod.pushReleaseRefs("v2026.6.18")).toThrow(
+        "FAIL:1:Command failed: git push --atomic origin HEAD v2026.6.18\nremote: permission denied\nerror: failed to push some refs to 'origin'",
+      );
+      expect(gitCalls).toEqual([["git", "push", "--atomic", "origin", "HEAD", "v2026.6.18"]]);
+    });
+
+    it("fails when release push retry is still rejected after rebase", async () => {
+      let pushAttempts = 0;
+      const runCommand = vi.fn((command: string, args: string[]) => {
+        if (command === "git" && args[0] === "push") {
+          pushAttempts += 1;
+          return {
+            status: 1,
+            stdout: "",
+            stderr: pushAttempts === 1
+              ? "! [rejected] HEAD -> main (fetch first)"
+              : "remote: protected branch update rejected",
+          };
+        }
+        return { status: 0, stdout: "", stderr: "" };
+      });
+      mockUtils(runCommand);
+
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
+      expect(() => mod.pushReleaseRefs("v2026.6.18")).toThrow(
+        "FAIL:1:Command failed: git push --atomic origin HEAD v2026.6.18\nremote: protected branch update rejected",
+      );
     });
 
     it("runs full non-dry-run path without push (text output)", async () => {

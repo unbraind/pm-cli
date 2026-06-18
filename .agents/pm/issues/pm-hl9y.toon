@@ -1,0 +1,34 @@
+id: pm-hl9y
+title: "GH-284: align pm init required schema directories with health"
+description: "GitHub issue #284 reports pm init followed by pm health can warn that required schema directories show-types and types are missing. Reproduce current behavior, align init/health directory requirements if needed, add regression coverage, and close the GitHub issue through the PR."
+type: Issue
+status: closed
+priority: 2
+tags[5]: agent-ux,"area:health","area:init","area:schema","github:284"
+created_at: "2026-06-18T13:16:38.873Z"
+updated_at: "2026-06-18T13:45:56.153Z"
+author: codex-sdk-cli-continuation
+parent: pm-8jdc
+resolution: "Custom schema item types now create their required storage folders during schema registration, and rerunning pm init repairs folders for schema-defined types that predate the fix."
+expected_result: pm health should not report missing required directories after pm schema add-type/apply-preset/infer or after rerunning pm init on a tracker with schema-defined custom item types.
+actual_result: "Focused tests, manual temp smoke, linked pm tests, and full 100% coverage confirmed missing custom type directories are created or repaired and health returns ok."
+comments[7]{created_at,author,text}:
+  "2026-06-18T13:16:46.265Z",codex-sdk-cli-continuation,"Duplicate check: pm search 'GH-284 init show-types types directories' and 'pm init show-types types required directories' found related closed init/schema/coverage work but no open canonical GH-284 item; GitHub issue #284 is open and reports pm init + health warning on missing show-types/types directories."
+  "2026-06-18T13:18:43.738Z",codex-sdk-cli-continuation,"Correction: duplicate checks must be status-agnostic across all pm items, including closed/canceled/terminal items. Follow-up all-status searches for GH-284, show-types, and types directories found no existing exact GH-284 item; related closed schema/init items are historical lineage, not duplicates of this GitHub issue. Future duplicate-check evidence must not be scoped to open items only."
+  "2026-06-18T13:21:57.260Z",codex-implementation-agent,"Investigation note: local current build manual repro in /tmp with PM_GLOBAL_PATH sandbox: node dist/cli.js init <tmp>/project-pm --yes --agent-guidance skip --json, then node dist/cli.js --pm-path <tmp>/project-pm health --json returned directories status ok with missing_required=[] and missing=[]. Continuing to check strict-directory and release-package behavior before editing."
+  "2026-06-18T13:27:10.397Z",github-security-lane,"Verification lane: no open PRs; GH #284 is open for pm init missing show-types/types dirs; open Dependabot and CodeQL alerts empty, secret scanning and repo advisories empty; latest main CI/Docs/CodeQL green; latest scheduled Auto Release failed after release gates at git push origin HEAD due non-fast-forward main, while manual Release/Auto Release on 2026-06-17 succeeded."
+  "2026-06-18T13:27:34.512Z",schema-health-lane,"Findings: init creates core+builtin item dirs and runtime schema files; health requires core dirs plus active non-optional custom type folders. GH-284's types/show-types are custom item folders, so schema add/apply/infer should scaffold folders; init/health constants should not add schema subdirs."
+  "2026-06-18T13:30:46.221Z",codex-implementation,"Implementation link: bundled with pm-5oti in this PR because both are current agent-facing reliability issues found during the requested GH/pm continuation sweep."
+  "2026-06-18T13:45:11.294Z",codex-implementation,"Evidence: focused schema/init/health tests passed (144 tests), linked pm test --run passed in sandbox, manual temp smoke proved Type folder creation and ShowType init repair, full coverage passed at 100/100/100/100."
+files[3]{path,scope,note}:
+  src/cli/commands/schema.ts,project,Scaffold storage folders when schema item-type mutations register custom types
+  tests/unit/commands/init-command.spec.ts,project,Regression coverage for init repairing schema-defined type folders
+  tests/unit/commands/schema-command.spec.ts,project,Regression coverage for schema add/apply/infer custom type folder health
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/commands/schema-command.spec.ts tests/unit/commands/init-command.spec.ts tests/unit/commands/health-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqjjvue1-m69ngn,test,passed,"2026-06-18T13:42:47.943Z","2026-06-18T13:43:26.618Z","2026-06-18T13:43:26.618Z",null,null,2,0,0,null,null,null
+close_reason: "Fixed GH-284 by scaffolding custom type storage folders during schema add/apply/infer flows and verified init repairs missing schema-defined type folders; focused tests, manual temp smoke, linked pm tests, typecheck, and full 100% coverage passed."
+body: ""
