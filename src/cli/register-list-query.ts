@@ -34,6 +34,32 @@ function shouldRegisterListQueryCommand(commandName: string, commandFilter?: Set
   return commandFilter.has(commandName);
 }
 
+type ReadCommandOutputFormat = "json" | "toon";
+
+function resolveReadCommandOutputFormat(
+  commandLabel: string,
+  rawFormat: unknown,
+  globalOptions: ReturnType<typeof getGlobalOptions>,
+): ReturnType<typeof getGlobalOptions> {
+  if (rawFormat === undefined) {
+    return globalOptions;
+  }
+  if (typeof rawFormat !== "string") {
+    throw new PmCliError(`${commandLabel} --format must be one of json|toon`, EXIT_CODE.USAGE);
+  }
+  const normalized = rawFormat.trim().toLowerCase() as ReadCommandOutputFormat;
+  if (normalized !== "json" && normalized !== "toon") {
+    throw new PmCliError(`${commandLabel} --format must be one of json|toon`, EXIT_CODE.USAGE);
+  }
+  if (globalOptions.json === true && normalized === "toon") {
+    throw new PmCliError(`${commandLabel} cannot combine --json with --format toon`, EXIT_CODE.USAGE);
+  }
+  return {
+    ...globalOptions,
+    json: normalized === "json",
+  };
+}
+
 export function registerListQueryCommands(program: Command, options?: RegisterListQueryCommandsOptions): void {
   const commandFilter = options?.commandFilter;
   const shouldRegister = (commandName: string): boolean => shouldRegisterListQueryCommand(commandName, commandFilter);
@@ -327,6 +353,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
         "--fields <value>",
         "Render custom comma-separated search hit fields (mutually exclusive with --compact/--full; valid: --fields id,title,score; invalid: --full --fields id,title)",
       )
+      .option("--format <value>", "Search output format override: json|toon")
       .option("--limit <n>", "Limit returned item count");
     registerContentAndGovernanceFilters(searchCommand);
     searchCommand
@@ -346,7 +373,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
           },
           globalOptions,
         );
-        printResult(result, globalOptions);
+        printResult(result, resolveReadCommandOutputFormat("Search", options.format, globalOptions));
         if (globalOptions.profile) {
           printError(`profile:command=search took_ms=${Date.now() - startedAt}`);
         }
@@ -363,6 +390,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--fields <value>", "Render custom comma-separated item metadata fields (for example: --fields id,title,status,parent,type)")
       .option("--tree", "Include descendants rooted at the requested item")
       .option("--tree-depth <n>", "Maximum subtree depth for --tree descendants")
+      .option("--format <value>", "Get output format override: json|toon")
       .description("Show item details by ID.")
       .action(async (id: string, options: Record<string, unknown>, command) => {
         const globalOptions = getGlobalOptions(command);
@@ -384,7 +412,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
                   : undefined,
           },
         );
-        printResult(result, globalOptions);
+        printResult(result, resolveReadCommandOutputFormat("Get", options.format, globalOptions));
         if (globalOptions.profile) {
           printError(`profile:command=get took_ms=${Date.now() - startedAt}`);
         }
@@ -402,6 +430,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--diff", "Include per-entry field-level before/after value diffs computed by replaying the history chain")
       .option("--field <name>", "With --diff, show only entries that changed this field (implies --diff)")
       .option("--verify", "Verify hash chain and replay integrity for the full history stream")
+      .option("--format <value>", "History output format override: json|toon")
       .description("Show item history entries.")
       .action(async (id: string, options: Record<string, unknown>, command) => {
         const globalOptions = getGlobalOptions(command);
@@ -422,7 +451,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
           },
           globalOptions,
         );
-        printResult(result, globalOptions);
+        printResult(result, resolveReadCommandOutputFormat("History", options.format, globalOptions));
         if (globalOptions.profile) {
           printError(`profile:command=history took_ms=${Date.now() - startedAt}`);
         }
@@ -466,3 +495,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       });
   }
 }
+
+export const _testOnlyRegisterListQuery = {
+  resolveReadCommandOutputFormat,
+};

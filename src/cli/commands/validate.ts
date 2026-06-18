@@ -60,6 +60,7 @@ type ValidateDependencyCycleSeverity = "off" | "warn" | "error";
 type ValidateFileScanMode = "default" | "tracked-all" | "tracked-all-strict";
 type ItemWithBody = Awaited<ReturnType<typeof listAllFrontMatterWithBody>>[number];
 type FileCandidateSource = "default-curated" | "tracked-git" | "tracked-all-fallback-default";
+type OrphanedPathClassification = "docs_unowned" | "tests_unowned" | "source_unowned" | "unlinked_existing";
 
 const FILE_SCAN_DIRECTORIES = ["src", "tests", "docs"] as const;
 const FILE_SCAN_ROOT_FILES = [
@@ -1013,12 +1014,20 @@ function buildResolutionCheck(
 }
 
 /* c8 ignore start -- lifecycle dependency-graph cycle analysis is covered by lifecycle integration fixtures */
-function buildLifecycleDependencyGraph(activeItems: ItemWithBody[]): Map<string, string[]> {
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function buildLifecycleDependencyGraph(activeItems: ItemWithBody[], idPrefix = "pm"): Map<string, string[]> {
   const activeItemIds = new Set(activeItems.map((item) => item.id));
   const graph = new Map<string, string[]>();
   const sortedItems = [...activeItems].sort((left, right) => left.id.localeCompare(right.id));
   for (const item of sortedItems) {
     const edges = new Set<string>();
+    const blockedBy = toMeaningfulString(item.blocked_by);
+    if (blockedBy && activeItemIds.has(blockedBy)) {
+      edges.add(blockedBy);
+    }
     for (const dependency of item.dependencies ?? []) {
       const dependencyId = toMeaningfulString(dependency.id);
       if (!dependencyId || !activeItemIds.has(dependencyId)) {
@@ -1026,11 +1035,27 @@ function buildLifecycleDependencyGraph(activeItems: ItemWithBody[]): Map<string,
       }
       edges.add(dependencyId);
     }
+    const definitionOfReady = toMeaningfulString(item.definition_of_ready);
+    if (definitionOfReady) {
+      for (const referencedId of extractItemIds(definitionOfReady, idPrefix)) {
+        if (activeItemIds.has(referencedId)) {
+          edges.add(referencedId);
+        }
+      }
+    }
     graph.set(item.id, [...edges].sort((left, right) => left.localeCompare(right)));
   }
   return graph;
 }
 /* c8 ignore stop */
+
+function extractItemIds(value: string, idPrefix = "pm"): string[] {
+  const normalizedPrefix = (idPrefix.trim().toLowerCase() || "pm").replace(/-+$/g, "");
+  const pattern = new RegExp(`(?:^|[^a-z0-9-])(${escapeRegExp(normalizedPrefix)}-[a-z0-9][a-z0-9-]*)`, "gi");
+  return [...new Set([...value.matchAll(pattern)].map((match) => match[1]!.toLowerCase()))].sort(
+    (left, right) => left.localeCompare(right),
+  );
+}
 
 /* c8 ignore start -- Tarjan SCC traversal branch matrix is covered by lifecycle cycle integration fixtures */
 function findLifecycleDependencyCycleComponents(graph: Map<string, string[]>): string[][] {
@@ -1134,12 +1159,12 @@ function resolveLifecycleDependencyCycleSamplePath(component: string[], graph: M
 }
 /* c8 ignore stop */
 
-function detectLifecycleDependencyCycles(activeItems: ItemWithBody[]): {
+function detectLifecycleDependencyCycles(activeItems: ItemWithBody[], idPrefix = "pm"): {
   cycle_count: number;
   cycle_item_ids: string[];
   cycle_sample_paths: string[];
 } {
-  const graph = buildLifecycleDependencyGraph(activeItems);
+  const graph = buildLifecycleDependencyGraph(activeItems, idPrefix);
   const cycleComponents = findLifecycleDependencyCycleComponents(graph);
   const cycleItemIds = [...new Set(cycleComponents.flat())].sort((left, right) => left.localeCompare(right));
   const cycleSamplePaths = cycleComponents.map((component) =>
@@ -1152,6 +1177,126 @@ function detectLifecycleDependencyCycles(activeItems: ItemWithBody[]): {
   };
 }
 
+interface OrphanedPathRow {
+  path: string;
+  classification: OrphanedPathClassification;
+  owner_candidate: {
+    id: string;
+    type: string;
+    title: string;
+    status: string;
+    confidence: "path_prefix" | "same_directory" | "shared_directory";
+  } | null;
+  remediation_hint: string;
+}
+
+function classifyOrphanedPath(pathValue: string): OrphanedPathClassification {
+  if (pathValue.startsWith("docs/")) {
+    return "docs_unowned";
+  }
+  if (pathValue.startsWith("tests/")) {
+    return "tests_unowned";
+  }
+  if (pathValue.startsWith("src/")) {
+    return "source_unowned";
+  }
+  if (pathValue.endsWith(".md")) {
+    return "docs_unowned";
+  }
+  return "unlinked_existing";
+}
+
+function directoryOf(relativePath: string): string {
+  const slash = relativePath.lastIndexOf("/");
+  return slash === -1 ? "" : relativePath.slice(0, slash);
+}
+
+function sharedDirectoryPrefixLength(left: string, right: string): number {
+  const leftParts = directoryOf(left).split("/").filter(Boolean);
+  const rightParts = directoryOf(right).split("/").filter(Boolean);
+  let count = 0;
+  while (count < leftParts.length && count < rightParts.length && leftParts[count] === rightParts[count]) {
+    count += 1;
+  }
+  return count;
+}
+
+function findOrphanOwnerCandidate(
+  pathValue: string,
+  classification: OrphanedPathClassification,
+  items: readonly ItemWithBody[],
+): OrphanedPathRow["owner_candidate"] {
+  const linkKind = classification === "docs_unowned" ? "docs" : "files";
+  let best:
+    | {
+      item: ItemWithBody;
+      score: number;
+      confidence: "path_prefix" | "same_directory" | "shared_directory";
+    }
+    | undefined;
+  for (const item of items) {
+    const links = linkKind === "docs" ? item.docs ?? [] : item.files ?? [];
+    for (const link of links) {
+      if (link.scope !== "project") {
+        continue;
+      }
+      const linkedPath = normalizeRelativePath(link.path);
+      if (linkedPath.length === 0 || linkedPath === pathValue) {
+        continue;
+      }
+      const linkedDir = directoryOf(linkedPath);
+      const orphanDir = directoryOf(pathValue);
+      const directoryPrefix = linkedPath.endsWith("/") ? linkedPath : `${linkedPath}/`;
+      const isDirectoryPrefix = pathValue.startsWith(directoryPrefix);
+      const sameDirectory = linkedDir.length > 0 && linkedDir === orphanDir;
+      const sharedPrefixLength = sharedDirectoryPrefixLength(pathValue, linkedPath);
+      if (!isDirectoryPrefix && !sameDirectory && sharedPrefixLength === 0) {
+        continue;
+      }
+      const score = isDirectoryPrefix ? linkedPath.length + 1000 : sameDirectory ? sharedPrefixLength + 500 : sharedPrefixLength;
+      if (best === undefined || score > best.score || (score === best.score && item.id.localeCompare(best.item.id) < 0)) {
+        best = {
+          item,
+          score,
+          confidence: isDirectoryPrefix ? "path_prefix" : sameDirectory ? "same_directory" : "shared_directory",
+        };
+      }
+    }
+  }
+  if (!best) {
+    return null;
+  }
+  return {
+    id: best.item.id,
+    type: best.item.type,
+    title: best.item.title,
+    status: best.item.status,
+    confidence: best.confidence,
+  };
+}
+
+function buildOrphanedPathRows(orphanedFiles: readonly string[], items: readonly ItemWithBody[]): OrphanedPathRow[] {
+  return orphanedFiles.map((pathValue) => {
+    const classification = classifyOrphanedPath(pathValue);
+    const linkCommand = classification === "docs_unowned" ? "docs" : "files";
+    const ownerCandidate = findOrphanOwnerCandidate(pathValue, classification, items);
+    const target = ownerCandidate?.id ?? "<id>";
+    return {
+      path: pathValue,
+      classification,
+      owner_candidate: ownerCandidate,
+      remediation_hint: `pm ${linkCommand} ${target} --add path=${pathValue},scope=project,note="<why this artifact belongs to the item>"`,
+    };
+  });
+}
+
+function summarizeOrphanedPathRows(rows: readonly OrphanedPathRow[]): string[] {
+  return rows.map(
+    (row) =>
+      `${row.path}:${row.classification} owner_candidate=${row.owner_candidate?.id ?? "unowned"} hint=${JSON.stringify(row.remediation_hint)}`,
+  );
+}
+
 /* c8 ignore start -- lifecycle stale/terminal/dependency diagnostics matrix is covered by end-to-end validate integration runs */
 function buildLifecycleCheck(
   items: ItemWithBody[],
@@ -1160,6 +1305,7 @@ function buildLifecycleCheck(
   statusRegistry: RuntimeStatusRegistry,
   lifecyclePatternPolicy: LifecyclePatternPolicy,
   verboseDiagnostics: boolean,
+  idPrefix = "pm",
 ): { check: ValidateCheck; warnings: string[]; terminalParentFixRows: TerminalParentFixRow[] } {
   const itemsById = new Map(items.map((item) => [item.id, item]));
   const blockedStatuses =
@@ -1260,7 +1406,7 @@ function buildLifecycleCheck(
     (left, right) => left.id.localeCompare(right.id) || left.parent_id.localeCompare(right.parent_id),
   );
   staleBlockerRows.sort((left, right) => left.id.localeCompare(right.id));
-  const dependencyCycleDiagnostics = detectLifecycleDependencyCycles(activeItems);
+  const dependencyCycleDiagnostics = detectLifecycleDependencyCycles(activeItems, idPrefix);
 
   const warnings: string[] = [];
   if (closureLikeRows.length > 0) {
@@ -1419,6 +1565,7 @@ async function buildFilesCheck(
     };
   }
   const orphanedFiles = candidateFiles.filter((candidate) => !linkedProjectPaths.has(candidate));
+  const orphanedPathRows = buildOrphanedPathRows(orphanedFiles, items);
   // Stale-path classification (pm-0v2m / GH-184): a missing linked path whose
   // basename still exists in the candidate scan is reported as `moved` (with
   // relink candidates); otherwise it is `deleted` and safe to prune.
@@ -1448,6 +1595,13 @@ async function buildFilesCheck(
   }
   const summarizedMissing = summarizeFileList(uniqueMissingLinkedPaths, verboseFileLists);
   const summarizedOrphaned = summarizeFileList(orphanedFiles, verboseFileLists);
+  const summarizedOrphanedClassifications = summarizeFileList(
+    orphanedPathRows.map((row) => `${row.path}:${row.classification}:owner_candidate=${row.owner_candidate?.id ?? "unowned"}`),
+    verboseFileLists,
+  );
+  const orphanedPathRowDetail = verboseFileLists
+    ? orphanedPathRows
+    : summarizeFileList(summarizeOrphanedPathRows(orphanedPathRows), false).values;
   const summarizedClassifications = summarizeFileList(
     summarizeStaleLinkedPathClassifications(classifiedStalePaths),
     verboseFileLists,
@@ -1515,6 +1669,10 @@ async function buildFilesCheck(
         orphaned_paths_total: summarizedOrphaned.total,
         orphaned_paths: summarizedOrphaned.values,
         orphaned_paths_truncated: summarizedOrphaned.truncated,
+        orphaned_path_classifications: summarizedOrphanedClassifications.values,
+        orphaned_path_classifications_truncated: summarizedOrphanedClassifications.truncated,
+        orphaned_path_rows_count: orphanedPathRows.length,
+        orphaned_path_rows: orphanedPathRowDetail,
       },
     },
     warnings,
@@ -1761,9 +1919,13 @@ export const _testOnlyValidateCommand = {
   buildFilesCheck,
   buildLifecycleCheck,
   buildLifecycleDependencyGraph,
+  buildOrphanedPathRows,
+  classifyOrphanedPath,
   collectDefaultProjectFileCandidates,
   collectTrackedGitFileCandidates,
   detectLifecycleDependencyCycles,
+  escapeRegExp,
+  extractItemIds,
   findLifecycleDependencyCycleComponents,
   isMetadataFieldMissing,
   listFilesRecursive,
@@ -1773,6 +1935,8 @@ export const _testOnlyValidateCommand = {
   resolveRequestedChecks,
   resolveValidateMetadataProfile,
   resolveWorkspaceRoot,
+  sharedDirectoryPrefixLength,
+  summarizeOrphanedPathRows,
   summarizeDuplicateIssueCodes,
   toMeaningfulString,
 };
@@ -1863,6 +2027,7 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
       statusRegistry,
       lifecyclePatternPolicy,
       fullDiagnostics,
+      settings.id_prefix,
     );
     terminalParentFixRows = built.terminalParentFixRows;
     record(built);

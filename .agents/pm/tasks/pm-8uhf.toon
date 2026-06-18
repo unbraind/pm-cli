@@ -2,13 +2,42 @@ id: pm-8uhf
 title: "GH #267/#271/#272 follow-up: lifecycle automation, logical dependency validation, read format parity"
 description: "GitHub audit refresh found broader open reports not safe to bundle into PR #266 after the focused guardrail and small UX fixes: #267 auto-unblock blocked_by dependencies after blocker closure, #271 detect logical circular dependencies involving blocked_by and definition_of_ready/free-text readiness, and #272 unify --format support across read-only commands. Duplicate check: pm search found no canonical open items for these exact GitHub issues. These require separate design/testing because they alter lifecycle automation, validation semantics, and command output contracts."
 type: Task
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-06-18T00:15:12.340Z"
-updated_at: "2026-06-18T00:15:19.785Z"
+updated_at: "2026-06-18T06:04:29.073Z"
 author: codex-audit-agent
 parent: pm-mpbb
-comments[1]{created_at,author,text}:
+resolution: "Auto-unblock, lifecycle logical-cycle detection, read-command format parity, and orphaned path diagnostics implemented with SDK contracts/docs/tests."
+expected_result: pm CLI provides safer lifecycle/context primitives and consistent agent-readable read output contracts.
+actual_result: "Targeted tests, full coverage, manual temp smoke, contracts, changelog, audit, telemetry, and Sentry gate passed."
+comments[4]{created_at,author,text}:
   "2026-06-18T00:15:19.785Z",codex-audit-agent,"Audit evidence: gh issue list on 2026-06-18 showed #267, #271, and #272 still open after #268-#270 were fixed in pm-x7g1. Deferred from PR #266 because #267 changes lifecycle automation, #271 needs a robust dependency/reference model beyond substring parsing of definition_of_ready text, and #272 changes read-command output contracts. Keep as canonical pm follow-up before creating any duplicate items."
+  "2026-06-18T04:54:50.530Z",codex-sdk-cli-continuation,"Orientation evidence: bootstrap passed (npm install -g ., pm 2026.6.17, node v25.9.0, pnpm 10.33.4, pnpm build); gh pr list found no open PRs; gh issue list showed open #267/#271/#272/#273 plus older backlog; pnpm audit --audit-level moderate found no known vulnerabilities; pnpm outdated --recursive failed only because docs/examples/policy-restricted-extension has no lockfile. Duplicate check: pm search found pm-8uhf canonical for #267/#271/#272 and no open #273-specific item, so GH #273 is tracked here as adjacent validate UX."
+  "2026-06-18T04:55:10.068Z",codex-sdk-cli-continuation,"Implementation note: attempted pm update pm-8uhf --status in_progress after claim, but update reported a lock conflict owned by the same author. No force override used per repository rules; continuing with claim plus append-only evidence commands."
+  "2026-06-18T06:03:40.185Z",codex-sdk-cli-continuation,"Verification evidence: targeted tests passed (register-list-query/close/validate); full coverage passed 4508 tests with Statements 100%, Branches 100%, Functions 100%, Lines 100%; manual temp-dir smoke passed for auto-unblock, get/search --format json, lifecycle cycle validation, and orphaned path owner rows; pnpm build, contracts:check, changelog:pm:check, pnpm audit --audit-level moderate, pm validate --check-resolution --check-history-drift, telemetry status, and Sentry/telemetry gate all ran. Dependency freshness: commander 15.0.0 exists but is intentionally deferred because it requires Node >=22.12.0 while pm-cli package support is Node >=20."
+files[8]{path,scope,note}:
+  src/cli/commands/close.ts,project,Auto-unblock blocked_by dependents after blocker close
+  src/cli/commands/validate.ts,project,Lifecycle graph and orphaned path validation primitives
+  src/cli/register-list-query.ts,project,Command-local read --format json|toon support
+  src/sdk/cli-contracts.ts,project,SDK command contract parity for read --format
+  tests/fixtures/contracts/full.json,project,Regenerated contract fixture
+  tests/unit/cli/register-list-query.spec.ts,project,Read --format regression coverage
+  tests/unit/commands/close-command.spec.ts,project,Auto-unblock regression coverage
+  tests/unit/commands/validate-command.spec.ts,project,Lifecycle cycle and orphaned path regression coverage
+tests[10]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "manual temp-dir smoke: init/create/update/close auto-unblock/get --format json/validate lifecycle cycle/validate orphan rows/search --format json",null,project,60,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/release/sentry-telemetry-gate.mjs --max-critical 0 --max-high 0,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/cli/register-list-query.spec.ts tests/unit/commands/close-command.spec.ts,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm audit --audit-level moderate,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm changelog:pm:check",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm contracts:check",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm contracts:update",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,"Document read --format,auto-unblock,lifecycle cycle,and orphaned path diagnostics"
+close_reason: "Implemented GH #267/#271/#272 plus adjacent GH #273 validate orphan diagnostics; verified build, contracts, 100/100/100/100 coverage, manual temp smoke, changelog, audit, telemetry, and Sentry gate."
 body: ""

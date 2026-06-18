@@ -27,7 +27,7 @@ vi.mock("../../../src/cli/registration-helpers.js", async (importOriginal) => {
   };
 });
 
-import { registerListQueryCommands } from "../../../src/cli/register-list-query.js";
+import { _testOnlyRegisterListQuery, registerListQueryCommands } from "../../../src/cli/register-list-query.js";
 import { runGet } from "../../../src/cli/commands/get.js";
 import { runHistory } from "../../../src/cli/commands/history.js";
 import { runActivity } from "../../../src/cli/commands/activity.js";
@@ -98,6 +98,29 @@ describe("register-list-query get options", () => {
     const projection = lastCall<Record<string, unknown>>(vi.mocked(runGet) as never, 2);
     expect(projection.treeDepth).toBe("5");
   });
+
+  it("prints get output as json when --format json is provided", async () => {
+    await runRaw("get", "pm-1", "--format", "json");
+    const outputOptions = lastCall<Record<string, unknown>>(vi.mocked(printResult) as never, 1);
+    expect(outputOptions.json).toBe(true);
+  });
+
+  it("rejects conflicting get --json and --format toon options", async () => {
+    await expect(buildProgram().parseAsync(["--path", tmpRoot, "--json", "get", "pm-1", "--format", "toon"], { from: "user" }))
+      .rejects.toThrow(/cannot combine --json with --format toon/);
+  });
+
+  it("rejects non-string read command format values defensively", () => {
+    expect(() =>
+      _testOnlyRegisterListQuery.resolveReadCommandOutputFormat("Get", true, { quiet: false }),
+    ).toThrow(/Get --format must be one of json\|toon/);
+  });
+
+  it("keeps non-json output when --format toon is provided without global json", () => {
+    expect(
+      _testOnlyRegisterListQuery.resolveReadCommandOutputFormat("Get", "toon", { quiet: false }),
+    ).toEqual({ quiet: false, json: false });
+  });
 });
 
 describe("register-list-query history options", () => {
@@ -111,6 +134,24 @@ describe("register-list-query history options", () => {
     await runRaw("history", "pm-1", "--full", "--limit", "5", "--verify");
     const options = lastCall<Record<string, unknown>>(vi.mocked(runHistory) as never, 1);
     expect(options).toMatchObject({ compact: false, limit: "5", verify: true });
+  });
+
+  it("prints history output as json when --format json is provided", async () => {
+    await runRaw("history", "pm-1", "--format", "json");
+    const outputOptions = lastCall<Record<string, unknown>>(vi.mocked(printResult) as never, 1);
+    expect(outputOptions.json).toBe(true);
+  });
+});
+
+describe("register-list-query search options", () => {
+  it("prints search output as json when --format json is provided", async () => {
+    await runRaw("search", "token", "--format", "json");
+    const outputOptions = lastCall<Record<string, unknown>>(vi.mocked(printResult) as never, 1);
+    expect(outputOptions.json).toBe(true);
+  });
+
+  it("rejects unsupported read command formats", async () => {
+    await expect(runRaw("search", "token", "--format", "markdown")).rejects.toThrow(/Search --format must be one of json\|toon/);
   });
 });
 

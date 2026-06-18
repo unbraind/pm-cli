@@ -162,6 +162,7 @@ describe("runValidate", () => {
     const graph = validateInternals.buildLifecycleDependencyGraph([
       {
         id: "pm-a",
+        definition_of_ready: "Ready after pm-c and pm-b are both prepared.",
         dependencies: [
           { id: "pm-b", kind: "blocks" },
           { id: "none", kind: "blocks" },
@@ -175,8 +176,26 @@ describe("runValidate", () => {
         id: "pm-c",
         dependencies: [{ id: "pm-c", kind: "blocks" }],
       },
+      {
+        id: "pm-d",
+        definition_of_ready: "No pm item references here.",
+        dependencies: [],
+      },
     ] as never);
-    expect(graph.get("pm-a")).toEqual(["pm-b"]);
+    expect(graph.get("pm-a")).toEqual(["pm-b", "pm-c"]);
+    expect(validateInternals.extractItemIds("Ready after work-2 and pm-3.", "work")).toEqual(["work-2"]);
+    expect(validateInternals.extractItemIds("Ready after x.pm-2", "x.pm")).toEqual(["x.pm-2"]);
+    expect(validateInternals.extractItemIds("Ready after (x.pm-2), not ax.pm-3", "x.pm")).toEqual(["x.pm-2"]);
+    expect(validateInternals.extractItemIds("Ready after pm-2", " ")).toEqual(["pm-2"]);
+    expect(validateInternals.extractItemIds("Ready after pm-2", "pm-")).toEqual(["pm-2"]);
+    const customPrefixGraph = validateInternals.buildLifecycleDependencyGraph(
+      [
+        { id: "work-1", status: "open", definition_of_ready: "Ready after work-2" },
+        { id: "work-2", status: "open", blocked_by: "work-1" },
+      ] as never,
+      "work",
+    );
+    expect(customPrefixGraph.get("work-1")).toEqual(["work-2"]);
     expect(validateInternals.findLifecycleDependencyCycleComponents(graph)).toEqual([["pm-a", "pm-b"], ["pm-c"]]);
     expect(validateInternals.resolveLifecycleDependencyCycleSamplePath(["pm-c"], graph)).toEqual(["pm-c", "pm-c"]);
     expect(
@@ -222,6 +241,91 @@ describe("runValidate", () => {
       true,
     );
     expect(lifecycleResult.warnings).toContain("validate_lifecycle_stale_blockers:1");
+
+    expect(validateInternals.classifyOrphanedPath("src/demo.ts")).toBe("source_unowned");
+    expect(validateInternals.classifyOrphanedPath("src/README.md")).toBe("source_unowned");
+    expect(validateInternals.classifyOrphanedPath("tests/fixtures.md")).toBe("tests_unowned");
+    expect(validateInternals.classifyOrphanedPath("README.md")).toBe("docs_unowned");
+    expect(validateInternals.sharedDirectoryPrefixLength("docs/a/b/orphan.md", "docs/a/c/owned.md")).toBe(2);
+    const orphanRows = validateInternals.buildOrphanedPathRows(
+      ["docs/ops/nested/orphan.md", "docs/tie/orphan.md"],
+      [
+        {
+          id: "pm-owner",
+          type: "Task",
+          title: "Directory owner",
+          status: "open",
+          docs: [
+            { path: "docs/ops/", scope: "project" },
+            { path: "docs/ops/nested/orphan.md", scope: "project" },
+            { path: "   ", scope: "project" },
+          ],
+        },
+        {
+          id: "pm-tie-b",
+          type: "Task",
+          title: "Tie B",
+          status: "open",
+          docs: [{ path: "docs/tie/b.md", scope: "project" }],
+        },
+        {
+          id: "pm-tie-a",
+          type: "Task",
+          title: "Tie A",
+          status: "open",
+          docs: [{ path: "docs/tie/a.md", scope: "project" }],
+        },
+      ] as never,
+    );
+    expect(orphanRows[0]?.owner_candidate).toMatchObject({ id: "pm-owner", confidence: "path_prefix" });
+    expect(orphanRows[1]?.owner_candidate).toMatchObject({ id: "pm-tie-a", confidence: "same_directory" });
+    expect(
+      validateInternals.buildOrphanedPathRows(
+        ["docs/ops/new/orphan.md"],
+        [
+          {
+            id: "pm-shared",
+            type: "Task",
+            title: "Shared prefix owner",
+            status: "open",
+            docs: [{ path: "docs/ops/owned/guide.md", scope: "project" }],
+          },
+        ] as never,
+      )[0]?.owner_candidate,
+    ).toMatchObject({ id: "pm-shared", confidence: "shared_directory" });
+    expect(
+      validateInternals.buildOrphanedPathRows(
+        ["docs/ops/new/orphan.md"],
+        [
+          {
+            id: "pm-a-shared",
+            type: "Task",
+            title: "Sibling owner",
+            status: "open",
+            docs: [{ path: "docs/ops/owned/guide.md", scope: "project" }],
+          },
+          {
+            id: "pm-z-same",
+            type: "Task",
+            title: "Same directory owner",
+            status: "open",
+            docs: [{ path: "docs/ops/new/owned.md", scope: "project" }],
+          },
+        ] as never,
+      )[0]?.owner_candidate,
+    ).toMatchObject({ id: "pm-z-same", confidence: "same_directory" });
+    expect(
+      validateInternals.summarizeOrphanedPathRows([
+        {
+          path: "docs/quote.md",
+          classification: "docs_unowned",
+          owner_candidate: null,
+          remediation_hint: 'pm docs <id> --add path=docs/quote.md,note="backslash \\\\ and quote"',
+        },
+      ]),
+    ).toEqual([
+      'docs/quote.md:docs_unowned owner_candidate=unowned hint="pm docs <id> --add path=docs/quote.md,note=\\"backslash \\\\\\\\ and quote\\""',
+    ]);
 
     await withTempPmPath(async (context) => {
       const filesResult = await validateInternals.buildFilesCheck(
@@ -461,6 +565,39 @@ describe("runValidate", () => {
       expect(cyclePath).toContain(first);
       expect(cyclePath).toContain(second);
       expect(cyclePath).toContain(third);
+    });
+  });
+
+  it("reports cycles that cross blocked_by and definition_of_ready references", async () => {
+    await withTempPmPath(async (context) => {
+      const blockedId = createTask(context, "validate-lifecycle-logical-cycle-blocked");
+      const blockerId = createTask(context, "validate-lifecycle-logical-cycle-blocker");
+      const blocked = context.runCli(
+        ["update", blockedId, "--blocked-by", blockerId, "--status", "blocked", "--json"],
+        { expectJson: true },
+      );
+      expect(blocked.code).toBe(0);
+      const ready = context.runCli(
+        [
+          "update",
+          blockerId,
+          "--definition-of-ready",
+          `Reporting workflow must be functional in ${blockedId} before this can start.`,
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(ready.code).toBe(0);
+
+      const result = await runValidate({ checkLifecycle: true }, { path: context.pmPath });
+      expect(result.warnings).toContain("validate_lifecycle_dependency_cycles:1");
+      const details = checkByName(result, "lifecycle").details as {
+        dependency_cycle_item_ids: string[];
+        dependency_cycle_sample_paths: string[];
+      };
+      expect(details.dependency_cycle_item_ids).toEqual([blockedId, blockerId].sort((left, right) => left.localeCompare(right)));
+      expect(details.dependency_cycle_sample_paths[0]).toContain(blockedId);
+      expect(details.dependency_cycle_sample_paths[0]).toContain(blockerId);
     });
   });
 
@@ -1776,7 +1913,7 @@ describe("runValidate", () => {
   it("attributes owners to missing linked paths in the files check (GH-210)", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "owns-a-stale-link");
-      const workspaceRoot = path.dirname(context.pmPath);
+      const workspaceRoot = path.dirname(path.dirname(context.pmPath));
       const stalePath = path.join(workspaceRoot, "goes-away.txt");
       await writeFile(stalePath, "temporary", "utf8");
       const linked = context.runCli(["files", id, "--add", "goes-away.txt", "--json"], { expectJson: true });
@@ -1808,6 +1945,68 @@ describe("runValidate", () => {
           path: "goes-away.txt",
           classification: "deleted",
           items: [{ id, type: "Task", title: "owns-a-stale-link", status: "open", field: "files" }],
+        },
+      ]);
+    });
+  });
+
+  it("classifies orphaned paths with compact remediation rows", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "validate-files-orphan-unowned");
+      const workspaceRoot = path.dirname(path.dirname(context.pmPath));
+      await mkdir(path.join(workspaceRoot, "docs"), { recursive: true });
+      await writeFile(path.join(workspaceRoot, "docs", "orphan-guide.md"), "orphan", "utf8");
+
+      const result = await runValidate({ checkFiles: true }, { path: context.pmPath });
+      expect(result.warnings).toContain("validate_files_orphaned_paths:1");
+      const details = checkByName(result, "files").details as {
+        orphaned_path_classifications: string[];
+        orphaned_path_rows_count: number;
+        orphaned_path_rows: string[];
+      };
+      expect(details.orphaned_path_classifications).toEqual([
+        "docs/orphan-guide.md:docs_unowned:owner_candidate=unowned",
+      ]);
+      expect(details.orphaned_path_rows_count).toBe(1);
+      expect(details.orphaned_path_rows[0]).toContain("docs/orphan-guide.md:docs_unowned owner_candidate=unowned");
+      expect(details.orphaned_path_rows[0]).toContain("pm docs <id> --add path=docs/orphan-guide.md");
+    });
+  });
+
+  it("reports verbose orphaned path rows with owner candidates", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "validate-files-orphan-owner-candidate");
+      const workspaceRoot = path.dirname(path.dirname(context.pmPath));
+      await mkdir(path.join(workspaceRoot, "docs", "ops"), { recursive: true });
+      await writeFile(path.join(workspaceRoot, "docs", "ops", "owned.md"), "owned", "utf8");
+      await writeFile(path.join(workspaceRoot, "docs", "ops", "orphan.md"), "orphan", "utf8");
+      const linked = context.runCli(["docs", id, "--add", "docs/ops/owned.md", "--json"], { expectJson: true });
+      expect(linked.code).toBe(0);
+
+      const result = await runValidate(
+        { checkFiles: true, scanMode: "tracked-all", verboseFileLists: true },
+        { path: context.pmPath },
+      );
+      const details = checkByName(result, "files").details as {
+        orphaned_path_rows: Array<{
+          path: string;
+          classification: string;
+          owner_candidate: { id: string; type: string; title: string; status: string; confidence: string } | null;
+          remediation_hint: string;
+        }>;
+      };
+      expect(details.orphaned_path_rows).toEqual([
+        {
+          path: "docs/ops/orphan.md",
+          classification: "docs_unowned",
+          owner_candidate: {
+            id,
+            type: "Task",
+            title: "validate-files-orphan-owner-candidate",
+            status: "open",
+            confidence: "same_directory",
+          },
+          remediation_hint: `pm docs ${id} --add path=docs/ops/orphan.md,scope=project,note="<why this artifact belongs to the item>"`,
         },
       ]);
     });

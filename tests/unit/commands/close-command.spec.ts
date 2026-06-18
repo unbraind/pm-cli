@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { _testOnly as closeManyInternals } from "../../../src/cli/commands/close-many.js";
-import { runClose } from "../../../src/cli/commands/close.js";
+import { _testOnlyCloseCommand, runClose } from "../../../src/cli/commands/close.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { readSettings } from "../../../src/core/store/settings.js";
@@ -76,6 +76,20 @@ describe("runClose", () => {
     expect(closeManyInternals.hierarchyDepth("child", parents, cache)).toBe(2);
     expect(closeManyInternals.hierarchyDepth("child", parents, cache)).toBe(2);
     expect(closeManyInternals.hierarchyDepth("cycle-a", parents, new Map())).toBe(2);
+  });
+
+  it("normalizes blocked_by scalar and dependency ids for auto-unblock scans", () => {
+    expect(_testOnlyCloseCommand.blockedByIds({ blocked_by: 7 as never, dependencies: undefined })).toEqual([]);
+    expect(
+      _testOnlyCloseCommand.blockedByIds({
+        blocked_by: " pm-b ",
+        dependencies: [
+          { id: "pm-a", kind: "blocked_by" },
+          { id: "pm-c", kind: "related" },
+          { id: "   ", kind: "blocked_by" },
+        ] as never,
+      }),
+    ).toEqual(["pm-a", "pm-b"]);
   });
 
   it("builds active child indexes from tracker front matter", async () => {
@@ -847,6 +861,111 @@ describe("runClose", () => {
       expect(item.dependencies).toBeUndefined();
       expect(result.changed_fields).toEqual(expect.arrayContaining(["blocked_by", "blocked_reason", "dependencies"]));
       expect(result.warnings).toContain(`closed_cleared_blocked_by:${blockedId}:${blockerId}`);
+    });
+  });
+
+  it("auto-unblocks dependents when their last blocked_by dependency closes", async () => {
+    await withTempPmPath(async (context) => {
+      const blockerId = createTask(context, "close-auto-unblock-blocker");
+      const relatedId = createTask(context, "close-auto-unblock-related");
+      const blockedId = createTask(context, "close-auto-unblock-blocked");
+      const secondBlockedId = createTask(context, "close-auto-unblock-blocked-b", { status: "blocked" });
+      const updated = context.runCli(
+        [
+          "update",
+          blockedId,
+          "--status",
+          "blocked",
+          "--blocked-by",
+          blockerId,
+          "--blocked-reason",
+          "waiting",
+          "--dep",
+          `id=${relatedId},kind=related`,
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(updated.code).toBe(0);
+      await patchTaskToon(context, secondBlockedId, (content) =>
+        content.replace(
+          "status: blocked\n",
+          `status: blocked\nblocked_by: ${blockerId}\nblocked_reason: scalar blocker only\n`,
+        ),
+      );
+
+      const result = await runClose(blockerId, "blocker resolved", { author: "closer" }, { path: context.pmPath });
+      expect(result.warnings).toContain(`auto_unblocked:${blockedId}:resolved_blockers=${blockerId}`);
+      expect(result.warnings).toContain(`auto_unblocked:${secondBlockedId}:resolved_blockers=${blockerId}`);
+
+      const unblocked = context.runCli(["get", blockedId, "--json", "--full"], { expectJson: true });
+      expect(unblocked.code).toBe(0);
+      const item = (unblocked.json as {
+        item: {
+          status: string;
+          blocked_by?: string;
+          blocked_reason?: string;
+          unblock_note?: string;
+          dependencies?: Array<{ id: string; kind: string }>;
+        };
+      }).item;
+      expect(item.status).toBe("open");
+      expect(item.blocked_by).toBeUndefined();
+      expect(item.blocked_reason).toBeUndefined();
+      expect(item.dependencies).toEqual([expect.objectContaining({ id: relatedId, kind: "related" })]);
+      expect(item.unblock_note).toContain(`Auto-unblocked after blocker ${blockerId} closed`);
+
+      const history = context.runCli(["history", blockedId, "--json", "--full"], { expectJson: true });
+      const entries = (history.json as { history: Array<{ op: string; author: string; message?: string }> }).history;
+      expect(entries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            op: "update",
+            author: "closer",
+            message: `Auto-unblocked after blocker ${blockerId} closed`,
+          }),
+        ]),
+      );
+      const scalarHistory = context.runCli(["history", secondBlockedId, "--json", "--compact"], { expectJson: true });
+      expect(scalarHistory.code).toBe(0);
+      const scalarHistoryJson = scalarHistory.json as {
+        compact_history: Array<{ index: number; changed_fields: string[] }>;
+      };
+      const autoUnblockEntry = scalarHistoryJson.compact_history.at(-1);
+      expect(autoUnblockEntry?.changed_fields).toEqual(
+        expect.arrayContaining(["status", "blocked_by", "blocked_reason", "unblock_note"]),
+      );
+      expect(autoUnblockEntry?.changed_fields).not.toContain("dependencies");
+    });
+  });
+
+  it("does not auto-unblock when another blocked_by dependency remains active", async () => {
+    await withTempPmPath(async (context) => {
+      const resolvedBlockerId = createTask(context, "close-auto-unblock-resolved-blocker");
+      const activeBlockerId = createTask(context, "close-auto-unblock-active-blocker");
+      const blockedId = createTask(context, "close-auto-unblock-still-blocked");
+      const updated = context.runCli(
+        [
+          "update",
+          blockedId,
+          "--status",
+          "blocked",
+          "--blocked-by",
+          resolvedBlockerId,
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(updated.code).toBe(0);
+      const secondBlocker = context.runCli(
+        ["update", blockedId, "--dep", `id=${activeBlockerId},kind=blocked_by`, "--json"],
+        { expectJson: true },
+      );
+      expect(secondBlocker.code).toBe(0);
+
+      const result = await runClose(resolvedBlockerId, "one blocker resolved", {}, { path: context.pmPath });
+      expect(result.warnings.some((warning) => warning.startsWith(`auto_unblocked:${blockedId}:`))).toBe(false);
+      expect(itemStatus(context, blockedId)).toBe("blocked");
     });
   });
 

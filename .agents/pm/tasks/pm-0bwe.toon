@@ -1,0 +1,29 @@
+id: pm-0bwe
+title: "PR #274 review follow-up: CodeQL and bot feedback"
+description: "Follow-up work for PR #274 after pm-8uhf was closed/released: address CodeQL incomplete string escaping in validate orphan remediation rows and actionable bot feedback on auto-unblock changed_fields plus orphan path classification precedence. Duplicate check: pm search found no existing open PR #274 review-follow-up item; this is a child follow-up to pm-8uhf rather than a duplicate of the completed implementation item."
+type: Task
+status: closed
+priority: 1
+tags: []
+created_at: "2026-06-18T06:10:23.618Z"
+updated_at: "2026-06-18T06:22:50.065Z"
+author: codex-sdk-cli-continuation
+parent: pm-8uhf
+resolution: "Fixed PR #274 review findings: CodeQL-safe remediation hint escaping, directory-first orphan classification, and precise auto-unblock dependency changed_fields."
+expected_result: PR #274 no longer has the CodeQL escaping alert or actionable bot feedback for these touched paths.
+actual_result: "Focused tests and full coverage passed; contracts, changelog check, security scan, validation, and Sentry telemetry gate passed after the fixes."
+comments[1]{created_at,author,text}:
+  "2026-06-18T06:22:05.693Z",codex-sdk-cli-continuation,"Evidence: addressed PR #274 bot feedback by making auto-unblock changed_fields conditional on dependency mutations, using directory-first orphan classification before Markdown fallback, and JSON-escaping compact orphan remediation hints to satisfy CodeQL. Focused tests passed 140 tests; full coverage passed 4508 tests at Statements 100%, Branches 100%, Functions 100%, Lines 100%; contracts:check, changelog:pm:check, and security:scan passed."
+files[4]{path,scope,note}:
+  src/cli/commands/close.ts,project,"Review feedback: conditional auto-unblock changed_fields"
+  src/cli/commands/validate.ts,project,CodeQL escaping and orphan classification precedence
+  tests/unit/commands/close-command.spec.ts,project,Auto-unblock scalar-only changed_fields regression
+  tests/unit/commands/validate-command.spec.ts,project,Orphan classification and escaping regressions
+tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/commands/close-command.spec.ts tests/unit/commands/validate-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm changelog:pm:check",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm contracts:check",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm security:scan",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: PR #274 CodeQL and review feedback addressed
+body: ""

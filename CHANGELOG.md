@@ -17,6 +17,9 @@
 
 ### Other
 
+- PR \#274 second review follow-up: prefix, format, and owner scoring ([pm-89ur](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-89ur.toon))
+- PR \#274 review follow-up: CodeQL and bot feedback ([pm-0bwe](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0bwe.toon))
+- GH \#267/\#271/\#272 follow-up: lifecycle automation, logical dependency validation, read format parity ([pm-8uhf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-8uhf.toon))
 - GH \#268-\#270 agent lookup and context output polish ([pm-x7g1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-x7g1.toon))
 - Dogfood audit 2026-06-12: ecosystem verification \(CLI+SDK+packages\) ([pm-krgd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-krgd.toon))
 
