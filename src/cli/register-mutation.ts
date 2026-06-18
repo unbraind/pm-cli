@@ -1336,14 +1336,15 @@ export function registerMutationCommands(program: Command): void {
     .option("--before <value>", "Compact entries strictly before this version number or ISO timestamp (single-id mode only)")
     .option("--ids <value>", "Bulk: compact an explicit comma-separated list of item ids")
     .option("--all-over <n>", "Bulk: compact every stream with more than N entries")
-    .option("--scope <scope>", "Bulk: lifecycle scope to scan — closed or all-streams")
+    .option("--closed", "Bulk: compact only closed (terminal) items' streams")
+    .option("--all-streams", "Bulk: compact every history stream regardless of lifecycle state")
     .option("--min-entries <n>", "Bulk: skip streams with at most N entries (already compact; default 3)")
     .option("--dry-run", "Preview compaction impact without writing the history file")
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "Audit history message for the compaction marker entry")
     .option("--force", "Force ownership/lock override")
     .description(
-      "Compact item history streams into a synthetic baseline plus retained tail entries. Pass an item id for one stream, or a bulk selector (--ids/--all-over/--scope) to compact many.",
+      "Compact item history streams into a synthetic baseline plus retained tail entries. Pass an item id for one stream, or a bulk selector (--ids/--all-over/--closed/--all-streams) to compact many.",
     )
     .action(async (id: string | undefined, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
@@ -1351,24 +1352,32 @@ export function registerMutationCommands(program: Command): void {
       const { runHistoryCompact, runHistoryCompactBulk, assertHistoryCompactTarget } = await import(
         "./commands/history-compact.js"
       );
+      const parseNonNegativeIntFlag = (raw: unknown, flag: string): number | undefined => {
+        if (typeof raw !== "string") {
+          return undefined;
+        }
+        // Strict: reject "10abc"/"3.5"/"-3" that Number.parseInt would silently truncate.
+        if (!/^\d+$/.test(raw.trim())) {
+          throw new PmCliError(`history-compact ${flag} must be a non-negative integer.`, EXIT_CODE.USAGE);
+        }
+        return Number.parseInt(raw, 10);
+      };
       const ids = typeof options.ids === "string" ? splitCommaList(options.ids) : undefined;
-      const allOver =
-        typeof options.allOver === "string" ? Number.parseInt(options.allOver, 10) : undefined;
-      const minEntries =
-        typeof options.minEntries === "string" ? Number.parseInt(options.minEntries, 10) : undefined;
-      const scope =
-        options.scope === "closed" || options.scope === "all-streams" ? options.scope : undefined;
-      if (options.scope !== undefined && scope === undefined) {
+      const allOver = parseNonNegativeIntFlag(options.allOver, "--all-over");
+      const minEntries = parseNonNegativeIntFlag(options.minEntries, "--min-entries");
+      if (options.closed === true && options.allStreams === true) {
         throw new PmCliError(
-          `history-compact --scope must be one of closed|all-streams, got "${String(options.scope)}".`,
+          "history-compact: --closed and --all-streams are mutually exclusive; pick one lifecycle scope.",
           EXIT_CODE.USAGE,
         );
       }
-      if (allOver !== undefined && (!Number.isFinite(allOver) || allOver < 0)) {
-        throw new PmCliError("history-compact --all-over must be a non-negative integer.", EXIT_CODE.USAGE);
-      }
-      if (minEntries !== undefined && (!Number.isFinite(minEntries) || minEntries < 0)) {
-        throw new PmCliError("history-compact --min-entries must be a non-negative integer.", EXIT_CODE.USAGE);
+      const scope = options.closed === true ? "closed" : options.allStreams === true ? "all-streams" : undefined;
+      const isBulk = ids !== undefined || allOver !== undefined || scope !== undefined;
+      if (isBulk && typeof options.before === "string") {
+        throw new PmCliError(
+          "history-compact: --before applies only in single-id mode (bulk mode always compacts full streams).",
+          EXIT_CODE.USAGE,
+        );
       }
       assertHistoryCompactTarget(id, { ids, allOver, scope });
       if (id === undefined) {

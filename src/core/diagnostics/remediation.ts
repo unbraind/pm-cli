@@ -178,7 +178,7 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   {
     code: "history_stream_over_compact_threshold",
     command: "pm history-compact <id>",
-    summary: "The history stream exceeds the configured compaction threshold; compact it (pm history-compact --scope all-streams sweeps every over-threshold stream in one pass).",
+    summary: "The history stream exceeds the configured compaction threshold; compact it (pm history-compact --all-streams sweeps every over-threshold stream in one pass).",
   },
   // --- pm health: locks ---
   {

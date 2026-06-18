@@ -427,7 +427,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--limit --compact --full --diff --field --verify --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    history-compact)",
-    `      COMPREPLY=(${compgen("--before --ids --all-over --scope --min-entries --dry-run --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--before --ids --all-over --closed --all-streams --min-entries --dry-run --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    get)",
     `      COMPREPLY=(${compgen(GET_FLAGS)})`,
@@ -1187,7 +1187,8 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--before[Compact entries strictly before this version number or ISO timestamp]:before' \\
             '--ids[Bulk: compact an explicit comma-separated list of item ids]:ids' \\
             '--all-over[Bulk: compact every stream with more than N entries]:all-over' \\
-            '--scope[Bulk: lifecycle scope to scan (closed|all-streams)]:scope' \\
+            '--closed[Bulk: compact only closed (terminal) items streams]' \\
+            '--all-streams[Bulk: compact every history stream regardless of lifecycle state]' \\
             '--min-entries[Bulk: skip streams with at most N entries]:min-entries' \\
             '--dry-run[Preview compaction impact without writing the history file]' \\
             '--author[Mutation author]:author' \\
@@ -2210,7 +2211,8 @@ complete -c pm -n '__fish_seen_subcommand_from history'  -l verify -d 'Verify hi
 complete -c pm -n '__fish_seen_subcommand_from history-compact' -l before -d 'Compact entries strictly before this version number or ISO timestamp' -r
 complete -c pm -n '__fish_seen_subcommand_from history-compact' -l ids -d 'Bulk: compact an explicit comma-separated list of item ids' -r
 complete -c pm -n '__fish_seen_subcommand_from history-compact' -l all-over -d 'Bulk: compact every stream with more than N entries' -r
-complete -c pm -n '__fish_seen_subcommand_from history-compact' -l scope -d 'Bulk: lifecycle scope to scan (closed|all-streams)' -r
+complete -c pm -n '__fish_seen_subcommand_from history-compact' -l closed -d 'Bulk: compact only closed (terminal) items streams'
+complete -c pm -n '__fish_seen_subcommand_from history-compact' -l all-streams -d 'Bulk: compact every history stream regardless of lifecycle state'
 complete -c pm -n '__fish_seen_subcommand_from history-compact' -l min-entries -d 'Bulk: skip streams with at most N entries' -r
 complete -c pm -n '__fish_seen_subcommand_from history-compact' -l dry-run -d 'Preview compaction impact without writing the history file'
 complete -c pm -n '__fish_seen_subcommand_from history-compact' -l author -d 'Mutation author' -r

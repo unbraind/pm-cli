@@ -1800,7 +1800,7 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
     // rather than a per-stream `pm history-compact <id>` template.
     if (check.name === "storage" && historySummary.over_threshold.length > 1) {
       for (const code of Object.keys(remediationMap)) {
-        remediationMap[code] = "pm history-compact --scope all-streams";
+        remediationMap[code] = "pm history-compact --all-streams";
       }
     }
     if (Object.keys(remediationMap).length > 0) {

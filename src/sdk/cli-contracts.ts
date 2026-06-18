@@ -413,7 +413,8 @@ export const HISTORY_COMPACT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--before" },
   { flag: "--ids", list: true },
   { flag: "--all-over", value_type: "number" },
-  { flag: "--scope" },
+  { flag: "--closed" },
+  { flag: "--all-streams" },
   { flag: "--min-entries", value_type: "number" },
   { flag: "--dry-run" },
   { flag: "--author" },
@@ -1947,11 +1948,12 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
     oneOfRequired: [["id"], ["all"]],
   },
   "history-compact": {
-    // Single-id mode (`id` + optional `before`) or bulk mode (one of `ids` /
-    // `allOver` / `scope`, with optional `minEntries`). The runtime enforces the
-    // exact mutual-exclusion via assertHistoryCompactTarget.
-    optional: ["id", "before", "ids", "allOver", "scope", "minEntries", "dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
-    oneOfRequired: [["id"], ["ids"], ["allOver"], ["scope"]],
+    // Single-id mode (`id` + optional `before`) or bulk mode (any of `ids` /
+    // `allOver` / `closed` / `allStreams`, with optional `minEntries`). Scan
+    // selectors (`allOver` + `closed`/`allStreams`) legitimately combine, so the
+    // mode/exclusivity contract is enforced at runtime by assertHistoryCompactTarget
+    // rather than a one-of schema rule.
+    optional: ["id", "before", "ids", "allOver", "closed", "allStreams", "minEntries", "dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
   },
   schema: {
     required: ["subcommand"],

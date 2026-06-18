@@ -462,7 +462,7 @@ export interface HistoryCompactBulkResult {
 /**
  * Enforce the `pm history-compact` target contract shared by the CLI and MCP
  * surfaces: exactly one selection mode — a single item `<id>`, an explicit
- * `--ids` list, or a scan selector (`--all-over` / `--scope`).
+ * `--ids` list, or a scan selector (`--all-over` / `--closed` / `--all-streams`).
  */
 export function assertHistoryCompactTarget(
   id: string | undefined,
@@ -473,19 +473,19 @@ export function assertHistoryCompactTarget(
   const selectorCount = (id !== undefined ? 1 : 0) + (hasIds ? 1 : 0) + (hasScan ? 1 : 0);
   if (selectorCount === 0) {
     throw new PmCliError(
-      "history-compact: provide an item <id>, or a bulk selector (--ids, --all-over <N>, or --scope closed|all-streams).",
+      "history-compact: provide an item <id>, or a bulk selector (--ids, --all-over <N>, --closed, or --all-streams).",
       EXIT_CODE.USAGE,
     );
   }
   if (id !== undefined && (hasIds || hasScan)) {
     throw new PmCliError(
-      "history-compact: <id> and bulk selectors (--ids/--all-over/--scope) are mutually exclusive; pass one item id, or use bulk mode without a positional id.",
+      "history-compact: <id> and bulk selectors (--ids/--all-over/--closed/--all-streams) are mutually exclusive; pass one item id, or use bulk mode without a positional id.",
       EXIT_CODE.USAGE,
     );
   }
   if (hasIds && hasScan) {
     throw new PmCliError(
-      "history-compact: --ids is mutually exclusive with --all-over/--scope; pass an explicit id list or a scan selector, not both.",
+      "history-compact: --ids is mutually exclusive with --all-over/--closed/--all-streams; pass an explicit id list or a scan selector, not both.",
       EXIT_CODE.USAGE,
     );
   }

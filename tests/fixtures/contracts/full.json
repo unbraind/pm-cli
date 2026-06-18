@@ -2672,7 +2672,10 @@
           "value_type": "number"
         },
         {
-          "flag": "--scope"
+          "flag": "--closed"
+        },
+        {
+          "flag": "--all-streams"
         },
         {
           "flag": "--min-entries",
@@ -17836,108 +17839,22 @@
       },
       {
         "additionalProperties": false,
-        "oneOf": [
-          {
-            "not": {
-              "anyOf": [
-                {
-                  "required": [
-                    "ids"
-                  ]
-                },
-                {
-                  "required": [
-                    "allOver"
-                  ]
-                },
-                {
-                  "required": [
-                    "scope"
-                  ]
-                }
-              ]
-            },
-            "required": [
-              "id"
-            ]
-          },
-          {
-            "not": {
-              "anyOf": [
-                {
-                  "required": [
-                    "id"
-                  ]
-                },
-                {
-                  "required": [
-                    "allOver"
-                  ]
-                },
-                {
-                  "required": [
-                    "scope"
-                  ]
-                }
-              ]
-            },
-            "required": [
-              "ids"
-            ]
-          },
-          {
-            "not": {
-              "anyOf": [
-                {
-                  "required": [
-                    "id"
-                  ]
-                },
-                {
-                  "required": [
-                    "ids"
-                  ]
-                },
-                {
-                  "required": [
-                    "scope"
-                  ]
-                }
-              ]
-            },
-            "required": [
-              "allOver"
-            ]
-          },
-          {
-            "not": {
-              "anyOf": [
-                {
-                  "required": [
-                    "id"
-                  ]
-                },
-                {
-                  "required": [
-                    "ids"
-                  ]
-                },
-                {
-                  "required": [
-                    "allOver"
-                  ]
-                }
-              ]
-            },
-            "required": [
-              "scope"
-            ]
-          }
-        ],
         "properties": {
           "action": {
             "const": "history-compact",
             "description": "Tool action to execute."
+          },
+          "allOver": {
+            "description": "For history-compact bulk mode, compact every stream with more than N entries. When history.compact_policy is enabled and this is omitted, the policy's max_entries is used.",
+            "examples": [
+              200,
+              "500"
+            ],
+            "type": "number"
+          },
+          "allStreams": {
+            "description": "For history-compact bulk mode, compact every history stream regardless of lifecycle state.",
+            "type": "boolean"
           },
           "author": {
             "description": "Mutation author identity.",
@@ -17947,12 +17864,16 @@
             "type": "string"
           },
           "before": {
-            "description": "For history-compact, compact entries strictly before this boundary (version number or ISO timestamp).",
+            "description": "For history-compact, compact entries strictly before this boundary (version number or ISO timestamp). Single-id mode only.",
             "examples": [
               "5",
               "2026-06-01T00:00:00.000Z"
             ],
             "type": "string"
+          },
+          "closed": {
+            "description": "For history-compact bulk mode, compact only closed (terminal) items' history streams.",
+            "type": "boolean"
           },
           "dryRun": {
             "description": "Preview command effects without mutating storage artifacts.",
@@ -17982,6 +17903,14 @@
             "description": "History message for mutation audit trail.",
             "type": "string"
           },
+          "minEntries": {
+            "description": "For history-compact bulk mode, skip streams with at most N entries as already-compact (default 3).",
+            "examples": [
+              3,
+              "10"
+            ],
+            "type": "number"
+          },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
             "type": "boolean"
@@ -18008,18 +17937,6 @@
           "quiet": {
             "description": "Suppress stdout payload output.",
             "type": "boolean"
-          },
-          "scope": {
-            "description": "Scope selector for commands that operate on project or global state. Linked files, docs, and tests default to project scope when omitted.",
-            "enum": [
-              "project",
-              "global"
-            ],
-            "examples": [
-              "project",
-              "global"
-            ],
-            "type": "string"
           },
           "timeoutMs": {
             "description": "Tool execution timeout in milliseconds.",

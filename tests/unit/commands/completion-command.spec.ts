@@ -370,7 +370,7 @@ describe("generateBashScript", () => {
   it("includes history-compact flags across completion scripts", () => {
     const bashScript = generateBashScript();
     expect(bashScript).toContain("history-compact)");
-    expect(bashScript).toContain("--before --ids --all-over --scope --min-entries --dry-run --author --message --force");
+    expect(bashScript).toContain("--before --ids --all-over --closed --all-streams --min-entries --dry-run --author --message --force");
 
     const zshScript = generateZshScript();
     expect(zshScript).toContain("history-compact)");
@@ -380,7 +380,7 @@ describe("generateBashScript", () => {
     const fishScript = generateFishScript();
     expect(fishScript).toContain("__fish_seen_subcommand_from history-compact");
     expect(fishScript).toContain("-l before -d 'Compact entries strictly before this version number or ISO timestamp'");
-    expect(fishScript).toContain("-l scope -d 'Bulk: lifecycle scope to scan (closed|all-streams)'");
+    expect(fishScript).toContain("-l all-streams -d 'Bulk: compact every history stream regardless of lifecycle state'");
   });
 
   it("includes get projection flags", () => {

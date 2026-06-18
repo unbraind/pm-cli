@@ -728,8 +728,12 @@ describe("history-compact bulk mode", () => {
   });
 
   it("requires an initialized tracker", async () => {
-    await expect(
-      runHistoryCompactBulk({ scope: "all-streams" }, { path: "/tmp/pm-compact-bulk-missing-root" }),
-    ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.NOT_FOUND });
+    await withTempPmPath(async (context) => {
+      // A fresh, guaranteed-absent subpath of the temp root: no settings.json there.
+      const missingRoot = path.join(context.pmPath, "definitely", "not-initialized");
+      await expect(
+        runHistoryCompactBulk({ scope: "all-streams" }, { path: missingRoot }),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.NOT_FOUND });
+    });
   });
 });

@@ -506,7 +506,7 @@ describe("runHealth", () => {
       const storageCheck = health.checks.find((check) => check.name === "storage");
       expect((storageCheck?.details as { compact_policy: { over_threshold_count: number } }).compact_policy.over_threshold_count).toBe(2);
       expect(storageCheck?.details).toMatchObject({
-        remediation_map: { history_stream_over_compact_threshold: "pm history-compact --scope all-streams" },
+        remediation_map: { history_stream_over_compact_threshold: "pm history-compact --all-streams" },
       });
     });
   });

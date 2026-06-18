@@ -1934,12 +1934,12 @@ describe("mutation command actions", () => {
       dryRun: true,
     });
 
-    // --all-over + --scope + --min-entries are parsed as numbers / enum, and
+    // --all-over + --all-streams + --min-entries map to numbers / scope, and
     // --message/--author flow through to the bulk runner.
     await runCli(
       "history-compact",
       "--all-over", "50",
-      "--scope", "all-streams",
+      "--all-streams",
       "--min-entries", "4",
       "--author", "agent",
       "--message", "bulk sweep",
@@ -1952,19 +1952,27 @@ describe("mutation command actions", () => {
       message: "bulk sweep",
     });
 
-    // items_errored > 0 propagates a failure exit code.
+    // --closed maps to scope "closed", and items_errored > 0 propagates a failure exit code.
     vi.mocked(runHistoryCompactBulk).mockResolvedValueOnce({ totals: { items_errored: 2 } } as never);
-    await runCli("history-compact", "--scope", "closed");
+    await runCli("history-compact", "--closed");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runHistoryCompactBulk) as never, 0).scope).toBe("closed");
     expect(process.exitCode).toBe(EXIT_CODE.GENERIC_FAILURE);
     process.exitCode = undefined;
 
-    // Invalid --scope / --all-over / --min-entries are rejected before dispatch
-    // (both the negative and the non-numeric/NaN arms).
-    await expect(runCli("history-compact", "--scope", "bogus")).rejects.toThrow(/--scope must be one of/);
+    // --closed + --all-streams are mutually exclusive.
+    await expect(runCli("history-compact", "--closed", "--all-streams")).rejects.toThrow(/mutually exclusive/);
+
+    // --before is rejected in bulk mode.
+    await expect(runCli("history-compact", "--all-streams", "--before", "5")).rejects.toThrow(
+      /--before applies only in single-id mode/,
+    );
+
+    // --all-over / --min-entries reject negative, non-numeric, and truncating-float inputs.
     await expect(runCli("history-compact", "--all-over", "-3")).rejects.toThrow(/--all-over/);
     await expect(runCli("history-compact", "--all-over", "notanumber")).rejects.toThrow(/--all-over/);
+    await expect(runCli("history-compact", "--all-over", "3.5")).rejects.toThrow(/--all-over/);
     await expect(runCli("history-compact", "--min-entries", "-1")).rejects.toThrow(/--min-entries/);
-    await expect(runCli("history-compact", "--min-entries", "notanumber")).rejects.toThrow(/--min-entries/);
+    await expect(runCli("history-compact", "--min-entries", "10abc")).rejects.toThrow(/--min-entries/);
   });
 
   it("maps full schema add-status/add-type options and string-form alias/role inputs", async () => {
