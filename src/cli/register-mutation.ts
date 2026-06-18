@@ -7,6 +7,7 @@ import { Option, type Command } from "commander";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { resolveBodyFileContent } from "../core/io/body-file.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
+import { splitCommaList } from "../core/shared/split-comma-list.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { isPureSnakeCaseAlias } from "../core/shared/option-alias-visibility.js";
 import {
@@ -1331,30 +1332,80 @@ export function registerMutationCommands(program: Command): void {
 
   program
     .command("history-compact")
-    .argument("<id>", "Item id")
-    .option("--before <value>", "Compact entries strictly before this version number or ISO timestamp")
+    .argument("[id]", "Item id (omit when using a bulk selector)")
+    .option("--before <value>", "Compact entries strictly before this version number or ISO timestamp (single-id mode only)")
+    .option("--ids <value>", "Bulk: compact an explicit comma-separated list of item ids")
+    .option("--all-over <n>", "Bulk: compact every stream with more than N entries")
+    .option("--scope <scope>", "Bulk: lifecycle scope to scan — closed or all-streams")
+    .option("--min-entries <n>", "Bulk: skip streams with at most N entries (already compact; default 3)")
     .option("--dry-run", "Preview compaction impact without writing the history file")
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "Audit history message for the compaction marker entry")
     .option("--force", "Force ownership/lock override")
-    .description("Compact an item history stream into a synthetic baseline plus retained tail entries.")
-    .action(async (id: string, options: Record<string, unknown>, command) => {
+    .description(
+      "Compact item history streams into a synthetic baseline plus retained tail entries. Pass an item id for one stream, or a bulk selector (--ids/--all-over/--scope) to compact many.",
+    )
+    .action(async (id: string | undefined, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runHistoryCompact } = await import("./commands/history-compact.js");
-      const result = await runHistoryCompact(
-        id,
-        {
-          before: typeof options.before === "string" ? options.before : undefined,
-          dryRun: options.dryRun === true,
-          author: typeof options.author === "string" ? options.author : undefined,
-          message: typeof options.message === "string" ? options.message : undefined,
-          force: Boolean(options.force),
-        },
-        globalOptions,
+      const { runHistoryCompact, runHistoryCompactBulk, assertHistoryCompactTarget } = await import(
+        "./commands/history-compact.js"
       );
+      const ids = typeof options.ids === "string" ? splitCommaList(options.ids) : undefined;
+      const allOver =
+        typeof options.allOver === "string" ? Number.parseInt(options.allOver, 10) : undefined;
+      const minEntries =
+        typeof options.minEntries === "string" ? Number.parseInt(options.minEntries, 10) : undefined;
+      const scope =
+        options.scope === "closed" || options.scope === "all-streams" ? options.scope : undefined;
+      if (options.scope !== undefined && scope === undefined) {
+        throw new PmCliError(
+          `history-compact --scope must be one of closed|all-streams, got "${String(options.scope)}".`,
+          EXIT_CODE.USAGE,
+        );
+      }
+      if (allOver !== undefined && (!Number.isFinite(allOver) || allOver < 0)) {
+        throw new PmCliError("history-compact --all-over must be a non-negative integer.", EXIT_CODE.USAGE);
+      }
+      if (minEntries !== undefined && (!Number.isFinite(minEntries) || minEntries < 0)) {
+        throw new PmCliError("history-compact --min-entries must be a non-negative integer.", EXIT_CODE.USAGE);
+      }
+      assertHistoryCompactTarget(id, { ids, allOver, scope });
+      if (id === undefined) {
+        const result = await runHistoryCompactBulk(
+          {
+            ids,
+            scope,
+            allOver,
+            minEntries,
+            dryRun: options.dryRun === true,
+            author: typeof options.author === "string" ? options.author : undefined,
+            message: typeof options.message === "string" ? options.message : undefined,
+            force: Boolean(options.force),
+          },
+          globalOptions,
+        );
+        printResult(result, globalOptions);
+        if (result.totals.items_errored > 0) {
+          // One failing stream never aborts the pass, but the command must still
+          // fail for gating callers.
+          process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+        }
+      } else {
+        const result = await runHistoryCompact(
+          id,
+          {
+            before: typeof options.before === "string" ? options.before : undefined,
+            dryRun: options.dryRun === true,
+            author: typeof options.author === "string" ? options.author : undefined,
+            message: typeof options.message === "string" ? options.message : undefined,
+            force: Boolean(options.force),
+          },
+          globalOptions,
+        );
+        printResult(result, globalOptions);
+      }
       // history-compact only rewrites the history stream; item content is untouched.
-      printResult(result, globalOptions);
       if (globalOptions.profile) {
         printError(`profile:command=history-compact took_ms=${Date.now() - startedAt}`);
       }
@@ -1447,7 +1498,7 @@ export function registerMutationCommands(program: Command): void {
       // --commands/--required-types are repeatable Commander `collect` flags, so
       // their value is always a string[] (or undefined when omitted); each entry
       // may itself be a comma-list, which we split and flatten here.
-      const splitCommaList = (raw: unknown): string[] | undefined => {
+      const splitCollectedCommaList = (raw: unknown): string[] | undefined => {
         if (!Array.isArray(raw)) {
           return undefined;
         }
@@ -1456,8 +1507,8 @@ export function registerMutationCommands(program: Command): void {
           .map((value) => value.trim())
           .filter((value) => value.length > 0);
       };
-      const commands = splitCommaList(options.commands);
-      const requiredTypes = splitCommaList(options.requiredTypes);
+      const commands = splitCollectedCommaList(options.commands);
+      const requiredTypes = splitCollectedCommaList(options.requiredTypes);
       const minCount = parseSchemaOrderOption(options.minCount);
       if (
         !SCHEMA_SUBCOMMANDS.includes(normalizedSubcommand as typeof SCHEMA_SUBCOMMANDS[number]) &&

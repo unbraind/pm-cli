@@ -62,6 +62,9 @@ When `settings.json` cannot be loaded, `pm` falls back to built-in defaults and 
 | `output.default_format` | default renderer, usually `toon` |
 | `locks.ttl_seconds` | stale lock threshold |
 | `history.missing_stream` | `auto_create` or `strict_error` |
+| `history.compact_policy.enabled` | enable the compaction advisory: `pm health` warns on over-threshold streams (default `false`) |
+| `history.compact_policy.max_entries` | entry count above which a stream is flagged, and the default `pm history-compact --all-over` threshold (default `500`) |
+| `history.compact_policy.trigger` | policy intent: `health_warn` (advisory only) or `auto` (scheduled sweeps expected) |
 | `testing.record_results_to_items` | persist bounded linked-test summaries |
 | `validation.sprint_release_format` | `warn` or `strict_error` |
 | `validation.parent_reference` | `warn` or `strict_error` (`strict_error` is the built-in default; `pm create --allow-missing-parent` is the explicit escape hatch) |

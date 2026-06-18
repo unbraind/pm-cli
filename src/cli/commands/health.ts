@@ -52,7 +52,7 @@ import {
 } from "../../core/store/paths.js";
 import { readSettingsWithMetadata } from "../../core/store/settings.js";
 import { buildRemediationMap } from "../../core/diagnostics/remediation.js";
-import type { ItemFormat, ItemMetadata, PmSettings } from "../../types/index.js";
+import type { HistoryCompactPolicy, ItemFormat, ItemMetadata, PmSettings } from "../../types/index.js";
 import { readManagedExtensionState } from "./extension.js";
 import {
   buildCapabilityContractMetadata,
@@ -175,10 +175,12 @@ const TELEMETRY_SERVER_MAX_SCHEMA_VERSION_HEADERS = [
  * Advisory warnings are surfaced for visibility but never flip overall health to
  * not-ok. Telemetry is opt-out, non-critical observability: a queued/unreachable
  * telemetry endpoint or corrupt local telemetry state is not a project-health
- * failure and must not block agents that gate on `pm health` `ok`.
+ * failure and must not block agents that gate on `pm health` `ok`. History
+ * over-compaction-threshold warnings are likewise advisory maintenance hints —
+ * a deep stream is healthy, just a candidate for `pm history-compact`.
  */
 function isAdvisoryHealthWarning(warning: string): boolean {
-  return warning.startsWith("telemetry_");
+  return warning.startsWith("telemetry_") || warning.startsWith("history_stream_over_compact_threshold:");
 }
 
 function warningCode(value: string): string {
@@ -212,31 +214,58 @@ async function isDirectory(targetPath: string): Promise<boolean> {
   }
 }
 
-async function countHistoryStreams(pmRoot: string): Promise<{ count: number; warnings: string[] }> {
+/**
+ * Summary of the history-stream directory used by the storage health check.
+ * `over_threshold` is populated only when the compaction policy is enabled —
+ * counting entries requires reading every stream, so the default (policy-off)
+ * path stays a cheap directory listing.
+ */
+interface HistoryStreamSummary {
+  count: number;
+  warnings: string[];
+  over_threshold: string[];
+  max_entries: number | null;
+}
+
+async function countHistoryStreams(
+  pmRoot: string,
+  compactPolicy: HistoryCompactPolicy,
+): Promise<HistoryStreamSummary> {
   const historyDir = path.join(pmRoot, "history");
   if (!(await isDirectory(historyDir))) {
-    return {
-      count: 0,
-      warnings: [],
-    };
+    return { count: 0, warnings: [], over_threshold: [], max_entries: null };
   }
   const historyFiles = (await fs.readdir(historyDir))
     .filter((entry) => entry.endsWith(".jsonl"))
     .sort((left, right) => left.localeCompare(right));
 
+  const policyActive = compactPolicy.enabled;
+  const maxEntries = policyActive ? compactPolicy.max_entries : null;
   const warnings: string[] = [];
+  const overThreshold: string[] = [];
   for (const fileName of historyFiles) {
-    warnings.push(
-      ...(await runActiveOnReadHooks({
-        path: path.join(historyDir, fileName),
-        scope: "project",
-      })),
-    );
+    const streamPath = path.join(historyDir, fileName);
+    warnings.push(...(await runActiveOnReadHooks({ path: streamPath, scope: "project" })));
+    if (!policyActive) {
+      continue;
+    }
+    const raw = await fs.readFile(streamPath, "utf8");
+    let entries = 0;
+    for (const line of raw.split(/\r?\n/)) {
+      if (line.trim().length > 0) {
+        entries += 1;
+      }
+    }
+    if (entries > compactPolicy.max_entries) {
+      overThreshold.push(fileName.slice(0, -".jsonl".length));
+    }
   }
 
   return {
     count: historyFiles.length,
-    warnings,
+    warnings: [...warnings, ...overThreshold.map((id) => `history_stream_over_compact_threshold:${id}`)],
+    over_threshold: overThreshold,
+    max_entries: maxEntries,
   };
 }
 
@@ -1646,7 +1675,7 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
         itemIds: items.map((item) => item.id),
         commandLabel: "health",
       });
-  const historySummary = await countHistoryStreams(pmRoot);
+  const historySummary = await countHistoryStreams(pmRoot, settings.history.compact_policy);
   const locksCheck = await buildLocksCheck(pmRoot);
   const integrityCheck = skipIntegrity
     ? { check: { name: "integrity" as const, status: "ok" as const, details: { skipped: true } }, warnings: [] }
@@ -1694,10 +1723,21 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
     extensionCheck.check,
     {
       name: "storage",
-      status: "ok",
+      status: historySummary.over_threshold.length === 0 ? "ok" : "warn",
       details: {
         items: items.length,
         history_streams: historySummary.count,
+        ...(historySummary.max_entries !== null
+          ? {
+              compact_policy: {
+                enabled: settings.history.compact_policy.enabled,
+                max_entries: historySummary.max_entries,
+                trigger: settings.history.compact_policy.trigger,
+                over_threshold_count: historySummary.over_threshold.length,
+                over_threshold: historySummary.over_threshold,
+              },
+            }
+          : {}),
       },
     },
     locksCheck.check,
@@ -1732,6 +1772,7 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
     directories: missingDirs.map((dir) => `missing_directory:${dir}`),
     settings_values: settingWarnings,
     telemetry: telemetryCheck.warnings,
+    storage: historySummary.over_threshold.map((id) => `history_stream_over_compact_threshold:${id}`),
     locks: locksCheck.warnings,
     integrity: integrityCheck.warnings,
     history_drift: historyDriftCheck.warnings,
@@ -1753,6 +1794,13 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
     if (check.name === "history_drift" && historyDriftedCount > 1) {
       for (const code of Object.keys(remediationMap)) {
         remediationMap[code] = "pm history-repair --all";
+      }
+    }
+    // With multiple over-threshold streams, point at the one-pass bulk sweep
+    // rather than a per-stream `pm history-compact <id>` template.
+    if (check.name === "storage" && historySummary.over_threshold.length > 1) {
+      for (const code of Object.keys(remediationMap)) {
+        remediationMap[code] = "pm history-compact --scope all-streams";
       }
     }
     if (Object.keys(remediationMap).length > 0) {

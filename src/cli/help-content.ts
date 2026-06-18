@@ -535,11 +535,13 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     examples: ["pm history pm-a1b2 --limit 20", "pm history pm-a1b2 --full --verify"],
   },
   "history-compact": {
-    why: "Compacts long history streams into a synthetic checkpoint while preserving replay integrity.",
+    why: "Compacts long history streams into a synthetic checkpoint while preserving replay integrity. Pass an item id for one stream, or a bulk selector (--ids/--all-over/--scope) to sweep many.",
     examples: [
       "pm history-compact pm-a1b2 --dry-run",
       "pm history-compact pm-a1b2 --before 25 --author codex-agent --message \"Compact early history\"",
-      "pm history-compact pm-a1b2 --before 2026-06-01T00:00:00.000Z",
+      "pm history-compact --all-over 500 --dry-run",
+      "pm history-compact --scope closed --author codex-agent",
+      "pm history-compact --ids pm-a1b2,pm-c3d4 --dry-run",
     ],
   },
   activity: {

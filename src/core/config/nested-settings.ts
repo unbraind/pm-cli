@@ -245,6 +245,29 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     choices: ["allow", "warn", "reject"],
     summary: "How item I/O handles metadata keys not in the field registry: allow, warn, or reject.",
   },
+  // History compaction policy leaves (pm health advisory + pm history-compact
+  // bulk-sweep default threshold). Disabled by default; enabling makes large
+  // streams discoverable without a manual stats pass.
+  {
+    key: "history_compact_policy_enabled",
+    path: "history.compact_policy.enabled",
+    kind: "boolean",
+    summary: "Enable the history-compaction advisory: pm health warns on over-threshold streams.",
+  },
+  {
+    key: "history_compact_policy_max_entries",
+    path: "history.compact_policy.max_entries",
+    kind: "integer",
+    min: 1,
+    summary: "Entry count above which a history stream is flagged (and the default pm history-compact --all-over threshold).",
+  },
+  {
+    key: "history_compact_policy_trigger",
+    path: "history.compact_policy.trigger",
+    kind: "string",
+    choices: ["health_warn", "auto"],
+    summary: "History-compaction policy intent: health_warn (advisory only) or auto (scheduled sweeps expected).",
+  },
 ];
 
 const DESCRIPTOR_BY_KEY: ReadonlyMap<string, NestedSettingDescriptor> = new Map(

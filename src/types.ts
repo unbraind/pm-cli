@@ -861,6 +861,22 @@ export interface SearchRerankSettings {
 }
 
 /**
+ * Config-driven policy for automatic history-stream compaction triage.
+ *
+ * When `enabled`, `pm health` surfaces an advisory warning for any history
+ * stream whose non-empty entry count exceeds `max_entries`, and `pm
+ * history-compact` bulk mode uses `max_entries` as its default `--all-over`
+ * threshold so the configured policy drives corpus-wide sweeps. `trigger`
+ * records operator intent — both values raise the health advisory; `auto`
+ * additionally signals that scheduled/automatic sweeps are expected.
+ */
+export interface HistoryCompactPolicy {
+  enabled: boolean;
+  max_entries: number;
+  trigger: "health_warn" | "auto";
+}
+
+/**
  * Documents the pm settings payload exchanged by command, SDK, and package integrations.
  */
 export interface PmSettings {
@@ -876,6 +892,7 @@ export interface PmSettings {
   };
   history: {
     missing_stream: "auto_create" | "strict_error";
+    compact_policy: HistoryCompactPolicy;
   };
   validation: {
     sprint_release_format: SprintReleaseFormatPolicy;

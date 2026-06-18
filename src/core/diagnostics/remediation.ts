@@ -174,6 +174,12 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     command: "pm history-repair <id>",
     summary: "The item's history chain is broken; re-anchor the chain (pm history-repair --all repairs every drifted stream in one pass).",
   },
+  // --- pm health: storage (history compaction policy) ---
+  {
+    code: "history_stream_over_compact_threshold",
+    command: "pm history-compact <id>",
+    summary: "The history stream exceeds the configured compaction threshold; compact it (pm history-compact --scope all-streams sweeps every over-threshold stream in one pass).",
+  },
   // --- pm health: locks ---
   {
     code: "locks_stale_count",

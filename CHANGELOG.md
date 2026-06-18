@@ -4,6 +4,9 @@
 
 ### Added
 
+- Auto-compact policy: config-driven threshold to trigger pm history-compact automatically ([pm-0pnz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-0pnz.toon))
+- pm history-compact: expose --scope all-streams \(history GC pass\) for closed items ([pm-yj9w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-yj9w.toon))
+- History stream bulk-compaction: pm history-compact --all-over N to batch-compact large streams ([pm-f3pa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-f3pa.toon))
 - Add agent-identity dimension to telemetry events: surface PM\_AUTHOR as hashed author\_context ([pm-fbyu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-fbyu.toon))
 - pm telemetry stats: add error\_rate and resolution breakdown per command bucket ([pm-gsoe](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gsoe.toon))
 - Surface duration\_ms percentile breakdown in pm telemetry stats \(p50/p95 per command\) ([pm-3n3b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-3n3b.toon))

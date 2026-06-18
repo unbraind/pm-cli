@@ -294,7 +294,17 @@ const REQUIRED_LEARNINGS_FLAGS = [
 const REQUIRED_CLAIM_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_RELEASE_FLAGS = ["--author", "--message", "--allow-audit-release", "--force"];
 const REQUIRED_RESTORE_FLAGS = ["--author", "--message", "--force"];
-const REQUIRED_HISTORY_COMPACT_FLAGS = ["--before", "--dry-run", "--author", "--message", "--force"];
+const REQUIRED_HISTORY_COMPACT_FLAGS = [
+  "--before",
+  "--ids",
+  "--all-over",
+  "--scope",
+  "--min-entries",
+  "--dry-run",
+  "--author",
+  "--message",
+  "--force",
+];
 const REQUIRED_HISTORY_REDACT_FLAGS = ["--literal", "--regex", "--replacement", "--dry-run", "--author", "--message", "--force"];
 const REQUIRED_CLOSE_FLAGS = ["--author", "--message", "--validate-close", "--force", "--reason", "--close-reason"];
 const REQUIRED_VALIDATE_FLAGS = [
@@ -957,8 +967,8 @@ describe("release readiness runtime coverage", () => {
 
       const historyCompactHelp = context.runCli(["history-compact", "--help"]);
       expect(historyCompactHelp.code).toBe(0);
-      expect(historyCompactHelp.stdout).toContain("Usage: pm history-compact [options] <id>");
-      expect(historyCompactHelp.stdout).toContain("Compact an item history stream into a synthetic baseline");
+      expect(historyCompactHelp.stdout).toContain("Usage: pm history-compact [options] [id]");
+      expect(historyCompactHelp.stdout).toContain("Compact item history streams into a synthetic baseline");
       for (const flag of REQUIRED_HISTORY_COMPACT_FLAGS) {
         expect(historyCompactHelp.stdout).toContain(flag);
       }

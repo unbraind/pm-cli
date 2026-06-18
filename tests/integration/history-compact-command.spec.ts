@@ -2,7 +2,11 @@ import { readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { runHistory } from "../../src/cli/commands/history.js";
-import { runHistoryCompact } from "../../src/cli/commands/history-compact.js";
+import {
+  assertHistoryCompactTarget,
+  runHistoryCompact,
+  runHistoryCompactBulk,
+} from "../../src/cli/commands/history-compact.js";
 import * as fsUtilsModule from "../../src/core/fs/fs-utils.js";
 import * as replayModule from "../../src/core/history/replay.js";
 import * as historyRewriteModule from "../../src/core/history/history-rewrite.js";
@@ -516,5 +520,216 @@ describe("history-compact command", () => {
         message: expect.stringContaining("history-repair"),
       });
     });
+  });
+});
+
+function deepenStream(context: TempPmContext, id: string, updates: number): void {
+  for (let index = 0; index < updates; index += 1) {
+    expect(context.runCli(["update", id, "--priority", String(index % 5)]).code).toBe(0);
+  }
+}
+
+function setCompactPolicy(context: TempPmContext, enabled: boolean, maxEntries: number): void {
+  expect(context.runCli(["config", "project", "set", "history_compact_policy_enabled", String(enabled)]).code).toBe(0);
+  expect(context.runCli(["config", "project", "set", "history_compact_policy_max_entries", String(maxEntries)]).code).toBe(0);
+}
+
+describe("assertHistoryCompactTarget", () => {
+  it("requires at least one selector", () => {
+    expect(() => assertHistoryCompactTarget(undefined, {})).toThrow(/provide an item <id>/);
+  });
+
+  it("rejects a positional id combined with bulk selectors", () => {
+    expect(() => assertHistoryCompactTarget("pm-a", { scope: "closed" })).toThrow(/mutually exclusive/);
+    expect(() => assertHistoryCompactTarget("pm-a", { ids: ["pm-b"] })).toThrow(/mutually exclusive/);
+    expect(() => assertHistoryCompactTarget("pm-a", { allOver: 5 })).toThrow(/mutually exclusive/);
+  });
+
+  it("rejects --ids combined with a scan selector", () => {
+    expect(() => assertHistoryCompactTarget(undefined, { ids: ["pm-a"], scope: "closed" })).toThrow(
+      /--ids is mutually exclusive/,
+    );
+    expect(() => assertHistoryCompactTarget(undefined, { ids: ["pm-a"], allOver: 5 })).toThrow(
+      /--ids is mutually exclusive/,
+    );
+  });
+
+  it("accepts a single valid selector", () => {
+    expect(() => assertHistoryCompactTarget("pm-a", {})).not.toThrow();
+    expect(() => assertHistoryCompactTarget(undefined, { ids: ["pm-a"] })).not.toThrow();
+    expect(() => assertHistoryCompactTarget(undefined, { scope: "all-streams" })).not.toThrow();
+    expect(() => assertHistoryCompactTarget(undefined, { allOver: 5 })).not.toThrow();
+    // An empty ids list is not a selector on its own; a scan selector still satisfies the contract.
+    expect(() => assertHistoryCompactTarget(undefined, { ids: [], scope: "closed" })).not.toThrow();
+  });
+});
+
+describe("history-compact bulk mode", () => {
+  it("scans all streams, compacts the deep ones, and skips already-compact streams", async () => {
+    await withTempPmPath(async (context) => {
+      const deep = createItem(context, "Bulk Deep");
+      deepenStream(context, deep, 6);
+      const shallow = createItem(context, "Bulk Shallow");
+
+      const result = await runHistoryCompactBulk({ scope: "all-streams", author: "test-author" }, { path: context.pmPath });
+
+      expect(result.bulk).toBe(true);
+      expect(result.mode).toBe("scan");
+      expect(result.totals.streams_considered).toBe(2);
+      expect(result.totals.items_compacted).toBe(1);
+      expect(result.totals.items_errored).toBe(0);
+      const deepRow = result.results.find((row) => row.id === deep);
+      expect(deepRow).toMatchObject({ outcome: "compacted", changed: true });
+      expect(deepRow!.entries_before).toBeGreaterThan(deepRow!.entries_after!);
+      const shallowRow = result.results.find((row) => row.id === shallow);
+      expect(shallowRow).toMatchObject({ outcome: "skipped", skip_reason: "already_compact" });
+
+      const verified = await runHistory(deep, { verify: true }, { path: context.pmPath });
+      expect(verified.verification?.ok).toBe(true);
+    });
+  });
+
+  it("does not write under --dry-run", async () => {
+    await withTempPmPath(async (context) => {
+      const deep = createItem(context, "Bulk DryRun");
+      deepenStream(context, deep, 6);
+      const before = await readFile(getHistoryPath(context, deep), "utf8");
+
+      const result = await runHistoryCompactBulk(
+        { scope: "all-streams", dryRun: true, author: "test-author" },
+        { path: context.pmPath },
+      );
+
+      expect(result.dry_run).toBe(true);
+      expect(result.totals.items_compacted).toBe(1);
+      expect(await readFile(getHistoryPath(context, deep), "utf8")).toBe(before);
+    });
+  });
+
+  it("scope=closed only compacts terminal items", async () => {
+    await withTempPmPath(async (context) => {
+      const open = createItem(context, "Bulk Open");
+      deepenStream(context, open, 6);
+      const closed = createItem(context, "Bulk Closed");
+      deepenStream(context, closed, 6);
+      expect(context.runCli(["close", closed, "done"]).code).toBe(0);
+
+      const result = await runHistoryCompactBulk({ scope: "closed", author: "test-author" }, { path: context.pmPath });
+
+      expect(result.scope).toBe("closed");
+      expect(result.results.find((row) => row.id === open)).toMatchObject({ skip_reason: "scope_mismatch" });
+      expect(result.results.find((row) => row.id === closed)).toMatchObject({ outcome: "compacted" });
+    });
+  });
+
+  it("ids mode compacts an explicit list and reports no_stream for unknown ids", async () => {
+    await withTempPmPath(async (context) => {
+      const target = createItem(context, "Bulk Ids");
+      deepenStream(context, target, 6);
+
+      const result = await runHistoryCompactBulk(
+        { ids: [target, "pm-nope"], author: "test-author" },
+        { path: context.pmPath },
+      );
+
+      expect(result.mode).toBe("ids");
+      expect(result.results.find((row) => row.id === target)).toMatchObject({ outcome: "compacted" });
+      expect(result.results.find((row) => row.id === "pm-nope")).toMatchObject({
+        outcome: "skipped",
+        skip_reason: "no_stream",
+      });
+    });
+  });
+
+  it("--all-over threshold selects only streams above N", async () => {
+    await withTempPmPath(async (context) => {
+      const deep = createItem(context, "Bulk Over Deep");
+      deepenStream(context, deep, 8);
+      const mid = createItem(context, "Bulk Over Mid");
+      deepenStream(context, mid, 3);
+
+      const result = await runHistoryCompactBulk({ allOver: 5, author: "test-author" }, { path: context.pmPath });
+
+      expect(result.criteria.all_over).toBe(5);
+      expect(result.results.find((row) => row.id === deep)).toMatchObject({ outcome: "compacted" });
+      expect(result.results.find((row) => row.id === mid)).toMatchObject({ skip_reason: "below_threshold" });
+    });
+  });
+
+  it("uses the enabled compact policy max_entries as the default scan threshold", async () => {
+    await withTempPmPath(async (context) => {
+      const deep = createItem(context, "Bulk Policy");
+      deepenStream(context, deep, 6);
+      setCompactPolicy(context, true, 4);
+
+      const result = await runHistoryCompactBulk({ scope: "all-streams", dryRun: true }, { path: context.pmPath });
+
+      expect(result.criteria.policy_threshold_applied).toBe(true);
+      expect(result.criteria.all_over).toBe(4);
+    });
+  });
+
+  it("honours an explicit --min-entries floor", async () => {
+    await withTempPmPath(async (context) => {
+      const stream = createItem(context, "Bulk MinEntries");
+      deepenStream(context, stream, 6);
+
+      const result = await runHistoryCompactBulk(
+        { scope: "all-streams", minEntries: 100, author: "test-author" },
+        { path: context.pmPath },
+      );
+
+      expect(result.criteria.min_entries).toBe(100);
+      expect(result.results.find((row) => row.id === stream)).toMatchObject({ skip_reason: "already_compact" });
+    });
+  });
+
+  it("collects per-stream errors without aborting the pass", async () => {
+    await withTempPmPath(async (context) => {
+      const healthy = createItem(context, "Bulk Healthy");
+      deepenStream(context, healthy, 6);
+      const broken = createItem(context, "Bulk Broken");
+      deepenStream(context, broken, 6);
+      await tamperSecondBeforeHash(getHistoryPath(context, broken));
+
+      const result = await runHistoryCompactBulk(
+        { ids: [healthy, broken], author: "test-author" },
+        { path: context.pmPath },
+      );
+
+      expect(result.totals.items_compacted).toBe(1);
+      expect(result.totals.items_errored).toBe(1);
+      const brokenRow = result.results.find((row) => row.id === broken);
+      expect(brokenRow).toMatchObject({ outcome: "errored" });
+      expect(brokenRow!.error).toContain("history-repair");
+    });
+  });
+
+  it("treats an orphan history stream (no matching item) as unbucketed under scope=closed", async () => {
+    await withTempPmPath(async (context) => {
+      const orphan = createItem(context, "Bulk Orphan");
+      deepenStream(context, orphan, 6);
+      // Remove the item document but keep its history stream so it has no lifecycle bucket.
+      await rm(getTaskItemPath(context, orphan), { force: true });
+
+      const result = await runHistoryCompactBulk({ scope: "closed", author: "test-author" }, { path: context.pmPath });
+
+      expect(result.results.find((row) => row.id === orphan)).toMatchObject({ skip_reason: "scope_mismatch" });
+    });
+  });
+
+  it("returns an empty pass when no history streams exist", async () => {
+    await withTempPmPath(async (context) => {
+      await rm(path.join(context.pmPath, "history"), { recursive: true, force: true });
+      const result = await runHistoryCompactBulk({ scope: "all-streams" }, { path: context.pmPath });
+      expect(result.totals.streams_considered).toBe(0);
+      expect(result.results).toEqual([]);
+    });
+  });
+
+  it("requires an initialized tracker", async () => {
+    await expect(
+      runHistoryCompactBulk({ scope: "all-streams" }, { path: "/tmp/pm-compact-bulk-missing-root" }),
+    ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.NOT_FOUND });
   });
 });

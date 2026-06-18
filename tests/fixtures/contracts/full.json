@@ -2664,6 +2664,21 @@
           "flag": "--before"
         },
         {
+          "flag": "--ids",
+          "list": true
+        },
+        {
+          "flag": "--all-over",
+          "value_type": "number"
+        },
+        {
+          "flag": "--scope"
+        },
+        {
+          "flag": "--min-entries",
+          "value_type": "number"
+        },
+        {
           "flag": "--dry-run"
         },
         {
@@ -17821,6 +17836,104 @@
       },
       {
         "additionalProperties": false,
+        "oneOf": [
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "ids"
+                  ]
+                },
+                {
+                  "required": [
+                    "allOver"
+                  ]
+                },
+                {
+                  "required": [
+                    "scope"
+                  ]
+                }
+              ]
+            },
+            "required": [
+              "id"
+            ]
+          },
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "id"
+                  ]
+                },
+                {
+                  "required": [
+                    "allOver"
+                  ]
+                },
+                {
+                  "required": [
+                    "scope"
+                  ]
+                }
+              ]
+            },
+            "required": [
+              "ids"
+            ]
+          },
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "id"
+                  ]
+                },
+                {
+                  "required": [
+                    "ids"
+                  ]
+                },
+                {
+                  "required": [
+                    "scope"
+                  ]
+                }
+              ]
+            },
+            "required": [
+              "allOver"
+            ]
+          },
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "id"
+                  ]
+                },
+                {
+                  "required": [
+                    "ids"
+                  ]
+                },
+                {
+                  "required": [
+                    "allOver"
+                  ]
+                }
+              ]
+            },
+            "required": [
+              "scope"
+            ]
+          }
+        ],
         "properties": {
           "action": {
             "const": "history-compact",
@@ -17854,6 +17967,10 @@
             "examples": [
               "pm-a1b2"
             ],
+            "type": "string"
+          },
+          "ids": {
+            "description": "Ids.",
             "type": "string"
           },
           "json": {
@@ -17892,6 +18009,18 @@
             "description": "Suppress stdout payload output.",
             "type": "boolean"
           },
+          "scope": {
+            "description": "Scope selector for commands that operate on project or global state. Linked files, docs, and tests default to project scope when omitted.",
+            "enum": [
+              "project",
+              "global"
+            ],
+            "examples": [
+              "project",
+              "global"
+            ],
+            "type": "string"
+          },
           "timeoutMs": {
             "description": "Tool execution timeout in milliseconds.",
             "examples": [
@@ -17901,8 +18030,7 @@
           }
         },
         "required": [
-          "action",
-          "id"
+          "action"
         ],
         "title": "pm action \"history-compact\" parameters",
         "type": "object"

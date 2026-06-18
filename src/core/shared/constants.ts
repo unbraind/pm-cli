@@ -244,6 +244,11 @@ export const SETTINGS_DEFAULTS: PmSettings = {
   },
   history: {
     missing_stream: "auto_create",
+    compact_policy: {
+      enabled: false,
+      max_entries: 500,
+      trigger: "health_warn",
+    },
   },
   validation: {
     sprint_release_format: "warn",

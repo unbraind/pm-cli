@@ -454,6 +454,63 @@ describe("runHealth", () => {
     });
   });
 
+  it("surfaces an advisory storage warning for streams over the compaction threshold", async () => {
+    await withTempPmPath(async (context) => {
+      const itemId = createSeedItem(context);
+      for (let index = 0; index < 5; index += 1) {
+        expect(context.runCli(["update", itemId, "--priority", String(index % 5)]).code).toBe(0);
+      }
+      // A second, shallow stream stays under the threshold so the policy scan
+      // exercises both the over- and under-threshold branches.
+      const shallowId = createSeedItem(context);
+      const settings = await readSettings(context.pmPath);
+      settings.history.compact_policy = { enabled: true, max_entries: 3, trigger: "health_warn" };
+      await writeSettings(context.pmPath, settings, "test:compact-policy");
+
+      const health = await runHealth({ path: context.pmPath });
+      // Over-threshold warnings are advisory: surfaced but never flip overall health.
+      expect(health.ok).toBe(true);
+      expect(health.warnings).toEqual(
+        expect.arrayContaining([`history_stream_over_compact_threshold:${itemId}`]),
+      );
+
+      const storageCheck = health.checks.find((check) => check.name === "storage");
+      expect(storageCheck?.status).toBe("warn");
+      expect(storageCheck?.details).toMatchObject({
+        compact_policy: {
+          enabled: true,
+          max_entries: 3,
+          trigger: "health_warn",
+          over_threshold_count: 1,
+          over_threshold: [itemId],
+        },
+        remediation_map: { history_stream_over_compact_threshold: "pm history-compact <id>" },
+      });
+    });
+  });
+
+  it("rewrites the storage remediation to the bulk sweep when multiple streams are over threshold", async () => {
+    await withTempPmPath(async (context) => {
+      const first = createSeedItem(context);
+      const second = createSeedItem(context);
+      for (const itemId of [first, second]) {
+        for (let index = 0; index < 5; index += 1) {
+          expect(context.runCli(["update", itemId, "--priority", String(index % 5)]).code).toBe(0);
+        }
+      }
+      const settings = await readSettings(context.pmPath);
+      settings.history.compact_policy = { enabled: true, max_entries: 3, trigger: "auto" };
+      await writeSettings(context.pmPath, settings, "test:compact-policy");
+
+      const health = await runHealth({ path: context.pmPath });
+      const storageCheck = health.checks.find((check) => check.name === "storage");
+      expect((storageCheck?.details as { compact_policy: { over_threshold_count: number } }).compact_policy.over_threshold_count).toBe(2);
+      expect(storageCheck?.details).toMatchObject({
+        remediation_map: { history_stream_over_compact_threshold: "pm history-compact --scope all-streams" },
+      });
+    });
+  });
+
   it("warns when telemetry queue entries approach retry exhaustion", async () => {
     await withTempPmPath(async (context) => {
       const globalRoot = context.env.PM_GLOBAL_PATH as string;

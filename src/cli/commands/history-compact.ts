@@ -4,7 +4,14 @@
  * Implements the pm history compact command surface and its agent-facing runtime behavior.
  */
 import fs from "node:fs/promises";
+import path from "node:path";
 import { createHistoryEntry } from "../../core/history/history.js";
+import {
+  selectHistoryCompactBulkTargets,
+  type HistoryCompactBulkCandidate,
+  type HistoryCompactBulkSkipReason,
+  type HistoryCompactScope,
+} from "../../core/history/history-compact-bulk.js";
 import { executeHistoryRewrite } from "../../core/history/history-rewrite.js";
 import {
   cloneEmptyReplayDocument,
@@ -17,12 +24,19 @@ import {
   type ReplayDocument,
 } from "../../core/history/replay.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
+import { lifecycleClassifierFromStatusRegistry } from "../../core/governance/metadata-coverage.js";
+import { resolveRuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
+import { listAllFrontMatterLight } from "../../core/store/item-store.js";
 import { pathExists, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
-import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../core/extensions/index.js";
+import {
+  getActiveExtensionRegistrations,
+  runActiveOnReadHooks,
+  runActiveOnWriteHooks,
+} from "../../core/extensions/index.js";
 import { readLocatedItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -389,6 +403,226 @@ export async function runHistoryCompact(
       matched_chain_before: matchedChainBefore,
     },
     warnings: [...new Set(warnings)].sort((left, right) => left.localeCompare(right)),
+    generated_at: nowIso(),
+  };
+}
+
+/** Default entry floor below which a stream is treated as already compact. */
+export const HISTORY_COMPACT_BULK_DEFAULT_MIN_ENTRIES = 3;
+
+/**
+ * Documents the bulk history compact command options payload exchanged by command, SDK, and package integrations.
+ */
+export interface HistoryCompactBulkCommandOptions {
+  ids?: string[];
+  scope?: HistoryCompactScope;
+  allOver?: number;
+  minEntries?: number;
+  dryRun?: boolean;
+  author?: string;
+  message?: string;
+  force?: boolean;
+}
+
+/** Per-item outcome row in a bulk compaction pass. */
+export interface HistoryCompactBulkItemResult {
+  id: string;
+  outcome: "compacted" | "skipped" | "errored";
+  entries_before: number;
+  entries_after: number | null;
+  skip_reason: HistoryCompactBulkSkipReason | null;
+  changed: boolean;
+  error: string | null;
+}
+
+/**
+ * Documents the bulk history compact result payload exchanged by command, SDK, and package integrations.
+ */
+export interface HistoryCompactBulkResult {
+  bulk: true;
+  dry_run: boolean;
+  mode: "ids" | "scan";
+  scope: HistoryCompactScope | null;
+  criteria: {
+    min_entries: number;
+    all_over: number | null;
+    policy_threshold_applied: boolean;
+  };
+  totals: {
+    streams_considered: number;
+    selected: number;
+    items_compacted: number;
+    items_skipped: number;
+    items_errored: number;
+  };
+  results: HistoryCompactBulkItemResult[];
+  generated_at: string;
+}
+
+/**
+ * Enforce the `pm history-compact` target contract shared by the CLI and MCP
+ * surfaces: exactly one selection mode — a single item `<id>`, an explicit
+ * `--ids` list, or a scan selector (`--all-over` / `--scope`).
+ */
+export function assertHistoryCompactTarget(
+  id: string | undefined,
+  bulk: { ids?: string[]; allOver?: number; scope?: HistoryCompactScope },
+): void {
+  const hasIds = bulk.ids !== undefined && bulk.ids.length > 0;
+  const hasScan = bulk.allOver !== undefined || bulk.scope !== undefined;
+  const selectorCount = (id !== undefined ? 1 : 0) + (hasIds ? 1 : 0) + (hasScan ? 1 : 0);
+  if (selectorCount === 0) {
+    throw new PmCliError(
+      "history-compact: provide an item <id>, or a bulk selector (--ids, --all-over <N>, or --scope closed|all-streams).",
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (id !== undefined && (hasIds || hasScan)) {
+    throw new PmCliError(
+      "history-compact: <id> and bulk selectors (--ids/--all-over/--scope) are mutually exclusive; pass one item id, or use bulk mode without a positional id.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (hasIds && hasScan) {
+    throw new PmCliError(
+      "history-compact: --ids is mutually exclusive with --all-over/--scope; pass an explicit id list or a scan selector, not both.",
+      EXIT_CODE.USAGE,
+    );
+  }
+}
+
+function countHistoryStreamEntries(raw: string): number {
+  let count = 0;
+  for (const line of raw.split(/\r?\n/)) {
+    if (line.trim().length > 0) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+/**
+ * Bulk history compaction: compact every history stream matching the requested
+ * selection (explicit `--ids`, a `--scope` lifecycle filter, and/or an
+ * `--all-over <N>` entry threshold) in one audited pass. Each selected stream is
+ * compacted with the same single-item logic ({@link runHistoryCompact}); one
+ * failing stream never aborts the rest, and the caller decides the exit code
+ * from `totals.items_errored`.
+ *
+ * When `history.compact_policy` is enabled and no explicit `--all-over` is
+ * given, the policy's `max_entries` is used as the scan threshold so the
+ * configured policy drives the sweep.
+ */
+export async function runHistoryCompactBulk(
+  options: HistoryCompactBulkCommandOptions,
+  global: GlobalOptions,
+): Promise<HistoryCompactBulkResult> {
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+  }
+
+  const settings = await readSettings(pmRoot);
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const classifier = lifecycleClassifierFromStatusRegistry(statusRegistry);
+  const items = await listAllFrontMatterLight(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema);
+  const bucketById = new Map(items.map((item) => [item.id, classifier.classify(item.status)] as const));
+
+  const historyDir = path.join(pmRoot, "history");
+  const candidates: HistoryCompactBulkCandidate[] = [];
+  if (await pathExists(historyDir)) {
+    const historyFiles = (await fs.readdir(historyDir))
+      .filter((entry) => entry.endsWith(".jsonl"))
+      .sort((left, right) => left.localeCompare(right));
+    for (const fileName of historyFiles) {
+      const historyPath = path.join(historyDir, fileName);
+      const raw = await fs.readFile(historyPath, "utf8");
+      await runActiveOnReadHooks({ path: historyPath, scope: "project" });
+      const id = fileName.slice(0, -".jsonl".length);
+      candidates.push({ id, entries: countHistoryStreamEntries(raw), bucket: bucketById.get(id) ?? null });
+    }
+  }
+
+  const mode: "ids" | "scan" = options.ids !== undefined && options.ids.length > 0 ? "ids" : "scan";
+  const minEntries = options.minEntries ?? HISTORY_COMPACT_BULK_DEFAULT_MIN_ENTRIES;
+  const policy = settings.history.compact_policy;
+  const policyThresholdApplied = mode === "scan" && options.allOver === undefined && policy.enabled;
+  const allOver = options.allOver ?? (policyThresholdApplied ? policy.max_entries : undefined);
+
+  const selection = selectHistoryCompactBulkTargets(candidates, {
+    ids: options.ids,
+    scope: options.scope,
+    minEntries,
+    allOver,
+  });
+
+  const dryRun = Boolean(options.dryRun);
+  const results: HistoryCompactBulkItemResult[] = [];
+  const totals = { streams_considered: candidates.length, selected: 0, items_compacted: 0, items_skipped: 0, items_errored: 0 };
+  for (const row of selection) {
+    if (!row.selected) {
+      totals.items_skipped += 1;
+      results.push({
+        id: row.id,
+        outcome: "skipped",
+        entries_before: row.entries,
+        entries_after: null,
+        skip_reason: row.skip_reason,
+        changed: false,
+        error: null,
+      });
+      continue;
+    }
+    totals.selected += 1;
+    try {
+      const result = await runHistoryCompact(
+        row.id,
+        {
+          dryRun,
+          author: options.author,
+          message: options.message,
+          force: options.force,
+        },
+        global,
+      );
+      totals.items_compacted += 1;
+      results.push({
+        id: row.id,
+        outcome: "compacted",
+        entries_before: row.entries,
+        entries_after: result.history.entries_after,
+        skip_reason: null,
+        changed: result.changed,
+        error: null,
+      });
+    } catch (error) {
+      totals.items_errored += 1;
+      results.push({
+        id: row.id,
+        outcome: "errored",
+        entries_before: row.entries,
+        entries_after: null,
+        skip_reason: null,
+        changed: false,
+        /* c8 ignore next -- non-Error throws are normalized in defensive fallback. */
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  return {
+    bulk: true,
+    dry_run: dryRun,
+    mode,
+    scope: options.scope ?? null,
+    criteria: {
+      min_entries: minEntries,
+      all_over: allOver ?? null,
+      policy_threshold_applied: policyThresholdApplied,
+    },
+    totals,
+    results,
     generated_at: nowIso(),
   };
 }
