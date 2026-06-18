@@ -119,7 +119,7 @@ describe("register-list-query get options", () => {
   it("keeps non-json output when --format toon is provided without global json", () => {
     expect(
       _testOnlyRegisterListQuery.resolveReadCommandOutputFormat("Get", "toon", { quiet: false }),
-    ).toEqual({ quiet: false, json: undefined });
+    ).toEqual({ quiet: false, json: false });
   });
 });
 

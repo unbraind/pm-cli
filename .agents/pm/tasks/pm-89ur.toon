@@ -1,0 +1,33 @@
+id: pm-89ur
+title: "PR #274 second review follow-up: prefix, format, and owner scoring"
+description: "Follow-up for latest PR #274 bot feedback after pm-0bwe was closed: fix configurable id-prefix extraction for definition_of_ready lifecycle references, explicit read --format toon JSON suppression, schema enum constraints for format, dependency id trimming during auto-unblock cleanup, and owner-candidate shared-prefix scoring. Duplicate check: search found no open canonical item for this exact second-review bundle; parented under pm-8uhf."
+type: Task
+status: closed
+priority: 1
+tags: []
+created_at: "2026-06-18T06:29:54.860Z"
+updated_at: "2026-06-18T06:48:00.332Z"
+author: codex-sdk-cli-continuation
+parent: pm-8uhf
+resolution: "Fixed configurable lifecycle id-prefix extraction, read-format contract precision, dependency-id trimming, and shared-prefix orphan owner scoring."
+expected_result: Latest PR #274 review feedback has concrete fixes and regression coverage without weakening coverage or contracts.
+actual_result: "Focused tests, full 100/100/100/100 coverage, contracts update/check, changelog check, security scan, validation, and Sentry telemetry gate passed."
+comments[1]{created_at,author,text}:
+  "2026-06-18T06:47:35.731Z",codex-sdk-cli-continuation,"Evidence: addressed second PR #274 review bundle. Configurable lifecycle item-id extraction now honors settings.id_prefix; read --format toon explicitly disables json output; get/history/search action schemas constrain format to json|toon; auto-unblock trims dependency ids before removing blocked_by edges; orphan owner scoring now considers shared directory prefixes. Focused tests passed 156 tests; full coverage passed 4508 tests with Statements 100%, Branches 100%, Functions 100%, Lines 100%; contracts update/check, changelog check, and security scan passed."
+files[7]{path,scope,note}:
+  src/cli/commands/close.ts,project,Trim dependency ids during auto-unblock cleanup
+  src/cli/commands/validate.ts,project,Configurable id-prefix lifecycle references and shared-directory owner scoring
+  src/cli/register-list-query.ts,project,Explicit --format toon JSON suppression
+  src/sdk/cli-contracts.ts,project,Action-scoped format enum contracts
+  tests/fixtures/contracts/full.json,project,Regenerated format enum contract fixture
+  tests/unit/cli/register-list-query.spec.ts,project,Read format toon regression
+  tests/unit/commands/validate-command.spec.ts,project,Custom prefix and shared owner regressions
+tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/cli/register-list-query.spec.ts tests/unit/commands/close-command.spec.ts tests/unit/commands/validate-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm changelog:pm:check",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm contracts:check",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm contracts:update",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm security:scan",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Second PR #274 review feedback addressed
+body: ""

@@ -283,9 +283,10 @@ async function autoUnblockResolvedDependents(
           /* c8 ignore start -- normal auto-unblock candidates carry dependency metadata; fallback preserves hand-edited scalar-only blockers. */
           const dependencies = document.metadata.dependencies ?? [];
           /* c8 ignore stop */
-          const remainingDependencies = dependencies.filter(
-            (dependency) => dependency.kind !== "blocked_by" || !candidate.blocker_ids.includes(dependency.id),
-          );
+          const remainingDependencies = dependencies.filter((dependency) => {
+            const dependencyId = dependency.id.trim();
+            return dependency.kind !== "blocked_by" || !candidate.blocker_ids.includes(dependencyId);
+          });
           document.metadata.status = statusRegistry.open_status;
           delete document.metadata.blocked_by;
           delete document.metadata.blocked_reason;

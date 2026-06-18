@@ -2266,6 +2266,9 @@ function actionScopedToolParameterDefinition(action: PmToolAction, key: string):
   if (action === "plan" && Object.prototype.hasOwnProperty.call(PLAN_ACTION_PARAMETER_PROPERTIES, key)) {
     return PLAN_ACTION_PARAMETER_PROPERTIES[key];
   }
+  if ((action === "get" || action === "history" || action === "search") && key === "format") {
+    return { type: "string", enum: ["json", "toon"] };
+  }
   return PM_TOOL_PARAMETER_PROPERTIES[key];
 }
 

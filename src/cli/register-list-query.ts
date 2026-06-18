@@ -56,7 +56,7 @@ function resolveReadCommandOutputFormat(
   }
   return {
     ...globalOptions,
-    json: normalized === "json" ? true : globalOptions.json,
+    json: normalized === "json",
   };
 }
 

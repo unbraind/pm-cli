@@ -1014,7 +1014,11 @@ function buildResolutionCheck(
 }
 
 /* c8 ignore start -- lifecycle dependency-graph cycle analysis is covered by lifecycle integration fixtures */
-function buildLifecycleDependencyGraph(activeItems: ItemWithBody[]): Map<string, string[]> {
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function buildLifecycleDependencyGraph(activeItems: ItemWithBody[], idPrefix = "pm"): Map<string, string[]> {
   const activeItemIds = new Set(activeItems.map((item) => item.id));
   const graph = new Map<string, string[]>();
   const sortedItems = [...activeItems].sort((left, right) => left.id.localeCompare(right.id));
@@ -1033,7 +1037,7 @@ function buildLifecycleDependencyGraph(activeItems: ItemWithBody[]): Map<string,
     }
     const definitionOfReady = toMeaningfulString(item.definition_of_ready);
     if (definitionOfReady) {
-      for (const referencedId of extractPmItemIds(definitionOfReady)) {
+      for (const referencedId of extractItemIds(definitionOfReady, idPrefix)) {
         if (activeItemIds.has(referencedId)) {
           edges.add(referencedId);
         }
@@ -1045,8 +1049,10 @@ function buildLifecycleDependencyGraph(activeItems: ItemWithBody[]): Map<string,
 }
 /* c8 ignore stop */
 
-function extractPmItemIds(value: string): string[] {
-  return [...new Set(value.match(/\bpm-[a-z0-9][a-z0-9-]*\b/gi)?.map((id) => id.toLowerCase()) ?? [])].sort(
+function extractItemIds(value: string, idPrefix = "pm"): string[] {
+  const normalizedPrefix = (idPrefix.trim().toLowerCase() || "pm").replace(/-+$/g, "");
+  const pattern = new RegExp(`\\b${escapeRegExp(normalizedPrefix)}-[a-z0-9][a-z0-9-]*\\b`, "gi");
+  return [...new Set(value.match(pattern)?.map((id) => id.toLowerCase()) ?? [])].sort(
     (left, right) => left.localeCompare(right),
   );
 }
@@ -1153,12 +1159,12 @@ function resolveLifecycleDependencyCycleSamplePath(component: string[], graph: M
 }
 /* c8 ignore stop */
 
-function detectLifecycleDependencyCycles(activeItems: ItemWithBody[]): {
+function detectLifecycleDependencyCycles(activeItems: ItemWithBody[], idPrefix = "pm"): {
   cycle_count: number;
   cycle_item_ids: string[];
   cycle_sample_paths: string[];
 } {
-  const graph = buildLifecycleDependencyGraph(activeItems);
+  const graph = buildLifecycleDependencyGraph(activeItems, idPrefix);
   const cycleComponents = findLifecycleDependencyCycleComponents(graph);
   const cycleItemIds = [...new Set(cycleComponents.flat())].sort((left, right) => left.localeCompare(right));
   const cycleSamplePaths = cycleComponents.map((component) =>
@@ -1179,7 +1185,7 @@ interface OrphanedPathRow {
     type: string;
     title: string;
     status: string;
-    confidence: "path_prefix" | "same_directory";
+    confidence: "path_prefix" | "same_directory" | "shared_directory";
   } | null;
   remediation_hint: string;
 }
@@ -1225,7 +1231,7 @@ function findOrphanOwnerCandidate(
     | {
       item: ItemWithBody;
       score: number;
-      confidence: "path_prefix" | "same_directory";
+      confidence: "path_prefix" | "same_directory" | "shared_directory";
     }
     | undefined;
   for (const item of items) {
@@ -1243,15 +1249,16 @@ function findOrphanOwnerCandidate(
       const directoryPrefix = linkedPath.endsWith("/") ? linkedPath : `${linkedPath}/`;
       const isDirectoryPrefix = pathValue.startsWith(directoryPrefix);
       const sameDirectory = linkedDir.length > 0 && linkedDir === orphanDir;
-      if (!isDirectoryPrefix && !sameDirectory) {
+      const sharedPrefixLength = sharedDirectoryPrefixLength(pathValue, linkedPath);
+      if (!isDirectoryPrefix && !sameDirectory && sharedPrefixLength === 0) {
         continue;
       }
-      const score = isDirectoryPrefix ? linkedPath.length + 1000 : sharedDirectoryPrefixLength(pathValue, linkedPath);
+      const score = isDirectoryPrefix ? linkedPath.length + 1000 : sharedPrefixLength;
       if (best === undefined || score > best.score || (score === best.score && item.id.localeCompare(best.item.id) < 0)) {
         best = {
           item,
           score,
-          confidence: isDirectoryPrefix ? "path_prefix" : "same_directory",
+          confidence: isDirectoryPrefix ? "path_prefix" : sameDirectory ? "same_directory" : "shared_directory",
         };
       }
     }
@@ -1298,6 +1305,7 @@ function buildLifecycleCheck(
   statusRegistry: RuntimeStatusRegistry,
   lifecyclePatternPolicy: LifecyclePatternPolicy,
   verboseDiagnostics: boolean,
+  idPrefix = "pm",
 ): { check: ValidateCheck; warnings: string[]; terminalParentFixRows: TerminalParentFixRow[] } {
   const itemsById = new Map(items.map((item) => [item.id, item]));
   const blockedStatuses =
@@ -1398,7 +1406,7 @@ function buildLifecycleCheck(
     (left, right) => left.id.localeCompare(right.id) || left.parent_id.localeCompare(right.parent_id),
   );
   staleBlockerRows.sort((left, right) => left.id.localeCompare(right.id));
-  const dependencyCycleDiagnostics = detectLifecycleDependencyCycles(activeItems);
+  const dependencyCycleDiagnostics = detectLifecycleDependencyCycles(activeItems, idPrefix);
 
   const warnings: string[] = [];
   if (closureLikeRows.length > 0) {
@@ -1916,6 +1924,8 @@ export const _testOnlyValidateCommand = {
   collectDefaultProjectFileCandidates,
   collectTrackedGitFileCandidates,
   detectLifecycleDependencyCycles,
+  escapeRegExp,
+  extractItemIds,
   findLifecycleDependencyCycleComponents,
   isMetadataFieldMissing,
   listFilesRecursive,
@@ -2017,6 +2027,7 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
       statusRegistry,
       lifecyclePatternPolicy,
       fullDiagnostics,
+      settings.id_prefix,
     );
     terminalParentFixRows = built.terminalParentFixRows;
     record(built);

@@ -183,6 +183,18 @@ describe("runValidate", () => {
       },
     ] as never);
     expect(graph.get("pm-a")).toEqual(["pm-b", "pm-c"]);
+    expect(validateInternals.extractItemIds("Ready after work-2 and pm-3.", "work")).toEqual(["work-2"]);
+    expect(validateInternals.extractItemIds("Ready after x.pm-2", "x.pm")).toEqual(["x.pm-2"]);
+    expect(validateInternals.extractItemIds("Ready after pm-2", " ")).toEqual(["pm-2"]);
+    expect(validateInternals.extractItemIds("Ready after pm-2", "pm-")).toEqual(["pm-2"]);
+    const customPrefixGraph = validateInternals.buildLifecycleDependencyGraph(
+      [
+        { id: "work-1", status: "open", definition_of_ready: "Ready after work-2" },
+        { id: "work-2", status: "open", blocked_by: "work-1" },
+      ] as never,
+      "work",
+    );
+    expect(customPrefixGraph.get("work-1")).toEqual(["work-2"]);
     expect(validateInternals.findLifecycleDependencyCycleComponents(graph)).toEqual([["pm-a", "pm-b"], ["pm-c"]]);
     expect(validateInternals.resolveLifecycleDependencyCycleSamplePath(["pm-c"], graph)).toEqual(["pm-c", "pm-c"]);
     expect(
@@ -266,6 +278,20 @@ describe("runValidate", () => {
     );
     expect(orphanRows[0]?.owner_candidate).toMatchObject({ id: "pm-owner", confidence: "path_prefix" });
     expect(orphanRows[1]?.owner_candidate).toMatchObject({ id: "pm-tie-a", confidence: "same_directory" });
+    expect(
+      validateInternals.buildOrphanedPathRows(
+        ["docs/ops/new/orphan.md"],
+        [
+          {
+            id: "pm-shared",
+            type: "Task",
+            title: "Shared prefix owner",
+            status: "open",
+            docs: [{ path: "docs/ops/owned/guide.md", scope: "project" }],
+          },
+        ] as never,
+      )[0]?.owner_candidate,
+    ).toMatchObject({ id: "pm-shared", confidence: "shared_directory" });
     expect(
       validateInternals.summarizeOrphanedPathRows([
         {
