@@ -686,6 +686,9 @@ describe("background test run lifecycle", () => {
           "  process.exit(0);",
           "}",
           "if (mode === 'test-all') {",
+          "  process.stderr.write('[pm test-all] item 1/2 start id=pm-itema linked_tests=1\\n');",
+          "  process.stderr.write('[pm test] linked-test 1/3 running elapsed_ms=25 command=\"node slow.js\"\\n');",
+          "  process.stderr.write('[pm test-all] item 2/2 end id=pm-itemb status=failed passed=0 failed=1 skipped=0\\n');",
           "  process.stdout.write(JSON.stringify({ totals: { items: 2, linked_tests: 3, passed: 1, failed: 1, skipped: 1 }, fail_on_skipped_triggered: true }));",
           "  process.exit(0);",
           "}",
@@ -729,6 +732,14 @@ describe("background test run lifecycle", () => {
           skipped: 1,
           fail_on_skipped_triggered: true,
         });
+        expect(failedTotals.progress).toMatchObject({
+          item_index: 2,
+          item_total: 2,
+          item_id: "pm-itemb",
+        });
+        expect(failedTotals.progress?.linked_test_index).toBeUndefined();
+        expect(failedTotals.progress?.linked_test_total).toBeUndefined();
+        expect(failedTotals.progress?.current_command).toBeUndefined();
 
         const badJsonRun = await startBackgroundTestRun({
           pmRoot: context.pmPath,
@@ -754,8 +765,16 @@ describe("background test run lifecycle", () => {
       await writeFile(
         cliEntry,
         [
-          "process.on('SIGTERM', () => {});",
-          "setInterval(() => process.stderr.write('[pm test] linked-test 1/1 running elapsed_ms=15\\n'), 1);",
+          "let stopped = false;",
+          "process.on('SIGTERM', () => {",
+          "  stopped = true;",
+          "  process.stderr.write('[pm test-all] item 1/1 end id=pm-stop status=failed\\n');",
+          "});",
+          "setInterval(() => {",
+          "  if (!stopped) {",
+          "    process.stderr.write('[pm test] linked-test 1/1 running elapsed_ms=15\\n');",
+          "  }",
+          "}, 1);",
           "setTimeout(() => {",
           "  process.kill(process.ppid, 'SIGTERM');",
           "  process.kill(process.ppid, 'SIGINT');",
@@ -782,10 +801,11 @@ describe("background test run lifecycle", () => {
             expect(stopped.progress).toMatchObject({
               phase: "finished",
               message: "Background run stopped.",
-              linked_test_index: 1,
-              linked_test_total: 1,
-              elapsed_ms: 15,
+              item_id: "pm-stop",
             });
+            expect(stopped.progress?.linked_test_index).toBeUndefined();
+            expect(stopped.progress?.linked_test_total).toBeUndefined();
+            expect(stopped.progress?.elapsed_ms).toBeUndefined();
             if (stopped.resource) {
               expect(stopped.resource.recorded_at).toBeDefined();
             }
@@ -843,12 +863,39 @@ describe("background test run lifecycle", () => {
       linked_test_total: 5,
       phase: "finished",
     });
+    expect(backgroundRunsTestOnly.parseProgressLine("[pm test-all] item 4/9 start id=pm-abc linked_tests=2")).toMatchObject({
+      item_index: 4,
+      item_total: 9,
+      item_id: "pm-abc",
+      linked_test_index: undefined,
+      linked_test_total: undefined,
+      current_command: undefined,
+      phase: "running",
+    });
+    expect(
+      backgroundRunsTestOnly.parseProgressLine(
+        "[pm test-all] item 4/9 end id=pm-abc status=passed passed=1 failed=0 skipped=0",
+      ),
+    ).toMatchObject({
+      item_index: 4,
+      item_total: 9,
+      item_id: "pm-abc",
+      phase: "finished",
+    });
     expect(backgroundRunsTestOnly.parseProgressLine("[pm test] linked-test bad/5 end")).toBeNull();
-    expect(backgroundRunsTestOnly.parseProgressLine("[pm test] linked-test 3/5 start elapsed_ms=120")).toMatchObject({
+    expect(
+      backgroundRunsTestOnly.parseProgressLine('[pm test] linked-test 3/5 start elapsed_ms=120 command="node spec.js"'),
+    ).toMatchObject({
       linked_test_index: 3,
       linked_test_total: 5,
+      current_command: "node spec.js",
       elapsed_ms: 120,
       phase: "running",
+    });
+    expect(
+      backgroundRunsTestOnly.parseProgressLine('[pm test] linked-test 3/5 start command="node \\"quoted\\" \\\\path"'),
+    ).toMatchObject({
+      current_command: 'node "quoted" \\path',
     });
     expect(backgroundRunsTestOnly.splitLines("one\n\ntwo  \n")).toEqual(["one", "two"]);
     expect(backgroundRunsTestOnly.tailLines("one\ntwo\n", 10)).toEqual(["one", "two"]);
@@ -1072,7 +1119,7 @@ describe("background test run lifecycle", () => {
     });
   });
 
-  it("covers linked progress fallback branches for non-progress stderr lines", async () => {
+  it("keeps structured progress stable across plain stderr and split progress lines", async () => {
     await withTempPmPath(async (context) => {
       const cliEntry = path.join(context.tempRoot, "worker-non-progress-entry.cjs");
       await writeFile(
@@ -1086,6 +1133,19 @@ describe("background test run lifecycle", () => {
           "    process.stdout.write(JSON.stringify({ run_results: [{ status: 'passed' }] }));",
           "    process.exit(0);",
           "  }, 0);",
+          "  return;",
+          "} else if (mode === 'split') {",
+          "  process.stderr.write('[pm test-all] item 1/1 start id=pm-split');",
+          "  setTimeout(() => {",
+          "    process.stderr.write(' linked_tests=1\\n');",
+          "    process.stdout.write(JSON.stringify({ totals: { items: 1, linked_tests: 1, passed: 1, failed: 0, skipped: 0 } }));",
+          "    process.exit(0);",
+          "  }, 0);",
+          "  return;",
+          "} else if (mode === 'trailing') {",
+          "  process.stderr.write('[pm test-all] item 1/1 start id=pm-trailing linked_tests=1');",
+          "  process.stdout.write(JSON.stringify({ totals: { items: 1, linked_tests: 1, passed: 1, failed: 0, skipped: 0 } }));",
+          "  process.exit(0);",
           "  return;",
           "} else {",
           "  process.stderr.write('another plain stderr message\\n');",
@@ -1108,6 +1168,31 @@ describe("background test run lifecycle", () => {
         });
         const seededRun = await runBackgroundTestRunWorker(context.pmPath, seeded.run.id);
         expect(seededRun.status).toBe("passed");
+        expect(seededRun.progress?.linked_test_index).toBe(1);
+        expect(seededRun.progress?.elapsed_ms).toBe(9);
+
+        const split = await startBackgroundTestRun({
+          pmRoot: context.pmPath,
+          globalPmRoot: context.globalPmPath,
+          kind: "test-all",
+          commandArgs: ["split"],
+          requestedBy: "unit",
+        });
+        const splitRun = await runBackgroundTestRunWorker(context.pmPath, split.run.id);
+        expect(splitRun.status).toBe("passed");
+        expect(splitRun.progress?.item_id).toBe("pm-split");
+        expect(splitRun.progress?.item_index).toBe(1);
+
+        const trailing = await startBackgroundTestRun({
+          pmRoot: context.pmPath,
+          globalPmRoot: context.globalPmPath,
+          kind: "test-all",
+          commandArgs: ["trailing"],
+          requestedBy: "unit",
+        });
+        const trailingRun = await runBackgroundTestRunWorker(context.pmPath, trailing.run.id);
+        expect(trailingRun.status).toBe("passed");
+        expect(trailingRun.progress?.item_id).toBe("pm-trailing");
 
         const plain = await startBackgroundTestRun({
           pmRoot: context.pmPath,

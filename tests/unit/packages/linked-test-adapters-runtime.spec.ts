@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -62,6 +62,26 @@ afterEach(async () => {
 });
 
 describe("linked-test-adapters package runtime", () => {
+  it("ships local ESM metadata for copied extension installs", async () => {
+    const sourceRoot = path.join(process.cwd(), "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters");
+    const tempRoot = await createTempRoot("pm-linked-extension-esm-");
+    const extensionRoot = path.join(tempRoot, "linked-test-adapters");
+    await mkdir(extensionRoot, { recursive: true });
+    await copyFile(path.join(sourceRoot, "package.json"), path.join(extensionRoot, "package.json"));
+    await copyFile(path.join(sourceRoot, "index.js"), path.join(extensionRoot, "index.js"));
+    await copyFile(path.join(sourceRoot, "runtime.js"), path.join(extensionRoot, "runtime.js"));
+
+    const metadata = JSON.parse(await readFile(path.join(extensionRoot, "package.json"), "utf8")) as { type?: string };
+    expect(metadata.type).toBe("module");
+
+    const imported = (await import(`${pathToFileURL(path.join(extensionRoot, "index.js")).href}?copied=${cacheBustToken()}`)) as {
+      manifest?: { name?: string };
+      activate?: unknown;
+    };
+    expect(imported.manifest?.name).toBe("builtin-linked-test-adapters");
+    expect(typeof imported.activate).toBe("function");
+  });
+
   it("covers runtime wrappers and argument validation", async () => {
     delete process.env[PM_PACKAGE_ROOT_ENV];
     const missingEnvRuntime = await importRuntime("linkedMissingEnv");

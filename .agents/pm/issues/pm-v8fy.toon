@@ -1,0 +1,26 @@
+id: pm-v8fy
+title: linked-test-adapters package install loses ESM module type
+description: "Temp tarball smoke found that project-installed linked-test-adapters copies ESM .js extension files without a local package.json, so Node treats them as CommonJS and test-runs remains unavailable."
+type: Issue
+status: closed
+priority: 2
+tags[3]: agent-ux,"area:packages","area:testing"
+created_at: "2026-06-18T19:08:11.244Z"
+updated_at: "2026-06-18T19:15:24.880Z"
+author: codex-gpt5
+parent: pm-ugqx
+resolution: Preserved ESM semantics for copied linked-test-adapters extension installs by shipping local package metadata with the extension payload.
+expected_result: Installing linked-test-adapters into a temp project makes the test-runs command family available without Node CommonJS/ESM load failures.
+actual_result: "Temp tarball smoke installed linked-test-adapters, package doctor passed, test-runs status returned the background run, and copied-extension import regression coverage passed."
+comments[2]{created_at,author,text}:
+  "2026-06-18T19:08:11.244Z",codex-gpt5,"Duplicate check: searched all pm items for linked-test-adapters CommonJS/ES module/test-runs unknown command and found no canonical open item; this is an adjacent package-platform bug discovered during pm-mcxr manual smoke."
+  "2026-06-18T19:14:58.270Z",codex-gpt5,"Evidence: fixed copied linked-test-adapters installs by adding local ESM package metadata, added regression coverage for importing the copied extension entry, verified package linked test and temp tarball smoke with installed linked-test-adapters/test-runs status."
+files[2]{path,scope,note}:
+  packages/pm-linked-test-adapters/extensions/linked-test-adapters/package.json,project,Preserve ESM semantics when the extension directory is copied into a project install
+  tests/unit/packages/linked-test-adapters-runtime.spec.ts,project,Regression coverage for copied extension ESM import
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/packages/linked-test-adapters-runtime.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqjvji36-9s6awd,test,passed,"2026-06-18T19:09:26.543Z","2026-06-18T19:09:46.194Z","2026-06-18T19:09:46.194Z",null,null,1,0,0,null,null,null
+close_reason: Fixed copied linked-test-adapters ESM package installs by shipping local extension package metadata and regression coverage. Verified package linked test and temp tarball smoke with test-runs status.
+body: ""

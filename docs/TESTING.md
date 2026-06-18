@@ -182,6 +182,11 @@ pm test-runs resume <run-id>
 ```
 
 Background run fingerprints prevent duplicate parallel runs for the same linked-test set.
+For long `test-all` runs, `pm test-runs status <run-id> --json` includes the
+latest aggregate item coordinates (`item_index`, `item_total`, `item_id`) plus
+linked-test coordinates and `current_command` when the child emits progress.
+Use `pm test-runs logs <run-id> --stream stderr` only when the compact status
+message is not enough.
 
 The bundled `pm-linked-test-adapters` package is the first-party package
 exemplar for background run management. Install it in an isolated project when
