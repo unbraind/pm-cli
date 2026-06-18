@@ -2,6 +2,8 @@
 
 This page describes safe local tests, linked tests, coverage, and release-readiness checks.
 
+Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-u42x](../.agents/pm/issues/pm-u42x.toon).
+
 ## Agent Quick Context
 
 - Unit and integration tests must not read or write real `.agents/pm` data.

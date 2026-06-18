@@ -6,12 +6,13 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-16T11:28:40.145Z"
-updated_at: "2026-06-18T12:21:55.716Z"
+updated_at: "2026-06-18T12:41:27.009Z"
 author: codex-sdk-cli-consolidation-20260616
 parent: pm-mpbb
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-06-18T11:55:06.905Z",codex-gpt5,"Implementation note: subagent linked-test lane recommended allowing package-manager scripts because runtime already injects sandbox PM_PATH/PM_GLOBAL_PATH, while continuing to reject direct runner binaries such as vitest/node --test/npx vitest. Focused tests passed: node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts tests/unit/commands/test-all-command.spec.ts tests/unit/core/history/history-append-overrides.spec.ts. pm docs append hit same-owner lock conflict, so docs are linked via pm files without forcing."
   "2026-06-18T12:21:55.716Z",codex-gpt5,"Final evidence: full coverage passed at 100/100/100/100 (4540 tests), pnpm build, pnpm quality:static, pnpm quality:docs-links, pnpm contracts:check, pm validate --check-resolution --check-history-drift, pnpm changelog:pm:check, pnpm security:scan, pnpm audit --audit-level moderate, manual temp-dir linked-test smoke, and sentry telemetry gate all passed. GitHub triage found no open PRs, no open Dependabot alerts, and only commander major latest 15.0.0 beyond wanted 14.0.3."
+  "2026-06-18T12:41:27.009Z",codex-gpt5,"Review follow-up evidence: addressed CodeRabbit sandbox feedback by detecting node --test even when preceded by Node flags, added node --no-warnings --test regression coverage, clarified tracker references in docs, and reran focused tests plus build/docs/static/full coverage."
 files[6]{path,scope,note}:
   docs/COMMANDS.md,project,Document linked-test sandbox-safe command rules
   docs/TESTING.md,project,Document package-script linked-test sandbox behavior
