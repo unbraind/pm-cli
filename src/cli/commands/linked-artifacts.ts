@@ -182,6 +182,22 @@ export function parseRemoveEntries(raw: string[] | undefined): string[] {
     }
     if (trimmed.includes("=") || /^(?:[-*+]\s+)?path\s*[:=]/i.test(trimmed) || trimmed.startsWith("```")) {
       const kv = parseCsvKv(trimmed, "--remove");
+      // GH-277: --remove identifies an existing link by path only; it does not
+      // attach per-link metadata. note=/scope= are valid on --add but meaningless
+      // on a removal, so reject them with guidance toward the audit-trail path
+      // (--message) rather than the generic "unrecognized key" error, which left
+      // agents believing they had recorded a removal note.
+      const unsupportedRemoveKeys = Object.keys(kv).filter(
+        (key) => key.toLowerCase() === "note" || key.toLowerCase() === "scope",
+      );
+      if (unsupportedRemoveKeys.length > 0) {
+        throw new PmCliError(
+          `--remove identifies a linked artifact by path only and does not accept ${unsupportedRemoveKeys
+            .map((key) => `"${key}"`)
+            .join(", ")}. Pass just the path (path=<value>, path:<value>, or a bare path); record removal context with --message "<why removed>".`,
+          EXIT_CODE.USAGE,
+        );
+      }
       assertNoUnknownCsvKeys(kv, "--remove", LINKED_ARTIFACT_REMOVE_KEYS);
       if (!kv.path) {
         throw new PmCliError("--remove key/value form requires path=<value>", EXIT_CODE.USAGE);

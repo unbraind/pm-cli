@@ -407,11 +407,33 @@ function resolveValidateMetadataPolicy(
   };
 }
 
+/**
+ * Planning fields whose absence is only actionable on live work (GH-276): an
+ * agent backfills an estimate or acceptance criteria to plan/execute an item,
+ * so flagging them on a terminal (closed/canceled) historical item is pure
+ * noise. Under the `strict` profile these are still enforced everywhere for
+ * projects that want full historical coverage.
+ */
+const TERMINAL_EXEMPT_PLANNING_FIELDS: ReadonlySet<ValidateMetadataRequiredField> = new Set([
+  "acceptance_criteria",
+  "estimated_minutes",
+]);
+
 function isMetadataFieldMissing(
   item: ItemWithBody,
   field: ValidateMetadataRequiredField,
   statusRegistry: RuntimeStatusRegistry,
+  enforcePlanningFieldsOnTerminal: boolean,
 ): boolean {
+  // GH-276: skip planning-field gaps on retired (closed/canceled) items unless
+  // the resolved profile explicitly demands strict historical coverage.
+  if (
+    !enforcePlanningFieldsOnTerminal &&
+    TERMINAL_EXEMPT_PLANNING_FIELDS.has(field) &&
+    isTerminalStatus(item.status, statusRegistry)
+  ) {
+    return false;
+  }
   if (field === "author") {
     return !toNonEmptyStringOrUndefined(item.author);
   }
@@ -831,9 +853,14 @@ function buildMetadataCheck(
   ) as Record<ValidateMetadataRequiredField, string[]>;
   const itemsById = new Map(items.map((item) => [item.id, item]));
 
+  // GH-276: only the `strict` profile enforces planning fields on terminal
+  // (closed/canceled) historical items; core/minimal/custom profiles treat a
+  // retired item's missing estimate or acceptance criteria as resolved.
+  const enforcePlanningFieldsOnTerminal = metadataPolicy.profile === "strict";
+
   for (const item of items) {
     for (const field of SUPPORTED_METADATA_REQUIRED_FIELDS) {
-      if (!isMetadataFieldMissing(item, field, statusRegistry)) {
+      if (!isMetadataFieldMissing(item, field, statusRegistry, enforcePlanningFieldsOnTerminal)) {
         continue;
       }
       missingByField[field].push(item.id);

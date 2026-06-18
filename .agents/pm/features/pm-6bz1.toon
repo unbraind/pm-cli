@@ -1,0 +1,13 @@
+id: pm-6bz1
+title: "Validate governance accuracy: suppress false-positive duplicate-code & terminal-item metadata noise + files --remove input clarity"
+description: "Real trackers accumulate validate false-positives that erode agent trust in governance audits: (GH-275) duplicate_issue_codes flags legitimate parent/child code-prefix pairs (PARENT vs PARENT-T0n); (GH-278) duplicate_issue_codes flags items already closed-as-duplicate (duplicate_of set); (GH-276) metadata check fires missing_estimated_minutes/missing_acceptance_criteria on terminal (closed/canceled) historical items where backfill adds no value; (GH-277) files --remove rejects note= input but the message does not point agents at the audit-trail alternative. Bundled because all four are agent-facing accuracy/clarity fixes for pm validate + pm files output trust."
+type: Feature
+status: closed
+priority: 1
+tags: []
+created_at: "2026-06-18T09:15:06.847Z"
+updated_at: "2026-06-18T09:31:28.976Z"
+author: claude-code-agent
+parent: pm-mpbb
+close_reason: "Shipped validate governance accuracy bundle (GH-275/276/277/278): duplicate-code parent/child + closed-as-duplicate suppression, terminal-item planning-field exemption, files --remove path-only clarity. 100/100/100/100 coverage (4527 tests), static + security + contracts gates green."
+body: ""
