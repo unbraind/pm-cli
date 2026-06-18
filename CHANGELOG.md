@@ -4,6 +4,7 @@
 
 ### Added
 
+- pm search: structured inline query syntax \(tag:/status:\) + matched-text highlighting \(GH-157 remainder\) ([pm-ldr1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ldr1.toon))
 - Auto-compact policy: config-driven threshold to trigger pm history-compact automatically ([pm-0pnz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-0pnz.toon))
 - pm history-compact: expose --scope all-streams \(history GC pass\) for closed items ([pm-yj9w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-yj9w.toon))
 - History stream bulk-compaction: pm history-compact --all-over N to batch-compact large streams ([pm-f3pa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-f3pa.toon))

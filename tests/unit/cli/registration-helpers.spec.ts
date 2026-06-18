@@ -461,12 +461,14 @@ describe("registration helpers", () => {
       includeLinked: true,
       titleExact: true,
       phraseExact: true,
+      highlight: true,
     });
     expect(normalized).toMatchObject({
       count: true,
       includeLinked: true,
       titleExact: true,
       phraseExact: true,
+      highlight: true,
     });
 
     // String-valued minScore/semanticWeight flow through readSearchStringOrNumber's string branch.

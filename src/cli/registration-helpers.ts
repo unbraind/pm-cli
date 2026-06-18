@@ -762,6 +762,7 @@ export function normalizeSearchOptions(options: Record<string, unknown>): Record
     includeLinked: options.includeLinked === true ? true : undefined,
     titleExact: options.titleExact === true ? true : undefined,
     phraseExact: options.phraseExact === true ? true : undefined,
+    highlight: options.highlight === true ? true : undefined,
     status: readSearchString("status"),
     type: readSearchString("type"),
     tag: readSearchString("tag"),

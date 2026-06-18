@@ -324,7 +324,10 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
     const searchCommand = program
       .command("search")
       .argument("<keywords...>", "Keyword query tokens")
-      .description("Search items with keyword, semantic, or hybrid retrieval.")
+      .description(
+        "Search items with keyword, semantic, or hybrid retrieval. Inline field:value tokens " +
+          "(tag:/status:/type:/priority:) in the query are parsed as filters, e.g. 'auth tag:area:search status:open'.",
+      )
       .option("--mode <value>", "Search mode: keyword|semantic|hybrid (default: keyword)")
       .option("--semantic", "Shorthand for --mode semantic")
       .option("--hybrid", "Shorthand for --mode hybrid")
@@ -344,6 +347,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--include-linked", "Include linked files, docs, and tests in the searchable corpus")
       .option("--title-exact", "Require exact normalized title match for the full query string")
       .option("--phrase-exact", "Require exact normalized phrase match in searchable text")
+      .option("--highlight", "Emit per-field matched-text snippets (wrapped in «…») on each hit; off by default")
       .option("--status <value>", "Filter by status before query (open/closed/canceled aliases or configured status id; CSV)")
       .option("--type <value>", "Filter by item type")
       .option("--tag <value>", "Filter by tag")

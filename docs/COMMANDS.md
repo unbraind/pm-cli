@@ -140,6 +140,24 @@ pm search "calendar" --min-score 5                              # this-query thr
 pm search "reminder" --count                                    # just the number
 ```
 
+### Inline filter syntax and matched-text highlighting (GH-157, pm-ldr1)
+
+Inline `field:value` tokens can be embedded directly in the query string and are parsed out as the equivalent filter. Recognized fields are `tag:`, `status:`, `type:`, and `priority:`; the value runs to the end of the token, so colon-bearing values like `tag:area:search` parse correctly. The remaining words drive keyword/semantic matching as usual:
+
+```bash
+pm search "auth tag:area:auth status:open"        # query "auth" + --tag area:auth --status open
+pm search "ranking type:Task priority:1"          # query "ranking" + --type Task --priority 1
+```
+
+Precedence: an **explicit `--flag` always wins** over a conflicting inline token. When both are supplied, the flag value is used and the result carries a `search_inline_filter_ignored:<field>:flag_takes_precedence` warning so the override is observable. On the CLI, an unquoted `tag:value` token is already rewritten to `--tag value` by argument normalization; the in-query parser additionally covers quoted multi-word queries and the `pm_search` MCP tool, where the whole query arrives as a single string. A query consisting solely of inline tokens (no keyword terms) is rejected — use `pm list` with the equivalent `--tag`/`--status`/`--type`/`--priority` flags for pure filtering.
+
+Pass `--highlight` to emit per-field matched-text snippets on each hit (off by default for token efficiency). Each matched field gets a `{ field, snippet }` entry under `highlights`, with the matching token runs wrapped in `«…»` and a `…` ellipsis where the field text was windowed:
+
+```bash
+pm search "auth" --highlight                       # adds highlights:[{field,snippet}] to each hit
+pm search "auth" --full --highlight                # full hit payloads + highlight snippets
+```
+
 ### Full results, totals, and bodies
 
 `pm list*` returns every matched row when neither `--limit` nor `--offset` is set. When a `--limit`/`--offset` *does* drop rows, the result adds a top-level `total` (the pre-pagination match count) so an agent knows how many remain. Pass `--no-truncate` (alias `--all`) to force the entire matched set and override any `--limit` in one call — the canonical "give me everything" flag for large-corpus audits:

@@ -5412,6 +5412,9 @@
           "flag": "--phrase-exact"
         },
         {
+          "flag": "--highlight"
+        },
+        {
           "flag": "--compact"
         },
         {
@@ -17288,6 +17291,10 @@
           },
           "hasTests": {
             "description": "Has Tests.",
+            "type": "boolean"
+          },
+          "highlight": {
+            "description": "For search action, emit per-field matched-text snippets (wrapped in «…») on each hit. Off by default.",
             "type": "boolean"
           },
           "hybrid": {
