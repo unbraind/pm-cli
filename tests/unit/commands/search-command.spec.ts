@@ -216,6 +216,48 @@ describe("runSearch", () => {
     expect(reviewerMissing.items.map((hit) => hit.item.id)).toEqual(["pm-search-filter-bare"]);
   });
 
+  it("matches exact and short item IDs as first-class search hits", async () => {
+    const target = makeFrontMatter({
+      id: "pm-fk49",
+      title: "Game Engine & Core Architecture",
+      description: "No literal id token in content",
+    });
+    const other = makeFrontMatter({
+      id: "pm-other",
+      title: "fk49 mentioned elsewhere",
+      description: "This item should rank below the exact id match",
+    });
+    listAllFrontMatterMock.mockResolvedValue([other, target]);
+    readFileMock.mockImplementation(async (targetPath: string) => {
+      if (targetPath.includes("pm-fk49")) {
+        return serializeDocument(target, "body without lookup token");
+      }
+      return serializeDocument(other, "fk49 body mention");
+    });
+
+    const { runSearch } = await import("../../../src/cli/commands/search.js");
+
+    const exact = await runSearch("pm-fk49", {}, { path: "/tmp/pm-search" });
+    expect(exact.items[0]?.item.id).toBe("pm-fk49");
+    expect(exact.items[0]?.matched_fields).toEqual(["id"]);
+
+    const short = await runSearch("fk49", {}, { path: "/tmp/pm-search" });
+    expect(short.items[0]?.item.id).toBe("pm-fk49");
+    expect(short.items[0]?.matched_fields).toEqual(["id"]);
+
+    const customIdTarget = makeFrontMatter({
+      id: "custom-fk49",
+      title: "Custom prefix item",
+      description: "No literal id token in content",
+    });
+    readSettingsMock.mockResolvedValue({ ...makeDefaultSettings(), id_prefix: "custom-" } as never);
+    listAllFrontMatterMock.mockResolvedValue([customIdTarget]);
+    readFileMock.mockResolvedValue(serializeDocument(customIdTarget, "body without lookup token"));
+    const custom = await runSearch("fk49", {}, { path: "/tmp/pm-search" });
+    expect(custom.items[0]?.item.id).toBe("custom-fk49");
+    expect(custom.items[0]?.matched_fields).toEqual(["id"]);
+  });
+
   it("resolves search max-results and score-threshold fallbacks deterministically", async () => {
     const { resolveSearchMaxResults, resolveSearchScoreThreshold, resolveHybridSemanticWeight } = await import(
       "../../../src/cli/commands/search.js"

@@ -1,0 +1,26 @@
+id: pm-at1j
+title: "PR #266 review feedback: tighten init and dynamic option validation"
+description: "AI review feedback on PR #266 found still-valid guardrail improvements: validate init existing-setting rewrites before mutating the settings object, reject unknown dynamic extension options even when parsed as false from --no-* flags, and render dynamic unknown option names in CLI kebab-case. Duplicate check: these are review follow-ups to pm-jek2/pm-nt1y, not a separate pre-existing open item."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-06-17T23:30:11.555Z"
+updated_at: "2026-06-18T00:03:01.324Z"
+author: codex-audit-agent
+parent: pm-mpbb
+resolution: "Init existing-setting rewrites are now guarded before mutation, and dynamic extension commands reject all unknown options including --no-* false values while reporting kebab-case CLI flags."
+expected_result: PR #266 review feedback should be resolved without allowing accidental init setting rewrites or silent unknown dynamic extension options.
+actual_result: "Focused init/dynamic/script tests passed and full coverage passed with 226 files, 4493 tests, and 100% statements/branches/functions/lines."
+comments[2]{created_at,author,text}:
+  "2026-06-17T23:56:19.283Z",codex-audit-agent,"Evidence: addressed PR #266 AI review feedback. Existing pm init settings now compute pending changes and require --force before mutating id_prefix/governance_preset/author_default. Dynamic extension commands without declared flags now reject unknown options even when Commander parses --no-* as false, and errors render canonical kebab-case flags. Verification passed: focused init/dynamic/script test set; full coverage 226 files / 4493 tests with 100% statements, branches, functions, and lines."
+  "2026-06-18T00:03:01.324Z",codex-audit-agent,"Release-gate evidence: node dist/cli.js changelog generate --check returned unchanged after package-owned changelog generation. pnpm version:check && pnpm contracts:check && pnpm security:scan && pnpm quality:static && npm pack --dry-run passed; contracts snapshot cleanup exercised successfully. Note: pnpm changelog:pm:check wrapper was interrupted because its second pm-changelog install child stalled in npm install @unbrained/pm-cli@>=2026.6.7 after regeneration; direct installed-extension check passed."
+files[3]{path,scope,note}:
+  src/cli/commands/init.ts,project,Validate existing init setting rewrites before mutating settings
+  src/cli/main.ts,project,Reject false-valued unknown dynamic extension options and render kebab-case flags
+  tests/unit/cli/cli-main-errors.spec.ts,project,Cover dynamic unknown --no-* option rejection and kebab-case error output
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/commands/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Resolved PR #266 review feedback with pre-mutation init force validation and stricter dynamic unknown option handling; focused tests and full 100% coverage pass.
+body: ""

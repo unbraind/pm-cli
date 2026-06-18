@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Sub-hour duration granularity for scheduling: support minutes in --duration / event duration= ([pm-zoe4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-zoe4.toon))
+
+### Fixed
+
+- PR \#266 review feedback: tighten init and dynamic option validation ([pm-at1j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-at1j.toon))
+- CI contracts snapshot temp cleanup can fail with ENOTEMPTY ([pm-c61g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-c61g.toon))
+- pm templates: unknown subcommand + flags silently fall back to 'list' \(exit 0\) instead of erroring ([pm-r2kd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r2kd.toon))
+- GH-265: schema unknown subcommands must not create custom types ([pm-ablm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ablm.toon))
+- GH-262: prevent path-like pm init from corrupting caller tracker settings ([pm-jek2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jek2.toon))
+- Dynamic package commands should reject excess args and unknown parent tokens ([pm-nt1y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nt1y.toon))
+
+### Other
+
+- GH \#268-\#270 agent lookup and context output polish ([pm-x7g1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-x7g1.toon))
+- Dogfood audit 2026-06-12: ecosystem verification \(CLI+SDK+packages\) ([pm-krgd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-krgd.toon))
+
 ## 2026.6.17 - 2026-06-17
 
 ### Added

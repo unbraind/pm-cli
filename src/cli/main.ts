@@ -790,6 +790,77 @@ function collectExtensionFlagDefinitionsForInvocation(
   return nestedMatch.length > 0 ? nestedMatch : exact;
 }
 
+function formatDynamicCommandUsage(descriptor: ExtensionCommandHelpDescriptor): string {
+  const argumentSuffix = descriptor.arguments
+    .map((argument) => {
+      const label = argument.variadic ? `${argument.name}...` : argument.name;
+      return argument.required ? `<${label}>` : `[${label}]`;
+    })
+    .join(" ");
+  return `pm ${descriptor.command}${argumentSuffix ? ` ${argumentSuffix}` : ""}`;
+}
+
+function validateDynamicExtensionCommandArgs(
+  descriptor: ExtensionCommandHelpDescriptor,
+  args: string[],
+): void {
+  const requiredCount = descriptor.arguments.filter((argument) => argument.required).length;
+  const variadic = descriptor.arguments.some((argument) => argument.variadic);
+  const maxCount = variadic ? Number.POSITIVE_INFINITY : descriptor.arguments.length;
+  if (args.length < requiredCount) {
+    throw new PmCliError(
+      `Missing required argument for extension command '${descriptor.command}'. Usage: ${formatDynamicCommandUsage(descriptor)}`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (args.length > maxCount) {
+    const extra = args.slice(maxCount).join(" ");
+    throw new PmCliError(
+      `Too many arguments for extension command '${descriptor.command}': ${extra}. Usage: ${formatDynamicCommandUsage(descriptor)}`,
+      EXIT_CODE.USAGE,
+    );
+  }
+}
+
+function formatDynamicOptionFlag(optionKey: string): string {
+  return `--${optionKey
+    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+    .replace(/_/g, "-")
+    .toLowerCase()}`;
+}
+
+function validateDynamicExtensionCommandOptions(
+  descriptor: ExtensionCommandHelpDescriptor,
+  options: Record<string, unknown>,
+  extensionFlagDefinitions: Array<Record<string, unknown>>,
+): void {
+  if (extensionFlagDefinitions.length > 0) {
+    validateLooseCommandOptionsWithFlagDefinitions(options, extensionFlagDefinitions, descriptor.command);
+    return;
+  }
+  const unknownOptions = Object.keys(options).filter((key) => options[key] !== undefined).sort();
+  if (unknownOptions.length === 0) {
+    return;
+  }
+  throw new PmCliError(
+    `Unknown option '${unknownOptions.map(formatDynamicOptionFlag).join(", ")}' for extension command '${descriptor.command}'. This command does not define extension flags.`,
+    EXIT_CODE.USAGE,
+  );
+}
+
+function validateDynamicExtensionCommandInvocation(
+  descriptor: ExtensionCommandHelpDescriptor | undefined,
+  args: string[],
+  options: Record<string, unknown>,
+  extensionFlagDefinitions: Array<Record<string, unknown>>,
+): void {
+  if (!descriptor) {
+    return;
+  }
+  validateDynamicExtensionCommandArgs(descriptor, args);
+  validateDynamicExtensionCommandOptions(descriptor, options, extensionFlagDefinitions);
+}
+
 const RUNTIME_FIELD_COMMAND_BY_COMMAND_PATH: Readonly<Record<string, RuntimeFieldCommand>> = {
   create: "create",
   update: "update",
@@ -1455,6 +1526,12 @@ async function runRequiredExtensionCommand(
   commandArgs = parserOverride.context.args;
   commandOptions = parserOverride.context.options;
   resolvedGlobalOptions = parserOverride.context.global;
+  validateDynamicExtensionCommandInvocation(
+    activeRuntimeExtensionCommandDescriptors.get(normalizeExtensionCommandPath(commandPath)),
+    commandArgs,
+    commandOptions,
+    extensionFlagDefinitions,
+  );
   setActiveCommandResult(undefined);
   setActiveCommandContext({
     command: commandPath,
@@ -2640,6 +2717,7 @@ export const _testOnly = {
   shouldRegisterRuntimeSchemaFlags,
   setActiveExtensionHookContextForTest,
   toLooseFieldDefinitionType,
+  validateDynamicExtensionCommandInvocation,
   wrapProgramActionsForExtensionHandlers,
   wrapThrownErrorForSentry,
 };

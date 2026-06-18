@@ -14,6 +14,23 @@ export const manifest = {
   capabilities: ["commands", "schema"],
 };
 
+function assertNoArgs(args, commandName) {
+  if (args.some((arg) => arg.trim().length > 0)) {
+    throw new Error(`${commandName} does not accept positional arguments.`);
+  }
+}
+
+function assertSingleRunId(args, commandName) {
+  const runId = args[0];
+  if (typeof runId !== "string" || runId.trim().length === 0) {
+    throw new Error(`${commandName} requires a runId argument.`);
+  }
+  if (args.length > 1) {
+    throw new Error(`${commandName} accepts exactly one runId argument.`);
+  }
+  return args;
+}
+
 function testRunsCommand() {
   return {
     name: "test-runs",
@@ -23,7 +40,10 @@ function testRunsCommand() {
       { long: "--status", value_name: "value", value_type: "string", description: "Filter by background run status." },
       { long: "--limit", value_name: "n", value_type: "string", description: "Limit number of runs returned." },
     ],
-    run: async (context) => runTestRunsListPackage(context.options, context.global),
+    run: async (context) => {
+      assertNoArgs(context.args, "test-runs");
+      return runTestRunsListPackage(context.options, context.global);
+    },
   };
 }
 
@@ -36,7 +56,10 @@ function testRunsListCommand() {
       { long: "--status", value_name: "value", value_type: "string", description: "Filter by background run status." },
       { long: "--limit", value_name: "n", value_type: "string", description: "Limit number of runs returned." },
     ],
-    run: async (context) => runTestRunsListPackage(context.options, context.global),
+    run: async (context) => {
+      assertNoArgs(context.args, "test-runs list");
+      return runTestRunsListPackage(context.options, context.global);
+    },
   };
 }
 
@@ -46,7 +69,7 @@ function testRunsStatusCommand() {
     action: "test-runs-status",
     description: "Show status and health snapshot for a background linked-test run.",
     arguments: [{ name: "runId", required: true, description: "Background run id." }],
-    run: async (context) => runTestRunsStatusPackage(context.args, context.global),
+    run: async (context) => runTestRunsStatusPackage(assertSingleRunId(context.args, "test-runs status"), context.global),
   };
 }
 
@@ -60,7 +83,7 @@ function testRunsLogsCommand() {
       { long: "--stream", value_name: "value", value_type: "string", description: "Log stream selector: stdout|stderr|both." },
       { long: "--tail", value_name: "n", value_type: "string", description: "Tail number of lines per selected stream." },
     ],
-    run: async (context) => runTestRunsLogsPackage(context.args, context.options, context.global),
+    run: async (context) => runTestRunsLogsPackage(assertSingleRunId(context.args, "test-runs logs"), context.options, context.global),
   };
 }
 
@@ -71,7 +94,7 @@ function testRunsStopCommand() {
     description: "Stop a running background linked-test run.",
     arguments: [{ name: "runId", required: true, description: "Background run id." }],
     flags: [{ long: "--force", value_type: "boolean", description: "Force-stop via SIGKILL." }],
-    run: async (context) => runTestRunsStopPackage(context.args, context.options, context.global),
+    run: async (context) => runTestRunsStopPackage(assertSingleRunId(context.args, "test-runs stop"), context.options, context.global),
   };
 }
 
@@ -82,7 +105,7 @@ function testRunsResumeCommand() {
     description: "Resume a terminal background linked-test run by starting a new attempt.",
     arguments: [{ name: "runId", required: true, description: "Background run id." }],
     flags: [{ long: "--author", value_name: "value", value_type: "string", description: "Resume author override." }],
-    run: async (context) => runTestRunsResumePackage(context.args, context.options, context.global),
+    run: async (context) => runTestRunsResumePackage(assertSingleRunId(context.args, "test-runs resume"), context.options, context.global),
   };
 }
 

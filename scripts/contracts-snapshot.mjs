@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { removeTempDirectory } from "./contracts-snapshot-cleanup.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const snapshotPath = resolve(repoRoot, "tests/fixtures/contracts/full.json");
@@ -32,11 +33,13 @@ function runContracts() {
         ...process.env,
         NO_COLOR: "1",
         PM_GLOBAL_PATH: isolatedGlobalPath,
+        PM_NO_TELEMETRY: "1",
+        PM_TELEMETRY_DISABLED: "1",
       },
       maxBuffer: 50 * 1024 * 1024,
     });
   } finally {
-    rmSync(isolatedGlobalPath, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+    removeTempDirectory(isolatedGlobalPath);
   }
   if (result.error !== undefined) {
     throw new Error(`pm contracts --full --json failed to start: ${result.error.message}`);

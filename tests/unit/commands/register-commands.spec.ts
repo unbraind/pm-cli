@@ -126,6 +126,7 @@ import {
 } from "../../../src/cli/register-operations.js";
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
 import {
+  looksLikeSchemaSubcommandTypo,
   registerMutationCommands,
   parseSchemaOrderOption,
   parsePositiveIntOption,
@@ -391,6 +392,13 @@ describe("list-query command actions", () => {
     expect(options.brief).toBe(true);
     expect(options.excludeTerminal).toBe(true);
     expect(lastCallArg(vi.mocked(runList) as never, 0)).toBeUndefined();
+  });
+
+  it("defaults pm list-blocked to the compact status-list projection", async () => {
+    await runCli("list-blocked");
+    const options = lastCallArg<Record<string, unknown>>(vi.mocked(runList) as never, 1);
+    expect(options.brief).toBe(true);
+    expect(lastCallArg(vi.mocked(runList) as never, 0)).toBe("blocked");
   });
 
   it("does not force brief when an explicit projection is requested", async () => {
@@ -1226,6 +1234,8 @@ describe("mutation command actions", () => {
   it("routes schema subcommands, shorthand add-type, aliases, warnings, and JSON output", async () => {
     await expect(runCli("schema")).rejects.toThrow("pm schema requires a subcommand");
     await expect(runCli("schema", "bogus", "Name")).rejects.toThrow("Unknown pm schema subcommand");
+    await expect(runCli("schema", "list-statuses")).rejects.toThrow("Unknown pm schema subcommand");
+    await expect(runCli("schema", "help")).rejects.toThrow("Unknown pm schema subcommand");
 
     await runCliRaw("schema", "list");
     expect(vi.mocked(runSchemaList)).toHaveBeenCalledTimes(1);
@@ -1507,6 +1517,16 @@ describe("mutation command actions", () => {
     expect(() => parseSchemaOrderOption("abc")).toThrow("--order must be a finite integer");
     // A non-number, non-string value (e.g. boolean) reaches the trailing throw.
     expect(() => parseSchemaOrderOption(true)).toThrow("--order must be a finite integer");
+  });
+
+  it("classifies schema shorthand tokens that look like subcommand typos", () => {
+    expect(looksLikeSchemaSubcommandTypo("")).toBe(false);
+    expect(looksLikeSchemaSubcommandTypo("   ")).toBe(false);
+    expect(looksLikeSchemaSubcommandTypo("Spike")).toBe(false);
+    expect(looksLikeSchemaSubcommandTypo("help")).toBe(true);
+    expect(looksLikeSchemaSubcommandTypo("types")).toBe(true);
+    expect(looksLikeSchemaSubcommandTypo("list-statuses")).toBe(true);
+    expect(looksLikeSchemaSubcommandTypo("show-all")).toBe(true);
   });
 
   it("coerces a positive 1-based integer option and rejects non-positive/non-integer values", () => {

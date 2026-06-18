@@ -1005,8 +1005,11 @@ export function renderContextMarkdown(result: ContextResult): string {
   }
   lines.push(`- agenda_events: ${result.summary.agenda_events}`);
   lines.push(`- blocked_fallback_used: ${result.summary.blocked_fallback_used}`);
-  if (result.sections_included.length > 0) {
-    lines.push(`- sections: ${result.sections_included.join(", ")}`);
+  const renderedSections = result.sections_included.filter(
+    (section) => section !== "blockers" || (result.blockers?.length ?? 0) > 0,
+  );
+  if (renderedSections.length > 0) {
+    lines.push(`- sections: ${renderedSections.join(", ")}`);
   }
   lines.push("");
 

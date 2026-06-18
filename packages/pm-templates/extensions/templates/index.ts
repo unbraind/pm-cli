@@ -16,12 +16,37 @@ export const manifest = {
   capabilities: ["commands", "schema"],
 };
 
-function firstArg(args: string[], commandName: string): string {
+function onlyArg(args: string[], commandName: string): string {
   const value = args[0];
   if (typeof value === "string" && value.trim().length > 0) {
+    if (args.length > 1) {
+      throw new Error(`${commandName} accepts exactly one template name argument.`);
+    }
     return value;
   }
   throw new Error(`${commandName} requires a template name argument.`);
+}
+
+function optionKeys(options: Record<string, unknown>): string[] {
+  return Object.entries(options)
+    .filter(([, value]) => value !== undefined && value !== false)
+    .map(([key]) => key)
+    .sort();
+}
+
+function assertListInvocation(args: string[], options: Record<string, unknown>, commandName: string): void {
+  const unexpectedSubcommand = args.find((arg) => arg.trim().length > 0);
+  if (unexpectedSubcommand) {
+    throw new Error(
+      `Unknown pm templates subcommand "${unexpectedSubcommand}". Allowed: list, save, show. Apply a saved template with pm create <type> <title> --template <name>.`,
+    );
+  }
+  const unexpectedOptions = optionKeys(options);
+  if (unexpectedOptions.length > 0) {
+    throw new Error(
+      `pm ${commandName} does not accept options: ${unexpectedOptions.map((key) => `--${key}`).join(", ")}. Allowed subcommands: list, save, show. Save defaults with pm templates save <name> ... or apply them with pm create <type> <title> --template <name>.`,
+    );
+  }
 }
 
 async function runTemplatesListFromRuntime(global: GlobalOptions): Promise<TemplatesListResult> {
@@ -33,11 +58,11 @@ async function runTemplatesSaveFromRuntime(
   options: Record<string, unknown>,
   global: GlobalOptions,
 ): Promise<TemplatesSaveResult> {
-  return runTemplatesSavePackage(firstArg(args, "templates save"), options, global);
+  return runTemplatesSavePackage(onlyArg(args, "templates save"), options, global);
 }
 
 async function runTemplatesShowFromRuntime(args: string[], global: GlobalOptions): Promise<TemplatesShowResult> {
-  return runTemplatesShowPackage(firstArg(args, "templates show"), global);
+  return runTemplatesShowPackage(onlyArg(args, "templates show"), global);
 }
 
 const createOptionFlags = [
@@ -78,13 +103,19 @@ export function activate(api: ExtensionApi): void {
     name: "templates",
     action: "templates-list",
     description: "List saved create templates.",
-    run: async (context) => runTemplatesListFromRuntime(context.global),
+    run: async (context) => {
+      assertListInvocation(context.args, context.options, "templates");
+      return runTemplatesListFromRuntime(context.global);
+    },
   } satisfies CommandDefinition);
   api.registerCommand({
     name: "templates list",
     action: "templates-list",
     description: "List saved create templates.",
-    run: async (context) => runTemplatesListFromRuntime(context.global),
+    run: async (context) => {
+      assertListInvocation(context.args, context.options, "templates list");
+      return runTemplatesListFromRuntime(context.global);
+    },
   } satisfies CommandDefinition);
   api.registerCommand({
     name: "templates save",

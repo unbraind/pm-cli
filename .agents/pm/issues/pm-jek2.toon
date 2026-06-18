@@ -1,0 +1,29 @@
+id: pm-jek2
+title: "GH-262: prevent path-like pm init from corrupting caller tracker settings"
+description: GitHub issue #262 reports pm init /tmp/target being parsed as an id prefix and rewriting the current project settings. Fix path-like positional disambiguation and require --force before init rewrites existing tracker settings.
+type: Issue
+status: closed
+priority: 1
+tags[3]: agent-ux,github-262,init
+created_at: "2026-06-17T22:02:31.964Z"
+updated_at: "2026-06-17T23:12:42.379Z"
+author: codex-audit-20260618
+parent: pm-mpbb
+resolution: Fixed init positional target handling and existing-settings force guard for GH #262.
+expected_result: Path-like pm init positional targets create/initialize the target tracker and do not rewrite the caller tracker unless --force is explicitly used for existing settings.
+actual_result: "Path-like targets are detected, existing settings rewrites require --force, help text documents prefix-or-path, focused tests/manual temp-project reproduction/full coverage/dogfood passed."
+comments[1]{created_at,author,text}:
+  "2026-06-17T23:12:20.894Z",codex-audit-agent,"Final evidence: init path-like target fix verified by focused init tests, full integration tests, manual /tmp caller-target SHA check, full coverage 100%, dogfood package-first, release gates, security scan, and validation history_drift ok."
+files[3]{path,scope,note}:
+  src/cli/commands/init.ts,project,GH-262 init path target and force guard
+  src/cli/register-setup.ts,project,init help argument description
+  tests/integration/cli.integration.spec.ts,project,init force integration contract
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,420,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/commands/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqimmd2c-mlwtv1,test,passed,"2026-06-17T22:11:56.146Z","2026-06-17T22:12:16.932Z","2026-06-17T22:12:16.932Z",null,null,1,0,0,null,null,null
+docs[1]{path,scope,note}:
+  src/cli/help-content.ts,project,init compact help documents path-target and force behavior
+close_reason: Resolved GH #262 init target corruption with tests and manual /tmp verification
+body: ""

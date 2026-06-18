@@ -330,7 +330,7 @@ function registerLifecycleCommand(
 export function registerSetupCommands(program: Command): void {
   program
     .command("init")
-    .argument("[prefix]", "Optional id prefix")
+    .argument("[prefix-or-path]", "Optional id prefix, or path-like tracker target such as ./pm-sandbox")
     .option("--preset <value>", "Governance preset for new setups: minimal|default|strict")
     .option("--defaults", "Use non-interactive setup defaults without opening the wizard")
     .option("-y, --yes", "Alias for --defaults (non-interactive setup)")
@@ -340,7 +340,7 @@ export function registerSetupCommands(program: Command): void {
     .option("--with-packages", "Install all bundled first-party packages during initialization")
     .option("--force", "Allow initializing tracker files directly in a directory that looks like a workspace root")
     .option("--verbose", "Include the full resolved settings tree in the output (default output is a concise summary)")
-    .description("Initialize pm storage and defaults for the current workspace.")
+    .description("Initialize pm storage and defaults for the current workspace or a path-like tracker target.")
     .action(async (prefix: string | undefined, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();

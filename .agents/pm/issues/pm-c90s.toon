@@ -6,7 +6,10 @@ status: open
 priority: 2
 tags[4]: audit-2026-06-13,health,history,performance
 created_at: "2026-06-12T22:47:21.538Z"
-updated_at: "2026-06-12T22:47:21.538Z"
+updated_at: "2026-06-17T23:12:21.038Z"
 author: audit-quality-agent
 parent: pm-y7sc
+comments[2]{created_at,author,text}:
+  "2026-06-17T22:04:54.799Z",codex-audit-20260618,"Sub-agent performance audit evidence: current repo has 1293 history streams, 20691 entries, 24641681 bytes; hotspot remains src/core/history/drift-scan.ts full stream read/content_hash on metadata cache hits. Recommended safe shape: add cacheHitVerification mode, use stat-fingerprint for health warm-cache, keep history-repair --all on content-hash, bump drift cache version, and test health/validate/repair callers separately. Not bundled into GH-262/templates branch because it changes shared drift-scan correctness semantics."
+  "2026-06-17T23:12:21.038Z",codex-audit-agent,"Audit decision: performance subagent confirmed pm health hotspot remains drift-scan cache-hit content hashing across 1293 streams/24.6MB; this branch did not change it because a cache-hit verification mode/stat-fingerprint optimization needs separate correctness design. Current command-profile fixture paths remain low-ms; package-first dogfood slowest health brief/health around ~516ms in isolated temp project."
 body: ""

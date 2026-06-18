@@ -185,7 +185,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
     registerListCommand("list-in-progress", "List in-progress items with optional filters.", "in_progress", false, false, true);
   }
   if (shouldRegister("list-blocked")) {
-    registerListCommand("list-blocked", "List blocked items with optional filters.", "blocked");
+    registerListCommand("list-blocked", "List blocked items with optional filters.", "blocked", false, false, true);
   }
   if (shouldRegister("list-closed")) {
     registerListCommand("list-closed", "List closed items with optional filters.", "closed");
