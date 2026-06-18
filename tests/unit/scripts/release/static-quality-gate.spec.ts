@@ -313,6 +313,29 @@ describe("static-quality-gate", () => {
       ]);
     });
 
+    it("checkExportedDocstringCoverage does not reuse the module docstring for the first export", async () => {
+      mockUtils("/repo");
+      const fileBodies: Record<string, string> = {
+        "/repo/src/a.ts": [
+          "/** Plain module documentation without an @module tag. */",
+          "export function missingOwnDocstring() { return true; }",
+          "/** Runs the documented API. */",
+          "export const documentedArrow = () => true;",
+        ].join("\n"),
+      };
+      mockFs({
+        readFileSync: vi.fn((p: string) => fileBodies[String(p)] ?? "") as never,
+      });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const report = mod.checkExportedDocstringCoverage(Object.keys(fileBodies), 100);
+      expect(report.ok).toBe(false);
+      expect(report.total).toBe(2);
+      expect(report.documented).toBe(1);
+      expect(report.missing).toEqual([
+        { path: "src/a.ts", line: 2, name: "missingOwnDocstring", reason: "missing_exported_docstring" },
+      ]);
+    });
+
     it("checkDocstringBoilerplate flags generated low-signal summaries", async () => {
       mockUtils("/repo");
       const fileBodies: Record<string, string> = {
@@ -320,6 +343,7 @@ describe("static-quality-gate", () => {
           "/**",
           " * Provides the exported run thing operation used by the pm CLI runtime and integration tests.",
           " */",
+          "/* regular multiline comments are ignored by the boilerplate matcher */",
           "// plain leading comments are ignored by the boilerplate matcher",
           "export function runThing() { return true; }",
           "/**",
@@ -340,7 +364,7 @@ describe("static-quality-gate", () => {
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       expect(mod.checkDocstringBoilerplate(Object.keys(fileBodies))).toEqual([
         { path: "src/a.ts", line: 1, reason: "boilerplate_docstring" },
-        { path: "src/a.ts", line: 6, reason: "boilerplate_docstring" },
+        { path: "src/a.ts", line: 7, reason: "boilerplate_docstring" },
         { path: "src/b.ts", line: 1, reason: "boilerplate_docstring" },
       ]);
     });

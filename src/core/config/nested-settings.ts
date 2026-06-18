@@ -23,6 +23,7 @@
  * already-validated PmSettings shape.
  */
 
+/** Supported coercion shapes for nested settings exposed through `pm config`. */
 export type NestedSettingKind = "string" | "boolean" | "integer" | "number" | "ratio";
 
 /**

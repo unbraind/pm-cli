@@ -13,6 +13,7 @@
  * the already-collected stale-link rows plus a metadata `lookup` closure.
  */
 
+/** Classification assigned to a stale linked path during files validation. */
 export type StaleLinkClassification = "moved" | "deleted";
 
 /**

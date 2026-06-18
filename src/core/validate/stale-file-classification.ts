@@ -12,6 +12,7 @@
  * already-collected candidate file list from the files check scan.
  */
 
+/** Classification labels for linked paths that no longer exist on disk. */
 export type StaleLinkedPathClassification = "moved" | "deleted";
 
 /**

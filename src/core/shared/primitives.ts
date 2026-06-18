@@ -7,6 +7,7 @@
  * several CLI command modules.
  */
 
+/** Return a trimmed non-empty string, or `null` for non-string/blank input. */
 export function toNonEmptyString(value: unknown): string | null {
   if (typeof value !== "string") {
     return null;

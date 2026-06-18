@@ -208,17 +208,6 @@ function hasExportModifier(node) {
   return node.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword) === true;
 }
 
-function isExportedVariableFunction(node) {
-  return (
-    (ts.isArrowFunction(node) || ts.isFunctionExpression(node)) &&
-    ts.isVariableDeclaration(node.parent) &&
-    ts.isVariableDeclarationList(node.parent.parent) &&
-    ts.isVariableStatement(node.parent.parent.parent) &&
-    hasExportModifier(node.parent.parent.parent) &&
-    ts.isIdentifier(node.parent.name)
-  );
-}
-
 function exportedDocstringTarget(node) {
   if (
     (ts.isFunctionDeclaration(node) ||
@@ -230,8 +219,15 @@ function exportedDocstringTarget(node) {
   ) {
     return node;
   }
-  if (isExportedVariableFunction(node)) {
-    return node.parent.parent.parent;
+  if (ts.isVariableStatement(node) && hasExportModifier(node)) {
+    const hasFunctionInitializer = node.declarationList.declarations.some(
+      (declaration) =>
+        declaration.initializer &&
+        (ts.isArrowFunction(declaration.initializer) || ts.isFunctionExpression(declaration.initializer)),
+    );
+    if (hasFunctionInitializer) {
+      return node;
+    }
   }
   return undefined;
 }
@@ -247,8 +243,14 @@ function declarationName(node) {
 
 function hasNodeDocstring(sourceFile, node) {
   const fullText = sourceFile.getFullText();
+  const strippedText = stripShebang(fullText);
+  const moduleDocRelativeStart = strippedText.trimStart().startsWith("/**") ? strippedText.indexOf("/**") : -1;
+  const moduleDocStart = moduleDocRelativeStart === -1 ? -1 : fullText.length - strippedText.length + moduleDocRelativeStart;
   const ranges = ts.getLeadingCommentRanges(fullText, node.pos) ?? [];
   return ranges.some((range) => {
+    if (range.pos === moduleDocStart) {
+      return false;
+    }
     const comment = fullText.slice(range.pos, range.end);
     return comment.startsWith("/**") && !comment.includes("@module");
   });
@@ -261,27 +263,24 @@ export function checkExportedDocstringCoverage(files, minCoveragePercent) {
   for (const absolutePath of sourceFilesOnly(files)) {
     const sourceText = loadText(absolutePath);
     const sourceFile = ts.createSourceFile(absolutePath, sourceText, ts.ScriptTarget.Latest, true);
-    const seen = new Set();
-    const visit = (node) => {
+    for (const node of sourceFile.statements) {
       const target = exportedDocstringTarget(node);
-      if (target && !seen.has(target.pos)) {
-        seen.add(target.pos);
-        total += 1;
-        if (hasNodeDocstring(sourceFile, target)) {
-          documented += 1;
-        } else {
-          const start = sourceFile.getLineAndCharacterOfPosition(target.getStart(sourceFile));
-          missing.push({
-            path: relativeToRepo(absolutePath),
-            line: start.line + 1,
-            name: declarationName(target),
-            reason: "missing_exported_docstring",
-          });
-        }
+      if (!target) {
+        continue;
       }
-      ts.forEachChild(node, visit);
-    };
-    visit(sourceFile);
+      total += 1;
+      if (hasNodeDocstring(sourceFile, target)) {
+        documented += 1;
+        continue;
+      }
+      const start = sourceFile.getLineAndCharacterOfPosition(target.getStart(sourceFile));
+      missing.push({
+        path: relativeToRepo(absolutePath),
+        line: start.line + 1,
+        name: declarationName(target),
+        reason: "missing_exported_docstring",
+      });
+    }
   }
   const coveragePercent = total === 0 ? 100 : (documented / total) * 100;
   return {
@@ -303,37 +302,27 @@ const BOILERPLATE_DOCSTRING_PATTERNS = [
 export function checkDocstringBoilerplate(files) {
   const violations = [];
   for (const absolutePath of sourceFilesOnly(files)) {
-    const sourceFile = ts.createSourceFile(absolutePath, loadText(absolutePath), ts.ScriptTarget.Latest, true);
-    const fullText = sourceFile.getFullText();
-    const ranges = ts.getLeadingCommentRanges(fullText, 0) ?? [];
-    const commentRanges = [...ranges];
-    const visit = (node) => {
-      const leading = ts.getLeadingCommentRanges(fullText, node.pos) ?? [];
-      commentRanges.push(...leading);
-      ts.forEachChild(node, visit);
-    };
-    visit(sourceFile);
-    const seen = new Set();
-    for (const range of commentRanges) {
-      const key = `${range.pos}:${range.end}`;
-      if (seen.has(key)) {
-        continue;
+    const sourceText = loadText(absolutePath);
+    const sourceFile = ts.createSourceFile(absolutePath, sourceText, ts.ScriptTarget.Latest, true);
+    const scanner = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.Standard, sourceText);
+    let token = scanner.scan();
+    while (token !== ts.SyntaxKind.EndOfFileToken) {
+      if (token === ts.SyntaxKind.MultiLineCommentTrivia) {
+        const commentStart = scanner.getTokenPos();
+        const comment = sourceText.slice(commentStart, scanner.getTextPos());
+        if (comment.startsWith("/**")) {
+          const matched = BOILERPLATE_DOCSTRING_PATTERNS.find((pattern) => pattern.test(comment));
+          if (matched) {
+            const start = sourceFile.getLineAndCharacterOfPosition(commentStart);
+            violations.push({
+              path: relativeToRepo(absolutePath),
+              line: start.line + 1,
+              reason: "boilerplate_docstring",
+            });
+          }
+        }
       }
-      seen.add(key);
-      const comment = fullText.slice(range.pos, range.end);
-      if (!comment.startsWith("/**")) {
-        continue;
-      }
-      const matched = BOILERPLATE_DOCSTRING_PATTERNS.find((pattern) => pattern.test(comment));
-      if (!matched) {
-        continue;
-      }
-      const start = sourceFile.getLineAndCharacterOfPosition(range.pos);
-      violations.push({
-        path: relativeToRepo(absolutePath),
-        line: start.line + 1,
-        reason: "boilerplate_docstring",
-      });
+      token = scanner.scan();
     }
   }
   return violations.sort((left, right) => left.path.localeCompare(right.path) || left.line - right.line);

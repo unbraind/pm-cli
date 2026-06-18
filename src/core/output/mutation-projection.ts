@@ -19,6 +19,7 @@
  * MCP server, and returns the original reference unchanged when nothing is compacted.
  */
 
+/** Controls whether mutation output keeps full changed fields or compact counts. */
 export type ChangedFieldsMode = "full" | "compact";
 
 /**

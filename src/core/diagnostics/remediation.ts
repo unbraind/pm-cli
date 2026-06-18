@@ -18,6 +18,7 @@
  * {@link RemediationEntry.summary}.
  */
 
+/** Maps a stable diagnostic warning code to the command and summary that resolve it. */
 export interface RemediationEntry {
   /**
    * Stable warning-code prefix this entry resolves. A warning matches when it

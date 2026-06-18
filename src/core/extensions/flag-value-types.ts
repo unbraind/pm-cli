@@ -4,6 +4,7 @@
  * aliases (`int`/`integer`/`float` -> number, `bool` -> boolean) so author
  * intent is honored without surprises.
  */
+/** Canonical scalar value kinds accepted by extension command flag definitions. */
 export type FlagValueKind = "string" | "number" | "boolean";
 
 const FLAG_VALUE_KIND_BY_ALIAS: Readonly<Record<string, FlagValueKind>> = Object.freeze({

@@ -8,6 +8,7 @@
  * `{ Task: { close_reason: 3, reviewer: 1 } }`.
  */
 
+/** One missing required metadata field observed on an item of a specific type. */
 export interface MissingFieldOccurrence {
   /** Item type name as stored in front matter (e.g. "Task"). */
   item_type: string;

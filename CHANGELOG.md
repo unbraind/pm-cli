@@ -28,8 +28,8 @@
 
 ### Other
 
-- SDK.md PM\_PACKAGE\_RESOURCE\_KINDS drift: assets/prompts kinds missing ([pm-u8y9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-u8y9.toon))
 - Repo-wide docstring coverage gate for source files ([pm-p4mw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-p4mw.toon))
+- SDK.md PM\_PACKAGE\_RESOURCE\_KINDS drift: assets/prompts kinds missing ([pm-u8y9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-u8y9.toon))
 - GH-277: files --remove path-only input clarity ([pm-k8ld](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-k8ld.toon))
 - GH-276: metadata check skip terminal items for planning fields ([pm-pktw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-pktw.toon))
 - GH-278: duplicate\_issue\_codes exclude items closed-as-duplicate ([pm-5fid](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5fid.toon))

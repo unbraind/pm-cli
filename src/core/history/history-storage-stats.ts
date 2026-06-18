@@ -4,6 +4,7 @@
  * This module has no Node imports; Buffer is available as a global.
  */
 
+/** Per-history-stream size and timestamp summary used by storage diagnostics. */
 export interface HistoryStreamStat {
   id: string;
   bytes: number;

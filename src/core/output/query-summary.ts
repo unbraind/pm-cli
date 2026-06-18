@@ -8,6 +8,7 @@
  * without the agent re-echoing its inputs.
  */
 
+/** Compact echo of filters and projection mode applied to list/search responses. */
 export interface QuerySummary {
   filters: Record<string, unknown>;
   projection: string;
