@@ -16,6 +16,10 @@
 - Validate governance accuracy: suppress false-positive duplicate-code & terminal-item metadata noise + files --remove input clarity ([pm-6bz1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-6bz1.toon))
 - Sub-hour duration granularity for scheduling: support minutes in --duration / event duration= ([pm-zoe4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-zoe4.toon))
 
+### Changed
+
+- pm update --allow-audit-update: permit append-only --comment/--file/--doc evidence \(GH-207\) ([pm-kanu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kanu.toon))
+
 ### Fixed
 
 - GH-206: test-all silent run process-liveness regression ([pm-mcxr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mcxr.toon))

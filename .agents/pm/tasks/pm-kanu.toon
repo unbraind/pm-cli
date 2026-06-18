@@ -2,13 +2,29 @@ id: pm-kanu
 title: "pm update --allow-audit-update: permit append-only --comment/--file/--doc evidence (GH-207)"
 description: ""
 type: Task
-status: open
+status: closed
 priority: 2
 tags[4]: "area:cli",audit,ergonomics,gh-207
 created_at: "2026-06-13T20:54:33.757Z"
-updated_at: "2026-06-13T20:59:27.028Z"
+updated_at: "2026-06-18T23:35:54.363Z"
 author: claude-code-agent
 parent: pm-mpbb
-comments[1]{created_at,author,text}:
+resolution: "Allowed non-owner audit evidence appends through pm update --allow-audit-update for comments, files, and docs only."
+expected_result: "Agents can append audit comments and linked file/doc evidence in one audited update without claiming another owner's item, while unsafe mutation classes stay blocked."
+actual_result: Focused and full coverage regression tests verify allowed evidence appends plus blocked unsafe audit-update fields; temp project smoke confirmed CLI behavior.
+comments[4]{created_at,author,text}:
   "2026-06-13T20:59:27.028Z",claude-code-agent,"DEFERRED (design tension): GH-207 was already deliberately addressed (code comment 'GH-207' in update.ts) — append-style --comment/--file/--doc are intentionally routed through dedicated commands (pm comments --allow-audit-comment, pm files --force) with exact retry guidance in the audit-scope error. Reversing that to permit inline non-owner appends under --allow-audit-update changes a documented decision and the audit-scope security story. Keeping restricted; the retry guidance already gives a one-paste path. Revisit only with explicit maintainer sign-off."
+  "2026-06-18T23:28:25.039Z",codex-implementation,"Evidence update: focused unit test passed (95 tests); build/contracts/docs-links/changelog/security checks passed; temp-dir smoke verified non-owner --allow-audit-update appends comment/file/doc and still rejects --test; dependency sweep found commander 15 latest but skipped because it requires Node >=22.12 while package engines remain >=20; Auto Release push-race failure maps to closed pm-5oti and current main has retry/rebase helper with latest manual Auto Release green."
+  "2026-06-18T23:29:44.632Z",codex-implementation,"Coverage follow-up: first full coverage run failed only because the removed --comment restriction left replacement-map branches for --file/--doc uncovered in update.ts; added focused helper assertions for those replacement commands and rerunning focused tests plus coverage."
+  "2026-06-18T23:35:41.712Z",codex-implementation,"Final local verification: focused update suite passed (95 tests); full coverage passed 228 files / 4609 tests with 100% statements, branches, functions, and lines; typecheck, static quality, docs-skills, docs-links, version check, contracts check, changelog check, security scan, audit, package doctor, telemetry status, Sentry 24h unresolved query, and temp-dir GH-207 smoke passed or were clean. Existing validate resolution warnings are backlog-wide and history drift is ok."
+files[2]{path,scope,note}:
+  src/cli/commands/update.ts,project,Allow --allow-audit-update to append comment/file/doc evidence
+  tests/unit/commands/update-command.spec.ts,project,Regression coverage for GH-207 audit evidence appends
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,360,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/commands/update-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+docs[2]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,Document agent ownership/audit evidence guidance
+  docs/COMMANDS.md,project,Document audit evidence update boundary
+close_reason: "Implemented GH-207 audit evidence appends: --allow-audit-update now permits append-only --comment/--file/--doc evidence while lifecycle, dependency, test, note, learning, reminder/event, and clear/replace mutations remain restricted; tests, docs, coverage, temp smoke, dependency/security, Sentry, telemetry, and release-health checks completed."
 body: "During a 3d-bots audit, pm update --allow-audit-update --comment/--file/--doc was rejected as restricted, forcing separate pm comments/files/docs calls. These are append-only non-lifecycle additions that match the audit-update intent. Permit them under --allow-audit-update (keep lifecycle/destructive flags restricted)."

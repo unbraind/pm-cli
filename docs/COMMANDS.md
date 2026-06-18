@@ -304,6 +304,21 @@ pm update <id> --parent <parent-id>
 pm append <id> --body "Detailed implementation notes."
 ```
 
+For audit evidence on an item owned by another agent, `pm update --allow-audit-update`
+can make non-lifecycle metadata updates and append comments, linked files, and linked
+docs in one audited history entry. It is intentionally append-only for evidence:
+lifecycle/ownership fields, dependencies, tests, notes, learnings, reminders, events,
+and all clear/replace operations stay restricted or use their dedicated commands.
+
+```bash
+pm update <id> \
+  --allow-audit-update \
+  --comment "Audit evidence: reproduced in staging" \
+  --file "path=src/cli/commands/update.ts,scope=project,note=audit evidence" \
+  --doc "path=docs/COMMANDS.md,scope=project,note=user-facing behavior" \
+  --message "Append audit evidence"
+```
+
 `--expected` and `--actual` are short aliases for `--expected-result` and `--actual-result` on `create`/`update`/`update-many`, matching the aliases `pm close` already accepts:
 
 ```bash

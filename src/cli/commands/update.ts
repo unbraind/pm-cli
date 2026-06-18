@@ -500,7 +500,7 @@ function parseUpdateUnsetTargets(
   return { frontMatterKeys, optionKeys };
 }
 
-// GH-207: restricted append-style flags have dedicated commands with their own
+// Restricted append-style flags have dedicated commands with their own
 // audit/override semantics; map each one to its exact replacement invocation so
 // the audit-scope error tells the agent how to retry instead of dead-ending.
 // Flag names verified against register-mutation.ts (comments has
@@ -519,8 +519,8 @@ function buildAuditScopeRestrictedOptionsError(params: {
   why: string;
   disallowedFlags: string[];
 }): PmCliError {
-  // GH-207: only surface replacement commands for restricted flags the caller
-  // actually passed, so the guidance is an exact retry path.
+  // Only surface replacement commands for restricted flags the caller actually
+  // passed, so the guidance is an exact retry path.
   const replacementCommands = params.disallowedFlags
     .filter((flag) => AUDIT_RESTRICTED_FLAG_REPLACEMENTS.has(flag))
     .map((flag) => AUDIT_RESTRICTED_FLAG_REPLACEMENTS.get(flag)!(params.id));
@@ -675,23 +675,14 @@ function enforceAllowAuditUpdateScope(id: string, options: UpdateCommandOptions,
   if (options.replaceTests === true) {
     disallowedFlags.push("--replace-tests");
   }
-  if (options.comment !== undefined) {
-    disallowedFlags.push("--comment");
-  }
   if (options.note !== undefined) {
     disallowedFlags.push("--note");
   }
   if (options.learning !== undefined) {
     disallowedFlags.push("--learning");
   }
-  if (options.file !== undefined) {
-    disallowedFlags.push("--file");
-  }
   if (options.test !== undefined) {
     disallowedFlags.push("--test");
-  }
-  if (options.doc !== undefined) {
-    disallowedFlags.push("--doc");
   }
   if (options.reminder !== undefined) {
     disallowedFlags.push("--reminder");

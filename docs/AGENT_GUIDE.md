@@ -159,7 +159,8 @@ Use the canonical [guide topic map](README.md#guide-topic-map) when local in-CLI
 - Claim before heavy edits.
 - `pm claim <id>` can take over non-terminal work from another owner.
 - Use `--force` only for explicit override paths.
-- For append-only audit comments on another owner item, use `--allow-audit-comment`.
+- For append-only audit comments on another owner item, use `pm comments --allow-audit-comment`.
+- To append audit evidence in one item update, use `pm update --allow-audit-update` with non-lifecycle metadata plus append-only `--comment`, `--file`, and `--doc`; use dedicated commands for tests, notes, learnings, lifecycle changes, and clear/replace operations.
 - Release when pausing, handing off, or after close.
 
 ## Documentation Rules for Agents
