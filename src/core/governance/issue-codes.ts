@@ -140,8 +140,16 @@ export function findDuplicateIssueCodes(items: readonly IssueCodeItem[]): Duplic
     }
     // GH-275: drop children whose parent is another item carrying the same code
     // (intentional `PARENT` + `PARENT-T0n` breakdown), then re-check the group.
-    const idsInGroup = new Set(entries.map((entry) => entry.id));
-    const collisionEntries = entries.filter((entry) => entry.parent === null || !idsInGroup.has(entry.parent));
+    // The parent reference is resolved only against the same-code group on
+    // purpose: a child is by-design noise solely when its parent shares the code
+    // (resolving against the full corpus would suppress genuinely colliding
+    // siblings whose parent merely exists elsewhere). Comparison is
+    // case-insensitive so a `parent` reference recorded in a different case than
+    // the canonical id (e.g. an upper-case `id_prefix`) still matches.
+    const idsInGroup = new Set(entries.map((entry) => entry.id.toLowerCase()));
+    const collisionEntries = entries.filter(
+      (entry) => entry.parent === null || !idsInGroup.has(entry.parent.toLowerCase()),
+    );
     if (collisionEntries.length < 2) {
       continue;
     }

@@ -217,6 +217,16 @@ describe("findDuplicateIssueCodes", () => {
     expect(findDuplicateIssueCodes(items)).toEqual([]);
   });
 
+  it("matches a parent reference case-insensitively against group ids (GH-275 review)", () => {
+    const items: IssueCodeItem[] = [
+      { id: "PM-PARENT", title: "TASK-11: parent" },
+      { id: "pm-child", title: "TASK-11: child", parent: "pm-parent" },
+    ];
+    // Child's lower-case `parent` resolves to the upper-case canonical id, so
+    // the intentional prefix sharing is suppressed rather than flagged.
+    expect(findDuplicateIssueCodes(items)).toEqual([]);
+  });
+
   it("resolves a mixed group: closed-dup excluded, child collapsed, two genuine dups survive", () => {
     const items: IssueCodeItem[] = [
       { id: "pm-parent", title: "TASK-10: parent epic" },
