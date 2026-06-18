@@ -163,6 +163,7 @@ export interface ValidateCommandOptions {
   checkLifecycle?: boolean;
   checkStaleBlockers?: boolean;
   dependencyCycleSeverity?: string;
+  parentCycleSeverity?: string;
   checkFiles?: boolean;
   includePmInternals?: boolean;
   verboseFileLists?: boolean;
@@ -345,6 +346,20 @@ function resolveDependencyCycleSeverity(value: string | undefined): ValidateDepe
   }
   throw new PmCliError(
     `Unknown --dependency-cycle-severity value "${value}". Supported values: ${VALIDATE_DEPENDENCY_CYCLE_SEVERITY_VALUES.join(", ")}.`,
+    EXIT_CODE.USAGE,
+  );
+}
+
+function resolveParentCycleSeverity(value: string | undefined): ValidateDependencyCycleSeverity {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized || normalized.length === 0) {
+    return "warn";
+  }
+  if ((VALIDATE_DEPENDENCY_CYCLE_SEVERITY_VALUES as readonly string[]).includes(normalized)) {
+    return normalized as ValidateDependencyCycleSeverity;
+  }
+  throw new PmCliError(
+    `Unknown --parent-cycle-severity value "${value}". Supported values: ${VALIDATE_DEPENDENCY_CYCLE_SEVERITY_VALUES.join(", ")}.`,
     EXIT_CODE.USAGE,
   );
 }
@@ -1204,6 +1219,52 @@ function detectLifecycleDependencyCycles(activeItems: ItemWithBody[], idPrefix =
   };
 }
 
+// Parent (composition) cycle detection (pm-8vul / GH-280). The dependency-cycle
+// path above only walks blocked_by/definition_of_ready edges across ACTIVE items;
+// it never traverses item.parent, so a parent cycle (A.parent=B, B.parent=A, or
+// any longer ring) goes undetected while it silently breaks `pm list --tree`,
+// orphan detection, and progress rollups. We reuse the generic Tarjan SCC helper
+// on a child->[parent] adjacency map. Unlike dependency cycles we scan ALL items
+// (not just active ones) because a parent cycle among closed items is still
+// structural corruption of the hierarchy.
+function buildLifecycleParentGraph(items: ItemWithBody[]): Map<string, string[]> {
+  // PR #279 made parent matching case-insensitive (e.g. `parent: PM-FK49`
+  // resolves to `id: pm-fk49`). Resolve parent references to their canonical
+  // item id the same way so a casing mismatch can never silently drop a cycle
+  // edge and hide a parent cycle (false negative).
+  const canonicalIdByLowercase = new Map(items.map((item) => [item.id.toLowerCase(), item.id]));
+  const graph = new Map<string, string[]>();
+  const sortedItems = [...items].sort((left, right) => left.id.localeCompare(right.id));
+  for (const item of sortedItems) {
+    const edges: string[] = [];
+    const parentId = toMeaningfulString(item.parent);
+    const canonicalParentId = parentId ? canonicalIdByLowercase.get(parentId.toLowerCase()) : undefined;
+    if (canonicalParentId) {
+      edges.push(canonicalParentId);
+    }
+    graph.set(item.id, edges);
+  }
+  return graph;
+}
+
+function detectLifecycleParentCycles(items: ItemWithBody[]): {
+  cycle_count: number;
+  cycle_item_ids: string[];
+  cycle_sample_paths: string[];
+} {
+  const graph = buildLifecycleParentGraph(items);
+  const cycleComponents = findLifecycleDependencyCycleComponents(graph);
+  const cycleItemIds = [...new Set(cycleComponents.flat())].sort((left, right) => left.localeCompare(right));
+  const cycleSamplePaths = cycleComponents.map((component) =>
+    resolveLifecycleDependencyCycleSamplePath(component, graph).join("->"),
+  );
+  return {
+    cycle_count: cycleComponents.length,
+    cycle_item_ids: cycleItemIds,
+    cycle_sample_paths: cycleSamplePaths,
+  };
+}
+
 interface OrphanedPathRow {
   path: string;
   classification: OrphanedPathClassification;
@@ -1329,6 +1390,7 @@ function buildLifecycleCheck(
   items: ItemWithBody[],
   includeStaleBlockers: boolean,
   dependencyCycleSeverity: ValidateDependencyCycleSeverity,
+  parentCycleSeverity: ValidateDependencyCycleSeverity,
   statusRegistry: RuntimeStatusRegistry,
   lifecyclePatternPolicy: LifecyclePatternPolicy,
   verboseDiagnostics: boolean,
@@ -1434,6 +1496,7 @@ function buildLifecycleCheck(
   );
   staleBlockerRows.sort((left, right) => left.id.localeCompare(right.id));
   const dependencyCycleDiagnostics = detectLifecycleDependencyCycles(activeItems, idPrefix);
+  const parentCycleDiagnostics = detectLifecycleParentCycles(items);
 
   const warnings: string[] = [];
   if (closureLikeRows.length > 0) {
@@ -1454,6 +1517,15 @@ function buildLifecycleCheck(
       }:${dependencyCycleDiagnostics.cycle_count}`,
     );
   }
+  if (parentCycleDiagnostics.cycle_count > 0 && parentCycleSeverity !== "off") {
+    warnings.push(
+      `${
+        parentCycleSeverity === "error"
+          ? "validate_hierarchy_parent_cycle_error"
+          : "validate_hierarchy_parent_cycle"
+      }:${parentCycleDiagnostics.cycle_count}`,
+    );
+  }
 
   const diagnosticLimit = verboseDiagnostics ? Number.POSITIVE_INFINITY : DIAGNOSTIC_LIST_SUMMARY_LIMIT;
   const summarizedClosureLikeRows = summarizeList(
@@ -1470,11 +1542,17 @@ function buildLifecycleCheck(
   );
   const summarizedDependencyCycleItemIds = summarizeList(dependencyCycleDiagnostics.cycle_item_ids, diagnosticLimit);
   const summarizedDependencyCycleSamplePaths = summarizeList(dependencyCycleDiagnostics.cycle_sample_paths, diagnosticLimit);
+  const summarizedParentCycleItemIds = summarizeList(parentCycleDiagnostics.cycle_item_ids, diagnosticLimit);
+  const summarizedParentCycleSamplePaths = summarizeList(parentCycleDiagnostics.cycle_sample_paths, diagnosticLimit);
+
+  const hasErrorSeverityCycle =
+    (dependencyCycleDiagnostics.cycle_count > 0 && dependencyCycleSeverity === "error") ||
+    (parentCycleDiagnostics.cycle_count > 0 && parentCycleSeverity === "error");
 
   return {
     check: {
       name: "lifecycle",
-      status: dependencyCycleDiagnostics.cycle_count > 0 && dependencyCycleSeverity === "error"
+      status: hasErrorSeverityCycle
         ? "error"
         : warnings.length === 0
           ? "ok"
@@ -1498,6 +1576,13 @@ function buildLifecycleCheck(
         dependency_cycle_item_ids_truncated: summarizedDependencyCycleItemIds.truncated,
         dependency_cycle_sample_paths: summarizedDependencyCycleSamplePaths.values,
         dependency_cycle_sample_paths_truncated: summarizedDependencyCycleSamplePaths.truncated,
+        parent_cycle_severity_policy: parentCycleSeverity,
+        parent_cycle_count: parentCycleDiagnostics.cycle_count,
+        parent_cycle_item_count: parentCycleDiagnostics.cycle_item_ids.length,
+        parent_cycle_item_ids: summarizedParentCycleItemIds.values,
+        parent_cycle_item_ids_truncated: summarizedParentCycleItemIds.truncated,
+        parent_cycle_sample_paths: summarizedParentCycleSamplePaths.values,
+        parent_cycle_sample_paths_truncated: summarizedParentCycleSamplePaths.truncated,
         stale_blocker_reason_patterns: [...lifecyclePatternPolicy.stale_blocker_reason_patterns],
         stale_blocker_reason_pattern_source: lifecyclePatternPolicy.stale_blocker_reason_pattern_source,
         closure_like_blocked_reason_patterns: [
@@ -1946,17 +2031,20 @@ export const _testOnlyValidateCommand = {
   buildFilesCheck,
   buildLifecycleCheck,
   buildLifecycleDependencyGraph,
+  buildLifecycleParentGraph,
   buildOrphanedPathRows,
   classifyOrphanedPath,
   collectDefaultProjectFileCandidates,
   collectTrackedGitFileCandidates,
   detectLifecycleDependencyCycles,
+  detectLifecycleParentCycles,
   escapeRegExp,
   extractItemIds,
   findLifecycleDependencyCycleComponents,
   isMetadataFieldMissing,
   listFilesRecursive,
   resolveDependencyCycleSeverity,
+  resolveParentCycleSeverity,
   resolveFileScanMode,
   resolveLifecycleDependencyCycleSamplePath,
   resolveRequestedChecks,
@@ -2011,6 +2099,7 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
   );
   const lifecyclePatternPolicy = resolveLifecyclePatternPolicy(settings);
   const dependencyCycleSeverity = resolveDependencyCycleSeverity(options.dependencyCycleSeverity);
+  const parentCycleSeverity = resolveParentCycleSeverity(options.parentCycleSeverity);
   const fileScanMode = resolveFileScanMode(options.scanMode);
   const workspaceRoot = resolveWorkspaceRoot(pmRoot);
   const checks: ValidateCheck[] = [];
@@ -2051,6 +2140,7 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
       items,
       Boolean(options.checkStaleBlockers),
       dependencyCycleSeverity,
+      parentCycleSeverity,
       statusRegistry,
       lifecyclePatternPolicy,
       fullDiagnostics,

@@ -361,6 +361,7 @@ export function registerOperationCommands(program: Command): void {
     .option("--check-lifecycle", "Run active-item lifecycle governance drift checks")
     .option("--check-stale-blockers", "Include stale blocker-pattern diagnostics in lifecycle checks")
     .option("--dependency-cycle-severity <value>", "Set dependency-cycle warning policy for lifecycle checks (off|warn|error)")
+    .option("--parent-cycle-severity <value>", "Set parent-hierarchy cycle warning policy for lifecycle checks (off|warn|error)")
     .option("--check-files", "Run linked-file and orphaned-file checks")
     .option("--check-command-references", "Run linked-command PM-ID reference checks")
     .option("--scan-mode <value>", "Select file candidate scan mode for --check-files (default|tracked-all|tracked-all-strict)")
@@ -387,6 +388,7 @@ export function registerOperationCommands(program: Command): void {
         checkLifecycle: Boolean(options.checkLifecycle),
         checkStaleBlockers: Boolean(options.checkStaleBlockers),
         dependencyCycleSeverity: typeof options.dependencyCycleSeverity === "string" ? options.dependencyCycleSeverity : undefined,
+        parentCycleSeverity: typeof options.parentCycleSeverity === "string" ? options.parentCycleSeverity : undefined,
         checkFiles: Boolean(options.checkFiles),
         checkCommandReferences: Boolean(options.checkCommandReferences),
         scanMode: typeof options.scanMode === "string" ? options.scanMode : undefined,

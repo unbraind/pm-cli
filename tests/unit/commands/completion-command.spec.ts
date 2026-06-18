@@ -293,7 +293,7 @@ describe("generateBashScript", () => {
   it("includes validate scan-mode flag in bash completion", () => {
     const script = generateBashScript();
     expect(script).toContain(
-      "--check-metadata --metadata-profile --check-resolution --check-lifecycle --check-stale-blockers --dependency-cycle-severity --check-files --scan-mode --include-pm-internals --verbose-file-lists --verbose-diagnostics --all-affected-ids --strict-exit --fail-on-warn --fix-hints --auto-fix --dry-run --fix-scope --prune-missing --check-history-drift --check-command-references",
+      "--check-metadata --metadata-profile --check-resolution --check-lifecycle --check-stale-blockers --dependency-cycle-severity --parent-cycle-severity --check-files --scan-mode --include-pm-internals --verbose-file-lists --verbose-diagnostics --all-affected-ids --strict-exit --fail-on-warn --fix-hints --auto-fix --dry-run --fix-scope --prune-missing --check-history-drift --check-command-references",
     );
   });
 

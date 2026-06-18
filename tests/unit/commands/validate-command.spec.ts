@@ -68,6 +68,29 @@ function seedDependencyCycle(context: TempPmContext): [string, string, string] {
   return [first, second, third];
 }
 
+function seedParentCycle(context: TempPmContext, length: 2 | 3 = 3): string[] {
+  const ids =
+    length === 2
+      ? [createTask(context, "validate-parent-cycle-a"), createTask(context, "validate-parent-cycle-b")]
+      : [
+          createTask(context, "validate-parent-cycle-a"),
+          createTask(context, "validate-parent-cycle-b"),
+          createTask(context, "validate-parent-cycle-c"),
+        ];
+  // Wire each item's parent to the next, closing the ring back to the first
+  // (A->B->...->A) so the composition graph contains a true cycle.
+  for (let index = 0; index < ids.length; index += 1) {
+    const child = ids[index]!;
+    const parent = ids[(index + 1) % ids.length]!;
+    const updated = context.runCli(
+      ["update", child, "--parent", parent, "--json", "--message", "Seed parent-hierarchy cycle edge"],
+      { expectJson: true },
+    );
+    expect(updated.code).toBe(0);
+  }
+  return ids;
+}
+
 function checkByName(result: Awaited<ReturnType<typeof runValidate>>, name: string): Record<string, unknown> {
   const found = result.checks.find((entry) => entry.name === name);
   expect(found).toBeDefined();
@@ -209,6 +232,38 @@ describe("runValidate", () => {
       ),
     ).toEqual(["pm-a", "pm-z", "pm-a"]);
 
+    // Parent-hierarchy cycle helpers (pm-8vul / GH-280). The child->[parent]
+    // graph guards against dangling parent refs and ignores "none"/blank values,
+    // and scans across ALL items (no active-only filter).
+    expect(validateInternals.resolveParentCycleSeverity("   ")).toBe("warn");
+    expect(validateInternals.resolveParentCycleSeverity("ERROR")).toBe("error");
+    const parentGraph = validateInternals.buildLifecycleParentGraph([
+      { id: "pm-pa", parent: "pm-pb" },
+      { id: "pm-pb", parent: "pm-pa" },
+      { id: "pm-pc", parent: "none" },
+      { id: "pm-pd", parent: "pm-missing" },
+      { id: "pm-pe" },
+      // Case-insensitive parent resolution (matches PR #279): an uppercase
+      // parent ref must still resolve to its canonical lowercase item id so a
+      // casing mismatch can never hide a cycle edge.
+      { id: "pm-pf", parent: "PM-PA" },
+    ] as never);
+    expect(parentGraph.get("pm-pa")).toEqual(["pm-pb"]);
+    expect(parentGraph.get("pm-pb")).toEqual(["pm-pa"]);
+    expect(parentGraph.get("pm-pc")).toEqual([]);
+    expect(parentGraph.get("pm-pd")).toEqual([]);
+    expect(parentGraph.get("pm-pe")).toEqual([]);
+    expect(parentGraph.get("pm-pf")).toEqual(["pm-pa"]);
+    const parentCycles = validateInternals.detectLifecycleParentCycles([
+      { id: "pm-pa", parent: "pm-pb" },
+      { id: "pm-pb", parent: "pm-pa" },
+      { id: "pm-pc", parent: "none" },
+    ] as never);
+    expect(parentCycles.cycle_count).toBe(1);
+    expect(parentCycles.cycle_item_ids).toEqual(["pm-pa", "pm-pb"]);
+    expect(parentCycles.cycle_sample_paths[0]).toContain("pm-pa");
+    expect(parentCycles.cycle_sample_paths[0]).toContain("pm-pb");
+
     const lifecyclePolicy = {
       stale_blocker_reason_patterns: ["no active blocker", "stale blocker"],
       stale_blocker_reason_pattern_source: "settings",
@@ -236,6 +291,7 @@ describe("runValidate", () => {
         },
       ] as never,
       true,
+      "warn",
       "warn",
       statusRegistry,
       lifecyclePolicy,
@@ -766,6 +822,136 @@ describe("runValidate", () => {
       createTask(context, "validate-lifecycle-invalid-cycle-severity");
       await expect(
         runValidate({ checkLifecycle: true, dependencyCycleSeverity: "invalid" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
+  it("reports a two-item parent-hierarchy cycle (A->B->A) in lifecycle checks", async () => {
+    await withTempPmPath(async (context) => {
+      const [first, second] = seedParentCycle(context, 2);
+      const result = await runValidate({ checkLifecycle: true }, { path: context.pmPath });
+      expect(result.ok).toBe(true);
+      expect(result.has_warnings).toBe(true);
+      expect(result.warnings).toContain("validate_hierarchy_parent_cycle:1");
+      const lifecycleCheck = checkByName(result, "lifecycle");
+      expect(lifecycleCheck.status).toBe("warn");
+      const details = lifecycleCheck.details as {
+        parent_cycle_severity_policy: string;
+        parent_cycle_count: number;
+        parent_cycle_item_count: number;
+        parent_cycle_item_ids: string[];
+        parent_cycle_item_ids_truncated: boolean;
+        parent_cycle_sample_paths: string[];
+        parent_cycle_sample_paths_truncated: boolean;
+      };
+      expect(details.parent_cycle_severity_policy).toBe("warn");
+      expect(details.parent_cycle_count).toBe(1);
+      expect(details.parent_cycle_item_count).toBe(2);
+      expect(details.parent_cycle_item_ids).toEqual([first, second].sort((left, right) => left.localeCompare(right)));
+      expect(details.parent_cycle_item_ids_truncated).toBe(false);
+      expect(details.parent_cycle_sample_paths).toHaveLength(1);
+      expect(details.parent_cycle_sample_paths_truncated).toBe(false);
+      const cyclePath = details.parent_cycle_sample_paths[0] ?? "";
+      const cycleSegments = cyclePath.split("->");
+      expect(cycleSegments[0]).toBe(cycleSegments[cycleSegments.length - 1]);
+      expect(cyclePath).toContain(first);
+      expect(cyclePath).toContain(second);
+    });
+  });
+
+  it("reports a three-item parent-hierarchy cycle (A->B->C->A)", async () => {
+    await withTempPmPath(async (context) => {
+      const ids = seedParentCycle(context, 3);
+      const result = await runValidate({ checkLifecycle: true }, { path: context.pmPath });
+      expect(result.warnings).toContain("validate_hierarchy_parent_cycle:1");
+      const details = checkByName(result, "lifecycle").details as {
+        parent_cycle_count: number;
+        parent_cycle_item_count: number;
+        parent_cycle_item_ids: string[];
+        parent_cycle_sample_paths: string[];
+      };
+      expect(details.parent_cycle_count).toBe(1);
+      expect(details.parent_cycle_item_count).toBe(3);
+      expect(details.parent_cycle_item_ids).toEqual([...ids].sort((left, right) => left.localeCompare(right)));
+      const cyclePath = details.parent_cycle_sample_paths[0] ?? "";
+      for (const id of ids) {
+        expect(cyclePath).toContain(id);
+      }
+    });
+  });
+
+  it("supports parent-cycle severity policy overrides", async () => {
+    await withTempPmPath(async (context) => {
+      seedParentCycle(context, 2);
+
+      const errorResult = await runValidate(
+        { checkLifecycle: true, parentCycleSeverity: "error" },
+        { path: context.pmPath },
+      );
+      expect(errorResult.ok).toBe(false);
+      expect(errorResult.has_warnings).toBe(true);
+      expect(errorResult.warnings).toContain("validate_hierarchy_parent_cycle_error:1");
+      const errorLifecycleCheck = checkByName(errorResult, "lifecycle");
+      expect(errorLifecycleCheck.status).toBe("error");
+      const errorDetails = errorLifecycleCheck.details as {
+        parent_cycle_severity_policy: string;
+        parent_cycle_count: number;
+      };
+      expect(errorDetails.parent_cycle_severity_policy).toBe("error");
+      expect(errorDetails.parent_cycle_count).toBe(1);
+
+      const offResult = await runValidate(
+        { checkLifecycle: true, parentCycleSeverity: "off" },
+        { path: context.pmPath },
+      );
+      expect(offResult.ok).toBe(true);
+      expect(offResult.warnings.some((warning) => warning.startsWith("validate_hierarchy_parent_cycle"))).toBe(false);
+      const offLifecycleCheck = checkByName(offResult, "lifecycle");
+      expect(offLifecycleCheck.status).toBe("ok");
+      const offDetails = offLifecycleCheck.details as {
+        parent_cycle_severity_policy: string;
+        parent_cycle_count: number;
+      };
+      expect(offDetails.parent_cycle_severity_policy).toBe("off");
+      expect(offDetails.parent_cycle_count).toBe(1);
+    });
+  });
+
+  it("does not flag a normal (acyclic) parent hierarchy", async () => {
+    await withTempPmPath(async (context) => {
+      const root = createTask(context, "validate-parent-acyclic-root");
+      const child = createTask(context, "validate-parent-acyclic-child");
+      const grandchild = createTask(context, "validate-parent-acyclic-grandchild");
+      for (const edge of [
+        { child, parent: root },
+        { child: grandchild, parent: child },
+      ]) {
+        const updated = context.runCli(
+          ["update", edge.child, "--parent", edge.parent, "--json", "--message", "Seed acyclic parent edge"],
+          { expectJson: true },
+        );
+        expect(updated.code).toBe(0);
+      }
+      const result = await runValidate({ checkLifecycle: true }, { path: context.pmPath });
+      expect(result.warnings.some((warning) => warning.startsWith("validate_hierarchy_parent_cycle"))).toBe(false);
+      const details = checkByName(result, "lifecycle").details as {
+        parent_cycle_count: number;
+        parent_cycle_item_count: number;
+        parent_cycle_item_ids: string[];
+      };
+      expect(details.parent_cycle_count).toBe(0);
+      expect(details.parent_cycle_item_count).toBe(0);
+      expect(details.parent_cycle_item_ids).toEqual([]);
+    });
+  });
+
+  it("rejects unknown parent-cycle severity values", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "validate-lifecycle-invalid-parent-cycle-severity");
+      await expect(
+        runValidate({ checkLifecycle: true, parentCycleSeverity: "invalid" }, { path: context.pmPath }),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
