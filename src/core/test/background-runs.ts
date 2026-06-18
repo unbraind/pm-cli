@@ -452,6 +452,10 @@ function parseProgressLine(stderrLine: string): Partial<BackgroundRunProgress> |
       item_index: itemIndex,
       item_total: itemTotal,
       item_id: testAllMatch[4],
+      linked_test_index: undefined,
+      linked_test_total: undefined,
+      current_command: undefined,
+      elapsed_ms: undefined,
       heartbeat_at: nowIso(),
       phase: testAllMatch[3]?.toLowerCase() === "end" ? "finished" : "running",
     };
@@ -785,10 +789,18 @@ export async function runBackgroundTestRunWorker(pmRoot: string, runId: string, 
         item_index: progressPatch?.item_index ?? record.progress?.item_index ?? undefined,
         item_total: progressPatch?.item_total ?? record.progress?.item_total ?? undefined,
         item_id: progressPatch?.item_id ?? record.progress?.item_id ?? undefined,
-        linked_test_index: progressPatch?.linked_test_index ?? record.progress?.linked_test_index ?? undefined,
-        linked_test_total: progressPatch?.linked_test_total ?? record.progress?.linked_test_total ?? undefined,
-        current_command: progressPatch?.current_command ?? record.progress?.current_command ?? undefined,
-        elapsed_ms: progressPatch?.elapsed_ms ?? record.progress?.elapsed_ms ?? undefined,
+        linked_test_index: progressPatch && "linked_test_index" in progressPatch
+          ? progressPatch.linked_test_index
+          : record.progress?.linked_test_index ?? undefined,
+        linked_test_total: progressPatch && "linked_test_total" in progressPatch
+          ? progressPatch.linked_test_total
+          : record.progress?.linked_test_total ?? undefined,
+        current_command: progressPatch && "current_command" in progressPatch
+          ? progressPatch.current_command
+          : record.progress?.current_command ?? undefined,
+        elapsed_ms: progressPatch && "elapsed_ms" in progressPatch
+          ? progressPatch.elapsed_ms
+          : record.progress?.elapsed_ms ?? undefined,
       };
       if (progressPatch?.phase === "finished" && !stopRequested) {
         record.progress.phase = "running";

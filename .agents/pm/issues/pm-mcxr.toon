@@ -6,13 +6,13 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-16T11:28:40.523Z"
-updated_at: "2026-06-18T19:15:24.847Z"
+updated_at: "2026-06-18T19:26:19.741Z"
 author: codex-sdk-cli-consolidation-20260616
 parent: pm-mpbb
 resolution: Resolved GH-206 test-all liveness UX by preserving every stderr progress line in background workers and exposing current test-all item plus linked command state in compact background status.
 expected_result: Background test-all runs provide visible current item/test-command progress and no stale non-runnable linked-test metadata remains on the item.
 actual_result: "Background records include item_index, item_total, item_id, linked_test_index, linked_test_total, and current_command; temp tarball smoke passed with test-runs status and full coverage remained 100/100/100/100."
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-06-18T12:21:55.941Z",codex-gpt5,"Partial implementation evidence: strict --fail-on-empty-test-run now marks zero-linked-test aggregate selections as failed with an explicit empty_run category and warning. Broader GH-206 liveness/progress work remains open intentionally."
   "2026-06-18T12:41:26.890Z",codex-gpt5,"Review follow-up evidence: updated PRD test-all foreground contract to include fail_on_empty_test_run_triggered alongside the strict empty-run runtime result field."
   "2026-06-18T14:47:47.581Z",codex-gpt5,"Duplicate check before continuation: pm context/list/search found no in-progress items; canonical live lineages are pm-mcxr for GH-206 and pm-u8y9 for SDK.md resource-kind drift. No new pm item created."
@@ -20,6 +20,7 @@ comments[7]{created_at,author,text}:
   "2026-06-18T15:31:02.483Z",codex-gpt5,"GitHub/observability evidence: gh pr list returned no open PRs; gh issues checked #206/#207 and open issue list; sentry issue list pm-cli --period 24h --query is:unresolved --fresh --json returned an empty data array; telemetry status showed enabled=true and last_successful_flush_at=2026-06-18T15:29:37.909Z; health --check-telemetry --summary --json returned ok=true."
   "2026-06-18T18:54:10.667Z",codex-gpt5,"Implementation note: continuing GH-206 liveness UX on the existing item after duplicate check. Remaining scoped gap is background test-all progress parsing: foreground emits per-item progress, but the background record only structurally captures linked-test heartbeat fields."
   "2026-06-18T19:14:58.208Z",codex-gpt5,"Evidence: implemented structured background test-all progress parsing for item_index/item_total/item_id plus current_command preservation, fixed stderr chunk handling to process every progress line, removed stale prose-only linked test metadata, and verified focused tests, linked pm tests, temp tarball smoke, build/static/contracts/changelog/validate, and full coverage 100/100/100/100."
+  "2026-06-18T19:26:19.741Z",codex-gpt5,"Review follow-up evidence: addressed Gemini/CodeRabbit stale progress-field feedback by clearing linked-test index/total/current_command/elapsed_ms when a test-all item progress line arrives; focused tests, build, static quality, and full coverage 100/100/100/100 passed after the fix."
 files[5]{path,scope,note}:
   docs/TESTING.md,project,Document strict empty-run gate behavior
   src/cli/commands/test-all.ts,project,Fail strict test-all empty selections under --fail-on-empty-test-run

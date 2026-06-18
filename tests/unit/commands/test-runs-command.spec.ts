@@ -736,10 +736,10 @@ describe("background test run lifecycle", () => {
           item_index: 2,
           item_total: 2,
           item_id: "pm-itemb",
-          linked_test_index: 1,
-          linked_test_total: 3,
-          current_command: "node slow.js",
         });
+        expect(failedTotals.progress?.linked_test_index).toBeUndefined();
+        expect(failedTotals.progress?.linked_test_total).toBeUndefined();
+        expect(failedTotals.progress?.current_command).toBeUndefined();
 
         const badJsonRun = await startBackgroundTestRun({
           pmRoot: context.pmPath,
@@ -858,6 +858,9 @@ describe("background test run lifecycle", () => {
       item_index: 4,
       item_total: 9,
       item_id: "pm-abc",
+      linked_test_index: undefined,
+      linked_test_total: undefined,
+      current_command: undefined,
       phase: "running",
     });
     expect(
