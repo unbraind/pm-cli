@@ -468,7 +468,9 @@ function parseProgressLine(stderrLine: string): Partial<BackgroundRunProgress> |
   const total = Number.parseInt(linkedTestMatch[2], 10);
   const elapsed = linkedTestMatch[4] ? Number.parseInt(linkedTestMatch[4], 10) : undefined;
   const commandMatch = line.match(/\scommand="((?:\\.|[^"\\])*)"/);
-  const currentCommand = commandMatch?.[1].replaceAll('\\"', '"').replaceAll("\\\\", "\\");
+  const currentCommand = commandMatch
+    ? commandMatch[1].replaceAll('\\"', '"').replaceAll("\\\\", "\\")
+    : undefined;
   return {
     linked_test_index: index,
     linked_test_total: total,
