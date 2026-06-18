@@ -52,8 +52,12 @@ export type BackgroundLogStream = "stdout" | "stderr" | "both";
 export interface BackgroundRunProgress {
   phase: "queued" | "running" | "stopping" | "finished";
   message?: string;
+  item_index?: number;
+  item_total?: number;
+  item_id?: string;
   linked_test_index?: number;
   linked_test_total?: number;
+  current_command?: string;
   elapsed_ms?: number;
   heartbeat_at?: string;
 }
@@ -440,19 +444,33 @@ function parseProgressLine(stderrLine: string): Partial<BackgroundRunProgress> |
   if (line.length === 0) {
     return null;
   }
-  const match = line.match(/\[pm test\]\s+linked-test\s+(\d+)\/(\d+)\s+(start|running|end)(?:.*elapsed_ms=(\d+))?/i);
-  if (!match) {
+  const testAllMatch = line.match(/\[pm test-all\]\s+item\s+(\d+)\/(\d+)\s+(start|end)\s+id=([^\s]+)/i);
+  if (testAllMatch) {
+    const itemIndex = Number.parseInt(testAllMatch[1], 10);
+    const itemTotal = Number.parseInt(testAllMatch[2], 10);
+    return {
+      item_index: itemIndex,
+      item_total: itemTotal,
+      item_id: testAllMatch[4],
+      heartbeat_at: nowIso(),
+      phase: testAllMatch[3]?.toLowerCase() === "end" ? "finished" : "running",
+    };
+  }
+  const linkedTestMatch = line.match(/\[pm test\]\s+linked-test\s+(\d+)\/(\d+)\s+(start|running|end)(?:.*elapsed_ms=(\d+))?/i);
+  if (!linkedTestMatch) {
     return null;
   }
-  const index = Number.parseInt(match[1], 10);
-  const total = Number.parseInt(match[2], 10);
-  const elapsed = match[4] ? Number.parseInt(match[4], 10) : undefined;
+  const index = Number.parseInt(linkedTestMatch[1], 10);
+  const total = Number.parseInt(linkedTestMatch[2], 10);
+  const elapsed = linkedTestMatch[4] ? Number.parseInt(linkedTestMatch[4], 10) : undefined;
+  const commandMatch = line.match(/\scommand="([^"]*)"/);
   return {
     linked_test_index: index,
     linked_test_total: total,
+    current_command: commandMatch?.[1],
     elapsed_ms: Number.isFinite(elapsed) ? elapsed : undefined,
     heartbeat_at: nowIso(),
-    phase: match[3]?.toLowerCase() === "end" ? "finished" : "running",
+    phase: linkedTestMatch[3]?.toLowerCase() === "end" ? "finished" : "running",
   };
 }
 
@@ -758,21 +776,23 @@ export async function runBackgroundTestRunWorker(pmRoot: string, runId: string, 
     const text = chunk.toString("utf8");
     stderrWriteQueue = appendFileOrdered(stderrWriteQueue, record.stderr_path, text);
     const lines = splitLines(text);
-    const latestLine = lines.at(-1);
-    if (!latestLine) {
-      return;
-    }
-    const progressPatch = parseProgressLine(latestLine);
-    record.progress = {
-      phase: (record.progress as BackgroundRunProgress).phase === "stopping" ? "stopping" : "running",
-      message: latestLine,
-      heartbeat_at: nowIso(),
-      linked_test_index: progressPatch?.linked_test_index ?? record.progress?.linked_test_index ?? undefined,
-      linked_test_total: progressPatch?.linked_test_total ?? record.progress?.linked_test_total ?? undefined,
-      elapsed_ms: progressPatch?.elapsed_ms ?? record.progress?.elapsed_ms ?? undefined,
-    };
-    if (progressPatch?.phase === "finished" && !stopRequested) {
-      record.progress.phase = "running";
+    for (const line of lines) {
+      const progressPatch = parseProgressLine(line);
+      record.progress = {
+        phase: (record.progress as BackgroundRunProgress).phase === "stopping" ? "stopping" : "running",
+        message: line,
+        heartbeat_at: nowIso(),
+        item_index: progressPatch?.item_index ?? record.progress?.item_index ?? undefined,
+        item_total: progressPatch?.item_total ?? record.progress?.item_total ?? undefined,
+        item_id: progressPatch?.item_id ?? record.progress?.item_id ?? undefined,
+        linked_test_index: progressPatch?.linked_test_index ?? record.progress?.linked_test_index ?? undefined,
+        linked_test_total: progressPatch?.linked_test_total ?? record.progress?.linked_test_total ?? undefined,
+        current_command: progressPatch?.current_command ?? record.progress?.current_command ?? undefined,
+        elapsed_ms: progressPatch?.elapsed_ms ?? record.progress?.elapsed_ms ?? undefined,
+      };
+      if (progressPatch?.phase === "finished" && !stopRequested) {
+        record.progress.phase = "running";
+      }
     }
     scheduleRecordWrite();
   });
@@ -818,8 +838,12 @@ export async function runBackgroundTestRunWorker(pmRoot: string, runId: string, 
     phase: "finished",
     message: stopRequested ? "Background run stopped." : `Background run finished with status=${record.status}.`,
     heartbeat_at: nowIso(),
+    item_index: record.progress?.item_index,
+    item_total: record.progress?.item_total,
+    item_id: record.progress?.item_id,
     linked_test_index: record.progress?.linked_test_index,
     linked_test_total: record.progress?.linked_test_total,
+    current_command: record.progress?.current_command,
     elapsed_ms: record.progress?.elapsed_ms,
   };
   record.resource = await buildResourceSnapshot(record);
@@ -953,8 +977,12 @@ export async function stopBackgroundTestRun(pmRoot: string, runId: string, force
     phase: "stopping",
     message: signalSent === "none" ? "Run marked stopped." : `Stop requested via ${signalSent}.`,
     heartbeat_at: nowIso(),
+    item_index: refreshed.progress?.item_index,
+    item_total: refreshed.progress?.item_total,
+    item_id: refreshed.progress?.item_id,
     linked_test_index: refreshed.progress?.linked_test_index,
     linked_test_total: refreshed.progress?.linked_test_total,
+    current_command: refreshed.progress?.current_command,
     elapsed_ms: refreshed.progress?.elapsed_ms,
   };
   await writeBackgroundRunRecord(pmRoot, refreshed);
