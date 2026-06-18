@@ -4,6 +4,9 @@
 
 ### Added
 
+- Add agent-identity dimension to telemetry events: surface PM\_AUTHOR as hashed author\_context ([pm-fbyu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-fbyu.toon))
+- pm telemetry stats: add error\_rate and resolution breakdown per command bucket ([pm-gsoe](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gsoe.toon))
+- Surface duration\_ms percentile breakdown in pm telemetry stats \(p50/p95 per command\) ([pm-3n3b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-3n3b.toon))
 - GH-208: linked test sandbox ergonomics ([pm-52eh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-52eh.toon))
 - Core read/validate integrity: exact-ID search rank guarantee across modes + parent-hierarchy cycle detection ([pm-rkie](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-rkie.toon))
 - Validate governance accuracy: suppress false-positive duplicate-code & terminal-item metadata noise + files --remove input clarity ([pm-6bz1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-6bz1.toon))

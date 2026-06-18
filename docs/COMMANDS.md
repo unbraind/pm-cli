@@ -526,7 +526,7 @@ pm telemetry local-analytics status
 ```
 
 - `status` reports queue depth, endpoint, and latest flush metadata.
-- `stats` groups queued local telemetry events by command name.
+- `stats` groups queued local telemetry events by command name. Each bucket also reports an always-available, zero-network performance and outcome signal derived from the bucket's `command_finish` payloads: latency percentiles (`duration_p50_ms`, `duration_p95_ms`, `duration_max_ms`, nearest-rank, present only when a finish event carries a finite `duration_ms`), success/failure tally (`ok_count`, `error_count`, `error_rate`; a finish event whose `ok` is missing or not strictly `true` is counted conservatively as an error), and `command_resolution_counts` (resolution → count, present only when non-empty). `command_start`/`command_error` events are excluded from these aggregates.
 - `flush` runs an immediate local queue flush attempt.
 - `clear` disables telemetry and deletes local queue/runtime telemetry artifacts.
 - `local-analytics <status|stats|flush|clear>` is accepted as a backward-compatible namespace alias for older scripts; new scripts should use `pm telemetry <subcommand>`.

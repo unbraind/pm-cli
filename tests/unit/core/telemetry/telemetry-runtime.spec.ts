@@ -120,6 +120,47 @@ describe("core/telemetry/runtime", () => {
     vi.restoreAllMocks();
   });
 
+  it("derives a stable, installation-keyed author_context_hash from PM_AUTHOR", () => {
+    const originalAuthor = process.env.PM_AUTHOR;
+    try {
+      // Minimal capture exposes only the boolean, never a hash.
+      process.env.PM_AUTHOR = "claude-code-agent";
+      expect(_testOnly.buildAuthorContextPayloadFields("minimal", "install-a")).toEqual({
+        has_author_context: true,
+      });
+      delete process.env.PM_AUTHOR;
+      expect(_testOnly.buildAuthorContextPayloadFields("minimal", "install-a")).toEqual({
+        has_author_context: false,
+      });
+      // A blank/whitespace PM_AUTHOR is treated as unset.
+      process.env.PM_AUTHOR = "   ";
+      expect(_testOnly.buildAuthorContextPayloadFields("redacted", "install-a")).toEqual({});
+
+      // Non-minimal capture attaches the hash; same author + same installation is
+      // stable, while a different installation id produces a different hash.
+      process.env.PM_AUTHOR = "claude-code-agent";
+      const first = _testOnly.buildAuthorContextPayloadFields("redacted", "install-a") as {
+        author_context_hash?: string;
+      };
+      const repeat = _testOnly.buildAuthorContextPayloadFields("redacted", "install-a") as {
+        author_context_hash?: string;
+      };
+      const otherInstall = _testOnly.buildAuthorContextPayloadFields("max", "install-b") as {
+        author_context_hash?: string;
+      };
+      expect(first.author_context_hash).toMatch(/^[0-9a-f]{64}$/);
+      expect(repeat.author_context_hash).toBe(first.author_context_hash);
+      expect(otherInstall.author_context_hash).not.toBe(first.author_context_hash);
+      expect(first.author_context_hash).not.toContain("claude-code-agent");
+    } finally {
+      if (originalAuthor === undefined) {
+        delete process.env.PM_AUTHOR;
+      } else {
+        process.env.PM_AUTHOR = originalAuthor;
+      }
+    }
+  });
+
   it("queues redacted command_start events when exporter fails", async () => {
     await withTempGlobalRoot(async (globalRoot) => {
       await setTelemetryCaptureLevel(globalRoot, "redacted");
