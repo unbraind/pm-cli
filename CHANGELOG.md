@@ -4,12 +4,14 @@
 
 ### Added
 
+- GH-208: linked test sandbox ergonomics ([pm-52eh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-52eh.toon))
 - Core read/validate integrity: exact-ID search rank guarantee across modes + parent-hierarchy cycle detection ([pm-rkie](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-rkie.toon))
 - Validate governance accuracy: suppress false-positive duplicate-code & terminal-item metadata noise + files --remove input clarity ([pm-6bz1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-6bz1.toon))
 - Sub-hour duration granularity for scheduling: support minutes in --duration / event duration= ([pm-zoe4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-zoe4.toon))
 
 ### Fixed
 
+- GH-215: enforce timestamps in history entries ([pm-u42x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u42x.toon))
 - GH-280: pm validate does not detect circular parent references \(hierarchy cycles A-\>B-\>A of any length\) ([pm-8vul](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8vul.toon))
 - GH-281: exact-ID search match is rank-diluted in hybrid/semantic mode \(keyword score normalized + capped by keyword weight\) ([pm-oqgf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oqgf.toon))
 - PR \#266 review feedback: tighten init and dynamic option validation ([pm-at1j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-at1j.toon))

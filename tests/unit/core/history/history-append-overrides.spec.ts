@@ -239,7 +239,112 @@ describe("appendHistoryEntry object service override", () => {
       await appendHistoryEntry(requestedPath, entry);
       await expect(fs.access(requestedPath)).rejects.toMatchObject({ code: "ENOENT" });
       const written = await fs.readFile(redirectedPath, "utf8");
-      expect(JSON.parse(written.trim())).toEqual({ op: "override", marker: "custom-entry" });
+      expect(JSON.parse(written.trim())).toEqual({ ts: FIXED_TS, op: "override", marker: "custom-entry" });
+    } finally {
+      clearActiveExtensionHooks();
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("falls back to the current time when an override entry and fallback entry both omit timestamps", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "pm-history-override-"));
+    try {
+      const historyPath = path.join(dir, "fallback-now-entry.jsonl");
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            name: "history-fallback-now-entry",
+            service: "history_append",
+            run: () => ({ entry: { op: "fallback-now", marker: "custom-entry" } }),
+          },
+        ],
+      });
+
+      const entry = createHistoryEntry({
+        nowIso: FIXED_TS,
+        author: "test-agent",
+        op: "update",
+        before: fullDoc({ id: "pm-fallback-now-entry", title: "a" }),
+        after: fullDoc({ id: "pm-fallback-now-entry", title: "b" }),
+      });
+      entry.ts = "";
+
+      await appendHistoryEntry(historyPath, entry);
+      const written = await fs.readFile(historyPath, "utf8");
+      const parsed = JSON.parse(written.trim()) as { ts?: string; op?: string; marker?: string };
+      expect(parsed).toMatchObject({ op: "fallback-now", marker: "custom-entry" });
+      expect(typeof parsed.ts).toBe("string");
+      expect(parsed.ts).not.toBe("");
+      expect(Number.isNaN(Date.parse(parsed.ts ?? ""))).toBe(false);
+    } finally {
+      clearActiveExtensionHooks();
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("adds a timestamp to JSON line override payloads that omit one", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "pm-history-override-"));
+    try {
+      const historyPath = path.join(dir, "line-entry.jsonl");
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            name: "history-line-entry",
+            service: "history_append",
+            run: () => JSON.stringify({ op: "line-override", marker: "custom-line-entry" }),
+          },
+        ],
+      });
+
+      const entry = createHistoryEntry({
+        nowIso: FIXED_TS,
+        author: "test-agent",
+        op: "update",
+        before: fullDoc({ id: "pm-line-entry", title: "a" }),
+        after: fullDoc({ id: "pm-line-entry", title: "b" }),
+      });
+
+      await appendHistoryEntry(historyPath, entry);
+      const written = await fs.readFile(historyPath, "utf8");
+      expect(JSON.parse(written.trim())).toEqual({
+        ts: FIXED_TS,
+        op: "line-override",
+        marker: "custom-line-entry",
+      });
+    } finally {
+      clearActiveExtensionHooks();
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("serializes primitive object override entry payloads defensively", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "pm-history-override-"));
+    try {
+      const historyPath = path.join(dir, "primitive-entry.jsonl");
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            name: "history-primitive-entry",
+            service: "history_append",
+            run: () => ({ entry: 42 }),
+          },
+        ],
+      });
+
+      const entry = createHistoryEntry({
+        nowIso: FIXED_TS,
+        author: "test-agent",
+        op: "update",
+        before: fullDoc({ id: "pm-primitive-entry", title: "a" }),
+        after: fullDoc({ id: "pm-primitive-entry", title: "b" }),
+      });
+
+      await appendHistoryEntry(historyPath, entry);
+      const written = await fs.readFile(historyPath, "utf8");
+      expect(JSON.parse(written.trim())).toBe(42);
     } finally {
       clearActiveExtensionHooks();
       await fs.rm(dir, { recursive: true, force: true });
