@@ -35,7 +35,14 @@ export interface ParsedSettings {
   item_format?: "toon" | "json_markdown";
   locks: { ttl_seconds: number };
   output: { default_format: "toon" | "json" };
-  history?: { missing_stream: "auto_create" | "strict_error" };
+  history?: {
+    missing_stream: "auto_create" | "strict_error";
+    compact_policy?: {
+      enabled?: boolean;
+      max_entries?: number;
+      trigger?: "health_warn" | "auto";
+    };
+  };
   validation?: {
     sprint_release_format: "warn" | "strict_error";
     parent_reference?: "warn" | "strict_error";
@@ -391,7 +398,18 @@ const settingsCheck = vObject({
   item_format: vOptional(vLiteral("toon", "json_markdown")),
   locks: vObject({ ttl_seconds: vNumber({ int: true }) }),
   output: vObject({ default_format: vLiteral("toon", "json") }),
-  history: vOptional(vObject({ missing_stream: vLiteral("auto_create", "strict_error") })),
+  history: vOptional(
+    vObject({
+      missing_stream: vLiteral("auto_create", "strict_error"),
+      compact_policy: vOptional(
+        vObject({
+          enabled: vOptional(vBoolean),
+          max_entries: vOptional(vNumber({ int: true, positive: true })),
+          trigger: vOptional(vLiteral("health_warn", "auto")),
+        }),
+      ),
+    }),
+  ),
   validation: vOptional(
     vObject({
       sprint_release_format: vLiteral("warn", "strict_error"),

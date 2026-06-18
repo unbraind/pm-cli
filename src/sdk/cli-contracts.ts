@@ -411,6 +411,11 @@ export const HISTORY_REPAIR_FLAG_CONTRACTS: CliFlagContract[] = [
 
 export const HISTORY_COMPACT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--before" },
+  { flag: "--ids", list: true },
+  { flag: "--all-over", value_type: "number" },
+  { flag: "--closed" },
+  { flag: "--all-streams" },
+  { flag: "--min-entries", value_type: "number" },
   { flag: "--dry-run" },
   { flag: "--author" },
   { flag: "--message" },
@@ -1943,8 +1948,12 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
     oneOfRequired: [["id"], ["all"]],
   },
   "history-compact": {
-    required: ["id"],
-    optional: ["before", "dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
+    // Single-id mode (`id` + optional `before`) or bulk mode (any of `ids` /
+    // `allOver` / `closed` / `allStreams`, with optional `minEntries`). Scan
+    // selectors (`allOver` + `closed`/`allStreams`) legitimately combine, so the
+    // mode/exclusivity contract is enforced at runtime by assertHistoryCompactTarget
+    // rather than a one-of schema rule.
+    optional: ["id", "before", "ids", "allOver", "closed", "allStreams", "minEntries", "dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
   },
   schema: {
     required: ["subcommand"],

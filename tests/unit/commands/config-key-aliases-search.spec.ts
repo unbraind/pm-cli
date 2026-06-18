@@ -54,6 +54,9 @@ const EXPECTED_GENERAL_ALIASES: Record<string, string> = {
   output_default_format: "output.default_format",
   locks_ttl_seconds: "locks.ttl_seconds",
   schema_unknown_field_policy: "schema.unknown_field_policy",
+  history_compact_policy_enabled: "history.compact_policy.enabled",
+  history_compact_policy_max_entries: "history.compact_policy.max_entries",
+  history_compact_policy_trigger: "history.compact_policy.trigger",
 };
 
 const ALL_EXPECTED_ALIASES: Record<string, string> = {
@@ -262,7 +265,7 @@ describe("config general-setting aliases (pm-9byd / pm-nnaq)", () => {
       expect(descriptor, `missing nested-setting alias: ${alias}`).toBeDefined();
       expect(descriptor!.path).toBe(expectedPath);
     }
-    expect(Object.keys(EXPECTED_GENERAL_ALIASES)).toHaveLength(5);
+    expect(Object.keys(EXPECTED_GENERAL_ALIASES)).toHaveLength(8);
   });
 
   it("resolves both kebab-case and snake_case forms of each general alias", () => {

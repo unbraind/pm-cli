@@ -65,7 +65,11 @@ vi.mock("../../../src/cli/commands/history-repair.js", () => ({
   runHistoryRepair: vi.fn(),
   runHistoryRepairAll: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/history-compact.js", () => ({ runHistoryCompact: vi.fn() }));
+vi.mock("../../../src/cli/commands/history-compact.js", () => ({
+  assertHistoryCompactTarget: vi.fn(),
+  runHistoryCompact: vi.fn(),
+  runHistoryCompactBulk: vi.fn(),
+}));
 vi.mock("../../../src/cli/commands/schema.js", () => ({
   SCHEMA_SUBCOMMANDS: [
     "add-type",
@@ -168,7 +172,11 @@ import { runRestore } from "../../../src/cli/commands/restore.js";
 import { runPlan } from "../../../src/cli/commands/plan.js";
 import { runHistoryRedact } from "../../../src/cli/commands/history-redact.js";
 import { assertHistoryRepairTarget, runHistoryRepair, runHistoryRepairAll } from "../../../src/cli/commands/history-repair.js";
-import { runHistoryCompact } from "../../../src/cli/commands/history-compact.js";
+import {
+  assertHistoryCompactTarget,
+  runHistoryCompact,
+  runHistoryCompactBulk,
+} from "../../../src/cli/commands/history-compact.js";
 import {
   formatSchemaAddStatusHuman,
   formatSchemaAddTypeHuman,
@@ -1909,6 +1917,62 @@ describe("mutation command actions", () => {
 
     // An unknown plan subcommand that is not list/ls carries no did-you-mean examples.
     await expect(runCli("plan", "frobnicate")).rejects.toThrow("Unknown pm plan subcommand");
+  });
+
+  it("routes history-compact bulk selectors and validates their inputs", async () => {
+    vi.mocked(runHistoryCompactBulk).mockResolvedValue({ totals: { items_errored: 0 } } as never);
+
+    // --ids → bulk mode with a parsed id list (no positional id).
+    await runCli("history-compact", "--ids", "pm-1,pm-2", "--dry-run");
+    expect(vi.mocked(assertHistoryCompactTarget)).toHaveBeenLastCalledWith(undefined, {
+      ids: ["pm-1", "pm-2"],
+      allOver: undefined,
+      scope: undefined,
+    });
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runHistoryCompactBulk) as never, 0)).toMatchObject({
+      ids: ["pm-1", "pm-2"],
+      dryRun: true,
+    });
+
+    // --all-over + --all-streams + --min-entries map to numbers / scope, and
+    // --message/--author flow through to the bulk runner.
+    await runCli(
+      "history-compact",
+      "--all-over", "50",
+      "--all-streams",
+      "--min-entries", "4",
+      "--author", "agent",
+      "--message", "bulk sweep",
+    );
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runHistoryCompactBulk) as never, 0)).toMatchObject({
+      allOver: 50,
+      scope: "all-streams",
+      minEntries: 4,
+      author: "agent",
+      message: "bulk sweep",
+    });
+
+    // --closed maps to scope "closed", and items_errored > 0 propagates a failure exit code.
+    vi.mocked(runHistoryCompactBulk).mockResolvedValueOnce({ totals: { items_errored: 2 } } as never);
+    await runCli("history-compact", "--closed");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runHistoryCompactBulk) as never, 0).scope).toBe("closed");
+    expect(process.exitCode).toBe(EXIT_CODE.GENERIC_FAILURE);
+    process.exitCode = undefined;
+
+    // --closed + --all-streams are mutually exclusive.
+    await expect(runCli("history-compact", "--closed", "--all-streams")).rejects.toThrow(/mutually exclusive/);
+
+    // --before is rejected in bulk mode.
+    await expect(runCli("history-compact", "--all-streams", "--before", "5")).rejects.toThrow(
+      /--before applies only in single-id mode/,
+    );
+
+    // --all-over / --min-entries reject negative, non-numeric, and truncating-float inputs.
+    await expect(runCli("history-compact", "--all-over", "-3")).rejects.toThrow(/--all-over/);
+    await expect(runCli("history-compact", "--all-over", "notanumber")).rejects.toThrow(/--all-over/);
+    await expect(runCli("history-compact", "--all-over", "3.5")).rejects.toThrow(/--all-over/);
+    await expect(runCli("history-compact", "--min-entries", "-1")).rejects.toThrow(/--min-entries/);
+    await expect(runCli("history-compact", "--min-entries", "10abc")).rejects.toThrow(/--min-entries/);
   });
 
   it("maps full schema add-status/add-type options and string-form alias/role inputs", async () => {

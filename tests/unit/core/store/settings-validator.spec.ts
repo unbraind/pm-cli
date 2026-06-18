@@ -257,4 +257,29 @@ describe("core/store/settings-validator", () => {
     raw.governance = { preset: "default", workflow_enforcement: "bogus" };
     expect(validateSettings(raw).success).toBe(false);
   });
+
+  it("accepts a full history.compact_policy block", () => {
+    const raw = minimalValidSettings();
+    raw.history = {
+      missing_stream: "auto_create",
+      compact_policy: { enabled: true, max_entries: 500, trigger: "auto" },
+    };
+    const result = validateSettings(raw);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.history?.compact_policy).toEqual({ enabled: true, max_entries: 500, trigger: "auto" });
+    }
+  });
+
+  it("rejects invalid history.compact_policy values", () => {
+    const base = minimalValidSettings();
+    const withPolicy = (policy: unknown): Record<string, unknown> => ({
+      ...base,
+      history: { missing_stream: "auto_create", compact_policy: policy },
+    });
+    expect(validateSettings(withPolicy({ enabled: "yes" })).success).toBe(false);
+    expect(validateSettings(withPolicy({ max_entries: 0 })).success).toBe(false);
+    expect(validateSettings(withPolicy({ max_entries: 1.5 })).success).toBe(false);
+    expect(validateSettings(withPolicy({ trigger: "bogus" })).success).toBe(false);
+  });
 });

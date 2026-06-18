@@ -2664,6 +2664,24 @@
           "flag": "--before"
         },
         {
+          "flag": "--ids",
+          "list": true
+        },
+        {
+          "flag": "--all-over",
+          "value_type": "number"
+        },
+        {
+          "flag": "--closed"
+        },
+        {
+          "flag": "--all-streams"
+        },
+        {
+          "flag": "--min-entries",
+          "value_type": "number"
+        },
+        {
           "flag": "--dry-run"
         },
         {
@@ -17826,6 +17844,18 @@
             "const": "history-compact",
             "description": "Tool action to execute."
           },
+          "allOver": {
+            "description": "For history-compact bulk mode, compact every stream with more than N entries. When history.compact_policy is enabled and this is omitted, the policy's max_entries is used.",
+            "examples": [
+              200,
+              "500"
+            ],
+            "type": "number"
+          },
+          "allStreams": {
+            "description": "For history-compact bulk mode, compact every history stream regardless of lifecycle state.",
+            "type": "boolean"
+          },
           "author": {
             "description": "Mutation author identity.",
             "examples": [
@@ -17834,12 +17864,16 @@
             "type": "string"
           },
           "before": {
-            "description": "For history-compact, compact entries strictly before this boundary (version number or ISO timestamp).",
+            "description": "For history-compact, compact entries strictly before this boundary (version number or ISO timestamp). Single-id mode only.",
             "examples": [
               "5",
               "2026-06-01T00:00:00.000Z"
             ],
             "type": "string"
+          },
+          "closed": {
+            "description": "For history-compact bulk mode, compact only closed (terminal) items' history streams.",
+            "type": "boolean"
           },
           "dryRun": {
             "description": "Preview command effects without mutating storage artifacts.",
@@ -17856,6 +17890,10 @@
             ],
             "type": "string"
           },
+          "ids": {
+            "description": "Ids.",
+            "type": "string"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -17864,6 +17902,14 @@
           "message": {
             "description": "History message for mutation audit trail.",
             "type": "string"
+          },
+          "minEntries": {
+            "description": "For history-compact bulk mode, skip streams with at most N entries as already-compact (default 3).",
+            "examples": [
+              3,
+              "10"
+            ],
+            "type": "number"
           },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
@@ -17901,8 +17947,7 @@
           }
         },
         "required": [
-          "action",
-          "id"
+          "action"
         ],
         "title": "pm action \"history-compact\" parameters",
         "type": "object"

@@ -2,16 +2,22 @@ id: pm-yj9w
 title: "pm history-compact: expose --scope all-streams (history GC pass) for closed items"
 description: "For closed items that will never be mutated again, it is safe to compact the entire history stream to a single baseline snapshot. There is no first-class 'compact all closed' operation, leaving growing history debt as the project ages. The all-streams bulk path could skip already-minimal streams (1-2 entries) and only act on streams over a threshold, making a full pass fast."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[4]: "area:history",compaction,maintenance,ux
 created_at: "2026-06-07T10:03:18.054Z"
-updated_at: "2026-06-07T10:15:52.166Z"
+updated_at: "2026-06-18T17:47:35.038Z"
 author: audit-data-agent
 acceptance_criteria: "- `pm history-compact --scope closed` (or `--all-closed`) compacts all closed items to a single baseline entry\n- Skips streams that are already at 1-3 entries (already compact)\n- Reports: items_compacted, items_skipped, items_errored\n- `--dry-run` mode shows plan without writing\n- Integrated with `pm health --fix` hint or `pm gc --scope history` alias"
 parent: pm-o2kc
 risk: medium
 confidence: high
+resolution: "Delivered via the unified bulk path: --scope closed/all-streams corpus sweep with min-entries skip and orphan-stream handling."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-f3pa,related,"2026-06-07T10:03:18.054Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-06-18T17:47:22.191Z",claude-code-agent,"Shipped as part of the unified bulk path: --scope closed compacts only terminal items (lifecycle classifier), --scope all-streams sweeps every stream. Skips already-compact streams via --min-entries (default 3). Orphan streams (history file, no item) are unbucketed and excluded from scope=closed. Reports items_compacted/items_skipped/items_errored."
+files[1]{path,scope,note}:
+  src/cli/commands/history-compact.ts,project,scope=closed/all-streams sweep
+close_reason: "Delivered via the unified bulk path: --scope closed/all-streams corpus sweep with min-entries skip and orphan-stream handling."
 body: "## Context\n\nWith 1032 closed items and growing, periodic history maintenance requires either scripted loops or a built-in pass. The existing `pm history-compact --before <all>` (no `--before` arg = compact everything) works per-item but there is no corpus-wide sweep.\n\nRelated to pm-f3pa (bulk compaction by count threshold) but distinct: this is about targeting CLOSED items as a corpus-level maintenance pass.\n\n## Acceptance criteria\n\n- [ ] `pm history-compact --scope closed` (or `--all-closed`) compacts all closed items to a single baseline entry\n- [ ] Skips streams that are already at 1-3 entries (already compact)\n- [ ] Reports: items_compacted, items_skipped, items_errored\n- [ ] `--dry-run` mode shows plan without writing\n- [ ] Integrated with `pm health --fix` hint or `pm gc --scope history` alias\n\n## Evidence\n\n- `src/cli/commands/history-compact.ts:214-399` — complete single-item compaction, no bulk mode\n- `node dist/cli.js stats --storage` — 17,753 entries across 1,063 streams; corpus is 19.5MB and growing"

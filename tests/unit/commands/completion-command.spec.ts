@@ -370,15 +370,17 @@ describe("generateBashScript", () => {
   it("includes history-compact flags across completion scripts", () => {
     const bashScript = generateBashScript();
     expect(bashScript).toContain("history-compact)");
-    expect(bashScript).toContain("--before --dry-run --author --message --force");
+    expect(bashScript).toContain("--before --ids --all-over --closed --all-streams --min-entries --dry-run --author --message --force");
 
     const zshScript = generateZshScript();
     expect(zshScript).toContain("history-compact)");
     expect(zshScript).toContain("--before[Compact entries strictly before this version number or ISO timestamp]:before");
+    expect(zshScript).toContain("--all-over[Bulk: compact every stream with more than N entries]:all-over");
 
     const fishScript = generateFishScript();
     expect(fishScript).toContain("__fish_seen_subcommand_from history-compact");
     expect(fishScript).toContain("-l before -d 'Compact entries strictly before this version number or ISO timestamp'");
+    expect(fishScript).toContain("-l all-streams -d 'Bulk: compact every history stream regardless of lifecycle state'");
   });
 
   it("includes get projection flags", () => {

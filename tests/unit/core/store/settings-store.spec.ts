@@ -176,7 +176,7 @@ describe("core/store/settings", () => {
       ]);
       expectOrderedObjectKeys(parsed.locks, ["ttl_seconds"]);
       expectOrderedObjectKeys(parsed.output, ["default_format"]);
-      expectOrderedObjectKeys(parsed.history, ["missing_stream"]);
+      expectOrderedObjectKeys(parsed.history, ["missing_stream", "compact_policy"]);
       expectOrderedObjectKeys(parsed.validation, [
         "sprint_release_format",
         "parent_reference",

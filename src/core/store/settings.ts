@@ -706,7 +706,14 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
     item_format: settings.item_format === "json_markdown" ? "toon" : (settings.item_format ?? defaults.item_format),
     locks: { ...defaults.locks, ...settings.locks },
     output: { ...defaults.output, ...settings.output },
-    history: { ...defaults.history, ...(settings.history ?? {}) },
+    history: {
+      ...defaults.history,
+      ...(settings.history ?? {}),
+      compact_policy: {
+        ...defaults.history.compact_policy,
+        ...(settings.history?.compact_policy ?? {}),
+      },
+    },
     validation: {
       ...defaults.validation,
       ...(settings.validation ?? {}),
@@ -930,7 +937,10 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
 
   ordered.locks = orderObject(ordered.locks as Record<string, unknown>, ["ttl_seconds"]);
   ordered.output = orderObject(ordered.output as Record<string, unknown>, ["default_format"]);
-  ordered.history = orderObject(ordered.history as Record<string, unknown>, ["missing_stream"]);
+  // compact_policy's own keys are emitted in deterministic order by mergeSettings
+  // (it rebuilds the object as {enabled, max_entries, trigger}); only the top-level
+  // history keys need explicit ordering here.
+  ordered.history = orderObject(ordered.history as Record<string, unknown>, ["missing_stream", "compact_policy"]);
   ordered.validation = orderObject(ordered.validation as Record<string, unknown>, [
     "sprint_release_format",
     "parent_reference",

@@ -35,6 +35,10 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   agentGuidance: { type: "string", enum: ["ask", "add", "skip", "status"] },
   withPackages: { type: "boolean" },
   scope: { type: "string", enum: ["project", "global"] },
+  allOver: { type: "number" },
+  minEntries: { type: "number" },
+  closed: { type: "boolean" },
+  allStreams: { type: "boolean" },
   contractAction: { type: "string" },
   command: { type: "string" },
   schemaOnly: { type: "boolean" },
@@ -883,8 +887,24 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   },
   before: {
     description:
-      "For history-compact, compact entries strictly before this boundary (version number or ISO timestamp).",
+      "For history-compact, compact entries strictly before this boundary (version number or ISO timestamp). Single-id mode only.",
     examples: ["5", "2026-06-01T00:00:00.000Z"],
+  },
+  allOver: {
+    description:
+      "For history-compact bulk mode, compact every stream with more than N entries. When history.compact_policy is enabled and this is omitted, the policy's max_entries is used.",
+    examples: [200, "500"],
+  },
+  minEntries: {
+    description:
+      "For history-compact bulk mode, skip streams with at most N entries as already-compact (default 3).",
+    examples: [3, "10"],
+  },
+  closed: {
+    description: "For history-compact bulk mode, compact only closed (terminal) items' history streams.",
+  },
+  allStreams: {
+    description: "For history-compact bulk mode, compact every history stream regardless of lifecycle state.",
   },
   limitItems: {
     description: "Maximum number of filtered items to include in comments-audit output (alias: --limit).",
