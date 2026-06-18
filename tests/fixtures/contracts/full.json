@@ -17063,6 +17063,10 @@
           },
           "format": {
             "description": "Format.",
+            "enum": [
+              "json",
+              "toon"
+            ],
             "type": "string"
           },
           "full": {
@@ -17495,6 +17499,10 @@
           },
           "format": {
             "description": "Format.",
+            "enum": [
+              "json",
+              "toon"
+            ],
             "type": "string"
           },
           "full": {
