@@ -11,6 +11,8 @@
 
 ### Fixed
 
+- Auto Release retries branch push after main advances ([pm-5oti](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5oti.toon))
+- GH-284: align pm init required schema directories with health ([pm-hl9y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hl9y.toon))
 - GH-215: enforce timestamps in history entries ([pm-u42x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u42x.toon))
 - GH-280: pm validate does not detect circular parent references \(hierarchy cycles A-\>B-\>A of any length\) ([pm-8vul](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8vul.toon))
 - GH-281: exact-ID search match is rank-diluted in hybrid/semantic mode \(keyword score normalized + capped by keyword weight\) ([pm-oqgf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oqgf.toon))

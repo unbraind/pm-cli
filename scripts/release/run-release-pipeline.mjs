@@ -172,6 +172,42 @@ export function runReleaseGates(options) {
   };
 }
 
+function isBranchBehindPushFailure(result) {
+  const output = `${result.stdout}\n${result.stderr}`.toLowerCase();
+  return (
+    output.includes("fetch first") ||
+    output.includes("non-fast-forward") ||
+    output.includes("tip of your current branch is behind")
+  );
+}
+
+export function pushReleaseRefs(tagName, gitOptions = {}) {
+  const firstPush = git(["push", "--atomic", "origin", "HEAD", tagName], { ...gitOptions, allowFailure: true });
+  if (firstPush.status === 0) {
+    return { retried: false };
+  }
+  if (!isBranchBehindPushFailure(firstPush)) {
+    const detail = `${firstPush.stderr.trim()}\n${firstPush.stdout.trim()}`.trim();
+    fail(`Command failed: git push --atomic origin HEAD ${tagName}\n${detail}`);
+  }
+
+  console.warn("Release branch push was rejected because origin/main advanced; fetching and rebasing before retry.");
+  git(["fetch", "origin", "main"], gitOptions);
+  const rebaseResult = git(["rebase", "origin/main"], { ...gitOptions, allowFailure: true });
+  if (rebaseResult.status !== 0) {
+    git(["rebase", "--abort"], gitOptions);
+    const detail = `${rebaseResult.stderr.trim()}\n${rebaseResult.stdout.trim()}`.trim();
+    fail(`Command failed: git rebase origin/main\n${detail}`);
+  }
+  git(["tag", "-f", tagName, "HEAD"], gitOptions);
+  const retryPush = git(["push", "--atomic", "origin", "HEAD", tagName], { ...gitOptions, allowFailure: true });
+  if (retryPush.status !== 0) {
+    const detail = `${retryPush.stderr.trim()}\n${retryPush.stdout.trim()}`.trim();
+    fail(`Command failed: git push --atomic origin HEAD ${tagName}\n${detail}`);
+  }
+  return { retried: true };
+}
+
 export function runPipeline() {
   const { flags } = parseFlags(process.argv.slice(2));
   if (flags.get("help") || flags.get("h")) {
@@ -364,8 +400,7 @@ export function runPipeline() {
     ], { env: gitIdentityEnv });
     git(["tag", tagName]);
     if (push) {
-      git(["push", "origin", "HEAD"]);
-      git(["push", "origin", tagName]);
+      pushReleaseRefs(tagName, { env: gitIdentityEnv });
     }
   }
 

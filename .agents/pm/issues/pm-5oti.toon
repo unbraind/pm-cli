@@ -1,0 +1,33 @@
+id: pm-5oti
+title: Auto Release retries branch push after main advances
+description: Scheduled Auto Release run 27743290726 passed release gates on 2026-06-18 but failed at git push origin HEAD because origin/main advanced during the long gate window. Add release-pipeline retry/rebase handling so daily auto-release can publish when the release commit can be replayed cleanly.
+type: Issue
+status: closed
+priority: 2
+tags[4]: "area:ci","area:release",github-actions,reliability
+created_at: "2026-06-18T13:29:07.198Z"
+updated_at: "2026-06-18T14:11:35.125Z"
+author: codex-implementation
+parent: pm-u9d0
+resolution: "Auto Release now pushes the release commit and tag atomically, rebases on origin/main when the first push is rejected because main advanced, retargets the local tag, and retries the atomic push."
+expected_result: A scheduled release whose gates pass should recover from a clean origin/main fast-forward race instead of failing after creating the local release commit.
+actual_result: "Unit coverage exercises successful retry, non-retryable failure, and retry failure paths; Sentry/telemetry gate was healthy and full coverage passed at 100/100/100/100."
+comments[6]{created_at,author,text}:
+  "2026-06-18T13:29:07.198Z",codex-implementation,"Duplicate check: pm search 'Auto Release non-fast-forward push main advanced git push origin HEAD' found historical release issues and the open Sentry-gate item pm-nb08, but no all-status item for the non-fast-forward branch push failure from run 27743290726. This item tracks that separate push-race defect."
+  "2026-06-18T13:30:46.534Z",codex-implementation,"Implementation link: bundled with pm-hl9y in this PR; pm deps is read-only in the current command surface, so the relationship is recorded here and both items share PR evidence."
+  "2026-06-18T13:45:11.620Z",codex-implementation,"Evidence: release pipeline spec passed (30 tests), linked pm test --run passed in sandbox, full coverage passed at 100/100/100/100, latest scheduled Auto Release failure 27743290726 was non-fast-forward push, Sentry/telemetry gate returned ok with 0 blocking Sentry issues."
+  "2026-06-18T14:00:00.321Z",codex-implementation,"Review follow-up: addressed Gemini/CodeRabbit feedback by passing git identity env through release push/rebase commands, aborting failed rebases, broadening branch-behind detection, and adding immediate-success plus rebase-failure tests. Re-ran release spec, typecheck, and full coverage at 100/100/100/100."
+  "2026-06-18T14:06:47.771Z",codex-implementation,"Review follow-up: addressed Gemini's latest branch-behind detector finding by removing the generic 'failed to push some refs' retry signal and adding a regression that permission failures with that Git trailer fail immediately without fetch/rebase. Focused release spec passed: node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts (32 tests)."
+  "2026-06-18T14:11:35.125Z",codex-implementation,"Evidence after latest Gemini fix: full coverage passed at 100/100/100/100 (4546 tests), pnpm typecheck passed, pnpm changelog:pm:check was unchanged using pm-changelog 2026.6.14, and pm validate --check-resolution --check-history-drift passed with only pre-existing validate_resolution_missing_fields:198 warnings and history_drift ok."
+files[2]{path,scope,note}:
+  scripts/release/run-release-pipeline.mjs,project,Retry atomic release commit/tag push after origin/main advances
+  tests/unit/scripts/release/run-release-pipeline.spec.ts,project,Regression coverage for non-fast-forward release push retry
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort --max-critical 0 --max-high 0,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs coverage,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqjjw3zh-1b6gbd,test,passed,"2026-06-18T13:43:26.963Z","2026-06-18T13:43:39.053Z","2026-06-18T13:43:39.053Z",null,null,2,0,0,null,null,null
+close_reason: "Fixed Auto Release push-race handling by atomically pushing release commit/tag and rebasing/retrying when origin/main advances; release spec, linked pm tests, typecheck, Sentry/telemetry gate, and full 100% coverage passed."
+body: ""

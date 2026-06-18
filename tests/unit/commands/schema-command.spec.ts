@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -192,6 +192,7 @@ describe("schema add-type command", () => {
       expect(added.warnings).toEqual(["extension_hook_failed:project:schema-type-write-hook:onWrite"]);
       expect(events).toEqual([
         "lock:create:schema-types.lock",
+        "schema:add-type-folder:spikes",
         "schema:add-type:types.json",
         "lock:release:schema-types.lock",
       ]);
@@ -354,6 +355,14 @@ describe("schema add-type command", () => {
       expect(addResult.type.description).toBe("demo");
       expect(addResult.type.default_status).toBe("open");
       expect(addResult.file.definitions).toBe(1);
+      await expect(access(path.join(context.pmPath, "footypes"))).resolves.toBeUndefined();
+
+      const health = context.runCli(["health", "--json"], { expectJson: true });
+      expect(health.code).toBe(0);
+      const directoriesCheck = (health.json as { checks: Array<{ name: string; details: { missing_required?: string[] } }> }).checks.find(
+        (check) => check.name === "directories",
+      );
+      expect(directoriesCheck?.details.missing_required ?? []).not.toContain("footypes");
 
       // The file on disk contains the definition.
       const types = await readTypes(context);
@@ -1524,6 +1533,8 @@ describe("schema apply-preset (GH-86ob)", () => {
       expect(applied.preset).toBe("agile");
       expect(applied.registered.sort()).toEqual(["Spike", "Story"]);
       expect(applied.replaced).toEqual([]);
+      await expect(access(path.join(context.pmPath, "spikes"))).resolves.toBeUndefined();
+      await expect(access(path.join(context.pmPath, "stories"))).resolves.toBeUndefined();
 
       const again = await schema.runSchemaApplyPreset("agile", {}, { path: context.pmPath });
       expect(again.registered).toEqual([]);
@@ -1568,6 +1579,8 @@ describe("schema add-type --infer (GH-245)", () => {
       expect(applied.applied).toBe(true);
       expect(applied.registered.sort()).toEqual(["Infra", "Security"]);
       expect(applied.skipped).toContainEqual({ name: "Task", reason: "shadows_builtin" });
+      await expect(access(path.join(context.pmPath, "infras"))).resolves.toBeUndefined();
+      await expect(access(path.join(context.pmPath, "securitys"))).resolves.toBeUndefined();
     });
   });
 
