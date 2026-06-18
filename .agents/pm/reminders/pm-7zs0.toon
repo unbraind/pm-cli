@@ -6,17 +6,18 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-06-17T17:21:01.407Z"
+updated_at: "2026-06-18T23:13:15.492Z"
 reminders[1]{at,text}:
   "2026-06-08T10:24:45.889Z",Confirm daily auto-release tagged a new version AND npm latest advanced; else inspect publish + Sentry-gate steps
 assignee: codex-sdk-cli-consolidation-20260616
 author: maintainer-agent
 parent: pm-u9d0
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-06-10T14:44:30.277Z",maintainer-agent,"2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
   "2026-06-16T11:26:49.976Z",codex-sdk-cli-consolidation-20260616,"Auto-release gate reproduced locally with SENTRY_PERSONAL_ADMIN_TOKEN; failing high issue was PM-CLI-1Q (handled CommandError: all items failed to apply). Added count-agnostic handled pattern 'item(s) failed to apply' and blocking_short_ids/blocking_titles output for diagnostics. Gate now passes in strict mode with max-high=0."
   "2026-06-16T11:46:33.866Z",codex-sdk-cli-consolidation-20260616,"Release-health verification: sentry-telemetry gate now passes in strict mode (max-critical=0,max-high=0) after expected handled-CommandError classification update; output now includes blocking_short_ids/blocking_titles for actionable diagnostics."
   "2026-06-17T17:21:01.407Z",claude-code-agent,"2026-06-17 verification: after merging PR #263 (GH-216/217), dispatched auto-release with push=true → Release workflow succeeded → tag v2026.6.17 cut → npm @unbrained/pm-cli@2026.6.17 published. Telemetry stack healthy (12,982 events/24h, queue drained, all containers up); Sentry live with 0 new unresolved errors/24h. NOTE: the 02:35 UTC SCHEDULED auto-release still fails on the stale Sentry reliability gate (tracked separately as pm-nb08); manual dispatch is the current reliable path."
+  "2026-06-18T23:13:15.492Z",claude-code-agent,"Release-health verification 2026-06-19 (post PR#290 merge): (1) Last published = npm 2026.6.17 == git v2026.6.17 (aligned). (2) The 2026-06-18 07:17Z scheduled Auto Release FAILED on a git push non-fast-forward — but that run executed BEFORE the push-retry fix bf35af26 merged at 16:19 CEST, so it ran old code. The fetch+rebase+retry now lives in scripts/release/run-release-pipeline.mjs pushReleaseRefs. (3) Manually dispatched Auto Release dry-run on current main (run 27794655651): FULLY GREEN — build, docs/static/coverage gates, tests, version compute, changelog, and the Sentry reliability gate all pass. (4) Telemetry stack healthy: all containers up, API ok (v2026.6.17), RabbitMQ queue drained (0 ready), 15061 Postgres events/24h (real-time). (5) Sentry: queryable with admin token; newest unresolved issue 2026-06-13, all expected CommandErrors, NO new errors from PR#290. Conclusion: the next scheduled cron (35 2 * * * UTC) will publish 2026.6.18/.19 automatically with the fixed push path. Verify npm picks it up after the next run."
 files[2]{path,scope,note}:
   scripts/release/sentry-telemetry-gate.mjs,project,Ignore expected handled apply-failure CommandError and expose blocking issue IDs
   tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,Regression coverage for updated sentry gate output/classification
