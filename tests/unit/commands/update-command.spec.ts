@@ -128,23 +128,29 @@ describe("update command helper coverage", () => {
       message: "restricted",
       required: "required text",
       why: "why text",
-      disallowedFlags: ["--comment", "--status", "--unknown"],
+      disallowedFlags: ["--comment", "--file", "--doc", "--status", "--unknown"],
     });
 
     expect(error).toMatchObject({
       exitCode: EXIT_CODE.USAGE,
       context: expect.objectContaining({
         code: "audit_update_restricted_options",
-        examples: expect.arrayContaining(['pm comments pm-1234 --add "<text>" --allow-audit-comment']),
+        examples: expect.arrayContaining([
+          'pm comments pm-1234 --add "<text>" --allow-audit-comment',
+          'pm files pm-1234 --add "path=<path>,scope=<scope>,note=<note>" --force',
+          'pm docs pm-1234 --add "path=<path>,scope=<scope>,note=<note>" --force',
+        ]),
         nextSteps: expect.arrayContaining([
-          "Re-run without: --comment, --status, --unknown",
+          "Re-run without: --comment, --file, --doc, --status, --unknown",
           'Replace --comment with: pm comments pm-1234 --add "<text>" --allow-audit-comment',
+          'Replace --file with: pm files pm-1234 --add "path=<path>,scope=<scope>,note=<note>" --force',
+          'Replace --doc with: pm docs pm-1234 --add "path=<path>,scope=<scope>,note=<note>" --force',
         ]),
       }),
     });
   });
 
-  it("enforces audit update override scopes for restricted lifecycle and append fields", () => {
+  it("enforces audit update override scopes for restricted lifecycle and unsafe append fields", () => {
     expect(() =>
       _testOnlyUpdateCommand.enforceAllowAuditUpdateScope(
         "pm-1234",
@@ -206,12 +212,9 @@ describe("update command helper coverage", () => {
           depRemove: ["pm-3"],
           replaceDeps: true,
           replaceTests: true,
-          comment: ["note"],
           note: ["note"],
           learning: ["lesson"],
-          file: ["path=src/a.ts"],
           test: ["command=pnpm test"],
-          doc: ["path=docs/a.md"],
           reminder: ["2026-01-01T00:00:00Z"],
           event: ["start=2026-01-01T00:00:00Z,end=2026-01-01T01:00:00Z"],
           clearDeps: true,
@@ -229,7 +232,7 @@ describe("update command helper coverage", () => {
     ).toThrow(expect.objectContaining({
       context: expect.objectContaining({
         code: "audit_update_restricted_options",
-        examples: expect.arrayContaining(['pm comments pm-1234 --add "<text>" --allow-audit-comment']),
+        nextSteps: expect.arrayContaining([expect.stringContaining("--note")]),
       }),
     }));
 
@@ -249,6 +252,9 @@ describe("update command helper coverage", () => {
         {
           allowAuditUpdate: true,
           title: "Allowed metadata",
+          comment: ["text=allowed audit evidence"],
+          file: ["path=src/a.ts"],
+          doc: ["path=docs/a.md"],
         } as UpdateCommandOptions,
         new Set(),
       ),
@@ -2346,17 +2352,54 @@ describe("runUpdate", () => {
     });
   });
 
-  it("guides audit-update append attempts to dedicated append commands", async () => {
+  it("allows audit-update evidence comments files and docs without ownership", async () => {
     await withTempPmPath(async (context) => {
-      const id = createTask(context, "update-audit-append-guidance", { assignee: "foreign-assignee" });
-      const error = await runUpdate(
+      const id = createTask(context, "update-audit-evidence-appends", { assignee: "foreign-assignee" });
+      const result = await runUpdate(
         id,
         {
           allowAuditUpdate: true,
           comment: ["author=audit-bot,created_at=2026-03-01T00:00:00.000Z,text=audit note"],
           file: ["path=src/cli/commands/update.ts,scope=project,note=audit file"],
           doc: ["path=docs/COMMANDS.md,scope=project,note=audit doc"],
-          message: "attempt append mutation via audit mode",
+          author: "actual-audit-owner",
+          message: "append audit evidence without claiming",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.audit_update).toBe(true);
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["comments", "files", "docs"]));
+      expect(latestUpdateOperation(context, id)).toBe("update_audit");
+      const item = result.item as {
+        comments?: Array<{ author?: string; text?: string }>;
+        files?: Array<{ path: string; note?: string }>;
+        docs?: Array<{ path: string; note?: string }>;
+      };
+      expect(item.comments?.at(-1)).toMatchObject({ author: "actual-audit-owner", text: "audit note" });
+      expect(item.files).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ path: "src/cli/commands/update.ts", note: "audit file" }),
+        ]),
+      );
+      expect(item.docs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ path: "docs/COMMANDS.md", note: "audit doc" }),
+        ]),
+      );
+    });
+  });
+
+  it("still guides audit-update attempts for unsafe append fields", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-audit-unsafe-append-guidance", { assignee: "foreign-assignee" });
+      const error = await runUpdate(
+        id,
+        {
+          allowAuditUpdate: true,
+          note: ["text=audit note"],
+          test: ["command=node --version"],
+          message: "attempt unsafe append mutation via audit mode",
         },
         { path: context.pmPath },
       ).then(
@@ -2368,18 +2411,9 @@ describe("runUpdate", () => {
 
       expect(error.exitCode).toBe(EXIT_CODE.USAGE);
       expect(error.context.code).toBe("audit_update_restricted_options");
-      expect(error.context.examples).toEqual(
-        expect.arrayContaining([
-          `pm comments ${id} --add "<text>" --allow-audit-comment`,
-          `pm files ${id} --add "path=<path>,scope=<scope>,note=<note>" --force`,
-          `pm docs ${id} --add "path=<path>,scope=<scope>,note=<note>" --force`,
-        ]),
-      );
       expect(error.context.nextSteps).toEqual(
         expect.arrayContaining([
-          expect.stringContaining("Replace --comment with:"),
-          expect.stringContaining("Replace --file with:"),
-          expect.stringContaining("Replace --doc with:"),
+          expect.stringContaining("Re-run without: --note, --test"),
         ]),
       );
     });

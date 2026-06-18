@@ -500,11 +500,11 @@ function parseUpdateUnsetTargets(
   return { frontMatterKeys, optionKeys };
 }
 
-// GH-207: restricted append-style flags have dedicated commands with their own
+// Restricted append-style flags have dedicated commands with their own
 // audit/override semantics; map each one to its exact replacement invocation so
-// the audit-scope error tells the agent how to retry instead of dead-ending.
-// Flag names verified against register-mutation.ts (comments has
-// --allow-audit-comment; files/docs only offer --force for ownership override).
+// audit-scope errors tell the agent how to retry instead of dead-ending. The
+// evidence append flags are allowed by --allow-audit-update, but still used by
+// narrower scopes such as --allow-audit-dep-update.
 const AUDIT_RESTRICTED_FLAG_REPLACEMENTS: ReadonlyMap<string, (id: string) => string> = new Map([
   ["--comment", (id: string) => `pm comments ${id} --add "<text>" --allow-audit-comment`],
   ["--file", (id: string) => `pm files ${id} --add "path=<path>,scope=<scope>,note=<note>" --force`],
@@ -519,8 +519,8 @@ function buildAuditScopeRestrictedOptionsError(params: {
   why: string;
   disallowedFlags: string[];
 }): PmCliError {
-  // GH-207: only surface replacement commands for restricted flags the caller
-  // actually passed, so the guidance is an exact retry path.
+  // Only surface replacement commands for restricted flags the caller actually
+  // passed, so the guidance is an exact retry path.
   const replacementCommands = params.disallowedFlags
     .filter((flag) => AUDIT_RESTRICTED_FLAG_REPLACEMENTS.has(flag))
     .map((flag) => AUDIT_RESTRICTED_FLAG_REPLACEMENTS.get(flag)!(params.id));
@@ -675,23 +675,14 @@ function enforceAllowAuditUpdateScope(id: string, options: UpdateCommandOptions,
   if (options.replaceTests === true) {
     disallowedFlags.push("--replace-tests");
   }
-  if (options.comment !== undefined) {
-    disallowedFlags.push("--comment");
-  }
   if (options.note !== undefined) {
     disallowedFlags.push("--note");
   }
   if (options.learning !== undefined) {
     disallowedFlags.push("--learning");
   }
-  if (options.file !== undefined) {
-    disallowedFlags.push("--file");
-  }
   if (options.test !== undefined) {
     disallowedFlags.push("--test");
-  }
-  if (options.doc !== undefined) {
-    disallowedFlags.push("--doc");
   }
   if (options.reminder !== undefined) {
     disallowedFlags.push("--reminder");
@@ -739,9 +730,9 @@ function enforceAllowAuditUpdateScope(id: string, options: UpdateCommandOptions,
     throw buildAuditScopeRestrictedOptionsError({
       id,
       code: "audit_update_restricted_options",
-      message: `--allow-audit-update only supports non-lifecycle metadata fields. Remove restricted options: ${disallowedFlags.join(", ")}`,
-      required: "Limit --allow-audit-update to non-lifecycle metadata fields; route appends and lifecycle changes through their dedicated commands.",
-      why: "--allow-audit-update is a non-owner override scoped to metadata-only audits; lifecycle, ownership, and append/clear operations keep their normal ownership rules.",
+      message: `--allow-audit-update only supports non-lifecycle metadata fields and evidence appends. Remove restricted options: ${disallowedFlags.join(", ")}`,
+      required: "Limit --allow-audit-update to non-lifecycle metadata fields plus append-only --comment/--file/--doc evidence; route restricted appends and lifecycle changes through their dedicated commands.",
+      why: "--allow-audit-update is a non-owner override scoped to metadata audits and append-only evidence; lifecycle, ownership, dependency mutations, restricted append fields, and clear/replace operations keep their normal ownership rules.",
       disallowedFlags,
     });
   }
@@ -1455,7 +1446,13 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   const nowIso = nowValue.toISOString();
   const dependencyUpdates = parseDependencyAdditions(options.dep, settings.id_prefix, nowIso);
   const dependencyRemovals = parseDependencyRemovals(options.depRemove, settings.id_prefix);
-  const commentUpdates = parseLogSeed("--comment", options.comment, nowIso, author);
+  const parsedCommentUpdates = parseLogSeed("--comment", options.comment, nowIso, author);
+  const commentUpdates = options.allowAuditUpdate === true && parsedCommentUpdates.values
+    ? {
+        ...parsedCommentUpdates,
+        values: parsedCommentUpdates.values.map((entry) => ({ ...entry, author })),
+      }
+    : parsedCommentUpdates;
   const noteUpdates = parseLogSeed("--note", options.note, nowIso, author);
   const learningUpdates = parseLogSeed("--learning", options.learning, nowIso, author);
   const fileUpdates = parseFiles(options.file);
