@@ -1572,7 +1572,9 @@ function forceExactIdHitsToTop(rankedHits: SearchHit[], keywordHits: SearchHit[]
   // full-ID match always precedes a short-ID match for the same query, then
   // offset the whole band above every remaining hit. ids are unique, so two
   // exact-ID hits can never tie on score — sorting on score alone is total.
-  const orderedExactHits = [...exactIdHits].sort((left, right) => right.score - left.score);
+  // exactIdHits is already a fresh array from keywordHits.filter(...), so sort
+  // it in place — no defensive copy needed.
+  const orderedExactHits = exactIdHits.sort((left, right) => right.score - left.score);
   const bandBase = maxRemainingScore + orderedExactHits.length + 1;
   const promoted = orderedExactHits.map((hit, index) => ({
     // Spread the original keyword hit so flags like matched_all_terms /
