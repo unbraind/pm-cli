@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/linked-test-parsers
+ *
+ * Implements the pm linked test parsers command surface and its agent-facing runtime behavior.
+ */
 import { parseOptionalNumber } from "../../core/item/parse.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -24,8 +29,14 @@ import type { LinkedTest, LinkScope } from "../../types/index.js";
 export const LINKED_TEST_PROTECTED_ENV_KEYS = new Set(["PM_PATH", "PM_GLOBAL_PATH", "FORCE_COLOR"]);
 export const LINKED_TEST_ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 export const LINKED_TEST_PM_CONTEXT_MODE_VALUES = ["schema", "tracker", "auto"] as const;
+/**
+ * Restricts linked test pm context mode values accepted by command, SDK, and storage contracts.
+ */
 export type LinkedTestPmContextMode = (typeof LINKED_TEST_PM_CONTEXT_MODE_VALUES)[number];
 
+/**
+ * Implements parse linked test env set for the public runtime surface of this module.
+ */
 export function parseLinkedTestEnvSet(raw: string | undefined, optionName: string): Record<string, string> | undefined {
   if (!raw) {
     return undefined;
@@ -61,6 +72,9 @@ export function parseLinkedTestEnvSet(raw: string | undefined, optionName: strin
   /* c8 ignore stop */
 }
 
+/**
+ * Implements parse linked test env clear for the public runtime surface of this module.
+ */
 export function parseLinkedTestEnvClear(raw: string | undefined, optionName: string): string[] | undefined {
   if (!raw) {
     return undefined;
@@ -80,6 +94,9 @@ export function parseLinkedTestEnvClear(raw: string | undefined, optionName: str
   return keys;
 }
 
+/**
+ * Implements parse linked test boolean for the public runtime surface of this module.
+ */
 export function parseLinkedTestBoolean(raw: string | undefined, optionName: string, fieldLabel: string): boolean | undefined {
   if (!raw) {
     return undefined;
@@ -94,6 +111,9 @@ export function parseLinkedTestBoolean(raw: string | undefined, optionName: stri
   throw new PmCliError(`${optionName} ${fieldLabel} must be one of true|false|1|0|yes|no`, EXIT_CODE.USAGE);
 }
 
+/**
+ * Implements parse linked test context mode for the public runtime surface of this module.
+ */
 export function parseLinkedTestContextMode(
   raw: string | undefined,
   optionName: string,
@@ -111,6 +131,9 @@ export function parseLinkedTestContextMode(
   );
 }
 
+/**
+ * Implements parse linked test string list for the public runtime surface of this module.
+ */
 export function parseLinkedTestStringList(raw: string | undefined): string[] | undefined {
   if (!raw) {
     return undefined;
@@ -119,6 +142,9 @@ export function parseLinkedTestStringList(raw: string | undefined): string[] | u
   return values.length > 0 ? values : undefined;
 }
 
+/**
+ * Implements parse linked test regex list for the public runtime surface of this module.
+ */
 export function parseLinkedTestRegexList(raw: string | undefined, optionName: string, fieldLabel: string): string[] | undefined {
   const values = parseLinkedTestStringList(raw);
   if (!values || values.length === 0) {
@@ -140,6 +166,9 @@ export function parseLinkedTestRegexList(raw: string | undefined, optionName: st
   return values;
 }
 
+/**
+ * Implements parse linked test min lines for the public runtime surface of this module.
+ */
 export function parseLinkedTestMinLines(raw: string | undefined, optionName: string): number | undefined {
   if (!raw) {
     return undefined;
@@ -151,6 +180,9 @@ export function parseLinkedTestMinLines(raw: string | undefined, optionName: str
   return parsed;
 }
 
+/**
+ * Implements parse linked test assertion equals map for the public runtime surface of this module.
+ */
 export function parseLinkedTestAssertionEqualsMap(raw: string | undefined, optionName: string): Record<string, string> | undefined {
   if (!raw) {
     return undefined;
@@ -183,6 +215,9 @@ export function parseLinkedTestAssertionEqualsMap(raw: string | undefined, optio
   /* c8 ignore stop */
 }
 
+/**
+ * Implements parse linked test assertion gte map for the public runtime surface of this module.
+ */
 export function parseLinkedTestAssertionGteMap(raw: string | undefined, optionName: string): Record<string, number> | undefined {
   if (!raw) {
     return undefined;
@@ -506,6 +541,9 @@ function parseLinkedTestJsonEntry(rawEntry: unknown, label: string, optionName: 
   };
 }
 
+/**
+ * Implements parse linked test json entries for the public runtime surface of this module.
+ */
 export function parseLinkedTestJsonEntries(raw: string, optionName: string): LinkedTest[] {
   const trimmed = raw.trim();
   if (trimmed.length === 0) {

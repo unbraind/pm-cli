@@ -1,3 +1,8 @@
+/**
+ * @module sdk/cli-contracts
+ *
+ * Defines public SDK APIs and package-author helpers for Cli Contracts.
+ */
 export type { CommanderOptionAliasContract, CommanderOptionRegistrationContract } from "./cli-contracts/commander-types.js";
 export {
   ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS,
@@ -83,6 +88,9 @@ import {
   PLAN_ACTION_PARAMETER_METADATA,
 } from "./cli-contracts/tool-parameter-tables.js";
 
+/**
+ * Documents the cli flag contract payload exchanged by command, SDK, and package integrations.
+ */
 export interface CliFlagContract {
   flag: string;
   short?: string;
@@ -101,6 +109,9 @@ export interface CliFlagContract {
   value_type?: "string" | "number" | "boolean";
 }
 
+/**
+ * Documents the tool option flag contract payload exchanged by command, SDK, and package integrations.
+ */
 export interface ToolOptionFlagContract {
   param: string;
   flag: string;
@@ -120,6 +131,9 @@ function normalizeFlagAliasKey(flag: string): string {
   return `--${flag.slice(2).replaceAll("_", "-")}`;
 }
 
+/**
+ * Implements with flag alias metadata for the public runtime surface of this module.
+ */
 export function withFlagAliasMetadata(flagContracts: CliFlagContract[]): CliFlagContract[] {
   const aliasesByCanonical = new Map<string, Set<string>>();
   for (const contract of flagContracts) {
@@ -155,6 +169,9 @@ export function withFlagAliasMetadata(flagContracts: CliFlagContract[]): CliFlag
   });
 }
 
+/**
+ * Implements compact flag alias contracts for the public runtime surface of this module.
+ */
 export function compactFlagAliasContracts(flagContracts: CliFlagContract[]): CliFlagContract[] {
   const withAliases = withFlagAliasMetadata(flagContracts);
   const canonicalFlags = new Set(withAliases.map((contract) => contract.flag));
@@ -1467,6 +1484,9 @@ function normalizeCommandNameForContracts(commandName: string | undefined): stri
   return commandName.trim().toLowerCase();
 }
 
+/**
+ * Implements resolve subcommand flag contracts for command for the public runtime surface of this module.
+ */
 export function resolveSubcommandFlagContractsForCommand(commandName: string | undefined): CliFlagContract[] {
   const normalized = normalizeCommandNameForContracts(commandName);
   if (normalized.length === 0) {
@@ -1631,6 +1651,9 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
   }
 }
 
+/**
+ * Implements to completion flag string for the public runtime surface of this module.
+ */
 export function toCompletionFlagString(flagContracts: CliFlagContract[], includeGlobal = true): string {
   const aliasAwareContracts = withFlagAliasMetadata(flagContracts);
   const scoped = aliasAwareContracts
@@ -1669,6 +1692,9 @@ const PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS: Partial<Record<PmToolAction, reado
   "close-many": ["fullChangedFields"],
 };
 
+/**
+ * Documents the pm action schema contract payload exchanged by command, SDK, and package integrations.
+ */
 export interface PmActionSchemaContract {
   required?: string[];
   optional?: string[];

@@ -1,3 +1,8 @@
+/**
+ * @module types
+ *
+ * Defines the shared project-management data model used by CLI, SDK, MCP, and packages.
+ */
 export const BUILTIN_ITEM_TYPE_VALUES = [
   "Epic",
   "Feature",
@@ -12,7 +17,13 @@ export const BUILTIN_ITEM_TYPE_VALUES = [
   "Plan",
 ] as const;
 export const ITEM_TYPE_VALUES = BUILTIN_ITEM_TYPE_VALUES;
+/**
+ * Restricts builtin item type values accepted by command, SDK, and storage contracts.
+ */
 export type BuiltinItemType = (typeof BUILTIN_ITEM_TYPE_VALUES)[number];
+/**
+ * Restricts item type values accepted by command, SDK, and storage contracts.
+ */
 export type ItemType = string;
 
 export const STATUS_VALUES = [
@@ -23,6 +34,9 @@ export const STATUS_VALUES = [
   "closed",
   "canceled",
 ] as const;
+/**
+ * Restricts item status values accepted by command, SDK, and storage contracts.
+ */
 export type ItemStatus = string;
 
 export const RUNTIME_STATUS_ROLE_VALUES = [
@@ -36,15 +50,27 @@ export const RUNTIME_STATUS_ROLE_VALUES = [
   "default_close",
   "default_cancel",
 ] as const;
+/**
+ * Restricts runtime status role values accepted by command, SDK, and storage contracts.
+ */
 export type RuntimeStatusRole = (typeof RUNTIME_STATUS_ROLE_VALUES)[number];
 
 export const RUNTIME_FIELD_TYPE_VALUES = ["string", "number", "boolean", "string_array"] as const;
+/**
+ * Restricts runtime field type values accepted by command, SDK, and storage contracts.
+ */
 export type RuntimeFieldType = (typeof RUNTIME_FIELD_TYPE_VALUES)[number];
 
 export const RUNTIME_FIELD_COMMAND_VALUES = ["create", "update", "update_many", "list", "search", "calendar", "context"] as const;
+/**
+ * Restricts runtime field command values accepted by command, SDK, and storage contracts.
+ */
 export type RuntimeFieldCommand = (typeof RUNTIME_FIELD_COMMAND_VALUES)[number];
 
 export const RUNTIME_UNKNOWN_FIELD_POLICY_VALUES = ["allow", "warn", "reject"] as const;
+/**
+ * Restricts runtime unknown field policy values accepted by command, SDK, and storage contracts.
+ */
 export type RuntimeUnknownFieldPolicy = (typeof RUNTIME_UNKNOWN_FIELD_POLICY_VALUES)[number];
 
 export const DEPENDENCY_KIND_VALUES = [
@@ -62,39 +88,84 @@ export const DEPENDENCY_KIND_VALUES = [
   "supersedes",
   "task",
 ] as const;
+/**
+ * Restricts dependency kind values accepted by command, SDK, and storage contracts.
+ */
 export type DependencyKind = (typeof DEPENDENCY_KIND_VALUES)[number];
 
 export const SCOPE_VALUES = ["project", "global"] as const;
+/**
+ * Restricts link scope values accepted by command, SDK, and storage contracts.
+ */
 export type LinkScope = (typeof SCOPE_VALUES)[number];
 
 export const RISK_VALUES = ["low", "medium", "high", "critical"] as const;
+/**
+ * Restricts risk level values accepted by command, SDK, and storage contracts.
+ */
 export type RiskLevel = (typeof RISK_VALUES)[number];
 
 export const ISSUE_SEVERITY_VALUES = ["low", "medium", "high", "critical"] as const;
+/**
+ * Restricts issue severity values accepted by command, SDK, and storage contracts.
+ */
 export type IssueSeverity = (typeof ISSUE_SEVERITY_VALUES)[number];
 
 export const CONFIDENCE_TEXT_VALUES = ["low", "medium", "high"] as const;
+/**
+ * Restricts confidence text level values accepted by command, SDK, and storage contracts.
+ */
 export type ConfidenceTextLevel = (typeof CONFIDENCE_TEXT_VALUES)[number];
+/**
+ * Restricts confidence value values accepted by command, SDK, and storage contracts.
+ */
 export type ConfidenceValue = number | ConfidenceTextLevel;
 
 export const ITEM_FORMAT_VALUES = ["toon", "json_markdown"] as const;
+/**
+ * Restricts item format values accepted by command, SDK, and storage contracts.
+ */
 export type ItemFormat = (typeof ITEM_FORMAT_VALUES)[number];
 
 export const SPRINT_RELEASE_FORMAT_POLICY_VALUES = ["warn", "strict_error"] as const;
+/**
+ * Restricts sprint release format policy values accepted by command, SDK, and storage contracts.
+ */
 export type SprintReleaseFormatPolicy = (typeof SPRINT_RELEASE_FORMAT_POLICY_VALUES)[number];
 export const PARENT_REFERENCE_POLICY_VALUES = ["warn", "strict_error"] as const;
+/**
+ * Restricts parent reference policy values accepted by command, SDK, and storage contracts.
+ */
 export type ParentReferencePolicy = (typeof PARENT_REFERENCE_POLICY_VALUES)[number];
 export const VALIDATE_METADATA_PROFILE_VALUES = ["core", "strict", "custom"] as const;
+/**
+ * Restricts validate metadata profile values accepted by command, SDK, and storage contracts.
+ */
 export type ValidateMetadataProfile = (typeof VALIDATE_METADATA_PROFILE_VALUES)[number];
 export const GOVERNANCE_PRESET_VALUES = ["minimal", "default", "strict", "custom"] as const;
+/**
+ * Restricts governance preset values accepted by command, SDK, and storage contracts.
+ */
 export type GovernancePreset = (typeof GOVERNANCE_PRESET_VALUES)[number];
 export const GOVERNANCE_OWNERSHIP_ENFORCEMENT_VALUES = ["none", "warn", "strict"] as const;
+/**
+ * Restricts governance ownership enforcement values accepted by command, SDK, and storage contracts.
+ */
 export type GovernanceOwnershipEnforcement = (typeof GOVERNANCE_OWNERSHIP_ENFORCEMENT_VALUES)[number];
 export const GOVERNANCE_CREATE_MODE_DEFAULT_VALUES = ["progressive", "strict"] as const;
+/**
+ * Restricts governance create mode default values accepted by command, SDK, and storage contracts.
+ */
 export type GovernanceCreateModeDefault = (typeof GOVERNANCE_CREATE_MODE_DEFAULT_VALUES)[number];
 export const GOVERNANCE_CLOSE_VALIDATION_DEFAULT_VALUES = ["off", "warn", "strict"] as const;
+/**
+ * Restricts governance close validation default values accepted by command, SDK, and storage contracts.
+ */
 export type GovernanceCloseValidationDefault = (typeof GOVERNANCE_CLOSE_VALIDATION_DEFAULT_VALUES)[number];
 export const GOVERNANCE_WORKFLOW_ENFORCEMENT_VALUES = ["off", "warn", "strict"] as const;
+/**
+ * Restricts governance workflow enforcement values accepted by command, SDK, and storage contracts.
+ */
 export type GovernanceWorkflowEnforcement = (typeof GOVERNANCE_WORKFLOW_ENFORCEMENT_VALUES)[number];
 export const VALIDATE_METADATA_REQUIRED_FIELD_VALUES = [
   "author",
@@ -107,12 +178,21 @@ export const VALIDATE_METADATA_REQUIRED_FIELD_VALUES = [
   "sprint",
   "release",
 ] as const;
+/**
+ * Restricts validate metadata required field values accepted by command, SDK, and storage contracts.
+ */
 export type ValidateMetadataRequiredField = (typeof VALIDATE_METADATA_REQUIRED_FIELD_VALUES)[number];
 
 export const RECURRENCE_FREQUENCY_VALUES = ["daily", "weekly", "monthly", "yearly"] as const;
+/**
+ * Restricts recurrence frequency values accepted by command, SDK, and storage contracts.
+ */
 export type RecurrenceFrequency = (typeof RECURRENCE_FREQUENCY_VALUES)[number];
 
 export const RECURRENCE_WEEKDAY_VALUES = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+/**
+ * Restricts recurrence weekday values accepted by command, SDK, and storage contracts.
+ */
 export type RecurrenceWeekday = (typeof RECURRENCE_WEEKDAY_VALUES)[number];
 
 /**
@@ -124,6 +204,9 @@ export function weekdayOrderIndex(value: RecurrenceWeekday): number {
   return RECURRENCE_WEEKDAY_VALUES.indexOf(value);
 }
 
+/**
+ * Documents the dependency payload exchanged by command, SDK, and package integrations.
+ */
 export interface Dependency {
   id: string;
   kind: DependencyKind;
@@ -132,24 +215,36 @@ export interface Dependency {
   source_kind?: string;
 }
 
+/**
+ * Documents the comment payload exchanged by command, SDK, and package integrations.
+ */
 export interface Comment {
   created_at: string;
   author: string;
   text: string;
 }
 
+/**
+ * Documents the log note payload exchanged by command, SDK, and package integrations.
+ */
 export interface LogNote {
   created_at: string;
   author: string;
   text: string;
 }
 
+/**
+ * Documents the linked file payload exchanged by command, SDK, and package integrations.
+ */
 export interface LinkedFile {
   path: string;
   scope: LinkScope;
   note?: string;
 }
 
+/**
+ * Documents the linked test payload exchanged by command, SDK, and package integrations.
+ */
 export interface LinkedTest {
   command?: string;
   path?: string;
@@ -169,17 +264,26 @@ export interface LinkedTest {
   note?: string;
 }
 
+/**
+ * Documents the linked doc payload exchanged by command, SDK, and package integrations.
+ */
 export interface LinkedDoc {
   path: string;
   scope: LinkScope;
   note?: string;
 }
 
+/**
+ * Documents the reminder payload exchanged by command, SDK, and package integrations.
+ */
 export interface Reminder {
   at: string;
   text: string;
 }
 
+/**
+ * Documents the recurrence rule payload exchanged by command, SDK, and package integrations.
+ */
 export interface RecurrenceRule {
   freq: RecurrenceFrequency;
   interval?: number;
@@ -190,6 +294,9 @@ export interface RecurrenceRule {
   exdates?: string[];
 }
 
+/**
+ * Documents the calendar event payload exchanged by command, SDK, and package integrations.
+ */
 export interface CalendarEvent {
   start_at: string;
   end_at?: string;
@@ -211,6 +318,9 @@ export const PLAN_MODE_VALUES = [
   "completed",
   "superseded",
 ] as const;
+/**
+ * Restricts plan mode values accepted by command, SDK, and storage contracts.
+ */
 export type PlanMode = (typeof PLAN_MODE_VALUES)[number];
 
 export const PLAN_STEP_STATUS_VALUES = [
@@ -221,9 +331,15 @@ export const PLAN_STEP_STATUS_VALUES = [
   "skipped",
   "superseded",
 ] as const;
+/**
+ * Restricts plan step status values accepted by command, SDK, and storage contracts.
+ */
 export type PlanStepStatus = (typeof PLAN_STEP_STATUS_VALUES)[number];
 
 export const PLAN_HARNESS_VALUES = ["codex", "claude-code", "cursor", "generic"] as const;
+/**
+ * Restricts plan harness values accepted by command, SDK, and storage contracts.
+ */
 export type PlanHarness = (typeof PLAN_HARNESS_VALUES)[number];
 
 export const PLAN_STEP_LINK_KIND_VALUES = [
@@ -236,8 +352,14 @@ export const PLAN_STEP_LINK_KIND_VALUES = [
   "verifies",
   "supersedes",
 ] as const;
+/**
+ * Restricts plan step link kind values accepted by command, SDK, and storage contracts.
+ */
 export type PlanStepLinkKind = (typeof PLAN_STEP_LINK_KIND_VALUES)[number];
 
+/**
+ * Documents the plan step link payload exchanged by command, SDK, and package integrations.
+ */
 export interface PlanStepLink {
   id: string;
   kind: PlanStepLinkKind;
@@ -245,24 +367,36 @@ export interface PlanStepLink {
   required_before_step?: boolean;
 }
 
+/**
+ * Documents the plan step file payload exchanged by command, SDK, and package integrations.
+ */
 export interface PlanStepFile {
   path: string;
   scope?: LinkScope;
   note?: string;
 }
 
+/**
+ * Documents the plan step test payload exchanged by command, SDK, and package integrations.
+ */
 export interface PlanStepTest {
   command?: string;
   path?: string;
   note?: string;
 }
 
+/**
+ * Documents the plan step doc payload exchanged by command, SDK, and package integrations.
+ */
 export interface PlanStepDoc {
   path: string;
   scope?: LinkScope;
   note?: string;
 }
 
+/**
+ * Documents the plan step payload exchanged by command, SDK, and package integrations.
+ */
 export interface PlanStep {
   id: string;
   order: number;
@@ -282,6 +416,9 @@ export interface PlanStep {
   completed_at?: string;
 }
 
+/**
+ * Documents the plan decision payload exchanged by command, SDK, and package integrations.
+ */
 export interface PlanDecision {
   ts: string;
   author: string;
@@ -291,6 +428,9 @@ export interface PlanDecision {
   step_id?: string;
 }
 
+/**
+ * Documents the plan discovery payload exchanged by command, SDK, and package integrations.
+ */
 export interface PlanDiscovery {
   ts: string;
   author: string;
@@ -298,12 +438,18 @@ export interface PlanDiscovery {
   step_id?: string;
 }
 
+/**
+ * Documents the plan validation check payload exchanged by command, SDK, and package integrations.
+ */
 export interface PlanValidationCheck {
   text: string;
   command?: string;
   expected?: string;
 }
 
+/**
+ * Documents the item type option definition payload exchanged by command, SDK, and package integrations.
+ */
 export interface ItemTypeOptionDefinition {
   key: string;
   values: string[];
@@ -312,6 +458,9 @@ export interface ItemTypeOptionDefinition {
   description?: string;
 }
 
+/**
+ * Documents the item type command option policy payload exchanged by command, SDK, and package integrations.
+ */
 export interface ItemTypeCommandOptionPolicy {
   command: "create" | "update";
   option: string;
@@ -320,6 +469,9 @@ export interface ItemTypeCommandOptionPolicy {
   enabled?: boolean;
 }
 
+/**
+ * Documents the item type definition payload exchanged by command, SDK, and package integrations.
+ */
 export interface ItemTypeDefinition {
   name: string;
   description?: string;
@@ -336,6 +488,9 @@ export interface ItemTypeDefinition {
   command_option_policies?: ItemTypeCommandOptionPolicy[];
 }
 
+/**
+ * Documents the runtime status definition payload exchanged by command, SDK, and package integrations.
+ */
 export interface RuntimeStatusDefinition {
   id: string;
   aliases?: string[];
@@ -344,6 +499,9 @@ export interface RuntimeStatusDefinition {
   order?: number;
 }
 
+/**
+ * Documents the runtime field definition payload exchanged by command, SDK, and package integrations.
+ */
 export interface RuntimeFieldDefinition {
   key: string;
   metadata_key?: string;
@@ -363,6 +521,9 @@ export interface RuntimeFieldDefinition {
   allow_unset?: boolean;
 }
 
+/**
+ * Documents the runtime workflow definition payload exchanged by command, SDK, and package integrations.
+ */
 export interface RuntimeWorkflowDefinition {
   draft_status?: string;
   open_status?: string;
@@ -372,6 +533,9 @@ export interface RuntimeWorkflowDefinition {
   canceled_status?: string;
 }
 
+/**
+ * Documents the runtime schema file config payload exchanged by command, SDK, and package integrations.
+ */
 export interface RuntimeSchemaFileConfig {
   types?: string;
   statuses?: string;
@@ -390,6 +554,9 @@ export interface TypeWorkflowDefinition {
   allowed_transitions: [string, string][];
 }
 
+/**
+ * Documents the runtime schema settings payload exchanged by command, SDK, and package integrations.
+ */
 export interface RuntimeSchemaSettings {
   version: number;
   files: RuntimeSchemaFileConfig;
@@ -400,6 +567,9 @@ export interface RuntimeSchemaSettings {
   unknown_field_policy: RuntimeUnknownFieldPolicy;
 }
 
+/**
+ * Documents the item test run summary payload exchanged by command, SDK, and package integrations.
+ */
 export interface ItemTestRunSummary {
   run_id: string;
   kind: "test" | "test-all";
@@ -417,6 +587,9 @@ export interface ItemTestRunSummary {
   fail_on_skipped_triggered?: boolean;
 }
 
+/**
+ * Documents the item metadata payload exchanged by command, SDK, and package integrations.
+ */
 export interface ItemMetadata {
   id: string;
   title: string;
@@ -495,11 +668,17 @@ export interface ItemMetadata {
  */
 export type ItemFrontMatter = ItemMetadata;
 
+/**
+ * Documents the item document payload exchanged by command, SDK, and package integrations.
+ */
 export interface ItemDocument {
   metadata: ItemMetadata;
   body: string;
 }
 
+/**
+ * Documents the history patch op payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistoryPatchOp {
   op: "add" | "remove" | "replace" | "move" | "copy" | "test";
   path: string;
@@ -507,6 +686,9 @@ export interface HistoryPatchOp {
   value?: unknown;
 }
 
+/**
+ * Documents the history entry payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistoryEntry {
   ts: string;
   author: string;
@@ -518,6 +700,9 @@ export interface HistoryEntry {
 }
 
 export const CONTEXT_DEPTH_VALUES = ["brief", "standard", "deep", "full"] as const;
+/**
+ * Restricts context depth values accepted by command, SDK, and storage contracts.
+ */
 export type ContextDepth = (typeof CONTEXT_DEPTH_VALUES)[number];
 
 export const CONTEXT_SECTION_VALUES = [
@@ -532,8 +717,14 @@ export const CONTEXT_SECTION_VALUES = [
   "staleness",
   "tests",
 ] as const;
+/**
+ * Restricts context section name values accepted by command, SDK, and storage contracts.
+ */
 export type ContextSectionName = (typeof CONTEXT_SECTION_VALUES)[number];
 
+/**
+ * Documents the context section settings payload exchanged by command, SDK, and package integrations.
+ */
 export interface ContextSectionSettings {
   hierarchy: boolean;
   activity: boolean;
@@ -547,6 +738,9 @@ export interface ContextSectionSettings {
   tests: boolean;
 }
 
+/**
+ * Documents the context settings payload exchanged by command, SDK, and package integrations.
+ */
 export interface ContextSettings {
   default_depth: ContextDepth;
   activity_limit: number;
@@ -554,6 +748,9 @@ export interface ContextSettings {
   sections: ContextSectionSettings;
 }
 
+/**
+ * Documents the governance settings payload exchanged by command, SDK, and package integrations.
+ */
 export interface GovernanceSettings {
   preset: GovernancePreset;
   ownership_enforcement: GovernanceOwnershipEnforcement;
@@ -572,10 +769,22 @@ export interface GovernanceSettings {
   workflow_enforcement?: GovernanceWorkflowEnforcement;
 }
 
+/**
+ * Restricts extension policy mode values accepted by command, SDK, and storage contracts.
+ */
 export type ExtensionPolicyMode = "off" | "warn" | "enforce";
+/**
+ * Restricts extension trust mode values accepted by command, SDK, and storage contracts.
+ */
 export type ExtensionTrustMode = "off" | "warn" | "enforce";
+/**
+ * Restricts extension sandbox profile values accepted by command, SDK, and storage contracts.
+ */
 export type ExtensionSandboxProfile = "none" | "restricted" | "strict";
 
+/**
+ * Documents the extension policy override settings payload exchanged by command, SDK, and package integrations.
+ */
 export interface ExtensionPolicyOverrideSettings {
   name: string;
   disabled?: boolean;
@@ -594,6 +803,9 @@ export interface ExtensionPolicyOverrideSettings {
   blocked_services?: string[];
 }
 
+/**
+ * Documents the extension policy settings payload exchanged by command, SDK, and package integrations.
+ */
 export interface ExtensionPolicySettings {
   mode: ExtensionPolicyMode;
   trust_mode: ExtensionTrustMode;
@@ -615,6 +827,9 @@ export interface ExtensionPolicySettings {
   extension_overrides: ExtensionPolicyOverrideSettings[];
 }
 
+/**
+ * Documents the agent guidance settings payload exchanged by command, SDK, and package integrations.
+ */
 export interface AgentGuidanceSettings {
   prompt_completed: boolean;
   declined: boolean;
@@ -623,19 +838,31 @@ export interface AgentGuidanceSettings {
   last_checked_files: string[];
 }
 
+/**
+ * Restricts search mutation refresh policy values accepted by command, SDK, and storage contracts.
+ */
 export type SearchMutationRefreshPolicy = "cache_only" | "semantic_configured" | "semantic_auto";
 
+/**
+ * Documents the search query expansion settings payload exchanged by command, SDK, and package integrations.
+ */
 export interface SearchQueryExpansionSettings {
   enabled: boolean;
   provider: string;
 }
 
+/**
+ * Documents the search rerank settings payload exchanged by command, SDK, and package integrations.
+ */
 export interface SearchRerankSettings {
   enabled: boolean;
   model: string;
   top_k: number;
 }
 
+/**
+ * Documents the pm settings payload exchanged by command, SDK, and package integrations.
+ */
 export interface PmSettings {
   version: number;
   id_prefix: string;

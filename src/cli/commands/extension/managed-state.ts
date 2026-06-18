@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/extension/managed-state
+ *
+ * Implements extension package-management support for Managed State.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { EXIT_CODE } from "../../../core/shared/constants.js";
@@ -9,6 +14,9 @@ import type { ExtensionScope } from "../extension.js";
 const MANAGED_EXTENSION_STATE_FILENAME = ".managed-extensions.json";
 const MANAGED_EXTENSION_STATE_VERSION = 1;
 
+/**
+ * Documents the managed extension source payload exchanged by command, SDK, and package integrations.
+ */
 export interface ManagedExtensionSource {
   kind: "local" | "github" | "npm" | "builtin";
   input: string;
@@ -24,6 +32,9 @@ export interface ManagedExtensionSource {
   commit?: string;
 }
 
+/**
+ * Documents the managed extension record payload exchanged by command, SDK, and package integrations.
+ */
 export interface ManagedExtensionRecord {
   name: string;
   directory: string;
@@ -40,22 +51,34 @@ export interface ManagedExtensionRecord {
   update_error?: string;
 }
 
+/**
+ * Documents the managed extension state payload exchanged by command, SDK, and package integrations.
+ */
 export interface ManagedExtensionState {
   version: number;
   updated_at: string;
   entries: ManagedExtensionRecord[];
 }
 
+/**
+ * Documents the managed extension state read result payload exchanged by command, SDK, and package integrations.
+ */
 export interface ManagedExtensionStateReadResult {
   path: string;
   state: ManagedExtensionState;
   warnings: string[];
 }
 
+/**
+ * Implements resolve managed extension state path for the public runtime surface of this module.
+ */
 export function resolveManagedExtensionStatePath(extensionsRoot: string): string {
   return path.join(extensionsRoot, MANAGED_EXTENSION_STATE_FILENAME);
 }
 
+/**
+ * Implements create empty managed extension state for the public runtime surface of this module.
+ */
 export function createEmptyManagedExtensionState(): ManagedExtensionState {
   return {
     version: MANAGED_EXTENSION_STATE_VERSION,
@@ -64,6 +87,9 @@ export function createEmptyManagedExtensionState(): ManagedExtensionState {
   };
 }
 
+/**
+ * Implements sort managed entries for the public runtime surface of this module.
+ */
 export function sortManagedEntries(entries: ManagedExtensionRecord[]): ManagedExtensionRecord[] {
   return [...entries].sort((left, right) => {
     const byScope = left.scope.localeCompare(right.scope);
@@ -78,6 +104,9 @@ export function sortManagedEntries(entries: ManagedExtensionRecord[]): ManagedEx
   });
 }
 
+/**
+ * Implements managed extension sources equivalent for the public runtime surface of this module.
+ */
 export function managedExtensionSourcesEquivalent(left: ManagedExtensionSource, right: ManagedExtensionSource): boolean {
   if (left.kind !== right.kind || left.input !== right.input || left.location !== right.location) {
     return false;
@@ -94,6 +123,9 @@ export function managedExtensionSourcesEquivalent(left: ManagedExtensionSource, 
   return true;
 }
 
+/**
+ * Implements normalize managed state for the public runtime surface of this module.
+ */
 export function normalizeManagedState(raw: unknown): ManagedExtensionState | null {
   if (typeof raw !== "object" || raw === null) {
     return null;
@@ -174,6 +206,9 @@ export function normalizeManagedState(raw: unknown): ManagedExtensionState | nul
   };
 }
 
+/**
+ * Implements read managed extension state for the public runtime surface of this module.
+ */
 export async function readManagedExtensionState(extensionsRoot: string): Promise<ManagedExtensionStateReadResult> {
   const statePath = resolveManagedExtensionStatePath(extensionsRoot);
   const fallback = createEmptyManagedExtensionState();
@@ -210,6 +245,9 @@ export async function readManagedExtensionState(extensionsRoot: string): Promise
   }
 }
 
+/**
+ * Implements write managed extension state for the public runtime surface of this module.
+ */
 export async function writeManagedExtensionState(extensionsRoot: string, state: ManagedExtensionState): Promise<void> {
   const statePath = resolveManagedExtensionStatePath(extensionsRoot);
   const normalized: ManagedExtensionState = {
@@ -222,6 +260,9 @@ export async function writeManagedExtensionState(extensionsRoot: string, state: 
 }
 
 
+/**
+ * Implements upsert managed entry for the public runtime surface of this module.
+ */
 export function upsertManagedEntry(state: ManagedExtensionState, entry: ManagedExtensionRecord): ManagedExtensionState {
   const updatedEntries = state.entries.filter(
     (candidate) =>

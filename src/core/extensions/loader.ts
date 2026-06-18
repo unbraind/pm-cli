@@ -1,3 +1,8 @@
+/**
+ * @module core/extensions/loader
+ *
+ * Implements extension runtime contracts and governance for Loader.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -210,6 +215,9 @@ const DEFAULT_EXTENSION_POLICY: ExtensionGovernancePolicy = Object.freeze(create
 
 let extensionReloadEpoch = 0;
 
+/**
+ * Implements next extension reload token for the public runtime surface of this module.
+ */
 export function nextExtensionReloadToken(seed = Date.now()): string {
   extensionReloadEpoch += 1;
   return `${extensionReloadEpoch}-${seed}`;
@@ -455,6 +463,9 @@ async function isCanonicalPathWithinDirectory(directory: string, targetPath: str
   return isPathWithinDirectory(resolvedDirectory, resolvedTargetPath);
 }
 
+/**
+ * Implements resolve extension roots for the public runtime surface of this module.
+ */
 export function resolveExtensionRoots(pmRoot: string, cwd = process.cwd()): { global: string; project: string } {
   return {
     global: path.join(resolveGlobalPmRoot(cwd), "extensions"),
@@ -724,6 +735,9 @@ async function scanExtensionDirectory(
 }
 
 
+/**
+ * Implements discover extensions for the public runtime surface of this module.
+ */
 export async function discoverExtensions(options: DiscoverExtensionsOptions): Promise<ExtensionDiscoveryResult> {
   const roots = resolveExtensionRoots(options.pmRoot, options.cwd ?? process.cwd());
   const configured_enabled = normalizeNames(options.settings.extensions.enabled);
@@ -970,6 +984,9 @@ async function resolveExtensionImportHref(
   return baseUrl.href;
 }
 
+/**
+ * Implements load extensions for the public runtime surface of this module.
+ */
 export async function loadExtensions(options: DiscoverExtensionsOptions): Promise<ExtensionLoadResult> {
   const discovery = await discoverExtensions(options);
   const loaded: LoadedExtension[] = [];
@@ -2413,6 +2430,9 @@ function collectServiceCollisionWarnings(services: ExtensionServiceRegistry): st
   return warnings;
 }
 
+/**
+ * Implements activate extensions for the public runtime surface of this module.
+ */
 export async function activateExtensions(loadResult: ExtensionLoadResult): Promise<ExtensionActivationResult> {
   const policy = hydrateExtensionPolicy(loadResult.policy ?? DEFAULT_EXTENSION_POLICY);
   const hooks = createEmptyExtensionHookRegistry();

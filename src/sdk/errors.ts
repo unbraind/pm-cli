@@ -1,8 +1,16 @@
+/**
+ * @module sdk/errors
+ *
+ * Defines public SDK APIs and package-author helpers for Errors.
+ */
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError, type PmCliErrorContext } from "../core/shared/errors.js";
 
 export const PM_CLI_EXPECTED_ERROR_NAME = "PmCliError";
 
+/**
+ * Documents the pm cli expected error payload exchanged by command, SDK, and package integrations.
+ */
 export interface PmCliExpectedError extends Error {
   name: typeof PM_CLI_EXPECTED_ERROR_NAME;
   exitCode: number;
@@ -10,6 +18,9 @@ export interface PmCliExpectedError extends Error {
   cause?: unknown;
 }
 
+/**
+ * Documents the create pm cli expected error options payload exchanged by command, SDK, and package integrations.
+ */
 export interface CreatePmCliExpectedErrorOptions {
   exitCode?: number;
   context?: PmCliErrorContext;
@@ -57,6 +68,9 @@ export function createPmCliExpectedError(
   return error;
 }
 
+/**
+ * Implements check whether pm cli expected error for the public runtime surface of this module.
+ */
 export function isPmCliExpectedError(error: unknown): error is PmCliExpectedError {
   if (!(error instanceof Error) || error.name !== PM_CLI_EXPECTED_ERROR_NAME) {
     return false;

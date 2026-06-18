@@ -20,8 +20,14 @@ import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { resolveEstimateDefaultMinutes } from "./estimate-defaults.js";
 
+/**
+ * Restricts validate fix check values accepted by command, SDK, and storage contracts.
+ */
 export type ValidateFixCheck = "metadata" | "resolution" | "lifecycle" | "files";
 
+/**
+ * Restricts validate fix kind values accepted by command, SDK, and storage contracts.
+ */
 export type ValidateFixKind =
   | "set_resolution"
   | "set_close_reason"
@@ -31,6 +37,9 @@ export type ValidateFixKind =
   | "prune_file_link"
   | "prune_doc_link";
 
+/**
+ * Restricts validate fix scope values accepted by command, SDK, and storage contracts.
+ */
 export type ValidateFixScope = "metadata" | "resolution" | "estimates" | "lifecycle";
 
 /** Scopes auto-applied without an explicit `--fix-scope` (safe field backfills). */
@@ -43,6 +52,9 @@ export const DEFAULT_GRANTED_FIX_SCOPES: readonly ValidateFixScope[] = ["metadat
  */
 export const SUPPORTED_FIX_SCOPES: readonly ValidateFixScope[] = ["metadata", "resolution", "estimates", "lifecycle"];
 
+/**
+ * Documents the validate fix record payload exchanged by command, SDK, and package integrations.
+ */
 export interface ValidateFixRecord {
   /** Item the fix targets. */
   item_id: string;
@@ -81,6 +93,9 @@ function toMeaningfulValue(value: string | undefined): string | undefined {
   return trimmed !== undefined && trimmed.length > 0 ? trimmed : undefined;
 }
 
+/**
+ * Documents the resolution backfill row payload exchanged by command, SDK, and package integrations.
+ */
 export interface ResolutionBackfillRow {
   id: string;
   /** Resolution-check missing field keys for this closed item. */
@@ -116,6 +131,9 @@ export function planResolutionBackfillFixes(rows: readonly ResolutionBackfillRow
   return fixes;
 }
 
+/**
+ * Documents the close reason backfill row payload exchanged by command, SDK, and package integrations.
+ */
 export interface CloseReasonBackfillRow {
   id: string;
   /** The item's resolution, when present (the only derivation source). */
@@ -148,6 +166,9 @@ export function planCloseReasonBackfillFixes(rows: readonly CloseReasonBackfillR
   return fixes;
 }
 
+/**
+ * Documents the estimate backfill row payload exchanged by command, SDK, and package integrations.
+ */
 export interface EstimateBackfillRow {
   id: string;
   /** Item type, used to resolve the per-type default estimate. */
@@ -180,6 +201,9 @@ export function planEstimateBackfillFixes(
   });
 }
 
+/**
+ * Documents the terminal parent fix row payload exchanged by command, SDK, and package integrations.
+ */
 export interface TerminalParentFixRow {
   id: string;
   parent_id: string;
@@ -222,6 +246,9 @@ export function planTerminalParentFixes(rows: readonly TerminalParentFixRow[]): 
   });
 }
 
+/**
+ * Documents the stale link prune row payload exchanged by command, SDK, and package integrations.
+ */
 export interface StaleLinkPruneRow {
   item_id: string;
   path: string;

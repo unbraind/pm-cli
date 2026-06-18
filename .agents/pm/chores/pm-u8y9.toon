@@ -2,11 +2,19 @@ id: pm-u8y9
 title: "SDK.md PM_PACKAGE_RESOURCE_KINDS drift: assets/prompts kinds missing"
 description: "src/core/packages/manifest.ts:8-14 exports PM_PACKAGE_RESOURCE_KINDS = [extensions, docs, examples, assets, prompts] (assets/prompts shipped in PR#150, pm-z9ho). Drift: docs/SDK.md:53 documents only (extensions, docs, examples), and docs/SDK.md:159 says 'Additional package resource kinds (docs, examples)' omitting assets/prompts. docs/EXTENSIONS.md:87 already documents pm.assets/pm.prompts correctly — align SDK.md with it."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[4]: audit-2026-06-12,docs,drift,sdk
 created_at: "2026-06-12T16:11:36.263Z"
-updated_at: "2026-06-12T16:11:36.263Z"
+updated_at: "2026-06-18T15:31:57.559Z"
 author: maintainer-agent
 parent: pm-gpea
+resolution: Aligned SDK resource-kind documentation with package manifest support for assets and prompts.
+expected_result: SDK.md documents all manifest package resource kinds consistently with the runtime manifest contract.
+actual_result: "SDK.md lists extensions, docs, examples, assets, and prompts in the resource-kind export, metadata-first install text, and assertPackageManifest example."
+comments[1]{created_at,author,text}:
+  "2026-06-18T15:31:03.092Z",codex-gpt5,"Implementation evidence: docs/SDK.md now lists PM_PACKAGE_RESOURCE_KINDS as extensions, docs, examples, assets, prompts; metadata-first package install text and assertPackageManifest example now include assets/prompts. Verified through pnpm build, pnpm quality:static, pnpm changelog:pm:check, and full coverage 100/100/100/100 in the combined branch."
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Align package resource kind documentation with manifest assets/prompts support
+close_reason: Closed with SDK resource-kind docs aligned to manifest support for assets and prompts; verified in the combined build/static/changelog/coverage gate.
 body: ""

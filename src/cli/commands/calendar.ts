@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/calendar
+ *
+ * Implements the pm calendar command surface and its agent-facing runtime behavior.
+ */
 import { encode as encodeToon } from "@toon-format/toon";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
@@ -22,11 +27,20 @@ import type { ItemFrontMatter, ItemStatus, ItemType, RecurrenceRule } from "../.
 import { RECURRENCE_WEEKDAY_VALUES, weekdayOrderIndex } from "../../types/index.js";
 
 export const CALENDAR_VIEW_VALUES = ["agenda", "day", "week", "month"] as const;
+/**
+ * Restricts calendar view values accepted by command, SDK, and storage contracts.
+ */
 export type CalendarView = (typeof CALENDAR_VIEW_VALUES)[number];
 
 export const CALENDAR_OUTPUT_VALUES = ["markdown", "toon", "json"] as const;
+/**
+ * Restricts calendar output format values accepted by command, SDK, and storage contracts.
+ */
 export type CalendarOutputFormat = (typeof CALENDAR_OUTPUT_VALUES)[number];
 
+/**
+ * Documents the calendar options payload exchanged by command, SDK, and package integrations.
+ */
 export interface CalendarOptions {
   view?: string;
   date?: string;
@@ -51,6 +65,9 @@ export interface CalendarOptions {
   [key: string]: unknown;
 }
 
+/**
+ * Documents the calendar row payload exchanged by command, SDK, and package integrations.
+ */
 export interface CalendarRow {
   at: string;
   date: string;
@@ -73,12 +90,18 @@ export interface CalendarRow {
   item_tags: string[];
 }
 
+/**
+ * Documents the calendar day bucket payload exchanged by command, SDK, and package integrations.
+ */
 export interface CalendarDayBucket {
   date: string;
   count: number;
   events: CalendarRow[];
 }
 
+/**
+ * Documents the calendar result payload exchanged by command, SDK, and package integrations.
+ */
 export interface CalendarResult {
   view: CalendarView;
   output_default: "markdown";
@@ -224,6 +247,9 @@ function parseOutputFormat(raw: string | undefined): CalendarOutputFormat | unde
   return normalized as CalendarOutputFormat;
 }
 
+/**
+ * Implements resolve calendar output format for the public runtime surface of this module.
+ */
 export function resolveCalendarOutputFormat(options: CalendarOptions, global: GlobalOptions): CalendarOutputFormat {
   const commandFormat = parseOutputFormat(options.format);
   if (global.json && commandFormat && commandFormat !== "json") {
@@ -971,6 +997,9 @@ function formatEventLine(event: CalendarRow): string {
   return core;
 }
 
+/**
+ * Implements render calendar markdown for the public runtime surface of this module.
+ */
 export function renderCalendarMarkdown(result: CalendarResult): string {
   const lines: string[] = [];
   lines.push(`# pm calendar (${result.view})`);
@@ -1032,6 +1061,9 @@ function trimTrailingNewlines(value: string): string {
   return value.slice(0, end);
 }
 
+/**
+ * Implements run calendar for the public runtime surface of this module.
+ */
 export async function runCalendar(options: CalendarOptions, global: GlobalOptions): Promise<CalendarResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {

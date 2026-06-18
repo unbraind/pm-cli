@@ -1,3 +1,8 @@
+/**
+ * @module core/store/item-format-migration
+ *
+ * Reads and writes tracker storage with format-aware helpers for Item Format Migration.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { runActiveOnWriteHooks } from "../extensions/index.js";
@@ -12,6 +17,9 @@ interface ItemPathVariants {
   toon?: string;
 }
 
+/**
+ * Documents the item format migration result payload exchanged by command, SDK, and package integrations.
+ */
 export interface ItemFormatMigrationResult {
   target_format: ItemFormat;
   scanned: number;
@@ -32,6 +40,9 @@ function errorSummary(error: unknown): string {
   return String(error).replaceAll(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 120);
 }
 
+/**
+ * Implements migrate item files to format for the public runtime surface of this module.
+ */
 export async function migrateItemFilesToFormat(
   pmRoot: string,
   targetFormat: ItemFormat,

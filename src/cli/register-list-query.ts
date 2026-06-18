@@ -1,3 +1,8 @@
+/**
+ * @module cli/register-list-query
+ *
+ * Provides CLI runtime support for Register List Query.
+ */
 import { Option, type Command } from "commander";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -20,6 +25,9 @@ import {
 
 
 
+/**
+ * Documents the register list query commands options payload exchanged by command, SDK, and package integrations.
+ */
 export interface RegisterListQueryCommandsOptions {
   commandFilter?: Set<string>;
 }
@@ -60,6 +68,9 @@ function resolveReadCommandOutputFormat(
   };
 }
 
+/**
+ * Implements register list query commands for the public runtime surface of this module.
+ */
 export function registerListQueryCommands(program: Command, options?: RegisterListQueryCommandsOptions): void {
   const commandFilter = options?.commandFilter;
   const shouldRegister = (commandName: string): boolean => shouldRegisterListQueryCommand(commandName, commandFilter);

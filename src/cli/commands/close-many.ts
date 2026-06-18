@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/close-many
+ *
+ * Implements the pm close many command surface and its agent-facing runtime behavior.
+ */
 import { pathExists } from "../../core/fs/fs-utils.js";
 import {
   createCheckpointId,
@@ -40,6 +45,9 @@ const CLOSE_MANY_FILTER_GUIDANCE = [
   "--ids",
 ].join(", ");
 
+/**
+ * Documents the close many command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface CloseManyCommandOptions {
   status?: string;
   list?: ListOptions;
@@ -74,6 +82,9 @@ interface CloseManyApplyRow {
   error?: string;
 }
 
+/**
+ * Documents the close many result payload exchanged by command, SDK, and package integrations.
+ */
 export interface CloseManyResult {
   mode: "dry_run" | "apply" | "rollback";
   matched_count: number;
@@ -224,6 +235,9 @@ function hierarchyDepth(id: string, parentByChild: Map<string, string>, cache?: 
   return depth;
 }
 
+/**
+ * Implements run close many for the public runtime surface of this module.
+ */
 export async function runCloseMany(options: CloseManyCommandOptions, global: GlobalOptions): Promise<CloseManyResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {

@@ -1,3 +1,8 @@
+/**
+ * @module core/extensions/runtime-registrations
+ *
+ * Implements extension runtime contracts and governance for Runtime Registrations.
+ */
 import type {
   ExtensionRegistrationRegistry,
   RegisteredExtensionSchemaMigrationDefinition,
@@ -13,6 +18,9 @@ function normalizeRegistrationName(value: unknown): string | null {
   return normalized.length > 0 ? normalized : null;
 }
 
+/**
+ * Implements collect registered item fields for the public runtime surface of this module.
+ */
 export function collectRegisteredItemFields(registrations: ExtensionRegistrationRegistry | null): Array<Record<string, unknown>> {
   if (!registrations) {
     return [];
@@ -26,6 +34,9 @@ export function collectRegisteredItemFields(registrations: ExtensionRegistration
   return fields;
 }
 
+/**
+ * Implements resolve registered search provider for the public runtime surface of this module.
+ */
 export function resolveRegisteredSearchProvider(
   registrations: ExtensionRegistrationRegistry | null,
   configuredProvider: string | undefined,
@@ -45,6 +56,9 @@ export function resolveRegisteredSearchProvider(
   return matched ?? null;
 }
 
+/**
+ * Implements resolve registered vector store adapter for the public runtime surface of this module.
+ */
 export function resolveRegisteredVectorStoreAdapter(
   registrations: ExtensionRegistrationRegistry | null,
   configuredAdapter: string | undefined,
@@ -64,6 +78,9 @@ export function resolveRegisteredVectorStoreAdapter(
   return matched ?? null;
 }
 
+/**
+ * Implements get migration runtime definition for the public runtime surface of this module.
+ */
 export function getMigrationRuntimeDefinition(
   migration: RegisteredExtensionSchemaMigrationDefinition,
 ): Record<string, unknown> {

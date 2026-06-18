@@ -1,3 +1,8 @@
+/**
+ * @module core/lock/lock
+ *
+ * Coordinates tracker lock ownership and cleanup for Lock.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { runActiveOnReadHooks, runActiveOnWriteHooks, runActiveServiceOverride } from "../extensions/index.js";
@@ -177,6 +182,9 @@ export const _testOnly = {
 };
 
 
+/**
+ * Implements acquire lock for the public runtime surface of this module.
+ */
 export async function acquireLock(
   pmRoot: string,
   id: string,

@@ -1,14 +1,28 @@
+/**
+ * @module core/search/vectorization-metadata
+ *
+ * Powers search, embeddings, and semantic retrieval behavior for Vectorization Metadata.
+ */
 import { toNonEmptyString } from "../shared/primitives.js";
 
+/**
+ * Documents the vectorization embedding identity payload exchanged by command, SDK, and package integrations.
+ */
 export interface VectorizationEmbeddingIdentity {
   provider: string;
   model: string;
 }
 
+/**
+ * Documents the vectorization embedding metadata payload exchanged by command, SDK, and package integrations.
+ */
 export interface VectorizationEmbeddingMetadata extends VectorizationEmbeddingIdentity {
   vector_dimension: number;
 }
 
+/**
+ * Implements build vectorization embedding identity for the public runtime surface of this module.
+ */
 export function buildVectorizationEmbeddingIdentity(
   provider: unknown,
   model: unknown,
@@ -24,6 +38,9 @@ export function buildVectorizationEmbeddingIdentity(
   };
 }
 
+/**
+ * Implements normalize vectorization embedding metadata for the public runtime surface of this module.
+ */
 export function normalizeVectorizationEmbeddingMetadata(value: unknown): VectorizationEmbeddingMetadata | null {
   if (value === undefined || value === null) {
     return null;
@@ -45,6 +62,9 @@ export function normalizeVectorizationEmbeddingMetadata(value: unknown): Vectori
   };
 }
 
+/**
+ * Implements build vectorization embedding metadata for the public runtime surface of this module.
+ */
 export function buildVectorizationEmbeddingMetadata(
   identity: VectorizationEmbeddingIdentity,
   vectorDimension: number,
@@ -59,6 +79,9 @@ export function buildVectorizationEmbeddingMetadata(
   };
 }
 
+/**
+ * Implements check whether vectorization embedding identity changed for the public runtime surface of this module.
+ */
 export function hasVectorizationEmbeddingIdentityChanged(
   metadata: VectorizationEmbeddingMetadata | null | undefined,
   identity: VectorizationEmbeddingIdentity,
@@ -66,6 +89,9 @@ export function hasVectorizationEmbeddingIdentityChanged(
   return !metadata || metadata.provider !== identity.provider || metadata.model !== identity.model;
 }
 
+/**
+ * Implements check whether vectorization vector dimension changed for the public runtime surface of this module.
+ */
 export function hasVectorizationVectorDimensionChanged(
   metadata: VectorizationEmbeddingMetadata | null | undefined,
   vectorDimension: number,
@@ -73,6 +99,9 @@ export function hasVectorizationVectorDimensionChanged(
   return Boolean(metadata && metadata.vector_dimension !== vectorDimension);
 }
 
+/**
+ * Implements infer consistent vector dimension for the public runtime surface of this module.
+ */
 export function inferConsistentVectorDimension(vectors: readonly number[][], context: string): number {
   if (vectors.length === 0) {
     throw new Error(`${context} returned no vectors`);

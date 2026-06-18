@@ -1,3 +1,8 @@
+/**
+ * @module core/item/sprint-release-format
+ *
+ * Defines item parsing, formatting, and lifecycle helpers for Sprint Release Format.
+ */
 import type { SprintReleaseFormatPolicy } from "../../types/index.js";
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
@@ -5,6 +10,9 @@ import { PmCliError } from "../shared/errors.js";
 const SPRINT_RELEASE_VALUE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/;
 const SPRINT_RELEASE_MAX_LENGTH = 64;
 
+/**
+ * Implements normalize sprint release format policy for the public runtime surface of this module.
+ */
 export function normalizeSprintReleaseFormatPolicy(value: string | undefined): SprintReleaseFormatPolicy {
   const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
   if (normalized === "warn" || normalized === "strict_error") {
@@ -19,6 +27,9 @@ export function normalizeSprintReleaseFormatPolicy(value: string | undefined): S
   );
 }
 
+/**
+ * Implements validate sprint or release value for the public runtime surface of this module.
+ */
 export function validateSprintOrReleaseValue(
   field: "sprint" | "release",
   rawValue: string,

@@ -1,3 +1,8 @@
+/**
+ * @module core/sentry/helpers
+ *
+ * Integrates Sentry instrumentation and release diagnostics for Helpers.
+ */
 import { getSentry } from "./instrument.js";
 import { PmCliError } from "../shared/errors.js";
 import { EXIT_CODE, type TelemetryErrorCategory } from "../shared/constants.js";
@@ -25,6 +30,9 @@ function setSpanAttribute(
   }
 }
 
+/**
+ * Implements sentry set command context for the public runtime surface of this module.
+ */
 export function sentrySetCommandContext(
   command: string,
   args: string[],
@@ -73,6 +81,9 @@ export function sentrySetCommandContext(
   });
 }
 
+/**
+ * Implements sentry start command span for the public runtime surface of this module.
+ */
 export function sentryStartCommandSpan(command: string): void {
   const Sentry = getSentry();
   if (!Sentry) return;
@@ -84,6 +95,9 @@ export function sentryStartCommandSpan(command: string): void {
   });
 }
 
+/**
+ * Implements sentry finish command span for the public runtime surface of this module.
+ */
 export function sentryFinishCommandSpan(
   ok: boolean,
   error?: string,
@@ -132,6 +146,9 @@ export function sentryFinishCommandSpan(
   activeCommandSpan = undefined;
 }
 
+/**
+ * Implements sentry capture cli error for the public runtime surface of this module.
+ */
 export function sentryCaptureCliError(error: unknown): void {
   if (!shouldCaptureCliError(error)) return;
 
@@ -152,6 +169,9 @@ export function sentryCaptureCliError(error: unknown): void {
   }
 }
 
+/**
+ * Implements sentry log cli usage error for the public runtime surface of this module.
+ */
 export function sentryLogCliUsageError(params: {
   command: string;
   error_code: string;
@@ -205,6 +225,9 @@ export function sentryLogCliUsageError(params: {
   });
 }
 
+/**
+ * Implements should capture cli error for the public runtime surface of this module.
+ */
 export function shouldCaptureCliError(error: unknown): boolean {
   if (error instanceof PmCliError) {
     return false;
@@ -227,6 +250,9 @@ export function shouldCaptureCliError(error: unknown): boolean {
   return true;
 }
 
+/**
+ * Implements sentry flush for the public runtime surface of this module.
+ */
 export async function sentryFlush(timeoutMs = 3000): Promise<void> {
   const Sentry = getSentry();
   if (!Sentry) return;

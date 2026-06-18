@@ -1,3 +1,8 @@
+/**
+ * @module core/test/run-selectors
+ *
+ * Runs and records linked-test orchestration for Run Selectors.
+ */
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import type { LinkedTest } from "../../types.js";
@@ -13,12 +18,18 @@ import type { LinkedTest } from "../../types.js";
 
 export type LinkedTestSelectorKind = "match" | "only-index" | "only-last";
 
+/**
+ * Documents the linked test run selector payload exchanged by command, SDK, and package integrations.
+ */
 export interface LinkedTestRunSelector {
   match?: string;
   onlyIndex?: number;
   onlyLast?: boolean;
 }
 
+/**
+ * Documents the linked test run selection payload exchanged by command, SDK, and package integrations.
+ */
 export interface LinkedTestRunSelection {
   selector: LinkedTestSelectorKind | null;
   requested: string | null;
@@ -31,6 +42,9 @@ export interface LinkedTestRunSelection {
 
 const MAX_SELECTOR_ENTRY_LABEL_LENGTH = 100;
 
+/**
+ * Implements parse only index value for the public runtime surface of this module.
+ */
 export function parseOnlyIndexValue(raw: string | number, optionName = "--only-index"): number {
   const value = typeof raw === "number" ? raw : Number(String(raw).trim());
   if (!Number.isInteger(value) || value < 1) {
@@ -51,6 +65,9 @@ function summarizeSelectorEntry(entry: LinkedTest): string {
   return `${normalized.slice(0, MAX_SELECTOR_ENTRY_LABEL_LENGTH - 3)}...`;
 }
 
+/**
+ * Implements describe linked test entries for the public runtime surface of this module.
+ */
 export function describeLinkedTestEntries(tests: LinkedTest[]): string {
   return tests.map((entry, index) => `${index + 1}. ${summarizeSelectorEntry(entry)}`).join("; ");
 }
@@ -75,6 +92,9 @@ function entryMatchesSubstring(entry: LinkedTest, needle: string): boolean {
   return command.includes(needle) || entryPath.includes(needle);
 }
 
+/**
+ * Implements resolve linked test run selection for the public runtime surface of this module.
+ */
 export function resolveLinkedTestRunSelection(tests: LinkedTest[], selector: LinkedTestRunSelector): LinkedTestRunSelection {
   const kinds = activeSelectorKinds(selector);
   if (kinds.length === 0) {

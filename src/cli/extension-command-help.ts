@@ -1,9 +1,17 @@
+/**
+ * @module cli/extension-command-help
+ *
+ * Provides CLI runtime support for Extension Command Help.
+ */
 import { Command } from "commander";
 import type {
   RegisteredExtensionCommandDefinition,
   RegisteredExtensionFlagDefinitions,
 } from "../core/extensions/index.js";
 
+/**
+ * Documents the extension command argument help descriptor payload exchanged by command, SDK, and package integrations.
+ */
 export interface ExtensionCommandArgumentHelpDescriptor {
   name: string;
   required: boolean;
@@ -11,6 +19,9 @@ export interface ExtensionCommandArgumentHelpDescriptor {
   description?: string;
 }
 
+/**
+ * Documents the extension command help descriptor payload exchanged by command, SDK, and package integrations.
+ */
 export interface ExtensionCommandHelpDescriptor {
   command: string;
   action: string;
@@ -27,6 +38,9 @@ export interface ExtensionCommandHelpDescriptor {
   };
 }
 
+/**
+ * Documents the help option summary payload exchanged by command, SDK, and package integrations.
+ */
 export interface HelpOptionSummary {
   flags: string;
   long: string | null;
@@ -42,6 +56,9 @@ export interface HelpOptionSummary {
   default_value?: unknown;
 }
 
+/**
+ * Implements normalize extension command path for the public runtime surface of this module.
+ */
 export function normalizeExtensionCommandPath(commandPath: string): string {
   return commandPath
     .trim()
@@ -103,6 +120,9 @@ function buildDynamicExtensionFlagHelp(definitions: Array<Record<string, unknown
   return `\nExtension-provided flags:\n  ${lines.join("\n  ")}`;
 }
 
+/**
+ * Implements collect dynamic extension flag help by command for the public runtime surface of this module.
+ */
 export function collectDynamicExtensionFlagHelpByCommand(
   registrations: RegisteredExtensionFlagDefinitions[],
 ): Map<string, string> {
@@ -181,6 +201,9 @@ function normalizeExtensionCommandArguments(
     .filter((entry): entry is ExtensionCommandArgumentHelpDescriptor => entry !== null);
 }
 
+/**
+ * Implements collect extension command help descriptors for the public runtime surface of this module.
+ */
 export function collectExtensionCommandHelpDescriptors(
   commandHandlers: string[],
   commandDefinitions: RegisteredExtensionCommandDefinition[],
@@ -275,6 +298,9 @@ function buildExtensionArgumentToken(argument: ExtensionCommandArgumentHelpDescr
   return `[${argument.name}${variadicSuffix}]`;
 }
 
+/**
+ * Implements apply dynamic extension arguments for the public runtime surface of this module.
+ */
 export function applyDynamicExtensionArguments(command: Command, descriptor: ExtensionCommandHelpDescriptor): void {
   for (const argument of descriptor.arguments) {
     command.argument(buildExtensionArgumentToken(argument), argument.description ?? "Extension argument.");
@@ -344,6 +370,9 @@ function commandAlreadyHasOption(command: Command, definition: Record<string, un
   });
 }
 
+/**
+ * Implements apply dynamic extension flag options for the public runtime surface of this module.
+ */
 export function applyDynamicExtensionFlagOptions(command: Command, definitions: Array<Record<string, unknown>>): void {
   for (const definition of definitions) {
     if (commandAlreadyHasOption(command, definition)) {
@@ -383,6 +412,9 @@ function buildDynamicExtensionHelpOptionSummary(definition: Record<string, unkno
   };
 }
 
+/**
+ * Implements build dynamic extension help option summaries for the public runtime surface of this module.
+ */
 export function buildDynamicExtensionHelpOptionSummaries(descriptor: ExtensionCommandHelpDescriptor | undefined): HelpOptionSummary[] {
   if (!descriptor) {
     return [];
@@ -400,6 +432,9 @@ export function buildDynamicExtensionHelpOptionSummaries(descriptor: ExtensionCo
   return summaries;
 }
 
+/**
+ * Implements merge help option summaries for the public runtime surface of this module.
+ */
 export function mergeHelpOptionSummaries(base: HelpOptionSummary[], extension: HelpOptionSummary[]): HelpOptionSummary[] {
   if (extension.length === 0) {
     return base;
@@ -416,6 +451,9 @@ export function mergeHelpOptionSummaries(base: HelpOptionSummary[], extension: H
   return merged;
 }
 
+/**
+ * Implements build dynamic extension command metadata help for the public runtime surface of this module.
+ */
 export function buildDynamicExtensionCommandMetadataHelp(descriptor: ExtensionCommandHelpDescriptor): string | null {
   const lines: string[] = [];
   if (descriptor.intent) {
@@ -442,6 +480,9 @@ export function buildDynamicExtensionCommandMetadataHelp(descriptor: ExtensionCo
   return `\nExtension command metadata:\n  ${lines.join("\n  ")}`;
 }
 
+/**
+ * Implements command aliases for the public runtime surface of this module.
+ */
 export function commandAliases(command: Command): string[] {
   const commandRecord = command as unknown as {
     aliases?: () => string[];
@@ -463,6 +504,9 @@ export function commandAliases(command: Command): string[] {
   return [];
 }
 
+/**
+ * Implements find direct child command for the public runtime surface of this module.
+ */
 export function findDirectChildCommand(parent: Command, name: string): Command | null {
   const normalizedTarget = name.trim().toLowerCase();
   return (
@@ -475,6 +519,9 @@ export function findDirectChildCommand(parent: Command, name: string): Command |
   );
 }
 
+/**
+ * Implements find command by path for the public runtime surface of this module.
+ */
 export function findCommandByPath(root: Command, pathParts: string[]): Command | null {
   let current: Command = root;
   for (const part of pathParts) {
@@ -487,6 +534,9 @@ export function findCommandByPath(root: Command, pathParts: string[]): Command |
   return current;
 }
 
+/**
+ * Implements ensure command path for the public runtime surface of this module.
+ */
 export function ensureCommandPath(root: Command, pathParts: string[]): Command | null {
   if (pathParts.length === 0) {
     return null;

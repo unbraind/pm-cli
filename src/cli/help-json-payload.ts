@@ -1,3 +1,8 @@
+/**
+ * @module cli/help-json-payload
+ *
+ * Provides CLI runtime support for Help Json Payload.
+ */
 import { Command } from "commander";
 import {
   commandOptionFlagLabel,
@@ -35,6 +40,9 @@ import {
   buildUnknownCommandGuidanceFromRuntime,
 } from "./commander-usage.js";
 
+/**
+ * Documents the help argument summary payload exchanged by command, SDK, and package integrations.
+ */
 export interface HelpArgumentSummary {
   name: string;
   required: boolean;
@@ -42,6 +50,9 @@ export interface HelpArgumentSummary {
   description: string | null;
 }
 
+/**
+ * Documents the help subcommand summary payload exchanged by command, SDK, and package integrations.
+ */
 export interface HelpSubcommandSummary {
   name: string;
   aliases: string[];
@@ -293,6 +304,9 @@ function buildJsonHelpPayload(
   };
 }
 
+/**
+ * Implements maybe render bootstrap json help for the public runtime surface of this module.
+ */
 export async function maybeRenderBootstrapJsonHelp(
   rootProgram: Command,
   argv: string[],
@@ -410,6 +424,9 @@ function buildCreateUpdatePolicyHelpText(
   return lines.join("\n");
 }
 
+/**
+ * Implements attach create update policy help text for the public runtime surface of this module.
+ */
 export function attachCreateUpdatePolicyHelpText(
   rootProgram: Command,
   typeRegistry: ReturnType<typeof resolveItemTypeRegistry>,

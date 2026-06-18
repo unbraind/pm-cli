@@ -1,3 +1,8 @@
+/**
+ * @module core/io/body-file
+ *
+ * Reads command body content from files, stdin, and inline arguments.
+ */
 import { readFile } from "node:fs/promises";
 
 import { EXIT_CODE } from "../shared/constants.js";
@@ -19,6 +24,9 @@ export type BodyFileReader = (path: string) => Promise<string>;
 
 const defaultBodyFileReader: BodyFileReader = (path) => readFile(path, "utf8");
 
+/**
+ * Implements resolve body file content for the public runtime surface of this module.
+ */
 export async function resolveBodyFileContent(
   bodyFile: string,
   inlineBody: string | undefined,

@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/templates
+ *
+ * Implements the pm templates command surface and its agent-facing runtime behavior.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathExists, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
@@ -18,7 +23,13 @@ const TEMPLATE_OPTION_REPEATABLE_KEYS = CREATE_COMMANDER_REPEATABLE_OPTION_CONTR
 const TEMPLATE_OPTION_REPEATABLE_KEY_SET = new Set<string>(TEMPLATE_OPTION_REPEATABLE_KEYS);
 
 type TemplateOptionValue = string | string[];
+/**
+ * Restricts create template options values accepted by command, SDK, and storage contracts.
+ */
 export type CreateTemplateOptions = Record<string, TemplateOptionValue>;
+/**
+ * Restricts template source values accepted by command, SDK, and storage contracts.
+ */
 export type TemplateSource = "builtin" | "user";
 
 const BUILTIN_TEMPLATE_TIMESTAMP = "1970-01-01T00:00:00.000Z";
@@ -72,6 +83,9 @@ export const _testOnly = {
   readStoredTemplateDocument,
 };
 
+/**
+ * Documents the templates save result payload exchanged by command, SDK, and package integrations.
+ */
 export interface TemplatesSaveResult {
   name: string;
   created_at: string;
@@ -80,6 +94,9 @@ export interface TemplatesSaveResult {
   options: CreateTemplateOptions;
 }
 
+/**
+ * Documents the templates list result payload exchanged by command, SDK, and package integrations.
+ */
 export interface TemplatesListResult {
   templates: string[];
   count: number;
@@ -87,6 +104,9 @@ export interface TemplatesListResult {
   user_templates: string[];
 }
 
+/**
+ * Documents the templates show result payload exchanged by command, SDK, and package integrations.
+ */
 export interface TemplatesShowResult {
   name: string;
   source: TemplateSource;
@@ -247,12 +267,18 @@ async function readStoredTemplateDocument(pmRoot: string, normalizedName: string
   return parseStoredTemplateDocument(raw, normalizedName);
 }
 
+/**
+ * Implements load create template options for the public runtime surface of this module.
+ */
 export async function loadCreateTemplateOptions(pmRoot: string, rawTemplateName: string): Promise<CreateTemplateOptions> {
   const normalizedName = normalizeTemplateName(rawTemplateName);
   const { document } = await resolveTemplateDocument(pmRoot, normalizedName);
   return document.options;
 }
 
+/**
+ * Implements run templates save for the public runtime surface of this module.
+ */
 export async function runTemplatesSave(
   rawTemplateName: string,
   options: Record<string, unknown>,
@@ -303,6 +329,9 @@ async function readUserTemplateNames(pmRoot: string): Promise<string[]> {
     .filter((entry) => TEMPLATE_NAME_PATTERN.test(entry));
 }
 
+/**
+ * Implements run templates list for the public runtime surface of this module.
+ */
 export async function runTemplatesList(global: GlobalOptions): Promise<TemplatesListResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await ensureTrackerInitialized(pmRoot);
@@ -320,6 +349,9 @@ export async function runTemplatesList(global: GlobalOptions): Promise<Templates
   };
 }
 
+/**
+ * Implements run templates show for the public runtime surface of this module.
+ */
 export async function runTemplatesShow(rawTemplateName: string, global: GlobalOptions): Promise<TemplatesShowResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await ensureTrackerInitialized(pmRoot);

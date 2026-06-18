@@ -1,11 +1,22 @@
+/**
+ * @module core/fs/fs-utils
+ *
+ * Provides filesystem helpers for Fs Utils.
+ */
 import * as fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
 
+/**
+ * Implements ensure dir for the public runtime surface of this module.
+ */
 export async function ensureDir(dirPath: string): Promise<void> {
   await fs.mkdir(dirPath, { recursive: true });
 }
 
+/**
+ * Implements path exists for the public runtime surface of this module.
+ */
 export async function pathExists(targetPath: string): Promise<boolean> {
   try {
     await fs.access(targetPath);
@@ -15,6 +26,9 @@ export async function pathExists(targetPath: string): Promise<boolean> {
   }
 }
 
+/**
+ * Implements read file if exists for the public runtime surface of this module.
+ */
 export async function readFileIfExists(targetPath: string): Promise<string | null> {
   try {
     return await fs.readFile(targetPath, "utf8");
@@ -26,6 +40,9 @@ export async function readFileIfExists(targetPath: string): Promise<string | nul
   }
 }
 
+/**
+ * Implements write file atomic for the public runtime surface of this module.
+ */
 export async function writeFileAtomic(targetPath: string, contents: string): Promise<void> {
   const dirPath = path.dirname(targetPath);
   await ensureDir(dirPath);
@@ -58,6 +75,9 @@ export async function writeFileAtomic(targetPath: string, contents: string): Pro
   }
 }
 
+/**
+ * Implements append line atomic for the public runtime surface of this module.
+ */
 export async function appendLineAtomic(targetPath: string, line: string): Promise<void> {
   const dirPath = path.dirname(targetPath);
   await ensureDir(dirPath);
@@ -69,6 +89,9 @@ export async function appendLineAtomic(targetPath: string, line: string): Promis
   }
 }
 
+/**
+ * Implements remove file if exists for the public runtime surface of this module.
+ */
 export async function removeFileIfExists(targetPath: string): Promise<void> {
   try {
     await fs.unlink(targetPath);

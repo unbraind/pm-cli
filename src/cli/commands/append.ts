@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/append
+ *
+ * Implements the pm append command surface and its agent-facing runtime behavior.
+ */
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -9,6 +14,9 @@ import { mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 
+/**
+ * Documents the append command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface AppendCommandOptions {
   body: string;
   author?: string;
@@ -16,6 +24,9 @@ export interface AppendCommandOptions {
   force?: boolean;
 }
 
+/**
+ * Documents the append result payload exchanged by command, SDK, and package integrations.
+ */
 export interface AppendResult {
   item: Record<string, unknown>;
   appended: string;
@@ -23,6 +34,9 @@ export interface AppendResult {
 }
 
 
+/**
+ * Implements run append for the public runtime surface of this module.
+ */
 export async function runAppend(id: string, options: AppendCommandOptions, global: GlobalOptions): Promise<AppendResult> {
   if (options.body === undefined) {
     throw new PmCliError("Missing required --body text", EXIT_CODE.USAGE);

@@ -1,3 +1,8 @@
+/**
+ * @module core/schema/type-workflows
+ *
+ * Resolves configurable schema, fields, statuses, and workflows for Type Workflows.
+ */
 import type { RuntimeSchemaSettings, TypeWorkflowDefinition } from "../../types/index.js";
 
 /**
@@ -27,6 +32,9 @@ export interface StatusTokenResolver {
   alias_to_id: Map<string, string>;
 }
 
+/**
+ * Documents the evaluate transition input payload exchanged by command, SDK, and package integrations.
+ */
 export interface EvaluateTransitionInput {
   typeName: string;
   fromStatus: string;
@@ -35,6 +43,9 @@ export interface EvaluateTransitionInput {
   statusRegistry?: StatusTokenResolver;
 }
 
+/**
+ * Documents the evaluate transition result payload exchanged by command, SDK, and package integrations.
+ */
 export interface EvaluateTransitionResult {
   /** Whether the transition is permitted. */
   allowed: boolean;

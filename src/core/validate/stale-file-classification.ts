@@ -14,6 +14,9 @@
 
 export type StaleLinkedPathClassification = "moved" | "deleted";
 
+/**
+ * Documents the classified stale linked path payload exchanged by command, SDK, and package integrations.
+ */
 export interface ClassifiedStaleLinkedPath {
   /** Normalized workspace-relative stale linked path. */
   path: string;

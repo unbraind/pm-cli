@@ -1,7 +1,18 @@
+/**
+ * @module core/telemetry/observability
+ *
+ * Captures consent-aware telemetry and observability events for Observability.
+ */
 import { EXIT_CODE, type TelemetryErrorCategory } from "../shared/constants.js";
 
+/**
+ * Restricts telemetry resolution stage values accepted by command, SDK, and storage contracts.
+ */
 export type TelemetryResolutionStage = "parse" | "preflight" | "execute" | "unknown";
 
+/**
+ * Restricts telemetry command resolution values accepted by command, SDK, and storage contracts.
+ */
 export type TelemetryCommandResolution =
   | "success"
   | "nonexistent_command"
@@ -16,6 +27,9 @@ export type TelemetryCommandResolution =
   | "runtime_failed"
   | "unknown_failed";
 
+/**
+ * Documents the telemetry command taxonomy payload exchanged by command, SDK, and package integrations.
+ */
 export interface TelemetryCommandTaxonomy {
   command_path: string;
   command_root: string;
@@ -88,6 +102,9 @@ function normalizeErrorCode(errorCode: string | undefined): string | undefined {
   return normalized && normalized.length > 0 ? normalized : undefined;
 }
 
+/**
+ * Implements derive telemetry command taxonomy for the public runtime surface of this module.
+ */
 export function deriveTelemetryCommandTaxonomy(commandPath: string): TelemetryCommandTaxonomy {
   const normalizedPath = normalizeCommandPath(commandPath);
   // tokens always has at least one element (the fallback ["<unknown>"]), so the
@@ -120,6 +137,9 @@ export function deriveTelemetryCommandTaxonomy(commandPath: string): TelemetryCo
   };
 }
 
+/**
+ * Implements infer telemetry error code for the public runtime surface of this module.
+ */
 export function inferTelemetryErrorCode(params: InferTelemetryErrorCodeParams): string | undefined {
   if (params.ok) {
     return undefined;
@@ -193,6 +213,9 @@ export function inferTelemetryErrorCode(params: InferTelemetryErrorCodeParams): 
   return "command_failed";
 }
 
+/**
+ * Implements derive telemetry command resolution for the public runtime surface of this module.
+ */
 export function deriveTelemetryCommandResolution(params: {
   ok: boolean;
   errorCode?: string;

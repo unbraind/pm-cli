@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/history-redact
+ *
+ * Implements the pm history redact command surface and its agent-facing runtime behavior.
+ */
 import fs from "node:fs/promises";
 import { pathExists, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { createHistoryEntry } from "../../core/history/history.js";
@@ -26,6 +31,9 @@ import { resolveAuthor } from "../../core/shared/author.js";
 import type { HistoryEntry, HistoryPatchOp, ItemDocument } from "../../types/index.js";
 import { readHistoryEntries } from "./history.js";
 
+/**
+ * Documents the history redact command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistoryRedactCommandOptions {
   literal?: string[] | string;
   regex?: string[] | string;
@@ -64,12 +72,18 @@ interface HistoryIntegritySnapshot {
   finalDocument: ReplayDocument;
 }
 
+/**
+ * Documents the history subject payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistorySubject {
   id: string;
   historyPath: string;
   located: Awaited<ReturnType<typeof locateItem>>;
 }
 
+/**
+ * Documents the history redact result payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistoryRedactResult {
   id: string;
   dry_run: boolean;
@@ -403,6 +417,9 @@ function hasItemMetadata(replay: ReplayDocument): boolean {
   return Object.keys(replay.metadata).length > 0;
 }
 
+/**
+ * Implements resolve history subject for the public runtime surface of this module.
+ */
 export async function resolveHistorySubject(
   pmRoot: string,
   id: string,
@@ -434,6 +451,9 @@ export async function resolveHistorySubject(
   throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
 }
 
+/**
+ * Implements run history redact for the public runtime surface of this module.
+ */
 export async function runHistoryRedact(
   id: string,
   options: HistoryRedactCommandOptions,

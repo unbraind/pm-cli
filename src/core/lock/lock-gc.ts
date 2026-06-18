@@ -12,6 +12,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
+/**
+ * Documents the stale lock scan entry payload exchanged by command, SDK, and package integrations.
+ */
 export interface StaleLockScanEntry {
   /** e.g. "pm-abc1.lock" */
   file: string;
@@ -27,11 +30,17 @@ export interface StaleLockScanEntry {
   reason: "expired" | "active" | "unparseable";
 }
 
+/**
+ * Documents the lock gc hooks payload exchanged by command, SDK, and package integrations.
+ */
 export interface LockGcHooks {
   onRead?: (lockPath: string) => Promise<string[]> | string[];
   onWrite?: (lockPath: string) => Promise<string[]> | string[];
 }
 
+/**
+ * Documents the lock gc options payload exchanged by command, SDK, and package integrations.
+ */
 export interface LockGcOptions {
   dryRun: boolean;
   /** epoch ms; defaults to Date.now() — injectable for deterministic tests */
@@ -39,6 +48,9 @@ export interface LockGcOptions {
   hooks?: LockGcHooks;
 }
 
+/**
+ * Documents the lock gc result payload exchanged by command, SDK, and package integrations.
+ */
 export interface LockGcResult {
   /** number of *.lock files examined */
   scanned: number;
@@ -99,6 +111,9 @@ function isErrno(error: unknown, code: string): boolean {
  */
 export type LockClassificationDetail = "active" | "expired" | "unparseable_json" | "invalid_timestamp";
 
+/**
+ * Documents the lock content classification payload exchanged by command, SDK, and package integrations.
+ */
 export interface LockContentClassification {
   detail: LockClassificationDetail;
   entry: StaleLockScanEntry;
@@ -160,6 +175,9 @@ export function classifyLockContent(file: string, raw: string, nowMs: number): L
   };
 }
 
+/**
+ * Documents the lock health scan payload exchanged by command, SDK, and package integrations.
+ */
 export interface LockHealthScan {
   /** number of *.lock files examined (ghost files that vanish mid-scan are skipped) */
   scanned: number;
@@ -223,6 +241,9 @@ export async function scanLockHealth(pmRoot: string, now?: number): Promise<Lock
   return scan;
 }
 
+/**
+ * Implements run lock gc for the public runtime surface of this module.
+ */
 export async function runLockGc(pmRoot: string, options: LockGcOptions): Promise<LockGcResult> {
   const { dryRun, hooks } = options;
   const nowMs = options.now ?? Date.now();

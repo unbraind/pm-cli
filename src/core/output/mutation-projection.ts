@@ -21,6 +21,9 @@
 
 export type ChangedFieldsMode = "full" | "compact";
 
+/**
+ * Documents the mutation projection options payload exchanged by command, SDK, and package integrations.
+ */
 export interface MutationProjectionOptions {
   /** Defaults to "full" (unchanged output). "compact" drops the array, keeping a count. */
   changedFields?: ChangedFieldsMode;

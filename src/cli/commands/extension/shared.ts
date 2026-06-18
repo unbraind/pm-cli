@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/extension/shared
+ *
+ * Implements extension package-management support for Shared.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathExists } from "../../../core/fs/fs-utils.js";
@@ -8,6 +13,9 @@ import type { ExtensionManifest } from "../../../core/extensions/loader.js";
 
 export const DEFAULT_EXTENSION_PRIORITY = 100;
 
+/**
+ * Documents the validated extension directory payload exchanged by command, SDK, and package integrations.
+ */
 export interface ValidatedExtensionDirectory {
   directory: string;
   manifest_path: string;
@@ -15,16 +23,25 @@ export interface ValidatedExtensionDirectory {
   manifest: ExtensionManifest;
 }
 
+/**
+ * Implements normalize string list for the public runtime surface of this module.
+ */
 export function normalizeStringList(values: readonly string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))].sort((left, right) =>
     left.localeCompare(right),
   );
 }
 
+/**
+ * Implements normalize extension name for match for the public runtime surface of this module.
+ */
 export function normalizeExtensionNameForMatch(value: string): string {
   return value.trim().toLowerCase();
 }
 
+/**
+ * Implements normalize managed directory name for the public runtime surface of this module.
+ */
 export function normalizeManagedDirectoryName(name: string): string {
   const normalized = name
     .trim()
@@ -42,6 +59,9 @@ export function normalizeManagedDirectoryName(name: string): string {
   return normalized;
 }
 
+/**
+ * Implements parse extension manifest for the public runtime surface of this module.
+ */
 export function parseExtensionManifest(raw: unknown): ExtensionManifest | null {
   if (typeof raw !== "object" || raw === null) {
     return null;
@@ -82,11 +102,17 @@ export function parseExtensionManifest(raw: unknown): ExtensionManifest | null {
   };
 }
 
+/**
+ * Implements check whether canonical path within directory for the public runtime surface of this module.
+ */
 export async function isCanonicalPathWithinDirectory(directory: string, targetPath: string): Promise<boolean> {
   const [resolvedDirectory, resolvedTargetPath] = await Promise.all([fs.realpath(directory), fs.realpath(targetPath)]);
   return isPathWithinDirectory(resolvedDirectory, resolvedTargetPath);
 }
 
+/**
+ * Implements validate extension directory for the public runtime surface of this module.
+ */
 export async function validateExtensionDirectory(directory: string): Promise<ValidatedExtensionDirectory> {
   const manifestPath = path.join(directory, "manifest.json");
   if (!(await pathExists(manifestPath))) {

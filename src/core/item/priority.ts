@@ -1,6 +1,14 @@
+/**
+ * @module core/item/priority
+ *
+ * Defines item parsing, formatting, and lifecycle helpers for Priority.
+ */
 import { PmCliError } from "../shared/errors.js";
 import { EXIT_CODE } from "../shared/constants.js";
 
+/**
+ * Restricts priority values accepted by command, SDK, and storage contracts.
+ */
 export type Priority = 0 | 1 | 2 | 3 | 4;
 
 /**

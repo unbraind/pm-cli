@@ -1,3 +1,8 @@
+/**
+ * @module sdk/cli-contracts/tool-option-contracts
+ *
+ * Defines SDK command-contract metadata for Tool Option Contracts.
+ */
 import type { ToolOptionFlagContract } from "../cli-contracts.js";
 
 export const TOOL_LIST_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [

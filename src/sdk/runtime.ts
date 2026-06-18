@@ -1,3 +1,8 @@
+/**
+ * @module sdk/runtime
+ *
+ * Defines public SDK APIs and package-author helpers for Runtime.
+ */
 import path from "node:path";
 import {
   activateExtensions,
@@ -141,6 +146,9 @@ export type {
   PmSettings,
 } from "../types/index.js";
 
+/**
+ * Documents the get contracts options payload exchanged by command, SDK, and package integrations.
+ */
 export interface GetContractsOptions extends ContractsCommandOptions {
   pmRoot?: string;
   cwd?: string;
@@ -149,12 +157,18 @@ export interface GetContractsOptions extends ContractsCommandOptions {
   profile?: boolean;
 }
 
+/**
+ * Documents the workspace contracts options payload exchanged by command, SDK, and package integrations.
+ */
 export interface WorkspaceContractsOptions {
   extensionRegistrations?: ExtensionRegistrationRegistry | null;
   noExtensions?: boolean;
   cwd?: string;
 }
 
+/**
+ * Documents the workspace contracts payload exchanged by command, SDK, and package integrations.
+ */
 export interface WorkspaceContracts {
   types: string[];
   statuses: string[];
@@ -222,6 +236,9 @@ async function resolveWorkspaceExtensionRegistrations(
   return registrations;
 }
 
+/**
+ * Implements get workspace contracts for the public runtime surface of this module.
+ */
 export async function getWorkspaceContracts(
   pmRoot: string,
   options: WorkspaceContractsOptions = {},
@@ -242,6 +259,9 @@ export async function getWorkspaceContracts(
   };
 }
 
+/**
+ * Implements get contracts for the public runtime surface of this module.
+ */
 export async function getContracts(
   pmRootOrOptions?: string | GetContractsOptions,
   options: GetContractsOptions = {},

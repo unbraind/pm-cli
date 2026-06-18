@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/contracts
+ *
+ * Implements the pm contracts command surface and its agent-facing runtime behavior.
+ */
 import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -115,6 +120,9 @@ import {
   type CommanderOptionAliasContract,
 } from "../../sdk/cli-contracts.js";
 
+/**
+ * Documents the contracts command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface ContractsCommandOptions {
   action?: string;
   command?: string;
@@ -140,6 +148,9 @@ interface CommandAliasSurface {
   aliases: string[];
 }
 
+/**
+ * Documents the contracts result payload exchanged by command, SDK, and package integrations.
+ */
 export interface ContractsResult {
   schema_version: string | null;
   schema_id: string | null;
@@ -193,6 +204,9 @@ export interface ContractsResult {
 
 type PmToolAction = (typeof PM_TOOL_ACTIONS)[number];
 
+/**
+ * Documents the contracts action availability payload exchanged by command, SDK, and package integrations.
+ */
 export interface ContractsActionAvailability {
   action: string;
   invocable: boolean;
@@ -1496,6 +1510,9 @@ function attachCreateRequiredOptionContracts(
   };
 }
 
+/**
+ * Implements run contracts for the public runtime surface of this module.
+ */
 export async function runContracts(
   options: ContractsCommandOptions,
   global: GlobalOptions,

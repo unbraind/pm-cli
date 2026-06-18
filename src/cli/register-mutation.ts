@@ -1,3 +1,8 @@
+/**
+ * @module cli/register-mutation
+ *
+ * Provides CLI runtime support for Register Mutation.
+ */
 import { Option, type Command } from "commander";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { resolveBodyFileContent } from "../core/io/body-file.js";
@@ -57,6 +62,9 @@ const SCHEMA_SHORTHAND_RESERVED_TOKENS = new Set([
   "types",
 ]);
 
+/**
+ * Implements looks like schema subcommand typo for the public runtime surface of this module.
+ */
 export function looksLikeSchemaSubcommandTypo(value: string): boolean {
   const normalized = value.trim().toLowerCase();
   if (normalized.length === 0) {
@@ -364,6 +372,9 @@ function mapBulkContentAndGovernanceFilters(options: Record<string, unknown>): R
   };
 }
 
+/**
+ * Implements register commander option contracts for the public runtime surface of this module.
+ */
 export function registerCommanderOptionContracts(command: Command, contracts: CommanderOptionRegistrationContract[]): void {
   for (const contract of contracts) {
     if (contract.required) {
@@ -424,6 +435,9 @@ function buildUpdateManyListOptions(options: Record<string, unknown>): Record<st
   };
 }
 
+/**
+ * Implements register mutation commands for the public runtime surface of this module.
+ */
 export function registerMutationCommands(program: Command): void {
   const createCommand = program
     .command("create")

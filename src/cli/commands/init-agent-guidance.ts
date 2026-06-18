@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/init-agent-guidance
+ *
+ * Implements the pm init agent guidance command surface and its agent-facing runtime behavior.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import readline from "node:readline/promises";
@@ -6,6 +11,9 @@ import { runActiveOnWriteHooks } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import type { PmSettings } from "../../types/index.js";
 
+/**
+ * Restricts init agent guidance mode values accepted by command, SDK, and storage contracts.
+ */
 export type InitAgentGuidanceMode = "ask" | "add" | "skip" | "status";
 
 export const INIT_AGENT_GUIDANCE_MODE_VALUES: InitAgentGuidanceMode[] = ["ask", "add", "skip", "status"];
@@ -67,6 +75,9 @@ interface AgentGuidanceBlockRange {
   end_index: number;
 }
 
+/**
+ * Documents the init agent guidance summary payload exchanged by command, SDK, and package integrations.
+ */
 export interface InitAgentGuidanceSummary {
   mode: InitAgentGuidanceMode;
   present: boolean;
@@ -82,6 +93,9 @@ export interface InitAgentGuidanceSummary {
   missing_files: string[];
 }
 
+/**
+ * Documents the run init agent guidance options payload exchanged by command, SDK, and package integrations.
+ */
 export interface RunInitAgentGuidanceOptions {
   pm_root: string;
   cwd: string;
@@ -90,6 +104,9 @@ export interface RunInitAgentGuidanceOptions {
   settings: PmSettings;
 }
 
+/**
+ * Documents the run init agent guidance result payload exchanged by command, SDK, and package integrations.
+ */
 export interface RunInitAgentGuidanceResult {
   summary: InitAgentGuidanceSummary;
   warnings: string[];
@@ -305,6 +322,9 @@ async function writeGuidanceFile(filePath: string): Promise<{ changed: boolean; 
   };
 }
 
+/**
+ * Implements run init agent guidance for the public runtime surface of this module.
+ */
 export async function runInitAgentGuidance(options: RunInitAgentGuidanceOptions): Promise<RunInitAgentGuidanceResult> {
   const warnings: string[] = [];
   const nextSteps: string[] = [];

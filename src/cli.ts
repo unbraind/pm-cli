@@ -1,4 +1,9 @@
 #!/usr/bin/env node
+/**
+ * @module cli
+ *
+ * Bootstraps the executable pm CLI entrypoint and startup optimizations.
+ */
 import fs from "node:fs";
 import * as nodeModule from "node:module";
 import os from "node:os";

@@ -1,3 +1,8 @@
+/**
+ * @module cli/commander-usage
+ *
+ * Provides CLI runtime support for Commander Usage.
+ */
 import { Command } from "commander";
 import { pathExists } from "../core/fs/fs-utils.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
@@ -104,12 +109,18 @@ function getSemanticUnknownOptionSuggestions(commandName: string, unknownOption:
   return [];
 }
 
+/**
+ * Documents the commander usage context payload exchanged by command, SDK, and package integrations.
+ */
 export interface CommanderUsageContext extends CommanderGuidanceContext {
   message: string;
   commandName: string | undefined;
   allowedTypes: string;
 }
 
+/**
+ * Implements collect runtime command paths for the public runtime surface of this module.
+ */
 export function collectRuntimeCommandPaths(
   root: Command,
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
@@ -138,6 +149,9 @@ export function collectRuntimeCommandPaths(
   return [...commandPaths].sort((left, right) => left.localeCompare(right));
 }
 
+/**
+ * Implements score command path match for the public runtime surface of this module.
+ */
 export function scoreCommandPathMatch(commandPath: string, queryToken: string): number {
   const normalizedPath = commandPath.trim().toLowerCase();
   const normalizedToken = queryToken.trim().toLowerCase();
@@ -370,6 +384,9 @@ function rewriteUnknownOptionArgv(argv: string[], unknownOption: string, replace
   return undefined;
 }
 
+/**
+ * Implements build unknown command guidance from runtime for the public runtime surface of this module.
+ */
 export function buildUnknownCommandGuidanceFromRuntime(
   rawMessage: string,
   root: Command,
@@ -471,6 +488,9 @@ function trimTrailingPunctuationToken(token: string): string {
   return token.slice(0, end);
 }
 
+/**
+ * Implements resolve child command by token for the public runtime surface of this module.
+ */
 export function resolveChildCommandByToken(parent: Command, token: string): Command | undefined {
   const normalizedToken = token.trim().toLowerCase();
   return parent.commands.find((candidate) => {
@@ -482,6 +502,9 @@ export function resolveChildCommandByToken(parent: Command, token: string): Comm
   });
 }
 
+/**
+ * Implements check whether known help command path for the public runtime surface of this module.
+ */
 export function isKnownHelpCommandPath(root: Command, commandPathTokens: string[]): boolean {
   if (commandPathTokens.length === 0) {
     return true;
@@ -499,6 +522,9 @@ export function isKnownHelpCommandPath(root: Command, commandPathTokens: string[
   return matchedAny;
 }
 
+/**
+ * Implements resolve commander usage context for the public runtime surface of this module.
+ */
 export async function resolveCommanderUsageContext(
   error: unknown,
   rootProgram: Command,
@@ -569,6 +595,9 @@ export async function resolveCommanderUsageContext(
   };
 }
 
+/**
+ * Implements format commander usage message for the public runtime surface of this module.
+ */
 export async function formatCommanderUsageMessage(
   error: unknown,
   rootProgram: Command,
@@ -609,6 +638,9 @@ export async function formatCommanderUsageMessage(
   return formatted;
 }
 
+/**
+ * Implements format commander usage json for the public runtime surface of this module.
+ */
 export async function formatCommanderUsageJson(
   error: unknown,
   rootProgram: Command,

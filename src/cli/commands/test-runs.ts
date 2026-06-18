@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/test-runs
+ *
+ * Implements the pm test runs command surface and its agent-facing runtime behavior.
+ */
 import os from "node:os";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
@@ -85,6 +90,9 @@ async function ensureInitialized(pmRoot: string): Promise<void> {
   }
 }
 
+/**
+ * Documents the start background run command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface StartBackgroundRunCommandOptions {
   kind: BackgroundTestRunKind;
   commandArgs: string[];
@@ -94,12 +102,18 @@ export interface StartBackgroundRunCommandOptions {
   noExtensions?: boolean;
 }
 
+/**
+ * Documents the start background run result payload exchanged by command, SDK, and package integrations.
+ */
 export interface StartBackgroundRunResult {
   started: boolean;
   duplicate_of?: string;
   run: unknown;
 }
 
+/**
+ * Implements run start background run for the public runtime surface of this module.
+ */
 export async function runStartBackgroundRun(
   options: StartBackgroundRunCommandOptions,
   global: GlobalOptions,
@@ -136,11 +150,17 @@ export async function runStartBackgroundRun(
   };
 }
 
+/**
+ * Documents the test runs list command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface TestRunsListCommandOptions {
   status?: string;
   limit?: string;
 }
 
+/**
+ * Implements run test runs list for the public runtime surface of this module.
+ */
 export async function runTestRunsList(options: TestRunsListCommandOptions, global: GlobalOptions): Promise<{
   runs: unknown[];
   count: number;
@@ -164,6 +184,9 @@ export async function runTestRunsList(options: TestRunsListCommandOptions, globa
   };
 }
 
+/**
+ * Implements run test runs status for the public runtime surface of this module.
+ */
 export async function runTestRunsStatus(runId: string, global: GlobalOptions): Promise<{
   run: unknown;
   health: unknown;
@@ -177,11 +200,17 @@ export async function runTestRunsStatus(runId: string, global: GlobalOptions): P
   };
 }
 
+/**
+ * Documents the test runs logs command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface TestRunsLogsCommandOptions {
   stream?: string;
   tail?: string;
 }
 
+/**
+ * Implements run test runs logs for the public runtime surface of this module.
+ */
 export async function runTestRunsLogs(
   runId: string,
   options: TestRunsLogsCommandOptions,
@@ -207,10 +236,16 @@ export async function runTestRunsLogs(
   };
 }
 
+/**
+ * Documents the test runs stop command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface TestRunsStopCommandOptions {
   force?: boolean;
 }
 
+/**
+ * Implements run test runs stop for the public runtime surface of this module.
+ */
 export async function runTestRunsStop(
   runId: string,
   options: TestRunsStopCommandOptions,
@@ -228,11 +263,17 @@ export async function runTestRunsStop(
   };
 }
 
+/**
+ * Documents the test runs resume command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface TestRunsResumeCommandOptions {
   author?: string;
   noExtensions?: boolean;
 }
 
+/**
+ * Implements run test runs resume for the public runtime surface of this module.
+ */
 export async function runTestRunsResume(
   runId: string,
   options: TestRunsResumeCommandOptions,
@@ -252,6 +293,9 @@ export async function runTestRunsResume(
   };
 }
 
+/**
+ * Implements run test runs worker for the public runtime surface of this module.
+ */
 export async function runTestRunsWorker(runId: string, global: GlobalOptions): Promise<{
   id: string;
   status: BackgroundTestRunStatus;

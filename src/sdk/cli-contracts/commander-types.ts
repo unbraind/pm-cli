@@ -1,8 +1,19 @@
+/**
+ * @module sdk/cli-contracts/commander-types
+ *
+ * Defines SDK command-contract metadata for Commander Types.
+ */
+/**
+ * Describes aliases accepted by Commander option registration contracts.
+ */
 export interface CommanderOptionAliasContract {
   target: string;
   keys: readonly string[];
 }
 
+/**
+ * Documents the commander option registration contract payload exchanged by command, SDK, and package integrations.
+ */
 export interface CommanderOptionRegistrationContract extends CommanderOptionAliasContract {
   option: string;
   description: string;
@@ -111,6 +122,9 @@ export const ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasCon
   { target: "limit", keys: ["limit"] },
 ];
 
+/**
+ * Implements read first string from commander options for the public runtime surface of this module.
+ */
 export function readFirstStringFromCommanderOptions(
   options: Record<string, unknown>,
   contract: CommanderOptionAliasContract,
@@ -124,6 +138,9 @@ export function readFirstStringFromCommanderOptions(
   return undefined;
 }
 
+/**
+ * Implements read first value from commander options for the public runtime surface of this module.
+ */
 export function readFirstValueFromCommanderOptions(
   options: Record<string, unknown>,
   contract: CommanderOptionAliasContract,
@@ -136,6 +153,9 @@ export function readFirstValueFromCommanderOptions(
   return undefined;
 }
 
+/**
+ * Implements read string array from commander options for the public runtime surface of this module.
+ */
 export function readStringArrayFromCommanderOptions(
   options: Record<string, unknown>,
   contract: CommanderOptionAliasContract,

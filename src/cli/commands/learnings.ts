@@ -1,8 +1,16 @@
+/**
+ * @module cli/commands/learnings
+ *
+ * Implements the pm learnings command surface and its agent-facing runtime behavior.
+ */
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { createStdinTokenResolver } from "../../core/item/parse.js";
 import type { LogNote } from "../../types/index.js";
 import { parseAnnotationTextInput, runAnnotationCommand } from "./annotation-command.js";
 
+/**
+ * Documents the learnings command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface LearningsCommandOptions {
   add?: string;
   limit?: string;
@@ -13,12 +21,18 @@ export interface LearningsCommandOptions {
   force?: boolean;
 }
 
+/**
+ * Documents the learnings result payload exchanged by command, SDK, and package integrations.
+ */
 export interface LearningsResult {
   id: string;
   learnings: LogNote[];
   count: number;
 }
 
+/**
+ * Implements run learnings for the public runtime surface of this module.
+ */
 export async function runLearnings(
   id: string,
   options: LearningsCommandOptions,

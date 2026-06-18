@@ -29,6 +29,9 @@ export interface ConfigPositionalListRouted {
   values: string[];
 }
 
+/**
+ * Restricts config positional routed values accepted by command, SDK, and storage contracts.
+ */
 export type ConfigPositionalRouted = ConfigPositionalScalarRouted | ConfigPositionalListRouted;
 
 /** A key whose value cannot be carried by a single positional (e.g. `context`). */
@@ -38,6 +41,9 @@ export interface ConfigPositionalNotRoutable {
   reason: string;
 }
 
+/**
+ * Restricts config positional result values accepted by command, SDK, and storage contracts.
+ */
 export type ConfigPositionalResult = ConfigPositionalRouted | ConfigPositionalNotRoutable;
 
 /** Canonical snake-case config keys this helper understands. */

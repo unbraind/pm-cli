@@ -1,3 +1,8 @@
+/**
+ * @module core/extensions/extension-capability-aliases
+ *
+ * Implements extension runtime contracts and governance for Extension Capability Aliases.
+ */
 import {
   KNOWN_EXTENSION_CAPABILITIES,
   EXTENSION_CAPABILITY_CONTRACT_VERSION,
@@ -9,20 +14,32 @@ import {
 } from "./extension-types.js";
 import { levenshteinDistanceWithinLimit } from "../shared/levenshtein.js";
 
+/**
+ * Implements normalize names for the public runtime surface of this module.
+ */
 export function normalizeNames(values: string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))].sort((a, b) =>
     a.localeCompare(b),
   );
 }
 
+/**
+ * Implements check whether known extension capability for the public runtime surface of this module.
+ */
 export function isKnownExtensionCapability(value: string): value is ExtensionCapability {
   return (KNOWN_EXTENSION_CAPABILITIES as readonly string[]).includes(value);
 }
 
+/**
+ * Implements collect unknown extension capabilities for the public runtime surface of this module.
+ */
 export function collectUnknownExtensionCapabilities(capabilities: readonly string[]): string[] {
   return capabilities.filter((capability) => !isKnownExtensionCapability(capability));
 }
 
+/**
+ * Implements resolve legacy extension capability alias for the public runtime surface of this module.
+ */
 export function resolveLegacyExtensionCapabilityAlias(capability: string): ExtensionCapability | null {
   const normalized = capability.trim().toLowerCase();
   if (normalized.length === 0) {
@@ -31,6 +48,9 @@ export function resolveLegacyExtensionCapabilityAlias(capability: string): Exten
   return EXTENSION_CAPABILITY_LEGACY_ALIASES[normalized] ?? null;
 }
 
+/**
+ * Implements normalize manifest capabilities for the public runtime surface of this module.
+ */
 export function normalizeManifestCapabilities(rawCapabilities: readonly string[]): {
   capabilities: string[];
   legacy_aliases: LegacyExtensionCapabilityAliasMapping[];
@@ -59,6 +79,9 @@ export function normalizeManifestCapabilities(rawCapabilities: readonly string[]
   };
 }
 
+/**
+ * Implements suggest known extension capability for the public runtime surface of this module.
+ */
 export function suggestKnownExtensionCapability(capability: string): string | null {
   const normalized = capability.trim().toLowerCase();
   if (normalized.length === 0) {
@@ -81,12 +104,18 @@ export function suggestKnownExtensionCapability(capability: string): string | nu
   return bestMatch;
 }
 
+/**
+ * Implements format unknown extension capability warning for the public runtime surface of this module.
+ */
 export function formatUnknownExtensionCapabilityWarning(layer: ExtensionLayer, name: string, capability: string): string {
   const allowed = KNOWN_EXTENSION_CAPABILITIES.join(",");
   const suggested = suggestKnownExtensionCapability(capability) ?? "none";
   return `extension_capability_unknown:${layer}:${name}:${capability}:allowed=${allowed}:suggested=${suggested}`;
 }
 
+/**
+ * Implements format legacy extension capability alias warning for the public runtime surface of this module.
+ */
 export function formatLegacyExtensionCapabilityAliasWarning(
   layer: ExtensionLayer,
   name: string,
@@ -97,6 +126,9 @@ export function formatLegacyExtensionCapabilityAliasWarning(
 }
 
 
+/**
+ * Implements parse unknown extension capability warning for the public runtime surface of this module.
+ */
 export function parseUnknownExtensionCapabilityWarning(
   warning: string,
 ): UnknownExtensionCapabilityWarningDetails | null {
@@ -132,6 +164,9 @@ export function parseUnknownExtensionCapabilityWarning(
   };
 }
 
+/**
+ * Implements parse legacy extension capability alias warning for the public runtime surface of this module.
+ */
 export function parseLegacyExtensionCapabilityAliasWarning(warning: string): UnknownExtensionCapabilityWarningDetails[] {
   const match = /^extension_capability_legacy_alias:(global|project):([^:]+):aliases=(.+)$/.exec(warning.trim());
   if (!match) {

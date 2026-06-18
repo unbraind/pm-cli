@@ -1,3 +1,11 @@
+/**
+ * @module core/shared/text-normalization
+ *
+ * Provides shared primitives and utilities for Text Normalization.
+ */
+/**
+ * Normalizes text to lowercase whitespace-collapsed form for stable matching and comparison.
+ */
 export function normalizeLowercaseWhitespace(value: string): string {
   return value
     .trim()
@@ -5,12 +13,18 @@ export function normalizeLowercaseWhitespace(value: string): string {
     .replace(/\s+/g, " ");
 }
 
+/**
+ * Implements tokenize alpha numeric for the public runtime surface of this module.
+ */
 export function tokenizeAlphaNumeric(value: string): string[] {
   return normalizeLowercaseWhitespace(value)
     .split(/[^a-z0-9]+/)
     .filter((token) => token.length > 0);
 }
 
+/**
+ * Implements jaccard similarity for the public runtime surface of this module.
+ */
 export function jaccardSimilarity(leftTokens: string[], rightTokens: string[]): number {
   if (leftTokens.length === 0 && rightTokens.length === 0) {
     return 1;

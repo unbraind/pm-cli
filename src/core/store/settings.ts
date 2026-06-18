@@ -1,3 +1,8 @@
+/**
+ * @module core/store/settings
+ *
+ * Reads and writes tracker storage with format-aware helpers for Settings.
+ */
 import { validateSettings, type ParsedSettings } from "./settings-validator.js";
 import { runActiveOnReadHooks, runActiveOnWriteHooks } from "../extensions/index.js";
 import { GOVERNANCE_PRESET_DEFAULTS, SETTINGS_DEFAULTS } from "../shared/constants.js";
@@ -62,10 +67,16 @@ interface SerializeSettingsOptions {
   persist_source?: SettingsPersistSourceSnapshot;
 }
 
+/**
+ * Documents the settings read metadata payload exchanged by command, SDK, and package integrations.
+ */
 export interface SettingsReadMetadata {
   has_explicit_item_format: boolean;
 }
 
+/**
+ * Documents the settings read result payload exchanged by command, SDK, and package integrations.
+ */
 export interface SettingsReadResult {
   settings: PmSettings;
   metadata: SettingsReadMetadata;
@@ -157,6 +168,9 @@ function resolveGovernanceExtras(
   return extras;
 }
 
+/**
+ * Implements resolve governance knobs for the public runtime surface of this module.
+ */
 export function resolveGovernanceKnobs(
   settings: Pick<PmSettings, "governance"> | { governance?: Partial<GovernanceSettings> },
 ): GovernanceSettings {
@@ -667,6 +681,9 @@ function arrayOrEmpty<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
+/**
+ * Implements normalize item type definitions for the public runtime surface of this module.
+ */
 export function normalizeItemTypeDefinitions(definitions: ItemTypeDefinition[] | undefined): ItemTypeDefinition[] {
   const normalized = (definitions ?? [])
     .map((definition) => normalizeItemTypeDefinition(definition))
@@ -780,6 +797,9 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
   };
 }
 
+/**
+ * Implements serialize settings for the public runtime surface of this module.
+ */
 export function serializeSettings(settings: PmSettings, options: SerializeSettingsOptions = {}): string {
   const baseSettings = {
     ...settings,
@@ -1074,6 +1094,9 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
   return `${JSON.stringify(ordered, null, 2)}\n`;
 }
 
+/**
+ * Implements read settings with metadata for the public runtime surface of this module.
+ */
 export async function readSettingsWithMetadata(pmRoot: string): Promise<SettingsReadResult> {
   const settingsPath = getSettingsPath(pmRoot);
   let trackedPathsForFailure: string[] = [settingsPath];
@@ -1174,10 +1197,16 @@ export async function readSettingsWithMetadata(pmRoot: string): Promise<Settings
   }
 }
 
+/**
+ * Implements read settings for the public runtime surface of this module.
+ */
 export async function readSettings(pmRoot: string): Promise<PmSettings> {
   return (await readSettingsWithMetadata(pmRoot)).settings;
 }
 
+/**
+ * Implements write settings for the public runtime surface of this module.
+ */
 export async function writeSettings(pmRoot: string, settings: PmSettings, op = SETTINGS_WRITE_OP): Promise<void> {
   const settingsPath = getSettingsPath(pmRoot);
   await writeFileAtomic(

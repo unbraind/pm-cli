@@ -1,3 +1,8 @@
+/**
+ * @module core/item/status-filter
+ *
+ * Defines item parsing, formatting, and lifecycle helpers for Status Filter.
+ */
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { levenshteinDistanceWithinLimit } from "../shared/levenshtein.js";
@@ -67,6 +72,9 @@ function suggestClosestStatus(value: string, registry: RuntimeStatusRegistry): s
   return best;
 }
 
+/**
+ * Documents the parse status filter options payload exchanged by command, SDK, and package integrations.
+ */
 export interface ParseStatusFilterOptions {
   /**
    * When true, an unrecognized token throws a USAGE error with a did-you-mean

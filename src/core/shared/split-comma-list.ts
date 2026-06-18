@@ -1,3 +1,11 @@
+/**
+ * @module core/shared/split-comma-list
+ *
+ * Provides shared primitives and utilities for Split Comma List.
+ */
+/**
+ * Configures comma-list parsing for command flags that support escaped separators.
+ */
 export interface SplitCommaListOptions {
   /** Separator pattern. Defaults to `/,/`. */
   separators?: RegExp | string;

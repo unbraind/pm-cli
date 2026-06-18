@@ -1,3 +1,8 @@
+/**
+ * @module sdk/testing
+ *
+ * Defines public SDK APIs and package-author helpers for Testing.
+ */
 import type {
   ExtensionActivationResult,
   ExtensionCapability,
@@ -37,6 +42,9 @@ interface TestExtensionModule {
   default?: TestExtensionModule;
 }
 
+/**
+ * Documents the activate extension for test options payload exchanged by command, SDK, and package integrations.
+ */
 export interface ActivateExtensionForTestOptions {
   name?: string;
   layer?: ExtensionLayer;
@@ -44,6 +52,9 @@ export interface ActivateExtensionForTestOptions {
   policy?: ExtensionGovernancePolicy;
 }
 
+/**
+ * Documents the registered command contract expectation payload exchanged by command, SDK, and package integrations.
+ */
 export interface RegisteredCommandContractExpectation {
   command: string;
   action?: string;
@@ -52,6 +63,9 @@ export interface RegisteredCommandContractExpectation {
   flags?: string[];
 }
 
+/**
+ * Documents the registered command contract assertion payload exchanged by command, SDK, and package integrations.
+ */
 export interface RegisteredCommandContractAssertion {
   command: RegisteredExtensionCommandDefinition;
   flags: FlagDefinition[];
@@ -70,74 +84,119 @@ const HOOK_KIND_TO_REGISTRY_FIELD: Record<RegisteredHookKind, keyof ExtensionHoo
   on_index: "onIndex",
 };
 
+/**
+ * Documents the registered hook expectation payload exchanged by command, SDK, and package integrations.
+ */
 export interface RegisteredHookExpectation {
   kind: RegisteredHookKind;
   extensionName?: string;
 }
 
+/**
+ * Documents the registered search provider expectation payload exchanged by command, SDK, and package integrations.
+ */
 export interface RegisteredSearchProviderExpectation {
   provider: string;
   extensionName?: string;
 }
 
+/**
+ * Documents the registered vector store adapter expectation payload exchanged by command, SDK, and package integrations.
+ */
 export interface RegisteredVectorStoreAdapterExpectation {
   adapter: string;
   extensionName?: string;
 }
 
+/**
+ * Documents the registered importer expectation payload exchanged by command, SDK, and package integrations.
+ */
 export interface RegisteredImporterExpectation {
   importer: string;
   extensionName?: string;
 }
 
+/**
+ * Documents the registered exporter expectation payload exchanged by command, SDK, and package integrations.
+ */
 export interface RegisteredExporterExpectation {
   exporter: string;
   extensionName?: string;
 }
 
+/**
+ * Documents the registered item field expectation payload exchanged by command, SDK, and package integrations.
+ */
 export interface RegisteredItemFieldExpectation {
   field: string;
   extensionName?: string;
   type?: SchemaFieldDefinition["type"];
 }
 
+/**
+ * Documents the registered item field assertion payload exchanged by command, SDK, and package integrations.
+ */
 export interface RegisteredItemFieldAssertion {
   registration: RegisteredExtensionSchemaFieldDefinitions;
   field: SchemaFieldDefinition;
 }
 
+/**
+ * Documents the registered item type expectation payload exchanged by command, SDK, and package integrations.
+ */
 export interface RegisteredItemTypeExpectation {
   itemType: string;
   extensionName?: string;
   folder?: string;
 }
 
+/**
+ * Documents the registered item type assertion payload exchanged by command, SDK, and package integrations.
+ */
 export interface RegisteredItemTypeAssertion {
   registration: RegisteredExtensionSchemaItemTypeDefinitions;
   itemType: SchemaItemTypeDefinition;
 }
 
+/**
+ * Documents the registered command override expectation payload exchanged by command, SDK, and package integrations.
+ */
 export interface RegisteredCommandOverrideExpectation {
   command: string;
   extensionName?: string;
 }
 
+/**
+ * Documents the registered parser override expectation payload exchanged by command, SDK, and package integrations.
+ */
 export interface RegisteredParserOverrideExpectation {
   command: string;
   extensionName?: string;
 }
 
+/**
+ * Documents the registered preflight override expectation payload exchanged by command, SDK, and package integrations.
+ */
 export interface RegisteredPreflightOverrideExpectation {
   extensionName?: string;
 }
 
+/**
+ * Documents the registered renderer override expectation payload exchanged by command, SDK, and package integrations.
+ */
 export interface RegisteredRendererOverrideExpectation {
   format: OutputRendererFormat;
   extensionName?: string;
 }
 
+/**
+ * Restricts package manifest resource expectation values accepted by command, SDK, and storage contracts.
+ */
 export type PackageManifestResourceExpectation = Partial<Record<PmPackageResourceKind, readonly string[]>>;
 
+/**
+ * Documents the package manifest expectation payload exchanged by command, SDK, and package integrations.
+ */
 export interface PackageManifestExpectation {
   packageName?: string;
   aliases?: readonly string[];

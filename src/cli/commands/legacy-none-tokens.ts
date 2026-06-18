@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/legacy-none-tokens
+ *
+ * Implements the pm legacy none tokens command surface and its agent-facing runtime behavior.
+ */
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 
@@ -11,6 +16,9 @@ import { PmCliError } from "../../core/shared/errors.js";
  */
 const LEGACY_NONE_TOKENS = new Set(["none", "null"]);
 
+/**
+ * Implements check whether legacy none token for the public runtime surface of this module.
+ */
 export function isLegacyNoneToken(value: string | undefined): boolean {
   if (value === undefined) {
     return false;
@@ -18,6 +26,9 @@ export function isLegacyNoneToken(value: string | undefined): boolean {
   return LEGACY_NONE_TOKENS.has(value.trim().toLowerCase());
 }
 
+/**
+ * Implements assert no legacy none token for the public runtime surface of this module.
+ */
 export function assertNoLegacyNoneToken(value: string | undefined, flag: string, replacementHint?: string): void {
   if (!isLegacyNoneToken(value)) {
     return;
@@ -26,6 +37,9 @@ export function assertNoLegacyNoneToken(value: string | undefined, flag: string,
   throw new PmCliError(`${flag} no longer accepts "none" or "null".${suffix}`.trim(), EXIT_CODE.USAGE);
 }
 
+/**
+ * Implements assert no legacy none tokens for the public runtime surface of this module.
+ */
 export function assertNoLegacyNoneTokens(values: string[] | undefined, flag: string, replacementHint?: string): void {
   if (!values || values.length === 0) {
     return;

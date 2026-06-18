@@ -1,3 +1,8 @@
+/**
+ * @module core/schema/type-presets
+ *
+ * Resolves configurable schema, fields, statuses, and workflows for Type Presets.
+ */
 import { normalizeAddTypeInput, type NormalizedAddTypeInput, type RawAddTypeInput } from "./item-types-file.js";
 
 /**
@@ -9,6 +14,9 @@ import { normalizeAddTypeInput, type NormalizedAddTypeInput, type RawAddTypeInpu
  */
 
 export const TYPE_PRESET_NAMES = ["agile", "ops", "research"] as const;
+/**
+ * Restricts type preset name values accepted by command, SDK, and storage contracts.
+ */
 export type TypePresetName = (typeof TYPE_PRESET_NAMES)[number];
 
 /**

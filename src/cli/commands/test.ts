@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/test
+ *
+ * Implements the pm test command surface and its agent-facing runtime behavior.
+ */
 import { spawn, type ChildProcess } from "node:child_process";
 import { cp, mkdir, mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -152,6 +157,9 @@ interface LinkedTestRuntimeDirectives {
   shared_host_safe: boolean;
 }
 
+/**
+ * Documents the test command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface TestCommandOptions {
   add?: string[];
   addJson?: string[];
@@ -179,6 +187,9 @@ export interface TestCommandOptions {
   force?: boolean;
 }
 
+/**
+ * Restricts linked test failure category values accepted by command, SDK, and storage contracts.
+ */
 export type LinkedTestFailureCategory =
   | "infra_collision"
   | "assertion_failure"
@@ -188,6 +199,9 @@ export type LinkedTestFailureCategory =
   | "spawn_error"
   | "signal";
 
+/**
+ * Documents the test run result payload exchanged by command, SDK, and package integrations.
+ */
 export interface TestRunResult {
   command?: string;
   path?: string;
@@ -217,6 +231,9 @@ export interface TestRunResult {
   error?: string;
 }
 
+/**
+ * Documents the test result payload exchanged by command, SDK, and package integrations.
+ */
 export interface TestResult {
   ok: boolean;
   id: string;
@@ -262,6 +279,9 @@ function summarizeRunResultStatuses(results: TestRunResult[]): { passed: number;
   return { passed, failed, skipped };
 }
 
+/**
+ * Implements summarize context preflight for the public runtime surface of this module.
+ */
 export function summarizeContextPreflight(runResults: TestRunResult[]): {
   checked_pm_commands: number;
   tracker_read_commands: number;
@@ -507,6 +527,9 @@ function commandInvokesPmTrackerReadCommand(command: string): boolean {
 }
 
 /* c8 ignore start -- command-token extraction edge permutations are covered by integration command-parser tests */
+/**
+ * Implements extract referenced pm item ids from command for the public runtime surface of this module.
+ */
 export function extractReferencedPmItemIdsFromCommand(command: string, idPrefix = "pm"): string[] {
   const normalizedCommand = normalizeCommandForValidation(command);
   const ids = new Set<string>();
@@ -1114,6 +1137,9 @@ function hasInfraCollisionSignal(result: Pick<LinkedTestExecutionResult, "stdout
   return LINKED_TEST_INFRA_COLLISION_PATTERNS.some((pattern) => pattern.test(combined));
 }
 
+/**
+ * Implements classify linked test failure for the public runtime surface of this module.
+ */
 export function classifyLinkedTestFailure(
   result: Pick<LinkedTestExecutionResult, "stdout" | "stderr" | "spawnError" | "signal" | "timedOut" | "maxBufferExceeded">,
 ): LinkedTestFailureCategory {
@@ -1147,6 +1173,9 @@ function createEmptyFailureCategoryCounts(): Record<LinkedTestFailureCategory, n
   };
 }
 
+/**
+ * Implements count failure categories for the public runtime surface of this module.
+ */
 export function countFailureCategories(runResults: TestRunResult[]): Record<LinkedTestFailureCategory, number> {
   const counts = createEmptyFailureCategoryCounts();
   for (const result of runResults) {
@@ -1307,6 +1336,9 @@ async function countLinkedTestItemFiles(pmRoot: string): Promise<number> {
   return total;
 }
 
+/**
+ * Implements resolve linked test failure exit code for the public runtime surface of this module.
+ */
 export function resolveLinkedTestFailureExitCode(
   execution: Pick<LinkedTestExecutionResult, "exitCode" | "timedOut" | "maxBufferExceeded">,
 ): number {
@@ -1511,6 +1543,9 @@ function detectEmptyLinkedTestRun(stdout: string, stderr: string): string | null
 }
 
 /* c8 ignore start -- linked-test orchestration branch matrix is covered by end-to-end command integration runs */
+/**
+ * Implements run linked tests for the public runtime surface of this module.
+ */
 export async function runLinkedTests(
   tests: LinkedTest[],
   defaultTimeoutSeconds: number | undefined,
@@ -1778,6 +1813,9 @@ export async function runLinkedTests(
   return results;
 }
 
+/**
+ * Implements run test for the public runtime surface of this module.
+ */
 export async function runTest(id: string, options: TestCommandOptions, global: GlobalOptions): Promise<TestResult> {
   const stdinResolver = createStdinTokenResolver();
   const pmRoot = resolvePmRoot(process.cwd(), global.path);

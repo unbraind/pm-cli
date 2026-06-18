@@ -47,6 +47,11 @@ Coverage gating now targets literal all-source coverage across runtime code fami
 - Prefer extending existing test files and shared helpers so new coverage remains fast and non-duplicative.
 - Prefer extracting deterministic pure helpers (and unit-testing them) when an orchestration-heavy file is difficult to cover directly.
 
+Static quality also enforces source documentation coverage through `pnpm
+quality:static`: every `src/**/*.ts` source file needs a module TSDoc block,
+every exported declaration needs a non-module TSDoc block, and known generated
+boilerplate summaries are rejected.
+
 ## Search Quality Evaluation
 
 `search-advanced` exposes an advisory golden-query harness for relevance drift checks.
@@ -88,6 +93,9 @@ pm test-all --status in_progress --progress
 Do not link `pm test-all` itself as an item-level test command. It creates recursive orchestration.
 Use `--fail-on-empty-test-run` for release/readiness gates where selecting zero
 linked tests should fail instead of producing an inconclusive pass.
+Use `--progress` for long foreground sweeps; it prints parent-level
+`pm test-all` selection, per-item start/end, and final summary lines in addition
+to the linked-test command progress emitted by `pm test`.
 
 ## Package Ecosystem Smoke
 

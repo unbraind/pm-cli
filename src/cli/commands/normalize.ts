@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/normalize
+ *
+ * Implements the pm normalize command surface and its agent-facing runtime behavior.
+ */
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { toItemRecord } from "../../core/item/item-record.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
@@ -59,6 +64,9 @@ interface NormalizeApplyResultRow {
   error?: string;
 }
 
+/**
+ * Documents the normalize command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface NormalizeCommandOptions {
   status?: string;
   list: ListOptions;
@@ -70,6 +78,9 @@ export interface NormalizeCommandOptions {
   allowAuditUpdate?: boolean;
 }
 
+/**
+ * Documents the normalize result payload exchanged by command, SDK, and package integrations.
+ */
 export interface NormalizeResult {
   mode: "dry_run" | "apply";
   dry_run: boolean;
@@ -315,6 +326,9 @@ function toNormalizeWarnings(ruleCounts: NormalizeRuleCount[]): string[] {
 }
 
 
+/**
+ * Implements run normalize for the public runtime surface of this module.
+ */
 export async function runNormalize(options: NormalizeCommandOptions, global: GlobalOptions): Promise<NormalizeResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   /* c8 ignore next -- tracker bootstrap failure path is validated in broader CLI tests. */

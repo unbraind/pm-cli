@@ -1,3 +1,8 @@
+/**
+ * @module cli/registration-helpers
+ *
+ * Provides CLI runtime support for Registration Helpers.
+ */
 import type { Command } from "commander";
 import { pathExists } from "../core/fs/fs-utils.js";
 import { normalizeStatusInput } from "../core/item/status.js";
@@ -68,14 +73,23 @@ function resolveCommanderContract(
   /* c8 ignore stop */
 }
 
+/**
+ * Implements set resolved global options for the public runtime surface of this module.
+ */
 export function setResolvedGlobalOptions(command: Command, globalOptions: GlobalOptions): void {
   (command as CommandWithResolvedGlobals)[RESOLVED_GLOBAL_OPTIONS] = { ...globalOptions };
 }
 
+/**
+ * Implements clear resolved global options for the public runtime surface of this module.
+ */
 export function clearResolvedGlobalOptions(command: Command): void {
   delete (command as CommandWithResolvedGlobals)[RESOLVED_GLOBAL_OPTIONS];
 }
 
+/**
+ * Implements get global options for the public runtime surface of this module.
+ */
 export function getGlobalOptions(command: Command): GlobalOptions {
   const resolved = (command as CommandWithResolvedGlobals)[RESOLVED_GLOBAL_OPTIONS];
   if (resolved) {
@@ -103,6 +117,9 @@ export function getGlobalOptions(command: Command): GlobalOptions {
   };
 }
 
+/**
+ * Implements get command path for the public runtime surface of this module.
+ */
 export function getCommandPath(command: Command): string {
   const parts: string[] = [];
   let current: Command | null = command;
@@ -113,6 +130,9 @@ export function getCommandPath(command: Command): string {
   return parts.join(" ");
 }
 
+/**
+ * Implements apply default output format for the public runtime surface of this module.
+ */
 export async function applyDefaultOutputFormat(globalOptions: GlobalOptions): Promise<GlobalOptions> {
   if (globalOptions.json === true) {
     return globalOptions;
@@ -128,6 +148,9 @@ export async function applyDefaultOutputFormat(globalOptions: GlobalOptions): Pr
   };
 }
 
+/**
+ * Implements collect for the public runtime surface of this module.
+ */
 export function collect(value: string, previous: string[] | undefined): string[] {
   const next = previous ?? [];
   next.push(value);
@@ -167,6 +190,9 @@ function pushRepeatableValueFlag(args: string[], flag: string, values: unknown):
   }
 }
 
+/**
+ * Implements build background test command args for the public runtime surface of this module.
+ */
 export function buildBackgroundTestCommandArgs(id: string, options: Record<string, unknown>): string[] {
   const args: string[] = ["test", id, "--run", "--json", "--progress"];
   pushRepeatableValueFlag(args, "--add", options.add);
@@ -193,6 +219,9 @@ export function buildBackgroundTestCommandArgs(id: string, options: Record<strin
   return args;
 }
 
+/**
+ * Implements build background test all command args for the public runtime surface of this module.
+ */
 export function buildBackgroundTestAllCommandArgs(options: Record<string, unknown>): string[] {
   const args: string[] = ["test-all", "--json", "--progress"];
   pushOptionalValueFlag(args, "--status", options.status);
@@ -213,10 +242,16 @@ export function buildBackgroundTestAllCommandArgs(options: Record<string, unknow
   return args;
 }
 
+/**
+ * Implements format hook warnings for the public runtime surface of this module.
+ */
 export function formatHookWarnings(warnings: string[]): string {
   return warnings.join(",");
 }
 
+/**
+ * Implements normalize create options for the public runtime surface of this module.
+ */
 export function normalizeCreateOptions(
   commandOptions: Record<string, unknown>,
   options: { requireType?: boolean } = {},
@@ -321,6 +356,9 @@ export function normalizeCreateOptions(
   return normalized as CreateCommandOptions;
 }
 
+/**
+ * Implements normalize update options for the public runtime surface of this module.
+ */
 export function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record<string, unknown> {
   const readUpdateString = (target: string): string | undefined =>
     readFirstStringFromCommanderOptions(
@@ -473,6 +511,9 @@ const UPDATE_MANY_CONTROL_OPTION_KEYS = new Set<string>([
   "checkpoint",
 ]);
 
+/**
+ * Implements extract update many mutation option source for the public runtime surface of this module.
+ */
 export function extractUpdateManyMutationOptionSource(commandOptions: Record<string, unknown>): Record<string, unknown> {
   const mutationOptions: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(commandOptions)) {
@@ -504,6 +545,9 @@ function readListOptionString(options: Record<string, unknown>, target: string):
   return undefined;
 }
 
+/**
+ * Implements normalize list options for the public runtime surface of this module.
+ */
 export function normalizeListOptions(options: Record<string, unknown>): ListOptions {
   const normalized: Record<string, unknown> = {
     status: readListOptionString(options, "status"),
@@ -577,6 +621,9 @@ export function normalizeListOptions(options: Record<string, unknown>): ListOpti
   return normalized as ListOptions;
 }
 
+/**
+ * Implements normalize aggregate options for the public runtime surface of this module.
+ */
 export function normalizeAggregateOptions(options: Record<string, unknown>): AggregateOptions {
   return {
     groupBy: typeof options.groupBy === "string" ? options.groupBy : undefined,
@@ -601,6 +648,9 @@ export function normalizeAggregateOptions(options: Record<string, unknown>): Agg
 
 type ListCommandResult = Awaited<ReturnType<typeof runList>>;
 
+/**
+ * Implements print list json stream for the public runtime surface of this module.
+ */
 export function printListJsonStream(commandName: string, result: ListCommandResult, globalOptions: GlobalOptions): void {
   setActiveCommandResult(result);
   if (globalOptions.quiet) {
@@ -630,6 +680,9 @@ export function printListJsonStream(commandName: string, result: ListCommandResu
 
 type ActivityCommandResult = Awaited<ReturnType<typeof runActivity>>;
 
+/**
+ * Implements print activity json stream for the public runtime surface of this module.
+ */
 export function printActivityJsonStream(
   result: ActivityCommandResult,
   options: {
@@ -671,6 +724,9 @@ export function printActivityJsonStream(
   writeStdout(`${JSON.stringify({ type: "end", command: "activity", count: result.count })}\n`);
 }
 
+/**
+ * Implements normalize search options for the public runtime surface of this module.
+ */
 export function normalizeSearchOptions(options: Record<string, unknown>): Record<string, unknown> {
   const readSearchString = (target: string): string | undefined =>
     readFirstStringFromCommanderOptions(
@@ -761,6 +817,9 @@ export function normalizeSearchOptions(options: Record<string, unknown>): Record
   return normalized;
 }
 
+/**
+ * Implements normalize search keywords input for the public runtime surface of this module.
+ */
 export function normalizeSearchKeywordsInput(keywords: string[]): string {
   const query = keywords
     .map((entry) => entry.trim())
@@ -773,6 +832,9 @@ export function normalizeSearchKeywordsInput(keywords: string[]): string {
 }
 
 
+/**
+ * Implements normalize activity options for the public runtime surface of this module.
+ */
 export function normalizeActivityOptions(options: Record<string, unknown>): {
   id?: string;
   op?: string;
@@ -798,6 +860,9 @@ export function normalizeActivityOptions(options: Record<string, unknown>): {
   };
 }
 
+/**
+ * Implements resolve activity stream mode for the public runtime surface of this module.
+ */
 export function resolveActivityStreamMode(raw: unknown): boolean {
   if (raw === true) {
     return true;
@@ -826,6 +891,9 @@ export function resolveActivityStreamMode(raw: unknown): boolean {
   throw new PmCliError("Activity --stream accepts rows|ndjson|jsonl (or no value)", EXIT_CODE.USAGE);
 }
 
+/**
+ * Implements normalize context options for the public runtime surface of this module.
+ */
 export function normalizeContextOptions(options: Record<string, unknown>): ContextOptions {
   const readContextString = (target: string): string | undefined =>
     readFirstStringFromCommanderOptions(
@@ -911,6 +979,9 @@ function collectMutationItemIds(result: unknown): string[] {
   return [...ids].sort((left, right) => left.localeCompare(right));
 }
 
+/**
+ * Implements invalidate search caches for mutation for the public runtime surface of this module.
+ */
 export async function invalidateSearchCachesForMutation(globalOptions: GlobalOptions, result?: unknown): Promise<void> {
   const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
   const refreshResult = await refreshSearchArtifactsForMutation(pmRoot, collectMutationItemIds(result), {

@@ -50,7 +50,7 @@ Common authoring exports:
 
 Package manifest exports:
 
-- `PM_PACKAGE_RESOURCE_KINDS` (`extensions`, `docs`, `examples`)
+- `PM_PACKAGE_RESOURCE_KINDS` (`extensions`, `docs`, `examples`, `assets`, `prompts`)
 - `PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS`
 - `readPmPackageManifest`
 - `collectPackageExtensionDirectories`
@@ -156,7 +156,7 @@ pm schema show Experiment --json
 
 When a package-owned command is missing at runtime, CLI usage guidance now includes a deterministic install hint (for example `pm install calendar` or `pm install search-advanced`) so agents can recover in one retry.
 
-Package installs currently activate only extension resources. Additional package resource kinds (`docs`, `examples`) are metadata-first and available through package manifest/catalog inspection.
+Package installs currently activate only extension resources. Additional package resource kinds (`docs`, `examples`, `assets`, `prompts`) are metadata-first and available through package manifest/catalog inspection.
 
 Package tests can assert the normalized manifest through the SDK without
 reimplementing resource sorting, alias normalization, or package.json parsing:
@@ -176,6 +176,8 @@ assertPackageManifest(manifest, {
     extensions: ["extensions/incident-workflow"],
     docs: ["README.md"],
     examples: ["examples/basic.md"],
+    assets: ["assets/workflow-diagram.png"],
+    prompts: ["prompts/triage.md"],
   },
 });
 ```

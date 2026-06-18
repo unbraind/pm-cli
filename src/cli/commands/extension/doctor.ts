@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/extension/doctor
+ *
+ * Implements extension package-management support for Doctor.
+ */
 import { activateExtensions, loadExtensions } from "../../../core/extensions/index.js";
 import {
   EXTENSION_CAPABILITY_CONTRACT,
@@ -19,6 +24,9 @@ import type {
   ManagedExtensionSummary,
 } from "../extension.js";
 
+/**
+ * Implements apply doctor runtime activation state for the public runtime surface of this module.
+ */
 export function applyDoctorRuntimeActivationState(
   extensions: ManagedExtensionSummary[],
   loadResult: Awaited<ReturnType<typeof loadExtensions>>,
@@ -157,6 +165,9 @@ const REGISTRATION_COLLISION_WARNING_CODES = new Set([
   "extension_service_override_collision",
 ]);
 
+/**
+ * Implements check whether registration collision warning for the public runtime surface of this module.
+ */
 export function isRegistrationCollisionWarning(warning: string): boolean {
   return REGISTRATION_COLLISION_WARNING_CODES.has(warningCode(warning));
 }
@@ -213,6 +224,9 @@ function collectRegistrationCollisionExtensionNames(warnings: string[]): string[
   return [...names].sort((left, right) => left.localeCompare(right));
 }
 
+/**
+ * Implements build registration collision remediation for the public runtime surface of this module.
+ */
 export function buildRegistrationCollisionRemediation(
   warnings: string[],
   commands: { deactivate: string; doctor: string },
@@ -298,6 +312,9 @@ function buildRegistrationCollisionPlan(
   };
 }
 
+/**
+ * Implements classify doctor load failure warnings for the public runtime surface of this module.
+ */
 export function classifyDoctorLoadFailureWarnings(loadFailures: Array<{ name: string; error: string }>): string[] {
   const warnings: string[] = [];
   for (const failure of loadFailures) {
@@ -320,6 +337,9 @@ export function classifyDoctorLoadFailureWarnings(loadFailures: Array<{ name: st
   return [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
 }
 
+/**
+ * Implements classify doctor activation failure warnings for the public runtime surface of this module.
+ */
 export function classifyDoctorActivationFailureWarnings(
   activationFailures: Array<{ name: string; trace?: { missing_capability?: string; capability?: string } }> = [],
 ): string[] {
@@ -337,6 +357,9 @@ export function classifyDoctorActivationFailureWarnings(
   return [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
 }
 
+/**
+ * Implements build extension triage summary for the public runtime surface of this module.
+ */
 export function buildExtensionTriageSummary(
   scope: ExtensionScope,
   warnings: string[],
@@ -515,6 +538,9 @@ export function buildExtensionTriageSummary(
   };
 }
 
+/**
+ * Implements parse doctor detail mode for the public runtime surface of this module.
+ */
 export function parseDoctorDetailMode(raw: string | undefined): ExtensionDoctorDetailMode {
   if (!raw || raw.trim().length === 0) {
     return "summary";
@@ -535,6 +561,9 @@ function warningCode(value: string): string {
   return normalized.slice(0, separator);
 }
 
+/**
+ * Implements collect unknown capability guidance for the public runtime surface of this module.
+ */
 export function collectUnknownCapabilityGuidance(warnings: string[]): UnknownExtensionCapabilityWarningDetails[] {
   const seen = new Set<string>();
   const guidance: UnknownExtensionCapabilityWarningDetails[] = [];
@@ -558,6 +587,9 @@ export function collectUnknownCapabilityGuidance(warnings: string[]): UnknownExt
   return guidance;
 }
 
+/**
+ * Implements build capability contract metadata for the public runtime surface of this module.
+ */
 export function buildCapabilityContractMetadata(): {
   version: number;
   capabilities: string[];
@@ -579,6 +611,9 @@ function isExpectedUnmanagedExtension(entry: ManagedExtensionSummary): boolean {
   return normalizedDirectory === "beads" || normalizedDirectory === "todos";
 }
 
+/**
+ * Implements build doctor consistency summary for the public runtime surface of this module.
+ */
 export function buildDoctorConsistencySummary(
   scope: ExtensionScope,
   installedExtensions: ManagedExtensionSummary[],

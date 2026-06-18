@@ -1,9 +1,20 @@
+/**
+ * @module cli/guide-topics
+ *
+ * Provides CLI runtime support for Guide Topics.
+ */
+/**
+ * Describes one documentation file surfaced by a progressive-disclosure guide topic.
+ */
 export interface GuideDocReference {
   path: string;
   purpose: string;
   optional?: boolean;
 }
 
+/**
+ * Documents the guide workflow template payload exchanged by command, SDK, and package integrations.
+ */
 export interface GuideWorkflowTemplate {
   name: string;
   goal: string;
@@ -11,6 +22,9 @@ export interface GuideWorkflowTemplate {
   commands: string[];
 }
 
+/**
+ * Documents the guide topic definition payload exchanged by command, SDK, and package integrations.
+ */
 export interface GuideTopicDefinition {
   id: string;
   aliases: string[];
@@ -292,6 +306,9 @@ for (const topic of GUIDE_TOPICS) {
   }
 }
 
+/**
+ * Implements list guide topics for the public runtime surface of this module.
+ */
 export function listGuideTopics(): GuideTopicDefinition[] {
   return GUIDE_TOPICS.map((topic) => ({
     ...topic,
@@ -306,10 +323,16 @@ export function listGuideTopics(): GuideTopicDefinition[] {
   }));
 }
 
+/**
+ * Implements list guide topic ids for the public runtime surface of this module.
+ */
 export function listGuideTopicIds(): string[] {
   return GUIDE_TOPICS.map((topic) => topic.id);
 }
 
+/**
+ * Implements resolve guide topic for the public runtime surface of this module.
+ */
 export function resolveGuideTopic(rawTopic: string | undefined): GuideTopicDefinition | null {
   if (!rawTopic) {
     return null;

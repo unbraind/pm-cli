@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/recurrence-parsers
+ *
+ * Implements the pm recurrence parsers command surface and its agent-facing runtime behavior.
+ */
 import { parseOptionalNumber } from "../../core/item/parse.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -36,6 +41,9 @@ export function parseEventBoolean(value: string, flag: string): boolean {
   throw new PmCliError(`${flag} must be one of true|false|1|0|yes|no`, EXIT_CODE.USAGE);
 }
 
+/**
+ * Implements parse delimited list for the public runtime surface of this module.
+ */
 export function parseDelimitedList(raw: string | undefined): string[] {
   if (!raw) {
     return [];
@@ -46,6 +54,9 @@ export function parseDelimitedList(raw: string | undefined): string[] {
     .filter((value) => value.length > 0);
 }
 
+/**
+ * Implements ensure enum value for the public runtime surface of this module.
+ */
 export function ensureEnumValue<T extends string>(value: string, allowed: readonly T[], label: string): T {
   if (!allowed.includes(value as T)) {
     throw new PmCliError(`Invalid ${label} value "${value}". Allowed: ${allowed.join(", ")}`, EXIT_CODE.USAGE);
@@ -78,6 +89,9 @@ export const RECURRENCE_CSV_KEYS = [
   "recur_exdates",
 ] as const;
 
+/**
+ * Implements parse recurrence rule for the public runtime surface of this module.
+ */
 export function parseRecurrenceRule(
   kv: Record<string, string>,
   startAt: string,

@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/upgrade
+ *
+ * Implements the pm upgrade command surface and its agent-facing runtime behavior.
+ */
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -20,6 +25,9 @@ const execFileAsync = promisify(execFile);
 const DEFAULT_CLI_PACKAGE = "@unbrained/pm-cli";
 const DEFAULT_TAG = "latest";
 
+/**
+ * Documents the upgrade command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface UpgradeCommandOptions {
   dryRun?: boolean;
   cliOnly?: boolean;
@@ -47,17 +55,26 @@ export const _testOnly = {
   summarize,
 };
 
+/**
+ * Documents the upgrade command runner result payload exchanged by command, SDK, and package integrations.
+ */
 export interface UpgradeCommandRunnerResult {
   stdout: string;
   stderr: string;
 }
 
+/**
+ * Restricts upgrade command runner values accepted by command, SDK, and storage contracts.
+ */
 export type UpgradeCommandRunner = (
   command: string,
   args: string[],
   options?: { cwd?: string },
 ) => Promise<UpgradeCommandRunnerResult>;
 
+/**
+ * Documents the upgrade cli result payload exchanged by command, SDK, and package integrations.
+ */
 export interface UpgradeCliResult {
   requested: boolean;
   status: "planned" | "updated" | "failed" | "skipped";
@@ -71,6 +88,9 @@ export interface UpgradeCliResult {
   error?: string;
 }
 
+/**
+ * Documents the upgrade package result payload exchanged by command, SDK, and package integrations.
+ */
 export interface UpgradePackageResult {
   name: string;
   directory: string;
@@ -84,6 +104,9 @@ export interface UpgradePackageResult {
   error?: string;
 }
 
+/**
+ * Documents the upgrade result payload exchanged by command, SDK, and package integrations.
+ */
 export interface UpgradeResult {
   ok: boolean;
   action: "upgrade";
@@ -335,6 +358,9 @@ function summarize(
   };
 }
 
+/**
+ * Implements run upgrade for the public runtime surface of this module.
+ */
 export async function runUpgrade(
   target: string | undefined,
   options: UpgradeCommandOptions,

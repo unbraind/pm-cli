@@ -1,3 +1,8 @@
+/**
+ * @module cli/extension-command-options
+ *
+ * Provides CLI runtime support for Extension Command Options.
+ */
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { flattenFlagListValue, resolveFlagValueKind } from "../core/extensions/flag-value-types.js";
@@ -127,6 +132,9 @@ function collectLooseOptionKeys(definition: Record<string, unknown>): string[] {
   return [...new Set(keys)];
 }
 
+/**
+ * Implements collect loose command option keys for definitions for the public runtime surface of this module.
+ */
 export function collectLooseCommandOptionKeysForDefinitions(
   definitions: Array<Record<string, unknown>>,
 ): Set<string> {
@@ -162,6 +170,9 @@ function formatLooseOptionLabel(definition: Record<string, unknown>): string | n
   return null;
 }
 
+/**
+ * Implements validate loose command options with flag definitions for the public runtime surface of this module.
+ */
 export function validateLooseCommandOptionsWithFlagDefinitions(
   options: Record<string, unknown>,
   definitions: Array<Record<string, unknown>>,
@@ -274,6 +285,9 @@ function applyFlagDefault(
   return kind ? coerceLooseOptionValue(defaultValue, kind) : defaultValue;
 }
 
+/**
+ * Implements coerce loose command options with flag definitions for the public runtime surface of this module.
+ */
 export function coerceLooseCommandOptionsWithFlagDefinitions(
   options: Record<string, unknown>,
   definitions: Array<Record<string, unknown>>,
@@ -321,6 +335,9 @@ export function coerceLooseCommandOptionsWithFlagDefinitions(
   return coerced;
 }
 
+/**
+ * Implements parse loose command options for the public runtime surface of this module.
+ */
 export function parseLooseCommandOptions(args: string[]): Record<string, unknown> {
   const options = Object.create(null) as Record<string, unknown>;
   let index = 0;
@@ -342,6 +359,9 @@ export function parseLooseCommandOptions(args: string[]): Record<string, unknown
   return options;
 }
 
+/**
+ * Implements strip loose command option tokens for the public runtime surface of this module.
+ */
 export function stripLooseCommandOptionTokens(
   args: string[],
   definitions: Array<Record<string, unknown>>,

@@ -1,3 +1,8 @@
+/**
+ * @module cli/bootstrap-args
+ *
+ * Provides CLI runtime support for Bootstrap Args.
+ */
 import { resolveSubcommandFlagContractsForCommand, type CliFlagContract } from "../sdk/cli-contracts.js";
 import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 
@@ -42,6 +47,9 @@ function parseBootstrapPathToken(
   };
 }
 
+/**
+ * Documents the bootstrap global options payload exchanged by command, SDK, and package integrations.
+ */
 export interface BootstrapGlobalOptions {
   path?: string;
   noExtensions: boolean;
@@ -50,6 +58,9 @@ export interface BootstrapGlobalOptions {
   quiet: boolean;
 }
 
+/**
+ * Implements parse bootstrap global options for the public runtime surface of this module.
+ */
 export function parseBootstrapGlobalOptions(argv: string[]): BootstrapGlobalOptions {
   let legacyPathValue: string | undefined;
   let pmPathValue: string | undefined;
@@ -106,6 +117,9 @@ export function parseBootstrapGlobalOptions(argv: string[]): BootstrapGlobalOpti
   };
 }
 
+/**
+ * Implements strip global bootstrap tokens for the public runtime surface of this module.
+ */
 export function stripGlobalBootstrapTokens(argv: string[]): string[] {
   const remaining: string[] = [];
   let index = 0;
@@ -140,11 +154,17 @@ export function stripGlobalBootstrapTokens(argv: string[]): string[] {
   return remaining;
 }
 
+/**
+ * Documents the bootstrap help request payload exchanged by command, SDK, and package integrations.
+ */
 export interface BootstrapHelpRequest {
   requested: boolean;
   commandPathTokens: string[];
 }
 
+/**
+ * Implements parse bootstrap help request for the public runtime surface of this module.
+ */
 export function parseBootstrapHelpRequest(argv: string[]): BootstrapHelpRequest {
   const stripped = stripGlobalBootstrapTokens(argv);
   const first = stripped[0]?.trim().toLowerCase();
@@ -222,6 +242,9 @@ function findCommandTokenIndex(argv: string[]): number | undefined {
   return undefined;
 }
 
+/**
+ * Implements parse bootstrap command name for the public runtime surface of this module.
+ */
 export function parseBootstrapCommandName(argv: string[]): string | undefined {
   const index = findCommandTokenIndex(argv);
   return index === undefined ? undefined : argv[index].trim().toLowerCase();
@@ -238,6 +261,9 @@ function shouldDisablePagerForInvocation(argv: string[], bootstrapGlobal: Bootst
   return helpRequest.requested;
 }
 
+/**
+ * Implements apply bootstrap pager policy for the public runtime surface of this module.
+ */
 export function applyBootstrapPagerPolicy(argv: string[]): void {
   const bootstrapGlobal = parseBootstrapGlobalOptions(argv);
   if (!shouldDisablePagerForInvocation(argv, bootstrapGlobal)) {
@@ -275,6 +301,9 @@ const EXTENSION_ACTION_SYNTAX_TOKENS = new Set<ExtensionSubcommandAction>([
   "deactivate",
 ]);
 
+/**
+ * Implements normalize legacy extension action syntax for the public runtime surface of this module.
+ */
 export function normalizeLegacyExtensionActionSyntax(argv: string[]): string[] {
   const extensionIndex = argv.findIndex((token) => token === "extension");
   if (extensionIndex < 0) {
@@ -346,6 +375,9 @@ function rewriteCommandAlias(argv: string[], trace: BootstrapNormalizationEvent[
   return rewritten;
 }
 
+/**
+ * Documents the bootstrap normalization event payload exchanged by command, SDK, and package integrations.
+ */
 export interface BootstrapNormalizationEvent {
   from: string;
   to: string[];
@@ -353,6 +385,9 @@ export interface BootstrapNormalizationEvent {
   confidence: BootstrapNormalizationConfidence;
 }
 
+/**
+ * Documents the bootstrap invocation normalization result payload exchanged by command, SDK, and package integrations.
+ */
 export interface BootstrapInvocationNormalizationResult {
   argv: string[];
   commandName: string | undefined;
@@ -500,6 +535,9 @@ function resolveCanonicalFlag(
   };
 }
 
+/**
+ * Implements list alias plural keys for the public runtime surface of this module.
+ */
 export function listAliasPluralKeys(normalizedKey: string): string[] {
   const candidates = [`${normalizedKey}s`];
   if (normalizedKey.endsWith("y") && normalizedKey.length > 1) {
@@ -794,6 +832,9 @@ export function mergeLinkedTestTwoTokenEntries(
   return result;
 }
 
+/**
+ * Implements normalize bootstrap invocation for the public runtime surface of this module.
+ */
 export function normalizeBootstrapInvocation(argv: string[]): BootstrapInvocationNormalizationResult {
   const trace: BootstrapNormalizationEvent[] = [];
   const legacyNormalized = normalizeLegacyExtensionActionSyntax(argv);
@@ -877,6 +918,9 @@ function parseBootstrapCommandPathName(argv: string[]): string | undefined {
   return first;
 }
 
+/**
+ * Implements parse bootstrap type value for the public runtime surface of this module.
+ */
 export function parseBootstrapTypeValue(argv: string[]): string | undefined {
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];

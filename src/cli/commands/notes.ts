@@ -1,8 +1,16 @@
+/**
+ * @module cli/commands/notes
+ *
+ * Implements the pm notes command surface and its agent-facing runtime behavior.
+ */
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { createStdinTokenResolver } from "../../core/item/parse.js";
 import type { LogNote } from "../../types/index.js";
 import { parseAnnotationTextInput, runAnnotationCommand } from "./annotation-command.js";
 
+/**
+ * Documents the notes command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface NotesCommandOptions {
   add?: string;
   limit?: string;
@@ -13,12 +21,18 @@ export interface NotesCommandOptions {
   force?: boolean;
 }
 
+/**
+ * Documents the notes result payload exchanged by command, SDK, and package integrations.
+ */
 export interface NotesResult {
   id: string;
   notes: LogNote[];
   count: number;
 }
 
+/**
+ * Implements run notes for the public runtime surface of this module.
+ */
 export async function runNotes(id: string, options: NotesCommandOptions, global: GlobalOptions): Promise<NotesResult> {
   const stdinResolver = createStdinTokenResolver();
   const addInput = options.add === undefined ? undefined : await stdinResolver.resolveValue(options.add, "--add");

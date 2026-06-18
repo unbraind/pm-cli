@@ -1,3 +1,8 @@
+/**
+ * @module core/extensions/item-fields
+ *
+ * Implements extension runtime contracts and governance for Item Fields.
+ */
 import type { ExtensionRegistrationRegistry } from "./loader.js";
 import { normalizeItemFieldType, type KnownItemFieldType } from "./item-field-types.js";
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
@@ -125,10 +130,16 @@ function assertNotReservedItemFieldName(fieldName: string): void {
   });
 }
 
+/**
+ * Implements collect registered item field names for the public runtime surface of this module.
+ */
 export function collectRegisteredItemFieldNames(registrations: ExtensionRegistrationRegistry | null): string[] {
   return [...collectRegisteredFieldDefinitions(registrations).keys()].sort((left, right) => left.localeCompare(right));
 }
 
+/**
+ * Implements parse registered item field assignments for the public runtime surface of this module.
+ */
 export function parseRegisteredItemFieldAssignments(
   rawFields: string[] | undefined,
   registrations: ExtensionRegistrationRegistry | null,
@@ -180,6 +191,9 @@ function isAllowedFieldValue(value: unknown, allowed: unknown[] | undefined): bo
   return allowed.some((candidate) => Object.is(candidate, value));
 }
 
+/**
+ * Implements apply registered item field defaults and validation for the public runtime surface of this module.
+ */
 export function applyRegisteredItemFieldDefaultsAndValidation(
   frontMatter: Record<string, unknown>,
   registrations: ExtensionRegistrationRegistry | null,

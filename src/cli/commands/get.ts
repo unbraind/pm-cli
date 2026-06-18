@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/get
+ *
+ * Implements the pm get command surface and its agent-facing runtime behavior.
+ */
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { toItemRecord } from "../../core/item/item-record.js";
@@ -44,6 +49,9 @@ interface ChildRollupContext {
 // item reads keep avoiding the corpus scan that the rollup requires.
 const CHILD_ROLLUP_TYPES = new Set(["milestone", "epic"]);
 
+/**
+ * Documents the get result payload exchanged by command, SDK, and package integrations.
+ */
 export interface GetResult {
   // `body` lives inside `item` (alongside `description`/`acceptance_criteria`)
   // for parity with `pm list --include-body`, so agents reliably find it at
@@ -69,6 +77,9 @@ const GET_DEPTH_VALUES = ["brief", "standard", "deep"] as const;
 
 type GetDepth = (typeof GET_DEPTH_VALUES)[number];
 
+/**
+ * Documents the get options payload exchanged by command, SDK, and package integrations.
+ */
 export interface GetOptions {
   depth?: string;
   fields?: string;
@@ -203,6 +214,9 @@ function fieldsIncludeRoot(fields: string[], name: string): boolean {
   return fields.some((field) => field === name || field.startsWith(`${name}.`));
 }
 
+/**
+ * Implements run get for the public runtime surface of this module.
+ */
 export async function runGet(id: string, global: GlobalOptions, options: GetOptions = {}): Promise<GetResult> {
   if (options.full && (options.fields !== undefined || options.depth !== undefined)) {
     throw new PmCliError("Get projection options are mutually exclusive; remove the extra projection flag and retry.", EXIT_CODE.USAGE);

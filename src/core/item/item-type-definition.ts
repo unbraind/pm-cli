@@ -1,3 +1,8 @@
+/**
+ * @module core/item/item-type-definition
+ *
+ * Defines item parsing, formatting, and lifecycle helpers for Item Type Definition.
+ */
 import type {
   ItemTypeCommandOptionPolicy,
   ItemTypeDefinition,
@@ -108,6 +113,9 @@ export function normalizeItemTypeCommandOptionPolicies(
   );
 }
 
+/**
+ * Documents the normalize item type definition options payload exchanged by command, SDK, and package integrations.
+ */
 export interface NormalizeItemTypeDefinitionOptions {
   /** How to resolve a raw policy `command` value (defaults to {@link keepPolicyCommand}). */
   resolvePolicyCommand?: ResolvePolicyCommand;

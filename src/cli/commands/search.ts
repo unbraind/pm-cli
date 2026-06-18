@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/search
+ *
+ * Implements the pm search command surface and its agent-facing runtime behavior.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { coerceNumberInRange, toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
@@ -78,6 +83,9 @@ import { getItemPath, getSettingsPath, resolveGlobalPmRoot, resolvePmRoot } from
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemDocument, ItemFormat, ItemFrontMatter, ItemStatus, ItemType, PmSettings } from "../../types/index.js";
 
+/**
+ * Documents the search options payload exchanged by command, SDK, and package integrations.
+ */
 export interface SearchOptions {
   mode?: string;
   matchMode?: string;
@@ -133,6 +141,9 @@ export interface SearchOptions {
   [key: string]: unknown;
 }
 
+/**
+ * Restricts search match mode values accepted by command, SDK, and storage contracts.
+ */
 export type SearchMatchMode = "and" | "or" | "exact";
 
 type SearchMode = "keyword" | "semantic" | "hybrid";
@@ -225,6 +236,9 @@ const SHORT_ID_MATCH_SCORE = 900;
 const IMPLICIT_HYBRID_EMBEDDING_TIMEOUT_MS = 8_000;
 const IMPLICIT_HYBRID_VECTOR_TIMEOUT_MS = 8_000;
 
+/**
+ * Documents the search hit payload exchanged by command, SDK, and package integrations.
+ */
 export interface SearchHit {
   item: ItemFrontMatter;
   score: number;
@@ -243,6 +257,9 @@ export interface SearchHit {
   exact_id_match?: boolean;
 }
 
+/**
+ * Restricts search result item values accepted by command, SDK, and storage contracts.
+ */
 export type SearchResultItem = SearchHit | Record<string, unknown>;
 
 interface SearchResultBase {
@@ -260,12 +277,18 @@ interface SearchResultBase {
   warnings?: string[];
 }
 
+/**
+ * Documents the search compact result payload exchanged by command, SDK, and package integrations.
+ */
 export interface SearchCompactResult extends SearchResultBase {
   filters: Record<string, unknown>;
   projection?: undefined;
   now?: undefined;
 }
 
+/**
+ * Documents the search verbose result payload exchanged by command, SDK, and package integrations.
+ */
 export interface SearchVerboseResult extends SearchResultBase {
   filters: Record<string, unknown>;
   projection: {
@@ -275,6 +298,9 @@ export interface SearchVerboseResult extends SearchResultBase {
   now: string;
 }
 
+/**
+ * Restricts search result values accepted by command, SDK, and storage contracts.
+ */
 export type SearchResult = SearchCompactResult | SearchVerboseResult;
 
 function isNonEmptyRecord(value: unknown): value is Record<string, unknown> {
@@ -1053,6 +1079,9 @@ async function loadLinkedCorpus(
   return chunks.join("\n");
 }
 
+/**
+ * Documents the search tuning payload exchanged by command, SDK, and package integrations.
+ */
 export interface SearchTuning {
   title_exact_bonus: number;
   title_weight: number;
@@ -1234,6 +1263,9 @@ function normalizeScoreMap(scoreById: Map<string, number>): Map<string, number> 
   return normalized;
 }
 
+/**
+ * Implements resolve search max results for the public runtime surface of this module.
+ */
 export function resolveSearchMaxResults(settings: unknown): number {
   const candidate = (settings as { search?: { max_results?: unknown } }).search?.max_results;
   if (typeof candidate === "number" && Number.isFinite(candidate) && candidate > 0) {
@@ -1242,6 +1274,9 @@ export function resolveSearchMaxResults(settings: unknown): number {
   return 50;
 }
 
+/**
+ * Implements resolve search score threshold for the public runtime surface of this module.
+ */
 export function resolveSearchScoreThreshold(settings: unknown): number {
   const candidate = (settings as { search?: { score_threshold?: unknown } }).search?.score_threshold;
   if (typeof candidate === "number" && Number.isFinite(candidate)) {
@@ -1250,6 +1285,9 @@ export function resolveSearchScoreThreshold(settings: unknown): number {
   return 0;
 }
 
+/**
+ * Implements resolve hybrid semantic weight for the public runtime surface of this module.
+ */
 export function resolveHybridSemanticWeight(settings: unknown): number {
   const candidate = (settings as { search?: { hybrid_semantic_weight?: unknown } }).search?.hybrid_semantic_weight;
   if (typeof candidate === "number" && Number.isFinite(candidate) && candidate >= 0 && candidate <= 1) {
@@ -1258,6 +1296,9 @@ export function resolveHybridSemanticWeight(settings: unknown): number {
   return 0.7;
 }
 
+/**
+ * Implements resolve search tuning for the public runtime surface of this module.
+ */
 export function resolveSearchTuning(settings: unknown): SearchTuning {
   const defaults: SearchTuning = {
     title_exact_bonus: 10,
@@ -1998,6 +2039,9 @@ function projectSearchHits(hits: SearchHit[], projection: SearchProjectionConfig
   });
 }
 
+/**
+ * Implements run search for the public runtime surface of this module.
+ */
 export async function runSearch(query: string, options: SearchOptions, global: GlobalOptions): Promise<SearchResult> {
   const includeLinked = parseIncludeLinked(options.includeLinked);
   const titleExact = parseTitleExact(options.titleExact);

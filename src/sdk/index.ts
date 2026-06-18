@@ -1,3 +1,8 @@
+/**
+ * @module sdk/index
+ *
+ * Defines public SDK APIs and package-author helpers for Index.
+ */
 import {
   EXTENSION_CAPABILITY_CONTRACT,
   EXTENSION_CAPABILITY_CONTRACT_VERSION,
@@ -67,6 +72,9 @@ export {
  * `capabilities`.
  */
 export const EXTENSION_CAPABILITIES = KNOWN_EXTENSION_CAPABILITIES;
+/**
+ * Restricts extension capability values accepted by command, SDK, and storage contracts.
+ */
 export type ExtensionCapability = (typeof EXTENSION_CAPABILITIES)[number];
 
 /**
@@ -76,9 +84,21 @@ export const EXTENSION_POLICY_MODES = KNOWN_EXTENSION_POLICY_MODES;
 export const EXTENSION_POLICY_SURFACES = KNOWN_EXTENSION_POLICY_SURFACES;
 export const EXTENSION_TRUST_MODES = KNOWN_EXTENSION_TRUST_MODES;
 export const EXTENSION_SANDBOX_PROFILES = KNOWN_EXTENSION_SANDBOX_PROFILES;
+/**
+ * Restricts extension policy mode values accepted by command, SDK, and storage contracts.
+ */
 export type ExtensionPolicyMode = (typeof EXTENSION_POLICY_MODES)[number];
+/**
+ * Restricts extension policy surface values accepted by command, SDK, and storage contracts.
+ */
 export type ExtensionPolicySurface = (typeof EXTENSION_POLICY_SURFACES)[number];
+/**
+ * Restricts extension trust mode values accepted by command, SDK, and storage contracts.
+ */
 export type ExtensionTrustMode = (typeof EXTENSION_TRUST_MODES)[number];
+/**
+ * Restricts extension sandbox profile values accepted by command, SDK, and storage contracts.
+ */
 export type ExtensionSandboxProfile = (typeof EXTENSION_SANDBOX_PROFILES)[number];
 
 /**
@@ -86,6 +106,9 @@ export type ExtensionSandboxProfile = (typeof EXTENSION_SANDBOX_PROFILES)[number
  */
 export { EXTENSION_CAPABILITY_CONTRACT, EXTENSION_CAPABILITY_CONTRACT_VERSION, EXTENSION_CAPABILITY_LEGACY_ALIASES };
 
+/**
+ * Documents the extension module payload exchanged by command, SDK, and package integrations.
+ */
 export interface ExtensionModule {
   /**
    * Optional in-module metadata mirror.

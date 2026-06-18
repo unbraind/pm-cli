@@ -1,3 +1,8 @@
+/**
+ * @module core/test/item-test-run-tracking
+ *
+ * Runs and records linked-test orchestration for Item Test Run Tracking.
+ */
 import { mutateItem } from "../store/item-store.js";
 import { compareTimestampStrings } from "../shared/time.js";
 import type { ItemTestRunSummary, PmSettings } from "../../types/index.js";
@@ -33,6 +38,9 @@ function normalizeTrackedTestRunSummaries(entries: ItemTestRunSummary[]): ItemTe
     });
 }
 
+/**
+ * Implements append tracked test run summary for the public runtime surface of this module.
+ */
 export async function appendTrackedTestRunSummary(options: {
   pmRoot: string;
   settings: PmSettings;

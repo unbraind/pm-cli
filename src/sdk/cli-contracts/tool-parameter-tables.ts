@@ -1,3 +1,8 @@
+/**
+ * @module sdk/cli-contracts/tool-parameter-tables
+ *
+ * Defines SDK command-contract metadata for Tool Parameter Tables.
+ */
 import {
   PLAN_HARNESS_VALUES,
   PLAN_MODE_VALUES,

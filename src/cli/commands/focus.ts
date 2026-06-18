@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/focus
+ *
+ * Implements the pm focus command surface and its agent-facing runtime behavior.
+ */
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { normalizeItemId } from "../../core/item/id.js";
@@ -14,10 +19,16 @@ import { buildItemNotFoundError, locateItem, readLocatedItem } from "../../core/
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 
+/**
+ * Documents the focus options payload exchanged by command, SDK, and package integrations.
+ */
 export interface FocusOptions {
   clear?: boolean;
 }
 
+/**
+ * Documents the focus result payload exchanged by command, SDK, and package integrations.
+ */
 export interface FocusResult {
   action: "set" | "clear" | "show";
   focused_item: string | null;
@@ -31,6 +42,9 @@ async function ensureInitialized(pmRoot: string): Promise<void> {
   }
 }
 
+/**
+ * Implements run focus for the public runtime surface of this module.
+ */
 export async function runFocus(
   id: string | undefined,
   options: FocusOptions,

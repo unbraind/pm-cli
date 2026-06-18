@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/list
+ *
+ * Implements the pm list command surface and its agent-facing runtime behavior.
+ */
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { toItemRecord } from "../../core/item/item-record.js";
@@ -35,6 +40,9 @@ import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter, ItemStatus, ItemType } from "../../types/index.js";
 
+/**
+ * Documents the list options payload exchanged by command, SDK, and package integrations.
+ */
 export interface ListOptions {
   status?: string;
   type?: string;
@@ -173,6 +181,9 @@ export function resolveContentFieldFilters(options: Record<string, unknown>): Co
   return filters;
 }
 
+/**
+ * Restricts listed item values accepted by command, SDK, and storage contracts.
+ */
 export type ListedItem = ItemFrontMatter | (ItemFrontMatter & { body: string });
 
 type ListProjectionMode = "full" | "compact" | "fields";
@@ -183,9 +194,15 @@ interface ListProjectionConfig {
 }
 
 export const LIST_SORT_FIELDS = ["priority", "deadline", "updated_at", "created_at", "title", "parent"] as const;
+/**
+ * Restricts list sort field values accepted by command, SDK, and storage contracts.
+ */
 export type ListSortField = (typeof LIST_SORT_FIELDS)[number];
 
 export const LIST_SORT_ORDER_VALUES = ["asc", "desc"] as const;
+/**
+ * Restricts list sort order values accepted by command, SDK, and storage contracts.
+ */
 export type ListSortOrder = (typeof LIST_SORT_ORDER_VALUES)[number];
 
 const DEFAULT_COMPACT_LIST_FIELDS = ["id", "title", "status", "type", "priority", "parent", "updated_at"] as const;
@@ -207,6 +224,9 @@ interface ListResultBase {
   warnings?: string[];
 }
 
+/**
+ * Documents the list compact result payload exchanged by command, SDK, and package integrations.
+ */
 export interface ListCompactResult extends ListResultBase {
   filters: Record<string, unknown>;
   projection?: undefined;
@@ -214,6 +234,9 @@ export interface ListCompactResult extends ListResultBase {
   now?: undefined;
 }
 
+/**
+ * Documents the list verbose result payload exchanged by command, SDK, and package integrations.
+ */
 export interface ListVerboseResult extends ListResultBase {
   filters: Record<string, unknown>;
   projection: {
@@ -227,6 +250,9 @@ export interface ListVerboseResult extends ListResultBase {
   now: string;
 }
 
+/**
+ * Restricts list result values accepted by command, SDK, and storage contracts.
+ */
 export type ListResult = ListCompactResult | ListVerboseResult;
 
 function isNonEmptyRecord(value: unknown): value is Record<string, unknown> {
@@ -283,12 +309,18 @@ function applyGovernanceMissingFilterEcho(filters: Record<string, unknown>, opti
   }
 }
 
+/**
+ * Implements build content filter echo for the public runtime surface of this module.
+ */
 export function buildContentFilterEcho(options: Record<string, unknown>): Record<string, true> {
   const echo: Record<string, true> = {};
   applyContentFilterEcho(echo, options);
   return echo;
 }
 
+/**
+ * Implements build governance missing filter echo for the public runtime surface of this module.
+ */
 export function buildGovernanceMissingFilterEcho(options: Record<string, unknown>): Record<string, true> {
   const echo: Record<string, true> = {};
   applyGovernanceMissingFilterEcho(echo, options);
@@ -859,6 +891,9 @@ function runtimeMetadataKeysForProjection(definitions: Array<{ metadata_key: str
   return keys;
 }
 
+/**
+ * Implements run list for the public runtime surface of this module.
+ */
 export async function runList(status: ItemStatus | undefined, options: ListOptions, global: GlobalOptions): Promise<ListResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {

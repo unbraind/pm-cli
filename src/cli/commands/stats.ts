@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/stats
+ *
+ * Implements the pm stats command surface and its agent-facing runtime behavior.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getActiveExtensionRegistrations, runActiveOnReadHooks } from "../../core/extensions/index.js";
@@ -26,6 +31,9 @@ import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemStatus, ItemType } from "../../types/index.js";
 
+/**
+ * Documents the stats command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface StatsCommandOptions {
   /** Include aggregate per-stream history storage metrics (sizes, depth, oldest/newest). */
   storage?: boolean;
@@ -43,6 +51,9 @@ export interface StatsCommandOptions {
   fieldUtilization?: boolean;
 }
 
+/**
+ * Documents the stats result payload exchanged by command, SDK, and package integrations.
+ */
 export interface StatsResult {
   totals: {
     items: number;
@@ -131,6 +142,9 @@ export const _testOnly = {
   readHistoryStreamContents,
 };
 
+/**
+ * Implements run stats for the public runtime surface of this module.
+ */
 export async function runStats(global: GlobalOptions, options: StatsCommandOptions = {}): Promise<StatsResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {

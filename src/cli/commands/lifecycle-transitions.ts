@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/lifecycle-transitions
+ *
+ * Implements the pm lifecycle transitions command surface and its agent-facing runtime behavior.
+ */
 import {
   normalizeStatusInputWithRegistry,
   type RuntimeStatusRegistry,

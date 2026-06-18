@@ -1,3 +1,8 @@
+/**
+ * @module core/schema/type-inference
+ *
+ * Resolves configurable schema, fields, statuses, and workflows for Type Inference.
+ */
 import { matchBuiltinTypeName } from "./item-types-file.js";
 
 /**
@@ -18,6 +23,9 @@ import { matchBuiltinTypeName } from "./item-types-file.js";
 
 const PREFIX_PATTERN = /^([A-Za-z][A-Za-z0-9_-]*?)\s*[-:]\s+\S/;
 
+/**
+ * Documents the inferred type candidate payload exchanged by command, SDK, and package integrations.
+ */
 export interface InferredTypeCandidate {
   /** Suggested PascalCase type name derived from the prefix. */
   name: string;
@@ -31,6 +39,9 @@ export interface InferredTypeCandidate {
   shadows_builtin: boolean;
 }
 
+/**
+ * Documents the infer types options payload exchanged by command, SDK, and package integrations.
+ */
 export interface InferTypesOptions {
   /** Minimum number of titles that must share a prefix to surface it (default 10). */
   minCount?: number;

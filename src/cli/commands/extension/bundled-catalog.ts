@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/extension/bundled-catalog
+ *
+ * Implements extension package-management support for Bundled Catalog.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { collectPackageExtensionDirectories, PM_PACKAGE_RESOURCE_KINDS, readPmPackageManifest } from "../../../core/packages/manifest.js";
@@ -44,6 +49,9 @@ function resolvePackageRootCandidates(): string[] {
   return [...new Set(candidates)];
 }
 
+/**
+ * Implements resolve bundled extension alias source for the public runtime surface of this module.
+ */
 export async function resolveBundledExtensionAliasSource(input: string): Promise<string | null> {
   const normalized = input.trim().toLowerCase();
   const packageRoot = await resolveBundledPackageRoot(normalized);
@@ -68,6 +76,9 @@ export async function resolveBundledExtensionAliasSource(input: string): Promise
   /* c8 ignore stop */
 }
 
+/**
+ * Implements check whether bundled package install all target for the public runtime surface of this module.
+ */
 export function isBundledPackageInstallAllTarget(input: string): boolean {
   return BUNDLED_PACKAGE_INSTALL_ALL_TARGETS.has(input.trim().toLowerCase());
 }
@@ -134,16 +145,25 @@ async function collectBundledPackageEntries(): Promise<BundledPackageEntry[]> {
   return [...entriesByAlias.values()].sort((left, right) => left.alias.localeCompare(right.alias));
 }
 
+/**
+ * Implements list bundled package aliases for the public runtime surface of this module.
+ */
 export async function listBundledPackageAliases(): Promise<string[]> {
   return (await collectBundledPackageEntries()).map((entry) => entry.alias);
 }
 
+/**
+ * Implements resolve bundled package root for the public runtime surface of this module.
+ */
 export async function resolveBundledPackageRoot(alias: string): Promise<string | null> {
   const normalized = alias.trim().toLowerCase();
   const entry = (await collectBundledPackageEntries()).find((candidate) => candidate.alias === normalized);
   return entry?.package_root ?? null;
 }
 
+/**
+ * Implements resolve bundled alias manifest name for the public runtime surface of this module.
+ */
 export async function resolveBundledAliasManifestName(input: string): Promise<string | null> {
   const bundledAliasSource = await resolveBundledExtensionAliasSource(input);
   if (!bundledAliasSource) {
@@ -161,6 +181,9 @@ export async function resolveBundledAliasManifestName(input: string): Promise<st
   }
 }
 
+/**
+ * Implements build bundled package catalog for the public runtime surface of this module.
+ */
 export async function buildBundledPackageCatalog(scope: ExtensionScope, global: GlobalOptions, options: ExtensionCommandOptions = {}): Promise<{
   total: number;
   scope: ExtensionScope;

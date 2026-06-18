@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/extension/install-sources
+ *
+ * Implements extension package-management support for Install Sources.
+ */
 import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -82,6 +87,9 @@ function parseGithubPathSpec(pathSpec: string, input: string, refOverride?: stri
   };
 }
 
+/**
+ * Implements parse extension install source for the public runtime surface of this module.
+ */
 export function parseExtensionInstallSource(input: string, options: { forceGithub?: boolean; ref?: string } = {}): InstallSource {
   const normalizedInput = input.trim();
   if (normalizedInput.length === 0) {
@@ -154,6 +162,9 @@ export function parseExtensionInstallSource(input: string, options: { forceGithu
   };
 }
 
+/**
+ * Implements run git command for the public runtime surface of this module.
+ */
 export async function runGitCommand(
   args: string[],
   execRunner: typeof execFileAsync = execFileAsync,
@@ -170,10 +181,16 @@ export async function runGitCommand(
   }
 }
 
+/**
+ * Implements resolve npm command name for the public runtime surface of this module.
+ */
 export function resolveNpmCommandName(platform: NodeJS.Platform = process.platform): "npm" | "npm.cmd" {
   return platform === "win32" ? "npm.cmd" : "npm";
 }
 
+/**
+ * Implements should run npm command in shell for the public runtime surface of this module.
+ */
 export function shouldRunNpmCommandInShell(platform: NodeJS.Platform = process.platform): boolean {
   return platform === "win32";
 }
@@ -205,6 +222,9 @@ function npmPackageNameFromSpec(spec: string): string {
   return unscoped?.[1] ?? withoutAlias;
 }
 
+/**
+ * Implements check whether npm not found error for the public runtime surface of this module.
+ */
 export function isNpmNotFoundError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   const normalized = message.toLowerCase();
@@ -215,6 +235,9 @@ export function isNpmNotFoundError(error: unknown): boolean {
   );
 }
 
+/**
+ * Implements check whether npm pack not found error for the public runtime surface of this module.
+ */
 export function isNpmPackNotFoundError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   const normalized = message.toLowerCase();
@@ -226,6 +249,9 @@ function isFirstPartyPmPackageName(packageName: string): boolean {
   return normalized.startsWith("@unbrained/pm-") || normalized.startsWith("pm-");
 }
 
+/**
+ * Implements build npm not found recovery for the public runtime surface of this module.
+ */
 export function buildNpmNotFoundRecovery(spec: string): {
   message: string;
   context: PmCliErrorContext;
@@ -273,6 +299,9 @@ export function buildNpmNotFoundRecovery(spec: string): {
   };
 }
 
+/**
+ * Implements wrap npm pack resolution error for the public runtime surface of this module.
+ */
 export function wrapNpmPackResolutionError(spec: string, error: unknown): PmCliError | null {
   if (!isNpmPackNotFoundError(error)) {
     return null;
@@ -325,6 +354,9 @@ async function resolveNpmPackSpec(spec: string): Promise<string> {
   return spec;
 }
 
+/**
+ * Implements normalize npm local file alias spec for the public runtime surface of this module.
+ */
 export function normalizeNpmLocalFileAliasSpec(spec: string, cwd: string = process.cwd()): string {
   const marker = "@file:";
   const markerIndex = spec.lastIndexOf(marker);
@@ -541,6 +573,9 @@ async function resolveGithubSourceDirectory(cloneDirectory: string, source: Gith
   };
 }
 
+/**
+ * Implements resolve install source for the public runtime surface of this module.
+ */
 export async function resolveInstallSource(source: InstallSource): Promise<ResolvedInstallSource> {
   if (source.kind === "local") {
     let localStats;
@@ -597,6 +632,9 @@ export async function resolveInstallSource(source: InstallSource): Promise<Resol
   }
 }
 
+/**
+ * Implements are directories equivalent for the public runtime surface of this module.
+ */
 export async function areDirectoriesEquivalent(left: string, right: string): Promise<boolean> {
   if (!(await pathExists(left)) || !(await pathExists(right))) {
     return false;

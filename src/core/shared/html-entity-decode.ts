@@ -1,3 +1,8 @@
+/**
+ * @module core/shared/html-entity-decode
+ *
+ * Provides shared primitives and utilities for Html Entity Decode.
+ */
 // Defensive HTML-entity decode for free-text fields arriving over the MCP boundary.
 // Background (pm-ydkl 2026-05-28): when Claude / the Anthropic MCP SDK forwards
 // tool arguments containing `<` or `>`, the upstream platform HTML-encodes those

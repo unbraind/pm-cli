@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/update
+ *
+ * Implements the pm update command surface and its agent-facing runtime behavior.
+ */
 import { pathExists } from "../../core/fs/fs-utils.js";
 import {
   canonicalizeCommandOptionKey,
@@ -89,6 +94,9 @@ import {
 } from "../../types/index.js";
 import { parseDocs, parseFiles, parseLogSeed, parseTests } from "./create.js";
 
+/**
+ * Documents the update command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface UpdateCommandOptions {
   title?: string;
   description?: string;
@@ -168,6 +176,9 @@ export interface UpdateCommandOptions {
   [key: string]: unknown;
 }
 
+/**
+ * Documents the update result payload exchanged by command, SDK, and package integrations.
+ */
 export interface UpdateResult {
   item: Record<string, unknown>;
   changed_fields: string[];
@@ -1176,6 +1187,9 @@ function enforceUpdateOptionsByType(
   }
 }
 
+/**
+ * Implements run update for the public runtime surface of this module.
+ */
 export async function runUpdate(id: string, options: UpdateCommandOptions, global: GlobalOptions): Promise<UpdateResult> {
   const stdinResolver = createStdinTokenResolver();
   options = normalizeLegacyNoneUpdateOptions({

@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/files
+ *
+ * Implements the pm files command surface and its agent-facing runtime behavior.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathExists } from "../../core/fs/fs-utils.js";
@@ -23,6 +28,9 @@ import {
   type LinkedPathValidation,
 } from "./linked-artifacts.js";
 
+/**
+ * Documents the files command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface FilesCommandOptions {
   add?: string[];
   addGlob?: string[];
@@ -39,6 +47,9 @@ export interface FilesCommandOptions {
   force?: boolean;
 }
 
+/**
+ * Documents the files discover options payload exchanged by command, SDK, and package integrations.
+ */
 export interface FilesDiscoverOptions {
   apply?: boolean;
   appendStable?: boolean;
@@ -48,6 +59,9 @@ export interface FilesDiscoverOptions {
   force?: boolean;
 }
 
+/**
+ * Documents the files discovery candidate payload exchanged by command, SDK, and package integrations.
+ */
 export interface FilesDiscoveryCandidate {
   path: string;
   scope: LinkScope;
@@ -57,6 +71,9 @@ export interface FilesDiscoveryCandidate {
   original_paths: string[];
 }
 
+/**
+ * Documents the files result payload exchanged by command, SDK, and package integrations.
+ */
 export interface FilesResult {
   id: string;
   files: LinkedFile[];
@@ -67,6 +84,9 @@ export interface FilesResult {
   audit?: LinkedPathAuditEntry[];
 }
 
+/**
+ * Documents the files discover result payload exchanged by command, SDK, and package integrations.
+ */
 export interface FilesDiscoverResult {
   id: string;
   files: LinkedFile[];
@@ -267,6 +287,9 @@ export const _testOnly = {
   discoverReferencedFiles,
 };
 
+/**
+ * Implements run files for the public runtime surface of this module.
+ */
 export async function runFiles(id: string, options: FilesCommandOptions, global: GlobalOptions): Promise<FilesResult> {
   const result: LinkedArtifactResult = await runLinkedArtifacts(id, options, global, {
     metadataKey: "files",
@@ -277,6 +300,9 @@ export async function runFiles(id: string, options: FilesCommandOptions, global:
   return renameArtifactsResultKey(result, "files") as unknown as FilesResult;
 }
 
+/**
+ * Implements run files discover for the public runtime surface of this module.
+ */
 export async function runFilesDiscover(
   id: string,
   options: FilesDiscoverOptions,

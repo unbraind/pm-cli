@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/scheduling-shortcuts
+ *
+ * Implements the pm scheduling shortcuts command surface and its agent-facing runtime behavior.
+ */
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { runCreate, type CreateCommandOptions, type CreateResult } from "./create.js";
 

@@ -300,6 +300,9 @@ export interface FieldCoverage {
   percent: number;
 }
 
+/**
+ * Documents the metadata coverage report payload exchanged by command, SDK, and package integrations.
+ */
 export interface MetadataCoverageReport {
   overall: Record<CoverageField, FieldCoverage>;
   by_type: Record<string, Record<CoverageField, FieldCoverage>>;
@@ -412,6 +415,9 @@ export function emptyGroupLabel(dimension: GroupDimension): string {
   return EMPTY_GROUP_LABELS[dimension];
 }
 
+/**
+ * Documents the group row payload exchanged by command, SDK, and package integrations.
+ */
 export interface GroupRow {
   /** Display label; explicit "(unassigned)"-style label for blank keys. */
   label: string;
@@ -421,6 +427,9 @@ export interface GroupRow {
   total: number;
 }
 
+/**
+ * Documents the grouped breakdown payload exchanged by command, SDK, and package integrations.
+ */
 export interface GroupedBreakdown {
   dimension: GroupDimension;
   rows: GroupRow[];
@@ -428,6 +437,9 @@ export interface GroupedBreakdown {
   total_items: number;
 }
 
+/**
+ * Documents the group options payload exchanged by command, SDK, and package integrations.
+ */
 export interface GroupOptions {
   /** For dimension="tag": only consider tags starting with this prefix. */
   tagPrefix?: string;

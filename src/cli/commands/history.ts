@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/history
+ *
+ * Implements the pm history command surface and its agent-facing runtime behavior.
+ */
 import { pathExists, readFileIfExists } from "../../core/fs/fs-utils.js";
 import { computeHistoryDiff, patchPathToChangedField, type HistoryDiffValueEntry } from "../../core/history/history-diff.js";
 import { hashDocument, hashEmptyDocument } from "../../core/history/history.js";
@@ -18,6 +23,9 @@ import type { HistoryEntry } from "../../types/index.js";
 
 export { verifyHistoryChain } from "../../core/history/replay.js";
 
+/**
+ * Documents the history command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistoryCommandOptions {
   limit?: string;
   diff?: boolean;
@@ -27,6 +35,9 @@ export interface HistoryCommandOptions {
   compact?: boolean;
 }
 
+/**
+ * Documents the history diff entry payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistoryDiffEntry {
   index: number;
   ts: string;
@@ -36,6 +47,9 @@ export interface HistoryDiffEntry {
   changed_fields: string[];
 }
 
+/**
+ * Documents the history verification result payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistoryVerificationResult {
   ok: boolean;
   entries: number;
@@ -45,6 +59,9 @@ export interface HistoryVerificationResult {
   current_matches_latest?: boolean;
 }
 
+/**
+ * Documents the history result payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistoryResult {
   id: string;
   history: HistoryEntry[];
@@ -82,6 +99,9 @@ function buildDiffEntries(entries: HistoryEntry[], startIndex: number): HistoryD
   });
 }
 
+/**
+ * Implements read history entries for the public runtime surface of this module.
+ */
 export async function readHistoryEntries(historyPath: string, itemId: string): Promise<HistoryEntry[]> {
   const raw = await readFileIfExists(historyPath);
   if (raw === null) {
@@ -126,6 +146,9 @@ export async function readHistoryEntries(historyPath: string, itemId: string): P
   return entries;
 }
 
+/**
+ * Implements run history for the public runtime surface of this module.
+ */
 export async function runHistory(id: string, options: HistoryCommandOptions, global: GlobalOptions): Promise<HistoryResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {

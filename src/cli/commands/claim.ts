@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/claim
+ *
+ * Implements the pm claim command surface and its agent-facing runtime behavior.
+ */
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { resolveRuntimeStatusRegistry, statusIsTerminal } from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
@@ -10,6 +15,9 @@ import { readSettings } from "../../core/store/settings.js";
 import { resolveAuthor } from "../../core/shared/author.js";
 import { wrapOwnershipConflict } from "./annotation-command.js";
 
+/**
+ * Documents the claim result payload exchanged by command, SDK, and package integrations.
+ */
 export interface ClaimResult {
   item: Record<string, unknown>;
   claimed_by: string;
@@ -19,6 +27,9 @@ export interface ClaimResult {
   warnings?: string[];
 }
 
+/**
+ * Documents the release result payload exchanged by command, SDK, and package integrations.
+ */
 export interface ReleaseResult {
   item: Record<string, unknown>;
   released_by: string;
@@ -27,16 +38,25 @@ export interface ReleaseResult {
   forced: boolean;
 }
 
+/**
+ * Documents the claim mutation options payload exchanged by command, SDK, and package integrations.
+ */
 export interface ClaimMutationOptions {
   author?: string;
   message?: string;
   ifAvailable?: boolean;
 }
 
+/**
+ * Documents the release mutation options payload exchanged by command, SDK, and package integrations.
+ */
 export interface ReleaseMutationOptions extends ClaimMutationOptions {
   allowAuditRelease?: boolean;
 }
 
+/**
+ * Implements run claim for the public runtime surface of this module.
+ */
 export async function runClaim(
   id: string,
   force: boolean,
@@ -91,6 +111,9 @@ export async function runClaim(
   };
 }
 
+/**
+ * Implements run release for the public runtime surface of this module.
+ */
 export async function runRelease(
   id: string,
   force: boolean,

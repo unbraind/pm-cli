@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/aggregate
+ *
+ * Implements the pm aggregate command surface and its agent-facing runtime behavior.
+ */
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -36,6 +41,9 @@ const AGGREGATE_GROUP_FIELDS: AggregateGroupField[] = [
   "release",
 ];
 
+/**
+ * Documents the aggregate options payload exchanged by command, SDK, and package integrations.
+ */
 export interface AggregateOptions {
   groupBy?: string;
   count?: boolean;
@@ -56,6 +64,9 @@ export interface AggregateOptions {
   release?: string;
 }
 
+/**
+ * Documents the aggregate row payload exchanged by command, SDK, and package integrations.
+ */
 export interface AggregateRow {
   group: AggregateGroupRecord;
   /**
@@ -76,6 +87,9 @@ export interface AggregateRow {
   avg?: number | null;
 }
 
+/**
+ * Documents the aggregate result payload exchanged by command, SDK, and package integrations.
+ */
 export interface AggregateResult {
   groups: AggregateRow[];
   count: number;
@@ -322,6 +336,9 @@ function updateCompletionCounts(accumulator: AggregateAccumulator, status: ItemS
   accumulator.other_count += 1;
 }
 
+/**
+ * Implements run aggregate for the public runtime surface of this module.
+ */
 export async function runAggregate(options: AggregateOptions, global: GlobalOptions): Promise<AggregateResult> {
   if (options.count === false) {
     throw new PmCliError("Aggregate grouped counts are always enabled; omit count=false.", EXIT_CODE.USAGE);

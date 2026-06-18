@@ -1,8 +1,16 @@
+/**
+ * @module cli/shared-parsers
+ *
+ * Provides CLI runtime support for Shared Parsers.
+ */
 import { PmCliError } from "../core/shared/errors.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { resolveTypeName, type ItemTypeRegistry } from "../core/item/type-registry.js";
 import type { ItemType } from "../types/index.js";
 
+/**
+ * Implements parse limit for the public runtime surface of this module.
+ */
 export function parseLimit(raw: string | undefined, label = "--limit"): number | undefined {
   if (raw === undefined) return undefined;
   const parsed = Number(raw);
@@ -12,6 +20,9 @@ export function parseLimit(raw: string | undefined, label = "--limit"): number |
   return Math.floor(parsed);
 }
 
+/**
+ * Implements parse integer limit for the public runtime surface of this module.
+ */
 export function parseIntegerLimit(raw: string | undefined, label = "--limit"): number | undefined {
   if (raw === undefined) return undefined;
   const parsed = Number(raw);
@@ -21,6 +32,9 @@ export function parseIntegerLimit(raw: string | undefined, label = "--limit"): n
   return parsed;
 }
 
+/**
+ * Implements parse priority for the public runtime surface of this module.
+ */
 export function parsePriority(raw: string | undefined, label = "--priority"): number | undefined {
   if (raw === undefined) return undefined;
   const parsed = Number(raw);
@@ -30,6 +44,9 @@ export function parsePriority(raw: string | undefined, label = "--priority"): nu
   return parsed;
 }
 
+/**
+ * Implements parse type for the public runtime surface of this module.
+ */
 export function parseType(
   raw: string | undefined,
   typeRegistry: ItemTypeRegistry,

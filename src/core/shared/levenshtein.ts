@@ -1,9 +1,17 @@
+/**
+ * @module core/shared/levenshtein
+ *
+ * Provides shared primitives and utilities for Levenshtein.
+ */
 // Optimal String Alignment (OSA) Damerau–Levenshtein: counts a single adjacent
 // transposition as one edit (e.g. "titel" vs "title", "lst" vs "lts" -> "list")
 // so flag/command typo suggestions catch transpositions at the same maxDistance
 // budget plain Levenshtein uses for substitutions. pm-fl0c #6 (2026-05-28):
 // fixed because plain Levenshtein scored "titel"->"title" at 2, defeating the
 // length-5 maxDistance=1 ceiling in suggestNearestLongFlags.
+/**
+ * Computes bounded Levenshtein distance for typo suggestions without scanning unnecessary suffixes.
+ */
 export function levenshteinDistanceWithinLimit(left: string, right: string, limit: number): number | null {
   if (left === right) {
     return 0;

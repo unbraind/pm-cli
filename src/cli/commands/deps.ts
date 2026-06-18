@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/deps
+ *
+ * Implements the pm deps command surface and its agent-facing runtime behavior.
+ */
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
@@ -10,10 +15,19 @@ import { readSettings } from "../../core/store/settings.js";
 import type { Dependency, ItemFrontMatter, ItemStatus, ItemType } from "../../types/index.js";
 
 export const DEPS_FORMAT_VALUES = ["tree", "graph"] as const;
+/**
+ * Restricts deps format values accepted by command, SDK, and storage contracts.
+ */
 export type DepsFormat = (typeof DEPS_FORMAT_VALUES)[number];
 export const DEPS_COLLAPSE_VALUES = ["none", "repeated"] as const;
+/**
+ * Restricts deps collapse mode values accepted by command, SDK, and storage contracts.
+ */
 export type DepsCollapseMode = (typeof DEPS_COLLAPSE_VALUES)[number];
 
+/**
+ * Documents the deps command options payload exchanged by command, SDK, and package integrations.
+ */
 export interface DepsCommandOptions {
   format?: string;
   maxDepth?: string | number;
@@ -29,6 +43,9 @@ interface IndexedItem {
   dependencies: Dependency[];
 }
 
+/**
+ * Documents the deps tree node payload exchanged by command, SDK, and package integrations.
+ */
 export interface DepsTreeNode {
   id: string;
   title?: string;
@@ -42,6 +59,9 @@ export interface DepsTreeNode {
   dependencies: DepsTreeNode[];
 }
 
+/**
+ * Documents the deps graph node payload exchanged by command, SDK, and package integrations.
+ */
 export interface DepsGraphNode {
   id: string;
   title?: string;
@@ -50,12 +70,18 @@ export interface DepsGraphNode {
   missing: boolean;
 }
 
+/**
+ * Documents the deps graph edge payload exchanged by command, SDK, and package integrations.
+ */
 export interface DepsGraphEdge {
   from: string;
   to: string;
   kind: string;
 }
 
+/**
+ * Documents the deps graph result payload exchanged by command, SDK, and package integrations.
+ */
 export interface DepsGraphResult {
   root_id: string;
   nodes: DepsGraphNode[];
@@ -63,6 +89,9 @@ export interface DepsGraphResult {
   missing_ids: string[];
 }
 
+/**
+ * Documents the deps result payload exchanged by command, SDK, and package integrations.
+ */
 export interface DepsResult {
   id: string;
   format: DepsFormat;
@@ -253,6 +282,9 @@ function toGraph(root: DepsTreeNode): DepsGraphResult {
   };
 }
 
+/**
+ * Implements run deps for the public runtime surface of this module.
+ */
 export async function runDeps(id: string, options: DepsCommandOptions, global: GlobalOptions): Promise<DepsResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {

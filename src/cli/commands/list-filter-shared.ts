@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/list-filter-shared
+ *
+ * Implements the pm list filter shared command surface and its agent-facing runtime behavior.
+ */
 import type { ListOptions } from "./list.js";
 
 interface HasListFilterOptions {
@@ -8,6 +13,9 @@ function isActiveListFilterValue(value: unknown): boolean {
   return value != null && (typeof value !== "string" || value.split(",").some((entry) => entry.trim().length > 0));
 }
 
+/**
+ * Implements check whether list filters for the public runtime surface of this module.
+ */
 export function hasListFilters(
   list: ListOptions | undefined,
   status: string | undefined,
@@ -64,6 +72,9 @@ export function hasListFilters(
   );
 }
 
+/**
+ * Restricts list query filters values accepted by command, SDK, and storage contracts.
+ */
 export type ListQueryFilters = Pick<
   ListOptions,
   | "type"
@@ -78,6 +89,9 @@ export type ListQueryFilters = Pick<
   | "release"
 >;
 
+/**
+ * Implements build list query filters for the public runtime surface of this module.
+ */
 export function buildListQueryFilters(filters: ListQueryFilters): ListOptions {
   return {
     type: filters.type,

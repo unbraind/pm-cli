@@ -1,3 +1,8 @@
+/**
+ * @module mcp/tool-definitions
+ *
+ * Defines the Tool Definitions module for pm CLI source.
+ */
 import { PM_TOOL_ACTIONS } from "../sdk/cli-contracts/enum-contracts.js";
 import { RUNTIME_STATUS_ROLE_VALUES } from "../types.js";
 
@@ -449,6 +454,9 @@ export interface McpToolContract {
   input_schema: Record<string, unknown>;
 }
 
+/**
+ * Implements build mcp tool contracts for the public runtime surface of this module.
+ */
 export function buildMcpToolContracts(): McpToolContract[] {
   return TOOLS.map((tool) => {
     const schemaRequired = tool.inputSchema["required"];

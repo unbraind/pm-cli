@@ -1,3 +1,8 @@
+/**
+ * @module core/store/front-matter-cache
+ *
+ * Reads and writes tracker storage with format-aware helpers for Front Matter Cache.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
@@ -104,6 +109,9 @@ function mergeHeavyMetadata(light: ItemMetadata, heavy: Record<string, unknown> 
   return { ...light, ...heavy } as ItemMetadata;
 }
 
+/**
+ * Documents the cached document candidate payload exchanged by command, SDK, and package integrations.
+ */
 export interface CachedDocumentCandidate {
   metadata: ItemMetadata;
   body?: string;
@@ -225,6 +233,9 @@ function statMatches(signature: StatSignature, mtimeMs: number, ctimeMs: number,
   return signature.mtime_ms === mtimeMs && signature.ctime_ms === ctimeMs && signature.size === size;
 }
 
+/**
+ * Documents the list cache options payload exchanged by command, SDK, and package integrations.
+ */
 export interface ListCacheOptions {
   /**
    * When false, item bodies are neither loaded from nor written to the separate
@@ -456,6 +467,9 @@ export async function listAllDocumentCandidatesCached(
     .map((entry) => entry.candidate);
 }
 
+/**
+ * Implements list all documents cached for the public runtime surface of this module.
+ */
 export async function listAllDocumentsCached(
   pmRoot: string,
   preferredFormat: ItemFormat | undefined,

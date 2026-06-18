@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/health
+ *
+ * Implements the pm health command surface and its agent-facing runtime behavior.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
@@ -58,6 +63,9 @@ import {
 type HealthStatus = "ok" | "warn";
 type MigrationRuntimeStatus = "pending" | "failed" | "applied";
 
+/**
+ * Documents the health check payload exchanged by command, SDK, and package integrations.
+ */
 export interface HealthCheck {
   name:
     | "settings"
@@ -74,6 +82,9 @@ export interface HealthCheck {
   details: Record<string, unknown>;
 }
 
+/**
+ * Documents the health result payload exchanged by command, SDK, and package integrations.
+ */
 export interface HealthResult {
   ok: boolean;
   checks: HealthCheck[];
@@ -89,6 +100,9 @@ export interface HealthResult {
   generated_at: string;
 }
 
+/**
+ * Documents the run health options payload exchanged by command, SDK, and package integrations.
+ */
 export interface RunHealthOptions {
   strictDirectories?: boolean;
   checkOnly?: boolean;
@@ -1553,6 +1567,9 @@ function resolveVectorRefreshPolicy(options: RunHealthOptions): {
   };
 }
 
+/**
+ * Implements run health for the public runtime surface of this module.
+ */
 export async function runHealth(global: GlobalOptions, options: RunHealthOptions = {}): Promise<HealthResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settingsPath = getSettingsPath(pmRoot);

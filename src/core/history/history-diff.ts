@@ -1,6 +1,14 @@
+/**
+ * @module core/history/history-diff
+ *
+ * Implements append-only history and replay behavior for History Diff.
+ */
 import { cloneEmptyReplayDocument, tryApplyReplayPatch, type ReplayDocument } from "./replay.js";
 import type { HistoryEntry } from "../../types/index.js";
 
+/**
+ * Documents the history field change payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistoryFieldChange {
   field: string;
   // before and after are the raw field values captured by replaying the history chain.
@@ -11,6 +19,9 @@ export interface HistoryFieldChange {
   after: unknown;
 }
 
+/**
+ * Documents the history diff value entry payload exchanged by command, SDK, and package integrations.
+ */
 export interface HistoryDiffValueEntry {
   /** 1-based position in the FULL stream (fullEntries index + 1). */
   index: number;

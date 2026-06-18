@@ -1,11 +1,22 @@
+/**
+ * @module cli/help-content
+ *
+ * Provides CLI runtime support for Help Content.
+ */
 import { Command } from "commander";
 
+/**
+ * Documents the help bundle payload exchanged by command, SDK, and package integrations.
+ */
 export interface HelpBundle {
   why: string;
   examples: string[];
   tips?: string[];
 }
 
+/**
+ * Documents the help narrative payload exchanged by command, SDK, and package integrations.
+ */
 export interface HelpNarrative {
   intent: string;
   examples: string[];
@@ -13,11 +24,17 @@ export interface HelpNarrative {
   detail_mode: HelpDetailMode;
 }
 
+/**
+ * Restricts help detail mode values accepted by command, SDK, and storage contracts.
+ */
 export type HelpDetailMode = "compact" | "detailed";
 
 // Compact help/narrative surfaces show at most the first example. Centralizing this
 // keeps the empty-examples guard in one place for renderCompactHelpBundle and
 // resolveHelpNarrative (both must degrade to an empty list rather than [undefined]).
+/**
+ * Implements first example or empty for the public runtime surface of this module.
+ */
 export function firstExampleOrEmpty(examples: string[]): string[] {
   return examples.length > 0 ? [examples[0]] : [];
 }
@@ -61,6 +78,9 @@ function renderHelpBundle(bundle: HelpBundle, detailMode: HelpDetailMode): strin
   return renderCompactHelpBundle(bundle);
 }
 
+/**
+ * Implements normalize help command path for the public runtime surface of this module.
+ */
 export function normalizeHelpCommandPath(commandPath: string): string {
   return commandPath
     .trim()
@@ -99,6 +119,9 @@ function attachBundleByPath(root: Command, commandPath: string, bundle: HelpBund
   command.addHelpText("after", renderHelpBundle(bundle, detailMode));
 }
 
+/**
+ * Implements resolve help detail mode for the public runtime surface of this module.
+ */
 export function resolveHelpDetailMode(argv: string[]): HelpDetailMode {
   if (argv.includes("--explain")) {
     return "detailed";
@@ -792,6 +815,9 @@ function resolveCanonicalHelpPath(commandPath: string | undefined): string {
   return HELP_PATH_ALIASES[normalized] ?? normalized;
 }
 
+/**
+ * Implements resolve help bundle for path for the public runtime surface of this module.
+ */
 export function resolveHelpBundleForPath(commandPath: string | undefined): HelpBundle {
   const canonicalPath = resolveCanonicalHelpPath(commandPath);
   if (!canonicalPath) {
@@ -800,6 +826,9 @@ export function resolveHelpBundleForPath(commandPath: string | undefined): HelpB
   return HELP_BY_COMMAND_PATH[canonicalPath] ?? ROOT_HELP_BUNDLE;
 }
 
+/**
+ * Implements resolve help narrative for the public runtime surface of this module.
+ */
 export function resolveHelpNarrative(commandPath: string | undefined, detailMode: HelpDetailMode): HelpNarrative {
   const bundle = resolveHelpBundleForPath(commandPath);
   return {
@@ -810,6 +839,9 @@ export function resolveHelpNarrative(commandPath: string | undefined, detailMode
   };
 }
 
+/**
+ * Implements attach rich help text for the public runtime surface of this module.
+ */
 export function attachRichHelpText(program: Command, argv: string[] = process.argv.slice(2)): void {
   const detailMode = resolveHelpDetailMode(argv);
   program.addHelpText("after", renderHelpBundle(ROOT_HELP_BUNDLE, detailMode));

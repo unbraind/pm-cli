@@ -1,3 +1,6 @@
+import type { Stats } from "node:fs";
+import * as fs from "node:fs";
+import { mkdir, writeFile } from "node:fs/promises";
 import { describe, expect, it, vi } from "vitest";
 import { createScriptHarness } from "../../../helpers/scriptModule";
 
@@ -14,6 +17,30 @@ type SqModule = {
   checkDuplicateChunks: (files: string[], window: number, maxChunks: number) => unknown[];
   resolveRelativeImport: (fromAbs: string, spec: string) => string | null;
   sourceFilesOnly: (files: string[]) => string[];
+  hasModuleDocstring: (sourceText: string) => boolean;
+  checkSourceDocstringCoverage: (
+    files: string[],
+    minCoveragePercent: number,
+  ) => {
+    ok: boolean;
+    total: number;
+    documented: number;
+    missing: Array<{ path: string; reason: string }>;
+    coverage_percent: number;
+    min_coverage_percent: number;
+  };
+  checkExportedDocstringCoverage: (
+    files: string[],
+    minCoveragePercent: number,
+  ) => {
+    ok: boolean;
+    total: number;
+    documented: number;
+    missing: Array<{ path: string; line: number; name: string; reason: string }>;
+    coverage_percent: number;
+    min_coverage_percent: number;
+  };
+  checkDocstringBoilerplate: (files: string[]) => Array<{ path: string; line: number; reason: string }>;
   checkOrphanSourceModules: (files: string[]) => Array<{ path: string }>;
   complexityContribution: (node: unknown) => number;
   functionLikeName: (node: unknown, sf: unknown) => string;
@@ -25,9 +52,7 @@ type SqModule = {
 
 function mockUtils(repoRoot: string): void {
   vi.doMock("../../../../scripts/release/utils.mjs", async () => {
-    const actual = await vi.importActual<typeof import("../../../../scripts/release/utils.mjs")>(
-      "../../../../scripts/release/utils.mjs",
-    );
+    const actual = await vi.importActual<Record<string, unknown>>("../../../../scripts/release/utils.mjs");
     return {
       ...actual,
       repoRoot,
@@ -38,9 +63,9 @@ function mockUtils(repoRoot: string): void {
   });
 }
 
-function mockFs(impl: Partial<typeof import("node:fs")>): void {
+function mockFs(impl: Partial<typeof fs>): void {
   vi.doMock("node:fs", async () => {
-    const actual = await vi.importActual<typeof import("node:fs")>("node:fs");
+    const actual = await vi.importActual<typeof fs>("node:fs");
     return { ...actual, ...impl };
   });
 }
@@ -207,7 +232,7 @@ describe("static-quality-gate", () => {
       mockUtils("/repo");
       mockFs({
         statSync: vi.fn((p: string) => {
-          if (String(p) === "/repo/src/dep.ts") return { isFile: () => true } as unknown as import("node:fs").Stats;
+          if (String(p) === "/repo/src/dep.ts") return { isFile: () => true } as unknown as Stats;
           throw Object.assign(new Error("nope"), { code: "ENOENT" });
         }) as never,
       });
@@ -215,6 +240,109 @@ describe("static-quality-gate", () => {
       expect(mod.resolveRelativeImport("/repo/src/main.ts", "node:path")).toBeNull();
       expect(mod.resolveRelativeImport("/repo/src/main.ts", "./dep")).toBe("/repo/src/dep.ts");
       expect(mod.resolveRelativeImport("/repo/src/main.ts", "./gone")).toBeNull();
+    });
+
+    it("checkSourceDocstringCoverage requires module TSDoc after optional shebang", async () => {
+      mockUtils("/repo");
+      const fileBodies: Record<string, string> = {
+        "/repo/src/cli.ts": "#!/usr/bin/env node\n/** CLI entrypoint. */\nexport {};",
+        "/repo/src/missing.ts": "export const missing = true;",
+        "/repo/src/also-missing.ts": "export const alsoMissing = true;",
+        "/repo/tests/sample.ts": "export const testOnly = true;",
+      };
+      mockFs({
+        readFileSync: vi.fn((p: string) => fileBodies[String(p)] ?? "") as never,
+      });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      expect(mod.hasModuleDocstring("/** documented */\nexport {};")).toBe(true);
+      expect(mod.hasModuleDocstring("#!/usr/bin/env node\n/** documented */\nexport {};")).toBe(true);
+      expect(mod.hasModuleDocstring("#!/usr/bin/env node")).toBe(false);
+      expect(mod.hasModuleDocstring("// not a docstring\nexport {};")).toBe(false);
+
+      const report = mod.checkSourceDocstringCoverage(Object.keys(fileBodies), 100);
+      expect(report.ok).toBe(false);
+      expect(report.total).toBe(3);
+      expect(report.documented).toBe(1);
+      expect(report.coverage_percent).toBe(33.33);
+      expect(report.missing).toEqual([
+        { path: "src/also-missing.ts", reason: "missing_module_docstring" },
+        { path: "src/missing.ts", reason: "missing_module_docstring" },
+      ]);
+
+      expect(mod.checkSourceDocstringCoverage(["/repo/tests/sample.ts"], 100)).toMatchObject({
+        ok: true,
+        total: 0,
+        coverage_percent: 100,
+      });
+    });
+
+    it("checkExportedDocstringCoverage requires TSDoc on exported declarations", async () => {
+      mockUtils("/repo");
+      const fileBodies: Record<string, string> = {
+        "/repo/src/a.ts": [
+          "/**",
+          " * @module a",
+          " *",
+          " * Module docs.",
+          " */",
+          "/** Runs the documented API. */",
+          "export function documented() { return true; }",
+          "export function missing() { return false; }",
+          "export function alsoMissing() { return false; }",
+          "export default function () { return false; }",
+          "export const missingArrow = () => false;",
+          "/** Describes exported options. */",
+          "export interface Options { ok: boolean; }",
+          "function internal() { return true; }",
+        ].join("\n"),
+      };
+      mockFs({
+        readFileSync: vi.fn((p: string) => fileBodies[String(p)] ?? "") as never,
+      });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const report = mod.checkExportedDocstringCoverage(Object.keys(fileBodies), 100);
+      expect(report.ok).toBe(false);
+      expect(report.total).toBe(6);
+      expect(report.documented).toBe(2);
+      expect(report.coverage_percent).toBe(33.33);
+      expect(report.missing).toEqual([
+        { path: "src/a.ts", line: 8, name: "missing", reason: "missing_exported_docstring" },
+        { path: "src/a.ts", line: 9, name: "alsoMissing", reason: "missing_exported_docstring" },
+        { path: "src/a.ts", line: 10, name: "exported_declaration", reason: "missing_exported_docstring" },
+        { path: "src/a.ts", line: 11, name: "missingArrow", reason: "missing_exported_docstring" },
+      ]);
+    });
+
+    it("checkDocstringBoilerplate flags generated low-signal summaries", async () => {
+      mockUtils("/repo");
+      const fileBodies: Record<string, string> = {
+        "/repo/src/a.ts": [
+          "/**",
+          " * Provides the exported run thing operation used by the pm CLI runtime and integration tests.",
+          " */",
+          "// plain leading comments are ignored by the boilerplate matcher",
+          "export function runThing() { return true; }",
+          "/**",
+          " * Describes the exported OtherThing data contract used across command and SDK boundaries.",
+          " */",
+          "export interface OtherThing { ok: boolean; }",
+        ].join("\n"),
+        "/repo/src/b.ts": [
+          "/**",
+          " * Defines the exported Shape type contract used to keep command and SDK surfaces type-safe.",
+          " */",
+          "export interface Shape { ok: boolean; }",
+        ].join("\n"),
+      };
+      mockFs({
+        readFileSync: vi.fn((p: string) => fileBodies[String(p)] ?? "") as never,
+      });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      expect(mod.checkDocstringBoilerplate(Object.keys(fileBodies))).toEqual([
+        { path: "src/a.ts", line: 1, reason: "boilerplate_docstring" },
+        { path: "src/a.ts", line: 6, reason: "boilerplate_docstring" },
+        { path: "src/b.ts", line: 1, reason: "boilerplate_docstring" },
+      ]);
     });
 
     it("checkOrphanSourceModules: flags multiple orphans (sort), honors allowlist + skip + out-of-set import", async () => {
@@ -235,11 +363,11 @@ describe("static-quality-gate", () => {
         readFileSync: vi.fn((p: string) => fileBodies[String(p)] ?? "") as never,
         statSync: vi.fn((p: string) => {
           if (Object.prototype.hasOwnProperty.call(fileBodies, String(p))) {
-            return { isFile: () => true } as unknown as import("node:fs").Stats;
+            return { isFile: () => true } as unknown as Stats;
           }
           // The external import target resolves to a real file but is outside the set.
           if (String(p) === "/repo/external/out.ts") {
-            return { isFile: () => true } as unknown as import("node:fs").Stats;
+            return { isFile: () => true } as unknown as Stats;
           }
           throw Object.assign(new Error("nope"), { code: "ENOENT" });
         }) as never,
@@ -322,19 +450,23 @@ describe("static-quality-gate", () => {
     async function seedRoots(root: string): Promise<void> {
       // collectTypeScriptFiles() walks src/tests/packages; all three must exist
       // because walkFiles() statSync's the root before checking isDirectory().
-      const { mkdir } = await import("node:fs/promises");
       for (const segment of ["src", "tests", "packages"]) {
         await mkdir(`${root}/${segment}`, { recursive: true });
       }
     }
 
     async function seedFixture(root: string): Promise<void> {
-      const { mkdir, writeFile } = await import("node:fs/promises");
       await seedRoots(root);
       const files = {
-        "src/cli.ts": 'import "./core/a";\nexport const cli = true;\n',
-        "src/core/a.ts": 'import "./b";\nexport function run() { return true; }\n',
-        "src/core/b.ts": "export const value = 1;\n",
+        "src/cli.ts": '/** CLI test fixture. */\nimport "./core/a";\nexport const cli = true;\n',
+        "src/core/a.ts": [
+          "/** Core test fixture. */",
+          'import "./b";',
+          "/** Runs the fixture command. */",
+          "export function run() { return true; }",
+          "",
+        ].join("\n"),
+        "src/core/b.ts": "/** Leaf test fixture. */\nexport const value = 1;\n",
         "tests/unit/sample.ts": "export const sample = true;\n",
         "packages/pkg/index.ts": "export const pkg = true;\n",
       } as const;
@@ -379,10 +511,20 @@ describe("static-quality-gate", () => {
       mod.main();
       const payload = JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0] ?? "{}")) as {
         ok: boolean;
-        scanned: { file_count: number };
+        scanned: {
+          file_count: number;
+          source_docstring_coverage_percent: number;
+          exported_docstring_coverage_percent: number;
+        };
+        source_docstrings: { coverage_percent: number };
+        exported_docstrings: { coverage_percent: number };
       };
       expect(payload.ok).toBe(true);
       expect(payload.scanned.file_count).toBeGreaterThan(0);
+      expect(payload.scanned.source_docstring_coverage_percent).toBe(100);
+      expect(payload.scanned.exported_docstring_coverage_percent).toBe(100);
+      expect(payload.source_docstrings.coverage_percent).toBe(100);
+      expect(payload.exported_docstrings.coverage_percent).toBe(100);
     });
 
     it("full text scan prints success message when clean", async () => {
@@ -399,7 +541,6 @@ describe("static-quality-gate", () => {
     it("full text scan reports every violation category and sets exit code", async () => {
       const root = await harness.createTempRoot("pm-static-quality-fail-");
       await seedFixture(root);
-      const { writeFile } = await import("node:fs/promises");
       // A function with a branch so complexity (2) exceeds --max-complexity 1.
       await writeFile(`${root}/src/core/b.ts`, "export function pick(a) {\n  if (a) { return 1; }\n  return 0;\n}\n", "utf8");
       mockUtils(root);
@@ -435,9 +576,9 @@ describe("static-quality-gate", () => {
     it("reports duplicate_chunks violations in text mode", async () => {
       const root = await harness.createTempRoot("pm-static-quality-dup-");
       await seedRoots(root);
-      const { mkdir, writeFile } = await import("node:fs/promises");
       await mkdir(`${root}/src/core`, { recursive: true });
       const block = [
+        "/** Duplicate fixture one. */",
         "export const sharedConstantOne = 1;",
         "export const sharedConstantTwo = 2;",
         "export const sharedConstantThree = 3;",
@@ -472,9 +613,9 @@ describe("static-quality-gate", () => {
     it("includes src/cli files in duplicate scope", async () => {
       const root = await harness.createTempRoot("pm-static-quality-dup-cli-");
       await seedRoots(root);
-      const { mkdir, writeFile } = await import("node:fs/promises");
       await mkdir(`${root}/src/cli`, { recursive: true });
       const block = [
+        "/** Duplicate fixture one. */",
         "export const sharedCliOne = 1;",
         "export const sharedCliTwo = 2;",
         "export const sharedCliThree = 3;",
@@ -507,10 +648,9 @@ describe("static-quality-gate", () => {
     it("reports orphan_modules violations in text mode", async () => {
       const root = await harness.createTempRoot("pm-static-quality-orphan-");
       await seedRoots(root);
-      const { mkdir, writeFile } = await import("node:fs/promises");
       await mkdir(`${root}/src`, { recursive: true });
       // A lone unreferenced src module → orphan_modules violation (line 401-402).
-      await writeFile(`${root}/src/lonely.ts`, "export const lonely = 1;\n", "utf8");
+      await writeFile(`${root}/src/lonely.ts`, "/** Lonely fixture. */\nexport const lonely = 1;\n", "utf8");
       mockUtils(root);
       const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
@@ -518,6 +658,67 @@ describe("static-quality-gate", () => {
       mod.main();
       expect(process.exitCode).toBe(1);
       expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("orphan_modules violations"))).toBe(true);
+    });
+
+    it("reports source_docstring coverage violations in text mode", async () => {
+      const root = await harness.createTempRoot("pm-static-quality-docstrings-");
+      await seedRoots(root);
+      await mkdir(`${root}/src`, { recursive: true });
+      await writeFile(`${root}/src/cli.ts`, "export const cli = true;\n", "utf8");
+      mockUtils(root);
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      process.argv = ["node", "x", "--max-lines", "500", "--max-lines-tests", "500"];
+      mod.main();
+      expect(process.exitCode).toBe(1);
+      expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("source_docstring coverage"))).toBe(true);
+    });
+
+    it("reports exported_docstring coverage violations in text mode", async () => {
+      const root = await harness.createTempRoot("pm-static-quality-exported-docstrings-");
+      await seedRoots(root);
+      await mkdir(`${root}/src`, { recursive: true });
+      await writeFile(
+        `${root}/src/cli.ts`,
+        ["/**", " * @module cli", " *", " * Module docs.", " */", "export function missing() { return true; }", ""].join("\n"),
+        "utf8",
+      );
+      mockUtils(root);
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      process.argv = ["node", "x", "--max-lines", "500", "--max-lines-tests", "500"];
+      mod.main();
+      expect(process.exitCode).toBe(1);
+      expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("exported_docstring coverage"))).toBe(true);
+    });
+
+    it("reports boilerplate_docstring violations in text mode", async () => {
+      const root = await harness.createTempRoot("pm-static-quality-boilerplate-docstrings-");
+      await seedRoots(root);
+      await mkdir(`${root}/src`, { recursive: true });
+      await writeFile(
+        `${root}/src/cli.ts`,
+        [
+          "/**",
+          " * @module cli",
+          " *",
+          " * Module docs.",
+          " */",
+          "/**",
+          " * Defines the exported CliOptions type contract used to keep command and SDK surfaces type-safe.",
+          " */",
+          "export interface CliOptions { ok: boolean; }",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      mockUtils(root);
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      process.argv = ["node", "x", "--max-lines", "500", "--max-lines-tests", "500"];
+      mod.main();
+      expect(process.exitCode).toBe(1);
+      expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("boilerplate_docstring violations"))).toBe(true);
     });
 
     it("rejects a duplicate-window below the minimum", async () => {

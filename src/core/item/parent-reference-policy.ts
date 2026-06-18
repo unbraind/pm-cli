@@ -1,7 +1,15 @@
+/**
+ * @module core/item/parent-reference-policy
+ *
+ * Defines item parsing, formatting, and lifecycle helpers for Parent Reference Policy.
+ */
 import type { ParentReferencePolicy } from "../../types/index.js";
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 
+/**
+ * Implements normalize parent reference policy for the public runtime surface of this module.
+ */
 export function normalizeParentReferencePolicy(value: string | undefined): ParentReferencePolicy {
   const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
   if (normalized === "warn" || normalized === "strict_error") {
@@ -16,6 +24,9 @@ export function normalizeParentReferencePolicy(value: string | undefined): Paren
   );
 }
 
+/**
+ * Implements normalize parent reference value for the public runtime surface of this module.
+ */
 export function normalizeParentReferenceValue(rawValue: string): string {
   const value = rawValue.trim();
   if (value.length === 0) {
@@ -31,6 +42,9 @@ export function normalizeParentReferenceValue(rawValue: string): string {
   return value;
 }
 
+/**
+ * Implements validate missing parent reference for the public runtime surface of this module.
+ */
 export function validateMissingParentReference(
   parentId: string,
   policy: ParentReferencePolicy,

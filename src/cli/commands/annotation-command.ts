@@ -1,3 +1,8 @@
+/**
+ * @module cli/commands/annotation-command
+ *
+ * Implements the pm annotation command command surface and its agent-facing runtime behavior.
+ */
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
@@ -61,17 +66,26 @@ type AnnotationCommandResult<TKey extends string, TEntry extends AnnotationEntry
     limit?: number;
   };
 
+/**
+ * Implements limit annotation entries for the public runtime surface of this module.
+ */
 export function limitAnnotationEntries<TEntry>(values: TEntry[], limit: number | undefined): TEntry[] {
   if (limit === undefined) return values;
   if (limit === 0) return [];
   return values.slice(Math.max(0, values.length - limit));
 }
 
+/**
+ * Implements read annotation entries for the public runtime surface of this module.
+ */
 export function readAnnotationEntries<TEntry>(source: Record<string, unknown>, collectionKey: string): TEntry[] {
   const value = source[collectionKey];
   return Array.isArray(value) ? (value as TEntry[]) : [];
 }
 
+/**
+ * Implements parse annotation text input for the public runtime surface of this module.
+ */
 export function parseAnnotationTextInput(raw: string, options: { stripPlainTextPrefix?: boolean } = {}): string {
   const trimmed = raw.trim();
   if (!trimmed) {
@@ -99,6 +113,9 @@ export function parseAnnotationTextInput(raw: string, options: { stripPlainTextP
   }
 }
 
+/**
+ * Implements wrap ownership conflict for the public runtime surface of this module.
+ */
 export function wrapOwnershipConflict(error: unknown, guidance: OwnershipConflictGuidance): never {
   if (
     error instanceof PmCliError &&
@@ -116,6 +133,9 @@ export function wrapOwnershipConflict(error: unknown, guidance: OwnershipConflic
   throw error;
 }
 
+/**
+ * Implements run annotation command for the public runtime surface of this module.
+ */
 export async function runAnnotationCommand<TKey extends string, TEntry extends AnnotationEntry>(
   id: string,
   options: AnnotationCommandOptions,
@@ -238,6 +258,9 @@ export async function runAnnotationCommand<TKey extends string, TEntry extends A
   return renderAnnotationResult(result.item.id, config.collectionKey, allEntries, limit, options.includeMeta === true);
 }
 
+/**
+ * Implements resolve annotation index for the public runtime surface of this module.
+ */
 export function resolveAnnotationIndex(
   oneBasedIndex: number | undefined,
   count: number,
