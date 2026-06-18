@@ -5,6 +5,7 @@ import { appendLineAtomic } from "../fs/fs-utils.js";
 import { canonicalDocument } from "../item/item-format.js";
 import { toItemRecord } from "../item/item-record.js";
 import { orderObject, sha256Hex, stableStringify } from "../shared/serialization.js";
+import { nowIso } from "../shared/time.js";
 import type { HistoryEntry, HistoryPatchOp, ItemDocument } from "../../types/index.js";
 
 const EMPTY_LEGACY_HASH_DOCUMENT = {
@@ -150,6 +151,42 @@ export function createHistoryEntry(params: {
   };
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function fallbackHistoryTimestamp(entry: Pick<HistoryEntry, "ts">): string {
+  const ts = entry.ts.trim();
+  return ts.length > 0 ? ts : nowIso();
+}
+
+function withHistoryTimestamp(value: Record<string, unknown>, fallbackTs: string): Record<string, unknown> {
+  const ts = value.ts;
+  if (typeof ts === "string" && ts.trim().length > 0) {
+    return value;
+  }
+  return { ...value, ts: fallbackTs };
+}
+
+function serializeHistoryLine(value: unknown, fallbackEntry: Pick<HistoryEntry, "ts">): string {
+  const fallbackTs = fallbackHistoryTimestamp(fallbackEntry);
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      if (isRecord(parsed)) {
+        return JSON.stringify(withHistoryTimestamp(parsed, fallbackTs));
+      }
+    } catch {
+      // Non-JSON extension lines are preserved for compatibility.
+    }
+    return value;
+  }
+  if (isRecord(value)) {
+    return JSON.stringify(withHistoryTimestamp(value, fallbackTs));
+  }
+  return JSON.stringify(value);
+}
+
 export async function appendHistoryEntry(historyPath: string, entry: HistoryEntry): Promise<void> {
   const override = await runActiveServiceOverride("history_append", {
     history_path: historyPath,
@@ -160,7 +197,7 @@ export async function appendHistoryEntry(historyPath: string, entry: HistoryEntr
       return;
     }
     if (typeof override.result === "string") {
-      await appendLineAtomic(historyPath, override.result);
+      await appendLineAtomic(historyPath, serializeHistoryLine(override.result, entry));
       return;
     }
     if (typeof override.result === "object" && override.result !== null) {
@@ -175,15 +212,14 @@ export async function appendHistoryEntry(historyPath: string, entry: HistoryEntr
       }
       const nextHistoryPath = typeof record.history_path === "string" ? record.history_path : historyPath;
       if (typeof record.line === "string") {
-        await appendLineAtomic(nextHistoryPath, record.line);
+        await appendLineAtomic(nextHistoryPath, serializeHistoryLine(record.line, entry));
         return;
       }
-      const nextEntry = (record.entry ?? entry) as HistoryEntry;
-      await appendLineAtomic(nextHistoryPath, JSON.stringify(nextEntry));
+      await appendLineAtomic(nextHistoryPath, serializeHistoryLine(record.entry ?? entry, entry));
       return;
     }
   }
-  await appendLineAtomic(historyPath, JSON.stringify(entry));
+  await appendLineAtomic(historyPath, serializeHistoryLine(entry, entry));
 }
 
 export const _testOnly = {

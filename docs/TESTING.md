@@ -2,11 +2,16 @@
 
 This page describes safe local tests, linked tests, coverage, and release-readiness checks.
 
+Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-u42x](../.agents/pm/issues/pm-u42x.toon).
+
 ## Agent Quick Context
 
 - Unit and integration tests must not read or write real `.agents/pm` data.
 - Prefer `node scripts/run-tests.mjs ...` because it creates sandboxed `PM_PATH` and `PM_GLOBAL_PATH`.
 - Linked tests added through `pm test` should use sandbox-safe commands.
+  Package-manager scripts such as `pnpm test` are allowed because linked-test
+  execution injects isolated `PM_PATH` and `PM_GLOBAL_PATH`; direct runners such
+  as `vitest` still need `node scripts/run-tests.mjs ...` or inline sandbox env.
 - Run linked tests before closing the item that owns the work.
 
 Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
@@ -81,6 +86,8 @@ pm test-all --status in_progress --progress
 ```
 
 Do not link `pm test-all` itself as an item-level test command. It creates recursive orchestration.
+Use `--fail-on-empty-test-run` for release/readiness gates where selecting zero
+linked tests should fail instead of producing an inconclusive pass.
 
 ## Package Ecosystem Smoke
 

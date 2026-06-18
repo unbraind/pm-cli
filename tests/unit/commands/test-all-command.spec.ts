@@ -223,6 +223,17 @@ describe("runTestAll", () => {
       expect(zeroLimit.totals.items).toBe(0);
       expect(zeroLimit.results).toHaveLength(0);
       expect(zeroLimit.totals.linked_tests).toBe(0);
+      expect(zeroLimit.ok).toBe(true);
+
+      const strictZeroLimit = await runTestAll(
+        { status: "open", limit: "0", timeout: "20", failOnEmptyTestRun: true },
+        { path: context.pmPath },
+      );
+      expect(strictZeroLimit.ok).toBe(false);
+      expect(strictZeroLimit.failed).toBe(1);
+      expect(strictZeroLimit.totals.failure_categories.empty_run).toBe(1);
+      expect(strictZeroLimit.fail_on_empty_test_run_triggered).toBe(true);
+      expect(strictZeroLimit.warnings?.[0]).toContain("empty_linked_test_selection");
     });
   });
 

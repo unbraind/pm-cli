@@ -5493,11 +5493,13 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(created.code).toBe(0);
       const createdId = (created.json as { item: { id: string } }).item.id;
       const historyRaw = await readFile(path.join(context.pmPath, "history", `${createdId}.jsonl`), "utf8");
-      const parsed = JSON.parse(historyRaw.trim()) as { override: boolean; op: string };
-      expect(parsed).toEqual({
+      const parsed = JSON.parse(historyRaw.trim()) as { override: boolean; op: string; ts?: string };
+      expect(parsed).toMatchObject({
         override: true,
         op: "create",
       });
+      expect(typeof parsed.ts).toBe("string");
+      expect(Number.isNaN(Date.parse(parsed.ts ?? ""))).toBe(false);
     });
   });
 

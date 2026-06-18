@@ -2,6 +2,8 @@
 
 This is a task-oriented command guide. For exact flags, use runtime help because extensions and settings can change the active surface:
 
+Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon).
+
 ```bash
 pm <command> --help
 pm <command> --help --json
@@ -422,7 +424,7 @@ pm test <id> --run --only-last
 pm test-all --status in_progress --progress
 ```
 
-Linked test commands should be sandbox-safe. Prefer `node scripts/run-tests.mjs ...` because it sets temporary `PM_PATH` and `PM_GLOBAL_PATH`. The two-token form `--add command "npm test -- parser"` (and `--add path "..."` / `--remove command "..."`) is accepted when the value is quoted into a single shell argument; it is normalized to `--add command=...` before parsing. Use `--add-json` when command strings contain commas, nested quotes, shell variables, or `--` separators that are awkward to preserve through CSV-style `--add` parsing. `--match`, `--only-index`, and `--only-last` select which linked tests execute without mutating the stored linked-test list.
+Linked test commands should be sandbox-safe. Prefer `node scripts/run-tests.mjs ...` for repo-local test suites; normal package-manager scripts such as `pnpm test` and `npm run test` are accepted because linked-test execution injects temporary `PM_PATH` and `PM_GLOBAL_PATH`. Direct runner binaries such as `vitest` or `node --test` still need the wrapper or explicit inline sandbox env. The two-token form `--add command "npm test -- parser"` (and `--add path "..."` / `--remove command "..."`) is accepted when the value is quoted into a single shell argument; it is normalized to `--add command=...` before parsing. Use `--add-json` when command strings contain commas, nested quotes, shell variables, or `--` separators that are awkward to preserve through CSV-style `--add` parsing. `--match`, `--only-index`, and `--only-last` select which linked tests execute without mutating the stored linked-test list.
 
 Strict linked-test guards:
 

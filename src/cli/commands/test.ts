@@ -463,7 +463,7 @@ function extractPmInvocationArgsFromSegment(segment: string): string[] | null {
   if (executable === "node" && args.length > 0 && isPmCliScriptToken(args[0])) {
     return args.slice(1);
   }
-  if (executable === "npx") {
+  if (executable === "npx" || executable === "bunx") {
     const parsed = parseNpxCommand(args);
     /* c8 ignore start -- npx launcher edge permutations are covered by command-parser integration suites */
     if (parsed && (isPmExecutableToken(parsed.command) || isPmCliPackageToken(parsed.command))) {
@@ -545,7 +545,7 @@ function resolveDirectRunnerSubcommand(parsed: { subcommand: string; args: strin
 }
 
 function firstDirectTestRunnerSubcommand(executable: string, args: string[]): string | undefined {
-  if (executable === "npx") {
+  if (executable === "npx" || executable === "bunx") {
     return parseNpxCommand(args)?.command;
   }
   if (executable === "pnpm") {
@@ -596,7 +596,7 @@ function segmentInvokesRecursiveTestAll(segment: string): boolean {
     return firstPmSubcommand(args.slice(1)) === "test-all";
   }
 
-  if (executable === "npx") {
+  if (executable === "npx" || executable === "bunx") {
     return parsedLauncherInvokesRecursiveTestAll(parseNpxCommand(args));
   }
 
@@ -650,8 +650,8 @@ function segmentHasExplicitSandboxEnv(normalizedSegment: string): boolean {
   return hasExplicitPmPath && hasExplicitPmGlobalPath;
 }
 
-function commandInvokesDirectTestRunner(normalizedCommand: string): boolean {
-  const rawTokens = normalizedCommand.split(" ").filter((token) => token.length > 0);
+function segmentInvokesUnsafeDirectTestRunner(normalizedSegment: string): boolean {
+  const rawTokens = normalizedSegment.split(" ").filter((token) => token.length > 0);
   const tokens = stripLeadingEnvAssignments(rawTokens);
   if (tokens.length === 0) {
     return false;
@@ -661,10 +661,32 @@ function commandInvokesDirectTestRunner(normalizedCommand: string): boolean {
     return true;
   }
   if (executable === "node") {
-    return args[0] === "--test" || Boolean(args[0]?.endsWith("/vitest") || args[0]?.endsWith("/vitest.mjs"));
+    return (
+      args.includes("--test") ||
+      args.some((arg) => arg === "vitest" || arg === "vitest.mjs" || arg.endsWith("/vitest") || arg.endsWith("/vitest.mjs"))
+    );
   }
-  const subcommand = firstDirectTestRunnerSubcommand(executable, args);
-  return isDirectTestRunnerSubcommand(subcommand);
+  if (executable === "npx" || executable === "bunx") {
+    return isDirectTestRunnerSubcommand(parseNpxCommand(args)?.command);
+  }
+  if (executable === "pnpm") {
+    const dlx = parsePnpmDlxCommand(args);
+    if (isDirectTestRunnerSubcommand(dlx?.command)) {
+      return true;
+    }
+    return firstDirectTestRunnerSubcommand(executable, args) === "vitest";
+  }
+  if (executable === "npm") {
+    const exec = parseNpmExecCommand(args);
+    if (isDirectTestRunnerSubcommand(exec?.command)) {
+      return true;
+    }
+    return firstDirectTestRunnerSubcommand(executable, args) === "vitest";
+  }
+  if (executable === "yarn" || executable === "bun") {
+    return firstDirectTestRunnerSubcommand(executable, args) === "vitest";
+  }
+  return false;
 }
 
 function assertSandboxSafeTestRunnerCommand(command: string): void {
@@ -673,7 +695,7 @@ function assertSandboxSafeTestRunnerCommand(command: string): void {
   const hasUnsafeDirectRunnerSegment = segments.some(
     (segment) =>
       !commandUsesSandboxRunner(segment) &&
-      commandInvokesDirectTestRunner(segment) &&
+      segmentInvokesUnsafeDirectTestRunner(segment) &&
       !segmentHasExplicitSandboxEnv(segment),
   );
 
@@ -682,7 +704,7 @@ function assertSandboxSafeTestRunnerCommand(command: string): void {
   }
 
   throw new PmCliError(
-    'Linked test runner commands must be sandbox-safe: use "node scripts/run-tests.mjs <test|coverage>" or include PM_PATH=... PM_GLOBAL_PATH=... INLINE in the command string (exporting them in your shell environment is not checked). Example: "PM_PATH=/tmp/pm-x PM_GLOBAL_PATH=/tmp/pm-x-g vitest run".',
+    'Linked test runner commands must be sandbox-safe: use "node scripts/run-tests.mjs <test|coverage>", use a package-manager script such as "pnpm test", or include PM_PATH=... PM_GLOBAL_PATH=... INLINE in the command string (exporting them in your shell environment is not checked). Example: "PM_PATH=/tmp/pm-x PM_GLOBAL_PATH=/tmp/pm-x-g vitest run".',
     EXIT_CODE.USAGE,
   );
 }
@@ -704,6 +726,7 @@ function parseAddEntries(raw: string[] | undefined): LinkedTest[] {
     if (!command) {
       throw new PmCliError("--add requires command=<value> or a bare command (path=<value> is optional metadata)", EXIT_CODE.USAGE);
     }
+    const sharedHostSafe = parseLinkedTestBooleanValue(kv.shared_host_safe?.trim(), "--add", "shared_host_safe");
     /* c8 ignore start -- command is guaranteed present after the non-empty guard above */
     if (command) {
       assertNoRecursiveTestAllCommand(command);
@@ -721,7 +744,6 @@ function parseAddEntries(raw: string[] | undefined): LinkedTest[] {
     const envSet = parseLinkedTestEnvSetValue(kv.env_set?.trim(), "--add");
     const envClear = parseLinkedTestEnvClearValue(kv.env_clear?.trim(), "--add");
     const pmContextMode = parseLinkedTestContextModeValue(kv.pm_context_mode?.trim(), "--add");
-    const sharedHostSafe = parseLinkedTestBooleanValue(kv.shared_host_safe?.trim(), "--add", "shared_host_safe");
     return {
       command,
       path: filePath,
@@ -1961,6 +1983,7 @@ export const _testOnlyTestCommand = {
   ensureScope,
   evaluateLinkedTestAssertions,
   extractPmInvocationArgsFromSegment,
+  firstDirectTestRunnerSubcommand,
   hasLinkedTestAssertions,
   parseAddJsonEntries,
   parsePmContextMode,

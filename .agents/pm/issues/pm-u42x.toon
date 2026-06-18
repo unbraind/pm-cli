@@ -2,11 +2,23 @@ id: pm-u42x
 title: "GH-215: enforce timestamps in history entries"
 description: "Tracks GitHub issue #215: prevent or repair history entries missing recorded timestamps to preserve data integrity."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-06-16T11:28:39.789Z"
-updated_at: "2026-06-16T11:28:39.789Z"
+updated_at: "2026-06-18T12:41:27.299Z"
 author: codex-sdk-cli-consolidation-20260616
 parent: pm-o2kc
+comments[3]{created_at,author,text}:
+  "2026-06-18T12:21:55.702Z",codex-gpt5,"Final evidence: append-boundary timestamp normalization is covered by focused unit/integration tests plus full 100/100/100/100 coverage; local tracker scan found no current missing/invalid history timestamps before this prevention change."
+  "2026-06-18T12:34:30.466Z",codex-gpt5,"Review fix evidence: addressed Gemini Code Assist finding by ensuring fallback timestamps override empty override payload ts values, added regression coverage for empty ts object and JSON-line overrides, and reran history focused test, pnpm build, pnpm quality:static, and full coverage 100/100/100/100 (4540 tests)."
+  "2026-06-18T12:41:27.299Z",codex-gpt5,"Review follow-up evidence: strengthened timestamp override tests to cover whitespace ts payloads for object and JSON-line overrides after fixing fallback timestamp merge order."
+files[3]{path,scope,note}:
+  src/core/history/history.ts,project,Normalize history append override payloads so JSON entries have timestamps
+  tests/integration/cli.integration.spec.ts,project,Integration assertion for stamped history override timestamps
+  tests/unit/core/history/history-append-overrides.spec.ts,project,Regression coverage for timestamp stamping on override entries and JSON lines
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t \"applies history append service overrides during item mutations\"",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/core/history/history-append-overrides.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Implemented GH-215 prevention at the append boundary: history_append JSON override entries and lines now receive valid timestamps, with unit and integration regressions plus 100% coverage passing."
 body: ""

@@ -68,6 +68,7 @@ export interface TestAllResult {
   passed: number;
   skipped: number;
   fail_on_skipped_triggered?: boolean;
+  fail_on_empty_test_run_triggered?: boolean;
   warnings?: string[];
   results: TestAllItemResult[];
 }
@@ -267,6 +268,15 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
     itemTests.push({ item, tests: readResult.tests });
   }
 
+  const failOnEmptyTestRunTriggered = options.failOnEmptyTestRun === true && linkedTests === 0;
+  if (failOnEmptyTestRunTriggered) {
+    failed += 1;
+    failureCategories.empty_run += 1;
+    trackingWarnings.push(
+      `empty_linked_test_selection:items=${filteredItems.length};linked_tests=0;fail_on_empty_test_run=true`,
+    );
+  }
+
   const effectiveTimeoutByKey = new Map<string, number | undefined>();
   for (const { tests } of itemTests) {
     for (const test of tests) {
@@ -387,7 +397,7 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
   }
 
   return {
-    ok: failed === 0 && failOnSkippedTriggered !== true,
+    ok: failed === 0 && failOnSkippedTriggered !== true && failOnEmptyTestRunTriggered !== true,
     totals: {
       items: filteredItems.length,
       linked_tests: linkedTests,
@@ -400,6 +410,7 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
     passed,
     skipped,
     fail_on_skipped_triggered: failOnSkippedTriggered ? true : undefined,
+    fail_on_empty_test_run_triggered: failOnEmptyTestRunTriggered ? true : undefined,
     warnings: trackingWarnings.length > 0 ? trackingWarnings : undefined,
     results,
   };

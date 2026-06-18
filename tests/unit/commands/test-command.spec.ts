@@ -622,6 +622,8 @@ describe("runTest", () => {
         "command=npx -- pm-cli --json test-all,scope=project",
         "command=npx --package=pm-cli pm --json test-all,scope=project",
         "command=npx -p pm-cli pm --json test-all,scope=project",
+        "command=bunx pm-cli@latest --json test-all,scope=project",
+        "command=bunx --bun pm-cli@latest --json test-all,scope=project",
         "command=pnpm dlx pm-cli@latest --json test-all,scope=project",
         "command=pnpm dlx @scope/pm-cli@latest --json test-all,scope=project",
         "command=pnpm -- dlx pm-cli@latest --json test-all,scope=project",
@@ -704,6 +706,9 @@ describe("runTest", () => {
     expect(
       extractReferencedPmItemIdsFromCommand("npx @unbrained/pm-cli@latest update pm-b2c3 --status open --json"),
     ).toEqual(["pm-b2c3"]);
+    expect(
+      extractReferencedPmItemIdsFromCommand("bunx @unbrained/pm-cli@latest update pm-b2c4 --status open --json"),
+    ).toEqual(["pm-b2c4"]);
     expect(
       extractReferencedPmItemIdsFromCommand("npm exec -- @unbrained/pm-cli@latest test pm-t123 --run --json"),
     ).toEqual(["pm-t123"]);
@@ -805,10 +810,18 @@ describe("runTest", () => {
     expect(testInternals.commandInvokesPmTrackerReadCommand("pm --path /tmp")).toBe(false);
     expect(testInternals.resolveDirectRunnerSubcommand({ subcommand: "vitest", args: [] })).toBe("vitest");
     expect(testInternals.resolveDirectRunnerSubcommand(null)).toBeUndefined();
+    expect(testInternals.firstDirectTestRunnerSubcommand("npx", ["--yes", "vitest", "run"])).toBe("vitest");
+    expect(testInternals.firstDirectTestRunnerSubcommand("bunx", ["--bun", "vitest", "run"])).toBe("vitest");
+    expect(testInternals.firstDirectTestRunnerSubcommand("pmx", ["test"])).toBeUndefined();
     expect(testInternals.extractPmInvocationArgsFromSegment("echo nothing")).toBeNull();
     expect(testInternals.extractPmInvocationArgsFromSegment("npx --yes pm get pm-a1b2 --json")).toEqual([
       "get",
       "pm-a1b2",
+      "--json",
+    ]);
+    expect(testInternals.extractPmInvocationArgsFromSegment("bunx --bun pm get pm-a1b3 --json")).toEqual([
+      "get",
+      "pm-a1b3",
       "--json",
     ]);
     expect(
@@ -940,26 +953,19 @@ describe("runTest", () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "reject-unsafe-test-runners");
       const unsafeRunnerCommands = [
-        "command=pnpm test,scope=project",
-        "command=pnpm test:coverage,scope=project",
-        "command=pnpm --dir /tmp test -- --runInBand,scope=project",
-        "command=pnpm -C /tmp test:coverage,scope=project",
-        "command=npm test -- --runInBand,scope=project",
-        "command=npm run test -- --runInBand,scope=project",
-        "command=npm --prefix /tmp test -- --runInBand,scope=project",
-        "command=pnpm run test -- --runInBand,scope=project",
         "command=npm --cache /tmp vitest run,scope=project",
-        "command=yarn --cwd /tmp test,scope=project",
-        "command=yarn run test,scope=project",
-        "command=bun --cwd /tmp test,scope=project",
-        "command=bun run test,scope=project",
+        "command=pnpm dlx vitest run,scope=project",
+        "command=npm exec -- vitest run,scope=project",
         "command=npx --yes vitest run,scope=project",
+        "command=bunx --bun vitest run,scope=project",
         "command=vitest run,scope=project",
+        "command=PM_PATH=/tmp/pm-only vitest run,scope=project",
         "command=./node_modules/.bin/vitest run,scope=project",
         "command=node --test tests/unit/example.test.js,scope=project",
-        "command=node scripts/run-tests.mjs test && pnpm test,scope=project",
+        "command=node --no-warnings --test tests/unit/example.test.js,scope=project",
+        "command=node vitest run,scope=project",
+        "command=node C:\\repo\\node_modules\\.bin\\vitest run,scope=project",
         "command=node ./scripts/run-tests.mjs coverage; vitest run,scope=project",
-        "command=PM_PATH=/tmp/pm-safe PM_GLOBAL_PATH=/tmp/pm-global echo seeded && pnpm test -- --runInBand,scope=project",
       ];
 
       for (const addEntry of unsafeRunnerCommands) {
@@ -972,7 +978,7 @@ describe("runTest", () => {
       // in the parent shell does not satisfy the guard. Previously the
       // message said "set both PM_PATH and PM_GLOBAL_PATH" without that
       // distinction, leading to repeated agent retries.
-      await expect(runTest(id, { add: ["command=pnpm test,scope=project"] }, { path: context.pmPath })).rejects.toMatchObject({
+      await expect(runTest(id, { add: ["command=vitest run,scope=project"] }, { path: context.pmPath })).rejects.toMatchObject({
         message: expect.stringContaining("INLINE in the command string"),
       });
 
@@ -1034,8 +1040,25 @@ describe("runTest", () => {
       );
       expect(safeEachRunnerSegmentSandboxed.count).toBe(6);
 
+      const safePackageScriptEntries = [
+        "command=pnpm test,scope=project",
+        "command=pnpm test:coverage,scope=project",
+        "command=pnpm --dir /tmp test -- --runInBand,scope=project",
+        "command=pnpm -C /tmp test:coverage,scope=project",
+        "command=npm test -- --runInBand,scope=project",
+        "command=npm run test -- --runInBand,scope=project",
+        "command=npm --prefix /tmp test -- --runInBand,scope=project",
+        "command=pnpm run test -- --runInBand,scope=project",
+        "command=yarn --cwd /tmp test,scope=project",
+        "command=yarn run test,scope=project",
+        "command=bun --cwd /tmp test,scope=project",
+        "command=bun run test,scope=project",
+      ];
+      const packageScripts = await runTest(id, { add: safePackageScriptEntries }, { path: context.pmPath });
+      expect(packageScripts.count).toBe(18);
+
       const nonRunnerCommand = await runTest(id, { add: ["command=pnpm build,scope=project"] }, { path: context.pmPath });
-      expect(nonRunnerCommand.count).toBe(7);
+      expect(nonRunnerCommand.count).toBe(19);
 
       const envOnlyCommand = await runTest(
         id,
@@ -1044,44 +1067,44 @@ describe("runTest", () => {
         },
         { path: context.pmPath },
       );
-      expect(envOnlyCommand.count).toBe(8);
+      expect(envOnlyCommand.count).toBe(20);
 
       const npxFlagOnlyCommand = await runTest(id, { add: ["command=npx --yes,scope=project"] }, { path: context.pmPath });
-      expect(npxFlagOnlyCommand.count).toBe(9);
+      expect(npxFlagOnlyCommand.count).toBe(21);
 
       const pmFlagsOnlyCommand = await runTest(id, { add: ["command=pm --json,scope=project"] }, { path: context.pmPath });
-      expect(pmFlagsOnlyCommand.count).toBe(10);
+      expect(pmFlagsOnlyCommand.count).toBe(22);
 
       const npxNonPmCommand = await runTest(id, { add: ["command=npx cowsay hello,scope=project"] }, { path: context.pmPath });
-      expect(npxNonPmCommand.count).toBe(11);
+      expect(npxNonPmCommand.count).toBe(23);
 
       const npxScopedNonPmCommand = await runTest(
         id,
         { add: ["command=npx @scope hello,scope=project"] },
         { path: context.pmPath },
       );
-      expect(npxScopedNonPmCommand.count).toBe(12);
+      expect(npxScopedNonPmCommand.count).toBe(24);
 
       const pnpmDlxNonPmCommand = await runTest(
         id,
         { add: ["command=pnpm dlx cowsay hello,scope=project"] },
         { path: context.pmPath },
       );
-      expect(pnpmDlxNonPmCommand.count).toBe(13);
+      expect(pnpmDlxNonPmCommand.count).toBe(25);
 
       const npmExecNonPmCommand = await runTest(
         id,
         { add: ["command=npm exec -- cowsay hello,scope=project"] },
         { path: context.pmPath },
       );
-      expect(npmExecNonPmCommand.count).toBe(14);
+      expect(npmExecNonPmCommand.count).toBe(26);
 
       const pnpmFlagsOnlyCommand = await runTest(
         id,
         { add: ["command=pnpm --config=/tmp/pm-safe,scope=project"] },
         { path: context.pmPath },
       );
-      expect(pnpmFlagsOnlyCommand.count).toBe(15);
+      expect(pnpmFlagsOnlyCommand.count).toBe(27);
     });
   });
 
@@ -1418,6 +1441,50 @@ describe("runTest", () => {
       const skipped = run.run_results.find((entry) => entry.status === "skipped");
       expect(skipped?.path).toBe("tests/no-command.spec.ts");
       expect(skipped?.error ?? "").toContain("No command configured");
+    });
+  });
+
+  it("runs package-script linked tests with sandboxed PM roots", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "package-script-sandbox-roots");
+      const packageDir = await mkdtemp(path.join(os.tmpdir(), "pm-linked-package-script-"));
+      try {
+        await writeFile(
+          path.join(packageDir, "package.json"),
+          `${JSON.stringify({ scripts: { probe: "node probe.mjs" } }, null, 2)}\n`,
+          "utf8",
+        );
+        await writeFile(
+          path.join(packageDir, "probe.mjs"),
+          [
+            "const project = process.env.PM_PATH || '';",
+            "const global = process.env.PM_GLOBAL_PATH || '';",
+            "if (!project.includes('pm-linked-test-') || !global.includes('pm-linked-test-')) process.exit(4);",
+            "process.stdout.write(`${project}\\n${global}`);",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+
+        await runTest(
+          id,
+          {
+            add: [`command=npm --prefix ${packageDir} run -s probe,scope=project,timeout_seconds=20`],
+            message: "seed package script sandbox probe",
+          },
+          { path: context.pmPath },
+        );
+
+        const run = await runTest(id, { run: true, timeout: "20" }, { path: context.pmPath });
+        expect(run.ok).toBe(true);
+        expect(run.run_results[0]?.status).toBe("passed");
+        const stdout = run.run_results[0]?.stdout ?? "";
+        expect(stdout).toContain("pm-linked-test-");
+        expect(stdout).not.toContain(context.pmPath);
+        expect(stdout).not.toContain(context.env.PM_GLOBAL_PATH ?? "");
+      } finally {
+        await rm(packageDir, { recursive: true, force: true });
+      }
     });
   });
 
