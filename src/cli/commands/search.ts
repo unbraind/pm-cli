@@ -233,6 +233,14 @@ export interface SearchHit {
   // Used by --match-mode and (hard filter) and the default all-terms ranking
   // bonus. Not projected into output rows.
   matched_all_terms?: boolean;
+  // GH-281: marks the keyword hit produced by the exact full-ID / short-ID
+  // early-return in scoreDocument(). The semantic & hybrid ranking paths use it
+  // to guarantee the exact-ID target ALWAYS ranks #1 (and is exempt from the
+  // score threshold / limit), so the keyword-mode exact-ID guarantee is never
+  // lost once vector blending is active. SHORT_ID matches keep score=900 and
+  // full-ID matches keep score=1000, so sortHits still orders full above short.
+  // Not projected into output rows.
+  exact_id_match?: boolean;
 }
 
 export type SearchResultItem = SearchHit | Record<string, unknown>;
@@ -1083,6 +1091,7 @@ function scoreDocument(
       score: normalizedQuery === normalizedId ? EXACT_ID_MATCH_SCORE : SHORT_ID_MATCH_SCORE,
       matched_fields: ["id"],
       matched_all_terms: true,
+      exact_id_match: true,
     };
   }
   const titleTokenCounts = new Map<string, number>();
@@ -1538,6 +1547,41 @@ function buildSemanticHits(
   };
 }
 
+// GH-281: in semantic & hybrid mode the blended/vector scores live on an
+// arbitrary scale (blended hybrid scores are [0,1]; raw vector similarities are
+// provider-defined), so an exact full-ID or short-ID keyword match can be
+// out-ranked by a high-semantic body mention. This reattaches the exact-ID
+// keyword hit(s) to the top of the ranked set in a reserved band ABOVE every
+// other hit, preserving matched_fields:["id"] and keeping full-ID above
+// short-ID. The reserved scores are derived from the current max so the
+// guarantee holds no matter what scale the backend returns, and the hit is
+// re-inserted even if it was dropped from `rankedHits` (e.g. it had no semantic
+// vector match) so it is never lost to the threshold or the result-limit slice.
+function forceExactIdHitsToTop(rankedHits: SearchHit[], keywordHits: SearchHit[]): SearchHit[] {
+  const exactIdHits = keywordHits.filter((hit) => hit.exact_id_match === true);
+  if (exactIdHits.length === 0) {
+    return rankedHits;
+  }
+  const exactIdIds = new Set(exactIdHits.map((hit) => hit.item.id));
+  const remaining = rankedHits.filter((hit) => !exactIdIds.has(hit.item.id));
+  const maxRemainingScore = Math.max(0, ...remaining.map((hit) => hit.score));
+  // Full-ID hits (score 1000) must rank above short-ID hits (score 900): rank
+  // within the exact-ID band by the original keyword score (descending) so a
+  // full-ID match always precedes a short-ID match for the same query, then
+  // offset the whole band above every remaining hit. ids are unique, so two
+  // exact-ID hits can never tie on score — sorting on score alone is total.
+  const orderedExactHits = [...exactIdHits].sort((left, right) => right.score - left.score);
+  const bandBase = maxRemainingScore + orderedExactHits.length + 1;
+  const promoted = orderedExactHits.map((hit, index) => ({
+    item: hit.item,
+    // Higher band slot for earlier (higher original keyword score) hits.
+    score: bandBase - index,
+    matched_fields: ["id"],
+    exact_id_match: true,
+  }));
+  return [...promoted, ...remaining];
+}
+
 function combineHybridHits(
   filteredById: Map<string, ItemDocument>,
   semanticScores: Map<string, number>,
@@ -1719,7 +1763,9 @@ async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promi
   const { semanticHits, semanticScores } = buildSemanticHits(vectorHits, filteredById);
   const vectorMatchCount = semanticScores.size;
   if (context.requestedMode === "semantic") {
-    return { hits: semanticHits, vectorMatchCount };
+    // GH-281: guarantee an exact full-ID / short-ID match ranks #1 even in pure
+    // semantic mode, where it otherwise carries no vector hit at all.
+    return { hits: forceExactIdHitsToTop(semanticHits, context.keywordHits), vectorMatchCount };
   }
   let hybridHits = combineHybridHits(filteredById, semanticScores, context.keywordHits, context.hybridSemanticWeight);
   if (context.rerank.enabled && hybridHits.length > 1) {
@@ -1814,7 +1860,10 @@ async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promi
     }
   }
   return {
-    hits: hybridHits,
+    // GH-281: applied LAST (after any rerank reordering) so an exact full-ID /
+    // short-ID keyword match always ranks #1 in hybrid mode regardless of the
+    // semantic blend weight or rerank scores.
+    hits: forceExactIdHitsToTop(hybridHits, context.keywordHits),
     vectorMatchCount,
   };
 }
@@ -2213,7 +2262,10 @@ export async function runSearch(query: string, options: SearchOptions, global: G
     }
   }
 
-  const thresholded = hits.filter((entry) => entry.score >= scoreThreshold);
+  // GH-281: an exact full-ID / short-ID match is always retained regardless of
+  // the (possibly user-raised --min-score) threshold so the exact-target lookup
+  // is never silently dropped in any mode.
+  const thresholded = hits.filter((entry) => entry.exact_id_match === true || entry.score >= scoreThreshold);
   const sorted = sortHits(thresholded, statusRegistry);
   // total = matched hits after filters + threshold, BEFORE limit truncation.
   const total = sorted.length;

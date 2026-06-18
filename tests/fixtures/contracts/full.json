@@ -6503,6 +6503,9 @@
           "flag": "--dependency-cycle-severity"
         },
         {
+          "flag": "--parent-cycle-severity"
+        },
+        {
           "flag": "--check-files"
         },
         {

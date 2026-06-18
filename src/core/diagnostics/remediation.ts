@@ -283,6 +283,18 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     command: "pm update <id> --dep-remove <dep-id>",
     summary: "Break the dependency cycle by removing one edge from the reported cycle.",
   },
+  {
+    code: "validate_hierarchy_parent_cycle_error",
+    command: "pm update <id> --parent <other-id>",
+    summary:
+      "Break the parent-hierarchy cycle by reparenting one item in the reported cycle to a non-cyclic parent (or clear it with pm update <id> --unset parent).",
+  },
+  {
+    code: "validate_hierarchy_parent_cycle",
+    command: "pm update <id> --parent <other-id>",
+    summary:
+      "Break the parent-hierarchy cycle by reparenting one item in the reported cycle to a non-cyclic parent (or clear it with pm update <id> --unset parent).",
+  },
   // --- pm validate: files ---
   {
     code: "validate_files_missing_linked_paths",

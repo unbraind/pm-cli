@@ -923,6 +923,8 @@ describe("operation command actions", () => {
       "--check-stale-blockers",
       "--dependency-cycle-severity",
       "error",
+      "--parent-cycle-severity",
+      "error",
       "--check-files",
       "--check-command-references",
       "--scan-mode",
@@ -947,6 +949,7 @@ describe("operation command actions", () => {
     expect(validateOptions.checkLifecycle).toBe(true);
     expect(validateOptions.checkStaleBlockers).toBe(true);
     expect(validateOptions.dependencyCycleSeverity).toBe("error");
+    expect(validateOptions.parentCycleSeverity).toBe("error");
     expect(validateOptions.checkFiles).toBe(true);
     expect(validateOptions.checkCommandReferences).toBe(true);
     expect(validateOptions.scanMode).toBe("tracked-all");

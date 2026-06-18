@@ -1,0 +1,15 @@
+id: pm-oqgf
+title: "GH-281: exact-ID search match is rank-diluted in hybrid/semantic mode (keyword score normalized + capped by keyword weight)"
+description: "scoreDocument() returns EXACT_ID_MATCH_SCORE=1000 / SHORT_ID_MATCH_SCORE=900 for an exact full/short id match and ranks #1 in keyword mode (already tested). But combineHybridHits() normalizes keyword scores to [0,1] via normalizeScoreMap then blends combined = semantic*w + keyword*(1-w); at default hybrid_semantic_weight=0.7 the exact-id keyword contribution caps at 0.3, so a high-semantic body-mention item can out-rank the exact target. Fix: preserve an exact-id flag through the hybrid/semantic path and guarantee exact-ID hits sort #1 in every mode. Add regression coverage for the hybrid blend."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-06-18T10:27:17.905Z"
+updated_at: "2026-06-18T10:36:35.301Z"
+assignee: claude-code-agent
+author: claude-code-agent
+parent: pm-rkie
+comments[1]{created_at,author,text}:
+  "2026-06-18T10:36:35.301Z",claude-code-agent,"GH-281 fix (semantic/hybrid exact-ID rank guarantee).\n\nROOT CAUSE: keyword mode already ranks an exact full-ID/short-ID #1 (scoreDocument returns EXACT_ID_MATCH_SCORE=1000 / SHORT_ID_MATCH_SCORE=900). But in semantic/hybrid mode combineHybridHits() normalizes keyword scores to [0,1] and blends combined = semantic*w + keyword*(1-w); at default hybrid_semantic_weight=0.7 the exact-ID keyword contribution caps at 0.3, so a high-semantic body mention out-ranks the exact target. In pure semantic mode the exact-ID item may carry NO vector hit at all and vanish entirely.\n\nFIX (src/cli/commands/search.ts only): (1) added optional exact_id_match:boolean to SearchHit, set on scoreDocument's exact/short-id early-return. (2) new helper forceExactIdHitsToTop(rankedHits, keywordHits) re-inserts exact-ID keyword hits at the top in a reserved band above every other hit (score = maxRemainingScore + N + 1, descending so full-ID 1000 ranks above short-ID 900), preserving matched_fields:[\"id\"]; re-inserts even if the item had no vector hit so it is never lost. Called at BOTH the semantic early-return and the hybrid final return (after rerank). (3) score-threshold filter now exempts exact_id_match hits so a raised --min-score never drops the exact target. sortHits unchanged.\n\nTESTS (tests/unit/commands/search-command.spec.ts, 3 added): 'forces an exact full-ID match to rank #1 in hybrid mode over a higher-semantic competitor' (rival semantic 0.99 vs exact target, target still #1), 'ranks full-ID above short-ID when both are exact matches in hybrid mode, both above a higher-semantic rival' (id fk49 full-band + pm-fk49 short-band, ordering fk49>pm-fk49>rival), 'forces an exact full-ID match to rank #1 in semantic mode even with no vector hit and a raised --min-score' (target has zero vector hits + --min-score 5, still #1). search.ts coverage = 100/100/100 across aggregate search specs; pnpm typecheck + 62 unit + 16 integration green."
+body: ""

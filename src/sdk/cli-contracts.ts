@@ -878,6 +878,7 @@ export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--check-lifecycle" },
   { flag: "--check-stale-blockers" },
   { flag: "--dependency-cycle-severity" },
+  { flag: "--parent-cycle-severity" },
   { flag: "--check-files" },
   { flag: "--scan-mode" },
   { flag: "--include-pm-internals" },

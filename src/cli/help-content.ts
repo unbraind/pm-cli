@@ -682,6 +682,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm validate",
       "pm validate --check-resolution --json",
       "pm validate --check-lifecycle --dependency-cycle-severity error",
+      "pm validate --check-lifecycle --parent-cycle-severity error",
       "pm validate --check-files --scan-mode tracked-all",
       "pm validate --check-files --scan-mode tracked-all-strict --include-pm-internals",
       "pm validate --check-command-references",

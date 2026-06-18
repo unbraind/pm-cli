@@ -2676,6 +2676,252 @@ describe("runSearch", () => {
       runSearch("statustoken", { mode: "keyword", status: "opne" }, { path: "/tmp/pm-search" }),
     ).rejects.toThrow(/Did you mean "open"\?/);
   });
+
+  // GH-281 (pm-oqgf): exact full-ID / short-ID matches must rank #1 in EVERY
+  // mode, not just keyword. In semantic & hybrid mode a high-semantic body
+  // mention used to out-rank the exact-ID target because the keyword
+  // contribution is capped by hybrid_semantic_weight.
+  it("forces an exact full-ID match to rank #1 in hybrid mode over a higher-semantic competitor", async () => {
+    const target = makeFrontMatter({
+      id: "pm-fk49",
+      title: "Game Engine Core Architecture",
+      description: "No literal id token in content",
+      updated_at: "2026-02-18T00:01:00.000Z",
+    });
+    // Competitor carries a far stronger semantic score AND a literal body
+    // mention of the target id, so under the default 0.7 semantic weight it
+    // would out-rank the exact-id target without the GH-281 guarantee.
+    const rival = makeFrontMatter({
+      id: "pm-rival",
+      title: "pm-fk49 mentioned in the title and body",
+      description: "pm-fk49 appears here too",
+      updated_at: "2026-02-18T00:02:00.000Z",
+    });
+    const docs = [rival, target];
+    listAllFrontMatterMock.mockResolvedValue(docs);
+    readFileMock.mockImplementation(async (targetPath: string) => {
+      const match = docs.find((item) => targetPath.includes(item.id));
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(match, match.id === "pm-rival" ? "pm-fk49 body mention pm-fk49" : "body without lookup token");
+    });
+    readSettingsMock.mockResolvedValue({
+      search: {
+        // Default weight: keyword contribution caps at 0.3 — pre-fix the rival wins.
+        hybrid_semantic_weight: 0.7,
+      },
+      providers: {
+        openai: {
+          base_url: "https://api.example.test/v1",
+          model: "text-embedding-3-small",
+          api_key: "",
+        },
+      },
+      vector_store: {
+        qdrant: {
+          url: "https://qdrant.example.test:6333",
+          api_key: "",
+        },
+      },
+    } as unknown as { id_prefix: string });
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (url: unknown) => {
+      const target = resolveFetchTarget(url);
+      if (target.endsWith("/v1/embeddings")) {
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          json: async () => ({ data: [{ embedding: [0.9, 0.1] }] }),
+          text: async () => "",
+        } as unknown as Response;
+      }
+      if (target.endsWith("/collections/pm_items/points/search")) {
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          json: async () => ({
+            result: [
+              { id: "pm-rival", score: 0.99 },
+              { id: "pm-fk49", score: 0.05 },
+            ],
+          }),
+          text: async () => "",
+        } as unknown as Response;
+      }
+      throw new Error(`Unexpected fetch target: ${target}`);
+    }) as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../../src/cli/commands/search.js");
+      const hybrid = await runSearch("pm-fk49", { mode: "hybrid" }, { path: "/tmp/pm-search" });
+      expect(hybrid.mode).toBe("hybrid");
+      expect(hybrid.items[0]?.item.id).toBe("pm-fk49");
+      expect(hybrid.items[0]?.matched_fields).toEqual(["id"]);
+      // The competitor is still present, just ranked below the exact-id target.
+      expect(hybrid.items.map((entry) => entry.item.id)).toContain("pm-rival");
+      expect(hybrid.items[0]!.score).toBeGreaterThan(hybrid.items[1]!.score);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("ranks full-ID above short-ID when both are exact matches in hybrid mode, both above a higher-semantic rival", async () => {
+    // Query "fk49" exactly matches TWO items: item "fk49" matches as a FULL id
+    // (score 1000) and item "pm-fk49" matches as a SHORT id (prefix "pm-"
+    // stripped → "fk49", score 900). The full-ID band slot must rank above the
+    // short-ID band slot, and both must out-rank the higher-semantic rival.
+    const fullIdMatch = makeFrontMatter({
+      id: "fk49",
+      title: "full id exact target",
+      description: "no id token here",
+      updated_at: "2026-02-18T00:01:00.000Z",
+    });
+    const shortIdMatch = makeFrontMatter({
+      id: "pm-fk49",
+      title: "short id exact target",
+      description: "no id token here",
+      updated_at: "2026-02-18T00:01:30.000Z",
+    });
+    const rival = makeFrontMatter({
+      id: "pm-rival",
+      title: "fk49 fk49 fk49 in title",
+      description: "fk49 body mention",
+      updated_at: "2026-02-18T00:02:00.000Z",
+    });
+    const docs = [rival, fullIdMatch, shortIdMatch];
+    listAllFrontMatterMock.mockResolvedValue(docs);
+    readFileMock.mockImplementation(async (targetPath: string) => {
+      const match = docs.find((item) => targetPath.includes(item.id));
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(match, match.id === "pm-rival" ? "fk49 fk49 body" : "no lookup token");
+    });
+    readSettingsMock.mockResolvedValue({
+      id_prefix: "pm-",
+      search: { hybrid_semantic_weight: 0.7 },
+      providers: {
+        openai: { base_url: "https://api.example.test/v1", model: "text-embedding-3-small", api_key: "" },
+      },
+      vector_store: { qdrant: { url: "https://qdrant.example.test:6333", api_key: "" } },
+    } as unknown as { id_prefix: string });
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (url: unknown) => {
+      const target = resolveFetchTarget(url);
+      if (target.endsWith("/v1/embeddings")) {
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          json: async () => ({ data: [{ embedding: [0.9, 0.1] }] }),
+          text: async () => "",
+        } as unknown as Response;
+      }
+      if (target.endsWith("/collections/pm_items/points/search")) {
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          json: async () => ({
+            result: [
+              { id: "pm-rival", score: 0.99 },
+              { id: "pm-fk49", score: 0.02 },
+            ],
+          }),
+          text: async () => "",
+        } as unknown as Response;
+      }
+      throw new Error(`Unexpected fetch target: ${target}`);
+    }) as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../../src/cli/commands/search.js");
+      const hybrid = await runSearch("fk49", { mode: "hybrid" }, { path: "/tmp/pm-search" });
+      expect(hybrid.mode).toBe("hybrid");
+      // Full id ("fk49") above short id ("pm-fk49"); both above the rival.
+      expect(hybrid.items.slice(0, 2).map((entry) => entry.item.id)).toEqual(["fk49", "pm-fk49"]);
+      expect(hybrid.items[0]?.matched_fields).toEqual(["id"]);
+      expect(hybrid.items[1]?.matched_fields).toEqual(["id"]);
+      expect(hybrid.items[0]!.score).toBeGreaterThan(hybrid.items[1]!.score);
+      expect(hybrid.items[1]!.score).toBeGreaterThan(hybrid.items[2]!.score);
+      expect(hybrid.items.map((entry) => entry.item.id)).toContain("pm-rival");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("forces an exact full-ID match to rank #1 in semantic mode even with no vector hit and a raised --min-score", async () => {
+    const target = makeFrontMatter({
+      id: "pm-fk49",
+      title: "semantic exact target",
+      description: "no id token here",
+      updated_at: "2026-02-18T00:01:00.000Z",
+    });
+    const rival = makeFrontMatter({
+      id: "pm-rival",
+      title: "unrelated heading",
+      description: "unrelated",
+      updated_at: "2026-02-18T00:02:00.000Z",
+    });
+    const docs = [rival, target];
+    listAllFrontMatterMock.mockResolvedValue(docs);
+    readFileMock.mockImplementation(async (targetPath: string) => {
+      const match = docs.find((item) => targetPath.includes(item.id));
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(match, "semantic body");
+    });
+    readSettingsMock.mockResolvedValue({
+      providers: {
+        openai: { base_url: "https://api.example.test/v1", model: "text-embedding-3-small", api_key: "" },
+      },
+      vector_store: { qdrant: { url: "https://qdrant.example.test:6333", api_key: "" } },
+    } as unknown as { id_prefix: string });
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (url: unknown) => {
+      const target = resolveFetchTarget(url);
+      if (target.endsWith("/v1/embeddings")) {
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          json: async () => ({ data: [{ embedding: [0.9, 0.1] }] }),
+          text: async () => "",
+        } as unknown as Response;
+      }
+      if (target.endsWith("/collections/pm_items/points/search")) {
+        // Only the rival carries a vector hit; the exact-id target has none, so
+        // pre-fix it would be absent from a pure-semantic result entirely.
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          json: async () => ({ result: [{ id: "pm-rival", score: 0.99 }] }),
+          text: async () => "",
+        } as unknown as Response;
+      }
+      throw new Error(`Unexpected fetch target: ${target}`);
+    }) as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../../src/cli/commands/search.js");
+      // --min-score above the reserved band's lower neighbors must not drop the
+      // exact-id hit (threshold exemption).
+      const semantic = await runSearch("pm-fk49", { mode: "semantic", minScore: "5" }, { path: "/tmp/pm-search" });
+      expect(semantic.mode).toBe("semantic");
+      expect(semantic.items[0]?.item.id).toBe("pm-fk49");
+      expect(semantic.items[0]?.matched_fields).toEqual(["id"]);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
 });
 
 describe("classifyImplicitSemanticFallbackReason", () => {
