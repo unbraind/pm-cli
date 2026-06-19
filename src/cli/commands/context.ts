@@ -57,6 +57,7 @@ export interface ContextOptions {
   limit?: string;
   format?: string;
   depth?: string;
+  fields?: string;
   section?: string[];
   activityLimit?: string;
   staleThreshold?: string;
@@ -276,6 +277,8 @@ export interface ContextResult {
   staleness?: StaleEntry[];
   tests?: TestHealthSummary;
   suggestions?: string[];
+  /** Focus-row field subset requested via --fields; null/omitted means full rows. */
+  focus_fields?: string[];
   warnings?: string[];
 }
 
@@ -310,6 +313,66 @@ function parseOutputFormat(raw: string | undefined): ContextOutputFormat | undef
     throw new PmCliError("Context format must be one of markdown|toon|json", EXIT_CODE.USAGE);
   }
   return normalized as ContextOutputFormat;
+}
+
+// Fields selectable by `pm context --fields` for focus-row projection. Every
+// ContextFocusItem scalar plus `created_at` (carried by recently-created rows)
+// is addressable; unknown names are rejected with a usage hint.
+const FOCUS_PROJECTION_FIELDS = new Set<string>([
+  "id",
+  "title",
+  "type",
+  "status",
+  "priority",
+  "order",
+  "deadline",
+  "assignee",
+  "tags",
+  "updated_at",
+  "parent",
+  "children_total",
+  "children_closed",
+  "completion_pct",
+  "created_at",
+]);
+
+/**
+ * Parses the comma-separated `--fields` value into a validated, de-duplicated
+ * focus-row projection list. Returns undefined when no projection was requested.
+ */
+export function parseContextFocusFields(raw: string | undefined): string[] | undefined {
+  if (raw === undefined) return undefined;
+  const fields: string[] = [];
+  for (const token of raw.split(",")) {
+    const normalized = token.trim().toLowerCase();
+    if (normalized.length === 0) continue;
+    if (!FOCUS_PROJECTION_FIELDS.has(normalized)) {
+      throw new PmCliError(
+        `Context --fields value not projectable: ${normalized} (valid: ${[...FOCUS_PROJECTION_FIELDS].join(", ")})`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    if (!fields.includes(normalized)) fields.push(normalized);
+  }
+  if (fields.length === 0) {
+    throw new PmCliError("Context --fields requires at least one field name", EXIT_CODE.USAGE);
+  }
+  return fields;
+}
+
+/**
+ * Projects focus rows onto the requested field subset, preserving field order so
+ * the rendered/serialized output mirrors the `--fields` argument.
+ */
+export function projectContextFocusRows<T extends ContextFocusItem>(rows: T[], fields: string[]): ContextFocusItem[] {
+  return rows.map((row) => {
+    const projected: Record<string, unknown> = {};
+    const source = row as Record<string, unknown>;
+    for (const field of fields) {
+      projected[field] = source[field] ?? null;
+    }
+    return projected as unknown as ContextFocusItem;
+  });
 }
 
 /**
@@ -1030,6 +1093,20 @@ function formatFocusLine(item: ContextFocusItem): string {
   return `${item.id} p${item.priority} ${item.status} ${item.type} order:${orderToken} deadline:${deadlineToken}${parentToken}${progressToken} ${item.title}`;
 }
 
+// Renders a focus row projected to a `--fields` subset as space-separated
+// field:value tokens, mirroring the projection field order. Array values join
+// with commas; missing/null values render as `-`.
+function formatProjectedFocusLine(item: ContextFocusItem, fields: string[]): string {
+  const source = item as unknown as Record<string, unknown>;
+  return fields
+    .map((field) => {
+      const value = source[field];
+      if (Array.isArray(value)) return `${field}:${value.join(",")}`;
+      return `${field}:${value ?? "-"}`;
+    })
+    .join(" ");
+}
+
 function formatAgendaLine(event: CalendarRow): string {
   const base = `${formatClock(event.at)} [${event.kind}] ${event.item_id} p${event.item_priority} ${event.item_status} ${event.item_title}`;
   if (event.kind === "reminder") {
@@ -1048,6 +1125,9 @@ function formatAgendaLine(event: CalendarRow): string {
  */
 export function renderContextMarkdown(result: ContextResult): string {
   const lines: string[] = [];
+  const focusFields = result.focus_fields;
+  const renderFocus = (item: ContextFocusItem): string =>
+    focusFields ? formatProjectedFocusLine(item, focusFields) : formatFocusLine(item);
   lines.push("# pm context");
   lines.push("");
   lines.push(`- now: ${result.now}`);
@@ -1074,7 +1154,7 @@ export function renderContextMarkdown(result: ContextResult): string {
     lines.push("No high-level active items.");
   } else {
     for (const item of result.high_level) {
-      lines.push(`- ${formatFocusLine(item)}`);
+      lines.push(`- ${renderFocus(item)}`);
     }
   }
   lines.push("");
@@ -1084,7 +1164,7 @@ export function renderContextMarkdown(result: ContextResult): string {
     lines.push("No low-level active items.");
   } else {
     for (const item of result.low_level) {
-      lines.push(`- ${formatFocusLine(item)}`);
+      lines.push(`- ${renderFocus(item)}`);
     }
   }
   lines.push("");
@@ -1092,7 +1172,7 @@ export function renderContextMarkdown(result: ContextResult): string {
   if (result.blocked_fallback.length > 0) {
     lines.push("## Blocked fallback");
     for (const item of result.blocked_fallback) {
-      lines.push(`- ${formatFocusLine(item)}`);
+      lines.push(`- ${renderFocus(item)}`);
     }
     lines.push("");
   }
@@ -1134,7 +1214,9 @@ export function renderContextMarkdown(result: ContextResult): string {
   if (result.recently_created && result.recently_created.length > 0) {
     lines.push("## Recently created");
     for (const item of result.recently_created) {
-      lines.push(`- ${dateTokenForTimestamp(item.created_at)} ${formatFocusLine(item)}`);
+      // The date prefix is dropped under --fields: created_at may be projected
+      // out, and the projected line already surfaces whatever fields were asked.
+      lines.push(focusFields ? `- ${renderFocus(item)}` : `- ${dateTokenForTimestamp(item.created_at)} ${formatFocusLine(item)}`);
     }
     lines.push("");
   }
@@ -1142,7 +1224,7 @@ export function renderContextMarkdown(result: ContextResult): string {
   if (result.unparented && result.unparented.length > 0) {
     lines.push("## Unparented");
     for (const item of result.unparented) {
-      lines.push(`- ${formatFocusLine(item)}`);
+      lines.push(`- ${renderFocus(item)}`);
     }
     lines.push("");
   }
@@ -1239,6 +1321,7 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
   const activityLimit = parseActivityLimit(options.activityLimit, contextSettings);
   const staleThresholdDays = parseStaleThresholdDays(options.staleThreshold, contextSettings);
   const parentScope = parseContextParent(options.parent);
+  const focusFields = parseContextFocusFields(options.fields);
 
   const needsAllItems = sectionsIncluded.some((s) =>
     ["hierarchy", "progress", "blockers", "staleness", "recently_created", "unparented"].includes(s),
@@ -1438,6 +1521,18 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
   if (workload) result.workload = workload;
   if (staleness) result.staleness = staleness;
   if (tests) result.tests = tests;
+  if (focusFields) {
+    result.focus_fields = focusFields;
+    result.high_level = projectContextFocusRows(result.high_level, focusFields);
+    result.low_level = projectContextFocusRows(result.low_level, focusFields);
+    result.blocked_fallback = projectContextFocusRows(result.blocked_fallback, focusFields);
+    if (result.recently_created) {
+      result.recently_created = projectContextFocusRows(result.recently_created, focusFields) as RecentContextItem[];
+    }
+    if (result.unparented) {
+      result.unparented = projectContextFocusRows(result.unparented, focusFields);
+    }
+  }
   if (warnings.length > 0) result.warnings = warnings;
   if (activeItems.length === 0 && blockedItems.length === 0 && agendaEvents.length === 0) {
     result.suggestions = [

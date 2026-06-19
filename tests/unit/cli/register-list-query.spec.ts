@@ -14,6 +14,7 @@ vi.mock("../../../src/cli/commands/context.js", () => ({
   resolveContextOutputFormat: vi.fn(),
   renderContextMarkdown: vi.fn(),
 }));
+vi.mock("../../../src/cli/commands/list.js", () => ({ runList: vi.fn() }));
 
 vi.mock("../../../src/cli/registration-helpers.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../../src/cli/registration-helpers.js")>();
@@ -34,7 +35,8 @@ import { runActivity } from "../../../src/cli/commands/activity.js";
 import { runSearch } from "../../../src/cli/commands/search.js";
 import { runAggregate } from "../../../src/cli/commands/aggregate.js";
 import { renderContextMarkdown, resolveContextOutputFormat, runContext } from "../../../src/cli/commands/context.js";
-import { printActivityJsonStream, printResult } from "../../../src/cli/registration-helpers.js";
+import { runList } from "../../../src/cli/commands/list.js";
+import { printActivityJsonStream, printListJsonStream, printResult, writeStdout } from "../../../src/cli/registration-helpers.js";
 
 let tmpRoot: string;
 
@@ -84,6 +86,72 @@ beforeEach(() => {
   vi.mocked(runContext).mockResolvedValue({ summary: {} } as never);
   vi.mocked(resolveContextOutputFormat).mockReturnValue("json" as never);
   vi.mocked(renderContextMarkdown).mockReturnValue("# Context" as never);
+  vi.mocked(runList).mockResolvedValue({
+    items: [
+      { id: "pm-1", status: "open", type: "Task", title: "First" },
+      { id: "pm-2", status: "open", type: "Epic", title: "Second" },
+    ],
+    count: 2,
+  } as never);
+});
+
+describe("register-list-query list output formats", () => {
+  it("parses every supported list --format value and rejects others", () => {
+    const { parseListFormat } = _testOnlyRegisterListQuery;
+    expect(parseListFormat(undefined)).toBeUndefined();
+    expect(parseListFormat(" CSV ")).toBe("csv");
+    expect(parseListFormat("table")).toBe("table");
+    expect(parseListFormat("json")).toBe("json");
+    expect(parseListFormat("toon")).toBe("toon");
+    expect(() => parseListFormat("yaml")).toThrow(/csv\|table\|json\|toon/);
+    expect(() => parseListFormat(true as never)).toThrow(/csv\|table\|json\|toon/);
+  });
+
+  it("renders CSV output through writeStdout and bypasses printResult", async () => {
+    await runRaw("list", "--format", "csv");
+    expect(vi.mocked(printResult)).not.toHaveBeenCalled();
+    const written = lastCall<string>(vi.mocked(writeStdout) as never, 0);
+    expect(written).toBe("id,status,type,title\npm-1,open,Task,First\npm-2,open,Epic,Second\n");
+  });
+
+  it("renders an aligned table for --format table", async () => {
+    await runRaw("list", "--format", "table");
+    const written = lastCall<string>(vi.mocked(writeStdout) as never, 0);
+    expect(written).toContain("id   | status | type | title");
+    expect(written).toContain("pm-1 | open   | Task | First");
+  });
+
+  it("suppresses tabular output under --quiet", async () => {
+    await runRaw("list", "--format", "csv", "--quiet");
+    expect(vi.mocked(writeStdout)).not.toHaveBeenCalled();
+  });
+
+  it("emits nothing for an empty tabular result", async () => {
+    vi.mocked(runList).mockResolvedValueOnce({ items: [], count: 0 } as never);
+    await runRaw("list", "--format", "table");
+    expect(vi.mocked(writeStdout)).not.toHaveBeenCalled();
+  });
+
+  it("routes --format json through printResult with json enabled", async () => {
+    await runRaw("list", "--format", "json");
+    const outputOptions = lastCall<Record<string, unknown>>(vi.mocked(printResult) as never, 1);
+    expect(outputOptions.json).toBe(true);
+  });
+
+  it("emits a JSON stream when --stream and --json are set", async () => {
+    await runRaw("list", "--json", "--stream");
+    expect(vi.mocked(printListJsonStream)).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects --stream without an effective json output mode", async () => {
+    await expect(runRaw("list", "--stream")).rejects.toThrow(/--stream requires --json/);
+  });
+
+  it("rejects combining --format csv with --stream", async () => {
+    await expect(runRaw("list", "--json", "--format", "csv", "--stream")).rejects.toThrow(
+      /--format csv\|table cannot be combined with --stream/,
+    );
+  });
 });
 
 describe("register-list-query get options", () => {

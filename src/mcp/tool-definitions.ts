@@ -123,6 +123,7 @@ export const TOOLS: ToolDefinition[] = [
       "Return the agent-oriented project context snapshot. " +
       "Pass options.depth=brief|standard|deep|full (full = every section with no per-section row cap), " +
       "options.parent='<id>' to scope the snapshot to one item's subtree (the item plus all descendants), " +
+      "options.fields='id,title,priority' to project focus rows to a field subset for low-token reads, " +
       "or options.section=['hierarchy','progress',...] to pick sections.",
     inputSchema: objectSchema({ options: { type: "object" } }),
   },

@@ -413,6 +413,7 @@ export const TOOL_CONTEXT_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "limit", flag: "--limit" },
   { param: "format", flag: "--format" },
   { param: "depth", flag: "--depth" },
+  { param: "fields", flag: "--fields" },
   { param: "section", flag: "--section", repeatable: true },
   { param: "activityLimit", flag: "--activity-limit" },
   { param: "staleThreshold", flag: "--stale-threshold" },
