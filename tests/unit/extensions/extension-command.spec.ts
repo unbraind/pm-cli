@@ -1235,15 +1235,30 @@ describe("extension command runtime", () => {
 
       expect(_testOnlyInstallSources.runtimeDependencyInstallSpecs({ dependencies: "bad" })).toEqual([]);
       expect(
-      _testOnlyInstallSources.runtimeDependencyInstallSpecs({
+        _testOnlyInstallSources.runtimeDependencyInstallSpecs({
           dependencies: { leftpad: " 1.0.0 ", skipped: "", bad: 1 },
           optionalDependencies: { leftpad: "2.0.0", optional: "^3.0.0" },
-          peerDependencies: { peer: "~4.0.0" },
+          peerDependencies: { peer: "~4.0.0", "@unbrained/pm-cli": ">=2026.6.7" },
         }),
       ).toEqual(["leftpad@1.0.0", "optional@^3.0.0", "peer@~4.0.0"]);
+      expect(
+        _testOnlyInstallSources.hasHostedPmCliDependency({
+          peerDependencies: { "@unbrained/pm-cli": ">=2026.6.7" },
+        }),
+      ).toBe(true);
+      expect(_testOnlyInstallSources.hasHostedPmCliDependency({ dependencies: { other: "1.0.0" } })).toBe(false);
+      expect(_testOnlyInstallSources.resolveDirectorySymlinkType("win32")).toBe("junction");
+      expect(_testOnlyInstallSources.resolveDirectorySymlinkType("linux")).toBe("dir");
+      const manifestWithHostedPmCli = {
+        dependencies: { runtime: "1.0.0", "@unbrained/pm-cli": ">=2026.6.7" },
+        optionalDependencies: { "@unbrained/pm-cli": ">=2026.6.7" },
+        peerDependencies: { "@unbrained/pm-cli": ">=2026.6.7" },
+      };
+      _testOnlyInstallSources.removeHostedPmCliDependency(manifestWithHostedPmCli);
+      expect(manifestWithHostedPmCli).toEqual({ dependencies: { runtime: "1.0.0" } });
       expect(wrapNpmPackResolutionError("pm-helper-package", new Error("permission denied"))).toBeNull();
-    expect(_testOnlyInstallSources.npmPackageNameFromSpec("@scope/pkg@1.2.3")).toBe("@scope/pkg");
-    expect(_testOnlyInstallSources.npmPackageNameFromSpec("alias@file:../pkg")).toBe("alias");
+      expect(_testOnlyInstallSources.npmPackageNameFromSpec("@scope/pkg@1.2.3")).toBe("@scope/pkg");
+      expect(_testOnlyInstallSources.npmPackageNameFromSpec("alias@file:../pkg")).toBe("alias");
       expect(_testOnlyInstallSources.npmPackageNameFromSpec("@broken")).toBe("@broken");
       expect(_testOnlyInstallSources.npmPackageNameFromSpec("   ")).toBe("");
       expect(isNpmNotFoundError("npm ERR! code E404 404 Not Found")).toBe(true);
@@ -1276,6 +1291,7 @@ describe("extension command runtime", () => {
           name: "pm-helper-package",
           version: "1.2.3",
           dependencies: { "runtime-dep": `file:${runtimeDepRoot}` },
+          peerDependencies: { "@unbrained/pm-cli": ">=2026.6.7" },
           devDependencies: { "dev-only": "1.0.0" },
         }),
         "utf8",
@@ -1283,13 +1299,73 @@ describe("extension command runtime", () => {
       await writeFile(path.join(packageRoot, "package-lock.json"), "{}\n", "utf8");
       await writeFile(path.join(packageRoot, "npm-shrinkwrap.json"), "{}\n", "utf8");
       await _testOnlyInstallSources.installNpmPackageRuntimeDependencies(packageRoot);
-      const rewrittenPackageJson = JSON.parse(await readFile(path.join(packageRoot, "package.json"), "utf8")) as Record<string, unknown>;
+      const rewrittenPackageJson = JSON.parse(await readFile(path.join(packageRoot, "package.json"), "utf8")) as Record<
+        string,
+        unknown
+      >;
       expect(rewrittenPackageJson.devDependencies).toBeUndefined();
+      expect(rewrittenPackageJson.peerDependencies).toEqual({ "@unbrained/pm-cli": ">=2026.6.7" });
       await expect(readdir(path.join(packageRoot, "node_modules", "runtime-dep"))).resolves.toEqual(
         expect.arrayContaining(["index.js", "package.json"]),
       );
+      await expect(realpath(path.join(packageRoot, "node_modules", "@unbrained", "pm-cli"))).resolves.toBe(
+        await realpath(process.cwd()),
+      );
       await expect(readFile(path.join(packageRoot, "package-lock.json"), "utf8")).rejects.toThrow();
       await expect(readFile(path.join(packageRoot, "npm-shrinkwrap.json"), "utf8")).rejects.toThrow();
+
+      const peerOnlyPackageRoot = path.join(tempRoot, "peer-only-package");
+      await mkdir(peerOnlyPackageRoot, { recursive: true });
+      await writeFile(
+        path.join(peerOnlyPackageRoot, "package.json"),
+        JSON.stringify({
+          name: "peer-only-package",
+          version: "1.0.0",
+          peerDependencies: { "@unbrained/pm-cli": ">=2026.6.7" },
+        }),
+        "utf8",
+      );
+      await _testOnlyInstallSources.installNpmPackageRuntimeDependencies(peerOnlyPackageRoot);
+      await expect(realpath(path.join(peerOnlyPackageRoot, "node_modules", "@unbrained", "pm-cli"))).resolves.toBe(
+        await realpath(process.cwd()),
+      );
+
+      const dependencyOnlyPackageRoot = path.join(tempRoot, "dependency-only-package");
+      await mkdir(dependencyOnlyPackageRoot, { recursive: true });
+      await writeFile(
+        path.join(dependencyOnlyPackageRoot, "package.json"),
+        JSON.stringify({
+          name: "dependency-only-package",
+          version: "1.0.0",
+          dependencies: { "runtime-dep": `file:${runtimeDepRoot}` },
+        }),
+        "utf8",
+      );
+      await _testOnlyInstallSources.installNpmPackageRuntimeDependencies(dependencyOnlyPackageRoot);
+      await expect(readdir(path.join(dependencyOnlyPackageRoot, "node_modules", "runtime-dep"))).resolves.toEqual(
+        expect.arrayContaining(["index.js", "package.json"]),
+      );
+      await expect(readFile(path.join(dependencyOnlyPackageRoot, "node_modules", "@unbrained", "pm-cli", "package.json"), "utf8")).rejects.toThrow();
+
+      const failingLinkPackageRoot = path.join(tempRoot, "failing-link-package");
+      await mkdir(path.join(failingLinkPackageRoot, "node_modules"), { recursive: true });
+      await writeFile(
+        path.join(failingLinkPackageRoot, "package.json"),
+        JSON.stringify({
+          name: "failing-link-package",
+          version: "1.0.0",
+          peerDependencies: { "@unbrained/pm-cli": ">=2026.6.7" },
+          devDependencies: { "dev-only": "1.0.0" },
+        }),
+        "utf8",
+      );
+      await writeFile(path.join(failingLinkPackageRoot, "node_modules", "@unbrained"), "blocked scope directory\n", "utf8");
+      await expect(_testOnlyInstallSources.installNpmPackageRuntimeDependencies(failingLinkPackageRoot)).rejects.toThrow();
+      const restoredAfterLinkFailure = JSON.parse(
+        await readFile(path.join(failingLinkPackageRoot, "package.json"), "utf8"),
+      ) as Record<string, unknown>;
+      expect(restoredAfterLinkFailure.peerDependencies).toEqual({ "@unbrained/pm-cli": ">=2026.6.7" });
+      expect(restoredAfterLinkFailure.devDependencies).toBeUndefined();
 
       const missingManifestRoot = path.join(tempRoot, "missing-package-json");
       await mkdir(missingManifestRoot, { recursive: true });

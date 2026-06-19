@@ -2,13 +2,38 @@ id: pm-oxq2
 title: Project-scope extension install writes ~69MB node_modules per workspace (peer pm-cli + transitive Sentry/OTel)
 description: ".agents/pm/extensions/pm-changelog/node_modules is 69MB: @unbrained/pm-cli 25MB (installed because runtimeDependencyInstallSpecs in src/cli/commands/extension/install-sources.ts:454-456 deliberately includes peerDependencies so SDK imports resolve inside the extension dir) plus its transitive @sentry 22MB + @opentelemetry 21MB. Gitignored, so no repo bloat, but every workspace that runs pm install npm:pm-changelog (including the changelog:pm CI/release path on every changelog check) pays the download+disk cost, and the nested pm-cli copy can version-skew against the host. Ideas: symlink/inject the running CLI's own install root to satisfy the peer instead of reinstalling it; or publish a slim SDK-only package for extensions to peer on; or npm install --omit=peer plus an explicit resolution shim for @unbrained/pm-cli. Needs care: PR#74 learning says package extensions rely on the resolvable peer for defineExtension imports."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[4]: audit-2026-06-13,disk,extensions,performance
 created_at: "2026-06-12T22:48:14.706Z"
-updated_at: "2026-06-18T00:03:43.439Z"
+updated_at: "2026-06-19T15:10:20.108Z"
 author: audit-quality-agent
 parent: pm-y7sc
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-06-18T00:03:43.439Z",codex-audit-agent,"Audit evidence from PR #266 on 2026-06-18: pnpm changelog:pm regenerated CHANGELOG.md successfully, but the subsequent pnpm changelog:pm:check wrapper stalled for several minutes inside pm install npm:pm-changelog --project -> npm install @unbrained/pm-cli@>=2026.6.7. Direct installed-extension check via node dist/cli.js changelog generate --check returned unchanged. This confirms the project-scope extension peer install cost can block release/check workflows, not just consume disk."
+  "2026-06-19T14:35:41.446Z",codex-impl,"Evidence: Full coverage passed after branch-fixture follow-up: 230 files, 4655 tests, statements 100% (29786/29786), branches 100% (23309/23309), functions 100% (4955/4955), lines 100% (28619/28619). Manual temp smoke passed in /tmp/pm-sdk-install-smoke-lAsXNs: npm package installed, doctor ok, SDK command discovered, installed @unbrained/pm-cli realpath matched checkout, nested @sentry absent."
+  "2026-06-19T14:41:48.422Z",codex-impl,"Evidence: Final dependency-state gates passed: pnpm build; focused extension+CLI integration tests 169 passed; node scripts/run-tests.mjs coverage 230 files / 4655 tests / 100% statements, branches, functions, lines; pnpm quality:static; pnpm contracts:check; pnpm audit --audit-level moderate; pnpm security:scan; pnpm changelog:pm:check unchanged with pm-changelog@2026.6.14; package doctor ok/no warnings; sentry-telemetry gate ok with critical=0 high=0 and telemetry error rate 2.04%."
+  "2026-06-19T14:48:16.995Z",codex-impl,"Evidence update: Final manifest-preserving implementation verified after the last code change. Focused extension+CLI integration tests passed (169 tests). Final coverage passed: 230 test files, 4655 tests, statements 100% (29788/29788), branches 100% (23309/23309), functions 100% (4955/4955), lines 100% (28621/28621). Final quick gates passed: pnpm quality:static, pnpm contracts:check, pnpm changelog:pm:check unchanged, pnpm security:scan."
+  "2026-06-19T15:10:20.108Z",codex-sdk-install-link,"Review follow-up: restored npm package manifests in a finally block when dependency install or hosted @unbrained/pm-cli linking fails; added regression coverage for link failure restoration; resolved pnpm audit undici advisory via @sentry/cli-compatible undici 6.27.0 override. Verification: pnpm build; node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts; node scripts/run-tests.mjs coverage => 100/100/100/100 (4655 tests); pnpm quality:static; pnpm contracts:check; pnpm changelog:pm:check; pnpm security:scan; pnpm audit --audit-level moderate; node dist/cli.js package doctor --project --detail deep --json; node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort."
+files[4]{path,scope,note}:
+  package.json,project,Update @sentry/node patch dependency while checking GitHub/dependency reports
+  pnpm-lock.yaml,project,Lock @sentry/node 10.59.0 patch update
+  src/cli/commands/extension/install-sources.ts,project,Skip nested host CLI package install for npm extension sources and link the active SDK root
+  tests/unit/extensions/extension-command.spec.ts,project,Regression coverage for hosted pm-cli dependency filtering and SDK link creation
+tests[11]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "manual temp smoke: install npm:pm-sdk-link-smoke@file:<tmp package> in fresh workspace; verify package doctor ok,SDK command discovered,@unbrained/pm-cli symlink realpath equals checkout,nested @sentry absent",null,project,60,null,null,null,null,null,null,null,null,null,null,null,null
+  node dist/cli.js package doctor --project --detail deep --json,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs coverage,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm audit --audit-level moderate,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm changelog:pm:check",null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm contracts:check",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:static",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm security:scan",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Document host SDK linking behavior for package-backed extensions
+  docs/SDK.md,project,Document registry package installs reuse the active host SDK
+close_reason: "Resolved by skipping nested host CLI installs for npm package extensions, linking @unbrained/pm-cli to the active host package root, preserving package runtime metadata, updating SDK/package docs, updating @sentry/node to 10.59.0, and verifying with focused tests, manual temp smoke, full 100/100/100/100 coverage, static/contracts/security/changelog/Sentry/telemetry gates."
 body: ""

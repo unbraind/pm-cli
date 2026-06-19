@@ -150,7 +150,7 @@ export function activate(api) {
 }
 ```
 
-Package-backed extensions can use the SDK helper after declaring `@unbrained/pm-cli` in `package.json` and installing dependencies. Use this shape for packages published to npm or installed from a package root:
+Package-backed extensions can use the SDK helper after declaring `@unbrained/pm-cli` in `package.json` and installing dependencies. Registry installs satisfy that SDK import from the running host CLI instead of downloading a nested CLI copy into each project extension directory, so package authors can declare `@unbrained/pm-cli` as a peer dependency without adding the CLI's own telemetry/runtime dependencies to every workspace. Use this shape for packages published to npm or installed from a package root:
 
 ```js
 import { defineExtension } from "@unbrained/pm-cli/sdk";
@@ -427,7 +427,7 @@ requiring private loader imports or a temporary `.agents/pm/extensions` tree.
 Keep `pm package doctor --project --detail deep --trace` and runtime contracts
 for integration tests against installed packages.
 
-`PM_CLI_PACKAGE_ROOT` is first-party only. Bundled packages in this repository use it to find the running CLI's `dist/sdk/runtime.js` before they are published or installed independently. External packages must not read this environment variable or import from `dist/` or `src/core`; use `@unbrained/pm-cli/sdk`, `@unbrained/pm-cli/sdk/runtime`, and `@unbrained/pm-cli/sdk/testing`.
+`PM_CLI_PACKAGE_ROOT` is first-party only. Bundled packages in this repository use it to find the running CLI's `dist/sdk/runtime.js` before they are published or installed independently. External packages must not read this environment variable or import from `dist/` or `src/core`; use `@unbrained/pm-cli/sdk`, `@unbrained/pm-cli/sdk/runtime`, and `@unbrained/pm-cli/sdk/testing`. During `pm install npm:<package>`, pm links the installed package's `@unbrained/pm-cli` dependency back to the running host CLI so SDK imports resolve without a duplicate nested CLI install.
 
 ## Troubleshooting
 
