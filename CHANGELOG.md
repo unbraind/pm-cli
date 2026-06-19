@@ -21,7 +21,6 @@
 
 ### Fixed
 
-- GH-244: empty search provider adapter strings should auto-normalize ([pm-28cf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-28cf.toon))
 - Daily auto-release was silently blocked 06-14..16 by a single stale, unresolved Sentry error \(sentry-telemetry-gate is:unresolved has no time window\) ([pm-nb08](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nb08.toon))
 - appendLineAtomic is not truly atomic: concurrent appends to history JSONL can interleave ([pm-xy9n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xy9n.toon))
 - Project-scope extension install writes ~69MB node\_modules per workspace \(peer pm-cli + transitive Sentry/OTel\) ([pm-oxq2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oxq2.toon))
