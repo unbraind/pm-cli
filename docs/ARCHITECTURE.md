@@ -309,7 +309,9 @@ pm health --check-only
 ## Performance and Startup Latency
 
 `pm-cli` is optimized for the agent loop, where many short commands run back to
-back. The performance model has three layers:
+back. The performance model has three layers (the absolute timings below are
+indicative order-of-magnitude figures at the time of writing — treat the relative
+behavior, not the exact milliseconds, as the durable contract):
 
 - **Per-command startup.** After a command-family code split, each handler
   imports only its own command module rather than the full command barrel, so a
@@ -401,9 +403,9 @@ Coverage governance is literal all-source, not a curated allowlist:
   gate. There is no include-list to edit; if a new module is genuinely not
   shippable source (a throwaway script), it belongs outside these roots rather
   than in a hand-maintained exclude list.
-- Authoring example snippets under `docs/examples/` import the published SDK by
-  its bare specifier (`@unbrained/pm-cli/sdk`); `vitest.config.ts` aliases that
-  to `src/sdk/index.ts` so the example specs cover without the workspace
+- When authoring example snippets under `docs/examples/`, import the published
+  SDK by its bare specifier (`@unbrained/pm-cli/sdk`); `vitest.config.ts` aliases
+  that to `src/sdk/index.ts` so the example specs cover without the workspace
   self-link present in a clean CI install.
 - When a module is hard to test end-to-end (for example CLI orchestration),
   extract pure logic helpers into small modules and cover those directly instead

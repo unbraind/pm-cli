@@ -1,0 +1,13 @@
+id: pm-3299
+title: pm-changelog over-escapes markdown in entry titles (parens + intra-word underscores)
+description: "PR #301 review (Gemini, Sourcery) flagged that auto-generated CHANGELOG.md entries contain unnecessary markdown backslash escapes, e.g. 'EXTENSION\\_AUTHOR\\_CONTRACTS' and '\\(actual 1.4.0\\)'. These come from pm-changelog's title-escaping pass. On GitHub-flavored markdown, intra-word underscores do not trigger emphasis and parentheses are not special outside link syntax, so the escapes are unnecessary (they render correctly on GitHub but add source noise). Fix belongs in the SEPARATE pm-changelog repo (/home/steve/GITHUB_RELEASE/pm-changelog), NOT pm-cli — relax the escaper to only escape characters that are actually markdown-significant in the entry context. Cannot be hand-fixed in CHANGELOG.md here because changelog:pm:check regenerates and would re-add the escapes."
+type: Issue
+status: open
+priority: 4
+tags[4]: "area:changelog",docs,pm-changelog,upstream
+created_at: "2026-06-19T13:54:21.639Z"
+updated_at: "2026-06-19T13:54:21.639Z"
+author: claude-code-agent
+acceptance_criteria: "pm-changelog no longer escapes ( ) and intra-word _ in generated entry titles; a regenerated pm-cli CHANGELOG.md has clean entries and changelog:pm:check still passes; pm-changelog gains a unit test for the escaping rule."
+parent: pm-u9d0
+body: ""
