@@ -6,16 +6,17 @@ status: in_progress
 priority: 1
 tags[5]: agent-ux,gh-293,gh-294,gh-295,gh-296
 created_at: "2026-06-19T06:13:24.173Z"
-updated_at: "2026-06-19T06:29:22.549Z"
+updated_at: "2026-06-19T06:30:43.267Z"
 assignee: codex-agent
 author: codex-agent
 parent: pm-mpbb
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-06-19T06:13:38.354Z",codex-agent,"Investigation note: GitHub sweep found open issues #293, #294, #295, #296 and no open PRs. pnpm audit --audit-level moderate reported no known vulnerabilities; pnpm outdated reports commander latest 15.0.0 but wanted/current 14.0.3, retained pending Node compatibility review."
   "2026-06-19T06:18:00.464Z",codex-agent,"Evidence: Focused regression suite passed: node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/commands/files-docs-command.spec.ts tests/unit/commands/register-commands.spec.ts (271 tests). Manual temp smoke passed against dist/cli.js with isolated PM_PATH/PM_GLOBAL_PATH for GH-293 schema unknown subcommand no-mutation, GH-294 create --tags alpha beta gamma, GH-296 docs comma paths, and GH-295 exact-ID search ranking."
   "2026-06-19T06:27:41.572Z",codex-agent,"Evidence: Full coverage gate passed after branch simplification: node scripts/run-tests.mjs coverage -> 230 files, 4649 tests, Statements 100% (29732/29732), Branches 100% (23273/23273), Functions 100% (4945/4945), Lines 100% (28566/28566). Other gates passed: pnpm build, git diff --check, pnpm contracts:check, pnpm security:scan, pnpm changelog:pm:check, pnpm quality:static. pm validate --check-resolution --check-history-drift had ok=true and history_drift ok, with pre-existing validate_resolution_missing_fields:201 warnings."
   "2026-06-19T06:28:06.218Z",codex-agent,"Evidence: Static quality JSON gate confirmed source_docstring_coverage_percent=100 and exported_docstring_coverage_percent=100 (source 221/221, exported 1620/1620). pnpm version:check passed version policy 2026.6.19. Fresh GitHub sweep still shows issues #293-#296 open and no open PRs before creating this branch."
   "2026-06-19T06:29:22.549Z",unknown,"Evidence: Sentry recent check passed. Command: sentry issue list pm-cli --period 24h --query 'is:unresolved' --limit 10 --json --fields shortId,title,level,status,priority,lastSeen. Result: no unresolved pm-cli issues returned for the last 24h."
+  "2026-06-19T06:30:43.267Z",codex-agent,"Evidence: Published PR #298 (https://github.com/unbraind/pm-cli/pull/298) for the bundled GH-293..296 parser/search regressions and requested review agents with @codex review, /gemini review, @gemini-code-assist, and @coderabbitai full review."
 files[7]{path,scope,note}:
   src/cli/bootstrap-args.ts,project,Accept create --tags multi-value argv normalization
   src/cli/commands/linked-artifacts.ts,project,Split bare comma-separated linked file/doc add paths
