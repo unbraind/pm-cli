@@ -76,7 +76,23 @@ export async function writeFileAtomic(targetPath: string, contents: string): Pro
 }
 
 /**
- * Implements append line atomic for the public runtime surface of this module.
+ * Append a single newline-terminated line to a file, opened with `O_APPEND`.
+ *
+ * Concurrency contract: `O_APPEND` makes the seek-to-EOF that precedes each
+ * `write(2)` atomic, so independent appenders never overwrite each other's
+ * bytes. For the common case the whole `${line}\n` buffer is handed to the
+ * kernel in one `write(2)`, which mainstream filesystems (ext4/xfs/apfs) commit
+ * atomically under the inode lock — concurrent multi-process appends of small
+ * records (e.g. the telemetry and OTLP-span queues) therefore stay
+ * line-coherent without an external lock.
+ *
+ * The guarantee weakens only for a single record large enough that the OS
+ * splits it across multiple `write(2)` calls (multi-KiB lines), where another
+ * process's append could interleave between fragments. History JSONL — the only
+ * caller that can produce large lines — is always written while the per-item
+ * store lock is held (see core/store/item-store.ts), so those appends are
+ * serialized regardless. Callers writing large records concurrently from
+ * multiple processes must hold an equivalent lock.
  */
 export async function appendLineAtomic(targetPath: string, line: string): Promise<void> {
   const dirPath = path.dirname(targetPath);

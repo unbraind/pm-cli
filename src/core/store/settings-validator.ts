@@ -34,6 +34,7 @@ export interface ParsedSettings {
   author_default: string;
   item_format?: "toon" | "json_markdown";
   locks: { ttl_seconds: number };
+  checkpoints?: { retention_days?: number };
   output: { default_format: "toon" | "json" };
   history?: {
     missing_stream: "auto_create" | "strict_error";
@@ -397,6 +398,7 @@ const settingsCheck = vObject({
   author_default: vString,
   item_format: vOptional(vLiteral("toon", "json_markdown")),
   locks: vObject({ ttl_seconds: vNumber({ int: true }) }),
+  checkpoints: vOptional(vObject({ retention_days: vOptional(vNumber({ int: true, positive: true })) })),
   output: vObject({ default_format: vLiteral("toon", "json") }),
   history: vOptional(
     vObject({

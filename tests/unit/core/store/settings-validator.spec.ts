@@ -282,4 +282,14 @@ describe("core/store/settings-validator", () => {
     expect(validateSettings(withPolicy({ max_entries: 1.5 })).success).toBe(false);
     expect(validateSettings(withPolicy({ trigger: "bogus" })).success).toBe(false);
   });
+
+  it("accepts an optional checkpoints.retention_days and rejects non-positive integers", () => {
+    const base = minimalValidSettings();
+    // Optional: a settings file without the checkpoints block stays valid.
+    expect(validateSettings(base).success).toBe(true);
+    expect(validateSettings({ ...base, checkpoints: { retention_days: 30 } }).success).toBe(true);
+    expect(validateSettings({ ...base, checkpoints: { retention_days: 0 } }).success).toBe(false);
+    expect(validateSettings({ ...base, checkpoints: { retention_days: 1.5 } }).success).toBe(false);
+    expect(validateSettings({ ...base, checkpoints: { retention_days: "30" } }).success).toBe(false);
+  });
 });

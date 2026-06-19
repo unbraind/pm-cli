@@ -3146,7 +3146,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         "search/lancedb",
         "runtime/history-drift-cache.json",
       ]);
-      expect(gcJson.retained).toEqual(["runtime/test-runs"]);
+      expect(gcJson.retained).toEqual(["search/pending-refresh.json", "search/pending-refresh.gate.lock", "runtime/test-runs"]);
       expect(gcJson.warnings).toEqual([]);
 
       const testAll = context.runCli(["test-all", "--json", "--status", "in_progress"], { expectJson: true });

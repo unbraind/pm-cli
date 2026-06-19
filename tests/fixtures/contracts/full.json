@@ -22538,7 +22538,7 @@
             "type": "boolean"
           },
           "gcScope": {
-            "description": "Repeatable gc scope selector values (index, embeddings, runtime, locks).",
+            "description": "Repeatable gc scope selector values (index, embeddings, runtime, locks, checkpoints).",
             "examples": [
               [
                 "index",
@@ -22549,6 +22549,9 @@
               ],
               [
                 "locks"
+              ],
+              [
+                "checkpoints"
               ]
             ],
             "items": {

@@ -432,7 +432,7 @@ export function registerOperationCommands(program: Command): void {
   program
     .command("gc")
     .option("--dry-run", "Preview cleanup targets without deleting files; without this flag, pm gc deletes matched artifacts")
-    .option("--scope <value>", "Limit cleanup to one or more scopes (comma-separated or repeatable): index, embeddings, runtime, locks", collect)
+    .option("--scope <value>", "Limit cleanup to one or more scopes (comma-separated or repeatable): index, embeddings, runtime, locks, checkpoints", collect)
     .description("Delete optional cache artifacts by default (including expired lock debris) and show a summary.")
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);

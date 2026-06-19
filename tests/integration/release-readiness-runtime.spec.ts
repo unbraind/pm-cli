@@ -1520,7 +1520,7 @@ describe("release readiness runtime coverage", () => {
 
       const gcResult = context.runCli(["gc", "--json"], { expectJson: true });
       expect(gcResult.code).toBe(0);
-      expectTopLevelKeyOrder(gcResult.json, ["ok", "dry_run", "scope", "removed", "retained", "warnings", "locks", "guidance", "generated_at"]);
+      expectTopLevelKeyOrder(gcResult.json, ["ok", "dry_run", "scope", "removed", "retained", "warnings", "locks", "checkpoints", "guidance", "generated_at"]);
 
       const testAllResult = context.runCli(["test-all", "--status", "in_progress", "--timeout", "30", "--json"], {
         expectJson: true,

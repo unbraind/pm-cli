@@ -705,6 +705,7 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
     ...settings,
     item_format: settings.item_format === "json_markdown" ? "toon" : (settings.item_format ?? defaults.item_format),
     locks: { ...defaults.locks, ...settings.locks },
+    checkpoints: { ...defaults.checkpoints, ...(settings.checkpoints ?? {}) },
     output: { ...defaults.output, ...settings.output },
     history: {
       ...defaults.history,
@@ -811,6 +812,7 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
   const baseSettings = {
     ...settings,
     locks: valueOrDefault(settings.locks, SETTINGS_DEFAULTS.locks),
+    checkpoints: valueOrDefault(settings.checkpoints, SETTINGS_DEFAULTS.checkpoints),
     output: valueOrDefault(settings.output, SETTINGS_DEFAULTS.output),
     history: valueOrDefault(settings.history, SETTINGS_DEFAULTS.history),
     validation: valueOrDefault(settings.validation, SETTINGS_DEFAULTS.validation),
@@ -917,6 +919,7 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
     "author_default",
     "item_format",
     "locks",
+    "checkpoints",
     "output",
     "history",
     "validation",
@@ -936,6 +939,7 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
   );
 
   ordered.locks = orderObject(ordered.locks as Record<string, unknown>, ["ttl_seconds"]);
+  ordered.checkpoints = orderObject(ordered.checkpoints as Record<string, unknown>, ["retention_days"]);
   ordered.output = orderObject(ordered.output as Record<string, unknown>, ["default_format"]);
   // compact_policy's own keys are emitted in deterministic order by mergeSettings
   // (it rebuilds the object as {enabled, max_entries, trigger}); only the top-level

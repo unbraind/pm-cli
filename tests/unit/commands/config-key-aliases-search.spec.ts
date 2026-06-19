@@ -53,6 +53,7 @@ const EXPECTED_GENERAL_ALIASES: Record<string, string> = {
   author_default: "author_default",
   output_default_format: "output.default_format",
   locks_ttl_seconds: "locks.ttl_seconds",
+  checkpoints_retention_days: "checkpoints.retention_days",
   schema_unknown_field_policy: "schema.unknown_field_policy",
   history_compact_policy_enabled: "history.compact_policy.enabled",
   history_compact_policy_max_entries: "history.compact_policy.max_entries",
@@ -265,7 +266,7 @@ describe("config general-setting aliases (pm-9byd / pm-nnaq)", () => {
       expect(descriptor, `missing nested-setting alias: ${alias}`).toBeDefined();
       expect(descriptor!.path).toBe(expectedPath);
     }
-    expect(Object.keys(EXPECTED_GENERAL_ALIASES)).toHaveLength(8);
+    expect(Object.keys(EXPECTED_GENERAL_ALIASES)).toHaveLength(9);
   });
 
   it("resolves both kebab-case and snake_case forms of each general alias", () => {
@@ -400,6 +401,32 @@ describe("config general-setting aliases (pm-9byd / pm-nnaq)", () => {
 
       await expect(
         runConfig("project", "set", "locks_ttl_seconds", {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot }, "0"),
+      ).rejects.toThrow(/>= 1/);
+    });
+  });
+
+  it("`pm config project set checkpoints_retention_days 30` parses integers and rejects 0", async () => {
+    await withTempRoot("pm-cli-ckpt-aliases-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      const accepted = await runConfig(
+        "project",
+        "set",
+        "checkpoints_retention_days",
+        {},
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        "30",
+      );
+      expect(accepted.nested_setting).toEqual({
+        key: "checkpoints_retention_days",
+        path: "checkpoints.retention_days",
+        kind: "integer",
+        value: 30,
+      });
+
+      await expect(
+        runConfig("project", "set", "checkpoints_retention_days", {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot }, "0"),
       ).rejects.toThrow(/>= 1/);
     });
   });

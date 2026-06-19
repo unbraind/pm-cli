@@ -239,6 +239,13 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     summary: "Claim/lock time-to-live in seconds before a stale lock can be reclaimed.",
   },
   {
+    key: "checkpoints_retention_days",
+    path: "checkpoints.retention_days",
+    kind: "integer",
+    min: 1,
+    summary: "Age in days above which pm gc --scope checkpoints prunes bulk-mutation rollback checkpoints.",
+  },
+  {
     key: "schema_unknown_field_policy",
     path: "schema.unknown_field_policy",
     kind: "string",

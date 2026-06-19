@@ -83,6 +83,7 @@ pm config project set id_prefix task                       # (id_prefix) IDs bec
 pm config project set author_default release-bot           # (author_default) default mutation author
 pm config project set output_default_format json           # (output.default_format) toon | json
 pm config project set locks_ttl_seconds 60                 # (locks.ttl_seconds) integer >= 1
+pm config project set checkpoints_retention_days 30        # (checkpoints.retention_days) integer >= 1; pm gc --scope checkpoints prunes checkpoints older than this many days
 pm config project set schema_unknown_field_policy reject   # (schema.unknown_field_policy) allow | warn | reject
 ```
 
