@@ -2,15 +2,20 @@ id: pm-5rge
 title: Add integration test for background-refresh (instant mutations) non-blocking behavior
 description: "The non-blocking background semantic refresh (PR #87, 2026-05-31) was the biggest perf win: create 2581->239ms, update 1693->265ms. The unit test in tests/unit/search-cache.spec.ts line 668 ('search background refresh') covers the cache-level behavior, but there is no integration test that verifies the end-to-end guarantee: a create/update command returns before the search reindex completes, and a subsequent search eventually reflects the change."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[4]: "area:tests",background-refresh,performance,search
 created_at: "2026-06-07T10:07:23.722Z"
-updated_at: "2026-06-09T22:05:02.817Z"
-assignee: codex-active-pm-cycle-20260610
+updated_at: "2026-06-19T21:57:30.554Z"
 author: audit-docs-tests-agent
 acceptance_criteria: "- Integration test or expanded unit test that:\n- Creates an item\n- Verifies mutation returns promptly (not waiting for reindex)\n- Polls or waits for reindex completion\n- Verifies pm search can find the new item\n- OR: a documented reason why this is adequately covered by existing tests"
 parent: pm-u9d0
 risk: low
 confidence: medium
+resolution: "Integration test asserts the user-facing guarantee: create/update reflect in keyword search with no explicit reindex (synchronous keyword-cache invalidation), the stale token stops matching, and no pending-refresh ids are stranded. The detached-worker dispatch decision is forced inline under test runners (shouldRunSearchRefreshInForeground) and is already unit-covered in search-cache.spec.ts:691; documented in the spec header."
+expected_result: "End-to-end non-blocking mutation->search behavior covered, or documented adequacy."
+actual_result: 1 deterministic integration test (no timing/flake); dispatch decision cross-referenced to existing unit coverage.
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/background-refresh-nonblocking.integration.spec.ts,tests/integration/background-refresh-nonblocking.integration.spec.ts,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Added tests/integration/background-refresh-nonblocking.integration.spec.ts covering the instant-mutation search guarantee.
 body: "## Context\nPR #87 shipped: detached worker + reindex lock for non-blocking search refresh (src/core/search/background-refresh.ts).\n\nUnit test: tests/unit/search-cache.spec.ts line 668 describes 'search background refresh'.\n\nThe background refresh uses a detached child process. No integration test verifies:\n1. create/update returns quickly (before reindex)\n2. a subsequent pm search eventually reflects the new item\n3. the reindex lock prevents duplicate workers\n\n## Acceptance criteria\n- Integration test or expanded unit test that:\n  - Creates an item\n  - Verifies mutation returns promptly (not waiting for reindex)\n  - Polls or waits for reindex completion\n  - Verifies pm search can find the new item\n- OR: a documented reason why this is adequately covered by existing tests\n\n## Evidence\ntests/unit/search-cache.spec.ts line 668; src/core/search/background-refresh.ts; PR #87 session notes"

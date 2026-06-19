@@ -4,6 +4,10 @@
 
 ### Added
 
+- Add 120-file unit-test cap governance test to ci-workflow-contract.spec.ts ([pm-wc0d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-wc0d.toon))
+- Add integration test for background-refresh \(instant mutations\) non-blocking behavior ([pm-5rge](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5rge.toon))
+- Add integration test for close-many --rollback checkpoint restore ([pm-7p4w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7p4w.toon))
+- Add integration test for schema add-type / remove-type round-trip with governance.workflow\_enforcement ([pm-4dtf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-4dtf.toon))
 - Add remediation registry entry for validate\_metadata\_duplicate\_issue\_codes warning ([pm-sdbo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-sdbo.toon))
 - Add remediation registry entry for extension\_update\_health\_partial\_coverage warning ([pm-bdvm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-bdvm.toon))
 - gc --scope checkpoints: prune stale bulk-mutation checkpoint files ([pm-tyj8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-tyj8.toon))
@@ -34,6 +38,7 @@
 
 ### Other
 
+- Document search eval golden-query harness usage in TESTING.md ([pm-eg9k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-eg9k.toon))
 - Sentry tracesSampleRate is hardcoded at 0.2 — expose as configurable knob or document intent ([pm-gg8e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-gg8e.toon))
 - CLAUDE\_CODE\_PLUGIN.md drift: architecture tree shows 9/14 commands + 1/4 agents; compat table says plugin 1.0.0 \(actual 1.4.0\) ([pm-cxi9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-cxi9.toon))
 - Docs index missing EXTENSION\_AUTHOR\_CONTRACTS + MIGRATION\_CLI\_SIMPLIFICATION links; migration note predates --pm-path ([pm-c97q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-c97q.toon))
