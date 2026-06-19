@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: agent-ux,"area:observability","area:validate"
 created_at: "2026-06-19T20:43:00.587Z"
-updated_at: "2026-06-19T20:57:52.778Z"
+updated_at: "2026-06-19T21:34:41.938Z"
 author: claude-code-agent
 acceptance_criteria: Add validate_metadata_duplicate_issue_codes to REMEDIATION_REGISTRY with an executable command + summary covering the rename-or-close-as-duplicate fix; the mutual-exclusivity test still passes; pm validate --fix-hints on a tracker with duplicate issue codes lists the fix command.
 parent: pm-5oj5
@@ -17,5 +17,7 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-bdvm,related,"2026-06-19T20:43:15.520Z",null,null
   pm-cc04,related,"2026-06-19T20:43:15.520Z",null,null
   pm-sz6w,related,"2026-06-19T20:43:15.520Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-06-19T21:34:41.938Z",claude-code-agent,"Post-merge evidence (PR #306, merged 2026-06-19T21:31:53Z, commit c7697a2e): all CI green. Sandbox-verified pm validate --check-metadata --fix-hints lists 'pm update <id> --title \"<distinct title>\"' for duplicate-issue-code findings. Summary now suggests structured 'pm close <id> --duplicate-of <canonical-id>' (Gemini review). CodeRabbit + Gemini converged with no remaining findings."
 close_reason: "Implemented: added validate_metadata_duplicate_issue_codes to REMEDIATION_REGISTRY with command 'pm update <id> --title \"<distinct title>\"' and a summary covering the rename-or-close-as-duplicate fix. pm validate --check-metadata --fix-hints now lists the fix command for duplicate-issue-code findings (GH-235) instead of leaving them with no machine-executable remediation."
 body: ""

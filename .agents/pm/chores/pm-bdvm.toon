@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: agent-ux,"area:health","area:observability"
 created_at: "2026-06-07T10:03:47.039Z"
-updated_at: "2026-06-19T20:57:52.270Z"
+updated_at: "2026-06-19T21:34:41.606Z"
 author: audit-observability-agent
 acceptance_criteria: "- Add `extension_update_health_partial_coverage` code to REMEDIATION_REGISTRY with command: 'pm extension --adopt-all --project' and a summary explaining the adoption flow.\n- The existing mutually-exclusive-codes test in remediation-registry.spec.ts still passes.\n- pm health --json on a repo with unmanaged extensions shows remediation_map for this code."
 parent: pm-5oj5
@@ -15,5 +15,7 @@ confidence: high
 resolution: "src/core/diagnostics/remediation.ts: new extensions-section registry entry. src/cli/commands/health.ts: checkRemediationSources made total and extensions:extensionCheck.warnings added; dead 'sources===undefined' guard removed. Tests: health-command.spec remediation_map assertion + remediation-registry.spec resolveRemediation assertion. Verified in sandbox (skipped_unmanaged:1 -> adopt-all command)."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-sdbo,related,"2026-06-19T20:43:15.807Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-06-19T21:34:41.606Z",claude-code-agent,"Post-merge evidence (PR #306, merged 2026-06-19T21:31:53Z, commit c7697a2e): all CI green (coverage 100/100/100/100, static + docs-skills + typecheck + smokes + CodeQL). CodeRabbit clean, Gemini no findings (after the --duplicate-of fix on the sibling pm-sdbo). Sandbox-verified pm health --json emits remediation_map={extension_update_health_partial_coverage:'pm extension --adopt-all --project'} on an unmanaged extension. Telemetry stack healthy (12.5k events/24h); Sentry shows no new errors from this session."
 close_reason: "Implemented: added extension_update_health_partial_coverage to REMEDIATION_REGISTRY (command 'pm extension --adopt-all --project') and wired the extensions check into pm health's checkRemediationSources (now total over HealthCheck['name']). pm health --json on a repo with unmanaged extensions now emits details.remediation_map for this code; other per-extension findings keep their richer triage.remediation and resolve to nothing in the registry."
 body: "## Context\n\nFile: src/cli/commands/health.ts line 705 — warning `extension_update_health_partial_coverage:skipped_unmanaged:<count>` is emitted when extensions are unmanaged.\n\nFile: src/core/diagnostics/remediation.ts — no entry for `extension_update_health_partial_coverage`. The comment at line 40 says extension findings are excluded, but partial-coverage is not a per-extension triage result — it is a system-wide finding about adoption gaps, making it a legitimate registry candidate.\n\n## Acceptance criteria\n\n- Add `extension_update_health_partial_coverage` code to REMEDIATION_REGISTRY with command: 'pm extension --adopt-all --project' and a summary explaining the adoption flow.\n- The existing mutually-exclusive-codes test in remediation-registry.spec.ts still passes.\n- pm health --json on a repo with unmanaged extensions shows remediation_map for this code.\n\n## Evidence\n\nsrc/cli/commands/health.ts:705 — warning code emitted.\nsrc/core/diagnostics/remediation.ts:43 — registry list; no extension_update_health_partial_coverage entry."
