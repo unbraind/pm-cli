@@ -21,6 +21,7 @@
 
 ### Changed
 
+- Replace 'as unknown as ItemMetadata' double-casts \(9 sites\) with typed mutation/replay returns ([pm-ul02](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ul02.toon))
 - COMMANDS.md omits pm get and pm copy; command-families table missing get/copy/update-many/close-many ([pm-xvzm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-xvzm.toon))
 
 ### Fixed
@@ -39,6 +40,7 @@
 
 ### Other
 
+- Export hygiene: 1 dead export + ~57 exported-but-internal-only symbols ([pm-vn9l](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-vn9l.toon))
 - Document search eval golden-query harness usage in TESTING.md ([pm-eg9k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-eg9k.toon))
 - Sentry tracesSampleRate is hardcoded at 0.2 — expose as configurable knob or document intent ([pm-gg8e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-gg8e.toon))
 - CLAUDE\_CODE\_PLUGIN.md drift: architecture tree shows 9/14 commands + 1/4 agents; compat table says plugin 1.0.0 \(actual 1.4.0\) ([pm-cxi9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-cxi9.toon))

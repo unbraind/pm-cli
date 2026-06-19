@@ -768,7 +768,7 @@ async function planCreate(
     },
   });
 
-  let finalMetadata: ItemMetadata = seedResult.item as unknown as ItemMetadata;
+  let finalMetadata: ItemMetadata = seedResult.item;
   let initialStep: PlanStep | undefined;
   const initialValidationText = options.validationText?.trim();
   const initialValidationCommand = options.validationCommand?.trim();
@@ -890,7 +890,7 @@ async function planCreate(
         return { changedFields: initialValidation ? ["plan_steps", "plan_validation"] : ["plan_steps"] };
       },
     });
-    finalMetadata = stepped.item as unknown as ItemMetadata;
+    finalMetadata = stepped.item;
   } else if (initialValidation) {
     const validated = await mutateItem({
       pmRoot: ctx.pmRoot,
@@ -905,7 +905,7 @@ async function planCreate(
         return { changedFields: ["plan_validation"] };
       },
     });
-    finalMetadata = validated.item as unknown as ItemMetadata;
+    finalMetadata = validated.item;
   } else if (hasPerStepDetailOptions) {
     throw new PmCliError("pm plan create step options require --step-title (or a single --step)", EXIT_CODE.USAGE, {
       code: "missing_required_option",
@@ -925,7 +925,7 @@ async function planCreate(
         return { changedFields: ["assignee"] };
       },
     });
-    finalMetadata = claimed.item as unknown as ItemMetadata;
+    finalMetadata = claimed.item;
   }
 
   const plan = projectPlan(finalMetadata, "brief");
@@ -998,7 +998,7 @@ async function mutatePlanSteps(args: MutateStepArgs): Promise<{ document: ItemDo
     },
   });
   return {
-    document: { metadata: result.item as unknown as ItemMetadata, body: result.body },
+    document: { metadata: result.item, body: result.body },
     resultStep,
     itemId: result.item.id,
   };

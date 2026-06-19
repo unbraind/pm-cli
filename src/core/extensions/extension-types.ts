@@ -220,32 +220,6 @@ export interface ExtensionManifest {
 }
 
 /**
- * Author-facing `manifest.json` fields recognized by the extension loader, plus
- * `$schema` (tolerated for inline IDE validation against
- * `docs/schemas/extension-manifest.schema.json`). `legacy_capability_aliases`
- * is loader-derived, never authored, so it is intentionally absent. A
- * governance test keeps the published JSON Schema's `properties` in sync with
- * this list.
- */
-export const KNOWN_EXTENSION_MANIFEST_FIELDS = Object.freeze([
-  "$schema",
-  "name",
-  "version",
-  "entry",
-  "priority",
-  "manifest_version",
-  "pm_min_version",
-  "pm_max_version",
-  "engines",
-  "trusted",
-  "provenance",
-  "sandbox_profile",
-  "permissions",
-  "capabilities",
-  "activation",
-] as const) satisfies readonly (Exclude<keyof ExtensionManifest, "legacy_capability_aliases"> | "$schema")[];
-
-/**
  * Documents the extension diagnostic payload exchanged by command, SDK, and package integrations.
  */
 export interface ExtensionDiagnostic {

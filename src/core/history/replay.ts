@@ -42,10 +42,7 @@ export function cloneEmptyReplayDocument(): ReplayDocument {
  */
 export function replayHash(document: ReplayDocument): string {
   try {
-    return hashDocument({
-      metadata: document.metadata as unknown as ItemMetadata,
-      body: document.body,
-    });
+    return hashDocument(replayToItemDocument(document));
   } catch {
     // Legacy/malformed replay states (for example a stream whose first entry never
     // established a full `create` document, so the canonicalizer cannot normalize it)
@@ -62,9 +59,21 @@ export function replayHash(document: ReplayDocument): string {
  */
 export function replayToItemDocument(document: ReplayDocument): ItemDocument {
   return {
-    metadata: document.metadata as unknown as ItemMetadata,
+    metadata: document.metadata as ItemMetadata,
     body: document.body,
   };
+}
+
+/**
+ * Converts a materialized replay document into a canonical item document. Use
+ * this when callers have already rejected the empty/deleted replay state and
+ * need restored metadata validated through the normal front-matter rules.
+ */
+export function replayToCanonicalItemDocument(
+  document: ReplayDocument,
+  options: Parameters<typeof canonicalDocument>[1] = {},
+): ItemDocument {
+  return canonicalDocument(replayToItemDocument(document), options);
 }
 
 /**
