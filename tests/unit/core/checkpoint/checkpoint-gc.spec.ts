@@ -124,6 +124,44 @@ describe("runCheckpointGc — safety-first retention of unreasonable files", () 
     expect(result.retained).toEqual(["checkpoints/update-many/dir.json"]);
   });
 
+  it("warns and continues when a checkpoint subdirectory is unreadable", async () => {
+    await writeCheckpoint("update-many/old.json", { created_at: isoDaysAgo(40) });
+    const realReaddir = fs.readdir.bind(fs) as typeof fs.readdir;
+    const subdirSuffix = path.join("checkpoints", "update-many");
+    vi.spyOn(fs, "readdir").mockImplementation(((target: Parameters<typeof fs.readdir>[0], options?: unknown) => {
+      if (typeof target === "string" && target.endsWith(subdirSuffix)) {
+        return Promise.reject(Object.assign(new Error("denied"), { code: "EACCES" }));
+      }
+      return (realReaddir as (...args: unknown[]) => unknown)(target, options);
+    }) as never);
+    const result = await runCheckpointGc(tempDir, { dryRun: false, retentionDays: 7 });
+    expect(result.warnings).toEqual(["checkpoint_subdir_unreadable:update-many"]);
+    expect(result.scanned).toBe(0);
+    expect(result.removed).toEqual([]);
+  });
+
+  it("skips a checkpoint subdirectory that vanishes during the scan (ENOENT, no warning)", async () => {
+    await writeCheckpoint("update-many/old.json", { created_at: isoDaysAgo(40) });
+    const realReaddir = fs.readdir.bind(fs) as typeof fs.readdir;
+    const subdirSuffix = path.join("checkpoints", "update-many");
+    vi.spyOn(fs, "readdir").mockImplementation(((target: Parameters<typeof fs.readdir>[0], options?: unknown) => {
+      if (typeof target === "string" && target.endsWith(subdirSuffix)) {
+        return Promise.reject(Object.assign(new Error("gone"), { code: "ENOENT" }));
+      }
+      return (realReaddir as (...args: unknown[]) => unknown)(target, options);
+    }) as never);
+    const result = await runCheckpointGc(tempDir, { dryRun: false, retentionDays: 7 });
+    expect(result.warnings).toEqual([]);
+    expect(result.scanned).toBe(0);
+  });
+
+  it("disables pruning when retentionDays is non-finite (bad input never deletes)", async () => {
+    await writeCheckpoint("update-many/ancient.json", { created_at: isoDaysAgo(9999) });
+    const result = await runCheckpointGc(tempDir, { dryRun: false, retentionDays: Number.POSITIVE_INFINITY });
+    expect(result.removed).toEqual([]);
+    expect(result.retained).toEqual(["checkpoints/update-many/ancient.json"]);
+  });
+
   it("skips a checkpoint that vanishes between scan and read (ghost)", async () => {
     await writeCheckpoint("update-many/ghost.json", { created_at: isoDaysAgo(40) });
     const enoent = Object.assign(new Error("gone"), { code: "ENOENT" });

@@ -293,6 +293,21 @@ describe("runGc", () => {
     });
   });
 
+  it("omits the unrecoverable-checkpoints guidance under dry-run", async () => {
+    await withTempPmPath(async (context) => {
+      const updateManyDir = path.join(context.pmPath, "checkpoints", "update-many");
+      await mkdir(updateManyDir, { recursive: true });
+      const oldAt = new Date(Date.now() - 40 * 24 * 3600 * 1000).toISOString();
+      await writeFile(path.join(updateManyDir, "old.json"), JSON.stringify({ created_at: oldAt }), "utf8");
+
+      const gc = await runGc({ path: context.pmPath }, { scope: ["checkpoints"], dryRun: true });
+      expect(gc.removed).toEqual(["checkpoints/update-many/old.json"]);
+      expect(gc.guidance).toEqual(["Dry-run preview only: no cache artifacts were deleted."]);
+      // The checkpoint must still exist after a dry run.
+      await expect(fs.stat(path.join(updateManyDir, "old.json"))).resolves.toBeTruthy();
+    });
+  });
+
   it("honors a configured checkpoints.retention_days override", async () => {
     await withTempPmPath(async (context) => {
       const setResult = context.runCli(["config", "set", "checkpoints_retention_days", "3"]);

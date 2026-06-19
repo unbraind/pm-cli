@@ -229,7 +229,7 @@ function buildGcGuidance(params: {
   if (params.removed.includes("runtime/history-drift-cache.json")) {
     guidance.push('History drift cache was removed; the next "pm health" run performs a full history-drift re-scan.');
   }
-  if (params.removed.some((entry) => entry.startsWith("checkpoints/"))) {
+  if (!params.dryRun && params.removed.some((entry) => entry.startsWith("checkpoints/"))) {
     guidance.push(
       'Aged rollback checkpoints were removed; their "pm update-many"/"pm close-many --rollback" windows are no longer recoverable.',
     );

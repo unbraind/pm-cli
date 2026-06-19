@@ -48,7 +48,11 @@ export interface CheckpointGcHooks {
  */
 export interface CheckpointGcOptions {
   dryRun: boolean;
-  /** Prune checkpoints older than this many days; clamped to a non-negative finite value. */
+  /**
+   * Prune checkpoints older than this many days. Negative values are clamped to
+   * zero (prune everything aged); a non-finite value (NaN/Infinity) disables
+   * pruning entirely so bad input never deletes recoverable checkpoints.
+   */
   retentionDays: number;
   /** Epoch ms; defaults to Date.now() — injectable for deterministic tests. */
   now?: number;
@@ -91,8 +95,15 @@ function readCheckpointCreatedAt(raw: string): string | null {
   return typeof createdAt === "string" ? createdAt : null;
 }
 
-/** Recursively collect relative `checkpoints/<subdir>/<file>.json` paths under the checkpoints root. */
-async function collectCheckpointFiles(checkpointsDir: string): Promise<string[]> {
+/**
+ * Collect relative `checkpoints/<subdir>/<file>.json` (and top-level `<file>.json`)
+ * paths under the checkpoints root. Subdirectory reads are resilient to
+ * concurrent races: a subdir that vanishes between the parent `readdir` and its
+ * own `readdir` (ENOENT) is skipped quietly, and any other read failure (e.g. a
+ * permission error) is surfaced as a `checkpoint_subdir_unreadable:<name>`
+ * warning rather than aborting the whole sweep.
+ */
+async function collectCheckpointFiles(checkpointsDir: string, warnings: string[]): Promise<string[]> {
   let dirEntries: Dirent[];
   try {
     dirEntries = await fs.readdir(checkpointsDir, { withFileTypes: true });
@@ -106,7 +117,15 @@ async function collectCheckpointFiles(checkpointsDir: string): Promise<string[]>
   for (const entry of dirEntries) {
     if (entry.isDirectory()) {
       const subdir = path.join(checkpointsDir, entry.name);
-      const nested = await fs.readdir(subdir);
+      let nested: string[];
+      try {
+        nested = await fs.readdir(subdir);
+      } catch (error: unknown) {
+        if (!isErrno(error, "ENOENT")) {
+          warnings.push(`checkpoint_subdir_unreadable:${entry.name}`);
+        }
+        continue;
+      }
       for (const file of nested) {
         if (file.endsWith(".json")) {
           files.push(`${entry.name}/${file}`);
@@ -127,6 +146,9 @@ export async function runCheckpointGc(pmRoot: string, options: CheckpointGcOptio
   const nowMs = options.now ?? Date.now();
   const retentionMs = Math.max(0, options.retentionDays) * MILLISECONDS_PER_DAY;
   const checkpointsDir = path.join(pmRoot, "checkpoints");
+  // A non-finite retentionMs (NaN/Infinity from a non-finite retentionDays)
+  // makes every `ageMs > retentionMs` comparison false, so nothing is pruned —
+  // pruning is disabled rather than risking deletion under bad input.
 
   const result: CheckpointGcResult = {
     scanned: 0,
@@ -136,7 +158,7 @@ export async function runCheckpointGc(pmRoot: string, options: CheckpointGcOptio
     entries: [],
   };
 
-  const files = await collectCheckpointFiles(checkpointsDir);
+  const files = await collectCheckpointFiles(checkpointsDir, result.warnings);
   for (const relName of files) {
     const absPath = path.join(checkpointsDir, relName);
     const relPath = `checkpoints/${relName}`;
