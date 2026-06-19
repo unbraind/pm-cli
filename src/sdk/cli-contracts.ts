@@ -299,6 +299,16 @@ export const DEDUPE_AUDIT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--release" },
 ];
 
+export const DEDUPE_MERGE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--keep" },
+  { flag: "--close", list: true },
+  { flag: "--apply" },
+  { flag: "--dry-run" },
+  { flag: "--skip-children" },
+  { flag: "--author" },
+  { flag: "--message" },
+];
+
 export const COMMENTS_AUDIT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--status" },
   { flag: "--type" },
@@ -466,6 +476,7 @@ export const PLAN_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--body" },
   { flag: "--claim" },
   { flag: "--from-search", aliases: ["--from_search"] },
+  { flag: "--template" },
   { flag: "--step-title", aliases: ["--step_title"] },
   // pm-6mit: --step is a Commander collect repeatable (ordered step titles on
   // create; single-value stepTitle alias elsewhere). It must NOT be list:true —

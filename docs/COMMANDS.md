@@ -38,7 +38,7 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 | Packages | `install`, `upgrade`, `package`, `packages`, `extension`, package/extension command groups | install, upgrade, manage, and run package-backed extension commands |
 | Machines | `contracts`, `help`, optional `guide`/`completion` | command contracts plus optional guide-shell docs routing and shell helpers |
 
-`*` `dedupe-audit` is provided by the optional `governance-audit` package (`pm install governance-audit --project`).
+`*` `dedupe-audit` and `dedupe-merge` are provided by the optional `governance-audit` package (`pm install governance-audit --project`).
 
 ## Bootstrap
 
@@ -82,8 +82,9 @@ pm list-open --type Task --priority 1 --limit 20
 pm list-in-progress --limit 20
 pm aggregate --group-by parent,type --status open
 pm aggregate --group-by parent,type --completion --include-unparented
-pm install governance-audit --project   # if dedupe-audit is not available
+pm install governance-audit --project   # if dedupe-audit / dedupe-merge are not available
 pm dedupe-audit --mode parent_scope --limit 20
+pm dedupe-merge --keep pm-canonical --close pm-duplicate --dry-run
 ```
 
 Use `context` first for a compact active-work snapshot. Use `search` when the request names a concept, component, or prior issue.
@@ -683,6 +684,7 @@ The option composes with `--defaults`, `--preset`, `--author`, `--agent-guidance
 ```bash
 pm plan create --title "Refactor lock retry" --scope "Improve retry semantics" --harness claude-code --parent pm-epic1 --related pm-rel1,pm-rel2 --claim
 pm plan create --title "Fix flaky retry test" --step "Read lock.ts" --step "Write the fix" --step "Run the tests"
+pm plan create --title "Investigate release failure" --template bug-investigation
 pm plan add-step <plan-id> --step-title "Read lock.ts" --step-body "Inspect retry path" --depends-on pm-task1
 pm plan update-step <plan-id> plan-step-001 --step-status in_progress --step-evidence "started reading lock.ts"
 pm plan complete-step <plan-id> plan-step-001 --step-evidence "lock.ts read; retry path captured"
@@ -723,6 +725,7 @@ Subcommand cheatsheet:
 Invariants:
 
 - Exactly one step is `in_progress` per Plan; pass `--allow-multiple-active` for explicit parallel branches.
+- `create --template <name>` seeds ordered pending steps from a built-in template. Available templates are `bug-investigation`, `feature-implementation`, and `refactoring-sprint`; templates cannot be combined with explicit `--step` or `--step-title` values.
 - Blocking a step requires `--step-blocked-reason` (or an already-recorded reason).
 - `create` accepts repeated `--step <title>` flags to seed ordered steps in argv order (values are never comma-split). When `--step-title` is also given it becomes the first step. Per-step detail flags (`--step-body`, `--step-status`, `--file`, ...) apply to a single initial step only; combining them with multiple `--step` values is a usage error — create the plan first, then refine steps with `add-step`/`update-step`. On step subcommands a single `--step` value still aliases `--step-title`.
 - `materialize` adds `discovered_from` + `parent` to each new item and an `implements` link back on the source step plus a `child` dependency on the Plan.

@@ -2,11 +2,37 @@ id: pm-jmld
 title: "Dedupe merge workflow: pm dedupe-audit --merge to consolidate duplicates (GH-163, builds on closed pm-4n1a detection)"
 description: "governance-audit package detects duplicates (title_exact/title_fuzzy/parent_scope). Remaining: guided merge — move children/comments/files to canonical, close dupes with duplicate_of (lands with pm-xnkd). GitHub issue #163."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[3]: backlog,cli,dedupe
 created_at: "2026-06-10T09:00:57.022Z"
-updated_at: "2026-06-10T09:00:57.022Z"
+updated_at: "2026-06-19T00:59:57.609Z"
 author: maintainer-agent
 parent: pm-mpbb
+resolution: "Implemented guided duplicate consolidation via pm dedupe-merge, exposed through SDK runtime and governance-audit package commands."
+expected_result: "Agents can preview or apply duplicate consolidation, reparent active children to the canonical item, and close duplicates with duplicate_of metadata."
+actual_result: "dedupe-merge is implemented, packaged, documented, contract-hinted, manually smoke-tested, and covered by 100% repo coverage."
+comments[4]{created_at,author,text}:
+  "2026-06-19T00:23:36.628Z",claude-code-agent,"Continuation note: Codex resumed existing branch feat/dedupe-merge-plan-discoverability on 2026-06-19, verified no open GitHub PRs, found GitHub issue #163 maps to this item, and will finish the dedupe merge implementation without creating duplicate tracker items."
+  "2026-06-19T00:29:42.142Z",claude-code-agent,"Dependency/security sweep: pnpm audit --audit-level moderate reported no known vulnerabilities. pnpm outdated reports commander 14.0.3 -> 15.0.0 only; npm metadata for commander@15.0.0 requires node >=22.12.0 while this repo still supports CI Node 20, so this PR intentionally keeps commander 14.0.3."
+  "2026-06-19T00:58:19.217Z",claude-code-agent,"Verification evidence: focused dedupe/governance/contracts linked test passed after final coverage additions (4 files, 70 tests). Full repo coverage passed: 229 test files, 4620 tests, Statements 100% (29612/29612), Branches 100% (23185/23185), Functions 100% (4920/4920), Lines 100% (28460/28460)."
+  "2026-06-19T00:59:37.599Z",claude-code-agent,"Closeout evidence: temp-dir manual smoke initialized an isolated project with PM_PATH/PM_GLOBAL_PATH, installed governance-audit, verified dedupe-merge appears in command discovery, applied a merge that reparented an active child to the canonical item, and closed the duplicate with duplicate_of. Sentry check: no unresolved pm-cli issues in last 24h; sentry-telemetry gate passed critical=0 high=0. Telemetry status enabled with successful flush at 2026-06-19T00:58:39Z."
+files[8]{path,scope,note}:
+  packages/pm-governance-audit/extensions/governance-audit/index.ts,project,package command registration
+  packages/pm-governance-audit/extensions/governance-audit/runtime.ts,project,package runtime option normalization
+  src/cli/commands/dedupe-merge.ts,project,core guided duplicate merge runtime
+  src/sdk/runtime.ts,project,SDK runtime export for dedupe merge
+  tests/fixtures/contracts/full.json,project,contract snapshot update
+  tests/unit/commands/dedupe-merge-command.spec.ts,project,dedupe merge command regression tests
+  tests/unit/extensions/builtin-extension-entrypoints.spec.ts,project,builtin package entrypoint coverage
+  tests/unit/packages/governance-audit-runtime.spec.ts,project,package runtime regression tests
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/dedupe-merge-command.spec.ts tests/unit/packages/governance-audit-runtime.spec.ts tests/unit/extensions/builtin-extension-entrypoints.spec.ts tests/unit/commands/contracts-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqk6y80n-1n4z3d,test,passed,"2026-06-19T00:28:27.714Z","2026-06-19T00:29:08.759Z","2026-06-19T00:29:08.759Z",null,null,1,0,0,null,null,null
+  test-local-mqk78ore-h6co0a,test,passed,"2026-06-19T00:36:30.904Z","2026-06-19T00:37:17.018Z","2026-06-19T00:37:17.018Z",null,null,1,0,0,null,null,null
+  test-local-mqk7j0h6-7iq0at,test,passed,"2026-06-19T00:44:30.389Z","2026-06-19T00:45:18.762Z","2026-06-19T00:45:18.762Z",null,null,1,0,0,null,null,null
+docs[1]{path,scope,note}:
+  packages/pm-governance-audit/README.md,project,document dedupe-merge package command
+close_reason: "Implemented dedupe-merge workflow for GH-163 with SDK/runtime/package command exposure, package docs, contract hints, tests, manual smoke, and 100% coverage evidence."
 body: ""

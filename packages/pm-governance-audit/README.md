@@ -19,6 +19,7 @@ bodies and full before/after snapshots.
 ## Commands
 
 - `pm dedupe-audit`
+- `pm dedupe-merge`
 - `pm comments-audit`
 - `pm normalize`
 
@@ -32,6 +33,7 @@ pm install governance-audit --project
 
 ```bash
 pm dedupe-audit --mode parent_scope --limit 20 --json
+pm dedupe-merge --keep pm-canonical --close pm-duplicate --dry-run --json
 pm comments-audit --latest 3 --limit-items 20 --json
 pm normalize --dry-run --json
 ```

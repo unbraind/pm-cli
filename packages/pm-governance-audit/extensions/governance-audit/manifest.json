@@ -17,6 +17,6 @@
   "manifest_version": 1,
   "pm_min_version": "2026.5.0",
   "activation": {
-    "commands": ["comments-audit", "dedupe-audit", "normalize"]
+    "commands": ["comments-audit", "dedupe-audit", "dedupe-merge", "normalize"]
   }
 }

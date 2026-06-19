@@ -1073,6 +1073,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--body <value>", "Plan item body")
     .option("--claim", "Claim the plan on create for the author")
     .option("--from-search <value>", "Record the search query that led to plan creation")
+    .option("--template <value>", "Seed plan steps from a built-in template: bug-investigation|feature-implementation|refactoring-sprint")
     .option("--step-title <value>", "Step title for add-step / update-step")
     // pm-6mit: --step is a Commander collect repeatable so `pm plan create
     // --step A --step B` seeds ordered steps (previously a single-value alias

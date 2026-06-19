@@ -122,6 +122,7 @@ export interface PlanCommandOptions {
   depth?: string;
   fields?: string;
   steps?: string;
+  template?: string;
   materializeType?: string;
   materializeParent?: string;
   materializeTags?: string;
@@ -182,10 +183,79 @@ export interface PlanStepSummary {
   completed: number;
   skipped: number;
   superseded: number;
+  /**
+   * Whole-percent step-completion progress (`round(completed / total * 100)`),
+   * surfaced so agents see plan progress without recomputing it (GH-158 #5).
+   */
+  completion_pct: number;
 }
 
 const STEP_ID_PREFIX = "plan-step-";
 const DEFAULT_PLAN_MODE: PlanMode = "draft";
+
+export const PLAN_TEMPLATE_NAMES = ["bug-investigation", "feature-implementation", "refactoring-sprint"] as const;
+/**
+ * Restricts plan template names accepted by `pm plan create --template` (GH-158 #2).
+ */
+export type PlanTemplateName = (typeof PLAN_TEMPLATE_NAMES)[number];
+
+interface PlanTemplateStepSeed {
+  title: string;
+  body: string;
+}
+
+// Built-in step scaffolds for the most common agent workflows. Each seeds an
+// ordered list of pending steps so `pm plan create --template <name>` produces a
+// ready-to-execute plan instead of an empty shell (GH-158 #2).
+const PLAN_TEMPLATES: Record<PlanTemplateName, PlanTemplateStepSeed[]> = {
+  "bug-investigation": [
+    { title: "Reproduce the bug", body: "Capture exact steps, inputs, and the observed vs expected behavior." },
+    { title: "Locate the root cause", body: "Trace the failure to the responsible code path with evidence." },
+    { title: "Write a failing test", body: "Add a regression test that fails for the current bug." },
+    { title: "Implement the fix", body: "Apply the minimal change that makes the failing test pass." },
+    { title: "Verify and document", body: "Run the full suite and record the resolution and verification." },
+  ],
+  "feature-implementation": [
+    { title: "Clarify requirements & acceptance criteria", body: "Confirm scope, edge cases, and done-conditions." },
+    { title: "Design the approach", body: "Decide the data model, interfaces, and integration points." },
+    { title: "Implement the change", body: "Build the feature behind the agreed design." },
+    { title: "Add tests", body: "Cover the new behavior and its edge cases." },
+    { title: "Update docs & changelog", body: "Document the feature and surface it to users." },
+  ],
+  "refactoring-sprint": [
+    { title: "Map the current structure & risks", body: "Inventory the code to change and its blast radius." },
+    { title: "Add characterization tests", body: "Lock in current behavior before refactoring." },
+    { title: "Refactor incrementally", body: "Apply small, reversible steps keeping tests green." },
+    { title: "Verify behavior is unchanged", body: "Run the full suite and compare against the baseline." },
+    { title: "Clean up & document", body: "Remove dead code and record the new structure." },
+  ],
+};
+
+/**
+ * Resolves the ordered step seeds for a built-in plan template, rejecting
+ * unknown names with the allowed set so agents can self-correct.
+ */
+export function resolvePlanTemplateSteps(raw: string): PlanTemplateStepSeed[] {
+  const normalized = raw.trim().toLowerCase();
+  const template = Object.prototype.hasOwnProperty.call(PLAN_TEMPLATES, normalized)
+    ? PLAN_TEMPLATES[normalized as PlanTemplateName]
+    : undefined;
+  if (!template) {
+    throw new PmCliError(`Unknown plan template "${raw}". Allowed: ${PLAN_TEMPLATE_NAMES.join(", ")}`, EXIT_CODE.USAGE, {
+      code: "unknown_plan_template",
+      examples: [`pm plan create --title "Fix login crash" --template ${PLAN_TEMPLATE_NAMES[0]}`],
+    });
+  }
+  return template.map((step) => ({ ...step }));
+}
+
+/**
+ * Computes whole-percent step completion (`round(completed / total * 100)`),
+ * returning 0 for an empty plan so the field is always a stable number.
+ */
+function planCompletionPct(completed: number, total: number): number {
+  return total > 0 ? Math.round((completed / total) * 100) : 0;
+}
 
 /* c8 ignore start -- detailed plan helper branches are validated through broader plan workflow integration tests. */
 function resolveAuthor(candidate: string | undefined, fallback: string): string {
@@ -410,10 +480,12 @@ function summarizeSteps(steps: PlanStep[]): PlanStepSummary {
     completed: 0,
     skipped: 0,
     superseded: 0,
+    completion_pct: 0,
   };
   for (const step of steps) {
     summary[step.status] += 1;
   }
+  summary.completion_pct = planCompletionPct(summary.completed, summary.total);
   return summary;
 }
 
@@ -714,7 +786,12 @@ async function planCreate(
   // followed by each repeated --step value in argv order.
   const stepTitleFlag = options.stepTitle?.trim();
   const repeatedStepTitles = toOrderedStepTitles(options.step);
-  const stepTitles = stepTitleFlag ? [stepTitleFlag, ...repeatedStepTitles] : repeatedStepTitles;
+  const templateSteps = options.template?.trim() ? resolvePlanTemplateSteps(options.template) : [];
+  const stepTitles = [
+    ...(stepTitleFlag ? [stepTitleFlag] : []),
+    ...repeatedStepTitles,
+    ...templateSteps.map((step) => step.title),
+  ];
   const hasPerStepDetailOptions =
     Boolean(options.stepBody?.trim()) ||
     Boolean(options.stepOwner?.trim()) ||
@@ -727,6 +804,19 @@ async function planCreate(
     toSpecArray(options.file).length > 0 ||
     toSpecArray(options.test).length > 0 ||
     toSpecArray(options.doc).length > 0;
+  if ((stepTitleFlag || repeatedStepTitles.length > 0) && templateSteps.length > 0) {
+    throw new PmCliError(
+      "pm plan create --template cannot be combined with --step-title or --step; choose one step seeding source",
+      EXIT_CODE.USAGE,
+      {
+        code: "ambiguous_option_combination",
+        examples: [
+          `pm plan create --title "Fix login crash" --template ${PLAN_TEMPLATE_NAMES[0]}`,
+          'pm plan create --title "Custom plan" --step "Read the code" --step "Write the fix"',
+        ],
+      },
+    );
+  }
   if (stepTitles.length > 1 && hasPerStepDetailOptions) {
     // Per-step detail flags target exactly one step; silently attaching them to
     // the first (or all) of several seeded steps would be unpredictable.
@@ -773,6 +863,7 @@ async function planCreate(
       id: `${STEP_ID_PREFIX}${String(index + 1).padStart(3, "0")}`,
       order: index + 1,
       title: stepTitle,
+      body: templateSteps[index]?.body,
       status: "pending" as const,
       created_at: now,
       updated_at: now,

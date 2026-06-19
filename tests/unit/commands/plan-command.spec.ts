@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { runPlan, PLAN_SUBCOMMANDS, PLAN_SHOW_DEPTH_VALUES } from "../../../src/cli/commands/plan.js";
+import { runPlan, PLAN_SUBCOMMANDS, PLAN_SHOW_DEPTH_VALUES, PLAN_TEMPLATE_NAMES } from "../../../src/cli/commands/plan.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
@@ -93,6 +93,7 @@ describe("runPlan command family", () => {
           in_progress: 0,
           blocked: 0,
           completed: 0,
+          completion_pct: 0,
           skipped: 0,
           superseded: 0,
         },
@@ -632,6 +633,82 @@ describe("runPlan command family", () => {
         [2, "Write the fix, then re-read it", "pending"],
         [3, "Run the tests", "pending"],
       ]);
+    });
+  });
+
+  it("create seeds built-in template steps and exposes completion progress", async () => {
+    await withTempPmPath(async (context) => {
+      expect(PLAN_TEMPLATE_NAMES).toEqual(["bug-investigation", "feature-implementation", "refactoring-sprint"]);
+      const result = await runPlan({
+        subcommand: "create",
+        options: {
+          title: "Templated Bug Plan",
+          template: "bug-investigation",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      expect(result.plan.steps_summary).toMatchObject({ total: 5, completed: 0, completion_pct: 0 });
+      expect(result.step?.title).toBe("Reproduce the bug");
+
+      const show = await runPlan({
+        subcommand: "show",
+        id: result.plan.id,
+        options: { depth: "standard" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      expect(show.plan.steps?.map((step) => [step.order, step.title, step.body])).toEqual([
+        [1, "Reproduce the bug", "Capture exact steps, inputs, and the observed vs expected behavior."],
+        [2, "Locate the root cause", "Trace the failure to the responsible code path with evidence."],
+        [3, "Write a failing test", "Add a regression test that fails for the current bug."],
+        [4, "Implement the fix", "Apply the minimal change that makes the failing test pass."],
+        [5, "Verify and document", "Run the full suite and record the resolution and verification."],
+      ]);
+
+      await runPlan({
+        subcommand: "complete-step",
+        id: result.plan.id,
+        stepRef: "plan-step-001",
+        options: { stepEvidence: "reproduced", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      const progress = await runPlan({
+        subcommand: "show",
+        id: result.plan.id,
+        options: { depth: "brief" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      expect(progress.plan.steps_summary.completion_pct).toBe(20);
+    });
+  });
+
+  it("rejects unknown templates and mixed template/manual step seeding", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runPlan({
+          subcommand: "create",
+          options: { title: "Bad Template", template: "missing", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          global: { ...GLOBAL, path: context.pmPath },
+        }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Unknown plan template"),
+      });
+      await expect(
+        runPlan({
+          subcommand: "create",
+          options: {
+            title: "Mixed Template",
+            template: "feature-implementation",
+            step: ["manual step"],
+            author: "test-author",
+          } as Parameters<typeof runPlan>[0]["options"],
+          global: { ...GLOBAL, path: context.pmPath },
+        }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("cannot be combined"),
+      });
     });
   });
 

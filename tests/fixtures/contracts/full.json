@@ -5106,6 +5106,9 @@
           "flag": "--from-search"
         },
         {
+          "flag": "--template"
+        },
+        {
           "aliases": [
             "--step_title"
           ],
