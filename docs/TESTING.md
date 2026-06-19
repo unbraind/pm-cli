@@ -52,6 +52,24 @@ quality:static`: every `src/**/*.ts` source file needs a module TSDoc block,
 every exported declaration needs a non-module TSDoc block, and known generated
 boilerplate summaries are rejected.
 
+### Directory-load cap and the `tests/unit` split
+
+`pnpm quality:static` also caps each directory under `src/`, `tests/`, and
+`packages/` at **120 `.ts` files** (`--max-files-per-dir`, default `120`). This
+keeps any single directory navigable and forces load to be partitioned by area
+rather than piling into one folder. `tests/unit/` is therefore split into
+per-area subdirectories (`tests/unit/commands/`, `tests/unit/core/`,
+`tests/unit/cli/`, `tests/unit/mcp/`, `tests/unit/extensions/`, …) instead of a
+single flat directory.
+
+When adding a unit test, place it in the matching `tests/unit/<area>/`
+subdirectory (or merge into an existing spec there); never add a file directly
+to `tests/unit/`. The
+[`static-quality-gate directory-load contract`](../tests/integration/ci-workflow-contract.spec.ts)
+test asserts the live repository stays at or below the cap and that the magic
+number matches the gate default, so drift is caught before CI's `static` gate
+fails.
+
 ## Search Quality Evaluation
 
 `search-advanced` exposes an advisory golden-query harness for relevance drift checks.

@@ -2,8 +2,17 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { checkDirectoryLoad, collectTypeScriptFiles, relativeToRepo } from "../../scripts/release/static-quality-gate.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+
+/**
+ * Per-directory `.ts` file cap enforced by `scripts/release/static-quality-gate.mjs`
+ * (`--max-files-per-dir`, default 120) and run via the `quality:static` CI gate.
+ * Kept in sync with the gate source by the contract test below so the magic
+ * number cannot silently drift between the gate and this guardrail.
+ */
+const MAX_FILES_PER_DIRECTORY = 120;
 
 const PUBLISH_OR_RELEASE_PATTERNS = [
   "npm publish",
@@ -341,5 +350,38 @@ describe("GitHub workflow contract", () => {
       .split("\n")
       .filter((line) => /uses:/.test(line) && !new RegExp(`@${SHA_PATTERN}(\\s|$)`).test(line));
     expect(unpinnedUses, `codeql.yml has unpinned actions: ${unpinnedUses.join(", ")}`).toEqual([]);
+  });
+});
+
+describe("static-quality-gate directory-load contract (pm-wc0d)", () => {
+  it("keeps the per-directory file cap pinned to the gate default", async () => {
+    const gateSource = await readFile(path.resolve(repoRoot, "scripts/release/static-quality-gate.mjs"), "utf8");
+    // The cap this guardrail asserts must match the gate's own default so the
+    // two cannot drift out of sync (e.g. the gate raising it without updating us).
+    expect(gateSource).toContain(`parseNumberFlag(flags, "max-files-per-dir", ${MAX_FILES_PER_DIRECTORY})`);
+  });
+
+  it("keeps every source/test/package directory at or below the 120-file cap", () => {
+    const files = collectTypeScriptFiles();
+    const violations = checkDirectoryLoad(files, MAX_FILES_PER_DIRECTORY) as Array<{
+      directory: string;
+      file_count: number;
+    }>;
+    expect(
+      violations,
+      `Directories over the ${MAX_FILES_PER_DIRECTORY}-file cap: ${violations
+        .map((entry) => `${entry.directory} (${entry.file_count})`)
+        .join(", ")}. Split the directory (e.g. tests/unit/<area>/) rather than adding more files.`,
+    ).toEqual([]);
+
+    // Sanity-check the tests/unit subdirectory split that keeps each area under
+    // the cap: the historical flat tests/unit/ directory is fully partitioned.
+    const counts = new Map<string, number>();
+    for (const absolutePath of files) {
+      const directory = relativeToRepo(path.dirname(absolutePath));
+      counts.set(directory, (counts.get(directory) ?? 0) + 1);
+    }
+    expect(counts.get("tests/unit") ?? 0).toBe(0);
+    expect([...counts.keys()].some((directory) => directory.startsWith("tests/unit/"))).toBe(true);
   });
 });

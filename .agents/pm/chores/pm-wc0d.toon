@@ -2,15 +2,22 @@ id: pm-wc0d
 title: Add 120-file unit-test cap governance test to ci-workflow-contract.spec.ts
 description: "The 120-file-per-directory cap for tests/unit/ is enforced by scripts/release/static-quality-gate.mjs (--max-files-per-dir 120) and is a documented rule. However, no test in tests/integration/ci-workflow-contract.spec.ts or elsewhere validates that the current unit file count stays at or below 120. With 122 files already in tests/unit/, the gate should fire soon if new tests keep being added — but contributors won't know this until the static gate fails in CI."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[4]: "area:ci","area:tests",governance,quality-gate
 created_at: "2026-06-07T10:05:34.173Z"
-updated_at: "2026-06-09T22:05:01.915Z"
-assignee: codex-active-pm-cycle-20260610
+updated_at: "2026-06-19T21:57:31.644Z"
 author: audit-docs-tests-agent
 acceptance_criteria: "- A test or note confirms whether 122 files in tests/unit/ is expected to pass the static gate (e.g. subdirectory counting only, or the cap is directory-specific)\n- If tests/unit/ has exceeded the cap: add a failing test + doc explaining the merge strategy\n- If tests/unit/ has a subdirectory that splits load (tests/unit/core/, tests/unit/commands/): document the strategy in TESTING.md"
 parent: pm-u9d0
 risk: medium
 confidence: medium
+resolution: "tests/unit/ was restructured into per-area subdirectories (commands/, core/, cli/, mcp/, ...), so the 120-file cap is now per-directory and the largest dir (src/cli/commands, 65) is well under it. New contract test reuses the gate's own collectTypeScriptFiles/checkDirectoryLoad against the live repo (asserts 0 violations) and pins MAX_FILES_PER_DIRECTORY to the gate's default-120 literal so the two cannot drift. TESTING.md documents the cap + placement rule."
+expected_result: Confirm 120-file cap status and document the subdirectory split strategy.
+actual_result: "Premise of '122 flat files' is stale post-restructure; cap is per-directory, repo compliant; governance test + TESTING.md note added."
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,tests/integration/ci-workflow-contract.spec.ts,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+docs[1]{path,scope,note}:
+  docs/TESTING.md,project,Directory-load cap + tests/unit subdirectory split strategy
+close_reason: Added directory-load cap governance contract to tests/integration/ci-workflow-contract.spec.ts + documented the tests/unit subdirectory split in TESTING.md.
 body: "## Context\nCurrent test file count: ls tests/unit/ | wc -l = 122. The static-quality-gate.mjs applies --max-files-per-dir 120 globally (line 338). So tests/unit/ may already be at the limit.\n\nci-workflow-contract.spec.ts validates pinned action SHAs, CI gate matrix alignment, etc. but has no assertion about tests/unit/ file count.\n\nThe governance rule from memory: 'tests/unit has a 120-file governance cap (merge, don’t add)'. The fact that it is already at 122 files may mean the static gate is failing, or the gate is not recursive to subdirectories. Either way this should be validated explicitly.\n\n## Acceptance criteria\n- A test or note confirms whether 122 files in tests/unit/ is expected to pass the static gate (e.g. subdirectory counting only, or the cap is directory-specific)\n- If tests/unit/ has exceeded the cap: add a failing test + doc explaining the merge strategy\n- If tests/unit/ has a subdirectory that splits load (tests/unit/core/, tests/unit/commands/): document the strategy in TESTING.md\n\n## Evidence\nls tests/unit/ | wc -l = 122; tests/unit/core/ and tests/unit/commands/ subdirectory exists per ls output; scripts/release/static-quality-gate.mjs line 338: maxFilesPerDirectory = 120"
