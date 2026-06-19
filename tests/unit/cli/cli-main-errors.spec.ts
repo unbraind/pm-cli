@@ -2687,11 +2687,37 @@ export default {
         await flagOnly.parseAsync(["node", "pm", "--pm-path", context.pmPath, "--json", "demo", "import", "--folder", "x"]);
         expect(handled).toBe(1);
 
-        // Importer that declares arguments is left to its own handler validation.
+        // Importer that declares arguments is validated before the handler.
         const declaredArgs = installRuntime(
           new Map([["demo import", importerDescriptor([{ name: "target", required: false, variadic: false }])]]),
         );
         await declaredArgs.parseAsync(["node", "pm", "--pm-path", context.pmPath, "--json", "demo", "import", "x"]);
+        expect(handled).toBe(2);
+
+        const tooManyDeclaredArgs = installRuntime(
+          new Map([["demo import", importerDescriptor([{ name: "target", required: false, variadic: false }])]]),
+        );
+        await expect(
+          tooManyDeclaredArgs.parseAsync([
+            "node",
+            "pm",
+            "--pm-path",
+            context.pmPath,
+            "--json",
+            "demo",
+            "import",
+            "x",
+            "y",
+          ]),
+        ).rejects.toThrow(/Too many arguments for extension command 'demo import': y.*Use --folder <path>\./);
+        expect(handled).toBe(2);
+
+        const missingRequiredDeclaredArg = installRuntime(
+          new Map([["demo import", importerDescriptor([{ name: "target", required: true, variadic: false }])]]),
+        );
+        await expect(
+          missingRequiredDeclaredArg.parseAsync(["node", "pm", "--pm-path", context.pmPath, "--json", "demo", "import"]),
+        ).rejects.toThrow(/Missing required argument for extension command 'demo import'.*Use --folder <path>\./);
         expect(handled).toBe(2);
 
         // A non-importer command path accepts free-form positionals via context.args.

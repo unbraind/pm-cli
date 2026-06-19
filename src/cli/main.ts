@@ -1646,24 +1646,18 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         commandArgs = parserOverride.context.args;
         commandOptions = parserOverride.context.options;
         globalOptions = parserOverride.context.global;
-        // Reject unexpected positionals for importer/exporter commands on the
-        // real dispatch path: these short-circuit before the dynamic action that
-        // previously held the only validation, so an excess positional (e.g.
-        // `todos import todos.md`) was silently ignored. Importers/exporters read
-        // their source/destination via flags and take no positional. Free-form
-        // `registerCommand` commands intentionally accept positionals via
-        // context.args, and core commands have no descriptor, so both are left
-        // untouched here.
+        // Validate importer/exporter positionals on the real dispatch path:
+        // these short-circuit before the dynamic action that previously held the
+        // only arity validation, so excess positionals could reach handlers.
+        // Free-form `registerCommand` commands intentionally accept positionals
+        // via context.args, and core commands have no descriptor.
         const dynamicDescriptor = activeRuntimeExtensionCommandDescriptors.get(normalizeExtensionCommandPath(commandPath));
-        if (
-          dynamicDescriptor &&
-          dynamicDescriptor.arguments.length === 0 &&
-          isImporterOrExporterCommandPath(activeRegistrations, commandPath)
-        ) {
-          const unexpectedPositionals = collectLoosePositionalArgs(commandArgs);
-          if (unexpectedPositionals.length > 0) {
-            validateDynamicExtensionCommandArgs(dynamicDescriptor, unexpectedPositionals);
-          }
+        if (dynamicDescriptor && isImporterOrExporterCommandPath(activeRegistrations, commandPath)) {
+          const positionalArgs =
+            dynamicDescriptor.arguments.length === 0
+              ? collectLoosePositionalArgs(commandArgs)
+              : stripLooseCommandOptionTokens(commandArgs, extensionFlagDefinitions);
+          validateDynamicExtensionCommandArgs(dynamicDescriptor, positionalArgs);
         }
         globalOptions = await applyDefaultOutputFormat(globalOptions);
         setResolvedGlobalOptions(actionCommand, globalOptions);
