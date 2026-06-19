@@ -28,10 +28,12 @@ async function loadGovernanceModule() {
     const loaded = await import(pathToFileURL(modulePath).href);
     if (
       typeof loaded.runDedupeAudit === "function" &&
+      typeof loaded.runDedupeMerge === "function" &&
       typeof loaded.runCommentsAudit === "function" &&
       typeof loaded.runNormalize === "function" &&
       typeof loaded.readStringOption === "function" &&
-      typeof loaded.readBooleanOption === "function"
+      typeof loaded.readBooleanOption === "function" &&
+      typeof loaded.readCsvListOption === "function"
     ) {
       return loaded;
     }
@@ -60,6 +62,20 @@ function normalizeDedupeAuditOptions(sdk, raw) {
     release: readStringOption(raw, "release"),
     limit: readStringOption(raw, "limit"),
     threshold: readStringOption(raw, "threshold"),
+  };
+}
+
+function normalizeDedupeMergeOptions(sdk, raw) {
+  const readStringOption = sdk.readStringOption;
+  const readBooleanOption = sdk.readBooleanOption;
+  return {
+    keep: readStringOption(raw, "keep"),
+    close: sdk.readCsvListOption(raw, "close"),
+    apply: readBooleanOption(raw, "apply") === true ? true : undefined,
+    dryRun: readBooleanOption(raw, "dryRun", ["dry_run"]) === true ? true : undefined,
+    reparentChildren: readBooleanOption(raw, "skipChildren", ["skip_children"]) === true ? false : undefined,
+    author: readStringOption(raw, "author"),
+    message: readStringOption(raw, "message"),
   };
 }
 
@@ -119,6 +135,11 @@ function normalizeNormalizeOptions(sdk, raw) {
 export async function runDedupeAuditPackage(options, global) {
   const module = await ensureGovernanceModule();
   return module.runDedupeAudit(normalizeDedupeAuditOptions(module, options), global);
+}
+
+export async function runDedupeMergePackage(options, global) {
+  const module = await ensureGovernanceModule();
+  return module.runDedupeMerge(normalizeDedupeMergeOptions(module, options), global);
 }
 
 export async function runCommentsAuditPackage(options, global) {

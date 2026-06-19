@@ -99,6 +99,14 @@ export {
   type DedupeAuditOptions,
   type DedupeAuditResult,
 } from "../cli/commands/dedupe-audit.js";
+export {
+  runDedupeMerge,
+  type DedupeMergeChildReparent,
+  type DedupeMergeCloseAction,
+  type DedupeMergeDuplicateOutcome,
+  type DedupeMergeOptions,
+  type DedupeMergeResult,
+} from "../cli/commands/dedupe-merge.js";
 export { runNormalize, type NormalizeCommandOptions, type NormalizeResult } from "../cli/commands/normalize.js";
 export { runReindex, type ReindexOptions, type ReindexResult } from "../cli/commands/reindex.js";
 export { runSearch, type SearchOptions, type SearchResult } from "../cli/commands/search.js";

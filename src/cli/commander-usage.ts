@@ -48,6 +48,7 @@ const OPTIONAL_PACKAGE_INSTALL_HINTS: Record<string, string> = {
   reindex: "search-advanced",
   "search-advanced": "search-advanced",
   "dedupe-audit": "governance-audit",
+  "dedupe-merge": "governance-audit",
   "comments-audit": "governance-audit",
   normalize: "governance-audit",
   guide: "guide-shell",

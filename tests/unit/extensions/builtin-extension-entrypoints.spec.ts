@@ -39,6 +39,7 @@ interface RuntimeCall {
     | "todos-import"
     | "todos-export"
     | "governance-dedupe"
+    | "governance-dedupe-merge"
     | "governance-comments"
     | "governance-normalize";
   options: Record<string, unknown>;
@@ -164,11 +165,24 @@ export function readBooleanOption(options, key, aliases = []) {
   return undefined;
 }
 
+export function readCsvListOption(options, key, aliases = []) {
+  const value = readStringOption(options, key, aliases);
+  if (!value) return [];
+  return value.split(",").map((entry) => entry.trim()).filter((entry) => entry.length > 0);
+}
+
 export async function runDedupeAudit(options, global) {
   const calls = Array.isArray(globalThis.${RUNTIME_CALLS_KEY}) ? globalThis.${RUNTIME_CALLS_KEY} : [];
   calls.push({ kind: "governance-dedupe", options, global });
   globalThis.${RUNTIME_CALLS_KEY} = calls;
   return { kind: "governance-dedupe", options };
+}
+
+export async function runDedupeMerge(options, global) {
+  const calls = Array.isArray(globalThis.${RUNTIME_CALLS_KEY}) ? globalThis.${RUNTIME_CALLS_KEY} : [];
+  calls.push({ kind: "governance-dedupe-merge", options, global });
+  globalThis.${RUNTIME_CALLS_KEY} = calls;
+  return { kind: "governance-dedupe-merge", options };
 }
 
 export async function runCommentsAudit(options, global) {
@@ -547,7 +561,12 @@ describe("built-in extension entrypoints", () => {
 
     try {
       activateGovernance(api);
-      expect(commands.map((command) => command.name)).toEqual(["dedupe-audit", "comments-audit", "normalize"]);
+      expect(commands.map((command) => command.name)).toEqual([
+        "dedupe-audit",
+        "dedupe-merge",
+        "comments-audit",
+        "normalize",
+      ]);
       expect(hooks.onRead).toHaveLength(1);
       expect(hooks.onWrite).toHaveLength(1);
 
@@ -559,14 +578,21 @@ describe("built-in extension entrypoints", () => {
         global: globalFlags,
         pm_root: "/tmp/pm",
       })) as Record<string, unknown>;
-      const commentsResult = (await commands[1]!.run({
+      const dedupeMergeResult = (await commands[1]!.run({
+        command: "dedupe-merge",
+        args: [],
+        options: { keep: "pm-canonical", close: "pm-dup1", apply: true },
+        global: globalFlags,
+        pm_root: "/tmp/pm",
+      })) as Record<string, unknown>;
+      const commentsResult = (await commands[2]!.run({
         command: "comments-audit",
         args: [],
         options: { full_history: true },
         global: globalFlags,
         pm_root: "/tmp/pm",
       })) as Record<string, unknown>;
-      const normalizeResult = (await commands[2]!.run({
+      const normalizeResult = (await commands[3]!.run({
         command: "normalize",
         args: [],
         options: { apply: true },
@@ -574,10 +600,12 @@ describe("built-in extension entrypoints", () => {
         pm_root: "/tmp/pm",
       })) as Record<string, unknown>;
       expect(dedupeResult).toMatchObject({ kind: "governance-dedupe" });
+      expect(dedupeMergeResult).toMatchObject({ kind: "governance-dedupe-merge" });
       expect(commentsResult).toMatchObject({ kind: "governance-comments" });
       expect(normalizeResult).toMatchObject({ kind: "governance-normalize" });
       expect(readRuntimeCalls().map((entry) => entry.kind)).toEqual([
         "governance-dedupe",
+        "governance-dedupe-merge",
         "governance-comments",
         "governance-normalize",
       ]);

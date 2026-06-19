@@ -3,6 +3,7 @@ import path from "node:path";
 import {
   runCommentsAuditPackage,
   runDedupeAuditPackage,
+  runDedupeMergePackage,
   runNormalizePackage,
 } from "./runtime.js";
 
@@ -32,6 +33,16 @@ const dedupeAuditFlags = [
   { long: "--release", value_name: "value", value_type: "string", description: "Filter by release." },
   { long: "--limit", value_name: "n", value_type: "string", description: "Limit analyzed items." },
   { long: "--threshold", value_name: "value", value_type: "string", description: "Similarity threshold for fuzzy modes." },
+];
+
+const dedupeMergeFlags = [
+  { long: "--keep", value_name: "id", value_type: "string", description: "Canonical item id to keep (children move here)." },
+  { long: "--close", value_name: "ids", value_type: "string", description: "Duplicate item id(s) to consolidate (comma-separated)." },
+  { long: "--apply", value_type: "boolean", description: "Apply the merge; omit for a non-mutating preview." },
+  { long: "--dry-run", value_type: "boolean", description: "Force a preview even when --apply is also set." },
+  { long: "--skip-children", value_type: "boolean", description: "Do not re-parent the duplicates' active children." },
+  { long: "--author", value_name: "value", value_type: "string", description: "Author recorded on merge mutations." },
+  { long: "--message", value_name: "value", value_type: "string", description: "History message recorded on merge mutations." },
 ];
 
 const commentsAuditFlags = [
@@ -90,6 +101,16 @@ function dedupeAuditCommand() {
   };
 }
 
+function dedupeMergeCommand() {
+  return {
+    name: "dedupe-merge",
+    action: "dedupe-merge",
+    description: "Consolidate duplicates into a canonical item: re-parent active children and close duplicates with duplicate_of.",
+    flags: [...dedupeMergeFlags],
+    run: async (context) => runDedupeMergePackage(context.options, context.global),
+  };
+}
+
 function commentsAuditCommand() {
   return {
     name: "comments-audit",
@@ -143,6 +164,7 @@ function appendHookAuditRecord(kind, context) {
 
 export function activate(api) {
   api.registerCommand(dedupeAuditCommand());
+  api.registerCommand(dedupeMergeCommand());
   api.registerCommand(commentsAuditCommand());
   api.registerCommand(normalizeCommand());
   api.hooks.onRead((context) => appendHookAuditRecord("on_read", context));

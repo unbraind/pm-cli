@@ -6,10 +6,12 @@ const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
 
 interface GovernanceRuntimeSdkModule {
   runDedupeAudit: (options: Record<string, unknown>, global: GlobalOptions) => Promise<unknown>;
+  runDedupeMerge: (options: Record<string, unknown>, global: GlobalOptions) => Promise<unknown>;
   runCommentsAudit: (options: Record<string, unknown>, global: GlobalOptions) => Promise<unknown>;
   runNormalize: (options: Record<string, unknown>, global: GlobalOptions) => Promise<unknown>;
   readStringOption: (options: Record<string, unknown>, key: string, aliases?: string[]) => string | undefined;
   readBooleanOption: (options: Record<string, unknown>, key: string, aliases?: string[]) => boolean | undefined;
+  readCsvListOption: (options: Record<string, unknown>, key: string, aliases?: string[]) => string[] | undefined;
 }
 
 let governanceModule: GovernanceRuntimeSdkModule | null = null;
@@ -38,10 +40,12 @@ async function loadGovernanceModule(): Promise<GovernanceRuntimeSdkModule> {
     const loaded = (await import(pathToFileURL(modulePath).href)) as Partial<GovernanceRuntimeSdkModule>;
     if (
       typeof loaded.runDedupeAudit === "function" &&
+      typeof loaded.runDedupeMerge === "function" &&
       typeof loaded.runCommentsAudit === "function" &&
       typeof loaded.runNormalize === "function" &&
       typeof loaded.readStringOption === "function" &&
-      typeof loaded.readBooleanOption === "function"
+      typeof loaded.readBooleanOption === "function" &&
+      typeof loaded.readCsvListOption === "function"
     ) {
       return loaded as GovernanceRuntimeSdkModule;
     }
@@ -73,6 +77,24 @@ function normalizeDedupeAuditOptions(
     release: readStringOption(raw, "release"),
     limit: readStringOption(raw, "limit"),
     threshold: readStringOption(raw, "threshold"),
+  };
+}
+
+function normalizeDedupeMergeOptions(
+  sdk: GovernanceRuntimeSdkModule,
+  raw: Record<string, unknown>,
+): Record<string, unknown> {
+  const readStringOption = sdk.readStringOption;
+  const readBooleanOption = sdk.readBooleanOption;
+  return {
+    keep: readStringOption(raw, "keep"),
+    close: sdk.readCsvListOption(raw, "close"),
+    apply: readBooleanOption(raw, "apply") === true ? true : undefined,
+    dryRun: readBooleanOption(raw, "dryRun", ["dry_run"]) === true ? true : undefined,
+    // --skip-children opts out of re-parenting; otherwise core defaults to true.
+    reparentChildren: readBooleanOption(raw, "skipChildren", ["skip_children"]) === true ? false : undefined,
+    author: readStringOption(raw, "author"),
+    message: readStringOption(raw, "message"),
   };
 }
 
@@ -141,6 +163,14 @@ export async function runDedupeAuditPackage(
 ): Promise<unknown> {
   const module = await ensureGovernanceModule();
   return module.runDedupeAudit(normalizeDedupeAuditOptions(module, options), global);
+}
+
+export async function runDedupeMergePackage(
+  options: Record<string, unknown>,
+  global: GlobalOptions,
+): Promise<unknown> {
+  const module = await ensureGovernanceModule();
+  return module.runDedupeMerge(normalizeDedupeMergeOptions(module, options), global);
 }
 
 export async function runCommentsAuditPackage(
