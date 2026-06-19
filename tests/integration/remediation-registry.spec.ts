@@ -71,6 +71,18 @@ describe("shared remediation registry", () => {
       );
     });
 
+    it("resolves the unmanaged-extension partial-coverage gap to adopt-all guidance", () => {
+      expect(resolveRemediation("extension_update_health_partial_coverage:skipped_unmanaged:2")?.command).toBe(
+        "pm extension --adopt-all --project",
+      );
+    });
+
+    it("resolves the duplicate-issue-code metadata warning to rename/close guidance", () => {
+      expect(resolveRemediation("validate_metadata_duplicate_issue_codes:3")?.command).toBe(
+        'pm update <id> --title "<distinct title>"',
+      );
+    });
+
     it("resolves pm health locks warnings to gc lock-sweep guidance", () => {
       expect(resolveRemediation("locks_stale_count:3")?.command).toBe("pm gc --scope locks");
       expect(resolveRemediation("locks_unreadable:1")?.command).toBe("pm gc --scope locks --dry-run");

@@ -4,6 +4,8 @@
 
 ### Added
 
+- Add remediation registry entry for validate\_metadata\_duplicate\_issue\_codes warning ([pm-sdbo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-sdbo.toon))
+- Add remediation registry entry for extension\_update\_health\_partial\_coverage warning ([pm-bdvm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-bdvm.toon))
 - gc --scope checkpoints: prune stale bulk-mutation checkpoint files ([pm-tyj8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-tyj8.toon))
 - LanceDB snapshot: add gc --scope embeddings to include pending-refresh.json and drift-cache coordination ([pm-3b1t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-3b1t.toon))
 - Sentry KNOWN\_NOISY\_CONSOLE\_MESSAGE\_PATTERNS maintenance: add a governance test to prevent silent accumulation of stale patterns ([pm-jxls](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-jxls.toon))
@@ -19,6 +21,7 @@
 
 ### Fixed
 
+- GH-244: empty search provider adapter strings should auto-normalize ([pm-28cf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-28cf.toon))
 - Daily auto-release was silently blocked 06-14..16 by a single stale, unresolved Sentry error \(sentry-telemetry-gate is:unresolved has no time window\) ([pm-nb08](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nb08.toon))
 - appendLineAtomic is not truly atomic: concurrent appends to history JSONL can interleave ([pm-xy9n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xy9n.toon))
 - Project-scope extension install writes ~69MB node\_modules per workspace \(peer pm-cli + transitive Sentry/OTel\) ([pm-oxq2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oxq2.toon))

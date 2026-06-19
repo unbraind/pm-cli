@@ -193,6 +193,19 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     summary:
       "Some lock files could not be read; preview the sweep and inspect the unreadable files manually — gc never deletes what it cannot read.",
   },
+  // --- pm health: extensions ---
+  // Most extension findings keep their richer, contextual
+  // `details.triage.remediation` and are intentionally absent here. The
+  // partial-coverage code is the exception: it is not a per-extension triage
+  // result but a system-wide adoption gap (unmanaged installs the update-health
+  // scan had to skip), so it has a single deterministic fix and belongs in the
+  // shared registry like any other health finding (pm-bdvm).
+  {
+    code: "extension_update_health_partial_coverage",
+    command: "pm extension --adopt-all --project",
+    summary:
+      "Update-health coverage is partial because unmanaged extensions were skipped; adopt the existing installs into managed metadata so the update scan covers them (use --global for global-scope extensions, or pm package --adopt-all when working with packages).",
+  },
   // --- pm health: vectorization ---
   {
     code: "vectorization_stale_items_remaining",
@@ -255,6 +268,12 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     command: 'pm config set metadata-required-fields --criterion "<field>"',
     summary:
       "Config-driven finding: the custom metadata profile has no required fields configured and falls back to core, so configure the fields rather than mutating items.",
+  },
+  {
+    code: "validate_metadata_duplicate_issue_codes",
+    command: 'pm update <id> --title "<distinct title>"',
+    summary:
+      "Two or more items share one logical issue code (GH-235); give each a distinct title so the derived code is unique, or close the redundant item with pm close <id> --reason \"duplicate of <other-id>\" (closed-as-duplicate items are excluded from the check).",
   },
   // --- pm validate: resolution ---
   {
