@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:ci","area:tests",cross-platform,regression,windows
 created_at: "2026-06-19T15:48:23.411Z"
-updated_at: "2026-06-19T19:58:47.286Z"
+updated_at: "2026-06-19T20:12:58.632Z"
 assignee: codex-gpt5
 author: claude-code-agent
 parent: pm-u9d0
@@ -14,13 +14,15 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-ehbb,related,"2026-06-19T15:48:46.347Z",claude-code-agent,null
   pm-tq5t,related,"2026-06-19T15:48:46.347Z",claude-code-agent,null
   pm-nb08,related,"2026-06-19T19:20:05.426Z",claude-code-agent,null
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-06-19T15:49:09.715Z",claude-code-agent,"Filed from a maintainer session on Linux. Root cause is Windows-only and not safely reproducible/verifiable from POSIX without risking the green 100%-coverage suite, so it needs a windows-latest runner to land + verify the fix. Non-blocking for releases: the daily Release workflow is independent of nightly and is green (npm @2026.6.19). macOS's single failure is already fixed (commit 8bc37a22)."
   "2026-06-19T19:20:05.038Z",claude-code-agent,"Partial progress (PR: auto-release-sentry-gate-window-and-alerting): fixed the two hardcoded POSIX-separator assertions called out in this issue — init-command.spec.ts pmRoot now asserts path.resolve(/repo, /repo/.agents/pm) and schema-command.spec.ts asserts path.join(.agents, pm, schema, types.json) instead of forward-slash literals. Added a win32-simulated regression guard (runtime-schema-path-win32-guard.spec.ts) that mocks node:path to path.win32 so a POSIX per-PR runner catches a schema-path separator regression rather than only the nightly. REMAINING (needs a Windows runner to verify): the file://-URL TS dynamic-import cluster (~18 specs computing pathToFileURL(src/*.ts) — chiefly cli-main-errors.spec.ts) that throws SyntaxError on Windows because Vitest does not transform absolute file:// specifiers there; that bulk and a per-PR windows-latest matrix guard stay open."
   "2026-06-19T19:27:11.538Z",claude-code-agent,"Separator fixes + win32 guard shipped in PR #305; file:// TS-import bulk remains open."
   "2026-06-19T19:50:48.661Z",codex-gpt5,"Evidence: addressed PR #305 review follow-up by making Sentry window contract assertions resilient, rejecting blank --sentry-window-days values, and regenerating CHANGELOG.md from the corrected pm-nb08 source title. Focused test passed: node scripts/run-tests.mjs test -- tests/unit/scripts/release/sentry-telemetry-gate.spec.ts tests/unit/scripts/release/run-gates.spec.ts tests/integration/release-automation-contract.spec.ts (67 tests)."
   "2026-06-19T19:58:34.757Z",codex-gpt5,"Verification evidence: pnpm changelog:pm:check passed with pm-changelog 2026.6.14 (npm latest also 2026.6.14); pnpm quality:static passed; pnpm security:scan passed; node scripts/run-tests.mjs coverage passed with 4689 tests and literal 100/100/100/100 coverage; pm validate --check-resolution --check-history-drift passed with history_drift ok and only known pre-existing resolution warnings; isolated temp-dir smoke passed create/update/files/test --run/close/validate with no warnings; live Sentry/telemetry gate passed with window_days=14, critical=0, high=0, finish_error_rate_pct=1.87, failures_without_error_code_rows=0."
   "2026-06-19T19:58:34.783Z",codex-gpt5,"Dependency/GitHub report sweep for PR #305: gh issue list returned no open repo issues, gh Dependabot alerts returned [], gh code-scanning alerts returned [], pnpm audit --audit-level moderate passed, pnpm security:scan passed. pnpm outdated only reports major updates commander 15.0.0 and @types/node 26.0.0; commander 15 is already evaluated/deferred in pm-7j8t because it requires Node >=22.12 while package.json supports node >=20, and @types/node 26 is a major type-surface bump not bundled into this release-gate review follow-up."
+  "2026-06-19T20:07:16.641Z",codex-gpt5,"Review follow-up: addressed fresh Gemini current-head finding by making parseNumber treat null and undefined as missing values before blank-string trimming, preserving fallback semantics and avoiding a defensive TypeError path."
+  "2026-06-19T20:12:58.632Z",codex-gpt5,"Verification evidence after Gemini undefined-guard follow-up: node scripts/run-tests.mjs test -- tests/unit/scripts/release/sentry-telemetry-gate.spec.ts passed (46 tests); pnpm quality:static passed; pnpm changelog:pm:check passed; node scripts/run-tests.mjs coverage passed with 4689 tests and literal 100/100/100/100 coverage."
 files[7]{path,scope,note}:
   scripts/release/sentry-telemetry-gate.mjs,project,Reject blank numeric Sentry window values instead of coercing to zero
   tests/integration/release-automation-contract.spec.ts,project,Make Sentry window contract assertion resilient to harmless formatting refactors

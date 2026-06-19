@@ -354,7 +354,7 @@ Blocks release automation when Sentry or telemetry reliability thresholds are ex
 }
 
 function parseNumber(value, key, fallback, { integer = false } = {}) {
-  if (value === null) {
+  if (value == null) {
     return fallback;
   }
   // `Number("")` / `Number("   ")` coerce to 0, which would silently disable a
