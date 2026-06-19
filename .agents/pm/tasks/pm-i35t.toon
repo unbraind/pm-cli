@@ -6,9 +6,11 @@ status: in_progress
 priority: 3
 tags[3]: agent-ux,cli,dogfood-2026-06-12
 created_at: "2026-06-12T16:19:38.636Z"
-updated_at: "2026-06-19T11:00:33.506Z"
+updated_at: "2026-06-19T11:23:29.500Z"
+assignee: codex-cli-agent
 author: maintainer-agent
 parent: pm-mpbb
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-06-19T11:00:33.506Z",claude-code-agent,"Implemented in feat/agent-ergonomics-cmd-suggestions-importer-ux. Executable command aliases (show/view->get, comment->comments, note->notes, learning->learnings) are now part of the unknown-command did-you-mean candidate pool. Exported EXECUTABLE_COMMAND_ALIASES from bootstrap-args.ts (single source of truth) and removed the redundant COMMON_COMMAND_ALIASES map in commander-usage.ts. buildUnknownCommandGuidanceFromRuntime now fuzzy-scores each alias TOKEN against the unknown command and attributes the score to the alias's CANONICAL command path, so 'pm shwo'->'Did you mean: get?', 'pm comemnt'->'comments', 'pm viee'->'get'. Real-command typos (lsit->list) still rank above aliases; aliases whose canonical command is absent from the runtime are not suggested. Tests: tests/unit/cli/cli-main-errors.spec.ts (alias-typo scoring + merge branches). Docs: AGENT_GUIDE.md Safe Defaults."
+  "2026-06-19T11:23:29.500Z",codex-cli-agent,"Evidence: continued branch feat/agent-ergonomics-cmd-suggestions-importer-ux on 2026-06-19. Temp-dir smoke confirmed pm shwo suggests canonical get. Focused UX tests passed (5 files, 255 tests). Repo gates passed after follow-up: pnpm quality:static, pnpm typecheck, node scripts/run-tests.mjs coverage = 100/100/100/100 (230 files, 4653 tests)."
 body: ""

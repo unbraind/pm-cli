@@ -813,10 +813,6 @@ function formatDynamicCommandUsage(descriptor: ExtensionCommandHelpDescriptor): 
   return `pm ${descriptor.command}${argumentSuffix ? ` ${argumentSuffix}` : ""}`;
 }
 
-function formatDynamicExtensionFailureHintSuffix(descriptor: ExtensionCommandHelpDescriptor): string {
-  return descriptor.failure_hints.length > 0 ? ` ${descriptor.failure_hints.join(" ")}` : "";
-}
-
 /**
  * Reports whether {@link commandPath} is the generated command path of a
  * registered importer (`<name> import`) or exporter (`<name> export`). Importers
@@ -846,7 +842,7 @@ function validateDynamicExtensionCommandArgs(
   const requiredCount = descriptor.arguments.filter((argument) => argument.required).length;
   const variadic = descriptor.arguments.some((argument) => argument.variadic);
   const maxCount = variadic ? Number.POSITIVE_INFINITY : descriptor.arguments.length;
-  const hintSuffix = formatDynamicExtensionFailureHintSuffix(descriptor);
+  const hintSuffix = descriptor.failure_hints.length > 0 ? ` ${descriptor.failure_hints.join(" ")}` : "";
   if (args.length < requiredCount) {
     throw new PmCliError(
       `Missing required argument for extension command '${descriptor.command}'. Usage: ${formatDynamicCommandUsage(descriptor)}${hintSuffix}`,
