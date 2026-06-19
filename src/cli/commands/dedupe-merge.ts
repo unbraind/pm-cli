@@ -215,6 +215,12 @@ export async function runDedupeMerge(options: DedupeMergeOptions, global: Global
         nextSteps: [`Verify the duplicate id with: pm get ${duplicateId}`],
       });
     }
+    if (duplicate.id === canonical.id) {
+      throw new PmCliError(`Cannot close the canonical item ${canonical.id} as a duplicate of itself`, EXIT_CODE.USAGE, {
+        code: "invalid_option_combination",
+        nextSteps: ["Pass distinct ids: --keep <canonical> and --close <duplicate>."],
+      });
+    }
     const reason = `Duplicate of ${keep}`;
     // The canonical can never be re-parented onto itself; terminal children are
     // historical and keep their frozen parent link, so only active children move.

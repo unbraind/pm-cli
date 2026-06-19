@@ -276,6 +276,9 @@ describe("runDedupeMerge", () => {
         runDedupeMerge({ keep, close: keep }, { path: context.pmPath }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE } as PmCliError);
       await expect(
+        runDedupeMerge({ keep, close: keep.replace(/^pm-/, "") }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE } as PmCliError);
+      await expect(
         runDedupeMerge({ keep: "pm-missing", close: keep }, { path: context.pmPath }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.NOT_FOUND } as PmCliError);
       await expect(

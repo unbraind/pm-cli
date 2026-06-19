@@ -25,7 +25,7 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 | Family | Commands | Purpose |
 |--------|----------|---------|
 | Bootstrap | `init`, `config`, `health`, `telemetry` | create and inspect tracker setup |
-| Triage | `context`, `search`, `list*`, `aggregate`, `dedupe-audit`* | find work and audit decomposition |
+| Triage | `context`, `search`, `list*`, `aggregate`, `dedupe-audit`*, `dedupe-merge`* | find work and audit decomposition |
 | Lifecycle | `create`, `copy`, `focus`, `claim`, `update`, `append`, `close`, `release`, `delete`, `start-task`, `pause-task`, `close-task` | mutate item state |
 | Scheduling | `meet`, `event`, `remind` | low-friction Meeting/Event/Reminder creation |
 | Planning | `plan create`, `plan add-step`, `plan update-step`, `plan complete-step`, `plan link`, `plan approve`, `plan materialize` | agent-optimized living plans with ordered steps, evidence, decisions, validation, and materialization |
