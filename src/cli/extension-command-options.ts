@@ -376,7 +376,7 @@ export function collectLoosePositionalArgs(args: string[]): string[] {
     }
     const parsed = parseLooseOptionToken(args, index);
     if (parsed) {
-      index += parsed.consumed;
+      index += Math.max(1, parsed.consumed);
       continue;
     }
     positionals.push(args[index]);

@@ -401,6 +401,7 @@ export function buildUnknownCommandGuidanceFromRuntime(
   }
 
   const primaryToken = normalizedUnknown.split(" ")[0];
+  const commandPathSet = new Set(commandPaths);
   const scoreAgainstUnknown = (candidatePath: string): number =>
     Math.min(
       scoreCommandPathMatch(candidatePath, normalizedUnknown),
@@ -410,7 +411,7 @@ export function buildUnknownCommandGuidanceFromRuntime(
   // (lowest) score per path.
   const scoresByCommandPath = new Map<string, number>();
   const recordCandidateScore = (commandPath: string, score: number): void => {
-    if (!Number.isFinite(score) || !commandPaths.includes(commandPath)) {
+    if (!Number.isFinite(score) || !commandPathSet.has(commandPath)) {
       return;
     }
     const existing = scoresByCommandPath.get(commandPath);
