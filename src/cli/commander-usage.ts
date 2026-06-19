@@ -27,6 +27,7 @@ import {
 import { normalizeHelpCommandPath } from "./help-content.js";
 import { getCommandPath } from "./registration-helpers.js";
 import {
+  EXECUTABLE_COMMAND_ALIASES,
   normalizeBootstrapInvocation,
   parseBootstrapGlobalOptions,
   parseBootstrapCommandName,
@@ -57,13 +58,6 @@ const OPTIONAL_PACKAGE_INSTALL_HINTS: Record<string, string> = {
   "test-runs": "linked-test-adapters",
   beads: "beads",
   todos: "todos",
-};
-
-const COMMON_COMMAND_ALIASES: Record<string, string[]> = {
-  comment: ["comments"],
-  note: ["notes"],
-  learning: ["learnings"],
-  show: ["get"],
 };
 
 const SEMANTIC_UNKNOWN_OPTION_SUGGESTIONS: Record<string, Record<string, string[]>> = {
@@ -407,30 +401,44 @@ export function buildUnknownCommandGuidanceFromRuntime(
   }
 
   const primaryToken = normalizedUnknown.split(" ")[0];
-  const rankedCandidates = commandPaths
-    .map((commandPath) => {
-      const directScore = scoreCommandPathMatch(commandPath, normalizedUnknown);
-      const fallbackScore =
-        primaryToken !== normalizedUnknown ? scoreCommandPathMatch(commandPath, primaryToken) : Number.POSITIVE_INFINITY;
-      const score = Math.min(directScore, fallbackScore);
-      return { commandPath, score };
-    })
-    .filter((entry) => Number.isFinite(entry.score))
-    .sort((left, right) => {
-      if (left.score !== right.score) {
-        return left.score - right.score;
-      }
-      return left.commandPath.localeCompare(right.commandPath);
-    })
-    .map((entry) => entry.commandPath);
+  const scoreAgainstUnknown = (candidatePath: string): number =>
+    Math.min(
+      scoreCommandPathMatch(candidatePath, normalizedUnknown),
+      primaryToken !== normalizedUnknown ? scoreCommandPathMatch(candidatePath, primaryToken) : Number.POSITIVE_INFINITY,
+    );
+  // Score every runtime command path against the unknown token, keeping the best
+  // (lowest) score per path.
+  const scoresByCommandPath = new Map<string, number>();
+  const recordCandidateScore = (commandPath: string, score: number): void => {
+    if (!Number.isFinite(score) || !commandPaths.includes(commandPath)) {
+      return;
+    }
+    const existing = scoresByCommandPath.get(commandPath);
+    if (existing === undefined || score < existing) {
+      scoresByCommandPath.set(commandPath, score);
+    }
+  };
+  for (const commandPath of commandPaths) {
+    recordCandidateScore(commandPath, scoreAgainstUnknown(commandPath));
+  }
+  // Executable command aliases (e.g. `show` -> `get`) are rewritten to their
+  // canonical command before commander parses, so they are never themselves
+  // runtime command paths and a typo of one (`shwo`) cannot match a real path.
+  // Fuzzy-match the alias token and attribute the score to its canonical command
+  // so the suggestion points at the command that would actually run.
+  for (const [aliasToken, canonicalPath] of Object.entries(EXECUTABLE_COMMAND_ALIASES)) {
+    recordCandidateScore(canonicalPath, scoreAgainstUnknown(aliasToken));
+  }
+  const rankedCandidates = [...scoresByCommandPath.entries()]
+    .sort(([leftPath, leftScore], [rightPath, rightScore]) =>
+      leftScore !== rightScore ? leftScore - rightScore : leftPath.localeCompare(rightPath),
+    )
+    .map(([commandPath]) => commandPath);
 
-  const aliasCandidates = (COMMON_COMMAND_ALIASES[primaryToken] ?? []).filter((aliasPath) =>
-    commandPaths.includes(aliasPath),
-  );
   const installedPackageCandidates = collectInstalledPackageCommandPathHints(primaryToken, extensionDescriptors).filter((commandPath) =>
     commandPaths.includes(commandPath),
   );
-  const combinedCandidates = dedupeStrings([...aliasCandidates, ...rankedCandidates, ...installedPackageCandidates]);
+  const combinedCandidates = dedupeStrings([...rankedCandidates, ...installedPackageCandidates]);
 
   const fallbackTopLevel = [...new Set(commandPaths.map((commandPath) => commandPath.split(" ")[0]).filter((segment) => segment.length > 0))];
   fallbackTopLevel.sort((left, right) => left.localeCompare(right));

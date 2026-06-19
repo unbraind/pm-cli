@@ -39,6 +39,7 @@ export function activate(api) {
     api.registerImporter("todos", async (context) => runTodosImportFromRuntime(toImportOptions(context.options), context.global), {
         action: "todos-import",
         description: "Import Todo markdown files into pm items.",
+        failure_hints: ["This command reads a directory, not a file. Use --folder <path> to point at the Todo markdown directory."],
         flags: [
             {
                 long: "--folder",
@@ -63,6 +64,7 @@ export function activate(api) {
     api.registerExporter("todos", async (context) => runTodosExportFromRuntime(toExportOptions(context.options), context.global), {
         action: "todos-export",
         description: "Export pm items into Todo markdown files.",
+        failure_hints: ["This command writes a directory of markdown files. Use --folder <path> to choose the destination directory."],
         flags: [
             {
                 long: "--folder",

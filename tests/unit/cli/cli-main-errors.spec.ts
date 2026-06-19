@@ -60,6 +60,7 @@ import {
 import {
   applyDynamicExtensionArguments,
   applyDynamicExtensionFlagOptions,
+  buildResidualDynamicExtensionFlagHelp,
   buildDynamicExtensionCommandMetadataHelp,
   buildDynamicExtensionHelpOptionSummaries,
   collectDynamicExtensionFlagHelpByCommand,
@@ -69,6 +70,7 @@ import {
   findCommandByPath,
   findDirectChildCommand,
   mergeHelpOptionSummaries,
+  type ExtensionCommandHelpDescriptor,
 } from "../../../src/cli/extension-command-help.js";
 import {
   ROOT_HELP_BUNDLE,
@@ -1271,6 +1273,19 @@ describe("CLI main bootstrap helper coverage", () => {
     expect(extensionScoped.score).toBe(42);
   });
 
+  it("identifies importer/exporter command paths for positional-arg rejection", () => {
+    const registrations = {
+      ...createEmptyExtensionRegistrationRegistry(),
+      importers: [{ layer: "project" as const, name: "todos-ext", importer: "todos" }],
+      exporters: [{ layer: "project" as const, name: "todos-ext", exporter: "todos" }],
+    };
+    expect(_testOnly.isImporterOrExporterCommandPath(registrations, "todos import")).toBe(true);
+    expect(_testOnly.isImporterOrExporterCommandPath(registrations, "todos export")).toBe(true);
+    expect(_testOnly.isImporterOrExporterCommandPath(registrations, "acme sync")).toBe(false);
+    // No active registry (e.g. extensions disabled) is never an importer path.
+    expect(_testOnly.isImporterOrExporterCommandPath(null, "todos import")).toBe(false);
+  });
+
   it("validates descriptor-backed dynamic command arity and unknown options", () => {
     const descriptor = {
       command: "tools export",
@@ -1300,6 +1315,30 @@ describe("CLI main bootstrap helper coverage", () => {
         [],
       ),
     ).toThrow(/Too many arguments.*extra.*Usage: pm tools$/);
+    // failure_hints are appended to both arity errors so importers/exporters can
+    // steer the caller toward the right flag (e.g. --folder).
+    expect(() =>
+      _testOnly.validateDynamicExtensionCommandInvocation(
+        { ...descriptor, command: "tools import", arguments: [], flags: [], failure_hints: ["Use --folder <path>."] },
+        ["stray.md"],
+        {},
+        [],
+      ),
+    ).toThrow(/Too many arguments.*stray\.md.*Usage: pm tools import Use --folder <path>\.$/);
+    expect(() =>
+      _testOnly.validateDynamicExtensionCommandInvocation(
+        {
+          ...descriptor,
+          command: "tools export",
+          arguments: [{ name: "target", required: true, variadic: false }],
+          flags: [],
+          failure_hints: ["Use --folder <path>."],
+        },
+        [],
+        {},
+        [],
+      ),
+    ).toThrow(/Missing required argument.*pm tools export <target> Use --folder <path>\.$/);
     expect(() =>
       _testOnly.validateDynamicExtensionCommandInvocation(
         {
@@ -2595,6 +2634,78 @@ export default {
     });
   });
 
+  it("rejects unexpected positionals for importer/exporter commands on the wrapped dispatch path (pm-90hp)", async () => {
+    await withTempPmPath(async (context) => {
+      const buildRoot = (): Command => {
+        const root = new Command().name("pm").exitOverride().configureOutput({ writeOut: () => {}, writeErr: () => {} });
+        root.option("--pm-path <dir>", "PM path");
+        root.option("--json", "JSON output");
+        const group = root.command("demo");
+        group.command("import").allowExcessArguments(true).allowUnknownOption(true).action(() => {});
+        group.command("run").allowExcessArguments(true).allowUnknownOption(true).action(() => {});
+        return root;
+      };
+      const registrations = {
+        ...createEmptyExtensionRegistrationRegistry(),
+        importers: [{ layer: "project" as const, name: "demo-ext", importer: "demo" }],
+      };
+      let handled = 0;
+      const installRuntime = (descriptors: Map<string, ExtensionCommandHelpDescriptor>): Command => {
+        const root = buildRoot();
+        setActiveExtensionRegistrations(registrations);
+        setActiveExtensionCommands({
+          overrides: [],
+          handlers: [
+            { layer: "project", name: "demo-ext", command: "demo import", run: () => ((handled += 1), { ok: true }) },
+            { layer: "project", name: "demo-ext", command: "demo run", run: () => ((handled += 1), { ok: true }) },
+          ],
+        });
+        _testOnly.setActiveRuntimeExtensionCommandDescriptorsForTest(descriptors);
+        _testOnly.wrapProgramActionsForExtensionHandlers(root);
+        return root;
+      };
+      const importerDescriptor = (args: ExtensionCommandHelpDescriptor["arguments"]): ExtensionCommandHelpDescriptor => ({
+        command: "demo import",
+        action: "demo-import",
+        arguments: args,
+        flags: [],
+        examples: [],
+        failure_hints: ["Use --folder <path>."],
+      });
+
+      const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+      try {
+        // Importer + no declared args + stray positional -> rejected with the hint.
+        const rejecting = installRuntime(new Map([["demo import", importerDescriptor([])]]));
+        await expect(
+          rejecting.parseAsync(["node", "pm", "--pm-path", context.pmPath, "--json", "demo", "import", "stray.md"]),
+        ).rejects.toThrow(/Too many arguments for extension command 'demo import': stray\.md.*Use --folder <path>\./);
+        expect(handled).toBe(0);
+
+        // Importer with no positional dispatches to the handler (count-zero path).
+        const flagOnly = installRuntime(new Map([["demo import", importerDescriptor([])]]));
+        await flagOnly.parseAsync(["node", "pm", "--pm-path", context.pmPath, "--json", "demo", "import", "--folder", "x"]);
+        expect(handled).toBe(1);
+
+        // Importer that declares arguments is left to its own handler validation.
+        const declaredArgs = installRuntime(
+          new Map([["demo import", importerDescriptor([{ name: "target", required: false, variadic: false }])]]),
+        );
+        await declaredArgs.parseAsync(["node", "pm", "--pm-path", context.pmPath, "--json", "demo", "import", "x"]);
+        expect(handled).toBe(2);
+
+        // A non-importer command path accepts free-form positionals via context.args.
+        const freeForm = installRuntime(
+          new Map([["demo run", { ...importerDescriptor([]), command: "demo run", action: "demo-run" }]]),
+        );
+        await freeForm.parseAsync(["node", "pm", "--pm-path", context.pmPath, "--json", "demo", "run", "anything"]);
+        expect(handled).toBe(3);
+      } finally {
+        stdoutSpy.mockRestore();
+      }
+    });
+  });
+
   it("reprocesses wrapped variadic action arguments after parser overrides", async () => {
     await withTempPmPath(async (context) => {
       const root = new Command()
@@ -3668,6 +3779,46 @@ describe("CLI Commander usage recovery helpers", () => {
     expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'missing'", new Command().name("pm"), new Map())).toBeUndefined();
   });
 
+  it("suggests the canonical command for a typo of an executable command alias (GH/pm-i35t)", () => {
+    // `show`/`view` -> `get`, `comment` -> `comments`, etc. are rewritten before
+    // commander parses, so they are never runtime command paths; a typo of one
+    // must still resolve to the canonical command that would actually run.
+    const program = new Command().name("pm");
+    program.command("get").description("Get item");
+    program.command("comments").description("Comments");
+    program.command("list").description("List items");
+
+    const showTypo = buildUnknownCommandGuidanceFromRuntime("unknown command 'shwo'", program, new Map());
+    expect(showTypo?.unknownCommandNextSteps?.[0]).toContain("get");
+    expect(showTypo?.unknownCommandExamples?.[0]).toBe("pm get --help");
+
+    const viewTypo = buildUnknownCommandGuidanceFromRuntime("unknown command 'viee'", program, new Map());
+    expect(viewTypo?.unknownCommandNextSteps?.[0]).toContain("get");
+
+    const commentTypo = buildUnknownCommandGuidanceFromRuntime("unknown command 'comemnt'", program, new Map());
+    expect(commentTypo?.unknownCommandNextSteps?.[0]).toContain("comments");
+
+    // The alias token matches its canonical command better than the canonical
+    // command name itself does (exact alias score beats the prefix match), so the
+    // alias-sourced score replaces the command-path score.
+    const aliasBeatsPath = buildUnknownCommandGuidanceFromRuntime("unknown command 'comment'", program, new Map());
+    expect(aliasBeatsPath?.unknownCommandExamples?.[0]).toBe("pm comments --help");
+    // When the command path already scores best (exact match), the weaker
+    // alias-sourced score does not displace it.
+    const pathBeatsAlias = buildUnknownCommandGuidanceFromRuntime("unknown command 'comments'", program, new Map());
+    expect(pathBeatsAlias?.unknownCommandExamples?.[0]).toBe("pm comments --help");
+
+    // A genuine list typo still ranks the real command above any alias.
+    const listTypo = buildUnknownCommandGuidanceFromRuntime("unknown command 'lsit'", program, new Map());
+    expect(listTypo?.unknownCommandNextSteps?.[0]).toContain("list");
+
+    // An alias whose canonical command is absent from the runtime is not suggested.
+    const sparseProgram = new Command().name("pm");
+    sparseProgram.command("list").description("List items");
+    const noCanonical = buildUnknownCommandGuidanceFromRuntime("unknown command 'comemnt'", sparseProgram, new Map());
+    expect(noCanonical?.unknownCommandNextSteps?.[0] ?? "").not.toContain("comments");
+  });
+
   it("resolves child commands and partial help paths through aliases", () => {
     const program = new Command().name("pm");
     program.command("context").alias("ctx").description("Context");
@@ -4234,6 +4385,16 @@ describe("CLI extension command help helpers", () => {
     expect(command.options.map((option) => option.flags)).not.toContain("--secret");
     expect(command.options.filter((option) => option.long === "--format")).toHaveLength(1);
     expect(command.options.find((option) => option.flags === "-q <value>")?.description).toBe("Short flag [required]");
+
+    // Once flags are registered as real options, the residual after-text block
+    // omits them entirely (no duplicate "Extension-provided flags:" section).
+    expect(buildResidualDynamicExtensionFlagHelp(command, descriptor.flags)).toBeNull();
+    // A flag not registered as a real option (e.g. on a command without it) still
+    // surfaces in the residual block so its documentation is not lost.
+    const bareCommand = new Command("import").exitOverride().configureOutput({ writeOut: () => {}, writeErr: () => {} });
+    const residual = buildResidualDynamicExtensionFlagHelp(bareCommand, [{ long: "--folder", value_name: "path", description: "Source folder." }]);
+    expect(residual).toContain("Extension-provided flags:");
+    expect(residual).toContain("--folder <path>  Source folder.");
   });
 
   it("finds, creates, and aliases extension command paths through normalized direct-child helpers", () => {

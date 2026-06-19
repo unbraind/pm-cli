@@ -213,8 +213,13 @@ describe("calendar command module", () => {
 
       const help = context.runCli(["calendar", "--help"]);
       expect(help.code).toBe(0);
-      expect(help.stdout).toContain("stored recur_count starts at series start");
-      expect(help.stdout).toContain("not the query window");
+      // Extension flags render once, as first-class options; commander wraps the
+      // long description across columns, so normalize whitespace before matching.
+      expect(help.stdout.replace(/\s+/g, " ")).toContain(
+        "stored recur_count starts at series start, not the query window",
+      );
+      // The flag must not be duplicated in a separate "Extension-provided flags" block.
+      expect(help.stdout).not.toContain("Extension-provided flags:");
 
       const contracts = context.runCli(
         ["contracts", "--action", "calendar", "--runtime-only", "--schema-only", "--json"],

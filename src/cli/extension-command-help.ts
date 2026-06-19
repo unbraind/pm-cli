@@ -386,6 +386,21 @@ export function applyDynamicExtensionFlagOptions(command: Command, definitions: 
   }
 }
 
+/**
+ * Builds the "Extension-provided flags" help block for only the definitions that
+ * are NOT already rendered as real commander options on {@link command}. After
+ * {@link applyDynamicExtensionFlagOptions} registers extension flags as first
+ * class options, repeating them verbatim in an after-text block duplicated every
+ * flag in `--help` output; this filters those already-listed flags out so the
+ * block is emitted only when it carries flags the Options section does not.
+ */
+export function buildResidualDynamicExtensionFlagHelp(
+  command: Command,
+  definitions: Array<Record<string, unknown>>,
+): string | null {
+  return buildDynamicExtensionFlagHelp(definitions.filter((definition) => !commandAlreadyHasOption(command, definition)));
+}
+
 function buildDynamicExtensionHelpOptionSummary(definition: Record<string, unknown>): HelpOptionSummary | null {
   const flags = formatDynamicExtensionOptionFlags(definition);
   if (!flags) {

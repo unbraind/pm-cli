@@ -630,6 +630,14 @@ Manifest capability: `importers` (and `schema` when supplying `flags`). The two-
 form remains supported; supplying the options object never produces a command-handler
 collision because the definition and handler share the same command path and extension.
 
+Importers and exporters read their source/destination through flags (e.g. `--file`,
+`--folder`) and take **no positional argument** unless one is declared via `arguments`.
+An unexpected positional (such as `pm jsonl import data.jsonl` instead of
+`pm jsonl import --file data.jsonl`) is rejected with a usage error rather than being
+silently ignored, and any `failure_hints` you register are appended to that error so an
+agent is steered to the correct flag. Flags declared via `flags` render once, as
+first-class options in the standard `Options:` section of `--help`.
+
 The bundled `pm-beads` and `pm-todos` packages are first-party importer/exporter
 exemplars that use this registration path and expose runtime contracts for their
 generated commands.

@@ -59,6 +59,7 @@ describe("built-in todos extension import/export", () => {
       const missingFolder = path.join(context.tempRoot, "missing-todos-source");
       await expect(runTodosImport({ folder: missingFolder }, {})).rejects.toMatchObject({
         exitCode: EXIT_CODE.NOT_FOUND,
+        message: expect.stringContaining("Use --folder <path> to point at the directory of Todo markdown files"),
       });
     });
   });
