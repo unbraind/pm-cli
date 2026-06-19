@@ -27,6 +27,22 @@ const WINDOWS_PATH_TOKEN_RE = /\b[A-Za-z]:\\[^\s"'`),;]+/g;
 const PRIVATE_IP_RE =
   /\b(?:10\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|172\.(?:1[6-9]|2\d|3[01])\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|192\.168\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d))\b/g;
 const PATH_FIELD_KEY_PATTERN = /(?:^|[_-])(path|filename|file|module|cwd|dir|directory|location|source|script)s?$/i;
+/**
+ * Upper bound on {@link KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS}. Enforced by a
+ * governance test so the allowlist cannot silently accumulate stale filters.
+ */
+const MAX_KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS = 15;
+/**
+ * Substrings (lowercased) of console output that first-party example
+ * extensions emit at activation. Matching events/breadcrumbs are confirmed
+ * false-positives and are dropped before they reach Sentry.
+ *
+ * Policy: add a pattern only when a marketplace-shipped extension generates
+ * confirmed false-positive console captures, and remove it when that extension
+ * leaves the ecosystem. The list is capped at
+ * {@link MAX_KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS} to keep the filter bounded
+ * and prevent stale entries from masking genuine errors.
+ */
 const KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS = [
   "[starter-extension] activating",
   "[starter-extension] all 8 capabilities registered.",
@@ -201,6 +217,28 @@ function resolveEnvironment(): string {
   return "production";
 }
 
+const DEFAULT_TRACES_SAMPLE_RATE = 0.2;
+
+/**
+ * Resolves the Sentry performance-tracing sample rate, honouring the standard
+ * `SENTRY_TRACES_SAMPLE_RATE` env var when it parses to a fraction in `[0, 1]`.
+ *
+ * The default (20%) keeps span volume modest for a low-frequency developer CLI
+ * while leaving an operational lever for full-trace performance debugging
+ * (`SENTRY_TRACES_SAMPLE_RATE=1`) or fully disabling traces (`=0`). Unset,
+ * non-numeric, or out-of-range values fall back to the default with no
+ * behaviour change for existing installs.
+ */
+function resolveTracesSampleRate(): number {
+  const raw = process.env.SENTRY_TRACES_SAMPLE_RATE?.trim();
+  if (!raw) return DEFAULT_TRACES_SAMPLE_RATE;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 1) {
+    return DEFAULT_TRACES_SAMPLE_RATE;
+  }
+  return parsed;
+}
+
 /**
  * Implements ensure sentry init for the public runtime surface of this module.
  */
@@ -221,7 +259,7 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
     release: `pm-cli@${release}`,
     environment: resolveEnvironment(),
 
-    tracesSampleRate: 0.2,
+    tracesSampleRate: resolveTracesSampleRate(),
     enableLogs: true,
     attachStacktrace: true,
     normalizeDepth: 6,
@@ -358,6 +396,9 @@ export const _testOnly = {
   isKnownNoisyConsoleBreadcrumb,
   scrubString,
   scrubEventData,
+  resolveTracesSampleRate,
+  KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS,
+  MAX_KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS,
   resetSentryStateForTests() {
     _sentry = undefined;
     _initDone = false;

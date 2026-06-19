@@ -4,6 +4,7 @@
 
 ### Added
 
+- Sentry KNOWN\_NOISY\_CONSOLE\_MESSAGE\_PATTERNS maintenance: add a governance test to prevent silent accumulation of stale patterns ([pm-jxls](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-jxls.toon))
 - Add vitest.config.ts coverage include/exclude governance guidance to ARCHITECTURE.md ([pm-othr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-othr.toon))
 - Add wiring-checklist reference card to ARCHITECTURE.md for new command authors ([pm-zyse](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-zyse.toon))
 - Add performance / startup-latency section to ARCHITECTURE.md ([pm-p37b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-p37b.toon))
@@ -27,6 +28,7 @@
 
 ### Other
 
+- Sentry tracesSampleRate is hardcoded at 0.2 — expose as configurable knob or document intent ([pm-gg8e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-gg8e.toon))
 - CLAUDE\_CODE\_PLUGIN.md drift: architecture tree shows 9/14 commands + 1/4 agents; compat table says plugin 1.0.0 \(actual 1.4.0\) ([pm-cxi9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-cxi9.toon))
 - Docs index missing EXTENSION\_AUTHOR\_CONTRACTS + MIGRATION\_CLI\_SIMPLIFICATION links; migration note predates --pm-path ([pm-c97q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-c97q.toon))
 - pm todos import: positional source arg silently ignored + folder-not-found error omits --folder flag \(beads parity\) ([pm-90hp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-90hp.toon))

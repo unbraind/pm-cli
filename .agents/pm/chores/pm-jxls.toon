@@ -2,14 +2,21 @@ id: pm-jxls
 title: "Sentry KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS maintenance: add a governance test to prevent silent accumulation of stale patterns"
 description: "src/core/sentry/instrument.ts maintains KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS (8 hardcoded strings). These were added reactively when Sentry noise was observed; there is no mechanism to detect when an extension is renamed/removed and the old pattern becomes a dead filter, nor a test asserting the set stays bounded. The list currently includes patterns for 'starter-extension' and 'pm-ext-ts-starter' which are example-package-specific. As the extension ecosystem grows, this list can accumulate stale entries that pass CI invisibly."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[3]: "area:observability","area:sentry",maintainability
 created_at: "2026-06-07T10:04:31.819Z"
-updated_at: "2026-06-07T10:16:03.217Z"
+updated_at: "2026-06-19T15:33:13.320Z"
 author: audit-observability-agent
 acceptance_criteria: "- A new governance test in tests/unit/sentry-helpers.spec.ts asserts `KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS.length <= 15` (or a chosen max) as a cardinality gate with an explanatory comment.\n- A code comment on the constant explains the policy: patterns should be added only when an extension ships to the marketplace and generates confirmed false-positive console captures; they should be removed when the extension is removed from the ecosystem.\n- Optional stretch: link each pattern to a pm-tracker item or an ADR reference so removal can be audited."
 parent: pm-5oj5
 risk: low
 confidence: high
+resolution: "Added policy doc comment on KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS + MAX_KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS=15 cardinality bound, plus a governance test asserting the allowlist stays bounded, lowercase/trimmed, and duplicate-free."
+expected_result: The noisy-pattern allowlist cannot silently accumulate stale or malformed filters that mask genuine extension errors.
+actual_result: "Governance test in sentry-helpers.spec.ts enforces <=15 entries, normalization, and uniqueness; constant carries an explicit add/remove policy. Coverage 100/100/100/100."
+files[2]{path,scope,note}:
+  src/core/sentry/instrument.ts,project,Policy comment + MAX_KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS cardinality bound (15)
+  tests/unit/core/sentry/sentry-helpers.spec.ts,project,"Governance gate: bounded/normalized/deduped allowlist assertions"
+close_reason: "Added policy doc comment on KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS + MAX_KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS=15 cardinality bound, plus a governance test asserting the allowlist stays bounded, lowercase/trimmed, and duplicate-free."
 body: "## Context\n\nFile: src/core/sentry/instrument.ts lines 27-36 — 8 hardcoded patterns. The associated test file (tests/unit/sentry-helpers.spec.ts) tests the filtering function but does not assert a maximum cardinality or validate that each pattern is still referenced by an installed extension.\n\nThis is a maintainability and signal-quality gap: stale patterns waste filter cycles and can mask genuine errors from extensions with similar naming.\n\n## Acceptance criteria\n\n- A new governance test in tests/unit/sentry-helpers.spec.ts asserts `KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS.length <= 15` (or a chosen max) as a cardinality gate with an explanatory comment.\n- A code comment on the constant explains the policy: patterns should be added only when an extension ships to the marketplace and generates confirmed false-positive console captures; they should be removed when the extension is removed from the ecosystem.\n- Optional stretch: link each pattern to a pm-tracker item or an ADR reference so removal can be audited.\n\n## Evidence\n\nsrc/core/sentry/instrument.ts:27-36 — 8 patterns, no governance comment.\ntests/unit/sentry-helpers.spec.ts — no cardinality assertion."

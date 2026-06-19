@@ -128,6 +128,19 @@ Interaction rules:
 
 `pm telemetry stats` reads the local queue and reports, per command bucket, latency percentiles (`duration_p50_ms`/`duration_p95_ms`/`duration_max_ms`, nearest-rank over `command_finish` `duration_ms`), outcome rates (`ok_count`/`error_count`/`error_rate`; a finish event whose `ok` is missing or not strictly `true` is counted conservatively as an error), and `command_resolution_counts`. These are an always-available, zero-network performance and reliability signal for the most recent queued window.
 
+### Sentry environment variables
+
+Crash and error diagnostics are reported to Sentry only when telemetry is enabled and the process is not opted out. These environment variables tune the Sentry client.
+
+| Variable | Values | Use |
+|----------|--------|-----|
+| `PM_SENTRY_DISABLED` | boolean | Disable Sentry error reporting for this process (the Sentry SDK is not even imported). `PM_TELEMETRY_DISABLED` / `PM_NO_TELEMETRY` also disable it. |
+| `SENTRY_DSN` | URL | Override the destination DSN. Defaults to the bundled pm-cli project DSN. |
+| `SENTRY_ENVIRONMENT` | string | Override the reported environment tag. Defaults to `test` under Vitest, `ci` when `CI` is set, otherwise `production`. |
+| `SENTRY_TRACES_SAMPLE_RATE` | number `0`–`1` | Fraction of command spans sampled for performance tracing. Defaults to `0.2` (20%). Set to `1` for full-trace performance debugging or `0` to disable tracing. Non-numeric or out-of-range values fall back to the default. |
+
+> Sentry is hard-disabled under Vitest (`VITEST` / `VITEST_WORKER_ID`), so these knobs are no-ops inside the test suite.
+
 ## Item Storage Format
 
 TOON is the default:
