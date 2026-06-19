@@ -166,6 +166,7 @@ describe("GitHub workflow contract", () => {
       "workflow_dispatch:",
       "permissions:",
       "contents: read",
+      "issues: write",
       "concurrency:",
       "cancel-in-progress: true",
       "matrix:",
@@ -196,6 +197,13 @@ describe("GitHub workflow contract", () => {
       "run: node scripts/release/compatibility-check.mjs --json",
       "if: matrix.os != 'ubuntu-latest' || matrix.node != 20",
       "run: pnpm test",
+      "name: Alert on scheduled nightly failure",
+      "if: failure() && github.event_name == 'schedule'",
+      "GH_TOKEN: ${{ github.token }}",
+      "NIGHTLY_SHA: ${{ github.sha }}",
+      'gh issue list --state open --search "\\"${title}\\" in:title"',
+      "gh issue create --title",
+      "gh issue comment",
     ]);
     expect(nightlyWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(2);
     expect(nightlyWorkflow).not.toContain("Sandboxed PM regression");

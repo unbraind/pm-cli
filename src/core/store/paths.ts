@@ -149,7 +149,8 @@ export function getItemPath(
  * Implements get item format from path for the public runtime surface of this module.
  */
 export function getItemFormatFromPath(itemPath: string): ItemFormat | null {
-  const extension = path.extname(itemPath).toLowerCase() as keyof typeof ITEM_FORMAT_BY_EXTENSION;
+  const normalizedItemPath = itemPath.replaceAll("\\", "/");
+  const extension = path.posix.extname(normalizedItemPath).toLowerCase() as keyof typeof ITEM_FORMAT_BY_EXTENSION;
   return ITEM_FORMAT_BY_EXTENSION[extension] ?? null;
 }
 

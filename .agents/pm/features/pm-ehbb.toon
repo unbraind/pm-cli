@@ -2,15 +2,32 @@ id: pm-ehbb
 title: "Add nightly.yml failure alerting: notify on Windows/Node25 smoke failures"
 description: "nightly.yml tests on windows-latest/Node20 and ubuntu/Node25 (cutting-edge) but on failure the result only appears in the GH Actions workflow run list. There is no alerting mechanism (GH issue, Slack, notification) when the nightly fails on a non-Ubuntu or non-Node20 matrix entry. A nightly Windows failure can go unnoticed for days, masking regressions that only appear on Windows paths (e.g. Win32 shell spawning, POSIX-skip vector-store tests)."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[4]: "area:ci","area:release",nightly,observability
 created_at: "2026-06-07T10:06:27.541Z"
-updated_at: "2026-06-09T22:05:03.412Z"
-assignee: codex-active-pm-cycle-20260610
+updated_at: "2026-06-19T12:48:07.224Z"
 author: audit-docs-tests-agent
 acceptance_criteria: "- nightly.yml has a failure notification step (e.g. create GH issue on failure, or a Slack/email webhook step)\n- OR: a ticket documents the deliberate decision to not alert and explains the monitoring approach\n- At minimum: RELEASING.md mentions that nightly failures should be investigated before release"
 parent: pm-u9d0
 risk: medium
 confidence: medium
+resolution: "Scheduled Nightly failures now open or update a GitHub issue per failing scheduled OS/Node matrix entry, and release docs treat those failures as release-health blockers."
+expected_result: Maintainers receive an actionable GitHub issue when scheduled Nightly Validation fails on cross-platform or cutting-edge matrix entries.
+actual_result: "nightly.yml grants issues:write and runs a failure-only scheduled alert step using gh issue list/create/comment; workflow contract tests and release docs cover the behavior."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-tq5t,related,"2026-06-19T12:35:32.337Z",codex-implementation-20260619,bundled_work
+comments[2]{created_at,author,text}:
+  "2026-06-19T12:33:20.721Z",codex-implementation-20260619,"Evidence: implemented scheduled Nightly failure issue alerting with issues:write, duplicate-aware gh issue create/comment behavior, workflow contract coverage, and RELEASING.md release-health guidance. Verification passed: linked ci-workflow-contract test, pnpm typecheck, pnpm quality:static, pnpm changelog:pm:check unchanged with pm-changelog 2026.6.14, pm package doctor ok, node scripts/run-tests.mjs coverage = 100/100/100/100 (4655 tests), pm validate history drift ok with pre-existing missing-resolution warning backlog, and isolated temp-dir manual smoke passed."
+  "2026-06-19T12:48:07.224Z",codex,"Review follow-up: incorporating CodeRabbit robustness nits for scheduled nightly alert issue search quoting and explicit SHA environment wiring before merge."
+files[2]{path,scope,note}:
+  .github/workflows/nightly.yml,project,Add scheduled Nightly failure issue alerting for failed matrix entries
+  tests/integration/ci-workflow-contract.spec.ts,project,Lock Nightly issue alerting in workflow contract tests
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqkwrf6y-6smsj2,test,passed,"2026-06-19T12:31:26.270Z","2026-06-19T12:31:41.482Z","2026-06-19T12:31:41.482Z",null,null,1,0,0,null,null,null
+docs[1]{path,scope,note}:
+  docs/RELEASING.md,project,Document scheduled Nightly failures as release-health blockers
+close_reason: "Nightly scheduled failure alerting implemented and verified: workflow issue alert step, contract test, release docs, full coverage 100/100/100/100, static/typecheck/changelog/validate/manual temp smoke passed."
 body: "## Context\nnightly.yml (lines 26-29) includes windows-latest/node20, ubuntu/node25.\nThe `test` step is only run for non-ubuntu-node20 entries (line 99-103): no coverage gate, no quality gate, just `pnpm test`.\n\nThere is no failure notification step in nightly.yml. A maintainer would only notice a failure if they regularly check the Actions tab.\n\n## Acceptance criteria\n- nightly.yml has a failure notification step (e.g. create GH issue on failure, or a Slack/email webhook step)\n- OR: a ticket documents the deliberate decision to not alert and explains the monitoring approach\n- At minimum: RELEASING.md mentions that nightly failures should be investigated before release\n\n## Evidence\n.github/workflows/nightly.yml; tests/unit/vector-store-adapter.spec.ts line 663 (itOnPosix = win32 skip); tests/unit/test-all-command.spec.ts line 896 (win32 timeout extended)\n\n## Options\n1. Add `if: failure()` step posting a GH issue\n2. Reference the nightly run URL from a TESTING.md 'Nightly coverage' section\n3. ADR: explicit decision that nightly is informational only"

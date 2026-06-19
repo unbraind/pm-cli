@@ -2,15 +2,31 @@ id: pm-tq5t
 title: Add Windows path-separator test coverage for fs-utils and store/paths
 description: "The nightly CI matrix includes windows-latest/Node20, and tests/unit/ has some win32-conditional logic (test-all-command.spec.ts line 896, test-command.spec.ts line 1820, vector-store-adapter.spec.ts line 663). However fs-utils.spec.ts and store-paths.spec.ts do not have Windows-specific path-separator coverage. Path construction using path.join() is safe, but hardcoded forward-slash usage in paths (e.g. .agents/pm/ pattern matching) could break on Windows."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[4]: "area:tests",coverage,cross-platform,windows
 created_at: "2026-06-07T10:07:36.935Z"
-updated_at: "2026-06-09T22:05:02.504Z"
-assignee: codex-active-pm-cycle-20260610
+updated_at: "2026-06-19T13:03:10.469Z"
 author: audit-docs-tests-agent
 acceptance_criteria: "- fs-utils.spec.ts has at least one test verifying path construction on simulated win32 (or a comment explaining the platform is safe)\n- store-paths.spec.ts verifies path outputs are platform-appropriate\n- OR: a review of fs-utils.ts and paths.ts confirms path.join() is used throughout with no hardcoded separators"
 parent: pm-u9d0
 risk: low
 confidence: medium
+resolution: Added focused cross-platform path tests for atomic file writes and Windows-style tracker path item-format parsing.
+expected_result: Path helper behavior has proactive coverage for platform path construction and Windows-style tracker paths.
+actual_result: "fs-utils and store-paths focused tests now cover platform path semantics and Windows-style .agents\\pm item paths; linked tests pass."
+comments[4]{created_at,author,text}:
+  "2026-06-19T12:33:21.471Z",codex-implementation-20260619,"Evidence: added path coverage for fs-utils atomic writes preserving platform path semantics and store path format parsing for Windows-style tracker paths. Verification passed: linked fs-utils/store-paths test, pnpm typecheck, pnpm quality:static, pnpm changelog:pm:check unchanged with pm-changelog 2026.6.14, node scripts/run-tests.mjs coverage = 100/100/100/100 (4655 tests), pm validate history drift ok with pre-existing missing-resolution warning backlog, and isolated temp-dir manual smoke passed."
+  "2026-06-19T12:42:31.640Z",codex-implementation-20260619,"Review follow-up: addressed Gemini feedback on fs-utils path test by reloading fs-utils with a mocked node:fs/promises.writeFile and asserting the atomic temp path is created in the target directory. Verification: node scripts/run-tests.mjs test -- tests/unit/core/fs/fs-utils.spec.ts tests/unit/core/store/store-paths.spec.ts passed; ci-workflow-contract focused test also passed."
+  "2026-06-19T12:57:46.598Z",codex,"Review follow-up: Gemini flagged POSIX parsing fragility for Windows-style tracker paths with dotted directory names; normalizing separator handling in getItemFormatFromPath and adding negative coverage before merge."
+  "2026-06-19T13:03:10.469Z",codex,"Evidence: normalized getItemFormatFromPath to parse Windows-style separators before extension detection, including dotted-directory/no-extension negative coverage. Verification passed: node scripts/run-tests.mjs test -- tests/unit/core/store/store-paths.spec.ts; node scripts/run-tests.mjs test -- tests/unit/core/fs/fs-utils.spec.ts tests/unit/core/store/store-paths.spec.ts; pnpm typecheck; pnpm quality:static; node scripts/run-tests.mjs coverage = 100/100/100/100 (4655 tests, 230 files)."
+files[3]{path,scope,note}:
+  src/core/store/paths.ts,project,Normalize Windows-style separators before item format extension parsing
+  tests/unit/core/fs/fs-utils.spec.ts,project,Add platform path semantics coverage for atomic file writes
+  tests/unit/core/store/store-paths.spec.ts,project,Add Windows-style tracker path format parsing coverage
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/core/fs/fs-utils.spec.ts tests/unit/core/store/store-paths.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqkwrfo3-p9hznl,test,passed,"2026-06-19T12:31:26.270Z","2026-06-19T12:31:42.099Z","2026-06-19T12:31:42.099Z",null,null,1,0,0,null,null,null
+close_reason: "Windows path coverage implemented and verified: linked focused tests pass, full coverage is 100/100/100/100, static/typecheck/changelog/validate/manual temp smoke passed."
 body: "## Context\nWindows-specific handling found in tests:\n- tests/unit/test-all-command.spec.ts line 896: extended timeout on win32\n- tests/unit/test-command.spec.ts line 1820: signal fixture skip on win32\n- tests/unit/vector-store-adapter.spec.ts line 663: itOnPosix skip on win32\n\nBut: fs-utils.spec.ts and store-paths.spec.ts have no win32-conditional tests.\n\nNightly actually runs full test suite on windows-latest (not just smoke), so any path-separator bugs would surface there, but are not proactively tested in unit coverage.\n\n## Acceptance criteria\n- fs-utils.spec.ts has at least one test verifying path construction on simulated win32 (or a comment explaining the platform is safe)\n- store-paths.spec.ts verifies path outputs are platform-appropriate\n- OR: a review of fs-utils.ts and paths.ts confirms path.join() is used throughout with no hardcoded separators\n\n## Evidence\ntests/unit/fs-utils.spec.ts; tests/unit/store-paths.spec.ts; tests/unit/test-all-command.spec.ts line 896; nightly.yml windows-latest entry"
