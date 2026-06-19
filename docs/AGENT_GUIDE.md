@@ -189,6 +189,7 @@ Use these defaults unless the task requires otherwise:
 - After switching embedding provider/model, run `pm reindex --mode semantic --full` or `pm reindex --mode hybrid --full` to rebuild vectors completely; `pm reindex --mode keyword` ignores `--full` and now warns when ledger identity drift is detected.
 - `pm normalize --dry-run --json` before lifecycle metadata cleanups.
 - `pm health --check-only` when inspecting repository health without refresh side effects.
+- Mistyped command names get a `Did you mean: <command>?` hint, including typos of the executable shortcut aliases — `pm shwo <id>` suggests `get` (the canonical of `show`/`view`), and `pm comemnt` suggests `comments`.
 
 ## Self-Repair Remediation
 

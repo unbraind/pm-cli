@@ -261,7 +261,7 @@ export async function runTodosImport(options, global) {
         entries = await fs.readdir(sourceFolder, { withFileTypes: true });
     }
     catch {
-        throw new PmCliError(`Todos source folder not found at ${sourceFolder}`, EXIT_CODE.NOT_FOUND);
+        throw new PmCliError(`Todos source folder not found at ${sourceFolder}. Use --folder <path> to point at the directory of Todo markdown files.`, EXIT_CODE.NOT_FOUND);
     }
     const author = selectAuthor(toNonEmptyString(options.author), settings.author_default);
     const message = toNonEmptyString(options.message) ?? "Import from todos markdown";

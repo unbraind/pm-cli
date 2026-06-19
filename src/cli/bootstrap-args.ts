@@ -345,7 +345,7 @@ type BootstrapNormalizationConfidence = "high" | "medium";
  * in one place means the alias is consistent across registration, commander dispatch,
  * telemetry, and error handling — all of which read the normalized argv.
  */
-const EXECUTABLE_COMMAND_ALIASES: Readonly<Record<string, string>> = {
+export const EXECUTABLE_COMMAND_ALIASES: Readonly<Record<string, string>> = {
   show: "get",
   view: "get",
   comment: "comments",

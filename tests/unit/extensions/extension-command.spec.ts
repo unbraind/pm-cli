@@ -1209,7 +1209,7 @@ describe("extension command runtime", () => {
   });
 
   it("covers npm install-source helper branches without registry access", async () => {
-    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-install-source-helpers-"));
+    const tempRoot = await realpath(await mkdtemp(path.join(os.tmpdir(), "pm-install-source-helpers-")));
     try {
       const packageRoot = path.join(tempRoot, "package-root");
       await mkdir(packageRoot, { recursive: true });

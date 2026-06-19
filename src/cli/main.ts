@@ -80,6 +80,7 @@ import type { PmSettings } from "../types/index.js";
 import {
   coerceLooseCommandOptionsWithFlagDefinitions,
   collectLooseCommandOptionKeysForDefinitions,
+  collectLoosePositionalArgs,
   parseLooseCommandOptions,
   stripLooseCommandOptionTokens,
   validateLooseCommandOptionsWithFlagDefinitions,
@@ -119,6 +120,7 @@ import {
   collectDynamicExtensionFlagHelpByCommand,
   collectExtensionCommandHelpDescriptors,
   applyDynamicExtensionFlagOptions,
+  buildResidualDynamicExtensionFlagHelp,
   applyDynamicExtensionArguments,
   buildDynamicExtensionCommandMetadataHelp,
   findCommandByPath,
@@ -178,6 +180,12 @@ let activeTelemetryCommandContext: ActiveTelemetryCommand | null = null;
 
 function setActiveExtensionHookContextForTest(context: ActiveExtensionHookContext | null): void {
   activeExtensionHookContext = context;
+}
+
+function setActiveRuntimeExtensionCommandDescriptorsForTest(
+  descriptors: Map<string, ExtensionCommandHelpDescriptor>,
+): void {
+  activeRuntimeExtensionCommandDescriptors = descriptors;
 }
 
 const TELEMETRY_COMMAND_RESOLUTION_SET = new Set<TelemetryCommandResolution>([
@@ -805,6 +813,28 @@ function formatDynamicCommandUsage(descriptor: ExtensionCommandHelpDescriptor): 
   return `pm ${descriptor.command}${argumentSuffix ? ` ${argumentSuffix}` : ""}`;
 }
 
+/**
+ * Reports whether {@link commandPath} is the generated command path of a
+ * registered importer (`<name> import`) or exporter (`<name> export`). Importers
+ * and exporters read/write a source/destination via flags and take no positional
+ * operand, so an unexpected positional is a usage error; free-form
+ * `registerCommand` commands intentionally accept positionals via `context.args`
+ * and are excluded.
+ */
+function isImporterOrExporterCommandPath(
+  registrations: ReturnType<typeof createEmptyExtensionRegistrationRegistry> | null,
+  commandPath: string,
+): boolean {
+  if (!registrations) {
+    return false;
+  }
+  const normalized = normalizeExtensionCommandPath(commandPath);
+  return (
+    registrations.importers.some((entry) => normalizeExtensionCommandPath(`${entry.importer} import`) === normalized) ||
+    registrations.exporters.some((entry) => normalizeExtensionCommandPath(`${entry.exporter} export`) === normalized)
+  );
+}
+
 function validateDynamicExtensionCommandArgs(
   descriptor: ExtensionCommandHelpDescriptor,
   args: string[],
@@ -812,16 +842,17 @@ function validateDynamicExtensionCommandArgs(
   const requiredCount = descriptor.arguments.filter((argument) => argument.required).length;
   const variadic = descriptor.arguments.some((argument) => argument.variadic);
   const maxCount = variadic ? Number.POSITIVE_INFINITY : descriptor.arguments.length;
+  const hintSuffix = descriptor.failure_hints.length > 0 ? ` ${descriptor.failure_hints.join(" ")}` : "";
   if (args.length < requiredCount) {
     throw new PmCliError(
-      `Missing required argument for extension command '${descriptor.command}'. Usage: ${formatDynamicCommandUsage(descriptor)}`,
+      `Missing required argument for extension command '${descriptor.command}'. Usage: ${formatDynamicCommandUsage(descriptor)}${hintSuffix}`,
       EXIT_CODE.USAGE,
     );
   }
   if (args.length > maxCount) {
     const extra = args.slice(maxCount).join(" ");
     throw new PmCliError(
-      `Too many arguments for extension command '${descriptor.command}': ${extra}. Usage: ${formatDynamicCommandUsage(descriptor)}`,
+      `Too many arguments for extension command '${descriptor.command}': ${extra}. Usage: ${formatDynamicCommandUsage(descriptor)}${hintSuffix}`,
       EXIT_CODE.USAGE,
     );
   }
@@ -1615,6 +1646,19 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         commandArgs = parserOverride.context.args;
         commandOptions = parserOverride.context.options;
         globalOptions = parserOverride.context.global;
+        // Validate importer/exporter positionals on the real dispatch path:
+        // these short-circuit before the dynamic action that previously held the
+        // only arity validation, so excess positionals could reach handlers.
+        // Free-form `registerCommand` commands intentionally accept positionals
+        // via context.args, and core commands have no descriptor.
+        const dynamicDescriptor = activeRuntimeExtensionCommandDescriptors.get(normalizeExtensionCommandPath(commandPath));
+        if (dynamicDescriptor && isImporterOrExporterCommandPath(activeRegistrations, commandPath)) {
+          const positionalArgs =
+            dynamicDescriptor.arguments.length === 0
+              ? collectLoosePositionalArgs(commandArgs)
+              : stripLooseCommandOptionTokens(commandArgs, extensionFlagDefinitions);
+          validateDynamicExtensionCommandArgs(dynamicDescriptor, positionalArgs);
+        }
         globalOptions = await applyDefaultOutputFormat(globalOptions);
         setResolvedGlobalOptions(actionCommand, globalOptions);
         actionCommand.args = [...commandArgs];
@@ -1747,8 +1791,11 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
     if (existingCommand) {
       if (descriptor?.flags && descriptor.flags.length > 0) {
         applyDynamicExtensionFlagOptions(existingCommand, descriptor.flags);
-      }
-      if (flagHelp) {
+        const residualFlagHelp = buildResidualDynamicExtensionFlagHelp(existingCommand, descriptor.flags);
+        if (residualFlagHelp) {
+          existingCommand.addHelpText("after", residualFlagHelp);
+        }
+      } else if (flagHelp) {
         existingCommand.addHelpText("after", flagHelp);
       }
       /* c8 ignore next */
@@ -1766,14 +1813,16 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
     if (descriptor?.description) {
       dynamicCommand.description(descriptor.description);
     }
+    let residualDynamicFlagHelp = flagHelp;
     if (descriptor) {
       applyDynamicExtensionArguments(dynamicCommand, descriptor);
       if (descriptor.flags.length > 0) {
         applyDynamicExtensionFlagOptions(dynamicCommand, descriptor.flags);
+        residualDynamicFlagHelp = buildResidualDynamicExtensionFlagHelp(dynamicCommand, descriptor.flags) ?? undefined;
       }
     }
-    if (flagHelp) {
-      dynamicCommand.addHelpText("after", flagHelp);
+    if (residualDynamicFlagHelp) {
+      dynamicCommand.addHelpText("after", residualDynamicFlagHelp);
     }
     if (metadataHelp) {
       dynamicCommand.addHelpText("after", metadataHelp);
@@ -2724,7 +2773,9 @@ export const _testOnly = {
   shouldRegisterDynamicExtensionPaths,
   shouldRegisterRuntimeSchemaFlags,
   setActiveExtensionHookContextForTest,
+  setActiveRuntimeExtensionCommandDescriptorsForTest,
   toLooseFieldDefinitionType,
+  isImporterOrExporterCommandPath,
   validateDynamicExtensionCommandInvocation,
   wrapProgramActionsForExtensionHandlers,
   wrapThrownErrorForSentry,

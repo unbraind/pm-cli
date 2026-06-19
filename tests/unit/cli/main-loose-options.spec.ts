@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   coerceLooseCommandOptionsWithFlagDefinitions,
+  collectLoosePositionalArgs,
   parseLooseCommandOptions,
   stripLooseCommandOptionTokens,
   validateLooseCommandOptionsWithFlagDefinitions,
@@ -245,5 +246,21 @@ describe("cli extension loose option parser", () => {
       "value",
       "positional",
     ]);
+  });
+
+  it("collects only positional operands, skipping option tokens and their values", () => {
+    // A bare operand with no flags is a positional.
+    expect(collectLoosePositionalArgs(["todos.md"])).toEqual(["todos.md"]);
+    // `--flag value`, `--flag=value`, and `-f value` consume their value; the
+    // trailing operand remains positional.
+    expect(collectLoosePositionalArgs(["--file", "path", "extra"])).toEqual(["extra"]);
+    expect(collectLoosePositionalArgs(["--file=path", "extra"])).toEqual(["extra"]);
+    expect(collectLoosePositionalArgs(["-f", "path", "extra"])).toEqual(["extra"]);
+    // A flag with no following value is a boolean option (consumes nothing else).
+    expect(collectLoosePositionalArgs(["--dry-run"])).toEqual([]);
+    // Everything after a bare `--` separator is positional.
+    expect(collectLoosePositionalArgs(["--file", "path", "--", "--looks-like-flag", "x"])).toEqual(["--looks-like-flag", "x"]);
+    // No operands at all.
+    expect(collectLoosePositionalArgs(["--file", "path"])).toEqual([]);
   });
 });

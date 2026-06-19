@@ -2,10 +2,17 @@ id: pm-i35t
 title: "Unknown-command did-you-mean misses executable aliases: 'pm shwo' gets no suggestion (show/view/comment not in candidate set)"
 description: "Repro: 'pm lsit' -> 'Did you mean: list?' (good) but 'pm shwo pm-xxxx' -> no did-you-mean at all, plus an unhelpful alphabetical Examples list (activity/aggregate/append). shwo->show is OSA distance 1 (transposition), but the EXECUTABLE_COMMAND_ALIASES tokens (show/view/comment/note/learning, src/cli/bootstrap-args.ts ~line 319) are rewritten pre-parse and apparently not included in the unknown-command suggestion candidates (error-guidance.ts unknownCommandNextSteps path). Fix: include executable alias tokens in the suggestion candidate list (suggest 'show' or its canonical 'get'). Telemetry already showed 'pm show' is the most common unknown-command shape, so typos of it are likely too."
 type: Task
-status: open
+status: closed
 priority: 3
 tags[3]: agent-ux,cli,dogfood-2026-06-12
 created_at: "2026-06-12T16:19:38.636Z"
-updated_at: "2026-06-12T16:19:38.636Z"
+updated_at: "2026-06-19T11:44:18.126Z"
 author: maintainer-agent
+parent: pm-mpbb
+comments[4]{created_at,author,text}:
+  "2026-06-19T11:00:33.506Z",claude-code-agent,"Implemented in feat/agent-ergonomics-cmd-suggestions-importer-ux. Executable command aliases (show/view->get, comment->comments, note->notes, learning->learnings) are now part of the unknown-command did-you-mean candidate pool. Exported EXECUTABLE_COMMAND_ALIASES from bootstrap-args.ts (single source of truth) and removed the redundant COMMON_COMMAND_ALIASES map in commander-usage.ts. buildUnknownCommandGuidanceFromRuntime now fuzzy-scores each alias TOKEN against the unknown command and attributes the score to the alias's CANONICAL command path, so 'pm shwo'->'Did you mean: get?', 'pm comemnt'->'comments', 'pm viee'->'get'. Real-command typos (lsit->list) still rank above aliases; aliases whose canonical command is absent from the runtime are not suggested. Tests: tests/unit/cli/cli-main-errors.spec.ts (alias-typo scoring + merge branches). Docs: AGENT_GUIDE.md Safe Defaults."
+  "2026-06-19T11:23:29.500Z",codex-cli-agent,"Evidence: continued branch feat/agent-ergonomics-cmd-suggestions-importer-ux on 2026-06-19. Temp-dir smoke confirmed pm shwo suggests canonical get. Focused UX tests passed (5 files, 255 tests). Repo gates passed after follow-up: pnpm quality:static, pnpm typecheck, node scripts/run-tests.mjs coverage = 100/100/100/100 (230 files, 4653 tests)."
+  "2026-06-19T11:35:08.959Z",codex-cli-agent,"Review follow-up: addressed Gemini/CodeRabbit suggestion by using a Set for runtime command path membership checks in buildUnknownCommandGuidanceFromRuntime, avoiding repeated array scans while preserving alias scoring behavior."
+  "2026-06-19T11:41:43.352Z",codex-cli-agent,"Verification after review follow-up: focused tests passed (tests/unit/cli/cli-main-errors.spec.ts + main-loose-options.spec.ts, 130 tests), pnpm typecheck passed, pnpm quality:static passed, and node scripts/run-tests.mjs coverage passed at 100/100/100/100 (230 files, 4653 tests)."
+close_reason: "Implemented alias-aware unknown-command suggestions using EXECUTABLE_COMMAND_ALIASES as the canonical source, verified with temp-dir smoke (pm shwo -> get), focused UX tests, typecheck, static/docstring quality gate, and full coverage 100/100/100/100."
 body: ""

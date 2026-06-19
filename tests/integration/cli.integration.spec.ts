@@ -5203,14 +5203,14 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const helpResult = context.runCli(["acme", "sync", "--help"]);
       expect(helpResult.code).toBe(0);
-      expect(helpResult.stdout).toContain("Extension-provided flags:");
-      expect(helpResult.stdout).toContain("-d, --dry-run  Run without side effects");
-      expect(helpResult.stdout).toContain("--limit <count>  Extension-provided option.");
-      expect(helpResult.stdout).toContain("--required-flag  Extension-provided option. [required]");
-      expect(helpResult.stdout).toContain("--disabled-flag  Extension-provided option. [disabled]");
+      expect(helpResult.stdout).not.toContain("Extension-provided flags:");
+      const normalizedHelp = helpResult.stdout.replace(/\s+/g, " ");
+      expect(normalizedHelp).toContain("-d, --dry-run Run without side effects");
+      expect(normalizedHelp).toContain("--limit <count> Extension-provided option.");
+      expect(normalizedHelp).toContain("--required-flag <value> Extension-provided option. [required]");
+      expect(normalizedHelp).toContain("--disabled-flag Extension-provided option. [disabled]");
       expect(helpResult.stdout).not.toContain("--hidden-flag");
       expect(helpResult.stdout).not.toContain("Ignored invalid long flag");
-
       const dispatched = context.runCli(["acme", "sync", "--json", "--dry-run", "--limit", "2", "--required-flag", "ok", "artifact-Z"], {
         expectJson: true,
       });
@@ -5824,7 +5824,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const beadsHelp = context.runCli(["beads", "import", "--help"]);
       expect(beadsHelp.code).toBe(0);
-      expect(beadsHelp.stdout).toContain("Extension-provided flags:");
+      expect(beadsHelp.stdout).not.toContain("Extension-provided flags:");
       expect(beadsHelp.stdout).toContain("--file");
       expect(beadsHelp.stdout).toContain("--author");
       expect(beadsHelp.stdout).toContain("--message");
@@ -5832,14 +5832,14 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const todosImportHelp = context.runCli(["todos", "import", "--help"]);
       expect(todosImportHelp.code).toBe(0);
-      expect(todosImportHelp.stdout).toContain("Extension-provided flags:");
+      expect(todosImportHelp.stdout).not.toContain("Extension-provided flags:");
       expect(todosImportHelp.stdout).toContain("--folder");
       expect(todosImportHelp.stdout).toContain("--author");
       expect(todosImportHelp.stdout).toContain("--message");
 
       const todosExportHelp = context.runCli(["todos", "export", "--help"]);
       expect(todosExportHelp.code).toBe(0);
-      expect(todosExportHelp.stdout).toContain("Extension-provided flags:");
+      expect(todosExportHelp.stdout).not.toContain("Extension-provided flags:");
       expect(todosExportHelp.stdout).toContain("--folder");
     });
   });

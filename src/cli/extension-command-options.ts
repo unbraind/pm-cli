@@ -360,6 +360,32 @@ export function parseLooseCommandOptions(args: string[]): Record<string, unknown
 }
 
 /**
+ * Returns the positional operands in `args`, skipping option tokens and the
+ * values they consume (`--flag value`, `--flag=value`, `-f value`, and boolean
+ * flags). Tokens after a bare `--` separator are all positional. Used to count
+ * genuinely unexpected positionals for extension commands that declare no
+ * arguments without miscounting leaked/undeclared option tokens as operands.
+ */
+export function collectLoosePositionalArgs(args: string[]): string[] {
+  const positionals: string[] = [];
+  let index = 0;
+  while (index < args.length) {
+    if (args[index] === "--") {
+      positionals.push(...args.slice(index + 1));
+      break;
+    }
+    const parsed = parseLooseOptionToken(args, index);
+    if (parsed) {
+      index += Math.max(1, parsed.consumed);
+      continue;
+    }
+    positionals.push(args[index]);
+    index += 1;
+  }
+  return positionals;
+}
+
+/**
  * Implements strip loose command option tokens for the public runtime surface of this module.
  */
 export function stripLooseCommandOptionTokens(
