@@ -6,16 +6,17 @@ status: closed
 priority: 2
 tags[4]: audit-2026-06-13,health,history,performance
 created_at: "2026-06-12T22:47:21.538Z"
-updated_at: "2026-06-19T22:58:06.574Z"
+updated_at: "2026-06-19T23:06:47.730Z"
 author: audit-quality-agent
 parent: pm-y7sc
 resolution: "Implemented a split drift-cache verification policy: strict content-hash verification remains the default for validate/history-repair, while pm health uses metadata-only cache hits for warm agent-loop scans."
 expected_result: Warm pm health avoids rereading every cached history stream while validation and repair still detect metadata-stable content replacement.
 actual_result: "Focused tests, linked tests, full coverage, static quality, security, contracts, changelog check, temp smoke, package dogfood, and Sentry/telemetry gate passed; real-repo warm health measured 615/483/422 ms."
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-06-17T22:04:54.799Z",codex-audit-20260618,"Sub-agent performance audit evidence: current repo has 1293 history streams, 20691 entries, 24641681 bytes; hotspot remains src/core/history/drift-scan.ts full stream read/content_hash on metadata cache hits. Recommended safe shape: add cacheHitVerification mode, use stat-fingerprint for health warm-cache, keep history-repair --all on content-hash, bump drift cache version, and test health/validate/repair callers separately. Not bundled into GH-262/templates branch because it changes shared drift-scan correctness semantics."
   "2026-06-17T23:12:21.038Z",codex-audit-agent,"Audit decision: performance subagent confirmed pm health hotspot remains drift-scan cache-hit content hashing across 1293 streams/24.6MB; this branch did not change it because a cache-hit verification mode/stat-fingerprint optimization needs separate correctness design. Current command-profile fixture paths remain low-ms; package-first dogfood slowest health brief/health around ~516ms in isolated temp project."
   "2026-06-19T22:58:00.092Z",codex-sdk-cli-20260620,"Evidence: implemented cacheHitVerification option in src/core/history/drift-scan.ts, kept strict default for validate/history-repair, opted pm health into metadata cache hits, bumped drift cache version to 3, and exposed health details.cache_hit_verification=metadata. Verification: focused drift/health/validate/repair tests passed; pm test --run passed 3/3 linked tests; pnpm build passed; node scripts/run-tests.mjs coverage passed 100/100/100/100 (4697 tests); pnpm quality:static passed; pnpm audit found no vulnerabilities; pnpm security:scan found no secrets; pnpm contracts:check passed; pnpm changelog:pm:check passed before close; temp dir smoke init/create/health/validate passed; npm run dogfood:package-first passed 87 commands; Sentry/telemetry gate passed with 0 critical/high and telemetry error rate 1.81%. Dependency note: commander@15 not upgraded because it requires Node >=22.12.0 while package.json supports >=20; @types/node@26 left unchanged to avoid raising compile surface beyond supported Node line."
+  "2026-06-19T23:06:47.730Z",codex-sdk-cli-20260620,"Review follow-up: addressed CodeRabbit quality nits on PR #308 by deriving the health cache mode from a single const, documenting the metadata-mode unreadable-after-stat trade-off, and renaming the metadata-mode regression to make the intentional content-reread bypass explicit. Verification after follow-up: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/commands/health-command.spec.ts passed (61 tests)."
 files[4]{path,scope,note}:
   src/cli/commands/health.ts,project,Use metadata-only drift-cache hits for warm pm health scans and expose diagnostic detail
   src/core/history/drift-scan.ts,project,Add explicit drift-cache hit verification mode with strict default and metadata fast path

@@ -150,6 +150,8 @@ export async function scanHistoryDrift(
   const previousEntries: Record<string, DriftCacheEntry> = cache?.entries ?? {};
   const nextEntries: Record<string, DriftCacheEntry> = {};
   let cacheDirty = false;
+  // Metadata mode does not open a stat-matched stream, so unreadable-after-stat
+  // failures are intentionally deferred to strict validate/history-repair scans.
   const verifyCacheHitByContent = options.cacheHitVerification !== "metadata";
 
   for (const item of items) {

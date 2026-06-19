@@ -1407,10 +1407,11 @@ async function buildHistoryDriftCheck(
   pmRoot: string,
   items: ItemWithBody[],
 ): Promise<{ check: HealthCheck; warnings: string[] }> {
+  const cacheHitVerification = "metadata" as const;
   const { missingStreams, unreadableStreams, hashMismatches, chainMismatches, driftedItems } = await scanHistoryDrift(
     pmRoot,
     items,
-    { cacheHitVerification: "metadata" },
+    { cacheHitVerification },
   );
   const warnings = [
     ...missingStreams.map((id) => `history_drift_missing_stream:${id}`),
@@ -1424,7 +1425,7 @@ async function buildHistoryDriftCheck(
       status: warnings.length === 0 ? "ok" : "warn",
       details: {
         checked_items: items.length,
-        cache_hit_verification: "metadata",
+        cache_hit_verification: cacheHitVerification,
         drifted_items: driftedItems,
         counts: {
           drifted: driftedItems.length,

@@ -197,7 +197,7 @@ describe("core/history/drift-scan", () => {
     });
   });
 
-  it("can trust metadata-only cache hits for latency-sensitive health scans", async () => {
+  it("metadata mode skips content rereads and trusts stat-matched cache entries after content changes", async () => {
     await withTempPmPath(async (context) => {
       const created = createTestItem(context, { title: "Metadata trusted" });
       const items = await listAllFrontMatterWithBody(context.pmPath);
