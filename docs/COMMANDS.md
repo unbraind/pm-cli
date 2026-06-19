@@ -176,6 +176,18 @@ pm list-open --json --include-body         # full fields + body for every return
 
 `pm get <id> --json` returns the item's `body` **inside** the `item` object (i.e. `.item.body`), matching where `list --include-body` places it and the long-form `description`/`acceptance_criteria` fields — so a single read exposes every field at a consistent path. Body is included at the default `standard` depth and above; `--depth brief` omits it.
 
+### Output render formats (`--format`)
+
+`pm list*` accepts `--format <csv|table|json|toon>` to choose how rows render. `csv` and `table` are **human export** modes — pipe them into a spreadsheet or read them directly in a terminal — while `json`/`toon` override the machine output format the same way the global `--json` flag does. The rendered columns follow the active projection, so combine `--format` with `--fields`/`--brief`/`--compact` to control exactly which columns appear:
+
+```bash
+pm list-open --format table                      # aligned, monospace-friendly columns
+pm list-all --fields id,title,priority --format csv  # spreadsheet export with chosen columns
+pm list-open --format csv > backlog.csv          # capture for reporting
+```
+
+CSV output is RFC 4180 compliant (values with commas, quotes, or newlines are quoted; array fields such as `tags` join with `;`). `--format csv|table` cannot be combined with `--stream` (which is line-delimited JSON and requires `--json`).
+
 ### Missing-metadata filters
 
 Every `list*` command also accepts metadata-presence filters for governance backfill: `--filter-ac-missing` (no `acceptance_criteria`), `--filter-estimates-missing` (no `estimated_minutes`; singular `--filter-estimate-missing` is an alias), `--filter-resolution-missing` (terminal items with no `resolution`), and `--filter-metadata-missing` (the union — missing *any* of those). Specific flags AND together; combine them with any other filter. They surface in the result's `filters` echo (`filter_ac_missing` etc.).
@@ -497,6 +509,7 @@ pm context --from today --to +7d --limit 10
 pm context --section recently_created --section unparented --limit 10
 pm context --depth full                  # every section, no per-section row cap
 pm context --parent pm-epic1 --depth deep # scope the snapshot to one item's subtree
+pm context --fields id,title,priority    # project focus rows to a field subset
 ```
 
 `pm context --depth full` returns the comprehensive snapshot: every known section
@@ -504,6 +517,15 @@ with no per-section row cap (overridable with an explicit `--limit`). `pm contex
 --parent <id>` scopes the focus items, hierarchy, agenda, and all derived sections
 to that item plus its transitive descendants — the "what is the status of this
 epic?" view for large trackers.
+
+`pm context --fields <a,b,c>` projects the focus rows (high-level, low-level,
+blocked-fallback, recently-created, unparented) to a chosen subset of fields for
+low-token reads — the same shaping `pm list --fields` and `pm get --fields`
+provide. Selectable fields: `id`, `title`, `type`, `status`, `priority`, `order`,
+`deadline`, `assignee`, `tags`, `updated_at`, `parent`, `children_total`,
+`children_closed`, `completion_pct`, `created_at`. The projection applies across
+the markdown, TOON, and JSON renderings and is also available on the `pm_context`
+MCP tool via `options.fields`.
 
 `calendar` defaults to markdown for human and agent readability. Other commands default to TOON unless configured otherwise.
 For `--include events` without explicit `--to`, `--recurrence-lookahead-days`, or `--occurrence-limit`, recurring expansion is intentionally capped to a bounded default window and emits a warning with retry hints for broader windows.

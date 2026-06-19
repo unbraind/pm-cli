@@ -6,6 +6,7 @@
 import { Option, type Command } from "commander";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { renderRowsAsCsv, renderRowsAsTable } from "../core/output/tabular.js";
 import type { ItemStatus } from "../types/index.js";
 import {
   getGlobalOptions,
@@ -43,6 +44,27 @@ function shouldRegisterListQueryCommand(commandName: string, commandFilter?: Set
 }
 
 type ReadCommandOutputFormat = "json" | "toon";
+
+type ListOutputFormat = "csv" | "table" | "json" | "toon";
+
+/**
+ * Parses the `pm list --format` value into a supported render mode. csv/table
+ * are human export modes; json/toon override the machine output format. Returns
+ * undefined when no `--format` was supplied so the global output format applies.
+ */
+function parseListFormat(rawFormat: unknown): ListOutputFormat | undefined {
+  if (rawFormat === undefined) {
+    return undefined;
+  }
+  if (typeof rawFormat !== "string") {
+    throw new PmCliError("List --format must be one of csv|table|json|toon", EXIT_CODE.USAGE);
+  }
+  const normalized = rawFormat.trim().toLowerCase();
+  if (normalized === "csv" || normalized === "table" || normalized === "json" || normalized === "toon") {
+    return normalized;
+  }
+  throw new PmCliError("List --format must be one of csv|table|json|toon", EXIT_CODE.USAGE);
+}
 
 function resolveReadCommandOutputFormat(
   commandLabel: string,
@@ -163,6 +185,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--order <value>", "Sort order: asc|desc (requires --sort)")
       .option("--tree", "Render rows in parent/child tree order")
       .option("--tree-depth <n>", "Maximum recursion depth with --tree (0 keeps root rows only)")
+      .option("--format <value>", "Output render mode: csv|table (human export) or json|toon (machine output override)")
       .option("--stream", "Emit line-delimited JSON rows (requires --json)");
     registerContentAndGovernanceFilters(command);
     command
@@ -184,13 +207,30 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
         const { runList } = await import("./commands/list.js");
         const result = await runList(status, listOptions, globalOptions);
         const streamMode = options.stream === true;
-        if (streamMode && !globalOptions.json) {
+        const listFormat = parseListFormat(options.format);
+        const tabular = listFormat === "csv" || listFormat === "table";
+        // json|toon reuse the shared read-command override (honours the
+        // --json + --format toon conflict); csv|table are human render modes.
+        const effectiveGlobal =
+          listFormat === "json" || listFormat === "toon"
+            ? resolveReadCommandOutputFormat("List", options.format, globalOptions)
+            : globalOptions;
+        if (streamMode && !effectiveGlobal.json) {
           throw new PmCliError("--stream requires --json output mode.", EXIT_CODE.USAGE);
         }
-        if (streamMode) {
-          printListJsonStream(name, result, globalOptions);
+        if (tabular && streamMode) {
+          throw new PmCliError("--format csv|table cannot be combined with --stream (line-delimited JSON).", EXIT_CODE.USAGE);
+        }
+        if (tabular) {
+          const rows = result.items as Array<Record<string, unknown>>;
+          const rendered = listFormat === "csv" ? renderRowsAsCsv(rows) : renderRowsAsTable(rows);
+          if (!effectiveGlobal.quiet && rendered.length > 0) {
+            writeStdout(`${rendered}\n`);
+          }
+        } else if (streamMode) {
+          printListJsonStream(name, result, effectiveGlobal);
         } else {
-          printResult(result, globalOptions);
+          printResult(result, effectiveGlobal);
         }
         if (globalOptions.profile) {
           printError(`profile:command=${name} took_ms=${Date.now() - startedAt}`);
@@ -292,6 +332,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--format <value>", "Context output format override: markdown|toon|json")
       .option("--depth <value>", "Context depth: brief|standard|deep|full (full = every section, no per-section cap)")
       .option("--section <value...>", "Include specific sections (repeatable; overrides --depth)")
+      .option("--fields <value>", "Project focus rows to a comma-separated field subset (e.g. id,title,priority)")
       .option("--activity-limit <n>", "Limit recent activity entries (default: settings or 10)")
       .option("--stale-threshold <value>", "Staleness cutoff in days (e.g. 7 or 7d; default: settings or 7)");
     // Hidden pure snake_case underscore-duplicate alias (kept parse-functional).
@@ -513,4 +554,5 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
 
 export const _testOnlyRegisterListQuery = {
   resolveReadCommandOutputFormat,
+  parseListFormat,
 };

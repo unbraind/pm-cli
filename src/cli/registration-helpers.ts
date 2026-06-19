@@ -923,6 +923,7 @@ export function normalizeContextOptions(options: Record<string, unknown>): Conte
     limit: readContextString("limit"),
     format: readContextString("format"),
     depth: readContextString("depth"),
+    fields: readContextString("fields"),
     section: section && section.length > 0 ? section : undefined,
     activityLimit: readContextString("activityLimit"),
     staleThreshold: readContextString("staleThreshold"),

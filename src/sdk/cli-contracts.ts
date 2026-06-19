@@ -256,6 +256,7 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--tree-depth" },
   { flag: "--tree_depth" },
   { flag: "--include-body" },
+  { flag: "--format" },
   { flag: "--stream" },
 ];
 
@@ -1360,6 +1361,7 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--limit" },
   { flag: "--format" },
   { flag: "--depth" },
+  { flag: "--fields", list: true },
   { flag: "--section" },
   { flag: "--activity-limit" },
   { flag: "--stale-threshold" },

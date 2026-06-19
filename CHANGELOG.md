@@ -4,6 +4,8 @@
 
 ### Added
 
+- pm context --fields: per-row field projection for focus items \(GH-156 follow-up to --depth full\) ([pm-hnjf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hnjf.toon))
+- pm list output formats: csv/table for human export \(GH-154 remainder\) ([pm-1lll](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-1lll.toon))
 - Dedupe merge workflow: pm dedupe-merge to consolidate duplicates \(GH-163, builds on closed pm-4n1a detection\) ([pm-jmld](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-jmld.toon))
 - pm plan discoverability: templates and auto-suggest for complex work \(GH-158 remainder\) ([pm-aer3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-aer3.toon))
 - pm search: structured inline query syntax \(tag:/status:\) + matched-text highlighting \(GH-157 remainder\) ([pm-ldr1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ldr1.toon))

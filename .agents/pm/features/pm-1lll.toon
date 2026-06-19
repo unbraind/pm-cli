@@ -2,11 +2,19 @@ id: pm-1lll
 title: "pm list output formats: csv/table for human export (GH-154 remainder)"
 description: list already returns all rows + count with json/toon/stream; remaining ask is csv/table render modes. GitHub issue #154.
 type: Feature
-status: open
+status: closed
 priority: 4
 tags[3]: backlog,cli,output
 created_at: "2026-06-10T09:00:58.341Z"
-updated_at: "2026-06-10T09:00:58.341Z"
+updated_at: "2026-06-19T05:29:02.828Z"
 author: maintainer-agent
 parent: pm-mpbb
+resolution: Implemented in feat/cli-output-formats-projection
+expected_result: pm list supports csv/table human-export render modes
+actual_result: Added --format csv|table|json|toon to all list* commands with RFC-4180 CSV + aligned table output
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-hnjf,related,"2026-06-19T05:22:46.049Z",claude-code-agent,null
+comments[1]{created_at,author,text}:
+  "2026-06-19T05:22:11.351Z",claude-code-agent,"Implemented pm list --format csv|table (GH-154 remainder). New shared renderer src/core/output/tabular.ts (renderRowsAsCsv RFC-4180-compliant + renderRowsAsTable fixed-width). --format also accepts json|toon (reuses resolveReadCommandOutputFormat override). Columns follow the active projection (--fields/--brief/--compact). Rejects --format+--stream. CLI-only (not on MCP, agents use --json). Tests: tests/unit/core/output/tabular.spec.ts + register-list-query.spec.ts. Docs: COMMANDS.md 'Output render formats'."
+close_reason: "Shipped pm list --format csv|table (+ json|toon override) via shared src/core/output/tabular.ts renderer. 100% coverage, docs + contracts updated."
 body: ""

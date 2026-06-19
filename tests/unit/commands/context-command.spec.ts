@@ -5,10 +5,13 @@ import { describe, expect, it, vi } from "vitest";
 import {
   _testOnly as contextInternals,
   parseContextDepth,
+  parseContextFocusFields,
   parseContextSections,
+  projectContextFocusRows,
   renderContextMarkdown,
   resolveContextOutputFormat,
   runContext,
+  type ContextFocusItem,
   type ContextOptions,
 } from "../../../src/cli/commands/context.js";
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
@@ -961,10 +964,12 @@ describe("context command module", () => {
     await withTempPmPath(async (context) => {
       createContextItem(context, { title: "Projection task", type: "Task", status: "open", priority: "1" });
 
+      // `fields` is now a first-class context projection (covered separately);
+      // the remaining list-only shaping flags must still never reach runList and
+      // strip the focus-row tags array.
       const projectionPermutations: ContextOptions[] = [
         { compact: true } as unknown as ContextOptions,
         { brief: true } as unknown as ContextOptions,
-        { fields: "id,title" } as unknown as ContextOptions,
         { includeBody: true } as unknown as ContextOptions,
         { include_body: true } as unknown as ContextOptions,
         { depth: "standard", compact: true } as unknown as ContextOptions,
@@ -1440,6 +1445,97 @@ describe("context command module", () => {
         blocked_by: outsideId,
         blocked_by_title: "Outside blocker",
         blocked_by_status: "open",
+      });
+    });
+  });
+
+  describe("focus-row field projection (--fields)", () => {
+    it("parses, trims, and de-duplicates field names", () => {
+      expect(parseContextFocusFields(undefined)).toBeUndefined();
+      expect(parseContextFocusFields(" id , title , id ")).toEqual(["id", "title"]);
+    });
+
+    it("rejects unknown and empty projections with usage guidance", () => {
+      expect(() => parseContextFocusFields("bogus")).toThrow(/not projectable: bogus/);
+      try {
+        parseContextFocusFields("bogus");
+      } catch (error) {
+        expect((error as PmCliError).exitCode).toBe(EXIT_CODE.USAGE);
+      }
+      expect(() => parseContextFocusFields("  ,  ")).toThrow(/at least one field/);
+    });
+
+    it("projects focus rows to the requested subset, filling missing fields with null", () => {
+      const rows: ContextFocusItem[] = [
+        {
+          id: "pm-1",
+          title: "First",
+          type: "Task",
+          status: "open",
+          priority: 2,
+          order: null,
+          deadline: null,
+          assignee: null,
+          tags: ["a", "b"],
+          updated_at: "2026-05-01T00:00:00.000Z",
+          parent: null,
+        },
+      ];
+      expect(projectContextFocusRows(rows, ["id", "tags", "created_at"])).toEqual([
+        { id: "pm-1", tags: ["a", "b"], created_at: null },
+      ]);
+    });
+
+    it("renders projected focus lines in markdown and drops the recently-created date prefix", () => {
+      const markdown = renderContextMarkdown({
+        now: "2026-05-01T00:00:00.000Z",
+        depth: "standard",
+        filters: {},
+        sections_included: ["recently_created"],
+        focus_fields: ["id", "priority", "tags", "deadline"],
+        summary: {
+          active_items: 1,
+          in_progress: 0,
+          open: 1,
+          blocked: 0,
+          blocked_fallback_used: false,
+          agenda_events: 0,
+        },
+        high_level: [{ id: "pm-hi", priority: 1, tags: ["epic"] }],
+        low_level: [],
+        blocked_fallback: [],
+        agenda: { summary: { events: 0, deadlines: 0, reminders: 0, scheduled: 0 }, events: [] },
+        recently_created: [{ id: "pm-new", priority: 3, tags: [] }],
+      } as never);
+      // Missing scalar fields render as "-"; arrays join with commas.
+      expect(markdown).toContain("- id:pm-hi priority:1 tags:epic deadline:-");
+      // No leading date token for the recently-created row under --fields.
+      expect(markdown).toContain("- id:pm-new priority:3 tags: deadline:-");
+      expect(markdown).not.toMatch(/- \d{4}-\d{2}-\d{2} id:pm-new/);
+    });
+
+    it("applies projection across focus sections through runContext", async () => {
+      await withTempPmPath(async (context) => {
+        createContextItem(context, { title: "Epic root", type: "Epic", status: "open" });
+        createContextItem(context, { title: "Lone task", type: "Task", status: "open" });
+        const projected = await runContext({ depth: "deep", fields: "id,priority" }, { path: context.pmPath });
+        expect(projected.focus_fields).toEqual(["id", "priority"]);
+        for (const row of [...projected.high_level, ...projected.low_level, ...(projected.unparented ?? []), ...(projected.recently_created ?? [])]) {
+          expect(Object.keys(row).sort()).toEqual(["id", "priority"]);
+        }
+      });
+    });
+
+    it("projects focus rows even when section-derived focus arrays are absent (brief depth)", async () => {
+      await withTempPmPath(async (context) => {
+        createContextItem(context, { title: "Brief task", type: "Task", status: "open" });
+        const projected = await runContext({ depth: "brief", fields: "id" }, { path: context.pmPath });
+        expect(projected.focus_fields).toEqual(["id"]);
+        expect(projected.recently_created).toBeUndefined();
+        expect(projected.unparented).toBeUndefined();
+        for (const row of projected.low_level) {
+          expect(Object.keys(row)).toEqual(["id"]);
+        }
       });
     });
   });
