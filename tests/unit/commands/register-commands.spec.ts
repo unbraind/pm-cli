@@ -2013,6 +2013,17 @@ describe("mutation command actions", () => {
     expect(bareAddType.folder).toBeUndefined();
   });
 
+  it("rejects read-like unknown schema subcommands instead of add-type shorthand mutation (GH-293)", async () => {
+    for (const token of ["list-types", "list-statuses", "show-all", "show-statuses"]) {
+      await expect(runCliRaw("schema", token)).rejects.toThrow(`Unknown pm schema subcommand "${token}"`);
+    }
+    expect(vi.mocked(runSchemaAddType)).not.toHaveBeenCalledWith(
+      expect.stringMatching(/^(list-types|list-statuses|show-all|show-statuses)$/),
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
   it("maps full comments/notes/learnings/files/docs option surfaces", async () => {
     await runCli(
       "comments", "pm-1",

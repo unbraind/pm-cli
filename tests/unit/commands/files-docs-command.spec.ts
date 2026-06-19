@@ -469,6 +469,29 @@ describe("runFiles", () => {
     });
   });
 
+  it("splits bare comma-separated file paths without splitting structured entries (GH-296)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "files-comma-add");
+      const result = await runFiles(
+        id,
+        {
+          add: ["README.md,docs/COMMANDS.md", "path=docs/AGENT_GUIDE.md,scope=project,note=structured"],
+          message: "add comma-separated file paths",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.files).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ path: "README.md", scope: "project" }),
+          expect.objectContaining({ path: "docs/COMMANDS.md", scope: "project" }),
+          expect.objectContaining({ path: "docs/AGENT_GUIDE.md", scope: "project", note: "structured" }),
+        ]),
+      );
+      expect(result.count).toBe(3);
+    });
+  });
+
   it("applies a standalone --note to every added link, letting embedded notes win (GH-170)", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "files-standalone-note");
@@ -1151,6 +1174,29 @@ describe("runDocs", () => {
           scope: "project",
         }),
       ]);
+    });
+  });
+
+  it("splits bare comma-separated doc paths without splitting structured entries (GH-296)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "docs-comma-add");
+      const result = await runDocs(
+        id,
+        {
+          add: ["README.md,docs/COMMANDS.md", "path=docs/AGENT_GUIDE.md,scope=project,note=structured"],
+          message: "add comma-separated doc paths",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.docs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ path: "README.md", scope: "project" }),
+          expect.objectContaining({ path: "docs/COMMANDS.md", scope: "project" }),
+          expect.objectContaining({ path: "docs/AGENT_GUIDE.md", scope: "project", note: "structured" }),
+        ]),
+      );
+      expect(result.count).toBe(3);
     });
   });
 

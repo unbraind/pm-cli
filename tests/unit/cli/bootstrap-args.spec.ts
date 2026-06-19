@@ -408,6 +408,37 @@ describe("normalizeBootstrapInvocation", () => {
     expect(normalized.trace.some((entry) => entry.reason === "list_merge")).toBe(true);
   });
 
+  it("accepts one create --tags occurrence with several adjacent values (GH-294)", () => {
+    const normalized = normalizeBootstrapInvocation([
+      "create",
+      "--type",
+      "Chore",
+      "--title",
+      "Tagged",
+      "--tags",
+      "alpha",
+      "beta",
+      "gamma",
+      "--author",
+      "agent",
+    ]);
+    expect(normalized.argv).toEqual([
+      "create",
+      "--type",
+      "Chore",
+      "--title",
+      "Tagged",
+      "--tags=alpha,beta,gamma",
+      "--author",
+      "agent",
+    ]);
+    expect(normalized.trace).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ from: "--tags (x1)", to: ["--tags=alpha,beta,gamma"], reason: "list_merge" }),
+      ]),
+    );
+  });
+
   it("leaves a single list flag occurrence unchanged with no list_merge event (pm-cf1u)", () => {
     const normalized = normalizeBootstrapInvocation(["create", "issue", "X", "--tags", "only"]);
     expect(normalized.argv).toEqual(["create", "issue", "X", "--tags", "only"]);
@@ -484,6 +515,23 @@ describe("coalesceRepeatedListFlags", () => {
     expect(result.argv).toEqual(["--tags=a,b", "--status=open,closed"]);
     expect(result.events).toHaveLength(2);
     expect(result.events.every((entry) => entry.reason === "list_merge")).toBe(true);
+  });
+
+  it("greedily merges configured multi-value list flags only", () => {
+    const greedy = coalesceRepeatedListFlags(
+      ["--tags", "alpha", "beta", "gamma", "--author", "agent"],
+      new Set(["--tags"]),
+      new Set(),
+      new Set(["--tags"]),
+    );
+    expect(greedy.argv).toEqual(["--tags=alpha,beta,gamma", "--author", "agent"]);
+    expect(greedy.events).toEqual([
+      { from: "--tags (x1)", to: ["--tags=alpha,beta,gamma"], reason: "list_merge", confidence: "high" },
+    ]);
+
+    const normal = coalesceRepeatedListFlags(["--tags", "alpha", "beta"], new Set(["--tags"]));
+    expect(normal.argv).toEqual(["--tags", "alpha", "beta"]);
+    expect(normal.events).toEqual([]);
   });
 
   it("preserves the relative order of the first occurrence", () => {
