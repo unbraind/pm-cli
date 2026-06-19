@@ -10,12 +10,14 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import { collectPackageExtensionDirectories } from "../../../core/packages/manifest.js";
+import { resolvePmPackageRootFromModule } from "../../../core/packages/root.js";
 import { pathExists } from "../../../core/fs/fs-utils.js";
 import { isPathWithinDirectory } from "../../../core/fs/path-utils.js";
 import { EXIT_CODE } from "../../../core/shared/constants.js";
 import { PmCliError, type PmCliErrorContext } from "../../../core/shared/errors.js";
 
 const execFileAsync = promisify(execFile);
+const PM_CLI_PACKAGE_NAME = "@unbrained/pm-cli";
 
 interface LocalInstallSource {
   kind: "local";
@@ -481,22 +483,84 @@ async function installNpmPackageRuntimeDependencies(packageRoot: string): Promis
 
   const manifest = parsed as { dependencies?: unknown; optionalDependencies?: unknown; peerDependencies?: unknown };
   const dependencySpecs = runtimeDependencyInstallSpecs(manifest);
-  if (dependencySpecs.length === 0) {
+  const shouldLinkHostedPmCli = hasHostedPmCliDependency(manifest);
+  if (dependencySpecs.length === 0 && !shouldLinkHostedPmCli) {
     return;
   }
 
   const runtimeOnlyManifest = { ...(parsed as Record<string, unknown>) };
   delete runtimeOnlyManifest.devDependencies;
-  await fs.writeFile(packageJsonPath, `${JSON.stringify(runtimeOnlyManifest, null, 2)}\n`, "utf8");
+  const installManifest = { ...runtimeOnlyManifest };
+  removeHostedPmCliDependency(installManifest);
+  await fs.writeFile(packageJsonPath, `${JSON.stringify(installManifest, null, 2)}\n`, "utf8");
   await Promise.all([
     fs.rm(path.join(packageRoot, "package-lock.json"), { force: true }),
     fs.rm(path.join(packageRoot, "npm-shrinkwrap.json"), { force: true }),
   ]);
 
-  await runNpmCommand(
-    ["install", "--ignore-scripts", "--no-audit", "--fund=false", "--package-lock=false", "--no-save", ...dependencySpecs],
-    packageRoot,
-  );
+  if (dependencySpecs.length > 0) {
+    await runNpmCommand(
+      [
+        "install",
+        "--ignore-scripts",
+        "--no-audit",
+        "--fund=false",
+        "--package-lock=false",
+        "--no-save",
+        "--omit=peer",
+        ...dependencySpecs,
+      ],
+      packageRoot,
+    );
+  }
+
+  if (shouldLinkHostedPmCli) {
+    await linkHostedPmCliDependency(packageRoot);
+  }
+
+  await fs.writeFile(packageJsonPath, `${JSON.stringify(runtimeOnlyManifest, null, 2)}\n`, "utf8");
+}
+
+function hasHostedPmCliDependency(manifest: {
+  dependencies?: unknown;
+  optionalDependencies?: unknown;
+  peerDependencies?: unknown;
+}): boolean {
+  for (const dependencyMap of [manifest.dependencies, manifest.optionalDependencies, manifest.peerDependencies]) {
+    if (typeof dependencyMap === "object" && dependencyMap !== null && PM_CLI_PACKAGE_NAME in dependencyMap) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function removeHostedPmCliDependency(manifest: Record<string, unknown>): void {
+  for (const field of ["dependencies", "optionalDependencies", "peerDependencies"] as const) {
+    const dependencyMap = manifest[field];
+    if (typeof dependencyMap !== "object" || dependencyMap === null) {
+      continue;
+    }
+    const nextMap = { ...(dependencyMap as Record<string, unknown>) };
+    delete nextMap[PM_CLI_PACKAGE_NAME];
+    if (Object.keys(nextMap).length === 0) {
+      delete manifest[field];
+    } else {
+      manifest[field] = nextMap;
+    }
+  }
+}
+
+async function linkHostedPmCliDependency(packageRoot: string): Promise<void> {
+  const hostPackageRoot = resolvePmPackageRootFromModule(import.meta.url, ["../../../.."]);
+  const scopedDirectory = path.join(packageRoot, "node_modules", "@unbrained");
+  const linkPath = path.join(scopedDirectory, "pm-cli");
+  await fs.mkdir(scopedDirectory, { recursive: true });
+  await fs.rm(linkPath, { recursive: true, force: true });
+  await fs.symlink(hostPackageRoot, linkPath, resolveDirectorySymlinkType(process.platform));
+}
+
+function resolveDirectorySymlinkType(platform: NodeJS.Platform): "dir" | "junction" {
+  return platform === "win32" ? "junction" : "dir";
 }
 
 function runtimeDependencyInstallSpecs(manifest: {
@@ -510,7 +574,12 @@ function runtimeDependencyInstallSpecs(manifest: {
       continue;
     }
     for (const [name, version] of Object.entries(dependencyMap)) {
-      if (typeof version !== "string" || version.trim().length === 0 || specs.has(name)) {
+      if (
+        name === PM_CLI_PACKAGE_NAME ||
+        typeof version !== "string" ||
+        version.trim().length === 0 ||
+        specs.has(name)
+      ) {
         continue;
       }
       specs.set(name, `${name}@${version.trim()}`);
@@ -652,5 +721,9 @@ export const _testOnlyInstallSources = {
   resolveNpmPackSpec,
   resolvePackageExtensionDirectory,
   runtimeDependencyInstallSpecs,
+  hasHostedPmCliDependency,
+  removeHostedPmCliDependency,
+  linkHostedPmCliDependency,
+  resolveDirectorySymlinkType,
   runNpmCommand,
 };

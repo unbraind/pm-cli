@@ -125,7 +125,7 @@
     }
   },
   "dependencies": {
-    "@sentry/node": "^10.58.0",
+    "@sentry/node": "^10.59.0",
     "@toon-format/toon": "^2.3.0",
     "commander": "^14.0.3",
     "fast-glob": "^3.3.3",

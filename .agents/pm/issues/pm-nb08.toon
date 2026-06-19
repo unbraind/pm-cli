@@ -6,9 +6,10 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-06-16T22:33:08.059Z"
-updated_at: "2026-06-19T05:58:34.208Z"
+updated_at: "2026-06-19T14:41:48.629Z"
 author: maintainer-agent
 parent: pm-5oj5
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-06-19T05:58:34.208Z",claude-code-agent,"Release-health verification 2026-06-19: the recent scheduled auto-release FAILURES (06-17T07:36, 06-18T07:17) were NOT this Sentry-gate path — they were the git push non-fast-forward race (bare 'git push origin HEAD' losing to concurrent main pushes), tracked+fixed by pm-5oti (commit bf35af26, merged 06-18 16:19 with --atomic + fetch/rebase/retry). Both failures predate that fix, so 06-19 will be the first scheduled run WITH it. Sentry reliability gate currently PASSES: critical=0, high=0 (this issue's stale-error class no longer blocks). Telemetry stack healthy: all containers up, RabbitMQ backlog 0, 14785 events/24h, full error-code coverage. No release published since v2026.6.17 (21+ commits pending incl PR#297)."
+  "2026-06-19T14:41:48.629Z",codex-impl,"Verification note 2026-06-19: latest scheduled Auto Release run 27814113814 at 2026-06-19T08:16:17Z succeeded. Default sentry-telemetry gate passed with max_critical=0 max_high=0: relevant critical=0 high=0 after expected handled CLI errors were filtered; telemetry best-effort query returned finish_error_rate_pct=2.04 and failures_without_error_code_rows=0. No code change needed in this branch for pm-nb08."
 body: ""

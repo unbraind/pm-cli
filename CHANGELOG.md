@@ -16,6 +16,7 @@
 
 ### Fixed
 
+- Project-scope extension install writes ~69MB node\_modules per workspace \(peer pm-cli + transitive Sentry/OTel\) ([pm-oxq2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oxq2.toon))
 - Fix ARCHITECTURE.md storage layout: add plans/, stories/, schema/, checkpoints/, runtime/ dirs ([pm-mcgf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-mcgf.toon))
 - Fix nightly cross-platform reliability: macOS realpath in extension-command test and Windows .cmd spawn EINVAL ([pm-gf6f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-gf6f.toon))
 - GH-293..296 CLI parser and search regression bundle ([pm-yy45](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yy45.toon))
