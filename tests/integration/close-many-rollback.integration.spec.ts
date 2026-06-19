@@ -54,6 +54,7 @@ describe("close-many rollback", () => {
 
       for (const id of createIds) {
         const closed = context.runCli(["get", id, "--json"], { expectJson: true });
+        expect(closed.code).toBe(0);
         expect((closed.json as { item: { status: string } }).item.status).toBe("closed");
       }
 
@@ -70,11 +71,13 @@ describe("close-many rollback", () => {
 
       for (const id of createIds) {
         const restored = context.runCli(["get", id, "--json"], { expectJson: true });
+        expect(restored.code).toBe(0);
         expect((restored.json as { item: { status: string; close_reason?: string } }).item.status).toBe("open");
         expect((restored.json as { item: { close_reason?: string } }).item.close_reason).toBeUndefined();
       }
 
       const charlie = context.runCli(["get", untouchedId, "--json"], { expectJson: true });
+      expect(charlie.code).toBe(0);
       expect((charlie.json as { item: { status: string } }).item.status).toBe("open");
     });
   });
