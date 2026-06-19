@@ -2,11 +2,21 @@ id: pm-c97q
 title: Docs index missing EXTENSION_AUTHOR_CONTRACTS + MIGRATION_CLI_SIMPLIFICATION links; migration note predates --pm-path
 description: "docs/README.md Documentation Map (:31-45) and Read Path do not link docs/EXTENSION_AUTHOR_CONTRACTS.md (only reachable via EXTENSIONS.md:15) or docs/MIGRATION_CLI_SIMPLIFICATION.md (only reachable via CLAUDE_CODE_PLUGIN.md:162) — broken progressive disclosure for package authors and automation maintainers. Also docs/MIGRATION_CLI_SIMPLIFICATION.md:20-27,54 documents resolvePmRoot precedence as 'explicit --path' and recommends 'pass --path explicitly' without mentioning that --pm-path is now the preferred explicit flag and that explicit --path pointing at a project root is redirected to .agents/pm (PR#146, pm-ryik); CONFIGURATION.md:7-8,86-90 documents the current contract. Fix: add both pages to the docs map and add a one-line --pm-path update to the migration note."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[3]: audit-2026-06-12,cross-links,docs
 created_at: "2026-06-12T16:11:58.998Z"
-updated_at: "2026-06-12T16:11:58.998Z"
+updated_at: "2026-06-19T13:38:33.338Z"
 author: maintainer-agent
 parent: pm-gpea
+resolution: Docs index links the two orphaned pages; migration note reflects the current --pm-path contract.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-cxi9,related,"2026-06-19T13:38:33.304Z",null,null
+  pm-xvzm,related,"2026-06-19T13:38:33.304Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-06-19T13:36:43.554Z",claude-code-agent,"docs/README.md Documentation Map now links EXTENSION_AUTHOR_CONTRACTS.md and MIGRATION_CLI_SIMPLIFICATION.md (fixing progressive-disclosure dead-ends). MIGRATION note updated to document --pm-path as the preferred explicit flag and the project-root->.agents/pm redirect (pm-ryik). Implemented in PR (docs accuracy & contributor-reference hardening). Verified: docs-skills-gate passed (relative links incl .toon validated), docs-skills-gate.spec + guide-command.spec + files-docs-command.spec = 66 passed, quality:static passed, manual temp-dir init confirms 11 builtins incl Plan and real dirs plans/schema/runtime (no index/)."
+files[2]{path,scope,note}:
+  docs/MIGRATION_CLI_SIMPLIFICATION.md,project,Root discovery now documents --pm-path preferred flag + project-root redirect
+  docs/README.md,project,Documentation Map adds EXTENSION_AUTHOR_CONTRACTS + MIGRATION_CLI_SIMPLIFICATION
+close_reason: Docs-map links and migration --pm-path guidance added.
 body: ""

@@ -83,8 +83,10 @@ Useful item types:
 | `Epic` | broad outcome or initiative |
 | `Feature` | user-facing capability or major slice |
 | `Task` | implementation work |
+| `Chore` | maintenance, refactoring, or housekeeping work |
 | `Issue` | bug or defect |
 | `Decision` | recorded choice and rationale |
+| `Plan` | agent-optimized living plan with ordered steps and evidence |
 | `Event`, `Reminder`, `Milestone`, `Meeting` | calendar-aware planning |
 
 ## Find and Claim Work

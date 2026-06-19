@@ -4,16 +4,30 @@
 
 ### Added
 
+- Add vitest.config.ts coverage include/exclude governance guidance to ARCHITECTURE.md ([pm-othr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-othr.toon))
+- Add wiring-checklist reference card to ARCHITECTURE.md for new command authors ([pm-zyse](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-zyse.toon))
+- Add performance / startup-latency section to ARCHITECTURE.md ([pm-p37b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-p37b.toon))
 - Add Windows path-separator test coverage for fs-utils and store/paths ([pm-tq5t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-tq5t.toon))
 - Add nightly.yml failure alerting: notify on Windows/Node25 smoke failures ([pm-ehbb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ehbb.toon))
 
+### Changed
+
+- COMMANDS.md omits pm get and pm copy; command-families table missing get/copy/update-many/close-many ([pm-xvzm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-xvzm.toon))
+
 ### Fixed
 
+- Fix ARCHITECTURE.md storage layout: add plans/, stories/, schema/, checkpoints/, runtime/ dirs ([pm-mcgf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-mcgf.toon))
 - Fix nightly cross-platform reliability: macOS realpath in extension-command test and Windows .cmd spawn EINVAL ([pm-gf6f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-gf6f.toon))
 - GH-293..296 CLI parser and search regression bundle ([pm-yy45](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yy45.toon))
 
+### Removed
+
+- Built-in type lists and storage layout drift: Plan missing; ARCHITECTURE.md still lists removed index/ dir ([pm-7u4z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7u4z.toon))
+
 ### Other
 
+- CLAUDE\_CODE\_PLUGIN.md drift: architecture tree shows 9/14 commands + 1/4 agents; compat table says plugin 1.0.0 \(actual 1.4.0\) ([pm-cxi9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-cxi9.toon))
+- Docs index missing EXTENSION\_AUTHOR\_CONTRACTS + MIGRATION\_CLI\_SIMPLIFICATION links; migration note predates --pm-path ([pm-c97q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-c97q.toon))
 - pm todos import: positional source arg silently ignored + folder-not-found error omits --folder flag \(beads parity\) ([pm-90hp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-90hp.toon))
 - Unknown-command did-you-mean misses executable aliases: 'pm shwo' gets no suggestion \(show/view/comment not in candidate set\) ([pm-i35t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-i35t.toon))
 

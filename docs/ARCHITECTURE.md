@@ -47,11 +47,15 @@ src/
     item/
     lock/
     output/
+    schema/
     search/
     store/
       front-matter-cache.ts
     test/
+    validate/
     shared/
+  mcp/
+    server.ts
   sdk/
     cli-contracts.ts
     index.ts
@@ -91,12 +95,24 @@ Project tracker root defaults to `.agents/pm/`.
   reminders/
   milestones/
   meetings/
+  plans/
+  stories/
   history/
   locks/
-  index/
+  schema/
+  checkpoints/
+  runtime/
   search/
   extensions/
 ```
+
+Type folders are created on demand: the listing above shows the built-in item
+types plus `stories/`, a representative folder created by a custom or preset
+type. `schema/` holds config-driven customization (`types.json`,
+`statuses.json`, `fields.json`), `checkpoints/` holds bulk-mutation rollback
+snapshots, and `runtime/` holds non-canonical operational state (for example
+background-refresh coordination). The legacy required `index/` directory was
+removed in 2026-05-31 ([pm-yf31](../.agents/pm/issues/pm-yf31.toon)).
 
 Required data:
 
@@ -106,8 +122,8 @@ Required data:
 
 Optional rebuildable data:
 
-- keyword and vector search cache files
-- generated index metadata
+- keyword and vector search cache files (`search/`)
+- `checkpoints/` and `runtime/` operational state
 
 ## Item Documents
 
@@ -127,7 +143,7 @@ body: |
 
 Legacy JSON-front-matter markdown files are read only for one-way migration into TOON. Runtime internals use `metadata` as the item metadata model key.
 
-Built-in item types:
+Built-in item types (11; confirm at runtime with `pm schema list`):
 
 - `Epic`
 - `Feature`
@@ -139,8 +155,12 @@ Built-in item types:
 - `Reminder`
 - `Milestone`
 - `Meeting`
+- `Plan`
 
-Runtime type resolution merges built-ins, `settings.item_types.definitions`, and extension `registerItemTypes(...)` registrations.
+Runtime type resolution merges built-ins, persisted project schema in
+`.agents/pm/schema/types.json` (`pm schema add-type` / `pm init --type-preset`),
+`settings.item_types.definitions`, and extension `registerItemTypes(...)`
+registrations.
 
 ## Mutation Contract
 
@@ -205,6 +225,43 @@ pm contracts --command create --flags-only --json
 pm help create --json
 ```
 
+### Adding a Command or Flag (Wiring Checklist)
+
+A new command or field-mutating flag touches several registries. Missing one
+produces a silently partial surface (for example a flag that parses on the CLI
+but is absent from `pm contracts`, MCP, or completions). Wire each site that
+applies:
+
+1. **Commander registration** — register the command/flag in the relevant
+   `src/cli/register-*.ts` family module (`register-setup`, `register-list-query`,
+   `register-mutation`, `register-operations`).
+2. **Command module** — implement the handler under `src/cli/commands/` and add
+   it to the `src/cli/commands/index.ts` barrel. The static orphan-modules gate
+   fails on a command module that only the dynamic dispatcher imports, so the
+   barrel export is mandatory.
+3. **Flag contracts** — declare flags in `src/sdk/cli-contracts.ts` (the
+   `*_FLAG_CONTRACTS` registries). Use `list: true` only for comma-list
+   accumulation flags, never for Commander `collect` repeatable flags. Flags that
+   should not appear in the public surface go through the `NO_SURFACE` set.
+4. **MCP exposure** — if the command is agent-callable, add or extend its tool in
+   `src/mcp/tool-definitions.ts` (tool definition plus parameter properties).
+   Shared parameter names (`fields`, `scope`) are owned centrally — prefer a new
+   boolean over overloading a shared enum.
+5. **Option policies** — if the flag participates in `command_option_policies`
+   (provided-set governance), wire it into the command's policy declaration.
+6. **Dependency-audit scope** — field mutations that must be excluded from
+   audit-only update scopes belong in the update command's disallowed list.
+7. **Docs and completions** — document the command in
+   [Command Reference](COMMANDS.md); completion output is generated from the
+   contracts, so confirm `pm completion` reflects the new surface.
+8. **Contract snapshot** — run `pnpm contracts:update` to regenerate
+   `tests/fixtures/contracts/full.json`; the static gate compares against it.
+9. **Coverage** — add focused tests so the new module keeps the corpus at
+   `100/100/100/100` (see [Testing Architecture](#testing-architecture)).
+
+Verify the end-to-end surface with `pm contracts --command <name> --json`,
+`pm help <name> --json`, and the matching MCP tool listing.
+
 ## Telemetry Schema Negotiation
 
 Telemetry preserves wire compatibility through an explicit client/server negotiation split:
@@ -249,6 +306,46 @@ pm reindex --mode hybrid --progress
 pm health --check-only
 ```
 
+## Performance and Startup Latency
+
+`pm-cli` is optimized for the agent loop, where many short commands run back to
+back. The performance model has three layers (the absolute timings below are
+indicative order-of-magnitude figures at the time of writing — treat the relative
+behavior, not the exact milliseconds, as the durable contract):
+
+- **Per-command startup.** After a command-family code split, each handler
+  imports only its own command module rather than the full command barrel, so a
+  read command does not pay for mutation/search modules. On a clean project the
+  dominant remaining cost is Node ESM module resolution (~90ms); this is the last
+  structural startup lever and is tracked under the observability epic.
+- **Reads.** The front-matter cache splits item metadata from body text and skips
+  re-reads of unchanged files, and on-read hooks are skipped when no extension
+  registers one. `pm health` uses a drift-scan verification cache so repeated
+  health checks do not re-hash every history stream.
+- **Mutations.** Mutations are non-blocking: the semantic reindex runs in a
+  detached background worker behind a reindex lock instead of inline embedding,
+  and item-format migration skips already-migrated items rather than re-parsing
+  the whole corpus on every write. This is what keeps `create`/`update` in the
+  hundreds-of-milliseconds range instead of multi-second inline-embed latency.
+
+What dominates latency in a given repository:
+
+- a clean project is fast (~140ms); a large dev repo is slower mainly from many
+  auto-loaded extensions and any inline embedding provider, not from item count.
+- `pm --version` short-circuits before the main entrypoint, so it is **not** a
+  valid probe for command startup cost.
+
+Profiling startup cost:
+
+```bash
+node --cpu-prof --cpu-prof-dir=/tmp/pmprof dist/cli.js list >/dev/null
+pm health --check-only          # drift-scan + telemetry timings
+```
+
+Reindex and embedding remain the heaviest background operations; keep them off
+the synchronous mutation path. See the observability epic
+([pm-5oj5](../.agents/pm/epics/pm-5oj5.toon)) for tracked perf work.
+
 ## Extension Host
 
 Load order:
@@ -292,12 +389,28 @@ node scripts/run-tests.mjs coverage
 
 Linked-test execution also creates sandbox roots and can seed settings/extensions for schema parity. See [Testing](TESTING.md).
 
-Coverage governance is literal all-source under `src/`:
+Coverage governance is literal all-source, not a curated allowlist:
 
-- `vitest.config.ts` coverage include patterns are `src/*.ts` and `src/**/*.ts`.
-- Global thresholds are explicit ratchet baselines for the measured all-source corpus and should only move upward until they reach 100%.
-- Do not maintain a curated include/exclude allowlist for production `src` modules.
-- When a module is hard to test end-to-end (for example CLI orchestration), extract pure logic helpers into small modules and cover those directly instead of weakening thresholds.
+- `vitest.config.ts` `coverage.include` is the full ship surface: `src/*.ts`,
+  `src/**/*.ts`, `packages/**/*.ts`, `scripts/*.mjs`, `scripts/**/*.mjs`,
+  `plugins/*.mjs`, `plugins/**/*.mjs`, and the `docs/examples/**/*.{ts,js,mjs}`
+  reference snippets. The only `coverage.exclude` entry is `src/**/*.d.ts`
+  (type-only declarations have no executable lines).
+- Global thresholds are `100/100/100/100` (lines/branches/functions/statements)
+  for the whole measured corpus — there is no per-file ratchet and no per-file
+  `/* c8 ignore */` allowlist for production modules.
+- Adding a new module under any included root automatically pulls it into the
+  gate. There is no include-list to edit; if a new module is genuinely not
+  shippable source (a throwaway script), it belongs outside these roots rather
+  than in a hand-maintained exclude list.
+- When authoring example snippets under `docs/examples/`, import the published
+  SDK by its bare specifier (`@unbrained/pm-cli/sdk`); `vitest.config.ts` aliases
+  that to `src/sdk/index.ts` so the example specs cover without the workspace
+  self-link present in a clean CI install.
+- When a module is hard to test end-to-end (for example CLI orchestration),
+  extract pure logic helpers into small modules and cover those directly instead
+  of weakening thresholds. Run `node scripts/run-tests.mjs coverage` locally to
+  confirm `100/100/100/100` before pushing.
 
 ## Terminal Compatibility
 

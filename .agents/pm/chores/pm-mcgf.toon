@@ -2,14 +2,22 @@ id: pm-mcgf
 title: "Fix ARCHITECTURE.md storage layout: add plans/, stories/, schema/, checkpoints/, runtime/ dirs"
 description: "The .agents/pm/ storage layout documented in docs/ARCHITECTURE.md is stale. The actual directory tree includes plans/, stories/, schema/, checkpoints/, and runtime/ which are absent from the documented listing. Agents relying on the architecture docs will have an incomplete picture of the data layout."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[3]: "area:architecture","area:docs",staleness
 created_at: "2026-06-07T10:04:37.846Z"
-updated_at: "2026-06-07T10:15:49.119Z"
+updated_at: "2026-06-19T13:38:28.651Z"
 author: audit-docs-tests-agent
 acceptance_criteria: "- docs/ARCHITECTURE.md storage layout section lists all current .agents/pm/ subdirectories\n- Each new directory has a one-line description of its contents\n- CI docs-links gate stays green after the change"
 parent: pm-u9d0
 risk: low
 confidence: high
+resolution: ARCHITECTURE.md storage layout now matches the runtime .agents/pm tree (index/ removed; plans/stories/schema/checkpoints/runtime/ documented).
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-7u4z,related,"2026-06-19T13:38:28.609Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-06-19T13:36:31.659Z",claude-code-agent,"Fixed Storage Layout tree in docs/ARCHITECTURE.md: removed legacy index/, added plans/, stories/, schema/, checkpoints/, runtime/ with an explanatory note on on-demand type folders and rebuildable vs required data. Implemented in PR (docs accuracy & contributor-reference hardening). Verified: docs-skills-gate passed (relative links incl .toon validated), docs-skills-gate.spec + guide-command.spec + files-docs-command.spec = 66 passed, quality:static passed, manual temp-dir init confirms 11 builtins incl Plan and real dirs plans/schema/runtime (no index/)."
+files[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,"Storage layout: removed index/, added plans/stories/schema/checkpoints/runtime/ + on-demand-folder note"
+close_reason: Storage layout drift fixed and verified against a fresh temp-dir init.
 body: "## Context\nActual .agents/pm/ contains: checkpoints/, chores/, decisions/, epics/, extensions/, features/, history/, issues/, locks/, milestones/, plans/, runtime/, schema/, search/, settings.json, stories/, tasks/.\n\nDocs/ARCHITECTURE.md (lines 82-99) shows only the older subset, missing plans/, stories/, schema/, checkpoints/, runtime/.\n\n## Acceptance criteria\n- docs/ARCHITECTURE.md storage layout section lists all current .agents/pm/ subdirectories\n- Each new directory has a one-line description of its contents\n- CI docs-links gate stays green after the change\n\n## Evidence\ndocs/ARCHITECTURE.md lines 82-99; ls .agents/pm/ output"

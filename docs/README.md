@@ -38,9 +38,11 @@ pm guide release --json
 - [Testing](TESTING.md) - sandbox-safe local tests and linked-test orchestration.
 - [Architecture](ARCHITECTURE.md) - contributor internals: storage, mutation flow, search, extensions, and command contracts.
 - [Packages and Extensions](EXTENSIONS.md) - package install workflows, runtime extension lifecycle, and API reference.
+- [Extension Author Contracts](EXTENSION_AUTHOR_CONTRACTS.md) - the stability guarantees and contract surface package authors build against.
 - [SDK](SDK.md) - public import surfaces and typed authoring examples.
 - [Codex Plugin](CODEX_PLUGIN.md) - native MCP plugin install, tools, skills, and safety notes.
 - [Claude Code Plugin](CLAUDE_CODE_PLUGIN.md) - native Claude Code plugin architecture and install flow.
+- [CLI Simplification Migration](MIGRATION_CLI_SIMPLIFICATION.md) - root discovery (`--pm-path`), recovery bundles, and clear/unset semantics for automation maintainers.
 - [Releasing](RELEASING.md) - maintainer release checklist and failure handling.
 - [starter extension](examples/starter-extension/README.md) - compact extension scaffold reference.
 
