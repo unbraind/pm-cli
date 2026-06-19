@@ -353,12 +353,12 @@ Blocks release automation when Sentry or telemetry reliability thresholds are ex
 `);
 }
 
-function parseNumber(value, key, fallback) {
+function parseNumber(value, key, fallback, { integer = false } = {}) {
   if (value === null) {
     return fallback;
   }
   const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed < 0) {
+  if (!Number.isFinite(parsed) || parsed < 0 || (integer && !Number.isInteger(parsed))) {
     fail(`Invalid --${key} value "${value}".`);
   }
   return parsed;
@@ -388,7 +388,12 @@ async function main() {
   const outputJson = flagBool(flags, "json", false);
   const sentryProject = flagString(flags, "sentry-project", "unbrained/pm-cli");
   const sentryLimit = parseNumber(flagString(flags, "sentry-limit", null), "sentry-limit", 200);
-  const sentryWindowDays = parseNumber(flagString(flags, "sentry-window-days", null), "sentry-window-days", 14);
+  // Sentry's relative-date syntax (`lastSeen:-Nd`) only accepts whole days, so a
+  // decimal window would yield a malformed query (400 / ignored filter); require
+  // an integer day count.
+  const sentryWindowDays = parseNumber(flagString(flags, "sentry-window-days", null), "sentry-window-days", 14, {
+    integer: true,
+  });
   const maxCritical = parseNumber(flagString(flags, "max-critical", null), "max-critical", 0);
   const maxHigh = parseNumber(flagString(flags, "max-high", null), "max-high", 0);
   const telemetryMode = flagString(flags, "telemetry-mode", "best-effort");
