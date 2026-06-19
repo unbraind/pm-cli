@@ -1353,11 +1353,12 @@ function scoreDocument(
   applyCoverageBonus = false,
 ): SearchHit | null {
   const item = document.metadata;
-  const normalizedId = item.id.trim().toLowerCase();
+  const normalizedId = normalizeSearchPhrase(item.id);
   const normalizedIdPrefix = typeof idPrefix === "string" ? idPrefix.trim().toLowerCase() : "";
+  const normalizedIdPrefixPhrase = normalizeSearchPhrase(normalizedIdPrefix);
   const normalizedShortId =
-    normalizedIdPrefix.length > 0 && normalizedId.startsWith(normalizedIdPrefix)
-      ? normalizedId.slice(normalizedIdPrefix.length)
+    normalizedIdPrefixPhrase.length > 0 && normalizedId.startsWith(normalizedIdPrefixPhrase)
+      ? normalizedId.slice(normalizedIdPrefixPhrase.length).trim()
       : normalizedId;
   if (normalizedQuery === normalizedId || normalizedQuery === normalizedShortId) {
     return {

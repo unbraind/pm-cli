@@ -18,6 +18,7 @@ import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { splitCommaList } from "../../core/shared/split-comma-list.js";
 import { listAllFrontMatter, locateItem, mutateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -167,12 +168,22 @@ export function looksLikeStructuredPathEntry(raw: string): boolean {
   return looksLikeGenericKeyValueEntry(raw);
 }
 
+function expandBareCommaSeparatedAddEntries(raw: string[]): string[] {
+  return raw.flatMap((entry) => {
+    const trimmed = entry.trim();
+    if (trimmed.length === 0 || looksLikeStructuredPathEntry(trimmed) || !trimmed.includes(",")) {
+      return [entry];
+    }
+    return splitCommaList(trimmed);
+  });
+}
+
 /**
  * Implements parse add entries for the public runtime surface of this module.
  */
 export function parseAddEntries(raw: string[] | undefined, bareNoun: "file" | "doc"): LinkedArtifact[] {
   if (!raw) return [];
-  return raw.map((entry) => {
+  return expandBareCommaSeparatedAddEntries(raw).map((entry) => {
     const trimmed = entry.trim();
     const kv = looksLikeStructuredPathEntry(trimmed) ? parseCsvKv(entry, "--add") : { path: trimmed };
     assertNoUnknownCsvKeys(kv, "--add", LINKED_ARTIFACT_ADD_KEYS);

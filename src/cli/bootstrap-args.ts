@@ -632,6 +632,7 @@ export function coalesceRepeatedListFlags(
   argv: string[],
   listFlags: Set<string>,
   valueConsumingFlags: Set<string> = new Set(),
+  multiValueListFlags: Set<string> = new Set(),
 ): { argv: string[]; events: BootstrapNormalizationEvent[] } {
   if (listFlags.size === 0) {
     return { argv: [...argv], events: [] };
@@ -675,7 +676,9 @@ export function coalesceRepeatedListFlags(
     }
 
     // Determine this occurrence's value (if any) and how many argv tokens it
-    // consumes. Only treat the next token as a value when it is not a flag.
+    // consumes. Most list flags consume one value per occurrence; selected
+    // agent-facing flags such as create --tags also accept several adjacent
+    // non-flag values in one occurrence.
     let value: string | undefined;
     let consumed = 1;
     if (parsed.inlineValue !== undefined) {
@@ -683,8 +686,16 @@ export function coalesceRepeatedListFlags(
     } else {
       const next = argv[index + 1];
       if (typeof next === "string" && next !== "--" && !next.startsWith("-")) {
-        value = next;
-        consumed = 2;
+        const values = [next];
+        if (multiValueListFlags.has(parsed.flag)) {
+          let valueIndex = index + 2;
+          while (valueIndex < argv.length && argv[valueIndex] !== "--" && !argv[valueIndex].startsWith("-")) {
+            values.push(argv[valueIndex]);
+            valueIndex += 1;
+          }
+        }
+        value = values.join(",");
+        consumed = 1 + values.length;
       }
     }
 
@@ -718,7 +729,8 @@ export function coalesceRepeatedListFlags(
   const events: BootstrapNormalizationEvent[] = [];
   const splices: Array<{ outputIndex: number; tokens: string[] }> = [];
   for (const [flag, slot] of slots) {
-    if (slot.occurrences >= 2) {
+    const shouldMerge = slot.occurrences >= 2 || (multiValueListFlags.has(flag) && slot.originalTokens.length > 2);
+    if (shouldMerge) {
       const mergedToken = `${flag}=${slot.values.join(",")}`;
       splices.push({ outputIndex: slot.outputIndex, tokens: [mergedToken] });
       events.push({
@@ -892,6 +904,7 @@ export function normalizeBootstrapInvocation(argv: string[]): BootstrapInvocatio
     linkedTestNormalized,
     lookup.listCanonicalFlags,
     GLOBAL_VALUE_CONSUMING_FLAGS,
+    commandName === "create" ? new Set(["--tags"]) : new Set(),
   );
   for (const event of coalesced.events) {
     trace.push(event);

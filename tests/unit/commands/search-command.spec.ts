@@ -258,6 +258,38 @@ describe("runSearch", () => {
     expect(custom.items[0]?.matched_fields).toEqual(["id"]);
   });
 
+  it("ranks exact dashed ID matches above items that only mention the ID (GH-295)", async () => {
+    const target = makeFrontMatter({
+      id: "pm-jxyj",
+      title: "Target item",
+      description: "No exact id mention in description",
+      comments: [{ author: "a", created_at: "2026-02-18T00:00:00.000Z", text: "pm-jxyj self reference" }],
+    });
+    const descriptionMention = makeFrontMatter({
+      id: "pm-mention-description",
+      title: "Mention elsewhere",
+      description: "pm-jxyj pm-jxyj pm-jxyj",
+    });
+    const commentMention = makeFrontMatter({
+      id: "pm-mention-comment",
+      title: "Comment mention",
+      comments: [{ author: "a", created_at: "2026-02-18T00:00:00.000Z", text: "pm-jxyj pm-jxyj" }],
+    });
+    listAllFrontMatterMock.mockResolvedValue([descriptionMention, commentMention, target]);
+    readFileMock.mockImplementation(async (targetPath: string) => {
+      if (targetPath.includes("pm-jxyj")) return serializeDocument(target, "body without lookup token");
+      if (targetPath.includes("pm-mention-description")) return serializeDocument(descriptionMention, "body");
+      return serializeDocument(commentMention, "body");
+    });
+
+    const { runSearch } = await import("../../../src/cli/commands/search.js");
+    const result = await runSearch("pm-jxyj", { mode: "keyword" }, { path: "/tmp/pm-search" });
+
+    expect(result.items[0]?.item.id).toBe("pm-jxyj");
+    expect(result.items[0]?.matched_fields).toEqual(["id"]);
+    expect(result.items[0]?.score).toBeGreaterThan(result.items[1]?.score ?? 0);
+  });
+
   it("resolves search max-results and score-threshold fallbacks deterministically", async () => {
     const { resolveSearchMaxResults, resolveSearchScoreThreshold, resolveHybridSemanticWeight } = await import(
       "../../../src/cli/commands/search.js"
