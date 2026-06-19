@@ -1124,8 +1124,9 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     description: "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
   },
   fields: {
-    description: "Comma-separated projection fields for get, search, or list-family outputs.",
-    examples: ["id,title,status,parent,type", "id,title,score,matched_fields"],
+    description:
+      "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
+    examples: ["id,title,status,parent,type", "id,title,score,matched_fields", "id,title,priority,deadline"],
   },
   groupBy: {
     description:

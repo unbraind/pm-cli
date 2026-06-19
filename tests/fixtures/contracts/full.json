@@ -10337,10 +10337,11 @@
             "description": "Tool action to execute."
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, or list-family outputs.",
+            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
             "examples": [
               "id,title,status,parent,type",
-              "id,title,score,matched_fields"
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline"
             ],
             "type": "string"
           },
@@ -11395,10 +11396,11 @@
             "description": "Tool action to execute."
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, or list-family outputs.",
+            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
             "examples": [
               "id,title,status,parent,type",
-              "id,title,score,matched_fields"
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline"
             ],
             "type": "string"
           },
@@ -13519,10 +13521,11 @@
             "type": "boolean"
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, or list-family outputs.",
+            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
             "examples": [
               "id,title,status,parent,type",
-              "id,title,score,matched_fields"
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline"
             ],
             "type": "string"
           },
@@ -13896,10 +13899,11 @@
             "type": "boolean"
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, or list-family outputs.",
+            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
             "examples": [
               "id,title,status,parent,type",
-              "id,title,score,matched_fields"
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline"
             ],
             "type": "string"
           },
@@ -14273,10 +14277,11 @@
             "type": "boolean"
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, or list-family outputs.",
+            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
             "examples": [
               "id,title,status,parent,type",
-              "id,title,score,matched_fields"
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline"
             ],
             "type": "string"
           },
@@ -14650,10 +14655,11 @@
             "type": "boolean"
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, or list-family outputs.",
+            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
             "examples": [
               "id,title,status,parent,type",
-              "id,title,score,matched_fields"
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline"
             ],
             "type": "string"
           },
@@ -15027,10 +15033,11 @@
             "type": "boolean"
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, or list-family outputs.",
+            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
             "examples": [
               "id,title,status,parent,type",
-              "id,title,score,matched_fields"
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline"
             ],
             "type": "string"
           },
@@ -15404,10 +15411,11 @@
             "type": "boolean"
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, or list-family outputs.",
+            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
             "examples": [
               "id,title,status,parent,type",
-              "id,title,score,matched_fields"
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline"
             ],
             "type": "string"
           },
@@ -15781,10 +15789,11 @@
             "type": "boolean"
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, or list-family outputs.",
+            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
             "examples": [
               "id,title,status,parent,type",
-              "id,title,score,matched_fields"
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline"
             ],
             "type": "string"
           },
@@ -16158,10 +16167,11 @@
             "type": "boolean"
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, or list-family outputs.",
+            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
             "examples": [
               "id,title,status,parent,type",
-              "id,title,score,matched_fields"
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline"
             ],
             "type": "string"
           },
@@ -16718,10 +16728,11 @@
             "type": "string"
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, or list-family outputs.",
+            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
             "examples": [
               "id,title,status,parent,type",
-              "id,title,score,matched_fields"
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline"
             ],
             "type": "string"
           },
@@ -16946,10 +16957,11 @@
             "type": "string"
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, or list-family outputs.",
+            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
             "examples": [
               "id,title,status,parent,type",
-              "id,title,score,matched_fields"
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline"
             ],
             "type": "string"
           },
@@ -17135,10 +17147,11 @@
             "type": "string"
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, or list-family outputs.",
+            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
             "examples": [
               "id,title,status,parent,type",
-              "id,title,score,matched_fields"
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline"
             ],
             "type": "string"
           },
@@ -17283,10 +17296,11 @@
             "type": "boolean"
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, or list-family outputs.",
+            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
             "examples": [
               "id,title,status,parent,type",
-              "id,title,score,matched_fields"
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline"
             ],
             "type": "string"
           },
@@ -20694,10 +20708,11 @@
             ]
           },
           "fields": {
-            "description": "Comma-separated projection fields for get, search, or list-family outputs.",
+            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
             "examples": [
               "id,title,status,parent,type",
-              "id,title,score,matched_fields"
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline"
             ],
             "type": "string"
           },
