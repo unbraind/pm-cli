@@ -25,8 +25,9 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 | Family | Commands | Purpose |
 |--------|----------|---------|
 | Bootstrap | `init`, `config`, `health`, `telemetry` | create and inspect tracker setup |
-| Triage | `context`, `search`, `list*`, `aggregate`, `dedupe-audit`*, `dedupe-merge`* | find work and audit decomposition |
+| Triage | `context`, `search`, `get`, `list*`, `aggregate`, `dedupe-audit`*, `dedupe-merge`* | find work, read a single item, and audit decomposition |
 | Lifecycle | `create`, `copy`, `focus`, `claim`, `update`, `append`, `close`, `release`, `delete`, `start-task`, `pause-task`, `close-task` | mutate item state |
+| Bulk | `update-many`, `close-many` | apply one change across a matched, dry-run-previewed set with a rollback checkpoint |
 | Scheduling | `meet`, `event`, `remind` | low-friction Meeting/Event/Reminder creation |
 | Planning | `plan create`, `plan add-step`, `plan update-step`, `plan complete-step`, `plan link`, `plan approve`, `plan materialize` | agent-optimized living plans with ordered steps, evidence, decisions, validation, and materialization |
 | Logs | `comments`, `notes`, `learnings`, `comments-audit` | record progress and durable context |
@@ -78,6 +79,8 @@ When package-owned commands are unavailable, usage guidance includes an install-
 ```bash
 pm context --limit 10
 pm search "calendar reminder validation" --limit 10
+pm get pm-a1b2                          # read one item; add --fields/--depth for lower-token projections
+pm get pm-a1b2 --tree --tree-depth 2    # item plus its descendant subtree
 pm list-open --type Task --priority 1 --limit 20
 pm list-in-progress --limit 20
 pm aggregate --group-by parent,type --status open
@@ -88,6 +91,7 @@ pm dedupe-merge --keep pm-canonical --close pm-duplicate --dry-run
 ```
 
 Use `context` first for a compact active-work snapshot. Use `search` when the request names a concept, component, or prior issue.
+Use `pm get <id>` to read a single item by ID — the single-item read primitive used throughout the agent loop. It accepts `--fields <list>` and `--depth brief|standard|deep|full` for token-minimal projections, and `--tree`/`--tree-depth <n>` to include descendants. `pm get <id> --json` returns the `body` inside the `item` object (`.item.body`); see [Full results, totals, and bodies](#full-results-totals-and-bodies). To duplicate an existing item as a starting point, `pm copy <id> --title "New title"` clones it into a fresh id with lifecycle fields reset.
 `context` standard/deep views include high-level child completion counters plus `recently_created` and `unparented` sections, so agents can spot new orphan work before creating duplicates.
 Use `pm aggregate --completion` when you need per-group `open`, `in_progress`, `closed`, `other`, and `completion_pct` progress context.
 Each aggregate row carries an explicit `group_label`: a blank/null group value (e.g. unassigned items under `--group-by assignee`) renders as `(unassigned)`/`(untagged)`/`(unparented)` rather than an ambiguous empty key, while the structured `group` value keeps the raw `null` for machine consumers. Multi-field grouping joins each `field=value` pair into the label.

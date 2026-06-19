@@ -19,12 +19,19 @@ Normalization runs across command families and preserves a normalization trace f
 
 `resolvePmRoot()` precedence is now:
 
-1. explicit `--path`
+1. explicit `--pm-path` (or its compatibility alias `--path`)
 2. `PM_PATH`
 3. upward discovery of initialized `.agents/pm` roots (must contain `settings.json`)
 4. local default (`<cwd>/.agents/pm`)
 
-If you need the old local-only behavior from nested directories, pass an explicit path (`--path .agents/pm`).
+`--pm-path` is the preferred explicit flag; `--path` remains a backward-compatible
+alias for the same tracker-storage directory (not a workspace/cwd flag). An
+explicit path that points at a project root is redirected to its `.agents/pm`
+subdirectory (pm-ryik), so `--pm-path <repo>` and `--pm-path <repo>/.agents/pm`
+resolve to the same tracker. See [Configuration](CONFIGURATION.md) for the
+current contract.
+
+If you need the old local-only behavior from nested directories, pass an explicit path (`--pm-path .agents/pm`).
 
 ### 3) Structured recovery bundles in CLI error output
 

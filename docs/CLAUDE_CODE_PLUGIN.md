@@ -18,21 +18,11 @@ pm-cli/ (repo root)
 │   │   ├── pm-release/      # Release gate sequence and evidence linking
 │   │   ├── pm-audit/        # Comprehensive audit suite
 │   │   └── pm-planner/      # Planning: decompose, prioritize, triage
-│   ├── commands/
-│   │   ├── pm-status.md     # /pm-status
-│   │   ├── pm-start-task.md # /pm-start-task [id|keywords]
-│   │   ├── pm-close-task.md # /pm-close-task [id]
-│   │   ├── pm-triage.md     # /pm-triage <request>
-│   │   ├── pm-audit.md      # /pm-audit
-│   │   ├── pm-search.md     # /pm-search <query>
-│   │   ├── pm-new.md        # /pm-new <title>
-│   │   ├── pm-list.md       # /pm-list [filter]
-│   │   └── pm-calendar.md   # /pm-calendar [view]
+│   ├── commands/            # Slash-command definitions (one .md per /pm-* command)
 │   ├── hooks/
 │   │   ├── hooks.json       # SessionStart hook definition
 │   │   └── session-start.mjs # Injects pm context at session start
-│   ├── agents/
-│   │   └── pm-coordinator.md # Subagent for multi-item coordination
+│   ├── agents/              # Subagent definitions (one .md per coordinator/triage/verification subagent)
 │   ├── scripts/
 │   │   └── pm-mcp-server.mjs # MCP server launcher (repo → npx fallback)
 │   └── README.md            # User-facing installation guide
@@ -186,7 +176,9 @@ After installing the plugin:
 
 | pm-cli version | Plugin version | Claude Code version |
 |---------------|----------------|---------------------|
-| 2026.5.x+ | 1.0.0 | Any current |
+| 2026.5.x+ | 1.x | Any current |
+
+The authoritative plugin version is `plugins/pm-claude/.claude-plugin/plugin.json`; this row stays on the `1.x` major line so it does not drift with each plugin release.
 
 The MCP server uses JSON-RPC 2.0 over stdio with protocol version `2025-06-18`.
 

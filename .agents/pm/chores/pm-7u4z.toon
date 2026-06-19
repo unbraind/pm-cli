@@ -2,11 +2,21 @@ id: pm-7u4z
 title: "Built-in type lists and storage layout drift: Plan missing; ARCHITECTURE.md still lists removed index/ dir"
 description: "Runtime built-ins are 11 types incl Plan (pm schema list: Chore, Decision, Epic, Event, Feature, Issue, Meeting, Milestone, Plan, Reminder, Task; COMMANDS.md:461 is correct). Drift: (1) docs/ARCHITECTURE.md:130-141 built-in type list omits Plan; (2) README.md:122 'Built-in types include ...' omits Plan; (3) docs/QUICKSTART.md:79-88 type table omits Plan (minor, labeled 'useful'); (4) docs/ARCHITECTURE.md:81-99 storage layout still lists 'index/' (legacy required dir removed 2026-05-31, pm-yf31) and omits real dirs plans/, checkpoints/, runtime/, schema/ (and stories/ from custom types); (5) docs/ARCHITECTURE.md:143 says type resolution merges built-ins + settings.item_types.definitions + extensions but omits .agents/pm/schema/types.json (pm schema add-type), which CONFIGURATION.md:74 documents."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[3]: audit-2026-06-12,docs,drift
 created_at: "2026-06-12T16:11:21.762Z"
-updated_at: "2026-06-12T16:11:21.762Z"
+updated_at: "2026-06-19T13:38:27.808Z"
 author: maintainer-agent
 parent: pm-gpea
+resolution: Built-in type list (incl Plan) and storage layout reconciled across ARCHITECTURE.md/README.md/QUICKSTART.md; type resolution documents schema/types.json.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-mcgf,related,"2026-06-19T13:38:27.768Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-06-19T13:36:37.005Z",claude-code-agent,"Resolved all 5 drift points: (1) ARCHITECTURE.md built-in types now lists Plan (11 total); (2) README.md built-in types adds Plan; (3) QUICKSTART.md type table adds Plan; (4) ARCHITECTURE storage layout index/ removed + real dirs added (see pm-mcgf); (5) type-resolution note now cites .agents/pm/schema/types.json. Implemented in PR (docs accuracy & contributor-reference hardening). Verified: docs-skills-gate passed (relative links incl .toon validated), docs-skills-gate.spec + guide-command.spec + files-docs-command.spec = 66 passed, quality:static passed, manual temp-dir init confirms 11 builtins incl Plan and real dirs plans/schema/runtime (no index/)."
+files[3]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,Built-in types add Plan; type resolution mentions schema/types.json
+  docs/QUICKSTART.md,project,Useful item types table adds Plan
+  README.md,project,Built-in types line adds Plan
+close_reason: Type-list and storage drift fixed; verified against pm schema list (11 builtins incl Plan).
 body: ""

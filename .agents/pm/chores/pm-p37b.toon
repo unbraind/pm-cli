@@ -2,14 +2,23 @@ id: pm-p37b
 title: Add performance / startup-latency section to ARCHITECTURE.md
 description: "ARCHITECTURE.md has no section on performance characteristics or startup latency. Sessions 2026-05-27 and 2026-05-31 delivered major perf improvements (front-matter cache body-split, drift-scan verification cache, non-blocking background semantic refresh, per-command code-splitting via detached handlers). Agents and contributors have no documented model of expected performance, what the remaining bottleneck is (~90ms from ESM module resolution), or how to profile startup cost."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[3]: "area:architecture","area:docs",performance
 created_at: "2026-06-07T10:06:41.383Z"
-updated_at: "2026-06-07T10:15:58.342Z"
+updated_at: "2026-06-19T13:38:29.603Z"
 author: audit-docs-tests-agent
 acceptance_criteria: "- ARCHITECTURE.md has a 'Performance characteristics' section covering:\n- Startup cost model: ~90ms from ESM module resolution; pm --version short-circuits cli.ts before main.ts\n- Mutation perf: non-blocking background semantic refresh (detached worker + reindex lock); migration skip for already-migrated items\n- Front-matter cache: body-split for list performance\n- Drift-scan verification cache: pm health bottleneck addressed\n- Known remaining levers (bundling note)"
 parent: pm-u9d0
 risk: low
 confidence: high
+resolution: "ARCHITECTURE.md now documents performance characteristics, the remaining ESM-resolution bottleneck, and startup profiling."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-othr,related,"2026-06-19T13:38:29.574Z",null,null
+  pm-zyse,related,"2026-06-19T13:38:29.574Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-06-19T13:37:11.133Z",claude-code-agent,"Added a Performance and Startup Latency section to ARCHITECTURE.md covering the three-layer model (per-command startup ~90ms ESM resolution, cached reads, non-blocking mutations), what dominates latency per repo, the --version short-circuit caveat, and how to profile startup. Links observability epic pm-5oj5. Implemented in PR (docs accuracy & contributor-reference hardening). Verified: docs-skills-gate passed, doc unit specs (66) passed, quality:static passed, manual temp-dir smoke passed."
+files[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,New Performance and Startup Latency section
+close_reason: Performance/startup-latency model documented for contributors and agents.
 body: "## Context\nFrom memory notes:\n- 'per-command cost is now ~entirely ESM module resolution (~90ms) → bundling (pm-ss1d, esbuild --splitting --packages=external) is the last lever'\n- 'pm --version short-circuits before main.js so it’s a bad perf probe'\n- 'create 2581→239ms, update 1693→265ms: non-blocking background semantic refresh + skip already-migrated items'\n\nARCHITECTURE.md has source tree, storage layout, mutation contract, but no performance section.\n\n## Acceptance criteria\n- ARCHITECTURE.md has a 'Performance characteristics' section covering:\n  - Startup cost model: ~90ms from ESM module resolution; pm --version short-circuits cli.ts before main.ts\n  - Mutation perf: non-blocking background semantic refresh (detached worker + reindex lock); migration skip for already-migrated items\n  - Front-matter cache: body-split for list performance\n  - Drift-scan verification cache: pm health bottleneck addressed\n  - Known remaining levers (bundling note)\n\n## Evidence\ndocs/ARCHITECTURE.md: no performance section; memory notes from sessions 2026-05-27 and 2026-05-31"

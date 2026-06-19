@@ -119,7 +119,7 @@ For token-aware local routing, install `guide-shell` with `pm install guide-shel
 - Items live under `.agents/pm/` as TOON by default, with JSON-front-matter markdown also supported.
 - History lives in `.agents/pm/history/<id>.jsonl` and is append-only.
 - Statuses are `draft`, `open`, `in_progress`, `blocked`, `closed`, and `canceled`.
-- Built-in types include `Epic`, `Feature`, `Task`, `Chore`, `Issue`, `Decision`, `Event`, `Reminder`, `Milestone`, and `Meeting`.
+- Built-in types include `Epic`, `Feature`, `Task`, `Chore`, `Issue`, `Decision`, `Event`, `Reminder`, `Milestone`, `Meeting`, and `Plan`.
 - Output defaults to sparse TOON. Use `--json` for strict parsing.
 - `pm contracts` is the machine-readable command and schema contract surface for agents.
 - `pm guide` is the optional local progressive-disclosure docs and skills index for agents after installing `guide-shell`.

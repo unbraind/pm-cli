@@ -85,6 +85,7 @@ Useful item types:
 | `Task` | implementation work |
 | `Issue` | bug or defect |
 | `Decision` | recorded choice and rationale |
+| `Plan` | agent-optimized living plan with ordered steps and evidence |
 | `Event`, `Reminder`, `Milestone`, `Meeting` | calendar-aware planning |
 
 ## Find and Claim Work
