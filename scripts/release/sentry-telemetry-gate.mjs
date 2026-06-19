@@ -210,6 +210,18 @@ function parseSentryProject(project) {
   return { org, projectSlug };
 }
 
+function buildSentryGateQuery(windowDays) {
+  const baseQuery = "is:unresolved level:[fatal,error]";
+  if (windowDays <= 0) {
+    return baseQuery;
+  }
+  // Bound the gate to issues whose most recent event falls inside the window so a
+  // stale, benign unresolved issue that stopped firing long ago no longer blocks
+  // every scheduled release. Sentry's relative date syntax `lastSeen:-Nd` matches
+  // issues last seen within the past N days.
+  return `${baseQuery} lastSeen:-${windowDays}d`;
+}
+
 function buildSentryIssuesUrl(project, query, limit) {
   const baseUrl = process.env.SENTRY_URL || process.env.SENTRY_BASE_URL || "https://sentry.io";
   const { org, projectSlug } = parseSentryProject(project);
@@ -328,6 +340,7 @@ function usage() {
   node scripts/release/sentry-telemetry-gate.mjs [--json]
     [--sentry-project unbrained/pm-cli]
     [--sentry-limit 200]
+    [--sentry-window-days 14]
     [--max-critical 0]
     [--max-high 0]
     [--telemetry-mode off|best-effort|required]
@@ -340,12 +353,15 @@ Blocks release automation when Sentry or telemetry reliability thresholds are ex
 `);
 }
 
-function parseNumber(value, key, fallback) {
-  if (value === null) {
+function parseNumber(value, key, fallback, { integer = false } = {}) {
+  if (value == null) {
     return fallback;
   }
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed < 0) {
+  // `Number("")` / `Number("   ")` coerce to 0, which would silently disable a
+  // numeric guard (e.g. an empty `--sentry-window-days` would mean "unbounded");
+  // reject blank values explicitly instead of accepting a surprise zero.
+  const parsed = value.trim() === "" ? Number.NaN : Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0 || (integer && !Number.isInteger(parsed))) {
     fail(`Invalid --${key} value "${value}".`);
   }
   return parsed;
@@ -375,6 +391,12 @@ async function main() {
   const outputJson = flagBool(flags, "json", false);
   const sentryProject = flagString(flags, "sentry-project", "unbrained/pm-cli");
   const sentryLimit = parseNumber(flagString(flags, "sentry-limit", null), "sentry-limit", 200);
+  // Sentry's relative-date syntax (`lastSeen:-Nd`) only accepts whole days, so a
+  // decimal window would yield a malformed query (400 / ignored filter); require
+  // an integer day count.
+  const sentryWindowDays = parseNumber(flagString(flags, "sentry-window-days", null), "sentry-window-days", 14, {
+    integer: true,
+  });
   const maxCritical = parseNumber(flagString(flags, "max-critical", null), "max-critical", 0);
   const maxHigh = parseNumber(flagString(flags, "max-high", null), "max-high", 0);
   const telemetryMode = flagString(flags, "telemetry-mode", "best-effort");
@@ -400,7 +422,7 @@ async function main() {
 
   const sentryFetch = await fetchSentryIssues(
     sentryProject,
-    "is:unresolved level:[fatal,error]",
+    buildSentryGateQuery(sentryWindowDays),
     sentryLimit,
     telemetryMode === "required",
   );
@@ -496,6 +518,7 @@ async function main() {
     },
     sentry: {
       project: sentryProject,
+      window_days: sentryWindowDays,
       checked: sentryFetch.ok,
       warning: sentryFetch.ok ? null : sentryFetch.reason,
       token_source: sentryFetch.ok ? sentryFetch.token_source : null,
@@ -530,11 +553,11 @@ async function main() {
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   } else if (ok) {
     console.log(
-      `Sentry/telemetry gate passed (critical=${sentrySummary.critical}, high=${sentrySummary.high}, ignored_noise=${sentryPartition.ignoredNoise.length}, ignored_expected_cli=${sentryPartition.ignoredExpected.length}, telemetry_mode=${telemetryMode}).`,
+      `Sentry/telemetry gate passed (critical=${sentrySummary.critical}, high=${sentrySummary.high}, sentry_window_days=${sentryWindowDays}, ignored_noise=${sentryPartition.ignoredNoise.length}, ignored_expected_cli=${sentryPartition.ignoredExpected.length}, telemetry_mode=${telemetryMode}).`,
     );
   } else {
     console.error(
-      `Sentry/telemetry gate failed (critical=${sentrySummary.critical}, high=${sentrySummary.high}, ignored_noise=${sentryPartition.ignoredNoise.length}, ignored_expected_cli=${sentryPartition.ignoredExpected.length}, telemetry_mode=${telemetryMode}).`,
+      `Sentry/telemetry gate failed (critical=${sentrySummary.critical}, high=${sentrySummary.high}, sentry_window_days=${sentryWindowDays}, ignored_noise=${sentryPartition.ignoredNoise.length}, ignored_expected_cli=${sentryPartition.ignoredExpected.length}, telemetry_mode=${telemetryMode}).`,
     );
   }
 

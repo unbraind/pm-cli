@@ -64,6 +64,22 @@ describe("scripts/release/run-gates", () => {
     expect(
       spawnSync.mock.calls.some((c) => [c[0], ...(c[1] as string[])].join(" ").includes("sentry-telemetry-gate.mjs")),
     ).toBe(true);
+    expect(
+      spawnSync.mock.calls.some(([, args]) => {
+        const commandArgs = args as string[];
+        const scriptIndex = commandArgs.indexOf("scripts/release/sentry-telemetry-gate.mjs");
+        const telemetryModeIndex = commandArgs.indexOf("--telemetry-mode");
+        const windowDaysIndex = commandArgs.indexOf("--sentry-window-days");
+        return (
+          scriptIndex >= 0 &&
+          commandArgs.includes("--json") &&
+          telemetryModeIndex >= 0 &&
+          commandArgs[telemetryModeIndex + 1] === "best-effort" &&
+          windowDaysIndex >= 0 &&
+          commandArgs[windowDaysIndex + 1] === "14"
+        );
+      }),
+    ).toBe(true);
     expect(logSpy.mock.calls.some((c) => String(c[0]).includes("Release gates passed."))).toBe(true);
     logSpy.mockRestore();
   });

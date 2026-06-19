@@ -148,6 +148,23 @@ describe("release automation contract", () => {
     expect(gateSource).not.toContain('runCommand(\n          "bash",\n          [telemetryCommandPath');
   });
 
+  it("bounds the Sentry gate query to a configurable recent-activity window (pm-nb08)", async () => {
+    const gateSource = await readFile(path.join(repoRoot, "scripts/release/sentry-telemetry-gate.mjs"), "utf8");
+    // A stale benign unresolved issue must not block every scheduled release: the
+    // query is bounded to a `lastSeen` window unless the window is explicitly 0.
+    expect(gateSource).toContain("function buildSentryGateQuery(windowDays)");
+    expect(gateSource).toMatch(/lastSeen:-\$\{windowDays\}d/);
+    expect(gateSource).toContain('"sentry-window-days"');
+    expect(gateSource).toContain("buildSentryGateQuery(sentryWindowDays)");
+    expect(gateSource).toContain("window_days: sentryWindowDays");
+
+    // The release + auto-release surfaces invoke the gate with an explicit window.
+    const releaseWorkflow = await readFile(path.join(repoRoot, ".github/workflows/release.yml"), "utf8");
+    expect(releaseWorkflow).toContain("--sentry-window-days 14");
+    const gatesSource = await readFile(path.join(repoRoot, "scripts/release/run-gates.mjs"), "utf8");
+    expect(gatesSource).toContain('"--sentry-window-days"');
+  });
+
   it("keeps tracker-only changes outside release relevance", async () => {
     const pipelineModule = (await import(
       pathToFileURL(path.join(repoRoot, "scripts/release/release-relevance.mjs")).href

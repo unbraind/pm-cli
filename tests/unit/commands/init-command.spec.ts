@@ -59,7 +59,11 @@ describe("runInit", () => {
       positional_target: path.resolve("/repo", "sandbox"),
     });
     expect(initInternals.resolveInitInvocation("/repo", { path: "/repo/.agents/pm" }, "./sandbox")).toEqual({
-      pmRoot: "/repo/.agents/pm",
+      // resolvePmRoot delegates to path.resolve(cwd, explicitPath), so the
+      // expectation must be platform-native (POSIX `/repo/.agents/pm`,
+      // win32 `<drive>\repo\.agents\pm`) rather than a hardcoded forward-slash
+      // literal that only matches on POSIX nightly runners (pm-i84i).
+      pmRoot: path.resolve("/repo", "/repo/.agents/pm"),
       prefixArg: "./sandbox",
     });
 
