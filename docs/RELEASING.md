@@ -201,6 +201,7 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
 ## Failure Handling
 
 - If local gates fail, fix and rerun before tagging.
+- Treat failed scheduled Nightly Validation jobs as release-health blockers until triaged. The nightly workflow opens or updates a GitHub issue for each failing scheduled OS/Node matrix entry, with the run URL and commit SHA, so cross-platform regressions do not rely on someone manually scanning the Actions tab.
 - If the tag workflow fails before npm publish, confirm no package was published before moving or replacing a tag.
 - If npm publish succeeds but GitHub Release creation fails, rerun `.github/workflows/release.yml` with `workflow_dispatch` and `tag=v<version>`; the workflow skips duplicate npm publish, reruns public verification, and creates the GitHub Release for the existing tag.
 - Record failure evidence and remediation in the release `pm` item.

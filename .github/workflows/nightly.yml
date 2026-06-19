@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: nightly-${{ github.workflow }}-${{ github.ref }}
@@ -101,3 +102,29 @@ jobs:
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: pnpm test
+
+      - name: Alert on scheduled nightly failure
+        if: failure() && github.event_name == 'schedule'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NIGHTLY_OS: ${{ matrix.os }}
+          NIGHTLY_NODE: ${{ matrix.node }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          NIGHTLY_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          title="Nightly Validation failed: ${NIGHTLY_OS} / Node ${NIGHTLY_NODE}"
+          existing_issue="$(gh issue list --state open --search "\"${title}\" in:title" --json number --jq '.[0].number // empty')"
+          body="Scheduled Nightly Validation failed for ${NIGHTLY_OS} / Node ${NIGHTLY_NODE}.
+
+          Run: ${RUN_URL}
+          Commit: ${NIGHTLY_SHA}
+
+          Investigate before trusting the next daily release."
+
+          if [[ -n "${existing_issue}" ]]; then
+            gh issue comment "${existing_issue}" --body "${body}"
+          else
+            gh issue create --title "${title}" --body "${body}"
+          fi

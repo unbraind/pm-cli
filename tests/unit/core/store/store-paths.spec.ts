@@ -165,6 +165,13 @@ describe("core/store/paths", () => {
     expect(getItemFormatFromPath(path.join(pmRoot, "tasks", `${id}.txt`))).toBeNull();
   });
 
+  it("recognizes item formats from Windows-style tracker paths", () => {
+    expect(getItemFormatFromPath(String.raw`C:\repo\.agents\pm\tasks\pm-win.toon`)).toBe("toon");
+    expect(getItemFormatFromPath(String.raw`C:\repo\.agents\pm\issues\pm-win.md`)).toBe("json_markdown");
+    expect(getItemFormatFromPath(String.raw`C:\repo\.agents\pm\issues\pm-win.json`)).toBeNull();
+    expect(getItemFormatFromPath(String.raw`C:\repo.with.dot\.agents\pm\tasks\pm-win`)).toBeNull();
+  });
+
   it("derives deterministic fallback folders for unknown item types", () => {
     const pmRoot = "/tmp/project/.agents/pm";
 

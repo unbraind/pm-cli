@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added
+
+- Add Windows path-separator test coverage for fs-utils and store/paths ([pm-tq5t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-tq5t.toon))
+- Add nightly.yml failure alerting: notify on Windows/Node25 smoke failures ([pm-ehbb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ehbb.toon))
+
 ### Fixed
 
 - Fix nightly cross-platform reliability: macOS realpath in extension-command test and Windows .cmd spawn EINVAL ([pm-gf6f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-gf6f.toon))

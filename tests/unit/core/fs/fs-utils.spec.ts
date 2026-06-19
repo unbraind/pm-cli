@@ -60,6 +60,36 @@ describe("core/fs/fs-utils", () => {
     });
   });
 
+  it("keeps atomic temp files beside the target using platform path semantics", async () => {
+    await withTempDir("pm-cli-fs-utils-", async (tempDir) => {
+      const filePath = path.join(tempDir, "nested folder", "pm-win-path.toon");
+      const writeFilePaths: Array<Parameters<typeof fs.writeFile>[0]> = [];
+      try {
+        vi.resetModules();
+        vi.doMock("node:fs/promises", async () => {
+          const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+          return {
+            ...actual,
+            writeFile: async (...args: Parameters<typeof actual.writeFile>) => {
+              writeFilePaths.push(args[0]);
+              return actual.writeFile(...args);
+            },
+          };
+        });
+        const reloadedModule = await import("../../../../src/core/fs/fs-utils.js");
+        await reloadedModule.writeFileAtomic(filePath, "contents");
+
+        const tempFilePath = writeFilePaths[0];
+        expect(typeof tempFilePath).toBe("string");
+        expect(path.dirname(tempFilePath as string)).toBe(path.dirname(filePath));
+        expect(await fs.readFile(filePath, "utf8")).toBe("contents");
+      } finally {
+        vi.doUnmock("node:fs/promises");
+        vi.resetModules();
+      }
+    });
+  });
+
   it("falls back to copy/unlink when rename fails with EXDEV", async () => {
     await withTempDir("pm-cli-fs-utils-", async (tempDir) => {
       const filePath = path.join(tempDir, "cross-device.txt");
