@@ -11,6 +11,8 @@ import {
   EMPTY_REPLAY_DOCUMENT,
   normalizeReplayPatchOps,
   replayHash,
+  replayToCanonicalItemDocument,
+  replayToItemDocument,
   toReplayDocument,
   type ReplayDocument as CanonicalReplayDocument,
 } from "../../core/history/replay.js";
@@ -283,10 +285,7 @@ function replayCurrentDocument(history: HistoryEntry[]): ItemDocument {
       body: currentReplay.body,
     };
   }
-  return canonicalDocument({
-    metadata: currentReplay.metadata as unknown as ItemMetadata,
-    body: currentReplay.body,
-  });
+  return canonicalDocument(replayToItemDocument(currentReplay));
 }
 
 async function resolveRestoreSubject(
@@ -376,13 +375,7 @@ export async function runRestore(
 
   const resolvedTarget = ensureReplayTarget(target, history);
   const replayDocument = ensureMaterializedRestoreTarget(replayToTarget(history, resolvedTarget.historyIndex), resolvedTarget);
-  const restoredDocument = canonicalDocument(
-    {
-      metadata: replayDocument.metadata as unknown as ItemMetadata,
-      body: replayDocument.body,
-    },
-    { schema: settings.schema },
-  );
+  const restoredDocument = replayToCanonicalItemDocument(replayDocument, { schema: settings.schema });
 
   if (restoredDocument.metadata.id !== resolvedId) {
     throw new PmCliError(

@@ -2,10 +2,28 @@ id: pm-vn9l
 title: "Export hygiene: 1 dead export + ~57 exported-but-internal-only symbols"
 description: "Audit scan (export declarations in src/ checked for references across src/tests/packages/scripts): KNOWN_EXTENSION_MANIFEST_FIELDS in src/core/extensions/extension-types.ts:180 is fully dead (declaration only, zero references anywhere incl docs). Additionally ~57 exported symbols are only referenced inside their own file (export keyword is unnecessary public surface), e.g. quoteCommandArg (cli/argv-utils.ts), collectRuntimeCommandPaths/scoreCommandPathMatch/resolveChildCommandByToken (cli/commander-usage.ts), CALENDAR_VIEW_VALUES/CALENDAR_OUTPUT_VALUES (commands/calendar.ts), six linked-artifacts.ts helpers, writeStderr (core/output/output.ts), normalizeItemTypeDefinitions/serializeSettings (core/store/settings.ts), 8 *_VALUES constants in src/types.ts, SUPPORTED_FIX_SCOPES/DEFAULT_RESOLUTION_BACKFILL_VALUE (core/validate/fix-planning.ts). Low priority hygiene: delete the dead constant; consider demoting internal-only exports to module-private where they are not intentional SDK surface (src/sdk/** and barrels were excluded from the scan). A further 86 exports are used only by tests/scripts (acceptable, listed in audit notes)."
 type: Task
-status: open
+status: closed
 priority: 3
 tags[3]: audit-2026-06-12,dead-code,hygiene
 created_at: "2026-06-12T16:11:22.616Z"
-updated_at: "2026-06-12T16:11:22.616Z"
+updated_at: "2026-06-19T23:34:53.710Z"
 author: maintainer-agent
+resolution: Export hygiene shipped by removing the test-only KNOWN_EXTENSION_MANIFEST_FIELDS value from the exported extension runtime surface and keeping manifest schema governance local to the test.
+expected_result: "The extension runtime no longer exports the manifest-field test list, and the schema governance test still protects docs/schemas/extension-manifest.schema.json."
+actual_result: "KNOWN_EXTENSION_MANIFEST_FIELDS is absent from source/tests; extension-loader focused tests, build, static quality, contracts, full 100% coverage, Sentry/telemetry gate, version/security, and changelog checks passed."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ul02,related,"2026-06-19T23:34:53.693Z",codex-implementation,null
+comments[3]{created_at,author,text}:
+  "2026-06-19T23:32:53.123Z",codex-implementation,"Evidence: extension-loader focused test passed (106 tests); pnpm build passed; pnpm quality:static passed; pnpm contracts:check passed; full coverage passed with Statements/Branches/Functions/Lines = 100/100/100/100 across 4697 tests."
+  "2026-06-19T23:33:07.713Z",codex-implementation,"Closeout check: pnpm changelog:pm:check passed using project pm-changelog 2026.6.14; CHANGELOG.md unchanged. GitHub refresh found no open PRs/issues and pnpm audit reported no known vulnerabilities."
+  "2026-06-19T23:34:15.905Z",codex-implementation,"Sentry/telemetry evidence: sentry CLI authenticated for unbrained/pm-cli; sentry-telemetry-gate passed with no blocking issues and telemetry ok. The 14-day unresolved list contains expected CLI error rows that the gate ignored as expected CLI usage/error cases."
+files[2]{path,scope,note}:
+  src/core/extensions/extension-types.ts,project,Remove test-only manifest field list from exported extension runtime types.
+  tests/unit/extensions/extension-loader.spec.ts,project,Keep manifest schema governance coverage without importing a production-only export.
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-loader.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:static",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Implemented export hygiene: removed test-only KNOWN_EXTENSION_MANIFEST_FIELDS from the exported extension runtime surface and kept manifest schema governance local to the test. Verified focused tests, build, static quality/docstring gate, contracts, full 100/100/100/100 coverage, changelog check, version/security checks, GitHub/Sentry/telemetry signals."
 body: ""

@@ -2,11 +2,31 @@ id: pm-ul02
 title: Replace 'as unknown as ItemMetadata' double-casts (9 sites) with typed mutation/replay returns
 description: "code-quality audit F5: plan.ts/replay.ts/restore.ts force-cast mutation/replay results through unknown, defeating the compiler if return shapes drift. Give mutateItem/replayItemHistory/restore properly-typed returns or validated converters."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[2]: "area:type-safety",refactor
 created_at: "2026-06-07T17:04:16.950Z"
-updated_at: "2026-06-07T17:04:16.950Z"
+updated_at: "2026-06-19T23:34:53.279Z"
 author: maintainer-agent
 parent: pm-o2kc
+resolution: Typed mutation/replay result cleanup shipped by replacing plan/restore/replay ItemMetadata double-casts with typed mutateItem returns and centralized replay conversion.
+expected_result: "plan.ts, restore.ts, and core/history/replay.ts no longer contain as unknown as ItemMetadata, while existing plan/restore/replay behavior remains unchanged."
+actual_result: "No as unknown as ItemMetadata casts remain in the targeted source files; focused tests, build, static quality, contracts, full 100% coverage, temp-dir restore smoke, Sentry/telemetry gate, version/security, and changelog checks passed."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-vn9l,related,"2026-06-19T23:34:53.262Z",codex-implementation,null
+comments[4]{created_at,author,text}:
+  "2026-06-19T23:32:52.571Z",codex-implementation,"Evidence: focused tests passed (4 files, 185 tests); pnpm build passed; pnpm quality:static passed; pnpm contracts:check passed; full coverage passed with Statements/Branches/Functions/Lines = 100/100/100/100 across 4697 tests."
+  "2026-06-19T23:33:07.266Z",codex-implementation,"Manual temp-dir smoke: isolated PM_PATH=/tmp/tmp.4vtUlG1gka/project/.agents/pm and PM_GLOBAL_PATH=/tmp/tmp.4vtUlG1gka/global; ran init --type-preset agile, plan create --template feature-implementation --claim, plan complete-step, comments --add, restore <plan> 2, validate --check-resolution --check-history-drift, and plan show. Result: all commands passed; restore replay produced no warnings and history_drift was ok."
+  "2026-06-19T23:33:32.845Z",codex-implementation,"Validation note: pm validate --check-resolution --check-history-drift passed history_drift=ok across 1309 items; resolution check reported pre-existing missing resolution metadata on 214 already-closed items. No history drift found."
+  "2026-06-19T23:34:15.452Z",codex-implementation,"Sentry/telemetry evidence: telemetry status enabled with last successful flush at 2026-06-19T23:33:40.195Z; sentry-telemetry-gate passed for unbrained/pm-cli over 14 days with critical=0, high=0, blocking_short_ids=[] and telemetry ok (finish_error_rate_pct=1.78, failures_without_error_code_rows=0). Direct 24h Sentry issue list returned no rows."
+files[3]{path,scope,note}:
+  src/cli/commands/plan.ts,project,Use mutateItem's typed metadata return instead of ItemMetadata double-casts.
+  src/cli/commands/restore.ts,project,Route restore replay metadata through typed replay converters.
+  src/core/history/replay.ts,project,Centralize replay-to-item conversion for typed history restore/replay callers.
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/core/history/history-replay.spec.ts tests/unit/commands/restore-command.spec.ts tests/unit/commands/plan-command.spec.ts tests/unit/extensions/extension-loader.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:static",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Implemented typed mutation/replay cleanup: plan now consumes mutateItem's typed metadata return directly; restore uses centralized replay-to-item conversion; no as unknown as ItemMetadata casts remain in plan/restore/replay. Verified focused tests, build, static quality/docstring gate, contracts, full 100/100/100/100 coverage, temp-dir restore smoke, changelog check, version/security checks, GitHub/Sentry/telemetry signals."
 body: ""

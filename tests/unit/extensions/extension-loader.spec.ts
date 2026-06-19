@@ -27,7 +27,6 @@ import {
 } from "../../../src/core/extensions/loader.js";
 import {
   createDefaultExtensionGovernancePolicy,
-  KNOWN_EXTENSION_MANIFEST_FIELDS,
   type ExtensionGovernancePolicy,
   type ExtensionSelfIdentity,
 } from "../../../src/core/extensions/extension-types.js";
@@ -5647,10 +5646,27 @@ describe("flag value type resolution (pm-ltbr/pm-l0jd)", () => {
 });
 
 describe("extension manifest schema governance", () => {
-  it("keeps docs/schemas/extension-manifest.schema.json properties in sync with KNOWN_EXTENSION_MANIFEST_FIELDS", async () => {
+  it("keeps docs/schemas/extension-manifest.schema.json properties in sync with author-facing manifest fields", async () => {
     const schemaPath = path.join(process.cwd(), "docs", "schemas", "extension-manifest.schema.json");
     const schema = JSON.parse(await readFile(schemaPath, "utf8")) as { properties?: Record<string, unknown> };
     const schemaFields = Object.keys(schema.properties ?? {}).sort();
-    expect(schemaFields).toEqual([...KNOWN_EXTENSION_MANIFEST_FIELDS].sort());
+    const authorFacingManifestFields = [
+      "$schema",
+      "name",
+      "version",
+      "entry",
+      "priority",
+      "manifest_version",
+      "pm_min_version",
+      "pm_max_version",
+      "engines",
+      "trusted",
+      "provenance",
+      "sandbox_profile",
+      "permissions",
+      "capabilities",
+      "activation",
+    ] satisfies Array<Exclude<keyof ExtensionManifest, "legacy_capability_aliases"> | "$schema">;
+    expect(schemaFields).toEqual([...authorFacingManifestFields].sort());
   });
 });
