@@ -2,12 +2,11 @@ id: pm-90hp
 title: "pm todos import: positional source arg silently ignored + folder-not-found error omits --folder flag (beads parity)"
 description: "Repro (sandbox, pm-todos installed): 'pm todos import todos.md' accepts the positional, ignores it, and errors 'Todos source folder not found at .../.pm/todos' without mentioning the --folder flag. Compare pm beads import whose error says 'Use --file <path> or --file - for stdin'. Two fixes: (1) reject or honor the unexpected positional (an agent passing a file path gets no signal it was ignored); (2) include 'Use --folder <path>' in the folder-not-found guidance. Bonus: 'pm todos import --help' prints flags twice (Options section + Extension-provided flags section) — duplicated tokens."
 type: Task
-status: in_progress
+status: closed
 priority: 3
 tags[4]: agent-ux,dogfood-2026-06-12,packages,todos
 created_at: "2026-06-12T16:19:38.893Z"
-updated_at: "2026-06-19T11:41:43.373Z"
-assignee: codex-cli-agent
+updated_at: "2026-06-19T11:44:19.515Z"
 author: maintainer-agent
 parent: pm-mpbb
 dependencies[1]{id,kind,created_at,author,source_kind}:
@@ -17,4 +16,5 @@ comments[4]{created_at,author,text}:
   "2026-06-19T11:23:29.454Z",codex-cli-agent,"Evidence: continued branch feat/agent-ergonomics-cmd-suggestions-importer-ux on 2026-06-19. Verified focused UX tests passed (5 files, 255 tests), temp-dir smoke confirmed todos import positional rejection, missing-folder --folder guidance, and no duplicate Extension-provided flags section. Repo gates passed after follow-up: pnpm quality:static, pnpm typecheck, node scripts/run-tests.mjs coverage = 100/100/100/100 (230 files, 4653 tests)."
   "2026-06-19T11:35:09.129Z",codex-cli-agent,"Review follow-up: addressed Gemini parser-safety suggestion in collectLoosePositionalArgs by ensuring any parsed option token advances by at least one slot, preventing non-advancing parser results without adding an unreachable branch to the 100% coverage gate."
   "2026-06-19T11:41:43.373Z",codex-cli-agent,"Verification after review follow-up: focused tests passed (tests/unit/cli/cli-main-errors.spec.ts + main-loose-options.spec.ts, 130 tests), pnpm typecheck passed, pnpm quality:static passed, and node scripts/run-tests.mjs coverage passed at 100/100/100/100 (230 files, 4653 tests)."
+close_reason: "Implemented importer/exporter positional rejection, failure_hints guidance, todos --folder runtime guidance, and extension help deduplication, verified with temp-dir todos smoke, focused UX tests, typecheck, static/docstring quality gate, and full coverage 100/100/100/100."
 body: ""

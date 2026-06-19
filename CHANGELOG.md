@@ -7,6 +7,11 @@
 - Fix nightly cross-platform reliability: macOS realpath in extension-command test and Windows .cmd spawn EINVAL ([pm-gf6f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-gf6f.toon))
 - GH-293..296 CLI parser and search regression bundle ([pm-yy45](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yy45.toon))
 
+### Other
+
+- pm todos import: positional source arg silently ignored + folder-not-found error omits --folder flag \(beads parity\) ([pm-90hp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-90hp.toon))
+- Unknown-command did-you-mean misses executable aliases: 'pm shwo' gets no suggestion \(show/view/comment not in candidate set\) ([pm-i35t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-i35t.toon))
+
 ## 2026.6.19 - 2026-06-19
 
 ### Added
