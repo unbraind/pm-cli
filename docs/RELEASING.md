@@ -166,7 +166,7 @@ git push origin v<version>
 - build, typecheck, test, and coverage
 - static quality gate (complexity, duplication, dead/orphan module, file/folder hygiene)
 - temporary-project compatibility gate against latest published tracker data
-- reliability threshold gate (Sentry severity threshold; `--telemetry-mode` gate policy: `off` | `best-effort` | `required`)
+- reliability threshold gate (Sentry severity threshold, bounded to a recent-activity window via `--sentry-window-days` (default `14`, `0` = unbounded) so a stale benign unresolved issue cannot block every scheduled release; `--telemetry-mode` gate policy: `off` | `best-effort` | `required`). Scheduled `auto-release.yml` failures open/update an `Auto Release blocked` GitHub issue so blocked daily releases are never silently skipped.
 - sandboxed `pm` coverage
 - optional Sentry release metadata and sourcemap upload when `SENTRY_AUTH_TOKEN` is configured
 - npm pack dry run and npx tarball smoke test

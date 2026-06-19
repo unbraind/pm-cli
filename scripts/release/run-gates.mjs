@@ -9,6 +9,7 @@ function usage() {
     [--skip-dogfood]
     [--skip-telemetry-sentry]
     [--telemetry-mode off|best-effort|required]
+    [--sentry-window-days 14]
     [--max-sentry-critical 0]
     [--max-sentry-high 0]
     [--max-telemetry-error-rate 6]
@@ -55,6 +56,7 @@ function main() {
   const skipDogfood = flagBool(flags, "skip-dogfood", false);
   const skipTelemetrySentry = flagBool(flags, "skip-telemetry-sentry", false);
   const telemetryMode = flagString(flags, "telemetry-mode", "best-effort");
+  const sentryWindowDays = flagString(flags, "sentry-window-days", "14");
   const maxSentryCritical = flagString(flags, "max-sentry-critical", "0");
   const maxSentryHigh = flagString(flags, "max-sentry-high", "0");
   const maxTelemetryErrorRate = flagString(flags, "max-telemetry-error-rate", "6");
@@ -124,6 +126,8 @@ function main() {
         "--json",
         "--telemetry-mode",
         telemetryMode,
+        "--sentry-window-days",
+        sentryWindowDays,
         "--max-critical",
         maxSentryCritical,
         "--max-high",

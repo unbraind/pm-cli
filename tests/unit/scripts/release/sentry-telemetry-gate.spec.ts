@@ -133,6 +133,49 @@ describe("scripts/release/sentry-telemetry-gate: usage and arg validation", () =
     const { errors } = await runSentryGate({ argv: ["--sentry-limit", "abc"] });
     expect(errors.join("\n")).toContain('Invalid --sentry-limit value "abc"');
   });
+
+  it("fails on a negative --sentry-window-days value", async () => {
+    const { errors } = await runSentryGate({ argv: ["--sentry-window-days", "-3"] });
+    expect(errors.join("\n")).toContain('Invalid --sentry-window-days value "-3"');
+  });
+});
+
+describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => {
+  it("bounds the default Sentry query to a 14-day lastSeen window", async () => {
+    const fetchSpy = vi.fn(async () => ({ ok: true, status: 200, text: async () => "[]" }));
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: fetchSpy as unknown as typeof fetch,
+    });
+    const calledUrl = new URL(String(fetchSpy.mock.calls[0]?.[0] ?? ""));
+    expect(calledUrl.searchParams.get("query")).toBe("is:unresolved level:[fatal,error] lastSeen:-14d");
+    expect(json.sentry.window_days).toBe(14);
+  });
+
+  it("honors a custom --sentry-window-days value in the query and output", async () => {
+    const fetchSpy = vi.fn(async () => ({ ok: true, status: 200, text: async () => "[]" }));
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off", "--sentry-window-days", "30"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: fetchSpy as unknown as typeof fetch,
+    });
+    const calledUrl = new URL(String(fetchSpy.mock.calls[0]?.[0] ?? ""));
+    expect(calledUrl.searchParams.get("query")).toBe("is:unresolved level:[fatal,error] lastSeen:-30d");
+    expect(json.sentry.window_days).toBe(30);
+  });
+
+  it("leaves the query unbounded when --sentry-window-days is 0", async () => {
+    const fetchSpy = vi.fn(async () => ({ ok: true, status: 200, text: async () => "[]" }));
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off", "--sentry-window-days", "0"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: fetchSpy as unknown as typeof fetch,
+    });
+    const calledUrl = new URL(String(fetchSpy.mock.calls[0]?.[0] ?? ""));
+    expect(calledUrl.searchParams.get("query")).toBe("is:unresolved level:[fatal,error]");
+    expect(json.sentry.window_days).toBe(0);
+  });
 });
 
 describe("scripts/release/sentry-telemetry-gate: sentry-project parsing", () => {

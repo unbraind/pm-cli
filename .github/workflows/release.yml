@@ -118,7 +118,7 @@ jobs:
             echo "SENTRY_PERSONAL_ADMIN_TOKEN is required for the Sentry issue threshold gate."
             exit 1
           fi
-          node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode off --max-critical 0 --max-high 0
+          node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode off --sentry-window-days 14 --max-critical 0 --max-high 0
 
       - name: Upload Sentry sourcemaps
         timeout-minutes: 5

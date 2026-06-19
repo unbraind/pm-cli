@@ -151,3 +151,27 @@ jobs:
             exit 1
           fi
           gh run watch "${RELEASE_RUN_ID}" --compact --exit-status --interval 30
+
+      - name: Alert on blocked scheduled auto-release
+        if: failure() && github.event_name == 'schedule'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          title="Auto Release blocked: scheduled run failed"
+          existing_issue="$(gh issue list --state open --search "\"${title}\" in:title" --json number --jq '.[0].number // empty')"
+          body="The scheduled daily Auto Release run failed before publishing, so no release was cut.
+
+          Run: ${RUN_URL}
+          Commit: ${RELEASE_SHA}
+
+          A common cause is the Sentry/telemetry reliability gate blocking on an unresolved fatal/error issue inside its recent-activity window (\`--sentry-window-days\`). Resolve the issue in Sentry (or inspect the gate's \`blocking_short_ids\`), then re-run Auto Release. This issue is auto-updated so blocked daily releases are never silently skipped."
+
+          if [[ -n "${existing_issue}" ]]; then
+            gh issue comment "${existing_issue}" --body "${body}"
+          else
+            gh issue create --title "${title}" --body "${body}"
+          fi

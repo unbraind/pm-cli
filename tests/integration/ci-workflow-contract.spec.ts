@@ -249,7 +249,7 @@ describe("GitHub workflow contract", () => {
       "run: pnpm quality:static",
       "run: pnpm changelog:pm:check",
       "run: node scripts/release/compatibility-check.mjs --json",
-      "node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode off --max-critical 0 --max-high 0",
+      "node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode off --sentry-window-days 14 --max-critical 0 --max-high 0",
       "name: Upload Sentry sourcemaps",
       "SENTRY_AUTH_TOKEN",
       "SENTRY_PERSONAL_ADMIN_TOKEN",
@@ -316,6 +316,14 @@ describe("GitHub workflow contract", () => {
       "--telemetry-mode",
       "gh workflow run release.yml --ref main -f tag=\"${NEW_TAG}\"",
       "gh run watch \"${RELEASE_RUN_ID}\" --compact --exit-status --interval 30",
+      "name: Alert on blocked scheduled auto-release",
+      "if: failure() && github.event_name == 'schedule'",
+      "GH_TOKEN: ${{ github.token }}",
+      "RELEASE_SHA: ${{ github.sha }}",
+      "Auto Release blocked: scheduled run failed",
+      'gh issue list --state open --search "\\"${title}\\" in:title"',
+      "gh issue create --title",
+      "gh issue comment",
     ]);
   });
 

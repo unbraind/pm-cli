@@ -333,7 +333,10 @@ describe("schema add-type command", () => {
       expect(before.code).not.toBe(0);
       expect(before.stderr).toContain('Invalid type value "FooType"');
       expect(before.stderr).toContain('pm schema add-type "FooType"');
-      expect(before.stderr).toContain(".agents/pm/schema/types.json");
+      // The hint path is built with path.join (OS-native separators), so assert
+      // against the platform-native form rather than a hardcoded forward-slash
+      // literal that only matches on POSIX nightly runners (pm-i84i).
+      expect(before.stderr).toContain(path.join(".agents", "pm", "schema", "types.json"));
 
       // Register the type.
       const add = context.runCli(

@@ -2,14 +2,27 @@ id: pm-nb08
 title: "Daily auto-release silently blocked 06-14..16 by a single stale unresolved Sentry error (sentry-telemetry-gate is:unresolved has no time window)"
 description: "auto-release.yml (cron 02:35) failed 2026-06-14/15/16 (last success 06-13) because sentry-telemetry-gate reported high=1 against max_high=0. The gate queries 'is:unresolved level:[fatal,error]' with NO time bound, so any single lingering unresolved error/fatal issue (even an old benign one nobody resolved in Sentry) blocks EVERY daily release until manually resolved, with no alerting — 3 releases were silently skipped. On 06-17 the offending issue had aged out (high=0) and I manually dispatched the catch-up release (v2026.6.16 published). Proposed durable fix (needs maintainer call as it loosens a safety gate): bound the gate query to a recent window (e.g. age:-14d or firstSeen/lastSeen window) and/or add failure alerting so a blocked daily release notifies instead of silently skipping. Related: pm-ehbb (nightly failure alerting)."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-06-16T22:33:08.059Z"
-updated_at: "2026-06-19T14:41:48.629Z"
+updated_at: "2026-06-19T19:19:47.612Z"
 author: maintainer-agent
 parent: pm-5oj5
-comments[2]{created_at,author,text}:
+resolution: "Bounded the release Sentry gate to a configurable recent-activity window (--sentry-window-days, default 14, lastSeen:-Nd) so a stale benign unresolved issue no longer blocks every scheduled release, and added blocked-release alerting that opens/updates an Auto Release blocked GitHub issue on scheduled failure."
+expected_result: "A single stale unresolved fatal/error Sentry issue no longer silently blocks every daily release, and a blocked scheduled release notifies via a tracked GitHub issue."
+actual_result: "Gate query now appends lastSeen:-14d by default; window_days surfaced in JSON+text; verified live against Sentry (checked=true, high=0). Coverage 100/100/100/100 across 4685 tests; full smoke test green."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ehbb,related,"2026-06-19T19:19:32.949Z",claude-code-agent,null
+comments[3]{created_at,author,text}:
   "2026-06-19T05:58:34.208Z",claude-code-agent,"Release-health verification 2026-06-19: the recent scheduled auto-release FAILURES (06-17T07:36, 06-18T07:17) were NOT this Sentry-gate path — they were the git push non-fast-forward race (bare 'git push origin HEAD' losing to concurrent main pushes), tracked+fixed by pm-5oti (commit bf35af26, merged 06-18 16:19 with --atomic + fetch/rebase/retry). Both failures predate that fix, so 06-19 will be the first scheduled run WITH it. Sentry reliability gate currently PASSES: critical=0, high=0 (this issue's stale-error class no longer blocks). Telemetry stack healthy: all containers up, RabbitMQ backlog 0, 14785 events/24h, full error-code coverage. No release published since v2026.6.17 (21+ commits pending incl PR#297)."
   "2026-06-19T14:41:48.629Z",codex-impl,"Verification note 2026-06-19: latest scheduled Auto Release run 27814113814 at 2026-06-19T08:16:17Z succeeded. Default sentry-telemetry gate passed with max_critical=0 max_high=0: relevant critical=0 high=0 after expected handled CLI errors were filtered; telemetry best-effort query returned finish_error_rate_pct=2.04 and failures_without_error_code_rows=0. No code change needed in this branch for pm-nb08."
+  "2026-06-19T19:11:19.255Z",claude-code-agent,"Implemented durable fix: sentry-telemetry-gate.mjs now bounds the 'is:unresolved level:[fatal,error]' query to a configurable recent-activity window via new --sentry-window-days flag (default 14, 0=unbounded legacy) using Sentry's lastSeen:-Nd relative-date syntax, so a stale benign unresolved issue no longer blocks every scheduled release. Threaded through run-gates.mjs and release.yml (--sentry-window-days 14). Added blocked-release alerting: auto-release.yml opens/updates an 'Auto Release blocked' GitHub issue on scheduled failure (mirrors the pm-ehbb nightly-failure pattern) so blocked daily releases are never silently skipped. window_days surfaced in gate JSON + text output. Verified live against Sentry: lastSeen:-14d query accepted, checked=true, high=0."
+files[5]{path,scope,note}:
+  docs/RELEASING.md,project,Document recent-activity window plus blocked-release alerting
+  scripts/release/sentry-telemetry-gate.mjs,project,Bound the unresolved-error query to a sentry-window-days recent-activity window
+  scripts/release/run-gates.mjs,project,Thread sentry-window-days through to the gate
+  .github/workflows/release.yml,project,Invoke gate with explicit sentry-window-days 14
+  .github/workflows/auto-release.yml,project,Open or update Auto Release blocked GitHub issue on scheduled failure
+close_reason: "Durable fix shipped: recent-activity window on the Sentry gate + blocked-release alerting; verified live and at 100% coverage."
 body: ""

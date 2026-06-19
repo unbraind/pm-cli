@@ -64,6 +64,11 @@ describe("scripts/release/run-gates", () => {
     expect(
       spawnSync.mock.calls.some((c) => [c[0], ...(c[1] as string[])].join(" ").includes("sentry-telemetry-gate.mjs")),
     ).toBe(true);
+    expect(
+      spawnSync.mock.calls.some((c) =>
+        [c[0], ...(c[1] as string[])].join(" ").includes("sentry-telemetry-gate.mjs --json --telemetry-mode best-effort --sentry-window-days 14"),
+      ),
+    ).toBe(true);
     expect(logSpy.mock.calls.some((c) => String(c[0]).includes("Release gates passed."))).toBe(true);
     logSpy.mockRestore();
   });
