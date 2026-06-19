@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-293..296 CLI parser and search regression bundle ([pm-yy45](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yy45.toon))
+
 ## 2026.6.19 - 2026-06-19
 
 ### Added
