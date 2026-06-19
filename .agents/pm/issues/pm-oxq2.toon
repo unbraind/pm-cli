@@ -6,14 +6,15 @@ status: closed
 priority: 3
 tags[4]: audit-2026-06-13,disk,extensions,performance
 created_at: "2026-06-12T22:48:14.706Z"
-updated_at: "2026-06-19T14:48:39.327Z"
+updated_at: "2026-06-19T15:10:20.108Z"
 author: audit-quality-agent
 parent: pm-y7sc
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-06-18T00:03:43.439Z",codex-audit-agent,"Audit evidence from PR #266 on 2026-06-18: pnpm changelog:pm regenerated CHANGELOG.md successfully, but the subsequent pnpm changelog:pm:check wrapper stalled for several minutes inside pm install npm:pm-changelog --project -> npm install @unbrained/pm-cli@>=2026.6.7. Direct installed-extension check via node dist/cli.js changelog generate --check returned unchanged. This confirms the project-scope extension peer install cost can block release/check workflows, not just consume disk."
   "2026-06-19T14:35:41.446Z",codex-impl,"Evidence: Full coverage passed after branch-fixture follow-up: 230 files, 4655 tests, statements 100% (29786/29786), branches 100% (23309/23309), functions 100% (4955/4955), lines 100% (28619/28619). Manual temp smoke passed in /tmp/pm-sdk-install-smoke-lAsXNs: npm package installed, doctor ok, SDK command discovered, installed @unbrained/pm-cli realpath matched checkout, nested @sentry absent."
   "2026-06-19T14:41:48.422Z",codex-impl,"Evidence: Final dependency-state gates passed: pnpm build; focused extension+CLI integration tests 169 passed; node scripts/run-tests.mjs coverage 230 files / 4655 tests / 100% statements, branches, functions, lines; pnpm quality:static; pnpm contracts:check; pnpm audit --audit-level moderate; pnpm security:scan; pnpm changelog:pm:check unchanged with pm-changelog@2026.6.14; package doctor ok/no warnings; sentry-telemetry gate ok with critical=0 high=0 and telemetry error rate 2.04%."
   "2026-06-19T14:48:16.995Z",codex-impl,"Evidence update: Final manifest-preserving implementation verified after the last code change. Focused extension+CLI integration tests passed (169 tests). Final coverage passed: 230 test files, 4655 tests, statements 100% (29788/29788), branches 100% (23309/23309), functions 100% (4955/4955), lines 100% (28621/28621). Final quick gates passed: pnpm quality:static, pnpm contracts:check, pnpm changelog:pm:check unchanged, pnpm security:scan."
+  "2026-06-19T15:10:20.108Z",codex-sdk-install-link,"Review follow-up: restored npm package manifests in a finally block when dependency install or hosted @unbrained/pm-cli linking fails; added regression coverage for link failure restoration; resolved pnpm audit undici advisory via @sentry/cli-compatible undici 6.27.0 override. Verification: pnpm build; node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts; node scripts/run-tests.mjs coverage => 100/100/100/100 (4655 tests); pnpm quality:static; pnpm contracts:check; pnpm changelog:pm:check; pnpm security:scan; pnpm audit --audit-level moderate; node dist/cli.js package doctor --project --detail deep --json; node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort."
 files[4]{path,scope,note}:
   package.json,project,Update @sentry/node patch dependency while checking GitHub/dependency reports
   pnpm-lock.yaml,project,Lock @sentry/node 10.59.0 patch update

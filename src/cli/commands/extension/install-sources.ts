@@ -493,32 +493,34 @@ async function installNpmPackageRuntimeDependencies(packageRoot: string): Promis
   const installManifest = { ...runtimeOnlyManifest };
   removeHostedPmCliDependency(installManifest);
   await fs.writeFile(packageJsonPath, `${JSON.stringify(installManifest, null, 2)}\n`, "utf8");
-  await Promise.all([
-    fs.rm(path.join(packageRoot, "package-lock.json"), { force: true }),
-    fs.rm(path.join(packageRoot, "npm-shrinkwrap.json"), { force: true }),
-  ]);
+  try {
+    await Promise.all([
+      fs.rm(path.join(packageRoot, "package-lock.json"), { force: true }),
+      fs.rm(path.join(packageRoot, "npm-shrinkwrap.json"), { force: true }),
+    ]);
 
-  if (dependencySpecs.length > 0) {
-    await runNpmCommand(
-      [
-        "install",
-        "--ignore-scripts",
-        "--no-audit",
-        "--fund=false",
-        "--package-lock=false",
-        "--no-save",
-        "--omit=peer",
-        ...dependencySpecs,
-      ],
-      packageRoot,
-    );
+    if (dependencySpecs.length > 0) {
+      await runNpmCommand(
+        [
+          "install",
+          "--ignore-scripts",
+          "--no-audit",
+          "--fund=false",
+          "--package-lock=false",
+          "--no-save",
+          "--omit=peer",
+          ...dependencySpecs,
+        ],
+        packageRoot,
+      );
+    }
+
+    if (shouldLinkHostedPmCli) {
+      await linkHostedPmCliDependency(packageRoot);
+    }
+  } finally {
+    await fs.writeFile(packageJsonPath, `${JSON.stringify(runtimeOnlyManifest, null, 2)}\n`, "utf8");
   }
-
-  if (shouldLinkHostedPmCli) {
-    await linkHostedPmCliDependency(packageRoot);
-  }
-
-  await fs.writeFile(packageJsonPath, `${JSON.stringify(runtimeOnlyManifest, null, 2)}\n`, "utf8");
 }
 
 function hasHostedPmCliDependency(manifest: {
@@ -552,8 +554,9 @@ function removeHostedPmCliDependency(manifest: Record<string, unknown>): void {
 
 async function linkHostedPmCliDependency(packageRoot: string): Promise<void> {
   const hostPackageRoot = resolvePmPackageRootFromModule(import.meta.url, ["../../../.."]);
-  const scopedDirectory = path.join(packageRoot, "node_modules", "@unbrained");
-  const linkPath = path.join(scopedDirectory, "pm-cli");
+  const [scope, packageName] = PM_CLI_PACKAGE_NAME.split("/");
+  const scopedDirectory = path.join(packageRoot, "node_modules", scope);
+  const linkPath = path.join(scopedDirectory, packageName);
   await fs.mkdir(scopedDirectory, { recursive: true });
   await fs.rm(linkPath, { recursive: true, force: true });
   await fs.symlink(hostPackageRoot, linkPath, resolveDirectorySymlinkType(process.platform));

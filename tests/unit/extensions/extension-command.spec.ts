@@ -1347,6 +1347,26 @@ describe("extension command runtime", () => {
       );
       await expect(readFile(path.join(dependencyOnlyPackageRoot, "node_modules", "@unbrained", "pm-cli", "package.json"), "utf8")).rejects.toThrow();
 
+      const failingLinkPackageRoot = path.join(tempRoot, "failing-link-package");
+      await mkdir(path.join(failingLinkPackageRoot, "node_modules"), { recursive: true });
+      await writeFile(
+        path.join(failingLinkPackageRoot, "package.json"),
+        JSON.stringify({
+          name: "failing-link-package",
+          version: "1.0.0",
+          peerDependencies: { "@unbrained/pm-cli": ">=2026.6.7" },
+          devDependencies: { "dev-only": "1.0.0" },
+        }),
+        "utf8",
+      );
+      await writeFile(path.join(failingLinkPackageRoot, "node_modules", "@unbrained"), "blocked scope directory\n", "utf8");
+      await expect(_testOnlyInstallSources.installNpmPackageRuntimeDependencies(failingLinkPackageRoot)).rejects.toThrow();
+      const restoredAfterLinkFailure = JSON.parse(
+        await readFile(path.join(failingLinkPackageRoot, "package.json"), "utf8"),
+      ) as Record<string, unknown>;
+      expect(restoredAfterLinkFailure.peerDependencies).toEqual({ "@unbrained/pm-cli": ">=2026.6.7" });
+      expect(restoredAfterLinkFailure.devDependencies).toBeUndefined();
+
       const missingManifestRoot = path.join(tempRoot, "missing-package-json");
       await mkdir(missingManifestRoot, { recursive: true });
       await expect(_testOnlyInstallSources.installNpmPackageRuntimeDependencies(missingManifestRoot)).resolves.toBeUndefined();
