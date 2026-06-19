@@ -273,7 +273,7 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     code: "validate_metadata_duplicate_issue_codes",
     command: 'pm update <id> --title "<distinct title>"',
     summary:
-      "Two or more items share one logical issue code (GH-235); give each a distinct title so the derived code is unique, or close the redundant item with pm close <id> --reason \"duplicate of <other-id>\" (closed-as-duplicate items are excluded from the check).",
+      "Two or more items share one logical issue code (GH-235); give each a distinct title so the derived code is unique, or close the redundant item with pm close <id> --duplicate-of <canonical-id> (closed-as-duplicate items are excluded from the check).",
   },
   // --- pm validate: resolution ---
   {
