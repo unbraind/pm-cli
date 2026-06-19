@@ -1410,6 +1410,7 @@ async function buildHistoryDriftCheck(
   const { missingStreams, unreadableStreams, hashMismatches, chainMismatches, driftedItems } = await scanHistoryDrift(
     pmRoot,
     items,
+    { cacheHitVerification: "metadata" },
   );
   const warnings = [
     ...missingStreams.map((id) => `history_drift_missing_stream:${id}`),
@@ -1423,6 +1424,7 @@ async function buildHistoryDriftCheck(
       status: warnings.length === 0 ? "ok" : "warn",
       details: {
         checked_items: items.length,
+        cache_hit_verification: "metadata",
         drifted_items: driftedItems,
         counts: {
           drifted: driftedItems.length,

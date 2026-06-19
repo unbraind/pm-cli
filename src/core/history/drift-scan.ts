@@ -23,8 +23,22 @@ export interface DriftScanResult {
   driftedItems: string[];
 }
 
-const DRIFT_CACHE_VERSION = 2;
+const DRIFT_CACHE_VERSION = 3;
 const DRIFT_CACHE_FILENAME = "history-drift-cache.json";
+
+/**
+ * Controls how cached history stream verification is trusted when the file stat
+ * tuple still matches a previous scan.
+ */
+export type DriftCacheHitVerification = "content_hash" | "metadata";
+
+/**
+ * Documents the history drift scan options shared by health, validate, and
+ * repair callers.
+ */
+export interface DriftScanOptions {
+  cacheHitVerification?: DriftCacheHitVerification;
+}
 
 interface DriftCacheEntry {
   mtime_ms: number;
@@ -116,15 +130,16 @@ async function verifyHistoryStream(historyPath: string): Promise<StreamVerificat
  * Scan every item's history stream for drift (missing/unreadable streams, broken
  * hash chains, and item/history hash mismatches).
  *
- * Full chain re-verification of a 17MB+ history tree is the dominant cost of
+ * Full chain re-verification of a large history tree is the dominant cost of
  * `pm health`. We cache the per-stream verification keyed by the history file's
- * mtime/ctime/size + content hash: metadata-stable replacements (same stat tuple)
- * can still happen, so each metadata hit recomputes a content hash guard before
- * trusting the cached chain/hash verification.
+ * mtime/ctime/size plus content hash. Strict callers keep recomputing the
+ * content hash on metadata hits; latency-sensitive health checks can opt into
+ * trusting the stat tuple and skip rereading unchanged streams.
  */
 export async function scanHistoryDrift(
   pmRoot: string,
   items: Array<ItemMetadata & { body: string }>,
+  options: DriftScanOptions = {},
 ): Promise<DriftScanResult> {
   const missingStreams: string[] = [];
   const unreadableStreams: string[] = [];
@@ -135,6 +150,7 @@ export async function scanHistoryDrift(
   const previousEntries: Record<string, DriftCacheEntry> = cache?.entries ?? {};
   const nextEntries: Record<string, DriftCacheEntry> = {};
   let cacheDirty = false;
+  const verifyCacheHitByContent = options.cacheHitVerification !== "metadata";
 
   for (const item of items) {
     const historyPath = getHistoryPath(pmRoot, item.id);
@@ -184,13 +200,17 @@ export async function scanHistoryDrift(
     const canUseCache = metadataMatchesCache && cachedContentHash !== undefined;
     if (canUseCache && cached) {
       let currentContentHash: string;
-      try {
-        currentContentHash = await readHistoryContentHash(historyPath);
-      } catch {
-        unreadableStreams.push(item.id);
-        continue;
+      if (verifyCacheHitByContent) {
+        try {
+          currentContentHash = await readHistoryContentHash(historyPath);
+        } catch {
+          unreadableStreams.push(item.id);
+          continue;
+        }
+      } else {
+        currentContentHash = cachedContentHash;
       }
-      if (currentContentHash === cachedContentHash) {
+      if (!verifyCacheHitByContent || currentContentHash === cachedContentHash) {
         verification = {
           latestAfterHash: cached.latest_after_hash,
           chainOk: cached.chain_ok,

@@ -297,6 +297,7 @@ describe("runHealth", () => {
       expect(historyDriftCheck?.status).toBe("ok");
       expect(historyDriftCheck?.details).toMatchObject({
         checked_items: 1,
+        cache_hit_verification: "metadata",
         drifted_items: [],
         counts: {
           drifted: 0,
