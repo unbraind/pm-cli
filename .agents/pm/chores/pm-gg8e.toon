@@ -2,16 +2,24 @@ id: pm-gg8e
 title: Sentry tracesSampleRate is hardcoded at 0.2 — expose as configurable knob or document intent
 description: "Sentry is initialized with tracesSampleRate: 0.2 (instrument.ts:227). This rate is not configurable via settings or env var, and is not documented anywhere. At 20% sampling, 80% of CLI command spans are dropped. For a low-volume developer CLI this may be appropriate, but if the install base grows or performance debugging requires full-trace coverage, there is no operational lever. The value should either be documented as intentional (with the reasoning) or wired to a SENTRY_TRACES_SAMPLE_RATE env var following Sentry SDK conventions."
 type: Chore
-status: open
+status: closed
 priority: 4
 tags[2]: "area:observability","area:sentry"
 created_at: "2026-06-07T10:05:12.734Z"
-updated_at: "2026-06-07T10:16:07.629Z"
+updated_at: "2026-06-19T15:33:07.262Z"
 author: audit-observability-agent
 acceptance_criteria: "- Either: (A) tracesSampleRate reads from SENTRY_TRACES_SAMPLE_RATE env var with 0.2 as the default; the env var is listed in the telemetry env-var docs (pm-r7md); OR (B) a code comment at instrument.ts:227 explains the rationale and documents that the value is intentionally static for this use case.\n- Whichever option, no behavior change for existing installs."
 parent: pm-5oj5
 risk: low
 confidence: high
+resolution: "Wired tracesSampleRate to SENTRY_TRACES_SAMPLE_RATE via resolveTracesSampleRate() (default 0.2, honours [0,1], falls back on invalid/out-of-range). Documented Sentry env vars in docs/CONFIGURATION.md."
+expected_result: Operators can tune or disable Sentry performance tracing without code changes; default behaviour unchanged.
+actual_result: "SENTRY_TRACES_SAMPLE_RATE now controls the rate (0=off, 1=full); unset/invalid keeps 0.2. Coverage 100/100/100/100, docs updated."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-r7md,related,"2026-06-07T10:05:12.734Z",null,null
+files[3]{path,scope,note}:
+  docs/CONFIGURATION.md,project,Document Sentry env vars incl SENTRY_TRACES_SAMPLE_RATE
+  src/core/sentry/instrument.ts,project,"Add resolveTracesSampleRate() reading SENTRY_TRACES_SAMPLE_RATE (default 0.2, clamped to [0,1])"
+  tests/unit/core/sentry/sentry-helpers.spec.ts,project,resolveTracesSampleRate branch coverage + init wiring assertion
+close_reason: "Wired tracesSampleRate to SENTRY_TRACES_SAMPLE_RATE via resolveTracesSampleRate() (default 0.2, honours [0,1], falls back on invalid/out-of-range). Documented Sentry env vars in docs/CONFIGURATION.md."
 body: "## Context\n\nFile: src/core/sentry/instrument.ts:227 — `tracesSampleRate: 0.2` hardcoded in SentryModule.init.\n\nThe Sentry SDK supports SENTRY_TRACES_SAMPLE_RATE env var natively. There is no existing override path in the pm-cli initialization code.\n\n## Acceptance criteria\n\n- Either: (A) tracesSampleRate reads from SENTRY_TRACES_SAMPLE_RATE env var with 0.2 as the default; the env var is listed in the telemetry env-var docs (pm-r7md); OR (B) a code comment at instrument.ts:227 explains the rationale and documents that the value is intentionally static for this use case.\n- Whichever option, no behavior change for existing installs.\n\n## Evidence\n\nsrc/core/sentry/instrument.ts:227 — hardcoded 0.2."

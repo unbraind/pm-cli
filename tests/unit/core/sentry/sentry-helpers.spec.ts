@@ -35,6 +35,9 @@ const {
   isKnownNoisyConsoleBreadcrumb,
   scrubString,
   scrubEventData,
+  resolveTracesSampleRate,
+  KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS,
+  MAX_KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS,
   resetSentryStateForTests,
 } = _testOnly;
 const PRIVATE_TEST_IP = ["192", "168", "42", "17"].join(".");
@@ -196,6 +199,60 @@ describe("noisy console starter filtering", () => {
       }),
     ).toBe(true);
   });
+
+  it("keeps the noisy-pattern allowlist bounded and normalized (governance gate)", () => {
+    // Governance: the allowlist must stay small so stale filters cannot
+    // accumulate unnoticed and mask genuine extension errors. See the policy
+    // comment on KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS in instrument.ts.
+    expect(KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS.length).toBeLessThanOrEqual(
+      MAX_KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS,
+    );
+    // Patterns are matched case-insensitively against lowercased input, so each
+    // entry must already be lowercase and trimmed to ever match.
+    for (const pattern of KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS) {
+      expect(pattern).toBe(pattern.toLowerCase().trim());
+      expect(pattern.length).toBeGreaterThan(0);
+    }
+    // Duplicate entries are dead filters; reject them outright.
+    expect(new Set(KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS).size).toBe(
+      KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS.length,
+    );
+  });
+});
+
+describe("resolveTracesSampleRate", () => {
+  const originalRate = process.env.SENTRY_TRACES_SAMPLE_RATE;
+
+  afterEach(() => {
+    if (originalRate === undefined) {
+      delete process.env.SENTRY_TRACES_SAMPLE_RATE;
+    } else {
+      process.env.SENTRY_TRACES_SAMPLE_RATE = originalRate;
+    }
+  });
+
+  it("defaults to 0.2 when SENTRY_TRACES_SAMPLE_RATE is unset or blank", () => {
+    delete process.env.SENTRY_TRACES_SAMPLE_RATE;
+    expect(resolveTracesSampleRate()).toBe(0.2);
+    process.env.SENTRY_TRACES_SAMPLE_RATE = "   ";
+    expect(resolveTracesSampleRate()).toBe(0.2);
+  });
+
+  it("honours a valid fraction in [0, 1], including the 0 and 1 boundaries", () => {
+    process.env.SENTRY_TRACES_SAMPLE_RATE = " 0.5 ";
+    expect(resolveTracesSampleRate()).toBe(0.5);
+    process.env.SENTRY_TRACES_SAMPLE_RATE = "0";
+    expect(resolveTracesSampleRate()).toBe(0);
+    process.env.SENTRY_TRACES_SAMPLE_RATE = "1";
+    expect(resolveTracesSampleRate()).toBe(1);
+  });
+
+  it("falls back to the default for non-numeric or out-of-range values", () => {
+    for (const value of ["abc", "-0.1", "1.5", "NaN", "Infinity"]) {
+      process.env.SENTRY_TRACES_SAMPLE_RATE = value;
+      expect(resolveTracesSampleRate()).toBe(0.2);
+    }
+  });
 });
 
 describe("scrubString", () => {
@@ -298,6 +355,7 @@ describe("ensureSentryInit", () => {
     delete process.env.PM_TELEMETRY_DISABLED;
     delete process.env.SENTRY_DSN;
     delete process.env.SENTRY_ENVIRONMENT;
+    delete process.env.SENTRY_TRACES_SAMPLE_RATE;
     delete process.env.CI;
     delete process.env.VITEST;
     delete process.env.VITEST_WORKER_ID;
@@ -325,6 +383,7 @@ describe("ensureSentryInit", () => {
   it("initializes Sentry once with sanitized beforeSend and beforeBreadcrumb hooks", async () => {
     process.env.SENTRY_DSN = " https://example.invalid/custom ";
     process.env.SENTRY_ENVIRONMENT = " staging ";
+    process.env.SENTRY_TRACES_SAMPLE_RATE = "0.75";
 
     await expect(ensureSentryInit()).resolves.toMatchObject({
       init: sentryNodeMock.init,
@@ -340,6 +399,7 @@ describe("ensureSentryInit", () => {
       dsn: string;
       release: string;
       environment: string;
+      tracesSampleRate: number;
       serverName: unknown;
       sendDefaultPii: boolean;
       initialScope: { tags: Record<string, string> };
@@ -350,6 +410,7 @@ describe("ensureSentryInit", () => {
     expect(options.dsn).toBe("https://example.invalid/custom");
     expect(options.release).toMatch(/^pm-cli@/);
     expect(options.environment).toBe("staging");
+    expect(options.tracesSampleRate).toBe(0.75);
     expect(options.serverName).toBeUndefined();
     expect(options.sendDefaultPii).toBe(false);
     expect(options.initialScope.tags).toMatchObject({
