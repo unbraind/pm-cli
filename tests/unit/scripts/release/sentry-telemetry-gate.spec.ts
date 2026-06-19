@@ -143,6 +143,11 @@ describe("scripts/release/sentry-telemetry-gate: usage and arg validation", () =
     const { errors } = await runSentryGate({ argv: ["--sentry-window-days", "14.5"] });
     expect(errors.join("\n")).toContain('Invalid --sentry-window-days value "14.5"');
   });
+
+  it("rejects a blank --sentry-window-days value instead of silently disabling the window", async () => {
+    const { errors } = await runSentryGate({ argv: ["--sentry-window-days", " "] });
+    expect(errors.join("\n")).toContain('Invalid --sentry-window-days value " "');
+  });
 });
 
 describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => {

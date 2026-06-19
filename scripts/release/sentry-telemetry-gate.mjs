@@ -357,7 +357,10 @@ function parseNumber(value, key, fallback, { integer = false } = {}) {
   if (value === null) {
     return fallback;
   }
-  const parsed = Number(value);
+  // `Number("")` / `Number("   ")` coerce to 0, which would silently disable a
+  // numeric guard (e.g. an empty `--sentry-window-days` would mean "unbounded");
+  // reject blank values explicitly instead of accepting a surprise zero.
+  const parsed = value.trim() === "" ? Number.NaN : Number(value);
   if (!Number.isFinite(parsed) || parsed < 0 || (integer && !Number.isInteger(parsed))) {
     fail(`Invalid --${key} value "${value}".`);
   }

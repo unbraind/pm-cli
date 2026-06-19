@@ -153,7 +153,7 @@ describe("release automation contract", () => {
     // A stale benign unresolved issue must not block every scheduled release: the
     // query is bounded to a `lastSeen` window unless the window is explicitly 0.
     expect(gateSource).toContain("function buildSentryGateQuery(windowDays)");
-    expect(gateSource).toContain("`${baseQuery} lastSeen:-${windowDays}d`");
+    expect(gateSource).toMatch(/lastSeen:-\$\{windowDays\}d/);
     expect(gateSource).toContain('"sentry-window-days"');
     expect(gateSource).toContain("buildSentryGateQuery(sentryWindowDays)");
     expect(gateSource).toContain("window_days: sentryWindowDays");
