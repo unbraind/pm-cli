@@ -5,6 +5,7 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
+import { runCheckpointGc } from "../../core/checkpoint/checkpoint-gc.js";
 import { runActiveOnIndexHooks, runActiveOnReadHooks, runActiveOnWriteHooks } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { runLockGc } from "../../core/lock/lock-gc.js";
@@ -15,7 +16,7 @@ import { nowIso } from "../../core/shared/time.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 
-const GC_SCOPE_VALUES = ["index", "embeddings", "runtime", "locks"] as const;
+const GC_SCOPE_VALUES = ["index", "embeddings", "runtime", "locks", "checkpoints"] as const;
 type GcScope = (typeof GC_SCOPE_VALUES)[number];
 
 interface GcTarget {
@@ -43,6 +44,21 @@ const GC_TARGETS: readonly GcTarget[] = [
   {
     scope: "embeddings",
     relativePath: "search/lancedb",
+    kind: "directory",
+  },
+  {
+    // Removing embeddings invalidates the whole semantic index, so the queued
+    // background-refresh work is also meaningless: a worker draining a stale
+    // queue against an empty ledger would rebuild a partial, inconsistent index
+    // (only the queued items vectorized). Clear the queue and its gate so the
+    // next mutation re-seeds from a clean slate. See core/search/background-refresh.ts.
+    scope: "embeddings",
+    relativePath: "search/pending-refresh.json",
+    kind: "file",
+  },
+  {
+    scope: "embeddings",
+    relativePath: "search/pending-refresh.gate.lock",
     kind: "directory",
   },
   {
@@ -75,6 +91,16 @@ export interface GcLocksSummary {
 }
 
 /**
+ * Documents the gc checkpoints summary payload exchanged by command, SDK, and package integrations.
+ */
+export interface GcCheckpointsSummary {
+  scanned: number;
+  removed: number;
+  retained: number;
+  retention_days: number;
+}
+
+/**
  * Documents the gc result payload exchanged by command, SDK, and package integrations.
  */
 export interface GcResult {
@@ -87,6 +113,8 @@ export interface GcResult {
   guidance: string[];
   /** Present only when the locks scope was selected. Summarizes the stale-lock sweep. */
   locks?: GcLocksSummary;
+  /** Present only when the checkpoints scope was selected. Summarizes the rollback-checkpoint sweep. */
+  checkpoints?: GcCheckpointsSummary;
   generated_at: string;
 }
 
@@ -189,15 +217,22 @@ function buildGcGuidance(params: {
       entry === "index/manifest.json" ||
       entry === "search/embeddings.jsonl" ||
       entry === "search/vectorization-status.json" ||
-      entry === "search/lancedb",
+      entry === "search/lancedb" ||
+      entry === "search/pending-refresh.json" ||
+      entry === "search/pending-refresh.gate.lock",
   );
   if (searchScopeSelected && searchArtifactsAffected) {
     guidance.push(
-      'Search artifacts were removed; run "pm install search-advanced --project" if reindex is unavailable, then "pm reindex --mode keyword" (and "--mode semantic" when semantic search is enabled) before search-heavy workflows.',
+      'Search artifacts were removed; the semantic index (including any queued background refresh) is invalidated. Run "pm install search-advanced --project" if reindex is unavailable, then "pm reindex --mode keyword" (and "--mode semantic" when semantic search is enabled) before search-heavy workflows.',
     );
   }
   if (params.removed.includes("runtime/history-drift-cache.json")) {
     guidance.push('History drift cache was removed; the next "pm health" run performs a full history-drift re-scan.');
+  }
+  if (params.removed.some((entry) => entry.startsWith("checkpoints/"))) {
+    guidance.push(
+      'Aged rollback checkpoints were removed; their "pm update-many"/"pm close-many --rollback" windows are no longer recoverable.',
+    );
   }
   return guidance;
 }
@@ -211,7 +246,7 @@ export async function runGc(global: GlobalOptions, options: GcCommandOptions = {
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
 
-  await readSettings(pmRoot);
+  const settings = await readSettings(pmRoot);
   const dryRun = options.dryRun === true;
   const scopes = parseScopes(options.scope);
   const selectedTargets = GC_TARGETS.filter((target) => scopes.includes(target.scope));
@@ -252,6 +287,33 @@ export async function runGc(global: GlobalOptions, options: GcCommandOptions = {
     };
   }
 
+  // The checkpoints scope is also not a path-based GC_TARGET: it sweeps
+  // checkpoints/ and removes only rollback checkpoints older than the configured
+  // checkpoints.retention_days, retaining active and unparseable files. See
+  // core/checkpoint/checkpoint-gc.ts.
+  let checkpointsSummary: GcCheckpointsSummary | undefined;
+  if (scopes.includes("checkpoints")) {
+    const retentionDays = settings.checkpoints.retention_days;
+    const checkpointResult = await runCheckpointGc(pmRoot, {
+      dryRun,
+      retentionDays,
+      hooks: {
+        onRead: (checkpointPath) => runActiveOnReadHooks({ path: checkpointPath, scope: "project" }),
+        onWrite: (checkpointPath) =>
+          runActiveOnWriteHooks({ path: checkpointPath, scope: "project", op: "gc:checkpoint_remove" }),
+      },
+    });
+    removed.push(...checkpointResult.removed);
+    retained.push(...checkpointResult.retained);
+    warnings.push(...checkpointResult.warnings);
+    checkpointsSummary = {
+      scanned: checkpointResult.scanned,
+      removed: checkpointResult.removed.length,
+      retained: checkpointResult.retained.length,
+      retention_days: retentionDays,
+    };
+  }
+
   warnings.push(
     ...(await runActiveOnIndexHooks({
       mode: dryRun ? "gc:dry-run" : "gc",
@@ -272,6 +334,7 @@ export async function runGc(global: GlobalOptions, options: GcCommandOptions = {
     retained,
     warnings,
     ...(locksSummary ? { locks: locksSummary } : {}),
+    ...(checkpointsSummary ? { checkpoints: checkpointsSummary } : {}),
     guidance,
     generated_at: nowIso(),
   };

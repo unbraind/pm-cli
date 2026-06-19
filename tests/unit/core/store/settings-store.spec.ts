@@ -158,6 +158,7 @@ describe("core/store/settings", () => {
         "author_default",
         "item_format",
         "locks",
+        "checkpoints",
         "output",
         "history",
         "validation",
@@ -175,6 +176,7 @@ describe("core/store/settings", () => {
         "vector_store",
       ]);
       expectOrderedObjectKeys(parsed.locks, ["ttl_seconds"]);
+      expectOrderedObjectKeys(parsed.checkpoints, ["retention_days"]);
       expectOrderedObjectKeys(parsed.output, ["default_format"]);
       expectOrderedObjectKeys(parsed.history, ["missing_stream", "compact_policy"]);
       expectOrderedObjectKeys(parsed.validation, [

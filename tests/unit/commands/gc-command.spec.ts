@@ -36,17 +36,23 @@ describe("runGc", () => {
       const gc = await runGc({ path: context.pmPath });
       expect(gc.ok).toBe(true);
       expect(gc.dry_run).toBe(false);
-      expect(gc.scope).toEqual(["index", "embeddings", "runtime", "locks"]);
+      expect(gc.scope).toEqual(["index", "embeddings", "runtime", "locks", "checkpoints"]);
       expect(gc.removed).toEqual([
         "index/manifest.json",
         "search/embeddings.jsonl",
         "search/vectorization-status.json",
         "search/lancedb",
       ]);
-      expect(gc.retained).toEqual(["runtime/test-runs", "runtime/history-drift-cache.json"]);
+      expect(gc.retained).toEqual([
+        "search/pending-refresh.json",
+        "search/pending-refresh.gate.lock",
+        "runtime/test-runs",
+        "runtime/history-drift-cache.json",
+      ]);
       expect(gc.warnings).toEqual([]);
+      expect(gc.checkpoints).toEqual({ scanned: 0, removed: 0, retained: 0, retention_days: 14 });
       expect(gc.guidance).toEqual([
-        'Search artifacts were removed; run "pm install search-advanced --project" if reindex is unavailable, then "pm reindex --mode keyword" (and "--mode semantic" when semantic search is enabled) before search-heavy workflows.',
+        'Search artifacts were removed; the semantic index (including any queued background refresh) is invalidated. Run "pm install search-advanced --project" if reindex is unavailable, then "pm reindex --mode keyword" (and "--mode semantic" when semantic search is enabled) before search-heavy workflows.',
       ]);
       expect(gc.generated_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
 
@@ -58,6 +64,8 @@ describe("runGc", () => {
         "search/embeddings.jsonl",
         "search/vectorization-status.json",
         "search/lancedb",
+        "search/pending-refresh.json",
+        "search/pending-refresh.gate.lock",
         "runtime/test-runs",
         "runtime/history-drift-cache.json",
       ]);
@@ -78,6 +86,8 @@ describe("runGc", () => {
         "index/manifest.json",
         "search/vectorization-status.json",
         "search/lancedb",
+        "search/pending-refresh.json",
+        "search/pending-refresh.gate.lock",
         "runtime/test-runs",
         "runtime/history-drift-cache.json",
       ]);
@@ -116,7 +126,7 @@ describe("runGc", () => {
       );
       expect(gc.ok).toBe(true);
       expect(gc.dry_run).toBe(true);
-      expect(gc.scope).toEqual(["index", "embeddings", "runtime", "locks"]);
+      expect(gc.scope).toEqual(["index", "embeddings", "runtime", "locks", "checkpoints"]);
       expect(gc.removed).toEqual([
         "index/manifest.json",
         "search/embeddings.jsonl",
@@ -124,10 +134,14 @@ describe("runGc", () => {
         "search/lancedb",
         "runtime/test-runs",
       ]);
-      expect(gc.retained).toEqual(["runtime/history-drift-cache.json"]);
+      expect(gc.retained).toEqual([
+        "search/pending-refresh.json",
+        "search/pending-refresh.gate.lock",
+        "runtime/history-drift-cache.json",
+      ]);
       expect(gc.guidance).toEqual([
         "Dry-run preview only: no cache artifacts were deleted.",
-        'Search artifacts were removed; run "pm install search-advanced --project" if reindex is unavailable, then "pm reindex --mode keyword" (and "--mode semantic" when semantic search is enabled) before search-heavy workflows.',
+        'Search artifacts were removed; the semantic index (including any queued background refresh) is invalidated. Run "pm install search-advanced --project" if reindex is unavailable, then "pm reindex --mode keyword" (and "--mode semantic" when semantic search is enabled) before search-heavy workflows.',
       ]);
 
       await expect(fs.stat(path.join(context.pmPath, "index", "manifest.json"))).resolves.toBeTruthy();
@@ -173,7 +187,10 @@ describe("runGc", () => {
         "search/vectorization-status.json",
         "search/lancedb",
       ]);
-      expect(embeddingsOnly.retained).toEqual([]);
+      expect(embeddingsOnly.retained).toEqual([
+        "search/pending-refresh.json",
+        "search/pending-refresh.gate.lock",
+      ]);
     });
   });
 
@@ -233,6 +250,68 @@ describe("runGc", () => {
       const gc = await runGc({ path: context.pmPath }, { scope: ["index"] });
       expect(gc.scope).toEqual(["index"]);
       expect(gc.locks).toBeUndefined();
+    });
+  });
+
+  it("prunes aged rollback checkpoints under the checkpoints scope and retains fresh ones", async () => {
+    await withTempPmPath(async (context) => {
+      const updateManyDir = path.join(context.pmPath, "checkpoints", "update-many");
+      await mkdir(updateManyDir, { recursive: true });
+      const oldAt = new Date(Date.now() - 40 * 24 * 3600 * 1000).toISOString();
+      const freshAt = new Date().toISOString();
+      await writeFile(path.join(updateManyDir, "old.json"), JSON.stringify({ created_at: oldAt }), "utf8");
+      await writeFile(path.join(updateManyDir, "fresh.json"), JSON.stringify({ created_at: freshAt }), "utf8");
+
+      const writeOps: string[] = [];
+      setActiveExtensionHooks({
+        beforeCommand: [],
+        afterCommand: [],
+        onWrite: [
+          {
+            layer: "project",
+            name: "checkpoint-gc-write-hook",
+            run: (hookContext) => {
+              writeOps.push(`${hookContext.op}:${path.basename(hookContext.path)}`);
+            },
+          },
+        ],
+        onRead: [],
+        onIndex: [],
+      });
+
+      const gc = await runGc({ path: context.pmPath }, { scope: ["checkpoints"] });
+      expect(gc.scope).toEqual(["checkpoints"]);
+      expect(gc.removed).toEqual(["checkpoints/update-many/old.json"]);
+      expect(gc.retained).toEqual(["checkpoints/update-many/fresh.json"]);
+      expect(gc.checkpoints).toEqual({ scanned: 2, removed: 1, retained: 1, retention_days: 14 });
+      expect(gc.guidance).toEqual([
+        'Aged rollback checkpoints were removed; their "pm update-many"/"pm close-many --rollback" windows are no longer recoverable.',
+      ]);
+      expect(writeOps).toEqual(["gc:checkpoint_remove:old.json"]);
+      await expect(fs.stat(path.join(updateManyDir, "old.json"))).rejects.toBeTruthy();
+      await expect(fs.stat(path.join(updateManyDir, "fresh.json"))).resolves.toBeTruthy();
+    });
+  });
+
+  it("honors a configured checkpoints.retention_days override", async () => {
+    await withTempPmPath(async (context) => {
+      const setResult = context.runCli(["config", "set", "checkpoints_retention_days", "3"]);
+      expect(setResult.code).toBe(0);
+      const updateManyDir = path.join(context.pmPath, "checkpoints", "update-many");
+      await mkdir(updateManyDir, { recursive: true });
+      const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString();
+      await writeFile(path.join(updateManyDir, "c.json"), JSON.stringify({ created_at: fiveDaysAgo }), "utf8");
+
+      const gc = await runGc({ path: context.pmPath }, { scope: ["checkpoints"] });
+      expect(gc.checkpoints).toEqual({ scanned: 1, removed: 1, retained: 0, retention_days: 3 });
+      expect(gc.removed).toEqual(["checkpoints/update-many/c.json"]);
+    });
+  });
+
+  it("omits the checkpoints summary when the checkpoints scope is not selected", async () => {
+    await withTempPmPath(async (context) => {
+      const gc = await runGc({ path: context.pmPath }, { scope: ["index"] });
+      expect(gc.checkpoints).toBeUndefined();
     });
   });
 
@@ -303,8 +382,15 @@ describe("runGc", () => {
         "search/vectorization-status.json",
         "search/lancedb",
       ]);
-      expect(gc.retained).toEqual(["runtime/test-runs", "runtime/history-drift-cache.json"]);
+      expect(gc.retained).toEqual([
+        "search/pending-refresh.json",
+        "search/pending-refresh.gate.lock",
+        "runtime/test-runs",
+        "runtime/history-drift-cache.json",
+      ]);
       expect(gc.warnings).toEqual([
+        "extension_hook_failed:project:boom-read-hook:onRead",
+        "extension_hook_failed:project:boom-read-hook:onRead",
         "extension_hook_failed:project:boom-read-hook:onRead",
         "extension_hook_failed:project:boom-read-hook:onRead",
         "extension_hook_failed:project:boom-read-hook:onRead",
@@ -322,7 +408,7 @@ describe("runGc", () => {
       expect(events).toContain("write:gc:remove:embeddings.jsonl");
       expect(events).toContain("write:gc:remove:vectorization-status.json");
       expect(events).toContain("write:gc:remove:lancedb");
-      expect(events).toContain("index:gc:6");
+      expect(events).toContain("index:gc:8");
     });
   });
 
@@ -352,6 +438,8 @@ describe("runGc", () => {
         "search/embeddings.jsonl",
         "search/vectorization-status.json",
         "search/lancedb",
+        "search/pending-refresh.json",
+        "search/pending-refresh.gate.lock",
         "runtime/test-runs",
         "runtime/history-drift-cache.json",
       ]);

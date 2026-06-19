@@ -2,14 +2,30 @@ id: pm-tyj8
 title: "gc --scope checkpoints: prune stale bulk-mutation checkpoint files"
 description: "pm gc currently covers scopes: index, embeddings, runtime, locks. The checkpoints/ directory (written by update-many and close-many rollback logic) is never collected. Old checkpoint files accumulate indefinitely under .agents/pm/checkpoints/. There is no TTL or gc coverage for this scope."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[3]: "area:storage",chore,gc
 created_at: "2026-06-07T10:02:04.103Z"
-updated_at: "2026-06-07T10:16:07.150Z"
+updated_at: "2026-06-19T18:27:35.575Z"
 author: audit-data-agent
 acceptance_criteria: "- Add `checkpoints` to `GC_SCOPE_VALUES` in gc.ts\n- GC sweeps `checkpoints/` by `created_at` age (default: prune files older than N days, configurable)\n- `--dry-run` shows what would be removed\n- Contract/flag tests updated; `pm gc --scope checkpoints` documented\n- At minimum, document the checkpoints directory and advise manual cleanup in the guide"
 parent: pm-o2kc
 risk: low
 confidence: high
+resolution: "Added pm gc --scope checkpoints: runCheckpointGc sweeps checkpoints/ and prunes rollback checkpoints older than checkpoints.retention_days (default 14, configurable via pm config set checkpoints_retention_days <n>). Unparseable/unreadable checkpoints are retained safety-first (mirrors the locks sweep), dry-run + extension hooks supported, and the result carries a checkpoints summary (scanned/removed/retained/retention_days)."
+expected_result: "checkpoints is a first-class gc scope with configurable age-based retention, dry-run, and contract/docs coverage."
+actual_result: "Scope wired end-to-end (commander, contracts golden, completion, MCP param table, docs); verified by checkpoint-gc.spec.ts + gc-command.spec.ts + a temp-dir smoke test; 100/100/100/100."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-xy9n,related,"2026-06-19T18:26:57.299Z",null,null
+files[7]{path,scope,note}:
+  src/core/checkpoint/checkpoint-gc.ts,project,New age-based rollback-checkpoint sweep (safety-first retention of unparseable files)
+  src/cli/commands/gc.ts,project,Wire checkpoints scope + GcCheckpointsSummary + guidance
+  src/types.ts,project,Add checkpoints.retention_days to PmSettings
+  src/core/shared/constants.ts,project,Default checkpoints.retention_days=14
+  src/core/store/settings.ts,project,Merge/serialize/order checkpoints section
+  src/core/store/settings-validator.ts,project,Validate optional checkpoints.retention_days (positive int)
+  src/core/config/nested-settings.ts,project,Expose checkpoints_retention_days config leaf
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/core/checkpoint/checkpoint-gc.spec.ts tests/unit/commands/gc-command.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Implemented checkpoints gc scope + checkpoints.retention_days config in feat/gc-storage-durability; full tests/docs/contracts; 100% coverage.
 body: "## Context\n\n`src/core/checkpoint/mutation-checkpoint.ts` writes checkpoint JSON files under `checkpoints/<subdir>/`. The `pm gc` command at `src/cli/commands/gc.ts:13` defines `GC_SCOPE_VALUES = ['index', 'embeddings', 'runtime', 'locks']` — checkpoints is absent.\n\nCheckpoint files include `created_at`, `author`, and `items` but have no TTL field. A project running bulk mutations regularly accumulates these files with no way to reclaim them other than manual deletion.\n\n## Acceptance criteria\n\n- [ ] Add `checkpoints` to `GC_SCOPE_VALUES` in gc.ts\n- [ ] GC sweeps `checkpoints/` by `created_at` age (default: prune files older than N days, configurable)\n- [ ] `--dry-run` shows what would be removed\n- [ ] Contract/flag tests updated; `pm gc --scope checkpoints` documented\n- [ ] At minimum, document the checkpoints directory and advise manual cleanup in the guide\n\n## Evidence\n\n- `src/cli/commands/gc.ts:13` — `GC_SCOPE_VALUES` does not include checkpoints\n- `src/core/checkpoint/mutation-checkpoint.ts:78-88` — writes to `checkpoints/<subdir>/`\n- `.agents/pm/checkpoints/update-many/` exists in this repo with accumulated files"

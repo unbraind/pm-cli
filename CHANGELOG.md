@@ -4,6 +4,8 @@
 
 ### Added
 
+- gc --scope checkpoints: prune stale bulk-mutation checkpoint files ([pm-tyj8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-tyj8.toon))
+- LanceDB snapshot: add gc --scope embeddings to include pending-refresh.json and drift-cache coordination ([pm-3b1t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-3b1t.toon))
 - Sentry KNOWN\_NOISY\_CONSOLE\_MESSAGE\_PATTERNS maintenance: add a governance test to prevent silent accumulation of stale patterns ([pm-jxls](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-jxls.toon))
 - Add vitest.config.ts coverage include/exclude governance guidance to ARCHITECTURE.md ([pm-othr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-othr.toon))
 - Add wiring-checklist reference card to ARCHITECTURE.md for new command authors ([pm-zyse](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-zyse.toon))
@@ -17,6 +19,7 @@
 
 ### Fixed
 
+- appendLineAtomic is not truly atomic: concurrent appends to history JSONL can interleave ([pm-xy9n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xy9n.toon))
 - Project-scope extension install writes ~69MB node\_modules per workspace \(peer pm-cli + transitive Sentry/OTel\) ([pm-oxq2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oxq2.toon))
 - Fix ARCHITECTURE.md storage layout: add plans/, stories/, schema/, checkpoints/, runtime/ dirs ([pm-mcgf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-mcgf.toon))
 - Fix nightly cross-platform reliability: macOS realpath in extension-command test and Windows .cmd spawn EINVAL ([pm-gf6f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-gf6f.toon))

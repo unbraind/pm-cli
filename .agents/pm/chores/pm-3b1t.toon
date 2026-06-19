@@ -2,14 +2,25 @@ id: pm-3b1t
 title: "LanceDB snapshot: add gc --scope embeddings to include pending-refresh.json and drift-cache coordination"
 description: "pm gc --scope embeddings removes search/embeddings.jsonl, search/vectorization-status.json, and search/lancedb/ but does NOT remove search/pending-refresh.json. If there are queued items in the pending-refresh queue when gc runs, the next spawned background worker will attempt to re-embed items that no longer have a vector store, potentially re-creating a partial ledger inconsistency."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[4]: "area:search","area:semantic",correctness,gc
 created_at: "2026-06-07T10:04:43.182Z"
-updated_at: "2026-06-07T10:15:48.481Z"
+updated_at: "2026-06-19T18:27:22.761Z"
 author: audit-data-agent
 acceptance_criteria: "- Add `search/pending-refresh.json` to the embeddings GC_TARGETS\n- OR: when gc --scope embeddings runs, acquire the reindex lock briefly to flush and discard the pending queue\n- Document that gc --scope embeddings invalidates the entire semantic index (requires pm reindex --mode semantic to rebuild)\n- Add a test that verifies the pending queue is cleared after gc"
 parent: pm-ydp6
 risk: low
 confidence: high
+resolution: "gc --scope embeddings now also removes search/pending-refresh.json and search/pending-refresh.gate.lock, so a background-refresh worker draining a stale queue can no longer rebuild a partial index against the freshly-emptied ledger. Guidance updated to state the whole semantic index (incl. queued refresh) is invalidated."
+expected_result: Embeddings GC clears the pending-refresh queue + gate atomically with the index artifacts.
+actual_result: Embeddings scope removes pending-refresh.json + gate; verified by gc-command.spec.ts and a temp-dir smoke test; full coverage 100/100/100/100.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-tyj8,related,"2026-06-19T18:26:56.939Z",null,null
+  pm-xy9n,related,"2026-06-19T18:26:56.939Z",null,null
+files[1]{path,scope,note}:
+  src/cli/commands/gc.ts,project,Add search/pending-refresh.json + gate to embeddings GC_TARGETS; guidance notes full semantic-index invalidation
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/gc-command.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Implemented in feat/gc-storage-durability: pending-refresh queue + gate added to embeddings GC targets; tests + docs updated; 100% coverage."
 body: "## Context\n\n`src/cli/commands/gc.ts:22-48` defines GC_TARGETS. The embeddings scope covers:\n- `search/embeddings.jsonl`\n- `search/vectorization-status.json`\n- `search/lancedb/`\n\nBut NOT `search/pending-refresh.json` (written by `src/core/search/background-refresh.ts:136`).\n\nAfter gc --scope embeddings, if a background worker is still running or a queued file exists, the worker drains the queue, calls refreshSemanticEmbeddingsForMutatedItems, reads the (now empty) ledger as '{}', and upserts only the queued items into a fresh vector store — leaving the remaining 1056 items unindexed with no warning.\n\n## Acceptance criteria\n\n- [ ] Add `search/pending-refresh.json` to the embeddings GC_TARGETS\n- [ ] OR: when gc --scope embeddings runs, acquire the reindex lock briefly to flush and discard the pending queue\n- [ ] Document that gc --scope embeddings invalidates the entire semantic index (requires pm reindex --mode semantic to rebuild)\n- [ ] Add a test that verifies the pending queue is cleared after gc\n\n## Evidence\n\n- `src/cli/commands/gc.ts:29-47` — embeddings targets list; pending-refresh.json absent\n- `src/core/search/background-refresh.ts:61-66` — pending queue path = `search/pending-refresh.json`\n- `.agents/pm/search/pending-refresh.json` present in this repo (currently contains 11 bytes)"

@@ -887,6 +887,15 @@ export interface PmSettings {
   locks: {
     ttl_seconds: number;
   };
+  /**
+   * Retention policy for bulk-mutation rollback checkpoints written by
+   * `update-many`/`close-many`. `pm gc --scope checkpoints` prunes checkpoint
+   * files older than `retention_days`; checkpoints with an unparseable
+   * `created_at` are retained (safety-first, mirroring the stale-lock sweep).
+   */
+  checkpoints: {
+    retention_days: number;
+  };
   output: {
     default_format: "toon" | "json";
   };

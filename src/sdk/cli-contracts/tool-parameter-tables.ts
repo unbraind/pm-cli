@@ -871,8 +871,8 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     description: "For focus action: clear the session focused item instead of setting it (mutually exclusive with id).",
   },
   gcScope: {
-    description: "Repeatable gc scope selector values (index, embeddings, runtime, locks).",
-    examples: [["index", "embeddings"], ["runtime"], ["locks"]],
+    description: "Repeatable gc scope selector values (index, embeddings, runtime, locks, checkpoints).",
+    examples: [["index", "embeddings"], ["runtime"], ["locks"], ["checkpoints"]],
   },
   storage: {
     description:

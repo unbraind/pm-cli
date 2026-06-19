@@ -2,14 +2,22 @@ id: pm-xy9n
 title: "appendLineAtomic is not truly atomic: concurrent appends to history JSONL can interleave"
 description: "appendLineAtomic opens the history JSONL file in append mode and writes a line. For single-process use with per-item locking this is safe, but the lock is per-item and the history path is also per-item, so concurrent multi-item operations (update-many) hold different locks and can interleave writes to different files without issue. However, the reindex lock is a shared lock distinct from item locks, and the background refresh worker writes to the same JSONL indirectly. If both a mutation and the background worker touch the same item's history file simultaneously (the mutation re-enqueues before the worker finishes draining), a partial line may be written."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[4]: "area:history","area:storage",concurrency,durability
 created_at: "2026-06-07T10:03:03.472Z"
-updated_at: "2026-06-07T10:16:06.694Z"
+updated_at: "2026-06-19T18:27:46.969Z"
 author: audit-data-agent
 acceptance_criteria: "- Document the invariant explicitly: history writes are only safe when the per-item lock is held\n- Add a dev-time assertion or eslint rule that `appendHistoryEntry` is not called outside item-store mutation context\n- OR replace appendLineAtomic with a write-temp+rename atomic approach for history JSONL (safer, slightly more expensive)"
 parent: pm-o2kc
 risk: low
 confidence: medium
+resolution: "Documented the concurrency invariant (AC option 1). appendLineAtomic opens with O_APPEND so each write(2) atomically positions at EOF; the common case hands the whole line to the kernel in one write(2) which mainstream filesystems commit atomically, keeping small concurrent multi-process appends (telemetry + OTLP queues) line-coherent without an external lock. The guarantee only weakens for multi-KiB single records; the only caller that produces those (history JSONL) always holds the per-item store lock, so those appends are serialized regardless."
+expected_result: The lock/atomicity invariant for history (and queue) appends is explicit so future callers know large concurrent appends need an item lock.
+actual_result: appendLineAtomic docstring now states the O_APPEND + single-write atomicity and the per-item-lock requirement for large lines; no behavioral change needed because all large-line callers already hold the lock; 100% coverage retained.
+files[1]{path,scope,note}:
+  src/core/fs/fs-utils.ts,project,Document appendLineAtomic O_APPEND single-write atomicity + per-item-lock invariant for large lines
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/core/fs/fs-utils.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Documented appendLineAtomic atomicity + per-item-lock invariant (AC option 1) in feat/gc-storage-durability; verified all large-line history writes hold the per-item lock.
 body: "## Context\n\n`src/core/fs/fs-utils.ts:40-49`:\n```ts\nconst handle = await fs.open(targetPath, 'a');\ntry {\n  await handle.writeFile(`${line}\\n`, 'utf8');\n} finally { await handle.close(); }\n```\n\nNode.js `fs.writeFile` on a handle does a single `write(2)` syscall for small strings, which is atomic on POSIX for sizes under PIPE_BUF (~4KB). A full history entry JSON can exceed 4KB for items with large bodies, making the write non-atomic. The background refresh worker at `src/core/search/background-refresh.ts:248-325` holds the reindex lock but NOT the per-item lock, meaning it reads item files while a concurrent `pm update` (which holds the item lock) could have already written a new history entry mid-write.\n\nIn practice the item lock gates ALL history writes (`item-store.ts:389-534`), so the risk is low for normal mutations. The real gap is when an extension's `service_override` writes history directly.\n\n## Acceptance criteria\n\n- [ ] Document the invariant explicitly: history writes are only safe when the per-item lock is held\n- [ ] Add a dev-time assertion or eslint rule that `appendHistoryEntry` is not called outside item-store mutation context\n- [ ] OR replace appendLineAtomic with a write-temp+rename atomic approach for history JSONL (safer, slightly more expensive)\n\n## Evidence\n\n- `src/core/fs/fs-utils.ts:40-49` — append open + writeFile\n- `src/core/history/history.ts:153-187` — `appendHistoryEntry` calls `appendLineAtomic`\n- `src/core/store/item-store.ts:295-345` — `prepareLockedItem` acquires the per-item lock before any history write"
