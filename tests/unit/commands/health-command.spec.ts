@@ -1363,6 +1363,14 @@ describe("runHealth", () => {
           activation_failure_count: 0,
         },
       });
+      // The system-wide adoption gap surfaces a machine-executable remediation
+      // map alongside the per-extension triage; the load-failure code is not in
+      // the shared registry and is intentionally absent (pm-bdvm).
+      expect(
+        (extensionCheck?.details as { remediation_map?: Record<string, string> }).remediation_map,
+      ).toEqual({
+        extension_update_health_partial_coverage: "pm extension --adopt-all --project",
+      });
 
       const loaded = (
         extensionCheck?.details as { loaded?: Array<{ name: string; has_activate: boolean; module?: unknown }> }

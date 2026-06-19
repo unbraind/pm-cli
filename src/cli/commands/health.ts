@@ -1767,11 +1767,19 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
   // never have to hardcode the warning-code -> fix mapping. The extensions check
   // keeps its richer, contextual `details.triage.remediation`; brief/summary
   // projections omit remediation_map (it lives only in full check details).
-  const checkRemediationSources: Partial<Record<HealthCheck["name"], string[]>> = {
+  // Every health check contributes its warning tokens as a remediation source.
+  // Most resolve to a registered fix command; the extensions check passes its
+  // full warning list because only the system-wide partial-coverage adoption
+  // gap is registered — per-extension findings resolve to nothing here and keep
+  // their richer `details.triage.remediation`, so buildRemediationMap simply
+  // skips every unregistered code (pm-bdvm). The map is total over
+  // HealthCheck["name"], so no check is ever silently missing a source.
+  const checkRemediationSources: Record<HealthCheck["name"], string[]> = {
     settings: normalizedSettingsReadWarnings,
     directories: missingDirs.map((dir) => `missing_directory:${dir}`),
     settings_values: settingWarnings,
     telemetry: telemetryCheck.warnings,
+    extensions: extensionCheck.warnings,
     storage: historySummary.over_threshold.map((id) => `history_stream_over_compact_threshold:${id}`),
     locks: locksCheck.warnings,
     integrity: integrityCheck.warnings,
@@ -1783,11 +1791,7 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
       ? ((historyDriftCheck.check.details.counts as { drifted: number }).drifted)
       : 0;
   for (const check of checks) {
-    const sources = checkRemediationSources[check.name];
-    if (sources === undefined) {
-      continue;
-    }
-    const remediationMap = buildRemediationMap(sources);
+    const remediationMap = buildRemediationMap(checkRemediationSources[check.name]);
     // With multiple drifted streams the per-item `pm history-repair <id>`
     // template would have to be run once per stream; suggest the bulk audited
     // pass instead so agents repair everything in one command.

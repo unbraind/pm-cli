@@ -183,6 +183,20 @@ describe("runValidate", () => {
     validateInternals.attachValidateFixHints(checkWithoutHints, []);
     expect(checkWithoutHints.details).toEqual({});
 
+    // The duplicate-issue-code metadata warning must resolve to an executable
+    // fix command now that it is in the shared remediation registry (pm-sdbo).
+    const metadataCheckWithDuplicates = {
+      name: "metadata",
+      status: "warn",
+      details: {},
+    } as never;
+    validateInternals.attachValidateFixHints(metadataCheckWithDuplicates, [
+      "validate_metadata_duplicate_issue_codes:2",
+    ]);
+    expect((metadataCheckWithDuplicates.details as { fix_hints?: string[] }).fix_hints).toEqual([
+      'pm update <id> --title "<distinct title>"',
+    ]);
+
     const graph = validateInternals.buildLifecycleDependencyGraph([
       {
         id: "pm-a",

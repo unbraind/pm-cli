@@ -4,6 +4,8 @@
 
 ### Added
 
+- Add remediation registry entry for validate\_metadata\_duplicate\_issue\_codes warning ([pm-sdbo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-sdbo.toon))
+- Add remediation registry entry for extension\_update\_health\_partial\_coverage warning ([pm-bdvm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-bdvm.toon))
 - gc --scope checkpoints: prune stale bulk-mutation checkpoint files ([pm-tyj8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-tyj8.toon))
 - LanceDB snapshot: add gc --scope embeddings to include pending-refresh.json and drift-cache coordination ([pm-3b1t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-3b1t.toon))
 - Sentry KNOWN\_NOISY\_CONSOLE\_MESSAGE\_PATTERNS maintenance: add a governance test to prevent silent accumulation of stale patterns ([pm-jxls](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-jxls.toon))
