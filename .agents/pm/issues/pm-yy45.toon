@@ -2,21 +2,24 @@ id: pm-yy45
 title: GH-293..296 CLI parser and search regression bundle
 description: "Fix fresh GitHub issues GH-293 schema unknown subcommands mutating types, GH-294 create --tags space-separated loss, GH-295 exact-ID keyword ranking, and GH-296 docs comma path parsing. Duplicate check covered open/closed/canceled pm search results before creation; related closed lineages include pm-ablm/pm-r2kd, pm-oqgf/pm-rkie, pm-cf1u/pm-klqo, and pm-jzf4."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[5]: agent-ux,gh-293,gh-294,gh-295,gh-296
 created_at: "2026-06-19T06:13:24.173Z"
-updated_at: "2026-06-19T06:30:43.267Z"
-assignee: codex-agent
+updated_at: "2026-06-19T06:39:23.001Z"
 author: codex-agent
 parent: pm-mpbb
-comments[6]{created_at,author,text}:
+resolution: "Merged PR #298 with parser/search fixes and regression tests for GH-293, GH-294, GH-295, and GH-296."
+expected_result: "CLI parser and search primitives handle schema unknown subcommands, multi-value create tags, exact dashed-ID searches, and comma-separated linked docs/files without data loss or unintended mutation."
+actual_result: "Local gates, manual temp smoke, remote CI/CodeQL/coverage/static/typecheck/compat/smoke/runtime checks passed; PR #298 merged to main and GitHub issues #293-#296 closed."
+comments[7]{created_at,author,text}:
   "2026-06-19T06:13:38.354Z",codex-agent,"Investigation note: GitHub sweep found open issues #293, #294, #295, #296 and no open PRs. pnpm audit --audit-level moderate reported no known vulnerabilities; pnpm outdated reports commander latest 15.0.0 but wanted/current 14.0.3, retained pending Node compatibility review."
   "2026-06-19T06:18:00.464Z",codex-agent,"Evidence: Focused regression suite passed: node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/commands/files-docs-command.spec.ts tests/unit/commands/register-commands.spec.ts (271 tests). Manual temp smoke passed against dist/cli.js with isolated PM_PATH/PM_GLOBAL_PATH for GH-293 schema unknown subcommand no-mutation, GH-294 create --tags alpha beta gamma, GH-296 docs comma paths, and GH-295 exact-ID search ranking."
   "2026-06-19T06:27:41.572Z",codex-agent,"Evidence: Full coverage gate passed after branch simplification: node scripts/run-tests.mjs coverage -> 230 files, 4649 tests, Statements 100% (29732/29732), Branches 100% (23273/23273), Functions 100% (4945/4945), Lines 100% (28566/28566). Other gates passed: pnpm build, git diff --check, pnpm contracts:check, pnpm security:scan, pnpm changelog:pm:check, pnpm quality:static. pm validate --check-resolution --check-history-drift had ok=true and history_drift ok, with pre-existing validate_resolution_missing_fields:201 warnings."
   "2026-06-19T06:28:06.218Z",codex-agent,"Evidence: Static quality JSON gate confirmed source_docstring_coverage_percent=100 and exported_docstring_coverage_percent=100 (source 221/221, exported 1620/1620). pnpm version:check passed version policy 2026.6.19. Fresh GitHub sweep still shows issues #293-#296 open and no open PRs before creating this branch."
   "2026-06-19T06:29:22.549Z",unknown,"Evidence: Sentry recent check passed. Command: sentry issue list pm-cli --period 24h --query 'is:unresolved' --limit 10 --json --fields shortId,title,level,status,priority,lastSeen. Result: no unresolved pm-cli issues returned for the last 24h."
   "2026-06-19T06:30:43.267Z",codex-agent,"Evidence: Published PR #298 (https://github.com/unbraind/pm-cli/pull/298) for the bundled GH-293..296 parser/search regressions and requested review agents with @codex review, /gemini review, @gemini-code-assist, and @coderabbitai full review."
+  "2026-06-19T06:39:06.813Z",codex-agent,"Evidence: PR #298 merged to main at 90a9e156185c05bbf6ce42b37cbfbf79a6943e98 on 2026-06-19T06:38:49Z. GitHub checks before merge were green: CI build, coverage, static, typecheck, compat, smokes, runtime smokes on ubuntu/macos, CodeQL, and CodeRabbit status. Sourcery/Gemini/Codex connector reported quota/setup blocks and produced no actionable review findings. GitHub issues #293, #294, #295, and #296 are no longer open after merge."
 files[7]{path,scope,note}:
   src/cli/bootstrap-args.ts,project,Accept create --tags multi-value argv normalization
   src/cli/commands/linked-artifacts.ts,project,Split bare comma-separated linked file/doc add paths
@@ -29,4 +32,5 @@ tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/commands/files-docs-command.spec.ts tests/unit/commands/register-commands.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mqkjfg94-ya47qr,test,passed,"2026-06-19T06:18:00.505Z","2026-06-19T06:18:27.976Z","2026-06-19T06:18:27.976Z",null,null,1,0,0,null,null,null
+close_reason: "Merged PR #298 fixing GH-293..296 parser/search regressions; local and remote gates passed, manual temp smoke passed, and linked GitHub issues closed."
 body: ""
