@@ -265,7 +265,16 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # Guards the two Windows-only import classes the nightly exposed:
+      # (1) file://-URL TypeScript source imports (sourceModule helper), and
+      # (2) .mjs script imports whose shebang must be stripped by the test
+      #     transform (scriptModule helper + the strip-script-shebang Vite
+      #     plugin). The script specs below exercise both harness branches
+      #     (top-level scripts/ and nested scripts/release/) plus the harness
+      #     contract test. The remaining tests/unit/scripts/** separator/path
+      #     failures are a separate pre-existing class tracked in pm-s5pe and
+      #     are intentionally not gated here yet.
       - name: Run Windows source-import regression tests
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
-        run: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts
+        run: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/finalize-build.spec.ts tests/unit/scripts/dogfood-package-first.spec.ts tests/unit/scripts/run-tests.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts tests/unit/scripts/release/utils.spec.ts

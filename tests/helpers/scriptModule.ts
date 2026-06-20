@@ -1,8 +1,67 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { afterEach, vi } from "vitest";
+
+/**
+ * Reduce a repo-root-relative script path (e.g. `scripts/release/utils.mjs`) to
+ * its `scripts/`-relative name without extension (`release/utils`). Splits on
+ * both separators so a caller passing a Windows-style path is normalized
+ * regardless of the host platform.
+ */
+function toScriptName(relativePath: string): string {
+  const posixPath = relativePath.split(/[\\/]/).join("/").replace(/^(?:\.\/)+/, "").replace(/^\/+/, "");
+  return posixPath.replace(/^scripts\//, "").replace(/\.mjs$/, "");
+}
+
+/**
+ * Import a repository script through a Vite-transformable specifier.
+ *
+ * The literal `../../scripts/…` prefix and `.mjs` suffix are required for
+ * cross-platform correctness. Vite's `dynamic-import-vars` transform only
+ * rewrites a dynamic `import()` when its static parts include a directory
+ * prefix AND a file extension, and the variable part may only span a single
+ * path segment. A fully dynamic specifier (the previous absolute `file://` URL)
+ * is left untransformed, so on Windows the `.mjs` script is loaded raw and its
+ * leading `#!/usr/bin/env node` shebang reaches the module compiler, throwing
+ * `SyntaxError: Invalid or unexpected token`. Branching on the one nested
+ * directory (`scripts/release/**`) keeps each variable a single segment so Vite
+ * globs and transforms the module — stripping the shebang — on every platform,
+ * the same Windows-safety rationale documented in {@link ./sourceModule.ts}.
+ *
+ * Freshness (re-running the module's top-level code) comes from the
+ * `vi.resetModules()` call in the harness `afterEach`, so no cache-bust query
+ * is needed; that also keeps relative `vi.doMock` targets of transitive imports
+ * matching, since Vite no longer has a parent query to propagate.
+ */
+async function importTransformedScript<T>(relativePath: string): Promise<T> {
+  const name = toScriptName(relativePath);
+  const releasePrefix = "release/";
+  if (name.startsWith(releasePrefix)) {
+    const leaf = name.slice(releasePrefix.length);
+    assertSingleSegment(leaf, relativePath);
+    return (await import(`../../scripts/release/${leaf}.mjs`)) as T;
+  }
+  assertSingleSegment(name, relativePath);
+  return (await import(`../../scripts/${name}.mjs`)) as T;
+}
+
+/**
+ * Fail fast when a script name spans more than one path segment. Vite's
+ * `dynamic-import-vars` transform only matches a single-segment variable, so a
+ * nested path outside the two supported directories (`scripts/` and
+ * `scripts/release/`) would be left untransformed and silently regress on
+ * Windows. Throwing here turns that into an explicit Linux-time error so a
+ * future contributor knows to add a dedicated branch.
+ */
+function assertSingleSegment(segment: string, relativePath: string): void {
+  if (segment.includes("/")) {
+    throw new Error(
+      `importTransformedScript: unsupported nested script path "${relativePath}". ` +
+        "Vite dynamic-import-vars requires a single-segment variable; add a dedicated branch for this directory.",
+    );
+  }
+}
 
 /**
  * Shared harness for unit-testing repository scripts (scripts/**, plugins/**,
@@ -16,15 +75,17 @@ import { afterEach, vi } from "vitest";
 
 export interface ScriptHarness {
   /**
-   * Import a repo module fresh (cache-busted) so its top-level code re-runs.
-   * Use when the module has no relative `vi.doMock` targets that must match.
+   * Import a repo script so its top-level code re-runs. Freshness comes from
+   * the `vi.resetModules()` call in the registered `afterEach`, so the optional
+   * `queryPrefix` (retained for call-site compatibility) no longer affects
+   * module identity.
    */
   importModule<T>(relativePath: string, queryPrefix?: string): Promise<T>;
   /**
-   * Import a repo module without a cache-bust query so relative `vi.doMock`
-   * targets of transitive imports still match (Vite propagates the parent
-   * query onto child specifiers). Freshness comes from `vi.resetModules()`
-   * in the registered `afterEach`.
+   * Alias of {@link ScriptHarness.importModule}. Both routes go through a
+   * Vite-transformable specifier with no cache-bust query, so relative
+   * `vi.doMock` targets of transitive imports keep matching (Vite has no parent
+   * query to propagate) and freshness still comes from `vi.resetModules()`.
    */
   importModuleStable<T>(relativePath: string): Promise<T>;
   /** Create a tracked temp directory removed automatically after each test. */
@@ -37,13 +98,6 @@ export interface ScriptHarness {
    * stdout) that the test must await without a fixed sleep.
    */
   waitForCondition(assertion: () => void, timeoutMs?: number): Promise<void>;
-}
-
-let cacheBustCounter = 0;
-
-function cacheBustToken(): string {
-  cacheBustCounter += 1;
-  return `n${cacheBustCounter}`;
 }
 
 /**
@@ -85,13 +139,11 @@ export function createScriptHarness(unmockSpecifiers: readonly string[] = []): S
   });
 
   return {
-    async importModule<T>(relativePath: string, queryPrefix = "v"): Promise<T> {
-      const absolutePath = path.join(process.cwd(), relativePath);
-      return (await import(`${pathToFileURL(absolutePath).href}?${queryPrefix}=${cacheBustToken()}`)) as T;
+    async importModule<T>(relativePath: string): Promise<T> {
+      return importTransformedScript<T>(relativePath);
     },
     async importModuleStable<T>(relativePath: string): Promise<T> {
-      const absolutePath = path.join(process.cwd(), relativePath);
-      return (await import(pathToFileURL(absolutePath).href)) as T;
+      return importTransformedScript<T>(relativePath);
     },
     async createTempRoot(prefix: string): Promise<string> {
       const root = await mkdtemp(path.join(os.tmpdir(), prefix));

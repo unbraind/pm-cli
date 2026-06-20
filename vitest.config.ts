@@ -1,6 +1,38 @@
 import { fileURLToPath } from "node:url";
 
+import type { Plugin } from "vite";
 import { defineConfig } from "vitest/config";
+
+/**
+ * Strip the leading `#!/usr/bin/env node` shebang from repository `.mjs`
+ * scripts before they are compiled under test.
+ *
+ * The script-test harness ({@link ./tests/helpers/scriptModule.ts}) imports
+ * these scripts through Vite. On Windows, Vite's default transform does not
+ * strip the shebang the way it does on POSIX, so the leading `#!` reaches the
+ * module compiler and throws `SyntaxError: Invalid or unexpected token` —
+ * turning the entire Windows nightly red. Removing the shebang text (while
+ * preserving the newline, so line numbers and coverage mapping are unchanged)
+ * in a `pre` transform makes the script imports load identically on every
+ * platform without touching the production script files, which still ship the
+ * shebang for direct execution.
+ */
+const stripScriptShebang: Plugin = {
+  name: "pm-strip-script-shebang",
+  enforce: "pre",
+  transform(code, id) {
+    if (!/[\\/]scripts[\\/][^?]*\.mjs(\?|$)/.test(id)) {
+      return null;
+    }
+    // Tolerate a leading UTF-8 BOM (Windows editors sometimes prepend one)
+    // before the shebang so the strip still fires.
+    const body = code.charCodeAt(0) === 0xfeff ? code.slice(1) : code;
+    if (!body.startsWith("#!")) {
+      return null;
+    }
+    return { code: body.replace(/^#!.*/, ""), map: null };
+  },
+};
 
 const coverageReporters = process.env.CI
   ? (["text", "json-summary"] as const)
@@ -15,6 +47,7 @@ const allSourceCoverageThresholds = {
 
 export default defineConfig({
   cacheDir: ".cache/vitest",
+  plugins: [stripScriptShebang],
   resolve: {
     alias: [
       // The docs/examples reference scripts import the published package by its
