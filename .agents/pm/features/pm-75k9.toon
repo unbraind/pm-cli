@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: "area:search",embedding,offline,ux
 created_at: "2026-06-07T10:05:12.215Z"
-updated_at: "2026-06-20T05:44:42.879Z"
+updated_at: "2026-06-20T06:22:55.754Z"
 author: audit-data-agent
 acceptance_criteria: "- Add a built-in `bm25` search provider that can be activated with `pm config set search.provider bm25`\n- BM25 operates entirely on the front-matter cache, requiring no external service\n- The provider registers as a fallback when `search.provider = auto` and no HTTP provider is configured\n- Quality is clearly documented as lower than dense retrieval\n- Extension authors can override with `registerSearchProvider`"
 value: Enables semantic-quality search for new users and CI pipelines without requiring an embedding service
@@ -16,8 +16,9 @@ confidence: medium
 resolution: Built-in BM25 offline provider shipped and validated end-to-end.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-u8n5,related,"2026-06-20T05:19:46.714Z",claude-code-agent,null
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-06-20T05:19:47.094Z",claude-code-agent,"Shipped built-in offline BM25 lexical retrieval (src/core/search/bm25.ts): Okapi BM25 with IDF + k1 term-frequency saturation + b length-normalization, scoring the in-memory corpus with NO embedding service or vector store. Activated via search.provider=bm25 (always) or auto (offline fallback only when no embedding/extension provider). Wired into runSearch semantic/hybrid: semantic returns pure BM25 hits (matched_fields:[bm25]); hybrid blends BM25 with the keyword scorer via combineHybridHits. Tuning: search.bm25.k1 (default 1.2) and search.bm25.b (default 0.75), settable via pm config set search_bm25_k1/b and validated/persisted. Keyword mode unchanged. 100% coverage; full manual sandbox verification."
+  "2026-06-20T06:22:55.754Z",claude-code-agent,"Post-merge evidence (PR #314, merged 2026-06-20, commit 0c40440c): all CI green (coverage 100/100/100/100 across 4768 tests, static + docs-skills + typecheck + contracts + CodeQL + Windows/macOS/Node20-24 smokes). CodeRabbit reviewed; all 5 findings addressed in c9930f0a (unrounded eval gate, strict relevant_ids, BM25 finite-clamp, eval flag resolver case, changelog wording) and the re-review surfaced no new findings. Sandbox-verified BM25 semantic/hybrid ranking + auto-fallback warning + config-knob persistence/validation. Telemetry stack healthy (12.6k events/24h, queue drained); Sentry shows no new errors from this session."
 files[2]{path,scope,note}:
   src/core/search/bm25.ts,project,Offline BM25 index + scorer + param resolution
   src/cli/commands/search.ts,project,BM25 activation + computeBuiltInBm25Hits wiring
