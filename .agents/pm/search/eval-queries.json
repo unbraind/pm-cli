@@ -1,0 +1,22 @@
+[
+  {
+    "query": "offline embedding fallback bm25 provider",
+    "relevant_ids": ["pm-75k9"],
+    "description": "Offline BM25 lexical retrieval provider"
+  },
+  {
+    "query": "search relevance evaluation ndcg mrr harness",
+    "relevant_ids": ["pm-u8n5", "pm-22x2"],
+    "description": "Search relevance eval harness (nDCG/MRR runner)"
+  },
+  {
+    "query": "telemetry worker postgres reconnect ingestion stall",
+    "relevant_ids": ["pm-rj3w"],
+    "description": "Telemetry worker Postgres reconnect incident"
+  },
+  {
+    "query": "item format version front-matter migration gating",
+    "relevant_ids": ["pm-ae1u"],
+    "description": "Per-item format-version front-matter field"
+  }
+]

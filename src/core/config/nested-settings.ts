@@ -147,6 +147,19 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     summary: "Default upper bound on search hits when --limit is not supplied.",
   },
   {
+    key: "search_bm25_k1",
+    path: "search.bm25.k1",
+    kind: "number",
+    min: 0,
+    summary: "Offline BM25 term-frequency saturation (k1); higher saturates repeated terms slower (default 1.2).",
+  },
+  {
+    key: "search_bm25_b",
+    path: "search.bm25.b",
+    kind: "ratio",
+    summary: "Offline BM25 document-length normalization (b) in [0, 1]; 0 disables, 1 fully normalizes (default 0.75).",
+  },
+  {
     key: "openai_base_url",
     path: "providers.openai.base_url",
     kind: "string",

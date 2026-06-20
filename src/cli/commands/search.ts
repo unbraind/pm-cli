@@ -42,7 +42,21 @@ import {
   type VectorStoreResolution,
 } from "../../core/search/vector-stores.js";
 import { readVectorizationStatusLedger } from "../../core/search/cache.js";
-import { buildEventCorpus, buildPlanFlatCorpus, buildReminderCorpus } from "../../core/search/corpus.js";
+import {
+  buildEventCorpus,
+  buildPlanFlatCorpus,
+  buildReminderCorpus,
+  buildSearchCorpus,
+  resolveSearchCorpusFields,
+} from "../../core/search/corpus.js";
+import {
+  buildBm25Index,
+  flattenSearchCorpusText,
+  resolveBm25Params,
+  scoreBm25Query,
+  tokenizeBm25,
+  type Bm25Params,
+} from "../../core/search/bm25.js";
 import { collectStaleVectorizationIds } from "../../core/search/staleness.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
@@ -815,7 +829,9 @@ export const _testOnlySearchCommand = {
   collectExactPhraseFields,
   collectLinkedPaths,
   combineHybridHits,
+  computeBuiltInBm25Hits,
   computeSemanticOrHybridHits,
+  resolveBuiltInBm25Mode,
   countOccurrences,
   dependencyEntries,
   documentContainsExactPhrase,
@@ -1869,6 +1885,10 @@ function combineHybridHits(
   semanticScores: Map<string, number>,
   keywordHits: SearchHit[],
   hybridSemanticWeight: number,
+  // Matched-field label for the dense-ranking component. Defaults to "semantic"
+  // (vector retrieval); the offline BM25 hybrid path passes "bm25" so hits carry
+  // an honest provenance marker instead of implying a vector match (pm-75k9).
+  semanticFieldLabel = "semantic",
 ): SearchHit[] {
   const keywordScores = new Map(keywordHits.map((entry) => [entry.item.id, entry.score]));
   const keywordMatches = new Map(keywordHits.map((entry) => [entry.item.id, entry.matched_fields]));
@@ -1887,7 +1907,7 @@ function combineHybridHits(
       }
       const matchedFields = new Set<string>();
       if (semanticScores.has(id)) {
-        matchedFields.add("semantic");
+        matchedFields.add(semanticFieldLabel);
       }
       for (const field of keywordMatches.get(id) ?? []) {
         matchedFields.add(field);
@@ -1899,6 +1919,77 @@ function combineHybridHits(
       };
     })
     .filter((entry): entry is SearchHit => entry !== null);
+}
+
+/**
+ * Built-in BM25 activation outcome for semantic/hybrid search (pm-75k9):
+ * - `"explicit"`: `search.provider` is `bm25` — the user opted into offline
+ *   lexical ranking, so it is used even if an embedding provider is configured.
+ * - `"auto-fallback"`: `search.provider` is `auto` and neither an embedding
+ *   provider nor an extension search provider is available — BM25 is used in
+ *   place of degrading to the naive field-weighted keyword scorer.
+ * - `null`: BM25 does not apply; the existing embedding/extension path runs.
+ */
+type BuiltInBm25Mode = "explicit" | "auto-fallback";
+
+function resolveBuiltInBm25Mode(params: {
+  configuredProvider: string | undefined;
+  hasEmbeddingProvider: boolean;
+  hasExtensionSearchProvider: boolean;
+}): BuiltInBm25Mode | null {
+  const normalized = params.configuredProvider?.trim().toLowerCase();
+  if (normalized === "bm25") {
+    return "explicit";
+  }
+  if (normalized === "auto" && !params.hasEmbeddingProvider && !params.hasExtensionSearchProvider) {
+    return "auto-fallback";
+  }
+  return null;
+}
+
+/**
+ * Rank the filtered corpus with the offline BM25 provider (pm-75k9). Builds a
+ * BM25 index over each document's resolved search corpus (honoring
+ * `search.corpus_fields`), scores the query, and shapes hits for the requested
+ * mode: semantic mode returns pure BM25-ranked hits tagged
+ * `matched_fields: ["bm25"]`, while hybrid mode blends the BM25 scores with the
+ * locally computed keyword scores via {@link combineHybridHits}. The exact
+ * full-ID / short-ID guarantee is preserved in both modes via
+ * {@link forceExactIdHitsToTop}. No network, embedding service, or vector store
+ * is involved, so this path cannot fail on a backend error.
+ */
+function computeBuiltInBm25Hits(params: {
+  requestedMode: Exclude<SearchMode, "keyword">;
+  query: string;
+  filteredDocuments: ItemDocument[];
+  keywordHits: SearchHit[];
+  corpusFields: string[];
+  bm25Params: Bm25Params;
+  hybridSemanticWeight: number;
+}): SearchHit[] {
+  const bm25Documents = params.filteredDocuments.map((document) => ({
+    id: document.metadata.id,
+    text: flattenSearchCorpusText(buildSearchCorpus(document, { fields: params.corpusFields })),
+  }));
+  const index = buildBm25Index(bm25Documents);
+  const bm25Scores = scoreBm25Query(index, tokenizeBm25(params.query), params.bm25Params);
+  const filteredById = new Map(params.filteredDocuments.map((document) => [document.metadata.id, document]));
+  if (params.requestedMode === "semantic") {
+    const semanticHits: SearchHit[] = [...bm25Scores].map(([id, score]) => ({
+      item: filteredById.get(id)!.metadata,
+      score,
+      matched_fields: ["bm25"],
+    }));
+    return forceExactIdHitsToTop(semanticHits, params.keywordHits);
+  }
+  const hybridHits = combineHybridHits(
+    filteredById,
+    bm25Scores,
+    params.keywordHits,
+    params.hybridSemanticWeight,
+    "bm25",
+  );
+  return forceExactIdHitsToTop(hybridHits, params.keywordHits);
 }
 
 interface SemanticQueryContext {
@@ -2344,6 +2435,15 @@ export async function runSearch(rawQuery: string, rawOptions: SearchOptions, glo
   const vectorResolution = resolveVectorStores(settings);
   const extensionSearchProvider = resolveExtensionSearchProvider(settings);
   const extensionVectorAdapter = resolveExtensionVectorAdapter(settings);
+  // pm-75k9: offline BM25 lexical provider. When active, a semantic/hybrid query
+  // ranks the corpus locally with BM25 instead of requiring an embedding service
+  // + vector store — enabling dense-quality offline retrieval in air-gapped, CI,
+  // and zero-setup environments. Resolved here so the semantic block can branch.
+  const bm25Mode = resolveBuiltInBm25Mode({
+    configuredProvider: toOptionalNonEmptyString(settings.search?.provider),
+    hasEmbeddingProvider: providerResolution.active !== null,
+    hasExtensionSearchProvider: extensionSearchProvider !== null,
+  });
   const queryExpansion = resolveQueryExpansionConfig(settings, providerResolution.active?.name ?? null);
   const rerank = resolveRerankConfig(
     settings,
@@ -2447,8 +2547,28 @@ export async function runSearch(rawQuery: string, rawOptions: SearchOptions, glo
     .filter((entry) => matchMode !== "and" || entry.matched_all_terms === true);
 
   let hits = keywordHits;
+  // pm-75k9: offline BM25 path. Runs entirely in-process (no embedding service,
+  // vector store, or HTTP), so it sits OUTSIDE the semantic try/catch fallback
+  // block below — it cannot fail on a backend error. Empty corpus / limit-0 are
+  // handled by the shared threshold+limit path that follows, so no early-return
+  // guard is needed here.
+  const useBuiltInBm25 = bm25Mode !== null && effectiveMode !== "keyword";
+  if (bm25Mode !== null && effectiveMode !== "keyword") {
+    hits = computeBuiltInBm25Hits({
+      requestedMode: effectiveMode,
+      query,
+      filteredDocuments,
+      keywordHits,
+      corpusFields: resolveSearchCorpusFields(settings),
+      bm25Params: resolveBm25Params(settings),
+      hybridSemanticWeight,
+    });
+    if (bm25Mode === "auto-fallback") {
+      warnings.push(`search_${effectiveMode}_offline_bm25:no_embedding_provider:using_lexical_bm25`);
+    }
+  }
   /* c8 ignore start -- semantic/provider fallback + compact/count warning-shape permutations are covered by integration command-contract tests */
-  if (effectiveMode !== "keyword") {
+  if (effectiveMode !== "keyword" && !useBuiltInBm25) {
     // Surface vector-index staleness once per query so agents notice when a
     // refresh is overdue. Only emitted when:
     //   (1) the user explicitly asked for semantic/hybrid mode (implicit

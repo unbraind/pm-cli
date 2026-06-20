@@ -72,6 +72,7 @@ export const PM_CORE_COMMAND_NAMES = [
   "ctx",
   "get",
   "search",
+  "eval",
   "history",
   "history-redact",
   "history-repair",

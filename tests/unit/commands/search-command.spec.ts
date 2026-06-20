@@ -290,6 +290,41 @@ describe("runSearch", () => {
     expect(result.items[0]?.score).toBeGreaterThan(result.items[1]?.score ?? 0);
   });
 
+  it("ranks semantic/hybrid search with the offline BM25 provider and warns on auto-fallback (pm-75k9)", async () => {
+    const dbDoc = makeFrontMatter({ id: "pm-db", title: "database connection pool leak under load" });
+    const retryDoc = makeFrontMatter({ id: "pm-retry", title: "exponential backoff retry http client" });
+    const migrationDoc = makeFrontMatter({ id: "pm-mig", title: "database migration plan" });
+    listAllFrontMatterMock.mockResolvedValue([dbDoc, retryDoc, migrationDoc]);
+    readFileMock.mockImplementation(async (targetPath: string) => {
+      if (targetPath.includes("pm-db")) return serializeDocument(dbDoc, "");
+      if (targetPath.includes("pm-retry")) return serializeDocument(retryDoc, "");
+      return serializeDocument(migrationDoc, "");
+    });
+    const bm25Settings = { ...makeDefaultSettings(), id_prefix: "pm-" };
+    bm25Settings.search = { ...bm25Settings.search, provider: "bm25" };
+    const autoSettings = { ...makeDefaultSettings(), id_prefix: "pm-" };
+    autoSettings.search = { ...autoSettings.search, provider: "auto" };
+
+    const { runSearch } = await import("../../../src/cli/commands/search.js");
+
+    readSettingsMock.mockResolvedValueOnce(bm25Settings as never);
+    const semantic = await runSearch("database connection", { mode: "semantic" }, { path: "/tmp/pm-search" });
+    const semanticItems = semantic.items as Array<{ item: { id: string }; matched_fields?: string[] }>;
+    expect(semantic.mode).toBe("semantic");
+    expect(semanticItems.map((hit) => hit.item.id)).toContain("pm-db");
+    expect(semanticItems.every((hit) => hit.matched_fields?.includes("bm25"))).toBe(true);
+
+    readSettingsMock.mockResolvedValueOnce(bm25Settings as never);
+    const hybrid = await runSearch("database connection", { mode: "hybrid" }, { path: "/tmp/pm-search" });
+    const hybridItems = hybrid.items as Array<{ item: { id: string }; matched_fields?: string[] }>;
+    expect(hybrid.mode).toBe("hybrid");
+    expect(hybridItems.some((hit) => hit.matched_fields?.includes("bm25"))).toBe(true);
+
+    readSettingsMock.mockResolvedValueOnce(autoSettings as never);
+    const auto = await runSearch("database connection", { mode: "semantic" }, { path: "/tmp/pm-search" });
+    expect(auto.warnings).toContain("search_semantic_offline_bm25:no_embedding_provider:using_lexical_bm25");
+  });
+
   it("resolves search max-results and score-threshold fallbacks deterministically", async () => {
     const { resolveSearchMaxResults, resolveSearchScoreThreshold, resolveHybridSemanticWeight } = await import(
       "../../../src/cli/commands/search.js"

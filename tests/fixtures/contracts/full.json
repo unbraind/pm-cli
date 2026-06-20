@@ -2181,6 +2181,27 @@
       "provider": "core"
     },
     {
+      "command": "eval",
+      "flags": [
+        {
+          "flag": "--mode"
+        },
+        {
+          "flag": "--k"
+        },
+        {
+          "flag": "--fail-under"
+        },
+        {
+          "flag": "--queries"
+        },
+        {
+          "flag": "--format"
+        }
+      ],
+      "provider": "core"
+    },
+    {
       "command": "event",
       "flags": [],
       "provider": "extension"
@@ -7920,6 +7941,7 @@
     "delete",
     "deps",
     "docs",
+    "eval",
     "event",
     "extension",
     "extension activate",

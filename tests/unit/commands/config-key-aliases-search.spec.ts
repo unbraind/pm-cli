@@ -34,6 +34,8 @@ const EXPECTED_ALIASES: Record<string, string> = {
   search_score_threshold: "search.score_threshold",
   search_hybrid_semantic_weight: "search.hybrid_semantic_weight",
   search_max_results: "search.max_results",
+  search_bm25_k1: "search.bm25.k1",
+  search_bm25_b: "search.bm25.b",
   openai_base_url: "providers.openai.base_url",
   openai_api_key: "providers.openai.api_key",
   openai_model: "providers.openai.model",
@@ -73,7 +75,7 @@ describe("config nested-setting aliases (pm-7ilo)", () => {
       expect(descriptor, `missing nested-setting alias: ${alias}`).toBeDefined();
       expect(descriptor!.path).toBe(expectedPath);
     }
-    expect(Object.keys(EXPECTED_ALIASES)).toHaveLength(24);
+    expect(Object.keys(EXPECTED_ALIASES)).toHaveLength(26);
   });
 
   it("resolves both kebab-case and snake_case forms of each alias", () => {

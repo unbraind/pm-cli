@@ -1,0 +1,15 @@
+id: pm-f2al
+title: "ADR: offline BM25 lexical provider + relevance eval harness for search quality"
+description: ""
+type: Decision
+status: open
+priority: 2
+tags[3]: adr,"area:search","area:semantic"
+created_at: "2026-06-20T05:29:45.329Z"
+updated_at: "2026-06-20T05:29:45.329Z"
+author: claude-code-agent
+parent: pm-ydp6
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-75k9,related,"2026-06-20T05:29:45.329Z",claude-code-agent,null
+  pm-u8n5,related,"2026-06-20T05:29:45.329Z",claude-code-agent,null
+body: "## Context\n\nSemantic/hybrid search required an embedding service (Ollama/OpenAI) + vector store, leaving air-gapped/CI/zero-setup users on the naive field-weighted keyword scorer. There was also no offline way to MEASURE retrieval quality, so relevance regressions went undetected.\n\n## Decision\n\n1. Ship a built-in **BM25** lexical ranker (Okapi BM25: IDF + k1 saturation + b length-normalization) that runs entirely in-process over the existing search corpus. It activates for --semantic/--hybrid when search.provider=bm25 (always) or auto (offline fallback only when no embedding/extension provider). Plain keyword mode is unchanged.\n2. Ship **pm eval**: an nDCG@k / MRR@k / precision@k / recall@k runner over a git-tracked golden-query set, with --fail-under as a CI gate.\n\n## Rationale\n\n- BM25 is a strong, dependency-free lexical baseline — far better than raw term counts, available with zero setup, and reuses the configurable search.corpus_fields. It is honestly tagged matched_fields:[bm25] and documented as below dense retrieval.\n- Reusing combineHybridHits (with a dense-component label param) and forceExactIdHitsToTop kept BM25 consistent with the vector path (exact-ID guarantee preserved) and minimized new branches.\n- A binary-relevance golden set is cheap to curate yet supports DCG's positional discount; --fail-under makes relevance a build-gateable signal. The eval harness is the validation vehicle for BM25 and any future provider/weight change.\n\n## Alternatives considered\n\n- Bundling a WASM embedding model for true offline dense retrieval: heavy artifact, deferred. BM25 is the pragmatic first step (matches pm-75k9 acceptance).\n- A new blocking CI workflow job: deferred in favor of the reusable --fail-under primitive (CI can adopt it without a curated corpus dependency in core CI).\n\n## Consequences\n\nsearch.provider now recognizes bm25/auto; search.bm25.{k1,b} are validated/persisted knobs; eval-queries.json lives at <pmRoot>/search/ (gitignore negation keeps the cache dir ignored). pm eval is a core command (contracts + help + fixture)."

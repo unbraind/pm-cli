@@ -1390,6 +1390,14 @@ export const DEPS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--summary" },
 ];
 
+export const EVAL_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--mode" },
+  { flag: "--k" },
+  { flag: "--fail-under" },
+  { flag: "--queries" },
+  { flag: "--format" },
+];
+
 export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--mode" },
   { flag: "--semantic" },
@@ -1593,6 +1601,8 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(GET_FLAG_CONTRACTS);
     case "search":
       return withSubcommandGlobalFlags(SEARCH_FLAG_CONTRACTS);
+    case "eval":
+      return withSubcommandGlobalFlags(EVAL_FLAG_CONTRACTS);
     case "history":
       return withSubcommandGlobalFlags(HISTORY_FLAG_CONTRACTS);
     case "history-redact":
