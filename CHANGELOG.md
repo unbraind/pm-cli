@@ -9,6 +9,7 @@
 
 ### Other
 
+- Code quality & perf audit 2026-06-12 ([pm-nimu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-nimu.toon))
 - SDK testing helper for registerFlags registrations ([pm-oveq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-oveq.toon))
 
 ## 2026.6.20 - 2026-06-20

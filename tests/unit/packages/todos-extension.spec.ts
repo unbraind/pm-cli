@@ -387,16 +387,158 @@ describe("built-in todos extension import/export", () => {
           regression: "true",
           customer_impact: "customer blocked",
           close_reason: "not closed yet",
+          dependencies: [
+            {
+              id: "PM-BLOCKER-A",
+              kind: "blocked_by",
+              created_at: "2026-02-07T00:00:00.000Z",
+              author: "dependency-author",
+              source_kind: "issue",
+            },
+            {
+              id: "pm-related-a",
+              kind: "not-a-kind",
+              created_at: "not-a-date",
+            },
+            {
+              id: "   ",
+              kind: "blocks",
+            },
+            "invalid-dependency",
+          ],
+          comments: [
+            "imported comment",
+            {
+              text: "fallback author comment",
+              author: "   ",
+            },
+            {
+              text: "review comment",
+              created_at: "2026-02-08T01:00:00.000Z",
+              author: "comment-author",
+            },
+            {
+              text: "   ",
+              author: "ignored-comment-author",
+            },
+          ],
+          notes: [
+            {
+              text: "import note",
+              author: "note-author",
+            },
+          ],
+          learnings: ["import learning"],
+          files: [
+            "   ",
+            "src/index.ts",
+            {
+              path: "docs/guide.md",
+              scope: "global",
+              note: "guide note",
+            },
+            null,
+            {
+              path: "   ",
+              scope: "project",
+            },
+          ],
+          docs: [
+            "   ",
+            "docs/README.md",
+            {
+              path: "docs/SDK.md",
+              scope: "global",
+              note: "sdk note",
+            },
+            null,
+            {
+              path: "   ",
+              scope: "project",
+            },
+          ],
+          tests: [
+            "   ",
+            "pnpm test",
+            {
+              command: "pnpm typecheck",
+              path: "tests/unit/example.spec.ts",
+              scope: "global",
+              timeout_seconds: "120",
+              pm_context_mode: "tracker",
+              env_set: {
+                FOO: "bar",
+                EMPTY: "   ",
+              },
+              env_clear: ["CLEAR_ME", "   "],
+              shared_host_safe: "true",
+              assert_stdout_contains: ["ok", "   "],
+              assert_stdout_regex: ["^ok$"],
+              assert_stderr_contains: ["warn"],
+              assert_stderr_regex: ["^warn$"],
+              assert_stdout_min_lines: "2",
+              assert_json_field_equals: {
+                status: "ok",
+                empty: "   ",
+              },
+              assert_json_field_gte: {
+                count: "2",
+                bad: "not-a-number",
+              },
+              note: "test note",
+            },
+            {
+              command: "   ",
+              path: "   ",
+            },
+            null,
+          ],
         },
         "metadata body",
       );
+      await writeTodoMarkdown(sourceFolder, "invalid-linked-arrays.md", {
+        id: "invalid-linked-arrays",
+        title: "Invalid linked arrays import",
+        dependencies: ["invalid-dependency", { id: "   " }],
+        comments: ["   ", null, { text: "   " }],
+        notes: [null, { text: "   " }],
+        learnings: [null, { text: "   " }],
+        files: [null, { path: "   " }],
+        docs: [null, { path: "   " }],
+        tests: [
+          null,
+          { command: "   ", path: "   " },
+          {
+            command: "pnpm lint",
+            env_set: "not-a-map",
+            env_clear: "not-a-list",
+            assert_stdout_contains: "not-a-list",
+            assert_json_field_equals: "not-a-map",
+            assert_json_field_gte: "not-a-map",
+          },
+          {
+            command: "pnpm lint:empty-normalized",
+            env_set: {
+              EMPTY: "   ",
+            },
+            env_clear: ["   "],
+            assert_stdout_contains: ["   "],
+            assert_json_field_equals: {
+              empty: "   ",
+            },
+            assert_json_field_gte: {
+              bad: "not-a-number",
+            },
+          },
+        ],
+      });
 
       const imported = await runTodosImport({ folder: sourceFolder }, {});
-      expect(imported.imported).toBe(1);
+      expect(imported.imported).toBe(2);
       expect(imported.skipped).toBe(0);
-      expect(imported.ids).toEqual(["pm-full-metadata"]);
+      expect(imported.ids).toEqual(["pm-full-metadata", "pm-invalid-linked-arrays"]);
 
-      const result = context.runCli(["get", "pm-full-metadata", "--json"], { expectJson: true });
+      const result = context.runCli(["get", "pm-full-metadata", "--json", "--full"], { expectJson: true });
       expect(result.code).toBe(0);
       const item = (result.json as { item: Record<string, unknown> & { body: string } }).item;
       expect(item.type).toBe("Issue");
@@ -436,7 +578,126 @@ describe("built-in todos extension import/export", () => {
       expect(item.regression).toBe(true);
       expect(item.customer_impact).toBe("customer blocked");
       expect(item.close_reason).toBe("not closed yet");
+      expect(item.dependencies).toEqual([
+        {
+          id: "pm-blocker-a",
+          kind: "blocked_by",
+          created_at: "2026-02-07T00:00:00.000Z",
+          author: "dependency-author",
+          source_kind: "issue",
+        },
+        {
+          id: "pm-related-a",
+          kind: "related",
+          created_at: "2026-02-08T00:00:00.000Z",
+        },
+      ]);
+      expect(item.comments).toEqual([
+        {
+          created_at: "2026-02-08T00:00:00.000Z",
+          author: "test-author",
+          text: "fallback author comment",
+        },
+        {
+          created_at: "2026-02-08T00:00:00.000Z",
+          author: "test-author",
+          text: "imported comment",
+        },
+        {
+          created_at: "2026-02-08T01:00:00.000Z",
+          author: "comment-author",
+          text: "review comment",
+        },
+      ]);
+      expect(item.notes).toEqual([
+        {
+          created_at: "2026-02-08T00:00:00.000Z",
+          author: "note-author",
+          text: "import note",
+        },
+      ]);
+      expect(item.learnings).toEqual([
+        {
+          created_at: "2026-02-08T00:00:00.000Z",
+          author: "test-author",
+          text: "import learning",
+        },
+      ]);
+      expect(item.files).toEqual([
+        {
+          path: "src/index.ts",
+          scope: "project",
+        },
+        {
+          path: "docs/guide.md",
+          scope: "global",
+          note: "guide note",
+        },
+      ]);
+      expect(item.docs).toEqual([
+        {
+          path: "docs/SDK.md",
+          scope: "global",
+          note: "sdk note",
+        },
+        {
+          path: "docs/README.md",
+          scope: "project",
+        },
+      ]);
+      expect(item.tests).toEqual([
+        {
+          command: "pnpm typecheck",
+          path: "tests/unit/example.spec.ts",
+          scope: "global",
+          timeout_seconds: 120,
+          pm_context_mode: "tracker",
+          env_set: {
+            FOO: "bar",
+          },
+          env_clear: ["CLEAR_ME"],
+          shared_host_safe: true,
+          assert_stdout_contains: ["ok"],
+          assert_stdout_regex: ["^ok$"],
+          assert_stderr_contains: ["warn"],
+          assert_stderr_regex: ["^warn$"],
+          assert_stdout_min_lines: 2,
+          assert_json_field_equals: {
+            status: "ok",
+          },
+          assert_json_field_gte: {
+            count: 2,
+          },
+          note: "test note",
+        },
+        {
+          command: "pnpm test",
+          scope: "project",
+        },
+      ]);
       expect((result.json as { item: { body: string } }).item.body).toBe("metadata body");
+
+      const invalidLinkedArrays = context.runCli(["get", "pm-invalid-linked-arrays", "--json", "--full"], {
+        expectJson: true,
+      });
+      expect(invalidLinkedArrays.code).toBe(0);
+      const invalidLinkedArraysItem = (invalidLinkedArrays.json as { item: Record<string, unknown> }).item;
+      expect("dependencies" in invalidLinkedArraysItem).toBe(false);
+      expect("comments" in invalidLinkedArraysItem).toBe(false);
+      expect("notes" in invalidLinkedArraysItem).toBe(false);
+      expect("learnings" in invalidLinkedArraysItem).toBe(false);
+      expect("files" in invalidLinkedArraysItem).toBe(false);
+      expect("docs" in invalidLinkedArraysItem).toBe(false);
+      expect(invalidLinkedArraysItem.tests).toEqual([
+        {
+          command: "pnpm lint",
+          scope: "project",
+        },
+        {
+          command: "pnpm lint:empty-normalized",
+          scope: "project",
+        },
+      ]);
     });
   });
 

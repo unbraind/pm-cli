@@ -12,6 +12,33 @@ import { readJsonlFixture } from "../../helpers/fixtures.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 type BeadsFixtureRecord = Record<string, unknown>;
+type BeadsDependencyJson = {
+  id: string;
+  kind: string;
+  created_at: string;
+  author?: string;
+  source_kind?: string;
+};
+type BeadsItemJson = {
+  item: {
+    id?: string;
+    type?: string;
+    source_type?: string;
+    tags?: string[];
+    status?: string;
+    closed_at?: string;
+    close_reason?: string;
+    design?: string;
+    external_ref?: string;
+    dependencies?: BeadsDependencyJson[];
+    created_at: string;
+    author?: string;
+    body?: string;
+    assignee?: string;
+    source_owner?: string;
+    deadline?: string;
+  };
+};
 
 const beadsImportRecordsFixture = readJsonlFixture<BeadsFixtureRecord>("beads", "import-records.jsonl");
 const beadsConversionFixture = readJsonlFixture<BeadsFixtureRecord>("beads", "conversion-branches.jsonl");
@@ -253,7 +280,7 @@ describe("runBeadsImport", () => {
 
       const ninth = context.runCli(["get", "pm-legacy.9", "--json"], { expectJson: true });
       expect(ninth.code).toBe(0);
-      const ninthJson = ninth.json as any;
+      const ninthJson = ninth.json as BeadsItemJson;
       expect(ninthJson.item.type).toBe("Issue");
       expect(ninthJson.item.source_type).toBe("bug");
       expect(ninthJson.item.tags).toEqual(["bug", "ui"]);
@@ -287,7 +314,7 @@ describe("runBeadsImport", () => {
 
       const twelfth = context.runCli(["get", "pm-legacy.12", "--json"], { expectJson: true });
       expect(twelfth.code).toBe(0);
-      const twelfthJson = twelfth.json as any;
+      const twelfthJson = twelfth.json as BeadsItemJson;
       expect(twelfthJson.item.type).toBe("Task");
       expect(twelfthJson.item.source_type).toBe("event");
       expect(twelfthJson.item.assignee).toBe("owner-a");
@@ -305,7 +332,7 @@ describe("runBeadsImport", () => {
 
       const thirteenth = context.runCli(["get", "pm-legacy.13", "--json"], { expectJson: true });
       expect(thirteenth.code).toBe(0);
-      const thirteenthJson = thirteenth.json as any;
+      const thirteenthJson = thirteenth.json as BeadsItemJson;
       expect(thirteenthJson.item.dependencies).toEqual([
         {
           id: "pm-legacy.2",
@@ -354,11 +381,11 @@ describe("runBeadsImport", () => {
 
       await runBeadsImport({ file: sourcePath }, { path: context.pmPath });
 
-      const kindlessJson = context.runCli(["get", "pm-kindless", "--json"], { expectJson: true }).json as any;
-      const childOfJson = context.runCli(["get", "pm-child-of", "--json"], { expectJson: true }).json as any;
-      const blockedByJson = context.runCli(["get", "pm-blocked-by", "--json"], { expectJson: true }).json as any;
-      const incidentFromJson = context.runCli(["get", "pm-incident-from", "--json"], { expectJson: true }).json as any;
-      const relatedToJson = context.runCli(["get", "pm-related-to", "--json"], { expectJson: true }).json as any;
+      const kindlessJson = context.runCli(["get", "pm-kindless", "--json"], { expectJson: true }).json as BeadsItemJson;
+      const childOfJson = context.runCli(["get", "pm-child-of", "--json"], { expectJson: true }).json as BeadsItemJson;
+      const blockedByJson = context.runCli(["get", "pm-blocked-by", "--json"], { expectJson: true }).json as BeadsItemJson;
+      const incidentFromJson = context.runCli(["get", "pm-incident-from", "--json"], { expectJson: true }).json as BeadsItemJson;
+      const relatedToJson = context.runCli(["get", "pm-related-to", "--json"], { expectJson: true }).json as BeadsItemJson;
 
       expect(kindlessJson.item.dependencies).toEqual([
         {
@@ -701,12 +728,13 @@ describe("runBeadsImport", () => {
 
       const imported = context.runCli(["get", "clawd-01c8", "--json"], { expectJson: true });
       expect(imported.code).toBe(0);
-      expect((imported.json as any).item.id).toBe("clawd-01c8");
-      expect((imported.json as any).item.dependencies).toEqual([
+      const importedJson = imported.json as BeadsItemJson;
+      expect(importedJson.item.id).toBe("clawd-01c8");
+      expect(importedJson.item.dependencies).toEqual([
         {
           id: "clawd-01c8.1",
           kind: "parent_child",
-          created_at: (imported.json as any).item.created_at,
+          created_at: importedJson.item.created_at,
           source_kind: "parent-child",
         },
       ]);

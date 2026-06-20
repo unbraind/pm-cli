@@ -7,6 +7,18 @@ const RUNTIME_MODULE = "../../../../src/core/telemetry/runtime.js";
 const FS_UTILS_MODULE = "../../../../src/core/fs/fs-utils.js";
 const NODE_FS_MODULE = "node:fs";
 
+interface OtelSpanPayloadForTest {
+  resourceSpans?: {
+    scopeSpans?: {
+      spans?: {
+        status?: {
+          message?: string;
+        };
+      }[];
+    }[];
+  }[];
+}
+
 async function importRuntime() {
   return import(RUNTIME_MODULE);
 }
@@ -64,7 +76,8 @@ describe("telemetry runtime residual coverage", () => {
         12,
       );
       expect(spanRequest).not.toBeNull();
-      const spanErrorMessage = (spanRequest as any)?.payload?.resourceSpans?.[0]?.scopeSpans?.[0]?.spans?.[0]?.status?.message;
+      const spanPayload = spanRequest?.payload as OtelSpanPayloadForTest | undefined;
+      const spanErrorMessage = spanPayload?.resourceSpans?.[0]?.scopeSpans?.[0]?.spans?.[0]?.status?.message;
       expect(spanErrorMessage).toBe("command_failed");
 
       const finishMinimal = runtime._testOnly.buildCommandFinishPayload({
