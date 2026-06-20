@@ -21,10 +21,16 @@ const stripScriptShebang: Plugin = {
   name: "pm-strip-script-shebang",
   enforce: "pre",
   transform(code, id) {
-    if (!/[\\/]scripts[\\/][^?]*\.mjs(\?|$)/.test(id) || !code.startsWith("#!")) {
+    if (!/[\\/]scripts[\\/][^?]*\.mjs(\?|$)/.test(id)) {
       return null;
     }
-    return { code: code.replace(/^#!.*/, ""), map: null };
+    // Tolerate a leading UTF-8 BOM (Windows editors sometimes prepend one)
+    // before the shebang so the strip still fires.
+    const body = code.charCodeAt(0) === 0xfeff ? code.slice(1) : code;
+    if (!body.startsWith("#!")) {
+      return null;
+    }
+    return { code: body.replace(/^#!.*/, ""), map: null };
   },
 };
 

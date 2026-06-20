@@ -21,10 +21,12 @@ describe("scriptModule harness imports", () => {
     expect(mod).toBeTypeOf("object");
   });
 
-  it("normalizes Windows-style separators and a leading slash to the same module", async () => {
+  it("normalizes Windows separators, leading slash, and a ./ prefix to the same module", async () => {
     const viaPosix = await harness.importModule<{ main: unknown }>("scripts/finalize-build.mjs");
     const viaWindows = await harness.importModule<{ main: unknown }>("\\scripts\\finalize-build.mjs");
+    const viaDotSlash = await harness.importModule<{ main: unknown }>("./scripts/finalize-build.mjs");
     expect(viaWindows.main).toBe(viaPosix.main);
+    expect(viaDotSlash.main).toBe(viaPosix.main);
   });
 
   it("fails fast on an unsupported nested script path instead of regressing on Windows", async () => {

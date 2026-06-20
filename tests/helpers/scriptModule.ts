@@ -10,7 +10,7 @@ import { afterEach, vi } from "vitest";
  * regardless of the host platform.
  */
 function toScriptName(relativePath: string): string {
-  const posixPath = relativePath.split(/[\\/]/).join("/").replace(/^\/+/, "");
+  const posixPath = relativePath.split(/[\\/]/).join("/").replace(/^(?:\.\/)+/, "").replace(/^\/+/, "");
   return posixPath.replace(/^scripts\//, "").replace(/\.mjs$/, "");
 }
 
