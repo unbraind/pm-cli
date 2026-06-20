@@ -90,6 +90,21 @@ export interface ScriptHarness {
   importModuleStable<T>(relativePath: string): Promise<T>;
   /** Create a tracked temp directory removed automatically after each test. */
   createTempRoot(prefix: string): Promise<string>;
+  /**
+   * Force the next dynamically-imported script to resolve `node:path` to its
+   * POSIX implementation. Script specs that mock `node:fs`/`node:fs/promises`
+   * with forward-slash absolute keys (e.g. `/repo/src/dep.ts`) otherwise fail
+   * on `windows-latest`, where the real `node:path` builds backslash, drive-
+   * lettered candidates (`C:\\repo\\src\\dep.ts`) that never match those mock
+   * keys. Forcing POSIX semantics keeps such pure-helper assertions
+   * deterministic across platforms without changing production path handling;
+   * it is the inverse of the win32 guard in
+   * `tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts`. Call this
+   * before importing the script and only in tests driven by mocked filesystem
+   * keys — never in tests that walk a real temp directory, whose absolute paths
+   * are native on the host. The registered `afterEach` unmocks `node:path`.
+   */
+  mockPosixPath(): void;
   /** Spy on `process.exit` so it throws `EXIT:<code>` instead of exiting. */
   mockProcessExit(): ReturnType<typeof vi.spyOn>;
   /**
@@ -115,6 +130,7 @@ export function createScriptHarness(unmockSpecifiers: readonly string[] = []): S
     "node:child_process",
     "node:fs",
     "node:fs/promises",
+    "node:path",
     "node:readline",
   ];
 
@@ -149,6 +165,9 @@ export function createScriptHarness(unmockSpecifiers: readonly string[] = []): S
       const root = await mkdtemp(path.join(os.tmpdir(), prefix));
       tempRoots.push(root);
       return root;
+    },
+    mockPosixPath(): void {
+      vi.doMock("node:path", () => ({ default: path.posix, ...path.posix }));
     },
     mockProcessExit() {
       return vi.spyOn(process, "exit").mockImplementation(((code?: number) => {

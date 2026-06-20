@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Windows nightly: secondary POSIX-separator + mocked-path test class (static-quality-gate, docs-skills-gate, bundle-cli, contracts-snapshot, smoke-npx-from-pack) ([pm-s5pe](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s5pe.toon))
+- Nightly windows-latest STILL red after pm-i84i: scriptModule test harness imports .mjs scripts via absolute file:// URL, shebang survives missing transform (SyntaxError) ([pm-dita](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dita.toon))
+
 ## 2026.6.20 - 2026-06-20
 
 ### Added

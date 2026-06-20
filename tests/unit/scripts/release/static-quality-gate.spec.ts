@@ -230,6 +230,7 @@ describe("static-quality-gate", () => {
 
     it("resolveRelativeImport: non-relative null, resolves .ts, missing → null", async () => {
       mockUtils("/repo");
+      harness.mockPosixPath();
       mockFs({
         statSync: vi.fn((p: string) => {
           if (String(p) === "/repo/src/dep.ts") return { isFile: () => true } as unknown as Stats;
@@ -371,6 +372,7 @@ describe("static-quality-gate", () => {
 
     it("checkOrphanSourceModules: flags multiple orphans (sort), honors allowlist + skip + out-of-set import", async () => {
       mockUtils("/repo");
+      harness.mockPosixPath();
       const fileBodies: Record<string, string> = {
         // imports a path that resolves OUTSIDE the incoming map → exercises the
         // `incoming.has(resolved)` false branch (line 188) without crediting it.
@@ -442,6 +444,7 @@ describe("static-quality-gate", () => {
 
     it("walkFiles: non-directory short-circuits and nested walk collects matches", async () => {
       mockUtils("/repo");
+      harness.mockPosixPath();
       mockFs({
         statSync: vi.fn((p: string) => ({
           isDirectory: () => String(p) === "/root" || String(p) === "/root/sub",

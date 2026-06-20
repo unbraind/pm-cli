@@ -112,7 +112,7 @@ describe("bundle-cli main()", () => {
     expect(scenario.rename).toHaveBeenCalled();
     expect(scenario.unlink).toHaveBeenCalledWith(expect.stringContaining("obsolete.js"));
     expect(scenario.writeFile).toHaveBeenCalledWith(
-      expect.stringContaining("dist/cli.js"),
+      expect.stringContaining(path.join("dist", "cli.js")),
       expect.stringContaining('await import("./cli-bundle/main.js")'),
       "utf8",
     );
@@ -341,6 +341,5 @@ describe("bundle-cli helpers", () => {
     await mod.removeStaleBundleFiles({ "dist/cli-bundle/main.js": {} });
     expect(unlink).toHaveBeenCalledTimes(1);
     expect(String(unlink.mock.calls[0][0])).toContain("old.js");
-    void path;
   });
 });
