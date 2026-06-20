@@ -133,6 +133,7 @@ export const TOOLS: ToolDefinition[] = [
       "Search pm items with keyword, semantic, or hybrid search. " +
       "Defaults to a compact projection for token efficiency. " +
       "Pass options.mode=keyword|semantic|hybrid, options.limit=N to cap hits, " +
+      "options.status='all' for no lifecycle restriction, " +
       "options.fields='id,title,score' for a custom projection, or options.full=true for full item bodies (can be large). " +
       "The result echoes the applied filters and projection mode in query_summary.",
     inputSchema: objectSchema({ query: { type: "string" }, options: { type: "object" }, ...SEARCH_TOP_LEVEL_OPTION_PROPERTIES }, ["query"]),
@@ -141,7 +142,7 @@ export const TOOLS: ToolDefinition[] = [
     name: "pm_list",
     description:
       "List pm items with status/type/tag/priority filters. Defaults to compact projection for token efficiency. " +
-      "options.status accepts CSV (open,in_progress). " +
+      "options.status accepts CSV (all,open,in_progress). " +
       "Pass options.compact=false or options.includeBody=true for full bodies/comments. " +
       "Pass options.brief=true for ultra-terse (id/status/type/title only). " +
       "Pass options.fields='id,title,priority' for custom projection. " +

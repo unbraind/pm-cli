@@ -376,6 +376,18 @@ describe("parseStatusFilterCsv", () => {
     expect(parseStatusFilterCsv("  , ,", builtInRegistry)).toBeUndefined();
   });
 
+  it("treats standalone all as an omitted status filter", () => {
+    expect(parseStatusFilterCsv(" all ", builtInRegistry, { strict: true })).toBeUndefined();
+    expect(parseStatusFilterCsv("ALL", builtInRegistry)).toBeUndefined();
+  });
+
+  it("rejects mixing all with narrower status filters", () => {
+    expect(() => parseStatusFilterCsv("all,open", builtInRegistry, { strict: true })).toThrow(
+      /Use it by itself/,
+    );
+    expect(() => parseStatusFilterCsv("open,all", builtInRegistry)).toThrow(/Use it by itself/);
+  });
+
   it("resolves and de-duplicates a CSV of group aliases and ids", () => {
     expect(parseStatusFilterCsv("open,closed", builtInRegistry)).toEqual([
       builtInRegistry.open_status,

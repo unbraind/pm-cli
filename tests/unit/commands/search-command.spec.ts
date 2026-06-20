@@ -2694,6 +2694,16 @@ describe("runSearch", () => {
     const noStatus = await runSearch("statustoken", { mode: "keyword" }, { path: "/tmp/pm-search" });
     expect(noStatus.count).toBe(2);
     expect(noStatus.filters.status).toBeNull();
+
+    // --status all is an explicit no-op status filter for duplicate discovery
+    // across open/closed/canceled/custom lifecycle buckets.
+    const allStatus = await runSearch("statustoken", { mode: "keyword", status: "all" }, { path: "/tmp/pm-search" });
+    expect(allStatus.count).toBe(2);
+    expect(allStatus.items.map((hit) => hit.item.id).sort()).toEqual([
+      "pm-status-closed",
+      "pm-status-open",
+    ]);
+    expect(allStatus.filters.status).toBe("all");
   });
 
   it("rejects an unrecognized --status token strictly with a did-you-mean hint", async () => {

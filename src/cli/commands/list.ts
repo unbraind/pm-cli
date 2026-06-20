@@ -7,7 +7,7 @@ import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { toItemRecord } from "../../core/item/item-record.js";
 import { isTerminalStatus } from "../../core/item/status.js";
-import { parseStatusFilterCsv } from "../../core/item/status-filter.js";
+import { isStatusAllFilterInput, parseStatusFilterCsv } from "../../core/item/status-filter.js";
 import { resolveItemTypeRegistry, type ItemTypeRegistry } from "../../core/item/type-registry.js";
 import { parseIntegerLimit, parsePriority, parseType } from "../shared-parsers.js";
 import { collectRuntimeFilterValues, matchesRuntimeFilters } from "../../core/schema/runtime-field-filters.js";
@@ -944,10 +944,13 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
   }
   const explicitStatus = resolveStatusFilter(options.status as ItemStatus | undefined, statusRegistry);
   const resolvedStatus = explicitStatus ?? resolveStatusFilter(status, statusRegistry);
-  const effectiveOptions = explicitStatus ? { ...options, excludeTerminal: false } : options;
+  const explicitAllStatuses = isStatusAllFilterInput(options.status);
+  const effectiveOptions = explicitStatus || explicitAllStatuses ? { ...options, excludeTerminal: false } : options;
   const filtered = applyFilters(items, resolvedStatus, effectiveOptions, typeRegistry, statusRegistry, runtimeFieldFilters);
   const filtersStatus =
-    resolvedStatus === undefined
+    explicitAllStatuses
+      ? "all"
+      : resolvedStatus === undefined
       ? null
       : resolvedStatus.length === 1
         ? resolvedStatus[0]

@@ -148,7 +148,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
   ): void {
     const command = program.command(name).description(description);
     if (allowStatusFilter) {
-      command.option("--status <value>", "Filter by status");
+      command.option("--status <value>", "Filter by status (use all for no status restriction)");
     }
     command
       .option("--type <value>", "Filter by item type")
@@ -389,7 +389,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--title-exact", "Require exact normalized title match for the full query string")
       .option("--phrase-exact", "Require exact normalized phrase match in searchable text")
       .option("--highlight", "Emit per-field matched-text snippets (wrapped in «…») on each hit; off by default")
-      .option("--status <value>", "Filter by status before query (open/closed/canceled aliases or configured status id; CSV)")
+      .option("--status <value>", "Filter by status before query (all, open/closed/canceled aliases, or configured status id; CSV)")
       .option("--type <value>", "Filter by item type")
       .option("--tag <value>", "Filter by tag")
       .option("--priority <value>", "Filter by priority")
