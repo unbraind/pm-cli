@@ -885,6 +885,12 @@ describe("runList", () => {
       const closedViaStatusOption = await runList(undefined, { status: "closed", excludeTerminal: true }, { path: context.pmPath });
       expect(closedViaStatusOption.count).toBe(1);
       expect(closedViaStatusOption.items[0].status).toBe("closed");
+
+      // --status all is also explicit: keep every lifecycle bucket while echoing
+      // the caller intent instead of falling back to the active-only default.
+      const allViaStatusOption = await runList(undefined, { status: "all", excludeTerminal: true }, { path: context.pmPath });
+      expect(allViaStatusOption.count).toBe(3);
+      expect(allViaStatusOption.filters.status).toBe("all");
     });
   });
 

@@ -2694,6 +2694,20 @@ describe("runSearch", () => {
     const noStatus = await runSearch("statustoken", { mode: "keyword" }, { path: "/tmp/pm-search" });
     expect(noStatus.count).toBe(2);
     expect(noStatus.filters.status).toBeNull();
+
+    // --status all is an explicit no-op status filter for duplicate discovery
+    // across open/closed/canceled/custom lifecycle buckets.
+    const allStatus = await runSearch("statustoken", { mode: "keyword", status: "all" }, { path: "/tmp/pm-search" });
+    expect(allStatus.count).toBe(2);
+    expect(allStatus.items.map((hit) => hit.item.id).sort()).toEqual([
+      "pm-status-closed",
+      "pm-status-open",
+    ]);
+    expect(allStatus.filters.status).toBe("all");
+
+    const upperAllStatus = await runSearch("statustoken", { mode: "keyword", status: " ALL " }, { path: "/tmp/pm-search" });
+    expect(upperAllStatus.count).toBe(2);
+    expect(upperAllStatus.filters.status).toBe("all");
   });
 
   it("rejects an unrecognized --status token strictly with a did-you-mean hint", async () => {
@@ -3233,6 +3247,13 @@ describe("classifyImplicitSemanticFallbackReason", () => {
         { path: "/tmp/pm-search" },
       );
       expect(compact.filters).toMatchObject({ match_mode: "and", assignee: "alice", sprint: "S1" });
+
+      const compactAllStatus = await runSearch(
+        "alpha",
+        { mode: "keyword", compact: true, status: " ALL " },
+        { path: "/tmp/pm-search" },
+      );
+      expect(compactAllStatus.filters.status).toBe("all");
     });
   });
 });

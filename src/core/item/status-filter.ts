@@ -22,6 +22,20 @@ const STATUS_GROUP_ALIASES: Readonly<Record<string, "open_status" | "close_statu
   cancelled: "canceled_status",
 };
 
+const STATUS_ALL_SENTINEL = "all";
+
+/** Return true when a status-filter input is the standalone all-status sentinel. */
+export function isStatusAllFilterInput(raw: unknown): boolean {
+  if (typeof raw !== "string") {
+    return false;
+  }
+  const tokens = raw
+    .split(",")
+    .map((entry) => entry.trim().toLowerCase())
+    .filter((entry) => entry.length > 0);
+  return tokens.length === 1 && tokens[0] === STATUS_ALL_SENTINEL;
+}
+
 /**
  * Resolve a single status-filter token to a concrete runtime status id.
  *
@@ -89,9 +103,11 @@ export interface ParseStatusFilterOptions {
 
 /**
  * Parse a comma-separated status filter into a de-duplicated list of concrete
- * status ids. Shared by `pm list` (lenient) and `pm search` (strict, with a
- * did-you-mean hint on typos) so both surfaces resolve the open/closed/canceled
- * workflow-group aliases identically.
+ * status ids. A standalone `all` sentinel intentionally resolves to no filter
+ * so duplicate-discovery loops can search every lifecycle bucket with the same
+ * `--status` flag shape. Shared by `pm list` (lenient) and `pm search`
+ * (strict, with a did-you-mean hint on typos) so both surfaces resolve the
+ * open/closed/canceled workflow-group aliases identically.
  */
 export function parseStatusFilterCsv(
   raw: unknown,
@@ -109,6 +125,16 @@ export function parseStatusFilterCsv(
     .filter((entry) => entry.length > 0);
   if (tokens.length === 0) {
     return undefined;
+  }
+  const allTokenCount = tokens.filter((token) => token.trim().toLowerCase() === STATUS_ALL_SENTINEL).length;
+  if (allTokenCount > 0) {
+    if (tokens.length === 1) {
+      return undefined;
+    }
+    throw new PmCliError(
+      `Invalid ${flagLabel} value "all". Use it by itself, or omit ${flagLabel} to search every status.`,
+      EXIT_CODE.USAGE,
+    );
   }
   const resolved: ItemStatus[] = [];
   for (const token of tokens) {

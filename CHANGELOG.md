@@ -26,6 +26,7 @@
 
 ### Fixed
 
+- Accept --status all for duplicate-safe search and list filters ([pm-i02t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-i02t.toon))
 - pm health 2.3-3.1s in dev repo \(~2x the 1.3s baseline\): drift-scan cache hit still reads + content-hashes every history stream ([pm-c90s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-c90s.toon))
 - Daily auto-release was silently blocked 06-14..16 by a single stale, unresolved Sentry error \(sentry-telemetry-gate is:unresolved has no time window\) ([pm-nb08](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nb08.toon))
 - appendLineAtomic is not truly atomic: concurrent appends to history JSONL can interleave ([pm-xy9n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xy9n.toon))

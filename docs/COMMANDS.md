@@ -115,10 +115,13 @@ pm list-all --updated-after 2026-06-04T15:18:32Z --brief
 pm list-open --updated-after=-2h --brief
 pm list-all --created-after=-7d --status open
 
-# Search scoped to open work only (drops closed-history noise); statuses are
-# open/closed/canceled aliases or configured ids, comma-separated, with a
-# did-you-mean hint on typos.
+# Search scoped to open work only (drops closed-history noise); statuses accept
+# all (no lifecycle restriction), open/closed/canceled aliases, or configured
+# ids, comma-separated, with a did-you-mean hint on typos.
 pm search "reminder validation" --status open --limit 10
+
+# Duplicate checks can deliberately scan every lifecycle bucket with one flag.
+pm search "reminder validation" --status all --limit 10
 
 # Full filter parity with list — scope retrieval before ranking.
 pm search "calendar" --type Task --assignee alice --updated-after=-7d --parent pm-abcd
