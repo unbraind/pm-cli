@@ -190,15 +190,17 @@ export function scoreBm25Query(index: Bm25Index, queryTokens: string[], params: 
 }
 
 /**
- * Coerce one persisted BM25 parameter to a finite number within `[min, max]`,
- * falling back to `fallback` for any non-finite or out-of-range value so a
- * malformed `settings.json` can never crash or skew scoring.
+ * Coerce one persisted BM25 parameter to a finite number within `[min, max]`.
+ * A finite number is clamped to the range (preserving user intent — e.g.
+ * `k1=5000` becomes `1000` rather than being silently ignored); any non-number
+ * or non-finite value (string, `NaN`, `Infinity`, missing) falls back to
+ * `fallback` so a malformed `settings.json` can never crash or skew scoring.
  */
 function resolveClampedParam(candidate: unknown, fallback: number, min: number, max: number): number {
-  if (typeof candidate === "number" && Number.isFinite(candidate) && candidate >= min && candidate <= max) {
-    return candidate;
+  if (typeof candidate !== "number" || !Number.isFinite(candidate)) {
+    return fallback;
   }
-  return fallback;
+  return Math.min(max, Math.max(min, candidate));
 }
 
 /**

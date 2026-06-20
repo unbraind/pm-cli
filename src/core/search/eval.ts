@@ -221,13 +221,13 @@ function parseEvalQueryEntry(raw: unknown, index: number): EvalQuery {
   if (!Array.isArray(entry.relevant_ids)) {
     throw new EvalQuerySetError(`Eval query at index ${index} must have a "relevant_ids" array`);
   }
+  if (entry.relevant_ids.some((value) => typeof value !== "string")) {
+    // Reject (rather than silently drop) non-string members: malformed golden
+    // data must fail loudly so it can never quietly change relevance judgments.
+    throw new EvalQuerySetError(`Eval query at index ${index} must have a "relevant_ids" array of strings`);
+  }
   const relevantIds = [
-    ...new Set(
-      entry.relevant_ids
-        .filter((value): value is string => typeof value === "string")
-        .map((value) => value.trim())
-        .filter((value) => value.length > 0),
-    ),
+    ...new Set((entry.relevant_ids as string[]).map((value) => value.trim()).filter((value) => value.length > 0)),
   ];
   if (relevantIds.length === 0) {
     throw new EvalQuerySetError(`Eval query at index ${index} must list at least one relevant id`);

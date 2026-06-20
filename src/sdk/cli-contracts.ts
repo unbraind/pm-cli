@@ -1601,6 +1601,8 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(GET_FLAG_CONTRACTS);
     case "search":
       return withSubcommandGlobalFlags(SEARCH_FLAG_CONTRACTS);
+    case "eval":
+      return withSubcommandGlobalFlags(EVAL_FLAG_CONTRACTS);
     case "history":
       return withSubcommandGlobalFlags(HISTORY_FLAG_CONTRACTS);
     case "history-redact":

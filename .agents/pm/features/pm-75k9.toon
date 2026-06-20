@@ -1,12 +1,12 @@
 id: pm-75k9
-title: "Offline/fallback embedding provider: built-in TF-IDF or BM25 when no Ollama/OpenAI is configured"
+title: Offline BM25 lexical retrieval provider when no Ollama/OpenAI is configured
 description: "When no embedding provider is configured, pm search falls back to keyword-only mode silently. There is no built-in dense-retrieval fallback that works without a running Ollama instance or OpenAI key. A lightweight offline provider (TF-IDF, BM25, or a tiny WASM embedding model) would enable semantic-quality search in air-gapped or no-setup environments."
 type: Feature
 status: closed
 priority: 3
 tags[4]: "area:search",embedding,offline,ux
 created_at: "2026-06-07T10:05:12.215Z"
-updated_at: "2026-06-20T05:19:55.632Z"
+updated_at: "2026-06-20T05:44:42.879Z"
 author: audit-data-agent
 acceptance_criteria: "- Add a built-in `bm25` search provider that can be activated with `pm config set search.provider bm25`\n- BM25 operates entirely on the front-matter cache, requiring no external service\n- The provider registers as a fallback when `search.provider = auto` and no HTTP provider is configured\n- Quality is clearly documented as lower than dense retrieval\n- Extension authors can override with `registerSearchProvider`"
 value: Enables semantic-quality search for new users and CI pipelines without requiring an embedding service

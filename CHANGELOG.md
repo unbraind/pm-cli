@@ -4,8 +4,8 @@
 
 ### Added
 
+- Offline BM25 lexical retrieval provider when no Ollama/OpenAI is configured ([pm-75k9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-75k9.toon))
 - Search relevance eval harness: implement nDCG/MRR runner and gate in CI ([pm-u8n5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-u8n5.toon))
-- Offline/fallback embedding provider: built-in TF-IDF or BM25 when no Ollama/OpenAI is configured ([pm-75k9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-75k9.toon))
 - Add 120-file unit-test cap governance test to ci-workflow-contract.spec.ts ([pm-wc0d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-wc0d.toon))
 - Add integration test for background-refresh (instant mutations) non-blocking behavior ([pm-5rge](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5rge.toon))
 - Add integration test for close-many --rollback checkpoint restore ([pm-7p4w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7p4w.toon))

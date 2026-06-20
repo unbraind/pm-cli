@@ -17,6 +17,7 @@ import {
   evaluateRanking,
   parseEvalQuerySet,
   type EvalSearchMode,
+  type QueryEvalMetrics,
 } from "../../core/search/eval.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -177,6 +178,9 @@ export async function runEval(options: EvalOptions, global: GlobalOptions): Prom
   const querySet = await loadEvalQuerySet(queriesPath);
 
   const reports: EvalQueryReport[] = [];
+  // Aggregate and gate on the UNROUNDED metrics; rounding is applied only to the
+  // emitted report values so display precision never flips a --fail-under decision.
+  const rawMetrics: QueryEvalMetrics[] = [];
   for (const evalQuery of querySet.queries) {
     const mode = evalQuery.mode ?? defaultMode;
     const searchResult = await runSearch(
@@ -188,6 +192,7 @@ export async function runEval(options: EvalOptions, global: GlobalOptions): Prom
       .map((item) => (item as { id?: unknown }).id)
       .filter((id): id is string => typeof id === "string");
     const metrics = evaluateRanking(rankedIds, new Set(evalQuery.relevant_ids), k);
+    rawMetrics.push(metrics);
     reports.push({
       query: evalQuery.query,
       mode,
@@ -200,23 +205,13 @@ export async function runEval(options: EvalOptions, global: GlobalOptions): Prom
     });
   }
 
-  const aggregate = aggregateEvalMetrics(
-    reports.map((report) => ({
-      ndcg: report.ndcg,
-      mrr: report.mrr,
-      precision: report.precision,
-      recall: report.recall,
-      relevant_total: report.relevant_total,
-      retrieved_relevant: report.retrieved_relevant,
-    })),
-  );
-  const aggregateNdcg = roundMetric(aggregate.ndcg);
-  const passed = failUnder === undefined || aggregateNdcg >= failUnder;
+  const aggregate = aggregateEvalMetrics(rawMetrics);
+  const passed = failUnder === undefined || aggregate.ndcg >= failUnder;
   return {
     k,
     query_count: querySet.queries.length,
     aggregate: {
-      ndcg: aggregateNdcg,
+      ndcg: roundMetric(aggregate.ndcg),
       mrr: roundMetric(aggregate.mrr),
       precision: roundMetric(aggregate.precision),
       recall: roundMetric(aggregate.recall),

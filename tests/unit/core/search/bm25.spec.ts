@@ -162,11 +162,12 @@ describe("bm25 resolveBm25Params", () => {
     expect(resolveBm25Params(settingsWithBm25({ k1: 2, b: 0.4 }))).toEqual({ k1: 2, b: 0.4 });
   });
 
-  it("clamps each invalid/out-of-range knob independently back to its default", () => {
-    expect(resolveBm25Params(settingsWithBm25({ k1: -1, b: 2 }))).toEqual({
-      k1: DEFAULT_BM25_K1,
-      b: DEFAULT_BM25_B,
-    });
+  it("clamps finite out-of-range knobs to their bounds (preserving intent)", () => {
+    expect(resolveBm25Params(settingsWithBm25({ k1: -1, b: 2 }))).toEqual({ k1: 0, b: 1 });
+    expect(resolveBm25Params(settingsWithBm25({ k1: 1001 }))).toEqual({ k1: 1_000, b: DEFAULT_BM25_B });
+  });
+
+  it("falls back to defaults for non-finite / non-number knobs, each independently", () => {
     expect(resolveBm25Params(settingsWithBm25({ k1: Number.NaN, b: 0.9 }))).toEqual({
       k1: DEFAULT_BM25_K1,
       b: 0.9,
@@ -175,6 +176,9 @@ describe("bm25 resolveBm25Params", () => {
       k1: DEFAULT_BM25_K1,
       b: DEFAULT_BM25_B,
     });
-    expect(resolveBm25Params(settingsWithBm25({ k1: 1001 }))).toEqual({ k1: DEFAULT_BM25_K1, b: DEFAULT_BM25_B });
+    expect(resolveBm25Params(settingsWithBm25({ k1: Number.POSITIVE_INFINITY }))).toEqual({
+      k1: DEFAULT_BM25_K1,
+      b: DEFAULT_BM25_B,
+    });
   });
 });

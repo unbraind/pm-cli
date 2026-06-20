@@ -137,6 +137,10 @@ describe("eval parseEvalQuerySet", () => {
     expect(() => parseEvalQuerySet([{ query: "x", relevant_ids: ["", "  "] }])).toThrow(/at least one relevant id/);
   });
 
+  it("rejects a relevant_ids array containing a non-string entry", () => {
+    expect(() => parseEvalQuerySet([{ query: "x", relevant_ids: ["pm-1", 7] }])).toThrow(/array of strings/);
+  });
+
   it("rejects an invalid mode", () => {
     expect(() => parseEvalQuerySet([{ query: "x", relevant_ids: ["pm-1"], mode: "fuzzy" }])).toThrow(/invalid mode/);
     expect(() => parseEvalQuerySet([{ query: "x", relevant_ids: ["pm-1"], mode: 7 }])).toThrow(/invalid mode/);
