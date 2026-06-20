@@ -437,6 +437,45 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
     addHiddenOption(searchCommand, "--tags <value>", "Alias for --tag");
   }
 
+  if (shouldRegister("eval")) {
+    program
+      .command("eval")
+      .description(
+        "Evaluate search relevance against a curated golden-query set: reports nDCG@k, MRR@k, " +
+          "precision@k, and recall@k per query plus the macro average. Use --fail-under as a CI gate.",
+      )
+      .option("--mode <value>", "Default retrieval mode for queries without their own: keyword|semantic|hybrid (default: keyword)")
+      .option("--k <n>", "Metric cutoff @k (positive integer; default: 10)")
+      .option("--fail-under <value>", "Exit non-zero when aggregate nDCG@k falls below this threshold (0..1); CI gate")
+      .option("--queries <path>", "Path to the golden-query JSON file (default: <pmRoot>/search/eval-queries.json)")
+      .option("--format <value>", "Eval output format override: json|toon")
+      .action(async (options: Record<string, unknown>, command) => {
+        const globalOptions = getGlobalOptions(command);
+        const startedAt = Date.now();
+        const { runEval } = await import("./commands/eval.js");
+        const result = await runEval(
+          {
+            mode: typeof options.mode === "string" ? options.mode : undefined,
+            k: typeof options.k === "string" ? options.k : undefined,
+            failUnder: typeof options.failUnder === "string" ? options.failUnder : undefined,
+            queries: typeof options.queries === "string" ? options.queries : undefined,
+            format: typeof options.format === "string" ? options.format : undefined,
+          },
+          globalOptions,
+        );
+        printResult(result, resolveReadCommandOutputFormat("Eval", options.format, globalOptions));
+        if (globalOptions.profile) {
+          printError(`profile:command=eval took_ms=${Date.now() - startedAt}`);
+        }
+        if (!result.passed) {
+          throw new PmCliError(
+            `Eval gate failed: aggregate nDCG@${result.k} ${result.aggregate.ndcg} is below --fail-under ${result.fail_under}`,
+            EXIT_CODE.GENERIC_FAILURE,
+          );
+        }
+      });
+  }
+
   if (shouldRegister("get")) {
     const getCommand = program
       .command("get")

@@ -8,6 +8,7 @@ vi.mock("../../../src/cli/commands/get.js", () => ({ runGet: vi.fn() }));
 vi.mock("../../../src/cli/commands/history.js", () => ({ runHistory: vi.fn() }));
 vi.mock("../../../src/cli/commands/activity.js", () => ({ runActivity: vi.fn() }));
 vi.mock("../../../src/cli/commands/search.js", () => ({ runSearch: vi.fn() }));
+vi.mock("../../../src/cli/commands/eval.js", () => ({ runEval: vi.fn() }));
 vi.mock("../../../src/cli/commands/aggregate.js", () => ({ runAggregate: vi.fn() }));
 vi.mock("../../../src/cli/commands/context.js", () => ({
   runContext: vi.fn(),
@@ -33,6 +34,7 @@ import { runGet } from "../../../src/cli/commands/get.js";
 import { runHistory } from "../../../src/cli/commands/history.js";
 import { runActivity } from "../../../src/cli/commands/activity.js";
 import { runSearch } from "../../../src/cli/commands/search.js";
+import { runEval } from "../../../src/cli/commands/eval.js";
 import { runAggregate } from "../../../src/cli/commands/aggregate.js";
 import { renderContextMarkdown, resolveContextOutputFormat, runContext } from "../../../src/cli/commands/context.js";
 import { runList } from "../../../src/cli/commands/list.js";
@@ -82,6 +84,13 @@ beforeEach(() => {
   vi.mocked(runHistory).mockResolvedValue({ entries: [] } as never);
   vi.mocked(runActivity).mockResolvedValue({ count: 0, activity: [] } as never);
   vi.mocked(runSearch).mockResolvedValue({ hits: [] } as never);
+  vi.mocked(runEval).mockResolvedValue({
+    k: 10,
+    query_count: 1,
+    aggregate: { ndcg: 1, mrr: 1, precision: 1, recall: 1 },
+    queries: [],
+    passed: true,
+  } as never);
   vi.mocked(runAggregate).mockResolvedValue({ rows: [] } as never);
   vi.mocked(runContext).mockResolvedValue({ summary: {} } as never);
   vi.mocked(resolveContextOutputFormat).mockReturnValue("json" as never);
@@ -220,6 +229,46 @@ describe("register-list-query search options", () => {
 
   it("rejects unsupported read command formats", async () => {
     await expect(runRaw("search", "token", "--format", "markdown")).rejects.toThrow(/Search --format must be one of json\|toon/);
+  });
+});
+
+describe("register-list-query eval command (pm-u8n5)", () => {
+  it("forwards every eval flag and prints the report", async () => {
+    await runProfiled(
+      "eval",
+      "--mode",
+      "hybrid",
+      "--k",
+      "5",
+      "--fail-under",
+      "0.5",
+      "--queries",
+      "custom/eval.json",
+      "--format",
+      "json",
+    );
+    const evalOptions = lastCall<Record<string, unknown>>(vi.mocked(runEval) as never, 0);
+    expect(evalOptions).toEqual({ mode: "hybrid", k: "5", failUnder: "0.5", queries: "custom/eval.json", format: "json" });
+    const outputOptions = lastCall<Record<string, unknown>>(vi.mocked(printResult) as never, 1);
+    expect(outputOptions.json).toBe(true);
+  });
+
+  it("passes undefined for omitted eval flags and runs without profile output", async () => {
+    await runRaw("eval");
+    const evalOptions = lastCall<Record<string, unknown>>(vi.mocked(runEval) as never, 0);
+    expect(evalOptions).toEqual({ mode: undefined, k: undefined, failUnder: undefined, queries: undefined, format: undefined });
+  });
+
+  it("throws when the relevance gate fails", async () => {
+    vi.mocked(runEval).mockResolvedValueOnce({
+      k: 10,
+      query_count: 1,
+      aggregate: { ndcg: 0, mrr: 0, precision: 0, recall: 0 },
+      queries: [],
+      fail_under: 0.5,
+      passed: false,
+    } as never);
+    await expect(runRaw("eval", "--fail-under", "0.5")).rejects.toThrow(/Eval gate failed/);
   });
 });
 

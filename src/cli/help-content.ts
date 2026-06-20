@@ -509,6 +509,19 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "Use --include-linked when linked docs/files/tests should influence scoring.",
     ],
   },
+  eval: {
+    why: "Measures search relevance against a curated golden-query set so retrieval regressions are caught, not guessed.",
+    examples: [
+      "pm eval --json",
+      "pm eval --mode hybrid --k 10",
+      "pm eval --fail-under 0.6 --json",
+      "pm eval --queries ./my-eval.json --mode semantic",
+    ],
+    tips: [
+      "Curate ground truth in <pmRoot>/search/eval-queries.json as an array of {query, relevant_ids, mode?} objects.",
+      "Wire --fail-under into CI to fail the build when aggregate nDCG@k drops below your baseline.",
+    ],
+  },
   reindex: {
     why: "Rebuilds search artifacts after large changes to item corpus or provider/vector config.",
     examples: ["pm reindex --mode keyword", "pm reindex --mode hybrid --progress --json"],

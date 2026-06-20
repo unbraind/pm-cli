@@ -245,6 +245,31 @@ pm search "release docs" --mode keyword --limit 10
 
 Semantic and hybrid search can use built-in OpenAI-compatible or Ollama providers plus vector stores such as Qdrant or LanceDB. If local Ollama is available and semantic settings are unset, `pm` can resolve local defaults automatically.
 
+### Offline BM25 provider (pm-75k9)
+
+For air-gapped, CI, or zero-setup environments there is a built-in **BM25** lexical ranker that powers `--semantic`/`--hybrid` search entirely in-process — no embedding service or vector store required. Select it via `search.provider`:
+
+```bash
+pm config project set search_provider bm25      # always use BM25 for semantic/hybrid
+pm config project set search_provider auto       # use BM25 only when no embedding provider is configured
+```
+
+- `bm25` always uses the offline ranker for semantic/hybrid queries, even when an embedding provider is set.
+- `auto` falls back to BM25 only when no embedding provider (and no extension search provider) is available; the search result then carries a `search_<mode>_offline_bm25:no_embedding_provider:using_lexical_bm25` warning.
+- Any other value (e.g. `openai`, `ollama`, or an extension provider name) keeps the existing embedding/vector path.
+
+Tune BM25 ranking with two persisted, validated knobs:
+
+- `search.bm25.k1` (number `>= 0`, default `1.2`) — term-frequency saturation; higher values let repeated terms keep accruing weight, lower values saturate sooner.
+- `search.bm25.b` (number `0..1`, default `0.75`) — document-length normalization; `0` disables it, `1` fully normalizes by length.
+
+```bash
+pm config project set search_bm25_k1 1.5
+pm config project set search_bm25_b 0.5
+```
+
+BM25 quality is lexical — a strong baseline, but below true dense retrieval; configure an embedding provider when semantic similarity matters. Measure either path against a golden-query set with `pm eval` (see COMMANDS.md).
+
 `search.hybrid_semantic_weight` (number `0..1`, default `0.7`) is the persistent default blend used in **hybrid** mode: it weights the semantic (vector) score against the lexical score during score fusion — higher favours semantic retrieval, lower favours keyword matching. A per-query `pm search --semantic-weight <value>` overrides it for a single query; when the flag is omitted the persistent setting applies. Set it once with:
 
 ```bash

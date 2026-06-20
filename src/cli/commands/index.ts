@@ -124,6 +124,7 @@ export {
   type SchemaShowStatusResult,
 } from "./schema.js";
 export { runSearch } from "./search.js";
+export { runEval } from "./eval.js";
 export { runRestore } from "./restore.js";
 export { runStats } from "./stats.js";
 export { runTelemetry, TELEMETRY_SUBCOMMANDS, type TelemetryCommandOptions, type TelemetrySubcommand } from "./telemetry.js";

@@ -6,10 +6,12 @@ coverage/
 .codex/
 .env
 .sentryclirc
-# Local vector store and search index cache (optional, rebuilt on demand via pm reindex)
-.agents/pm/search/lancedb/
+# Local vector store and search index cache (optional, rebuilt on demand via pm reindex).
+# Ignore the search/ cache CONTENTS but keep the directory re-includable so the curated,
+# git-tracked golden-query set (pm eval, pm-u8n5) lives at .agents/pm/search/eval-queries.json.
+.agents/pm/search/*
+!.agents/pm/search/eval-queries.json
 .agents/pm/index/manifest.json
-.agents/pm/search/
 .agents/pm/checkpoints/
 .agents/pm/runtime/front-matter-cache.json
 .agents/pm/runtime/metadata-cache.json

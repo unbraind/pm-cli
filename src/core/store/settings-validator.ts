@@ -112,6 +112,10 @@ export interface ParsedSettings {
       model?: string;
       top_k?: number;
     };
+    bm25?: {
+      k1?: number;
+      b?: number;
+    };
   };
   providers: {
     openai: { base_url: string; api_key: string; model: string };
@@ -498,6 +502,15 @@ const settingsCheck = vObject({
         enabled: vOptional(vBoolean),
         model: vOptional(vString),
         top_k: vOptional(vNumber({ int: true, positive: true })),
+      }),
+    ),
+    // pm-75k9: offline BM25 tuning. Unlike `search.tuning` (intentionally
+    // stripped for legacy zod parity), bm25 is validated so it persists across
+    // writeSettings round-trips — these knobs must survive to take effect.
+    bm25: vOptional(
+      vObject({
+        k1: vOptional(vNumber()),
+        b: vOptional(vNumber()),
       }),
     ),
   }),

@@ -25,7 +25,7 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 | Family | Commands | Purpose |
 |--------|----------|---------|
 | Bootstrap | `init`, `config`, `health`, `telemetry` | create and inspect tracker setup |
-| Triage | `context`, `search`, `get`, `list*`, `aggregate`, `dedupe-audit`*, `dedupe-merge`* | find work, read a single item, and audit decomposition |
+| Triage | `context`, `search`, `eval`, `get`, `list*`, `aggregate`, `dedupe-audit`*, `dedupe-merge`* | find work, read a single item, measure search relevance, and audit decomposition |
 | Lifecycle | `create`, `copy`, `focus`, `claim`, `update`, `append`, `close`, `release`, `delete`, `start-task`, `pause-task`, `close-task` | mutate item state |
 | Bulk | `update-many`, `close-many` | apply one change across a matched, dry-run-previewed set with a rollback checkpoint |
 | Scheduling | `meet`, `event`, `remind` | low-friction Meeting/Event/Reminder creation |
@@ -165,6 +165,47 @@ Pass `--highlight` to emit per-field matched-text snippets on each hit (off by d
 pm search "auth" --highlight                       # adds highlights:[{field,snippet}] to each hit
 pm search "auth" --full --highlight                # full hit payloads + highlight snippets
 ```
+
+### Offline BM25 provider (pm-75k9)
+
+`semantic`/`hybrid` search normally needs an embedding service (Ollama/OpenAI) plus a vector store. For air-gapped, CI, or zero-setup environments there is a built-in **BM25** lexical ranker that runs entirely in-process over the item corpus — no network, no service. BM25 improves on naive keyword counting with inverse-document-frequency weighting, term-frequency saturation, and document-length normalization.
+
+Activate it by setting the search provider:
+
+```bash
+pm config project set search_provider bm25      # always use offline BM25 for semantic/hybrid
+pm config project set search_provider auto       # use BM25 only when no embedding provider is configured
+pm search "connection pool leak" --semantic       # BM25-ranked; hits carry matched_fields:["bm25"]
+pm search "retry backoff" --hybrid                 # blends BM25 with the keyword scorer
+```
+
+- `bm25` — always use BM25 for `--semantic`/`--hybrid`, even if an embedding provider is configured.
+- `auto` — use BM25 as the **offline fallback** only when no embedding provider (and no extension search provider) is available; the result carries a `search_<mode>_offline_bm25:no_embedding_provider:using_lexical_bm25` warning so the offline path is observable.
+- Plain `keyword` mode is unchanged. BM25 quality is lexical — strong, but below true dense retrieval; configure an embedding provider when you need semantic similarity.
+
+Tune ranking via `search.bm25.k1` (term-frequency saturation, default `1.2`) and `search.bm25.b` (length normalization in `[0,1]`, default `0.75`): `pm config project set search_bm25_k1 1.5`.
+
+### Search relevance evaluation — `pm eval` (pm-u8n5)
+
+`pm eval` measures retrieval quality against a curated golden-query set so relevance regressions (from corpus, weight, or provider changes) are caught instead of guessed. Ground truth lives in a git-tracked `<pmRoot>/search/eval-queries.json` — an array of `{ query, relevant_ids, mode? }` objects:
+
+```json
+[
+  { "query": "offline search ranking", "relevant_ids": ["pm-75k9"], "mode": "keyword" },
+  { "query": "relevance regression gate", "relevant_ids": ["pm-u8n5"] }
+]
+```
+
+It runs each query through the live search path and reports nDCG@k, MRR@k, precision@k, and recall@k per query plus the macro average:
+
+```bash
+pm eval --json                       # full per-query + aggregate metrics
+pm eval --mode hybrid --k 10         # default mode for queries without their own; cutoff @k
+pm eval --queries ./my-eval.json     # evaluate an alternate golden set
+pm eval --fail-under 0.6 --json      # CI gate: exit non-zero when aggregate nDCG@k < 0.6
+```
+
+`--fail-under <0..1>` turns `pm eval` into a CI gate: it still prints the report (stdout) but exits non-zero when the aggregate nDCG@k falls below the threshold, so a relevance drop fails the build.
 
 ### Full results, totals, and bodies
 

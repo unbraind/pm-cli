@@ -1390,6 +1390,14 @@ export const DEPS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--summary" },
 ];
 
+export const EVAL_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--mode" },
+  { flag: "--k" },
+  { flag: "--fail-under" },
+  { flag: "--queries" },
+  { flag: "--format" },
+];
+
 export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--mode" },
   { flag: "--semantic" },

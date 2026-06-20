@@ -967,6 +967,16 @@ export interface PmSettings {
     mutation_refresh_policy: SearchMutationRefreshPolicy;
     query_expansion: SearchQueryExpansionSettings;
     rerank: SearchRerankSettings;
+    /**
+     * Offline BM25 lexical-ranking parameters (pm-75k9), applied when
+     * `search.provider` is `bm25` (or auto-selected as the offline fallback) for
+     * semantic/hybrid queries. `k1` controls term-frequency saturation, `b`
+     * controls document-length normalization. Unset → Lucene defaults (1.2/0.75).
+     */
+    bm25?: {
+      k1?: number;
+      b?: number;
+    };
     tuning?: {
       title_exact_bonus?: number;
       title_weight?: number;

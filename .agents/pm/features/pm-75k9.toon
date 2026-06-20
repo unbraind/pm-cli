@@ -2,15 +2,27 @@ id: pm-75k9
 title: "Offline/fallback embedding provider: built-in TF-IDF or BM25 when no Ollama/OpenAI is configured"
 description: "When no embedding provider is configured, pm search falls back to keyword-only mode silently. There is no built-in dense-retrieval fallback that works without a running Ollama instance or OpenAI key. A lightweight offline provider (TF-IDF, BM25, or a tiny WASM embedding model) would enable semantic-quality search in air-gapped or no-setup environments."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[4]: "area:search",embedding,offline,ux
 created_at: "2026-06-07T10:05:12.215Z"
-updated_at: "2026-06-07T10:16:00.726Z"
+updated_at: "2026-06-20T05:19:55.632Z"
 author: audit-data-agent
 acceptance_criteria: "- Add a built-in `bm25` search provider that can be activated with `pm config set search.provider bm25`\n- BM25 operates entirely on the front-matter cache, requiring no external service\n- The provider registers as a fallback when `search.provider = auto` and no HTTP provider is configured\n- Quality is clearly documented as lower than dense retrieval\n- Extension authors can override with `registerSearchProvider`"
 value: Enables semantic-quality search for new users and CI pipelines without requiring an embedding service
 parent: pm-ydp6
 risk: medium
 confidence: medium
+resolution: Built-in BM25 offline provider shipped and validated end-to-end.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-u8n5,related,"2026-06-20T05:19:46.714Z",claude-code-agent,null
+comments[1]{created_at,author,text}:
+  "2026-06-20T05:19:47.094Z",claude-code-agent,"Shipped built-in offline BM25 lexical retrieval (src/core/search/bm25.ts): Okapi BM25 with IDF + k1 term-frequency saturation + b length-normalization, scoring the in-memory corpus with NO embedding service or vector store. Activated via search.provider=bm25 (always) or auto (offline fallback only when no embedding/extension provider). Wired into runSearch semantic/hybrid: semantic returns pure BM25 hits (matched_fields:[bm25]); hybrid blends BM25 with the keyword scorer via combineHybridHits. Tuning: search.bm25.k1 (default 1.2) and search.bm25.b (default 0.75), settable via pm config set search_bm25_k1/b and validated/persisted. Keyword mode unchanged. 100% coverage; full manual sandbox verification."
+files[2]{path,scope,note}:
+  src/core/search/bm25.ts,project,Offline BM25 index + scorer + param resolution
+  src/cli/commands/search.ts,project,BM25 activation + computeBuiltInBm25Hits wiring
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,Offline BM25 provider docs
+  docs/CONFIGURATION.md,project,search.provider bm25 + search.bm25 knobs
+close_reason: "Implemented built-in offline BM25 lexical provider (search.provider=bm25|auto) powering --semantic/--hybrid with no embedding service or vector store. New pure module src/core/search/bm25.ts (Okapi BM25: IDF + k1 saturation + b length-normalization), wired into runSearch via resolveBuiltInBm25Mode + computeBuiltInBm25Hits; combineHybridHits gained a dense-component label so BM25 hybrid hits read matched_fields:[bm25]. Config: search.bm25.{k1,b} validated/persisted + pm config set search_bm25_k1/b. Docs in COMMANDS.md + CONFIGURATION.md. 100/100/100/100 coverage; sandbox-verified."
 body: "## Context\n\n`src/core/search/providers.ts:182-201` — `resolveEmbeddingProviders` returns `active: null` when no openai/ollama is configured. The search command silently degrades to keyword.\n\nFor CI-only, air-gapped, or minimal-setup projects the semantic search path is completely unavailable. The extension SDK allows `registerSearchProvider` but there is no built-in offline fallback.\n\nThis is a post-v0.1 feature (complexity of bundling a WASM embedding model is non-trivial) but a BM25 implementation would be feasible as a first step.\n\n## Acceptance criteria\n\n- [ ] Add a built-in `bm25` search provider that can be activated with `pm config set search.provider bm25`\n- [ ] BM25 operates entirely on the front-matter cache, requiring no external service\n- [ ] The provider registers as a fallback when `search.provider = auto` and no HTTP provider is configured\n- [ ] Quality is clearly documented as lower than dense retrieval\n- [ ] Extension authors can override with `registerSearchProvider`\n\n## Evidence\n\n- `src/core/search/providers.ts:182-201` — only openai/ollama; no offline fallback\n- `src/core/extensions/loader.ts:1930` — `registerSearchProvider` exists in SDK; could be extended for built-in BM25"
