@@ -3,11 +3,14 @@ import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
+import type { GlobalOptions, ServiceOverrideContext } from "../../../src/sdk/index.js";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
 const ORIGINAL_PACKAGE_ROOT = process.env[PM_PACKAGE_ROOT_ENV];
 
 const tempRoots: string[] = [];
+const PM_GLOBAL: GlobalOptions = { path: "/tmp/pm" };
+const MISSING_PM_GLOBAL: GlobalOptions = { path: "/tmp/missing" };
 
 function cacheBustToken(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -196,12 +199,13 @@ export function readCsvListOption(options, key, aliases = []) {
     );
 
     const renderBeforeLoad = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "guide",
       payload: { result: { topic: "before-load" } },
-    } as any);
+    } satisfies ServiceOverrideContext);
     expect(renderBeforeLoad).toBeNull();
 
-    const guideResult = await runtime.runGuidePackage(["workflows"], {}, { path: "/tmp/pm" } as any);
+    const guideResult = await runtime.runGuidePackage(["workflows"], {}, PM_GLOBAL);
     expect((guideResult as Record<string, unknown>).topic).toBe("workflows");
 
     const completion = await runtime.runCompletionPackage(
@@ -211,101 +215,114 @@ export function readCsvListOption(options, key, aliases = []) {
         tags: "alpha,beta",
         eager_tags: true,
       },
-      { path: "/tmp/pm" } as any,
+      PM_GLOBAL,
     );
     expect((completion as Record<string, unknown>).shell).toBe("zsh");
 
-    const tagsWhenMissingSettings = await runtime.runCompletionTagsPackage({ path: "/tmp/missing" } as any);
+    const tagsWhenMissingSettings = await runtime.runCompletionTagsPackage(MISSING_PM_GLOBAL);
     expect(tagsWhenMissingSettings).toEqual({ tags: [], count: 0 });
 
-    const tags = await runtime.runCompletionTagsPackage({ path: "/tmp/pm" } as any);
+    const tags = await runtime.runCompletionTagsPackage(PM_GLOBAL);
     expect(tags).toEqual({ tags: ["alpha", "beta", "delta", "gamma"], count: 4 });
 
-    const statuses = await runtime.runCompletionStatusesPackage({ path: "/tmp/pm" } as any);
+    const statuses = await runtime.runCompletionStatusesPackage(PM_GLOBAL);
     expect(statuses).toEqual({ statuses: ["blocked", "open", "open"], count: 3 });
 
-    const types = await runtime.runCompletionTypesPackage({ path: "/tmp/pm" } as any);
+    const types = await runtime.runCompletionTypesPackage(PM_GLOBAL);
     expect(types).toEqual({ types: ["Issue", "Task"], count: 2 });
 
     const guideMarkdown = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "guide",
       options: { format: "markdown" },
       global: {},
       payload: { result: { topic: "workflows" } },
-    } as any);
+    } satisfies ServiceOverrideContext);
     expect(guideMarkdown).toBe("# guide workflows\n");
 
     const guideJson = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "guide",
       options: { format: "json" },
       global: {},
       payload: { result: { topic: "json-guide" } },
-    } as any);
+    } satisfies ServiceOverrideContext);
     expect(guideJson).toContain('"topic": "json-guide"');
 
     const guideInvalidFormat = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "guide",
       options: { format: "invalid" },
       global: {},
       payload: { result: { topic: "ignored" } },
-    } as any);
+    } satisfies ServiceOverrideContext);
     expect(guideInvalidFormat).toBeNull();
 
     const completionJson = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "completion",
       payload: { format: "json", result: { script: "echo hi" } },
-    } as any);
+    } satisfies ServiceOverrideContext);
     expect(completionJson).toContain('"script": "echo hi"');
 
     const completionScript = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "completion",
       payload: { result: { script: "echo hi" } },
-    } as any);
+    } satisfies ServiceOverrideContext);
     expect(completionScript).toBe("echo hi\n");
 
     const completionNoScript = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "completion",
       payload: { result: { no_script: true } },
-    } as any);
+    } satisfies ServiceOverrideContext);
     expect(completionNoScript).toBeNull();
 
     const renderedTags = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "completion-tags",
       payload: { result: { tags: ["alpha", 1, "beta"] } },
-    } as any);
+    } satisfies ServiceOverrideContext);
     expect(renderedTags).toBe("alpha beta\n");
     const renderedTagsJson = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "completion-tags",
       payload: { format: "json", result: { tags: ["alpha"] } },
-    } as any);
+    } satisfies ServiceOverrideContext);
     expect(renderedTagsJson).toContain('"tags": [');
 
     const renderedStatuses = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "completion-statuses",
       payload: { result: { statuses: ["open", "blocked"] } },
-    } as any);
+    } satisfies ServiceOverrideContext);
     expect(renderedStatuses).toBe("open blocked\n");
     const renderedStatusesJson = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "completion-statuses",
       payload: { format: "json", result: { statuses: ["open"] } },
-    } as any);
+    } satisfies ServiceOverrideContext);
     expect(renderedStatusesJson).toContain('"statuses": [');
 
     const renderedTypes = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "completion-types",
       payload: { result: { types: ["Task", "Issue"] } },
-    } as any);
+    } satisfies ServiceOverrideContext);
     expect(renderedTypes).toBe("Task Issue\n");
     const renderedTypesJson = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "completion-types",
       payload: { format: "json", result: { types: ["Task"] } },
-    } as any);
+    } satisfies ServiceOverrideContext);
     expect(renderedTypesJson).toContain('"types": [');
 
     const unknownCommandRender = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "unknown",
       payload: { result: {} },
-    } as any);
+    } satisfies ServiceOverrideContext);
     expect(unknownCommandRender).toBeNull();
 
     const calls = readGlobalCallLog<{ kind: string }>("__PM_GUIDE_CALLS");
@@ -375,21 +392,21 @@ export function readCsvListOption() { return []; }
 
     // Guide topic resolved from positional args (readStringOption topic absent),
     // with no --list flag (false arm of `=== true ? true : undefined`).
-    const guide = (await runtime.runGuidePackage(["workflows"], {}, { path: "/tmp/pm" } as any)) as Record<string, unknown>;
+    const guide = (await runtime.runGuidePackage(["workflows"], {}, PM_GLOBAL)) as Record<string, unknown>;
     expect(guide.topic).toBe("workflows");
     expect(guide.list).toBeUndefined();
 
     // Guide with neither topic option nor positional arg -> topic undefined.
-    const guideNoTopic = (await runtime.runGuidePackage([], {}, { path: "/tmp/pm" } as any)) as Record<string, unknown>;
+    const guideNoTopic = (await runtime.runGuidePackage([], {}, PM_GLOBAL)) as Record<string, unknown>;
     expect(guideNoTopic.topic).toBe("none");
 
     // --list true exercises the TRUE arm of the list ternary.
-    const guideList = (await runtime.runGuidePackage([], { list: true }, { path: "/tmp/pm" } as any)) as Record<string, unknown>;
+    const guideList = (await runtime.runGuidePackage([], { list: true }, PM_GLOBAL)) as Record<string, unknown>;
     expect(guideList.list).toBe(true);
 
     // Completion shell from positional arg + definitions-only type registry +
     // empty status/flag registries (config object collapses to {}).
-    const completion = (await runtime.runCompletionPackage(["fish"], {}, { path: "/tmp/pm" } as any)) as Record<string, unknown>;
+    const completion = (await runtime.runCompletionPackage(["fish"], {}, PM_GLOBAL)) as Record<string, unknown>;
     expect(completion.shell).toBe("fish");
     // item_types resolves from definitions; statuses/command_flags collapse to undefined.
     expect((completion.runtime as Record<string, unknown>).item_types).toEqual(["NoFolder", "Task"]);
@@ -397,82 +414,90 @@ export function readCsvListOption() { return []; }
     expect((completion.runtime as Record<string, unknown>).command_flags).toBeUndefined();
 
     // Completion shell default (no option, no arg) -> "bash".
-    const completionDefault = (await runtime.runCompletionPackage([], {}, { path: "/tmp/pm" } as any)) as Record<string, unknown>;
+    const completionDefault = (await runtime.runCompletionPackage([], {}, PM_GLOBAL)) as Record<string, unknown>;
     expect(completionDefault.shell).toBe("bash");
 
     // buildCompletionRuntimeConfig early-return when settings file is absent.
-    const completionMissing = (await runtime.runCompletionPackage(["zsh"], {}, { path: "/tmp/missing" } as any)) as Record<string, unknown>;
+    const completionMissing = (await runtime.runCompletionPackage(["zsh"], {}, MISSING_PM_GLOBAL)) as Record<string, unknown>;
     expect(completionMissing.runtime).toEqual({});
 
     // Types from definitions only (null + folder-less entries tolerated).
-    const types = await runtime.runCompletionTypesPackage({ path: "/tmp/pm" } as any);
+    const types = await runtime.runCompletionTypesPackage(PM_GLOBAL);
     expect(types).toEqual({ types: ["NoFolder", "Task"], count: 2 });
 
     // Statuses come straight from readSettings (no settings-file gate here).
-    const statuses = await runtime.runCompletionStatusesPackage({ path: "/tmp/pm" } as any);
+    const statuses = await runtime.runCompletionStatusesPackage(PM_GLOBAL);
     expect(statuses).toEqual({ statuses: [], count: 0 });
 
     // Tags: json_markdown item_format branch + non-array tags tolerated, plus
     // the collectTypeToFolder definitions-derived path (folder-less entry skipped).
-    const tags = await runtime.runCompletionTagsPackage({ path: "/tmp/pm" } as any);
+    const tags = await runtime.runCompletionTagsPackage(PM_GLOBAL);
     expect(tags).toEqual({ tags: [], count: 0 });
 
     // Render edge cases against the loaded runtime:
     // guide render with neither options nor global supplied.
     const guideRenderBare = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "guide",
       payload: { result: { topic: "bare" } },
-    } as any);
+    } satisfies ServiceOverrideContext);
     // resolveGuideOutputFormat stub returns "toon" -> not markdown/json -> null.
     expect(guideRenderBare).toBeNull();
 
     // outputFormat is "toon" but payload.format === "json" -> the second operand
     // of the `outputFormat === "json" || readPayloadFormat === "json"` guard.
     const guideRenderPayloadJson = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "guide",
       options: {},
       global: {},
       payload: { format: "json", result: { topic: "payload-json" } },
-    } as any);
+    } satisfies ServiceOverrideContext);
     expect(guideRenderPayloadJson).toContain('"topic": "payload-json"');
 
     // readPayloadResult: payload without a `result` key returns the payload itself.
     const completionScriptNoNewline = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "completion",
       payload: { script: "complete -F _pm pm" },
-    } as any);
+    } satisfies ServiceOverrideContext);
     expect(completionScriptNoNewline).toBe("complete -F _pm pm\n");
 
     // Script already ending in newline is returned unchanged.
     const completionScriptNewline = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "completion",
       payload: { result: { script: "done\n" } },
-    } as any);
+    } satisfies ServiceOverrideContext);
     expect(completionScriptNewline).toBe("done\n");
 
     // Non-array tags/statuses/types collapse to empty join.
     const tagsNonArray = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "completion-tags",
       payload: { result: { tags: "nope" } },
-    } as any);
+    } satisfies ServiceOverrideContext);
     expect(tagsNonArray).toBe("\n");
     const statusesNonArray = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "completion-statuses",
       payload: { result: { statuses: 5 } },
-    } as any);
+    } satisfies ServiceOverrideContext);
     expect(statusesNonArray).toBe("\n");
     const typesNonArray = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "completion-types",
       payload: { result: null },
-    } as any);
+    } satisfies ServiceOverrideContext);
     expect(typesNonArray).toBe("\n");
 
     // Non-object payload exercises the readPayloadFormat object-guard false arm
     // (and readPayloadResult returns the payload itself).
     const stringPayloadRender = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
       command: "completion-tags",
       payload: "raw-string-payload",
-    } as any);
+    } satisfies ServiceOverrideContext);
     expect(stringPayloadRender).toBe("\n");
   });
 
@@ -507,14 +532,14 @@ export function readCsvListOption() { return []; }
       "guideEmptyRegistry",
     );
 
-    const completion = (await runtime.runCompletionPackage(["bash"], {}, { path: "/tmp/pm" } as any)) as Record<string, unknown>;
+    const completion = (await runtime.runCompletionPackage(["bash"], {}, PM_GLOBAL)) as Record<string, unknown>;
     // No item_types/statuses/command_flags resolve -> runtime config is empty.
     expect(completion.runtime).toEqual({});
 
-    const types = await runtime.runCompletionTypesPackage({ path: "/tmp/pm" } as any);
+    const types = await runtime.runCompletionTypesPackage(PM_GLOBAL);
     expect(types).toEqual({ types: [], count: 0 });
 
-    const tags = await runtime.runCompletionTagsPackage({ path: "/tmp/pm" } as any);
+    const tags = await runtime.runCompletionTagsPackage(PM_GLOBAL);
     expect(tags).toEqual({ tags: [], count: 0 });
   });
 
@@ -548,8 +573,8 @@ export function readCsvListOption() { return []; }
     // Two un-awaited calls race through ensureRuntimeBundle before the first
     // load settles, so the second observes the in-flight promise branch.
     const [guide, completion] = await Promise.all([
-      runtime.runGuidePackage(["topic"], { topic: "concurrent" }, { path: "/tmp/pm" } as any),
-      runtime.runCompletionPackage(["bash"], {}, { path: "/tmp/pm" } as any),
+      runtime.runGuidePackage(["topic"], { topic: "concurrent" }, PM_GLOBAL),
+      runtime.runCompletionPackage(["bash"], {}, PM_GLOBAL),
     ]);
     expect((guide as Record<string, unknown>).topic).toBe("concurrent");
     expect((completion as Record<string, unknown>).shell).toBe("bash");

@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { CONFIDENCE_TEXT_VALUES, EXIT_CODE, ISSUE_SEVERITY_VALUES, PmCliError, RISK_VALUES, canonicalDocument, commitImportedItem, generateItemId, getActiveExtensionRegistrations, getItemPath, listAllFrontMatter, locateItem, normalizeFrontMatter, normalizeItemId, nowIso, readLocatedItem, readSettings, resolveItemTypeRegistry, resolvePmRoot, runActiveOnReadHooks, runActiveOnWriteHooks, selectImportAuthor, splitFrontMatter, ensureTrackerInitialized, toEstimatedMinutesValue, toImportPriority, toImportStatus, toImportTags, toNonEmptyImportString, writeFileAtomic, } from "../../../../dist/sdk/index.js";
+import { CONFIDENCE_TEXT_VALUES, DEPENDENCY_KIND_VALUES, EXIT_CODE, ISSUE_SEVERITY_VALUES, PmCliError, RISK_VALUES, canonicalDocument, commitImportedItem, generateItemId, getActiveExtensionRegistrations, getItemPath, listAllFrontMatter, locateItem, normalizeFrontMatter, normalizeItemId, nowIso, readLocatedItem, readSettings, resolveItemTypeRegistry, resolvePmRoot, runActiveOnReadHooks, runActiveOnWriteHooks, selectImportAuthor, splitFrontMatter, ensureTrackerInitialized, toEstimatedMinutesValue, toImportPriority, toImportStatus, toImportTags, toNonEmptyImportString, writeFileAtomic, } from "../../../../dist/sdk/index.js";
 const DEFAULT_TODOS_FOLDER = ".pm/todos";
 // Shared, behavior-identical value coercers are sourced from the SDK adapter
 // surface; package-specific mappings (lenient timestamps, type-name resolution,
@@ -95,6 +95,189 @@ function toBoolean(value) {
     return undefined;
 }
 const toTags = toImportTags;
+function toLinkScope(value) {
+    return toNonEmptyString(value)?.toLowerCase() === "global" ? "global" : "project";
+}
+function toStringList(value) {
+    if (!Array.isArray(value)) {
+        return undefined;
+    }
+    const entries = value
+        .map((entry) => toNonEmptyString(entry))
+        .filter((entry) => entry !== undefined);
+    return entries.length > 0 ? entries : undefined;
+}
+function toStringMap(value) {
+    if (!isRecord(value)) {
+        return undefined;
+    }
+    const entries = Object.entries(value)
+        .map(([key, entryValue]) => [key.trim(), toNonEmptyString(entryValue)])
+        .filter((entry) => entry[0].length > 0 && entry[1] !== undefined);
+    return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+}
+function toNumberMap(value) {
+    if (!isRecord(value)) {
+        return undefined;
+    }
+    const entries = Object.entries(value)
+        .map(([key, entryValue]) => [key.trim(), toInteger(entryValue)])
+        .filter((entry) => entry[0].length > 0 && entry[1] !== undefined);
+    return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+}
+function toDependencyEntries(value, fallbackCreatedAt) {
+    if (!Array.isArray(value)) {
+        return undefined;
+    }
+    const dependencies = [];
+    for (const entry of value) {
+        if (!isRecord(entry)) {
+            continue;
+        }
+        const id = toNonEmptyString(entry.id);
+        if (!id) {
+            continue;
+        }
+        const normalizedKind = toNonEmptyString(entry.kind)?.toLowerCase();
+        const kind = normalizedKind && DEPENDENCY_KIND_VALUES.includes(normalizedKind) ? normalizedKind : "related";
+        dependencies.push({
+            id,
+            kind,
+            created_at: toIsoString(entry.created_at) ?? fallbackCreatedAt,
+            author: toNonEmptyString(entry.author),
+            source_kind: toNonEmptyString(entry.source_kind),
+        });
+    }
+    return dependencies.length > 0 ? dependencies : undefined;
+}
+function toLogEntries(value, fallbackCreatedAt, fallbackAuthor) {
+    if (!Array.isArray(value)) {
+        return undefined;
+    }
+    const entries = value
+        .map((entry) => {
+        if (typeof entry === "string") {
+            const text = toNonEmptyString(entry);
+            return text
+                ? {
+                    created_at: fallbackCreatedAt,
+                    author: fallbackAuthor,
+                    text,
+                }
+                : undefined;
+        }
+        if (!isRecord(entry)) {
+            return undefined;
+        }
+        const text = toNonEmptyString(entry.text);
+        if (!text) {
+            return undefined;
+        }
+        return {
+            created_at: toIsoString(entry.created_at) ?? fallbackCreatedAt,
+            author: toNonEmptyString(entry.author) ?? fallbackAuthor,
+            text,
+        };
+    })
+        .filter((entry) => entry !== undefined);
+    return entries.length > 0 ? entries : undefined;
+}
+function toLinkedFiles(value) {
+    if (!Array.isArray(value)) {
+        return undefined;
+    }
+    const entries = value
+        .map((entry) => {
+        if (typeof entry === "string") {
+            const filePath = toNonEmptyString(entry);
+            return filePath ? { path: filePath, scope: "project" } : undefined;
+        }
+        if (!isRecord(entry)) {
+            return undefined;
+        }
+        const filePath = toNonEmptyString(entry.path);
+        if (!filePath) {
+            return undefined;
+        }
+        return {
+            path: filePath,
+            scope: toLinkScope(entry.scope),
+            note: toNonEmptyString(entry.note),
+        };
+    })
+        .filter((entry) => entry !== undefined);
+    return entries.length > 0 ? entries : undefined;
+}
+function toLinkedDocs(value) {
+    if (!Array.isArray(value)) {
+        return undefined;
+    }
+    const entries = value
+        .map((entry) => {
+        if (typeof entry === "string") {
+            const docPath = toNonEmptyString(entry);
+            return docPath ? { path: docPath, scope: "project" } : undefined;
+        }
+        if (!isRecord(entry)) {
+            return undefined;
+        }
+        const docPath = toNonEmptyString(entry.path);
+        if (!docPath) {
+            return undefined;
+        }
+        return {
+            path: docPath,
+            scope: toLinkScope(entry.scope),
+            note: toNonEmptyString(entry.note),
+        };
+    })
+        .filter((entry) => entry !== undefined);
+    return entries.length > 0 ? entries : undefined;
+}
+function toLinkedTests(value) {
+    if (!Array.isArray(value)) {
+        return undefined;
+    }
+    const entries = [];
+    for (const entry of value) {
+        if (typeof entry === "string") {
+            const command = toNonEmptyString(entry);
+            if (command) {
+                entries.push({ command, scope: "project" });
+            }
+            continue;
+        }
+        if (!isRecord(entry)) {
+            continue;
+        }
+        const command = toNonEmptyString(entry.command);
+        const testPath = toNonEmptyString(entry.path);
+        if (!command && !testPath) {
+            continue;
+        }
+        const timeoutSeconds = toInteger(entry.timeout_seconds);
+        const pmContextMode = toNormalizedEnum(entry.pm_context_mode, ["schema", "tracker", "auto"]);
+        entries.push({
+            command,
+            path: testPath,
+            scope: toLinkScope(entry.scope),
+            timeout_seconds: timeoutSeconds !== undefined && timeoutSeconds > 0 ? timeoutSeconds : undefined,
+            pm_context_mode: pmContextMode,
+            env_set: toStringMap(entry.env_set),
+            env_clear: toStringList(entry.env_clear),
+            shared_host_safe: toBoolean(entry.shared_host_safe),
+            assert_stdout_contains: toStringList(entry.assert_stdout_contains),
+            assert_stdout_regex: toStringList(entry.assert_stdout_regex),
+            assert_stderr_contains: toStringList(entry.assert_stderr_contains),
+            assert_stderr_regex: toStringList(entry.assert_stderr_regex),
+            assert_stdout_min_lines: toInteger(entry.assert_stdout_min_lines),
+            assert_json_field_equals: toStringMap(entry.assert_json_field_equals),
+            assert_json_field_gte: toNumberMap(entry.assert_json_field_gte),
+            note: toNonEmptyString(entry.note),
+        });
+    }
+    return entries.length > 0 ? entries : undefined;
+}
 function toItemType(value, typeNames) {
     const normalized = toNonEmptyString(value)?.toLowerCase();
     const fallbackType = typeNames.find((entry) => entry.toLowerCase() === "task") ?? typeNames[0] ?? "Task";
@@ -224,13 +407,13 @@ async function importTodoCandidate(candidate, runtime) {
             regression: toBoolean(candidate.frontMatter.regression),
             customer_impact: toNonEmptyString(candidate.frontMatter.customer_impact),
             close_reason: toNonEmptyString(candidate.frontMatter.close_reason),
-            dependencies: Array.isArray(candidate.frontMatter.dependencies) ? candidate.frontMatter.dependencies : undefined,
-            comments: Array.isArray(candidate.frontMatter.comments) ? candidate.frontMatter.comments : undefined,
-            notes: Array.isArray(candidate.frontMatter.notes) ? candidate.frontMatter.notes : undefined,
-            learnings: Array.isArray(candidate.frontMatter.learnings) ? candidate.frontMatter.learnings : undefined,
-            files: Array.isArray(candidate.frontMatter.files) ? candidate.frontMatter.files : undefined,
-            docs: Array.isArray(candidate.frontMatter.docs) ? candidate.frontMatter.docs : undefined,
-            tests: Array.isArray(candidate.frontMatter.tests) ? candidate.frontMatter.tests : undefined,
+            dependencies: toDependencyEntries(candidate.frontMatter.dependencies, createdAt),
+            comments: toLogEntries(candidate.frontMatter.comments, createdAt, runtime.author),
+            notes: toLogEntries(candidate.frontMatter.notes, createdAt, runtime.author),
+            learnings: toLogEntries(candidate.frontMatter.learnings, createdAt, runtime.author),
+            files: toLinkedFiles(candidate.frontMatter.files),
+            docs: toLinkedDocs(candidate.frontMatter.docs),
+            tests: toLinkedTests(candidate.frontMatter.tests),
         }),
         body: candidate.body,
     });
