@@ -1,0 +1,12 @@
+# Normalize line endings to LF in the working tree on every platform.
+#
+# Without this, a `windows-latest` checkout converts tracked text files to CRLF
+# (git's default `core.autocrlf`), so gate scripts and specs that read real
+# files see `\r\n`. That breaks line-ending-sensitive parsing such as the
+# docs-skills gate's `extractFrontmatter`, whose `---\n` frontmatter delimiter
+# check fails against `---\r\n` and reports valid SKILL.md files as missing
+# frontmatter (pm-s5pe). `text=auto` lets git detect text vs binary, and
+# `eol=lf` pins the working-tree ending for text files so Windows runs match
+# Linux and macOS. The repo is authored on POSIX and currently has zero CRLF
+# files, so this introduces no renormalization churn.
+* text=auto eol=lf

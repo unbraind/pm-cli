@@ -521,7 +521,9 @@ describe("docs-skills-gate", () => {
       mockFsPromises({
         readdir: vi.fn(async () => [] as never) as never,
         readFile: vi.fn(async (p: string) => {
-          const s = String(p);
+          // Match either separator so the skill path resolves on windows-latest,
+          // where the gate reads native backslash absolute paths.
+          const s = String(p).replaceAll("\\", "/");
           const match = s.match(/\.agents\/skills\/([^/]+)\/SKILL\.md$/);
           if (match) {
             return validSkill.replace("__SKILLNAME__", match[1]);
@@ -559,7 +561,9 @@ describe("docs-skills-gate", () => {
       mockFsPromises({
         readdir: vi.fn(async () => [] as never) as never,
         readFile: vi.fn(async (p: string) => {
-          const s = String(p);
+          // Match either separator so the skill path resolves on windows-latest,
+          // where the gate reads native backslash absolute paths.
+          const s = String(p).replaceAll("\\", "/");
           const match = s.match(/\.agents\/skills\/([^/]+)\/SKILL\.md$/);
           if (match) {
             return validSkill.replace("__SKILLNAME__", match[1]);
