@@ -242,7 +242,9 @@ describe("docs-skills-gate", () => {
       mockUtils();
       mockFsPromises({
         readdir: vi.fn(async (dir: string) => {
-          const s = String(dir);
+          // Normalize separators so the directory keys match on windows-latest,
+          // where the gate passes native backslash absolute paths to readdir.
+          const s = String(dir).replaceAll("\\", "/");
           if (s.endsWith("/docs")) {
             return [
               { name: "sub", isDirectory: () => true, isFile: () => false },

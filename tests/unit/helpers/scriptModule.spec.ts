@@ -1,3 +1,4 @@
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { createScriptHarness } from "../../helpers/scriptModule";
 
@@ -37,5 +38,12 @@ describe("scriptModule harness imports", () => {
     await expect(harness.importModule("scripts/release/nested/foo.mjs")).rejects.toThrow(
       /unsupported nested script path/,
     );
+  });
+
+  it("mockPosixPath forces a subsequently-imported node:path to its POSIX implementation", async () => {
+    harness.mockPosixPath();
+    const mocked = await import("node:path");
+    expect(mocked.default).toBe(path.posix);
+    expect(mocked.sep).toBe("/");
   });
 });

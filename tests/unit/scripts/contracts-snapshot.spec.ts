@@ -1,3 +1,4 @@
+import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import { createScriptHarness } from "../../helpers/scriptModule";
@@ -115,7 +116,7 @@ describe("scripts/contracts-snapshot: check/update flows", () => {
     });
     expect(String(result.failure ?? "")).toContain("EXIT:0");
     expect(result.writeFile).toHaveBeenCalledWith(
-      expect.stringContaining("tests/fixtures/contracts/full.json"),
+      expect.stringContaining(path.join("tests", "fixtures", "contracts", "full.json")),
       '{\n  "a": 1,\n  "z": 9\n}\n',
       "utf8",
     );

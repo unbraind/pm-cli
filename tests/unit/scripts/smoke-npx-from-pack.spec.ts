@@ -7,6 +7,16 @@ const harness = createScriptHarness(["../../../scripts/smoke-cleanup.mjs"]);
 const SCRIPT = "scripts/smoke-npx-from-pack.mjs";
 const SCRIPT_ABS = path.join(process.cwd(), "scripts/smoke-npx-from-pack.mjs");
 
+/**
+ * Strip the win32 `.cmd` suffix the script's `resolveCommand` appends to
+ * `npm`/`npx` on `process.platform === "win32"`, so these `execFileSync` mocks
+ * match the spawned command on every host. Without this, the default `npm`/
+ * `npx` keys never match `npm.cmd`/`npx.cmd` on `windows-latest`, the pack step
+ * returns empty, and every case fails with "npm pack did not produce a tarball
+ * name". The dedicated win32 test below keys on the `.cmd` names directly.
+ */
+const baseCommand = (command: string): string => command.replace(/\.cmd$/, "");
+
 interface ExecResponses {
   packOutput?: string;
   /** Map a logical pm sub-command to its stdout (JSON string or text). */
@@ -37,26 +47,27 @@ function buildExecFileSync(responses: ExecResponses) {
   let npxVersionFailedOnce = false;
   const pm = responses.pmResponse ?? ((c: string) => defaultPm(c));
   return vi.fn((command: string, args: string[]) => {
-    if (command === "npm" && args[0] === "pack") {
+    const cmd = baseCommand(command);
+    if (cmd === "npm" && args[0] === "pack") {
       return responses.packOutput ?? "pm-cli-2026.6.14.tgz\n";
     }
-    if (command === "npm" && args[0] === "exec") {
+    if (cmd === "npm" && args[0] === "exec") {
       // npm-exec fallback for runPackedPm.
       const idx = args.indexOf("pm");
       const pmArgs = idx >= 0 ? args.slice(idx + 1) : [];
       return pm(pmArgs[0], pmArgs);
     }
-    if (command === "npx" && String(args[1] ?? "").startsWith("file:")) {
+    if (cmd === "npx" && String(args[1] ?? "").startsWith("file:")) {
       if (responses.directResponse) return responses.directResponse(args);
       if (args.includes("--version")) return "2026.6.14\n";
       if (args.includes("--help")) return "Usage: pm\n";
     }
-    if (command === "npx" && args.includes("--package") && args.includes("pm-cli")) {
+    if (cmd === "npx" && args.includes("--package") && args.includes("pm-cli")) {
       if (responses.aliasResponse) return responses.aliasResponse(args);
       if (args.includes("--version")) return "2026.6.14\n";
       if (args.includes("--help")) return "Usage: pm-cli\n";
     }
-    if (command === "npx" && args.includes("--package") && args.includes("pm")) {
+    if (cmd === "npx" && args.includes("--package") && args.includes("pm")) {
       const pmArgs = args.slice(args.indexOf("pm") + 1);
       const commandName = pmArgs[0];
       if (commandName === "--version" && responses.npxVersionFails && !npxVersionFailedOnce) {
@@ -140,8 +151,9 @@ describe("smoke-npx-from-pack", () => {
     let initFellBack = false;
     vi.doMock("node:child_process", () => ({
       execFileSync: vi.fn((command: string, args: string[]) => {
-        if (command === "npm" && args[0] === "pack") return "pm-cli-2026.6.14.tgz\n";
-        if (command === "npm" && args[0] === "exec") {
+        const cmd = baseCommand(command);
+        if (cmd === "npm" && args[0] === "pack") return "pm-cli-2026.6.14.tgz\n";
+        if (cmd === "npm" && args[0] === "exec") {
           const idx = args.indexOf("pm");
           const pmArgs = idx >= 0 ? args.slice(idx + 1) : [];
           if (pmArgs[0] === "init") {
@@ -150,15 +162,15 @@ describe("smoke-npx-from-pack", () => {
           }
           return defaultPm(pmArgs[0]);
         }
-        if (command === "npx" && String(args[1] ?? "").startsWith("file:")) {
+        if (cmd === "npx" && String(args[1] ?? "").startsWith("file:")) {
           if (args.includes("--version")) return "2026.6.14\n";
           if (args.includes("--help")) return "Usage: pm\n";
         }
-        if (command === "npx" && args.includes("--package") && args.includes("pm-cli")) {
+        if (cmd === "npx" && args.includes("--package") && args.includes("pm-cli")) {
           if (args.includes("--version")) return "2026.6.14\n";
           if (args.includes("--help")) return "Usage: pm-cli\n";
         }
-        if (command === "npx" && args.includes("--package") && args.includes("pm")) {
+        if (cmd === "npx" && args.includes("--package") && args.includes("pm")) {
           const pmArgs = args.slice(args.indexOf("pm") + 1);
           if (pmArgs[0] === "init") {
             // Force the npx call to fail so the fallback (empty) path is taken.
@@ -286,9 +298,10 @@ describe("smoke-npx-from-pack", () => {
     mockFs();
     vi.doMock("node:child_process", () => ({
       execFileSync: vi.fn((command: string, args: string[]) => {
-        if (command === "npm" && args[0] === "pack") return "pm-cli-2026.6.14.tgz\n";
-        if (command === "npm" && args[0] === "exec") return ""; // fallback empty
-        if (command === "npx" && args.includes("--package") && args.includes("pm")) {
+        const cmd = baseCommand(command);
+        if (cmd === "npm" && args[0] === "pack") return "pm-cli-2026.6.14.tgz\n";
+        if (cmd === "npm" && args[0] === "exec") return ""; // fallback empty
+        if (cmd === "npx" && args.includes("--package") && args.includes("pm")) {
           // string (non-Error) throwable -> readCommandError returns String(error)
           throw "raw-npx-failure-string";
         }
@@ -305,9 +318,10 @@ describe("smoke-npx-from-pack", () => {
     mockFs();
     vi.doMock("node:child_process", () => ({
       execFileSync: vi.fn((command: string, args: string[]) => {
-        if (command === "npm" && args[0] === "pack") return "pm-cli-2026.6.14.tgz\n";
-        if (command === "npm" && args[0] === "exec") return ""; // fallback empty
-        if (command === "npx" && args.includes("--package") && args.includes("pm")) {
+        const cmd = baseCommand(command);
+        if (cmd === "npm" && args[0] === "pack") return "pm-cli-2026.6.14.tgz\n";
+        if (cmd === "npm" && args[0] === "exec") return ""; // fallback empty
+        if (cmd === "npx" && args.includes("--package") && args.includes("pm")) {
           const error = new Error("npx boom") as Error & { stderr?: string; stdout?: string };
           error.stderr = "npx stderr line"; // `"stderr" in error` truthy value branch
           error.stdout = "npx stdout detail"; // `"stdout" in error` true, value truthy
@@ -326,9 +340,10 @@ describe("smoke-npx-from-pack", () => {
     mockFs();
     vi.doMock("node:child_process", () => ({
       execFileSync: vi.fn((command: string, args: string[]) => {
-        if (command === "npm" && args[0] === "pack") return "pm-cli-2026.6.14.tgz\n";
-        if (command === "npm" && args[0] === "exec") return ""; // fallback empty
-        if (command === "npx" && args.includes("--package") && args.includes("pm")) {
+        const cmd = baseCommand(command);
+        if (cmd === "npm" && args[0] === "pack") return "pm-cli-2026.6.14.tgz\n";
+        if (cmd === "npm" && args[0] === "exec") return ""; // fallback empty
+        if (cmd === "npx" && args.includes("--package") && args.includes("pm")) {
           const error = new Error("npx boom blank") as Error & { stderr?: string; stdout?: string };
           error.stderr = undefined; // key present, nullish -> stderr `?? ""`
           error.stdout = undefined; // key present, nullish -> stdout `?? ""`
