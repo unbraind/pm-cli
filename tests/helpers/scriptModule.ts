@@ -1,8 +1,33 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { afterEach, vi } from "vitest";
+
+/**
+ * Repo root resolved from this helper's own module URL rather than
+ * `process.cwd()`, so script imports stay correct even if a test mutates the
+ * working directory.
+ */
+const HELPER_DIRECTORY = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Convert a repo-root-relative module path (e.g. `scripts/finalize-build.mjs`)
+ * into a specifier relative to this helper module, using POSIX separators.
+ *
+ * Vitest reliably transforms modules referenced by relative specifiers (it
+ * strips the leading `#!` shebang that repo scripts carry). Absolute `file://`
+ * URLs with a drive letter are NOT intercepted by Vitest's transform on
+ * Windows, so the raw shebang reaches the module compiler and throws
+ * `SyntaxError: Invalid or unexpected token`. Routing every script import
+ * through a relative specifier keeps the Windows nightly green; see the same
+ * Windows-safety rationale in {@link ../helpers/sourceModule.ts}.
+ */
+function toRelativeScriptSpecifier(relativePath: string): string {
+  const absolutePath = path.resolve(HELPER_DIRECTORY, "..", "..", relativePath);
+  const specifier = path.relative(HELPER_DIRECTORY, absolutePath).split(path.sep).join("/");
+  return specifier.startsWith(".") ? specifier : `./${specifier}`;
+}
 
 /**
  * Shared harness for unit-testing repository scripts (scripts/**, plugins/**,
@@ -86,12 +111,10 @@ export function createScriptHarness(unmockSpecifiers: readonly string[] = []): S
 
   return {
     async importModule<T>(relativePath: string, queryPrefix = "v"): Promise<T> {
-      const absolutePath = path.join(process.cwd(), relativePath);
-      return (await import(`${pathToFileURL(absolutePath).href}?${queryPrefix}=${cacheBustToken()}`)) as T;
+      return (await import(`${toRelativeScriptSpecifier(relativePath)}?${queryPrefix}=${cacheBustToken()}`)) as T;
     },
     async importModuleStable<T>(relativePath: string): Promise<T> {
-      const absolutePath = path.join(process.cwd(), relativePath);
-      return (await import(pathToFileURL(absolutePath).href)) as T;
+      return (await import(toRelativeScriptSpecifier(relativePath))) as T;
     },
     async createTempRoot(prefix: string): Promise<string> {
       const root = await mkdtemp(path.join(os.tmpdir(), prefix));
