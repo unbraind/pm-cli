@@ -1,10 +1,20 @@
 # Changelog
 
+## 2026.6.20 - 2026-06-20
+
+### Fixed
+
+- Relax changelog title escaping for readable Markdown ([pmc-8t9f](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-8t9f.toon))
+
+### Security
+
+- Refresh pm-changelog dev dependency lock for clean audit ([pmc-licw](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/chores/pmc-licw.toon))
+
 ## 2026.6.13-1 - 2026-06-13
 
 ### Fixed
 
-- Prepend merge promotes a stale Unreleased section into the released version instead of duplicating it \(GH \#47\) ([pmc-8ssd](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-8ssd.toon))
+- Prepend merge promotes a stale Unreleased section into the released version instead of duplicating it (GH \#47) ([pmc-8ssd](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-8ssd.toon))
 
 ## 2026.6.8 - 2026-06-08
 
@@ -32,9 +42,9 @@
 
 ### Fixed
 
-- suggest-semver computed over all items not visible release sections \(GH \#28\) ([pmc-isyx](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-isyx.toon))
-- body-preview silently empty for real pm items: body not loaded \(GH \#27\) ([pmc-ztt5](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-ztt5.toon))
-- Breaking-change detector substring-matches non-breaking as breaking \(GH \#26\) ([pmc-18yz](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-18yz.toon))
+- suggest-semver computed over all items not visible release sections (GH \#28) ([pmc-isyx](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-isyx.toon))
+- body-preview silently empty for real pm items: body not loaded (GH \#27) ([pmc-ztt5](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-ztt5.toon))
+- Breaking-change detector substring-matches non-breaking as breaking (GH \#26) ([pmc-18yz](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-18yz.toon))
 
 ## 2026.6.5 - 2026-06-05
 
@@ -68,23 +78,23 @@
 
 ### Fixed
 
-- changelog generate returned {error} \(exit 0\) on bad flags; plain throw on --check ([pmc-qw3g](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-qw3g.toon))
+- changelog generate returned {error} (exit 0) on bad flags; plain throw on --check ([pmc-qw3g](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-qw3g.toon))
 
 ## 2026.5.29-2 - 2026-05-29
 
 ### Added
 
-- Hands-on functional test pass 2026-05-29 \(real data\) ([pmc-7rd8](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/features/pmc-7rd8.toon))
+- Hands-on functional test pass 2026-05-29 (real data) ([pmc-7rd8](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/features/pmc-7rd8.toon))
 
 ### Fixed
 
-- Committed CHANGELOG.md stale vs current history \(orphaned release tags\) ([pmc-e3sy](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-e3sy.toon))
+- Committed CHANGELOG.md stale vs current history (orphaned release tags) ([pmc-e3sy](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-e3sy.toon))
 
 ## 2026.5.29-1 - 2026-05-29
 
 ### Fixed
 
-- Classifier misroutes Issues with CLI command-name titles \(update/change\) to Changed not Fixed ([pmc-874d](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-874d.toon))
+- Classifier misroutes Issues with CLI command-name titles (update/change) to Changed not Fixed ([pmc-874d](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-874d.toon))
 
 ## 2026.5.27-1 - 2026-05-27
 
@@ -97,7 +107,7 @@
 ### Other
 
 - Bump @unbrained/pm-cli SDK to \>=2026.5.24 ([pmc-cfhf](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/tasks/pmc-cfhf.toon))
-- Align CI+release workflows with peer pm-\* packages \(Node 22 + Bun\) ([pmc-078v](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/tasks/pmc-078v.toon))
+- Align CI+release workflows with peer pm-\* packages (Node 22 + Bun) ([pmc-078v](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/tasks/pmc-078v.toon))
 
 ## 2026.5.26 - 2026-05-25
 
@@ -173,14 +183,14 @@
 ### Fixed
 
 - Expose item-url-base through pm changelog extension command ([pmc-f4yg](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-f4yg.toon))
-- Fix stale file path references in pm items \(mjs → ts, dist → dist/cli.js\) ([pmc-gn92](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/chores/pmc-gn92.toon))
+- Fix stale file path references in pm items (mjs → ts, dist → dist/cli.js) ([pmc-gn92](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/chores/pmc-gn92.toon))
 - Fix large tracker generation buffer limit ([pmc-2lzr](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-2lzr.toon))
 
 ## 2026.5.24-6 - 2026-05-24
 
 ### Fixed
 
-- Changelog sections out of version order when items have different updated\_at times ([pmc-36lr](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-36lr.toon))
+- Changelog sections out of version order when items have different updated_at times ([pmc-36lr](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-36lr.toon))
 
 ## 2026.5.24-5 - 2026-05-24
 
