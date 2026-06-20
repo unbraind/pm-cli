@@ -68,6 +68,7 @@ Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 - `activateExtensionForTest`
 - `assertPackageManifest`
 - `assertRegisteredCommandContract`
+- `assertRegisteredFlags`
 - `assertRegisteredCommandOverride`
 - `assertRegisteredParserOverride`
 - `assertRegisteredPreflightOverride`
@@ -179,6 +180,29 @@ assertPackageManifest(manifest, {
     assets: ["assets/workflow-diagram.png"],
     prompts: ["prompts/triage.md"],
   },
+});
+```
+
+Package tests can also assert extension registrations without importing private
+loader internals. Use `activateExtensionForTest` plus the targeted assertion for
+the surface your package owns:
+
+```ts
+import {
+  activateExtensionForTest,
+  assertRegisteredCommandContract,
+  assertRegisteredFlags,
+} from "@unbrained/pm-cli/sdk/testing";
+
+const activation = await activateExtensionForTest(extensionModule);
+
+assertRegisteredCommandContract(activation.registrations, {
+  command: "incident triage",
+  flags: ["--severity"],
+});
+assertRegisteredFlags(activation.registrations, {
+  targetCommand: "list",
+  flags: ["--incident-filter"],
 });
 ```
 

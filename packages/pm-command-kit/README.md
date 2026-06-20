@@ -70,3 +70,7 @@ Key conventions for authors:
 - `activation.commands` in `manifest.json` lists both package-owned commands and
   existing commands that receive injected flags so the host can lazily activate the
   extension before option validation.
+- Unit tests can validate this package's three command-facing registrations with
+  public SDK helpers: `assertRegisteredCommandContract(...)` for the owned command,
+  `assertRegisteredParserOverride(...)` for parser rewrites, and
+  `assertRegisteredFlags(...)` for the injected `pm list --kit-note` flag.

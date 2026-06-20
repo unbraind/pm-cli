@@ -19,6 +19,7 @@ import {
   assertRegisteredCommandContract as assertRegisteredCommandContractFromBarrel,
   assertRegisteredCommandOverride as assertRegisteredCommandOverrideFromBarrel,
   assertRegisteredExporter as assertRegisteredExporterFromBarrel,
+  assertRegisteredFlags as assertRegisteredFlagsFromBarrel,
   assertRegisteredHook as assertRegisteredHookFromBarrel,
   assertRegisteredImporter as assertRegisteredImporterFromBarrel,
   assertRegisteredItemField as assertRegisteredItemFieldFromBarrel,
@@ -66,6 +67,7 @@ import {
   assertRegisteredCommandContract,
   assertRegisteredCommandOverride,
   assertRegisteredExporter,
+  assertRegisteredFlags,
   assertRegisteredHook,
   assertRegisteredImporter,
   assertRegisteredItemField,
@@ -227,6 +229,18 @@ function createRegistrationRegistry(): ExtensionRegistrationRegistry {
         name: "hello-ext",
         target_command: "hello world",
         flags: [{ long: "--shout" }, { short: "-n", long: "--name", value_name: "value" }],
+      },
+      {
+        layer: "global",
+        name: "second-hello-ext",
+        target_command: "hello world",
+        flags: [{ long: "--format", value_name: "value" }],
+      },
+      {
+        layer: "project",
+        name: "list-ext",
+        target_command: "list",
+        flags: [{ long: "--list-note", value_name: "value" }],
       },
     ],
     item_fields: [
@@ -463,6 +477,61 @@ describe("public sdk entrypoint", () => {
         }),
       ).toThrow("Expected package manifest pm.docs to include README.md; available: (none)");
     });
+  });
+
+  it("asserts registerFlags registrations for package-author tests", () => {
+    const registrations = createRegistrationRegistry();
+
+    const fromBarrel = assertRegisteredFlagsFromBarrel(registrations, {
+      targetCommand: " hello   world ",
+      extensionName: "hello-ext",
+      flags: ["--shout", "-n", "--name"],
+    });
+    expect(fromBarrel.target_command).toBe("hello world");
+    expect(fromBarrel.flags).toHaveLength(2);
+
+    expect(
+      assertRegisteredFlags(registrations, {
+        targetCommand: "list",
+      }),
+    ).toBe(registrations.flags[2]);
+    expect(() =>
+      assertRegisteredFlags(registrations, {
+        targetCommand: "hello world",
+      }),
+    ).toThrow(
+      'Expected flags for target command "hello world" matched multiple extensions: hello-ext, second-hello-ext. Specify extensionName to choose one registration.',
+    );
+
+    expect(() =>
+      assertRegisteredFlags(registrations, {
+        targetCommand: "",
+      }),
+    ).toThrow("Expected target command name must be a non-empty string");
+    expect(() =>
+      assertRegisteredFlags(registrations, {
+        targetCommand: "missing command",
+      }),
+    ).toThrow(
+      'Expected flags for target command "missing command" to be registered. Available flag target commands: hello world, list; matching extensions: (none)',
+    );
+    expect(() =>
+      assertRegisteredFlags(registrations, {
+        targetCommand: "hello world",
+        extensionName: "missing-ext",
+      }),
+    ).toThrow(
+      'Expected flags for target command "hello world" from extension "missing-ext" to be registered. Available flag target commands: hello world, list; matching extensions: hello-ext, second-hello-ext',
+    );
+    expect(() =>
+      assertRegisteredFlags(registrations, {
+        targetCommand: "hello world",
+        extensionName: "hello-ext",
+        flags: ["--missing"],
+      }),
+    ).toThrow(
+      'Expected flags for target command "hello world" to include --missing; missing --missing; available --name, --shout, -n',
+    );
   });
 
   it("exposes stable pm tool contract constants through the sdk barrel", () => {
@@ -1059,7 +1128,7 @@ describe("sdk testing helpers", () => {
       command: "hello world",
       arguments: ["target"],
     });
-    expect(resultWithoutFlagExpectations.flags).toHaveLength(2);
+    expect(resultWithoutFlagExpectations.flags).toHaveLength(3);
 
     const registryWithBlankFlagLabels = createRegistrationRegistry();
     registryWithBlankFlagLabels.flags[0]!.flags.push({ long: " " }, { short: " " });
@@ -1068,7 +1137,7 @@ describe("sdk testing helpers", () => {
         command: "hello world",
         flags: ["--shout"],
       }).flags,
-    ).toHaveLength(4);
+    ).toHaveLength(5);
 
     const registryWithoutArguments = createRegistrationRegistry();
     delete registryWithoutArguments.commands[0]!.arguments;
