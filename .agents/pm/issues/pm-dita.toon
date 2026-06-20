@@ -6,11 +6,12 @@ status: in_progress
 priority: 2
 tags[5]: "area:ci","area:tests",cross-platform,regression,windows
 created_at: "2026-06-20T09:32:56.085Z"
-updated_at: "2026-06-20T09:55:48.345Z"
+updated_at: "2026-06-20T10:21:43.591Z"
 author: claude-code-agent
 parent: pm-u9d0
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-i84i,related,"2026-06-20T09:34:08.082Z",claude-code-agent,null
+  pm-s5pe,related,"2026-06-20T10:21:43.570Z",claude-code-agent,null
 comments[1]{created_at,author,text}:
   "2026-06-20T09:55:48.345Z",claude-code-agent,"Root-cause + fix iteration (verified against the real per-PR windows-latest job, not just nightly):\n\n1. The differentiator is NOT absolute-vs-relative specifier — it is whether Vite TRANSFORMS the module. A fully dynamic `import()` (specifier begins with `${...}`) is opaque to Vite, so on Windows the `.mjs` is loaded untransformed and its `#!/usr/bin/env node` shebang reaches the module compiler → `SyntaxError: Invalid or unexpected token` (empty stack). On Linux the runtime resolver happens to transform it, which is why it was green there.\n\n2. First attempt (relative `file://`-free specifier computed from the helper dir) STILL failed the windows-regression job — still fully dynamic, still untransformed.\n\n3. Working fix: Vite's `dynamic-import-vars` plugin only rewrites an `import()` when the static parts include a directory prefix AND a file extension, and the variable may span only ONE path segment. So `../../scripts/${name}.mjs` works; `../../${path}` (no static ext) is rejected ('file extension must be in the static part'), and `../../scripts/${'release/utils'}.mjs` is rejected ('variables only represent file names one level deep') — hence the explicit `scripts/release/${name}.mjs` branch for the single nested dir.\n\n4. The per-call cache-bust query had to be dropped (it broke the glob-map lookup: 'Unknown variable dynamic import: …?v=n1'); `vi.resetModules()` in the harness afterEach already provides per-test freshness and keeps relative `vi.doMock` targets matching.\n\n5. Hardened the per-PR `windows-regression` CI job to run all of `tests/unit/scripts/` so this class is caught per-PR (it is what surfaced both the original miss and my first failed attempt within minutes instead of waiting for nightly)."
 files[3]{path,scope,note}:

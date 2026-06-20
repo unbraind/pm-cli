@@ -174,7 +174,7 @@ describe("GitHub workflow contract", () => {
       "run: pnpm install --frozen-lockfile",
       "run: pnpm build",
       "PM_RUN_TESTS_SKIP_BUILD: \"1\"",
-      "run: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/scripts/",
+      "run: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/finalize-build.spec.ts tests/unit/scripts/dogfood-package-first.spec.ts tests/unit/scripts/run-tests.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts tests/unit/scripts/release/utils.spec.ts",
     ]);
     expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(2);
     expect(ciWorkflow).not.toMatch(/^\s*run: pnpm test\s*$/m);
