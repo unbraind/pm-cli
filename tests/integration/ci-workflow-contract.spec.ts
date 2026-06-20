@@ -66,6 +66,7 @@ describe("GitHub workflow contract", () => {
     const ciPath = path.resolve(repoRoot, ".github/workflows/ci.yml");
     const ciWorkflow = normalizeWorkflow(await readFile(ciPath, "utf8"));
     const runtimeSmokeJob = extractWorkflowJob(ciWorkflow, "build-test");
+    const windowsRegressionJob = extractWorkflowJob(ciWorkflow, "windows-regression");
 
     expectContainsAll(ciWorkflow, [
       "on:",
@@ -85,9 +86,11 @@ describe("GitHub workflow contract", () => {
       "build-foundation:",
       "build-test:",
       "gates:",
+      "windows-regression:",
       "name: Build foundation (Ubuntu, Node 20)",
       "name: Runtime smoke (${{ matrix.os }}, Node ${{ matrix.node }})",
       "name: Gates (${{ matrix.gate }})",
+      "name: Windows regression (Node 20)",
       "needs: build-foundation",
       "gate:",
       "- coverage",
@@ -159,7 +162,21 @@ describe("GitHub workflow contract", () => {
       "pnpm install",
       "pnpm test",
     ]);
-    expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(1);
+    expectContainsAll(windowsRegressionJob, [
+      "name: Windows regression (Node 20)",
+      "needs: build-foundation",
+      "runs-on: windows-latest",
+      "node-version: 20",
+      PINNED_ACTIONS.checkout,
+      PINNED_ACTIONS.pnpmSetup,
+      PINNED_ACTIONS.setupNode,
+      PINNED_ACTIONS.actionsCache,
+      "run: pnpm install --frozen-lockfile",
+      "run: pnpm build",
+      "PM_RUN_TESTS_SKIP_BUILD: \"1\"",
+      "run: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts",
+    ]);
+    expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(2);
     expect(ciWorkflow).not.toMatch(/^\s*run: pnpm test\s*$/m);
     expect(ciWorkflow).not.toContain("Sandboxed PM regression");
 

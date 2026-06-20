@@ -2,9 +2,10 @@ import fs from "node:fs";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { Command } from "commander";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type * as NodeModule from "node:module";
+import type * as CliEntrypointModule from "../../../src/cli.js";
 
 // `node:module.enableCompileCache` is a Node 22+ API. The CI coverage gate runs on
 // Node 20, where it is absent and src/cli.ts's compile-cache startup block
@@ -12,7 +13,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // the real API is missing so the block is exercised version-agnostically; on Node 22+
 // the real implementation is preserved unchanged. Only src/cli.ts reads node:module.
 vi.mock("node:module", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("node:module")>();
+  const actual = await importOriginal<typeof NodeModule>();
   const enableCompileCache =
     typeof (actual as { enableCompileCache?: unknown }).enableCompileCache === "function"
       ? actual.enableCompileCache
@@ -108,6 +109,7 @@ import {
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { resolveItemTypeRegistry } from "../../../src/core/item/type-registry.js";
 import { writeTestExtension } from "../../helpers/extensions.js";
+import { importFreshSourceModule } from "../../helpers/sourceModule.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 interface SourceCliRunResult {
@@ -179,9 +181,10 @@ async function runSourceCli(args: string[], env: NodeJS.ProcessEnv): Promise<Sou
       return true;
     }) as typeof process.stderr.write;
 
-    const mainUrl = pathToFileURL(path.resolve("src/cli/main.ts"));
-    mainUrl.search = `?sourceCli=${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    const loaded = (await import(mainUrl.href)) as { runPmCli: (argv: string[]) => Promise<void> };
+    const loaded = await importFreshSourceModule<{ runPmCli: (argv: string[]) => Promise<void> }>(
+      "cli/main.js",
+      "sourceCli",
+    );
     await loaded.runPmCli(args);
     return {
       code: process.exitCode ?? EXIT_CODE.SUCCESS,
@@ -695,8 +698,6 @@ describe("CLI bootstrap entrypoints", () => {
     const previousDisableCompileCache = process.env.PM_CLI_DISABLE_COMPILE_CACHE;
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-cli-entry-"));
     const nested = path.join(tempRoot, "nested", "child.js");
-    const cliUrl = pathToFileURL(path.resolve("src/cli.ts"));
-    cliUrl.search = `?entryFastVersion=${Date.now()}`;
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
     try {
@@ -708,7 +709,7 @@ describe("CLI bootstrap entrypoints", () => {
       });
 
       process.argv = ["node", "pm", "--no-extensions", "--version"];
-      const cliModule = await import(cliUrl.href);
+      const cliModule = await importFreshSourceModule<typeof CliEntrypointModule>("cli.js", "entryFastVersion");
 
       expect(logSpy.mock.calls.map((call) => String(call[0])).join("").trim()).toMatch(/^\d{4}\.\d+\.\d+$/);
       expect(cliModule._testOnly.findPackageJson(nested)).toBe(path.join(tempRoot, "package.json"));
@@ -781,6 +782,31 @@ describe("CLI bootstrap entrypoints", () => {
     });
   });
 
+  it("covers CLI main package-root environment guard branches", async () => {
+    const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
+    try {
+      process.env.PM_CLI_PACKAGE_ROOT = " ";
+      await importFreshSourceModule<{ runPmCli: (argv: string[]) => Promise<void> }>(
+        "cli/main.js",
+        "packageRootBlank",
+      );
+      expect(process.env.PM_CLI_PACKAGE_ROOT?.trim()).not.toBe("");
+
+      process.env.PM_CLI_PACKAGE_ROOT = "/tmp/existing-pm-package-root";
+      await importFreshSourceModule<{ runPmCli: (argv: string[]) => Promise<void> }>(
+        "cli/main.js",
+        "packageRootPresent",
+      );
+      expect(process.env.PM_CLI_PACKAGE_ROOT).toBe("/tmp/existing-pm-package-root");
+    } finally {
+      if (previousPackageRoot === undefined) {
+        delete process.env.PM_CLI_PACKAGE_ROOT;
+      } else {
+        process.env.PM_CLI_PACKAGE_ROOT = previousPackageRoot;
+      }
+    }
+  });
+
   it("falls through the direct cli.ts entrypoint when fast-version arguments do not match", async () => {
     await withTempPmPath(async (context) => {
       const previousArgv = process.argv;
@@ -800,9 +826,7 @@ describe("CLI bootstrap entrypoints", () => {
         }
         process.argv = ["node", path.resolve("src/cli.ts"), "--no-extensions", "--json", "--version"];
         process.exitCode = undefined;
-        const cliUrl = pathToFileURL(path.resolve("src/cli.ts"));
-        cliUrl.search = `?entryFallthrough=${Date.now()}-${Math.random().toString(16).slice(2)}`;
-        await import(cliUrl.href);
+        await importFreshSourceModule<typeof CliEntrypointModule>("cli.js", "entryFallthrough");
 
         expect(process.exitCode ?? EXIT_CODE.SUCCESS).toBe(EXIT_CODE.SUCCESS);
         expect(stdoutSpy.mock.calls.map((call) => String(call[0])).join("").trim()).toMatch(/^\d{4}\.\d+\.\d+$/);
