@@ -789,7 +789,7 @@ function buildSelectionHints(input) {
     return hints;
 }
 function formatItem(item, options) {
-    const title = escapeMarkdown(toSingleLine(item.title));
+    const title = escapeItemTitleMarkdown(toSingleLine(item.title));
     const id = formatItemId(item, options);
     const metadata = formatItemMetadata(item, options);
     const link = options.includeLinks ? formatLink(item.url) : "";
@@ -1143,6 +1143,16 @@ function itemTimestamp(item) {
 }
 function escapeMarkdown(value) {
     return value.replace(/([\\`*_[\]()#|>])/g, "\\$1");
+}
+function escapeItemTitleMarkdown(value) {
+    const escaped = value.replace(/([\\`*[\]#|>])/g, "\\$1");
+    return escaped.replace(/_/g, (underscore, index) => {
+        const previous = escaped[index - 1] ?? "";
+        const next = escaped[index + 1] ?? "";
+        return /[A-Za-z0-9]/.test(previous) && /[A-Za-z0-9]/.test(next)
+            ? underscore
+            : "\\_";
+    });
 }
 function toSingleLine(value) {
     return value.trim().replace(/\s+/g, " ");
