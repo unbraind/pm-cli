@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",context-management,query
 created_at: "2026-06-20T00:12:19.204Z"
-updated_at: "2026-06-20T00:31:40.721Z"
+updated_at: "2026-06-20T00:50:27.593Z"
 author: codex-sdk-cli-continuation
 parent: pm-mpbb
 resolution: Added a shared all-status sentinel for list/search filters and documented it across CLI/MCP/contracts/docs.
@@ -15,10 +15,11 @@ actual_result: Standalone all now resolves to no status set while preserving exp
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-ec4s,related,"2026-06-20T00:12:59.537Z",null,null
   pm-j2ig,related,"2026-06-20T00:12:59.537Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-06-20T00:12:27.661Z",codex-sdk-cli-continuation,"Duplicate-check evidence: pm list --parent pm-mpbb --status open showed only pm-srex and pm-e7dn; pm search 'status all duplicate discovery' across default/open and closed results found historical closed lineage pm-j2ig and pm-ec4s but no active item for the current --status all rejection. Live reproduction: pm search '<query>' --status all exits with Invalid --status value all."
   "2026-06-20T00:30:47.457Z",codex-sdk-cli-continuation,"Evidence: implemented standalone --status all as explicit no-op lifecycle filter for search and list. Search now returns all lifecycle buckets and echoes filters.status=all; list now disables active-only terminal exclusion when --status all is supplied and echoes filters.status=all. Focused tests passed (149 tests); full coverage passed 4699 tests with Statements/Branches/Functions/Lines all 100%; contracts:check and quality:static passed; manual temp-dir smoke with sandboxed PM_PATH/PM_GLOBAL_PATH passed for init/create/close/search/list."
   "2026-06-20T00:30:54.970Z",codex-sdk-cli-continuation,"GitHub/security/dependency evidence: gh pr list and gh issue list returned no open items; Dependabot, secret-scanning, and security-advisory API queries returned no open alerts; pnpm audit found no vulnerabilities; pnpm security:scan found no credential-like secrets in tracked files; pm-changelog latest is 2026.6.14 and changelog:pm:check passed before final closeout. Dependency note: commander@15 requires Node >=22.12.0 while this repo declares Node >=20 and CI/Docs/Auto Release still run Node 20, so commander remains on 14.0.3."
+  "2026-06-20T00:50:27.593Z",codex-sdk-cli-continuation,"Review follow-up evidence: addressed CodeRabbit feedback by avoiding redundant re-tokenization inside parseStatusFilterCsv and normalizing pm search filter echoes so status=ALL/whitespace serializes as filters.status=all like list. Added compact search regression for the normalized all echo. Verification passed: focused status/search/list tests (149), full coverage 4699 tests with 100/100/100/100."
 files[9]{path,scope,note}:
   CHANGELOG.md,project,Package-owned changelog regenerated after closing pm-i02t.
   src/cli/commands/list.ts,project,List --status all disables active-only terminal exclusion and echoes all.

@@ -126,8 +126,9 @@ export function parseStatusFilterCsv(
   if (tokens.length === 0) {
     return undefined;
   }
-  if (tokens.some((token) => token.trim().toLowerCase() === STATUS_ALL_SENTINEL)) {
-    if (isStatusAllFilterInput(raw)) {
+  const allTokenCount = tokens.filter((token) => token.trim().toLowerCase() === STATUS_ALL_SENTINEL).length;
+  if (allTokenCount > 0) {
+    if (tokens.length === 1) {
       return undefined;
     }
     throw new PmCliError(

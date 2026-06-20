@@ -48,7 +48,7 @@ import { pathExists } from "../../core/fs/fs-utils.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
 import { toItemRecord } from "../../core/item/item-record.js";
 import { isTerminalStatus } from "../../core/item/status.js";
-import { parseStatusFilterCsv } from "../../core/item/status-filter.js";
+import { isStatusAllFilterInput, parseStatusFilterCsv } from "../../core/item/status-filter.js";
 import { collectRuntimeFilterValues, matchesRuntimeFilters } from "../../core/schema/runtime-field-filters.js";
 import {
   hasMissingMetadataFilter,
@@ -365,7 +365,7 @@ function buildCompactSearchFilterSummary(params: {
   } = params;
   const filters: Record<string, unknown> = {};
   if (options.status !== undefined) {
-    filters.status = options.status;
+    filters.status = isStatusAllFilterInput(options.status) ? "all" : options.status;
   }
   if (options.type !== undefined) {
     filters.type = options.type;
@@ -466,7 +466,7 @@ function buildVerboseSearchFilters(params: {
   return {
     mode: effectiveMode,
     match_mode: matchMode,
-    status: options.status ?? null,
+    status: isStatusAllFilterInput(options.status) ? "all" : options.status ?? null,
     type: options.type ?? null,
     tag: options.tag ?? null,
     priority: options.priority ?? null,

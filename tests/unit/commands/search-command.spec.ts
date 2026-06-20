@@ -2704,6 +2704,10 @@ describe("runSearch", () => {
       "pm-status-open",
     ]);
     expect(allStatus.filters.status).toBe("all");
+
+    const upperAllStatus = await runSearch("statustoken", { mode: "keyword", status: " ALL " }, { path: "/tmp/pm-search" });
+    expect(upperAllStatus.count).toBe(2);
+    expect(upperAllStatus.filters.status).toBe("all");
   });
 
   it("rejects an unrecognized --status token strictly with a did-you-mean hint", async () => {
@@ -3243,6 +3247,13 @@ describe("classifyImplicitSemanticFallbackReason", () => {
         { path: "/tmp/pm-search" },
       );
       expect(compact.filters).toMatchObject({ match_mode: "and", assignee: "alice", sprint: "S1" });
+
+      const compactAllStatus = await runSearch(
+        "alpha",
+        { mode: "keyword", compact: true, status: " ALL " },
+        { path: "/tmp/pm-search" },
+      );
+      expect(compactAllStatus.filters.status).toBe("all");
     });
   });
 });
