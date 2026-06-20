@@ -2,11 +2,24 @@ id: pm-e7dn
 title: Refactor runUpdate (~950-line function) into table-driven per-field apply helpers
 description: "code-quality audit F2: src/cli/commands/update.ts runUpdate is one ~950-line high-complexity function (177 ifs, depth 8) with fragile non-null assertions (options.x!). Extract per-field applyXField helpers (clearCollectionDefinitions is a precedent) to remove the assertions and improve testability. Stays under the 3400 LOC gate."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[3]: "area:cleanup",complexity,refactor
 created_at: "2026-06-07T17:04:16.688Z"
-updated_at: "2026-06-07T17:04:16.688Z"
+updated_at: "2026-06-20T04:04:48.501Z"
 author: maintainer-agent
 parent: pm-mpbb
+resolution: Refactored runUpdate scalar metadata mutation handling into table-driven helpers while preserving update ordering and behavior.
+expected_result: "runUpdate no longer carries repeated inline scalar mutation blocks or fragile non-null assertions for those fields, and existing update behavior remains covered."
+actual_result: "src/cli/commands/update.ts now uses shared scalar mutation definitions for post-tag, stakeholder, and issue metadata fields; focused tests, full coverage, release gates, temp smoke, Sentry, telemetry, changelog, health, and validate gates passed."
+comments[2]{created_at,author,text}:
+  "2026-06-20T03:49:29.098Z",codex-sdk-cli-continuation-20260620,"Progress: refactored runUpdate scalar metadata mutation handling into table-driven helpers in src/cli/commands/update.ts; focused typecheck and update/update-many tests pass locally."
+  "2026-06-20T04:04:47.126Z",codex-sdk-cli-continuation-20260620,"Evidence: pnpm build; pnpm typecheck; node scripts/run-tests.mjs test -- tests/unit/commands/update-command.spec.ts tests/unit/commands/update-many-command.spec.ts (140 passed); node scripts/run-tests.mjs coverage (235 files, 4700 tests, 100/100/100/100); pnpm quality:static; pnpm quality:docs-links; pnpm contracts:check; pnpm security:scan; pnpm changelog:pm:check; pm health --check-only --summary --json ok; pm validate --check-resolution --check-history-drift ok with known pre-existing resolution warning only and history_drift ok; node scripts/release/sentry-telemetry-gate.mjs required ok (Sentry critical=0 high=0, telemetry error rate 1.74%, missing error rows 0); temp PM_PATH/PM_GLOBAL_PATH smoke passed for init/create/update/unset/comments/health; pnpm release:gates passed."
+files[1]{path,scope,note}:
+  src/cli/commands/update.ts,project,Refactor runUpdate scalar metadata mutations into table-driven helpers and remove fragile non-null assertions
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/update-command.spec.ts tests/unit/commands/update-many-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,Focused update and update-many regression coverage for runUpdate refactor
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqltseet-anddx9,test,passed,"2026-06-20T03:55:27.242Z","2026-06-20T03:56:14.453Z","2026-06-20T03:56:14.453Z",null,null,1,0,0,null,null,null
+close_reason: Implemented and verified runUpdate scalar mutation refactor with full release gates and temp smoke.
 body: ""

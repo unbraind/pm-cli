@@ -21,6 +21,7 @@
 
 ### Changed
 
+- Refactor runUpdate (~950-line function) into table-driven per-field apply helpers ([pm-e7dn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-e7dn.toon))
 - Replace 'as unknown as ItemMetadata' double-casts (9 sites) with typed mutation/replay returns ([pm-ul02](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ul02.toon))
 - COMMANDS.md omits pm get and pm copy; command-families table missing get/copy/update-many/close-many ([pm-xvzm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-xvzm.toon))
 

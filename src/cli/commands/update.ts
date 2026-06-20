@@ -522,11 +522,15 @@ function buildAuditScopeRestrictedOptionsError(params: {
   // Only surface replacement commands for restricted flags the caller actually
   // passed, so the guidance is an exact retry path.
   const replacementCommands = params.disallowedFlags
-    .filter((flag) => AUDIT_RESTRICTED_FLAG_REPLACEMENTS.has(flag))
-    .map((flag) => AUDIT_RESTRICTED_FLAG_REPLACEMENTS.get(flag)!(params.id));
+    .flatMap((flag) => {
+      const replacement = AUDIT_RESTRICTED_FLAG_REPLACEMENTS.get(flag);
+      return replacement ? [replacement(params.id)] : [];
+    });
   const replacementSteps = params.disallowedFlags
-    .filter((flag) => AUDIT_RESTRICTED_FLAG_REPLACEMENTS.has(flag))
-    .map((flag) => `Replace ${flag} with: ${AUDIT_RESTRICTED_FLAG_REPLACEMENTS.get(flag)!(params.id)}`);
+    .flatMap((flag) => {
+      const replacement = AUDIT_RESTRICTED_FLAG_REPLACEMENTS.get(flag);
+      return replacement ? [`Replace ${flag} with: ${replacement(params.id)}`] : [];
+    });
   return new PmCliError(params.message, EXIT_CODE.USAGE, {
     code: params.code,
     required: params.required,
@@ -1178,6 +1182,96 @@ function enforceUpdateOptionsByType(
   }
 }
 
+interface UpdateScalarMutationContext {
+  metadataRecord: Record<string, unknown>;
+  clearFrontMatterKeys: ReadonlySet<string>;
+  changedFields: string[];
+  nowValue: Date;
+}
+
+interface UpdateScalarMutationDefinition {
+  optionKey: keyof UpdateCommandOptions;
+  metadataKey: string;
+  transform?: (value: string, context: UpdateScalarMutationContext) => unknown;
+}
+
+const UPDATE_POST_TAG_SCALAR_MUTATIONS: ReadonlyArray<UpdateScalarMutationDefinition> = [
+  {
+    optionKey: "deadline",
+    metadataKey: "deadline",
+    transform: (value, context) => resolveIsoOrRelative(value, context.nowValue, "deadline"),
+  },
+  {
+    optionKey: "estimatedMinutes",
+    metadataKey: "estimated_minutes",
+    transform: (value) => parseOptionalNumber(value, "estimated-minutes"),
+  },
+  { optionKey: "acceptanceCriteria", metadataKey: "acceptance_criteria", transform: (value) => value },
+  { optionKey: "definitionOfReady", metadataKey: "definition_of_ready" },
+  { optionKey: "goal", metadataKey: "goal" },
+  { optionKey: "objective", metadataKey: "objective" },
+  { optionKey: "value", metadataKey: "value" },
+  { optionKey: "impact", metadataKey: "impact" },
+  { optionKey: "outcome", metadataKey: "outcome" },
+  { optionKey: "whyNow", metadataKey: "why_now" },
+];
+
+const UPDATE_STAKEHOLDER_SCALAR_MUTATIONS: ReadonlyArray<UpdateScalarMutationDefinition> = [
+  { optionKey: "reviewer", metadataKey: "reviewer" },
+  { optionKey: "risk", metadataKey: "risk", transform: (value) => ensureEnum(normalizeRiskInput(value), RISK_VALUES, "risk") },
+  { optionKey: "confidence", metadataKey: "confidence", transform: (value) => parseConfidenceInput(value) },
+];
+
+const UPDATE_ISSUE_SCALAR_MUTATIONS: ReadonlyArray<UpdateScalarMutationDefinition> = [
+  { optionKey: "blockedReason", metadataKey: "blocked_reason" },
+  { optionKey: "unblockNote", metadataKey: "unblock_note" },
+  { optionKey: "reporter", metadataKey: "reporter" },
+  {
+    optionKey: "severity",
+    metadataKey: "severity",
+    transform: (value) => ensureEnum(normalizeSeverityInput(value), ISSUE_SEVERITY_VALUES, "severity"),
+  },
+  { optionKey: "environment", metadataKey: "environment" },
+  { optionKey: "reproSteps", metadataKey: "repro_steps" },
+  { optionKey: "resolution", metadataKey: "resolution" },
+  { optionKey: "expectedResult", metadataKey: "expected_result" },
+  { optionKey: "actualResult", metadataKey: "actual_result" },
+  { optionKey: "affectedVersion", metadataKey: "affected_version" },
+  { optionKey: "fixedVersion", metadataKey: "fixed_version" },
+  { optionKey: "component", metadataKey: "component" },
+  { optionKey: "regression", metadataKey: "regression", transform: (value) => parseRegressionInput(value) },
+  { optionKey: "customerImpact", metadataKey: "customer_impact" },
+];
+
+function applyUpdateScalarMutations(
+  definitions: ReadonlyArray<UpdateScalarMutationDefinition>,
+  options: UpdateCommandOptions,
+  context: UpdateScalarMutationContext,
+): void {
+  for (const definition of definitions) {
+    const optionValue = options[definition.optionKey];
+    const shouldClear = context.clearFrontMatterKeys.has(definition.metadataKey);
+    if (optionValue === undefined && !shouldClear) {
+      continue;
+    }
+    if (shouldClear) {
+      delete context.metadataRecord[definition.metadataKey];
+      context.changedFields.push(definition.metadataKey);
+      continue;
+    }
+    if (typeof optionValue !== "string") {
+      throw new PmCliError(
+        `${commandOptionFlagLabel("update", String(definition.optionKey))} must be a string value`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    context.metadataRecord[definition.metadataKey] = definition.transform
+      ? definition.transform(optionValue, context)
+      : optionValue.trim();
+    context.changedFields.push(definition.metadataKey);
+  }
+}
+
 /**
  * Implements run update for the public runtime surface of this module.
  */
@@ -1711,23 +1805,11 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
       // Each call is placed in the same position the inline block occupied so
       // the order of `changedFields` is preserved exactly (pm-why9).
       const metadataRecord = toItemRecord(document.metadata);
-      const setOrClearScalar = (
-        optionValue: string | undefined,
-        metadataKey: string,
-        transform: (value: string) => unknown,
-      ): void => {
-        if (optionValue === undefined && !clearFrontMatterKeys.has(metadataKey)) {
-          return;
-        }
-        if (clearFrontMatterKeys.has(metadataKey)) {
-          delete metadataRecord[metadataKey];
-        } else {
-          metadataRecord[metadataKey] = transform(optionValue as string);
-        }
-        changedFields.push(metadataKey);
-      };
-      const setOrClearTrimScalar = (optionValue: string | undefined, metadataKey: string): void => {
-        setOrClearScalar(optionValue, metadataKey, (value) => value.trim());
+      const scalarMutationContext: UpdateScalarMutationContext = {
+        metadataRecord,
+        clearFrontMatterKeys,
+        changedFields,
+        nowValue,
       };
 
       if (options.title !== undefined) {
@@ -1758,7 +1840,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         if (clearFrontMatterKeys.has("close_reason")) {
           delete document.metadata.close_reason;
         } else {
-          const closeReason = options.closeReason!.trim();
+          const closeReason = options.closeReason?.trim() ?? "";
           if (closeReason.length === 0) {
             throw new PmCliError("--close-reason must not be empty", EXIT_CODE.USAGE);
           }
@@ -1795,7 +1877,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         if (clearFrontMatterKeys.has("type_options")) {
           delete document.metadata.type_options;
         } else {
-          const parsedTypeOptions = parseTypeOptionEntries(options.typeOption!);
+          const parsedTypeOptions = parseTypeOptionEntries(options.typeOption ?? []);
           const validation = validateTypeOptions(activeTypeName, parsedTypeOptions, typeRegistry);
           if (validation.errors.length > 0) {
             throw new PmCliError(validation.errors.join("; "), EXIT_CODE.USAGE);
@@ -1941,7 +2023,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         const baseTags = clearFrontMatterKeys.has("tags")
           ? []
           : options.tags !== undefined
-            ? parseTags(options.tags!)
+            ? parseTags(options.tags)
             : Array.isArray(document.metadata.tags)
               ? [...(document.metadata.tags as string[])]
               : [];
@@ -1950,18 +2032,13 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         document.metadata.tags = finalTags;
         changedFields.push("tags");
       }
-      setOrClearScalar(options.deadline, "deadline", (value) => resolveIsoOrRelative(value, nowValue, "deadline"));
-      setOrClearScalar(options.estimatedMinutes, "estimated_minutes", (value) =>
-        parseOptionalNumber(value, "estimated-minutes"),
-      );
-      setOrClearScalar(options.acceptanceCriteria, "acceptance_criteria", (value) => value);
-      setOrClearTrimScalar(options.definitionOfReady, "definition_of_ready");
+      applyUpdateScalarMutations(UPDATE_POST_TAG_SCALAR_MUTATIONS, options, scalarMutationContext);
       const orderRaw = options.order ?? options.rank;
       if (orderRaw !== undefined || clearFrontMatterKeys.has("order")) {
         if (clearFrontMatterKeys.has("order")) {
           delete document.metadata.order;
         } else {
-          const parsedOrder = parseOptionalNumber(orderRaw!, "order");
+          const parsedOrder = parseOptionalNumber(orderRaw ?? "", "order");
           if (!Number.isInteger(parsedOrder)) {
             throw new PmCliError("Order must be an integer", EXIT_CODE.USAGE);
           }
@@ -1969,20 +2046,15 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         }
         changedFields.push("order");
       }
-      setOrClearTrimScalar(options.goal, "goal");
-      setOrClearTrimScalar(options.objective, "objective");
-      setOrClearTrimScalar(options.value, "value");
-      setOrClearTrimScalar(options.impact, "impact");
-      setOrClearTrimScalar(options.outcome, "outcome");
-      setOrClearTrimScalar(options.whyNow, "why_now");
       if (options.assignee !== undefined || clearFrontMatterKeys.has("assignee")) {
         if (clearFrontMatterKeys.has("assignee")) {
           delete document.metadata.assignee;
         } else {
-          if (options.assignee!.trim() === "") {
+          const assignee = options.assignee?.trim() ?? "";
+          if (assignee === "") {
             throw new PmCliError("--assignee must not be empty. Use --unset assignee to clear it.", EXIT_CODE.USAGE);
           }
-          document.metadata.assignee = options.assignee!.trim();
+          document.metadata.assignee = assignee;
         }
         changedFields.push("assignee");
       }
@@ -1990,18 +2062,16 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         if (clearFrontMatterKeys.has("parent")) {
           delete document.metadata.parent;
         } else {
-          document.metadata.parent = resolvedParentValue as string;
+          document.metadata.parent = resolvedParentValue ?? "";
         }
         changedFields.push("parent");
       }
-      setOrClearTrimScalar(options.reviewer, "reviewer");
-      setOrClearScalar(options.risk, "risk", (value) => ensureEnum(normalizeRiskInput(value), RISK_VALUES, "risk"));
-      setOrClearScalar(options.confidence, "confidence", (value) => parseConfidenceInput(value));
+      applyUpdateScalarMutations(UPDATE_STAKEHOLDER_SCALAR_MUTATIONS, options, scalarMutationContext);
       if (options.sprint !== undefined || clearFrontMatterKeys.has("sprint")) {
         if (clearFrontMatterKeys.has("sprint")) {
           delete document.metadata.sprint;
         } else {
-          const sprintValidation = validateSprintOrReleaseValue("sprint", options.sprint!, sprintReleasePolicy);
+          const sprintValidation = validateSprintOrReleaseValue("sprint", options.sprint ?? "", sprintReleasePolicy);
           document.metadata.sprint = sprintValidation.value;
           warnings.push(...sprintValidation.warnings);
         }
@@ -2011,7 +2081,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         if (clearFrontMatterKeys.has("release")) {
           delete document.metadata.release;
         } else {
-          const releaseValidation = validateSprintOrReleaseValue("release", options.release!, sprintReleasePolicy);
+          const releaseValidation = validateSprintOrReleaseValue("release", options.release ?? "", sprintReleasePolicy);
           document.metadata.release = releaseValidation.value;
           warnings.push(...releaseValidation.warnings);
         }
@@ -2021,7 +2091,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         if (clearFrontMatterKeys.has("blocked_by")) {
           delete document.metadata.blocked_by;
         } else {
-          document.metadata.blocked_by = options.blockedBy!.trim();
+          document.metadata.blocked_by = options.blockedBy?.trim() ?? "";
         }
         changedFields.push("blocked_by");
         // pm-kyd6: keep the dependency graph in sync with the blocked_by scalar.
@@ -2033,27 +2103,12 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
           changedFields,
         );
       }
-      setOrClearTrimScalar(options.blockedReason, "blocked_reason");
-      setOrClearTrimScalar(options.unblockNote, "unblock_note");
-      setOrClearTrimScalar(options.reporter, "reporter");
-      setOrClearScalar(options.severity, "severity", (value) =>
-        ensureEnum(normalizeSeverityInput(value), ISSUE_SEVERITY_VALUES, "severity"),
-      );
-      setOrClearTrimScalar(options.environment, "environment");
-      setOrClearTrimScalar(options.reproSteps, "repro_steps");
-      setOrClearTrimScalar(options.resolution, "resolution");
-      setOrClearTrimScalar(options.expectedResult, "expected_result");
-      setOrClearTrimScalar(options.actualResult, "actual_result");
-      setOrClearTrimScalar(options.affectedVersion, "affected_version");
-      setOrClearTrimScalar(options.fixedVersion, "fixed_version");
-      setOrClearTrimScalar(options.component, "component");
-      setOrClearScalar(options.regression, "regression", (value) => parseRegressionInput(value));
-      setOrClearTrimScalar(options.customerImpact, "customer_impact");
+      applyUpdateScalarMutations(UPDATE_ISSUE_SCALAR_MUTATIONS, options, scalarMutationContext);
       if (options.reminder !== undefined || clearFrontMatterKeys.has("reminders")) {
         if (clearFrontMatterKeys.has("reminders")) {
           delete document.metadata.reminders;
         } else {
-          document.metadata.reminders = parseReminderEntries(options.reminder!, nowValue, { valueMode: "trimmed" });
+          document.metadata.reminders = parseReminderEntries(options.reminder ?? [], nowValue, { valueMode: "trimmed" });
         }
         changedFields.push("reminders");
       }
@@ -2061,7 +2116,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         if (clearFrontMatterKeys.has("events")) {
           delete document.metadata.events;
         } else {
-          document.metadata.events = parseEventEntries(options.event!, nowValue, {
+          document.metadata.events = parseEventEntries(options.event ?? [], nowValue, {
             allDayEmptyGuard: "truthy",
             recurrenceEmptyNumericGuard: "truthy",
           });
