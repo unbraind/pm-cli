@@ -5,10 +5,12 @@ import { afterEach, vi } from "vitest";
 
 /**
  * Reduce a repo-root-relative script path (e.g. `scripts/release/utils.mjs`) to
- * its `scripts/`-relative name without extension (`release/utils`).
+ * its `scripts/`-relative name without extension (`release/utils`). Splits on
+ * both separators so a caller passing a Windows-style path is normalized
+ * regardless of the host platform.
  */
 function toScriptName(relativePath: string): string {
-  const posixPath = relativePath.split(path.sep).join("/").replace(/^\/+/, "");
+  const posixPath = relativePath.split(/[\\/]/).join("/").replace(/^\/+/, "");
   return posixPath.replace(/^scripts\//, "").replace(/\.mjs$/, "");
 }
 
@@ -36,9 +38,29 @@ async function importTransformedScript<T>(relativePath: string): Promise<T> {
   const name = toScriptName(relativePath);
   const releasePrefix = "release/";
   if (name.startsWith(releasePrefix)) {
-    return (await import(`../../scripts/release/${name.slice(releasePrefix.length)}.mjs`)) as T;
+    const leaf = name.slice(releasePrefix.length);
+    assertSingleSegment(leaf, relativePath);
+    return (await import(`../../scripts/release/${leaf}.mjs`)) as T;
   }
+  assertSingleSegment(name, relativePath);
   return (await import(`../../scripts/${name}.mjs`)) as T;
+}
+
+/**
+ * Fail fast when a script name spans more than one path segment. Vite's
+ * `dynamic-import-vars` transform only matches a single-segment variable, so a
+ * nested path outside the two supported directories (`scripts/` and
+ * `scripts/release/`) would be left untransformed and silently regress on
+ * Windows. Throwing here turns that into an explicit Linux-time error so a
+ * future contributor knows to add a dedicated branch.
+ */
+function assertSingleSegment(segment: string, relativePath: string): void {
+  if (segment.includes("/")) {
+    throw new Error(
+      `importTransformedScript: unsupported nested script path "${relativePath}". ` +
+        "Vite dynamic-import-vars requires a single-segment variable; add a dedicated branch for this directory.",
+    );
+  }
 }
 
 /**
