@@ -20,6 +20,7 @@ import type {
   RegisteredExtensionCommandDefinition,
   RegisteredExtensionCommandOverride,
   RegisteredExtensionExporter,
+  RegisteredExtensionFlagDefinitions,
   RegisteredExtensionHook,
   RegisteredExtensionImporter,
   RegisteredExtensionParserOverride,
@@ -69,6 +70,15 @@ export interface RegisteredCommandContractExpectation {
 export interface RegisteredCommandContractAssertion {
   command: RegisteredExtensionCommandDefinition;
   flags: FlagDefinition[];
+}
+
+/**
+ * Documents the registered flags expectation payload exchanged by command, SDK, and package integrations.
+ */
+export interface RegisteredFlagsExpectation {
+  targetCommand: string;
+  extensionName?: string;
+  flags?: string[];
 }
 
 /**
@@ -439,6 +449,49 @@ export function assertRegisteredCommandContract(
   }
 
   return { command, flags };
+}
+
+/**
+ * Assert that an activated extension registration registry contains flags
+ * injected into an existing command through `api.registerFlags(...)`.
+ */
+export function assertRegisteredFlags(
+  registrations: ExtensionRegistrationRegistry,
+  expectation: RegisteredFlagsExpectation,
+): RegisteredExtensionFlagDefinitions {
+  const expectedCommand = normalizeSdkCommandName(expectation.targetCommand);
+  if (expectedCommand.length === 0) {
+    throw new Error("Expected target command name must be a non-empty string");
+  }
+
+  const candidates = registrations.flags.filter((entry) => entry.target_command === expectedCommand);
+  const registration = expectation.extensionName
+    ? candidates.find((entry) => entry.name === expectation.extensionName)
+    : candidates[0];
+  if (!registration) {
+    const available = sortedUnique(registrations.flags.map((entry) => entry.target_command));
+    throw new Error(
+      `Expected flags for target command "${expectedCommand}"${extensionNameSuffix(
+        expectation.extensionName,
+      )} to be registered. Available flag target commands: ${formatAvailable(available)}`,
+    );
+  }
+
+  if (expectation.flags !== undefined) {
+    const actualFlagLabels = collectFlagLabels(registration.flags);
+    const missingFlags = expectation.flags.filter((flag) => !actualFlagLabels.has(flag));
+    if (missingFlags.length > 0) {
+      throw new Error(
+        `Expected flags for target command "${expectedCommand}" to include ${formatAvailable(
+          expectation.flags,
+        )}; missing ${formatAvailable(missingFlags)}; available ${formatAvailable(
+          [...actualFlagLabels].sort((left, right) => left.localeCompare(right)),
+        )}`,
+      );
+    }
+  }
+
+  return registration;
 }
 
 /**

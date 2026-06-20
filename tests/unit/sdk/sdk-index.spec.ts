@@ -19,6 +19,7 @@ import {
   assertRegisteredCommandContract as assertRegisteredCommandContractFromBarrel,
   assertRegisteredCommandOverride as assertRegisteredCommandOverrideFromBarrel,
   assertRegisteredExporter as assertRegisteredExporterFromBarrel,
+  assertRegisteredFlags as assertRegisteredFlagsFromBarrel,
   assertRegisteredHook as assertRegisteredHookFromBarrel,
   assertRegisteredImporter as assertRegisteredImporterFromBarrel,
   assertRegisteredItemField as assertRegisteredItemFieldFromBarrel,
@@ -66,6 +67,7 @@ import {
   assertRegisteredCommandContract,
   assertRegisteredCommandOverride,
   assertRegisteredExporter,
+  assertRegisteredFlags,
   assertRegisteredHook,
   assertRegisteredImporter,
   assertRegisteredItemField,
@@ -463,6 +465,59 @@ describe("public sdk entrypoint", () => {
         }),
       ).toThrow("Expected package manifest pm.docs to include README.md; available: (none)");
     });
+  });
+
+  it("asserts registerFlags registrations for package-author tests", () => {
+    const registrations = createRegistrationRegistry();
+
+    const fromBarrel = assertRegisteredFlagsFromBarrel(registrations, {
+      targetCommand: " hello   world ",
+      extensionName: "hello-ext",
+      flags: ["--shout", "-n", "--name"],
+    });
+    expect(fromBarrel.target_command).toBe("hello world");
+    expect(fromBarrel.flags).toHaveLength(2);
+
+    expect(
+      assertRegisteredFlags(registrations, {
+        targetCommand: "hello world",
+        flags: ["--name"],
+      }),
+    ).toBe(fromBarrel);
+    expect(
+      assertRegisteredFlags(registrations, {
+        targetCommand: "hello world",
+      }),
+    ).toBe(fromBarrel);
+
+    expect(() =>
+      assertRegisteredFlags(registrations, {
+        targetCommand: "",
+      }),
+    ).toThrow("Expected target command name must be a non-empty string");
+    expect(() =>
+      assertRegisteredFlags(registrations, {
+        targetCommand: "missing command",
+      }),
+    ).toThrow(
+      'Expected flags for target command "missing command" to be registered. Available flag target commands: hello world',
+    );
+    expect(() =>
+      assertRegisteredFlags(registrations, {
+        targetCommand: "hello world",
+        extensionName: "missing-ext",
+      }),
+    ).toThrow(
+      'Expected flags for target command "hello world" from extension "missing-ext" to be registered. Available flag target commands: hello world',
+    );
+    expect(() =>
+      assertRegisteredFlags(registrations, {
+        targetCommand: "hello world",
+        flags: ["--missing"],
+      }),
+    ).toThrow(
+      'Expected flags for target command "hello world" to include --missing; missing --missing; available --name, --shout, -n',
+    );
   });
 
   it("exposes stable pm tool contract constants through the sdk barrel", () => {
