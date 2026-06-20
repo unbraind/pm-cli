@@ -228,6 +228,8 @@ jobs:
 
   windows-regression:
     name: Windows regression (Node 20)
+    # Gate this focused Windows slice on a green foundation build; the job is
+    # otherwise self-contained because it must install and run on windows-latest.
     needs: build-foundation
     runs-on: windows-latest
     timeout-minutes: 12

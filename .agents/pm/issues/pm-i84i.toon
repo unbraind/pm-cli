@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[5]: "area:ci","area:tests",cross-platform,regression,windows
 created_at: "2026-06-19T15:48:23.411Z"
-updated_at: "2026-06-20T01:19:39.872Z"
+updated_at: "2026-06-20T01:28:52.399Z"
 assignee: codex-sdk-cli-continuation
 author: claude-code-agent
 parent: pm-u9d0
@@ -14,7 +14,7 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-ehbb,related,"2026-06-19T15:48:46.347Z",claude-code-agent,null
   pm-tq5t,related,"2026-06-19T15:48:46.347Z",claude-code-agent,null
   pm-nb08,related,"2026-06-19T19:20:05.426Z",claude-code-agent,null
-comments[10]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-06-19T15:49:09.715Z",claude-code-agent,"Filed from a maintainer session on Linux. Root cause is Windows-only and not safely reproducible/verifiable from POSIX without risking the green 100%-coverage suite, so it needs a windows-latest runner to land + verify the fix. Non-blocking for releases: the daily Release workflow is independent of nightly and is green (npm @2026.6.19). macOS's single failure is already fixed (commit 8bc37a22)."
   "2026-06-19T19:20:05.038Z",claude-code-agent,"Partial progress (PR: auto-release-sentry-gate-window-and-alerting): fixed the two hardcoded POSIX-separator assertions called out in this issue — init-command.spec.ts pmRoot now asserts path.resolve(/repo, /repo/.agents/pm) and schema-command.spec.ts asserts path.join(.agents, pm, schema, types.json) instead of forward-slash literals. Added a win32-simulated regression guard (runtime-schema-path-win32-guard.spec.ts) that mocks node:path to path.win32 so a POSIX per-PR runner catches a schema-path separator regression rather than only the nightly. REMAINING (needs a Windows runner to verify): the file://-URL TS dynamic-import cluster (~18 specs computing pathToFileURL(src/*.ts) — chiefly cli-main-errors.spec.ts) that throws SyntaxError on Windows because Vitest does not transform absolute file:// specifiers there; that bulk and a per-PR windows-latest matrix guard stay open."
   "2026-06-19T19:27:11.538Z",claude-code-agent,"Separator fixes + win32 guard shipped in PR #305; file:// TS-import bulk remains open."
@@ -25,6 +25,7 @@ comments[10]{created_at,author,text}:
   "2026-06-19T20:12:58.632Z",codex-gpt5,"Verification evidence after Gemini undefined-guard follow-up: node scripts/run-tests.mjs test -- tests/unit/scripts/release/sentry-telemetry-gate.spec.ts passed (46 tests); pnpm quality:static passed; pnpm changelog:pm:check passed; node scripts/run-tests.mjs coverage passed with 4689 tests and literal 100/100/100/100 coverage."
   "2026-06-19T20:23:46.717Z",codex-gpt5,"Post-merge evidence: PR #305 merged to main at 54fc791d7e592baaf867d2a759ba5a38d7a8c600 (2026-06-19T20:23:03Z). Remote GitHub checks were green on head 447816def5176049bf49a38efa103bf248c1b161 before merge, including Build foundation, Docs and Skills, Runtime smoke on Ubuntu Node 20/22/24 and macOS Node 20, Gates coverage/typecheck/static/compat/smokes, CodeQL, and CodeRabbit. Post-merge package-owned changelog validation passed with pm-changelog 2026.6.14: pnpm changelog:pm:check reported CHANGELOG.md unchanged, 1242 items, check true. pm-i84i remains open for the remaining Windows file:// TypeScript dynamic import bulk acceptance work; releasing claim after this merged subset."
   "2026-06-20T01:19:39.872Z",codex-sdk-cli-continuation,"Evidence: implemented Windows-safe source TypeScript imports and per-PR Windows regression guard. Focused tests passed: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/integration/ci-workflow-contract.spec.ts (125 tests). Full coverage passed: node scripts/run-tests.mjs coverage (235 files, 4700 tests, Statements 100%, Branches 100%, Functions 100%, Lines 100%). Quality gates passed: pnpm typecheck, pnpm quality:static, pnpm security:scan, pnpm changelog:pm:check, pnpm contracts:check. pm validate passed with history_drift ok and known pre-existing resolution warnings only. Manual isolated temp-dir smoke passed init/create/update/files/test --run/close/validate. Dependabot/code scanning open alerts empty; pnpm audit found no vulnerabilities; pnpm outdated reports only major commander 15 and @types/node 26."
+  "2026-06-20T01:28:52.399Z",codex-sdk-cli-continuation,"Review follow-up evidence: addressed CodeRabbit current-head feedback by making the sourceCli helper path explicit, documenting the closed source-module dispatch set, and clarifying the self-contained Windows regression job's build-foundation gate. Focused test rerun passed: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/integration/ci-workflow-contract.spec.ts (125 tests)."
 files[11]{path,scope,note}:
   .github/workflows/ci.yml,project,Add per-PR Windows Node 20 regression check for source-import and path regressions
   scripts/release/sentry-telemetry-gate.mjs,project,Reject blank numeric Sentry window values instead of coercing to zero

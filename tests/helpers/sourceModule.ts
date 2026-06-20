@@ -4,6 +4,9 @@
  * Absolute `file://` URLs for TypeScript sources are not transformed reliably on
  * Windows, so source-entry tests should use this helper when they need a fresh
  * import with top-level code re-executed.
+ *
+ * Only `"cli.js"` and `"cli/main.js"` are supported. Extend this closed
+ * dispatch set when another source entrypoint needs Windows-safe imports.
  */
 export async function importFreshSourceModule<T>(sourcePath: string, queryPrefix = "source"): Promise<T> {
   const normalizedPath = sourcePath.replace(/^\/+/, "");
@@ -17,6 +20,9 @@ export async function importFreshSourceModule<T>(sourcePath: string, queryPrefix
     return (await import("../../src/cli.js?source")) as T;
   }
   if (normalizedPath === "cli/main.js") {
+    if (queryPrefix === "sourceCli") {
+      return (await import("../../src/cli/main.js")) as T;
+    }
     if (queryPrefix === "packageRootBlank") {
       return (await import("../../src/cli/main.js?packageRootBlank")) as T;
     }
