@@ -230,6 +230,18 @@ function createRegistrationRegistry(): ExtensionRegistrationRegistry {
         target_command: "hello world",
         flags: [{ long: "--shout" }, { short: "-n", long: "--name", value_name: "value" }],
       },
+      {
+        layer: "global",
+        name: "second-hello-ext",
+        target_command: "hello world",
+        flags: [{ long: "--format", value_name: "value" }],
+      },
+      {
+        layer: "project",
+        name: "list-ext",
+        target_command: "list",
+        flags: [{ long: "--list-note", value_name: "value" }],
+      },
     ],
     item_fields: [
       {
@@ -480,15 +492,16 @@ describe("public sdk entrypoint", () => {
 
     expect(
       assertRegisteredFlags(registrations, {
-        targetCommand: "hello world",
-        flags: ["--name"],
+        targetCommand: "list",
       }),
-    ).toBe(fromBarrel);
-    expect(
+    ).toBe(registrations.flags[2]);
+    expect(() =>
       assertRegisteredFlags(registrations, {
         targetCommand: "hello world",
       }),
-    ).toBe(fromBarrel);
+    ).toThrow(
+      'Expected flags for target command "hello world" matched multiple extensions: hello-ext, second-hello-ext. Specify extensionName to choose one registration.',
+    );
 
     expect(() =>
       assertRegisteredFlags(registrations, {
@@ -500,7 +513,7 @@ describe("public sdk entrypoint", () => {
         targetCommand: "missing command",
       }),
     ).toThrow(
-      'Expected flags for target command "missing command" to be registered. Available flag target commands: hello world',
+      'Expected flags for target command "missing command" to be registered. Available flag target commands: hello world, list; matching extensions: (none)',
     );
     expect(() =>
       assertRegisteredFlags(registrations, {
@@ -508,11 +521,12 @@ describe("public sdk entrypoint", () => {
         extensionName: "missing-ext",
       }),
     ).toThrow(
-      'Expected flags for target command "hello world" from extension "missing-ext" to be registered. Available flag target commands: hello world',
+      'Expected flags for target command "hello world" from extension "missing-ext" to be registered. Available flag target commands: hello world, list; matching extensions: hello-ext, second-hello-ext',
     );
     expect(() =>
       assertRegisteredFlags(registrations, {
         targetCommand: "hello world",
+        extensionName: "hello-ext",
         flags: ["--missing"],
       }),
     ).toThrow(
@@ -1114,7 +1128,7 @@ describe("sdk testing helpers", () => {
       command: "hello world",
       arguments: ["target"],
     });
-    expect(resultWithoutFlagExpectations.flags).toHaveLength(2);
+    expect(resultWithoutFlagExpectations.flags).toHaveLength(3);
 
     const registryWithBlankFlagLabels = createRegistrationRegistry();
     registryWithBlankFlagLabels.flags[0]!.flags.push({ long: " " }, { short: " " });
@@ -1123,7 +1137,7 @@ describe("sdk testing helpers", () => {
         command: "hello world",
         flags: ["--shout"],
       }).flags,
-    ).toHaveLength(4);
+    ).toHaveLength(5);
 
     const registryWithoutArguments = createRegistrationRegistry();
     delete registryWithoutArguments.commands[0]!.arguments;

@@ -6,14 +6,15 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:extensions","area:packages","area:sdk"
 created_at: "2026-06-20T14:27:44.471Z"
-updated_at: "2026-06-20T14:40:10.981Z"
+updated_at: "2026-06-20T14:51:15.197Z"
 author: codex-20260620
 parent: pm-ugqx
 resolution: Added and exported assertRegisteredFlags plus docs and regression coverage for package-author registerFlags assertions.
 expected_result: Package authors can assert registerFlags registrations through the public SDK testing surface without private loader imports.
 actual_result: "assertRegisteredFlags is available from both SDK entrypoints, validates target command and expected flag labels, returns the matching registration, and is documented/tested."
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-06-20T14:40:00.175Z",codex-20260620,"Evidence: implemented public SDK assertRegisteredFlags helper for api.registerFlags(targetCommand, flags), exported it from @unbrained/pm-cli/sdk and @unbrained/pm-cli/sdk/testing, documented package-author usage in docs/SDK.md and pm-command-kit README, and covered success/failure branches in tests/unit/sdk/sdk-index.spec.ts. Verification passed: linked pm test run (sdk-index + build), node scripts/run-tests.mjs test -- tests/unit/packages/package-manifest.spec.ts tests/unit/packages/package-import-adapters.spec.ts tests/unit/packages/package-runtime-options.spec.ts, node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts, node scripts/run-tests.mjs coverage => 100/100/100/100, pnpm quality:static, pnpm quality:docs-links, pnpm security:scan, pm validate --check-resolution --check-history-drift (history_drift ok; pre-existing resolution warnings), pnpm changelog:pm:check unchanged, pm package doctor --project --detail deep --json ok, pm contracts --runtime-only --availability-only --json ok, pm health --check-only --summary --json ok, temp npm consumer installed this checkout and asserted --dogfood-note via assertRegisteredFlags. GitHub: no open PRs/issues; Dependabot/code scanning open alerts empty; Auto Release latest scheduled run 27863311552 success; Sentry 24h issue lists empty; sentry-telemetry-gate --sentry-window-days 1 ok with telemetry error rate 1.52%. Nightly failure issue #315 is closed and current head passes the previously failing verify-published-release spec."
+  "2026-06-20T14:51:15.197Z",codex-20260620,"Review follow-up: addressed Gemini/CodeRabbit feedback by making assertRegisteredFlags reject ambiguous target-command matches when extensionName is omitted and by listing matching extension names for missing-extension failures. Added regression coverage for ambiguous target commands and reran node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts plus node scripts/run-tests.mjs coverage => 100/100/100/100."
 files[3]{path,scope,note}:
   src/sdk/index.ts,project,Export assertRegisteredFlags helper and public flag registration type from SDK barrel
   src/sdk/testing.ts,project,Add assertRegisteredFlags helper for package-author registerFlags assertions

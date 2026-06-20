@@ -465,15 +465,28 @@ export function assertRegisteredFlags(
   }
 
   const candidates = registrations.flags.filter((entry) => entry.target_command === expectedCommand);
-  const registration = expectation.extensionName
-    ? candidates.find((entry) => entry.name === expectation.extensionName)
-    : candidates[0];
+  let registration: RegisteredExtensionFlagDefinitions | undefined;
+  if (expectation.extensionName) {
+    registration = candidates.find((entry) => entry.name === expectation.extensionName);
+  } else if (candidates.length === 1) {
+    registration = candidates[0];
+  } else if (candidates.length > 1) {
+    const availableExtensions = sortedUnique(candidates.map((entry) => entry.name));
+    throw new Error(
+      `Expected flags for target command "${expectedCommand}" matched multiple extensions: ${formatAvailable(
+        availableExtensions,
+      )}. Specify extensionName to choose one registration.`,
+    );
+  }
   if (!registration) {
     const available = sortedUnique(registrations.flags.map((entry) => entry.target_command));
+    const availableExtensions = sortedUnique(candidates.map((entry) => entry.name));
     throw new Error(
       `Expected flags for target command "${expectedCommand}"${extensionNameSuffix(
         expectation.extensionName,
-      )} to be registered. Available flag target commands: ${formatAvailable(available)}`,
+      )} to be registered. Available flag target commands: ${formatAvailable(available)}; matching extensions: ${formatAvailable(
+        availableExtensions,
+      )}`,
     );
   }
 
