@@ -26,6 +26,7 @@
 
 ### Fixed
 
+- Nightly windows-latest red since 2026-06-14: ~373 tests fail with 'SyntaxError: Invalid or unexpected token' from file://-URL TS dynamic imports + POSIX-separator assertions ([pm-i84i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-i84i.toon))
 - Accept --status all for duplicate-safe search and list filters ([pm-i02t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-i02t.toon))
 - pm health 2.3-3.1s in dev repo \(~2x the 1.3s baseline\): drift-scan cache hit still reads + content-hashes every history stream ([pm-c90s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-c90s.toon))
 - Daily auto-release was silently blocked 06-14..16 by a single stale, unresolved Sentry error \(sentry-telemetry-gate is:unresolved has no time window\) ([pm-nb08](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nb08.toon))
