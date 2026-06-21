@@ -4,6 +4,7 @@ Packages add optional `pm` workflows without changing the core CLI. A package ca
 
 ```bash
 pm package init ./my-package
+pm package init ./my-hook-package --capability hooks
 pm install ./my-package --project
 pm package doctor --project --detail summary
 pm package reload --project
@@ -86,7 +87,7 @@ Package roots declare resources in `package.json` under `pm`:
 
 Installation activates `pm.extensions`. `pm.docs`, `pm.examples`, `pm.assets`, and `pm.prompts` are catalog metadata (metadata-only — they are discovered and surfaced in the catalog but not executed). Declare agent-facing prompt/slash-command markdown under `pm.prompts` and non-code assets (images, skills, fixtures) under `pm.assets`; their conventional roots are `prompts/` (also `.agents/pm/prompts/`) and `assets/` (also `.agents/pm/assets/`).
 
-`pm package init` emits a root extension (`"extensions": ["."]`) so local package installs can activate without dependency bootstrapping. Its starter manifest uses the same least-privilege policy metadata as pure first-party command packages: `trusted: true`, `sandbox_profile: "strict"`, and explicit `false` permissions for `fs_read`, `fs_write`, `network`, `env_read`, `env_write`, and `process_spawn`. Larger packages may point at nested extension directories after declaring runtime dependencies, relaxing only the permissions they actually need, and validating with `pm package doctor`.
+`pm package init` emits a root extension (`"extensions": ["."]`) so local package installs can activate without dependency bootstrapping. The default `--capability commands` scaffold registers a starter command and a colocated `node:test` suite. `--capability hooks` keeps the starter command and adds an `after_command` lifecycle hook plus SDK testing coverage with `assertRegisteredHook` and `runRegisteredHookForTest`, giving package authors a runnable template for reacting to pm mutations when project management is context management. Starter manifests use the same least-privilege policy metadata as pure first-party command packages: `trusted: true`, `sandbox_profile: "strict"`, and explicit `false` permissions for `fs_read`, `fs_write`, `network`, `env_read`, `env_write`, and `process_spawn`. Larger packages may point at nested extension directories after declaring runtime dependencies, relaxing only the permissions they actually need, and validating with `pm package doctor`.
 
 Package tests can pair `readPmPackageManifest(packageRoot)` with
 `assertPackageManifest(manifest, { resources: ... })` from

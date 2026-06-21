@@ -382,7 +382,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--criterion --clear-criteria --format --policy --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    extension)",
-    `      COMPREPLY=(${compgen("init scaffold install uninstall explore manage reload doctor adopt adopt-all activate deactivate --init --scaffold --install --uninstall --explore --manage --reload --watch --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("init scaffold install uninstall explore manage reload doctor adopt adopt-all activate deactivate --init --scaffold --capability --install --uninstall --explore --manage --reload --watch --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    comments)",
     `      COMPREPLY=(${compgen("--add --stdin --file --edit --delete --limit --author --message --allow-audit-comment --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
@@ -1597,6 +1597,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '1:extension_action:(init scaffold install uninstall explore manage reload doctor adopt adopt-all activate deactivate)' \\
             '--init[Generate a starter extension scaffold at target path]' \\
             '--scaffold[Alias for --init]' \\
+            '--capability[Capability the init scaffold targets]:capability:(commands hooks)' \\
             '--install[Install extension from local path or GitHub source]' \\
             '--uninstall[Uninstall extension by name]' \\
             '--explore[List discovered extensions for selected scope]' \\
@@ -2539,6 +2540,7 @@ complete -c pm -n '__fish_seen_subcommand_from templates' -a 'save list show' -d
 complete -c pm -n '__fish_seen_subcommand_from extension' -a 'init scaffold install uninstall explore manage reload doctor adopt adopt-all activate deactivate' -d 'Extension action subcommand'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l init -d 'Generate starter extension scaffold'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l scaffold -d 'Alias for --init'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l capability -d 'Capability the init scaffold targets' -r -a 'commands hooks'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l install -d 'Install extension from local path or GitHub source'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l uninstall -d 'Uninstall extension by name'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l explore -d 'List discovered extensions for selected scope'

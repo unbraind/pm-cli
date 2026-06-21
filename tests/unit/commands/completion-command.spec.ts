@@ -307,7 +307,7 @@ describe("generateBashScript", () => {
   it("includes extension doctor strict flags in bash completion", () => {
     const script = generateBashScript();
     expect(script).toContain(
-      "--init --scaffold --install --uninstall --explore --manage --reload --watch --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn",
+      "--init --scaffold --capability --install --uninstall --explore --manage --reload --watch --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn",
     );
   });
 
@@ -629,6 +629,7 @@ describe("generateZshScript", () => {
   it("includes extension doctor strict flags in zsh completion", () => {
     const script = generateZshScript();
     expect(script).toContain("--trace[Include registration traces in doctor deep diagnostics]");
+    expect(script).toContain("--capability[Capability the init scaffold targets]:capability:(commands hooks)");
     expect(script).toContain("--runtime-probe[Opt-in runtime activation probe for manage output]");
     expect(script).toContain("--fix-managed-state[Adopt unmanaged extensions before diagnostics/update checks]");
     expect(script).toContain("--strict-exit[Return non-zero exit when doctor warnings are present]");
@@ -770,6 +771,7 @@ describe("generateFishScript", () => {
     expect(script).toContain("-l github");
     expect(script).toContain("-l ref");
     expect(script).toContain("-l detail");
+    expect(script).toContain("-l capability");
     expect(script).toContain("-l trace");
     expect(script).toContain("-l runtime-probe");
     expect(script).toContain("-l fix-managed-state");

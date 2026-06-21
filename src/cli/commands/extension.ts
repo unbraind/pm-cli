@@ -147,6 +147,7 @@ export interface ExtensionCommandOptions {
   runtimeProbe?: boolean;
   fixManagedState?: boolean;
   fields?: string;
+  capability?: string;
   vocabulary?: "extension" | "package";
 }
 
@@ -1142,6 +1143,9 @@ export async function runExtension(
   if (options.fixManagedState === true && action !== "manage" && action !== "doctor") {
     throw new PmCliError("--fix-managed-state is only valid with --manage or --doctor.", EXIT_CODE.USAGE);
   }
+  if (typeof options.capability === "string" && options.capability.trim().length > 0 && action !== "init") {
+    throw new PmCliError("--capability is only valid with --init/--scaffold.", EXIT_CODE.USAGE);
+  }
   /* c8 ignore start -- alias-normalization matrix is covered by resolveAction tests; this IIFE only rewrites positional aliases */
   const normalizedTarget = (() => {
     const normalizedInput = target?.trim().toLowerCase();
@@ -1206,7 +1210,7 @@ export async function runExtension(
       throw new PmCliError('Action "init" does not accept --gh/--github/--ref options.', EXIT_CODE.USAGE);
     }
     const scaffoldTarget = requireTarget(normalizedTarget, action);
-    const scaffold = await scaffoldExtensionProject(scaffoldTarget, options.vocabulary ?? "extension");
+    const scaffold = await scaffoldExtensionProject(scaffoldTarget, options.vocabulary ?? "extension", options.capability);
     const quotedTargetPath = JSON.stringify(scaffold.target_path);
     // Forward-slash the path for the copy-pasteable `cd` hint: Windows cmd.exe /
     // PowerShell reject the doubled backslashes JSON.stringify emits, while both
@@ -1218,6 +1222,7 @@ export async function runExtension(
         name: scaffold.extension_name,
         command: scaffold.command_name,
       },
+      capability: scaffold.capability,
       target_path: scaffold.target_path,
       created_directory: scaffold.created_directory,
       files: scaffold.files,
