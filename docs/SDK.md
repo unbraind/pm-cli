@@ -166,10 +166,14 @@ than a silent `overridden: false` / `handled: false`.
 The *executable registration* surfaces — search providers, vector store
 adapters, schema migrations, importers, and exporters — also have invoke helpers,
 so every executable register\* method has both an `assertRegistered*` and a
-`runRegistered*ForTest` counterpart. Each resolves the registration through the
-same runtime resolver the host uses and invokes its `runtime_definition` (the
-clone that preserves live functions), so a test exercises the real behavior, not a
-re-implementation:
+`runRegistered*ForTest` counterpart. Each exercises the real registered behavior,
+not a re-implementation, but along two execution paths that mirror how the host
+runs them. Providers, adapters, and migrations are resolved through the same
+runtime resolver the host uses and invoked via their `runtime_definition` (the
+clone that preserves live functions). Importers and exporters have no standalone
+`runtime_definition` — `registerImporter`/`registerExporter` wrap their handler
+into a command path, so their helpers resolve by name and dispatch through the
+command runner instead, returning a `CommandHandlerResult`:
 
 - `runRegisteredSearchProviderForTest(activation.registrations, { provider, operation, context })`
   resolves a registered provider by name (case-insensitive, last registration
@@ -190,19 +194,19 @@ re-implementation:
   throw propagate, so both success and failure are assertable.
 - `runRegisteredImporterForTest(activation, { importer, extensionName?, args?, options?, global?, pmRoot? })`
   and `runRegisteredExporterForTest(activation, { exporter, ... })` resolve a
-  registered importer/exporter by name and invoke its handler, returning the same
-  `CommandHandlerResult` the command runner produces. Because
-  `registerImporter`/`registerExporter` wrap their handlers into command paths
-  (`"<name> import"` / `"<name> export"`), these helpers accept the registration
-  name directly and derive the path internally — so authors never hand-build it,
-  and the helper validates the name is genuinely a registered importer/exporter.
-  They take the whole `activation` because resolution spans two sub-registries
-  (`registrations` proves it exists, `commands` holds the wrapped handler).
+  registered importer/exporter by name, derive the `"<name> import"` /
+  `"<name> export"` command path internally — so authors never hand-build it — and
+  validate that the name is genuinely a registered importer/exporter before
+  dispatching. They take the whole `activation` because resolution spans two
+  sub-registries (`registrations` proves it exists, `commands` holds the wrapped
+  handler), and they return the command runner's `CommandHandlerResult` verbatim,
+  so `handled`/`warnings`/`errorMessage` semantics and `exitCode` propagation match
+  invoking the importer/exporter as a command.
 
 Each surface helper guards that the named provider / adapter / migration /
-importer / exporter is registered (and implements the requested operation), so a
-typo surfaces as a descriptive error rather than a silent no-op. All invoke
-helpers are `async`, so a test always `await`s them.
+importer / exporter is registered (and, for providers and adapters, implements the
+requested operation), so a typo surfaces as a descriptive error rather than a
+silent no-op. All invoke helpers are `async`, so a test always `await`s them.
 
 Commander option contract exports:
 
