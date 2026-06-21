@@ -43,6 +43,7 @@ import {
   type RuntimeFieldRegistry,
   type RuntimeStatusRegistry,
 } from "../schema/runtime-schema.js";
+import { normalizeItemFormatVersion } from "./item-format-version.js";
 import { normalizeStatusInput } from "./status.js";
 import { decodeToonItemContent } from "./toon-decode.js";
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
@@ -231,6 +232,14 @@ function assertValidFrontMatter(
 
   const itemType = record.type;
   assertFrontMatterCondition(typeof itemType === "string" && itemType.trim().length > 0, "type must be a non-empty string");
+
+  const formatVersion = record.pm_format_version;
+  if (formatVersion !== undefined) {
+    assertFrontMatterCondition(
+      typeof formatVersion === "number" && Number.isInteger(formatVersion) && formatVersion >= 1,
+      "pm_format_version must be an integer >= 1",
+    );
+  }
 
   const status = record.status;
   assertFrontMatterCondition(
@@ -996,6 +1005,7 @@ export function normalizeFrontMatter(
     title: frontMatter.title,
     description: frontMatter.description,
     type: frontMatter.type,
+    pm_format_version: normalizeItemFormatVersion(frontMatter.pm_format_version),
     source_type: frontMatter.source_type?.trim() || undefined,
     type_options: normalizeTypeOptions(frontMatter.type_options),
     status: normalizedStatus,

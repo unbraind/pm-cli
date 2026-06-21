@@ -143,6 +143,8 @@ body: |
 
 Legacy JSON-front-matter markdown files are read only for one-way migration into TOON. Runtime internals use `metadata` as the item metadata model key.
 
+Front-matter carries an explicit, monotonically increasing storage format version (`pm_format_version`). The baseline version (`1`) is the implicit default and is **never** serialized, so the field stays absent for the entire current corpus and adds no per-item token cost; it only materializes once an item advances past the baseline via a future breaking migration. Absence therefore always means the baseline. `core/item/item-format-version.ts` owns the constant and the classification helpers (`effectiveItemFormatVersion`, `classifyItemFormatVersion`, `scanItemFormatVersions`) that `pm health` (the `integrity` check) and `pm validate` (the `format_version` check) use to flag items that are outdated (a future migration would rewrite them) or ahead of the runtime (written by a newer pm). When a breaking front-matter change ships, bump `CURRENT_ITEM_FORMAT_VERSION` and add a migration that rewrites items below it — the version gate makes that a per-item decision instead of a full-corpus structural re-parse.
+
 Built-in item types (11; confirm at runtime with `pm schema list`):
 
 - `Epic`

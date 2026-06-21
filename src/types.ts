@@ -595,6 +595,13 @@ export interface ItemMetadata {
   title: string;
   description: string;
   type: ItemType;
+  /**
+   * On-disk front-matter format version. Absent means the implicit baseline
+   * (version 1) and is never serialized; populated only once an item advances
+   * past the baseline via a future storage migration. See
+   * core/item/item-format-version.
+   */
+  pm_format_version?: number;
   source_type?: string;
   type_options?: Record<string, string>;
   status: ItemStatus;

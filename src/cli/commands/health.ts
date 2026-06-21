@@ -35,6 +35,7 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import { nowIso } from "../../core/shared/time.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
+import { effectiveItemFormatVersion, scanItemFormatVersions } from "../../core/item/item-format-version.js";
 import { listAllFrontMatter, listAllFrontMatterWithBody } from "../../core/store/item-store.js";
 import {
   PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
@@ -307,6 +308,7 @@ async function buildIntegrityCheck(
   const itemUnreadable: string[] = [];
   const itemConflictMarkers: Array<{ path: string; line: number; marker: string }> = [];
   const itemParseFailures: string[] = [];
+  const formatVersionEntries: Array<{ ref: string; version: number }> = [];
   const extensionFieldNames = collectRegisteredItemFieldNames(getActiveExtensionRegistrations());
 
   for (const itemPath of itemPaths) {
@@ -328,11 +330,13 @@ async function buildIntegrityCheck(
       continue;
     }
     try {
-      parseItemDocument(raw, { format: getItemFormatFromPath(itemPath) as ItemFormat, schema, extensionFieldNames });
+      const parsed = parseItemDocument(raw, { format: getItemFormatFromPath(itemPath) as ItemFormat, schema, extensionFieldNames });
+      formatVersionEntries.push({ ref: relativePath, version: effectiveItemFormatVersion(parsed.metadata) });
     } catch {
       itemParseFailures.push(relativePath);
     }
   }
+  const formatVersionScan = scanItemFormatVersions(formatVersionEntries);
 
   const historyDir = path.join(pmRoot, "history");
   const historyUnreadable: string[] = [];
@@ -391,6 +395,10 @@ async function buildIntegrityCheck(
     ...historyUnreadable.map((entry) => `integrity_history_unreadable:${entry}`),
     ...historyConflictMarkers.map((entry) => `integrity_history_conflict_marker:${entry.id}:L${entry.line}`),
     ...historyInvalidJson.map((entry) => `integrity_history_invalid_json:${entry.id}:L${entry.line}`),
+    /* c8 ignore start -- outdated-version items are unreachable until CURRENT_ITEM_FORMAT_VERSION advances past the baseline (an effective version below 1 cannot occur); the per-item mapping is covered in item-format-version.spec, and the ahead path below is covered by health-command.spec */
+    ...formatVersionScan.outdated.map((entry) => `integrity_item_outdated_format_version:${entry}`),
+    /* c8 ignore stop */
+    ...formatVersionScan.ahead.map((entry) => `integrity_item_ahead_format_version:${entry}`),
   ];
   const normalizedWarnings = [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
 
@@ -408,10 +416,14 @@ async function buildIntegrityCheck(
           history_unreadable: historyUnreadable.length,
           history_conflict_markers: historyConflictMarkers.length,
           history_invalid_json: historyInvalidJson.length,
+          item_outdated_format_version: formatVersionScan.outdated.length,
+          item_ahead_format_version: formatVersionScan.ahead.length,
         },
         item_unreadable: itemUnreadable,
         item_conflict_markers: itemConflictMarkers,
         item_parse_failures: itemParseFailures,
+        item_outdated_format_version: formatVersionScan.outdated,
+        item_ahead_format_version: formatVersionScan.ahead,
         history_unreadable: historyUnreadable,
         history_conflict_markers: historyConflictMarkers,
         history_invalid_json: historyInvalidJson,

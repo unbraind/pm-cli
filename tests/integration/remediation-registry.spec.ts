@@ -88,6 +88,21 @@ describe("shared remediation registry", () => {
       expect(resolveRemediation("locks_unreadable:1")?.command).toBe("pm gc --scope locks --dry-run");
     });
 
+    it("resolves item format-version warnings to migration and upgrade guidance", () => {
+      expect(resolveRemediation("integrity_item_outdated_format_version:tasks/pm-x.toon")?.command).toBe(
+        "pm validate --verbose-diagnostics",
+      );
+      expect(resolveRemediation("validate_format_version_outdated_items:2")?.command).toBe(
+        "pm validate --verbose-diagnostics",
+      );
+      expect(resolveRemediation("integrity_item_ahead_format_version:tasks/pm-x.toon")?.command).toBe(
+        "npm install -g @unbrained/pm-cli@latest",
+      );
+      expect(resolveRemediation("validate_format_version_ahead_items:1")?.command).toBe(
+        "npm install -g @unbrained/pm-cli@latest",
+      );
+    });
+
     it("returns undefined for an unknown warning code", () => {
       expect(resolveRemediation("totally_unknown_warning:1")).toBeUndefined();
     });

@@ -100,6 +100,26 @@ describe("item-format front-matter validation", () => {
     expect(() => parseItemDocument(buildSource({ priority: 7 }))).toThrow("priority must be an integer 0..4");
   });
 
+  it("rejects malformed pm_format_version values", () => {
+    expect(() => parseItemDocument(buildSource({ pm_format_version: 0 }))).toThrow("pm_format_version must be an integer >= 1");
+    expect(() => parseItemDocument(buildSource({ pm_format_version: 1.5 }))).toThrow(
+      "pm_format_version must be an integer >= 1",
+    );
+    expect(() => parseItemDocument(buildSource({ pm_format_version: "2" }))).toThrow(
+      "pm_format_version must be an integer >= 1",
+    );
+  });
+
+  it("drops a baseline pm_format_version on normalization but preserves versions above the baseline", () => {
+    const baseline = parseItemDocument(buildSource({ pm_format_version: 1 }));
+    expect(baseline.metadata.pm_format_version).toBeUndefined();
+    expect(serializeItemDocument(baseline, { format: "toon" })).not.toContain("pm_format_version");
+
+    const ahead = parseItemDocument(buildSource({ pm_format_version: 2 }));
+    expect(ahead.metadata.pm_format_version).toBe(2);
+    expect(serializeItemDocument(ahead, { format: "toon" })).toContain("pm_format_version: 2");
+  });
+
   it("accepts in-progress status alias and normalizes to canonical status", () => {
     const parsed = parseItemDocument(buildSource({ status: "in-progress" }));
     expect(parsed.metadata.status).toBe("in_progress");

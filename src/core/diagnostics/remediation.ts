@@ -151,6 +151,17 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     command: "pm history-repair <id>",
     summary: "A history stream contains Git conflict markers; resolve the markers, then re-anchor the chain.",
   },
+  // --- pm health (integrity) + pm validate (format_version): item format version ---
+  {
+    code: "integrity_item_outdated_format_version",
+    command: "pm validate --verbose-diagnostics",
+    summary: "An item predates the current storage format version; a pm storage migration rewrites it. Use --verbose-diagnostics to list the affected items.",
+  },
+  {
+    code: "integrity_item_ahead_format_version",
+    command: "npm install -g @unbrained/pm-cli@latest",
+    summary: "An item was written by a newer pm format version than this runtime supports; upgrade pm to read and validate it safely.",
+  },
   // --- pm health: history_drift ---
   // `pm health` rewrites these commands to `pm history-repair --all` in the
   // per-check remediation_map when more than one stream is drifted.
@@ -366,6 +377,16 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     command: 'pm update <id> --replace-tests --test "command=<corrected-command>" [--test ...]',
     summary:
       "Correct the stale pm-ID inside the item's linked test command (the check scans tests[].command, not the body). --replace-tests overwrites the entire tests list, so re-include the item's other linked tests in the same call.",
+  },
+  {
+    code: "validate_format_version_outdated_items",
+    command: "pm validate --verbose-diagnostics",
+    summary: "One or more items predate the current storage format version; a pm storage migration rewrites them. Use --verbose-diagnostics to list the affected items.",
+  },
+  {
+    code: "validate_format_version_ahead_items",
+    command: "npm install -g @unbrained/pm-cli@latest",
+    summary: "One or more items were written by a newer pm format version than this runtime supports; upgrade pm to read and validate them safely.",
   },
 ]);
 

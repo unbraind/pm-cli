@@ -54,6 +54,17 @@ export {
   serializeItemDocument,
   splitFrontMatter,
 } from "../core/item/item-format.js";
+export {
+  BASELINE_ITEM_FORMAT_VERSION,
+  CURRENT_ITEM_FORMAT_VERSION,
+  classifyItemFormatVersion,
+  effectiveItemFormatVersion,
+  normalizeItemFormatVersion,
+  scanItemFormatVersions,
+  type ItemFormatVersionScanEntry,
+  type ItemFormatVersionScanResult,
+  type ItemFormatVersionStatus,
+} from "../core/item/item-format-version.js";
 export { parseTags } from "../core/item/parse.js";
 export { normalizeStatusInput } from "../core/item/status.js";
 export { resolveItemTypeRegistry } from "../core/item/type-registry.js";

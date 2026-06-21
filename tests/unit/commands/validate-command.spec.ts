@@ -120,7 +120,54 @@ describe("runValidate", () => {
         "files",
         "command_references",
         "history_drift",
+        "format_version",
       ]);
+    });
+  });
+
+  it("reports a clean format-version check for a baseline tracker", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "validate-format-version-baseline");
+      const result = await runValidate({}, { path: context.pmPath });
+      const check = checkByName(result, "format_version");
+      expect(check.status).toBe("ok");
+      expect(check.details).toMatchObject({
+        current_format_version: 1,
+        outdated_items_count: 0,
+        ahead_items_count: 0,
+      });
+    });
+  });
+
+  it("errors when an item was written by a newer format version", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "validate-format-version-baseline");
+      await writeFile(
+        path.join(context.pmPath, "tasks", "pm-ahead.toon"),
+        [
+          "id: pm-ahead",
+          "title: Future format item",
+          'description: ""',
+          "type: Task",
+          "pm_format_version: 2",
+          "status: open",
+          "priority: 2",
+          "tags: []",
+          'created_at: "2026-02-22T00:00:00.000Z"',
+          'updated_at: "2026-02-22T00:00:00.000Z"',
+          "author: test-author",
+          'body: ""',
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const result = await runValidate({}, { path: context.pmPath });
+      const check = checkByName(result, "format_version");
+      expect(check.status).toBe("error");
+      expect(check.details).toMatchObject({ ahead_items_count: 1, ahead_items: ["pm-ahead"] });
+      expect(result.ok).toBe(false);
+      expect(result.warnings).toEqual(expect.arrayContaining(["validate_format_version_ahead_items:1"]));
     });
   });
 
