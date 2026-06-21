@@ -24,10 +24,12 @@ import {
   assertRegisteredImporter as assertRegisteredImporterFromBarrel,
   assertRegisteredItemField as assertRegisteredItemFieldFromBarrel,
   assertRegisteredItemType as assertRegisteredItemTypeFromBarrel,
+  assertRegisteredMigration as assertRegisteredMigrationFromBarrel,
   assertRegisteredParserOverride as assertRegisteredParserOverrideFromBarrel,
   assertRegisteredPreflightOverride as assertRegisteredPreflightOverrideFromBarrel,
   assertRegisteredRendererOverride as assertRegisteredRendererOverrideFromBarrel,
   assertRegisteredSearchProvider as assertRegisteredSearchProviderFromBarrel,
+  assertRegisteredServiceOverride as assertRegisteredServiceOverrideFromBarrel,
   assertRegisteredVectorStoreAdapter as assertRegisteredVectorStoreAdapterFromBarrel,
   activateExtensionForTest as activateExtensionForTestFromBarrel,
   appendHistoryEntry,
@@ -39,6 +41,7 @@ import {
   type ExtensionApi,
   type ExtensionHookRegistry,
   type ExtensionRegistrationRegistry,
+  type ExtensionServiceName,
   generateItemId,
   getContracts,
   getWorkspaceContracts,
@@ -72,10 +75,12 @@ import {
   assertRegisteredImporter,
   assertRegisteredItemField,
   assertRegisteredItemType,
+  assertRegisteredMigration,
   assertRegisteredParserOverride,
   assertRegisteredPreflightOverride,
   assertRegisteredRendererOverride,
   assertRegisteredSearchProvider,
+  assertRegisteredServiceOverride,
   assertRegisteredVectorStoreAdapter,
   activateExtensionForTest,
 } from "../../../src/sdk/testing.js";
@@ -860,6 +865,8 @@ describe("public sdk entrypoint", () => {
     expect(assertRegisteredParserOverrideFromBarrel).toBe(assertRegisteredParserOverride);
     expect(assertRegisteredPreflightOverrideFromBarrel).toBe(assertRegisteredPreflightOverride);
     expect(assertRegisteredRendererOverrideFromBarrel).toBe(assertRegisteredRendererOverride);
+    expect(assertRegisteredServiceOverrideFromBarrel).toBe(assertRegisteredServiceOverride);
+    expect(assertRegisteredMigrationFromBarrel).toBe(assertRegisteredMigration);
   });
 
   it("exposes runtime contracts without requiring a pm subprocess", async () => {
@@ -1844,5 +1851,125 @@ describe("sdk testing helpers", () => {
         extensionName: "other-ext",
       }),
     ).toThrow(/from extension "other-ext".*Available renderer overrides: toon/);
+  });
+
+  const activateServiceMigrationExtensionForTest = async (name: string): Promise<ExtensionActivationResult> =>
+    activateExtensionForTest(
+      {
+        activate(api: ExtensionApi) {
+          api.registerService("output_format", () => null);
+          api.registerService("error_format", () => null);
+          api.registerMigration({ id: "backfill-severity", description: "Backfill severity", mandatory: true });
+          api.registerMigration({ id: "rename-impact", description: "Rename impact" });
+        },
+      },
+      { name, capabilities: ["services", "schema"] },
+    );
+
+  it("asserts a registered service override by service name and extension", async () => {
+    const activation = await activateServiceMigrationExtensionForTest("service-ext");
+
+    const override = assertRegisteredServiceOverride(activation.services, { service: " Output_Format " });
+    expect(override.service).toBe("output_format");
+    expect(typeof override.run).toBe("function");
+
+    const scoped = assertRegisteredServiceOverride(activation.services, {
+      service: "error_format",
+      extensionName: "service-ext",
+    });
+    expect(scoped.name).toBe("service-ext");
+  });
+
+  it("throws actionable errors for missing service override registrations", async () => {
+    const activation = await activateServiceMigrationExtensionForTest("service-ext");
+
+    expect(() =>
+      assertRegisteredServiceOverride(activation.services, { service: "   " as ExtensionServiceName }),
+    ).toThrow("Expected service name must be a non-empty string");
+    expect(() => assertRegisteredServiceOverride(activation.services, { service: "help_format" })).toThrow(
+      /Available service overrides: error_format, output_format/,
+    );
+    expect(() =>
+      assertRegisteredServiceOverride(activation.services, {
+        service: "output_format",
+        extensionName: "other-ext",
+      }),
+    ).toThrow(/from extension "other-ext".*Available service overrides: error_format, output_format/);
+  });
+
+  it("asserts a registered migration by id, extension, and mandatory flag", async () => {
+    const activation = await activateServiceMigrationExtensionForTest("migration-ext");
+
+    const migration = assertRegisteredMigration(activation.registrations, { migration: " Backfill-Severity " });
+    expect(migration.definition.id).toBe("backfill-severity");
+    expect(migration.definition.mandatory).toBe(true);
+
+    const scoped = assertRegisteredMigration(activation.registrations, {
+      migration: "rename-impact",
+      extensionName: "migration-ext",
+      mandatory: false,
+    });
+    expect(scoped.layer).toBe("project");
+
+    const mandatory = assertRegisteredMigration(activation.registrations, {
+      migration: "backfill-severity",
+      mandatory: true,
+    });
+    expect(mandatory.definition.id).toBe("backfill-severity");
+  });
+
+  it("throws actionable errors for missing migration registrations", async () => {
+    const registryWithUnnamedMigration: ExtensionRegistrationRegistry = {
+      ...createRegistrationRegistry(),
+      migrations: [
+        {
+          layer: "project",
+          name: "schema-ext",
+          definition: { id: "Add-Severity", mandatory: true },
+          runtime_definition: { id: "Add-Severity", mandatory: true },
+        },
+        {
+          layer: "project",
+          name: "schema-ext",
+          definition: { id: "rename-impact" },
+          runtime_definition: { id: "rename-impact" },
+        },
+        {
+          layer: "global",
+          name: "other-ext",
+          definition: { description: "no id" },
+          runtime_definition: { description: "no id" },
+        },
+      ],
+    };
+
+    expect(() => assertRegisteredMigration(registryWithUnnamedMigration, { migration: "   " })).toThrow(
+      "Expected migration id must be a non-empty string",
+    );
+    expect(() => assertRegisteredMigration(registryWithUnnamedMigration, { migration: "ghost" })).toThrow(
+      /Available migrations: \(unnamed\):false, Add-Severity:true/,
+    );
+    // Id matches but the mandatory flag does not: report the mismatch directly
+    // rather than the misleading "to be registered" listing.
+    expect(() =>
+      assertRegisteredMigration(registryWithUnnamedMigration, { migration: "add-severity", mandatory: false }),
+    ).toThrow('Expected migration "add-severity" to have mandatory=false, but it is mandatory=true.');
+    // An unset mandatory flag is reported as mandatory=false in the mismatch message.
+    expect(() =>
+      assertRegisteredMigration(registryWithUnnamedMigration, { migration: "rename-impact", mandatory: true }),
+    ).toThrow('Expected migration "rename-impact" to have mandatory=true, but it is mandatory=false.');
+    expect(() =>
+      assertRegisteredMigration(registryWithUnnamedMigration, {
+        migration: "add-severity",
+        extensionName: "schema-ext",
+        mandatory: false,
+      }),
+    ).toThrow('from extension "schema-ext" to have mandatory=false, but it is mandatory=true.');
+    expect(() =>
+      assertRegisteredMigration(registryWithUnnamedMigration, {
+        migration: "add-severity",
+        extensionName: "ghost-ext",
+      }),
+    ).toThrow(/from extension "ghost-ext".*Available migrations:/);
   });
 });
