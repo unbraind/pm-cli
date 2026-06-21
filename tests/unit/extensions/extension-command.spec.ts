@@ -1898,8 +1898,10 @@ describe("extension command runtime", () => {
         ".gitignore",
         "README.md",
       ]);
+      // No `&&` / subshell chaining: Windows PowerShell 5.1 rejects `&&`, so the
+      // hint describes the sequence as prose with a forward-slashed path.
       expect((scaffold.details as { next_steps?: string[] }).next_steps).toContainEqual(
-        expect.stringContaining("npm install && npm test"),
+        expect.stringContaining('run "npm install" then "npm test"'),
       );
 
       const packageJson = JSON.parse(await readFile(path.join(scaffoldPath, "package.json"), "utf8")) as Record<string, unknown>;

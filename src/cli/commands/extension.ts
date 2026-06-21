@@ -1224,7 +1224,7 @@ export async function runExtension(
         `Install the scaffold: ${options.vocabulary === "package" ? "pm install --project" : "pm extension --install --project"} ${quotedTargetPath}`,
         `Smoke-test command path: pm ${scaffold.command_name}`,
         ...(options.vocabulary === "package"
-          ? [`Validate with the sample test: (cd ${quotedShellTargetPath} && npm install && npm test)`]
+          ? [`Validate the sample test in ${quotedShellTargetPath}: run "npm install" then "npm test"`]
           : []),
         `Run diagnostics: ${options.vocabulary === "package" ? "pm package doctor" : "pm extension --doctor"} --project --detail summary`,
       ],
