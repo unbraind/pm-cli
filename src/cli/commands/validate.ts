@@ -26,6 +26,11 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import { nowIso } from "../../core/shared/time.js";
+import {
+  CURRENT_ITEM_FORMAT_VERSION,
+  effectiveItemFormatVersion,
+  scanItemFormatVersions,
+} from "../../core/item/item-format-version.js";
 import { listAllFrontMatterWithBody } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -59,7 +64,14 @@ import {
 import type { ValidateMetadataProfile, ValidateMetadataRequiredField } from "../../types/index.js";
 import { extractReferencedPmItemIdsFromCommand } from "./test.js";
 
-type ValidateCheckName = "metadata" | "resolution" | "lifecycle" | "files" | "command_references" | "history_drift";
+type ValidateCheckName =
+  | "metadata"
+  | "resolution"
+  | "lifecycle"
+  | "files"
+  | "command_references"
+  | "history_drift"
+  | "format_version";
 type ValidateStatus = "ok" | "warn" | "error";
 type ValidateDependencyCycleSeverity = "off" | "warn" | "error";
 type ValidateFileScanMode = "default" | "tracked-all" | "tracked-all-strict";
@@ -824,6 +836,7 @@ function resolveRequestedChecks(options: ValidateCommandOptions): Set<ValidateCh
       requested.add("files");
       requested.add("command_references");
       requested.add("history_drift");
+      requested.add("format_version");
     }
     return requested;
   }
@@ -1935,6 +1948,49 @@ function buildCommandReferencesCheck(
 }
 /* c8 ignore stop */
 
+/* c8 ignore start -- format-version diagnostics projection is covered by validate format-version integration fixtures */
+function buildFormatVersionCheck(
+  items: ItemWithBody[],
+  verboseDiagnostics: boolean,
+): { check: ValidateCheck; warnings: string[] } {
+  const scan = scanItemFormatVersions(
+    items.map((item) => ({ ref: item.id, version: effectiveItemFormatVersion(item) })),
+  );
+  const warnings: string[] = [];
+  if (scan.outdated.length > 0) {
+    warnings.push(`validate_format_version_outdated_items:${scan.outdated.length}`);
+  }
+  if (scan.ahead.length > 0) {
+    warnings.push(`validate_format_version_ahead_items:${scan.ahead.length}`);
+  }
+  const diagnosticLimit = verboseDiagnostics ? Number.POSITIVE_INFINITY : DIAGNOSTIC_LIST_SUMMARY_LIMIT;
+  const summarizedOutdated = summarizeList(scan.outdated, diagnosticLimit);
+  const summarizedAhead = summarizeList(scan.ahead, diagnosticLimit);
+  // `ahead` items were written by a newer pm than this runtime: validation
+  // cannot vouch for fields it does not understand, so it is an error (upgrade
+  // pm). `outdated` items are a non-fatal warning (a migration would rewrite
+  // them). At the current baseline version neither list is populated.
+  const status: ValidateStatus = scan.ahead.length > 0 ? "error" : scan.outdated.length > 0 ? "warn" : "ok";
+  return {
+    check: {
+      name: "format_version",
+      status,
+      details: {
+        checked_items: items.length,
+        current_format_version: CURRENT_ITEM_FORMAT_VERSION,
+        outdated_items_count: scan.outdated.length,
+        outdated_items: summarizedOutdated.values,
+        outdated_items_truncated: summarizedOutdated.truncated,
+        ahead_items_count: scan.ahead.length,
+        ahead_items: summarizedAhead.values,
+        ahead_items_truncated: summarizedAhead.truncated,
+      },
+    },
+    warnings,
+  };
+}
+/* c8 ignore stop */
+
 const VALIDATE_AUTO_FIX_MESSAGE = "pm validate auto-fix";
 
 /**
@@ -2186,6 +2242,9 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
   }
   if (requestedChecks.has("history_drift")) {
     record(await buildHistoryDriftCheck(pmRoot, items, fullDiagnostics));
+  }
+  if (requestedChecks.has("format_version")) {
+    record(buildFormatVersionCheck(items, fullDiagnostics));
   }
 
   // Remediation phase (pm-c3sz / pm-8jss / pm-0v2m). Plans are derived from

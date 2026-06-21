@@ -888,6 +888,49 @@ describe("runHealth", () => {
     });
   });
 
+  it("reports an integrity warning for items written by a newer format version", async () => {
+    await withTempPmPath(async (context) => {
+      createSeedItem(context);
+
+      await writeFile(
+        path.join(context.pmPath, "tasks", "pm-ahead.toon"),
+        [
+          "id: pm-ahead",
+          "title: Future format item",
+          'description: ""',
+          "type: Task",
+          "pm_format_version: 2",
+          "status: open",
+          "priority: 2",
+          "tags: []",
+          'created_at: "2026-02-22T00:00:00.000Z"',
+          'updated_at: "2026-02-22T00:00:00.000Z"',
+          "author: test-author",
+          'body: ""',
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const health = await runHealth({ path: context.pmPath });
+      expect(health.warnings).toEqual(
+        expect.arrayContaining(["integrity_item_ahead_format_version:tasks/pm-ahead.toon"]),
+      );
+      expect(health.warnings.some((warning) => warning.startsWith("integrity_item_outdated_format_version:"))).toBe(false);
+
+      const integrityCheck = health.checks.find((check) => check.name === "integrity");
+      expect(integrityCheck?.status).toBe("warn");
+      expect(integrityCheck?.details).toMatchObject({
+        counts: {
+          item_outdated_format_version: 0,
+          item_ahead_format_version: 1,
+        },
+        item_outdated_format_version: [],
+        item_ahead_format_version: ["tasks/pm-ahead.toon"],
+      });
+    });
+  });
+
   it("fails in strict mode when required history streams are missing", async () => {
     await withTempPmPath(async (context) => {
       const missingId = createSeedItem(context);

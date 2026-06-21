@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- item-format-migration: add format-version field to front-matter for future migration gating ([pm-ae1u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ae1u.toon))
+
 ### Fixed
 
 - Windows nightly: secondary POSIX-separator + mocked-path test class (static-quality-gate, docs-skills-gate, bundle-cli, contracts-snapshot, smoke-npx-from-pack) ([pm-s5pe](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s5pe.toon))

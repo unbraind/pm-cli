@@ -115,6 +115,7 @@ export const FRONT_MATTER_KEY_ORDER: ReadonlyArray<string> = [
   "title",
   "description",
   "type",
+  "pm_format_version",
   "source_type",
   "type_options",
   "status",

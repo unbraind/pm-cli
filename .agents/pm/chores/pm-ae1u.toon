@@ -2,14 +2,19 @@ id: pm-ae1u
 title: "item-format-migration: add format-version field to front-matter for future migration gating"
 description: "There is no explicit format/schema version field in TOON front-matter. When a breaking front-matter change ships, there is no per-item version gate to distinguish items that need migration from items that are already migrated. The migrateItemFilesToFormat function performs an expensive full-corpus pass on every mutation; a version stamp would let it skip up-to-date items much faster."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[3]: "area:storage",migration,tech-debt
 created_at: "2026-06-07T10:03:32.173Z"
-updated_at: "2026-06-07T10:16:06.227Z"
+updated_at: "2026-06-21T01:32:07.407Z"
 author: audit-data-agent
 acceptance_criteria: "- Propose and evaluate adding `pm_format_version: 1` to the TOON front-matter schema\n- If approved: `item-format-migration.ts` stamps the version on write and gates migration on version < current\n- `pm validate` checks format version; `pm health` warns on outdated items\n- ADR candidate: whether to add a version field or keep relying on structural detection"
 parent: pm-o2kc
 risk: low
 confidence: medium
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-eeai,related,"2026-06-21T01:28:57.130Z",claude-code-agent,null
+comments[1]{created_at,author,text}:
+  "2026-06-21T01:29:15.571Z",claude-code-agent,"Implemented in PR feat/item-format-version-gating. Added core/item/item-format-version.ts (CURRENT/BASELINE constants + effectiveItemFormatVersion/classifyItemFormatVersion/scanItemFormatVersions, SDK-exported via sdk/runtime). pm_format_version added to ItemMetadata + FRONT_MATTER_KEY_ORDER (after type). item-format.ts: parse validates shape (integer >= 1); normalize drops the baseline so it is never serialized (zero churn for the current corpus) and preserves versions >= 2 verbatim. pm health integrity check tallies item_outdated_format_version/item_ahead_format_version + per-item lists; pm validate gains a default format_version check (outdated=warn, ahead=error). Remediation registry maps the four new warning codes to migration-listing / pm-upgrade guidance. Design rationale recorded in the ADR Decision [[pm-eeai]]. Acceptance criteria all satisfied; the outdated path is dormant-by-design at the baseline version and activates with the first CURRENT_ITEM_FORMAT_VERSION bump + accompanying migration."
+close_reason: "Shipped pm_format_version front-matter field + migration gating, validate format_version check, health integrity tally, remediation guidance, and ADR pm-eeai. All acceptance criteria met."
 body: "## Context\n\n`src/core/store/item-format-migration.ts` handles migrations but relies on structural content inspection (does the file look like old format?) rather than an explicit version. The performance fix in session 2026-05-31 (PR#87) added a skip for already-migrated items based on format detection, but a true version field would be more robust and enable staged multi-version migrations.\n\nExisting ADR: TOON canonical storage is in place. A `pm_format_version` front-matter field would be a very lightweight addition.\n\n## Acceptance criteria\n\n- [ ] Propose and evaluate adding `pm_format_version: 1` to the TOON front-matter schema\n- [ ] If approved: `item-format-migration.ts` stamps the version on write and gates migration on version < current\n- [ ] `pm validate` checks format version; `pm health` warns on outdated items\n- [ ] ADR candidate: whether to add a version field or keep relying on structural detection\n\n## Evidence\n\n- `src/core/store/item-format-migration.ts` — no version field; uses structural detection\n- PR#87 memory note: 'pre-mutation migrateItemFilesToFormat re-parsed the WHOLE corpus every mutation (now skips already-migrated items)' — the skip is heuristic, not version-based"

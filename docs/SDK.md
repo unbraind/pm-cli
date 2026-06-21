@@ -55,6 +55,14 @@ Package manifest exports:
 - `readPmPackageManifest`
 - `collectPackageExtensionDirectories`
 
+Storage format-version exports (under `@unbrained/pm-cli/sdk/runtime`):
+
+- `CURRENT_ITEM_FORMAT_VERSION` / `BASELINE_ITEM_FORMAT_VERSION`
+- `effectiveItemFormatVersion` (resolve an item's stored version; absent means the baseline)
+- `normalizeItemFormatVersion` (persisted form; the baseline is dropped so it is never serialized)
+- `classifyItemFormatVersion` (`current` / `outdated` / `ahead`)
+- `scanItemFormatVersions` (partition items into outdated/ahead reference lists)
+
 Command/action contract exports:
 
 - `PM_CORE_COMMAND_NAMES`
