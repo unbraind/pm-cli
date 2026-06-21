@@ -279,6 +279,60 @@ export interface RunRegisteredMigrationForTestOptions {
 }
 
 /**
+ * Options for {@link runRegisteredImporterForTest} — the registered importer name
+ * to invoke plus the synthetic invocation context forwarded to its handler.
+ *
+ * The `importer` name is the value passed to `api.registerImporter(name, ...)`,
+ * resolved case-insensitively (and whitespace-collapsed) against
+ * `registrations.importers`; the helper derives the `"<name> import"` command
+ * path internally, so authors never hand-build it.
+ */
+export interface RunRegisteredImporterForTestOptions {
+  /** Registered importer name to resolve, e.g. `"csv"` for a `"csv import"` handler. */
+  importer: string;
+  /** Optional extension name to disambiguate when several extensions register the same importer. */
+  extensionName?: string;
+  /** Positional arguments forwarded as `context.args` (default: none). */
+  args?: readonly string[];
+  /** Parsed flags/options forwarded as `context.options` (default: none). */
+  options?: Record<string, unknown>;
+  /**
+   * Global option overrides merged onto the agent-safe test defaults
+   * (`{ json: true, quiet: true, noPager: true }`), forwarded as `context.global`.
+   */
+  global?: Partial<GlobalOptions>;
+  /** Resolved pm workspace root forwarded as `context.pm_root` (default: `""`). */
+  pmRoot?: string;
+}
+
+/**
+ * Options for {@link runRegisteredExporterForTest} — the registered exporter name
+ * to invoke plus the synthetic invocation context forwarded to its handler.
+ *
+ * The `exporter` name is the value passed to `api.registerExporter(name, ...)`,
+ * resolved case-insensitively (and whitespace-collapsed) against
+ * `registrations.exporters`; the helper derives the `"<name> export"` command
+ * path internally, so authors never hand-build it.
+ */
+export interface RunRegisteredExporterForTestOptions {
+  /** Registered exporter name to resolve, e.g. `"csv"` for a `"csv export"` handler. */
+  exporter: string;
+  /** Optional extension name to disambiguate when several extensions register the same exporter. */
+  extensionName?: string;
+  /** Positional arguments forwarded as `context.args` (default: none). */
+  args?: readonly string[];
+  /** Parsed flags/options forwarded as `context.options` (default: none). */
+  options?: Record<string, unknown>;
+  /**
+   * Global option overrides merged onto the agent-safe test defaults
+   * (`{ json: true, quiet: true, noPager: true }`), forwarded as `context.global`.
+   */
+  global?: Partial<GlobalOptions>;
+  /** Resolved pm workspace root forwarded as `context.pm_root` (default: `""`). */
+  pmRoot?: string;
+}
+
+/**
  * Documents the extension deactivation expectation payload exchanged by command, SDK, and package integrations.
  */
 export interface ExtensionDeactivationExpectation {
@@ -1076,6 +1130,86 @@ export async function runRegisteredMigrationForTest(
     status: (typeof declaredStatus === "string" ? declaredStatus.trim().toLowerCase() : "") || "pending",
   };
   return await (run as (context: SchemaMigrationRunContext) => unknown)(context);
+}
+
+/**
+ * Invoke a registered extension importer through pm's real handler-dispatch
+ * engine and return its {@link CommandHandlerResult}, so package tests can assert
+ * an importer's behavior — not just that it registered.
+ *
+ * This is the importer counterpart to {@link runRegisteredCommandForTest},
+ * extending the package-author "invoke" verb to the `api.registerImporter`
+ * surface. Because `registerImporter(name, fn)` wraps `fn` into a command handler
+ * at the `"<name> import"` path, invoking it through `runRegisteredCommandForTest`
+ * requires the author to know that naming convention and to remember that an
+ * importer is reachable as a command at all. This helper closes both gaps: it
+ * accepts the registered importer name directly, validates via
+ * {@link assertRegisteredImporter} that it is genuinely a registered importer
+ * (not merely some command parked at that path), derives the command path, and
+ * dispatches through the same engine.
+ *
+ * The full activation result is required because importer execution spans two
+ * sub-registries: `registrations.importers` proves the importer exists, while
+ * `commands` holds the wrapped handler. The result is returned verbatim from the
+ * command engine: a clean run yields `{ handled: true, result, warnings: [] }`
+ * (where `result` is the importer's return value), a non-exit throw yields
+ * `{ handled: false, warnings: [code], errorMessage }`, and an error carrying a
+ * numeric `exitCode` propagates — matching runtime import semantics.
+ *
+ * Throws a descriptive "available importers" error (via `assertRegisteredImporter`)
+ * when no importer matches, since that is a wiring/typo bug in the test rather
+ * than a behavior under test.
+ */
+export async function runRegisteredImporterForTest(
+  activation: ExtensionActivationResult,
+  options: RunRegisteredImporterForTestOptions,
+): Promise<CommandHandlerResult> {
+  const importer = assertRegisteredImporter(activation.registrations, {
+    importer: options.importer,
+    extensionName: options.extensionName,
+  });
+  return runRegisteredCommandForTest(activation.commands, {
+    command: `${importer.importer} import`,
+    args: options.args,
+    options: options.options,
+    global: options.global,
+    pmRoot: options.pmRoot,
+  });
+}
+
+/**
+ * Invoke a registered extension exporter through pm's real handler-dispatch
+ * engine and return its {@link CommandHandlerResult}, so package tests can assert
+ * an exporter's behavior — not just that it registered.
+ *
+ * This is the exporter counterpart to {@link runRegisteredImporterForTest} and
+ * the final surface in the package-author "invoke" verb. Because
+ * `registerExporter(name, fn)` wraps `fn` into a command handler at the
+ * `"<name> export"` path, this helper accepts the registered exporter name
+ * directly, validates via {@link assertRegisteredExporter} that it is genuinely a
+ * registered exporter, derives the command path, and dispatches through the same
+ * engine. See {@link runRegisteredImporterForTest} for the full activation
+ * rationale and return semantics (which apply identically here).
+ *
+ * Throws a descriptive "available exporters" error (via `assertRegisteredExporter`)
+ * when no exporter matches, since that is a wiring/typo bug in the test rather
+ * than a behavior under test.
+ */
+export async function runRegisteredExporterForTest(
+  activation: ExtensionActivationResult,
+  options: RunRegisteredExporterForTestOptions,
+): Promise<CommandHandlerResult> {
+  const exporter = assertRegisteredExporter(activation.registrations, {
+    exporter: options.exporter,
+    extensionName: options.extensionName,
+  });
+  return runRegisteredCommandForTest(activation.commands, {
+    command: `${exporter.exporter} export`,
+    args: options.args,
+    options: options.options,
+    global: options.global,
+    pmRoot: options.pmRoot,
+  });
 }
 
 /**
