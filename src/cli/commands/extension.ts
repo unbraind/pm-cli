@@ -1207,6 +1207,10 @@ export async function runExtension(
     const scaffoldTarget = requireTarget(normalizedTarget, action);
     const scaffold = await scaffoldExtensionProject(scaffoldTarget, options.vocabulary ?? "extension");
     const quotedTargetPath = JSON.stringify(scaffold.target_path);
+    // Forward-slash the path for the copy-pasteable `cd` hint: Windows cmd.exe /
+    // PowerShell reject the doubled backslashes JSON.stringify emits, while both
+    // shells (and POSIX) accept forward slashes.
+    const quotedShellTargetPath = JSON.stringify(scaffold.target_path.replace(/\\/g, "/"));
     return withResult({
       scaffolded: scaffold.created_directory || scaffold.files.some((entry) => entry.status === "created"),
       extension: {
@@ -1220,7 +1224,7 @@ export async function runExtension(
         `Install the scaffold: ${options.vocabulary === "package" ? "pm install --project" : "pm extension --install --project"} ${quotedTargetPath}`,
         `Smoke-test command path: pm ${scaffold.command_name}`,
         ...(options.vocabulary === "package"
-          ? [`Validate with the sample test: (cd ${quotedTargetPath} && npm install && npm test)`]
+          ? [`Validate with the sample test: (cd ${quotedShellTargetPath} && npm install && npm test)`]
           : []),
         `Run diagnostics: ${options.vocabulary === "package" ? "pm package doctor" : "pm extension --doctor"} --project --detail summary`,
       ],
