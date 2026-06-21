@@ -38,10 +38,13 @@ import {
   runRegisteredCommandForTest as runRegisteredCommandForTestFromBarrel,
   runRegisteredCommandOverrideForTest as runRegisteredCommandOverrideForTestFromBarrel,
   runRegisteredHookForTest as runRegisteredHookForTestFromBarrel,
+  runRegisteredMigrationForTest as runRegisteredMigrationForTestFromBarrel,
   runRegisteredParserOverrideForTest as runRegisteredParserOverrideForTestFromBarrel,
   runRegisteredPreflightOverrideForTest as runRegisteredPreflightOverrideForTestFromBarrel,
   runRegisteredRendererOverrideForTest as runRegisteredRendererOverrideForTestFromBarrel,
+  runRegisteredSearchProviderForTest as runRegisteredSearchProviderForTestFromBarrel,
   runRegisteredServiceOverrideForTest as runRegisteredServiceOverrideForTestFromBarrel,
+  runRegisteredVectorStoreAdapterForTest as runRegisteredVectorStoreAdapterForTestFromBarrel,
   appendHistoryEntry,
   createHistoryEntry,
   createPmCliExpectedError,
@@ -99,10 +102,13 @@ import {
   runRegisteredCommandForTest,
   runRegisteredCommandOverrideForTest,
   runRegisteredHookForTest,
+  runRegisteredMigrationForTest,
   runRegisteredParserOverrideForTest,
   runRegisteredPreflightOverrideForTest,
   runRegisteredRendererOverrideForTest,
+  runRegisteredSearchProviderForTest,
   runRegisteredServiceOverrideForTest,
+  runRegisteredVectorStoreAdapterForTest,
 } from "../../../src/sdk/testing.js";
 import { serializeItemDocument } from "../../../src/core/item/item-format.js";
 import { readSettings as readCoreSettings, writeSettings } from "../../../src/core/store/settings.js";
@@ -890,6 +896,12 @@ describe("public sdk entrypoint", () => {
     expect(runRegisteredCommandOverrideForTestFromBarrel).toBe(runRegisteredCommandOverrideForTest);
     expect(runRegisteredRendererOverrideForTestFromBarrel).toBe(runRegisteredRendererOverrideForTest);
     expect(runRegisteredServiceOverrideForTestFromBarrel).toBe(runRegisteredServiceOverrideForTest);
+    // Lock the invoke-verb helpers for the executable registration surfaces
+    // (search providers, vector store adapters, migrations) to the same
+    // implementation the testing entrypoint exports.
+    expect(runRegisteredSearchProviderForTestFromBarrel).toBe(runRegisteredSearchProviderForTest);
+    expect(runRegisteredVectorStoreAdapterForTestFromBarrel).toBe(runRegisteredVectorStoreAdapterForTest);
+    expect(runRegisteredMigrationForTestFromBarrel).toBe(runRegisteredMigrationForTest);
     expect(assertExtensionDeactivatedFromBarrel).toBe(assertExtensionDeactivated);
     // Lock the new override-assertion helpers to the same implementation the
     // testing entrypoint exports (barrel-contract for this PR's SDK surface).
@@ -2450,5 +2462,212 @@ describe("sdk testing helpers", () => {
     ).rejects.toThrow(
       /Expected a registered service override for service "error_format" to invoke\. Available service override services: output_format/,
     );
+  });
+
+  // In-memory extension that registers the three executable registration
+  // surfaces (search providers, vector store adapters, migrations) so the
+  // invoke-verb helpers can exercise their live runtime functions. The
+  // `query-only-*` registrations omit operations on purpose to drive the
+  // "operation not implemented" guard, and the `norun`/`nostatus` migrations
+  // cover the run-absent and default-status paths.
+  const activateInvokeRegistrationExtension = async (): Promise<ExtensionActivationResult> =>
+    activateExtensionForTest(
+      {
+        activate(api: ExtensionApi) {
+          api.registerSearchProvider({
+            name: "memory-search",
+            query: async (context) => ({ hits: [{ id: context.query, score: context.tokens.length }] }),
+            embed: async (context) => [context.input.length],
+            // camelCase spelling exercises the first alias key for embedBatch.
+            embedBatch: async (context) => context.inputs.map((input) => [input.length]),
+            // snake_case spelling exercises the second alias key for queryExpansion.
+            query_expansion: async (context) => [`${context.query}+more`],
+            rerank: async (context) => context.candidates.map((candidate, index) => ({ id: candidate.id, score: index })),
+          });
+          api.registerSearchProvider({ name: "query-only-search", query: async () => ({ hits: [] }) });
+          api.registerVectorStoreAdapter({
+            name: "memory-vector",
+            query: async (context) => [{ id: "v1", score: context.limit }],
+            upsert: async (context) => ({ upserted: context.points.length }),
+            delete: async (context) => ({ deleted: context.ids.length }),
+          });
+          api.registerVectorStoreAdapter({ name: "query-only-vector", query: async () => [] });
+          api.registerMigration({
+            id: "memory-migration",
+            description: "In-memory migration",
+            status: "Pending",
+            run: async (context) => ({ ranAt: context.pm_root, status: context.status, id: context.id }),
+          });
+          api.registerMigration({
+            id: "nostatus-migration",
+            description: "Migration without a declared status",
+            run: async (context) => ({ ranAt: context.pm_root, status: context.status, id: context.id }),
+          });
+          api.registerMigration({ id: "norun-migration", description: "Marker migration without a run function" });
+        },
+      },
+      {
+        name: "invoke-registration-ext",
+        capabilities: ["search", "schema"],
+      },
+    );
+
+  it("invokes every operation of a registered search provider", async () => {
+    const activation = await activateInvokeRegistrationExtension();
+
+    expect(
+      await runRegisteredSearchProviderForTest(activation.registrations, {
+        provider: "memory-search",
+        operation: "query",
+        context: { query: "calendar", mode: "semantic", tokens: ["calendar"], options: {}, settings: {}, documents: [] },
+      }),
+    ).toEqual({ hits: [{ id: "calendar", score: 1 }] });
+
+    // The provider name is resolved case-insensitively, mirroring the host.
+    expect(
+      await runRegisteredSearchProviderForTest(activation.registrations, {
+        provider: "MEMORY-SEARCH",
+        operation: "embed",
+        context: { input: "abc", settings: {}, model: "test-model" },
+      }),
+    ).toEqual([3]);
+
+    expect(
+      await runRegisteredSearchProviderForTest(activation.registrations, {
+        provider: "memory-search",
+        operation: "embedBatch",
+        context: { inputs: ["a", "bb"], settings: {}, model: "test-model" },
+      }),
+    ).toEqual([[1], [2]]);
+
+    expect(
+      await runRegisteredSearchProviderForTest(activation.registrations, {
+        provider: "memory-search",
+        operation: "queryExpansion",
+        context: { query: "todo", mode: "semantic", settings: {} },
+      }),
+    ).toEqual(["todo+more"]);
+
+    expect(
+      await runRegisteredSearchProviderForTest(activation.registrations, {
+        provider: "memory-search",
+        operation: "rerank",
+        context: {
+          query: "todo",
+          mode: "hybrid",
+          model: "rerank-model",
+          top_k: 2,
+          settings: {},
+          candidates: [
+            { id: "a", text: "alpha", score: 0.1 },
+            { id: "b", text: "beta", score: 0.2 },
+          ],
+        },
+      }),
+    ).toEqual([
+      { id: "a", score: 0 },
+      { id: "b", score: 1 },
+    ]);
+  });
+
+  it("throws a descriptive error invoking an unregistered or under-implemented search provider", async () => {
+    const activation = await activateInvokeRegistrationExtension();
+
+    await expect(
+      runRegisteredSearchProviderForTest(activation.registrations, {
+        provider: "ghost-search",
+        operation: "query",
+        context: { query: "x", mode: "semantic", tokens: [], options: {}, settings: {}, documents: [] },
+      }),
+    ).rejects.toThrow(
+      /Expected a registered search provider "ghost-search" to invoke\. Available search providers: memory-search, query-only-search/,
+    );
+
+    await expect(
+      runRegisteredSearchProviderForTest(activation.registrations, {
+        provider: "query-only-search",
+        operation: "rerank",
+        context: { query: "x", mode: "hybrid", model: "m", top_k: 1, settings: {}, candidates: [] },
+      }),
+    ).rejects.toThrow(/Registered search provider "query-only-search" does not implement the "rerank" operation/);
+  });
+
+  it("invokes every operation of a registered vector store adapter", async () => {
+    const activation = await activateInvokeRegistrationExtension();
+
+    expect(
+      await runRegisteredVectorStoreAdapterForTest(activation.registrations, {
+        adapter: "memory-vector",
+        operation: "query",
+        context: { vector: [0.1, 0.2], limit: 5, settings: {} },
+      }),
+    ).toEqual([{ id: "v1", score: 5 }]);
+
+    expect(
+      await runRegisteredVectorStoreAdapterForTest(activation.registrations, {
+        adapter: "MEMORY-VECTOR",
+        operation: "upsert",
+        context: { points: [{ id: "p1", vector: [0.1] }], settings: {} },
+      }),
+    ).toEqual({ upserted: 1 });
+
+    expect(
+      await runRegisteredVectorStoreAdapterForTest(activation.registrations, {
+        adapter: "memory-vector",
+        operation: "delete",
+        context: { ids: ["p1", "p2"], settings: {} },
+      }),
+    ).toEqual({ deleted: 2 });
+  });
+
+  it("throws a descriptive error invoking an unregistered or under-implemented vector store adapter", async () => {
+    const activation = await activateInvokeRegistrationExtension();
+
+    await expect(
+      runRegisteredVectorStoreAdapterForTest(activation.registrations, {
+        adapter: "ghost-vector",
+        operation: "query",
+        context: { vector: [0.1], limit: 1, settings: {} },
+      }),
+    ).rejects.toThrow(
+      /Expected a registered vector store adapter "ghost-vector" to invoke\. Available vector store adapters: memory-vector, query-only-vector/,
+    );
+
+    await expect(
+      runRegisteredVectorStoreAdapterForTest(activation.registrations, {
+        adapter: "query-only-vector",
+        operation: "upsert",
+        context: { points: [], settings: {} },
+      }),
+    ).rejects.toThrow(/Registered vector store adapter "query-only-vector" does not implement the "upsert" operation/);
+  });
+
+  it("invokes a registered migration run function with a host-shaped context", async () => {
+    const activation = await activateInvokeRegistrationExtension();
+
+    // Declared status is normalized (trimmed + lower-cased) and pmRoot flows through.
+    expect(
+      await runRegisteredMigrationForTest(activation.registrations, {
+        migration: "memory-migration",
+        pmRoot: "/tmp/pm-workspace",
+      }),
+    ).toEqual({ ranAt: "/tmp/pm-workspace", status: "pending", id: "memory-migration" });
+
+    // No declared status defaults to "pending"; omitted pmRoot defaults to "".
+    expect(
+      await runRegisteredMigrationForTest(activation.registrations, { migration: "nostatus-migration" }),
+    ).toEqual({ ranAt: "", status: "pending", id: "nostatus-migration" });
+  });
+
+  it("throws a descriptive error invoking an unregistered or runless migration", async () => {
+    const activation = await activateInvokeRegistrationExtension();
+
+    await expect(
+      runRegisteredMigrationForTest(activation.registrations, { migration: "ghost-migration" }),
+    ).rejects.toThrow(/Expected migration "ghost-migration" to be registered\. Available migrations:/);
+
+    await expect(
+      runRegisteredMigrationForTest(activation.registrations, { migration: "norun-migration" }),
+    ).rejects.toThrow(/Registered migration "norun-migration" does not implement a run function to invoke/);
   });
 });

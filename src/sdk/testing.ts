@@ -52,8 +52,21 @@ import type {
   RendererOverrideResult,
   SchemaFieldDefinition,
   SchemaItemTypeDefinition,
+  SchemaMigrationRunContext,
+  SearchProviderEmbedBatchContext,
+  SearchProviderEmbedContext,
+  SearchProviderQueryContext,
+  SearchProviderQueryExpansionContext,
+  SearchProviderQueryExpansionResult,
+  SearchProviderQueryResult,
+  SearchProviderRerankContext,
+  SearchProviderRerankResult,
   ServiceOverrideContext,
   ServiceOverrideResult,
+  VectorStoreDeleteContext,
+  VectorStoreQueryContext,
+  VectorStoreQueryHit,
+  VectorStoreUpsertContext,
 } from "../core/extensions/loader.js";
 import {
   activateExtensions,
@@ -71,6 +84,11 @@ import {
   runServiceOverride,
 } from "../core/extensions/loader.js";
 import { createDefaultExtensionGovernancePolicy } from "../core/extensions/extension-types.js";
+import {
+  getMigrationRuntimeDefinition,
+  resolveRegisteredSearchProvider,
+  resolveRegisteredVectorStoreAdapter,
+} from "../core/extensions/runtime-registrations.js";
 import { collectUsedExtensionCapabilities } from "../core/extensions/capability-usage.js";
 import { normalizeKnownExtensionCapability } from "../core/extensions/extension-capability-aliases.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
@@ -156,6 +174,109 @@ export type RunRegisteredHookForTestOptions =
   | { kind: "on_read"; context: OnReadHookContext }
   | { kind: "on_write"; context: OnWriteHookContext }
   | { kind: "on_index"; context: OnIndexHookContext };
+
+/**
+ * Maps each invokable search-provider operation to the context type its function
+ * receives, keeping {@link runRegisteredSearchProviderForTest} type-safe per
+ * operation. Mirrors the operations the host dispatches to a registered provider:
+ * semantic `query`, single/batch embedding (`embed`/`embedBatch`),
+ * `queryExpansion`, and `rerank`.
+ */
+export interface SearchProviderOperationContexts {
+  query: SearchProviderQueryContext;
+  embed: SearchProviderEmbedContext;
+  embedBatch: SearchProviderEmbedBatchContext;
+  queryExpansion: SearchProviderQueryExpansionContext;
+  rerank: SearchProviderRerankContext;
+}
+
+/**
+ * Maps each invokable search-provider operation to the result type its function
+ * returns, so {@link runRegisteredSearchProviderForTest} resolves a precise return
+ * type from the chosen `operation` instead of a union the caller must narrow.
+ */
+export interface SearchProviderOperationResults {
+  query: SearchProviderQueryResult;
+  embed: number[];
+  embedBatch: number[][];
+  queryExpansion: SearchProviderQueryExpansionResult;
+  rerank: SearchProviderRerankResult;
+}
+
+/**
+ * Options for {@link runRegisteredSearchProviderForTest}: the registered
+ * `provider` name to resolve, the `operation` to invoke, and the synthetic
+ * `context` handed to that operation. The discriminated union keeps `context`
+ * type-safe per operation — `operation: "embed"` requires a
+ * {@link SearchProviderEmbedContext}, `operation: "rerank"` a
+ * {@link SearchProviderRerankContext}, and so on.
+ */
+export type RunRegisteredSearchProviderForTestOptions = {
+  [Operation in keyof SearchProviderOperationContexts]: {
+    /** Registered provider name to resolve, matched case-insensitively as the host does. */
+    provider: string;
+    /** Provider operation to invoke. */
+    operation: Operation;
+    /** Synthetic context handed to the resolved operation function. */
+    context: SearchProviderOperationContexts[Operation];
+  };
+}[keyof SearchProviderOperationContexts];
+
+/**
+ * Maps each invokable vector-store-adapter operation to the context type its
+ * function receives, keeping {@link runRegisteredVectorStoreAdapterForTest}
+ * type-safe per operation. Mirrors the operations the host dispatches to a
+ * registered adapter: nearest-neighbour `query`, `upsert`, and `delete`.
+ */
+export interface VectorStoreAdapterOperationContexts {
+  query: VectorStoreQueryContext;
+  upsert: VectorStoreUpsertContext;
+  delete: VectorStoreDeleteContext;
+}
+
+/**
+ * Maps each invokable vector-store-adapter operation to the result type its
+ * function returns. Only `query` has a structured result
+ * ({@link VectorStoreQueryHit}[]); `upsert`/`delete` report success by not
+ * throwing, so their result is `unknown` and typically ignored.
+ */
+export interface VectorStoreAdapterOperationResults {
+  query: VectorStoreQueryHit[];
+  upsert: unknown;
+  delete: unknown;
+}
+
+/**
+ * Options for {@link runRegisteredVectorStoreAdapterForTest}: the registered
+ * `adapter` name to resolve, the `operation` to invoke, and the synthetic
+ * `context` handed to that operation. The discriminated union keeps `context`
+ * type-safe per operation — `operation: "upsert"` requires a
+ * {@link VectorStoreUpsertContext}, `operation: "delete"` a
+ * {@link VectorStoreDeleteContext}, and so on.
+ */
+export type RunRegisteredVectorStoreAdapterForTestOptions = {
+  [Operation in keyof VectorStoreAdapterOperationContexts]: {
+    /** Registered adapter name to resolve, matched case-insensitively as the host does. */
+    adapter: string;
+    /** Adapter operation to invoke. */
+    operation: Operation;
+    /** Synthetic context handed to the resolved operation function. */
+    context: VectorStoreAdapterOperationContexts[Operation];
+  };
+}[keyof VectorStoreAdapterOperationContexts];
+
+/**
+ * Options for {@link runRegisteredMigrationForTest}: which registered migration
+ * to invoke and the workspace root its run context reports.
+ */
+export interface RunRegisteredMigrationForTestOptions {
+  /** Registered migration id to resolve, matched case-insensitively against `definition.id`. */
+  migration: string;
+  /** Optional extension name to disambiguate when several extensions register the same id. */
+  extensionName?: string;
+  /** Resolved pm workspace root forwarded as `context.pm_root` (default `""`). */
+  pmRoot?: string;
+}
 
 /**
  * Documents the extension deactivation expectation payload exchanged by command, SDK, and package integrations.
@@ -797,6 +918,164 @@ export async function runRegisteredServiceOverrideForTest(
     );
   }
   return runServiceOverride(services, context);
+}
+
+/**
+ * Maps each search-provider operation to the runtime-definition keys that may
+ * hold its function, in priority order. The host accepts both camelCase and
+ * snake_case spellings for the multi-word operations, so this helper mirrors that
+ * by trying `embedBatch` before `embed_batch` and `queryExpansion` before
+ * `query_expansion`.
+ */
+const SEARCH_PROVIDER_OPERATION_DEFINITION_KEYS: Record<keyof SearchProviderOperationContexts, readonly string[]> = {
+  query: ["query"],
+  embed: ["embed"],
+  embedBatch: ["embedBatch", "embed_batch"],
+  queryExpansion: ["queryExpansion", "query_expansion"],
+  rerank: ["rerank"],
+};
+
+/**
+ * Invoke an operation of a registered search provider through the same name
+ * resolution the host uses and return the operation's result, so package tests
+ * can assert a custom provider's runtime behavior — not just that it registered.
+ *
+ * This is the search-provider counterpart to {@link runRegisteredCommandForTest},
+ * extending the package-author "invoke" verb to the `api.registerSearchProvider`
+ * surface. Pass the `ExtensionRegistrationRegistry` from
+ * `activateExtensionForTest(...).registrations`, the registered provider name, the
+ * `operation` to exercise (`query`, `embed`, `embedBatch`, `queryExpansion`, or
+ * `rerank`), and a synthetic context. The provider is resolved via
+ * {@link resolveRegisteredSearchProvider} (case-insensitive, last registration
+ * wins) and the operation is invoked on its `runtime_definition` — the clone that
+ * preserves live functions, matching what the runtime dispatches.
+ *
+ * Throws a descriptive error listing the available providers when the name is not
+ * registered, and a separate error when the resolved provider does not implement
+ * the requested operation, since invoking an absent provider/operation is a
+ * wiring bug in the test rather than a behavior under test.
+ */
+export async function runRegisteredSearchProviderForTest<Operation extends keyof SearchProviderOperationContexts>(
+  registrations: ExtensionRegistrationRegistry,
+  options: {
+    provider: string;
+    operation: Operation;
+    context: SearchProviderOperationContexts[Operation];
+  },
+): Promise<SearchProviderOperationResults[Operation]> {
+  const registration = resolveRegisteredSearchProvider(registrations, options.provider);
+  if (!registration) {
+    const available = sortedUnique(registrations.search_providers.map((entry) => entry.definition.name));
+    throw new Error(
+      `Expected a registered search provider "${options.provider}" to invoke. Available search providers: ${formatAvailable(
+        available,
+      )}`,
+    );
+  }
+  const runtimeDefinition = registration.runtime_definition;
+  const operationFn = SEARCH_PROVIDER_OPERATION_DEFINITION_KEYS[options.operation]
+    .map((key) => runtimeDefinition[key])
+    .find((value) => typeof value === "function");
+  if (typeof operationFn !== "function") {
+    throw new Error(
+      `Registered search provider "${options.provider}" does not implement the "${options.operation}" operation.`,
+    );
+  }
+  return (await (operationFn as (context: SearchProviderOperationContexts[Operation]) => unknown)(
+    options.context,
+  )) as SearchProviderOperationResults[Operation];
+}
+
+/**
+ * Invoke an operation of a registered vector store adapter through the same name
+ * resolution the host uses and return the operation's result, so package tests
+ * can assert a custom adapter's runtime behavior — not just that it registered.
+ *
+ * This is the vector-store counterpart to {@link runRegisteredSearchProviderForTest}.
+ * Pass the `ExtensionRegistrationRegistry` from
+ * `activateExtensionForTest(...).registrations`, the registered adapter name, the
+ * `operation` to exercise (`query`, `upsert`, or `delete`), and a synthetic
+ * context. The adapter is resolved via {@link resolveRegisteredVectorStoreAdapter}
+ * (case-insensitive, last registration wins) and the operation is invoked on its
+ * `runtime_definition` — the clone that preserves live functions, matching what
+ * the runtime dispatches.
+ *
+ * Throws a descriptive error listing the available adapters when the name is not
+ * registered, and a separate error when the resolved adapter does not implement
+ * the requested operation.
+ */
+export async function runRegisteredVectorStoreAdapterForTest<
+  Operation extends keyof VectorStoreAdapterOperationContexts,
+>(
+  registrations: ExtensionRegistrationRegistry,
+  options: {
+    adapter: string;
+    operation: Operation;
+    context: VectorStoreAdapterOperationContexts[Operation];
+  },
+): Promise<VectorStoreAdapterOperationResults[Operation]> {
+  const registration = resolveRegisteredVectorStoreAdapter(registrations, options.adapter);
+  if (!registration) {
+    const available = sortedUnique(registrations.vector_store_adapters.map((entry) => entry.definition.name));
+    throw new Error(
+      `Expected a registered vector store adapter "${options.adapter}" to invoke. Available vector store adapters: ${formatAvailable(
+        available,
+      )}`,
+    );
+  }
+  const operationFn = registration.runtime_definition[options.operation];
+  if (typeof operationFn !== "function") {
+    throw new Error(
+      `Registered vector store adapter "${options.adapter}" does not implement the "${options.operation}" operation.`,
+    );
+  }
+  return (await (operationFn as (context: VectorStoreAdapterOperationContexts[Operation]) => unknown)(
+    options.context,
+  )) as VectorStoreAdapterOperationResults[Operation];
+}
+
+/**
+ * Invoke a registered schema migration's `run` function through the same runtime
+ * definition the host executes and return its result, so package tests can assert
+ * a migration's behavior — not just that it registered.
+ *
+ * This completes the package-author "invoke" verb across every executable
+ * registration surface. The migration is resolved by id via
+ * {@link assertRegisteredMigration} (which throws a descriptive "available
+ * migrations" error when absent), then `run` is invoked on its
+ * `runtime_definition` with a context mirroring the one
+ * `executeRegisteredRuntimeMigrations` builds at runtime: the resolved id,
+ * `command: "migration"`, the registering extension's layer/name, the supplied
+ * `pmRoot`, and the migration's normalized status. Unlike the runtime — which
+ * skips already-applied migrations and folds a throw into a warning — this helper
+ * always invokes `run` and lets a throw propagate, so authors can assert both the
+ * success result and failure via rejection.
+ *
+ * Throws when the resolved migration declares no `run` function, since invoking a
+ * runless migration is a wiring bug in the test rather than a behavior under test.
+ */
+export async function runRegisteredMigrationForTest(
+  registrations: ExtensionRegistrationRegistry,
+  options: RunRegisteredMigrationForTestOptions,
+): Promise<unknown> {
+  const migration = assertRegisteredMigration(registrations, {
+    migration: options.migration,
+    extensionName: options.extensionName,
+  });
+  const run = getMigrationRuntimeDefinition(migration).run;
+  if (typeof run !== "function") {
+    throw new Error(`Registered migration "${options.migration}" does not implement a run function to invoke.`);
+  }
+  const declaredStatus = migration.definition.status;
+  const context: SchemaMigrationRunContext = {
+    id: migration.definition.id as string,
+    command: "migration",
+    layer: migration.layer,
+    extension: migration.name,
+    pm_root: options.pmRoot ?? "",
+    status: (typeof declaredStatus === "string" ? declaredStatus.trim().toLowerCase() : "") || "pending",
+  };
+  return (run as (context: SchemaMigrationRunContext) => unknown)(context);
 }
 
 /**
