@@ -13,7 +13,7 @@
  * reviewer would otherwise have to catch by hand.
  */
 import type { ExtensionActivationResult, ExtensionCapability, ExtensionLayer } from "./extension-types.js";
-import { isKnownExtensionCapability } from "./extension-capability-aliases.js";
+import { normalizeKnownExtensionCapability } from "./extension-capability-aliases.js";
 
 /**
  * Canonical map from each known extension capability to the human-readable
@@ -64,17 +64,17 @@ export interface CollectUsedExtensionCapabilitiesOptions {
   extensionName?: string;
 }
 
-/**
- * Build a collision-proof lookup key from an extension's layer and name. A
- * JSON tuple keeps both fields distinct without embedding a control byte in
- * source (a literal NUL would taint `grep` over the tree).
- */
+// `layer` is a closed enum (`"global" | "project"`) that never contains a
+// colon, so the first colon always separates the layer from the (possibly
+// colon-bearing) name — making the key collision-proof without serialization.
+const USAGE_KEY_SEPARATOR = ":";
+
 function usageKey(layer: ExtensionLayer, name: string): string {
-  return JSON.stringify([layer, normalizeExtensionName(name)]);
+  return `${layer}${USAGE_KEY_SEPARATOR}${normalizeExtensionName(name)}`;
 }
 
 function usageKeyName(key: string): string {
-  return (JSON.parse(key) as [ExtensionLayer, string])[1];
+  return key.slice(key.indexOf(USAGE_KEY_SEPARATOR) + 1);
 }
 
 function normalizeExtensionName(name: string): string {
@@ -87,10 +87,10 @@ function normalizeDeclaredCapabilities(capabilities: readonly string[] | undefin
   }
   const known = new Set<ExtensionCapability>();
   for (const capability of capabilities) {
-    const normalized = capability.trim().toLowerCase();
     // Unknown capabilities are reported by the separate unknown-capability
     // diagnostic; reconciling them here would double-report a typo as "unused".
-    if (isKnownExtensionCapability(normalized)) {
+    const normalized = normalizeKnownExtensionCapability(capability);
+    if (normalized !== null) {
       known.add(normalized);
     }
   }

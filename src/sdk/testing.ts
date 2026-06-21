@@ -40,7 +40,7 @@ import type {
 import { activateExtensions } from "../core/extensions/loader.js";
 import { createDefaultExtensionGovernancePolicy } from "../core/extensions/extension-types.js";
 import { collectUsedExtensionCapabilities } from "../core/extensions/capability-usage.js";
-import { isKnownExtensionCapability } from "../core/extensions/extension-capability-aliases.js";
+import { normalizeKnownExtensionCapability } from "../core/extensions/extension-capability-aliases.js";
 import type { PmPackageManifest, PmPackageResourceKind } from "../core/packages/manifest.js";
 
 interface TestExtensionModule {
@@ -1022,21 +1022,26 @@ export function assertExtensionCapabilityUsage(
   activation: ExtensionActivationResult,
   expectation: ExtensionCapabilityUsageExpectation,
 ): ExtensionCapabilityUsageAssertion {
-  const declaredSet = new Set<ExtensionCapability>();
-  for (const capability of expectation.declared) {
-    const normalized = capability.trim().toLowerCase();
-    if (!isKnownExtensionCapability(normalized)) {
-      throw new Error(
-        `Expected declared capability "${capability}" to be a known extension capability. ` +
-          "Use canonical capability names (see manifest.capabilities).",
-      );
+  const toKnownCapabilitySet = (capabilities: readonly string[], field: string): Set<ExtensionCapability> => {
+    const known = new Set<ExtensionCapability>();
+    for (const capability of capabilities) {
+      const normalized = normalizeKnownExtensionCapability(capability);
+      if (normalized === null) {
+        throw new Error(
+          `Expected ${field} capability "${capability}" to be a known extension capability. ` +
+            "Use canonical capability names (see manifest.capabilities).",
+        );
+      }
+      known.add(normalized);
     }
-    declaredSet.add(normalized);
-  }
-  const declared = [...declaredSet].sort((left, right) => left.localeCompare(right));
+    return known;
+  };
+  const declared = [...toKnownCapabilitySet(expectation.declared, "declared")].sort((left, right) =>
+    left.localeCompare(right),
+  );
+  const allowUnused = toKnownCapabilitySet(expectation.allowUnused ?? [], "allowUnused");
   const used = collectUsedExtensionCapabilities(activation, { extensionName: expectation.extensionName });
   const usedSet = new Set(used);
-  const allowUnused = new Set((expectation.allowUnused ?? []).map((capability) => capability.trim().toLowerCase()));
   const unused = declared.filter((capability) => !usedSet.has(capability) && !allowUnused.has(capability));
   if (unused.length > 0) {
     const scopeSuffix = extensionNameSuffix(expectation.extensionName);

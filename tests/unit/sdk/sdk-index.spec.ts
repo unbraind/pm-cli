@@ -915,8 +915,12 @@ describe("public sdk entrypoint", () => {
     ).toEqual([]);
     // An unknown declared capability is rejected outright.
     expect(() => assertExtensionCapabilityUsage(activation, { declared: ["made-up"] })).toThrow(
-      /known extension capability/,
+      /declared capability "made-up" to be a known extension capability/,
     );
+    // A typo in allowUnused is rejected too, so it cannot silently bypass the guard.
+    expect(() =>
+      assertExtensionCapabilityUsage(activation, { declared: ["commands"], allowUnused: ["schem"] }),
+    ).toThrow(/allowUnused capability "schem" to be a known extension capability/);
   });
 
   it("exposes runtime contracts without requiring a pm subprocess", async () => {
