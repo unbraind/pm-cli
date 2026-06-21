@@ -1,0 +1,25 @@
+id: pm-miqm
+title: "Complete the SDK extension-invoke testing surface: runRegisteredHookForTest + override invoke helpers"
+description: "Finish the package-author 'invoke' verb. runRegisteredCommandForTest (pm-owm0) lets authors fire a registered command handler and assert behavior, but the OTHER runtime surfaces an extension can register still have only assert* helpers (registration), no supported way to INVOKE them and observe behavior. Authors must hand-build contexts and reach for the internal runtime runners. This completes the command-pipeline invoke surface: (1) runRegisteredHookForTest(hooks, {kind, context}) fires a registered lifecycle hook (before_command|after_command|on_read|on_write|on_index) via the real runtime runner and returns the warnings array ([] = clean); type-safe per-kind context via discriminated union; throws a descriptive error listing kinds-with-registrations when none of that kind exist (a test wiring/typo bug). (2) runRegisteredParserOverrideForTest / runRegisteredPreflightOverrideForTest / runRegisteredCommandOverrideForTest / runRegisteredRendererOverrideForTest / runRegisteredServiceOverrideForTest each wrap the matching runtime runner (runParserOverride/runPreflightOverride/runCommandOverride/runRendererOverride/runServiceOverride), guard that a matching override is registered for the target (command/format/service) so a typo surfaces as a clear error rather than a silent overridden:false, and return the real *OverrideResult verbatim. All helpers async for a uniform await-based API. Export from the public SDK testing barrel, cover to 100%, and document in SDK.md + EXTENSIONS.md. Data-plane invoke (search provider query, vector adapter ops, migration run) is intentionally out of scope here and tracked separately."
+type: Feature
+status: in_progress
+priority: 2
+tags[5]: "area:extensions","area:sdk","area:testing",context-management,living-map
+created_at: "2026-06-21T14:33:28.420Z"
+updated_at: "2026-06-21T14:46:52.517Z"
+assignee: claude-code-agent
+author: claude-code-agent
+parent: pm-ugqx
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-owm0,related,"2026-06-21T14:33:48.888Z",claude-code-agent,null
+notes[1]{created_at,author,text}:
+  "2026-06-21T14:46:52.517Z",claude-code-agent,"Implemented in src/sdk/testing.ts (+ barrel src/sdk/index.ts). Added 6 invoke helpers completing the command-pipeline \"invoke\" verb symmetric to runRegisteredCommandForTest (pm-owm0): runRegisteredHookForTest (5 lifecycle kinds via a type-safe discriminated-union RunRegisteredHookForTestOptions; returns runner warnings, [] = clean; throws listing populated kinds when none of the requested kind exist) + runRegistered{Parser,Preflight,Command,Renderer,Service}OverrideForTest (each guards a matching override is registered for the target command/format/service — preflight guards non-empty since the runtime applies the last override regardless of command — then delegates to the real runtime runner and returns the *OverrideResult verbatim). All async for a uniform await API. Reused existing HOOK_KIND_TO_REGISTRY_FIELD map + normalizeSdkCommandName/sortedUnique/formatAvailable helpers (no new private helpers). Runtime runners + context/result types imported from core/extensions/loader.js (re-exported there via export * from extension-types.js). 100% coverage of testing.ts (348/348 stmts, 268/268 branch, 119/119 func). Manual E2E in temp dir against built dist: all 9 checks (clean hook, warning hook, hook guard, 5 override invokes, override guard) passed. Docs: SDK.md export list + invoke-verb paragraph + Testing Helpers examples; EXTENSIONS.md one-line note (kept under 450-line cap)."
+files[2]{path,scope,note}:
+  src/sdk/testing.ts,project,Add runRegisteredHookForTest + 5 override invoke helpers
+  src/sdk/index.ts,project,Re-export new invoke helpers + option types from SDK barrel
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Note invoke helpers in extension testing guidance
+  docs/SDK.md,project,Document hook + override invoke helpers in testing section
+body: ""

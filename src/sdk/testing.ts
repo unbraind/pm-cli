@@ -4,7 +4,11 @@
  * Defines public SDK APIs and package-author helpers for Testing.
  */
 import type {
+  AfterCommandHookContext,
+  BeforeCommandHookContext,
   CommandHandlerResult,
+  CommandOverrideContext,
+  CommandOverrideResult,
   ExtensionActivationResult,
   ExtensionCapability,
   ExtensionCommandRegistry,
@@ -21,7 +25,14 @@ import type {
   ExtensionServiceName,
   ExtensionServiceRegistry,
   FlagDefinition,
+  OnIndexHookContext,
+  OnReadHookContext,
+  OnWriteHookContext,
   OutputRendererFormat,
+  ParserOverrideContext,
+  ParserOverrideResult,
+  PreflightOverrideContext,
+  PreflightOverrideResult,
   RegisteredExtensionCommandDefinition,
   RegisteredExtensionCommandOverride,
   RegisteredExtensionExporter,
@@ -37,10 +48,28 @@ import type {
   RegisteredExtensionSearchProvider,
   RegisteredExtensionServiceOverride,
   RegisteredExtensionVectorStoreAdapter,
+  RendererOverrideContext,
+  RendererOverrideResult,
   SchemaFieldDefinition,
   SchemaItemTypeDefinition,
+  ServiceOverrideContext,
+  ServiceOverrideResult,
 } from "../core/extensions/loader.js";
-import { activateExtensions, deactivateExtensions, runCommandHandler } from "../core/extensions/loader.js";
+import {
+  activateExtensions,
+  deactivateExtensions,
+  runAfterCommandHooks,
+  runBeforeCommandHooks,
+  runCommandHandler,
+  runCommandOverride,
+  runOnIndexHooks,
+  runOnReadHooks,
+  runOnWriteHooks,
+  runParserOverride,
+  runPreflightOverride,
+  runRendererOverride,
+  runServiceOverride,
+} from "../core/extensions/loader.js";
 import { createDefaultExtensionGovernancePolicy } from "../core/extensions/extension-types.js";
 import { collectUsedExtensionCapabilities } from "../core/extensions/capability-usage.js";
 import { normalizeKnownExtensionCapability } from "../core/extensions/extension-capability-aliases.js";
@@ -111,6 +140,22 @@ export interface RunRegisteredCommandForTestOptions {
    */
   pmRoot?: string;
 }
+
+/**
+ * Options for {@link runRegisteredHookForTest} — the lifecycle `kind` to fire and
+ * the synthetic context handed to every registered hook of that kind.
+ *
+ * The union keeps `context` type-safe per kind: `kind: "on_write"` requires an
+ * {@link OnWriteHookContext}, `kind: "after_command"` an
+ * {@link AfterCommandHookContext}, and so on — so authors cannot accidentally
+ * pass an index context to a read hook.
+ */
+export type RunRegisteredHookForTestOptions =
+  | { kind: "before_command"; context: BeforeCommandHookContext }
+  | { kind: "after_command"; context: AfterCommandHookContext }
+  | { kind: "on_read"; context: OnReadHookContext }
+  | { kind: "on_write"; context: OnWriteHookContext }
+  | { kind: "on_index"; context: OnIndexHookContext };
 
 /**
  * Documents the extension deactivation expectation payload exchanged by command, SDK, and package integrations.
@@ -572,6 +617,186 @@ export async function runRegisteredCommandForTest(
     global: { json: true, quiet: true, noPager: true, ...options.global },
     pm_root: options.pmRoot ?? "",
   });
+}
+
+/**
+ * Fire every registered lifecycle hook of a given `kind` through pm's real hook
+ * runner and return the warnings array so package tests can assert on behavior —
+ * not just that a hook was registered.
+ *
+ * This is the hook counterpart to {@link runRegisteredCommandForTest}, extending
+ * the package-author "invoke" verb to the `api.hooks.*` surface. Pass the
+ * `ExtensionHookRegistry` from `activateExtensionForTest(...).hooks` together with
+ * the lifecycle `kind` and a synthetic context. Hooks observe their inputs via a
+ * cloned context snapshot (mutations never leak back to the caller), so the
+ * observable signal is twofold: any side effects the hook performs, and the
+ * returned warnings. A clean run returns `[]`; a hook that throws contributes one
+ * `extension_hook_failed:<layer>:<name>:<hookName>` warning, mirroring runtime
+ * dispatch which isolates a failing hook without aborting the others.
+ *
+ * Throws a descriptive error (listing the hook kinds that do have registrations)
+ * when no hook of `kind` is registered, since firing a hook the extension never
+ * registered is a wiring/typo bug in the test rather than a behavior under test.
+ */
+export async function runRegisteredHookForTest(
+  hooks: ExtensionHookRegistry,
+  options: RunRegisteredHookForTestOptions,
+): Promise<string[]> {
+  if (hooks[HOOK_KIND_TO_REGISTRY_FIELD[options.kind]].length === 0) {
+    const populatedKinds = sortedUnique(
+      (Object.keys(HOOK_KIND_TO_REGISTRY_FIELD) as RegisteredHookKind[]).filter(
+        (kind) => hooks[HOOK_KIND_TO_REGISTRY_FIELD[kind]].length > 0,
+      ),
+    );
+    throw new Error(
+      `Expected a registered "${options.kind}" hook to invoke. Hook kinds with registrations: ${formatAvailable(
+        populatedKinds,
+      )}`,
+    );
+  }
+  switch (options.kind) {
+    case "before_command":
+      return runBeforeCommandHooks(hooks, options.context);
+    case "after_command":
+      return runAfterCommandHooks(hooks, options.context);
+    case "on_read":
+      return runOnReadHooks(hooks, options.context);
+    case "on_write":
+      return runOnWriteHooks(hooks, options.context);
+    case "on_index":
+      return runOnIndexHooks(hooks, options.context);
+  }
+}
+
+/**
+ * Invoke a registered parser override through pm's real runner and return the
+ * resolved {@link ParserOverrideResult}, so package tests can assert the rewritten
+ * args/options/global an override produces for a command before dispatch.
+ *
+ * Guards that a parser override is registered for the (normalized) target command
+ * before delegating: without a match `runParserOverride` would silently return
+ * `overridden: false`, hiding a typo'd command name in the test. When a match
+ * exists the result is returned verbatim — `overridden: true` with the rewritten
+ * context on success, or `overridden: false` with an
+ * `extension_parser_override_failed:*` warning when the override throws.
+ */
+export async function runRegisteredParserOverrideForTest(
+  parsers: ExtensionParserRegistry,
+  context: ParserOverrideContext,
+): Promise<ParserOverrideResult> {
+  const command = normalizeSdkCommandName(context.command);
+  if (!parsers.overrides.some((entry) => entry.command === command)) {
+    throw new Error(
+      `Expected a registered parser override for command "${command}" to invoke. Available parser override commands: ${formatAvailable(
+        sortedUnique(parsers.overrides.map((entry) => entry.command)),
+      )}`,
+    );
+  }
+  return runParserOverride(parsers, context);
+}
+
+/**
+ * Invoke the active preflight override through pm's real runner and return the
+ * resolved {@link PreflightOverrideResult}, so package tests can assert the
+ * migration/format gate decision an override yields.
+ *
+ * Unlike command-scoped overrides, the runtime applies the **last** registered
+ * preflight override regardless of command, so this helper guards only that at
+ * least one preflight override is registered before delegating. The result is
+ * returned verbatim — `overridden: true` with the adjusted decision on success,
+ * or `overridden: false` with an `extension_preflight_override_failed:*` warning
+ * when the override throws.
+ */
+export async function runRegisteredPreflightOverrideForTest(
+  preflight: ExtensionPreflightRegistry,
+  context: PreflightOverrideContext,
+): Promise<PreflightOverrideResult> {
+  if (preflight.overrides.length === 0) {
+    throw new Error(
+      "Expected a registered preflight override to invoke, but none are registered.",
+    );
+  }
+  return runPreflightOverride(preflight, context);
+}
+
+/**
+ * Invoke a registered command-result override through pm's real runner and return
+ * the resolved {@link CommandOverrideResult}, so package tests can assert how an
+ * override transforms a command's result payload.
+ *
+ * Accepts the same `ExtensionCommandRegistry` exposed as
+ * `activateExtensionForTest(...).commands` (it carries both handlers and
+ * overrides). Guards that an override is registered for the (normalized) target
+ * command before delegating, so a typo'd command name surfaces as a clear error
+ * rather than a silent `overridden: false`. The result is returned verbatim —
+ * including the `extension_command_override_async_unsupported:*` warning the
+ * runtime emits when an override returns a Promise (command overrides are
+ * synchronous), or an `extension_command_override_failed:*` warning on throw.
+ */
+export async function runRegisteredCommandOverrideForTest(
+  commands: ExtensionCommandRegistry,
+  context: CommandOverrideContext,
+): Promise<CommandOverrideResult> {
+  const command = normalizeSdkCommandName(context.command);
+  if (!commands.overrides.some((entry) => entry.command === command)) {
+    throw new Error(
+      `Expected a registered command override for command "${command}" to invoke. Available command override commands: ${formatAvailable(
+        sortedUnique(commands.overrides.map((entry) => entry.command)),
+      )}`,
+    );
+  }
+  return runCommandOverride(commands, context);
+}
+
+/**
+ * Invoke a registered renderer override through pm's real runner and return the
+ * resolved {@link RendererOverrideResult}, so package tests can assert the custom
+ * string an override renders for a given output `format`.
+ *
+ * Guards that a renderer override is registered for `context.format` before
+ * delegating, so a wrong format surfaces as a clear error rather than a silent
+ * `overridden: false`. The result is returned verbatim — `overridden: true` with
+ * the rendered string on success, or `overridden: false` (with an
+ * `extension_renderer_invalid_result:*` / `extension_renderer_failed:*` warning
+ * where applicable) when the override returns a non-string or throws.
+ */
+export async function runRegisteredRendererOverrideForTest(
+  renderers: ExtensionRendererRegistry,
+  context: RendererOverrideContext,
+): Promise<RendererOverrideResult> {
+  if (!renderers.overrides.some((entry) => entry.format === context.format)) {
+    throw new Error(
+      `Expected a registered renderer override for format "${context.format}" to invoke. Available renderer override formats: ${formatAvailable(
+        sortedUnique(renderers.overrides.map((entry) => entry.format)),
+      )}`,
+    );
+  }
+  return runRendererOverride(renderers, context);
+}
+
+/**
+ * Invoke a registered service override through pm's real runner and return the
+ * resolved {@link ServiceOverrideResult}, so package tests can assert how an
+ * override handles an internal service payload (e.g. `output_format`).
+ *
+ * Guards that a service override is registered for `context.service` before
+ * delegating, so a wrong service name surfaces as a clear error rather than a
+ * silent `handled: false`. The result is returned verbatim — `handled: true` with
+ * the override's result when it claims the payload, or `handled: false` with the
+ * original payload (and any `extension_service_override_*` warnings) otherwise.
+ */
+export async function runRegisteredServiceOverrideForTest(
+  services: ExtensionServiceRegistry,
+  context: ServiceOverrideContext,
+): Promise<ServiceOverrideResult> {
+  if (!services.overrides.some((entry) => entry.service === context.service)) {
+    throw new Error(
+      `Expected a registered service override for service "${context.service}" to invoke. Available service override services: ${formatAvailable(
+        sortedUnique(services.overrides.map((entry) => entry.service)),
+      )}`,
+    );
+  }
+  return runServiceOverride(services, context);
 }
 
 /**
