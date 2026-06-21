@@ -1,0 +1,29 @@
+id: pm-owm0
+title: "SDK testing helper to invoke a registered extension command handler: runRegisteredCommandForTest"
+description: "Complete the package-author testing loop. The SDK testing surface can assert registrations exist (assertRegistered*), activate (activateExtensionForTest), and deactivate (deactivateExtensionForTest), but offers no supported way to INVOKE a registered command handler and assert its behavior. Authors must hand-construct a CommandHandlerContext and reach for the internal runCommandHandler. Add runRegisteredCommandForTest(commands, { command, args, options, global, pmRoot }) that builds the context with agent-safe defaults (json+quiet+noPager), throws a descriptive error listing available handlers when the command is unregistered (a wiring/typo bug), and otherwise returns the real CommandHandlerResult so authors can assert .result/.handled/.errorMessage. Because registerImporter/registerExporter create '<name> import'/'<name> export' command paths, the same helper exercises importers/exporters too. Wire an invoke step into the package scaffold sample test and document in SDK + package authoring guides."
+type: Feature
+status: closed
+priority: 2
+tags[4]: "area:extensions","area:sdk","area:testing",context-management
+created_at: "2026-06-21T13:24:57.908Z"
+updated_at: "2026-06-21T13:42:14.191Z"
+author: claude-code-agent
+parent: pm-ugqx
+resolution: "Added runRegisteredCommandForTest(commands, options) to src/sdk/testing.ts, re-exported it (and CommandHandlerResult) from the sdk + sdk/testing barrels, wired an invoke step into the package scaffold sample test, and documented it in SDK.md + EXTENSIONS.md."
+expected_result: "Package authors can invoke a registered command/importer/exporter handler through the public SDK and assert its CommandHandlerResult, completing the activate -> assert -> run -> deactivate testing loop."
+actual_result: Helper ships at 100% coverage (4809 tests green); a freshly scaffolded package's generated node --test run passes the new invoke assertions end-to-end against the built SDK.
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-0zn9,related,"2026-06-21T13:25:24.215Z",claude-code-agent,null
+  pm-4ltc,related,"2026-06-21T13:25:24.215Z",claude-code-agent,null
+  pm-6pmp,related,"2026-06-21T13:25:24.215Z",claude-code-agent,null
+  pm-aw7d,related,"2026-06-21T13:25:24.215Z",claude-code-agent,null
+learnings[1]{created_at,author,text}:
+  "2026-06-21T13:42:04.218Z",claude-code-agent,"runRegisteredCommandForTest takes activation.commands (ExtensionCommandRegistry), mirroring assertRegisteredCommandOverride and the internal runCommandHandler, NOT activation.registrations (which the contract/metadata asserts use). Distinguishes the two handled:false runtime cases: no matching handler is a test wiring bug so the helper PRE-CHECKS and throws with the available-handlers list, while a handler that throws a non-exit error returns {handled:false,errorMessage} for the caller to assert; an error carrying numeric exitCode propagates (matches runtime). The [...options.args] spread is required (readonly string[] -> mutable string[] + undefined default), not merely defensive. Importers/exporters are covered for free because registerImporter/registerExporter create \"<name> import\"/\"<name> export\" handler paths. CommandHandlerResult had to be added to the SDK index type re-exports so authors can type the return value."
+files[3]{path,scope,note}:
+  src/sdk/testing.ts,project,runRegisteredCommandForTest implementation + RunRegisteredCommandForTestOptions
+  src/sdk/index.ts,project,barrel re-export of helper + CommandHandlerResult type
+  src/cli/commands/extension/scaffold.ts,project,sample test invoke step
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test tests/unit/sdk/sdk-index.spec.ts,tests/unit/sdk/sdk-index.spec.ts,project,null,tracker,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Shipped runRegisteredCommandForTest SDK testing helper (src/sdk/testing.ts), exported from the sdk + sdk/testing barrels with CommandHandlerResult, wired an invoke step into the package scaffold sample test, and documented in SDK.md + EXTENSIONS.md. Completes the package-author testing loop: activate -> assertRegisteredCommandContract -> RUN -> deactivate. 100% coverage (4809 tests), verified end-to-end by scaffolding a package and running its generated node --test against the built SDK."
+body: ""

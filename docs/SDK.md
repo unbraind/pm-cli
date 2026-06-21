@@ -75,6 +75,7 @@ Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 
 - `activateExtensionForTest`
 - `deactivateExtensionForTest`
+- `runRegisteredCommandForTest`
 - `assertExtensionDeactivated`
 - `assertPackageManifest`
 - `assertRegisteredCommandContract`
@@ -108,6 +109,22 @@ module and returns the `ExtensionDeactivationResult`, so a package can prove its
 asserts the single-extension happy path (one extension deactivated, none failed)
 by default; pass `{ deactivated, failed }` to assert other counts. Forward the
 `activation` result and `deactivateTimeoutMs` to mirror real host teardown.
+
+`runRegisteredCommandForTest(activation.commands, { command, args, options, global, pmRoot })`
+is the "invoke" verb that completes the package-author testing loop —
+`activateExtensionForTest` → `assertRegisteredCommandContract` → **run** →
+`deactivateExtensionForTest`. It dispatches a registered command handler through
+pm's real engine and returns the `CommandHandlerResult`, so a test can assert
+*behavior* (`result.result`) rather than only that the command is wired. The
+`CommandHandlerContext` is built with agent-safe global defaults
+(`{ json: true, quiet: true, noPager: true }`) that callers may override. A clean
+run yields `{ handled: true, result, warnings: [] }`; a handler that throws a
+non-exit error yields `{ handled: false, warnings: [code], errorMessage }` so the
+failure can be asserted, while one that throws an error carrying a numeric
+`exitCode` propagates the throw. An unregistered command throws a descriptive
+error listing the available handler command paths. Because
+`registerImporter`/`registerExporter` register handlers under `"<name> import"` /
+`"<name> export"`, the same helper exercises importer and exporter handlers too.
 
 Commander option contract exports:
 
@@ -492,6 +509,24 @@ assertRegisteredCommandContract(activation.registrations, {
 guardrails, but it does not discover files or install packages. Use it for unit
 tests of extension registration shape; keep `pm package doctor` and runtime
 contracts in integration tests.
+
+Invoke a registered command handler to assert its behavior (not just that it was
+registered). `runRegisteredCommandForTest` dispatches through pm's real engine and
+returns the `CommandHandlerResult`:
+
+```ts
+import { runRegisteredCommandForTest } from "@unbrained/pm-cli/sdk/testing";
+
+const invocation = await runRegisteredCommandForTest(activation.commands, {
+  command: "hello",
+  options: { name: "ada" },
+});
+
+// invocation.handled === true; invocation.result is the handler's return value.
+```
+
+The same helper invokes importer/exporter handlers via their `"<name> import"` /
+`"<name> export"` command paths.
 
 Assert a command registration contract:
 
