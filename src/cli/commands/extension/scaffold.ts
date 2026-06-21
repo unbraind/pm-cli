@@ -105,7 +105,7 @@ function buildActivateBodyLines(
       "      const needle = context.query.toLowerCase();",
       "      const hits = context.documents",
       "        .filter((document) => {",
-      "          const title = String(document.metadata?.title ?? \"\").toLowerCase();",
+      "          const title = String(document.metadata.title ?? \"\").toLowerCase();",
       "          return title.includes(needle);",
       "        })",
       "        .map((document) => ({",
