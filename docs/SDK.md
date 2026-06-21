@@ -90,6 +90,13 @@ Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 - `assertRegisteredItemType`
 - `assertRegisteredServiceOverride`
 - `assertRegisteredMigration`
+- `assertExtensionCapabilityUsage`
+
+`assertExtensionCapabilityUsage(activation, { declared })` is the least-privilege
+counterpart of the per-surface `assertRegistered*` helpers: pass the same
+capabilities as your `manifest.capabilities` and it fails the test when the
+manifest grants a capability the extension never registers against. Use
+`allowUnused` for capabilities a runtime registers only behind a config flag.
 
 Commander option contract exports:
 
@@ -115,6 +122,13 @@ Extension runtime contract exports:
 - `PM_EXTENSION_POLICY_SURFACE_CONTRACTS`
 - `PM_EXTENSION_TRUST_MODE_CONTRACTS`
 - `PM_EXTENSION_SANDBOX_PROFILE_CONTRACTS`
+
+Least-privilege capability reconciliation exports (map declared capabilities to
+the registration surfaces a package actually exercises at activation):
+
+- `EXTENSION_CAPABILITY_REGISTRATION_SURFACES`
+- `collectUsedExtensionCapabilities`
+- `reconcileExtensionCapabilityUsage`
 
 Common types:
 

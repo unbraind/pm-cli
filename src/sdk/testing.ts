@@ -39,6 +39,8 @@ import type {
 } from "../core/extensions/loader.js";
 import { activateExtensions } from "../core/extensions/loader.js";
 import { createDefaultExtensionGovernancePolicy } from "../core/extensions/extension-types.js";
+import { collectUsedExtensionCapabilities } from "../core/extensions/capability-usage.js";
+import { normalizeKnownExtensionCapability } from "../core/extensions/extension-capability-aliases.js";
 import type { PmPackageManifest, PmPackageResourceKind } from "../core/packages/manifest.js";
 
 interface TestExtensionModule {
@@ -218,6 +220,37 @@ export interface RegisteredMigrationExpectation {
   migration: string;
   extensionName?: string;
   mandatory?: boolean;
+}
+
+/**
+ * Documents the extension capability usage expectation payload exchanged by command, SDK, and package integrations.
+ */
+export interface ExtensionCapabilityUsageExpectation {
+  /**
+   * Capabilities the manifest declares. Mirror `manifest.capabilities` here so
+   * the assertion fails when the manifest grants more than the code uses.
+   */
+  declared: readonly ExtensionCapability[];
+  /** Restrict reconciliation to a single extension when the activation has several. */
+  extensionName?: string;
+  /**
+   * Capabilities allowed to be declared without being exercised (e.g. ones a
+   * runtime registers only behind a config flag). These are excluded from the
+   * least-privilege failure.
+   */
+  allowUnused?: readonly ExtensionCapability[];
+}
+
+/**
+ * Documents the extension capability usage assertion payload exchanged by command, SDK, and package integrations.
+ */
+export interface ExtensionCapabilityUsageAssertion {
+  /** Declared capabilities considered, sorted and de-duplicated. */
+  declared: ExtensionCapability[];
+  /** Capabilities the extension actually registered against, sorted. */
+  used: ExtensionCapability[];
+  /** Declared capabilities with no matching registration after the allowlist. */
+  unused: ExtensionCapability[];
 }
 
 /**
@@ -972,4 +1005,53 @@ export function assertRegisteredMigration(
       expectation.extensionName,
     )} to be registered. Available migrations: ${formatAvailable(available)}`,
   );
+}
+
+/**
+ * Assert that an activated extension declares no capability it never uses
+ * (least privilege). Pass the same capabilities as `manifest.capabilities` via
+ * `expectation.declared`; the helper computes what the extension actually
+ * registered against and throws when any declared capability is unused.
+ *
+ * This is the package-test counterpart of the advisory
+ * `extension_capability_unused` warning `pm package doctor` emits, letting an
+ * author catch an over-broad manifest at `npm test` time. Returns the
+ * declared/used/unused breakdown for further assertions.
+ */
+export function assertExtensionCapabilityUsage(
+  activation: ExtensionActivationResult,
+  expectation: ExtensionCapabilityUsageExpectation,
+): ExtensionCapabilityUsageAssertion {
+  const toKnownCapabilitySet = (capabilities: readonly string[], field: string): Set<ExtensionCapability> => {
+    const known = new Set<ExtensionCapability>();
+    for (const capability of capabilities) {
+      const normalized = normalizeKnownExtensionCapability(capability);
+      if (normalized === null) {
+        throw new Error(
+          `Expected ${field} capability "${capability}" to be a known extension capability. ` +
+            "Use canonical capability names (see manifest.capabilities).",
+        );
+      }
+      known.add(normalized);
+    }
+    return known;
+  };
+  const declared = [...toKnownCapabilitySet(expectation.declared, "declared")].sort((left, right) =>
+    left.localeCompare(right),
+  );
+  const allowUnused = toKnownCapabilitySet(expectation.allowUnused ?? [], "allowUnused");
+  const used = collectUsedExtensionCapabilities(activation, { extensionName: expectation.extensionName });
+  const usedSet = new Set(used);
+  const unused = declared.filter((capability) => !usedSet.has(capability) && !allowUnused.has(capability));
+  if (unused.length > 0) {
+    const scopeSuffix = extensionNameSuffix(expectation.extensionName);
+    throw new Error(
+      `Expected every declared capability${scopeSuffix} to be exercised, but [${unused.join(
+        ", ",
+      )}] ${unused.length === 1 ? "is" : "are"} declared yet never registered against. ` +
+        `Remove ${unused.length === 1 ? "it" : "them"} from manifest.capabilities for least privilege, ` +
+        "or pass allowUnused for capabilities registered only behind a runtime flag.",
+    );
+  }
+  return { declared, used, unused };
 }

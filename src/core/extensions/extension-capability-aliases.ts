@@ -31,6 +31,17 @@ export function isKnownExtensionCapability(value: string): value is ExtensionCap
 }
 
 /**
+ * Trim and lower-case a capability token, returning it only when it is a known
+ * canonical capability (otherwise `null`). Shared so capability normalization
+ * and known-capability filtering stay identical across the doctor and the SDK
+ * least-privilege helpers.
+ */
+export function normalizeKnownExtensionCapability(value: string): ExtensionCapability | null {
+  const normalized = value.trim().toLowerCase();
+  return isKnownExtensionCapability(normalized) ? normalized : null;
+}
+
+/**
  * Implements collect unknown extension capabilities for the public runtime surface of this module.
  */
 export function collectUnknownExtensionCapabilities(capabilities: readonly string[]): string[] {

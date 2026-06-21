@@ -30,6 +30,7 @@ export {
 export * from "./cli-contracts.js";
 export * from "./runtime.js";
 export {
+  assertExtensionCapabilityUsage,
   assertPackageManifest,
   assertRegisteredCommandContract,
   assertRegisteredCommandOverride,
@@ -48,6 +49,8 @@ export {
   assertRegisteredVectorStoreAdapter,
   activateExtensionForTest,
   type ActivateExtensionForTestOptions,
+  type ExtensionCapabilityUsageAssertion,
+  type ExtensionCapabilityUsageExpectation,
   type PackageManifestExpectation,
   type PackageManifestResourceExpectation,
   type RegisteredCommandContractAssertion,
@@ -111,6 +114,18 @@ export type ExtensionSandboxProfile = (typeof EXTENSION_SANDBOX_PROFILES)[number
  * Versioned capability contract metadata emitted by runtime diagnostics.
  */
 export { EXTENSION_CAPABILITY_CONTRACT, EXTENSION_CAPABILITY_CONTRACT_VERSION, EXTENSION_CAPABILITY_LEGACY_ALIASES };
+
+/**
+ * Least-privilege capability reconciliation helpers: map declared capabilities
+ * against the registration surfaces a package actually exercises at activation.
+ */
+export {
+  EXTENSION_CAPABILITY_REGISTRATION_SURFACES,
+  collectUsedExtensionCapabilities,
+  reconcileExtensionCapabilityUsage,
+  type CollectUsedExtensionCapabilitiesOptions,
+  type ExtensionCapabilityUsageReconciliation,
+} from "../core/extensions/capability-usage.js";
 
 /**
  * Documents the extension module payload exchanged by command, SDK, and package integrations.

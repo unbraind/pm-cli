@@ -198,7 +198,7 @@ Rules:
 - Both bounds share the same warning-code shapes: `*_invalid` blocks, `*_unchecked` allows with a warning, and `extension_pm_min_version_unmet` / `extension_pm_max_version_exceeded` blocks unless the max-version warn mode is enabled.
 - An empty-string or non-string `pm_min_version`/`pm_max_version` makes the whole manifest malformed (`extension_manifest_invalid:<layer>:<name>`). Omit the field instead of leaving it blank.
 - Optional `engines.pm` and `engines.node` metadata is accepted for tooling, but `pm_min_version`/`pm_max_version` are the loader-enforced compatibility fields.
-- Declare only capabilities the extension actually uses.
+- Declare only capabilities the extension actually uses. Declaring a capability it never registers against is over-broad: `pm package doctor` emits an advisory `extension_capability_unused:<layer>:<name>:<capability>` warning (never blocking) so you can trim the manifest, while the inverse — registering a surface whose capability is undeclared — is the blocking `extension_capability_missing` activation failure. Catch over-declaration earlier with the `assertExtensionCapabilityUsage` SDK testing helper.
 - Unknown capabilities emit deterministic warnings.
 - Legacy aliases such as `migration` and `validation` are normalized to `schema` with warnings.
 

@@ -14,6 +14,7 @@ import {
   collectUnknownExtensionCapabilities,
   formatLegacyExtensionCapabilityAliasWarning,
   formatUnknownExtensionCapabilityWarning,
+  normalizeKnownExtensionCapability,
   normalizeManifestCapabilities,
   normalizeNames,
   parseLegacyExtensionCapabilityAliasWarning,
@@ -53,6 +54,8 @@ describe("extensions runtime registration resolution", () => {
     expect(resolveLegacyExtensionCapabilityAlias(" ")).toBeNull();
     expect(suggestKnownExtensionCapability("comands")).toBe("commands");
     expect(suggestKnownExtensionCapability(" ")).toBeNull();
+    expect(normalizeKnownExtensionCapability(" Schema ")).toBe("schema");
+    expect(normalizeKnownExtensionCapability("not-real")).toBeNull();
 
     expect(normalizeManifestCapabilities(["Migration", "hooks", "validation"])).toEqual({
       capabilities: ["hooks", "schema"],
