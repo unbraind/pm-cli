@@ -1,0 +1,22 @@
+id: pm-bd3u
+title: "SDK invoke helpers for search providers, vector store adapters and migrations"
+description: "Complete the extension-invoke testing surface so every executable registration surface has a runRegistered*ForTest helper to match its assertRegistered* counterpart. Adds runRegisteredSearchProviderForTest (query/embed/embedBatch/queryExpansion/rerank), runRegisteredVectorStoreAdapterForTest (query/upsert/delete), and runRegisteredMigrationForTest (run). Each resolves the registered definition via the same runtime resolver the host uses (resolveRegisteredSearchProvider, resolveRegisteredVectorStoreAdapter, getMigrationRuntimeDefinition), invokes runtime_definition over definition, and throws a descriptive error when the registration or operation is absent. Closes the gap left by pm-miqm/pm-owm0 which covered commands, hooks and the five overrides but not these three operation surfaces."
+type: Feature
+status: in_progress
+priority: 1
+tags[5]: "area:extensions","area:packages","area:sdk",pm-cli,sdk-testing
+created_at: "2026-06-21T17:54:13.581Z"
+updated_at: "2026-06-21T18:28:00.463Z"
+assignee: claude-code-agent
+author: claude-code-agent
+value: "Package authors can unit-test the runtime behavior of custom search providers, vector store adapters and migrations through stable SDK entry points, not private registry internals"
+parent: pm-ugqx
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-475h,related,"2026-06-21T17:54:34.089Z",null,null
+  pm-6pmp,related,"2026-06-21T17:54:34.089Z",null,null
+  pm-kfd8,related,"2026-06-21T17:54:34.089Z",null,null
+  pm-miqm,related,"2026-06-21T17:54:34.089Z",null,null
+  pm-owm0,related,"2026-06-21T17:54:34.089Z",null,null
+notes[1]{created_at,author,text}:
+  "2026-06-21T18:28:00.462Z",claude-code-agent,"Implemented on branch feat/sdk-invoke-search-vector-migration-pm-bd3u (PR #330). Added three SDK invoke helpers in src/sdk/testing.ts plus barrel exports in src/sdk/index.ts. runRegisteredSearchProviderForTest dispatches query/embed/embedBatch/queryExpansion/rerank with camelCase+snake_case alias resolution via SEARCH_PROVIDER_OPERATION_DEFINITION_KEYS. runRegisteredVectorStoreAdapterForTest dispatches query/upsert/delete. runRegisteredMigrationForTest resolves by id through assertRegisteredMigration then invokes getMigrationRuntimeDefinition(migration).run with a host-shaped SchemaMigrationRunContext. All three invoke runtime_definition (the live-function clone), not definition (which stringifies functions). Verification: typecheck green, full coverage 4822 tests 100/100/100/100, static-quality + docs gates green, manual smoke of built dist/sdk/testing.js and a temp-workspace CLI flow. 6 new specs in tests/unit/sdk/sdk-index.spec.ts (operation happy paths, alias resolution, unregistered + unimplemented-operation guards, migration default-status + runless paths, barrel equivalence). Docs updated in docs/SDK.md and docs/EXTENSIONS.md."
+body: ""

@@ -82,6 +82,9 @@ Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 - `runRegisteredCommandOverrideForTest`
 - `runRegisteredRendererOverrideForTest`
 - `runRegisteredServiceOverrideForTest`
+- `runRegisteredSearchProviderForTest`
+- `runRegisteredVectorStoreAdapterForTest`
+- `runRegisteredMigrationForTest`
 - `assertExtensionDeactivated`
 - `assertPackageManifest`
 - `assertRegisteredCommandContract`
@@ -156,8 +159,37 @@ command handlers:
 
 Each override helper guards that a matching override is registered for the target
 (command / format / service), so a typo surfaces as a descriptive error rather
-than a silent `overridden: false` / `handled: false`. All invoke helpers are
-`async`, so a test always `await`s them.
+than a silent `overridden: false` / `handled: false`.
+
+The three *executable registration* surfaces — search providers, vector store
+adapters, and schema migrations — also have invoke helpers, so every register\*
+method has both an `assertRegistered*` and a `runRegistered*ForTest` counterpart.
+Each resolves the registration through the same runtime resolver the host uses and
+invokes its `runtime_definition` (the clone that preserves live functions), so a
+test exercises the real behavior, not a re-implementation:
+
+- `runRegisteredSearchProviderForTest(activation.registrations, { provider, operation, context })`
+  resolves a registered provider by name (case-insensitive, last registration
+  wins) and invokes one `operation` — `query`, `embed`, `embedBatch`,
+  `queryExpansion`, or `rerank` — returning that operation's result. The
+  `context` and return type are inferred from `operation`, and the camelCase /
+  snake_case spellings the host accepts (`embedBatch`/`embed_batch`,
+  `queryExpansion`/`query_expansion`) both resolve.
+- `runRegisteredVectorStoreAdapterForTest(activation.registrations, { adapter, operation, context })`
+  resolves a registered adapter by name and invokes `query` (returns
+  `VectorStoreQueryHit[]`), `upsert`, or `delete`.
+- `runRegisteredMigrationForTest(activation.registrations, { migration, extensionName?, pmRoot? })`
+  resolves a registered migration by id and invokes its `run` with a context
+  mirroring the host's (`command: "migration"`, the registering extension's
+  layer/name, the supplied `pmRoot`, and the migration's normalized status),
+  returning whatever `run` returns. Unlike the host — which skips applied
+  migrations and folds a throw into a warning — it always invokes `run` and lets a
+  throw propagate, so both success and failure are assertable.
+
+Each surface helper guards that the named provider / adapter / migration is
+registered (and implements the requested operation), so a typo surfaces as a
+descriptive error rather than a silent no-op. All invoke helpers are `async`, so a
+test always `await`s them.
 
 Commander option contract exports:
 
@@ -731,6 +763,39 @@ const migration = assertRegisteredMigration(activation.registrations, {
 Together these complete the SDK assertion surface: every extension `register*`
 method now has a matching `assertRegistered*` helper, so packages can prove any
 registration without importing private registry internals.
+
+The three executable registration surfaces add `runRegistered*ForTest` invoke
+helpers on top of those assertions, so a package can exercise the real behavior of
+a custom provider, adapter, or migration:
+
+```ts
+import {
+  runRegisteredSearchProviderForTest,
+  runRegisteredVectorStoreAdapterForTest,
+  runRegisteredMigrationForTest,
+} from "@unbrained/pm-cli/sdk/testing";
+
+// Invoke a registered provider's semantic query (or embed / embedBatch /
+// queryExpansion / rerank); the result type follows `operation`.
+const hits = await runRegisteredSearchProviderForTest(activation.registrations, {
+  provider: "semantic-local",
+  operation: "query",
+  context: { query: "calendar", mode: "semantic", tokens: ["calendar"], options: {}, settings, documents },
+});
+
+// Invoke a registered adapter's upsert / query / delete.
+await runRegisteredVectorStoreAdapterForTest(activation.registrations, {
+  adapter: "pinecone",
+  operation: "upsert",
+  context: { points: [{ id: "pm-1", vector }], settings },
+});
+
+// Invoke a registered migration's run with a host-shaped context.
+await runRegisteredMigrationForTest(activation.registrations, {
+  migration: "backfill-severity",
+  pmRoot,
+});
+```
 
 The bundled `pm-lifecycle-hooks` package is the first-party hooks exemplar. It
 declares only the `hooks` capability and registers a default-inert `afterCommand`
