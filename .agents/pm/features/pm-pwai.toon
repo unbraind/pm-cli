@@ -6,18 +6,19 @@ status: closed
 priority: 2
 tags[4]: "area:packages","area:sdk","area:search",pm-cli
 created_at: "2026-06-21T21:48:10.194Z"
-updated_at: "2026-06-21T22:21:48.559Z"
+updated_at: "2026-06-21T22:29:54.169Z"
 author: codex-implementation
 parent: pm-ugqx
 resolution: Delivered search-capability scaffolds and fixed generated command paths for manual invocation
 expected_result: "pm package init --capability search creates an installable package with a command, search provider, vector-store adapter, and runnable SDK tests; generated command paths invoke after install."
 actual_result: "Search scaffold package generated, npm test passed, package doctor reported status ok with warning_count=0, pm search package ping --json invoked successfully, and repo coverage passed 100/100/100/100."
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-06-21T21:53:37.703Z",codex-implementation,"Investigation note: manual temp smoke surfaced that scaffold command names derived directly from hyphenated package directories (for example search-package ping) appear in help but fail dynamic dispatch. No duplicate PM item found for this exact scaffold defect. Folding a generated-command-name normalization into this item so scaffolded packages can be manually invoked after install."
   "2026-06-21T22:00:35.531Z",codex-implementation,"Evidence update: focused scaffold/completion/contracts/SDK tests pass after search scaffold and command-path normalization: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts => 4 files, 309 tests passed. Manual temp smoke passed in /tmp/tmp.hP0BuKj8Gw: pm init, package init --capability search, npm install local checkout, npm test, pm install, package doctor deep trace warning_count=0, and pm search package ping --json."
   "2026-06-21T22:03:47.065Z",codex-implementation,"Coverage evidence: node scripts/run-tests.mjs coverage passed after adding standalone search-extension coverage. Result: 242 test files, 4,832 tests, Statements 100% (30534/30534), Branches 100% (23839/23839), Functions 100% (5108/5108), Lines 100% (29329/29329)."
   "2026-06-21T22:11:32.590Z",codex-implementation,"Review follow-up evidence: addressed Gemini feedback by removing redundant optional chaining from the generated search provider title read. Verification passed after the change: focused 4-file suite 309 tests, pnpm build, pnpm quality:static, and node scripts/run-tests.mjs coverage => 242 files, 4,832 tests, 100/100/100/100."
   "2026-06-21T22:21:48.559Z",codex,"Review follow-up evidence: refactored search scaffold branching/metadata tables after Gemini review on PR #333. Verification passed: focused suite (extension-command, completion-command, contracts-command, sdk-index) 309 tests; pnpm build; pnpm quality:static; git diff --check; full coverage 242 files / 4,832 tests with Statements 100% (30539/30539), Branches 100% (23815/23815), Functions 100% (5107/5107), Lines 100% (29334/29334)."
+  "2026-06-21T22:29:54.169Z",codex-implementation,"CI smoke follow-up evidence: GitHub Gates (smokes) failed on the superseded head because dogfood-package-first still expected scaffold-package ping. Updated the smoke script and its unit mock to assert/invoke the normalized scaffold package ping command. Verification passed: focused dogfood/scaffold unit suite 132 tests; pnpm dogfood:package-first (87 commands); pnpm smoke:npx; node scripts/smoke-claude-plugin.mjs; pnpm build; pnpm quality:static; git diff --check; full coverage 242 files / 4,832 tests with 100/100/100/100."
 files[5]{path,scope,note}:
   src/cli/commands/completion.ts,project,Expose search scaffold capability in shell completions
   src/cli/commands/extension/scaffold.ts,project,Add search-capability package/extension scaffold generator
