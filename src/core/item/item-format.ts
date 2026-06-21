@@ -43,7 +43,7 @@ import {
   type RuntimeFieldRegistry,
   type RuntimeStatusRegistry,
 } from "../schema/runtime-schema.js";
-import { normalizeItemFormatVersion } from "./item-format-version.js";
+import { BASELINE_ITEM_FORMAT_VERSION, normalizeItemFormatVersion } from "./item-format-version.js";
 import { normalizeStatusInput } from "./status.js";
 import { decodeToonItemContent } from "./toon-decode.js";
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
@@ -236,8 +236,8 @@ function assertValidFrontMatter(
   const formatVersion = record.pm_format_version;
   if (formatVersion !== undefined) {
     assertFrontMatterCondition(
-      typeof formatVersion === "number" && Number.isInteger(formatVersion) && formatVersion >= 1,
-      "pm_format_version must be an integer >= 1",
+      typeof formatVersion === "number" && Number.isInteger(formatVersion) && formatVersion >= BASELINE_ITEM_FORMAT_VERSION,
+      `pm_format_version must be an integer >= ${BASELINE_ITEM_FORMAT_VERSION}`,
     );
   }
 

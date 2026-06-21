@@ -916,6 +916,7 @@ describe("runHealth", () => {
       expect(health.warnings).toEqual(
         expect.arrayContaining(["integrity_item_ahead_format_version:tasks/pm-ahead.toon"]),
       );
+      expect(health.warnings.some((warning) => warning.startsWith("integrity_item_outdated_format_version:"))).toBe(false);
 
       const integrityCheck = health.checks.find((check) => check.name === "integrity");
       expect(integrityCheck?.status).toBe("warn");
@@ -924,6 +925,7 @@ describe("runHealth", () => {
           item_outdated_format_version: 0,
           item_ahead_format_version: 1,
         },
+        item_outdated_format_version: [],
         item_ahead_format_version: ["tasks/pm-ahead.toon"],
       });
     });

@@ -136,6 +136,7 @@ describe("runValidate", () => {
         outdated_items_count: 0,
         ahead_items_count: 0,
       });
+      expect(result.warnings.some((warning) => warning.startsWith("validate_format_version_"))).toBe(false);
     });
   });
 
