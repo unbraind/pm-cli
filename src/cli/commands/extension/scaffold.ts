@@ -39,6 +39,81 @@ export const SCAFFOLD_CAPABILITIES = ["commands", "hooks", "search"] as const;
  */
 export type ExtensionScaffoldCapability = (typeof SCAFFOLD_CAPABILITIES)[number];
 
+const SCAFFOLD_MANIFEST_CAPABILITIES: Record<ExtensionScaffoldCapability, readonly string[]> = {
+  commands: ["commands"],
+  hooks: ["commands", "hooks"],
+  search: ["commands", "search"],
+};
+
+const SAMPLE_TEST_CAPABILITIES_LITERAL: Record<ExtensionScaffoldCapability, string> = {
+  commands: '["commands"]',
+  hooks: '["commands", "hooks"]',
+  search: '["commands", "search"]',
+};
+
+const ENTRYPOINT_BULLETS: Record<ExtensionScaffoldCapability, string> = {
+  commands: "- `index.js`: starter command registration plus a `deactivate` teardown stub.",
+  hooks:
+    "- `index.js`: starter command registration, an `after_command` lifecycle hook, and a `deactivate` teardown stub.",
+  search:
+    "- `index.js`: starter command registration, a search provider, a vector-store adapter, and a `deactivate` teardown stub.",
+};
+
+const SAMPLE_TEST_BULLETS: Record<ExtensionScaffoldCapability, string> = {
+  commands:
+    "- `index.test.js`: sample `node:test` suite covering activation, command invocation, and teardown via the SDK testing helpers.",
+  hooks:
+    "- `index.test.js`: sample `node:test` suite covering activation, command invocation, the after_command hook, and teardown via the SDK testing helpers.",
+  search:
+    "- `index.test.js`: sample `node:test` suite covering activation, command invocation, search provider/vector adapter invocation, and teardown via the SDK testing helpers.",
+};
+
+const PACKAGE_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, readonly string[]> = {
+  commands: [],
+  hooks: [
+    "",
+    "## Lifecycle Hook",
+    "`index.js` registers an `after_command` hook via `api.hooks.afterCommand`.",
+    "pm fires it once a command finishes, passing the command outcome and the",
+    "items it mutated (`context.affected`). React there to keep external context",
+    "in sync - sync records, emit telemetry, or refresh derived state. The",
+    "`hooks` capability in `manifest.json` is what grants the hook registration;",
+    "remove it (and the hook) if your package only needs commands.",
+  ],
+  search: [
+    "",
+    "## Search Provider",
+    "`index.js` registers a deterministic in-memory search provider and",
+    "vector-store adapter through `api.registerSearchProvider` and",
+    "`api.registerVectorStoreAdapter`. Replace the sample scoring,",
+    "embedding, and storage behavior with your project-specific retrieval",
+    "logic. The `search` capability in `manifest.json` grants both",
+    "registrations.",
+  ],
+};
+
+const EXTENSION_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, readonly string[]> = {
+  commands: [],
+  hooks: [
+    "",
+    "## Lifecycle Hook",
+    "`index.js` registers an `after_command` hook via `api.hooks.afterCommand`.",
+    "pm fires it once a command finishes, passing the command outcome and the",
+    "items it mutated (`context.affected`). React there to keep external context",
+    "in sync. The `hooks` capability in `manifest.json` grants the registration;",
+    "remove it (and the hook) if your extension only needs commands.",
+  ],
+  search: [
+    "",
+    "## Search Provider",
+    "`index.js` registers a deterministic in-memory search provider and",
+    "vector-store adapter through `api.registerSearchProvider` and",
+    "`api.registerVectorStoreAdapter`. Replace the sample scoring, embedding,",
+    "and storage behavior with your project-specific retrieval logic. The",
+    "`search` capability in `manifest.json` grants both registrations.",
+  ],
+};
+
 interface ExtensionScaffoldFileResult {
   path: string;
   status: "created" | "unchanged";
@@ -51,16 +126,6 @@ interface ExtensionScaffoldResult {
   target_path: string;
   created_directory: boolean;
   files: ExtensionScaffoldFileResult[];
-}
-
-/**
- * Converts a package/extension identifier into a Commander-safe command path.
- * Hyphenated top-level command groups can surface in help but fail dispatch in
- * Commander, so generated starters use space-separated command words while the
- * manifest and package identity keep their normalized directory names.
- */
-function buildStarterCommandName(extensionName: string): string {
-  return `${extensionName.replace(/-/g, " ")} ping`;
 }
 
 /**
@@ -88,10 +153,10 @@ function buildActivateBodyLines(
     "    }),",
     "  });",
   ];
-  if (capability !== "hooks") {
-    if (capability !== "search") {
-      return commandLines;
-    }
+  if (capability === "commands") {
+    return commandLines;
+  }
+  if (capability === "search") {
     return [
       ...commandLines,
       "",
@@ -105,7 +170,7 @@ function buildActivateBodyLines(
       "      const needle = context.query.toLowerCase();",
       "      const hits = context.documents",
       "        .filter((document) => {",
-      "          const title = String(document.metadata.title ?? \"\").toLowerCase();",
+      "          const title = document.metadata.title.toLowerCase();",
       "          return title.includes(needle);",
       "        })",
       "        .map((document) => ({",
@@ -162,11 +227,7 @@ function buildSampleTestSource(
 ): string {
   const hooksEnabled = capability === "hooks";
   const searchEnabled = capability === "search";
-  const capabilitiesLiteral = hooksEnabled
-    ? '["commands", "hooks"]'
-    : searchEnabled
-      ? '["commands", "search"]'
-      : '["commands"]';
+  const capabilitiesLiteral = SAMPLE_TEST_CAPABILITIES_LITERAL[capability];
   const searchProviderName = `${extensionName}-search`;
   const vectorAdapterName = `${extensionName}-vector`;
   const importNames = [
@@ -323,8 +384,7 @@ export function buildStarterExtensionScaffoldFiles(
   capability: ExtensionScaffoldCapability = "commands",
 ): Record<string, string> {
   const packageName = `pm-${extensionName}`;
-  const capabilities =
-    capability === "hooks" ? ["commands", "hooks"] : capability === "search" ? ["commands", "search"] : ["commands"];
+  const capabilities = SCAFFOLD_MANIFEST_CAPABILITIES[capability];
   const manifest = `${JSON.stringify(
     {
       name: extensionName,
@@ -364,12 +424,7 @@ export function buildStarterExtensionScaffoldFiles(
   ].join("\n");
   // README bullet describing what index.js wires, kept in sync with the chosen
   // capability so the generated docs match the generated code.
-  const entrypointBullet =
-    capability === "hooks"
-      ? "- `index.js`: starter command registration, an `after_command` lifecycle hook, and a `deactivate` teardown stub."
-      : capability === "search"
-        ? "- `index.js`: starter command registration, a search provider, a vector-store adapter, and a `deactivate` teardown stub."
-      : "- `index.js`: starter command registration plus a `deactivate` teardown stub.";
+  const entrypointBullet = ENTRYPOINT_BULLETS[capability];
   if (vocabulary === "package") {
     const packageJson = `${JSON.stringify(
       {
@@ -407,12 +462,7 @@ export function buildStarterExtensionScaffoldFiles(
     // capability the scaffold targets (command invocation, and for the hooks
     // capability, the after_command lifecycle hook).
     const sampleTest = buildSampleTestSource(extensionName, commandName, capability);
-    const sampleTestBullet =
-      capability === "hooks"
-        ? "- `index.test.js`: sample `node:test` suite covering activation, command invocation, the after_command hook, and teardown via the SDK testing helpers."
-        : capability === "search"
-          ? "- `index.test.js`: sample `node:test` suite covering activation, command invocation, search provider/vector adapter invocation, and teardown via the SDK testing helpers."
-        : "- `index.test.js`: sample `node:test` suite covering activation, command invocation, and teardown via the SDK testing helpers.";
+    const sampleTestBullet = SAMPLE_TEST_BULLETS[capability];
     const gitignore = ["node_modules/", "*.log", ""].join("\n");
     const packageReadme = [
       `# ${packageName}`,
@@ -441,29 +491,7 @@ export function buildStarterExtensionScaffoldFiles(
       "```",
       "`npm test` runs `node --test`, which executes `index.test.js` against the",
       "`@unbrained/pm-cli/sdk/testing` helpers - no extra test runner required.",
-      ...(capability === "hooks"
-        ? [
-            "",
-            "## Lifecycle Hook",
-            "`index.js` registers an `after_command` hook via `api.hooks.afterCommand`.",
-            "pm fires it once a command finishes, passing the command outcome and the",
-            "items it mutated (`context.affected`). React there to keep external context",
-            "in sync - sync records, emit telemetry, or refresh derived state. The",
-            "`hooks` capability in `manifest.json` is what grants the hook registration;",
-            "remove it (and the hook) if your package only needs commands.",
-          ]
-        : capability === "search"
-          ? [
-              "",
-              "## Search Provider",
-              "`index.js` registers a deterministic in-memory search provider and",
-              "vector-store adapter through `api.registerSearchProvider` and",
-              "`api.registerVectorStoreAdapter`. Replace the sample scoring,",
-              "embedding, and storage behavior with your project-specific retrieval",
-              "logic. The `search` capability in `manifest.json` grants both",
-              "registrations.",
-            ]
-        : []),
+      ...PACKAGE_CAPABILITY_README_SECTIONS[capability],
       "",
       "## Compatibility Bounds",
       "`manifest.json` cannot hold comments, so the version-compatibility fields are documented here:",
@@ -505,27 +533,7 @@ export function buildStarterExtensionScaffoldFiles(
     `pm ${commandName}`,
     "pm extension --doctor --project --detail summary",
     "```",
-    ...(capability === "hooks"
-      ? [
-          "",
-          "## Lifecycle Hook",
-          "`index.js` registers an `after_command` hook via `api.hooks.afterCommand`.",
-          "pm fires it once a command finishes, passing the command outcome and the",
-          "items it mutated (`context.affected`). React there to keep external context",
-          "in sync. The `hooks` capability in `manifest.json` grants the registration;",
-          "remove it (and the hook) if your extension only needs commands.",
-        ]
-      : capability === "search"
-        ? [
-            "",
-            "## Search Provider",
-            "`index.js` registers a deterministic in-memory search provider and",
-            "vector-store adapter through `api.registerSearchProvider` and",
-            "`api.registerVectorStoreAdapter`. Replace the sample scoring, embedding,",
-            "and storage behavior with your project-specific retrieval logic. The",
-            "`search` capability in `manifest.json` grants both registrations.",
-          ]
-      : []),
+    ...EXTENSION_CAPABILITY_README_SECTIONS[capability],
     "",
     "## Compatibility Bounds",
     "`manifest.json` cannot hold comments, so the version-compatibility fields are documented here:",
@@ -568,7 +576,10 @@ export async function scaffoldExtensionProject(
   const normalizedTarget = target.trim();
   const targetPath = path.resolve(process.cwd(), normalizedTarget);
   const extensionName = normalizeManagedDirectoryName(path.basename(targetPath));
-  const commandName = buildStarterCommandName(extensionName);
+  // Hyphenated top-level command groups can surface in help but fail dispatch in
+  // Commander, so generated starters use space-separated command words while the
+  // manifest and package identity keep their normalized directory names.
+  const commandName = `${extensionName.replace(/-/g, " ")} ping`;
   const scaffoldFiles = buildStarterExtensionScaffoldFiles(extensionName, commandName, vocabulary, resolvedCapability);
 
   let createdDirectory = false;
