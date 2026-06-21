@@ -1,0 +1,20 @@
+id: pm-0zn9
+title: "SDK deactivate test lifecycle: deactivateExtensionForTest + assertExtensionDeactivated helpers"
+description: "Symmetric counterpart to activateExtensionForTest. The deactivate teardown lifecycle (pm-k1e4) and its per-hook timeout guard (pm-bujg) are first-class in core via deactivateExtensions, but package authors had no SDK helper to test their deactivate hook without importing private loader internals. Adds deactivateExtensionForTest (runs the real deactivateExtensions engine over one in-memory module) and assertExtensionDeactivated (assert clean teardown count), exports both from the public SDK testing surface, and extends the package-mode scaffold to demonstrate the full activate-then-deactivate lifecycle in the generated index.js + index.test.js. Completes the extension test-assertion surface alongside pm-6pmp and pm-4ltc."
+type: Feature
+status: closed
+priority: 2
+tags[4]: "area:extensions","area:sdk",living-map,sdk-testing
+created_at: "2026-06-21T12:16:50.066Z"
+updated_at: "2026-06-21T12:30:37.354Z"
+author: claude-code-agent
+parent: pm-ugqx
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-4ltc,related,"2026-06-21T12:17:08.463Z",claude-code-agent,null
+  pm-6pmp,related,"2026-06-21T12:17:08.463Z",claude-code-agent,null
+  pm-bujg,related,"2026-06-21T12:17:08.463Z",claude-code-agent,null
+  pm-k1e4,related,"2026-06-21T12:17:08.463Z",claude-code-agent,null
+notes[1]{created_at,author,text}:
+  "2026-06-21T12:30:24.618Z",claude-code-agent,"Implemented on branch feat/sdk-deactivate-test-lifecycle. Summary of changes:\n\n(1) src/sdk/testing.ts — added deactivateExtensionForTest(module, options) (teardown counterpart to activateExtensionForTest; runs the real deactivateExtensions engine over one in-memory load entry, returns ExtensionDeactivationResult) and assertExtensionDeactivated(result, expectation) (defaults assert one clean teardown / zero failures; accepts {deactivated, failed}). Extracted shared resolveTestExtensionName so both activate/deactivate helpers resolve the load-entry identity identically. New options: name, layer, activation (forwards a prior activation result so a failed-activation extension is skipped), deactivateTimeoutMs (forwarded as deactivate_timeout_ms).\n\n(2) src/sdk/index.ts — exported deactivateExtensionForTest, assertExtensionDeactivated, and types DeactivateExtensionForTestOptions, ExtensionDeactivationExpectation through the public SDK barrel (also reachable at @unbrained/pm-cli/sdk/testing).\n\n(3) src/cli/commands/extension/scaffold.ts — the starter index.js (both extension-only and package mode) now emits a documented deactivate teardown stub and wires it into the default export; the package-mode index.test.js gained a second test demonstrating deactivateExtensionForTest + assertExtensionDeactivated. READMEs updated for the lifecycle.\n\n(4) docs/SDK.md — documented both helpers in the testing-helper list + prose.\n\nTests: tests/unit/sdk/sdk-index.spec.ts (new helpers, all branches + barrel-equality) and tests/unit/extensions/extension-command.spec.ts (scaffold content assertions). Verified: 100% coverage (30431 stmts / 23754 branches / 5077 funcs / 29234 lines), 4808 tests green, typecheck + static + docs-skills gates green. Manual end-to-end: scaffolded a package in a temp dir, symlinked the repo as the peer SDK, ran node --test -> both activation and teardown tests pass; install + invoke + package doctor all green with zero unused capabilities."
+close_reason: "Shipped deactivateExtensionForTest + assertExtensionDeactivated SDK testing helpers, exported them through the public SDK barrel, and extended the package scaffold to demonstrate the full activate/deactivate lifecycle. 100% coverage, all gates green, end-to-end verified in a temp package."
+body: ""

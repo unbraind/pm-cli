@@ -7,9 +7,11 @@ import type {
   ExtensionActivationResult,
   ExtensionCapability,
   ExtensionCommandRegistry,
+  ExtensionDeactivationResult,
   ExtensionGovernancePolicy,
   ExtensionHookRegistry,
   ExtensionLayer,
+  ExtensionLoadResult,
   ExtensionManifest,
   ExtensionParserRegistry,
   ExtensionPreflightRegistry,
@@ -37,7 +39,7 @@ import type {
   SchemaFieldDefinition,
   SchemaItemTypeDefinition,
 } from "../core/extensions/loader.js";
-import { activateExtensions } from "../core/extensions/loader.js";
+import { activateExtensions, deactivateExtensions } from "../core/extensions/loader.js";
 import { createDefaultExtensionGovernancePolicy } from "../core/extensions/extension-types.js";
 import { collectUsedExtensionCapabilities } from "../core/extensions/capability-usage.js";
 import { normalizeKnownExtensionCapability } from "../core/extensions/extension-capability-aliases.js";
@@ -57,6 +59,38 @@ export interface ActivateExtensionForTestOptions {
   layer?: ExtensionLayer;
   capabilities?: readonly ExtensionCapability[];
   policy?: ExtensionGovernancePolicy;
+}
+
+/**
+ * Documents the deactivate extension for test options payload exchanged by command, SDK, and package integrations.
+ */
+export interface DeactivateExtensionForTestOptions {
+  /** Overrides the in-memory extension name (defaults to `manifest.name` or `"test-extension"`). */
+  name?: string;
+  /** Overrides the layer recorded for the in-memory extension (defaults to `"project"`). */
+  layer?: ExtensionLayer;
+  /**
+   * Activation result returned by `activateExtensionForTest`. When provided, an
+   * extension whose `activate` failed is skipped — mirroring the host teardown
+   * contract that never deactivates a never-initialized extension. Pass the same
+   * `name`/`layer` to both helpers so the skip key matches.
+   */
+  activation?: Pick<ExtensionActivationResult, "failed">;
+  /**
+   * Per-hook teardown bound, forwarded as `deactivate_timeout_ms`. Use `0` (or
+   * `Infinity`) to wait indefinitely; omit to keep the host default.
+   */
+  deactivateTimeoutMs?: number;
+}
+
+/**
+ * Documents the extension deactivation expectation payload exchanged by command, SDK, and package integrations.
+ */
+export interface ExtensionDeactivationExpectation {
+  /** Expected count of extensions whose `deactivate` ran without throwing (default `1`). */
+  deactivated?: number;
+  /** Expected count of teardown failures (default `0`). */
+  failed?: number;
 }
 
 /**
@@ -343,6 +377,13 @@ function readTestExtensionManifest(module: unknown): Partial<ExtensionManifest> 
   return {};
 }
 
+function resolveTestExtensionName(manifest: Partial<ExtensionManifest>, explicitName: string | undefined): string {
+  return (
+    explicitName ??
+    (typeof manifest.name === "string" && manifest.name.trim().length > 0 ? manifest.name.trim() : "test-extension")
+  );
+}
+
 function readTestExtensionCapabilities(
   manifest: Partial<ExtensionManifest>,
   options: ActivateExtensionForTestOptions,
@@ -357,23 +398,18 @@ function readTestExtensionCapabilities(
 }
 
 /**
- * Activate one in-memory extension module for package tests.
- *
- * This uses pm's real registration validation and activation engine while
- * avoiding private loader imports, filesystem manifests, or workspace setup.
+ * Build the synthetic single-extension {@link ExtensionLoadResult} shared by the
+ * activate/deactivate test helpers, so both stay aligned with the loader's load
+ * contract as it evolves. The `loaded` entry mirrors the real on-disk shape
+ * (including `capabilities` and the compatibility fields) while leaving
+ * filesystem paths empty, since the module is supplied in memory.
  */
-export async function activateExtensionForTest(
+function buildSingleExtensionLoadResult(
   module: unknown,
-  options: ActivateExtensionForTestOptions = {},
-): Promise<ExtensionActivationResult> {
-  const manifest = readTestExtensionManifest(module);
-  const name =
-    options.name ??
-    (typeof manifest.name === "string" && manifest.name.trim().length > 0 ? manifest.name.trim() : "test-extension");
-  const layer = options.layer ?? "project";
-  const capabilities = readTestExtensionCapabilities(manifest, options);
-
-  return activateExtensions({
+  manifest: Partial<ExtensionManifest>,
+  identity: { name: string; layer: ExtensionLayer; capabilities: ExtensionCapability[]; policy: ExtensionGovernancePolicy },
+): ExtensionLoadResult {
+  return {
     disabled_by_flag: false,
     roots: { global: "", project: "" },
     configured_enabled: [],
@@ -381,19 +417,19 @@ export async function activateExtensionForTest(
     discovered: [],
     effective: [],
     warnings: [],
-    policy: options.policy ?? createDefaultExtensionGovernancePolicy(),
+    policy: identity.policy,
     failed: [],
     loaded: [
       {
-        layer,
+        layer: identity.layer,
         directory: "",
         manifest_path: "",
-        name,
+        name: identity.name,
         version: typeof manifest.version === "string" ? manifest.version : "0.0.0",
         entry: typeof manifest.entry === "string" ? manifest.entry : "./index.js",
         priority: typeof manifest.priority === "number" ? manifest.priority : 0,
         entry_path: "",
-        capabilities,
+        capabilities: identity.capabilities,
         manifest_version: typeof manifest.manifest_version === "number" ? manifest.manifest_version : undefined,
         pm_min_version: typeof manifest.pm_min_version === "string" ? manifest.pm_min_version : undefined,
         pm_max_version: typeof manifest.pm_max_version === "string" ? manifest.pm_max_version : undefined,
@@ -406,7 +442,84 @@ export async function activateExtensionForTest(
         module,
       },
     ],
-  });
+  };
+}
+
+/**
+ * Activate one in-memory extension module for package tests.
+ *
+ * This uses pm's real registration validation and activation engine while
+ * avoiding private loader imports, filesystem manifests, or workspace setup.
+ */
+export async function activateExtensionForTest(
+  module: unknown,
+  options: ActivateExtensionForTestOptions = {},
+): Promise<ExtensionActivationResult> {
+  const manifest = readTestExtensionManifest(module);
+  return activateExtensions(
+    buildSingleExtensionLoadResult(module, manifest, {
+      name: resolveTestExtensionName(manifest, options.name),
+      layer: options.layer ?? "project",
+      capabilities: readTestExtensionCapabilities(manifest, options),
+      policy: options.policy ?? createDefaultExtensionGovernancePolicy(),
+    }),
+  );
+}
+
+/**
+ * Deactivate one in-memory extension module for package tests — the teardown
+ * counterpart to {@link activateExtensionForTest}.
+ *
+ * Runs pm's real `deactivateExtensions` engine (including its bounded per-hook
+ * timeout and best-effort failure capture) over a single synthetic load entry,
+ * so authors can prove an extension's `deactivate` releases the resources its
+ * `activate` opened — without importing private loader internals or staging a
+ * workspace. Resolve `name`/`layer` the same way {@link activateExtensionForTest}
+ * does so a forwarded `activation` result skips a failed extension correctly.
+ */
+export async function deactivateExtensionForTest(
+  module: unknown,
+  options: DeactivateExtensionForTestOptions = {},
+): Promise<ExtensionDeactivationResult> {
+  const manifest = readTestExtensionManifest(module);
+  return deactivateExtensions(
+    buildSingleExtensionLoadResult(module, manifest, {
+      name: resolveTestExtensionName(manifest, options.name),
+      layer: options.layer ?? "project",
+      capabilities: readTestExtensionCapabilities(manifest, {}),
+      policy: createDefaultExtensionGovernancePolicy(),
+    }),
+    options.activation,
+    options.deactivateTimeoutMs === undefined ? {} : { deactivate_timeout_ms: options.deactivateTimeoutMs },
+  );
+}
+
+/**
+ * Assert that an {@link ExtensionDeactivationResult} reports the expected clean
+ * teardown counts, throwing a descriptive error otherwise. Defaults assert the
+ * single-extension happy path — exactly one extension deactivated and none
+ * failed. Returns the result so assertions can chain.
+ */
+export function assertExtensionDeactivated(
+  result: ExtensionDeactivationResult,
+  expectation: ExtensionDeactivationExpectation = {},
+): ExtensionDeactivationResult {
+  const expectedDeactivated = expectation.deactivated ?? 1;
+  if (result.deactivated !== expectedDeactivated) {
+    throw new Error(
+      `Expected ${expectedDeactivated} extension${expectedDeactivated === 1 ? "" : "s"} to deactivate cleanly, ` +
+        `but ${result.deactivated} did.`,
+    );
+  }
+  const expectedFailed = expectation.failed ?? 0;
+  if (result.failed.length !== expectedFailed) {
+    const detail = result.failed.map((failure) => `${failure.layer}:${failure.name} (${failure.error})`).join(", ");
+    throw new Error(
+      `Expected ${expectedFailed} teardown failure${expectedFailed === 1 ? "" : "s"}, ` +
+        `but observed ${result.failed.length}${detail.length > 0 ? `: ${detail}` : ""}.`,
+    );
+  }
+  return result;
 }
 
 /**
