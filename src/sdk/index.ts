@@ -31,6 +31,7 @@ export * from "./cli-contracts.js";
 export * from "./runtime.js";
 export {
   assertExtensionCapabilityUsage,
+  assertExtensionDeactivated,
   assertPackageManifest,
   assertRegisteredCommandContract,
   assertRegisteredCommandOverride,
@@ -48,9 +49,12 @@ export {
   assertRegisteredServiceOverride,
   assertRegisteredVectorStoreAdapter,
   activateExtensionForTest,
+  deactivateExtensionForTest,
   type ActivateExtensionForTestOptions,
+  type DeactivateExtensionForTestOptions,
   type ExtensionCapabilityUsageAssertion,
   type ExtensionCapabilityUsageExpectation,
+  type ExtensionDeactivationExpectation,
   type PackageManifestExpectation,
   type PackageManifestResourceExpectation,
   type RegisteredCommandContractAssertion,

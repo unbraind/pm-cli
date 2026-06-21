@@ -16,6 +16,7 @@ import {
   PM_TOOL_PARAMETERS_SCHEMA_VERSION,
   STATUS_VALUES,
   assertExtensionCapabilityUsage as assertExtensionCapabilityUsageFromBarrel,
+  assertExtensionDeactivated as assertExtensionDeactivatedFromBarrel,
   assertPackageManifest as assertPackageManifestFromBarrel,
   assertRegisteredCommandContract as assertRegisteredCommandContractFromBarrel,
   assertRegisteredCommandOverride as assertRegisteredCommandOverrideFromBarrel,
@@ -33,6 +34,7 @@ import {
   assertRegisteredServiceOverride as assertRegisteredServiceOverrideFromBarrel,
   assertRegisteredVectorStoreAdapter as assertRegisteredVectorStoreAdapterFromBarrel,
   activateExtensionForTest as activateExtensionForTestFromBarrel,
+  deactivateExtensionForTest as deactivateExtensionForTestFromBarrel,
   appendHistoryEntry,
   createHistoryEntry,
   createPmCliExpectedError,
@@ -68,6 +70,7 @@ import {
 import { _testOnlyCliContracts } from "../../../src/sdk/cli-contracts.js";
 import {
   assertExtensionCapabilityUsage,
+  assertExtensionDeactivated,
   assertPackageManifest,
   assertRegisteredCommandContract,
   assertRegisteredCommandOverride,
@@ -85,6 +88,7 @@ import {
   assertRegisteredServiceOverride,
   assertRegisteredVectorStoreAdapter,
   activateExtensionForTest,
+  deactivateExtensionForTest,
 } from "../../../src/sdk/testing.js";
 import { serializeItemDocument } from "../../../src/core/item/item-format.js";
 import { readSettings as readCoreSettings, writeSettings } from "../../../src/core/store/settings.js";
@@ -861,6 +865,9 @@ describe("public sdk entrypoint", () => {
     expect(typeof assertRegisteredItemTypeFromBarrel).toBe("function");
     expect(typeof assertRegisteredVectorStoreAdapterFromBarrel).toBe("function");
     expect(typeof activateExtensionForTestFromBarrel).toBe("function");
+    expect(typeof deactivateExtensionForTestFromBarrel).toBe("function");
+    expect(deactivateExtensionForTestFromBarrel).toBe(deactivateExtensionForTest);
+    expect(assertExtensionDeactivatedFromBarrel).toBe(assertExtensionDeactivated);
     // Lock the new override-assertion helpers to the same implementation the
     // testing entrypoint exports (barrel-contract for this PR's SDK surface).
     expect(assertRegisteredCommandOverrideFromBarrel).toBe(assertRegisteredCommandOverride);
@@ -921,6 +928,80 @@ describe("public sdk entrypoint", () => {
     expect(() =>
       assertExtensionCapabilityUsage(activation, { declared: ["commands"], allowUnused: ["schem"] }),
     ).toThrow(/allowUnused capability "schem" to be a known extension capability/);
+  });
+
+  it("deactivates an in-memory extension and asserts a clean teardown", async () => {
+    // Full manifest + default options: name comes from the manifest, the layer
+    // defaults to "project", no per-hook timeout is forwarded, and no prior
+    // activation result is supplied.
+    let cleared = false;
+    const cleanResult = await deactivateExtensionForTest({
+      manifest: { name: "teardown-ext", version: "1.2.3", entry: "./entry.js", priority: 7 },
+      activate() {},
+      deactivate() {
+        cleared = true;
+      },
+    });
+    expect(cleared).toBe(true);
+    expect(cleanResult).toEqual({ deactivated: 1, warnings: [], failed: [] });
+    // The default expectation (one clean teardown, no failures) passes and the
+    // result is returned for chaining.
+    expect(assertExtensionDeactivated(cleanResult)).toBe(cleanResult);
+
+    // A bare module with no manifest falls back to the synthetic defaults, and
+    // explicit layer/timeout options exercise the non-default branches.
+    const bareResult = await deactivateExtensionForTest(
+      { activate() {}, deactivate() {} },
+      { layer: "global", deactivateTimeoutMs: 1000 },
+    );
+    expect(bareResult.deactivated).toBe(1);
+
+    // A forwarded activation result whose `failed` entry matches the resolved
+    // name/layer skips teardown (the extension never finished activating).
+    const skippedResult = await deactivateExtensionForTest(
+      {
+        activate() {},
+        deactivate() {
+          throw new Error("should not run for a failed activation");
+        },
+      },
+      {
+        name: "skip-me",
+        activation: { failed: [{ layer: "project", name: "skip-me", entry_path: "", error: "boom" }] },
+      },
+    );
+    expect(skippedResult).toEqual({ deactivated: 0, warnings: [], failed: [] });
+
+    // A throwing teardown is captured as a best-effort failure rather than
+    // propagated, so the result records it without rejecting.
+    const failingResult = await deactivateExtensionForTest({
+      activate() {},
+      deactivate() {
+        throw new Error("teardown blew up");
+      },
+    });
+    expect(failingResult.deactivated).toBe(0);
+    expect(failingResult.failed).toHaveLength(1);
+    expect(failingResult.failed[0]).toMatchObject({ layer: "project", name: "test-extension" });
+    expect(failingResult.warnings).toEqual(["extension_deactivate_failed:project:test-extension"]);
+
+    // assertExtensionDeactivated surfaces a deactivated-count mismatch (singular
+    // and plural phrasing) and a failure-count mismatch (with and without the
+    // failure detail / singular and plural phrasing).
+    expect(() => assertExtensionDeactivated(failingResult)).toThrow(
+      "Expected 1 extension to deactivate cleanly, but 0 did.",
+    );
+    expect(() => assertExtensionDeactivated(cleanResult, { deactivated: 2 })).toThrow(
+      "Expected 2 extensions to deactivate cleanly, but 1 did.",
+    );
+    expect(() => assertExtensionDeactivated(failingResult, { deactivated: 0 })).toThrow(
+      /Expected 0 teardown failures, but observed 1: project:test-extension \(teardown blew up\)\./,
+    );
+    expect(() => assertExtensionDeactivated(cleanResult, { failed: 1 })).toThrow(
+      "Expected 1 teardown failure, but observed 0.",
+    );
+    // Matching both expected counts (zero clean teardowns, one failure) passes.
+    expect(assertExtensionDeactivated(failingResult, { deactivated: 0, failed: 1 })).toBe(failingResult);
   });
 
   it("exposes runtime contracts without requiring a pm subprocess", async () => {

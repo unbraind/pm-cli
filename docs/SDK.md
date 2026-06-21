@@ -74,6 +74,8 @@ Command/action contract exports:
 Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 
 - `activateExtensionForTest`
+- `deactivateExtensionForTest`
+- `assertExtensionDeactivated`
 - `assertPackageManifest`
 - `assertRegisteredCommandContract`
 - `assertRegisteredFlags`
@@ -97,6 +99,15 @@ counterpart of the per-surface `assertRegistered*` helpers: pass the same
 capabilities as your `manifest.capabilities` and it fails the test when the
 manifest grants a capability the extension never registers against. Use
 `allowUnused` for capabilities a runtime registers only behind a config flag.
+
+`deactivateExtensionForTest(module, options)` is the teardown counterpart to
+`activateExtensionForTest`: it runs pm's real `deactivateExtensions` engine
+(including the bounded per-hook timeout and best-effort failure capture) over the
+module and returns the `ExtensionDeactivationResult`, so a package can prove its
+`deactivate` releases the resources `activate` opened. `assertExtensionDeactivated(result)`
+asserts the single-extension happy path (one extension deactivated, none failed)
+by default; pass `{ deactivated, failed }` to assert other counts. Forward the
+`activation` result and `deactivateTimeoutMs` to mirror real host teardown.
 
 Commander option contract exports:
 

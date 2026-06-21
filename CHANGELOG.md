@@ -4,6 +4,7 @@
 
 ### Added
 
+- SDK deactivate test lifecycle: deactivateExtensionForTest + assertExtensionDeactivated helpers ([pm-0zn9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-0zn9.toon))
 - Least-privilege capability reconciliation: pm package doctor flags declared-but-unused extension capabilities + SDK assertExtensionCapabilityUsage ([pm-fk84](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-fk84.toon))
 
 ### Fixed

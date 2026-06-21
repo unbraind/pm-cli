@@ -1869,6 +1869,10 @@ describe("extension command runtime", () => {
       expect(entry).not.toContain('import { defineExtension }');
       expect(entry).toContain('@param {import("@unbrained/pm-cli/sdk").ExtensionApi}');
       expect(entry).toContain("export function activate(api)");
+      // The starter also emits a documented `deactivate` teardown stub so the
+      // full lifecycle is modelled (and the default export wires both hooks).
+      expect(entry).toContain("export function deactivate() {}");
+      expect(entry).toContain("  deactivate,");
       expect(entry).toContain("export default {");
       expect(entry).toContain('name: "starter-ext ping"');
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
@@ -1970,16 +1974,29 @@ describe("extension command runtime", () => {
       expect(entry).not.toContain('import { defineExtension }');
       expect(entry).toContain('@param {import("@unbrained/pm-cli/sdk").ExtensionApi}');
       expect(entry).toContain("export function activate(api)");
+      expect(entry).toContain("export function deactivate() {}");
       expect(entry).toContain('name: "starter-package ping"');
 
       const sampleTest = await readFile(path.join(scaffoldPath, "index.test.js"), "utf8");
       expect(sampleTest).toContain('import assert from "node:assert/strict";');
       expect(sampleTest).toContain('import { test } from "node:test";');
-      expect(sampleTest).toContain('import { activateExtensionForTest, assertRegisteredCommandContract } from "@unbrained/pm-cli/sdk/testing";');
+      // The sample imports the activate and deactivate test helpers so it can
+      // cover the full lifecycle, not just command registration.
+      expect(sampleTest).toContain("  activateExtensionForTest,");
+      expect(sampleTest).toContain("  assertExtensionDeactivated,");
+      expect(sampleTest).toContain("  assertRegisteredCommandContract,");
+      expect(sampleTest).toContain("  deactivateExtensionForTest,");
+      expect(sampleTest).toContain('} from "@unbrained/pm-cli/sdk/testing";');
       expect(sampleTest).toContain('import extension from "./index.js";');
       expect(sampleTest).toContain('capabilities: ["commands"]');
       expect(sampleTest).toContain('command: "starter-package ping"');
       expect(sampleTest).toContain('assert.equal(typeof registered.command.description, "string");');
+      // The teardown test demonstrates deactivateExtensionForTest + the clean
+      // teardown assertion.
+      expect(sampleTest).toContain("tears down cleanly via deactivate");
+      expect(sampleTest).toContain("const teardown = await deactivateExtensionForTest(extension, {");
+      expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
+      expect(sampleTest).toContain("assert.equal(teardown.deactivated, 1);");
       // The contract helper already validates the command name, so the sample
       // does not redundantly re-assert registered.command.command.
       expect(sampleTest).not.toContain("assert.equal(registered.command.command,");

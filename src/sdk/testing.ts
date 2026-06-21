@@ -7,6 +7,7 @@ import type {
   ExtensionActivationResult,
   ExtensionCapability,
   ExtensionCommandRegistry,
+  ExtensionDeactivationResult,
   ExtensionGovernancePolicy,
   ExtensionHookRegistry,
   ExtensionLayer,
@@ -37,7 +38,7 @@ import type {
   SchemaFieldDefinition,
   SchemaItemTypeDefinition,
 } from "../core/extensions/loader.js";
-import { activateExtensions } from "../core/extensions/loader.js";
+import { activateExtensions, deactivateExtensions } from "../core/extensions/loader.js";
 import { createDefaultExtensionGovernancePolicy } from "../core/extensions/extension-types.js";
 import { collectUsedExtensionCapabilities } from "../core/extensions/capability-usage.js";
 import { normalizeKnownExtensionCapability } from "../core/extensions/extension-capability-aliases.js";
@@ -57,6 +58,38 @@ export interface ActivateExtensionForTestOptions {
   layer?: ExtensionLayer;
   capabilities?: readonly ExtensionCapability[];
   policy?: ExtensionGovernancePolicy;
+}
+
+/**
+ * Documents the deactivate extension for test options payload exchanged by command, SDK, and package integrations.
+ */
+export interface DeactivateExtensionForTestOptions {
+  /** Overrides the in-memory extension name (defaults to `manifest.name` or `"test-extension"`). */
+  name?: string;
+  /** Overrides the layer recorded for the in-memory extension (defaults to `"project"`). */
+  layer?: ExtensionLayer;
+  /**
+   * Activation result returned by `activateExtensionForTest`. When provided, an
+   * extension whose `activate` failed is skipped — mirroring the host teardown
+   * contract that never deactivates a never-initialized extension. Pass the same
+   * `name`/`layer` to both helpers so the skip key matches.
+   */
+  activation?: Pick<ExtensionActivationResult, "failed">;
+  /**
+   * Per-hook teardown bound, forwarded as `deactivate_timeout_ms`. Use `0` (or
+   * `Infinity`) to wait indefinitely; omit to keep the host default.
+   */
+  deactivateTimeoutMs?: number;
+}
+
+/**
+ * Documents the extension deactivation expectation payload exchanged by command, SDK, and package integrations.
+ */
+export interface ExtensionDeactivationExpectation {
+  /** Expected count of extensions whose `deactivate` ran without throwing (default `1`). */
+  deactivated?: number;
+  /** Expected count of teardown failures (default `0`). */
+  failed?: number;
 }
 
 /**
@@ -343,6 +376,13 @@ function readTestExtensionManifest(module: unknown): Partial<ExtensionManifest> 
   return {};
 }
 
+function resolveTestExtensionName(manifest: Partial<ExtensionManifest>, explicitName: string | undefined): string {
+  return (
+    explicitName ??
+    (typeof manifest.name === "string" && manifest.name.trim().length > 0 ? manifest.name.trim() : "test-extension")
+  );
+}
+
 function readTestExtensionCapabilities(
   manifest: Partial<ExtensionManifest>,
   options: ActivateExtensionForTestOptions,
@@ -367,9 +407,7 @@ export async function activateExtensionForTest(
   options: ActivateExtensionForTestOptions = {},
 ): Promise<ExtensionActivationResult> {
   const manifest = readTestExtensionManifest(module);
-  const name =
-    options.name ??
-    (typeof manifest.name === "string" && manifest.name.trim().length > 0 ? manifest.name.trim() : "test-extension");
+  const name = resolveTestExtensionName(manifest, options.name);
   const layer = options.layer ?? "project";
   const capabilities = readTestExtensionCapabilities(manifest, options);
 
@@ -407,6 +445,82 @@ export async function activateExtensionForTest(
       },
     ],
   });
+}
+
+/**
+ * Deactivate one in-memory extension module for package tests — the teardown
+ * counterpart to {@link activateExtensionForTest}.
+ *
+ * Runs pm's real `deactivateExtensions` engine (including its bounded per-hook
+ * timeout and best-effort failure capture) over a single synthetic load entry,
+ * so authors can prove an extension's `deactivate` releases the resources its
+ * `activate` opened — without importing private loader internals or staging a
+ * workspace. Resolve `name`/`layer` the same way {@link activateExtensionForTest}
+ * does so a forwarded `activation` result skips a failed extension correctly.
+ */
+export async function deactivateExtensionForTest(
+  module: unknown,
+  options: DeactivateExtensionForTestOptions = {},
+): Promise<ExtensionDeactivationResult> {
+  const manifest = readTestExtensionManifest(module);
+  const name = resolveTestExtensionName(manifest, options.name);
+  const layer = options.layer ?? "project";
+  return deactivateExtensions(
+    {
+      disabled_by_flag: false,
+      roots: { global: "", project: "" },
+      configured_enabled: [],
+      configured_disabled: [],
+      discovered: [],
+      effective: [],
+      warnings: [],
+      policy: createDefaultExtensionGovernancePolicy(),
+      failed: [],
+      loaded: [
+        {
+          layer,
+          directory: "",
+          manifest_path: "",
+          name,
+          version: typeof manifest.version === "string" ? manifest.version : "0.0.0",
+          entry: typeof manifest.entry === "string" ? manifest.entry : "./index.js",
+          priority: typeof manifest.priority === "number" ? manifest.priority : 0,
+          entry_path: "",
+          module,
+        },
+      ],
+    },
+    options.activation,
+    options.deactivateTimeoutMs === undefined ? {} : { deactivate_timeout_ms: options.deactivateTimeoutMs },
+  );
+}
+
+/**
+ * Assert that an {@link ExtensionDeactivationResult} reports the expected clean
+ * teardown counts, throwing a descriptive error otherwise. Defaults assert the
+ * single-extension happy path — exactly one extension deactivated and none
+ * failed. Returns the result so assertions can chain.
+ */
+export function assertExtensionDeactivated(
+  result: ExtensionDeactivationResult,
+  expectation: ExtensionDeactivationExpectation = {},
+): ExtensionDeactivationResult {
+  const expectedDeactivated = expectation.deactivated ?? 1;
+  if (result.deactivated !== expectedDeactivated) {
+    throw new Error(
+      `Expected ${expectedDeactivated} extension${expectedDeactivated === 1 ? "" : "s"} to deactivate cleanly, ` +
+        `but ${result.deactivated} did.`,
+    );
+  }
+  const expectedFailed = expectation.failed ?? 0;
+  if (result.failed.length !== expectedFailed) {
+    const detail = result.failed.map((failure) => `${failure.layer}:${failure.name} (${failure.error})`).join(", ");
+    throw new Error(
+      `Expected ${expectedFailed} teardown failure${expectedFailed === 1 ? "" : "s"}, ` +
+        `but observed ${result.failed.length}${detail.length > 0 ? `: ${detail}` : ""}.`,
+    );
+  }
+  return result;
 }
 
 /**
