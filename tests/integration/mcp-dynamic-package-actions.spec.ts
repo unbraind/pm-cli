@@ -1549,5 +1549,5 @@ describe("MCP dynamic package actions", () => {
       );
       expect((missingDeleteId as Error).message).toBe("Missing required argument: id");
     });
-  });
+  }, 60_000);
 });

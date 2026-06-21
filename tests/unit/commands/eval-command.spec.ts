@@ -1,3 +1,4 @@
+import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
@@ -125,7 +126,8 @@ describe("runEval", () => {
     queueRankings(["pm-a"]);
 
     await runEval({ queries: "custom/eval.json" }, GLOBAL);
-    expect(readFileMock.mock.calls[0][0]).toContain("custom/eval.json");
+    const [targetPath] = readFileMock.mock.calls[0];
+    expect(targetPath.replaceAll(path.sep, "/")).toContain("custom/eval.json");
   });
 
   it("defaults the golden-set path under the pm root", async () => {
@@ -133,8 +135,10 @@ describe("runEval", () => {
     queueRankings(["pm-a"]);
 
     await runEval({}, GLOBAL);
-    expect(readFileMock.mock.calls[0][0]).toContain("/pmroot");
-    expect(readFileMock.mock.calls[0][0]).toContain("eval-queries.json");
+    const [targetPath] = readFileMock.mock.calls[0];
+    const normalizedTargetPath = targetPath.replaceAll(path.sep, "/");
+    expect(normalizedTargetPath).toContain("/pmroot");
+    expect(normalizedTargetPath).toContain("eval-queries.json");
   });
 
   it("throws NOT_FOUND when the tracker is not initialized", async () => {

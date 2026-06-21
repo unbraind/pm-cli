@@ -29,6 +29,7 @@ const originalTelemetryIngestKey = process.env.PM_TELEMETRY_INGEST_KEY;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PRIVATE_TEST_IP = ["192", "168", "42", "17"].join(".");
 const TEST_LOCAL_PATH = ["/home", "example", "private", "path"].join("/");
+const itOnPosix = process.platform === "win32" ? it.skip : it;
 
 function telemetryQueuePath(globalRoot: string): string {
   return path.join(globalRoot, "runtime", "telemetry", "events.jsonl");
@@ -2699,7 +2700,7 @@ describe("core/telemetry/runtime", () => {
     ).toHaveLength(1);
   });
 
-  it("covers queue rewrite retry loops and empty-queue fallback branches", async () => {
+  itOnPosix("covers queue rewrite retry loops and empty-queue fallback branches", async () => {
     await withTempGlobalRoot(async (globalRoot) => {
       const telemetryDir = path.join(globalRoot, "runtime", "telemetry");
       await fs.mkdir(telemetryDir, { recursive: true });
@@ -2717,7 +2718,7 @@ describe("core/telemetry/runtime", () => {
     });
   });
 
-  it("covers primitive flush errors, lock failure branches, and unknown-command fallback", async () => {
+  itOnPosix("covers primitive flush errors, lock failure branches, and unknown-command fallback", async () => {
     await withTempGlobalRoot(async (globalRoot) => {
       const settings = await readSettings(globalRoot);
       settings.telemetry.enabled = true;

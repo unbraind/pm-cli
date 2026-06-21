@@ -465,14 +465,16 @@ describe("extension command runtime", () => {
         error: "runner-failed",
       });
 
-      const readonlyRoot = path.join(tempRoot, "readonly-root");
-      const readonlyLockRoot = path.join(readonlyRoot, "runtime", "extension-install-locks");
-      await mkdir(readonlyLockRoot, { recursive: true });
-      await chmod(readonlyLockRoot, 0o555);
-      await expect(
-        extensionCommandTestOnly.withExtensionInstallLock(readonlyRoot, "denied-ext", async () => "nope"),
-      ).rejects.toBeTruthy();
-      await chmod(readonlyLockRoot, 0o755);
+      if (process.platform !== "win32") {
+        const readonlyRoot = path.join(tempRoot, "readonly-root");
+        const readonlyLockRoot = path.join(readonlyRoot, "runtime", "extension-install-locks");
+        await mkdir(readonlyLockRoot, { recursive: true });
+        await chmod(readonlyLockRoot, 0o555);
+        await expect(
+          extensionCommandTestOnly.withExtensionInstallLock(readonlyRoot, "denied-ext", async () => "nope"),
+        ).rejects.toBeTruthy();
+        await chmod(readonlyLockRoot, 0o755);
+      }
 
       const busyRoot = path.join(tempRoot, "busy-root");
       const busyLockPath = path.join(busyRoot, "runtime", "extension-install-locks", "busy-ext.lock");
@@ -492,11 +494,15 @@ describe("extension command runtime", () => {
       const cleanupRoot = path.join(tempRoot, "cleanup-root");
       const cleanupLockRoot = path.join(cleanupRoot, "runtime", "extension-install-locks");
       const cleanupResult = await extensionCommandTestOnly.withExtensionInstallLock(cleanupRoot, "cleanup-ext", async () => {
-        await chmod(cleanupLockRoot, 0o555);
+        if (process.platform !== "win32") {
+          await chmod(cleanupLockRoot, 0o555);
+        }
         return "cleanup-ok";
       });
       expect(cleanupResult).toBe("cleanup-ok");
-      await chmod(cleanupLockRoot, 0o755);
+      if (process.platform !== "win32") {
+        await chmod(cleanupLockRoot, 0o755);
+      }
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
