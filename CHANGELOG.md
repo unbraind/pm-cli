@@ -4,7 +4,7 @@
 
 ### Other
 
-- Package scaffold emits least-privilege manifest policy metadata ([pm-bav0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-bav0.toon))
+- Package and extension scaffolds emit least-privilege manifest policy metadata ([pm-bav0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-bav0.toon))
 
 ## 2026.6.21 - 2026-06-21
 

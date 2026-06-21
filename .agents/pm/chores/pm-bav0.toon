@@ -1,12 +1,12 @@
 id: pm-bav0
-title: Package scaffold emits least-privilege manifest policy metadata
+title: Package and extension scaffolds emit least-privilege manifest policy metadata
 description: "New package and extension scaffolds should teach package authors the same least-privilege manifest contract as first-party packages: trusted=true, sandbox_profile=strict for pure starter commands, and explicit false permissions. This keeps generated packages compatible with extension policy enforcement and makes the SDK/package author baseline easier to copy."
 type: Chore
 status: closed
 priority: 2
 tags[3]: agent-ux,"area:packages","area:sdk"
 created_at: "2026-06-21T08:27:34.890Z"
-updated_at: "2026-06-21T08:47:11.094Z"
+updated_at: "2026-06-21T08:47:44.910Z"
 author: codex-impl
 parent: pm-ugqx
 resolution: Implemented least-privilege policy metadata in the scaffold manifest generator and documented the generated contract.
