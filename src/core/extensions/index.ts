@@ -400,3 +400,10 @@ export function runActiveServiceOverrideSync(service: ExtensionServiceName, payl
 }
 
 export * from "./loader.js";
+export {
+  EXTENSION_CAPABILITY_REGISTRATION_SURFACES,
+  collectUsedExtensionCapabilities,
+  reconcileExtensionCapabilityUsage,
+  type CollectUsedExtensionCapabilitiesOptions,
+  type ExtensionCapabilityUsageReconciliation,
+} from "./capability-usage.js";

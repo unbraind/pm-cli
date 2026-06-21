@@ -53,8 +53,12 @@ import {
   buildRegistrationCollisionRemediation,
   classifyDoctorLoadFailureWarnings,
   classifyDoctorActivationFailureWarnings,
+  classifyUnusedCapabilityWarnings,
   collectUnknownCapabilityGuidance,
 } from "../../../src/cli/commands/extension/doctor.js";
+import { activateExtensions } from "../../../src/core/extensions/loader.js";
+import type { ExtensionApi } from "../../../src/core/extensions/loader.js";
+import { createDefaultExtensionGovernancePolicy } from "../../../src/core/extensions/extension-types.js";
 import {
   _testOnlyBundledCatalog,
   buildBundledPackageCatalog,
@@ -2615,6 +2619,53 @@ describe("extension command runtime", () => {
         missing_active_project_names: ["alpha", "zulu"],
       },
     });
+  });
+
+  it("classifies declared-but-unused capabilities as advisory doctor warnings with remediation", async () => {
+    const loadResult = {
+      disabled_by_flag: false,
+      roots: { global: "", project: "" },
+      configured_enabled: [],
+      configured_disabled: [],
+      discovered: [],
+      effective: [],
+      warnings: [],
+      policy: createDefaultExtensionGovernancePolicy(),
+      failed: [],
+      loaded: [
+        {
+          layer: "project" as const,
+          directory: "",
+          manifest_path: "",
+          name: "over-declarer",
+          version: "0.0.0",
+          entry: "./index.js",
+          priority: 0,
+          entry_path: "",
+          capabilities: ["commands", "schema", "search"],
+          module: { activate: (api: ExtensionApi) => api.registerCommand({ name: "over-declarer cmd", run: () => ({}) }) },
+        },
+      ],
+    };
+    const activationResult = await activateExtensions(loadResult);
+    expect(activationResult.failed).toEqual([]);
+    const warnings = classifyUnusedCapabilityWarnings(loadResult, activationResult);
+    expect(warnings).toEqual([
+      "extension_capability_unused:project:over-declarer:schema",
+      "extension_capability_unused:project:over-declarer:search",
+    ]);
+
+    const triage = buildExtensionTriageSummary("project", warnings, []);
+    expect(triage.status).toBe("warn");
+    expect(triage.warning_codes).toContain("extension_capability_unused");
+    expect(triage.remediation.some((entry) => entry.includes("least privilege"))).toBe(true);
+
+    // A least-privilege manifest produces no unused-capability warnings.
+    const minimalLoad = {
+      ...loadResult,
+      loaded: [{ ...loadResult.loaded[0], capabilities: ["commands"] }],
+    };
+    expect(classifyUnusedCapabilityWarnings(minimalLoad, await activateExtensions(minimalLoad))).toEqual([]);
   });
 
   it("installs all bundled first-party packages via wildcard and all aliases", async () => {

@@ -3,7 +3,11 @@
  *
  * Implements extension package-management support for Doctor.
  */
-import { activateExtensions, loadExtensions } from "../../../core/extensions/index.js";
+import {
+  activateExtensions,
+  loadExtensions,
+  reconcileExtensionCapabilityUsage,
+} from "../../../core/extensions/index.js";
 import {
   EXTENSION_CAPABILITY_CONTRACT,
   KNOWN_EXTENSION_CAPABILITIES,
@@ -358,6 +362,29 @@ export function classifyDoctorActivationFailureWarnings(
 }
 
 /**
+ * Classify advisory least-privilege warnings for capabilities each loaded
+ * extension declares in its manifest but never registers against.
+ *
+ * Emits one `extension_capability_unused:<layer>:<name>:<capability>` token per
+ * over-broad grant. These are advisory hygiene hints — they never block — that
+ * tell an author to trim the manifest (or add the missing registration). The
+ * inverse failure (registering a surface whose capability is undeclared) is the
+ * blocking `extension_capability_missing` warning emitted during activation.
+ */
+export function classifyUnusedCapabilityWarnings(
+  loadResult: Awaited<ReturnType<typeof loadExtensions>>,
+  activationResult: Awaited<ReturnType<typeof activateExtensions>>,
+): string[] {
+  const warnings: string[] = [];
+  for (const entry of reconcileExtensionCapabilityUsage(loadResult.loaded, activationResult)) {
+    for (const capability of entry.unused) {
+      warnings.push(`extension_capability_unused:${entry.layer}:${entry.name}:${capability}`);
+    }
+  }
+  return [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
+}
+
+/**
  * Implements build extension triage summary for the public runtime surface of this module.
  */
 export function buildExtensionTriageSummary(
@@ -434,6 +461,12 @@ export function buildExtensionTriageSummary(
       remediation.push(
         `Extension activation failed because code registered a surface missing from manifest capabilities. ` +
           `Run ${lifecycleFlagCommand(options, "doctor")} ${scopeFlag} --detail deep --trace and add the reported missing_capability to manifest.json before publishing.`,
+      );
+    }
+    if (normalizedWarnings.some((warning) => warning.startsWith("extension_capability_unused:"))) {
+      remediation.push(
+        "Extension manifests declare capabilities that are never registered against. " +
+          `Remove each reported unused capability from manifest.json to keep least privilege, or add the matching registration. Run ${lifecycleFlagCommand(options, "doctor")} ${scopeFlag} --detail deep --trace for per-extension registration counts.`,
       );
     }
     if (normalizedWarnings.some((warning) => warning.startsWith("extension_command_definition_legacy_handler_alias:"))) {

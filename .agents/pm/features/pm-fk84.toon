@@ -1,0 +1,20 @@
+id: pm-fk84
+title: "Least-privilege capability reconciliation: pm package doctor flags declared-but-unused extension capabilities + SDK assertExtensionCapabilityUsage"
+description: "Add the inverse of the existing missing-capability enforcement (pm-mwwp): detect capabilities a package manifest DECLARES but never EXERCISES at activation, so authors can trim manifests to least privilege. Surfaced as advisory extension_capability_unused warnings in pm package/extension doctor, plus a batteries-included SDK test helper assertExtensionCapabilityUsage so authors catch over-declaration at npm test time. Closes the least-privilege loop opened by pm-bav0 (scaffold least-privilege metadata) and pm-mwwp (enforce missing capabilities)."
+type: Feature
+status: closed
+priority: 2
+tags[6]: "area:extensions","area:sdk",capability,context-management,doctor,least-privilege
+created_at: "2026-06-21T11:08:59.286Z"
+updated_at: "2026-06-21T11:35:44.870Z"
+author: claude-code-agent
+parent: pm-ugqx
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-aabt,related,"2026-06-21T11:09:47.739Z",claude-code-agent,null
+  pm-bav0,related,"2026-06-21T11:09:47.739Z",claude-code-agent,null
+  pm-hzh6,related,"2026-06-21T11:09:47.739Z",claude-code-agent,null
+  pm-mwwp,related,"2026-06-21T11:09:47.739Z",claude-code-agent,null
+notes[1]{created_at,author,text}:
+  "2026-06-21T11:34:49.721Z",claude-code-agent,"Implemented least-privilege capability reconciliation across core + doctor + SDK:\n\nCORE (src/core/extensions/capability-usage.ts, new):\n- EXTENSION_CAPABILITY_REGISTRATION_SURFACES: canonical capability->surface map, `satisfies Record<ExtensionCapability,...>` makes it exhaustive at COMPILE TIME (adding a capability without a surface fails the build, preventing a perpetually-\"unused\" false positive).\n- collectUsedExtensionCapabilities(activation, {extensionName?}): unions exercised capabilities, optional case-insensitive name filter.\n- reconcileExtensionCapabilityUsage(loaded, activation): per-extension {declared, used, unused}; filters declared to KNOWN capabilities (unknowns are the separate unknown-capability diagnostic); skips extensions with no reconcilable declared caps. Keyed by JSON [layer,name] tuple (no literal NUL in source).\n\nDOCTOR (extension/doctor.ts + extension.ts):\n- classifyUnusedCapabilityWarnings(loadResult, activationResult) emits advisory `extension_capability_unused:<layer>:<name>:<capability>`; wired into the doctor warning pipeline (NOT install-probe).\n- buildExtensionTriageSummary adds a least-privilege remediation branch.\n- ADVISORY only: doctor `ok` stays true (status:\"warn\"). Deliberately NOT wired into `pm health` (isAdvisoryHealthWarning only whitelists telemetry_*/history_* -> any extension warning would block the health gate + daily release). Verified pm health unaffected.\n\nSDK (sdk/testing.ts + sdk/index.ts + core/extensions/index.ts):\n- assertExtensionCapabilityUsage(activation, {declared, extensionName?, allowUnused?}) — package-test counterpart; throws on over-declaration (singular/plural phrasing), rejects unknown declared caps. Barrel-re-exported + barrel-equality locked.\n- Exported collectUsedExtensionCapabilities / reconcileExtensionCapabilityUsage / EXTENSION_CAPABILITY_REGISTRATION_SURFACES from the SDK.\n\nVERIFICATION: 4807 tests pass, 100/100/100/100 coverage; typecheck + quality:static (docstrings) + docs-skills all green. Repo's own 10 first-party packages + builtins are already least-privilege (0 warnings). Sandbox dogfood: over-declaring [\"commands\",\"schema\",\"search\"] with only a command -> flagged schema+search; trim to [\"commands\"] -> clean."
+close_reason: "Shipped least-privilege capability reconciliation: advisory extension_capability_unused doctor warnings + assertExtensionCapabilityUsage SDK helper + collectUsedExtensionCapabilities/reconcileExtensionCapabilityUsage core exports. 100% coverage, all gates green."
+body: ""

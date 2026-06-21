@@ -61,6 +61,7 @@ import {
   applyDoctorRuntimeActivationState,
   classifyDoctorLoadFailureWarnings,
   classifyDoctorActivationFailureWarnings,
+  classifyUnusedCapabilityWarnings,
   buildExtensionTriageSummary,
   parseDoctorDetailMode,
   collectUnknownCapabilityGuidance,
@@ -1739,6 +1740,7 @@ export async function runExtension(
     warnings.push(...classifyDoctorLoadFailureWarnings(loadResult.failed));
     warnings.push(...activationResult.warnings);
     warnings.push(...classifyDoctorActivationFailureWarnings(activationResult.failed));
+    warnings.push(...classifyUnusedCapabilityWarnings(loadResult, activationResult));
     warnings.push(...collectGlobalOutputOverrideDoctorWarnings(activationResult));
     const runtimeInstalledExtensions = applyDoctorRuntimeActivationState(refreshedInstalled.extensions, loadResult, activationResult);
     const doctorConsistency = buildDoctorConsistencySummary(

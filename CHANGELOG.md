@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Least-privilege capability reconciliation: pm package doctor flags declared-but-unused extension capabilities + SDK assertExtensionCapabilityUsage ([pm-fk84](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-fk84.toon))
+
 ### Fixed
 
 - Fix Windows nightly full-test path and permission assumptions ([pm-83rt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-83rt.toon))

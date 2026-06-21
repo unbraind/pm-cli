@@ -15,6 +15,7 @@ import {
   PM_TOOL_PARAMETERS_SCHEMA,
   PM_TOOL_PARAMETERS_SCHEMA_VERSION,
   STATUS_VALUES,
+  assertExtensionCapabilityUsage as assertExtensionCapabilityUsageFromBarrel,
   assertPackageManifest as assertPackageManifestFromBarrel,
   assertRegisteredCommandContract as assertRegisteredCommandContractFromBarrel,
   assertRegisteredCommandOverride as assertRegisteredCommandOverrideFromBarrel,
@@ -66,6 +67,7 @@ import {
 } from "../../../src/sdk/index.js";
 import { _testOnlyCliContracts } from "../../../src/sdk/cli-contracts.js";
 import {
+  assertExtensionCapabilityUsage,
   assertPackageManifest,
   assertRegisteredCommandContract,
   assertRegisteredCommandOverride,
@@ -867,6 +869,54 @@ describe("public sdk entrypoint", () => {
     expect(assertRegisteredRendererOverrideFromBarrel).toBe(assertRegisteredRendererOverride);
     expect(assertRegisteredServiceOverrideFromBarrel).toBe(assertRegisteredServiceOverride);
     expect(assertRegisteredMigrationFromBarrel).toBe(assertRegisteredMigration);
+    expect(assertExtensionCapabilityUsageFromBarrel).toBe(assertExtensionCapabilityUsage);
+  });
+
+  it("asserts least-privilege capability usage for package-author tests", async () => {
+    const activation = await activateExtensionForTest(
+      {
+        activate(api: ExtensionApi) {
+          api.registerCommand({ name: "least hello", action: "least-hello", run: async () => ({ ok: true }) });
+          api.registerItemFields([{ name: "severity", type: "string" }]);
+        },
+      },
+      { name: "least-ext", capabilities: ["commands", "schema"] },
+    );
+
+    // A manifest that uses every declared capability passes and returns the
+    // declared/used/unused breakdown.
+    expect(assertExtensionCapabilityUsage(activation, { declared: ["commands", "schema"] })).toEqual({
+      declared: ["commands", "schema"],
+      used: ["commands", "schema"],
+      unused: [],
+    });
+    // Declaration order and casing are normalized.
+    expect(
+      assertExtensionCapabilityUsage(activation, { declared: ["Schema", "commands", "commands"] }).declared,
+    ).toEqual(["commands", "schema"]);
+    // Filtering to the extension by name works.
+    expect(assertExtensionCapabilityUsage(activation, { declared: ["commands"], extensionName: "least-ext" }).used).toEqual([
+      "commands",
+      "schema",
+    ]);
+
+    // A single unused capability throws with singular phrasing and the scope.
+    expect(() =>
+      assertExtensionCapabilityUsage(activation, { declared: ["commands", "schema", "search"], extensionName: "least-ext" }),
+    ).toThrow(/extension "least-ext".*\[search\] is declared yet never registered against/s);
+    // Multiple unused capabilities throw with plural phrasing.
+    expect(() =>
+      assertExtensionCapabilityUsage(activation, { declared: ["commands", "schema", "search", "hooks"] }),
+    ).toThrow(/\[hooks, search\] are declared yet never registered against/);
+    // allowUnused suppresses the failure for conditionally-registered capabilities.
+    expect(
+      assertExtensionCapabilityUsage(activation, { declared: ["commands", "schema", "search"], allowUnused: ["search"] })
+        .unused,
+    ).toEqual([]);
+    // An unknown declared capability is rejected outright.
+    expect(() => assertExtensionCapabilityUsage(activation, { declared: ["made-up"] })).toThrow(
+      /known extension capability/,
+    );
   });
 
   it("exposes runtime contracts without requiring a pm subprocess", async () => {
