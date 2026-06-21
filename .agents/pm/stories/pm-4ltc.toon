@@ -1,0 +1,23 @@
+id: pm-4ltc
+title: "Package scaffold generates a runnable sample test, .gitignore, and npm test script"
+description: "As a pm package author, I want 'pm package init' to scaffold a runnable sample test (node:test + SDK testing helpers), a .gitignore, and an npm test script, so I can validate my package's command registration immediately without wiring up a test harness myself. The SDK already ships rich testing helpers (activateExtensionForTest, assertRegisteredCommandContract, etc.) but the scaffold never demonstrated them — closing the 'as easy as possible to create AND verify a package' gap. Package mode only (npm-installable root); extension-only scaffold stays minimal since it cannot npm-install the peer SDK."
+type: Story
+status: closed
+priority: 2
+tags[4]: "area:packages","area:sdk",dx,scaffold
+created_at: "2026-06-21T02:04:00.412Z"
+updated_at: "2026-06-21T02:13:08.622Z"
+author: claude-code-agent
+parent: pm-ugqx
+notes[1]{created_at,author,text}:
+  "2026-06-21T02:13:07.797Z",claude-code-agent,"Implemented + verified end-to-end: scaffolded a package in a temp dir, symlinked the built @unbrained/pm-cli, ran 'node --test' on the generated index.test.js → PASS against the real SDK testing helpers. Extension-only scaffold stays minimal (3 files: manifest.json/index.js/README.md) because it cannot npm-install the peer SDK. 100% coverage (30288 stmts/23669 branches) + docstring + static gates all green."
+learnings[2]{created_at,author,text}:
+  "2026-06-21T02:12:59.874Z",claude-code-agent,"activateExtensionForTest only grants capabilities passed via options.capabilities OR an inline module.manifest.capabilities mirror — the on-disk manifest.json is NOT read. A scaffolded index.js with no inline manifest needs the test to pass capabilities:['commands'] or registerCommand is silently dropped (Available commands: (none))."
+  "2026-06-21T02:13:00.209Z",claude-code-agent,"RegisteredExtensionCommandDefinition.name is the base command group (e.g. 'val-pkg'); the full command path lives in .command ('val-pkg ping') and the action slug in .action ('val-pkg-ping'). Assert command registration on .command, not .name."
+files[2]{path,scope,note}:
+  src/cli/commands/extension.ts,project,next_steps includes 'npm install && npm test' validation step for package mode
+  src/cli/commands/extension/scaffold.ts,project,Package-mode scaffold now emits index.test.js + .gitignore + npm test script
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Shipped package-mode scaffold sample test (node:test + SDK testing helpers), .gitignore, npm test script, README Validate section, and next_steps validation hint. Verified the generated test passes against the real SDK; extension-only scaffold unchanged."
+body: ""

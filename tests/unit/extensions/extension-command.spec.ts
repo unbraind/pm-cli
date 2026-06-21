@@ -1851,6 +1851,18 @@ describe("extension command runtime", () => {
       expect(entry).toContain("export default {");
       expect(entry).toContain('name: "starter-ext ping"');
 
+      // pm-4ltc: the sample test + .gitignore are package-mode only. An
+      // extension-only scaffold cannot `npm install` the peer SDK, so emitting
+      // a test that imports `@unbrained/pm-cli/sdk/testing` would never run.
+      const scaffoldedFiles = (scaffold.details as { files?: Array<{ path: string }> }).files ?? [];
+      expect(scaffoldedFiles.map((file) => file.path)).toEqual(["manifest.json", "index.js", "README.md"]);
+      await expect(readFile(path.join(scaffoldPath, "index.test.js"), "utf8")).rejects.toMatchObject({
+        code: "ENOENT",
+      });
+      await expect(readFile(path.join(scaffoldPath, ".gitignore"), "utf8")).rejects.toMatchObject({
+        code: "ENOENT",
+      });
+
       const rerun = await runExtension(scaffoldPath, { scaffold: true, project: true }, { path: context.pmPath });
       const rerunFiles = (rerun.details as { files?: Array<{ status: string }> }).files ?? [];
       expect(rerunFiles.length).toBeGreaterThan(0);
@@ -1876,11 +1888,33 @@ describe("extension command runtime", () => {
         created_directory: true,
       });
 
+      // pm-4ltc: package mode emits a runnable sample test + .gitignore + test
+      // script so authors can validate command registration immediately.
+      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
+        "package.json",
+        "manifest.json",
+        "index.js",
+        "index.test.js",
+        ".gitignore",
+        "README.md",
+      ]);
+      // No `&&` / subshell chaining: Windows PowerShell 5.1 rejects `&&`, so the
+      // hint gives a bare `cd` then names the commands with a forward-slashed path.
+      expect((scaffold.details as { next_steps?: string[] }).next_steps).toContainEqual(
+        expect.stringContaining('cd '),
+      );
+      expect((scaffold.details as { next_steps?: string[] }).next_steps).toContainEqual(
+        expect.stringContaining('run "npm install" and "npm test"'),
+      );
+
       const packageJson = JSON.parse(await readFile(path.join(scaffoldPath, "package.json"), "utf8")) as Record<string, unknown>;
       expect(packageJson).toMatchObject({
         name: "pm-starter-package",
         private: true,
         type: "module",
+        scripts: {
+          test: "node --test",
+        },
         pm: {
           aliases: ["starter-package"],
           extensions: ["."],
@@ -1903,6 +1937,27 @@ describe("extension command runtime", () => {
       expect(entry).toContain('@param {import("@unbrained/pm-cli/sdk").ExtensionApi}');
       expect(entry).toContain("export function activate(api)");
       expect(entry).toContain('name: "starter-package ping"');
+
+      const sampleTest = await readFile(path.join(scaffoldPath, "index.test.js"), "utf8");
+      expect(sampleTest).toContain('import assert from "node:assert/strict";');
+      expect(sampleTest).toContain('import { test } from "node:test";');
+      expect(sampleTest).toContain('import { activateExtensionForTest, assertRegisteredCommandContract } from "@unbrained/pm-cli/sdk/testing";');
+      expect(sampleTest).toContain('import extension from "./index.js";');
+      expect(sampleTest).toContain('capabilities: ["commands"]');
+      expect(sampleTest).toContain('command: "starter-package ping"');
+      expect(sampleTest).toContain('assert.equal(typeof registered.command.description, "string");');
+      // The contract helper already validates the command name, so the sample
+      // does not redundantly re-assert registered.command.command.
+      expect(sampleTest).not.toContain("assert.equal(registered.command.command,");
+
+      const gitignore = await readFile(path.join(scaffoldPath, ".gitignore"), "utf8");
+      expect(gitignore).toContain("node_modules/");
+      expect(gitignore).toContain("*.log");
+
+      const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
+      expect(readme).toContain("## Validate the Package");
+      expect(readme).toContain("npm test");
+      expect(readme).toContain("`index.test.js`");
 
       const install = await runExtension(scaffoldPath, { install: true, project: true }, { path: context.pmPath });
       expect(install.details).toMatchObject({
