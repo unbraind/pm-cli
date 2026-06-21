@@ -282,6 +282,16 @@ Manifest:
   "version": "0.1.0",
   "entry": "./index.js",
   "pm_min_version": "2026.5.31",
+  "trusted": true,
+  "sandbox_profile": "strict",
+  "permissions": {
+    "fs_read": false,
+    "fs_write": false,
+    "network": false,
+    "env_read": false,
+    "env_write": false,
+    "process_spawn": false
+  },
   "capabilities": ["commands"]
 }
 ```
@@ -300,6 +310,7 @@ Manifest typing also accepts optional `engines` metadata:
 ```
 
 Use `pm_min_version` for the loader gate. Keep `engines` as package-manager and tooling metadata.
+For pure command packages, keep `trusted: true`, `sandbox_profile: "strict"`, and all six permissions set to `false`; relax only the permission keys the package actually needs and verify the result with `pm package doctor --project --detail deep --trace`.
 
 For a complete commands-capability package that combines `registerCommand`,
 `registerFlags`, and `registerParser`, see the first-party

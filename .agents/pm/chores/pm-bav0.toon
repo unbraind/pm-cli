@@ -1,0 +1,32 @@
+id: pm-bav0
+title: Package scaffold emits least-privilege manifest policy metadata
+description: "New package and extension scaffolds should teach package authors the same least-privilege manifest contract as first-party packages: trusted=true, sandbox_profile=strict for pure starter commands, and explicit false permissions. This keeps generated packages compatible with extension policy enforcement and makes the SDK/package author baseline easier to copy."
+type: Chore
+status: closed
+priority: 2
+tags[3]: agent-ux,"area:packages","area:sdk"
+created_at: "2026-06-21T08:27:34.890Z"
+updated_at: "2026-06-21T08:41:22.249Z"
+author: codex-impl
+parent: pm-ugqx
+resolution: Implemented least-privilege policy metadata in the scaffold manifest generator and documented the generated contract.
+expected_result: "New package and extension scaffolds declare trusted=true, sandbox_profile=strict, and explicit false permissions, with tests and docs proving the baseline for package authors."
+actual_result: Generated scaffolds now emit the least-privilege manifest metadata; focused tests assert package and extension manifests; SDK and extension docs explain how to keep or relax the policy metadata.
+comments[2]{created_at,author,text}:
+  "2026-06-21T08:27:44.090Z",codex-impl,"Duplicate check: searched package scaffold manifest trusted sandbox permissions and scaffold trusted sandbox_profile permissions. Related prior work pm-iljy and pm-4ltc is closed and covers first-party manifests / runnable scaffold tests, not generated scaffold policy metadata. Proceeding under parent pm-ugqx."
+  "2026-06-21T08:41:01.185Z",codex-impl,"Evidence: implemented least-privilege manifest metadata in generated package/extension scaffolds (trusted=true, sandbox_profile=strict, all declared permissions false), added focused scaffold assertions, and updated SDK/extension author docs. Validation passed: focused linked test 94 tests; pnpm build; pnpm quality:static; pnpm quality:docs-links; pnpm contracts:check; pnpm changelog:pm:check; node scripts/run-tests.mjs coverage = 241 files / 4796 tests / 100% statements, branches, functions, lines; manual temp-dir package scaffold/install/invoke/npm-test/package-doctor smoke; pm health summary ok; pnpm security:scan; npm pack --dry-run; sentry-telemetry gate ok; pm telemetry status showed successful recent flush; pnpm release:gates passed."
+files[2]{path,scope,note}:
+  src/cli/commands/extension/scaffold.ts,project,Emit least-privilege policy metadata in generated extension/package manifests.
+  tests/unit/extensions/extension-command.spec.ts,project,Assert generated scaffold manifests include trusted/sandbox/permission metadata.
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  manual temp-dir package scaffold smoke,null,project,300,null,null,null,null,null,null,null,null,null,null,null,"Manual smoke evidence: temp project init; package init; manifest policy assertion; package install; command invoke; generated npm test; package doctor."
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,Full all-source coverage gate; passed 100/100/100/100.
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,Focused scaffold regression coverage.
+  "pnpm release:gates",null,project,900,null,null,null,null,null,null,null,null,null,null,null,"Umbrella release gate including build,typecheck,docs/static quality,full coverage,version,security,npx smoke,dogfood."
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqnizo4r-3c7g32,test,passed,"2026-06-21T08:29:09.331Z","2026-06-21T08:29:30.219Z","2026-06-21T08:29:30.219Z",null,null,1,0,0,null,null,null
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Document package-init least-privilege manifest policy defaults.
+  docs/SDK.md,project,Sync SDK minimal manifest example with policy metadata best practice.
+close_reason: "Generated package/extension scaffolds now include least-privilege manifest policy metadata, with docs and regression tests proving the scaffolded contract."
+body: ""
