@@ -76,6 +76,12 @@ Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 - `activateExtensionForTest`
 - `deactivateExtensionForTest`
 - `runRegisteredCommandForTest`
+- `runRegisteredHookForTest`
+- `runRegisteredParserOverrideForTest`
+- `runRegisteredPreflightOverrideForTest`
+- `runRegisteredCommandOverrideForTest`
+- `runRegisteredRendererOverrideForTest`
+- `runRegisteredServiceOverrideForTest`
 - `assertExtensionDeactivated`
 - `assertPackageManifest`
 - `assertRegisteredCommandContract`
@@ -125,6 +131,33 @@ failure can be asserted, while one that throws an error carrying a numeric
 error listing the available handler command paths. Because
 `registerImporter`/`registerExporter` register handlers under `"<name> import"` /
 `"<name> export"`, the same helper exercises importer and exporter handlers too.
+
+The remaining runtime surfaces an extension can register have matching invoke
+helpers, so the "invoke" verb covers the whole command pipeline — not just
+command handlers:
+
+- `runRegisteredHookForTest(activation.hooks, { kind, context })` fires every
+  registered lifecycle hook of a `kind` (`before_command` | `after_command` |
+  `on_read` | `on_write` | `on_index`) through pm's real hook runner and returns
+  the warnings array (`[]` = clean; a thrown hook contributes one
+  `extension_hook_failed:*` warning while the others still run). The `context` is
+  type-safe per `kind`.
+- `runRegisteredParserOverrideForTest(activation.parsers, context)` returns the
+  rewritten `ParserOverrideResult` (args/options/global the override produces
+  before dispatch).
+- `runRegisteredPreflightOverrideForTest(activation.preflight, context)` returns
+  the `PreflightOverrideResult` (the migration/format gate decision).
+- `runRegisteredCommandOverrideForTest(activation.commands, context)` returns the
+  `CommandOverrideResult` (the transformed command result payload).
+- `runRegisteredRendererOverrideForTest(activation.renderers, context)` returns
+  the `RendererOverrideResult` (the custom string rendered for an output format).
+- `runRegisteredServiceOverrideForTest(activation.services, context)` returns the
+  `ServiceOverrideResult` (how the override handles an internal service payload).
+
+Each override helper guards that a matching override is registered for the target
+(command / format / service), so a typo surfaces as a descriptive error rather
+than a silent `overridden: false` / `handled: false`. All invoke helpers are
+`async`, so a test always `await`s them.
 
 Commander option contract exports:
 
@@ -527,6 +560,49 @@ const invocation = await runRegisteredCommandForTest(activation.commands, {
 
 The same helper invokes importer/exporter handlers via their `"<name> import"` /
 `"<name> export"` command paths.
+
+Fire a registered lifecycle hook to assert its behavior (the `context` is
+type-safe per `kind`). A clean run returns `[]`; a hook that throws contributes a
+single `extension_hook_failed:*` warning while the others still run:
+
+```ts
+import { runRegisteredHookForTest } from "@unbrained/pm-cli/sdk/testing";
+
+const warnings = await runRegisteredHookForTest(activation.hooks, {
+  kind: "after_command",
+  context: { command: "close", args: ["pm-1a2b"], pm_root: "", ok: true },
+});
+// warnings === [] when every after_command hook ran cleanly.
+```
+
+The override surfaces have parallel invoke helpers that delegate to pm's real
+runners and return the override result verbatim, after guarding that a matching
+override is registered for the target (command / format / service):
+
+```ts
+import {
+  runRegisteredParserOverrideForTest,
+  runRegisteredCommandOverrideForTest,
+  runRegisteredRendererOverrideForTest,
+  runRegisteredServiceOverrideForTest,
+  runRegisteredPreflightOverrideForTest,
+} from "@unbrained/pm-cli/sdk/testing";
+
+const parsed = await runRegisteredParserOverrideForTest(activation.parsers, {
+  command: "deploy",
+  args: ["staging"],
+  options: {},
+  global: {},
+  pm_root: "",
+});
+// parsed.overridden === true; parsed.context holds the rewritten args/options.
+
+const rendered = await runRegisteredRendererOverrideForTest(activation.renderers, {
+  format: "toon",
+  result: { id: "pm-1a2b" },
+});
+// rendered.rendered is the custom string the override produced.
+```
 
 Assert a command registration contract:
 

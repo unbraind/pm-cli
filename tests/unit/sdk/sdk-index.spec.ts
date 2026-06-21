@@ -36,6 +36,12 @@ import {
   activateExtensionForTest as activateExtensionForTestFromBarrel,
   deactivateExtensionForTest as deactivateExtensionForTestFromBarrel,
   runRegisteredCommandForTest as runRegisteredCommandForTestFromBarrel,
+  runRegisteredCommandOverrideForTest as runRegisteredCommandOverrideForTestFromBarrel,
+  runRegisteredHookForTest as runRegisteredHookForTestFromBarrel,
+  runRegisteredParserOverrideForTest as runRegisteredParserOverrideForTestFromBarrel,
+  runRegisteredPreflightOverrideForTest as runRegisteredPreflightOverrideForTestFromBarrel,
+  runRegisteredRendererOverrideForTest as runRegisteredRendererOverrideForTestFromBarrel,
+  runRegisteredServiceOverrideForTest as runRegisteredServiceOverrideForTestFromBarrel,
   appendHistoryEntry,
   createHistoryEntry,
   createPmCliExpectedError,
@@ -91,6 +97,12 @@ import {
   activateExtensionForTest,
   deactivateExtensionForTest,
   runRegisteredCommandForTest,
+  runRegisteredCommandOverrideForTest,
+  runRegisteredHookForTest,
+  runRegisteredParserOverrideForTest,
+  runRegisteredPreflightOverrideForTest,
+  runRegisteredRendererOverrideForTest,
+  runRegisteredServiceOverrideForTest,
 } from "../../../src/sdk/testing.js";
 import { serializeItemDocument } from "../../../src/core/item/item-format.js";
 import { readSettings as readCoreSettings, writeSettings } from "../../../src/core/store/settings.js";
@@ -870,6 +882,14 @@ describe("public sdk entrypoint", () => {
     expect(typeof deactivateExtensionForTestFromBarrel).toBe("function");
     expect(deactivateExtensionForTestFromBarrel).toBe(deactivateExtensionForTest);
     expect(runRegisteredCommandForTestFromBarrel).toBe(runRegisteredCommandForTest);
+    // Lock the invoke-verb helpers (hooks + override runners) to the same
+    // implementation the testing entrypoint exports.
+    expect(runRegisteredHookForTestFromBarrel).toBe(runRegisteredHookForTest);
+    expect(runRegisteredParserOverrideForTestFromBarrel).toBe(runRegisteredParserOverrideForTest);
+    expect(runRegisteredPreflightOverrideForTestFromBarrel).toBe(runRegisteredPreflightOverrideForTest);
+    expect(runRegisteredCommandOverrideForTestFromBarrel).toBe(runRegisteredCommandOverrideForTest);
+    expect(runRegisteredRendererOverrideForTestFromBarrel).toBe(runRegisteredRendererOverrideForTest);
+    expect(runRegisteredServiceOverrideForTestFromBarrel).toBe(runRegisteredServiceOverrideForTest);
     expect(assertExtensionDeactivatedFromBarrel).toBe(assertExtensionDeactivated);
     // Lock the new override-assertion helpers to the same implementation the
     // testing entrypoint exports (barrel-contract for this PR's SDK surface).
@@ -2201,5 +2221,234 @@ describe("sdk testing helpers", () => {
         extensionName: "ghost-ext",
       }),
     ).toThrow(/from extension "ghost-ext".*Available migrations:/);
+  });
+
+  it("fires registered lifecycle hooks and returns the runner warnings", async () => {
+    const calls: string[] = [];
+    const activation = await activateExtensionForTest(
+      {
+        activate(api: ExtensionApi) {
+          api.hooks.beforeCommand((context) => {
+            calls.push(`before:${context.command}`);
+          });
+          api.hooks.afterCommand((context) => {
+            calls.push(`after:${context.ok}`);
+          });
+          api.hooks.onRead((context) => {
+            calls.push(`read:${context.path}`);
+          });
+          api.hooks.onWrite((context) => {
+            calls.push(`write:${context.op}`);
+          });
+          api.hooks.onWrite(() => {
+            throw new Error("write hook exploded");
+          });
+          api.hooks.onIndex((context) => {
+            calls.push(`index:${context.mode}`);
+          });
+        },
+      },
+      { name: "hook-ext", capabilities: ["hooks"] },
+    );
+
+    // Each clean lifecycle kind returns an empty warnings array and runs its hook.
+    expect(
+      await runRegisteredHookForTest(activation.hooks, {
+        kind: "before_command",
+        context: { command: "build", args: ["x"], pm_root: "" },
+      }),
+    ).toEqual([]);
+    expect(
+      await runRegisteredHookForTest(activation.hooks, {
+        kind: "after_command",
+        context: { command: "build", args: [], pm_root: "", ok: true },
+      }),
+    ).toEqual([]);
+    expect(
+      await runRegisteredHookForTest(activation.hooks, {
+        kind: "on_read",
+        context: { path: "/tmp/item.toon", scope: "project" },
+      }),
+    ).toEqual([]);
+    expect(
+      await runRegisteredHookForTest(activation.hooks, {
+        kind: "on_index",
+        context: { mode: "full", total_items: 3 },
+      }),
+    ).toEqual([]);
+
+    // The on_write kind has a recording hook plus one that throws; the runner
+    // isolates the failure into a single warning while the others still run.
+    expect(
+      await runRegisteredHookForTest(activation.hooks, {
+        kind: "on_write",
+        context: { path: "/tmp/item.toon", scope: "project", op: "update" },
+      }),
+    ).toEqual(["extension_hook_failed:project:hook-ext:onWrite"]);
+
+    expect(calls).toEqual(["before:build", "after:true", "read:/tmp/item.toon", "index:full", "write:update"]);
+  });
+
+  it("throws actionable errors when no hook of the requested kind is registered", async () => {
+    const activation = await activateExtensionForTest(
+      {
+        activate(api: ExtensionApi) {
+          api.hooks.beforeCommand(() => undefined);
+        },
+      },
+      { name: "before-only-ext", capabilities: ["hooks"] },
+    );
+
+    // A kind with no registrations lists the kinds that do have them.
+    await expect(
+      runRegisteredHookForTest(activation.hooks, {
+        kind: "on_read",
+        context: { path: "/tmp/x", scope: "project" },
+      }),
+    ).rejects.toThrow(/Expected a registered "on_read" hook to invoke\. Hook kinds with registrations: before_command/);
+
+    // An entirely empty hook registry reports "(none)".
+    await expect(
+      runRegisteredHookForTest(
+        { beforeCommand: [], afterCommand: [], onWrite: [], onRead: [], onIndex: [] },
+        { kind: "before_command", context: { command: "x", args: [], pm_root: "" } },
+      ),
+    ).rejects.toThrow(/Hook kinds with registrations: \(none\)/);
+  });
+
+  const activateInvokeOverrideExtension = async (): Promise<ExtensionActivationResult> =>
+    activateExtensionForTest(
+      {
+        activate(api: ExtensionApi) {
+          api.registerCommand("transform run", (context) => ({ doubled: context.result }));
+          api.registerParser("transform run", (context) => ({ args: [...context.args, "injected"] }));
+          api.registerPreflight((context) => ({
+            enforce_item_format_gate: !context.decision.enforce_item_format_gate,
+          }));
+          api.registerRenderer("toon", (context) => `rendered:${JSON.stringify(context.result)}`);
+          api.registerService("output_format", (context) => ({ formatted: context.payload }));
+        },
+      },
+      {
+        name: "invoke-override-ext",
+        capabilities: ["commands", "parser", "preflight", "renderers", "services"],
+      },
+    );
+
+  it("invokes a registered parser override and returns the rewritten context", async () => {
+    const activation = await activateInvokeOverrideExtension();
+
+    // The command name is normalized (casing + whitespace) before matching.
+    const result = await runRegisteredParserOverrideForTest(activation.parsers, {
+      command: "  Transform  Run ",
+      args: ["a"],
+      options: {},
+      global: { json: true },
+      pm_root: "",
+    });
+    expect(result.overridden).toBe(true);
+    expect(result.context.args).toEqual(["a", "injected"]);
+
+    await expect(
+      runRegisteredParserOverrideForTest(activation.parsers, {
+        command: "missing run",
+        args: [],
+        options: {},
+        global: {},
+        pm_root: "",
+      }),
+    ).rejects.toThrow(
+      /Expected a registered parser override for command "missing run" to invoke\. Available parser override commands: transform run/,
+    );
+  });
+
+  it("invokes the active preflight override and returns its decision", async () => {
+    const activation = await activateInvokeOverrideExtension();
+    const baseDecision = {
+      enforce_item_format_gate: false,
+      run_preflight_item_format_sync: false,
+      run_extension_migrations: false,
+      enforce_mandatory_migration_gate: false,
+    };
+
+    const result = await runRegisteredPreflightOverrideForTest(activation.preflight, {
+      command: "anything",
+      args: [],
+      options: {},
+      global: {},
+      pm_root: "",
+      decision: baseDecision,
+    });
+    expect(result.overridden).toBe(true);
+    expect(result.decision.enforce_item_format_gate).toBe(true);
+
+    await expect(
+      runRegisteredPreflightOverrideForTest(
+        { overrides: [] },
+        { command: "anything", args: [], options: {}, global: {}, pm_root: "", decision: baseDecision },
+      ),
+    ).rejects.toThrow("Expected a registered preflight override to invoke, but none are registered.");
+  });
+
+  it("invokes a registered command override and returns the transformed result", async () => {
+    const activation = await activateInvokeOverrideExtension();
+
+    const result = await runRegisteredCommandOverrideForTest(activation.commands, {
+      command: "transform run",
+      args: [],
+      options: {},
+      global: {},
+      pm_root: "",
+      result: 21,
+    });
+    expect(result.overridden).toBe(true);
+    expect(result.result).toEqual({ doubled: 21 });
+
+    await expect(
+      runRegisteredCommandOverrideForTest(activation.commands, {
+        command: "missing run",
+        args: [],
+        options: {},
+        global: {},
+        pm_root: "",
+        result: null,
+      }),
+    ).rejects.toThrow(
+      /Expected a registered command override for command "missing run" to invoke\. Available command override commands: transform run/,
+    );
+  });
+
+  it("invokes a registered renderer override and returns the rendered string", async () => {
+    const activation = await activateInvokeOverrideExtension();
+
+    const result = await runRegisteredRendererOverrideForTest(activation.renderers, {
+      format: "toon",
+      result: { a: 1 },
+    });
+    expect(result.overridden).toBe(true);
+    expect(result.rendered).toBe('rendered:{"a":1}');
+
+    await expect(
+      runRegisteredRendererOverrideForTest(activation.renderers, { format: "json", result: null }),
+    ).rejects.toThrow(
+      /Expected a registered renderer override for format "json" to invoke\. Available renderer override formats: toon/,
+    );
+  });
+
+  it("invokes a registered service override and returns its handled result", async () => {
+    const activation = await activateInvokeOverrideExtension();
+
+    const result = await runRegisteredServiceOverrideForTest(activation.services, {
+      service: "output_format",
+      payload: { hi: true },
+    });
+    expect(result.handled).toBe(true);
+    expect(result.result).toEqual({ formatted: { hi: true } });
+
+    await expect(
+      runRegisteredServiceOverrideForTest(activation.services, { service: "error_format", payload: null }),
+    ).rejects.toThrow(
+      /Expected a registered service override for service "error_format" to invoke\. Available service override services: output_format/,
+    );
   });
 });
