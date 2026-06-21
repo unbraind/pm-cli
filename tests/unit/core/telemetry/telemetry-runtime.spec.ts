@@ -12,6 +12,7 @@ import {
   startTelemetryCommand,
   waitForPendingFlush,
 } from "../../../../src/core/telemetry/runtime.js";
+import { itOnPosix } from "../../../helpers/platform.js";
 import { withTempGlobalRoot as withTempGlobalRootHelper } from "../../../helpers/temp.js";
 
 const originalGlobalPath = process.env.PM_GLOBAL_PATH;
@@ -29,7 +30,6 @@ const originalTelemetryIngestKey = process.env.PM_TELEMETRY_INGEST_KEY;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PRIVATE_TEST_IP = ["192", "168", "42", "17"].join(".");
 const TEST_LOCAL_PATH = ["/home", "example", "private", "path"].join("/");
-const itOnPosix = process.platform === "win32" ? it.skip : it;
 
 function telemetryQueuePath(globalRoot: string): string {
   return path.join(globalRoot, "runtime", "telemetry", "events.jsonl");

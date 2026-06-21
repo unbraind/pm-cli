@@ -99,15 +99,18 @@ describe("telemetry OTLP export is non-blocking at the process level (GH-209)", 
 
   afterAll(async () => {
     if (context) {
-      for (let attempt = 0; attempt <= 5; attempt += 1) {
+      const cleanupAttempts = 8;
+      for (let attempt = 0; attempt < cleanupAttempts; attempt += 1) {
         try {
           await rm(context.tempRoot, { recursive: true, force: true });
           return;
         } catch (error) {
-          if (attempt === 5) {
-            throw error;
+          if (attempt === cleanupAttempts - 1) {
+            throw new Error(`Failed to clean telemetry OTLP temp root after ${cleanupAttempts} attempts`, {
+              cause: error,
+            });
           }
-          await delay(50 * (attempt + 1));
+          await delay(100 * (attempt + 1));
         }
       }
     }

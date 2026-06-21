@@ -52,8 +52,7 @@ import {
   installFailingFetchMock,
   installSemanticFetchMock,
 } from "../../../helpers/semanticFetchMock.js";
-
-const itOnPosix = process.platform === "win32" ? it.skip : it;
+import { itOnPosix } from "../../../helpers/platform.js";
 
 function createSeedItem(
   context: TempPmContext,

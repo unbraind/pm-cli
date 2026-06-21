@@ -73,6 +73,7 @@ import {
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { readSettings, writeSettings } from "../../../src/core/store/settings.js";
 import { writeTestExtension } from "../../helpers/extensions.js";
+import { isPosix } from "../../helpers/platform.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
@@ -465,7 +466,7 @@ describe("extension command runtime", () => {
         error: "runner-failed",
       });
 
-      if (process.platform !== "win32") {
+      if (isPosix) {
         const readonlyRoot = path.join(tempRoot, "readonly-root");
         const readonlyLockRoot = path.join(readonlyRoot, "runtime", "extension-install-locks");
         await mkdir(readonlyLockRoot, { recursive: true });
@@ -494,13 +495,13 @@ describe("extension command runtime", () => {
       const cleanupRoot = path.join(tempRoot, "cleanup-root");
       const cleanupLockRoot = path.join(cleanupRoot, "runtime", "extension-install-locks");
       const cleanupResult = await extensionCommandTestOnly.withExtensionInstallLock(cleanupRoot, "cleanup-ext", async () => {
-        if (process.platform !== "win32") {
+        if (isPosix) {
           await chmod(cleanupLockRoot, 0o555);
         }
         return "cleanup-ok";
       });
       expect(cleanupResult).toBe("cleanup-ok");
-      if (process.platform !== "win32") {
+      if (isPosix) {
         await chmod(cleanupLockRoot, 0o755);
       }
     } finally {
