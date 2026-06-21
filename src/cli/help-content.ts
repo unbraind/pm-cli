@@ -211,7 +211,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm package init ./my-package",
       "pm package init ./my-hook-package --capability hooks",
       "pm package init ./my-search-package --capability search",
-      "pm install ./my-package --project",
+      "pm install ./my-search-package --project",
       "pm package doctor --project --detail summary",
     ],
     tips: [
@@ -251,7 +251,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm extension init ./my-extension",
       "pm extension init ./my-hook-extension --capability hooks",
       "pm extension init ./my-search-extension --capability search",
-      "pm extension --install --project ./my-extension",
+      "pm extension --install --project ./my-search-extension",
       "pm extension --doctor --project --detail summary",
     ],
     tips: [
