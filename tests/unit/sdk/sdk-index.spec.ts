@@ -2570,6 +2570,33 @@ describe("sdk testing helpers", () => {
     ]);
   });
 
+  it("resolves a search provider operation declared with only its snake_case alias", async () => {
+    // A provider that spells embedBatch only as `embed_batch` must still resolve,
+    // mirroring the host's camelCase/snake_case acceptance.
+    const activation = await activateExtensionForTest(
+      {
+        activate(api: ExtensionApi) {
+          api.registerSearchProvider({
+            name: "snake-embed-search",
+            embed_batch: async (context) => context.inputs.map((input) => [input.length, 0]),
+          });
+        },
+      },
+      { name: "snake-embed-ext", capabilities: ["search"] },
+    );
+
+    expect(
+      await runRegisteredSearchProviderForTest(activation.registrations, {
+        provider: "snake-embed-search",
+        operation: "embedBatch",
+        context: { inputs: ["ab", "c"], settings: {}, model: "snake-model" },
+      }),
+    ).toEqual([
+      [2, 0],
+      [1, 0],
+    ]);
+  });
+
   it("throws a descriptive error invoking an unregistered or under-implemented search provider", async () => {
     const activation = await activateInvokeRegistrationExtension();
 
@@ -2669,5 +2696,27 @@ describe("sdk testing helpers", () => {
     await expect(
       runRegisteredMigrationForTest(activation.registrations, { migration: "norun-migration" }),
     ).rejects.toThrow(/Registered migration "norun-migration" does not implement a run function to invoke/);
+  });
+
+  it("disambiguates a migration by extensionName when invoking", async () => {
+    const activation = await activateInvokeRegistrationExtension();
+
+    // A matching extensionName resolves and runs the migration.
+    expect(
+      await runRegisteredMigrationForTest(activation.registrations, {
+        migration: "memory-migration",
+        extensionName: "invoke-registration-ext",
+        pmRoot: "/tmp/scoped",
+      }),
+    ).toEqual({ ranAt: "/tmp/scoped", status: "pending", id: "memory-migration" });
+
+    // A non-matching extensionName filters the migration out, surfacing the
+    // descriptive "not registered" error scoped to that extension.
+    await expect(
+      runRegisteredMigrationForTest(activation.registrations, {
+        migration: "memory-migration",
+        extensionName: "other-ext",
+      }),
+    ).rejects.toThrow(/Expected migration "memory-migration" from extension "other-ext" to be registered/);
   });
 });

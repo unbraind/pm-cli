@@ -1075,7 +1075,7 @@ export async function runRegisteredMigrationForTest(
     pm_root: options.pmRoot ?? "",
     status: (typeof declaredStatus === "string" ? declaredStatus.trim().toLowerCase() : "") || "pending",
   };
-  return (run as (context: SchemaMigrationRunContext) => unknown)(context);
+  return await (run as (context: SchemaMigrationRunContext) => unknown)(context);
 }
 
 /**
