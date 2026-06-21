@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: ci,nightly,tests,windows
 created_at: "2026-06-21T08:57:26.311Z"
-updated_at: "2026-06-21T09:38:35.449Z"
+updated_at: "2026-06-21T09:47:24.307Z"
 author: codex-gpt5
 parent: pm-u9d0
 environment: GitHub Actions windows-latest Node 20
@@ -20,7 +20,7 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-i84i,related,"2026-06-21T08:57:26.311Z",null,null
   pm-s5pe,related,"2026-06-21T08:57:26.311Z",null,null
   pm-tq5t,related,"2026-06-21T08:57:26.311Z",null,null
-comments[7]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-06-21T08:57:26.311Z",codex-gpt5,"Duplicate check: pm search --status all for Windows nightly path separator chmod telemetry eval search-cache found only closed lineage pm-s5pe, pm-i84i, pm-dita, pm-tq5t and no active duplicate. Creating a new current GitHub-reported failure item for run 27898852339. Dependency links point to closed prior Windows-nightly/path-separator lineage."
   "2026-06-21T08:59:50.425Z",codex-gpt5,"Evidence: focused affected specs pass locally: 4 files, 199 tests via node scripts/run-tests.mjs test -- eval/extension/search-cache/telemetry specs. This covers the GitHub nightly failure files from run 27898852339."
   "2026-06-21T09:06:12.497Z",codex-gpt5,"Evidence: expanded focused regression set passes locally: 6 files, 223 tests, including MCP dynamic package actions and telemetry OTLP nonblocking cleanup coverage."
@@ -28,6 +28,8 @@ comments[7]{created_at,author,text}:
   "2026-06-21T09:18:26.185Z",codex-gpt5,"Evidence: manual temporary-project smoke passed using isolated temp root and PM_GLOBAL_PATH. Init created /tmp/.../.agents/pm with prefix demo; create/update/get verified item demo-d85w reached status in_progress. Earlier failed smokes documented the corrected init contract distinction between id prefix and path-like target."
   "2026-06-21T09:26:08.727Z",codex-gpt5,"Post-close PR evidence: pnpm changelog:pm:check passed unchanged after CHANGELOG regeneration; pnpm contracts:check, pnpm quality:static, pnpm build, pnpm quality:docs-links, pm health --check-only --summary, and direct node scripts/run-tests.mjs coverage all passed. Coverage remained literal 100/100/100/100 across 241 files and 4796 tests. Sentry/telemetry gate passed with 0 critical/high Sentry issues and telemetry finish error rate 1.29%."
   "2026-06-21T09:38:35.449Z",codex-gpt5,"Review follow-up evidence: addressed Sourcery/Gemini/CodeRabbit feedback by centralizing POSIX test gating in tests/helpers/platform.ts, reusing it in chmod-dependent tests, and increasing telemetry OTLP cleanup retries to 8 attempts with an explicit final error cause. Verification passed: affected 4-spec regression set 186 tests, pnpm build, pnpm quality:static, pnpm changelog:pm:check, and direct node scripts/run-tests.mjs coverage at 100/100/100/100 across 241 files and 4796 tests."
+  "2026-06-21T09:46:52.723Z",codex-gpt5,"Gemini follow-up evidence: made eval golden-set path tests assert readFileMock was called before reading mock.calls[0], so failures produce clear assertion output instead of a destructuring/type error. Verification will include focused eval spec plus build/static before push."
+  "2026-06-21T09:47:24.307Z",codex-gpt5,"Gemini follow-up verification passed: node scripts/run-tests.mjs test -- tests/unit/commands/eval-command.spec.ts completed 1 file / 15 tests, pnpm build passed, and pnpm quality:static passed before pushing the final review-response commit."
 files[7]{path,scope,note}:
   tests/helpers/platform.ts,project,Shared POSIX platform test helper from PR review feedback
   tests/integration/mcp-dynamic-package-actions.spec.ts,project,Coverage full-suite timeout allowance for MCP error-path integration test

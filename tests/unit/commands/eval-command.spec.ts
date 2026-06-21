@@ -126,6 +126,7 @@ describe("runEval", () => {
     queueRankings(["pm-a"]);
 
     await runEval({ queries: "custom/eval.json" }, GLOBAL);
+    expect(readFileMock).toHaveBeenCalled();
     const [targetPath] = readFileMock.mock.calls[0];
     expect(targetPath.replaceAll(path.sep, "/")).toContain("custom/eval.json");
   });
@@ -135,6 +136,7 @@ describe("runEval", () => {
     queueRankings(["pm-a"]);
 
     await runEval({}, GLOBAL);
+    expect(readFileMock).toHaveBeenCalled();
     const [targetPath] = readFileMock.mock.calls[0];
     const normalizedTargetPath = targetPath.replaceAll(path.sep, "/");
     expect(normalizedTargetPath).toContain("/pmroot");
