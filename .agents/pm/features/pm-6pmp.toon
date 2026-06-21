@@ -1,0 +1,23 @@
+id: pm-6pmp
+title: "Complete SDK package-author test-assertion surface: service-override + migration helpers"
+description: "sdk/testing.ts ships assertRegistered* helpers for 16 of 18 extension register* surfaces. Two remain uncovered: registerService (service overrides, surfaced on ExtensionActivationResult.services) and registerMigration (schema migrations, surfaced on ExtensionActivationResult.registrations.migrations). Package authors testing those registrations must reach into private registry internals, unlike every other registration type. Add assertRegisteredServiceOverride and assertRegisteredMigration to finish the surface."
+type: Feature
+status: in_progress
+priority: 2
+tags[5]: "area:sdk",dx,extensions,living-map,testing
+created_at: "2026-06-21T04:21:38.390Z"
+updated_at: "2026-06-21T04:31:15.619Z"
+assignee: claude-code-agent
+author: claude-code-agent
+acceptance_criteria: "Add assertRegisteredServiceOverride(services, {service, extensionName?}) and assertRegisteredMigration(registrations, {migration, extensionName?, mandatory?}) to sdk/testing.ts with actionable failure listings matching existing helpers; export both functions + expectation/return types from sdk/index.ts; 100% coverage in sdk-index.spec.ts via real activateExtensionForTest activation + unit branches; document in docs/SDK.md (and fix the stale helper bullet list missing item-field/item-type); pm SDK then covers all extension register* surfaces."
+parent: pm-ugqx
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-475h,related,"2026-06-21T04:22:08.827Z",claude-code-agent,null
+  pm-aw7d,related,"2026-06-21T04:22:08.827Z",claude-code-agent,null
+  pm-kfd8,related,"2026-06-21T04:22:08.827Z",claude-code-agent,null
+  pm-oveq,related,"2026-06-21T04:22:08.827Z",claude-code-agent,null
+  pm-xevy,related,"2026-06-21T04:22:08.827Z",claude-code-agent,null
+notes[2]{created_at,author,text}:
+  "2026-06-21T04:30:41.550Z",claude-code-agent,"Implemented on branch feat/sdk-service-migration-test-helpers. Added two SDK test-assertion helpers to src/sdk/testing.ts: (1) assertRegisteredServiceOverride(services: ExtensionServiceRegistry, {service, extensionName?}) — matches api.registerService overrides surfaced on ExtensionActivationResult.services; case/space-insensitive service-name match; (2) assertRegisteredMigration(registrations: ExtensionRegistrationRegistry, {migration, extensionName?, mandatory?}) — matches api.registerMigration definitions on registrations.migrations by id with optional mandatory-flag assertion (unset flag treated as non-mandatory). Both mirror existing helper conventions (normalize, extension scoping, actionable 'Available ...' failure listings). Exported functions + RegisteredServiceOverrideExpectation/RegisteredMigrationExpectation + return types RegisteredExtensionServiceOverride/RegisteredExtensionSchemaMigrationDefinition from sdk/index.ts. Docs: docs/SDK.md gains both helpers in the bullet list (also added previously-missing assertRegisteredItemField/ItemType) plus worked examples. Tests: tests/unit/sdk/sdk-index.spec.ts +2 activation-path helpers and 4 it() blocks (57 pass), barrel-identity locked. This completes the SDK surface — every extension register* method now has a matching assertRegistered* helper. Manual smoke test from built dist (temp dir, symlinked package) passed: service+migration registered via activateExtensionForTest and both helpers resolved incl. case-insensitive match and actionable failure throw."
+  "2026-06-21T04:31:15.619Z",claude-code-agent,"Implemented on branch feat/sdk-service-migration-test-helpers. Added two SDK test-assertion helpers to src/sdk/testing.ts. assertRegisteredServiceOverride(services, expectation) matches api.registerService overrides surfaced on ExtensionActivationResult.services with case/space-insensitive service-name match. assertRegisteredMigration(registrations, expectation) matches api.registerMigration definitions on registrations.migrations by id, with an optional mandatory-flag assertion where an unset flag is treated as non-mandatory. Both mirror existing helper conventions (identifier normalize, optional extensionName scoping, actionable Available... failure listings). Exported both functions plus expectation and return types from sdk/index.ts. Updated docs/SDK.md (helper bullet list now also includes the previously-missing item-field and item-type helpers, plus worked examples). Added activation-path tests in tests/unit/sdk/sdk-index.spec.ts (57 pass) and locked barrel identity. Completes the SDK surface: every extension register-star method now has a matching assertRegistered-star helper. Manual smoke test from built dist in a temp dir with a symlinked package passed."
+body: ""

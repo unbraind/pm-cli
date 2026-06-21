@@ -86,6 +86,10 @@ Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 - `assertRegisteredImporter`
 - `assertRegisteredExporter`
 - `assertRegisteredVectorStoreAdapter`
+- `assertRegisteredItemField`
+- `assertRegisteredItemType`
+- `assertRegisteredServiceOverride`
+- `assertRegisteredMigration`
 
 Commander option contract exports:
 
@@ -545,6 +549,41 @@ assertRegisteredParserOverride(activation.parsers, { command: "list", extensionN
 assertRegisteredPreflightOverride(activation.preflight); // preflight overrides are global (no command)
 assertRegisteredRendererOverride(activation.renderers, { format: "toon" });
 ```
+
+Service overrides from `registerService(service, override)` live on
+`activation.services` (an `ExtensionServiceRegistry`), so
+`assertRegisteredServiceOverride` takes the service registry and a known service
+name (`output_format` | `error_format` | `help_format` | `lock_acquire` |
+`lock_release` | `history_append` | `item_store_write` | `item_store_delete`):
+
+```ts
+import { assertRegisteredServiceOverride } from "@unbrained/pm-cli/sdk/testing";
+
+const service = assertRegisteredServiceOverride(activation.services, {
+  service: "output_format",
+  extensionName: "my-ext",
+});
+// service.run is the registered ServiceOverride handler
+```
+
+Schema migrations from `registerMigration(definition)` live on
+`activation.registrations.migrations`. `assertRegisteredMigration` matches by the
+migration `id` and can additionally assert the `mandatory` governance flag (an
+unset flag is treated as non-mandatory):
+
+```ts
+import { assertRegisteredMigration } from "@unbrained/pm-cli/sdk/testing";
+
+const migration = assertRegisteredMigration(activation.registrations, {
+  migration: "backfill-severity",
+  mandatory: true,
+});
+// migration.definition is the normalized SchemaMigrationDefinition
+```
+
+Together these complete the SDK assertion surface: every extension `register*`
+method now has a matching `assertRegistered*` helper, so packages can prove any
+registration without importing private registry internals.
 
 The bundled `pm-lifecycle-hooks` package is the first-party hooks exemplar. It
 declares only the `hooks` capability and registers a default-inert `afterCommand`

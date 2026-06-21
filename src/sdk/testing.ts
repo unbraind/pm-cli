@@ -15,6 +15,8 @@ import type {
   ExtensionPreflightRegistry,
   ExtensionRegistrationRegistry,
   ExtensionRendererRegistry,
+  ExtensionServiceName,
+  ExtensionServiceRegistry,
   FlagDefinition,
   OutputRendererFormat,
   RegisteredExtensionCommandDefinition,
@@ -28,7 +30,9 @@ import type {
   RegisteredExtensionRendererOverride,
   RegisteredExtensionSchemaFieldDefinitions,
   RegisteredExtensionSchemaItemTypeDefinitions,
+  RegisteredExtensionSchemaMigrationDefinition,
   RegisteredExtensionSearchProvider,
+  RegisteredExtensionServiceOverride,
   RegisteredExtensionVectorStoreAdapter,
   SchemaFieldDefinition,
   SchemaItemTypeDefinition,
@@ -197,6 +201,23 @@ export interface RegisteredPreflightOverrideExpectation {
 export interface RegisteredRendererOverrideExpectation {
   format: OutputRendererFormat;
   extensionName?: string;
+}
+
+/**
+ * Documents the registered service override expectation payload exchanged by command, SDK, and package integrations.
+ */
+export interface RegisteredServiceOverrideExpectation {
+  service: ExtensionServiceName;
+  extensionName?: string;
+}
+
+/**
+ * Documents the registered migration expectation payload exchanged by command, SDK, and package integrations.
+ */
+export interface RegisteredMigrationExpectation {
+  migration: string;
+  extensionName?: string;
+  mandatory?: boolean;
 }
 
 /**
@@ -859,4 +880,84 @@ export function assertRegisteredRendererOverride(
   }
 
   return override;
+}
+
+/**
+ * Assert that an activated extension service registry contains a service override
+ * registered via `api.registerService(service, override)` for the expected
+ * service name (optionally scoped to a specific extension).
+ *
+ * Service overrides are surfaced via `ExtensionActivationResult.services`, not the
+ * command registration registry, so this helper accepts an
+ * `ExtensionServiceRegistry`.
+ */
+export function assertRegisteredServiceOverride(
+  services: ExtensionServiceRegistry,
+  expectation: RegisteredServiceOverrideExpectation,
+): RegisteredExtensionServiceOverride {
+  const expectedService = normalizeSdkIdentifier(expectation.service);
+  if (expectedService.length === 0) {
+    throw new Error("Expected service name must be a non-empty string");
+  }
+
+  const candidates = services.overrides.filter((entry) => normalizeSdkIdentifier(entry.service) === expectedService);
+  const override = expectation.extensionName
+    ? candidates.find((entry) => entry.name === expectation.extensionName)
+    : candidates[0];
+  if (!override) {
+    const available = sortedUnique(services.overrides.map((entry) => entry.service));
+    throw new Error(
+      `Expected service override "${expectedService}"${extensionNameSuffix(
+        expectation.extensionName,
+      )} to be registered. Available service overrides: ${formatAvailable(available)}`,
+    );
+  }
+
+  return override;
+}
+
+/**
+ * Assert that an activated extension registration registry contains a schema
+ * migration registered via `api.registerMigration(definition)` with the expected
+ * id (optionally scoped to a specific extension and asserting the `mandatory`
+ * governance flag, where an unset flag is treated as non-mandatory).
+ *
+ * Migrations are surfaced via `ExtensionActivationResult.registrations.migrations`.
+ */
+export function assertRegisteredMigration(
+  registrations: ExtensionRegistrationRegistry,
+  expectation: RegisteredMigrationExpectation,
+): RegisteredExtensionSchemaMigrationDefinition {
+  const expectedMigration = normalizeSdkIdentifier(expectation.migration);
+  if (expectedMigration.length === 0) {
+    throw new Error("Expected migration id must be a non-empty string");
+  }
+
+  const candidates = registrations.migrations.filter(
+    (entry) =>
+      (expectation.extensionName === undefined || entry.name === expectation.extensionName) &&
+      typeof entry.definition.id === "string" &&
+      normalizeSdkIdentifier(entry.definition.id) === expectedMigration,
+  );
+  const match = candidates.find(
+    (entry) => expectation.mandatory === undefined || (entry.definition.mandatory ?? false) === expectation.mandatory,
+  );
+  if (!match) {
+    const available = sortedUnique(
+      registrations.migrations.map((entry) => {
+        const id =
+          typeof entry.definition.id === "string" && entry.definition.id.trim().length > 0
+            ? entry.definition.id.trim()
+            : "(unnamed)";
+        return `${id}:${entry.definition.mandatory === true}`;
+      }),
+    );
+    throw new Error(
+      `Expected migration "${expectedMigration}"${extensionNameSuffix(
+        expectation.extensionName,
+      )} to be registered. Available migrations: ${formatAvailable(available)}`,
+    );
+  }
+
+  return match;
 }
