@@ -440,6 +440,12 @@ For a complete commands-capability package that combines `registerCommand`,
 `registerFlags`, and `registerParser`, see the first-party
 [pm-command-kit exemplar](../packages/pm-command-kit/README.md).
 
+For a generated starter, use `pm package init ./my-package`. Pass
+`--capability hooks` to scaffold a command plus an `afterCommand` lifecycle
+reactor and a runnable `node:test` file that exercises
+`activateExtensionForTest`, `assertRegisteredHook`, `runRegisteredHookForTest`,
+and `deactivateExtensionForTest`.
+
 ## Self-Identity and Lifecycle
 
 `activate(api)` receives a read-only `api.extension` describing the extension it

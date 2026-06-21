@@ -1840,6 +1840,7 @@ describe("extension command runtime", () => {
           name: "starter-ext",
           command: "starter-ext ping",
         },
+        capability: "commands",
         target_path: scaffoldPath,
         created_directory: true,
       });
@@ -1912,6 +1913,7 @@ describe("extension command runtime", () => {
           name: "starter-package",
           command: "starter-package ping",
         },
+        capability: "commands",
         target_path: scaffoldPath,
         created_directory: true,
       });
@@ -2049,6 +2051,122 @@ describe("extension command runtime", () => {
       expect(JSON.parse(invoked.stdout) as Record<string, unknown>).toMatchObject({
         ok: true,
         command: "starter-package ping",
+      });
+    });
+  });
+
+  it("scaffolds hook-capability packages with runnable SDK hook tests", async () => {
+    await withTempPmPath(async (context) => {
+      const scaffoldPath = path.join(context.tempRoot, "starter-hooks");
+      const scaffold = await runExtension(scaffoldPath, {
+        init: true,
+        project: true,
+        vocabulary: "package",
+        capability: "HOOKS",
+      }, { path: context.pmPath });
+
+      expect(scaffold.details).toMatchObject({
+        capability: "hooks",
+        extension: {
+          name: "starter-hooks",
+          command: "starter-hooks ping",
+        },
+      });
+
+      const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
+      expect(manifest.capabilities).toEqual(["commands", "hooks"]);
+
+      const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
+      expect(entry).toContain("api.hooks.afterCommand((context) => {");
+      expect(entry).toContain("context.affected");
+
+      const sampleTest = await readFile(path.join(scaffoldPath, "index.test.js"), "utf8");
+      expect(sampleTest).toContain("  assertRegisteredHook,");
+      expect(sampleTest).toContain("  runRegisteredHookForTest,");
+      expect(sampleTest).toContain('capabilities: ["commands", "hooks"]');
+      expect(sampleTest).toContain("assertRegisteredHook(activation.hooks, {");
+      expect(sampleTest).toContain('kind: "after_command"');
+      expect(sampleTest).toContain("const warnings = await runRegisteredHookForTest(activation.hooks, {");
+      expect(sampleTest).toContain("assert.deepEqual(warnings, []);");
+
+      const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
+      expect(readme).toContain("## Lifecycle Hook");
+      expect(readme).toContain("api.hooks.afterCommand");
+    });
+  });
+
+  it("scaffolds hook-capability standalone extensions without package test files", async () => {
+    await withTempPmPath(async (context) => {
+      const scaffoldPath = path.join(context.tempRoot, "starter-hook-ext");
+      const scaffold = await runExtension(scaffoldPath, {
+        init: true,
+        project: true,
+        capability: "hooks",
+      }, { path: context.pmPath });
+
+      expect(scaffold.details).toMatchObject({
+        capability: "hooks",
+        extension: {
+          name: "starter-hook-ext",
+          command: "starter-hook-ext ping",
+        },
+      });
+      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
+        "manifest.json",
+        "index.js",
+        "README.md",
+      ]);
+
+      const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
+      expect(manifest.capabilities).toEqual(["commands", "hooks"]);
+      const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
+      expect(entry).toContain("api.hooks.afterCommand((context) => {");
+      const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
+      expect(readme).toContain("## Lifecycle Hook");
+      await expect(readFile(path.join(scaffoldPath, "index.test.js"), "utf8")).rejects.toMatchObject({
+        code: "ENOENT",
+      });
+    });
+  });
+
+  it("rejects unknown scaffold capabilities before writing files", async () => {
+    await withTempPmPath(async (context) => {
+      const scaffoldPath = path.join(context.tempRoot, "starter-invalid-capability");
+
+      await expect(
+        runExtension(scaffoldPath, {
+          init: true,
+          project: true,
+          capability: "migration",
+        }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(readFile(path.join(scaffoldPath, "manifest.json"), "utf8")).rejects.toMatchObject({
+        code: "ENOENT",
+      });
+    });
+  });
+
+  it("rejects scaffold capability selection on non-init actions", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runExtension(undefined, {
+          explore: true,
+          project: true,
+          capability: "hooks",
+        }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runExtension(undefined, {
+          explore: true,
+          project: true,
+          capability: "",
+        }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
       });
     });
   });

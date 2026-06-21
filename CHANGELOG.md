@@ -4,6 +4,7 @@
 
 ### Added
 
+- pm package init --capability <kind\>: scaffold capability-targeted starter packages (commands\|hook) ([pm-nhby](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-nhby.toon))
 - SDK invoke helpers for importers & exporters: runRegisteredImporterForTest + runRegisteredExporterForTest ([pm-1p2u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-1p2u.toon))
 - SDK invoke helpers for search providers, vector store adapters and migrations ([pm-bd3u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-bd3u.toon))
 - Complete the SDK extension-invoke testing surface: runRegisteredHookForTest + override invoke helpers ([pm-miqm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-miqm.toon))

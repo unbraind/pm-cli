@@ -549,6 +549,7 @@ export const CONFIG_FLAG_CONTRACTS: CliFlagContract[] = [
 export const EXTENSION_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--init" },
   { flag: "--scaffold" },
+  { flag: "--capability" },
   { flag: "--install" },
   { flag: "--uninstall" },
   { flag: "--explore" },
@@ -576,10 +577,15 @@ export const EXTENSION_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--fail-on-warn" },
 ];
 
-export const EXTENSION_INIT_FLAG_CONTRACTS: CliFlagContract[] = [
+export const EXTENSION_SCOPE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--project" },
   { flag: "--local" },
   { flag: "--global" },
+];
+
+export const EXTENSION_INIT_FLAG_CONTRACTS: CliFlagContract[] = [
+  ...EXTENSION_SCOPE_FLAG_CONTRACTS,
+  { flag: "--capability" },
 ];
 
 export const EXTENSION_INSTALL_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -591,25 +597,25 @@ export const EXTENSION_INSTALL_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--ref" },
 ];
 
-export const EXTENSION_UNINSTALL_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_INIT_FLAG_CONTRACTS;
-export const EXTENSION_EXPLORE_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_INIT_FLAG_CONTRACTS;
-export const EXTENSION_ADOPT_ALL_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_INIT_FLAG_CONTRACTS;
-export const EXTENSION_ACTIVATE_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_INIT_FLAG_CONTRACTS;
-export const EXTENSION_DEACTIVATE_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_INIT_FLAG_CONTRACTS;
+export const EXTENSION_UNINSTALL_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_SCOPE_FLAG_CONTRACTS;
+export const EXTENSION_EXPLORE_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_SCOPE_FLAG_CONTRACTS;
+export const EXTENSION_ADOPT_ALL_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_SCOPE_FLAG_CONTRACTS;
+export const EXTENSION_ACTIVATE_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_SCOPE_FLAG_CONTRACTS;
+export const EXTENSION_DEACTIVATE_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_SCOPE_FLAG_CONTRACTS;
 
 export const EXTENSION_MANAGE_FLAG_CONTRACTS: CliFlagContract[] = [
-  ...EXTENSION_INIT_FLAG_CONTRACTS,
+  ...EXTENSION_SCOPE_FLAG_CONTRACTS,
   { flag: "--runtime-probe" },
   { flag: "--fix-managed-state" },
 ];
 
 export const EXTENSION_RELOAD_FLAG_CONTRACTS: CliFlagContract[] = [
-  ...EXTENSION_INIT_FLAG_CONTRACTS,
+  ...EXTENSION_SCOPE_FLAG_CONTRACTS,
   { flag: "--watch" },
 ];
 
 export const EXTENSION_DOCTOR_FLAG_CONTRACTS: CliFlagContract[] = [
-  ...EXTENSION_INIT_FLAG_CONTRACTS,
+  ...EXTENSION_SCOPE_FLAG_CONTRACTS,
   { flag: "--detail" },
   { flag: "--trace" },
   { flag: "--fix-managed-state" },
@@ -618,12 +624,12 @@ export const EXTENSION_DOCTOR_FLAG_CONTRACTS: CliFlagContract[] = [
 ];
 
 export const EXTENSION_CATALOG_FLAG_CONTRACTS: CliFlagContract[] = [
-  ...EXTENSION_INIT_FLAG_CONTRACTS,
+  ...EXTENSION_SCOPE_FLAG_CONTRACTS,
   { flag: "--fields", list: true },
 ];
 
 export const EXTENSION_ADOPT_FLAG_CONTRACTS: CliFlagContract[] = [
-  ...EXTENSION_INIT_FLAG_CONTRACTS,
+  ...EXTENSION_SCOPE_FLAG_CONTRACTS,
   { flag: "--gh" },
   { flag: "--github" },
   { flag: "--ref" },

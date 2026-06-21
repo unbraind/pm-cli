@@ -1337,6 +1337,7 @@ describe("contracts command runtime", () => {
           command: "extension",
           flags: [
             "--init",
+            "--capability",
             "--install",
             "--doctor",
             "--catalog",
@@ -1348,6 +1349,7 @@ describe("contracts command runtime", () => {
           command: "package",
           flags: [
             "--init",
+            "--capability",
             "--install",
             "--doctor",
             "--catalog",

@@ -25,6 +25,20 @@ const SCAFFOLD_DECLARED_PERMISSIONS = {
   process_spawn: false,
 };
 
+/**
+ * Capability shapes the package/extension scaffolder can target via the
+ * `--capability` selector. `commands` emits the default command-only starter;
+ * `hooks` additionally wires an `after_command` lifecycle reactor (a command
+ * plus a hook) so authors get a runnable example of reacting to every pm
+ * mutation - the "project management = context management" pattern.
+ */
+export const SCAFFOLD_CAPABILITIES = ["commands", "hooks"] as const;
+
+/**
+ * Restricts the `--capability` selector to a {@link SCAFFOLD_CAPABILITIES} value.
+ */
+export type ExtensionScaffoldCapability = (typeof SCAFFOLD_CAPABILITIES)[number];
+
 interface ExtensionScaffoldFileResult {
   path: string;
   status: "created" | "unchanged";
@@ -33,11 +47,161 @@ interface ExtensionScaffoldFileResult {
 interface ExtensionScaffoldResult {
   extension_name: string;
   command_name: string;
+  capability: ExtensionScaffoldCapability;
   target_path: string;
   created_directory: boolean;
   files: ExtensionScaffoldFileResult[];
 }
 
+/**
+ * Build the `activate` body lines for the starter entrypoint. The base body
+ * always registers the starter command; the `hooks` capability appends an
+ * `after_command` lifecycle reactor so the generated extension demonstrates
+ * reacting to the items pm mutates after every command.
+ */
+function buildActivateBodyLines(
+  extensionName: string,
+  commandName: string,
+  capability: ExtensionScaffoldCapability,
+): string[] {
+  const commandLines = [
+    "  api.registerCommand({",
+    `    name: ${JSON.stringify(commandName)},`,
+    '    description: "Starter scaffold command. Replace with your own behavior.",',
+    "    run: async (context) => ({",
+    "      ok: true,",
+    `      source: ${JSON.stringify(extensionName)},`,
+    "      command: context.command,",
+    '      message: "Starter extension scaffold is active.",',
+    "    }),",
+    "  });",
+  ];
+  if (capability !== "hooks") {
+    return commandLines;
+  }
+  return [
+    ...commandLines,
+    "",
+    "  // after_command hooks fire once pm finishes a command, receiving the items",
+    "  // it mutated. This is the natural place to react to every change - sync to",
+    "  // an external system, emit telemetry, or refresh derived context",
+    '  // ("project management = context management"). This starter is a documented',
+    "  // no-op on the success path; replace the body with your own reaction.",
+    "  api.hooks.afterCommand((context) => {",
+    "    if (!context.ok) {",
+    "      return;",
+    "    }",
+    "    // `context.affected` lists the items pm mutated (id, status,",
+    "    // changed_fields). React here, e.g.:",
+    "    //   for (const item of context.affected ?? []) { /* ...item.id... */ }",
+    "  });",
+  ];
+}
+
+/**
+ * Build the colocated `node:test` sample suite for the chosen capability. Every
+ * variant covers activation, command invocation, and teardown via the SDK
+ * testing helpers; the `hooks` variant adds a test that asserts the
+ * `after_command` hook is registered and fires cleanly through the public SDK
+ * testing helper `runRegisteredHookForTest`.
+ */
+function buildSampleTestSource(
+  extensionName: string,
+  commandName: string,
+  capability: ExtensionScaffoldCapability,
+): string {
+  const hooksEnabled = capability === "hooks";
+  const capabilitiesLiteral = hooksEnabled ? '["commands", "hooks"]' : '["commands"]';
+  const importNames = [
+    "  activateExtensionForTest,",
+    "  assertExtensionDeactivated,",
+    "  assertRegisteredCommandContract,",
+    ...(hooksEnabled ? ["  assertRegisteredHook,"] : []),
+    "  deactivateExtensionForTest,",
+    "  runRegisteredCommandForTest,",
+    ...(hooksEnabled ? ["  runRegisteredHookForTest,"] : []),
+  ];
+  const hookTestLines = hooksEnabled
+    ? [
+        `test(${JSON.stringify(`${extensionName} reacts to commands via its after_command hook`)}, async () => {`,
+        "  const activation = await activateExtensionForTest(extension, {",
+        `    name: ${JSON.stringify(extensionName)},`,
+        `    capabilities: ${capabilitiesLiteral},`,
+        "  });",
+        "  // assertRegisteredHook throws unless an after_command hook is registered,",
+        "  // so reaching the next line already proves the hook is wired.",
+        "  assertRegisteredHook(activation.hooks, {",
+        '    kind: "after_command",',
+        `    extensionName: ${JSON.stringify(extensionName)},`,
+        "  });",
+        "  // runRegisteredHookForTest fires the hook through pm's real runner with a",
+        "  // synthetic context and returns the warnings it produced; a clean hook",
+        "  // returns none. Replace the context/assertions as your hook grows.",
+        "  const warnings = await runRegisteredHookForTest(activation.hooks, {",
+        '    kind: "after_command",',
+        "    context: {",
+        `      command: ${JSON.stringify(commandName)},`,
+        "      args: [],",
+        '      pm_root: "",',
+        "      ok: true,",
+        "      affected: [],",
+        "    },",
+        "  });",
+        "  assert.deepEqual(warnings, []);",
+        "});",
+        "",
+      ]
+    : [];
+  return [
+    'import assert from "node:assert/strict";',
+    'import { test } from "node:test";',
+    "import {",
+    ...importNames,
+    '} from "@unbrained/pm-cli/sdk/testing";',
+    'import extension from "./index.js";',
+    "",
+    `test(${JSON.stringify(`${extensionName} registers its starter command`)}, async () => {`,
+    "  // `capabilities` mirrors manifest.json so the in-memory activation grants",
+    "  // the capabilities the entrypoint relies on.",
+    "  const activation = await activateExtensionForTest(extension, {",
+    `    name: ${JSON.stringify(extensionName)},`,
+    `    capabilities: ${capabilitiesLiteral},`,
+    "  });",
+    "  // assertRegisteredCommandContract throws if the command is not",
+    "  // registered, so reaching here already proves the wiring; assert on the",
+    "  // returned definition to demonstrate inspecting registered metadata.",
+    "  const registered = assertRegisteredCommandContract(activation.registrations, {",
+    `    command: ${JSON.stringify(commandName)},`,
+    `    extensionName: ${JSON.stringify(extensionName)},`,
+    "  });",
+    '  assert.equal(typeof registered.command.description, "string");',
+    "",
+    "  // runRegisteredCommandForTest invokes the handler through pm's real",
+    "  // dispatch engine, so this asserts behavior - not just that the command",
+    "  // is wired. Replace these assertions as you flesh out your command.",
+    "  const invocation = await runRegisteredCommandForTest(activation.commands, {",
+    `    command: ${JSON.stringify(commandName)},`,
+    "  });",
+    "  assert.equal(invocation.handled, true);",
+    "  assert.equal(invocation.result.ok, true);",
+    `  assert.equal(invocation.result.command, ${JSON.stringify(commandName)});`,
+    "});",
+    "",
+    ...hookTestLines,
+    `test(${JSON.stringify(`${extensionName} tears down cleanly via deactivate`)}, async () => {`,
+    "  // deactivateExtensionForTest runs pm's real teardown engine over the",
+    "  // module, so this proves your `deactivate` hook runs without throwing.",
+    "  const teardown = await deactivateExtensionForTest(extension, {",
+    `    name: ${JSON.stringify(extensionName)},`,
+    "  });",
+    "  // assertExtensionDeactivated throws unless exactly one extension tore down",
+    "  // with no failures, so reaching the next line already proves teardown ran.",
+    "  assertExtensionDeactivated(teardown);",
+    "  assert.equal(teardown.deactivated, 1);",
+    "});",
+    "",
+  ].join("\n");
+}
 
 /**
  * Implements build starter extension scaffold files for the public runtime surface of this module.
@@ -46,8 +210,10 @@ export function buildStarterExtensionScaffoldFiles(
   extensionName: string,
   commandName: string,
   vocabulary: "extension" | "package",
+  capability: ExtensionScaffoldCapability = "commands",
 ): Record<string, string> {
   const packageName = `pm-${extensionName}`;
+  const capabilities = capability === "hooks" ? ["commands", "hooks"] : ["commands"];
   const manifest = `${JSON.stringify(
     {
       name: extensionName,
@@ -58,7 +224,7 @@ export function buildStarterExtensionScaffoldFiles(
       trusted: true,
       sandbox_profile: "strict",
       permissions: { ...SCAFFOLD_DECLARED_PERMISSIONS },
-      capabilities: ["commands"],
+      capabilities,
     },
     null,
     2,
@@ -70,21 +236,12 @@ export function buildStarterExtensionScaffoldFiles(
   const entrypoint = [
     '/** @param {import("@unbrained/pm-cli/sdk").ExtensionApi} api */',
     "export function activate(api) {",
-    "  api.registerCommand({",
-    `    name: ${JSON.stringify(commandName)},`,
-    '    description: "Starter scaffold command. Replace with your own behavior.",',
-    "    run: async (context) => ({",
-    "      ok: true,",
-    `      source: ${JSON.stringify(extensionName)},`,
-    "      command: context.command,",
-    '      message: "Starter extension scaffold is active.",',
-    "    }),",
-    "  });",
+    ...buildActivateBodyLines(extensionName, commandName, capability),
     "}",
     "",
     "// `deactivate` is the teardown counterpart to `activate`: pm runs it on host",
     "// shutdown/reload (e.g. the MCP server between requests) to release anything",
-    "// `activate` opened — timers, connections, caches. This starter holds no such",
+    "// `activate` opened - timers, connections, caches. This starter holds no such",
     "// resources, so it stays a documented no-op; add cleanup here as you grow.",
     "export function deactivate() {}",
     "",
@@ -94,6 +251,12 @@ export function buildStarterExtensionScaffoldFiles(
     "};",
     "",
   ].join("\n");
+  // README bullet describing what index.js wires, kept in sync with the chosen
+  // capability so the generated docs match the generated code.
+  const entrypointBullet =
+    capability === "hooks"
+      ? "- `index.js`: starter command registration, an `after_command` lifecycle hook, and a `deactivate` teardown stub."
+      : "- `index.js`: starter command registration plus a `deactivate` teardown stub.";
   if (vocabulary === "package") {
     const packageJson = `${JSON.stringify(
       {
@@ -126,61 +289,15 @@ export function buildStarterExtensionScaffoldFiles(
       null,
       2,
     )}\n`;
-    // node:test sample: demonstrates validating command registration with the
-    // SDK testing helpers without adding a third-party test runner. Uses the
-    // package's own `commands` capability scaffold as the unit under test.
-    const sampleTest = [
-      'import assert from "node:assert/strict";',
-      'import { test } from "node:test";',
-      "import {",
-      "  activateExtensionForTest,",
-      "  assertExtensionDeactivated,",
-      "  assertRegisteredCommandContract,",
-      "  deactivateExtensionForTest,",
-      "  runRegisteredCommandForTest,",
-      '} from "@unbrained/pm-cli/sdk/testing";',
-      'import extension from "./index.js";',
-      "",
-      `test(${JSON.stringify(`${extensionName} registers its starter command`)}, async () => {`,
-      "  // `capabilities` mirrors manifest.json so the in-memory activation grants",
-      "  // the `commands` capability the entrypoint relies on.",
-      "  const activation = await activateExtensionForTest(extension, {",
-      `    name: ${JSON.stringify(extensionName)},`,
-      '    capabilities: ["commands"],',
-      "  });",
-      "  // assertRegisteredCommandContract throws if the command is not",
-      "  // registered, so reaching here already proves the wiring; assert on the",
-      "  // returned definition to demonstrate inspecting registered metadata.",
-      "  const registered = assertRegisteredCommandContract(activation.registrations, {",
-      `    command: ${JSON.stringify(commandName)},`,
-      `    extensionName: ${JSON.stringify(extensionName)},`,
-      "  });",
-      '  assert.equal(typeof registered.command.description, "string");',
-      "",
-      "  // runRegisteredCommandForTest invokes the handler through pm's real",
-      "  // dispatch engine, so this asserts behavior — not just that the command",
-      "  // is wired. Replace these assertions as you flesh out your command.",
-      "  const invocation = await runRegisteredCommandForTest(activation.commands, {",
-      `    command: ${JSON.stringify(commandName)},`,
-      "  });",
-      "  assert.equal(invocation.handled, true);",
-      "  assert.equal(invocation.result.ok, true);",
-      `  assert.equal(invocation.result.command, ${JSON.stringify(commandName)});`,
-      "});",
-      "",
-      `test(${JSON.stringify(`${extensionName} tears down cleanly via deactivate`)}, async () => {`,
-      "  // deactivateExtensionForTest runs pm's real teardown engine over the",
-      "  // module, so this proves your `deactivate` hook runs without throwing.",
-      "  const teardown = await deactivateExtensionForTest(extension, {",
-      `    name: ${JSON.stringify(extensionName)},`,
-      "  });",
-      "  // assertExtensionDeactivated throws unless exactly one extension tore down",
-      "  // with no failures, so reaching the next line already proves teardown ran.",
-      "  assertExtensionDeactivated(teardown);",
-      "  assert.equal(teardown.deactivated, 1);",
-      "});",
-      "",
-    ].join("\n");
+    // node:test sample: demonstrates validating the package with the SDK testing
+    // helpers without adding a third-party test runner. The suite covers the
+    // capability the scaffold targets (command invocation, and for the hooks
+    // capability, the after_command lifecycle hook).
+    const sampleTest = buildSampleTestSource(extensionName, commandName, capability);
+    const sampleTestBullet =
+      capability === "hooks"
+        ? "- `index.test.js`: sample `node:test` suite covering activation, command invocation, the after_command hook, and teardown via the SDK testing helpers."
+        : "- `index.test.js`: sample `node:test` suite covering activation, command invocation, and teardown via the SDK testing helpers.";
     const gitignore = ["node_modules/", "*.log", ""].join("\n");
     const packageReadme = [
       `# ${packageName}`,
@@ -190,8 +307,8 @@ export function buildStarterExtensionScaffoldFiles(
       "## Included Files",
       "- `package.json`: package metadata, `test` script, and `pm` resource manifest.",
       "- `manifest.json`: extension metadata and capabilities.",
-      "- `index.js`: starter command registration plus a `deactivate` teardown stub.",
-      "- `index.test.js`: sample `node:test` suite covering activation, command invocation, and teardown via the SDK testing helpers.",
+      entrypointBullet,
+      sampleTestBullet,
       "- `.gitignore`: ignores `node_modules/` and log files.",
       "",
       "## Quick Start",
@@ -208,7 +325,19 @@ export function buildStarterExtensionScaffoldFiles(
       "npm test",
       "```",
       "`npm test` runs `node --test`, which executes `index.test.js` against the",
-      "`@unbrained/pm-cli/sdk/testing` helpers — no extra test runner required.",
+      "`@unbrained/pm-cli/sdk/testing` helpers - no extra test runner required.",
+      ...(capability === "hooks"
+        ? [
+            "",
+            "## Lifecycle Hook",
+            "`index.js` registers an `after_command` hook via `api.hooks.afterCommand`.",
+            "pm fires it once a command finishes, passing the command outcome and the",
+            "items it mutated (`context.affected`). React there to keep external context",
+            "in sync - sync records, emit telemetry, or refresh derived state. The",
+            "`hooks` capability in `manifest.json` is what grants the hook registration;",
+            "remove it (and the hook) if your package only needs commands.",
+          ]
+        : []),
       "",
       "## Compatibility Bounds",
       "`manifest.json` cannot hold comments, so the version-compatibility fields are documented here:",
@@ -242,7 +371,7 @@ export function buildStarterExtensionScaffoldFiles(
     "",
     "## Included Files",
     "- `manifest.json`: extension metadata and capabilities.",
-    "- `index.js`: starter command registration plus a `deactivate` teardown stub.",
+    entrypointBullet,
     "",
     "## Quick Start",
     "```bash",
@@ -250,6 +379,17 @@ export function buildStarterExtensionScaffoldFiles(
     `pm ${commandName}`,
     "pm extension --doctor --project --detail summary",
     "```",
+    ...(capability === "hooks"
+      ? [
+          "",
+          "## Lifecycle Hook",
+          "`index.js` registers an `after_command` hook via `api.hooks.afterCommand`.",
+          "pm fires it once a command finishes, passing the command outcome and the",
+          "items it mutated (`context.affected`). React there to keep external context",
+          "in sync. The `hooks` capability in `manifest.json` grants the registration;",
+          "remove it (and the hook) if your extension only needs commands.",
+        ]
+      : []),
     "",
     "## Compatibility Bounds",
     "`manifest.json` cannot hold comments, so the version-compatibility fields are documented here:",
@@ -279,12 +419,21 @@ export function buildStarterExtensionScaffoldFiles(
 export async function scaffoldExtensionProject(
   target: string,
   vocabulary: "extension" | "package" = "extension",
+  capability: string = "commands",
 ): Promise<ExtensionScaffoldResult> {
+  const normalizedCapability = capability.trim().toLowerCase();
+  if (!(SCAFFOLD_CAPABILITIES as readonly string[]).includes(normalizedCapability)) {
+    throw new PmCliError(
+      `Unknown scaffold capability "${capability}". Supported capabilities: ${SCAFFOLD_CAPABILITIES.join(", ")}.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  const resolvedCapability = normalizedCapability as ExtensionScaffoldCapability;
   const normalizedTarget = target.trim();
   const targetPath = path.resolve(process.cwd(), normalizedTarget);
   const extensionName = normalizeManagedDirectoryName(path.basename(targetPath));
   const commandName = `${extensionName} ping`;
-  const scaffoldFiles = buildStarterExtensionScaffoldFiles(extensionName, commandName, vocabulary);
+  const scaffoldFiles = buildStarterExtensionScaffoldFiles(extensionName, commandName, vocabulary, resolvedCapability);
 
   let createdDirectory = false;
   if (await pathExists(targetPath)) {
@@ -335,6 +484,7 @@ export async function scaffoldExtensionProject(
   return {
     extension_name: extensionName,
     command_name: commandName,
+    capability: resolvedCapability,
     target_path: targetPath,
     created_directory: createdDirectory,
     files,

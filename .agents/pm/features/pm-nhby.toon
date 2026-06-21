@@ -1,0 +1,43 @@
+id: pm-nhby
+title: "pm package init --capability <kind>: scaffold capability-targeted starter packages (commands|hook)"
+description: "Extend the package scaffold (pm package init / pm extension init) with a --capability <kind> selector so authors get a runnable, fully-tested starter for the capability shape they actually want, not just the default 'commands' starter. kind=commands keeps current behavior (default). kind=hook scaffolds an after_command lifecycle reactor (the 'react to every mutation' pattern central to project management = context management): manifest declares the hooks capability, index.js registers api.hooks.afterCommand, and the package-mode sample test exercises activateExtensionForTest + assertRegisteredHook + runRegisteredHookForTest + deactivateExtensionForTest. Builds on pm-4ltc (runnable sample test) and exercises the runRegisteredHookForTest helper added under pm-miqm. Demonstrates the hooks-capability pillar end to end so authors can customize pm for any project archetype."
+type: Feature
+status: closed
+priority: 2
+tags[4]: "area:cli","area:packages","area:sdk",pm-cli
+created_at: "2026-06-21T20:35:07.534Z"
+updated_at: "2026-06-21T21:29:46.737Z"
+author: claude-code-agent
+parent: pm-ugqx
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-4ltc,related,"2026-06-21T20:35:33.909Z",null,null
+  pm-miqm,related,"2026-06-21T20:35:33.909Z",null,null
+comments[4]{created_at,author,text}:
+  "2026-06-21T21:20:49.034Z",claude-code-agent,"Evidence: implemented package/extension init --capability commands|hooks. Hook scaffolds declare commands+hooks, register a starter command plus after_command lifecycle hook, emit package-mode SDK sample tests with assertRegisteredHook/runRegisteredHookForTest, expose capability in init results/help/completions/contracts, and reject --capability on non-init actions. Verification passed: focused test bundle 421 tests; pnpm build && pnpm contracts:check; pnpm quality:static; pnpm security:scan; manual temp smoke at /tmp/tmp.2DM5gLYLNL with npm test, pm install, package doctor deep trace status ok warning_count 0, and pm hook-package ping; node scripts/run-tests.mjs coverage passed literal 100/100/100/100 across 4,830 tests."
+  "2026-06-21T21:21:14.073Z",claude-code-agent,"Changelog/package evidence: npm view pm-changelog version returned 2026.6.20; pm package doctor --project --detail deep --trace returned status ok with warning_count 0 and pm-changelog active at 2026.6.20; pnpm changelog:pm:check reinstalled pm-changelog 2026.6.20 and reported CHANGELOG.md action unchanged, item_count 1272."
+  "2026-06-21T21:21:51.394Z",claude-code-agent,"Observability/release evidence: sentry-telemetry-gate best-effort returned ok=true with SENTRY_PERSONAL_ADMIN_TOKEN access, critical=0, high=0, blocking_short_ids=[], telemetry finish_error_rate_pct=1.25 and failures_without_error_code_rows=0. pm telemetry status shows enabled=true, queue_invalid_rows=0, last_successful_flush_at=2026-06-21T21:21:14.155Z. pm telemetry stats shows telemetry command error_rate=0. Latest Auto Release workflow runs listed by gh are successful, including scheduled run 27897024941 on 2026-06-21T07:17:26Z."
+  "2026-06-21T21:29:46.737Z",claude-code-agent,"Reviewer follow-up: Gemini noted that non-init --capability validation should reject any present flag, not only non-empty strings. Updated runExtension to check options.capability !== undefined for non-init actions and added a regression assertion for capability: \"\" on explore. Verification: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts; pnpm build && pnpm contracts:check; git diff --check."
+files[11]{path,scope,note}:
+  src/cli/commands/completion.ts,project,surface --capability in shell completions
+  src/cli/commands/extension.ts,project,validate --capability is init-only and include scaffold capability in init result
+  src/cli/commands/extension/scaffold.ts,project,generate commands/hooks capability starter scaffolds and sample SDK tests
+  src/cli/help-content.ts,project,document hook-capability init examples in concise help
+  src/cli/register-setup.ts,project,wire --capability through package/extension init commands
+  src/sdk/cli-contracts.ts,project,advertise --capability in lifecycle command flag contracts
+  tests/fixtures/contracts/full.json,project,refresh generated command contract snapshot
+  tests/unit/commands/completion-command.spec.ts,project,cover completion exposure for --capability
+  tests/unit/commands/contracts-command.spec.ts,project,cover command contract exposure for --capability
+  tests/unit/extensions/extension-command.spec.ts,project,"cover commands/hooks scaffold variants,invalid capabilities,and init-only guard"
+  tests/unit/sdk/sdk-index.spec.ts,project,cover SDK flag contract routing for package/extension init
+tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "manual temp smoke: pm init,pm package init ./hook-package --capability hooks,npm install local checkout,npm test,pm install ./hook-package,pm package doctor --detail deep --trace,pm hook-package ping",null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/unit/cli/cli-main-errors.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm build && pnpm contracts:check",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:static",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm security:scan",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,document package init --capability hooks starter workflow
+  docs/SDK.md,project,document generated hook starter SDK testing helpers
+close_reason: "Implemented and verified package/extension init --capability hooks starter scaffold with SDK sample tests, docs, contracts, completions, temp smoke, changelog/package checks, observability gates, and literal 100/100/100/100 coverage."
+body: ""

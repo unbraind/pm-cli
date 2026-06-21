@@ -14,6 +14,7 @@ import {
   printError,
   printResult,
 } from "./registration-helpers.js";
+import { SCAFFOLD_CAPABILITIES } from "./commands/extension/scaffold.js";
 
 
 
@@ -68,6 +69,7 @@ function normalizeExtensionOptions(
     gh: readString("gh"),
     github: readString("github"),
     ref: readString("ref"),
+    capability: readString("capability"),
     fields: readString("fields"),
     detail: readString("detail"),
     trace: readBoolean("trace"),
@@ -171,6 +173,7 @@ function registerLifecycleCommand(
     .argument("[target]", `${noun[0]!.toUpperCase()}${noun.slice(1)} source/name or scaffold target path (for --init/--scaffold)`)
     .option("--init", `Generate a starter ${noun} scaffold at target path`)
     .option("--scaffold", "Alias for --init")
+    .option("--capability <kind>", `Capability the --init starter targets (${SCAFFOLD_CAPABILITIES.join("|")}; default commands)`)
     .option("--install", `Install ${noun} from local path, bundled alias, npm: source, wildcard, or GitHub source`)
     .option("--uninstall", `Uninstall an installed ${noun}`)
     .option("--explore", `List discovered ${plural} in selected scope`)
@@ -214,6 +217,7 @@ function registerLifecycleCommand(
       .command("init")
       .alias("scaffold")
       .argument("<target>", `Scaffold target directory path`)
+      .option("--capability <kind>", `Capability the starter targets (${SCAFFOLD_CAPABILITIES.join("|")}; default commands)`)
       .description(
         vocabulary === "package"
           ? "Generate a starter package scaffold with package metadata, manifest, and entrypoint."

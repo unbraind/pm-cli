@@ -763,7 +763,7 @@ describe("public sdk entrypoint", () => {
     expect(flagsFor("cal")).toEqual(expect.arrayContaining(["--from", "--to"]));
     expect(flagsFor("ctx")).toEqual(expect.arrayContaining(["--depth"]));
     expect(flagsFor("test-runs-worker")).toEqual(expect.arrayContaining(["--status", "--tail"]));
-    expect(flagsFor("extension init")).toEqual(expect.arrayContaining(["--project", "--global"]));
+    expect(flagsFor("extension init")).toEqual(expect.arrayContaining(["--project", "--global", "--capability"]));
     expect(flagsFor("extension install")).toEqual(expect.arrayContaining(["--github", "--ref"]));
     expect(flagsFor("extension uninstall")).toEqual(expect.arrayContaining(["--project", "--global"]));
     expect(flagsFor("extension explore")).toEqual(expect.arrayContaining(["--project", "--global"]));
@@ -777,7 +777,7 @@ describe("public sdk entrypoint", () => {
     expect(flagsFor("extension activate")).toEqual(expect.arrayContaining(["--project", "--global"]));
     expect(flagsFor("extension deactivate")).toEqual(expect.arrayContaining(["--project", "--global"]));
     expect(flagsFor("package unknown")).toEqual(expect.arrayContaining(["--json"]));
-    expect(flagsFor("packages")).toEqual(expect.arrayContaining(["--install", "--catalog"]));
+    expect(flagsFor("packages")).toEqual(expect.arrayContaining(["--install", "--catalog", "--capability"]));
     expect(flagsFor("extension install extra")).toEqual(expect.arrayContaining(["--json"]));
     expect(flagsFor("package")).toEqual(expect.arrayContaining(["--install", "--catalog"]));
     expect(flagsFor("history-repair")).toEqual(expect.arrayContaining(["--all", "--dry-run"]));
