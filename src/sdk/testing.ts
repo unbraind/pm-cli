@@ -11,6 +11,7 @@ import type {
   ExtensionGovernancePolicy,
   ExtensionHookRegistry,
   ExtensionLayer,
+  ExtensionLoadResult,
   ExtensionManifest,
   ExtensionParserRegistry,
   ExtensionPreflightRegistry,
@@ -397,21 +398,18 @@ function readTestExtensionCapabilities(
 }
 
 /**
- * Activate one in-memory extension module for package tests.
- *
- * This uses pm's real registration validation and activation engine while
- * avoiding private loader imports, filesystem manifests, or workspace setup.
+ * Build the synthetic single-extension {@link ExtensionLoadResult} shared by the
+ * activate/deactivate test helpers, so both stay aligned with the loader's load
+ * contract as it evolves. The `loaded` entry mirrors the real on-disk shape
+ * (including `capabilities` and the compatibility fields) while leaving
+ * filesystem paths empty, since the module is supplied in memory.
  */
-export async function activateExtensionForTest(
+function buildSingleExtensionLoadResult(
   module: unknown,
-  options: ActivateExtensionForTestOptions = {},
-): Promise<ExtensionActivationResult> {
-  const manifest = readTestExtensionManifest(module);
-  const name = resolveTestExtensionName(manifest, options.name);
-  const layer = options.layer ?? "project";
-  const capabilities = readTestExtensionCapabilities(manifest, options);
-
-  return activateExtensions({
+  manifest: Partial<ExtensionManifest>,
+  identity: { name: string; layer: ExtensionLayer; capabilities: ExtensionCapability[]; policy: ExtensionGovernancePolicy },
+): ExtensionLoadResult {
+  return {
     disabled_by_flag: false,
     roots: { global: "", project: "" },
     configured_enabled: [],
@@ -419,19 +417,19 @@ export async function activateExtensionForTest(
     discovered: [],
     effective: [],
     warnings: [],
-    policy: options.policy ?? createDefaultExtensionGovernancePolicy(),
+    policy: identity.policy,
     failed: [],
     loaded: [
       {
-        layer,
+        layer: identity.layer,
         directory: "",
         manifest_path: "",
-        name,
+        name: identity.name,
         version: typeof manifest.version === "string" ? manifest.version : "0.0.0",
         entry: typeof manifest.entry === "string" ? manifest.entry : "./index.js",
         priority: typeof manifest.priority === "number" ? manifest.priority : 0,
         entry_path: "",
-        capabilities,
+        capabilities: identity.capabilities,
         manifest_version: typeof manifest.manifest_version === "number" ? manifest.manifest_version : undefined,
         pm_min_version: typeof manifest.pm_min_version === "string" ? manifest.pm_min_version : undefined,
         pm_max_version: typeof manifest.pm_max_version === "string" ? manifest.pm_max_version : undefined,
@@ -444,7 +442,28 @@ export async function activateExtensionForTest(
         module,
       },
     ],
-  });
+  };
+}
+
+/**
+ * Activate one in-memory extension module for package tests.
+ *
+ * This uses pm's real registration validation and activation engine while
+ * avoiding private loader imports, filesystem manifests, or workspace setup.
+ */
+export async function activateExtensionForTest(
+  module: unknown,
+  options: ActivateExtensionForTestOptions = {},
+): Promise<ExtensionActivationResult> {
+  const manifest = readTestExtensionManifest(module);
+  return activateExtensions(
+    buildSingleExtensionLoadResult(module, manifest, {
+      name: resolveTestExtensionName(manifest, options.name),
+      layer: options.layer ?? "project",
+      capabilities: readTestExtensionCapabilities(manifest, options),
+      policy: options.policy ?? createDefaultExtensionGovernancePolicy(),
+    }),
+  );
 }
 
 /**
@@ -463,33 +482,13 @@ export async function deactivateExtensionForTest(
   options: DeactivateExtensionForTestOptions = {},
 ): Promise<ExtensionDeactivationResult> {
   const manifest = readTestExtensionManifest(module);
-  const name = resolveTestExtensionName(manifest, options.name);
-  const layer = options.layer ?? "project";
   return deactivateExtensions(
-    {
-      disabled_by_flag: false,
-      roots: { global: "", project: "" },
-      configured_enabled: [],
-      configured_disabled: [],
-      discovered: [],
-      effective: [],
-      warnings: [],
+    buildSingleExtensionLoadResult(module, manifest, {
+      name: resolveTestExtensionName(manifest, options.name),
+      layer: options.layer ?? "project",
+      capabilities: readTestExtensionCapabilities(manifest, {}),
       policy: createDefaultExtensionGovernancePolicy(),
-      failed: [],
-      loaded: [
-        {
-          layer,
-          directory: "",
-          manifest_path: "",
-          name,
-          version: typeof manifest.version === "string" ? manifest.version : "0.0.0",
-          entry: typeof manifest.entry === "string" ? manifest.entry : "./index.js",
-          priority: typeof manifest.priority === "number" ? manifest.priority : 0,
-          entry_path: "",
-          module,
-        },
-      ],
-    },
+    }),
     options.activation,
     options.deactivateTimeoutMs === undefined ? {} : { deactivate_timeout_ms: options.deactivateTimeoutMs },
   );
