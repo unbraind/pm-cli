@@ -1945,7 +1945,10 @@ describe("extension command runtime", () => {
       expect(sampleTest).toContain('import extension from "./index.js";');
       expect(sampleTest).toContain('capabilities: ["commands"]');
       expect(sampleTest).toContain('command: "starter-package ping"');
-      expect(sampleTest).toContain('assert.equal(registered.command.command, "starter-package ping");');
+      expect(sampleTest).toContain('assert.equal(typeof registered.command.description, "string");');
+      // The contract helper already validates the command name, so the sample
+      // does not redundantly re-assert registered.command.command.
+      expect(sampleTest).not.toContain("assert.equal(registered.command.command,");
 
       const gitignore = await readFile(path.join(scaffoldPath, ".gitignore"), "utf8");
       expect(gitignore).toContain("node_modules/");
