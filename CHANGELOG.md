@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- Fix Windows nightly full-test path and permission assumptions ([pm-83rt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-83rt.toon))
+
 ### Other
 
 - Package and extension scaffolds emit least-privilege manifest policy metadata ([pm-bav0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-bav0.toon))

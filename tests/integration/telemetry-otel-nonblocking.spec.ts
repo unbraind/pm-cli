@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
@@ -98,7 +99,20 @@ describe("telemetry OTLP export is non-blocking at the process level (GH-209)", 
 
   afterAll(async () => {
     if (context) {
-      await rm(context.tempRoot, { recursive: true, force: true });
+      const cleanupAttempts = 8;
+      for (let attempt = 0; attempt < cleanupAttempts; attempt += 1) {
+        try {
+          await rm(context.tempRoot, { recursive: true, force: true });
+          return;
+        } catch (error) {
+          if (attempt === cleanupAttempts - 1) {
+            throw new Error(`Failed to clean telemetry OTLP temp root after ${cleanupAttempts} attempts`, {
+              cause: error,
+            });
+          }
+          await delay(100 * (attempt + 1));
+        }
+      }
     }
   });
 

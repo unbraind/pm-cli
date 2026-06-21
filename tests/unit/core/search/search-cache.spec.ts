@@ -52,6 +52,7 @@ import {
   installFailingFetchMock,
   installSemanticFetchMock,
 } from "../../../helpers/semanticFetchMock.js";
+import { itOnPosix } from "../../../helpers/platform.js";
 
 function createSeedItem(
   context: TempPmContext,
@@ -566,7 +567,7 @@ describe("core/search/cache", () => {
     });
   });
 
-  it("records ledger write warnings when semantic refresh cannot persist vectorization status", async () => {
+  itOnPosix("records ledger write warnings when semantic refresh cannot persist vectorization status", async () => {
     await withTempPmPath(async (context) => {
       const itemId = createSeedItem(context, "Ledger write warning item");
       const settings = await readSettings(context.pmPath);

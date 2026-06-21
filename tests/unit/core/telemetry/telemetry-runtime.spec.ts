@@ -12,6 +12,7 @@ import {
   startTelemetryCommand,
   waitForPendingFlush,
 } from "../../../../src/core/telemetry/runtime.js";
+import { itOnPosix } from "../../../helpers/platform.js";
 import { withTempGlobalRoot as withTempGlobalRootHelper } from "../../../helpers/temp.js";
 
 const originalGlobalPath = process.env.PM_GLOBAL_PATH;
@@ -2699,7 +2700,7 @@ describe("core/telemetry/runtime", () => {
     ).toHaveLength(1);
   });
 
-  it("covers queue rewrite retry loops and empty-queue fallback branches", async () => {
+  itOnPosix("covers queue rewrite retry loops and empty-queue fallback branches", async () => {
     await withTempGlobalRoot(async (globalRoot) => {
       const telemetryDir = path.join(globalRoot, "runtime", "telemetry");
       await fs.mkdir(telemetryDir, { recursive: true });
@@ -2717,7 +2718,7 @@ describe("core/telemetry/runtime", () => {
     });
   });
 
-  it("covers primitive flush errors, lock failure branches, and unknown-command fallback", async () => {
+  itOnPosix("covers primitive flush errors, lock failure branches, and unknown-command fallback", async () => {
     await withTempGlobalRoot(async (globalRoot) => {
       const settings = await readSettings(globalRoot);
       settings.telemetry.enabled = true;
