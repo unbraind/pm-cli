@@ -4,6 +4,7 @@
 
 ### Added
 
+- SDK invoke helpers for search providers, vector store adapters and migrations ([pm-bd3u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-bd3u.toon))
 - Complete the SDK extension-invoke testing surface: runRegisteredHookForTest + override invoke helpers ([pm-miqm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-miqm.toon))
 - SDK testing helper to invoke a registered extension command handler: runRegisteredCommandForTest ([pm-owm0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-owm0.toon))
 - SDK deactivate test lifecycle: deactivateExtensionForTest + assertExtensionDeactivated helpers ([pm-0zn9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-0zn9.toon))
