@@ -2159,6 +2159,15 @@ describe("extension command runtime", () => {
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
+      await expect(
+        runExtension(undefined, {
+          explore: true,
+          project: true,
+          capability: "",
+        }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 

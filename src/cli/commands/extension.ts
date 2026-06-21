@@ -1143,7 +1143,7 @@ export async function runExtension(
   if (options.fixManagedState === true && action !== "manage" && action !== "doctor") {
     throw new PmCliError("--fix-managed-state is only valid with --manage or --doctor.", EXIT_CODE.USAGE);
   }
-  if (typeof options.capability === "string" && options.capability.trim().length > 0 && action !== "init") {
+  if (options.capability !== undefined && action !== "init") {
     throw new PmCliError("--capability is only valid with --init/--scaffold.", EXIT_CODE.USAGE);
   }
   /* c8 ignore start -- alias-normalization matrix is covered by resolveAction tests; this IIFE only rewrites positional aliases */
