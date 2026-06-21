@@ -1860,6 +1860,9 @@ describe("extension command runtime", () => {
       expect(entry).toContain("export function activate(api)");
       expect(entry).toContain("export default {");
       expect(entry).toContain('name: "starter-ext ping"');
+      const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
+      expect(readme).toContain("## Policy Metadata");
+      expect(readme).toContain('sandbox_profile: "strict"');
 
       // pm-4ltc: the sample test + .gitignore are package-mode only. An
       // extension-only scaffold cannot `npm install` the peer SDK, so emitting
