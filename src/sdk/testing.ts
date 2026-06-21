@@ -942,22 +942,34 @@ export function assertRegisteredMigration(
   const match = candidates.find(
     (entry) => expectation.mandatory === undefined || (entry.definition.mandatory ?? false) === expectation.mandatory,
   );
-  if (!match) {
-    const available = sortedUnique(
-      registrations.migrations.map((entry) => {
-        const id =
-          typeof entry.definition.id === "string" && entry.definition.id.trim().length > 0
-            ? entry.definition.id.trim()
-            : "(unnamed)";
-        return `${id}:${entry.definition.mandatory === true}`;
-      }),
-    );
+  if (match) {
+    return match;
+  }
+
+  // The id (and any extension scope) matched but the `mandatory` flag did not:
+  // report the mismatch directly rather than the misleading "not registered"
+  // listing. Reaching here with a candidate implies `expectation.mandatory` was
+  // set, since an unset flag matches any candidate above.
+  const idMatch = candidates[0];
+  if (idMatch !== undefined) {
     throw new Error(
-      `Expected migration "${expectedMigration}"${extensionNameSuffix(
-        expectation.extensionName,
-      )} to be registered. Available migrations: ${formatAvailable(available)}`,
+      `Expected migration "${expectedMigration}"${extensionNameSuffix(expectation.extensionName)} to have ` +
+        `mandatory=${expectation.mandatory}, but it is mandatory=${idMatch.definition.mandatory ?? false}.`,
     );
   }
 
-  return match;
+  const available = sortedUnique(
+    registrations.migrations.map((entry) => {
+      const id =
+        typeof entry.definition.id === "string" && entry.definition.id.trim().length > 0
+          ? entry.definition.id.trim()
+          : "(unnamed)";
+      return `${id}:${entry.definition.mandatory === true}`;
+    }),
+  );
+  throw new Error(
+    `Expected migration "${expectedMigration}"${extensionNameSuffix(
+      expectation.extensionName,
+    )} to be registered. Available migrations: ${formatAvailable(available)}`,
+  );
 }

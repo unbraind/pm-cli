@@ -1929,6 +1929,12 @@ describe("sdk testing helpers", () => {
           runtime_definition: { id: "Add-Severity", mandatory: true },
         },
         {
+          layer: "project",
+          name: "schema-ext",
+          definition: { id: "rename-impact" },
+          runtime_definition: { id: "rename-impact" },
+        },
+        {
           layer: "global",
           name: "other-ext",
           definition: { description: "no id" },
@@ -1941,11 +1947,24 @@ describe("sdk testing helpers", () => {
       "Expected migration id must be a non-empty string",
     );
     expect(() => assertRegisteredMigration(registryWithUnnamedMigration, { migration: "ghost" })).toThrow(
-      /Available migrations:.*Add-Severity:true/,
+      /Available migrations: \(unnamed\):false, Add-Severity:true/,
     );
+    // Id matches but the mandatory flag does not: report the mismatch directly
+    // rather than the misleading "to be registered" listing.
     expect(() =>
       assertRegisteredMigration(registryWithUnnamedMigration, { migration: "add-severity", mandatory: false }),
-    ).toThrow(/Available migrations:.*\(unnamed\):false/);
+    ).toThrow('Expected migration "add-severity" to have mandatory=false, but it is mandatory=true.');
+    // An unset mandatory flag is reported as mandatory=false in the mismatch message.
+    expect(() =>
+      assertRegisteredMigration(registryWithUnnamedMigration, { migration: "rename-impact", mandatory: true }),
+    ).toThrow('Expected migration "rename-impact" to have mandatory=true, but it is mandatory=false.');
+    expect(() =>
+      assertRegisteredMigration(registryWithUnnamedMigration, {
+        migration: "add-severity",
+        extensionName: "schema-ext",
+        mandatory: false,
+      }),
+    ).toThrow('from extension "schema-ext" to have mandatory=false, but it is mandatory=true.');
     expect(() =>
       assertRegisteredMigration(registryWithUnnamedMigration, {
         migration: "add-severity",
