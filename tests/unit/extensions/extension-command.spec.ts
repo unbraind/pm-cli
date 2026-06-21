@@ -1899,9 +1899,12 @@ describe("extension command runtime", () => {
         "README.md",
       ]);
       // No `&&` / subshell chaining: Windows PowerShell 5.1 rejects `&&`, so the
-      // hint describes the sequence as prose with a forward-slashed path.
+      // hint gives a bare `cd` then names the commands with a forward-slashed path.
       expect((scaffold.details as { next_steps?: string[] }).next_steps).toContainEqual(
-        expect.stringContaining('run "npm install" then "npm test"'),
+        expect.stringContaining('cd '),
+      );
+      expect((scaffold.details as { next_steps?: string[] }).next_steps).toContainEqual(
+        expect.stringContaining('run "npm install" and "npm test"'),
       );
 
       const packageJson = JSON.parse(await readFile(path.join(scaffoldPath, "package.json"), "utf8")) as Record<string, unknown>;
@@ -1936,6 +1939,8 @@ describe("extension command runtime", () => {
       expect(entry).toContain('name: "starter-package ping"');
 
       const sampleTest = await readFile(path.join(scaffoldPath, "index.test.js"), "utf8");
+      expect(sampleTest).toContain('import assert from "node:assert/strict";');
+      expect(sampleTest).toContain('import { test } from "node:test";');
       expect(sampleTest).toContain('import { activateExtensionForTest, assertRegisteredCommandContract } from "@unbrained/pm-cli/sdk/testing";');
       expect(sampleTest).toContain('import extension from "./index.js";');
       expect(sampleTest).toContain('capabilities: ["commands"]');
@@ -1944,6 +1949,7 @@ describe("extension command runtime", () => {
 
       const gitignore = await readFile(path.join(scaffoldPath, ".gitignore"), "utf8");
       expect(gitignore).toContain("node_modules/");
+      expect(gitignore).toContain("*.log");
 
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Validate the Package");
