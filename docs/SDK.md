@@ -444,7 +444,11 @@ For a generated starter, use `pm package init ./my-package`. Pass
 `--capability hooks` to scaffold a command plus an `afterCommand` lifecycle
 reactor and a runnable `node:test` file that exercises
 `activateExtensionForTest`, `assertRegisteredHook`, `runRegisteredHookForTest`,
-and `deactivateExtensionForTest`.
+and `deactivateExtensionForTest`. Pass `--capability search` to scaffold a
+command plus a deterministic search provider/vector-store adapter pair and a
+runnable `node:test` file that exercises `assertRegisteredSearchProvider`,
+`assertRegisteredVectorStoreAdapter`, `runRegisteredSearchProviderForTest`, and
+`runRegisteredVectorStoreAdapterForTest`.
 
 ## Self-Identity and Lifecycle
 

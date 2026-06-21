@@ -210,11 +210,13 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     examples: [
       "pm package init ./my-package",
       "pm package init ./my-hook-package --capability hooks",
-      "pm install ./my-package --project",
+      "pm package init ./my-search-package --capability search",
+      "pm install ./my-search-package --project",
       "pm package doctor --project --detail summary",
     ],
     tips: [
       "Use --capability hooks for a starter after_command lifecycle reactor with runnable SDK testing coverage.",
+      "Use --capability search for a starter search provider/vector-store adapter with runnable SDK testing coverage.",
       "The generated package is local-install safe; add SDK runtime imports only after declaring dependencies and validating with package doctor.",
       "Use package doctor after changes to verify activation, policy, and collision diagnostics.",
     ],
@@ -248,11 +250,13 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     examples: [
       "pm extension init ./my-extension",
       "pm extension init ./my-hook-extension --capability hooks",
-      "pm extension --install --project ./my-extension",
+      "pm extension init ./my-search-extension --capability search",
+      "pm extension --install --project ./my-search-extension",
       "pm extension --doctor --project --detail summary",
     ],
     tips: [
       "Use --capability hooks when the extension should react to command lifecycle events.",
+      "Use --capability search when the extension should register retrieval primitives.",
       "Use package init for new distributable package workflows; extension init is the compatibility-level runtime scaffold.",
     ],
   },

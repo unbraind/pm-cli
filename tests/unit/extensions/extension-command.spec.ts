@@ -1838,7 +1838,7 @@ describe("extension command runtime", () => {
       expect(scaffold.details).toMatchObject({
         extension: {
           name: "starter-ext",
-          command: "starter-ext ping",
+          command: "starter ext ping",
         },
         capability: "commands",
         target_path: scaffoldPath,
@@ -1875,7 +1875,7 @@ describe("extension command runtime", () => {
       expect(entry).toContain("export function deactivate() {}");
       expect(entry).toContain("  deactivate,");
       expect(entry).toContain("export default {");
-      expect(entry).toContain('name: "starter-ext ping"');
+      expect(entry).toContain('name: "starter ext ping"');
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Policy Metadata");
       expect(readme).toContain('sandbox_profile: "strict"');
@@ -1911,7 +1911,7 @@ describe("extension command runtime", () => {
       expect(scaffold.details).toMatchObject({
         extension: {
           name: "starter-package",
-          command: "starter-package ping",
+          command: "starter package ping",
         },
         capability: "commands",
         target_path: scaffoldPath,
@@ -1977,7 +1977,7 @@ describe("extension command runtime", () => {
       expect(entry).toContain('@param {import("@unbrained/pm-cli/sdk").ExtensionApi}');
       expect(entry).toContain("export function activate(api)");
       expect(entry).toContain("export function deactivate() {}");
-      expect(entry).toContain('name: "starter-package ping"');
+      expect(entry).toContain('name: "starter package ping"');
 
       const sampleTest = await readFile(path.join(scaffoldPath, "index.test.js"), "utf8");
       expect(sampleTest).toContain('import assert from "node:assert/strict";');
@@ -1992,14 +1992,14 @@ describe("extension command runtime", () => {
       expect(sampleTest).toContain('} from "@unbrained/pm-cli/sdk/testing";');
       expect(sampleTest).toContain('import extension from "./index.js";');
       expect(sampleTest).toContain('capabilities: ["commands"]');
-      expect(sampleTest).toContain('command: "starter-package ping"');
+      expect(sampleTest).toContain('command: "starter package ping"');
       expect(sampleTest).toContain('assert.equal(typeof registered.command.description, "string");');
       // The invoke step demonstrates exercising the handler's behavior through
       // pm's real dispatch engine, not just asserting it is registered.
       expect(sampleTest).toContain("const invocation = await runRegisteredCommandForTest(activation.commands, {");
       expect(sampleTest).toContain("assert.equal(invocation.handled, true);");
       expect(sampleTest).toContain("assert.equal(invocation.result.ok, true);");
-      expect(sampleTest).toContain('assert.equal(invocation.result.command, "starter-package ping");');
+      expect(sampleTest).toContain('assert.equal(invocation.result.command, "starter package ping");');
       // The teardown test demonstrates deactivateExtensionForTest + the clean
       // teardown assertion.
       expect(sampleTest).toContain("tears down cleanly via deactivate");
@@ -2027,18 +2027,18 @@ describe("extension command runtime", () => {
           name: "starter-package",
         },
         activated: true,
-        command_paths: ["starter-package ping"],
+        command_paths: ["starter package ping"],
         action_paths: ["starter-package-ping"],
         command_discovery: {
           package_name: "starter-package",
           extension_name: "starter-package",
-          command_paths: ["starter-package ping"],
+          command_paths: ["starter package ping"],
           action_paths: ["starter-package-ping"],
-          help_commands: ["pm starter-package ping --help"],
-          next_steps: ["pm starter-package ping --help"],
+          help_commands: ["pm starter package ping --help"],
+          next_steps: ["pm starter package ping --help"],
         },
       });
-      const invoked = spawnSync(process.execPath, [path.join(process.cwd(), "dist/cli.js"), "--path", context.pmPath, "starter-package", "ping", "--json"], {
+      const invoked = spawnSync(process.execPath, [path.join(process.cwd(), "dist/cli.js"), "--path", context.pmPath, "starter", "package", "ping", "--json"], {
         cwd: process.cwd(),
         encoding: "utf8",
         env: {
@@ -2050,7 +2050,7 @@ describe("extension command runtime", () => {
       expect(invoked.status).toBe(0);
       expect(JSON.parse(invoked.stdout) as Record<string, unknown>).toMatchObject({
         ok: true,
-        command: "starter-package ping",
+        command: "starter package ping",
       });
     });
   });
@@ -2069,7 +2069,7 @@ describe("extension command runtime", () => {
         capability: "hooks",
         extension: {
           name: "starter-hooks",
-          command: "starter-hooks ping",
+          command: "starter hooks ping",
         },
       });
 
@@ -2095,6 +2095,54 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("scaffolds search-capability packages with runnable SDK search tests", async () => {
+    await withTempPmPath(async (context) => {
+      const scaffoldPath = path.join(context.tempRoot, "starter-search");
+      const scaffold = await runExtension(scaffoldPath, {
+        init: true,
+        project: true,
+        vocabulary: "package",
+        capability: "search",
+      }, { path: context.pmPath });
+
+      expect(scaffold.details).toMatchObject({
+        capability: "search",
+        extension: {
+          name: "starter-search",
+          command: "starter search ping",
+        },
+      });
+
+      const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
+      expect(manifest.capabilities).toEqual(["commands", "search"]);
+
+      const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
+      expect(entry).toContain("api.registerSearchProvider({");
+      expect(entry).toContain('name: "starter-search-search"');
+      expect(entry).toContain("api.registerVectorStoreAdapter({");
+      expect(entry).toContain('name: "starter-search-vector"');
+
+      const sampleTest = await readFile(path.join(scaffoldPath, "index.test.js"), "utf8");
+      expect(sampleTest).toContain("  assertRegisteredSearchProvider,");
+      expect(sampleTest).toContain("  assertRegisteredVectorStoreAdapter,");
+      expect(sampleTest).toContain("  runRegisteredSearchProviderForTest,");
+      expect(sampleTest).toContain("  runRegisteredVectorStoreAdapterForTest,");
+      expect(sampleTest).toContain('capabilities: ["commands", "search"]');
+      expect(sampleTest).toContain("assertRegisteredSearchProvider(activation.registrations, {");
+      expect(sampleTest).toContain('provider: "starter-search-search"');
+      expect(sampleTest).toContain("assertRegisteredVectorStoreAdapter(activation.registrations, {");
+      expect(sampleTest).toContain('adapter: "starter-search-vector"');
+      expect(sampleTest).toContain('operation: "query"');
+      expect(sampleTest).toContain('assert.deepEqual(embedding, [3]);');
+      expect(sampleTest).toContain('assert.deepEqual(vectorHits, [{ id: "starter-vector-hit", score: 2 }]);');
+
+      const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
+      expect(readme).toContain("## Search Provider");
+      expect(readme).toContain("api.registerSearchProvider");
+      expect(readme).toContain("api.registerVectorStoreAdapter");
+    });
+  });
+
   it("scaffolds hook-capability standalone extensions without package test files", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-hook-ext");
@@ -2108,7 +2156,7 @@ describe("extension command runtime", () => {
         capability: "hooks",
         extension: {
           name: "starter-hook-ext",
-          command: "starter-hook-ext ping",
+          command: "starter hook ext ping",
         },
       });
       expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
@@ -2123,6 +2171,42 @@ describe("extension command runtime", () => {
       expect(entry).toContain("api.hooks.afterCommand((context) => {");
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Lifecycle Hook");
+      await expect(readFile(path.join(scaffoldPath, "index.test.js"), "utf8")).rejects.toMatchObject({
+        code: "ENOENT",
+      });
+    });
+  });
+
+  it("scaffolds search-capability standalone extensions without package test files", async () => {
+    await withTempPmPath(async (context) => {
+      const scaffoldPath = path.join(context.tempRoot, "starter-search-ext");
+      const scaffold = await runExtension(scaffoldPath, {
+        init: true,
+        project: true,
+        capability: "search",
+      }, { path: context.pmPath });
+
+      expect(scaffold.details).toMatchObject({
+        capability: "search",
+        extension: {
+          name: "starter-search-ext",
+          command: "starter search ext ping",
+        },
+      });
+      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
+        "manifest.json",
+        "index.js",
+        "README.md",
+      ]);
+
+      const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
+      expect(manifest.capabilities).toEqual(["commands", "search"]);
+      const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
+      expect(entry).toContain("api.registerSearchProvider({");
+      expect(entry).toContain("api.registerVectorStoreAdapter({");
+      const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
+      expect(readme).toContain("## Search Provider");
+      expect(readme).toContain("api.registerSearchProvider");
       await expect(readFile(path.join(scaffoldPath, "index.test.js"), "utf8")).rejects.toMatchObject({
         code: "ENOENT",
       });

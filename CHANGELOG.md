@@ -4,6 +4,7 @@
 
 ### Added
 
+- pm package init --capability search: scaffold search provider starter packages ([pm-pwai](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-pwai.toon))
 - pm package init --capability <kind\>: scaffold capability-targeted starter packages (commands\|hook) ([pm-nhby](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-nhby.toon))
 - SDK invoke helpers for importers & exporters: runRegisteredImporterForTest + runRegisteredExporterForTest ([pm-1p2u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-1p2u.toon))
 - SDK invoke helpers for search providers, vector store adapters and migrations ([pm-bd3u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-bd3u.toon))
