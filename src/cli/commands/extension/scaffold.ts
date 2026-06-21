@@ -28,11 +28,11 @@ const SCAFFOLD_DECLARED_PERMISSIONS = {
 /**
  * Capability shapes the package/extension scaffolder can target via the
  * `--capability` selector. `commands` emits the default command-only starter;
- * `hooks` additionally wires an `after_command` lifecycle reactor (a command
- * plus a hook) so authors get a runnable example of reacting to every pm
- * mutation - the "project management = context management" pattern.
+ * `hooks` additionally wires an `after_command` lifecycle reactor, and
+ * `search` wires an in-memory provider/adapter pair so authors can customize
+ * retrieval and vector context without starting from a blank extension.
  */
-export const SCAFFOLD_CAPABILITIES = ["commands", "hooks"] as const;
+export const SCAFFOLD_CAPABILITIES = ["commands", "hooks", "search"] as const;
 
 /**
  * Restricts the `--capability` selector to a {@link SCAFFOLD_CAPABILITIES} value.
@@ -54,16 +54,28 @@ interface ExtensionScaffoldResult {
 }
 
 /**
+ * Converts a package/extension identifier into a Commander-safe command path.
+ * Hyphenated top-level command groups can surface in help but fail dispatch in
+ * Commander, so generated starters use space-separated command words while the
+ * manifest and package identity keep their normalized directory names.
+ */
+function buildStarterCommandName(extensionName: string): string {
+  return `${extensionName.replace(/-/g, " ")} ping`;
+}
+
+/**
  * Build the `activate` body lines for the starter entrypoint. The base body
- * always registers the starter command; the `hooks` capability appends an
- * `after_command` lifecycle reactor so the generated extension demonstrates
- * reacting to the items pm mutates after every command.
+ * always registers the starter command; capability-specific variants append
+ * the matching SDK surface so generated packages demonstrate one runnable
+ * customization primitive end to end.
  */
 function buildActivateBodyLines(
   extensionName: string,
   commandName: string,
   capability: ExtensionScaffoldCapability,
 ): string[] {
+  const searchProviderName = `${extensionName}-search`;
+  const vectorAdapterName = `${extensionName}-vector`;
   const commandLines = [
     "  api.registerCommand({",
     `    name: ${JSON.stringify(commandName)},`,
@@ -77,7 +89,45 @@ function buildActivateBodyLines(
     "  });",
   ];
   if (capability !== "hooks") {
-    return commandLines;
+    if (capability !== "search") {
+      return commandLines;
+    }
+    return [
+      ...commandLines,
+      "",
+      "  // Search providers let packages customize how pm ranks and retrieves",
+      "  // project context. This starter is deterministic and dependency-free:",
+      "  // replace the scoring with your domain retrieval, embedding, or rerank",
+      "  // logic as the package grows.",
+      "  api.registerSearchProvider({",
+      `    name: ${JSON.stringify(searchProviderName)},`,
+      "    query: async (context) => {",
+      "      const needle = context.query.toLowerCase();",
+      "      const hits = context.documents",
+      "        .filter((document) => {",
+      "          const title = String(document.metadata?.title ?? \"\").toLowerCase();",
+      "          return title.includes(needle);",
+      "        })",
+      "        .map((document) => ({",
+      "          id: document.metadata.id,",
+      "          score: 1,",
+      '          matched_fields: ["title"],',
+      "        }));",
+      "      return { hits };",
+      "    },",
+      "    embed: async (context) => [context.input.length],",
+      "  });",
+      "",
+      "  // Vector-store adapters let packages own semantic index storage. This",
+      "  // starter returns a stable in-memory hit so generated tests can exercise",
+      "  // the adapter without external services.",
+      "  api.registerVectorStoreAdapter({",
+      `    name: ${JSON.stringify(vectorAdapterName)},`,
+      "    query: async (context) => [{ id: \"starter-vector-hit\", score: context.limit }],",
+      "    upsert: async (context) => ({ upserted: context.points.length }),",
+      "    delete: async (context) => ({ deleted: context.ids.length }),",
+      "  });",
+    ];
   }
   return [
     ...commandLines,
@@ -111,15 +161,24 @@ function buildSampleTestSource(
   capability: ExtensionScaffoldCapability,
 ): string {
   const hooksEnabled = capability === "hooks";
-  const capabilitiesLiteral = hooksEnabled ? '["commands", "hooks"]' : '["commands"]';
+  const searchEnabled = capability === "search";
+  const capabilitiesLiteral = hooksEnabled
+    ? '["commands", "hooks"]'
+    : searchEnabled
+      ? '["commands", "search"]'
+      : '["commands"]';
+  const searchProviderName = `${extensionName}-search`;
+  const vectorAdapterName = `${extensionName}-vector`;
   const importNames = [
     "  activateExtensionForTest,",
     "  assertExtensionDeactivated,",
     "  assertRegisteredCommandContract,",
     ...(hooksEnabled ? ["  assertRegisteredHook,"] : []),
+    ...(searchEnabled ? ["  assertRegisteredSearchProvider,", "  assertRegisteredVectorStoreAdapter,"] : []),
     "  deactivateExtensionForTest,",
     "  runRegisteredCommandForTest,",
     ...(hooksEnabled ? ["  runRegisteredHookForTest,"] : []),
+    ...(searchEnabled ? ["  runRegisteredSearchProviderForTest,", "  runRegisteredVectorStoreAdapterForTest,"] : []),
   ];
   const hookTestLines = hooksEnabled
     ? [
@@ -148,6 +207,56 @@ function buildSampleTestSource(
         "    },",
         "  });",
         "  assert.deepEqual(warnings, []);",
+        "});",
+        "",
+      ]
+    : [];
+  const searchTestLines = searchEnabled
+    ? [
+        `test(${JSON.stringify(`${extensionName} registers and invokes search primitives`)}, async () => {`,
+        "  const activation = await activateExtensionForTest(extension, {",
+        `    name: ${JSON.stringify(extensionName)},`,
+        `    capabilities: ${capabilitiesLiteral},`,
+        "  });",
+        "  assertRegisteredSearchProvider(activation.registrations, {",
+        `    provider: ${JSON.stringify(searchProviderName)},`,
+        `    extensionName: ${JSON.stringify(extensionName)},`,
+        "  });",
+        "  assertRegisteredVectorStoreAdapter(activation.registrations, {",
+        `    adapter: ${JSON.stringify(vectorAdapterName)},`,
+        `    extensionName: ${JSON.stringify(extensionName)},`,
+        "  });",
+        "",
+        "  const query = await runRegisteredSearchProviderForTest(activation.registrations, {",
+        `    provider: ${JSON.stringify(searchProviderName)},`,
+        '    operation: "query",',
+        "    context: {",
+        '      query: "sync",',
+        '      mode: "semantic",',
+        '      tokens: ["sync"],',
+        "      options: {},",
+        "      settings: {},",
+        "      documents: [",
+        '        { metadata: { id: "pm-1", title: "Sync external context" }, body: "" },',
+        '        { metadata: { id: "pm-2", title: "Unrelated task" }, body: "" },',
+        "      ],",
+        "    },",
+        "  });",
+        '  assert.deepEqual(query, { hits: [{ id: "pm-1", score: 1, matched_fields: ["title"] }] });',
+        "",
+        "  const embedding = await runRegisteredSearchProviderForTest(activation.registrations, {",
+        `    provider: ${JSON.stringify(searchProviderName)},`,
+        '    operation: "embed",',
+        '    context: { input: "abc", settings: {}, model: "starter-model" },',
+        "  });",
+        "  assert.deepEqual(embedding, [3]);",
+        "",
+        "  const vectorHits = await runRegisteredVectorStoreAdapterForTest(activation.registrations, {",
+        `    adapter: ${JSON.stringify(vectorAdapterName)},`,
+        '    operation: "query",',
+        "    context: { vector: [0.1, 0.2], limit: 2, settings: {} },",
+        "  });",
+        '  assert.deepEqual(vectorHits, [{ id: "starter-vector-hit", score: 2 }]);',
         "});",
         "",
       ]
@@ -188,6 +297,7 @@ function buildSampleTestSource(
     "});",
     "",
     ...hookTestLines,
+    ...searchTestLines,
     `test(${JSON.stringify(`${extensionName} tears down cleanly via deactivate`)}, async () => {`,
     "  // deactivateExtensionForTest runs pm's real teardown engine over the",
     "  // module, so this proves your `deactivate` hook runs without throwing.",
@@ -213,7 +323,8 @@ export function buildStarterExtensionScaffoldFiles(
   capability: ExtensionScaffoldCapability = "commands",
 ): Record<string, string> {
   const packageName = `pm-${extensionName}`;
-  const capabilities = capability === "hooks" ? ["commands", "hooks"] : ["commands"];
+  const capabilities =
+    capability === "hooks" ? ["commands", "hooks"] : capability === "search" ? ["commands", "search"] : ["commands"];
   const manifest = `${JSON.stringify(
     {
       name: extensionName,
@@ -256,6 +367,8 @@ export function buildStarterExtensionScaffoldFiles(
   const entrypointBullet =
     capability === "hooks"
       ? "- `index.js`: starter command registration, an `after_command` lifecycle hook, and a `deactivate` teardown stub."
+      : capability === "search"
+        ? "- `index.js`: starter command registration, a search provider, a vector-store adapter, and a `deactivate` teardown stub."
       : "- `index.js`: starter command registration plus a `deactivate` teardown stub.";
   if (vocabulary === "package") {
     const packageJson = `${JSON.stringify(
@@ -297,6 +410,8 @@ export function buildStarterExtensionScaffoldFiles(
     const sampleTestBullet =
       capability === "hooks"
         ? "- `index.test.js`: sample `node:test` suite covering activation, command invocation, the after_command hook, and teardown via the SDK testing helpers."
+        : capability === "search"
+          ? "- `index.test.js`: sample `node:test` suite covering activation, command invocation, search provider/vector adapter invocation, and teardown via the SDK testing helpers."
         : "- `index.test.js`: sample `node:test` suite covering activation, command invocation, and teardown via the SDK testing helpers.";
     const gitignore = ["node_modules/", "*.log", ""].join("\n");
     const packageReadme = [
@@ -337,6 +452,17 @@ export function buildStarterExtensionScaffoldFiles(
             "`hooks` capability in `manifest.json` is what grants the hook registration;",
             "remove it (and the hook) if your package only needs commands.",
           ]
+        : capability === "search"
+          ? [
+              "",
+              "## Search Provider",
+              "`index.js` registers a deterministic in-memory search provider and",
+              "vector-store adapter through `api.registerSearchProvider` and",
+              "`api.registerVectorStoreAdapter`. Replace the sample scoring,",
+              "embedding, and storage behavior with your project-specific retrieval",
+              "logic. The `search` capability in `manifest.json` grants both",
+              "registrations.",
+            ]
         : []),
       "",
       "## Compatibility Bounds",
@@ -389,6 +515,16 @@ export function buildStarterExtensionScaffoldFiles(
           "in sync. The `hooks` capability in `manifest.json` grants the registration;",
           "remove it (and the hook) if your extension only needs commands.",
         ]
+      : capability === "search"
+        ? [
+            "",
+            "## Search Provider",
+            "`index.js` registers a deterministic in-memory search provider and",
+            "vector-store adapter through `api.registerSearchProvider` and",
+            "`api.registerVectorStoreAdapter`. Replace the sample scoring, embedding,",
+            "and storage behavior with your project-specific retrieval logic. The",
+            "`search` capability in `manifest.json` grants both registrations.",
+          ]
       : []),
     "",
     "## Compatibility Bounds",
@@ -432,7 +568,7 @@ export async function scaffoldExtensionProject(
   const normalizedTarget = target.trim();
   const targetPath = path.resolve(process.cwd(), normalizedTarget);
   const extensionName = normalizeManagedDirectoryName(path.basename(targetPath));
-  const commandName = `${extensionName} ping`;
+  const commandName = buildStarterCommandName(extensionName);
   const scaffoldFiles = buildStarterExtensionScaffoldFiles(extensionName, commandName, vocabulary, resolvedCapability);
 
   let createdDirectory = false;
