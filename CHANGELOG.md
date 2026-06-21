@@ -4,6 +4,7 @@
 
 ### Added
 
+- Complete SDK package-author test-assertion surface: service-override + migration helpers ([pm-6pmp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-6pmp.toon))
 - item-format-migration: add format-version field to front-matter for future migration gating ([pm-ae1u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ae1u.toon))
 
 ### Fixed
