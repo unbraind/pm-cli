@@ -85,6 +85,8 @@ Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 - `runRegisteredSearchProviderForTest`
 - `runRegisteredVectorStoreAdapterForTest`
 - `runRegisteredMigrationForTest`
+- `runRegisteredImporterForTest`
+- `runRegisteredExporterForTest`
 - `assertExtensionDeactivated`
 - `assertPackageManifest`
 - `assertRegisteredCommandContract`
@@ -161,12 +163,17 @@ Each override helper guards that a matching override is registered for the targe
 (command / format / service), so a typo surfaces as a descriptive error rather
 than a silent `overridden: false` / `handled: false`.
 
-The three *executable registration* surfaces — search providers, vector store
-adapters, and schema migrations — also have invoke helpers, so every register\*
-method has both an `assertRegistered*` and a `runRegistered*ForTest` counterpart.
-Each resolves the registration through the same runtime resolver the host uses and
-invokes its `runtime_definition` (the clone that preserves live functions), so a
-test exercises the real behavior, not a re-implementation:
+The *executable registration* surfaces — search providers, vector store
+adapters, schema migrations, importers, and exporters — also have invoke helpers,
+so every executable register\* method has both an `assertRegistered*` and a
+`runRegistered*ForTest` counterpart. Each exercises the real registered behavior,
+not a re-implementation, but along two execution paths that mirror how the host
+runs them. Providers, adapters, and migrations are resolved through the same
+runtime resolver the host uses and invoked via their `runtime_definition` (the
+clone that preserves live functions). Importers and exporters have no standalone
+`runtime_definition` — `registerImporter`/`registerExporter` wrap their handler
+into a command path, so their helpers resolve by name and dispatch through the
+command runner instead, returning a `CommandHandlerResult`:
 
 - `runRegisteredSearchProviderForTest(activation.registrations, { provider, operation, context })`
   resolves a registered provider by name (case-insensitive, last registration
@@ -185,11 +192,21 @@ test exercises the real behavior, not a re-implementation:
   returning whatever `run` returns. Unlike the host — which skips applied
   migrations and folds a throw into a warning — it always invokes `run` and lets a
   throw propagate, so both success and failure are assertable.
+- `runRegisteredImporterForTest(activation, { importer, extensionName?, args?, options?, global?, pmRoot? })`
+  and `runRegisteredExporterForTest(activation, { exporter, ... })` resolve a
+  registered importer/exporter by name, derive the `"<name> import"` /
+  `"<name> export"` command path internally — so authors never hand-build it — and
+  validate that the name is genuinely a registered importer/exporter before
+  dispatching. They take the whole `activation` because resolution spans two
+  sub-registries (`registrations` proves it exists, `commands` holds the wrapped
+  handler), and they return the command runner's `CommandHandlerResult` verbatim,
+  so `handled`/`warnings`/`errorMessage` semantics and `exitCode` propagation match
+  invoking the importer/exporter as a command.
 
-Each surface helper guards that the named provider / adapter / migration is
-registered (and implements the requested operation), so a typo surfaces as a
-descriptive error rather than a silent no-op. All invoke helpers are `async`, so a
-test always `await`s them.
+Each surface helper guards that the named provider / adapter / migration /
+importer / exporter is registered (and, for providers and adapters, implements the
+requested operation), so a typo surfaces as a descriptive error rather than a
+silent no-op. All invoke helpers are `async`, so a test always `await`s them.
 
 Commander option contract exports:
 
@@ -590,8 +607,21 @@ const invocation = await runRegisteredCommandForTest(activation.commands, {
 // invocation.handled === true; invocation.result is the handler's return value.
 ```
 
-The same helper invokes importer/exporter handlers via their `"<name> import"` /
-`"<name> export"` command paths.
+Importers and exporters get dedicated name-based helpers so tests never hand-build
+the `"<name> import"` / `"<name> export"` command path. Pass the whole `activation`
+and the registration name:
+
+```ts
+import { runRegisteredImporterForTest, runRegisteredExporterForTest } from "@unbrained/pm-cli/sdk/testing";
+
+const imported = await runRegisteredImporterForTest(activation, {
+  importer: "csv",
+  options: { rows: 3 },
+});
+const exported = await runRegisteredExporterForTest(activation, { exporter: "csv" });
+
+// Both return a CommandHandlerResult: imported.result is the importer's return value.
+```
 
 Fire a registered lifecycle hook to assert its behavior (the `context` is
 type-safe per `kind`). A clean run returns `[]`; a hook that throws contributes a

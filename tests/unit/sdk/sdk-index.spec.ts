@@ -37,7 +37,9 @@ import {
   deactivateExtensionForTest as deactivateExtensionForTestFromBarrel,
   runRegisteredCommandForTest as runRegisteredCommandForTestFromBarrel,
   runRegisteredCommandOverrideForTest as runRegisteredCommandOverrideForTestFromBarrel,
+  runRegisteredExporterForTest as runRegisteredExporterForTestFromBarrel,
   runRegisteredHookForTest as runRegisteredHookForTestFromBarrel,
+  runRegisteredImporterForTest as runRegisteredImporterForTestFromBarrel,
   runRegisteredMigrationForTest as runRegisteredMigrationForTestFromBarrel,
   runRegisteredParserOverrideForTest as runRegisteredParserOverrideForTestFromBarrel,
   runRegisteredPreflightOverrideForTest as runRegisteredPreflightOverrideForTestFromBarrel,
@@ -101,7 +103,9 @@ import {
   deactivateExtensionForTest,
   runRegisteredCommandForTest,
   runRegisteredCommandOverrideForTest,
+  runRegisteredExporterForTest,
   runRegisteredHookForTest,
+  runRegisteredImporterForTest,
   runRegisteredMigrationForTest,
   runRegisteredParserOverrideForTest,
   runRegisteredPreflightOverrideForTest,
@@ -902,6 +906,11 @@ describe("public sdk entrypoint", () => {
     expect(runRegisteredSearchProviderForTestFromBarrel).toBe(runRegisteredSearchProviderForTest);
     expect(runRegisteredVectorStoreAdapterForTestFromBarrel).toBe(runRegisteredVectorStoreAdapterForTest);
     expect(runRegisteredMigrationForTestFromBarrel).toBe(runRegisteredMigrationForTest);
+    // Lock the importer/exporter invoke-verb helpers — the final executable
+    // registration surfaces — to the same implementation the testing entrypoint
+    // exports.
+    expect(runRegisteredImporterForTestFromBarrel).toBe(runRegisteredImporterForTest);
+    expect(runRegisteredExporterForTestFromBarrel).toBe(runRegisteredExporterForTest);
     expect(assertExtensionDeactivatedFromBarrel).toBe(assertExtensionDeactivated);
     // Lock the new override-assertion helpers to the same implementation the
     // testing entrypoint exports (barrel-contract for this PR's SDK surface).
@@ -1129,6 +1138,106 @@ describe("public sdk entrypoint", () => {
     await expect(
       runRegisteredCommandForTest({ overrides: [], handlers: [] }, { command: "anything" }),
     ).rejects.toThrow(/Available command handlers: \(none\)/);
+  });
+
+  it("invokes a registered importer by name and returns its handler result for package tests", async () => {
+    const activation = await activateExtensionForTest(
+      {
+        activate(api: ExtensionApi) {
+          api.registerImporter("csv", (context) => ({
+            registration: context.registration,
+            action: context.action,
+            rows: context.options.rows ?? 0,
+            first: context.args[0] ?? null,
+            quiet: context.global.quiet,
+            pmRoot: context.pm_root,
+          }));
+          api.registerImporter("boom", () => {
+            throw new Error("import exploded");
+          });
+        },
+      },
+      { name: "io-ext", capabilities: ["importers"] },
+    );
+
+    // The importer name is resolved case-insensitively, the `"<name> import"`
+    // command path is derived internally, and args/options/pmRoot are forwarded
+    // while agent-safe global defaults merge with the caller override.
+    const result = await runRegisteredImporterForTest(activation, {
+      importer: "CSV",
+      args: ["source.csv"],
+      options: { rows: 3 },
+      global: { quiet: false },
+      pmRoot: "/tmp/import-root",
+    });
+    expect(result).toEqual({
+      handled: true,
+      result: { registration: "csv", action: "import", rows: 3, first: "source.csv", quiet: false, pmRoot: "/tmp/import-root" },
+      warnings: [],
+    });
+
+    // Defaults: no args/options/global/pmRoot supplied.
+    const defaulted = await runRegisteredImporterForTest(activation, { importer: "csv" });
+    expect(defaulted.result).toEqual({
+      registration: "csv",
+      action: "import",
+      rows: 0,
+      first: null,
+      quiet: true,
+      pmRoot: "",
+    });
+
+    // An importer whose handler throws a non-exit error yields a soft failure
+    // the caller can assert on, exactly like the command runner.
+    const boom = await runRegisteredImporterForTest(activation, { importer: "boom" });
+    expect(boom.handled).toBe(false);
+    expect(boom.errorMessage).toBe("import exploded");
+
+    // An unregistered importer throws the descriptive "available importers"
+    // error from assertRegisteredImporter.
+    await expect(runRegisteredImporterForTest(activation, { importer: "missing" })).rejects.toThrow(
+      /Expected importer "missing" to be registered\. Available importers: boom, csv/,
+    );
+  });
+
+  it("invokes a registered exporter by name and returns its handler result for package tests", async () => {
+    const activation = await activateExtensionForTest(
+      {
+        activate(api: ExtensionApi) {
+          api.registerExporter("csv", (context) => ({
+            registration: context.registration,
+            action: context.action,
+            limit: context.options.limit ?? 0,
+          }));
+          api.registerExporter("explode", () => {
+            throw Object.assign(new Error("export aborted"), { exitCode: 2 });
+          });
+        },
+      },
+      { name: "io-ext", capabilities: ["importers"] },
+    );
+
+    // The exporter handler reports action "export" and forwards options.
+    const result = await runRegisteredExporterForTest(activation, {
+      exporter: "csv",
+      extensionName: "io-ext",
+      options: { limit: 5 },
+    });
+    expect(result).toEqual({
+      handled: true,
+      result: { registration: "csv", action: "export", limit: 5 },
+      warnings: [],
+    });
+
+    // An exporter whose handler throws an error carrying a numeric exitCode
+    // propagates the throw, matching runtime export semantics.
+    await expect(runRegisteredExporterForTest(activation, { exporter: "explode" })).rejects.toThrow("export aborted");
+
+    // An unregistered exporter throws the descriptive "available exporters"
+    // error from assertRegisteredExporter.
+    await expect(runRegisteredExporterForTest(activation, { exporter: "missing" })).rejects.toThrow(
+      /Expected exporter "missing" to be registered\. Available exporters: csv, explode/,
+    );
   });
 
   it("exposes runtime contracts without requiring a pm subprocess", async () => {

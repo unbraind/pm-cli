@@ -1,0 +1,17 @@
+id: pm-1p2u
+title: "SDK invoke helpers for importers & exporters: runRegisteredImporterForTest + runRegisteredExporterForTest"
+description: "Complete the SDK package-author 'invoke' verb by adding name-based invoke helpers for the last two executable registration surfaces without one: importers and exporters. registerImporter/registerExporter wrap their handlers into command paths ('<name> import' / '<name> export'), so today they are invokable only via runRegisteredCommandForTest with a hand-derived command path. The new runRegisteredImporterForTest(activation, { importer }) / runRegisteredExporterForTest(activation, { exporter }) resolve by registration name (validating via assertRegisteredImporter/Exporter), derive the command path internally, and return the same CommandHandlerResult. Now every executable register* surface has both an assertRegistered* and a runRegistered*ForTest counterpart."
+type: Feature
+status: open
+priority: 2
+tags[4]: "area:extensions","area:packages","area:sdk",extension-testing
+created_at: "2026-06-21T19:14:23.653Z"
+updated_at: "2026-06-21T19:14:43.308Z"
+author: claude-code-agent
+parent: pm-ugqx
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-0wm0,related,"2026-06-21T19:14:43.265Z",claude-code-agent,null
+  pm-7qjk,related,"2026-06-21T19:14:43.265Z",claude-code-agent,null
+  pm-bd3u,related,"2026-06-21T19:14:43.265Z",claude-code-agent,null
+  pm-miqm,related,"2026-06-21T19:14:43.265Z",claude-code-agent,null
+body: ""
