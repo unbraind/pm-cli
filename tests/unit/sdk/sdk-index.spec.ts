@@ -35,6 +35,7 @@ import {
   assertRegisteredVectorStoreAdapter as assertRegisteredVectorStoreAdapterFromBarrel,
   activateExtensionForTest as activateExtensionForTestFromBarrel,
   deactivateExtensionForTest as deactivateExtensionForTestFromBarrel,
+  runRegisteredCommandForTest as runRegisteredCommandForTestFromBarrel,
   appendHistoryEntry,
   createHistoryEntry,
   createPmCliExpectedError,
@@ -89,6 +90,7 @@ import {
   assertRegisteredVectorStoreAdapter,
   activateExtensionForTest,
   deactivateExtensionForTest,
+  runRegisteredCommandForTest,
 } from "../../../src/sdk/testing.js";
 import { serializeItemDocument } from "../../../src/core/item/item-format.js";
 import { readSettings as readCoreSettings, writeSettings } from "../../../src/core/store/settings.js";
@@ -867,6 +869,7 @@ describe("public sdk entrypoint", () => {
     expect(typeof activateExtensionForTestFromBarrel).toBe("function");
     expect(typeof deactivateExtensionForTestFromBarrel).toBe("function");
     expect(deactivateExtensionForTestFromBarrel).toBe(deactivateExtensionForTest);
+    expect(runRegisteredCommandForTestFromBarrel).toBe(runRegisteredCommandForTest);
     expect(assertExtensionDeactivatedFromBarrel).toBe(assertExtensionDeactivated);
     // Lock the new override-assertion helpers to the same implementation the
     // testing entrypoint exports (barrel-contract for this PR's SDK surface).
@@ -1002,6 +1005,98 @@ describe("public sdk entrypoint", () => {
     );
     // Matching both expected counts (zero clean teardowns, one failure) passes.
     expect(assertExtensionDeactivated(failingResult, { deactivated: 0, failed: 1 })).toBe(failingResult);
+  });
+
+  it("invokes a registered command handler and returns its result for package tests", async () => {
+    const seen: Array<{ args: string[]; options: Record<string, unknown>; global: unknown; pmRoot: string }> = [];
+    const activation = await activateExtensionForTest(
+      {
+        activate(api: ExtensionApi) {
+          api.registerCommand({
+            name: "greet hello",
+            action: "greet-hello",
+            run: (context) => {
+              seen.push({
+                args: context.args,
+                options: context.options,
+                global: context.global,
+                pmRoot: context.pm_root,
+              });
+              return { greeting: `hi ${context.args[0] ?? "world"}`, loud: context.options.loud === true };
+            },
+          });
+          api.registerCommand({
+            name: "greet boom",
+            action: "greet-boom",
+            run: () => {
+              throw new Error("handler exploded");
+            },
+          });
+          api.registerCommand({
+            name: "greet exit",
+            action: "greet-exit",
+            run: () => {
+              throw Object.assign(new Error("exit please"), { exitCode: 2 });
+            },
+          });
+        },
+      },
+      { name: "greet-ext", capabilities: ["commands"] },
+    );
+
+    // A clean run forwards args/options/pmRoot and merges agent-safe global
+    // defaults (json+quiet+noPager) with the caller's override.
+    const result = await runRegisteredCommandForTest(activation.commands, {
+      command: "greet hello",
+      args: ["alice"],
+      options: { loud: true },
+      global: { quiet: false },
+      pmRoot: "/tmp/example-root",
+    });
+    expect(result).toEqual({ handled: true, result: { greeting: "hi alice", loud: true }, warnings: [] });
+    expect(seen).toEqual([
+      {
+        args: ["alice"],
+        options: { loud: true },
+        global: { json: true, quiet: false, noPager: true },
+        pmRoot: "/tmp/example-root",
+      },
+    ]);
+
+    // Defaults: no args/options/global/pmRoot supplied. The command name is
+    // normalized (extra whitespace + casing) before matching the handler.
+    const defaulted = await runRegisteredCommandForTest(activation.commands, { command: "  Greet   Hello  " });
+    expect(defaulted.result).toEqual({ greeting: "hi world", loud: false });
+    expect(seen[1]).toEqual({ args: [], options: {}, global: { json: true, quiet: true, noPager: true }, pmRoot: "" });
+
+    // A handler that throws a non-exit error yields a soft failure the caller
+    // can assert on, rather than propagating.
+    const boom = await runRegisteredCommandForTest(activation.commands, { command: "greet boom" });
+    expect(boom.handled).toBe(false);
+    expect(boom.warnings).toEqual(["extension_command_handler_failed:project:greet-ext:greet boom"]);
+    expect(boom.errorMessage).toBe("handler exploded");
+
+    // A handler that throws an error carrying a numeric exitCode propagates the
+    // throw, matching runtime dispatch semantics.
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "greet exit" })).rejects.toThrow(
+      "exit please",
+    );
+
+    // An empty command name is rejected outright.
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "   " })).rejects.toThrow(
+      "Expected command name must be a non-empty string",
+    );
+
+    // An unregistered command throws a descriptive error listing the available
+    // handler command paths.
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "greet missing" })).rejects.toThrow(
+      /Expected a registered command handler for "greet missing" to invoke\. Available command handlers: greet boom, greet exit, greet hello/,
+    );
+
+    // A registry with no handlers reports "(none)" for the available list.
+    await expect(
+      runRegisteredCommandForTest({ overrides: [], handlers: [] }, { command: "anything" }),
+    ).rejects.toThrow(/Available command handlers: \(none\)/);
   });
 
   it("exposes runtime contracts without requiring a pm subprocess", async () => {

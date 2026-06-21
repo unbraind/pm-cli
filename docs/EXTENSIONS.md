@@ -420,12 +420,7 @@ import { activateExtensionForTest, assertRegisteredCommandContract } from "@unbr
 
 Use `createPmCliExpectedError(message, { exitCode, context })` for expected user/action failures from package commands. It creates an `Error` named `PmCliError` with a structural `exitCode`, so separately installed package code still gets expected-error handling and Sentry filtering.
 
-Use `activateExtensionForTest(module)` in package unit tests when you need an
-`activation.registrations` or `activation.hooks` object for assertion helpers.
-It exercises the real activation and capability validation path without
-requiring private loader imports or a temporary `.agents/pm/extensions` tree.
-Keep `pm package doctor --project --detail deep --trace` and runtime contracts
-for integration tests against installed packages.
+Use `activateExtensionForTest(module)` in package unit tests when you need an `activation.registrations` or `activation.hooks` object for assertion helpers; then `runRegisteredCommandForTest(activation.commands, { command })` invokes a registered command (or importer/exporter) handler through pm's real dispatch engine to assert behavior, not just wiring. Keep `pm package doctor --project --detail deep --trace` and runtime contracts for integration tests against installed packages.
 
 `PM_CLI_PACKAGE_ROOT` is first-party only. Bundled packages in this repository use it to find the running CLI's `dist/sdk/runtime.js` before they are published or installed independently. External packages must not read this environment variable or import from `dist/` or `src/core`; use `@unbrained/pm-cli/sdk`, `@unbrained/pm-cli/sdk/runtime`, and `@unbrained/pm-cli/sdk/testing`. During `pm install npm:<package>`, pm links the installed package's `@unbrained/pm-cli` dependency back to the running host CLI so SDK imports resolve without a duplicate nested CLI install.
 

@@ -4,6 +4,7 @@
  * Defines public SDK APIs and package-author helpers for Testing.
  */
 import type {
+  CommandHandlerResult,
   ExtensionActivationResult,
   ExtensionCapability,
   ExtensionCommandRegistry,
@@ -39,10 +40,11 @@ import type {
   SchemaFieldDefinition,
   SchemaItemTypeDefinition,
 } from "../core/extensions/loader.js";
-import { activateExtensions, deactivateExtensions } from "../core/extensions/loader.js";
+import { activateExtensions, deactivateExtensions, runCommandHandler } from "../core/extensions/loader.js";
 import { createDefaultExtensionGovernancePolicy } from "../core/extensions/extension-types.js";
 import { collectUsedExtensionCapabilities } from "../core/extensions/capability-usage.js";
 import { normalizeKnownExtensionCapability } from "../core/extensions/extension-capability-aliases.js";
+import type { GlobalOptions } from "../core/shared/command-types.js";
 import type { PmPackageManifest, PmPackageResourceKind } from "../core/packages/manifest.js";
 
 interface TestExtensionModule {
@@ -81,6 +83,33 @@ export interface DeactivateExtensionForTestOptions {
    * `Infinity`) to wait indefinitely; omit to keep the host default.
    */
   deactivateTimeoutMs?: number;
+}
+
+/**
+ * Options for {@link runRegisteredCommandForTest} — the inputs forwarded to a
+ * registered extension command handler when exercising its behavior in a test.
+ */
+export interface RunRegisteredCommandForTestOptions {
+  /**
+   * Full registered command path to invoke, e.g. `"hello"` or `"todos import"`.
+   * Matched against `commands.handlers[].command` after normalization (trimmed,
+   * lower-cased, internal whitespace collapsed), mirroring runtime dispatch.
+   */
+  command: string;
+  /** Positional arguments forwarded as `context.args` (default: none). */
+  args?: readonly string[];
+  /** Parsed flags/options forwarded as `context.options` (default: none). */
+  options?: Record<string, unknown>;
+  /**
+   * Global option overrides merged onto the agent-safe test defaults
+   * (`{ json: true, quiet: true, noPager: true }`), forwarded as `context.global`.
+   */
+  global?: Partial<GlobalOptions>;
+  /**
+   * Resolved pm workspace root forwarded as `context.pm_root` (default: `""`).
+   * Most pure handlers ignore it; set it when the handler reads workspace files.
+   */
+  pmRoot?: string;
 }
 
 /**
@@ -492,6 +521,57 @@ export async function deactivateExtensionForTest(
     options.activation,
     options.deactivateTimeoutMs === undefined ? {} : { deactivate_timeout_ms: options.deactivateTimeoutMs },
   );
+}
+
+/**
+ * Invoke a registered extension command handler and return its real
+ * {@link CommandHandlerResult} so package tests can assert on behavior — not
+ * just that the command was registered.
+ *
+ * This is the "invoke" verb that completes the package-author testing loop:
+ * `activateExtensionForTest` → `assertRegisteredCommandContract` → **run** →
+ * `deactivateExtensionForTest`. It runs pm's real handler-dispatch engine
+ * (`runCommandHandler`) over `activation.commands`, building the
+ * `CommandHandlerContext` with agent-safe global defaults
+ * (`{ json: true, quiet: true, noPager: true }`) that callers may override.
+ *
+ * Because `registerImporter`/`registerExporter` register their handlers under
+ * the `"<name> import"` / `"<name> export"` command paths, this same helper
+ * exercises importer and exporter handlers too.
+ *
+ * Throws a descriptive error (listing the available handler command paths) when
+ * no handler is registered for `command`, since that is a wiring/typo bug in the
+ * test rather than a behavior under test. When a handler is found, the result is
+ * returned verbatim: a clean run yields `{ handled: true, result, warnings: [] }`,
+ * while a handler that throws a non-exit error yields
+ * `{ handled: false, warnings: [code], errorMessage }` so the failure can be
+ * asserted. A handler that throws an error carrying a numeric `exitCode`
+ * propagates the throw, matching runtime semantics.
+ */
+export async function runRegisteredCommandForTest(
+  commands: ExtensionCommandRegistry,
+  options: RunRegisteredCommandForTestOptions,
+): Promise<CommandHandlerResult> {
+  const command = normalizeSdkCommandName(options.command);
+  if (command.length === 0) {
+    throw new Error("Expected command name must be a non-empty string");
+  }
+  const hasHandler = commands.handlers.some((entry) => entry.command === command);
+  if (!hasHandler) {
+    const available = sortedUnique(commands.handlers.map((entry) => entry.command));
+    throw new Error(
+      `Expected a registered command handler for "${command}" to invoke. Available command handlers: ${formatAvailable(
+        available,
+      )}`,
+    );
+  }
+  return runCommandHandler(commands, {
+    command,
+    args: options.args ? [...options.args] : [],
+    options: options.options ? { ...options.options } : {},
+    global: { json: true, quiet: true, noPager: true, ...options.global },
+    pm_root: options.pmRoot ?? "",
+  });
 }
 
 /**

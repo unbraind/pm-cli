@@ -1986,11 +1986,18 @@ describe("extension command runtime", () => {
       expect(sampleTest).toContain("  assertExtensionDeactivated,");
       expect(sampleTest).toContain("  assertRegisteredCommandContract,");
       expect(sampleTest).toContain("  deactivateExtensionForTest,");
+      expect(sampleTest).toContain("  runRegisteredCommandForTest,");
       expect(sampleTest).toContain('} from "@unbrained/pm-cli/sdk/testing";');
       expect(sampleTest).toContain('import extension from "./index.js";');
       expect(sampleTest).toContain('capabilities: ["commands"]');
       expect(sampleTest).toContain('command: "starter-package ping"');
       expect(sampleTest).toContain('assert.equal(typeof registered.command.description, "string");');
+      // The invoke step demonstrates exercising the handler's behavior through
+      // pm's real dispatch engine, not just asserting it is registered.
+      expect(sampleTest).toContain("const invocation = await runRegisteredCommandForTest(activation.commands, {");
+      expect(sampleTest).toContain("assert.equal(invocation.handled, true);");
+      expect(sampleTest).toContain("assert.equal(invocation.result.ok, true);");
+      expect(sampleTest).toContain('assert.equal(invocation.result.command, "starter-package ping");');
       // The teardown test demonstrates deactivateExtensionForTest + the clean
       // teardown assertion.
       expect(sampleTest).toContain("tears down cleanly via deactivate");
