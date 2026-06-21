@@ -16,6 +16,14 @@ import { normalizeManagedDirectoryName } from "./shared.js";
 // tracks the manifest schema generation (currently 1).
 const SCAFFOLD_MANIFEST_VERSION = 1;
 const SCAFFOLD_PM_MIN_VERSION = "2026.5.0";
+const SCAFFOLD_DECLARED_PERMISSIONS = {
+  fs_read: false,
+  fs_write: false,
+  network: false,
+  env_read: false,
+  env_write: false,
+  process_spawn: false,
+};
 
 interface ExtensionScaffoldFileResult {
   path: string;
@@ -45,9 +53,12 @@ export function buildStarterExtensionScaffoldFiles(
       name: extensionName,
       version: "0.1.0",
       entry: "./index.js",
-      capabilities: ["commands"],
       manifest_version: SCAFFOLD_MANIFEST_VERSION,
       pm_min_version: SCAFFOLD_PM_MIN_VERSION,
+      trusted: true,
+      sandbox_profile: "strict",
+      permissions: { ...SCAFFOLD_DECLARED_PERMISSIONS },
+      capabilities: ["commands"],
     },
     null,
     2,
@@ -170,6 +181,9 @@ export function buildStarterExtensionScaffoldFiles(
       `- \`pm_min_version\` (string): lowest pm CLI version that may load this package. Scaffolded as \`${SCAFFOLD_PM_MIN_VERSION}\`. The loader blocks the package on older CLIs.`,
       "- `pm_max_version` (string, optional): highest pm CLI version that may load this package. Add it to block CLIs that are newer than the version you have validated against. The loader blocks the package when the CLI exceeds this bound.",
       "",
+      "## Policy Metadata",
+      "The starter command is pure compute, so `manifest.json` declares `trusted: true`, `sandbox_profile: \"strict\"`, and all six permission keys as `false`. Keep that least-privilege shape for pure packages; relax only the specific permission your package actually needs and verify with `pm package doctor --project --detail deep --trace`.",
+      "",
       "## Notes",
       "- Keep simple starter runtime behavior at the package root so local installs work without dependency bootstrapping.",
       "- Move larger runtimes into subdirectories only after adding package dependencies and validating `pm package doctor`.",
@@ -207,6 +221,9 @@ export function buildStarterExtensionScaffoldFiles(
     `- \`manifest_version\` (integer): manifest schema generation. Leave at \`${SCAFFOLD_MANIFEST_VERSION}\` unless you adopt a newer manifest schema.`,
     `- \`pm_min_version\` (string): lowest pm CLI version that may load this extension. Scaffolded as \`${SCAFFOLD_PM_MIN_VERSION}\`. The loader blocks the extension on older CLIs.`,
     "- `pm_max_version` (string, optional): highest pm CLI version that may load this extension. Add it to block CLIs that are newer than the version you have validated against. The loader blocks the extension when the CLI exceeds this bound.",
+    "",
+    "## Policy Metadata",
+    "The starter command is pure compute, so `manifest.json` declares `trusted: true`, `sandbox_profile: \"strict\"`, and all six permission keys as `false`. Keep that least-privilege shape for pure extensions; relax only the specific permission your extension actually needs and verify with `pm extension --doctor --project --detail deep --trace`.",
     "",
     "## Notes",
     "- This scaffold uses ESM exports so it works in package scopes with `type: module`.",

@@ -1838,6 +1838,16 @@ describe("extension command runtime", () => {
         name: "starter-ext",
         entry: "./index.js",
         capabilities: ["commands"],
+        trusted: true,
+        sandbox_profile: "strict",
+        permissions: {
+          fs_read: false,
+          fs_write: false,
+          network: false,
+          env_read: false,
+          env_write: false,
+          process_spawn: false,
+        },
       });
       const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
       // pm-fl0c B-1 (2026-05-28) + Codex P2 follow-up: extension-only scaffold
@@ -1850,6 +1860,9 @@ describe("extension command runtime", () => {
       expect(entry).toContain("export function activate(api)");
       expect(entry).toContain("export default {");
       expect(entry).toContain('name: "starter-ext ping"');
+      const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
+      expect(readme).toContain("## Policy Metadata");
+      expect(readme).toContain('sandbox_profile: "strict"');
 
       // pm-4ltc: the sample test + .gitignore are package-mode only. An
       // extension-only scaffold cannot `npm install` the peer SDK, so emitting
@@ -1931,6 +1944,16 @@ describe("extension command runtime", () => {
         name: "starter-package",
         entry: "./index.js",
         capabilities: ["commands"],
+        trusted: true,
+        sandbox_profile: "strict",
+        permissions: {
+          fs_read: false,
+          fs_write: false,
+          network: false,
+          env_read: false,
+          env_write: false,
+          process_spawn: false,
+        },
       });
       const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
       expect(entry).not.toContain('import { defineExtension }');
@@ -1958,6 +1981,8 @@ describe("extension command runtime", () => {
       expect(readme).toContain("## Validate the Package");
       expect(readme).toContain("npm test");
       expect(readme).toContain("`index.test.js`");
+      expect(readme).toContain("## Policy Metadata");
+      expect(readme).toContain('sandbox_profile: "strict"');
 
       const install = await runExtension(scaffoldPath, { install: true, project: true }, { path: context.pmPath });
       expect(install.details).toMatchObject({
