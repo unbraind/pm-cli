@@ -97,7 +97,11 @@ export interface ExtensionActivationSummary {
   service_overrides: ExtensionServiceName[];
   /** Output formats with a renderer override registered via `registerRenderer`. */
   renderer_overrides: OutputRendererFormat[];
-  /** Count of registered preflight overrides; the surface carries no per-entry identifier. */
+  /**
+   * Count of registered preflight overrides. The surface carries no per-entry
+   * identifier, so this is a `number` rather than `string[]` — the only numeric
+   * field in the summary.
+   */
   preflight_overrides: number;
 }
 
