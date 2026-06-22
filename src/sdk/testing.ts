@@ -2128,12 +2128,12 @@ export async function createExtensionTestHarness(
     runExporter(runOptions) {
       return runRegisteredExporterForTest(activation, runOptions);
     },
-    deactivate(deactivateOptions) {
+    deactivate({ deactivateTimeoutMs } = {}) {
       return deactivateExtensionForTest(module, {
         name,
         layer,
         activation,
-        deactivateTimeoutMs: deactivateOptions?.deactivateTimeoutMs,
+        deactivateTimeoutMs,
       });
     },
   };

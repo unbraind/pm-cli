@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","area:packages","area:sdk",dx
 created_at: "2026-06-22T09:25:53.160Z"
-updated_at: "2026-06-22T09:47:49.750Z"
+updated_at: "2026-06-22T10:03:36.607Z"
 author: claude-code-agent
 parent: pm-ugqx
 resolution: "Added createExtensionTestHarness + ExtensionTestHarness to src/sdk/testing.ts (re-exported via the sdk barrel and @unbrained/pm-cli/sdk/testing). 100% coverage (4838 tests), docstring/static/docs gates green, manual end-to-end smoke against built dist passed. Docs updated in docs/SDK.md and docs/EXTENSIONS.md."
@@ -18,8 +18,9 @@ dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-bd3u,related,"2026-06-22T09:26:36.010Z",claude-code-agent,null
   pm-l0jd,related,"2026-06-22T09:26:36.010Z",claude-code-agent,null
   pm-miqm,related,"2026-06-22T09:26:36.010Z",claude-code-agent,null
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-06-22T09:47:49.750Z",claude-code-agent,"PR #339 opened (branch feat/sdk-extension-test-harness, commit 76ce93d6): createExtensionTestHarness capstone. Full coverage 100/100/100/100 (4838 tests), all gates green, manual dist smoke passed. Triggered @codex / @gemini-code-assist / CodeRabbit review; awaiting CI + AI-bot rounds."
+  "2026-06-22T10:03:36.607Z",claude-code-agent,"Review round 1 (PR #339): Gemini fail-fast finding (medium) FIXED in commit 9f19c9b4 — harness now throws a descriptive error on activation.failed instead of returning empty registries (the 'available: (none)' footgun); +2 branch tests, testing.ts stays 100/100/100/100. Declined 2 CodeRabbit false-positives with reasons: (1) per-change tracker-ref in docs — CONTRIBUTING.md:152 is PR-description-scoped (satisfied) and no doc carries such a ref; (2) add 'exporters' capability — importers/exporters intentionally share the 'importers' capability (docs/SDK.md table + existing tests), 'exporters' is not in KNOWN_EXTENSION_CAPABILITIES by design. Re-triggered Codex/Gemini/CodeRabbit."
 notes[1]{created_at,author,text}:
   "2026-06-22T09:43:46.651Z",claude-code-agent,"Implemented createExtensionTestHarness + ExtensionTestHarness interface in src/sdk/testing.ts (re-exported via src/sdk/index.ts and the @unbrained/pm-cli/sdk/testing subpath). The factory activates a module once and returns a fluent fixture whose 16 assert*/12 run* methods + deactivate() are pre-bound to the correct activation sub-registry; methods use closures (no `this`) so they are safe to destructure. Added 4 focused tests (sdk-index.spec.ts) covering every method via one rich fixture extension + a barrel-equivalence lock. testing.ts at 100/100/100/100 coverage (415 stmts, 287 branches, 158 fns). Docs updated: docs/SDK.md (recommended-entry paragraph + exports list + example) and docs/EXTENSIONS.md (in-place, under 450-line cap). typecheck + quality:static + quality:docs-skills green. Manual end-to-end smoke (temp dir, symlinked package, real @unbrained/pm-cli/sdk/testing import) PASSED: assert/run/hook/importer/destructure/deactivate all work against the built dist."
 close_reason: "Shipped createExtensionTestHarness: a fluent ExtensionTestHarness fixture that activates a module once and binds all 16 assert*/12 run* helpers + deactivate() to the correct activation sub-registry, so package authors never thread activation.registrations/.commands/.hooks by hand."
