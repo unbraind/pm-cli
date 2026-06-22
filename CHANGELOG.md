@@ -4,6 +4,7 @@
 
 ### Added
 
+- Declarative extension authoring: composeExtension blueprint + deriveExtensionCapabilities + defineExtensionManifest ([pm-iqq0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-iqq0.toon))
 - pm extension/package describe: agent-facing CLI + MCP surface for describeExtensionActivation ([pm-l4c8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-l4c8.toon))
 - SDK describeExtensionActivation: single-call introspection of every registered surface (complements assert\*/run\*) ([pm-16ue](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-16ue.toon))
 - SDK authoring-time define\* typed builders for every extension registration surface ([pm-12tj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-12tj.toon))
