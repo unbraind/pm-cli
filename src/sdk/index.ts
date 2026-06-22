@@ -30,6 +30,7 @@ export * from "./compose.js";
 export * from "./define.js";
 export * from "./runtime.js";
 export {
+  assertExtensionBlueprint,
   assertExtensionCapabilityUsage,
   assertExtensionDeactivated,
   assertPackageManifest,

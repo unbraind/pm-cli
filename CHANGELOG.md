@@ -4,6 +4,8 @@
 
 ### Added
 
+- SDK lintExtensionBlueprint + assertExtensionBlueprint: author-time preflight for composeExtension blueprints (capability drift, duplicate commands, empty surfaces) ([pm-9ect](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-9ect.toon))
+- SDK describeExtensionBlueprint: static author-time surface map of a composeExtension blueprint (author-time inverse of describeExtensionActivation) ([pm-tlpv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-tlpv.toon))
 - Declarative extension authoring: composeExtension blueprint + deriveExtensionCapabilities + defineExtensionManifest ([pm-iqq0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-iqq0.toon))
 - pm extension/package describe: agent-facing CLI + MCP surface for describeExtensionActivation ([pm-l4c8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-l4c8.toon))
 - SDK describeExtensionActivation: single-call introspection of every registered surface (complements assert\*/run\*) ([pm-16ue](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-16ue.toon))
@@ -12,10 +14,12 @@
 
 ### Fixed
 
+- deriveExtensionCapabilities omits 'schema' for a CommandDefinition with inline flags (manifest under-grant would fail activation) ([pm-5758](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5758.toon))
 - GH-340: Windows nightly telemetry OTLP cleanup EBUSY ([pm-zpe7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zpe7.toon))
 
 ### Other
 
+- ADR: SDK author-time helpers are the static inverse of runtime extension checks (derive↔reconcile, describe-blueprint↔describe-activation, lint↔loader-enforcement+doctor) ([pm-4oio](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-4oio.toon))
 - ADR: SDK define\* builders are zero-cost identity helpers (defineConfig pattern), generic for object defs / non-generic for function defs ([pm-3mph](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-3mph.toon))
 
 ## 2026.6.22 - 2026-06-22

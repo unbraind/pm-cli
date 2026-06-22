@@ -36,6 +36,8 @@ Source of truth:
 Common authoring exports:
 
 - `defineExtension`
+- `composeExtension` / `deriveExtensionCapabilities`
+- `describeExtensionBlueprint` (static surface map of a blueprint) / `lintExtensionBlueprint` (author-time preflight)
 - `EXTENSION_CAPABILITIES`
 - `EXTENSION_CAPABILITY_CONTRACT`
 - `EXTENSION_CAPABILITY_CONTRACT_VERSION`
@@ -114,7 +116,9 @@ Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 - `assertRegisteredServiceOverride`
 - `assertRegisteredMigration`
 - `assertExtensionCapabilityUsage`
+- `assertExtensionBlueprint` (throwing preflight; pairs with `lintExtensionBlueprint`)
 - `describeExtensionActivation`
+- `describeExtensionBlueprint` / `lintExtensionBlueprint` (also surfaced here for the full author → describe → preflight → test loop)
 
 `createExtensionTestHarness(module, options)` is the recommended entry point and
 the ergonomic capstone over every standalone helper below: it activates the
@@ -734,6 +738,41 @@ malformed definition surfaces the same activation diagnostic as a hand-written
 hand-written `activate` bodies so they load in extension-only installs; reach for
 `composeExtension` in npm package-mode authoring where the SDK is a dependency.
 
+### Author-time introspection and preflight
+
+Tracked: [pm-tlpv](../.agents/pm/features/pm-tlpv.toon),
+[pm-9ect](../.agents/pm/features/pm-9ect.toon),
+[pm-4oio](../.agents/pm/decisions/pm-4oio.toon).
+
+Two pure, no-activation helpers complete the loop, so a blueprint is fully
+inspectable and verifiable before it is ever loaded — the author-time inverse of
+the runtime guardrails (the same discipline as `deriveExtensionCapabilities`
+inverting [`reconcileExtensionCapabilityUsage`](#capability-requirements)):
+
+```js
+import { describeExtensionBlueprint, lintExtensionBlueprint } from "@unbrained/pm-cli/sdk";
+
+// describeExtensionBlueprint returns the same ExtensionActivationSummary shape as
+// the runtime describeExtensionActivation — but from the blueprint data alone, no
+// activation. It is to the named surfaces what deriveExtensionCapabilities is to
+// the capability set.
+describeExtensionBlueprint(blueprint).command_handlers; // ["command-kit echo", ...]
+
+// lintExtensionBlueprint preflights for the footguns activation would otherwise
+// surface late: a capability a surface exercises but the manifest omits is an
+// `error` (the loader throws extension_capability_missing); a declared-but-unused
+// capability, a duplicate command, a command/override conflict, and a present-but-
+// empty surface are `warning`s. Pass declaredCapabilities or set manifest.capabilities.
+const report = lintExtensionBlueprint(blueprint, { declaredCapabilities: ["commands", "parser", "schema"] });
+report.ok;       // false if any error-severity finding
+report.findings; // [{ code, severity, message, capability?/command?/field? }, ...]
+```
+
+Both read only the declarative data, so the imperative `activate` escape hatch is
+invisible to them — a blueprint that registers everything through that hatch
+summarizes as empty and lints clean. In a package test, `assertExtensionBlueprint`
+(below) turns the lint into a one-line CI guard.
+
 ## Testing Helpers
 
 Package tests can assert registration contracts without depending on Vitest-specific
@@ -780,6 +819,22 @@ assertRegisteredCommandContract(activation.registrations, {
 guardrails, but it does not discover files or install packages. Use it for unit
 tests of extension registration shape; keep `pm package doctor` and runtime
 contracts in integration tests.
+
+For declarative (`composeExtension`) packages, `assertExtensionBlueprint(blueprint, options?)`
+is the `assert*` family member that preflights the blueprint *without* activating
+it — it runs `lintExtensionBlueprint` and throws if any finding is error-severity
+(today: a capability a surface exercises but the declared set omits, which would
+fail activation with `extension_capability_missing`). It returns the full
+`ExtensionBlueprintLintResult` on success so a test can still inspect advisory
+warnings:
+
+```ts
+import { assertExtensionBlueprint } from "@unbrained/pm-cli/sdk/testing";
+
+// Throws if the blueprint and its declared capabilities have drifted; otherwise
+// returns the lint result (including any non-blocking warnings) for inspection.
+const report = assertExtensionBlueprint(blueprint);
+```
 
 Invoke a registered command handler to assert its behavior (not just that it was
 registered). `runRegisteredCommandForTest` dispatches through pm's real engine and

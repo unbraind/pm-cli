@@ -1,0 +1,28 @@
+id: pm-tlpv
+title: "SDK describeExtensionBlueprint: static author-time surface map of a composeExtension blueprint (author-time inverse of describeExtensionActivation)"
+description: "Add `describeExtensionBlueprint(blueprint): ExtensionActivationSummary` to the SDK. It computes the exact same flat, sorted, de-duplicated named-surface summary that the runtime `describeExtensionActivation` (pm-16ue) returns, but PURELY from the declarative `ExtensionBlueprint` data — without loading, activating, or running any side effects.\n\nWhy: `composeExtension` (pm-iqq0) lets authors declare what to register as data, and `deriveExtensionCapabilities` already gives the author-time capability set without activation. But to see the full named surface map (commands, overrides, handlers, hooks, item types/fields, importers/exporters, search/vector adapters, parser/service/renderer overrides, flag targets, preflight count) an author still has to compose -> activate -> describe. This closes that asymmetry: capabilities have an author-time deriver; named surfaces now do too.\n\nFidelity: command paths are normalized with the SAME exported `normalizeCommandName` the loader uses, and importer/exporter handler paths are synthesized as `normalizeCommandName(\"<name> import|export\")`, exactly mirroring `toRegistrationCommandPath`. A keystone parity test asserts `describeExtensionBlueprint(bp)` deep-equals `describeExtensionActivation(activate(composeExtension(bp)))` for a blueprint exercising every surface, so any future drift in registration mechanics fails CI. The imperative `activate` escape-hatch is intentionally NOT reflected (a static describer cannot see arbitrary code) and this is documented.\n\nScope: src/sdk/compose.ts (co-located with composeExtension/deriveExtensionCapabilities), SDK barrel export, docs/SDK.md Declarative Authoring section, 100% test + docstring coverage."
+type: Feature
+status: closed
+priority: 2
+tags[3]: "area:extensions","area:sdk",pm-cli
+created_at: "2026-06-22T21:35:57.200Z"
+updated_at: "2026-06-22T22:02:08.405Z"
+author: claude-code-agent
+parent: pm-ugqx
+resolution: "Shipped describeExtensionBlueprint in src/sdk/compose.ts, parity-locked to describeExtensionActivation."
+expected_result: "An author-time, no-activation helper returns the same ExtensionActivationSummary as the runtime describe."
+actual_result: "describeExtensionBlueprint added, barrel + /sdk/testing exported, deepEqual parity test green, 100% coverage."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-16ue,related,"2026-06-22T21:36:52.135Z",null,null
+  pm-iqq0,related,"2026-06-22T21:36:56.085Z",null,null
+  pm-4oio,related,"2026-06-22T21:36:57.023Z",null,null
+learnings[1]{created_at,author,text}:
+  "2026-06-22T22:00:54.819Z",claude-code-agent,"The static describer is kept drift-free by IMPORTING the loader's own normalizers (normalizeCommandName) rather than reimplementing them, and by a keystone parity test asserting describeExtensionBlueprint(bp) deepEquals describeExtensionActivation of the composed+activated bp over a blueprint that exercises every surface. That parity discipline is what surfaced pm-5758: composing the full blueprint with an inline-flags command failed activation under the derived capability set, exposing that deriveExtensionCapabilities omitted schema. Two non-obvious parity rules: (1) a CommandDefinition with inline flags registers a flag target under its OWN path, so flag_commands unions top-level flags keys with inline-flag command names; (2) importer/exporter handler paths are normalizeCommandName('<name> import|export') and land in command_handlers (a superset of commands) but NEVER in command_overrides. The imperative activate escape hatch is invisible to any static reader and is documented as such."
+files[1]{path,scope,note}:
+  src/sdk/compose.ts,project,null
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  tests/unit/sdk/sdk-compose.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,null
+close_reason: "Shipped describeExtensionBlueprint(blueprint): static, no-activation ExtensionActivationSummary computed from the declarative blueprint, drift-locked to the runtime describeExtensionActivation by a keystone parity test. Reuses the loader's normalizeCommandName; documents the imperative-activate escape-hatch as invisible. 100% coverage, manual end-to-end verified."
+body: ""

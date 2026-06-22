@@ -15,6 +15,7 @@ import {
   PM_TOOL_PARAMETERS_SCHEMA,
   PM_TOOL_PARAMETERS_SCHEMA_VERSION,
   STATUS_VALUES,
+  assertExtensionBlueprint as assertExtensionBlueprintFromBarrel,
   assertExtensionCapabilityUsage as assertExtensionCapabilityUsageFromBarrel,
   assertExtensionDeactivated as assertExtensionDeactivatedFromBarrel,
   assertPackageManifest as assertPackageManifestFromBarrel,
@@ -83,6 +84,7 @@ import {
 } from "../../../src/sdk/index.js";
 import { _testOnlyCliContracts } from "../../../src/sdk/cli-contracts.js";
 import {
+  assertExtensionBlueprint,
   assertExtensionCapabilityUsage,
   assertExtensionDeactivated,
   assertPackageManifest,
@@ -3104,5 +3106,43 @@ describe("createExtensionTestHarness", () => {
         { name: "throwing-ext", capabilities: ["commands"] },
       ),
     ).rejects.toThrow(/createExtensionTestHarness could not activate the extension cleanly: project:throwing-ext \(.*activate boom.*\)/);
+  });
+});
+
+describe("sdk assertExtensionBlueprint", () => {
+  it("is re-exported by identity from the barrel", () => {
+    expect(assertExtensionBlueprintFromBarrel).toBe(assertExtensionBlueprint);
+  });
+
+  it("returns the lint result for a clean blueprint, exposing advisory warnings without throwing", () => {
+    const result = assertExtensionBlueprint(
+      { commands: [{ name: "a b", action: "a-b", run: () => ({}) }] },
+      { declaredCapabilities: ["commands", "search"] },
+    );
+    // `search` is declared-but-unused — a warning, not an error — so the assertion
+    // passes and the caller can still inspect the advisory finding.
+    expect(result.ok).toBe(true);
+    expect(result.findings.some((finding) => finding.code === "capability_unused")).toBe(true);
+  });
+
+  it("throws listing the error when the blueprint exercises an undeclared capability", () => {
+    expect(() =>
+      assertExtensionBlueprint(
+        { commands: [{ name: "a b", action: "a-b", run: () => ({}) }], flags: { "a b": [{ long: "--x" }] } },
+        { declaredCapabilities: ["commands"] },
+      ),
+    ).toThrow(/failed preflight with 1 error:\n\s+- \[capability_undeclared\].*schema/);
+  });
+
+  it("pluralizes the error summary when several capabilities are undeclared", () => {
+    expect(() =>
+      assertExtensionBlueprint(
+        {
+          commands: [{ name: "a b", action: "a-b", run: () => ({}) }],
+          searchProviders: [{ name: "s", query: async () => ({ hits: [] }) }],
+        },
+        { declaredCapabilities: [] },
+      ),
+    ).toThrow(/failed preflight with 2 errors:/);
   });
 });

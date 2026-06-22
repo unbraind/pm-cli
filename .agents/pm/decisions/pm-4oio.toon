@@ -1,0 +1,20 @@
+id: pm-4oio
+title: "ADR: SDK author-time helpers are the static inverse of runtime extension checks (derive↔reconcile, describe-blueprint↔describe-activation, lint↔loader-enforcement+doctor)"
+description: "Decision (living ADR): every runtime guardrail the loader/doctor enforces on an activated extension SHOULD have a pure, side-effect-free author-time counterpart in the SDK that operates on the declarative `ExtensionBlueprint` BEFORE activation. The pair is kept honest by a parity/cross-check test rather than by hand.\n\nEstablished pairs:\n- `deriveExtensionCapabilities(blueprint)` (author-time) ↔ `reconcileExtensionCapabilityUsage(loaded, activation)` (runtime used-set attribution).\n- `describeExtensionBlueprint(blueprint)` (author-time, pm-tlpv) ↔ `describeExtensionActivation(activation)` (runtime, pm-16ue) — same `ExtensionActivationSummary` shape, locked by a deepEqual parity test.\n- `lintExtensionBlueprint(blueprint)` (author-time, pm-9ect) ↔ the loader's `extension_capability_missing` hard failure + the `pm package doctor` `extension_capability_unused` advisory (pm-fk84).\n\nConsequences: (1) authors and agents catch capability drift, duplicates, and dead declarations at edit/test time, not at load time; (2) drift between the static reimplementation and the runtime is a CI failure (parity test), so the symmetry is maintained by construction — the same discipline as the `as const satisfies Record<ExtensionCapability, ...>` exhaustiveness guards already in the codebase; (3) static helpers explicitly cannot reflect the imperative `activate` escape-hatch, and must document that boundary. Aligns with the core philosophy: project management = context management — author-time introspection keeps the package surface in the author's context window without paying for activation."
+type: Decision
+status: closed
+priority: 2
+tags[4]: adr,architecture,"area:extensions","area:sdk"
+created_at: "2026-06-22T21:36:24.059Z"
+updated_at: "2026-06-22T22:02:14.716Z"
+author: claude-code-agent
+parent: pm-m2u1
+resolution: "ADR recorded and implemented across three author-time/runtime pairs, each kept honest by a parity/inverse relationship."
+expected_result: A documented principle that runtime extension guardrails get a pure author-time counterpart.
+actual_result: Decision recorded with the three established pairs and consequences; applied by pm-tlpv and pm-9ect.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-16ue,related,"2026-06-22T21:37:10.309Z",null,null
+  pm-fk84,related,"2026-06-22T21:37:11.276Z",null,null
+  pm-iqq0,related,"2026-06-22T21:37:12.212Z",null,null
+close_reason: "Recorded: SDK author-time helpers are the static inverse of runtime extension checks, kept honest by parity tests. Implemented pairs: deriveExtensionCapabilities↔reconcileExtensionCapabilityUsage, describeExtensionBlueprint↔describeExtensionActivation (pm-tlpv), lintExtensionBlueprint↔loader extension_capability_missing + doctor extension_capability_unused (pm-9ect)."
+body: ""
