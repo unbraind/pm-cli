@@ -68,7 +68,7 @@ export function defineCommand<TDefinition extends CommandDefinition>(definition:
  * Type a single flag definition for a `api.registerFlags(command, flags)` array.
  *
  * Authors compose builders into the array
- * (`registerFlags("list", [defineFlag({ long: "--mine" })])`) to get
+ * (`api.registerFlags("list", [defineFlag({ long: "--mine" })])`) to get
  * per-flag contract checking — `value_type`, `list`, and `default` included —
  * instead of validating a loosely-typed literal array all at once.
  */
@@ -100,9 +100,9 @@ export function defineItemField<TField extends SchemaFieldDefinition>(field: TFi
 /**
  * Type a schema migration definition for `api.registerMigration(definition)`.
  *
- * Infers the `run` migration runner's context and preserves the literal `id`,
- * so the same definition can be registered and later exercised through
- * `runRegisteredMigrationForTest`.
+ * Preserves the literal `id` and, when `run` is provided, infers the migration
+ * runner's context, so the same definition can be registered and later exercised
+ * through `runRegisteredMigrationForTest`.
  */
 export function defineMigration<TMigration extends SchemaMigrationDefinition>(migration: TMigration): TMigration {
   return migration;
