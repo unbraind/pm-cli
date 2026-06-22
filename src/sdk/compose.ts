@@ -258,32 +258,35 @@ export function composeExtension(blueprint: ExtensionBlueprint): ExtensionModule
     for (const entry of blueprint.exporters ?? []) {
       api.registerExporter(entry.name, entry.exporter, entry.options);
     }
-    const hooks = blueprint.hooks;
-    if (hooks !== undefined) {
-      for (const hook of hooks.beforeCommand ?? []) {
-        api.hooks.beforeCommand(hook);
-      }
-      for (const hook of hooks.afterCommand ?? []) {
-        api.hooks.afterCommand(hook);
-      }
-      for (const hook of hooks.onWrite ?? []) {
-        api.hooks.onWrite(hook);
-      }
-      for (const hook of hooks.onRead ?? []) {
-        api.hooks.onRead(hook);
-      }
-      for (const hook of hooks.onIndex ?? []) {
-        api.hooks.onIndex(hook);
-      }
+    // `?? {}` (rather than a `!== undefined` guard) so an untyped JavaScript
+    // author who passes `hooks: null` is treated the same as omitting it,
+    // instead of throwing on the first `hooks.beforeCommand` access.
+    const hooks: ExtensionBlueprintHooks = blueprint.hooks ?? {};
+    for (const hook of hooks.beforeCommand ?? []) {
+      api.hooks.beforeCommand(hook);
+    }
+    for (const hook of hooks.afterCommand ?? []) {
+      api.hooks.afterCommand(hook);
+    }
+    for (const hook of hooks.onWrite ?? []) {
+      api.hooks.onWrite(hook);
+    }
+    for (const hook of hooks.onRead ?? []) {
+      api.hooks.onRead(hook);
+    }
+    for (const hook of hooks.onIndex ?? []) {
+      api.hooks.onIndex(hook);
     }
     await blueprint.activate?.(api);
   };
 
+  // Truthy checks (rather than `!== undefined`) so an explicit `null` mirror or
+  // teardown is treated as absent instead of copied onto the module.
   const module: ExtensionModule = { activate };
-  if (blueprint.manifest !== undefined) {
+  if (blueprint.manifest) {
     module.manifest = blueprint.manifest;
   }
-  if (blueprint.deactivate !== undefined) {
+  if (blueprint.deactivate) {
     module.deactivate = blueprint.deactivate;
   }
   return module;
@@ -331,8 +334,11 @@ type BlueprintRegistrationField =
   | "importers"
   | "exporters";
 
-function hasEntries(value: readonly unknown[] | Record<string, unknown> | undefined): boolean {
-  if (value === undefined) {
+function hasEntries(value: readonly unknown[] | Record<string, unknown> | null | undefined): boolean {
+  // `!value` treats both `null` and `undefined` as "no entries", so an untyped
+  // JavaScript author cannot crash capability derivation with an explicit null
+  // field — `Object.keys(null)` would otherwise throw.
+  if (!value) {
     return false;
   }
   if (Array.isArray(value)) {
@@ -358,8 +364,9 @@ export function deriveExtensionCapabilities(blueprint: ExtensionBlueprint): Exte
       capabilities.add(capability);
     }
   }
-  const hooks = blueprint.hooks;
-  if (hooks !== undefined && [hooks.beforeCommand, hooks.afterCommand, hooks.onWrite, hooks.onRead, hooks.onIndex].some(hasEntries)) {
+  // `?? {}` keeps an explicit `hooks: null` from throwing, mirroring composeExtension.
+  const hooks: ExtensionBlueprintHooks = blueprint.hooks ?? {};
+  if ([hooks.beforeCommand, hooks.afterCommand, hooks.onWrite, hooks.onRead, hooks.onIndex].some(hasEntries)) {
     capabilities.add("hooks");
   }
   return [...capabilities].sort((left, right) => left.localeCompare(right));

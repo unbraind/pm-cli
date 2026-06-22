@@ -154,13 +154,25 @@ describe("sdk composeExtension", () => {
     });
   });
 
-  it("registers nothing when hooks is present but every kind is empty", async () => {
-    // hooks defined-but-empty exercises the `if (hooks !== undefined)` true branch
-    // with each per-kind `?? []` resolving to its empty default.
-    const composed = composeExtension({ hooks: {} });
+  it("tolerates explicit null for optional fields and hooks (untyped .js authors)", async () => {
+    // A plain-JavaScript author can pass an explicit null where the type expects
+    // an optional field; composeExtension and deriveExtensionCapabilities must
+    // treat null like undefined instead of throwing (e.g. Object.keys(null) or a
+    // null hooks dereference). The double cast models that out-of-type input.
+    const nullish = {
+      commands: null,
+      flags: null,
+      hooks: null,
+      manifest: null,
+      deactivate: null,
+    } as unknown as ExtensionBlueprint;
+    expect(deriveExtensionCapabilities(nullish)).toEqual([]);
+    const composed = composeExtension(nullish);
+    expect(composed.manifest).toBeUndefined();
+    expect(composed.deactivate).toBeUndefined();
     const activation = await activateExtensionForTest(composed, {});
-    expect(activation.hook_counts.after_command).toBe(0);
     expect(activation.failed).toEqual([]);
+    expect(activation.hook_counts.after_command).toBe(0);
   });
 });
 

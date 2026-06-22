@@ -665,9 +665,9 @@ export function activate(api) {
 Object-definition builders (`defineExtensionManifest`, `defineCommand`,
 `defineFlag`, `defineItemType`, `defineItemField`, `defineMigration`,
 `defineSearchProvider`, `defineVectorStoreAdapter`) preserve the narrow literal
-type — `defineExtensionManifest` keeps the `capabilities` tuple literal so it
-pairs with `deriveExtensionCapabilities` (see [Declarative
-Authoring](#declarative-authoring)). Function-definition
+type. `defineExtensionManifest` additionally contract-checks the in-module
+manifest mirror where it is authored and pairs with `deriveExtensionCapabilities`
+(see [Declarative Authoring](#declarative-authoring)). Function-definition
 builders (`defineCommandOverride`, `defineParserOverride`,
 `definePreflightOverride`, `defineServiceOverride`, `defineRendererOverride`,
 `defineImporter`, `defineExporter`, and the five hook builders
@@ -717,8 +717,8 @@ capability set the blueprint exercises (sorted, de-duplicated), so you can autho
 `manifest.json` `capabilities` with zero declared-but-unused or used-but-undeclared
 drift. It is the author-time inverse of the runtime
 [`reconcileExtensionCapabilityUsage`](#capability-requirements) check, and the set
-it returns is exactly what `composeExtension`'s generated `activate` requires —
-the two agree by construction:
+it returns is the set `composeExtension`'s generated `activate` requires — they
+agree by construction:
 
 ```js
 deriveExtensionCapabilities(blueprint); // ["commands", "parser", "schema"]

@@ -57,12 +57,12 @@ import type {
  * Type an extension's in-module manifest mirror (the `manifest` export / field).
  *
  * Completes the `define*` family: the manifest is the one authoring surface that
- * otherwise had no builder. Checks the object against {@link ExtensionManifest}
- * while preserving literals — `name`, `version`, and especially the
- * `capabilities` tuple — so a plain-JavaScript package gets contract checking on
- * the metadata the loader reads. Pair with
+ * otherwise had no builder. Contract-checks the object against
+ * {@link ExtensionManifest} where it is authored, so a plain-JavaScript package
+ * catches a missing required field or a mistyped key at edit time instead of at
+ * load time. Pair with
  * {@link ./compose.js#deriveExtensionCapabilities | `deriveExtensionCapabilities`}
- * to keep `capabilities` exactly matched to the surfaces the extension registers.
+ * to keep `capabilities` matched to the surfaces the extension actually registers.
  */
 export function defineExtensionManifest<TManifest extends ExtensionManifest>(manifest: TManifest): TManifest {
   return manifest;
