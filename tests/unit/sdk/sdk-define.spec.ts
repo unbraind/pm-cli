@@ -42,7 +42,11 @@ import {
   defineVectorStoreAdapter as defineVectorStoreAdapterFromBarrel,
   type ExtensionApi,
 } from "../../../src/sdk/index.js";
-import { activateExtensionForTest, runRegisteredCommandForTest } from "../../../src/sdk/testing.js";
+import {
+  activateExtensionForTest,
+  runRegisteredCommandForTest,
+  runRegisteredHookForTest,
+} from "../../../src/sdk/testing.js";
 
 describe("sdk define builders", () => {
   it("returns every registration definition unchanged (zero-cost identity)", () => {
@@ -147,5 +151,15 @@ describe("sdk define builders", () => {
     expect(activation.registration_counts.search_providers).toBe(1);
     const run = await runRegisteredCommandForTest(activation.commands, { command: "demo run" });
     expect(run).toEqual({ handled: true, result: { ok: true, command: "demo run" }, warnings: [] });
+
+    // The defineAfterCommandHook output is a dispatchable hook: fire it through
+    // the real runner and assert its recorded side effect, so the test fails if
+    // hook registration or dispatch regresses (not just that activation counted).
+    const warnings = await runRegisteredHookForTest(activation.hooks, {
+      kind: "after_command",
+      context: { command: "demo run", args: [], pm_root: "", ok: true },
+    });
+    expect(warnings).toEqual([]);
+    expect(observed).toEqual(["demo run"]);
   });
 });

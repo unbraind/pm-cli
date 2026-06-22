@@ -577,6 +577,8 @@ import { createPmCliExpectedError } from "@unbrained/pm-cli/sdk/runtime";
 
 ## Authoring Builders
 
+Tracked: [pm-12tj](../.agents/pm/features/pm-12tj.toon) (design rationale: ADR [pm-3mph](../.agents/pm/decisions/pm-3mph.toon)).
+
 The `define*` builders are the authoring half of the `author → register → test`
 loop: they type a registration definition where you write it, before it ever
 reaches `api.register*`. Each is a zero-cost identity function (it returns its
