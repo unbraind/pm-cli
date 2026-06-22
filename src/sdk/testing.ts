@@ -94,6 +94,17 @@ import { normalizeKnownExtensionCapability } from "../core/extensions/extension-
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import type { PmPackageManifest, PmPackageResourceKind } from "../core/packages/manifest.js";
 
+// `describeExtensionActivation` is the `describe` (enumerate-all) verb that
+// pairs with the `assert*` (verify-one) and `run*` (invoke-one) helpers below.
+// It lives in core (it walks the same registries the loader populates) and is
+// surfaced here so package authors get the whole testing surface from the
+// `@unbrained/pm-cli/sdk/testing` subpath.
+export {
+  describeExtensionActivation,
+  type DescribeExtensionActivationOptions,
+  type ExtensionActivationSummary,
+} from "../core/extensions/activation-summary.js";
+
 interface TestExtensionModule {
   manifest?: Partial<ExtensionManifest>;
   activate?: unknown;

@@ -114,6 +114,7 @@ Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 - `assertRegisteredServiceOverride`
 - `assertRegisteredMigration`
 - `assertExtensionCapabilityUsage`
+- `describeExtensionActivation`
 
 `createExtensionTestHarness(module, options)` is the recommended entry point and
 the ergonomic capstone over every standalone helper below: it activates the
@@ -231,6 +232,41 @@ importer / exporter is registered (and, for providers and adapters, implements t
 requested operation), so a typo surfaces as a descriptive error rather than a
 silent no-op. All invoke helpers are `async`, so a test always `await`s them.
 
+`describeExtensionActivation(activation, { extensionName })` is the **describe**
+(enumerate-all) verb that complements the `assertRegistered*` (verify-one) and
+`runRegistered*ForTest` (invoke-one) helpers. The activation result already
+carries per-surface *counts*; this returns the *names*. It walks every
+sub-registry once and returns a flat `ExtensionActivationSummary` whose arrays
+are de-duplicated and locale-sorted (except `hooks`, emitted in canonical
+lifecycle order to mirror `hook_counts`) of every registered surface's
+identifiers — command paths, hook kinds, item-type /
+field names, migration ids, importer / exporter / provider / adapter names,
+overridden service names and renderer formats, flag target-commands, and the
+preflight-override count — plus the `capabilities` those surfaces exercise. Two
+uses:
+
+```ts
+import { describeExtensionActivation } from "@unbrained/pm-cli/sdk/testing";
+
+const summary = describeExtensionActivation(activation);
+// Least-privilege check: assert the WHOLE registration surface in one deepEqual.
+assert.deepEqual(summary.commands, ["greet hello"]);
+assert.deepEqual(summary.hooks, ["after_command"]);
+assert.deepEqual(summary.capabilities, ["commands", "hooks"]);
+```
+
+Without `extensionName` the summary unions every extension in the activation;
+with it (matched case-insensitively after trimming, like
+`collectUsedExtensionCapabilities`) only that extension's registrations
+contribute. The three command fields capture distinct dimensions and can
+overlap: `commands` lists definitions declared via `registerCommand(definition)`,
+`command_handlers` lists every command path backed by an extension handler (a
+superset that also includes the synthesized `"<name> import"` / `"<name> export"`
+importer/exporter paths), and `command_overrides` lists built-in commands
+replaced via `registerCommand(name, override)`. For agents, one call returns the
+entire surface instead of traversing fifteen-plus sub-registries — keeping the context
+window lean ("project management = context management").
+
 Commander option contract exports:
 
 - `CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS`
@@ -266,6 +302,7 @@ the registration surfaces a package actually exercises at activation):
 Common types:
 
 - `ExtensionApi`
+- `ExtensionActivationSummary`
 - `ExtensionManifest`
 - `ExtensionManifestEngines`
 - `CommandDefinition`
