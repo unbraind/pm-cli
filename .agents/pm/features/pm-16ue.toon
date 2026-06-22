@@ -1,0 +1,19 @@
+id: pm-16ue
+title: "SDK describeExtensionActivation: single-call introspection of every registered surface (complements assert*/run*)"
+description: "Add a describe/introspection verb to the SDK testing surface. ExtensionActivationResult already exposes per-surface COUNTS (hook_counts, registration_counts, *_count) but no single API enumerating WHAT was registered by name: a package author or agent must walk all 15+ sub-registries (registrations.commands/flags/item_types/item_fields/migrations/importers/exporters/search_providers/vector_store_adapters, commands.overrides/handlers, parsers/preflight/services/renderers.overrides, hooks.before/after/onWrite/onRead/onIndex) by hand to answer 'what does this extension register?'. describeExtensionActivation(activation, {extensionName?}) returns a flat, sorted, deterministic ExtensionActivationSummary of every surface's identifiers (command paths, hook kinds, item-type/field names, migration ids, importer/exporter/provider/adapter names, overridden service names + renderer formats, flag target-commands, preflight override count) plus the capabilities exercised (reusing collectUsedExtensionCapabilities). Value: (1) agents get one token-efficient call instead of traversing every sub-registry; (2) authors can assert their WHOLE registration surface in one deepEqual ('I register exactly these surfaces, nothing more' = a least-privilege check). Completes the author(define*) -> register(api.register*) -> verify-one(assert*) -> invoke-one(run*) -> enumerate-all(describe) ergonomics. New src/core/extensions/activation-summary.ts, re-exported via @unbrained/pm-cli/sdk and /sdk/testing, 100% line+branch+docstring coverage, documented in docs/SDK.md."
+type: Feature
+status: in_progress
+priority: 2
+tags[5]: agent-ux,"area:extensions","area:sdk",living-map,pm-cli
+created_at: "2026-06-22T12:51:14.910Z"
+updated_at: "2026-06-22T13:06:54.204Z"
+assignee: claude-code-agent
+author: claude-code-agent
+parent: pm-ugqx
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-12tj,related,"2026-06-22T12:51:25.493Z",null,null
+  pm-miqm,related,"2026-06-22T12:51:26.007Z",null,null
+  pm-6pmp,related,"2026-06-22T12:51:26.377Z",null,null
+notes[1]{created_at,author,text}:
+  "2026-06-22T13:06:54.204Z",claude-code-agent,"Implemented src/core/extensions/activation-summary.ts: describeExtensionActivation(activation, {extensionName?}) -> ExtensionActivationSummary. Pure function, walks every sub-registry the loader populates (same surfaces capability-usage attributes), returns flat sorted/deduped identifier arrays for all 16 surfaces + capabilities (reusing collectUsedExtensionCapabilities). Re-exported from sdk/index.ts barrel AND sdk/testing.ts subpath (barrel identity locked via toBe in the spec). KEY findings: (1) registerMigration allows id-less migrations -> migrations field uses a narrowing flatMap (cast-free, the empty-array branch is reachable+covered); (2) importer/exporter command paths land in commands.handlers but NOT registrations.commands unless command-metadata options are passed -> commands vs command_handlers genuinely differ, documented in interface JSDoc + test. 7 new tests in tests/unit/core/extensions/activation-summary.spec.ts (full-surface, flag dedup, union+filter, no-match-empty, id-less migration, empty activation, barrel identity). 100% line/branch/func/stmt on the module. Documented in docs/SDK.md (Testing Helpers prose + Public Exports + Common types). Full suite: 4850 tests green, 100/100/100/100 coverage. Manual temp-dir verify: real package imported describeExtensionActivation from @unbrained/pm-cli/sdk/testing, activated, got full surface + filter in one call."
+body: ""
