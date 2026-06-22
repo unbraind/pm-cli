@@ -167,7 +167,6 @@ function buildActivateBodyLines(
   const searchProviderName = `${extensionName}-search`;
   const vectorAdapterName = `${extensionName}-vector`;
   const adapterName = `${extensionName.replace(/-/g, " ")} items`;
-  const adapterActionPrefix = `${extensionName}-items`;
   const commandLines = [
     "  api.registerCommand({",
     `    name: ${JSON.stringify(commandName)},`,
@@ -237,7 +236,7 @@ function buildActivateBodyLines(
       "      args: context.args,",
       "    }),",
       "    {",
-      `      action: ${JSON.stringify(`${adapterActionPrefix}-import`)},`,
+      `      action: ${JSON.stringify(`${adapterName} import`)},`,
       '      description: "Import starter records into pm context.",',
       "      flags: [",
       "        {",
@@ -258,7 +257,7 @@ function buildActivateBodyLines(
       "      args: context.args,",
       "    }),",
       "    {",
-      `      action: ${JSON.stringify(`${adapterActionPrefix}-export`)},`,
+      `      action: ${JSON.stringify(`${adapterName} export`)},`,
       '      description: "Export pm context into starter records.",',
       "      flags: [",
       "        {",

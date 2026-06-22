@@ -2166,9 +2166,9 @@ describe("extension command runtime", () => {
 
       const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
       expect(entry).toContain("api.registerImporter(");
-      expect(entry).toContain('action: "starter-importers-items-import"');
+      expect(entry).toContain('action: "starter importers items import"');
       expect(entry).toContain("api.registerExporter(");
-      expect(entry).toContain('action: "starter-importers-items-export"');
+      expect(entry).toContain('action: "starter importers items export"');
 
       const sampleTest = await readFile(path.join(scaffoldPath, "index.test.js"), "utf8");
       expect(sampleTest).toContain("  assertRegisteredImporter,");
