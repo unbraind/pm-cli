@@ -12,6 +12,10 @@
 
 - GH-340: Windows nightly telemetry OTLP cleanup EBUSY ([pm-zpe7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zpe7.toon))
 
+### Other
+
+- ADR: SDK define\* builders are zero-cost identity helpers (defineConfig pattern), generic for object defs / non-generic for function defs ([pm-3mph](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-3mph.toon))
+
 ## 2026.6.22 - 2026-06-22
 
 ### Added

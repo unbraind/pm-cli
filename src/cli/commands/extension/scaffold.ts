@@ -581,6 +581,118 @@ export function buildStarterExtensionScaffoldFiles(
     const sampleTest = buildSampleTestSource(extensionName, commandName, capability);
     const sampleTestBullet = SAMPLE_TEST_BULLETS[capability];
     const gitignore = ["node_modules/", "*.log", ""].join("\n");
+    const searchProviderName = `${extensionName}-search`;
+    const vectorAdapterName = `${extensionName}-vector`;
+    const adapterName = `${extensionName.replace(/-/g, " ")} items`;
+    const defineBuilderImports = [
+      "defineCommand",
+      ...(capability === "hooks" ? ["defineAfterCommandHook"] : []),
+      ...(capability === "search" ? ["defineSearchProvider", "defineVectorStoreAdapter"] : []),
+      ...(capability === "importers" ? ["defineImporter", "defineExporter"] : []),
+    ].join(", ");
+    const defineBuilderSnippet = [
+      "```js",
+      `import { ${defineBuilderImports} } from "@unbrained/pm-cli/sdk";`,
+      "",
+      "export const pingCommand = defineCommand({",
+      `  name: ${JSON.stringify(commandName)},`,
+      '  description: "Starter scaffold command. Replace with your own behavior.",',
+      "  run: (context) => ({ ok: true, command: context.command }),",
+      "});",
+    ];
+    if (capability === "hooks") {
+      defineBuilderSnippet.push(
+        "",
+        "export const afterCommandHook = defineAfterCommandHook((context) => {",
+        "  if (!context.ok) return;",
+        "  // React to context.affected here as your package grows.",
+        "});",
+      );
+    }
+    if (capability === "search") {
+      defineBuilderSnippet.push(
+        "",
+        "export const searchProvider = defineSearchProvider({",
+        `  name: ${JSON.stringify(searchProviderName)},`,
+        "  query: async (context) => ({",
+        "    hits: context.documents",
+        "      .filter((document) => String(document.metadata.title ?? \"\").toLowerCase().includes(context.query.toLowerCase()))",
+        "      .map((document) => ({ id: document.metadata.id, score: 1, matched_fields: [\"title\"] })),",
+        "  }),",
+        "  embed: async (context) => [context.input.length],",
+        "});",
+        "",
+        "export const vectorStoreAdapter = defineVectorStoreAdapter({",
+        `  name: ${JSON.stringify(vectorAdapterName)},`,
+        "  query: async (context) => [{ id: \"starter-vector-hit\", score: context.limit }],",
+        "  upsert: async (context) => ({ upserted: context.points.length }),",
+        "  delete: async (context) => ({ deleted: context.ids.length }),",
+        "});",
+      );
+    }
+    if (capability === "importers") {
+      defineBuilderSnippet.push(
+        "",
+        "export const importer = defineImporter(async (context) => ({",
+        "  imported: 1,",
+        "  source: context.options.source ?? \"starter\",",
+        "  args: context.args,",
+        "}));",
+        "",
+        "export const exporter = defineExporter(async (context) => ({",
+        "  exported: true,",
+        "  destination: context.options.destination ?? \"stdout\",",
+        "  args: context.args,",
+        "}));",
+      );
+    }
+    defineBuilderSnippet.push(
+      "",
+      "export function activate(api) {",
+      "  api.registerCommand(pingCommand);",
+    );
+    if (capability === "hooks") {
+      defineBuilderSnippet.push("  api.hooks.afterCommand(afterCommandHook);");
+    }
+    if (capability === "search") {
+      defineBuilderSnippet.push("  api.registerSearchProvider(searchProvider);", "  api.registerVectorStoreAdapter(vectorStoreAdapter);");
+    }
+    if (capability === "importers") {
+      defineBuilderSnippet.push(
+        `  api.registerImporter(${JSON.stringify(adapterName)}, importer, {`,
+        `    action: ${JSON.stringify(`${adapterName} import`)},`,
+        '    description: "Import starter records into pm context.",',
+        "    flags: [",
+        "      {",
+        '        long: "--source",',
+        '        value_name: "name",',
+        '        value_type: "string",',
+        '        description: "Source name or path to import from.",',
+        "      },",
+        "    ],",
+        "  });",
+        `  api.registerExporter(${JSON.stringify(adapterName)}, exporter, {`,
+        `    action: ${JSON.stringify(`${adapterName} export`)},`,
+        '    description: "Export pm context into starter records.",',
+        "    flags: [",
+        "      {",
+        '        long: "--destination",',
+        '        value_name: "name",',
+        '        value_type: "string",',
+        '        description: "Destination name or path to export to.",',
+        "      },",
+        "    ],",
+        "  });",
+      );
+    }
+    defineBuilderSnippet.push(
+      "}",
+      "",
+      "export function deactivate() {}",
+      "",
+      "export default { activate, deactivate };",
+      "```",
+    );
     const packageReadme = [
       `# ${packageName}`,
       "",
@@ -608,6 +720,15 @@ export function buildStarterExtensionScaffoldFiles(
       "```",
       "`npm test` runs `node --test`, which executes `index.test.js` against the",
       "`@unbrained/pm-cli/sdk/testing` helpers - no extra test runner required.",
+      "",
+      "## Authoring With define* Builders",
+      "`index.js` stays import-free so the package can be installed locally before",
+      "`npm install` materializes peer dependencies. After installing dependencies,",
+      "use the public SDK authoring builders for exported definitions you want",
+      "editor type-checking, contextual handler inference, and direct unit tests for:",
+      ...defineBuilderSnippet,
+      "The builders return their argument unchanged; runtime validation still lives",
+      "in `api.register*`, and behavior validation lives in `sdk/testing`.",
       ...PACKAGE_CAPABILITY_README_SECTIONS[capability],
       "",
       "## Compatibility Bounds",
