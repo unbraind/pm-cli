@@ -34,6 +34,7 @@ import {
   assertRegisteredServiceOverride as assertRegisteredServiceOverrideFromBarrel,
   assertRegisteredVectorStoreAdapter as assertRegisteredVectorStoreAdapterFromBarrel,
   activateExtensionForTest as activateExtensionForTestFromBarrel,
+  createExtensionTestHarness as createExtensionTestHarnessFromBarrel,
   deactivateExtensionForTest as deactivateExtensionForTestFromBarrel,
   runRegisteredCommandForTest as runRegisteredCommandForTestFromBarrel,
   runRegisteredCommandOverrideForTest as runRegisteredCommandOverrideForTestFromBarrel,
@@ -54,6 +55,7 @@ import {
   compactFlagAliasContracts,
   defineExtension,
   type ExtensionApi,
+  type ExtensionCapability,
   type ExtensionHookRegistry,
   type ExtensionRegistrationRegistry,
   type ExtensionServiceName,
@@ -100,6 +102,7 @@ import {
   assertRegisteredServiceOverride,
   assertRegisteredVectorStoreAdapter,
   activateExtensionForTest,
+  createExtensionTestHarness,
   deactivateExtensionForTest,
   runRegisteredCommandForTest,
   runRegisteredCommandOverrideForTest,
@@ -113,6 +116,7 @@ import {
   runRegisteredSearchProviderForTest,
   runRegisteredServiceOverrideForTest,
   runRegisteredVectorStoreAdapterForTest,
+  type ExtensionTestHarness,
 } from "../../../src/sdk/testing.js";
 import { serializeItemDocument } from "../../../src/core/item/item-format.js";
 import { readSettings as readCoreSettings, writeSettings } from "../../../src/core/store/settings.js";
@@ -912,6 +916,10 @@ describe("public sdk entrypoint", () => {
     expect(runRegisteredImporterForTestFromBarrel).toBe(runRegisteredImporterForTest);
     expect(runRegisteredExporterForTestFromBarrel).toBe(runRegisteredExporterForTest);
     expect(assertExtensionDeactivatedFromBarrel).toBe(assertExtensionDeactivated);
+    // Lock the unified harness factory — the capstone over every standalone
+    // helper — to the same implementation the testing entrypoint exports.
+    expect(typeof createExtensionTestHarnessFromBarrel).toBe("function");
+    expect(createExtensionTestHarnessFromBarrel).toBe(createExtensionTestHarness);
     // Lock the new override-assertion helpers to the same implementation the
     // testing entrypoint exports (barrel-contract for this PR's SDK surface).
     expect(assertRegisteredCommandOverrideFromBarrel).toBe(assertRegisteredCommandOverride);
@@ -2827,5 +2835,273 @@ describe("sdk testing helpers", () => {
         extensionName: "other-ext",
       }),
     ).rejects.toThrow(/Expected migration "memory-migration" from extension "other-ext" to be registered/);
+  });
+});
+
+describe("createExtensionTestHarness", () => {
+  const harnessCapabilities: ExtensionCapability[] = [
+    "commands",
+    "parser",
+    "preflight",
+    "renderers",
+    "services",
+    "hooks",
+    "schema",
+    "search",
+    "importers",
+  ];
+
+  // One in-memory extension that registers a representative of every surface the
+  // harness binds, so a single activation exercises all convenience methods. The
+  // `events` array records lifecycle-hook and teardown side effects so tests can
+  // prove a bound method ran the real registered function, not a stub.
+  const createHarnessFixtureModule = (events: string[]) => ({
+    manifest: {
+      name: "harness-ext",
+      version: "1.0.0",
+      entry: "./index.js",
+      capabilities: harnessCapabilities,
+    },
+    activate(api: ExtensionApi) {
+      api.registerCommand({
+        name: "harness hello",
+        action: "harness-hello",
+        description: "Harness handler command.",
+        flags: [{ long: "--name", value_type: "string" }],
+        run: async (context) => ({ ok: true, name: context.options.name ?? null }),
+      });
+      api.registerItemFields([{ name: "risk", type: "string" }]);
+      api.registerItemTypes([{ name: "Risk", folder: "risks", required_create_fields: ["risk"] }]);
+      api.hooks.afterCommand((context) => {
+        events.push(`after:${context.ok}`);
+      });
+      api.registerCommand("transform run", (context) => ({ doubled: context.result }));
+      api.registerParser("transform run", (context) => ({ args: [...context.args, "injected"] }));
+      api.registerPreflight((context) => ({
+        enforce_item_format_gate: !context.decision.enforce_item_format_gate,
+      }));
+      api.registerRenderer("toon", (context) => `rendered:${JSON.stringify(context.result)}`);
+      api.registerService("output_format", (context) => ({ formatted: context.payload }));
+      api.registerSearchProvider({
+        name: "memory-search",
+        query: async (context) => ({ hits: [{ id: context.query, score: context.tokens.length }] }),
+        embed: async (context) => [context.input.length],
+      });
+      api.registerVectorStoreAdapter({
+        name: "memory-vector",
+        query: async (context) => [{ id: "v1", score: context.limit }],
+      });
+      api.registerMigration({
+        id: "memory-migration",
+        description: "In-memory migration",
+        status: "Pending",
+        run: async (context) => ({ ranAt: context.pm_root, status: context.status, id: context.id }),
+      });
+      api.registerImporter("csv", (context) => ({ registration: context.registration, action: context.action }));
+      api.registerExporter("csv", (context) => ({ registration: context.registration, action: context.action }));
+    },
+    deactivate() {
+      events.push("deactivated");
+    },
+  });
+
+  it("binds every assertion helper to the correct activation sub-registry", async () => {
+    const harness = await createExtensionTestHarness(createHarnessFixtureModule([]));
+
+    // The fixture supplies a manifest name and no layer override, so the harness
+    // resolves the same name/layer activateExtensionForTest would and exposes the
+    // raw activation as an escape hatch.
+    expect(harness.name).toBe("harness-ext");
+    expect(harness.layer).toBe("project");
+    expect(harness.activation.registrations.commands).toHaveLength(1);
+
+    expect(harness.assertCommandContract({ command: "harness hello", action: "harness-hello", flags: ["--name"] }).command.action).toBe(
+      "harness-hello",
+    );
+    expect(harness.assertFlags({ targetCommand: "harness hello", flags: ["--name"] }).target_command).toBe("harness hello");
+    expect(harness.assertItemField({ field: "risk", type: "string" }).field.name).toBe("risk");
+    expect(harness.assertItemType({ itemType: "Risk", folder: "risks" }).itemType.folder).toBe("risks");
+    expect(typeof harness.assertHook({ kind: "after_command" }).run).toBe("function");
+    expect(harness.assertCommandOverride({ command: "transform run" }).command).toBe("transform run");
+    expect(harness.assertParserOverride({ command: "transform run" }).command).toBe("transform run");
+    expect(harness.assertPreflightOverride().name).toBe("harness-ext");
+    expect(harness.assertRendererOverride({ format: "toon" }).format).toBe("toon");
+    expect(harness.assertServiceOverride({ service: "output_format" }).service).toBe("output_format");
+    expect(harness.assertSearchProvider({ provider: "memory-search" }).definition.name).toBe("memory-search");
+    expect(harness.assertVectorStoreAdapter({ adapter: "memory-vector" }).definition.name).toBe("memory-vector");
+    expect(harness.assertImporter({ importer: "csv" }).importer).toBe("csv");
+    expect(harness.assertExporter({ exporter: "csv" }).exporter).toBe("csv");
+    expect(harness.assertMigration({ migration: "memory-migration" }).definition.id).toBe("memory-migration");
+
+    const usage = harness.assertCapabilityUsage({ declared: ["commands"] });
+    expect(usage.declared).toEqual(["commands"]);
+    expect(usage.unused).toEqual([]);
+  });
+
+  it("binds every invoke helper through pm's real dispatch engine", async () => {
+    const events: string[] = [];
+    const harness = await createExtensionTestHarness(createHarnessFixtureModule(events));
+
+    expect(await harness.runCommand({ command: "harness hello", options: { name: "abc" } })).toEqual({
+      handled: true,
+      result: { ok: true, name: "abc" },
+      warnings: [],
+    });
+
+    expect(
+      await harness.runHook({ kind: "after_command", context: { command: "x", args: [], pm_root: "", ok: true } }),
+    ).toEqual([]);
+    expect(events).toContain("after:true");
+
+    const commandOverride = await harness.runCommandOverride({
+      command: "transform run",
+      args: [],
+      options: {},
+      global: {},
+      pm_root: "",
+      result: 21,
+    });
+    expect(commandOverride.overridden).toBe(true);
+    expect(commandOverride.result).toEqual({ doubled: 21 });
+
+    const parserOverride = await harness.runParserOverride({
+      command: "transform run",
+      args: ["a"],
+      options: {},
+      global: {},
+      pm_root: "",
+    });
+    expect(parserOverride.overridden).toBe(true);
+    expect(parserOverride.context.args).toEqual(["a", "injected"]);
+
+    const preflightOverride = await harness.runPreflightOverride({
+      command: "anything",
+      args: [],
+      options: {},
+      global: {},
+      pm_root: "",
+      decision: {
+        enforce_item_format_gate: false,
+        run_preflight_item_format_sync: false,
+        run_extension_migrations: false,
+        enforce_mandatory_migration_gate: false,
+      },
+    });
+    expect(preflightOverride.overridden).toBe(true);
+    expect(preflightOverride.decision.enforce_item_format_gate).toBe(true);
+
+    const rendererOverride = await harness.runRendererOverride({ format: "toon", result: { a: 1 } });
+    expect(rendererOverride.rendered).toBe('rendered:{"a":1}');
+
+    const serviceOverride = await harness.runServiceOverride({ service: "output_format", payload: { hi: true } });
+    expect(serviceOverride.handled).toBe(true);
+    expect(serviceOverride.result).toEqual({ formatted: { hi: true } });
+
+    expect(
+      await harness.runSearchProvider({
+        provider: "memory-search",
+        operation: "query",
+        context: { query: "calendar", mode: "semantic", tokens: ["calendar"], options: {}, settings: {}, documents: [] },
+      }),
+    ).toEqual({ hits: [{ id: "calendar", score: 1 }] });
+    expect(
+      await harness.runSearchProvider({
+        provider: "memory-search",
+        operation: "embed",
+        context: { input: "abc", settings: {}, model: "test-model" },
+      }),
+    ).toEqual([3]);
+
+    expect(
+      await harness.runVectorStoreAdapter({
+        adapter: "memory-vector",
+        operation: "query",
+        context: { vector: [0.1, 0.2], limit: 5, settings: {} },
+      }),
+    ).toEqual([{ id: "v1", score: 5 }]);
+
+    expect(await harness.runMigration({ migration: "memory-migration", pmRoot: "/tmp/pm" })).toEqual({
+      ranAt: "/tmp/pm",
+      status: "pending",
+      id: "memory-migration",
+    });
+
+    const importResult = await harness.runImporter({ importer: "csv", args: ["source.csv"] });
+    expect(importResult.handled).toBe(true);
+    expect((importResult.result as { action: string }).action).toBe("import");
+
+    const exportResult = await harness.runExporter({ exporter: "csv", options: { limit: 5 } });
+    expect(exportResult.handled).toBe(true);
+    expect((exportResult.result as { action: string }).action).toBe("export");
+  });
+
+  it("deactivates through the harness, forwarding the resolved skip-key and optional timeout", async () => {
+    const events: string[] = [];
+    const harness = await createExtensionTestHarness(createHarnessFixtureModule(events));
+
+    // Default deactivate forwards an undefined timeout and the resolved name/layer
+    // so the real teardown engine runs the module's deactivate exactly once.
+    const cleanResult = await harness.deactivate();
+    expect(assertExtensionDeactivated(cleanResult)).toBe(cleanResult);
+    expect(events).toEqual(["deactivated"]);
+
+    // An explicit timeout exercises the forwarded-option branch.
+    const timedResult = await harness.deactivate({ deactivateTimeoutMs: 1000 });
+    expect(timedResult.deactivated).toBe(1);
+  });
+
+  it("resolves an explicit name and layer and keeps methods safe to destructure", async () => {
+    const events: string[] = [];
+    const harness: ExtensionTestHarness = await createExtensionTestHarness(createHarnessFixtureModule(events), {
+      name: "explicit-harness-ext",
+      layer: "global",
+      capabilities: harnessCapabilities,
+    });
+    expect(harness.name).toBe("explicit-harness-ext");
+    expect(harness.layer).toBe("global");
+    expect(harness.module).toBeTypeOf("object");
+
+    // Methods close over the activation rather than `this`, so destructuring keeps
+    // them callable — the ergonomic the harness promises for agent-authored tests.
+    const { assertCommandContract, runCommand, deactivate } = harness;
+    expect(assertCommandContract({ command: "harness hello" }).command.command).toBe("harness hello");
+    expect((await runCommand({ command: "harness hello" })).handled).toBe(true);
+
+    // A matching resolved name/layer means the teardown skip-key lines up and the
+    // module deactivates cleanly even after the methods were detached.
+    expect(assertExtensionDeactivated(await deactivate()).deactivated).toBe(1);
+  });
+
+  it("fails fast with a descriptive error when a registration is dropped for a missing capability", async () => {
+    // registerItemFields needs the "schema" capability; declaring only "commands"
+    // drops the registration, so the harness throws (with the missing-capability
+    // hint) instead of returning a fixture whose registries are silently empty.
+    await expect(
+      createExtensionTestHarness(
+        {
+          activate(api: ExtensionApi) {
+            api.registerItemFields([{ name: "risk", type: "string" }]);
+          },
+        },
+        { name: "missing-cap-ext", capabilities: ["commands"] },
+      ),
+    ).rejects.toThrow(
+      /createExtensionTestHarness could not activate the extension cleanly: project:missing-cap-ext \(.*missing capability "schema"\)/,
+    );
+  });
+
+  it("fails fast without a capability hint when activation throws a generic error", async () => {
+    // A generic activate throw has no registration-validation trace, so the error
+    // reports just the failure reason — covering the no-missing-capability branch.
+    await expect(
+      createExtensionTestHarness(
+        {
+          activate() {
+            throw new Error("activate boom");
+          },
+        },
+        { name: "throwing-ext", capabilities: ["commands"] },
+      ),
+    ).rejects.toThrow(/createExtensionTestHarness could not activate the extension cleanly: project:throwing-ext \(.*activate boom.*\)/);
   });
 });
