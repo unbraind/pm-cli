@@ -212,7 +212,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm package init ./my-hook-package --capability hooks",
       "pm package init ./my-search-package --capability search",
       "pm package init ./my-sync-package --capability importers",
-      "pm install ./my-search-package --project",
+      "pm install ./my-sync-package --project",
       "pm package doctor --project --detail summary",
     ],
     tips: [
@@ -254,7 +254,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm extension init ./my-hook-extension --capability hooks",
       "pm extension init ./my-search-extension --capability search",
       "pm extension init ./my-sync-extension --capability importers",
-      "pm extension --install --project ./my-search-extension",
+      "pm extension --install --project ./my-sync-extension",
       "pm extension --doctor --project --detail summary",
     ],
     tips: [

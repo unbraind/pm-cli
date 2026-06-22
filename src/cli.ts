@@ -10,10 +10,12 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+type NodeModuleWithCompileCache = typeof nodeModule & {
+  enableCompileCache?: (cacheDir?: string) => { status?: number; message?: string };
+};
+
 function enableNodeCompileCache(): void {
-  const enableCompileCache = nodeModule.enableCompileCache as
-    | ((cacheDir?: string) => { status?: number; message?: string })
-    | undefined;
+  const { enableCompileCache } = nodeModule as NodeModuleWithCompileCache;
   if (typeof enableCompileCache !== "function" || process.env.PM_CLI_DISABLE_COMPILE_CACHE === "1") {
     return;
   }
