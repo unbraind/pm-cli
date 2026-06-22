@@ -172,9 +172,12 @@ describe("extension describe action", () => {
       expect(demo?.surfaces.commands).toContain("demo ping");
       expect(allDetails.union.commands).toContain("demo ping");
 
-      const byName = await runExtension("demo-ext", { describe: true, project: true }, { path: context.pmPath });
+      // A mixed-case target matches case-insensitively yet echoes the original
+      // casing verbatim: runExtension forwards the raw (alias-normalized, not
+      // lowercased) target, so describe never mangles the requested name.
+      const byName = await runExtension("Demo-Ext", { describe: true, project: true }, { path: context.pmPath });
       const byNameDetails = byName.details as { target: string | null; total: number };
-      expect(byNameDetails.target).toBe("demo-ext");
+      expect(byNameDetails.target).toBe("Demo-Ext");
       expect(byNameDetails.total).toBe(1);
     });
   });
