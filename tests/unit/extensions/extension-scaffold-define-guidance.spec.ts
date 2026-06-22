@@ -8,8 +8,10 @@ describe("extension scaffold define builder guidance", () => {
     const entrypoint = scaffold["index.js"] ?? "";
 
     expect(readme).toContain("## Authoring With define* Builders");
-    expect(readme).toContain('import { defineCommand, defineAfterCommandHook } from "@unbrained/pm-cli/sdk";');
-    expect(readme).toContain("Only add this when your package declares and registers hooks.");
+    expect(readme).toContain('import { defineCommand } from "@unbrained/pm-cli/sdk";');
+    expect(readme).not.toContain("defineAfterCommandHook");
+    expect(readme).toContain("api.registerCommand(pingCommand);");
+    expect(readme).toContain("export default { activate, deactivate };");
     expect(entrypoint).toContain('/** @param {import("@unbrained/pm-cli/sdk").ExtensionApi} api */');
     expect(entrypoint).not.toContain('from "@unbrained/pm-cli/sdk"');
   });
@@ -21,10 +23,26 @@ describe("extension scaffold define builder guidance", () => {
 
     expect(readme).toContain("## Authoring With define* Builders");
     expect(readme).toContain('import { defineCommand, defineAfterCommandHook } from "@unbrained/pm-cli/sdk";');
-    expect(readme).toContain("Only add this when your package declares and registers hooks.");
+    expect(readme).toContain("api.hooks.afterCommand(afterCommandHook);");
+    expect(readme).toContain("export function deactivate() {}");
     expect(readme).toContain("The builders return their argument unchanged");
     expect(entrypoint).toContain('/** @param {import("@unbrained/pm-cli/sdk").ExtensionApi} api */');
     expect(entrypoint).not.toContain('from "@unbrained/pm-cli/sdk"');
+  });
+
+  it("tailors package define* examples to search and importer capabilities", () => {
+    const searchReadme = buildStarterExtensionScaffoldFiles("search-kit", "search kit ping", "package", "search")["README.md"] ?? "";
+    const importerReadme =
+      buildStarterExtensionScaffoldFiles("sync-kit", "sync kit ping", "package", "importers")["README.md"] ?? "";
+
+    expect(searchReadme).toContain(
+      'import { defineCommand, defineSearchProvider, defineVectorStoreAdapter } from "@unbrained/pm-cli/sdk";',
+    );
+    expect(searchReadme).toContain("api.registerSearchProvider(searchProvider);");
+    expect(searchReadme).toContain("api.registerVectorStoreAdapter(vectorStoreAdapter);");
+    expect(importerReadme).toContain('import { defineCommand, defineImporter, defineExporter } from "@unbrained/pm-cli/sdk";');
+    expect(importerReadme).toContain('api.registerImporter("sync kit items", importer);');
+    expect(importerReadme).toContain('api.registerExporter("sync kit items", exporter);');
   });
 
   it("keeps standalone extension scaffolds dependency-light and import-free", () => {
