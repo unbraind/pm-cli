@@ -41,8 +41,12 @@ describe("extension scaffold define builder guidance", () => {
     expect(searchReadme).toContain("api.registerSearchProvider(searchProvider);");
     expect(searchReadme).toContain("api.registerVectorStoreAdapter(vectorStoreAdapter);");
     expect(importerReadme).toContain('import { defineCommand, defineImporter, defineExporter } from "@unbrained/pm-cli/sdk";');
-    expect(importerReadme).toContain('api.registerImporter("sync kit items", importer);');
-    expect(importerReadme).toContain('api.registerExporter("sync kit items", exporter);');
+    expect(importerReadme).toContain('api.registerImporter("sync kit items", importer, {');
+    expect(importerReadme).toContain('action: "sync kit items import"');
+    expect(importerReadme).toContain('long: "--source"');
+    expect(importerReadme).toContain('api.registerExporter("sync kit items", exporter, {');
+    expect(importerReadme).toContain('action: "sync kit items export"');
+    expect(importerReadme).toContain('long: "--destination"');
   });
 
   it("keeps standalone extension scaffolds dependency-light and import-free", () => {

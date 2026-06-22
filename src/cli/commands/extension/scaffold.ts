@@ -659,8 +659,30 @@ export function buildStarterExtensionScaffoldFiles(
     }
     if (capability === "importers") {
       defineBuilderSnippet.push(
-        `  api.registerImporter(${JSON.stringify(adapterName)}, importer);`,
-        `  api.registerExporter(${JSON.stringify(adapterName)}, exporter);`,
+        `  api.registerImporter(${JSON.stringify(adapterName)}, importer, {`,
+        `    action: ${JSON.stringify(`${adapterName} import`)},`,
+        '    description: "Import starter records into pm context.",',
+        "    flags: [",
+        "      {",
+        '        long: "--source",',
+        '        value_name: "name",',
+        '        value_type: "string",',
+        '        description: "Source name or path to import from.",',
+        "      },",
+        "    ],",
+        "  });",
+        `  api.registerExporter(${JSON.stringify(adapterName)}, exporter, {`,
+        `    action: ${JSON.stringify(`${adapterName} export`)},`,
+        '    description: "Export pm context into starter records.",',
+        "    flags: [",
+        "      {",
+        '        long: "--destination",',
+        '        value_name: "name",',
+        '        value_type: "string",',
+        '        description: "Destination name or path to export to.",',
+        "      },",
+        "    ],",
+        "  });",
       );
     }
     defineBuilderSnippet.push(
