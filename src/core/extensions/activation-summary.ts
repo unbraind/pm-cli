@@ -31,7 +31,7 @@ import type {
   ExtensionServiceName,
   OutputRendererFormat,
 } from "./extension-types.js";
-import { collectUsedExtensionCapabilities } from "./capability-usage.js";
+import { collectUsedExtensionCapabilities, normalizeExtensionName } from "./capability-usage.js";
 
 /**
  * Canonical lifecycle hook kinds paired with their {@link ExtensionHookRegistry}
@@ -129,8 +129,11 @@ export function describeExtensionActivation(
   activation: ExtensionActivationResult,
   options: DescribeExtensionActivationOptions = {},
 ): ExtensionActivationSummary {
-  const filter = options.extensionName !== undefined ? options.extensionName.trim().toLowerCase() : null;
-  const matches = (name: string): boolean => filter === null || name.trim().toLowerCase() === filter;
+  // Match both sides with the same normalizer collectUsedExtensionCapabilities
+  // uses for the `capabilities` field below, so a filtered summary's named
+  // surfaces and capabilities never disagree for a stored name with whitespace.
+  const filter = options.extensionName !== undefined ? normalizeExtensionName(options.extensionName) : null;
+  const matches = (name: string): boolean => filter === null || normalizeExtensionName(name) === filter;
   const collect = <TEntry extends { name: string }, TValue extends string>(
     entries: readonly TEntry[],
     identify: (entry: TEntry) => TValue,

@@ -163,6 +163,22 @@ describe("describeExtensionActivation", () => {
     ]);
   });
 
+  it("normalizes whitespace in stored names so named surfaces and capabilities agree under a filter", async () => {
+    // Activation stores extension.name verbatim, so a synthetic name can carry
+    // whitespace. The filter must trim both sides (the same normalization the
+    // capabilities field uses) or the two would disagree.
+    const activation = await activate([
+      {
+        name: "  spacey  ",
+        capabilities: ["commands"],
+        activate: (api) => api.registerCommand({ name: "spacey cmd", run: () => ({}) }),
+      },
+    ]);
+    const summary = describeExtensionActivation(activation, { extensionName: "spacey" });
+    expect(summary.commands).toEqual(["spacey cmd"]);
+    expect(summary.capabilities).toEqual(["commands"]);
+  });
+
   it("returns an empty summary when no extension matches the name filter", async () => {
     const activation = await activate([
       { name: "ext-a", capabilities: [...KNOWN_EXTENSION_CAPABILITIES], activate: registerEverySurface },

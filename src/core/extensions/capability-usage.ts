@@ -77,7 +77,16 @@ function usageKeyName(key: string): string {
   return key.slice(key.indexOf(USAGE_KEY_SEPARATOR) + 1);
 }
 
-function normalizeExtensionName(name: string): string {
+/**
+ * Canonical extension-name normalization (trim + lowercase) used to match an
+ * `extensionName` filter against a registration's stored `name`.
+ *
+ * Activation stores `extension.name` verbatim — the synthetic test-activation
+ * path (`activateExtensionForTest`) never trims it — so any helper that filters
+ * by extension name must normalize both sides with this function to stay
+ * consistent, including {@link ../extensions/activation-summary.js#describeExtensionActivation}.
+ */
+export function normalizeExtensionName(name: string): string {
   return name.trim().toLowerCase();
 }
 
