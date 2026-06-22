@@ -6,14 +6,15 @@ status: closed
 priority: 2
 tags[4]: adr,"area:sdk",living-map,pm-cli
 created_at: "2026-06-22T11:53:53.511Z"
-updated_at: "2026-06-22T15:17:28.690Z"
+updated_at: "2026-06-22T15:23:57.387Z"
 author: claude-code-agent
 parent: pm-m2u1
 resolution: Closed the ADR by aligning generated package authoring guidance with the shipped zero-cost define* SDK builder decision while keeping the runtime scaffold dependency-light.
 expected_result: "Package authors can see when and how to use define* builders from generated package scaffolds, without breaking the local install-before-dependencies workflow."
 actual_result: "Generated package README now includes a defineCommand/defineAfterCommandHook upgrade path; standalone extension scaffolds remain import-free; focused regression test, build, static/docstring gate, full coverage, package doctor, security, contracts, health, changelog, and temp-dir smoke passed."
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-06-22T15:17:20.551Z",codex-implementation-agent,"Evidence: duplicate-safe all-status search found pm-12tj as the closed implementation and pm-3mph as the open ADR; no open GitHub PRs or issues; Dependabot alerts empty; pnpm audit found no known vulnerabilities; pnpm outdated only reports Node-major-bound @types/node 26 and commander 15 while current wanted versions remain pinned. Implemented package scaffold README guidance for the SDK define* upgrade path after peer dependencies are installed, while preserving import-free entrypoints for local install-before-npm-install. Verification passed: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-scaffold-define-guidance.spec.ts; pm test pm-3mph --run --progress; pnpm build; pnpm quality:static; node scripts/run-tests.mjs coverage = 100/100/100/100 (245 files, 4853 tests); pnpm security:scan; pnpm contracts:check; pm package doctor --project --detail deep --json; pm health --check-only --summary --json; manual temp-dir smoke at /tmp/tmp.DDR3X0sX97 with pm init, pm package init --capability hooks, local install before dependencies, command invocation, README define* check, npm install --no-save current checkout, and npm test."
+  "2026-06-22T15:23:57.351Z",codex-implementation-agent,"Review follow-up: addressed CodeRabbit minor suggestions on PR #344 by marking defineAfterCommandHook as optional for packages that declare/register hooks and adding package+commands scaffold coverage for the define* guidance condition. Will rerun focused test/build/static and retrigger review agents on the new head."
 files[2]{path,scope,note}:
   src/cli/commands/extension/scaffold.ts,project,Generated package README documents define* authoring-builder upgrade path while keeping entrypoint import-free
   tests/unit/extensions/extension-scaffold-define-guidance.spec.ts,project,Regression coverage for package scaffold define* guidance and import-free entrypoint

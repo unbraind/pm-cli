@@ -624,6 +624,7 @@ export function buildStarterExtensionScaffoldFiles(
       "});",
       "",
       "export const afterCommandHook = defineAfterCommandHook((context) => {",
+      "  // Only add this when your package declares and registers hooks.",
       "  if (!context.ok) return;",
       "  // React to context.affected here as your package grows.",
       "});",
