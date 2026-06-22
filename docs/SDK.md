@@ -236,8 +236,10 @@ silent no-op. All invoke helpers are `async`, so a test always `await`s them.
 (enumerate-all) verb that complements the `assertRegistered*` (verify-one) and
 `runRegistered*ForTest` (invoke-one) helpers. The activation result already
 carries per-surface *counts*; this returns the *names*. It walks every
-sub-registry once and returns a flat, sorted `ExtensionActivationSummary` of
-every registered surface's identifiers — command paths, hook kinds, item-type /
+sub-registry once and returns a flat `ExtensionActivationSummary` whose arrays
+are de-duplicated and locale-sorted (except `hooks`, emitted in canonical
+lifecycle order to mirror `hook_counts`) of every registered surface's
+identifiers — command paths, hook kinds, item-type /
 field names, migration ids, importer / exporter / provider / adapter names,
 overridden service names and renderer formats, flag target-commands, and the
 preflight-override count — plus the `capabilities` those surfaces exercise. Two

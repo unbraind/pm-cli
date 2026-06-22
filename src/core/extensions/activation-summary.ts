@@ -49,8 +49,11 @@ const HOOK_REGISTRY_FIELD_TO_KIND = [
 /**
  * Flat, name-level enumeration of every surface an activation registered.
  *
- * Every array is sorted and de-duplicated for deterministic equality. The three
- * command fields capture distinct dimensions and can overlap: a command
+ * Arrays are de-duplicated for deterministic equality. Most are locale-sorted;
+ * {@link ExtensionActivationSummary.hooks} is the exception — it is emitted in
+ * canonical lifecycle order to mirror `ExtensionActivationResult.hook_counts`,
+ * not alphabetically. The three command fields capture distinct dimensions and
+ * can overlap: a command
  * registered via `api.registerCommand(definition)` appears in both
  * {@link ExtensionActivationSummary.commands} (its declared definition) and
  * {@link ExtensionActivationSummary.command_handlers} (its executable handler),
