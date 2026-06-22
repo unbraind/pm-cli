@@ -28,6 +28,7 @@ export {
   type PmPackageResourceMap,
 } from "../core/packages/manifest.js";
 export * from "./cli-contracts.js";
+export * from "./define.js";
 export * from "./runtime.js";
 export {
   assertExtensionCapabilityUsage,

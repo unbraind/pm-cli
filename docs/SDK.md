@@ -48,6 +48,14 @@ Common authoring exports:
 - `createPmCliExpectedError`
 - `isPmCliExpectedError`
 
+Registration builders (`define*`, zero-cost identity — see [Authoring Builders](#authoring-builders)):
+
+- `defineCommand` / `defineFlag` / `defineItemType` / `defineItemField` / `defineMigration`
+- `defineSearchProvider` / `defineVectorStoreAdapter`
+- `defineCommandOverride` / `defineParserOverride` / `definePreflightOverride` / `defineServiceOverride` / `defineRendererOverride`
+- `defineImporter` / `defineExporter`
+- `defineBeforeCommandHook` / `defineAfterCommandHook` / `defineOnWriteHook` / `defineOnReadHook` / `defineOnIndexHook`
+
 Package manifest exports:
 
 - `PM_PACKAGE_RESOURCE_KINDS` (`extensions`, `docs`, `examples`, `assets`, `prompts`)
@@ -566,6 +574,58 @@ import { createPmCliExpectedError } from "@unbrained/pm-cli/sdk/runtime";
 ```
 
 `PM_CLI_PACKAGE_ROOT` is reserved for first-party packages bundled inside this repository. Those packages use it to locate the running CLI's `dist/sdk/runtime.js` before they are installed as independent npm packages. External packages must not depend on `PM_CLI_PACKAGE_ROOT`, `dist/` paths, or `src/core/...`; declare `@unbrained/pm-cli` as a dependency or peer dependency and import the public SDK subpaths instead. When pm installs a registry package, it links that dependency to the running host CLI so the package gets the active SDK without downloading a second CLI copy into the project.
+
+## Authoring Builders
+
+Tracked: [pm-12tj](../.agents/pm/features/pm-12tj.toon) (design rationale: ADR [pm-3mph](../.agents/pm/decisions/pm-3mph.toon)).
+
+The `define*` builders are the authoring half of the `author → register → test`
+loop: they type a registration definition where you write it, before it ever
+reaches `api.register*`. Each is a zero-cost identity function (it returns its
+argument unchanged), exactly like `defineExtension` and the wider
+`defineConfig`/`defineComponent` ecosystem convention — the value is entirely at
+the type level.
+
+This matters most in **plain-JavaScript packages** (the default `pm package init`
+scaffold). A bare `const cmd = { ... }` is unchecked because JS has no type
+annotations; wrapping it in a builder restores full contract checking and infers
+the nested handler's `context` parameter through the editor's TypeScript language
+service. It also lets you colocate, export, reuse, and unit-test a definition
+apart from `activate`:
+
+```js
+import { defineCommand, defineAfterCommandHook } from "@unbrained/pm-cli/sdk";
+
+// `context` is inferred even though this is a .js file with no annotations.
+export const greetCommand = defineCommand({
+  name: "greet hello",
+  action: "greet-hello",
+  description: "Say hello.",
+  run: (context) => ({ greeting: `hi ${context.args[0] ?? "world"}` }),
+});
+
+export const auditHook = defineAfterCommandHook((context) => {
+  if (!context.ok) return;
+  // react to context.affected — "project management = context management"
+});
+
+export function activate(api) {
+  api.registerCommand(greetCommand);
+  api.hooks.afterCommand(auditHook);
+}
+```
+
+Object-definition builders (`defineCommand`, `defineFlag`, `defineItemType`,
+`defineItemField`, `defineMigration`, `defineSearchProvider`,
+`defineVectorStoreAdapter`) preserve the narrow literal type. Function-definition
+builders (`defineCommandOverride`, `defineParserOverride`,
+`definePreflightOverride`, `defineServiceOverride`, `defineRendererOverride`,
+`defineImporter`, `defineExporter`, and the five hook builders
+`defineBeforeCommandHook` / `defineAfterCommandHook` / `defineOnWriteHook` /
+`defineOnReadHook` / `defineOnIndexHook`) are non-generic so a bare arrow's
+parameter is contextually typed instead of falling back to `any`. The
+[`assertRegistered*`](#testing-helpers) helpers below verify these same
+definitions once registered.
 
 ## Testing Helpers
 

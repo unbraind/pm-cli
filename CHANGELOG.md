@@ -4,6 +4,7 @@
 
 ### Added
 
+- SDK authoring-time define\* typed builders for every extension registration surface ([pm-12tj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-12tj.toon))
 - Unified extension test harness (createExtensionTestHarness): one fluent fixture binding all activate/assert/invoke/deactivate SDK helpers ([pm-jcyn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-jcyn.toon))
 
 ### Fixed
