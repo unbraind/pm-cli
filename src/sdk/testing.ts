@@ -1886,3 +1886,233 @@ export function assertExtensionCapabilityUsage(
   }
   return { declared, used, unused };
 }
+
+/**
+ * A fluent, single-extension test fixture returned by
+ * {@link createExtensionTestHarness}.
+ *
+ * Every method binds one of the standalone SDK testing helpers to the correct
+ * sub-registry of a single {@link ExtensionActivationResult}, so a package author
+ * never threads `activation.registrations` vs `activation.commands` vs
+ * `activation.hooks` (etc.) by hand — picking the wrong sub-registry is a common
+ * footgun that surfaces as a confusing `available: (none)` error. Methods do not
+ * use `this`; they close over the activation, so they remain safe to destructure
+ * (`const { runCommand, assertCommandContract } = harness;`).
+ *
+ * The `assert*` methods verify registration wiring (returning the matched
+ * registration); the `run*` methods invoke a registered surface through pm's real
+ * dispatch engine (returning its runtime result); {@link deactivate} runs the real
+ * teardown engine. The raw {@link activation} stays public as an escape hatch to
+ * the standalone helpers for any surface not covered by a convenience method.
+ */
+export interface ExtensionTestHarness {
+  /** The in-memory extension module supplied to {@link createExtensionTestHarness}. */
+  readonly module: unknown;
+  /** Resolved extension name (manifest name, explicit override, or `"test-extension"`). */
+  readonly name: string;
+  /** Layer recorded for the in-memory extension (defaults to `"project"`). */
+  readonly layer: ExtensionLayer;
+  /** The underlying activation result; use it to reach standalone helpers directly. */
+  readonly activation: ExtensionActivationResult;
+
+  /** Bound {@link assertRegisteredCommandContract} over `activation.registrations`. */
+  assertCommandContract(expectation: RegisteredCommandContractExpectation): RegisteredCommandContractAssertion;
+  /** Bound {@link assertRegisteredFlags} over `activation.registrations`. */
+  assertFlags(expectation: RegisteredFlagsExpectation): RegisteredExtensionFlagDefinitions;
+  /** Bound {@link assertRegisteredItemField} over `activation.registrations`. */
+  assertItemField(expectation: RegisteredItemFieldExpectation): RegisteredItemFieldAssertion;
+  /** Bound {@link assertRegisteredItemType} over `activation.registrations`. */
+  assertItemType(expectation: RegisteredItemTypeExpectation): RegisteredItemTypeAssertion;
+  /** Bound {@link assertRegisteredHook} over `activation.hooks`. */
+  assertHook<TKind extends RegisteredHookKind>(
+    expectation: RegisteredHookExpectation & { kind: TKind },
+  ): ExtensionHookRegistry[(typeof HOOK_KIND_TO_REGISTRY_FIELD)[TKind]][number];
+  /** Bound {@link assertRegisteredCommandOverride} over `activation.commands`. */
+  assertCommandOverride(expectation: RegisteredCommandOverrideExpectation): RegisteredExtensionCommandOverride;
+  /** Bound {@link assertRegisteredParserOverride} over `activation.parsers`. */
+  assertParserOverride(expectation: RegisteredParserOverrideExpectation): RegisteredExtensionParserOverride;
+  /** Bound {@link assertRegisteredPreflightOverride} over `activation.preflight`. */
+  assertPreflightOverride(expectation?: RegisteredPreflightOverrideExpectation): RegisteredExtensionPreflightOverride;
+  /** Bound {@link assertRegisteredRendererOverride} over `activation.renderers`. */
+  assertRendererOverride(expectation: RegisteredRendererOverrideExpectation): RegisteredExtensionRendererOverride;
+  /** Bound {@link assertRegisteredServiceOverride} over `activation.services`. */
+  assertServiceOverride(expectation: RegisteredServiceOverrideExpectation): RegisteredExtensionServiceOverride;
+  /** Bound {@link assertRegisteredSearchProvider} over `activation.registrations`. */
+  assertSearchProvider(expectation: RegisteredSearchProviderExpectation): RegisteredExtensionSearchProvider;
+  /** Bound {@link assertRegisteredVectorStoreAdapter} over `activation.registrations`. */
+  assertVectorStoreAdapter(expectation: RegisteredVectorStoreAdapterExpectation): RegisteredExtensionVectorStoreAdapter;
+  /** Bound {@link assertRegisteredImporter} over `activation.registrations`. */
+  assertImporter(expectation: RegisteredImporterExpectation): RegisteredExtensionImporter;
+  /** Bound {@link assertRegisteredExporter} over `activation.registrations`. */
+  assertExporter(expectation: RegisteredExporterExpectation): RegisteredExtensionExporter;
+  /** Bound {@link assertRegisteredMigration} over `activation.registrations`. */
+  assertMigration(expectation: RegisteredMigrationExpectation): RegisteredExtensionSchemaMigrationDefinition;
+  /** Bound {@link assertExtensionCapabilityUsage} over the whole `activation`. */
+  assertCapabilityUsage(expectation: ExtensionCapabilityUsageExpectation): ExtensionCapabilityUsageAssertion;
+
+  /** Bound {@link runRegisteredCommandForTest} over `activation.commands`. */
+  runCommand(options: RunRegisteredCommandForTestOptions): Promise<CommandHandlerResult>;
+  /** Bound {@link runRegisteredHookForTest} over `activation.hooks`. */
+  runHook(options: RunRegisteredHookForTestOptions): Promise<string[]>;
+  /** Bound {@link runRegisteredCommandOverrideForTest} over `activation.commands`. */
+  runCommandOverride(context: CommandOverrideContext): Promise<CommandOverrideResult>;
+  /** Bound {@link runRegisteredParserOverrideForTest} over `activation.parsers`. */
+  runParserOverride(context: ParserOverrideContext): Promise<ParserOverrideResult>;
+  /** Bound {@link runRegisteredPreflightOverrideForTest} over `activation.preflight`. */
+  runPreflightOverride(context: PreflightOverrideContext): Promise<PreflightOverrideResult>;
+  /** Bound {@link runRegisteredRendererOverrideForTest} over `activation.renderers`. */
+  runRendererOverride(context: RendererOverrideContext): Promise<RendererOverrideResult>;
+  /** Bound {@link runRegisteredServiceOverrideForTest} over `activation.services`. */
+  runServiceOverride(context: ServiceOverrideContext): Promise<ServiceOverrideResult>;
+  /** Bound {@link runRegisteredSearchProviderForTest} over `activation.registrations`. */
+  runSearchProvider<Operation extends keyof SearchProviderOperationContexts>(options: {
+    provider: string;
+    operation: Operation;
+    context: SearchProviderOperationContexts[Operation];
+  }): Promise<SearchProviderOperationResults[Operation]>;
+  /** Bound {@link runRegisteredVectorStoreAdapterForTest} over `activation.registrations`. */
+  runVectorStoreAdapter<Operation extends keyof VectorStoreAdapterOperationContexts>(options: {
+    adapter: string;
+    operation: Operation;
+    context: VectorStoreAdapterOperationContexts[Operation];
+  }): Promise<VectorStoreAdapterOperationResults[Operation]>;
+  /** Bound {@link runRegisteredMigrationForTest} over `activation.registrations`. */
+  runMigration(options: RunRegisteredMigrationForTestOptions): Promise<unknown>;
+  /** Bound {@link runRegisteredImporterForTest} over the whole `activation`. */
+  runImporter(options: RunRegisteredImporterForTestOptions): Promise<CommandHandlerResult>;
+  /** Bound {@link runRegisteredExporterForTest} over the whole `activation`. */
+  runExporter(options: RunRegisteredExporterForTestOptions): Promise<CommandHandlerResult>;
+
+  /**
+   * Bound {@link deactivateExtensionForTest} — runs the real teardown engine for
+   * this harness's module, forwarding its resolved `name`/`layer`/`activation` so
+   * the skip-key matches and a never-initialized extension is not deactivated.
+   */
+  deactivate(options?: { deactivateTimeoutMs?: number }): Promise<ExtensionDeactivationResult>;
+}
+
+/**
+ * Activate one in-memory extension module and return a fluent
+ * {@link ExtensionTestHarness} that binds every SDK testing helper to the right
+ * sub-registry of the resulting activation.
+ *
+ * This is the ergonomic capstone over the standalone helpers: instead of
+ * `activateExtensionForTest(module)` followed by repeatedly threading
+ * `activation.registrations` / `activation.commands` / `activation.hooks` into
+ * each `assertRegistered*` / `runRegistered*` call, an author writes
+ * `const ext = await createExtensionTestHarness(module, { capabilities });` and
+ * then `ext.assertCommandContract(...)`, `await ext.runCommand(...)`,
+ * `await ext.deactivate()` — never needing to know pm's internal registry layout.
+ *
+ * `name` and `layer` are resolved exactly as {@link activateExtensionForTest}
+ * resolves them, and captured so {@link ExtensionTestHarness.deactivate} forwards
+ * a matching skip-key. Activation runs pm's real validation/activation engine, so
+ * every bound helper exercises real wiring and dispatch — not mocks.
+ */
+export async function createExtensionTestHarness(
+  module: unknown,
+  options: ActivateExtensionForTestOptions = {},
+): Promise<ExtensionTestHarness> {
+  const manifest = readTestExtensionManifest(module);
+  const name = resolveTestExtensionName(manifest, options.name);
+  const layer: ExtensionLayer = options.layer ?? "project";
+  const activation = await activateExtensionForTest(module, options);
+  return {
+    module,
+    name,
+    layer,
+    activation,
+    assertCommandContract(expectation) {
+      return assertRegisteredCommandContract(activation.registrations, expectation);
+    },
+    assertFlags(expectation) {
+      return assertRegisteredFlags(activation.registrations, expectation);
+    },
+    assertItemField(expectation) {
+      return assertRegisteredItemField(activation.registrations, expectation);
+    },
+    assertItemType(expectation) {
+      return assertRegisteredItemType(activation.registrations, expectation);
+    },
+    assertHook(expectation) {
+      return assertRegisteredHook(activation.hooks, expectation);
+    },
+    assertCommandOverride(expectation) {
+      return assertRegisteredCommandOverride(activation.commands, expectation);
+    },
+    assertParserOverride(expectation) {
+      return assertRegisteredParserOverride(activation.parsers, expectation);
+    },
+    assertPreflightOverride(expectation) {
+      return assertRegisteredPreflightOverride(activation.preflight, expectation);
+    },
+    assertRendererOverride(expectation) {
+      return assertRegisteredRendererOverride(activation.renderers, expectation);
+    },
+    assertServiceOverride(expectation) {
+      return assertRegisteredServiceOverride(activation.services, expectation);
+    },
+    assertSearchProvider(expectation) {
+      return assertRegisteredSearchProvider(activation.registrations, expectation);
+    },
+    assertVectorStoreAdapter(expectation) {
+      return assertRegisteredVectorStoreAdapter(activation.registrations, expectation);
+    },
+    assertImporter(expectation) {
+      return assertRegisteredImporter(activation.registrations, expectation);
+    },
+    assertExporter(expectation) {
+      return assertRegisteredExporter(activation.registrations, expectation);
+    },
+    assertMigration(expectation) {
+      return assertRegisteredMigration(activation.registrations, expectation);
+    },
+    assertCapabilityUsage(expectation) {
+      return assertExtensionCapabilityUsage(activation, expectation);
+    },
+    runCommand(runOptions) {
+      return runRegisteredCommandForTest(activation.commands, runOptions);
+    },
+    runHook(runOptions) {
+      return runRegisteredHookForTest(activation.hooks, runOptions);
+    },
+    runCommandOverride(context) {
+      return runRegisteredCommandOverrideForTest(activation.commands, context);
+    },
+    runParserOverride(context) {
+      return runRegisteredParserOverrideForTest(activation.parsers, context);
+    },
+    runPreflightOverride(context) {
+      return runRegisteredPreflightOverrideForTest(activation.preflight, context);
+    },
+    runRendererOverride(context) {
+      return runRegisteredRendererOverrideForTest(activation.renderers, context);
+    },
+    runServiceOverride(context) {
+      return runRegisteredServiceOverrideForTest(activation.services, context);
+    },
+    runSearchProvider(runOptions) {
+      return runRegisteredSearchProviderForTest(activation.registrations, runOptions);
+    },
+    runVectorStoreAdapter(runOptions) {
+      return runRegisteredVectorStoreAdapterForTest(activation.registrations, runOptions);
+    },
+    runMigration(runOptions) {
+      return runRegisteredMigrationForTest(activation.registrations, runOptions);
+    },
+    runImporter(runOptions) {
+      return runRegisteredImporterForTest(activation, runOptions);
+    },
+    runExporter(runOptions) {
+      return runRegisteredExporterForTest(activation, runOptions);
+    },
+    deactivate(deactivateOptions) {
+      return deactivateExtensionForTest(module, {
+        name,
+        layer,
+        activation,
+        deactivateTimeoutMs: deactivateOptions?.deactivateTimeoutMs,
+      });
+    },
+  };
+}

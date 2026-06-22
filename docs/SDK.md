@@ -73,6 +73,7 @@ Command/action contract exports:
 
 Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 
+- `createExtensionTestHarness`
 - `activateExtensionForTest`
 - `deactivateExtensionForTest`
 - `runRegisteredCommandForTest`
@@ -105,6 +106,20 @@ Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 - `assertRegisteredServiceOverride`
 - `assertRegisteredMigration`
 - `assertExtensionCapabilityUsage`
+
+`createExtensionTestHarness(module, options)` is the recommended entry point and
+the ergonomic capstone over every standalone helper below: it activates the
+module once and returns a fluent `ExtensionTestHarness` whose `assert*`/`run*`
+methods are pre-bound to the correct activation sub-registry, so a package author
+never threads `activation.registrations` vs `activation.commands` vs
+`activation.hooks` (etc.) by hand — picking the wrong one is a common footgun that
+surfaces as a confusing `available: (none)` error. Write
+`const ext = await createExtensionTestHarness(module, { capabilities: ["commands"] })`,
+then `ext.assertCommandContract({ command })`, `await ext.runCommand({ command })`,
+and `await ext.deactivate()`. The methods do not use `this`, so they remain safe
+to destructure (`const { runCommand } = ext;`), and the raw `ext.activation`
+stays public as an escape hatch to the standalone helpers for any surface a
+convenience method does not cover.
 
 `assertExtensionCapabilityUsage(activation, { declared })` is the least-privilege
 counterpart of the per-surface `assertRegistered*` helpers: pass the same
@@ -320,26 +335,18 @@ assertPackageManifest(manifest, {
 ```
 
 Package tests can also assert extension registrations without importing private
-loader internals. Use `activateExtensionForTest` plus the targeted assertion for
-the surface your package owns:
+loader internals. Prefer `createExtensionTestHarness` — its `assert*`/`run*`
+methods bind to the right sub-registry for you:
 
 ```ts
-import {
-  activateExtensionForTest,
-  assertRegisteredCommandContract,
-  assertRegisteredFlags,
-} from "@unbrained/pm-cli/sdk/testing";
+import { createExtensionTestHarness } from "@unbrained/pm-cli/sdk/testing";
 
-const activation = await activateExtensionForTest(extensionModule);
+const ext = await createExtensionTestHarness(extensionModule, { capabilities: ["commands", "schema"] });
 
-assertRegisteredCommandContract(activation.registrations, {
-  command: "incident triage",
-  flags: ["--severity"],
-});
-assertRegisteredFlags(activation.registrations, {
-  targetCommand: "list",
-  flags: ["--incident-filter"],
-});
+ext.assertCommandContract({ command: "incident triage", flags: ["--severity"] });
+ext.assertFlags({ targetCommand: "list", flags: ["--incident-filter"] });
+const { result } = await ext.runCommand({ command: "incident triage", options: { severity: "high" } });
+await ext.deactivate();
 ```
 
 For provider-safe schemas, use `PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`. It is flat and avoids advanced schema constructs such as root `oneOf`.
