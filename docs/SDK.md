@@ -448,7 +448,12 @@ and `deactivateExtensionForTest`. Pass `--capability search` to scaffold a
 command plus a deterministic search provider/vector-store adapter pair and a
 runnable `node:test` file that exercises `assertRegisteredSearchProvider`,
 `assertRegisteredVectorStoreAdapter`, `runRegisteredSearchProviderForTest`, and
-`runRegisteredVectorStoreAdapterForTest`.
+`runRegisteredVectorStoreAdapterForTest`. Pass `--capability importers` to
+scaffold paired import/export commands with example flag metadata and a runnable
+`node:test` file that exercises `assertRegisteredImporter`,
+`assertRegisteredExporter`, `runRegisteredImporterForTest`, and
+`runRegisteredExporterForTest`; the generated manifest declares both `importers`
+and `schema` because extension flag metadata is schema-governed.
 
 ## Self-Identity and Lifecycle
 
