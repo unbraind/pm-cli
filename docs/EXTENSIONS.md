@@ -334,11 +334,12 @@ surface guarantees.
 
 ## Lifecycle Commands
 
-Explore installed runtime entries:
+Explore installed runtime entries, or describe exactly what each loaded package registers (commands, hooks, item types, providers, overrides) as a by-name surface map:
 
 ```bash
 pm package explore --project
-pm package explore --project --json
+pm package describe --project          # every loaded package
+pm package describe my-extension       # one package's surface map
 ```
 
 Run diagnostics:

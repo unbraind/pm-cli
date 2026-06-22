@@ -267,6 +267,16 @@ replaced via `registerCommand(name, override)`. For agents, one call returns the
 entire surface instead of traversing fifteen-plus sub-registries — keeping the context
 window lean ("project management = context management").
 
+The same verb is reachable from the CLI and MCP without writing a test:
+`pm extension describe [name]` / `pm package describe [name]` (and `pm_run` with
+`action: "extension"`/`"package"` and `describe: true`) activate the workspace's
+extensions and return each loaded extension's `ExtensionActivationSummary` under
+`details.extensions[].surfaces`, plus a deduplicated `details.union`. Omit the name
+to map every loaded package; pass one to scope to it. This is the agent-facing answer
+to "what does this installed package add to my context?" — distinct from
+`pm package doctor` (errors/policy) and `pm package manage` (update metadata), which
+report only command/action paths, not the full registration surface.
+
 Commander option contract exports:
 
 - `CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS`

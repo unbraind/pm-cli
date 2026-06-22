@@ -1,0 +1,17 @@
+id: pm-l4c8
+title: "pm extension/package describe: agent-facing CLI + MCP surface for describeExtensionActivation"
+description: "Expose the SDK describeExtensionActivation verb (shipped in pm-16ue / PR #343, currently SDK-test-only) to the CLI and MCP as a read-only 'describe' action: pm extension describe [name] and pm package describe [name]. Returns the flat, per-surface registration map (commands, command_handlers, command_overrides, hooks, flag_commands, item_types, item_fields, migrations, importers, exporters, search_providers, vector_store_adapters, parser/service/renderer overrides, preflight_overrides, capabilities) for one named extension or all loaded extensions plus a union. Completes the describe (enumerate-all) verb across SDK->CLI->MCP, complementing assert*/run* (SDK) and the existing explore/manage/doctor lifecycle actions (which only surface command/action paths, not the full 16-surface map). Agent value: one token-efficient call answers 'what does this installed package add to my context?' without running doctor + manage + reading manifests. Wiring mirrors the doctor/manage precedent exactly (flag + explicit subcommand + runExtension handler + cli-contracts signature + PM_TOOL_ACTIONS enum; MCP reachable via action:extension/package + describe:true passthrough)."
+type: Feature
+status: closed
+priority: 2
+tags[6]: agent-ergonomics,"area:extensions","area:mcp","area:sdk",context-management,pm-cli
+created_at: "2026-06-22T16:21:28.709Z"
+updated_at: "2026-06-22T17:00:43.963Z"
+author: claude-code-agent
+parent: pm-ugqx
+resolution: "Added a read-only describe action to the extension/package lifecycle command. pm extension describe [name] / pm package describe [name] (and MCP pm_run action extension/package with describe=true) activate the workspace extensions and return each loaded extension's per-surface registration map under details.extensions[].surfaces plus a deduplicated details.union. New pure helper src/cli/commands/extension/describe.ts (buildExtensionDescribeResult) wraps the core describeExtensionActivation verb; runExtension orchestrates load+activate like explore/doctor. Wired flag + explicit subcommand (register-setup), flag/signature/PM_TOOL_ACTIONS contracts (cli-contracts + enum-contracts + full.json), bash/zsh completion, and help. Completes the describe verb SDK->CLI->MCP. 100/100/100/100 coverage, 4864 tests; contracts/docs-skills/static-quality gates green."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-16ue,related,"2026-06-22T16:21:43.253Z",null,null
+  pm-mpbb,related,"2026-06-22T16:21:43.551Z",null,null
+close_reason: "Shipped pm extension/package describe; SDK describeExtensionActivation now reachable from CLI+MCP. 100% coverage, all gates green."
+body: ""

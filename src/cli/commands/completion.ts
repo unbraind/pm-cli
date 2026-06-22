@@ -382,7 +382,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--criterion --clear-criteria --format --policy --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    extension)",
-    `      COMPREPLY=(${compgen("init scaffold install uninstall explore manage reload doctor adopt adopt-all activate deactivate --init --scaffold --capability --install --uninstall --explore --manage --reload --watch --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("init scaffold install uninstall explore manage describe reload doctor adopt adopt-all activate deactivate --init --scaffold --capability --install --uninstall --explore --manage --describe --reload --watch --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    comments)",
     `      COMPREPLY=(${compgen("--add --stdin --file --edit --delete --limit --author --message --allow-audit-comment --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
@@ -1594,7 +1594,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         extension)
           _arguments \\
-            '1:extension_action:(init scaffold install uninstall explore manage reload doctor adopt adopt-all activate deactivate)' \\
+            '1:extension_action:(init scaffold install uninstall explore manage describe reload doctor adopt adopt-all activate deactivate)' \\
             '--init[Generate a starter extension scaffold at target path]' \\
             '--scaffold[Alias for --init]' \\
             '--capability[Capability the init scaffold targets]:capability:(commands hooks search importers)' \\
@@ -1602,6 +1602,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--uninstall[Uninstall extension by name]' \\
             '--explore[List discovered extensions for selected scope]' \\
             '--manage[List managed extensions with update metadata]' \\
+            '--describe[Map every surface a loaded extension registers]' \\
             '--reload[Reload extensions with cache-busted module imports]' \\
             '--watch[Enable watch mode with --reload]' \\
             '--doctor[Run consolidated extension diagnostics (summary/deep)]' \\
