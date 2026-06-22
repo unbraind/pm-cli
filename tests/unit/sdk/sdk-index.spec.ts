@@ -3071,4 +3071,37 @@ describe("createExtensionTestHarness", () => {
     // module deactivates cleanly even after the methods were detached.
     expect(assertExtensionDeactivated(await deactivate()).deactivated).toBe(1);
   });
+
+  it("fails fast with a descriptive error when a registration is dropped for a missing capability", async () => {
+    // registerItemFields needs the "schema" capability; declaring only "commands"
+    // drops the registration, so the harness throws (with the missing-capability
+    // hint) instead of returning a fixture whose registries are silently empty.
+    await expect(
+      createExtensionTestHarness(
+        {
+          activate(api: ExtensionApi) {
+            api.registerItemFields([{ name: "risk", type: "string" }]);
+          },
+        },
+        { name: "missing-cap-ext", capabilities: ["commands"] },
+      ),
+    ).rejects.toThrow(
+      /createExtensionTestHarness could not activate the extension cleanly: project:missing-cap-ext \(.*missing capability "schema"\)/,
+    );
+  });
+
+  it("fails fast without a capability hint when activation throws a generic error", async () => {
+    // A generic activate throw has no registration-validation trace, so the error
+    // reports just the failure reason — covering the no-missing-capability branch.
+    await expect(
+      createExtensionTestHarness(
+        {
+          activate() {
+            throw new Error("activate boom");
+          },
+        },
+        { name: "throwing-ext", capabilities: ["commands"] },
+      ),
+    ).rejects.toThrow(/createExtensionTestHarness could not activate the extension cleanly: project:throwing-ext \(.*activate boom.*\)/);
+  });
 });

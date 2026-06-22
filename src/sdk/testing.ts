@@ -2008,6 +2008,14 @@ export interface ExtensionTestHarness {
  * resolves them, and captured so {@link ExtensionTestHarness.deactivate} forwards
  * a matching skip-key. Activation runs pm's real validation/activation engine, so
  * every bound helper exercises real wiring and dispatch — not mocks.
+ *
+ * Fails fast: if the module does not activate cleanly (e.g. a registration is
+ * dropped because the manifest omits the required capability), this throws a
+ * descriptive error listing each failure instead of returning a harness whose
+ * registries are empty — which would otherwise surface later as the confusing
+ * `available: (none)` assertion error this helper exists to prevent. Tests that
+ * deliberately exercise a *failed* activation should call
+ * {@link activateExtensionForTest} directly and inspect `activation.failed`.
  */
 export async function createExtensionTestHarness(
   module: unknown,
@@ -2017,6 +2025,20 @@ export async function createExtensionTestHarness(
   const name = resolveTestExtensionName(manifest, options.name);
   const layer: ExtensionLayer = options.layer ?? "project";
   const activation = await activateExtensionForTest(module, options);
+  if (activation.failed.length > 0) {
+    const detail = activation.failed
+      .map((failure) => {
+        const missingCapability = failure.trace?.missing_capability;
+        const reason = missingCapability ? `${failure.error}; missing capability "${missingCapability}"` : failure.error;
+        return `${failure.layer}:${failure.name} (${reason})`;
+      })
+      .join(", ");
+    throw new Error(
+      `createExtensionTestHarness could not activate the extension cleanly: ${detail}. ` +
+        "Declare the required capability in the manifest (or pass it via options.capabilities), " +
+        "or use activateExtensionForTest directly to inspect a failed activation.",
+    );
+  }
   return {
     module,
     name,
