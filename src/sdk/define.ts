@@ -36,6 +36,7 @@ import type {
   CommandDefinition,
   CommandOverride,
   Exporter,
+  ExtensionManifest,
   FlagDefinition,
   Importer,
   OnIndexHook,
@@ -51,6 +52,21 @@ import type {
   ServiceOverride,
   VectorStoreAdapterDefinition,
 } from "../core/extensions/loader.js";
+
+/**
+ * Type an extension's in-module manifest mirror (the `manifest` export / field).
+ *
+ * Completes the `define*` family: the manifest is the one authoring surface that
+ * otherwise had no builder. Checks the object against {@link ExtensionManifest}
+ * while preserving literals — `name`, `version`, and especially the
+ * `capabilities` tuple — so a plain-JavaScript package gets contract checking on
+ * the metadata the loader reads. Pair with
+ * {@link ./compose.js#deriveExtensionCapabilities | `deriveExtensionCapabilities`}
+ * to keep `capabilities` exactly matched to the surfaces the extension registers.
+ */
+export function defineExtensionManifest<TManifest extends ExtensionManifest>(manifest: TManifest): TManifest {
+  return manifest;
+}
 
 /**
  * Type a command definition for `api.registerCommand(definition)`.
