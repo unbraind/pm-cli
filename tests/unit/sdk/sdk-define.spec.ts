@@ -5,6 +5,7 @@ import {
   defineCommand,
   defineCommandOverride,
   defineExporter,
+  defineExtensionManifest,
   defineFlag,
   defineImporter,
   defineItemField,
@@ -26,6 +27,7 @@ import {
   defineCommand as defineCommandFromBarrel,
   defineCommandOverride as defineCommandOverrideFromBarrel,
   defineExporter as defineExporterFromBarrel,
+  defineExtensionManifest as defineExtensionManifestFromBarrel,
   defineFlag as defineFlagFromBarrel,
   defineImporter as defineImporterFromBarrel,
   defineItemField as defineItemFieldFromBarrel,
@@ -55,6 +57,14 @@ describe("sdk define builders", () => {
     expect(defineCommand(command)).toBe(command);
     const flag = { long: "--loud", value_type: "boolean" as const };
     expect(defineFlag(flag)).toBe(flag);
+    const manifest = {
+      name: "manifest-ext",
+      version: "1.0.0",
+      entry: "./index.js",
+      priority: 0,
+      capabilities: ["commands"] as const,
+    };
+    expect(defineExtensionManifest(manifest)).toBe(manifest);
     const itemType = { name: "Incident", folder: "incidents", aliases: ["incident"] };
     expect(defineItemType(itemType)).toBe(itemType);
     const itemField = { name: "severity", type: "string" };
@@ -97,6 +107,7 @@ describe("sdk define builders", () => {
     // Lock the authoring builders to the same implementation the dedicated
     // entrypoint exports, mirroring the assert*/run* barrel contract.
     expect(defineCommandFromBarrel).toBe(defineCommand);
+    expect(defineExtensionManifestFromBarrel).toBe(defineExtensionManifest);
     expect(defineFlagFromBarrel).toBe(defineFlag);
     expect(defineItemTypeFromBarrel).toBe(defineItemType);
     expect(defineItemFieldFromBarrel).toBe(defineItemField);

@@ -662,9 +662,12 @@ export function activate(api) {
 }
 ```
 
-Object-definition builders (`defineCommand`, `defineFlag`, `defineItemType`,
-`defineItemField`, `defineMigration`, `defineSearchProvider`,
-`defineVectorStoreAdapter`) preserve the narrow literal type. Function-definition
+Object-definition builders (`defineExtensionManifest`, `defineCommand`,
+`defineFlag`, `defineItemType`, `defineItemField`, `defineMigration`,
+`defineSearchProvider`, `defineVectorStoreAdapter`) preserve the narrow literal
+type. `defineExtensionManifest` additionally contract-checks the in-module
+manifest mirror where it is authored and pairs with `deriveExtensionCapabilities`
+(see [Declarative Authoring](#declarative-authoring)). Function-definition
 builders (`defineCommandOverride`, `defineParserOverride`,
 `definePreflightOverride`, `defineServiceOverride`, `defineRendererOverride`,
 `defineImporter`, `defineExporter`, and the five hook builders
@@ -673,6 +676,63 @@ builders (`defineCommandOverride`, `defineParserOverride`,
 parameter is contextually typed instead of falling back to `any`. The
 [`assertRegistered*`](#testing-helpers) helpers below verify these same
 definitions once registered.
+
+## Declarative Authoring
+
+Tracked: [pm-iqq0](../.agents/pm/features/pm-iqq0.toon).
+
+`composeExtension` is the capstone of the `author → register → test` loop. Instead
+of hand-wiring each `api.register*` call inside an imperative `activate(api)`
+body — calling the right method, in the right order, without forgetting one —
+describe **what** to register as a plain `ExtensionBlueprint` object and let the
+SDK generate the `activate` for you. Every field is optional; populate the
+surfaces you use (ideally with `define*`-authored definitions) and leave the rest
+out:
+
+```js
+import { composeExtension, defineCommand, deriveExtensionCapabilities } from "@unbrained/pm-cli/sdk";
+
+const echo = defineCommand({
+  name: "command-kit echo",
+  action: "command-kit-echo",
+  description: "Echo a message as structured output.",
+  run: (context) => ({ message: context.args.join(" ") }),
+});
+
+const blueprint = {
+  commands: [echo],
+  parsers: { "command-kit echo": (context) => ({ options: context.options }) },
+  flags: { list: [{ long: "--kit-note", value_type: "string", value_name: "text" }] },
+};
+
+// The generated `activate` registers commands → overrides → flags → parsers →
+// renderers → services → preflights → item types → item fields → migrations →
+// search providers → vector store adapters → importers → exporters → hooks, then
+// awaits any imperative `activate` you also pass (an escape hatch run last).
+export default composeExtension(blueprint);
+```
+
+`deriveExtensionCapabilities(blueprint)` returns the exact least-privilege
+capability set the blueprint exercises (sorted, de-duplicated), so you can author
+`manifest.json` `capabilities` with zero declared-but-unused or used-but-undeclared
+drift. It is the author-time inverse of the runtime
+[`reconcileExtensionCapabilityUsage`](#capability-requirements) check, and the set
+it returns is the set `composeExtension`'s generated `activate` requires — they
+agree by construction:
+
+```js
+deriveExtensionCapabilities(blueprint); // ["commands", "parser", "schema"]
+```
+
+The blueprint's record-keyed fields (`commandOverrides`, `flags`, `parsers`,
+`renderers`, `services`) map a routing key to its handler, mirroring the
+two-argument `api.register*` overloads; `hooks` groups the five lifecycle kinds.
+`composeExtension` is a pure assembler: it does not validate definitions —
+per-surface contract enforcement stays in `api.register*` and the loader, so a
+malformed definition surfaces the same activation diagnostic as a hand-written
+`activate`. The bundled first-party packages intentionally keep import-free
+hand-written `activate` bodies so they load in extension-only installs; reach for
+`composeExtension` in npm package-mode authoring where the SDK is a dependency.
 
 ## Testing Helpers
 

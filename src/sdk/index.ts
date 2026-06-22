@@ -12,8 +12,6 @@ import {
   KNOWN_EXTENSION_POLICY_SURFACES,
   KNOWN_EXTENSION_SANDBOX_PROFILES,
   KNOWN_EXTENSION_TRUST_MODES,
-  type ExtensionApi,
-  type ExtensionManifest,
 } from "../core/extensions/loader.js";
 export {
   PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS,
@@ -28,6 +26,7 @@ export {
   type PmPackageResourceMap,
 } from "../core/packages/manifest.js";
 export * from "./cli-contracts.js";
+export * from "./compose.js";
 export * from "./define.js";
 export * from "./runtime.js";
 export {
@@ -159,35 +158,6 @@ export {
   type CollectUsedExtensionCapabilitiesOptions,
   type ExtensionCapabilityUsageReconciliation,
 } from "../core/extensions/capability-usage.js";
-
-/**
- * Documents the extension module payload exchanged by command, SDK, and package integrations.
- */
-export interface ExtensionModule {
-  /**
-   * Optional in-module metadata mirror.
-   *
-   * The authoritative manifest remains on-disk `manifest.json`; this field is
-   * useful when authors want colocated metadata for tooling/tests.
-   */
-  manifest?: ExtensionManifest;
-  activate(api: ExtensionApi): void | Promise<void>;
-  /**
-   * Optional teardown lifecycle hook (VS Code-style `deactivate`). Invoked by
-   * the host on shutdown/reload to release resources opened during `activate`.
-   */
-  deactivate?(): void | Promise<void>;
-}
-
-/**
- * Typed identity helper for extension module exports.
- *
- * Use as:
- * `export default defineExtension({ activate(api) { ... } })`
- */
-export function defineExtension<TModule extends ExtensionModule>(module: TModule): TModule {
-  return module;
-}
 
 export type {
   AfterCommandAffectedItem,
