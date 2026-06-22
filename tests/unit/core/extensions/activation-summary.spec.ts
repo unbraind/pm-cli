@@ -97,7 +97,7 @@ describe("describeExtensionActivation", () => {
     });
   });
 
-  it("lists flag target-commands and de-duplicates sorted identifiers", async () => {
+  it("lists flag target-commands and de-duplicates them across commands and extensions", async () => {
     const activation = await activate([
       {
         name: "flagger",
@@ -113,11 +113,23 @@ describe("describeExtensionActivation", () => {
           api.registerFlags("alpha run", [{ long: "--loud", value_type: "boolean" }]);
         },
       },
+      {
+        name: "second-flagger",
+        capabilities: ["commands", "schema"],
+        activate: (api) => {
+          // Re-flags the SAME "alpha run" target and adds a distinct one.
+          api.registerFlags("alpha run", [{ long: "--again", value_type: "boolean" }]);
+          api.registerFlags("beta run", [{ long: "--x", value_type: "boolean" }]);
+        },
+      },
     ]);
     const summary = describeExtensionActivation(activation);
     expect(summary.commands).toEqual(["alpha run", "zeta run"]);
-    // registerCommand flags and registerFlags both target "alpha run" -> one entry.
-    expect(summary.flag_commands).toEqual(["alpha run"]);
+    // "alpha run" is flagged twice within flagger and again by second-flagger;
+    // the union across both registration forms and both extensions dedups to one entry.
+    expect(summary.flag_commands).toEqual(["alpha run", "beta run"]);
+    // Filtering isolates one extension's flag targets from the union.
+    expect(describeExtensionActivation(activation, { extensionName: "flagger" }).flag_commands).toEqual(["alpha run"]);
   });
 
   it("unions surfaces across extensions and filters by extension name", async () => {

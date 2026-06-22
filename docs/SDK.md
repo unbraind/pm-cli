@@ -262,7 +262,7 @@ overlap: `commands` lists definitions declared via `registerCommand(definition)`
 superset that also includes the synthesized `"<name> import"` / `"<name> export"`
 importer/exporter paths), and `command_overrides` lists built-in commands
 replaced via `registerCommand(name, override)`. For agents, one call returns the
-entire surface instead of traversing fifteen sub-registries — keeping the context
+entire surface instead of traversing fifteen-plus sub-registries — keeping the context
 window lean ("project management = context management").
 
 Commander option contract exports:
