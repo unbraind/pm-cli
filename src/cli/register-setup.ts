@@ -24,6 +24,7 @@ type ExtensionSubcommandAction =
   | "uninstall"
   | "explore"
   | "manage"
+  | "describe"
   | "reload"
   | "doctor"
   | "catalog"
@@ -56,6 +57,7 @@ function normalizeExtensionOptions(
     uninstall: isForcedAction("uninstall") || readBoolean("uninstall"),
     explore: isForcedAction("explore") || readBoolean("explore", "list"),
     manage: isForcedAction("manage") || readBoolean("manage"),
+    describe: isForcedAction("describe") || readBoolean("describe"),
     reload: isForcedAction("reload") || readBoolean("reload"),
     doctor: isForcedAction("doctor") || readBoolean("doctor"),
     catalog: isForcedAction("catalog") || readBoolean("catalog"),
@@ -179,6 +181,7 @@ function registerLifecycleCommand(
     .option("--explore", `List discovered ${plural} in selected scope`)
     .option("--list", "Alias for --explore")
     .option("--manage", `List managed ${plural} with update-check metadata`)
+    .option("--describe", `Map every surface a loaded ${noun} registers (optionally one by name)`)
     .option("--reload", `Reload ${plural} with cache-busted module imports`)
     .option("--watch", "Use watch mode with --reload")
     .option("--doctor", `Run consolidated ${noun} diagnostics (summary/deep modes)`)
@@ -264,6 +267,16 @@ function registerLifecycleCommand(
     vocabulary,
   ).action(async (_options: Record<string, unknown>, command) => {
     await executeExtensionCommand(undefined, command.optsWithGlobals() as Record<string, unknown>, command, "manage", vocabulary);
+  });
+
+  addLifecycleScopeOptions(
+    lifecycleCommand
+      .command("describe")
+      .argument("[target]", `${noun[0]!.toUpperCase()}${noun.slice(1)} name to describe (omit for every loaded ${noun})`)
+      .description(`Map every surface a loaded ${noun} registers (commands, hooks, item types, providers, overrides, ...).`),
+    vocabulary,
+  ).action(async (target: string | undefined, _options: Record<string, unknown>, command) => {
+    await executeExtensionCommand(target, command.optsWithGlobals() as Record<string, unknown>, command, "describe", vocabulary);
   });
 
   addLifecycleScopeOptions(

@@ -65,6 +65,7 @@ pm package                     # bare command defaults to --explore (list instal
 pm install '*' --project
 pm package catalog --project
 pm install npm:@scope/pm-package --project
+pm package describe --project   # by-name surface map of every loaded package
 pm package doctor --project --detail summary
 pm upgrade --dry-run
 pm upgrade --packages-only

@@ -2340,6 +2340,17 @@ describe("setup command actions", () => {
     await runCli("package", "--catalog");
     normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
     expect(normalized.catalog).toBe(true);
+
+    await runCli("package", "describe");
+    expect(lastCallArg(vi.mocked(runExtension) as never, 0)).toBeUndefined();
+    normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
+    expect(normalized.describe).toBe(true);
+    expect(normalized.vocabulary).toBe("package");
+
+    await runCli("extension", "describe", "my-ext");
+    expect(lastCallArg(vi.mocked(runExtension) as never, 0)).toBe("my-ext");
+    normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
+    expect(normalized.describe).toBe(true);
   });
 
   it("routes adopt/adopt-all/activate/deactivate lifecycle subcommands", async () => {

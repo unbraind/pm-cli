@@ -261,6 +261,16 @@
       "requires_extension": false
     },
     {
+      "action": "extension-describe",
+      "available": true,
+      "cli_exposed": true,
+      "command_path": "extension describe",
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
       "action": "extension-doctor",
       "available": true,
       "cli_exposed": true,
@@ -601,6 +611,16 @@
       "requires_extension": false
     },
     {
+      "action": "package-describe",
+      "available": true,
+      "cli_exposed": true,
+      "command_path": "package describe",
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
       "action": "package-doctor",
       "available": true,
       "cli_exposed": true,
@@ -847,6 +867,7 @@
     "extension-adopt-all",
     "extension-catalog",
     "extension-deactivate",
+    "extension-describe",
     "extension-doctor",
     "extension-explore",
     "extension-init",
@@ -881,6 +902,7 @@
     "package-adopt-all",
     "package-catalog",
     "package-deactivate",
+    "package-describe",
     "package-doctor",
     "package-explore",
     "package-init",
@@ -2234,6 +2256,9 @@
           "flag": "--manage"
         },
         {
+          "flag": "--describe"
+        },
+        {
           "flag": "--reload"
         },
         {
@@ -2371,6 +2396,21 @@
     },
     {
       "command": "extension deactivate",
+      "flags": [
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "extension describe",
       "flags": [
         {
           "flag": "--project"
@@ -4490,6 +4530,9 @@
           "flag": "--manage"
         },
         {
+          "flag": "--describe"
+        },
+        {
           "flag": "--reload"
         },
         {
@@ -4627,6 +4670,21 @@
     },
     {
       "command": "package deactivate",
+      "flags": [
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "package describe",
       "flags": [
         {
           "flag": "--project"
@@ -4809,6 +4867,9 @@
           "flag": "--manage"
         },
         {
+          "flag": "--describe"
+        },
+        {
           "flag": "--reload"
         },
         {
@@ -4946,6 +5007,21 @@
     },
     {
       "command": "packages deactivate",
+      "flags": [
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "packages describe",
       "flags": [
         {
           "flag": "--project"
@@ -7967,6 +8043,7 @@
     "extension adopt-all",
     "extension catalog",
     "extension deactivate",
+    "extension describe",
     "extension doctor",
     "extension explore",
     "extension init",
@@ -8003,6 +8080,7 @@
     "package adopt-all",
     "package catalog",
     "package deactivate",
+    "package describe",
     "package doctor",
     "package explore",
     "package init",
@@ -8016,6 +8094,7 @@
     "packages adopt-all",
     "packages catalog",
     "packages deactivate",
+    "packages describe",
     "packages doctor",
     "packages explore",
     "packages init",
@@ -9174,7 +9253,7 @@
         "additionalProperties": true,
         "properties": {
           "action": {
-            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, focus, list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, aggregate, context, ctx, get, search, history, history-redact, history-repair, history-compact, schema, activity, restore, update, update-many, close, close-many, delete, append, comments, plan, notes, learnings, files, docs, deps, test, test-all, telemetry, stats, health, validate, gc, contracts, claim, release, start-task, pause-task, close-task. Package-owned actions (for example calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume) are available dynamically when installed.",
+            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, focus, list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, aggregate, context, ctx, get, search, history, history-redact, history-repair, history-compact, schema, activity, restore, update, update-many, close, close-many, delete, append, comments, plan, notes, learnings, files, docs, deps, test, test-all, telemetry, stats, health, validate, gc, contracts, claim, release, start-task, pause-task, close-task. Package-owned actions (for example calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume) are available dynamically when installed.",
             "type": "string"
           },
           "author": {
@@ -10205,6 +10284,80 @@
           "action"
         ],
         "title": "pm action \"extension-manage\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "extension-describe",
+            "description": "Tool action to execute."
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Pm Executable.",
+            "type": "string"
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "scope": {
+            "description": "Scope selector for commands that operate on project or global state. Linked files, docs, and tests default to project scope when omitted.",
+            "enum": [
+              "project",
+              "global"
+            ],
+            "examples": [
+              "project",
+              "global"
+            ],
+            "type": "string"
+          },
+          "target": {
+            "description": "Positional target argument for the selected action (ID, source, package source, or extension name).",
+            "examples": [
+              "pm-a1b2",
+              ".agents/pm/extensions/sample",
+              "sample-extension"
+            ],
+            "type": "string"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "pm action \"extension-describe\" parameters",
         "type": "object"
       },
       {
@@ -11264,6 +11417,80 @@
           "action"
         ],
         "title": "pm action \"package-manage\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "package-describe",
+            "description": "Tool action to execute."
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Pm Executable.",
+            "type": "string"
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "scope": {
+            "description": "Scope selector for commands that operate on project or global state. Linked files, docs, and tests default to project scope when omitted.",
+            "enum": [
+              "project",
+              "global"
+            ],
+            "examples": [
+              "project",
+              "global"
+            ],
+            "type": "string"
+          },
+          "target": {
+            "description": "Positional target argument for the selected action (ID, source, package source, or extension name).",
+            "examples": [
+              "pm-a1b2",
+              ".agents/pm/extensions/sample",
+              "sample-extension"
+            ],
+            "type": "string"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "pm action \"package-describe\" parameters",
         "type": "object"
       },
       {

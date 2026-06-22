@@ -57,6 +57,7 @@ import {
   buildBundledPackageCatalog,
 } from "./extension/bundled-catalog.js";
 import { scaffoldExtensionProject } from "./extension/scaffold.js";
+import { buildExtensionDescribeResult } from "./extension/describe.js";
 import {
   applyDoctorRuntimeActivationState,
   classifyDoctorLoadFailureWarnings,
@@ -99,6 +100,7 @@ export type ExtensionCommandAction =
   | "uninstall"
   | "explore"
   | "manage"
+  | "describe"
   | "reload"
   | "doctor"
   | "catalog"
@@ -124,6 +126,7 @@ export interface ExtensionCommandOptions {
   uninstall?: boolean;
   explore?: boolean;
   manage?: boolean;
+  describe?: boolean;
   reload?: boolean;
   doctor?: boolean;
   catalog?: boolean;
@@ -580,6 +583,7 @@ function resolveAction(target: string | undefined, options: ExtensionCommandOpti
     options.uninstall ? "uninstall" : null,
     options.explore ? "explore" : null,
     options.manage ? "manage" : null,
+    options.describe ? "describe" : null,
     options.reload ? "reload" : null,
     options.doctor ? "doctor" : null,
     options.catalog ? "catalog" : null,
@@ -616,7 +620,7 @@ function resolveAction(target: string | undefined, options: ExtensionCommandOpti
       return "explore";
     }
     throw new PmCliError(
-      "One action flag is required. Use one of: --install, --uninstall, --explore, --manage, --reload, --doctor, --catalog, --init/--scaffold, --adopt, --adopt-all, --activate, --deactivate. Bare `pm package` and `pm extension` default to --explore.",
+      "One action flag is required. Use one of: --install, --uninstall, --explore, --manage, --describe, --reload, --doctor, --catalog, --init/--scaffold, --adopt, --adopt-all, --activate, --deactivate. Bare `pm package` and `pm extension` default to --explore.",
       EXIT_CODE.USAGE,
     );
   }
@@ -1945,6 +1949,33 @@ export async function runExtension(
       }
     }
     return withResult(details);
+  }
+
+  if (action === "describe") {
+    const settings = await readSettings(resolvedRoots.settings_root);
+    const loadResult = await loadExtensions({
+      pmRoot: resolvedRoots.pm_root,
+      settings,
+      cwd: process.cwd(),
+      noExtensions: global.noExtensions === true,
+    });
+    const activationResult = await activateExtensions(loadResult);
+    warnings.push(...loadResult.warnings);
+    warnings.push(...activationResult.warnings);
+    const describeResult = buildExtensionDescribeResult(normalizedTarget, loadResult, activationResult);
+    if (normalizedTarget !== undefined && describeResult.extensions.length === 0) {
+      const noun = options.vocabulary === "package" ? "package" : "extension";
+      throw new PmCliError(
+        `No loaded ${noun} named "${normalizedTarget}" was found in ${scope} scope. Run pm ${noun} explore to list discovered ${noun}s.`,
+        EXIT_CODE.NOT_FOUND,
+      );
+    }
+    return withResult({
+      target: describeResult.target,
+      total: describeResult.total,
+      extensions: describeResult.extensions,
+      union: describeResult.union,
+    });
   }
 
   /* c8 ignore start -- explore/manage action split is validated by dedicated command-action tests */
