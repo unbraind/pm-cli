@@ -1927,6 +1927,9 @@ function scheduleTelemetryFlush(globalPmRoot: string, endpoint: string, retentio
     const child = spawn(process.execPath, [telemetryFlushRunnerPath()], {
       detached: true,
       stdio: "ignore",
+      // Detached workers inherit cwd by default. On Windows that can keep a
+      // disposable project directory locked after the foreground command exits.
+      cwd: os.tmpdir(),
       env: {
         ...process.env,
         PM_GLOBAL_PATH: globalPmRoot,

@@ -1,0 +1,35 @@
+id: pm-zpe7
+title: "GH-340: Windows nightly telemetry OTLP cleanup EBUSY"
+description: Scheduled Nightly Validation failed on 2026-06-22 for windows-latest / Node 20 after telemetry-otel-nonblocking passed its foreground assertions but failed cleanup with EBUSY removing the temp root. Reuse existing observability lineage; no duplicate active item found across all statuses.
+type: Issue
+status: closed
+priority: 1
+tags[4]: "area:ci","area:telemetry",gh-340,windows
+created_at: "2026-06-22T10:53:34.353Z"
+updated_at: "2026-06-22T11:20:21.308Z"
+author: codex-sdk-cli-continuation
+parent: pm-5oj5
+reporter: github-actions
+severity: high
+environment: windows-latest / Node 20 Nightly Validation run 27944143257
+repro_steps: "gh run view 27944143257 --job 82684505929 --log shows tests/integration/telemetry-otel-nonblocking.spec.ts failed during afterAll cleanup: EBUSY rmdir temp root."
+resolution: Resolved by setting the detached telemetry flush worker cwd to os.tmpdir() so Windows no longer keeps the caller temp project directory locked after the foreground command exits; PR #341 verified on local gates and GitHub Windows Node 20 regression.
+expected_result: Nightly Windows Node 20 telemetry nonblocking test should pass without temp cleanup races.
+actual_result: "Functional assertions passed, but cleanup failed after 8 attempts because a detached telemetry flush worker can keep the temp root busy on Windows."
+comments[3]{created_at,author,text}:
+  "2026-06-22T10:58:31.892Z",codex-sdk-cli-continuation,"Evidence: Root cause from GH run 27944143257 job 82684505929: Windows Node 20 nightly failed after telemetry-otel-nonblocking functional assertions because afterAll cleanup hit EBUSY removing the temp root. The detached OTLP flush worker inherits cwd, so using the disposable temp root as cwd creates a Windows cleanup race. Patch keeps PM_PATH/PM_GLOBAL_PATH sandboxed but runs spawned CLI from repoRoot, and adds fs.rm retry options for cleanup. Verification: targeted test passed (2 tests); pnpm build passed; node scripts/run-tests.mjs coverage passed 100/100/100/100 with 242 files and 4840 tests; pnpm quality:static passed; pnpm security:scan found no credential-like secrets; pnpm audit --audit-level moderate found no known vulnerabilities; pnpm changelog:pm:check passed with pm-changelog 2026.6.20 unchanged; pm health ok; pm validate history drift ok with pre-existing resolution warnings; manual isolated temp smoke passed init/create/update/get/health. GitHub: no open PRs; GH issue #340 is the active nightly failure report; newer main CI run 27947183372 completed success including Windows Node 20."
+  "2026-06-22T11:07:27.740Z",codex-sdk-cli-continuation,"Review follow-up: Gemini correctly pointed out the stronger fix belongs in src/core/telemetry/runtime.ts. Updated scheduleTelemetryFlush to spawn the detached worker with cwd=os.tmpdir(), then restored the integration test to run the foreground CLI from the sandbox temp root and removed redundant fs.rm native retries."
+  "2026-06-22T11:11:07.687Z",codex-sdk-cli-continuation,"Evidence update after review follow-up: implemented Gemini production-code recommendation by setting detached telemetry flush worker cwd to os.tmpdir() in src/core/telemetry/runtime.ts. Restored telemetry-otel-nonblocking test cwd to context.tempRoot and removed redundant native rm retries. Verification after follow-up: targeted telemetry test passed (2 tests); pnpm build passed; pnpm quality:static passed; node scripts/run-tests.mjs coverage passed 100/100/100/100 with 242 files and 4840 tests; pnpm security:scan found no credential-like secrets; pnpm changelog:pm:check passed unchanged with pm-changelog 2026.6.20; manual isolated temp smoke passed init/create/update/get/health."
+files[2]{path,scope,note}:
+  src/core/telemetry/runtime.ts,project,Set detached telemetry flush worker cwd to OS temp dir to avoid locking caller cwd on Windows
+  tests/integration/telemetry-otel-nonblocking.spec.ts,project,Fix Windows EBUSY cleanup race in OTLP nonblocking regression test
+tests[7]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "manual temp smoke: isolated PM_PATH/PM_GLOBAL_PATH init manual-gh340 --force,create,update,get,health",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/integration/telemetry-otel-nonblocking.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm changelog:pm:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:static",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm security:scan",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Fixed GH-340 by setting detached telemetry flush worker cwd to os.tmpdir(), preventing Windows from locking caller temp project directories after foreground CLI exit. Verified targeted test, build, static quality, full 100/100/100/100 coverage, security scan, changelog check, health/validate, manual isolated temp smoke, and PR #341 CI/CodeQL/Windows regression."
+body: ""

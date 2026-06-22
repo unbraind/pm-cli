@@ -6,6 +6,10 @@
 
 - Unified extension test harness (createExtensionTestHarness): one fluent fixture binding all activate/assert/invoke/deactivate SDK helpers ([pm-jcyn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-jcyn.toon))
 
+### Fixed
+
+- GH-340: Windows nightly telemetry OTLP cleanup EBUSY ([pm-zpe7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zpe7.toon))
+
 ## 2026.6.22 - 2026-06-22
 
 ### Added
