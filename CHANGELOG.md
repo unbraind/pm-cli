@@ -4,6 +4,7 @@
 
 ### Added
 
+- Add importers package scaffold and dependency-maintenance closeout ([pm-j5az](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-j5az.toon))
 - pm package init --capability search: scaffold search provider starter packages ([pm-pwai](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-pwai.toon))
 - pm package init --capability <kind\>: scaffold capability-targeted starter packages (commands\|hook) ([pm-nhby](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-nhby.toon))
 - SDK invoke helpers for importers & exporters: runRegisteredImporterForTest + runRegisteredExporterForTest ([pm-1p2u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-1p2u.toon))

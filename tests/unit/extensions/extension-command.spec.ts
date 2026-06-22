@@ -2143,6 +2143,57 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("scaffolds importers-capability packages with runnable SDK import/export tests", async () => {
+    await withTempPmPath(async (context) => {
+      const scaffoldPath = path.join(context.tempRoot, "starter-importers");
+      const scaffold = await runExtension(scaffoldPath, {
+        init: true,
+        project: true,
+        vocabulary: "package",
+        capability: "importers",
+      }, { path: context.pmPath });
+
+      expect(scaffold.details).toMatchObject({
+        capability: "importers",
+        extension: {
+          name: "starter-importers",
+          command: "starter importers ping",
+        },
+      });
+
+      const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
+      expect(manifest.capabilities).toEqual(["commands", "schema", "importers"]);
+
+      const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
+      expect(entry).toContain("api.registerImporter(");
+      expect(entry).toContain('action: "starter-importers-items-import"');
+      expect(entry).toContain("api.registerExporter(");
+      expect(entry).toContain('action: "starter-importers-items-export"');
+
+      const sampleTest = await readFile(path.join(scaffoldPath, "index.test.js"), "utf8");
+      expect(sampleTest).toContain("  assertRegisteredImporter,");
+      expect(sampleTest).toContain("  assertRegisteredExporter,");
+      expect(sampleTest).toContain("  runRegisteredImporterForTest,");
+      expect(sampleTest).toContain("  runRegisteredExporterForTest,");
+      expect(sampleTest).toContain('capabilities: ["commands", "schema", "importers"]');
+      expect(sampleTest).toContain("assertRegisteredImporter(activation.registrations, {");
+      expect(sampleTest).toContain('importer: "starter importers items"');
+      expect(sampleTest).toContain("assertRegisteredExporter(activation.registrations, {");
+      expect(sampleTest).toContain('exporter: "starter importers items"');
+      expect(sampleTest).toContain("const imported = await runRegisteredImporterForTest(activation, {");
+      expect(sampleTest).toContain("assert.equal(imported.handled, true);");
+      expect(sampleTest).toContain('assert.deepEqual(imported.result, { imported: 1, source: "tickets", args: ["batch-1"] });');
+      expect(sampleTest).toContain("const exported = await runRegisteredExporterForTest(activation, {");
+      expect(sampleTest).toContain("assert.equal(exported.handled, true);");
+      expect(sampleTest).toContain('assert.deepEqual(exported.result, { exported: true, destination: "archive", args: ["done"] });');
+
+      const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
+      expect(readme).toContain("## Importer and Exporter");
+      expect(readme).toContain("api.registerImporter");
+      expect(readme).toContain("api.registerExporter");
+    });
+  });
+
   it("scaffolds hook-capability standalone extensions without package test files", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-hook-ext");
@@ -2207,6 +2258,42 @@ describe("extension command runtime", () => {
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Search Provider");
       expect(readme).toContain("api.registerSearchProvider");
+      await expect(readFile(path.join(scaffoldPath, "index.test.js"), "utf8")).rejects.toMatchObject({
+        code: "ENOENT",
+      });
+    });
+  });
+
+  it("scaffolds importers-capability standalone extensions without package test files", async () => {
+    await withTempPmPath(async (context) => {
+      const scaffoldPath = path.join(context.tempRoot, "starter-importers-ext");
+      const scaffold = await runExtension(scaffoldPath, {
+        init: true,
+        project: true,
+        capability: "importers",
+      }, { path: context.pmPath });
+
+      expect(scaffold.details).toMatchObject({
+        capability: "importers",
+        extension: {
+          name: "starter-importers-ext",
+          command: "starter importers ext ping",
+        },
+      });
+      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
+        "manifest.json",
+        "index.js",
+        "README.md",
+      ]);
+
+      const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
+      expect(manifest.capabilities).toEqual(["commands", "schema", "importers"]);
+      const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
+      expect(entry).toContain("api.registerImporter(");
+      expect(entry).toContain("api.registerExporter(");
+      const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
+      expect(readme).toContain("## Importer and Exporter");
+      expect(readme).toContain("api.registerImporter");
       await expect(readFile(path.join(scaffoldPath, "index.test.js"), "utf8")).rejects.toMatchObject({
         code: "ENOENT",
       });

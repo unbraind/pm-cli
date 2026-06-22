@@ -28,11 +28,12 @@ const SCAFFOLD_DECLARED_PERMISSIONS = {
 /**
  * Capability shapes the package/extension scaffolder can target via the
  * `--capability` selector. `commands` emits the default command-only starter;
- * `hooks` additionally wires an `after_command` lifecycle reactor, and
- * `search` wires an in-memory provider/adapter pair so authors can customize
- * retrieval and vector context without starting from a blank extension.
+ * `hooks` additionally wires an `after_command` lifecycle reactor, `search`
+ * wires an in-memory provider/adapter pair, and `importers` wires importer and
+ * exporter command primitives so authors can customize project context movement
+ * without starting from a blank extension.
  */
-export const SCAFFOLD_CAPABILITIES = ["commands", "hooks", "search"] as const;
+export const SCAFFOLD_CAPABILITIES = ["commands", "hooks", "search", "importers"] as const;
 
 /**
  * Restricts the `--capability` selector to a {@link SCAFFOLD_CAPABILITIES} value.
@@ -43,12 +44,14 @@ const SCAFFOLD_MANIFEST_CAPABILITIES: Record<ExtensionScaffoldCapability, readon
   commands: ["commands"],
   hooks: ["commands", "hooks"],
   search: ["commands", "search"],
+  importers: ["commands", "schema", "importers"],
 };
 
 const SAMPLE_TEST_CAPABILITIES_LITERAL: Record<ExtensionScaffoldCapability, string> = {
   commands: '["commands"]',
   hooks: '["commands", "hooks"]',
   search: '["commands", "search"]',
+  importers: '["commands", "schema", "importers"]',
 };
 
 const ENTRYPOINT_BULLETS: Record<ExtensionScaffoldCapability, string> = {
@@ -57,6 +60,8 @@ const ENTRYPOINT_BULLETS: Record<ExtensionScaffoldCapability, string> = {
     "- `index.js`: starter command registration, an `after_command` lifecycle hook, and a `deactivate` teardown stub.",
   search:
     "- `index.js`: starter command registration, a search provider, a vector-store adapter, and a `deactivate` teardown stub.",
+  importers:
+    "- `index.js`: starter command registration, importer/exporter command registrations, and a `deactivate` teardown stub.",
 };
 
 const SAMPLE_TEST_BULLETS: Record<ExtensionScaffoldCapability, string> = {
@@ -66,6 +71,8 @@ const SAMPLE_TEST_BULLETS: Record<ExtensionScaffoldCapability, string> = {
     "- `index.test.js`: sample `node:test` suite covering activation, command invocation, the after_command hook, and teardown via the SDK testing helpers.",
   search:
     "- `index.test.js`: sample `node:test` suite covering activation, command invocation, search provider/vector adapter invocation, and teardown via the SDK testing helpers.",
+  importers:
+    "- `index.test.js`: sample `node:test` suite covering activation, command invocation, importer/exporter invocation, and teardown via the SDK testing helpers.",
 };
 
 const PACKAGE_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, readonly string[]> = {
@@ -90,6 +97,16 @@ const PACKAGE_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, re
     "logic. The `search` capability in `manifest.json` grants both",
     "registrations.",
   ],
+  importers: [
+    "",
+    "## Importer and Exporter",
+    "`index.js` registers paired project-context import/export commands through",
+    "`api.registerImporter` and `api.registerExporter`. Replace the starter",
+    "payloads with your domain adapter: GitHub issues, CSV rows, documents,",
+    "tickets, or another project-management source of truth. The `importers`",
+    "capability grants both registrations, and `schema` grants the example",
+    "command flag metadata.",
+  ],
 };
 
 const EXTENSION_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, readonly string[]> = {
@@ -111,6 +128,14 @@ const EXTENSION_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, 
     "`api.registerVectorStoreAdapter`. Replace the sample scoring, embedding,",
     "and storage behavior with your project-specific retrieval logic. The",
     "`search` capability in `manifest.json` grants both registrations.",
+  ],
+  importers: [
+    "",
+    "## Importer and Exporter",
+    "`index.js` registers paired project-context import/export commands through",
+    "`api.registerImporter` and `api.registerExporter`. Replace the starter",
+    "payloads with your domain adapter. The `importers` capability grants both",
+    "registrations, and `schema` grants the example command flag metadata.",
   ],
 };
 
@@ -141,6 +166,8 @@ function buildActivateBodyLines(
 ): string[] {
   const searchProviderName = `${extensionName}-search`;
   const vectorAdapterName = `${extensionName}-vector`;
+  const adapterName = `${extensionName.replace(/-/g, " ")} items`;
+  const adapterActionPrefix = `${extensionName}-items`;
   const commandLines = [
     "  api.registerCommand({",
     `    name: ${JSON.stringify(commandName)},`,
@@ -194,6 +221,57 @@ function buildActivateBodyLines(
       "  });",
     ];
   }
+  if (capability === "importers") {
+    return [
+      ...commandLines,
+      "",
+      "  // Importers/exporters are the bridge between pm's context graph and",
+      "  // another project-management system. Keep the starter deterministic so",
+      "  // package tests can run without touching the network or filesystem; replace",
+      "  // these payloads with your adapter's real mapping as the package grows.",
+      "  api.registerImporter(",
+      `    ${JSON.stringify(adapterName)},`,
+      "    async (context) => ({",
+      "      imported: 1,",
+      "      source: context.options.source ?? \"starter\",",
+      "      args: context.args,",
+      "    }),",
+      "    {",
+      `      action: ${JSON.stringify(`${adapterActionPrefix}-import`)},`,
+      '      description: "Import starter records into pm context.",',
+      "      flags: [",
+      "        {",
+      '          long: "--source",',
+      '          value_name: "name",',
+      '          value_type: "string",',
+      '          description: "Source name or path to import from.",',
+      "        },",
+      "      ],",
+      "    },",
+      "  );",
+      "",
+      "  api.registerExporter(",
+      `    ${JSON.stringify(adapterName)},`,
+      "    async (context) => ({",
+      "      exported: true,",
+      "      destination: context.options.destination ?? \"stdout\",",
+      "      args: context.args,",
+      "    }),",
+      "    {",
+      `      action: ${JSON.stringify(`${adapterActionPrefix}-export`)},`,
+      '      description: "Export pm context into starter records.",',
+      "      flags: [",
+      "        {",
+      '          long: "--destination",',
+      '          value_name: "name",',
+      '          value_type: "string",',
+      '          description: "Destination name or path to export to.",',
+      "        },",
+      "      ],",
+      "    },",
+      "  );",
+    ];
+  }
   return [
     ...commandLines,
     "",
@@ -227,19 +305,23 @@ function buildSampleTestSource(
 ): string {
   const hooksEnabled = capability === "hooks";
   const searchEnabled = capability === "search";
+  const importersEnabled = capability === "importers";
   const capabilitiesLiteral = SAMPLE_TEST_CAPABILITIES_LITERAL[capability];
   const searchProviderName = `${extensionName}-search`;
   const vectorAdapterName = `${extensionName}-vector`;
+  const adapterName = `${extensionName.replace(/-/g, " ")} items`;
   const importNames = [
     "  activateExtensionForTest,",
     "  assertExtensionDeactivated,",
     "  assertRegisteredCommandContract,",
     ...(hooksEnabled ? ["  assertRegisteredHook,"] : []),
     ...(searchEnabled ? ["  assertRegisteredSearchProvider,", "  assertRegisteredVectorStoreAdapter,"] : []),
+    ...(importersEnabled ? ["  assertRegisteredImporter,", "  assertRegisteredExporter,"] : []),
     "  deactivateExtensionForTest,",
     "  runRegisteredCommandForTest,",
     ...(hooksEnabled ? ["  runRegisteredHookForTest,"] : []),
     ...(searchEnabled ? ["  runRegisteredSearchProviderForTest,", "  runRegisteredVectorStoreAdapterForTest,"] : []),
+    ...(importersEnabled ? ["  runRegisteredImporterForTest,", "  runRegisteredExporterForTest,"] : []),
   ];
   const hookTestLines = hooksEnabled
     ? [
@@ -322,6 +404,41 @@ function buildSampleTestSource(
         "",
       ]
     : [];
+  const importerTestLines = importersEnabled
+    ? [
+        `test(${JSON.stringify(`${extensionName} registers and invokes import/export primitives`)}, async () => {`,
+        "  const activation = await activateExtensionForTest(extension, {",
+        `    name: ${JSON.stringify(extensionName)},`,
+        `    capabilities: ${capabilitiesLiteral},`,
+        "  });",
+        "  assertRegisteredImporter(activation.registrations, {",
+        `    importer: ${JSON.stringify(adapterName)},`,
+        `    extensionName: ${JSON.stringify(extensionName)},`,
+        "  });",
+        "  assertRegisteredExporter(activation.registrations, {",
+        `    exporter: ${JSON.stringify(adapterName)},`,
+        `    extensionName: ${JSON.stringify(extensionName)},`,
+        "  });",
+        "",
+        "  const imported = await runRegisteredImporterForTest(activation, {",
+        `    importer: ${JSON.stringify(adapterName)},`,
+        '    options: { source: "tickets" },',
+        '    args: ["batch-1"],',
+        "  });",
+        "  assert.equal(imported.handled, true);",
+        '  assert.deepEqual(imported.result, { imported: 1, source: "tickets", args: ["batch-1"] });',
+        "",
+        "  const exported = await runRegisteredExporterForTest(activation, {",
+        `    exporter: ${JSON.stringify(adapterName)},`,
+        '    options: { destination: "archive" },',
+        '    args: ["done"],',
+        "  });",
+        "  assert.equal(exported.handled, true);",
+        '  assert.deepEqual(exported.result, { exported: true, destination: "archive", args: ["done"] });',
+        "});",
+        "",
+      ]
+    : [];
   return [
     'import assert from "node:assert/strict";',
     'import { test } from "node:test";',
@@ -359,6 +476,7 @@ function buildSampleTestSource(
     "",
     ...hookTestLines,
     ...searchTestLines,
+    ...importerTestLines,
     `test(${JSON.stringify(`${extensionName} tears down cleanly via deactivate`)}, async () => {`,
     "  // deactivateExtensionForTest runs pm's real teardown engine over the",
     "  // module, so this proves your `deactivate` hook runs without throwing.",
