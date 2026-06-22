@@ -1,0 +1,12 @@
+id: pm-3mph
+title: "ADR: SDK define* builders are zero-cost identity helpers (defineConfig pattern), generic for object defs / non-generic for function defs"
+description: "CONTEXT: Adding authoring-time define* builders (pm-12tj) for every extension registration surface raises two design questions. DECISION 1 - pure identity vs validating: define* builders are zero-cost identity functions (return the argument unchanged), exactly like the existing defineExtension and the Vite/Vue defineConfig/defineComponent ecosystem convention. Validation stays in the runtime register*/loader and the test-time assert* helpers; duplicating it in define* would make the cost non-obvious, diverge from defineExtension, and create two sources of truth. DECISION 2 - generic vs non-generic signature: object-definition builders use a generic constraint `<T extends Def>(x: T): T` to PRESERVE literal types (matches defineExtension) while still type-checking against the contract; function-definition builders use the non-generic `(fn: FnType): FnType` because a generic constrained to a whole function type SUPPRESSES contextual parameter typing for bare arrows in .js packages (the param would fall back to implicit any) - the non-generic form lets TypeScript contextually type the handler parameter from the declared FnType. CONSEQUENCES: package authors get type-checking + handler-param inference in plain-JS packages without TS annotation syntax; the builders are tree-shakeable; the author->register->test ergonomics surface is symmetric and complete."
+type: Decision
+status: open
+priority: 2
+tags[4]: adr,"area:sdk",living-map,pm-cli
+created_at: "2026-06-22T11:53:53.511Z"
+updated_at: "2026-06-22T11:53:53.511Z"
+author: claude-code-agent
+parent: pm-m2u1
+body: ""
