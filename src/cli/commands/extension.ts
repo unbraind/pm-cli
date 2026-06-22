@@ -1959,10 +1959,7 @@ export async function runExtension(
       cwd: process.cwd(),
       noExtensions: global.noExtensions === true,
     });
-    const activationResult = await activateExtensions({
-      ...loadResult,
-      loaded: loadResult.loaded,
-    });
+    const activationResult = await activateExtensions(loadResult);
     warnings.push(...loadResult.warnings);
     warnings.push(...activationResult.warnings);
     const describeResult = buildExtensionDescribeResult(normalizedTarget, loadResult, activationResult);

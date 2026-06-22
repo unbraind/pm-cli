@@ -2411,8 +2411,18 @@
     },
     {
       "command": "extension describe",
-      "flags": [],
-      "provider": "extension"
+      "flags": [
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        }
+      ],
+      "provider": "core"
     },
     {
       "command": "extension doctor",
@@ -4675,8 +4685,18 @@
     },
     {
       "command": "package describe",
-      "flags": [],
-      "provider": "extension"
+      "flags": [
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        }
+      ],
+      "provider": "core"
     },
     {
       "command": "package doctor",
@@ -4987,6 +5007,21 @@
     },
     {
       "command": "packages deactivate",
+      "flags": [
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "packages describe",
       "flags": [
         {
           "flag": "--project"
@@ -8059,6 +8094,7 @@
     "packages adopt-all",
     "packages catalog",
     "packages deactivate",
+    "packages describe",
     "packages doctor",
     "packages explore",
     "packages init",
