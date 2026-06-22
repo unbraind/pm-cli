@@ -1,0 +1,32 @@
+id: pm-9ect
+title: "SDK lintExtensionBlueprint + assertExtensionBlueprint: author-time preflight for composeExtension blueprints (capability drift, duplicate commands, empty surfaces)"
+description: "Add author-time preflight for declarative blueprints so the two footguns `composeExtension`'s own docstring names are caught at edit/test time instead of at activation:\n\n1. `lintExtensionBlueprint(blueprint, options?): ExtensionBlueprintLintResult` (src/sdk/compose.ts) — pure data analysis, no activation. Structured findings:\n   - `capability_undeclared` (ERROR): a capability the blueprint exercises is missing from the declared set; the loader throws `extension_capability_missing` at activation. The author-time form of that hard failure.\n   - `capability_unused` (WARNING): a declared capability the blueprint never exercises; the runtime equivalent is the `pm package doctor` `extension_capability_unused` advisory (pm-fk84). This makes lintExtensionBlueprint the author-time inverse of `reconcileExtensionCapabilityUsage`, just as `deriveExtensionCapabilities` is for the used set.\n   - `duplicate_command` (WARNING): the same normalized command path declared twice in `commands` (silent last-wins shadow at dispatch).\n   - `command_override_conflict` (WARNING): a path declared as both a fresh `commands` definition and a `commandOverrides` override (contradictory).\n   - `empty_surface` (WARNING): a registration field present but empty (e.g. `commands: []`) — a dead declaration.\n   - `manifest_capabilities_absent` (WARNING): blueprint exercises capabilities but provides no declared set to reconcile against; suggests `capabilities: deriveExtensionCapabilities(blueprint)`.\n   Declared set comes from `options.declaredCapabilities` or `blueprint.manifest.capabilities`, normalized through the same `normalizeKnownExtensionCapability` (legacy-alias aware) the runtime reconciler uses.\n\n2. `assertExtensionBlueprint(blueprint, options?)` (src/sdk/testing.ts) — the assert* family member: runs the linter and throws (plain Error, matching the file convention) on any error-severity finding, returning the lint result on success so a test can still inspect warnings. One-liner CI guard for package authors.\n\nScope: SDK barrel + /sdk/testing re-export, docs/SDK.md (Declarative Authoring + Testing Helpers), 100% test + docstring coverage. Lives author-time/test-only (a blueprint is in-code data, not on disk), consistent with the assert*/run* family."
+type: Feature
+status: closed
+priority: 2
+tags[3]: "area:extensions","area:sdk",pm-cli
+created_at: "2026-06-22T21:36:10.745Z"
+updated_at: "2026-06-22T22:02:10.304Z"
+author: claude-code-agent
+parent: pm-ugqx
+resolution: Shipped lintExtensionBlueprint + assertExtensionBlueprint for author-time blueprint preflight.
+expected_result: "Capability drift / duplicate / empty-surface footguns are caught at edit/test time, not at activation."
+actual_result: "Both helpers added with structured findings, legacy-alias resolution, barrel + /sdk/testing exports, docs, 100% coverage."
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-fk84,related,"2026-06-22T21:36:57.686Z",null,null
+  pm-iqq0,related,"2026-06-22T21:37:02.929Z",null,null
+  pm-tlpv,related,"2026-06-22T21:37:03.886Z",null,null
+  pm-4oio,related,"2026-06-22T21:37:04.328Z",null,null
+learnings[1]{created_at,author,text}:
+  "2026-06-22T22:00:59.049Z",claude-code-agent,"lintExtensionBlueprint must resolve legacy capability aliases (migration/validation -> schema) on the author's declared set, even though the runtime reconcileExtensionCapabilityUsage only uses normalizeKnownExtensionCapability. Reason: the loader runs normalizeManifestCapabilities (which alias-resolves) BEFORE reconciliation, so by reconcile-time aliases are already canonical; but the author-time lint sees the RAW manifest.capabilities, so it must resolve aliases itself (resolveLegacyExtensionCapabilityAlias ?? normalizeKnownExtensionCapability) or it would emit a false-positive capability_undeclared error for a manifest that actually loads fine. Unknown capabilities are dropped (a separate diagnostic owns them) so a typo is not misreported as unused. capability_undeclared is the only ERROR severity (loader throws); everything else is advisory WARNING so ok stays true."
+files[3]{path,scope,note}:
+  src/sdk/compose.ts,project,null
+  src/sdk/index.ts,project,null
+  src/sdk/testing.ts,project,null
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  tests/unit/sdk/sdk-compose.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+  tests/unit/sdk/sdk-index.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,null
+close_reason: "Shipped lintExtensionBlueprint (structured author-time findings: capability_undeclared error + capability_unused/duplicate_command/command_override_conflict/empty_surface/manifest_capabilities_absent warnings) and assertExtensionBlueprint (throwing assert* family member). Legacy aliases resolved like the loader. Barrel + /sdk/testing exports, docs, 100% coverage, manual end-to-end verified."
+body: ""

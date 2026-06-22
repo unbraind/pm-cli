@@ -1,0 +1,23 @@
+id: pm-5758
+title: deriveExtensionCapabilities omits 'schema' for a CommandDefinition with inline flags (manifest under-grant would fail activation)
+description: "Surfaced while building describeExtensionBlueprint (pm-tlpv): `deriveExtensionCapabilities(blueprint)` only scanned the top-level blueprint fields, so a blueprint whose only schema-requiring surface is a command-definition's INLINE `flags` array (e.g. `commands: [{ name, run, flags: [...] }]` with no separate top-level `flags` record) derived `[\"commands\"]` and omitted `\"schema\"`.\n\nImpact: at activation `registerCommand` calls `assertExtensionCapability(extension, \"schema\", \"registerCommand flags\")` (loader.ts:1854-1855) for any command with `flags !== undefined`. An author who set `manifest.capabilities = deriveExtensionCapabilities(blueprint)` would therefore ship an UNDER-granted manifest that throws `extension_capability_missing` on load — the exact opposite of the helper's purpose.\n\nFix: deriveExtensionCapabilities now adds `\"schema\"` when any `blueprint.commands[].flags !== undefined`, mirroring the loader's exact guard (including an empty inline array). describeExtensionBlueprint's `flag_commands` already unions inline-flag command paths with the top-level `flags` keys, so the static summary and the capability set agree, and the describe parity test (static == runtime describeExtensionActivation) over an inline-flags blueprint pins it. Regression source: pm-iqq0 (composeExtension/deriveExtensionCapabilities). Discovered by: pm-tlpv. Was previously untested."
+type: Issue
+status: closed
+priority: 2
+tags[3]: "area:extensions","area:sdk",pm-cli
+created_at: "2026-06-22T22:00:08.557Z"
+updated_at: "2026-06-22T22:02:12.649Z"
+author: claude-code-agent
+parent: pm-ugqx
+resolution: deriveExtensionCapabilities now adds schema for inline-flags command definitions.
+expected_result: deriveExtensionCapabilities(blueprint) yields a manifest grant that activates without extension_capability_missing.
+actual_result: "Added schema when any blueprint.commands[].flags !== undefined; unit-tested and pinned by the inline-flags parity test."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-iqq0,related,"2026-06-22T22:00:21.450Z",null,null
+  pm-tlpv,related,"2026-06-22T22:00:22.410Z",null,null
+files[1]{path,scope,note}:
+  src/sdk/compose.ts,project,null
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  tests/unit/sdk/sdk-compose.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Fixed: deriveExtensionCapabilities now adds schema when any blueprint.commands[].flags !== undefined, mirroring the loader's registerCommand-flags guard, so a derived manifest no longer under-grants and fails activation. Covered by a new unit test and pinned by the describeExtensionBlueprint inline-flags parity test."
+body: ""

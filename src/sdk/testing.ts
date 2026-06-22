@@ -91,6 +91,15 @@ import {
 } from "../core/extensions/runtime-registrations.js";
 import { collectUsedExtensionCapabilities } from "../core/extensions/capability-usage.js";
 import { normalizeKnownExtensionCapability } from "../core/extensions/extension-capability-aliases.js";
+import { describeExtensionBlueprint, lintExtensionBlueprint } from "./compose.js";
+import type {
+  ExtensionBlueprint,
+  ExtensionBlueprintLintCode,
+  ExtensionBlueprintLintFinding,
+  ExtensionBlueprintLintResult,
+  ExtensionBlueprintLintSeverity,
+  LintExtensionBlueprintOptions,
+} from "./compose.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import type { PmPackageManifest, PmPackageResourceKind } from "../core/packages/manifest.js";
 
@@ -104,6 +113,22 @@ export {
   type DescribeExtensionActivationOptions,
   type ExtensionActivationSummary,
 } from "../core/extensions/activation-summary.js";
+
+// `composeExtension`'s author-time companions: describe a blueprint's surface map
+// and preflight it for capability drift / duplicate / empty-surface footguns
+// without activating. Surfaced through the `@unbrained/pm-cli/sdk/testing` subpath
+// so a package author gets the full author → describe → preflight → test loop here,
+// alongside the assert*/run* helpers; `assertExtensionBlueprint` below is the
+// throwing assertion that pairs with the non-throwing `lintExtensionBlueprint`.
+export { describeExtensionBlueprint, lintExtensionBlueprint };
+export type {
+  ExtensionBlueprint,
+  ExtensionBlueprintLintCode,
+  ExtensionBlueprintLintFinding,
+  ExtensionBlueprintLintResult,
+  ExtensionBlueprintLintSeverity,
+  LintExtensionBlueprintOptions,
+};
 
 interface TestExtensionModule {
   manifest?: Partial<ExtensionManifest>;
@@ -1896,6 +1921,33 @@ export function assertExtensionCapabilityUsage(
     );
   }
   return { declared, used, unused };
+}
+
+/**
+ * Preflight a declarative {@link ExtensionBlueprint} in a test, throwing if it has
+ * any `error`-severity issue (today: capability the blueprint exercises but the
+ * declared set omits, which would fail activation with `extension_capability_missing`).
+ *
+ * The throwing counterpart to {@link lintExtensionBlueprint} and the `assert*`
+ * family member for declarative authoring: drop `assertExtensionBlueprint(blueprint)`
+ * into a package's `node:test`/Vitest suite to fail CI before the blueprint is
+ * ever activated. The full {@link ExtensionBlueprintLintResult} is returned on
+ * success so a test can still inspect advisory warnings (unused capability,
+ * duplicate command, empty surface) without failing on them.
+ */
+export function assertExtensionBlueprint(
+  blueprint: ExtensionBlueprint,
+  options: LintExtensionBlueprintOptions = {},
+): ExtensionBlueprintLintResult {
+  const result = lintExtensionBlueprint(blueprint, options);
+  if (!result.ok) {
+    const errors = result.findings.filter((finding) => finding.severity === "error");
+    throw new Error(
+      `Extension blueprint failed preflight with ${errors.length} ${errors.length === 1 ? "error" : "errors"}:\n` +
+        errors.map((finding) => `  - [${finding.code}] ${finding.message}`).join("\n"),
+    );
+  }
+  return result;
 }
 
 /**

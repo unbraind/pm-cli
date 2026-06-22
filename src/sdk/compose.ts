@@ -52,6 +52,12 @@ import type {
   ServiceOverride,
   VectorStoreAdapterDefinition,
 } from "../core/extensions/loader.js";
+import type { ExtensionActivationSummary } from "../core/extensions/activation-summary.js";
+import {
+  normalizeKnownExtensionCapability,
+  resolveLegacyExtensionCapabilityAlias,
+} from "../core/extensions/extension-capability-aliases.js";
+import { normalizeCommandName } from "../core/extensions/extension-runtime-helpers.js";
 
 /**
  * Documents the extension module payload exchanged by command, SDK, and package integrations.
@@ -364,10 +370,354 @@ export function deriveExtensionCapabilities(blueprint: ExtensionBlueprint): Exte
       capabilities.add(capability);
     }
   }
+  // A command definition carrying its own inline `flags` registers them through
+  // `registerCommand`, which asserts the `schema` capability independently of the
+  // top-level `flags` record. Mirror that here so the derived set still matches
+  // what activation enforces when a command declares flags inline and the
+  // blueprint has no separate `flags` field. `!== undefined` (not a truthiness or
+  // length check) matches the loader's exact guard, including an empty inline array.
+  if ((blueprint.commands ?? []).some((command) => command.flags !== undefined)) {
+    capabilities.add("schema");
+  }
   // `?? {}` keeps an explicit `hooks: null` from throwing, mirroring composeExtension.
   const hooks: ExtensionBlueprintHooks = blueprint.hooks ?? {};
   if ([hooks.beforeCommand, hooks.afterCommand, hooks.onWrite, hooks.onRead, hooks.onIndex].some(hasEntries)) {
     capabilities.add("hooks");
   }
   return [...capabilities].sort((left, right) => left.localeCompare(right));
+}
+
+/**
+ * Blueprint hook fields paired with the lifecycle kind each registers, ordered to
+ * match `ExtensionActivationResult.hook_counts` (and the runtime
+ * {@link ../core/extensions/activation-summary.js#describeExtensionActivation}'s
+ * `hooks` ordering) so a blueprint summary's `hooks` list reads in the same
+ * canonical order, not alphabetically.
+ */
+const BLUEPRINT_HOOK_FIELD_TO_KIND = [
+  ["beforeCommand", "before_command"],
+  ["afterCommand", "after_command"],
+  ["onWrite", "on_write"],
+  ["onRead", "on_read"],
+  ["onIndex", "on_index"],
+] as const satisfies ReadonlyArray<readonly [keyof ExtensionBlueprintHooks, string]>;
+
+/** De-duplicate and locale-sort a list of identifiers, mirroring the runtime summary. */
+function sortUnique<TValue extends string>(values: readonly TValue[]): TValue[] {
+  return [...new Set(values)].sort((left, right) => left.localeCompare(right));
+}
+
+/**
+ * Compute, without activating, the exact {@link ExtensionActivationSummary} that
+ * {@link composeExtension}'s generated `activate` would produce for a blueprint.
+ *
+ * This is the author-time inverse of the runtime
+ * {@link ../core/extensions/activation-summary.js#describeExtensionActivation}:
+ * the runtime verb walks an *activated* registry, while this one reads the
+ * declarative {@link ExtensionBlueprint} data directly, so an author or agent can
+ * preview the full named surface map (commands, overrides, handlers, hooks, item
+ * types/fields, importers/exporters, search/vector adapters, parser/service/
+ * renderer overrides, flag-target commands, and the preflight count) with no
+ * loading, activation, or side effects. It is to the named surfaces what
+ * {@link deriveExtensionCapabilities} is to the capability set.
+ *
+ * Fidelity is by construction: command paths are normalized with the same
+ * `normalizeCommandName` the loader applies, and importer/exporter handler paths
+ * are synthesized as `normalizeCommandName("<name> import|export")`, exactly as
+ * `registerImporter`/`registerExporter` do. A parity test pins this output equal
+ * to `describeExtensionActivation` over the same composed-and-activated blueprint.
+ *
+ * The one surface it cannot reflect is the blueprint's optional imperative
+ * `activate` escape hatch — arbitrary code a static reader cannot inspect. A
+ * blueprint that registers everything through that hatch summarizes as empty.
+ */
+export function describeExtensionBlueprint(blueprint: ExtensionBlueprint): ExtensionActivationSummary {
+  const commandPaths = (blueprint.commands ?? []).map((command) => normalizeCommandName(command.name));
+  const importerPaths = (blueprint.importers ?? []).map((entry) => normalizeCommandName(`${entry.name} import`));
+  const exporterPaths = (blueprint.exporters ?? []).map((entry) => normalizeCommandName(`${entry.name} export`));
+  // A command definition with inline `flags` registers a flag target under its own
+  // path in addition to any top-level `flags` record, so union both sources.
+  const flagCommands = [
+    ...Object.keys(blueprint.flags ?? {}).map((command) => normalizeCommandName(command)),
+    ...(blueprint.commands ?? [])
+      .filter((command) => command.flags !== undefined)
+      .map((command) => normalizeCommandName(command.name)),
+  ];
+  const hooks: ExtensionBlueprintHooks = blueprint.hooks ?? {};
+
+  return {
+    capabilities: deriveExtensionCapabilities(blueprint),
+    commands: sortUnique(commandPaths),
+    command_overrides: sortUnique(Object.keys(blueprint.commandOverrides ?? {}).map((command) => normalizeCommandName(command))),
+    // command_handlers is a superset of commands that also carries the synthesized
+    // importer/exporter command paths, but never the override-only paths.
+    command_handlers: sortUnique([...commandPaths, ...importerPaths, ...exporterPaths]),
+    hooks: BLUEPRINT_HOOK_FIELD_TO_KIND.filter(([field]) => (hooks[field]?.length ?? 0) > 0).map(([, kind]) => kind),
+    flag_commands: sortUnique(flagCommands),
+    item_types: sortUnique((blueprint.itemTypes ?? []).map((type) => type.name)),
+    item_fields: sortUnique((blueprint.itemFields ?? []).map((field) => field.name)),
+    // id-less migrations register but carry no identifier, so they are omitted —
+    // exactly as describeExtensionActivation drops them from its `migrations` list.
+    migrations: sortUnique(
+      (blueprint.migrations ?? []).flatMap((migration) => (typeof migration.id === "string" ? [migration.id] : [])),
+    ),
+    importers: sortUnique((blueprint.importers ?? []).map((entry) => normalizeCommandName(entry.name))),
+    exporters: sortUnique((blueprint.exporters ?? []).map((entry) => normalizeCommandName(entry.name))),
+    search_providers: sortUnique((blueprint.searchProviders ?? []).map((provider) => provider.name)),
+    vector_store_adapters: sortUnique((blueprint.vectorStoreAdapters ?? []).map((adapter) => adapter.name)),
+    parser_overrides: sortUnique(Object.keys(blueprint.parsers ?? {}).map((command) => normalizeCommandName(command))),
+    service_overrides: sortUnique(
+      Object.keys(blueprint.services ?? {}).map((service) => String(service).trim().toLowerCase() as ExtensionServiceName),
+    ),
+    renderer_overrides: sortUnique(
+      Object.keys(blueprint.renderers ?? {}).map((format) => String(format).trim().toLowerCase() as OutputRendererFormat),
+    ),
+    preflight_overrides: (blueprint.preflights ?? []).length,
+  };
+}
+
+/**
+ * The blueprint registration fields a lint flags as a dead "empty surface" when
+ * present but empty. Mirrors {@link BlueprintRegistrationField} so adding a new
+ * registration surface forces a decision here too; `hooks` is handled separately
+ * because it is a nested object rather than an array/record of registrations.
+ */
+const BLUEPRINT_LINTABLE_SURFACE_FIELDS = [
+  "commands",
+  "commandOverrides",
+  "flags",
+  "parsers",
+  "renderers",
+  "services",
+  "preflights",
+  "itemTypes",
+  "itemFields",
+  "migrations",
+  "searchProviders",
+  "vectorStoreAdapters",
+  "importers",
+  "exporters",
+] as const satisfies ReadonlyArray<BlueprintRegistrationField>;
+
+/** Severity of an {@link ExtensionBlueprintLintFinding}: a hard `error` (activation will fail) or an advisory `warning`. */
+export type ExtensionBlueprintLintSeverity = "error" | "warning";
+
+/**
+ * Machine-readable kind of an {@link ExtensionBlueprintLintFinding}.
+ *
+ * - `capability_undeclared` (error): a surface exercises a capability the declared
+ *   set omits; the loader throws `extension_capability_missing` at activation.
+ * - `capability_unused` (warning): a declared capability no surface exercises; the
+ *   runtime equivalent is the `pm package doctor` `extension_capability_unused` note.
+ * - `duplicate_command` (warning): the same normalized command path is declared
+ *   more than once in `commands`; the later registration shadows the earlier.
+ * - `command_override_conflict` (warning): a path is declared as both a fresh
+ *   command definition and a command override.
+ * - `empty_surface` (warning): a registration field is present but contributes
+ *   nothing — a dead declaration.
+ * - `manifest_capabilities_absent` (warning): the blueprint exercises capabilities
+ *   but offers no declared set to reconcile against.
+ */
+export type ExtensionBlueprintLintCode =
+  | "capability_undeclared"
+  | "capability_unused"
+  | "duplicate_command"
+  | "command_override_conflict"
+  | "empty_surface"
+  | "manifest_capabilities_absent";
+
+/**
+ * A single author-time issue {@link lintExtensionBlueprint} found in a blueprint.
+ */
+export interface ExtensionBlueprintLintFinding {
+  /** The machine-readable {@link ExtensionBlueprintLintCode} for programmatic handling. */
+  code: ExtensionBlueprintLintCode;
+  /** Whether the finding blocks activation (`error`) or is advisory (`warning`). */
+  severity: ExtensionBlueprintLintSeverity;
+  /** Human-readable explanation, including the suggested fix. */
+  message: string;
+  /** The capability involved, for capability-drift findings. */
+  capability?: ExtensionCapability;
+  /** The normalized command path involved, for command findings. */
+  command?: string;
+  /** The blueprint field involved, for `empty_surface` findings. */
+  field?: string;
+}
+
+/**
+ * Options for {@link lintExtensionBlueprint} and {@link ../sdk/testing.js#assertExtensionBlueprint}.
+ */
+export interface LintExtensionBlueprintOptions {
+  /**
+   * The capabilities the package's `manifest.json` declares (or will), used to
+   * reconcile against the surfaces the blueprint exercises. Overrides
+   * `blueprint.manifest.capabilities` when both are present. Omit both to lint
+   * without a capability reconciliation (only the structural checks run).
+   */
+  declaredCapabilities?: readonly string[];
+}
+
+/**
+ * The structured result of {@link lintExtensionBlueprint}.
+ */
+export interface ExtensionBlueprintLintResult {
+  /** `true` when no `error`-severity finding is present (warnings still allow activation). */
+  ok: boolean;
+  /** Every finding, in detection order (capability drift, duplicates, conflicts, empty surfaces). */
+  findings: ExtensionBlueprintLintFinding[];
+  /** The least-privilege capability set the blueprint exercises (from {@link deriveExtensionCapabilities}). */
+  used: ExtensionCapability[];
+  /** The normalized declared capability set reconciled against, or `null` when none was provided. */
+  declared: ExtensionCapability[] | null;
+}
+
+/** Normalize a raw declared-capability list to known capabilities only (legacy-alias aware, sorted, de-duplicated). */
+function normalizeDeclaredCapabilities(capabilities: readonly string[]): ExtensionCapability[] {
+  const known = new Set<ExtensionCapability>();
+  for (const capability of capabilities) {
+    // Resolve a legacy alias (e.g. migration/validation → schema) exactly as the
+    // loader does before reconciliation — the author's raw manifest input has not
+    // been loader-normalized yet, so failing to resolve it here would misreport an
+    // alias-satisfied capability as undeclared. Fall back to a canonical known
+    // name; unknown capabilities are a separate diagnostic and are dropped so a
+    // typo is not misreported as "unused".
+    const normalized = resolveLegacyExtensionCapabilityAlias(capability) ?? normalizeKnownExtensionCapability(capability);
+    if (normalized !== null) {
+      known.add(normalized);
+    }
+  }
+  return [...known].sort((left, right) => left.localeCompare(right));
+}
+
+/**
+ * Preflight a declarative {@link ExtensionBlueprint} at author time, returning the
+ * structured issues that would otherwise only surface at activation.
+ *
+ * It is the author-time inverse of the runtime extension guardrails — pure data
+ * analysis with no loading, activation, or side effects:
+ *
+ * - capability drift in both directions: a capability a surface exercises but the
+ *   declared set omits is an `error` (the loader throws `extension_capability_missing`
+ *   at activation); a declared capability no surface exercises is a `warning` (the
+ *   author-time form of the `pm package doctor` `extension_capability_unused` note,
+ *   making this the static inverse of `reconcileExtensionCapabilityUsage`).
+ * - structural footguns: a command path declared twice (`duplicate_command`), a
+ *   path declared as both a command and an override (`command_override_conflict`),
+ *   and a registration field present but empty (`empty_surface`).
+ *
+ * The declared set is taken from `options.declaredCapabilities` or, failing that,
+ * `blueprint.manifest.capabilities`; with neither, capability reconciliation is
+ * skipped and a single `manifest_capabilities_absent` warning suggests adopting
+ * {@link deriveExtensionCapabilities}. Like {@link describeExtensionBlueprint},
+ * the imperative `activate` escape hatch is invisible to this static check.
+ */
+export function lintExtensionBlueprint(
+  blueprint: ExtensionBlueprint,
+  options: LintExtensionBlueprintOptions = {},
+): ExtensionBlueprintLintResult {
+  const findings: ExtensionBlueprintLintFinding[] = [];
+  const used = deriveExtensionCapabilities(blueprint);
+
+  // A non-array declared source (an untyped `.js` author's malformed manifest, or
+  // a missing field) is treated as "no declared set" rather than "declares nothing".
+  const declaredSource = options.declaredCapabilities ?? blueprint.manifest?.capabilities;
+  const declared = Array.isArray(declaredSource) ? normalizeDeclaredCapabilities(declaredSource) : null;
+
+  if (declared === null) {
+    if (used.length > 0) {
+      findings.push({
+        code: "manifest_capabilities_absent",
+        severity: "warning",
+        message: `Blueprint exercises ${used.length === 1 ? "capability" : "capabilities"} [${used.join(", ")}] but declares none; set capabilities to deriveExtensionCapabilities(blueprint) so the manifest grant matches.`,
+      });
+    }
+  } else {
+    const declaredSet = new Set(declared);
+    const usedSet = new Set(used);
+    for (const capability of used) {
+      if (!declaredSet.has(capability)) {
+        findings.push({
+          code: "capability_undeclared",
+          severity: "error",
+          message: `Blueprint exercises capability "${capability}" but it is absent from the declared capabilities; activation throws extension_capability_missing — add "${capability}" to the manifest capabilities.`,
+          capability,
+        });
+      }
+    }
+    for (const capability of declared) {
+      if (!usedSet.has(capability)) {
+        findings.push({
+          code: "capability_unused",
+          severity: "warning",
+          message: `Capability "${capability}" is declared but no blueprint surface exercises it; drop it to keep the manifest least-privilege (pm package doctor reports this as extension_capability_unused).`,
+          capability,
+        });
+      }
+    }
+  }
+
+  // Duplicate command paths within the declared command definitions.
+  const commandPathCounts = new Map<string, number>();
+  for (const command of blueprint.commands ?? []) {
+    const path = normalizeCommandName(command.name);
+    commandPathCounts.set(path, (commandPathCounts.get(path) ?? 0) + 1);
+  }
+  for (const [path, count] of commandPathCounts) {
+    if (count > 1) {
+      findings.push({
+        code: "duplicate_command",
+        severity: "warning",
+        message: `Command "${path}" is declared ${count} times in commands; the later registration shadows the earlier one at dispatch.`,
+        command: path,
+      });
+    }
+  }
+
+  // A command path declared as both a fresh definition and an override.
+  const overridePaths = new Set(
+    Object.keys(blueprint.commandOverrides ?? {}).map((command) => normalizeCommandName(command)),
+  );
+  for (const path of commandPathCounts.keys()) {
+    if (overridePaths.has(path)) {
+      findings.push({
+        code: "command_override_conflict",
+        severity: "warning",
+        message: `Command "${path}" is declared both as a new command definition and as a command override; register one or the other.`,
+        command: path,
+      });
+    }
+  }
+
+  // Registration fields present on the blueprint but contributing nothing.
+  for (const field of BLUEPRINT_LINTABLE_SURFACE_FIELDS) {
+    if (field in blueprint && !hasEntries(blueprint[field])) {
+      findings.push({
+        code: "empty_surface",
+        severity: "warning",
+        message: `Blueprint field "${field}" is present but empty; remove it or populate it.`,
+        field,
+      });
+    }
+  }
+  if ("hooks" in blueprint) {
+    const hooks: ExtensionBlueprintHooks = blueprint.hooks ?? {};
+    const registersHook = [hooks.beforeCommand, hooks.afterCommand, hooks.onWrite, hooks.onRead, hooks.onIndex].some(
+      hasEntries,
+    );
+    if (!registersHook) {
+      findings.push({
+        code: "empty_surface",
+        severity: "warning",
+        message: `Blueprint field "hooks" is present but registers no lifecycle hooks; remove it or populate it.`,
+        field: "hooks",
+      });
+    }
+  }
+
+  return {
+    ok: findings.every((finding) => finding.severity !== "error"),
+    findings,
+    used,
+    declared,
+  };
 }
