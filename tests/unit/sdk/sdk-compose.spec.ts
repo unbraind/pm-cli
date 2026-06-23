@@ -980,6 +980,34 @@ describe("sdk mergeExtensionBlueprints", () => {
     expect(order).toEqual(["deactivate-b", "deactivate-a"]);
   });
 
+  it("preserves blueprint this context while chaining lifecycle methods", async () => {
+    const order: string[] = [];
+    const moduleA = {
+      label: "module-a",
+      activate(this: { label: string }): void {
+        order.push(`activate:${this.label}`);
+      },
+      deactivate(this: { label: string }): void {
+        order.push(`deactivate:${this.label}`);
+      },
+    } satisfies ExtensionBlueprint & { label: string };
+    const moduleB = {
+      label: "module-b",
+      activate(this: { label: string }): void {
+        order.push(`activate:${this.label}`);
+      },
+      deactivate(this: { label: string }): void {
+        order.push(`deactivate:${this.label}`);
+      },
+    } satisfies ExtensionBlueprint & { label: string };
+
+    const merged = mergeExtensionBlueprints(moduleA, moduleB);
+
+    await merged.activate?.({} as ExtensionApi);
+    await merged.deactivate?.();
+    expect(order).toEqual(["activate:module-a", "activate:module-b", "deactivate:module-b", "deactivate:module-a"]);
+  });
+
   it("returns a fresh blueprint object and array containers without mutating the input", () => {
     const source: ExtensionBlueprint = {
       commands: [{ name: "solo cmd", action: "solo", run: () => ({}) }],

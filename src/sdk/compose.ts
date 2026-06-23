@@ -504,29 +504,34 @@ export function mergeExtensionBlueprints(...blueprints: ExtensionBlueprint[]): E
   assign("manifest", manifest);
   // Imperative escape hatches chain forward (acquisition order); teardown chains
   // in reverse (LIFO), so resources release in the inverse of acquisition.
-  const activates = blueprints.flatMap((blueprint) => (blueprint.activate ? [blueprint.activate] : []));
+  const hasActivates = blueprints.some((blueprint) => blueprint.activate);
   assign(
     "activate",
-    activates.length > 0
+    hasActivates
       ? async (api: ExtensionApi): Promise<void> => {
-          for (const activate of activates) {
-            await activate(api);
+          for (const blueprint of blueprints) {
+            if (blueprint.activate) {
+              await blueprint.activate(api);
+            }
           }
         }
       : undefined,
   );
-  const deactivates = blueprints.flatMap((blueprint) => (blueprint.deactivate ? [blueprint.deactivate] : []));
+  const hasDeactivates = blueprints.some((blueprint) => blueprint.deactivate);
   assign(
     "deactivate",
-    deactivates.length > 0
+    hasDeactivates
       ? async (): Promise<void> => {
           // Teardown is best-effort across modules: a throwing `deactivate` must
           // not strand a later module's cleanup, so every hook runs (in reverse,
           // LIFO) and the first failure is re-thrown afterwards to still surface it.
           const errors: unknown[] = [];
-          for (const deactivate of [...deactivates].reverse()) {
+          for (const blueprint of [...blueprints].reverse()) {
+            if (!blueprint.deactivate) {
+              continue;
+            }
             try {
-              await deactivate();
+              await blueprint.deactivate();
             } catch (error) {
               errors.push(error);
             }
