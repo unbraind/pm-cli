@@ -25,6 +25,41 @@ const SCAFFOLD_DECLARED_PERMISSIONS = {
   process_spawn: false,
 };
 
+// TypeScript dev-dependency floor for scaffolded packages, matching the CLI's own
+// toolchain so generated packages compile against the same compiler generation.
+const SCAFFOLD_TYPESCRIPT_VERSION = "^6.0.0";
+
+// `@types/node` floor for scaffolded packages: the colocated `index.test.ts`
+// imports `node:test`/`node:assert`, which need Node's ambient type definitions
+// to compile. Pinned to the engines floor (Node >=20), matching the CLI itself.
+const SCAFFOLD_TYPES_NODE_VERSION = "^20.0.0";
+
+// Strict NodeNext tsconfig emitted into every scaffold (ADR pm-2c28: extensions
+// are authored fully in TypeScript). It compiles `index.ts` (and the colocated
+// `index.test.ts`) in place to the `./index.js` entry the manifest loads, so the
+// authored source is type-checked against the SDK contracts while the loader keeps
+// importing plain compiled JavaScript. NodeNext resolution matches the explicit
+// `.js` import specifiers the emitted ESM uses. No `outDir` is set on purpose:
+// tsc auto-excludes its `outDir`, and an in-package `outDir` would exclude the
+// whole package root, leaving the `*.ts` inputs unmatched (TS18003). Emitting
+// beside the source mirrors the first-party `packages/pm-*` layout.
+const SCAFFOLD_TSCONFIG = {
+  compilerOptions: {
+    target: "ES2022",
+    module: "NodeNext",
+    moduleResolution: "NodeNext",
+    strict: true,
+    esModuleInterop: true,
+    skipLibCheck: true,
+    declaration: false,
+    // `node:test`/`node:assert` in the colocated test (and Node globals) resolve
+    // from `@types/node`; name it explicitly so it is loaded regardless of how the
+    // package manager lays out `node_modules/@types`.
+    types: ["node"],
+  },
+  include: ["*.ts"],
+};
+
 /**
  * Capability shapes the package/extension scaffolder can target via the
  * `--capability` selector. `commands` emits the default command-only starter;
@@ -55,32 +90,34 @@ const SAMPLE_TEST_CAPABILITIES_LITERAL: Record<ExtensionScaffoldCapability, stri
 };
 
 const ENTRYPOINT_BULLETS: Record<ExtensionScaffoldCapability, string> = {
-  commands: "- `index.js`: starter command registration plus a `deactivate` teardown stub.",
+  commands: "- `index.ts`: starter command registration plus a `deactivate` teardown stub (compiled to `index.js`).",
   hooks:
-    "- `index.js`: starter command registration, an `after_command` lifecycle hook, and a `deactivate` teardown stub.",
+    "- `index.ts`: starter command registration, an `after_command` lifecycle hook, and a `deactivate` teardown stub (compiled to `index.js`).",
   search:
-    "- `index.js`: starter command registration, a search provider, a vector-store adapter, and a `deactivate` teardown stub.",
+    "- `index.ts`: starter command registration, a search provider, a vector-store adapter, and a `deactivate` teardown stub (compiled to `index.js`).",
   importers:
-    "- `index.js`: starter command registration, importer/exporter command registrations, and a `deactivate` teardown stub.",
+    "- `index.ts`: starter command registration, importer/exporter command registrations, and a `deactivate` teardown stub (compiled to `index.js`).",
 };
 
 const SAMPLE_TEST_BULLETS: Record<ExtensionScaffoldCapability, string> = {
   commands:
-    "- `index.test.js`: sample `node:test` suite covering activation, command invocation, and teardown via the SDK testing helpers.",
+    "- `index.test.ts`: sample `node:test` suite covering activation, command invocation, and teardown via the SDK testing helpers.",
   hooks:
-    "- `index.test.js`: sample `node:test` suite covering activation, command invocation, the after_command hook, and teardown via the SDK testing helpers.",
+    "- `index.test.ts`: sample `node:test` suite covering activation, command invocation, the after_command hook, and teardown via the SDK testing helpers.",
   search:
-    "- `index.test.js`: sample `node:test` suite covering activation, command invocation, search provider/vector adapter invocation, and teardown via the SDK testing helpers.",
+    "- `index.test.ts`: sample `node:test` suite covering activation, command invocation, search provider/vector adapter invocation, and teardown via the SDK testing helpers.",
   importers:
-    "- `index.test.js`: sample `node:test` suite covering activation, command invocation, importer/exporter invocation, and teardown via the SDK testing helpers.",
+    "- `index.test.ts`: sample `node:test` suite covering activation, command invocation, importer/exporter invocation, and teardown via the SDK testing helpers.",
 };
+
+const TSCONFIG_BULLET = "- `tsconfig.json`: strict TypeScript config that compiles `index.ts` to the `./index.js` entry.";
 
 const PACKAGE_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, readonly string[]> = {
   commands: [],
   hooks: [
     "",
     "## Lifecycle Hook",
-    "`index.js` registers an `after_command` hook via `api.hooks.afterCommand`.",
+    "`index.ts` registers an `after_command` hook via `api.hooks.afterCommand`.",
     "pm fires it once a command finishes, passing the command outcome and the",
     "items it mutated (`context.affected`). React there to keep external context",
     "in sync - sync records, emit telemetry, or refresh derived state. The",
@@ -90,7 +127,7 @@ const PACKAGE_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, re
   search: [
     "",
     "## Search Provider",
-    "`index.js` registers a deterministic in-memory search provider and",
+    "`index.ts` registers a deterministic in-memory search provider and",
     "vector-store adapter through `api.registerSearchProvider` and",
     "`api.registerVectorStoreAdapter`. Replace the sample scoring,",
     "embedding, and storage behavior with your project-specific retrieval",
@@ -100,7 +137,7 @@ const PACKAGE_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, re
   importers: [
     "",
     "## Importer and Exporter",
-    "`index.js` registers paired project-context import/export commands through",
+    "`index.ts` registers paired project-context import/export commands through",
     "`api.registerImporter` and `api.registerExporter`. Replace the starter",
     "payloads with your domain adapter: GitHub issues, CSV rows, documents,",
     "tickets, or another project-management source of truth. The `importers`",
@@ -114,7 +151,7 @@ const EXTENSION_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, 
   hooks: [
     "",
     "## Lifecycle Hook",
-    "`index.js` registers an `after_command` hook via `api.hooks.afterCommand`.",
+    "`index.ts` registers an `after_command` hook via `api.hooks.afterCommand`.",
     "pm fires it once a command finishes, passing the command outcome and the",
     "items it mutated (`context.affected`). React there to keep external context",
     "in sync. The `hooks` capability in `manifest.json` grants the registration;",
@@ -123,7 +160,7 @@ const EXTENSION_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, 
   search: [
     "",
     "## Search Provider",
-    "`index.js` registers a deterministic in-memory search provider and",
+    "`index.ts` registers a deterministic in-memory search provider and",
     "vector-store adapter through `api.registerSearchProvider` and",
     "`api.registerVectorStoreAdapter`. Replace the sample scoring, embedding,",
     "and storage behavior with your project-specific retrieval logic. The",
@@ -132,7 +169,7 @@ const EXTENSION_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, 
   importers: [
     "",
     "## Importer and Exporter",
-    "`index.js` registers paired project-context import/export commands through",
+    "`index.ts` registers paired project-context import/export commands through",
     "`api.registerImporter` and `api.registerExporter`. Replace the starter",
     "payloads with your domain adapter. The `importers` capability grants both",
     "registrations, and `schema` grants the example command flag metadata.",
@@ -291,8 +328,10 @@ function buildActivateBodyLines(
 }
 
 /**
- * Build the colocated `node:test` sample suite for the chosen capability. Every
- * variant covers activation, command invocation, and teardown via the SDK
+ * Build the colocated `node:test` sample suite (`index.test.ts`) for the chosen
+ * capability. Authored in TypeScript and run through `npm test` (`tsc && node
+ * --test`), it imports the compiled `./index.js` entry under NodeNext resolution.
+ * Every variant covers activation, command invocation, and teardown via the SDK
  * testing helpers; the `hooks` variant adds a test that asserts the
  * `after_command` hook is registered and fires cleanly through the public SDK
  * testing helper `runRegisteredHookForTest`.
@@ -369,6 +408,8 @@ function buildSampleTestSource(
         `    extensionName: ${JSON.stringify(extensionName)},`,
         "  });",
         "",
+        "  // The starter provider reads only document title/id, so `settings` is a",
+        "  // minimal typed stub and `documents` carry just the fields it inspects.",
         "  const query = await runRegisteredSearchProviderForTest(activation.registrations, {",
         `    provider: ${JSON.stringify(searchProviderName)},`,
         '    operation: "query",',
@@ -377,11 +418,11 @@ function buildSampleTestSource(
         '      mode: "semantic",',
         '      tokens: ["sync"],',
         "      options: {},",
-        "      settings: {},",
+        "      settings: {} as PmSettings,",
         "      documents: [",
         '        { metadata: { id: "pm-1", title: "Sync external context" }, body: "" },',
         '        { metadata: { id: "pm-2", title: "Unrelated task" }, body: "" },',
-        "      ],",
+        "      ] as ItemDocument[],",
         "    },",
         "  });",
         '  assert.deepEqual(query, { hits: [{ id: "pm-1", score: 1, matched_fields: ["title"] }] });',
@@ -389,14 +430,14 @@ function buildSampleTestSource(
         "  const embedding = await runRegisteredSearchProviderForTest(activation.registrations, {",
         `    provider: ${JSON.stringify(searchProviderName)},`,
         '    operation: "embed",',
-        '    context: { input: "abc", settings: {}, model: "starter-model" },',
+        '    context: { input: "abc", settings: {} as PmSettings, model: "starter-model" },',
         "  });",
         "  assert.deepEqual(embedding, [3]);",
         "",
         "  const vectorHits = await runRegisteredVectorStoreAdapterForTest(activation.registrations, {",
         `    adapter: ${JSON.stringify(vectorAdapterName)},`,
         '    operation: "query",',
-        "    context: { vector: [0.1, 0.2], limit: 2, settings: {} },",
+        "    context: { vector: [0.1, 0.2], limit: 2, settings: {} as PmSettings },",
         "  });",
         '  assert.deepEqual(vectorHits, [{ id: "starter-vector-hit", score: 2 }]);',
         "});",
@@ -444,6 +485,9 @@ function buildSampleTestSource(
     "import {",
     ...importNames,
     '} from "@unbrained/pm-cli/sdk/testing";',
+    // The search sample's synthetic query/vector contexts reference these SDK types
+    // for their typed-stub fixtures; other capabilities need no extra type imports.
+    ...(searchEnabled ? ['import type { ItemDocument, PmSettings } from "@unbrained/pm-cli/sdk";'] : []),
     'import extension from "./index.js";',
     "",
     `test(${JSON.stringify(`${extensionName} registers its starter command`)}, async () => {`,
@@ -469,8 +513,14 @@ function buildSampleTestSource(
     `    command: ${JSON.stringify(commandName)},`,
     "  });",
     "  assert.equal(invocation.handled, true);",
-    "  assert.equal(invocation.result.ok, true);",
-    `  assert.equal(invocation.result.command, ${JSON.stringify(commandName)});`,
+    "  // The handler result is typed `unknown`, so deep-equality on the whole",
+    "  // structured payload keeps the assertion type-safe without a cast.",
+    "  assert.deepEqual(invocation.result, {",
+    "    ok: true,",
+    `    source: ${JSON.stringify(extensionName)},`,
+    `    command: ${JSON.stringify(commandName)},`,
+    '    message: "Starter extension scaffold is active.",',
+    "  });",
     "});",
     "",
     ...hookTestLines,
@@ -517,13 +567,15 @@ export function buildStarterExtensionScaffoldFiles(
     null,
     2,
   )}\n`;
-  // Keep scaffolds dependency-light by default: even package mode can be
-  // installed before peer dependencies are materialized in the generated root.
-  // The JSDoc import preserves editor narrowing without forcing the runtime
-  // loader to resolve @unbrained/pm-cli/sdk from a freshly generated scaffold.
+  // The entrypoint is authored fully in TypeScript (ADR pm-2c28): the `import
+  // type` is erased at compile time, so the typed `ExtensionApi` parameter is
+  // checked against the SDK contract at author time while the emitted ./index.js
+  // stays import-light. `npm run build` (tsc) compiles this index.ts to the
+  // ./index.js the manifest entry loads.
   const entrypoint = [
-    '/** @param {import("@unbrained/pm-cli/sdk").ExtensionApi} api */',
-    "export function activate(api) {",
+    'import type { ExtensionApi } from "@unbrained/pm-cli/sdk";',
+    "",
+    "export function activate(api: ExtensionApi): void {",
     ...buildActivateBodyLines(extensionName, commandName, capability),
     "}",
     "",
@@ -531,7 +583,7 @@ export function buildStarterExtensionScaffoldFiles(
     "// shutdown/reload (e.g. the MCP server between requests) to release anything",
     "// `activate` opened - timers, connections, caches. This starter holds no such",
     "// resources, so it stays a documented no-op; add cleanup here as you grow.",
-    "export function deactivate() {}",
+    "export function deactivate(): void {}",
     "",
     "export default {",
     "  activate,",
@@ -539,7 +591,8 @@ export function buildStarterExtensionScaffoldFiles(
     "};",
     "",
   ].join("\n");
-  // README bullet describing what index.js wires, kept in sync with the chosen
+  const tsconfig = `${JSON.stringify(SCAFFOLD_TSCONFIG, null, 2)}\n`;
+  // README bullet describing what index.ts wires, kept in sync with the chosen
   // capability so the generated docs match the generated code.
   const entrypointBullet = ENTRYPOINT_BULLETS[capability];
   if (vocabulary === "package") {
@@ -550,13 +603,20 @@ export function buildStarterExtensionScaffoldFiles(
         private: true,
         type: "module",
         keywords: ["pm-package"],
-        // `node --test` runs the colocated *.test.js sample against the peer SDK
-        // testing helpers; no extra dev-dependency or test runner is required.
+        // `build` compiles index.ts to the ./index.js the manifest loads; `test`
+        // compiles first (Node's `node --test` runs the emitted *.test.js, not the
+        // TypeScript source) then runs the colocated sample against the peer SDK
+        // testing helpers — no third-party test runner required.
         scripts: {
-          test: "node --test",
+          build: "tsc",
+          test: "tsc && node --test",
         },
         peerDependencies: {
           "@unbrained/pm-cli": "*",
+        },
+        devDependencies: {
+          "@types/node": SCAFFOLD_TYPES_NODE_VERSION,
+          typescript: SCAFFOLD_TYPESCRIPT_VERSION,
         },
         pm: {
           aliases: [extensionName],
@@ -580,7 +640,18 @@ export function buildStarterExtensionScaffoldFiles(
     // capability, the after_command lifecycle hook).
     const sampleTest = buildSampleTestSource(extensionName, commandName, capability);
     const sampleTestBullet = SAMPLE_TEST_BULLETS[capability];
-    const gitignore = ["node_modules/", "*.log", ""].join("\n");
+    // Ignore the compiled TypeScript output: `index.ts`/`index.test.ts` are the
+    // authored source, and `npm run build` emits `index.js`/`index.test.js` in
+    // place. The build artifacts are derived, so they stay out of version control.
+    const gitignore = [
+      "node_modules/",
+      "*.log",
+      "",
+      "# Compiled TypeScript output (npm run build)",
+      "/index.js",
+      "/index.test.js",
+      "",
+    ].join("\n");
     const searchProviderName = `${extensionName}-search`;
     const vectorAdapterName = `${extensionName}-vector`;
     const adapterName = `${extensionName.replace(/-/g, " ")} items`;
@@ -591,8 +662,9 @@ export function buildStarterExtensionScaffoldFiles(
       ...(capability === "importers" ? ["defineImporter", "defineExporter"] : []),
     ].join(", ");
     const defineBuilderSnippet = [
-      "```js",
+      "```ts",
       `import { ${defineBuilderImports} } from "@unbrained/pm-cli/sdk";`,
+      'import type { ExtensionApi } from "@unbrained/pm-cli/sdk";',
       "",
       "export const pingCommand = defineCommand({",
       `  name: ${JSON.stringify(commandName)},`,
@@ -648,7 +720,7 @@ export function buildStarterExtensionScaffoldFiles(
     }
     defineBuilderSnippet.push(
       "",
-      "export function activate(api) {",
+      "export function activate(api: ExtensionApi): void {",
       "  api.registerCommand(pingCommand);",
     );
     if (capability === "hooks") {
@@ -688,7 +760,7 @@ export function buildStarterExtensionScaffoldFiles(
     defineBuilderSnippet.push(
       "}",
       "",
-      "export function deactivate() {}",
+      "export function deactivate(): void {}",
       "",
       "export default { activate, deactivate };",
       "```",
@@ -699,33 +771,40 @@ export function buildStarterExtensionScaffoldFiles(
       "Generated by `pm package init`.",
       "",
       "## Included Files",
-      "- `package.json`: package metadata, `test` script, and `pm` resource manifest.",
+      "- `package.json`: package metadata, `build`/`test` scripts, and `pm` resource manifest.",
       "- `manifest.json`: extension metadata and capabilities.",
       entrypointBullet,
       sampleTestBullet,
-      "- `.gitignore`: ignores `node_modules/` and log files.",
+      TSCONFIG_BULLET,
+      "- `.gitignore`: ignores `node_modules/`, logs, and the compiled `index.js`/`index.test.js`.",
       "",
       "## Quick Start",
+      "This package is authored in TypeScript; build it once so the manifest's",
+      "`./index.js` entry exists, then install it:",
       "```bash",
+      "npm install",
+      "npm run build",
       "pm install --project <package-path>",
       `pm ${commandName}`,
       "pm package doctor --project --detail summary",
       "```",
       "",
       "## Validate the Package",
-      "Install the peer SDK once, then run the colocated sample test:",
+      "`npm install` pulls the peer SDK and TypeScript; `npm test` compiles and runs",
+      "the colocated sample test:",
       "```bash",
       "npm install",
       "npm test",
       "```",
-      "`npm test` runs `node --test`, which executes `index.test.js` against the",
+      "`npm test` runs `tsc && node --test`: it compiles `index.ts`/`index.test.ts`",
+      "then executes the emitted `index.test.js` against the",
       "`@unbrained/pm-cli/sdk/testing` helpers - no extra test runner required.",
       "",
       "## Authoring With define* Builders",
-      "`index.js` stays import-free so the package can be installed locally before",
-      "`npm install` materializes peer dependencies. After installing dependencies,",
-      "use the public SDK authoring builders for exported definitions you want",
-      "editor type-checking, contextual handler inference, and direct unit tests for:",
+      "`index.ts` is authored fully in TypeScript so every registration is checked",
+      "against the SDK contracts at author time. Use the public SDK authoring",
+      "builders for exported definitions you want literal-type preservation,",
+      "contextual handler inference, and direct unit tests for:",
       ...defineBuilderSnippet,
       "The builders return their argument unchanged; runtime validation still lives",
       "in `api.register*`, and behavior validation lives in `sdk/testing`.",
@@ -741,8 +820,8 @@ export function buildStarterExtensionScaffoldFiles(
       "The starter command is pure compute, so `manifest.json` declares `trusted: true`, `sandbox_profile: \"strict\"`, and all six permission keys as `false`. Keep that least-privilege shape for pure packages; relax only the specific permission your package actually needs and verify with `pm package doctor --project --detail deep --trace`.",
       "",
       "## Notes",
-      "- Keep simple starter runtime behavior at the package root so local installs work without dependency bootstrapping.",
-      "- Move larger runtimes into subdirectories only after adding package dependencies and validating `pm package doctor`.",
+      "- Author in `index.ts`; `npm run build` (tsc) emits the `./index.js` the manifest loads, so rebuild after editing before installing or reloading.",
+      "- Move larger runtimes into sibling `*.ts` modules and import them; `tsconfig.json` compiles every `*.ts` in the package root.",
       "- Add capabilities to the extension manifest only when the entrypoint uses the matching SDK API.",
       "- Use `@unbrained/pm-cli/sdk` as the public SDK import for richer package runtimes.",
       "",
@@ -750,8 +829,9 @@ export function buildStarterExtensionScaffoldFiles(
     return {
       "package.json": packageJson,
       "manifest.json": manifest,
-      "index.js": entrypoint,
-      "index.test.js": sampleTest,
+      "index.ts": entrypoint,
+      "index.test.ts": sampleTest,
+      "tsconfig.json": tsconfig,
       ".gitignore": gitignore,
       "README.md": packageReadme,
     };
@@ -764,9 +844,16 @@ export function buildStarterExtensionScaffoldFiles(
     "## Included Files",
     "- `manifest.json`: extension metadata and capabilities.",
     entrypointBullet,
+    TSCONFIG_BULLET,
     "",
     "## Quick Start",
+    "This extension is authored in TypeScript; compile `index.ts` to the manifest's",
+    "`./index.js` entry, then install it. The SDK types resolve once",
+    "`@unbrained/pm-cli` is available to the compiler (install it and TypeScript, or",
+    "build from a project that already depends on the CLI):",
     "```bash",
+    "npm install -D typescript @unbrained/pm-cli",
+    "npx tsc",
     "pm extension --install --project <scaffold-path>",
     `pm ${commandName}`,
     "pm extension --doctor --project --detail summary",
@@ -783,14 +870,15 @@ export function buildStarterExtensionScaffoldFiles(
     "The starter command is pure compute, so `manifest.json` declares `trusted: true`, `sandbox_profile: \"strict\"`, and all six permission keys as `false`. Keep that least-privilege shape for pure extensions; relax only the specific permission your extension actually needs and verify with `pm extension --doctor --project --detail deep --trace`.",
     "",
     "## Notes",
-    "- This scaffold uses ESM exports so it works in package scopes with `type: module`.",
-    "- Update `manifest.json` capabilities and `index.js` command behavior as your extension evolves.",
+    "- This scaffold uses TypeScript ESM source compiled to ESM output, so it works in package scopes with `type: module`.",
+    "- Author in `index.ts` and recompile to `index.js` (the manifest entry) after editing capabilities or command behavior.",
     "- Release any resources `activate` opens (timers, connections, caches) in the `deactivate` teardown hook.",
     "",
   ].join("\n");
   return {
     "manifest.json": manifest,
-    "index.js": entrypoint,
+    "index.ts": entrypoint,
+    "tsconfig.json": tsconfig,
     "README.md": readme,
   };
 }

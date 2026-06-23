@@ -37,6 +37,8 @@ Common authoring exports:
 
 - `defineExtension`
 - `composeExtension` / `deriveExtensionCapabilities`
+- `mergeExtensionBlueprints` (combine partial blueprints into one for modular authoring)
+- `composeExtensionPackage` (author-once capstone: returns both the module and its synthesized manifest)
 - `synthesizeExtensionManifest` (generate a complete least-privilege manifest from a blueprint)
 - `describeExtensionBlueprint` (static surface map of a blueprint) / `lintExtensionBlueprint` (author-time preflight)
 - `checkExtensionManifestCompatibility` (author-time `pm_min_version`/`pm_max_version` check against a target pm version)
@@ -643,17 +645,20 @@ argument unchanged), exactly like `defineExtension` and the wider
 `defineConfig`/`defineComponent` ecosystem convention — the value is entirely at
 the type level.
 
-This matters most in **plain-JavaScript packages** (the default `pm package init`
-scaffold). A bare `const cmd = { ... }` is unchecked because JS has no type
-annotations; wrapping it in a builder restores full contract checking and infers
-the nested handler's `context` parameter through the editor's TypeScript language
-service. It also lets you colocate, export, reuse, and unit-test a definition
+pm packages are authored fully in TypeScript (ADR
+[pm-2c28](../.agents/pm/decisions/pm-2c28.toon)). A bare `const cmd = { ... }`
+satisfies the registration types only structurally and widens its literals;
+wrapping it in a builder checks the object against the contract *and* preserves
+the narrow literal types, while inferring the nested handler's `context`
+parameter from the builder signature — the same ergonomics `defineConfig` gives a
+Vite config. It also lets you colocate, export, reuse, and unit-test a definition
 apart from `activate`:
 
-```js
+```ts
 import { defineCommand, defineAfterCommandHook } from "@unbrained/pm-cli/sdk";
+import type { ExtensionApi } from "@unbrained/pm-cli/sdk";
 
-// `context` is inferred even though this is a .js file with no annotations.
+// `context` is inferred from the builder signature; the literal name/action are preserved.
 export const greetCommand = defineCommand({
   name: "greet hello",
   action: "greet-hello",
@@ -666,7 +671,7 @@ export const auditHook = defineAfterCommandHook((context) => {
   // react to context.affected — "project management = context management"
 });
 
-export function activate(api) {
+export function activate(api: ExtensionApi): void {
   api.registerCommand(greetCommand);
   api.hooks.afterCommand(auditHook);
 }
@@ -699,8 +704,9 @@ SDK generate the `activate` for you. Every field is optional; populate the
 surfaces you use (ideally with `define*`-authored definitions) and leave the rest
 out:
 
-```js
+```ts
 import { composeExtension, defineCommand, deriveExtensionCapabilities } from "@unbrained/pm-cli/sdk";
+import type { ExtensionBlueprint } from "@unbrained/pm-cli/sdk";
 
 const echo = defineCommand({
   name: "command-kit echo",
@@ -709,7 +715,7 @@ const echo = defineCommand({
   run: (context) => ({ message: context.args.join(" ") }),
 });
 
-const blueprint = {
+const blueprint: ExtensionBlueprint = {
   commands: [echo],
   parsers: { "command-kit echo": (context) => ({ options: context.options }) },
   flags: { list: [{ long: "--kit-note", value_type: "string", value_name: "text" }] },
@@ -730,7 +736,7 @@ drift. It is the author-time inverse of the runtime
 it returns is the set `composeExtension`'s generated `activate` requires — they
 agree by construction:
 
-```js
+```ts
 deriveExtensionCapabilities(blueprint); // ["commands", "parser", "schema"]
 ```
 
@@ -743,6 +749,50 @@ malformed definition surfaces the same activation diagnostic as a hand-written
 `activate`. The bundled first-party packages intentionally keep import-free
 hand-written `activate` bodies so they load in extension-only installs; reach for
 `composeExtension` in npm package-mode authoring where the SDK is a dependency.
+
+### Modular blueprints
+
+Tracked: [pm-high](../.agents/pm/tasks/pm-high.toon),
+[pm-nvgy](../.agents/pm/tasks/pm-nvgy.toon).
+
+A large extension's surface does not have to live in one object. `mergeExtensionBlueprints(...blueprints)`
+combines several partial blueprints into one — a commands module, a search module,
+a hooks module — so each concern is authored (and tested) in its own file and
+assembled at the entry point. Wrap each fragment in `defineExtensionBlueprint(...)`
+so it is contract-checked at its own definition site (with editor completion) —
+the blueprint-level companion to `defineExtension` (a whole module) and
+`defineExtensionManifest` (a manifest):
+
+```ts
+// commands.ts
+import { defineExtensionBlueprint } from "@unbrained/pm-cli/sdk";
+export const commandsModule = defineExtensionBlueprint({
+  commands: [{ name: "kit run", action: "kit-run", run: () => ({ ok: true }) }],
+});
+```
+
+```ts
+// index.ts — NodeNext import specifiers keep the .js extension; they resolve to the .ts source.
+import { composeExtension, mergeExtensionBlueprints } from "@unbrained/pm-cli/sdk";
+import { commandsModule } from "./commands.js";
+import { searchModule } from "./search.js";
+
+export default composeExtension(mergeExtensionBlueprints(commandsModule, searchModule));
+```
+
+The merge is pure, deterministic, and never mutates an input. Each surface combines
+the way its `api.register*` call composes: array surfaces (`commands`, `itemTypes`,
+`migrations`, `searchProviders`, `importers`, …) concatenate in order; `flags`
+concatenates the flag arrays of a shared target command; single-handler records
+(`commandOverrides`, `parsers`, `renderers`, `services`) take last-defined-wins
+precedence on a key collision; `hooks` concatenate per lifecycle kind; imperative
+`activate` hatches chain forward (acquisition order) while `deactivate` hooks chain
+in reverse (LIFO teardown); the `manifest` mirror is last-defined-wins. Because the
+result is an ordinary blueprint, every downstream helper (`deriveExtensionCapabilities`,
+`describeExtensionBlueprint`, `lintExtensionBlueprint`, `preflightExtension`) reads it
+exactly as it would a hand-written one — a command two modules both define survives
+as a duplicate and `lintExtensionBlueprint` flags it. Merging zero blueprints returns
+an empty blueprint (`{}`).
 
 ### Generate the manifest (author once)
 
@@ -757,7 +807,7 @@ optional `engines`/`permissions`/version floors/etc.) and it returns a complete
 `ExtensionManifest` with `capabilities` derived, sorted, and de-duplicated. Write
 the blueprint once; never hand-sync `capabilities` again:
 
-```js
+```ts
 import { synthesizeExtensionManifest } from "@unbrained/pm-cli/sdk";
 
 const manifest = synthesizeExtensionManifest(blueprint, {
@@ -777,6 +827,37 @@ resolved, unknown names dropped). Use the result as the on-disk `manifest.json`
 content or the in-module `manifest` mirror; guard a hand-maintained manifest
 against drift with `assertExtensionManifestMatchesBlueprint` (below).
 
+### Ship both halves (author once)
+
+Tracked: [pm-cn0c](../.agents/pm/tasks/pm-cn0c.toon).
+
+`composeExtension` produces the runtime module; `synthesizeExtensionManifest`
+produces the manifest. `composeExtensionPackage(blueprint, identity)` is the
+author-once capstone that returns both halves of a shippable package from one call,
+with the synthesized manifest set as the module's authoritative in-module mirror —
+so the runtime module and the on-disk `manifest.json` are generated from one source
+and cannot drift:
+
+```ts
+import { composeExtensionPackage } from "@unbrained/pm-cli/sdk";
+
+const { module, manifest } = composeExtensionPackage(blueprint, {
+  name: "command-kit",
+  version: "1.0.0",
+  entry: "./index.js",
+  priority: 0,
+});
+export default module;          // the package entry's default export
+// write `manifest` verbatim as manifest.json — capabilities derived, never hand-synced
+```
+
+It is a pure assembler (no validation, loading, or filesystem access), exactly like
+the two functions it composes; pair it with `preflightExtension` /
+`assertExtensionPreflight` for the author-time verify step. Combined with
+`mergeExtensionBlueprints`, the full declarative loop is: author each concern with
+`define*`, assemble them modularly with `mergeExtensionBlueprints`, then ship both
+halves with `composeExtensionPackage`.
+
 ### Author-time introspection and preflight
 
 Tracked: [pm-tlpv](../.agents/pm/features/pm-tlpv.toon),
@@ -788,7 +869,7 @@ inspectable and verifiable before it is ever loaded — the author-time inverse 
 the runtime guardrails (the same discipline as `deriveExtensionCapabilities`
 inverting [`reconcileExtensionCapabilityUsage`](#capability-requirements)):
 
-```js
+```ts
 import { describeExtensionBlueprint, lintExtensionBlueprint } from "@unbrained/pm-cli/sdk";
 
 // describeExtensionBlueprint returns the same ExtensionActivationSummary shape as

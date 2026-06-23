@@ -80,8 +80,8 @@ export interface ExtensionModule {
    *
    * The authoritative manifest remains on-disk `manifest.json`; this field is
    * useful when authors want colocated metadata for tooling/tests. Type it with
-   * {@link defineExtensionManifest} for full contract checking in plain
-   * JavaScript packages.
+   * {@link defineExtensionManifest} for full contract checking at the definition
+   * site.
    */
   manifest?: ExtensionManifest;
   activate(api: ExtensionApi): void | Promise<void>;
@@ -206,6 +206,27 @@ export interface ExtensionBlueprint {
 }
 
 /**
+ * Typed identity helper for a (partial) {@link ExtensionBlueprint} authored as its
+ * own module — the typed entry point of the modular declarative-authoring loop.
+ *
+ * It is the natural companion to {@link mergeExtensionBlueprints}: when an
+ * extension's surface is split across files — a commands module, a search module,
+ * a hooks module — wrap each fragment so it is contract-checked *at its definition
+ * site* (with editor completion), exactly as {@link defineExtension} types a whole
+ * module and {@link defineExtensionManifest} types a manifest. It returns its
+ * argument unchanged, preserving the literal type
+ * so the fragment composes into {@link mergeExtensionBlueprints},
+ * {@link composeExtension}, or {@link composeExtensionPackage} with no loss of
+ * inference.
+ *
+ * Use as:
+ * `export const commandsModule = defineExtensionBlueprint({ commands: [...] })`
+ */
+export function defineExtensionBlueprint<TBlueprint extends ExtensionBlueprint>(blueprint: TBlueprint): TBlueprint {
+  return blueprint;
+}
+
+/**
  * Assemble an {@link ExtensionModule} from a declarative {@link ExtensionBlueprint}.
  *
  * The returned module's `activate` registers every populated surface through the
@@ -271,9 +292,10 @@ export function composeExtension(blueprint: ExtensionBlueprint): ExtensionModule
     for (const entry of blueprint.exporters ?? []) {
       api.registerExporter(entry.name, entry.exporter, entry.options);
     }
-    // `?? {}` (rather than a `!== undefined` guard) so an untyped JavaScript
-    // author who passes `hooks: null` is treated the same as omitting it,
-    // instead of throwing on the first `hooks.beforeCommand` access.
+    // `?? {}` (rather than a `!== undefined` guard) so an explicit `hooks: null`
+    // crossing an untyped boundary (e.g. a blueprint hydrated from JSON) is
+    // treated the same as omitting it, instead of throwing on the first
+    // `hooks.beforeCommand` access.
     const hooks: ExtensionBlueprintHooks = blueprint.hooks ?? {};
     for (const hook of hooks.beforeCommand ?? []) {
       api.hooks.beforeCommand(hook);
@@ -303,6 +325,169 @@ export function composeExtension(blueprint: ExtensionBlueprint): ExtensionModule
     module.deactivate = blueprint.deactivate;
   }
   return module;
+}
+
+/**
+ * Concatenate the populated entries of an array surface across blueprints,
+ * preserving argument order. Returns `undefined` when no blueprint contributes
+ * any entry, so {@link mergeExtensionBlueprints} omits the field instead of
+ * emitting an empty array. `?? []` tolerates an explicit `null` field (e.g. from a
+ * blueprint hydrated across an untyped boundary) exactly as {@link composeExtension} does.
+ */
+function mergeArraySurface<TValue>(
+  surfaces: ReadonlyArray<readonly TValue[] | null | undefined>,
+): TValue[] | undefined {
+  const merged = surfaces.flatMap((surface) => surface ?? []);
+  return merged.length > 0 ? merged : undefined;
+}
+
+/**
+ * Shallow-merge single-handler record surfaces (`commandOverrides`, `parsers`,
+ * `renderers`, `services`) with last-defined-wins precedence on a key collision,
+ * exactly like spreading the records in argument order. Returns `undefined` when
+ * no blueprint contributes any key.
+ */
+function mergeHandlerRecord<TRecord extends object>(
+  surfaces: ReadonlyArray<TRecord | null | undefined>,
+): TRecord | undefined {
+  const merged = Object.assign({}, ...surfaces.map((surface) => surface ?? {})) as TRecord;
+  return Object.keys(merged).length > 0 ? merged : undefined;
+}
+
+/**
+ * Merge `flags` records by concatenating every blueprint's flag array for a shared
+ * target command, mirroring the additive `api.registerFlags` semantics so each
+ * module's flags reach the command. Returns `undefined` when no blueprint declares
+ * any flags.
+ */
+function mergeFlagRecord(
+  surfaces: ReadonlyArray<Record<string, FlagDefinition[]> | null | undefined>,
+): Record<string, FlagDefinition[]> | undefined {
+  const merged: Record<string, FlagDefinition[]> = {};
+  for (const surface of surfaces) {
+    for (const [command, flags] of Object.entries(surface ?? {})) {
+      // `flags` is the record's array value, never nullish in-type — `composeExtension`
+      // likewise passes it to `registerFlags` unguarded — so it is spread directly.
+      merged[command] = [...(merged[command] ?? []), ...flags];
+    }
+  }
+  return Object.keys(merged).length > 0 ? merged : undefined;
+}
+
+/**
+ * Merge the nested `hooks` surface by concatenating each lifecycle kind's array in
+ * canonical order. Returns `undefined` when no blueprint registers any hook.
+ */
+function mergeHookSurfaces(
+  surfaces: ReadonlyArray<ExtensionBlueprintHooks | null | undefined>,
+): ExtensionBlueprintHooks | undefined {
+  const merged: ExtensionBlueprintHooks = {};
+  const assignHook = <TKey extends keyof ExtensionBlueprintHooks>(
+    key: TKey,
+    value: ExtensionBlueprintHooks[TKey],
+  ): void => {
+    if (value !== undefined) {
+      merged[key] = value;
+    }
+  };
+  assignHook("beforeCommand", mergeArraySurface(surfaces.map((hooks) => hooks?.beforeCommand)));
+  assignHook("afterCommand", mergeArraySurface(surfaces.map((hooks) => hooks?.afterCommand)));
+  assignHook("onWrite", mergeArraySurface(surfaces.map((hooks) => hooks?.onWrite)));
+  assignHook("onRead", mergeArraySurface(surfaces.map((hooks) => hooks?.onRead)));
+  assignHook("onIndex", mergeArraySurface(surfaces.map((hooks) => hooks?.onIndex)));
+  return Object.keys(merged).length > 0 ? merged : undefined;
+}
+
+/**
+ * Merge several partial {@link ExtensionBlueprint}s into one, so an extension's
+ * surface can be authored *modularly* — a commands module, a search module, a
+ * hooks module — and combined into a single blueprint to feed
+ * {@link composeExtension}, {@link composeExtensionPackage},
+ * {@link synthesizeExtensionManifest}, {@link describeExtensionBlueprint}, or
+ * {@link preflightExtension}.
+ *
+ * The merge is pure and deterministic and never mutates an input. Each surface
+ * combines the way its underlying `api.register*` call composes:
+ *
+ * - **Array surfaces** — `commands`, `preflights`, `itemTypes`, `itemFields`,
+ *   `migrations`, `searchProviders`, `vectorStoreAdapters`, `importers`,
+ *   `exporters` — concatenate in argument order.
+ * - **`flags`** concatenates the flag arrays of any shared target command,
+ *   mirroring additive `api.registerFlags`: every module's flags reach the command.
+ * - **Single-handler records** — `commandOverrides`, `parsers`, `renderers`,
+ *   `services` — follow last-defined-wins precedence on a key collision, exactly
+ *   like spreading the records in argument order; a later module deliberately
+ *   overrides an earlier one's handler for that key.
+ * - **`hooks`** concatenates each lifecycle kind's array in canonical order.
+ * - The imperative **`activate`** escape hatches chain in argument order (each
+ *   awaited), so every module's escape-hatch wiring still runs.
+ * - The **`deactivate`** teardown hooks chain in *reverse* argument order (LIFO),
+ *   releasing resources in the inverse of acquisition.
+ * - The **`manifest`** mirror is last-defined-wins.
+ *
+ * Because `composeExtension` and the derive/lint/describe helpers are pure readers
+ * of this data, a merged blueprint behaves exactly as a hand-written one: a command
+ * two modules both define survives as a duplicate in the merged `commands` array
+ * and {@link lintExtensionBlueprint} flags it, just as it would in one file. An
+ * empty field is omitted rather than emitted empty, so merging zero blueprints
+ * returns an empty blueprint (`{}`).
+ */
+export function mergeExtensionBlueprints(...blueprints: ExtensionBlueprint[]): ExtensionBlueprint {
+  const merged: ExtensionBlueprint = {};
+  const assign = <TKey extends keyof ExtensionBlueprint>(key: TKey, value: ExtensionBlueprint[TKey]): void => {
+    if (value !== undefined) {
+      merged[key] = value;
+    }
+  };
+  assign("commands", mergeArraySurface(blueprints.map((blueprint) => blueprint.commands)));
+  assign("commandOverrides", mergeHandlerRecord(blueprints.map((blueprint) => blueprint.commandOverrides)));
+  assign("flags", mergeFlagRecord(blueprints.map((blueprint) => blueprint.flags)));
+  assign("parsers", mergeHandlerRecord(blueprints.map((blueprint) => blueprint.parsers)));
+  assign("renderers", mergeHandlerRecord(blueprints.map((blueprint) => blueprint.renderers)));
+  assign("services", mergeHandlerRecord(blueprints.map((blueprint) => blueprint.services)));
+  assign("preflights", mergeArraySurface(blueprints.map((blueprint) => blueprint.preflights)));
+  assign("itemTypes", mergeArraySurface(blueprints.map((blueprint) => blueprint.itemTypes)));
+  assign("itemFields", mergeArraySurface(blueprints.map((blueprint) => blueprint.itemFields)));
+  assign("migrations", mergeArraySurface(blueprints.map((blueprint) => blueprint.migrations)));
+  assign("searchProviders", mergeArraySurface(blueprints.map((blueprint) => blueprint.searchProviders)));
+  assign("vectorStoreAdapters", mergeArraySurface(blueprints.map((blueprint) => blueprint.vectorStoreAdapters)));
+  assign("importers", mergeArraySurface(blueprints.map((blueprint) => blueprint.importers)));
+  assign("exporters", mergeArraySurface(blueprints.map((blueprint) => blueprint.exporters)));
+  assign("hooks", mergeHookSurfaces(blueprints.map((blueprint) => blueprint.hooks)));
+  // Last-defined-wins for the in-module manifest mirror: a later module's identity
+  // supersedes an earlier one's, matching the single-handler record precedence.
+  let manifest: ExtensionManifest | undefined;
+  for (const blueprint of blueprints) {
+    if (blueprint.manifest) {
+      manifest = blueprint.manifest;
+    }
+  }
+  assign("manifest", manifest);
+  // Imperative escape hatches chain forward (acquisition order); teardown chains
+  // in reverse (LIFO), so resources release in the inverse of acquisition.
+  const activates = blueprints.flatMap((blueprint) => (blueprint.activate ? [blueprint.activate] : []));
+  assign(
+    "activate",
+    activates.length > 0
+      ? async (api: ExtensionApi): Promise<void> => {
+          for (const activate of activates) {
+            await activate(api);
+          }
+        }
+      : undefined,
+  );
+  const deactivates = blueprints.flatMap((blueprint) => (blueprint.deactivate ? [blueprint.deactivate] : []));
+  assign(
+    "deactivate",
+    deactivates.length > 0
+      ? async (): Promise<void> => {
+          for (const deactivate of [...deactivates].reverse()) {
+            await deactivate();
+          }
+        }
+      : undefined,
+  );
+  return merged;
 }
 
 /**
@@ -776,13 +961,60 @@ export function synthesizeExtensionManifest(
   identity: SynthesizeExtensionManifestIdentity,
 ): ExtensionManifest {
   const { additionalCapabilities, ...manifestIdentity } = identity;
-  // `Array.isArray` keeps an untyped JavaScript author who passes a non-array
-  // (or omits the field) from crashing the spread, mirroring the rest of the SDK.
+  // `Array.isArray` keeps a non-array value (or an omitted field) crossing an
+  // untyped boundary from crashing the spread, mirroring the rest of the SDK.
   const extra = Array.isArray(additionalCapabilities) ? normalizeDeclaredCapabilities(additionalCapabilities) : [];
   const capabilities = [...new Set<ExtensionCapability>([...deriveExtensionCapabilities(blueprint), ...extra])].sort(
     (left, right) => left.localeCompare(right),
   );
   return { ...manifestIdentity, capabilities };
+}
+
+/**
+ * The two generated halves of a shippable extension package, returned by
+ * {@link composeExtensionPackage}.
+ */
+export interface ExtensionPackage {
+  /**
+   * The runtime {@link ExtensionModule} to export as the package entry's default
+   * export. Its `manifest` mirror is set to the same {@link ExtensionPackage.manifest}
+   * object, so the in-module metadata and the on-disk manifest never diverge.
+   */
+  module: ExtensionModule;
+  /**
+   * The complete least-privilege {@link ExtensionManifest} to write as the
+   * package's `manifest.json`, with `capabilities` derived from the blueprint.
+   */
+  manifest: ExtensionManifest;
+}
+
+/**
+ * Assemble both halves of a shippable extension package from one declarative
+ * {@link ExtensionBlueprint} and the author's identity fields — the author-once
+ * capstone of the declarative loop.
+ *
+ * Where {@link composeExtension} produces only the runtime module and
+ * {@link synthesizeExtensionManifest} produces only the manifest, this unifies
+ * them: it synthesizes the complete least-privilege manifest from the blueprint
+ * and identity, then composes the module with that synthesized manifest set as its
+ * authoritative in-module `manifest` mirror. Both halves are therefore generated
+ * from a single source and cannot drift — the module's `manifest` is the very
+ * object returned as `manifest`. Export `module` as the package entry's default
+ * export and write `manifest` as `manifest.json`.
+ *
+ * It is a pure assembler with no validation, loading, or filesystem access,
+ * exactly like the two functions it composes; pair it with
+ * {@link preflightExtension} (or {@link ../sdk/testing.js#assertExtensionPreflight})
+ * for the author-time verify step. Use {@link mergeExtensionBlueprints} first to
+ * assemble the blueprint modularly, then this to ship it.
+ */
+export function composeExtensionPackage(
+  blueprint: ExtensionBlueprint,
+  identity: SynthesizeExtensionManifestIdentity,
+): ExtensionPackage {
+  const manifest = synthesizeExtensionManifest(blueprint, identity);
+  const module = composeExtension({ ...blueprint, manifest });
+  return { module, manifest };
 }
 
 /**
@@ -810,9 +1042,9 @@ export interface ExtensionManifestCompatibilityTarget {
 /**
  * The manifest fields {@link checkExtensionManifestCompatibility} evaluates.
  *
- * Values are intentionally `unknown` rather than `string` so plain JavaScript
- * packages can preflight the same malformed blank/non-string bounds the loader's
- * manifest parser rejects as `extension_manifest_invalid`.
+ * Values are intentionally `unknown` rather than `string` so an author can
+ * preflight the same malformed blank/non-string bounds (e.g. read from a JSON
+ * manifest) the loader's manifest parser rejects as `extension_manifest_invalid`.
  */
 export interface ExtensionManifestCompatibilityManifest {
   /** Inclusive lower pm CLI version bound from `manifest.json`. */

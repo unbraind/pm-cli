@@ -1,0 +1,28 @@
+id: pm-2p38
+title: "Modular declarative authoring: mergeExtensionBlueprints + composeExtensionPackage"
+description: "Complete the declarative extension-authoring loop with two missing assembly verbs. Today an author can describe an extension as one ExtensionBlueprint and turn it into a module (composeExtension) and synthesize its manifest (synthesizeExtensionManifest) — but (1) there is no way to build a blueprint MODULARLY across files (a commands module + a search module + a hooks module) and combine them, and (2) there is no single call that returns the whole shippable package (runtime module + on-disk manifest) from one declarative spec. Add mergeExtensionBlueprints(...blueprints) (pure, deterministic modular composition) and composeExtensionPackage(blueprint, identity) (author-once capstone returning { module, manifest } with the synthesized manifest set as the module's authoritative mirror so the two halves never drift). Author once, modularly; ship both halves in one call."
+type: Feature
+status: closed
+priority: 2
+tags[4]: "area:extensions","area:sdk",authoring,dx
+created_at: "2026-06-23T19:52:13.077Z"
+updated_at: "2026-06-23T21:49:34.016Z"
+author: claude-code-agent
+parent: pm-ugqx
+resolution: All three assembly verbs shipped (merge + package capstone + defineExtensionBlueprint); declarative loop author->merge->ship->preflight is end-to-end.
+dependencies[7]{id,kind,created_at,author,source_kind}:
+  pm-iqq0,related,"2026-06-23T19:52:38.878Z",null,null
+  pm-ozaf,related,"2026-06-23T19:52:38.878Z",null,null
+  pm-tlpv,related,"2026-06-23T19:52:38.878Z",null,null
+  pm-u5le,related,"2026-06-23T19:52:38.878Z",null,null
+  pm-09rh,related,"2026-06-23T20:36:18.150Z",null,null
+  pm-2c28,related,"2026-06-23T20:36:18.150Z",null,null
+  pm-nvgy,related,"2026-06-23T20:36:18.150Z",null,null
+files[1]{path,scope,note}:
+  tests/unit/sdk/sdk-compose.spec.ts,project,merge + package capstone tests
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-compose.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Modular blueprints + Ship both halves sections
+close_reason: Modular declarative authoring complete
+body: ""

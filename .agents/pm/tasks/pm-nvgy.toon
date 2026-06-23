@@ -1,0 +1,25 @@
+id: pm-nvgy
+title: "defineExtensionBlueprint: typed identity helper for partial blueprint fragments"
+description: "Add defineExtensionBlueprint(blueprint): TBlueprint to src/sdk/compose.ts — a zero-cost typed identity helper for a (partial) ExtensionBlueprint authored as its own module, the typed entry point of the modular declarative-authoring loop and natural companion to mergeExtensionBlueprints. Completes the define* symmetry: defineExtension (whole module), defineExtensionManifest (manifest), defineExtensionBlueprint (blueprint fragment). In TypeScript it preserves the narrow literal type while checking the fragment against the ExtensionBlueprint interface and gives contextual handler-parameter inference (the Vite defineConfig pattern), so each concern can be authored, exported, and unit-tested in its own .ts file then combined via mergeExtensionBlueprints. Re-exported from the SDK barrel; 100% line + docstring coverage; documented in docs/SDK.md Modular blueprints section."
+type: Task
+status: closed
+priority: 2
+tags[4]: "area:extensions","area:sdk",authoring,dx
+created_at: "2026-06-23T20:35:34.182Z"
+updated_at: "2026-06-23T21:49:30.586Z"
+author: claude-code-agent
+parent: pm-2p38
+resolution: Added defineExtensionBlueprint typed identity helper completing the define* symmetry (module/manifest/blueprint).
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-12tj,related,"2026-06-23T20:35:34.182Z",null,null
+  pm-2c28,related,"2026-06-23T20:35:34.182Z",null,null
+  pm-cn0c,related,"2026-06-23T20:35:34.182Z",null,null
+  pm-high,related,"2026-06-23T20:35:34.182Z",null,null
+  pm-iqq0,related,"2026-06-23T20:35:34.182Z",null,null
+files[2]{path,scope,note}:
+  src/sdk/compose.ts,project,defineExtensionBlueprint identity helper
+  tests/unit/sdk/sdk-compose.spec.ts,project,defineExtensionBlueprint tests
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Modular blueprints section
+close_reason: Shipped defineExtensionBlueprint
+body: ""

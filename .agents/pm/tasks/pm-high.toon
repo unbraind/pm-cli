@@ -1,0 +1,18 @@
+id: pm-high
+title: "mergeExtensionBlueprints: pure modular composition of partial ExtensionBlueprints"
+description: "Add mergeExtensionBlueprints(...blueprints): ExtensionBlueprint to src/sdk/compose.ts — a pure, deterministic variadic merge so an author can split an extension's surface across modules/files and combine them into one blueprint for composeExtension/synthesizeExtensionManifest/preflightExtension. Merge rules: array fields (commands, preflights, itemTypes, itemFields, migrations, searchProviders, vectorStoreAdapters, importers, exporters) concatenate in order; the flags record concatenates per-command flag arrays (additive registerFlags semantics); single-handler records (commandOverrides, parsers, renderers, services) take later-blueprint-wins precedence; hooks concatenate per kind in canonical order; the imperative activate escape hatch chains in input order; deactivate chains in reverse (LIFO teardown); the manifest mirror is last-defined-wins. Returns a NEW object (never mutates inputs); zero blueprints -> {}; null/undefined fields tolerated for untyped JS authors. Duplicates surface to lintExtensionBlueprint exactly as a hand-written blueprint would."
+type: Task
+status: closed
+priority: 2
+tags[4]: "area:extensions","area:sdk",authoring,dx
+created_at: "2026-06-23T19:52:27.715Z"
+updated_at: "2026-06-23T21:49:29.354Z"
+author: claude-code-agent
+parent: pm-2p38
+resolution: Added pure variadic mergeExtensionBlueprints(...blueprints) to src/sdk/compose.ts with per-surface merge semantics; 100% covered.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-iqq0,related,"2026-06-23T19:52:39.251Z",null,null
+files[1]{path,scope,note}:
+  src/sdk/compose.ts,project,mergeExtensionBlueprints + merge helpers
+close_reason: Shipped mergeExtensionBlueprints
+body: ""

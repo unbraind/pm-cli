@@ -1,0 +1,15 @@
+id: pm-ax7z
+title: "Convert docs/examples extensions to TypeScript-first (starter-extension, policy-restricted-extension)"
+description: "Honor ADR pm-2c28 for the committed docs/examples extensions, which are still authored in plain JavaScript (docs/examples/starter-extension/index.js 199L all-9-capabilities showcase + docs/examples/policy-restricted-extension/index.js). Add index.ts source authored against the SDK types, keep the compiled index.js the loader/tests import (mirror first-party packages/pm-*), and wire type-checking (add docs/examples/**/*.ts to a packages-style tsconfig include). The starter-extension test docstring already (incorrectly) claims TS authorship. Deferred from the scaffolder PR to keep that PR focused on the generator + SDK primitives + docs reframe."
+type: Task
+status: open
+priority: 3
+tags[4]: "area:docs","area:extensions",authoring,dx
+created_at: "2026-06-23T20:58:13.797Z"
+updated_at: "2026-06-23T20:58:13.797Z"
+assignee: claude-code-agent
+author: claude-code-agent
+parent: pm-09rh
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-2c28,related,"2026-06-23T20:58:13.797Z",null,null
+body: ""

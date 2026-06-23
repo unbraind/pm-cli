@@ -1,0 +1,19 @@
+id: pm-09rh
+title: TypeScript-first extension & package scaffolding + SDK docs reframe
+description: "Honor ADR pm-2c28 (extensions must be authored fully in TypeScript) by converting the pm extension/package init scaffolder to emit TypeScript source instead of plain .js, and reframing the SDK authoring docs/docstrings TypeScript-first. Today the scaffolder emits index.js with a single JSDoc @param annotation while every first-party package is TS (index.ts compiled to index.js). Scaffold index.ts + tsconfig.json + a build script + colocated index.test.ts, with the manifest entry pointing at the compiled ./index.js and the README documenting the install+build flow; update scaffold tests, smoke:external-packages, and dogfood:package-first to build the TS scaffold before loading. Reframe docs/SDK.md + docs/EXTENSIONS.md and the define*/compose* docstrings to justify the helpers by their TypeScript value (literal-type preservation + handler inference) rather than 'JS cannot annotate'."
+type: Feature
+status: in_progress
+priority: 1
+tags[5]: "area:extensions","area:sdk",authoring,dx,living-map
+created_at: "2026-06-23T20:36:02.668Z"
+updated_at: "2026-06-23T20:36:02.668Z"
+assignee: claude-code-agent
+author: claude-code-agent
+parent: pm-ugqx
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-12tj,related,"2026-06-23T20:36:02.668Z",null,null
+  pm-2c28,related,"2026-06-23T20:36:02.668Z",null,null
+  pm-2p38,related,"2026-06-23T20:36:02.668Z",null,null
+  pm-59gj,related,"2026-06-23T20:36:02.668Z",null,null
+  pm-iqq0,related,"2026-06-23T20:36:02.668Z",null,null
+body: ""

@@ -4,6 +4,7 @@
 
 ### Added
 
+- Modular declarative authoring: mergeExtensionBlueprints + composeExtensionPackage ([pm-2p38](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-2p38.toon))
 - SDK unified author-time preflight capstone: preflightExtension + assertExtensionPreflight ([pm-ozaf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ozaf.toon))
 - SDK author-time version-compatibility preflight: checkExtensionManifestCompatibility + assertExtensionManifestCompatible ([pm-1w0d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-1w0d.toon))
 - SDK author-once manifest synthesis: synthesizeExtensionManifest + assertExtensionManifestMatchesBlueprint ([pm-u5le](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-u5le.toon))
@@ -14,6 +15,11 @@
 
 ### Other
 
+- Reframe SDK docs & docstrings TypeScript-first (SDK.md, EXTENSIONS.md, define\*/compose\*) ([pm-l2ud](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-l2ud.toon))
+- Scaffolder emits TypeScript: index.ts + tsconfig.json + build script, compiled ./index.js entry ([pm-frou](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-frou.toon))
+- defineExtensionBlueprint: typed identity helper for partial blueprint fragments ([pm-nvgy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-nvgy.toon))
+- composeExtensionPackage: author-once capstone returning { module, manifest } ([pm-cn0c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-cn0c.toon))
+- mergeExtensionBlueprints: pure modular composition of partial ExtensionBlueprints ([pm-high](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-high.toon))
 - assertExtensionPreflight(blueprint, options) — throwing CI/test bookend (testing.ts) + barrel re-export ([pm-t8yl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-t8yl.toon))
 - preflightExtension(blueprint, options) — pure unified author-time analyzer (compose.ts) ([pm-tcw1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-tcw1.toon))
 - assertExtensionManifestCompatible(manifest, target) — SDK testing assert ([pm-hng2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hng2.toon))

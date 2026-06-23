@@ -11,14 +11,16 @@
  *
  * Every builder is a zero-cost identity function that returns its argument
  * unchanged — exactly like the SDK's {@link ./index.js#defineExtension} and the
- * wider `defineConfig`/`defineComponent` ecosystem convention. Their value is
- * entirely at the type level:
+ * wider `defineConfig`/`defineComponent` ecosystem convention. Extensions are
+ * authored fully in TypeScript (ADR pm-2c28); these builders are where that type
+ * safety is anchored at the definition site. Their value is entirely at the type
+ * level:
  *
- * - In plain-JavaScript packages (the documented norm — `pm package init`
- *   scaffolds `.js`) authors cannot write TypeScript annotations, so a bare
- *   `const cmd = { ... }` is unchecked. `const cmd = defineCommand({ ... })`
- *   restores full contract checking and contextual parameter inference for the
- *   nested handler through the editor's TypeScript language service.
+ * - A bare `const cmd = { ... }` satisfies the registration type only
+ *   structurally and widens its literals; `const cmd = defineCommand({ ... })`
+ *   checks the object against the contract *and* preserves the narrow literal
+ *   type, while inferring the nested handler's `context` parameter from the
+ *   builder signature.
  * - Definitions can be colocated, exported, reused, and unit-tested apart from
  *   the `activate` call instead of being trapped as inline literals.
  *
@@ -26,7 +28,7 @@
  * narrow literal type survives the round-trip, mirroring `defineExtension`.
  * Function-definition builders are intentionally non-generic: a generic
  * constrained to a whole function type suppresses contextual typing of a bare
- * arrow's parameter (it would fall back to implicit `any` in `.js`), whereas the
+ * arrow's parameter (it would fall back to implicit `any`), whereas the
  * non-generic signature lets TypeScript type the handler parameter from the
  * declared function type.
  */
@@ -58,9 +60,8 @@ import type {
  *
  * Completes the `define*` family: the manifest is the one authoring surface that
  * otherwise had no builder. Contract-checks the object against
- * {@link ExtensionManifest} where it is authored, so a plain-JavaScript package
- * catches a missing required field or a mistyped key at edit time instead of at
- * load time. Pair with
+ * {@link ExtensionManifest} where it is authored, catching a missing required
+ * field or a mistyped key at edit time instead of at load time. Pair with
  * {@link ./compose.js#deriveExtensionCapabilities | `deriveExtensionCapabilities`}
  * to keep `capabilities` matched to the surfaces the extension actually registers.
  */
@@ -183,7 +184,7 @@ export function definePreflightOverride(override: PreflightOverride): PreflightO
  *
  * Contextually types the `context` parameter from {@link ServiceOverride} so a
  * package overriding a built-in service (output formatting, embeddings, and the
- * like) keeps its handler argument typed even in plain JavaScript.
+ * like) keeps its handler argument typed without an explicit annotation.
  */
 export function defineServiceOverride(override: ServiceOverride): ServiceOverride {
   return override;
@@ -247,7 +248,7 @@ export function defineAfterCommandHook(hook: AfterCommandHook): AfterCommandHook
  * Type an `on_write` hook for `api.hooks.onWrite(hook)`.
  *
  * Contextually types the {@link OnWriteHook} `context` so a hook reacting to
- * item persistence keeps its argument typed in plain-JavaScript packages.
+ * item persistence keeps its argument typed without an explicit annotation.
  */
 export function defineOnWriteHook(hook: OnWriteHook): OnWriteHook {
   return hook;

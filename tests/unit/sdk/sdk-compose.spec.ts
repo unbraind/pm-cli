@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   checkExtensionManifestCompatibility,
   composeExtension,
+  composeExtensionPackage,
   defineExtension,
+  defineExtensionBlueprint,
   deriveExtensionCapabilities,
   describeExtensionBlueprint,
   lintExtensionBlueprint,
+  mergeExtensionBlueprints,
   preflightExtension,
   synthesizeExtensionManifest,
   type ExtensionBlueprint,
@@ -13,10 +16,13 @@ import {
 import {
   checkExtensionManifestCompatibility as checkExtensionManifestCompatibilityFromBarrel,
   composeExtension as composeExtensionFromBarrel,
+  composeExtensionPackage as composeExtensionPackageFromBarrel,
   defineExtension as defineExtensionFromBarrel,
+  defineExtensionBlueprint as defineExtensionBlueprintFromBarrel,
   deriveExtensionCapabilities as deriveExtensionCapabilitiesFromBarrel,
   describeExtensionBlueprint as describeExtensionBlueprintFromBarrel,
   lintExtensionBlueprint as lintExtensionBlueprintFromBarrel,
+  mergeExtensionBlueprints as mergeExtensionBlueprintsFromBarrel,
   preflightExtension as preflightExtensionFromBarrel,
   synthesizeExtensionManifest as synthesizeExtensionManifestFromBarrel,
   type ExtensionApi,
@@ -812,5 +818,243 @@ describe("sdk preflightExtension", () => {
     });
     expect(report.blueprint.findings).toContainEqual(expect.objectContaining({ code: "empty_surface", field: "flags" }));
     expect(report.ok).toBe(false);
+  });
+});
+
+describe("sdk defineExtensionBlueprint", () => {
+  it("re-exports the same function reference from the barrel", () => {
+    expect(defineExtensionBlueprintFromBarrel).toBe(defineExtensionBlueprint);
+  });
+
+  it("returns the blueprint fragment unchanged so it composes through the modular loop", async () => {
+    const commandsModule = defineExtensionBlueprint({
+      commands: [{ name: "kit run", action: "kit-run", run: () => ({ ok: true }) }],
+    });
+    const searchModule = defineExtensionBlueprint({
+      searchProviders: [{ name: "kit-search", query: async () => ({ hits: [] }) }],
+    });
+    // Zero-cost identity helper: the same object reference is returned untouched.
+    expect(defineExtensionBlueprint(commandsModule)).toBe(commandsModule);
+
+    // The typed fragments feed the modular loop with no loss of fidelity: merge,
+    // compose, and activate exactly as hand-written blueprint literals would.
+    const merged = mergeExtensionBlueprints(commandsModule, searchModule);
+    expect(deriveExtensionCapabilities(merged)).toEqual(["commands", "search"]);
+    const activation = await activateExtensionForTest(composeExtension(merged), {
+      capabilities: ["commands", "search"],
+    });
+    expect(activation.failed).toEqual([]);
+    expect(activation.registrations.commands.map((command) => command.command)).toEqual(["kit run"]);
+  });
+});
+
+describe("sdk mergeExtensionBlueprints", () => {
+  it("re-exports the same function reference from the barrel", () => {
+    expect(mergeExtensionBlueprintsFromBarrel).toBe(mergeExtensionBlueprints);
+  });
+
+  it("concatenates arrays, last-wins handlers, per-command flags, hooks per kind, and chains lifecycle LIFO", async () => {
+    const order: string[] = [];
+    const overrideA = (): undefined => undefined;
+    const overrideB = (): undefined => undefined;
+    const parserA = (): Record<string, never> => ({});
+    const moduleA: ExtensionBlueprint = {
+      manifest: { name: "mod-a", version: "1.0.0", entry: "./a.js", priority: 0, capabilities: ["commands", "schema", "parser"] },
+      commands: [{ name: "kit alpha", action: "kit-alpha", run: () => ({ a: 1 }) }],
+      flags: { "kit alpha": [{ long: "--alpha", value_type: "string", value_name: "text" }] },
+      commandOverrides: { list: overrideA },
+      parsers: { "kit alpha": parserA },
+      hooks: { beforeCommand: [() => undefined] },
+      activate: () => {
+        order.push("activate-a");
+      },
+      deactivate: () => {
+        order.push("deactivate-a");
+      },
+    };
+    const moduleB: ExtensionBlueprint = {
+      manifest: { name: "mod-b", version: "2.0.0", entry: "./b.js", priority: 0, capabilities: ["commands", "search"] },
+      commands: [{ name: "kit beta", action: "kit-beta", run: () => ({ b: 2 }) }],
+      flags: { "kit alpha": [{ long: "--alpha-extra", value_type: "string", value_name: "text" }] },
+      commandOverrides: { list: overrideB },
+      searchProviders: [{ name: "kit-search", query: async () => ({ hits: [] }) }],
+      hooks: { beforeCommand: [() => undefined], onWrite: [() => undefined] },
+      activate: () => {
+        order.push("activate-b");
+      },
+      deactivate: () => {
+        order.push("deactivate-b");
+      },
+    };
+
+    const merged = mergeExtensionBlueprints(moduleA, moduleB);
+
+    // Array surfaces concatenate in argument order.
+    expect(merged.commands?.map((command) => command.name)).toEqual(["kit alpha", "kit beta"]);
+    expect(merged.searchProviders?.map((provider) => provider.name)).toEqual(["kit-search"]);
+    // A shared flag target command concatenates both modules' flag arrays.
+    expect(merged.flags?.["kit alpha"].map((flag) => flag.long)).toEqual(["--alpha", "--alpha-extra"]);
+    // Single-handler record collision: the later module wins the key.
+    expect(merged.commandOverrides?.list).toBe(overrideB);
+    // A key only one module declares survives untouched.
+    expect(merged.parsers?.["kit alpha"]).toBe(parserA);
+    // Hooks concatenate per lifecycle kind.
+    expect(merged.hooks?.beforeCommand).toHaveLength(2);
+    expect(merged.hooks?.onWrite).toHaveLength(1);
+    // The manifest mirror is last-defined-wins.
+    expect(merged.manifest?.name).toBe("mod-b");
+    // The merged blueprint derives the union of both modules' capabilities.
+    expect(deriveExtensionCapabilities(merged)).toEqual(["commands", "hooks", "parser", "schema", "search"]);
+
+    // Imperative activate hatches chain forward; deactivate chains in reverse (LIFO).
+    await merged.activate?.({} as ExtensionApi);
+    expect(order).toEqual(["activate-a", "activate-b"]);
+    await merged.deactivate?.();
+    expect(order).toEqual(["activate-a", "activate-b", "deactivate-b", "deactivate-a"]);
+
+    // Inputs are never mutated.
+    expect(moduleA.commands).toHaveLength(1);
+    expect(moduleB.flags?.["kit alpha"]).toHaveLength(1);
+  });
+
+  it("composes and activates a merged blueprint exactly like a hand-written one", async () => {
+    const merged = mergeExtensionBlueprints(
+      { commands: [{ name: "kit alpha", action: "kit-alpha", run: () => ({}) }] },
+      { searchProviders: [{ name: "kit-search", query: async () => ({ hits: [] }) }] },
+    );
+    const activation = await activateExtensionForTest(composeExtension(merged), {
+      capabilities: ["commands", "search"],
+    });
+    expect(activation.failed).toEqual([]);
+    expect(activation.registrations.commands.map((command) => command.command)).toEqual(["kit alpha"]);
+    expect(activation.registration_counts.search_providers).toBe(1);
+    // describeExtensionBlueprint reads the merged data as the runtime would see it.
+    expect(describeExtensionBlueprint(merged).search_providers).toEqual(["kit-search"]);
+  });
+
+  it("preserves cross-module duplicates so lintExtensionBlueprint still flags them", () => {
+    const merged = mergeExtensionBlueprints(
+      {
+        manifest: { name: "dup", version: "1.0.0", entry: "./index.js", priority: 0, capabilities: ["commands"] },
+        commands: [{ name: "dup cmd", action: "dup-a", run: () => ({}) }],
+      },
+      { commands: [{ name: "dup cmd", action: "dup-b", run: () => ({}) }] },
+    );
+    expect(merged.commands).toHaveLength(2);
+    const report = lintExtensionBlueprint(merged, { declaredCapabilities: ["commands"] });
+    expect(report.findings.some((finding) => finding.code === "duplicate_command")).toBe(true);
+  });
+
+  it("returns an empty blueprint when merging nothing", () => {
+    expect(mergeExtensionBlueprints()).toEqual({});
+  });
+
+  it("returns a fresh blueprint object and array containers without mutating the input", () => {
+    const source: ExtensionBlueprint = {
+      commands: [{ name: "solo cmd", action: "solo", run: () => ({}) }],
+      hooks: { beforeCommand: [() => undefined] },
+    };
+    const merged = mergeExtensionBlueprints(source);
+    expect(merged).not.toBe(source);
+    expect(merged.commands).not.toBe(source.commands);
+    expect(merged.commands?.map((command) => command.name)).toEqual(["solo cmd"]);
+    expect(merged.hooks?.beforeCommand).toHaveLength(1);
+    expect(source.commands).toHaveLength(1);
+  });
+
+  it("omits empty surfaces and tolerates absent and explicit-null fields (untyped .js authors)", async () => {
+    const order: string[] = [];
+    const rich: ExtensionBlueprint = {
+      manifest: { name: "rich", version: "1.0.0", entry: "./r.js", priority: 0, capabilities: ["commands", "schema"] },
+      commands: [{ name: "rich cmd", action: "rich", run: () => ({}) }],
+      commandOverrides: { list: () => undefined },
+      flags: { "rich cmd": [{ long: "--rich", value_type: "string", value_name: "x" }] },
+      hooks: { beforeCommand: [() => undefined] },
+      activate: () => {
+        order.push("a");
+      },
+      deactivate: () => {
+        order.push("d");
+      },
+    };
+    // A plain-JavaScript author can pass explicit null where the type expects an
+    // optional field; the merge must treat null like undefined, never throw.
+    const nullish = {
+      commands: null,
+      flags: null,
+      hooks: null,
+      manifest: null,
+      activate: null,
+      deactivate: null,
+    } as unknown as ExtensionBlueprint;
+    const merged = mergeExtensionBlueprints(rich, {}, nullish);
+
+    expect(merged.commands?.map((command) => command.name)).toEqual(["rich cmd"]);
+    // The last-defined non-null mirror is the rich module's.
+    expect(merged.manifest).toBe(rich.manifest);
+    // Surfaces no module contributes are omitted, not emitted empty.
+    expect(merged.searchProviders).toBeUndefined();
+    expect("services" in merged).toBe(false);
+    expect("parsers" in merged).toBe(false);
+    // The single contributing module's lifecycle still fires.
+    await merged.activate?.({} as ExtensionApi);
+    await merged.deactivate?.();
+    expect(order).toEqual(["a", "d"]);
+  });
+});
+
+describe("sdk composeExtensionPackage", () => {
+  const identity = { name: "kit", version: "3.1.0", entry: "./index.js", priority: 0 } as const;
+
+  it("re-exports the same function reference from the barrel", () => {
+    expect(composeExtensionPackageFromBarrel).toBe(composeExtensionPackage);
+  });
+
+  it("returns both halves with the synthesized manifest as the module's authoritative mirror", async () => {
+    const blueprint: ExtensionBlueprint = {
+      // A stale in-blueprint mirror that must be superseded by the synthesized one.
+      manifest: { name: "stale", version: "0.0.0", entry: "./stale.js", priority: 9, capabilities: ["renderers"] },
+      commands: [{ name: "kit run", action: "kit-run", run: () => ({ ok: true }) }],
+      searchProviders: [{ name: "kit-search", query: async () => ({ hits: [] }) }],
+      deactivate: () => undefined,
+    };
+    const pkg = composeExtensionPackage(blueprint, identity);
+
+    // The manifest is synthesized from identity + derived least-privilege capabilities.
+    expect(pkg.manifest).toEqual({ ...identity, capabilities: ["commands", "search"] });
+    // The module's mirror IS the returned manifest object — one source, drift-proof.
+    expect(pkg.module.manifest).toBe(pkg.manifest);
+    // The stale in-blueprint mirror is superseded, not copied onto the module.
+    expect(pkg.module.manifest?.name).toBe("kit");
+    expect(pkg.module.deactivate).toBe(blueprint.deactivate);
+
+    const activation = await activateExtensionForTest(pkg.module, { capabilities: pkg.manifest.capabilities });
+    expect(activation.failed).toEqual([]);
+    expect(activation.registrations.commands.map((command) => command.command)).toEqual(["kit run"]);
+    expect(activation.registration_counts.search_providers).toBe(1);
+  });
+
+  it("unions additionalCapabilities for surfaces wired through the imperative escape hatch", () => {
+    const pkg = composeExtensionPackage(
+      {
+        commands: [{ name: "kit run", action: "kit-run", run: () => ({}) }],
+        activate: (api: ExtensionApi) => {
+          api.registerRenderer("toon", () => null);
+        },
+      },
+      { ...identity, additionalCapabilities: ["renderers"] },
+    );
+    expect(pkg.manifest.capabilities).toEqual(["commands", "renderers"]);
+  });
+
+  it("ships a blueprint assembled modularly by mergeExtensionBlueprints", async () => {
+    const merged = mergeExtensionBlueprints(
+      { commands: [{ name: "kit a", action: "kit-a", run: () => ({}) }] },
+      { searchProviders: [{ name: "kit-s", query: async () => ({ hits: [] }) }] },
+    );
+    const pkg = composeExtensionPackage(merged, identity);
+    expect(pkg.manifest.capabilities).toEqual(["commands", "search"]);
+    const activation = await activateExtensionForTest(pkg.module, { capabilities: pkg.manifest.capabilities });
+    expect(activation.failed).toEqual([]);
   });
 });

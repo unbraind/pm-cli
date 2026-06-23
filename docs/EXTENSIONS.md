@@ -87,7 +87,7 @@ Package roots declare resources in `package.json` under `pm`:
 
 Installation activates `pm.extensions`. `pm.docs`, `pm.examples`, `pm.assets`, and `pm.prompts` are catalog metadata (metadata-only — they are discovered and surfaced in the catalog but not executed). Declare agent-facing prompt/slash-command markdown under `pm.prompts` and non-code assets (images, skills, fixtures) under `pm.assets`; their conventional roots are `prompts/` (also `.agents/pm/prompts/`) and `assets/` (also `.agents/pm/assets/`).
 
-`pm package init` emits a root extension (`"extensions": ["."]`) so local package installs can activate without dependency bootstrapping. The generated entrypoint stays import-free for that first local install, while the generated package README shows how to graduate exported command/hook definitions to the SDK [define* builders](../.agents/pm/decisions/pm-3mph.toon) after `npm install` materializes the peer SDK. The default `--capability commands` scaffold registers a starter command and a colocated `node:test` suite. `--capability hooks` keeps the starter command and adds an `after_command` lifecycle hook plus SDK testing coverage with `assertRegisteredHook` and `runRegisteredHookForTest`, giving package authors a runnable template for reacting to pm mutations when project management is context management. `--capability search` keeps the starter command and adds a deterministic search provider/vector-store adapter pair plus SDK tests with `assertRegisteredSearchProvider`, `assertRegisteredVectorStoreAdapter`, `runRegisteredSearchProviderForTest`, and `runRegisteredVectorStoreAdapterForTest`, giving retrieval packages a copyable context-management primitive without external services. `--capability importers` keeps the starter command and adds paired import/export command registrations plus SDK tests with `assertRegisteredImporter`, `assertRegisteredExporter`, `runRegisteredImporterForTest`, and `runRegisteredExporterForTest`, giving integration packages a copyable context-movement primitive for synchronizing external project systems; the generated manifest declares both `importers` and `schema` because the starter includes schema-governed flag metadata. Starter manifests use the same least-privilege policy metadata as pure first-party command packages: `trusted: true`, `sandbox_profile: "strict"`, and explicit `false` permissions for `fs_read`, `fs_write`, `network`, `env_read`, `env_write`, and `process_spawn`. Larger packages may point at nested extension directories after declaring runtime dependencies, relaxing only the permissions they actually need, and validating with `pm package doctor`.
+`pm package init` emits a root extension (`"extensions": ["."]`) authored fully in TypeScript (ADR [pm-2c28](../.agents/pm/decisions/pm-2c28.toon)): a typed `index.ts`, a strict `tsconfig.json`, and `build`/`test` scripts, with the manifest `entry` pointing at the compiled `./index.js`. Run `npm install && npm run build` to produce that entry before `pm install`. The generated README shows how to author exported command/hook definitions with the SDK [define* builders](../.agents/pm/decisions/pm-3mph.toon). The default `--capability commands` scaffold registers a starter command and a colocated `node:test` suite. `--capability hooks` keeps the starter command and adds an `after_command` lifecycle hook plus SDK testing coverage with `assertRegisteredHook` and `runRegisteredHookForTest`, giving package authors a runnable template for reacting to pm mutations when project management is context management. `--capability search` keeps the starter command and adds a deterministic search provider/vector-store adapter pair plus SDK tests with `assertRegisteredSearchProvider`, `assertRegisteredVectorStoreAdapter`, `runRegisteredSearchProviderForTest`, and `runRegisteredVectorStoreAdapterForTest`, giving retrieval packages a copyable context-management primitive without external services. `--capability importers` keeps the starter command and adds paired import/export command registrations plus SDK tests with `assertRegisteredImporter`, `assertRegisteredExporter`, `runRegisteredImporterForTest`, and `runRegisteredExporterForTest`, giving integration packages a copyable context-movement primitive for synchronizing external project systems; the generated manifest declares both `importers` and `schema` because the starter includes schema-governed flag metadata. Starter manifests use the same least-privilege policy metadata as pure first-party command packages: `trusted: true`, `sandbox_profile: "strict"`, and explicit `false` permissions for `fs_read`, `fs_write`, `network`, `env_read`, `env_write`, and `process_spawn`. Larger packages may point at nested extension directories after declaring runtime dependencies, relaxing only the permissions they actually need, and validating with `pm package doctor`.
 
 Package tests can pair `readPmPackageManifest(packageRoot)` with
 `assertPackageManifest(manifest, { resources: ... })` from
@@ -112,7 +112,7 @@ Runtime path overrides:
 - `PM_PATH`: project tracker root
 - `PM_GLOBAL_PATH`: global profile root
 
-A minimal standalone extension has a `manifest.json` and an import-free entrypoint. Standalone entries are loaded by file URL from the extension directory, so they should not import `@unbrained/pm-cli` unless the extension is installed as a package with its own dependencies.
+Extensions are authored fully in TypeScript (ADR [pm-2c28](../.agents/pm/decisions/pm-2c28.toon)): a minimal standalone extension has a `manifest.json` and a TypeScript `index.ts` entrypoint compiled to the `./index.js` the loader imports by file URL. Author against the SDK types with `import type { ExtensionApi }` — the type-only import is erased at compile time, so the emitted `index.js` carries **no runtime import** of `@unbrained/pm-cli` (standalone entries are loaded outside any `node_modules`, so a runtime SDK import would fail). Compile with `npx tsc` after installing `typescript` and `@unbrained/pm-cli` for the type resolution.
 
 ```json
 {
@@ -136,9 +136,10 @@ A minimal standalone extension has a `manifest.json` and an import-free entrypoi
 }
 ```
 
-```js
-/** @param {import("@unbrained/pm-cli/sdk").ExtensionApi} api */
-export function activate(api) {
+```ts
+// index.ts — `import type` is erased at compile; the emitted index.js has no runtime import.
+import type { ExtensionApi } from "@unbrained/pm-cli/sdk";
+export function activate(api: ExtensionApi): void {
   api.registerCommand({
     name: "hello",
     description: "Print a deterministic hello payload.",
@@ -151,9 +152,9 @@ export function activate(api) {
 }
 ```
 
-Package-backed extensions can use the SDK helper after declaring `@unbrained/pm-cli` in `package.json` and installing dependencies. Registry installs satisfy that SDK import from the running host CLI instead of downloading a nested CLI copy into each project extension directory, so package authors can declare `@unbrained/pm-cli` as a peer dependency without adding the CLI's own telemetry/runtime dependencies to every workspace. Use this shape for packages published to npm or installed from a package root:
+Package-backed extensions can also import the SDK's runtime helpers (e.g. `defineExtension`, `composeExtension`) after declaring `@unbrained/pm-cli` in `package.json` and installing dependencies. Registry installs satisfy that SDK import from the running host CLI instead of downloading a nested CLI copy into each project extension directory, so package authors can declare `@unbrained/pm-cli` as a peer dependency without adding the CLI's own telemetry/runtime dependencies to every workspace. Use this shape for packages published to npm or installed from a package root:
 
-```js
+```ts
 import { defineExtension } from "@unbrained/pm-cli/sdk";
 
 export default defineExtension({
@@ -287,7 +288,7 @@ Doctor JSON also includes `triage.collision_plan` with grouped surfaces, ranked 
 
 Use the public SDK barrel. Do not deep-import from `src/core` or `dist/core`.
 
-```js
+```ts
 import { defineExtension } from "@unbrained/pm-cli/sdk";
 ```
 
@@ -415,7 +416,7 @@ If a package-owned command is invoked before installation, usage guidance includ
 
 Third-party packages should import only stable public SDK subpaths:
 
-```js
+```ts
 import { defineExtension, createPmCliExpectedError } from "@unbrained/pm-cli/sdk";
 import { createExtensionTestHarness, activateExtensionForTest } from "@unbrained/pm-cli/sdk/testing";
 ```
