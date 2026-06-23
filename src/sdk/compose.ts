@@ -382,42 +382,21 @@ const EXTENSION_BLUEPRINT_HOOK_KEYS = [
   "onIndex",
 ] as const satisfies ReadonlyArray<keyof ExtensionBlueprintHooks>;
 
-function assignMergedHookSurface(
+type ExtensionBlueprintHookArray<TKey extends keyof ExtensionBlueprintHooks> = NonNullable<ExtensionBlueprintHooks[TKey]>;
+type ExtensionBlueprintHookValue<TKey extends keyof ExtensionBlueprintHooks> = ExtensionBlueprintHookArray<TKey>[number];
+
+function assignMergedHookSurface<TKey extends keyof ExtensionBlueprintHooks>(
   merged: ExtensionBlueprintHooks,
   surfaces: ReadonlyArray<ExtensionBlueprintHooks | null | undefined>,
-  key: keyof ExtensionBlueprintHooks,
+  key: TKey,
 ): void {
-  if (key === "beforeCommand") {
-    const value = mergeArraySurface(surfaces.map((hooks) => hooks?.beforeCommand));
-    if (value !== undefined) {
-      merged.beforeCommand = value;
-    }
-    return;
-  }
-  if (key === "afterCommand") {
-    const value = mergeArraySurface(surfaces.map((hooks) => hooks?.afterCommand));
-    if (value !== undefined) {
-      merged.afterCommand = value;
-    }
-    return;
-  }
-  if (key === "onWrite") {
-    const value = mergeArraySurface(surfaces.map((hooks) => hooks?.onWrite));
-    if (value !== undefined) {
-      merged.onWrite = value;
-    }
-    return;
-  }
-  if (key === "onRead") {
-    const value = mergeArraySurface(surfaces.map((hooks) => hooks?.onRead));
-    if (value !== undefined) {
-      merged.onRead = value;
-    }
-    return;
-  }
-  const value = mergeArraySurface(surfaces.map((hooks) => hooks?.onIndex));
+  const hookArrays = surfaces.map((hooks) => hooks?.[key]) as ReadonlyArray<
+    ExtensionBlueprintHookArray<TKey> | null | undefined
+  >;
+  const value = mergeArraySurface<ExtensionBlueprintHookValue<TKey>>(hookArrays);
   if (value !== undefined) {
-    merged.onIndex = value;
+    const typedMerged = merged as { [K in TKey]?: ExtensionBlueprintHookArray<K> };
+    typedMerged[key] = value as ExtensionBlueprintHookArray<TKey>;
   }
 }
 
