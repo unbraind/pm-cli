@@ -5,6 +5,7 @@ import {
   deriveExtensionCapabilities,
   describeExtensionBlueprint,
   lintExtensionBlueprint,
+  synthesizeExtensionManifest,
   type ExtensionBlueprint,
 } from "../../../src/sdk/compose.js";
 import {
@@ -13,6 +14,7 @@ import {
   deriveExtensionCapabilities as deriveExtensionCapabilitiesFromBarrel,
   describeExtensionBlueprint as describeExtensionBlueprintFromBarrel,
   lintExtensionBlueprint as lintExtensionBlueprintFromBarrel,
+  synthesizeExtensionManifest as synthesizeExtensionManifestFromBarrel,
   type ExtensionApi,
 } from "../../../src/sdk/index.js";
 import { activateExtensionForTest, describeExtensionActivation } from "../../../src/sdk/testing.js";
@@ -499,5 +501,66 @@ describe("sdk lintExtensionBlueprint", () => {
     expect(result.findings.filter((finding) => finding.code === "empty_surface").map((finding) => finding.field)).toEqual([
       "hooks",
     ]);
+  });
+});
+
+describe("sdk synthesizeExtensionManifest", () => {
+  const identity = { name: "synth", version: "1.2.3", entry: "./index.js", priority: 0 } as const;
+
+  it("is re-exported by identity from the barrel", () => {
+    expect(synthesizeExtensionManifestFromBarrel).toBe(synthesizeExtensionManifest);
+  });
+
+  it("fills capabilities from the blueprint and copies every identity field verbatim", () => {
+    const manifest = synthesizeExtensionManifest(
+      {
+        commands: [{ name: "demo", action: "demo", run: () => ({}) }],
+        itemFields: [{ name: "sev", type: "string" }],
+        hooks: { afterCommand: [() => undefined] },
+      },
+      {
+        ...identity,
+        manifest_version: 1,
+        pm_min_version: "2026.1.0",
+        engines: { node: ">=20" },
+        permissions: { fs_read: true },
+      },
+    );
+    expect(manifest).toEqual({
+      name: "synth",
+      version: "1.2.3",
+      entry: "./index.js",
+      priority: 0,
+      manifest_version: 1,
+      pm_min_version: "2026.1.0",
+      engines: { node: ">=20" },
+      permissions: { fs_read: true },
+      // Derived from the blueprint surfaces, sorted and de-duplicated.
+      capabilities: ["commands", "hooks", "schema"],
+    });
+  });
+
+  it("returns an empty capability set for a blueprint that registers nothing", () => {
+    expect(synthesizeExtensionManifest({}, identity).capabilities).toEqual([]);
+  });
+
+  it("unions additionalCapabilities (escape-hatch surfaces) with the derived set, alias-resolved and de-duplicated", () => {
+    const manifest = synthesizeExtensionManifest(
+      { commands: [{ name: "demo", action: "demo", run: () => ({}) }] },
+      // `renderers` is registered only in an imperative activate (invisible to
+      // derivation); `validation` is a legacy alias of `schema`; `commands` is
+      // already derived; `bogus` is unknown and dropped.
+      { ...identity, additionalCapabilities: ["renderers", "validation", "commands", "bogus"] },
+    );
+    expect(manifest.capabilities).toEqual(["commands", "renderers", "schema"]);
+  });
+
+  it("ignores a non-array additionalCapabilities without leaking it into the manifest (untyped .js robustness)", () => {
+    const manifest = synthesizeExtensionManifest(
+      { commands: [{ name: "demo", action: "demo", run: () => ({}) }] },
+      { ...identity, additionalCapabilities: null as unknown as string[] },
+    );
+    expect(manifest.capabilities).toEqual(["commands"]);
+    expect("additionalCapabilities" in manifest).toBe(false);
   });
 });

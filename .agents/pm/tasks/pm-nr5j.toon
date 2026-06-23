@@ -1,0 +1,14 @@
+id: pm-nr5j
+title: "synthesizeExtensionManifest(blueprint, identity): generate a complete least-privilege ExtensionManifest from a blueprint"
+description: "Pure generator in src/sdk/compose.ts. Merges author identity (name/version/entry/priority + optional engines/permissions/provenance/manifest_version/pm_min_version/pm_max_version/sandbox_profile/activation/legacy_capability_aliases) with capabilities=deriveExtensionCapabilities(blueprint), unioned with optional identity.additionalCapabilities (legacy-alias resolved, normalized, unknown dropped) for surfaces the imperative activate escape hatch registers. Sorted, de-duplicated. Pairs with defineExtensionManifest (which only TYPES a hand-written manifest)."
+type: Task
+status: closed
+priority: 2
+tags[2]: "area:sdk",authoring
+created_at: "2026-06-23T12:17:55.635Z"
+updated_at: "2026-06-23T12:31:45.827Z"
+author: claude-code-agent
+parent: pm-u5le
+resolution: "Shipped synthesizeExtensionManifest(blueprint, identity) in src/sdk/compose.ts: merges author identity with capabilities=deriveExtensionCapabilities, unioned with optional additionalCapabilities (alias-resolved, unknown dropped), sorted+deduped. Verified end-to-end via built dist (round-trip: synthesized manifest activates with exactly its capabilities). 100% cov."
+close_reason: "Shipped synthesizeExtensionManifest(blueprint, identity) in src/sdk/compose.ts: merges author identity with capabilities=deriveExtensionCapabilities, unioned with optional additionalCapabilities (alias-resolved, unknown dropped), sorted+deduped. Verified end-to-end via built dist (round-trip: synthesized manifest activates with exactly its capabilities). 100% cov."
+body: ""
