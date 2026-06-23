@@ -1,0 +1,20 @@
+id: pm-hng2
+title: "assertExtensionManifestCompatible(manifest, target) — SDK testing assert"
+description: "Add the throwing CI/test guard to src/sdk/testing.ts: runs checkExtensionManifestCompatibility and throws a descriptive Error listing every error-severity finding (blocking incompatibility) when the manifest would not load against the target pm version; warnings (unchecked) do not throw. Mirrors the assertExtension* helper conventions. Re-export from the SDK barrel and /sdk/testing."
+type: Task
+status: closed
+priority: 2
+tags[4]: "area:extensions","area:sdk",dx,testing
+created_at: "2026-06-23T14:45:59.450Z"
+updated_at: "2026-06-23T15:06:09.950Z"
+author: claude-code-agent
+parent: pm-1w0d
+files[2]{path,scope,note}:
+  src/sdk/testing.ts,project,assertExtensionManifestCompatible throwing guard
+  src/sdk/index.ts,project,Barrel re-export of assertExtensionManifestCompatible
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Author-time compat-check pointer in pm_min/max_version rules
+close_reason: "Shipped assertExtensionManifestCompatible(manifest, target) in src/sdk/testing.ts: throws on any blocking (error-severity) finding, returns the result on success so advisory warnings stay inspectable. Re-exported from SDK barrel + /sdk/testing. 100% cov."
+body: ""

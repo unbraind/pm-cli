@@ -14,6 +14,13 @@ import type { GlobalOptions } from "../shared/command-types.js";
 import { asRecordLoose } from "../shared/primitives.js";
 import { flattenFlagListValue, isFlagDefaultValueCoercible, resolveFlagValueKind } from "./flag-value-types.js";
 import { KNOWN_ITEM_FIELD_TYPES, normalizeItemFieldType, suggestKnownItemFieldType } from "./item-field-types.js";
+import {
+  compareComparableVersions,
+  evaluatePmMaxVersionBound,
+  evaluatePmMinVersionBound,
+  parseComparableVersion,
+  type PmVersionBoundEvaluation,
+} from "./version-compat.js";
 import type { PmSettings } from "../../types/index.js";
 // Cohesive helper groups now live in sibling modules. They are imported for the
 // discovery/activation code that stays here and re-exported below so existing
@@ -819,35 +826,6 @@ function formatUnknownError(error: unknown): string {
   return String(error);
 }
 
-function parseComparableVersion(value: string): number[] | null {
-  const normalized = value.trim().replace(/^>=\s*/, "").replace(/^v/i, "");
-  const release = normalized.split(/[+-]/, 1)[0];
-  if (!/^\d+(?:[.-]\d+)*$/.test(release)) {
-    return null;
-  }
-  return release.split(/[.-]/).map((part) => Number(part));
-}
-
-function compareComparableVersions(currentVersion: string, minimumVersion: string): number | null {
-  const currentParts = parseComparableVersion(currentVersion);
-  const minimumParts = parseComparableVersion(minimumVersion);
-  if (!currentParts || !minimumParts) {
-    return null;
-  }
-  const width = Math.max(currentParts.length, minimumParts.length);
-  for (let index = 0; index < width; index += 1) {
-    const current = currentParts[index] ?? 0;
-    const minimum = minimumParts[index] ?? 0;
-    if (current > minimum) {
-      return 1;
-    }
-    if (current < minimum) {
-      return -1;
-    }
-  }
-  return 0;
-}
-
 async function readCurrentPmCliVersion(): Promise<string | null> {
   try {
     const packageRoot = resolvePmPackageRootFromModule(import.meta.url, ["../../.."]);
@@ -864,40 +842,50 @@ function resolveCurrentPmCliVersion(): Promise<string | null> {
   return currentPmCliVersionPromise;
 }
 
+function formatPmVersionCompatibilityWarning(
+  layer: ExtensionLayer,
+  manifest: ExtensionManifest,
+  evaluation: PmVersionBoundEvaluation,
+): string | undefined {
+  const current = evaluation.current ?? "unknown";
+  if (evaluation.kind === "pm_min_version") {
+    switch (evaluation.status) {
+      case "invalid":
+        return `extension_pm_min_version_invalid:${layer}:${manifest.name}:required=${evaluation.required}`;
+      case "unchecked":
+        return `extension_pm_min_version_unchecked:${layer}:${manifest.name}:required=${evaluation.required}:current=${current}`;
+      case "unmet":
+        return `extension_pm_min_version_unmet:${layer}:${manifest.name}:required=${evaluation.required}:current=${current}`;
+      default:
+        return undefined;
+    }
+  }
+  switch (evaluation.status) {
+    case "invalid":
+      return `extension_pm_max_version_invalid:${layer}:${manifest.name}:allowed=${evaluation.required}`;
+    case "unchecked":
+      return `extension_pm_max_version_unchecked:${layer}:${manifest.name}:allowed=${evaluation.required}:current=${current}`;
+    case "exceeded_warn":
+      return `extension_pm_max_version_exceeded_warn:${layer}:${manifest.name}:allowed=${evaluation.required}:current=${current}`;
+    case "exceeded":
+      return `extension_pm_max_version_exceeded:${layer}:${manifest.name}:allowed=${evaluation.required}:current=${current}`;
+    default:
+      return undefined;
+  }
+}
+
 async function evaluatePmMinVersionCompatibility(
   layer: ExtensionLayer,
   manifest: ExtensionManifest,
 ): Promise<{ allowed: boolean; warning?: string }> {
-  if (typeof manifest.pm_min_version !== "string" || manifest.pm_min_version.trim().length === 0) {
+  // Resolve the current CLI version only when a bound is declared, so the common
+  // no-bound case never reads package.json.
+  if (manifest.pm_min_version === undefined) {
     return { allowed: true };
   }
-  if (!parseComparableVersion(manifest.pm_min_version)) {
-    return {
-      allowed: false,
-      warning: `extension_pm_min_version_invalid:${layer}:${manifest.name}:required=${manifest.pm_min_version}`,
-    };
-  }
-  const currentVersion = await resolveCurrentPmCliVersion();
-  if (!currentVersion) {
-    return {
-      allowed: true,
-      warning: `extension_pm_min_version_unchecked:${layer}:${manifest.name}:required=${manifest.pm_min_version}:current=unknown`,
-    };
-  }
-  const comparison = compareComparableVersions(currentVersion, manifest.pm_min_version);
-  if (comparison === null) {
-    return {
-      allowed: true,
-      warning: `extension_pm_min_version_unchecked:${layer}:${manifest.name}:required=${manifest.pm_min_version}:current=${currentVersion}`,
-    };
-  }
-  if (comparison < 0) {
-    return {
-      allowed: false,
-      warning: `extension_pm_min_version_unmet:${layer}:${manifest.name}:required=${manifest.pm_min_version}:current=${currentVersion}`,
-    };
-  }
-  return { allowed: true };
+  const evaluation = evaluatePmMinVersionBound(manifest.pm_min_version, await resolveCurrentPmCliVersion());
+  const warning = formatPmVersionCompatibilityWarning(layer, manifest, evaluation);
+  return warning ? { allowed: evaluation.allowed, warning } : { allowed: evaluation.allowed };
 }
 
 async function evaluatePmMaxVersionCompatibility(
@@ -905,54 +893,16 @@ async function evaluatePmMaxVersionCompatibility(
   manifest: ExtensionManifest,
   exceededMode: PmMaxVersionExceededMode,
 ): Promise<{ allowed: boolean; warning?: string }> {
-  if (typeof manifest.pm_max_version !== "string" || manifest.pm_max_version.trim().length === 0) {
+  if (manifest.pm_max_version === undefined) {
     return { allowed: true };
   }
-  // An upper bound must be an exact version. parseComparableVersion leniently strips a
-  // leading ">=" (for engines.pm min-version compat), which would turn a range-like
-  // ">=2026.6.1" into an inclusive max and wrongly block newer CLIs — reject range prefixes.
-  if (/^[<>=~^]/.test(manifest.pm_max_version.trim())) {
-    return {
-      allowed: false,
-      warning: `extension_pm_max_version_invalid:${layer}:${manifest.name}:allowed=${manifest.pm_max_version}`,
-    };
-  }
-  if (!parseComparableVersion(manifest.pm_max_version)) {
-    return {
-      allowed: false,
-      warning: `extension_pm_max_version_invalid:${layer}:${manifest.name}:allowed=${manifest.pm_max_version}`,
-    };
-  }
-  const currentVersion = await resolveCurrentPmCliVersion();
-  if (!currentVersion) {
-    return {
-      allowed: true,
-      warning: `extension_pm_max_version_unchecked:${layer}:${manifest.name}:allowed=${manifest.pm_max_version}:current=unknown`,
-    };
-  }
-  const comparison = compareComparableVersions(currentVersion, manifest.pm_max_version);
-  if (comparison === null) {
-    return {
-      allowed: true,
-      warning: `extension_pm_max_version_unchecked:${layer}:${manifest.name}:allowed=${manifest.pm_max_version}:current=${currentVersion}`,
-    };
-  }
-  if (comparison > 0) {
-    // pm-k5e8: `extensions.policy.pm_max_version_exceeded_mode` (default "block",
-    // per-layer overridable) relaxes this to warn-only so operators can keep
-    // pinned extensions loading during a CLI upgrade window.
-    if (exceededMode === "warn") {
-      return {
-        allowed: true,
-        warning: `extension_pm_max_version_exceeded_warn:${layer}:${manifest.name}:allowed=${manifest.pm_max_version}:current=${currentVersion}`,
-      };
-    }
-    return {
-      allowed: false,
-      warning: `extension_pm_max_version_exceeded:${layer}:${manifest.name}:allowed=${manifest.pm_max_version}:current=${currentVersion}`,
-    };
-  }
-  return { allowed: true };
+  const evaluation = evaluatePmMaxVersionBound(
+    manifest.pm_max_version,
+    await resolveCurrentPmCliVersion(),
+    exceededMode,
+  );
+  const warning = formatPmVersionCompatibilityWarning(layer, manifest, evaluation);
+  return warning ? { allowed: evaluation.allowed, warning } : { allowed: evaluation.allowed };
 }
 
 async function fingerprintPath(pathToInspect: string): Promise<string> {

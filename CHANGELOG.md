@@ -4,10 +4,17 @@
 
 ### Added
 
+- SDK author-time version-compatibility preflight: checkExtensionManifestCompatibility + assertExtensionManifestCompatible ([pm-1w0d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-1w0d.toon))
 - SDK author-once manifest synthesis: synthesizeExtensionManifest + assertExtensionManifestMatchesBlueprint ([pm-u5le](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-u5le.toon))
+
+### Changed
+
+- Extract shared version-compat core (core/extensions/version-compat.ts); loader delegates, behavior-preserving ([pm-sjea](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-sjea.toon))
 
 ### Other
 
+- assertExtensionManifestCompatible(manifest, target) — SDK testing assert ([pm-hng2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hng2.toon))
+- checkExtensionManifestCompatibility(manifest, target) — pure author-time analyzer ([pm-knma](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-knma.toon))
 - assertExtensionManifestMatchesBlueprint(manifest, blueprint): strict least-privilege CI guard against capability drift ([pm-pfxi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-pfxi.toon))
 - synthesizeExtensionManifest(blueprint, identity): generate a complete least-privilege ExtensionManifest from a blueprint ([pm-nr5j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-nr5j.toon))
 

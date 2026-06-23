@@ -1,0 +1,18 @@
+id: pm-sjea
+title: "Extract shared version-compat core (core/extensions/version-compat.ts); loader delegates, behavior-preserving"
+description: "Move parseComparableVersion/compareComparableVersions out of loader.ts into a new pure core/extensions/version-compat.ts and add a pure synchronous bound evaluator (evaluatePmMinVersionBound/evaluatePmMaxVersionBound) returning structured {kind,status,allowed,required,current}. Loader keeps its async wrappers but delegates comparison+status to the shared evaluator and formats the SAME extension_pm_*_version_* warning strings verbatim. Single source of truth so author-time and runtime can never drift."
+type: Task
+status: closed
+priority: 2
+tags[3]: "area:extensions","area:sdk",refactor
+created_at: "2026-06-23T14:45:48.821Z"
+updated_at: "2026-06-23T15:05:56.086Z"
+author: claude-code-agent
+parent: pm-1w0d
+files[2]{path,scope,note}:
+  src/core/extensions/version-compat.ts,project,New shared version-compat core (parse/compare + pure pm_min/pm_max bound evaluators)
+  src/core/extensions/loader.ts,project,Loader delegates compat to shared core; async wrappers format identical warning strings
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/version-compat.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Extracted core/extensions/version-compat.ts (parseComparableVersion/compareComparableVersions + pure evaluatePmMin/MaxVersionBound). Loader now delegates; async wrappers format the same extension_pm_*_version_* warnings verbatim. Verified byte-identical via exact-match loader tests + 100% coverage.
+body: ""

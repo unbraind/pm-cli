@@ -91,13 +91,20 @@ import {
 } from "../core/extensions/runtime-registrations.js";
 import { collectUsedExtensionCapabilities } from "../core/extensions/capability-usage.js";
 import { normalizeKnownExtensionCapability } from "../core/extensions/extension-capability-aliases.js";
-import { describeExtensionBlueprint, lintExtensionBlueprint } from "./compose.js";
+import {
+  checkExtensionManifestCompatibility,
+  describeExtensionBlueprint,
+  lintExtensionBlueprint,
+} from "./compose.js";
 import type {
   ExtensionBlueprint,
   ExtensionBlueprintLintCode,
   ExtensionBlueprintLintFinding,
   ExtensionBlueprintLintResult,
   ExtensionBlueprintLintSeverity,
+  ExtensionManifestCompatibilityManifest,
+  ExtensionManifestCompatibilityResult,
+  ExtensionManifestCompatibilityTarget,
   LintExtensionBlueprintOptions,
 } from "./compose.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
@@ -2018,6 +2025,38 @@ export function assertExtensionManifestMatchesBlueprint(
     );
   }
   return { used: result.used, declared, missing, unused, findings: result.findings };
+}
+
+/**
+ * Assert an extension manifest's declared version bounds permit it to load on a
+ * target pm CLI version, throwing when a bound blocks the load.
+ *
+ * This is the throwing CI/test counterpart to
+ * {@link ../sdk/compose.js#checkExtensionManifestCompatibility}: it runs the same
+ * author-time version-bound analysis and fails on any blocking incompatibility — a
+ * malformed bound (`*_invalid`), a `pm_min_version` the target is below
+ * (`pm_min_version_unmet`), or a `block`-mode `pm_max_version` the target exceeds
+ * (`pm_max_version_exceeded`). Advisory `warning` findings (`*_unchecked`, or a
+ * `warn`-mode `pm_max_version_exceeded_warn`) never throw, because the loader
+ * would still load the extension. Pin it to the pm version a package commits to
+ * supporting so a too-tight or malformed bound fails the package's own suite, not
+ * a user's install. The full compatibility result is returned on success so a test
+ * can still inspect advisory warnings.
+ */
+export function assertExtensionManifestCompatible(
+  manifest: ExtensionManifestCompatibilityManifest,
+  target: ExtensionManifestCompatibilityTarget,
+): ExtensionManifestCompatibilityResult {
+  const result = checkExtensionManifestCompatibility(manifest, target);
+  const blocking = result.findings.filter((finding) => finding.severity === "error");
+  if (blocking.length > 0) {
+    throw new Error(
+      `Extension manifest is not compatible with pm ${result.pmVersion}: ${blocking
+        .map((finding) => finding.message)
+        .join("; ")}`,
+    );
+  }
+  return result;
 }
 
 /**

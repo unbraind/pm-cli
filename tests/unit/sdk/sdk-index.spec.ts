@@ -18,6 +18,7 @@ import {
   assertExtensionBlueprint as assertExtensionBlueprintFromBarrel,
   assertExtensionCapabilityUsage as assertExtensionCapabilityUsageFromBarrel,
   assertExtensionDeactivated as assertExtensionDeactivatedFromBarrel,
+  assertExtensionManifestCompatible as assertExtensionManifestCompatibleFromBarrel,
   assertExtensionManifestMatchesBlueprint as assertExtensionManifestMatchesBlueprintFromBarrel,
   assertPackageManifest as assertPackageManifestFromBarrel,
   synthesizeExtensionManifest as synthesizeExtensionManifestFromBarrel,
@@ -89,6 +90,7 @@ import {
   assertExtensionBlueprint,
   assertExtensionCapabilityUsage,
   assertExtensionDeactivated,
+  assertExtensionManifestCompatible,
   assertExtensionManifestMatchesBlueprint,
   assertPackageManifest,
   assertRegisteredCommandContract,
@@ -3247,5 +3249,55 @@ describe("sdk assertExtensionManifestMatchesBlueprint", () => {
     expect(match.missing).toEqual([]);
     expect(match.unused).toEqual([]);
     expect(manifest.capabilities).toEqual(["commands", "hooks", "schema", "search"]);
+  });
+});
+
+describe("sdk assertExtensionManifestCompatible", () => {
+  it("is re-exported by identity from the barrel", () => {
+    expect(assertExtensionManifestCompatibleFromBarrel).toBe(assertExtensionManifestCompatible);
+  });
+
+  it("returns the compatibility result without throwing for a manifest within the supported window", () => {
+    const result = assertExtensionManifestCompatible(
+      { pm_min_version: "2026.1.0", pm_max_version: "2026.9.0" },
+      { pmVersion: "2026.6.23" },
+    );
+    expect(result).toEqual({ compatible: true, findings: [], pmVersion: "2026.6.23" });
+  });
+
+  it("returns (does not throw) on an advisory unchecked warning, surfacing it for inspection", () => {
+    const result = assertExtensionManifestCompatible({ pm_min_version: "2026.1.0" }, { pmVersion: "nightly" });
+    expect(result.compatible).toBe(true);
+    expect(result.findings[0]?.severity).toBe("warning");
+  });
+
+  it("throws naming the unmet minimum when the target is below pm_min_version", () => {
+    expect(() =>
+      assertExtensionManifestCompatible({ pm_min_version: "2026.9.0" }, { pmVersion: "2026.6.23" }),
+    ).toThrow(/not compatible with pm 2026\.6\.23.*Requires pm >= 2026\.9\.0/s);
+  });
+
+  it("throws when a block-mode pm_max_version is exceeded", () => {
+    expect(() =>
+      assertExtensionManifestCompatible({ pm_max_version: "2026.1.0" }, { pmVersion: "2026.6.23" }),
+    ).toThrow(/pm_max_version|Allows pm <= 2026\.1\.0/);
+  });
+
+  it("does not throw when an exceeded pm_max_version is relaxed to warn mode", () => {
+    expect(() =>
+      assertExtensionManifestCompatible(
+        { pm_max_version: "2026.1.0" },
+        { pmVersion: "2026.6.23", pmMaxVersionExceededMode: "warn" },
+      ),
+    ).not.toThrow();
+  });
+
+  it("joins multiple blocking findings into one error message", () => {
+    expect(() =>
+      assertExtensionManifestCompatible(
+        { pm_min_version: "2026.9.0", pm_max_version: ">=bad" },
+        { pmVersion: "2026.6.23" },
+      ),
+    ).toThrow(/Requires pm >= 2026\.9\.0.*; .*not a valid inclusive upper bound/s);
   });
 });
