@@ -1,10 +1,24 @@
 # Changelog
 
-## 2026.6.23 - 2026-06-23
+## Unreleased
 
 ### Added
 
 - SDK author-once manifest synthesis: synthesizeExtensionManifest + assertExtensionManifestMatchesBlueprint ([pm-u5le](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-u5le.toon))
+
+### Fixed
+
+- GH-244: empty search provider adapter strings should auto-normalize ([pm-28cf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-28cf.toon))
+
+### Other
+
+- assertExtensionManifestMatchesBlueprint(manifest, blueprint): strict least-privilege CI guard against capability drift ([pm-pfxi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-pfxi.toon))
+- synthesizeExtensionManifest(blueprint, identity): generate a complete least-privilege ExtensionManifest from a blueprint ([pm-nr5j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-nr5j.toon))
+
+## 2026.6.23 - 2026-06-23
+
+### Added
+
 - SDK lintExtensionBlueprint + assertExtensionBlueprint: author-time preflight for composeExtension blueprints (capability drift, duplicate commands, empty surfaces) ([pm-9ect](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-9ect.toon))
 - SDK describeExtensionBlueprint: static author-time surface map of a composeExtension blueprint (author-time inverse of describeExtensionActivation) ([pm-tlpv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-tlpv.toon))
 - Declarative extension authoring: composeExtension blueprint + deriveExtensionCapabilities + defineExtensionManifest ([pm-iqq0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-iqq0.toon))
@@ -15,14 +29,11 @@
 
 ### Fixed
 
-- GH-244: empty search provider adapter strings should auto-normalize ([pm-28cf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-28cf.toon))
 - deriveExtensionCapabilities omits 'schema' for a CommandDefinition with inline flags (manifest under-grant would fail activation) ([pm-5758](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5758.toon))
 - GH-340: Windows nightly telemetry OTLP cleanup EBUSY ([pm-zpe7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zpe7.toon))
 
 ### Other
 
-- assertExtensionManifestMatchesBlueprint(manifest, blueprint): strict least-privilege CI guard against capability drift ([pm-pfxi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-pfxi.toon))
-- synthesizeExtensionManifest(blueprint, identity): generate a complete least-privilege ExtensionManifest from a blueprint ([pm-nr5j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-nr5j.toon))
 - ADR: SDK author-time helpers are the static inverse of runtime extension checks (derive↔reconcile, describe-blueprint↔describe-activation, lint↔loader-enforcement+doctor) ([pm-4oio](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-4oio.toon))
 - ADR: SDK define\* builders are zero-cost identity helpers (defineConfig pattern), generic for object defs / non-generic for function defs ([pm-3mph](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-3mph.toon))
 
