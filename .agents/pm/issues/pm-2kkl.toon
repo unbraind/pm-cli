@@ -6,10 +6,12 @@ status: open
 priority: 3
 tags[5]: "area:ci","area:tests",cross-platform,flake,windows
 created_at: "2026-06-23T12:18:09.377Z"
-updated_at: "2026-06-23T12:18:17.678Z"
+updated_at: "2026-06-23T15:39:40.414Z"
 author: claude-code-agent
 parent: pm-u9d0
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-i84i,related,"2026-06-23T12:18:17.665Z",null,null
   pm-zpe7,related,"2026-06-23T12:18:17.665Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-06-23T15:39:40.414Z",codex,"Continuation check (codex): GH-348 still open and remains separate from the SDK version-compatibility branch. Current main CI run 28028252104 had Windows regression (Node 20) green, while GH-348 describes intermittent Nightly Validation worker teardown after tests pass. No SDK version-compat code changes touch the suspected LanceDB/OTLP teardown surface; leave pm-2kkl open for a Windows-runner reproduction/hardening lane."
 body: ""

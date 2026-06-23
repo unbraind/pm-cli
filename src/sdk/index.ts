@@ -33,6 +33,7 @@ export {
   assertExtensionBlueprint,
   assertExtensionCapabilityUsage,
   assertExtensionDeactivated,
+  assertExtensionManifestCompatible,
   assertExtensionManifestMatchesBlueprint,
   assertPackageManifest,
   assertRegisteredCommandContract,

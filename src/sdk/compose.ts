@@ -53,11 +53,18 @@ import type {
   VectorStoreAdapterDefinition,
 } from "../core/extensions/loader.js";
 import type { ExtensionActivationSummary } from "../core/extensions/activation-summary.js";
+import type { PmMaxVersionExceededMode } from "../core/extensions/extension-types.js";
 import {
   normalizeKnownExtensionCapability,
   resolveLegacyExtensionCapabilityAlias,
 } from "../core/extensions/extension-capability-aliases.js";
 import { normalizeCommandName } from "../core/extensions/extension-runtime-helpers.js";
+import {
+  evaluatePmMaxVersionBound,
+  evaluatePmMinVersionBound,
+  type PmVersionBoundEvaluation,
+  type PmVersionBoundKind,
+} from "../core/extensions/version-compat.js";
 
 /**
  * Documents the extension module payload exchanged by command, SDK, and package integrations.
@@ -776,4 +783,164 @@ export function synthesizeExtensionManifest(
     (left, right) => left.localeCompare(right),
   );
   return { ...manifestIdentity, capabilities };
+}
+
+/**
+ * The target a {@link checkExtensionManifestCompatibility} call evaluates a
+ * manifest's version bounds against.
+ */
+export interface ExtensionManifestCompatibilityTarget {
+  /**
+   * The pm CLI version to check the manifest against, e.g. the running CLI's
+   * `version` or a version floor a package commits to supporting. Plain
+   * dotted-numeric (`2026.6.23`) or `v`-prefixed values are compared; anything
+   * uninterpretable yields an `unchecked` finding rather than a false verdict.
+   */
+  pmVersion: string;
+  /**
+   * How a `pm_max_version` overrun is treated, mirroring the runtime
+   * `extensions.policy.pm_max_version_exceeded_mode`. `"block"` (the default)
+   * reports an exceeded upper bound as a blocking incompatibility; `"warn"`
+   * reports it as a non-blocking advisory, matching an operator who relaxed the
+   * gate during a CLI upgrade window.
+   */
+  pmMaxVersionExceededMode?: PmMaxVersionExceededMode;
+}
+
+/**
+ * The machine-readable kind of an {@link ExtensionManifestCompatibilityFinding},
+ * one per `<bound>_<outcome>` the loader can reach. Each mirrors a loader
+ * `extension_pm_*_version_*` warning: `*_invalid`/`*_unmet`/`*_exceeded` block the
+ * load, while `*_unchecked`/`*_exceeded_warn` are advisory (the extension still
+ * loads).
+ */
+export type ExtensionManifestCompatibilityCode =
+  | "pm_min_version_invalid"
+  | "pm_min_version_unchecked"
+  | "pm_min_version_unmet"
+  | "pm_max_version_invalid"
+  | "pm_max_version_unchecked"
+  | "pm_max_version_exceeded"
+  | "pm_max_version_exceeded_warn";
+
+/**
+ * A single version-bound issue {@link checkExtensionManifestCompatibility} found
+ * when evaluating a manifest against a target pm version.
+ */
+export interface ExtensionManifestCompatibilityFinding {
+  /** The machine-readable {@link ExtensionManifestCompatibilityCode} for programmatic handling. */
+  code: ExtensionManifestCompatibilityCode;
+  /** `error` when the bound blocks the load against the target version, `warning` when it is advisory. */
+  severity: "error" | "warning";
+  /** Which manifest bound produced the finding. */
+  constraint: PmVersionBoundKind;
+  /** The declared bound value, verbatim. */
+  required: string;
+  /** The target pm version the bound was evaluated against. */
+  current: string;
+  /** Human-readable explanation of the outcome and its effect on loading. */
+  message: string;
+}
+
+/**
+ * The structured result of {@link checkExtensionManifestCompatibility}.
+ */
+export interface ExtensionManifestCompatibilityResult {
+  /** `true` when no `error`-severity finding blocks the load against the target version. */
+  compatible: boolean;
+  /** Every bound finding, lower bound before upper bound; empty when both bounds are absent or satisfied. */
+  findings: ExtensionManifestCompatibilityFinding[];
+  /** The target pm version the manifest was checked against, echoed back for messaging. */
+  pmVersion: string;
+}
+
+/** Map a non-trivial bound evaluation to a compatibility finding, or `null` when the bound is absent or satisfied. */
+function toCompatibilityFinding(
+  evaluation: PmVersionBoundEvaluation,
+  pmVersion: string,
+): ExtensionManifestCompatibilityFinding | null {
+  if (evaluation.status === "absent" || evaluation.status === "ok") {
+    return null;
+  }
+  const code = `${evaluation.kind}_${evaluation.status}` as ExtensionManifestCompatibilityCode;
+  let message: string;
+  switch (code) {
+    case "pm_min_version_invalid":
+      message = `pm_min_version "${evaluation.required}" is not a valid version; the extension is treated as incompatible and the loader skips it.`;
+      break;
+    case "pm_min_version_unchecked":
+      message = `pm_min_version "${evaluation.required}" could not be compared against pm ${pmVersion}; compatibility is unverified.`;
+      break;
+    case "pm_min_version_unmet":
+      message = `Requires pm >= ${evaluation.required} but the target is pm ${pmVersion}; the loader skips the extension.`;
+      break;
+    case "pm_max_version_invalid":
+      message = `pm_max_version "${evaluation.required}" is not a valid inclusive upper bound (version ranges are not allowed); the extension is treated as incompatible and the loader skips it.`;
+      break;
+    case "pm_max_version_unchecked":
+      message = `pm_max_version "${evaluation.required}" could not be compared against pm ${pmVersion}; compatibility is unverified.`;
+      break;
+    case "pm_max_version_exceeded":
+      message = `Allows pm <= ${evaluation.required} but the target is pm ${pmVersion}; the loader skips the extension.`;
+      break;
+    case "pm_max_version_exceeded_warn":
+      message = `Target pm ${pmVersion} is newer than pm_max_version ${evaluation.required}, but the "warn" exceeded mode lets it load with a warning.`;
+      break;
+  }
+  return {
+    code,
+    severity: evaluation.allowed ? "warning" : "error",
+    constraint: evaluation.kind,
+    required: evaluation.required,
+    current: pmVersion,
+    message,
+  };
+}
+
+/**
+ * Check, without loading anything, whether an extension manifest's declared
+ * version bounds permit it to load on a given pm CLI version.
+ *
+ * This is the author-time inverse of the loader's runtime version gate: where the
+ * loader resolves the *installed* CLI version (asynchronously, from `package.json`)
+ * and emits `extension_pm_*_version_*` warnings, this pure synchronous function
+ * takes the {@link ExtensionManifestCompatibilityTarget.pmVersion | target version}
+ * the author supplies and returns structured findings. Both share the
+ * {@link ../core/extensions/version-compat.js | version-compat core}, so the
+ * author-time verdict and the runtime decision agree by construction — a package
+ * author can pin a CI test to the pm version they support and catch a too-tight
+ * `pm_min_version`, a malformed `pm_max_version`, or an upper bound a newer CLI
+ * would exceed, long before publishing.
+ *
+ * `compatible` is `true` only when no bound blocks the load (`*_invalid`,
+ * `*_unmet`, and a `block`-mode `*_exceeded`); `*_unchecked` (an uninterpretable
+ * bound or target) and a `warn`-mode `*_exceeded_warn` are advisory `warning`
+ * findings that still load. Pair it with
+ * {@link ../sdk/testing.js#assertExtensionManifestCompatible} to fail CI on a
+ * blocking incompatibility.
+ */
+export function checkExtensionManifestCompatibility(
+  manifest: Pick<ExtensionManifest, "pm_min_version" | "pm_max_version">,
+  target: ExtensionManifestCompatibilityTarget,
+): ExtensionManifestCompatibilityResult {
+  const minEvaluation = evaluatePmMinVersionBound(manifest.pm_min_version, target.pmVersion);
+  const maxEvaluation = evaluatePmMaxVersionBound(
+    manifest.pm_max_version,
+    target.pmVersion,
+    target.pmMaxVersionExceededMode ?? "block",
+  );
+  const findings: ExtensionManifestCompatibilityFinding[] = [];
+  const minFinding = toCompatibilityFinding(minEvaluation, target.pmVersion);
+  if (minFinding !== null) {
+    findings.push(minFinding);
+  }
+  const maxFinding = toCompatibilityFinding(maxEvaluation, target.pmVersion);
+  if (maxFinding !== null) {
+    findings.push(maxFinding);
+  }
+  return {
+    compatible: minEvaluation.allowed && maxEvaluation.allowed,
+    findings,
+    pmVersion: target.pmVersion,
+  };
 }

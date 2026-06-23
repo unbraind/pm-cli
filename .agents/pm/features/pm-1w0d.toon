@@ -1,0 +1,20 @@
+id: pm-1w0d
+title: "SDK author-time version-compatibility preflight: checkExtensionManifestCompatibility + assertExtensionManifestCompatible"
+description: "Deliver the epic's explicitly-listed 'version-compat' leg as an author-facing SDK primitive. pm_min_version/pm_max_version compatibility is enforced ONLY at runtime by the loader: the logic is async (reads the installed CLI package.json) and private to loader.ts, so a package author cannot statically verify their manifest version bounds against a target pm version without spinning up a real repo at a real CLI version. Add checkExtensionManifestCompatibility(manifest, target): a pure synchronous author-time analyzer returning structured per-bound findings that mirror the loader min/max semantics by construction. Add assertExtensionManifestCompatible(manifest, target): the throwing CI/test guard. Backed by a shared core/extensions/version-compat.ts the loader delegates to, so author-time and runtime checks can never drift (same 'agrees with loader by construction' philosophy as describeExtensionBlueprint/deriveExtensionCapabilities)."
+type: Feature
+status: closed
+priority: 2
+tags[4]: "area:extensions","area:sdk",authoring,dx
+created_at: "2026-06-23T14:45:08.106Z"
+updated_at: "2026-06-23T15:39:48.457Z"
+author: claude-code-agent
+parent: pm-ugqx
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-u5le,related,"2026-06-23T14:45:47.577Z",null,null
+  pm-iqq0,related,"2026-06-23T14:45:47.916Z",null,null
+  pm-4gw6,related,"2026-06-23T14:45:48.339Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-06-23T15:39:40.284Z",codex,"GitHub/release/observability evidence (codex): gh pr list returned no open PRs; open GitHub issue GH-348 remains tracked separately as pm-2kkl (Windows nightly worker teardown flake, current main CI Windows regression job green). GitHub Dependabot and CodeQL APIs returned only fixed alerts; secret-scanning API returned no alerts. GitHub release v2026.6.23 is published, npm @unbrained/pm-cli is 2026.6.23, npm pm-changelog latest is 2026.6.20. Sentry/telemetry gate passed for unbrained/pm-cli over 14 days: critical=0 high=0 total_blocking=0, 11 expected CLI errors ignored, telemetry finish_error_rate_pct=1.03, failures_without_error_code_rows=0. Local telemetry status enabled with last_successful_flush_at=2026-06-23T15:36:52.625Z."
+  "2026-06-23T15:39:48.457Z",codex,"Final verification evidence (codex): preserved existing pm-1w0d/pm-sjea/pm-knma/pm-hng2 lineage; no duplicate item created. Passed pnpm build; focused node scripts/run-tests.mjs test -- tests/unit/extensions/version-compat.spec.ts tests/unit/sdk/sdk-compose.spec.ts tests/unit/sdk/sdk-index.spec.ts (168 tests); pnpm quality:static; pnpm security:scan; pnpm audit --audit-level moderate; pnpm contracts:check; pnpm changelog:pm:check with pm-changelog@2026.6.20 unchanged; node scripts/run-tests.mjs coverage (248 files, 4949 tests, 100/100/100/100); isolated temp smoke at /tmp/tmp.T8RpzD8FxG using sandboxed PM_PATH/PM_GLOBAL_PATH and built dist SDK/loader compatibility checks."
+close_reason: "Delivered the epic's version-compat leg as an author-facing SDK primitive. Three children shipped: shared core/extensions/version-compat.ts (pm-sjea), checkExtensionManifestCompatibility analyzer (pm-knma), assertExtensionManifestCompatible test guard (pm-hng2). Author-time and runtime version gating now share one implementation and agree by construction. Verified end-to-end against the built dist (SDK helpers + real loader gating of pm_min/pm_max bounds). 4949 tests, 100% cov, static+docs gates green."
+body: ""

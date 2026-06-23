@@ -39,6 +39,7 @@ Common authoring exports:
 - `composeExtension` / `deriveExtensionCapabilities`
 - `synthesizeExtensionManifest` (generate a complete least-privilege manifest from a blueprint)
 - `describeExtensionBlueprint` (static surface map of a blueprint) / `lintExtensionBlueprint` (author-time preflight)
+- `checkExtensionManifestCompatibility` (author-time `pm_min_version`/`pm_max_version` check against a target pm version)
 - `EXTENSION_CAPABILITIES`
 - `EXTENSION_CAPABILITY_CONTRACT`
 - `EXTENSION_CAPABILITY_CONTRACT_VERSION`
@@ -119,6 +120,7 @@ Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 - `assertExtensionCapabilityUsage`
 - `assertExtensionBlueprint` (throwing preflight; pairs with `lintExtensionBlueprint`)
 - `assertExtensionManifestMatchesBlueprint` (strict manifest↔blueprint capability guard)
+- `assertExtensionManifestCompatible` (throwing version-bound guard; pairs with `checkExtensionManifestCompatibility`)
 - `describeExtensionActivation`
 - `describeExtensionBlueprint` / `lintExtensionBlueprint` (also surfaced here for the full author → describe → preflight → test loop)
 
@@ -886,6 +888,30 @@ import { assertExtensionManifestMatchesBlueprint } from "@unbrained/pm-cli/sdk/t
 // declares any the blueprint never exercises. Returns { used, declared, missing,
 // unused, findings } on an exact match.
 assertExtensionManifestMatchesBlueprint(manifest, blueprint);
+```
+
+Where the blueprint guards `capabilities`, a manifest's `pm_min_version` /
+`pm_max_version` bounds guard *which pm CLI versions the package supports*.
+`checkExtensionManifestCompatibility(manifest, { pmVersion, pmMaxVersionExceededMode? })`
+is the author-time inverse of the loader's runtime version gate: it takes the pm
+version you target and returns structured per-bound findings (the same
+`extension_pm_*_version_*` outcomes the loader emits), so you can verify the window
+without installing the package against a real CLI. `assertExtensionManifestCompatible`
+is the throwing CI guard — it fails on a blocking incompatibility (a malformed
+bound, a `pm_min_version` the target is below, or a `block`-mode `pm_max_version`
+the target exceeds) and stays quiet on advisory `*_unchecked` / `*_exceeded_warn`
+warnings, which still load:
+
+```ts
+import { checkExtensionManifestCompatibility } from "@unbrained/pm-cli/sdk";
+import { assertExtensionManifestCompatible } from "@unbrained/pm-cli/sdk/testing";
+
+// Inspect every bound outcome against a target version…
+const report = checkExtensionManifestCompatibility(manifest, { pmVersion: "2026.6.23" });
+//   report.compatible === false, report.findings[0].code === "pm_min_version_unmet", …
+
+// …or fail the package's own suite when a bound would block the load.
+assertExtensionManifestCompatible(manifest, { pmVersion: "2026.6.23" });
 ```
 
 Invoke a registered command handler to assert its behavior (not just that it was

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  checkExtensionManifestCompatibility,
   composeExtension,
   defineExtension,
   deriveExtensionCapabilities,
@@ -9,6 +10,7 @@ import {
   type ExtensionBlueprint,
 } from "../../../src/sdk/compose.js";
 import {
+  checkExtensionManifestCompatibility as checkExtensionManifestCompatibilityFromBarrel,
   composeExtension as composeExtensionFromBarrel,
   defineExtension as defineExtensionFromBarrel,
   deriveExtensionCapabilities as deriveExtensionCapabilitiesFromBarrel,
@@ -562,5 +564,90 @@ describe("sdk synthesizeExtensionManifest", () => {
     );
     expect(manifest.capabilities).toEqual(["commands"]);
     expect("additionalCapabilities" in manifest).toBe(false);
+  });
+});
+
+describe("sdk checkExtensionManifestCompatibility", () => {
+  it("is re-exported by identity from the barrel", () => {
+    expect(checkExtensionManifestCompatibilityFromBarrel).toBe(checkExtensionManifestCompatibility);
+  });
+
+  it("reports a manifest with no version bounds as compatible with no findings", () => {
+    expect(checkExtensionManifestCompatibility({}, { pmVersion: "2026.6.23" })).toEqual({
+      compatible: true,
+      findings: [],
+      pmVersion: "2026.6.23",
+    });
+  });
+
+  it("reports satisfied bounds as compatible with no findings", () => {
+    const result = checkExtensionManifestCompatibility(
+      { pm_min_version: "2026.1.0", pm_max_version: "2026.9.0" },
+      { pmVersion: "2026.6.23" },
+    );
+    expect(result).toEqual({ compatible: true, findings: [], pmVersion: "2026.6.23" });
+  });
+
+  it("flags an unmet pm_min_version as a blocking error", () => {
+    const result = checkExtensionManifestCompatibility({ pm_min_version: "2026.9.0" }, { pmVersion: "2026.6.23" });
+    expect(result.compatible).toBe(false);
+    expect(result.findings).toEqual([
+      {
+        code: "pm_min_version_unmet",
+        severity: "error",
+        constraint: "pm_min_version",
+        required: "2026.9.0",
+        current: "2026.6.23",
+        message: "Requires pm >= 2026.9.0 but the target is pm 2026.6.23; the loader skips the extension.",
+      },
+    ]);
+  });
+
+  it("flags a malformed pm_min_version as a blocking error", () => {
+    const result = checkExtensionManifestCompatibility({ pm_min_version: "nightly" }, { pmVersion: "2026.6.23" });
+    expect(result.compatible).toBe(false);
+    expect(result.findings[0]).toMatchObject({ code: "pm_min_version_invalid", severity: "error" });
+  });
+
+  it("reports an uninterpretable target as an advisory unchecked warning that still loads", () => {
+    const result = checkExtensionManifestCompatibility({ pm_min_version: "2026.1.0" }, { pmVersion: "nightly" });
+    expect(result.compatible).toBe(true);
+    expect(result.findings[0]).toMatchObject({ code: "pm_min_version_unchecked", severity: "warning" });
+  });
+
+  it("blocks an exceeded pm_max_version in the default (block) mode", () => {
+    const result = checkExtensionManifestCompatibility({ pm_max_version: "2026.1.0" }, { pmVersion: "2026.6.23" });
+    expect(result.compatible).toBe(false);
+    expect(result.findings[0]).toMatchObject({ code: "pm_max_version_exceeded", severity: "error" });
+  });
+
+  it("downgrades an exceeded pm_max_version to an advisory warning in warn mode", () => {
+    const result = checkExtensionManifestCompatibility(
+      { pm_max_version: "2026.1.0" },
+      { pmVersion: "2026.6.23", pmMaxVersionExceededMode: "warn" },
+    );
+    expect(result.compatible).toBe(true);
+    expect(result.findings[0]).toMatchObject({ code: "pm_max_version_exceeded_warn", severity: "warning" });
+  });
+
+  it("flags a range-prefixed pm_max_version as a blocking invalid bound", () => {
+    const result = checkExtensionManifestCompatibility({ pm_max_version: ">=2026.6.1" }, { pmVersion: "2026.6.23" });
+    expect(result.compatible).toBe(false);
+    expect(result.findings[0]).toMatchObject({ code: "pm_max_version_invalid", severity: "error" });
+  });
+
+  it("reports an uninterpretable target against a pm_max_version as an unchecked warning", () => {
+    const result = checkExtensionManifestCompatibility({ pm_max_version: "2026.9.0" }, { pmVersion: "nightly" });
+    expect(result.compatible).toBe(true);
+    expect(result.findings[0]).toMatchObject({ code: "pm_max_version_unchecked", severity: "warning" });
+  });
+
+  it("orders the lower-bound finding before the upper-bound finding", () => {
+    const result = checkExtensionManifestCompatibility(
+      { pm_min_version: "2026.9.0", pm_max_version: ">=bad" },
+      { pmVersion: "2026.6.23" },
+    );
+    expect(result.findings.map((finding) => finding.constraint)).toEqual(["pm_min_version", "pm_max_version"]);
+    expect(result.compatible).toBe(false);
   });
 });
