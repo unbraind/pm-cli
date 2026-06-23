@@ -4,6 +4,7 @@
 
 ### Added
 
+- SDK unified author-time preflight capstone: preflightExtension + assertExtensionPreflight ([pm-ozaf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ozaf.toon))
 - SDK author-time version-compatibility preflight: checkExtensionManifestCompatibility + assertExtensionManifestCompatible ([pm-1w0d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-1w0d.toon))
 - SDK author-once manifest synthesis: synthesizeExtensionManifest + assertExtensionManifestMatchesBlueprint ([pm-u5le](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-u5le.toon))
 
@@ -13,6 +14,8 @@
 
 ### Other
 
+- assertExtensionPreflight(blueprint, options) — throwing CI/test bookend (testing.ts) + barrel re-export ([pm-t8yl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-t8yl.toon))
+- preflightExtension(blueprint, options) — pure unified author-time analyzer (compose.ts) ([pm-tcw1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-tcw1.toon))
 - assertExtensionManifestCompatible(manifest, target) — SDK testing assert ([pm-hng2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hng2.toon))
 - checkExtensionManifestCompatibility(manifest, target) — pure author-time analyzer ([pm-knma](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-knma.toon))
 - assertExtensionManifestMatchesBlueprint(manifest, blueprint): strict least-privilege CI guard against capability drift ([pm-pfxi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-pfxi.toon))

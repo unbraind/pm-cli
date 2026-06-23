@@ -1,0 +1,18 @@
+id: pm-t8yl
+title: "assertExtensionPreflight(blueprint, options) — throwing CI/test bookend (testing.ts) + barrel re-export"
+description: "Add the throwing counterpart to src/sdk/testing.ts: runs preflightExtension and throws one descriptive Error aggregating every error-severity finding (tagged [source:code]) when the package would not load/activate cleanly; advisory warnings never throw. Returns the full ExtensionPreflightReport on success. Re-export both preflightExtension and assertExtensionPreflight from the SDK barrel (index.ts) and /sdk/testing."
+type: Task
+status: closed
+priority: 2
+tags[3]: "area:extensions","area:sdk","area:tests"
+created_at: "2026-06-23T18:47:15.565Z"
+updated_at: "2026-06-23T19:04:04.888Z"
+author: claude-code-agent
+parent: pm-ozaf
+resolution: "Added throwing assertExtensionPreflight(blueprint, options) over preflightExtension: throws one Error aggregating every error-severity finding tagged [source:code]; advisory warnings never throw; returns the full report on success. Re-exported from the SDK barrel (index.ts) and /sdk/testing."
+expected_result: One-line CI/test bookend replacing the chain of three asserts.
+actual_result: Delivered; 100% covered; verified via temp-dir SDK smoke against built dist.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-hng2,related,"2026-06-23T18:47:33.113Z",null,null
+close_reason: Implemented assertExtensionPreflight in src/sdk/testing.ts
+body: ""

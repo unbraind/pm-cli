@@ -95,6 +95,7 @@ import {
   checkExtensionManifestCompatibility,
   describeExtensionBlueprint,
   lintExtensionBlueprint,
+  preflightExtension,
 } from "./compose.js";
 import type {
   ExtensionBlueprint,
@@ -105,7 +106,9 @@ import type {
   ExtensionManifestCompatibilityManifest,
   ExtensionManifestCompatibilityResult,
   ExtensionManifestCompatibilityTarget,
+  ExtensionPreflightReport,
   LintExtensionBlueprintOptions,
+  PreflightExtensionOptions,
 } from "./compose.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import type { PmPackageManifest, PmPackageResourceKind } from "../core/packages/manifest.js";
@@ -2057,6 +2060,38 @@ export function assertExtensionManifestCompatible(
     );
   }
   return result;
+}
+
+/**
+ * Preflight a declarative {@link ExtensionBlueprint} through every author-time
+ * check in one test, throwing if any stage produced an `error`-severity finding.
+ *
+ * This is the throwing CI/test bookend over
+ * {@link ../sdk/compose.js#preflightExtension} — the single guard that replaces
+ * chaining {@link assertExtensionBlueprint}, {@link assertExtensionManifestMatchesBlueprint},
+ * and {@link assertExtensionManifestCompatible} in a package's
+ * `node:test`/Vitest suite. It runs the same consolidated analysis (always lints
+ * the blueprint; synthesizes the manifest when `options.identity` is given; checks
+ * version bounds when `options.target` is given) and throws one error listing every
+ * blocking finding tagged by its `source:code`. Advisory `warning` findings (an
+ * unused capability, a duplicate command, an `*_unchecked` bound) never throw,
+ * matching the underlying stages. The full {@link ExtensionPreflightReport} is
+ * returned on success so a test can still inspect those warnings, the synthesized
+ * manifest, and the derived capability set without failing on them.
+ */
+export function assertExtensionPreflight(
+  blueprint: ExtensionBlueprint,
+  options: PreflightExtensionOptions = {},
+): ExtensionPreflightReport {
+  const report = preflightExtension(blueprint, options);
+  if (!report.ok) {
+    const errors = report.findings.filter((finding) => finding.severity === "error");
+    throw new Error(
+      `Extension failed preflight with ${errors.length} ${errors.length === 1 ? "error" : "errors"}:\n` +
+        errors.map((finding) => `  - [${finding.source}:${finding.code}] ${finding.message}`).join("\n"),
+    );
+  }
+  return report;
 }
 
 /**

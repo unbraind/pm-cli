@@ -6,6 +6,7 @@ import {
   deriveExtensionCapabilities,
   describeExtensionBlueprint,
   lintExtensionBlueprint,
+  preflightExtension,
   synthesizeExtensionManifest,
   type ExtensionBlueprint,
 } from "../../../src/sdk/compose.js";
@@ -16,6 +17,7 @@ import {
   deriveExtensionCapabilities as deriveExtensionCapabilitiesFromBarrel,
   describeExtensionBlueprint as describeExtensionBlueprintFromBarrel,
   lintExtensionBlueprint as lintExtensionBlueprintFromBarrel,
+  preflightExtension as preflightExtensionFromBarrel,
   synthesizeExtensionManifest as synthesizeExtensionManifestFromBarrel,
   type ExtensionApi,
 } from "../../../src/sdk/index.js";
@@ -661,5 +663,154 @@ describe("sdk checkExtensionManifestCompatibility", () => {
     );
     expect(result.findings.map((finding) => finding.constraint)).toEqual(["pm_min_version", "pm_max_version"]);
     expect(result.compatible).toBe(false);
+  });
+});
+
+describe("sdk preflightExtension", () => {
+  const identity = { name: "preflight", version: "1.0.0", entry: "./index.js", priority: 0 } as const;
+  const commandBlueprint: ExtensionBlueprint = {
+    commands: [{ name: "demo", action: "demo", run: () => ({ ok: true }) }],
+  };
+
+  it("is re-exported by identity from the barrel", () => {
+    expect(preflightExtensionFromBarrel).toBe(preflightExtension);
+  });
+
+  it("lints the blueprint and leaves manifest and compatibility null when neither identity nor target is given", () => {
+    const report = preflightExtension(commandBlueprint);
+    expect(report.manifest).toBeNull();
+    expect(report.compatibility).toBeNull();
+    expect(report.ok).toBe(true);
+    expect(report.capabilities).toEqual(["commands"]);
+    // The blueprint exercises a capability but declares none, so the lone finding
+    // is the advisory manifest_capabilities_absent warning, tagged to the blueprint.
+    expect(report.findings).toEqual([
+      { source: "blueprint", severity: "warning", code: "manifest_capabilities_absent", message: expect.any(String) },
+    ]);
+    expect(report.blueprint.used).toEqual(["commands"]);
+  });
+
+  it("synthesizes the manifest from identity and exposes it on the report", () => {
+    const report = preflightExtension(commandBlueprint, { identity });
+    expect(report.manifest).toEqual({ ...identity, capabilities: ["commands"] });
+    expect(report.compatibility).toBeNull();
+    expect(report.ok).toBe(true);
+  });
+
+  it("omits the now-moot manifest_capabilities_absent advisory from the consolidated view once the manifest is synthesized", () => {
+    const report = preflightExtension(commandBlueprint, { identity });
+    // Synthesis authored the capability grant, so the lint's "declares none" advisory
+    // is contradictory noise in the consolidated findings…
+    expect(report.findings).toEqual([]);
+    // …but the raw lint result on report.blueprint still reports it faithfully.
+    expect(report.blueprint.findings).toContainEqual(
+      expect.objectContaining({ code: "manifest_capabilities_absent" }),
+    );
+  });
+
+  it("suppresses capability drift against a stale in-module manifest mirror once the manifest is synthesized", () => {
+    const report = preflightExtension(
+      {
+        commands: [{ name: "demo", action: "demo", run: () => ({}) }],
+        itemFields: [{ name: "sev", type: "string" }],
+        // Stale mirror: it omits the `schema` capability the itemFields surface exercises.
+        manifest: { ...identity, capabilities: ["commands"] },
+      },
+      { identity },
+    );
+    // The synthesized manifest — not the stale mirror — is what ships, so the blocking
+    // capability_undeclared drift must not flip the consolidated verdict to false.
+    expect(report.ok).toBe(true);
+    expect(report.findings).toEqual([]);
+    expect(report.manifest?.capabilities).toEqual(["commands", "schema"]);
+    // The raw lint still reports the drift against the mirror it was given.
+    expect(report.blueprint.findings).toContainEqual(
+      expect.objectContaining({ code: "capability_undeclared", capability: "schema" }),
+    );
+  });
+
+  it("keeps capability drift findings when the caller pins an explicit declaredCapabilities set, even while synthesizing", () => {
+    const report = preflightExtension(
+      {
+        commands: [{ name: "demo", action: "demo", run: () => ({}) }],
+        itemFields: [{ name: "sev", type: "string" }],
+      },
+      // An explicit declared set is a deliberate "check exactly this" request that
+      // omits `schema`, so the drift is honored rather than curated away.
+      { identity, declaredCapabilities: ["commands"] },
+    );
+    expect(report.ok).toBe(false);
+    expect(report.findings).toContainEqual(
+      expect.objectContaining({ source: "blueprint", code: "capability_undeclared" }),
+    );
+    // The synthesized manifest itself is still least-privilege-correct.
+    expect(report.manifest?.capabilities).toEqual(["commands", "schema"]);
+  });
+
+  it("checks the synthesized manifest version bounds against the target and blocks an unmet floor", () => {
+    const report = preflightExtension(commandBlueprint, {
+      identity: { ...identity, pm_min_version: "2026.9.0" },
+      target: { pmVersion: "2026.6.23" },
+    });
+    expect(report.manifest?.pm_min_version).toBe("2026.9.0");
+    expect(report.compatibility?.compatible).toBe(false);
+    expect(report.ok).toBe(false);
+    expect(report.findings).toContainEqual({
+      source: "compatibility",
+      severity: "error",
+      code: "pm_min_version_unmet",
+      message: expect.stringContaining("Requires pm >= 2026.9.0"),
+    });
+  });
+
+  it("falls back to the blueprint manifest mirror for the version check when no identity is given", () => {
+    const report = preflightExtension(
+      {
+        ...commandBlueprint,
+        manifest: { ...identity, capabilities: ["commands"], pm_max_version: "2026.1.0" },
+      },
+      { target: { pmVersion: "2026.6.23" } },
+    );
+    expect(report.manifest).toBeNull();
+    expect(report.compatibility?.compatible).toBe(false);
+    expect(report.findings.map((finding) => finding.code)).toContain("pm_max_version_exceeded");
+    expect(report.ok).toBe(false);
+  });
+
+  it("treats a target with no manifest bounds anywhere as compatible", () => {
+    const report = preflightExtension(commandBlueprint, { target: { pmVersion: "2026.6.23" } });
+    expect(report.manifest).toBeNull();
+    expect(report.compatibility).toEqual({ compatible: true, findings: [], pmVersion: "2026.6.23" });
+    expect(report.ok).toBe(true);
+  });
+
+  it("flags a capability the blueprint exercises but the declared set omits as a blocking error", () => {
+    const report = preflightExtension(commandBlueprint, { declaredCapabilities: [] });
+    expect(report.ok).toBe(false);
+    expect(report.findings).toEqual([
+      { source: "blueprint", severity: "error", code: "capability_undeclared", message: expect.any(String) },
+    ]);
+  });
+
+  it("tags every finding by source, ordering blueprint findings before compatibility findings", () => {
+    const report = preflightExtension(
+      { ...commandBlueprint, flags: {} },
+      { identity: { ...identity, pm_min_version: "2026.9.0" }, target: { pmVersion: "2026.6.23" } },
+    );
+    const sources = report.findings.map((finding) => finding.source);
+    expect(sources[sources.length - 1]).toBe("compatibility");
+    expect(sources.slice(0, -1).every((source) => source === "blueprint")).toBe(true);
+    // The empty `flags` surface is an advisory blueprint warning; the unmet floor is
+    // the blocking compatibility error — both flow through one consolidated report.
+    // Unified findings carry only source/severity/code/message; per-stage detail
+    // (the lint `field`, the compat `constraint`) stays on report.blueprint/compatibility.
+    expect(report.findings).toContainEqual({
+      source: "blueprint",
+      severity: "warning",
+      code: "empty_surface",
+      message: expect.any(String),
+    });
+    expect(report.blueprint.findings).toContainEqual(expect.objectContaining({ code: "empty_surface", field: "flags" }));
+    expect(report.ok).toBe(false);
   });
 });

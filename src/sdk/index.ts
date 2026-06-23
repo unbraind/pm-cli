@@ -35,6 +35,7 @@ export {
   assertExtensionDeactivated,
   assertExtensionManifestCompatible,
   assertExtensionManifestMatchesBlueprint,
+  assertExtensionPreflight,
   assertPackageManifest,
   assertRegisteredCommandContract,
   assertRegisteredCommandOverride,

@@ -20,6 +20,7 @@ import {
   assertExtensionDeactivated as assertExtensionDeactivatedFromBarrel,
   assertExtensionManifestCompatible as assertExtensionManifestCompatibleFromBarrel,
   assertExtensionManifestMatchesBlueprint as assertExtensionManifestMatchesBlueprintFromBarrel,
+  assertExtensionPreflight as assertExtensionPreflightFromBarrel,
   assertPackageManifest as assertPackageManifestFromBarrel,
   synthesizeExtensionManifest as synthesizeExtensionManifestFromBarrel,
   assertRegisteredCommandContract as assertRegisteredCommandContractFromBarrel,
@@ -92,6 +93,7 @@ import {
   assertExtensionDeactivated,
   assertExtensionManifestCompatible,
   assertExtensionManifestMatchesBlueprint,
+  assertExtensionPreflight,
   assertPackageManifest,
   assertRegisteredCommandContract,
   assertRegisteredCommandOverride,
@@ -3299,5 +3301,53 @@ describe("sdk assertExtensionManifestCompatible", () => {
         { pmVersion: "2026.6.23" },
       ),
     ).toThrow(/Requires pm >= 2026\.9\.0.*; .*not a valid inclusive upper bound/s);
+  });
+});
+
+describe("sdk assertExtensionPreflight", () => {
+  const identity = { name: "preflight", version: "1.0.0", entry: "./index.js", priority: 0 } as const;
+  const commandBlueprint = {
+    commands: [{ name: "demo", action: "demo", run: () => ({ ok: true }) }],
+  };
+
+  it("is re-exported by identity from the barrel", () => {
+    expect(assertExtensionPreflightFromBarrel).toBe(assertExtensionPreflight);
+  });
+
+  it("returns the consolidated report without throwing when every stage passes", () => {
+    const report = assertExtensionPreflight(commandBlueprint, {
+      declaredCapabilities: ["commands"],
+      identity,
+      target: { pmVersion: "2026.6.23" },
+    });
+    expect(report.ok).toBe(true);
+    expect(report.findings).toEqual([]);
+    expect(report.manifest).toEqual({ ...identity, capabilities: ["commands"] });
+    expect(report.compatibility?.compatible).toBe(true);
+  });
+
+  it("does not throw on advisory warnings, surfacing them on the returned report", () => {
+    // No declared capabilities → an advisory manifest_capabilities_absent warning only.
+    const report = assertExtensionPreflight(commandBlueprint);
+    expect(report.ok).toBe(true);
+    expect(report.findings).toEqual([
+      expect.objectContaining({ source: "blueprint", severity: "warning", code: "manifest_capabilities_absent" }),
+    ]);
+  });
+
+  it("throws naming the blocking finding tagged by source and code", () => {
+    expect(() => assertExtensionPreflight(commandBlueprint, { declaredCapabilities: [] })).toThrow(
+      /failed preflight with 1 error:\n {2}- \[blueprint:capability_undeclared\]/,
+    );
+  });
+
+  it("pluralizes and lists every blocking finding across stages in one error", () => {
+    expect(() =>
+      assertExtensionPreflight(commandBlueprint, {
+        declaredCapabilities: [],
+        identity: { ...identity, pm_min_version: "2026.9.0" },
+        target: { pmVersion: "2026.6.23" },
+      }),
+    ).toThrow(/failed preflight with 2 errors:[\s\S]*\[blueprint:capability_undeclared\][\s\S]*\[compatibility:pm_min_version_unmet\]/);
   });
 });

@@ -40,6 +40,7 @@ Common authoring exports:
 - `synthesizeExtensionManifest` (generate a complete least-privilege manifest from a blueprint)
 - `describeExtensionBlueprint` (static surface map of a blueprint) / `lintExtensionBlueprint` (author-time preflight)
 - `checkExtensionManifestCompatibility` (author-time `pm_min_version`/`pm_max_version` check against a target pm version)
+- `preflightExtension` (one-call capstone: lint + manifest synthesis + version-compat in a single consolidated report)
 - `EXTENSION_CAPABILITIES`
 - `EXTENSION_CAPABILITY_CONTRACT`
 - `EXTENSION_CAPABILITY_CONTRACT_VERSION`
@@ -121,6 +122,7 @@ Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 - `assertExtensionBlueprint` (throwing preflight; pairs with `lintExtensionBlueprint`)
 - `assertExtensionManifestMatchesBlueprint` (strict manifest↔blueprint capability guard)
 - `assertExtensionManifestCompatible` (throwing version-bound guard; pairs with `checkExtensionManifestCompatibility`)
+- `assertExtensionPreflight` (one-line throwing capstone over `preflightExtension`; replaces chaining the three asserts above)
 - `describeExtensionActivation`
 - `describeExtensionBlueprint` / `lintExtensionBlueprint` (also surfaced here for the full author → describe → preflight → test loop)
 
@@ -914,6 +916,43 @@ const report = checkExtensionManifestCompatibility(manifest, { pmVersion: "2026.
 
 // …or fail the package's own suite when a bound would block the load.
 assertExtensionManifestCompatible(manifest, { pmVersion: "2026.6.23" });
+```
+
+Tracked: [pm-ozaf](../.agents/pm/features/pm-ozaf.toon).
+
+`preflightExtension(blueprint, { identity?, target?, declaredCapabilities? })` is the
+author-time **capstone** that runs all of the above in one call — the static analog
+of `createExtensionTestHarness`, which unified the runtime-test helpers. Rather than
+chaining `lintExtensionBlueprint`, `synthesizeExtensionManifest`, and
+`checkExtensionManifestCompatibility` (and reconciling their separate results)
+before publishing, you read one `ExtensionPreflightReport`: the blueprint is always
+linted; when `identity` is given the complete least-privilege manifest is synthesized
+and returned; when `target` is given the synthesized bounds (or, absent an identity,
+the blueprint's in-module `manifest` mirror) are version-checked. The per-stage
+results are exposed unmodified (`report.blueprint` / `report.manifest` /
+`report.compatibility`) alongside a flattened `report.findings` where each entry is
+tagged by `source` (`"blueprint"` | `"compatibility"`); `report.ok` is `false` if any
+stage produced an `error`. `assertExtensionPreflight(blueprint, options?)` is the
+throwing one-line CI guard over it — it fails listing every blocking finding tagged
+`[source:code]` and stays quiet on advisory warnings, returning the full report on
+success:
+
+```ts
+import { preflightExtension } from "@unbrained/pm-cli/sdk";
+import { assertExtensionPreflight } from "@unbrained/pm-cli/sdk/testing";
+
+// Inspect every author-time stage in one report…
+const report = preflightExtension(blueprint, {
+  identity: { name: "command-kit", version: "1.0.0", entry: "./index.js", priority: 0 },
+  target: { pmVersion: "2026.6.23" },
+});
+//   report.manifest.capabilities (derived), report.compatibility.compatible, report.findings[]
+
+// …or guard the whole package in one CI line.
+assertExtensionPreflight(blueprint, {
+  identity: { name: "command-kit", version: "1.0.0", entry: "./index.js", priority: 0 },
+  target: { pmVersion: "2026.6.23" },
+});
 ```
 
 Invoke a registered command handler to assert its behavior (not just that it was

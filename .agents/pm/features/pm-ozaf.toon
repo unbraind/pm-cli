@@ -1,0 +1,23 @@
+id: pm-ozaf
+title: "SDK unified author-time preflight capstone: preflightExtension + assertExtensionPreflight"
+description: "Unify the SDK three separate author-time checks (lintExtensionBlueprint, synthesizeExtensionManifest, checkExtensionManifestCompatibility) into one pure preflightExtension(blueprint, options) capstone returning a consolidated ExtensionPreflightReport, plus a throwing assertExtensionPreflight CI/test bookend. Author-time analog of createExtensionTestHarness (pm-jcyn) which unified the runtime-test helpers: one call validates a declarative package before publishing instead of chaining 4-5 asserts. SDK-only, consistent with lint/synthesize/compat (none have CLI surface)."
+type: Feature
+status: closed
+priority: 2
+tags[4]: "area:extensions","area:sdk",author-ergonomics,capstone
+created_at: "2026-06-23T18:47:03.887Z"
+updated_at: "2026-06-23T19:17:34.266Z"
+author: claude-code-agent
+parent: pm-ugqx
+resolution: "preflightExtension (compose.ts) + assertExtensionPreflight (testing.ts) unify blueprint lint + manifest synthesis + version-compat into one report/one assert — the author-time analog of createExtensionTestHarness. SDK-only, consistent with lint/synthesize/compat. Docs: SDK.md export lists + capstone prose; EXTENSIONS.md note. Gates: build, quality:static, docs-skills, contracts:check, security:scan all green; full coverage 100/100/100/100 (4966 tests); temp-dir smoke against built dist passed."
+expected_result: Capstone makes pre-publish validation one call.
+actual_result: Delivered with both children closed.
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-1w0d,related,"2026-06-23T18:47:32.532Z",null,null
+  pm-9ect,related,"2026-06-23T18:47:32.532Z",null,null
+  pm-jcyn,related,"2026-06-23T18:47:32.532Z",null,null
+  pm-u5le,related,"2026-06-23T18:47:32.532Z",null,null
+notes[1]{created_at,author,text}:
+  "2026-06-23T19:17:34.266Z",claude-code-agent,"PR #351 bot-review round (2026-06-23): Gemini flagged a real broader bug beyond the initial manifest_capabilities_absent curation — ANY capability-drift finding the blueprint lint derives from a stale in-module manifest mirror (notably the BLOCKING capability_undeclared) is a false positive once an identity synthesizes a fresh authoritative manifest, and falsely flipped report.ok=false. Fixed by curating all CAPABILITY_DRIFT_LINT_CODES from the consolidated view, suppressed only when synthesizing without an explicit declaredCapabilities (explicit set always honored); raw report.blueprint keeps every finding. CodeRabbit: accepted SDK.md pm-ozaf tracker ref; declined cross-module {@link ../sdk/compose.js#preflightExtension} nitpick (file-qualified links are the codebase convention for cross-module refs, matching assertExtensionManifestCompatible). Codex not connected; Sourcery weekly-capped."
+close_reason: Unified author-time preflight capstone shipped
+body: ""
