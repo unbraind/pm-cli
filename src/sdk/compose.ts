@@ -808,6 +808,20 @@ export interface ExtensionManifestCompatibilityTarget {
 }
 
 /**
+ * The manifest fields {@link checkExtensionManifestCompatibility} evaluates.
+ *
+ * Values are intentionally `unknown` rather than `string` so plain JavaScript
+ * packages can preflight the same malformed blank/non-string bounds the loader's
+ * manifest parser rejects as `extension_manifest_invalid`.
+ */
+export interface ExtensionManifestCompatibilityManifest {
+  /** Inclusive lower pm CLI version bound from `manifest.json`. */
+  pm_min_version?: unknown;
+  /** Inclusive upper pm CLI version bound from `manifest.json`. */
+  pm_max_version?: unknown;
+}
+
+/**
  * The machine-readable kind of an {@link ExtensionManifestCompatibilityFinding},
  * one per `<bound>_<outcome>` the loader can reach. Each mirrors a loader
  * `extension_pm_*_version_*` warning: `*_invalid`/`*_unmet`/`*_exceeded` block the
@@ -920,7 +934,7 @@ function toCompatibilityFinding(
  * blocking incompatibility.
  */
 export function checkExtensionManifestCompatibility(
-  manifest: Pick<ExtensionManifest, "pm_min_version" | "pm_max_version">,
+  manifest: ExtensionManifestCompatibilityManifest,
   target: ExtensionManifestCompatibilityTarget,
 ): ExtensionManifestCompatibilityResult {
   const minEvaluation = evaluatePmMinVersionBound(manifest.pm_min_version, target.pmVersion);

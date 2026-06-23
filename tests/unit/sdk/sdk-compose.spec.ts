@@ -609,6 +609,18 @@ describe("sdk checkExtensionManifestCompatibility", () => {
     expect(result.findings[0]).toMatchObject({ code: "pm_min_version_invalid", severity: "error" });
   });
 
+  it("flags blank or non-string manifest bounds as blocking malformed values", () => {
+    const result = checkExtensionManifestCompatibility(
+      { pm_min_version: "", pm_max_version: 20260623 },
+      { pmVersion: "2026.6.23" },
+    );
+    expect(result.compatible).toBe(false);
+    expect(result.findings).toEqual([
+      expect.objectContaining({ code: "pm_min_version_invalid", required: "" }),
+      expect.objectContaining({ code: "pm_max_version_invalid", required: "20260623" }),
+    ]);
+  });
+
   it("reports an uninterpretable target as an advisory unchecked warning that still loads", () => {
     const result = checkExtensionManifestCompatibility({ pm_min_version: "2026.1.0" }, { pmVersion: "nightly" });
     expect(result.compatible).toBe(true);

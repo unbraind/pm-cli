@@ -102,6 +102,7 @@ import type {
   ExtensionBlueprintLintFinding,
   ExtensionBlueprintLintResult,
   ExtensionBlueprintLintSeverity,
+  ExtensionManifestCompatibilityManifest,
   ExtensionManifestCompatibilityResult,
   ExtensionManifestCompatibilityTarget,
   LintExtensionBlueprintOptions,
@@ -2043,7 +2044,7 @@ export function assertExtensionManifestMatchesBlueprint(
  * can still inspect advisory warnings.
  */
 export function assertExtensionManifestCompatible(
-  manifest: Pick<ExtensionManifest, "pm_min_version" | "pm_max_version">,
+  manifest: ExtensionManifestCompatibilityManifest,
   target: ExtensionManifestCompatibilityTarget,
 ): ExtensionManifestCompatibilityResult {
   const result = checkExtensionManifestCompatibility(manifest, target);
@@ -2052,7 +2053,7 @@ export function assertExtensionManifestCompatible(
     throw new Error(
       `Extension manifest is not compatible with pm ${result.pmVersion}: ${blocking
         .map((finding) => finding.message)
-        .join(" ")}`,
+        .join("; ")}`,
     );
   }
   return result;

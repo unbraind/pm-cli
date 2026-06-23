@@ -39,13 +39,21 @@ describe("compareComparableVersions", () => {
 });
 
 describe("evaluatePmMinVersionBound", () => {
-  it("is absent for an undefined, empty, or non-string bound", () => {
+  it("is absent for an undefined or null bound", () => {
     expect(evaluatePmMinVersionBound(undefined, "2026.6.23").status).toBe("absent");
-    expect(evaluatePmMinVersionBound("   ", "2026.6.23").status).toBe("absent");
-    expect(evaluatePmMinVersionBound(7 as unknown as string, "2026.6.23")).toMatchObject({
-      status: "absent",
-      allowed: true,
-      required: "",
+    expect(evaluatePmMinVersionBound(null, "2026.6.23").status).toBe("absent");
+  });
+
+  it("is invalid for a blank or non-string bound and blocks", () => {
+    expect(evaluatePmMinVersionBound("   ", "2026.6.23")).toMatchObject({
+      status: "invalid",
+      allowed: false,
+      required: "   ",
+    });
+    expect(evaluatePmMinVersionBound(7, "2026.6.23")).toMatchObject({
+      status: "invalid",
+      allowed: false,
+      required: "7",
     });
   });
 
@@ -86,9 +94,22 @@ describe("evaluatePmMinVersionBound", () => {
 });
 
 describe("evaluatePmMaxVersionBound", () => {
-  it("is absent for an undefined or empty bound", () => {
+  it("is absent for an undefined or null bound", () => {
     expect(evaluatePmMaxVersionBound(undefined, "2026.6.23", "block").status).toBe("absent");
-    expect(evaluatePmMaxVersionBound("", "2026.6.23", "block").status).toBe("absent");
+    expect(evaluatePmMaxVersionBound(null, "2026.6.23", "block").status).toBe("absent");
+  });
+
+  it("is invalid for a blank or non-string bound and blocks", () => {
+    expect(evaluatePmMaxVersionBound("", "2026.6.23", "block")).toMatchObject({
+      status: "invalid",
+      allowed: false,
+      required: "",
+    });
+    expect(evaluatePmMaxVersionBound(false, "2026.6.23", "block")).toMatchObject({
+      status: "invalid",
+      allowed: false,
+      required: "false",
+    });
   });
 
   it("is invalid for a range-prefixed bound and blocks", () => {

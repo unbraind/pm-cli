@@ -71,6 +71,10 @@ export interface PmVersionBoundEvaluation {
   current: string | null;
 }
 
+function formatVersionBoundValue(value: unknown): string {
+  return typeof value === "string" ? value : String(value);
+}
+
 /**
  * Parse a comparable release string into numeric segments, or `null` when it is
  * not an interpretable dotted-numeric version.
@@ -120,18 +124,22 @@ export function compareComparableVersions(currentVersion: string, otherVersion: 
  * Evaluate a manifest `pm_min_version` inclusive lower bound against the current
  * pm version.
  *
- * An absent or blank bound is `absent`; an unparseable bound is `invalid`; an
- * unknown or incomparable current version is `unchecked`; a current version below
- * the bound is `unmet`; otherwise the bound is satisfied (`ok`). `currentVersion`
- * is `null` when the loader could not resolve the running CLI version.
+ * An omitted bound is `absent`; a blank, non-string, or unparseable bound is
+ * `invalid`; an unknown or incomparable current version is `unchecked`; a current
+ * version below the bound is `unmet`; otherwise the bound is satisfied (`ok`).
+ * `currentVersion` is `null` when the loader could not resolve the running CLI
+ * version.
  */
 export function evaluatePmMinVersionBound(
-  required: string | undefined,
+  required: unknown,
   currentVersion: string | null,
 ): PmVersionBoundEvaluation {
-  const declared = typeof required === "string" ? required : "";
-  if (declared.trim().length === 0) {
-    return { kind: "pm_min_version", status: "absent", allowed: true, required: declared, current: currentVersion };
+  if (required === undefined || required === null) {
+    return { kind: "pm_min_version", status: "absent", allowed: true, required: "", current: currentVersion };
+  }
+  const declared = formatVersionBoundValue(required);
+  if (typeof required !== "string" || declared.trim().length === 0) {
+    return { kind: "pm_min_version", status: "invalid", allowed: false, required: declared, current: currentVersion };
   }
   if (!parseComparableVersion(declared)) {
     return { kind: "pm_min_version", status: "invalid", allowed: false, required: declared, current: currentVersion };
@@ -153,8 +161,9 @@ export function evaluatePmMinVersionBound(
  * Evaluate a manifest `pm_max_version` inclusive upper bound against the current
  * pm version.
  *
- * An absent or blank bound is `absent`. The upper bound must be an exact version:
- * a range prefix (`<`/`>`/`=`/`~`/`^`) is rejected as `invalid`, because
+ * An omitted bound is `absent`. A blank or non-string bound is `invalid`. The
+ * upper bound must be an exact version: a range prefix (`<`/`>`/`=`/`~`/`^`) is
+ * rejected as `invalid`, because
  * {@link parseComparableVersion} leniently strips a leading `>=` for
  * `engines.pm` min-version compatibility and would otherwise turn a range-like
  * `">=2026.6.1"` into an inclusive max and wrongly block newer CLIs. An
@@ -164,13 +173,16 @@ export function evaluatePmMinVersionBound(
  * during a controlled upgrade window); otherwise the bound is satisfied (`ok`).
  */
 export function evaluatePmMaxVersionBound(
-  required: string | undefined,
+  required: unknown,
   currentVersion: string | null,
   exceededMode: PmMaxVersionExceededMode,
 ): PmVersionBoundEvaluation {
-  const declared = typeof required === "string" ? required : "";
-  if (declared.trim().length === 0) {
-    return { kind: "pm_max_version", status: "absent", allowed: true, required: declared, current: currentVersion };
+  if (required === undefined || required === null) {
+    return { kind: "pm_max_version", status: "absent", allowed: true, required: "", current: currentVersion };
+  }
+  const declared = formatVersionBoundValue(required);
+  if (typeof required !== "string" || declared.trim().length === 0) {
+    return { kind: "pm_max_version", status: "invalid", allowed: false, required: declared, current: currentVersion };
   }
   if (/^[<>=~^]/.test(declared.trim()) || !parseComparableVersion(declared)) {
     return { kind: "pm_max_version", status: "invalid", allowed: false, required: declared, current: currentVersion };

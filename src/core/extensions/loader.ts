@@ -19,6 +19,7 @@ import {
   evaluatePmMaxVersionBound,
   evaluatePmMinVersionBound,
   parseComparableVersion,
+  type PmVersionBoundEvaluation,
 } from "./version-compat.js";
 import type { PmSettings } from "../../types/index.js";
 // Cohesive helper groups now live in sibling modules. They are imported for the
@@ -841,36 +842,50 @@ function resolveCurrentPmCliVersion(): Promise<string | null> {
   return currentPmCliVersionPromise;
 }
 
+function formatPmVersionCompatibilityWarning(
+  layer: ExtensionLayer,
+  manifest: ExtensionManifest,
+  evaluation: PmVersionBoundEvaluation,
+): string | undefined {
+  const current = evaluation.current ?? "unknown";
+  if (evaluation.kind === "pm_min_version") {
+    switch (evaluation.status) {
+      case "invalid":
+        return `extension_pm_min_version_invalid:${layer}:${manifest.name}:required=${evaluation.required}`;
+      case "unchecked":
+        return `extension_pm_min_version_unchecked:${layer}:${manifest.name}:required=${evaluation.required}:current=${current}`;
+      case "unmet":
+        return `extension_pm_min_version_unmet:${layer}:${manifest.name}:required=${evaluation.required}:current=${current}`;
+      default:
+        return undefined;
+    }
+  }
+  switch (evaluation.status) {
+    case "invalid":
+      return `extension_pm_max_version_invalid:${layer}:${manifest.name}:allowed=${evaluation.required}`;
+    case "unchecked":
+      return `extension_pm_max_version_unchecked:${layer}:${manifest.name}:allowed=${evaluation.required}:current=${current}`;
+    case "exceeded_warn":
+      return `extension_pm_max_version_exceeded_warn:${layer}:${manifest.name}:allowed=${evaluation.required}:current=${current}`;
+    case "exceeded":
+      return `extension_pm_max_version_exceeded:${layer}:${manifest.name}:allowed=${evaluation.required}:current=${current}`;
+    default:
+      return undefined;
+  }
+}
+
 async function evaluatePmMinVersionCompatibility(
   layer: ExtensionLayer,
   manifest: ExtensionManifest,
 ): Promise<{ allowed: boolean; warning?: string }> {
   // Resolve the current CLI version only when a bound is declared, so the common
   // no-bound case never reads package.json.
-  if (typeof manifest.pm_min_version !== "string" || manifest.pm_min_version.trim().length === 0) {
+  if (manifest.pm_min_version === undefined) {
     return { allowed: true };
   }
   const evaluation = evaluatePmMinVersionBound(manifest.pm_min_version, await resolveCurrentPmCliVersion());
-  const current = evaluation.current ?? "unknown";
-  switch (evaluation.status) {
-    case "invalid":
-      return {
-        allowed: evaluation.allowed,
-        warning: `extension_pm_min_version_invalid:${layer}:${manifest.name}:required=${manifest.pm_min_version}`,
-      };
-    case "unchecked":
-      return {
-        allowed: evaluation.allowed,
-        warning: `extension_pm_min_version_unchecked:${layer}:${manifest.name}:required=${manifest.pm_min_version}:current=${current}`,
-      };
-    case "unmet":
-      return {
-        allowed: evaluation.allowed,
-        warning: `extension_pm_min_version_unmet:${layer}:${manifest.name}:required=${manifest.pm_min_version}:current=${current}`,
-      };
-    default:
-      return { allowed: evaluation.allowed };
-  }
+  const warning = formatPmVersionCompatibilityWarning(layer, manifest, evaluation);
+  return warning ? { allowed: evaluation.allowed, warning } : { allowed: evaluation.allowed };
 }
 
 async function evaluatePmMaxVersionCompatibility(
@@ -878,7 +893,7 @@ async function evaluatePmMaxVersionCompatibility(
   manifest: ExtensionManifest,
   exceededMode: PmMaxVersionExceededMode,
 ): Promise<{ allowed: boolean; warning?: string }> {
-  if (typeof manifest.pm_max_version !== "string" || manifest.pm_max_version.trim().length === 0) {
+  if (manifest.pm_max_version === undefined) {
     return { allowed: true };
   }
   const evaluation = evaluatePmMaxVersionBound(
@@ -886,31 +901,8 @@ async function evaluatePmMaxVersionCompatibility(
     await resolveCurrentPmCliVersion(),
     exceededMode,
   );
-  const current = evaluation.current ?? "unknown";
-  switch (evaluation.status) {
-    case "invalid":
-      return {
-        allowed: evaluation.allowed,
-        warning: `extension_pm_max_version_invalid:${layer}:${manifest.name}:allowed=${manifest.pm_max_version}`,
-      };
-    case "unchecked":
-      return {
-        allowed: evaluation.allowed,
-        warning: `extension_pm_max_version_unchecked:${layer}:${manifest.name}:allowed=${manifest.pm_max_version}:current=${current}`,
-      };
-    case "exceeded_warn":
-      return {
-        allowed: evaluation.allowed,
-        warning: `extension_pm_max_version_exceeded_warn:${layer}:${manifest.name}:allowed=${manifest.pm_max_version}:current=${current}`,
-      };
-    case "exceeded":
-      return {
-        allowed: evaluation.allowed,
-        warning: `extension_pm_max_version_exceeded:${layer}:${manifest.name}:allowed=${manifest.pm_max_version}:current=${current}`,
-      };
-    default:
-      return { allowed: evaluation.allowed };
-  }
+  const warning = formatPmVersionCompatibilityWarning(layer, manifest, evaluation);
+  return warning ? { allowed: evaluation.allowed, warning } : { allowed: evaluation.allowed };
 }
 
 async function fingerprintPath(pathToInspect: string): Promise<string> {

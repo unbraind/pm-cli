@@ -3298,6 +3298,6 @@ describe("sdk assertExtensionManifestCompatible", () => {
         { pm_min_version: "2026.9.0", pm_max_version: ">=bad" },
         { pmVersion: "2026.6.23" },
       ),
-    ).toThrow(/Requires pm >= 2026\.9\.0.*not a valid inclusive upper bound/s);
+    ).toThrow(/Requires pm >= 2026\.9\.0.*; .*not a valid inclusive upper bound/s);
   });
 });
