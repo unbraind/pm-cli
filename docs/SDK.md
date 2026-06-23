@@ -37,6 +37,7 @@ Common authoring exports:
 
 - `defineExtension`
 - `composeExtension` / `deriveExtensionCapabilities`
+- `synthesizeExtensionManifest` (generate a complete least-privilege manifest from a blueprint)
 - `describeExtensionBlueprint` (static surface map of a blueprint) / `lintExtensionBlueprint` (author-time preflight)
 - `EXTENSION_CAPABILITIES`
 - `EXTENSION_CAPABILITY_CONTRACT`
@@ -117,6 +118,7 @@ Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 - `assertRegisteredMigration`
 - `assertExtensionCapabilityUsage`
 - `assertExtensionBlueprint` (throwing preflight; pairs with `lintExtensionBlueprint`)
+- `assertExtensionManifestMatchesBlueprint` (strict manifest↔blueprint capability guard)
 - `describeExtensionActivation`
 - `describeExtensionBlueprint` / `lintExtensionBlueprint` (also surfaced here for the full author → describe → preflight → test loop)
 
@@ -738,6 +740,39 @@ malformed definition surfaces the same activation diagnostic as a hand-written
 hand-written `activate` bodies so they load in extension-only installs; reach for
 `composeExtension` in npm package-mode authoring where the SDK is a dependency.
 
+### Generate the manifest (author once)
+
+Tracked: [pm-u5le](../.agents/pm/features/pm-u5le.toon).
+
+`deriveExtensionCapabilities` gives you only the capability set; every other
+manifest field is still yours to hand-write. `synthesizeExtensionManifest(blueprint, identity)`
+closes that gap — it is the **generate** verb that completes the declarative loop
+(`compose → derive → describe/lint → synthesize`). Supply the identity fields a
+blueprint cannot determine (`name`, `version`, `entry`, `priority`, plus any
+optional `engines`/`permissions`/version floors/etc.) and it returns a complete
+`ExtensionManifest` with `capabilities` derived, sorted, and de-duplicated. Write
+the blueprint once; never hand-sync `capabilities` again:
+
+```js
+import { synthesizeExtensionManifest } from "@unbrained/pm-cli/sdk";
+
+const manifest = synthesizeExtensionManifest(blueprint, {
+  name: "command-kit",
+  version: "1.0.0",
+  entry: "./index.js",
+  priority: 0,
+});
+manifest.capabilities; // ["commands", "parser", "schema"] — derived, not hand-written
+```
+
+Where `defineExtensionManifest` only *types* a manifest you wrote by hand, this
+*generates* it. For the rare surface registered through the imperative `activate`
+escape hatch (invisible to static derivation — e.g. a renderer wired in
+`activate`), pass `additionalCapabilities` and they are unioned in (legacy-alias
+resolved, unknown names dropped). Use the result as the on-disk `manifest.json`
+content or the in-module `manifest` mirror; guard a hand-maintained manifest
+against drift with `assertExtensionManifestMatchesBlueprint` (below).
+
 ### Author-time introspection and preflight
 
 Tracked: [pm-tlpv](../.agents/pm/features/pm-tlpv.toon),
@@ -834,6 +869,23 @@ import { assertExtensionBlueprint } from "@unbrained/pm-cli/sdk/testing";
 // Throws if the blueprint and its declared capabilities have drifted; otherwise
 // returns the lint result (including any non-blocking warnings) for inspection.
 const report = assertExtensionBlueprint(blueprint);
+```
+
+`assertExtensionManifestMatchesBlueprint(manifest, blueprint)` is the **strict**
+bookend to that lenient preflight: where `assertExtensionBlueprint` only fails on
+an *undeclared* capability and merely warns on an unused one, this assertion fails
+on **both** — so a hand-maintained `manifest.json` stays exactly the least-privilege
+set the blueprint requires (assert what `synthesizeExtensionManifest` would
+otherwise generate). Only `capabilities` are reconciled, since that is the one
+manifest field a blueprint determines:
+
+```ts
+import { assertExtensionManifestMatchesBlueprint } from "@unbrained/pm-cli/sdk/testing";
+
+// Throws if manifest.capabilities is missing any capability the blueprint uses, or
+// declares any the blueprint never exercises. Returns { used, declared, missing,
+// unused, findings } on an exact match.
+assertExtensionManifestMatchesBlueprint(manifest, blueprint);
 ```
 
 Invoke a registered command handler to assert its behavior (not just that it was

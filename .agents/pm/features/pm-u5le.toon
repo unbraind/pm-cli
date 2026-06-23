@@ -1,0 +1,20 @@
+id: pm-u5le
+title: "SDK author-once manifest synthesis: synthesizeExtensionManifest + assertExtensionManifestMatchesBlueprint"
+description: "Complete the declarative extension-authoring loop (compose -> derive -> describe/lint -> SYNTHESIZE). Today deriveExtensionCapabilities computes only the capability set; every other manifest field is hand-synced. Add synthesizeExtensionManifest(blueprint, identity) to GENERATE a complete least-privilege ExtensionManifest from a blueprint + author identity, and assertExtensionManifestMatchesBlueprint() as the STRICT CI guard (errors on BOTH undeclared and unused capabilities, unlike the lenient assertExtensionBlueprint) so a hand-maintained manifest.json never drifts. Author once: write the blueprint, generate the manifest, keep it honest."
+type: Feature
+status: closed
+priority: 2
+tags[4]: "area:extensions","area:sdk",authoring,dx
+created_at: "2026-06-23T12:17:44.212Z"
+updated_at: "2026-06-23T12:32:07.017Z"
+author: claude-code-agent
+parent: pm-ugqx
+resolution: "Both child tasks shipped (synthesizeExtensionManifest + assertExtensionManifestMatchesBlueprint). Declarative authoring loop now complete: compose -> derive -> describe/lint -> SYNTHESIZE -> assert. 100% cov, 4911 tests, verified end-to-end via built dist."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-9ect,related,"2026-06-23T12:18:09.096Z",null,null
+  pm-iqq0,related,"2026-06-23T12:18:09.096Z",null,null
+  pm-tlpv,related,"2026-06-23T12:18:09.096Z",null,null
+notes[1]{created_at,author,text}:
+  "2026-06-23T12:32:06.592Z",claude-code-agent,"Design: synthesizeExtensionManifest is the GENERATE verb completing compose -> derive -> describe/lint -> synthesize. It pairs with defineExtensionManifest (which only TYPES a hand-written manifest). Capabilities = deriveExtensionCapabilities(blueprint) UNION normalized additionalCapabilities (for imperative-activate escape-hatch surfaces invisible to static derivation). assertExtensionManifestMatchesBlueprint is the STRICT bookend to the lenient assertExtensionBlueprint: fails on BOTH missing (undeclared, would crash activation) AND unused (over-grant, violates least-privilege). Coverage gotcha: pre-guarding manifest.capabilities with Array.isArray makes lint's declared non-null, so result.declared ?? [] is a DEAD branch -> used an erasable cast (result.declared as ExtensionCapability[]) since the repo has zero non-null assertions in src/sdk and a runtime guard would break 100% branch cov. Verified round-trip via built dist: synthesized manifest activates with exactly its capabilities (least-privilege by construction)."
+close_reason: "Both child tasks shipped (synthesizeExtensionManifest + assertExtensionManifestMatchesBlueprint). Declarative authoring loop now complete: compose -> derive -> describe/lint -> SYNTHESIZE -> assert. 100% cov, 4911 tests, verified end-to-end via built dist."
+body: ""

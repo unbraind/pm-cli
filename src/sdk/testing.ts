@@ -1951,6 +1951,76 @@ export function assertExtensionBlueprint(
 }
 
 /**
+ * The structured result of {@link assertExtensionManifestMatchesBlueprint}: the
+ * reconciliation between a manifest's declared capabilities and the set the
+ * blueprint actually exercises. Returned only when they match exactly (the
+ * assertion throws otherwise).
+ */
+export interface ExtensionManifestBlueprintMatch {
+  /** The least-privilege capability set the blueprint exercises (from `deriveExtensionCapabilities`). */
+  used: ExtensionCapability[];
+  /** The manifest's declared capabilities, legacy-alias resolved and normalized. */
+  declared: ExtensionCapability[];
+  /** Capabilities the blueprint uses but the manifest omits — would crash activation. Empty on success. */
+  missing: ExtensionCapability[];
+  /** Capabilities the manifest declares but no surface exercises — violates least privilege. Empty on success. */
+  unused: ExtensionCapability[];
+  /** Every lint finding for the blueprint, so callers can inspect advisory warnings. */
+  findings: ExtensionBlueprintLintFinding[];
+}
+
+/**
+ * Strictly assert a manifest's `capabilities` equal the least-privilege set a
+ * declarative {@link ExtensionBlueprint} exercises, throwing on any drift in
+ * either direction.
+ *
+ * This is the strict bookend to the lenient {@link assertExtensionBlueprint}:
+ * where that helper fails only on an *undeclared* capability (the `error`-severity
+ * `extension_capability_missing` activation crash) and merely *warns* on an unused
+ * one, this assertion fails on **both** — an undeclared capability (`missing`) and
+ * a declared-but-unused one (`unused`) — so a hand-maintained `manifest.json` stays
+ * exactly the set the blueprint requires. Drop it into a package's
+ * `node:test`/Vitest suite to guard against capability drift in CI, the natural
+ * companion to {@link ../sdk/compose.js#synthesizeExtensionManifest} (assert what
+ * you would otherwise generate). Only `capabilities` are reconciled because that is
+ * the one manifest field a blueprint determines.
+ *
+ * The reconciliation is returned on success so a test can still inspect advisory
+ * warnings (duplicate command, empty surface) without failing on them.
+ */
+export function assertExtensionManifestMatchesBlueprint(
+  manifest: Pick<ExtensionManifest, "capabilities">,
+  blueprint: ExtensionBlueprint,
+): ExtensionManifestBlueprintMatch {
+  // Coerce a malformed/absent capabilities field to an explicit empty declared set
+  // so an untyped `.js` caller gets a deterministic `missing` list rather than the
+  // lint silently falling back to the blueprint's in-module manifest mirror.
+  const declaredCapabilities = Array.isArray(manifest.capabilities) ? manifest.capabilities : [];
+  const result = lintExtensionBlueprint(blueprint, { declaredCapabilities });
+  // `declared` is guaranteed non-null here: we always hand lint an array, so it
+  // never takes its "no declared set" branch. The cast drops the unreachable null.
+  const declared = result.declared as ExtensionCapability[];
+  const declaredSet = new Set(declared);
+  const usedSet = new Set(result.used);
+  const missing = result.used.filter((capability) => !declaredSet.has(capability));
+  const unused = declared.filter((capability) => !usedSet.has(capability));
+  if (missing.length > 0 || unused.length > 0) {
+    const parts: string[] = [];
+    if (missing.length > 0) {
+      parts.push(`missing [${missing.join(", ")}] (the blueprint registers ${missing.length === 1 ? "a surface" : "surfaces"} requiring ${missing.length === 1 ? "it" : "them"}; activation throws extension_capability_missing)`);
+    }
+    if (unused.length > 0) {
+      parts.push(`unused [${unused.join(", ")}] (declared but no surface exercises ${unused.length === 1 ? "it" : "them"}; drop for least privilege)`);
+    }
+    throw new Error(
+      `Manifest capabilities do not match the blueprint: ${parts.join("; ")}. ` +
+        "Set capabilities to synthesizeExtensionManifest(blueprint, identity).capabilities to stay in sync.",
+    );
+  }
+  return { used: result.used, declared, missing, unused, findings: result.findings };
+}
+
+/**
  * A fluent, single-extension test fixture returned by
  * {@link createExtensionTestHarness}.
  *

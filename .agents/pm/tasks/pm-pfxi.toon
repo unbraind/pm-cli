@@ -1,0 +1,14 @@
+id: pm-pfxi
+title: "assertExtensionManifestMatchesBlueprint(manifest, blueprint): strict least-privilege CI guard against capability drift"
+description: "Throwing testing helper in src/sdk/testing.ts. Reconciles manifest.capabilities against deriveExtensionCapabilities(blueprint) via lintExtensionBlueprint, then throws on ANY capability finding -> undeclared (would crash activation with extension_capability_missing) AND unused (least-privilege violation). The STRICT bookend to the lenient assertExtensionBlueprint (which only warns on unused). Returns {used, declared, missing, unused, findings} on an exact match."
+type: Task
+status: closed
+priority: 2
+tags[2]: "area:sdk",testing
+created_at: "2026-06-23T12:17:55.902Z"
+updated_at: "2026-06-23T12:51:17.837Z"
+author: claude-code-agent
+parent: pm-u5le
+resolution: "Shipped assertExtensionManifestMatchesBlueprint(manifest, blueprint) in src/sdk/testing.ts: strict bookend to assertExtensionBlueprint — throws on BOTH undeclared (missing) and unused (over-grant) capabilities. Verified drift detection both directions via built dist. 100% cov."
+close_reason: "Shipped assertExtensionManifestMatchesBlueprint(manifest, blueprint) in src/sdk/testing.ts: strict bookend to assertExtensionBlueprint — throws on BOTH undeclared (missing) and unused (over-grant) capabilities. Verified drift detection both directions via built dist. 100% cov."
+body: ""

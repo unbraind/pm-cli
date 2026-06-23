@@ -18,7 +18,9 @@ import {
   assertExtensionBlueprint as assertExtensionBlueprintFromBarrel,
   assertExtensionCapabilityUsage as assertExtensionCapabilityUsageFromBarrel,
   assertExtensionDeactivated as assertExtensionDeactivatedFromBarrel,
+  assertExtensionManifestMatchesBlueprint as assertExtensionManifestMatchesBlueprintFromBarrel,
   assertPackageManifest as assertPackageManifestFromBarrel,
+  synthesizeExtensionManifest as synthesizeExtensionManifestFromBarrel,
   assertRegisteredCommandContract as assertRegisteredCommandContractFromBarrel,
   assertRegisteredCommandOverride as assertRegisteredCommandOverrideFromBarrel,
   assertRegisteredExporter as assertRegisteredExporterFromBarrel,
@@ -87,6 +89,7 @@ import {
   assertExtensionBlueprint,
   assertExtensionCapabilityUsage,
   assertExtensionDeactivated,
+  assertExtensionManifestMatchesBlueprint,
   assertPackageManifest,
   assertRegisteredCommandContract,
   assertRegisteredCommandOverride,
@@ -3144,5 +3147,105 @@ describe("sdk assertExtensionBlueprint", () => {
         { declaredCapabilities: [] },
       ),
     ).toThrow(/failed preflight with 2 errors:/);
+  });
+});
+
+describe("sdk assertExtensionManifestMatchesBlueprint", () => {
+  const commandBlueprint = { commands: [{ name: "a b", action: "a-b", run: () => ({}) }] };
+
+  it("is re-exported by identity from the barrel", () => {
+    expect(assertExtensionManifestMatchesBlueprintFromBarrel).toBe(assertExtensionManifestMatchesBlueprint);
+  });
+
+  it("returns the reconciliation for an exactly-matching manifest, surfacing advisory warnings", () => {
+    const match = assertExtensionManifestMatchesBlueprint(
+      { capabilities: ["commands"] },
+      {
+        commands: [
+          { name: "dup", action: "dup-1", run: () => ({}) },
+          { name: "dup", action: "dup-2", run: () => ({}) },
+        ],
+      },
+    );
+    expect(match.missing).toEqual([]);
+    expect(match.unused).toEqual([]);
+    expect(match.used).toEqual(["commands"]);
+    expect(match.declared).toEqual(["commands"]);
+    // A duplicate_command is an advisory warning, surfaced but never fatal here.
+    expect(match.findings.some((finding) => finding.code === "duplicate_command")).toBe(true);
+  });
+
+  it("normalizes a legacy-alias declared capability before reconciling", () => {
+    // `validation` is a legacy alias of `schema`; it must reconcile cleanly against
+    // a blueprint whose item fields require `schema`, not report spurious drift.
+    const match = assertExtensionManifestMatchesBlueprint(
+      { capabilities: ["commands", "validation"] },
+      { ...commandBlueprint, itemFields: [{ name: "sev", type: "string" }] },
+    );
+    expect(match.declared).toEqual(["commands", "schema"]);
+    expect(match.missing).toEqual([]);
+    expect(match.unused).toEqual([]);
+  });
+
+  it("throws naming the missing capability when the manifest under-grants", () => {
+    expect(() =>
+      assertExtensionManifestMatchesBlueprint(
+        { capabilities: ["commands"] },
+        { ...commandBlueprint, flags: { "a b": [{ long: "--x" }] } },
+      ),
+    ).toThrow(/missing \[schema\].*extension_capability_missing/s);
+  });
+
+  it("throws naming the unused capability when the manifest over-grants (least privilege)", () => {
+    expect(() =>
+      assertExtensionManifestMatchesBlueprint({ capabilities: ["commands", "search"] }, commandBlueprint),
+    ).toThrow(/unused \[search\].*least privilege/s);
+  });
+
+  it("reports both missing and unused capabilities in one error", () => {
+    expect(() =>
+      assertExtensionManifestMatchesBlueprint(
+        { capabilities: ["search"] },
+        { ...commandBlueprint, flags: { "a b": [{ long: "--x" }] } },
+      ),
+    ).toThrow(/missing \[commands, schema\].*unused \[search\]/s);
+  });
+
+  it("pluralizes the unused list when several capabilities are over-granted", () => {
+    expect(() =>
+      assertExtensionManifestMatchesBlueprint({ capabilities: ["commands", "renderers", "search"] }, commandBlueprint),
+    ).toThrow(/unused \[renderers, search\] \(declared but no surface exercises them;/);
+  });
+
+  it("treats a manifest with no capabilities array as declaring nothing", () => {
+    // An untyped `.js` caller can omit `capabilities`; the helper must report every
+    // exercised capability as missing rather than crashing or falling back.
+    expect(() =>
+      assertExtensionManifestMatchesBlueprint({ capabilities: undefined as unknown as string[] }, commandBlueprint),
+    ).toThrow(/missing \[commands\]/);
+  });
+
+  it("passes for an empty blueprint against an empty manifest", () => {
+    const match = assertExtensionManifestMatchesBlueprint({ capabilities: [] }, {});
+    expect(match).toEqual({ used: [], declared: [], missing: [], unused: [], findings: [] });
+  });
+
+  it("always accepts a manifest synthesized from the same blueprint (synthesize↔assert round-trip)", () => {
+    const blueprint = {
+      commands: [{ name: "demo", action: "demo", run: () => ({}) }],
+      itemFields: [{ name: "sev", type: "string" }],
+      searchProviders: [{ name: "s", query: async () => ({ hits: [] }) }],
+      hooks: { afterCommand: [() => undefined] },
+    };
+    const manifest = synthesizeExtensionManifestFromBarrel(blueprint, {
+      name: "round-trip",
+      version: "1.0.0",
+      entry: "./index.js",
+      priority: 0,
+    });
+    const match = assertExtensionManifestMatchesBlueprint(manifest, blueprint);
+    expect(match.missing).toEqual([]);
+    expect(match.unused).toEqual([]);
+    expect(manifest.capabilities).toEqual(["commands", "hooks", "schema", "search"]);
   });
 });

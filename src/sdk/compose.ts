@@ -721,3 +721,59 @@ export function lintExtensionBlueprint(
     declared,
   };
 }
+
+/**
+ * The author-supplied identity fields {@link synthesizeExtensionManifest} cannot
+ * derive from a blueprint: every {@link ExtensionManifest} field except the
+ * generated `capabilities`.
+ *
+ * The blueprint determines `capabilities` (the surfaces it registers) and nothing
+ * else, so `name`/`version`/`entry`/`priority` and any optional metadata
+ * (engines, permissions, provenance, version floors/ceilings, sandbox profile,
+ * manifest version, activation, legacy aliases) are the author's to supply here.
+ */
+export interface SynthesizeExtensionManifestIdentity extends Omit<ExtensionManifest, "capabilities"> {
+  /**
+   * Extra capabilities to grant beyond the blueprint's derived set, for surfaces
+   * registered through the blueprint's imperative `activate` escape hatch that
+   * static derivation cannot see (e.g. a renderer wired in `activate`). Each is
+   * legacy-alias resolved and normalized like a declared manifest capability;
+   * unknown names are dropped (the synthesized manifest is validated at load).
+   */
+  additionalCapabilities?: readonly string[];
+}
+
+/**
+ * Generate a complete, least-privilege {@link ExtensionManifest} from a
+ * declarative {@link ExtensionBlueprint} and the author's identity fields.
+ *
+ * This is the *generate* verb that completes the declarative authoring loop
+ * (`compose → derive → describe/lint → synthesize`). Where
+ * {@link defineExtensionManifest} only *types* a hand-written manifest and
+ * {@link deriveExtensionCapabilities} computes only the capability set, this
+ * function assembles the whole manifest: it copies every author-supplied identity
+ * field verbatim and fills `capabilities` with `deriveExtensionCapabilities`
+ * unioned with any {@link SynthesizeExtensionManifestIdentity.additionalCapabilities | additionalCapabilities},
+ * sorted and de-duplicated. The author writes the blueprint once and never
+ * hand-syncs `manifest.capabilities` — declaring nothing the extension does not
+ * use and nothing it does.
+ *
+ * It is a pure assembler: it neither validates the blueprint definitions (that
+ * stays in `api.register*` at activation) nor the identity fields (the loader
+ * validates the on-disk manifest). Pair it with
+ * {@link ../sdk/testing.js#assertExtensionManifestMatchesBlueprint} to guard a
+ * hand-maintained `manifest.json` against drift in CI.
+ */
+export function synthesizeExtensionManifest(
+  blueprint: ExtensionBlueprint,
+  identity: SynthesizeExtensionManifestIdentity,
+): ExtensionManifest {
+  const { additionalCapabilities, ...manifestIdentity } = identity;
+  // `Array.isArray` keeps an untyped JavaScript author who passes a non-array
+  // (or omits the field) from crashing the spread, mirroring the rest of the SDK.
+  const extra = Array.isArray(additionalCapabilities) ? normalizeDeclaredCapabilities(additionalCapabilities) : [];
+  const capabilities = [...new Set<ExtensionCapability>([...deriveExtensionCapabilities(blueprint), ...extra])].sort(
+    (left, right) => left.localeCompare(right),
+  );
+  return { ...manifestIdentity, capabilities };
+}
