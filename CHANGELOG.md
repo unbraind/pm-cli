@@ -6,10 +6,6 @@
 
 - SDK author-once manifest synthesis: synthesizeExtensionManifest + assertExtensionManifestMatchesBlueprint ([pm-u5le](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-u5le.toon))
 
-### Fixed
-
-- GH-244: empty search provider adapter strings should auto-normalize ([pm-28cf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-28cf.toon))
-
 ### Other
 
 - assertExtensionManifestMatchesBlueprint(manifest, blueprint): strict least-privilege CI guard against capability drift ([pm-pfxi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-pfxi.toon))
