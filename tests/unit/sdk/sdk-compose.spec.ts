@@ -708,6 +708,45 @@ describe("sdk preflightExtension", () => {
     );
   });
 
+  it("suppresses capability drift against a stale in-module manifest mirror once the manifest is synthesized", () => {
+    const report = preflightExtension(
+      {
+        commands: [{ name: "demo", action: "demo", run: () => ({}) }],
+        itemFields: [{ name: "sev", type: "string" }],
+        // Stale mirror: it omits the `schema` capability the itemFields surface exercises.
+        manifest: { ...identity, capabilities: ["commands"] },
+      },
+      { identity },
+    );
+    // The synthesized manifest — not the stale mirror — is what ships, so the blocking
+    // capability_undeclared drift must not flip the consolidated verdict to false.
+    expect(report.ok).toBe(true);
+    expect(report.findings).toEqual([]);
+    expect(report.manifest?.capabilities).toEqual(["commands", "schema"]);
+    // The raw lint still reports the drift against the mirror it was given.
+    expect(report.blueprint.findings).toContainEqual(
+      expect.objectContaining({ code: "capability_undeclared", capability: "schema" }),
+    );
+  });
+
+  it("keeps capability drift findings when the caller pins an explicit declaredCapabilities set, even while synthesizing", () => {
+    const report = preflightExtension(
+      {
+        commands: [{ name: "demo", action: "demo", run: () => ({}) }],
+        itemFields: [{ name: "sev", type: "string" }],
+      },
+      // An explicit declared set is a deliberate "check exactly this" request that
+      // omits `schema`, so the drift is honored rather than curated away.
+      { identity, declaredCapabilities: ["commands"] },
+    );
+    expect(report.ok).toBe(false);
+    expect(report.findings).toContainEqual(
+      expect.objectContaining({ source: "blueprint", code: "capability_undeclared" }),
+    );
+    // The synthesized manifest itself is still least-privilege-correct.
+    expect(report.manifest?.capabilities).toEqual(["commands", "schema"]);
+  });
+
   it("checks the synthesized manifest version bounds against the target and blocks an unmet floor", () => {
     const report = preflightExtension(commandBlueprint, {
       identity: { ...identity, pm_min_version: "2026.9.0" },

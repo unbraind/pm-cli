@@ -960,6 +960,21 @@ export function checkExtensionManifestCompatibility(
 }
 
 /**
+ * The lint codes whose verdict depends on the *declared* capability set rather
+ * than the blueprint's structure. {@link preflightExtension} drops these from its
+ * consolidated view when it synthesizes the manifest from an `identity` without an
+ * explicit declared set, because the synthesized manifest — not the blueprint's
+ * stale in-module `manifest` mirror — is what the package ships, so a drift against
+ * the mirror is a false positive. Structural codes (`duplicate_command`,
+ * `command_override_conflict`, `empty_surface`) are never suppressed.
+ */
+const CAPABILITY_DRIFT_LINT_CODES = new Set<ExtensionBlueprintLintCode>([
+  "capability_undeclared",
+  "capability_unused",
+  "manifest_capabilities_absent",
+]);
+
+/**
  * Options for {@link preflightExtension} and
  * {@link ../sdk/testing.js#assertExtensionPreflight}. Every field is optional:
  * each one a check enables, so an author opts into exactly the stages whose
@@ -1030,9 +1045,10 @@ export interface ExtensionPreflightReport {
   /**
    * Every finding from all stages, blueprint-lint findings before compatibility
    * findings, each tagged by `source`. This is the consolidated, curated view: when
-   * `options.identity` synthesizes the manifest, the lint's now-moot
-   * `manifest_capabilities_absent` advisory is omitted here (the raw `blueprint`
-   * result still carries it).
+   * `options.identity` synthesizes the manifest without an explicit
+   * `declaredCapabilities` set, capability-drift findings the lint raised against the
+   * blueprint's now-superseded in-module `manifest` mirror are omitted here (the raw
+   * `blueprint` result still carries them).
    */
   findings: ExtensionPreflightFinding[];
 }
@@ -1060,11 +1076,13 @@ export interface ExtensionPreflightReport {
  * context. The per-stage structured results are exposed unmodified
  * (`report.blueprint`/`manifest`/`compatibility`) alongside the flattened,
  * source-tagged `report.findings`; `report.ok` is `false` if any stage produced an
- * `error`-severity finding. The flattened `findings` are lightly curated for the
- * author-once flow: once an `identity` synthesizes the manifest, the lint's now-moot
- * `manifest_capabilities_absent` advisory is omitted from `report.findings` (the raw
- * `report.blueprint` result still reports it). Pair it with
- * {@link ../sdk/testing.js#assertExtensionPreflight} to fail CI in one line.
+ * `error`-severity finding. The flattened `findings` are curated for the author-once
+ * flow: once an `identity` synthesizes the manifest (and no explicit
+ * `declaredCapabilities` was pinned), the synthesized manifest — not the blueprint's
+ * in-module `manifest` mirror — is what ships, so capability-drift findings the lint
+ * raised against that mirror are false positives and are omitted from
+ * `report.findings` (the raw `report.blueprint` result still reports them). Pair it
+ * with {@link ../sdk/testing.js#assertExtensionPreflight} to fail CI in one line.
  */
 export function preflightExtension(
   blueprint: ExtensionBlueprint,
@@ -1078,15 +1096,19 @@ export function preflightExtension(
   const compatibility = options.target
     ? checkExtensionManifestCompatibility(manifest ?? blueprint.manifest ?? {}, options.target)
     : null;
-  // When preflight synthesizes the manifest it has authored the capability grant
-  // itself, so the lint's `manifest_capabilities_absent` advisory ("declares none,
-  // set capabilities to deriveExtensionCapabilities(blueprint)") is superseded and
-  // would be contradictory noise in the consolidated view. Drop just that one
-  // advisory here; the raw lint result on `report.blueprint` still reports it.
-  const blueprintFindings =
-    manifest === null
-      ? blueprintResult.findings
-      : blueprintResult.findings.filter((finding) => finding.code !== "manifest_capabilities_absent");
+  // When preflight synthesizes the manifest from an identity (and the caller did not
+  // pin an explicit declaredCapabilities set), the blueprint lint reconciled against
+  // the blueprint's in-module `manifest` mirror — which the synthesized manifest
+  // supersedes. Capability-drift findings against that stale mirror are false
+  // positives in the consolidated view (a missing capability would even flip `ok` to
+  // false though the synthesized manifest declares it), so drop them; structural
+  // findings are unaffected and the raw lint result on `report.blueprint` keeps all of
+  // them. An explicit declaredCapabilities set is a deliberate "check exactly this"
+  // request, so it is never suppressed.
+  const suppressCapabilityDrift = manifest !== null && options.declaredCapabilities === undefined;
+  const blueprintFindings = suppressCapabilityDrift
+    ? blueprintResult.findings.filter((finding) => !CAPABILITY_DRIFT_LINT_CODES.has(finding.code))
+    : blueprintResult.findings;
   const findings: ExtensionPreflightFinding[] = [
     ...blueprintFindings.map(
       (finding): ExtensionPreflightFinding => ({

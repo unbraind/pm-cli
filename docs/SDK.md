@@ -918,6 +918,8 @@ const report = checkExtensionManifestCompatibility(manifest, { pmVersion: "2026.
 assertExtensionManifestCompatible(manifest, { pmVersion: "2026.6.23" });
 ```
 
+Tracked: [pm-ozaf](../.agents/pm/features/pm-ozaf.toon).
+
 `preflightExtension(blueprint, { identity?, target?, declaredCapabilities? })` is the
 author-time **capstone** that runs all of the above in one call — the static analog
 of `createExtensionTestHarness`, which unified the runtime-test helpers. Rather than
