@@ -1,0 +1,21 @@
+id: pm-ozaf
+title: "SDK unified author-time preflight capstone: preflightExtension + assertExtensionPreflight"
+description: "Unify the SDK three separate author-time checks (lintExtensionBlueprint, synthesizeExtensionManifest, checkExtensionManifestCompatibility) into one pure preflightExtension(blueprint, options) capstone returning a consolidated ExtensionPreflightReport, plus a throwing assertExtensionPreflight CI/test bookend. Author-time analog of createExtensionTestHarness (pm-jcyn) which unified the runtime-test helpers: one call validates a declarative package before publishing instead of chaining 4-5 asserts. SDK-only, consistent with lint/synthesize/compat (none have CLI surface)."
+type: Feature
+status: closed
+priority: 2
+tags[4]: "area:extensions","area:sdk",author-ergonomics,capstone
+created_at: "2026-06-23T18:47:03.887Z"
+updated_at: "2026-06-23T19:04:05.358Z"
+author: claude-code-agent
+parent: pm-ugqx
+resolution: "preflightExtension (compose.ts) + assertExtensionPreflight (testing.ts) unify blueprint lint + manifest synthesis + version-compat into one report/one assert — the author-time analog of createExtensionTestHarness. SDK-only, consistent with lint/synthesize/compat. Docs: SDK.md export lists + capstone prose; EXTENSIONS.md note. Gates: build, quality:static, docs-skills, contracts:check, security:scan all green; full coverage 100/100/100/100 (4966 tests); temp-dir smoke against built dist passed."
+expected_result: Capstone makes pre-publish validation one call.
+actual_result: Delivered with both children closed.
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-1w0d,related,"2026-06-23T18:47:32.532Z",null,null
+  pm-9ect,related,"2026-06-23T18:47:32.532Z",null,null
+  pm-jcyn,related,"2026-06-23T18:47:32.532Z",null,null
+  pm-u5le,related,"2026-06-23T18:47:32.532Z",null,null
+close_reason: Unified author-time preflight capstone shipped
+body: ""
