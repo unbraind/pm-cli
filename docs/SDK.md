@@ -892,6 +892,8 @@ assertExtensionManifestMatchesBlueprint(manifest, blueprint);
 
 Where the blueprint guards `capabilities`, a manifest's `pm_min_version` /
 `pm_max_version` bounds guard *which pm CLI versions the package supports*.
+Tracker references: `pm-knma` introduced `checkExtensionManifestCompatibility`;
+`pm-hng2` introduced `assertExtensionManifestCompatible`.
 `checkExtensionManifestCompatibility(manifest, { pmVersion, pmMaxVersionExceededMode? })`
 is the author-time inverse of the loader's runtime version gate: it takes the pm
 version you target and returns structured per-bound findings (the same
