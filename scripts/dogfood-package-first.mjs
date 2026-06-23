@@ -22,6 +22,10 @@ const semanticDogfoodEnabled = process.env.PM_DOGFOOD_SEMANTIC === "1";
 
 const timings = [];
 
+function trimOutput(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
 function cleanupTempRoot() {
   try {
     rmSync(tempRoot, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
@@ -42,12 +46,14 @@ function runProcess(label, args, options = {}) {
   const tookMs = Date.now() - startedAt;
   timings.push({ label, took_ms: tookMs, code: completed.status ?? 1 });
   if (completed.status !== 0) {
+    const stdout = trimOutput(completed.stdout);
+    const stderr = trimOutput(completed.stderr);
     throw new Error(
       [
         `${label} failed with exit ${completed.status ?? "unknown"}`,
         `command: pm ${options.json === false ? "" : "--json "}${args.join(" ")}`,
-        completed.stdout.trim() ? `stdout:\n${completed.stdout.trim()}` : "",
-        completed.stderr.trim() ? `stderr:\n${completed.stderr.trim()}` : "",
+        stdout ? `stdout:\n${stdout}` : "",
+        stderr ? `stderr:\n${stderr}` : "",
       ]
         .filter(Boolean)
         .join("\n"),
@@ -108,11 +114,13 @@ function buildScaffoldedPackage(label, scaffoldPath) {
   });
   timings.push({ label, took_ms: Date.now() - startedAt, code: tsc.status ?? 1 });
   if (tsc.status !== 0) {
+    const stdout = trimOutput(tsc.stdout);
+    const stderr = trimOutput(tsc.stderr);
     throw new Error(
       [
         `${label} (tsc) failed with exit ${tsc.status ?? "unknown"}`,
-        tsc.stdout.trim() ? `stdout:\n${tsc.stdout.trim()}` : "",
-        tsc.stderr.trim() ? `stderr:\n${tsc.stderr.trim()}` : "",
+        stdout ? `stdout:\n${stdout}` : "",
+        stderr ? `stderr:\n${stderr}` : "",
       ]
         .filter(Boolean)
         .join("\n"),

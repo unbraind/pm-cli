@@ -1884,6 +1884,7 @@ describe("extension command runtime", () => {
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Policy Metadata");
       expect(readme).toContain('sandbox_profile: "strict"');
+      expect(readme).toContain("npm install -D typescript @types/node @unbrained/pm-cli");
       expect(readme).toContain("npx tsc");
 
       // The sample test + .gitignore are package-mode only. An extension-only
@@ -1891,6 +1892,9 @@ describe("extension command runtime", () => {
       // helpers against, so it emits the typed source + tsconfig but no test.
       const scaffoldedFiles = (scaffold.details as { files?: Array<{ path: string }> }).files ?? [];
       expect(scaffoldedFiles.map((file) => file.path)).toEqual(["manifest.json", "index.ts", "tsconfig.json", "README.md"]);
+      expect((scaffold.details as { next_steps?: string[] }).next_steps).toContainEqual(
+        expect.stringContaining('npm install -D typescript @types/node @unbrained/pm-cli'),
+      );
       await expect(readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).rejects.toMatchObject({
         code: "ENOENT",
       });
@@ -2036,7 +2040,8 @@ describe("extension command runtime", () => {
       expect(gitignore).toContain("node_modules/");
       expect(gitignore).toContain("*.log");
       // The compiled TypeScript output is a build artifact, kept out of version control.
-      expect(gitignore).toContain("/index.js");
+      expect(gitignore).toContain("/*.js");
+      expect(gitignore).toContain("/*.test.js");
 
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Validate the Package");

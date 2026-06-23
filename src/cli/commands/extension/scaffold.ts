@@ -57,7 +57,9 @@ const SCAFFOLD_TSCONFIG = {
     // package manager lays out `node_modules/@types`.
     types: ["node"],
   },
-  include: ["*.ts"],
+  // Recursive so a package that grows into subdirectory `*.ts` modules still
+  // type-checks and compiles them; tsc excludes `node_modules` by default.
+  include: ["**/*.ts"],
 };
 
 /**
@@ -640,16 +642,15 @@ export function buildStarterExtensionScaffoldFiles(
     // capability, the after_command lifecycle hook).
     const sampleTest = buildSampleTestSource(extensionName, commandName, capability);
     const sampleTestBullet = SAMPLE_TEST_BULLETS[capability];
-    // Ignore the compiled TypeScript output: `index.ts`/`index.test.ts` are the
-    // authored source, and `npm run build` emits `index.js`/`index.test.js` in
-    // place. The build artifacts are derived, so they stay out of version control.
+    // Ignore root-level compiled TypeScript output. Authors can add sibling
+    // modules beside index.ts, and tsc emits each module's .js next to its source.
     const gitignore = [
       "node_modules/",
       "*.log",
       "",
       "# Compiled TypeScript output (npm run build)",
-      "/index.js",
-      "/index.test.js",
+      "/*.js",
+      "/*.test.js",
       "",
     ].join("\n");
     const searchProviderName = `${extensionName}-search`;
@@ -776,7 +777,7 @@ export function buildStarterExtensionScaffoldFiles(
       entrypointBullet,
       sampleTestBullet,
       TSCONFIG_BULLET,
-      "- `.gitignore`: ignores `node_modules/`, logs, and the compiled `index.js`/`index.test.js`.",
+      "- `.gitignore`: ignores `node_modules/`, logs, and root-level compiled `*.js`/`*.test.js` output.",
       "",
       "## Quick Start",
       "This package is authored in TypeScript; build it once so the manifest's",
@@ -821,7 +822,7 @@ export function buildStarterExtensionScaffoldFiles(
       "",
       "## Notes",
       "- Author in `index.ts`; `npm run build` (tsc) emits the `./index.js` the manifest loads, so rebuild after editing before installing or reloading.",
-      "- Move larger runtimes into sibling `*.ts` modules and import them; `tsconfig.json` compiles every `*.ts` in the package root.",
+      "- Move larger runtimes into sibling or subdirectory `*.ts` modules and import them; `tsconfig.json` compiles every `*.ts` in the package (recursively).",
       "- Add capabilities to the extension manifest only when the entrypoint uses the matching SDK API.",
       "- Use `@unbrained/pm-cli/sdk` as the public SDK import for richer package runtimes.",
       "",
@@ -849,10 +850,10 @@ export function buildStarterExtensionScaffoldFiles(
     "## Quick Start",
     "This extension is authored in TypeScript; compile `index.ts` to the manifest's",
     "`./index.js` entry, then install it. The SDK types resolve once",
-    "`@unbrained/pm-cli` is available to the compiler (install it and TypeScript, or",
+    "`@unbrained/pm-cli` is available to the compiler (install it, Node types, and TypeScript, or",
     "build from a project that already depends on the CLI):",
     "```bash",
-    "npm install -D typescript @unbrained/pm-cli",
+    "npm install -D typescript @types/node @unbrained/pm-cli",
     "npx tsc",
     "pm extension --install --project <scaffold-path>",
     `pm ${commandName}`,

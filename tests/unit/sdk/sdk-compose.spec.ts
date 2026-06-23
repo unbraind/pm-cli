@@ -949,6 +949,28 @@ describe("sdk mergeExtensionBlueprints", () => {
     expect(mergeExtensionBlueprints()).toEqual({});
   });
 
+  it("runs every deactivate even when one throws, then re-throws the first failure", async () => {
+    const order: string[] = [];
+    const boom = new Error("teardown boom");
+    const merged = mergeExtensionBlueprints(
+      {
+        deactivate: () => {
+          order.push("deactivate-a");
+        },
+      },
+      {
+        deactivate: () => {
+          order.push("deactivate-b");
+          throw boom;
+        },
+      },
+    );
+    // Teardown is LIFO (B before A); B throws but A must still run, and the
+    // collected failure is surfaced rather than swallowed.
+    await expect(merged.deactivate?.()).rejects.toBe(boom);
+    expect(order).toEqual(["deactivate-b", "deactivate-a"]);
+  });
+
   it("returns a fresh blueprint object and array containers without mutating the input", () => {
     const source: ExtensionBlueprint = {
       commands: [{ name: "solo cmd", action: "solo", run: () => ({}) }],

@@ -6,8 +6,8 @@ status: in_progress
 priority: 1
 tags[5]: "area:extensions","area:sdk",authoring,dx,living-map
 created_at: "2026-06-23T20:36:02.668Z"
-updated_at: "2026-06-23T20:36:02.668Z"
-assignee: claude-code-agent
+updated_at: "2026-06-23T22:31:52.853Z"
+assignee: codex
 author: claude-code-agent
 parent: pm-ugqx
 dependencies[5]{id,kind,created_at,author,source_kind}:
@@ -16,4 +16,22 @@ dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-2p38,related,"2026-06-23T20:36:02.668Z",null,null
   pm-59gj,related,"2026-06-23T20:36:02.668Z",null,null
   pm-iqq0,related,"2026-06-23T20:36:02.668Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-06-23T22:31:52.853Z",codex,"Evidence: PR #352 review follow-up implemented. Fixed mergeExtensionBlueprints teardown to run every deactivate in LIFO order and rethrow the first failure; made TypeScript scaffolds compile recursive **/*.ts modules; changed package scaffold .gitignore to root wildcard compiled outputs; added @types/node to standalone README and runtime next-step install commands; hardened dogfood spawnSync failure formatting for null output streams. Verification passed: linked pm test command (4 focused files, 213 tests) passed in PM sandbox; node scripts/run-tests.mjs coverage passed literal 100/100/100/100 (31041 statements, 24166 branches, 5289 functions, 29791 lines; 4987 tests); pnpm release:gates passed after latest source change with the same 100/100/100/100 coverage, npx packed smoke, and dogfood:package-first temp project (88 commands); focused manual temp smoke passed for package init + extension init, recursive subdir helper.ts emitting src/helper.js, wildcard .gitignore, README @types guidance, and next_steps @types guidance; pnpm changelog:pm:check passed with pm-changelog 2026.6.20 and CHANGELOG.md unchanged; pnpm audit reported no vulnerabilities; pnpm outdated only reported @sentry/node 10.59.0 -> 10.60.0, @types/node 20.19.43 -> 26.0.0, commander 14.0.3 -> 15.0.0, not bundled into this review-fix PR due semver/runtime risk; pm package doctor and pm health were ok; pm validate history_drift ok with existing resolution metadata warnings; GH issue #348 remains tracked in pm-2kkl as intermittent Windows nightly worker teardown, while current PR Windows regression checks pass."
+files[8]{path,scope,note}:
+  scripts/dogfood-package-first.mjs,project,"review follow-up: null-safe spawnSync failure formatting"
+  src/cli/commands/extension.ts,project,"review follow-up: standalone TypeScript scaffold next-step installs @types/node"
+  src/cli/commands/extension/scaffold.ts,project,"review follow-up: recursive TS scaffold config,wildcard ignored outputs,@types install guidance"
+  src/sdk/compose.ts,project,"review follow-up: best-effort modular blueprint teardown"
+  tests/unit/extensions/extension-command.spec.ts,project,regression coverage for scaffold install and ignore guidance
+  tests/unit/extensions/extension-scaffold-define-guidance.spec.ts,project,focused scaffold contract assertions
+  tests/unit/scripts/dogfood-package-first.spec.ts,project,regression coverage for null spawnSync output formatting
+  tests/unit/sdk/sdk-compose.spec.ts,project,regression coverage for best-effort teardown
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-scaffold-define-guidance.spec.ts tests/unit/extensions/extension-command.spec.ts tests/unit/scripts/dogfood-package-first.spec.ts tests/unit/sdk/sdk-compose.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm changelog:pm:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm release:gates",null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqr776m3-14vodn,test,passed,"2026-06-23T22:10:04.491Z","2026-06-23T22:10:30.075Z","2026-06-23T22:10:30.075Z",null,null,1,0,0,null,null,null
+  test-local-mqr7q9ht-u75n3m,test,passed,"2026-06-23T22:24:43.849Z","2026-06-23T22:25:20.273Z","2026-06-23T22:25:20.273Z",null,null,1,0,0,null,null,null
 body: ""

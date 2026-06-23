@@ -7,7 +7,7 @@ const harness = createScriptHarness();
 const SCRIPT = "scripts/dogfood-package-first.mjs";
 const CLI_TAIL = path.join("dist", "cli.js");
 
-type SpawnResult = { status: number; stdout: string; stderr: string };
+type SpawnResult = { status: number | null; stdout: string | null; stderr: string | null };
 
 const pmJson = (payload: unknown): SpawnResult => ({ status: 0, stdout: JSON.stringify(payload), stderr: "" });
 
@@ -375,7 +375,20 @@ describe("dogfood-package-first", () => {
   });
 
   it("formats the scaffold build failure with null status and empty output", async () => {
-    const spawnSync = buildSpawnSync({ tsc: { status: null as unknown as number, stdout: "", stderr: "" } });
+    const spawnSync = buildSpawnSync({ tsc: { status: null, stdout: "", stderr: "" } });
+    vi.doMock("node:child_process", () => ({ spawnSync }));
+    mockFs();
+    delete process.env.PM_DOGFOOD_SEMANTIC;
+    process.argv = ["node", "scripts/dogfood-package-first.mjs"];
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await harness.importModule(SCRIPT);
+    expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("package build scaffold (tsc) failed with exit unknown"))).toBe(true);
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("formats the scaffold build failure when spawnSync returns null output streams", async () => {
+    const spawnSync = buildSpawnSync({ tsc: { status: null, stdout: null, stderr: null } });
     vi.doMock("node:child_process", () => ({ spawnSync }));
     mockFs();
     delete process.env.PM_DOGFOOD_SEMANTIC;

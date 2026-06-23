@@ -78,13 +78,15 @@ describe("extension scaffold define builder guidance", () => {
     // No `outDir`: tsc auto-excludes its outDir, so an in-package outDir would leave
     // the *.ts inputs unmatched (TS18003). The output lands beside the source.
     expect(tsconfig.compilerOptions?.outDir).toBeUndefined();
-    expect(tsconfig.include).toEqual(["*.ts"]);
+    // Recursive include so subdirectory modules compile as the package grows.
+    expect(tsconfig.include).toEqual(["**/*.ts"]);
     // The sample test and entrypoint are TypeScript; the manifest still loads the
     // compiled ./index.js, and the compiled output is git-ignored.
     expect(scaffold["index.test.ts"]).toContain('import extension from "./index.js";');
     expect(scaffold["index.js"]).toBeUndefined();
     expect(JSON.parse(scaffold["manifest.json"] ?? "{}").entry).toBe("./index.js");
-    expect(scaffold[".gitignore"]).toContain("/index.js");
+    expect(scaffold[".gitignore"]).toContain("/*.js");
+    expect(scaffold[".gitignore"]).toContain("/*.test.js");
   });
 
   it("scaffolds standalone extensions as TypeScript with a tsconfig and build guidance", () => {
@@ -99,6 +101,7 @@ describe("extension scaffold define builder guidance", () => {
     expect(entrypoint).toContain("export function activate(api: ExtensionApi): void {");
     expect(scaffold["tsconfig.json"]).toBeTruthy();
     expect(scaffold["index.js"]).toBeUndefined();
+    expect(readme).toContain("npm install -D typescript @types/node @unbrained/pm-cli");
     expect(readme).toContain("npx tsc");
   });
 });

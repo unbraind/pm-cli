@@ -422,7 +422,9 @@ function mergeHookSurfaces(
  * - The imperative **`activate`** escape hatches chain in argument order (each
  *   awaited), so every module's escape-hatch wiring still runs.
  * - The **`deactivate`** teardown hooks chain in *reverse* argument order (LIFO),
- *   releasing resources in the inverse of acquisition.
+ *   releasing resources in the inverse of acquisition. Teardown is best-effort:
+ *   a throwing hook does not strand later modules' cleanup — every hook runs and
+ *   the first failure is re-thrown afterwards.
  * - The **`manifest`** mirror is last-defined-wins.
  *
  * Because `composeExtension` and the derive/lint/describe helpers are pure readers
@@ -481,8 +483,19 @@ export function mergeExtensionBlueprints(...blueprints: ExtensionBlueprint[]): E
     "deactivate",
     deactivates.length > 0
       ? async (): Promise<void> => {
+          // Teardown is best-effort across modules: a throwing `deactivate` must
+          // not strand a later module's cleanup, so every hook runs (in reverse,
+          // LIFO) and the first failure is re-thrown afterwards to still surface it.
+          const errors: unknown[] = [];
           for (const deactivate of [...deactivates].reverse()) {
-            await deactivate();
+            try {
+              await deactivate();
+            } catch (error) {
+              errors.push(error);
+            }
+          }
+          if (errors.length > 0) {
+            throw errors[0];
           }
         }
       : undefined,
