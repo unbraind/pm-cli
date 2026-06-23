@@ -6,10 +6,10 @@ status: open
 priority: 3
 tags[4]: "area:docs","area:extensions",authoring,dx
 created_at: "2026-06-23T20:58:13.797Z"
-updated_at: "2026-06-23T20:58:13.797Z"
+updated_at: "2026-06-23T23:52:02.961Z"
 assignee: claude-code-agent
 author: claude-code-agent
-parent: pm-09rh
+parent: pm-ugqx
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-2c28,related,"2026-06-23T20:58:13.797Z",null,null
 body: ""

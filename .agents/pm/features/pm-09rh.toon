@@ -2,14 +2,16 @@ id: pm-09rh
 title: TypeScript-first extension & package scaffolding + SDK docs reframe
 description: "Honor ADR pm-2c28 (extensions must be authored fully in TypeScript) by converting the pm extension/package init scaffolder to emit TypeScript source instead of plain .js, and reframing the SDK authoring docs/docstrings TypeScript-first. Today the scaffolder emits index.js with a single JSDoc @param annotation while every first-party package is TS (index.ts compiled to index.js). Scaffold index.ts + tsconfig.json + a build script + colocated index.test.ts, with the manifest entry pointing at the compiled ./index.js and the README documenting the install+build flow; update scaffold tests, smoke:external-packages, and dogfood:package-first to build the TS scaffold before loading. Reframe docs/SDK.md + docs/EXTENSIONS.md and the define*/compose* docstrings to justify the helpers by their TypeScript value (literal-type preservation + handler inference) rather than 'JS cannot annotate'."
 type: Feature
-status: in_progress
+status: closed
 priority: 1
 tags[5]: "area:extensions","area:sdk",authoring,dx,living-map
 created_at: "2026-06-23T20:36:02.668Z"
-updated_at: "2026-06-23T23:43:32.625Z"
-assignee: codex
+updated_at: "2026-06-23T23:52:21.273Z"
 author: claude-code-agent
 parent: pm-ugqx
+resolution: "Implemented TypeScript-first extension/package scaffolding and modular SDK blueprint/package primitives, then addressed all current PR review feedback."
+expected_result: "pm extension/package authors can scaffold and compose TypeScript-first packages with typed SDK primitives, build them reliably, and track the completed work through pm/changelog evidence."
+actual_result: "Scaffolds emit TypeScript source/config/tests and build guidance, SDK merge/compose primitives handle modular blueprints with typed hook merging and lifecycle context preservation, focused/manual/release verification passed, PR #352 checks are green, and pm-09rh is closed/released."
 dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-12tj,related,"2026-06-23T20:36:02.668Z",null,null
   pm-2c28,related,"2026-06-23T20:36:02.668Z",null,null
@@ -41,4 +43,5 @@ test_runs[8]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resum
   test-local-mqr94td8-ohy9kq,test,passed,"2026-06-23T23:04:20.954Z","2026-06-23T23:04:38.828Z","2026-06-23T23:04:38.828Z",null,null,1,0,0,null,null,null
   test-local-mqr9vk57-4p49pj,test,passed,"2026-06-23T23:25:08.961Z","2026-06-23T23:25:26.587Z","2026-06-23T23:25:26.587Z",null,null,1,0,0,null,null,null
   test-local-mqraie8n-fmxokh,test,passed,"2026-06-23T23:42:54.451Z","2026-06-23T23:43:12.023Z","2026-06-23T23:43:12.023Z",null,null,1,0,0,null,null,null
+close_reason: "TypeScript-first extension/package scaffolding and SDK modular blueprint authoring are implemented, review feedback addressed, manual temp smoke passed, focused PM-linked test passed, direct coverage and release gates passed, GitHub checks green on PR #352."
 body: ""

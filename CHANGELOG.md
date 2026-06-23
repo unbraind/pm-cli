@@ -4,6 +4,7 @@
 
 ### Added
 
+- TypeScript-first extension & package scaffolding + SDK docs reframe ([pm-09rh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-09rh.toon))
 - Modular declarative authoring: mergeExtensionBlueprints + composeExtensionPackage ([pm-2p38](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-2p38.toon))
 - SDK unified author-time preflight capstone: preflightExtension + assertExtensionPreflight ([pm-ozaf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ozaf.toon))
 - SDK author-time version-compatibility preflight: checkExtensionManifestCompatibility + assertExtensionManifestCompatible ([pm-1w0d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-1w0d.toon))
