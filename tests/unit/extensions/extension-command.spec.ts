@@ -2040,8 +2040,8 @@ describe("extension command runtime", () => {
       expect(gitignore).toContain("node_modules/");
       expect(gitignore).toContain("*.log");
       // The compiled TypeScript output is a build artifact, kept out of version control.
-      expect(gitignore).toContain("/*.js");
-      expect(gitignore).toContain("/*.test.js");
+      expect(gitignore).toContain("*.js");
+      expect(gitignore).toContain("*.test.js");
 
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Validate the Package");

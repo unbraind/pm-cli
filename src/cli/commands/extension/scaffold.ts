@@ -642,15 +642,15 @@ export function buildStarterExtensionScaffoldFiles(
     // capability, the after_command lifecycle hook).
     const sampleTest = buildSampleTestSource(extensionName, commandName, capability);
     const sampleTestBullet = SAMPLE_TEST_BULLETS[capability];
-    // Ignore root-level compiled TypeScript output. Authors can add sibling
-    // modules beside index.ts, and tsc emits each module's .js next to its source.
+    // Ignore compiled TypeScript output wherever tsc emits it. Authors can add
+    // sibling or subdirectory modules, and tsc writes each .js next to its source.
     const gitignore = [
       "node_modules/",
       "*.log",
       "",
       "# Compiled TypeScript output (npm run build)",
-      "/*.js",
-      "/*.test.js",
+      "*.js",
+      "*.test.js",
       "",
     ].join("\n");
     const searchProviderName = `${extensionName}-search`;
@@ -777,7 +777,7 @@ export function buildStarterExtensionScaffoldFiles(
       entrypointBullet,
       sampleTestBullet,
       TSCONFIG_BULLET,
-      "- `.gitignore`: ignores `node_modules/`, logs, and root-level compiled `*.js`/`*.test.js` output.",
+      "- `.gitignore`: ignores `node_modules/`, logs, and compiled `*.js`/`*.test.js` output.",
       "",
       "## Quick Start",
       "This package is authored in TypeScript; build it once so the manifest's",

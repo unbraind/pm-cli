@@ -85,8 +85,8 @@ describe("extension scaffold define builder guidance", () => {
     expect(scaffold["index.test.ts"]).toContain('import extension from "./index.js";');
     expect(scaffold["index.js"]).toBeUndefined();
     expect(JSON.parse(scaffold["manifest.json"] ?? "{}").entry).toBe("./index.js");
-    expect(scaffold[".gitignore"]).toContain("/*.js");
-    expect(scaffold[".gitignore"]).toContain("/*.test.js");
+    expect(scaffold[".gitignore"]).toContain("*.js");
+    expect(scaffold[".gitignore"]).toContain("*.test.js");
   });
 
   it("scaffolds standalone extensions as TypeScript with a tsconfig and build guidance", () => {

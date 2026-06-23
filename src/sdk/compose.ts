@@ -374,6 +374,53 @@ function mergeFlagRecord(
   return Object.keys(merged).length > 0 ? merged : undefined;
 }
 
+const EXTENSION_BLUEPRINT_HOOK_KEYS = [
+  "beforeCommand",
+  "afterCommand",
+  "onWrite",
+  "onRead",
+  "onIndex",
+] as const satisfies ReadonlyArray<keyof ExtensionBlueprintHooks>;
+
+function assignMergedHookSurface(
+  merged: ExtensionBlueprintHooks,
+  surfaces: ReadonlyArray<ExtensionBlueprintHooks | null | undefined>,
+  key: keyof ExtensionBlueprintHooks,
+): void {
+  if (key === "beforeCommand") {
+    const value = mergeArraySurface(surfaces.map((hooks) => hooks?.beforeCommand));
+    if (value !== undefined) {
+      merged.beforeCommand = value;
+    }
+    return;
+  }
+  if (key === "afterCommand") {
+    const value = mergeArraySurface(surfaces.map((hooks) => hooks?.afterCommand));
+    if (value !== undefined) {
+      merged.afterCommand = value;
+    }
+    return;
+  }
+  if (key === "onWrite") {
+    const value = mergeArraySurface(surfaces.map((hooks) => hooks?.onWrite));
+    if (value !== undefined) {
+      merged.onWrite = value;
+    }
+    return;
+  }
+  if (key === "onRead") {
+    const value = mergeArraySurface(surfaces.map((hooks) => hooks?.onRead));
+    if (value !== undefined) {
+      merged.onRead = value;
+    }
+    return;
+  }
+  const value = mergeArraySurface(surfaces.map((hooks) => hooks?.onIndex));
+  if (value !== undefined) {
+    merged.onIndex = value;
+  }
+}
+
 /**
  * Merge the nested `hooks` surface by concatenating each lifecycle kind's array in
  * canonical order. Returns `undefined` when no blueprint registers any hook.
@@ -382,19 +429,9 @@ function mergeHookSurfaces(
   surfaces: ReadonlyArray<ExtensionBlueprintHooks | null | undefined>,
 ): ExtensionBlueprintHooks | undefined {
   const merged: ExtensionBlueprintHooks = {};
-  const assignHook = <TKey extends keyof ExtensionBlueprintHooks>(
-    key: TKey,
-    value: ExtensionBlueprintHooks[TKey],
-  ): void => {
-    if (value !== undefined) {
-      merged[key] = value;
-    }
-  };
-  assignHook("beforeCommand", mergeArraySurface(surfaces.map((hooks) => hooks?.beforeCommand)));
-  assignHook("afterCommand", mergeArraySurface(surfaces.map((hooks) => hooks?.afterCommand)));
-  assignHook("onWrite", mergeArraySurface(surfaces.map((hooks) => hooks?.onWrite)));
-  assignHook("onRead", mergeArraySurface(surfaces.map((hooks) => hooks?.onRead)));
-  assignHook("onIndex", mergeArraySurface(surfaces.map((hooks) => hooks?.onIndex)));
+  for (const key of EXTENSION_BLUEPRINT_HOOK_KEYS) {
+    assignMergedHookSurface(merged, surfaces, key);
+  }
   return Object.keys(merged).length > 0 ? merged : undefined;
 }
 

@@ -878,7 +878,13 @@ describe("sdk mergeExtensionBlueprints", () => {
       flags: { "kit alpha": [{ long: "--alpha-extra", value_type: "string", value_name: "text" }] },
       commandOverrides: { list: overrideB },
       searchProviders: [{ name: "kit-search", query: async () => ({ hits: [] }) }],
-      hooks: { beforeCommand: [() => undefined], onWrite: [() => undefined] },
+      hooks: {
+        beforeCommand: [() => undefined],
+        afterCommand: [() => undefined],
+        onWrite: [() => undefined],
+        onRead: [() => undefined],
+        onIndex: [() => undefined],
+      },
       activate: () => {
         order.push("activate-b");
       },
@@ -900,7 +906,10 @@ describe("sdk mergeExtensionBlueprints", () => {
     expect(merged.parsers?.["kit alpha"]).toBe(parserA);
     // Hooks concatenate per lifecycle kind.
     expect(merged.hooks?.beforeCommand).toHaveLength(2);
+    expect(merged.hooks?.afterCommand).toHaveLength(1);
     expect(merged.hooks?.onWrite).toHaveLength(1);
+    expect(merged.hooks?.onRead).toHaveLength(1);
+    expect(merged.hooks?.onIndex).toHaveLength(1);
     // The manifest mirror is last-defined-wins.
     expect(merged.manifest?.name).toBe("mod-b");
     // The merged blueprint derives the union of both modules' capabilities.
