@@ -4,6 +4,7 @@
 
 ### Added
 
+- pm next: recommend the next actionable (unblocked, ready) work item with rationale + blocked companion ([pm-nj90](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-nj90.toon))
 - Complete scaffold capability matrix: --capability renderers/parser/preflight/services starters ([pm-i5p5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-i5p5.toon))
 - pm package/extension init --capability schema: scaffold custom item type/field/migration starter ([pm-d1ig](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-d1ig.toon))
 - Scaffolded & authored command-bearing extensions reliably activate for their own commands ([pm-yxb5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-yxb5.toon))
@@ -21,6 +22,7 @@
 
 ### Other
 
+- ADR: dependency-aware actionability for pm next — ready = active leaf with no open blocked_by; reuse compareCriticalItems + shared blocked_by resolver ([pm-9x6k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-9x6k.toon))
 - Schema-capability scaffolds must omit narrow activation.commands so custom item types/fields register globally ([pm-halx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-halx.toon))
 - Schema scaffold docs: EXTENSIONS.md, SDK.md, shell completion, help-content examples ([pm-pwf1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-pwf1.toon))
 - Schema scaffold tests: unit coverage (package+extension variants) + materialize/run generated node:test smoke ([pm-x3vi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-x3vi.toon))

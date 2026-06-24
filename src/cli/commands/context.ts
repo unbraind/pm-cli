@@ -514,11 +514,16 @@ function stripListProjectionFlags(options: ContextOptions): Record<string, unkno
   return copy;
 }
 
-// Resolve the transitive subtree (the anchor item plus every descendant via
-// parent links) so --parent can scope a context snapshot to one epic/milestone.
-// Reuses the same buildChildrenByParent/collectDescendants helpers the hierarchy
-// section relies on, so subtree membership stays consistent across the snapshot.
-function collectSubtreeIds(corpus: ItemFrontMatter[], parentId: string): { ids: Set<string>; found: boolean } {
+/**
+ * Resolves the transitive subtree (the anchor item plus every descendant via
+ * parent links) so `--parent` can scope a snapshot to one epic/milestone. Reuses
+ * the same {@link buildChildrenByParent}/{@link collectDescendants} helpers the
+ * hierarchy section relies on, so subtree membership stays consistent across the
+ * snapshot. Ids are normalized to lowercase for case-insensitive membership; the
+ * `found` flag is false when the anchor id is absent from the corpus. Exported so
+ * sibling read commands (e.g. `pm next`) can apply the same subtree scoping.
+ */
+export function collectSubtreeIds(corpus: ItemFrontMatter[], parentId: string): { ids: Set<string>; found: boolean } {
   const target = parentId.trim().toLowerCase();
   const anchor = corpus.find((item) => item.id.trim().toLowerCase() === target);
   if (!anchor) {
@@ -622,7 +627,14 @@ function normalizedParentId(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-function compareCriticalItems(left: ItemFrontMatter, right: ItemFrontMatter, statusRegistry: RuntimeStatusRegistry): number {
+/**
+ * Ranks two items by work criticality: in-progress before open before blocked
+ * before draft (via {@link statusRank}), then ascending priority, explicit order,
+ * earliest deadline, most-recently-updated, and finally id for a total order.
+ * Exported as the canonical focus ordering so sibling read commands (e.g.
+ * `pm next`) recommend work in the exact same sequence as `pm context`.
+ */
+export function compareCriticalItems(left: ItemFrontMatter, right: ItemFrontMatter, statusRegistry: RuntimeStatusRegistry): number {
   const byStatus = statusRank(left.status, statusRegistry) - statusRank(right.status, statusRegistry);
   if (byStatus !== 0) return byStatus;
   const byPriority = left.priority - right.priority;
@@ -640,7 +652,12 @@ function completionPct(closed: number, total: number): number {
   return total > 0 ? Math.round((closed / total) * 100) : 0;
 }
 
-function buildChildrenByParent(allItems: ItemFrontMatter[]): Map<string, ItemFrontMatter[]> {
+/**
+ * Indexes items by their parent id, yielding a parent→direct-children map used by
+ * the hierarchy/progress rollups and by focus-row child completion. Items without
+ * a parent are skipped. Exported so sibling read commands reuse the same index.
+ */
+export function buildChildrenByParent(allItems: ItemFrontMatter[]): Map<string, ItemFrontMatter[]> {
   const childrenByParent = new Map<string, ItemFrontMatter[]>();
   for (const item of allItems) {
     const parent = normalizedParentId(item.parent);
@@ -652,7 +669,13 @@ function buildChildrenByParent(allItems: ItemFrontMatter[]): Map<string, ItemFro
   return childrenByParent;
 }
 
-function toContextFocusItem(
+/**
+ * Projects an item onto the compact {@link ContextFocusItem} focus row. When both
+ * a status registry and a parent→children index are supplied, it also folds in the
+ * descendant rollup (`children_total`/`children_closed`/`completion_pct`). Exported
+ * so sibling read commands (e.g. `pm next`) emit identically-shaped focus rows.
+ */
+export function toContextFocusItem(
   item: ItemFrontMatter,
   statusRegistry?: RuntimeStatusRegistry,
   childrenByParent?: Map<string, ItemFrontMatter[]>,

@@ -114,6 +114,20 @@ export const CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasCont
   { target: "staleThreshold", keys: ["staleThreshold", "stale_threshold"] },
 ];
 
+export const NEXT_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
+  { target: "type", keys: ["type"] },
+  { target: "tag", keys: ["tag"] },
+  { target: "priority", keys: ["priority"] },
+  { target: "assignee", keys: ["assignee"] },
+  { target: "assigneeFilter", keys: ["assigneeFilter", "assignee_filter"] },
+  { target: "sprint", keys: ["sprint"] },
+  { target: "release", keys: ["release"] },
+  { target: "parent", keys: ["parent"] },
+  { target: "limit", keys: ["limit"] },
+  { target: "blockedLimit", keys: ["blockedLimit", "blocked_limit"] },
+  { target: "format", keys: ["format"] },
+];
+
 export const ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
   { target: "id", keys: ["id"] },
   { target: "op", keys: ["op"] },

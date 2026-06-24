@@ -14,13 +14,30 @@ export { runConfig, type ConfigCommandOptions, type ConfigResult } from "./confi
 export { runContracts, type ContractsCommandOptions, type ContractsResult } from "./contracts.js";
 export {
   CONTEXT_OUTPUT_VALUES,
+  buildChildrenByParent,
+  collectSubtreeIds,
+  compareCriticalItems,
   renderContextMarkdown,
   resolveContextOutputFormat,
   runContext,
+  toContextFocusItem,
+  type ContextFocusItem,
   type ContextOptions,
   type ContextOutputFormat,
   type ContextResult,
 } from "./context.js";
+export {
+  NEXT_OUTPUT_VALUES,
+  renderNextMarkdown,
+  resolveNextOutputFormat,
+  runNext,
+  type NextActionableItem,
+  type NextBlockerRef,
+  type NextOptions,
+  type NextOutputFormat,
+  type NextRecommendation,
+  type NextResult,
+} from "./next.js";
 export { runCreate, type CreateCommandOptions } from "./create.js";
 export { runCopy, type CopyOptions, type CopyResult } from "./copy.js";
 export { runFocus, type FocusOptions, type FocusResult } from "./focus.js";

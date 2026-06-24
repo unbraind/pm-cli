@@ -9,6 +9,7 @@ export {
   CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS,
   CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS,
   LIST_COMMANDER_STRING_OPTION_CONTRACTS,
+  NEXT_COMMANDER_STRING_OPTION_CONTRACTS,
   SEARCH_COMMANDER_STRING_OPTION_CONTRACTS,
   readFirstValueFromCommanderOptions,
   readFirstStringFromCommanderOptions,
@@ -1406,6 +1407,24 @@ export const EVAL_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--format" },
 ];
 
+export const NEXT_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--type" },
+  { flag: "--tag" },
+  { flag: "--priority" },
+  { flag: "--assignee" },
+  { flag: "--assignee-filter" },
+  { flag: "--assignee_filter" },
+  { flag: "--sprint" },
+  { flag: "--release" },
+  { flag: "--parent" },
+  { flag: "--limit" },
+  { flag: "--blocked-limit" },
+  { flag: "--blocked_limit" },
+  { flag: "--ready-only" },
+  { flag: "--ready_only" },
+  { flag: "--format" },
+];
+
 export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--mode" },
   { flag: "--semantic" },
@@ -1611,6 +1630,8 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(GET_FLAG_CONTRACTS);
     case "search":
       return withSubcommandGlobalFlags(SEARCH_FLAG_CONTRACTS);
+    case "next":
+      return withSubcommandGlobalFlags(NEXT_FLAG_CONTRACTS);
     case "eval":
       return withSubcommandGlobalFlags(EVAL_FLAG_CONTRACTS);
     case "history":
@@ -1847,6 +1868,21 @@ const SEARCH_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...TOOL_SEARCH_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
 ]);
 
+const NEXT_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
+  "type",
+  "tag",
+  "priority",
+  "assignee",
+  "assigneeFilter",
+  "sprint",
+  "release",
+  "parent",
+  "limit",
+  "blockedLimit",
+  "readyOnly",
+  "format",
+]);
+
 const AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS = ["author", "message", "force"];
 
 const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = {
@@ -1974,6 +2010,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
     optional: SEARCH_CONTRACT_PARAMETER_KEYS,
     anyOfRequired: [["query"], ["keywords"]],
   },
+  next: { optional: NEXT_CONTRACT_PARAMETER_KEYS },
   reindex: { optional: ["mode", "progress"] },
   history: { required: ["id"], optional: ["limit", "compact", "full", "diff", "verify", "format"] },
   "history-redact": {

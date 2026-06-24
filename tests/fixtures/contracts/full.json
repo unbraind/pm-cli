@@ -541,6 +541,16 @@
       "requires_extension": false
     },
     {
+      "action": "next",
+      "available": true,
+      "cli_exposed": true,
+      "command_path": "next",
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
       "action": "notes",
       "available": true,
       "cli_exposed": true,
@@ -895,6 +905,7 @@
     "list-draft",
     "list-in-progress",
     "list-open",
+    "next",
     "notes",
     "package",
     "package-activate",
@@ -4471,6 +4482,57 @@
       "command": "meet",
       "flags": [],
       "provider": "extension"
+    },
+    {
+      "command": "next",
+      "flags": [
+        {
+          "flag": "--type"
+        },
+        {
+          "flag": "--tag"
+        },
+        {
+          "flag": "--priority"
+        },
+        {
+          "flag": "--assignee"
+        },
+        {
+          "aliases": [
+            "--assignee_filter"
+          ],
+          "flag": "--assignee-filter"
+        },
+        {
+          "flag": "--sprint"
+        },
+        {
+          "flag": "--release"
+        },
+        {
+          "flag": "--parent"
+        },
+        {
+          "flag": "--limit"
+        },
+        {
+          "aliases": [
+            "--blocked_limit"
+          ],
+          "flag": "--blocked-limit"
+        },
+        {
+          "aliases": [
+            "--ready_only"
+          ],
+          "flag": "--ready-only"
+        },
+        {
+          "flag": "--format"
+        }
+      ],
+      "provider": "core"
     },
     {
       "command": "notes",
@@ -8073,6 +8135,7 @@
     "list-in-progress",
     "list-open",
     "meet",
+    "next",
     "notes",
     "package",
     "package activate",
@@ -9135,6 +9198,33 @@
       "required": []
     },
     {
+      "description": "Recommend the next actionable work item: the single highest-priority READY item (active status, no open blockers, no open children) plus the ranked ready and blocked queues. The recommended item carries a rationale and each blocked item lists the open blockers gating it. Pass options.parent='<id>' to scope to one subtree, options.limit=N to cap ready rows, options.readyOnly=true to omit the blocked list, or filters (options.type/tag/priority/assignee/sprint/release). The most token-efficient 'what should I do now?' read for agents.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "options": {
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "pm_next",
+      "required": []
+    },
+    {
       "description": "List or add structured notes on a pm item. Use options.add to append a note; omit it to list existing notes.",
       "input_schema": {
         "additionalProperties": true,
@@ -9253,7 +9343,7 @@
         "additionalProperties": true,
         "properties": {
           "action": {
-            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, focus, list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, aggregate, context, ctx, get, search, history, history-redact, history-repair, history-compact, schema, activity, restore, update, update-many, close, close-many, delete, append, comments, plan, notes, learnings, files, docs, deps, test, test-all, telemetry, stats, health, validate, gc, contracts, claim, release, start-task, pause-task, close-task. Package-owned actions (for example calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume) are available dynamically when installed.",
+            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, focus, list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, aggregate, context, ctx, get, search, next, history, history-redact, history-repair, history-compact, schema, activity, restore, update, update-many, close, close-many, delete, append, comments, plan, notes, learnings, files, docs, deps, test, test-all, telemetry, stats, health, validate, gc, contracts, claim, release, start-task, pause-task, close-task. Package-owned actions (for example calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume) are available dynamically when installed.",
             "type": "string"
           },
           "author": {
@@ -17846,6 +17936,159 @@
           "action"
         ],
         "title": "pm action \"search\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "next",
+            "description": "Tool action to execute."
+          },
+          "assignee": {
+            "description": "Assignee identity.",
+            "examples": [
+              "codex-agent"
+            ],
+            "type": "string"
+          },
+          "assigneeFilter": {
+            "description": "Assignee presence selector for list/calendar/context/comments-audit filters.",
+            "enum": [
+              "assigned",
+              "unassigned"
+            ],
+            "examples": [
+              "assigned",
+              "unassigned"
+            ],
+            "type": "string"
+          },
+          "blockedLimit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Cap blocked rows returned by the next action (defaults to the ready --limit).",
+            "examples": [
+              "3"
+            ]
+          },
+          "format": {
+            "description": "Format.",
+            "type": "string"
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Limit."
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "parent": {
+            "description": "Parent item ID filter for hierarchical list queries.",
+            "examples": [
+              "pm-epic01"
+            ],
+            "type": "string"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Pm Executable.",
+            "type": "string"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Priority value in range 0..4.",
+            "examples": [
+              0,
+              1,
+              "2"
+            ]
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "readyOnly": {
+            "description": "When true, the next action omits the blocked companion list.",
+            "type": "boolean"
+          },
+          "release": {
+            "description": "Release.",
+            "type": "string"
+          },
+          "sprint": {
+            "description": "Sprint.",
+            "type": "string"
+          },
+          "tag": {
+            "description": "npm version or dist-tag used for CLI and registry package upgrades.",
+            "examples": [
+              "latest",
+              "next",
+              "2026.5.11"
+            ],
+            "type": "string"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          },
+          "type": {
+            "description": "Item type name from the active runtime type registry.",
+            "examples": [
+              "Task",
+              "Feature"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "pm action \"next\" parameters",
         "type": "object"
       },
       {
