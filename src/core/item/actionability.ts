@@ -17,6 +17,16 @@ import type { ItemFrontMatter, ItemStatus } from "../../types/index.js";
 const BLOCKED_BY_DEPENDENCY_KIND = "blocked_by";
 
 /**
+ * Normalizes an item id / parent reference / blocker id to its canonical
+ * comparison key (trimmed, lowercased). pm ids are canonically lowercase, but
+ * resolving case-insensitively — as {@link collectSubtreeIds} does — keeps a
+ * hand-edited mixed-case reference from being silently treated as missing.
+ */
+function normalizeItemId(id: string): string {
+  return id.trim().toLowerCase();
+}
+
+/**
  * Collects the blocker item ids declared by an item: the legacy scalar
  * `blocked_by` field plus every `blocked_by` dependency edge. Ids are trimmed,
  * de-duplicated, and returned in stable lexicographic order. This is the single
@@ -63,7 +73,7 @@ export function resolveItemBlockers(
   statusRegistry: RuntimeStatusRegistry,
 ): ResolvedBlocker[] {
   return collectBlockedByIds(item).map((id) => {
-    const blocker = itemsById.get(id);
+    const blocker = itemsById.get(normalizeItemId(id));
     if (!blocker) {
       return { id, title: null, status: null, resolved: true };
     }
@@ -119,7 +129,7 @@ function hasOpenDescendant(
   childrenByParent: Map<string, ItemFrontMatter[]>,
   statusRegistry: RuntimeStatusRegistry,
 ): boolean {
-  const stack = [rootId];
+  const stack = [normalizeItemId(rootId)];
   const visited = new Set<string>();
   while (stack.length > 0) {
     const current = stack.pop() as string;
@@ -131,7 +141,7 @@ function hasOpenDescendant(
       if (!isTerminalStatus(child.status, statusRegistry)) {
         return true;
       }
-      stack.push(child.id);
+      stack.push(normalizeItemId(child.id));
     }
   }
   return false;
@@ -152,17 +162,21 @@ function indexCorpus(corpus: ItemFrontMatter[]): {
   const childrenByParent = new Map<string, ItemFrontMatter[]>();
   const blockedByReverse = new Map<string, string[]>();
   for (const item of corpus) {
-    itemsById.set(item.id, item);
+    // Index keys are normalized (lowercased) for case-insensitive resolution;
+    // stored values keep the item's original-case id for display.
+    itemsById.set(normalizeItemId(item.id), item);
     const parent = typeof item.parent === "string" ? item.parent.trim() : "";
     if (parent.length > 0) {
-      const siblings = childrenByParent.get(parent) ?? [];
+      const parentKey = normalizeItemId(parent);
+      const siblings = childrenByParent.get(parentKey) ?? [];
       siblings.push(item);
-      childrenByParent.set(parent, siblings);
+      childrenByParent.set(parentKey, siblings);
     }
     for (const blockerId of collectBlockedByIds(item)) {
-      const dependents = blockedByReverse.get(blockerId) ?? [];
+      const blockerKey = normalizeItemId(blockerId);
+      const dependents = blockedByReverse.get(blockerKey) ?? [];
       dependents.push(item.id);
-      blockedByReverse.set(blockerId, dependents);
+      blockedByReverse.set(blockerKey, dependents);
     }
   }
   return { itemsById, childrenByParent, blockedByReverse };
@@ -189,7 +203,7 @@ export function computeActionabilityReport(
   // Ids of corpus items still in flight, used to keep only the non-terminal
   // dependents in each item's downstream "unblocks" list.
   const nonTerminalIds = new Set(
-    corpus.filter((entry) => !isTerminalStatus(entry.status, statusRegistry)).map((entry) => entry.id),
+    corpus.filter((entry) => !isTerminalStatus(entry.status, statusRegistry)).map((entry) => normalizeItemId(entry.id)),
   );
   const ready: ActionableEntry[] = [];
   const blocked: ActionableEntry[] = [];
@@ -203,8 +217,8 @@ export function computeActionabilityReport(
       continue;
     }
     const openBlockers = resolveItemBlockers(item, itemsById, statusRegistry).filter((blocker) => !blocker.resolved);
-    const unblocks = (blockedByReverse.get(item.id) ?? [])
-      .filter((dependentId) => nonTerminalIds.has(dependentId))
+    const unblocks = (blockedByReverse.get(normalizeItemId(item.id)) ?? [])
+      .filter((dependentId) => nonTerminalIds.has(normalizeItemId(dependentId)))
       .sort((left, right) => left.localeCompare(right));
     const entry: ActionableEntry = { item, open_blockers: openBlockers, unblocks };
     if (openBlockers.length === 0) {

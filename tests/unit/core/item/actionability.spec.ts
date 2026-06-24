@@ -117,6 +117,22 @@ describe("computeActionabilityReport", () => {
     expect(report.container_count).toBe(0);
   });
 
+  it("resolves blockers, parent containment, and unblocks case-insensitively", () => {
+    const epic = item({ id: "pm-EPIC", type: "Epic", status: "open" });
+    const child = item({ id: "pm-CHILD", parent: "pm-epic", status: "open" });
+    const blocker = item({ id: "pm-BLK", status: "open" });
+    const blockee = item({ id: "pm-DEP", status: "open", dependencies: [blockedByDep("PM-blk")] });
+    const corpus = [epic, child, blocker, blockee];
+
+    const report = computeActionabilityReport(corpus, corpus, registry);
+    // pm-EPIC is a container via its mixed-case child link; pm-CHILD and pm-BLK are ready.
+    expect(report.ready.map((entry) => entry.item.id).sort()).toEqual(["pm-BLK", "pm-CHILD"]);
+    // pm-DEP is blocked by pm-BLK even though it references it as "PM-blk".
+    expect(report.blocked.map((entry) => entry.item.id)).toEqual(["pm-DEP"]);
+    expect(report.blocked[0].open_blockers[0].id).toBe("PM-blk");
+    expect(report.ready.find((entry) => entry.item.id === "pm-BLK")?.unblocks).toEqual(["pm-DEP"]);
+  });
+
   it("returns the downstream unblocks list sorted when an item gates several dependents", () => {
     const blocker = item({ id: "pm-blocker", status: "open" });
     const second = item({ id: "pm-d2", status: "open", dependencies: [blockedByDep("pm-blocker")] });
