@@ -529,6 +529,15 @@ scaffold paired import/export commands with example flag metadata and a runnable
 `runRegisteredExporterForTest`; the generated manifest declares both `importers`
 and `schema` because extension flag metadata is schema-governed.
 
+Every variant's generated `manifest.json` also declares `activation.commands` —
+the exact command paths the starter registers — so pm activates the package
+lazily, importing and running `activate` only when an invoked command matches.
+This mirrors every first-party bundled package and is the contract authors keep
+in sync with their registrations: an omitted or stale entry means the matching
+command will not dispatch from the CLI (globally-scoped surfaces such as hooks
+and search providers for built-in search commands still activate regardless).
+See [EXTENSIONS.md](EXTENSIONS.md) for the manifest-field reference.
+
 ## Self-Identity and Lifecycle
 
 `activate(api)` receives a read-only `api.extension` describing the extension it

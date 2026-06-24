@@ -1206,6 +1206,29 @@ describe("CLI main bootstrap helper coverage", () => {
         allowCommandPrefixMatch: true,
       }),
     ).toBe(true);
+    // Importers register import/export command handlers, so a pure-importers
+    // extension without declared activation commands must activate on direct
+    // invocation too (not only on a help prefix) or its command never dispatches.
+    expect(
+      _testOnly.extensionNeedsActivationForProbe(extension({ capabilities: ["importers"] }), {
+        commandPath: "tickets",
+        commandArgs: ["import"],
+      }),
+    ).toBe(true);
+    // search + command-bearing capabilities: the search gate must not shadow the
+    // conservative `commands` activation when the invoked command is not a
+    // built-in search command (pm-nacb).
+    expect(
+      _testOnly.extensionNeedsActivationForProbe(extension({ capabilities: ["search", "commands"] }), {
+        commandPath: "kanban",
+        commandArgs: ["board", "ping"],
+      }),
+    ).toBe(true);
+    // A pure search provider (no command-bearing capability) stays scoped to the
+    // built-in search commands and is not activated for unrelated commands.
+    expect(
+      _testOnly.extensionNeedsActivationForProbe(extension({ capabilities: ["search"] }), { commandPath: "list" }),
+    ).toBe(false);
     expect(_testOnly.discoveryNeedsActivationForProbe({ effective: [], warnings: [] }, { commandPath: "search" })).toBe(false);
     expect(
       _testOnly.discoveryNeedsActivationForProbe(

@@ -90,6 +90,82 @@ describe("extension startup activation", () => {
     });
   });
 
+  it("dispatches a search+commands extension's own command, both with and without declared activation.commands (pm-nacb)", async () => {
+    await withTempPmPath(async (context) => {
+      // Mirrors `pm package init --capability search`: capabilities pair `search`
+      // with `commands`, the command path's first token is not a built-in search
+      // word, and `activation.commands` enumerates the registered command exactly.
+      await writeTestExtension({
+        root: path.join(context.pmPath, "extensions"),
+        directory: "kanban-board",
+        manifest: {
+          name: "kanban-board",
+          version: "1.0.0",
+          entry: "index.mjs",
+          capabilities: ["commands", "search"],
+          activation: {
+            commands: ["kanban board ping"],
+          },
+        },
+        entryFilename: "index.mjs",
+        entrySource: [
+          "export function activate(api) {",
+          "  api.registerCommand({",
+          '    name: "kanban board ping",',
+          '    description: "Kanban starter command.",',
+          '    run: async (context) => ({ ok: true, source: "kanban-board", command: context.command }),',
+          "  });",
+          "  api.registerSearchProvider({",
+          '    name: "kanban-board-search",',
+          "    query: async () => ({ hits: [] }),",
+          "    embed: async () => [1],",
+          "  });",
+          "}",
+          "export default { activate };",
+          "",
+        ].join("\n"),
+      });
+      // Hand-authored variant that omits `activation.commands`: dispatch must still
+      // work through the capability heuristic (search must not shadow the
+      // conservative `commands` activation).
+      await writeTestExtension({
+        root: path.join(context.pmPath, "extensions"),
+        directory: "atlas-grid",
+        manifest: {
+          name: "atlas-grid",
+          version: "1.0.0",
+          entry: "index.mjs",
+          capabilities: ["commands", "search"],
+        },
+        entryFilename: "index.mjs",
+        entrySource: [
+          "export function activate(api) {",
+          "  api.registerCommand({",
+          '    name: "atlas grid ping",',
+          '    description: "Atlas starter command.",',
+          '    run: async (context) => ({ ok: true, source: "atlas-grid", command: context.command }),',
+          "  });",
+          "  api.registerSearchProvider({",
+          '    name: "atlas-grid-search",',
+          "    query: async () => ({ hits: [] }),",
+          "    embed: async () => [1],",
+          "  });",
+          "}",
+          "export default { activate };",
+          "",
+        ].join("\n"),
+      });
+
+      const declared = runSourceCli(context, ["kanban", "board", "ping", "--json"], { expectJson: true });
+      expect(declared.code).toBe(0);
+      expect(declared.json).toMatchObject({ ok: true, source: "kanban-board", command: "kanban board ping" });
+
+      const heuristic = runSourceCli(context, ["atlas", "grid", "ping", "--json"], { expectJson: true });
+      expect(heuristic.code).toBe(0);
+      expect(heuristic.json).toMatchObject({ ok: true, source: "atlas-grid", command: "atlas grid ping" });
+    });
+  });
+
   it("keeps renderer and hook overrides active even when activation metadata does not match the command", async () => {
     await withTempPmPath(async (context) => {
       const hookLogPath = path.join(context.tempRoot, "hook-extension.log");
