@@ -541,7 +541,10 @@ output renderer override (via `registerRenderer`, scoped to its own command so
 other output passes through) with a `node:test` file exercising
 `assertRegisteredRendererOverride` and `runRegisteredRendererOverrideForTest`;
 `--capability parser` for a parser override (via `registerParser`) that rewrites
-the command's parsed options, exercising `assertRegisteredParserOverride` and
+the command's parsed options — the starter command declares matching
+`--shout`/`--upper` flags (so the manifest also declares `schema`) and surfaces
+the normalized value, making the override runnable through `pm <command> --shout`
+— exercising `assertRegisteredParserOverride` and
 `runRegisteredParserOverrideForTest`; `--capability preflight` for a preflight
 override (via `registerPreflight`) over pm's pre-run migration/format gate
 decision, exercising `assertRegisteredPreflightOverride` and

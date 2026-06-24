@@ -158,7 +158,7 @@ describe("extension scaffold define builder guidance", () => {
     expect(readme).toContain("## Lazy Activation");
   });
 
-  it("scaffolds a runnable parser override starter scoped to its own command", () => {
+  it("scaffolds a runnable parser override starter with matching command flags", () => {
     const scaffold = buildStarterExtensionScaffoldFiles("flag-kit", "flag kit ping", "package", "parser");
     const entry = scaffold["index.ts"] ?? "";
     const sampleTest = scaffold["index.test.ts"] ?? "";
@@ -168,10 +168,15 @@ describe("extension scaffold define builder guidance", () => {
       activation?: { commands?: string[] };
     };
 
-    expect(manifest.capabilities).toEqual(["commands", "parser"]);
+    // Flag metadata is schema-governed, so the parser starter also declares
+    // `schema` so the override is runnable through `pm <command> --shout`.
+    expect(manifest.capabilities).toEqual(["commands", "parser", "schema"]);
     expect(manifest.activation?.commands).toEqual(["flag kit ping"]);
-    // The override is registered for the starter command and rewrites a
-    // deprecated alias to the canonical flag.
+    // The command declares the deprecated alias + canonical flag the override
+    // normalizes, and surfaces the normalized value so the demo is end-to-end.
+    expect(entry).toContain('long: "--shout",');
+    expect(entry).toContain('long: "--upper",');
+    expect(entry).toContain("upper: context.options.upper === true,");
     expect(entry).toContain('api.registerParser("flag kit ping", (context) => {');
     expect(entry).toContain("if (options.shout === true) {");
     expect(entry).toContain("options.upper = true;");
@@ -179,9 +184,14 @@ describe("extension scaffold define builder guidance", () => {
     expect(sampleTest).toContain("  assertRegisteredParserOverride,");
     expect(sampleTest).toContain("  runRegisteredParserOverrideForTest,");
     expect(sampleTest).toContain("assert.deepEqual(result.context.options, { upper: true });");
+    // The sample test feeds the rewritten options into the command handler to
+    // prove the normalized flag is surfaced end to end.
+    expect(sampleTest).toContain("options: result.context.options,");
+    expect(sampleTest).toContain("    upper: true,");
     expect(readme).toContain(
       'import { defineCommand, defineParserOverride } from "@unbrained/pm-cli/sdk";',
     );
+    expect(readme).toContain('long: "--shout"');
     expect(readme).toContain("export const pingParser = defineParserOverride((context) => {");
     expect(readme).toContain('api.registerParser("flag kit ping", pingParser);');
     expect(readme).toContain("## Parser Override");

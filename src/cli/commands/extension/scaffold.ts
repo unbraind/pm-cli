@@ -102,7 +102,10 @@ const SCAFFOLD_MANIFEST_CAPABILITIES: Record<ExtensionScaffoldCapability, readon
   importers: ["commands", "schema", "importers"],
   schema: ["commands", "schema"],
   renderers: ["commands", "renderers"],
-  parser: ["commands", "parser"],
+  // The parser starter declares `--shout`/`--upper` command flags so the
+  // override is runnable through `pm <command> --shout`; flag metadata is
+  // schema-governed, so the manifest also declares `schema`.
+  parser: ["commands", "parser", "schema"],
   preflight: ["commands", "preflight"],
   services: ["commands", "services"],
 };
@@ -114,7 +117,7 @@ const SAMPLE_TEST_CAPABILITIES_LITERAL: Record<ExtensionScaffoldCapability, stri
   importers: '["commands", "schema", "importers"]',
   schema: '["commands", "schema"]',
   renderers: '["commands", "renderers"]',
-  parser: '["commands", "parser"]',
+  parser: '["commands", "parser", "schema"]',
   preflight: '["commands", "preflight"]',
   services: '["commands", "services"]',
 };
@@ -589,12 +592,40 @@ function buildActivateBodyLines(
   }
   if (capability === "parser") {
     return [
-      ...commandLines,
+      // The parser starter declares its own flags so the override is runnable end
+      // to end through `pm <command> --shout`: the command defines the deprecated
+      // `--shout` alias and canonical `--upper` flag, the parser rewrites one to
+      // the other, and the handler surfaces the normalized value. Flag metadata
+      // needs the `schema` capability (declared in manifest.json).
+      "  api.registerCommand({",
+      `    name: ${JSON.stringify(commandName)},`,
+      '    description: "Starter scaffold command. Replace with your own behavior.",',
+      "    flags: [",
+      "      {",
+      '        long: "--shout",',
+      '        value_type: "boolean",',
+      '        description: "Deprecated alias for --upper; the parser override rewrites it.",',
+      "      },",
+      "      {",
+      '        long: "--upper",',
+      '        value_type: "boolean",',
+      '        description: "Echo the canonical flag the parser override produces.",',
+      "      },",
+      "    ],",
+      "    run: async (context) => ({",
+      "      ok: true,",
+      `      source: ${JSON.stringify(extensionName)},`,
+      "      command: context.command,",
+      "      // Surfaces the normalized option so `--shout`/`--upper` is observable.",
+      "      upper: context.options.upper === true,",
+      '      message: "Starter extension scaffold is active.",',
+      "    }),",
+      "  });",
       "",
       "  // Parser overrides preprocess a command's parsed options BEFORE its handler",
       "  // runs, returning a delta — only the keys you set are merged over the parsed",
       "  // input. This override is scoped to THIS package's own command. Here it",
-      "  // rewrites a deprecated `--shout` boolean alias to the canonical `--upper`",
+      "  // rewrites the deprecated `--shout` boolean alias to the canonical `--upper`",
       "  // flag; replace it with your command's real normalization. The `parser`",
       "  // capability in manifest.json grants the registration.",
       `  api.registerParser(${JSON.stringify(commandName)}, (context) => {`,
@@ -925,7 +956,7 @@ function buildSampleTestSource(
         "  });",
         "",
         "  // runRegisteredParserOverrideForTest runs the override through pm's real",
-        "  // parser runner and returns the rewritten context. The starter rewrites a",
+        "  // parser runner and returns the rewritten context. The starter rewrites the",
         "  // deprecated `shout` alias to the canonical `upper` flag.",
         "  const result = await runRegisteredParserOverrideForTest(activation.parsers, {",
         `    command: ${JSON.stringify(commandName)},`,
@@ -936,6 +967,21 @@ function buildSampleTestSource(
         "  });",
         "  assert.equal(result.overridden, true);",
         "  assert.deepEqual(result.context.options, { upper: true });",
+        "",
+        "  // End to end: feed the rewritten options into the command handler to prove",
+        "  // `pm <command> --shout` surfaces the normalized `upper` flag in the result.",
+        "  const invocation = await runRegisteredCommandForTest(activation.commands, {",
+        `    command: ${JSON.stringify(commandName)},`,
+        "    options: result.context.options,",
+        "  });",
+        "  assert.equal(invocation.handled, true);",
+        "  assert.deepEqual(invocation.result, {",
+        "    ok: true,",
+        `    source: ${JSON.stringify(extensionName)},`,
+        `    command: ${JSON.stringify(commandName)},`,
+        "    upper: true,",
+        '    message: "Starter extension scaffold is active.",',
+        "  });",
         "});",
         "",
       ]
@@ -1052,6 +1098,9 @@ function buildSampleTestSource(
     "    ok: true,",
     `    source: ${JSON.stringify(extensionName)},`,
     `    command: ${JSON.stringify(commandName)},`,
+    // The parser starter's command surfaces the normalized `upper` flag, which
+    // defaults to false when the command is invoked without `--shout`/`--upper`.
+    ...(parserEnabled ? ["    upper: false,"] : []),
     '    message: "Starter extension scaffold is active.",',
     "  });",
     "});",
@@ -1272,7 +1321,18 @@ export function buildStarterExtensionScaffoldFiles(
       "export const pingCommand = defineCommand({",
       `  name: ${JSON.stringify(commandName)},`,
       '  description: "Starter scaffold command. Replace with your own behavior.",',
-      "  run: (context) => ({ ok: true, command: context.command }),",
+      // The parser starter's command declares the flags its override normalizes so
+      // the demo is runnable through `pm <command> --shout`, and surfaces the
+      // canonical `upper` flag in the result.
+      ...(capability === "parser"
+        ? [
+            "  flags: [",
+            '    { long: "--shout", value_type: "boolean", description: "Deprecated alias for --upper." },',
+            '    { long: "--upper", value_type: "boolean", description: "Canonical flag the parser produces." },',
+            "  ],",
+            "  run: (context) => ({ ok: true, command: context.command, upper: context.options.upper === true }),",
+          ]
+        : ["  run: (context) => ({ ok: true, command: context.command }),"]),
       "});",
     ];
     if (capability === "hooks") {
