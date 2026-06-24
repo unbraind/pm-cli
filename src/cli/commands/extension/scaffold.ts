@@ -651,6 +651,9 @@ export function buildStarterExtensionScaffoldFiles(
       "# Compiled TypeScript output (npm run build)",
       "*.js",
       "*.test.js",
+      "*.js.map",
+      "*.d.ts",
+      "*.d.ts.map",
       "",
     ].join("\n");
     const searchProviderName = `${extensionName}-search`;
@@ -777,7 +780,7 @@ export function buildStarterExtensionScaffoldFiles(
       entrypointBullet,
       sampleTestBullet,
       TSCONFIG_BULLET,
-      "- `.gitignore`: ignores `node_modules/`, logs, and compiled `*.js`/`*.test.js` output.",
+      "- `.gitignore`: ignores `node_modules/`, logs, and compiled JavaScript/declaration output.",
       "",
       "## Quick Start",
       "This package is authored in TypeScript; build it once so the manifest's",

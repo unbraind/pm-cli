@@ -382,6 +382,18 @@ const EXTENSION_BLUEPRINT_HOOK_KEYS = [
   "onIndex",
 ] as const satisfies ReadonlyArray<keyof ExtensionBlueprintHooks>;
 
+type ExtensionBlueprintHookKey = (typeof EXTENSION_BLUEPRINT_HOOK_KEYS)[number];
+type MissingExtensionBlueprintHookKeys = Exclude<keyof ExtensionBlueprintHooks, ExtensionBlueprintHookKey>;
+type ExtraExtensionBlueprintHookKeys = Exclude<ExtensionBlueprintHookKey, keyof ExtensionBlueprintHooks>;
+
+// Compile-time exhaustiveness guard: adding a hook field must update the canonical
+// merge order above, and stale keys cannot remain in that list.
+const EXTENSION_BLUEPRINT_HOOK_KEY_COVERAGE: Record<
+  MissingExtensionBlueprintHookKeys | ExtraExtensionBlueprintHookKeys,
+  never
+> = {};
+void EXTENSION_BLUEPRINT_HOOK_KEY_COVERAGE;
+
 type ExtensionBlueprintHookArray<TKey extends keyof ExtensionBlueprintHooks> = NonNullable<ExtensionBlueprintHooks[TKey]>;
 type ExtensionBlueprintHookValue<TKey extends keyof ExtensionBlueprintHooks> = ExtensionBlueprintHookArray<TKey>[number];
 
@@ -440,7 +452,8 @@ function mergeHookSurfaces(
  * - The **`deactivate`** teardown hooks chain in *reverse* argument order (LIFO),
  *   releasing resources in the inverse of acquisition. Teardown is best-effort:
  *   a throwing hook does not strand later modules' cleanup — every hook runs and
- *   the first failure is re-thrown afterwards.
+ *   teardown failures are re-thrown afterwards (as the original error for one
+ *   failure, or an `AggregateError` for several).
  * - The **`manifest`** mirror is last-defined-wins.
  *
  * Because `composeExtension` and the derive/lint/describe helpers are pure readers
@@ -503,7 +516,7 @@ export function mergeExtensionBlueprints(...blueprints: ExtensionBlueprint[]): E
       ? async (): Promise<void> => {
           // Teardown is best-effort across modules: a throwing `deactivate` must
           // not strand a later module's cleanup, so every hook runs (in reverse,
-          // LIFO) and the first failure is re-thrown afterwards to still surface it.
+          // LIFO) and failures are surfaced after cleanup completes.
           const errors: unknown[] = [];
           for (const blueprint of [...blueprints].reverse()) {
             if (!blueprint.deactivate) {
@@ -516,6 +529,9 @@ export function mergeExtensionBlueprints(...blueprints: ExtensionBlueprint[]): E
             }
           }
           if (errors.length > 0) {
+            if (errors.length > 1) {
+              throw new AggregateError(errors, "Multiple extension blueprint deactivate hooks failed.");
+            }
             throw errors[0];
           }
         }

@@ -958,7 +958,7 @@ describe("sdk mergeExtensionBlueprints", () => {
     expect(mergeExtensionBlueprints()).toEqual({});
   });
 
-  it("runs every deactivate even when one throws, then re-throws the first failure", async () => {
+  it("runs every deactivate when one throws, then re-throws that failure", async () => {
     const order: string[] = [];
     const boom = new Error("teardown boom");
     const merged = mergeExtensionBlueprints(
@@ -977,6 +977,32 @@ describe("sdk mergeExtensionBlueprints", () => {
     // Teardown is LIFO (B before A); B throws but A must still run, and the
     // collected failure is surfaced rather than swallowed.
     await expect(merged.deactivate?.()).rejects.toBe(boom);
+    expect(order).toEqual(["deactivate-b", "deactivate-a"]);
+  });
+
+  it("runs every deactivate when several throw, then reports the collected failures", async () => {
+    const order: string[] = [];
+    const boomA = new Error("teardown boom a");
+    const boomB = new Error("teardown boom b");
+    const merged = mergeExtensionBlueprints(
+      {
+        deactivate: () => {
+          order.push("deactivate-a");
+          throw boomA;
+        },
+      },
+      {
+        deactivate: () => {
+          order.push("deactivate-b");
+          throw boomB;
+        },
+      },
+    );
+
+    await expect(merged.deactivate?.()).rejects.toMatchObject({
+      errors: [boomB, boomA],
+      message: "Multiple extension blueprint deactivate hooks failed.",
+    });
     expect(order).toEqual(["deactivate-b", "deactivate-a"]);
   });
 
