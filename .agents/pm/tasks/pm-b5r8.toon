@@ -1,0 +1,14 @@
+id: pm-b5r8
+title: "Harden extensionNeedsActivationForProbe: non-terminal search gate + command-bearing importers"
+description: "Fix the search early-return that shadows conservative command activation, and treat importers as command-bearing so its registered commands dispatch without declared activation.commands."
+type: Task
+status: closed
+priority: 1
+tags[5]: activation,"area:cli","area:extensions",bug,pm-cli
+created_at: "2026-06-24T11:29:17.838Z"
+updated_at: "2026-06-24T11:41:33.953Z"
+author: claude-code-agent
+parent: pm-yxb5
+resolution: "extensionNeedsActivationForProbe hardened: search gate is non-terminal (no longer shadows conservative command activation), and importers activate as command-bearing on direct invocation. Verified search+commands and pure-importers dispatch with and without declared activation.commands."
+close_reason: "extensionNeedsActivationForProbe hardened: search gate is non-terminal (no longer shadows conservative command activation), and importers activate as command-bearing on direct invocation. Verified search+commands and pure-importers dispatch with and without declared activation.commands."
+body: ""

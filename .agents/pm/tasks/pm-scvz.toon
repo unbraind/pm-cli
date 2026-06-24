@@ -1,0 +1,14 @@
+id: pm-scvz
+title: "Document activation.commands lazy-activation contract in scaffold README, EXTENSIONS.md, SDK.md"
+description: Explain the activation.commands manifest field as the lazy-activation contract authors keep in sync with their registrations.
+type: Task
+status: closed
+priority: 2
+tags[4]: activation,"area:docs","area:sdk",pm-cli
+created_at: "2026-06-24T11:29:18.142Z"
+updated_at: "2026-06-24T11:41:34.435Z"
+author: claude-code-agent
+parent: pm-yxb5
+resolution: "Documented activation.commands in scaffold README (Lazy Activation), EXTENSIONS.md manifest-field list, and SDK.md package-init section."
+close_reason: "Documented activation.commands in scaffold README (Lazy Activation), EXTENSIONS.md manifest-field list, and SDK.md package-init section."
+body: ""

@@ -1,0 +1,14 @@
+id: pm-mhih
+title: Scaffold emits manifest activation.commands matching registered command paths per capability
+description: "buildStarterExtensionScaffoldFiles adds activation.commands to the generated manifest.json for commands/hooks/search/importers variants, matching first-party convention."
+type: Task
+status: closed
+priority: 1
+tags[4]: activation,"area:cli","area:packages",pm-cli
+created_at: "2026-06-24T11:29:17.534Z"
+updated_at: "2026-06-24T11:41:33.512Z"
+author: claude-code-agent
+parent: pm-yxb5
+resolution: "Scaffold manifest now declares activation.commands per capability (commands/hooks/search: [<name> ping]; importers: + adapter import/export), via buildScaffoldActivationCommands; READMEs gained a Lazy Activation section."
+close_reason: "Scaffold manifest now declares activation.commands per capability (commands/hooks/search: [<name> ping]; importers: + adapter import/export), via buildScaffoldActivationCommands; READMEs gained a Lazy Activation section."
+body: ""

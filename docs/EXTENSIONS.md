@@ -201,8 +201,8 @@ Rules:
 - An empty-string or non-string `pm_min_version`/`pm_max_version` makes the whole manifest malformed (`extension_manifest_invalid:<layer>:<name>`). Omit the field instead of leaving it blank.
 - Optional `engines.pm` and `engines.node` metadata is accepted for tooling, but `pm_min_version`/`pm_max_version` are the loader-enforced compatibility fields.
 - Declare only capabilities the extension actually uses. Declaring a capability it never registers against is over-broad: `pm package doctor` emits an advisory `extension_capability_unused:<layer>:<name>:<capability>` warning (never blocking) so you can trim the manifest, while the inverse — registering a surface whose capability is undeclared — is the blocking `extension_capability_missing` activation failure. Catch over-declaration earlier with the `assertExtensionCapabilityUsage` SDK testing helper.
-- Unknown capabilities emit deterministic warnings.
-- Legacy aliases such as `migration` and `validation` are normalized to `schema` with warnings.
+- `activation.commands` is an optional array of the command paths the extension registers (e.g. `["hello", "tickets import"]`). pm uses it to activate the extension lazily — importing and running `activate` only when an invoked command matches — so declaring it (every first-party package and `pm package init` scaffold does) keeps the extension's own commands dispatchable while unrelated commands skip the import. Omit it and pm falls back to capability heuristics, which cannot enumerate the contributed commands. Globally-scoped surfaces (hooks, parser/preflight/renderer overrides, and search providers for built-in search commands) activate regardless of this list.
+- Unknown capabilities emit deterministic warnings; legacy aliases such as `migration` and `validation` are normalized to `schema` with warnings.
 
 Supported capabilities:
 

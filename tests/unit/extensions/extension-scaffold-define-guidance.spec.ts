@@ -54,6 +54,32 @@ describe("extension scaffold define builder guidance", () => {
     expect(importerReadme).toContain('long: "--destination"');
   });
 
+  it("declares manifest activation.commands matching every registered command path per capability", () => {
+    const commandsManifest = JSON.parse(
+      buildStarterExtensionScaffoldFiles("tool-kit", "tool kit ping", "package", "commands")["manifest.json"] ?? "{}",
+    ) as { activation?: { commands?: string[] } };
+    const searchManifest = JSON.parse(
+      buildStarterExtensionScaffoldFiles("search-kit", "search kit ping", "package", "search")["manifest.json"] ?? "{}",
+    ) as { activation?: { commands?: string[] } };
+    const importerScaffold = buildStarterExtensionScaffoldFiles("sync-kit", "sync kit ping", "package", "importers");
+    const importerManifest = JSON.parse(importerScaffold["manifest.json"] ?? "{}") as {
+      activation?: { commands?: string[] };
+    };
+
+    // commands/search variants register just the starter command; the importers
+    // variant additionally registers paired import/export command handlers.
+    expect(commandsManifest.activation?.commands).toEqual(["tool kit ping"]);
+    expect(searchManifest.activation?.commands).toEqual(["search kit ping"]);
+    expect(importerManifest.activation?.commands).toEqual([
+      "sync kit ping",
+      "sync kit items import",
+      "sync kit items export",
+    ]);
+    // The README documents the field so authors keep it in sync with index.ts.
+    expect(importerScaffold["README.md"]).toContain("## Lazy Activation");
+    expect(importerScaffold["README.md"]).toContain("`activation.commands`");
+  });
+
   it("scaffolds a package as a TypeScript-only project (type-check tsconfig + .ts entry, no compiled output)", () => {
     const scaffold = buildStarterExtensionScaffoldFiles("tool-kit", "tool kit ping", "package", "commands");
     const packageJson = JSON.parse(scaffold["package.json"] ?? "{}") as {

@@ -4,14 +4,22 @@
 
 ### Added
 
+- Scaffolded & authored command-bearing extensions reliably activate for their own commands ([pm-yxb5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-yxb5.toon))
 - TypeScript-only extension loading: ship .ts entry, load via Node native type stripping (no compiled .js) ([pm-2p7a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-2p7a.toon))
 
 ### Changed
 
 - ADR: pm extensions are authored AND loaded as TypeScript via Node native type stripping ([pm-m1uz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-m1uz.toon))
 
+### Fixed
+
+- Scaffolded search/importers package commands fail to dispatch: lazy-activation probe skips command-bearing extensions that omit activation.commands ([pm-nacb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nacb.toon))
+- Harden extensionNeedsActivationForProbe: non-terminal search gate + command-bearing importers ([pm-b5r8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-b5r8.toon))
+
 ### Other
 
+- Document activation.commands lazy-activation contract in scaffold README, EXTENSIONS.md, SDK.md ([pm-scvz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-scvz.toon))
+- Scaffold emits manifest activation.commands matching registered command paths per capability ([pm-mhih](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mhih.toon))
 - Scaffolder emits TypeScript source: index.ts + tsconfig.json + type-check/test scripts (./index.ts entry) ([pm-frou](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-frou.toon))
 - Convert docs/examples extensions to TypeScript-first (starter-extension, policy-restricted-extension) ([pm-ax7z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ax7z.toon))
 - ADR: pm extensions & SDK packages must be authored fully in TypeScript ([pm-2c28](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-2c28.toon))
