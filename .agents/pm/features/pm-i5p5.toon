@@ -1,0 +1,14 @@
+id: pm-i5p5
+title: "Complete scaffold capability matrix: --capability renderers/parser/preflight/services starters"
+description: "Follow-up to pm-d1ig (schema). After schema lands, the scaffold supports 5 of 9 SDK capabilities (commands/hooks/search/importers/schema). Add starters for the four override surfaces so 'pm package init --capability' covers all 9: renderers (api.registerRenderer toon|json output override), parser (api.registerParser argv rewrite), preflight (api.registerPreflight runtime-decision delta), services (api.registerService named service override). Each has define*/assert*/run* SDK helpers already. These are GLOBAL-activation capabilities (renderers/parser/preflight in GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES; services conservative), so unlike schema they activate appropriately. Defer until schema proven; override starters need careful design to be genuinely useful rather than noise."
+type: Feature
+status: open
+priority: 3
+tags[3]: "area:extensions","area:sdk",authoring
+created_at: "2026-06-24T13:13:37.723Z"
+updated_at: "2026-06-24T13:13:50.494Z"
+author: claude-code-agent
+parent: pm-ugqx
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-d1ig,related,"2026-06-24T13:13:50.481Z",null,null
+body: ""

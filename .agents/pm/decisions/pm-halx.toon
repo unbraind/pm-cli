@@ -1,0 +1,16 @@
+id: pm-halx
+title: Schema-capability scaffolds must omit narrow activation.commands so custom item types/fields register globally
+description: "Empirically verified: an extension/package that registers custom item TYPES via api.registerItemTypes (or fields via registerItemFields) and ALSO declares narrow manifest activation.commands (e.g. ['<name> ping']) will NOT have its custom type available for built-in commands like 'pm create <type>'. Lazy activation (src/cli/main.ts extensionNeedsActivationForProbe) only activates such a package when an invoked command path matches activation.commands; once activation.commands is non-empty, the conservative tier (schema in CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES) is short-circuited. Built-in create/list/validate are not the package's commands and cannot be enumerated, so 'pm create <customtype>' fails 'Invalid type value'. schema is NOT in GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES (only hooks/parser/preflight/renderers) because schema is also used for command-scoped flag metadata. RESOLUTION: the schema scaffold OMITS activation.commands entirely; the conservative schema tier then activates the package for every command probe, making the custom type/field globally present (verified: pm create <type> + alias both succeed). Contrast pm-yxb5/PR#354 which made command/hook/search/importer scaffolds DECLARE activation.commands — those contribute named commands; schema contributes global types. Follow-up: a doctor warning could catch 'schema registers item_types but manifest declares activation.commands'."
+type: Decision
+status: closed
+priority: 1
+tags[3]: activation,"area:extensions","area:schema"
+created_at: "2026-06-24T13:13:24.134Z"
+updated_at: "2026-06-24T13:32:21.904Z"
+author: claude-code-agent
+parent: pm-d1ig
+resolution: "Decided and implemented: the schema scaffold OMITS activation.commands. Verified empirically — a schema package with narrow activation.commands fails 'pm create <type>' (Invalid type value) because lazy activation never fires for built-in create; with the field omitted, conservative activation (schema in CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES) loads the package for every command and the custom type + alias resolve correctly. Encoded in buildScaffoldActivationCommands (schema -> []) + conditional manifest activation spread, and documented in the generated README '## Activation' section. Follow-up doctor warning tracked as pm-ok47."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-5wb6,related,"2026-06-24T13:13:51.486Z",null,null
+close_reason: "Decided and implemented: the schema scaffold OMITS activation.commands. Verified empirically — a schema package with narrow activation.commands fails 'pm create <type>' (Invalid type value) because lazy activation never fires for built-in create; with the field omitted, conservative activation (schema in CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES) loads the package for every command and the custom type + alias resolve correctly. Encoded in buildScaffoldActivationCommands (schema -> []) + conditional manifest activation spread, and documented in the generated README '## Activation' section. Follow-up doctor warning tracked as pm-ok47."
+body: ""

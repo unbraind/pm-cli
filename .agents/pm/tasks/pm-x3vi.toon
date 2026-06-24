@@ -1,0 +1,14 @@
+id: pm-x3vi
+title: "Schema scaffold tests: unit coverage (package+extension variants) + materialize/run generated node:test smoke"
+description: ""
+type: Task
+status: closed
+priority: 1
+tags[2]: "area:extensions","area:tests"
+created_at: "2026-06-24T13:13:12.097Z"
+updated_at: "2026-06-24T13:32:11.487Z"
+author: claude-code-agent
+parent: pm-d1ig
+resolution: "Added package-variant and extension-variant schema scaffold tests in tests/unit/extensions/extension-command.spec.ts (manifest omits activation, item type/field/migration registrations, sample-test assertions, README sections, define* guidance) and schema cases in extension-scaffold-define-guidance.spec.ts. Materialized smoke verified: generated index.test.ts passes 3/3 under node --test against the symlinked SDK, tsc --noEmit exits 0, and pm create <type> + alias + bundled ping + package doctor all succeed in a temp workspace. Full suite 5006 tests, 100/100/100/100 coverage."
+close_reason: "Added package-variant and extension-variant schema scaffold tests in tests/unit/extensions/extension-command.spec.ts (manifest omits activation, item type/field/migration registrations, sample-test assertions, README sections, define* guidance) and schema cases in extension-scaffold-define-guidance.spec.ts. Materialized smoke verified: generated index.test.ts passes 3/3 under node --test against the symlinked SDK, tsc --noEmit exits 0, and pm create <type> + alias + bundled ping + package doctor all succeed in a temp workspace. Full suite 5006 tests, 100/100/100/100 coverage."
+body: ""

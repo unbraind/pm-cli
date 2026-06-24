@@ -527,15 +527,25 @@ scaffold paired import/export commands with example flag metadata and a runnable
 `node:test` file that exercises `assertRegisteredImporter`,
 `assertRegisteredExporter`, `runRegisteredImporterForTest`, and
 `runRegisteredExporterForTest`; the generated manifest declares both `importers`
-and `schema` because extension flag metadata is schema-governed.
+and `schema` because extension flag metadata is schema-governed. Pass
+`--capability schema` to scaffold a command plus a custom item type, item field,
+and migration (via `registerItemTypes`/`registerItemFields`/`registerMigration`)
+and a runnable `node:test` file that exercises `assertRegisteredItemType`,
+`assertRegisteredItemField`, `assertRegisteredMigration`, and
+`runRegisteredMigrationForTest` — a copyable starting point for modeling a
+project domain.
 
-Every variant's generated `manifest.json` also declares `activation.commands` —
-the exact command paths the starter registers — so pm activates the package
-lazily, importing and running `activate` only when an invoked command matches.
-This mirrors every first-party bundled package and is the contract authors keep
-in sync with their registrations: an omitted or stale entry means the matching
-command will not dispatch from the CLI (globally-scoped surfaces such as hooks
-and search providers for built-in search commands still activate regardless).
+Every command-bearing variant's generated `manifest.json` also declares
+`activation.commands` — the exact command paths the starter registers — so pm
+activates the package lazily, importing and running `activate` only when an
+invoked command matches. This mirrors every first-party bundled package and is
+the contract authors keep in sync with their registrations: an omitted or stale
+entry means the matching command will not dispatch from the CLI (globally-scoped
+surfaces such as hooks and search providers for built-in search commands still
+activate regardless). The `schema` starter is the deliberate exception: it omits
+`activation.commands` so its custom item type — a global contribution that
+built-in commands like `pm create <type>` must see — activates conservatively for
+every command rather than gating on the package's own commands.
 See [EXTENSIONS.md](EXTENSIONS.md) for the manifest-field reference.
 
 ## Self-Identity and Lifecycle

@@ -1,0 +1,14 @@
+id: pm-mdw6
+title: "Implement schema scaffold capability in scaffold.ts (manifest/entrypoint/README/define* guidance, omit activation.commands)"
+description: ""
+type: Task
+status: closed
+priority: 1
+tags[1]: "area:extensions"
+created_at: "2026-06-24T13:13:11.761Z"
+updated_at: "2026-06-24T13:32:10.990Z"
+author: claude-code-agent
+parent: pm-d1ig
+resolution: "Added 'schema' to SCAFFOLD_CAPABILITIES in src/cli/commands/extension/scaffold.ts. The schema starter registers a custom item type (api.registerItemTypes), item field (api.registerItemFields), and migration (api.registerMigration) plus the base ping command; manifest capabilities ['commands','schema']. buildScaffoldActivationCommands returns [] for schema and the manifest omits the activation field (conditional spread) so conservative activation makes the global type available to built-in commands. README gains a '## Custom Schema' section, a schema-specific '## Activation' note (replacing the lazy-activation contract), an accurate manifest 'Included Files' bullet, and define* guidance (defineItemType/defineItemField/defineMigration)."
+close_reason: "Added 'schema' to SCAFFOLD_CAPABILITIES in src/cli/commands/extension/scaffold.ts. The schema starter registers a custom item type (api.registerItemTypes), item field (api.registerItemFields), and migration (api.registerMigration) plus the base ping command; manifest capabilities ['commands','schema']. buildScaffoldActivationCommands returns [] for schema and the manifest omits the activation field (conditional spread) so conservative activation makes the global type available to built-in commands. README gains a '## Custom Schema' section, a schema-specific '## Activation' note (replacing the lazy-activation contract), an accurate manifest 'Included Files' bullet, and define* guidance (defineItemType/defineItemField/defineMigration)."
+body: ""

@@ -68,11 +68,13 @@ const SCAFFOLD_TSCONFIG = {
  * Capability shapes the package/extension scaffolder can target via the
  * `--capability` selector. `commands` emits the default command-only starter;
  * `hooks` additionally wires an `after_command` lifecycle reactor, `search`
- * wires an in-memory provider/adapter pair, and `importers` wires importer and
- * exporter command primitives so authors can customize project context movement
- * without starting from a blank extension.
+ * wires an in-memory provider/adapter pair, `importers` wires importer and
+ * exporter command primitives so authors can customize project context movement,
+ * and `schema` registers a custom item type, item field, and migration so
+ * authors can model their own project domain — without starting from a blank
+ * extension.
  */
-export const SCAFFOLD_CAPABILITIES = ["commands", "hooks", "search", "importers"] as const;
+export const SCAFFOLD_CAPABILITIES = ["commands", "hooks", "search", "importers", "schema"] as const;
 
 /**
  * Restricts the `--capability` selector to a {@link SCAFFOLD_CAPABILITIES} value.
@@ -84,6 +86,7 @@ const SCAFFOLD_MANIFEST_CAPABILITIES: Record<ExtensionScaffoldCapability, readon
   hooks: ["commands", "hooks"],
   search: ["commands", "search"],
   importers: ["commands", "schema", "importers"],
+  schema: ["commands", "schema"],
 };
 
 const SAMPLE_TEST_CAPABILITIES_LITERAL: Record<ExtensionScaffoldCapability, string> = {
@@ -91,6 +94,7 @@ const SAMPLE_TEST_CAPABILITIES_LITERAL: Record<ExtensionScaffoldCapability, stri
   hooks: '["commands", "hooks"]',
   search: '["commands", "search"]',
   importers: '["commands", "schema", "importers"]',
+  schema: '["commands", "schema"]',
 };
 
 const ENTRYPOINT_BULLETS: Record<ExtensionScaffoldCapability, string> = {
@@ -101,6 +105,8 @@ const ENTRYPOINT_BULLETS: Record<ExtensionScaffoldCapability, string> = {
     "- `index.ts`: the TypeScript manifest entry — starter command registration, a search provider, a vector-store adapter, and a `deactivate` teardown stub.",
   importers:
     "- `index.ts`: the TypeScript manifest entry — starter command registration, importer/exporter command registrations, and a `deactivate` teardown stub.",
+  schema:
+    "- `index.ts`: the TypeScript manifest entry — starter command registration, a custom item type, a custom item field, a schema migration, and a `deactivate` teardown stub.",
 };
 
 const SAMPLE_TEST_BULLETS: Record<ExtensionScaffoldCapability, string> = {
@@ -112,6 +118,8 @@ const SAMPLE_TEST_BULLETS: Record<ExtensionScaffoldCapability, string> = {
     "- `index.test.ts`: sample `node:test` suite covering activation, command invocation, search provider/vector adapter invocation, and teardown via the SDK testing helpers.",
   importers:
     "- `index.test.ts`: sample `node:test` suite covering activation, command invocation, importer/exporter invocation, and teardown via the SDK testing helpers.",
+  schema:
+    "- `index.test.ts`: sample `node:test` suite covering activation, command invocation, item type/field/migration registration, migration invocation, and teardown via the SDK testing helpers.",
 };
 
 const TSCONFIG_BULLET = "- `tsconfig.json`: strict type-check-only TypeScript config (`noEmit`) for the `.ts` source the loader runs directly.";
@@ -148,6 +156,18 @@ const PACKAGE_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, re
     "capability grants both registrations, and `schema` grants the example",
     "command flag metadata.",
   ],
+  schema: [
+    "",
+    "## Custom Schema",
+    "`index.ts` models a project domain by registering a custom item type, a",
+    "custom item field, and a schema migration through `api.registerItemTypes`,",
+    "`api.registerItemFields`, and `api.registerMigration`. This is how a package",
+    "turns pm into a domain-specific tracker — `project management = context",
+    "management`. Replace the sample type/field/migration with your own domain",
+    "model; the `schema` capability in `manifest.json` grants all three",
+    "registrations. Once installed, the custom type is usable everywhere, e.g.",
+    "`pm create <type> \"<title>\"` and `pm list --type <type>`.",
+  ],
 };
 
 const EXTENSION_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, readonly string[]> = {
@@ -177,6 +197,73 @@ const EXTENSION_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, 
     "`api.registerImporter` and `api.registerExporter`. Replace the starter",
     "payloads with your domain adapter. The `importers` capability grants both",
     "registrations, and `schema` grants the example command flag metadata.",
+  ],
+  schema: [
+    "",
+    "## Custom Schema",
+    "`index.ts` models a project domain by registering a custom item type, a",
+    "custom item field, and a schema migration through `api.registerItemTypes`,",
+    "`api.registerItemFields`, and `api.registerMigration`. Replace the sample",
+    "type/field/migration with your own domain model; the `schema` capability in",
+    "`manifest.json` grants all three registrations. Once installed, the custom",
+    'type is usable everywhere, e.g. `pm create <type> "<title>"`.',
+  ],
+};
+
+// README activation explainer for command-bearing starters (commands/hooks/
+// search/importers): they declare `activation.commands` so pm loads them lazily.
+const LAZY_ACTIVATION_README_SECTION: Record<"package" | "extension", readonly string[]> = {
+  package: [
+    "",
+    "## Lazy Activation",
+    "`manifest.json` declares `activation.commands`: the exact command paths this",
+    "package's `activate` registers. pm imports and activates the package lazily —",
+    "only when an invoked command path matches one of these entries — so unrelated",
+    "commands (`pm list`, `pm search`, ...) never pay to load it. Keep this list in",
+    "sync with the registrations in `index.ts`: add an entry when you register a new",
+    "command, importer, or exporter, and remove one you drop. An omitted or stale",
+    "entry means the matching command will not dispatch from the CLI. Globally-scoped",
+    "surfaces (hooks, parser/preflight/renderer overrides, and search providers for",
+    "built-in search commands) still activate regardless of this list.",
+  ],
+  extension: [
+    "",
+    "## Lazy Activation",
+    "`manifest.json` declares `activation.commands`: the exact command paths this",
+    "extension's `activate` registers. pm imports and activates the extension lazily —",
+    "only when an invoked command path matches one of these entries — so unrelated",
+    "commands never pay to load it. Keep this list in sync with the registrations in",
+    "`index.ts`: an omitted or stale entry means the matching command will not dispatch",
+    "from the CLI. Globally-scoped surfaces (hooks, parser/preflight/renderer overrides,",
+    "and search providers for built-in search commands) still activate regardless.",
+  ],
+};
+
+// README activation explainer for the `schema` starter: it contributes a GLOBAL
+// custom item type/field, so it intentionally omits `activation.commands` and
+// relies on pm's conservative activation tier (see buildScaffoldActivationCommands).
+const SCHEMA_ACTIVATION_README_SECTION: Record<"package" | "extension", readonly string[]> = {
+  package: [
+    "",
+    "## Activation",
+    "This package contributes a GLOBAL custom item type and field, so `manifest.json`",
+    "intentionally declares no `activation.commands`. pm activates the package",
+    "conservatively — for every command — so the custom type is present wherever it is",
+    "used: `pm create <type>`, `pm list --type <type>`, `pm validate`, and so on.",
+    "Declaring narrow `activation.commands` here would gate activation to only those",
+    "commands and silently leave the custom type unregistered for `pm create`. If you",
+    "drop the schema registrations and keep only command/hook/search/importer surfaces,",
+    "add `activation.commands` back so pm can load the package lazily.",
+  ],
+  extension: [
+    "",
+    "## Activation",
+    "This extension contributes a GLOBAL custom item type and field, so `manifest.json`",
+    "intentionally declares no `activation.commands`. pm activates the extension",
+    "conservatively — for every command — so the custom type is present wherever it is",
+    "used: `pm create <type>`, `pm list --type <type>`, `pm validate`, and so on.",
+    "Declaring narrow `activation.commands` here would gate activation to only those",
+    "commands and silently leave the custom type unregistered for `pm create`.",
   ],
 };
 
@@ -258,6 +345,51 @@ function buildActivateBodyLines(
       "    query: async (context) => [{ id: \"starter-vector-hit\", score: context.limit }],",
       "    upsert: async (context) => ({ upserted: context.points.length }),",
       "    delete: async (context) => ({ deleted: context.ids.length }),",
+      "  });",
+    ];
+  }
+  if (capability === "schema") {
+    const itemTypeName = extensionName;
+    const itemTypeFolder = `${extensionName}s`;
+    const itemTypeAlias = extensionName.replace(/-/g, "");
+    const fieldName = `${extensionName.replace(/-/g, "_")}_note`;
+    const migrationId = `${extensionName}-0001-init`;
+    return [
+      ...commandLines,
+      "",
+      "  // Schema registrations let a package model its own project domain — the",
+      "  // heart of \"project management = context management\". Item types and fields",
+      "  // are GLOBAL contributions: built-in commands like `pm create <type>` and",
+      "  // `pm list --type <type>` must see them, so this package declares no",
+      "  // `activation.commands` and pm activates it conservatively for every command.",
+      "  // The `schema` capability in manifest.json grants all three registrations.",
+      "  api.registerItemFields([",
+      "    {",
+      `      name: ${JSON.stringify(fieldName)},`,
+      '      type: "string",',
+      "      optional: true,",
+      "    },",
+      "  ]);",
+      "",
+      "  api.registerItemTypes([",
+      "    {",
+      `      name: ${JSON.stringify(itemTypeName)},`,
+      `      folder: ${JSON.stringify(itemTypeFolder)},`,
+      `      aliases: [${JSON.stringify(itemTypeAlias)}],`,
+      "      // Add field names here to force them at `pm create` time.",
+      "      required_create_fields: [],",
+      "    },",
+      "  ]);",
+      "",
+      "  // Migrations let a package evolve stored items as its schema changes. pm",
+      "  // tracks each migration by `id` and runs it through the preflight gate; this",
+      "  // starter is a deterministic no-op so package tests can invoke it without",
+      "  // touching the corpus. Replace the body with your real per-item rewrite.",
+      "  api.registerMigration({",
+      `    id: ${JSON.stringify(migrationId)},`,
+      `    description: ${JSON.stringify(`Initialize ${extensionName} schema state.`)},`,
+      "    mandatory: false,",
+      "    run: async (context) => ({ migrated: true, id: context.id }),",
       "  });",
     ];
   }
@@ -349,10 +481,15 @@ function buildSampleTestSource(
   const hooksEnabled = capability === "hooks";
   const searchEnabled = capability === "search";
   const importersEnabled = capability === "importers";
+  const schemaEnabled = capability === "schema";
   const capabilitiesLiteral = SAMPLE_TEST_CAPABILITIES_LITERAL[capability];
   const searchProviderName = `${extensionName}-search`;
   const vectorAdapterName = `${extensionName}-vector`;
   const adapterName = `${extensionName.replace(/-/g, " ")} items`;
+  const itemTypeName = extensionName;
+  const itemTypeFolder = `${extensionName}s`;
+  const fieldName = `${extensionName.replace(/-/g, "_")}_note`;
+  const migrationId = `${extensionName}-0001-init`;
   const importNames = [
     "  activateExtensionForTest,",
     "  assertExtensionDeactivated,",
@@ -360,11 +497,13 @@ function buildSampleTestSource(
     ...(hooksEnabled ? ["  assertRegisteredHook,"] : []),
     ...(searchEnabled ? ["  assertRegisteredSearchProvider,", "  assertRegisteredVectorStoreAdapter,"] : []),
     ...(importersEnabled ? ["  assertRegisteredImporter,", "  assertRegisteredExporter,"] : []),
+    ...(schemaEnabled ? ["  assertRegisteredItemField,", "  assertRegisteredItemType,", "  assertRegisteredMigration,"] : []),
     "  deactivateExtensionForTest,",
     "  runRegisteredCommandForTest,",
     ...(hooksEnabled ? ["  runRegisteredHookForTest,"] : []),
     ...(searchEnabled ? ["  runRegisteredSearchProviderForTest,", "  runRegisteredVectorStoreAdapterForTest,"] : []),
     ...(importersEnabled ? ["  runRegisteredImporterForTest,", "  runRegisteredExporterForTest,"] : []),
+    ...(schemaEnabled ? ["  runRegisteredMigrationForTest,"] : []),
   ];
   const hookTestLines = hooksEnabled
     ? [
@@ -484,6 +623,43 @@ function buildSampleTestSource(
         "",
       ]
     : [];
+  const schemaTestLines = schemaEnabled
+    ? [
+        `test(${JSON.stringify(`${extensionName} registers and runs its custom schema`)}, async () => {`,
+        "  const activation = await activateExtensionForTest(extension, {",
+        `    name: ${JSON.stringify(extensionName)},`,
+        `    capabilities: ${capabilitiesLiteral},`,
+        "  });",
+        "  // assertRegisteredItemType/Field/Migration throw unless the registration is",
+        "  // present, so reaching each next line already proves the wiring; assert on",
+        "  // the returned definitions to demonstrate inspecting registered metadata.",
+        "  const itemType = assertRegisteredItemType(activation.registrations, {",
+        `    itemType: ${JSON.stringify(itemTypeName)},`,
+        `    extensionName: ${JSON.stringify(extensionName)},`,
+        "  });",
+        `  assert.equal(itemType.itemType.folder, ${JSON.stringify(itemTypeFolder)});`,
+        "  const itemField = assertRegisteredItemField(activation.registrations, {",
+        `    field: ${JSON.stringify(fieldName)},`,
+        `    extensionName: ${JSON.stringify(extensionName)},`,
+        "  });",
+        '  assert.equal(itemField.field.type, "string");',
+        "  assertRegisteredMigration(activation.registrations, {",
+        `    migration: ${JSON.stringify(migrationId)},`,
+        `    extensionName: ${JSON.stringify(extensionName)},`,
+        "    mandatory: false,",
+        "  });",
+        "",
+        "  // runRegisteredMigrationForTest invokes the migration through pm's real",
+        "  // runner with a synthetic context and returns its result. Replace the",
+        "  // context/assertions as your migration grows.",
+        "  const migrated = await runRegisteredMigrationForTest(activation.registrations, {",
+        `    migration: ${JSON.stringify(migrationId)},`,
+        "  });",
+        `  assert.deepEqual(migrated, { migrated: true, id: ${JSON.stringify(migrationId)} });`,
+        "});",
+        "",
+      ]
+    : [];
   return [
     'import assert from "node:assert/strict";',
     'import { test } from "node:test";',
@@ -531,6 +707,7 @@ function buildSampleTestSource(
     ...hookTestLines,
     ...searchTestLines,
     ...importerTestLines,
+    ...schemaTestLines,
     `test(${JSON.stringify(`${extensionName} tears down cleanly via deactivate`)}, async () => {`,
     "  // deactivateExtensionForTest runs pm's real teardown engine over the",
     "  // module, so this proves your `deactivate` hook runs without throwing.",
@@ -558,12 +735,24 @@ function buildSampleTestSource(
  * activation instead of falling back to capability heuristics (which cannot
  * enumerate the contributed commands). The `importers` variant additionally
  * registers paired import/export command handlers under the adapter name.
+ *
+ * The `schema` variant is the deliberate exception: it returns an empty list so
+ * the manifest omits `activation.commands`. Custom item types and fields are
+ * GLOBAL schema contributions that built-in commands (`pm create <type>`,
+ * `pm list --type <type>`, `pm validate`) must see — commands the package does
+ * not own and cannot enumerate. Declaring narrow `activation.commands` there
+ * would gate activation to only the listed commands and silently leave the
+ * custom type unregistered for `pm create`; omitting it lets pm's conservative
+ * activation tier (which covers `schema`) load the package for every command.
  */
 function buildScaffoldActivationCommands(
   extensionName: string,
   commandName: string,
   capability: ExtensionScaffoldCapability,
 ): string[] {
+  if (capability === "schema") {
+    return [];
+  }
   if (capability === "importers") {
     const adapterName = `${extensionName.replace(/-/g, " ")} items`;
     return [commandName, `${adapterName} import`, `${adapterName} export`];
@@ -582,6 +771,7 @@ export function buildStarterExtensionScaffoldFiles(
 ): Record<string, string> {
   const packageName = `pm-${extensionName}`;
   const capabilities = SCAFFOLD_MANIFEST_CAPABILITIES[capability];
+  const activationCommands = buildScaffoldActivationCommands(extensionName, commandName, capability);
   const manifest = `${JSON.stringify(
     {
       name: extensionName,
@@ -596,9 +786,10 @@ export function buildStarterExtensionScaffoldFiles(
       // Declares the exact command paths `activate` registers so pm activates
       // this package lazily — only when an invoked command matches — mirroring
       // every first-party bundled package. Keep it in sync with the entrypoint.
-      activation: {
-        commands: buildScaffoldActivationCommands(extensionName, commandName, capability),
-      },
+      // The schema starter omits this field (empty list) so its global custom
+      // item type/field stay available to built-in commands (see
+      // buildScaffoldActivationCommands).
+      ...(activationCommands.length > 0 ? { activation: { commands: activationCommands } } : {}),
     },
     null,
     2,
@@ -631,6 +822,12 @@ export function buildStarterExtensionScaffoldFiles(
   // README bullet describing what index.ts wires, kept in sync with the chosen
   // capability so the generated docs match the generated code.
   const entrypointBullet = ENTRYPOINT_BULLETS[capability];
+  // The schema starter omits `activation.commands` (its custom type is global),
+  // so describe the manifest accurately instead of referencing a field it lacks.
+  const manifestBullet =
+    capability === "schema"
+      ? `- \`manifest.json\`: ${vocabulary} metadata and capabilities (no \`activation.commands\` — the custom item type activates for every command).`
+      : `- \`manifest.json\`: ${vocabulary} metadata, capabilities, and \`activation.commands\` (the command paths that lazily activate this ${vocabulary}).`;
   if (vocabulary === "package") {
     const packageJson = `${JSON.stringify(
       {
@@ -693,11 +890,17 @@ export function buildStarterExtensionScaffoldFiles(
     const searchProviderName = `${extensionName}-search`;
     const vectorAdapterName = `${extensionName}-vector`;
     const adapterName = `${extensionName.replace(/-/g, " ")} items`;
+    const itemTypeName = extensionName;
+    const itemTypeFolder = `${extensionName}s`;
+    const itemTypeAlias = extensionName.replace(/-/g, "");
+    const fieldName = `${extensionName.replace(/-/g, "_")}_note`;
+    const migrationId = `${extensionName}-0001-init`;
     const defineBuilderImports = [
       "defineCommand",
       ...(capability === "hooks" ? ["defineAfterCommandHook"] : []),
       ...(capability === "search" ? ["defineSearchProvider", "defineVectorStoreAdapter"] : []),
       ...(capability === "importers" ? ["defineImporter", "defineExporter"] : []),
+      ...(capability === "schema" ? ["defineItemType", "defineItemField", "defineMigration"] : []),
     ].join(", ");
     const defineBuilderSnippet = [
       "```ts",
@@ -756,6 +959,26 @@ export function buildStarterExtensionScaffoldFiles(
         "}));",
       );
     }
+    if (capability === "schema") {
+      defineBuilderSnippet.push(
+        "",
+        `export const noteField = defineItemField({ name: ${JSON.stringify(fieldName)}, type: "string", optional: true });`,
+        "",
+        "export const itemType = defineItemType({",
+        `  name: ${JSON.stringify(itemTypeName)},`,
+        `  folder: ${JSON.stringify(itemTypeFolder)},`,
+        `  aliases: [${JSON.stringify(itemTypeAlias)}],`,
+        "  required_create_fields: [],",
+        "});",
+        "",
+        "export const initMigration = defineMigration({",
+        `  id: ${JSON.stringify(migrationId)},`,
+        `  description: ${JSON.stringify(`Initialize ${extensionName} schema state.`)},`,
+        "  mandatory: false,",
+        "  run: async (context) => ({ migrated: true, id: context.id }),",
+        "});",
+      );
+    }
     defineBuilderSnippet.push(
       "",
       "export function activate(api: ExtensionApi): void {",
@@ -766,6 +989,13 @@ export function buildStarterExtensionScaffoldFiles(
     }
     if (capability === "search") {
       defineBuilderSnippet.push("  api.registerSearchProvider(searchProvider);", "  api.registerVectorStoreAdapter(vectorStoreAdapter);");
+    }
+    if (capability === "schema") {
+      defineBuilderSnippet.push(
+        "  api.registerItemFields([noteField]);",
+        "  api.registerItemTypes([itemType]);",
+        "  api.registerMigration(initMigration);",
+      );
     }
     if (capability === "importers") {
       defineBuilderSnippet.push(
@@ -810,7 +1040,7 @@ export function buildStarterExtensionScaffoldFiles(
       "",
       "## Included Files",
       "- `package.json`: package metadata, `typecheck`/`test` scripts, and `pm` resource manifest.",
-      "- `manifest.json`: extension metadata, capabilities, and `activation.commands` (the command paths that lazily activate this package).",
+      manifestBullet,
       entrypointBullet,
       sampleTestBullet,
       TSCONFIG_BULLET,
@@ -848,17 +1078,7 @@ export function buildStarterExtensionScaffoldFiles(
       "The builders return their argument unchanged; runtime validation still lives",
       "in `api.register*`, and behavior validation lives in `sdk/testing`.",
       ...PACKAGE_CAPABILITY_README_SECTIONS[capability],
-      "",
-      "## Lazy Activation",
-      "`manifest.json` declares `activation.commands`: the exact command paths this",
-      "package's `activate` registers. pm imports and activates the package lazily —",
-      "only when an invoked command path matches one of these entries — so unrelated",
-      "commands (`pm list`, `pm search`, ...) never pay to load it. Keep this list in",
-      "sync with the registrations in `index.ts`: add an entry when you register a new",
-      "command, importer, or exporter, and remove one you drop. An omitted or stale",
-      "entry means the matching command will not dispatch from the CLI. Globally-scoped",
-      "surfaces (hooks, parser/preflight/renderer overrides, and search providers for",
-      "built-in search commands) still activate regardless of this list.",
+      ...(capability === "schema" ? SCHEMA_ACTIVATION_README_SECTION.package : LAZY_ACTIVATION_README_SECTION.package),
       "",
       "## Compatibility Bounds",
       "`manifest.json` cannot hold comments, so the version-compatibility fields are documented here:",
@@ -892,7 +1112,7 @@ export function buildStarterExtensionScaffoldFiles(
     "Generated by `pm extension init`.",
     "",
     "## Included Files",
-    "- `manifest.json`: extension metadata, capabilities, and `activation.commands` (the command paths that lazily activate this extension).",
+    manifestBullet,
     entrypointBullet,
     TSCONFIG_BULLET,
     "",
@@ -909,15 +1129,7 @@ export function buildStarterExtensionScaffoldFiles(
     "pm extension --doctor --project --detail summary",
     "```",
     ...EXTENSION_CAPABILITY_README_SECTIONS[capability],
-    "",
-    "## Lazy Activation",
-    "`manifest.json` declares `activation.commands`: the exact command paths this",
-    "extension's `activate` registers. pm imports and activates the extension lazily —",
-    "only when an invoked command path matches one of these entries — so unrelated",
-    "commands never pay to load it. Keep this list in sync with the registrations in",
-    "`index.ts`: an omitted or stale entry means the matching command will not dispatch",
-    "from the CLI. Globally-scoped surfaces (hooks, parser/preflight/renderer overrides,",
-    "and search providers for built-in search commands) still activate regardless.",
+    ...(capability === "schema" ? SCHEMA_ACTIVATION_README_SECTION.extension : LAZY_ACTIVATION_README_SECTION.extension),
     "",
     "## Compatibility Bounds",
     "`manifest.json` cannot hold comments, so the version-compatibility fields are documented here:",
