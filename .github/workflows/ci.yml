@@ -120,16 +120,11 @@ jobs:
         shell: bash
         run: |
           temp_root="$(mktemp -d)"
-          project_root="${temp_root}/project"
-          mkdir -p "${project_root}"
-          export PM_PATH="${project_root}/.agents/pm"
-          export PM_GLOBAL_PATH="${temp_root}/global"
-          export PM_AUTHOR="ci-node22-ts-loader"
-          cd "${project_root}"
-          node "${GITHUB_WORKSPACE}/dist/cli.js" init --defaults --json
-          node "${GITHUB_WORKSPACE}/dist/cli.js" install beads --project --json
-          printf '{"id":"node22-ts-runtime","title":"Node 22 TS runtime","status":"open","priority":1}\n' > "${temp_root}/beads.jsonl"
-          node "${GITHUB_WORKSPACE}/dist/cli.js" beads import --file "${temp_root}/beads.jsonl" --preserve-source-ids --json
+          runtime_dir="${temp_root}/.agents/pm/extensions/beads"
+          mkdir -p "${runtime_dir}"
+          printf 'export const marker: string = "node22-ts-runtime";\n' > "${runtime_dir}/runtime.ts"
+          export PM_CLI_PACKAGE_ROOT="${temp_root}"
+          node --input-type=module -e 'const { pathToFileURL } = await import("node:url"); const loader = await import(pathToFileURL(`${process.env.GITHUB_WORKSPACE}/packages/pm-beads/extensions/beads/runtime-loader.ts`).href); const runtime = await loader.loadPackageRuntimeModule(); if (runtime.marker !== "node22-ts-runtime") throw new Error(`unexpected runtime marker: ${String(runtime.marker)}`);'
 
   gates:
     name: Gates (${{ matrix.gate }})

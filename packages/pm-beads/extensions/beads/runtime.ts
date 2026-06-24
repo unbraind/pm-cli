@@ -1,42 +1,24 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import {
-  DEPENDENCY_KIND_VALUES,
-  EXIT_CODE,
-  PmCliError,
-  canonicalDocument,
-  commitImportedItem,
-  generateItemId,
-  getActiveExtensionRegistrations,
-  getItemPath,
-  isTimestampLiteral,
-  locateItem,
-  normalizeFrontMatter,
-  normalizeItemId,
-  normalizeRawItemId,
-  nowIso,
-  pathExists,
-  readSettings,
-  resolveItemTypeRegistry,
-  resolvePmRoot,
-  runActiveOnReadHooks,
-  ensureTrackerInitialized,
-  selectImportAuthor,
-  toEstimatedMinutesValue,
-  toImportPriority,
-  toImportStatus,
-  toImportTags,
-  toNonEmptyImportString,
-  type Dependency,
-  type GlobalOptions,
-  type ItemStatus,
-  type ItemType,
-  type LinkedDoc,
-  type LinkedFile,
-  type LinkedTest,
-  type LogNote,
+import { fileURLToPath, pathToFileURL } from "node:url";
+import type {
+  CommitImportedItemParams,
+  CommitImportedItemResult,
+  Dependency,
+  GlobalOptions,
+  ItemDocument,
+  ItemMetadata,
+  ItemStatus,
+  ItemType,
+  LinkedDoc,
+  LinkedFile,
+  LinkedTest,
+  LogNote,
+  PmSettings,
 } from "@unbrained/pm-cli/sdk";
 
+const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
+const CURRENT_RUNTIME_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PRIMARY_AUTO_DISCOVERY_FILES = [
   ".beads/issues.jsonl",
   "issues.jsonl",
@@ -96,6 +78,140 @@ interface BeadsRecord extends Record<string, unknown> {
   tests?: unknown;
   docs?: unknown;
 }
+
+interface ActiveExtensionRegistrations {
+  types?: unknown;
+}
+
+interface ItemTypeRegistry {
+  types: string[];
+  type_to_folder: Record<string, string>;
+}
+
+interface BeadsSdkModule {
+  DEPENDENCY_KIND_VALUES: readonly Dependency["kind"][];
+  EXIT_CODE: {
+    NOT_FOUND: number;
+    USAGE: number;
+  };
+  PmCliError: new (message: string, exitCode?: number) => Error;
+  canonicalDocument: (document: ItemDocument) => ItemDocument;
+  commitImportedItem: (params: CommitImportedItemParams) => Promise<CommitImportedItemResult>;
+  ensureTrackerInitialized: (pmRoot: string) => Promise<void>;
+  generateItemId: (pmRoot: string, prefix: string) => Promise<string>;
+  getActiveExtensionRegistrations: () => ActiveExtensionRegistrations | null;
+  getItemPath: (
+    pmRoot: string,
+    type: ItemType,
+    id: string,
+    itemFormat: "toon",
+    typeToFolder: Record<string, string>,
+  ) => string;
+  isTimestampLiteral: (value: string) => boolean;
+  locateItem: (
+    pmRoot: string,
+    id: string,
+    prefix: string,
+    itemFormat: PmSettings["item_format"],
+    typeToFolder: Record<string, string>,
+  ) => Promise<unknown>;
+  normalizeFrontMatter: (frontMatter: Partial<ItemMetadata>) => ItemMetadata;
+  normalizeItemId: (id: string, prefix: string) => string;
+  normalizeRawItemId: (id: string) => string;
+  nowIso: () => string;
+  pathExists: (targetPath: string) => Promise<boolean>;
+  readSettings: (pmRoot: string) => Promise<PmSettings>;
+  resolveItemTypeRegistry: (
+    settings: PmSettings,
+    registrations: ActiveExtensionRegistrations | null,
+  ) => ItemTypeRegistry;
+  resolvePmRoot: (cwd: string, overridePath?: string) => string;
+  runActiveOnReadHooks: (context: { path: string; scope: "project" | "global" }) => Promise<string[]>;
+  selectImportAuthor: (explicitAuthor: string | undefined, settingsAuthor: string) => string;
+  toEstimatedMinutesValue: (value: unknown) => number | undefined;
+  toImportPriority: (value: unknown) => 0 | 1 | 2 | 3 | 4;
+  toImportStatus: (value: unknown) => ItemStatus;
+  toImportTags: (value: unknown) => string[];
+  toNonEmptyImportString: (value: unknown) => string | undefined;
+}
+
+async function loadBeadsSdkModule(): Promise<BeadsSdkModule> {
+  const envRoot = process.env[PM_PACKAGE_ROOT_ENV];
+  const hasConfiguredPackageRoot = typeof envRoot === "string" && envRoot.trim().length > 0;
+  const packageRoot =
+    hasConfiguredPackageRoot
+      ? path.resolve(envRoot.trim())
+      : path.resolve(CURRENT_RUNTIME_ROOT, "../../../..");
+  const modulePath = hasConfiguredPackageRoot
+    ? path.join(packageRoot, "dist", "sdk", "index.js")
+    : path.join(packageRoot, "src", "sdk", "index.ts");
+  try {
+    const loaded = (await import(pathToFileURL(modulePath).href)) as Partial<BeadsSdkModule>;
+    if (
+      Array.isArray(loaded.DEPENDENCY_KIND_VALUES) &&
+      typeof loaded.EXIT_CODE === "object" &&
+      loaded.EXIT_CODE !== null &&
+      typeof loaded.PmCliError === "function" &&
+      typeof loaded.canonicalDocument === "function" &&
+      typeof loaded.commitImportedItem === "function" &&
+      typeof loaded.ensureTrackerInitialized === "function" &&
+      typeof loaded.generateItemId === "function" &&
+      typeof loaded.getActiveExtensionRegistrations === "function" &&
+      typeof loaded.getItemPath === "function" &&
+      typeof loaded.isTimestampLiteral === "function" &&
+      typeof loaded.locateItem === "function" &&
+      typeof loaded.normalizeFrontMatter === "function" &&
+      typeof loaded.normalizeItemId === "function" &&
+      typeof loaded.normalizeRawItemId === "function" &&
+      typeof loaded.nowIso === "function" &&
+      typeof loaded.pathExists === "function" &&
+      typeof loaded.readSettings === "function" &&
+      typeof loaded.resolveItemTypeRegistry === "function" &&
+      typeof loaded.resolvePmRoot === "function" &&
+      typeof loaded.runActiveOnReadHooks === "function" &&
+      typeof loaded.selectImportAuthor === "function" &&
+      typeof loaded.toEstimatedMinutesValue === "function" &&
+      typeof loaded.toImportPriority === "function" &&
+      typeof loaded.toImportStatus === "function" &&
+      typeof loaded.toImportTags === "function" &&
+      typeof loaded.toNonEmptyImportString === "function"
+    ) {
+      return loaded as BeadsSdkModule;
+    }
+  } catch {
+    // Fall through to deterministic failure message below.
+  }
+  throw new Error(`builtin-beads failed to load SDK exports from ${modulePath}.`);
+}
+
+const {
+  DEPENDENCY_KIND_VALUES,
+  EXIT_CODE,
+  PmCliError,
+  canonicalDocument,
+  commitImportedItem,
+  ensureTrackerInitialized,
+  generateItemId,
+  getActiveExtensionRegistrations,
+  getItemPath,
+  isTimestampLiteral,
+  locateItem,
+  normalizeFrontMatter,
+  normalizeItemId,
+  normalizeRawItemId,
+  nowIso,
+  pathExists,
+  readSettings,
+  resolveItemTypeRegistry,
+  resolvePmRoot,
+  runActiveOnReadHooks,
+  selectImportAuthor,
+  toEstimatedMinutesValue,
+  toImportPriority,
+  toImportStatus,
+  toImportTags,
+  toNonEmptyImportString,
+} = await loadBeadsSdkModule();
 
 // Shared, behavior-identical value coercers are sourced from the SDK adapter
 // surface; package-specific mappings (timestamps, item types, dependencies,

@@ -34,6 +34,11 @@ async function importTodosRuntimeLoader(): Promise<{
   };
 }
 
+async function importTodosRuntime(): Promise<unknown> {
+  const runtimePath = path.join(process.cwd(), "packages", "pm-todos", "extensions", "todos", "runtime.ts");
+  return import(`${pathToFileURL(runtimePath).href}?todosRuntime=${cacheBustToken()}`);
+}
+
 describe("built-in todos extension import/export", () => {
   afterEach(() => {
     clearActiveExtensionHooks();
@@ -1461,6 +1466,41 @@ describe("built-in todos extension import/export", () => {
       }
     } finally {
       await rm(throwRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("reports a deterministic error when the configured SDK root is invalid", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-todos-sdk-missing-"));
+    const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
+    process.env.PM_CLI_PACKAGE_ROOT = tempRoot;
+    try {
+      await expect(importTodosRuntime()).rejects.toThrow("builtin-todos failed to load SDK exports");
+    } finally {
+      if (previousPackageRoot === undefined) {
+        delete process.env.PM_CLI_PACKAGE_ROOT;
+      } else {
+        process.env.PM_CLI_PACKAGE_ROOT = previousPackageRoot;
+      }
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("reports a deterministic error when the configured SDK module is incomplete", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-todos-sdk-incomplete-"));
+    const sdkDir = path.join(tempRoot, "dist", "sdk");
+    await mkdir(sdkDir, { recursive: true });
+    await writeFile(path.join(sdkDir, "index.js"), "export const CONFIDENCE_TEXT_VALUES = [];\n", "utf8");
+    const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
+    process.env.PM_CLI_PACKAGE_ROOT = tempRoot;
+    try {
+      await expect(importTodosRuntime()).rejects.toThrow("builtin-todos failed to load SDK exports");
+    } finally {
+      if (previousPackageRoot === undefined) {
+        delete process.env.PM_CLI_PACKAGE_ROOT;
+      } else {
+        process.env.PM_CLI_PACKAGE_ROOT = previousPackageRoot;
+      }
+      await rm(tempRoot, { recursive: true, force: true });
     }
   });
 });

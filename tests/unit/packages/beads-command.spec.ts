@@ -108,6 +108,11 @@ async function importBeadsRuntimeLoader(): Promise<{
   };
 }
 
+async function importBeadsRuntime(): Promise<unknown> {
+  const runtimePath = path.join(process.cwd(), "packages", "pm-beads", "extensions", "beads", "runtime.ts");
+  return import(`${pathToFileURL(runtimePath).href}?beadsRuntime=${cacheBustToken()}`);
+}
+
 describe("runBeadsImport", () => {
   afterEach(() => {
     clearActiveExtensionHooks();
@@ -887,6 +892,41 @@ describe("runBeadsImport", () => {
       }
     } finally {
       await rm(throwRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("reports a deterministic error when the configured SDK root is invalid", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-beads-sdk-missing-"));
+    const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
+    process.env.PM_CLI_PACKAGE_ROOT = tempRoot;
+    try {
+      await expect(importBeadsRuntime()).rejects.toThrow("builtin-beads failed to load SDK exports");
+    } finally {
+      if (previousPackageRoot === undefined) {
+        delete process.env.PM_CLI_PACKAGE_ROOT;
+      } else {
+        process.env.PM_CLI_PACKAGE_ROOT = previousPackageRoot;
+      }
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("reports a deterministic error when the configured SDK module is incomplete", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-beads-sdk-incomplete-"));
+    const sdkDir = path.join(tempRoot, "dist", "sdk");
+    await mkdir(sdkDir, { recursive: true });
+    await writeFile(path.join(sdkDir, "index.js"), "export const DEPENDENCY_KIND_VALUES = [];\n", "utf8");
+    const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
+    process.env.PM_CLI_PACKAGE_ROOT = tempRoot;
+    try {
+      await expect(importBeadsRuntime()).rejects.toThrow("builtin-beads failed to load SDK exports");
+    } finally {
+      if (previousPackageRoot === undefined) {
+        delete process.env.PM_CLI_PACKAGE_ROOT;
+      } else {
+        process.env.PM_CLI_PACKAGE_ROOT = previousPackageRoot;
+      }
+      await rm(tempRoot, { recursive: true, force: true });
     }
   });
 });
