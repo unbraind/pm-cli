@@ -54,6 +54,41 @@ describe("extension scaffold define builder guidance", () => {
     expect(importerReadme).toContain('long: "--destination"');
   });
 
+  it("tailors package define* examples to the schema capability", () => {
+    const schemaReadme = buildStarterExtensionScaffoldFiles("domain-kit", "domain kit ping", "package", "schema")["README.md"] ?? "";
+
+    expect(schemaReadme).toContain(
+      'import { defineCommand, defineItemType, defineItemField, defineMigration } from "@unbrained/pm-cli/sdk";',
+    );
+    expect(schemaReadme).toContain('export const noteField = defineItemField({ name: "domain_kit_note", type: "string", optional: true });');
+    expect(schemaReadme).toContain("export const itemType = defineItemType({");
+    expect(schemaReadme).toContain('name: "domain-kit"');
+    expect(schemaReadme).toContain('folder: "domain-kits"');
+    expect(schemaReadme).toContain('aliases: ["domainkit"]');
+    expect(schemaReadme).toContain("export const initMigration = defineMigration({");
+    expect(schemaReadme).toContain('id: "domain-kit-0001-init"');
+    expect(schemaReadme).toContain("api.registerItemFields([noteField]);");
+    expect(schemaReadme).toContain("api.registerItemTypes([itemType]);");
+    expect(schemaReadme).toContain("api.registerMigration(initMigration);");
+  });
+
+  it("omits a redundant self-alias when a single-word schema type equals its de-hyphenated alias", () => {
+    const scaffold = buildStarterExtensionScaffoldFiles("todo", "todo ping", "package", "schema");
+    const entry = scaffold["index.ts"] ?? "";
+    const readme = scaffold["README.md"] ?? "";
+
+    // "todo" has no hyphen, so the de-hyphenated alias equals the type name; the
+    // starter registers no alias rather than a confusing self-alias. The
+    // entrypoint and the README define* snippet agree.
+    expect(entry).toContain("aliases: [],");
+    expect(entry).not.toContain('aliases: ["todo"]');
+    expect(readme).toContain("aliases: [],");
+    expect(readme).not.toContain('aliases: ["todo"]');
+    // A hyphenated name still gets a useful short alias.
+    const hyphenEntry = buildStarterExtensionScaffoldFiles("my-todo", "my todo ping", "package", "schema")["index.ts"] ?? "";
+    expect(hyphenEntry).toContain('aliases: ["mytodo"],');
+  });
+
   it("declares manifest activation.commands matching every registered command path per capability", () => {
     const commandsManifest = JSON.parse(
       buildStarterExtensionScaffoldFiles("tool-kit", "tool kit ping", "package", "commands")["manifest.json"] ?? "{}",
@@ -63,6 +98,10 @@ describe("extension scaffold define builder guidance", () => {
     ) as { activation?: { commands?: string[] } };
     const importerScaffold = buildStarterExtensionScaffoldFiles("sync-kit", "sync kit ping", "package", "importers");
     const importerManifest = JSON.parse(importerScaffold["manifest.json"] ?? "{}") as {
+      activation?: { commands?: string[] };
+    };
+    const schemaScaffold = buildStarterExtensionScaffoldFiles("domain-kit", "domain kit ping", "package", "schema");
+    const schemaManifest = JSON.parse(schemaScaffold["manifest.json"] ?? "{}") as {
       activation?: { commands?: string[] };
     };
 
@@ -75,9 +114,15 @@ describe("extension scaffold define builder guidance", () => {
       "sync kit items import",
       "sync kit items export",
     ]);
+    // The schema variant registers a GLOBAL custom item type, so it omits the
+    // activation field entirely and relies on conservative activation instead.
+    expect(schemaManifest.activation).toBeUndefined();
     // The README documents the field so authors keep it in sync with index.ts.
     expect(importerScaffold["README.md"]).toContain("## Lazy Activation");
     expect(importerScaffold["README.md"]).toContain("`activation.commands`");
+    // The schema README documents conservative activation, not the lazy contract.
+    expect(schemaScaffold["README.md"]).toContain("## Activation");
+    expect(schemaScaffold["README.md"]).not.toContain("## Lazy Activation");
   });
 
   it("scaffolds a package as a TypeScript-only project (type-check tsconfig + .ts entry, no compiled output)", () => {

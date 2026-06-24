@@ -4,6 +4,7 @@
 
 ### Added
 
+- pm package/extension init --capability schema: scaffold custom item type/field/migration starter ([pm-d1ig](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-d1ig.toon))
 - Scaffolded & authored command-bearing extensions reliably activate for their own commands ([pm-yxb5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-yxb5.toon))
 - TypeScript-only extension loading: ship .ts entry, load via Node native type stripping (no compiled .js) ([pm-2p7a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-2p7a.toon))
 
@@ -18,6 +19,10 @@
 
 ### Other
 
+- Schema-capability scaffolds must omit narrow activation.commands so custom item types/fields register globally ([pm-halx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-halx.toon))
+- Schema scaffold docs: EXTENSIONS.md, SDK.md, shell completion, help-content examples ([pm-pwf1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-pwf1.toon))
+- Schema scaffold tests: unit coverage (package+extension variants) + materialize/run generated node:test smoke ([pm-x3vi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-x3vi.toon))
+- Implement schema scaffold capability in scaffold.ts (manifest/entrypoint/README/define\* guidance, omit activation.commands) ([pm-mdw6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mdw6.toon))
 - Document activation.commands lazy-activation contract in scaffold README, EXTENSIONS.md, SDK.md ([pm-scvz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-scvz.toon))
 - Scaffold emits manifest activation.commands matching registered command paths per capability ([pm-mhih](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mhih.toon))
 - Scaffolder emits TypeScript source: index.ts + tsconfig.json + type-check/test scripts (./index.ts entry) ([pm-frou](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-frou.toon))

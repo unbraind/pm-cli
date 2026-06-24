@@ -1,0 +1,14 @@
+id: pm-pwf1
+title: "Schema scaffold docs: EXTENSIONS.md, SDK.md, shell completion, help-content examples"
+description: ""
+type: Task
+status: closed
+priority: 2
+tags[1]: "area:docs"
+created_at: "2026-06-24T13:13:12.451Z"
+updated_at: "2026-06-24T13:32:11.970Z"
+author: claude-code-agent
+parent: pm-d1ig
+resolution: "Documented --capability schema in docs/EXTENSIONS.md (in-place, line budget preserved at 449) and docs/SDK.md (scaffold capability paragraph + conservative-activation note), added schema examples/tips to package init and extension init in src/cli/help-content.ts, and drift-proofed shell completion by interpolating SCAFFOLD_CAPABILITIES into the zsh/fish --capability lists (completion-command.spec assertion updated). Static-quality and docs-skills gates green."
+close_reason: "Documented --capability schema in docs/EXTENSIONS.md (in-place, line budget preserved at 449) and docs/SDK.md (scaffold capability paragraph + conservative-activation note), added schema examples/tips to package init and extension init in src/cli/help-content.ts, and drift-proofed shell completion by interpolating SCAFFOLD_CAPABILITIES into the zsh/fish --capability lists (completion-command.spec assertion updated). Static-quality and docs-skills gates green."
+body: ""

@@ -2230,6 +2230,74 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("scaffolds schema-capability packages with runnable SDK schema tests", async () => {
+    await withTempPmPath(async (context) => {
+      const scaffoldPath = path.join(context.tempRoot, "starter-schema");
+      const scaffold = await runExtension(scaffoldPath, {
+        init: true,
+        project: true,
+        vocabulary: "package",
+        capability: "schema",
+      }, { path: context.pmPath });
+
+      expect(scaffold.details).toMatchObject({
+        capability: "schema",
+        extension: {
+          name: "starter-schema",
+          command: "starter schema ping",
+        },
+      });
+
+      const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
+      expect(manifest.capabilities).toEqual(["commands", "schema"]);
+      // A schema starter registers a GLOBAL custom item type, so it must NOT gate
+      // activation behind narrow activation.commands (which would hide the type
+      // from `pm create <type>`); the manifest omits the field entirely.
+      expect(manifest.activation).toBeUndefined();
+
+      const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
+      expect(entry).toContain("api.registerItemFields([");
+      expect(entry).toContain('name: "starter_schema_note"');
+      expect(entry).toContain("api.registerItemTypes([");
+      expect(entry).toContain('name: "starter-schema"');
+      expect(entry).toContain('folder: "starter-schemas"');
+      expect(entry).toContain('aliases: ["starterschema"]');
+      expect(entry).toContain("api.registerMigration({");
+      expect(entry).toContain('id: "starter-schema-0001-init"');
+
+      const sampleTest = await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8");
+      expect(sampleTest).toContain("  assertRegisteredItemField,");
+      expect(sampleTest).toContain("  assertRegisteredItemType,");
+      expect(sampleTest).toContain("  assertRegisteredMigration,");
+      expect(sampleTest).toContain("  runRegisteredMigrationForTest,");
+      expect(sampleTest).toContain('capabilities: ["commands", "schema"]');
+      expect(sampleTest).toContain("assertRegisteredItemType(activation.registrations, {");
+      expect(sampleTest).toContain('itemType: "starter-schema"');
+      expect(sampleTest).toContain('assert.equal(itemType.itemType.folder, "starter-schemas");');
+      expect(sampleTest).toContain("assertRegisteredItemField(activation.registrations, {");
+      expect(sampleTest).toContain('field: "starter_schema_note"');
+      expect(sampleTest).toContain('assert.equal(itemField.field.type, "string");');
+      expect(sampleTest).toContain("assertRegisteredMigration(activation.registrations, {");
+      expect(sampleTest).toContain('migration: "starter-schema-0001-init"');
+      expect(sampleTest).toContain("const migrated = await runRegisteredMigrationForTest(activation.registrations, {");
+      expect(sampleTest).toContain('assert.deepEqual(migrated, { migrated: true, id: "starter-schema-0001-init" });');
+
+      const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
+      expect(readme).toContain("## Custom Schema");
+      expect(readme).toContain("api.registerItemTypes");
+      expect(readme).toContain("api.registerMigration");
+      // The schema starter documents conservative (non-lazy) activation, not the
+      // lazy-activation contract the command-bearing starters use.
+      expect(readme).toContain("## Activation");
+      expect(readme).not.toContain("## Lazy Activation");
+      // README define* guidance includes the schema builders.
+      expect(readme).toContain("defineItemType");
+      expect(readme).toContain("defineItemField");
+      expect(readme).toContain("defineMigration");
+      expect(readme).toContain("no `activation.commands`");
+    });
+  });
+
   it("scaffolds hook-capability standalone extensions without package test files", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-hook-ext");
@@ -2333,6 +2401,47 @@ describe("extension command runtime", () => {
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Importer and Exporter");
       expect(readme).toContain("api.registerImporter");
+      await expect(readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).rejects.toMatchObject({
+        code: "ENOENT",
+      });
+    });
+  });
+
+  it("scaffolds schema-capability standalone extensions without package test files", async () => {
+    await withTempPmPath(async (context) => {
+      const scaffoldPath = path.join(context.tempRoot, "starter-schema-ext");
+      const scaffold = await runExtension(scaffoldPath, {
+        init: true,
+        project: true,
+        capability: "schema",
+      }, { path: context.pmPath });
+
+      expect(scaffold.details).toMatchObject({
+        capability: "schema",
+        extension: {
+          name: "starter-schema-ext",
+          command: "starter schema ext ping",
+        },
+      });
+      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
+        "manifest.json",
+        "index.ts",
+        "tsconfig.json",
+        "README.md",
+      ]);
+
+      const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
+      expect(manifest.capabilities).toEqual(["commands", "schema"]);
+      expect(manifest.activation).toBeUndefined();
+      const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
+      expect(entry).toContain("api.registerItemTypes([");
+      expect(entry).toContain("api.registerItemFields([");
+      expect(entry).toContain("api.registerMigration({");
+      const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
+      expect(readme).toContain("## Custom Schema");
+      expect(readme).toContain("## Activation");
+      expect(readme).not.toContain("## Lazy Activation");
+      expect(readme).toContain("api.registerItemTypes");
       await expect(readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).rejects.toMatchObject({
         code: "ENOENT",
       });

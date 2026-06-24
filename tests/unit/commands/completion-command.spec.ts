@@ -629,7 +629,7 @@ describe("generateZshScript", () => {
   it("includes extension doctor strict flags in zsh completion", () => {
     const script = generateZshScript();
     expect(script).toContain("--trace[Include registration traces in doctor deep diagnostics]");
-    expect(script).toContain("--capability[Capability the init scaffold targets]:capability:(commands hooks search importers)");
+    expect(script).toContain("--capability[Capability the init scaffold targets]:capability:(commands hooks search importers schema)");
     expect(script).toContain("--runtime-probe[Opt-in runtime activation probe for manage output]");
     expect(script).toContain("--fix-managed-state[Adopt unmanaged extensions before diagnostics/update checks]");
     expect(script).toContain("--strict-exit[Return non-zero exit when doctor warnings are present]");
