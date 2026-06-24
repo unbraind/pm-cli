@@ -2,14 +2,18 @@ id: pm-ok47
 title: pm package doctor should warn when a schema package registers item types/fields but declares narrow activation.commands (silently non-global)
 description: "From pm-halx finding: a package that registers custom item types/fields via registerItemTypes/registerItemFields AND declares narrow manifest activation.commands will not have those types available to built-in commands (pm create/list/validate) because lazy activation only fires for the listed commands. This is a silent footgun. pm package doctor activates the package (so it knows the real registrations) and reads the manifest, so it could detect 'registrations.item_types/item_fields non-empty AND manifest.activation.commands present AND the registered surfaces are global schema contributions' and emit an advisory warning recommending the author drop activation.commands (or document that the type is intentionally command-scoped). Advisory/doctor-only (not health-blocking)."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[3]: "area:extensions","area:schema",doctor
 created_at: "2026-06-24T13:13:38.064Z"
-updated_at: "2026-06-24T13:13:50.809Z"
+updated_at: "2026-06-24T14:48:20.306Z"
 author: claude-code-agent
 parent: pm-ugqx
+resolution: "Added the doctor advisory extension_schema_narrow_activation: collectSchemaNarrowActivationDoctorWarnings flags any loaded extension that registered custom item types/fields (a GLOBAL schema contribution) yet declares narrow manifest activation.commands, with actionable remediation in buildExtensionTriageSummary recommending the field be dropped (or knowingly ignored if command-scoped). Doctor-only and non-blocking: pm health's buildExtensionCheck does not surface this collector. Verified end-to-end (footgun package warns + remediation; correct schema package is clean and its type works via pm create); branch-complete unit + remediation tests at 100% coverage."
+expected_result: "pm package/extension doctor emits an advisory (non-health-blocking) warning when a loaded extension registers custom item types/fields yet declares narrow activation.commands, with actionable remediation; correctly authored schema packages (no activation.commands) produce no warning."
+actual_result: "Added collectSchemaNarrowActivationDoctorWarnings (src/cli/commands/extension.ts): it builds the set of GLOBAL schema contributors (extensions whose activation registered non-empty item_types or item_fields, keyed layer:normalizedName) and emits extension_schema_narrow_activation:<layer>:<name> for each loaded extension that is a contributor AND declares non-empty manifest activation.commands. Wired into the doctor path next to collectGlobalOutputOverrideDoctorWarnings. Added matching actionable remediation in doctor.ts buildExtensionTriageSummary (drop activation.commands, or knowingly ignore if command-scoped). Doctor-only: buildExtensionCheck (pm health) does not surface these collectors, so the advisory never blocks health (verified: warning is doctor-only). Verified end-to-end: scaffolded a schema package, injected narrow activation.commands, installed, and doctor reported the warning + remediation; a correctly authored schema package (no activation.commands) produced no warning and its custom type worked via pm create. Branch-complete unit test (empty types/fields, missing activation block, contributor vs non-contributor, verbatim-name + case-insensitive match) plus a remediation test; 5013 tests at 100% coverage."
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-d1ig,related,"2026-06-24T13:13:50.790Z",null,null
   pm-halx,related,"2026-06-24T13:13:50.790Z",null,null
+close_reason: "Implemented the doctor advisory extension_schema_narrow_activation (collectSchemaNarrowActivationDoctorWarnings) that flags loaded extensions registering custom item types/fields while declaring narrow activation.commands, with actionable remediation. Doctor-only and non-health-blocking. Verified both directions end-to-end and at 100% coverage."
 body: ""

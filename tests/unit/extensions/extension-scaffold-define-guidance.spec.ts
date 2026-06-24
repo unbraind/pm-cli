@@ -125,6 +125,136 @@ describe("extension scaffold define builder guidance", () => {
     expect(schemaScaffold["README.md"]).not.toContain("## Lazy Activation");
   });
 
+  it("scaffolds a runnable renderer override starter scoped to its own command", () => {
+    const scaffold = buildStarterExtensionScaffoldFiles("view-kit", "view kit ping", "package", "renderers");
+    const entry = scaffold["index.ts"] ?? "";
+    const sampleTest = scaffold["index.test.ts"] ?? "";
+    const readme = scaffold["README.md"] ?? "";
+    const manifest = JSON.parse(scaffold["manifest.json"] ?? "{}") as {
+      capabilities?: string[];
+      activation?: { commands?: string[] };
+    };
+
+    expect(manifest.capabilities).toEqual(["commands", "renderers"]);
+    // A renderer override is global, but the starter still registers the `ping`
+    // command, so it declares activation.commands for lazy command dispatch.
+    expect(manifest.activation?.commands).toEqual(["view kit ping"]);
+    // The override scopes itself to its own command and passes other output
+    // through (returns null) so installing it never disrupts unrelated commands.
+    expect(entry).toContain('api.registerRenderer("toon", (context) => {');
+    expect(entry).toContain('if (context.command !== "view kit ping") {');
+    expect(entry).toContain("return null;");
+    expect(entry).toContain('return "view-kit: " + JSON.stringify(context.result);');
+    expect(sampleTest).toContain("  assertRegisteredRendererOverride,");
+    expect(sampleTest).toContain("  runRegisteredRendererOverrideForTest,");
+    expect(sampleTest).toContain("assertRegisteredRendererOverride(activation.renderers, {");
+    expect(sampleTest).toContain("assert.equal(passthrough.overridden, false);");
+    expect(readme).toContain(
+      'import { defineCommand, defineRendererOverride } from "@unbrained/pm-cli/sdk";',
+    );
+    expect(readme).toContain("export const toonRenderer = defineRendererOverride((context) => {");
+    expect(readme).toContain('api.registerRenderer("toon", toonRenderer);');
+    expect(readme).toContain("## Output Renderer");
+    expect(readme).toContain("## Lazy Activation");
+  });
+
+  it("scaffolds a runnable parser override starter with matching command flags", () => {
+    const scaffold = buildStarterExtensionScaffoldFiles("flag-kit", "flag kit ping", "package", "parser");
+    const entry = scaffold["index.ts"] ?? "";
+    const sampleTest = scaffold["index.test.ts"] ?? "";
+    const readme = scaffold["README.md"] ?? "";
+    const manifest = JSON.parse(scaffold["manifest.json"] ?? "{}") as {
+      capabilities?: string[];
+      activation?: { commands?: string[] };
+    };
+
+    // Flag metadata is schema-governed, so the parser starter also declares
+    // `schema` so the override is runnable through `pm <command> --shout`.
+    expect(manifest.capabilities).toEqual(["commands", "parser", "schema"]);
+    expect(manifest.activation?.commands).toEqual(["flag kit ping"]);
+    // The command declares the deprecated alias + canonical flag the override
+    // normalizes, and surfaces the normalized value so the demo is end-to-end.
+    expect(entry).toContain('long: "--shout",');
+    expect(entry).toContain('long: "--upper",');
+    expect(entry).toContain("upper: context.options.upper === true,");
+    expect(entry).toContain('api.registerParser("flag kit ping", (context) => {');
+    expect(entry).toContain("if (options.shout === true) {");
+    expect(entry).toContain("options.upper = true;");
+    expect(entry).toContain("return { options };");
+    expect(sampleTest).toContain("  assertRegisteredParserOverride,");
+    expect(sampleTest).toContain("  runRegisteredParserOverrideForTest,");
+    expect(sampleTest).toContain("assert.deepEqual(result.context.options, { upper: true });");
+    // The sample test feeds the rewritten options into the command handler to
+    // prove the normalized flag is surfaced end to end.
+    expect(sampleTest).toContain("options: result.context.options,");
+    expect(sampleTest).toContain("    upper: true,");
+    expect(readme).toContain(
+      'import { defineCommand, defineParserOverride } from "@unbrained/pm-cli/sdk";',
+    );
+    expect(readme).toContain('long: "--shout"');
+    expect(readme).toContain("export const pingParser = defineParserOverride((context) => {");
+    expect(readme).toContain('api.registerParser("flag kit ping", pingParser);');
+    expect(readme).toContain("## Parser Override");
+  });
+
+  it("scaffolds a runnable preflight override starter that echoes the gate decision", () => {
+    const scaffold = buildStarterExtensionScaffoldFiles("gate-kit", "gate kit ping", "package", "preflight");
+    const entry = scaffold["index.ts"] ?? "";
+    const sampleTest = scaffold["index.test.ts"] ?? "";
+    const readme = scaffold["README.md"] ?? "";
+    const manifest = JSON.parse(scaffold["manifest.json"] ?? "{}") as {
+      capabilities?: string[];
+      activation?: { commands?: string[] };
+    };
+
+    expect(manifest.capabilities).toEqual(["commands", "preflight"]);
+    expect(manifest.activation?.commands).toEqual(["gate kit ping"]);
+    // The starter returns context.decision unchanged (a safe no-op delta); the
+    // comment documents the keys the author can change.
+    expect(entry).toContain("api.registerPreflight((context) => context.decision);");
+    expect(entry).toContain("run_extension_migrations, enforce_mandatory_migration_gate);");
+    expect(sampleTest).toContain("  assertRegisteredPreflightOverride,");
+    expect(sampleTest).toContain("  runRegisteredPreflightOverrideForTest,");
+    expect(sampleTest).toContain("assert.deepEqual(result.decision, decision);");
+    expect(readme).toContain(
+      'import { defineCommand, definePreflightOverride } from "@unbrained/pm-cli/sdk";',
+    );
+    expect(readme).toContain("export const preflightOverride = definePreflightOverride((context) => context.decision);");
+    expect(readme).toContain("api.registerPreflight(preflightOverride);");
+    expect(readme).toContain("## Preflight Override");
+  });
+
+  it("scaffolds a runnable service override starter scoped to its own command", () => {
+    const scaffold = buildStarterExtensionScaffoldFiles("svc-kit", "svc kit ping", "package", "services");
+    const entry = scaffold["index.ts"] ?? "";
+    const sampleTest = scaffold["index.test.ts"] ?? "";
+    const readme = scaffold["README.md"] ?? "";
+    const manifest = JSON.parse(scaffold["manifest.json"] ?? "{}") as {
+      capabilities?: string[];
+      activation?: { commands?: string[] };
+    };
+
+    expect(manifest.capabilities).toEqual(["commands", "services"]);
+    // The service override is scoped to its own command, so the starter declares
+    // activation.commands for lazy activation (it is not a global contribution
+    // like schema, which would need the field omitted).
+    expect(manifest.activation?.commands).toEqual(["svc kit ping"]);
+    expect(entry).toContain('api.registerService("output_format", (context) => {');
+    expect(entry).toContain('if (context.command !== "svc kit ping") {');
+    expect(entry).toContain("return context.payload;");
+    expect(entry).toContain('return { rendered_by: "svc-kit", payload: context.payload };');
+    expect(sampleTest).toContain("  assertRegisteredServiceOverride,");
+    expect(sampleTest).toContain("  runRegisteredServiceOverrideForTest,");
+    expect(sampleTest).toContain("assert.equal(passthrough.handled, false);");
+    expect(readme).toContain(
+      'import { defineCommand, defineServiceOverride } from "@unbrained/pm-cli/sdk";',
+    );
+    expect(readme).toContain("export const outputService = defineServiceOverride((context) => {");
+    expect(readme).toContain('api.registerService("output_format", outputService);');
+    expect(readme).toContain("## Service Override");
+    expect(readme).toContain("## Lazy Activation");
+  });
+
   it("scaffolds a package as a TypeScript-only project (type-check tsconfig + .ts entry, no compiled output)", () => {
     const scaffold = buildStarterExtensionScaffoldFiles("tool-kit", "tool kit ping", "package", "commands");
     const packageJson = JSON.parse(scaffold["package.json"] ?? "{}") as {

@@ -1124,6 +1124,48 @@ function collectGlobalOutputOverrideDoctorWarnings(
 }
 
 /**
+ * Doctor advisory: flag loaded extensions that contribute GLOBAL schema (custom
+ * item types or fields) yet also declare narrow `activation.commands`.
+ *
+ * Custom item types and fields must be present for the built-in commands the
+ * extension does not own and cannot enumerate (`pm create <type>`,
+ * `pm list --type <type>`, `pm validate`). Declaring `activation.commands` gates
+ * lazy activation to only the listed command paths, so the package never
+ * activates for those built-ins and its custom type silently fails to register —
+ * a quiet footgun (decision pm-halx). The `schema` scaffold deliberately omits
+ * the field; this advisory catches hand-authored packages that do not. It is
+ * doctor-only and non-blocking — `pm health` does not surface it — so the author
+ * can either drop `activation.commands` or, when the schema is intentionally
+ * command-scoped, knowingly ignore the hint.
+ */
+function collectSchemaNarrowActivationDoctorWarnings(
+  loadResult: Awaited<ReturnType<typeof loadExtensions>>,
+  activationResult: Awaited<ReturnType<typeof activateExtensions>>,
+): string[] {
+  const schemaContributors = new Set<string>();
+  for (const entry of activationResult.registrations.item_types) {
+    if (entry.types.length > 0) {
+      schemaContributors.add(`${entry.layer}:${normalizeExtensionNameForMatch(entry.name)}`);
+    }
+  }
+  for (const entry of activationResult.registrations.item_fields) {
+    if (entry.fields.length > 0) {
+      schemaContributors.add(`${entry.layer}:${normalizeExtensionNameForMatch(entry.name)}`);
+    }
+  }
+  const warnings: string[] = [];
+  for (const extension of loadResult.loaded) {
+    if ((extension.activation?.commands ?? []).length === 0) {
+      continue;
+    }
+    if (schemaContributors.has(`${extension.layer}:${normalizeExtensionNameForMatch(extension.name)}`)) {
+      warnings.push(`extension_schema_narrow_activation:${extension.layer}:${extension.name}`);
+    }
+  }
+  return [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
+}
+
+/**
  * Implements run extension for the public runtime surface of this module.
  */
 export async function runExtension(
@@ -1760,6 +1802,7 @@ export async function runExtension(
     warnings.push(...classifyDoctorActivationFailureWarnings(activationResult.failed));
     warnings.push(...classifyUnusedCapabilityWarnings(loadResult, activationResult));
     warnings.push(...collectGlobalOutputOverrideDoctorWarnings(activationResult));
+    warnings.push(...collectSchemaNarrowActivationDoctorWarnings(loadResult, activationResult));
     const runtimeInstalledExtensions = applyDoctorRuntimeActivationState(refreshedInstalled.extensions, loadResult, activationResult);
     const doctorConsistency = buildDoctorConsistencySummary(
       scope,
@@ -2133,6 +2176,7 @@ export const _testOnly = {
   findActivationFailureByName,
   resolveInstallRuntimeActivationStatus,
   collectGlobalOutputOverrideDoctorWarnings,
+  collectSchemaNarrowActivationDoctorWarnings,
   copyExtensionDirectoryWithoutSelfNesting,
   isErrnoCode,
   isRetriableExtensionInstallCopyError,

@@ -486,6 +486,11 @@ export function buildExtensionTriageSummary(
         "Global output service/renderer overrides are active. For output_format, return context.payload/null/undefined unless the extension owns the command. For renderers, return null for unrelated payloads so pm falls back to native rendering.",
       );
     }
+    if (normalizedWarnings.some((warning) => warning.startsWith("extension_schema_narrow_activation:"))) {
+      remediation.push(
+        "A package registers custom item types/fields (a GLOBAL schema contribution) but also declares narrow activation.commands, so it never activates for built-in commands like pm create <type> and the custom type silently fails to register. Remove activation.commands from manifest.json so pm activates the package for every command, or — if the schema is intentionally command-scoped — knowingly ignore this advisory.",
+      );
+    }
     if (normalizedWarnings.some((warning) => warning.startsWith("extension_load_failed_sdk_dependency_missing:"))) {
       remediation.push(
         `Detected extension load failures caused by missing SDK dependency resolution. ` +
