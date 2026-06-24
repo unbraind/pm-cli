@@ -81,8 +81,6 @@ export interface ActionableEntry {
   item: ItemFrontMatter;
   /** Blockers that still gate the item (resolved blockers are filtered out). */
   open_blockers: ResolvedBlocker[];
-  /** Non-terminal descendants of this item; always 0 for classified entries. */
-  open_children: number;
   /** Ids of non-terminal items whose `blocked_by` points at this item. */
   unblocks: string[];
 }
@@ -111,31 +109,32 @@ function resolveActiveStatusSet(statusRegistry: RuntimeStatusRegistry): Set<stri
 }
 
 /**
- * Counts the non-terminal descendants of an item by walking the parent→children
- * index depth-first. A positive count marks the item as a container (its real
- * work lives in its children), so `pm next` can skip it and recommend a leaf.
- * Cycle-safe via a visited set.
+ * Returns whether an item has any non-terminal descendant by walking the
+ * parent→children index depth-first, short-circuiting on the first one found.
+ * Such an item is a container (its real work lives in its children), so `pm next`
+ * skips it and recommends a leaf instead. Cycle-safe via a visited set.
  */
-function countOpenDescendants(
+function hasOpenDescendant(
   rootId: string,
   childrenByParent: Map<string, ItemFrontMatter[]>,
   statusRegistry: RuntimeStatusRegistry,
-): number {
-  let open = 0;
+): boolean {
   const stack = [rootId];
   const visited = new Set<string>();
   while (stack.length > 0) {
     const current = stack.pop() as string;
+    /* c8 ignore start -- defensive cycle-guard: unreachable for active roots (an open child returns before any node is revisited, and single-parent graphs cannot form a root-reachable cycle excluding the root), retained for safety */
     if (visited.has(current)) continue;
+    /* c8 ignore stop */
     visited.add(current);
     for (const child of childrenByParent.get(current) ?? []) {
       if (!isTerminalStatus(child.status, statusRegistry)) {
-        open += 1;
+        return true;
       }
       stack.push(child.id);
     }
   }
-  return open;
+  return false;
 }
 
 /**
@@ -199,8 +198,7 @@ export function computeActionabilityReport(
   for (const item of candidates) {
     if (!activeStatuses.has(normalizeStatusForRegistry(item.status, statusRegistry))) continue;
     activeCount += 1;
-    const openChildren = countOpenDescendants(item.id, childrenByParent, statusRegistry);
-    if (openChildren > 0) {
+    if (hasOpenDescendant(item.id, childrenByParent, statusRegistry)) {
       containerCount += 1;
       continue;
     }
@@ -208,7 +206,7 @@ export function computeActionabilityReport(
     const unblocks = (blockedByReverse.get(item.id) ?? [])
       .filter((dependentId) => nonTerminalIds.has(dependentId))
       .sort((left, right) => left.localeCompare(right));
-    const entry: ActionableEntry = { item, open_blockers: openBlockers, open_children: 0, unblocks };
+    const entry: ActionableEntry = { item, open_blockers: openBlockers, unblocks };
     if (openBlockers.length === 0) {
       ready.push(entry);
     } else {

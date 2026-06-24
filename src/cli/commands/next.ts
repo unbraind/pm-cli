@@ -198,8 +198,10 @@ function buildRecommendationReasons(
 }
 
 // Renders a deadline as a date token plus a relative tag (overdue/today/in Nd).
-// Unparseable deadlines degrade to the raw token (defensive — stored deadlines
-// are always valid ISO).
+// The relative delta is computed on UTC calendar dates (both sides normalized to
+// midnight) so a deadline due today never reads as "overdue 1d" just because the
+// wall-clock time of `now` has passed midnight. Unparseable deadlines degrade to
+// the raw token (defensive — stored deadlines are always valid ISO).
 function describeDeadline(deadline: string, now: string): string {
   const deadlineMs = Date.parse(deadline);
   /* c8 ignore start -- defensive: a stored deadline that fails Date.parse still surfaces its raw token */
@@ -208,7 +210,8 @@ function describeDeadline(deadline: string, now: string): string {
   }
   /* c8 ignore stop */
   const dateToken = new Date(deadlineMs).toISOString().slice(0, 10);
-  const days = Math.floor((deadlineMs - Date.parse(now)) / MS_PER_DAY);
+  const nowToken = new Date(Date.parse(now)).toISOString().slice(0, 10);
+  const days = Math.round((Date.parse(dateToken) - Date.parse(nowToken)) / MS_PER_DAY);
   if (days < 0) return `deadline ${dateToken} (overdue ${-days}d)`;
   if (days === 0) return `deadline ${dateToken} (due today)`;
   return `deadline ${dateToken} (in ${days}d)`;
@@ -249,11 +252,13 @@ export async function runNext(options: NextOptions, global: GlobalOptions): Prom
   const readyOnly = options.readyOnly === true;
   const parentScope = typeof options.parent === "string" ? options.parent.trim() : "";
 
-  // Active (non-terminal) candidates honor the caller's filters; the full corpus
-  // (every status) is the reference for blocker and descendant resolution so a
-  // blocker outside the filtered/--parent set is still seen.
+  // Active (non-terminal) candidates honor the caller's filters; the corpus is the
+  // FULL, UNFILTERED set (every status, every item) so blocker and descendant
+  // resolution still sees items outside the caller's filters or --parent subtree —
+  // otherwise a real blocker assigned to someone else (or a parent of a different
+  // type) would be missing and the blocked item misread as ready.
   const candidatesList = await runList(undefined, nextListOptions(options, { excludeTerminal: true }), global);
-  const corpusList = await runList(undefined, nextListOptions(options, { excludeTerminal: false }), global);
+  const corpusList = await runList(undefined, { excludeTerminal: false, noTruncate: true }, global);
   let candidates = candidatesList.items as ItemFrontMatter[];
   const corpus = corpusList.items as ItemFrontMatter[];
 

@@ -142,7 +142,10 @@ describe("runNext", () => {
       expect(overdue.recommended?.reasons.some((reason) => reason.includes("(overdue "))).toBe(true);
     });
     await withTempPmPath(async (context) => {
-      createItem(context, { title: "Due soon", priority: "0", deadline: deadlineOffsetMs(2 * 60 * 60 * 1000) });
+      // A date-only deadline of today resolves to today's UTC midnight, so the
+      // calendar-date delta is exactly 0 regardless of the wall-clock time.
+      const todayDate = new Date(Date.now()).toISOString().slice(0, 10);
+      createItem(context, { title: "Due today", priority: "0", deadline: todayDate });
       const today = await runNext({}, { path: context.pmPath });
       expect(today.recommended?.reasons.some((reason) => reason.includes("(due today)"))).toBe(true);
     });

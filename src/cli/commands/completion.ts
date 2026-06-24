@@ -572,6 +572,7 @@ _pm_commands() {
     'context:Show a token-efficient project context snapshot'
     'ctx:Alias for context'
     'get:Show item details by ID'
+    'next:Recommend the next actionable (unblocked, ready) work item'
     'search:Search items with keyword, semantic, or hybrid modes'
     'reindex:Rebuild search artifacts'
     'history:Show item history entries'
