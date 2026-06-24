@@ -1,7 +1,7 @@
 {
   "name": "builtin-lifecycle-hooks",
   "version": "0.1.0",
-  "entry": "./index.js",
+  "entry": "./index.ts",
   "priority": 0,
   "trusted": true,
   "sandbox_profile": "strict",

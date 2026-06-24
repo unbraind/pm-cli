@@ -1,12 +1,12 @@
 id: pm-frou
-title: "Scaffolder emits TypeScript: index.ts + tsconfig.json + build script, compiled ./index.js entry"
+title: "Scaffolder emits TypeScript source: index.ts + tsconfig.json + type-check/test scripts (./index.ts entry)"
 description: "Rewrite src/cli/commands/extension/scaffold.ts to generate TypeScript source: index.ts (typed activate/deactivate + capability surfaces importing types from @unbrained/pm-cli/sdk), tsconfig.json compiling to ./index.js, and a package.json build script (tsc) + devDependency on typescript. The manifest entry stays ./index.js (compiled output). Mirror the first-party packages/pm-* layout. Keep the colocated sample test as index.test.ts. Update SCAFFOLD_* constants, README bullets/sections, and the define*-builder snippet to TypeScript. 100% line + docstring coverage."
 type: Task
 status: closed
 priority: 1
 tags[4]: "area:extensions","area:sdk",authoring,dx
 created_at: "2026-06-23T20:36:02.972Z"
-updated_at: "2026-06-23T21:49:31.705Z"
+updated_at: "2026-06-24T07:53:49.996Z"
 author: claude-code-agent
 parent: pm-09rh
 resolution: "pm extension/package init emits index.ts + tsconfig.json (NodeNext, types:[node], no outDir) + build/test scripts + @types/node; manifest entry stays compiled ./index.js. Manual compile+node:test verified for all 4 capabilities."
@@ -21,4 +21,4 @@ files[5]{path,scope,note}:
   tests/unit/extensions/extension-command.spec.ts,project,TS scaffold assertions + derive compiled index.js
   tests/unit/extensions/extension-scaffold-define-guidance.spec.ts,project,TS-first scaffold content assertions
 close_reason: Scaffolder is TypeScript-first
-body: ""
+body: "## Revised pre-release (2026-06-24) by [[pm-2p7a]] / [[pm-m1uz]]\n\nAs originally landed (commit 73c0e729) this scaffolder emitted a `build` script and a compiled `./index.js` manifest entry. That intermediate state was superseded **before any release** by the TypeScript-only loading model ([[pm-m1uz]]): the scaffolder now emits `typecheck`/`test` scripts (no `build`), a `noEmit` tsconfig, and points the manifest `entry` at `./index.ts` itself (loaded directly via Node native type stripping). Title corrected to the net-shipped state so the Unreleased changelog is accurate."

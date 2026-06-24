@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- TypeScript-only extension loading: ship .ts entry, load via Node native type stripping (no compiled .js) ([pm-2p7a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-2p7a.toon))
+
+### Changed
+
+- ADR: pm extensions are authored AND loaded as TypeScript via Node native type stripping ([pm-m1uz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-m1uz.toon))
+
+### Other
+
+- Scaffolder emits TypeScript source: index.ts + tsconfig.json + type-check/test scripts (./index.ts entry) ([pm-frou](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-frou.toon))
+- Convert docs/examples extensions to TypeScript-first (starter-extension, policy-restricted-extension) ([pm-ax7z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ax7z.toon))
+- ADR: pm extensions & SDK packages must be authored fully in TypeScript ([pm-2c28](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-2c28.toon))
+
 ## 2026.6.24 - 2026-06-24
 
 ### Added
@@ -17,7 +33,6 @@
 ### Other
 
 - Reframe SDK docs & docstrings TypeScript-first (SDK.md, EXTENSIONS.md, define\*/compose\*) ([pm-l2ud](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-l2ud.toon))
-- Scaffolder emits TypeScript: index.ts + tsconfig.json + build script, compiled ./index.js entry ([pm-frou](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-frou.toon))
 - defineExtensionBlueprint: typed identity helper for partial blueprint fragments ([pm-nvgy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-nvgy.toon))
 - composeExtensionPackage: author-once capstone returning { module, manifest } ([pm-cn0c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-cn0c.toon))
 - mergeExtensionBlueprints: pure modular composition of partial ExtensionBlueprints ([pm-high](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-high.toon))

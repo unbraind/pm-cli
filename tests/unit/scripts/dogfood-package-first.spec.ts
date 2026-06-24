@@ -200,10 +200,11 @@ function mockFs(rmThrows = false, indexEmitted = true) {
       })
     : vi.fn();
   vi.doMock("node:fs", () => ({
-    // `existsSync` reports the compiled `index.js` per `indexEmitted` (the
-    // `buildScaffoldedPackage` emitted-entry assertion), and the scaffold's
-    // node_modules links absent so symlinkSync always runs.
-    existsSync: vi.fn((target: string) => indexEmitted && String(target).endsWith("index.js")),
+    // `existsSync` reports the authored `index.ts` per `indexEmitted` (the
+    // `typecheckScaffoldedPackage` manifest-entry assertion — pm loads the .ts
+    // entry directly, ADR pm-m1uz), and the scaffold's node_modules links absent
+    // so symlinkSync always runs.
+    existsSync: vi.fn((target: string) => indexEmitted && String(target).endsWith("index.ts")),
     mkdirSync: vi.fn(),
     mkdtempSync: vi.fn(() => "/tmp/pm-dogfood"),
     readdirSync: vi.fn(() => ["README.md", "scripts", ".hidden"]),
@@ -360,7 +361,7 @@ describe("dogfood-package-first", () => {
     expect(process.exitCode).toBe(1);
   });
 
-  it("fails when the scaffold TypeScript build (tsc) exits non-zero", async () => {
+  it("fails when the scaffold TypeScript typecheck (tsc) exits non-zero", async () => {
     const spawnSync = buildSpawnSync({ tsc: { status: 2, stdout: "tsc partial", stderr: "tsc boom" } });
     vi.doMock("node:child_process", () => ({ spawnSync }));
     mockFs();
@@ -369,12 +370,12 @@ describe("dogfood-package-first", () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     await harness.importModule(SCRIPT);
-    expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("package build scaffold (tsc) failed with exit 2"))).toBe(true);
+    expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("package typecheck scaffold (tsc) failed with exit 2"))).toBe(true);
     expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("tsc boom"))).toBe(true);
     expect(process.exitCode).toBe(1);
   });
 
-  it("formats the scaffold build failure with null status and empty output", async () => {
+  it("formats the scaffold typecheck failure with null status and empty output", async () => {
     const spawnSync = buildSpawnSync({ tsc: { status: null, stdout: "", stderr: "" } });
     vi.doMock("node:child_process", () => ({ spawnSync }));
     mockFs();
@@ -383,11 +384,11 @@ describe("dogfood-package-first", () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     await harness.importModule(SCRIPT);
-    expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("package build scaffold (tsc) failed with exit unknown"))).toBe(true);
+    expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("package typecheck scaffold (tsc) failed with exit unknown"))).toBe(true);
     expect(process.exitCode).toBe(1);
   });
 
-  it("formats the scaffold build failure when spawnSync returns null output streams", async () => {
+  it("formats the scaffold typecheck failure when spawnSync returns null output streams", async () => {
     const spawnSync = buildSpawnSync({ tsc: { status: null, stdout: null, stderr: null } });
     vi.doMock("node:child_process", () => ({ spawnSync }));
     mockFs();
@@ -396,11 +397,11 @@ describe("dogfood-package-first", () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     await harness.importModule(SCRIPT);
-    expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("package build scaffold (tsc) failed with exit unknown"))).toBe(true);
+    expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("package typecheck scaffold (tsc) failed with exit unknown"))).toBe(true);
     expect(process.exitCode).toBe(1);
   });
 
-  it("fails when the scaffold build does not emit the ./index.js entry", async () => {
+  it("fails when the scaffold is missing the ./index.ts manifest entry", async () => {
     const spawnSync = buildSpawnSync();
     vi.doMock("node:child_process", () => ({ spawnSync }));
     mockFs(false, false);
@@ -409,7 +410,7 @@ describe("dogfood-package-first", () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     await harness.importModule(SCRIPT);
-    expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("did not emit the ./index.js manifest entry"))).toBe(true);
+    expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("did not author the ./index.ts manifest entry"))).toBe(true);
     expect(process.exitCode).toBe(1);
   });
 

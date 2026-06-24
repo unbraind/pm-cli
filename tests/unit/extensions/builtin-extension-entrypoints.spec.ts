@@ -97,7 +97,7 @@ async function seedRuntimeCommandStubs(packageRoot: string): Promise<void> {
   await mkdir(todosRuntimeRoot, { recursive: true });
   await mkdir(sdkRuntimeRoot, { recursive: true });
   await writeFile(
-    path.join(sdkRuntimeRoot, "runtime.js"),
+    path.join(sdkRuntimeRoot, "runtime.ts"),
     `export async function runCalendar(options, global) {
   const calls = Array.isArray(globalThis.${RUNTIME_CALLS_KEY}) ? globalThis.${RUNTIME_CALLS_KEY} : [];
   calls.push({ kind: "calendar", options, global });
@@ -202,7 +202,7 @@ export async function runNormalize(options, global) {
     "utf8",
   );
   await writeFile(
-    path.join(beadsRuntimeRoot, "runtime.js"),
+    path.join(beadsRuntimeRoot, "runtime.ts"),
     `export async function runBeadsImport(options, global) {
   const calls = Array.isArray(globalThis.${RUNTIME_CALLS_KEY}) ? globalThis.${RUNTIME_CALLS_KEY} : [];
   calls.push({ kind: "beads", options, global });
@@ -220,7 +220,7 @@ export async function runNormalize(options, global) {
     "utf8",
   );
   await writeFile(
-    path.join(calendarRuntimeRoot, "runtime.js"),
+    path.join(calendarRuntimeRoot, "runtime.ts"),
     `export async function runCalendarPackage(options, global) {
   const calls = Array.isArray(globalThis.${RUNTIME_CALLS_KEY}) ? globalThis.${RUNTIME_CALLS_KEY} : [];
   calls.push({ kind: "calendar", options, global });
@@ -271,7 +271,7 @@ export function renderCalendarPackageOutput(context) {
     "utf8",
   );
   await writeFile(
-    path.join(todosRuntimeRoot, "runtime.js"),
+    path.join(todosRuntimeRoot, "runtime.ts"),
     `export async function runTodosImport(options, global) {
   const calls = Array.isArray(globalThis.${RUNTIME_CALLS_KEY}) ? globalThis.${RUNTIME_CALLS_KEY} : [];
   calls.push({ kind: "todos-import", options, global });
@@ -1031,8 +1031,8 @@ describe("built-in extension entrypoints", () => {
     try {
       const runtimeDir = path.join(emptyRoot, ".agents", "pm", "extensions", "beads");
       await mkdir(runtimeDir, { recursive: true });
-      // runtime.js without runBeadsImport export.
-      await writeFile(path.join(runtimeDir, "runtime.js"), "export const marker = true;\n", "utf8");
+      // runtime.ts without runBeadsImport export.
+      await writeFile(path.join(runtimeDir, "runtime.ts"), "export const marker = true;\n", "utf8");
       process.env[PM_PACKAGE_ROOT_ENV] = emptyRoot;
       const { api, importers } = createCommandOnlyApi();
       activateBeads(api);
@@ -1167,8 +1167,8 @@ describe("built-in extension entrypoints", () => {
     try {
       const runtimeDir = path.join(emptyRoot, ".agents", "pm", "extensions", "todos");
       await mkdir(runtimeDir, { recursive: true });
-      // runtime.js without runTodosImport / runTodosExport exports.
-      await writeFile(path.join(runtimeDir, "runtime.js"), "export const marker = true;\n", "utf8");
+      // runtime.ts without runTodosImport / runTodosExport exports.
+      await writeFile(path.join(runtimeDir, "runtime.ts"), "export const marker = true;\n", "utf8");
       process.env[PM_PACKAGE_ROOT_ENV] = emptyRoot;
       const { api, importers, exporters } = createCommandOnlyApi();
       activateTodos(api);

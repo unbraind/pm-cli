@@ -31,18 +31,18 @@ const SCAFFOLD_TYPESCRIPT_VERSION = "^6.0.0";
 
 // `@types/node` floor for scaffolded packages: the colocated `index.test.ts`
 // imports `node:test`/`node:assert`, which need Node's ambient type definitions
-// to compile. Pinned to the engines floor (Node >=20), matching the CLI itself.
-const SCAFFOLD_TYPES_NODE_VERSION = "^20.0.0";
+// to type-check. Pinned to the engines floor (Node >=22.18), matching the CLI
+// itself — the version where Node strips TypeScript types on load by default.
+const SCAFFOLD_TYPES_NODE_VERSION = "^22.0.0";
 
-// Strict NodeNext tsconfig emitted into every scaffold (ADR pm-2c28: extensions
-// are authored fully in TypeScript). It compiles `index.ts` (and the colocated
-// `index.test.ts`) in place to the `./index.js` entry the manifest loads, so the
-// authored source is type-checked against the SDK contracts while the loader keeps
-// importing plain compiled JavaScript. NodeNext resolution matches the explicit
-// `.js` import specifiers the emitted ESM uses. No `outDir` is set on purpose:
-// tsc auto-excludes its `outDir`, and an in-package `outDir` would exclude the
-// whole package root, leaving the `*.ts` inputs unmatched (TS18003). Emitting
-// beside the source mirrors the first-party `packages/pm-*` layout.
+// Strict NodeNext tsconfig emitted into every scaffold (ADR pm-2c28 / pm-m1uz:
+// extensions are authored AND loaded as TypeScript). It is a type-check-only
+// config (`noEmit`): there is no compile step — pm loads the `./index.ts`
+// manifest entry directly via Node's native type stripping (Node >=22.18), so
+// no `.js` is emitted or committed. `allowImportingTsExtensions` lets the
+// colocated `index.test.ts` import the sibling `./index.ts` entry with its real
+// extension, exactly as Node resolves it at load time. NodeNext resolution keeps
+// the module graph identical to the runtime loader.
 const SCAFFOLD_TSCONFIG = {
   compilerOptions: {
     target: "ES2022",
@@ -51,14 +51,15 @@ const SCAFFOLD_TSCONFIG = {
     strict: true,
     esModuleInterop: true,
     skipLibCheck: true,
-    declaration: false,
+    noEmit: true,
+    allowImportingTsExtensions: true,
     // `node:test`/`node:assert` in the colocated test (and Node globals) resolve
     // from `@types/node`; name it explicitly so it is loaded regardless of how the
     // package manager lays out `node_modules/@types`.
     types: ["node"],
   },
   // Recursive so a package that grows into subdirectory `*.ts` modules still
-  // type-checks and compiles them; tsc excludes `node_modules` by default.
+  // type-checks; tsc excludes `node_modules` by default.
   include: ["**/*.ts"],
 };
 
@@ -92,13 +93,13 @@ const SAMPLE_TEST_CAPABILITIES_LITERAL: Record<ExtensionScaffoldCapability, stri
 };
 
 const ENTRYPOINT_BULLETS: Record<ExtensionScaffoldCapability, string> = {
-  commands: "- `index.ts`: starter command registration plus a `deactivate` teardown stub (compiled to `index.js`).",
+  commands: "- `index.ts`: the TypeScript manifest entry — starter command registration plus a `deactivate` teardown stub.",
   hooks:
-    "- `index.ts`: starter command registration, an `after_command` lifecycle hook, and a `deactivate` teardown stub (compiled to `index.js`).",
+    "- `index.ts`: the TypeScript manifest entry — starter command registration, an `after_command` lifecycle hook, and a `deactivate` teardown stub.",
   search:
-    "- `index.ts`: starter command registration, a search provider, a vector-store adapter, and a `deactivate` teardown stub (compiled to `index.js`).",
+    "- `index.ts`: the TypeScript manifest entry — starter command registration, a search provider, a vector-store adapter, and a `deactivate` teardown stub.",
   importers:
-    "- `index.ts`: starter command registration, importer/exporter command registrations, and a `deactivate` teardown stub (compiled to `index.js`).",
+    "- `index.ts`: the TypeScript manifest entry — starter command registration, importer/exporter command registrations, and a `deactivate` teardown stub.",
 };
 
 const SAMPLE_TEST_BULLETS: Record<ExtensionScaffoldCapability, string> = {
@@ -112,7 +113,7 @@ const SAMPLE_TEST_BULLETS: Record<ExtensionScaffoldCapability, string> = {
     "- `index.test.ts`: sample `node:test` suite covering activation, command invocation, importer/exporter invocation, and teardown via the SDK testing helpers.",
 };
 
-const TSCONFIG_BULLET = "- `tsconfig.json`: strict TypeScript config that compiles `index.ts` to the `./index.js` entry.";
+const TSCONFIG_BULLET = "- `tsconfig.json`: strict type-check-only TypeScript config (`noEmit`) for the `.ts` source the loader runs directly.";
 
 const PACKAGE_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, readonly string[]> = {
   commands: [],
@@ -331,8 +332,9 @@ function buildActivateBodyLines(
 
 /**
  * Build the colocated `node:test` sample suite (`index.test.ts`) for the chosen
- * capability. Authored in TypeScript and run through `npm test` (`tsc && node
- * --test`), it imports the compiled `./index.js` entry under NodeNext resolution.
+ * capability. Authored in TypeScript and run through `npm test` (`node --test`,
+ * which strips types on Node >=22.18), it imports the `./index.ts` manifest entry
+ * directly under NodeNext resolution.
  * Every variant covers activation, command invocation, and teardown via the SDK
  * testing helpers; the `hooks` variant adds a test that asserts the
  * `after_command` hook is registered and fires cleanly through the public SDK
@@ -490,7 +492,7 @@ function buildSampleTestSource(
     // The search sample's synthetic query/vector contexts reference these SDK types
     // for their typed-stub fixtures; other capabilities need no extra type imports.
     ...(searchEnabled ? ['import type { ItemDocument, PmSettings } from "@unbrained/pm-cli/sdk";'] : []),
-    'import extension from "./index.js";',
+    'import extension from "./index.ts";',
     "",
     `test(${JSON.stringify(`${extensionName} registers its starter command`)}, async () => {`,
     "  // `capabilities` mirrors manifest.json so the in-memory activation grants",
@@ -558,7 +560,7 @@ export function buildStarterExtensionScaffoldFiles(
     {
       name: extensionName,
       version: "0.1.0",
-      entry: "./index.js",
+      entry: "./index.ts",
       manifest_version: SCAFFOLD_MANIFEST_VERSION,
       pm_min_version: SCAFFOLD_PM_MIN_VERSION,
       trusted: true,
@@ -569,11 +571,11 @@ export function buildStarterExtensionScaffoldFiles(
     null,
     2,
   )}\n`;
-  // The entrypoint is authored fully in TypeScript (ADR pm-2c28): the `import
-  // type` is erased at compile time, so the typed `ExtensionApi` parameter is
-  // checked against the SDK contract at author time while the emitted ./index.js
-  // stays import-light. `npm run build` (tsc) compiles this index.ts to the
-  // ./index.js the manifest entry loads.
+  // The entrypoint is authored AND loaded as TypeScript (ADR pm-2c28 / pm-m1uz):
+  // the manifest `entry` points at `./index.ts` and pm imports it directly via
+  // Node's native type stripping (Node >=22.18) — there is no compile step and no
+  // `.js` artifact. The typed `ExtensionApi` parameter is checked against the SDK
+  // contract at author time (`npm run typecheck`).
   const entrypoint = [
     'import type { ExtensionApi } from "@unbrained/pm-cli/sdk";',
     "",
@@ -605,13 +607,15 @@ export function buildStarterExtensionScaffoldFiles(
         private: true,
         type: "module",
         keywords: ["pm-package"],
-        // `build` compiles index.ts to the ./index.js the manifest loads; `test`
-        // compiles first (Node's `node --test` runs the emitted *.test.js, not the
-        // TypeScript source) then runs the colocated sample against the peer SDK
-        // testing helpers — no third-party test runner required.
+        // There is no build step: pm loads the `./index.ts` manifest entry
+        // directly via Node's native type stripping (Node >=22.18). `typecheck`
+        // validates the source against the SDK contracts (`tsc --noEmit`), and
+        // `test` runs the colocated sample with Node's built-in runner (which
+        // strips types on load) against the peer SDK testing helpers — no
+        // third-party test runner or compile required.
         scripts: {
-          build: "tsc",
-          test: "tsc && node --test",
+          typecheck: "tsc --noEmit",
+          test: "node --test",
         },
         peerDependencies: {
           "@unbrained/pm-cli": "*",
@@ -642,18 +646,13 @@ export function buildStarterExtensionScaffoldFiles(
     // capability, the after_command lifecycle hook).
     const sampleTest = buildSampleTestSource(extensionName, commandName, capability);
     const sampleTestBullet = SAMPLE_TEST_BULLETS[capability];
-    // Ignore compiled TypeScript output wherever tsc emits it. Authors can add
-    // sibling or subdirectory modules, and tsc writes each .js next to its source.
+    // The package commits only TypeScript source — pm loads the `.ts` entry
+    // directly, so there is no compiled output to ignore. Keep dependencies and
+    // the tsc incremental cache out of version control.
     const gitignore = [
       "node_modules/",
       "*.log",
-      "",
-      "# Compiled TypeScript output (npm run build)",
-      "*.js",
-      "*.test.js",
-      "*.js.map",
-      "*.d.ts",
-      "*.d.ts.map",
+      "*.tsbuildinfo",
       "",
     ].join("\n");
     const searchProviderName = `${extensionName}-search`;
@@ -775,34 +774,35 @@ export function buildStarterExtensionScaffoldFiles(
       "Generated by `pm package init`.",
       "",
       "## Included Files",
-      "- `package.json`: package metadata, `build`/`test` scripts, and `pm` resource manifest.",
+      "- `package.json`: package metadata, `typecheck`/`test` scripts, and `pm` resource manifest.",
       "- `manifest.json`: extension metadata and capabilities.",
       entrypointBullet,
       sampleTestBullet,
       TSCONFIG_BULLET,
-      "- `.gitignore`: ignores `node_modules/`, logs, and compiled JavaScript/declaration output.",
+      "- `.gitignore`: ignores `node_modules/`, logs, and the TypeScript build cache.",
       "",
       "## Quick Start",
-      "This package is authored in TypeScript; build it once so the manifest's",
-      "`./index.js` entry exists, then install it:",
+      "This package is authored AND loaded as TypeScript: the manifest `entry` is",
+      "`./index.ts` and pm imports it directly via Node's native type stripping",
+      "(Node >=22.18), so there is no build step — install and run:",
       "```bash",
       "npm install",
-      "npm run build",
       "pm install --project <package-path>",
       `pm ${commandName}`,
       "pm package doctor --project --detail summary",
       "```",
       "",
       "## Validate the Package",
-      "`npm install` pulls the peer SDK and TypeScript; `npm test` compiles and runs",
-      "the colocated sample test:",
+      "`npm install` pulls the peer SDK and TypeScript; `npm run typecheck` checks the",
+      "source against the SDK contracts and `npm test` runs the colocated sample:",
       "```bash",
       "npm install",
+      "npm run typecheck",
       "npm test",
       "```",
-      "`npm test` runs `tsc && node --test`: it compiles `index.ts`/`index.test.ts`",
-      "then executes the emitted `index.test.js` against the",
-      "`@unbrained/pm-cli/sdk/testing` helpers - no extra test runner required.",
+      "`npm test` runs `node --test`, which strips types on load and executes",
+      "`index.test.ts` directly against the `@unbrained/pm-cli/sdk/testing` helpers -",
+      "no compile step and no extra test runner required.",
       "",
       "## Authoring With define* Builders",
       "`index.ts` is authored fully in TypeScript so every registration is checked",
@@ -824,8 +824,8 @@ export function buildStarterExtensionScaffoldFiles(
       "The starter command is pure compute, so `manifest.json` declares `trusted: true`, `sandbox_profile: \"strict\"`, and all six permission keys as `false`. Keep that least-privilege shape for pure packages; relax only the specific permission your package actually needs and verify with `pm package doctor --project --detail deep --trace`.",
       "",
       "## Notes",
-      "- Author in `index.ts`; `npm run build` (tsc) emits the `./index.js` the manifest loads, so rebuild after editing before installing or reloading.",
-      "- Move larger runtimes into sibling or subdirectory `*.ts` modules and import them; `tsconfig.json` compiles every `*.ts` in the package (recursively).",
+      "- Author in `index.ts`; pm loads it directly (no build), so edits take effect on the next install/reload — there is no `.js` to regenerate.",
+      "- Move larger runtimes into sibling or subdirectory `*.ts` modules and import them with their real `.ts` extension; `tsconfig.json` type-checks every `*.ts` in the package (recursively).",
       "- Add capabilities to the extension manifest only when the entrypoint uses the matching SDK API.",
       "- Use `@unbrained/pm-cli/sdk` as the public SDK import for richer package runtimes.",
       "",
@@ -851,13 +851,13 @@ export function buildStarterExtensionScaffoldFiles(
     TSCONFIG_BULLET,
     "",
     "## Quick Start",
-    "This extension is authored in TypeScript; compile `index.ts` to the manifest's",
-    "`./index.js` entry, then install it. The SDK types resolve once",
-    "`@unbrained/pm-cli` is available to the compiler (install it, Node types, and TypeScript, or",
-    "build from a project that already depends on the CLI):",
+    "This extension is authored AND loaded as TypeScript: the manifest `entry` is",
+    "`./index.ts` and pm imports it directly via Node's native type stripping",
+    "(Node >=22.18), so there is no compile step. Install the dev dependencies for",
+    "type-checking, then install and run the extension:",
     "```bash",
     "npm install -D typescript @types/node @unbrained/pm-cli",
-    "npx tsc",
+    "npx tsc --noEmit",
     "pm extension --install --project <scaffold-path>",
     `pm ${commandName}`,
     "pm extension --doctor --project --detail summary",
@@ -873,9 +873,8 @@ export function buildStarterExtensionScaffoldFiles(
     "## Policy Metadata",
     "The starter command is pure compute, so `manifest.json` declares `trusted: true`, `sandbox_profile: \"strict\"`, and all six permission keys as `false`. Keep that least-privilege shape for pure extensions; relax only the specific permission your extension actually needs and verify with `pm extension --doctor --project --detail deep --trace`.",
     "",
-    "## Notes",
-    "- This scaffold uses TypeScript ESM source compiled to ESM output, so it works in package scopes with `type: module`.",
-    "- Author in `index.ts` and recompile to `index.js` (the manifest entry) after editing capabilities or command behavior.",
+    "- This scaffold is TypeScript ESM source loaded directly by pm (no compile), so it works in package scopes with `type: module`.",
+    "- Author in `index.ts` (the manifest entry); edits take effect on the next install/reload — there is no `.js` to regenerate.",
     "- Release any resources `activate` opens (timers, connections, caches) in the `deactivate` teardown hook.",
     "",
   ].join("\n");

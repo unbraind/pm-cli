@@ -835,7 +835,7 @@ describe("runBeadsImport", () => {
       const packageRuntimeDir = path.join(tempRoot, "packages", "pm-beads", "extensions", "beads");
       await mkdir(packageRuntimeDir, { recursive: true });
       await writeFile(
-        path.join(packageRuntimeDir, "runtime.js"),
+        path.join(packageRuntimeDir, "runtime.ts"),
         [
           "export const marker = 'custom-beads-runtime';",
           "export async function runBeadsImport() {",
@@ -868,7 +868,7 @@ describe("runBeadsImport", () => {
       const throwingRuntimeDir = path.join(throwRoot, ".agents", "pm", "extensions", "beads");
       await mkdir(throwingRuntimeDir, { recursive: true });
       await writeFile(
-        path.join(throwingRuntimeDir, "runtime.js"),
+        path.join(throwingRuntimeDir, "runtime.ts"),
         ["throw new Error('beads-loader-boom');", ""].join("\n"),
         "utf8",
       );

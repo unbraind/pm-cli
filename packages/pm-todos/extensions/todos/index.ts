@@ -3,9 +3,9 @@ import type {
   GlobalOptions,
   ImportExportContext,
   ImportExportRegistrationOptions,
-} from "../../../../src/sdk/index.js";
-import type { TodosExportOptions, TodosExportResult, TodosImportOptions, TodosImportResult } from "./runtime.js";
-import { loadPackageRuntimeModule } from "./runtime-loader.js";
+} from "@unbrained/pm-cli/sdk";
+import type { TodosExportOptions, TodosExportResult, TodosImportOptions, TodosImportResult } from "./runtime.ts";
+import { loadPackageRuntimeModule } from "./runtime-loader.ts";
 
 export const manifest = {
   name: "builtin-todos-import-export",

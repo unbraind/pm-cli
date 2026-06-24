@@ -92,11 +92,13 @@ function assert(condition, message) {
   }
 }
 
-// Scaffolded packages are authored in TypeScript (ADR pm-2c28): the manifest's
-// ./index.js entry only exists after a compile. Simulate `npm install && npm run
-// build` by linking the SDK + @types/node into the scaffold's node_modules (so the
-// type imports resolve) and running the repo's tsc, then assert the entry emitted.
-function buildScaffoldedPackage(label, scaffoldPath) {
+// Scaffolded packages are authored AND loaded as TypeScript (ADR pm-m1uz): the
+// manifest entry is ./index.ts and pm strips types on load, so there is no build
+// step and no compiled ./index.js. Type-check the scaffold the way an author would
+// (`npm run typecheck`): link the SDK + @types/node into the scaffold's
+// node_modules (so the type imports resolve), run the repo's tsc (noEmit), then
+// assert the .ts entry the manifest points at is present.
+function typecheckScaffoldedPackage(label, scaffoldPath) {
   const sdkLink = path.join(scaffoldPath, "node_modules", "@unbrained", "pm-cli");
   const typesLink = path.join(scaffoldPath, "node_modules", "@types", "node");
   mkdirSync(path.dirname(sdkLink), { recursive: true });
@@ -126,7 +128,7 @@ function buildScaffoldedPackage(label, scaffoldPath) {
         .join("\n"),
     );
   }
-  assert(existsSync(path.join(scaffoldPath, "index.js")), `${label} did not emit the ./index.js manifest entry`);
+  assert(existsSync(path.join(scaffoldPath, "index.ts")), `${label} did not author the ./index.ts manifest entry`);
 }
 
 function assertCalendarMarkdown(label, markdown) {
@@ -405,8 +407,9 @@ try {
   const scaffoldPackagePath = path.join(tempRoot, "scaffold-package");
   const packageScaffold = run("package init scaffold", ["package", "init", scaffoldPackagePath, "--project"]);
   assert(packageScaffold?.details?.extension?.command === "scaffold package ping", "package init scaffold did not report starter command");
-  // The scaffold ships TypeScript source; compile it to the ./index.js entry before installing.
-  buildScaffoldedPackage("package build scaffold", scaffoldPackagePath);
+  // The scaffold ships TypeScript source loaded directly by pm (ADR pm-m1uz):
+  // type-check it the way an author would, then install and invoke it as authored.
+  typecheckScaffoldedPackage("package typecheck scaffold", scaffoldPackagePath);
   run("package install scaffold", ["install", scaffoldPackagePath, "--project"]);
   const scaffoldInvoke = run("package scaffold command", ["scaffold", "package", "ping"]);
   assert(scaffoldInvoke?.ok === true, "scaffolded package command did not execute");

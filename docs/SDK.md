@@ -478,7 +478,7 @@ Manifest:
 {
   "name": "hello",
   "version": "0.1.0",
-  "entry": "./index.js",
+  "entry": "./index.ts",
   "pm_min_version": "2026.5.31",
   "trusted": true,
   "sandbox_profile": "strict",
@@ -502,7 +502,7 @@ Manifest typing also accepts optional `engines` metadata:
 {
   "engines": {
     "pm": ">=2026.5.31",
-    "node": ">=20"
+    "node": ">=22.18"
   }
 }
 ```
@@ -645,8 +645,8 @@ argument unchanged), exactly like `defineExtension` and the wider
 `defineConfig`/`defineComponent` ecosystem convention — the value is entirely at
 the type level.
 
-pm packages are authored fully in TypeScript (ADR
-[pm-2c28](../.agents/pm/decisions/pm-2c28.toon)). A bare `const cmd = { ... }`
+pm packages are authored **and loaded** as TypeScript (ADR
+[pm-2c28](../.agents/pm/decisions/pm-2c28.toon) / [pm-m1uz](../.agents/pm/decisions/pm-m1uz.toon)). A bare `const cmd = { ... }`
 satisfies the registration types only structurally and widens its literals;
 wrapping it in a builder checks the object against the contract *and* preserves
 the narrow literal types, while inferring the nested handler's `context`
@@ -772,10 +772,10 @@ export const commandsModule = defineExtensionBlueprint({
 ```
 
 ```ts
-// index.ts — NodeNext import specifiers keep the .js extension; they resolve to the .ts source.
+// index.ts — the manifest entry; import sibling .ts modules by their real extension (loaded directly via native type stripping).
 import { composeExtension, mergeExtensionBlueprints } from "@unbrained/pm-cli/sdk";
-import { commandsModule } from "./commands.js";
-import { searchModule } from "./search.js";
+import { commandsModule } from "./commands.ts";
+import { searchModule } from "./search.ts";
 
 export default composeExtension(mergeExtensionBlueprints(commandsModule, searchModule));
 ```
@@ -813,7 +813,7 @@ import { synthesizeExtensionManifest } from "@unbrained/pm-cli/sdk";
 const manifest = synthesizeExtensionManifest(blueprint, {
   name: "command-kit",
   version: "1.0.0",
-  entry: "./index.js",
+  entry: "./index.ts",
   priority: 0,
 });
 manifest.capabilities; // ["commands", "parser", "schema"] — derived, not hand-written
@@ -844,7 +844,7 @@ import { composeExtensionPackage } from "@unbrained/pm-cli/sdk";
 const { module, manifest } = composeExtensionPackage(blueprint, {
   name: "command-kit",
   version: "1.0.0",
-  entry: "./index.js",
+  entry: "./index.ts",
   priority: 0,
 });
 export default module;          // the package entry's default export
@@ -913,7 +913,7 @@ const activation = await activateExtensionForTest({
   manifest: {
     name: "hello-ext",
     version: "0.1.0",
-    entry: "./index.js",
+    entry: "./index.ts",
     priority: 0,
     capabilities: ["commands", "schema"],
   },
@@ -1024,14 +1024,14 @@ import { assertExtensionPreflight } from "@unbrained/pm-cli/sdk/testing";
 
 // Inspect every author-time stage in one report…
 const report = preflightExtension(blueprint, {
-  identity: { name: "command-kit", version: "1.0.0", entry: "./index.js", priority: 0 },
+  identity: { name: "command-kit", version: "1.0.0", entry: "./index.ts", priority: 0 },
   target: { pmVersion: "2026.6.23" },
 });
 //   report.manifest.capabilities (derived), report.compatibility.compatible, report.findings[]
 
 // …or guard the whole package in one CI line.
 assertExtensionPreflight(blueprint, {
-  identity: { name: "command-kit", version: "1.0.0", entry: "./index.js", priority: 0 },
+  identity: { name: "command-kit", version: "1.0.0", entry: "./index.ts", priority: 0 },
   target: { pmVersion: "2026.6.23" },
 });
 ```

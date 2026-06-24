@@ -35,7 +35,7 @@ import {
   type LinkedFile,
   type LinkedTest,
   type LogNote,
-} from "../../../../src/sdk/index.js";
+} from "@unbrained/pm-cli/sdk";
 
 const PRIMARY_AUTO_DISCOVERY_FILES = [
   ".beads/issues.jsonl",

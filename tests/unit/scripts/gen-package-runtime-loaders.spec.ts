@@ -22,8 +22,8 @@ describe("gen-package-runtime-loaders", () => {
     const mod = await harness.importModule<GeneratorModule>("scripts/gen-package-runtime-loaders.mjs");
     await mod.main();
     expect(logSpy.mock.calls.some((call) => String(call[0]).includes("Wrote"))).toBe(true);
-    // Both packages, each .ts + .js loader.
-    expect(generated.size).toBe(4);
+    // Both packages, one TypeScript-only loader each (no compiled .js variant).
+    expect(generated.size).toBe(2);
   });
 
   it("reports in-sync when --check finds matching generated content", async () => {

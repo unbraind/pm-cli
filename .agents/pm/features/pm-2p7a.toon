@@ -1,0 +1,21 @@
+id: pm-2p7a
+title: "TypeScript-only extension loading: ship .ts entry, load via Node native type stripping (no compiled .js)"
+description: "Implement ADR pm-m1uz: convert the extension/package loading model from 'TS source compiled to a committed index.js the loader imports' to 'TS source IS the manifest entry (./index.ts), loaded directly via Node >=22.18 native type stripping — no compiled .js, no build step'. Scope: bump engines to >=22.18 and @types/node to ^22; point every manifest entry (first-party packages, docs/examples, scaffolder output) at ./index.ts; delete committed compiled .js; update runtime-loaders + gen-package-runtime-loaders.mjs to resolve runtime.ts (drop the JS loader variant); retarget CI (ci/nightly/auto-release/docs workflows) and the esbuild bundler to Node 22/24 (drop Node 20); add tsconfig.examples.json + allowImportingTsExtensions; fix the scaffolder next_steps (no 'npm run build') and README/docstring drift; reconcile all test fixtures (runtime.js->runtime.ts, manifest entry, scaffold package.json scripts) and the dogfood/smoke harnesses (no compile, load .ts directly)."
+type: Feature
+status: closed
+priority: 1
+tags[6]: "area:extensions","area:sdk",authoring,breaking-change,ci,loader
+created_at: "2026-06-24T07:24:07.989Z"
+updated_at: "2026-06-24T08:01:21.171Z"
+author: claude-code-agent
+parent: pm-ugqx
+resolution: "TypeScript-only extension/package loading delivered: the .ts source IS the manifest entry, loaded directly via Node native type stripping; no compiled .js or build step. Verified: typecheck (3 projects) green; full coverage 248 files / 4989 tests at 100% statements/branches/functions/lines; quality:static, contracts:check, security:scan, version:check, docs-skills, gen-package-runtime-loaders --check all green; real `pnpm dogfood:package-first` scaffolds, type-checks, installs, and invokes a package end-to-end (ts-only) with exit 0."
+expected_result: "All extension/package loading is TypeScript-only with 100% coverage, green dogfood/smoke gates, and a working manual smoke; docs/docstrings reframed; auto-release healthy."
+actual_result: "Delivered end-to-end: 100% coverage (248 files / 4989 tests), all static gates + gen-loader check green, real dogfood ts-only end-to-end green (exit 0), docs/docstrings reframed across SDK.md/EXTENSIONS.md/examples/scaffolder."
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-m1uz,related,"2026-06-24T07:24:30.548Z",null,null
+  pm-2c28,related,"2026-06-24T07:24:30.848Z",null,null
+  pm-ax7z,related,"2026-06-24T07:24:31.215Z",null,null
+  pm-09rh,related,"2026-06-24T07:24:31.582Z",null,null
+close_reason: "Shipped TypeScript-only extension loading (ADR pm-m1uz). engines>=22.18 + @types/node ^22; all first-party packages, docs/examples, and the scaffolder point manifest entry at ./index.ts; committed compiled .js removed; runtime-loaders + gen-package-runtime-loaders.mjs resolve runtime.ts (JS loader variant dropped); CI/nightly/auto-release/docs workflows + esbuild bundler target Node 22/24 (Node 20 dropped); tsconfig.examples.json + allowImportingTsExtensions added; scaffolder next_steps fixed (no npm run build) and all README/docstring drift reframed; 8 spec files reconciled (runtime.js->runtime.ts, manifest entry, scaffold scripts, src-not-dist mocks) and the dogfood harness type-checks the scaffold then loads .ts directly."
+body: ""

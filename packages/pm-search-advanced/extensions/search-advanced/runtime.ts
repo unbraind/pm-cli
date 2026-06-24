@@ -7,7 +7,7 @@ import type {
   ReindexResult,
   SearchOptions,
   SearchResult,
-} from "../../../../src/sdk/runtime.js";
+} from "@unbrained/pm-cli/sdk/runtime";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
 const DEFAULT_EVAL_FIXTURES_PATH = path.join("tests", "search-eval", "golden-queries.json");

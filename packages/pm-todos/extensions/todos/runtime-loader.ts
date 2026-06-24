@@ -50,8 +50,8 @@ export async function loadPackageRuntimeModule(): Promise<PackageRuntimeModule> 
   const attempted: string[] = [];
   for (const packageRoot of resolvePackageRootCandidates()) {
     const modulePaths = [
-      path.join(packageRoot, ".agents", "pm", "extensions", EXTENSION_NAME, "runtime.js"),
-      path.join(packageRoot, "packages", PACKAGE_NAME, "extensions", EXTENSION_NAME, "runtime.js"),
+      path.join(packageRoot, ".agents", "pm", "extensions", EXTENSION_NAME, "runtime.ts"),
+      path.join(packageRoot, "packages", PACKAGE_NAME, "extensions", EXTENSION_NAME, "runtime.ts"),
     ];
     for (const modulePath of modulePaths) {
       attempted.push(modulePath);
@@ -69,7 +69,7 @@ export async function loadPackageRuntimeModule(): Promise<PackageRuntimeModule> 
     }
   }
 
-  const localRuntimePath = path.join(CURRENT_EXTENSION_ROOT, "runtime.js");
+  const localRuntimePath = path.join(CURRENT_EXTENSION_ROOT, "runtime.ts");
   attempted.push(localRuntimePath);
   if (existsSync(localRuntimePath)) {
     try {
@@ -83,6 +83,6 @@ export async function loadPackageRuntimeModule(): Promise<PackageRuntimeModule> 
 
   throw new Error(
     `Unable to resolve packaged ${DIAGNOSTIC_NAME} extension runtime module. ` +
-      `Tried: ${attempted.join(", ")}. Ensure the installed extension includes runtime.js or PM_CLI_PACKAGE_ROOT points to an installed pm package root.`,
+      `Tried: ${attempted.join(", ")}. Ensure the installed extension includes runtime.ts or PM_CLI_PACKAGE_ROOT points to an installed pm package root.`,
   );
 }

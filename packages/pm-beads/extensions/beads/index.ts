@@ -3,9 +3,9 @@ import type {
   GlobalOptions,
   ImportExportContext,
   ImportExportRegistrationOptions,
-} from "../../../../src/sdk/index.js";
-import type { BeadsImportOptions, BeadsImportResult } from "./runtime.js";
-import { loadPackageRuntimeModule } from "./runtime-loader.js";
+} from "@unbrained/pm-cli/sdk";
+import type { BeadsImportOptions, BeadsImportResult } from "./runtime.ts";
+import { loadPackageRuntimeModule } from "./runtime-loader.ts";
 
 export const manifest = {
   name: "builtin-beads-import",

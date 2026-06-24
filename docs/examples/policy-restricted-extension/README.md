@@ -2,6 +2,12 @@
 
 This example demonstrates governance policy behavior with real registrations.
 
+It is authored **and loaded** as TypeScript (ADR pm-2c28 / pm-m1uz): `index.ts` is
+both the source and the manifest `entry`, imported directly via Node's native type
+stripping — there is no compile step and no committed `index.js`. Edit `index.ts`
+and the change takes effect on the next install/reload; run `npx tsc --noEmit` to
+type-check.
+
 The extension declares:
 
 - `commands` (handler registration)

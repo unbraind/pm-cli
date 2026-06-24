@@ -68,13 +68,13 @@ describe("linked-test-adapters package runtime", () => {
     const extensionRoot = path.join(tempRoot, "linked-test-adapters");
     await mkdir(extensionRoot, { recursive: true });
     await copyFile(path.join(sourceRoot, "package.json"), path.join(extensionRoot, "package.json"));
-    await copyFile(path.join(sourceRoot, "index.js"), path.join(extensionRoot, "index.js"));
-    await copyFile(path.join(sourceRoot, "runtime.js"), path.join(extensionRoot, "runtime.js"));
+    await copyFile(path.join(sourceRoot, "index.ts"), path.join(extensionRoot, "index.ts"));
+    await copyFile(path.join(sourceRoot, "runtime.ts"), path.join(extensionRoot, "runtime.ts"));
 
     const metadata = JSON.parse(await readFile(path.join(extensionRoot, "package.json"), "utf8")) as { type?: string };
     expect(metadata.type).toBe("module");
 
-    const imported = (await import(`${pathToFileURL(path.join(extensionRoot, "index.js")).href}?copied=${cacheBustToken()}`)) as {
+    const imported = (await import(`${pathToFileURL(path.join(extensionRoot, "index.ts")).href}?copied=${cacheBustToken()}`)) as {
       manifest?: { name?: string };
       activate?: unknown;
     };

@@ -42,7 +42,7 @@ import {
   type LinkedTest,
   type LogNote,
   type PmSettings,
-} from "../../../../src/sdk/index.js";
+} from "@unbrained/pm-cli/sdk";
 
 const DEFAULT_TODOS_FOLDER = ".pm/todos";
 

@@ -1,6 +1,6 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import type { GlobalOptions } from "../../../../src/sdk/runtime.js";
+import type { GlobalOptions } from "@unbrained/pm-cli/sdk/runtime";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
 

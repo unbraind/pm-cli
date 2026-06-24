@@ -5,8 +5,8 @@ import type {
   SearchProviderDefinition,
   SearchProviderHit,
   SearchProviderQueryContext,
-} from "../../../../src/sdk/index.js";
-import { runAdvancedReindexPackage, runAdvancedSearchPackage } from "./runtime.js";
+} from "@unbrained/pm-cli/sdk";
+import { runAdvancedReindexPackage, runAdvancedSearchPackage } from "./runtime.ts";
 
 export const manifest = {
   name: "builtin-search-advanced",

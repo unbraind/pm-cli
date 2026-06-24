@@ -2,9 +2,9 @@ import type {
   CommandDefinition,
   ExtensionApi,
   ServiceOverrideContext,
-} from "../../../../src/sdk/index.js";
-import type { CalendarOptions } from "../../../../src/sdk/runtime.js";
-import { renderCalendarPackageOutput, runCalendarPackage } from "./runtime.js";
+} from "@unbrained/pm-cli/sdk";
+import type { CalendarOptions } from "@unbrained/pm-cli/sdk/runtime";
+import { renderCalendarPackageOutput, runCalendarPackage } from "./runtime.ts";
 
 const CALENDAR_VIEW_NAMES = ["agenda", "day", "week", "month"] as const;
 

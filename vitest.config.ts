@@ -77,8 +77,13 @@ export default defineConfig({
         "scripts/**/*.mjs",
         "plugins/*.mjs",
         "plugins/**/*.mjs",
+        // The reference extensions (starter/policy-restricted) are authored AND
+        // loaded as TypeScript and exercised through their `.ts` source, exactly
+        // like the first-party `packages/**/*.ts`. The `.ts` IS the manifest entry
+        // the loader imports directly (ADR pm-m1uz); there is no compiled `.js`, so
+        // only `.ts` (and the embedding/contract-consumer `.mjs` scripts) are
+        // tracked.
         "docs/examples/**/*.ts",
-        "docs/examples/**/*.js",
         "docs/examples/**/*.mjs",
       ],
       exclude: ["src/**/*.d.ts"],

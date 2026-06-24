@@ -5,7 +5,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 /**
  * Branch coverage for the policy-restricted-extension reference example
  * (docs/examples/policy-restricted-extension/index.ts), driven through its
- * compiled .js entrypoint and a collecting extension API.
+ * TypeScript source and a collecting extension API. The `./index.ts` source is
+ * itself the manifest entry the loader imports directly via Node's native type
+ * stripping (ADR pm-2c28 / pm-m1uz) — there is no compiled `.js`.
  */
 
 function cacheBustToken(): string {
@@ -49,7 +51,7 @@ afterEach(() => {
 describe("policy-restricted-extension example", () => {
   it("registers a command, service, and before-command hook with runtime behavior", async () => {
     const policyModule = await importRepoModule<{ default: { activate: (api: Record<string, unknown>) => void } }>(
-      "docs/examples/policy-restricted-extension/index.js",
+      "docs/examples/policy-restricted-extension/index.ts",
       "policyExample",
     );
     const collector = createPolicyApi();
@@ -71,6 +73,8 @@ describe("policy-restricted-extension example", () => {
       source: "policy-restricted-extension",
     });
 
-    expect(collector.artifacts.services[0]?.handler({ ok: true })).toEqual({ ok: true });
+    // The output_format override is an identity formatter: it receives a
+    // ServiceOverrideContext and returns its `payload` (the value to format).
+    expect(collector.artifacts.services[0]?.handler({ payload: { ok: true } })).toEqual({ ok: true });
   });
 });

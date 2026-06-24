@@ -68,7 +68,7 @@
   ],
   "scripts": {
     "build": "node scripts/prepare-build-cache.mjs && tsc -p tsconfig.json && node scripts/bundle-cli.mjs && node scripts/finalize-build.mjs",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc -p tsconfig.packages.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc -p tsconfig.packages.json && tsc -p tsconfig.examples.json",
     "start": "node dist/cli.js",
     "dev": "tsx src/cli.ts",
     "test": "node scripts/run-tests.mjs test",
@@ -114,7 +114,7 @@
     "access": "public"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.18.0"
   },
   "peerDependencies": {
     "typebox": "*"
@@ -133,7 +133,7 @@
   },
   "devDependencies": {
     "@sentry/cli": "^3.5.1",
-    "@types/node": "^20.0.0",
+    "@types/node": "^22.0.0",
     "@vitest/coverage-v8": "^4.1.9",
     "esbuild": "0.28.1",
     "tsx": "^4.22.4",

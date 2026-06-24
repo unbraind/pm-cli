@@ -1,4 +1,4 @@
-import type { CommandDefinition, ExtensionApi, GlobalOptions } from "../../../../src/sdk/index.js";
+import type { CommandDefinition, ExtensionApi, GlobalOptions } from "@unbrained/pm-cli/sdk";
 import {
   runTemplatesList as runTemplatesListPackage,
   runTemplatesSave as runTemplatesSavePackage,
@@ -6,7 +6,7 @@ import {
   type TemplatesListResult,
   type TemplatesSaveResult,
   type TemplatesShowResult,
-} from "./runtime.js";
+} from "./runtime.ts";
 
 export const manifest = {
   name: "builtin-templates",

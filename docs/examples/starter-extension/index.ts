@@ -1,6 +1,38 @@
+/**
+ * @module docs/examples/starter-extension
+ *
+ * TypeScript-first reference extension that exercises every pm extension
+ * capability surface (commands, parser, preflight, services, renderers, hooks,
+ * schema, importers/exporters, search). It is the author-facing companion to the
+ * first-party `packages/pm-*` extensions: the source is authored in TypeScript
+ * against the published SDK types (`@unbrained/pm-cli/sdk`) and is itself the
+ * `./index.ts` manifest entry the loader imports directly via Node's native type
+ * stripping (Node >=22.18) — no compile step and no committed `.js`, per ADR
+ * pm-2c28 ("authored fully in TypeScript") and pm-m1uz ("authored AND loaded as
+ * TypeScript").
+ *
+ * Typing `activate(api: ExtensionApi)` is the only annotation an author needs:
+ * every nested handler (`run`, parser/preflight/service/renderer overrides,
+ * search provider, vector store adapter) then has its `context` parameter
+ * inferred from the SDK registration contracts, so capability misuse is caught
+ * at author time instead of at `api.register*`/load time.
+ */
 import { defineExtension } from "@unbrained/pm-cli/sdk";
+import type { ExtensionApi } from "@unbrained/pm-cli/sdk";
 
-const runtimeState = {
+/**
+ * Mutable per-activation counters the lifecycle hooks increment so the
+ * `starter ping` command can echo how many times each hook kind has fired.
+ */
+interface StarterRuntimeState {
+  beforeCommandCount: number;
+  afterCommandCount: number;
+  onWriteCount: number;
+  onReadCount: number;
+  onIndexCount: number;
+}
+
+const runtimeState: StarterRuntimeState = {
   beforeCommandCount: 0,
   afterCommandCount: 0,
   onWriteCount: 0,
@@ -8,18 +40,31 @@ const runtimeState = {
   onIndexCount: 0,
 };
 
-function asRecord(value) {
+/**
+ * Narrow an unknown value to a plain string-keyed record, returning an empty
+ * object for arrays, `null`, and non-objects so handlers can index defensively
+ * even when invoked with partially-shaped runtime payloads.
+ */
+function asRecord(value: unknown): Record<string, unknown> {
   if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-    return value;
+    return value as Record<string, unknown>;
   }
   return {};
 }
 
-function asString(value, fallback = "") {
+/**
+ * Coerce an unknown value to a string, falling back to `fallback` (default `""`)
+ * for any non-string input.
+ */
+function asString(value: unknown, fallback = ""): string {
   return typeof value === "string" ? value : fallback;
 }
 
-function stableJson(value) {
+/**
+ * Serialize a value to pretty JSON, degrading to a deterministic error envelope
+ * when the value cannot be stringified (for example a circular structure).
+ */
+function stableJson(value: unknown): string {
   try {
     return JSON.stringify(value, null, 2);
   } catch {
@@ -28,7 +73,7 @@ function stableJson(value) {
 }
 
 export default defineExtension({
-  activate(api) {
+  activate(api: ExtensionApi): void {
     // commands
     api.registerCommand({
       name: "starter ping",

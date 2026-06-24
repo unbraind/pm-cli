@@ -4,11 +4,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 /**
  * Branch coverage for the starter-extension reference example
- * (docs/examples/starter-extension/index.ts), driven through its compiled .js
- * entrypoint and a collecting extension API. The tiny
+ * (docs/examples/starter-extension/index.ts), driven through its TypeScript
+ * source and a collecting extension API. The `./index.ts` source is itself the
+ * manifest entry the loader imports directly via Node's native type stripping
+ * (ADR pm-2c28 / pm-m1uz) — there is no compiled `.js`. The tiny
  * starter-extension-example.spec.ts only asserts the migration source string;
- * this file covers the remaining runtime branches (command/parser/renderer/
- * service/hook/provider/adapter behavior).
+ * this file covers the remaining runtime branches
+ * (command/parser/renderer/service/hook/provider/adapter behavior).
  */
 
 function cacheBustToken(): string {
@@ -134,7 +136,7 @@ afterEach(() => {
 describe("starter-extension example", () => {
   it("registers all artifacts and exercises every runtime branch", async () => {
     const starterModule = await importRepoModule<{ default: { activate: (api: Record<string, unknown>) => void } }>(
-      "docs/examples/starter-extension/index.js",
+      "docs/examples/starter-extension/index.ts",
       "starterExample",
     );
     const starterCollector = createExtensionApiCollector();

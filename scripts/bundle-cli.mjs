@@ -119,7 +119,7 @@ export async function main() {
       splitting: true,
       format: "esm",
       platform: "node",
-      target: ["node20"],
+      target: ["node22"],
       packages: "external",
       sourcemap: true,
       metafile: true,

@@ -4,6 +4,11 @@
     "rootDir": ".",
     "types": ["node"],
     "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@unbrained/pm-cli/sdk": ["./src/sdk/index.ts"],
+      "@unbrained/pm-cli/sdk/runtime": ["./src/sdk/runtime.ts"]
+    },
     "tsBuildInfoFile": ".cache/tsbuildinfo/packages.tsbuildinfo"
   },
   "include": ["packages/**/*.ts"]

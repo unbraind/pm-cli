@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/unbraind/pm-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/unbraind/pm-cli/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/%40unbrained%2Fpm-cli)](https://www.npmjs.com/package/%40unbrained%2Fpm-cli)
-[![Node >=20](https://img.shields.io/node/v/%40unbrained%2Fpm-cli)](https://nodejs.org)
+[![Node >=22.18](https://img.shields.io/node/v/%40unbrained%2Fpm-cli)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 `pm` is a git-native project management CLI for humans and coding agents. It stores work items in reviewable repository files, records every mutation in append-only history, and defaults to sparse TOON output so agents can spend fewer tokens while still getting deterministic data.
@@ -29,7 +29,7 @@ For optional in-terminal docs routing, use the canonical [guide topic map](docs/
 
 ## Install
 
-`pm-cli` requires Node.js 20 or newer.
+`pm-cli` requires Node.js 22.18 or newer (extensions and packages are authored and loaded as TypeScript via Node's native type stripping, so no compiled `.js` is shipped or committed).
 
 ```bash
 npm install -g @unbrained/pm-cli
