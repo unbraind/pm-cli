@@ -2,7 +2,7 @@ import type {
   CommandDefinition,
   ExtensionApi,
   ServiceOverrideContext,
-} from "../../../../src/sdk/index.js";
+} from "@unbrained/pm-cli/sdk";
 import {
   renderGuideShellPackageOutput,
   runCompletionPackage,
@@ -10,7 +10,7 @@ import {
   runCompletionTagsPackage,
   runCompletionTypesPackage,
   runGuidePackage,
-} from "./runtime.js";
+} from "./runtime.ts";
 
 export const manifest = {
   name: "builtin-guide-shell",

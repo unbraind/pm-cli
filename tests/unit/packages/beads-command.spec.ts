@@ -108,6 +108,11 @@ async function importBeadsRuntimeLoader(): Promise<{
   };
 }
 
+async function importBeadsRuntime(): Promise<unknown> {
+  const runtimePath = path.join(process.cwd(), "packages", "pm-beads", "extensions", "beads", "runtime.ts");
+  return import(`${pathToFileURL(runtimePath).href}?beadsRuntime=${cacheBustToken()}`);
+}
+
 describe("runBeadsImport", () => {
   afterEach(() => {
     clearActiveExtensionHooks();
@@ -835,7 +840,7 @@ describe("runBeadsImport", () => {
       const packageRuntimeDir = path.join(tempRoot, "packages", "pm-beads", "extensions", "beads");
       await mkdir(packageRuntimeDir, { recursive: true });
       await writeFile(
-        path.join(packageRuntimeDir, "runtime.js"),
+        path.join(packageRuntimeDir, "runtime.ts"),
         [
           "export const marker = 'custom-beads-runtime';",
           "export async function runBeadsImport() {",
@@ -868,7 +873,7 @@ describe("runBeadsImport", () => {
       const throwingRuntimeDir = path.join(throwRoot, ".agents", "pm", "extensions", "beads");
       await mkdir(throwingRuntimeDir, { recursive: true });
       await writeFile(
-        path.join(throwingRuntimeDir, "runtime.js"),
+        path.join(throwingRuntimeDir, "runtime.ts"),
         ["throw new Error('beads-loader-boom');", ""].join("\n"),
         "utf8",
       );
@@ -887,6 +892,76 @@ describe("runBeadsImport", () => {
       }
     } finally {
       await rm(throwRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("reports a deterministic error when the configured SDK root is invalid", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-beads-sdk-missing-"));
+    const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
+    process.env.PM_CLI_PACKAGE_ROOT = tempRoot;
+    try {
+      let thrown: unknown;
+      try {
+        await importBeadsRuntime();
+      } catch (error: unknown) {
+        thrown = error;
+      }
+      expect(thrown).toBeInstanceOf(Error);
+      expect((thrown as Error).message).toContain("builtin-beads failed to load SDK exports");
+      expect((thrown as Error & { cause?: unknown }).cause).toBeInstanceOf(Error);
+    } finally {
+      if (previousPackageRoot === undefined) {
+        delete process.env.PM_CLI_PACKAGE_ROOT;
+      } else {
+        process.env.PM_CLI_PACKAGE_ROOT = previousPackageRoot;
+      }
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects a configured SDK module with incomplete beads exit codes", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-beads-sdk-exit-code-"));
+    const sdkDir = path.join(tempRoot, "dist", "sdk");
+    const realSdkUrl = pathToFileURL(path.join(process.cwd(), "src", "sdk", "index.ts")).href;
+    await mkdir(sdkDir, { recursive: true });
+    await writeFile(
+      path.join(sdkDir, "index.js"),
+      [`export * from ${JSON.stringify(realSdkUrl)};`, "export const EXIT_CODE = { NOT_FOUND: 66 };\n"].join("\n"),
+      "utf8",
+    );
+    const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
+    process.env.PM_CLI_PACKAGE_ROOT = tempRoot;
+    try {
+      const failure = await importBeadsRuntime().catch((error: unknown) => error);
+      expect(failure).toBeInstanceOf(Error);
+      expect((failure as Error).message).toContain("builtin-beads failed to load SDK exports");
+      expect("cause" in (failure as object)).toBe(false);
+    } finally {
+      if (previousPackageRoot === undefined) {
+        delete process.env.PM_CLI_PACKAGE_ROOT;
+      } else {
+        process.env.PM_CLI_PACKAGE_ROOT = previousPackageRoot;
+      }
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("reports a deterministic error when the configured SDK module is incomplete", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-beads-sdk-incomplete-"));
+    const sdkDir = path.join(tempRoot, "dist", "sdk");
+    await mkdir(sdkDir, { recursive: true });
+    await writeFile(path.join(sdkDir, "index.js"), "export const DEPENDENCY_KIND_VALUES = [];\n", "utf8");
+    const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
+    process.env.PM_CLI_PACKAGE_ROOT = tempRoot;
+    try {
+      await expect(importBeadsRuntime()).rejects.toThrow("builtin-beads failed to load SDK exports");
+    } finally {
+      if (previousPackageRoot === undefined) {
+        delete process.env.PM_CLI_PACKAGE_ROOT;
+      } else {
+        process.env.PM_CLI_PACKAGE_ROOT = previousPackageRoot;
+      }
+      await rm(tempRoot, { recursive: true, force: true });
     }
   });
 });

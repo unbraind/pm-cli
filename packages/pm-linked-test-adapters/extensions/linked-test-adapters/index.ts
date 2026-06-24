@@ -1,11 +1,11 @@
-import type { CommandDefinition, ExtensionApi } from "../../../../src/sdk/index.js";
+import type { CommandDefinition, ExtensionApi } from "@unbrained/pm-cli/sdk";
 import {
   runTestRunsListPackage,
   runTestRunsLogsPackage,
   runTestRunsResumePackage,
   runTestRunsStatusPackage,
   runTestRunsStopPackage,
-} from "./runtime.js";
+} from "./runtime.ts";
 
 export const manifest = {
   name: "builtin-linked-test-adapters",

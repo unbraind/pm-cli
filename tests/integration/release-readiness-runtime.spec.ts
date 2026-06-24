@@ -1792,7 +1792,9 @@ describe("release readiness runtime coverage", () => {
     expect(packageJson.scripts?.build).toBe(
       "node scripts/prepare-build-cache.mjs && tsc -p tsconfig.json && node scripts/bundle-cli.mjs && node scripts/finalize-build.mjs",
     );
-    expect(packageJson.scripts?.typecheck).toBe("tsc --noEmit -p tsconfig.json && tsc -p tsconfig.packages.json");
+    expect(packageJson.scripts?.typecheck).toBe(
+      "tsc --noEmit -p tsconfig.json && tsc -p tsconfig.packages.json && tsc -p tsconfig.examples.json",
+    );
     expect(packageJson.scripts?.["version:check"]).toBe("node scripts/release-version.mjs check");
     expect(packageJson.scripts?.["version:next"]).toBe("node scripts/release-version.mjs next");
     expect(packageJson.scripts?.["quality:static"]).toBe("node scripts/release/static-quality-gate.mjs");
@@ -1874,7 +1876,12 @@ describe("release readiness runtime coverage", () => {
       ...(await listFilesRelativeToRepo("packages", [".ts"])),
       ...(await listFilesRelativeToRepo("scripts", [".mjs"])),
       ...(await listFilesRelativeToRepo("plugins", [".mjs"])),
-      ...(await listFilesRelativeToRepo("docs/examples", [".ts", ".js", ".mjs"])),
+      // The reference extensions are authored AND loaded as TypeScript (ADR
+      // pm-2c28 / pm-m1uz): `.ts` is both the covered source and the manifest entry
+      // the loader imports directly (no compiled `.js`), exactly as packages
+      // contribute only `.ts` above. The `.mjs` embedding/contract-consumer scripts
+      // remain authored source.
+      ...(await listFilesRelativeToRepo("docs/examples", [".ts", ".mjs"])),
     ];
     const uncoveredFiles = sourceFiles.filter((filePath) => !matchesAnyPattern(filePath, includePatterns));
     const sorted = uncoveredFiles.sort((left, right) => left.localeCompare(right));
@@ -1887,7 +1894,6 @@ describe("release readiness runtime coverage", () => {
         "plugins/*.mjs",
         "plugins/**/*.mjs",
         "docs/examples/**/*.ts",
-        "docs/examples/**/*.js",
         "docs/examples/**/*.mjs",
       ]),
     );

@@ -1231,18 +1231,20 @@ export async function runExtension(
       created_directory: scaffold.created_directory,
       files: scaffold.files,
       next_steps: [
-        // The scaffold is authored in TypeScript (ADR pm-2c28); the manifest's
-        // ./index.js entry only exists after a compile, so building comes first.
+        // Extensions are authored AND loaded as TypeScript (ADR pm-2c28 / pm-m1uz):
+        // the manifest entry is ./index.ts and pm strips types on load (Node
+        // >=22.18), so there is no compile/build step — install dependencies, then
+        // install the scaffold directly.
         ...(options.vocabulary === "package"
-          ? [`Build the package: cd ${quotedShellTargetPath}, then run "npm install" and "npm run build"`]
+          ? [`Install dependencies: cd ${quotedShellTargetPath}, then run "npm install"`]
           : [
-              `Build the extension: cd ${quotedShellTargetPath}, then run "npm install -D typescript @types/node @unbrained/pm-cli" and "npx tsc"`,
+              `Install type-check dependencies: cd ${quotedShellTargetPath}, then run "npm install -D typescript @types/node @unbrained/pm-cli"`,
             ]),
         `Install the scaffold: ${options.vocabulary === "package" ? "pm install --project" : "pm extension --install --project"} ${quotedTargetPath}`,
         `Smoke-test command path: pm ${scaffold.command_name}`,
         ...(options.vocabulary === "package"
-          ? [`Validate the sample test: cd ${quotedShellTargetPath}, then run "npm test"`]
-          : []),
+          ? [`Validate the package: cd ${quotedShellTargetPath}, then run "npm run typecheck" and "npm test"`]
+          : [`Type-check the source (optional): cd ${quotedShellTargetPath}, then run "npx tsc --noEmit"`]),
         `Run diagnostics: ${options.vocabulary === "package" ? "pm package doctor" : "pm extension --doctor"} --project --detail summary`,
       ],
     });

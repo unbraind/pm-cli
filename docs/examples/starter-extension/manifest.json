@@ -2,7 +2,7 @@
   "name": "starter-extension",
   "version": "0.1.0",
   "description": "SDK-first starter extension demonstrating all pm extension capabilities.",
-  "entry": "./index.js",
+  "entry": "./index.ts",
   "manifest_version": 2,
   "pm_min_version": "2026.5.0",
   "trusted": true,

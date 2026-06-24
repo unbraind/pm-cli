@@ -79,7 +79,7 @@ describe.each(LOADERS)("$pkg runtime-loader", ({ pkg, ext }) => {
     const root = await createTempRoot(`pm-${ext}-loader-agents-`);
     const runtimeDir = path.join(root, ".agents", "pm", "extensions", ext);
     await mkdir(runtimeDir, { recursive: true });
-    await writeFile(path.join(runtimeDir, "runtime.js"), "export const marker = 'agents-runtime';\n", "utf8");
+    await writeFile(path.join(runtimeDir, "runtime.ts"), "export const marker = 'agents-runtime';\n", "utf8");
     process.env[PM_PACKAGE_ROOT_ENV] = root;
     const loader = await importLoader(pkg, ext);
     const runtime = await loader.loadPackageRuntimeModule();
@@ -90,7 +90,7 @@ describe.each(LOADERS)("$pkg runtime-loader", ({ pkg, ext }) => {
     const root = await createTempRoot(`pm-${ext}-loader-argv-`);
     const runtimeDir = path.join(root, "packages", pkg, "extensions", ext);
     await mkdir(runtimeDir, { recursive: true });
-    await writeFile(path.join(runtimeDir, "runtime.js"), "export const marker = 'argv-runtime';\n", "utf8");
+    await writeFile(path.join(runtimeDir, "runtime.ts"), "export const marker = 'argv-runtime';\n", "utf8");
     const fakeBinDir = path.join(root, "bin");
     await mkdir(fakeBinDir, { recursive: true });
     delete process.env[PM_PACKAGE_ROOT_ENV];
@@ -104,13 +104,63 @@ describe.each(LOADERS)("$pkg runtime-loader", ({ pkg, ext }) => {
     const root = await createTempRoot(`pm-${ext}-loader-throw-`);
     const runtimeDir = path.join(root, ".agents", "pm", "extensions", ext);
     await mkdir(runtimeDir, { recursive: true });
-    await writeFile(path.join(runtimeDir, "runtime.js"), "throw new Error('explicit-runtime-boom');\n", "utf8");
+    await writeFile(path.join(runtimeDir, "runtime.ts"), "throw new Error('explicit-runtime-boom');\n", "utf8");
     process.env[PM_PACKAGE_ROOT_ENV] = root;
     const loader = await importLoader(pkg, ext);
     await expect(loader.loadPackageRuntimeModule()).rejects.toThrow("explicit-runtime-boom");
   });
 
-  it("falls back to the sibling runtime.js when no candidate roots resolve", async () => {
+  it("preserves missing dependency errors from a discovered runtime", async () => {
+    const root = await createTempRoot(`pm-${ext}-loader-missing-dep-`);
+    const runtimeDir = path.join(root, ".agents", "pm", "extensions", ext);
+    await mkdir(runtimeDir, { recursive: true });
+    await writeFile(path.join(runtimeDir, "runtime.ts"), 'import "@missing/runtime-dep";\n', "utf8");
+    process.env[PM_PACKAGE_ROOT_ENV] = root;
+    const loader = await importLoader(pkg, ext);
+    await expect(loader.loadPackageRuntimeModule()).rejects.toThrow("@missing/runtime-dep");
+  });
+
+  it("continues when Node reports the runtime path on a missing runtime error", async () => {
+    const root = await createTempRoot(`pm-${ext}-loader-error-path-`);
+    const agentsRuntimeDir = path.join(root, ".agents", "pm", "extensions", ext);
+    const packageRuntimeDir = path.join(root, "packages", pkg, "extensions", ext);
+    const agentsRuntimePath = path.join(agentsRuntimeDir, "runtime.ts");
+    await mkdir(agentsRuntimeDir, { recursive: true });
+    await mkdir(packageRuntimeDir, { recursive: true });
+    await writeFile(
+      agentsRuntimePath,
+      `throw { code: "ERR_MODULE_NOT_FOUND", path: ${JSON.stringify(agentsRuntimePath)}, message: "missing runtime" };\n`,
+      "utf8",
+    );
+    await writeFile(path.join(packageRuntimeDir, "runtime.ts"), "export const marker = 'package-runtime';\n", "utf8");
+    process.env[PM_PACKAGE_ROOT_ENV] = root;
+    const loader = await importLoader(pkg, ext);
+    const runtime = await loader.loadPackageRuntimeModule();
+    expect(runtime.marker).toBe("package-runtime");
+  });
+
+  it("continues when Node reports a forward-slashed missing runtime path", async () => {
+    const parent = await createTempRoot(`pm-${ext}-loader-windows-message-`);
+    const root = path.join(parent, "C:\\pm\\project");
+    const agentsRuntimeDir = path.join(root, ".agents", "pm", "extensions", ext);
+    const packageRuntimeDir = path.join(root, "packages", pkg, "extensions", ext);
+    const agentsRuntimePath = path.join(agentsRuntimeDir, "runtime.ts");
+    const normalizedRuntimePath = agentsRuntimePath.replace(/\\/g, "/");
+    await mkdir(agentsRuntimeDir, { recursive: true });
+    await mkdir(packageRuntimeDir, { recursive: true });
+    await writeFile(
+      agentsRuntimePath,
+      `throw { code: "ERR_MODULE_NOT_FOUND", message: "Cannot find module '${normalizedRuntimePath}'" };\n`,
+      "utf8",
+    );
+    await writeFile(path.join(packageRuntimeDir, "runtime.ts"), "export const marker = 'normalized-path-runtime';\n", "utf8");
+    process.env[PM_PACKAGE_ROOT_ENV] = root;
+    const loader = await importLoader(pkg, ext);
+    const runtime = await loader.loadPackageRuntimeModule();
+    expect(runtime.marker).toBe("normalized-path-runtime");
+  });
+
+  it("falls back to the sibling runtime.ts when no candidate roots resolve", async () => {
     const emptyRoot = await createTempRoot(`pm-${ext}-loader-empty-`);
     const deepDir = path.join(emptyRoot, "a", "b", "c");
     await mkdir(deepDir, { recursive: true });
@@ -124,7 +174,7 @@ describe.each(LOADERS)("$pkg runtime-loader", ({ pkg, ext }) => {
 
   it("skips ERR_MODULE_NOT_FOUND candidates and throws when nothing resolves", async () => {
     const root = await createTempRoot(`pm-${ext}-loader-missing-`);
-    const phantomLocal = path.join(process.cwd(), "packages", pkg, "extensions", ext, "runtime.js");
+    const phantomLocal = path.join(process.cwd(), "packages", pkg, "extensions", ext, "runtime.ts");
 
     vi.doMock("node:fs", () => ({
       existsSync: (target: string) => path.resolve(String(target)) !== path.resolve(phantomLocal),
@@ -139,9 +189,9 @@ describe.each(LOADERS)("$pkg runtime-loader", ({ pkg, ext }) => {
   });
 
   it("swallows ERR_MODULE_NOT_FOUND from the sibling fallback then throws the summary", async () => {
-    const realLocal = path.resolve(path.join(process.cwd(), "packages", pkg, "extensions", ext, "runtime.js"));
+    const realLocal = path.resolve(path.join(process.cwd(), "packages", pkg, "extensions", ext, "runtime.ts"));
     const phantomDir = await createTempRoot(`pm-${ext}-loader-phantom-`);
-    const phantomLocal = path.join(phantomDir, "runtime.js");
+    const phantomLocal = path.join(phantomDir, "runtime.ts");
 
     vi.doMock("node:fs", () => ({
       existsSync: (target: string) => path.resolve(String(target)) === realLocal,
@@ -168,9 +218,9 @@ describe.each(LOADERS)("$pkg runtime-loader", ({ pkg, ext }) => {
   });
 
   it("rethrows a non-ERR_MODULE_NOT_FOUND error from the sibling fallback", async () => {
-    const realLocal = path.resolve(path.join(process.cwd(), "packages", pkg, "extensions", ext, "runtime.js"));
+    const realLocal = path.resolve(path.join(process.cwd(), "packages", pkg, "extensions", ext, "runtime.ts"));
     const phantomDir = await createTempRoot(`pm-${ext}-loader-rethrow-`);
-    const phantomLocal = path.join(phantomDir, "runtime.js");
+    const phantomLocal = path.join(phantomDir, "runtime.ts");
     await writeFile(phantomLocal, "throw new Error('sibling-explicit-boom');\n", "utf8");
 
     vi.doMock("node:fs", () => ({
@@ -196,9 +246,9 @@ describe.each(LOADERS)("$pkg runtime-loader", ({ pkg, ext }) => {
   });
 
   it("treats an ERR_MODULE_NOT_FOUND error with a non-string message as missing", async () => {
-    const realLocal = path.resolve(path.join(process.cwd(), "packages", pkg, "extensions", ext, "runtime.js"));
+    const realLocal = path.resolve(path.join(process.cwd(), "packages", pkg, "extensions", ext, "runtime.ts"));
     const phantomDir = await createTempRoot(`pm-${ext}-loader-nonstring-`);
-    const phantomLocal = path.join(phantomDir, "runtime.js");
+    const phantomLocal = path.join(phantomDir, "runtime.ts");
     await writeFile(phantomLocal, "throw { code: 'ERR_MODULE_NOT_FOUND', message: 12345 };\n", "utf8");
 
     vi.doMock("node:fs", () => ({

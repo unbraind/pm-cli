@@ -1,4 +1,4 @@
-import type { ExtensionApi } from "../../../../src/sdk/index.js";
+import type { ExtensionApi } from "@unbrained/pm-cli/sdk";
 
 export const manifest = {
   name: "builtin-lifecycle-hooks",

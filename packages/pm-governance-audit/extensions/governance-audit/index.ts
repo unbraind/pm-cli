@@ -1,12 +1,12 @@
 import { appendFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
-import type { CommandDefinition, ExtensionApi, OnReadHookContext, OnWriteHookContext } from "../../../../src/sdk/index.js";
+import type { CommandDefinition, ExtensionApi, OnReadHookContext, OnWriteHookContext } from "@unbrained/pm-cli/sdk";
 import {
   runCommentsAuditPackage,
   runDedupeAuditPackage,
   runDedupeMergePackage,
   runNormalizePackage,
-} from "./runtime.js";
+} from "./runtime.ts";
 
 export const manifest = {
   name: "builtin-governance-audit",

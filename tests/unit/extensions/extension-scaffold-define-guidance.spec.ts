@@ -54,9 +54,10 @@ describe("extension scaffold define builder guidance", () => {
     expect(importerReadme).toContain('long: "--destination"');
   });
 
-  it("scaffolds a package as a buildable TypeScript project (tsconfig + build script + ignored output)", () => {
+  it("scaffolds a package as a TypeScript-only project (type-check tsconfig + .ts entry, no compiled output)", () => {
     const scaffold = buildStarterExtensionScaffoldFiles("tool-kit", "tool kit ping", "package", "commands");
     const packageJson = JSON.parse(scaffold["package.json"] ?? "{}") as {
+      engines?: Record<string, string>;
       scripts?: Record<string, string>;
       devDependencies?: Record<string, string>;
     };
@@ -65,31 +66,36 @@ describe("extension scaffold define builder guidance", () => {
       include?: string[];
     };
 
-    // The package builds index.ts to the ./index.js manifest entry, and `test`
-    // compiles before running the emitted *.test.js (Node 20 cannot strip types).
-    expect(packageJson.scripts?.build).toBe("tsc");
-    expect(packageJson.scripts?.test).toBe("tsc && node --test");
+    // pm loads the ./index.ts manifest entry directly via Node's native type
+    // stripping (Node >=22.18): there is no build step, `typecheck` validates the
+    // source, and `test` runs `node --test` (which strips types on load).
+    expect(packageJson.engines?.node).toBe(">=22.18.0");
+    expect(packageJson.scripts?.build).toBeUndefined();
+    expect(packageJson.scripts?.typecheck).toBe("tsc --noEmit");
+    expect(packageJson.scripts?.test).toBe("node --test");
     expect(packageJson.devDependencies?.typescript).toBeTruthy();
     // `@types/node` is required: the colocated index.test.ts imports node:test/node:assert.
     expect(packageJson.devDependencies?.["@types/node"]).toBeTruthy();
     expect(tsconfig.compilerOptions?.strict).toBe(true);
     expect(tsconfig.compilerOptions?.module).toBe("NodeNext");
     expect(tsconfig.compilerOptions?.types).toEqual(["node"]);
-    // No `outDir`: tsc auto-excludes its outDir, so an in-package outDir would leave
-    // the *.ts inputs unmatched (TS18003). The output lands beside the source.
+    // Type-check-only: noEmit (no compiled output) plus allowImportingTsExtensions
+    // so index.test.ts can import the sibling ./index.ts entry with its real extension.
+    expect(tsconfig.compilerOptions?.noEmit).toBe(true);
+    expect(tsconfig.compilerOptions?.allowImportingTsExtensions).toBe(true);
     expect(tsconfig.compilerOptions?.outDir).toBeUndefined();
-    // Recursive include so subdirectory modules compile as the package grows.
+    // Recursive include so subdirectory modules type-check as the package grows.
     expect(tsconfig.include).toEqual(["**/*.ts"]);
-    // The sample test and entrypoint are TypeScript; the manifest still loads the
-    // compiled ./index.js, and the compiled output is git-ignored.
-    expect(scaffold["index.test.ts"]).toContain('import extension from "./index.js";');
+    // The sample test imports the .ts entry directly; the manifest loads ./index.ts
+    // and no .js is emitted or committed.
+    expect(scaffold["index.test.ts"]).toContain('import extension from "./index.ts";');
     expect(scaffold["index.js"]).toBeUndefined();
-    expect(JSON.parse(scaffold["manifest.json"] ?? "{}").entry).toBe("./index.js");
-    expect(scaffold[".gitignore"]).toContain("*.js");
-    expect(scaffold[".gitignore"]).toContain("*.test.js");
-    expect(scaffold[".gitignore"]).toContain("*.js.map");
-    expect(scaffold[".gitignore"]).toContain("*.d.ts");
-    expect(scaffold[".gitignore"]).toContain("*.d.ts.map");
+    expect(JSON.parse(scaffold["manifest.json"] ?? "{}").entry).toBe("./index.ts");
+    // No compiled-output ignores remain — only deps, logs, and the tsc cache.
+    expect(scaffold[".gitignore"]).toContain("node_modules/");
+    expect(scaffold[".gitignore"]).toContain("*.tsbuildinfo");
+    expect(scaffold[".gitignore"]).not.toContain("*.test.js");
+    expect(scaffold[".gitignore"]).not.toContain("*.d.ts");
   });
 
   it("scaffolds standalone extensions as TypeScript with a tsconfig and build guidance", () => {

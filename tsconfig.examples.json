@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "types": ["node"],
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@unbrained/pm-cli/sdk": ["./src/sdk/index.ts"]
+    },
+    "tsBuildInfoFile": ".cache/tsbuildinfo/examples.tsbuildinfo"
+  },
+  "include": ["docs/examples/**/*.ts"]
+}

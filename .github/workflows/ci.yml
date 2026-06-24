@@ -27,7 +27,7 @@ concurrency:
 
 jobs:
   build-foundation:
-    name: Build foundation (Ubuntu, Node 20)
+    name: Build foundation (Ubuntu, Node 24)
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -44,7 +44,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
 
       - name: Restore TypeScript and Vitest caches
@@ -53,9 +53,9 @@ jobs:
           path: |
             .cache/tsbuildinfo
             .cache/vitest
-          key: pm-cli-validation-cache-${{ runner.os }}-node20-${{ hashFiles('pnpm-lock.yaml', 'tsconfig*.json', 'vitest.config.ts', 'src/**/*.ts', 'tests/**/*.ts', 'packages/**/*.ts') }}
+          key: pm-cli-validation-cache-${{ runner.os }}-node24-${{ hashFiles('pnpm-lock.yaml', 'tsconfig*.json', 'vitest.config.ts', 'src/**/*.ts', 'tests/**/*.ts', 'packages/**/*.ts') }}
           restore-keys: |
-            pm-cli-validation-cache-${{ runner.os }}-node20-
+            pm-cli-validation-cache-${{ runner.os }}-node24-
             pm-cli-validation-cache-${{ runner.os }}-
 
       - name: Restore LanceDB cache
@@ -63,9 +63,9 @@ jobs:
         with:
           path: |
             .agents/pm/search/lancedb
-          key: pm-cli-observability-cache-${{ runner.os }}-node20-${{ hashFiles('pnpm-lock.yaml', '.agents/pm/settings.json', '.agents/pm/**/*.toon', '.agents/pm/**/*.md', 'src/**/*.ts', 'scripts/**/*.mjs', 'tests/**/*.ts') }}
+          key: pm-cli-observability-cache-${{ runner.os }}-node24-${{ hashFiles('pnpm-lock.yaml', '.agents/pm/settings.json', '.agents/pm/**/*.toon', '.agents/pm/**/*.md', 'src/**/*.ts', 'scripts/**/*.mjs', 'tests/**/*.ts') }}
           restore-keys: |
-            pm-cli-observability-cache-${{ runner.os }}-node20-
+            pm-cli-observability-cache-${{ runner.os }}-node24-
             pm-cli-observability-cache-${{ runner.os }}-
 
       - name: Install dependencies
@@ -77,7 +77,7 @@ jobs:
       - name: Upload dist artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: dist-node20-ubuntu
+          name: dist-node24-ubuntu
           path: dist
           if-no-files-found: error
 
@@ -91,11 +91,9 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            node: 20
-          - os: macos-latest
-            node: 20
-          - os: ubuntu-latest
             node: 22
+          - os: macos-latest
+            node: 24
           - os: ubuntu-latest
             node: 24
 
@@ -111,11 +109,22 @@ jobs:
       - name: Download dist artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: dist-node20-ubuntu
+          name: dist-node24-ubuntu
           path: dist
 
       - name: Dist artifact version smoke
         run: node dist/cli.js --version
+
+      - name: Node 22 TypeScript extension loading smoke
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 22
+        shell: bash
+        run: |
+          temp_root="$(mktemp -d)"
+          runtime_dir="${temp_root}/.agents/pm/extensions/beads"
+          mkdir -p "${runtime_dir}"
+          printf 'export const marker: string = "node22-ts-runtime";\n' > "${runtime_dir}/runtime.ts"
+          export PM_CLI_PACKAGE_ROOT="${temp_root}"
+          node --input-type=module -e 'const { pathToFileURL } = await import("node:url"); const loader = await import(pathToFileURL(`${process.env.GITHUB_WORKSPACE}/packages/pm-beads/extensions/beads/runtime-loader.ts`).href); const runtime = await loader.loadPackageRuntimeModule(); if (runtime.marker !== "node22-ts-runtime") throw new Error(`unexpected runtime marker: ${String(runtime.marker)}`);'
 
   gates:
     name: Gates (${{ matrix.gate }})
@@ -146,7 +155,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
 
       - name: Restore TypeScript and Vitest caches
@@ -155,9 +164,9 @@ jobs:
           path: |
             .cache/tsbuildinfo
             .cache/vitest
-          key: pm-cli-validation-cache-${{ runner.os }}-node20-${{ hashFiles('pnpm-lock.yaml', 'tsconfig*.json', 'vitest.config.ts', 'src/**/*.ts', 'tests/**/*.ts', 'packages/**/*.ts') }}
+          key: pm-cli-validation-cache-${{ runner.os }}-node24-${{ hashFiles('pnpm-lock.yaml', 'tsconfig*.json', 'vitest.config.ts', 'src/**/*.ts', 'tests/**/*.ts', 'packages/**/*.ts') }}
           restore-keys: |
-            pm-cli-validation-cache-${{ runner.os }}-node20-
+            pm-cli-validation-cache-${{ runner.os }}-node24-
             pm-cli-validation-cache-${{ runner.os }}-
 
       - name: Restore LanceDB cache
@@ -165,9 +174,9 @@ jobs:
         with:
           path: |
             .agents/pm/search/lancedb
-          key: pm-cli-observability-cache-${{ runner.os }}-node20-${{ hashFiles('pnpm-lock.yaml', '.agents/pm/settings.json', '.agents/pm/**/*.toon', '.agents/pm/**/*.md', 'src/**/*.ts', 'scripts/**/*.mjs', 'tests/**/*.ts') }}
+          key: pm-cli-observability-cache-${{ runner.os }}-node24-${{ hashFiles('pnpm-lock.yaml', '.agents/pm/settings.json', '.agents/pm/**/*.toon', '.agents/pm/**/*.md', 'src/**/*.ts', 'scripts/**/*.mjs', 'tests/**/*.ts') }}
           restore-keys: |
-            pm-cli-observability-cache-${{ runner.os }}-node20-
+            pm-cli-observability-cache-${{ runner.os }}-node24-
             pm-cli-observability-cache-${{ runner.os }}-
 
       - name: Install dependencies
@@ -176,7 +185,7 @@ jobs:
       - name: Download dist artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: dist-node20-ubuntu
+          name: dist-node24-ubuntu
           path: dist
 
       - name: Run coverage gate
@@ -222,12 +231,12 @@ jobs:
         if: always() && matrix.gate == 'coverage'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: coverage-node20-ubuntu-latest
+          name: coverage-node24-ubuntu-latest
           path: coverage
           if-no-files-found: ignore
 
   windows-regression:
-    name: Windows regression (Node 20)
+    name: Windows regression (Node 24)
     # Gate this focused Windows slice on a green foundation build; the job is
     # otherwise self-contained because it must install and run on windows-latest.
     needs: build-foundation
@@ -245,7 +254,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
 
       - name: Restore TypeScript and Vitest caches
@@ -254,9 +263,9 @@ jobs:
           path: |
             .cache/tsbuildinfo
             .cache/vitest
-          key: pm-cli-validation-cache-${{ runner.os }}-node20-${{ hashFiles('pnpm-lock.yaml', 'tsconfig*.json', 'vitest.config.ts', 'src/**/*.ts', 'tests/**/*.ts', 'packages/**/*.ts') }}
+          key: pm-cli-validation-cache-${{ runner.os }}-node24-${{ hashFiles('pnpm-lock.yaml', 'tsconfig*.json', 'vitest.config.ts', 'src/**/*.ts', 'tests/**/*.ts', 'packages/**/*.ts') }}
           restore-keys: |
-            pm-cli-validation-cache-${{ runner.os }}-node20-
+            pm-cli-validation-cache-${{ runner.os }}-node24-
             pm-cli-validation-cache-${{ runner.os }}-
 
       - name: Install dependencies

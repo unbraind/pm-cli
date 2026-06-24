@@ -19,7 +19,7 @@ import type {
   FlagDefinition,
   ParserOverrideContext,
   ParserOverrideDelta,
-} from "../../../../src/sdk/index.js";
+} from "@unbrained/pm-cli/sdk";
 
 export const manifest = {
   name: "builtin-command-kit",

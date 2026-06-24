@@ -559,7 +559,7 @@ describe("pm package manifest model", () => {
 
     for (const extensionDirectory of extensionDirectories) {
       const manifestPath = path.join(extensionDirectory, "manifest.json");
-      const modulePath = path.join(extensionDirectory, "index.js");
+      const modulePath = path.join(extensionDirectory, "index.ts");
       const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as { capabilities?: unknown };
       const source = await readFile(modulePath, "utf8");
       const capabilitiesMatch = source.match(/capabilities:\s*(\[[^\]]*\])/);
@@ -695,69 +695,49 @@ describe("pm package manifest model", () => {
   });
 
   it("keeps shipped package sources on the public SDK surface", async () => {
+    // ADR pm-m1uz: first-party packages ship only TypeScript source (no compiled
+    // .js). index.ts/runtime.ts author against the published `@unbrained/pm-cli/sdk`
+    // specifier, which self-resolves through the package's own `exports` map when
+    // the runtime-loader imports the runtime from inside the installed CLI tree.
     const packageSourceFiles = [
       path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "index.ts"),
       path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime-loader.ts"),
       path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime.ts"),
-      path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "index.js"),
-      path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime-loader.js"),
-      path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime.js"),
       path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "index.ts"),
       path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "runtime.ts"),
-      path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "index.js"),
-      path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "runtime.js"),
       path.join(repoRoot, "packages", "pm-command-kit", "extensions", "command-kit", "index.ts"),
-      path.join(repoRoot, "packages", "pm-command-kit", "extensions", "command-kit", "index.js"),
       path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "index.ts"),
       path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "runtime.ts"),
-      path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "index.js"),
-      path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "runtime.js"),
       path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "index.ts"),
       path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "runtime.ts"),
-      path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "index.js"),
-      path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "runtime.js"),
       path.join(repoRoot, "packages", "pm-lifecycle-hooks", "extensions", "lifecycle-hooks", "index.ts"),
-      path.join(repoRoot, "packages", "pm-lifecycle-hooks", "extensions", "lifecycle-hooks", "index.js"),
       path.join(repoRoot, "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters", "index.ts"),
       path.join(repoRoot, "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters", "runtime.ts"),
-      path.join(repoRoot, "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters", "index.js"),
-      path.join(repoRoot, "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters", "runtime.js"),
       path.join(repoRoot, "packages", "pm-search-advanced", "extensions", "search-advanced", "index.ts"),
       path.join(repoRoot, "packages", "pm-search-advanced", "extensions", "search-advanced", "runtime.ts"),
-      path.join(repoRoot, "packages", "pm-search-advanced", "extensions", "search-advanced", "index.js"),
-      path.join(repoRoot, "packages", "pm-search-advanced", "extensions", "search-advanced", "runtime.js"),
       path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "index.ts"),
       path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "runtime.ts"),
-      path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "index.js"),
-      path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "runtime.js"),
       path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "index.ts"),
       path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "runtime-loader.ts"),
       path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "runtime.ts"),
-      path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "index.js"),
-      path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "runtime-loader.js"),
-      path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "runtime.js"),
     ];
 
     for (const sourceFile of packageSourceFiles) {
       const source = await readFile(sourceFile, "utf8");
-      expect(source).not.toMatch(/["']\.\.\/\.\.\/\.\.\/\.\.\/(?:src|dist)\/(?:core|types)\//);
-      if (sourceFile.endsWith("runtime.js")) {
-        const referencesDistSdk =
-          source.includes("../../../../dist/sdk/index.js") ||
-          source.includes("../../../../dist/sdk/runtime.js") ||
-          source.includes('"dist", "sdk", "index.js"') ||
-          source.includes('"dist", "sdk", "runtime.js"');
-        expect(referencesDistSdk).toBe(true);
-      }
-      if (sourceFile.endsWith(".ts") && !sourceFile.endsWith("runtime-loader.ts")) {
-        const referencesSrcSdk =
-          source.includes("../../../../src/sdk/index.js") ||
-          source.includes("../../../../src/sdk/runtime.js");
-        expect(referencesSrcSdk).toBe(true);
-      }
-      if (sourceFile.endsWith("runtime-loader.ts") || sourceFile.endsWith("runtime-loader.js")) {
-        expect(source).not.toContain("../../../../src/sdk/");
-        expect(source).not.toContain("../../../../dist/sdk/");
+      // Never reach into deep CLI internals; only the public SDK surface is allowed.
+      expect(source, sourceFile).not.toMatch(/["']\.\.\/\.\.\/\.\.\/\.\.\/(?:src|dist)\/(?:core|types)\//);
+      // No package source carries a relative path into the CLI's src/dist SDK either:
+      // the published specifier is the only sanctioned SDK surface post-ADR pm-m1uz.
+      expect(source, sourceFile).not.toContain("../../../../src/sdk/");
+      expect(source, sourceFile).not.toContain("../../../../dist/sdk/");
+      if (sourceFile.endsWith("runtime-loader.ts")) {
+        // The generated loader stays import-light so copied installs load it without
+        // resolving the SDK at module-evaluation time.
+        expect(source, sourceFile).not.toContain("@unbrained/pm-cli");
+      } else {
+        // index.ts / runtime.ts author against the published SDK specifier (resolved
+        // via the package's own exports map at load time).
+        expect(source, sourceFile).toMatch(/from "@unbrained\/pm-cli\/sdk(?:\/(?:runtime|testing))?"/);
       }
     }
   });

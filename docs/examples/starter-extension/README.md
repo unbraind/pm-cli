@@ -6,9 +6,21 @@ Use it to learn APIs, then narrow capabilities for production extensions.
 
 ## Contents
 
-- `manifest.json` -> extension metadata/capabilities
+- `manifest.json` -> extension metadata/capabilities (the `entry` points at `index.ts`)
 - `package.json` -> local dependency metadata
-- `index.js` -> capability demonstrations
+- `index.ts` -> TypeScript source AND the manifest entry the loader imports directly
+
+## Authoring (TypeScript-first)
+
+Per ADR pm-2c28 / pm-m1uz, pm extensions are authored **and loaded** as TypeScript:
+`index.ts` is both the source and the manifest `entry`, and pm imports it directly
+via Node's native type stripping (Node >=22.18) — there is no compile step and no
+committed `index.js`, exactly like the first-party `packages/pm-*` extensions. Copy
+this example and run it as-is; after editing `index.ts` the change takes effect on
+the next install/reload. Run `npx tsc --noEmit` to type-check, or scaffold a new
+extension via `pm extension init`. Typing only `activate(api: ExtensionApi)` is
+enough for every nested handler's `context` to be inferred from the SDK
+registration contracts.
 
 ## End-to-End Run
 

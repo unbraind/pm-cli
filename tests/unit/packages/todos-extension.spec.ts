@@ -34,6 +34,11 @@ async function importTodosRuntimeLoader(): Promise<{
   };
 }
 
+async function importTodosRuntime(): Promise<unknown> {
+  const runtimePath = path.join(process.cwd(), "packages", "pm-todos", "extensions", "todos", "runtime.ts");
+  return import(`${pathToFileURL(runtimePath).href}?todosRuntime=${cacheBustToken()}`);
+}
+
 describe("built-in todos extension import/export", () => {
   afterEach(() => {
     clearActiveExtensionHooks();
@@ -1295,10 +1300,10 @@ describe("built-in todos extension import/export", () => {
 
   it("records export warnings when located items are missing or unreadable", async () => {
     await withTempPmPath(async (context) => {
-      const itemStoreModulePath = "../../../dist/core/store/item-store.js";
+      const itemStoreModulePath = "../../../src/core/store/item-store.js";
       vi.resetModules();
       vi.doMock(itemStoreModulePath, async () => {
-        const actualModule = (await vi.importActual(itemStoreModulePath)) as typeof import("../../../dist/core/store/item-store.js");
+        const actualModule = (await vi.importActual(itemStoreModulePath)) as typeof import("../../../src/core/store/item-store.js");
         return {
           ...actualModule,
           listAllFrontMatter: async () => [{ id: "raw-id" }, { id: "pm-read-failed" }],
@@ -1318,7 +1323,7 @@ describe("built-in todos extension import/export", () => {
         };
       });
 
-      const mockedModule = await import("../../../packages/pm-todos/extensions/todos/runtime.js");
+      const mockedModule = await import("../../../packages/pm-todos/extensions/todos/runtime.ts");
       const exported = await mockedModule.runTodosExport(
         { folder: path.join(context.tempRoot, "todos-mocked-export") },
         { path: context.pmPath },
@@ -1333,10 +1338,10 @@ describe("built-in todos extension import/export", () => {
 
   it("marks todos markdown as invalid when split front-matter parses to non-object JSON", async () => {
     await withTempPmPath(async (context) => {
-      const itemFormatModulePath = "../../../dist/core/item/item-format.js";
+      const itemFormatModulePath = "../../../src/core/item/item-format.js";
       vi.resetModules();
       vi.doMock(itemFormatModulePath, async () => {
-        const actualModule = (await vi.importActual(itemFormatModulePath)) as typeof import("../../../dist/core/item/item-format.js");
+        const actualModule = (await vi.importActual(itemFormatModulePath)) as typeof import("../../../src/core/item/item-format.js");
         return {
           ...actualModule,
           splitFrontMatter: () => ({
@@ -1346,7 +1351,7 @@ describe("built-in todos extension import/export", () => {
         };
       });
 
-      const mockedModule = await import("../../../packages/pm-todos/extensions/todos/runtime.js");
+      const mockedModule = await import("../../../packages/pm-todos/extensions/todos/runtime.ts");
       const sourceFolder = path.join(context.tempRoot, "todos-mocked-frontmatter");
       await mkdir(sourceFolder, { recursive: true });
       await writeTodoMarkdown(sourceFolder, "non-object.md", { title: "Ignored by split mock" }, "ignored");
@@ -1360,11 +1365,11 @@ describe("built-in todos extension import/export", () => {
 
   it("adds read_failed warning when source markdown cannot be read", async () => {
     await withTempPmPath(async (context) => {
-      const itemFormatModulePath = "../../../dist/core/item/item-format.js";
+      const itemFormatModulePath = "../../../src/core/item/item-format.js";
       const fsModulePath = "node:fs/promises";
       vi.resetModules();
       vi.doMock(itemFormatModulePath, async () => {
-        const actualModule = (await vi.importActual(itemFormatModulePath)) as typeof import("../../../dist/core/item/item-format.js");
+        const actualModule = (await vi.importActual(itemFormatModulePath)) as typeof import("../../../src/core/item/item-format.js");
         return actualModule;
       });
       vi.doMock(fsModulePath, async () => {
@@ -1388,7 +1393,7 @@ describe("built-in todos extension import/export", () => {
         };
       });
 
-      const mockedModule = await import("../../../packages/pm-todos/extensions/todos/runtime.js");
+      const mockedModule = await import("../../../packages/pm-todos/extensions/todos/runtime.ts");
       const sourceFolder = path.join(context.tempRoot, "todos-read-failure");
       await mkdir(sourceFolder, { recursive: true });
       await writeTodoMarkdown(sourceFolder, "unreadable.md", { title: "Unreadable file" }, "ignored");
@@ -1406,7 +1411,7 @@ describe("built-in todos extension import/export", () => {
       const packageRuntimeDir = path.join(tempRoot, "packages", "pm-todos", "extensions", "todos");
       await mkdir(packageRuntimeDir, { recursive: true });
       await writeFile(
-        path.join(packageRuntimeDir, "runtime.js"),
+        path.join(packageRuntimeDir, "runtime.ts"),
         [
           "export const marker = 'custom-todos-runtime';",
           "export async function runTodosImport() {",
@@ -1442,7 +1447,7 @@ describe("built-in todos extension import/export", () => {
       const throwingRuntimeDir = path.join(throwRoot, ".agents", "pm", "extensions", "todos");
       await mkdir(throwingRuntimeDir, { recursive: true });
       await writeFile(
-        path.join(throwingRuntimeDir, "runtime.js"),
+        path.join(throwingRuntimeDir, "runtime.ts"),
         ["throw new Error('todos-loader-boom');", ""].join("\n"),
         "utf8",
       );
@@ -1461,6 +1466,76 @@ describe("built-in todos extension import/export", () => {
       }
     } finally {
       await rm(throwRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("reports a deterministic error when the configured SDK root is invalid", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-todos-sdk-missing-"));
+    const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
+    process.env.PM_CLI_PACKAGE_ROOT = tempRoot;
+    try {
+      let thrown: unknown;
+      try {
+        await importTodosRuntime();
+      } catch (error: unknown) {
+        thrown = error;
+      }
+      expect(thrown).toBeInstanceOf(Error);
+      expect((thrown as Error).message).toContain("builtin-todos failed to load SDK exports");
+      expect((thrown as Error & { cause?: unknown }).cause).toBeInstanceOf(Error);
+    } finally {
+      if (previousPackageRoot === undefined) {
+        delete process.env.PM_CLI_PACKAGE_ROOT;
+      } else {
+        process.env.PM_CLI_PACKAGE_ROOT = previousPackageRoot;
+      }
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects a configured SDK module with incomplete todos exit codes", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-todos-sdk-exit-code-"));
+    const sdkDir = path.join(tempRoot, "dist", "sdk");
+    const realSdkUrl = pathToFileURL(path.join(process.cwd(), "src", "sdk", "index.ts")).href;
+    await mkdir(sdkDir, { recursive: true });
+    await writeFile(
+      path.join(sdkDir, "index.js"),
+      [`export * from ${JSON.stringify(realSdkUrl)};`, "export const EXIT_CODE = {};\n"].join("\n"),
+      "utf8",
+    );
+    const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
+    process.env.PM_CLI_PACKAGE_ROOT = tempRoot;
+    try {
+      const failure = await importTodosRuntime().catch((error: unknown) => error);
+      expect(failure).toBeInstanceOf(Error);
+      expect((failure as Error).message).toContain("builtin-todos failed to load SDK exports");
+      expect("cause" in (failure as object)).toBe(false);
+    } finally {
+      if (previousPackageRoot === undefined) {
+        delete process.env.PM_CLI_PACKAGE_ROOT;
+      } else {
+        process.env.PM_CLI_PACKAGE_ROOT = previousPackageRoot;
+      }
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("reports a deterministic error when the configured SDK module is incomplete", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-todos-sdk-incomplete-"));
+    const sdkDir = path.join(tempRoot, "dist", "sdk");
+    await mkdir(sdkDir, { recursive: true });
+    await writeFile(path.join(sdkDir, "index.js"), "export const CONFIDENCE_TEXT_VALUES = [];\n", "utf8");
+    const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
+    process.env.PM_CLI_PACKAGE_ROOT = tempRoot;
+    try {
+      await expect(importTodosRuntime()).rejects.toThrow("builtin-todos failed to load SDK exports");
+    } finally {
+      if (previousPackageRoot === undefined) {
+        delete process.env.PM_CLI_PACKAGE_ROOT;
+      } else {
+        process.env.PM_CLI_PACKAGE_ROOT = previousPackageRoot;
+      }
+      await rm(tempRoot, { recursive: true, force: true });
     }
   });
 });

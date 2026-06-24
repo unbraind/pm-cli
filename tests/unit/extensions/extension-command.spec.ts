@@ -1848,7 +1848,7 @@ describe("extension command runtime", () => {
       const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
       expect(manifest).toMatchObject({
         name: "starter-ext",
-        entry: "./index.js",
+        entry: "./index.ts",
         capabilities: ["commands"],
         trusted: true,
         sandbox_profile: "strict",
@@ -1862,10 +1862,10 @@ describe("extension command runtime", () => {
         },
       });
       const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
-      // ADR pm-2c28: extensions are authored fully in TypeScript. The standalone
-      // entrypoint imports the `ExtensionApi` type (erased at compile time, so the
-      // emitted ./index.js carries no runtime import) and types the `activate`
-      // parameter against the SDK contract instead of the old JS+JSDoc shape.
+      // ADR pm-2c28 / pm-m1uz: extensions are authored AND loaded as TypeScript. The
+      // standalone entrypoint imports the `ExtensionApi` type (erased on load by
+      // Node's native type stripping, so the `.ts` entry carries no runtime SDK
+      // import) and types the `activate` parameter against the SDK contract.
       expect(entry).not.toContain('import { defineExtension }');
       expect(entry).not.toContain("@param");
       expect(entry).toContain('import type { ExtensionApi } from "@unbrained/pm-cli/sdk";');
@@ -1876,7 +1876,7 @@ describe("extension command runtime", () => {
       expect(entry).toContain("  deactivate,");
       expect(entry).toContain("export default {");
       expect(entry).toContain('name: "starter ext ping"');
-      // A tsconfig compiles index.ts to the ./index.js manifest entry.
+      // A strict type-check-only tsconfig (noEmit) validates the ./index.ts entry.
       const tsconfig = JSON.parse(await readFile(path.join(scaffoldPath, "tsconfig.json"), "utf8")) as {
         compilerOptions?: Record<string, unknown>;
       };
@@ -1928,8 +1928,8 @@ describe("extension command runtime", () => {
         created_directory: true,
       });
 
-      // ADR pm-2c28: package mode emits a TypeScript source + colocated test +
-      // tsconfig + build/test scripts so authors compile and validate the package.
+      // ADR pm-2c28 / pm-m1uz: package mode emits TypeScript source + colocated test
+      // + tsconfig + typecheck/test scripts; pm loads the .ts entry directly (no build).
       expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
         "package.json",
         "manifest.json",
@@ -1945,7 +1945,7 @@ describe("extension command runtime", () => {
         expect.stringContaining('cd '),
       );
       expect((scaffold.details as { next_steps?: string[] }).next_steps).toContainEqual(
-        expect.stringContaining('run "npm install" and "npm run build"'),
+        expect.stringContaining('run "npm run typecheck" and "npm test"'),
       );
 
       const packageJson = JSON.parse(await readFile(path.join(scaffoldPath, "package.json"), "utf8")) as Record<string, unknown>;
@@ -1954,8 +1954,8 @@ describe("extension command runtime", () => {
         private: true,
         type: "module",
         scripts: {
-          build: "tsc",
-          test: "tsc && node --test",
+          typecheck: "tsc --noEmit",
+          test: "node --test",
         },
         pm: {
           aliases: ["starter-package"],
@@ -1968,7 +1968,7 @@ describe("extension command runtime", () => {
         "@unbrained/pm-cli": "*",
       });
       expect(packageJson.devDependencies).toMatchObject({
-        "@types/node": expect.stringContaining("20"),
+        "@types/node": expect.stringContaining("22"),
         typescript: expect.stringContaining("6"),
       });
       const scaffoldTsconfig = JSON.parse(await readFile(path.join(scaffoldPath, "tsconfig.json"), "utf8")) as {
@@ -1980,7 +1980,7 @@ describe("extension command runtime", () => {
       const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
       expect(manifest).toMatchObject({
         name: "starter-package",
-        entry: "./index.js",
+        entry: "./index.ts",
         capabilities: ["commands"],
         trusted: true,
         sandbox_profile: "strict",
@@ -2012,8 +2012,8 @@ describe("extension command runtime", () => {
       expect(sampleTest).toContain("  deactivateExtensionForTest,");
       expect(sampleTest).toContain("  runRegisteredCommandForTest,");
       expect(sampleTest).toContain('} from "@unbrained/pm-cli/sdk/testing";');
-      // NodeNext resolution: the .ts test imports the compiled ./index.js entry.
-      expect(sampleTest).toContain('import extension from "./index.js";');
+      // NodeNext resolution: the .ts test imports the ./index.ts manifest entry directly.
+      expect(sampleTest).toContain('import extension from "./index.ts";');
       expect(sampleTest).toContain('capabilities: ["commands"]');
       expect(sampleTest).toContain('command: "starter package ping"');
       expect(sampleTest).toContain('assert.equal(typeof registered.command.description, "string");');
@@ -2039,12 +2039,10 @@ describe("extension command runtime", () => {
       const gitignore = await readFile(path.join(scaffoldPath, ".gitignore"), "utf8");
       expect(gitignore).toContain("node_modules/");
       expect(gitignore).toContain("*.log");
-      // The compiled TypeScript output is a build artifact, kept out of version control.
-      expect(gitignore).toContain("*.js");
-      expect(gitignore).toContain("*.test.js");
-      expect(gitignore).toContain("*.js.map");
-      expect(gitignore).toContain("*.d.ts");
-      expect(gitignore).toContain("*.d.ts.map");
+      // The package ships only TypeScript source (ADR pm-m1uz): there is no compiled
+      // .js to ignore, so the .gitignore keeps out only deps, logs, and the tsc cache.
+      expect(gitignore).toContain("*.tsbuildinfo");
+      expect(gitignore).not.toContain("*.js");
 
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Validate the Package");
@@ -2053,16 +2051,9 @@ describe("extension command runtime", () => {
       expect(readme).toContain("## Policy Metadata");
       expect(readme).toContain('sandbox_profile: "strict"');
 
-      // Simulate `npm run build`: the manifest entry is the compiled ./index.js,
-      // so type-erase the authored index.ts (drop the type-only import + the
-      // `: ExtensionApi`/`: void` annotations — exactly what tsc emits for a
-      // type-only construct) before installing and invoking the command.
-      const compiledEntry = entry
-        .replace(/^import type \{ ExtensionApi \} from "@unbrained\/pm-cli\/sdk";\n\n/m, "")
-        .replace(": ExtensionApi", "")
-        .replace(/\): void \{/g, ") {");
-      await writeFile(path.join(scaffoldPath, "index.js"), compiledEntry, "utf8");
-
+      // No build step (ADR pm-m1uz): pm loads the ./index.ts manifest entry directly
+      // via Node's native type stripping, so install and invoke the scaffold exactly
+      // as authored — there is no compiled ./index.js to produce first.
       const install = await runExtension(scaffoldPath, { install: true, project: true }, { path: context.pmPath });
       expect(install.details).toMatchObject({
         extension: {

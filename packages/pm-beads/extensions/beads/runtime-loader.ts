@@ -24,9 +24,20 @@ function isMissingRuntimeModuleError(error: unknown, modulePath: string): boolea
   if (!isRecord(error) || error.code !== "ERR_MODULE_NOT_FOUND") {
     return false;
   }
-  const message = typeof error.message === "string" ? error.message : "";
   const moduleUrl = pathToFileURL(modulePath).href;
-  return message.includes(modulePath) || message.includes(moduleUrl);
+  if (error.url === moduleUrl) {
+    return true;
+  }
+  if (typeof error.path === "string" && path.resolve(error.path) === path.resolve(modulePath)) {
+    return true;
+  }
+  const message = typeof error.message === "string" ? error.message : "";
+  const normalizedModulePath = modulePath.replace(/\\/g, "/");
+  return (
+    message.startsWith(`Cannot find module '${modulePath}'`) ||
+    message.startsWith(`Cannot find module '${normalizedModulePath}'`) ||
+    message.startsWith(`Cannot find module '${moduleUrl}'`)
+  );
 }
 
 function resolvePackageRootCandidates(): string[] {
@@ -50,8 +61,8 @@ export async function loadPackageRuntimeModule(): Promise<PackageRuntimeModule> 
   const attempted: string[] = [];
   for (const packageRoot of resolvePackageRootCandidates()) {
     const modulePaths = [
-      path.join(packageRoot, ".agents", "pm", "extensions", EXTENSION_NAME, "runtime.js"),
-      path.join(packageRoot, "packages", PACKAGE_NAME, "extensions", EXTENSION_NAME, "runtime.js"),
+      path.join(packageRoot, ".agents", "pm", "extensions", EXTENSION_NAME, "runtime.ts"),
+      path.join(packageRoot, "packages", PACKAGE_NAME, "extensions", EXTENSION_NAME, "runtime.ts"),
     ];
     for (const modulePath of modulePaths) {
       attempted.push(modulePath);
@@ -69,7 +80,7 @@ export async function loadPackageRuntimeModule(): Promise<PackageRuntimeModule> 
     }
   }
 
-  const localRuntimePath = path.join(CURRENT_EXTENSION_ROOT, "runtime.js");
+  const localRuntimePath = path.join(CURRENT_EXTENSION_ROOT, "runtime.ts");
   attempted.push(localRuntimePath);
   if (existsSync(localRuntimePath)) {
     try {
@@ -83,6 +94,6 @@ export async function loadPackageRuntimeModule(): Promise<PackageRuntimeModule> 
 
   throw new Error(
     `Unable to resolve packaged ${DIAGNOSTIC_NAME} extension runtime module. ` +
-      `Tried: ${attempted.join(", ")}. Ensure the installed extension includes runtime.js or PM_CLI_PACKAGE_ROOT points to an installed pm package root.`,
+      `Tried: ${attempted.join(", ")}. Ensure the installed extension includes runtime.ts or PM_CLI_PACKAGE_ROOT points to an installed pm package root.`,
   );
 }
