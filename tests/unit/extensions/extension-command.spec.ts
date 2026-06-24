@@ -1861,31 +1861,41 @@ describe("extension command runtime", () => {
           process_spawn: false,
         },
       });
-      const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
-      // pm-fl0c B-1 (2026-05-28) + Codex P2 follow-up: extension-only scaffold
-      // must NOT import `@unbrained/pm-cli/sdk` (no package.json with the dep
-      // → ERR_MODULE_NOT_FOUND when the loader imports the file URL). Instead
-      // it emits the original `export function activate(api)` shape with a
-      // JSDoc @param hint so editors still narrow the api parameter.
+      const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
+      // ADR pm-2c28: extensions are authored fully in TypeScript. The standalone
+      // entrypoint imports the `ExtensionApi` type (erased at compile time, so the
+      // emitted ./index.js carries no runtime import) and types the `activate`
+      // parameter against the SDK contract instead of the old JS+JSDoc shape.
       expect(entry).not.toContain('import { defineExtension }');
-      expect(entry).toContain('@param {import("@unbrained/pm-cli/sdk").ExtensionApi}');
-      expect(entry).toContain("export function activate(api)");
+      expect(entry).not.toContain("@param");
+      expect(entry).toContain('import type { ExtensionApi } from "@unbrained/pm-cli/sdk";');
+      expect(entry).toContain("export function activate(api: ExtensionApi): void {");
       // The starter also emits a documented `deactivate` teardown stub so the
       // full lifecycle is modelled (and the default export wires both hooks).
-      expect(entry).toContain("export function deactivate() {}");
+      expect(entry).toContain("export function deactivate(): void {}");
       expect(entry).toContain("  deactivate,");
       expect(entry).toContain("export default {");
       expect(entry).toContain('name: "starter ext ping"');
+      // A tsconfig compiles index.ts to the ./index.js manifest entry.
+      const tsconfig = JSON.parse(await readFile(path.join(scaffoldPath, "tsconfig.json"), "utf8")) as {
+        compilerOptions?: Record<string, unknown>;
+      };
+      expect(tsconfig.compilerOptions?.strict).toBe(true);
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Policy Metadata");
       expect(readme).toContain('sandbox_profile: "strict"');
+      expect(readme).toContain("npm install -D typescript @types/node @unbrained/pm-cli");
+      expect(readme).toContain("npx tsc");
 
-      // pm-4ltc: the sample test + .gitignore are package-mode only. An
-      // extension-only scaffold cannot `npm install` the peer SDK, so emitting
-      // a test that imports `@unbrained/pm-cli/sdk/testing` would never run.
+      // The sample test + .gitignore are package-mode only. An extension-only
+      // scaffold has no package.json to `npm install` the peer SDK testing
+      // helpers against, so it emits the typed source + tsconfig but no test.
       const scaffoldedFiles = (scaffold.details as { files?: Array<{ path: string }> }).files ?? [];
-      expect(scaffoldedFiles.map((file) => file.path)).toEqual(["manifest.json", "index.js", "README.md"]);
-      await expect(readFile(path.join(scaffoldPath, "index.test.js"), "utf8")).rejects.toMatchObject({
+      expect(scaffoldedFiles.map((file) => file.path)).toEqual(["manifest.json", "index.ts", "tsconfig.json", "README.md"]);
+      expect((scaffold.details as { next_steps?: string[] }).next_steps).toContainEqual(
+        expect.stringContaining('npm install -D typescript @types/node @unbrained/pm-cli'),
+      );
+      await expect(readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).rejects.toMatchObject({
         code: "ENOENT",
       });
       await expect(readFile(path.join(scaffoldPath, ".gitignore"), "utf8")).rejects.toMatchObject({
@@ -1918,13 +1928,14 @@ describe("extension command runtime", () => {
         created_directory: true,
       });
 
-      // pm-4ltc: package mode emits a runnable sample test + .gitignore + test
-      // script so authors can validate command registration immediately.
+      // ADR pm-2c28: package mode emits a TypeScript source + colocated test +
+      // tsconfig + build/test scripts so authors compile and validate the package.
       expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
         "package.json",
         "manifest.json",
-        "index.js",
-        "index.test.js",
+        "index.ts",
+        "index.test.ts",
+        "tsconfig.json",
         ".gitignore",
         "README.md",
       ]);
@@ -1934,7 +1945,7 @@ describe("extension command runtime", () => {
         expect.stringContaining('cd '),
       );
       expect((scaffold.details as { next_steps?: string[] }).next_steps).toContainEqual(
-        expect.stringContaining('run "npm install" and "npm test"'),
+        expect.stringContaining('run "npm install" and "npm run build"'),
       );
 
       const packageJson = JSON.parse(await readFile(path.join(scaffoldPath, "package.json"), "utf8")) as Record<string, unknown>;
@@ -1943,7 +1954,8 @@ describe("extension command runtime", () => {
         private: true,
         type: "module",
         scripts: {
-          test: "node --test",
+          build: "tsc",
+          test: "tsc && node --test",
         },
         pm: {
           aliases: ["starter-package"],
@@ -1955,6 +1967,15 @@ describe("extension command runtime", () => {
       expect(packageJson.peerDependencies).toMatchObject({
         "@unbrained/pm-cli": "*",
       });
+      expect(packageJson.devDependencies).toMatchObject({
+        "@types/node": expect.stringContaining("20"),
+        typescript: expect.stringContaining("6"),
+      });
+      const scaffoldTsconfig = JSON.parse(await readFile(path.join(scaffoldPath, "tsconfig.json"), "utf8")) as {
+        compilerOptions?: Record<string, unknown>;
+      };
+      expect(scaffoldTsconfig.compilerOptions?.types).toEqual(["node"]);
+      expect(scaffoldTsconfig.compilerOptions?.outDir).toBeUndefined();
 
       const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
       expect(manifest).toMatchObject({
@@ -1972,14 +1993,15 @@ describe("extension command runtime", () => {
           process_spawn: false,
         },
       });
-      const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
+      const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
       expect(entry).not.toContain('import { defineExtension }');
-      expect(entry).toContain('@param {import("@unbrained/pm-cli/sdk").ExtensionApi}');
-      expect(entry).toContain("export function activate(api)");
-      expect(entry).toContain("export function deactivate() {}");
+      expect(entry).not.toContain("@param");
+      expect(entry).toContain('import type { ExtensionApi } from "@unbrained/pm-cli/sdk";');
+      expect(entry).toContain("export function activate(api: ExtensionApi): void {");
+      expect(entry).toContain("export function deactivate(): void {}");
       expect(entry).toContain('name: "starter package ping"');
 
-      const sampleTest = await readFile(path.join(scaffoldPath, "index.test.js"), "utf8");
+      const sampleTest = await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8");
       expect(sampleTest).toContain('import assert from "node:assert/strict";');
       expect(sampleTest).toContain('import { test } from "node:test";');
       // The sample imports the activate and deactivate test helpers so it can
@@ -1990,16 +2012,20 @@ describe("extension command runtime", () => {
       expect(sampleTest).toContain("  deactivateExtensionForTest,");
       expect(sampleTest).toContain("  runRegisteredCommandForTest,");
       expect(sampleTest).toContain('} from "@unbrained/pm-cli/sdk/testing";');
+      // NodeNext resolution: the .ts test imports the compiled ./index.js entry.
       expect(sampleTest).toContain('import extension from "./index.js";');
       expect(sampleTest).toContain('capabilities: ["commands"]');
       expect(sampleTest).toContain('command: "starter package ping"');
       expect(sampleTest).toContain('assert.equal(typeof registered.command.description, "string");');
       // The invoke step demonstrates exercising the handler's behavior through
-      // pm's real dispatch engine, not just asserting it is registered.
+      // pm's real dispatch engine, not just asserting it is registered. The
+      // handler result is typed `unknown`, so the sample uses a type-safe
+      // deep-equality assertion on the whole structured payload (no cast).
       expect(sampleTest).toContain("const invocation = await runRegisteredCommandForTest(activation.commands, {");
       expect(sampleTest).toContain("assert.equal(invocation.handled, true);");
-      expect(sampleTest).toContain("assert.equal(invocation.result.ok, true);");
-      expect(sampleTest).toContain('assert.equal(invocation.result.command, "starter package ping");');
+      expect(sampleTest).toContain("assert.deepEqual(invocation.result, {");
+      expect(sampleTest).toContain('command: "starter package ping",');
+      expect(sampleTest).not.toContain("invocation.result.ok");
       // The teardown test demonstrates deactivateExtensionForTest + the clean
       // teardown assertion.
       expect(sampleTest).toContain("tears down cleanly via deactivate");
@@ -2013,13 +2039,29 @@ describe("extension command runtime", () => {
       const gitignore = await readFile(path.join(scaffoldPath, ".gitignore"), "utf8");
       expect(gitignore).toContain("node_modules/");
       expect(gitignore).toContain("*.log");
+      // The compiled TypeScript output is a build artifact, kept out of version control.
+      expect(gitignore).toContain("*.js");
+      expect(gitignore).toContain("*.test.js");
+      expect(gitignore).toContain("*.js.map");
+      expect(gitignore).toContain("*.d.ts");
+      expect(gitignore).toContain("*.d.ts.map");
 
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Validate the Package");
       expect(readme).toContain("npm test");
-      expect(readme).toContain("`index.test.js`");
+      expect(readme).toContain("`index.test.ts`");
       expect(readme).toContain("## Policy Metadata");
       expect(readme).toContain('sandbox_profile: "strict"');
+
+      // Simulate `npm run build`: the manifest entry is the compiled ./index.js,
+      // so type-erase the authored index.ts (drop the type-only import + the
+      // `: ExtensionApi`/`: void` annotations — exactly what tsc emits for a
+      // type-only construct) before installing and invoking the command.
+      const compiledEntry = entry
+        .replace(/^import type \{ ExtensionApi \} from "@unbrained\/pm-cli\/sdk";\n\n/m, "")
+        .replace(": ExtensionApi", "")
+        .replace(/\): void \{/g, ") {");
+      await writeFile(path.join(scaffoldPath, "index.js"), compiledEntry, "utf8");
 
       const install = await runExtension(scaffoldPath, { install: true, project: true }, { path: context.pmPath });
       expect(install.details).toMatchObject({
@@ -2076,11 +2118,11 @@ describe("extension command runtime", () => {
       const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
       expect(manifest.capabilities).toEqual(["commands", "hooks"]);
 
-      const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
+      const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
       expect(entry).toContain("api.hooks.afterCommand((context) => {");
       expect(entry).toContain("context.affected");
 
-      const sampleTest = await readFile(path.join(scaffoldPath, "index.test.js"), "utf8");
+      const sampleTest = await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8");
       expect(sampleTest).toContain("  assertRegisteredHook,");
       expect(sampleTest).toContain("  runRegisteredHookForTest,");
       expect(sampleTest).toContain('capabilities: ["commands", "hooks"]');
@@ -2116,17 +2158,20 @@ describe("extension command runtime", () => {
       const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
       expect(manifest.capabilities).toEqual(["commands", "search"]);
 
-      const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
+      const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
       expect(entry).toContain("api.registerSearchProvider({");
       expect(entry).toContain('name: "starter-search-search"');
       expect(entry).toContain("api.registerVectorStoreAdapter({");
       expect(entry).toContain('name: "starter-search-vector"');
 
-      const sampleTest = await readFile(path.join(scaffoldPath, "index.test.js"), "utf8");
+      const sampleTest = await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8");
       expect(sampleTest).toContain("  assertRegisteredSearchProvider,");
       expect(sampleTest).toContain("  assertRegisteredVectorStoreAdapter,");
       expect(sampleTest).toContain("  runRegisteredSearchProviderForTest,");
       expect(sampleTest).toContain("  runRegisteredVectorStoreAdapterForTest,");
+      // The search variant imports SDK types for its strict-typed synthetic fixtures.
+      expect(sampleTest).toContain('import type { ItemDocument, PmSettings } from "@unbrained/pm-cli/sdk";');
+      expect(sampleTest).toContain("settings: {} as PmSettings");
       expect(sampleTest).toContain('capabilities: ["commands", "search"]');
       expect(sampleTest).toContain("assertRegisteredSearchProvider(activation.registrations, {");
       expect(sampleTest).toContain('provider: "starter-search-search"');
@@ -2164,13 +2209,13 @@ describe("extension command runtime", () => {
       const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
       expect(manifest.capabilities).toEqual(["commands", "schema", "importers"]);
 
-      const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
+      const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
       expect(entry).toContain("api.registerImporter(");
       expect(entry).toContain('action: "starter importers items import"');
       expect(entry).toContain("api.registerExporter(");
       expect(entry).toContain('action: "starter importers items export"');
 
-      const sampleTest = await readFile(path.join(scaffoldPath, "index.test.js"), "utf8");
+      const sampleTest = await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8");
       expect(sampleTest).toContain("  assertRegisteredImporter,");
       expect(sampleTest).toContain("  assertRegisteredExporter,");
       expect(sampleTest).toContain("  runRegisteredImporterForTest,");
@@ -2212,17 +2257,18 @@ describe("extension command runtime", () => {
       });
       expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
         "manifest.json",
-        "index.js",
+        "index.ts",
+        "tsconfig.json",
         "README.md",
       ]);
 
       const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
       expect(manifest.capabilities).toEqual(["commands", "hooks"]);
-      const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
+      const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
       expect(entry).toContain("api.hooks.afterCommand((context) => {");
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Lifecycle Hook");
-      await expect(readFile(path.join(scaffoldPath, "index.test.js"), "utf8")).rejects.toMatchObject({
+      await expect(readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).rejects.toMatchObject({
         code: "ENOENT",
       });
     });
@@ -2246,19 +2292,20 @@ describe("extension command runtime", () => {
       });
       expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
         "manifest.json",
-        "index.js",
+        "index.ts",
+        "tsconfig.json",
         "README.md",
       ]);
 
       const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
       expect(manifest.capabilities).toEqual(["commands", "search"]);
-      const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
+      const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
       expect(entry).toContain("api.registerSearchProvider({");
       expect(entry).toContain("api.registerVectorStoreAdapter({");
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Search Provider");
       expect(readme).toContain("api.registerSearchProvider");
-      await expect(readFile(path.join(scaffoldPath, "index.test.js"), "utf8")).rejects.toMatchObject({
+      await expect(readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).rejects.toMatchObject({
         code: "ENOENT",
       });
     });
@@ -2282,19 +2329,20 @@ describe("extension command runtime", () => {
       });
       expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
         "manifest.json",
-        "index.js",
+        "index.ts",
+        "tsconfig.json",
         "README.md",
       ]);
 
       const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
       expect(manifest.capabilities).toEqual(["commands", "schema", "importers"]);
-      const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
+      const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
       expect(entry).toContain("api.registerImporter(");
       expect(entry).toContain("api.registerExporter(");
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Importer and Exporter");
       expect(readme).toContain("api.registerImporter");
-      await expect(readFile(path.join(scaffoldPath, "index.test.js"), "utf8")).rejects.toMatchObject({
+      await expect(readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).rejects.toMatchObject({
         code: "ENOENT",
       });
     });
@@ -2361,7 +2409,7 @@ describe("extension command runtime", () => {
     await withTempPmPath(async (context) => {
       const conflictPath = path.join(context.tempRoot, "partial-conflict");
       await mkdir(conflictPath, { recursive: true });
-      await writeFile(path.join(conflictPath, "index.js"), "conflicting entrypoint\n", "utf8");
+      await writeFile(path.join(conflictPath, "index.ts"), "conflicting entrypoint\n", "utf8");
 
       await expect(runExtension(conflictPath, { init: true, project: true }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.CONFLICT,

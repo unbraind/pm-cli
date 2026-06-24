@@ -7,7 +7,7 @@ const harness = createScriptHarness();
 const SCRIPT = "scripts/dogfood-package-first.mjs";
 const CLI_TAIL = path.join("dist", "cli.js");
 
-type SpawnResult = { status: number; stdout: string; stderr: string };
+type SpawnResult = { status: number | null; stdout: string | null; stderr: string | null };
 
 const pmJson = (payload: unknown): SpawnResult => ({ status: 0, stdout: JSON.stringify(payload), stderr: "" });
 
@@ -18,6 +18,8 @@ interface Overrides {
   sdk?: SpawnResult;
   /** Override the semantic reindex / search results when semantic enabled. */
   semantic?: (pmArgs: string[]) => SpawnResult | undefined;
+  /** Override the scaffold TypeScript build (`tsc`) result. */
+  tsc?: SpawnResult;
 }
 
 function buildSpawnSync(overrides: Overrides = {}) {
@@ -26,6 +28,9 @@ function buildSpawnSync(overrides: Overrides = {}) {
   return vi.fn((command: string, args: string[]): SpawnResult => {
     if (command === process.execPath && args[0] === "--input-type=module") {
       return overrides.sdk ?? { status: 0, stdout: "", stderr: "" };
+    }
+    if (command === process.execPath && args[0]?.endsWith(path.join("typescript", "bin", "tsc"))) {
+      return overrides.tsc ?? { status: 0, stdout: "", stderr: "" };
     }
     if (command !== process.execPath || !args[0]?.endsWith(CLI_TAIL)) {
       return { status: 0, stdout: "", stderr: "" };
@@ -188,17 +193,22 @@ function buildSpawnSync(overrides: Overrides = {}) {
   });
 }
 
-function mockFs(rmThrows = false) {
+function mockFs(rmThrows = false, indexEmitted = true) {
   const rmSync = rmThrows
     ? vi.fn(() => {
         throw new Error("rm failed");
       })
     : vi.fn();
   vi.doMock("node:fs", () => ({
+    // `existsSync` reports the compiled `index.js` per `indexEmitted` (the
+    // `buildScaffoldedPackage` emitted-entry assertion), and the scaffold's
+    // node_modules links absent so symlinkSync always runs.
+    existsSync: vi.fn((target: string) => indexEmitted && String(target).endsWith("index.js")),
     mkdirSync: vi.fn(),
     mkdtempSync: vi.fn(() => "/tmp/pm-dogfood"),
     readdirSync: vi.fn(() => ["README.md", "scripts", ".hidden"]),
     rmSync,
+    symlinkSync: vi.fn(),
     writeFileSync: vi.fn(),
   }));
   return rmSync;
@@ -347,6 +357,59 @@ describe("dogfood-package-first", () => {
 
     await harness.importModule(SCRIPT);
     expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("SDK direct import failed"))).toBe(true);
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("fails when the scaffold TypeScript build (tsc) exits non-zero", async () => {
+    const spawnSync = buildSpawnSync({ tsc: { status: 2, stdout: "tsc partial", stderr: "tsc boom" } });
+    vi.doMock("node:child_process", () => ({ spawnSync }));
+    mockFs();
+    delete process.env.PM_DOGFOOD_SEMANTIC;
+    process.argv = ["node", "scripts/dogfood-package-first.mjs"];
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await harness.importModule(SCRIPT);
+    expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("package build scaffold (tsc) failed with exit 2"))).toBe(true);
+    expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("tsc boom"))).toBe(true);
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("formats the scaffold build failure with null status and empty output", async () => {
+    const spawnSync = buildSpawnSync({ tsc: { status: null, stdout: "", stderr: "" } });
+    vi.doMock("node:child_process", () => ({ spawnSync }));
+    mockFs();
+    delete process.env.PM_DOGFOOD_SEMANTIC;
+    process.argv = ["node", "scripts/dogfood-package-first.mjs"];
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await harness.importModule(SCRIPT);
+    expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("package build scaffold (tsc) failed with exit unknown"))).toBe(true);
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("formats the scaffold build failure when spawnSync returns null output streams", async () => {
+    const spawnSync = buildSpawnSync({ tsc: { status: null, stdout: null, stderr: null } });
+    vi.doMock("node:child_process", () => ({ spawnSync }));
+    mockFs();
+    delete process.env.PM_DOGFOOD_SEMANTIC;
+    process.argv = ["node", "scripts/dogfood-package-first.mjs"];
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await harness.importModule(SCRIPT);
+    expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("package build scaffold (tsc) failed with exit unknown"))).toBe(true);
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("fails when the scaffold build does not emit the ./index.js entry", async () => {
+    const spawnSync = buildSpawnSync();
+    vi.doMock("node:child_process", () => ({ spawnSync }));
+    mockFs(false, false);
+    delete process.env.PM_DOGFOOD_SEMANTIC;
+    process.argv = ["node", "scripts/dogfood-package-first.mjs"];
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await harness.importModule(SCRIPT);
+    expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("did not emit the ./index.js manifest entry"))).toBe(true);
     expect(process.exitCode).toBe(1);
   });
 

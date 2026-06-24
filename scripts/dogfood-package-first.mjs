@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -22,6 +22,10 @@ const semanticDogfoodEnabled = process.env.PM_DOGFOOD_SEMANTIC === "1";
 
 const timings = [];
 
+function trimOutput(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
 function cleanupTempRoot() {
   try {
     rmSync(tempRoot, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
@@ -42,12 +46,14 @@ function runProcess(label, args, options = {}) {
   const tookMs = Date.now() - startedAt;
   timings.push({ label, took_ms: tookMs, code: completed.status ?? 1 });
   if (completed.status !== 0) {
+    const stdout = trimOutput(completed.stdout);
+    const stderr = trimOutput(completed.stderr);
     throw new Error(
       [
         `${label} failed with exit ${completed.status ?? "unknown"}`,
         `command: pm ${options.json === false ? "" : "--json "}${args.join(" ")}`,
-        completed.stdout.trim() ? `stdout:\n${completed.stdout.trim()}` : "",
-        completed.stderr.trim() ? `stderr:\n${completed.stderr.trim()}` : "",
+        stdout ? `stdout:\n${stdout}` : "",
+        stderr ? `stderr:\n${stderr}` : "",
       ]
         .filter(Boolean)
         .join("\n"),
@@ -84,6 +90,43 @@ function assert(condition, message) {
   if (!condition) {
     throw new Error(message);
   }
+}
+
+// Scaffolded packages are authored in TypeScript (ADR pm-2c28): the manifest's
+// ./index.js entry only exists after a compile. Simulate `npm install && npm run
+// build` by linking the SDK + @types/node into the scaffold's node_modules (so the
+// type imports resolve) and running the repo's tsc, then assert the entry emitted.
+function buildScaffoldedPackage(label, scaffoldPath) {
+  const sdkLink = path.join(scaffoldPath, "node_modules", "@unbrained", "pm-cli");
+  const typesLink = path.join(scaffoldPath, "node_modules", "@types", "node");
+  mkdirSync(path.dirname(sdkLink), { recursive: true });
+  mkdirSync(path.dirname(typesLink), { recursive: true });
+  // `type: "junction"` is honored on Windows and ignored on other platforms, so a
+  // single call links correctly everywhere without a platform branch.
+  symlinkSync(repoRoot, sdkLink, "junction");
+  symlinkSync(path.join(repoRoot, "node_modules", "@types", "node"), typesLink, "junction");
+  const startedAt = Date.now();
+  const tsc = spawnSync(process.execPath, [path.join(repoRoot, "node_modules", "typescript", "bin", "tsc")], {
+    cwd: scaffoldPath,
+    encoding: "utf8",
+    env,
+    maxBuffer: 20 * 1024 * 1024,
+  });
+  timings.push({ label, took_ms: Date.now() - startedAt, code: tsc.status ?? 1 });
+  if (tsc.status !== 0) {
+    const stdout = trimOutput(tsc.stdout);
+    const stderr = trimOutput(tsc.stderr);
+    throw new Error(
+      [
+        `${label} (tsc) failed with exit ${tsc.status ?? "unknown"}`,
+        stdout ? `stdout:\n${stdout}` : "",
+        stderr ? `stderr:\n${stderr}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    );
+  }
+  assert(existsSync(path.join(scaffoldPath, "index.js")), `${label} did not emit the ./index.js manifest entry`);
 }
 
 function assertCalendarMarkdown(label, markdown) {
@@ -362,6 +405,8 @@ try {
   const scaffoldPackagePath = path.join(tempRoot, "scaffold-package");
   const packageScaffold = run("package init scaffold", ["package", "init", scaffoldPackagePath, "--project"]);
   assert(packageScaffold?.details?.extension?.command === "scaffold package ping", "package init scaffold did not report starter command");
+  // The scaffold ships TypeScript source; compile it to the ./index.js entry before installing.
+  buildScaffoldedPackage("package build scaffold", scaffoldPackagePath);
   run("package install scaffold", ["install", scaffoldPackagePath, "--project"]);
   const scaffoldInvoke = run("package scaffold command", ["scaffold", "package", "ping"]);
   assert(scaffoldInvoke?.ok === true, "scaffolded package command did not execute");

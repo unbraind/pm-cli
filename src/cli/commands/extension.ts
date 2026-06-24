@@ -1231,10 +1231,17 @@ export async function runExtension(
       created_directory: scaffold.created_directory,
       files: scaffold.files,
       next_steps: [
+        // The scaffold is authored in TypeScript (ADR pm-2c28); the manifest's
+        // ./index.js entry only exists after a compile, so building comes first.
+        ...(options.vocabulary === "package"
+          ? [`Build the package: cd ${quotedShellTargetPath}, then run "npm install" and "npm run build"`]
+          : [
+              `Build the extension: cd ${quotedShellTargetPath}, then run "npm install -D typescript @types/node @unbrained/pm-cli" and "npx tsc"`,
+            ]),
         `Install the scaffold: ${options.vocabulary === "package" ? "pm install --project" : "pm extension --install --project"} ${quotedTargetPath}`,
         `Smoke-test command path: pm ${scaffold.command_name}`,
         ...(options.vocabulary === "package"
-          ? [`Validate the sample test: cd ${quotedShellTargetPath}, then run "npm install" and "npm test"`]
+          ? [`Validate the sample test: cd ${quotedShellTargetPath}, then run "npm test"`]
           : []),
         `Run diagnostics: ${options.vocabulary === "package" ? "pm package doctor" : "pm extension --doctor"} --project --detail summary`,
       ],
