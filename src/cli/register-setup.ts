@@ -177,7 +177,6 @@ function registerLifecycleCommand(
     .option("--init", `Generate a starter ${noun} scaffold at target path`)
     .option("--scaffold", "Alias for --init")
     .option("--capability <kind>", `Capability the --init starter targets (${SCAFFOLD_CAPABILITIES.join("|")}; default commands)`)
-    .option("--declarative", "Scaffold the composeExtension blueprint starter (package-mode, any capability)")
     .option("--install", `Install ${noun} from local path, bundled alias, npm: source, wildcard, or GitHub source`)
     .option("--uninstall", `Uninstall an installed ${noun}`)
     .option("--explore", `List discovered ${plural} in selected scope`)
@@ -215,22 +214,29 @@ function registerLifecycleCommand(
 
   if (vocabulary === "package") {
     lifecycleCommand.alias("packages");
+    // `--declarative` scaffolds a `composeExtension` blueprint starter, which is a
+    // runtime SDK *value* import — only package-mode authoring links the SDK, so the
+    // flag is package-only. It is advertised solely on `pm package` (the top-level
+    // lifecycle command and its `init` subcommand below); `scaffoldExtensionProject`
+    // still rejects extension-mode + declarative as defense-in-depth for the
+    // programmatic/MCP path.
+    lifecycleCommand.option("--declarative", "Scaffold the composeExtension blueprint starter (any capability)");
   }
 
-  addLifecycleScopeOptions(
-    lifecycleCommand
-      .command("init")
-      .alias("scaffold")
-      .argument("<target>", `Scaffold target directory path`)
-      .option("--capability <kind>", `Capability the starter targets (${SCAFFOLD_CAPABILITIES.join("|")}; default commands)`)
-      .option("--declarative", "Scaffold the composeExtension blueprint starter (package-mode, any capability)")
-      .description(
-        vocabulary === "package"
-          ? "Generate a starter package scaffold with package metadata, manifest, and entrypoint."
-          : "Generate a starter extension scaffold with manifest and entrypoint.",
-      ),
-    vocabulary,
-  ).action(async (target: string, _options: Record<string, unknown>, command) => {
+  const initCommand = lifecycleCommand
+    .command("init")
+    .alias("scaffold")
+    .argument("<target>", `Scaffold target directory path`)
+    .option("--capability <kind>", `Capability the starter targets (${SCAFFOLD_CAPABILITIES.join("|")}; default commands)`)
+    .description(
+      vocabulary === "package"
+        ? "Generate a starter package scaffold with package metadata, manifest, and entrypoint."
+        : "Generate a starter extension scaffold with manifest and entrypoint.",
+    );
+  if (vocabulary === "package") {
+    initCommand.option("--declarative", "Scaffold the composeExtension blueprint starter (any capability)");
+  }
+  addLifecycleScopeOptions(initCommand, vocabulary).action(async (target: string, _options: Record<string, unknown>, command) => {
     await executeExtensionCommand(target, command.optsWithGlobals() as Record<string, unknown>, command, "init", vocabulary);
   });
 

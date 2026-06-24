@@ -627,12 +627,11 @@ export function deriveExtensionCapabilities(blueprint: ExtensionBlueprint): Exte
   // Mirror that guard so a flag-bearing importer/exporter derives `schema` too —
   // otherwise a least-privilege manifest synthesized from the blueprint would
   // under-grant `schema` and fail activation. `!== undefined` matches the loader's
-  // exact `options.flags` guard, including an empty flag array.
-  const importExportOptions = [
-    ...(blueprint.importers ?? []).map((entry) => entry.options),
-    ...(blueprint.exporters ?? []).map((entry) => entry.options),
-  ];
-  if (importExportOptions.some((options) => options?.flags !== undefined)) {
+  // exact `options.flags` guard, including an empty flag array. `entry?.` keeps a
+  // malformed null array entry (from an untyped `.js`/JSON boundary) from crashing
+  // derivation, consistent with the null-field robustness above.
+  const importExportEntries = [...(blueprint.importers ?? []), ...(blueprint.exporters ?? [])];
+  if (importExportEntries.some((entry) => entry?.options?.flags !== undefined)) {
     capabilities.add("schema");
   }
   // `?? {}` keeps an explicit `hooks: null` from throwing, mirroring composeExtension.

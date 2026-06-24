@@ -96,6 +96,21 @@ describe("content + governance filter contract surface", () => {
     expect(flagSet("stats").has("--field-utilization")).toBe(true);
   });
 
+  it("scopes --declarative to the package lifecycle, not the extension lifecycle", () => {
+    // `--declarative` scaffolds a composeExtension blueprint (a runtime SDK value
+    // import), so it is package-only — declared on `pm package` / `pm packages` and
+    // their `init` subcommand, but never on `pm extension`.
+    expect(flagSet("package").has("--declarative")).toBe(true);
+    expect(flagSet("packages").has("--declarative")).toBe(true);
+    expect(flagSet("package init").has("--declarative")).toBe(true);
+    expect(flagSet("packages init").has("--declarative")).toBe(true);
+    expect(flagSet("extension").has("--declarative")).toBe(false);
+    expect(flagSet("extension init").has("--declarative")).toBe(false);
+    // The split is the only difference: every other lifecycle flag is shared.
+    expect(flagSet("extension init").has("--capability")).toBe(true);
+    expect(flagSet("package init").has("--capability")).toBe(true);
+  });
+
   it("declares MCP parameter properties for the new content/governance/stats params", () => {
     for (const param of [
       "hasNotes",

@@ -307,7 +307,7 @@ describe("generateBashScript", () => {
   it("includes extension doctor strict flags in bash completion", () => {
     const script = generateBashScript();
     expect(script).toContain(
-      "--init --scaffold --capability --declarative --install --uninstall --explore --manage --describe --reload --watch --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn",
+      "--init --scaffold --capability --install --uninstall --explore --manage --describe --reload --watch --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn",
     );
   });
 

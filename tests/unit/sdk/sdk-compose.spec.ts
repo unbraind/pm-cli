@@ -264,6 +264,13 @@ describe("sdk deriveExtensionCapabilities", () => {
         importers: [{ name: "tickets", importer: () => ({}), options: { description: "no flags" } }],
       }),
     ).toEqual(["importers"]);
+    // A malformed null array entry (untyped .js/JSON boundary) does not crash
+    // derivation, mirroring its null-field robustness — `entry?.options` guards it.
+    // The non-empty arrays still derive `importers` from field presence; the null
+    // entries carry no flags, so no `schema` is added.
+    expect(
+      deriveExtensionCapabilities({ importers: [null], exporters: [null] } as unknown as ExtensionBlueprint),
+    ).toEqual(["importers"]);
   });
 });
 
