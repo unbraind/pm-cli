@@ -32,7 +32,12 @@ function isMissingRuntimeModuleError(error: unknown, modulePath: string): boolea
     return true;
   }
   const message = typeof error.message === "string" ? error.message : "";
-  return message.startsWith(`Cannot find module '${modulePath}'`) || message.startsWith(`Cannot find module '${moduleUrl}'`);
+  const normalizedModulePath = modulePath.replace(/\\/g, "/");
+  return (
+    message.startsWith(`Cannot find module '${modulePath}'`) ||
+    message.startsWith(`Cannot find module '${normalizedModulePath}'`) ||
+    message.startsWith(`Cannot find module '${moduleUrl}'`)
+  );
 }
 
 function resolvePackageRootCandidates(): string[] {

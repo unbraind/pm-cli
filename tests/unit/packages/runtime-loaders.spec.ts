@@ -139,6 +139,27 @@ describe.each(LOADERS)("$pkg runtime-loader", ({ pkg, ext }) => {
     expect(runtime.marker).toBe("package-runtime");
   });
 
+  it("continues when Node reports a forward-slashed missing runtime path", async () => {
+    const parent = await createTempRoot(`pm-${ext}-loader-windows-message-`);
+    const root = path.join(parent, "C:\\pm\\project");
+    const agentsRuntimeDir = path.join(root, ".agents", "pm", "extensions", ext);
+    const packageRuntimeDir = path.join(root, "packages", pkg, "extensions", ext);
+    const agentsRuntimePath = path.join(agentsRuntimeDir, "runtime.ts");
+    const normalizedRuntimePath = agentsRuntimePath.replace(/\\/g, "/");
+    await mkdir(agentsRuntimeDir, { recursive: true });
+    await mkdir(packageRuntimeDir, { recursive: true });
+    await writeFile(
+      agentsRuntimePath,
+      `throw { code: "ERR_MODULE_NOT_FOUND", message: "Cannot find module '${normalizedRuntimePath}'" };\n`,
+      "utf8",
+    );
+    await writeFile(path.join(packageRuntimeDir, "runtime.ts"), "export const marker = 'normalized-path-runtime';\n", "utf8");
+    process.env[PM_PACKAGE_ROOT_ENV] = root;
+    const loader = await importLoader(pkg, ext);
+    const runtime = await loader.loadPackageRuntimeModule();
+    expect(runtime.marker).toBe("normalized-path-runtime");
+  });
+
   it("falls back to the sibling runtime.ts when no candidate roots resolve", async () => {
     const emptyRoot = await createTempRoot(`pm-${ext}-loader-empty-`);
     const deepDir = path.join(emptyRoot, "a", "b", "c");
