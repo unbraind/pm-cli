@@ -4,6 +4,7 @@
  * Implements the pm close command surface and its agent-facing runtime behavior.
  */
 import { pathExists } from "../../core/fs/fs-utils.js";
+import { collectBlockedByIds } from "../../core/item/actionability.js";
 import { toItemRecord } from "../../core/item/item-record.js";
 import { isTerminalStatus } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
@@ -228,20 +229,6 @@ async function findActiveChildIds(
     .sort((left, right) => left.localeCompare(right));
 }
 
-function blockedByIds(item: Pick<ItemFrontMatter, "blocked_by" | "dependencies">): string[] {
-  const ids = new Set<string>();
-  const scalar = typeof item.blocked_by === "string" ? item.blocked_by.trim() : "";
-  if (scalar.length > 0) {
-    ids.add(scalar);
-  }
-  for (const dependency of item.dependencies ?? []) {
-    if (dependency.kind === "blocked_by" && typeof dependency.id === "string" && dependency.id.trim().length > 0) {
-      ids.add(dependency.id.trim());
-    }
-  }
-  return [...ids].sort((left, right) => left.localeCompare(right));
-}
-
 async function findAutoUnblockCandidates(
   pmRoot: string,
   settings: Awaited<ReturnType<typeof readSettings>>,
@@ -260,7 +247,7 @@ async function findAutoUnblockCandidates(
   const blockedStatuses = statusRegistry.blocked_statuses;
   return items
     .filter((item) => blockedStatuses.has(item.status))
-    .map((item) => ({ item, blockerIds: blockedByIds(item) }))
+    .map((item) => ({ item, blockerIds: collectBlockedByIds(item) }))
     .filter(({ blockerIds }) => blockerIds.includes(closedId))
     .filter(({ blockerIds }) =>
       blockerIds.every((blockerId) => {
@@ -328,7 +315,7 @@ async function autoUnblockResolvedDependents(
 }
 
 export const _testOnlyCloseCommand = {
-  blockedByIds,
+  blockedByIds: collectBlockedByIds,
 };
 
 /**

@@ -24,6 +24,7 @@ import {
   CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
   CREATE_COMMANDER_STRING_OPTION_CONTRACTS,
   LIST_COMMANDER_STRING_OPTION_CONTRACTS,
+  NEXT_COMMANDER_STRING_OPTION_CONTRACTS,
   SEARCH_COMMANDER_STRING_OPTION_CONTRACTS,
   UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
   UPDATE_COMMANDER_STRING_OPTION_CONTRACTS,
@@ -37,6 +38,7 @@ import type {
   CreateCommandOptions,
   AggregateOptions,
   ListOptions,
+  NextOptions,
 } from "./commands/index.js";
 import type { runList, runActivity } from "./commands/index.js";
 
@@ -935,6 +937,42 @@ export function normalizeContextOptions(options: Record<string, unknown>): Conte
     normalized[key] = value;
   }
   return normalized as ContextOptions;
+}
+
+/**
+ * Normalizes raw commander options for `pm next` into a typed {@link NextOptions}
+ * payload, resolving snake_case flag aliases (e.g. `--assignee_filter`,
+ * `--blocked_limit`, `--ready_only`) to their canonical camelCase keys and folding
+ * the boolean `--ready-only` switch. Unknown keys are passed through untouched so
+ * downstream filtering still sees them.
+ */
+export function normalizeNextOptions(options: Record<string, unknown>): NextOptions {
+  const readNextString = (target: string): string | undefined =>
+    readFirstStringFromCommanderOptions(
+      options,
+      resolveCommanderContract(NEXT_COMMANDER_STRING_OPTION_CONTRACTS, target),
+    );
+  const normalized: Record<string, unknown> = {
+    type: readNextString("type"),
+    tag: readNextString("tag"),
+    priority: readNextString("priority"),
+    assignee: readNextString("assignee"),
+    assigneeFilter: readNextString("assigneeFilter"),
+    sprint: readNextString("sprint"),
+    release: readNextString("release"),
+    parent: readNextString("parent"),
+    limit: readNextString("limit"),
+    blockedLimit: readNextString("blockedLimit"),
+    readyOnly: options.readyOnly === true || options.ready_only === true ? true : undefined,
+    format: readNextString("format"),
+  };
+  for (const [key, value] of Object.entries(options)) {
+    if (Object.hasOwn(normalized, key)) {
+      continue;
+    }
+    normalized[key] = value;
+  }
+  return normalized as NextOptions;
 }
 
 function collectMutationItemIds(result: unknown): string[] {

@@ -27,6 +27,7 @@ import {
   HEALTH_FLAG_CONTRACTS,
   INIT_FLAG_CONTRACTS,
   LIST_FILTER_FLAG_CONTRACTS,
+  NEXT_FLAG_CONTRACTS,
   NORMALIZE_FLAG_CONTRACTS,
   PLAN_FLAG_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
@@ -84,6 +85,7 @@ const NORMALIZE_FLAGS = toCompletionFlagString(NORMALIZE_FLAG_CONTRACTS);
 const ACTIVITY_FLAGS = toCompletionFlagString(ACTIVITY_FLAG_CONTRACTS);
 const CALENDAR_FLAGS = toCompletionFlagString(CALENDAR_FLAG_CONTRACTS);
 const CONTEXT_FLAGS = toCompletionFlagString(CONTEXT_FLAG_CONTRACTS);
+const NEXT_FLAGS = toCompletionFlagString(NEXT_FLAG_CONTRACTS);
 const DEPS_FLAGS = toCompletionFlagString(DEPS_FLAG_CONTRACTS);
 const GUIDE_FLAGS = toCompletionFlagString(GUIDE_FLAG_CONTRACTS);
 const SEARCH_FLAGS = toCompletionFlagString(SEARCH_FLAG_CONTRACTS);
@@ -367,6 +369,9 @@ export function generateBashScript(
     "    context|ctx)",
     `      COMPREPLY=(${compgen(contextFlags)})`,
     "      ;;",
+    "    next)",
+    `      COMPREPLY=(${compgen(NEXT_FLAGS)})`,
+    "      ;;",
     "    guide)",
     `      COMPREPLY=(${compgen(`${GUIDE_FLAGS} ${GUIDE_TOPIC_CHOICES}`)})`,
     "      ;;",
@@ -567,6 +572,7 @@ _pm_commands() {
     'context:Show a token-efficient project context snapshot'
     'ctx:Alias for context'
     'get:Show item details by ID'
+    'next:Recommend the next actionable (unblocked, ready) work item'
     'search:Search items with keyword, semantic, or hybrid modes'
     'reindex:Rebuild search artifacts'
     'history:Show item history entries'
@@ -1107,6 +1113,23 @@ ${zshCalendarRuntimeFieldFlags}            '--include[Include event sources]:(al
             '--depth[Context depth]:(brief standard deep full)' \\
             '--format[Output override]:(markdown toon json)' \\
 ${zshContextRuntimeFieldFlags}            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        next)
+          _arguments \\
+            '--type[Filter candidates by type]:(${typeChoices})' \\
+            '--tag[Filter candidates by tag]:(${zshTagChoices})' \\
+            '--priority[Filter candidates by priority]:(0 1 2 3 4)' \\
+            '--assignee[Filter candidates by assignee]:assignee' \\
+            '--assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
+            '--sprint[Filter candidates by sprint]:sprint' \\
+            '--release[Filter candidates by release]:release' \\
+            '--parent[Scope to one item subtree]:id' \\
+            '--limit[Limit ready rows]:number' \\
+            '--blocked-limit[Limit blocked rows]:number' \\
+            '--ready-only[Omit the blocked companion list]' \\
+            '--format[Output override]:(markdown toon json)' \\
+            '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
         guide)
@@ -1748,6 +1771,7 @@ complete -c pm -n __pm_no_subcommand -a cal           -d 'Alias for calendar'
 complete -c pm -n __pm_no_subcommand -a context       -d 'Show a token-efficient project context snapshot'
 complete -c pm -n __pm_no_subcommand -a ctx           -d 'Alias for context'
 complete -c pm -n __pm_no_subcommand -a get           -d 'Show item details by ID'
+complete -c pm -n __pm_no_subcommand -a next          -d 'Recommend the next actionable (unblocked, ready) work item'
 complete -c pm -n __pm_no_subcommand -a search        -d 'Search items with keyword, semantic, or hybrid modes'
 complete -c pm -n __pm_no_subcommand -a reindex       -d 'Rebuild search artifacts'
 complete -c pm -n __pm_no_subcommand -a history       -d 'Show item history entries'
@@ -2188,6 +2212,20 @@ complete -c pm -n '__fish_seen_subcommand_from context ctx' -l limit     -d 'Lim
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l depth     -d 'Context depth' -r -a 'brief standard deep full'
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l format    -d 'Output override' -r -a 'markdown toon json'
 ${fishContextRuntimeFieldFlags}
+
+# next flags
+complete -c pm -n '__fish_seen_subcommand_from next' -l type           -d 'Filter candidates by type' -r -a '${typeChoices}'
+complete -c pm -n '__fish_seen_subcommand_from next' -l tag            -d 'Filter candidates by tag' -r -a ${fishTagChoices}
+complete -c pm -n '__fish_seen_subcommand_from next' -l priority       -d 'Filter candidates by priority' -r -a '0 1 2 3 4'
+complete -c pm -n '__fish_seen_subcommand_from next' -l assignee       -d 'Filter candidates by assignee' -r
+complete -c pm -n '__fish_seen_subcommand_from next' -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
+complete -c pm -n '__fish_seen_subcommand_from next' -l sprint         -d 'Filter candidates by sprint' -r
+complete -c pm -n '__fish_seen_subcommand_from next' -l release        -d 'Filter candidates by release' -r
+complete -c pm -n '__fish_seen_subcommand_from next' -l parent         -d 'Scope to one item subtree' -r
+complete -c pm -n '__fish_seen_subcommand_from next' -l limit          -d 'Limit ready rows' -r
+complete -c pm -n '__fish_seen_subcommand_from next' -l blocked-limit  -d 'Limit blocked rows' -r
+complete -c pm -n '__fish_seen_subcommand_from next' -l ready-only     -d 'Omit the blocked companion list'
+complete -c pm -n '__fish_seen_subcommand_from next' -l format         -d 'Output override' -r -a 'markdown toon json'
 
 # guide flags
 complete -c pm -n '__fish_seen_subcommand_from guide' -l list      -d 'Show guide topic index'

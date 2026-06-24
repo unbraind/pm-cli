@@ -102,6 +102,8 @@ pm release <item-id>
 
 | Need | Command |
 |------|---------|
+| The single next action + why | `pm next` (recommended ready item with rationale, plus ranked ready/blocked queues; `--ready-only` for the tightest output) |
+| Next ready work in one epic | `pm next --parent <id>` |
 | Next work and agenda | `pm context --limit 10` |
 | Comprehensive whole-tracker snapshot | `pm context --depth full` (every section, no per-section row cap) |
 | Status of one epic/subtree | `pm context --parent <id> --depth deep` |

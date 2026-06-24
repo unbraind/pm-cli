@@ -78,6 +78,7 @@ When package-owned commands are unavailable, usage guidance includes an install-
 ## Triage
 
 ```bash
+pm next                                 # the single highest-priority READY item + why, then the ready/blocked queues
 pm context --limit 10
 pm search "calendar reminder validation" --limit 10
 pm get pm-a1b2                          # read one item; add --fields/--depth for lower-token projections
@@ -89,6 +90,14 @@ pm aggregate --group-by parent,type --completion --include-unparented
 pm install governance-audit --project   # if dedupe-audit / dedupe-merge are not available
 pm dedupe-audit --mode parent_scope --limit 20
 pm dedupe-merge --keep pm-canonical --close pm-duplicate --dry-run
+```
+
+Use `pm next` when the only question is "what should I work on now?" — it is the distilled, dependency-aware version of `context`. It computes READINESS rather than just listing active work: an item is **ready** when its status is active, it has no open blockers (neither the scalar `blocked_by` nor any `blocked_by` dependency points at a non-terminal item), and it has no open children (a concrete leaf, never an Epic with open work beneath it). `pm next` returns one `recommended` item with a deterministic rationale (status, priority, deadline, blocker clearance, parent advancement, and the downstream items it would unblock), a ranked `ready` queue, and a `blocked` companion queue annotated with each item's open blockers so you know exactly what to clear next. In-progress work is recommended before unstarted work. Scope to one epic with `--parent <id>`, cap rows with `--limit`/`--blocked-limit`, drop the blocked list with `--ready-only`, and render markdown with `--format markdown`. Available over MCP as the narrow `pm_next` tool (and the `next` action of `pm_run`).
+
+```bash
+pm next                                 # recommend the next action + ready/blocked queues
+pm next --parent pm-epic01              # scope readiness to one epic's subtree
+pm next --ready-only --limit 3 --json   # tightest agent-loop projection
 ```
 
 Use `context` first for a compact active-work snapshot. Use `search` when the request names a concept, component, or prior issue.

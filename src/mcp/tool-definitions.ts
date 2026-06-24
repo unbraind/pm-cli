@@ -128,6 +128,17 @@ export const TOOLS: ToolDefinition[] = [
     inputSchema: objectSchema({ options: { type: "object" } }),
   },
   {
+    name: "pm_next",
+    description:
+      "Recommend the next actionable work item: the single highest-priority READY item " +
+      "(active status, no open blockers, no open children) plus the ranked ready and blocked queues. " +
+      "The recommended item carries a rationale and each blocked item lists the open blockers gating it. " +
+      "Pass options.parent='<id>' to scope to one subtree, options.limit=N to cap ready rows, " +
+      "options.readyOnly=true to omit the blocked list, or filters (options.type/tag/priority/assignee/sprint/release). " +
+      "The most token-efficient 'what should I do now?' read for agents.",
+    inputSchema: objectSchema({ options: { type: "object" } }),
+  },
+  {
     name: "pm_search",
     description:
       "Search pm items with keyword, semantic, or hybrid search. " +

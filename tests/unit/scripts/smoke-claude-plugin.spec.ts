@@ -10,6 +10,7 @@ type ClaudeModule = typeof import("../../../scripts/smoke-claude-plugin.mjs");
 const REQUIRED_TOOLS = [
   "pm_run",
   "pm_context",
+  "pm_next",
   "pm_search",
   "pm_list",
   "pm_get",

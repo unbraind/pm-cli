@@ -15,6 +15,11 @@ vi.mock("../../../src/cli/commands/context.js", () => ({
   resolveContextOutputFormat: vi.fn(),
   renderContextMarkdown: vi.fn(),
 }));
+vi.mock("../../../src/cli/commands/next.js", () => ({
+  runNext: vi.fn(),
+  resolveNextOutputFormat: vi.fn(),
+  renderNextMarkdown: vi.fn(),
+}));
 vi.mock("../../../src/cli/commands/list.js", () => ({ runList: vi.fn() }));
 
 vi.mock("../../../src/cli/registration-helpers.js", async (importOriginal) => {
@@ -37,6 +42,7 @@ import { runSearch } from "../../../src/cli/commands/search.js";
 import { runEval } from "../../../src/cli/commands/eval.js";
 import { runAggregate } from "../../../src/cli/commands/aggregate.js";
 import { renderContextMarkdown, resolveContextOutputFormat, runContext } from "../../../src/cli/commands/context.js";
+import { renderNextMarkdown, resolveNextOutputFormat, runNext } from "../../../src/cli/commands/next.js";
 import { runList } from "../../../src/cli/commands/list.js";
 import { printActivityJsonStream, printListJsonStream, printResult, writeStdout } from "../../../src/cli/registration-helpers.js";
 
@@ -95,6 +101,9 @@ beforeEach(() => {
   vi.mocked(runContext).mockResolvedValue({ summary: {} } as never);
   vi.mocked(resolveContextOutputFormat).mockReturnValue("json" as never);
   vi.mocked(renderContextMarkdown).mockReturnValue("# Context" as never);
+  vi.mocked(runNext).mockResolvedValue({ summary: {}, recommended: null } as never);
+  vi.mocked(resolveNextOutputFormat).mockReturnValue("json" as never);
+  vi.mocked(renderNextMarkdown).mockReturnValue("# Next" as never);
   vi.mocked(runList).mockResolvedValue({
     items: [
       { id: "pm-1", status: "open", type: "Task", title: "First" },
@@ -269,6 +278,77 @@ describe("register-list-query eval command (pm-u8n5)", () => {
       passed: false,
     } as never);
     await expect(runRaw("eval", "--fail-under", "0.5")).rejects.toThrow(/Eval gate failed/);
+  });
+});
+
+describe("register-list-query next command (pm-nj90)", () => {
+  it("normalizes every filter, snake_case alias, and the boolean ready-only flag", async () => {
+    await runProfiled(
+      "next",
+      "--type",
+      "Task",
+      "--tag",
+      "area:cli",
+      "--priority",
+      "0",
+      "--assignee",
+      "me",
+      "--assignee_filter",
+      "assigned",
+      "--sprint",
+      "s1",
+      "--release",
+      "r1",
+      "--parent",
+      "pm-epic",
+      "--limit",
+      "3",
+      "--blocked_limit",
+      "2",
+      "--ready_only",
+    );
+    const nextOptions = lastCall<Record<string, unknown>>(vi.mocked(runNext) as never, 0);
+    expect(nextOptions).toMatchObject({
+      type: "Task",
+      tag: "area:cli",
+      priority: "0",
+      assignee: "me",
+      assigneeFilter: "assigned",
+      sprint: "s1",
+      release: "r1",
+      parent: "pm-epic",
+      limit: "3",
+      blockedLimit: "2",
+      readyOnly: true,
+    });
+    const outputOptions = lastCall<Record<string, unknown>>(vi.mocked(printResult) as never, 1);
+    expect(outputOptions.json).toBe(true);
+  });
+
+  it("forwards the canonical --ready-only flag and leaves omitted flags undefined", async () => {
+    await runRaw("next", "--ready-only");
+    const nextOptions = lastCall<Record<string, unknown>>(vi.mocked(runNext) as never, 0);
+    expect(nextOptions).toMatchObject({ readyOnly: true, type: undefined, blockedLimit: undefined });
+  });
+
+  it("writes markdown output through writeStdout when not quiet", async () => {
+    vi.mocked(resolveNextOutputFormat).mockReturnValue("markdown" as never);
+    await runRaw("next", "--format", "markdown");
+    expect(vi.mocked(writeStdout)).toHaveBeenCalledWith("# Next\n");
+    expect(vi.mocked(printResult)).not.toHaveBeenCalled();
+  });
+
+  it("suppresses markdown output under --quiet", async () => {
+    vi.mocked(resolveNextOutputFormat).mockReturnValue("markdown" as never);
+    await runProfiled("next", "--format", "markdown");
+    expect(vi.mocked(writeStdout)).not.toHaveBeenCalled();
+  });
+
+  it("routes toon output through printResult without json", async () => {
+    vi.mocked(resolveNextOutputFormat).mockReturnValue("toon" as never);
+    await runRaw("next");
+    const outputOptions = lastCall<Record<string, unknown>>(vi.mocked(printResult) as never, 1);
+    expect(outputOptions.json).toBe(false);
   });
 });
 

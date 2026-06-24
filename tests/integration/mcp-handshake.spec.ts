@@ -30,6 +30,7 @@ import { withTempPmPath } from "../helpers/withTempPmPath.js";
 const EXPECTED_TOOL_NAMES = [
   "pm_run",
   "pm_context",
+  "pm_next",
   "pm_search",
   "pm_list",
   "pm_get",
@@ -105,7 +106,7 @@ describe("MCP protocol handshake", () => {
     expect(result.capabilities).toMatchObject({ tools: {} });
   });
 
-  it("tools/list returns exactly the 25 expected tools including the new narrow tools", async () => {
+  it("tools/list returns exactly the 27 expected tools including the new narrow tools", async () => {
     const result = (await handleRequest({
       jsonrpc: "2.0",
       id: 2,
@@ -113,7 +114,7 @@ describe("MCP protocol handshake", () => {
     })) as { tools?: Array<{ name?: string; description?: string; inputSchema?: unknown }> };
 
     const tools = result.tools ?? [];
-    expect(tools).toHaveLength(26);
+    expect(tools).toHaveLength(27);
 
     const names = tools.map((tool) => tool.name);
     expect(new Set(names)).toEqual(new Set(EXPECTED_TOOL_NAMES));
@@ -403,6 +404,44 @@ describe("MCP protocol handshake", () => {
 
   it("pm_context defaults to a brief compact snapshot and honors depth overrides", async () => {
     await withTempPmPath((context) => assertPmContextDepthProjection(context, "MCP context projection target"));
+  });
+
+  it("pm_next recommends the next ready item and lists blocked work with their blockers", async () => {
+    await withTempPmPath(async (context) => {
+      const ready = (context.runCli(
+        ["create", "--json", "--title", "Ready leaf", "--type", "Task", "--priority", "0", "--body", ""],
+        { expectJson: true },
+      ).json as { item: { id: string } }).item.id;
+      const blocker = (context.runCli(
+        ["create", "--json", "--title", "Gate", "--type", "Task", "--body", ""],
+        { expectJson: true },
+      ).json as { item: { id: string } }).item.id;
+      context.runCli(
+        ["create", "--json", "--title", "Waiting", "--type", "Task", "--dep", `id=${blocker},kind=blocked_by`, "--body", ""],
+        { expectJson: true },
+      );
+
+      const response = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 71,
+        method: "tools/call",
+        params: { name: "pm_next", arguments: { path: context.pmPath } },
+      })) as {
+        structuredContent?: {
+          result?: {
+            recommended?: { id?: string } | null;
+            ready?: Array<{ id?: string }>;
+            blocked?: Array<{ id?: string; blockers?: Array<{ id?: string }> }>;
+            summary?: { recommended?: boolean };
+          };
+        };
+      };
+
+      const result = response.structuredContent?.result;
+      expect(result?.recommended?.id).toBe(ready);
+      expect(result?.summary?.recommended).toBe(true);
+      expect(result?.blocked?.[0]?.blockers?.[0]?.id).toBe(blocker);
+    });
   });
 
   it("pm_health defaults to the compact summary projection and full=true opts into detail (F2)", async () => {

@@ -204,6 +204,8 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   filterNoLinkedCommand: { type: "boolean" },
   ids: { type: "string" },
   limit: { anyOf: [{ type: "string" }, { type: "number" }] },
+  blockedLimit: { anyOf: [{ type: "string" }, { type: "number" }] },
+  readyOnly: { type: "boolean" },
   limitItems: { anyOf: [{ type: "string" }, { type: "number" }] },
   fullHistory: { type: "boolean" },
   latest: { anyOf: [{ type: "string" }, { type: "number" }] },
@@ -739,6 +741,13 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   parent: {
     description: "Parent item ID filter for hierarchical list queries.",
     examples: ["pm-epic01"],
+  },
+  blockedLimit: {
+    description: "Cap blocked rows returned by the next action (defaults to the ready --limit).",
+    examples: ["3"],
+  },
+  readyOnly: {
+    description: "When true, the next action omits the blocked companion list.",
   },
   unset: {
     description: "Repeatable list of front-matter fields to clear explicitly during create/update mutations.",

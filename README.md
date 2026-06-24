@@ -92,9 +92,10 @@ pm release <item-id>
 
 ## Agent Loop
 
-Use `pm context` first, then search before creating anything:
+Use `pm next` to get the single highest-priority ready item (and why), or `pm context` for the full snapshot, then search before creating anything:
 
 ```bash
+pm next                                          # the next actionable item + rationale, ready/blocked queues
 pm context --limit 10
 pm search "keywords for the requested work" --limit 10
 pm list-open --limit 20

@@ -14,6 +14,7 @@ import {
   normalizeActivityOptions,
   normalizeContextOptions,
   normalizeListOptions,
+  normalizeNextOptions,
   normalizeSearchKeywordsInput,
   normalizeSearchOptions,
   printActivityJsonStream,
@@ -359,6 +360,45 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
           printError(`profile:command=context took_ms=${Date.now() - startedAt}`);
         }
       });
+  }
+
+  if (shouldRegister("next")) {
+    const nextCommand = program
+      .command("next")
+      .description("Recommend the next actionable (unblocked, ready) work item with rationale + blocked companion.")
+      .option("--type <value>", "Filter candidate items by type")
+      .option("--tag <value>", "Filter candidate items by tag")
+      .option("--priority <value>", "Filter candidate items by priority")
+      .option("--assignee <value>", "Filter candidate items by assignee")
+      .option("--assignee-filter <value>", "Filter assignee presence: assigned|unassigned")
+      .option("--sprint <value>", "Filter candidate items by sprint")
+      .option("--release <value>", "Filter candidate items by release")
+      .option("--parent <id>", "Scope to one item's subtree (the item plus all descendants)")
+      .option("--limit <n>", "Limit ready rows (default: 5; non-positive falls back to default)")
+      .option("--blocked-limit <n>", "Limit blocked rows (default: same as --limit)")
+      .option("--ready-only", "Omit the blocked companion list")
+      .option("--format <value>", "Next output format override: markdown|toon|json");
+    addHiddenOption(nextCommand, "--assignee_filter <value>", "Alias for --assignee-filter");
+    addHiddenOption(nextCommand, "--blocked_limit <n>", "Alias for --blocked-limit");
+    addHiddenOption(nextCommand, "--ready_only", "Alias for --ready-only");
+    nextCommand.action(async (options: Record<string, unknown>, actionCommand) => {
+      const globalOptions = getGlobalOptions(actionCommand);
+      const startedAt = Date.now();
+      const commands = await import("./commands/next.js");
+      const nextOptions = normalizeNextOptions(options);
+      const result = await commands.runNext(nextOptions, globalOptions);
+      const outputFormat = commands.resolveNextOutputFormat(nextOptions, globalOptions);
+      if (outputFormat === "markdown") {
+        if (!globalOptions.quiet) {
+          writeStdout(`${commands.renderNextMarkdown(result)}\n`);
+        }
+      } else {
+        printResult(result, { ...globalOptions, json: outputFormat === "json" });
+      }
+      if (globalOptions.profile) {
+        printError(`profile:command=next took_ms=${Date.now() - startedAt}`);
+      }
+    });
   }
 
   if (shouldRegister("search")) {

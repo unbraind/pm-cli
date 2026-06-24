@@ -521,6 +521,22 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "Configure defaults via pm config project set context --default-depth standard --activity-limit 15.",
     ],
   },
+  next: {
+    why: "Answers 'what should I work on now?' in one read: the single highest-priority ready item with rationale, plus the ranked ready and blocked queues (project management = context management).",
+    examples: [
+      "pm next",
+      "pm next --json",
+      "pm next --limit 3 --ready-only",
+      "pm next --parent pm-mpbb",
+      "pm next --assignee codex-agent --format markdown",
+    ],
+    tips: [
+      "Ready = active status, no open blockers, and no open children (a concrete leaf); the recommendation resumes in-progress work before starting new work.",
+      "An item is blocked when its scalar blocked_by or a blocked_by dependency points at a non-terminal item; the blocked list names the blockers to clear.",
+      "Containers (Epics/Features with open children) are never recommended directly — the actionable leaf beneath them is.",
+      "Use --parent to scope to one epic's subtree, or --ready-only to drop the blocked companion list for the tightest output.",
+    ],
+  },
   search: {
     why: "Finds relevant items by keyword, semantic, or hybrid retrieval modes.",
     examples: [
