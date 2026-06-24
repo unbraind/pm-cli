@@ -156,6 +156,7 @@ async function loadTodosSdkModule(): Promise<TodosSdkModule> {
       Array.isArray(loaded.DEPENDENCY_KIND_VALUES) &&
       typeof loaded.EXIT_CODE === "object" &&
       loaded.EXIT_CODE !== null &&
+      typeof loaded.EXIT_CODE.NOT_FOUND === "number" &&
       Array.isArray(loaded.ISSUE_SEVERITY_VALUES) &&
       typeof loaded.PmCliError === "function" &&
       Array.isArray(loaded.RISK_VALUES) &&
@@ -187,8 +188,8 @@ async function loadTodosSdkModule(): Promise<TodosSdkModule> {
     ) {
       return loaded as TodosSdkModule;
     }
-  } catch {
-    // Fall through to deterministic failure message below.
+  } catch (error: unknown) {
+    throw new Error(`builtin-todos failed to load SDK exports from ${modulePath}.`, { cause: error });
   }
   throw new Error(`builtin-todos failed to load SDK exports from ${modulePath}.`);
 }

@@ -151,6 +151,8 @@ async function loadBeadsSdkModule(): Promise<BeadsSdkModule> {
       Array.isArray(loaded.DEPENDENCY_KIND_VALUES) &&
       typeof loaded.EXIT_CODE === "object" &&
       loaded.EXIT_CODE !== null &&
+      typeof loaded.EXIT_CODE.NOT_FOUND === "number" &&
+      typeof loaded.EXIT_CODE.USAGE === "number" &&
       typeof loaded.PmCliError === "function" &&
       typeof loaded.canonicalDocument === "function" &&
       typeof loaded.commitImportedItem === "function" &&
@@ -178,8 +180,8 @@ async function loadBeadsSdkModule(): Promise<BeadsSdkModule> {
     ) {
       return loaded as BeadsSdkModule;
     }
-  } catch {
-    // Fall through to deterministic failure message below.
+  } catch (error: unknown) {
+    throw new Error(`builtin-beads failed to load SDK exports from ${modulePath}.`, { cause: error });
   }
   throw new Error(`builtin-beads failed to load SDK exports from ${modulePath}.`);
 }

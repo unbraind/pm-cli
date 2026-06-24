@@ -1474,7 +1474,42 @@ describe("built-in todos extension import/export", () => {
     const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
     process.env.PM_CLI_PACKAGE_ROOT = tempRoot;
     try {
-      await expect(importTodosRuntime()).rejects.toThrow("builtin-todos failed to load SDK exports");
+      let thrown: unknown;
+      try {
+        await importTodosRuntime();
+      } catch (error: unknown) {
+        thrown = error;
+      }
+      expect(thrown).toBeInstanceOf(Error);
+      expect((thrown as Error).message).toContain("builtin-todos failed to load SDK exports");
+      expect((thrown as Error & { cause?: unknown }).cause).toBeInstanceOf(Error);
+    } finally {
+      if (previousPackageRoot === undefined) {
+        delete process.env.PM_CLI_PACKAGE_ROOT;
+      } else {
+        process.env.PM_CLI_PACKAGE_ROOT = previousPackageRoot;
+      }
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects a configured SDK module with incomplete todos exit codes", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-todos-sdk-exit-code-"));
+    const sdkDir = path.join(tempRoot, "dist", "sdk");
+    const realSdkUrl = pathToFileURL(path.join(process.cwd(), "src", "sdk", "index.ts")).href;
+    await mkdir(sdkDir, { recursive: true });
+    await writeFile(
+      path.join(sdkDir, "index.js"),
+      [`export * from ${JSON.stringify(realSdkUrl)};`, "export const EXIT_CODE = {};\n"].join("\n"),
+      "utf8",
+    );
+    const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
+    process.env.PM_CLI_PACKAGE_ROOT = tempRoot;
+    try {
+      const failure = await importTodosRuntime().catch((error: unknown) => error);
+      expect(failure).toBeInstanceOf(Error);
+      expect((failure as Error).message).toContain("builtin-todos failed to load SDK exports");
+      expect("cause" in (failure as object)).toBe(false);
     } finally {
       if (previousPackageRoot === undefined) {
         delete process.env.PM_CLI_PACKAGE_ROOT;
