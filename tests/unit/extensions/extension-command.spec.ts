@@ -2183,7 +2183,10 @@ describe("extension command runtime", () => {
       // resolve the subpath, then prove the module loads and dispatches for real.
       const sdkLinkDir = path.join(context.pmPath, "node_modules", "@unbrained");
       await mkdir(sdkLinkDir, { recursive: true });
-      await symlink(process.cwd(), path.join(sdkLinkDir, "pm-cli"), "dir");
+      // "junction" rather than "dir": a Windows directory symlink needs admin /
+      // Developer Mode, while a junction (over the absolute cwd) does not. Node
+      // ignores the type argument on POSIX, so Linux/macOS get an ordinary symlink.
+      await symlink(process.cwd(), path.join(sdkLinkDir, "pm-cli"), "junction");
       const invoked = spawnSync(
         process.execPath,
         [path.join(process.cwd(), "dist/cli.js"), "--path", context.pmPath, "starter", "declarative", "ping", "--json"],

@@ -566,8 +566,9 @@ built-in commands like `pm create <type>` must see — activates conservatively 
 every command rather than gating on the package's own commands.
 
 Each `--capability` starter authors an imperative `activate` body. To scaffold the
-declarative `composeExtension` form instead, pass `--declarative` (package-mode,
-commands capability) — see [Declarative Authoring](#declarative-authoring).
+declarative `composeExtension` form instead, pass `--declarative` to
+`pm package init` / `pm package scaffold` (it is an init/scaffold flag, package-mode
+and commands capability only) — see [Declarative Authoring](#declarative-authoring).
 See [EXTENSIONS.md](EXTENSIONS.md) for the manifest-field reference.
 
 ## Self-Identity and Lifecycle
