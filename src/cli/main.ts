@@ -1133,7 +1133,11 @@ function extensionCapabilities(extension: ExtensionDiscoveryResult["effective"][
 }
 
 const GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES = new Set(["hooks", "parser", "preflight", "renderers"]);
-const CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES = new Set(["commands", "schema", "services"]);
+// Capabilities that register command handlers whose names are not statically
+// known without declared `activation.commands`, so the extension must activate
+// for any command probe. `importers`/`exporters` register their import/export as
+// command handlers, so they belong here alongside commands/schema/services.
+const CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES = new Set(["commands", "schema", "services", "importers"]);
 const SEARCH_EXTENSION_ACTIVATION_COMMANDS = new Set(["reindex", "search", "search-advanced"]);
 const CREATE_TEMPLATE_FLAGS = new Set(["--template"]);
 
@@ -1218,16 +1222,12 @@ function extensionNeedsActivationForProbe(
   }
 
   // Without declared activation commands the contributed command names are
-  // unknown, so any command-bearing capability must activate for the probe — the
-  // invoked command could be one it registers. `importers`/`exporters` register
-  // their import/export as command handlers, so they belong in this tier
-  // alongside commands/schema/services; activation stays lazy once the extension
-  // declares `activation.commands` (handled by the exact-match path above).
+  // unknown, so any command-bearing capability (commands/schema/services and
+  // importers/exporters, all of which register command handlers) must activate
+  // for the probe — the invoked command could be one it registers. Activation
+  // stays lazy once the extension declares `activation.commands` (handled by the
+  // exact-match path above).
   if (hasAnyCapability(capabilities, CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES)) {
-    return true;
-  }
-
-  if (capabilities.has("importers")) {
     return true;
   }
 
@@ -1249,7 +1249,6 @@ function discoveryNeedsActivationForProbe(
         extensionActivationCommands(extension).length > 0 ||
         hasAnyCapability(capabilities, GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES) ||
         hasAnyCapability(capabilities, CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES) ||
-        capabilities.has("importers") ||
         capabilities.has("search")
       );
     });
