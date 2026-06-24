@@ -209,15 +209,17 @@ describe("extension scaffold define builder guidance", () => {
 
     expect(manifest.capabilities).toEqual(["commands", "preflight"]);
     expect(manifest.activation?.commands).toEqual(["gate kit ping"]);
-    expect(entry).toContain("api.registerPreflight((context) => ({");
-    expect(entry).toContain("run_extension_migrations: context.decision.run_extension_migrations,");
+    // The starter returns context.decision unchanged (a safe no-op delta); the
+    // comment documents the keys the author can change.
+    expect(entry).toContain("api.registerPreflight((context) => context.decision);");
+    expect(entry).toContain("run_extension_migrations, enforce_mandatory_migration_gate);");
     expect(sampleTest).toContain("  assertRegisteredPreflightOverride,");
     expect(sampleTest).toContain("  runRegisteredPreflightOverrideForTest,");
     expect(sampleTest).toContain("assert.deepEqual(result.decision, decision);");
     expect(readme).toContain(
       'import { defineCommand, definePreflightOverride } from "@unbrained/pm-cli/sdk";',
     );
-    expect(readme).toContain("export const preflightOverride = definePreflightOverride((context) => ({");
+    expect(readme).toContain("export const preflightOverride = definePreflightOverride((context) => context.decision);");
     expect(readme).toContain("api.registerPreflight(preflightOverride);");
     expect(readme).toContain("## Preflight Override");
   });

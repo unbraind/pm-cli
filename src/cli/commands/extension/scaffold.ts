@@ -644,18 +644,14 @@ function buildActivateBodyLines(
       "",
       "  // Preflight overrides adjust pm's pre-run gate decision (extension",
       "  // migrations + item-format checks) before EVERY command — the last",
-      "  // registered override wins. Return only the decision keys you want to",
-      "  // change; omitted keys keep pm's computed value. This starter echoes the",
-      "  // current decision unchanged (a safe no-op) so installing the package does",
-      "  // not alter gate behavior — replace the values with your policy, e.g.",
+      "  // registered override wins. Return a delta of the keys you want to change",
+      "  // (enforce_item_format_gate, run_preflight_item_format_sync,",
+      "  // run_extension_migrations, enforce_mandatory_migration_gate); returning",
+      "  // context.decision unchanged is a safe no-op so installing the package does",
+      "  // not alter gate behavior — replace it with your policy, e.g.",
       "  // `{ run_extension_migrations: false }`. The `preflight` capability in",
       "  // manifest.json grants the registration.",
-      "  api.registerPreflight((context) => ({",
-      "    enforce_item_format_gate: context.decision.enforce_item_format_gate,",
-      "    run_preflight_item_format_sync: context.decision.run_preflight_item_format_sync,",
-      "    run_extension_migrations: context.decision.run_extension_migrations,",
-      "    enforce_mandatory_migration_gate: context.decision.enforce_mandatory_migration_gate,",
-      "  }));",
+      "  api.registerPreflight((context) => context.decision);",
     ];
   }
   if (capability === "services") {
@@ -1424,12 +1420,9 @@ export function buildStarterExtensionScaffoldFiles(
     if (capability === "preflight") {
       defineBuilderSnippet.push(
         "",
-        "export const preflightOverride = definePreflightOverride((context) => ({",
-        "  enforce_item_format_gate: context.decision.enforce_item_format_gate,",
-        "  run_preflight_item_format_sync: context.decision.run_preflight_item_format_sync,",
-        "  run_extension_migrations: context.decision.run_extension_migrations,",
-        "  enforce_mandatory_migration_gate: context.decision.enforce_mandatory_migration_gate,",
-        "}));",
+        "// Return a delta of the gate-decision keys you want to change; returning",
+        "// context.decision unchanged is a safe no-op (e.g. { run_extension_migrations: false }).",
+        "export const preflightOverride = definePreflightOverride((context) => context.decision);",
       );
     }
     if (capability === "services") {
