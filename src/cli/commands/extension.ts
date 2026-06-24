@@ -151,6 +151,7 @@ export interface ExtensionCommandOptions {
   fixManagedState?: boolean;
   fields?: string;
   capability?: string;
+  declarative?: boolean;
   vocabulary?: "extension" | "package";
 }
 
@@ -1192,6 +1193,9 @@ export async function runExtension(
   if (options.capability !== undefined && action !== "init") {
     throw new PmCliError("--capability is only valid with --init/--scaffold.", EXIT_CODE.USAGE);
   }
+  if (options.declarative === true && action !== "init") {
+    throw new PmCliError("--declarative is only valid with --init/--scaffold.", EXIT_CODE.USAGE);
+  }
   /* c8 ignore start -- alias-normalization matrix is covered by resolveAction tests; this IIFE only rewrites positional aliases */
   const normalizedTarget = (() => {
     const normalizedInput = target?.trim().toLowerCase();
@@ -1256,7 +1260,12 @@ export async function runExtension(
       throw new PmCliError('Action "init" does not accept --gh/--github/--ref options.', EXIT_CODE.USAGE);
     }
     const scaffoldTarget = requireTarget(normalizedTarget, action);
-    const scaffold = await scaffoldExtensionProject(scaffoldTarget, options.vocabulary ?? "extension", options.capability);
+    const scaffold = await scaffoldExtensionProject(
+      scaffoldTarget,
+      options.vocabulary ?? "extension",
+      options.capability,
+      options.declarative === true,
+    );
     const quotedTargetPath = JSON.stringify(scaffold.target_path);
     // Forward-slash the path for the copy-pasteable `cd` hint: Windows cmd.exe /
     // PowerShell reject the doubled backslashes JSON.stringify emits, while both
@@ -1269,6 +1278,7 @@ export async function runExtension(
         command: scaffold.command_name,
       },
       capability: scaffold.capability,
+      style: scaffold.style,
       target_path: scaffold.target_path,
       created_directory: scaffold.created_directory,
       files: scaffold.files,

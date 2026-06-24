@@ -396,10 +396,24 @@ interface ExtensionScaffoldResult {
   extension_name: string;
   command_name: string;
   capability: ExtensionScaffoldCapability;
+  /**
+   * Authoring style of the generated entrypoint: `"imperative"` (a hand-written
+   * `activate` body, the default) or `"declarative"` (a `composeExtension`
+   * blueprint). The declarative style is package-mode + commands only.
+   */
+  style: ExtensionScaffoldStyle;
   target_path: string;
   created_directory: boolean;
   files: ExtensionScaffoldFileResult[];
 }
+
+/**
+ * Authoring style the scaffolder targets for the generated entrypoint. The
+ * default `"imperative"` emits a hand-written `activate` body; `"declarative"`
+ * emits the SDK's `composeExtension` blueprint loop (package-mode + commands
+ * only — see {@link buildDeclarativeEntrypoint}).
+ */
+export type ExtensionScaffoldStyle = "imperative" | "declarative";
 
 /**
  * Build the `activate` body lines for the starter entrypoint. The base body
@@ -1162,6 +1176,235 @@ function buildScaffoldActivationCommands(
 }
 
 /**
+ * Build the declarative (`composeExtension`) variant of the starter `index.ts`.
+ *
+ * Where {@link buildActivateBodyLines} emits an imperative `activate` that calls
+ * `api.register*` directly, this emits the SDK's flagship declarative loop: the
+ * starter command is authored with `defineCommand`, collected into an
+ * `ExtensionBlueprint` via `defineExtensionBlueprint`, and turned into the runtime
+ * module by `composeExtension` (which generates the `activate` that registers
+ * every blueprint surface in order). The command, blueprint, and module are all
+ * exported so the colocated test can preflight the blueprint and exercise the
+ * module — see {@link buildDeclarativeSampleTestSource}.
+ *
+ * It is package-mode and commands-only by construction (the canonical
+ * `composeExtension` example): `composeExtension` is a runtime SDK *value* import,
+ * so it belongs in package-mode authoring where the SDK is a linked dependency,
+ * not in the import-free extension-only starters. {@link scaffoldExtensionProject}
+ * enforces both constraints before this is reached.
+ */
+function buildDeclarativeEntrypoint(extensionName: string, commandName: string): string {
+  return [
+    'import { composeExtension, defineCommand, defineExtensionBlueprint } from "@unbrained/pm-cli/sdk";',
+    "",
+    "// The starter command, authored with the `defineCommand` builder so its literal",
+    "// name is preserved and the handler `context` is inferred. Exporting it lets you",
+    "// unit-test the definition in isolation, apart from the blueprint.",
+    "export const pingCommand = defineCommand({",
+    `  name: ${JSON.stringify(commandName)},`,
+    '  description: "Starter scaffold command. Replace with your own behavior.",',
+    "  run: async (context) => ({",
+    "    ok: true,",
+    `    source: ${JSON.stringify(extensionName)},`,
+    "    command: context.command,",
+    '    message: "Starter extension scaffold is active.",',
+    "  }),",
+    "});",
+    "",
+    "// Declarative authoring: describe WHAT the package registers as a blueprint and",
+    "// let `composeExtension` generate the `activate` that wires every surface in",
+    "// order, instead of hand-writing each `api.register*` call. Grow the package by",
+    "// adding blueprint fields (`parsers`, `hooks`, `itemTypes`, `searchProviders`,",
+    "// ...); `defineExtensionBlueprint` contract-checks the blueprint where it is",
+    "// authored. Keep `manifest.json`'s `capabilities` equal to the set this blueprint",
+    "// derives (here: [\"commands\"]).",
+    "export const blueprint = defineExtensionBlueprint({",
+    "  commands: [pingCommand],",
+    "  // `deactivate` is the teardown counterpart to the generated `activate`: pm runs",
+    "  // it on host shutdown/reload to release anything the package opened (timers,",
+    "  // connections, caches). This starter holds none, so it stays a no-op.",
+    "  deactivate: () => {},",
+    "});",
+    "",
+    "// `composeExtension(blueprint)` is the package's default export — the runtime",
+    "// `ExtensionModule` pm loads. Guard the blueprint with `assertExtensionPreflight`",
+    "// in index.test.ts before publishing.",
+    "export default composeExtension(blueprint);",
+    "",
+  ].join("\n");
+}
+
+/**
+ * Build the declarative variant of the colocated `node:test` suite
+ * (`index.test.ts`) for the `composeExtension` commands starter.
+ *
+ * Unlike {@link buildSampleTestSource}, which threads the standalone
+ * `activateExtensionForTest`/`assertRegistered*`/`runRegistered*` helpers, this
+ * exercises the two capstones the declarative loop unlocks: the author-time
+ * `assertExtensionPreflight(blueprint, { identity, target })` (lint + manifest
+ * synthesis + version-compat in one call) over the exported `blueprint`, and the
+ * ergonomic runtime `createExtensionTestHarness(module)` whose `assert*`/`run*`/
+ * `deactivate` methods are pre-bound to the right activation sub-registry. The
+ * `identity`/`target` versions are pinned to the scaffolded `pm_min_version` so
+ * the synthesized manifest is trivially compatible and the suite stays
+ * deterministic; an author edits them as the package matures.
+ */
+function buildDeclarativeSampleTestSource(extensionName: string, commandName: string): string {
+  return [
+    'import assert from "node:assert/strict";',
+    'import { test } from "node:test";',
+    'import { assertExtensionPreflight, createExtensionTestHarness } from "@unbrained/pm-cli/sdk/testing";',
+    'import extension, { blueprint } from "./index.ts";',
+    "",
+    `test(${JSON.stringify(`${extensionName} passes author-time preflight`)}, () => {`,
+    "  // assertExtensionPreflight is the author-time capstone: it lints the blueprint,",
+    "  // synthesizes the least-privilege manifest from `identity`, and checks the version",
+    "  // bounds against `target` in one call, throwing on any blocking finding. It returns",
+    "  // the full report so you can inspect the derived data.",
+    "  const report = assertExtensionPreflight(blueprint, {",
+    "    identity: {",
+    `      name: ${JSON.stringify(extensionName)},`,
+    '      version: "0.1.0",',
+    '      entry: "./index.ts",',
+    "      priority: 0,",
+    `      pm_min_version: ${JSON.stringify(SCAFFOLD_PM_MIN_VERSION)},`,
+    "    },",
+    `    target: { pmVersion: ${JSON.stringify(SCAFFOLD_PM_MIN_VERSION)} },`,
+    "  });",
+    "  // The capability set is DERIVED from the blueprint, never hand-synced. Keep",
+    "  // manifest.json's `capabilities` equal to this list.",
+    '  assert.deepEqual(report.capabilities, ["commands"]);',
+    '  assert.deepEqual(report.manifest?.capabilities, ["commands"]);',
+    "});",
+    "",
+    `test(${JSON.stringify(`${extensionName} registers and runs its starter command`)}, async () => {`,
+    "  // createExtensionTestHarness activates the composed module once and binds the",
+    "  // assert*/run*/deactivate helpers to the right activation sub-registry, so you",
+    "  // never thread activation.registrations vs activation.commands by hand.",
+    "  // `capabilities` mirrors manifest.json so the in-memory activation grants what the",
+    "  // blueprint needs.",
+    "  const ext = await createExtensionTestHarness(extension, {",
+    `    name: ${JSON.stringify(extensionName)},`,
+    '    capabilities: ["commands"],',
+    "  });",
+    "  // assertCommandContract throws unless the command is registered, so reaching the",
+    "  // next line already proves the wiring; assert on the returned definition to",
+    "  // demonstrate inspecting registered metadata.",
+    `  const registered = ext.assertCommandContract({ command: ${JSON.stringify(commandName)} });`,
+    '  assert.equal(typeof registered.command.description, "string");',
+    "",
+    "  // runCommand invokes the handler through pm's real dispatch engine, so this asserts",
+    "  // behavior - not just that the command is wired. Replace these assertions as you",
+    "  // flesh out your command.",
+    `  const invocation = await ext.runCommand({ command: ${JSON.stringify(commandName)} });`,
+    "  assert.equal(invocation.handled, true);",
+    "  assert.deepEqual(invocation.result, {",
+    "    ok: true,",
+    `    source: ${JSON.stringify(extensionName)},`,
+    `    command: ${JSON.stringify(commandName)},`,
+    '    message: "Starter extension scaffold is active.",',
+    "  });",
+    "",
+    "  // deactivate runs pm's real teardown engine over the module; exactly one extension",
+    "  // tears down with no failures.",
+    "  const teardown = await ext.deactivate();",
+    "  assert.equal(teardown.deactivated, 1);",
+    "});",
+    "",
+  ].join("\n");
+}
+
+/**
+ * Build the README for the declarative (`composeExtension`) package starter.
+ *
+ * It documents the same metadata/validation sections as the imperative package
+ * README but frames the entrypoint around the declarative loop and the author-time
+ * preflight test, so the generated docs match the generated `index.ts`/
+ * `index.test.ts`.
+ */
+function buildDeclarativePackageReadme(packageName: string, commandName: string): string {
+  return [
+    `# ${packageName}`,
+    "",
+    "Generated by `pm package init --declarative`.",
+    "",
+    "## Included Files",
+    "- `package.json`: package metadata, `typecheck`/`test` scripts, and `pm` resource manifest.",
+    "- `manifest.json`: package metadata, capabilities, and `activation.commands` (the command paths that lazily activate this package).",
+    "- `index.ts`: the TypeScript manifest entry — a `defineExtensionBlueprint` blueprint composed into the runtime module by `composeExtension`, plus a `deactivate` teardown stub.",
+    "- `index.test.ts`: sample `node:test` suite covering author-time preflight (`assertExtensionPreflight`) and runtime command invocation/teardown via `createExtensionTestHarness`.",
+    TSCONFIG_BULLET,
+    "- `.gitignore`: ignores `node_modules/`, logs, and the TypeScript build cache.",
+    "",
+    "## Quick Start",
+    "This package is authored AND loaded as TypeScript: the manifest `entry` is",
+    "`./index.ts` and pm imports it directly via Node's native type stripping",
+    "(Node >=22.18), so there is no build step — install and run:",
+    "```bash",
+    "npm install",
+    "pm install --project <package-path>",
+    `pm ${commandName}`,
+    "pm package doctor --project --detail summary",
+    "```",
+    "",
+    "## Declarative Authoring",
+    "`index.ts` uses the SDK's declarative authoring loop instead of an imperative",
+    "`activate` body. You describe WHAT the package registers as an",
+    "`ExtensionBlueprint` and `composeExtension` generates the `activate` that wires",
+    "every surface in order:",
+    "- `defineCommand` authors the starter command with literal-type preservation and",
+    "  contextual handler inference.",
+    "- `defineExtensionBlueprint({ commands: [pingCommand], deactivate })` declares the",
+    "  registration surface; add more fields (`parsers`, `hooks`, `itemTypes`,",
+    "  `searchProviders`, ...) as the package grows.",
+    "- `composeExtension(blueprint)` is the default export — the runtime module pm",
+    "  loads. Its generated `activate` requires exactly the capabilities the blueprint",
+    "  derives, so `manifest.json`'s `capabilities` never drift.",
+    "",
+    "## Validate the Package",
+    "`npm install` pulls the peer SDK and TypeScript; `npm run typecheck` checks the",
+    "source against the SDK contracts and `npm test` runs the colocated sample:",
+    "```bash",
+    "npm install",
+    "npm run typecheck",
+    "npm test",
+    "```",
+    "`index.test.ts` exercises both authoring capstones: `assertExtensionPreflight`",
+    "(the author-time lint + manifest synthesis + version-compatibility check over the",
+    "exported `blueprint`) and `createExtensionTestHarness` (the runtime fixture whose",
+    "`assert*`/`run*`/`deactivate` methods bind to the right activation sub-registry).",
+    "`npm test` runs `node --test`, which strips types on load and executes",
+    "`index.test.ts` directly against the `@unbrained/pm-cli/sdk/testing` helpers - no",
+    "compile step and no extra test runner required.",
+    "",
+    "## Lazy Activation",
+    "`manifest.json` declares `activation.commands`: the exact command paths this",
+    "package's composed `activate` registers. pm imports and activates the package",
+    "lazily — only when an invoked command path matches one of these entries — so",
+    "unrelated commands (`pm list`, `pm search`, ...) never pay to load it. Keep this",
+    "list in sync with the blueprint's `commands`: add an entry when you add a command",
+    "and remove one you drop. Globally-scoped surfaces (hooks, parser/preflight/renderer",
+    "overrides, and search providers for built-in search commands) still activate",
+    "regardless of this list.",
+    "",
+    "## Compatibility Bounds",
+    "`manifest.json` cannot hold comments, so the version-compatibility fields are documented here:",
+    `- \`manifest_version\` (integer): manifest schema generation. Leave at \`${SCAFFOLD_MANIFEST_VERSION}\` unless you adopt a newer manifest schema.`,
+    `- \`pm_min_version\` (string): lowest pm CLI version that may load this package. Scaffolded as \`${SCAFFOLD_PM_MIN_VERSION}\`. The loader blocks the package on older CLIs.`,
+    "- `pm_max_version` (string, optional): highest pm CLI version that may load this package. Add it to block CLIs that are newer than the version you have validated against. The loader blocks the package when the CLI exceeds this bound.",
+    "",
+    "## Policy Metadata",
+    "The starter command is pure compute, so `manifest.json` declares `trusted: true`, `sandbox_profile: \"strict\"`, and all six permission keys as `false`. Keep that least-privilege shape for pure packages; relax only the specific permission your package actually needs and verify with `pm package doctor --project --detail deep --trace`.",
+    "",
+    "## Notes",
+    "- Author in `index.ts`; pm loads it directly (no build), so edits take effect on the next install/reload — there is no `.js` to regenerate.",
+    "- Move larger runtimes into sibling or subdirectory `*.ts` modules and import them with their real `.ts` extension; `tsconfig.json` type-checks every `*.ts` in the package (recursively).",
+    "- Use `@unbrained/pm-cli/sdk` as the public SDK import for richer package runtimes.",
+    "",
+  ].join("\n");
+}
+
+/**
  * Implements build starter extension scaffold files for the public runtime surface of this module.
  */
 export function buildStarterExtensionScaffoldFiles(
@@ -1169,6 +1412,7 @@ export function buildStarterExtensionScaffoldFiles(
   commandName: string,
   vocabulary: "extension" | "package",
   capability: ExtensionScaffoldCapability = "commands",
+  declarative: boolean = false,
 ): Record<string, string> {
   const packageName = `pm-${extensionName}`;
   const capabilities = SCAFFOLD_MANIFEST_CAPABILITIES[capability];
@@ -1563,14 +1807,18 @@ export function buildStarterExtensionScaffoldFiles(
       "- Use `@unbrained/pm-cli/sdk` as the public SDK import for richer package runtimes.",
       "",
     ].join("\n");
+    // The declarative starter swaps the imperative entrypoint/test/README for the
+    // `composeExtension` blueprint form (package-mode + commands only, enforced by
+    // scaffoldExtensionProject). package.json, manifest.json, tsconfig.json, and
+    // .gitignore are identical to the imperative commands starter.
     return {
       "package.json": packageJson,
       "manifest.json": manifest,
-      "index.ts": entrypoint,
-      "index.test.ts": sampleTest,
+      "index.ts": declarative ? buildDeclarativeEntrypoint(extensionName, commandName) : entrypoint,
+      "index.test.ts": declarative ? buildDeclarativeSampleTestSource(extensionName, commandName) : sampleTest,
       "tsconfig.json": tsconfig,
       ".gitignore": gitignore,
-      "README.md": packageReadme,
+      "README.md": declarative ? buildDeclarativePackageReadme(packageName, commandName) : packageReadme,
     };
   }
   const readme = [
@@ -1627,6 +1875,7 @@ export async function scaffoldExtensionProject(
   target: string,
   vocabulary: "extension" | "package" = "extension",
   capability: string = "commands",
+  declarative: boolean = false,
 ): Promise<ExtensionScaffoldResult> {
   const normalizedCapability = capability.trim().toLowerCase();
   if (!(SCAFFOLD_CAPABILITIES as readonly string[]).includes(normalizedCapability)) {
@@ -1636,6 +1885,25 @@ export async function scaffoldExtensionProject(
     );
   }
   const resolvedCapability = normalizedCapability as ExtensionScaffoldCapability;
+  // The declarative (`composeExtension` blueprint) starter is package-mode +
+  // commands only. `composeExtension` is a runtime SDK *value* import, so it
+  // belongs in package-mode authoring where the SDK is a linked dependency — not
+  // in the import-free extension-only starters that must load without it. The
+  // commands surface is the canonical declarative example; other capabilities use
+  // the imperative starter (tracked for a follow-up generalization).
+  if (declarative && vocabulary !== "package") {
+    throw new PmCliError(
+      "--declarative scaffolds a package-mode blueprint starter (composeExtension is a runtime SDK import). Use `pm package init`, not `pm extension init`.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (declarative && resolvedCapability !== "commands") {
+    throw new PmCliError(
+      `--declarative currently scaffolds the commands-capability blueprint starter (the canonical composeExtension example). Omit --capability or pass --capability commands; other capabilities use the imperative starter.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  const style: ExtensionScaffoldStyle = declarative ? "declarative" : "imperative";
   const normalizedTarget = target.trim();
   const targetPath = path.resolve(process.cwd(), normalizedTarget);
   const extensionName = normalizeManagedDirectoryName(path.basename(targetPath));
@@ -1643,7 +1911,7 @@ export async function scaffoldExtensionProject(
   // Commander, so generated starters use space-separated command words while the
   // manifest and package identity keep their normalized directory names.
   const commandName = `${extensionName.replace(/-/g, " ")} ping`;
-  const scaffoldFiles = buildStarterExtensionScaffoldFiles(extensionName, commandName, vocabulary, resolvedCapability);
+  const scaffoldFiles = buildStarterExtensionScaffoldFiles(extensionName, commandName, vocabulary, resolvedCapability, declarative);
 
   let createdDirectory = false;
   if (await pathExists(targetPath)) {
@@ -1695,6 +1963,7 @@ export async function scaffoldExtensionProject(
     extension_name: extensionName,
     command_name: commandName,
     capability: resolvedCapability,
+    style,
     target_path: targetPath,
     created_directory: createdDirectory,
     files,
