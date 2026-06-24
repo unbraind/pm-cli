@@ -351,7 +351,11 @@ function buildActivateBodyLines(
   if (capability === "schema") {
     const itemTypeName = extensionName;
     const itemTypeFolder = `${extensionName}s`;
+    // De-hyphenate for a short alias (e.g. "my-tracker" -> "mytracker"). For a
+    // single-word name the de-hyphenated form equals the type name, so omit the
+    // alias rather than register a redundant self-alias in the starter.
     const itemTypeAlias = extensionName.replace(/-/g, "");
+    const itemTypeAliases = itemTypeAlias === itemTypeName ? [] : [itemTypeAlias];
     const fieldName = `${extensionName.replace(/-/g, "_")}_note`;
     const migrationId = `${extensionName}-0001-init`;
     return [
@@ -376,7 +380,7 @@ function buildActivateBodyLines(
       `      name: ${JSON.stringify(itemTypeName)},`,
       "      // Replace with your domain's canonical plural folder name.",
       `      folder: ${JSON.stringify(itemTypeFolder)},`,
-      `      aliases: [${JSON.stringify(itemTypeAlias)}],`,
+      `      aliases: ${JSON.stringify(itemTypeAliases)},`,
       "      // Add field names here to force them at `pm create` time.",
       "      required_create_fields: [],",
       "    },",
@@ -897,6 +901,8 @@ export function buildStarterExtensionScaffoldFiles(
     const itemTypeName = extensionName;
     const itemTypeFolder = `${extensionName}s`;
     const itemTypeAlias = extensionName.replace(/-/g, "");
+    // Omit a redundant self-alias when the de-hyphenated form equals the type name.
+    const itemTypeAliases = itemTypeAlias === itemTypeName ? [] : [itemTypeAlias];
     const fieldName = `${extensionName.replace(/-/g, "_")}_note`;
     const migrationId = `${extensionName}-0001-init`;
     const defineBuilderImports = [
@@ -971,7 +977,7 @@ export function buildStarterExtensionScaffoldFiles(
         "export const itemType = defineItemType({",
         `  name: ${JSON.stringify(itemTypeName)},`,
         `  folder: ${JSON.stringify(itemTypeFolder)},`,
-        `  aliases: [${JSON.stringify(itemTypeAlias)}],`,
+        `  aliases: ${JSON.stringify(itemTypeAliases)},`,
         "  required_create_fields: [],",
         "});",
         "",

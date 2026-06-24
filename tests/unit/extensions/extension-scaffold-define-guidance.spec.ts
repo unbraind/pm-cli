@@ -72,6 +72,23 @@ describe("extension scaffold define builder guidance", () => {
     expect(schemaReadme).toContain("api.registerMigration(initMigration);");
   });
 
+  it("omits a redundant self-alias when a single-word schema type equals its de-hyphenated alias", () => {
+    const scaffold = buildStarterExtensionScaffoldFiles("todo", "todo ping", "package", "schema");
+    const entry = scaffold["index.ts"] ?? "";
+    const readme = scaffold["README.md"] ?? "";
+
+    // "todo" has no hyphen, so the de-hyphenated alias equals the type name; the
+    // starter registers no alias rather than a confusing self-alias. The
+    // entrypoint and the README define* snippet agree.
+    expect(entry).toContain("aliases: [],");
+    expect(entry).not.toContain('aliases: ["todo"]');
+    expect(readme).toContain("aliases: [],");
+    expect(readme).not.toContain('aliases: ["todo"]');
+    // A hyphenated name still gets a useful short alias.
+    const hyphenEntry = buildStarterExtensionScaffoldFiles("my-todo", "my todo ping", "package", "schema")["index.ts"] ?? "";
+    expect(hyphenEntry).toContain('aliases: ["mytodo"],');
+  });
+
   it("declares manifest activation.commands matching every registered command path per capability", () => {
     const commandsManifest = JSON.parse(
       buildStarterExtensionScaffoldFiles("tool-kit", "tool kit ping", "package", "commands")["manifest.json"] ?? "{}",
