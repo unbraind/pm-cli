@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildStarterExtensionScaffoldFiles } from "../../../src/cli/commands/extension/scaffold.js";
+import {
+  buildStarterExtensionScaffoldFiles,
+  type ExtensionScaffoldCapability,
+} from "../../../src/cli/commands/extension/scaffold.js";
 
 describe("extension scaffold define builder guidance", () => {
   it("documents the define* builder upgrade path for commands-only package scaffolds", () => {
@@ -401,5 +404,158 @@ describe("declarative composeExtension package scaffold", () => {
     const entry = buildStarterExtensionScaffoldFiles("local-ext", "local ext ping", "extension", "commands", true)["index.ts"] ?? "";
     expect(entry).toContain("export function activate(api: ExtensionApi): void {");
     expect(entry).not.toContain("composeExtension(blueprint)");
+  });
+
+  // The full capability matrix: every --capability variant emits its
+  // composeExtension(blueprint) form (the right define* imports, blueprint fields,
+  // and a harness test for the capability surface) — pm-lfdv.
+  const MATRIX: ReadonlyArray<{
+    capability: ExtensionScaffoldCapability;
+    builderImports: readonly string[];
+    blueprintFields: readonly string[];
+    entrypointMarkers: readonly string[];
+    testMarkers: readonly string[];
+    derivedCapabilities: string;
+    surfacePhrase: string;
+  }> = [
+    {
+      capability: "hooks",
+      builderImports: ["defineAfterCommandHook"],
+      blueprintFields: ["  hooks: { afterCommand: [afterCommandHook] },"],
+      entrypointMarkers: ["export const afterCommandHook = defineAfterCommandHook((context) => {"],
+      testMarkers: ['ext.assertHook({ kind: "after_command", extensionName: "kit" });', "const warnings = await ext.runHook({"],
+      derivedCapabilities: '["commands","hooks"]',
+      surfacePhrase: "starter command and after_command hook",
+    },
+    {
+      capability: "search",
+      builderImports: ["defineSearchProvider", "defineVectorStoreAdapter"],
+      blueprintFields: ["  searchProviders: [searchProvider],", "  vectorStoreAdapters: [vectorStoreAdapter],"],
+      entrypointMarkers: ["export const searchProvider = defineSearchProvider({", "export const vectorStoreAdapter = defineVectorStoreAdapter({"],
+      testMarkers: [
+        'import type { ItemDocument, PmSettings } from "@unbrained/pm-cli/sdk";',
+        "const query = await ext.runSearchProvider({",
+        "const vectorHits = await ext.runVectorStoreAdapter({",
+      ],
+      derivedCapabilities: '["commands","search"]',
+      surfacePhrase: "starter command, search provider, and vector-store adapter",
+    },
+    {
+      capability: "importers",
+      builderImports: ["defineExporter", "defineImporter"],
+      blueprintFields: ["  importers: [", "  exporters: ["],
+      entrypointMarkers: ["export const importer = defineImporter(async (context) => ({", "export const exporter = defineExporter(async (context) => ({"],
+      testMarkers: ["const imported = await ext.runImporter({", "const exported = await ext.runExporter({"],
+      // The importer/exporter declare flags, so the derived set includes `schema`
+      // (SDK fix pm-v3ty) — sorted: commands, importers, schema.
+      derivedCapabilities: '["commands","importers","schema"]',
+      surfacePhrase: "starter command, importer, and exporter",
+    },
+    {
+      capability: "schema",
+      builderImports: ["defineItemField", "defineItemType", "defineMigration"],
+      blueprintFields: ["  itemTypes: [itemType],", "  itemFields: [noteField],", "  migrations: [initMigration],"],
+      entrypointMarkers: ["export const noteField = defineItemField({", "export const initMigration = defineMigration({"],
+      testMarkers: ["const itemType = ext.assertItemType({", "const migrated = await ext.runMigration({"],
+      derivedCapabilities: '["commands","schema"]',
+      surfacePhrase: "starter command, custom item type, item field, and migration",
+    },
+    {
+      capability: "renderers",
+      builderImports: ["defineRendererOverride"],
+      blueprintFields: ["  renderers: { toon: toonRenderer },"],
+      entrypointMarkers: ["export const toonRenderer = defineRendererOverride((context) => {"],
+      testMarkers: ["const rendered = await ext.runRendererOverride({", "assert.equal(rendered.overridden, true);"],
+      derivedCapabilities: '["commands","renderers"]',
+      surfacePhrase: "starter command and toon renderer override",
+    },
+    {
+      capability: "parser",
+      builderImports: ["defineParserOverride"],
+      blueprintFields: ['  parsers: { "kit ping": pingParser },'],
+      entrypointMarkers: ["export const pingParser = defineParserOverride((context) => {", '      long: "--shout",'],
+      testMarkers: ["const result = await ext.runParserOverride({", "assert.deepEqual(result.context.options, { upper: true });", "    upper: false,"],
+      derivedCapabilities: '["commands","parser","schema"]',
+      surfacePhrase: "starter command and parser override",
+    },
+    {
+      capability: "preflight",
+      builderImports: ["definePreflightOverride"],
+      blueprintFields: ["  preflights: [preflightOverride],"],
+      entrypointMarkers: ["export const preflightOverride = definePreflightOverride((context) => context.decision);"],
+      testMarkers: ["const result = await ext.runPreflightOverride({", "assert.deepEqual(result.decision, decision);"],
+      derivedCapabilities: '["commands","preflight"]',
+      surfacePhrase: "starter command and preflight override",
+    },
+    {
+      capability: "services",
+      builderImports: ["defineServiceOverride"],
+      blueprintFields: ["  services: { output_format: outputService },"],
+      entrypointMarkers: ["export const outputService = defineServiceOverride((context) => {"],
+      testMarkers: ["const handled = await ext.runServiceOverride({", "assert.equal(passthrough.handled, false);"],
+      derivedCapabilities: '["commands","services"]',
+      surfacePhrase: "starter command and output_format service override",
+    },
+  ];
+
+  it.each(MATRIX)(
+    "scaffolds the $capability capability through the composeExtension blueprint",
+    ({ capability, builderImports, blueprintFields, entrypointMarkers, testMarkers, derivedCapabilities, surfacePhrase }) => {
+      const declarative = buildStarterExtensionScaffoldFiles("kit", "kit ping", "package", capability, true);
+      const imperative = buildStarterExtensionScaffoldFiles("kit", "kit ping", "package", capability, false);
+      const entry = declarative["index.ts"] ?? "";
+      const sampleTest = declarative["index.test.ts"] ?? "";
+      const readme = declarative["README.md"] ?? "";
+
+      // The entrypoint is the declarative loop — never an imperative activate body.
+      expect(entry).toContain("export const blueprint = defineExtensionBlueprint({");
+      expect(entry).toContain("export default composeExtension(blueprint);");
+      expect(entry).not.toContain("export function activate(api: ExtensionApi)");
+      // The capability's define* builders are imported and its blueprint fields wired.
+      for (const builder of builderImports) {
+        expect(entry).toContain(builder);
+      }
+      for (const field of blueprintFields) {
+        expect(entry).toContain(field);
+      }
+      for (const marker of entrypointMarkers) {
+        expect(entry).toContain(marker);
+      }
+      // The colocated test exercises the author-time preflight + a harness block for
+      // the capability surface, asserting the DERIVED (sorted) capability set.
+      expect(sampleTest).toContain("const report = assertExtensionPreflight(blueprint, {");
+      expect(sampleTest).toContain(`assert.deepEqual(report.capabilities, ${derivedCapabilities});`);
+      expect(sampleTest).toContain(`assert.deepEqual(report.manifest?.capabilities, ${derivedCapabilities});`);
+      expect(sampleTest).toContain("const ext = await createExtensionTestHarness(extension, {");
+      for (const marker of testMarkers) {
+        expect(sampleTest).toContain(marker);
+      }
+      // The declarative test never reaches for the standalone helpers — the harness
+      // binds them.
+      expect(sampleTest).not.toContain("activateExtensionForTest");
+      // The README documents the declarative loop and the capability's surface.
+      expect(readme).toContain("Generated by `pm package init --declarative`.");
+      expect(readme).toContain(`blueprint (${surfacePhrase})`);
+
+      // The manifest, package.json, tsconfig, and .gitignore are byte-identical to
+      // the imperative starter for the same capability, so a declarative package
+      // installs and activates exactly like its imperative twin.
+      expect(declarative["manifest.json"]).toBe(imperative["manifest.json"]);
+      expect(declarative["package.json"]).toBe(imperative["package.json"]);
+      expect(declarative["tsconfig.json"]).toBe(imperative["tsconfig.json"]);
+      expect(declarative[".gitignore"]).toBe(imperative[".gitignore"]);
+    },
+  );
+
+  it("omits activation.commands for the declarative schema starter (global item type)", () => {
+    const scaffold = buildStarterExtensionScaffoldFiles("kit", "kit ping", "package", "schema", true);
+    const manifest = JSON.parse(scaffold["manifest.json"] ?? "{}") as Record<string, unknown>;
+    expect(manifest.capabilities).toEqual(["commands", "schema"]);
+    expect(manifest.activation).toBeUndefined();
+    // The README explains the conservative-activation tradeoff rather than lazy activation.
+    const readme = scaffold["README.md"] ?? "";
+    expect(readme).toContain("## Activation");
+    expect(readme).toContain("contributes a GLOBAL custom item type");
+    expect(readme).not.toContain("## Lazy Activation");
   });
 });

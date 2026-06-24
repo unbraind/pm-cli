@@ -551,7 +551,6 @@ export const EXTENSION_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--init" },
   { flag: "--scaffold" },
   { flag: "--capability" },
-  { flag: "--declarative" },
   { flag: "--install" },
   { flag: "--uninstall" },
   { flag: "--explore" },
@@ -589,8 +588,15 @@ export const EXTENSION_SCOPE_FLAG_CONTRACTS: CliFlagContract[] = [
 export const EXTENSION_INIT_FLAG_CONTRACTS: CliFlagContract[] = [
   ...EXTENSION_SCOPE_FLAG_CONTRACTS,
   { flag: "--capability" },
-  { flag: "--declarative" },
 ];
+
+// `pm package` / `pm packages` additionally accept `--declarative` to scaffold the
+// `composeExtension` blueprint starter. It is a runtime SDK *value* import that only
+// package-mode authoring links, so `pm extension` omits it — the lone flag where the
+// package surface diverges from the extension surface.
+export const PACKAGE_FLAG_CONTRACTS: CliFlagContract[] = [...EXTENSION_FLAG_CONTRACTS, { flag: "--declarative" }];
+
+export const PACKAGE_INIT_FLAG_CONTRACTS: CliFlagContract[] = [...EXTENSION_INIT_FLAG_CONTRACTS, { flag: "--declarative" }];
 
 export const EXTENSION_INSTALL_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--project" },
@@ -1574,7 +1580,10 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
   ) {
     switch (lifecycleSubcommand) {
       case "init":
-        return withSubcommandGlobalFlags(EXTENSION_INIT_FLAG_CONTRACTS);
+        // `--declarative` is package-only, so `package init` / `packages init` carry it.
+        return withSubcommandGlobalFlags(
+          rootCommand === "extension" ? EXTENSION_INIT_FLAG_CONTRACTS : PACKAGE_INIT_FLAG_CONTRACTS,
+        );
       case "install":
         return withSubcommandGlobalFlags(EXTENSION_INSTALL_FLAG_CONTRACTS);
       case "uninstall":
@@ -1609,9 +1618,11 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
     case "config":
       return withSubcommandGlobalFlags(CONFIG_FLAG_CONTRACTS);
     case "extension":
+      return withSubcommandGlobalFlags(EXTENSION_FLAG_CONTRACTS);
     case "package":
     case "packages":
-      return withSubcommandGlobalFlags(EXTENSION_FLAG_CONTRACTS);
+      // `--declarative` is package-only (see PACKAGE_FLAG_CONTRACTS).
+      return withSubcommandGlobalFlags(PACKAGE_FLAG_CONTRACTS);
     case "install":
       return withSubcommandGlobalFlags(INSTALL_FLAG_CONTRACTS);
     case "upgrade":

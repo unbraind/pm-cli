@@ -87,6 +87,8 @@ import {
   LIST_FILTER_FLAG_CONTRACTS,
   NORMALIZE_FLAG_CONTRACTS,
   NOTES_FLAG_CONTRACTS,
+  PACKAGE_FLAG_CONTRACTS,
+  PACKAGE_INIT_FLAG_CONTRACTS,
   PM_EXTENSION_CAPABILITY_CONTRACTS,
   PM_EXTENSION_POLICY_MODE_CONTRACTS,
   PM_EXTENSION_POLICY_SURFACE_CONTRACTS,
@@ -382,7 +384,12 @@ const COMMAND_ALIAS_TO_CANONICAL = new Map(
   ),
 );
 
-const EXTENSION_PACKAGE_LIFECYCLE_FLAG_CONTRACTS: Array<readonly [string, CliFlagContract[]]> = [
+// Lifecycle subcommand flag contracts for `pm extension`. Only `init` differs
+// between extension and package: `pm package init` / `pm packages init`
+// additionally accept the package-only `--declarative` flag, so the package
+// variant swaps in PACKAGE_INIT_FLAG_CONTRACTS while every other subcommand is
+// shared verbatim.
+const EXTENSION_LIFECYCLE_FLAG_CONTRACTS: Array<readonly [string, CliFlagContract[]]> = [
   ["init", EXTENSION_INIT_FLAG_CONTRACTS],
   ["install", EXTENSION_INSTALL_FLAG_CONTRACTS],
   ["uninstall", EXTENSION_UNINSTALL_FLAG_CONTRACTS],
@@ -398,17 +405,22 @@ const EXTENSION_PACKAGE_LIFECYCLE_FLAG_CONTRACTS: Array<readonly [string, CliFla
   ["deactivate", EXTENSION_DEACTIVATE_FLAG_CONTRACTS],
 ];
 
+const PACKAGE_LIFECYCLE_FLAG_CONTRACTS: Array<readonly [string, CliFlagContract[]]> =
+  EXTENSION_LIFECYCLE_FLAG_CONTRACTS.map(([subcommand, flags]) =>
+    subcommand === "init" ? ([subcommand, PACKAGE_INIT_FLAG_CONTRACTS] as const) : ([subcommand, flags] as const),
+  );
+
 const CORE_COMMAND_FLAG_CONTRACT_ENTRIES: Array<readonly [string, CliFlagContract[]]> = [
-  ...EXTENSION_PACKAGE_LIFECYCLE_FLAG_CONTRACTS.flatMap(([subcommand, flags]) => [
-    [`extension ${subcommand}`, flags] as const,
+  ...EXTENSION_LIFECYCLE_FLAG_CONTRACTS.map(([subcommand, flags]) => [`extension ${subcommand}`, flags] as const),
+  ...PACKAGE_LIFECYCLE_FLAG_CONTRACTS.flatMap(([subcommand, flags]) => [
     [`package ${subcommand}`, flags] as const,
     [`packages ${subcommand}`, flags] as const,
   ]),
   ["init", INIT_FLAG_CONTRACTS],
   ["config", CONFIG_FLAG_CONTRACTS],
   ["extension", EXTENSION_FLAG_CONTRACTS],
-  ["package", EXTENSION_FLAG_CONTRACTS],
-  ["packages", EXTENSION_FLAG_CONTRACTS],
+  ["package", PACKAGE_FLAG_CONTRACTS],
+  ["packages", PACKAGE_FLAG_CONTRACTS],
   ["install", INSTALL_FLAG_CONTRACTS],
   ["create", CREATE_FLAG_CONTRACTS],
   ["update", UPDATE_FLAG_CONTRACTS],

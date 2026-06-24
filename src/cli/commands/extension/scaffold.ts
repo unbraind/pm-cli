@@ -399,7 +399,7 @@ interface ExtensionScaffoldResult {
   /**
    * Authoring style of the generated entrypoint: `"imperative"` (a hand-written
    * `activate` body, the default) or `"declarative"` (a `composeExtension`
-   * blueprint). The declarative style is package-mode + commands only.
+   * blueprint). The declarative style is package-mode only (any capability).
    */
   style: ExtensionScaffoldStyle;
   target_path: string;
@@ -410,8 +410,8 @@ interface ExtensionScaffoldResult {
 /**
  * Authoring style the scaffolder targets for the generated entrypoint. The
  * default `"imperative"` emits a hand-written `activate` body; `"declarative"`
- * emits the SDK's `composeExtension` blueprint loop (package-mode + commands
- * only — see {@link buildDeclarativeEntrypoint}).
+ * emits the SDK's `composeExtension` blueprint loop (package-mode only, for any
+ * capability — see {@link buildDeclarativeEntrypoint}).
  */
 export type ExtensionScaffoldStyle = "imperative" | "declarative";
 
@@ -1175,51 +1175,405 @@ function buildScaffoldActivationCommands(
   return [commandName];
 }
 
+// One-line surface phrase per capability, listing the registration surfaces the
+// declarative blueprint populates beyond the always-present starter command. Used
+// to keep the generated README's entrypoint bullet accurate per capability.
+const DECLARATIVE_ENTRYPOINT_SURFACE_PHRASE: Record<ExtensionScaffoldCapability, string> = {
+  commands: "starter command",
+  hooks: "starter command and after_command hook",
+  search: "starter command, search provider, and vector-store adapter",
+  importers: "starter command, importer, and exporter",
+  schema: "starter command, custom item type, item field, and migration",
+  renderers: "starter command and toon renderer override",
+  parser: "starter command and parser override",
+  preflight: "starter command and preflight override",
+  services: "starter command and output_format service override",
+};
+
+// The `ExtensionBlueprint` fields each capability populates, rendered as inline
+// code in the README's Declarative Authoring section so authors can see which
+// blueprint surface maps to the capability they scaffolded.
+const DECLARATIVE_CAPABILITY_BLUEPRINT_FIELDS: Record<ExtensionScaffoldCapability, string> = {
+  commands: "`commands`",
+  hooks: "`commands` and `hooks.afterCommand`",
+  search: "`commands`, `searchProviders`, and `vectorStoreAdapters`",
+  importers: "`commands`, `importers`, and `exporters`",
+  schema: "`commands`, `itemTypes`, `itemFields`, and `migrations`",
+  renderers: "`commands` and `renderers`",
+  parser: "`commands` and `parsers`",
+  preflight: "`commands` and `preflights`",
+  services: "`commands` and `services`",
+};
+
 /**
- * Build the declarative (`composeExtension`) variant of the starter `index.ts`.
- *
- * Where {@link buildActivateBodyLines} emits an imperative `activate` that calls
- * `api.register*` directly, this emits the SDK's flagship declarative loop: the
- * starter command is authored with `defineCommand`, collected into an
- * `ExtensionBlueprint` via `defineExtensionBlueprint`, and turned into the runtime
- * module by `composeExtension` (which generates the `activate` that registers
- * every blueprint surface in order). The command, blueprint, and module are all
- * exported so the colocated test can preflight the blueprint and exercise the
- * module — see {@link buildDeclarativeSampleTestSource}.
- *
- * It is package-mode and commands-only by construction (the canonical
- * `composeExtension` example): `composeExtension` is a runtime SDK *value* import,
- * so it belongs in package-mode authoring where the SDK is a linked dependency,
- * not in the import-free extension-only starters. {@link scaffoldExtensionProject}
- * enforces both constraints before this is reached.
+ * The shared per-capability registration-definition builder for the declarative
+ * starter: the `define*`-authored definitions, the `ExtensionBlueprint` fields that
+ * collect them, and the extra `define*` builder names to import. It is the single
+ * source the declarative {@link buildDeclarativeEntrypoint} and its colocated test
+ * ({@link buildDeclarativeCapabilityTestBlock}) both read from, so the two never
+ * drift on what the capability registers.
  */
-function buildDeclarativeEntrypoint(extensionName: string, commandName: string): string {
+interface DeclarativeBlueprintSurface {
+  /** Extra `define*` builder names to import beyond the always-present trio. */
+  builderImports: string[];
+  /** The `export const <name> = define*({...})` definition blocks (blank-separated). */
+  definitions: string[];
+  /** The `ExtensionBlueprint` object field lines, e.g. `  searchProviders: [searchProvider],`. */
+  blueprintFields: string[];
+}
+
+/**
+ * Build the `defineCommand` starter-command definition for the declarative
+ * entrypoint. Mirrors the imperative {@link buildActivateBodyLines} command body
+ * (same name/description/run result), and for the `parser` capability declares the
+ * `--shout`/`--upper` flags and surfaces the normalized `upper` option so the
+ * override is runnable end to end through `pm <command> --shout`.
+ */
+function buildDeclarativePingCommandLines(
+  extensionName: string,
+  commandName: string,
+  capability: ExtensionScaffoldCapability,
+): string[] {
+  const parserEnabled = capability === "parser";
   return [
-    'import { composeExtension, defineCommand, defineExtensionBlueprint } from "@unbrained/pm-cli/sdk";',
-    "",
     "// The starter command, authored with the `defineCommand` builder so its literal",
     "// name is preserved and the handler `context` is inferred. Exporting it lets you",
     "// unit-test the definition in isolation, apart from the blueprint.",
     "export const pingCommand = defineCommand({",
     `  name: ${JSON.stringify(commandName)},`,
     '  description: "Starter scaffold command. Replace with your own behavior.",',
+    ...(parserEnabled
+      ? [
+          "  flags: [",
+          "    {",
+          '      long: "--shout",',
+          '      value_type: "boolean",',
+          '      description: "Deprecated alias for --upper; the parser override rewrites it.",',
+          "    },",
+          "    {",
+          '      long: "--upper",',
+          '      value_type: "boolean",',
+          '      description: "Echo the canonical flag the parser override produces.",',
+          "    },",
+          "  ],",
+        ]
+      : []),
     "  run: async (context) => ({",
     "    ok: true,",
     `    source: ${JSON.stringify(extensionName)},`,
     "    command: context.command,",
+    ...(parserEnabled ? ["    upper: context.options.upper === true,"] : []),
     '    message: "Starter extension scaffold is active.",',
     "  }),",
     "});",
+  ];
+}
+
+/**
+ * Build the {@link DeclarativeBlueprintSurface} for a capability: the starter
+ * command plus the capability's `define*`-authored registration definitions and
+ * the `ExtensionBlueprint` fields that collect them.
+ *
+ * Blueprint fields are emitted in {@link composeExtension}'s registration order so
+ * the generated `activate` wires them deterministically. Each surface mirrors the
+ * imperative {@link buildActivateBodyLines} registration (same names, same handler
+ * behavior) so a package scaffolded in either style installs and dispatches
+ * identically — the manifest, derived capabilities, and registered surfaces match.
+ */
+function buildDeclarativeBlueprintSurface(
+  extensionName: string,
+  commandName: string,
+  capability: ExtensionScaffoldCapability,
+): DeclarativeBlueprintSurface {
+  const builderImports: string[] = [];
+  const definitions: string[] = [...buildDeclarativePingCommandLines(extensionName, commandName, capability)];
+  const blueprintFields: string[] = ["  commands: [pingCommand],"];
+
+  const searchProviderName = `${extensionName}-search`;
+  const vectorAdapterName = `${extensionName}-vector`;
+  const adapterName = `${extensionName.replace(/-/g, " ")} items`;
+  const itemTypeName = extensionName;
+  const itemTypeFolder = `${extensionName}s`;
+  // De-hyphenate for a short alias; omit a redundant self-alias for single-word names.
+  const itemTypeAlias = extensionName.replace(/-/g, "");
+  const itemTypeAliases = itemTypeAlias === itemTypeName ? [] : [itemTypeAlias];
+  const fieldName = `${extensionName.replace(/-/g, "_")}_note`;
+  const migrationId = `${extensionName}-0001-init`;
+
+  switch (capability) {
+    case "commands":
+      break;
+    case "hooks":
+      builderImports.push("defineAfterCommandHook");
+      definitions.push(
+        "",
+        "// after_command hooks fire once pm finishes a command, receiving the items it",
+        "// mutated. React here - sync to an external system, emit telemetry, or refresh",
+        '// derived context ("project management = context management"). This starter is a',
+        "// documented no-op on the success path; replace the body with your own reaction.",
+        "export const afterCommandHook = defineAfterCommandHook((context) => {",
+        "  if (!context.ok) {",
+        "    return;",
+        "  }",
+        "  // `context.affected` lists the items pm mutated (id, status, changed_fields):",
+        "  //   for (const item of context.affected ?? []) { /* ...item.id... */ }",
+        "});",
+      );
+      blueprintFields.push("  hooks: { afterCommand: [afterCommandHook] },");
+      break;
+    case "search":
+      builderImports.push("defineSearchProvider", "defineVectorStoreAdapter");
+      definitions.push(
+        "",
+        "// Search providers let packages customize how pm ranks and retrieves project",
+        "// context. This starter is deterministic and dependency-free: replace the scoring",
+        "// with your domain retrieval, embedding, or rerank logic as the package grows.",
+        "export const searchProvider = defineSearchProvider({",
+        `  name: ${JSON.stringify(searchProviderName)},`,
+        "  query: async (context) => {",
+        "    const needle = context.query.toLowerCase();",
+        "    const hits = context.documents",
+        "      .filter((document) => {",
+        '        const title = String(document.metadata.title ?? "").toLowerCase();',
+        "        return title.includes(needle);",
+        "      })",
+        "      .map((document) => ({",
+        "        id: document.metadata.id,",
+        "        score: 1,",
+        '        matched_fields: ["title"],',
+        "      }));",
+        "    return { hits };",
+        "  },",
+        "  embed: async (context) => [context.input.length],",
+        "});",
+        "",
+        "// Vector-store adapters let packages own semantic index storage. This starter",
+        "// returns a stable in-memory hit so generated tests can exercise the adapter",
+        "// without external services.",
+        "export const vectorStoreAdapter = defineVectorStoreAdapter({",
+        `  name: ${JSON.stringify(vectorAdapterName)},`,
+        '  query: async (context) => [{ id: "starter-vector-hit", score: context.limit }],',
+        "  upsert: async (context) => ({ upserted: context.points.length }),",
+        "  delete: async (context) => ({ deleted: context.ids.length }),",
+        "});",
+      );
+      blueprintFields.push("  searchProviders: [searchProvider],", "  vectorStoreAdapters: [vectorStoreAdapter],");
+      break;
+    case "importers":
+      builderImports.push("defineExporter", "defineImporter");
+      definitions.push(
+        "",
+        "// Importers/exporters are the bridge between pm's context graph and another",
+        "// project-management system. Keep the starter deterministic so package tests can",
+        "// run without touching the network or filesystem; replace these payloads with",
+        "// your adapter's real mapping as the package grows.",
+        "export const importer = defineImporter(async (context) => ({",
+        "  imported: 1,",
+        '  source: context.options.source ?? "starter",',
+        "  args: context.args,",
+        "}));",
+        "",
+        "export const exporter = defineExporter(async (context) => ({",
+        "  exported: true,",
+        '  destination: context.options.destination ?? "stdout",',
+        "  args: context.args,",
+        "}));",
+      );
+      blueprintFields.push(
+        "  importers: [",
+        "    {",
+        `      name: ${JSON.stringify(adapterName)},`,
+        "      importer,",
+        "      options: {",
+        `        action: ${JSON.stringify(`${adapterName} import`)},`,
+        '        description: "Import starter records into pm context.",',
+        "        flags: [",
+        "          {",
+        '            long: "--source",',
+        '            value_name: "name",',
+        '            value_type: "string",',
+        '            description: "Source name or path to import from.",',
+        "          },",
+        "        ],",
+        "      },",
+        "    },",
+        "  ],",
+        "  exporters: [",
+        "    {",
+        `      name: ${JSON.stringify(adapterName)},`,
+        "      exporter,",
+        "      options: {",
+        `        action: ${JSON.stringify(`${adapterName} export`)},`,
+        '        description: "Export pm context into starter records.",',
+        "        flags: [",
+        "          {",
+        '            long: "--destination",',
+        '            value_name: "name",',
+        '            value_type: "string",',
+        '            description: "Destination name or path to export to.",',
+        "          },",
+        "        ],",
+        "      },",
+        "    },",
+        "  ],",
+      );
+      break;
+    case "schema":
+      builderImports.push("defineItemField", "defineItemType", "defineMigration");
+      definitions.push(
+        "",
+        "// Schema registrations let a package model its own project domain - the heart of",
+        '// "project management = context management". Item types and fields are GLOBAL',
+        "// contributions, so this package declares no `activation.commands` and pm",
+        "// activates it conservatively for every command.",
+        "export const noteField = defineItemField({",
+        `  name: ${JSON.stringify(fieldName)},`,
+        '  type: "string",',
+        "  optional: true,",
+        "});",
+        "",
+        "export const itemType = defineItemType({",
+        `  name: ${JSON.stringify(itemTypeName)},`,
+        "  // Replace with your domain's canonical plural folder name.",
+        `  folder: ${JSON.stringify(itemTypeFolder)},`,
+        `  aliases: ${JSON.stringify(itemTypeAliases)},`,
+        "  // Add field names here to force them at `pm create` time.",
+        "  required_create_fields: [],",
+        "});",
+        "",
+        "// Migrations let a package evolve stored items as its schema changes. pm runs each",
+        "// migration ONCE through the preflight gate (not once per item), passing a context",
+        "// that identifies the migration itself: `context.id` is the migration id (not an",
+        "// item id), alongside `context.pm_root`. This starter is a deterministic no-op so",
+        "// package tests can invoke it without touching the corpus; replace the body with",
+        "// your real rewrite.",
+        "export const initMigration = defineMigration({",
+        `  id: ${JSON.stringify(migrationId)},`,
+        `  description: ${JSON.stringify(`Initialize ${extensionName} schema state.`)},`,
+        "  mandatory: false,",
+        "  run: async (context) => ({ migrated: true, id: context.id }),",
+        "});",
+      );
+      blueprintFields.push("  itemTypes: [itemType],", "  itemFields: [noteField],", "  migrations: [initMigration],");
+      break;
+    case "renderers":
+      builderImports.push("defineRendererOverride");
+      definitions.push(
+        "",
+        "// Renderer overrides customize how pm serializes a command's structured result",
+        '// for an output format ("toon" or "json"). pm runs this override for EVERY',
+        "// command's output in that format, so it scopes itself to THIS package's own",
+        "// command and returns null - pass-through to pm's default renderer - for",
+        "// everything else. Return a string to take over rendering.",
+        "export const toonRenderer = defineRendererOverride((context) => {",
+        `  if (context.command !== ${JSON.stringify(commandName)}) {`,
+        "    return null;",
+        "  }",
+        `  return ${JSON.stringify(`${extensionName}: `)} + JSON.stringify(context.result);`,
+        "});",
+      );
+      blueprintFields.push("  renderers: { toon: toonRenderer },");
+      break;
+    case "parser":
+      builderImports.push("defineParserOverride");
+      definitions.push(
+        "",
+        "// Parser overrides preprocess a command's parsed options BEFORE its handler runs,",
+        "// returning a delta - only the keys you set are merged over the parsed input. This",
+        "// override is scoped to THIS package's own command; here it rewrites the deprecated",
+        "// `--shout` boolean alias to the canonical `--upper` flag.",
+        "export const pingParser = defineParserOverride((context) => {",
+        "  const options = { ...context.options };",
+        "  if (options.shout === true) {",
+        "    options.upper = true;",
+        "  }",
+        "  delete options.shout;",
+        "  return { options };",
+        "});",
+      );
+      blueprintFields.push(`  parsers: { ${JSON.stringify(commandName)}: pingParser },`);
+      break;
+    case "preflight":
+      builderImports.push("definePreflightOverride");
+      definitions.push(
+        "",
+        "// Preflight overrides adjust pm's pre-run gate decision (extension migrations +",
+        "// item-format checks) before EVERY command - the last registered override wins.",
+        "// Return a delta of the keys you want to change (enforce_item_format_gate,",
+        "// run_preflight_item_format_sync, run_extension_migrations,",
+        "// enforce_mandatory_migration_gate); returning context.decision unchanged is a",
+        "// safe no-op - replace it with your policy, e.g. { run_extension_migrations: false }.",
+        "export const preflightOverride = definePreflightOverride((context) => context.decision);",
+      );
+      blueprintFields.push("  preflights: [preflightOverride],");
+      break;
+    case "services":
+      builderImports.push("defineServiceOverride");
+      definitions.push(
+        "",
+        "// Service overrides replace a built-in pm service. The `output_format` service",
+        "// renders a command's structured result; returning the payload unchanged passes",
+        "// through to pm's default formatting. This override scopes itself to THIS",
+        "// package's own command and passes every other command through.",
+        "export const outputService = defineServiceOverride((context) => {",
+        `  if (context.command !== ${JSON.stringify(commandName)}) {`,
+        "    return context.payload;",
+        "  }",
+        `  return { rendered_by: ${JSON.stringify(extensionName)}, payload: context.payload };`,
+        "});",
+      );
+      blueprintFields.push("  services: { output_format: outputService },");
+      break;
+  }
+
+  return { builderImports, definitions, blueprintFields };
+}
+
+/**
+ * Build the declarative (`composeExtension`) variant of the starter `index.ts` for
+ * the chosen capability.
+ *
+ * Where {@link buildActivateBodyLines} emits an imperative `activate` that calls
+ * `api.register*` directly, this emits the SDK's flagship declarative loop: the
+ * capability's surfaces are authored with the `define*` builders (via the shared
+ * {@link buildDeclarativeBlueprintSurface}), collected into an `ExtensionBlueprint`
+ * by `defineExtensionBlueprint`, and turned into the runtime module by
+ * `composeExtension` (which generates the `activate` that registers every blueprint
+ * surface in order). Every definition, the blueprint, and the module are exported
+ * so the colocated test can preflight the blueprint and exercise the module — see
+ * {@link buildDeclarativeSampleTestSource}.
+ *
+ * It is package-mode by construction: `composeExtension` is a runtime SDK *value*
+ * import, so it belongs in package-mode authoring where the SDK is a linked
+ * dependency, not in the import-free extension-only starters.
+ * {@link scaffoldExtensionProject} enforces that constraint before this is reached.
+ */
+function buildDeclarativeEntrypoint(
+  extensionName: string,
+  commandName: string,
+  capability: ExtensionScaffoldCapability,
+): string {
+  const surface = buildDeclarativeBlueprintSurface(extensionName, commandName, capability);
+  // `composeExtension`/`defineCommand`/`defineExtensionBlueprint` are always needed;
+  // sort the full set so the import line is stable and idiomatic per capability.
+  const builderImports = [
+    "composeExtension",
+    "defineCommand",
+    "defineExtensionBlueprint",
+    ...surface.builderImports,
+  ].sort((left, right) => left.localeCompare(right));
+  return [
+    `import { ${builderImports.join(", ")} } from "@unbrained/pm-cli/sdk";`,
+    "",
+    ...surface.definitions,
     "",
     "// Declarative authoring: describe WHAT the package registers as a blueprint and",
-    "// let `composeExtension` generate the `activate` that wires every surface in",
-    "// order, instead of hand-writing each `api.register*` call. Grow the package by",
-    "// adding blueprint fields (`parsers`, `hooks`, `itemTypes`, `searchProviders`,",
-    "// ...); `defineExtensionBlueprint` contract-checks the blueprint where it is",
-    "// authored. Keep `manifest.json`'s `capabilities` equal to the set this blueprint",
-    "// derives (here: [\"commands\"]).",
+    "// let `composeExtension` generate the `activate` that wires every surface in order,",
+    "// instead of hand-writing each `api.register*` call. `defineExtensionBlueprint`",
+    "// contract-checks the blueprint where it is authored. Keep `manifest.json`'s",
+    "// `capabilities` equal to the set this blueprint derives.",
     "export const blueprint = defineExtensionBlueprint({",
-    "  commands: [pingCommand],",
+    ...surface.blueprintFields,
     "  // `deactivate` is the teardown counterpart to the generated `activate`: pm runs",
     "  // it on host shutdown/reload to release anything the package opened (timers,",
     "  // connections, caches). This starter holds none, so it stays a no-op.",
@@ -1235,8 +1589,280 @@ function buildDeclarativeEntrypoint(extensionName: string, commandName: string):
 }
 
 /**
+ * Build the capability-specific `node:test` block for the declarative starter:
+ * a dedicated test that activates the composed module through
+ * {@link ExtensionTestHarness} and asserts + invokes the capability's surface
+ * (hook, search provider/adapter, importer/exporter, schema, renderer, parser,
+ * preflight, or service override). Returns `[]` for the `commands` capability,
+ * whose only surface — the starter command — is already covered by the base test.
+ *
+ * Each block mirrors the imperative {@link buildSampleTestSource} capability test
+ * but reaches it through the harness's bound `assert*`/`run*` helpers instead of
+ * the standalone helpers, so the declarative starter never threads
+ * `activation.registrations` / `activation.parsers` / ... by hand.
+ */
+function buildDeclarativeCapabilityTestBlock(
+  extensionName: string,
+  commandName: string,
+  capability: ExtensionScaffoldCapability,
+  capabilitiesLiteral: string,
+): string[] {
+  if (capability === "commands") {
+    return [];
+  }
+  const searchProviderName = `${extensionName}-search`;
+  const vectorAdapterName = `${extensionName}-vector`;
+  const adapterName = `${extensionName.replace(/-/g, " ")} items`;
+  const itemTypeName = extensionName;
+  const itemTypeFolder = `${extensionName}s`;
+  const fieldName = `${extensionName.replace(/-/g, "_")}_note`;
+  const migrationId = `${extensionName}-0001-init`;
+  const harness = [
+    "  const ext = await createExtensionTestHarness(extension, {",
+    `    name: ${JSON.stringify(extensionName)},`,
+    `    capabilities: ${capabilitiesLiteral},`,
+    "  });",
+  ];
+  switch (capability) {
+    case "hooks":
+      return [
+        `test(${JSON.stringify(`${extensionName} reacts to commands via its after_command hook`)}, async () => {`,
+        ...harness,
+        "  // assertHook throws unless an after_command hook is registered, so reaching the",
+        "  // next line already proves the hook is wired.",
+        `  ext.assertHook({ kind: "after_command", extensionName: ${JSON.stringify(extensionName)} });`,
+        "  // runHook fires the hook through pm's real runner with a synthetic context and",
+        "  // returns the warnings it produced; a clean hook returns none.",
+        "  const warnings = await ext.runHook({",
+        '    kind: "after_command",',
+        "    context: {",
+        `      command: ${JSON.stringify(commandName)},`,
+        "      args: [],",
+        '      pm_root: "",',
+        "      ok: true,",
+        "      affected: [],",
+        "    },",
+        "  });",
+        "  assert.deepEqual(warnings, []);",
+        "});",
+        "",
+      ];
+    case "search":
+      return [
+        `test(${JSON.stringify(`${extensionName} registers and invokes search primitives`)}, async () => {`,
+        ...harness,
+        `  ext.assertSearchProvider({ provider: ${JSON.stringify(searchProviderName)}, extensionName: ${JSON.stringify(extensionName)} });`,
+        `  ext.assertVectorStoreAdapter({ adapter: ${JSON.stringify(vectorAdapterName)}, extensionName: ${JSON.stringify(extensionName)} });`,
+        "",
+        "  // The starter provider reads only document title/id, so `settings` is a minimal",
+        "  // typed stub and `documents` carry just the fields it inspects.",
+        "  const query = await ext.runSearchProvider({",
+        `    provider: ${JSON.stringify(searchProviderName)},`,
+        '    operation: "query",',
+        "    context: {",
+        '      query: "sync",',
+        '      mode: "semantic",',
+        '      tokens: ["sync"],',
+        "      options: {},",
+        "      settings: {} as PmSettings,",
+        "      documents: [",
+        '        { metadata: { id: "pm-1", title: "Sync external context" }, body: "" },',
+        '        { metadata: { id: "pm-2", title: "Unrelated task" }, body: "" },',
+        "      ] as ItemDocument[],",
+        "    },",
+        "  });",
+        '  assert.deepEqual(query, { hits: [{ id: "pm-1", score: 1, matched_fields: ["title"] }] });',
+        "",
+        "  const embedding = await ext.runSearchProvider({",
+        `    provider: ${JSON.stringify(searchProviderName)},`,
+        '    operation: "embed",',
+        '    context: { input: "abc", settings: {} as PmSettings, model: "starter-model" },',
+        "  });",
+        "  assert.deepEqual(embedding, [3]);",
+        "",
+        "  const vectorHits = await ext.runVectorStoreAdapter({",
+        `    adapter: ${JSON.stringify(vectorAdapterName)},`,
+        '    operation: "query",',
+        "    context: { vector: [0.1, 0.2], limit: 2, settings: {} as PmSettings },",
+        "  });",
+        '  assert.deepEqual(vectorHits, [{ id: "starter-vector-hit", score: 2 }]);',
+        "});",
+        "",
+      ];
+    case "importers":
+      return [
+        `test(${JSON.stringify(`${extensionName} registers and invokes import/export primitives`)}, async () => {`,
+        ...harness,
+        `  ext.assertImporter({ importer: ${JSON.stringify(adapterName)}, extensionName: ${JSON.stringify(extensionName)} });`,
+        `  ext.assertExporter({ exporter: ${JSON.stringify(adapterName)}, extensionName: ${JSON.stringify(extensionName)} });`,
+        "",
+        "  const imported = await ext.runImporter({",
+        `    importer: ${JSON.stringify(adapterName)},`,
+        '    options: { source: "tickets" },',
+        '    args: ["batch-1"],',
+        "  });",
+        "  assert.equal(imported.handled, true);",
+        '  assert.deepEqual(imported.result, { imported: 1, source: "tickets", args: ["batch-1"] });',
+        "",
+        "  const exported = await ext.runExporter({",
+        `    exporter: ${JSON.stringify(adapterName)},`,
+        '    options: { destination: "archive" },',
+        '    args: ["done"],',
+        "  });",
+        "  assert.equal(exported.handled, true);",
+        '  assert.deepEqual(exported.result, { exported: true, destination: "archive", args: ["done"] });',
+        "});",
+        "",
+      ];
+    case "schema":
+      return [
+        `test(${JSON.stringify(`${extensionName} registers and runs its custom schema`)}, async () => {`,
+        ...harness,
+        "  // assertItemType/Field/Migration throw unless the registration is present, so",
+        "  // reaching each next line already proves the wiring; assert on the returned",
+        "  // definitions to demonstrate inspecting registered metadata.",
+        `  const itemType = ext.assertItemType({ itemType: ${JSON.stringify(itemTypeName)}, extensionName: ${JSON.stringify(extensionName)} });`,
+        `  assert.equal(itemType.itemType.folder, ${JSON.stringify(itemTypeFolder)});`,
+        `  const itemField = ext.assertItemField({ field: ${JSON.stringify(fieldName)}, extensionName: ${JSON.stringify(extensionName)} });`,
+        '  assert.equal(itemField.field.type, "string");',
+        `  ext.assertMigration({ migration: ${JSON.stringify(migrationId)}, extensionName: ${JSON.stringify(extensionName)}, mandatory: false });`,
+        "",
+        "  // runMigration invokes the migration through pm's real runner with a synthetic",
+        "  // context and returns its result.",
+        `  const migrated = await ext.runMigration({ migration: ${JSON.stringify(migrationId)} });`,
+        `  assert.deepEqual(migrated, { migrated: true, id: ${JSON.stringify(migrationId)} });`,
+        "});",
+        "",
+      ];
+    case "renderers":
+      return [
+        `test(${JSON.stringify(`${extensionName} registers and invokes its renderer override`)}, async () => {`,
+        ...harness,
+        "  // assertRendererOverride throws unless a renderer is registered for the format,",
+        "  // so reaching the next line already proves the wiring.",
+        `  const override = ext.assertRendererOverride({ format: "toon", extensionName: ${JSON.stringify(extensionName)} });`,
+        '  assert.equal(override.format, "toon");',
+        "",
+        "  // runRendererOverride renders through pm's real runner. The override customizes",
+        "  // only THIS package's command output and returns a string the host uses verbatim.",
+        "  const rendered = await ext.runRendererOverride({",
+        '    format: "toon",',
+        `    command: ${JSON.stringify(commandName)},`,
+        "    result: { ok: true },",
+        "  });",
+        "  assert.equal(rendered.overridden, true);",
+        `  assert.equal(rendered.rendered, ${JSON.stringify(`${extensionName}: `)} + JSON.stringify({ ok: true }));`,
+        "",
+        "  // Output for any other command passes through to pm's default renderer.",
+        "  const passthrough = await ext.runRendererOverride({",
+        '    format: "toon",',
+        '    command: "list",',
+        "    result: { ok: true },",
+        "  });",
+        "  assert.equal(passthrough.overridden, false);",
+        "});",
+        "",
+      ];
+    case "parser":
+      return [
+        `test(${JSON.stringify(`${extensionName} rewrites command options via its parser override`)}, async () => {`,
+        ...harness,
+        "  // assertParserOverride throws unless a parser is registered for the command, so",
+        "  // reaching the next line already proves the wiring.",
+        `  ext.assertParserOverride({ command: ${JSON.stringify(commandName)}, extensionName: ${JSON.stringify(extensionName)} });`,
+        "",
+        "  // runParserOverride runs the override through pm's real parser runner and returns",
+        "  // the rewritten context. The starter rewrites the deprecated `shout` alias to the",
+        "  // canonical `upper` flag.",
+        "  const result = await ext.runParserOverride({",
+        `    command: ${JSON.stringify(commandName)},`,
+        "    args: [],",
+        "    options: { shout: true },",
+        "    global: {},",
+        '    pm_root: "",',
+        "  });",
+        "  assert.equal(result.overridden, true);",
+        "  assert.deepEqual(result.context.options, { upper: true });",
+        "",
+        "  // End to end: feed the rewritten options into the command handler to prove",
+        "  // `pm <command> --shout` surfaces the normalized `upper` flag in the result.",
+        `  const invocation = await ext.runCommand({ command: ${JSON.stringify(commandName)}, options: result.context.options });`,
+        "  assert.equal(invocation.handled, true);",
+        "  assert.deepEqual(invocation.result, {",
+        "    ok: true,",
+        `    source: ${JSON.stringify(extensionName)},`,
+        `    command: ${JSON.stringify(commandName)},`,
+        "    upper: true,",
+        '    message: "Starter extension scaffold is active.",',
+        "  });",
+        "});",
+        "",
+      ];
+    case "preflight":
+      return [
+        `test(${JSON.stringify(`${extensionName} returns a preflight gate decision via its override`)}, async () => {`,
+        ...harness,
+        "  // assertPreflightOverride throws unless a preflight override is registered, so",
+        "  // reaching the next line already proves the wiring.",
+        `  ext.assertPreflightOverride({ extensionName: ${JSON.stringify(extensionName)} });`,
+        "",
+        "  // runPreflightOverride runs the override through pm's real runner with a synthetic",
+        "  // gate decision. The starter echoes the decision unchanged; replace the",
+        "  // values/assertions with your real policy.",
+        "  const decision = {",
+        "    enforce_item_format_gate: true,",
+        "    run_preflight_item_format_sync: false,",
+        "    run_extension_migrations: true,",
+        "    enforce_mandatory_migration_gate: false,",
+        "  };",
+        "  const result = await ext.runPreflightOverride({",
+        `    command: ${JSON.stringify(commandName)},`,
+        "    args: [],",
+        "    options: {},",
+        "    global: {},",
+        '    pm_root: "",',
+        "    decision,",
+        "  });",
+        "  assert.equal(result.overridden, true);",
+        "  assert.deepEqual(result.decision, decision);",
+        "});",
+        "",
+      ];
+    case "services":
+      return [
+        `test(${JSON.stringify(`${extensionName} customizes command output via its service override`)}, async () => {`,
+        ...harness,
+        "  // assertServiceOverride throws unless a service override is registered for the",
+        "  // service, so reaching the next line proves the wiring.",
+        `  ext.assertServiceOverride({ service: "output_format", extensionName: ${JSON.stringify(extensionName)} });`,
+        "",
+        "  // runServiceOverride runs the override through pm's real service runner. The",
+        "  // override customizes only THIS package's command output (handled), passing every",
+        "  // other command through (not handled).",
+        "  const handled = await ext.runServiceOverride({",
+        '    service: "output_format",',
+        `    command: ${JSON.stringify(commandName)},`,
+        "    payload: { ok: true },",
+        "  });",
+        "  assert.equal(handled.handled, true);",
+        `  assert.deepEqual(handled.result, { rendered_by: ${JSON.stringify(extensionName)}, payload: { ok: true } });`,
+        "",
+        "  // Output for any other command passes through to pm's default formatter.",
+        "  const passthrough = await ext.runServiceOverride({",
+        '    service: "output_format",',
+        '    command: "list",',
+        "    payload: { ok: true },",
+        "  });",
+        "  assert.equal(passthrough.handled, false);",
+        "});",
+        "",
+      ];
+  }
+}
+
+/**
  * Build the declarative variant of the colocated `node:test` suite
- * (`index.test.ts`) for the `composeExtension` commands starter.
+ * (`index.test.ts`) for the chosen capability's `composeExtension` starter.
  *
  * Unlike {@link buildSampleTestSource}, which threads the standalone
  * `activateExtensionForTest`/`assertRegistered*`/`runRegistered*` helpers, this
@@ -1244,16 +1870,30 @@ function buildDeclarativeEntrypoint(extensionName: string, commandName: string):
  * `assertExtensionPreflight(blueprint, { identity, target })` (lint + manifest
  * synthesis + version-compat in one call) over the exported `blueprint`, and the
  * ergonomic runtime `createExtensionTestHarness(module)` whose `assert*`/`run*`/
- * `deactivate` methods are pre-bound to the right activation sub-registry. The
- * `identity`/`target` versions are pinned to the scaffolded `pm_min_version` so
- * the synthesized manifest is trivially compatible and the suite stays
- * deterministic; an author edits them as the package matures.
+ * `deactivate` methods are pre-bound to the right activation sub-registry. The base
+ * suite covers preflight, the starter command, and teardown; for non-`commands`
+ * capabilities {@link buildDeclarativeCapabilityTestBlock} adds a dedicated test for
+ * the capability's surface. The `identity`/`target` versions are pinned to the
+ * scaffolded `pm_min_version` so the synthesized manifest is trivially compatible
+ * and the suite stays deterministic; an author edits them as the package matures.
  */
-function buildDeclarativeSampleTestSource(extensionName: string, commandName: string): string {
+function buildDeclarativeSampleTestSource(
+  extensionName: string,
+  commandName: string,
+  capability: ExtensionScaffoldCapability,
+): string {
+  const parserEnabled = capability === "parser";
+  // The preflight report's capability set is DERIVED from the blueprint and SORTED,
+  // so assert against the sorted manifest capabilities (a set match in canonical
+  // order); the harness `capabilities` grant uses the same literal.
+  const capabilitiesLiteral = JSON.stringify([...SCAFFOLD_MANIFEST_CAPABILITIES[capability]].sort());
   return [
     'import assert from "node:assert/strict";',
     'import { test } from "node:test";',
     'import { assertExtensionPreflight, createExtensionTestHarness } from "@unbrained/pm-cli/sdk/testing";',
+    // The search sample's synthetic query/vector contexts reference these SDK types
+    // for their typed-stub fixtures; other capabilities need no extra type imports.
+    ...(capability === "search" ? ['import type { ItemDocument, PmSettings } from "@unbrained/pm-cli/sdk";'] : []),
     'import extension, { blueprint } from "./index.ts";',
     "",
     `test(${JSON.stringify(`${extensionName} passes author-time preflight`)}, () => {`,
@@ -1272,9 +1912,9 @@ function buildDeclarativeSampleTestSource(extensionName: string, commandName: st
     `    target: { pmVersion: ${JSON.stringify(SCAFFOLD_PM_MIN_VERSION)} },`,
     "  });",
     "  // The capability set is DERIVED from the blueprint, never hand-synced. Keep",
-    "  // manifest.json's `capabilities` equal to this list.",
-    '  assert.deepEqual(report.capabilities, ["commands"]);',
-    '  assert.deepEqual(report.manifest?.capabilities, ["commands"]);',
+    "  // manifest.json's `capabilities` equal to this list (set match, sorted).",
+    `  assert.deepEqual(report.capabilities, ${capabilitiesLiteral});`,
+    `  assert.deepEqual(report.manifest?.capabilities, ${capabilitiesLiteral});`,
     "});",
     "",
     `test(${JSON.stringify(`${extensionName} registers and runs its starter command`)}, async () => {`,
@@ -1285,7 +1925,7 @@ function buildDeclarativeSampleTestSource(extensionName: string, commandName: st
     "  // blueprint needs.",
     "  const ext = await createExtensionTestHarness(extension, {",
     `    name: ${JSON.stringify(extensionName)},`,
-    '    capabilities: ["commands"],',
+    `    capabilities: ${capabilitiesLiteral},`,
     "  });",
     "  // assertCommandContract throws unless the command is registered, so reaching the",
     "  // next line already proves the wiring; assert on the returned definition to",
@@ -1302,6 +1942,9 @@ function buildDeclarativeSampleTestSource(extensionName: string, commandName: st
     "    ok: true,",
     `    source: ${JSON.stringify(extensionName)},`,
     `    command: ${JSON.stringify(commandName)},`,
+    // The parser starter's command surfaces the normalized `upper` flag, false when
+    // the command is invoked without `--shout`/`--upper`.
+    ...(parserEnabled ? ["    upper: false,"] : []),
     '    message: "Starter extension scaffold is active.",',
     "  });",
     "",
@@ -1311,18 +1954,35 @@ function buildDeclarativeSampleTestSource(extensionName: string, commandName: st
     "  assert.equal(teardown.deactivated, 1);",
     "});",
     "",
+    ...buildDeclarativeCapabilityTestBlock(extensionName, commandName, capability, capabilitiesLiteral),
   ].join("\n");
 }
 
 /**
- * Build the README for the declarative (`composeExtension`) package starter.
+ * Build the README for the declarative (`composeExtension`) package starter for
+ * the chosen capability.
  *
  * It documents the same metadata/validation sections as the imperative package
  * README but frames the entrypoint around the declarative loop and the author-time
  * preflight test, so the generated docs match the generated `index.ts`/
- * `index.test.ts`.
+ * `index.test.ts`. The included-files bullets, the Declarative Authoring blueprint
+ * fields, and the activation section are capability-aware: the `schema` starter
+ * contributes a global item type (so it omits `activation.commands`), while every
+ * other capability declares the command paths that lazily activate the package.
  */
-function buildDeclarativePackageReadme(packageName: string, commandName: string): string {
+function buildDeclarativePackageReadme(
+  packageName: string,
+  commandName: string,
+  capability: ExtensionScaffoldCapability,
+): string {
+  // The schema starter omits `activation.commands` (its custom type is global), so
+  // describe the manifest accurately and use the conservative-activation section.
+  const manifestBullet =
+    capability === "schema"
+      ? "- `manifest.json`: package metadata and capabilities (no `activation.commands` — the custom item type activates for every command)."
+      : "- `manifest.json`: package metadata, capabilities, and `activation.commands` (the command paths that lazily activate this package).";
+  const activationSection =
+    capability === "schema" ? SCHEMA_ACTIVATION_README_SECTION.package : LAZY_ACTIVATION_README_SECTION.package;
   return [
     `# ${packageName}`,
     "",
@@ -1330,9 +1990,9 @@ function buildDeclarativePackageReadme(packageName: string, commandName: string)
     "",
     "## Included Files",
     "- `package.json`: package metadata, `typecheck`/`test` scripts, and `pm` resource manifest.",
-    "- `manifest.json`: package metadata, capabilities, and `activation.commands` (the command paths that lazily activate this package).",
-    "- `index.ts`: the TypeScript manifest entry — a `defineExtensionBlueprint` blueprint composed into the runtime module by `composeExtension`, plus a `deactivate` teardown stub.",
-    "- `index.test.ts`: sample `node:test` suite covering author-time preflight (`assertExtensionPreflight`) and runtime command invocation/teardown via `createExtensionTestHarness`.",
+    manifestBullet,
+    `- \`index.ts\`: the TypeScript manifest entry — a \`defineExtensionBlueprint\` blueprint (${DECLARATIVE_ENTRYPOINT_SURFACE_PHRASE[capability]}) composed into the runtime module by \`composeExtension\`, plus a \`deactivate\` teardown stub.`,
+    "- `index.test.ts`: sample `node:test` suite covering author-time preflight (`assertExtensionPreflight`) and runtime surface invocation/teardown via `createExtensionTestHarness`.",
     TSCONFIG_BULLET,
     "- `.gitignore`: ignores `node_modules/`, logs, and the TypeScript build cache.",
     "",
@@ -1352,11 +2012,12 @@ function buildDeclarativePackageReadme(packageName: string, commandName: string)
     "`activate` body. You describe WHAT the package registers as an",
     "`ExtensionBlueprint` and `composeExtension` generates the `activate` that wires",
     "every surface in order:",
-    "- `defineCommand` authors the starter command with literal-type preservation and",
-    "  contextual handler inference.",
-    "- `defineExtensionBlueprint({ commands: [pingCommand], deactivate })` declares the",
-    "  registration surface; add more fields (`parsers`, `hooks`, `itemTypes`,",
-    "  `searchProviders`, ...) as the package grows.",
+    "- The `define*` builders author each surface with literal-type preservation and",
+    "  contextual handler inference (`defineCommand`, `defineSearchProvider`,",
+    "  `defineItemType`, `defineParserOverride`, ...).",
+    `- \`defineExtensionBlueprint({ ... })\` collects the definitions into the blueprint;`,
+    `  this starter populates ${DECLARATIVE_CAPABILITY_BLUEPRINT_FIELDS[capability]}. Add more`,
+    "  fields as the package grows.",
     "- `composeExtension(blueprint)` is the default export — the runtime module pm",
     "  loads. Its generated `activate` requires exactly the capabilities the blueprint",
     "  derives, so `manifest.json`'s `capabilities` never drift.",
@@ -1376,16 +2037,7 @@ function buildDeclarativePackageReadme(packageName: string, commandName: string)
     "`npm test` runs `node --test`, which strips types on load and executes",
     "`index.test.ts` directly against the `@unbrained/pm-cli/sdk/testing` helpers - no",
     "compile step and no extra test runner required.",
-    "",
-    "## Lazy Activation",
-    "`manifest.json` declares `activation.commands`: the exact command paths this",
-    "package's composed `activate` registers. pm imports and activates the package",
-    "lazily — only when an invoked command path matches one of these entries — so",
-    "unrelated commands (`pm list`, `pm search`, ...) never pay to load it. Keep this",
-    "list in sync with the blueprint's `commands`: add an entry when you add a command",
-    "and remove one you drop. Globally-scoped surfaces (hooks, parser/preflight/renderer",
-    "overrides, and search providers for built-in search commands) still activate",
-    "regardless of this list.",
+    ...activationSection,
     "",
     "## Compatibility Bounds",
     "`manifest.json` cannot hold comments, so the version-compatibility fields are documented here:",
@@ -1808,17 +2460,17 @@ export function buildStarterExtensionScaffoldFiles(
       "",
     ].join("\n");
     // The declarative starter swaps the imperative entrypoint/test/README for the
-    // `composeExtension` blueprint form (package-mode + commands only, enforced by
+    // `composeExtension` blueprint form (package-mode, any capability, enforced by
     // scaffoldExtensionProject). package.json, manifest.json, tsconfig.json, and
-    // .gitignore are identical to the imperative commands starter.
+    // .gitignore are identical to the imperative starter for the same capability.
     return {
       "package.json": packageJson,
       "manifest.json": manifest,
-      "index.ts": declarative ? buildDeclarativeEntrypoint(extensionName, commandName) : entrypoint,
-      "index.test.ts": declarative ? buildDeclarativeSampleTestSource(extensionName, commandName) : sampleTest,
+      "index.ts": declarative ? buildDeclarativeEntrypoint(extensionName, commandName, capability) : entrypoint,
+      "index.test.ts": declarative ? buildDeclarativeSampleTestSource(extensionName, commandName, capability) : sampleTest,
       "tsconfig.json": tsconfig,
       ".gitignore": gitignore,
-      "README.md": declarative ? buildDeclarativePackageReadme(packageName, commandName) : packageReadme,
+      "README.md": declarative ? buildDeclarativePackageReadme(packageName, commandName, capability) : packageReadme,
     };
   }
   const readme = [
@@ -1885,21 +2537,14 @@ export async function scaffoldExtensionProject(
     );
   }
   const resolvedCapability = normalizedCapability as ExtensionScaffoldCapability;
-  // The declarative (`composeExtension` blueprint) starter is package-mode +
-  // commands only. `composeExtension` is a runtime SDK *value* import, so it
-  // belongs in package-mode authoring where the SDK is a linked dependency — not
-  // in the import-free extension-only starters that must load without it. The
-  // commands surface is the canonical declarative example; other capabilities use
-  // the imperative starter (tracked for a follow-up generalization).
+  // The declarative (`composeExtension` blueprint) starter is package-mode only.
+  // `composeExtension` is a runtime SDK *value* import, so it belongs in
+  // package-mode authoring where the SDK is a linked dependency — not in the
+  // import-free extension-only starters that must load without it. Every capability
+  // emits its blueprint form (see buildDeclarativeBlueprintSurface).
   if (declarative && vocabulary !== "package") {
     throw new PmCliError(
       "--declarative scaffolds a package-mode blueprint starter (composeExtension is a runtime SDK import). Use `pm package init`, not `pm extension init`.",
-      EXIT_CODE.USAGE,
-    );
-  }
-  if (declarative && resolvedCapability !== "commands") {
-    throw new PmCliError(
-      `--declarative currently scaffolds the commands-capability blueprint starter (the canonical composeExtension example). Omit --capability or pass --capability commands; other capabilities use the imperative starter.`,
       EXIT_CODE.USAGE,
     );
   }

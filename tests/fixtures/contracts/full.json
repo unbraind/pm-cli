@@ -2252,9 +2252,6 @@
           "flag": "--capability"
         },
         {
-          "flag": "--declarative"
-        },
-        {
           "flag": "--install"
         },
         {
@@ -2497,9 +2494,6 @@
         },
         {
           "flag": "--capability"
-        },
-        {
-          "flag": "--declarative"
         }
       ],
       "provider": "core"
@@ -4583,9 +4577,6 @@
           "flag": "--capability"
         },
         {
-          "flag": "--declarative"
-        },
-        {
           "flag": "--install"
         },
         {
@@ -4662,6 +4653,9 @@
         },
         {
           "flag": "--fail-on-warn"
+        },
+        {
+          "flag": "--declarative"
         }
       ],
       "provider": "core"
@@ -4926,9 +4920,6 @@
           "flag": "--capability"
         },
         {
-          "flag": "--declarative"
-        },
-        {
           "flag": "--install"
         },
         {
@@ -5005,6 +4996,9 @@
         },
         {
           "flag": "--fail-on-warn"
+        },
+        {
+          "flag": "--declarative"
         }
       ],
       "provider": "core"

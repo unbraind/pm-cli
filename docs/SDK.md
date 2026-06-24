@@ -568,8 +568,10 @@ every command rather than gating on the package's own commands.
 Each `--capability` starter authors an imperative `activate` body. To scaffold the
 declarative `composeExtension` form instead, pass `--declarative` to
 `pm package init` / `pm package scaffold` (it is an init/scaffold flag, package-mode
-and commands capability only) — see [Declarative Authoring](#declarative-authoring).
-See [EXTENSIONS.md](EXTENSIONS.md) for the manifest-field reference.
+only — every `--capability` variant emits its blueprint form, since `composeExtension`
+is a runtime SDK value import that only package-mode authoring links) — see
+[Declarative Authoring](#declarative-authoring). See [EXTENSIONS.md](EXTENSIONS.md)
+for the manifest-field reference.
 
 ## Self-Identity and Lifecycle
 
@@ -793,13 +795,14 @@ hand-written `activate` bodies so they load in extension-only installs; reach fo
 `composeExtension` in npm package-mode authoring where the SDK is a dependency.
 
 For a generated starting point, `pm package init <path> --declarative` scaffolds
-this loop end to end: an `index.ts` that authors a `defineExtensionBlueprint`
-blueprint and exports `composeExtension(blueprint)`, plus an `index.test.ts` that
-guards it with the author-time `assertExtensionPreflight` capstone and exercises
-the composed module through `createExtensionTestHarness`. It is package-mode and
-commands-only (`composeExtension` is a runtime SDK value import, so it belongs in
-package-mode authoring where the SDK is a linked dependency, not the import-free
-extension-only starters); other capabilities scaffold the imperative starter.
+this loop end to end for any `--capability`: an `index.ts` that authors a
+`defineExtensionBlueprint` blueprint (the capability's surfaces wired through the
+`define*` builders) and exports `composeExtension(blueprint)`, plus an
+`index.test.ts` that guards it with the author-time `assertExtensionPreflight`
+capstone and exercises the composed module through `createExtensionTestHarness`. It
+is package-mode only (`composeExtension` is a runtime SDK value import, so it belongs
+in package-mode authoring where the SDK is a linked dependency, not the import-free
+extension-only starters).
 
 ### Modular blueprints
 
