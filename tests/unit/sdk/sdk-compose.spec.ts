@@ -241,6 +241,30 @@ describe("sdk deriveExtensionCapabilities", () => {
       }),
     ).toEqual(["commands", "schema"]);
   });
+
+  it("adds schema for an importer or exporter that declares options.flags", () => {
+    // registerImporter/registerExporter with options.flags register flag metadata
+    // through the schema surface (loader applyImportExportCommandMetadata), so a
+    // flag-bearing importer/exporter derives `schema` on top of `importers` —
+    // otherwise a synthesized least-privilege manifest would under-grant and fail
+    // activation (pm-v3ty). A flagless importer/exporter still derives only `importers`.
+    expect(
+      deriveExtensionCapabilities({
+        importers: [{ name: "tickets", importer: () => ({}), options: { flags: [{ long: "--source" }] } }],
+      }),
+    ).toEqual(["importers", "schema"]);
+    expect(
+      deriveExtensionCapabilities({
+        exporters: [{ name: "tickets", exporter: () => ({}), options: { flags: [{ long: "--dest" }] } }],
+      }),
+    ).toEqual(["importers", "schema"]);
+    // options present but without flags does not add schema.
+    expect(
+      deriveExtensionCapabilities({
+        importers: [{ name: "tickets", importer: () => ({}), options: { description: "no flags" } }],
+      }),
+    ).toEqual(["importers"]);
+  });
 });
 
 /**

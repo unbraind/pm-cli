@@ -1,0 +1,19 @@
+id: pm-v3ty
+title: deriveExtensionCapabilities omits 'schema' for importer/exporter options.flags (declarative blueprint under-grant)
+description: "deriveExtensionCapabilities (src/sdk/compose.ts) maps importers/exporters -> 'importers' but ignores their options.flags. registerImporter/registerExporter with options.flags assert the 'schema' capability at runtime (loader.ts:2009), so a declarative blueprint with a flag-bearing importer derives ['commands','importers'] while activation requires 'schema' too — a least-privilege under-grant that would fail activation (and mismatch the imperative scaffold manifest ['commands','schema','importers']). This is the importer/exporter analogue of pm-5758 (inline CommandDefinition flags -> schema, already fixed). Surfaced while generalizing pm package init --declarative to the importers capability (pm-lfdv): the declarative importers starter declares --source/--destination flags. Fix: deriveExtensionCapabilities adds 'schema' when any importers[].options?.flags or exporters[].options?.flags is present, mirroring the loader guard."
+type: Issue
+status: closed
+priority: 2
+tags[3]: "area:extensions","area:packages","area:sdk"
+created_at: "2026-06-24T22:00:28.601Z"
+updated_at: "2026-06-24T22:33:46.660Z"
+author: claude-code-agent
+parent: pm-ugqx
+resolution: "deriveExtensionCapabilities adds 'schema' when any importers[].options?.flags or exporters[].options?.flags is present, mirroring the loader applyImportExportCommandMetadata guard (loader.ts:2009). New sdk-compose.spec coverage; verified by the declarative importers scaffold installing + dispatching."
+expected_result: "A declarative blueprint whose importer/exporter declares options.flags derives 'schema' (alongside 'importers'), so a synthesized least-privilege manifest grants every capability activation requires."
+actual_result: "deriveExtensionCapabilities returned ['commands','importers'] for a flag-bearing importer; activation required 'schema' too, so a least-privilege manifest synthesized from the blueprint under-granted and failed activation."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-5758,related,"2026-06-24T22:00:47.930Z",null,null
+  pm-lfdv,related,"2026-06-24T22:00:47.930Z",null,null
+close_reason: "Fixed: deriveExtensionCapabilities now adds 'schema' when any importers[].options?.flags / exporters[].options?.flags is present, mirroring loader applyImportExportCommandMetadata (loader.ts:2009). Covered by a new sdk-compose.spec case and proven by the declarative importers scaffold (manifest ['commands','schema','importers']) installing + dispatching end to end. Ships with pm-lfdv on branch feat/declarative-capability-matrix."
+body: ""

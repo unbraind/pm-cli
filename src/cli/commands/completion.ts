@@ -1622,7 +1622,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--init[Generate a starter extension scaffold at target path]' \\
             '--scaffold[Alias for --init]' \\
             '--capability[Capability the init scaffold targets]:capability:(${SCAFFOLD_CAPABILITIES.join(" ")})' \\
-            '--declarative[Scaffold the composeExtension blueprint starter (package-mode, commands)]' \\
+            '--declarative[Scaffold the composeExtension blueprint starter (package-mode, any capability)]' \\
             '--install[Install extension from local path or GitHub source]' \\
             '--uninstall[Uninstall extension by name]' \\
             '--explore[List discovered extensions for selected scope]' \\
@@ -2582,7 +2582,7 @@ complete -c pm -n '__fish_seen_subcommand_from extension' -a 'init scaffold inst
 complete -c pm -n '__fish_seen_subcommand_from extension' -l init -d 'Generate starter extension scaffold'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l scaffold -d 'Alias for --init'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l capability -d 'Capability the init scaffold targets' -r -a '${SCAFFOLD_CAPABILITIES.join(" ")}'
-complete -c pm -n '__fish_seen_subcommand_from extension' -l declarative -d 'Scaffold the composeExtension blueprint starter (package-mode, commands)'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l declarative -d 'Scaffold the composeExtension blueprint starter (package-mode, any capability)'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l install -d 'Install extension from local path or GitHub source'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l uninstall -d 'Uninstall extension by name'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l explore -d 'List discovered extensions for selected scope'

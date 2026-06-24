@@ -621,6 +621,20 @@ export function deriveExtensionCapabilities(blueprint: ExtensionBlueprint): Exte
   if ((blueprint.commands ?? []).some((command) => command.flags !== undefined)) {
     capabilities.add("schema");
   }
+  // `registerImporter`/`registerExporter` with `options.flags` register flag
+  // metadata through the same surface as `registerFlags`, asserting the `schema`
+  // capability on top of `importers` (loader `applyImportExportCommandMetadata`).
+  // Mirror that guard so a flag-bearing importer/exporter derives `schema` too —
+  // otherwise a least-privilege manifest synthesized from the blueprint would
+  // under-grant `schema` and fail activation. `!== undefined` matches the loader's
+  // exact `options.flags` guard, including an empty flag array.
+  const importExportOptions = [
+    ...(blueprint.importers ?? []).map((entry) => entry.options),
+    ...(blueprint.exporters ?? []).map((entry) => entry.options),
+  ];
+  if (importExportOptions.some((options) => options?.flags !== undefined)) {
+    capabilities.add("schema");
+  }
   // `?? {}` keeps an explicit `hooks: null` from throwing, mirroring composeExtension.
   const hooks: ExtensionBlueprintHooks = blueprint.hooks ?? {};
   if ([hooks.beforeCommand, hooks.afterCommand, hooks.onWrite, hooks.onRead, hooks.onIndex].some(hasEntries)) {

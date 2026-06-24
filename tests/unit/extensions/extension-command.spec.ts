@@ -2205,22 +2205,74 @@ describe("extension command runtime", () => {
     });
   });
 
-  it("rejects --declarative for extension-mode and non-commands capabilities, and outside init", async () => {
+  it("scaffolds a non-commands declarative capability that installs and dispatches end to end", async () => {
+    await withTempPmPath(async (context) => {
+      // The declarative loop generalizes past commands: scaffold the search
+      // capability and prove its composeExtension blueprint installs and dispatches.
+      const scaffoldPath = path.join(context.tempRoot, "starter-decl-search");
+      const scaffold = await runExtension(scaffoldPath, {
+        init: true,
+        project: true,
+        vocabulary: "package",
+        capability: "search",
+        declarative: true,
+      }, { path: context.pmPath });
+      expect(scaffold.details).toMatchObject({
+        capability: "search",
+        style: "declarative",
+        extension: { name: "starter-decl-search" },
+        created_directory: true,
+      });
+
+      // The blueprint wires the capability's surfaces declaratively.
+      const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
+      expect(entry).toContain("searchProviders: [searchProvider],");
+      expect(entry).toContain("vectorStoreAdapters: [vectorStoreAdapter],");
+      expect(entry).toContain("export default composeExtension(blueprint);");
+      expect(entry).not.toContain("export function activate(api: ExtensionApi)");
+
+      // The manifest is the same least-privilege search manifest as the imperative
+      // starter, so the composed module installs and dispatches identically.
+      const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
+      expect(manifest.capabilities).toEqual(["commands", "search"]);
+
+      const install = await runExtension(scaffoldPath, { install: true, project: true }, { path: context.pmPath });
+      expect(install.details).toMatchObject({
+        extension: { name: "starter-decl-search" },
+        activated: true,
+        command_paths: ["starter decl search ping"],
+      });
+      // composeExtension is a runtime SDK *value* import, so link the running repo
+      // into the workspace's node_modules so the spawned CLI resolves the subpath
+      // (mirrors a real package install), then prove the module dispatches for real.
+      const sdkLinkDir = path.join(context.pmPath, "node_modules", "@unbrained");
+      await mkdir(sdkLinkDir, { recursive: true });
+      await symlink(process.cwd(), path.join(sdkLinkDir, "pm-cli"), "junction");
+      const invoked = spawnSync(
+        process.execPath,
+        [path.join(process.cwd(), "dist/cli.js"), "--path", context.pmPath, "starter", "decl", "search", "ping", "--json"],
+        {
+          cwd: context.pmPath,
+          encoding: "utf8",
+          env: { ...process.env, PM_TELEMETRY_DISABLED: "1", PM_SENTRY_DISABLED: "1" },
+        },
+      );
+      expect(invoked.status).toBe(0);
+      expect(JSON.parse(invoked.stdout) as Record<string, unknown>).toMatchObject({
+        ok: true,
+        command: "starter decl search ping",
+        message: "Starter extension scaffold is active.",
+      });
+    });
+  });
+
+  it("rejects --declarative for extension-mode scaffolds and outside init", async () => {
     await withTempPmPath(async (context) => {
       // composeExtension is a runtime SDK import, so the declarative starter is
       // package-mode only — extension-mode is rejected before any file is written.
       await expect(
         runExtension(path.join(context.tempRoot, "decl-ext"), { init: true, project: true, declarative: true }, { path: context.pmPath }),
       ).rejects.toThrow(/--declarative scaffolds a package-mode blueprint starter/);
-
-      // The declarative starter targets the commands surface only.
-      await expect(
-        runExtension(
-          path.join(context.tempRoot, "decl-search"),
-          { init: true, project: true, vocabulary: "package", capability: "search", declarative: true },
-          { path: context.pmPath },
-        ),
-      ).rejects.toThrow(/--declarative currently scaffolds the commands-capability blueprint starter/);
 
       // --declarative is a scaffold-only flag.
       await expect(
