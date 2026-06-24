@@ -535,6 +535,21 @@ and a runnable `node:test` file that exercises `assertRegisteredItemType`,
 `runRegisteredMigrationForTest` — a copyable starting point for modeling a
 project domain.
 
+The four override surfaces complete the matrix to one starter per SDK
+registration capability. Pass `--capability renderers` to scaffold a `toon`
+output renderer override (via `registerRenderer`, scoped to its own command so
+other output passes through) with a `node:test` file exercising
+`assertRegisteredRendererOverride` and `runRegisteredRendererOverrideForTest`;
+`--capability parser` for a parser override (via `registerParser`) that rewrites
+the command's parsed options, exercising `assertRegisteredParserOverride` and
+`runRegisteredParserOverrideForTest`; `--capability preflight` for a preflight
+override (via `registerPreflight`) over pm's pre-run migration/format gate
+decision, exercising `assertRegisteredPreflightOverride` and
+`runRegisteredPreflightOverrideForTest`; and `--capability services` for an
+`output_format` service override (via `registerService`, scoped to its own
+command), exercising `assertRegisteredServiceOverride` and
+`runRegisteredServiceOverrideForTest`.
+
 Every command-bearing variant's generated `manifest.json` also declares
 `activation.commands` — the exact command paths the starter registers — so pm
 activates the package lazily, importing and running `activate` only when an

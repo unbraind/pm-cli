@@ -291,6 +291,50 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("warns (doctor-only) when a schema package narrows activation.commands", () => {
+    // A GLOBAL schema contributor (registers item types or fields) that ALSO
+    // declares narrow activation.commands silently hides its custom type from
+    // built-in commands (decision pm-halx). The doctor advisory flags it. The
+    // warning string keeps the verbatim extension name while matching is
+    // case-insensitive (normalizeExtensionNameForMatch), so "Footgun" matches.
+    const warnings = extensionCommandTestOnly.collectSchemaNarrowActivationDoctorWarnings(
+      {
+        loaded: [
+          // item-type contributor with narrow activation.commands -> warned.
+          { layer: "project", name: "Footgun", activation: { commands: ["footgun ping"] } },
+          // item-field contributor with narrow activation.commands -> warned.
+          { layer: "global", name: "field-foot", activation: { commands: ["field-foot ping"] } },
+          // Correct schema shape: registers a type but omits activation.commands
+          // (empty list) -> skipped before the contributor lookup.
+          { layer: "project", name: "clean", activation: { commands: [] } },
+          // No activation block at all -> the ?.commands ?? [] fallback skips it.
+          { layer: "project", name: "no-activation" },
+          // Command-only package with activation.commands but no schema -> not warned.
+          { layer: "project", name: "cmd-only", activation: { commands: ["cmd-only ping"] } },
+        ],
+      },
+      {
+        registrations: {
+          item_types: [
+            { layer: "project", name: "Footgun", types: [{ name: "footgun" }] },
+            { layer: "project", name: "clean", types: [{ name: "clean" }] },
+            // Empty types array is not a schema contribution.
+            { layer: "global", name: "empty-types", types: [] },
+          ],
+          item_fields: [
+            { layer: "global", name: "field-foot", fields: [{ name: "note" }] },
+            // Empty fields array is not a schema contribution.
+            { layer: "project", name: "empty-fields", fields: [] },
+          ],
+        },
+      },
+    );
+    expect(warnings).toEqual([
+      "extension_schema_narrow_activation:global:field-foot",
+      "extension_schema_narrow_activation:project:Footgun",
+    ]);
+  });
+
   it("covers extension helper fallback and lock edge branches", async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-helpers-"));
     try {
@@ -4755,6 +4799,33 @@ describe("extension command runtime", () => {
     expect(summary.remediation.join(" ")).toContain("pm package --adopt-all --project");
     expect(summary.remediation.join(" ")).toContain("pm package --install --project <source>");
     expect(summary.remediation.join(" ")).not.toContain("pm package install");
+  });
+
+  it("recommends dropping activation.commands for a schema-narrow-activation advisory", () => {
+    const summary = buildExtensionTriageSummary(
+      "project",
+      ["extension_schema_narrow_activation:project:footgun-tracker"],
+      [
+        {
+          name: "footgun-tracker",
+          directory: "/tmp/footgun-tracker",
+          version: "0.1.0",
+          entry: "./index.ts",
+          scope: "project",
+          managed: true,
+          enabled: true,
+          active: true,
+          runtime_active: true,
+          activation_status: "active",
+          update_check_status: "skipped_unmanaged",
+          update_check_reason: "unmanaged",
+        },
+      ],
+      { vocabulary: "package" },
+    );
+
+    expect(summary.warning_codes).toContain("extension_schema_narrow_activation");
+    expect(summary.remediation.join(" ")).toContain("Remove activation.commands from manifest.json");
   });
 
   it("reports actionable package remediation for registration collisions", () => {

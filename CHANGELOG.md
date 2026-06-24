@@ -4,6 +4,7 @@
 
 ### Added
 
+- Complete scaffold capability matrix: --capability renderers/parser/preflight/services starters ([pm-i5p5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-i5p5.toon))
 - pm package/extension init --capability schema: scaffold custom item type/field/migration starter ([pm-d1ig](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-d1ig.toon))
 - Scaffolded & authored command-bearing extensions reliably activate for their own commands ([pm-yxb5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-yxb5.toon))
 - TypeScript-only extension loading: ship .ts entry, load via Node native type stripping (no compiled .js) ([pm-2p7a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-2p7a.toon))
@@ -14,6 +15,7 @@
 
 ### Fixed
 
+- pm package doctor should warn when a schema package registers item types/fields but declares narrow activation.commands (silently non-global) ([pm-ok47](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ok47.toon))
 - Scaffolded search/importers package commands fail to dispatch: lazy-activation probe skips command-bearing extensions that omit activation.commands ([pm-nacb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nacb.toon))
 - Harden extensionNeedsActivationForProbe: non-terminal search gate + command-bearing importers ([pm-b5r8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-b5r8.toon))
 

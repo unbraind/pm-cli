@@ -66,15 +66,29 @@ const SCAFFOLD_TSCONFIG = {
 
 /**
  * Capability shapes the package/extension scaffolder can target via the
- * `--capability` selector. `commands` emits the default command-only starter;
- * `hooks` additionally wires an `after_command` lifecycle reactor, `search`
- * wires an in-memory provider/adapter pair, `importers` wires importer and
- * exporter command primitives so authors can customize project context movement,
- * and `schema` registers a custom item type, item field, and migration so
- * authors can model their own project domain — without starting from a blank
- * extension.
+ * `--capability` selector — one per SDK extension capability, so every
+ * registration surface has a runnable starter. `commands` emits the default
+ * command-only starter; `hooks` additionally wires an `after_command` lifecycle
+ * reactor; `search` wires an in-memory provider/adapter pair; `importers` wires
+ * importer and exporter command primitives so authors can customize project
+ * context movement; `schema` registers a custom item type, item field, and
+ * migration so authors can model their own project domain; `renderers` overrides
+ * how a command's output is serialized for a format; `parser` rewrites a
+ * command's parsed options before its handler runs; `preflight` adjusts pm's
+ * pre-run migration/format gate decision; and `services` overrides a built-in pm
+ * service (e.g. output formatting) — without starting from a blank extension.
  */
-export const SCAFFOLD_CAPABILITIES = ["commands", "hooks", "search", "importers", "schema"] as const;
+export const SCAFFOLD_CAPABILITIES = [
+  "commands",
+  "hooks",
+  "search",
+  "importers",
+  "schema",
+  "renderers",
+  "parser",
+  "preflight",
+  "services",
+] as const;
 
 /**
  * Restricts the `--capability` selector to a {@link SCAFFOLD_CAPABILITIES} value.
@@ -87,6 +101,10 @@ const SCAFFOLD_MANIFEST_CAPABILITIES: Record<ExtensionScaffoldCapability, readon
   search: ["commands", "search"],
   importers: ["commands", "schema", "importers"],
   schema: ["commands", "schema"],
+  renderers: ["commands", "renderers"],
+  parser: ["commands", "parser"],
+  preflight: ["commands", "preflight"],
+  services: ["commands", "services"],
 };
 
 const SAMPLE_TEST_CAPABILITIES_LITERAL: Record<ExtensionScaffoldCapability, string> = {
@@ -95,6 +113,10 @@ const SAMPLE_TEST_CAPABILITIES_LITERAL: Record<ExtensionScaffoldCapability, stri
   search: '["commands", "search"]',
   importers: '["commands", "schema", "importers"]',
   schema: '["commands", "schema"]',
+  renderers: '["commands", "renderers"]',
+  parser: '["commands", "parser"]',
+  preflight: '["commands", "preflight"]',
+  services: '["commands", "services"]',
 };
 
 const ENTRYPOINT_BULLETS: Record<ExtensionScaffoldCapability, string> = {
@@ -107,6 +129,14 @@ const ENTRYPOINT_BULLETS: Record<ExtensionScaffoldCapability, string> = {
     "- `index.ts`: the TypeScript manifest entry — starter command registration, importer/exporter command registrations, and a `deactivate` teardown stub.",
   schema:
     "- `index.ts`: the TypeScript manifest entry — starter command registration, a custom item type, a custom item field, a schema migration, and a `deactivate` teardown stub.",
+  renderers:
+    "- `index.ts`: the TypeScript manifest entry — starter command registration, a `toon` output renderer override, and a `deactivate` teardown stub.",
+  parser:
+    "- `index.ts`: the TypeScript manifest entry — starter command registration, a parser override that rewrites the command's parsed options, and a `deactivate` teardown stub.",
+  preflight:
+    "- `index.ts`: the TypeScript manifest entry — starter command registration, a preflight override over pm's pre-run gate decision, and a `deactivate` teardown stub.",
+  services:
+    "- `index.ts`: the TypeScript manifest entry — starter command registration, an `output_format` service override, and a `deactivate` teardown stub.",
 };
 
 const SAMPLE_TEST_BULLETS: Record<ExtensionScaffoldCapability, string> = {
@@ -120,6 +150,14 @@ const SAMPLE_TEST_BULLETS: Record<ExtensionScaffoldCapability, string> = {
     "- `index.test.ts`: sample `node:test` suite covering activation, command invocation, importer/exporter invocation, and teardown via the SDK testing helpers.",
   schema:
     "- `index.test.ts`: sample `node:test` suite covering activation, command invocation, item type/field/migration registration, migration invocation, and teardown via the SDK testing helpers.",
+  renderers:
+    "- `index.test.ts`: sample `node:test` suite covering activation, command invocation, renderer override registration and invocation (including format pass-through), and teardown via the SDK testing helpers.",
+  parser:
+    "- `index.test.ts`: sample `node:test` suite covering activation, command invocation, parser override registration and the option rewrite it produces, and teardown via the SDK testing helpers.",
+  preflight:
+    "- `index.test.ts`: sample `node:test` suite covering activation, command invocation, preflight override registration and the gate decision it returns, and teardown via the SDK testing helpers.",
+  services:
+    "- `index.test.ts`: sample `node:test` suite covering activation, command invocation, service override registration and invocation (including command pass-through), and teardown via the SDK testing helpers.",
 };
 
 const TSCONFIG_BULLET = "- `tsconfig.json`: strict type-check-only TypeScript config (`noEmit`) for the `.ts` source the loader runs directly.";
@@ -168,6 +206,47 @@ const PACKAGE_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, re
     "registrations. Once installed, the custom type is usable everywhere, e.g.",
     "`pm create <type> \"<title>\"` and `pm list --type <type>`.",
   ],
+  renderers: [
+    "",
+    "## Output Renderer",
+    "`index.ts` registers a `toon` output renderer override through",
+    "`api.registerRenderer`. Renderer overrides run for every command's output in",
+    "that format, so this starter scopes itself to THIS package's own command and",
+    "returns `null` (pass-through to pm's default renderer) for everything else.",
+    "Return a string to take over rendering. Replace the sample serialization with",
+    "your own; the `renderers` capability in `manifest.json` grants the",
+    "registration.",
+  ],
+  parser: [
+    "",
+    "## Parser Override",
+    "`index.ts` registers a parser override for the starter command through",
+    "`api.registerParser`. pm runs it on the command's parsed options BEFORE the",
+    "handler, merging the delta you return. This starter rewrites a deprecated",
+    "`--shout` alias to the canonical `--upper` flag; replace it with your",
+    "command's real normalization. The `parser` capability in `manifest.json`",
+    "grants the registration.",
+  ],
+  preflight: [
+    "",
+    "## Preflight Override",
+    "`index.ts` registers a preflight override through `api.registerPreflight`. pm",
+    "calls it before every command to compute the migration/format gate decision —",
+    "the last registered override wins. Return only the decision keys you want to",
+    "change; this starter echoes the current decision unchanged (a safe no-op) so",
+    "installing the package does not alter gate behavior. The `preflight`",
+    "capability in `manifest.json` grants the registration.",
+  ],
+  services: [
+    "",
+    "## Service Override",
+    "`index.ts` overrides the built-in `output_format` service through",
+    "`api.registerService`. The service renders a command's structured result;",
+    "returning the payload unchanged passes through to pm's default formatting.",
+    "This starter scopes itself to THIS package's own command and passes every",
+    "other command through, so it never disrupts unrelated output. The `services`",
+    "capability in `manifest.json` grants the registration.",
+  ],
 };
 
 const EXTENSION_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, readonly string[]> = {
@@ -207,6 +286,44 @@ const EXTENSION_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, 
     "type/field/migration with your own domain model; the `schema` capability in",
     "`manifest.json` grants all three registrations. Once installed, the custom",
     'type is usable everywhere, e.g. `pm create <type> "<title>"`.',
+  ],
+  renderers: [
+    "",
+    "## Output Renderer",
+    "`index.ts` registers a `toon` output renderer override through",
+    "`api.registerRenderer`. Renderer overrides run for every command's output in",
+    "that format, so this starter scopes itself to its own command and returns",
+    "`null` (pass-through to pm's default renderer) for everything else. Replace",
+    "the sample serialization with your own; the `renderers` capability in",
+    "`manifest.json` grants the registration.",
+  ],
+  parser: [
+    "",
+    "## Parser Override",
+    "`index.ts` registers a parser override for the starter command through",
+    "`api.registerParser`. pm runs it on the command's parsed options BEFORE the",
+    "handler, merging the delta you return. This starter rewrites a deprecated",
+    "`--shout` alias to the canonical `--upper` flag; replace it with your own",
+    "normalization. The `parser` capability in `manifest.json` grants the",
+    "registration.",
+  ],
+  preflight: [
+    "",
+    "## Preflight Override",
+    "`index.ts` registers a preflight override through `api.registerPreflight`. pm",
+    "calls it before every command to compute the migration/format gate decision —",
+    "the last registered override wins. This starter echoes the current decision",
+    "unchanged (a safe no-op); return only the decision keys you want to change.",
+    "The `preflight` capability in `manifest.json` grants the registration.",
+  ],
+  services: [
+    "",
+    "## Service Override",
+    "`index.ts` overrides the built-in `output_format` service through",
+    "`api.registerService`. Returning the payload unchanged passes through to pm's",
+    "default formatting, so this starter scopes itself to its own command and",
+    "passes every other command through. The `services` capability in",
+    "`manifest.json` grants the registration.",
   ],
 };
 
@@ -452,6 +569,82 @@ function buildActivateBodyLines(
       "  );",
     ];
   }
+  if (capability === "renderers") {
+    return [
+      ...commandLines,
+      "",
+      "  // Renderer overrides customize how pm serializes a command's structured",
+      "  // result for an output format (\"toon\" or \"json\"). pm runs this override for",
+      "  // EVERY command's output in that format, so it scopes itself to THIS",
+      "  // package's own command and returns null — pass-through to pm's default",
+      "  // renderer — for everything else. Return a string to take over rendering.",
+      "  // The `renderers` capability in manifest.json grants the registration.",
+      '  api.registerRenderer("toon", (context) => {',
+      `    if (context.command !== ${JSON.stringify(commandName)}) {`,
+      "      return null;",
+      "    }",
+      `    return ${JSON.stringify(`${extensionName}: `)} + JSON.stringify(context.result);`,
+      "  });",
+    ];
+  }
+  if (capability === "parser") {
+    return [
+      ...commandLines,
+      "",
+      "  // Parser overrides preprocess a command's parsed options BEFORE its handler",
+      "  // runs, returning a delta — only the keys you set are merged over the parsed",
+      "  // input. This override is scoped to THIS package's own command. Here it",
+      "  // rewrites a deprecated `--shout` boolean alias to the canonical `--upper`",
+      "  // flag; replace it with your command's real normalization. The `parser`",
+      "  // capability in manifest.json grants the registration.",
+      `  api.registerParser(${JSON.stringify(commandName)}, (context) => {`,
+      "    const options = { ...context.options };",
+      "    if (options.shout === true) {",
+      "      options.upper = true;",
+      "    }",
+      "    delete options.shout;",
+      "    return { options };",
+      "  });",
+    ];
+  }
+  if (capability === "preflight") {
+    return [
+      ...commandLines,
+      "",
+      "  // Preflight overrides adjust pm's pre-run gate decision (extension",
+      "  // migrations + item-format checks) before EVERY command — the last",
+      "  // registered override wins. Return only the decision keys you want to",
+      "  // change; omitted keys keep pm's computed value. This starter echoes the",
+      "  // current decision unchanged (a safe no-op) so installing the package does",
+      "  // not alter gate behavior — replace the values with your policy, e.g.",
+      "  // `{ run_extension_migrations: false }`. The `preflight` capability in",
+      "  // manifest.json grants the registration.",
+      "  api.registerPreflight((context) => ({",
+      "    enforce_item_format_gate: context.decision.enforce_item_format_gate,",
+      "    run_preflight_item_format_sync: context.decision.run_preflight_item_format_sync,",
+      "    run_extension_migrations: context.decision.run_extension_migrations,",
+      "    enforce_mandatory_migration_gate: context.decision.enforce_mandatory_migration_gate,",
+      "  }));",
+    ];
+  }
+  if (capability === "services") {
+    return [
+      ...commandLines,
+      "",
+      "  // Service overrides replace a built-in pm service. The `output_format`",
+      "  // service renders a command's structured result; returning the payload",
+      "  // unchanged passes through to pm's default formatting. This override scopes",
+      "  // itself to THIS package's own command and passes every other command",
+      "  // through, so it never disrupts unrelated output. The `services` capability",
+      "  // in manifest.json grants the registration.",
+      '  api.registerService("output_format", (context) => {',
+      `    if (context.command !== ${JSON.stringify(commandName)}) {`,
+      "      return context.payload;",
+      "    }",
+      `    return { rendered_by: ${JSON.stringify(extensionName)}, payload: context.payload };`,
+      "  });",
+    ];
+  }
   return [
     ...commandLines,
     "",
@@ -490,6 +683,10 @@ function buildSampleTestSource(
   const searchEnabled = capability === "search";
   const importersEnabled = capability === "importers";
   const schemaEnabled = capability === "schema";
+  const renderersEnabled = capability === "renderers";
+  const parserEnabled = capability === "parser";
+  const preflightEnabled = capability === "preflight";
+  const servicesEnabled = capability === "services";
   const capabilitiesLiteral = SAMPLE_TEST_CAPABILITIES_LITERAL[capability];
   const searchProviderName = `${extensionName}-search`;
   const vectorAdapterName = `${extensionName}-vector`;
@@ -506,12 +703,20 @@ function buildSampleTestSource(
     ...(searchEnabled ? ["  assertRegisteredSearchProvider,", "  assertRegisteredVectorStoreAdapter,"] : []),
     ...(importersEnabled ? ["  assertRegisteredImporter,", "  assertRegisteredExporter,"] : []),
     ...(schemaEnabled ? ["  assertRegisteredItemField,", "  assertRegisteredItemType,", "  assertRegisteredMigration,"] : []),
+    ...(renderersEnabled ? ["  assertRegisteredRendererOverride,"] : []),
+    ...(parserEnabled ? ["  assertRegisteredParserOverride,"] : []),
+    ...(preflightEnabled ? ["  assertRegisteredPreflightOverride,"] : []),
+    ...(servicesEnabled ? ["  assertRegisteredServiceOverride,"] : []),
     "  deactivateExtensionForTest,",
     "  runRegisteredCommandForTest,",
     ...(hooksEnabled ? ["  runRegisteredHookForTest,"] : []),
     ...(searchEnabled ? ["  runRegisteredSearchProviderForTest,", "  runRegisteredVectorStoreAdapterForTest,"] : []),
     ...(importersEnabled ? ["  runRegisteredImporterForTest,", "  runRegisteredExporterForTest,"] : []),
     ...(schemaEnabled ? ["  runRegisteredMigrationForTest,"] : []),
+    ...(renderersEnabled ? ["  runRegisteredRendererOverrideForTest,"] : []),
+    ...(parserEnabled ? ["  runRegisteredParserOverrideForTest,"] : []),
+    ...(preflightEnabled ? ["  runRegisteredPreflightOverrideForTest,"] : []),
+    ...(servicesEnabled ? ["  runRegisteredServiceOverrideForTest,"] : []),
   ];
   const hookTestLines = hooksEnabled
     ? [
@@ -668,6 +873,145 @@ function buildSampleTestSource(
         "",
       ]
     : [];
+  const rendererTestLines = renderersEnabled
+    ? [
+        `test(${JSON.stringify(`${extensionName} registers and invokes its renderer override`)}, async () => {`,
+        "  const activation = await activateExtensionForTest(extension, {",
+        `    name: ${JSON.stringify(extensionName)},`,
+        `    capabilities: ${capabilitiesLiteral},`,
+        "  });",
+        "  // assertRegisteredRendererOverride throws unless a renderer is registered",
+        "  // for the format, so reaching the next line already proves the wiring.",
+        "  const override = assertRegisteredRendererOverride(activation.renderers, {",
+        '    format: "toon",',
+        `    extensionName: ${JSON.stringify(extensionName)},`,
+        "  });",
+        '  assert.equal(override.format, "toon");',
+        "",
+        "  // runRegisteredRendererOverrideForTest renders through pm's real runner.",
+        "  // The override customizes only THIS package's command output and returns a",
+        "  // string the host uses verbatim. Replace the assertions as it grows.",
+        "  const rendered = await runRegisteredRendererOverrideForTest(activation.renderers, {",
+        '    format: "toon",',
+        `    command: ${JSON.stringify(commandName)},`,
+        "    result: { ok: true },",
+        "  });",
+        "  assert.equal(rendered.overridden, true);",
+        `  assert.equal(rendered.rendered, ${JSON.stringify(`${extensionName}: `)} + JSON.stringify({ ok: true }));`,
+        "",
+        "  // Output for any other command passes through to pm's default renderer.",
+        "  const passthrough = await runRegisteredRendererOverrideForTest(activation.renderers, {",
+        '    format: "toon",',
+        '    command: "list",',
+        "    result: { ok: true },",
+        "  });",
+        "  assert.equal(passthrough.overridden, false);",
+        "});",
+        "",
+      ]
+    : [];
+  const parserTestLines = parserEnabled
+    ? [
+        `test(${JSON.stringify(`${extensionName} rewrites command options via its parser override`)}, async () => {`,
+        "  const activation = await activateExtensionForTest(extension, {",
+        `    name: ${JSON.stringify(extensionName)},`,
+        `    capabilities: ${capabilitiesLiteral},`,
+        "  });",
+        "  // assertRegisteredParserOverride throws unless a parser is registered for",
+        "  // the command, so reaching the next line already proves the wiring.",
+        "  assertRegisteredParserOverride(activation.parsers, {",
+        `    command: ${JSON.stringify(commandName)},`,
+        `    extensionName: ${JSON.stringify(extensionName)},`,
+        "  });",
+        "",
+        "  // runRegisteredParserOverrideForTest runs the override through pm's real",
+        "  // parser runner and returns the rewritten context. The starter rewrites a",
+        "  // deprecated `shout` alias to the canonical `upper` flag.",
+        "  const result = await runRegisteredParserOverrideForTest(activation.parsers, {",
+        `    command: ${JSON.stringify(commandName)},`,
+        "    args: [],",
+        "    options: { shout: true },",
+        "    global: {},",
+        '    pm_root: "",',
+        "  });",
+        "  assert.equal(result.overridden, true);",
+        "  assert.deepEqual(result.context.options, { upper: true });",
+        "});",
+        "",
+      ]
+    : [];
+  const preflightTestLines = preflightEnabled
+    ? [
+        `test(${JSON.stringify(`${extensionName} returns a preflight gate decision via its override`)}, async () => {`,
+        "  const activation = await activateExtensionForTest(extension, {",
+        `    name: ${JSON.stringify(extensionName)},`,
+        `    capabilities: ${capabilitiesLiteral},`,
+        "  });",
+        "  // assertRegisteredPreflightOverride throws unless a preflight override is",
+        "  // registered, so reaching the next line already proves the wiring.",
+        "  assertRegisteredPreflightOverride(activation.preflight, {",
+        `    extensionName: ${JSON.stringify(extensionName)},`,
+        "  });",
+        "",
+        "  // runRegisteredPreflightOverrideForTest runs the override through pm's real",
+        "  // runner with a synthetic gate decision. The starter echoes the decision",
+        "  // unchanged; replace the values/assertions with your real policy.",
+        "  const decision = {",
+        "    enforce_item_format_gate: true,",
+        "    run_preflight_item_format_sync: false,",
+        "    run_extension_migrations: true,",
+        "    enforce_mandatory_migration_gate: false,",
+        "  };",
+        "  const result = await runRegisteredPreflightOverrideForTest(activation.preflight, {",
+        `    command: ${JSON.stringify(commandName)},`,
+        "    args: [],",
+        "    options: {},",
+        "    global: {},",
+        '    pm_root: "",',
+        "    decision,",
+        "  });",
+        "  assert.equal(result.overridden, true);",
+        "  assert.deepEqual(result.decision, decision);",
+        "});",
+        "",
+      ]
+    : [];
+  const serviceTestLines = servicesEnabled
+    ? [
+        `test(${JSON.stringify(`${extensionName} customizes command output via its service override`)}, async () => {`,
+        "  const activation = await activateExtensionForTest(extension, {",
+        `    name: ${JSON.stringify(extensionName)},`,
+        `    capabilities: ${capabilitiesLiteral},`,
+        "  });",
+        "  // assertRegisteredServiceOverride throws unless a service override is",
+        "  // registered for the service, so reaching the next line proves the wiring.",
+        "  assertRegisteredServiceOverride(activation.services, {",
+        '    service: "output_format",',
+        `    extensionName: ${JSON.stringify(extensionName)},`,
+        "  });",
+        "",
+        "  // runRegisteredServiceOverrideForTest runs the override through pm's real",
+        "  // service runner. The override customizes only THIS package's command",
+        "  // output (handled), passing every other command through (not handled).",
+        "  const handled = await runRegisteredServiceOverrideForTest(activation.services, {",
+        '    service: "output_format",',
+        `    command: ${JSON.stringify(commandName)},`,
+        "    payload: { ok: true },",
+        "  });",
+        "  assert.equal(handled.handled, true);",
+        `  assert.deepEqual(handled.result, { rendered_by: ${JSON.stringify(extensionName)}, payload: { ok: true } });`,
+        "",
+        "  // Output for any other command passes through to pm's default formatter.",
+        "  const passthrough = await runRegisteredServiceOverrideForTest(activation.services, {",
+        '    service: "output_format",',
+        '    command: "list",',
+        "    payload: { ok: true },",
+        "  });",
+        "  assert.equal(passthrough.handled, false);",
+        "});",
+        "",
+      ]
+    : [];
   return [
     'import assert from "node:assert/strict";',
     'import { test } from "node:test";',
@@ -716,6 +1060,10 @@ function buildSampleTestSource(
     ...searchTestLines,
     ...importerTestLines,
     ...schemaTestLines,
+    ...rendererTestLines,
+    ...parserTestLines,
+    ...preflightTestLines,
+    ...serviceTestLines,
     `test(${JSON.stringify(`${extensionName} tears down cleanly via deactivate`)}, async () => {`,
     "  // deactivateExtensionForTest runs pm's real teardown engine over the",
     "  // module, so this proves your `deactivate` hook runs without throwing.",
@@ -911,6 +1259,10 @@ export function buildStarterExtensionScaffoldFiles(
       ...(capability === "search" ? ["defineSearchProvider", "defineVectorStoreAdapter"] : []),
       ...(capability === "importers" ? ["defineImporter", "defineExporter"] : []),
       ...(capability === "schema" ? ["defineItemType", "defineItemField", "defineMigration"] : []),
+      ...(capability === "renderers" ? ["defineRendererOverride"] : []),
+      ...(capability === "parser" ? ["defineParserOverride"] : []),
+      ...(capability === "preflight" ? ["definePreflightOverride"] : []),
+      ...(capability === "services" ? ["defineServiceOverride"] : []),
     ].join(", ");
     const defineBuilderSnippet = [
       "```ts",
@@ -989,11 +1341,63 @@ export function buildStarterExtensionScaffoldFiles(
         "});",
       );
     }
+    if (capability === "renderers") {
+      defineBuilderSnippet.push(
+        "",
+        "export const toonRenderer = defineRendererOverride((context) => {",
+        `  if (context.command !== ${JSON.stringify(commandName)}) return null;`,
+        `  return ${JSON.stringify(`${extensionName}: `)} + JSON.stringify(context.result);`,
+        "});",
+      );
+    }
+    if (capability === "parser") {
+      defineBuilderSnippet.push(
+        "",
+        "export const pingParser = defineParserOverride((context) => {",
+        "  const options = { ...context.options };",
+        "  if (options.shout === true) options.upper = true;",
+        "  delete options.shout;",
+        "  return { options };",
+        "});",
+      );
+    }
+    if (capability === "preflight") {
+      defineBuilderSnippet.push(
+        "",
+        "export const preflightOverride = definePreflightOverride((context) => ({",
+        "  enforce_item_format_gate: context.decision.enforce_item_format_gate,",
+        "  run_preflight_item_format_sync: context.decision.run_preflight_item_format_sync,",
+        "  run_extension_migrations: context.decision.run_extension_migrations,",
+        "  enforce_mandatory_migration_gate: context.decision.enforce_mandatory_migration_gate,",
+        "}));",
+      );
+    }
+    if (capability === "services") {
+      defineBuilderSnippet.push(
+        "",
+        "export const outputService = defineServiceOverride((context) => {",
+        `  if (context.command !== ${JSON.stringify(commandName)}) return context.payload;`,
+        `  return { rendered_by: ${JSON.stringify(extensionName)}, payload: context.payload };`,
+        "});",
+      );
+    }
     defineBuilderSnippet.push(
       "",
       "export function activate(api: ExtensionApi): void {",
       "  api.registerCommand(pingCommand);",
     );
+    if (capability === "renderers") {
+      defineBuilderSnippet.push('  api.registerRenderer("toon", toonRenderer);');
+    }
+    if (capability === "parser") {
+      defineBuilderSnippet.push(`  api.registerParser(${JSON.stringify(commandName)}, pingParser);`);
+    }
+    if (capability === "preflight") {
+      defineBuilderSnippet.push("  api.registerPreflight(preflightOverride);");
+    }
+    if (capability === "services") {
+      defineBuilderSnippet.push('  api.registerService("output_format", outputService);');
+    }
     if (capability === "hooks") {
       defineBuilderSnippet.push("  api.hooks.afterCommand(afterCommandHook);");
     }
