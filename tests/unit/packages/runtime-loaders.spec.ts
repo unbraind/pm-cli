@@ -110,6 +110,35 @@ describe.each(LOADERS)("$pkg runtime-loader", ({ pkg, ext }) => {
     await expect(loader.loadPackageRuntimeModule()).rejects.toThrow("explicit-runtime-boom");
   });
 
+  it("preserves missing dependency errors from a discovered runtime", async () => {
+    const root = await createTempRoot(`pm-${ext}-loader-missing-dep-`);
+    const runtimeDir = path.join(root, ".agents", "pm", "extensions", ext);
+    await mkdir(runtimeDir, { recursive: true });
+    await writeFile(path.join(runtimeDir, "runtime.ts"), 'import "@missing/runtime-dep";\n', "utf8");
+    process.env[PM_PACKAGE_ROOT_ENV] = root;
+    const loader = await importLoader(pkg, ext);
+    await expect(loader.loadPackageRuntimeModule()).rejects.toThrow("@missing/runtime-dep");
+  });
+
+  it("continues when Node reports the runtime path on a missing runtime error", async () => {
+    const root = await createTempRoot(`pm-${ext}-loader-error-path-`);
+    const agentsRuntimeDir = path.join(root, ".agents", "pm", "extensions", ext);
+    const packageRuntimeDir = path.join(root, "packages", pkg, "extensions", ext);
+    const agentsRuntimePath = path.join(agentsRuntimeDir, "runtime.ts");
+    await mkdir(agentsRuntimeDir, { recursive: true });
+    await mkdir(packageRuntimeDir, { recursive: true });
+    await writeFile(
+      agentsRuntimePath,
+      `throw { code: "ERR_MODULE_NOT_FOUND", path: ${JSON.stringify(agentsRuntimePath)}, message: "missing runtime" };\n`,
+      "utf8",
+    );
+    await writeFile(path.join(packageRuntimeDir, "runtime.ts"), "export const marker = 'package-runtime';\n", "utf8");
+    process.env[PM_PACKAGE_ROOT_ENV] = root;
+    const loader = await importLoader(pkg, ext);
+    const runtime = await loader.loadPackageRuntimeModule();
+    expect(runtime.marker).toBe("package-runtime");
+  });
+
   it("falls back to the sibling runtime.ts when no candidate roots resolve", async () => {
     const emptyRoot = await createTempRoot(`pm-${ext}-loader-empty-`);
     const deepDir = path.join(emptyRoot, "a", "b", "c");

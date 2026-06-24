@@ -6,12 +6,14 @@ status: open
 priority: 3
 tags[5]: "area:ci","area:tests",cross-platform,flake,windows
 created_at: "2026-06-23T12:18:09.377Z"
-updated_at: "2026-06-24T06:28:48.942Z"
+updated_at: "2026-06-24T09:06:44.562Z"
 author: claude-code-agent
 parent: pm-u9d0
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-i84i,related,"2026-06-23T12:18:17.665Z",null,null
   pm-zpe7,related,"2026-06-23T12:18:17.665Z",null,null
-comments[1]{created_at,author,text}:
+  pm-2p7a,related,"2026-06-24T09:06:44.485Z",null,null
+comments[2]{created_at,author,text}:
   "2026-06-23T15:39:40.414Z",codex,"Continuation check (codex): GH-348 still open and remains separate from the SDK version-compatibility branch. Current main CI run 28028252104 had Windows regression (Node 20) green, while GH-348 describes intermittent Nightly Validation worker teardown after tests pass. No SDK version-compat code changes touch the suspected LanceDB/OTLP teardown surface; leave pm-2kkl open for a Windows-runner reproduction/hardening lane."
+  "2026-06-24T09:06:44.562Z",codex-gpt5,"Continuation note: GitHub issue #348 was refreshed by run 28083306766 on 2026-06-24 for windows-latest / Node 20. PR #353 / pm-2p7a resolves the live scheduled failure class by removing unsupported Node 20 nightly lanes as part of the Node >=22.18 TypeScript-only extension runtime floor; branch nightly matrix is Node 22/24/25 on Ubuntu plus Node 24 on macOS/Windows. Keep this issue open until PR #353 is merged to main and the next scheduled nightly no longer reports Node 20."
 body: "## Triage 2026-06-24 (still open — needs a Windows runner)\n\nReconfirmed scope: GH-348 is a teardown-only worker crash on windows-latest/Node20 — all 246/247 test files pass with 0 assertion failures, then a vitest fork worker exits unexpectedly. Not reproducible on Linux. The per-PR `windows-regression` CI job runs only a 4-spec subset, so it cannot reproduce a full-suite teardown crash either; only the nightly full run exercises it.\n\nCandidate mitigations to try (ranked, each requires a Windows runner to confirm):\n1. Force single-use workers for the native-resource specs: `test.poolOptions.forks.isolate` is already default; try `test.poolOptions.forks.maxForks`/`minForks` pinning or `test.fileParallelism: false` for the LanceDB/OTLP-touching specs only via a `test.projects` split, so a crashing worker is isolated.\n2. Add an explicit global teardown that closes LanceDB connections and shuts down the OTLP gRPC exporter (`forceFlush()` + `shutdown()`) before the worker exits — the most likely root cause is a native handle (vectordb addon or `@opentelemetry` gRPC channel) keeping the event loop alive past teardown on Windows.\n3. As a last resort, scope `dangerouslyIgnoreUnhandledErrors` narrowly — rejected for now because it would mask real teardown regressions.\n\nDecision: not bundling a speculative vitest-config change into the TypeScript-first examples PR (pm-ax7z) — it is unverifiable on Linux and could destabilize the green Linux/macOS gates. Non-blocking for releases (auto-release green; npm 2026.6.23 published). Tracked here until a Windows runner is available to confirm option 2. Related: pm-zpe7 (OTLP EBUSY, fixed), pm-i84i (file:// TS import SyntaxError)."

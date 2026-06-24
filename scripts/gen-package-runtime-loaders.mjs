@@ -63,9 +63,15 @@ function isMissingRuntimeModuleError(error: unknown, modulePath: string): boolea
   if (!isRecord(error) || error.code !== "ERR_MODULE_NOT_FOUND") {
     return false;
   }
-  const message = typeof error.message === "string" ? error.message : "";
   const moduleUrl = pathToFileURL(modulePath).href;
-  return message.includes(modulePath) || message.includes(moduleUrl);
+  if (error.url === moduleUrl) {
+    return true;
+  }
+  if (typeof error.path === "string" && path.resolve(error.path) === path.resolve(modulePath)) {
+    return true;
+  }
+  const message = typeof error.message === "string" ? error.message : "";
+  return message.startsWith(\`Cannot find module '\${modulePath}'\`) || message.startsWith(\`Cannot find module '\${moduleUrl}'\`);
 }
 
 function resolvePackageRootCandidates(): string[] {

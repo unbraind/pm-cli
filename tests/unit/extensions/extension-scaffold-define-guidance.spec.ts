@@ -57,6 +57,7 @@ describe("extension scaffold define builder guidance", () => {
   it("scaffolds a package as a TypeScript-only project (type-check tsconfig + .ts entry, no compiled output)", () => {
     const scaffold = buildStarterExtensionScaffoldFiles("tool-kit", "tool kit ping", "package", "commands");
     const packageJson = JSON.parse(scaffold["package.json"] ?? "{}") as {
+      engines?: Record<string, string>;
       scripts?: Record<string, string>;
       devDependencies?: Record<string, string>;
     };
@@ -68,6 +69,7 @@ describe("extension scaffold define builder guidance", () => {
     // pm loads the ./index.ts manifest entry directly via Node's native type
     // stripping (Node >=22.18): there is no build step, `typecheck` validates the
     // source, and `test` runs `node --test` (which strips types on load).
+    expect(packageJson.engines?.node).toBe(">=22.18.0");
     expect(packageJson.scripts?.build).toBeUndefined();
     expect(packageJson.scripts?.typecheck).toBe("tsc --noEmit");
     expect(packageJson.scripts?.test).toBe("node --test");

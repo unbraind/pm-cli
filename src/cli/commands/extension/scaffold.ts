@@ -16,6 +16,7 @@ import { normalizeManagedDirectoryName } from "./shared.js";
 // tracks the manifest schema generation (currently 1).
 const SCAFFOLD_MANIFEST_VERSION = 1;
 const SCAFFOLD_PM_MIN_VERSION = "2026.5.0";
+const SCAFFOLD_NODE_ENGINE = ">=22.18.0";
 const SCAFFOLD_DECLARED_PERMISSIONS = {
   fs_read: false,
   fs_write: false,
@@ -607,6 +608,9 @@ export function buildStarterExtensionScaffoldFiles(
         private: true,
         type: "module",
         keywords: ["pm-package"],
+        engines: {
+          node: SCAFFOLD_NODE_ENGINE,
+        },
         // There is no build step: pm loads the `./index.ts` manifest entry
         // directly via Node's native type stripping (Node >=22.18). `typecheck`
         // validates the source against the SDK contracts (`tsc --noEmit`), and

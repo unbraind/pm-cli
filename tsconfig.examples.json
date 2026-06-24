@@ -4,6 +4,7 @@
     "rootDir": ".",
     "types": ["node"],
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "paths": {
       "@unbrained/pm-cli/sdk": ["./src/sdk/index.ts"]
     },

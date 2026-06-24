@@ -6,16 +6,56 @@ status: closed
 priority: 1
 tags[6]: "area:extensions","area:sdk",authoring,breaking-change,ci,loader
 created_at: "2026-06-24T07:24:07.989Z"
-updated_at: "2026-06-24T08:01:21.171Z"
+updated_at: "2026-06-24T09:14:56.812Z"
 author: claude-code-agent
 parent: pm-ugqx
-resolution: "TypeScript-only extension/package loading delivered: the .ts source IS the manifest entry, loaded directly via Node native type stripping; no compiled .js or build step. Verified: typecheck (3 projects) green; full coverage 248 files / 4989 tests at 100% statements/branches/functions/lines; quality:static, contracts:check, security:scan, version:check, docs-skills, gen-package-runtime-loaders --check all green; real `pnpm dogfood:package-first` scaffolds, type-checks, installs, and invokes a package end-to-end (ts-only) with exit 0."
+resolution: "TypeScript-only extension/package loading delivered and PR #353 follow-up failures fixed: .ts source is the manifest entry loaded by Node native type stripping, package runtime loaders rethrow missing dependencies inside discovered runtime.ts, scaffolded packages declare engines.node >=22.18.0, tsconfig examples allow explicit .ts imports, CI now has a Node 22 TypeScript package-runtime smoke, and stale scaffolder metadata/changelog state is reconciled through pm."
 expected_result: "All extension/package loading is TypeScript-only with 100% coverage, green dogfood/smoke gates, and a working manual smoke; docs/docstrings reframed; auto-release healthy."
-actual_result: "Delivered end-to-end: 100% coverage (248 files / 4989 tests), all static gates + gen-loader check green, real dogfood ts-only end-to-end green (exit 0), docs/docstrings reframed across SDK.md/EXTENSIONS.md/examples/scaffolder."
-dependencies[4]{id,kind,created_at,author,source_kind}:
+actual_result: "Verified end-to-end: focused runtime/scaffold/CI tests green; CI failure slice green; package-first dogfood 88 commands ok; manual isolated temp smoke passed for beads/todos plus scaffolded starter extension; full coverage 248 files / 4993 tests at 100% statements/branches/functions/lines; quality:static, quality:docs-skills, contracts, changelog, security, audit, version, compatibility, npm pack, pm health, external-package smoke, Sentry/telemetry, and pnpm release:gates all green."
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-m1uz,related,"2026-06-24T07:24:30.548Z",null,null
   pm-2c28,related,"2026-06-24T07:24:30.848Z",null,null
   pm-ax7z,related,"2026-06-24T07:24:31.215Z",null,null
   pm-09rh,related,"2026-06-24T07:24:31.582Z",null,null
-close_reason: "Shipped TypeScript-only extension loading (ADR pm-m1uz). engines>=22.18 + @types/node ^22; all first-party packages, docs/examples, and the scaffolder point manifest entry at ./index.ts; committed compiled .js removed; runtime-loaders + gen-package-runtime-loaders.mjs resolve runtime.ts (JS loader variant dropped); CI/nightly/auto-release/docs workflows + esbuild bundler target Node 22/24 (Node 20 dropped); tsconfig.examples.json + allowImportingTsExtensions added; scaffolder next_steps fixed (no npm run build) and all README/docstring drift reframed; 8 spec files reconciled (runtime.js->runtime.ts, manifest entry, scaffold scripts, src-not-dist mocks) and the dogfood harness type-checks the scaffold then loads .ts directly."
+  pm-2kkl,related,"2026-06-24T09:06:50.494Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-06-24T08:42:52.228Z",codex-gpt5,"Continuation: PR #353 is still open with failing Gates (coverage) and Gates (smokes) on head 5bd07b82. Reopening/continuing the existing TypeScript-only extension loading lineage instead of creating a duplicate item. Root failure: beads/todos package commands cannot resolve runtime.ts from the package-first installed path; review follow-up also requires tsconfig.examples allowImportingTsExtensions, scaffold engines.node >=22.18.0, Node 22 TS-loading smoke coverage, and pm-frou metadata reconciliation via pm."
+  "2026-06-24T09:14:36.493Z",codex-gpt5,"Evidence: PR #353 follow-up fixes are implemented and locally verified. Fixed package runtime-loader missing-module classification so missing dependencies inside discovered runtime.ts are rethrown instead of being swallowed as a missing runtime. Added Node 22 dist smoke for TS package runtime loading, tsconfig.examples allowImportingTsExtensions, scaffold package engines.node >=22.18.0, and pm-frou metadata reconciliation. Focused checks passed: gen-package-runtime-loaders --check; runtime-loader/scaffold/CI contract tests 30 passed; CI failure slice 3 passed; pnpm dogfood:package-first 88 commands ok. Full gates passed: pnpm typecheck; node scripts/run-tests.mjs coverage = 248 files, 4993 tests, 100/100/100/100; quality:static; quality:docs-skills; contracts:check; changelog:pm:check with pm-changelog latest npm version 2026.6.20; security:scan; pnpm audit --audit-level low; version:check; compatibility-check; npm pack --dry-run; pm health --check-only; pnpm smoke:external-packages tested 10 packages with 0 failures; pnpm release:gates passed end to end. Manual temp-dir smoke passed at /tmp/tmp.YPXDQmEAE4 using isolated PM_PATH and PM_GLOBAL_PATH: init, create, install beads/todos one-at-a-time, beads import, todos export, scaffold/install starter-extension, run starter extension ping, extension doctor strict summary with 3 active runtimes and 0 warnings, health ok. GitHub reports checked: PR #353 had stale failures on previous head; open issue #348 is related to unsupported Node 20 nightly and is linked to pm-2kkl; branch nightly matrix no longer includes Node 20. Dependabot/code-scanning/secret-scanning alert APIs returned 404/not enabled or not visible to token, while local secret scan and pnpm audit are green. Sentry/telemetry gate checked unbrained/pm-cli over 14 days: 0 critical, 0 high, 11 expected CLI-error issues ignored, telemetry finish error rate 0.86%, missing error-code rows 0."
+files[9]{path,scope,note}:
+  .github/workflows/ci.yml,project,Node 22 dist smoke imports package runtime.ts
+  packages/pm-beads/extensions/beads/runtime-loader.ts,project,beads runtime loader exact missing-runtime detection
+  packages/pm-todos/extensions/todos/runtime-loader.ts,project,todos runtime loader exact missing-runtime detection
+  scripts/gen-package-runtime-loaders.mjs,project,generated runtime loader keeps missing dependency errors
+  src/cli/commands/extension/scaffold.ts,project,scaffolded packages declare Node 22 type stripping floor
+  tests/integration/ci-workflow-contract.spec.ts,project,CI contract asserts runtime smoke stays dependency-free
+  tests/unit/extensions/extension-scaffold-define-guidance.spec.ts,project,scaffold package manifest asserts Node 22 engine
+  tests/unit/packages/runtime-loaders.spec.ts,project,regression coverage for missing dependency in discovered runtime
+  tsconfig.examples.json,project,allow explicit .ts example imports
+tests[19]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/gen-package-runtime-loaders.mjs --check,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/release/compatibility-check.mjs --json,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort --sentry-window-days 14 --max-critical 0 --max-high 0,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/packages/runtime-loaders.spec.ts tests/unit/extensions/extension-scaffold-define-guidance.spec.ts tests/integration/ci-workflow-contract.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  npm pack --dry-run,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  PM_AUTHOR=codex-gpt5 pm health --check-only --summary --json,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  "PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t \"imports and exports todos markdown through bundled extension commands|preserves hierarchical IDs through the todos import CLI command|imports Beads JSONL records through the beads import CLI command\"",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm audit --audit-level low,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm changelog:pm:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm contracts:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm dogfood:package-first",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:docs-skills",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:static",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm release:gates",null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm security:scan",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm smoke:external-packages",null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm version:check",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+docs[5]{path,scope,note}:
+  docs/examples/policy-restricted-extension/README.md,project,policy extension example docs match .ts manifest entry
+  docs/examples/starter-extension/README.md,project,starter extension docs match .ts manifest entry
+  docs/EXTENSIONS.md,project,extension authoring model uses TypeScript entrypoints directly
+  docs/SDK.md,project,SDK package authoring and runtime guidance for TS-only packages
+  README.md,project,top-level Node 22 and TS-only package authoring guidance
+close_reason: "Closed with implementation and verification evidence: PR #353 follow-up fixes are complete locally, manual temp smoke passed, literal coverage is 100/100/100/100, package/release gates are green, changelog uses latest pm-changelog, and GitHub/Sentry/telemetry reports were checked."
 body: ""

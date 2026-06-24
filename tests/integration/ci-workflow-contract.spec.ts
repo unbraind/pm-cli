@@ -125,6 +125,11 @@ describe("GitHub workflow contract", () => {
       "name: Download dist artifact",
       "name: Dist artifact version smoke",
       "run: node dist/cli.js --version",
+      "name: Node 22 TypeScript extension loading smoke",
+      "if: matrix.os == 'ubuntu-latest' && matrix.node == 22",
+      "PM_AUTHOR=\"ci-node22-ts-loader\"",
+      "install beads --project --json",
+      "beads import --file \"${temp_root}/beads.jsonl\" --preserve-source-ids --json",
       "run: pnpm build",
       "pnpm version:check",
       "pnpm security:scan",
@@ -151,6 +156,10 @@ describe("GitHub workflow contract", () => {
       PINNED_ACTIONS.downloadArtifact,
       "name: Dist artifact version smoke",
       "run: node dist/cli.js --version",
+      "name: Node 22 TypeScript extension loading smoke",
+      "if: matrix.os == 'ubuntu-latest' && matrix.node == 22",
+      "install beads --project --json",
+      "beads import --file \"${temp_root}/beads.jsonl\" --preserve-source-ids --json",
     ]);
     expect(runtimeSmokeJob).toMatch(
       /matrix:\n\s+include:\n\s+- os: ubuntu-latest\n\s+node: 22\n\s+- os: macos-latest\n\s+node: 24\n\s+- os: ubuntu-latest\n\s+node: 24/,
@@ -161,6 +170,7 @@ describe("GitHub workflow contract", () => {
       "actions/cache",
       "pnpm install",
       "pnpm test",
+      "pnpm dogfood:package-first",
     ]);
     expectContainsAll(windowsRegressionJob, [
       "name: Windows regression (Node 24)",
