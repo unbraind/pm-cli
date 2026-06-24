@@ -72,6 +72,7 @@ function normalizeExtensionOptions(
     github: readString("github"),
     ref: readString("ref"),
     capability: readString("capability"),
+    declarative: readBoolean("declarative"),
     fields: readString("fields"),
     detail: readString("detail"),
     trace: readBoolean("trace"),
@@ -176,6 +177,7 @@ function registerLifecycleCommand(
     .option("--init", `Generate a starter ${noun} scaffold at target path`)
     .option("--scaffold", "Alias for --init")
     .option("--capability <kind>", `Capability the --init starter targets (${SCAFFOLD_CAPABILITIES.join("|")}; default commands)`)
+    .option("--declarative", "Scaffold the composeExtension blueprint starter (package-mode, commands capability)")
     .option("--install", `Install ${noun} from local path, bundled alias, npm: source, wildcard, or GitHub source`)
     .option("--uninstall", `Uninstall an installed ${noun}`)
     .option("--explore", `List discovered ${plural} in selected scope`)
@@ -221,6 +223,7 @@ function registerLifecycleCommand(
       .alias("scaffold")
       .argument("<target>", `Scaffold target directory path`)
       .option("--capability <kind>", `Capability the starter targets (${SCAFFOLD_CAPABILITIES.join("|")}; default commands)`)
+      .option("--declarative", "Scaffold the composeExtension blueprint starter (package-mode, commands capability)")
       .description(
         vocabulary === "package"
           ? "Generate a starter package scaffold with package metadata, manifest, and entrypoint."

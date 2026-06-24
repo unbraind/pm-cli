@@ -2132,6 +2132,103 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("scaffolds a declarative composeExtension package that installs and dispatches end to end", async () => {
+    await withTempPmPath(async (context) => {
+      const scaffoldPath = path.join(context.tempRoot, "starter-declarative");
+      const scaffold = await runExtension(scaffoldPath, {
+        init: true,
+        project: true,
+        vocabulary: "package",
+        declarative: true,
+      }, { path: context.pmPath });
+      expect(scaffold.action).toBe("init");
+      expect(scaffold.details).toMatchObject({
+        capability: "commands",
+        style: "declarative",
+        extension: {
+          name: "starter-declarative",
+          command: "starter declarative ping",
+        },
+        created_directory: true,
+      });
+
+      // The declarative entrypoint is the composeExtension blueprint loop.
+      const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
+      expect(entry).toContain('import { composeExtension, defineCommand, defineExtensionBlueprint } from "@unbrained/pm-cli/sdk";');
+      expect(entry).toContain("export const blueprint = defineExtensionBlueprint({");
+      expect(entry).toContain("export default composeExtension(blueprint);");
+      expect(entry).not.toContain("export function activate(api: ExtensionApi)");
+
+      // The colocated test exercises the author-time preflight + runtime harness.
+      const sampleTest = await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8");
+      expect(sampleTest).toContain("assertExtensionPreflight(blueprint, {");
+      expect(sampleTest).toContain("createExtensionTestHarness(extension, {");
+
+      // The manifest is the same least-privilege commands manifest, so the
+      // composed module installs and dispatches exactly like the imperative one.
+      const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
+      expect(manifest.capabilities).toEqual(["commands"]);
+
+      const install = await runExtension(scaffoldPath, { install: true, project: true }, { path: context.pmPath });
+      expect(install.details).toMatchObject({
+        extension: { name: "starter-declarative" },
+        activated: true,
+        command_paths: ["starter declarative ping"],
+      });
+      // composeExtension is a runtime SDK *value* import (unlike the imperative
+      // starter, whose only SDK import is the erased `ExtensionApi` type), so the
+      // composed module needs `@unbrained/pm-cli/sdk` resolvable when pm loads it.
+      // A real package install links the host SDK; mirror that here by linking the
+      // running repo into the workspace's node_modules so the spawned CLI can
+      // resolve the subpath, then prove the module loads and dispatches for real.
+      const sdkLinkDir = path.join(context.pmPath, "node_modules", "@unbrained");
+      await mkdir(sdkLinkDir, { recursive: true });
+      // "junction" rather than "dir": a Windows directory symlink needs admin /
+      // Developer Mode, while a junction (over the absolute cwd) does not. Node
+      // ignores the type argument on POSIX, so Linux/macOS get an ordinary symlink.
+      await symlink(process.cwd(), path.join(sdkLinkDir, "pm-cli"), "junction");
+      const invoked = spawnSync(
+        process.execPath,
+        [path.join(process.cwd(), "dist/cli.js"), "--path", context.pmPath, "starter", "declarative", "ping", "--json"],
+        {
+          cwd: context.pmPath,
+          encoding: "utf8",
+          env: { ...process.env, PM_TELEMETRY_DISABLED: "1", PM_SENTRY_DISABLED: "1" },
+        },
+      );
+      expect(invoked.status).toBe(0);
+      expect(JSON.parse(invoked.stdout) as Record<string, unknown>).toMatchObject({
+        ok: true,
+        command: "starter declarative ping",
+        message: "Starter extension scaffold is active.",
+      });
+    });
+  });
+
+  it("rejects --declarative for extension-mode and non-commands capabilities, and outside init", async () => {
+    await withTempPmPath(async (context) => {
+      // composeExtension is a runtime SDK import, so the declarative starter is
+      // package-mode only — extension-mode is rejected before any file is written.
+      await expect(
+        runExtension(path.join(context.tempRoot, "decl-ext"), { init: true, project: true, declarative: true }, { path: context.pmPath }),
+      ).rejects.toThrow(/--declarative scaffolds a package-mode blueprint starter/);
+
+      // The declarative starter targets the commands surface only.
+      await expect(
+        runExtension(
+          path.join(context.tempRoot, "decl-search"),
+          { init: true, project: true, vocabulary: "package", capability: "search", declarative: true },
+          { path: context.pmPath },
+        ),
+      ).rejects.toThrow(/--declarative currently scaffolds the commands-capability blueprint starter/);
+
+      // --declarative is a scaffold-only flag.
+      await expect(
+        runExtension(undefined, { explore: true, project: true, declarative: true }, { path: context.pmPath }),
+      ).rejects.toThrow(/--declarative is only valid with --init\/--scaffold/);
+    });
+  });
+
   it("scaffolds hook-capability packages with runnable SDK hook tests", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-hooks");

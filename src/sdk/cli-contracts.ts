@@ -551,6 +551,7 @@ export const EXTENSION_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--init" },
   { flag: "--scaffold" },
   { flag: "--capability" },
+  { flag: "--declarative" },
   { flag: "--install" },
   { flag: "--uninstall" },
   { flag: "--explore" },
@@ -588,6 +589,7 @@ export const EXTENSION_SCOPE_FLAG_CONTRACTS: CliFlagContract[] = [
 export const EXTENSION_INIT_FLAG_CONTRACTS: CliFlagContract[] = [
   ...EXTENSION_SCOPE_FLAG_CONTRACTS,
   { flag: "--capability" },
+  { flag: "--declarative" },
 ];
 
 export const EXTENSION_INSTALL_FLAG_CONTRACTS: CliFlagContract[] = [
