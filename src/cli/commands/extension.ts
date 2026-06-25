@@ -167,6 +167,7 @@ export interface ExtensionCommandOptions {
   manage?: boolean;
   describe?: boolean;
   markdown?: boolean;
+  output?: string;
   reload?: boolean;
   doctor?: boolean;
   catalog?: boolean;

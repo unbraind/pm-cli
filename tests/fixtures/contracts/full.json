@@ -2284,6 +2284,9 @@
           "flag": "--markdown"
         },
         {
+          "flag": "--output"
+        },
+        {
           "flag": "--reload"
         },
         {
@@ -2448,6 +2451,9 @@
         },
         {
           "flag": "--markdown"
+        },
+        {
+          "flag": "--output"
         }
       ],
       "provider": "core"
@@ -4615,6 +4621,9 @@
           "flag": "--markdown"
         },
         {
+          "flag": "--output"
+        },
+        {
           "flag": "--reload"
         },
         {
@@ -4782,6 +4791,9 @@
         },
         {
           "flag": "--markdown"
+        },
+        {
+          "flag": "--output"
         }
       ],
       "provider": "core"
@@ -4964,6 +4976,9 @@
           "flag": "--markdown"
         },
         {
+          "flag": "--output"
+        },
+        {
           "flag": "--reload"
         },
         {
@@ -5131,6 +5146,9 @@
         },
         {
           "flag": "--markdown"
+        },
+        {
+          "flag": "--output"
         }
       ],
       "provider": "core"
@@ -10511,6 +10529,14 @@
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
           },
+          "output": {
+            "description": "File path for commands that write generated output, such as package/extension describe Markdown references.",
+            "examples": [
+              "docs/pm-package-reference.md"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
           "path": {
             "description": "Optional PM data root override for this invocation.",
             "examples": [
@@ -11153,6 +11179,14 @@
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
           },
+          "output": {
+            "description": "File path for commands that write generated output, such as package/extension describe Markdown references.",
+            "examples": [
+              "docs/pm-package-reference.md"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
           "path": {
             "description": "Optional PM data root override for this invocation.",
             "examples": [
@@ -11643,6 +11677,14 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "output": {
+            "description": "File path for commands that write generated output, such as package/extension describe Markdown references.",
+            "examples": [
+              "docs/pm-package-reference.md"
+            ],
+            "minLength": 1,
+            "type": "string"
           },
           "path": {
             "description": "Optional PM data root override for this invocation.",
@@ -12285,6 +12327,14 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "output": {
+            "description": "File path for commands that write generated output, such as package/extension describe Markdown references.",
+            "examples": [
+              "docs/pm-package-reference.md"
+            ],
+            "minLength": 1,
+            "type": "string"
           },
           "path": {
             "description": "Optional PM data root override for this invocation.",
@@ -24071,10 +24121,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.0.3"
+    "x-schema-version": "4.0.4"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.0.3",
+  "schema_version": "4.0.4",
   "selected": {
     "action": null,
     "availability_only": false,

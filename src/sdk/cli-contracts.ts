@@ -567,6 +567,7 @@ export const EXTENSION_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--manage" },
   { flag: "--describe" },
   { flag: "--markdown" },
+  { flag: "--output" },
   { flag: "--reload" },
   { flag: "--watch" },
   { flag: "--doctor" },
@@ -619,7 +620,11 @@ export const EXTENSION_INSTALL_FLAG_CONTRACTS: CliFlagContract[] = [
 
 export const EXTENSION_UNINSTALL_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_SCOPE_FLAG_CONTRACTS;
 export const EXTENSION_EXPLORE_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_SCOPE_FLAG_CONTRACTS;
-export const EXTENSION_DESCRIBE_FLAG_CONTRACTS: CliFlagContract[] = [...EXTENSION_SCOPE_FLAG_CONTRACTS, { flag: "--markdown" }];
+export const EXTENSION_DESCRIBE_FLAG_CONTRACTS: CliFlagContract[] = [
+  ...EXTENSION_SCOPE_FLAG_CONTRACTS,
+  { flag: "--markdown" },
+  { flag: "--output" },
+];
 export const EXTENSION_ADOPT_ALL_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_SCOPE_FLAG_CONTRACTS;
 export const EXTENSION_ACTIVATE_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_SCOPE_FLAG_CONTRACTS;
 export const EXTENSION_DEACTIVATE_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_SCOPE_FLAG_CONTRACTS;
@@ -1924,7 +1929,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   "extension-uninstall": { required: ["target"], optional: ["scope"] },
   "extension-explore": { optional: ["scope"] },
   "extension-manage": { optional: ["scope", "runtimeProbe", "fixManagedState"] },
-  "extension-describe": { optional: ["target", "scope", "markdown"] },
+  "extension-describe": { optional: ["target", "scope", "markdown", "output"] },
   "extension-reload": { optional: ["scope", "watch"] },
   "extension-doctor": { optional: ["scope", "detail", "trace", "fixManagedState", "strictExit", "failOnWarn"] },
   "extension-catalog": { optional: ["scope", "fields"] },
@@ -1945,6 +1950,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
       "manage",
       "describe",
       "markdown",
+      "output",
       "reload",
       "doctor",
       "catalog",
@@ -1969,7 +1975,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   "package-uninstall": { required: ["target"], optional: ["scope"] },
   "package-explore": { optional: ["scope"] },
   "package-manage": { optional: ["scope", "runtimeProbe", "fixManagedState"] },
-  "package-describe": { optional: ["target", "scope", "markdown"] },
+  "package-describe": { optional: ["target", "scope", "markdown", "output"] },
   "package-reload": { optional: ["scope", "watch"] },
   "package-doctor": { optional: ["scope", "detail", "trace", "fixManagedState", "strictExit", "failOnWarn"] },
   "package-catalog": { optional: ["scope", "fields"] },
@@ -1990,6 +1996,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
       "manage",
       "describe",
       "markdown",
+      "output",
       "reload",
       "doctor",
       "catalog",
@@ -2535,7 +2542,7 @@ function createLazyContractSchema(
  * the MAJOR for breaking changes — the major also drives the `$id`
  * `tool-parameters-v{major}` slug, so the two never drift.
  */
-export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.0.3" as const;
+export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.0.4" as const;
 
 /**
  * Major component of {@link PM_TOOL_PARAMETERS_SCHEMA_VERSION}, used to build the

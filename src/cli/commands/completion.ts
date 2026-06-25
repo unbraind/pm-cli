@@ -1652,6 +1652,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--manage[List managed extensions with update metadata]' \\
             '--describe[Map every surface a loaded extension registers]' \\
             '--markdown[Render describe output as a Markdown reference document]' \\
+            '--output[Write describe Markdown to a file]:path:_files' \\
             '--reload[Reload extensions with cache-busted module imports]' \\
             '--watch[Enable watch mode with --reload]' \\
             '--doctor[Run consolidated extension diagnostics (summary/deep)]' \\
@@ -1689,6 +1690,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--manage[List managed packages with update metadata]' \\
             '--describe[Map every surface a loaded package registers]' \\
             '--markdown[Render describe output as a Markdown reference document]' \\
+            '--output[Write describe Markdown to a file]:path:_files' \\
             '--reload[Reload packages with cache-busted module imports]' \\
             '--watch[Enable watch mode with --reload]' \\
             '--doctor[Run consolidated package diagnostics (summary/deep)]' \\
@@ -2658,6 +2660,7 @@ complete -c pm -n '__fish_seen_subcommand_from extension' -l explore -d 'List di
 complete -c pm -n '__fish_seen_subcommand_from extension' -l manage -d 'List managed extensions with update metadata'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l describe -d 'Map every surface a loaded extension registers'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l markdown -d 'Render describe output as a Markdown reference document'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l output -d 'Write describe Markdown to a file' -r
 complete -c pm -n '__fish_seen_subcommand_from extension' -l reload -d 'Reload extensions with cache-busted module imports'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l watch -d 'Enable watch mode with --reload'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l doctor -d 'Run consolidated extension diagnostics'
@@ -2692,6 +2695,7 @@ for package_cmd in package packages
   complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l manage -d 'List managed packages with update metadata'
   complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l describe -d 'Map every surface a loaded package registers'
   complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l markdown -d 'Render describe output as a Markdown reference document'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l output -d 'Write describe Markdown to a file' -r
   complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l reload -d 'Reload packages with cache-busted module imports'
   complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l watch -d 'Enable watch mode with --reload'
   complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l doctor -d 'Run consolidated package diagnostics'

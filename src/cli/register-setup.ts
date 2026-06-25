@@ -5,6 +5,7 @@
  */
 import type { Command } from "commander";
 import fs from "node:fs/promises";
+import path from "node:path";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -15,6 +16,7 @@ import {
   printResult,
   writeStdout,
 } from "./registration-helpers.js";
+import { runExtension } from "./commands/extension.js";
 import { SCAFFOLD_CAPABILITIES } from "./commands/extension/scaffold.js";
 import { renderExtensionDescribeMarkdown, type ExtensionDescribeResult } from "./commands/extension/describe.js";
 
@@ -78,6 +80,7 @@ function normalizeExtensionOptions(
     declarative: readBoolean("declarative"),
     fields: readString("fields"),
     detail: readString("detail"),
+    output: readString("output"),
     trace: readBoolean("trace"),
     watch: readBoolean("watch"),
     runtimeProbe: readBoolean("runtimeProbe", "runtime_probe", "runtime-probe"),
@@ -132,6 +135,14 @@ async function executeExtensionCommand(
   const startedAt = Date.now();
   const normalizedOptions = normalizeExtensionOptions(options, forcedAction, vocabulary);
   const wantsMarkdown = normalizedOptions.markdown === true;
+  const outputOption = typeof normalizedOptions.output === "string" ? normalizedOptions.output : undefined;
+  const outputPath = outputOption?.trim();
+  if (outputOption !== undefined && outputPath === "") {
+    throw new PmCliError("--output requires a non-empty file path.", EXIT_CODE.USAGE);
+  }
+  if (outputPath !== undefined && !wantsMarkdown) {
+    throw new PmCliError("--output is only supported with --markdown describe output.", EXIT_CODE.USAGE);
+  }
   if (wantsMarkdown) {
     // Validate before running so a misdirected --markdown (e.g. on install) fails
     // fast instead of performing the action and only then rejecting the flag.
@@ -142,10 +153,15 @@ async function executeExtensionCommand(
       throw new PmCliError("--markdown is only supported by the describe action.", EXIT_CODE.USAGE);
     }
   }
-  const { runExtension } = await import("./commands/extension.js");
   const result = await runExtension(target, normalizedOptions, globalOptions);
   if (wantsMarkdown) {
     // describe resolved above, so `details` is the describe action's ExtensionDescribeResult.
+    const markdown = renderExtensionDescribeMarkdown(result.details as unknown as ExtensionDescribeResult, vocabulary);
+    if (outputPath !== undefined) {
+      const resolvedOutputPath = path.resolve(outputPath);
+      await fs.mkdir(path.dirname(resolvedOutputPath), { recursive: true });
+      await fs.writeFile(resolvedOutputPath, markdown, "utf8");
+    }
     if (!globalOptions.quiet) {
       // printResult is bypassed in markdown mode, so surface result warnings (e.g.
       // extension load/activation failures) to stderr rather than swallowing them,
@@ -153,7 +169,9 @@ async function executeExtensionCommand(
       for (const warning of result.warnings) {
         printError(`warning: ${warning}`);
       }
-      writeStdout(renderExtensionDescribeMarkdown(result.details as unknown as ExtensionDescribeResult, vocabulary));
+      if (outputPath === undefined) {
+        writeStdout(markdown);
+      }
     }
   } else {
     printResult(result, globalOptions);
@@ -211,6 +229,7 @@ function registerLifecycleCommand(
     .option("--manage", `List managed ${plural} with update-check metadata`)
     .option("--describe", `Map every surface a loaded ${noun} registers (optionally one by name)`)
     .option("--markdown", "Render describe output as a Markdown reference document (describe only)")
+    .option("--output <path>", "Write describe Markdown to a file (requires --markdown)")
     .option("--reload", `Reload ${plural} with cache-busted module imports`)
     .option("--watch", "Use watch mode with --reload")
     .option("--doctor", `Run consolidated ${noun} diagnostics (summary/deep modes)`)
@@ -311,6 +330,7 @@ function registerLifecycleCommand(
       .command("describe")
       .argument("[target]", `${noun[0]!.toUpperCase()}${noun.slice(1)} name to describe (omit for every loaded ${noun})`)
       .option("--markdown", "Render the surface map as a Markdown reference document instead of toon/json")
+      .option("--output <path>", "Write Markdown output to a file (requires --markdown)")
       .description(`Map every surface a loaded ${noun} registers (commands, hooks, item types, providers, overrides, ...).`),
     vocabulary,
   ).action(async (target: string | undefined, _options: Record<string, unknown>, command) => {
