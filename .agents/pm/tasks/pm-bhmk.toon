@@ -2,22 +2,21 @@ id: pm-bhmk
 title: Expose project profile application through MCP contracts and drift gates
 description: "When project profile commands land, expose the profile surface through MCP/contracts with schema snapshots and drift protection."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[5]: "area:contracts","area:mcp",customization,profiles,schema
 created_at: "2026-06-25T04:57:09.188Z"
-updated_at: "2026-06-25T07:32:05.661Z"
-assignee: claude-code-agent
+updated_at: "2026-06-25T08:19:16.586Z"
 author: codex-pm-ecosystem-audit-20260625
 estimated_minutes: 180
 acceptance_criteria: "Profile application is exposed via pm_schema or a narrow profile MCP tool; tool schemas and command contracts include the new surface; contract snapshots, handshake tests, and negative tests are updated; pm contracts --command schema --schema-only --json remains green."
 parent: pm-5k4v
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-v37g,blocked_by,"2026-06-25T06:44:15.106Z",claude-code-agent,null
+resolution: Narrow pm_profile MCP tool (28 tools) + profile action with PM_TOOL_ACTION_SCHEMA_CONTRACTS entry; PROFILE_FLAG_CONTRACTS + resolver + contracts snapshot drift gate green.
 comments[1]{created_at,author,text}:
   "2026-06-25T04:57:09.188Z",codex-pm-ecosystem-audit-20260625,"Duplicate check: status-all MCP profile searches found closed schema/config MCP tooling but no profile application surface because profile commands do not exist yet."
 notes[1]{created_at,author,text}:
   "2026-06-25T07:28:41.581Z",claude-code-agent,"Exposed profiles through MCP + contracts + drift gates (delivered together with pm-v37g in one PR). Added narrow pm_profile MCP tool (tools count 27->28; updated mcp-handshake.spec EXPECTED_TOOL_NAMES + length, smoke-claude-plugin.mjs required list + count, smoke-claude-plugin.spec list, CLAUDE_CODE_PLUGIN.md \"28 tools\", server prose narrow-tool list). Added \"profile\" action: PM_TOOL_ACTIONS + PM_CORE_COMMAND_NAMES entry, PM_TOOL_ACTION_SCHEMA_CONTRACTS.profile entry (required subcommand; optional name/dryRun/author/force; conditionalRequired name for show+apply) so contracts --full does not crash buildActionScopedToolSchema, PROFILE_FLAG_CONTRACTS + resolver case + contracts.ts command->flags map, tool-definitions.ts pm_profile inputSchema. Regenerated tests/fixtures/contracts/full.json (contracts:check green). MCP routing case \"profile\" in server.runAction (list/show/apply + unknown throw) covered by profile-command integration spec (incl nested-options path). contracts:check, quality:static, docs-skills, typecheck all green."
 docs[1]{path,scope,note}:
   "https://github.com/unbraind/pm-cli/pull/362",project,Project profiles PR (MCP/contracts)
+close_reason: Shipped in PR #362 (squash 14cd7323).
 body: ""

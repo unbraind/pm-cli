@@ -4,6 +4,7 @@
 
 ### Added
 
+- Project profile presets: compose types, statuses, fields, workflows, templates, and packages ([pm-v37g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-v37g.toon))
 - Add pm package / pm packages shell completion (bash/zsh/fish), including the package-only --declarative flag ([pm-mthy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mthy.toon))
 - pm package init --declarative: scaffold a composeExtension blueprint starter + author-time preflight test ([pm-8mxg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-8mxg.toon))
 - pm next: recommend the next actionable (unblocked, ready) work item with rationale + blocked companion ([pm-nj90](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-nj90.toon))
@@ -29,6 +30,7 @@
 
 ### Other
 
+- Expose project profile application through MCP contracts and drift gates ([pm-bhmk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-bhmk.toon))
 - 2026-06-25 PM ecosystem taxonomy and context backlog normalization ([pm-57vh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-57vh.toon))
 - Sub-agent lane: source, tests, docs, and command-surface coverage map ([pm-xezi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xezi.toon))
 - Sub-agent lane: tracker taxonomy, hierarchy, and duplicate hygiene ([pm-klpw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-klpw.toon))
