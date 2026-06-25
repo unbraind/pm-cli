@@ -132,6 +132,21 @@ const LIFECYCLE_ACTION_TARGETS = [
 const LIFECYCLE_ACTION_FLAG_HINT = LIFECYCLE_ACTION_TARGETS.map(([, , flag]) => flag)
   .filter((flag, index, flags) => flags.indexOf(flag) === index)
   .join(", ");
+const LIFECYCLE_ACTION_FLAGS: Record<ExtensionCommandAction, `--${string}`> = {
+  install: "--install",
+  uninstall: "--uninstall",
+  explore: "--explore",
+  manage: "--manage",
+  describe: "--describe",
+  reload: "--reload",
+  doctor: "--doctor",
+  catalog: "--catalog",
+  adopt: "--adopt",
+  "adopt-all": "--adopt-all",
+  activate: "--activate",
+  deactivate: "--deactivate",
+  init: "--init",
+};
 /**
  * Restricts extension scope values accepted by command, SDK, and storage contracts.
  */
@@ -603,7 +618,7 @@ function clearExtensionState(settings: PmSettings, name: string): boolean {
 
 function suggestLifecycleActionTarget(target: string): { action: ExtensionCommandAction; flag: `--${string}` } | null {
   const normalizedTarget = target.trim().toLowerCase();
-  const exactMatch = LIFECYCLE_ACTION_TARGETS.find(([candidate, , flag]) => candidate === normalizedTarget || flag === normalizedTarget);
+  const exactMatch = LIFECYCLE_ACTION_TARGETS.find(([candidate]) => candidate === normalizedTarget);
   if (exactMatch) {
     return { action: exactMatch[1], flag: exactMatch[2] };
   }
@@ -1171,7 +1186,7 @@ function resolveGithubOption(options: ExtensionCommandOptions): string | undefin
 }
 
 function getLifecycleActionFlag(action: ExtensionCommandAction): `--${string}` {
-  return LIFECYCLE_ACTION_TARGETS.find(([, candidateAction]) => candidateAction === action)?.[2] ?? `--${action}`;
+  return LIFECYCLE_ACTION_FLAGS[action];
 }
 
 function requireTarget(target: string | undefined, action: ExtensionCommandAction, options: ExtensionCommandOptions = {}): string {

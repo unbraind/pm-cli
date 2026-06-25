@@ -6,25 +6,28 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",dx,recovery
 created_at: "2026-06-25T00:06:32.677Z"
-updated_at: "2026-06-25T01:28:17.494Z"
+updated_at: "2026-06-25T01:42:53.673Z"
 author: codex-audit-20260625
 parent: pm-mpbb
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-06-25T00:12:20.747Z",codex-audit-20260625,"Evidence: compiled CLI now returns unknown_lifecycle_action for package descirbe/catalogx with suggested_retry pm package describe/catalog. Focused test passed: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts (110 tests)."
   "2026-06-25T00:42:17.795Z",codex-audit-20260625,"Evidence update: strict coverage initially caught new recovery branches; tests now cover exact action fallback, short typos, nearest later candidate ranking, and structured package recovery. Full release gate later passed literal 100/100/100/100 coverage."
   "2026-06-25T01:05:19.081Z",codex-audit-20260625,"PR review evidence: fixed lifecycle typo recovery to suggest executable flag-form commands such as pm package --catalog and pm package --explore; focused suite passed with 184 total tests across extension-command and sdk-compose."
   "2026-06-25T01:23:46.145Z",codex-audit-20260625,"PR review evidence: exact bare lifecycle targets that reach the error path now suggest executable flags, e.g. package install -> pm package --install; extension command suite passed again."
   "2026-06-25T01:24:18.501Z",codex-audit-20260625,"Correction: helper-level exact install recovery passed, but live pm package install --json currently still resolves as install without a source target; continuing the fix before final PR push."
   "2026-06-25T01:27:49.505Z",codex-audit-20260625,"Final evidence: after rebuilding dist, live node dist/cli.js package install --json emits code missing_lifecycle_target with suggested_retry pm package --install <source>; package catalogx/lis still recover to executable flag-form --catalog/--explore suggestions."
+  "2026-06-25T01:37:25.627Z",codex-audit-20260625,"CI follow-up: PR run 28140792831 failed only the strict coverage gate at 99.99% branch coverage in src/cli/commands/extension.ts; replacing the lifecycle flag fallback with a typed action flag map and removing unnecessary positional --flag matching."
+  "2026-06-25T01:42:32.609Z",codex-audit-20260625,"Coverage fix evidence: local node scripts/run-tests.mjs coverage passed literal Statements/Branches/Functions/Lines 100/100/100/100 after replacing the lifecycle fallback branch with an explicit action flag map."
 files[2]{path,scope,note}:
   src/cli/commands/extension.ts,project,suggest lifecycle action typos before generic install-target recovery
   tests/unit/extensions/extension-command.spec.ts,project,cover package and extension lifecycle typo recovery payloads
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mqsryi97-rd3ba7,test,passed,"2026-06-25T00:39:02.707Z","2026-06-25T00:39:23.371Z","2026-06-25T00:39:23.371Z",null,null,1,0,0,null,null,null
   test-local-mqsswblz-7hl1t8,test,passed,"2026-06-25T01:05:19.764Z","2026-06-25T01:05:41.063Z","2026-06-25T01:05:41.063Z",null,null,1,0,0,null,null,null
   test-local-mqstk1qf-h9qxk2,test,passed,"2026-06-25T01:23:46.460Z","2026-06-25T01:24:08.008Z","2026-06-25T01:24:08.008Z",null,null,1,0,0,null,null,null
   test-local-mqstp9bx-a660ur,test,passed,"2026-06-25T01:27:49.793Z","2026-06-25T01:28:11.133Z","2026-06-25T01:28:11.133Z",null,null,1,0,0,null,null,null
-close_reason: "Fixed live missing-target lifecycle recovery for package install: compiled CLI now emits missing_lifecycle_target with flag-form suggested_retry, and the linked extension-command suite passed."
+  test-local-mqsu85nu-tnk892,test,passed,"2026-06-25T01:42:32.897Z","2026-06-25T01:42:52.843Z","2026-06-25T01:42:52.843Z",null,null,1,0,0,null,null,null
+close_reason: "Fixed lifecycle recovery and CI coverage follow-up: typed action flag map preserves executable suggestions and local focused/linked tests plus full coverage are 100%."
 body: ""
