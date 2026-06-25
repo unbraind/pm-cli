@@ -13,8 +13,10 @@ import {
   getGlobalOptions,
   printError,
   printResult,
+  writeStdout,
 } from "./registration-helpers.js";
 import { SCAFFOLD_CAPABILITIES } from "./commands/extension/scaffold.js";
+import { renderExtensionDescribeMarkdown, type ExtensionDescribeResult } from "./commands/extension/describe.js";
 
 
 
@@ -58,6 +60,7 @@ function normalizeExtensionOptions(
     explore: isForcedAction("explore") || readBoolean("explore", "list"),
     manage: isForcedAction("manage") || readBoolean("manage"),
     describe: isForcedAction("describe") || readBoolean("describe"),
+    markdown: readBoolean("markdown"),
     reload: isForcedAction("reload") || readBoolean("reload"),
     doctor: isForcedAction("doctor") || readBoolean("doctor"),
     catalog: isForcedAction("catalog") || readBoolean("catalog"),
@@ -128,9 +131,33 @@ async function executeExtensionCommand(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   const normalizedOptions = normalizeExtensionOptions(options, forcedAction, vocabulary);
+  const wantsMarkdown = normalizedOptions.markdown === true;
+  if (wantsMarkdown) {
+    // Validate before running so a misdirected --markdown (e.g. on install) fails
+    // fast instead of performing the action and only then rejecting the flag.
+    if (globalOptions.json) {
+      throw new PmCliError("Cannot combine --json with --markdown.", EXIT_CODE.USAGE);
+    }
+    if (normalizedOptions.describe !== true) {
+      throw new PmCliError("--markdown is only supported by the describe action.", EXIT_CODE.USAGE);
+    }
+  }
   const { runExtension } = await import("./commands/extension.js");
   const result = await runExtension(target, normalizedOptions, globalOptions);
-  printResult(result, globalOptions);
+  if (wantsMarkdown) {
+    // describe resolved above, so `details` is the describe action's ExtensionDescribeResult.
+    if (!globalOptions.quiet) {
+      // printResult is bypassed in markdown mode, so surface result warnings (e.g.
+      // extension load/activation failures) to stderr rather than swallowing them,
+      // and emit the rendered doc (already newline-terminated) without an extra newline.
+      for (const warning of result.warnings) {
+        printError(`warning: ${warning}`);
+      }
+      writeStdout(renderExtensionDescribeMarkdown(result.details as unknown as ExtensionDescribeResult, vocabulary));
+    }
+  } else {
+    printResult(result, globalOptions);
+  }
   const strictExit = Boolean(normalizedOptions.strictExit) || Boolean(normalizedOptions.failOnWarn);
   if (result.action === "doctor" && strictExit) {
     const detailsRecord = result.details as Record<string, unknown>;
@@ -183,6 +210,7 @@ function registerLifecycleCommand(
     .option("--list", "Alias for --explore")
     .option("--manage", `List managed ${plural} with update-check metadata`)
     .option("--describe", `Map every surface a loaded ${noun} registers (optionally one by name)`)
+    .option("--markdown", "Render describe output as a Markdown reference document (describe only)")
     .option("--reload", `Reload ${plural} with cache-busted module imports`)
     .option("--watch", "Use watch mode with --reload")
     .option("--doctor", `Run consolidated ${noun} diagnostics (summary/deep modes)`)
@@ -282,6 +310,7 @@ function registerLifecycleCommand(
     lifecycleCommand
       .command("describe")
       .argument("[target]", `${noun[0]!.toUpperCase()}${noun.slice(1)} name to describe (omit for every loaded ${noun})`)
+      .option("--markdown", "Render the surface map as a Markdown reference document instead of toon/json")
       .description(`Map every surface a loaded ${noun} registers (commands, hooks, item types, providers, overrides, ...).`),
     vocabulary,
   ).action(async (target: string | undefined, _options: Record<string, unknown>, command) => {

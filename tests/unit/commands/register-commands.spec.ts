@@ -2400,6 +2400,85 @@ describe("setup command actions", () => {
     expect(normalized.describe).toBe(true);
   });
 
+  it("renders describe output as Markdown to stdout when --markdown is set", async () => {
+    const emptySurfaces = {
+      capabilities: [],
+      commands: ["pm-x ping"],
+      command_overrides: [],
+      command_handlers: [],
+      hooks: [],
+      flag_commands: [],
+      item_types: [],
+      item_fields: [],
+      migrations: [],
+      importers: [],
+      exporters: [],
+      search_providers: [],
+      vector_store_adapters: [],
+      parser_overrides: [],
+      service_overrides: [],
+      renderer_overrides: [],
+      preflight_overrides: 0,
+    };
+    vi.mocked(runExtension).mockResolvedValue({
+      action: "describe",
+      warnings: ["pm-x failed to load on the global layer"],
+      details: {
+        target: "pm-x",
+        total: 1,
+        extensions: [{ name: "pm-x", layer: "project", version: "1.0.0", activation_status: "ok", surfaces: emptySurfaces }],
+        union: emptySurfaces,
+      },
+    } as never);
+    const stdout = vi.spyOn(process.stdout, "write").mockReturnValue(true);
+    const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    let written = "";
+    let warned = "";
+    try {
+      await runCliRaw("package", "describe", "pm-x", "--markdown");
+      // Capture before mockRestore(), which clears the recorded call history.
+      written = stdout.mock.calls.map((call) => String(call[0])).join("");
+      warned = stderr.mock.calls.map((call) => String(call[0])).join("");
+    } finally {
+      stdout.mockRestore();
+      stderr.mockRestore();
+    }
+    expect(written).toContain("# Package surface reference");
+    expect(written).toContain("## pm-x (project v1.0.0, loaded)");
+    expect(written).toContain("- `pm-x ping`");
+    // Exactly one trailing newline (no extra blank line at EOF).
+    expect(written.endsWith("\n")).toBe(true);
+    expect(written.endsWith("\n\n")).toBe(false);
+    // Warnings are surfaced to stderr rather than swallowed in markdown mode.
+    expect(warned).toContain("warning: pm-x failed to load on the global layer");
+
+    // --quiet still resolves to the describe action (no throw) but suppresses stdout.
+    const quietStdout = vi.spyOn(process.stdout, "write").mockReturnValue(true);
+    let quietWrites = 0;
+    try {
+      await runCli("package", "describe", "pm-x", "--markdown");
+      quietWrites = quietStdout.mock.calls.length;
+    } finally {
+      quietStdout.mockRestore();
+    }
+    expect(quietWrites).toBe(0);
+  });
+
+  it("rejects --markdown combined with --json", async () => {
+    await expect(runCliRaw("package", "describe", "--markdown", "--json")).rejects.toThrow(
+      "Cannot combine --json with --markdown",
+    );
+  });
+
+  it("rejects --markdown for a non-describe action", async () => {
+    // The guard runs before runExtension: --manage sets normalizedOptions.describe
+    // to false, so the dispatch rejects --markdown without performing any action
+    // (the mock's resolved action is irrelevant here).
+    await expect(runCliRaw("package", "--manage", "--markdown")).rejects.toThrow(
+      "--markdown is only supported by the describe action",
+    );
+  });
+
   it("routes adopt/adopt-all/activate/deactivate lifecycle subcommands", async () => {
     await runCli("extension", "adopt", "ext-managed", "--github", "owner/repo", "--ref", "main");
     expect(lastCallArg(vi.mocked(runExtension) as never, 0)).toBe("ext-managed");

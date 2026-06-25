@@ -41,6 +41,7 @@ Common authoring exports:
 - `composeExtensionPackage` (author-once capstone: returns both the module and its synthesized manifest)
 - `synthesizeExtensionManifest` (generate a complete least-privilege manifest from a blueprint)
 - `describeExtensionBlueprint` (static surface map of a blueprint) / `lintExtensionBlueprint` (author-time preflight)
+- `renderExtensionSurfaceMarkdown` (render a describe summary to a drift-free Markdown reference doc for a package README)
 - `checkExtensionManifestCompatibility` (author-time `pm_min_version`/`pm_max_version` check against a target pm version)
 - `preflightExtension` (one-call capstone: lint + manifest synthesis + version-compat in a single consolidated report)
 - `EXTENSION_CAPABILITIES`
@@ -134,6 +135,7 @@ Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 - `assertExtensionPreflight` (one-line throwing capstone over `preflightExtension`; replaces chaining the three asserts above)
 - `describeExtensionActivation`
 - `describeExtensionBlueprint` / `lintExtensionBlueprint` (also surfaced here for the full author → describe → preflight → test loop)
+- `renderExtensionSurfaceMarkdown` (render the describe summary to a drift-free Markdown reference; powers `describe --markdown`)
 
 `createExtensionTestHarness(module, options)` is the recommended entry point and
 the ergonomic capstone over every standalone helper below: it activates the
@@ -295,6 +297,31 @@ to map every loaded package; pass one to scope to it. This is the agent-facing a
 to "what does this installed package add to my context?" — distinct from
 `pm package doctor` (errors/policy) and `pm package manage` (update metadata), which
 report only command/action paths, not the full registration surface.
+
+`renderExtensionSurfaceMarkdown(summary, options?)` is the **render** leg of the
+describe verb: it projects any `ExtensionActivationSummary` to a deterministic
+Markdown reference document — a title heading, a one-line capabilities summary,
+and a section per registered surface. Pipe `describeExtensionBlueprint(blueprint)`
+straight into it during a build or test step and embed the result in your
+README, and the "commands & capabilities" reference can never drift from the
+surface the loader actually registers ("project management = context
+management"). `options.title` / `options.headingLevel` (an integer in `[1, 6]`,
+default `2`; section headings render one level deeper) control nesting, and
+`options.includeEmpty` renders every section (as `_None._`) rather than omitting
+empty ones.
+
+```ts
+import { describeExtensionBlueprint, renderExtensionSurfaceMarkdown } from "@unbrained/pm-cli/sdk";
+
+const reference = renderExtensionSurfaceMarkdown(describeExtensionBlueprint(blueprint), { title: "my-pkg", headingLevel: 2 });
+// → "## my-pkg\n\nCapabilities: `commands`, `schema`\n\n### Commands\n\n- `greet hello`\n…"
+```
+
+The same renderer powers `pm extension describe --markdown` / `pm package
+describe --markdown`, which compose a per-extension section plus a union section
+across every loaded extension. `--markdown` is a presentation format (it cannot
+be combined with `--json`); MCP `describe` keeps returning the structured
+summary, which a caller can hand to `renderExtensionSurfaceMarkdown` itself.
 
 Commander option contract exports:
 

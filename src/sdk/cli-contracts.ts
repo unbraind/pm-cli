@@ -566,6 +566,7 @@ export const EXTENSION_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--list" },
   { flag: "--manage" },
   { flag: "--describe" },
+  { flag: "--markdown" },
   { flag: "--reload" },
   { flag: "--watch" },
   { flag: "--doctor" },
@@ -618,7 +619,7 @@ export const EXTENSION_INSTALL_FLAG_CONTRACTS: CliFlagContract[] = [
 
 export const EXTENSION_UNINSTALL_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_SCOPE_FLAG_CONTRACTS;
 export const EXTENSION_EXPLORE_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_SCOPE_FLAG_CONTRACTS;
-export const EXTENSION_DESCRIBE_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_SCOPE_FLAG_CONTRACTS;
+export const EXTENSION_DESCRIBE_FLAG_CONTRACTS: CliFlagContract[] = [...EXTENSION_SCOPE_FLAG_CONTRACTS, { flag: "--markdown" }];
 export const EXTENSION_ADOPT_ALL_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_SCOPE_FLAG_CONTRACTS;
 export const EXTENSION_ACTIVATE_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_SCOPE_FLAG_CONTRACTS;
 export const EXTENSION_DEACTIVATE_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_SCOPE_FLAG_CONTRACTS;
@@ -1923,7 +1924,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   "extension-uninstall": { required: ["target"], optional: ["scope"] },
   "extension-explore": { optional: ["scope"] },
   "extension-manage": { optional: ["scope", "runtimeProbe", "fixManagedState"] },
-  "extension-describe": { optional: ["target", "scope"] },
+  "extension-describe": { optional: ["target", "scope", "markdown"] },
   "extension-reload": { optional: ["scope", "watch"] },
   "extension-doctor": { optional: ["scope", "detail", "trace", "fixManagedState", "strictExit", "failOnWarn"] },
   "extension-catalog": { optional: ["scope", "fields"] },
@@ -1943,6 +1944,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
       "explore",
       "manage",
       "describe",
+      "markdown",
       "reload",
       "doctor",
       "catalog",
@@ -1967,7 +1969,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   "package-uninstall": { required: ["target"], optional: ["scope"] },
   "package-explore": { optional: ["scope"] },
   "package-manage": { optional: ["scope", "runtimeProbe", "fixManagedState"] },
-  "package-describe": { optional: ["target", "scope"] },
+  "package-describe": { optional: ["target", "scope", "markdown"] },
   "package-reload": { optional: ["scope", "watch"] },
   "package-doctor": { optional: ["scope", "detail", "trace", "fixManagedState", "strictExit", "failOnWarn"] },
   "package-catalog": { optional: ["scope", "fields"] },
@@ -1987,6 +1989,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
       "explore",
       "manage",
       "describe",
+      "markdown",
       "reload",
       "doctor",
       "catalog",

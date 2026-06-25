@@ -339,8 +339,8 @@ Explore installed runtime entries, or describe exactly what each loaded package 
 
 ```bash
 pm package explore --project
-pm package describe --project          # every loaded package
-pm package describe my-extension       # one package's surface map
+pm package describe --project                 # surface map of every loaded package
+pm package describe my-extension --markdown   # one package as a Markdown reference doc (drift-free README source)
 ```
 
 Run diagnostics:
