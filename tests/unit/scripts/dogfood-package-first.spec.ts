@@ -65,7 +65,7 @@ function buildSpawnSync(overrides: Overrides = {}) {
         }
       }
       return pmJson({
-        installed_packages: { installed_all: true, installed_count: 9 },
+        installed_packages: { installed_all: true, installed_count: 10 },
         agent_guidance: { mode: "ask", present: false },
       });
     }
@@ -123,7 +123,7 @@ function buildSpawnSync(overrides: Overrides = {}) {
     }
 
     if (cmd === "install") {
-      if (pmArgs[1] === "all") return pmJson({ details: { installed_all: true, installed_count: 9 } });
+      if (pmArgs[1] === "all") return pmJson({ details: { installed_all: true, installed_count: 10 } });
       return pmJson({ details: { installed_count: 1 } });
     }
 
@@ -140,7 +140,7 @@ function buildSpawnSync(overrides: Overrides = {}) {
           },
         });
       }
-      if (sub === "list") return pmJson({ action: "catalog", details: { total: 9 } });
+      if (sub === "list") return pmJson({ action: "catalog", details: { total: 10 } });
       if (sub === "doctor") {
         return pmJson({ details: { summary: { activation_failure_count: 0, blocking_failure_count: 0 }, triage: { warning_codes: [] } } });
       }

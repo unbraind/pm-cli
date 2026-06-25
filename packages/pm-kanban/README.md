@@ -66,7 +66,7 @@ const plan = planProfileApplication(kanbanProfile, currentState);
 
 ## Package anatomy
 
-```
+```text
 packages/pm-kanban/
 ├── package.json                  # pm resources: aliases, extensions, catalog, docs
 ├── README.md
