@@ -390,7 +390,15 @@ export function normalizeNpmLocalFileAliasSpec(spec: string, cwd: string = proce
   // decodeURIComponent rather than fileURLToPath, which throws
   // ERR_INVALID_FILE_URL_PATH for a driveless absolute path supplied on Windows;
   // strip the leading slash before a Windows drive letter (`/C:/x` -> `C:/x`).
-  const decodedPath = decodeURIComponent(new URL(`file:${target}`).pathname);
+  let decodedPath: string;
+  try {
+    decodedPath = decodeURIComponent(new URL(`file:${target}`).pathname);
+  } catch {
+    // Malformed percent-encoding (e.g. `%ZZ`) makes decodeURIComponent throw a
+    // URIError; leave the spec untouched so npm surfaces a clear error instead
+    // of crashing the CLI on an uncaught exception.
+    return spec;
+  }
   const nativePath = /^\/[A-Za-z]:/.test(decodedPath) ? decodedPath.slice(1) : decodedPath;
   return `${packageName}@${nativePath}`;
 }

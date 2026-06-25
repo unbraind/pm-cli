@@ -1632,6 +1632,9 @@ describe("extension command runtime", () => {
           "alias@C:/Temp/pm~short/pkg",
         );
         expect(normalizeNpmLocalFileAliasSpec("alias@file:///opt/pm%20space%7Eshort/pkg")).not.toContain("%");
+        // Malformed percent-encoding must not crash the resolver — leave the spec
+        // for npm to surface a clear error (decodeURIComponent throws URIError).
+        expect(normalizeNpmLocalFileAliasSpec("alias@file:///bad/%ZZ/pkg")).toBe("alias@file:///bad/%ZZ/pkg");
         await expect(_testOnlyInstallSources.resolveNpmPackSpec("https://registry.example/pkg.tgz")).resolves.toBe(
           "https://registry.example/pkg.tgz",
         );
