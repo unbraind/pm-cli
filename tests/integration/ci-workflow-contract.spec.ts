@@ -334,9 +334,11 @@ describe("GitHub workflow contract", () => {
       "permissions:",
       "actions: write",
       "contents: write",
+      "issues: write",
       "concurrency:",
       "cancel-in-progress: false",
       PINNED_ACTIONS.checkout,
+      "persist-credentials: false",
       PINNED_ACTIONS.pnpmSetup,
       PINNED_ACTIONS.setupNode,
       "name: Restore TypeScript and Vitest caches",
@@ -351,6 +353,10 @@ describe("GitHub workflow contract", () => {
       "--allow-same-day-release",
       "--dry-run",
       "--push",
+      "RELEASE_PAT_CONFIGURED: ${{ secrets.RELEASE_PAT != '' }}",
+      "RELEASE_PUSH_TOKEN: ${{ secrets.RELEASE_PAT || github.token }}",
+      '-z "${RELEASE_PUSH_TOKEN//[[:space:]]/}"',
+      "RELEASE_PAT is required before Auto Release can push",
       "node scripts/release/run-release-pipeline.mjs",
       "--telemetry-mode",
       "gh workflow run release.yml --ref main -f tag=\"${NEW_TAG}\"",
@@ -360,10 +366,12 @@ describe("GitHub workflow contract", () => {
       "GH_TOKEN: ${{ github.token }}",
       "RELEASE_SHA: ${{ github.sha }}",
       "Auto Release blocked: scheduled run failed",
+      "Common causes:",
       'gh issue list --state open --search "\\"${title}\\" in:title"',
       "gh issue create --title",
       "gh issue comment",
     ]);
+    expect(autoReleaseWorkflow).not.toContain("token: ${{ secrets.RELEASE_PAT || github.token }}");
   });
 
   it("keeps CodeQL actions SHA-pinned for supply-chain safety (pm-ji5c)", async () => {

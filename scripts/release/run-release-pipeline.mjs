@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { Buffer } from "node:buffer";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -16,6 +17,9 @@ import {
   utcDateKey,
 } from "./utils.mjs";
 import { isReleaseRelevantPath } from "./release-relevance.mjs";
+
+const releasePushToken = process.env.RELEASE_PUSH_TOKEN?.trim() ?? "";
+delete process.env.RELEASE_PUSH_TOKEN;
 
 export function usage() {
   console.log(`Usage:
@@ -182,7 +186,8 @@ function isBranchBehindPushFailure(result) {
 }
 
 export function pushReleaseRefs(tagName, gitOptions = {}) {
-  const firstPush = git(["push", "--atomic", "origin", "HEAD", tagName], { ...gitOptions, allowFailure: true });
+  const pushGitOptions = withReleasePushCredentials(gitOptions);
+  const firstPush = git(["push", "--atomic", "origin", "HEAD", tagName], { ...pushGitOptions, allowFailure: true });
   if (firstPush.status === 0) {
     return { retried: false };
   }
@@ -200,12 +205,34 @@ export function pushReleaseRefs(tagName, gitOptions = {}) {
     fail(`Command failed: git rebase origin/main\n${detail}`);
   }
   git(["tag", "-f", tagName, "HEAD"], gitOptions);
-  const retryPush = git(["push", "--atomic", "origin", "HEAD", tagName], { ...gitOptions, allowFailure: true });
+  const retryPush = git(["push", "--atomic", "origin", "HEAD", tagName], { ...pushGitOptions, allowFailure: true });
   if (retryPush.status !== 0) {
     const detail = `${retryPush.stderr.trim()}\n${retryPush.stdout.trim()}`.trim();
     fail(`Command failed: git push --atomic origin HEAD ${tagName}\n${detail}`);
   }
   return { retried: true };
+}
+
+export function withReleasePushCredentials(gitOptions = {}, token = releasePushToken) {
+  const options = gitOptions ?? {};
+  if (!token) {
+    return options;
+  }
+  const baseEnv = options.env ?? {};
+  const existingGitConfigCount = Number.parseInt(baseEnv.GIT_CONFIG_COUNT ?? "0", 10);
+  const gitConfigIndex = Number.isInteger(existingGitConfigCount) && existingGitConfigCount >= 0
+    ? existingGitConfigCount
+    : 0;
+  const authHeader = `Authorization: Basic ${Buffer.from(`x-access-token:${token}`, "utf8").toString("base64")}`;
+  return {
+    ...options,
+    env: {
+      ...baseEnv,
+      GIT_CONFIG_COUNT: String(gitConfigIndex + 1),
+      [`GIT_CONFIG_KEY_${gitConfigIndex}`]: "http.https://github.com/.extraheader",
+      [`GIT_CONFIG_VALUE_${gitConfigIndex}`]: authHeader,
+    },
+  };
 }
 
 export function runPipeline() {

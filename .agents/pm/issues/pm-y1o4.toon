@@ -2,18 +2,34 @@ id: pm-y1o4
 title: Contracts command lookup should handle package namespace roots
 description: The 2026-06-25 source-map audit found that an installed package namespace can expose help at the root command path while pm contracts --command <namespace> reports unknown_command; child command lookup works.
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,"area:contracts","area:mcp","area:packages"
 created_at: "2026-06-25T04:53:47.719Z"
-updated_at: "2026-06-25T04:53:47.719Z"
+updated_at: "2026-06-25T13:23:06.409Z"
 author: codex-pm-ecosystem-audit-20260625
 estimated_minutes: 120
 acceptance_criteria: "The intended contract behavior for package namespace roots is defined; pm contracts either returns namespace metadata/child-command guidance for roots like changelog or emits a clearer package-namespace error; regression coverage exercises installed package namespace root and child command; pnpm contracts:check and package command discovery tests pass."
 parent: pm-5k4v
 repro_steps: "Run node dist/cli.js changelog --help, then node dist/cli.js contracts --command changelog --flags-only --json and node dist/cli.js contracts --command \"changelog generate\" --flags-only --json."
-expected_result: "Contracts lookup gives useful namespace-level metadata or a precise guidance error for the package namespace root, while child command lookup remains valid."
-actual_result: "Root namespace help exists, but contracts --command changelog returns unknown_command; contracts --command \"changelog generate\" works."
-comments[1]{created_at,author,text}:
+resolution: Implemented command_namespace recovery for package namespace roots in pm contracts and preserved child command contracts for installed package commands.
+expected_result: "pm contracts --command <package namespace> gives precise child-command guidance instead of unknown_command, while pm contracts --command '<namespace> <child>' continues to return the child command flags."
+actual_result: pm contracts --command changelog now reports command_namespace with concrete changelog export/generate retry examples; changelog generate/export child lookups return extension-provided flag contracts.
+comments[5]{created_at,author,text}:
   "2026-06-25T04:53:47.719Z",codex-pm-ecosystem-audit-20260625,"Duplicate check before create: status-all search for contracts --command changelog unknown_command package root command full path changelog generate found related closed items pm-7etc, pm-4os2/pm-d6kq class work, and pm-zqes class work, but no open direct namespace-root contracts item."
+  "2026-06-25T11:52:14.770Z",codex-20260625,"Evidence: implemented command_namespace guidance for package namespace roots in contracts lookup; added regression coverage for changelog namespace roots and child commands. Verification passed: node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts (36 tests), pnpm contracts:check, node scripts/run-tests.mjs coverage (100/100/100/100), static-quality gate docstrings 237/237 source and 1840/1840 exported."
+  "2026-06-25T11:53:43.587Z",codex-20260625,"Evidence: refreshed CHANGELOG.md through pm-changelog 2026.6.20 after closure; pnpm changelog:pm:check now passes with item_count=1340 and changed=false."
+  "2026-06-25T12:05:19.486Z",codex-20260625,"Review response: split the package namespace-root regression into its own dedicated test case after Gemini feedback. Verification: node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts passed 37 tests."
+  "2026-06-25T13:23:05.504Z",codex-gpt5,"Review response: capped command namespace recovery output after Gemini feedback. Namespace-root errors now display at most 10 child commands in the message and return at most 20 fallback candidates, while still preserving the first concrete retry and examples. Verification passed: node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts (38 tests), node scripts/run-tests.mjs coverage (100/100/100/100; 5098 tests), node scripts/release/static-quality-gate.mjs --json (source docstrings 237/237 and exported docstrings 1840/1840), pnpm contracts:check, pm health summary ok, git diff --check clean."
+files[2]{path,scope,note}:
+  src/cli/commands/contracts.ts,project,emit command_namespace guidance for package command roots
+  tests/unit/commands/contracts-command.spec.ts,project,regress namespace root and child command contract behavior
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm contracts:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqtf2w7w-ehc5qs,test,passed,"2026-06-25T11:26:32.946Z","2026-06-25T11:26:39.260Z","2026-06-25T11:26:39.260Z",null,null,1,0,0,null,null,null
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,generated by pm-changelog after closing namespace contracts item
+close_reason: "Closed after PR #366 review follow-up: contracts namespace guidance is now token-efficient for large extension command groups, with bounded displayed children and fallback candidates plus regression coverage and full gates."
 body: ""
