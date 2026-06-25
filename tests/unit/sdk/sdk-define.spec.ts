@@ -16,6 +16,7 @@ import {
   defineOnWriteHook,
   defineParserOverride,
   definePreflightOverride,
+  defineProjectProfile,
   defineRendererOverride,
   defineSearchProvider,
   defineServiceOverride,
@@ -38,6 +39,7 @@ import {
   defineOnWriteHook as defineOnWriteHookFromBarrel,
   defineParserOverride as defineParserOverrideFromBarrel,
   definePreflightOverride as definePreflightOverrideFromBarrel,
+  defineProjectProfile as defineProjectProfileFromBarrel,
   defineRendererOverride as defineRendererOverrideFromBarrel,
   defineSearchProvider as defineSearchProviderFromBarrel,
   defineServiceOverride as defineServiceOverrideFromBarrel,
@@ -67,6 +69,19 @@ describe("sdk define builders", () => {
     expect(defineExtensionManifest(manifest)).toBe(manifest);
     const itemType = { name: "Incident", folder: "incidents", aliases: ["incident"] };
     expect(defineItemType(itemType)).toBe(itemType);
+    const projectProfile = {
+      name: "demo",
+      title: "Demo",
+      summary: "Demo archetype",
+      types: [{ name: "Widget", folder: "widgets", aliases: [] }],
+      statuses: [{ id: "verifying", roles: ["active"] as const }],
+      fields: [{ key: "widget_size", type: "number" as const }],
+      workflows: [{ type: "Widget", allowed_transitions: [["open", "in_progress"]] as [string, string][] }],
+      config: [{ key: "search_max_results", value: "30", summary: "cap" }],
+      templates: [{ name: "widget", options: { type: "Widget" } }],
+      packages: [{ spec: "templates", reason: "reuse" }],
+    };
+    expect(defineProjectProfile(projectProfile)).toBe(projectProfile);
     const itemField = { name: "severity", type: "string" };
     expect(defineItemField(itemField)).toBe(itemField);
     const migration = { id: "demo-migration", description: "demo" };
@@ -111,6 +126,7 @@ describe("sdk define builders", () => {
     expect(defineFlagFromBarrel).toBe(defineFlag);
     expect(defineItemTypeFromBarrel).toBe(defineItemType);
     expect(defineItemFieldFromBarrel).toBe(defineItemField);
+    expect(defineProjectProfileFromBarrel).toBe(defineProjectProfile);
     expect(defineMigrationFromBarrel).toBe(defineMigration);
     expect(defineSearchProviderFromBarrel).toBe(defineSearchProvider);
     expect(defineVectorStoreAdapterFromBarrel).toBe(defineVectorStoreAdapter);

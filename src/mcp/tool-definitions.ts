@@ -410,6 +410,32 @@ export const TOOLS: ToolDefinition[] = [
     ),
   },
   {
+    name: "pm_profile",
+    description:
+      "List, show, or apply project profiles (pm profile) — archetype bundles that stage item types, statuses, fields, per-type workflows, config knobs, create templates, and recommended packages. " +
+      "subcommand selects the operation; name carries the profile name (agile, ops, research) for show/apply. " +
+      "apply stages every dimension idempotently; dryRun previews the diff without writing. Profile staging writes workspace config/schema files, not item history.",
+    inputSchema: objectSchema(
+      {
+        subcommand: {
+          type: "string",
+          enum: ["list", "show", "apply"],
+          description: "Profile subcommand to run.",
+        },
+        name: {
+          type: "string",
+          enum: ["agile", "ops", "research"],
+          description: "Profile name for show/apply. Required for those subcommands.",
+        },
+        dryRun: { type: "boolean", description: "Preview the apply diff without writing any files (apply)." },
+        author: { type: "string", description: "Mutation author for apply." },
+        force: { type: "boolean", description: "Force ownership/lock override for apply." },
+        options: { type: "object", description: "Additional profile options using camelCase keys." },
+      },
+      ["subcommand"],
+    ),
+  },
+  {
     name: "pm_config",
     description:
       "Read or write pm workspace configuration (pm config). " +

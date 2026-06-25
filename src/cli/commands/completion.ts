@@ -455,6 +455,9 @@ export function generateBashScript(
     "    schema)",
     `      COMPREPLY=(${compgen("list show show-status add-type remove-type add-status remove-status add-field remove-field list-fields show-field apply-preset --description --default-status --folder --alias --role --order --type --commands --cli-flag --required --required-on-create --no-allow-unset --required-types --infer --min-count --apply --author --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
+    "    profile)",
+    `      COMPREPLY=(${compgen("list show apply agile ops research --dry-run --author --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    "      ;;",
     "    plan)",
     `      COMPREPLY=(${compgen(`${PLAN_SUBCOMMANDS_LIST} ${PLAN_FLAGS}`)})`,
     "      ;;",
@@ -590,6 +593,7 @@ _pm_commands() {
     'history-redact:Redact sensitive literals/patterns and recompute history hashes'
     'history-repair:Re-anchor a drifted history chain so pm health/validate report ok'
     'schema:Manage custom item types and statuses in .agents/pm/schema/*.json'
+    'profile:List, show, and apply project profiles (archetype schema/config/template/package bundles)'
     'plan:Agent-optimized Plan item workflow (create/show/add-step/update-step/complete-step/link/approve/materialize)'
     'activity:Show recent activity across items'
     'restore:Restore an item to an earlier state'
@@ -1288,6 +1292,16 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
+        profile)
+          _arguments \\
+            '1:subcommand:(list show apply)' \\
+            '2:name:(agile ops research)' \\
+            '--dry-run[Preview the apply diff without writing any files]' \\
+            '--author[Mutation author]:author' \\
+            '--force[Force ownership/lock override]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
         plan)
           _arguments \\
             '1:subcommand:(create show add-step update-step complete-step block-step reorder-step remove-step link unlink decision discovery validation resume approve materialize)' \\
@@ -1828,6 +1842,7 @@ complete -c pm -n __pm_no_subcommand -a history-compact -d 'Compact history stre
 complete -c pm -n __pm_no_subcommand -a history-redact -d 'Redact sensitive literals/patterns and recompute history hashes'
 complete -c pm -n __pm_no_subcommand -a history-repair -d 'Re-anchor a drifted history chain so pm health/validate report ok'
 complete -c pm -n __pm_no_subcommand -a schema        -d 'Inspect and manage runtime schema'
+complete -c pm -n __pm_no_subcommand -a profile       -d 'List, show, and apply project profiles (archetype bundles)'
 complete -c pm -n __pm_no_subcommand -a plan          -d 'Agent-optimized Plan workflow (create/show/add-step/update-step/complete-step/link/approve/materialize)'
 complete -c pm -n __pm_no_subcommand -a activity      -d 'Show recent activity across items'
 complete -c pm -n __pm_no_subcommand -a restore       -d 'Restore an item to an earlier state'
@@ -2341,6 +2356,11 @@ complete -c pm -n '__fish_seen_subcommand_from schema' -l min-count -d 'Minimum 
 complete -c pm -n '__fish_seen_subcommand_from schema' -l apply -d 'Register inferred types (with --infer)'
 complete -c pm -n '__fish_seen_subcommand_from schema' -l author -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l force -d 'Force ownership/lock override'
+complete -c pm -n '__fish_seen_subcommand_from profile' -a 'list show apply' -d 'Profile subcommand'
+complete -c pm -n '__fish_seen_subcommand_from profile' -a 'agile ops research' -d 'Profile name'
+complete -c pm -n '__fish_seen_subcommand_from profile' -l dry-run -d 'Preview the apply diff without writing any files'
+complete -c pm -n '__fish_seen_subcommand_from profile' -l author -d 'Mutation author' -r
+complete -c pm -n '__fish_seen_subcommand_from profile' -l force -d 'Force ownership/lock override'
 complete -c pm -n '__fish_seen_subcommand_from plan' -a 'create show add-step update-step complete-step block-step reorder-step remove-step link unlink decision discovery validation resume approve materialize' -d 'Plan subcommand'
 complete -c pm -n '__fish_seen_subcommand_from plan' -l title -d 'Plan title' -r
 complete -c pm -n '__fish_seen_subcommand_from plan' -l scope -d 'Plan scope statement' -r

@@ -721,6 +721,16 @@
       "requires_extension": false
     },
     {
+      "action": "profile",
+      "available": true,
+      "cli_exposed": true,
+      "command_path": "profile",
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
       "action": "release",
       "available": true,
       "cli_exposed": true,
@@ -923,6 +933,7 @@
     "package-uninstall",
     "pause-task",
     "plan",
+    "profile",
     "release",
     "restore",
     "schema",
@@ -5502,6 +5513,21 @@
       "provider": "core"
     },
     {
+      "command": "profile",
+      "flags": [
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--force"
+        }
+      ],
+      "provider": "core"
+    },
+    {
       "command": "release",
       "flags": [
         {
@@ -8179,6 +8205,7 @@
     "packages uninstall",
     "pause-task",
     "plan",
+    "profile",
     "release",
     "remind",
     "restore",
@@ -9312,6 +9339,64 @@
       "required": []
     },
     {
+      "description": "List, show, or apply project profiles (pm profile) — archetype bundles that stage item types, statuses, fields, per-type workflows, config knobs, create templates, and recommended packages. subcommand selects the operation; name carries the profile name (agile, ops, research) for show/apply. apply stages every dimension idempotently; dryRun previews the diff without writing. Profile staging writes workspace config/schema files, not item history.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author for apply.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "dryRun": {
+            "description": "Preview the apply diff without writing any files (apply).",
+            "type": "boolean"
+          },
+          "force": {
+            "description": "Force ownership/lock override for apply.",
+            "type": "boolean"
+          },
+          "name": {
+            "description": "Profile name for show/apply. Required for those subcommands.",
+            "enum": [
+              "agile",
+              "ops",
+              "research"
+            ],
+            "type": "string"
+          },
+          "options": {
+            "description": "Additional profile options using camelCase keys.",
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          },
+          "subcommand": {
+            "description": "Profile subcommand to run.",
+            "enum": [
+              "list",
+              "show",
+              "apply"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "subcommand"
+        ],
+        "type": "object"
+      },
+      "name": "pm_profile",
+      "required": [
+        "subcommand"
+      ]
+    },
+    {
       "description": "Release a pm item claim.",
       "input_schema": {
         "additionalProperties": true,
@@ -9355,7 +9440,7 @@
         "additionalProperties": true,
         "properties": {
           "action": {
-            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, focus, list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, aggregate, context, ctx, get, search, next, history, history-redact, history-repair, history-compact, schema, activity, restore, update, update-many, close, close-many, delete, append, comments, plan, notes, learnings, files, docs, deps, test, test-all, telemetry, stats, health, validate, gc, contracts, claim, release, start-task, pause-task, close-task. Package-owned actions (for example calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume) are available dynamically when installed.",
+            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, focus, list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, aggregate, context, ctx, get, search, next, history, history-redact, history-repair, history-compact, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, plan, notes, learnings, files, docs, deps, test, test-all, telemetry, stats, health, validate, gc, contracts, claim, release, start-task, pause-task, close-task. Package-owned actions (for example calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume) are available dynamically when installed.",
             "type": "string"
           },
           "author": {
@@ -18960,6 +19045,124 @@
           "subcommand"
         ],
         "title": "pm action \"schema\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "show"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "name"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "apply"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "name"
+              ]
+            }
+          }
+        ],
+        "properties": {
+          "action": {
+            "const": "profile",
+            "description": "Tool action to execute."
+          },
+          "author": {
+            "description": "Mutation author identity.",
+            "examples": [
+              "codex-agent"
+            ],
+            "type": "string"
+          },
+          "dryRun": {
+            "description": "Preview command effects without mutating storage artifacts.",
+            "type": "boolean"
+          },
+          "force": {
+            "description": "Force.",
+            "type": "boolean"
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "name": {
+            "description": "Custom item type name (schema add-type/remove-type/show), custom status id (schema show-status/add-status/remove-status), or custom field key (schema add-field/remove-field/show-field).",
+            "examples": [
+              "Spike",
+              "review",
+              "component"
+            ],
+            "type": "string"
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Pm Executable.",
+            "type": "string"
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "subcommand": {
+            "description": "Subcommand selector for schema and telemetry actions.",
+            "type": "string"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          }
+        },
+        "required": [
+          "action",
+          "subcommand"
+        ],
+        "title": "pm action \"profile\" parameters",
         "type": "object"
       },
       {

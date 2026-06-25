@@ -734,7 +734,13 @@ function typesPathFor(pmRoot: string, schema: ReturnType<typeof normalizeRuntime
   return filePathForSchemaSection(pmRoot, schema.files.types, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.types);
 }
 
-async function ensureTypeFolderScaffold(
+/**
+ * Creates the storage folder for each item-type definition (resolving the
+ * default folder when unset) and runs on-write hooks for newly created folders.
+ * Shared with `pm profile apply` so profile-staged types scaffold identically to
+ * `pm schema add-type`. Existing folders are skipped, keeping the call idempotent.
+ */
+export async function ensureTypeFolderScaffold(
   pmRoot: string,
   definitions: readonly ItemTypeDefinition[],
   warnings: string[],

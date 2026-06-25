@@ -462,6 +462,15 @@ export const SCHEMA_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--force" },
 ];
 
+/**
+ * Flags accepted by the `pm profile` command (list/show/apply subcommands).
+ */
+export const PROFILE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--dry-run" },
+  { flag: "--author" },
+  { flag: "--force" },
+];
+
 export const PLAN_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--title" },
   { flag: "--description" },
@@ -1657,6 +1666,8 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(HISTORY_COMPACT_FLAG_CONTRACTS);
     case "schema":
       return withSubcommandGlobalFlags(SCHEMA_FLAG_CONTRACTS);
+    case "profile":
+      return withSubcommandGlobalFlags(PROFILE_FLAG_CONTRACTS);
     case "plan":
       return withSubcommandGlobalFlags(PLAN_FLAG_CONTRACTS);
     case "activity":
@@ -2083,6 +2094,15 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
       { property: "subcommand", value: "show-field", required: ["name"] },
       // apply-preset passes the preset name as `typePreset`.
       { property: "subcommand", value: "apply-preset", required: ["typePreset"] },
+    ],
+  },
+  profile: {
+    required: ["subcommand"],
+    // No --message: profile staging writes config/schema files, not item history.
+    optional: ["name", "dryRun", "author", "force"],
+    conditionalRequired: [
+      { property: "subcommand", value: "show", required: ["name"] },
+      { property: "subcommand", value: "apply", required: ["name"] },
     ],
   },
   plan: {

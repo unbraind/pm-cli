@@ -33,6 +33,7 @@ const REQUIRED_TOOLS = [
   "pm_health",
   "pm_contracts",
   "pm_schema",
+  "pm_profile",
   "pm_config",
   "pm_plan",
 ];
