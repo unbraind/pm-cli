@@ -6,13 +6,13 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:extensions","area:packages","area:sdk"
 created_at: "2026-06-25T20:24:56.707Z"
-updated_at: "2026-06-25T21:03:00.215Z"
+updated_at: "2026-06-25T21:12:33.085Z"
 author: codex-gpt5
 parent: pm-ugqx
 resolution: "Implemented --output for package/extension describe Markdown generation with contract, completion, docs, fixture, and regression coverage."
 expected_result: pm package/extension describe --markdown can write deterministic reference Markdown directly to a requested file path without stdout duplication and remains discoverable through SDK contracts/completions.
 actual_result: "CLI writes Markdown to the requested file, creates parent directories, supports quiet output, rejects invalid --output usage before dispatch, and SDK contracts/completions/docs advertise the flag."
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-06-25T20:43:45.044Z",codex-gpt5,"Evidence: pnpm build passed; focused register-command test passed; contract/completion/sdk tests passed; pnpm contracts:check passed after regenerating tests/fixtures/contracts/full.json; pnpm quality:docs-skills passed; pnpm quality:static passed; node scripts/run-tests.mjs coverage passed with Statements 100% (31801/31801), Branches 100% (24765/24765), Functions 100% (5401/5401), Lines 100% (30523/30523)."
   "2026-06-25T20:44:39.414Z",codex-gpt5,"Manual smoke evidence: in an isolated temp project with PM_PATH and PM_GLOBAL_PATH, initialized a tracker, scaffolded ./context-kit with package init --capability commands, installed it project-scope, ran package describe --project --markdown --output docs/context-kit-reference.md, verified the file was non-empty and contained Package surface reference, context-kit, and Commands, and verified --output emitted no stdout. A second isolated smoke also verified --quiet --output writes nested parent directories."
   "2026-06-25T20:45:26.979Z",codex-gpt5,"Evidence: pnpm security:scan passed with no credential-like secrets detected in tracked files; pnpm audit --audit-level moderate passed with no known vulnerabilities; pnpm changelog:pm:check installed pm-changelog 2026.6.20 and reported CHANGELOG.md unchanged; latest GitHub main CI, Docs, and CodeQL runs for be81b7e were successful; GitHub Dependabot, code scanning, and secret scanning APIs returned no open alerts."
@@ -20,6 +20,7 @@ comments[7]{created_at,author,text}:
   "2026-06-25T20:59:17.861Z",codex-gpt5,"Evidence: pm test pm-u2tm --run --progress passed for 7 linked tests after keeping repo-wide coverage/docs-skills as standalone evidence and linking sandbox-compatible gates: env-cleared changelog and contracts checks, focused command/contract/completion/sdk tests, audit, build, static quality, and security scan."
   "2026-06-25T21:00:45.643Z",codex-gpt5,"Evidence: after closing pm-u2tm, pnpm changelog:pm regenerated CHANGELOG.md with the new entry and pnpm changelog:pm:check passed with item_count 1347 and action unchanged. Timestamp-only .managed-extensions.json churn from pm-changelog reinstall was restored out of the diff."
   "2026-06-25T21:03:00.215Z",codex-gpt5,"Evidence: release observability and GitHub health refreshed on 2026-06-25. node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort passed with Sentry project unbrained/pm-cli: 0 blocking critical/high issues in the 14-day window, 11 expected handled CLI issues ignored by the gate, telemetry finish_error_rate_pct=0.78, failures_without_error_code_rows=0. GitHub gh issue list and gh pr list returned no open entries; Dependabot, code scanning, and secret scanning API queries returned no open alerts."
+  "2026-06-25T21:12:33.085Z",codex-gpt5,"Review follow-up: addressed Gemini Code Assist feedback on PR #371 by restoring the lazy import of runExtension inside executeExtensionCommand so register-setup.ts does not eagerly load extension command dependencies during unrelated CLI startup. Verification after the follow-up: pnpm build, pnpm quality:static, and node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/sdk/sdk-index.spec.ts all passed."
 files[7]{path,scope,note}:
   src/cli/commands/completion.ts,project,shell completion surfaces
   src/cli/commands/extension.ts,project,extension command option contract

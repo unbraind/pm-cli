@@ -16,7 +16,6 @@ import {
   printResult,
   writeStdout,
 } from "./registration-helpers.js";
-import { runExtension } from "./commands/extension.js";
 import { SCAFFOLD_CAPABILITIES } from "./commands/extension/scaffold.js";
 import { renderExtensionDescribeMarkdown, type ExtensionDescribeResult } from "./commands/extension/describe.js";
 
@@ -153,6 +152,7 @@ async function executeExtensionCommand(
       throw new PmCliError("--markdown is only supported by the describe action.", EXIT_CODE.USAGE);
     }
   }
+  const { runExtension } = await import("./commands/extension.js");
   const result = await runExtension(target, normalizedOptions, globalOptions);
   if (wantsMarkdown) {
     // describe resolved above, so `details` is the describe action's ExtensionDescribeResult.
