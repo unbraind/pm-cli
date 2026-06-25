@@ -112,24 +112,26 @@ export type ExtensionCommandAction =
   | "init";
 
 const LIFECYCLE_ACTION_TARGETS = [
-  ["install", "install"],
-  ["uninstall", "uninstall"],
-  ["explore", "explore"],
-  ["list", "explore"],
-  ["manage", "manage"],
-  ["describe", "describe"],
-  ["reload", "reload"],
-  ["doctor", "doctor"],
-  ["catalog", "catalog"],
-  ["init", "init"],
-  ["scaffold", "init"],
-  ["adopt", "adopt"],
-  ["adopt-all", "adopt-all"],
-  ["activate", "activate"],
-  ["deactivate", "deactivate"],
-] as const satisfies readonly (readonly [string, ExtensionCommandAction])[];
+  ["install", "install", "--install"],
+  ["uninstall", "uninstall", "--uninstall"],
+  ["explore", "explore", "--explore"],
+  ["list", "explore", "--explore"],
+  ["manage", "manage", "--manage"],
+  ["describe", "describe", "--describe"],
+  ["reload", "reload", "--reload"],
+  ["doctor", "doctor", "--doctor"],
+  ["catalog", "catalog", "--catalog"],
+  ["init", "init", "--init"],
+  ["scaffold", "init", "--scaffold"],
+  ["adopt", "adopt", "--adopt"],
+  ["adopt-all", "adopt-all", "--adopt-all"],
+  ["activate", "activate", "--activate"],
+  ["deactivate", "deactivate", "--deactivate"],
+] as const satisfies readonly (readonly [string, ExtensionCommandAction, `--${string}`])[];
 
-const LIFECYCLE_ACTION_TARGET_HINT = LIFECYCLE_ACTION_TARGETS.map(([target]) => target).join(", ");
+const LIFECYCLE_ACTION_FLAG_HINT = LIFECYCLE_ACTION_TARGETS.map(([, , flag]) => flag)
+  .filter((flag, index, flags) => flags.indexOf(flag) === index)
+  .join(", ");
 /**
  * Restricts extension scope values accepted by command, SDK, and storage contracts.
  */
@@ -599,27 +601,27 @@ function clearExtensionState(settings: PmSettings, name: string): boolean {
   );
 }
 
-function suggestLifecycleActionTarget(target: string): string | null {
+function suggestLifecycleActionTarget(target: string): { action: ExtensionCommandAction; flag: `--${string}` } | null {
   const normalizedTarget = target.trim().toLowerCase();
   if (LIFECYCLE_ACTION_TARGETS.some(([candidate]) => candidate === normalizedTarget)) {
     return null;
   }
   const maxDistance = normalizedTarget.length <= 4 ? 1 : 2;
-  let nearest: { target: string; distance: number } | null = null;
-  for (const [candidate] of LIFECYCLE_ACTION_TARGETS) {
+  let nearest: { action: ExtensionCommandAction; flag: `--${string}`; distance: number } | null = null;
+  for (const [candidate, action, flag] of LIFECYCLE_ACTION_TARGETS) {
     const distance = levenshteinDistanceWithinLimit(normalizedTarget, candidate, maxDistance);
     if (distance === null) {
       continue;
     }
     if (nearest === null) {
-      nearest = { target: candidate, distance };
+      nearest = { action, flag, distance };
       continue;
     }
     if (distance < nearest.distance) {
-      nearest = { target: candidate, distance };
+      nearest = { action, flag, distance };
     }
   }
-  return nearest?.target ?? null;
+  return nearest === null ? null : { action: nearest.action, flag: nearest.flag };
 }
 
 function buildUnknownLifecycleActionError(target: string, options: ExtensionCommandOptions): PmCliError {
@@ -627,17 +629,17 @@ function buildUnknownLifecycleActionError(target: string, options: ExtensionComm
   const suggestion = suggestLifecycleActionTarget(target);
   if (!suggestion) {
     return new PmCliError(
-      "One action flag is required. Use one of: --install, --uninstall, --explore, --manage, --describe, --reload, --doctor, --catalog, --init/--scaffold, --adopt, --adopt-all, --activate, --deactivate. Bare `pm package` and `pm extension` default to --explore.",
+      `One action flag is required. Use one of: ${LIFECYCLE_ACTION_FLAG_HINT}. Bare \`pm package\` and \`pm extension\` default to --explore.`,
       EXIT_CODE.USAGE,
     );
   }
-  const command = `pm ${noun} ${suggestion}`;
+  const command = `pm ${noun} ${suggestion.flag}`;
   return new PmCliError(
-    `Unknown ${noun} lifecycle action "${target}". Did you mean "${suggestion}"?`,
+    `Unknown ${noun} lifecycle action "${target}". Did you mean "${suggestion.flag}"?`,
     EXIT_CODE.USAGE,
     {
       code: "unknown_lifecycle_action",
-      required: `Use one of: ${LIFECYCLE_ACTION_TARGET_HINT}.`,
+      required: `Use one of: ${LIFECYCLE_ACTION_FLAG_HINT}.`,
       examples: [command, `pm ${noun} --help`],
       recovery: {
         attempted_command: `pm ${noun} ${target}`,

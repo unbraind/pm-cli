@@ -618,7 +618,7 @@ export function deriveExtensionCapabilities(blueprint: ExtensionBlueprint): Exte
   // what activation enforces when a command declares flags inline and the
   // blueprint has no separate `flags` field. `!== undefined` (not a truthiness or
   // length check) matches the loader's exact guard, including an empty inline array.
-  if ((blueprint.commands ?? []).some((command) => command.flags !== undefined)) {
+  if ((blueprint.commands ?? []).filter(isPresent).some((command) => command.flags !== undefined)) {
     capabilities.add("schema");
   }
   // `registerImporter`/`registerExporter` with `options.flags` register flag
@@ -630,7 +630,7 @@ export function deriveExtensionCapabilities(blueprint: ExtensionBlueprint): Exte
   // exact `options.flags` guard, including an empty flag array. `entry?.` keeps a
   // malformed null array entry (from an untyped `.js`/JSON boundary) from crashing
   // derivation, consistent with the null-field robustness above.
-  const importExportEntries = [...(blueprint.importers ?? []), ...(blueprint.exporters ?? [])];
+  const importExportEntries = [...(blueprint.importers ?? []), ...(blueprint.exporters ?? [])].filter(isPresent);
   if (importExportEntries.some((entry) => entry?.options?.flags !== undefined)) {
     capabilities.add("schema");
   }
@@ -669,6 +669,10 @@ function sortUnique<TValue extends string>(values: readonly TValue[]): TValue[] 
   return [...new Set(values)].sort((left, right) => left.localeCompare(right));
 }
 
+function isPresent<TValue>(value: TValue | null | undefined): value is TValue {
+  return value !== null && value !== undefined;
+}
+
 /**
  * Compute, without activating, the exact {@link ExtensionActivationSummary} that
  * {@link composeExtension}'s generated `activate` would produce for a blueprint.
@@ -694,16 +698,19 @@ function sortUnique<TValue extends string>(values: readonly TValue[]): TValue[] 
  * blueprint that registers everything through that hatch summarizes as empty.
  */
 export function describeExtensionBlueprint(blueprint: ExtensionBlueprint): ExtensionActivationSummary {
-  const importerPaths = (blueprint.importers ?? []).map((entry) => normalizeCommandName(`${entry.name} import`));
-  const exporterPaths = (blueprint.exporters ?? []).map((entry) => normalizeCommandName(`${entry.name} export`));
-  const importerCommandDefinitionPaths = (blueprint.importers ?? [])
+  const commands = (blueprint.commands ?? []).filter(isPresent);
+  const importers = (blueprint.importers ?? []).filter(isPresent);
+  const exporters = (blueprint.exporters ?? []).filter(isPresent);
+  const importerPaths = importers.map((entry) => normalizeCommandName(`${entry.name} import`));
+  const exporterPaths = exporters.map((entry) => normalizeCommandName(`${entry.name} export`));
+  const importerCommandDefinitionPaths = importers
     .filter((entry) => entry.options !== undefined)
     .map((entry) => normalizeCommandName(`${entry.name} import`));
-  const exporterCommandDefinitionPaths = (blueprint.exporters ?? [])
+  const exporterCommandDefinitionPaths = exporters
     .filter((entry) => entry.options !== undefined)
     .map((entry) => normalizeCommandName(`${entry.name} export`));
   const commandPaths = [
-    ...(blueprint.commands ?? []).map((command) => normalizeCommandName(command.name)),
+    ...commands.map((command) => normalizeCommandName(command.name)),
     ...importerCommandDefinitionPaths,
     ...exporterCommandDefinitionPaths,
   ];
@@ -712,13 +719,13 @@ export function describeExtensionBlueprint(blueprint: ExtensionBlueprint): Exten
   // `flags` register through the same runtime metadata path, so union all sources.
   const flagCommands = [
     ...Object.keys(blueprint.flags ?? {}).map((command) => normalizeCommandName(command)),
-    ...(blueprint.commands ?? [])
+    ...commands
       .filter((command) => command.flags !== undefined)
       .map((command) => normalizeCommandName(command.name)),
-    ...(blueprint.importers ?? [])
+    ...importers
       .filter((entry) => entry.options?.flags !== undefined)
       .map((entry) => normalizeCommandName(`${entry.name} import`)),
-    ...(blueprint.exporters ?? [])
+    ...exporters
       .filter((entry) => entry.options?.flags !== undefined)
       .map((entry) => normalizeCommandName(`${entry.name} export`)),
   ];
@@ -740,8 +747,8 @@ export function describeExtensionBlueprint(blueprint: ExtensionBlueprint): Exten
     migrations: sortUnique(
       (blueprint.migrations ?? []).flatMap((migration) => (typeof migration.id === "string" ? [migration.id] : [])),
     ),
-    importers: sortUnique((blueprint.importers ?? []).map((entry) => normalizeCommandName(entry.name))),
-    exporters: sortUnique((blueprint.exporters ?? []).map((entry) => normalizeCommandName(entry.name))),
+    importers: sortUnique(importers.map((entry) => normalizeCommandName(entry.name))),
+    exporters: sortUnique(exporters.map((entry) => normalizeCommandName(entry.name))),
     search_providers: sortUnique((blueprint.searchProviders ?? []).map((provider) => provider.name)),
     vector_store_adapters: sortUnique((blueprint.vectorStoreAdapters ?? []).map((adapter) => adapter.name)),
     parser_overrides: sortUnique(Object.keys(blueprint.parsers ?? {}).map((command) => normalizeCommandName(command))),

@@ -402,6 +402,45 @@ describe("sdk describeExtensionBlueprint", () => {
     });
   });
 
+  it("skips null entries from dynamic blueprint boundaries", () => {
+    const blueprint = {
+      commands: [
+        null,
+        {
+          name: "null safe run",
+          action: "null-safe-run",
+          flags: [{ long: "--mode", value_type: "string", value_name: "mode" }],
+          run: () => ({ ok: true }),
+        },
+      ],
+      importers: [
+        null,
+        {
+          name: "tickets",
+          importer: () => ({ imported: 0 }),
+          options: { flags: [{ long: "--source", value_type: "string", value_name: "path" }] },
+        },
+      ],
+      exporters: [
+        undefined,
+        {
+          name: "tickets",
+          exporter: () => ({ exported: true }),
+          options: { flags: [{ long: "--target", value_type: "string", value_name: "path" }] },
+        },
+      ],
+    } as unknown as ExtensionBlueprint;
+
+    const summary = describeExtensionBlueprint(blueprint);
+
+    expect(summary.commands).toEqual(["null safe run", "tickets export", "tickets import"]);
+    expect(summary.command_handlers).toEqual(["null safe run", "tickets export", "tickets import"]);
+    expect(summary.flag_commands).toEqual(["null safe run", "tickets export", "tickets import"]);
+    expect(summary.importers).toEqual(["tickets"]);
+    expect(summary.exporters).toEqual(["tickets"]);
+    expect(summary.capabilities).toEqual(expect.arrayContaining(["commands", "importers", "schema"]));
+  });
+
   it("omits id-less migrations, which carry no identifier", () => {
     expect(
       describeExtensionBlueprint({ migrations: [{ id: "m1", description: "d" }, { description: "no id" }] }).migrations,

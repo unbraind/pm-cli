@@ -6,18 +6,20 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",dx,recovery
 created_at: "2026-06-25T00:06:32.677Z"
-updated_at: "2026-06-25T00:42:18.617Z"
+updated_at: "2026-06-25T01:06:08.783Z"
 author: codex-audit-20260625
 parent: pm-mpbb
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-06-25T00:12:20.747Z",codex-audit-20260625,"Evidence: compiled CLI now returns unknown_lifecycle_action for package descirbe/catalogx with suggested_retry pm package describe/catalog. Focused test passed: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts (110 tests)."
   "2026-06-25T00:42:17.795Z",codex-audit-20260625,"Evidence update: strict coverage initially caught new recovery branches; tests now cover exact action fallback, short typos, nearest later candidate ranking, and structured package recovery. Full release gate later passed literal 100/100/100/100 coverage."
+  "2026-06-25T01:05:19.081Z",codex-audit-20260625,"PR review evidence: fixed lifecycle typo recovery to suggest executable flag-form commands such as pm package --catalog and pm package --explore; focused suite passed with 184 total tests across extension-command and sdk-compose."
 files[2]{path,scope,note}:
   src/cli/commands/extension.ts,project,suggest lifecycle action typos before generic install-target recovery
   tests/unit/extensions/extension-command.spec.ts,project,cover package and extension lifecycle typo recovery payloads
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mqsryi97-rd3ba7,test,passed,"2026-06-25T00:39:02.707Z","2026-06-25T00:39:23.371Z","2026-06-25T00:39:23.371Z",null,null,1,0,0,null,null,null
-close_reason: Fixed package/extension lifecycle typo recovery with deterministic unknown_lifecycle_action guidance and suggested_retry for action-like typos; focused pm-linked test passed and full release gate passed.
+  test-local-mqsswblz-7hl1t8,test,passed,"2026-06-25T01:05:19.764Z","2026-06-25T01:05:41.063Z","2026-06-25T01:05:41.063Z",null,null,1,0,0,null,null,null
+close_reason: "Fixed PR review feedback: lifecycle typo recovery now suggests executable flag-form commands and tests/live JSON payloads confirm --catalog/--explore recovery."
 body: ""
