@@ -278,10 +278,17 @@ jobs:
       # (1) file://-URL TypeScript source imports (sourceModule helper),
       # (2) .mjs script imports whose shebang must be stripped by the test
       #     transform (scriptModule helper + the strip-script-shebang Vite
-      #     plugin), and
+      #     plugin),
       # (3) the path-separator / mocked-path class across tests/unit/scripts/**
       #     (POSIX-keyed fs mocks vs native separators, win32 `.cmd` command
-      #     resolution, and native-separator path assertions) closed in pm-s5pe.
+      #     resolution, and native-separator path assertions) closed in pm-s5pe,
+      # (4) the generated package runtime-loaders, whose ERR_MODULE_NOT_FOUND
+      #     path-normalization coverage must not synthesize colon-bearing
+      #     directory names that are illegal on Windows (GH-348), and
+      # (5) the telemetry runtime's detached flush scheduler, whose unit suite
+      #     must mock the spawn rather than launch a real, network-touching
+      #     node child that lingers and crashes the vitest worker on teardown
+      #     (GH-348).
       # The two non-scripts guards (cli-main-errors, runtime-schema-path-win32)
       # plus the harness contract test stay pinned; the full tests/unit/scripts/
       # directory now runs so a fresh Windows-only script regression fails this
@@ -289,4 +296,13 @@ jobs:
       - name: Run Windows source-import and script regression tests
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
-        run: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/
+        run: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/ tests/unit/packages/runtime-loaders.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts
+
+      # The packed-npm-extension install path exercises the Windows `.cmd` npm
+      # spawn + tar extraction + hosted-SDK junction class that only the Node 24
+      # nightly previously caught (GH-348). Run just that integration case here so
+      # a Windows-only install regression fails this required per-PR check.
+      - name: Run Windows packed-npm-extension install regression test
+        env:
+          PM_RUN_TESTS_SKIP_BUILD: "1"
+        run: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t "installs runtime dependencies for packed npm package extensions"

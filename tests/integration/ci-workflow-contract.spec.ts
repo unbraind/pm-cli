@@ -187,9 +187,10 @@ describe("GitHub workflow contract", () => {
       "run: pnpm install --frozen-lockfile",
       "run: pnpm build",
       "PM_RUN_TESTS_SKIP_BUILD: \"1\"",
-      "run: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/",
+      "run: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/ tests/unit/packages/runtime-loaders.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts",
+      "run: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t \"installs runtime dependencies for packed npm package extensions\"",
     ]);
-    expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(2);
+    expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(3);
     expect(ciWorkflow).not.toMatch(/^\s*run: pnpm test\s*$/m);
     expect(ciWorkflow).not.toContain("Sandboxed PM regression");
 

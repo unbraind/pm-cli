@@ -1,0 +1,21 @@
+id: pm-xaib
+title: "GH-363: Windows nightly (Node 24) red — runtime-loader colon-path + telemetry detached-spawn unhandled error + npm-install regression"
+description: "Nightly Validation windows-latest/Node24 (GH-363, run 28155165798) fails with THREE deterministic symptoms after the 2026-06-24 matrix bump from Node 20 to Node 24 (commit be5be995): (1) tests/unit/packages/runtime-loaders.spec.ts 'continues when Node reports a forward-slashed missing runtime path' (pm-beads + pm-todos) raised ENOENT because the coverage fixture synthesized a literal 'C:\\pm\\project' directory segment — the colon is reserved on Windows so mkdir fails; (2) tests/integration/cli.integration.spec.ts 'installs runtime dependencies for packed npm package extensions' returned install code 1 (npm.cmd shell-spawn / tar / hosted-SDK junction class, Windows-only); (3) the long-standing teardown 'Worker forks emitted error / Worker exited unexpectedly' (GH-348 / pm-2kkl) whose root cause is the telemetry detached flush spawn in src/core/telemetry/runtime.ts missing a child.on('error') handler — an async spawn failure becomes an unhandled error that crashes the vitest worker (the sibling search background-refresh spawn already had this guard). Fix bundle: platform-aware runtime-loader fixture, child.on('error') gate-release on the telemetry spawn mirroring background-refresh, spawn-mocked telemetry test (no real network-touching orphan child), install-failure diagnostics, and expanded per-PR windows-regression Node 24 guards covering all three classes."
+type: Issue
+status: in_progress
+priority: 1
+tags[7]: "area:ci","area:telemetry","area:tests",cross-platform,flake,node24,windows
+created_at: "2026-06-25T09:18:05.862Z"
+updated_at: "2026-06-25T09:47:29.528Z"
+assignee: claude-code-agent
+author: claude-code-agent
+parent: pm-u9d0
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-2kkl,related,"2026-06-25T09:18:17.307Z",null,null
+  pm-2p7a,related,"2026-06-25T09:18:18.144Z",null,null
+  pm-s5pe,related,"2026-06-25T09:18:19.123Z",null,null
+  pm-zpe7,related,"2026-06-25T09:18:20.173Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-06-25T09:26:43.003Z",claude-code-agent,"PR #365 opened: https://github.com/unbraind/pm-cli/pull/365 — fix bundle for the Windows nightly Node 24 red (runtime-loader colon-path fixture, telemetry detached-spawn child.on(\"error\") hardening + spawn-mocked test, install diagnostics, expanded windows-regression Node 24 guards). Awaiting CI (windows-regression Node 24 is the Windows oracle) + AI bot reviews.\n"
+  "2026-06-25T09:47:29.528Z",claude-code-agent,"Windows-regression (Node 24) on PR #365 surfaced the real integration failure via the new diagnostic: `npm pack` received `pm-test-...@file:///C:/Users/RUNNER%7E1/...` and opened the literal `RUNNER%7E1` path -> ENOENT. Root cause: pathToFileURL percent-encodes the Windows 8.3 `~` short name (and spaces -> %20), and pm passed that encoded file URL straight to npm, which opens it literally. This is a real cross-platform bug — reproduced on Linux with a space-containing path. Fix: resolveNpmPackSpec + normalizeNpmLocalFileAliasSpec now hand npm pack a NATIVE decoded filesystem path (via fileURLToPath) instead of a percent-encoded file URL, and decode file:///abs alias targets (previously bailed on the `//` prefix), while leaving file://host/share UNC specs untouched. Verified end-to-end on Linux: `pm install npm:file:///…/pm%20install%20space…/my%20pkg` now succeeds (was ENOENT). 5096 tests, 100/100/100/100 coverage.\n"
+body: ""
