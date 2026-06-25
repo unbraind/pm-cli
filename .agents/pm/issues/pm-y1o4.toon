@@ -1,0 +1,19 @@
+id: pm-y1o4
+title: Contracts command lookup should handle package namespace roots
+description: The 2026-06-25 source-map audit found that an installed package namespace can expose help at the root command path while pm contracts --command <namespace> reports unknown_command; child command lookup works.
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,"area:contracts","area:mcp","area:packages"
+created_at: "2026-06-25T04:53:47.719Z"
+updated_at: "2026-06-25T04:53:47.719Z"
+author: codex-pm-ecosystem-audit-20260625
+estimated_minutes: 120
+acceptance_criteria: "The intended contract behavior for package namespace roots is defined; pm contracts either returns namespace metadata/child-command guidance for roots like changelog or emits a clearer package-namespace error; regression coverage exercises installed package namespace root and child command; pnpm contracts:check and package command discovery tests pass."
+parent: pm-5k4v
+repro_steps: "Run node dist/cli.js changelog --help, then node dist/cli.js contracts --command changelog --flags-only --json and node dist/cli.js contracts --command \"changelog generate\" --flags-only --json."
+expected_result: "Contracts lookup gives useful namespace-level metadata or a precise guidance error for the package namespace root, while child command lookup remains valid."
+actual_result: "Root namespace help exists, but contracts --command changelog returns unknown_command; contracts --command \"changelog generate\" works."
+comments[1]{created_at,author,text}:
+  "2026-06-25T04:53:47.719Z",codex-pm-ecosystem-audit-20260625,"Duplicate check before create: status-all search for contracts --command changelog unknown_command package root command full path changelog generate found related closed items pm-7etc, pm-4os2/pm-d6kq class work, and pm-zqes class work, but no open direct namespace-root contracts item."
+body: ""

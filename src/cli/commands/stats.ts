@@ -107,6 +107,10 @@ function countNonEmptyLines(raw: string): number {
     .length;
 }
 
+function isNotFoundError(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && (error as { code?: unknown }).code === "ENOENT";
+}
+
 async function readHistoryStreamContents(pmRoot: string): Promise<Array<{ id: string; raw: string }>> {
   const historyDir = path.join(pmRoot, "history");
   if (!(await pathExists(historyDir))) {
@@ -124,7 +128,15 @@ async function readHistoryStreamContents(pmRoot: string): Promise<Array<{ id: st
   const streams: Array<{ id: string; raw: string }> = [];
   for (const file of historyFiles) {
     const historyPath = path.join(historyDir, file);
-    const raw = await fs.readFile(historyPath, "utf8");
+    let raw: string;
+    try {
+      raw = await fs.readFile(historyPath, "utf8");
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        continue;
+      }
+      throw error;
+    }
     await runActiveOnReadHooks({
       path: historyPath,
       scope: "project",

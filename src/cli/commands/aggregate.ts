@@ -9,6 +9,7 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { splitCommaList } from "../../core/shared/split-comma-list.js";
 import { nowIso } from "../../core/shared/time.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
+import { parseStatusFilterCsv } from "../../core/item/status-filter.js";
 import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -123,17 +124,17 @@ export interface AggregateResult {
 }
 
 function parseStatus(raw: string | undefined, statusRegistry: RuntimeStatusRegistry): ItemStatus | undefined {
-  if (raw === undefined) {
+  const statuses = parseStatusFilterCsv(raw, statusRegistry, { strict: true, flagLabel: "--status" });
+  if (!statuses || statuses.length === 0) {
     return undefined;
   }
-  const normalized = normalizeStatusInput(raw, statusRegistry);
-  if (!normalized) {
+  if (statuses.length > 1) {
     throw new PmCliError(
-      `Status filter must be one of ${statusRegistry.definitions.map((definition) => definition.id).join("|")}`,
+      'Aggregate --status accepts one status, or the standalone "all" sentinel.',
       EXIT_CODE.USAGE,
     );
   }
-  return normalized;
+  return statuses[0];
 }
 
 interface NumericAggregation {

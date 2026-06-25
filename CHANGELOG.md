@@ -18,6 +18,8 @@
 
 ### Fixed
 
+- Sentry PM-CLI-1T: pm stats should tolerate disappearing history streams ([pm-7o0s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7o0s.toon))
+- Aggregate --status all should match duplicate-safe lifecycle filters ([pm-bhtx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bhtx.toon))
 - Package lifecycle typo recovery should suggest action subcommands ([pm-js02](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-js02.toon))
 - describeExtensionBlueprint omits importer/exporter-with-options command definitions (parity gap vs describeExtensionActivation) ([pm-zqes](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zqes.toon))
 - deriveExtensionCapabilities omits 'schema' for importer/exporter options.flags (declarative blueprint under-grant) ([pm-v3ty](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v3ty.toon))
@@ -27,6 +29,11 @@
 
 ### Other
 
+- 2026-06-25 PM ecosystem taxonomy and context backlog normalization ([pm-57vh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-57vh.toon))
+- Sub-agent lane: source, tests, docs, and command-surface coverage map ([pm-xezi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xezi.toon))
+- Sub-agent lane: tracker taxonomy, hierarchy, and duplicate hygiene ([pm-klpw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-klpw.toon))
+- Sub-agent lane: release, GitHub, Sentry, telemetry, and live-ops evidence ([pm-3whx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-3whx.toon))
+- Sub-agent lane: SDK, packages, MCP, and universal customization backlog ([pm-o578](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-o578.toon))
 - Refresh runtime dependencies for audit baseline ([pm-r642](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-r642.toon))
 - Extend pm package init --declarative to the full capability matrix (hooks/search/importers/schema/renderers/parser/preflight/services) ([pm-lfdv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lfdv.toon))
 - ADR: dependency-aware actionability for pm next — ready = active leaf with no open blocked_by; reuse compareCriticalItems + shared blocked_by resolver ([pm-9x6k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-9x6k.toon))
