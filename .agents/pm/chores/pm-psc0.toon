@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: audit,dedupe,normalization,pm-cli,tracker-governance
 created_at: "2026-06-25T04:57:09.508Z"
-updated_at: "2026-06-25T16:58:21.197Z"
+updated_at: "2026-06-25T17:09:30.415Z"
 author: codex-pm-ecosystem-audit-20260625
 estimated_minutes: 180
 acceptance_criteria: Stale audit containers and intentional-open resolved items are normalized in a dedicated tracker-only change or documented as deliberate open coordination containers; release-bearing changelog mis-bucketing is avoided; status-all duplicate evidence and current disposition comments are recorded before any closures.
@@ -21,20 +21,22 @@ dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-gpea,related,"2026-06-25T16:51:49.328Z",null,null
   pm-lzrq,related,"2026-06-25T16:51:49.328Z",null,null
   pm-srex,related,"2026-06-25T16:51:49.328Z",null,null
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-06-25T04:57:09.508Z",codex-pm-ecosystem-audit-20260625,"Duplicate check: status-all searches for stale open audit stories close normalization and tracker taxonomy hierarchy duplicate hygiene found active read-only lane pm-klpw plus closed prior audits, but no active cleanup execution item."
   "2026-06-25T05:15:09.780Z",codex-ecosystem-auditor,"Evidence: closed stale audit wrappers pm-5dbn, pm-srex, pm-b4cp, pm-34gb, pm-lzrq, and pm-gpea after confirming no active descendants remained and current findings are closed or represented by current backlog. Kept pm-z5nb open as an intentional coordination container, pm-28cf open because its own notes require a non-release-bearing close to avoid changelog mis-bucketing, pm-7zs0 open as recurring release-health, and pm-96wm open as a living ADR."
   "2026-06-25T05:20:58.757Z",codex-ecosystem-auditor,"Audit correction: stale-container closures were inspected but pruned from this product-fix PR to avoid changing old closed/open audit records and reclassifying unrelated historical work in CHANGELOG.md. Current intentional follow-up stays open here: pm-5dbn, pm-srex, pm-b4cp, pm-34gb, pm-lzrq, and pm-gpea need a dedicated tracker-only disposition pass; pm-z5nb, pm-28cf, pm-7zs0, and pm-96wm need explicit recurring/living rationale before closure decisions."
   "2026-06-25T16:51:55.416Z",codex,"Disposition evidence: status-all duplicate searches and current child checks found pm-5dbn, pm-srex, pm-b4cp, pm-34gb, pm-lzrq, and pm-gpea are stale audit/session containers with zero open descendants; their findings are either closed children or represented by current roadmap items. Keeping intentional-open items unchanged: pm-z5nb is an explicit coordination container kept out of release changelogs; pm-28cf is already satisfied by #254 and requires only a dedicated non-release-bearing closure later; pm-7zs0 is a recurring release-health reminder and remains claimed by the prior release-health lane; pm-96wm remains a living ADR under the ADR epic."
   "2026-06-25T16:58:07.699Z",codex,"Evidence: normalized six stale audit/session wrappers (pm-5dbn, pm-srex, pm-b4cp, pm-34gb, pm-lzrq, pm-gpea) to closed after descendant checks showed zero open child work; linked them as related dependencies from pm-psc0. Kept living/recurring items open with rationale recorded. Verification passed: pnpm build; static-quality gate ok with source docstrings 237/237 and exported docstrings 1840/1840; pm validate ok with known pre-existing resolution warnings and history_drift ok; pm health summary ok; pnpm audit moderate clean; pnpm changelog:pm regenerated CHANGELOG.md and pnpm changelog:pm:check passed; full coverage passed 100/100/100/100 (254 files, 5104 tests); manual temp smoke passed in /tmp/pm-cli-manual-smoke-c6u88v using sandboxed PM_PATH and PM_GLOBAL_PATH."
+  "2026-06-25T17:08:57.583Z",codex,"Review follow-up: CodeRabbit flagged pm-gpea as a stale audit wrapper mis-bucketed into Unreleased / Other. Verified this was metadata, not a pm-changelog package bug: pm-gpea was the only retired wrapper typed as Task, so it was release-bearing while sibling audit wrappers were Story. Reclassified pm-gpea to Story through pm update, updated pm-psc0 linked file evidence to .agents/pm/stories/pm-gpea.toon, and regenerated CHANGELOG.md so only the canonical pm-psc0 tracker normalization line remains."
+  "2026-06-25T17:09:30.415Z",codex,"Review follow-up verification: pnpm changelog:pm:check passed unchanged after pm-gpea story reclassification (item_count 1343); pm validate --check-resolution --check-history-drift passed with only known pre-existing validate_resolution_missing_fields warnings and history_drift ok; pm health --check-only --summary --json passed; pnpm build passed."
 files[7]{path,scope,note}:
   .agents/pm/chores/pm-psc0.toon,project,"cleanup chore status,relationship links,and disposition evidence"
   .agents/pm/stories/pm-34gb.toon,project,closed stale storage/search audit wrapper
   .agents/pm/stories/pm-5dbn.toon,project,closed stale docs/CI audit wrapper
   .agents/pm/stories/pm-b4cp.toon,project,closed stale MCP/SDK/packages audit wrapper
+  .agents/pm/stories/pm-gpea.toon,project,closed stale docs CI/CD audit wrapper reclassified as story after review
   .agents/pm/stories/pm-lzrq.toon,project,closed stale observability audit wrapper
   .agents/pm/stories/pm-srex.toon,project,closed stale CLI/schema audit wrapper
-  .agents/pm/tasks/pm-gpea.toon,project,closed stale docs CI/CD audit task
 tests[7]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/release/static-quality-gate.mjs --json,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null

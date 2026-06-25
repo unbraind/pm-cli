@@ -36,7 +36,6 @@
 ### Other
 
 - Normalize stale audit containers and intentional-open resolved items ([pm-psc0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-psc0.toon))
-- Docs & CI/CD audit 2026-06-12 ([pm-gpea](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-gpea.toon))
 - Expose project profile application through MCP contracts and drift gates ([pm-bhmk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-bhmk.toon))
 - 2026-06-25 PM ecosystem taxonomy and context backlog normalization ([pm-57vh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-57vh.toon))
 - Sub-agent lane: source, tests, docs, and command-surface coverage map ([pm-xezi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xezi.toon))
