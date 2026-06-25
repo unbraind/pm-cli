@@ -340,7 +340,7 @@ Explore installed runtime entries, or describe exactly what each loaded package 
 ```bash
 pm package explore --project
 pm package describe --project                 # surface map of every loaded package
-pm package describe my-extension --markdown   # one package as a Markdown reference doc (drift-free README source)
+pm package describe my-extension --markdown --output docs/my-extension-reference.md
 ```
 
 Run diagnostics:

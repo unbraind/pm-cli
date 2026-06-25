@@ -21,6 +21,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   timeoutMs: { type: "number" },
   id: { type: "string" },
   target: { type: "string" },
+  output: { type: "string", minLength: 1 },
   github: { type: "string" },
   ref: { type: "string" },
   query: { type: "string" },
@@ -525,6 +526,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   target: {
     description: "Positional target argument for the selected action (ID, source, package source, or extension name).",
     examples: ["pm-a1b2", ".agents/pm/extensions/sample", "sample-extension"],
+  },
+  output: {
+    description: "File path for commands that write generated output, such as package/extension describe Markdown references.",
+    examples: ["docs/pm-package-reference.md"],
   },
   github: {
     description: "GitHub shorthand owner/repo[/path] source for package/extension install actions.",

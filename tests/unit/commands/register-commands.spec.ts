@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { Command } from "commander";
@@ -2400,7 +2400,7 @@ describe("setup command actions", () => {
     expect(normalized.describe).toBe(true);
   });
 
-  it("renders describe output as Markdown to stdout when --markdown is set", async () => {
+  it("renders describe output as Markdown to stdout or a file when --markdown is set", async () => {
     const emptySurfaces = {
       capabilities: [],
       commands: ["pm-x ping"],
@@ -2462,6 +2462,32 @@ describe("setup command actions", () => {
       quietStdout.mockRestore();
     }
     expect(quietWrites).toBe(0);
+
+    const outputDir = await mkdtemp(path.join(tmpdir(), "pm-describe-markdown-output-"));
+    const outputPath = path.join(outputDir, "docs", "pm-x-reference.md");
+    const outputStdout = vi.spyOn(process.stdout, "write").mockReturnValue(true);
+    try {
+      await runCli("package", "describe", "pm-x", "--markdown", "--output", outputPath);
+      const fileMarkdown = await readFile(outputPath, "utf8");
+      expect(fileMarkdown).toContain("# Package surface reference");
+      expect(fileMarkdown).toContain("## pm-x (project v1.0.0, loaded)");
+      expect(fileMarkdown).toContain("- `pm-x ping`");
+      expect(outputStdout.mock.calls.length).toBe(0);
+      outputStdout.mockClear();
+      const outputStderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+      try {
+        await runCliRaw("package", "describe", "pm-x", "--markdown", "--output", path.join(outputDir, "pm-x-visible.md"));
+        expect(outputStdout.mock.calls.length).toBe(0);
+        expect(outputStderr.mock.calls.map((call) => String(call[0])).join("")).toContain(
+          "warning: pm-x failed to load on the global layer",
+        );
+      } finally {
+        outputStderr.mockRestore();
+      }
+    } finally {
+      outputStdout.mockRestore();
+      await rm(outputDir, { recursive: true, force: true });
+    }
   });
 
   it("rejects --markdown combined with --json", async () => {
@@ -2477,6 +2503,19 @@ describe("setup command actions", () => {
     await expect(runCliRaw("package", "--manage", "--markdown")).rejects.toThrow(
       "--markdown is only supported by the describe action",
     );
+  });
+
+  it("rejects --output without markdown or a non-empty path", async () => {
+    vi.mocked(runExtension).mockClear();
+    await expect(runCliRaw("package", "describe", "pm-x", "--output", "docs/pm-x.md")).rejects.toThrow(
+      "--output is only supported with --markdown describe output",
+    );
+    expect(vi.mocked(runExtension)).not.toHaveBeenCalled();
+
+    await expect(runCliRaw("package", "describe", "pm-x", "--markdown", "--output", "   ")).rejects.toThrow(
+      "--output requires a non-empty file path",
+    );
+    expect(vi.mocked(runExtension)).not.toHaveBeenCalled();
   });
 
   it("routes adopt/adopt-all/activate/deactivate lifecycle subcommands", async () => {

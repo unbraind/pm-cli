@@ -319,9 +319,11 @@ const reference = renderExtensionSurfaceMarkdown(describeExtensionBlueprint(blue
 
 The same renderer powers `pm extension describe --markdown` / `pm package
 describe --markdown`, which compose a per-extension section plus a union section
-across every loaded extension. `--markdown` is a presentation format (it cannot
-be combined with `--json`); MCP `describe` keeps returning the structured
-summary, which a caller can hand to `renderExtensionSurfaceMarkdown` itself.
+across every loaded extension. Add `--output docs/package-reference.md` to write
+the generated Markdown directly to a file for README/reference-doc refreshes.
+`--markdown` is a presentation format (it cannot be combined with `--json`);
+MCP `describe` keeps returning the structured summary, which a caller can hand to
+`renderExtensionSurfaceMarkdown` itself.
 
 Commander option contract exports:
 
