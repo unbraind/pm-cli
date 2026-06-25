@@ -2,15 +2,19 @@ id: pm-qawd
 title: "Auto Release blocked-alert step can never create its tracking issue (auto-release.yml missing issues:write)"
 description: ""
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: ci,observability,release,reliability
 created_at: "2026-06-25T08:31:33.895Z"
-updated_at: "2026-06-25T08:31:46.649Z"
+updated_at: "2026-06-25T08:41:30.214Z"
 author: claude-code-agent
 parent: pm-u9d0
+resolution: "auto-release.yml permissions now include issues:write so the blocked-release alert's gh issue create/comment/list works; locked into release-automation-contract.spec.ts. Release pipeline dry-run confirmed healthy (2026.6.25)."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-nb08,related,"2026-06-25T08:31:46.347Z",claude-code-agent,null
 notes[1]{created_at,author,text}:
   "2026-06-25T08:31:46.649Z",claude-code-agent,"ROOT CAUSE: The daily Auto Release run 2026-06-25T06:32Z (run 28151547639) failed. Primary cause was a transient \"Release workflow dispatch did not become visible in time\" (the 300s poll for the dispatched Release run via `gh run list --workflow Release --event workflow_dispatch` filtering status in [queued,in_progress,waiting] returned nothing — most likely GitHub run-list eventual-consistency; prior 3 days succeeded with identical logic, and `pnpm release:pipeline:dry-run` on current main passes cleanly through all gates and reports \"Release pipeline completed for 2026.6.25 (dry run)\"). SECONDARY (real, persistent) BUG: the \"Alert on blocked scheduled auto-release\" step (added in pm-nb08) calls `gh issue list/comment/create` but auto-release.yml `permissions:` only granted `actions: write` + `contents: write` — so the alert ITSELF failed with `GraphQL: Resource not accessible by integration (createIssue)`. Net effect: blocked daily releases are silently un-alerted (the very thing pm-nb08's alert was meant to prevent). FIX: add `issues: write` to auto-release.yml permissions; lock it into release-automation-contract.spec.ts. No v2026.6.25 tag was pushed (npm latest still 2026.6.24); the next scheduled run cuts 2026.6.25 including the project-profiles work."
+docs[1]{path,scope,note}:
+  "https://github.com/unbraind/pm-cli/pull/364",project,Fix PR
+close_reason: "Fixed in PR #364 (squash c8e4a756): added issues:write to auto-release.yml + contract test."
 body: ""
