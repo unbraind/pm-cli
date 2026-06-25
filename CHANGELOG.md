@@ -4,6 +4,7 @@
 
 ### Added
 
+- Add pm package / pm packages shell completion (bash/zsh/fish), including the package-only --declarative flag ([pm-mthy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mthy.toon))
 - pm package init --declarative: scaffold a composeExtension blueprint starter + author-time preflight test ([pm-8mxg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-8mxg.toon))
 - pm next: recommend the next actionable (unblocked, ready) work item with rationale + blocked companion ([pm-nj90](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-nj90.toon))
 - Complete scaffold capability matrix: --capability renderers/parser/preflight/services starters ([pm-i5p5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-i5p5.toon))
@@ -17,6 +18,8 @@
 
 ### Fixed
 
+- Package lifecycle typo recovery should suggest action subcommands ([pm-js02](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-js02.toon))
+- describeExtensionBlueprint omits importer/exporter-with-options command definitions (parity gap vs describeExtensionActivation) ([pm-zqes](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zqes.toon))
 - deriveExtensionCapabilities omits 'schema' for importer/exporter options.flags (declarative blueprint under-grant) ([pm-v3ty](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v3ty.toon))
 - pm package doctor should warn when a schema package registers item types/fields but declares narrow activation.commands (silently non-global) ([pm-ok47](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ok47.toon))
 - Scaffolded search/importers package commands fail to dispatch: lazy-activation probe skips command-bearing extensions that omit activation.commands ([pm-nacb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nacb.toon))
@@ -24,6 +27,7 @@
 
 ### Other
 
+- Refresh runtime dependencies for audit baseline ([pm-r642](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-r642.toon))
 - Extend pm package init --declarative to the full capability matrix (hooks/search/importers/schema/renderers/parser/preflight/services) ([pm-lfdv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lfdv.toon))
 - ADR: dependency-aware actionability for pm next — ready = active leaf with no open blocked_by; reuse compareCriticalItems + shared blocked_by resolver ([pm-9x6k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-9x6k.toon))
 - Schema-capability scaffolds must omit narrow activation.commands so custom item types/fields register globally ([pm-halx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-halx.toon))

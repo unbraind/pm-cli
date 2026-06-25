@@ -2,14 +2,28 @@ id: pm-zqes
 title: describeExtensionBlueprint omits importer/exporter-with-options command definitions (parity gap vs describeExtensionActivation)
 description: "describeExtensionBlueprint (src/sdk/compose.ts) places importer/exporter synthesized command paths only in command_handlers, never in `commands`, and does not surface their option-registered flag targets or the resulting `commands` capability. But at runtime, registerImporter/registerExporter WITH options (action/description/flags) push a full RegisteredExtensionCommandDefinition (loader applyImportExportCommandMetadata), so describeExtensionActivation lists those paths under `commands`, includes their `<name> import|export` flag targets in flag_commands, and reports `commands` in capabilities. For an importer/exporter-with-options-only blueprint the two summaries diverge (commands, flag_commands, capabilities), violating the parity contract pinned in the describeExtensionBlueprint docstring. The existing parity test (buildParityBlueprint) masks this because its importers/exporters declare no options. Empirically confirmed while building pm-lfdv: an importers-only blueprint with options.flags yields static commands=[] / capabilities=[importers,schema] vs runtime commands=[tickets export,tickets import] / capabilities=[commands,importers,schema]. Fix: make describeExtensionBlueprint mirror applyImportExportCommandMetadata for entries with options (commands + flag_commands + command capability), then extend the parity test with a flag-bearing importer/exporter. Related: pm-v3ty (deriveExtensionCapabilities schema under-grant, fixed alongside pm-lfdv)."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[2]: "area:extensions","area:sdk"
 created_at: "2026-06-24T22:17:15.689Z"
-updated_at: "2026-06-24T22:17:20.875Z"
+updated_at: "2026-06-25T01:14:36.306Z"
 author: claude-code-agent
 parent: pm-ugqx
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-lfdv,related,"2026-06-24T22:17:20.866Z",null,null
   pm-v3ty,related,"2026-06-24T22:17:20.866Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-06-25T00:12:17.871Z",codex-audit-20260625,"Evidence: SDK compose now advertises importer/exporter option-backed runtime commands in describeExtensionBlueprint commands and flag_commands. Focused test passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-compose.spec.ts (73 tests)."
+  "2026-06-25T01:05:19.420Z",codex-audit-20260625,"PR review evidence: fixed describeExtensionBlueprint null-boundary handling for commands/importers/exporters and added a regression test for null/undefined entries; focused suite passed with 184 total tests across extension-command and sdk-compose."
+  "2026-06-25T01:14:28.196Z",codex-audit-20260625,"PR review evidence: removed redundant null guard after import/export entries are filtered with isPresent; SDK compose suite passed again."
+files[2]{path,scope,note}:
+  src/sdk/compose.ts,project,include importer/exporter option-backed commands in SDK blueprint parity
+  tests/unit/sdk/sdk-compose.spec.ts,project,cover importer/exporter command capability parity
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-compose.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqsryof9-iil8yn,test,passed,"2026-06-25T00:39:23.696Z","2026-06-25T00:39:31.365Z","2026-06-25T00:39:31.365Z",null,null,1,0,0,null,null,null
+  test-local-mqsswgl1-x1e5dq,test,passed,"2026-06-25T01:05:41.376Z","2026-06-25T01:05:47.509Z","2026-06-25T01:05:47.509Z",null,null,1,0,0,null,null,null
+  test-local-mqst7rxu-enjmpm,test,passed,"2026-06-25T01:14:28.497Z","2026-06-25T01:14:35.442Z","2026-06-25T01:14:35.442Z",null,null,1,0,0,null,null,null
+close_reason: "Fixed latest Gemini review nit by removing the redundant null check after import/export entries are filtered, with SDK compose regression passing."
 body: ""

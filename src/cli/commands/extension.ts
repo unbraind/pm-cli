@@ -16,6 +16,7 @@ import { collectPackageExtensionDirectories } from "../../core/packages/manifest
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { levenshteinDistanceWithinLimit } from "../../core/shared/levenshtein.js";
 import { nowIso } from "../../core/shared/time.js";
 import { resolveGlobalPmRoot, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings, writeSettings } from "../../core/store/settings.js";
@@ -109,6 +110,43 @@ export type ExtensionCommandAction =
   | "activate"
   | "deactivate"
   | "init";
+
+const LIFECYCLE_ACTION_TARGETS = [
+  ["install", "install", "--install"],
+  ["uninstall", "uninstall", "--uninstall"],
+  ["explore", "explore", "--explore"],
+  ["list", "explore", "--explore"],
+  ["manage", "manage", "--manage"],
+  ["describe", "describe", "--describe"],
+  ["reload", "reload", "--reload"],
+  ["doctor", "doctor", "--doctor"],
+  ["catalog", "catalog", "--catalog"],
+  ["init", "init", "--init"],
+  ["scaffold", "init", "--scaffold"],
+  ["adopt", "adopt", "--adopt"],
+  ["adopt-all", "adopt-all", "--adopt-all"],
+  ["activate", "activate", "--activate"],
+  ["deactivate", "deactivate", "--deactivate"],
+] as const satisfies readonly (readonly [string, ExtensionCommandAction, `--${string}`])[];
+
+const LIFECYCLE_ACTION_FLAG_HINT = LIFECYCLE_ACTION_TARGETS.map(([, , flag]) => flag)
+  .filter((flag, index, flags) => flags.indexOf(flag) === index)
+  .join(", ");
+const LIFECYCLE_ACTION_FLAGS: Record<ExtensionCommandAction, `--${string}`> = {
+  install: "--install",
+  uninstall: "--uninstall",
+  explore: "--explore",
+  manage: "--manage",
+  describe: "--describe",
+  reload: "--reload",
+  doctor: "--doctor",
+  catalog: "--catalog",
+  adopt: "--adopt",
+  "adopt-all": "--adopt-all",
+  activate: "--activate",
+  deactivate: "--deactivate",
+  init: "--init",
+};
 /**
  * Restricts extension scope values accepted by command, SDK, and storage contracts.
  */
@@ -578,6 +616,62 @@ function clearExtensionState(settings: PmSettings, name: string): boolean {
   );
 }
 
+function suggestLifecycleActionTarget(target: string): { action: ExtensionCommandAction; flag: `--${string}` } | null {
+  const normalizedTarget = target.trim().toLowerCase();
+  const exactMatch = LIFECYCLE_ACTION_TARGETS.find(([candidate]) => candidate === normalizedTarget);
+  if (exactMatch) {
+    return { action: exactMatch[1], flag: exactMatch[2] };
+  }
+  const maxDistance = normalizedTarget.length <= 4 ? 1 : 2;
+  let nearest: { action: ExtensionCommandAction; flag: `--${string}`; distance: number } | null = null;
+  for (const [candidate, action, flag] of LIFECYCLE_ACTION_TARGETS) {
+    const distance = levenshteinDistanceWithinLimit(normalizedTarget, candidate, maxDistance);
+    if (distance === null) {
+      continue;
+    }
+    if (nearest === null) {
+      nearest = { action, flag, distance };
+      continue;
+    }
+    if (distance < nearest.distance) {
+      nearest = { action, flag, distance };
+    }
+  }
+  return nearest === null ? null : { action: nearest.action, flag: nearest.flag };
+}
+
+function buildUnknownLifecycleActionError(target: string, options: ExtensionCommandOptions): PmCliError {
+  const noun = options.vocabulary === "package" ? "package" : "extension";
+  const suggestion = suggestLifecycleActionTarget(target);
+  if (!suggestion) {
+    return new PmCliError(
+      `One action flag is required. Use one of: ${LIFECYCLE_ACTION_FLAG_HINT}. Bare \`pm package\` and \`pm extension\` default to --explore.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  const command = `pm ${noun} ${suggestion.flag}`;
+  return new PmCliError(
+    `Unknown ${noun} lifecycle action "${target}". Did you mean "${suggestion.flag}"?`,
+    EXIT_CODE.USAGE,
+    {
+      code: "unknown_lifecycle_action",
+      required: `Use one of: ${LIFECYCLE_ACTION_FLAG_HINT}.`,
+      examples: [command, `pm ${noun} --help`],
+      recovery: {
+        attempted_command: `pm ${noun} ${target}`,
+        suggested_retry: command,
+        fallback_candidates: [
+          {
+            source: "lifecycle_action",
+            command,
+            reason: `nearest lifecycle action for "${target}"`,
+          },
+        ],
+      },
+    },
+  );
+}
+
 function resolveAction(target: string | undefined, options: ExtensionCommandOptions): ExtensionCommandAction {
   const selected = [...new Set([
     options.install ? "install" : null,
@@ -620,10 +714,7 @@ function resolveAction(target: string | undefined, options: ExtensionCommandOpti
     if (target === undefined) {
       return "explore";
     }
-    throw new PmCliError(
-      "One action flag is required. Use one of: --install, --uninstall, --explore, --manage, --describe, --reload, --doctor, --catalog, --init/--scaffold, --adopt, --adopt-all, --activate, --deactivate. Bare `pm package` and `pm extension` default to --explore.",
-      EXIT_CODE.USAGE,
-    );
+    throw buildUnknownLifecycleActionError(target, options);
   }
   if (selected.length > 1) {
     throw new PmCliError("Extension action flags are mutually exclusive.", EXIT_CODE.USAGE);
@@ -1094,7 +1185,11 @@ function resolveGithubOption(options: ExtensionCommandOptions): string | undefin
   return undefined;
 }
 
-function requireTarget(target: string | undefined, action: ExtensionCommandAction): string {
+function getLifecycleActionFlag(action: ExtensionCommandAction): `--${string}` {
+  return LIFECYCLE_ACTION_FLAGS[action];
+}
+
+function requireTarget(target: string | undefined, action: ExtensionCommandAction, options: ExtensionCommandOptions = {}): string {
   const normalized = target?.trim();
   if (!normalized) {
     if (action === "init") {
@@ -1103,7 +1198,32 @@ function requireTarget(target: string | undefined, action: ExtensionCommandActio
         EXIT_CODE.USAGE,
       );
     }
-    throw new PmCliError(`Action "${action}" requires an extension name or source target argument.`, EXIT_CODE.USAGE);
+    const noun = options.vocabulary === "package" ? "package" : "extension";
+    const targetName = action === "install" ? "source" : "name";
+    const targetLabel = `${noun} ${targetName}`;
+    const actionFlag = getLifecycleActionFlag(action);
+    const commandTarget = `<${targetName}>`;
+    const command = `pm ${noun} ${actionFlag} ${commandTarget}`;
+    throw new PmCliError(
+      `Action "${action}" requires ${targetLabel} input.`,
+      EXIT_CODE.USAGE,
+      {
+        code: "missing_lifecycle_target",
+        required: `Provide a ${targetName} target for ${action}.`,
+        examples: [`pm ${noun} ${action} ${commandTarget}`, command, `pm ${noun} --help`],
+        recovery: {
+          attempted_command: `pm ${noun} ${action}`,
+          suggested_retry: command,
+          fallback_candidates: [
+            {
+              source: "lifecycle_action",
+              command,
+              reason: `flag-form ${action} command with required ${targetName} target`,
+            },
+          ],
+        },
+      },
+    );
   }
   return normalized;
 }
@@ -1259,7 +1379,7 @@ export async function runExtension(
     if (githubOption !== undefined || (typeof options.ref === "string" && options.ref.trim().length > 0)) {
       throw new PmCliError('Action "init" does not accept --gh/--github/--ref options.', EXIT_CODE.USAGE);
     }
-    const scaffoldTarget = requireTarget(normalizedTarget, action);
+    const scaffoldTarget = requireTarget(normalizedTarget, action, options);
     const scaffold = await scaffoldExtensionProject(
       scaffoldTarget,
       options.vocabulary ?? "extension",
@@ -1360,7 +1480,7 @@ export async function runExtension(
 
   if (action === "install") {
     const githubOption = resolveGithubOption(options);
-    const explicitSourceInput = githubOption ?? requireTarget(normalizedTarget, action);
+    const explicitSourceInput = githubOption ?? requireTarget(normalizedTarget, action, options);
     if (typeof githubOption !== "string" && isBundledPackageInstallAllTarget(explicitSourceInput)) {
       if (typeof options.ref === "string" && options.ref.trim().length > 0) {
         throw new PmCliError('Action "install all" does not accept --ref.', EXIT_CODE.USAGE);
@@ -1597,7 +1717,7 @@ export async function runExtension(
   }
 
   if (action === "adopt") {
-    const extensionTarget = requireTarget(normalizedTarget, action);
+    const extensionTarget = requireTarget(normalizedTarget, action, options);
     const githubOption = resolveGithubOption(options);
     const settings = await readSettings(resolvedRoots.settings_root);
     const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
@@ -1693,7 +1813,7 @@ export async function runExtension(
   }
 
   if (action === "uninstall") {
-    const extensionTarget = requireTarget(normalizedTarget, action);
+    const extensionTarget = requireTarget(normalizedTarget, action, options);
     const settings = await readSettings(resolvedRoots.settings_root);
     const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
     warnings.push(...managedStateRead.warnings);
@@ -1736,7 +1856,7 @@ export async function runExtension(
   }
 
   if (action === "activate" || action === "deactivate") {
-    const extensionTarget = requireTarget(normalizedTarget, action);
+    const extensionTarget = requireTarget(normalizedTarget, action, options);
     const settings = await readSettings(resolvedRoots.settings_root);
     const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
     warnings.push(...managedStateRead.warnings);

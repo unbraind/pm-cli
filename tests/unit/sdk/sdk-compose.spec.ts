@@ -225,8 +225,14 @@ describe("sdk deriveExtensionCapabilities", () => {
     expect(deriveExtensionCapabilities({ vectorStoreAdapters: [{ name: "v", query: async () => [] }] })).toEqual([
       "search",
     ]);
-    expect(deriveExtensionCapabilities({ importers: [{ name: "i", importer: () => ({}) }] })).toEqual(["importers"]);
-    expect(deriveExtensionCapabilities({ exporters: [{ name: "e", exporter: () => ({}) }] })).toEqual(["importers"]);
+    expect(deriveExtensionCapabilities({ importers: [{ name: "i", importer: () => ({}) }] })).toEqual([
+      "commands",
+      "importers",
+    ]);
+    expect(deriveExtensionCapabilities({ exporters: [{ name: "e", exporter: () => ({}) }] })).toEqual([
+      "commands",
+      "importers",
+    ]);
     expect(deriveExtensionCapabilities({ hooks: { afterCommand: [() => undefined] } })).toEqual(["hooks"]);
   });
 
@@ -247,27 +253,29 @@ describe("sdk deriveExtensionCapabilities", () => {
     // through the schema surface (loader applyImportExportCommandMetadata), so a
     // flag-bearing importer/exporter derives `schema` on top of `importers` —
     // otherwise a synthesized least-privilege manifest would under-grant and fail
-    // activation (pm-v3ty). A flagless importer/exporter still derives only `importers`.
+    // activation (pm-v3ty). Importers/exporters also synthesize command handlers,
+    // so even flagless entries derive `commands` alongside `importers`.
     expect(
       deriveExtensionCapabilities({
         importers: [{ name: "tickets", importer: () => ({}), options: { flags: [{ long: "--source" }] } }],
       }),
-    ).toEqual(["importers", "schema"]);
+    ).toEqual(["commands", "importers", "schema"]);
     expect(
       deriveExtensionCapabilities({
         exporters: [{ name: "tickets", exporter: () => ({}), options: { flags: [{ long: "--dest" }] } }],
       }),
-    ).toEqual(["importers", "schema"]);
+    ).toEqual(["commands", "importers", "schema"]);
     // options present but without flags does not add schema.
     expect(
       deriveExtensionCapabilities({
         importers: [{ name: "tickets", importer: () => ({}), options: { description: "no flags" } }],
       }),
-    ).toEqual(["importers"]);
+    ).toEqual(["commands", "importers"]);
     // A malformed null array entry (untyped .js/JSON boundary) does not crash
     // derivation, mirroring its null-field robustness — `entry?.options` guards it.
     // The non-empty arrays still derive `importers` from field presence; the null
-    // entries carry no flags, so no `schema` is added.
+    // entries carry no command handlers or flags, so no `commands` or `schema`
+    // capability is added.
     expect(
       deriveExtensionCapabilities({ importers: [null], exporters: [null] } as unknown as ExtensionBlueprint),
     ).toEqual(["importers"]);
@@ -307,8 +315,26 @@ function buildParityBlueprint(): ExtensionBlueprint {
     migrations: [{ id: "demo-migration", description: "demo migration" }],
     searchProviders: [{ name: "demo-search", query: async () => ({ hits: [] }) }],
     vectorStoreAdapters: [{ name: "demo-vector", query: async () => [] }],
-    importers: [{ name: "demo-import", importer: () => ({ imported: 0 }) }],
-    exporters: [{ name: "demo-export", exporter: () => ({ exported: true }) }],
+    importers: [
+      {
+        name: "demo-import",
+        importer: () => ({ imported: 0 }),
+        options: {
+          description: "Import demo items",
+          flags: [{ long: "--import-source", value_type: "string", value_name: "path" }],
+        },
+      },
+    ],
+    exporters: [
+      {
+        name: "demo-export",
+        exporter: () => ({ exported: true }),
+        options: {
+          description: "Export demo items",
+          flags: [{ long: "--export-target", value_type: "string", value_name: "path" }],
+        },
+      },
+    ],
     hooks: {
       beforeCommand: [() => undefined],
       afterCommand: [() => undefined],
@@ -345,9 +371,9 @@ describe("sdk describeExtensionBlueprint", () => {
     // false pass is impossible.
     const summary = describeExtensionBlueprint(blueprint);
     expect(summary.capabilities).toEqual(ALL_CAPABILITIES);
-    expect(summary.commands).toEqual(["demo flagged", "demo run"]);
+    expect(summary.commands).toEqual(["demo flagged", "demo run", "demo-export export", "demo-import import"]);
     expect(summary.command_overrides).toEqual(["list"]);
-    expect(summary.flag_commands).toEqual(["demo flagged", "demo run"]);
+    expect(summary.flag_commands).toEqual(["demo flagged", "demo run", "demo-export export", "demo-import import"]);
     expect(summary.item_types).toEqual(["DemoIncident", "DemoTask"]);
     expect(summary.migrations).toEqual(["demo-migration"]);
     expect(summary.hooks).toEqual(["before_command", "after_command", "on_write", "on_read", "on_index"]);
@@ -374,6 +400,45 @@ describe("sdk describeExtensionBlueprint", () => {
       renderer_overrides: [],
       preflight_overrides: 0,
     });
+  });
+
+  it("skips null entries from dynamic blueprint boundaries", () => {
+    const blueprint = {
+      commands: [
+        null,
+        {
+          name: "null safe run",
+          action: "null-safe-run",
+          flags: [{ long: "--mode", value_type: "string", value_name: "mode" }],
+          run: () => ({ ok: true }),
+        },
+      ],
+      importers: [
+        null,
+        {
+          name: "tickets",
+          importer: () => ({ imported: 0 }),
+          options: { flags: [{ long: "--source", value_type: "string", value_name: "path" }] },
+        },
+      ],
+      exporters: [
+        undefined,
+        {
+          name: "tickets",
+          exporter: () => ({ exported: true }),
+          options: { flags: [{ long: "--target", value_type: "string", value_name: "path" }] },
+        },
+      ],
+    } as unknown as ExtensionBlueprint;
+
+    const summary = describeExtensionBlueprint(blueprint);
+
+    expect(summary.commands).toEqual(["null safe run", "tickets export", "tickets import"]);
+    expect(summary.command_handlers).toEqual(["null safe run", "tickets export", "tickets import"]);
+    expect(summary.flag_commands).toEqual(["null safe run", "tickets export", "tickets import"]);
+    expect(summary.importers).toEqual(["tickets"]);
+    expect(summary.exporters).toEqual(["tickets"]);
+    expect(summary.capabilities).toEqual(expect.arrayContaining(["commands", "importers", "schema"]));
   });
 
   it("omits id-less migrations, which carry no identifier", () => {

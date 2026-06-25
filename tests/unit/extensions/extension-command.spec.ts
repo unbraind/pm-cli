@@ -109,13 +109,72 @@ describe("extension command runtime", () => {
     expect(extensionCommandTestOnly.resolveAction(undefined, {})).toBe("explore");
     expect(() => extensionCommandTestOnly.resolveAction("target", { install: true, manage: true })).toThrow(/mutually exclusive/);
     expect(() => extensionCommandTestOnly.resolveAction("target", {})).toThrow(/One action flag is required/);
+    expect(() => extensionCommandTestOnly.resolveAction("install", { vocabulary: "extension" })).toThrow(
+      'Unknown extension lifecycle action "install". Did you mean "--install"?',
+    );
+    expect(() => extensionCommandTestOnly.resolveAction("descirbe", { vocabulary: "extension" })).toThrow(
+      'Unknown extension lifecycle action "descirbe". Did you mean "--describe"?',
+    );
+    expect(() => extensionCommandTestOnly.resolveAction("insta", { vocabulary: "package" })).toThrow(
+      'Unknown package lifecycle action "insta". Did you mean "--install"?',
+    );
+    expect(() => extensionCommandTestOnly.resolveAction("lis", { vocabulary: "package" })).toThrow(
+      'Unknown package lifecycle action "lis". Did you mean "--explore"?',
+    );
+    expect(() => extensionCommandTestOnly.resolveAction("unistall", { vocabulary: "extension" })).toThrow(
+      'Unknown extension lifecycle action "unistall". Did you mean "--uninstall"?',
+    );
+
+    let unknownPackageActionError: unknown;
+    try {
+      extensionCommandTestOnly.resolveAction("catalogx", { vocabulary: "package" });
+    } catch (error) {
+      unknownPackageActionError = error;
+    }
+    expect(unknownPackageActionError).toMatchObject({
+      context: {
+        code: "unknown_lifecycle_action",
+        recovery: {
+          suggested_retry: "pm package --catalog",
+          fallback_candidates: [
+            {
+              source: "lifecycle_action",
+              command: "pm package --catalog",
+              reason: 'nearest lifecycle action for "catalogx"',
+            },
+          ],
+        },
+      },
+    });
     expect(extensionCommandTestOnly.resolveScope({ project: true })).toBe("project");
     expect(extensionCommandTestOnly.resolveScope({ local: true })).toBe("project");
     expect(extensionCommandTestOnly.resolveScope({ global: true })).toBe("global");
     expect(() => extensionCommandTestOnly.resolveScope({ project: true, global: true })).toThrow(/mutually exclusive/);
 
     expect(() => extensionCommandTestOnly.requireTarget(undefined, "init")).toThrow(/requires a scaffold target path/);
-    expect(() => extensionCommandTestOnly.requireTarget(" ", "install")).toThrow(/requires an extension name/);
+    expect(() => extensionCommandTestOnly.requireTarget(" ", "install")).toThrow(/requires extension source input/);
+    let missingPackageInstallTargetError: unknown;
+    try {
+      extensionCommandTestOnly.requireTarget(undefined, "install", { vocabulary: "package" });
+    } catch (error) {
+      missingPackageInstallTargetError = error;
+    }
+    expect(missingPackageInstallTargetError).toMatchObject({
+      message: 'Action "install" requires package source input.',
+      context: {
+        code: "missing_lifecycle_target",
+        recovery: {
+          suggested_retry: "pm package --install <source>",
+          fallback_candidates: [
+            {
+              source: "lifecycle_action",
+              command: "pm package --install <source>",
+              reason: "flag-form install command with required source target",
+            },
+          ],
+        },
+      },
+    });
     expect(extensionCommandTestOnly.requireTarget(" package ", "install")).toBe("package");
 
     expect(extensionCommandTestOnly.resolveGithubOption({ gh: " owner/repo ", github: "owner/repo" })).toBe("owner/repo");

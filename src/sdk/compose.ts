@@ -618,7 +618,7 @@ export function deriveExtensionCapabilities(blueprint: ExtensionBlueprint): Exte
   // what activation enforces when a command declares flags inline and the
   // blueprint has no separate `flags` field. `!== undefined` (not a truthiness or
   // length check) matches the loader's exact guard, including an empty inline array.
-  if ((blueprint.commands ?? []).some((command) => command.flags !== undefined)) {
+  if ((blueprint.commands ?? []).filter(isPresent).some((command) => command.flags !== undefined)) {
     capabilities.add("schema");
   }
   // `registerImporter`/`registerExporter` with `options.flags` register flag
@@ -630,9 +630,16 @@ export function deriveExtensionCapabilities(blueprint: ExtensionBlueprint): Exte
   // exact `options.flags` guard, including an empty flag array. `entry?.` keeps a
   // malformed null array entry (from an untyped `.js`/JSON boundary) from crashing
   // derivation, consistent with the null-field robustness above.
-  const importExportEntries = [...(blueprint.importers ?? []), ...(blueprint.exporters ?? [])];
+  const importExportEntries = [...(blueprint.importers ?? []), ...(blueprint.exporters ?? [])].filter(isPresent);
   if (importExportEntries.some((entry) => entry?.options?.flags !== undefined)) {
     capabilities.add("schema");
+  }
+  // Importers/exporters always synthesize command handlers (`<name> import` /
+  // `<name> export`), so runtime capability summaries attribute them to the
+  // commands surface as well as the importers surface. Keep the author-time
+  // capability preview aligned with describeExtensionActivation.
+  if (importExportEntries.some((entry) => typeof entry === "object")) {
+    capabilities.add("commands");
   }
   // `?? {}` keeps an explicit `hooks: null` from throwing, mirroring composeExtension.
   const hooks: ExtensionBlueprintHooks = blueprint.hooks ?? {};
@@ -662,6 +669,10 @@ function sortUnique<TValue extends string>(values: readonly TValue[]): TValue[] 
   return [...new Set(values)].sort((left, right) => left.localeCompare(right));
 }
 
+function isPresent<TValue>(value: TValue | null | undefined): value is TValue {
+  return value !== null && value !== undefined;
+}
+
 /**
  * Compute, without activating, the exact {@link ExtensionActivationSummary} that
  * {@link composeExtension}'s generated `activate` would produce for a blueprint.
@@ -687,16 +698,36 @@ function sortUnique<TValue extends string>(values: readonly TValue[]): TValue[] 
  * blueprint that registers everything through that hatch summarizes as empty.
  */
 export function describeExtensionBlueprint(blueprint: ExtensionBlueprint): ExtensionActivationSummary {
-  const commandPaths = (blueprint.commands ?? []).map((command) => normalizeCommandName(command.name));
-  const importerPaths = (blueprint.importers ?? []).map((entry) => normalizeCommandName(`${entry.name} import`));
-  const exporterPaths = (blueprint.exporters ?? []).map((entry) => normalizeCommandName(`${entry.name} export`));
+  const commands = (blueprint.commands ?? []).filter(isPresent);
+  const importers = (blueprint.importers ?? []).filter(isPresent);
+  const exporters = (blueprint.exporters ?? []).filter(isPresent);
+  const importerPaths = importers.map((entry) => normalizeCommandName(`${entry.name} import`));
+  const exporterPaths = exporters.map((entry) => normalizeCommandName(`${entry.name} export`));
+  const importerCommandDefinitionPaths = importers
+    .filter((entry) => entry.options !== undefined)
+    .map((entry) => normalizeCommandName(`${entry.name} import`));
+  const exporterCommandDefinitionPaths = exporters
+    .filter((entry) => entry.options !== undefined)
+    .map((entry) => normalizeCommandName(`${entry.name} export`));
+  const commandPaths = [
+    ...commands.map((command) => normalizeCommandName(command.name)),
+    ...importerCommandDefinitionPaths,
+    ...exporterCommandDefinitionPaths,
+  ];
   // A command definition with inline `flags` registers a flag target under its own
-  // path in addition to any top-level `flags` record, so union both sources.
+  // path in addition to any top-level `flags` record. Import/export options with
+  // `flags` register through the same runtime metadata path, so union all sources.
   const flagCommands = [
     ...Object.keys(blueprint.flags ?? {}).map((command) => normalizeCommandName(command)),
-    ...(blueprint.commands ?? [])
+    ...commands
       .filter((command) => command.flags !== undefined)
       .map((command) => normalizeCommandName(command.name)),
+    ...importers
+      .filter((entry) => entry.options?.flags !== undefined)
+      .map((entry) => normalizeCommandName(`${entry.name} import`)),
+    ...exporters
+      .filter((entry) => entry.options?.flags !== undefined)
+      .map((entry) => normalizeCommandName(`${entry.name} export`)),
   ];
   const hooks: ExtensionBlueprintHooks = blueprint.hooks ?? {};
 
@@ -716,8 +747,8 @@ export function describeExtensionBlueprint(blueprint: ExtensionBlueprint): Exten
     migrations: sortUnique(
       (blueprint.migrations ?? []).flatMap((migration) => (typeof migration.id === "string" ? [migration.id] : [])),
     ),
-    importers: sortUnique((blueprint.importers ?? []).map((entry) => normalizeCommandName(entry.name))),
-    exporters: sortUnique((blueprint.exporters ?? []).map((entry) => normalizeCommandName(entry.name))),
+    importers: sortUnique(importers.map((entry) => normalizeCommandName(entry.name))),
+    exporters: sortUnique(exporters.map((entry) => normalizeCommandName(entry.name))),
     search_providers: sortUnique((blueprint.searchProviders ?? []).map((provider) => provider.name)),
     vector_store_adapters: sortUnique((blueprint.vectorStoreAdapters ?? []).map((adapter) => adapter.name)),
     parser_overrides: sortUnique(Object.keys(blueprint.parsers ?? {}).map((command) => normalizeCommandName(command))),
