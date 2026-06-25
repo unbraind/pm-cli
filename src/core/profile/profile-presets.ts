@@ -115,7 +115,7 @@ export const BUILTIN_PROFILES: Record<ProfileName, ProjectProfileDefinition> = {
   agile: {
     name: "agile",
     title: "Agile delivery",
-    summary: "Story/Spike delivery with a review stage, story points, and sprint tracking.",
+    summary: "Story/Spike delivery with a review stage, story points, and acceptance ownership.",
     types: TYPE_PRESET_DEFINITIONS.agile,
     statuses: [
       {
@@ -248,7 +248,7 @@ export const BUILTIN_PROFILES: Record<ProfileName, ProjectProfileDefinition> = {
   research: {
     name: "research",
     title: "Research",
-    summary: "Experiment/Hypothesis investigation with an analysis stage, hypothesis, and confidence fields.",
+    summary: "Experiment/Hypothesis investigation with an analysis stage, hypothesis, and method fields.",
     types: TYPE_PRESET_DEFINITIONS.research,
     statuses: [
       {
