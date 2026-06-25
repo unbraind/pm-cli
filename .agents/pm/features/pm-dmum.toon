@@ -1,0 +1,27 @@
+id: pm-dmum
+title: "SDK + CLI: render extension/package surfaces to Markdown reference docs (renderExtensionSurfaceMarkdown + describe --markdown)"
+description: "Complete the describe verb's missing render leg: the SDK can enumerate WHAT a package contributes (ExtensionActivationSummary via describeExtensionActivation [pm-16ue] / describeExtensionBlueprint [pm-tlpv], surfaced to the CLI by pm extension/package describe [pm-l4c8]) but there is NO way to render that to human-readable Markdown. Package authors today hand-write the README 'Commands & capabilities' reference, which silently drifts from the registered surface.\n\nScope (one PR):\n(1) SDK PRIMITIVE renderExtensionSurfaceMarkdown(summary: ExtensionActivationSummary, options?) -> string, a pure deterministic renderer in core/extensions, re-exported from the SDK barrel. Package authors call it on describeExtensionBlueprint(blueprint) output to generate a drift-free README reference section in their build/test step.\n(2) CLI pm extension describe --markdown / pm package describe --markdown emits a composed Markdown document (per-extension sections + union), following the established pm context/next/guide --format markdown precedent (renderer is a pure function of the structured result; markdown is a CLI presentation format, MCP keeps returning structured data).\n(3) Contracts (EXTENSION_FLAG_CONTRACTS + COMMAND_ARG_CONTRACTS describe/lifecycle, regen full.json), shell completion (bash/zsh/fish), docs (SDK.md + EXTENSIONS.md), and 100% test + docstring coverage.\n\nPhilosophy fit: project management = context management — a package's contributed surface documented automatically from a single source of truth, never drifting. Token-efficient: agents authoring packages emit a README reference without restating the registry."
+type: Feature
+status: closed
+priority: 2
+tags[8]: agent-ux,"area:cli","area:extensions","area:packages","area:sdk",dx,living-map,pm-cli
+created_at: "2026-06-25T19:15:04.746Z"
+updated_at: "2026-06-25T19:51:13.508Z"
+author: claude-code-agent
+parent: pm-ugqx
+risk: low
+confidence: high
+resolution: Implemented renderExtensionSurfaceMarkdown core primitive + SDK barrel export + CLI describe --markdown (extension & package) + contracts/completion/docs + 100% tests. Markdown is a CLI presentation format (consistent with pm context/next/guide); MCP describe keeps returning structured data which a caller can hand to the SDK primitive.
+expected_result: Package authors and agents can generate a drift-free Markdown reference for any blueprint (SDK renderExtensionSurfaceMarkdown on describeExtensionBlueprint output) or installed package (CLI describe --markdown) from the same ExtensionActivationSummary the assert*/run* helpers verify.
+actual_result: "Verified in a temp dir: pm package describe <name> --markdown emits the reference doc (loaded/activation-failed/not-loaded status labels correct), the union section spans multiple extensions, --json+--markdown and --markdown on a non-describe action both exit 2 (USAGE), the toon/json paths are unchanged, and renderExtensionSurfaceMarkdown is callable from the built dist SDK barrel. 100% coverage on the new core module, the describe composer, and the register-setup dispatch."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-16ue,related,"2026-06-25T19:16:36.436Z",null,null
+  pm-l4c8,related,"2026-06-25T19:16:36.436Z",null,null
+  pm-tlpv,related,"2026-06-25T19:16:36.436Z",null,null
+files[2]{path,scope,note}:
+  src/core/extensions/activation-summary-markdown.ts,project,SDK primitive rendering an ExtensionActivationSummary to deterministic Markdown reference docs
+  tests/unit/core/extensions/activation-summary-markdown.spec.ts,project,100% branch/line coverage for renderExtensionSurfaceMarkdown
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/core/extensions/activation-summary-markdown.spec.ts tests/unit/extensions/extension-describe.spec.ts tests/unit/commands/register-commands.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Shipped the describe verb's render leg: new SDK primitive renderExtensionSurfaceMarkdown(summary, options?) (src/core/extensions/activation-summary-markdown.ts, re-exported from the SDK barrel) renders any ExtensionActivationSummary to a deterministic Markdown reference doc; pm extension/package describe --markdown composes per-extension + union sections (renderExtensionDescribeMarkdown in describe.ts) via the dispatch in register-setup.ts (fails fast: --markdown requires the describe action and conflicts with --json). Contracts (EXTENSION_FLAG_CONTRACTS + EXTENSION_DESCRIBE_FLAG_CONTRACTS + COMMAND_ARG_CONTRACTS describe/lifecycle, full.json regenerated), completion (bash auto via contracts, zsh+fish manual), and docs (SDK.md + EXTENSIONS.md) updated. 100/100/100/100 coverage on all three touched modules; full suite 5122 tests green; static/docs-skills/docs-links/contracts gates green."
+body: ""

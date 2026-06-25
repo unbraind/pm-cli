@@ -17,6 +17,7 @@
  * builder is trivially unit-testable against synthetic activations.
  */
 import { describeExtensionActivation, type ExtensionActivationSummary } from "../../../core/extensions/activation-summary.js";
+import { renderExtensionSurfaceMarkdown } from "../../../core/extensions/activation-summary-markdown.js";
 import type { ExtensionActivationResult, ExtensionLayer, ExtensionLoadResult } from "../../../core/extensions/loader.js";
 import { normalizeExtensionNameForMatch } from "./shared.js";
 
@@ -119,4 +120,53 @@ export function buildExtensionDescribeResult(
     extensions,
     union: describeExtensionActivation(activationResult, normalizedTarget === null ? {} : { extensionName: target }),
   };
+}
+
+/**
+ * Human-readable label for each {@link ExtensionDescribeActivationStatus}, used
+ * in the Markdown per-extension heading so a reader sees *why* an entry has no
+ * surfaces (activation failed / never loaded) rather than assuming it
+ * contributes nothing.
+ */
+const ACTIVATION_STATUS_LABELS: Record<ExtensionDescribeActivationStatus, string> = {
+  ok: "loaded",
+  failed: "activation failed",
+  not_loaded: "not loaded",
+};
+
+/**
+ * Render an {@link ExtensionDescribeResult} as a Markdown reference document: a
+ * top-level title and scope line, one section per described extension (titled
+ * with its identity and activation status), and — only when more than one
+ * extension was described — a final union section spanning them all. Each
+ * extension and the union are rendered with the shared
+ * {@link renderExtensionSurfaceMarkdown} primitive at heading level 2, so the
+ * document nests cleanly under the level-1 title.
+ *
+ * `noun` is the lifecycle vocabulary (`"extension"` or `"package"`) so the prose
+ * matches the command the agent invoked. When no extensions match (an unmatched
+ * target is already a not-found error upstream, so this is the "nothing loaded"
+ * case) the document is the title plus a single explanatory note.
+ */
+export function renderExtensionDescribeMarkdown(result: ExtensionDescribeResult, noun: string): string {
+  const titleNoun = `${noun[0]!.toUpperCase()}${noun.slice(1)}`;
+  const lines = [`# ${titleNoun} surface reference`, ""];
+  lines.push(result.target === null ? `Scope: all loaded ${noun}s` : `Scope: \`${result.target}\``);
+  lines.push(`Described: ${result.total} ${noun}${result.total === 1 ? "" : "s"}`, "");
+
+  if (result.extensions.length === 0) {
+    lines.push(`_No ${noun}s are loaded._`, "");
+    return `${lines.join("\n").trimEnd()}\n`;
+  }
+
+  for (const entry of result.extensions) {
+    const title = `${entry.name} (${entry.layer} v${entry.version}, ${ACTIVATION_STATUS_LABELS[entry.activation_status]})`;
+    lines.push(renderExtensionSurfaceMarkdown(entry.surfaces, { title, headingLevel: 2 }), "");
+  }
+
+  if (result.extensions.length > 1) {
+    lines.push(renderExtensionSurfaceMarkdown(result.union, { title: `Union across all described ${noun}s`, headingLevel: 2 }));
+  }
+
+  return `${lines.join("\n").trimEnd()}\n`;
 }

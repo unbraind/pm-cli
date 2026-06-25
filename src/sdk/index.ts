@@ -192,6 +192,17 @@ export {
   type ExtensionCapabilityUsageReconciliation,
 } from "../core/extensions/capability-usage.js";
 
+/**
+ * Render an extension/package activation summary
+ * ({@link describeExtensionActivation} / {@link describeExtensionBlueprint}) to a
+ * deterministic Markdown reference document — the author-facing *render* leg of
+ * the describe verb, for drift-free package READMEs.
+ */
+export {
+  renderExtensionSurfaceMarkdown,
+  type ExtensionSurfaceMarkdownOptions,
+} from "../core/extensions/activation-summary-markdown.js";
+
 export type {
   AfterCommandAffectedItem,
   AfterCommandHook,

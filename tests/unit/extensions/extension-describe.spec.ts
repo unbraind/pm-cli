@@ -1,6 +1,6 @@
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildExtensionDescribeResult } from "../../../src/cli/commands/extension/describe.js";
+import { buildExtensionDescribeResult, renderExtensionDescribeMarkdown } from "../../../src/cli/commands/extension/describe.js";
 import { runExtension } from "../../../src/cli/commands/extension.js";
 import { activateExtensions } from "../../../src/core/extensions/loader.js";
 import type {
@@ -146,6 +146,69 @@ describe("buildExtensionDescribeResult", () => {
 
     // Equal names fall back to the layer comparator: "global" sorts before "project".
     expect(result.extensions.map((entry) => entry.layer)).toEqual(["global", "project"]);
+  });
+});
+
+describe("renderExtensionDescribeMarkdown", () => {
+  it("renders a single described extension with a scope line and no union section", async () => {
+    const { loadResult, activationResult } = await buildActivation([
+      { name: "ext-a", activate: (api) => api.registerCommand({ name: "ext-a cmd", run: () => ({}) }) },
+    ]);
+    const result = buildExtensionDescribeResult("ext-a", loadResult, activationResult);
+
+    const markdown = renderExtensionDescribeMarkdown(result, "extension");
+
+    expect(markdown.startsWith("# Extension surface reference\n")).toBe(true);
+    expect(markdown).toContain("Scope: `ext-a`");
+    expect(markdown).toContain("Described: 1 extension\n");
+    expect(markdown).toContain("## ext-a (project v0.0.0, loaded)");
+    expect(markdown).toContain("### Commands\n\n- `ext-a cmd`");
+    expect(markdown).not.toContain("Union across");
+  });
+
+  it("renders multiple packages with an all-scope line and a union section", async () => {
+    const { loadResult, activationResult } = await buildActivation([
+      { name: "ext-a", activate: (api) => api.registerCommand({ name: "ext-a cmd", run: () => ({}) }) },
+      { name: "ext-b", capabilities: ["hooks"], activate: (api) => api.hooks.onWrite(() => undefined) },
+    ]);
+    const result = buildExtensionDescribeResult(undefined, loadResult, activationResult);
+
+    const markdown = renderExtensionDescribeMarkdown(result, "package");
+
+    expect(markdown.startsWith("# Package surface reference\n")).toBe(true);
+    expect(markdown).toContain("Scope: all loaded packages");
+    expect(markdown).toContain("Described: 2 packages\n");
+    expect(markdown).toContain("## Union across all described packages");
+  });
+
+  it("labels failed and not-loaded activation states in the per-extension heading", async () => {
+    const { loadResult, activationResult } = await buildActivation(
+      [
+        {
+          name: "boomer",
+          activate: () => {
+            throw new Error("activation boom");
+          },
+        },
+      ],
+      [{ name: "broken" }],
+    );
+    const result = buildExtensionDescribeResult(undefined, loadResult, activationResult);
+
+    const markdown = renderExtensionDescribeMarkdown(result, "extension");
+
+    expect(markdown).toContain("## boomer (project v0.0.0, activation failed)");
+    expect(markdown).toContain("## broken (project vunknown, not loaded)");
+  });
+
+  it("renders a no-extensions-loaded note when nothing is loaded", async () => {
+    const { loadResult, activationResult } = await buildActivation([]);
+    const result = buildExtensionDescribeResult(undefined, loadResult, activationResult);
+
+    const markdown = renderExtensionDescribeMarkdown(result, "extension");
+
+    expect(markdown).toContain("Described: 0 extensions");
+    expect(markdown.trimEnd().endsWith("_No extensions are loaded._")).toBe(true);
   });
 });
 

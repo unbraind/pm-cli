@@ -2281,6 +2281,9 @@
           "flag": "--describe"
         },
         {
+          "flag": "--markdown"
+        },
+        {
           "flag": "--reload"
         },
         {
@@ -2442,6 +2445,9 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "flag": "--markdown"
         }
       ],
       "provider": "core"
@@ -4606,6 +4612,9 @@
           "flag": "--describe"
         },
         {
+          "flag": "--markdown"
+        },
+        {
           "flag": "--reload"
         },
         {
@@ -4770,6 +4779,9 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "flag": "--markdown"
         }
       ],
       "provider": "core"
@@ -4949,6 +4961,9 @@
           "flag": "--describe"
         },
         {
+          "flag": "--markdown"
+        },
+        {
           "flag": "--reload"
         },
         {
@@ -5113,6 +5128,9 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "flag": "--markdown"
         }
       ],
       "provider": "core"
