@@ -1,0 +1,34 @@
+id: pm-bhtx
+title: Aggregate --status all should match duplicate-safe lifecycle filters
+description: The 2026-06-25 PM ecosystem audit found that pm aggregate rejects --status all even though list/search use all as the duplicate-safe no-status-filter sentinel and the aggregate error recovery suggests the same shape.
+type: Issue
+status: closed
+priority: 2
+tags[5]: agent-ux,aggregate,"area:cli",dedupe,status-filter
+created_at: "2026-06-25T04:51:51.175Z"
+updated_at: "2026-06-25T05:28:50.299Z"
+author: codex-pm-ecosystem-audit-20260625
+estimated_minutes: 45
+acceptance_criteria: pm aggregate --status all succeeds and behaves like no status filter; mixed all plus another status remains invalid; focused aggregate tests cover the sentinel; validation evidence is recorded on this item.
+parent: pm-mpbb
+repro_steps: Run pm aggregate --group-by parent --count --completion --include-unparented --status all in the pm-cli repo; it exits with Invalid argument value.
+resolution: Aggregate status parsing now reuses the shared status-filter parser so standalone --status all is treated as the no-filter sentinel while mixed all+status and multiple statuses remain invalid for aggregate's single-status contract.
+expected_result: Standalone --status all is accepted as a no-filter sentinel for duplicate-safe aggregate governance queries.
+actual_result: Focused aggregate tests pass; the real repository command pm aggregate --group-by parent --count --completion --include-unparented --status all succeeds; the linked sandbox command also verifies the parser no longer rejects the all sentinel; pnpm build passes.
+comments[4]{created_at,author,text}:
+  "2026-06-25T04:51:51.175Z",codex-pm-ecosystem-audit-20260625,"Duplicate check before create: pm search \"aggregate --status all rejects\" --status all --limit 20 found related closed status-all work pm-i02t for list/search and aggregate feature work, but no open issue for aggregate rejecting the all sentinel."
+  "2026-06-25T05:13:26.870Z",codex-ecosystem-auditor,"Evidence: focused test node scripts/run-tests.mjs test -- tests/unit/commands/aggregate-command.spec.ts passed (17 tests). Real command pm aggregate --group-by parent --count --completion --include-unparented --status all now succeeds and returns all-status grouped output."
+  "2026-06-25T05:13:55.793Z",codex-ecosystem-auditor,"Clarification: the linked pm aggregate run executed in the schema sandbox and returned zero items, so the authoritative behavioral evidence for real tracker data is the separately recorded local command run in the repository, which returned grouped all-status output."
+  "2026-06-25T05:28:10.555Z",codex-ecosystem-auditor,"Final verification: initial direct pm aggregate smoke used the pre-fix globally installed binary and failed before runAggregate. After pnpm build and npm install -g . from this checkout, PM_AUTHOR=codex-ecosystem-auditor pm aggregate --group-by parent --count --completion --include-unparented --status all succeeds on the real tracker. node dist/cli.js aggregate with the same flags also succeeds."
+files[2]{path,scope,note}:
+  src/cli/commands/aggregate.ts,project,Accept duplicate-safe all-status sentinel in aggregate status parser
+  tests/unit/commands/aggregate-command.spec.ts,project,Regression coverage for aggregate status all sentinel
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/aggregate-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pm aggregate --group-by parent --count --completion --include-unparented --status all,null,project,120,tracker,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqt1ra24-1yo4no,test,passed,"2026-06-25T05:13:27.128Z","2026-06-25T05:13:42.316Z","2026-06-25T05:13:42.316Z",null,null,3,0,0,null,null,null
+  test-local-mqt2a9pu-7u2tkl,test,passed,"2026-06-25T05:28:10.568Z","2026-06-25T05:28:28.338Z","2026-06-25T05:28:28.338Z",null,null,3,0,0,null,null,null
+close_reason: Aggregate --status all now matches duplicate-safe lifecycle filter semantics.
+body: ""

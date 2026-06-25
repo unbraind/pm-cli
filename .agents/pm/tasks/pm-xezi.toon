@@ -1,0 +1,25 @@
+id: pm-xezi
+title: "Sub-agent lane: source, tests, docs, and command-surface coverage map"
+description: "Map repository code, tests, docs, scripts, commands, and release gates to existing pm items and identify untracked coverage gaps."
+type: Task
+status: closed
+priority: 1
+tags[5]: contracts,docs,source-map,subagent,tests
+created_at: "2026-06-25T04:45:07.502Z"
+updated_at: "2026-06-25T05:21:44.411Z"
+author: codex-pm-ecosystem-audit-20260625
+estimated_minutes: 60
+acceptance_criteria: "Report high-signal source/test/docs surfaces, linked-item coverage gaps, command/runtime contract risks, and exact pm or repo commands used."
+parent: pm-57vh
+resolution: Source/test/docs coverage findings were mapped to concrete items; package namespace contracts and historical linked-file ownership remain tracked as open follow-ups while the aggregate status-all regression was fixed.
+expected_result: Command-surface and artifact-ownership gaps are tracked individually without duplicates.
+actual_result: pm-y1o4 remains open for package namespace contract lookup; pm-bhtx is closed; pm-j8z6 remains open for dedicated linked-file reconciliation. Current validate --check-files baseline warns with 146 missing linked paths and 162 orphaned paths after broad historical mutations were pruned.
+comments[3]{created_at,author,text}:
+  "2026-06-25T04:53:47.696Z",codex-pm-ecosystem-audit-20260625,"Sub-agent evidence: read AGENTS.md and inspected source/test/docs/contracts/release surfaces without code or tracker mutations. Inventory: src/cli/commands=75 files, src/core=121, src/sdk=14, src/mcp=2, packages=51, scripts=30, docs=33, workflows=6, tests=269. Existing historical coverage is mostly closed under pm-xau3/pm-w13j/pm-ud1x/pm-7v9s/pm-krwu/pm-f2ne/pm-6tch; live pm-xezi had no linked artifacts at inspection time. Open stories pm-5dbn/pm-b4cp/pm-srex are useful but sparse as current linked file maps. One concrete new candidate: package namespace contracts, because pm changelog --help works and changelog generate contracts work, but pm contracts --command changelog --flags-only --json returns unknown_command; no open direct duplicate found by status-all search. Verification run: pm health --check-only --summary --json ok; pnpm contracts:check current."
+  "2026-06-25T05:16:05.394Z",codex-ecosystem-auditor,"Lane closure evidence: source/tests/docs/command-surface audit produced inventory and one concrete command-contract issue pm-y1o4. Aggregate status-all regression pm-bhtx was also fixed and closed from this lane evidence. File ownership reconciliation pm-j8z6 closed with validate --check-files ok."
+  "2026-06-25T05:21:44.393Z",codex-ecosystem-auditor,"Correction after changelog review: pm-j8z6 was reopened because broad linked-file reconciliation touched hundreds of old PM records and was pruned from this product-fix PR. The lane's source/command inventory remains valid; linked-file hygiene is tracked separately as open backlog."
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  pm health --check-only --summary --json,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm contracts:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Source/tests/docs lane complete; concrete findings are fixed where scoped to this PR or tracked as open backlog.
+body: Execution lane for specialized repository-surface inspection. No code edits; report missing or weakly tracked work as candidate pm items with canonical parent suggestions.

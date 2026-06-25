@@ -1,0 +1,22 @@
+id: pm-klpw
+title: "Sub-agent lane: tracker taxonomy, hierarchy, and duplicate hygiene"
+description: "Inspect all pm item topology, lifecycle state, parentage, duplicate risk, and metadata coverage for the 2026-06-25 ecosystem normalization."
+type: Task
+status: closed
+priority: 1
+tags[4]: dedupe,subagent,taxonomy,tracker-governance
+created_at: "2026-06-25T04:44:59.499Z"
+updated_at: "2026-06-25T05:21:44.069Z"
+author: codex-pm-ecosystem-audit-20260625
+estimated_minutes: 60
+acceptance_criteria: "Report item counts by status/type, orphan or weakly-parented work, duplicate-risk clusters, metadata gaps, and exact pm commands used."
+parent: pm-57vh
+resolution: "Tracker taxonomy and duplicate-hygiene findings were reviewed, structural blockers were ruled out, and cleanup gaps were converted into explicit follow-up backlog without broad historical mutation in this release PR."
+expected_result: Tracker hierarchy has no structural blockers and stale audit containers have explicit disposition.
+actual_result: "pm validate --check-lifecycle and --check-history-drift are ok. Stale audit container cleanup remains open in pm-psc0, and terminal resolution metadata backlog remains open in pm-e9zh."
+comments[3]{created_at,author,text}:
+  "2026-06-25T04:54:13.839Z",codex-pm-ecosystem-audit-20260625,"Read-only taxonomy lane complete. Evidence: AGENTS.md read first; pm inventory paged with pm list --status all over 1,387 items; pm-doxj direct hierarchy inspected; active/stale/metadata filters and targeted pm get reads completed. Findings: 29 active items, all under pm-doxj with no active orphans, missing parents, or active-under-closed-parent cases. Main risks are taxonomy hygiene, not broken topology: stale open audit containers pm-5dbn/pm-srex/pm-b4cp/pm-34gb/pm-lzrq/pm-gpea have zero active descendants; pm-z5nb/pm-28cf/pm-7zs0/pm-96wm need resolved-or-recurring disposition; 24 active items lacked AC before this run; all 29 active items lacked estimate/risk/confidence before this run; validate reports validate_resolution_missing_fields:253 while history drift and health are clean. Recommended creating cleanup/backfill tracking under pm-57vh and closing/repurposing stale audit containers after current evidence is recorded."
+  "2026-06-25T05:16:03.870Z",codex-ecosystem-auditor,"Lane closure evidence: taxonomy/hierarchy audit found no active orphan, missing-parent, active-under-closed-parent, dependency-cycle, or parent-cycle blockers. Converted findings into pm-psc0 and pm-e9zh; pm-psc0 is now closed and pm-e9zh remains open for high-quality historical resolution backfill."
+  "2026-06-25T05:21:44.057Z",codex-ecosystem-auditor,"Correction after changelog review: pm-psc0 is intentionally open again because stale-container closures were pruned from this product-fix PR to avoid changelog mis-bucketing. Structural taxonomy result is unchanged: no active orphan, missing-parent, active-under-closed-parent, dependency-cycle, or parent-cycle blocker."
+close_reason: Taxonomy lane complete; findings are tracked as explicit open cleanup backlog where not release-safe to mutate now.
+body: Execution lane for specialized tracker taxonomy inspection. Read-only analysis first; recommendations must be duplicate-safe and mapped to canonical parents.

@@ -115,7 +115,10 @@ describe("aggregate command helper coverage", () => {
     const statusRegistry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
 
     expect(_testOnlyAggregateCommand.parseStatus(undefined, statusRegistry)).toBeUndefined();
+    expect(_testOnlyAggregateCommand.parseStatus("all", statusRegistry)).toBeUndefined();
     expect(_testOnlyAggregateCommand.parseStatus("open", statusRegistry)).toBe("open");
+    expect(() => _testOnlyAggregateCommand.parseStatus("all,open", statusRegistry)).toThrow(PmCliError);
+    expect(() => _testOnlyAggregateCommand.parseStatus("open,closed", statusRegistry)).toThrow(PmCliError);
     expect(() => _testOnlyAggregateCommand.parseStatus("not-a-status", statusRegistry)).toThrow(PmCliError);
     expect(_testOnlyAggregateCommand.parseGroupBy(undefined)).toEqual(["status"]);
     expect(_testOnlyAggregateCommand.parseGroupBy("type, priority")).toEqual(["type", "priority"]);
@@ -700,6 +703,46 @@ describe("runAggregate", () => {
         },
       ]);
       expect(result.totals.items_considered).toBe(2);
+    });
+  });
+
+  it("treats aggregate --status all as an all-status sentinel", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, {
+        title: "Aggregate Open Task",
+        type: "Task",
+        status: "open",
+      });
+      createItem(context, {
+        title: "Aggregate Closed Task",
+        type: "Task",
+        status: "closed",
+      });
+
+      const result = await runAggregate(
+        {
+          groupBy: "status",
+          count: true,
+          status: "all",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.filters.status).toBeNull();
+      expect(result.groups.map(stripGroupLabel)).toEqual([
+        {
+          group: {
+            status: "closed",
+          },
+          count: 1,
+        },
+        {
+          group: {
+            status: "open",
+          },
+          count: 1,
+        },
+      ]);
     });
   });
 

@@ -1,7 +1,7 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import fs, { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { _testOnly as statsInternals, runStats } from "../../../src/cli/commands/stats.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../../src/core/extensions/index.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
@@ -92,6 +92,47 @@ describe("runStats", () => {
     try {
       expect(await statsInternals.readHistoryStreamContents(tempDir)).toEqual([]);
     } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it("skips history streams that disappear between directory listing and read", async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-stats-history-race-"));
+    try {
+      const historyDir = path.join(tempDir, "history");
+      await mkdir(historyDir, { recursive: true });
+      await writeFile(path.join(historyDir, "pm-ghost.jsonl"), "ghost\n", "utf8");
+      await writeFile(path.join(historyDir, "pm-present.jsonl"), "present\n", "utf8");
+
+      const readFile = vi.spyOn(fs, "readFile").mockImplementation(async (file, options) => {
+        if (String(file).endsWith("pm-ghost.jsonl")) {
+          throw Object.assign(new Error("gone"), { code: "ENOENT" });
+        }
+        return "present\n" as Awaited<ReturnType<typeof fs.readFile>>;
+      });
+
+      const streams = await statsInternals.readHistoryStreamContents(tempDir);
+
+      expect(streams).toEqual([{ id: "pm-present", raw: "present\n" }]);
+      expect(readFile).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.restoreAllMocks();
+      await rm(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it("still surfaces non-ENOENT history stream read failures", async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-stats-history-read-failure-"));
+    try {
+      const historyDir = path.join(tempDir, "history");
+      await mkdir(historyDir, { recursive: true });
+      await writeFile(path.join(historyDir, "pm-broken.jsonl"), "broken\n", "utf8");
+
+      vi.spyOn(fs, "readFile").mockRejectedValue(Object.assign(new Error("permission denied"), { code: "EACCES" }));
+
+      await expect(statsInternals.readHistoryStreamContents(tempDir)).rejects.toMatchObject({ code: "EACCES" });
+    } finally {
+      vi.restoreAllMocks();
       await rm(tempDir, { recursive: true, force: true });
     }
   });

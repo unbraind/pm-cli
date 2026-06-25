@@ -1,0 +1,21 @@
+id: pm-3whx
+title: "Sub-agent lane: release, GitHub, Sentry, telemetry, and live-ops evidence"
+description: "Inspect CI, release workflows, GitHub reports, Sentry health, telemetry freshness, and live-ops tracking coverage for the 2026-06-25 ecosystem normalization."
+type: Task
+status: closed
+priority: 1
+tags[5]: github,release,sentry,subagent,telemetry
+created_at: "2026-06-25T04:45:21.028Z"
+updated_at: "2026-06-25T05:16:09.569Z"
+author: codex-pm-ecosystem-audit-20260625
+estimated_minutes: 60
+acceptance_criteria: "Report current GitHub/CI/security state, Sentry/telemetry freshness signals or blockers, live-ops pm coverage gaps, and exact commands used."
+parent: pm-57vh
+resolution: "Release, GitHub, Sentry, and telemetry findings were verified; the fresh Sentry blocker was fixed, resolved, and gate-tested."
+expected_result: "Release observability surfaces are recent, actionable, and non-blocking after remediation."
+actual_result: node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode required passes; telemetry finish_error_rate_pct=0.82; PM-CLI-1T resolved.
+comments[2]{created_at,author,text}:
+  "2026-06-25T04:55:07.059Z",codex-pm-ecosystem-audit-20260625,"Sub-agent evidence 2026-06-25T04:50Z: GitHub open PRs/issues none; Dependabot, secret scanning, code scanning, security advisories clean; latest main CI/Docs/CodeQL green on 99ede4f1. npm/GitHub latest v2026.6.24, with 9 commits after tag. Auto Release/Release latest visible runs on 2026-06-24 succeeded; no 2026-06-25 scheduled run visible yet. Nightly latest visible run failed on obsolete windows-latest/Node20; current matrix removes Node20 and GH #348 is closed, so verify next scheduled Nightly before closing pm-2kkl. Sentry gate currently fails on PM-CLI-1T, a fresh high unresolved handled ENOENT in pm stats history-stream reading; telemetry is healthy and remote backlog is 0. Recommend creating a PM-CLI-1T stats/history race issue under pm-34gb and updating pm-7zs0, pm-2kkl, and pm-rj3w with this evidence."
+  "2026-06-25T05:16:08.445Z",codex-ecosystem-auditor,"Lane closure evidence: release/GitHub/Sentry/telemetry audit found GitHub baseline clean and Sentry PM-CLI-1T as the only release-gate blocker. pm-7o0s fixed and closed that race; Sentry/telemetry gate now passes required-mode with critical=0/high=0 and telemetry ok."
+close_reason: Release/Sentry/telemetry lane complete; blocker fixed and gate green.
+body: Execution lane for specialized release and observability evidence. No secrets in public docs or comments; use high-level evidence and exact non-sensitive commands.

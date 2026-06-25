@@ -1,0 +1,21 @@
+id: pm-o578
+title: "Sub-agent lane: SDK, packages, MCP, and universal customization backlog"
+description: "Inspect SDK, package, extension, MCP, schema, and customization backlog coverage against the universal project-management primitive vision."
+type: Task
+status: closed
+priority: 1
+tags[5]: customization,mcp,packages,sdk,subagent
+created_at: "2026-06-25T04:45:14.112Z"
+updated_at: "2026-06-25T05:16:08.111Z"
+author: codex-pm-ecosystem-audit-20260625
+estimated_minutes: 60
+acceptance_criteria: "Report existing canonical epics/items, gaps in SDK/package/MCP/customization primitives, duplicate risks, and exact pm or repo commands used."
+parent: pm-57vh
+resolution: SDK/package/MCP customization findings were converted into project-profile backlog items aligned with the universal project management goal.
+expected_result: Universal customization gaps are represented by concrete Feature/Task items under canonical epics.
+actual_result: "pm-v37g, pm-a7o4, and pm-bhmk are open under schema/customization, extension/package, and MCP epics."
+comments[2]{created_at,author,text}:
+  "2026-06-25T04:57:08.326Z",codex-pm-ecosystem-audit-20260625,"Read-only SDK/packages/MCP/customization lane complete. Evidence: inspected AGENTS.md, pm-sdk/pm-extensions guidance, pm context/list/get, status-all duplicate searches, runtime contracts, package/schema surfaces, SDK exports/testing helpers, MCP tool definitions, package catalog, and schema preset implementation. Canonical reuse: pm-doxj, pm-8jdc, pm-ugqx, pm-5k4v, with pm-b4cp/pm-srex as audit evidence buckets. Backlog is strong for low-level primitives: public SDK define/compose/testing helpers, packages/extensions, import/export, MCP schema/config/contracts, and schema types/statuses/fields/workflows. Gap: no open leaf captures a coherent universal PM baseline/profile composing types, fields, statuses, workflows, templates, config, and package selections for arbitrary project archetypes; current presets are type-only and package install is separate. Recommended creating profile, first-party package, and MCP profile-surface follow-ups."
+  "2026-06-25T05:16:06.935Z",codex-ecosystem-auditor,"Lane closure evidence: SDK/package/MCP customization audit identified project profile composition as the major universal-PM primitive gap. Created pm-v37g, pm-a7o4, and pm-bhmk under the relevant epics with duplicate checks and acceptance criteria."
+close_reason: SDK/package/MCP lane complete; customization backlog is tracked.
+body: "Execution lane for specialized platform-primitive inspection. No code edits; candidate items must be small, actionable, and parented to existing capability epics."
