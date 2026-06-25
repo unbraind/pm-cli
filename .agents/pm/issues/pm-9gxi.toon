@@ -6,8 +6,7 @@ status: blocked
 priority: 1
 tags[5]: "area:ci",auto-release,branch-protection,release,reliability
 created_at: "2026-06-25T11:02:40.952Z"
-updated_at: "2026-06-25T13:35:48.242Z"
-assignee: codex-gpt5
+updated_at: "2026-06-25T13:45:36.322Z"
 author: claude-code-agent
 parent: pm-u9d0
 expected_result: "Auto Release production runs use a configured maintainer RELEASE_PAT to push the checked version commit and tag to protected main after gates pass, and missing release credentials fail fast with clear recovery guidance."
