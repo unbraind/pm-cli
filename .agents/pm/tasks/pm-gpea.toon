@@ -2,13 +2,16 @@ id: pm-gpea
 title: Docs & CI/CD audit 2026-06-12
 description: "Read-only docs + CI/CD + secret-scan audit session. Scope: README.md, AGENTS.md, all docs/*.md, plugins/* READMEs, packages/* READMEs, .github/workflows/*, repo-wide secret scan. Findings filed as child items tagged audit-2026-06-12."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[4]: audit,audit-2026-06-12,ci,docs
 created_at: "2026-06-12T16:10:55.983Z"
-updated_at: "2026-06-12T16:57:11.237Z"
+updated_at: "2026-06-25T16:52:32.917Z"
 author: maintainer-agent
 parent: pm-u9d0
+resolution: Closed as terminal stale audit container during dedicated tracker-only normalization.
+expected_result: Audit wrapper remains open only while active findings need tracking.
+actual_result: All findings are closed or represented by current backlog; descendant check found no open child work.
 comments[6]{created_at,author,text}:
   "2026-06-12T16:10:55.983Z",maintainer-agent,"Duplicate check: pm search 'docs CI audit 2026-06-12' + 'documentation drift audit' found prior audits (pm-5dbn 2026-06-07 story,pm-obxz closed) but no 2026-06-12 audit task. This is the session tracker."
   "2026-06-12T16:12:24.353Z",maintainer-agent,"Audit complete (read-only; findings filed as children pm-m4bx, pm-xvzm, pm-7u4z, pm-u8y9, pm-cxi9, pm-c97q, pm-5909).\n\nSECRET SCAN: CLEAN. git-tracked files only: no private IPv4 (192.168/10.x/172.16-31), no telemetry host IP, no ssh user@host strings, no personal emails, no sk-/ghp_/github_pat_/npm_/sntrys_/sntryu_ token literals (only the detector rules in scripts/check-secrets-lib.mjs, test fixtures under tests/, and prior-audit evidence text naming pattern families). node scripts/check-secrets.mjs exits 0. scripts/prod and .env confirmed untracked.\n\nCI/CD: healthy. gh run list (15): all green except one PR-branch CI failure immediately fixed in the next push; today's scheduled Auto Release (27400423759) -> dispatched Release (27400708149) chain succeeded, so the daily release path incl Sentry gate is verified live. All 6 workflows: SHA-pinned actions, least-privilege permissions, concurrency groups, caches. Only structural finding: pm-5909 (md-only push gap for plugins/packages markdown).\n\nTOOL/COUNT COHERENCE: 25 MCP tools consistent across README.md:54, docs/CLAUDE_CODE_PLUGIN.md:68+126, plugins/pm-claude/README.md, plugin.json, marketplace.json; 5 skills/14 commands/4 subagents claims match actual plugin file counts.\n\nDUPLICATION CHECK (.claude/.agents/assets/plugins): no contradictory instructions. pm-developer and pm-release skills exist in 3 flavors (.agents/skills CLI-flavored, plugins/pm-claude MCP-flavored, plugins/pm-codex) — intentional per-harness variants with consistent workflow semantics; maintenance cost acknowledged, no action filed. Guide-shell snippet duplication was already addressed by closed pm-48vd. AGENTS.md/README/docs progressive-disclosure structure is in good shape; README remains minimal and link-first.\n\nTop quick-wins for this session PR: (1) pm-m4bx install-spec fix (3 one-line edits, user-facing P2), (2) pm-u8y9 SDK.md resource kinds (2 lines), (3) pm-cxi9 plugin doc tree/version (drift-proof by pointing at canonical README), (4) pm-7u4z Plan/type-list + ARCHITECTURE layout refresh.\n"
@@ -22,4 +25,5 @@ docs[5]{path,scope,note}:
   docs/COMMANDS.md,project,get/copy gap (pm-xvzm)
   docs/SDK.md,project,resource kinds drift (pm-u8y9)
   README.md,project,install spec drift (pm-m4bx)
+close_reason: "Stale audit wrapper normalized by pm-psc0: all child/follow-up work is closed or represented by current backlog; no open descendants remain."
 body: ""
