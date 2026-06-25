@@ -161,7 +161,9 @@ export function renderExtensionDescribeMarkdown(result: ExtensionDescribeResult,
 
   for (const entry of result.extensions) {
     const title = `${entry.name} (${entry.layer} v${entry.version}, ${ACTIVATION_STATUS_LABELS[entry.activation_status]})`;
-    lines.push(renderExtensionSurfaceMarkdown(entry.surfaces, { title, headingLevel: 2 }), "");
+    // renderExtensionSurfaceMarkdown already ends with a newline; the join adds a
+    // single blank line between sections, so no extra "" separator is pushed.
+    lines.push(renderExtensionSurfaceMarkdown(entry.surfaces, { title, headingLevel: 2 }));
   }
 
   if (result.extensions.length > 1) {

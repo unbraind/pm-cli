@@ -179,6 +179,8 @@ describe("renderExtensionDescribeMarkdown", () => {
     expect(markdown).toContain("Scope: all loaded packages");
     expect(markdown).toContain("Described: 2 packages\n");
     expect(markdown).toContain("## Union across all described packages");
+    // Sections are separated by exactly one blank line — never a triple newline.
+    expect(markdown).not.toContain("\n\n\n");
   });
 
   it("labels failed and not-loaded activation states in the per-extension heading", async () => {
