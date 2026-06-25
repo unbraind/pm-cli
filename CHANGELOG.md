@@ -29,6 +29,7 @@
 
 ### Other
 
+- 2026-06-25 PM ecosystem taxonomy and context backlog normalization ([pm-57vh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-57vh.toon))
 - Sub-agent lane: source, tests, docs, and command-surface coverage map ([pm-xezi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xezi.toon))
 - Sub-agent lane: tracker taxonomy, hierarchy, and duplicate hygiene ([pm-klpw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-klpw.toon))
 - Sub-agent lane: release, GitHub, Sentry, telemetry, and live-ops evidence ([pm-3whx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-3whx.toon))
