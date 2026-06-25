@@ -1200,11 +1200,12 @@ function requireTarget(target: string | undefined, action: ExtensionCommandActio
     }
     const noun = options.vocabulary === "package" ? "package" : "extension";
     const targetName = action === "install" ? "source" : "name";
+    const targetLabel = `${noun} ${targetName}`;
     const actionFlag = getLifecycleActionFlag(action);
     const commandTarget = `<${targetName}>`;
     const command = `pm ${noun} ${actionFlag} ${commandTarget}`;
     throw new PmCliError(
-      `Action "${action}" requires an extension name or source target argument.`,
+      `Action "${action}" requires ${targetLabel} input.`,
       EXIT_CODE.USAGE,
       {
         code: "missing_lifecycle_target",

@@ -152,7 +152,7 @@ describe("extension command runtime", () => {
     expect(() => extensionCommandTestOnly.resolveScope({ project: true, global: true })).toThrow(/mutually exclusive/);
 
     expect(() => extensionCommandTestOnly.requireTarget(undefined, "init")).toThrow(/requires a scaffold target path/);
-    expect(() => extensionCommandTestOnly.requireTarget(" ", "install")).toThrow(/requires an extension name/);
+    expect(() => extensionCommandTestOnly.requireTarget(" ", "install")).toThrow(/requires extension source input/);
     let missingPackageInstallTargetError: unknown;
     try {
       extensionCommandTestOnly.requireTarget(undefined, "install", { vocabulary: "package" });
@@ -160,6 +160,7 @@ describe("extension command runtime", () => {
       missingPackageInstallTargetError = error;
     }
     expect(missingPackageInstallTargetError).toMatchObject({
+      message: 'Action "install" requires package source input.',
       context: {
         code: "missing_lifecycle_target",
         recovery: {
