@@ -324,8 +324,10 @@ export function normalizeProfileName(rawValue: string | undefined): ProfileName 
   if (normalized.length === 0) {
     throw new Error("Profile name must not be empty.");
   }
-  if (normalized === "agile" || normalized === "ops" || normalized === "research") {
-    return normalized;
+  // Validate against PROFILE_NAMES so adding a profile never drifts from the
+  // accepted set (single source of truth shared with BUILTIN_PROFILES).
+  if ((PROFILE_NAMES as readonly string[]).includes(normalized)) {
+    return normalized as ProfileName;
   }
   throw new Error(`Invalid profile "${rawValue}". Allowed: ${PROFILE_NAMES.join(", ")}.`);
 }

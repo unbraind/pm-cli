@@ -28,7 +28,6 @@ import { normalizeAddTypeInput, serializeItemTypesFile } from "../../core/schema
 import { serializeStatusDefsFile } from "../../core/schema/status-defs-file.js";
 import { serializeFieldsFile } from "../../core/schema/fields-file.js";
 import {
-  parseNestedSettingValue,
   resolveNestedSettingDescriptor,
   writeNestedSettingValue,
 } from "../../core/config/nested-settings.js";
@@ -254,9 +253,12 @@ async function readStoredTemplateOptions(pmRoot: string, name: string): Promise<
     return undefined;
   }
   try {
-    const parsed = JSON.parse(raw) as { options?: unknown };
-    if (parsed.options !== null && typeof parsed.options === "object" && !Array.isArray(parsed.options)) {
-      return parsed.options as ProfileTemplateOptions;
+    const parsed = JSON.parse(raw) as unknown;
+    if (parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)) {
+      const options = (parsed as { options?: unknown }).options;
+      if (options !== null && typeof options === "object" && !Array.isArray(options)) {
+        return options as ProfileTemplateOptions;
+      }
     }
   } catch {
     // A malformed template file is treated as absent so apply re-stages it.
@@ -288,6 +290,10 @@ async function loadProfileCurrentState(
     workflows: settings.schema.type_workflows ?? [],
     settings,
     templates,
+    // Package recommendations are advisory: apply never installs and never
+    // inspects install state, so every recommendation surfaces as "recommended".
+    // The planner still supports an install-state set for SDK consumers that want
+    // richer reporting.
     installedPackages: new Set<string>(),
   };
 }
@@ -368,32 +374,20 @@ export async function runProfileApply(
   const force = Boolean(options.force);
   const warnings: string[] = [];
 
-  const releaseTypes = await acquireLock(
-    pmRoot,
-    PROFILE_TYPES_LOCK_ID,
-    settings.locks.ttl_seconds,
-    author,
-    force,
-    governance.force_required_for_stale_lock,
-  );
-  const releaseStatuses = await acquireLock(
-    pmRoot,
-    PROFILE_STATUSES_LOCK_ID,
-    settings.locks.ttl_seconds,
-    author,
-    force,
-    governance.force_required_for_stale_lock,
-  );
-  const releaseFields = await acquireLock(
-    pmRoot,
-    PROFILE_FIELDS_LOCK_ID,
-    settings.locks.ttl_seconds,
-    author,
-    force,
-    governance.force_required_for_stale_lock,
-  );
+  // Acquire all three schema locks inside the try so a later acquisition that
+  // throws (held/stale lock without --force) still releases the earlier ones in
+  // finally rather than stranding them until TTL expiry.
+  const releasers: Array<() => Promise<void>> = [];
+  const acquire = async (lockId: string): Promise<void> => {
+    releasers.push(
+      await acquireLock(pmRoot, lockId, settings.locks.ttl_seconds, author, force, governance.force_required_for_stale_lock),
+    );
+  };
   let plan: ProfileApplicationPlan;
   try {
+    await acquire(PROFILE_TYPES_LOCK_ID);
+    await acquire(PROFILE_STATUSES_LOCK_ID);
+    await acquire(PROFILE_FIELDS_LOCK_ID);
     const state = await loadProfileCurrentState(pmRoot, schema, settings, profile);
     plan = planProfile(profile, state);
 
@@ -435,9 +429,10 @@ export async function runProfileApply(
       await runTemplatesSave(change.name, { ...change.options }, global);
     }
   } finally {
-    await releaseFields();
-    await releaseStatuses();
-    await releaseTypes();
+    // Release in reverse acquisition order; only locks actually acquired are present.
+    for (const release of releasers.reverse()) {
+      await release();
+    }
   }
 
   return buildApplyResult(profile, plan, plan.changed, false, warnings);

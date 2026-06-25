@@ -18921,7 +18921,7 @@
             "type": "number"
           },
           "name": {
-            "description": "Custom item type name (schema add-type/remove-type/show), custom status id (schema show-status/add-status/remove-status), or custom field key (schema add-field/remove-field/show-field).",
+            "description": "Custom item type name (schema add-type/remove-type/show), custom status id (schema show-status/add-status/remove-status), custom field key (schema add-field/remove-field/show-field), or profile name (profile show/apply).",
             "examples": [
               "Spike",
               "review",
@@ -19015,7 +19015,7 @@
             "type": "array"
           },
           "subcommand": {
-            "description": "Subcommand selector for schema and telemetry actions.",
+            "description": "Subcommand selector for schema, profile, and telemetry actions.",
             "type": "string"
           },
           "timeoutMs": {
@@ -19111,7 +19111,7 @@
             "type": "boolean"
           },
           "name": {
-            "description": "Custom item type name (schema add-type/remove-type/show), custom status id (schema show-status/add-status/remove-status), or custom field key (schema add-field/remove-field/show-field).",
+            "description": "Custom item type name (schema add-type/remove-type/show), custom status id (schema show-status/add-status/remove-status), custom field key (schema add-field/remove-field/show-field), or profile name (profile show/apply).",
             "examples": [
               "Spike",
               "review",
@@ -19147,7 +19147,7 @@
             "type": "boolean"
           },
           "subcommand": {
-            "description": "Subcommand selector for schema and telemetry actions.",
+            "description": "Subcommand selector for schema, profile, and telemetry actions.",
             "type": "string"
           },
           "timeoutMs": {
@@ -22860,7 +22860,7 @@
             "type": "boolean"
           },
           "subcommand": {
-            "description": "Subcommand selector for schema and telemetry actions.",
+            "description": "Subcommand selector for schema, profile, and telemetry actions.",
             "type": "string"
           },
           "timeoutMs": {

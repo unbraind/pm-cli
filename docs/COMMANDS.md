@@ -764,6 +764,8 @@ The option composes with `--defaults`, `--preset`, `--author`, `--agent-guidance
 
 ## Project Profiles
 
+Tracker references: [pm-v37g](../.agents/pm/features/pm-v37g.toon), [pm-bhmk](../.agents/pm/tasks/pm-bhmk.toon).
+
 `pm profile` composes the schema, config, template, and package primitives into complete project-management archetypes. Where a type preset only registers item types, a profile bundles item types, custom statuses, custom fields, per-type workflows, config knobs, create templates, and recommended packages so a fresh tracker can be tailored to an archetype in one idempotent command.
 
 ```bash

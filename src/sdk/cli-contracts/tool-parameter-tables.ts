@@ -589,11 +589,11 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     examples: ["Task", "Feature"],
   },
   subcommand: {
-    description: "Subcommand selector for schema and telemetry actions.",
+    description: "Subcommand selector for schema, profile, and telemetry actions.",
   },
   name: {
     description:
-      "Custom item type name (schema add-type/remove-type/show), custom status id (schema show-status/add-status/remove-status), or custom field key (schema add-field/remove-field/show-field).",
+      "Custom item type name (schema add-type/remove-type/show), custom status id (schema show-status/add-status/remove-status), custom field key (schema add-field/remove-field/show-field), or profile name (profile show/apply).",
     examples: ["Spike", "review", "component"],
   },
   defaultStatus: {
