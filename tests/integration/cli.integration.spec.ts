@@ -299,7 +299,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const installSpec = `pm-test-npm-package-with-deps@${pathToFileURL(packageRoot).href}`;
       const install = context.runCli(["install", `npm:${installSpec}`, "--json"], { expectJson: true });
-      expect(install.code).toBe(0);
+      expect(install.code, `install failed (code ${install.code}):\n${install.stderr || install.stdout}`).toBe(0);
 
       const doctor = context.runCli(["package", "doctor", "--project", "--json", "--detail", "deep"], { expectJson: true });
       expect(doctor.code).toBe(0);

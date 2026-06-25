@@ -141,7 +141,14 @@ describe.each(LOADERS)("$pkg runtime-loader", ({ pkg, ext }) => {
 
   it("continues when Node reports a forward-slashed missing runtime path", async () => {
     const parent = await createTempRoot(`pm-${ext}-loader-windows-message-`);
-    const root = path.join(parent, "C:\\pm\\project");
+    // Force the resolved runtime path to contain native separators that diverge
+    // from the forward-slashed form Node embeds in ERR_MODULE_NOT_FOUND messages
+    // so the loader's backslash-normalizing branch is the deciding match. On
+    // Windows `path.join` already produces backslashes; on POSIX we inject a
+    // backslash-bearing segment (a valid filename character there) to create the
+    // same divergence. A literal `C:\\…` segment is intentionally NOT used: the
+    // colon is reserved on Windows and makes `mkdir` raise ENOENT (GH-348).
+    const root = process.platform === "win32" ? parent : path.join(parent, "pm\\project");
     const agentsRuntimeDir = path.join(root, ".agents", "pm", "extensions", ext);
     const packageRuntimeDir = path.join(root, "packages", pkg, "extensions", ext);
     const agentsRuntimePath = path.join(agentsRuntimeDir, "runtime.ts");

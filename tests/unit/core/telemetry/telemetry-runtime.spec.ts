@@ -1,3 +1,4 @@
+import { EventEmitter } from "node:events";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
@@ -1698,62 +1699,139 @@ describe("core/telemetry/runtime", () => {
   });
 
   it("covers non-inline scheduler gate and start failure fallback", async () => {
-    await withTempGlobalRoot(async (globalRoot) => {
-      const originalVitest = process.env.VITEST;
-      const originalVitestWorker = process.env.VITEST_WORKER_ID;
-      const originalNodeEnv = process.env.NODE_ENV;
-      try {
-        delete process.env.PM_TELEMETRY_INLINE_FLUSH;
-        delete process.env.PM_TELEMETRY_FLUSH_CHILD;
-        delete process.env.VITEST;
-        delete process.env.VITEST_WORKER_ID;
-        process.env.NODE_ENV = "development";
-
-        const invalidGateRoot = path.join(globalRoot, "blocked-gate-root");
-        await fs.mkdir(path.dirname(invalidGateRoot), { recursive: true });
-        await fs.writeFile(invalidGateRoot, "file blocks runtime path", "utf8");
-        expect(_testOnly.acquireTelemetryFlushSpawnGate(invalidGateRoot)).toBe(false);
-
-        const spawnRoot = path.join(globalRoot, "spawn-root");
-        await fs.mkdir(spawnRoot, { recursive: true });
-        _testOnly.scheduleTelemetryFlush(spawnRoot, "https://telemetry.example.test/events", 1);
-        await sleep(25);
-
-        await fs.mkdir(_testOnly.flushLockPath(globalRoot), { recursive: true });
-        _testOnly.scheduleTelemetryFlush(globalRoot, "https://telemetry.example.test/events", 1);
-        await expect(fs.access(_testOnly.flushLockPath(globalRoot))).resolves.toBeUndefined();
-
-        const invalidGlobalRoot = path.join(globalRoot, "not-a-directory");
-        await fs.writeFile(invalidGlobalRoot, "file blocks settings path", "utf8");
-        process.env.PM_GLOBAL_PATH = invalidGlobalRoot;
-        await expect(
-          startTelemetryCommand({
-            command: "list-open",
-            pm_version: "1.0.0",
-            args: [],
-            options: {},
-            global: {},
-            pm_root: globalRoot,
-          }),
-        ).resolves.toBeNull();
-      } finally {
-        if (originalVitest === undefined) {
+    // The non-inline path launches a detached flush worker via spawn. Mock
+    // node:child_process so the unit test never starts a real, network-touching
+    // node child process that would linger and crash the vitest worker on
+    // teardown (GH-348). The mock still drives spawn + error-listener + unref so
+    // the success branch stays covered.
+    await vi.resetModules();
+    const unref = vi.fn();
+    const on = vi.fn();
+    const spawnMock = vi.fn(() => ({ on, unref }));
+    vi.doMock("node:child_process", () => ({ spawn: spawnMock }));
+    try {
+      const runtime = await import("../../../../src/core/telemetry/runtime.js");
+      await withTempGlobalRoot(async (globalRoot) => {
+        const originalVitest = process.env.VITEST;
+        const originalVitestWorker = process.env.VITEST_WORKER_ID;
+        const originalNodeEnv = process.env.NODE_ENV;
+        try {
+          delete process.env.PM_TELEMETRY_INLINE_FLUSH;
+          delete process.env.PM_TELEMETRY_FLUSH_CHILD;
           delete process.env.VITEST;
-        } else {
-          process.env.VITEST = originalVitest;
-        }
-        if (originalVitestWorker === undefined) {
           delete process.env.VITEST_WORKER_ID;
-        } else {
-          process.env.VITEST_WORKER_ID = originalVitestWorker;
+          process.env.NODE_ENV = "development";
+
+          const invalidGateRoot = path.join(globalRoot, "blocked-gate-root");
+          await fs.mkdir(path.dirname(invalidGateRoot), { recursive: true });
+          await fs.writeFile(invalidGateRoot, "file blocks runtime path", "utf8");
+          expect(runtime._testOnly.acquireTelemetryFlushSpawnGate(invalidGateRoot)).toBe(false);
+
+          const spawnRoot = path.join(globalRoot, "spawn-root");
+          await fs.mkdir(spawnRoot, { recursive: true });
+          runtime._testOnly.scheduleTelemetryFlush(spawnRoot, "https://telemetry.example.test/events", 1);
+          expect(spawnMock).toHaveBeenCalledTimes(1);
+          expect(unref).toHaveBeenCalledTimes(1);
+          expect(on).toHaveBeenCalledWith("error", expect.any(Function));
+
+          await fs.mkdir(runtime._testOnly.flushLockPath(globalRoot), { recursive: true });
+          runtime._testOnly.scheduleTelemetryFlush(globalRoot, "https://telemetry.example.test/events", 1);
+          await expect(fs.access(runtime._testOnly.flushLockPath(globalRoot))).resolves.toBeUndefined();
+
+          const invalidGlobalRoot = path.join(globalRoot, "not-a-directory");
+          await fs.writeFile(invalidGlobalRoot, "file blocks settings path", "utf8");
+          process.env.PM_GLOBAL_PATH = invalidGlobalRoot;
+          await expect(
+            runtime.startTelemetryCommand({
+              command: "list-open",
+              pm_version: "1.0.0",
+              args: [],
+              options: {},
+              global: {},
+              pm_root: globalRoot,
+            }),
+          ).resolves.toBeNull();
+        } finally {
+          if (originalVitest === undefined) {
+            delete process.env.VITEST;
+          } else {
+            process.env.VITEST = originalVitest;
+          }
+          if (originalVitestWorker === undefined) {
+            delete process.env.VITEST_WORKER_ID;
+          } else {
+            process.env.VITEST_WORKER_ID = originalVitestWorker;
+          }
+          if (originalNodeEnv === undefined) {
+            delete process.env.NODE_ENV;
+          } else {
+            process.env.NODE_ENV = originalNodeEnv;
+          }
         }
-        if (originalNodeEnv === undefined) {
-          delete process.env.NODE_ENV;
-        } else {
-          process.env.NODE_ENV = originalNodeEnv;
+      });
+    } finally {
+      vi.doUnmock("node:child_process");
+      await vi.resetModules();
+    }
+  });
+
+  it("swallows an asynchronous detached-spawn error and releases the spawn gate", async () => {
+    // Regression for GH-348: a detached flush worker can fail to launch
+    // asynchronously (locked-down Windows runners, EACCES). Without an 'error'
+    // listener Node re-throws that as an uncaught exception that crashes the
+    // foreground CLI / vitest worker. Drive a fake child that emits 'error'
+    // after the synchronous spawn returns and assert the gate is released.
+    await vi.resetModules();
+    const child = new EventEmitter() as EventEmitter & { unref: () => void };
+    child.unref = vi.fn();
+    const spawnMock = vi.fn(() => child);
+    vi.doMock("node:child_process", () => ({ spawn: spawnMock }));
+    try {
+      const runtime = await import("../../../../src/core/telemetry/runtime.js");
+      await withTempGlobalRoot(async (globalRoot) => {
+        const originalVitest = process.env.VITEST;
+        const originalVitestWorker = process.env.VITEST_WORKER_ID;
+        const originalNodeEnv = process.env.NODE_ENV;
+        try {
+          delete process.env.PM_TELEMETRY_INLINE_FLUSH;
+          delete process.env.PM_TELEMETRY_FLUSH_CHILD;
+          delete process.env.VITEST;
+          delete process.env.VITEST_WORKER_ID;
+          process.env.NODE_ENV = "development";
+
+          runtime._testOnly.scheduleTelemetryFlush(globalRoot, "https://telemetry.example.test/events", 1);
+          expect(child.unref).toHaveBeenCalledTimes(1);
+          // The spawn gate is held while the detached worker is presumed running.
+          await expect(fs.access(runtime._testOnly.flushSpawnLockPath(globalRoot))).resolves.toBeUndefined();
+
+          // Emitting 'error' must not throw (a listener is attached) and must
+          // release the gate so a later flush can retry.
+          expect(() => child.emit("error", new Error("spawn unavailable asynchronously"))).not.toThrow();
+          await expect(fs.access(runtime._testOnly.flushSpawnLockPath(globalRoot))).rejects.toMatchObject({
+            code: "ENOENT",
+          });
+        } finally {
+          if (originalVitest === undefined) {
+            delete process.env.VITEST;
+          } else {
+            process.env.VITEST = originalVitest;
+          }
+          if (originalVitestWorker === undefined) {
+            delete process.env.VITEST_WORKER_ID;
+          } else {
+            process.env.VITEST_WORKER_ID = originalVitestWorker;
+          }
+          if (originalNodeEnv === undefined) {
+            delete process.env.NODE_ENV;
+          } else {
+            process.env.NODE_ENV = originalNodeEnv;
+          }
         }
-      }
-    });
+      });
+    } finally {
+      vi.doUnmock("node:child_process");
+      await vi.resetModules();
+    }
   });
 
   it("releases the telemetry spawn gate when detached spawn throws", async () => {

@@ -1,0 +1,18 @@
+id: pm-xaib
+title: "GH-363: Windows nightly (Node 24) red — runtime-loader colon-path + telemetry detached-spawn unhandled error + npm-install regression"
+description: "Nightly Validation windows-latest/Node24 (GH-363, run 28155165798) fails with THREE deterministic symptoms after the 2026-06-24 matrix bump from Node 20 to Node 24 (commit be5be995): (1) tests/unit/packages/runtime-loaders.spec.ts 'continues when Node reports a forward-slashed missing runtime path' (pm-beads + pm-todos) raised ENOENT because the coverage fixture synthesized a literal 'C:\\pm\\project' directory segment — the colon is reserved on Windows so mkdir fails; (2) tests/integration/cli.integration.spec.ts 'installs runtime dependencies for packed npm package extensions' returned install code 1 (npm.cmd shell-spawn / tar / hosted-SDK junction class, Windows-only); (3) the long-standing teardown 'Worker forks emitted error / Worker exited unexpectedly' (GH-348 / pm-2kkl) whose root cause is the telemetry detached flush spawn in src/core/telemetry/runtime.ts missing a child.on('error') handler — an async spawn failure becomes an unhandled error that crashes the vitest worker (the sibling search background-refresh spawn already had this guard). Fix bundle: platform-aware runtime-loader fixture, child.on('error') gate-release on the telemetry spawn mirroring background-refresh, spawn-mocked telemetry test (no real network-touching orphan child), install-failure diagnostics, and expanded per-PR windows-regression Node 24 guards covering all three classes."
+type: Issue
+status: in_progress
+priority: 1
+tags[7]: "area:ci","area:telemetry","area:tests",cross-platform,flake,node24,windows
+created_at: "2026-06-25T09:18:05.862Z"
+updated_at: "2026-06-25T09:18:21.256Z"
+assignee: claude-code-agent
+author: claude-code-agent
+parent: pm-u9d0
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-2kkl,related,"2026-06-25T09:18:17.307Z",null,null
+  pm-2p7a,related,"2026-06-25T09:18:18.144Z",null,null
+  pm-s5pe,related,"2026-06-25T09:18:19.123Z",null,null
+  pm-zpe7,related,"2026-06-25T09:18:20.173Z",null,null
+body: ""

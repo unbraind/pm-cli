@@ -1936,6 +1936,15 @@ function scheduleTelemetryFlush(globalPmRoot: string, endpoint: string, retentio
         [PM_TELEMETRY_FLUSH_CHILD_ENV]: "1",
       },
     });
+    // A detached spawn can fail asynchronously — the runtime cannot launch the
+    // executable (locked-down Windows runners, missing flush runner, EACCES).
+    // Node re-throws an 'error' event with no listener as an uncaught exception,
+    // which would crash the foreground CLI and, under the test runner, the
+    // vitest worker during teardown (GH-348). Flush is strictly best effort, so
+    // swallow the failure and release the spawn gate to permit a later retry.
+    child.on("error", () => {
+      releaseTelemetryFlushSpawnGate(globalPmRoot);
+    });
     child.unref();
   } catch {
     releaseTelemetryFlushSpawnGate(globalPmRoot);
