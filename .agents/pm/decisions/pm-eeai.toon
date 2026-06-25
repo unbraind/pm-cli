@@ -2,13 +2,25 @@ id: pm-eeai
 title: "ADR: explicit pm_format_version front-matter field for storage schema evolution"
 description: "Adopt an explicit, monotonically increasing item front-matter format version (pm_format_version) to gate future breaking storage migrations, replacing reliance on structural detection alone."
 type: Decision
-status: open
+status: closed
 priority: 2
 tags[3]: adr,"area:storage",migration
 created_at: "2026-06-21T01:28:04.296Z"
-updated_at: "2026-06-21T01:28:58.183Z"
+updated_at: "2026-06-25T17:45:52.601Z"
 author: claude-code-agent
 parent: pm-m2u1
+resolution: Accepted storage-format ADR; explicit pm_format_version remains implicit at baseline and gates future migrations through health/validate.
+expected_result: "Storage schema evolution has a documented, token-efficient per-item version gate without serializing baseline metadata."
+actual_result: docs/ARCHITECTURE.md documents the contract; linked health and validate commands passed in tracker context.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-ae1u,related,"2026-06-21T01:28:58.108Z",claude-code-agent,null
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node dist/cli.js health --check-only --summary --json,null,project,120,tracker,null,null,null,null,null,null,null,null,null,null,null
+  node dist/cli.js validate --check-resolution --check-history-drift --json,null,project,180,tracker,null,null,null,null,null,null,null,null,null,null,null
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqtsjygn-alr37o,test,failed,"2026-06-25T17:43:49.186Z","2026-06-25T17:43:50.327Z","2026-06-25T17:43:50.327Z",null,null,0,2,0,null,null,null
+  test-local-mqtsl64w-b41037,test,passed,"2026-06-25T17:44:28.557Z","2026-06-25T17:44:46.928Z","2026-06-25T17:44:46.928Z",null,null,2,0,0,null,null,null
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,Documents pm_format_version storage ADR and migration contract
+close_reason: "ADR accepted and already implemented: pm_format_version storage gating is documented and validated."
 body: "## Context\n\nTOON item front-matter had no explicit format/schema version. When a breaking front-matter change ships, there is no per-item gate to distinguish items needing migration from already-migrated items; `migrateItemFilesToFormat` relied on structural detection (file extension / presence of a legacy `.md` alternate). Tracked by pm-ae1u under the storage epic pm-o2kc. Related shipped work: legacy markdown→TOON migration (pm-w5j7), first-mutation auto-migration (pm-yvwt), legacy format gate (pm-z8bl) — all about the *file format* (md vs toon) and *settings* version, NOT a within-TOON front-matter schema version.\n\n## Decision\n\nAdd an explicit, monotonically increasing integer `pm_format_version` to item front-matter, owned by `core/item/item-format-version.ts` (`CURRENT_ITEM_FORMAT_VERSION`, `BASELINE_ITEM_FORMAT_VERSION`, `effectiveItemFormatVersion`, `classifyItemFormatVersion`, `scanItemFormatVersions`). Keep structural md→toon migration orthogonal.\n\nToken economy is a first-class constraint: the baseline version (1) is the implicit default and is NEVER serialized (`normalizeItemFormatVersion` drops it). The field only materializes once an item advances past the baseline. Absence therefore always means baseline — now and after future bumps. The entire current corpus gains zero bytes and zero git churn.\n\nSurfacing: `pm validate` gains a default `format_version` check (outdated => warn, ahead => error because validation cannot vouch for fields a newer pm wrote); `pm health` integrity check tallies `item_outdated_format_version` / `item_ahead_format_version`. Both resolve to remediation registry guidance (migration listing / pm upgrade).\n\n## Rationale\n\n- A version stamp makes future migration a per-item O(1) decision instead of a full-corpus structural re-parse.\n- Omitting the baseline keeps the agent-facing context minimal, honoring the project's token-efficiency mandate, while still providing a forward/backward safety gate.\n- The `ahead` guard protects against silent mishandling when an older pm reads items written by a newer pm (downgrade scenario).\n\n## Consequences\n\n- At the baseline version the outdated path is unreachable by construction (an effective version below 1 cannot occur); its per-item mapping in health is c8-ignored and covered by the pure unit tests of the helper. When `CURRENT_ITEM_FORMAT_VERSION` is bumped to 2, the outdated path activates and a migration that rewrites sub-current items must accompany the bump.\n- Parse validation only enforces shape (integer >= 1), never range, so reading is never bricked by an ahead version; range is advisory via health/validate.\n\n## Alternatives considered\n\n- Keep structural detection only: rejected — cannot stage multi-version migrations and cannot detect newer-than-runtime files.\n- Eagerly stamp every item at version 1: rejected — adds a line to all ~1100 items (token + churn cost) for zero present value."
