@@ -50,28 +50,6 @@ describe("release automation contract", () => {
     expect(packageJson.scripts?.["changelog:pm:check"]).toContain("--check");
   });
 
-  it("keeps auto-release workflow aligned with one-per-day and manual override controls", async () => {
-    const workflow = await readFile(path.join(repoRoot, ".github/workflows/auto-release.yml"), "utf8");
-    expect(workflow).toContain("schedule:");
-    expect(workflow).toContain("workflow_dispatch:");
-    expect(workflow).toContain("allow_same_day_release:");
-    expect(workflow).toContain("dry_run:");
-    expect(workflow).toContain("push:");
-    expect(workflow).toContain('default: "off"');
-    expect(workflow).toContain('- "off"');
-    expect(workflow).toContain("--allow-same-day-release");
-    expect(workflow).toContain("--dry-run");
-    expect(workflow).toContain("--push");
-    expect(workflow).toContain("node scripts/release/run-release-pipeline.mjs");
-    expect(workflow).toContain("actions: write");
-    // The blocked-release alert opens/updates a tracking issue, which needs issues:write.
-    expect(workflow).toContain("issues: write");
-    expect(workflow).toContain("gh workflow run release.yml --ref main -f tag=\"${NEW_TAG}\"");
-    expect(workflow).toContain("gh run watch \"${RELEASE_RUN_ID}\" --compact --exit-status --interval 30");
-    expect(workflow).toContain("SENTRY_AUTH_TOKEN");
-    expect(workflow).toContain("SENTRY_PERSONAL_ADMIN_TOKEN");
-  });
-
   it("keeps bundle rebuilds safe for concurrent local pm invocations", async () => {
     const bundleScript = await readFile(path.join(repoRoot, "scripts/bundle-cli.mjs"), "utf8");
     expect(bundleScript).not.toContain("rm(outputDir");

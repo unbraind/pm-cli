@@ -385,6 +385,9 @@ const COMMAND_ALIAS_TO_CANONICAL = new Map(
   ),
 );
 
+const COMMAND_NAMESPACE_DISPLAY_LIMIT = 10;
+const COMMAND_NAMESPACE_FALLBACK_LIMIT = 20;
+
 // Lifecycle subcommand flag contracts for `pm extension`. Only `init` differs
 // between extension and package: `pm package init` / `pm packages init`
 // additionally accept the package-only `--declarative` flag, so the package
@@ -1638,6 +1641,43 @@ export async function runContracts(
     .sort((left, right) => left.localeCompare(right));
   const commandNames = new Set(commandCatalog);
   if (selectedCommand && !commandNames.has(selectedCommand)) {
+    const namespaceChildren = commandCatalog.filter((command) =>
+      command.startsWith(`${selectedCommand} `),
+    );
+    if (namespaceChildren.length > 0) {
+      const displayedNamespaceChildren = namespaceChildren.slice(0, COMMAND_NAMESPACE_DISPLAY_LIMIT);
+      const hiddenNamespaceChildCount = namespaceChildren.length - displayedNamespaceChildren.length;
+      const displayedChildCommandList = hiddenNamespaceChildCount > 0
+        ? `${displayedNamespaceChildren.join(", ")}, and ${hiddenNamespaceChildCount} more`
+        : displayedNamespaceChildren.join(", ");
+      const fallbackCandidates = namespaceChildren.slice(0, COMMAND_NAMESPACE_FALLBACK_LIMIT);
+      const childCommandExamples = namespaceChildren
+        .slice(0, 5)
+        .map((command) => `pm contracts --command "${command}" --flags-only --json`);
+      const suggestedChildCommand = namespaceChildren[0];
+      throw new PmCliError(
+        `Command "${options.command}" is a command namespace. Choose a concrete child command: ${displayedChildCommandList}.`,
+        EXIT_CODE.USAGE,
+        {
+          code: "command_namespace",
+          required: "Use a concrete child command path listed under this namespace.",
+          why:
+            "Command groups expose help at the namespace root, but command flag contracts belong to executable child commands.",
+          examples: childCommandExamples,
+          nextSteps: [
+            `Retry with a child command, for example: ${childCommandExamples[0]}`,
+          ],
+          recovery: {
+            suggested_retry: `pm contracts --command "${suggestedChildCommand}" --flags-only --json`,
+            fallback_candidates: fallbackCandidates.map((command) => ({
+              source: "command_namespace",
+              command: `pm contracts --command "${command}" --flags-only --json`,
+              reason: `Child command under ${selectedCommand}`,
+            })),
+          },
+        },
+      );
+    }
     const packageHint = PACKAGE_OWNED_COMMAND_INSTALL_HINTS.get(selectedCommand);
     if (packageHint) {
       throw new PmCliError(

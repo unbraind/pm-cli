@@ -1870,6 +1870,149 @@ describe("contracts command runtime", () => {
     });
   });
 
+  it("rejects command namespace roots and suggests concrete child commands", async () => {
+    await withTempPmPath(async (context) => {
+      await writeTestExtension({
+        root: context.pmPath,
+        placement: "projectRoot",
+        directory: "changelog-namespace-contracts",
+        manifest: {
+          name: "changelog-namespace-contracts",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["commands", "schema"],
+        },
+        entryFilename: "index.mjs",
+        entrySource: [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerCommand({",
+          "      name: 'changelog generate',",
+          "      action: 'changelog-generate',",
+          "      flags: [{ long: '--output', value_name: 'file', value_type: 'string' }],",
+          "      run: () => ({ ok: true }),",
+          "    });",
+          "    api.registerCommand({",
+          "      name: 'changelog export',",
+          "      action: 'changelog-export',",
+          "      flags: [{ long: '--format', value_name: 'format', value_type: 'string' }],",
+          "      run: () => ({ ok: true }),",
+          "    });",
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+      });
+
+      await expect(
+        runContracts(
+          { command: "changelog", flagsOnly: true },
+          { ...GLOBAL_OPTIONS, path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        message:
+          'Command "changelog" is a command namespace. Choose a concrete child command: changelog export, changelog generate.',
+        exitCode: EXIT_CODE.USAGE,
+        context: expect.objectContaining({
+          code: "command_namespace",
+          required: "Use a concrete child command path listed under this namespace.",
+          why: expect.stringContaining("command flag contracts belong to executable child commands"),
+          examples: expect.arrayContaining([
+            'pm contracts --command "changelog export" --flags-only --json',
+            'pm contracts --command "changelog generate" --flags-only --json',
+          ]),
+          recovery: expect.objectContaining({
+            suggested_retry: 'pm contracts --command "changelog export" --flags-only --json',
+            fallback_candidates: expect.arrayContaining([
+              {
+                source: "command_namespace",
+                command: 'pm contracts --command "changelog generate" --flags-only --json',
+                reason: "Child command under changelog",
+              },
+            ]),
+          }),
+        }),
+      });
+
+      const childResult = await runContracts(
+        { command: "changelog generate", flagsOnly: true },
+        { ...GLOBAL_OPTIONS, path: context.pmPath },
+      );
+      expect(childResult.command_flags).toEqual([
+        expect.objectContaining({
+          command: "changelog generate",
+          provider: "extension",
+          flags: [expect.objectContaining({ flag: "--output" })],
+        }),
+      ]);
+    });
+  });
+
+  it("caps command namespace suggestions for large extension command groups", async () => {
+    await withTempPmPath(async (context) => {
+      const commandRegistrations = Array.from({ length: 25 }, (_entry, index) => {
+        const suffix = String(index).padStart(2, "0");
+        return [
+          "    api.registerCommand({",
+          `      name: 'bulk action-${suffix}',`,
+          `      action: 'bulk-action-${suffix}',`,
+          "      flags: [{ long: '--target', value_name: 'id', value_type: 'string' }],",
+          "      run: () => ({ ok: true }),",
+          "    });",
+        ].join("\n");
+      });
+      await writeTestExtension({
+        root: context.pmPath,
+        placement: "projectRoot",
+        directory: "bulk-namespace-contracts",
+        manifest: {
+          name: "bulk-namespace-contracts",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["commands", "schema"],
+        },
+        entryFilename: "index.mjs",
+        entrySource: [
+          "export default {",
+          "  activate(api) {",
+          ...commandRegistrations,
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+      });
+
+      let thrown: unknown;
+      try {
+        await runContracts(
+          { command: "bulk", flagsOnly: true },
+          { ...GLOBAL_OPTIONS, path: context.pmPath },
+        );
+      } catch (error: unknown) {
+        thrown = error;
+      }
+
+      expect(thrown).toBeInstanceOf(PmCliError);
+      const error = thrown as PmCliError;
+      const errorContext = error.context as {
+        recovery?: {
+          fallback_candidates?: Array<{ command: string }>;
+        };
+      };
+      expect(error.message).toContain("bulk action-00");
+      expect(error.message).toContain("bulk action-09");
+      expect(error.message).toContain("and 15 more");
+      expect(error.message).not.toContain("bulk action-10");
+      expect(errorContext.recovery?.fallback_candidates).toHaveLength(20);
+      expect(errorContext.recovery?.fallback_candidates?.at(0)?.command).toBe(
+        'pm contracts --command "bulk action-00" --flags-only --json',
+      );
+      expect(errorContext.recovery?.fallback_candidates?.at(-1)?.command).toBe(
+        'pm contracts --command "bulk action-19" --flags-only --json',
+      );
+    });
+  });
+
   it("rejects unknown action and command filters", async () => {
     await expect(
       runContracts({ action: "unknown-action" }, GLOBAL_OPTIONS),

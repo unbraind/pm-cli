@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { createScriptHarness } from "../../../helpers/scriptModule";
@@ -27,6 +28,10 @@ type PipelineModule = {
     skipCompatibility: boolean;
     skipTelemetrySentry: boolean;
   }) => { ok: boolean; telemetry_mode: string };
+  withReleasePushCredentials: (
+    options?: { env?: Record<string, string> } | null,
+    token?: string,
+  ) => { env?: Record<string, string> };
   pushReleaseRefs: (tagName: string, options?: { env?: Record<string, string> }) => { retried: boolean };
   runPipeline: () => void;
 };
@@ -463,6 +468,79 @@ describe("run-release-pipeline", () => {
         ["push", "--atomic", "origin", "HEAD", "v2026.6.18"],
         expect.objectContaining({ allowFailure: true }),
       );
+    });
+
+    it("scopes RELEASE_PUSH_TOKEN to git push without leaving it in child environments", async () => {
+      process.env.RELEASE_PUSH_TOKEN = "release-token";
+      const runCommand = vi.fn(() => ({ status: 0, stdout: "", stderr: "" }));
+      mockUtils(runCommand);
+
+      const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
+      expect(process.env.RELEASE_PUSH_TOKEN).toBeUndefined();
+      expect(mod.pushReleaseRefs("v2026.6.18", { env: { GIT_AUTHOR_NAME: "release-bot" } })).toEqual({
+        retried: false,
+      });
+      const expectedHeader = `Authorization: Basic ${Buffer.from(
+        "x-access-token:release-token",
+        "utf8",
+      ).toString("base64")}`;
+      expect(runCommand).toHaveBeenCalledWith(
+        "git",
+        ["push", "--atomic", "origin", "HEAD", "v2026.6.18"],
+        expect.objectContaining({
+          allowFailure: true,
+          env: {
+            GIT_AUTHOR_NAME: "release-bot",
+            GIT_CONFIG_COUNT: "1",
+            GIT_CONFIG_KEY_0: "http.https://github.com/.extraheader",
+            GIT_CONFIG_VALUE_0: expectedHeader,
+          },
+        }),
+      );
+      expect(mod.withReleasePushCredentials({ env: { GIT_AUTHOR_NAME: "release-bot" } }, "")).toEqual({
+        env: { GIT_AUTHOR_NAME: "release-bot" },
+      });
+      expect(mod.withReleasePushCredentials({}, "release-token")).toEqual({
+        env: {
+          GIT_CONFIG_COUNT: "1",
+          GIT_CONFIG_KEY_0: "http.https://github.com/.extraheader",
+          GIT_CONFIG_VALUE_0: expectedHeader,
+        },
+      });
+      expect(mod.withReleasePushCredentials(null, "release-token")).toEqual({
+        env: {
+          GIT_CONFIG_COUNT: "1",
+          GIT_CONFIG_KEY_0: "http.https://github.com/.extraheader",
+          GIT_CONFIG_VALUE_0: expectedHeader,
+        },
+      });
+      expect(mod.withReleasePushCredentials({ env: { GIT_CONFIG_COUNT: "not-a-number" } }, "release-token")).toEqual({
+        env: {
+          GIT_CONFIG_COUNT: "1",
+          GIT_CONFIG_KEY_0: "http.https://github.com/.extraheader",
+          GIT_CONFIG_VALUE_0: expectedHeader,
+        },
+      });
+      expect(
+        mod.withReleasePushCredentials(
+          {
+            env: {
+              GIT_CONFIG_COUNT: "1",
+              GIT_CONFIG_KEY_0: "safe.directory",
+              GIT_CONFIG_VALUE_0: "/workspace/pm-cli",
+            },
+          },
+          "release-token",
+        ),
+      ).toEqual({
+        env: {
+          GIT_CONFIG_COUNT: "2",
+          GIT_CONFIG_KEY_0: "safe.directory",
+          GIT_CONFIG_VALUE_0: "/workspace/pm-cli",
+          GIT_CONFIG_KEY_1: "http.https://github.com/.extraheader",
+          GIT_CONFIG_VALUE_1: expectedHeader,
+        },
+      });
     });
 
     it("aborts and fails when release push rebase cannot replay cleanly", async () => {

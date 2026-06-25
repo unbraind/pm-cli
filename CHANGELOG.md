@@ -19,6 +19,7 @@
 
 ### Fixed
 
+- Contracts command lookup should handle package namespace roots ([pm-y1o4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y1o4.toon))
 - GH-363: Windows nightly (Node 24) red — runtime-loader colon-path + telemetry detached-spawn unhandled error + npm-install regression ([pm-xaib](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xaib.toon))
 - Auto Release blocked-alert step can never create its tracking issue (auto-release.yml missing issues:write) ([pm-qawd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qawd.toon))
 - Sentry PM-CLI-1T: pm stats should tolerate disappearing history streams ([pm-7o0s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7o0s.toon))

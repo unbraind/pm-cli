@@ -55,6 +55,10 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
+          # Do not persist the elevated release token through checkout or
+          # dependency installation. run-release-pipeline scopes RELEASE_PAT to
+          # the git push process only.
+          persist-credentials: false
 
       - name: Setup pnpm
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
@@ -106,6 +110,8 @@ jobs:
           INPUT_PUSH: ${{ github.event_name == 'workflow_dispatch' && (inputs.push && 'true' || 'false') || 'true' }}
           INPUT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && (inputs.dry_run && 'true' || 'false') || 'false' }}
           INPUT_TELEMETRY_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.telemetry_mode || 'off' }}
+          RELEASE_PAT_CONFIGURED: ${{ secrets.RELEASE_PAT != '' }}
+          RELEASE_PUSH_TOKEN: ${{ secrets.RELEASE_PAT || github.token }}
           GH_TOKEN: ${{ github.token }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_PERSONAL_ADMIN_TOKEN: ${{ secrets.SENTRY_PERSONAL_ADMIN_TOKEN }}
@@ -114,6 +120,11 @@ jobs:
           if [[ "${INPUT_DRY_RUN}" == "true" && "${INPUT_PUSH}" == "true" ]]; then
             echo "dry_run=true cannot be combined with push=true"
             exit 2
+          fi
+          if [[ "${INPUT_PUSH}" == "true" && "${INPUT_DRY_RUN}" != "true" && ( "${RELEASE_PAT_CONFIGURED}" != "true" || -z "${RELEASE_PUSH_TOKEN//[[:space:]]/}" ) ]]; then
+            echo "RELEASE_PAT is required before Auto Release can push the checked version commit/tag to protected main."
+            echo "Create a release environment secret from a maintainer token with contents:write and branch-protection bypass rights."
+            exit 1
           fi
           if [[ "${INPUT_PUSH}" == "true" && "${INPUT_DRY_RUN}" != "true" && -z "${SENTRY_PERSONAL_ADMIN_TOKEN:-}" ]]; then
             echo "SENTRY_PERSONAL_ADMIN_TOKEN is required before Auto Release can create a version commit/tag."
@@ -172,7 +183,11 @@ jobs:
           Run: ${RUN_URL}
           Commit: ${RELEASE_SHA}
 
-          A common cause is the Sentry/telemetry reliability gate blocking on an unresolved fatal/error issue inside its recent-activity window (\`--sentry-window-days\`). Resolve the issue in Sentry (or inspect the gate's \`blocking_short_ids\`), then re-run Auto Release. This issue is auto-updated so blocked daily releases are never silently skipped."
+          Common causes:
+          - \`RELEASE_PAT\` is missing from the release environment, so Auto Release cannot push its checked version commit/tag to protected \`main\`.
+          - The Sentry/telemetry reliability gate blocked on an unresolved fatal/error issue inside its recent-activity window (\`--sentry-window-days\`).
+
+          Configure the release push token or resolve the gate's \`blocking_short_ids\`, then re-run Auto Release. This issue is auto-updated so blocked daily releases are never silently skipped."
 
           if [[ -n "${existing_issue}" ]]; then
             gh issue comment "${existing_issue}" --body "${body}"
