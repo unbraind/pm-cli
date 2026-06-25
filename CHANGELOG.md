@@ -4,6 +4,7 @@
 
 ### Added
 
+- First-party baseline profile package built on public SDK primitives ([pm-a7o4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-a7o4.toon))
 - Project profile presets: compose types, statuses, fields, workflows, templates, and packages ([pm-v37g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-v37g.toon))
 - Add pm package / pm packages shell completion (bash/zsh/fish), including the package-only --declarative flag ([pm-mthy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mthy.toon))
 - pm package init --declarative: scaffold a composeExtension blueprint starter + author-time preflight test ([pm-8mxg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-8mxg.toon))
@@ -19,6 +20,7 @@
 
 ### Fixed
 
+- pm install does not scaffold extension-contributed item-type folders (transient missing_directory health warning) ([pm-rjab](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rjab.toon))
 - Contracts command lookup should handle package namespace roots ([pm-y1o4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y1o4.toon))
 - GH-363: Windows nightly (Node 24) red — runtime-loader colon-path + telemetry detached-spawn unhandled error + npm-install regression ([pm-xaib](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xaib.toon))
 - Auto Release blocked-alert step can never create its tracking issue (auto-release.yml missing issues:write) ([pm-qawd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qawd.toon))

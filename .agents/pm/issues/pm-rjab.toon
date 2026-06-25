@@ -2,16 +2,19 @@ id: pm-rjab
 title: pm install does not scaffold extension-contributed item-type folders (transient missing_directory health warning)
 description: "Installing a package that registers custom item types (schema capability) leaves a transient `missing_directory:<folder>` warning in `pm health` (ok=false) until the first item of that type is created. `pm schema add-type` and `pm profile apply` both call ensureTypeFolderScaffold when a type becomes available, but raw `pm install`/activation did not — so a freshly-installed schema package degraded health."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: "area:extensions","area:packages",dogfood,health,install
 created_at: "2026-06-25T15:23:05.242Z"
-updated_at: "2026-06-25T15:23:44.889Z"
-assignee: claude-code-agent
+updated_at: "2026-06-25T15:51:55.166Z"
 author: claude-code-agent
 parent: pm-ugqx
+resolution: "Fixed in PR #367: pm install (project scope) scaffolds the folders for item types the installed package contributes, via ensureTypeFolderScaffold after the activation probe."
+expected_result: "After installing a schema package that adds an item type, pm health is green (the type's folder exists, matching pm schema add-type / pm profile apply)."
+actual_result: "Before the fix, a fresh install left a transient missing_directory:<folder> warning (health ok=false) until the first item of the type was created; after the fix the folder is scaffolded on install."
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-a7o4,related,"2026-06-25T15:23:28.914Z",null,null
   pm-hl9y,related,"2026-06-25T15:23:37.895Z",null,null
   pm-halx,related,"2026-06-25T15:23:38.453Z",null,null
+close_reason: "Shipped in PR #367 (squash 98324629). pm install (project scope) now scaffolds folders for item types the installed package contributes, matching pm schema add-type / pm profile apply, so a freshly-installed schema package keeps pm health green (no transient missing_directory warning). Verified by manual dogfood + new install-scaffolds-folders unit test; 100% coverage retained."
 body: "## Root cause\nThe health `directories` check (`src/cli/commands/health.ts`) treats every registered item-type folder as REQUIRED. `pm schema add-type` (schema.ts:540) and `pm profile apply` (schema.ts:1540/1668) both call `ensureTypeFolderScaffold` so the folder exists when the type is registered. `pm install` was the only path that registered types (via extension activation) without scaffolding their folders.\n\n## Discovery\nSurfaced while dogfooding the first-party `pm-kanban` archetype package (pm-a7o4) — the first bundled package to contribute an item type. `pm install kanban --project` followed by `pm health` reported `missing_directory:cards`.\n\n## Fix\n`runExtension` install action now scaffolds folders for the installed package's item types after the runtime activation probe, scoped to project installs (where pm_root is unambiguously the tracker). `probeRuntimeCommandPathsForInstall` was extended to return `registrations.item_types`.\n\n## Verification\nManual temp-dir dogfood: `pm install kanban --project` → `cards/` created → `pm health` ok=true with zero warnings, before any Card is created. New unit test asserts the folder is scaffolded on install."
