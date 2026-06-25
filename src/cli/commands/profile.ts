@@ -429,9 +429,15 @@ export async function runProfileApply(
       await runTemplatesSave(change.name, { ...change.options }, global);
     }
   } finally {
-    // Release in reverse acquisition order; only locks actually acquired are present.
+    // Release in reverse acquisition order; only locks actually acquired are
+    // present. Each release is best-effort so one rejecting release never strands
+    // the remaining locks (a failed release falls back to TTL expiry).
     for (const release of releasers.reverse()) {
-      await release();
+      try {
+        await release();
+      } catch {
+        // Ignore: a failed lock release is non-fatal and self-heals at TTL.
+      }
     }
   }
 
