@@ -20,6 +20,7 @@ import { levenshteinDistanceWithinLimit } from "../../core/shared/levenshtein.js
 import { nowIso } from "../../core/shared/time.js";
 import { resolveGlobalPmRoot, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings, writeSettings } from "../../core/store/settings.js";
+import { ensureTypeFolderScaffold } from "./schema.js";
 import type { PmSettings } from "../../types/index.js";
 // Cohesive helper groups now live in ./extension/* sibling modules. They are
 // imported for the command wiring that stays here and re-exported below so
@@ -1001,7 +1002,12 @@ async function probeRuntimeCommandPathsForInstall(
   settings: PmSettings,
   refreshedInstalled: ManagedExtensionSummary[],
   global: GlobalOptions,
-): Promise<{ installed: ManagedExtensionSummary[]; warnings: string[]; activation_failures: ActivationFailureDiagnostic[] }> {
+): Promise<{
+  installed: ManagedExtensionSummary[];
+  warnings: string[];
+  activation_failures: ActivationFailureDiagnostic[];
+  item_type_registrations: Awaited<ReturnType<typeof activateExtensions>>["registrations"]["item_types"];
+}> {
   const loadResult = await loadExtensions({
     pmRoot,
     settings,
@@ -1018,6 +1024,7 @@ async function probeRuntimeCommandPathsForInstall(
     installed: applyDoctorRuntimeActivationState(refreshedInstalled, loadResult, activationResult),
     warnings: [...loadResult.warnings, ...activationResult.warnings],
     activation_failures: collectActivationFailureDiagnostics(activationResult.failed),
+    item_type_registrations: activationResult.registrations.item_types,
   };
 }
 
@@ -1613,6 +1620,20 @@ export async function runExtension(
           global,
         );
         warnings.push(...runtimeProbe.warnings);
+        // Scaffold the folders for any item types the installed package contributes
+        // so the tracker is immediately healthy — matching `pm schema add-type` and
+        // `pm profile apply`, the other paths that register a type. Without this a
+        // freshly-installed schema package leaves a `missing_directory` health
+        // warning until the first item of its type is created. Scoped to project
+        // installs, where `pm_root` is unambiguously the tracker the type folders
+        // belong to; a global install is not tied to one tracker, so its folders are
+        // created lazily on first use in each project.
+        const installedItemTypeDefinitions = runtimeProbe.item_type_registrations
+          .filter((entry) => normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(validated.manifest.name))
+          .flatMap((entry) => entry.types.map((type) => ({ name: type.name, folder: type.folder })));
+        if (scope === "project" && installedItemTypeDefinitions.length > 0) {
+          await ensureTypeFolderScaffold(resolvedRoots.pm_root, installedItemTypeDefinitions, warnings, "install:type-folder");
+        }
         const commandSummary = summarizeRuntimeCommandPathsForExtension(validated.manifest.name, runtimeProbe.installed);
         const installActivationFailure = findActivationFailureByName(
           validated.manifest.name,

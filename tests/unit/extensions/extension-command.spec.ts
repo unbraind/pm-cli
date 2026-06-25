@@ -2791,6 +2791,21 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("scaffolds contributed item-type folders when installing a schema package", async () => {
+    await withTempPmPath(async (context) => {
+      const kanbanInstall = await runExtension("kanban", { install: true, project: true }, { path: context.pmPath });
+      expect(kanbanInstall.details).toMatchObject({
+        extension: { name: "builtin-kanban-profile" },
+        source: { kind: "builtin", input: "kanban", location: "kanban", name: "kanban" },
+        activated: true,
+      });
+      // The Card type's folder is scaffolded on install (matching add-type and
+      // profile apply) so the tracker stays healthy before the first card exists.
+      const pmEntries = await readdir(context.pmPath);
+      expect(pmEntries).toContain("cards");
+    });
+  });
+
   it("installs bundled first-party package aliases via extension install", async () => {
     await withTempPmPath(async (context) => {
       const beadsInstall = await runExtension("beads", { install: true, project: true }, { path: context.pmPath });
@@ -3062,7 +3077,7 @@ describe("extension command runtime", () => {
       const beforeInstall = await runExtension(undefined, { catalog: true, project: true, vocabulary: "package" }, { path: context.pmPath });
       expect(beforeInstall.action).toBe("catalog");
       expect(beforeInstall.details).toMatchObject({
-        total: 10,
+        total: 11,
         scope: "project",
         installable_resource_kinds: ["extensions"],
         metadata_only_resource_kinds: ["docs", "examples", "assets", "prompts"],
@@ -3122,6 +3137,16 @@ describe("extension command runtime", () => {
             catalog: {
               display_name: "Guide + Shell UX",
               category: "workflow",
+            },
+          },
+          {
+            alias: "kanban",
+            available: true,
+            installed: false,
+            package_name: "@unbrained/pm-kanban",
+            catalog: {
+              display_name: "Kanban Archetype",
+              category: "sdk",
             },
           },
           {
@@ -3405,7 +3430,7 @@ describe("extension command runtime", () => {
       const wildcardInstall = await runExtension("*", { install: true, project: true }, { path: context.pmPath });
       expect(wildcardInstall.details).toMatchObject({
         installed_all: true,
-        installed_count: 10,
+        installed_count: 11,
         packages: [
           {
             alias: "beads",
@@ -3443,6 +3468,11 @@ describe("extension command runtime", () => {
             activated: true,
           },
           {
+            alias: "kanban",
+            extension: { name: "builtin-kanban-profile" },
+            activated: true,
+          },
+          {
             alias: "lifecycle-hooks",
             extension: { name: "builtin-lifecycle-hooks" },
             activated: true,
@@ -3473,7 +3503,7 @@ describe("extension command runtime", () => {
       const allInstall = await runExtension("all", { install: true, project: true }, { path: context.pmPath });
       expect(allInstall.details).toMatchObject({
         installed_all: true,
-        installed_count: 10,
+        installed_count: 11,
       });
     });
   });

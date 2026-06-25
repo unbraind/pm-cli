@@ -32,11 +32,10 @@ Bundled first-party packages live under `packages/pm-*`:
 
 ```bash
 pm package catalog --project
-pm install '*' --project
 pm install all --project
 pm install calendar --project
 pm install search-advanced --project
-pm install governance-audit --project
+pm install kanban --project
 ```
 
 `pm install '*'`, `pm install all`, and shell-expanded `pm install *` are normalized to the same bundled install-all request. First-party package aliases come from each package manifest, with a fallback derived from the `packages/pm-*` directory name.
@@ -223,6 +222,7 @@ First-party package exemplars:
 - `pm-command-kit`: command capability exemplar for `registerCommand`, `registerFlags`, and `registerParser`.
 - `pm-governance-audit`: governance hook exemplar for compact read/write sidecar logs.
 - `pm-guide-shell`: guide-topic package for bundled workflow docs.
+- `pm-kanban`: archetype exemplar shipping a complete Kanban continuous-flow profile (Card type, flow fields, and a `ProjectProfileDefinition`) on public SDK primitives.
 - `pm-lifecycle-hooks`: default-inert lifecycle hook registration.
 - `pm-linked-test-adapters`: linked-test run-management adapters and reporters.
 - `pm-search-advanced`: deterministic local search provider registration.

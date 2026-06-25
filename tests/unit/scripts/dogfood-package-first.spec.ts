@@ -132,9 +132,9 @@ function buildSpawnSync(overrides: Overrides = {}) {
       if (sub === "catalog") {
         return pmJson({
           details: {
-            total: 9,
+            total: 10,
             packages: [
-              "beads", "calendar", "governance-audit", "guide-shell", "lifecycle-hooks",
+              "beads", "calendar", "governance-audit", "guide-shell", "kanban", "lifecycle-hooks",
               "linked-test-adapters", "search-advanced", "templates", "todos",
             ].map((alias) => ({ alias })),
           },

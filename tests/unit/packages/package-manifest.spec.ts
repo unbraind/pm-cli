@@ -311,6 +311,7 @@ describe("pm package manifest model", () => {
     const commandKitRoot = path.join(repoRoot, "packages", "pm-command-kit");
     const governanceAuditRoot = path.join(repoRoot, "packages", "pm-governance-audit");
     const guideShellRoot = path.join(repoRoot, "packages", "pm-guide-shell");
+    const kanbanRoot = path.join(repoRoot, "packages", "pm-kanban");
     const lifecycleHooksRoot = path.join(repoRoot, "packages", "pm-lifecycle-hooks");
     const linkedTestAdaptersRoot = path.join(repoRoot, "packages", "pm-linked-test-adapters");
     const searchAdvancedRoot = path.join(repoRoot, "packages", "pm-search-advanced");
@@ -400,6 +401,23 @@ describe("pm package manifest model", () => {
     });
     await expect(collectPackageExtensionDirectories(guideShellRoot)).resolves.toEqual([
       path.join(guideShellRoot, "extensions", "guide-shell"),
+    ]);
+
+    await expect(readPmPackageManifest(kanbanRoot)).resolves.toMatchObject({
+      source: "pm",
+      package_name: "@unbrained/pm-kanban",
+      package_version: "0.1.0",
+      aliases: ["kanban"],
+      catalog: {
+        display_name: "Kanban Archetype",
+        category: "sdk",
+      },
+      resources: {
+        extensions: ["extensions/kanban"],
+      },
+    });
+    await expect(collectPackageExtensionDirectories(kanbanRoot)).resolves.toEqual([
+      path.join(kanbanRoot, "extensions", "kanban"),
     ]);
 
     await expect(readPmPackageManifest(lifecycleHooksRoot)).resolves.toMatchObject({
@@ -493,6 +511,7 @@ describe("pm package manifest model", () => {
       commandKitRoot,
       governanceAuditRoot,
       guideShellRoot,
+      kanbanRoot,
       lifecycleHooksRoot,
       linkedTestAdaptersRoot,
       searchAdvancedRoot,
@@ -523,6 +542,8 @@ describe("pm package manifest model", () => {
     await expect(access(path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "index.ts"))).resolves
       .toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "runtime.ts"))).resolves
+      .toBeUndefined();
+    await expect(access(path.join(repoRoot, "packages", "pm-kanban", "extensions", "kanban", "index.ts"))).resolves
       .toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-lifecycle-hooks", "extensions", "lifecycle-hooks", "index.ts"))).resolves
       .toBeUndefined();
@@ -710,6 +731,7 @@ describe("pm package manifest model", () => {
       path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "runtime.ts"),
       path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "index.ts"),
       path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "runtime.ts"),
+      path.join(repoRoot, "packages", "pm-kanban", "extensions", "kanban", "index.ts"),
       path.join(repoRoot, "packages", "pm-lifecycle-hooks", "extensions", "lifecycle-hooks", "index.ts"),
       path.join(repoRoot, "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters", "index.ts"),
       path.join(repoRoot, "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters", "runtime.ts"),
