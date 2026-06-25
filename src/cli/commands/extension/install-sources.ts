@@ -7,7 +7,7 @@ import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { collectPackageExtensionDirectories } from "../../../core/packages/manifest.js";
 import { resolvePmPackageRootFromModule } from "../../../core/packages/root.js";
@@ -341,7 +341,11 @@ async function resolveLocalNpmPackagePath(spec: string): Promise<string | null> 
 async function resolveNpmPackSpec(spec: string): Promise<string> {
   const localPath = await resolveLocalNpmPackagePath(spec);
   if (localPath) {
-    return pathToFileURL(localPath).href;
+    // Hand npm pack a NATIVE filesystem path, never a percent-encoded file URL:
+    // npm opens the spec literally, so spaces (`%20`) or a Windows 8.3 `~` short
+    // name (`%7E`) escaped by pathToFileURL make pack fail ENOENT on every
+    // platform (GH-363). resolveLocalNpmPackagePath already decoded the path.
+    return localPath;
   }
 
   const localFileAlias = normalizeNpmLocalFileAliasSpec(spec);
@@ -367,11 +371,21 @@ export function normalizeNpmLocalFileAliasSpec(spec: string, cwd: string = proce
   }
   const packageName = spec.slice(0, markerIndex);
   const target = spec.slice(markerIndex + marker.length);
-  if (packageName.trim().length === 0 || target.trim().length === 0 || target.startsWith("//")) {
+  if (packageName.trim().length === 0 || target.trim().length === 0) {
     return spec;
   }
-  const absolutePath = path.isAbsolute(target) || path.win32.isAbsolute(target) ? target : path.resolve(cwd, target);
-  return `${packageName}@${pathToFileURL(absolutePath).href}`;
+  // `file://host/share` (exactly two leading slashes) is a UNC / network spec,
+  // not a local path — leave it for npm to resolve.
+  if (target.startsWith("//") && !target.startsWith("///")) {
+    return spec;
+  }
+  // Resolve to a NATIVE filesystem path (never a percent-encoded file URL): npm
+  // opens the alias target literally, so an escaped path — spaces (`%20`) or a
+  // Windows 8.3 `~` short name escaped to `%7E` — fails ENOENT on every platform
+  // (GH-363). `file:///abs` and `file:/abs` are absolute URLs decoded via
+  // fileURLToPath; a bare relative target resolves against cwd.
+  const absolutePath = target.startsWith("/") ? fileURLToPath(`file:${target}`) : path.resolve(cwd, target);
+  return `${packageName}@${absolutePath}`;
 }
 
 function parsePackedNpmPackage(stdout: string, packDirectory: string): { tarball: string; package?: string; version?: string } {

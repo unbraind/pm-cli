@@ -1597,8 +1597,11 @@ describe("extension command runtime", () => {
       const cwd = process.cwd();
       process.chdir(tempRoot);
       try {
+        // resolveNpmPackSpec hands npm pack NATIVE filesystem paths (never
+        // percent-encoded file URLs) so spaces / Windows 8.3 `~` short names do
+        // not survive into the literal path npm opens (GH-363).
         const resolvedRelativePackSpec = await _testOnlyInstallSources.resolveNpmPackSpec("./package-root");
-        await expect(realpath(fileURLToPath(resolvedRelativePackSpec))).resolves.toBe(await realpath(packageRoot));
+        await expect(realpath(resolvedRelativePackSpec)).resolves.toBe(await realpath(packageRoot));
         await expect(_testOnlyInstallSources.resolveNpmPackSpec("./missing-package-root")).resolves.toBe(
           "./missing-package-root",
         );
@@ -1607,15 +1610,21 @@ describe("extension command runtime", () => {
           "alias@file://server/share",
         );
         const resolvedFileUrlPackSpec = await _testOnlyInstallSources.resolveNpmPackSpec(pathToFileURL(packageRoot).href);
-        await expect(realpath(fileURLToPath(resolvedFileUrlPackSpec))).resolves.toBe(await realpath(packageRoot));
+        await expect(realpath(resolvedFileUrlPackSpec)).resolves.toBe(await realpath(packageRoot));
         const missingFileUrlSpec = pathToFileURL(path.join(tempRoot, "missing-file-url-package")).href;
         await expect(_testOnlyInstallSources.resolveNpmPackSpec(missingFileUrlSpec)).resolves.toBe(missingFileUrlSpec);
         await expect(_testOnlyInstallSources.resolveNpmPackSpec("alias@file:./package-root")).resolves.toBe(
-          `alias@${pathToFileURL(packageRoot).href}`,
+          `alias@${packageRoot}`,
         );
         expect(normalizeNpmLocalFileAliasSpec("alias@file:/tmp/pm-absolute-path")).toBe(
-          `alias@${pathToFileURL("/tmp/pm-absolute-path").href}`,
+          `alias@${fileURLToPath("file:///tmp/pm-absolute-path")}`,
         );
+        // GH-363 regression: a percent-encoded file URL alias (a space, or the
+        // Windows 8.3 `~` short name pathToFileURL escapes to %7E) must decode to
+        // a native path so npm pack opens a real file instead of failing ENOENT.
+        const encodedSpaceUrl = "file:///opt/pm%20space%7Eshort/pkg";
+        expect(normalizeNpmLocalFileAliasSpec(`alias@${encodedSpaceUrl}`)).toBe(`alias@${fileURLToPath(encodedSpaceUrl)}`);
+        expect(normalizeNpmLocalFileAliasSpec(`alias@${encodedSpaceUrl}`)).not.toContain("%");
         await expect(_testOnlyInstallSources.resolveNpmPackSpec("https://registry.example/pkg.tgz")).resolves.toBe(
           "https://registry.example/pkg.tgz",
         );
@@ -4084,8 +4093,10 @@ describe("extension command runtime", () => {
       );
 
       process.chdir(tempRoot);
+      // The alias resolves to a NATIVE absolute path (never a percent-encoded
+      // file URL) so npm pack opens a real path on every platform (GH-363).
       expect(normalizeNpmLocalFileAliasSpec("pm-file-alias-package@file:packages/file-alias-package")).toMatch(
-        /^pm-file-alias-package@file:\/\//,
+        /^pm-file-alias-package@.*[/\\]packages[/\\]file-alias-package$/,
       );
       const source = parseExtensionInstallSource("npm:pm-file-alias-package@file:packages/file-alias-package");
       expect(source.kind).toBe("npm");
