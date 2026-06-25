@@ -32,6 +32,39 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const PRIVATE_TEST_IP = ["192", "168", "42", "17"].join(".");
 const TEST_LOCAL_PATH = ["/home", "example", "private", "path"].join("/");
 
+/**
+ * Environment variables the non-inline flush-scheduler tests mutate. Snapshotted
+ * and restored per test so a deleted/overwritten value never leaks into a
+ * sibling test (CodeRabbit) — the suite afterEach also resets these, but the
+ * snapshot keeps each scheduler test self-contained.
+ */
+const SCHEDULER_TEST_ENV_KEYS = [
+  "VITEST",
+  "VITEST_WORKER_ID",
+  "NODE_ENV",
+  "PM_GLOBAL_PATH",
+  "PM_TELEMETRY_INLINE_FLUSH",
+  "PM_TELEMETRY_FLUSH_CHILD",
+] as const;
+
+/**
+ * Captures the current values of {@link SCHEDULER_TEST_ENV_KEYS} and returns a
+ * restore function that resets each key to its captured value (deleting keys
+ * that were originally absent).
+ */
+function snapshotEnv(keys: readonly string[]): () => void {
+  const snapshot = new Map(keys.map((key) => [key, process.env[key]]));
+  return () => {
+    for (const [key, value] of snapshot) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+  };
+}
+
 function telemetryQueuePath(globalRoot: string): string {
   return path.join(globalRoot, "runtime", "telemetry", "events.jsonl");
 }
@@ -1712,9 +1745,7 @@ describe("core/telemetry/runtime", () => {
     try {
       const runtime = await import("../../../../src/core/telemetry/runtime.js");
       await withTempGlobalRoot(async (globalRoot) => {
-        const originalVitest = process.env.VITEST;
-        const originalVitestWorker = process.env.VITEST_WORKER_ID;
-        const originalNodeEnv = process.env.NODE_ENV;
+        const restoreEnv = snapshotEnv(SCHEDULER_TEST_ENV_KEYS);
         try {
           delete process.env.PM_TELEMETRY_INLINE_FLUSH;
           delete process.env.PM_TELEMETRY_FLUSH_CHILD;
@@ -1752,21 +1783,7 @@ describe("core/telemetry/runtime", () => {
             }),
           ).resolves.toBeNull();
         } finally {
-          if (originalVitest === undefined) {
-            delete process.env.VITEST;
-          } else {
-            process.env.VITEST = originalVitest;
-          }
-          if (originalVitestWorker === undefined) {
-            delete process.env.VITEST_WORKER_ID;
-          } else {
-            process.env.VITEST_WORKER_ID = originalVitestWorker;
-          }
-          if (originalNodeEnv === undefined) {
-            delete process.env.NODE_ENV;
-          } else {
-            process.env.NODE_ENV = originalNodeEnv;
-          }
+          restoreEnv();
         }
       });
     } finally {
@@ -1789,9 +1806,7 @@ describe("core/telemetry/runtime", () => {
     try {
       const runtime = await import("../../../../src/core/telemetry/runtime.js");
       await withTempGlobalRoot(async (globalRoot) => {
-        const originalVitest = process.env.VITEST;
-        const originalVitestWorker = process.env.VITEST_WORKER_ID;
-        const originalNodeEnv = process.env.NODE_ENV;
+        const restoreEnv = snapshotEnv(SCHEDULER_TEST_ENV_KEYS);
         try {
           delete process.env.PM_TELEMETRY_INLINE_FLUSH;
           delete process.env.PM_TELEMETRY_FLUSH_CHILD;
@@ -1811,21 +1826,7 @@ describe("core/telemetry/runtime", () => {
             code: "ENOENT",
           });
         } finally {
-          if (originalVitest === undefined) {
-            delete process.env.VITEST;
-          } else {
-            process.env.VITEST = originalVitest;
-          }
-          if (originalVitestWorker === undefined) {
-            delete process.env.VITEST_WORKER_ID;
-          } else {
-            process.env.VITEST_WORKER_ID = originalVitestWorker;
-          }
-          if (originalNodeEnv === undefined) {
-            delete process.env.NODE_ENV;
-          } else {
-            process.env.NODE_ENV = originalNodeEnv;
-          }
+          restoreEnv();
         }
       });
     } finally {
