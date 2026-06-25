@@ -109,6 +109,41 @@ describe("extension command runtime", () => {
     expect(extensionCommandTestOnly.resolveAction(undefined, {})).toBe("explore");
     expect(() => extensionCommandTestOnly.resolveAction("target", { install: true, manage: true })).toThrow(/mutually exclusive/);
     expect(() => extensionCommandTestOnly.resolveAction("target", {})).toThrow(/One action flag is required/);
+    expect(() => extensionCommandTestOnly.resolveAction("install", {})).toThrow(/One action flag is required/);
+    expect(() => extensionCommandTestOnly.resolveAction("descirbe", { vocabulary: "extension" })).toThrow(
+      'Unknown extension lifecycle action "descirbe". Did you mean "describe"?',
+    );
+    expect(() => extensionCommandTestOnly.resolveAction("insta", { vocabulary: "package" })).toThrow(
+      'Unknown package lifecycle action "insta". Did you mean "install"?',
+    );
+    expect(() => extensionCommandTestOnly.resolveAction("lis", { vocabulary: "package" })).toThrow(
+      'Unknown package lifecycle action "lis". Did you mean "list"?',
+    );
+    expect(() => extensionCommandTestOnly.resolveAction("unistall", { vocabulary: "extension" })).toThrow(
+      'Unknown extension lifecycle action "unistall". Did you mean "uninstall"?',
+    );
+
+    let unknownPackageActionError: unknown;
+    try {
+      extensionCommandTestOnly.resolveAction("catalogx", { vocabulary: "package" });
+    } catch (error) {
+      unknownPackageActionError = error;
+    }
+    expect(unknownPackageActionError).toMatchObject({
+      context: {
+        code: "unknown_lifecycle_action",
+        recovery: {
+          suggested_retry: "pm package catalog",
+          fallback_candidates: [
+            {
+              source: "lifecycle_action",
+              command: "pm package catalog",
+              reason: 'nearest lifecycle action for "catalogx"',
+            },
+          ],
+        },
+      },
+    });
     expect(extensionCommandTestOnly.resolveScope({ project: true })).toBe("project");
     expect(extensionCommandTestOnly.resolveScope({ local: true })).toBe("project");
     expect(extensionCommandTestOnly.resolveScope({ global: true })).toBe("global");

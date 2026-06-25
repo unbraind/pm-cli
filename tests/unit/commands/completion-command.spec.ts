@@ -25,6 +25,8 @@ describe("generateBashScript", () => {
     for (const cmd of [
       "init",
       "extension",
+      "package",
+      "packages",
       "create",
       "get",
       "update",
@@ -306,9 +308,47 @@ describe("generateBashScript", () => {
 
   it("includes extension doctor strict flags in bash completion", () => {
     const script = generateBashScript();
-    expect(script).toContain(
-      "--init --scaffold --capability --install --uninstall --explore --manage --describe --reload --watch --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn",
-    );
+    expect(script).toContain("extension)");
+    for (const flag of [
+      "--init",
+      "--scaffold",
+      "--capability",
+      "--install",
+      "--uninstall",
+      "--explore",
+      "--manage",
+      "--describe",
+      "--reload",
+      "--watch",
+      "--doctor",
+      "--catalog",
+      "--adopt",
+      "--adopt-all",
+      "--activate",
+      "--deactivate",
+      "--project",
+      "--local",
+      "--global",
+      "--gh",
+      "--github",
+      "--ref",
+      "--detail",
+      "--trace",
+      "--runtime-probe",
+      "--fix-managed-state",
+      "--strict-exit",
+      "--fail-on-warn",
+    ]) {
+      expect(script).toContain(flag);
+    }
+  });
+
+  it("includes package lifecycle completions in bash with package-only declarative scaffolding", () => {
+    const script = generateBashScript();
+    expect(script).toContain("package|packages)");
+    expect(script).toContain("init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate");
+    expect(script).toContain("--declarative");
+    expect(script).toContain("--catalog");
   });
 
   it("includes fail-on-empty-test-run in bash test completions", () => {
@@ -528,6 +568,8 @@ describe("generateZshScript", () => {
     const script = generateZshScript();
     expect(script).toContain("init:Initialize");
     expect(script).toContain("extension:Manage extension lifecycle operations");
+    expect(script).toContain("package:Manage package lifecycle operations");
+    expect(script).toContain("packages:Alias for package");
     expect(script).toContain("create:Create a new project management item");
     expect(script).toContain("completion:Generate shell completion");
     expect(script).toContain("guide:Browse local progressive-disclosure guides");
@@ -575,6 +617,8 @@ describe("generateZshScript", () => {
     expect(script).toContain("_arguments");
     expect(script).toContain("_describe");
     expect(script).toContain("_pm_commands");
+    expect(script).toContain("package:Manage package lifecycle operations");
+    expect(script).toContain("packages:Alias for package");
   });
 
   it("includes zsh completion for list filters", () => {
@@ -638,6 +682,16 @@ describe("generateZshScript", () => {
     expect(script).toContain("--fail-on-warn[Alias for --strict-exit (doctor)]");
   });
 
+  it("includes zsh package lifecycle completions with package-only declarative scaffolding", () => {
+    const script = generateZshScript();
+    expect(script).toContain("package|packages)");
+    expect(script).toContain(
+      "1:package_action:(init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate)",
+    );
+    expect(script).toContain("--declarative[Generate a composeExtension blueprint starter]");
+    expect(script).toContain("--catalog[List bundled first-party package catalog entries]");
+  });
+
   it("includes fail-on-empty-test-run in zsh test completions", () => {
     const script = generateZshScript();
     expect(script).toContain("--override-linked-pm-context[Force run-level --pm-context over per-linked-test pm_context_mode metadata]");
@@ -692,6 +746,8 @@ describe("generateFishScript", () => {
     for (const [cmd, desc] of [
       ["init", "Initialize"],
       ["extension", "Manage extension lifecycle operations"],
+      ["package", "Manage package lifecycle operations"],
+      ["packages", "Alias for package"],
       ["create", "Create"],
       ["calendar", "deadline/reminder calendar views"],
       ["context", "project context snapshot"],
@@ -764,7 +820,9 @@ describe("generateFishScript", () => {
     expect(script).toContain("-l uninstall");
     expect(script).toContain("-l explore");
     expect(script).toContain("-l manage");
+    expect(script).toContain("-l describe");
     expect(script).toContain("-l doctor");
+    expect(script).toContain("-l catalog");
     expect(script).toContain("-l adopt");
     expect(script).toContain("-l adopt-all");
     expect(script).toContain("-l activate");
@@ -779,6 +837,16 @@ describe("generateFishScript", () => {
     expect(script).toContain("-l fix-managed-state");
     expect(script).toContain("-l strict-exit");
     expect(script).toContain("-l fail-on-warn");
+  });
+
+  it("includes fish package lifecycle completions with package-only declarative scaffolding", () => {
+    const script = generateFishScript();
+    expect(script).toContain("__fish_seen_subcommand_from $package_cmd");
+    expect(script).toContain("complete -c pm -n __pm_no_subcommand -a package");
+    expect(script).toContain("complete -c pm -n __pm_no_subcommand -a packages");
+    expect(script).toContain("-l declarative -d 'Generate a composeExtension blueprint starter'");
+    expect(script).toContain("-l catalog -d 'List bundled first-party package catalog entries'");
+    expect(script).toContain("-l fail-on-warn -d 'Alias for --strict-exit (doctor)'");
   });
 
   it("includes strict health flags in fish completion", () => {

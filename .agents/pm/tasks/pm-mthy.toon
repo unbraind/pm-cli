@@ -2,13 +2,23 @@ id: pm-mthy
 title: "Add pm package / pm packages shell completion (bash/zsh/fish), including the package-only --declarative flag"
 description: "src/cli/commands/completion.ts only emits a lifecycle completion block for `pm extension` (bash `extension)` case, zsh `extension)` case, fish `__fish_seen_subcommand_from extension`). There is NO completion block for `pm package` / `pm packages`, so the package lifecycle command (the primary package-mode authoring entry per docs/SDK.md) has never had shell completion. Surfaced in PR #359 review (Gemini): after scoping `--declarative` to package mode, it was removed from the extension completion (correct — `pm extension init` no longer accepts it) but there is no package completion to carry it. Fix: add `package`/`packages` lifecycle completion blocks mirroring the extension block across bash/zsh/fish, including the package-only `--declarative` flag, and assert them in completion-command.spec.ts. Pre-existing gap, scoped out of #359 to keep that PR focused on the declarative capability matrix."
 type: Task
-status: open
+status: closed
 priority: 3
 tags[4]: "area:cli","area:packages",dx,follow-up
 created_at: "2026-06-24T23:17:49.163Z"
-updated_at: "2026-06-24T23:17:53.700Z"
+updated_at: "2026-06-25T00:42:20.301Z"
 author: claude-code-agent
 parent: pm-ugqx
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-lfdv,related,"2026-06-24T23:17:53.683Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-06-25T00:12:19.315Z",codex-audit-20260625,"Evidence: package/packages shell completions now include lifecycle actions and package-only flags. Focused tests passed: node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts tests/unit/commands/contracts-command.spec.ts (135 tests)."
+files[2]{path,scope,note}:
+  src/cli/commands/completion.ts,project,complete package/package alias shell completion lifecycle coverage
+  tests/unit/commands/completion-command.spec.ts,project,cover package lifecycle completions in bash zsh fish
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts tests/unit/commands/contracts-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqsryy4y-tz7bkr,test,passed,"2026-06-25T00:39:31.658Z","2026-06-25T00:39:43.954Z","2026-06-25T00:39:43.954Z",null,null,1,0,0,null,null,null
+close_reason: "Fixed package/packages shell completion coverage for lifecycle actions and package-only flags across bash, zsh, and fish; focused pm-linked completion/contracts test passed and full release gate passed."
 body: ""

@@ -21,6 +21,7 @@ import {
   REMIND_FLAG_CONTRACTS,
   CREATE_FLAG_CONTRACTS,
   DEPS_FLAG_CONTRACTS,
+  EXTENSION_FLAG_CONTRACTS,
   GET_FLAG_CONTRACTS,
   GUIDE_FLAG_CONTRACTS,
   GLOBAL_FLAG_CONTRACTS,
@@ -29,6 +30,7 @@ import {
   LIST_FILTER_FLAG_CONTRACTS,
   NEXT_FLAG_CONTRACTS,
   NORMALIZE_FLAG_CONTRACTS,
+  PACKAGE_FLAG_CONTRACTS,
   PLAN_FLAG_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
   SEARCH_FLAG_CONTRACTS,
@@ -98,6 +100,9 @@ const PLAN_SUBCOMMANDS_LIST =
 const COMPLETION_FLAGS = toCompletionFlagString(COMPLETION_FLAG_CONTRACTS);
 const COMPLETION_SHELL_CHOICES = `${COMPLETION_FLAGS} bash zsh fish`;
 const GUIDE_TOPIC_CHOICES = joinCompletionValues(listGuideTopicIds());
+const LIFECYCLE_ACTIONS = "init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate";
+const EXTENSION_LIFECYCLE_FLAGS = toCompletionFlagString(EXTENSION_FLAG_CONTRACTS);
+const PACKAGE_LIFECYCLE_FLAGS = toCompletionFlagString(PACKAGE_FLAG_CONTRACTS);
 
 const MUTATION_FLAGS = "--author --message --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
 const DELETE_MUTATION_FLAGS = "--dry-run --author --message --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
@@ -388,7 +393,10 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--criterion --clear-criteria --format --policy --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    extension)",
-    `      COMPREPLY=(${compgen("init scaffold install uninstall explore manage describe reload doctor adopt adopt-all activate deactivate --init --scaffold --capability --install --uninstall --explore --manage --describe --reload --watch --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen(`${LIFECYCLE_ACTIONS} ${EXTENSION_LIFECYCLE_FLAGS}`)})`,
+    "      ;;",
+    "    package|packages)",
+    `      COMPREPLY=(${compgen(`${LIFECYCLE_ACTIONS} ${PACKAGE_LIFECYCLE_FLAGS}`)})`,
     "      ;;",
     "    comments)",
     `      COMPREPLY=(${compgen("--add --stdin --file --edit --delete --limit --author --message --allow-audit-comment --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
@@ -553,6 +561,8 @@ _pm_commands() {
     'init:Initialize pm storage for the current workspace'
     'config:Read or update pm settings'
     'extension:Manage extension lifecycle operations'
+    'package:Manage package lifecycle operations'
+    'packages:Alias for package'
     'create:Create a new project management item'
     'copy:Copy an existing item to a new ID'
     'focus:Set/clear/show the session focused parent for new items'
@@ -1618,7 +1628,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         extension)
           _arguments \\
-            '1:extension_action:(init scaffold install uninstall explore manage describe reload doctor adopt adopt-all activate deactivate)' \\
+            '1:extension_action:(init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate)' \\
             '--init[Generate a starter extension scaffold at target path]' \\
             '--scaffold[Alias for --init]' \\
             '--capability[Capability the init scaffold targets]:capability:(${SCAFFOLD_CAPABILITIES.join(" ")})' \\
@@ -1630,6 +1640,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--reload[Reload extensions with cache-busted module imports]' \\
             '--watch[Enable watch mode with --reload]' \\
             '--doctor[Run consolidated extension diagnostics (summary/deep)]' \\
+            '--catalog[List bundled first-party package catalog entries]' \\
             '--adopt[Adopt an unmanaged extension into managed metadata]' \\
             '--adopt-all[Adopt all unmanaged extensions into managed metadata]' \\
             '--activate[Activate extension in selected scope settings]' \\
@@ -1644,6 +1655,42 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--trace[Include registration traces in doctor deep diagnostics]' \\
             '--runtime-probe[Opt-in runtime activation probe for manage output]' \\
             '--fix-managed-state[Adopt unmanaged extensions before diagnostics/update checks]' \\
+            '--strict-exit[Return non-zero exit when doctor warnings are present]' \\
+            '--fail-on-warn[Alias for --strict-exit (doctor)]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]' \\
+            '*:target_or_name:_files -/'
+          ;;
+        package|packages)
+          _arguments \\
+            '1:package_action:(init scaffold install uninstall explore manage describe reload doctor catalog adopt adopt-all activate deactivate)' \\
+            '--init[Generate a starter package scaffold at target path]' \\
+            '--scaffold[Alias for --init]' \\
+            '--capability[Capability the init scaffold targets]:capability:(${SCAFFOLD_CAPABILITIES.join(" ")})' \\
+            '--declarative[Generate a composeExtension blueprint starter]' \\
+            '--install[Install package from local path, GitHub source, npm source, or bundled alias]' \\
+            '--uninstall[Uninstall package by name]' \\
+            '--explore[List discovered packages for selected scope]' \\
+            '--manage[List managed packages with update metadata]' \\
+            '--describe[Map every surface a loaded package registers]' \\
+            '--reload[Reload packages with cache-busted module imports]' \\
+            '--watch[Enable watch mode with --reload]' \\
+            '--doctor[Run consolidated package diagnostics (summary/deep)]' \\
+            '--catalog[List bundled first-party package catalog entries]' \\
+            '--adopt[Adopt an unmanaged package into managed metadata]' \\
+            '--adopt-all[Adopt all unmanaged packages into managed metadata]' \\
+            '--activate[Activate package in selected scope settings]' \\
+            '--deactivate[Deactivate package in selected scope settings]' \\
+            '--project[Use project package scope (default)]' \\
+            '--local[Alias for --project]' \\
+            '--global[Use global package scope]' \\
+            '--gh[Install from GitHub shorthand owner/repo/path]:github_spec' \\
+            '--github[Alias for --gh]:github_spec' \\
+            '--ref[Git ref/branch/tag for GitHub source]:git_ref' \\
+            '--detail[Detail mode for package diagnostics]:detail_mode:(summary deep)' \\
+            '--trace[Include registration traces in doctor deep diagnostics]' \\
+            '--runtime-probe[Opt-in runtime activation probe for manage output]' \\
+            '--fix-managed-state[Adopt unmanaged packages before diagnostics/update checks]' \\
             '--strict-exit[Return non-zero exit when doctor warnings are present]' \\
             '--fail-on-warn[Alias for --strict-exit (doctor)]' \\
             '--json[Output JSON]' \\
@@ -1752,6 +1799,8 @@ ${renderFishDynamicChoiceResolver("status", "completion-statuses", statusFallbac
 complete -c pm -n __pm_no_subcommand -a init          -d 'Initialize pm storage for the current workspace'
 complete -c pm -n __pm_no_subcommand -a config        -d 'Read or update pm settings'
 complete -c pm -n __pm_no_subcommand -a extension     -d 'Manage extension lifecycle operations'
+complete -c pm -n __pm_no_subcommand -a package       -d 'Manage package lifecycle operations'
+complete -c pm -n __pm_no_subcommand -a packages      -d 'Alias for package'
 complete -c pm -n __pm_no_subcommand -a create        -d 'Create a new project management item'
 complete -c pm -n __pm_no_subcommand -a copy          -d 'Copy an existing item to a new ID'
 complete -c pm -n __pm_no_subcommand -a focus         -d 'Set/clear/show the session focused parent for new items'
@@ -2577,7 +2626,7 @@ complete -c pm -n '__fish_seen_subcommand_from completion' -a 'bash zsh fish' -d
 complete -c pm -n '__fish_seen_subcommand_from templates' -a 'save list show' -d 'Templates command'
 
 # extension lifecycle flags
-complete -c pm -n '__fish_seen_subcommand_from extension' -a 'init scaffold install uninstall explore manage reload doctor adopt adopt-all activate deactivate' -d 'Extension action subcommand'
+complete -c pm -n '__fish_seen_subcommand_from extension' -a '${LIFECYCLE_ACTIONS}' -d 'Extension action subcommand'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l init -d 'Generate starter extension scaffold'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l scaffold -d 'Alias for --init'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l capability -d 'Capability the init scaffold targets' -r -a '${SCAFFOLD_CAPABILITIES.join(" ")}'
@@ -2585,9 +2634,11 @@ complete -c pm -n '__fish_seen_subcommand_from extension' -l install -d 'Install
 complete -c pm -n '__fish_seen_subcommand_from extension' -l uninstall -d 'Uninstall extension by name'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l explore -d 'List discovered extensions for selected scope'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l manage -d 'List managed extensions with update metadata'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l describe -d 'Map every surface a loaded extension registers'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l reload -d 'Reload extensions with cache-busted module imports'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l watch -d 'Enable watch mode with --reload'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l doctor -d 'Run consolidated extension diagnostics'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l catalog -d 'List bundled first-party package catalog entries'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l adopt -d 'Adopt an unmanaged extension into managed metadata'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l adopt-all -d 'Adopt all unmanaged extensions into managed metadata'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l activate -d 'Activate extension in selected scope settings'
@@ -2603,7 +2654,41 @@ complete -c pm -n '__fish_seen_subcommand_from extension' -l trace -d 'Include r
 complete -c pm -n '__fish_seen_subcommand_from extension' -l runtime-probe -d 'Opt-in runtime activation probe for manage output'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l fix-managed-state -d 'Adopt unmanaged extensions before diagnostics/update checks'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l strict-exit -d 'Return non-zero exit when doctor warnings are present'
-complete -c pm -n '__fish_seen_subcommand_from extension' -l fail-on-warn -d 'Alias for --strict-exit (doctor)'`;
+complete -c pm -n '__fish_seen_subcommand_from extension' -l fail-on-warn -d 'Alias for --strict-exit (doctor)'
+
+# package lifecycle flags
+for package_cmd in package packages
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -a '${LIFECYCLE_ACTIONS}' -d 'Package action subcommand'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l init -d 'Generate starter package scaffold'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l scaffold -d 'Alias for --init'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l capability -d 'Capability the init scaffold targets' -r -a '${SCAFFOLD_CAPABILITIES.join(" ")}'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l declarative -d 'Generate a composeExtension blueprint starter'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l install -d 'Install package from local path, GitHub source, npm source, or bundled alias'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l uninstall -d 'Uninstall package by name'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l explore -d 'List discovered packages for selected scope'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l manage -d 'List managed packages with update metadata'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l describe -d 'Map every surface a loaded package registers'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l reload -d 'Reload packages with cache-busted module imports'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l watch -d 'Enable watch mode with --reload'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l doctor -d 'Run consolidated package diagnostics'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l catalog -d 'List bundled first-party package catalog entries'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l adopt -d 'Adopt an unmanaged package into managed metadata'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l adopt-all -d 'Adopt all unmanaged packages into managed metadata'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l activate -d 'Activate package in selected scope settings'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l deactivate -d 'Deactivate package in selected scope settings'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l project -d 'Use project package scope'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l local -d 'Alias for --project'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l global -d 'Use global package scope'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l gh -d 'GitHub shorthand owner/repo/path' -r
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l github -d 'Alias for --gh' -r
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l ref -d 'Git ref/branch/tag for GitHub source' -r
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l detail -d 'Detail mode for package diagnostics' -r -a 'summary deep'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l trace -d 'Include registration traces in doctor deep diagnostics'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l runtime-probe -d 'Opt-in runtime activation probe for manage output'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l fix-managed-state -d 'Adopt unmanaged packages before diagnostics/update checks'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l strict-exit -d 'Return non-zero exit when doctor warnings are present'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l fail-on-warn -d 'Alias for --strict-exit (doctor)'
+end`;
 }
 
 const SETUP_HINTS: Record<CompletionShell, string> = {

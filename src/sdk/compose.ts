@@ -634,6 +634,13 @@ export function deriveExtensionCapabilities(blueprint: ExtensionBlueprint): Exte
   if (importExportEntries.some((entry) => entry?.options?.flags !== undefined)) {
     capabilities.add("schema");
   }
+  // Importers/exporters always synthesize command handlers (`<name> import` /
+  // `<name> export`), so runtime capability summaries attribute them to the
+  // commands surface as well as the importers surface. Keep the author-time
+  // capability preview aligned with describeExtensionActivation.
+  if (importExportEntries.some((entry) => entry !== null && typeof entry === "object")) {
+    capabilities.add("commands");
+  }
   // `?? {}` keeps an explicit `hooks: null` from throwing, mirroring composeExtension.
   const hooks: ExtensionBlueprintHooks = blueprint.hooks ?? {};
   if ([hooks.beforeCommand, hooks.afterCommand, hooks.onWrite, hooks.onRead, hooks.onIndex].some(hasEntries)) {
@@ -687,16 +694,33 @@ function sortUnique<TValue extends string>(values: readonly TValue[]): TValue[] 
  * blueprint that registers everything through that hatch summarizes as empty.
  */
 export function describeExtensionBlueprint(blueprint: ExtensionBlueprint): ExtensionActivationSummary {
-  const commandPaths = (blueprint.commands ?? []).map((command) => normalizeCommandName(command.name));
   const importerPaths = (blueprint.importers ?? []).map((entry) => normalizeCommandName(`${entry.name} import`));
   const exporterPaths = (blueprint.exporters ?? []).map((entry) => normalizeCommandName(`${entry.name} export`));
+  const importerCommandDefinitionPaths = (blueprint.importers ?? [])
+    .filter((entry) => entry.options !== undefined)
+    .map((entry) => normalizeCommandName(`${entry.name} import`));
+  const exporterCommandDefinitionPaths = (blueprint.exporters ?? [])
+    .filter((entry) => entry.options !== undefined)
+    .map((entry) => normalizeCommandName(`${entry.name} export`));
+  const commandPaths = [
+    ...(blueprint.commands ?? []).map((command) => normalizeCommandName(command.name)),
+    ...importerCommandDefinitionPaths,
+    ...exporterCommandDefinitionPaths,
+  ];
   // A command definition with inline `flags` registers a flag target under its own
-  // path in addition to any top-level `flags` record, so union both sources.
+  // path in addition to any top-level `flags` record. Import/export options with
+  // `flags` register through the same runtime metadata path, so union all sources.
   const flagCommands = [
     ...Object.keys(blueprint.flags ?? {}).map((command) => normalizeCommandName(command)),
     ...(blueprint.commands ?? [])
       .filter((command) => command.flags !== undefined)
       .map((command) => normalizeCommandName(command.name)),
+    ...(blueprint.importers ?? [])
+      .filter((entry) => entry.options?.flags !== undefined)
+      .map((entry) => normalizeCommandName(`${entry.name} import`)),
+    ...(blueprint.exporters ?? [])
+      .filter((entry) => entry.options?.flags !== undefined)
+      .map((entry) => normalizeCommandName(`${entry.name} export`)),
   ];
   const hooks: ExtensionBlueprintHooks = blueprint.hooks ?? {};
 

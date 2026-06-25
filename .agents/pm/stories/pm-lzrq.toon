@@ -6,9 +6,14 @@ status: open
 priority: 3
 tags[4]: "area:health","area:observability","area:telemetry",audit
 created_at: "2026-06-07T10:02:40.700Z"
-updated_at: "2026-06-07T10:05:30.863Z"
+updated_at: "2026-06-25T00:41:53.453Z"
+assignee: codex-audit-20260625
 author: audit-observability-agent
 parent: pm-5oj5
+comments[1]{created_at,author,text}:
+  "2026-06-25T00:41:53.453Z",codex-audit-20260625,"Audit evidence: release gate Sentry/telemetry step returned ok. Sentry checked unbrained/pm-cli over 14 days with critical=0 high=0 total blocking=0, access_ok=true; expected CLI errors were classified as ignored. Telemetry best-effort check returned finish_error_rate_pct=0.73 and failures_without_error_code_rows=0."
 notes[1]{created_at,author,text}:
   "2026-06-07T10:05:30.863Z",audit-observability-agent,"AUDIT FINDINGS (2026-06-07)\n\nScope audited:\n- src/core/telemetry/runtime.ts (1765 lines) — queue, flush, sanitize, schema, OTEL export\n- src/core/telemetry/observability.ts — command taxonomy, error code inference, resolution derivation\n- src/core/telemetry/consent.ts — first-run prompt, opt-out\n- src/core/diagnostics/remediation.ts — remediation registry (37 entries)\n- src/core/sentry/instrument.ts + helpers.ts — initialization, scrubbing, expected-error filtering\n- src/cli/commands/health.ts (1571 lines), validate.ts, telemetry.ts, stats.ts\n\nKEY OBSERVATIONS (live):\n- pm health --json: all 9 checks ok:true; 72-entry queue, last_successful_flush current\n- pm telemetry stats: max_attempts=8 on some entries — approaching retry exhaustion with no warning\n- TELEMETRY_SCHEMA_VERSION=1 hardcoded; server probe reads max_schema_version header but never warns if server > client\n- source_context covers user/automation/test/dogfood/audit_smoke but PM_AUTHOR identity is lost in the 'automation' bucket\n- KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS has 8 patterns but no governance cap/test\n- extension_update_health_partial_coverage warning has no remediation_map entry\n- No locks health check; only pm gc --scope locks provides stale-lock visibility\n- telemetry stats reports count+max_attempts but no duration_ms percentiles or error_rate\n- Sentry tracesSampleRate=0.2 hardcoded (no env-var override)\n- 9 telemetry env-vars scattered across code, not documented in one place\n\nALREADY TRACKED/CLOSED (not duplicated):\n- pm-t4wb: schema versioning prep (CLOSED — client_schema_version in queue, server max-version header read)\n- pm-5oj5 epic children: remediation map, validate fix-hints, local-analytics subcommand, capture_level doc\n\nITEMS CREATED: pm-dfhp, pm-xo1n, pm-fbyu, pm-bdvm, pm-3n3b, pm-irc7, pm-jxls, pm-gsoe, pm-r7md, pm-gg8e"
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/release/run-gates.mjs --json --telemetry-mode best-effort,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
 body: ""
