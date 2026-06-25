@@ -14,7 +14,7 @@ import {
 } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   _testOnly as extensionCommandTestOnly,
@@ -1617,14 +1617,21 @@ describe("extension command runtime", () => {
           `alias@${packageRoot}`,
         );
         expect(normalizeNpmLocalFileAliasSpec("alias@file:/tmp/pm-absolute-path")).toBe(
-          `alias@${fileURLToPath("file:///tmp/pm-absolute-path")}`,
+          "alias@/tmp/pm-absolute-path",
         );
         // GH-363 regression: a percent-encoded file URL alias (a space, or the
         // Windows 8.3 `~` short name pathToFileURL escapes to %7E) must decode to
         // a native path so npm pack opens a real file instead of failing ENOENT.
-        const encodedSpaceUrl = "file:///opt/pm%20space%7Eshort/pkg";
-        expect(normalizeNpmLocalFileAliasSpec(`alias@${encodedSpaceUrl}`)).toBe(`alias@${fileURLToPath(encodedSpaceUrl)}`);
-        expect(normalizeNpmLocalFileAliasSpec(`alias@${encodedSpaceUrl}`)).not.toContain("%");
+        // The decode is platform-independent (no fileURLToPath, which throws on a
+        // driveless absolute path under Windows), so the expected literal holds
+        // on every OS; the drive-letter form drops the file-URL leading slash.
+        expect(normalizeNpmLocalFileAliasSpec("alias@file:///opt/pm%20space%7Eshort/pkg")).toBe(
+          "alias@/opt/pm space~short/pkg",
+        );
+        expect(normalizeNpmLocalFileAliasSpec("alias@file:///C:/Temp/pm%7Eshort/pkg")).toBe(
+          "alias@C:/Temp/pm~short/pkg",
+        );
+        expect(normalizeNpmLocalFileAliasSpec("alias@file:///opt/pm%20space%7Eshort/pkg")).not.toContain("%");
         await expect(_testOnlyInstallSources.resolveNpmPackSpec("https://registry.example/pkg.tgz")).resolves.toBe(
           "https://registry.example/pkg.tgz",
         );

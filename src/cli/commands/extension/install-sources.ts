@@ -379,13 +379,20 @@ export function normalizeNpmLocalFileAliasSpec(spec: string, cwd: string = proce
   if (target.startsWith("//") && !target.startsWith("///")) {
     return spec;
   }
-  // Resolve to a NATIVE filesystem path (never a percent-encoded file URL): npm
-  // opens the alias target literally, so an escaped path — spaces (`%20`) or a
-  // Windows 8.3 `~` short name escaped to `%7E` — fails ENOENT on every platform
-  // (GH-363). `file:///abs` and `file:/abs` are absolute URLs decoded via
-  // fileURLToPath; a bare relative target resolves against cwd.
-  const absolutePath = target.startsWith("/") ? fileURLToPath(`file:${target}`) : path.resolve(cwd, target);
-  return `${packageName}@${absolutePath}`;
+  // A bare relative target resolves against cwd.
+  if (!target.startsWith("/")) {
+    return `${packageName}@${path.resolve(cwd, target)}`;
+  }
+  // Resolve an absolute `file:` URL target to a NATIVE, percent-DECODED path
+  // (never an encoded file URL): npm opens the alias target literally, so an
+  // escaped path — spaces (`%20`) or a Windows 8.3 `~` short name escaped to
+  // `%7E` — fails ENOENT on every platform (GH-363). Decode via URL +
+  // decodeURIComponent rather than fileURLToPath, which throws
+  // ERR_INVALID_FILE_URL_PATH for a driveless absolute path supplied on Windows;
+  // strip the leading slash before a Windows drive letter (`/C:/x` -> `C:/x`).
+  const decodedPath = decodeURIComponent(new URL(`file:${target}`).pathname);
+  const nativePath = /^\/[A-Za-z]:/.test(decodedPath) ? decodedPath.slice(1) : decodedPath;
+  return `${packageName}@${nativePath}`;
 }
 
 function parsePackedNpmPackage(stdout: string, packDirectory: string): { tarball: string; package?: string; version?: string } {
