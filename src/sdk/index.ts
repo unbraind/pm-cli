@@ -30,6 +30,34 @@ export * from "./compose.js";
 export * from "./define.js";
 export * from "./runtime.js";
 export {
+  BUILTIN_PROFILES,
+  listProfiles,
+  normalizeProfileName,
+  PROFILE_NAMES,
+  resolveProfile,
+  type ProfileConfigEntry,
+  type ProfileName,
+  type ProfilePackageRecommendation,
+  type ProfileTemplateEntry,
+  type ProfileTemplateOptions,
+  type ProjectProfileDefinition,
+} from "../core/profile/profile-presets.js";
+export {
+  planProfileApplication,
+  type ProfileApplicationPlan,
+  type ProfileChangeStatus,
+  type ProfileComponentChange,
+  type ProfileConfigChange,
+  type ProfileConfigPlan,
+  type ProfileCurrentState,
+  type ProfilePackagePlan,
+  type ProfileSchemaPlan,
+  type ProfileTemplateChange,
+  type ProfileTemplatePlan,
+  type ProfileWorkflowChange,
+  type ProfileWorkflowPlan,
+} from "../core/profile/profile-plan.js";
+export {
   assertExtensionBlueprint,
   assertExtensionCapabilityUsage,
   assertExtensionDeactivated,

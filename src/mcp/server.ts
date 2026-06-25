@@ -94,6 +94,9 @@ import {
   runSchemaShow,
   runSchemaShowField,
   runSchemaShowStatus,
+  runProfileApply,
+  runProfileList,
+  runProfileShow,
   runSearch,
   runStats,
   runTelemetry,
@@ -1044,6 +1047,31 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
         global,
       );
     }
+    case "profile": {
+      // subcommand/name are top-level fields in the published action contract,
+      // so accept them from args first and fall back to options for parity.
+      const subcommand = readString(args, "subcommand") ?? readRequiredString(options, "subcommand");
+      const normalizedSubcommand = subcommand.trim().toLowerCase();
+      const profileName = readString(args, "name") ?? readString(options, "name");
+      if (normalizedSubcommand === "list") {
+        return runProfileList();
+      }
+      if (normalizedSubcommand === "show") {
+        return runProfileShow(profileName);
+      }
+      if (normalizedSubcommand === "apply") {
+        return runProfileApply(
+          profileName,
+          {
+            dryRun: args.dryRun === true || options.dryRun === true,
+            author: readString(args, "author") ?? readString(options, "author"),
+            force: args.force === true || options.force === true,
+          },
+          global,
+        );
+      }
+      throw new PmCliError(`Unknown pm profile subcommand "${subcommand}". Allowed: list, show, apply`, 64);
+    }
     case "stats":
       return runStats(global, {
         storage: options.storage === true,
@@ -1110,6 +1138,7 @@ const HANDLERS: Record<string, ToolHandler> = {
   pm_health: (args) => runAction({ ...args, action: "health" }),
   pm_contracts: (args) => runAction({ ...args, action: "contracts" }),
   pm_schema: (args) => runAction({ ...args, action: "schema" }),
+  pm_profile: (args) => runAction({ ...args, action: "profile" }),
   pm_config: (args) => runAction({ ...args, action: "config" }),
   pm_plan: (args) => runAction({ ...args, action: "plan" }),
 };
@@ -1165,7 +1194,7 @@ export async function handleRequest(request: JsonRpcRequest): Promise<Record<str
       instructions:
         "You have access to native pm CLI tools for git-based project management. " +
         "Use pm_next to pick the next actionable item, or pm_context or pm_search before creating new work. " +
-        "Prefer narrow tools (pm_next, pm_context, pm_list, pm_get, pm_search, pm_create, pm_copy, pm_focus, pm_update, pm_append, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_notes, pm_learnings, pm_deps, pm_test, pm_validate, pm_health, pm_contracts, pm_schema, pm_config, pm_plan) over pm_run when they cover the operation. " +
+        "Prefer narrow tools (pm_next, pm_context, pm_list, pm_get, pm_search, pm_create, pm_copy, pm_focus, pm_update, pm_append, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_notes, pm_learnings, pm_deps, pm_test, pm_validate, pm_health, pm_contracts, pm_schema, pm_profile, pm_config, pm_plan) over pm_run when they cover the operation. " +
         "Use pm_plan for agent harness Plan workflows: it provides Codex/Claude/Cursor-style planning with durable steps, dependencies, decisions, discoveries, validation, and materialization. " +
         "Use pm_schema and pm_config for workspace configuration: pm_schema manages custom item types/statuses and pm_config reads or writes settings keys. " +
         "Use pm_run with an explicit action for package-owned operations (calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume), plus activity, aggregate, history, stats, test-all, and gc. " +

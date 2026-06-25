@@ -140,6 +140,21 @@ export {
   type SchemaShowResult,
   type SchemaShowStatusResult,
 } from "./schema.js";
+export {
+  runProfileApply,
+  runProfileList,
+  runProfileShow,
+  formatProfileApplyHuman,
+  formatProfileListHuman,
+  formatProfileShowHuman,
+  PROFILE_SUBCOMMANDS,
+  type ProfileSubcommand,
+  type ProfileApplyCommandOptions,
+  type ProfileApplyResult,
+  type ProfileListResult,
+  type ProfileShowResult,
+  type ProfileResult,
+} from "./profile.js";
 export { runSearch } from "./search.js";
 export { runEval } from "./eval.js";
 export { runRestore } from "./restore.js";

@@ -6,7 +6,7 @@
  * 1. Plugin file structure (marketplace + plugin manifests, skills, commands, agents, hooks)
  * 2. MCP server launcher resolves the repo build
  * 3. MCP server initializes with instructions
- * 4. All 27 required tools are listed
+ * 4. All 28 required tools are listed
  * 5. pm_run(init), pm_create, pm_claim, pm_update, pm_comments, pm_files, pm_docs, pm_test,
  *    pm_get, pm_context, pm_search, pm_validate, pm_health all succeed
  * 6. Session-start hook script runs without errors
@@ -132,7 +132,7 @@ try {
     "pm_create", "pm_copy", "pm_focus", "pm_update", "pm_append", "pm_claim", "pm_release", "pm_close",
     "pm_comments", "pm_files", "pm_docs", "pm_notes", "pm_learnings",
     "pm_deps", "pm_test",
-    "pm_validate", "pm_health", "pm_contracts", "pm_schema", "pm_config", "pm_plan",
+    "pm_validate", "pm_health", "pm_contracts", "pm_schema", "pm_profile", "pm_config", "pm_plan",
   ];
   for (const name of required) {
     if (!toolNames.has(name)) {

@@ -58,10 +58,16 @@ Common authoring exports:
 Registration builders (`define*`, zero-cost identity — see [Authoring Builders](#authoring-builders)):
 
 - `defineCommand` / `defineFlag` / `defineItemType` / `defineItemField` / `defineMigration`
+- `defineProjectProfile` (archetype bundle of types/statuses/fields/workflows/config/templates/packages — powers `pm profile`)
 - `defineSearchProvider` / `defineVectorStoreAdapter`
 - `defineCommandOverride` / `defineParserOverride` / `definePreflightOverride` / `defineServiceOverride` / `defineRendererOverride`
 - `defineImporter` / `defineExporter`
 - `defineBeforeCommandHook` / `defineAfterCommandHook` / `defineOnWriteHook` / `defineOnReadHook` / `defineOnIndexHook`
+
+Project profiles:
+
+- `defineProjectProfile` / `BUILTIN_PROFILES` / `PROFILE_NAMES` / `resolveProfile` / `listProfiles` / `normalizeProfileName`
+- `planProfileApplication` (pure, idempotent diff of a profile against the current tracker state) and its `ProfileApplicationPlan` / `ProfileCurrentState` types
 
 Package manifest exports:
 

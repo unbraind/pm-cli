@@ -54,6 +54,7 @@ import type {
   ServiceOverride,
   VectorStoreAdapterDefinition,
 } from "../core/extensions/loader.js";
+import type { ProjectProfileDefinition } from "../core/profile/profile-presets.js";
 
 /**
  * Type an extension's in-module manifest mirror (the `manifest` export / field).
@@ -67,6 +68,22 @@ import type {
  */
 export function defineExtensionManifest<TManifest extends ExtensionManifest>(manifest: TManifest): TManifest {
   return manifest;
+}
+
+/**
+ * Type a project-profile definition for the profile registry.
+ *
+ * A profile bundles item types, statuses, fields, per-type workflows, config
+ * knobs, create templates, and package recommendations into one declarative
+ * archetype that `pm profile apply` stages idempotently. This builder checks the
+ * object against {@link ProjectProfileDefinition} where it is authored — catching
+ * an invalid field type or a malformed workflow at edit time — while preserving
+ * the literal `name`/`types`/`statuses` so a package's archetype stays strongly
+ * typed at the definition site, mirroring {@link defineItemType}. It is the
+ * authoring anchor a first-party or third-party profile package builds on.
+ */
+export function defineProjectProfile<TProfile extends ProjectProfileDefinition>(profile: TProfile): TProfile {
+  return profile;
 }
 
 /**

@@ -272,6 +272,62 @@ function renderSchemaResultHuman(schema: SchemaCommandModule, result: SchemaComm
   }
 }
 
+type ProfileCommandModule = typeof import("./commands/profile.js");
+type ProfileCommandResult =
+  | ReturnType<ProfileCommandModule["runProfileList"]>
+  | ReturnType<ProfileCommandModule["runProfileShow"]>
+  | Awaited<ReturnType<ProfileCommandModule["runProfileApply"]>>;
+
+/**
+ * Routes a normalized `pm profile` subcommand to its run function. Extracted from
+ * the profile `.action()` body so the per-subcommand dispatch lives in one place.
+ */
+async function dispatchProfileSubcommand(
+  profile: ProfileCommandModule,
+  subcommand: string,
+  name: string | undefined,
+  options: Record<string, unknown>,
+  globalOptions: GlobalOptions,
+): Promise<ProfileCommandResult> {
+  switch (subcommand) {
+    case "list":
+      return profile.runProfileList();
+    case "show":
+      return profile.runProfileShow(name);
+    default:
+      return profile.runProfileApply(
+        name,
+        {
+          dryRun: options.dryRun === true,
+          author: typeof options.author === "string" ? options.author : undefined,
+          force: options.force === true,
+        },
+        globalOptions,
+      );
+  }
+}
+
+/**
+ * Renders a profile command result for non-JSON, non-quiet output and surfaces
+ * any on-write hook warnings from an apply.
+ */
+function renderProfileResultHuman(profile: ProfileCommandModule, result: ProfileCommandResult): void {
+  switch (result.action) {
+    case "list":
+      writeStdout(`${profile.formatProfileListHuman(result)}\n`);
+      return;
+    case "show":
+      writeStdout(`${profile.formatProfileShowHuman(result)}\n`);
+      return;
+    default:
+      writeStdout(`${profile.formatProfileApplyHuman(result)}\n`);
+      if (result.warnings.length > 0) {
+        printError(`profile apply warnings: ${formatHookWarnings(result.warnings)}`);
+      }
+      break;
+  }
+}
+
 /**
  * Build a commander argParser that coerces a flag value into a positive
  * (1-based) integer, throwing a usage error when the supplied value is not a
@@ -1564,6 +1620,52 @@ export function registerMutationCommands(program: Command): void {
         printError(`profile:command=schema took_ms=${Date.now() - startedAt}`);
       }
     });
+
+  const profileCommand = program
+    .command("profile")
+    .argument("[subcommand]", "Profile subcommand: list, show, or apply")
+    .argument("[name]", "Profile name for show/apply: agile, ops, or research")
+    .option("--dry-run", "Preview the apply diff without writing any files (apply)")
+    .option("--author <value>", "Mutation author")
+    .option("--force", "Force ownership/lock override")
+    .description(
+      "List, show, and apply project profiles — archetype bundles of item types, statuses, fields, workflows, config, templates, and recommended packages.",
+    );
+  profileCommand.action(async (
+    subcommand: string | undefined,
+    name: string | undefined,
+    options: Record<string, unknown>,
+    command,
+  ) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const profileModule = await import("./commands/profile.js");
+    const { PROFILE_SUBCOMMANDS } = profileModule;
+    const normalizedSubcommand = (subcommand ?? "").trim().toLowerCase();
+    if (!normalizedSubcommand) {
+      throw new PmCliError(`pm profile requires a subcommand. Allowed: ${PROFILE_SUBCOMMANDS.join(", ")}`, EXIT_CODE.USAGE, {
+        code: "missing_required_argument",
+        examples: ["pm profile list", "pm profile show agile", "pm profile apply agile --dry-run", "pm profile apply ops"],
+      });
+    }
+    if (!PROFILE_SUBCOMMANDS.includes(normalizedSubcommand as (typeof PROFILE_SUBCOMMANDS)[number])) {
+      throw new PmCliError(
+        `Unknown pm profile subcommand "${subcommand}". Allowed: ${PROFILE_SUBCOMMANDS.join(", ")}`,
+        EXIT_CODE.USAGE,
+        { code: "unknown_subcommand" },
+      );
+    }
+    const result = await dispatchProfileSubcommand(profileModule, normalizedSubcommand, name, options, globalOptions);
+    // Profile inspection and schema staging do not mutate item content, so search caches stay valid (mirrors pm schema).
+    if (globalOptions.json === true || globalOptions.defaultOutputFormat === "json") {
+      printResult(result, globalOptions);
+    } else if (!globalOptions.quiet) {
+      renderProfileResultHuman(profileModule, result);
+    }
+    if (globalOptions.profile) {
+      printError(`profile:command=profile took_ms=${Date.now() - startedAt}`);
+    }
+  });
 
   program
     .command("comments")

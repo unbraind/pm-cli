@@ -112,6 +112,15 @@ vi.mock("../../../src/cli/commands/schema.js", () => ({
   formatSchemaShowHuman: vi.fn(() => "schema show"),
   formatSchemaShowStatusHuman: vi.fn(() => "schema status"),
 }));
+vi.mock("../../../src/cli/commands/profile.js", () => ({
+  PROFILE_SUBCOMMANDS: ["list", "show", "apply"],
+  runProfileList: vi.fn(() => ({ action: "list" })),
+  runProfileShow: vi.fn(() => ({ action: "show" })),
+  runProfileApply: vi.fn(() => ({ action: "apply", warnings: [] })),
+  formatProfileListHuman: vi.fn(() => "profile list"),
+  formatProfileShowHuman: vi.fn(() => "profile show"),
+  formatProfileApplyHuman: vi.fn(() => "profile apply"),
+}));
 vi.mock("../../../src/cli/commands/comments.js", () => ({ runComments: vi.fn() }));
 vi.mock("../../../src/cli/commands/notes.js", () => ({ runNotes: vi.fn() }));
 vi.mock("../../../src/cli/commands/learnings.js", () => ({ runLearnings: vi.fn() }));
@@ -205,6 +214,14 @@ import {
   runSchemaShow,
   runSchemaShowStatus,
 } from "../../../src/cli/commands/schema.js";
+import {
+  formatProfileApplyHuman,
+  formatProfileListHuman,
+  formatProfileShowHuman,
+  runProfileApply,
+  runProfileList,
+  runProfileShow,
+} from "../../../src/cli/commands/profile.js";
 import { runComments } from "../../../src/cli/commands/comments.js";
 import { runNotes } from "../../../src/cli/commands/notes.js";
 import { runLearnings } from "../../../src/cli/commands/learnings.js";
@@ -1383,6 +1400,36 @@ describe("mutation command actions", () => {
       expect.objectContaining({ apply: false, minCount: undefined }),
       expect.anything(),
     );
+  });
+
+  it("routes profile subcommands, human/JSON rendering, apply warnings, and usage errors", async () => {
+    await expect(runCli("profile")).rejects.toThrow("pm profile requires a subcommand");
+    await expect(runCli("profile", "frobnicate")).rejects.toThrow("Unknown pm profile subcommand");
+
+    // Human render path for each subcommand.
+    await runCliRaw("profile", "list");
+    expect(vi.mocked(runProfileList)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(formatProfileListHuman)).toHaveBeenCalledTimes(1);
+
+    await runCliRaw("profile", "show", "agile");
+    expect(vi.mocked(runProfileShow)).toHaveBeenCalledWith("agile");
+    expect(vi.mocked(formatProfileShowHuman)).toHaveBeenCalledTimes(1);
+
+    await runCliRaw("profile", "apply", "agile", "--dry-run", "--author", "tester", "--force");
+    expect(vi.mocked(runProfileApply)).toHaveBeenCalledWith(
+      "agile",
+      { dryRun: true, author: "tester", force: true },
+      expect.anything(),
+    );
+    expect(vi.mocked(formatProfileApplyHuman)).toHaveBeenCalledTimes(1);
+
+    // Apply that surfaces on-write hook warnings exercises the warnings branch.
+    vi.mocked(runProfileApply).mockResolvedValueOnce({ action: "apply", warnings: ["hook:warn"] } as never);
+    await runCliRaw("profile", "apply", "ops");
+
+    // JSON output path and the --quiet/--profile (timing, no render) path.
+    await runCliRaw("--json", "profile", "list");
+    await runCli("profile", "apply", "research");
   });
 
   it("guards annotation text sources and skips refresh for read-only listings", async () => {
