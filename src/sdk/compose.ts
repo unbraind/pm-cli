@@ -638,7 +638,7 @@ export function deriveExtensionCapabilities(blueprint: ExtensionBlueprint): Exte
   // `<name> export`), so runtime capability summaries attribute them to the
   // commands surface as well as the importers surface. Keep the author-time
   // capability preview aligned with describeExtensionActivation.
-  if (importExportEntries.some((entry) => entry !== null && typeof entry === "object")) {
+  if (importExportEntries.some((entry) => typeof entry === "object")) {
     capabilities.add("commands");
   }
   // `?? {}` keeps an explicit `hooks: null` from throwing, mirroring composeExtension.
