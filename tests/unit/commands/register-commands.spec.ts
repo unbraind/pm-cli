@@ -2422,7 +2422,7 @@ describe("setup command actions", () => {
     };
     vi.mocked(runExtension).mockResolvedValue({
       action: "describe",
-      warnings: [],
+      warnings: ["pm-x failed to load on the global layer"],
       details: {
         target: "pm-x",
         total: 1,
@@ -2431,17 +2431,26 @@ describe("setup command actions", () => {
       },
     } as never);
     const stdout = vi.spyOn(process.stdout, "write").mockReturnValue(true);
+    const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
     let written = "";
+    let warned = "";
     try {
       await runCliRaw("package", "describe", "pm-x", "--markdown");
       // Capture before mockRestore(), which clears the recorded call history.
       written = stdout.mock.calls.map((call) => String(call[0])).join("");
+      warned = stderr.mock.calls.map((call) => String(call[0])).join("");
     } finally {
       stdout.mockRestore();
+      stderr.mockRestore();
     }
     expect(written).toContain("# Package surface reference");
     expect(written).toContain("## pm-x (project v1.0.0, loaded)");
     expect(written).toContain("- `pm-x ping`");
+    // Exactly one trailing newline (no extra blank line at EOF).
+    expect(written.endsWith("\n")).toBe(true);
+    expect(written.endsWith("\n\n")).toBe(false);
+    // Warnings are surfaced to stderr rather than swallowed in markdown mode.
+    expect(warned).toContain("warning: pm-x failed to load on the global layer");
 
     // --quiet still resolves to the describe action (no throw) but suppresses stdout.
     const quietStdout = vi.spyOn(process.stdout, "write").mockReturnValue(true);
@@ -2462,8 +2471,9 @@ describe("setup command actions", () => {
   });
 
   it("rejects --markdown for a non-describe action", async () => {
-    // Default runExtension mock returns the explore action, so the dispatch's
-    // post-run guard rejects --markdown for anything but describe.
+    // The guard runs before runExtension: --manage sets normalizedOptions.describe
+    // to false, so the dispatch rejects --markdown without performing any action
+    // (the mock's resolved action is irrelevant here).
     await expect(runCliRaw("package", "--manage", "--markdown")).rejects.toThrow(
       "--markdown is only supported by the describe action",
     );

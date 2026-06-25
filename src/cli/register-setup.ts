@@ -147,7 +147,13 @@ async function executeExtensionCommand(
   if (wantsMarkdown) {
     // describe resolved above, so `details` is the describe action's ExtensionDescribeResult.
     if (!globalOptions.quiet) {
-      writeStdout(`${renderExtensionDescribeMarkdown(result.details as unknown as ExtensionDescribeResult, vocabulary)}\n`);
+      // printResult is bypassed in markdown mode, so surface result warnings (e.g.
+      // extension load/activation failures) to stderr rather than swallowing them,
+      // and emit the rendered doc (already newline-terminated) without an extra newline.
+      for (const warning of result.warnings) {
+        printError(`warning: ${warning}`);
+      }
+      writeStdout(renderExtensionDescribeMarkdown(result.details as unknown as ExtensionDescribeResult, vocabulary));
     }
   } else {
     printResult(result, globalOptions);

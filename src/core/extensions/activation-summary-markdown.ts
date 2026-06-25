@@ -100,11 +100,25 @@ function headingPrefix(level: number): string {
 }
 
 /**
- * Render `value` as an inline Markdown code span, escaping any backticks it
- * contains so an identifier with a backtick cannot break out of the span.
+ * Render `value` as an inline Markdown code span. Backslash escapes do not work
+ * inside CommonMark code spans, so when `value` contains backticks the span is
+ * delimited by a run of backticks one longer than the longest internal run, and
+ * padded with a space when the value borders a backtick — the CommonMark rule
+ * for embedding literal backticks in a code span.
  */
 function code(value: string): string {
-  return `\`${value.replaceAll("`", "\\`")}\``;
+  if (!value.includes("`")) {
+    return `\`${value}\``;
+  }
+  let longestRun = 0;
+  let currentRun = 0;
+  for (const char of value) {
+    currentRun = char === "`" ? currentRun + 1 : 0;
+    longestRun = Math.max(longestRun, currentRun);
+  }
+  const fence = "`".repeat(longestRun + 1);
+  const pad = value.startsWith("`") || value.endsWith("`") ? " " : "";
+  return `${fence}${pad}${value}${pad}${fence}`;
 }
 
 /**

@@ -93,9 +93,13 @@ describe("renderExtensionSurfaceMarkdown", () => {
     expect(markdown).not.toContain("Capabilities:");
   });
 
-  it("escapes backticks in identifiers so a span cannot break out", () => {
-    const markdown = renderExtensionSurfaceMarkdown(makeSummary({ commands: ["weird`cmd"] }));
-    expect(markdown).toContain("- `weird\\`cmd`");
+  it("delimits code spans with backtick fences (CommonMark) when an identifier contains backticks", () => {
+    // Interior backtick, value does not border one: a longer fence, no padding.
+    expect(renderExtensionSurfaceMarkdown(makeSummary({ commands: ["weird`cmd"] }))).toContain("- ``weird`cmd``");
+    // Leading backtick: padded so the opening fence stays distinct.
+    expect(renderExtensionSurfaceMarkdown(makeSummary({ commands: ["`lead"] }))).toContain("- `` `lead ``");
+    // Trailing backtick: padded so the closing fence stays distinct.
+    expect(renderExtensionSurfaceMarkdown(makeSummary({ commands: ["trail`"] }))).toContain("- `` trail` ``");
   });
 
   it("renders the override surfaces (service/renderer/parser) and search/vector providers", () => {
