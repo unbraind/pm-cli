@@ -33,6 +33,10 @@ on:
 permissions:
   actions: write
   contents: write
+  # The "Alert on blocked scheduled auto-release" step opens/updates a tracking
+  # issue when a scheduled release is blocked; without issues:write the alert
+  # itself fails (gh issue create -> "Resource not accessible by integration").
+  issues: write
 
 concurrency:
   group: auto-release-${{ github.workflow }}

@@ -64,6 +64,8 @@ describe("release automation contract", () => {
     expect(workflow).toContain("--push");
     expect(workflow).toContain("node scripts/release/run-release-pipeline.mjs");
     expect(workflow).toContain("actions: write");
+    // The blocked-release alert opens/updates a tracking issue, which needs issues:write.
+    expect(workflow).toContain("issues: write");
     expect(workflow).toContain("gh workflow run release.yml --ref main -f tag=\"${NEW_TAG}\"");
     expect(workflow).toContain("gh run watch \"${RELEASE_RUN_ID}\" --compact --exit-status --interval 30");
     expect(workflow).toContain("SENTRY_AUTH_TOKEN");
