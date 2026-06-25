@@ -603,8 +603,9 @@ function clearExtensionState(settings: PmSettings, name: string): boolean {
 
 function suggestLifecycleActionTarget(target: string): { action: ExtensionCommandAction; flag: `--${string}` } | null {
   const normalizedTarget = target.trim().toLowerCase();
-  if (LIFECYCLE_ACTION_TARGETS.some(([candidate]) => candidate === normalizedTarget)) {
-    return null;
+  const exactMatch = LIFECYCLE_ACTION_TARGETS.find(([candidate, , flag]) => candidate === normalizedTarget || flag === normalizedTarget);
+  if (exactMatch) {
+    return { action: exactMatch[1], flag: exactMatch[2] };
   }
   const maxDistance = normalizedTarget.length <= 4 ? 1 : 2;
   let nearest: { action: ExtensionCommandAction; flag: `--${string}`; distance: number } | null = null;
@@ -1169,7 +1170,11 @@ function resolveGithubOption(options: ExtensionCommandOptions): string | undefin
   return undefined;
 }
 
-function requireTarget(target: string | undefined, action: ExtensionCommandAction): string {
+function getLifecycleActionFlag(action: ExtensionCommandAction): `--${string}` {
+  return LIFECYCLE_ACTION_TARGETS.find(([, candidateAction]) => candidateAction === action)?.[2] ?? `--${action}`;
+}
+
+function requireTarget(target: string | undefined, action: ExtensionCommandAction, options: ExtensionCommandOptions = {}): string {
   const normalized = target?.trim();
   if (!normalized) {
     if (action === "init") {
@@ -1178,7 +1183,31 @@ function requireTarget(target: string | undefined, action: ExtensionCommandActio
         EXIT_CODE.USAGE,
       );
     }
-    throw new PmCliError(`Action "${action}" requires an extension name or source target argument.`, EXIT_CODE.USAGE);
+    const noun = options.vocabulary === "package" ? "package" : "extension";
+    const targetName = action === "install" ? "source" : "name";
+    const actionFlag = getLifecycleActionFlag(action);
+    const commandTarget = `<${targetName}>`;
+    const command = `pm ${noun} ${actionFlag} ${commandTarget}`;
+    throw new PmCliError(
+      `Action "${action}" requires an extension name or source target argument.`,
+      EXIT_CODE.USAGE,
+      {
+        code: "missing_lifecycle_target",
+        required: `Provide a ${targetName} target for ${action}.`,
+        examples: [`pm ${noun} ${action} ${commandTarget}`, command, `pm ${noun} --help`],
+        recovery: {
+          attempted_command: `pm ${noun} ${action}`,
+          suggested_retry: command,
+          fallback_candidates: [
+            {
+              source: "lifecycle_action",
+              command,
+              reason: `flag-form ${action} command with required ${targetName} target`,
+            },
+          ],
+        },
+      },
+    );
   }
   return normalized;
 }
@@ -1334,7 +1363,7 @@ export async function runExtension(
     if (githubOption !== undefined || (typeof options.ref === "string" && options.ref.trim().length > 0)) {
       throw new PmCliError('Action "init" does not accept --gh/--github/--ref options.', EXIT_CODE.USAGE);
     }
-    const scaffoldTarget = requireTarget(normalizedTarget, action);
+    const scaffoldTarget = requireTarget(normalizedTarget, action, options);
     const scaffold = await scaffoldExtensionProject(
       scaffoldTarget,
       options.vocabulary ?? "extension",
@@ -1435,7 +1464,7 @@ export async function runExtension(
 
   if (action === "install") {
     const githubOption = resolveGithubOption(options);
-    const explicitSourceInput = githubOption ?? requireTarget(normalizedTarget, action);
+    const explicitSourceInput = githubOption ?? requireTarget(normalizedTarget, action, options);
     if (typeof githubOption !== "string" && isBundledPackageInstallAllTarget(explicitSourceInput)) {
       if (typeof options.ref === "string" && options.ref.trim().length > 0) {
         throw new PmCliError('Action "install all" does not accept --ref.', EXIT_CODE.USAGE);
@@ -1672,7 +1701,7 @@ export async function runExtension(
   }
 
   if (action === "adopt") {
-    const extensionTarget = requireTarget(normalizedTarget, action);
+    const extensionTarget = requireTarget(normalizedTarget, action, options);
     const githubOption = resolveGithubOption(options);
     const settings = await readSettings(resolvedRoots.settings_root);
     const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
@@ -1768,7 +1797,7 @@ export async function runExtension(
   }
 
   if (action === "uninstall") {
-    const extensionTarget = requireTarget(normalizedTarget, action);
+    const extensionTarget = requireTarget(normalizedTarget, action, options);
     const settings = await readSettings(resolvedRoots.settings_root);
     const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
     warnings.push(...managedStateRead.warnings);
@@ -1811,7 +1840,7 @@ export async function runExtension(
   }
 
   if (action === "activate" || action === "deactivate") {
-    const extensionTarget = requireTarget(normalizedTarget, action);
+    const extensionTarget = requireTarget(normalizedTarget, action, options);
     const settings = await readSettings(resolvedRoots.settings_root);
     const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
     warnings.push(...managedStateRead.warnings);

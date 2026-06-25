@@ -109,7 +109,9 @@ describe("extension command runtime", () => {
     expect(extensionCommandTestOnly.resolveAction(undefined, {})).toBe("explore");
     expect(() => extensionCommandTestOnly.resolveAction("target", { install: true, manage: true })).toThrow(/mutually exclusive/);
     expect(() => extensionCommandTestOnly.resolveAction("target", {})).toThrow(/One action flag is required/);
-    expect(() => extensionCommandTestOnly.resolveAction("install", {})).toThrow(/One action flag is required/);
+    expect(() => extensionCommandTestOnly.resolveAction("install", { vocabulary: "extension" })).toThrow(
+      'Unknown extension lifecycle action "install". Did you mean "--install"?',
+    );
     expect(() => extensionCommandTestOnly.resolveAction("descirbe", { vocabulary: "extension" })).toThrow(
       'Unknown extension lifecycle action "descirbe". Did you mean "--describe"?',
     );
@@ -151,6 +153,27 @@ describe("extension command runtime", () => {
 
     expect(() => extensionCommandTestOnly.requireTarget(undefined, "init")).toThrow(/requires a scaffold target path/);
     expect(() => extensionCommandTestOnly.requireTarget(" ", "install")).toThrow(/requires an extension name/);
+    let missingPackageInstallTargetError: unknown;
+    try {
+      extensionCommandTestOnly.requireTarget(undefined, "install", { vocabulary: "package" });
+    } catch (error) {
+      missingPackageInstallTargetError = error;
+    }
+    expect(missingPackageInstallTargetError).toMatchObject({
+      context: {
+        code: "missing_lifecycle_target",
+        recovery: {
+          suggested_retry: "pm package --install <source>",
+          fallback_candidates: [
+            {
+              source: "lifecycle_action",
+              command: "pm package --install <source>",
+              reason: "flag-form install command with required source target",
+            },
+          ],
+        },
+      },
+    });
     expect(extensionCommandTestOnly.requireTarget(" package ", "install")).toBe("package");
 
     expect(extensionCommandTestOnly.resolveGithubOption({ gh: " owner/repo ", github: "owner/repo" })).toBe("owner/repo");

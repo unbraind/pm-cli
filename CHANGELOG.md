@@ -18,8 +18,8 @@
 
 ### Fixed
 
-- describeExtensionBlueprint omits importer/exporter-with-options command definitions (parity gap vs describeExtensionActivation) ([pm-zqes](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zqes.toon))
 - Package lifecycle typo recovery should suggest action subcommands ([pm-js02](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-js02.toon))
+- describeExtensionBlueprint omits importer/exporter-with-options command definitions (parity gap vs describeExtensionActivation) ([pm-zqes](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zqes.toon))
 - deriveExtensionCapabilities omits 'schema' for importer/exporter options.flags (declarative blueprint under-grant) ([pm-v3ty](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v3ty.toon))
 - pm package doctor should warn when a schema package registers item types/fields but declares narrow activation.commands (silently non-global) ([pm-ok47](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ok47.toon))
 - Scaffolded search/importers package commands fail to dispatch: lazy-activation probe skips command-bearing extensions that omit activation.commands ([pm-nacb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nacb.toon))
