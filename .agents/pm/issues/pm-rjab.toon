@@ -1,0 +1,17 @@
+id: pm-rjab
+title: pm install does not scaffold extension-contributed item-type folders (transient missing_directory health warning)
+description: "Installing a package that registers custom item types (schema capability) leaves a transient `missing_directory:<folder>` warning in `pm health` (ok=false) until the first item of that type is created. `pm schema add-type` and `pm profile apply` both call ensureTypeFolderScaffold when a type becomes available, but raw `pm install`/activation did not — so a freshly-installed schema package degraded health."
+type: Issue
+status: open
+priority: 2
+tags[5]: "area:extensions","area:packages",dogfood,health,install
+created_at: "2026-06-25T15:23:05.242Z"
+updated_at: "2026-06-25T15:23:44.889Z"
+assignee: claude-code-agent
+author: claude-code-agent
+parent: pm-ugqx
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-a7o4,related,"2026-06-25T15:23:28.914Z",null,null
+  pm-hl9y,related,"2026-06-25T15:23:37.895Z",null,null
+  pm-halx,related,"2026-06-25T15:23:38.453Z",null,null
+body: "## Root cause\nThe health `directories` check (`src/cli/commands/health.ts`) treats every registered item-type folder as REQUIRED. `pm schema add-type` (schema.ts:540) and `pm profile apply` (schema.ts:1540/1668) both call `ensureTypeFolderScaffold` so the folder exists when the type is registered. `pm install` was the only path that registered types (via extension activation) without scaffolding their folders.\n\n## Discovery\nSurfaced while dogfooding the first-party `pm-kanban` archetype package (pm-a7o4) — the first bundled package to contribute an item type. `pm install kanban --project` followed by `pm health` reported `missing_directory:cards`.\n\n## Fix\n`runExtension` install action now scaffolds folders for the installed package's item types after the runtime activation probe, scoped to project installs (where pm_root is unambiguously the tracker). `probeRuntimeCommandPathsForInstall` was extended to return `registrations.item_types`.\n\n## Verification\nManual temp-dir dogfood: `pm install kanban --project` → `cards/` created → `pm health` ok=true with zero warnings, before any Card is created. New unit test asserts the folder is scaffolded on install."

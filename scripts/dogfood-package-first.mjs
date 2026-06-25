@@ -386,6 +386,7 @@ try {
     "calendar",
     "governance-audit",
     "guide-shell",
+    "kanban",
     "lifecycle-hooks",
     "linked-test-adapters",
     "search-advanced",

@@ -68,6 +68,7 @@ Project profiles:
 
 - `defineProjectProfile` / `BUILTIN_PROFILES` / `PROFILE_NAMES` / `resolveProfile` / `listProfiles` / `normalizeProfileName`
 - `planProfileApplication` (pure, idempotent diff of a profile against the current tracker state) and its `ProfileApplicationPlan` / `ProfileCurrentState` types
+- The bundled [pm-kanban exemplar](../packages/pm-kanban/README.md) ships a complete archetype as an installable package: it registers the live schema (`Card` type + flow fields) and exports a `ProjectProfileDefinition` the planner can stage, all on public SDK primitives.
 
 Package manifest exports:
 
