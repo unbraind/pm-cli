@@ -23,6 +23,7 @@ const PUBLISH_OR_RELEASE_PATTERNS = [
   "npx changeset publish",
 ];
 const SHA_PATTERN = "[0-9a-f]{40}";
+const PINNED_PNPM_VERSION = "version: 10.33.4";
 const PINNED_ACTIONS = {
   checkout: new RegExp(`uses: actions/checkout@${SHA_PATTERN}`),
   pnpmSetup: new RegExp(`uses: pnpm/action-setup@${SHA_PATTERN}`),
@@ -114,6 +115,7 @@ describe("GitHub workflow contract", () => {
       "if: matrix.gate == 'smokes'",
       PINNED_ACTIONS.checkout,
       PINNED_ACTIONS.pnpmSetup,
+      PINNED_PNPM_VERSION,
       PINNED_ACTIONS.setupNode,
       "name: Restore TypeScript and Vitest caches",
       PINNED_ACTIONS.actionsCache,
@@ -200,6 +202,7 @@ describe("GitHub workflow contract", () => {
       "node-version: 24",
       PINNED_ACTIONS.checkout,
       PINNED_ACTIONS.pnpmSetup,
+      PINNED_PNPM_VERSION,
       PINNED_ACTIONS.setupNode,
       PINNED_ACTIONS.actionsCache,
       "run: pnpm install --frozen-lockfile",
@@ -213,6 +216,32 @@ describe("GitHub workflow contract", () => {
     expect(ciWorkflow).not.toContain("Sandboxed PM regression");
 
     expectContainsNone(ciWorkflow, PUBLISH_OR_RELEASE_PATTERNS);
+  });
+
+  it("keeps docs workflow setup pinned and aligned with docs gates", async () => {
+    const docsPath = path.resolve(repoRoot, ".github/workflows/docs.yml");
+    const docsWorkflow = normalizeWorkflow(await readFile(docsPath, "utf8"));
+
+    expectContainsAll(docsWorkflow, [
+      "name: Docs and Skills",
+      "permissions:",
+      "contents: read",
+      "FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: \"true\"",
+      "concurrency:",
+      "cancel-in-progress: true",
+      PINNED_ACTIONS.checkout,
+      PINNED_ACTIONS.pnpmSetup,
+      PINNED_PNPM_VERSION,
+      PINNED_ACTIONS.setupNode,
+      "node-version: 24",
+      "cache: pnpm",
+      "run: pnpm install --frozen-lockfile",
+      "run: pnpm build",
+      "run: pnpm quality:docs-skills",
+      "run: pnpm quality:docs-links",
+    ]);
+
+    expectContainsNone(docsWorkflow, PUBLISH_OR_RELEASE_PATTERNS);
   });
 
   it("keeps nightly regression workflow sandbox-safe and non-publishing", async () => {
@@ -235,6 +264,7 @@ describe("GitHub workflow contract", () => {
       "{ os: windows-latest, node: 24 }",
       PINNED_ACTIONS.checkout,
       PINNED_ACTIONS.pnpmSetup,
+      PINNED_PNPM_VERSION,
       PINNED_ACTIONS.setupNode,
       "name: Restore TypeScript and Vitest caches",
       PINNED_ACTIONS.actionsCache,
@@ -288,6 +318,7 @@ describe("GitHub workflow contract", () => {
       PINNED_ACTIONS.checkout,
       "ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}",
       PINNED_ACTIONS.pnpmSetup,
+      PINNED_PNPM_VERSION,
       PINNED_ACTIONS.setupNode,
       "node-version: 24",
       "name: Restore TypeScript and Vitest caches",
@@ -358,6 +389,7 @@ describe("GitHub workflow contract", () => {
       PINNED_ACTIONS.checkout,
       "persist-credentials: false",
       PINNED_ACTIONS.pnpmSetup,
+      PINNED_PNPM_VERSION,
       PINNED_ACTIONS.setupNode,
       "name: Restore TypeScript and Vitest caches",
       PINNED_ACTIONS.actionsCache,
