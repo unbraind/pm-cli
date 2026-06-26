@@ -2427,16 +2427,6 @@ function actionScopedToolParameterDefinition(action: PmToolAction, key: string):
   return PM_TOOL_PARAMETER_PROPERTIES[key];
 }
 
-const JSON_SCHEMA_THEN_KEY = String.fromCharCode(116, 104, 101, 110);
-
-/**
- * Builds a JSON Schema object member while avoiding analyzer-folded property
- * literals for keywords that overlap with Promise-like object shapes.
- */
-function jsonSchemaObjectMember(key: string, value: Record<string, unknown>): Record<string, unknown> {
-  return { [key]: value };
-}
-
 function buildActionScopedToolSchema(action: PmToolAction): Record<string, unknown> {
   const contract = PM_TOOL_ACTION_SCHEMA_CONTRACTS[action];
   const required = toSchemaKeyList(contract.required ?? []);
@@ -2490,9 +2480,10 @@ function buildActionScopedToolSchema(action: PmToolAction): Record<string, unkno
         },
         required: [entry.property],
       },
-      ...jsonSchemaObjectMember(JSON_SCHEMA_THEN_KEY, {
+      // eslint-disable-next-line unicorn/no-thenable -- JSON Schema conditional keyword, not a Promise-like object.
+      then: {
         required: entry.required,
-      }),
+      },
     }));
   }
   if (contract.dependentAnyOfRequired && contract.dependentAnyOfRequired.length > 0) {
@@ -2500,11 +2491,12 @@ function buildActionScopedToolSchema(action: PmToolAction): Record<string, unkno
     for (const entry of contract.dependentAnyOfRequired) {
       allOf.push({
         if: { required: [entry.property] },
-        ...jsonSchemaObjectMember(JSON_SCHEMA_THEN_KEY, {
+        // eslint-disable-next-line unicorn/no-thenable -- JSON Schema conditional keyword, not a Promise-like object.
+        then: {
           anyOf: entry.anyOfRequired.map((requiredFields) => ({
             required: [...requiredFields],
           })),
-        }),
+        },
       });
     }
     schema.allOf = allOf;

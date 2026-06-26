@@ -36,11 +36,6 @@ const GLOBAL_OPTIONS: GlobalOptions = {
   noExtensions: false,
   profile: false,
 };
-const JSON_SCHEMA_THEN_KEY = String.fromCharCode(116, 104, 101, 110);
-
-function jsonSchemaObjectMember(key: string, value: Record<string, unknown>): Record<string, unknown> {
-  return { [key]: value };
-}
 
 describe("content + governance filter contract surface", () => {
   const CONTENT_PRESENCE_FLAGS = [
@@ -763,7 +758,8 @@ describe("contracts command runtime", () => {
 
     const addNotePrecondition = {
       if: { required: ["addNote"] },
-      ...jsonSchemaObjectMember(JSON_SCHEMA_THEN_KEY, { anyOf: [{ required: ["add"] }, { required: ["addGlob"] }] }),
+      // eslint-disable-next-line unicorn/no-thenable -- JSON Schema conditional keyword, not a Promise-like object.
+      then: { anyOf: [{ required: ["add"] }, { required: ["addGlob"] }] },
     };
     const docsSchema = findActionSchema("docs");
     expect(docsSchema?.properties).toHaveProperty("list");
@@ -1118,7 +1114,8 @@ describe("contracts command runtime", () => {
       allOf: expect.arrayContaining([
         expect.objectContaining({
           if: { properties: { subcommand: { const: "show" } }, required: ["subcommand"] },
-          ...jsonSchemaObjectMember(JSON_SCHEMA_THEN_KEY, { required: ["name"] }),
+          // eslint-disable-next-line unicorn/no-thenable -- JSON Schema conditional keyword, not a Promise-like object.
+          then: { required: ["name"] },
         }),
       ]),
     });
