@@ -108,9 +108,9 @@ const STRICT_METADATA_REQUIRED_FIELDS = [
   "sprint",
   "release",
 ] as const;
-const SUPPORTED_METADATA_REQUIRED_FIELDS = [
-  ...new Set([...STRICT_METADATA_REQUIRED_FIELDS]),
-] as ValidateMetadataRequiredField[];
+const SUPPORTED_METADATA_REQUIRED_FIELDS = Array.from(
+  new Set<ValidateMetadataRequiredField>(STRICT_METADATA_REQUIRED_FIELDS),
+);
 const METADATA_REQUIRED_FIELD_ALIASES: Record<string, ValidateMetadataRequiredField> = {
   author: "author",
   acceptance_criteria: "acceptance_criteria",
