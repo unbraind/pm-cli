@@ -129,14 +129,14 @@
     }
   },
   "dependencies": {
-    "@sentry/node": "^10.61.0",
+    "@sentry/node": "^10.62.0",
     "@toon-format/toon": "^2.3.0",
     "commander": "^15.0.0",
     "fast-glob": "^3.3.3",
     "fast-json-patch": "^3.1.1"
   },
   "devDependencies": {
-    "@sentry/cli": "^3.5.1",
+    "@sentry/cli": "^3.6.0",
     "@types/node": "^22.0.0",
     "@vitest/coverage-v8": "^4.1.9",
     "esbuild": "0.28.1",
