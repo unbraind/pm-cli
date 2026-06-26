@@ -259,7 +259,7 @@ export const TOOL_UPDATE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "allowAuditDepUpdate", flag: "--allow-audit-dep-update" },
 ];
 
-export const TOOL_UPDATE_MANY_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
+const TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "filterStatus", flag: "--filter-status" },
   { param: "filterType", flag: "--filter-type" },
   { param: "filterTag", flag: "--filter-tag" },
@@ -301,6 +301,10 @@ export const TOOL_UPDATE_MANY_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] 
   { param: "ids", flag: "--ids" },
   { param: "limit", flag: "--limit" },
   { param: "offset", flag: "--offset" },
+];
+
+export const TOOL_UPDATE_MANY_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
+  ...TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACTS,
 ];
 
 // normalize keeps the original filter family (no --ids / date-window filters):
@@ -323,47 +327,7 @@ export const TOOL_NORMALIZE_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = 
 ];
 
 export const TOOL_CLOSE_MANY_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
-  { param: "filterStatus", flag: "--filter-status" },
-  { param: "filterType", flag: "--filter-type" },
-  { param: "filterTag", flag: "--filter-tag" },
-  { param: "filterPriority", flag: "--filter-priority" },
-  { param: "filterDeadlineBefore", flag: "--filter-deadline-before" },
-  { param: "filterDeadlineAfter", flag: "--filter-deadline-after" },
-  { param: "filterUpdatedAfter", flag: "--filter-updated-after" },
-  { param: "filterUpdatedBefore", flag: "--filter-updated-before" },
-  { param: "filterCreatedAfter", flag: "--filter-created-after" },
-  { param: "filterCreatedBefore", flag: "--filter-created-before" },
-  { param: "filterAssignee", flag: "--filter-assignee" },
-  { param: "filterAssigneeFilter", flag: "--filter-assignee-filter" },
-  { param: "filterParent", flag: "--filter-parent" },
-  { param: "filterSprint", flag: "--filter-sprint" },
-  { param: "filterRelease", flag: "--filter-release" },
-  { param: "filterReviewerMissing", flag: "--filter-reviewer-missing" },
-  { param: "filterRiskMissing", flag: "--filter-risk-missing" },
-  { param: "filterConfidenceMissing", flag: "--filter-confidence-missing" },
-  { param: "filterSprintMissing", flag: "--filter-sprint-missing" },
-  { param: "filterReleaseMissing", flag: "--filter-release-missing" },
-  { param: "filterHasNotes", flag: "--filter-has-notes" },
-  { param: "filterNoNotes", flag: "--filter-no-notes" },
-  { param: "filterHasLearnings", flag: "--filter-has-learnings" },
-  { param: "filterNoLearnings", flag: "--filter-no-learnings" },
-  { param: "filterHasFiles", flag: "--filter-has-files" },
-  { param: "filterNoFiles", flag: "--filter-no-files" },
-  { param: "filterHasDocs", flag: "--filter-has-docs" },
-  { param: "filterNoDocs", flag: "--filter-no-docs" },
-  { param: "filterHasTests", flag: "--filter-has-tests" },
-  { param: "filterNoTests", flag: "--filter-no-tests" },
-  { param: "filterHasComments", flag: "--filter-has-comments" },
-  { param: "filterNoComments", flag: "--filter-no-comments" },
-  { param: "filterHasDeps", flag: "--filter-has-deps" },
-  { param: "filterNoDeps", flag: "--filter-no-deps" },
-  { param: "filterHasBody", flag: "--filter-has-body" },
-  { param: "filterEmptyBody", flag: "--filter-empty-body" },
-  { param: "filterHasLinkedCommand", flag: "--filter-has-linked-command" },
-  { param: "filterNoLinkedCommand", flag: "--filter-no-linked-command" },
-  { param: "ids", flag: "--ids" },
-  { param: "limit", flag: "--limit" },
-  { param: "offset", flag: "--offset" },
+  ...TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACTS,
 ];
 
 export const TOOL_CALENDAR_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
