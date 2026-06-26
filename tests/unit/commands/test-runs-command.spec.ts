@@ -808,12 +808,18 @@ describe("background test run lifecycle", () => {
               }
               return originalOn(event, listener);
             });
+            const addListenerSpy = vi
+              .spyOn(process, "addListener")
+              .mockImplementation((event, listener) => process.on(event, listener));
             const offSpy = vi.spyOn(process, "off").mockImplementation((event, listener) => {
               if (event === "SIGTERM" || event === "SIGINT") {
                 return process;
               }
               return originalOff(event, listener);
             });
+            const removeListenerSpy = vi
+              .spyOn(process, "removeListener")
+              .mockImplementation((event, listener) => process.off(event, listener));
             const signalWhenProgressReady = (async (): Promise<void> => {
               for (let attempt = 0; attempt < 1000; attempt += 1) {
                 if (workerFinished) {
@@ -833,6 +839,8 @@ describe("background test run lifecycle", () => {
               try {
                 await signalWhenProgressReady;
               } finally {
+                addListenerSpy.mockRestore();
+                removeListenerSpy.mockRestore();
                 onSpy.mockRestore();
                 offSpy.mockRestore();
               }
@@ -1124,12 +1132,18 @@ describe("background test run lifecycle", () => {
               }
               return originalOn(event, listener);
             });
+            const addListenerSpy = vi
+              .spyOn(process, "addListener")
+              .mockImplementation((event, listener) => process.on(event, listener));
             const offSpy = vi.spyOn(process, "off").mockImplementation((event, listener) => {
               if (event === "SIGTERM") {
                 return process;
               }
               return originalOff(event, listener);
             });
+            const removeListenerSpy = vi
+              .spyOn(process, "removeListener")
+              .mockImplementation((event, listener) => process.off(event, listener));
             const signalWhenProgressReady = (async (): Promise<void> => {
               for (let attempt = 0; attempt < 1000; attempt += 1) {
                 if (workerFinished) {
@@ -1148,6 +1162,8 @@ describe("background test run lifecycle", () => {
               try {
                 await signalWhenProgressReady;
               } finally {
+                addListenerSpy.mockRestore();
+                removeListenerSpy.mockRestore();
                 onSpy.mockRestore();
                 offSpy.mockRestore();
               }
