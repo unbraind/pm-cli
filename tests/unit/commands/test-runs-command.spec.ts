@@ -813,15 +813,17 @@ describe("background test run lifecycle", () => {
                 const index = sigtermHandlers.indexOf(listener as NodeJS.SignalsListener);
                 if (index >= 0) {
                   sigtermHandlers.splice(index, 1);
+                  return process;
                 }
-                return process;
+                return originalOff(event, listener);
               }
               if (event === "SIGINT") {
                 const index = sigintHandlers.indexOf(listener as NodeJS.SignalsListener);
                 if (index >= 0) {
                   sigintHandlers.splice(index, 1);
+                  return process;
                 }
-                return process;
+                return originalOff(event, listener);
               }
               return originalOff(event, listener);
             });
@@ -1149,8 +1151,9 @@ describe("background test run lifecycle", () => {
                 const index = sigtermHandlers.indexOf(listener as NodeJS.SignalsListener);
                 if (index >= 0) {
                   sigtermHandlers.splice(index, 1);
+                  return process;
                 }
-                return process;
+                return originalOff(event, listener);
               }
               return originalOff(event, listener);
             });
