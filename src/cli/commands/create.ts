@@ -93,8 +93,6 @@ import {
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
   COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR,
   type CommandUnsetFieldDefinition,
-  type RuntimeUnsetFieldDefinition,
-  resolveRuntimeUnsetFieldDefinition,
 } from "./shared-unset-fields.js";
 import { ensureEnumValue } from "./recurrence-parsers.js";
 import {
@@ -221,7 +219,10 @@ const SCHEDULE_CREATE_PRESET_VALUES = ["lightweight"] as const;
 const SCHEDULE_CREATE_PRESET_TYPES = new Set(["Reminder", "Meeting", "Event"]);
 const LOG_SEED_ALLOWED_KEYS = new Set(["author", "created_at", "text"]);
 
-type CreateUnsetFieldDefinition = RuntimeUnsetFieldDefinition;
+interface CreateUnsetFieldDefinition {
+  optionKey: string;
+  frontMatterKey: string;
+}
 
 const CREATE_UNSET_FIELD_DEFINITIONS: readonly CommandUnsetFieldDefinition[] = [
   ...COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR,
@@ -385,6 +386,36 @@ function parseOptionalString(value: string | undefined): string | undefined {
   return value;
 }
 
+function resolveRuntimeCreateUnsetDefinition(
+  token: string,
+  runtimeFieldRegistry: RuntimeFieldRegistry | undefined,
+): CreateUnsetFieldDefinition | undefined {
+  if (!runtimeFieldRegistry) {
+    return undefined;
+  }
+  for (const definition of runtimeFieldRegistry.definitions) {
+    if (definition.allow_unset === false) {
+      continue;
+    }
+    const candidates = new Set<string>([
+      definition.key,
+      definition.metadata_key,
+      definition.cli_flag.replaceAll("-", "_"),
+      definition.cli_flag,
+      ...definition.cli_aliases.map((alias) => alias.replaceAll("-", "_")),
+      ...definition.cli_aliases,
+    ]);
+    if (!candidates.has(token)) {
+      continue;
+    }
+    return {
+      optionKey: definition.key,
+      frontMatterKey: definition.metadata_key,
+    };
+  }
+  return undefined;
+}
+
 function parseCreateUnsetTargets(
   raw: string[] | undefined,
   runtimeFieldRegistry?: RuntimeFieldRegistry,
@@ -406,7 +437,7 @@ function parseCreateUnsetTargets(
         EXIT_CODE.USAGE,
       );
     }
-    const definition = CREATE_UNSET_ALIAS_MAP.get(trimmed) ?? resolveRuntimeUnsetFieldDefinition(trimmed, runtimeFieldRegistry);
+    const definition = CREATE_UNSET_ALIAS_MAP.get(trimmed) ?? resolveRuntimeCreateUnsetDefinition(trimmed, runtimeFieldRegistry);
     if (!definition) {
       throw new PmCliError(
         `Unsupported --unset field "${entry}". Supported fields: ${CREATE_UNSET_SUPPORTED_CANONICAL_FIELDS}`,
@@ -2006,6 +2037,6 @@ export const _testOnlyCreateCommand = {
   parseCreateUnsetTargets,
   requireStringOption,
   readTemplateOptionsFromRuntimeResult,
-  resolveRuntimeCreateUnsetDefinition: resolveRuntimeUnsetFieldDefinition,
+  resolveRuntimeCreateUnsetDefinition,
   typeOptionExampleValue,
 };

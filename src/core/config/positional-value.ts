@@ -47,7 +47,7 @@ export interface ConfigPositionalNotRoutable {
 export type ConfigPositionalResult = ConfigPositionalRouted | ConfigPositionalNotRoutable;
 
 /** Canonical snake-case config keys this helper understands. */
-export type CanonicalConfigKey =
+type CanonicalConfigKey =
   | "definition_of_done"
   | "item_format"
   | "history_missing_stream_policy"
