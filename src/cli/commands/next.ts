@@ -174,6 +174,7 @@ function buildRecommendationReasons(
   entry: ActionableEntry,
   statusRegistry: RuntimeStatusRegistry,
   now: string,
+  completedContainer: boolean,
 ): string[] {
   const item = entry.item;
   const reasons: string[] = [];
@@ -183,6 +184,9 @@ function buildRecommendationReasons(
       ? "in progress — resume to finish"
       : "open and ready to start",
   );
+  if (completedContainer) {
+    reasons.push("completed container — governance closeout");
+  }
   reasons.push(`priority p${item.priority}${item.priority === 0 ? " (highest)" : ""}`);
   if (typeof item.deadline === "string" && item.deadline.trim().length > 0) {
     reasons.push(describeDeadline(item.deadline, now));
@@ -220,6 +224,13 @@ function describeDeadline(deadline: string, now: string): string {
 function inProgressReadyCount(ready: NextActionableItem[], statusRegistry: RuntimeStatusRegistry): number {
   const inProgressStatus = normalizeStatusInput("in_progress", statusRegistry);
   return ready.filter((item) => normalizeStatusForRegistry(item.status, statusRegistry) === inProgressStatus).length;
+}
+
+// Returns true when an otherwise-ready item still has terminal descendants. Such
+// rows are useful governance closeout context, but concrete leaf work should rank
+// ahead of them in the default agent loop.
+function hasCompletedDescendants(item: ItemFrontMatter, childrenByParent: Map<string, ItemFrontMatter[]>): boolean {
+  return (childrenByParent.get(item.id.trim().toLowerCase()) ?? []).length > 0;
 }
 
 // Strips projection/pagination flags so the corpus reads stay full: limits are
@@ -272,9 +283,14 @@ export async function runNext(options: NextOptions, global: GlobalOptions): Prom
 
   const report = computeActionabilityReport(candidates, corpus, statusRegistry);
   const childrenByParent = buildChildrenByParent(corpus);
-  const rankedReady = [...report.ready].sort((left, right) =>
-    compareCriticalItems(left.item, right.item, statusRegistry),
-  );
+  const rankedReady = [...report.ready].sort((left, right) => {
+    const leftCompletedContainer = hasCompletedDescendants(left.item, childrenByParent);
+    const rightCompletedContainer = hasCompletedDescendants(right.item, childrenByParent);
+    if (leftCompletedContainer !== rightCompletedContainer) {
+      return Number(leftCompletedContainer) - Number(rightCompletedContainer);
+    }
+    return compareCriticalItems(left.item, right.item, statusRegistry);
+  });
   const rankedBlocked = [...report.blocked].sort((left, right) =>
     compareCriticalItems(left.item, right.item, statusRegistry),
   );
@@ -284,7 +300,15 @@ export async function runNext(options: NextOptions, global: GlobalOptions): Prom
 
   const recommended: NextRecommendation | null =
     rankedReady.length > 0
-      ? { ...readyRows[0], reasons: buildRecommendationReasons(rankedReady[0], statusRegistry, now) }
+      ? {
+          ...readyRows[0],
+          reasons: buildRecommendationReasons(
+            rankedReady[0],
+            statusRegistry,
+            now,
+            hasCompletedDescendants(rankedReady[0].item, childrenByParent),
+          ),
+        }
       : null;
 
   const result: NextResult = {

@@ -1,0 +1,38 @@
+id: pm-2n6i
+title: pm next should skip completed open containers when recommending actionable work
+description: "Regression follow-up for pm next: the command advertises ready work as active leaves with no open children, but current output recommends open Epics/containers whose children are already 100 percent closed before actionable leaf work. Fix ranking/filtering so agent loops get concrete work first while still exposing completed containers as governance context when useful."
+type: Issue
+status: closed
+priority: 1
+tags[3]: agent-ux,"area:cli",context-management
+created_at: "2026-06-26T04:53:53.825Z"
+updated_at: "2026-06-26T05:12:42.841Z"
+author: codex-gpt5-pm-next-20260626
+estimated_minutes: 90
+acceptance_criteria: pm next does not recommend open containers that have children_total > 0 and children_closed == children_total ahead of actionable leaf items; output remains token-efficient and documents any completed-container governance signal; focused tests cover the regression.
+parent: pm-mpbb
+resolution: Resolved the pm next ranking regression by demoting otherwise-ready completed containers behind concrete leaf work while preserving them as governance closeout rows.
+expected_result: pm next recommends active concrete leaf work before 100%-complete open containers and documents completed-container closeout behavior across CLI docs and MCP contracts.
+actual_result: "pm next now ranks concrete leaf entries ahead of completed containers, adds a completed-container governance closeout rationale when such a row is recommended, updates docs/MCP contract text, and passes focused tests, contracts, full coverage, temp smoke, security, changelog, and observability gates."
+comments[3]{created_at,author,text}:
+  "2026-06-26T04:54:03.066Z",codex-gpt5-pm-next-20260626,"Duplicate check: searched all statuses for 'pm next completed container epics children closed recommended actionable leaf' and 'ready queue container completion_pct open children closed next recommendation'. Existing pm-nj90/pm-9x6k are closed original feature/ADR items; this is a regression follow-up observed live on 2026-06-26 where pm next recommended 100%-complete open containers ahead of leaf work."
+  "2026-06-26T05:10:32.714Z",codex-gpt5-pm-next-20260626,"Evidence: implemented pm next concrete-leaf-first ranking for completed containers; focused tests passed (24 tests); linked build passed; linked contracts check passed in tracker context after replacing the duplicate sandboxed contracts link. Full coverage passed at literal 100/100/100/100 (31815 statements, 24773 branches, 5403 functions, 30538 lines; 256 files, 5132 tests). Typecheck, static quality/docstring gate, security scan, pnpm audit --audit-level low, contracts:check, and pm-changelog@2026.6.20 check passed. Manual temp smoke passed with isolated PM_PATH/PM_GLOBAL_PATH: init, create completed Epic+closed child, create leaf, pm next recommended the leaf before the completed container, contracts, health, validate. GitHub open PRs/issues none; Dependabot/CodeQL/secret-scanning open alerts all 0. Sentry/telemetry gate passed: critical=0 high=0, telemetry finish_error_rate_pct=0.75, failures_without_error_code_rows=0. pm health summary ok with 0 warnings; validate history_drift ok with existing resolution metadata backlog warning validate_resolution_missing_fields:257 tracked separately."
+  "2026-06-26T05:11:34.533Z",codex-gpt5-pm-next-20260626,"Post-close evidence: regenerated CHANGELOG.md with pm-changelog@2026.6.20 via node dist/cli.js changelog generate; pnpm changelog:pm:check then passed unchanged with item_count=1349. Managed extension metadata remained out of the diff."
+files[4]{path,scope,note}:
+  src/cli/commands/next.ts,project,Demote completed containers behind concrete leaf work in pm next ranking
+  src/mcp/tool-definitions.ts,project,Align pm_next MCP tool description with completed-container ranking
+  tests/fixtures/contracts/full.json,project,Refresh MCP contract snapshot after pm_next description update
+  tests/unit/commands/next-command.spec.ts,project,Regression coverage for completed-container ordering and closeout rationale
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/next-command.spec.ts tests/unit/core/item/actionability.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,Focused pm next/actionability regression tests
+  pnpm build,null,project,300,null,null,null,null,null,null,null,null,null,null,null,TypeScript build and bundled CLI
+  "pnpm contracts:check",null,project,300,tracker,null,null,null,null,null,null,null,null,null,null,Contract snapshot remains current in real tracker context
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mquh0zr0-6was4x,test,failed,"2026-06-26T05:08:39.934Z","2026-06-26T05:08:55.932Z","2026-06-26T05:08:55.932Z",null,null,2,1,0,null,null,null
+  test-local-mquh1xy6-eqlz2f,test,passed,"2026-06-26T05:09:38.776Z","2026-06-26T05:09:40.254Z","2026-06-26T05:09:40.254Z",null,null,1,0,0,null,null,null
+  test-local-mquh5utv-kbx5ht,test,passed,"2026-06-26T05:12:27.239Z","2026-06-26T05:12:42.835Z","2026-06-26T05:12:42.835Z",null,null,3,0,0,null,null,null
+docs[2]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,Update token-minimal retrieval guidance for pm next completed-container behavior
+  docs/COMMANDS.md,project,Document pm next concrete-leaf-first ranking and completed-container closeout signal
+close_reason: "Acceptance met: pm next ranks concrete leaf work before completed containers, docs/contracts/tests updated, full coverage 100/100/100/100 and temp smoke/security/observability gates passed."
+body: ""
