@@ -215,9 +215,13 @@ describe("runGet and runAppend", () => {
 
       const withOnlyTests = await runGet(id, { path: context.pmPath }, { fields: "id,linked.tests" });
       expect(withOnlyTests.item).toEqual({ id });
-      expect(withOnlyTests.linked?.files).toEqual([]);
-      expect(withOnlyTests.linked?.tests).toHaveLength(1);
-      expect(withOnlyTests.linked?.docs).toEqual([]);
+      expect(withOnlyTests.linked).toBeDefined();
+      if (withOnlyTests.linked === undefined) {
+        throw new TypeError("linked projection was not returned");
+      }
+      expect(withOnlyTests.linked.files).toEqual([]);
+      expect(withOnlyTests.linked.tests).toHaveLength(1);
+      expect(withOnlyTests.linked.docs).toEqual([]);
 
       const withClaimState = await runGet(id, { path: context.pmPath }, { fields: "id,claim_state" });
       expect(withClaimState.item).toEqual({ id });
@@ -230,7 +234,11 @@ describe("runGet and runAppend", () => {
 
       const withDottedClaimState = await runGet(id, { path: context.pmPath }, { fields: "id,claim_state.claimed" });
       expect(withDottedClaimState.item).toEqual({ id });
-      expect(withDottedClaimState.claim_state?.claimed).toBe(false);
+      expect(withDottedClaimState.claim_state).toBeDefined();
+      if (withDottedClaimState.claim_state === undefined) {
+        throw new TypeError("claim_state projection was not returned");
+      }
+      expect(withDottedClaimState.claim_state.claimed).toBe(false);
 
       const withChildren = await runGet(id, { path: context.pmPath }, { fields: "id,children" });
       expect(withChildren.item).toEqual({ id });
@@ -288,17 +296,32 @@ describe("runGet and runAppend", () => {
 
       const treeResult = await runGet(rootId, { path: context.pmPath }, { tree: true, treeDepth: "1" });
       expect(treeResult.tree).toBeDefined();
-      expect(treeResult.tree?.root_id).toBe(rootId);
-      expect(treeResult.tree?.depth_limit).toBe(1);
-      expect(treeResult.tree?.count).toBe(2);
-      const ids = (treeResult.tree?.items ?? []).map((entry) => String(entry.id));
+      if (treeResult.tree === undefined) {
+        throw new TypeError("tree result was not returned");
+      }
+      expect(treeResult.tree.root_id).toBe(rootId);
+      expect(treeResult.tree.depth_limit).toBe(1);
+      expect(treeResult.tree.count).toBe(2);
+      const treeItems = treeResult.tree.items;
+      const ids = treeItems.map((entry) => String(entry.id));
       expect(ids).toEqual([childId, grandchildId]);
-      expect((treeResult.tree?.items[0] as { tree_depth?: number }).tree_depth).toBe(0);
-      expect((treeResult.tree?.items[1] as { tree_depth?: number }).tree_depth).toBe(1);
+      expect(treeItems).toHaveLength(2);
+      const [childTreeItem, grandchildTreeItem] = treeItems as Array<{ tree_depth?: number }>;
+      expect(childTreeItem).toBeDefined();
+      expect(grandchildTreeItem).toBeDefined();
+      if (childTreeItem === undefined || grandchildTreeItem === undefined) {
+        throw new TypeError("tree result did not include expected child entries");
+      }
+      expect(childTreeItem.tree_depth).toBe(0);
+      expect(grandchildTreeItem.tree_depth).toBe(1);
 
       const unboundedTree = await runGet(rootId, { path: context.pmPath }, { tree: true });
-      expect(unboundedTree.tree?.depth_limit).toBeNull();
-      expect(unboundedTree.tree?.count).toBe(2);
+      expect(unboundedTree.tree).toBeDefined();
+      if (unboundedTree.tree === undefined) {
+        throw new TypeError("unbounded tree result was not returned");
+      }
+      expect(unboundedTree.tree.depth_limit).toBeNull();
+      expect(unboundedTree.tree.count).toBe(2);
     });
   });
 

@@ -155,13 +155,38 @@ describe("starter-extension example", () => {
     expect(starterCollector.artifacts.searchProviders).toHaveLength(1);
     expect(starterCollector.artifacts.vectorAdapters).toHaveLength(1);
 
-    starterCollector.artifacts.hooks.beforeCommand[0]?.({ command: "starter ping" });
-    starterCollector.artifacts.hooks.afterCommand[0]?.({ command: "starter ping" });
-    starterCollector.artifacts.hooks.onWrite[0]?.({ path: "/tmp/item.md" });
-    starterCollector.artifacts.hooks.onRead[0]?.({ path: "/tmp/item.md" });
-    starterCollector.artifacts.hooks.onIndex[0]?.({ id: "pm-1" });
+    const beforeCommand = starterCollector.artifacts.hooks.beforeCommand[0];
+    const afterCommand = starterCollector.artifacts.hooks.afterCommand[0];
+    const onWrite = starterCollector.artifacts.hooks.onWrite[0];
+    const onRead = starterCollector.artifacts.hooks.onRead[0];
+    const onIndex = starterCollector.artifacts.hooks.onIndex[0];
+    expect(beforeCommand).toBeDefined();
+    expect(afterCommand).toBeDefined();
+    expect(onWrite).toBeDefined();
+    expect(onRead).toBeDefined();
+    expect(onIndex).toBeDefined();
+    if (
+      beforeCommand === undefined ||
+      afterCommand === undefined ||
+      onWrite === undefined ||
+      onRead === undefined ||
+      onIndex === undefined
+    ) {
+      throw new TypeError("starter extension hooks were not registered");
+    }
+    beforeCommand({ command: "starter ping" });
+    afterCommand({ command: "starter ping" });
+    onWrite({ path: "/tmp/item.md" });
+    onRead({ path: "/tmp/item.md" });
+    onIndex({ id: "pm-1" });
 
-    const starterRun = await (starterCollector.artifacts.commands[0]?.run as (context: unknown) => Promise<Record<string, unknown>>)({
+    const starterCommandRun = starterCollector.artifacts.commands[0]?.run;
+    expect(typeof starterCommandRun).toBe("function");
+    if (typeof starterCommandRun !== "function") {
+      throw new TypeError("starter ping command run handler was not registered");
+    }
+    const runStarterCommand = starterCommandRun as (context: unknown) => Promise<Record<string, unknown>>;
+    const starterRun = await runStarterCommand({
       command: "starter ping",
       options: { name: "  starter  " },
     });
@@ -174,7 +199,7 @@ describe("starter-extension example", () => {
       index: 1,
     });
 
-    const starterFallbackRun = await (starterCollector.artifacts.commands[0]?.run as (context: unknown) => Promise<Record<string, unknown>>)({
+    const starterFallbackRun = await runStarterCommand({
       command: "starter ping",
       options: null,
     });
@@ -182,31 +207,46 @@ describe("starter-extension example", () => {
 
     // Whitespace-only name collapses to empty after trim, hitting the
     // `rawName.length > 0 ? rawName : "agent"` false arm.
-    const starterBlankNameRun = await (starterCollector.artifacts.commands[0]?.run as (context: unknown) => Promise<Record<string, unknown>>)({
+    const starterBlankNameRun = await runStarterCommand({
       command: "starter ping",
       options: { name: "   " },
     });
     expect(starterBlankNameRun.hello).toBe("agent");
 
-    const parsed = await (starterCollector.artifacts.parsers[0]?.handler as (context: unknown) => Promise<Record<string, unknown>>)({
+    const starterParser = starterCollector.artifacts.parsers[0]?.handler;
+    expect(typeof starterParser).toBe("function");
+    if (typeof starterParser !== "function") {
+      throw new TypeError("starter parser handler was not registered");
+    }
+    const parseStarterCommand = starterParser as (context: unknown) => Promise<Record<string, unknown>>;
+    const parsed = await parseStarterCommand({
       options: { name: "  agent  " },
     });
     expect(parsed.options).toEqual({ name: "agent" });
 
     // Non-string name skips the trim branch.
-    const parsedNonString = await (starterCollector.artifacts.parsers[0]?.handler as (context: unknown) => Promise<Record<string, unknown>>)({
+    const parsedNonString = await parseStarterCommand({
       options: { name: 42 },
     });
     expect(parsedNonString.options).toEqual({ name: 42 });
 
-    const preflightOther = starterCollector.artifacts.preflights[0]?.({ command: "context" }) as Record<string, unknown>;
-    const preflightStarter = starterCollector.artifacts.preflights[0]?.({ command: "starter ping" }) as Record<string, unknown>;
+    const preflight = starterCollector.artifacts.preflights[0];
+    expect(preflight).toBeDefined();
+    if (preflight === undefined) {
+      throw new TypeError("starter preflight handler was not registered");
+    }
+    const preflightOther = preflight({ command: "context" }) as Record<string, unknown>;
+    const preflightStarter = preflight({ command: "starter ping" }) as Record<string, unknown>;
     expect(preflightOther).toEqual({});
     expect(preflightStarter).toEqual({ run_extension_migrations: false });
 
     const outputService = starterCollector.artifacts.services.find((service) => service.name === "output_format");
+    expect(outputService).toBeDefined();
+    if (outputService === undefined) {
+      throw new TypeError("starter output service was not registered");
+    }
     expect(
-      outputService?.handler({
+      outputService.handler({
         command: "starter ping",
         payload: { result: starterRun },
         options: { uppercase: true },
@@ -214,14 +254,14 @@ describe("starter-extension example", () => {
     ).toBe("starter_service_output hello=STARTER command=starter ping");
     // uppercase absent/non-true exercises the `uppercase ? ... : helloRaw` else arm.
     expect(
-      outputService?.handler({
+      outputService.handler({
         command: "starter ping",
         payload: { result: starterRun },
         options: { uppercase: false },
       }),
     ).toBe("starter_service_output hello=starter command=starter ping");
     expect(
-      outputService?.handler({
+      outputService.handler({
         command: "context",
         payload: { passthrough: true },
       }),
@@ -229,31 +269,43 @@ describe("starter-extension example", () => {
 
     const jsonRenderer = starterCollector.artifacts.renderers.find((renderer) => renderer.format === "json");
     const toonRenderer = starterCollector.artifacts.renderers.find((renderer) => renderer.format === "toon");
-    const renderedJson = jsonRenderer?.handler({ command: "starter ping", result: starterRun });
-    const renderedToon = toonRenderer?.handler({ command: "starter ping", result: starterRun });
+    expect(jsonRenderer).toBeDefined();
+    expect(toonRenderer).toBeDefined();
+    if (jsonRenderer === undefined || toonRenderer === undefined) {
+      throw new TypeError("starter renderers were not registered");
+    }
+    const renderedJson = jsonRenderer.handler({ command: "starter ping", result: starterRun });
+    const renderedToon = toonRenderer.handler({ command: "starter ping", result: starterRun });
     expect(String(renderedJson)).toContain('"source": "starter-extension"');
     expect(String(renderedToon)).toContain("starter_ping");
     const circular: Record<string, unknown> = {};
     circular.self = circular;
-    expect(String(jsonRenderer?.handler({ command: "starter ping", result: circular }))).toContain(
+    expect(String(jsonRenderer.handler({ command: "starter ping", result: circular }))).toContain(
       '"error": "non_serializable_payload"',
     );
-    expect(jsonRenderer?.handler({ command: "context", result: {} })).toBeNull();
-    expect(toonRenderer?.handler({ command: "context", result: {} })).toBeNull();
+    expect(jsonRenderer.handler({ command: "context", result: {} })).toBeNull();
+    expect(toonRenderer.handler({ command: "context", result: {} })).toBeNull();
 
     // A result whose hook_counts lack before/after exercises the `?? 0` right arms.
-    const renderedToonNoHooks = toonRenderer?.handler({
+    const renderedToonNoHooks = toonRenderer.handler({
       command: "starter ping",
       result: { hello: "x", command: "starter ping", hook_counts: {} },
     });
     expect(String(renderedToonNoHooks)).toContain("hooks.before: 0");
     expect(String(renderedToonNoHooks)).toContain("hooks.after: 0");
 
-    const imported = await starterCollector.artifacts.importers[0]?.handler({
+    const importer = starterCollector.artifacts.importers[0];
+    const exporter = starterCollector.artifacts.exporters[0];
+    expect(importer).toBeDefined();
+    expect(exporter).toBeDefined();
+    if (importer === undefined || exporter === undefined) {
+      throw new TypeError("starter importer/exporter handlers were not registered");
+    }
+    const imported = await importer.handler({
       source: "fixture.json",
       count: 1,
     });
-    const exported = await starterCollector.artifacts.exporters[0]?.handler({
+    const exported = await exporter.handler({
       destination: "fixture.json",
       count: 1,
     });

@@ -1742,7 +1742,8 @@ describe("extension loader", () => {
           source_package: "pm-name-backed",
         }),
       ]);
-      expect((loaded.loaded[0]?.module as { loadedValue?: string }).loadedValue).toBe("first");
+      const firstLoadedModule = loaded.loaded[0]?.module as { loadedValue?: string } | undefined;
+      expect(firstLoadedModule?.loadedValue).toBe("first");
 
       await writeFile(path.join(roots.project, "name-backed", "index.mjs"), "export const loadedValue = 'second';\n", "utf8");
       const reloaded = await loadExtensions({
@@ -1752,7 +1753,8 @@ describe("extension loader", () => {
         reload_token: "reload-token-1",
       });
 
-      expect((reloaded.loaded[0]?.module as { loadedValue?: string }).loadedValue).toBe("second");
+      const reloadedModule = reloaded.loaded[0]?.module as { loadedValue?: string } | undefined;
+      expect(reloadedModule?.loadedValue).toBe("second");
     });
   });
 

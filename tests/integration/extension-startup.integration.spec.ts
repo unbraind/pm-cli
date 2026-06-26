@@ -244,7 +244,7 @@ describe("extension startup activation", () => {
         entrySource: [
           "export function activate(api) {",
           "  api.registerCommand('list-open', (context) => ({",
-          "    ...(context.result ?? {}),",
+          "    ...context.result,",
           "    legacy_override: true,",
           "  }));",
           "}",

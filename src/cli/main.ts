@@ -341,7 +341,7 @@ function buildPmCliRecoveryContext(
   if (existingRecovery?.recovery_mode === "compact" && !explainRequested) {
     return {
       /* c8 ignore next */
-      ...(context ?? {}),
+      ...context,
       recovery: existingRecovery,
     };
   }
@@ -382,7 +382,7 @@ function buildPmCliRecoveryContext(
     ...(existingRecovery?.next_best_command ? { next_best_command: existingRecovery.next_best_command } : {}),
   };
   return {
-    ...(context ?? {}),
+    ...context,
     recovery,
   };
 }

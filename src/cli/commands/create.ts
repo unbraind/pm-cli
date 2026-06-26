@@ -1993,9 +1993,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     reminders: reminders.values,
     events: events.values,
     ...registeredItemFieldValues,
-    /* c8 ignore start -- collectRuntimeCreateFieldValues always returns a `values` object, so the `?? {}` fallback is unreachable. */
-    ...(runtimeCreateFieldValues.values ?? {}),
-    /* c8 ignore stop */
+    ...runtimeCreateFieldValues.values,
   });
   try {
     applyRegisteredItemFieldDefaultsAndValidation(

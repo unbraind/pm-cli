@@ -260,7 +260,7 @@ export function upsertStatusDef(
   const existing = existingIndex >= 0 ? statuses[existingIndex] : baseDefinition;
 
   const next: RuntimeStatusDefinition = {
-    ...(existing ?? {}),
+    ...existing,
     id: input.id,
   };
   if (input.roles !== undefined) {

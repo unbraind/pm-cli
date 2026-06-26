@@ -247,6 +247,8 @@ jobs:
           disable_search: true
           flags: unittests
           name: pm-cli-coverage
+          override_branch: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
+          override_commit: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           fail_ci_if_error: true
           verbose: true
 
@@ -262,6 +264,8 @@ jobs:
           disable_search: true
           flags: unittests
           name: pm-cli-test-results
+          override_branch: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
+          override_commit: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           fail_ci_if_error: true
           verbose: true
 

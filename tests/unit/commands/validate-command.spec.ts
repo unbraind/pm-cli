@@ -1303,7 +1303,7 @@ describe("runValidate", () => {
       settings.validation.metadata_profile = "custom";
       settings.validation.metadata_required_fields = ["sprint", "release"];
       settings.governance = {
-        ...(settings.governance ?? {}),
+        ...settings.governance,
         preset: "custom",
         metadata_profile: "custom",
       };
@@ -1339,7 +1339,7 @@ describe("runValidate", () => {
       settings.validation.metadata_profile = "custom";
       settings.validation.metadata_required_fields = [];
       settings.governance = {
-        ...(settings.governance ?? {}),
+        ...settings.governance,
         preset: "custom",
         metadata_profile: "custom",
       };
@@ -2311,7 +2311,7 @@ describe("runValidate", () => {
       // A per-type override from settings wins over the built-in default.
       const settingsPath = path.join(context.pmPath, "settings.json");
       const settings = JSON.parse(await readFile(settingsPath, "utf8")) as { validation?: Record<string, unknown> };
-      settings.validation = { ...(settings.validation ?? {}), estimate_defaults_by_type: { Epic: 999 } };
+      settings.validation = { ...settings.validation, estimate_defaults_by_type: { Epic: 999 } };
       await writeFile(settingsPath, JSON.stringify(settings, null, 2), "utf8");
 
       const granted = await runValidate({ autoFix: true, fixScope: ["estimates"] }, { path: context.pmPath });

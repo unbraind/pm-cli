@@ -601,7 +601,7 @@ export async function resolveCommanderUsageContext(
     unknownOptionSuggestions,
     unknownOptionOtherCommands: unknownOptionOtherCommands.length > 0 ? unknownOptionOtherCommands : undefined,
     suggestedRetryCommand,
-    ...(unknownCommandGuidance ?? {}),
+    ...unknownCommandGuidance,
   };
 }
 

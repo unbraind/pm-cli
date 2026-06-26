@@ -174,7 +174,7 @@ describe("runCreate", () => {
         governance?: { preset?: string };
       };
       strictSettings.governance = {
-        ...(strictSettings.governance ?? {}),
+        ...strictSettings.governance,
         preset: "strict",
       };
       await writeFile(settingsPath, `${JSON.stringify(strictSettings, null, 2)}\n`, "utf8");
@@ -1635,7 +1635,7 @@ describe("runCreate", () => {
         validation?: { sprint_release_format?: string };
       };
       parsed.validation = {
-        ...(parsed.validation ?? {}),
+        ...parsed.validation,
         sprint_release_format: "strict_error",
       };
       await writeFile(settingsPath, `${JSON.stringify(parsed, null, 2)}\n`, "utf8");
@@ -1695,7 +1695,7 @@ describe("runCreate", () => {
         };
       };
       parsed.governance = {
-        ...(parsed.governance ?? {}),
+        ...parsed.governance,
         preset: "custom",
         parent_reference: "strict_error",
       };
@@ -1726,7 +1726,7 @@ describe("runCreate", () => {
         };
       };
       parsed.governance = {
-        ...(parsed.governance ?? {}),
+        ...parsed.governance,
         preset: "custom",
         parent_reference: "strict_error",
       };
@@ -2634,7 +2634,7 @@ describe("runCreate", () => {
         governance?: { preset?: string };
       };
       settings.governance = {
-        ...(settings.governance ?? {}),
+        ...settings.governance,
         preset: "strict",
       };
       settings.item_types = {
@@ -2884,7 +2884,7 @@ describe("runCreate", () => {
         schema?: { fields?: Array<Record<string, unknown>> };
       };
       settings.schema = {
-        ...(settings.schema ?? {}),
+        ...settings.schema,
         fields: [
           {
             key: "githubUrl",
@@ -2952,7 +2952,7 @@ describe("runCreate", () => {
         schema?: { fields?: Array<Record<string, unknown>> };
       };
       settings.schema = {
-        ...(settings.schema ?? {}),
+        ...settings.schema,
         fields: [
           {
             key: "reviewUrl",
@@ -2988,7 +2988,7 @@ describe("runCreate", () => {
         schema?: { unknown_field_policy?: string };
       };
       settings.schema = {
-        ...(settings.schema ?? {}),
+        ...settings.schema,
         unknown_field_policy: "reject",
       };
       await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
@@ -3432,7 +3432,7 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
         governance?: { create_default_type?: string };
       };
       settings.governance = {
-        ...(settings.governance ?? {}),
+        ...settings.governance,
         create_default_type: "Feature",
       };
       await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
@@ -3581,7 +3581,7 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
         schema?: { fields?: Array<Record<string, unknown>> };
       };
       settings.schema = {
-        ...(settings.schema ?? {}),
+        ...settings.schema,
         fields: [
           {
             key: "reviewUrl",
@@ -3713,7 +3713,7 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
         { id: "closed", roles: ["terminal", "terminal_done", "default_close"] },
       ];
       settings.schema = {
-        ...(settings.schema ?? {}),
+        ...settings.schema,
         statuses: customStatuses,
       };
       await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
@@ -3762,7 +3762,7 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
         { id: "closed", roles: ["terminal", "terminal_done", "default_close"] },
       ];
       settings.schema = {
-        ...(settings.schema ?? {}),
+        ...settings.schema,
         statuses: noBlockedStatuses,
       };
       await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
@@ -3900,7 +3900,7 @@ describe("repeatable metadata parser helpers", () => {
         const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
           governance?: Record<string, unknown>;
         };
-        settings.governance = { ...(settings.governance ?? {}), require_close_reason: false };
+        settings.governance = { ...settings.governance, require_close_reason: false };
         await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
 
         const result = await runCreate(

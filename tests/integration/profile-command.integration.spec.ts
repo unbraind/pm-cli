@@ -136,26 +136,35 @@ describe("pm profile command", () => {
 
       const list = await callProfile({ subcommand: "list" });
       expect(list?.isError).not.toBe(true);
-      expect((list?.structuredContent as { result?: { profiles?: unknown[] } })?.result?.profiles).toHaveLength(3);
+      const listContent = list?.structuredContent as { result?: { profiles?: unknown[] } } | undefined;
+      expect(listContent?.result?.profiles).toHaveLength(3);
 
       const show = await callProfile({ subcommand: "show", name: "research" });
-      expect((show?.structuredContent as { result?: { name?: string } })?.result?.name).toBe("research");
+      const showContent = show?.structuredContent as { result?: { name?: string } } | undefined;
+      expect(showContent?.result?.name).toBe("research");
 
       const apply = await callProfile({ subcommand: "apply", name: "ops", dryRun: true, author: "mcp", force: false });
-      expect((apply?.structuredContent as { result?: { applied?: boolean; changed?: boolean } })?.result).toMatchObject({
+      const applyContent = apply?.structuredContent as
+        | { result?: { applied?: boolean; changed?: boolean } }
+        | undefined;
+      expect(applyContent?.result).toMatchObject({
         applied: false,
         changed: true,
       });
 
       // Nested-options path: subcommand/name/flags supplied under `options`.
       const listViaOptions = await callProfile({ options: { subcommand: "list" } });
-      expect((listViaOptions?.structuredContent as { result?: { profiles?: unknown[] } })?.result?.profiles).toHaveLength(3);
+      const listViaOptionsContent = listViaOptions?.structuredContent as
+        | { result?: { profiles?: unknown[] } }
+        | undefined;
+      expect(listViaOptionsContent?.result?.profiles).toHaveLength(3);
 
       const applyViaOptions = await callProfile({
         subcommand: "apply",
         options: { name: "agile", dryRun: true, author: "x", force: true },
       });
-      expect((applyViaOptions?.structuredContent as { result?: { name?: string } })?.result?.name).toBe("agile");
+      const applyViaOptionsContent = applyViaOptions?.structuredContent as { result?: { name?: string } } | undefined;
+      expect(applyViaOptionsContent?.result?.name).toBe("agile");
 
       await expect(callProfile({ subcommand: "frobnicate" })).rejects.toThrow(/Unknown pm profile subcommand/);
     });

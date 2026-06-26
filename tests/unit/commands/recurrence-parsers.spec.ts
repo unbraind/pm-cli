@@ -70,12 +70,23 @@ describe("parseRecurrenceRule", () => {
       NOW,
       "defined",
     );
-    expect(rule?.freq).toBe("weekly");
-    expect(rule?.interval).toBe(2);
-    expect(rule?.count).toBe(5);
-    expect(rule?.by_weekday).toEqual(["mon", "fri"]);
-    expect(rule?.by_month_day).toEqual([1, 15]);
-    expect(rule?.exdates?.[0] < (rule?.exdates?.[1] as string)).toBe(true);
+    expect(rule).toBeDefined();
+    if (rule === undefined) {
+      throw new TypeError("full recurrence rule was not parsed");
+    }
+    expect(rule.freq).toBe("weekly");
+    expect(rule.interval).toBe(2);
+    expect(rule.count).toBe(5);
+    expect(rule.by_weekday).toEqual(["mon", "fri"]);
+    expect(rule.by_month_day).toEqual([1, 15]);
+    expect(rule.exdates).toHaveLength(2);
+    const [firstExdate, secondExdate] = rule.exdates ?? [];
+    expect(firstExdate).toBeDefined();
+    expect(secondExdate).toBeDefined();
+    if (firstExdate === undefined || secondExdate === undefined) {
+      throw new TypeError("full recurrence rule did not include two exclusion dates");
+    }
+    expect(firstExdate < secondExdate).toBe(true);
   });
 
   it("omits optional collections when empty", () => {
