@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[4]: code-quality,codefactor,complexity,refactor
 created_at: "2026-06-26T13:33:03.901Z"
-updated_at: "2026-06-26T20:18:29.140Z"
+updated_at: "2026-06-26T20:35:59.044Z"
 author: claude-code-agent
 acceptance_criteria: "First milestone: the 3 Critical + 7 High complexity findings are eliminated. Stretch: Moderate findings trend to 0 where it does not harm readability (otherwise scoped-ignore with justification). No behavior change — full coverage suite green at 100%; pnpm typecheck, contracts:check, and quality:static pass; no directory exceeds the 120-file static-gate cap."
 parent: pm-92if
