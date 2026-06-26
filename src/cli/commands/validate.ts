@@ -109,7 +109,7 @@ const STRICT_METADATA_REQUIRED_FIELDS = [
   "release",
 ] as const;
 // Keep this deduplicated so future list edits cannot double-count metadata diagnostics.
-const SUPPORTED_METADATA_REQUIRED_FIELDS = Array.from(
+const SUPPORTED_METADATA_REQUIRED_FIELDS: readonly ValidateMetadataRequiredField[] = Array.from(
   new Set<ValidateMetadataRequiredField>(STRICT_METADATA_REQUIRED_FIELDS),
 );
 const METADATA_REQUIRED_FIELD_ALIASES: Record<string, ValidateMetadataRequiredField> = {
