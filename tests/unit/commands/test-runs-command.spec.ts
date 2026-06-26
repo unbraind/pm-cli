@@ -792,18 +792,18 @@ describe("background test run lifecycle", () => {
               requestedBy: "unit",
             });
 
-            let sigtermHandler: NodeJS.SignalsListener | undefined;
-            let sigintHandler: NodeJS.SignalsListener | undefined;
+            const sigtermHandlers: NodeJS.SignalsListener[] = [];
+            const sigintHandlers: NodeJS.SignalsListener[] = [];
             let workerFinished = false;
             const originalOn: typeof process.on = process.on.bind(process);
             const originalOff: typeof process.off = process.off.bind(process);
             const onSpy = vi.spyOn(process, "on").mockImplementation((event, listener) => {
               if (event === "SIGTERM") {
-                sigtermHandler = listener as NodeJS.SignalsListener;
+                sigtermHandlers.push(listener as NodeJS.SignalsListener);
                 return process;
               }
               if (event === "SIGINT") {
-                sigintHandler = listener as NodeJS.SignalsListener;
+                sigintHandlers.push(listener as NodeJS.SignalsListener);
                 return process;
               }
               return originalOn(event, listener);
@@ -812,7 +812,18 @@ describe("background test run lifecycle", () => {
               .spyOn(process, "addListener")
               .mockImplementation((event, listener) => process.on(event, listener));
             const offSpy = vi.spyOn(process, "off").mockImplementation((event, listener) => {
-              if (event === "SIGTERM" || event === "SIGINT") {
+              if (event === "SIGTERM") {
+                const index = sigtermHandlers.indexOf(listener as NodeJS.SignalsListener);
+                if (index >= 0) {
+                  sigtermHandlers.splice(index, 1);
+                }
+                return process;
+              }
+              if (event === "SIGINT") {
+                const index = sigintHandlers.indexOf(listener as NodeJS.SignalsListener);
+                if (index >= 0) {
+                  sigintHandlers.splice(index, 1);
+                }
                 return process;
               }
               return originalOff(event, listener);
@@ -831,8 +842,12 @@ describe("background test run lifecycle", () => {
                   break;
                 }
               }
-              sigtermHandler?.("SIGTERM");
-              sigintHandler?.("SIGINT");
+              for (const handler of sigtermHandlers) {
+                handler("SIGTERM");
+              }
+              for (const handler of sigintHandlers) {
+                handler("SIGINT");
+              }
             })();
             const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true).finally(async () => {
               workerFinished = true;
@@ -1121,13 +1136,13 @@ describe("background test run lifecycle", () => {
               commandArgs: ["signal-stop-default-delay"],
               requestedBy: "unit",
             });
-            let sigtermHandler: NodeJS.SignalsListener | undefined;
+            const sigtermHandlers: NodeJS.SignalsListener[] = [];
             let workerFinished = false;
             const originalOn: typeof process.on = process.on.bind(process);
             const originalOff: typeof process.off = process.off.bind(process);
             const onSpy = vi.spyOn(process, "on").mockImplementation((event, listener) => {
               if (event === "SIGTERM") {
-                sigtermHandler = listener as NodeJS.SignalsListener;
+                sigtermHandlers.push(listener as NodeJS.SignalsListener);
                 return process;
               }
               return originalOn(event, listener);
@@ -1137,6 +1152,10 @@ describe("background test run lifecycle", () => {
               .mockImplementation((event, listener) => process.on(event, listener));
             const offSpy = vi.spyOn(process, "off").mockImplementation((event, listener) => {
               if (event === "SIGTERM") {
+                const index = sigtermHandlers.indexOf(listener as NodeJS.SignalsListener);
+                if (index >= 0) {
+                  sigtermHandlers.splice(index, 1);
+                }
                 return process;
               }
               return originalOff(event, listener);
@@ -1155,7 +1174,9 @@ describe("background test run lifecycle", () => {
                   break;
                 }
               }
-              sigtermHandler?.("SIGTERM");
+              for (const handler of sigtermHandlers) {
+                handler("SIGTERM");
+              }
             })();
             const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true).finally(async () => {
               workerFinished = true;
