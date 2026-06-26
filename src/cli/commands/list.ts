@@ -309,6 +309,33 @@ function applyGovernanceMissingFilterEcho(filters: Record<string, unknown>, opti
   }
 }
 
+interface FilterValueEchoEntry {
+  optionKey: string;
+  summaryKey: string;
+  normalize?: (value: unknown) => unknown;
+}
+
+/**
+ * Copies user-supplied option values into compact filter summaries.
+ *
+ * Compact list/search responses are optimized for agent context: they echo only
+ * filters the caller actually supplied. Keeping this helper shared prevents the
+ * list and search command summaries from drifting as new scalar filters are
+ * added.
+ */
+export function applyFilterValueEcho(
+  filters: Record<string, unknown>,
+  options: Record<string, unknown>,
+  entries: ReadonlyArray<FilterValueEchoEntry>,
+): void {
+  for (const entry of entries) {
+    const value = options[entry.optionKey];
+    if (value !== undefined) {
+      filters[entry.summaryKey] = entry.normalize ? entry.normalize(value) : value;
+    }
+  }
+}
+
 /**
  * Implements build content filter echo for the public runtime surface of this module.
  */
@@ -326,6 +353,24 @@ export function buildGovernanceMissingFilterEcho(options: Record<string, unknown
   applyGovernanceMissingFilterEcho(echo, options);
   return echo;
 }
+
+const COMPACT_LIST_VALUE_FILTER_ECHO_ENTRIES: ReadonlyArray<FilterValueEchoEntry> = [
+  { optionKey: "type", summaryKey: "type" },
+  { optionKey: "tag", summaryKey: "tag" },
+  { optionKey: "priority", summaryKey: "priority" },
+  { optionKey: "deadlineBefore", summaryKey: "deadline_before" },
+  { optionKey: "deadlineAfter", summaryKey: "deadline_after" },
+  { optionKey: "updatedAfter", summaryKey: "updated_after" },
+  { optionKey: "updatedBefore", summaryKey: "updated_before" },
+  { optionKey: "createdAfter", summaryKey: "created_after" },
+  { optionKey: "createdBefore", summaryKey: "created_before" },
+  { optionKey: "ids", summaryKey: "ids" },
+  { optionKey: "assignee", summaryKey: "assignee" },
+  { optionKey: "assigneeFilter", summaryKey: "assignee_filter" },
+  { optionKey: "parent", summaryKey: "parent" },
+  { optionKey: "sprint", summaryKey: "sprint" },
+  { optionKey: "release", summaryKey: "release" },
+] as const;
 
 function buildCompactListFilterSummary(params: {
   filtersStatus: string | string[] | null;
@@ -349,51 +394,7 @@ function buildCompactListFilterSummary(params: {
   if (filtersStatus !== null) {
     filters.status = filtersStatus;
   }
-  if (options.type !== undefined) {
-    filters.type = options.type;
-  }
-  if (options.tag !== undefined) {
-    filters.tag = options.tag;
-  }
-  if (options.priority !== undefined) {
-    filters.priority = options.priority;
-  }
-  if (options.deadlineBefore !== undefined) {
-    filters.deadline_before = options.deadlineBefore;
-  }
-  if (options.deadlineAfter !== undefined) {
-    filters.deadline_after = options.deadlineAfter;
-  }
-  if (options.updatedAfter !== undefined) {
-    filters.updated_after = options.updatedAfter;
-  }
-  if (options.updatedBefore !== undefined) {
-    filters.updated_before = options.updatedBefore;
-  }
-  if (options.createdAfter !== undefined) {
-    filters.created_after = options.createdAfter;
-  }
-  if (options.createdBefore !== undefined) {
-    filters.created_before = options.createdBefore;
-  }
-  if (options.ids !== undefined) {
-    filters.ids = options.ids;
-  }
-  if (options.assignee !== undefined) {
-    filters.assignee = options.assignee;
-  }
-  if (options.assigneeFilter !== undefined) {
-    filters.assignee_filter = options.assigneeFilter;
-  }
-  if (options.parent !== undefined) {
-    filters.parent = options.parent;
-  }
-  if (options.sprint !== undefined) {
-    filters.sprint = options.sprint;
-  }
-  if (options.release !== undefined) {
-    filters.release = options.release;
-  }
+  applyFilterValueEcho(filters, options, COMPACT_LIST_VALUE_FILTER_ECHO_ENTRIES);
   if (options.filterAcMissing === true) {
     filters.filter_ac_missing = true;
   }
@@ -647,36 +648,36 @@ function resolveStatusFilter(
   return parseStatusFilterCsv(status, statusRegistry, { strict: false });
 }
 
-function applyFilters(
-  items: ListedItem[],
-  status: ItemStatus[] | undefined,
-  options: ListOptions,
-  typeRegistry: ItemTypeRegistry,
-  statusRegistry: RuntimeStatusRegistry,
-  runtimeFieldFilters: Record<string, unknown>,
-): ListedItem[] {
-  const statusSet = status && status.length > 0 ? new Set<ItemStatus>(status) : undefined;
-  const typeFilter = parseType(options.type, typeRegistry);
-  const tagFilter = options.tag?.trim().toLowerCase();
-  const priorityFilter = parsePriority(options.priority);
-  const deadlineBefore = parseDeadline(options.deadlineBefore, "deadline-before");
-  const deadlineAfter = parseDeadline(options.deadlineAfter, "deadline-after");
-  const updatedAfter = parseTimestampWindow(options.updatedAfter, "updated-after");
-  const updatedBefore = parseTimestampWindow(options.updatedBefore, "updated-before");
-  const createdAfter = parseTimestampWindow(options.createdAfter, "created-after");
-  const createdBefore = parseTimestampWindow(options.createdBefore, "created-before");
-  const idsFilter = parseIdsFilter(options.ids);
-  const assigneeFilter = options.assignee?.trim();
-  const assigneeModeFilter = parseAssigneeFilter(options.assigneeFilter);
-  const parentFilter = options.parent?.trim();
-  const sprintFilter = options.sprint?.trim();
-  const releaseFilter = options.release?.trim();
-  const missingMetadataFilters = resolveMissingMetadataFilters(options);
-  const missingMetadataActive = hasMissingMetadataFilter(missingMetadataFilters);
-  const lifecycleClassifier = lifecycleClassifierFromStatusRegistry(statusRegistry);
-  const contentFieldFilters = resolveContentFieldFilters(options as Record<string, unknown>);
-  const contentFiltersActive = hasContentFieldFilter(contentFieldFilters);
+interface ListFilterSet {
+  idsFilter: Set<string> | undefined;
+  statusSet: Set<ItemStatus> | undefined;
+  excludeTerminal: boolean;
+  typeFilter: ItemType | undefined;
+  tagFilter: string | undefined;
+  priorityFilter: number | undefined;
+  deadlineBefore: string | undefined;
+  deadlineAfter: string | undefined;
+  updatedAfter: string | undefined;
+  updatedBefore: string | undefined;
+  createdAfter: string | undefined;
+  createdBefore: string | undefined;
+  assigneeFilter: string | undefined;
+  assigneeModeFilter: "assigned" | "unassigned" | undefined;
+  parentFilter: string | undefined;
+  treeEnabled: boolean;
+  sprintFilter: string | undefined;
+  releaseFilter: string | undefined;
+  missingMetadataFilters: MissingMetadataFilters;
+  missingMetadataActive: boolean;
+  lifecycleClassifier: ReturnType<typeof lifecycleClassifierFromStatusRegistry>;
+  contentFieldFilters: ContentFieldFilters;
+  contentFiltersActive: boolean;
+}
 
+function assertListAssigneeFilters(
+  assigneeFilter: string | undefined,
+  assigneeModeFilter: "assigned" | "unassigned" | undefined,
+): void {
   if (assigneeFilter && (assigneeFilter.toLowerCase() === "none" || assigneeFilter.toLowerCase() === "null")) {
     throw new PmCliError(
       '--assignee no longer accepts "none" or "null". Use --assignee-filter unassigned.',
@@ -686,39 +687,103 @@ function applyFilters(
   if (assigneeFilter !== undefined && assigneeModeFilter === "unassigned") {
     throw new PmCliError("Cannot combine --assignee with --assignee-filter unassigned", EXIT_CODE.USAGE);
   }
+}
 
-  return items.filter((item) => {
-    if (idsFilter && !idsFilter.has(item.id)) return false;
-    if (statusSet && !statusSet.has(item.status)) return false;
-    if (options.excludeTerminal && isTerminalStatus(item.status, statusRegistry)) return false;
-    if (typeFilter && item.type !== typeFilter) return false;
-    if (tagFilter && !item.tags.includes(tagFilter)) return false;
-    if (priorityFilter !== undefined && item.priority !== priorityFilter) return false;
-    if (deadlineBefore && (!item.deadline || compareTimestampStrings(item.deadline, deadlineBefore) > 0)) return false;
-    if (deadlineAfter && (!item.deadline || compareTimestampStrings(item.deadline, deadlineAfter) < 0)) return false;
-    if (updatedAfter && compareTimestampStrings(item.updated_at, updatedAfter) < 0) return false;
-    if (updatedBefore && compareTimestampStrings(item.updated_at, updatedBefore) > 0) return false;
-    if (createdAfter && compareTimestampStrings(item.created_at, createdAfter) < 0) return false;
-    if (createdBefore && compareTimestampStrings(item.created_at, createdBefore) > 0) return false;
-    if (assigneeModeFilter === "assigned" && !item.assignee) return false;
-    if (assigneeModeFilter === "unassigned" && item.assignee) return false;
-    if (assigneeFilter !== undefined && item.assignee !== assigneeFilter) {
-      return false;
-    }
-    if (parentFilter !== undefined && options.tree !== true && item.parent !== parentFilter) return false;
-    if (sprintFilter !== undefined && item.sprint !== sprintFilter) return false;
-    if (releaseFilter !== undefined && item.release !== releaseFilter) return false;
-    if (missingMetadataActive && !itemMatchesMissingMetadata(item, missingMetadataFilters, lifecycleClassifier)) {
-      return false;
-    }
-    if (contentFiltersActive && !itemMatchesContentFilters(item, contentFieldFilters)) {
-      return false;
-    }
-    if (!matchesRuntimeFilters(item as Record<string, unknown>, runtimeFieldFilters)) {
-      return false;
-    }
-    return true;
-  });
+function resolveListFilterSet(
+  status: ItemStatus[] | undefined,
+  options: ListOptions,
+  typeRegistry: ItemTypeRegistry,
+  statusRegistry: RuntimeStatusRegistry,
+): ListFilterSet {
+  const assigneeFilter = options.assignee?.trim();
+  const assigneeModeFilter = parseAssigneeFilter(options.assigneeFilter);
+  assertListAssigneeFilters(assigneeFilter, assigneeModeFilter);
+  const missingMetadataFilters = resolveMissingMetadataFilters(options);
+  const contentFieldFilters = resolveContentFieldFilters(options as Record<string, unknown>);
+  return {
+    idsFilter: parseIdsFilter(options.ids),
+    statusSet: status && status.length > 0 ? new Set<ItemStatus>(status) : undefined,
+    excludeTerminal: options.excludeTerminal === true,
+    typeFilter: parseType(options.type, typeRegistry),
+    tagFilter: options.tag?.trim().toLowerCase(),
+    priorityFilter: parsePriority(options.priority),
+    deadlineBefore: parseDeadline(options.deadlineBefore, "deadline-before"),
+    deadlineAfter: parseDeadline(options.deadlineAfter, "deadline-after"),
+    updatedAfter: parseTimestampWindow(options.updatedAfter, "updated-after"),
+    updatedBefore: parseTimestampWindow(options.updatedBefore, "updated-before"),
+    createdAfter: parseTimestampWindow(options.createdAfter, "created-after"),
+    createdBefore: parseTimestampWindow(options.createdBefore, "created-before"),
+    assigneeFilter,
+    assigneeModeFilter,
+    parentFilter: options.parent?.trim(),
+    treeEnabled: options.tree === true,
+    sprintFilter: options.sprint?.trim(),
+    releaseFilter: options.release?.trim(),
+    missingMetadataFilters,
+    missingMetadataActive: hasMissingMetadataFilter(missingMetadataFilters),
+    lifecycleClassifier: lifecycleClassifierFromStatusRegistry(statusRegistry),
+    contentFieldFilters,
+    contentFiltersActive: hasContentFieldFilter(contentFieldFilters),
+  };
+}
+
+function matchesListScalarFilters(
+  item: ListedItem,
+  filters: ListFilterSet,
+  statusRegistry: RuntimeStatusRegistry,
+): boolean {
+  if (filters.idsFilter && !filters.idsFilter.has(item.id)) return false;
+  if (filters.statusSet && !filters.statusSet.has(item.status)) return false;
+  if (filters.excludeTerminal && isTerminalStatus(item.status, statusRegistry)) return false;
+  if (filters.typeFilter && item.type !== filters.typeFilter) return false;
+  if (filters.tagFilter && !item.tags.includes(filters.tagFilter)) return false;
+  if (filters.priorityFilter !== undefined && item.priority !== filters.priorityFilter) return false;
+  if (filters.deadlineBefore && (!item.deadline || compareTimestampStrings(item.deadline, filters.deadlineBefore) > 0)) return false;
+  if (filters.deadlineAfter && (!item.deadline || compareTimestampStrings(item.deadline, filters.deadlineAfter) < 0)) return false;
+  if (filters.updatedAfter && compareTimestampStrings(item.updated_at, filters.updatedAfter) < 0) return false;
+  if (filters.updatedBefore && compareTimestampStrings(item.updated_at, filters.updatedBefore) > 0) return false;
+  if (filters.createdAfter && compareTimestampStrings(item.created_at, filters.createdAfter) < 0) return false;
+  if (filters.createdBefore && compareTimestampStrings(item.created_at, filters.createdBefore) > 0) return false;
+  if (filters.assigneeModeFilter === "assigned" && !item.assignee) return false;
+  if (filters.assigneeModeFilter === "unassigned" && item.assignee) return false;
+  if (filters.assigneeFilter !== undefined && item.assignee !== filters.assigneeFilter) return false;
+  if (filters.parentFilter !== undefined && !filters.treeEnabled && item.parent !== filters.parentFilter) return false;
+  if (filters.sprintFilter !== undefined && item.sprint !== filters.sprintFilter) return false;
+  if (filters.releaseFilter !== undefined && item.release !== filters.releaseFilter) return false;
+  return true;
+}
+
+function matchesListFilterSet(
+  item: ListedItem,
+  filters: ListFilterSet,
+  statusRegistry: RuntimeStatusRegistry,
+  runtimeFieldFilters: Record<string, unknown>,
+): boolean {
+  if (!matchesListScalarFilters(item, filters, statusRegistry)) {
+    return false;
+  }
+  if (filters.missingMetadataActive && !itemMatchesMissingMetadata(item, filters.missingMetadataFilters, filters.lifecycleClassifier)) {
+    return false;
+  }
+  if (filters.contentFiltersActive && !itemMatchesContentFilters(item, filters.contentFieldFilters)) {
+    return false;
+  }
+  if (!matchesRuntimeFilters(item as Record<string, unknown>, runtimeFieldFilters)) {
+    return false;
+  }
+  return true;
+}
+
+function applyFilters(
+  items: ListedItem[],
+  status: ItemStatus[] | undefined,
+  options: ListOptions,
+  typeRegistry: ItemTypeRegistry,
+  statusRegistry: RuntimeStatusRegistry,
+  runtimeFieldFilters: Record<string, unknown>,
+): ListedItem[] {
+  const filters = resolveListFilterSet(status, options, typeRegistry, statusRegistry);
+  return items.filter((item) => matchesListFilterSet(item, filters, statusRegistry, runtimeFieldFilters));
 }
 
 function trimNonEmpty(value: string | undefined): string | undefined {
