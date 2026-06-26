@@ -866,11 +866,11 @@ describe("background test run lifecycle", () => {
               for (const handler of sigintHandlers) {
                 handler("SIGINT");
               }
-            })();
+            })().catch(() => undefined);
             const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true).finally(async () => {
               workerFinished = true;
               try {
-                await signalWhenProgressReady.catch(() => undefined);
+                await signalWhenProgressReady;
               } finally {
                 restore();
               }
@@ -1172,11 +1172,11 @@ describe("background test run lifecycle", () => {
               for (const handler of sigtermHandlers) {
                 handler("SIGTERM");
               }
-            })();
+            })().catch(() => undefined);
             const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true).finally(async () => {
               workerFinished = true;
               try {
-                await signalWhenProgressReady.catch(() => undefined);
+                await signalWhenProgressReady;
               } finally {
                 restore();
               }
