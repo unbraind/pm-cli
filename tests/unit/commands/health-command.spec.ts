@@ -1170,6 +1170,9 @@ describe("runHealth", () => {
         expect(verboseDetails?.stale_items_after.length).toBe(ids.length);
         expect(verboseDetails?.stale_items_before_truncated).toBe(false);
         expect(verboseDetails?.stale_items_after_truncated).toBe(false);
+        if (verboseDetails === undefined) {
+          throw new TypeError("Expected health vectorization verbose details to exist.");
+        }
         expect(verboseDetails.stale_items_before).toEqual(expect.arrayContaining(ids));
         expect(verboseDetails.stale_items_after).toEqual(expect.arrayContaining(ids));
       });
