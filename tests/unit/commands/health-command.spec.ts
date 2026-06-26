@@ -1133,16 +1133,19 @@ describe("runHealth", () => {
               stale_items_after_truncated: boolean;
             }
           | undefined;
-        expect(summaryDetails?.stale_items_detail_mode).toBe("summary");
-        expect(summaryDetails?.stale_items_summary_limit).toBe(25);
-        expect(summaryDetails?.stale_items_before_total).toBe(ids.length);
-        expect(summaryDetails?.stale_items_after_total).toBe(ids.length);
-        expect(summaryDetails?.stale_items_before.length).toBe(25);
-        expect(summaryDetails?.stale_items_after.length).toBe(25);
-        expect(summaryDetails?.stale_items_before_truncated).toBe(true);
-        expect(summaryDetails?.stale_items_after_truncated).toBe(true);
-        expect(summaryDetails?.stale_items_before.every((entry) => ids.includes(entry))).toBe(true);
-        expect(summaryDetails?.stale_items_after.every((entry) => ids.includes(entry))).toBe(true);
+        if (summaryDetails === undefined) {
+          throw new TypeError("Expected health vectorization summary details to exist.");
+        }
+        expect(summaryDetails.stale_items_detail_mode).toBe("summary");
+        expect(summaryDetails.stale_items_summary_limit).toBe(25);
+        expect(summaryDetails.stale_items_before_total).toBe(ids.length);
+        expect(summaryDetails.stale_items_after_total).toBe(ids.length);
+        expect(summaryDetails.stale_items_before.length).toBe(25);
+        expect(summaryDetails.stale_items_after.length).toBe(25);
+        expect(summaryDetails.stale_items_before_truncated).toBe(true);
+        expect(summaryDetails.stale_items_after_truncated).toBe(true);
+        expect(summaryDetails.stale_items_before.every((entry) => ids.includes(entry))).toBe(true);
+        expect(summaryDetails.stale_items_after.every((entry) => ids.includes(entry))).toBe(true);
 
         const verboseResult = await runHealth(
           { path: context.pmPath },
@@ -1163,16 +1166,16 @@ describe("runHealth", () => {
               stale_items_after_truncated: boolean;
             }
           | undefined;
-        expect(verboseDetails?.stale_items_detail_mode).toBe("full");
-        expect(verboseDetails?.stale_items_before_total).toBe(ids.length);
-        expect(verboseDetails?.stale_items_after_total).toBe(ids.length);
-        expect(verboseDetails?.stale_items_before.length).toBe(ids.length);
-        expect(verboseDetails?.stale_items_after.length).toBe(ids.length);
-        expect(verboseDetails?.stale_items_before_truncated).toBe(false);
-        expect(verboseDetails?.stale_items_after_truncated).toBe(false);
         if (verboseDetails === undefined) {
           throw new TypeError("Expected health vectorization verbose details to exist.");
         }
+        expect(verboseDetails.stale_items_detail_mode).toBe("full");
+        expect(verboseDetails.stale_items_before_total).toBe(ids.length);
+        expect(verboseDetails.stale_items_after_total).toBe(ids.length);
+        expect(verboseDetails.stale_items_before.length).toBe(ids.length);
+        expect(verboseDetails.stale_items_after.length).toBe(ids.length);
+        expect(verboseDetails.stale_items_before_truncated).toBe(false);
+        expect(verboseDetails.stale_items_after_truncated).toBe(false);
         expect(verboseDetails.stale_items_before).toEqual(expect.arrayContaining(ids));
         expect(verboseDetails.stale_items_after).toEqual(expect.arrayContaining(ids));
       });
