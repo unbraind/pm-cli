@@ -164,6 +164,24 @@ describe("runNext", () => {
     });
   });
 
+  it("keeps completed containers behind concrete leaf work and marks container closeout rationale", async () => {
+    await withTempPmPath(async (context) => {
+      const completedEpic = createItem(context, { title: "Completed platform epic", type: "Epic", priority: "0" });
+      const shippedChild = createItem(context, { title: "Already shipped", parent: completedEpic, priority: "0" });
+      context.runCli(["close", shippedChild, "shipped", "--json"], { expectJson: true });
+      const leaf = createItem(context, { title: "Actual next leaf", priority: "1" });
+
+      const result = await runNext({}, { path: context.pmPath });
+      expect(result.recommended?.id).toBe(leaf);
+      expect(result.ready.map((entry) => entry.id).slice(0, 2)).toEqual([leaf, completedEpic]);
+
+      context.runCli(["close", leaf, "done", "--json"], { expectJson: true });
+      const closeoutOnly = await runNext({}, { path: context.pmPath });
+      expect(closeoutOnly.recommended?.id).toBe(completedEpic);
+      expect(closeoutOnly.recommended?.reasons).toContain("completed container — governance closeout");
+    });
+  });
+
   it("scopes to a parent subtree, honours --limit/--blocked-limit, and --ready-only", async () => {
     await withTempPmPath(async (context) => {
       const epic = createItem(context, { title: "Scoped epic", type: "Epic" });
