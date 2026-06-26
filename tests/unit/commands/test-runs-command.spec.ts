@@ -773,12 +773,9 @@ describe("background test run lifecycle", () => {
           "setInterval(() => {",
           "  if (!stopped) {",
           "    process.stderr.write('[pm test] linked-test 1/1 running elapsed_ms=15\\n');",
+          "    process.stderr.write('[pm test-all] item 1/1 start id=pm-stop linked_tests=1\\n');",
           "  }",
           "}, 1);",
-          "setTimeout(() => {",
-          "  process.kill(process.ppid, 'SIGTERM');",
-          "  process.kill(process.ppid, 'SIGINT');",
-          "}, 5);",
           "",
         ].join("\n"),
         "utf8",
@@ -795,7 +792,24 @@ describe("background test run lifecycle", () => {
               requestedBy: "unit",
             });
 
-            const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true);
+            const signalWhenProgressReady = (async (): Promise<void> => {
+              for (let attempt = 0; attempt < 50; attempt += 1) {
+                await new Promise<void>((resolve) => setTimeout(resolve, 10));
+                const stderr = await readFile(getTestRunStderrPath(context.pmPath, started.run.id), "utf8").catch(() => "");
+                if (stderr.includes("id=pm-stop")) {
+                  break;
+                }
+              }
+              process.emit("SIGTERM");
+              process.emit("SIGINT");
+            })();
+            const stopped = await (async (): Promise<Awaited<ReturnType<typeof runBackgroundTestRunWorker>>> => {
+              try {
+                return await runBackgroundTestRunWorker(context.pmPath, started.run.id, true);
+              } finally {
+                await signalWhenProgressReady;
+              }
+            })();
             expect(stopped.status).toBe("stopped");
             expect(stopped.stop_requested_at).toBeDefined();
             expect(stopped.progress).toMatchObject({
@@ -1055,7 +1069,6 @@ describe("background test run lifecycle", () => {
         [
           "process.on('SIGTERM', () => {});",
           "setInterval(() => process.stderr.write('[pm test] linked-test 1/1 running elapsed_ms=10\\n'), 1);",
-          "setTimeout(() => process.kill(process.ppid, 'SIGTERM'), 5);",
           "",
         ].join("\n"),
         "utf8",
@@ -1073,7 +1086,10 @@ describe("background test run lifecycle", () => {
               commandArgs: ["signal-stop-default-delay"],
               requestedBy: "unit",
             });
-            const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true);
+            const signalTimer = setTimeout(() => process.emit("SIGTERM"), 50);
+            const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true).finally(() => {
+              clearTimeout(signalTimer);
+            });
             expect(stopped.status).toBe("stopped");
             expect(stopped.progress?.phase).toBe("finished");
           });
