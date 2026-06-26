@@ -808,9 +808,6 @@ describe("background test run lifecycle", () => {
               }
               return originalOn(event, listener);
             });
-            const addListenerSpy = vi
-              .spyOn(process, "addListener")
-              .mockImplementation((event, listener) => process.on(event, listener));
             const offSpy = vi.spyOn(process, "off").mockImplementation((event, listener) => {
               if (event === "SIGTERM") {
                 const index = sigtermHandlers.indexOf(listener as NodeJS.SignalsListener);
@@ -828,9 +825,6 @@ describe("background test run lifecycle", () => {
               }
               return originalOff(event, listener);
             });
-            const removeListenerSpy = vi
-              .spyOn(process, "removeListener")
-              .mockImplementation((event, listener) => process.off(event, listener));
             const signalWhenProgressReady = (async (): Promise<void> => {
               for (let attempt = 0; attempt < 1000; attempt += 1) {
                 if (workerFinished) {
@@ -852,10 +846,8 @@ describe("background test run lifecycle", () => {
             const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true).finally(async () => {
               workerFinished = true;
               try {
-                await signalWhenProgressReady;
+                await signalWhenProgressReady.catch(() => undefined);
               } finally {
-                addListenerSpy.mockRestore();
-                removeListenerSpy.mockRestore();
                 onSpy.mockRestore();
                 offSpy.mockRestore();
               }
@@ -1147,9 +1139,6 @@ describe("background test run lifecycle", () => {
               }
               return originalOn(event, listener);
             });
-            const addListenerSpy = vi
-              .spyOn(process, "addListener")
-              .mockImplementation((event, listener) => process.on(event, listener));
             const offSpy = vi.spyOn(process, "off").mockImplementation((event, listener) => {
               if (event === "SIGTERM") {
                 const index = sigtermHandlers.indexOf(listener as NodeJS.SignalsListener);
@@ -1160,9 +1149,6 @@ describe("background test run lifecycle", () => {
               }
               return originalOff(event, listener);
             });
-            const removeListenerSpy = vi
-              .spyOn(process, "removeListener")
-              .mockImplementation((event, listener) => process.off(event, listener));
             const signalWhenProgressReady = (async (): Promise<void> => {
               for (let attempt = 0; attempt < 1000; attempt += 1) {
                 if (workerFinished) {
@@ -1181,10 +1167,8 @@ describe("background test run lifecycle", () => {
             const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true).finally(async () => {
               workerFinished = true;
               try {
-                await signalWhenProgressReady;
+                await signalWhenProgressReady.catch(() => undefined);
               } finally {
-                addListenerSpy.mockRestore();
-                removeListenerSpy.mockRestore();
                 onSpy.mockRestore();
                 offSpy.mockRestore();
               }
