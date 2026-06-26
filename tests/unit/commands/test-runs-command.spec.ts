@@ -795,16 +795,25 @@ describe("background test run lifecycle", () => {
             let sigtermHandler: NodeJS.SignalsListener | undefined;
             let sigintHandler: NodeJS.SignalsListener | undefined;
             let workerFinished = false;
+            const originalOn: typeof process.on = process.on.bind(process);
+            const originalOff: typeof process.off = process.off.bind(process);
             const onSpy = vi.spyOn(process, "on").mockImplementation((event, listener) => {
               if (event === "SIGTERM") {
                 sigtermHandler = listener as NodeJS.SignalsListener;
+                return process;
               }
               if (event === "SIGINT") {
                 sigintHandler = listener as NodeJS.SignalsListener;
+                return process;
               }
-              return process;
+              return originalOn(event, listener);
             });
-            const offSpy = vi.spyOn(process, "off").mockImplementation(() => process);
+            const offSpy = vi.spyOn(process, "off").mockImplementation((event, listener) => {
+              if (event === "SIGTERM" || event === "SIGINT") {
+                return process;
+              }
+              return originalOff(event, listener);
+            });
             const signalWhenProgressReady = (async (): Promise<void> => {
               for (let attempt = 0; attempt < 1000; attempt += 1) {
                 if (workerFinished) {
@@ -1106,13 +1115,21 @@ describe("background test run lifecycle", () => {
             });
             let sigtermHandler: NodeJS.SignalsListener | undefined;
             let workerFinished = false;
+            const originalOn: typeof process.on = process.on.bind(process);
+            const originalOff: typeof process.off = process.off.bind(process);
             const onSpy = vi.spyOn(process, "on").mockImplementation((event, listener) => {
               if (event === "SIGTERM") {
                 sigtermHandler = listener as NodeJS.SignalsListener;
+                return process;
               }
-              return process;
+              return originalOn(event, listener);
             });
-            const offSpy = vi.spyOn(process, "off").mockImplementation(() => process);
+            const offSpy = vi.spyOn(process, "off").mockImplementation((event, listener) => {
+              if (event === "SIGTERM") {
+                return process;
+              }
+              return originalOff(event, listener);
+            });
             const signalWhenProgressReady = (async (): Promise<void> => {
               for (let attempt = 0; attempt < 1000; attempt += 1) {
                 if (workerFinished) {
