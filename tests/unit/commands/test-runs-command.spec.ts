@@ -98,6 +98,9 @@ function captureProcessSignalHandlers(): {
     }
     return originalOn(event, listener);
   });
+  const addListenerSpy = vi
+    .spyOn(process, "addListener")
+    .mockImplementation((event, listener) => process.on(event, listener));
   const offSpy = vi.spyOn(process, "off").mockImplementation((event, listener) => {
     if (event === "SIGTERM") {
       const index = sigtermHandlers.indexOf(listener as NodeJS.SignalsListener);
@@ -117,11 +120,16 @@ function captureProcessSignalHandlers(): {
     }
     return originalOff(event, listener);
   });
+  const removeListenerSpy = vi
+    .spyOn(process, "removeListener")
+    .mockImplementation((event, listener) => process.off(event, listener));
 
   return {
     sigtermHandlers,
     sigintHandlers,
     restore: () => {
+      addListenerSpy.mockRestore();
+      removeListenerSpy.mockRestore();
       onSpy.mockRestore();
       offSpy.mockRestore();
     },
