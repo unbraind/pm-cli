@@ -794,6 +794,7 @@ describe("background test run lifecycle", () => {
 
             let sigtermHandler: NodeJS.SignalsListener | undefined;
             let sigintHandler: NodeJS.SignalsListener | undefined;
+            let workerFinished = false;
             const onSpy = vi.spyOn(process, "on").mockImplementation((event, listener) => {
               if (event === "SIGTERM") {
                 sigtermHandler = listener as NodeJS.SignalsListener;
@@ -806,6 +807,9 @@ describe("background test run lifecycle", () => {
             const offSpy = vi.spyOn(process, "off").mockImplementation(() => process);
             const signalWhenProgressReady = (async (): Promise<void> => {
               for (let attempt = 0; attempt < 1000; attempt += 1) {
+                if (workerFinished) {
+                  break;
+                }
                 await new Promise<void>((resolve) => setTimeout(resolve, 10));
                 const stderr = await readFile(getTestRunStderrPath(context.pmPath, started.run.id), "utf8").catch(() => "");
                 if (stderr.includes("id=pm-stop")) {
@@ -816,6 +820,7 @@ describe("background test run lifecycle", () => {
               sigintHandler?.("SIGINT");
             })();
             const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true).finally(async () => {
+              workerFinished = true;
               try {
                 await signalWhenProgressReady;
               } finally {
@@ -1100,6 +1105,7 @@ describe("background test run lifecycle", () => {
               requestedBy: "unit",
             });
             let sigtermHandler: NodeJS.SignalsListener | undefined;
+            let workerFinished = false;
             const onSpy = vi.spyOn(process, "on").mockImplementation((event, listener) => {
               if (event === "SIGTERM") {
                 sigtermHandler = listener as NodeJS.SignalsListener;
@@ -1109,6 +1115,9 @@ describe("background test run lifecycle", () => {
             const offSpy = vi.spyOn(process, "off").mockImplementation(() => process);
             const signalWhenProgressReady = (async (): Promise<void> => {
               for (let attempt = 0; attempt < 1000; attempt += 1) {
+                if (workerFinished) {
+                  break;
+                }
                 await new Promise<void>((resolve) => setTimeout(resolve, 10));
                 const stderr = await readFile(getTestRunStderrPath(context.pmPath, started.run.id), "utf8").catch(() => "");
                 if (stderr.includes("linked-test 1/1 running")) {
@@ -1118,6 +1127,7 @@ describe("background test run lifecycle", () => {
               sigtermHandler?.("SIGTERM");
             })();
             const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true).finally(async () => {
+              workerFinished = true;
               try {
                 await signalWhenProgressReady;
               } finally {
