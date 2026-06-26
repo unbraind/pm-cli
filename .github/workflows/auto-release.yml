@@ -174,14 +174,31 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           RELEASE_SHA: ${{ github.sha }}
+          INPUT_PUSH: ${{ github.event_name == 'workflow_dispatch' && (inputs.push && 'true' || 'false') || 'true' }}
+          INPUT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && (inputs.dry_run && 'true' || 'false') || 'false' }}
+          RELEASE_PAT_CONFIGURED: ${{ secrets.RELEASE_PAT != '' }}
+          SENTRY_PERSONAL_ADMIN_TOKEN_CONFIGURED: ${{ secrets.SENTRY_PERSONAL_ADMIN_TOKEN != '' }}
         run: |
           set -euo pipefail
           title="Auto Release blocked: scheduled run failed"
           existing_issue="$(gh issue list --state open --search "\"${title}\" in:title" --json number --jq '.[0].number // empty')"
+          detected_cause="Inspect the failed workflow logs for the exact failing command."
+          if [[ "${INPUT_PUSH}" == "true" && "${INPUT_DRY_RUN}" != "true" && "${RELEASE_PAT_CONFIGURED}" != "true" ]]; then
+            detected_cause="RELEASE_PAT is missing from the release environment; scheduled production releases cannot push the checked version commit/tag to protected main."
+          elif [[ "${INPUT_PUSH}" == "true" && "${INPUT_DRY_RUN}" != "true" && "${SENTRY_PERSONAL_ADMIN_TOKEN_CONFIGURED}" != "true" ]]; then
+            detected_cause="SENTRY_PERSONAL_ADMIN_TOKEN is missing from the release environment; scheduled production releases cannot run the mandatory reliability gate."
+          fi
           body="The scheduled daily Auto Release run failed before publishing, so no release was cut.
 
           Run: ${RUN_URL}
           Commit: ${RELEASE_SHA}
+
+          Detected preflight state:
+          - push: \`${INPUT_PUSH}\`
+          - dry_run: \`${INPUT_DRY_RUN}\`
+          - release_pat_configured: \`${RELEASE_PAT_CONFIGURED}\`
+          - sentry_personal_admin_token_configured: \`${SENTRY_PERSONAL_ADMIN_TOKEN_CONFIGURED}\`
+          - detected_cause: ${detected_cause}
 
           Common causes:
           - \`RELEASE_PAT\` is missing from the release environment, so Auto Release cannot push its checked version commit/tag to protected \`main\`.

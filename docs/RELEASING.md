@@ -58,6 +58,7 @@ Policy:
 - protected-branch pushes require `RELEASE_PAT`; Auto Release fails fast before the expensive release gates when `push=true`, `dry_run=false`, and that secret is not configured
 - release reliability gating requires `SENTRY_PERSONAL_ADMIN_TOKEN` for issue-threshold checks; Auto Release fails before creating the version commit/tag when the token is missing and `push=true`, while sourcemap upload remains optional through `SENTRY_AUTH_TOKEN`
 - after creating and pushing a new tag, auto-release dispatches `.github/workflows/release.yml` with that tag and waits for the publish workflow to finish, because GitHub does not start normal push/tag workflows from `GITHUB_TOKEN` pushes
+- scheduled failure issues include the preflight state (`push`, `dry_run`, `release_pat_configured`, and `sentry_personal_admin_token_configured`) plus a detected cause so agents can distinguish missing release secrets from Sentry gate failures without scanning the full workflow log first
 
 Pipeline entrypoint:
 
@@ -204,6 +205,7 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
 
 - If local gates fail, fix and rerun before tagging.
 - Treat failed scheduled Nightly Validation jobs as release-health blockers until triaged. The nightly workflow opens or updates a GitHub issue for each failing scheduled OS/Node matrix entry, with the run URL and commit SHA, so cross-platform regressions do not rely on someone manually scanning the Actions tab.
+- Treat a green manual Auto Release dry-run (`push=false` or `dry_run=true`) as gate confidence only. It does not prove the protected-branch publish path; scheduled production runs still require `RELEASE_PAT` and `SENTRY_PERSONAL_ADMIN_TOKEN` to be configured in the `release` environment.
 - If the tag workflow fails before npm publish, confirm no package was published before moving or replacing a tag.
 - If npm publish succeeds but GitHub Release creation fails, rerun `.github/workflows/release.yml` with `workflow_dispatch` and `tag=v<version>`; the workflow skips duplicate npm publish, reruns public verification, and creates the GitHub Release for the existing tag.
 - Record failure evidence and remediation in the release `pm` item.
