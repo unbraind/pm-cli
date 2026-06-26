@@ -6,22 +6,27 @@ status: in_progress
 priority: 2
 tags[4]: code-quality,codefactor,duplication,refactor
 created_at: "2026-06-26T13:33:10.951Z"
-updated_at: "2026-06-26T19:25:13.173Z"
+updated_at: "2026-06-26T20:35:58.865Z"
 author: claude-code-agent
 acceptance_criteria: "First milestone: the 2 Critical + 3 Major duplication clones are removed by extracting shared helpers/fixtures. Stretch: Minor clones to 0. Extracted helpers are covered; full coverage suite green at 100%; pnpm typecheck + quality gates pass."
 parent: pm-92if
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-06-26T19:05:47.033Z",codex-codefactor-sdk-cli-20260626,"Evidence: removed CodeFactor-reported shipped duplication by single-sourcing create/update --unset field metadata, create/update command option key lists, and SDK update-many/close-many filter contracts; generated package runtime loaders and plugin MCP launchers are now explicitly excluded from CodeFactor because generator check tests enforce drift. Passed: pnpm build; targeted create/update/runtime-loader/generator/plugin/package tests (7 files, 254 tests); pnpm contracts:check; pnpm quality:static; pnpm typecheck; pnpm security:scan; node scripts/run-tests.mjs coverage (256 files, 5133 tests, 100% statements/branches/functions/lines)."
-files[6]{path,scope,note}:
+  "2026-06-26T20:19:33.237Z",codex,"CodeFactor PR follow-up: after PR #381 showed 18 fixed and 16 found, the 16 found rows were all complexity findings on command/SDK files touched by the initial dedupe refactor. This branch now keeps the generated-file remediation only: CodeFactor hosted-ignore checklist wording plus auto-generated markers emitted by the package runtime-loader and plugin MCP-wrapper generators. Source command/SDK complexity remains tracked by pm-arzz for a dedicated refactor."
+  "2026-06-26T20:25:55.857Z",codex,"Evidence after narrowing PR #381: generator drift checks passed (node scripts/gen-package-runtime-loaders.mjs --check; node scripts/gen-plugin-mcp-wrappers.mjs --check); focused generator/runtime tests passed (4 files, 34 tests); pnpm build passed; pnpm typecheck passed; pnpm contracts:check passed; pnpm quality:static passed; pnpm security:scan passed; pnpm audit --audit-level low reported no known vulnerabilities; pnpm changelog:pm:check used pm-changelog@2026.6.20 and left CHANGELOG.md unchanged; node scripts/run-tests.mjs coverage passed 256 files, 5133 tests, 100% statements/branches/functions/lines; isolated manual temp smoke in /tmp/tmp.uTuxtFeLBr passed init/create/claim/update/files/docs/test/close/release with health ok 0 warnings and validate ok 0 warnings; repo pm health ok 0 warnings; repo validate history_drift ok with known pre-existing validate_resolution_missing_fields:258 warning; Sentry/telemetry gate ok with critical=0 high=0 total=0 and telemetry finish_error_rate_pct=0.69."
+files[7]{path,scope,note}:
   .codefactor.yml,project,CodeFactor scope excludes generated standalone loaders/wrappers and test files covered by repo gates
-  src/cli/commands/create.ts,project,Create command now consumes shared unset definitions
-  src/cli/commands/shared-unset-fields.ts,project,Shared unset-field metadata removes create/update duplicate command tables
-  src/cli/commands/update.ts,project,Update command now consumes shared unset definitions
-  src/core/item/type-registry.ts,project,Create/update command option keys share common mutation field list
-  src/sdk/cli-contracts/tool-option-contracts.ts,project,SDK bulk mutation filter contracts share one contract table
-tests[7]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  packages/pm-beads/extensions/beads/runtime-loader.ts,project,Regenerated package runtime loader marker
+  packages/pm-todos/extensions/todos/runtime-loader.ts,project,Regenerated package runtime loader marker
+  plugins/pm-claude/scripts/pm-mcp-server.mjs,project,Regenerated plugin MCP wrapper marker
+  plugins/pm-codex/scripts/pm-mcp-server.mjs,project,Regenerated plugin MCP wrapper marker
+  scripts/gen-package-runtime-loaders.mjs,project,Generator emits CodeFactor auto-generated marker for package runtime loaders
+  scripts/gen-plugin-mcp-wrappers.mjs,project,Generator emits CodeFactor auto-generated marker for plugin MCP wrappers
+tests[9]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/gen-package-runtime-loaders.mjs --check,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/gen-plugin-mcp-wrappers.mjs --check,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs coverage,null,project,360,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/unit/packages/runtime-loaders.spec.ts tests/unit/scripts/gen-package-runtime-loaders.spec.ts tests/unit/scripts/gen-plugin-mcp-wrappers.spec.ts tests/unit/plugins/pm-mcp-server.spec.ts tests/unit/packages/package-manifest.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/packages/runtime-loaders.spec.ts tests/unit/scripts/gen-package-runtime-loaders.spec.ts tests/unit/scripts/gen-plugin-mcp-wrappers.spec.ts tests/unit/plugins/pm-mcp-server.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   "pnpm contracts:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   "pnpm quality:static",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
