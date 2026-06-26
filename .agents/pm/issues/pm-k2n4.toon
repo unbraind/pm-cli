@@ -2,15 +2,18 @@ id: pm-k2n4
 title: "pm validate --check-files mis-handles remote (URL) doc/file references: flagged as deleted and silently destroyed by --prune-missing"
 description: "A linked artifact `path` (pm files / pm docs) is normally a workspace-relative or absolute local filesystem path, but `pm docs --add` legitimately records REMOTE references too — most commonly an `https://` URL to a pull request, issue, or external design doc (e.g. pm-bhmk/pm-v37g/pm-qawd each link https://github.com/unbraind/pm-cli/pull/362|364). These remote references are not local files, yet three validation surfaces blindly `fs.stat` them:\n\n1. buildFilesCheck (src/cli/commands/validate.ts ~L1666): every project-scoped files+docs artifact is stat'd; a URL resolves to a bogus local path -> stat fails -> pushed to missing_linked_paths and staleLinkRows.\n2. classifyStaleLinkedPaths then labels it `deleted` (no basename candidate match).\n3. planStaleLinkPruneFixes (src/core/validate/fix-planning.ts) prunes every `deleted`-classified link -> `pm validate --prune-missing` SILENTLY DELETES the intentionally-recorded PR/URL doc reference. This is data loss of recorded context (project management = context management).\n4. validateLinkedPaths (src/cli/commands/linked-artifacts.ts ~L402) used by `pm files/docs --validate-paths` reports the URL as a missing_path for the same reason.\n\nImpact: false-positive validator noise (URL refs counted among the 148 missing_linked_paths seen on this repo, inflating pm-j8z6's reconciliation backlog) AND a latent destructive-fix bug. Follow-up to pm-0v2m (GH-184) which introduced moved/deleted classification + --prune-missing without remote-reference awareness."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli",context-management,data-safety,linked-files
 created_at: "2026-06-26T04:13:20.706Z"
-updated_at: "2026-06-26T04:20:21.106Z"
+updated_at: "2026-06-26T04:37:46.946Z"
 author: claude-code-agent
 parent: pm-mpbb
 risk: low
 confidence: high
+resolution: "Added pure helper isRemoteLinkedArtifactReference (scheme:// detection, 2+ char scheme so Windows drive/UNC paths stay local) and wired it into buildFilesCheck (validate.ts) and validateLinkedPaths (linked-artifacts.ts): remote (URL) refs are now surfaced in benign remote_linked_paths / remote_references categories and are never stat'd, classified moved/deleted, counted missing, or planned for --prune-missing. Shipped in PR #372."
+expected_result: "A recorded https:// doc reference (e.g. a PR URL) stays a benign tracked reference; pm validate --check-files does not report it as missing/deleted and pm validate --prune-missing never deletes it."
+actual_result: "Before the fix the URL fs.stat-failed, was classified 'deleted', and was planned for deletion by --prune-missing (silent data loss); after the fix it appears under remote_linked_paths and is never pruned (verified by temp-dir smoke + unit tests)."
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-0v2m,related,"2026-06-26T04:13:59.840Z",null,null
   pm-j8z6,related,"2026-06-26T04:13:59.840Z",null,null
@@ -18,4 +21,7 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
 files[2]{path,scope,note}:
   src/core/validate/linked-artifact-reference.ts,project,remote-reference detection helper
   tests/unit/validate/linked-artifact-reference.spec.ts,project,helper unit tests
+docs[1]{path,scope,note}:
+  "https://github.com/unbraind/pm-cli/pull/372",project,"PR: remote-reference awareness fix"
+close_reason: "Fixed in PR #372: remote (URL) doc/file references are now recognized and excluded from local-file existence checks, missing/stale classification, and --prune-missing. Verified by 5131-test 100% coverage suite, contracts/static/changelog gates, and a temp-dir end-to-end smoke. CI green across the full matrix; CodeRabbit review clean (1 nitpick addressed); Gemini at daily quota / Codex not connected this cycle."
 body: "## Implementation (branch fix/validate-remote-reference-awareness)\n\nNew pure module `src/core/validate/linked-artifact-reference.ts` exposing `isRemoteLinkedArtifactReference(path)` — matches `^[a-z][a-z0-9+.-]+:\\/\\//i` (scheme of 2+ chars + `://` authority) so `https://`/`ftp://`/`ssh://`/`file://` are remote while `C:/…`, `C:\\…`, `//server/share`, relative and absolute POSIX paths are local.\n\nWired into both stat-based surfaces:\n- `buildFilesCheck` (src/cli/commands/validate.ts): remote refs are collected into a new benign `remote_linked_paths{,_count,_total,_truncated}` details category and `continue` before the existence probe — so they never enter `missing_linked_paths`, `staleLinkRows`, classification, or `staleLinkPruneRows`.\n- `validateLinkedPaths` (src/cli/commands/linked-artifacts.ts): remote refs go to a new `remote_references[]` field instead of `missing_paths` (surfaced by `pm files/docs --validate-paths`).\n\n## Verification\n\nManual temp-dir smoke (real built CLI, `pm init` + Task with a real file, a missing local file, and a PR URL doc ref):\n- `validate --check-files`: `remote_linked_paths_count=1` (the PR URL), `missing_linked_paths=['ghost-file.ts']` only — URL not flagged.\n- `validate --prune-missing --dry-run`: single planned fix `pm files <id> --remove \"ghost-file.ts\"` — the URL doc ref is NEVER targeted (data-loss bug fixed).\n- `pm docs --validate-paths`: `remote_references=['https://…/pull/362']`, `missing_paths=[]`.\n\nGates: `pnpm typecheck` clean; targeted suites 122/122 pass; `contracts:check` current; `quality:static` (incl. docstring coverage) passes. Full 100% coverage gate running."
