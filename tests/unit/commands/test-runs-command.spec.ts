@@ -87,6 +87,17 @@ function captureProcessSignalHandlers(): {
   const sigintHandlers: NodeJS.SignalsListener[] = [];
   const originalOn: typeof process.on = process.on.bind(process);
   const originalOff: typeof process.off = process.off.bind(process);
+  const removeCapturedHandler = (
+    handlers: NodeJS.SignalsListener[],
+    listener: Parameters<typeof process.off>[1],
+  ): boolean => {
+    const index = handlers.indexOf(listener as NodeJS.SignalsListener);
+    if (index < 0) {
+      return false;
+    }
+    handlers.splice(index, 1);
+    return true;
+  };
   const onSpy = vi.spyOn(process, "on").mockImplementation((event, listener) => {
     if (event === "SIGTERM") {
       sigtermHandlers.push(listener as NodeJS.SignalsListener);
@@ -102,21 +113,11 @@ function captureProcessSignalHandlers(): {
     .spyOn(process, "addListener")
     .mockImplementation((event, listener) => process.on(event, listener));
   const offSpy = vi.spyOn(process, "off").mockImplementation((event, listener) => {
-    if (event === "SIGTERM") {
-      const index = sigtermHandlers.indexOf(listener as NodeJS.SignalsListener);
-      if (index >= 0) {
-        sigtermHandlers.splice(index, 1);
-        return process;
-      }
-      return originalOff(event, listener);
+    if (event === "SIGTERM" && removeCapturedHandler(sigtermHandlers, listener)) {
+      return process;
     }
-    if (event === "SIGINT") {
-      const index = sigintHandlers.indexOf(listener as NodeJS.SignalsListener);
-      if (index >= 0) {
-        sigintHandlers.splice(index, 1);
-        return process;
-      }
-      return originalOff(event, listener);
+    if (event === "SIGINT" && removeCapturedHandler(sigintHandlers, listener)) {
+      return process;
     }
     return originalOff(event, listener);
   });
@@ -134,6 +135,37 @@ function captureProcessSignalHandlers(): {
       offSpy.mockRestore();
     },
   };
+}
+
+async function dispatchSignalsWhenProgressReady(options: {
+  stderrPath: string;
+  marker: string;
+  isWorkerFinished: () => boolean;
+  signalGroups: ReadonlyArray<{
+    signal: NodeJS.Signals;
+    handlers: readonly NodeJS.SignalsListener[];
+  }>;
+}): Promise<void> {
+  let progressObserved = false;
+  for (let attempt = 0; attempt < 1000; attempt += 1) {
+    if (options.isWorkerFinished()) {
+      break;
+    }
+    await new Promise<void>((resolve) => setTimeout(resolve, 10));
+    const stderr = await readFile(options.stderrPath, "utf8").catch(() => "");
+    if (stderr.includes(options.marker)) {
+      progressObserved = true;
+      break;
+    }
+  }
+  if (!progressObserved || options.isWorkerFinished()) {
+    return;
+  }
+  for (const group of options.signalGroups) {
+    for (const handler of group.handlers) {
+      handler(group.signal);
+    }
+  }
 }
 
 describe("test-runs command attribution fallback", () => {
@@ -852,29 +884,15 @@ describe("background test run lifecycle", () => {
 
             let workerFinished = false;
             const { sigtermHandlers, sigintHandlers, restore } = captureProcessSignalHandlers();
-            const signalWhenProgressReady = (async (): Promise<void> => {
-              let progressObserved = false;
-              for (let attempt = 0; attempt < 1000; attempt += 1) {
-                if (workerFinished) {
-                  break;
-                }
-                await new Promise<void>((resolve) => setTimeout(resolve, 10));
-                const stderr = await readFile(getTestRunStderrPath(context.pmPath, started.run.id), "utf8").catch(() => "");
-                if (stderr.includes("id=pm-stop")) {
-                  progressObserved = true;
-                  break;
-                }
-              }
-              if (!progressObserved || workerFinished) {
-                return;
-              }
-              for (const handler of sigtermHandlers) {
-                handler("SIGTERM");
-              }
-              for (const handler of sigintHandlers) {
-                handler("SIGINT");
-              }
-            })().catch(() => undefined);
+            const signalWhenProgressReady = dispatchSignalsWhenProgressReady({
+              stderrPath: getTestRunStderrPath(context.pmPath, started.run.id),
+              marker: "id=pm-stop",
+              isWorkerFinished: () => workerFinished,
+              signalGroups: [
+                { signal: "SIGTERM", handlers: sigtermHandlers },
+                { signal: "SIGINT", handlers: sigintHandlers },
+              ],
+            }).catch(() => undefined);
             const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true).finally(async () => {
               workerFinished = true;
               try {
@@ -1161,26 +1179,12 @@ describe("background test run lifecycle", () => {
             });
             let workerFinished = false;
             const { sigtermHandlers, restore } = captureProcessSignalHandlers();
-            const signalWhenProgressReady = (async (): Promise<void> => {
-              let progressObserved = false;
-              for (let attempt = 0; attempt < 1000; attempt += 1) {
-                if (workerFinished) {
-                  break;
-                }
-                await new Promise<void>((resolve) => setTimeout(resolve, 10));
-                const stderr = await readFile(getTestRunStderrPath(context.pmPath, started.run.id), "utf8").catch(() => "");
-                if (stderr.includes("linked-test 1/1 running")) {
-                  progressObserved = true;
-                  break;
-                }
-              }
-              if (!progressObserved || workerFinished) {
-                return;
-              }
-              for (const handler of sigtermHandlers) {
-                handler("SIGTERM");
-              }
-            })().catch(() => undefined);
+            const signalWhenProgressReady = dispatchSignalsWhenProgressReady({
+              stderrPath: getTestRunStderrPath(context.pmPath, started.run.id),
+              marker: "linked-test 1/1 running",
+              isWorkerFinished: () => workerFinished,
+              signalGroups: [{ signal: "SIGTERM", handlers: sigtermHandlers }],
+            }).catch(() => undefined);
             const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true).finally(async () => {
               workerFinished = true;
               try {
