@@ -205,7 +205,7 @@ jobs:
           pnpm changelog:pm:check
           pnpm contracts:check
           pnpm security:scan
-          pnpm quality:static
+          pnpm lint
           npm pack --dry-run
 
       - name: Run compatibility migration gate

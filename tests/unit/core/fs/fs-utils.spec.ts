@@ -1,5 +1,6 @@
 import * as fs from "node:fs/promises";
 import path from "node:path";
+import type * as FsPromises from "node:fs/promises";
 import { describe, expect, it, vi } from "vitest";
 import {
   appendLineAtomic,
@@ -125,6 +126,121 @@ describe("core/fs/fs-utils", () => {
       } finally {
         vi.doUnmock("node:fs/promises");
         vi.resetModules();
+      }
+    });
+  });
+
+  it("retries transient Windows rename failures during atomic replacement", async () => {
+    await withTempDir("pm-cli-fs-utils-", async (tempDir) => {
+      const filePath = path.join(tempDir, "windows-rename-retry.txt");
+      await fs.writeFile(filePath, "before", "utf8");
+      const descriptor = Object.getOwnPropertyDescriptor(process, "platform");
+      try {
+        Object.defineProperty(process, "platform", { value: "win32" });
+        const actual = await vi.importActual<typeof FsPromises>("node:fs/promises");
+        const renameMock = vi
+          .fn<typeof actual.rename>()
+          .mockImplementationOnce(async () => {
+            const transient = new Error("permission denied") as NodeJS.ErrnoException;
+            transient.code = "EPERM";
+            throw transient;
+          })
+          .mockImplementation(async (...args: Parameters<typeof actual.rename>) => actual.rename(...args));
+        vi.resetModules();
+        vi.doMock("node:fs/promises", async () => ({
+          ...actual,
+          rename: renameMock,
+        }));
+        const reloadedModule = await import("../../../../src/core/fs/fs-utils.js");
+        await reloadedModule.writeFileAtomic(filePath, "after");
+
+        expect(await fs.readFile(filePath, "utf8")).toBe("after");
+        expect(renameMock).toHaveBeenCalledTimes(2);
+      } finally {
+        vi.doUnmock("node:fs/promises");
+        vi.resetModules();
+        if (descriptor) {
+          Object.defineProperty(process, "platform", descriptor);
+        }
+      }
+    });
+  });
+
+  it("throws the last Windows rename retry failure after cleanup", async () => {
+    await withTempDir("pm-cli-fs-utils-", async (tempDir) => {
+      const filePath = path.join(tempDir, "windows-rename-exhausted.txt");
+      await fs.writeFile(filePath, "before", "utf8");
+      const descriptor = Object.getOwnPropertyDescriptor(process, "platform");
+      try {
+        Object.defineProperty(process, "platform", { value: "win32" });
+        const actual = await vi.importActual<typeof FsPromises>("node:fs/promises");
+        const transient = new Error("resource busy") as NodeJS.ErrnoException;
+        transient.code = "EBUSY";
+        const retryFailure = new Error("still busy") as NodeJS.ErrnoException;
+        retryFailure.code = "EBUSY";
+        const renameMock = vi
+          .fn<typeof actual.rename>()
+          .mockRejectedValueOnce(transient)
+          .mockRejectedValue(retryFailure);
+        const unlinkMock = vi.fn<typeof actual.unlink>().mockImplementation(async (...args) => actual.unlink(...args));
+        vi.resetModules();
+        vi.doMock("node:fs/promises", async () => ({
+          ...actual,
+          rename: renameMock,
+          unlink: unlinkMock,
+        }));
+        const reloadedModule = await import("../../../../src/core/fs/fs-utils.js");
+        await expect(reloadedModule.writeFileAtomic(filePath, "after")).rejects.toBe(retryFailure);
+
+        expect(await fs.readFile(filePath, "utf8")).toBe("before");
+        expect(renameMock).toHaveBeenCalledTimes(5);
+        expect(unlinkMock).toHaveBeenCalledTimes(1);
+      } finally {
+        vi.doUnmock("node:fs/promises");
+        vi.resetModules();
+        if (descriptor) {
+          Object.defineProperty(process, "platform", descriptor);
+        }
+      }
+    });
+  });
+
+  it("stops Windows rename retries after a non-transient retry failure", async () => {
+    await withTempDir("pm-cli-fs-utils-", async (tempDir) => {
+      const filePath = path.join(tempDir, "windows-rename-non-transient.txt");
+      await fs.writeFile(filePath, "before", "utf8");
+      const descriptor = Object.getOwnPropertyDescriptor(process, "platform");
+      try {
+        Object.defineProperty(process, "platform", { value: "win32" });
+        const actual = await vi.importActual<typeof FsPromises>("node:fs/promises");
+        const transient = new Error("permission denied") as NodeJS.ErrnoException;
+        transient.code = "EPERM";
+        const nonTransient = new Error("access denied") as NodeJS.ErrnoException;
+        nonTransient.code = "EACCES";
+        const cleanupFailure = new Error("cleanup denied");
+        const renameMock = vi
+          .fn<typeof actual.rename>()
+          .mockRejectedValueOnce(transient)
+          .mockRejectedValueOnce(nonTransient);
+        const unlinkMock = vi.fn<typeof actual.unlink>().mockRejectedValueOnce(cleanupFailure);
+        vi.resetModules();
+        vi.doMock("node:fs/promises", async () => ({
+          ...actual,
+          rename: renameMock,
+          unlink: unlinkMock,
+        }));
+        const reloadedModule = await import("../../../../src/core/fs/fs-utils.js");
+        await expect(reloadedModule.writeFileAtomic(filePath, "after")).rejects.toBe(nonTransient);
+
+        expect(await fs.readFile(filePath, "utf8")).toBe("before");
+        expect(renameMock).toHaveBeenCalledTimes(2);
+        expect(unlinkMock).toHaveBeenCalledTimes(1);
+      } finally {
+        vi.doUnmock("node:fs/promises");
+        vi.resetModules();
+        if (descriptor) {
+          Object.defineProperty(process, "platform", descriptor);
+        }
       }
     });
   });

@@ -73,6 +73,10 @@
     "dev": "tsx src/cli.ts",
     "test": "node scripts/run-tests.mjs test",
     "test:coverage": "node scripts/run-tests.mjs coverage",
+    "lint": "pnpm lint:eslint && pnpm lint:duplicates && pnpm lint:codefactor",
+    "lint:eslint": "eslint . --max-warnings=0",
+    "lint:duplicates": "jscpd --config .jscpd.json",
+    "lint:codefactor": "pnpm quality:static",
     "quality:static": "node scripts/release/static-quality-gate.mjs",
     "quality:docs-skills": "node scripts/release/docs-skills-gate.mjs",
     "quality:docs-links": "node scripts/release/docs-skills-gate.mjs --links-only",
@@ -136,8 +140,12 @@
     "@types/node": "^22.0.0",
     "@vitest/coverage-v8": "^4.1.9",
     "esbuild": "0.28.1",
+    "eslint": "^10.6.0",
+    "eslint-plugin-unicorn": "^69.0.0",
+    "jscpd": "^5.0.11",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
+    "typescript-eslint": "^8.62.0",
     "vitest": "^4.1.9"
   },
   "pnpm": {

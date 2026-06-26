@@ -20,12 +20,24 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 
 ```bash
 pnpm build
+pnpm lint
 pnpm typecheck
 node scripts/run-tests.mjs test
 node scripts/run-tests.mjs coverage
 ```
 
 `node scripts/run-tests.mjs` wraps Vitest in temporary tracker roots, then cleans them up.
+
+`pnpm lint` is the local CodeFactor parity check. It layers ESLint rules for
+shipped source, package, plugin, and script surfaces that match the CodeFactor
+maintainability findings this repo tracks (`complexity`,
+`no-unsafe-optional-chaining`, and the relevant `eslint-plugin-unicorn`
+mechanical rules), jscpd duplicate detection across source and tests, and the
+repo-specific `quality:static` gate. The dedicated `quality:static` gate remains
+authoritative for source/exported docstring coverage, orphan-module checks,
+directory-load caps, and the TypeScript-aware duplicate/complexity checks that
+are tailored to pm's source layout; `pnpm lint` delegates to it instead of
+running a second threshold profile.
 
 ## Focused Test Runs
 
