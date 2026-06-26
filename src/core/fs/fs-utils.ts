@@ -7,6 +7,8 @@ import * as fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
 
+const WINDOWS_RENAME_RETRY_DELAYS_MS = [10, 25, 50, 100];
+
 /**
  * Implements ensure dir for the public runtime surface of this module.
  */
@@ -54,6 +56,30 @@ export async function writeFileAtomic(targetPath: string, contents: string): Pro
   try {
     await fs.rename(tempPath, targetPath);
   } catch (error: unknown) {
+    if (
+      process.platform === "win32" &&
+      (isErrno(error, "EPERM") || isErrno(error, "EBUSY"))
+    ) {
+      let lastError = error;
+      for (const delayMs of WINDOWS_RENAME_RETRY_DELAYS_MS) {
+        await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
+        try {
+          await fs.rename(tempPath, targetPath);
+          return;
+        } catch (retryError: unknown) {
+          lastError = retryError;
+          if (!isErrno(retryError, "EPERM") && !isErrno(retryError, "EBUSY")) {
+            break;
+          }
+        }
+      }
+      try {
+        await fs.unlink(tempPath);
+      } catch {
+        // Best-effort cleanup only.
+      }
+      throw lastError;
+    }
     if (isErrno(error, "EXDEV")) {
       try {
         await fs.copyFile(tempPath, targetPath);
