@@ -22,6 +22,8 @@
 
 ### Fixed
 
+- CodeFactor/Maintainability: fix unsafe optional chaining (no-unsafe-optional-chaining ×25) ([pm-m8yl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-m8yl.toon))
+- CI: make Codecov badge uploads branch-explicit ([pm-x878](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x878.toon))
 - pm next should skip completed open containers when recommending actionable work ([pm-2n6i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2n6i.toon))
 - pm validate --check-files mis-handles remote (URL) doc/file references: flagged as deleted and silently destroyed by --prune-missing ([pm-k2n4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-k2n4.toon))
 - pm install does not scaffold extension-contributed item-type folders (transient missing_directory health warning) ([pm-rjab](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rjab.toon))
@@ -36,6 +38,10 @@
 - pm package doctor should warn when a schema package registers item types/fields but declares narrow activation.commands (silently non-global) ([pm-ok47](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ok47.toon))
 - Scaffolded search/importers package commands fail to dispatch: lazy-activation probe skips command-bearing extensions that omit activation.commands ([pm-nacb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nacb.toon))
 - Harden extensionNeedsActivationForProbe: non-terminal search gate + command-bearing importers ([pm-b5r8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-b5r8.toon))
+
+### Removed
+
+- CodeFactor/Maintainability: remove useless object-spread fallbacks (unicorn/no-useless-fallback-in-spread ×57) ([pm-xsth](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-xsth.toon))
 
 ### Other
 

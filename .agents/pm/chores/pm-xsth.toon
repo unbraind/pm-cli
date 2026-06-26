@@ -6,15 +6,16 @@ status: closed
 priority: 3
 tags[5]: code-quality,codefactor,eslint,good-first-issue,maintainability
 created_at: "2026-06-26T13:32:27.757Z"
-updated_at: "2026-06-26T15:46:51.787Z"
+updated_at: "2026-06-26T15:52:00.802Z"
 author: claude-code-agent
 acceptance_criteria: CodeFactor reports 0 no-useless-fallback-in-spread findings; full coverage suite (node scripts/run-tests.mjs coverage) stays green at 100%; pnpm typecheck and quality gates pass.
 parent: pm-92if
 resolution: Removed object-spread empty object fallbacks from the CodeFactor-reported runtime and test locations.
 expected_result: No unicorn/no-useless-fallback-in-spread patterns remain in the touched object-spread locations and all gates stay green.
 actual_result: "Pattern cleanup completed; typecheck, static quality, coverage 100/100/100/100, release gates, and temp smoke passed."
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-06-26T15:46:30.905Z",codex-gpt5,"Evidence: removed CodeFactor unicorn/no-useless-fallback-in-spread object fallbacks across runtime and test files. Verification passed: pnpm typecheck; pnpm quality:static; node scripts/run-tests.mjs coverage (5133 tests, 100/100/100/100); node scripts/release/run-gates.mjs --telemetry-mode best-effort; manual temp-project smoke."
+  "2026-06-26T15:52:00.802Z",codex,"Follow-up evidence: PR #379 branch updated with current main and deterministic CHANGELOG.md entry for the closed CodeFactor object-spread fallback item; pnpm changelog:pm:check and pnpm quality:static pass locally."
 files[21]{path,scope,note}:
   src/cli/commander-usage.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
   src/cli/commands/create.ts,project,remove object-spread fallback no-op for CodeFactor maintainability

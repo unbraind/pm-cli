@@ -6,15 +6,16 @@ status: closed
 priority: 2
 tags[3]: "area:ci","area:coverage",codecov
 created_at: "2026-06-26T15:22:45.840Z"
-updated_at: "2026-06-26T15:46:51.846Z"
+updated_at: "2026-06-26T15:52:00.738Z"
 author: codex-sdk-cli-continuation
 parent: pm-u9d0
 resolution: Pinned README Codecov badge to the main-branch badge URL and sent explicit branch/commit metadata in CI uploads.
 expected_result: README badge no longer renders unknown and CI workflow contracts protect Codecov upload metadata.
 actual_result: "Branch-pinned badge returned a 100% SVG; workflow contract, typecheck, static quality, coverage, release gates, and temp smoke passed."
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-06-26T15:33:05.031Z",codex-gpt5,"Evidence: branch-pinned Codecov badge URL returned SVG with 100% text during live curl verification."
   "2026-06-26T15:46:30.947Z",codex-gpt5,"Evidence: README now uses the branch-pinned Codecov badge URL, CI Codecov uploads pass explicit branch/commit metadata, and workflow contracts guard both. Live curl to https://codecov.io/gh/unbraind/pm-cli/branch/main/graph/badge.svg returned a 100% SVG. Verification passed: ci-workflow-contract spec, pnpm typecheck, pnpm quality:static, coverage 100/100/100/100, release gates, and temp smoke."
+  "2026-06-26T15:52:00.738Z",codex,"Follow-up evidence: merged current main, regenerated CHANGELOG.md with pm-changelog 2026.6.20 after closing pm-x878/pm-m8yl/pm-xsth, verified pnpm changelog:pm:check, pnpm quality:static, ci workflow contract test, and live branch-pinned Codecov badge returns 100%."
 files[2]{path,scope,note}:
   .github/workflows/ci.yml,project,Provide explicit Codecov branch and commit metadata
   tests/integration/ci-workflow-contract.spec.ts,project,Guard Codecov badge and upload metadata contract
