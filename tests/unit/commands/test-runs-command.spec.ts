@@ -826,6 +826,7 @@ describe("background test run lifecycle", () => {
               return originalOff(event, listener);
             });
             const signalWhenProgressReady = (async (): Promise<void> => {
+              let progressObserved = false;
               for (let attempt = 0; attempt < 1000; attempt += 1) {
                 if (workerFinished) {
                   break;
@@ -833,8 +834,12 @@ describe("background test run lifecycle", () => {
                 await new Promise<void>((resolve) => setTimeout(resolve, 10));
                 const stderr = await readFile(getTestRunStderrPath(context.pmPath, started.run.id), "utf8").catch(() => "");
                 if (stderr.includes("id=pm-stop")) {
+                  progressObserved = true;
                   break;
                 }
+              }
+              if (!progressObserved || workerFinished) {
+                return;
               }
               for (const handler of sigtermHandlers) {
                 handler("SIGTERM");
@@ -1150,6 +1155,7 @@ describe("background test run lifecycle", () => {
               return originalOff(event, listener);
             });
             const signalWhenProgressReady = (async (): Promise<void> => {
+              let progressObserved = false;
               for (let attempt = 0; attempt < 1000; attempt += 1) {
                 if (workerFinished) {
                   break;
@@ -1157,8 +1163,12 @@ describe("background test run lifecycle", () => {
                 await new Promise<void>((resolve) => setTimeout(resolve, 10));
                 const stderr = await readFile(getTestRunStderrPath(context.pmPath, started.run.id), "utf8").catch(() => "");
                 if (stderr.includes("linked-test 1/1 running")) {
+                  progressObserved = true;
                   break;
                 }
+              }
+              if (!progressObserved || workerFinished) {
+                return;
               }
               for (const handler of sigtermHandlers) {
                 handler("SIGTERM");
