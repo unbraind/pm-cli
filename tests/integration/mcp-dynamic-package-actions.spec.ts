@@ -1534,7 +1534,7 @@ describe("MCP dynamic package actions", () => {
         jsonrpc: "2.0",
         id: 136,
         method: "tools/call",
-        params: { name: "pm_run", arguments: { path: context.pmPath, action: "upgrade" } },
+        params: { name: "pm_run", arguments: { path: context.pmPath, action: "upgrade", options: { dryRun: true } } },
       });
       expect(upgrade?.isError).not.toBe(true);
 

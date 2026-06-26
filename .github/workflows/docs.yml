@@ -11,12 +11,6 @@ on:
       - ".github/ISSUE_TEMPLATE/**"
       - ".github/workflows/docs.yml"
   pull_request:
-    paths:
-      - "docs/**"
-      - ".agents/skills/**"
-      - "**/*.md"
-      - ".github/ISSUE_TEMPLATE/**"
-      - ".github/workflows/docs.yml"
 
 permissions:
   contents: read

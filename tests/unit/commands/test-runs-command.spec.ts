@@ -78,6 +78,96 @@ async function withTemporaryPlatform<T>(platform: NodeJS.Platform, callback: () 
   }
 }
 
+function captureProcessSignalHandlers(): {
+  sigtermHandlers: NodeJS.SignalsListener[];
+  sigintHandlers: NodeJS.SignalsListener[];
+  restore: () => void;
+} {
+  const sigtermHandlers: NodeJS.SignalsListener[] = [];
+  const sigintHandlers: NodeJS.SignalsListener[] = [];
+  const originalOn: typeof process.on = process.on.bind(process);
+  const originalOff: typeof process.off = process.off.bind(process);
+  const removeCapturedHandler = (
+    handlers: NodeJS.SignalsListener[],
+    listener: Parameters<typeof process.off>[1],
+  ): boolean => {
+    const index = handlers.indexOf(listener as NodeJS.SignalsListener);
+    if (index < 0) {
+      return false;
+    }
+    handlers.splice(index, 1);
+    return true;
+  };
+  const onSpy = vi.spyOn(process, "on").mockImplementation((event, listener) => {
+    if (event === "SIGTERM") {
+      sigtermHandlers.push(listener as NodeJS.SignalsListener);
+      return process;
+    }
+    if (event === "SIGINT") {
+      sigintHandlers.push(listener as NodeJS.SignalsListener);
+      return process;
+    }
+    return originalOn(event, listener);
+  });
+  const addListenerSpy = vi
+    .spyOn(process, "addListener")
+    .mockImplementation((event, listener) => process.on(event, listener));
+  const offSpy = vi.spyOn(process, "off").mockImplementation((event, listener) => {
+    if (event === "SIGTERM" && removeCapturedHandler(sigtermHandlers, listener)) {
+      return process;
+    }
+    if (event === "SIGINT" && removeCapturedHandler(sigintHandlers, listener)) {
+      return process;
+    }
+    return originalOff(event, listener);
+  });
+  const removeListenerSpy = vi
+    .spyOn(process, "removeListener")
+    .mockImplementation((event, listener) => process.off(event, listener));
+
+  return {
+    sigtermHandlers,
+    sigintHandlers,
+    restore: () => {
+      addListenerSpy.mockRestore();
+      removeListenerSpy.mockRestore();
+      onSpy.mockRestore();
+      offSpy.mockRestore();
+    },
+  };
+}
+
+async function dispatchSignalsWhenProgressReady(options: {
+  stderrPath: string;
+  marker: string;
+  isWorkerFinished: () => boolean;
+  signalGroups: ReadonlyArray<{
+    signal: NodeJS.Signals;
+    handlers: readonly NodeJS.SignalsListener[];
+  }>;
+}): Promise<void> {
+  let progressObserved = false;
+  for (let attempt = 0; attempt < 1000; attempt += 1) {
+    if (options.isWorkerFinished()) {
+      break;
+    }
+    await new Promise<void>((resolve) => setTimeout(resolve, 10));
+    const stderr = await readFile(options.stderrPath, "utf8").catch(() => "");
+    if (stderr.includes(options.marker)) {
+      progressObserved = true;
+      break;
+    }
+  }
+  if (!progressObserved || options.isWorkerFinished()) {
+    return;
+  }
+  for (const group of options.signalGroups) {
+    for (const handler of group.handlers) {
+      handler(group.signal);
+    }
+  }
+}
+
 describe("test-runs command attribution fallback", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -770,15 +860,14 @@ describe("background test run lifecycle", () => {
           "  stopped = true;",
           "  process.stderr.write('[pm test-all] item 1/1 end id=pm-stop status=failed\\n');",
           "});",
-          "setInterval(() => {",
+          "const timer = setInterval(() => {",
           "  if (!stopped) {",
           "    process.stderr.write('[pm test] linked-test 1/1 running elapsed_ms=15\\n');",
+          "    process.stderr.write('[pm test-all] item 1/1 start id=pm-stop linked_tests=1\\n');",
+          "  } else {",
+          "    clearInterval(timer);",
           "  }",
           "}, 1);",
-          "setTimeout(() => {",
-          "  process.kill(process.ppid, 'SIGTERM');",
-          "  process.kill(process.ppid, 'SIGINT');",
-          "}, 5);",
           "",
         ].join("\n"),
         "utf8",
@@ -795,7 +884,25 @@ describe("background test run lifecycle", () => {
               requestedBy: "unit",
             });
 
-            const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true);
+            let workerFinished = false;
+            const { sigtermHandlers, sigintHandlers, restore } = captureProcessSignalHandlers();
+            const signalWhenProgressReady = dispatchSignalsWhenProgressReady({
+              stderrPath: getTestRunStderrPath(context.pmPath, started.run.id),
+              marker: "id=pm-stop",
+              isWorkerFinished: () => workerFinished,
+              signalGroups: [
+                { signal: "SIGTERM", handlers: sigtermHandlers },
+                { signal: "SIGINT", handlers: sigintHandlers },
+              ],
+            }).catch(() => undefined);
+            const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true).finally(async () => {
+              workerFinished = true;
+              try {
+                await signalWhenProgressReady;
+              } finally {
+                restore();
+              }
+            });
             expect(stopped.status).toBe("stopped");
             expect(stopped.stop_requested_at).toBeDefined();
             expect(stopped.progress).toMatchObject({
@@ -1055,7 +1162,6 @@ describe("background test run lifecycle", () => {
         [
           "process.on('SIGTERM', () => {});",
           "setInterval(() => process.stderr.write('[pm test] linked-test 1/1 running elapsed_ms=10\\n'), 1);",
-          "setTimeout(() => process.kill(process.ppid, 'SIGTERM'), 5);",
           "",
         ].join("\n"),
         "utf8",
@@ -1073,7 +1179,22 @@ describe("background test run lifecycle", () => {
               commandArgs: ["signal-stop-default-delay"],
               requestedBy: "unit",
             });
-            const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true);
+            let workerFinished = false;
+            const { sigtermHandlers, restore } = captureProcessSignalHandlers();
+            const signalWhenProgressReady = dispatchSignalsWhenProgressReady({
+              stderrPath: getTestRunStderrPath(context.pmPath, started.run.id),
+              marker: "linked-test 1/1 running",
+              isWorkerFinished: () => workerFinished,
+              signalGroups: [{ signal: "SIGTERM", handlers: sigtermHandlers }],
+            }).catch(() => undefined);
+            const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true).finally(async () => {
+              workerFinished = true;
+              try {
+                await signalWhenProgressReady;
+              } finally {
+                restore();
+              }
+            });
             expect(stopped.status).toBe("stopped");
             expect(stopped.progress?.phase).toBe("finished");
           });
