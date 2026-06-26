@@ -78,6 +78,56 @@ async function withTemporaryPlatform<T>(platform: NodeJS.Platform, callback: () 
   }
 }
 
+function captureProcessSignalHandlers(): {
+  sigtermHandlers: NodeJS.SignalsListener[];
+  sigintHandlers: NodeJS.SignalsListener[];
+  restore: () => void;
+} {
+  const sigtermHandlers: NodeJS.SignalsListener[] = [];
+  const sigintHandlers: NodeJS.SignalsListener[] = [];
+  const originalOn: typeof process.on = process.on.bind(process);
+  const originalOff: typeof process.off = process.off.bind(process);
+  const onSpy = vi.spyOn(process, "on").mockImplementation((event, listener) => {
+    if (event === "SIGTERM") {
+      sigtermHandlers.push(listener as NodeJS.SignalsListener);
+      return process;
+    }
+    if (event === "SIGINT") {
+      sigintHandlers.push(listener as NodeJS.SignalsListener);
+      return process;
+    }
+    return originalOn(event, listener);
+  });
+  const offSpy = vi.spyOn(process, "off").mockImplementation((event, listener) => {
+    if (event === "SIGTERM") {
+      const index = sigtermHandlers.indexOf(listener as NodeJS.SignalsListener);
+      if (index >= 0) {
+        sigtermHandlers.splice(index, 1);
+        return process;
+      }
+      return originalOff(event, listener);
+    }
+    if (event === "SIGINT") {
+      const index = sigintHandlers.indexOf(listener as NodeJS.SignalsListener);
+      if (index >= 0) {
+        sigintHandlers.splice(index, 1);
+        return process;
+      }
+      return originalOff(event, listener);
+    }
+    return originalOff(event, listener);
+  });
+
+  return {
+    sigtermHandlers,
+    sigintHandlers,
+    restore: () => {
+      onSpy.mockRestore();
+      offSpy.mockRestore();
+    },
+  };
+}
+
 describe("test-runs command attribution fallback", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -792,41 +842,8 @@ describe("background test run lifecycle", () => {
               requestedBy: "unit",
             });
 
-            const sigtermHandlers: NodeJS.SignalsListener[] = [];
-            const sigintHandlers: NodeJS.SignalsListener[] = [];
             let workerFinished = false;
-            const originalOn: typeof process.on = process.on.bind(process);
-            const originalOff: typeof process.off = process.off.bind(process);
-            const onSpy = vi.spyOn(process, "on").mockImplementation((event, listener) => {
-              if (event === "SIGTERM") {
-                sigtermHandlers.push(listener as NodeJS.SignalsListener);
-                return process;
-              }
-              if (event === "SIGINT") {
-                sigintHandlers.push(listener as NodeJS.SignalsListener);
-                return process;
-              }
-              return originalOn(event, listener);
-            });
-            const offSpy = vi.spyOn(process, "off").mockImplementation((event, listener) => {
-              if (event === "SIGTERM") {
-                const index = sigtermHandlers.indexOf(listener as NodeJS.SignalsListener);
-                if (index >= 0) {
-                  sigtermHandlers.splice(index, 1);
-                  return process;
-                }
-                return originalOff(event, listener);
-              }
-              if (event === "SIGINT") {
-                const index = sigintHandlers.indexOf(listener as NodeJS.SignalsListener);
-                if (index >= 0) {
-                  sigintHandlers.splice(index, 1);
-                  return process;
-                }
-                return originalOff(event, listener);
-              }
-              return originalOff(event, listener);
-            });
+            const { sigtermHandlers, sigintHandlers, restore } = captureProcessSignalHandlers();
             const signalWhenProgressReady = (async (): Promise<void> => {
               let progressObserved = false;
               for (let attempt = 0; attempt < 1000; attempt += 1) {
@@ -855,8 +872,7 @@ describe("background test run lifecycle", () => {
               try {
                 await signalWhenProgressReady.catch(() => undefined);
               } finally {
-                onSpy.mockRestore();
-                offSpy.mockRestore();
+                restore();
               }
             });
             expect(stopped.status).toBe("stopped");
@@ -1135,28 +1151,8 @@ describe("background test run lifecycle", () => {
               commandArgs: ["signal-stop-default-delay"],
               requestedBy: "unit",
             });
-            const sigtermHandlers: NodeJS.SignalsListener[] = [];
             let workerFinished = false;
-            const originalOn: typeof process.on = process.on.bind(process);
-            const originalOff: typeof process.off = process.off.bind(process);
-            const onSpy = vi.spyOn(process, "on").mockImplementation((event, listener) => {
-              if (event === "SIGTERM") {
-                sigtermHandlers.push(listener as NodeJS.SignalsListener);
-                return process;
-              }
-              return originalOn(event, listener);
-            });
-            const offSpy = vi.spyOn(process, "off").mockImplementation((event, listener) => {
-              if (event === "SIGTERM") {
-                const index = sigtermHandlers.indexOf(listener as NodeJS.SignalsListener);
-                if (index >= 0) {
-                  sigtermHandlers.splice(index, 1);
-                  return process;
-                }
-                return originalOff(event, listener);
-              }
-              return originalOff(event, listener);
-            });
+            const { sigtermHandlers, restore } = captureProcessSignalHandlers();
             const signalWhenProgressReady = (async (): Promise<void> => {
               let progressObserved = false;
               for (let attempt = 0; attempt < 1000; attempt += 1) {
@@ -1182,8 +1178,7 @@ describe("background test run lifecycle", () => {
               try {
                 await signalWhenProgressReady.catch(() => undefined);
               } finally {
-                onSpy.mockRestore();
-                offSpy.mockRestore();
+                restore();
               }
             });
             expect(stopped.status).toBe("stopped");
