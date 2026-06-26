@@ -1,0 +1,13 @@
+id: pm-arzz
+title: "CodeFactor/Complexity: reduce cyclomatic complexity (×152: 3 Critical, 7 High, 142 Moderate)"
+description: "CodeFactor flags functions/methods that exceed its cyclomatic-complexity thresholds. **Count: 152** — the single largest category.\n\n## Breakdown + lists\n\n- Critical ×3 — https://www.codefactor.io/repository/github/unbraind/pm-cli/issues/main?category=Complexity&groupId=63\n- High ×7 — https://www.codefactor.io/repository/github/unbraind/pm-cli/issues/main?category=Complexity&groupId=23\n- Moderate ×142 — https://www.codefactor.io/repository/github/unbraind/pm-cli/issues/main?category=Complexity&groupId=3\n\n## Hotspot files\n\n- `src/sdk/cli-contracts.ts` (B)\n- `src/cli/main.ts` (B)\n- `src/cli/commands/search.ts` (B)\n- `tests/unit/commands/create-command.spec.ts` (C)\n- `tests/unit/commands/update-command.spec.ts` (B)\n\n## Strategy\n\n1. Kill the 10 Critical+High first — biggest grade impact per fix. Extract helpers, use early returns / guard clauses, replace long if/switch ladders with lookup tables or a dispatch map.\n2. Moderate (142) is a long tail: large command handlers and big test specs. For specs, split oversized `describe` blocks or parametrize repetitive cases (also helps the Duplication item).\n3. Judgment: do NOT inflate complexity-of-understanding to satisfy the metric. Where a function is genuinely cohesive, prefer a documented, scoped CodeFactor ignore over a harmful split.\n\n## Constraints\n\nBehavior-preserving only. Keep 100% coverage, and respect `scripts/release/static-quality-gate.mjs` (120 `.ts` files/dir cap) when splitting files into new directories."
+type: Task
+status: open
+priority: 2
+tags[4]: code-quality,codefactor,complexity,refactor
+created_at: "2026-06-26T13:33:03.901Z"
+updated_at: "2026-06-26T13:33:03.901Z"
+author: claude-code-agent
+acceptance_criteria: "First milestone: the 3 Critical + 7 High complexity findings are eliminated. Stretch: Moderate findings trend to 0 where it does not harm readability (otherwise scoped-ignore with justification). No behavior change — full coverage suite green at 100%; pnpm typecheck, contracts:check, and quality:static pass; no directory exceeds the 120-file static-gate cap."
+parent: pm-92if
+body: ""

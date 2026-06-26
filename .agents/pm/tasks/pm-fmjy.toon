@@ -1,0 +1,13 @@
+id: pm-fmjy
+title: "CodeFactor/Duplication: remove duplicated code blocks (×20: 2 Critical, 3 Major, 15 Minor)"
+description: "CodeFactor's duplicate-code detector found **20 clones**.\n\n## Breakdown + lists\n\n- Critical ×2 — https://www.codefactor.io/repository/github/unbraind/pm-cli/issues/main?category=Duplication&groupId=2\n- Major ×3 — https://www.codefactor.io/repository/github/unbraind/pm-cli/issues/main?category=Duplication&groupId=1\n- Minor ×15 — https://www.codefactor.io/repository/github/unbraind/pm-cli/issues/main?category=Duplication&groupId=4\n\n## Strategy\n\n- Production code: extract the duplicated block into a shared helper/constant/module. (This repo already favors shared dedup helpers — see prior chore pm-1b96.)\n- Test code: a large share of duplication lives in the command spec files (`create-command.spec.ts`, `update-command.spec.ts`); factor common arrange/act setup into shared test helpers or fixtures and parametrize repeated cases.\n- Tackle Critical + Major first.\n\n## Constraints\n\nBehavior-preserving. New shared helpers must themselves be covered to keep the 100% coverage gate green. Mind the 120-file/dir static cap if adding helper files."
+type: Task
+status: open
+priority: 2
+tags[4]: code-quality,codefactor,duplication,refactor
+created_at: "2026-06-26T13:33:10.951Z"
+updated_at: "2026-06-26T13:33:10.951Z"
+author: claude-code-agent
+acceptance_criteria: "First milestone: the 2 Critical + 3 Major duplication clones are removed by extracting shared helpers/fixtures. Stretch: Minor clones to 0. Extracted helpers are covered; full coverage suite green at 100%; pnpm typecheck + quality gates pass."
+parent: pm-92if
+body: ""
