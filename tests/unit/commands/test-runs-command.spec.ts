@@ -793,7 +793,7 @@ describe("background test run lifecycle", () => {
             });
 
             const signalWhenProgressReady = (async (): Promise<void> => {
-              for (let attempt = 0; attempt < 50; attempt += 1) {
+              for (let attempt = 0; attempt < 1000; attempt += 1) {
                 await new Promise<void>((resolve) => setTimeout(resolve, 10));
                 const stderr = await readFile(getTestRunStderrPath(context.pmPath, started.run.id), "utf8").catch(() => "");
                 if (stderr.includes("id=pm-stop")) {
@@ -1086,9 +1086,18 @@ describe("background test run lifecycle", () => {
               commandArgs: ["signal-stop-default-delay"],
               requestedBy: "unit",
             });
-            const signalTimer = setTimeout(() => process.emit("SIGTERM"), 50);
-            const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true).finally(() => {
-              clearTimeout(signalTimer);
+            const signalWhenProgressReady = (async (): Promise<void> => {
+              for (let attempt = 0; attempt < 1000; attempt += 1) {
+                await new Promise<void>((resolve) => setTimeout(resolve, 10));
+                const stderr = await readFile(getTestRunStderrPath(context.pmPath, started.run.id), "utf8").catch(() => "");
+                if (stderr.includes("linked-test 1/1 running")) {
+                  break;
+                }
+              }
+              process.emit("SIGTERM");
+            })();
+            const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true).finally(async () => {
+              await signalWhenProgressReady;
             });
             expect(stopped.status).toBe("stopped");
             expect(stopped.progress?.phase).toBe("finished");
