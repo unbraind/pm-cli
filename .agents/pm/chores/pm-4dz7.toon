@@ -1,0 +1,38 @@
+id: pm-4dz7
+title: Refresh Sentry release and telemetry dependencies
+description: Update @sentry/node and @sentry/cli minor versions after GitHub/dependency sweep found no vulnerabilities but current Sentry packages behind latest. Keep release/telemetry gates healthy while Auto Release remains externally blocked on RELEASE_PAT configuration.
+type: Chore
+status: closed
+priority: 2
+tags[4]: "area:release","area:telemetry",dependencies,sentry
+created_at: "2026-06-26T23:12:40.686Z"
+updated_at: "2026-06-26T23:23:59.630Z"
+author: codex-sdk-cli-continuation
+parent: pm-u9d0
+resolution: "Updated @sentry/node and @sentry/cli to current minor releases and verified release, telemetry, security, changelog, package, coverage, and isolated temp-project smoke gates."
+expected_result: Sentry release and telemetry dependencies are current without introducing vulnerabilities or breaking pm CLI/package workflows.
+actual_result: "@sentry/node is 10.62.0 and @sentry/cli is 3.6.0; all focused and repo-wide gates passed, including 100/100/100/100 coverage and isolated sandbox smoke."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-7zs0,related,"2026-06-26T23:12:40.686Z",null,null
+  pm-9gxi,related,"2026-06-26T23:12:40.686Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-06-26T23:12:40.686Z",codex-sdk-cli-continuation,"Duplicate check: pm search 'Sentry dependency update @sentry/node @sentry/cli outdated' --status all and pm search 'dependency updates pnpm outdated sentry cli node' --status all found only closed historical dependency tasks plus open release-health/blocker lineages; no active duplicate for the current @sentry/node 10.62.0 and @sentry/cli 3.6.0 refresh."
+  "2026-06-26T23:23:45.108Z",codex-sdk-cli-continuation,"Evidence: refreshed @sentry/node from 10.61.0 to 10.62.0 and @sentry/cli from 3.5.1 to 3.6.0. GitHub sweep found no open PRs, one open Auto Release issue (#374) still externally blocked on missing RELEASE_PAT, no open Dependabot alerts, no open CodeQL alerts, pnpm audit moderate clean, and pnpm outdated now only reports @types/node 26.x while the repo intentionally targets Node 22 types. Verification passed: pm test pm-4dz7 --run --progress (5/5 linked checks), pnpm typecheck, pnpm quality:static, pnpm changelog:pm:check with pm-changelog 2026.6.20 unchanged, package doctor deep ok, pm health summary ok, pm validate history drift ok with known resolution warning backlog, node scripts/run-tests.mjs coverage 256 files / 5136 tests with 100/100/100/100 coverage, and isolated temp smoke in /tmp/pm-cli-sentry-refresh-smoke-B7XXCD using sandboxed PM_PATH/PM_GLOBAL_PATH through init/create/claim/update/comments/files/docs/test-run/health/validate/close/release."
+files[2]{path,scope,note}:
+  package.json,project,bump @sentry/node and @sentry/cli minor versions
+  pnpm-lock.yaml,project,lock Sentry CLI and Node dependency graph at refreshed versions
+tests[10]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node dist/cli.js package doctor --project --detail deep --json,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/sentry-telemetry-gate.spec.ts tests/unit/scripts/release/run-gates.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm audit --audit-level moderate,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm changelog:pm:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:static",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm security:scan",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqvjsmal-hqte1d,test,passed,"2026-06-26T23:13:43.335Z","2026-06-26T23:14:10.269Z","2026-06-26T23:14:10.269Z",null,null,5,0,0,null,null,null
+close_reason: Sentry release and telemetry dependencies refreshed and verified
+body: ""

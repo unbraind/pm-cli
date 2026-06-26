@@ -6,12 +6,12 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-06-26T21:06:16.131Z"
+updated_at: "2026-06-26T23:23:45.393Z"
 reminders[1]{at,text}:
   "2026-06-08T10:24:45.889Z",Confirm daily auto-release tagged a new version AND npm latest advanced; else inspect publish + Sentry-gate steps
 author: maintainer-agent
 parent: pm-u9d0
-comments[11]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-06-10T14:44:30.277Z",maintainer-agent,"2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
   "2026-06-16T11:26:49.976Z",codex-sdk-cli-consolidation-20260616,"Auto-release gate reproduced locally with SENTRY_PERSONAL_ADMIN_TOKEN; failing high issue was PM-CLI-1Q (handled CommandError: all items failed to apply). Added count-agnostic handled pattern 'item(s) failed to apply' and blocking_short_ids/blocking_titles output for diagnostics. Gate now passes in strict mode with max-high=0."
   "2026-06-16T11:46:33.866Z",codex-sdk-cli-consolidation-20260616,"Release-health verification: sentry-telemetry gate now passes in strict mode (max-critical=0,max-high=0) after expected handled-CommandError classification update; output now includes blocking_short_ids/blocking_titles for actionable diagnostics."
@@ -23,6 +23,7 @@ comments[11]{created_at,author,text}:
   "2026-06-26T07:24:47.324Z",codex-sdk-cli-continue,"Release-health evidence 2026-06-26: npm latest remains @unbrained/pm-cli 2026.6.24 and latest tag is v2026.6.24. Scheduled Auto Release run 28221678293 failed before publishing because RELEASE_PAT is absent from the release environment; open GitHub issue #374 tracks the current blocked daily release. Manual workflow_dispatch run 28219218329 was push=false dry_run=true and therefore only confirms gates, not publish."
   "2026-06-26T07:29:59.238Z",codex-sdk-cli-continue,"Evidence: release-health branch verification completed. The active external blocker remains RELEASE_PAT absence in the release environment; the branch improves future scheduled failure issues so agents can read detected preflight state directly. npm latest/tag remain 2026.6.24/v2026.6.24 until maintainer configures RELEASE_PAT and reruns Auto Release with push=true."
   "2026-06-26T21:06:16.131Z",codex-gpt5,"Release-health evidence 2026-06-26 continuation: GitHub issue #374 is still open for scheduled Auto Release blocked before publish because RELEASE_PAT_CONFIGURED=false in the release environment. Latest inspected Auto Release schedule run 28221678293 failed before the release pipeline; workflow_dispatch run 28219218329 was push=false/dry_run=true and only proved gates. Current code-side checks are healthy: Sentry/telemetry gate ok (critical=0 high=0, telemetry finish_error_rate_pct=0.7), pm-changelog latest and installed version are 2026.6.20, package doctor deep ok. No release-health code patch is included in the CodeFactor branch; maintainer must configure RELEASE_PAT/RELEASE_PUSH_TOKEN and rerun Auto Release with push=true before this reminder can close."
+  "2026-06-26T23:23:45.393Z",codex-sdk-cli-continuation,"Release-health evidence: Sentry dependency refresh task pm-4dz7 verified release/telemetry gates after updating @sentry/node 10.62.0 and @sentry/cli 3.6.0. Auto Release remains blocked by external RELEASE_PAT absence in the release environment; latest scheduled Auto Release run 28221678293 failed before publish and issue #374 remains open. Code-side release/telemetry gates are healthy: live Sentry critical/high = 0, telemetry finish_error_rate_pct = 0.73, pm-changelog 2026.6.20 check unchanged, package doctor deep ok."
 files[2]{path,scope,note}:
   scripts/release/sentry-telemetry-gate.mjs,project,Ignore expected handled apply-failure CommandError and expose blocking issue IDs
   tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,Regression coverage for updated sentry gate output/classification

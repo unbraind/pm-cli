@@ -47,6 +47,7 @@
 
 ### Other
 
+- Refresh Sentry release and telemetry dependencies ([pm-4dz7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-4dz7.toon))
 - CodeFactor parity tooling: local ESLint (unicorn) + complexity + duplication lint to reproduce findings and prevent regressions ([pm-6sqo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-6sqo.toon))
 - CodeFactor/Maintainability: clear remaining unicorn lints (no-thenable ×4, no-useless-spread ×2, no-useless-length-check ×1) ([pm-q0ye](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-q0ye.toon))
 - ADR: offline BM25 lexical provider + relevance eval harness for search quality ([pm-f2al](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-f2al.toon))
