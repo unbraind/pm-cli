@@ -1266,7 +1266,7 @@ describe("runUpdate", () => {
         validation?: { sprint_release_format?: string };
       };
       parsed.validation = {
-        ...(parsed.validation ?? {}),
+        ...parsed.validation,
         sprint_release_format: "strict_error",
       };
       await writeFile(settingsPath, `${JSON.stringify(parsed, null, 2)}\n`, "utf8");
@@ -2771,7 +2771,7 @@ describe("runUpdate", () => {
         schema?: { fields?: Array<Record<string, unknown>> };
       };
       settings.schema = {
-        ...(settings.schema ?? {}),
+        ...settings.schema,
         fields: [
           {
             key: "reviewUrl",
@@ -2885,7 +2885,7 @@ describe("runUpdate", () => {
         schema?: { unknown_field_policy?: string };
       };
       settings.schema = {
-        ...(settings.schema ?? {}),
+        ...settings.schema,
         unknown_field_policy: "reject",
       };
       await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
@@ -2981,7 +2981,7 @@ describe("runUpdate", () => {
         schema?: { unknown_field_policy?: string };
       };
       settings.schema = {
-        ...(settings.schema ?? {}),
+        ...settings.schema,
         unknown_field_policy: "reject",
       };
       await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
@@ -3431,9 +3431,9 @@ describe("runUpdate per-type workflow enforcement (pm-f4r1)", () => {
       governance?: Record<string, unknown>;
       schema?: Record<string, unknown>;
     };
-    settings.governance = { ...(settings.governance ?? {}), workflow_enforcement: enforcement };
+    settings.governance = { ...settings.governance, workflow_enforcement: enforcement };
     settings.schema = {
-      ...(settings.schema ?? {}),
+      ...settings.schema,
       type_workflows: [
         {
           type: "Issue",
@@ -3541,9 +3541,9 @@ describe("runUpdate per-type workflow enforcement (pm-f4r1)", () => {
       governance?: Record<string, unknown>;
       schema?: Record<string, unknown>;
     };
-    settings.governance = { ...(settings.governance ?? {}), workflow_enforcement: "strict" };
+    settings.governance = { ...settings.governance, workflow_enforcement: "strict" };
     settings.schema = {
-      ...(settings.schema ?? {}),
+      ...settings.schema,
       type_workflows: [{ type: "Issue", allowed_transitions: [] }],
     };
     await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");

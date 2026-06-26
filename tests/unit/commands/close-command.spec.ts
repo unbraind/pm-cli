@@ -994,7 +994,7 @@ describe("runClose", () => {
         governance?: { require_close_reason?: boolean };
       };
       settings.governance = {
-        ...(settings.governance ?? {}),
+        ...settings.governance,
         require_close_reason: false,
       };
       await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
@@ -1663,7 +1663,7 @@ describe("runCloseMany via CLI", () => {
         governance?: { require_close_reason?: boolean };
       };
       settings.governance = {
-        ...(settings.governance ?? {}),
+        ...settings.governance,
         require_close_reason: false,
       };
       await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
@@ -1695,7 +1695,7 @@ describe("runCloseMany via CLI", () => {
         governance?: { require_close_reason?: boolean };
       };
       settings.governance = {
-        ...(settings.governance ?? {}),
+        ...settings.governance,
         require_close_reason: false,
       };
       await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");

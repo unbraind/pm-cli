@@ -62,6 +62,15 @@ function extractWorkflowJob(content: string, jobName: string): string {
 }
 
 describe("GitHub workflow contract", () => {
+  it("keeps the README Codecov badge pinned to the default branch", async () => {
+    const readmePath = path.resolve(repoRoot, "README.md");
+    const readme = normalizeWorkflow(await readFile(readmePath, "utf8"));
+
+    expect(readme).toContain(
+      "[![codecov](https://codecov.io/gh/unbraind/pm-cli/branch/main/graph/badge.svg)]",
+    );
+  });
+
   it("keeps CI matrix and quality-gate steps aligned with release requirements", async () => {
     const ciPath = path.resolve(repoRoot, ".github/workflows/ci.yml");
     const ciWorkflow = normalizeWorkflow(await readFile(ciPath, "utf8"));
@@ -146,6 +155,15 @@ describe("GitHub workflow contract", () => {
       "name: coverage-node24-ubuntu-latest",
       "path: coverage",
       "if-no-files-found: ignore",
+      "uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0",
+      "token: ${{ secrets.CODECOV_TOKEN }}",
+      "files: ./coverage/lcov.info",
+      "name: pm-cli-coverage",
+      "override_branch: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}",
+      "override_commit: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}",
+      "report_type: test_results",
+      "files: ./coverage/junit.xml",
+      "name: pm-cli-test-results",
     ]);
     expectContainsAll(runtimeSmokeJob, [
       "name: Runtime smoke (${{ matrix.os }}, Node ${{ matrix.node }})",

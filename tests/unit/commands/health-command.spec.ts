@@ -272,9 +272,10 @@ describe("runHealth", () => {
           },
         },
       });
-      const defaultLoaded = (
-        extensionCheck?.details as { loaded?: Array<{ name: string; has_activate: boolean; module?: unknown }> }
-      ).loaded ?? [];
+      const defaultExtensionDetails = extensionCheck?.details as
+        | { loaded?: Array<{ name: string; has_activate: boolean; module?: unknown }> }
+        | undefined;
+      const defaultLoaded = defaultExtensionDetails?.loaded ?? [];
       expect(defaultLoaded).toEqual([]);
       expect(defaultLoaded.every((entry) => !("module" in entry))).toBe(true);
 
@@ -505,7 +506,10 @@ describe("runHealth", () => {
 
       const health = await runHealth({ path: context.pmPath });
       const storageCheck = health.checks.find((check) => check.name === "storage");
-      expect((storageCheck?.details as { compact_policy: { over_threshold_count: number } }).compact_policy.over_threshold_count).toBe(2);
+      const compactPolicyDetails = storageCheck?.details as
+        | { compact_policy?: { over_threshold_count?: number } }
+        | undefined;
+      expect(compactPolicyDetails?.compact_policy?.over_threshold_count).toBe(2);
       expect(storageCheck?.details).toMatchObject({
         remediation_map: { history_stream_over_compact_threshold: "pm history-compact --all-streams" },
       });
@@ -551,7 +555,8 @@ describe("runHealth", () => {
         queue_max_attempts: 12,
         queue_draining: false,
       });
-      expect((telemetryCheck?.details as { remediation_map?: Record<string, string> }).remediation_map).toMatchObject({
+      const telemetryDetails = telemetryCheck?.details as { remediation_map?: Record<string, string> } | undefined;
+      expect(telemetryDetails?.remediation_map).toMatchObject({
         telemetry_queue_high_retries: "pm telemetry flush",
       });
     });
@@ -1115,26 +1120,29 @@ describe("runHealth", () => {
             checkOnly: true,
           },
         );
-        const summaryDetails = summaryResult.checks.find((check) => check.name === "vectorization")?.details as {
-          stale_items_detail_mode: string;
-          stale_items_summary_limit: number;
-          stale_items_before_total: number;
-          stale_items_before: string[];
-          stale_items_before_truncated: boolean;
-          stale_items_after_total: number;
-          stale_items_after: string[];
-          stale_items_after_truncated: boolean;
-        };
-        expect(summaryDetails.stale_items_detail_mode).toBe("summary");
-        expect(summaryDetails.stale_items_summary_limit).toBe(25);
-        expect(summaryDetails.stale_items_before_total).toBe(ids.length);
-        expect(summaryDetails.stale_items_after_total).toBe(ids.length);
-        expect(summaryDetails.stale_items_before.length).toBe(25);
-        expect(summaryDetails.stale_items_after.length).toBe(25);
-        expect(summaryDetails.stale_items_before_truncated).toBe(true);
-        expect(summaryDetails.stale_items_after_truncated).toBe(true);
-        expect(summaryDetails.stale_items_before.every((entry) => ids.includes(entry))).toBe(true);
-        expect(summaryDetails.stale_items_after.every((entry) => ids.includes(entry))).toBe(true);
+        const summaryVectorizationCheck = summaryResult.checks.find((check) => check.name === "vectorization");
+        const summaryDetails = summaryVectorizationCheck?.details as
+          | {
+              stale_items_detail_mode: string;
+              stale_items_summary_limit: number;
+              stale_items_before_total: number;
+              stale_items_before: string[];
+              stale_items_before_truncated: boolean;
+              stale_items_after_total: number;
+              stale_items_after: string[];
+              stale_items_after_truncated: boolean;
+            }
+          | undefined;
+        expect(summaryDetails?.stale_items_detail_mode).toBe("summary");
+        expect(summaryDetails?.stale_items_summary_limit).toBe(25);
+        expect(summaryDetails?.stale_items_before_total).toBe(ids.length);
+        expect(summaryDetails?.stale_items_after_total).toBe(ids.length);
+        expect(summaryDetails?.stale_items_before.length).toBe(25);
+        expect(summaryDetails?.stale_items_after.length).toBe(25);
+        expect(summaryDetails?.stale_items_before_truncated).toBe(true);
+        expect(summaryDetails?.stale_items_after_truncated).toBe(true);
+        expect(summaryDetails?.stale_items_before.every((entry) => ids.includes(entry))).toBe(true);
+        expect(summaryDetails?.stale_items_after.every((entry) => ids.includes(entry))).toBe(true);
 
         const verboseResult = await runHealth(
           { path: context.pmPath },
@@ -1143,22 +1151,25 @@ describe("runHealth", () => {
             verboseStaleItems: true,
           },
         );
-        const verboseDetails = verboseResult.checks.find((check) => check.name === "vectorization")?.details as {
-          stale_items_detail_mode: string;
-          stale_items_before_total: number;
-          stale_items_before: string[];
-          stale_items_before_truncated: boolean;
-          stale_items_after_total: number;
-          stale_items_after: string[];
-          stale_items_after_truncated: boolean;
-        };
-        expect(verboseDetails.stale_items_detail_mode).toBe("full");
-        expect(verboseDetails.stale_items_before_total).toBe(ids.length);
-        expect(verboseDetails.stale_items_after_total).toBe(ids.length);
-        expect(verboseDetails.stale_items_before.length).toBe(ids.length);
-        expect(verboseDetails.stale_items_after.length).toBe(ids.length);
-        expect(verboseDetails.stale_items_before_truncated).toBe(false);
-        expect(verboseDetails.stale_items_after_truncated).toBe(false);
+        const verboseVectorizationCheck = verboseResult.checks.find((check) => check.name === "vectorization");
+        const verboseDetails = verboseVectorizationCheck?.details as
+          | {
+              stale_items_detail_mode: string;
+              stale_items_before_total: number;
+              stale_items_before: string[];
+              stale_items_before_truncated: boolean;
+              stale_items_after_total: number;
+              stale_items_after: string[];
+              stale_items_after_truncated: boolean;
+            }
+          | undefined;
+        expect(verboseDetails?.stale_items_detail_mode).toBe("full");
+        expect(verboseDetails?.stale_items_before_total).toBe(ids.length);
+        expect(verboseDetails?.stale_items_after_total).toBe(ids.length);
+        expect(verboseDetails?.stale_items_before.length).toBe(ids.length);
+        expect(verboseDetails?.stale_items_after.length).toBe(ids.length);
+        expect(verboseDetails?.stale_items_before_truncated).toBe(false);
+        expect(verboseDetails?.stale_items_after_truncated).toBe(false);
         expect(verboseDetails.stale_items_before).toEqual(expect.arrayContaining(ids));
         expect(verboseDetails.stale_items_after).toEqual(expect.arrayContaining(ids));
       });
@@ -1410,15 +1421,14 @@ describe("runHealth", () => {
       // The system-wide adoption gap surfaces a machine-executable remediation
       // map alongside the per-extension triage; the load-failure code is not in
       // the shared registry and is intentionally absent (pm-bdvm).
-      expect(
-        (extensionCheck?.details as { remediation_map?: Record<string, string> }).remediation_map,
-      ).toEqual({
+      const extensionDetails = extensionCheck?.details as
+        | { remediation_map?: Record<string, string>; loaded?: Array<{ name: string; has_activate: boolean; module?: unknown }> }
+        | undefined;
+      expect(extensionDetails?.remediation_map).toEqual({
         extension_update_health_partial_coverage: "pm extension --adopt-all --project",
       });
 
-      const loaded = (
-        extensionCheck?.details as { loaded?: Array<{ name: string; has_activate: boolean; module?: unknown }> }
-      ).loaded ?? [];
+      const loaded = extensionDetails?.loaded ?? [];
       expect(loaded).toEqual([
         expect.objectContaining({
           name: "ok-ext",
@@ -1521,7 +1531,8 @@ describe("runHealth", () => {
         },
       });
 
-      const loaded = (extensionCheck?.details as { loaded?: Array<{ name: string }> }).loaded ?? [];
+      const extensionDetails = extensionCheck?.details as { loaded?: Array<{ name: string }> } | undefined;
+      const loaded = extensionDetails?.loaded ?? [];
       expect(loaded.map((entry) => entry.name)).toEqual([
         "activate-boom-ext",
         "ok-ext",
@@ -1566,12 +1577,15 @@ describe("runHealth", () => {
 
       const health = await runHealth({ path: context.pmPath });
       const extensionCheck = health.checks.find((check) => check.name === "extensions");
-      const triage = (extensionCheck?.details as {
-        triage?: {
-          warning_codes: string[];
-          remediation: string[];
-        };
-      }).triage;
+      const extensionDetails = extensionCheck?.details as
+        | {
+            triage?: {
+              warning_codes: string[];
+              remediation: string[];
+            };
+          }
+        | undefined;
+      const triage = extensionDetails?.triage;
 
       expect(triage?.warning_codes).toEqual(
         expect.arrayContaining(["extension_preflight_override_collision", "extension_renderer_collision"]),
@@ -1605,16 +1619,21 @@ describe("runHealth", () => {
       expect(health.warnings.some((warning) => warning.startsWith("extension_update_health_partial_coverage:"))).toBe(false);
 
       const extensionCheck = health.checks.find((check) => check.name === "extensions");
-      const triage = (extensionCheck?.details as {
-        triage?: {
-          update_health_coverage: string;
-          update_health_partial: boolean;
-          unmanaged_loaded_extension_count: number;
-          unmanaged_expected_extension_count: number;
-          unmanaged_action_required_extension_count: number;
-          remediation: string[];
-        };
-      }).triage;
+      const extensionDetails = extensionCheck?.details as
+        | {
+            discovered?: Array<{ name: string | null }>;
+            loaded?: Array<{ name: string }>;
+            triage?: {
+              update_health_coverage: string;
+              update_health_partial: boolean;
+              unmanaged_loaded_extension_count: number;
+              unmanaged_expected_extension_count: number;
+              unmanaged_action_required_extension_count: number;
+              remediation: string[];
+            };
+          }
+        | undefined;
+      const triage = extensionDetails?.triage;
       expect(triage).toMatchObject({
         update_health_coverage: "full",
         update_health_partial: false,
@@ -1842,7 +1861,8 @@ describe("runHealth", () => {
           }),
         ]),
       );
-      expect((details.capability_guidance?.[0]?.allowed_capabilities as string[]) ?? []).toContain("services");
+      const allowedCapabilities = details.capability_guidance?.[0]?.allowed_capabilities as string[] | undefined;
+      expect(allowedCapabilities ?? []).toContain("services");
       expect(typeof details.capability_guidance?.[0]?.capability_contract_version).toBe("number");
       expect(details.triage?.unknown_capability_count).toBeGreaterThanOrEqual(1);
       expect((details.triage?.remediation ?? []).some((entry) => entry.includes("Allowed capabilities"))).toBe(true);
@@ -2095,10 +2115,16 @@ describe("runHealth", () => {
           "extension_entry_outside_extension:project:outside-entry-ext",
         ],
       });
-      const filteredLoaded = (extensionCheck?.details as { loaded?: Array<{ name: string }> }).loaded ?? [];
+      const extensionDetails = extensionCheck?.details as
+        | {
+            discovered?: Array<{ name: string | null }>;
+            loaded?: Array<{ name: string }>;
+          }
+        | undefined;
+      const filteredLoaded = extensionDetails?.loaded ?? [];
       expect(filteredLoaded.map((entry) => entry.name)).toEqual([]);
 
-      const discovered = (extensionCheck?.details as { discovered?: Array<{ name: string | null }> }).discovered ?? [];
+      const discovered = extensionDetails?.discovered ?? [];
       expect(discovered.map((entry) => entry.name)).toEqual([
         "global-valid-ext",
         null,
@@ -2268,7 +2294,10 @@ describe("runHealth", () => {
 
       const historyDriftCheck = health.checks.find((check) => check.name === "history_drift");
       expect(historyDriftCheck?.status).toBe("warn");
-      const remediationMap = (historyDriftCheck?.details as { remediation_map?: Record<string, string> }).remediation_map;
+      const historyDriftDetails = historyDriftCheck?.details as
+        | { remediation_map?: Record<string, string> }
+        | undefined;
+      const remediationMap = historyDriftDetails?.remediation_map;
       expect(remediationMap).toEqual({
         history_drift_missing_stream: "pm history-repair <id>",
       });
@@ -2303,8 +2332,10 @@ describe("runHealth", () => {
         ]),
       );
       const historyDriftCheck = health.checks.find((check) => check.name === "history_drift");
-      const remediationMap = (historyDriftCheck?.details as { remediation_map?: Record<string, string> })
-        .remediation_map;
+      const historyDriftDetails = historyDriftCheck?.details as
+        | { remediation_map?: Record<string, string> }
+        | undefined;
+      const remediationMap = historyDriftDetails?.remediation_map;
       expect(remediationMap).toEqual({
         history_drift_missing_stream: "pm history-repair --all",
       });
@@ -2342,7 +2373,8 @@ describe("runHealth", () => {
         unreadable_lock_count: 1,
         unparseable_lock_count: 1,
       });
-      const remediationMap = (locksCheck?.details as { remediation_map?: Record<string, string> }).remediation_map;
+      const lockDetails = locksCheck?.details as { remediation_map?: Record<string, string> } | undefined;
+      const remediationMap = lockDetails?.remediation_map;
       expect(remediationMap).toEqual({
         locks_stale_count: "pm gc --scope locks",
         locks_unreadable: "pm gc --scope locks --dry-run",
@@ -2372,7 +2404,8 @@ describe("runHealth", () => {
         scan_failed: true,
         pm_root: context.pmPath,
       });
-      expect((locksCheck?.details as { error?: string }).error).toContain("not a directory");
+      const lockDetails = locksCheck?.details as { error?: string } | undefined;
+      expect(lockDetails?.error).toContain("not a directory");
     });
   });
 

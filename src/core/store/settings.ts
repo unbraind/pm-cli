@@ -705,19 +705,19 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
     ...settings,
     item_format: settings.item_format === "json_markdown" ? "toon" : (settings.item_format ?? defaults.item_format),
     locks: { ...defaults.locks, ...settings.locks },
-    checkpoints: { ...defaults.checkpoints, ...(settings.checkpoints ?? {}) },
+    checkpoints: { ...defaults.checkpoints, ...settings.checkpoints },
     output: { ...defaults.output, ...settings.output },
     history: {
       ...defaults.history,
-      ...(settings.history ?? {}),
+      ...settings.history,
       compact_policy: {
         ...defaults.history.compact_policy,
-        ...(settings.history?.compact_policy ?? {}),
+        ...settings.history?.compact_policy,
       },
     },
     validation: {
       ...defaults.validation,
-      ...(settings.validation ?? {}),
+      ...settings.validation,
       parent_reference: governance.parent_reference,
       metadata_profile: governance.metadata_profile,
       metadata_required_fields: normalizeValidationMetadataRequiredFields(settings.validation?.metadata_required_fields),
@@ -766,7 +766,7 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
       stale_threshold_days: settings.context?.stale_threshold_days ?? defaults.context.stale_threshold_days,
       sections: {
         ...defaults.context.sections,
-        ...(settings.context?.sections ?? {}),
+        ...settings.context?.sections,
       },
     },
     extensions: {
@@ -780,13 +780,13 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
       mutation_refresh_policy: normalizeSearchMutationRefreshPolicy(settings.search?.mutation_refresh_policy),
       query_expansion: {
         ...defaults.search.query_expansion,
-        ...(settings.search?.query_expansion ?? {}),
+        ...settings.search?.query_expansion,
         enabled: normalizeSearchQueryExpansionEnabled(settings.search?.query_expansion?.enabled),
         provider: normalizeSearchQueryExpansionProvider(settings.search?.query_expansion?.provider),
       },
       rerank: {
         ...defaults.search.rerank,
-        ...(settings.search?.rerank ?? {}),
+        ...settings.search?.rerank,
         enabled: normalizeSearchRerankEnabled(settings.search?.rerank?.enabled),
         model: normalizeSearchRerankModel(settings.search?.rerank?.model),
         top_k: normalizeSearchRerankTopK(settings.search?.rerank?.top_k),
@@ -874,13 +874,13 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
       mutation_refresh_policy: normalizeSearchMutationRefreshPolicy(baseSettings.search?.mutation_refresh_policy),
       query_expansion: {
         ...SETTINGS_DEFAULTS.search.query_expansion,
-        ...(baseSettings.search?.query_expansion ?? {}),
+        ...baseSettings.search?.query_expansion,
         enabled: normalizeSearchQueryExpansionEnabled(baseSettings.search?.query_expansion?.enabled),
         provider: normalizeSearchQueryExpansionProvider(baseSettings.search?.query_expansion?.provider),
       },
       rerank: {
         ...SETTINGS_DEFAULTS.search.rerank,
-        ...(baseSettings.search?.rerank ?? {}),
+        ...baseSettings.search?.rerank,
         enabled: normalizeSearchRerankEnabled(baseSettings.search?.rerank?.enabled),
         model: normalizeSearchRerankModel(baseSettings.search?.rerank?.model),
         top_k: normalizeSearchRerankTopK(baseSettings.search?.rerank?.top_k),
@@ -892,7 +892,7 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
       stale_threshold_days: baseSettings.context?.stale_threshold_days ?? SETTINGS_DEFAULTS.context.stale_threshold_days,
       sections: {
         ...SETTINGS_DEFAULTS.context.sections,
-        ...(baseSettings.context?.sections ?? {}),
+        ...baseSettings.context?.sections,
       },
     },
     extensions: {
@@ -904,8 +904,8 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
       ...baseSettings.vector_store,
       adapter: baseSettings.vector_store?.adapter ?? SETTINGS_DEFAULTS.vector_store.adapter,
       collection_name: normalizeVectorStoreCollectionName(baseSettings.vector_store?.collection_name),
-      qdrant: { ...(baseSettings.vector_store?.qdrant ?? {}) },
-      lancedb: { ...(baseSettings.vector_store?.lancedb ?? {}) },
+      qdrant: { ...baseSettings.vector_store?.qdrant },
+      lancedb: { ...baseSettings.vector_store?.lancedb },
     },
   };
   const ordered = orderObject(

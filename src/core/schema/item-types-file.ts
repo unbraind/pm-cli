@@ -345,7 +345,7 @@ export function upsertItemType(file: ItemTypesFile, input: NormalizedAddTypeInpu
   const mergedAliases = dedupeAliases([...coerceAliasArray(existing?.aliases), ...input.aliases]);
 
   const next: ItemTypeDefinition = {
-    ...(existing ?? {}),
+    ...existing,
     name: input.name,
   };
   if (input.folder !== undefined) {

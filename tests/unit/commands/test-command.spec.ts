@@ -60,7 +60,7 @@ async function setTestResultTracking(pmPath: string, enabled: boolean): Promise<
     testing?: { record_results_to_items?: boolean };
   };
   settings.testing = {
-    ...(settings.testing ?? {}),
+    ...settings.testing,
     record_results_to_items: enabled,
   };
   await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");

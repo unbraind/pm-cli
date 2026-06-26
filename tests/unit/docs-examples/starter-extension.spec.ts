@@ -161,7 +161,11 @@ describe("starter-extension example", () => {
     starterCollector.artifacts.hooks.onRead[0]?.({ path: "/tmp/item.md" });
     starterCollector.artifacts.hooks.onIndex[0]?.({ id: "pm-1" });
 
-    const starterRun = await (starterCollector.artifacts.commands[0]?.run as (context: unknown) => Promise<Record<string, unknown>>)({
+    const starterCommandRun = starterCollector.artifacts.commands[0]?.run as
+      | ((context: unknown) => Promise<Record<string, unknown>>)
+      | undefined;
+    expect(typeof starterCommandRun).toBe("function");
+    const starterRun = await starterCommandRun({
       command: "starter ping",
       options: { name: "  starter  " },
     });
@@ -174,7 +178,7 @@ describe("starter-extension example", () => {
       index: 1,
     });
 
-    const starterFallbackRun = await (starterCollector.artifacts.commands[0]?.run as (context: unknown) => Promise<Record<string, unknown>>)({
+    const starterFallbackRun = await starterCommandRun({
       command: "starter ping",
       options: null,
     });
@@ -182,19 +186,23 @@ describe("starter-extension example", () => {
 
     // Whitespace-only name collapses to empty after trim, hitting the
     // `rawName.length > 0 ? rawName : "agent"` false arm.
-    const starterBlankNameRun = await (starterCollector.artifacts.commands[0]?.run as (context: unknown) => Promise<Record<string, unknown>>)({
+    const starterBlankNameRun = await starterCommandRun({
       command: "starter ping",
       options: { name: "   " },
     });
     expect(starterBlankNameRun.hello).toBe("agent");
 
-    const parsed = await (starterCollector.artifacts.parsers[0]?.handler as (context: unknown) => Promise<Record<string, unknown>>)({
+    const starterParser = starterCollector.artifacts.parsers[0]?.handler as
+      | ((context: unknown) => Promise<Record<string, unknown>>)
+      | undefined;
+    expect(typeof starterParser).toBe("function");
+    const parsed = await starterParser({
       options: { name: "  agent  " },
     });
     expect(parsed.options).toEqual({ name: "agent" });
 
     // Non-string name skips the trim branch.
-    const parsedNonString = await (starterCollector.artifacts.parsers[0]?.handler as (context: unknown) => Promise<Record<string, unknown>>)({
+    const parsedNonString = await starterParser({
       options: { name: 42 },
     });
     expect(parsedNonString.options).toEqual({ name: 42 });

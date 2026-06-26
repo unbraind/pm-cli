@@ -63,7 +63,9 @@ describe("policy-restricted-extension example", () => {
 
     collector.artifacts.beforeCommand[0]?.({ command: "policy demo" });
 
-    const run = await (collector.artifacts.commands[0]?.run as (context: unknown) => Promise<unknown>)({
+    const policyCommandRun = collector.artifacts.commands[0]?.run as ((context: unknown) => Promise<unknown>) | undefined;
+    expect(typeof policyCommandRun).toBe("function");
+    const run = await policyCommandRun({
       command: "policy demo",
       options: {},
     });

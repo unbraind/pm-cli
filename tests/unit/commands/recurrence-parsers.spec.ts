@@ -75,7 +75,8 @@ describe("parseRecurrenceRule", () => {
     expect(rule?.count).toBe(5);
     expect(rule?.by_weekday).toEqual(["mon", "fri"]);
     expect(rule?.by_month_day).toEqual([1, 15]);
-    expect(rule?.exdates?.[0] < (rule?.exdates?.[1] as string)).toBe(true);
+    const exdates = rule?.exdates ?? [];
+    expect(exdates[0] < (exdates[1] ?? "")).toBe(true);
   });
 
   it("omits optional collections when empty", () => {

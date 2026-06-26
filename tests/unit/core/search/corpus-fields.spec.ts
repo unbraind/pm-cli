@@ -39,11 +39,11 @@ function makeDocument(overrides: Partial<ItemMetadata> = {}, body = "body-text")
 }
 
 function makeSettings(corpusFields?: unknown): Pick<PmSettings, "search"> {
-  return {
-    search: {
-      ...(corpusFields === undefined ? {} : { corpus_fields: corpusFields as string[] }),
-    },
-  } as Pick<PmSettings, "search">;
+  const search: Record<string, unknown> = {};
+  if (corpusFields !== undefined) {
+    search.corpus_fields = corpusFields;
+  }
+  return { search } as Pick<PmSettings, "search">;
 }
 
 describe("core/search/corpus structured fields", () => {

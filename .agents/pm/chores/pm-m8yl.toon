@@ -2,12 +2,34 @@ id: pm-m8yl
 title: "CodeFactor/Maintainability: fix unsafe optional chaining (no-unsafe-optional-chaining ×25)"
 description: "**Rule:** ESLint core `no-unsafe-optional-chaining` (CodeFactor message: \"Unsafe usage of optional chaining.\", category label \"Optional chaining with invalid undefined usage\"). **Count:** 25 (Maintainability, Minor).\n\n**CodeFactor list:** https://www.codefactor.io/repository/github/unbraind/pm-cli/issues/main?category=Maintainability&groupId=8467\n\n## What it is\n\nA `?.` short-circuits to `undefined`. Using that result in a position where `undefined` would throw or coerce incorrectly is flagged — e.g. property access / call on the result `(a?.b).c`, arithmetic `a?.b + 1`, `await (a?.b)()`, `new (a?.b)()`, spreading, or destructuring.\n\n## Confirmed instance (from CodeFactor)\n\n- `tests/unit/extensions/extension-command.spec.ts:5960` (col 15)\n- 25 total — see the CodeFactor list for the complete set.\n\n## Fix\n\nNot blindly auto-fixable — review each. Options: guard the result first, use non-optional access where the value is provably defined, or restructure so the optional-chain result is not consumed where `undefined` is invalid. Keep behavior identical; tests + 100% coverage + typecheck must stay green."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[4]: code-quality,codefactor,eslint,maintainability
 created_at: "2026-06-26T13:32:34.362Z"
-updated_at: "2026-06-26T13:32:34.362Z"
+updated_at: "2026-06-26T15:46:51.791Z"
 author: claude-code-agent
 acceptance_criteria: "CodeFactor reports 0 unsafe-optional-chaining (\"Optional chaining with invalid undefined usage\") findings; full coverage suite stays green at 100%; pnpm typecheck passes."
 parent: pm-92if
+resolution: Rewrote unsafe optional-chain assertion dereferences and the CodeFactor no-useless-spread helper.
+expected_result: Unsafe optional-chain and no-useless-spread CodeFactor maintainability findings are removed without behavior changes.
+actual_result: "Assertions use explicit intermediate values; focused tests, typecheck, static quality, coverage 100/100/100/100, release gates, and temp smoke passed."
+comments[1]{created_at,author,text}:
+  "2026-06-26T15:46:31.025Z",codex-gpt5,"Evidence: rewrote unsafe optional-chain assertion shapes and the no-useless-spread corpus setting helper. Also normalized adjacent optional-chain cast shapes to avoid future CodeFactor churn. Verification passed: targeted 309-test suite; extra 186-test guard suite; pnpm typecheck; pnpm quality:static; node scripts/run-tests.mjs coverage (5133 tests, 100/100/100/100); node scripts/release/run-gates.mjs --telemetry-mode best-effort; manual temp-project smoke."
+files[9]{path,scope,note}:
+  tests/integration/profile-command.integration.spec.ts,project,Prevent future unsafe optional-chain cast findings
+  tests/unit/commands/get-append-command.spec.ts,project,CodeFactor unsafe optional-chain assertion rewrite
+  tests/unit/commands/health-command.spec.ts,project,CodeFactor unsafe optional-chain assertion rewrite
+  tests/unit/commands/recurrence-parsers.spec.ts,project,Prevent future unsafe optional-chain cast findings
+  tests/unit/core/search/corpus-fields.spec.ts,project,CodeFactor no-useless-spread cleanup
+  tests/unit/docs-examples/policy-restricted-extension.spec.ts,project,CodeFactor unsafe optional-chain assertion rewrite
+  tests/unit/docs-examples/starter-extension.spec.ts,project,CodeFactor unsafe optional-chain assertion rewrite
+  tests/unit/extensions/extension-command.spec.ts,project,CodeFactor unsafe optional-chain assertion rewrite
+  tests/unit/extensions/extension-loader.spec.ts,project,CodeFactor unsafe optional-chain assertion rewrite
+tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/integration/profile-command.integration.spec.ts tests/unit/commands/recurrence-parsers.spec.ts,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/core/search/corpus-fields.spec.ts tests/unit/extensions/extension-command.spec.ts tests/unit/extensions/extension-loader.spec.ts tests/unit/commands/health-command.spec.ts tests/unit/commands/get-append-command.spec.ts tests/unit/docs-examples/starter-extension.spec.ts tests/unit/docs-examples/policy-restricted-extension.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:static",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Removed CodeFactor unsafe optional chaining and no-useless-spread findings with regression coverage and release-gate evidence.
 body: ""

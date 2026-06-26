@@ -331,7 +331,7 @@ export async function maybeRenderBootstrapJsonHelp(
         BUILTIN_TYPE_HELP_VALUES,
         EXIT_CODE.USAGE,
         {
-          ...(runtimeContext ?? {}),
+          ...runtimeContext,
           attemptedCommand: renderAttemptedCommand(argv),
           normalizedInvocationArgs: [...argv],
           providedOptionFlags: extractProvidedOptionFlags(argv),

@@ -291,10 +291,11 @@ describe("runGet and runAppend", () => {
       expect(treeResult.tree?.root_id).toBe(rootId);
       expect(treeResult.tree?.depth_limit).toBe(1);
       expect(treeResult.tree?.count).toBe(2);
-      const ids = (treeResult.tree?.items ?? []).map((entry) => String(entry.id));
+      const treeItems = treeResult.tree?.items ?? [];
+      const ids = treeItems.map((entry) => String(entry.id));
       expect(ids).toEqual([childId, grandchildId]);
-      expect((treeResult.tree?.items[0] as { tree_depth?: number }).tree_depth).toBe(0);
-      expect((treeResult.tree?.items[1] as { tree_depth?: number }).tree_depth).toBe(1);
+      expect((treeItems[0] as { tree_depth?: number } | undefined)?.tree_depth).toBe(0);
+      expect((treeItems[1] as { tree_depth?: number } | undefined)?.tree_depth).toBe(1);
 
       const unboundedTree = await runGet(rootId, { path: context.pmPath }, { tree: true });
       expect(unboundedTree.tree?.depth_limit).toBeNull();

@@ -310,7 +310,7 @@ describe("runNormalize", () => {
       const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
         governance?: Record<string, unknown>;
       };
-      settings.governance = { ...(settings.governance ?? {}), require_close_reason: false };
+      settings.governance = { ...settings.governance, require_close_reason: false };
       await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
 
       const closedId = createTask(context, "normalize-closed-no-close-reason", {

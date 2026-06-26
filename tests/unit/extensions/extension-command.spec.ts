@@ -5318,7 +5318,8 @@ describe("extension command runtime", () => {
           }),
         ]),
       );
-      expect((capabilityGuidance[0]?.allowed_capabilities as string[]) ?? []).toContain("services");
+      const allowedCapabilities = capabilityGuidance[0]?.allowed_capabilities as string[] | undefined;
+      expect(allowedCapabilities ?? []).toContain("services");
       expect(typeof capabilityGuidance[0]?.capability_contract_version).toBe("number");
       expect(deep.warnings?.some((warning) => warning.includes("suggested=services"))).toBe(true);
       expect(deep.capability_contract?.version).toBe(summary.capability_contract_version);
@@ -5956,8 +5957,9 @@ describe("extension command runtime", () => {
 
       const installedFailure = (install.details as { activation_diagnostics?: { installed_extension_failed?: { hint?: unknown } } })
         .activation_diagnostics?.installed_extension_failed;
-      expect(typeof installedFailure?.hint).toBe("string");
-      expect((installedFailure?.hint as string).toLowerCase()).toContain("schema");
+      const installedFailureHint = installedFailure?.hint;
+      expect(typeof installedFailureHint).toBe("string");
+      expect((installedFailureHint as string).toLowerCase()).toContain("schema");
 
       const explore = await runExtension(undefined, { explore: true, project: true }, { path: context.pmPath });
       const listed = (explore.details.extensions as Array<Record<string, unknown>>) ?? [];

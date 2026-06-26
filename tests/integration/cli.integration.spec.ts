@@ -486,7 +486,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
         output?: { default_format?: "toon" | "json" };
       };
-      settings.output = { ...(settings.output ?? {}), default_format: "json" };
+      settings.output = { ...settings.output, default_format: "json" };
       await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
 
       const listResult = context.runCli(["list-open", "--limit", "10"]);

@@ -306,7 +306,7 @@ function normalizeRuntimeFieldDefinition(definition: RuntimeFieldDefinition): Ru
 export function normalizeRuntimeSchemaSettings(schema: Partial<RuntimeSchemaSettings> | undefined): RuntimeSchemaSettings {
   const files = {
     ...DEFAULT_RUNTIME_SCHEMA_FILE_PATHS,
-    ...(schema?.files ?? {}),
+    ...schema?.files,
   };
   const statusesSource = schema?.statuses && schema.statuses.length > 0 ? schema.statuses : DEFAULT_RUNTIME_STATUS_DEFINITIONS;
   const normalizedStatuses = (() => {
@@ -630,7 +630,7 @@ export async function loadRuntimeSchemaFromOptionalFiles(
     fields: [...normalizedSchema.fields, ...(loadedFields ?? [])],
     workflow: {
       ...normalizedSchema.workflow,
-      ...(loadedWorkflow ?? {}),
+      ...loadedWorkflow,
     },
     type_workflows: [...(normalizedSchema.type_workflows ?? []), ...(loadedTypeWorkflows ?? [])],
   });

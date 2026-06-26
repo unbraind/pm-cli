@@ -547,7 +547,7 @@ function withMutationCompaction(args: Record<string, unknown>, options?: Record<
   idOnly: boolean;
   runnerOptions: Record<string, unknown>;
 } {
-  return { changedFields: args.fullChangedFields === true ? "full" : "compact", idOnly: args.idOnly === true, runnerOptions: { ...(options ?? {}) } };
+  return { changedFields: args.fullChangedFields === true ? "full" : "compact", idOnly: args.idOnly === true, runnerOptions: { ...options } };
 }
 
 function mutationListOptions(options: Record<string, unknown>): ListOptions {

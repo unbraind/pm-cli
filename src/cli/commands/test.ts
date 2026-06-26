@@ -1224,7 +1224,7 @@ function resolveEffectiveLinkedTestDirectives(
   runtimeDirectives: LinkedTestRuntimeDirectives,
   linkedTest: LinkedTest,
 ): LinkedTestRuntimeDirectives {
-  const envSet = { ...runtimeDirectives.env_set, ...(linkedTest.env_set ?? {}) };
+  const envSet = { ...runtimeDirectives.env_set, ...linkedTest.env_set };
   const envClear = [...new Set([...runtimeDirectives.env_clear, ...(linkedTest.env_clear ?? [])])];
   const sharedHostSafe = linkedTest.shared_host_safe ?? runtimeDirectives.shared_host_safe;
   return {

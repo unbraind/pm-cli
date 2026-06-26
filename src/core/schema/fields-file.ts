@@ -323,7 +323,7 @@ export function upsertField(file: FieldsFile, input: NormalizedAddFieldInput): U
   const fields = file.fields.filter((definition) => normalizeFieldKey(definition.key) !== input.key);
 
   const next: RuntimeFieldDefinition = {
-    ...(existing ?? {}),
+    ...existing,
     key: input.key,
     type: input.type,
     commands: [...input.commands],
