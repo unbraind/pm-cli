@@ -1,5 +1,9 @@
-# CodeFactor configuration for @unbrained/pm-cli
+# Local reference for @unbrained/pm-cli CodeFactor settings
 # Docs: https://docs.codefactor.io/common-tasks/ignoring-files/
+#
+# CodeFactor manages repository ignore patterns in the hosted Settings > Ignore
+# Files UI. Keep this file as the source-of-truth checklist to mirror there; do
+# not assume CodeFactor reads it directly during hosted analysis.
 #
 # Keep CodeFactor focused on hand-authored source code. Generated data, the
 # git-native work-item store, large reference docs, and the dependency lockfile

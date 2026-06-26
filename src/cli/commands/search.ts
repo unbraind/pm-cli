@@ -75,6 +75,7 @@ import {
   itemMatchesContentFilters,
 } from "../../core/governance/content-fields.js";
 import {
+  applyCommonItemFilterEcho,
   buildContentFilterEcho,
   buildGovernanceMissingFilterEcho,
   resolveContentFieldFilters,
@@ -381,45 +382,7 @@ function buildCompactSearchFilterSummary(params: {
   if (options.status !== undefined) {
     filters.status = isStatusAllFilterInput(options.status) ? "all" : options.status;
   }
-  if (options.type !== undefined) {
-    filters.type = options.type;
-  }
-  if (options.tag !== undefined) {
-    filters.tag = options.tag;
-  }
-  if (options.priority !== undefined) {
-    filters.priority = options.priority;
-  }
-  if (options.deadlineBefore !== undefined) {
-    filters.deadline_before = options.deadlineBefore;
-  }
-  if (options.deadlineAfter !== undefined) {
-    filters.deadline_after = options.deadlineAfter;
-  }
-  if (options.updatedAfter !== undefined) {
-    filters.updated_after = options.updatedAfter;
-  }
-  if (options.updatedBefore !== undefined) {
-    filters.updated_before = options.updatedBefore;
-  }
-  if (options.createdAfter !== undefined) {
-    filters.created_after = options.createdAfter;
-  }
-  if (options.createdBefore !== undefined) {
-    filters.created_before = options.createdBefore;
-  }
-  if (options.assignee !== undefined) {
-    filters.assignee = options.assignee;
-  }
-  if (options.sprint !== undefined) {
-    filters.sprint = options.sprint;
-  }
-  if (options.release !== undefined) {
-    filters.release = options.release;
-  }
-  if (options.parent !== undefined) {
-    filters.parent = options.parent;
-  }
+  applyCommonItemFilterEcho(filters, options);
   Object.assign(filters, buildGovernanceMissingFilterEcho(options as Record<string, unknown>));
   Object.assign(filters, buildContentFilterEcho(options as Record<string, unknown>));
   if (matchMode !== "or") {

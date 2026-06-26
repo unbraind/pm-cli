@@ -309,6 +309,39 @@ function applyGovernanceMissingFilterEcho(filters: Record<string, unknown>, opti
   }
 }
 
+const COMMON_ITEM_FILTER_ECHO_ENTRIES: ReadonlyArray<{ optionKey: string; summaryKey: string }> = [
+  { optionKey: "type", summaryKey: "type" },
+  { optionKey: "tag", summaryKey: "tag" },
+  { optionKey: "priority", summaryKey: "priority" },
+  { optionKey: "deadlineBefore", summaryKey: "deadline_before" },
+  { optionKey: "deadlineAfter", summaryKey: "deadline_after" },
+  { optionKey: "updatedAfter", summaryKey: "updated_after" },
+  { optionKey: "updatedBefore", summaryKey: "updated_before" },
+  { optionKey: "createdAfter", summaryKey: "created_after" },
+  { optionKey: "createdBefore", summaryKey: "created_before" },
+  { optionKey: "ids", summaryKey: "ids" },
+  { optionKey: "assignee", summaryKey: "assignee" },
+  { optionKey: "assigneeFilter", summaryKey: "assignee_filter" },
+  { optionKey: "parent", summaryKey: "parent" },
+  { optionKey: "sprint", summaryKey: "sprint" },
+  { optionKey: "release", summaryKey: "release" },
+] as const;
+
+/**
+ * Apply shared list/search item filter echo fields to a compact filters object.
+ */
+export function applyCommonItemFilterEcho(
+  filters: Record<string, unknown>,
+  options: Record<string, unknown>,
+): void {
+  for (const entry of COMMON_ITEM_FILTER_ECHO_ENTRIES) {
+    const value = options[entry.optionKey];
+    if (value !== undefined) {
+      filters[entry.summaryKey] = value;
+    }
+  }
+}
+
 /**
  * Implements build content filter echo for the public runtime surface of this module.
  */
@@ -349,51 +382,7 @@ function buildCompactListFilterSummary(params: {
   if (filtersStatus !== null) {
     filters.status = filtersStatus;
   }
-  if (options.type !== undefined) {
-    filters.type = options.type;
-  }
-  if (options.tag !== undefined) {
-    filters.tag = options.tag;
-  }
-  if (options.priority !== undefined) {
-    filters.priority = options.priority;
-  }
-  if (options.deadlineBefore !== undefined) {
-    filters.deadline_before = options.deadlineBefore;
-  }
-  if (options.deadlineAfter !== undefined) {
-    filters.deadline_after = options.deadlineAfter;
-  }
-  if (options.updatedAfter !== undefined) {
-    filters.updated_after = options.updatedAfter;
-  }
-  if (options.updatedBefore !== undefined) {
-    filters.updated_before = options.updatedBefore;
-  }
-  if (options.createdAfter !== undefined) {
-    filters.created_after = options.createdAfter;
-  }
-  if (options.createdBefore !== undefined) {
-    filters.created_before = options.createdBefore;
-  }
-  if (options.ids !== undefined) {
-    filters.ids = options.ids;
-  }
-  if (options.assignee !== undefined) {
-    filters.assignee = options.assignee;
-  }
-  if (options.assigneeFilter !== undefined) {
-    filters.assignee_filter = options.assigneeFilter;
-  }
-  if (options.parent !== undefined) {
-    filters.parent = options.parent;
-  }
-  if (options.sprint !== undefined) {
-    filters.sprint = options.sprint;
-  }
-  if (options.release !== undefined) {
-    filters.release = options.release;
-  }
+  applyCommonItemFilterEcho(filters, options);
   if (options.filterAcMissing === true) {
     filters.filter_ac_missing = true;
   }

@@ -98,6 +98,8 @@ import {
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
   COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON,
   type CommandUnsetFieldDefinition,
+  type RuntimeUnsetFieldDefinition,
+  resolveRuntimeUnsetFieldDefinition,
 } from "./shared-unset-fields.js";
 
 /**
@@ -192,10 +194,7 @@ export interface UpdateResult {
   audit_update?: boolean;
 }
 
-interface UpdateUnsetFieldDefinition {
-  optionKey: string;
-  frontMatterKey: string;
-}
+type UpdateUnsetFieldDefinition = RuntimeUnsetFieldDefinition;
 
 const UPDATE_UNSET_FIELD_DEFINITIONS: readonly CommandUnsetFieldDefinition[] = [
   ...COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON,
@@ -324,36 +323,6 @@ function normalizeLegacyNoneUpdateOptions(options: UpdateCommandOptions): Update
   return normalized;
 }
 
-function resolveRuntimeUnsetDefinition(
-  token: string,
-  runtimeFieldRegistry: RuntimeFieldRegistry | undefined,
-): UpdateUnsetFieldDefinition | undefined {
-  if (!runtimeFieldRegistry) {
-    return undefined;
-  }
-  for (const definition of runtimeFieldRegistry.definitions) {
-    if (definition.allow_unset === false) {
-      continue;
-    }
-    const candidates = new Set<string>([
-      definition.key,
-      definition.metadata_key,
-      definition.cli_flag.replaceAll("-", "_"),
-      definition.cli_flag,
-      ...definition.cli_aliases.map((alias) => alias.replaceAll("-", "_")),
-      ...definition.cli_aliases,
-    ]);
-    if (!candidates.has(token)) {
-      continue;
-    }
-    return {
-      optionKey: definition.key,
-      frontMatterKey: definition.metadata_key,
-    };
-  }
-  return undefined;
-}
-
 function parseUpdateUnsetTargets(
   raw: string[] | undefined,
   runtimeFieldRegistry?: RuntimeFieldRegistry,
@@ -385,7 +354,7 @@ function parseUpdateUnsetTargets(
       );
     });
     const definition = UPDATE_UNSET_ALIAS_MAP.get(trimmed) ??
-      resolveRuntimeUnsetDefinition(trimmed, runtimeFieldRegistry) ??
+      resolveRuntimeUnsetFieldDefinition(trimmed, runtimeFieldRegistry) ??
       (extensionFieldName ? { optionKey: "field", frontMatterKey: extensionFieldName } : undefined);
     if (!definition) {
       throw new PmCliError(
@@ -2110,5 +2079,5 @@ export const _testOnlyUpdateCommand = {
   parseDependencyRemovals,
   parseUpdateUnsetTargets,
   reconcileBlockedByDependency,
-  resolveRuntimeUnsetDefinition,
+  resolveRuntimeUnsetDefinition: resolveRuntimeUnsetFieldDefinition,
 };
