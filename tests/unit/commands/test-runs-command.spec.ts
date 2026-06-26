@@ -792,6 +792,18 @@ describe("background test run lifecycle", () => {
               requestedBy: "unit",
             });
 
+            let sigtermHandler: NodeJS.SignalsListener | undefined;
+            let sigintHandler: NodeJS.SignalsListener | undefined;
+            const onSpy = vi.spyOn(process, "on").mockImplementation((event, listener) => {
+              if (event === "SIGTERM") {
+                sigtermHandler = listener as NodeJS.SignalsListener;
+              }
+              if (event === "SIGINT") {
+                sigintHandler = listener as NodeJS.SignalsListener;
+              }
+              return process;
+            });
+            const offSpy = vi.spyOn(process, "off").mockImplementation(() => process);
             const signalWhenProgressReady = (async (): Promise<void> => {
               for (let attempt = 0; attempt < 1000; attempt += 1) {
                 await new Promise<void>((resolve) => setTimeout(resolve, 10));
@@ -800,16 +812,17 @@ describe("background test run lifecycle", () => {
                   break;
                 }
               }
-              process.emit("SIGTERM");
-              process.emit("SIGINT");
+              sigtermHandler?.("SIGTERM");
+              sigintHandler?.("SIGINT");
             })();
-            const stopped = await (async (): Promise<Awaited<ReturnType<typeof runBackgroundTestRunWorker>>> => {
+            const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true).finally(async () => {
               try {
-                return await runBackgroundTestRunWorker(context.pmPath, started.run.id, true);
-              } finally {
                 await signalWhenProgressReady;
+              } finally {
+                onSpy.mockRestore();
+                offSpy.mockRestore();
               }
-            })();
+            });
             expect(stopped.status).toBe("stopped");
             expect(stopped.stop_requested_at).toBeDefined();
             expect(stopped.progress).toMatchObject({
@@ -1086,6 +1099,14 @@ describe("background test run lifecycle", () => {
               commandArgs: ["signal-stop-default-delay"],
               requestedBy: "unit",
             });
+            let sigtermHandler: NodeJS.SignalsListener | undefined;
+            const onSpy = vi.spyOn(process, "on").mockImplementation((event, listener) => {
+              if (event === "SIGTERM") {
+                sigtermHandler = listener as NodeJS.SignalsListener;
+              }
+              return process;
+            });
+            const offSpy = vi.spyOn(process, "off").mockImplementation(() => process);
             const signalWhenProgressReady = (async (): Promise<void> => {
               for (let attempt = 0; attempt < 1000; attempt += 1) {
                 await new Promise<void>((resolve) => setTimeout(resolve, 10));
@@ -1094,10 +1115,15 @@ describe("background test run lifecycle", () => {
                   break;
                 }
               }
-              process.emit("SIGTERM");
+              sigtermHandler?.("SIGTERM");
             })();
             const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true).finally(async () => {
-              await signalWhenProgressReady;
+              try {
+                await signalWhenProgressReady;
+              } finally {
+                onSpy.mockRestore();
+                offSpy.mockRestore();
+              }
             });
             expect(stopped.status).toBe("stopped");
             expect(stopped.progress?.phase).toBe("finished");
