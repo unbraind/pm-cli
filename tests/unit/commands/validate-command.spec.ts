@@ -484,6 +484,47 @@ describe("runValidate", () => {
     expect(validateInternals.resolveWorkspaceRoot(missingWorkspace).length).toBeGreaterThan(0);
   });
 
+  it("treats remote (URL) doc/file references as a benign category, never missing or prunable (pm-k2n4)", async () => {
+    await withTempPmPath(async (context) => {
+      const remoteUrl = "https://github.com/unbraind/pm-cli/pull/362";
+      const filesResult = await validateInternals.buildFilesCheck(
+        [
+          {
+            id: "pm-remote-ref",
+            type: "Task",
+            title: "Remote and local linked artifacts",
+            status: "open",
+            files: [{ scope: "project", path: "does-not-exist-local-xyz.ts" }],
+            docs: [
+              { scope: "project", path: remoteUrl },
+              { scope: "project", path: "ssh://git@example.com/repo.git" },
+            ],
+          },
+        ] as never,
+        process.cwd(),
+        context.pmPath,
+        "default",
+        false,
+        true,
+      );
+      const details = filesResult.check.details as {
+        remote_linked_paths_count: number;
+        remote_linked_paths: string[];
+        missing_linked_paths: string[];
+        missing_linked_paths_count: number;
+      };
+      // Both remote references are surfaced in the benign remote category.
+      expect(details.remote_linked_paths_count).toBe(2);
+      expect(details.remote_linked_paths).toEqual([remoteUrl, "ssh://git@example.com/repo.git"]);
+      // The genuinely-missing local file is still flagged; the URLs are not.
+      expect(details.missing_linked_paths).toEqual(["does-not-exist-local-xyz.ts"]);
+      expect(details.missing_linked_paths_count).toBe(1);
+      expect(details.missing_linked_paths).not.toContain(remoteUrl);
+      // --prune-missing must never target a remote reference (no data loss).
+      expect(filesResult.staleLinkPruneRows.map((row) => row.path)).toEqual(["does-not-exist-local-xyz.ts"]);
+    });
+  });
+
   it("summarizes duplicate logical issue codes as advisory warnings with truncation (GH-235)", () => {
     // No duplicates → empty projection, no warning.
     expect(validateInternals.summarizeDuplicateIssueCodes([], false)).toEqual({ rows: [], truncated: false, warnings: [] });

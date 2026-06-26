@@ -15,6 +15,7 @@ import {
   parseCsvKv,
 } from "../../core/item/parse.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
+import { isRemoteLinkedArtifactReference } from "../../core/validate/linked-artifact-reference.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -96,6 +97,13 @@ export interface LinkedPathValidation {
   existing_files: string[];
   missing_paths: string[];
   non_file_paths: string[];
+  /**
+   * Remote references (https:// URLs and other `scheme://` paths) recorded as
+   * links — most often a PR/issue/design-doc URL added via `pm docs --add`.
+   * These are not local files, so they bypass the existence probe and are
+   * reported here rather than counted as missing.
+   */
+  remote_references: string[];
 }
 
 /**
@@ -398,7 +406,15 @@ export async function validateLinkedPaths(paths: string[]): Promise<LinkedPathVa
   const existingFiles: string[] = [];
   const missingPaths: string[] = [];
   const nonFilePaths: string[] = [];
+  const remoteReferences: string[] = [];
   for (const relativePath of uniquePaths) {
+    // Remote references (https:// PR/issue/design-doc URLs) are not local
+    // files; report them separately (trimmed, to match buildFilesCheck's
+    // output shape) instead of probing a meaningless path.
+    if (isRemoteLinkedArtifactReference(relativePath)) {
+      remoteReferences.push(relativePath.trim());
+      continue;
+    }
     const resolvedPath = path.isAbsolute(relativePath) ? relativePath : path.resolve(process.cwd(), relativePath);
     try {
       const stats = await fs.stat(resolvedPath);
@@ -420,6 +436,7 @@ export async function validateLinkedPaths(paths: string[]): Promise<LinkedPathVa
     existing_files: existingFiles,
     missing_paths: missingPaths,
     non_file_paths: nonFilePaths,
+    remote_references: remoteReferences,
   };
 }
 
