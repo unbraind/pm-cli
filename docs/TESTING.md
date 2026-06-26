@@ -36,7 +36,8 @@ mechanical rules), jscpd duplicate detection across source and tests, and the
 repo-specific `quality:static` gate. The dedicated `quality:static` gate remains
 authoritative for source/exported docstring coverage, orphan-module checks,
 directory-load caps, and the TypeScript-aware duplicate/complexity checks that
-are tailored to pm's source layout.
+are tailored to pm's source layout; `pnpm lint` delegates to it instead of
+running a second threshold profile.
 
 ## Focused Test Runs
 

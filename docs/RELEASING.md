@@ -167,8 +167,7 @@ git push origin v<version>
 - version policy and tag guard
 - secret scan
 - build, typecheck, test, and coverage
-- local CodeFactor parity lint (ESLint maintainability rules, jscpd duplication detector, and the static quality profile)
-- static quality gate (complexity, duplication, dead/orphan module, file/folder hygiene, source/exported docstring coverage)
+- local CodeFactor parity lint (ESLint maintainability rules, jscpd duplication detector, and the shared static quality profile)
 - temporary-project compatibility gate against latest published tracker data
 - reliability threshold gate (Sentry severity threshold, bounded to a recent-activity window via `--sentry-window-days` (default `14`, `0` = unbounded) so a stale benign unresolved issue cannot block every scheduled release; `--telemetry-mode` gate policy: `off` | `best-effort` | `required`). Scheduled `auto-release.yml` failures open/update an `Auto Release blocked` GitHub issue so blocked daily releases are never silently skipped.
 - sandboxed `pm` coverage

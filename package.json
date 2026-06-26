@@ -76,7 +76,7 @@
     "lint": "pnpm lint:eslint && pnpm lint:duplicates && pnpm lint:codefactor",
     "lint:eslint": "eslint . --max-warnings=0",
     "lint:duplicates": "jscpd --config .jscpd.json",
-    "lint:codefactor": "node scripts/release/static-quality-gate.mjs --max-complexity 260 --duplicate-window 24 --max-duplicate-chunks 8",
+    "lint:codefactor": "pnpm quality:static",
     "quality:static": "node scripts/release/static-quality-gate.mjs",
     "quality:docs-skills": "node scripts/release/docs-skills-gate.mjs",
     "quality:docs-links": "node scripts/release/docs-skills-gate.mjs --links-only",
@@ -136,7 +136,6 @@
     "fast-json-patch": "^3.1.1"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
     "@sentry/cli": "^3.5.1",
     "@types/node": "^22.0.0",
     "@vitest/coverage-v8": "^4.1.9",

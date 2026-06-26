@@ -26,6 +26,7 @@ describe("release automation contract", () => {
     );
     expect(packageJson.scripts?.["quality:static"]).toBe("node scripts/release/static-quality-gate.mjs");
     expect(packageJson.scripts?.lint).toBe("pnpm lint:eslint && pnpm lint:duplicates && pnpm lint:codefactor");
+    expect(packageJson.scripts?.["lint:codefactor"]).toBe("pnpm quality:static");
     expect(packageJson.scripts?.typecheck).toBe(
       "tsc --noEmit -p tsconfig.json && tsc -p tsconfig.packages.json && tsc -p tsconfig.examples.json",
     );

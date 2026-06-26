@@ -6,17 +6,18 @@ status: closed
 priority: 2
 tags[5]: ci,code-quality,codefactor,eslint,tooling
 created_at: "2026-06-26T13:33:22.673Z"
-updated_at: "2026-06-26T21:57:11.826Z"
+updated_at: "2026-06-26T22:14:22.214Z"
 author: claude-code-agent
 acceptance_criteria: "A local lint command reproduces the CodeFactor Maintainability findings (rule counts reconcile within tolerance); ESLint --fix mechanically clears the auto-fixable unicorn rules; a duplication check (e.g. jscpd) surfaces the Duplication category; optionally wired as a CI gate so new PRs cannot introduce CodeFactor findings. Adding the config must not regress existing gates (typecheck, 100% coverage, quality:static, contracts:check)."
 parent: pm-92if
 resolution: "Added pnpm lint with ESLint CodeFactor maintainability rules, jscpd duplicate baseline reporting, and static quality profile; wired it into CI and docs."
 expected_result: "Local CodeFactor parity tooling is reproducible, documented, CI-enforced, and does not regress existing gates."
 actual_result: "pnpm lint passes, jscpd reports current 30-clone baseline under a 0.35 threshold, CI static gate runs lint, coverage remains 100/100/100/100, and temp smokes passed."
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-06-26T21:48:48.484Z",codex-gpt5,"Relationship note: this CodeFactor parity tooling is the preventive follow-up to sibling remediation items pm-arzz (complexity) and pm-fmjy (duplication) under parent pm-92if; it keeps those fixes reproducible locally and in CI without creating duplicate tracker items."
   "2026-06-26T21:55:47.890Z",codex-gpt5,"Evidence: implemented local CodeFactor parity tooling. Added ESLint flat config for complexity, no-unsafe-optional-chaining, and unicorn no-thenable/no-useless-* maintainability rules; added jscpd duplicate detector with current 30-clone / 0.34% baseline and 0.35 regression threshold; wired pnpm lint into package scripts and CI static gate; documented testing/release workflow; contract tests assert the scripts and workflow. Verification passed: pm test pm-6sqo --run --progress (2/2); pnpm lint; focused workflow/release contract tests (54 tests); pnpm typecheck; pnpm quality:static; pnpm contracts:check; pnpm security:scan; pnpm audit --audit-level moderate; pnpm changelog:pm:check with pm-changelog 2026.6.20 unchanged; node scripts/run-tests.mjs coverage 256 files / 5133 tests / 100% statements branches functions lines; npm pack --dry-run --silent; package doctor deep ok; pm health ok 0 warnings; Sentry/telemetry gate ok with critical=0 high=0 and telemetry finish_error_rate_pct=0.7. Repo validate history drift ok with known pre-existing validate_resolution_missing_fields:258 warning. Manual temp smoke: first run intentionally demonstrated recovery for obsolete --acceptance alias; rerun with --acceptance-criteria passed full lifecycle plus todos package doctor in /tmp/tmp.ExXdcpRd86. Strict warning-free temp smoke passed in /tmp/tmp.vRdXivNLZS with item temp-codefactor-lint-zbd9: linked test, strict close/release, health 0 warnings, validate resolution/history drift ok."
   "2026-06-26T21:57:11.826Z",codex-gpt5,"Changelog evidence: ran pnpm changelog:pm after closing pm-6sqo, pm-arzz, and pm-fmjy; pm-changelog 2026.6.20 regenerated CHANGELOG.md with the CodeFactor parity and remediation closeout entries."
+  "2026-06-26T22:13:26.597Z",codex-gpt5,"PR #383 review follow-up evidence: addressed Sourcery/Cubic feedback by making lint:codefactor delegate to the shared quality:static profile, removing the duplicate CI quality:static invocation after pnpm lint, dropping unused @eslint/js dependency, and updating docs/contracts. Verification passed: pnpm lint; focused CI/release contract tests (54 tests); pnpm typecheck; pnpm security:scan; pnpm audit --audit-level moderate; pnpm changelog:pm:check with pm-changelog 2026.6.20 unchanged; npm pack --dry-run --silent; node scripts/run-tests.mjs coverage 256 files / 5133 tests / 100% statements branches functions lines; pm health ok 0 warnings; pm validate history drift ok with known pre-existing validate_resolution_missing_fields:258 warning."
 files[9]{path,scope,note}:
   .github/workflows/ci.yml,project,run pnpm lint in the static CI gate
   .gitignore,project,ignore local pnpm store cache used for dependency installs
@@ -30,8 +31,9 @@ files[9]{path,scope,note}:
 tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
   pnpm lint,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mqvgrwjk-ym1o2z,test,passed,"2026-06-26T21:48:54.910Z","2026-06-26T21:49:38.048Z","2026-06-26T21:49:38.048Z",null,null,2,0,0,null,null,null
+  test-local-mqvhnpq8-ffnvax,test,passed,"2026-06-26T22:13:26.631Z","2026-06-26T22:14:22.208Z","2026-06-26T22:14:22.208Z",null,null,2,0,0,null,null,null
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,pm-changelog generated release entry for CodeFactor parity and closeouts
   docs/RELEASING.md,project,document lint in release quality gates
