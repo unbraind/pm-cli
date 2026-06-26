@@ -39,6 +39,7 @@
 
 ### Other
 
+- CodeFactor/Maintainability: clear remaining unicorn lints (no-thenable ×4, no-useless-spread ×2, no-useless-length-check ×1) ([pm-q0ye](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-q0ye.toon))
 - ADR: offline BM25 lexical provider + relevance eval harness for search quality ([pm-f2al](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-f2al.toon))
 - ADR: explicit pm_format_version front-matter field for storage schema evolution ([pm-eeai](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-eeai.toon))
 - Normalize stale audit containers and intentional-open resolved items ([pm-psc0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-psc0.toon))
