@@ -94,8 +94,9 @@ import {
 } from "../../types/index.js";
 import { parseDocs, parseFiles, parseLogSeed, parseTests } from "./create.js";
 import {
+  COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR,
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
-  COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR,
+  COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON,
   type CommandUnsetFieldDefinition,
 } from "./shared-unset-fields.js";
 
@@ -197,9 +198,9 @@ interface UpdateUnsetFieldDefinition {
 }
 
 const UPDATE_UNSET_FIELD_DEFINITIONS: readonly CommandUnsetFieldDefinition[] = [
-  ...COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR.slice(0, 1),
+  ...COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON,
   { canonical: "close-reason", aliases: ["close_reason", "close-reason"], optionKey: "closeReason", frontMatterKey: "close_reason" },
-  ...COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR.slice(1),
+  ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR,
   ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
 ];
 

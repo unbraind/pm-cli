@@ -40,6 +40,8 @@ export const DEFAULT_REQUIRED_CREATE_REPEATABLES = ["dep", "comment", "note", "l
  */
 export type CommandOptionPolicyCommand = "create" | "update";
 
+// Keep aligned with cli/commands/shared-unset-fields.ts. This core registry
+// cannot import CLI unset metadata without creating a core -> CLI dependency.
 const COMMON_MUTATION_COMMAND_OPTION_KEYS = [
   "deadline",
   "estimatedMinutes",

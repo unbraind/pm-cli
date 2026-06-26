@@ -14,8 +14,11 @@ export interface CommandUnsetFieldDefinition {
   frontMatterKey: string;
 }
 
-export const COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR: readonly CommandUnsetFieldDefinition[] = [
+export const COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON: readonly CommandUnsetFieldDefinition[] = [
   { canonical: "tags", aliases: ["tags"], optionKey: "tags", frontMatterKey: "tags" },
+] as const;
+
+export const COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR: readonly CommandUnsetFieldDefinition[] = [
   { canonical: "deadline", aliases: ["deadline"], optionKey: "deadline", frontMatterKey: "deadline" },
   {
     canonical: "estimate",
@@ -42,6 +45,11 @@ export const COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR: readonly CommandUnset
   { canonical: "impact", aliases: ["impact"], optionKey: "impact", frontMatterKey: "impact" },
   { canonical: "outcome", aliases: ["outcome"], optionKey: "outcome", frontMatterKey: "outcome" },
   { canonical: "why-now", aliases: ["why_now", "why-now"], optionKey: "whyNow", frontMatterKey: "why_now" },
+] as const;
+
+export const COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR: readonly CommandUnsetFieldDefinition[] = [
+  ...COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON,
+  ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR,
 ] as const;
 
 export const COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR: readonly CommandUnsetFieldDefinition[] = [
