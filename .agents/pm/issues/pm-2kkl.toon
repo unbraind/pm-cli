@@ -6,7 +6,7 @@ status: in_progress
 priority: 3
 tags[5]: "area:ci","area:tests",cross-platform,flake,windows
 created_at: "2026-06-23T12:18:09.377Z"
-updated_at: "2026-06-26T10:25:48.656Z"
+updated_at: "2026-06-26T10:26:23.786Z"
 assignee: codex-gpt5
 author: claude-code-agent
 parent: pm-u9d0
@@ -14,7 +14,7 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-i84i,related,"2026-06-23T12:18:17.665Z",null,null
   pm-zpe7,related,"2026-06-23T12:18:17.665Z",null,null
   pm-2p7a,related,"2026-06-24T09:06:44.485Z",null,null
-comments[10]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-06-23T15:39:40.414Z",codex,"Continuation check (codex): GH-348 still open and remains separate from the SDK version-compatibility branch. Current main CI run 28028252104 had Windows regression (Node 20) green, while GH-348 describes intermittent Nightly Validation worker teardown after tests pass. No SDK version-compat code changes touch the suspected LanceDB/OTLP teardown surface; leave pm-2kkl open for a Windows-runner reproduction/hardening lane."
   "2026-06-24T09:06:44.562Z",codex-gpt5,"Continuation note: GitHub issue #348 was refreshed by run 28083306766 on 2026-06-24 for windows-latest / Node 20. PR #353 / pm-2p7a resolves the live scheduled failure class by removing unsupported Node 20 nightly lanes as part of the Node >=22.18 TypeScript-only extension runtime floor; branch nightly matrix is Node 22/24/25 on Ubuntu plus Node 24 on macOS/Windows. Keep this issue open until PR #353 is merged to main and the next scheduled nightly no longer reports Node 20."
   "2026-06-25T09:18:47.079Z",claude-code-agent,"Root cause located (2026-06-25, via pm-xaib / GH-363). The teardown \"Worker forks emitted error / Worker exited unexpectedly\" is the detached telemetry flush spawn in src/core/telemetry/runtime.ts (scheduleTelemetryFlush) launching a child via spawn() WITHOUT a child.on(\"error\", ...) listener. An asynchronous spawn failure (locked-down Windows runner, EACCES, missing runner) emits an unhandled \"error\" event that Node re-throws as an uncaught exception, crashing the vitest fork worker on teardown. The sibling search background-refresh spawn (src/core/search/background-refresh.ts dispatchRefreshChild) already had exactly this guard — telemetry was the lone outlier. Secondary aggravator: the unit test \"covers non-inline scheduler gate and start failure fallback\" deleted VITEST and launched a REAL, network-touching, untracked node flush child instead of mocking spawn, leaving an orphan process on Windows.\n\nFix shipped in pm-xaib: (1) add child.on(\"error\") gate-release to the telemetry spawn mirroring background-refresh; (2) mock node:child_process in the telemetry test so no real orphan child is spawned; (3) add a focused regression test that emits an async \"error\" and asserts the spawn gate is released; (4) run tests/unit/core/telemetry/telemetry-runtime.spec.ts in the per-PR windows-regression Node 24 job so this class is caught before the nightly. Closing this issue is gated on the Windows nightly turning green after pm-xaib merges.\n"
@@ -25,6 +25,7 @@ comments[10]{created_at,author,text}:
   "2026-06-26T10:17:24.015Z",codex-gpt5,"Release gate evidence: pnpm release:gates passed after this change. It rebuilt the CLI, passed typecheck/static/docs gates, coverage 100/100/100/100, version policy, security scan, packed npx smoke (packages=11), and package-first dogfood (88 commands, linked test run passed). Semantic dogfood was skipped by design because PM_DOGFOOD_SEMANTIC was not set."
   "2026-06-26T10:18:23.928Z",codex-gpt5,"PR evidence: opened GitHub PR #377 (Fix Windows background test-run signal coverage) for this implementation and requested review agents on the PR."
   "2026-06-26T10:25:03.335Z",codex-gpt5,"Review response: addressed Gemini feedback on PR #377 by removing the remaining fixed 50ms signal timer and extending progress polling to 10 seconds in the background signal tests. Re-verified focused test-runs-command spec and the full Windows regression slice locally."
+  "2026-06-26T10:26:23.786Z",codex-gpt5,"PR review loop: pushed follow-up commit 2c69fcf0 to PR #377 addressing Gemini timing-race feedback and re-requested review agents on the new head."
 files[3]{path,scope,note}:
   .github/workflows/ci.yml,project,include background-run signal spec in required Windows regression slice
   tests/integration/mcp-dynamic-package-actions.spec.ts,project,keep MCP upgrade routing coverage dry-run and network-free
