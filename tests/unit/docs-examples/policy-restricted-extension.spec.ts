@@ -61,11 +61,20 @@ describe("policy-restricted-extension example", () => {
     expect(collector.artifacts.services).toHaveLength(1);
     expect(collector.artifacts.beforeCommand).toHaveLength(1);
 
-    collector.artifacts.beforeCommand[0]?.({ command: "policy demo" });
+    const beforeCommand = collector.artifacts.beforeCommand[0];
+    expect(beforeCommand).toBeDefined();
+    if (beforeCommand === undefined) {
+      throw new TypeError("policy beforeCommand hook was not registered");
+    }
+    beforeCommand({ command: "policy demo" });
 
-    const policyCommandRun = collector.artifacts.commands[0]?.run as ((context: unknown) => Promise<unknown>) | undefined;
+    const policyCommandRun = collector.artifacts.commands[0]?.run;
     expect(typeof policyCommandRun).toBe("function");
-    const run = await policyCommandRun({
+    if (typeof policyCommandRun !== "function") {
+      throw new TypeError("policy demo command run handler was not registered");
+    }
+    const runPolicyCommand = policyCommandRun as (context: unknown) => Promise<unknown>;
+    const run = await runPolicyCommand({
       command: "policy demo",
       options: {},
     });
@@ -77,6 +86,11 @@ describe("policy-restricted-extension example", () => {
 
     // The output_format override is an identity formatter: it receives a
     // ServiceOverrideContext and returns its `payload` (the value to format).
-    expect(collector.artifacts.services[0]?.handler({ payload: { ok: true } })).toEqual({ ok: true });
+    const outputService = collector.artifacts.services[0];
+    expect(outputService).toBeDefined();
+    if (outputService === undefined) {
+      throw new TypeError("policy output service was not registered");
+    }
+    expect(outputService.handler({ payload: { ok: true } })).toEqual({ ok: true });
   });
 });
