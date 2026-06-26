@@ -8,7 +8,10 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 [![pm total](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-cli&metric=items)](https://pm-cli.unbrained.dev/badges)
-[![pm active](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-cli&metric=active)](https://pm-cli.unbrained.dev/badges)
+[![pm open](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-cli&metric=status&status=open)](https://pm-cli.unbrained.dev/badges)
+[![pm in progress](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-cli&metric=status&status=in_progress)](https://pm-cli.unbrained.dev/badges)
+[![pm blocked](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-cli&metric=status&status=blocked)](https://pm-cli.unbrained.dev/badges)
+[![pm canceled](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-cli&metric=status&status=canceled)](https://pm-cli.unbrained.dev/badges)
 [![pm closed](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-cli&metric=closed)](https://pm-cli.unbrained.dev/badges)
 [![pm completion](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-cli&metric=completion)](https://pm-cli.unbrained.dev/badges)
 [![pm last activity](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-cli&metric=last-activity)](https://pm-cli.unbrained.dev/badges)
