@@ -1192,7 +1192,7 @@ function extensionNeedsActivationForProbe(
 ): boolean {
   const capabilities = extensionCapabilities(extension);
   const commands = extensionActivationCommands(extension);
-  if (commands.length > 0 && commands.some((command) => activationCommandMatchesProbe(command, probe))) {
+  if (commands.some((command) => activationCommandMatchesProbe(command, probe))) {
     return true;
   }
 

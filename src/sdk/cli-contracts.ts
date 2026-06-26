@@ -2480,6 +2480,7 @@ function buildActionScopedToolSchema(action: PmToolAction): Record<string, unkno
         },
         required: [entry.property],
       },
+      // eslint-disable-next-line unicorn/no-thenable -- JSON Schema conditional keyword, not a Promise-like object.
       then: {
         required: entry.required,
       },
@@ -2490,6 +2491,7 @@ function buildActionScopedToolSchema(action: PmToolAction): Record<string, unkno
     for (const entry of contract.dependentAnyOfRequired) {
       allOf.push({
         if: { required: [entry.property] },
+        // eslint-disable-next-line unicorn/no-thenable -- JSON Schema conditional keyword, not a Promise-like object.
         then: {
           anyOf: entry.anyOfRequired.map((requiredFields) => ({
             required: [...requiredFields],

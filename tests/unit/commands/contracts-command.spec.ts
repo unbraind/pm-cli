@@ -758,6 +758,7 @@ describe("contracts command runtime", () => {
 
     const addNotePrecondition = {
       if: { required: ["addNote"] },
+      // eslint-disable-next-line unicorn/no-thenable -- JSON Schema conditional keyword, not a Promise-like object.
       then: { anyOf: [{ required: ["add"] }, { required: ["addGlob"] }] },
     };
     const docsSchema = findActionSchema("docs");
@@ -1113,6 +1114,7 @@ describe("contracts command runtime", () => {
       allOf: expect.arrayContaining([
         expect.objectContaining({
           if: { properties: { subcommand: { const: "show" } }, required: ["subcommand"] },
+          // eslint-disable-next-line unicorn/no-thenable -- JSON Schema conditional keyword, not a Promise-like object.
           then: { required: ["name"] },
         }),
       ]),
