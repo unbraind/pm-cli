@@ -143,6 +143,7 @@ describe("GitHub workflow contract", () => {
       "run: pnpm build",
       "pnpm version:check",
       "pnpm security:scan",
+      "pnpm lint",
       "run: pnpm typecheck",
       "run: pnpm test:coverage",
       "pnpm quality:static",

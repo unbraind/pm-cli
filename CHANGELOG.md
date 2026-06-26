@@ -18,6 +18,8 @@
 
 ### Changed
 
+- CodeFactor/Duplication: remove duplicated code blocks (×20: 2 Critical, 3 Major, 15 Minor) ([pm-fmjy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fmjy.toon))
+- CodeFactor/Complexity: reduce cyclomatic complexity (×152: 3 Critical, 7 High, 142 Moderate) ([pm-arzz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-arzz.toon))
 - ADR: pm extensions are authored AND loaded as TypeScript via Node native type stripping ([pm-m1uz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-m1uz.toon))
 
 ### Fixed
@@ -45,6 +47,7 @@
 
 ### Other
 
+- CodeFactor parity tooling: local ESLint (unicorn) + complexity + duplication lint to reproduce findings and prevent regressions ([pm-6sqo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-6sqo.toon))
 - CodeFactor/Maintainability: clear remaining unicorn lints (no-thenable ×4, no-useless-spread ×2, no-useless-length-check ×1) ([pm-q0ye](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-q0ye.toon))
 - ADR: offline BM25 lexical provider + relevance eval harness for search quality ([pm-f2al](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-f2al.toon))
 - ADR: explicit pm_format_version front-matter field for storage schema evolution ([pm-eeai](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-eeai.toon))

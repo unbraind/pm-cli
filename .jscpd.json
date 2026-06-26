@@ -1,0 +1,20 @@
+{
+  "path": ["src", "packages", "plugins", "scripts", "docs/examples", "tests"],
+  "format": ["typescript", "javascript"],
+  "mode": "weak",
+  "minLines": 24,
+  "minTokens": 120,
+  "threshold": 0.35,
+  "reporters": ["console"],
+  "noTips": true,
+  "ignore": [
+    "**/.agents/**",
+    "**/.cache/**",
+    "**/.pnpm-store/**",
+    "**/coverage/**",
+    "**/dist/**",
+    "**/node_modules/**",
+    "packages/pm-*/extensions/*/runtime-loader.ts",
+    "plugins/pm-*/scripts/pm-mcp-server.mjs"
+  ]
+}
