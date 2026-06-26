@@ -56,6 +56,7 @@ import {
   classifyStaleLinkedPaths,
   summarizeStaleLinkedPathClassifications,
 } from "../../core/validate/stale-file-classification.js";
+import { isRemoteLinkedArtifactReference } from "../../core/validate/linked-artifact-reference.js";
 import {
   buildMissingLinkedPathRows,
   summarizeMissingLinkedPathRows,
@@ -1644,6 +1645,7 @@ async function buildFilesCheck(
   verboseFileLists: boolean,
 ): Promise<{ check: ValidateCheck; warnings: string[]; staleLinkPruneRows: StaleLinkPruneRow[] }> {
   const linkedProjectPaths = new Set<string>();
+  const remoteLinkedPaths = new Set<string>();
   const missingLinkedPaths: string[] = [];
   const staleLinkRows: Array<{ item_id: string; path: string; link_kind: "files" | "docs" }> = [];
   const itemsById = new Map(items.map((item) => [item.id, item]));
@@ -1656,6 +1658,14 @@ async function buildFilesCheck(
     for (const group of linkedArtifactGroups) {
       for (const artifact of group.artifacts) {
         if (artifact.scope !== "project") {
+          continue;
+        }
+        // Remote references (https:// PR/issue/design-doc URLs recorded via
+        // `pm docs --add`) are not local files: they must never be stat'd,
+        // classified as moved/deleted, counted missing, or pruned by
+        // --prune-missing (which would silently destroy recorded context).
+        if (isRemoteLinkedArtifactReference(artifact.path)) {
+          remoteLinkedPaths.add(artifact.path.trim());
           continue;
         }
         const normalizedPath = normalizeRelativePath(artifact.path);
@@ -1735,6 +1745,8 @@ async function buildFilesCheck(
   if (orphanedFiles.length > 0) {
     warnings.push(`validate_files_orphaned_paths:${orphanedFiles.length}`);
   }
+  const uniqueRemoteLinkedPaths = [...remoteLinkedPaths].sort((left, right) => left.localeCompare(right));
+  const summarizedRemote = summarizeFileList(uniqueRemoteLinkedPaths, verboseFileLists);
   const summarizedMissing = summarizeFileList(uniqueMissingLinkedPaths, verboseFileLists);
   const summarizedOrphaned = summarizeFileList(orphanedFiles, verboseFileLists);
   const summarizedOrphanedClassifications = summarizeFileList(
@@ -1792,6 +1804,10 @@ async function buildFilesCheck(
         excluded_total: excludedPmInternalCount,
         excluded_by_reason: excludedByReason,
         linked_project_paths: linkedProjectPaths.size,
+        remote_linked_paths_count: uniqueRemoteLinkedPaths.length,
+        remote_linked_paths_total: summarizedRemote.total,
+        remote_linked_paths: summarizedRemote.values,
+        remote_linked_paths_truncated: summarizedRemote.truncated,
         candidate_total_raw: fileCandidates.candidateTotal,
         candidate_scanned_raw: fileCandidates.candidateScanned,
         candidate_total: candidateFiles.length,

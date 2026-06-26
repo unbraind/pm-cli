@@ -667,11 +667,20 @@ describe("runFiles", () => {
       await writeFile(filePath, "linked", "utf8");
       await mkdir(dirPath);
 
-      const validation = await validateLinkedPaths([filePath, dirPath, path.join(tempRoot, "missing.md"), "bad\0path"]);
+      const validation = await validateLinkedPaths([
+        filePath,
+        dirPath,
+        path.join(tempRoot, "missing.md"),
+        "bad\0path",
+        "https://github.com/unbraind/pm-cli/pull/362",
+      ]);
 
       expect(validation.existing_files).toContain(filePath);
       expect(validation.missing_paths).toContain(path.join(tempRoot, "missing.md"));
       expect(validation.non_file_paths).toEqual(expect.arrayContaining([dirPath, "bad\0path"]));
+      // Remote references bypass the existence probe and are reported separately.
+      expect(validation.remote_references).toEqual(["https://github.com/unbraind/pm-cli/pull/362"]);
+      expect(validation.missing_paths).not.toContain("https://github.com/unbraind/pm-cli/pull/362");
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
