@@ -7,6 +7,13 @@
 [![Node >=22.18](https://img.shields.io/node/v/%40unbrained%2Fpm-cli)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+[![pm total](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-cli&metric=items)](https://pm-cli.unbrained.dev/badges)
+[![pm active](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-cli&metric=active)](https://pm-cli.unbrained.dev/badges)
+[![pm closed](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-cli&metric=closed)](https://pm-cli.unbrained.dev/badges)
+[![pm completion](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-cli&metric=completion)](https://pm-cli.unbrained.dev/badges)
+[![pm last activity](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-cli&metric=last-activity)](https://pm-cli.unbrained.dev/badges)
+[![pm history events](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-cli&metric=history-events)](https://pm-cli.unbrained.dev/badges)
+
 `pm` is a git-native project management CLI for humans and coding agents. It stores work items in reviewable repository files, records every mutation in append-only history, and defaults to sparse TOON output so agents can spend fewer tokens while still getting deterministic data.
 
 ## Start Here
