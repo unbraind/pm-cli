@@ -409,9 +409,10 @@ export async function validateLinkedPaths(paths: string[]): Promise<LinkedPathVa
   const remoteReferences: string[] = [];
   for (const relativePath of uniquePaths) {
     // Remote references (https:// PR/issue/design-doc URLs) are not local
-    // files; report them separately instead of probing a meaningless path.
+    // files; report them separately (trimmed, to match buildFilesCheck's
+    // output shape) instead of probing a meaningless path.
     if (isRemoteLinkedArtifactReference(relativePath)) {
-      remoteReferences.push(relativePath);
+      remoteReferences.push(relativePath.trim());
       continue;
     }
     const resolvedPath = path.isAbsolute(relativePath) ? relativePath : path.resolve(process.cwd(), relativePath);
