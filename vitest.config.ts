@@ -34,9 +34,23 @@ const stripScriptShebang: Plugin = {
   },
 };
 
+// In CI we additionally emit `lcovonly` (writes `coverage/lcov.info`) so the
+// Codecov upload step in `.github/workflows/ci.yml` has a line-level report to
+// ingest. `lcovonly` deliberately skips the heavy HTML tree that the local
+// `lcov`/`html` reporters generate. Locally we keep the browsable HTML report.
 const coverageReporters = process.env.CI
-  ? (["text", "json-summary"] as const)
+  ? (["text", "json-summary", "lcovonly"] as const)
   : (["text", "json-summary", "html"] as const);
+
+// Codecov Test Analytics ingests a JUnit XML report. Emit it only in CI (kept
+// out of local runs to avoid surprise files) alongside the human-readable
+// `default` reporter so the CI logs still show the live test summary. The
+// vitest JUnit reporter creates the parent directory before writing, so this is
+// safe even on the non-coverage Windows/nightly subset runs that have no
+// `coverage/` directory yet.
+const testReporters: Array<"default" | "junit"> = process.env.CI
+  ? ["default", "junit"]
+  : ["default"];
 
 const allSourceCoverageThresholds = {
   lines: 100,
@@ -66,6 +80,8 @@ export default defineConfig({
     include: ["tests/**/*.spec.ts"],
     testTimeout: 30_000,
     hookTimeout: 30_000,
+    reporters: testReporters,
+    outputFile: { junit: "./coverage/junit.xml" },
     coverage: {
       provider: "v8",
       reporter: coverageReporters,

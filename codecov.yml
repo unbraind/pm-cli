@@ -1,0 +1,98 @@
+# Codecov configuration for @unbrained/pm-cli
+# Reference: https://docs.codecov.com/docs/codecovyml-reference
+# Validate after editing:
+#   curl -X POST --data-binary @codecov.yml https://api.codecov.io/validate
+
+codecov:
+  # Wait for the GitHub Actions CI run to finish before Codecov reports its own
+  # status / posts the PR comment, so coverage is judged against a green build.
+  require_ci_to_pass: true
+  notify:
+    wait_for_ci: true
+
+coverage:
+  precision: 2
+  round: down
+  # Below 90% is red, 100% is green, gradient in between. The repo enforces 100%
+  # via the vitest thresholds, so healthy commits sit at the top of this range.
+  range: "90...100"
+  status:
+    # pm-cli holds 100% line/branch/function/statement coverage as a hard CI
+    # gate (vitest thresholds). Mirror that intent here: any regression off the
+    # base coverage is reported. These checks only block merges once they are
+    # added to branch protection as required status checks.
+    project:
+      default:
+        target: 100%
+        threshold: 0%
+        if_ci_failed: error
+    patch:
+      default:
+        target: 100%
+        threshold: 0%
+        if_ci_failed: error
+
+# Help Codecov classify partial branch coverage from the v8/lcov report.
+parsers:
+  javascript:
+    enable_partials: true
+
+comment:
+  layout: "header, diff, flags, components, files, footer"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
+
+github_checks:
+  # Inline PR annotations on uncovered lines.
+  annotations: true
+
+# A single upload carries this flag; declared so it appears in the PR comment
+# and so per-flag history is tracked.
+flags:
+  unittests:
+    carryforward: false
+
+# Components give per-area coverage visibility from the one upload (no extra
+# uploads needed). They are informational so they never block merges; the
+# project/patch statuses above are the gating signals.
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: auto
+        informational: true
+  individual_components:
+    - component_id: core
+      name: core (src)
+      paths:
+        - src/**
+    - component_id: packages
+      name: first-party packages
+      paths:
+        - packages/**
+    - component_id: scripts
+      name: build & release scripts
+      paths:
+        - scripts/**
+    - component_id: plugins
+      name: plugins
+      paths:
+        - plugins/**
+    - component_id: examples
+      name: docs examples
+      paths:
+        - docs/examples/**
+
+# Files that are never part of the measured surface. Source globs the vitest
+# coverage config includes (src, packages, scripts, plugins, docs/examples) are
+# intentionally not ignored here.
+ignore:
+  - "dist"
+  - "coverage"
+  - "node_modules"
+  - "tests/**"
+  - "**/*.spec.ts"
+  - "**/*.test.ts"
+  - "**/*.d.ts"

@@ -235,6 +235,36 @@ jobs:
           path: coverage
           if-no-files-found: ignore
 
+      # Codecov ingests the v8 line-level lcov report. `!cancelled()` so coverage
+      # still uploads when the gate fails on the 100% threshold (that is exactly
+      # when the Codecov report is most useful for diagnosis).
+      - name: Upload coverage to Codecov
+        if: ${{ !cancelled() && matrix.gate == 'coverage' }}
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+          disable_search: true
+          flags: unittests
+          name: pm-cli-coverage
+          fail_ci_if_error: true
+          verbose: true
+
+      # Codecov Test Analytics ingests the JUnit report for flaky-test and
+      # failure analytics. Runs on failure too so failing tests are recorded.
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() && matrix.gate == 'coverage' }}
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          report_type: test_results
+          files: ./coverage/junit.xml
+          disable_search: true
+          flags: unittests
+          name: pm-cli-test-results
+          fail_ci_if_error: true
+          verbose: true
+
   windows-regression:
     name: Windows regression (Node 24)
     # Gate this focused Windows slice on a green foundation build; the job is
