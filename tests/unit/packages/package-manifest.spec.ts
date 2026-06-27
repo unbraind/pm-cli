@@ -9,6 +9,7 @@ import {
   collectPackageExtensionDirectories,
   readPmPackageManifest,
 } from "../../../src/core/packages/manifest.js";
+import { SCAFFOLD_PM_MIN_VERSION } from "../../../src/cli/commands/extension/scaffold.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { writeTestExtension } from "../../helpers/extensions.js";
 
@@ -694,12 +695,38 @@ describe("pm package manifest model", () => {
     }
   });
 
-  it("declares manifest_version and pm_min_version on every first-party package manifest", async () => {
+  it("declares manifest_version and the SDK compatibility floor on first-party and public example manifests", async () => {
     const extensionDirectories = await collectBundledExtensionDirectories();
     expect(extensionDirectories.length).toBeGreaterThan(0);
 
-    for (const extensionDirectory of extensionDirectories) {
-      const manifestPath = path.join(extensionDirectory, "manifest.json");
+    const docsExamplesRoot = path.join(repoRoot, "docs", "examples");
+    const docsExampleEntries = await readdir(docsExamplesRoot, { withFileTypes: true });
+    const docsExampleManifestPathCandidates = docsExampleEntries
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => path.join(docsExamplesRoot, entry.name, "manifest.json"));
+    const docsExampleManifestPaths = (
+      await Promise.all(
+        docsExampleManifestPathCandidates.map(async (manifestPath) => {
+          const exists = await access(manifestPath)
+            .then(() => true)
+            .catch((error: unknown) => {
+              if (typeof error === "object" && error !== null && (error as { code?: unknown }).code === "ENOENT") {
+                return false;
+              }
+              throw error;
+            });
+          return exists ? manifestPath : null;
+        }),
+      )
+    ).filter((manifestPath): manifestPath is string => manifestPath !== null);
+    expect(docsExampleManifestPaths.length).toBeGreaterThan(0);
+
+    const manifestPaths = [
+      ...extensionDirectories.map((extensionDirectory) => path.join(extensionDirectory, "manifest.json")),
+      ...docsExampleManifestPaths,
+    ].sort();
+
+    for (const manifestPath of manifestPaths) {
       const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as {
         manifest_version?: unknown;
         pm_min_version?: unknown;
@@ -709,9 +736,9 @@ describe("pm package manifest model", () => {
         `manifest_version must be an integer in ${manifestPath}`,
       ).toBe(true);
       expect(
-        typeof manifest.pm_min_version === "string" && manifest.pm_min_version.trim().length > 0,
-        `pm_min_version must be a non-empty string in ${manifestPath}`,
-      ).toBe(true);
+        manifest.pm_min_version,
+        `pm_min_version must match the current scaffold SDK floor in ${manifestPath}`,
+      ).toBe(SCAFFOLD_PM_MIN_VERSION);
     }
   });
 
