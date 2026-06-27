@@ -149,10 +149,12 @@ describe("extension scaffold define builder guidance", () => {
     expect(entry).toContain('if (context.command !== "view kit ping") {');
     expect(entry).toContain("return null;");
     expect(entry).toContain('return "view-kit: " + JSON.stringify(context.result);');
-    expect(sampleTest).toContain("  assertRegisteredRendererOverride,");
-    expect(sampleTest).toContain("  runRegisteredRendererOverrideForTest,");
-    expect(sampleTest).toContain("assertRegisteredRendererOverride(activation.renderers, {");
+    expect(sampleTest).toContain("  createExtensionTestHarness,");
+    expect(sampleTest).toContain('const override = ext.assertRendererOverride({ format: "toon", extensionName: "view-kit" });');
+    expect(sampleTest).toContain("const rendered = await ext.runRendererOverride({");
     expect(sampleTest).toContain("assert.equal(passthrough.overridden, false);");
+    expect(sampleTest).toContain("} finally {");
+    expect(sampleTest).toContain("await ext.deactivate();");
     expect(readme).toContain(
       'import { defineCommand, defineRendererOverride } from "@unbrained/pm-cli/sdk";',
     );
@@ -185,13 +187,16 @@ describe("extension scaffold define builder guidance", () => {
     expect(entry).toContain("if (options.shout === true) {");
     expect(entry).toContain("options.upper = true;");
     expect(entry).toContain("return { options };");
-    expect(sampleTest).toContain("  assertRegisteredParserOverride,");
-    expect(sampleTest).toContain("  runRegisteredParserOverrideForTest,");
+    expect(sampleTest).toContain("  createExtensionTestHarness,");
+    expect(sampleTest).toContain('ext.assertParserOverride({ command: "flag kit ping", extensionName: "flag-kit" });');
+    expect(sampleTest).toContain("const result = await ext.runParserOverride({");
     expect(sampleTest).toContain("assert.deepEqual(result.context.options, { upper: true });");
     // The sample test feeds the rewritten options into the command handler to
     // prove the normalized flag is surfaced end to end.
-    expect(sampleTest).toContain("options: result.context.options,");
-    expect(sampleTest).toContain("    upper: true,");
+    expect(sampleTest).toContain('const invocation = await ext.runCommand({ command: "flag kit ping", options: result.context.options });');
+    expect(sampleTest).toContain("      upper: true,");
+    expect(sampleTest).toContain("} finally {");
+    expect(sampleTest).toContain("await ext.deactivate();");
     expect(readme).toContain(
       'import { defineCommand, defineParserOverride } from "@unbrained/pm-cli/sdk";',
     );
@@ -217,9 +222,12 @@ describe("extension scaffold define builder guidance", () => {
     // comment documents the keys the author can change.
     expect(entry).toContain("api.registerPreflight((context) => context.decision);");
     expect(entry).toContain("run_extension_migrations, enforce_mandatory_migration_gate);");
-    expect(sampleTest).toContain("  assertRegisteredPreflightOverride,");
-    expect(sampleTest).toContain("  runRegisteredPreflightOverrideForTest,");
+    expect(sampleTest).toContain("  createExtensionTestHarness,");
+    expect(sampleTest).toContain('ext.assertPreflightOverride({ extensionName: "gate-kit" });');
+    expect(sampleTest).toContain("const result = await ext.runPreflightOverride({");
     expect(sampleTest).toContain("assert.deepEqual(result.decision, decision);");
+    expect(sampleTest).toContain("} finally {");
+    expect(sampleTest).toContain("await ext.deactivate();");
     expect(readme).toContain(
       'import { defineCommand, definePreflightOverride } from "@unbrained/pm-cli/sdk";',
     );
@@ -247,9 +255,12 @@ describe("extension scaffold define builder guidance", () => {
     expect(entry).toContain('if (context.command !== "svc kit ping") {');
     expect(entry).toContain("return context.payload;");
     expect(entry).toContain('return { rendered_by: "svc-kit", payload: context.payload };');
-    expect(sampleTest).toContain("  assertRegisteredServiceOverride,");
-    expect(sampleTest).toContain("  runRegisteredServiceOverrideForTest,");
+    expect(sampleTest).toContain("  createExtensionTestHarness,");
+    expect(sampleTest).toContain('ext.assertServiceOverride({ service: "output_format", extensionName: "svc-kit" });');
+    expect(sampleTest).toContain("const handled = await ext.runServiceOverride({");
     expect(sampleTest).toContain("assert.equal(passthrough.handled, false);");
+    expect(sampleTest).toContain("} finally {");
+    expect(sampleTest).toContain("await ext.deactivate();");
     expect(readme).toContain(
       'import { defineCommand, defineServiceOverride } from "@unbrained/pm-cli/sdk";',
     );
