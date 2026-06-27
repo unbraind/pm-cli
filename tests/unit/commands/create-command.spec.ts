@@ -3142,6 +3142,10 @@ describe("create command helper coverage", () => {
       optionKey: "githubUrl",
       frontMatterKey: "github_url",
     });
+    expect(_testOnlyCreateCommand.resolveRuntimeCreateUnsetDefinition("githuburl", registry)).toEqual({
+      optionKey: "githubUrl",
+      frontMatterKey: "github_url",
+    });
     expect(_testOnlyCreateCommand.resolveRuntimeCreateUnsetDefinition("hidden", registry)).toBeUndefined();
     const parsed = _testOnlyCreateCommand.parseCreateUnsetTargets(["deadline", "gh-url"], registry);
     expect([...parsed.frontMatterKeys].sort()).toEqual(["deadline", "github_url"]);

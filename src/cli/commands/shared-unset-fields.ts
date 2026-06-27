@@ -149,6 +149,7 @@ export function resolveRuntimeUnsetFieldDefinition(
   command: RuntimeFieldCommand,
   runtimeFieldRegistry: RuntimeFieldRegistry | undefined,
 ): RuntimeUnsetFieldDefinition | undefined {
+  const normalizedToken = token.trim().toLowerCase();
   if (!runtimeFieldRegistry) {
     return undefined;
   }
@@ -159,25 +160,25 @@ export function resolveRuntimeUnsetFieldDefinition(
     }
     const candidates = new Set<string>();
     if (typeof definition.key === "string" && definition.key.length > 0) {
-      candidates.add(definition.key);
+      candidates.add(definition.key.toLowerCase());
     }
     if (typeof definition.metadata_key === "string" && definition.metadata_key.length > 0) {
-      candidates.add(definition.metadata_key);
+      candidates.add(definition.metadata_key.toLowerCase());
     }
     if (typeof definition.cli_flag === "string" && definition.cli_flag.length > 0) {
-      candidates.add(definition.cli_flag.replaceAll("-", "_"));
-      candidates.add(definition.cli_flag);
+      candidates.add(definition.cli_flag.replaceAll("-", "_").toLowerCase());
+      candidates.add(definition.cli_flag.toLowerCase());
     }
     if (Array.isArray(definition.cli_aliases)) {
       for (const alias of definition.cli_aliases) {
         if (typeof alias !== "string" || alias.length === 0) {
           continue;
         }
-        candidates.add(alias.replaceAll("-", "_"));
-        candidates.add(alias);
+        candidates.add(alias.replaceAll("-", "_").toLowerCase());
+        candidates.add(alias.toLowerCase());
       }
     }
-    if (!candidates.has(token)) {
+    if (!candidates.has(normalizedToken)) {
       continue;
     }
     return {
