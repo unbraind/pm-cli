@@ -2128,13 +2128,14 @@ describe("extension command runtime", () => {
       const sampleTest = await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8");
       expect(sampleTest).toContain('import assert from "node:assert/strict";');
       expect(sampleTest).toContain('import { test } from "node:test";');
-      // The sample imports the activate and deactivate test helpers so it can
-      // cover the full lifecycle, not just command registration.
-      expect(sampleTest).toContain("  activateExtensionForTest,");
+      // The sample uses the high-level harness so package authors do not need
+      // to hand-thread activation registries for the common command path.
       expect(sampleTest).toContain("  assertExtensionDeactivated,");
-      expect(sampleTest).toContain("  assertRegisteredCommandContract,");
-      expect(sampleTest).toContain("  deactivateExtensionForTest,");
-      expect(sampleTest).toContain("  runRegisteredCommandForTest,");
+      expect(sampleTest).toContain("  createExtensionTestHarness,");
+      expect(sampleTest).not.toContain("  activateExtensionForTest,");
+      expect(sampleTest).not.toContain("  assertRegisteredCommandContract,");
+      expect(sampleTest).not.toContain("  deactivateExtensionForTest,");
+      expect(sampleTest).not.toContain("  runRegisteredCommandForTest,");
       expect(sampleTest).toContain('} from "@unbrained/pm-cli/sdk/testing";');
       // NodeNext resolution: the .ts test imports the ./index.ts manifest entry directly.
       expect(sampleTest).toContain('import extension from "./index.ts";');
@@ -2145,15 +2146,17 @@ describe("extension command runtime", () => {
       // pm's real dispatch engine, not just asserting it is registered. The
       // handler result is typed `unknown`, so the sample uses a type-safe
       // deep-equality assertion on the whole structured payload (no cast).
-      expect(sampleTest).toContain("const invocation = await runRegisteredCommandForTest(activation.commands, {");
+      expect(sampleTest).toContain("const ext = await createExtensionTestHarness(extension, {");
+      expect(sampleTest).toContain("const registered = ext.assertCommandContract({");
+      expect(sampleTest).toContain("const invocation = await ext.runCommand({");
       expect(sampleTest).toContain("assert.equal(invocation.handled, true);");
       expect(sampleTest).toContain("assert.deepEqual(invocation.result, {");
       expect(sampleTest).toContain('command: "starter package ping",');
       expect(sampleTest).not.toContain("invocation.result.ok");
-      // The teardown test demonstrates deactivateExtensionForTest + the clean
+      // The teardown test demonstrates the harness teardown method + the clean
       // teardown assertion.
       expect(sampleTest).toContain("tears down cleanly via deactivate");
-      expect(sampleTest).toContain("const teardown = await deactivateExtensionForTest(extension, {");
+      expect(sampleTest).toContain("const teardown = await ext.deactivate();");
       expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
       expect(sampleTest).toContain("assert.equal(teardown.deactivated, 1);");
       // The contract helper already validates the command name, so the sample

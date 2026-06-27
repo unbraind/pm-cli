@@ -301,6 +301,15 @@ describe("extension scaffold define builder guidance", () => {
     // The sample test imports the .ts entry directly; the manifest loads ./index.ts
     // and no .js is emitted or committed.
     expect(scaffold["index.test.ts"]).toContain('import extension from "./index.ts";');
+    expect(scaffold["index.test.ts"]).toContain("createExtensionTestHarness,");
+    expect(scaffold["index.test.ts"]).toContain("const ext = await createExtensionTestHarness(extension, {");
+    expect(scaffold["index.test.ts"]).toContain('const registered = ext.assertCommandContract({');
+    expect(scaffold["index.test.ts"]).toContain("const invocation = await ext.runCommand({");
+    expect(scaffold["index.test.ts"]).toContain("const teardown = await ext.deactivate();");
+    expect(scaffold["index.test.ts"]).not.toContain("activateExtensionForTest,");
+    expect(scaffold["index.test.ts"]).not.toContain("assertRegisteredCommandContract,");
+    expect(scaffold["index.test.ts"]).not.toContain("deactivateExtensionForTest,");
+    expect(scaffold["index.test.ts"]).not.toContain("runRegisteredCommandForTest,");
     expect(scaffold["index.js"]).toBeUndefined();
     expect(JSON.parse(scaffold["manifest.json"] ?? "{}").entry).toBe("./index.ts");
     // No compiled-output ignores remain — only deps, logs, and the tsc cache.
