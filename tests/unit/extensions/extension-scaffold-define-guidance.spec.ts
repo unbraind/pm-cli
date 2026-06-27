@@ -262,8 +262,12 @@ describe("extension scaffold define builder guidance", () => {
     const scaffold = buildStarterExtensionScaffoldFiles("tool-kit", "tool kit ping", "package", "commands");
     const packageJson = JSON.parse(scaffold["package.json"] ?? "{}") as {
       engines?: Record<string, string>;
+      peerDependencies?: Record<string, string>;
       scripts?: Record<string, string>;
       devDependencies?: Record<string, string>;
+    };
+    const manifest = JSON.parse(scaffold["manifest.json"] ?? "{}") as {
+      pm_min_version?: string;
     };
     const tsconfig = JSON.parse(scaffold["tsconfig.json"] ?? "{}") as {
       compilerOptions?: Record<string, unknown>;
@@ -274,6 +278,9 @@ describe("extension scaffold define builder guidance", () => {
     // stripping (Node >=22.18): there is no build step, `typecheck` validates the
     // source, and `test` runs `node --test` (which strips types on load).
     expect(packageJson.engines?.node).toBe(">=22.18.0");
+    expect(packageJson.peerDependencies?.["@unbrained/pm-cli"]).toBe(">=2026.6.24");
+    expect(manifest.pm_min_version).toBe("2026.6.24");
+    expect(scaffold["README.md"]).toContain("Scaffolded as `2026.6.24`");
     expect(packageJson.scripts?.build).toBeUndefined();
     expect(packageJson.scripts?.typecheck).toBe("tsc --noEmit");
     expect(packageJson.scripts?.test).toBe("node --test");
@@ -306,12 +313,17 @@ describe("extension scaffold define builder guidance", () => {
     const scaffold = buildStarterExtensionScaffoldFiles("local-ext", "local ext ping", "extension", "commands");
     const readme = scaffold["README.md"] ?? "";
     const entrypoint = scaffold["index.ts"] ?? "";
+    const manifest = JSON.parse(scaffold["manifest.json"] ?? "{}") as {
+      pm_min_version?: string;
+    };
 
     expect(readme).not.toContain("## Authoring With define* Builders");
     // Standalone extensions are still authored in TypeScript: typed entrypoint +
     // a tsconfig, with the README documenting the compile step.
     expect(entrypoint).toContain('import type { ExtensionApi } from "@unbrained/pm-cli/sdk";');
     expect(entrypoint).toContain("export function activate(api: ExtensionApi): void {");
+    expect(manifest.pm_min_version).toBe("2026.6.24");
+    expect(readme).toContain("Scaffolded as `2026.6.24`");
     expect(scaffold["tsconfig.json"]).toBeTruthy();
     expect(scaffold["index.js"]).toBeUndefined();
     expect(readme).toContain("npm install -D typescript @types/node @unbrained/pm-cli");

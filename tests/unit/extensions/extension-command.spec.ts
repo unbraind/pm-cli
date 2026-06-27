@@ -2087,7 +2087,7 @@ describe("extension command runtime", () => {
         },
       });
       expect(packageJson.peerDependencies).toMatchObject({
-        "@unbrained/pm-cli": "*",
+        "@unbrained/pm-cli": ">=2026.6.24",
       });
       expect(packageJson.devDependencies).toMatchObject({
         "@types/node": expect.stringContaining("22"),
@@ -2103,6 +2103,7 @@ describe("extension command runtime", () => {
       expect(manifest).toMatchObject({
         name: "starter-package",
         entry: "./index.ts",
+        pm_min_version: "2026.6.24",
         capabilities: ["commands"],
         trusted: true,
         sandbox_profile: "strict",

@@ -10,12 +10,12 @@ import { EXIT_CODE } from "../../../core/shared/constants.js";
 import { PmCliError } from "../../../core/shared/errors.js";
 import { normalizeManagedDirectoryName } from "./shared.js";
 
-// Safe compatibility floor emitted into scaffolded manifests. Mirrors the
-// first-party package manifests (pm-nf2q): every current 2026.5.x CLI
-// satisfies it, and it models the field for external authors. manifest_version
-// tracks the manifest schema generation (currently 1).
+// Safe compatibility floor emitted into scaffolded manifests. The current
+// starters are loaded as TypeScript and use the SDK define*/testing helpers; the
+// first released host that supports that full generated contract is v2026.6.24.
+// manifest_version tracks the manifest schema generation (currently 1).
 const SCAFFOLD_MANIFEST_VERSION = 1;
-const SCAFFOLD_PM_MIN_VERSION = "2026.5.0";
+const SCAFFOLD_PM_MIN_VERSION = "2026.6.24";
 const SCAFFOLD_NODE_ENGINE = ">=22.18.0";
 const SCAFFOLD_DECLARED_PERMISSIONS = {
   fs_read: false,
@@ -2147,7 +2147,7 @@ export function buildStarterExtensionScaffoldFiles(
           test: "node --test",
         },
         peerDependencies: {
-          "@unbrained/pm-cli": "*",
+          "@unbrained/pm-cli": `>=${SCAFFOLD_PM_MIN_VERSION}`,
         },
         devDependencies: {
           "@types/node": SCAFFOLD_TYPES_NODE_VERSION,

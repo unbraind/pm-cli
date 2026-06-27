@@ -24,6 +24,7 @@
 
 ### Fixed
 
+- GH-348/GH-376: Windows nightly Vitest worker fork exits unexpectedly after passing tests ([pm-2kkl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2kkl.toon))
 - CodeFactor/Maintainability: fix unsafe optional chaining (no-unsafe-optional-chaining ×25) ([pm-m8yl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-m8yl.toon))
 - CI: make Codecov badge uploads branch-explicit ([pm-x878](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x878.toon))
 - pm next should skip completed open containers when recommending actionable work ([pm-2n6i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2n6i.toon))
@@ -47,6 +48,7 @@
 
 ### Other
 
+- Package scaffolds declare current SDK compatibility floor ([pm-sf08](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-sf08.toon))
 - Refresh Sentry release and telemetry dependencies ([pm-4dz7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-4dz7.toon))
 - CodeFactor parity tooling: local ESLint (unicorn) + complexity + duplication lint to reproduce findings and prevent regressions ([pm-6sqo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-6sqo.toon))
 - CodeFactor/Maintainability: clear remaining unicorn lints (no-thenable ×4, no-useless-spread ×2, no-useless-length-check ×1) ([pm-q0ye](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-q0ye.toon))

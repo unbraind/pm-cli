@@ -1,0 +1,31 @@
+id: pm-sf08
+title: Package scaffolds declare current SDK compatibility floor
+description: "Generated package/extension scaffolds import modern TypeScript SDK primitives but still declare pm_min_version 2026.5.0 and peerDependency '*'. Raise the generated compatibility floor to the first released host that supports TypeScript-loaded scaffolds and the SDK helpers, document it in generated README output, and cover imperative/declarative scaffold metadata so package authors get accurate install/load guidance."
+type: Task
+status: closed
+priority: 2
+tags[4]: agent-ux,"area:packages","area:sdk",compatibility
+created_at: "2026-06-27T14:01:55.215Z"
+updated_at: "2026-06-27T14:25:24.482Z"
+author: codex-20260627
+acceptance_criteria: "Generated package and extension manifests declare a pm_min_version that matches the SDK/runtime primitives they use; generated package.json peerDependencies enforce the same floor; package-author README text explains the floor; scaffold tests cover imperative and declarative package output; verification includes focused scaffold tests, coverage/static checks, and an isolated temp-package install/doctor smoke."
+parent: pm-ugqx
+resolution: "Raised generated package and extension scaffold compatibility metadata to the first released host that supports TypeScript-loaded SDK define*/testing scaffolds, and covered the generated manifest, README, and peer dependency surfaces."
+expected_result: Generated scaffolds should tell package authors and host installers the real minimum pm CLI version required by the emitted TypeScript SDK primitives.
+actual_result: "Generated package and extension scaffolds now emit pm_min_version 2026.6.24, package README text says Scaffolded as 2026.6.24, generated package.json declares @unbrained/pm-cli >=2026.6.24, focused scaffold tests pass, repo coverage remains 100/100/100/100, and an isolated package-author smoke installs and dispatches the scaffold successfully."
+comments[2]{created_at,author,text}:
+  "2026-06-27T14:01:55.215Z",codex-20260627,"Duplicate check: pm search \"scaffold compatibility floor pm_min_version peerDependencies TypeScript package init\" --status all --limit 30 found related closed scaffold lineages (pm-09rh, pm-2c28, pm-8mxg, pm-2p7a, pm-frou) but no active item for the stale generated compatibility floor. Creating this child under pm-ugqx."
+  "2026-06-27T14:25:11.767Z",codex-20260627,"Evidence: implementation raises generated package/extension scaffold compatibility metadata to the first released host floor for TypeScript-loaded SDK define*/testing scaffolds (2026.6.24) and changes generated package peerDependencies to >=2026.6.24. Focused verification passed: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-scaffold-define-guidance.spec.ts tests/unit/extensions/extension-command.spec.ts (137 tests). Repo-wide coverage passed: node scripts/run-tests.mjs coverage -> 256 files, 5137 tests, 100/100/100/100 (31769 statements, 24690 branches, 5414 functions, 30490 lines). Static quality, contracts, health, package doctor, pnpm audit, security scan, Sentry/telemetry gate, and changelog:pm:check with pm-changelog 2026.6.27 all passed. Manual isolated temp smoke passed in /tmp/tmp.nBhO547azz with PM_PATH/PM_GLOBAL_PATH sandbox: init, package init --declarative, metadata assertions, npm install, npm run typecheck, npm test, install --project, context kit ping, package doctor, health, and validate. Note: the earlier linked pm test run recorded false failures for coverage and changelog because pm test executes linked commands inside an empty schema-sandbox tracker; the same real-repo commands passed outside that linked-test sandbox."
+files[3]{path,scope,note}:
+  src/cli/commands/extension/scaffold.ts,project,raise generated scaffold compatibility floor and package peer dependency
+  tests/unit/extensions/extension-command.spec.ts,project,cover package-init runtime scaffold metadata through runExtension
+  tests/unit/extensions/extension-scaffold-define-guidance.spec.ts,project,cover generated scaffold manifest/readme/peer compatibility metadata
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-scaffold-define-guidance.spec.ts tests/unit/extensions/extension-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm changelog:pm:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:static",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqwfta96-m8j9j1,test,failed,"2026-06-27T14:04:49.713Z","2026-06-27T14:10:29.034Z","2026-06-27T14:10:29.034Z",null,null,2,2,0,null,null,null
+close_reason: "Generated scaffolds now declare the correct 2026.6.24 SDK/runtime compatibility floor in manifests, README text, and package peerDependencies, with focused tests, 100% repo coverage, static/release-adjacent gates, and isolated package-author smoke passing."
+body: ""
