@@ -100,6 +100,7 @@ export {
   type DeactivateExtensionForTestOptions,
   type DescribeExtensionActivationOptions,
   type ExtensionActivationSummary,
+  type RenderExtensionHarnessMarkdownOptions,
   type RunRegisteredCommandForTestOptions,
   type RunRegisteredExporterForTestOptions,
   type RunRegisteredHookForTestOptions,

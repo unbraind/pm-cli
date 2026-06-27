@@ -122,6 +122,7 @@ import {
   runRegisteredParserOverrideForTest,
   runRegisteredPreflightOverrideForTest,
   runRegisteredRendererOverrideForTest,
+  renderExtensionSurfaceMarkdown,
   runRegisteredSearchProviderForTest,
   runRegisteredServiceOverrideForTest,
   runRegisteredVectorStoreAdapterForTest,
@@ -2924,6 +2925,23 @@ describe("createExtensionTestHarness", () => {
     expect(harness.name).toBe("harness-ext");
     expect(harness.layer).toBe("project");
     expect(harness.activation.registrations.commands).toHaveLength(1);
+    expect(harness.activationSummary().commands).toEqual(["harness hello"]);
+    expect(harness.activationSummary({ extensionName: "missing-ext" }).commands).toEqual([]);
+    expect(
+      harness.renderMarkdown({ title: "Harness Extension", headingLevel: 3, extensionName: "harness-ext" }),
+    ).toBe(
+      renderExtensionSurfaceMarkdown(harness.activationSummary({ extensionName: "harness-ext" }), {
+        title: "Harness Extension",
+        headingLevel: 3,
+      }),
+    );
+    expect(harness.renderMarkdown({ title: "Harness Extension", headingLevel: 3 })).toContain(
+      "### Harness Extension",
+    );
+    expect(harness.renderMarkdown()).toContain("- `harness hello`");
+    expect(harness.renderMarkdown(null as unknown as RenderExtensionHarnessMarkdownOptions)).toContain(
+      "- `harness hello`",
+    );
 
     expect(harness.assertCommandContract({ command: "harness hello", action: "harness-hello", flags: ["--name"] }).command.action).toBe(
       "harness-hello",
@@ -3073,8 +3091,10 @@ describe("createExtensionTestHarness", () => {
 
     // Methods close over the activation rather than `this`, so destructuring keeps
     // them callable — the ergonomic the harness promises for agent-authored tests.
-    const { assertCommandContract, runCommand, deactivate } = harness;
+    const { activationSummary, assertCommandContract, renderMarkdown, runCommand, deactivate } = harness;
     expect(assertCommandContract({ command: "harness hello" }).command.command).toBe("harness hello");
+    expect(activationSummary().commands).toEqual(["harness hello"]);
+    expect(renderMarkdown()).toContain("## Extension surfaces");
     expect((await runCommand({ command: "harness hello" })).handled).toBe(true);
 
     // A matching resolved name/layer means the teardown skip-key lines up and the

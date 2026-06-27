@@ -4,6 +4,7 @@
 
 ### Added
 
+- SDK test harness summary/render surface ([pm-2qte](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-2qte.toon))
 - Describe --markdown writes reference docs to a file ([pm-u2tm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-u2tm.toon))
 - SDK + CLI: render extension/package surfaces to Markdown reference docs (renderExtensionSurfaceMarkdown + describe --markdown) ([pm-dmum](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-dmum.toon))
 - First-party baseline profile package built on public SDK primitives ([pm-a7o4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-a7o4.toon))
@@ -24,6 +25,7 @@
 
 ### Fixed
 
+- Windows background stop progress assertion ([pm-bnh3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bnh3.toon))
 - GH-348/GH-376: Windows nightly Vitest worker fork exits unexpectedly after passing tests ([pm-2kkl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2kkl.toon))
 - CodeFactor/Maintainability: fix unsafe optional chaining (no-unsafe-optional-chaining ×25) ([pm-m8yl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-m8yl.toon))
 - CI: make Codecov badge uploads branch-explicit ([pm-x878](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x878.toon))
