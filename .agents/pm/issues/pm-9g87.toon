@@ -1,0 +1,36 @@
+id: pm-9g87
+title: pm next hides completed-container closeout rows while leaf work exists
+description: "Follow-up to pm-2n6i: pm next now ranks concrete ready leaf work ahead of 100%-complete open containers, but the default ready queue still emits completed-container closeout rows while actionable leaf work exists. Hide those governance closeout rows from the ready queue until there is no concrete leaf work, so agent loops stay token-focused on implementation work while still surfacing closeout when it becomes the next action."
+type: Issue
+status: closed
+priority: 2
+tags[3]: agent-ux,"area:cli",context-management
+created_at: "2026-06-27T20:44:06.865Z"
+updated_at: "2026-06-27T20:55:29.327Z"
+author: codex-implementation
+parent: pm-mpbb
+resolution: "Resolved by projecting ranked ready rows through a concrete-leaf filter: completed-container closeout candidates remain available, but are hidden from the normal ready queue until no concrete leaf work is ready."
+expected_result: Agent-facing pm next output should stay focused on concrete leaf work while still surfacing completed-container governance closeout when it becomes the next action.
+actual_result: "pm next now recommends and lists concrete leaf work first, omits completed-container closeout rows while leaf work exists, and shows the closeout row with rationale once leaf work is closed."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-2n6i,related,"2026-06-27T20:44:29.799Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-06-27T20:44:06.865Z",codex-implementation,"Duplicate check evidence: searched all statuses for 'pm next hide completed containers ready queue closeout concrete leaf'. Existing pm-2n6i is closed and only demoted completed containers; this follow-up narrows the output projection to hide closeout rows while concrete leaf work exists."
+  "2026-06-27T20:54:57.989Z",codex-implementation,"Evidence: implemented pm next closeout-row projection so completed-container governance rows are hidden while concrete leaf work exists and resurface only when closeout is the next action. Updated docs, MCP description, and contract snapshot. Verification passed: linked pm test run 3/3; focused next/actionability tests 24/24; pnpm build; pnpm contracts:check; pnpm typecheck; pnpm quality:static; pnpm lint; git diff --check; pnpm security:scan; pnpm audit --audit-level low; pm health summary ok; package doctor deep ok; pnpm changelog:pm:check with pm-changelog 2026.6.27 unchanged before close; Sentry/telemetry gate ok with critical=0 high=0 finish_error_rate_pct=0.74; full coverage 256 files / 5138 tests / 100% statements, branches, functions, lines. Manual temp smoke passed at /tmp/pm-next-closeout-smoke-qbtMOC with sandboxed PM_PATH/PM_GLOBAL_PATH."
+files[5]{path,scope,note}:
+  src/cli/commands/next.ts,project,Hide completed-container closeout rows while concrete leaf work exists
+  src/mcp/tool-definitions.ts,project,Align MCP pm_next description with closeout-row projection
+  tests/fixtures/contracts/full.json,project,Refresh pm_next MCP contract description
+  tests/unit/commands/next-command.spec.ts,project,Regression coverage for hiding completed-container ready rows until closeout only
+  CHANGELOG.md,project,Package-owned changelog generation after closing item
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/next-command.spec.ts tests/unit/core/item/actionability.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,Focused pm next/actionability regression tests
+  pnpm build,null,project,300,null,null,null,null,null,null,null,null,null,null,null,TypeScript build and bundled CLI
+  "pnpm contracts:check",null,project,300,tracker,null,null,null,null,null,null,null,null,null,null,Contract snapshot remains current in real tracker context
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqwu82l8-fgaar0,test,passed,"2026-06-27T20:53:32.784Z","2026-06-27T20:53:53.564Z","2026-06-27T20:53:53.564Z",null,null,3,0,0,null,null,null
+docs[2]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,Document token-minimal pm next closeout behavior
+  docs/COMMANDS.md,project,Document pm next closeout rows surfacing only after leaf work
+close_reason: "Acceptance met: pm next hides completed-container closeout rows while concrete leaf work exists, resurfaces them for governance closeout when no leaf work remains, and all linked plus full repo verification passed."
+body: ""

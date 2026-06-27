@@ -294,19 +294,21 @@ export async function runNext(options: NextOptions, global: GlobalOptions): Prom
   const rankedBlocked = [...report.blocked].sort((left, right) =>
     compareCriticalItems(left.item, right.item, statusRegistry),
   );
+  const concreteReady = rankedReady.filter((entry) => !hasCompletedDescendants(entry.item, childrenByParent));
+  const projectedReady = concreteReady.length > 0 ? concreteReady : rankedReady;
 
-  const readyRows = rankedReady.map((entry) => toNextActionableItem(entry, statusRegistry, childrenByParent));
+  const readyRows = projectedReady.map((entry) => toNextActionableItem(entry, statusRegistry, childrenByParent));
   const blockedRows = rankedBlocked.map((entry) => toNextActionableItem(entry, statusRegistry, childrenByParent));
 
   const recommended: NextRecommendation | null =
-    rankedReady.length > 0
+    projectedReady.length > 0
       ? {
           ...readyRows[0],
           reasons: buildRecommendationReasons(
-            rankedReady[0],
+            projectedReady[0],
             statusRegistry,
             now,
-            hasCompletedDescendants(rankedReady[0].item, childrenByParent),
+            hasCompletedDescendants(projectedReady[0].item, childrenByParent),
           ),
         }
       : null;

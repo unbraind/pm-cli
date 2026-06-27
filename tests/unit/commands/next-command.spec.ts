@@ -173,11 +173,12 @@ describe("runNext", () => {
 
       const result = await runNext({}, { path: context.pmPath });
       expect(result.recommended?.id).toBe(leaf);
-      expect(result.ready.map((entry) => entry.id).slice(0, 2)).toEqual([leaf, completedEpic]);
+      expect(result.ready.map((entry) => entry.id)).toEqual([leaf]);
 
       context.runCli(["close", leaf, "done", "--json"], { expectJson: true });
       const closeoutOnly = await runNext({}, { path: context.pmPath });
       expect(closeoutOnly.recommended?.id).toBe(completedEpic);
+      expect(closeoutOnly.ready.map((entry) => entry.id)).toEqual([completedEpic]);
       expect(closeoutOnly.recommended?.reasons).toContain("completed container — governance closeout");
     });
   });
