@@ -157,14 +157,26 @@ export function resolveRuntimeUnsetFieldDefinition(
     if (definition.allow_unset === false) {
       continue;
     }
-    const candidates = new Set<string>([
-      definition.key,
-      definition.metadata_key,
-      definition.cli_flag.replaceAll("-", "_"),
-      definition.cli_flag,
-      ...definition.cli_aliases.map((alias) => alias.replaceAll("-", "_")),
-      ...definition.cli_aliases,
-    ]);
+    const candidates = new Set<string>();
+    if (typeof definition.key === "string" && definition.key.length > 0) {
+      candidates.add(definition.key);
+    }
+    if (typeof definition.metadata_key === "string" && definition.metadata_key.length > 0) {
+      candidates.add(definition.metadata_key);
+    }
+    if (typeof definition.cli_flag === "string" && definition.cli_flag.length > 0) {
+      candidates.add(definition.cli_flag.replaceAll("-", "_"));
+      candidates.add(definition.cli_flag);
+    }
+    if (Array.isArray(definition.cli_aliases)) {
+      for (const alias of definition.cli_aliases) {
+        if (typeof alias !== "string" || alias.length === 0) {
+          continue;
+        }
+        candidates.add(alias.replaceAll("-", "_"));
+        candidates.add(alias);
+      }
+    }
     if (!candidates.has(token)) {
       continue;
     }

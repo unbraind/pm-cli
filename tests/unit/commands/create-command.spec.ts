@@ -3127,12 +3127,17 @@ describe("create command helper coverage", () => {
       cli_aliases: [],
       allow_unset: false,
     };
+    const malformedField = { cli_aliases: ["", 1] } as unknown as typeof githubUrlField;
+    const malformedAliasesField = { cli_aliases: "gh-url" } as unknown as typeof githubUrlField;
     const registry = {
-      definitions: [githubUrlField, hiddenField],
-      command_to_fields: new Map([["create", [githubUrlField, hiddenField]]]),
+      definitions: [malformedField, malformedAliasesField, githubUrlField, hiddenField],
+      command_to_fields: new Map([
+        ["create", [malformedField, malformedAliasesField, githubUrlField, hiddenField]],
+      ]),
     };
 
     expect(_testOnlyCreateCommand.resolveRuntimeCreateUnsetDefinition("anything", undefined)).toBeUndefined();
+    expect(_testOnlyCreateCommand.resolveRuntimeCreateUnsetDefinition("malformed", registry)).toBeUndefined();
     expect(_testOnlyCreateCommand.resolveRuntimeCreateUnsetDefinition("gh_url", registry)).toEqual({
       optionKey: "githubUrl",
       frontMatterKey: "github_url",
