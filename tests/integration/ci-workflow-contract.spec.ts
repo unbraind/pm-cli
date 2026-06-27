@@ -416,7 +416,7 @@ describe("GitHub workflow contract", () => {
       "echo \"published_tag=${NEW_TAG}\" >> \"${GITHUB_OUTPUT}\"",
       "echo \"published_sha=${PUBLISHED_SHA}\" >> \"${GITHUB_OUTPUT}\"",
       "name: Resolve blocked scheduled auto-release issue",
-      "if: success() && github.event_name == 'schedule' && steps.auto_release.outputs.published_tag != ''",
+      "if: success() && github.event_name == 'schedule' && steps.auto_release.outputs.published_tag",
       "RELEASE_SHA: ${{ steps.auto_release.outputs.published_sha }}",
       "RELEASE_TAG: ${{ steps.auto_release.outputs.published_tag }}",
       "Could not query blocked auto-release issues after successful publish; leaving release status successful.",

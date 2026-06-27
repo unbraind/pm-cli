@@ -172,7 +172,7 @@ jobs:
           echo "published_sha=${PUBLISHED_SHA}" >> "${GITHUB_OUTPUT}"
 
       - name: Resolve blocked scheduled auto-release issue
-        if: success() && github.event_name == 'schedule' && steps.auto_release.outputs.published_tag != ''
+        if: success() && github.event_name == 'schedule' && steps.auto_release.outputs.published_tag
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
