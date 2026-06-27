@@ -46,8 +46,8 @@ export interface ConfigPositionalNotRoutable {
  */
 export type ConfigPositionalResult = ConfigPositionalRouted | ConfigPositionalNotRoutable;
 
-/** Canonical snake-case config keys this helper understands. */
-type CanonicalConfigKey =
+/** Canonical snake-case config keys accepted by the config command and positional router. */
+export type ConfigKey =
   | "definition_of_done"
   | "item_format"
   | "history_missing_stream_policy"
@@ -73,9 +73,9 @@ type CanonicalConfigKey =
   | "telemetry_tracking"
   | "context";
 
-const FORMAT_KEYS: ReadonlySet<CanonicalConfigKey> = new Set<CanonicalConfigKey>(["item_format"]);
+const FORMAT_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>(["item_format"]);
 
-const CRITERIA_KEYS: ReadonlySet<CanonicalConfigKey> = new Set<CanonicalConfigKey>([
+const CRITERIA_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
   "definition_of_done",
   "metadata_required_fields",
   "lifecycle_stale_blocker_reason_patterns",
@@ -84,7 +84,7 @@ const CRITERIA_KEYS: ReadonlySet<CanonicalConfigKey> = new Set<CanonicalConfigKe
   "lifecycle_closure_like_actual_result_patterns",
 ]);
 
-const POLICY_KEYS: ReadonlySet<CanonicalConfigKey> = new Set<CanonicalConfigKey>([
+const POLICY_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
   "history_missing_stream_policy",
   "sprint_release_format_policy",
   "parent_reference_policy",
@@ -108,7 +108,7 @@ const POLICY_KEYS: ReadonlySet<CanonicalConfigKey> = new Set<CanonicalConfigKey>
  * intuitive synonyms off/on/true/false. Other policy keys pass through unchanged so
  * their own validators report the precise allowed set.
  */
-const ENABLED_DISABLED_POLICY_KEYS: ReadonlySet<CanonicalConfigKey> = new Set<CanonicalConfigKey>([
+const ENABLED_DISABLED_POLICY_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
   "governance_require_close_reason",
   "governance_force_required_for_stale_lock",
   "test_result_tracking",
@@ -125,15 +125,15 @@ const ENABLED_DISABLED_SYNONYMS: Record<string, string> = {
 };
 
 /** Normalize any kebab/snake key form to the canonical snake key (or undefined). */
-function toCanonicalKey(keyOrAlias: string): CanonicalConfigKey | undefined {
+function toCanonicalKey(keyOrAlias: string): ConfigKey | undefined {
   const normalized = keyOrAlias.trim().toLowerCase().replaceAll("-", "_");
   if (
-    FORMAT_KEYS.has(normalized as CanonicalConfigKey) ||
-    CRITERIA_KEYS.has(normalized as CanonicalConfigKey) ||
-    POLICY_KEYS.has(normalized as CanonicalConfigKey) ||
+    FORMAT_KEYS.has(normalized as ConfigKey) ||
+    CRITERIA_KEYS.has(normalized as ConfigKey) ||
+    POLICY_KEYS.has(normalized as ConfigKey) ||
     normalized === "context"
   ) {
-    return normalized as CanonicalConfigKey;
+    return normalized as ConfigKey;
   }
   return undefined;
 }

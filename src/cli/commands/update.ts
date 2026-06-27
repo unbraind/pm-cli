@@ -68,7 +68,13 @@ import {
   parseConfidenceInput,
   parseRegressionInput,
 } from "./metadata-normalizers.js";
-import { assertNoLegacyNoneToken, assertNoLegacyNoneTokens, isLegacyNoneToken } from "./legacy-none-tokens.js";
+import {
+  applyLegacyNoneCollectionNormalizers,
+  assertNoLegacyNoneToken,
+  assertNoLegacyNoneTokens,
+  isLegacyNoneToken,
+  type LegacyNoneCollectionNormalizer,
+} from "./legacy-none-tokens.js";
 import { ensureEnumValue as ensureEnum } from "./recurrence-parsers.js";
 import {
   parseEventEntries,
@@ -97,6 +103,7 @@ import {
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR,
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
   COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON,
+  resolveRuntimeUnsetFieldDefinition,
   type CommandUnsetFieldDefinition,
 } from "./shared-unset-fields.js";
 
@@ -249,21 +256,13 @@ function toAuthor(candidate: string | undefined, defaultAuthor: string): string 
   return trimmed || "unknown";
 }
 
-interface LegacyNoneCollectionNormalizationDefinition {
-  optionKey: keyof UpdateCommandOptions;
-  clearFlagKey: keyof UpdateCommandOptions;
-  valueFlag: string;
-  clearFlag: string;
-  disableReplaceFlagKey?: "replaceDeps" | "replaceTests";
-}
-
-const UPDATE_LEGACY_NONE_COLLECTION_NORMALIZERS: ReadonlyArray<LegacyNoneCollectionNormalizationDefinition> = [
-  { optionKey: "dep", clearFlagKey: "clearDeps", valueFlag: "--dep", clearFlag: "--clear-deps", disableReplaceFlagKey: "replaceDeps" },
+const UPDATE_LEGACY_NONE_COLLECTION_NORMALIZERS: ReadonlyArray<LegacyNoneCollectionNormalizer<UpdateCommandOptions>> = [
+  { optionKey: "dep", clearFlagKey: "clearDeps", valueFlag: "--dep", clearFlag: "--clear-deps", disableFlagKey: "replaceDeps" },
   { optionKey: "comment", clearFlagKey: "clearComments", valueFlag: "--comment", clearFlag: "--clear-comments" },
   { optionKey: "note", clearFlagKey: "clearNotes", valueFlag: "--note", clearFlag: "--clear-notes" },
   { optionKey: "learning", clearFlagKey: "clearLearnings", valueFlag: "--learning", clearFlag: "--clear-learnings" },
   { optionKey: "file", clearFlagKey: "clearFiles", valueFlag: "--file", clearFlag: "--clear-files" },
-  { optionKey: "test", clearFlagKey: "clearTests", valueFlag: "--test", clearFlag: "--clear-tests", disableReplaceFlagKey: "replaceTests" },
+  { optionKey: "test", clearFlagKey: "clearTests", valueFlag: "--test", clearFlag: "--clear-tests", disableFlagKey: "replaceTests" },
   { optionKey: "doc", clearFlagKey: "clearDocs", valueFlag: "--doc", clearFlag: "--clear-docs" },
   { optionKey: "reminder", clearFlagKey: "clearReminders", valueFlag: "--reminder", clearFlag: "--clear-reminders" },
   { optionKey: "event", clearFlagKey: "clearEvents", valueFlag: "--event", clearFlag: "--clear-events" },
@@ -298,60 +297,7 @@ function normalizeLegacyNoneUpdateOptions(options: UpdateCommandOptions): Update
     /* c8 ignore stop */
   }
 
-  for (const definition of UPDATE_LEGACY_NONE_COLLECTION_NORMALIZERS) {
-    const entries = normalized[definition.optionKey];
-    if (!Array.isArray(entries) || entries.length === 0) {
-      continue;
-    }
-    const hasLegacy = entries.some((entry) => isLegacyNoneToken(entry));
-    if (!hasLegacy) {
-      continue;
-    }
-    const concreteEntries = entries.filter((entry) => !isLegacyNoneToken(entry));
-    if (concreteEntries.length > 0) {
-      throw new PmCliError(
-        `Cannot mix legacy clear token "none"/"null" with concrete ${definition.valueFlag} entries. Use ${definition.clearFlag} to clear or provide explicit entries.`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    normalized[definition.optionKey] = undefined;
-    normalized[definition.clearFlagKey] = true;
-    if (definition.disableReplaceFlagKey) {
-      normalized[definition.disableReplaceFlagKey] = false;
-    }
-  }
-
-  return normalized;
-}
-
-function resolveRuntimeUnsetDefinition(
-  token: string,
-  runtimeFieldRegistry: RuntimeFieldRegistry | undefined,
-): UpdateUnsetFieldDefinition | undefined {
-  if (!runtimeFieldRegistry) {
-    return undefined;
-  }
-  for (const definition of runtimeFieldRegistry.definitions) {
-    if (definition.allow_unset === false) {
-      continue;
-    }
-    const candidates = new Set<string>([
-      definition.key,
-      definition.metadata_key,
-      definition.cli_flag.replaceAll("-", "_"),
-      definition.cli_flag,
-      ...definition.cli_aliases.map((alias) => alias.replaceAll("-", "_")),
-      ...definition.cli_aliases,
-    ]);
-    if (!candidates.has(token)) {
-      continue;
-    }
-    return {
-      optionKey: definition.key,
-      frontMatterKey: definition.metadata_key,
-    };
-  }
-  return undefined;
+  return applyLegacyNoneCollectionNormalizers(normalized, UPDATE_LEGACY_NONE_COLLECTION_NORMALIZERS);
 }
 
 function parseUpdateUnsetTargets(
@@ -385,7 +331,7 @@ function parseUpdateUnsetTargets(
       );
     });
     const definition = UPDATE_UNSET_ALIAS_MAP.get(trimmed) ??
-      resolveRuntimeUnsetDefinition(trimmed, runtimeFieldRegistry) ??
+      resolveRuntimeUnsetFieldDefinition(trimmed, "update", runtimeFieldRegistry) ??
       (extensionFieldName ? { optionKey: "field", frontMatterKey: extensionFieldName } : undefined);
     if (!definition) {
       throw new PmCliError(
@@ -2110,5 +2056,6 @@ export const _testOnlyUpdateCommand = {
   parseDependencyRemovals,
   parseUpdateUnsetTargets,
   reconcileBlockedByDependency,
-  resolveRuntimeUnsetDefinition,
+  resolveRuntimeUnsetDefinition: (token: string, registry: RuntimeFieldRegistry | undefined) =>
+    resolveRuntimeUnsetFieldDefinition(token, "update", registry),
 };

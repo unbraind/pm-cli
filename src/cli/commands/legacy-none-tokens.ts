@@ -17,6 +17,17 @@ import { PmCliError } from "../../core/shared/errors.js";
 const LEGACY_NONE_TOKENS = new Set(["none", "null"]);
 
 /**
+ * Describes a repeatable option whose legacy none/null token maps to a clear flag.
+ */
+export interface LegacyNoneCollectionNormalizer<TOptions extends Record<string, unknown>> {
+  optionKey: keyof TOptions;
+  clearFlagKey: keyof TOptions;
+  valueFlag: string;
+  clearFlag: string;
+  disableFlagKey?: keyof TOptions;
+}
+
+/**
  * Implements check whether legacy none token for the public runtime surface of this module.
  */
 export function isLegacyNoneToken(value: string | undefined): boolean {
@@ -50,4 +61,40 @@ export function assertNoLegacyNoneTokens(values: string[] | undefined, flag: str
   }
   const suffix = replacementHint ? ` ${replacementHint}` : "";
   throw new PmCliError(`${flag} no longer accepts "none" or "null".${suffix}`.trim(), EXIT_CODE.USAGE);
+}
+
+/**
+ * Convert collection-level legacy none/null tokens into their explicit clear flags.
+ */
+export function applyLegacyNoneCollectionNormalizers<TOptions extends Record<string, unknown>>(
+  normalized: TOptions,
+  definitions: ReadonlyArray<LegacyNoneCollectionNormalizer<TOptions>>,
+): TOptions {
+  for (const definition of definitions) {
+    const candidate = normalized[definition.optionKey];
+    if (!Array.isArray(candidate) || candidate.length === 0) {
+      continue;
+    }
+    if (!candidate.every((entry): entry is string => typeof entry === "string")) {
+      throw new PmCliError(`${definition.valueFlag} entries must be strings.`, EXIT_CODE.USAGE);
+    }
+    const entries = candidate;
+    const hasLegacy = entries.some((entry) => isLegacyNoneToken(entry));
+    if (!hasLegacy) {
+      continue;
+    }
+    const concreteEntries = entries.filter((entry) => !isLegacyNoneToken(entry));
+    if (concreteEntries.length > 0) {
+      throw new PmCliError(
+        `Cannot mix legacy clear token "none"/"null" with concrete ${definition.valueFlag} entries. Use ${definition.clearFlag} to clear or provide explicit entries.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    normalized[definition.optionKey] = undefined as TOptions[keyof TOptions];
+    normalized[definition.clearFlagKey] = true as TOptions[keyof TOptions];
+    if (definition.disableFlagKey) {
+      normalized[definition.disableFlagKey] = false as TOptions[keyof TOptions];
+    }
+  }
+  return normalized;
 }
