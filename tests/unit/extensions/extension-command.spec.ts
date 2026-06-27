@@ -2128,13 +2128,14 @@ describe("extension command runtime", () => {
       const sampleTest = await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8");
       expect(sampleTest).toContain('import assert from "node:assert/strict";');
       expect(sampleTest).toContain('import { test } from "node:test";');
-      // The sample imports the activate and deactivate test helpers so it can
-      // cover the full lifecycle, not just command registration.
-      expect(sampleTest).toContain("  activateExtensionForTest,");
+      // The sample uses the high-level harness so package authors do not need
+      // to hand-thread activation registries for the common command path.
       expect(sampleTest).toContain("  assertExtensionDeactivated,");
-      expect(sampleTest).toContain("  assertRegisteredCommandContract,");
-      expect(sampleTest).toContain("  deactivateExtensionForTest,");
-      expect(sampleTest).toContain("  runRegisteredCommandForTest,");
+      expect(sampleTest).toContain("  createExtensionTestHarness,");
+      expect(sampleTest).not.toContain("  activateExtensionForTest,");
+      expect(sampleTest).not.toContain("  assertRegisteredCommandContract,");
+      expect(sampleTest).not.toContain("  deactivateExtensionForTest,");
+      expect(sampleTest).not.toContain("  runRegisteredCommandForTest,");
       expect(sampleTest).toContain('} from "@unbrained/pm-cli/sdk/testing";');
       // NodeNext resolution: the .ts test imports the ./index.ts manifest entry directly.
       expect(sampleTest).toContain('import extension from "./index.ts";');
@@ -2145,15 +2146,25 @@ describe("extension command runtime", () => {
       // pm's real dispatch engine, not just asserting it is registered. The
       // handler result is typed `unknown`, so the sample uses a type-safe
       // deep-equality assertion on the whole structured payload (no cast).
-      expect(sampleTest).toContain("const invocation = await runRegisteredCommandForTest(activation.commands, {");
+      expect(sampleTest).toContain("const ext = await createExtensionTestHarness(extension, {");
+      expect(sampleTest).toContain("const registered = ext.assertCommandContract({");
+      expect(sampleTest).toContain("const invocation = await ext.runCommand({");
+      expect(sampleTest).toContain("  let deactivated = false;");
+      expect(sampleTest).toContain("  try {");
+      expect(sampleTest).toContain("  } finally {");
+      expect(sampleTest).toContain("    if (!deactivated) {");
+      expect(sampleTest).toContain("      try {");
+      expect(sampleTest).toContain("      } catch {}");
       expect(sampleTest).toContain("assert.equal(invocation.handled, true);");
       expect(sampleTest).toContain("assert.deepEqual(invocation.result, {");
       expect(sampleTest).toContain('command: "starter package ping",');
       expect(sampleTest).not.toContain("invocation.result.ok");
-      // The teardown test demonstrates deactivateExtensionForTest + the clean
+      expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
+      expect(sampleTest).toContain("deactivated = true;");
+      // The teardown test demonstrates the harness teardown method + the clean
       // teardown assertion.
       expect(sampleTest).toContain("tears down cleanly via deactivate");
-      expect(sampleTest).toContain("const teardown = await deactivateExtensionForTest(extension, {");
+      expect(sampleTest).toContain("const teardown = await ext.deactivate();");
       expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
       expect(sampleTest).toContain("assert.equal(teardown.deactivated, 1);");
       // The contract helper already validates the command name, so the sample
@@ -2387,13 +2398,19 @@ describe("extension command runtime", () => {
       expect(entry).toContain("context.affected");
 
       const sampleTest = await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8");
-      expect(sampleTest).toContain("  assertRegisteredHook,");
-      expect(sampleTest).toContain("  runRegisteredHookForTest,");
+      expect(sampleTest).toContain("  createExtensionTestHarness,");
       expect(sampleTest).toContain('capabilities: ["commands", "hooks"]');
-      expect(sampleTest).toContain("assertRegisteredHook(activation.hooks, {");
+      expect(sampleTest).toContain("ext.assertHook({");
       expect(sampleTest).toContain('kind: "after_command"');
-      expect(sampleTest).toContain("const warnings = await runRegisteredHookForTest(activation.hooks, {");
+      expect(sampleTest).toContain("const warnings = await ext.runHook({");
       expect(sampleTest).toContain("assert.deepEqual(warnings, []);");
+      expect(sampleTest).toContain("let deactivated = false;");
+      expect(sampleTest).toContain("} finally {");
+      expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
+      expect(sampleTest).toContain("if (!deactivated) {");
+      expect(sampleTest).toContain("try {");
+      expect(sampleTest).toContain("} catch {}");
+      expect(sampleTest).toContain("await ext.deactivate();");
 
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Lifecycle Hook");
@@ -2429,21 +2446,27 @@ describe("extension command runtime", () => {
       expect(entry).toContain('name: "starter-search-vector"');
 
       const sampleTest = await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8");
-      expect(sampleTest).toContain("  assertRegisteredSearchProvider,");
-      expect(sampleTest).toContain("  assertRegisteredVectorStoreAdapter,");
-      expect(sampleTest).toContain("  runRegisteredSearchProviderForTest,");
-      expect(sampleTest).toContain("  runRegisteredVectorStoreAdapterForTest,");
+      expect(sampleTest).toContain("  createExtensionTestHarness,");
       // The search variant imports SDK types for its strict-typed synthetic fixtures.
       expect(sampleTest).toContain('import type { ItemDocument, PmSettings } from "@unbrained/pm-cli/sdk";');
       expect(sampleTest).toContain("settings: {} as PmSettings");
       expect(sampleTest).toContain('capabilities: ["commands", "search"]');
-      expect(sampleTest).toContain("assertRegisteredSearchProvider(activation.registrations, {");
+      expect(sampleTest).toContain("ext.assertSearchProvider({");
       expect(sampleTest).toContain('provider: "starter-search-search"');
-      expect(sampleTest).toContain("assertRegisteredVectorStoreAdapter(activation.registrations, {");
+      expect(sampleTest).toContain("ext.assertVectorStoreAdapter({");
       expect(sampleTest).toContain('adapter: "starter-search-vector"');
       expect(sampleTest).toContain('operation: "query"');
+      expect(sampleTest).toContain("const query = await ext.runSearchProvider({");
+      expect(sampleTest).toContain("const vectorHits = await ext.runVectorStoreAdapter({");
       expect(sampleTest).toContain('assert.deepEqual(embedding, [3]);');
       expect(sampleTest).toContain('assert.deepEqual(vectorHits, [{ id: "starter-vector-hit", score: 2 }]);');
+      expect(sampleTest).toContain("let deactivated = false;");
+      expect(sampleTest).toContain("} finally {");
+      expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
+      expect(sampleTest).toContain("if (!deactivated) {");
+      expect(sampleTest).toContain("try {");
+      expect(sampleTest).toContain("} catch {}");
+      expect(sampleTest).toContain("await ext.deactivate();");
 
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Search Provider");
@@ -2480,21 +2503,25 @@ describe("extension command runtime", () => {
       expect(entry).toContain('action: "starter importers items export"');
 
       const sampleTest = await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8");
-      expect(sampleTest).toContain("  assertRegisteredImporter,");
-      expect(sampleTest).toContain("  assertRegisteredExporter,");
-      expect(sampleTest).toContain("  runRegisteredImporterForTest,");
-      expect(sampleTest).toContain("  runRegisteredExporterForTest,");
+      expect(sampleTest).toContain("  createExtensionTestHarness,");
       expect(sampleTest).toContain('capabilities: ["commands", "schema", "importers"]');
-      expect(sampleTest).toContain("assertRegisteredImporter(activation.registrations, {");
+      expect(sampleTest).toContain("ext.assertImporter({");
       expect(sampleTest).toContain('importer: "starter importers items"');
-      expect(sampleTest).toContain("assertRegisteredExporter(activation.registrations, {");
+      expect(sampleTest).toContain("ext.assertExporter({");
       expect(sampleTest).toContain('exporter: "starter importers items"');
-      expect(sampleTest).toContain("const imported = await runRegisteredImporterForTest(activation, {");
+      expect(sampleTest).toContain("const imported = await ext.runImporter({");
       expect(sampleTest).toContain("assert.equal(imported.handled, true);");
       expect(sampleTest).toContain('assert.deepEqual(imported.result, { imported: 1, source: "tickets", args: ["batch-1"] });');
-      expect(sampleTest).toContain("const exported = await runRegisteredExporterForTest(activation, {");
+      expect(sampleTest).toContain("const exported = await ext.runExporter({");
       expect(sampleTest).toContain("assert.equal(exported.handled, true);");
       expect(sampleTest).toContain('assert.deepEqual(exported.result, { exported: true, destination: "archive", args: ["done"] });');
+      expect(sampleTest).toContain("let deactivated = false;");
+      expect(sampleTest).toContain("} finally {");
+      expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
+      expect(sampleTest).toContain("if (!deactivated) {");
+      expect(sampleTest).toContain("try {");
+      expect(sampleTest).toContain("} catch {}");
+      expect(sampleTest).toContain("await ext.deactivate();");
 
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Importer and Exporter");
@@ -2539,21 +2566,25 @@ describe("extension command runtime", () => {
       expect(entry).toContain('id: "starter-schema-0001-init"');
 
       const sampleTest = await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8");
-      expect(sampleTest).toContain("  assertRegisteredItemField,");
-      expect(sampleTest).toContain("  assertRegisteredItemType,");
-      expect(sampleTest).toContain("  assertRegisteredMigration,");
-      expect(sampleTest).toContain("  runRegisteredMigrationForTest,");
+      expect(sampleTest).toContain("  createExtensionTestHarness,");
       expect(sampleTest).toContain('capabilities: ["commands", "schema"]');
-      expect(sampleTest).toContain("assertRegisteredItemType(activation.registrations, {");
+      expect(sampleTest).toContain("const itemType = ext.assertItemType({");
       expect(sampleTest).toContain('itemType: "starter-schema"');
       expect(sampleTest).toContain('assert.equal(itemType.itemType.folder, "starter-schemas");');
-      expect(sampleTest).toContain("assertRegisteredItemField(activation.registrations, {");
+      expect(sampleTest).toContain("const itemField = ext.assertItemField({");
       expect(sampleTest).toContain('field: "starter_schema_note"');
       expect(sampleTest).toContain('assert.equal(itemField.field.type, "string");');
-      expect(sampleTest).toContain("assertRegisteredMigration(activation.registrations, {");
+      expect(sampleTest).toContain("ext.assertMigration({");
       expect(sampleTest).toContain('migration: "starter-schema-0001-init"');
-      expect(sampleTest).toContain("const migrated = await runRegisteredMigrationForTest(activation.registrations, {");
+      expect(sampleTest).toContain("const migrated = await ext.runMigration({");
       expect(sampleTest).toContain('assert.deepEqual(migrated, { migrated: true, id: "starter-schema-0001-init" });');
+      expect(sampleTest).toContain("let deactivated = false;");
+      expect(sampleTest).toContain("} finally {");
+      expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
+      expect(sampleTest).toContain("if (!deactivated) {");
+      expect(sampleTest).toContain("try {");
+      expect(sampleTest).toContain("} catch {}");
+      expect(sampleTest).toContain("await ext.deactivate();");
 
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Custom Schema");
