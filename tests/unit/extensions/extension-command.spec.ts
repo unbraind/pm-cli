@@ -33,6 +33,7 @@ import {
   upsertManagedEntry,
   writeManagedExtensionState,
 } from "../../../src/cli/commands/extension/managed-state.js";
+import { SCAFFOLD_PM_MIN_VERSION } from "../../../src/cli/commands/extension/scaffold.js";
 import {
   buildNpmNotFoundRecovery,
   _testOnlyInstallSources,
@@ -2087,7 +2088,7 @@ describe("extension command runtime", () => {
         },
       });
       expect(packageJson.peerDependencies).toMatchObject({
-        "@unbrained/pm-cli": "*",
+        "@unbrained/pm-cli": `>=${SCAFFOLD_PM_MIN_VERSION}`,
       });
       expect(packageJson.devDependencies).toMatchObject({
         "@types/node": expect.stringContaining("22"),
@@ -2103,6 +2104,7 @@ describe("extension command runtime", () => {
       expect(manifest).toMatchObject({
         name: "starter-package",
         entry: "./index.ts",
+        pm_min_version: SCAFFOLD_PM_MIN_VERSION,
         capabilities: ["commands"],
         trusted: true,
         sandbox_profile: "strict",
