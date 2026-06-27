@@ -308,7 +308,7 @@ export async function runNext(options: NextOptions, global: GlobalOptions): Prom
             projectedReady[0],
             statusRegistry,
             now,
-            hasCompletedDescendants(projectedReady[0].item, childrenByParent),
+            concreteReady.length === 0,
           ),
         }
       : null;
