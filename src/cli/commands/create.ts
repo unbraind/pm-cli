@@ -387,7 +387,7 @@ function parseCreateUnsetTargets(
         EXIT_CODE.USAGE,
       );
     }
-    const definition = CREATE_UNSET_ALIAS_MAP.get(trimmed) ?? resolveRuntimeUnsetFieldDefinition(trimmed, runtimeFieldRegistry);
+    const definition = CREATE_UNSET_ALIAS_MAP.get(trimmed) ?? resolveRuntimeUnsetFieldDefinition(trimmed, "create", runtimeFieldRegistry);
     if (!definition) {
       throw new PmCliError(
         `Unsupported --unset field "${entry}". Supported fields: ${CREATE_UNSET_SUPPORTED_CANONICAL_FIELDS}`,
@@ -1987,6 +1987,7 @@ export const _testOnlyCreateCommand = {
   parseCreateUnsetTargets,
   requireStringOption,
   readTemplateOptionsFromRuntimeResult,
-  resolveRuntimeCreateUnsetDefinition: resolveRuntimeUnsetFieldDefinition,
+  resolveRuntimeCreateUnsetDefinition: (token: string, registry: RuntimeFieldRegistry | undefined) =>
+    resolveRuntimeUnsetFieldDefinition(token, "create", registry),
   typeOptionExampleValue,
 };

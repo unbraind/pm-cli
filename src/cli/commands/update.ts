@@ -331,7 +331,7 @@ function parseUpdateUnsetTargets(
       );
     });
     const definition = UPDATE_UNSET_ALIAS_MAP.get(trimmed) ??
-      resolveRuntimeUnsetFieldDefinition(trimmed, runtimeFieldRegistry) ??
+      resolveRuntimeUnsetFieldDefinition(trimmed, "update", runtimeFieldRegistry) ??
       (extensionFieldName ? { optionKey: "field", frontMatterKey: extensionFieldName } : undefined);
     if (!definition) {
       throw new PmCliError(
@@ -2056,5 +2056,6 @@ export const _testOnlyUpdateCommand = {
   parseDependencyRemovals,
   parseUpdateUnsetTargets,
   reconcileBlockedByDependency,
-  resolveRuntimeUnsetDefinition: resolveRuntimeUnsetFieldDefinition,
+  resolveRuntimeUnsetDefinition: (token: string, registry: RuntimeFieldRegistry | undefined) =>
+    resolveRuntimeUnsetFieldDefinition(token, "update", registry),
 };

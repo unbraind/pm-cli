@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  applyLegacyNoneCollectionNormalizers,
   assertNoLegacyNoneToken,
   assertNoLegacyNoneTokens,
   isLegacyNoneToken,
 } from "../../../src/cli/commands/legacy-none-tokens.js";
+import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 
 describe("isLegacyNoneToken", () => {
@@ -77,5 +79,16 @@ describe("assertNoLegacyNoneTokens", () => {
     } catch (error) {
       expect((error as PmCliError).message).toBe('--dep no longer accepts "none" or "null". Use --clear-deps.');
     }
+  });
+});
+
+describe("applyLegacyNoneCollectionNormalizers", () => {
+  it("rejects malformed collection entries with a usage error", () => {
+    expect(() =>
+      applyLegacyNoneCollectionNormalizers(
+        { dep: ["none", 1] },
+        [{ optionKey: "dep", clearFlagKey: "clearDeps", valueFlag: "--dep", clearFlag: "--clear-deps" }],
+      ),
+    ).toThrow(expect.objectContaining({ exitCode: EXIT_CODE.USAGE, message: "--dep entries must be strings." }));
   });
 });

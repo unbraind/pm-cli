@@ -75,7 +75,10 @@ export function applyLegacyNoneCollectionNormalizers<TOptions extends Record<str
     if (!Array.isArray(candidate) || candidate.length === 0) {
       continue;
     }
-    const entries = candidate as string[];
+    if (!candidate.every((entry): entry is string => typeof entry === "string")) {
+      throw new PmCliError(`${definition.valueFlag} entries must be strings.`, EXIT_CODE.USAGE);
+    }
+    const entries = candidate;
     const hasLegacy = entries.some((entry) => isLegacyNoneToken(entry));
     if (!hasLegacy) {
       continue;

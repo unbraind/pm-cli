@@ -78,22 +78,23 @@ describe("update command helper coverage", () => {
   });
 
   it("parses built-in runtime and extension unset targets", () => {
+    const githubUrlField = {
+      key: "githubUrl",
+      metadata_key: "github_url",
+      cli_flag: "github-url",
+      cli_aliases: ["gh-url"],
+      allow_unset: true,
+    };
+    const hiddenField = {
+      key: "hidden",
+      metadata_key: "hidden",
+      cli_flag: "hidden",
+      cli_aliases: [],
+      allow_unset: false,
+    };
     const registry = {
-      definitions: [
-        {
-          key: "githubUrl",
-          metadata_key: "github_url",
-          cli_flag: "github-url",
-          cli_aliases: ["gh-url"],
-        },
-        {
-          key: "hidden",
-          metadata_key: "hidden",
-          cli_flag: "hidden",
-          cli_aliases: [],
-          allow_unset: false,
-        },
-      ],
+      definitions: [githubUrlField, hiddenField],
+      command_to_fields: new Map([["update", [githubUrlField, hiddenField]]]),
     };
 
     expect(_testOnlyUpdateCommand.resolveRuntimeUnsetDefinition("github_url", registry)).toEqual({

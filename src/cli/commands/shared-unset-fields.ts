@@ -3,7 +3,7 @@
  *
  * Single-sources unset-field metadata shared by create and update command handlers.
  */
-import type { RuntimeFieldRegistry } from "../../core/schema/runtime-schema.js";
+import type { RuntimeFieldCommand, RuntimeFieldRegistry } from "../../core/schema/runtime-schema.js";
 
 /**
  * Describes one command option that can be removed from item front matter through `--unset`.
@@ -146,12 +146,14 @@ export interface RuntimeUnsetFieldDefinition {
  */
 export function resolveRuntimeUnsetFieldDefinition(
   token: string,
+  command: RuntimeFieldCommand,
   runtimeFieldRegistry: RuntimeFieldRegistry | undefined,
 ): RuntimeUnsetFieldDefinition | undefined {
   if (!runtimeFieldRegistry) {
     return undefined;
   }
-  for (const definition of runtimeFieldRegistry.definitions) {
+  const definitions = runtimeFieldRegistry.command_to_fields?.get(command) ?? [];
+  for (const definition of definitions) {
     if (definition.allow_unset === false) {
       continue;
     }

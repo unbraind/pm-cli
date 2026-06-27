@@ -3113,22 +3113,23 @@ describe("create command helper coverage", () => {
   });
 
   it("resolves runtime unset aliases and rejects unsupported create unset tokens", () => {
+    const githubUrlField = {
+      key: "githubUrl",
+      metadata_key: "github_url",
+      cli_flag: "github-url",
+      cli_aliases: ["gh-url"],
+      allow_unset: true,
+    };
+    const hiddenField = {
+      key: "hidden",
+      metadata_key: "hidden",
+      cli_flag: "hidden",
+      cli_aliases: [],
+      allow_unset: false,
+    };
     const registry = {
-      definitions: [
-        {
-          key: "githubUrl",
-          metadata_key: "github_url",
-          cli_flag: "github-url",
-          cli_aliases: ["gh-url"],
-        },
-        {
-          key: "hidden",
-          metadata_key: "hidden",
-          cli_flag: "hidden",
-          cli_aliases: [],
-          allow_unset: false,
-        },
-      ],
+      definitions: [githubUrlField, hiddenField],
+      command_to_fields: new Map([["create", [githubUrlField, hiddenField]]]),
     };
 
     expect(_testOnlyCreateCommand.resolveRuntimeCreateUnsetDefinition("anything", undefined)).toBeUndefined();
