@@ -2153,6 +2153,8 @@ describe("extension command runtime", () => {
       expect(sampleTest).toContain("  try {");
       expect(sampleTest).toContain("  } finally {");
       expect(sampleTest).toContain("    if (!deactivated) {");
+      expect(sampleTest).toContain("      try {");
+      expect(sampleTest).toContain("      } catch {}");
       expect(sampleTest).toContain("assert.equal(invocation.handled, true);");
       expect(sampleTest).toContain("assert.deepEqual(invocation.result, {");
       expect(sampleTest).toContain('command: "starter package ping",');
@@ -2402,9 +2404,12 @@ describe("extension command runtime", () => {
       expect(sampleTest).toContain('kind: "after_command"');
       expect(sampleTest).toContain("const warnings = await ext.runHook({");
       expect(sampleTest).toContain("assert.deepEqual(warnings, []);");
+      expect(sampleTest).toContain("let deactivated = false;");
       expect(sampleTest).toContain("} finally {");
       expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
       expect(sampleTest).toContain("if (!deactivated) {");
+      expect(sampleTest).toContain("try {");
+      expect(sampleTest).toContain("} catch {}");
       expect(sampleTest).toContain("await ext.deactivate();");
 
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
@@ -2455,9 +2460,12 @@ describe("extension command runtime", () => {
       expect(sampleTest).toContain("const vectorHits = await ext.runVectorStoreAdapter({");
       expect(sampleTest).toContain('assert.deepEqual(embedding, [3]);');
       expect(sampleTest).toContain('assert.deepEqual(vectorHits, [{ id: "starter-vector-hit", score: 2 }]);');
+      expect(sampleTest).toContain("let deactivated = false;");
       expect(sampleTest).toContain("} finally {");
       expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
       expect(sampleTest).toContain("if (!deactivated) {");
+      expect(sampleTest).toContain("try {");
+      expect(sampleTest).toContain("} catch {}");
       expect(sampleTest).toContain("await ext.deactivate();");
 
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
@@ -2507,9 +2515,12 @@ describe("extension command runtime", () => {
       expect(sampleTest).toContain("const exported = await ext.runExporter({");
       expect(sampleTest).toContain("assert.equal(exported.handled, true);");
       expect(sampleTest).toContain('assert.deepEqual(exported.result, { exported: true, destination: "archive", args: ["done"] });');
+      expect(sampleTest).toContain("let deactivated = false;");
       expect(sampleTest).toContain("} finally {");
       expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
       expect(sampleTest).toContain("if (!deactivated) {");
+      expect(sampleTest).toContain("try {");
+      expect(sampleTest).toContain("} catch {}");
       expect(sampleTest).toContain("await ext.deactivate();");
 
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
@@ -2567,9 +2578,12 @@ describe("extension command runtime", () => {
       expect(sampleTest).toContain('migration: "starter-schema-0001-init"');
       expect(sampleTest).toContain("const migrated = await ext.runMigration({");
       expect(sampleTest).toContain('assert.deepEqual(migrated, { migrated: true, id: "starter-schema-0001-init" });');
+      expect(sampleTest).toContain("let deactivated = false;");
       expect(sampleTest).toContain("} finally {");
       expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
       expect(sampleTest).toContain("if (!deactivated) {");
+      expect(sampleTest).toContain("try {");
+      expect(sampleTest).toContain("} catch {}");
       expect(sampleTest).toContain("await ext.deactivate();");
 
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");

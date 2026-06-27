@@ -156,6 +156,8 @@ describe("extension scaffold define builder guidance", () => {
     expect(sampleTest).toContain("} finally {");
     expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
     expect(sampleTest).toContain("if (!deactivated) {");
+    expect(sampleTest).toContain("try {");
+    expect(sampleTest).toContain("} catch {}");
     expect(sampleTest).toContain("await ext.deactivate();");
     expect(readme).toContain(
       'import { defineCommand, defineRendererOverride } from "@unbrained/pm-cli/sdk";',
@@ -200,6 +202,8 @@ describe("extension scaffold define builder guidance", () => {
     expect(sampleTest).toContain("} finally {");
     expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
     expect(sampleTest).toContain("if (!deactivated) {");
+    expect(sampleTest).toContain("try {");
+    expect(sampleTest).toContain("} catch {}");
     expect(sampleTest).toContain("await ext.deactivate();");
     expect(readme).toContain(
       'import { defineCommand, defineParserOverride } from "@unbrained/pm-cli/sdk";',
@@ -233,6 +237,8 @@ describe("extension scaffold define builder guidance", () => {
     expect(sampleTest).toContain("} finally {");
     expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
     expect(sampleTest).toContain("if (!deactivated) {");
+    expect(sampleTest).toContain("try {");
+    expect(sampleTest).toContain("} catch {}");
     expect(sampleTest).toContain("await ext.deactivate();");
     expect(readme).toContain(
       'import { defineCommand, definePreflightOverride } from "@unbrained/pm-cli/sdk";',
@@ -268,6 +274,8 @@ describe("extension scaffold define builder guidance", () => {
     expect(sampleTest).toContain("} finally {");
     expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
     expect(sampleTest).toContain("if (!deactivated) {");
+    expect(sampleTest).toContain("try {");
+    expect(sampleTest).toContain("} catch {}");
     expect(sampleTest).toContain("await ext.deactivate();");
     expect(readme).toContain(
       'import { defineCommand, defineServiceOverride } from "@unbrained/pm-cli/sdk";',
@@ -404,6 +412,8 @@ describe("declarative composeExtension package scaffold", () => {
     expect(sampleTest).toContain("  try {");
     expect(sampleTest).toContain("  } finally {");
     expect(sampleTest).toContain("    if (!deactivated) {");
+    expect(sampleTest).toContain("      try {");
+    expect(sampleTest).toContain("      } catch {}");
     expect(sampleTest).toContain("const teardown = await ext.deactivate();");
     expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
     expect(sampleTest).toContain("deactivated = true;");
