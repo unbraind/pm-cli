@@ -154,6 +154,8 @@ describe("extension scaffold define builder guidance", () => {
     expect(sampleTest).toContain("const rendered = await ext.runRendererOverride({");
     expect(sampleTest).toContain("assert.equal(passthrough.overridden, false);");
     expect(sampleTest).toContain("} finally {");
+    expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
+    expect(sampleTest).toContain("if (!deactivated) {");
     expect(sampleTest).toContain("await ext.deactivate();");
     expect(readme).toContain(
       'import { defineCommand, defineRendererOverride } from "@unbrained/pm-cli/sdk";',
@@ -196,6 +198,8 @@ describe("extension scaffold define builder guidance", () => {
     expect(sampleTest).toContain('const invocation = await ext.runCommand({ command: "flag kit ping", options: result.context.options });');
     expect(sampleTest).toContain("      upper: true,");
     expect(sampleTest).toContain("} finally {");
+    expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
+    expect(sampleTest).toContain("if (!deactivated) {");
     expect(sampleTest).toContain("await ext.deactivate();");
     expect(readme).toContain(
       'import { defineCommand, defineParserOverride } from "@unbrained/pm-cli/sdk";',
@@ -227,6 +231,8 @@ describe("extension scaffold define builder guidance", () => {
     expect(sampleTest).toContain("const result = await ext.runPreflightOverride({");
     expect(sampleTest).toContain("assert.deepEqual(result.decision, decision);");
     expect(sampleTest).toContain("} finally {");
+    expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
+    expect(sampleTest).toContain("if (!deactivated) {");
     expect(sampleTest).toContain("await ext.deactivate();");
     expect(readme).toContain(
       'import { defineCommand, definePreflightOverride } from "@unbrained/pm-cli/sdk";',
@@ -260,6 +266,8 @@ describe("extension scaffold define builder guidance", () => {
     expect(sampleTest).toContain("const handled = await ext.runServiceOverride({");
     expect(sampleTest).toContain("assert.equal(passthrough.handled, false);");
     expect(sampleTest).toContain("} finally {");
+    expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
+    expect(sampleTest).toContain("if (!deactivated) {");
     expect(sampleTest).toContain("await ext.deactivate();");
     expect(readme).toContain(
       'import { defineCommand, defineServiceOverride } from "@unbrained/pm-cli/sdk";',
@@ -381,7 +389,7 @@ describe("declarative composeExtension package scaffold", () => {
     // The two capstones the declarative loop unlocks: author-time preflight over
     // the exported blueprint, and the ergonomic runtime harness over the module.
     expect(sampleTest).toContain(
-      'import { assertExtensionPreflight, createExtensionTestHarness } from "@unbrained/pm-cli/sdk/testing";',
+      'import { assertExtensionDeactivated, assertExtensionPreflight, createExtensionTestHarness } from "@unbrained/pm-cli/sdk/testing";',
     );
     expect(sampleTest).toContain('import extension, { blueprint } from "./index.ts";');
     expect(sampleTest).toContain("const report = assertExtensionPreflight(blueprint, {");
@@ -392,8 +400,13 @@ describe("declarative composeExtension package scaffold", () => {
     expect(sampleTest).toContain("const ext = await createExtensionTestHarness(extension, {");
     expect(sampleTest).toContain('const registered = ext.assertCommandContract({ command: "kit ping" });');
     expect(sampleTest).toContain('const invocation = await ext.runCommand({ command: "kit ping" });');
+    expect(sampleTest).toContain("  let deactivated = false;");
+    expect(sampleTest).toContain("  try {");
+    expect(sampleTest).toContain("  } finally {");
+    expect(sampleTest).toContain("    if (!deactivated) {");
     expect(sampleTest).toContain("const teardown = await ext.deactivate();");
-    expect(sampleTest).toContain("assert.equal(teardown.deactivated, 1);");
+    expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
+    expect(sampleTest).toContain("deactivated = true;");
     // The declarative test does not reach for the standalone activate/assert
     // helpers the imperative starter uses — the harness binds them for it.
     expect(sampleTest).not.toContain("activateExtensionForTest");
