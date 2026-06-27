@@ -1,6 +1,5 @@
-import { pathToFileURL } from "node:url";
-import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { importExampleScript, resetExampleScriptHarness } from "./example-script-harness.js";
 
 /**
  * Branch coverage for the starter-extension reference example
@@ -12,15 +11,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
  * this file covers the remaining runtime branches
  * (command/parser/renderer/service/hook/provider/adapter behavior).
  */
-
-function cacheBustToken(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
-async function importRepoModule<T>(relativePath: string, queryPrefix: string): Promise<T> {
-  const absolutePath = path.join(process.cwd(), relativePath);
-  return (await import(`${pathToFileURL(absolutePath).href}?${queryPrefix}=${cacheBustToken()}`)) as T;
-}
 
 interface RegisteredArtifacts {
   commands: Array<Record<string, unknown>>;
@@ -128,14 +118,11 @@ function createExtensionApiCollector(): { api: Record<string, unknown>; artifact
   return { api, artifacts };
 }
 
-afterEach(() => {
-  vi.restoreAllMocks();
-  vi.resetModules();
-});
+afterEach(resetExampleScriptHarness);
 
 describe("starter-extension example", () => {
   it("registers all artifacts and exercises every runtime branch", async () => {
-    const starterModule = await importRepoModule<{ default: { activate: (api: Record<string, unknown>) => void } }>(
+    const starterModule = await importExampleScript<{ default: { activate: (api: Record<string, unknown>) => void } }>(
       "docs/examples/starter-extension/index.ts",
       "starterExample",
     );

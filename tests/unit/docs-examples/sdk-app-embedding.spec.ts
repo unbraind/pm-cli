@@ -1,6 +1,5 @@
-import { pathToFileURL } from "node:url";
-import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { importExampleScript, resetExampleScriptHarness } from "./example-script-harness.js";
 
 /**
  * Branch coverage for the sdk-app-embedding reference script
@@ -8,24 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
  * pm subprocess (node:child_process) and the SDK contract exports.
  */
 
-const ORIGINAL_ARGV = [...process.argv];
-
-function cacheBustToken(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
-async function importRepoModule<T>(relativePath: string, queryPrefix: string): Promise<T> {
-  const absolutePath = path.join(process.cwd(), relativePath);
-  return (await import(`${pathToFileURL(absolutePath).href}?${queryPrefix}=${cacheBustToken()}`)) as T;
-}
-
-afterEach(() => {
-  process.argv = [...ORIGINAL_ARGV];
-  vi.doUnmock("@unbrained/pm-cli/sdk");
-  vi.doUnmock("node:child_process");
-  vi.restoreAllMocks();
-  vi.resetModules();
-});
+afterEach(resetExampleScriptHarness);
 
 const SCRIPT = "docs/examples/sdk-app-embedding/run-embedded-pm.mjs";
 
@@ -53,7 +35,7 @@ describe("sdk-app-embedding example", () => {
       };
     });
     vi.doMock("node:child_process", () => ({ spawnSync: successSpawn }));
-    await importRepoModule(SCRIPT, "embeddedSuccess");
+    await importExampleScript(SCRIPT, "embeddedSuccess");
     expect(successSpawn).toHaveBeenCalledTimes(2);
     expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"action": "extension-reload"');
     expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"command": "pm extension --reload --project --json"');
@@ -85,7 +67,7 @@ describe("sdk-app-embedding example", () => {
         };
       }),
     }));
-    await importRepoModule(SCRIPT, "embeddedContractFallbacks");
+    await importExampleScript(SCRIPT, "embeddedContractFallbacks");
     expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"required_parameters": []');
     expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"optional_parameters": []');
 
@@ -106,7 +88,7 @@ describe("sdk-app-embedding example", () => {
         stderr: "",
       })),
     }));
-    await expect(importRepoModule(SCRIPT, "embeddedUnavailableUnknownReason")).rejects.toThrow(
+    await expect(importExampleScript(SCRIPT, "embeddedUnavailableUnknownReason")).rejects.toThrow(
       'Action "extension-reload" is not available in this runtime (unknown_reason).',
     );
 
@@ -123,14 +105,14 @@ describe("sdk-app-embedding example", () => {
         stderr: "",
       })),
     }));
-    await expect(importRepoModule(SCRIPT, "embeddedUnavailable")).rejects.toThrow(
+    await expect(importExampleScript(SCRIPT, "embeddedUnavailable")).rejects.toThrow(
       'Action "contracts" is not available in this runtime (policy_blocked).',
     );
 
     vi.resetModules();
     process.argv = ["node", "run-embedded-pm.mjs", "not-a-real-action"];
     vi.doMock("node:child_process", () => ({ spawnSync: vi.fn() }));
-    await expect(importRepoModule(SCRIPT, "embeddedUnsupported")).rejects.toThrow(
+    await expect(importExampleScript(SCRIPT, "embeddedUnsupported")).rejects.toThrow(
       'Unsupported pm action "not-a-real-action".',
     );
 
@@ -143,7 +125,7 @@ describe("sdk-app-embedding example", () => {
         stderr: "pm contracts failed",
       })),
     }));
-    await expect(importRepoModule(SCRIPT, "embeddedContractsFailure")).rejects.toThrow("pm contracts failed");
+    await expect(importExampleScript(SCRIPT, "embeddedContractsFailure")).rejects.toThrow("pm contracts failed");
 
     // Failure with empty stderr exercises the `?? ""` and ternary-else exit-code message.
     vi.resetModules();
@@ -151,7 +133,7 @@ describe("sdk-app-embedding example", () => {
     vi.doMock("node:child_process", () => ({
       spawnSync: vi.fn(() => ({ status: 7, stdout: null, stderr: null })),
     }));
-    await expect(importRepoModule(SCRIPT, "embeddedContractsFailureNoStderr")).rejects.toThrow(
+    await expect(importExampleScript(SCRIPT, "embeddedContractsFailureNoStderr")).rejects.toThrow(
       "pm contracts --json failed with exit code 7",
     );
 
@@ -173,7 +155,7 @@ describe("sdk-app-embedding example", () => {
         return { status: 0, stdout: null, stderr: "" };
       }),
     }));
-    await importRepoModule(SCRIPT, "embeddedDefaultActionEmptyStdout");
+    await importExampleScript(SCRIPT, "embeddedDefaultActionEmptyStdout");
     expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"action": "extension-reload"');
     expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"result": {}');
     expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"policy_state": null');
@@ -199,7 +181,7 @@ describe("sdk-app-embedding example", () => {
         return { status: 0, stdout: JSON.stringify({ ok: true }), stderr: "" };
       }),
     }));
-    await importRepoModule(SCRIPT, "embeddedUnmappedAction");
+    await importExampleScript(SCRIPT, "embeddedUnmappedAction");
     expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"command": "pm stats --json"');
   });
 });

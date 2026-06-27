@@ -1,6 +1,5 @@
-import { pathToFileURL } from "node:url";
-import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { importExampleScript, resetExampleScriptHarness } from "./example-script-harness.js";
 
 /**
  * Branch coverage for the sdk-contract-consumer reference script
@@ -8,24 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
  * mocking the pm subprocess (node:child_process) and the SDK contract exports.
  */
 
-const ORIGINAL_ARGV = [...process.argv];
-
-function cacheBustToken(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
-async function importRepoModule<T>(relativePath: string, queryPrefix: string): Promise<T> {
-  const absolutePath = path.join(process.cwd(), relativePath);
-  return (await import(`${pathToFileURL(absolutePath).href}?${queryPrefix}=${cacheBustToken()}`)) as T;
-}
-
-afterEach(() => {
-  process.argv = [...ORIGINAL_ARGV];
-  vi.doUnmock("@unbrained/pm-cli/sdk");
-  vi.doUnmock("node:child_process");
-  vi.restoreAllMocks();
-  vi.resetModules();
-});
+afterEach(resetExampleScriptHarness);
 
 const SCRIPT = "docs/examples/sdk-contract-consumer/inspect-contracts.mjs";
 
@@ -49,7 +31,7 @@ describe("sdk-contract-consumer example", () => {
         stderr: "",
       })),
     }));
-    await importRepoModule(SCRIPT, "contractsSuccess");
+    await importExampleScript(SCRIPT, "contractsSuccess");
     expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"action": "create"');
     expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"runtime_available": true');
 
@@ -72,7 +54,7 @@ describe("sdk-contract-consumer example", () => {
         stderr: "",
       })),
     }));
-    await importRepoModule(SCRIPT, "contractsFallbackPayload");
+    await importExampleScript(SCRIPT, "contractsFallbackPayload");
     expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"required_parameters": []');
     expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"optional_parameters": []');
     expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"any_of_required_groups": []');
@@ -81,7 +63,7 @@ describe("sdk-contract-consumer example", () => {
     vi.doUnmock("@unbrained/pm-cli/sdk");
     process.argv = ["node", "inspect-contracts.mjs", "invalid-action"];
     vi.doMock("node:child_process", () => ({ spawnSync: vi.fn() }));
-    await expect(importRepoModule(SCRIPT, "contractsUnsupported")).rejects.toThrow(
+    await expect(importExampleScript(SCRIPT, "contractsUnsupported")).rejects.toThrow(
       'Unsupported pm action "invalid-action".',
     );
 
@@ -96,7 +78,7 @@ describe("sdk-contract-consumer example", () => {
         stderr: "",
       })),
     }));
-    await expect(importRepoModule(SCRIPT, "contractsUnavailable")).rejects.toThrow(
+    await expect(importExampleScript(SCRIPT, "contractsUnavailable")).rejects.toThrow(
       'Action "create" is not currently invocable in this runtime.',
     );
 
@@ -109,7 +91,7 @@ describe("sdk-contract-consumer example", () => {
         stderr: "pm contracts failed hard",
       })),
     }));
-    await expect(importRepoModule(SCRIPT, "contractsFailure")).rejects.toThrow("pm contracts failed hard");
+    await expect(importExampleScript(SCRIPT, "contractsFailure")).rejects.toThrow("pm contracts failed hard");
 
     // Failure with null stderr exercises the `?? ""` and exit-code ternary-else.
     vi.resetModules();
@@ -117,7 +99,7 @@ describe("sdk-contract-consumer example", () => {
     vi.doMock("node:child_process", () => ({
       spawnSync: vi.fn(() => ({ status: 4, stdout: null, stderr: null })),
     }));
-    await expect(importRepoModule(SCRIPT, "contractsFailureNoStderr")).rejects.toThrow(
+    await expect(importExampleScript(SCRIPT, "contractsFailureNoStderr")).rejects.toThrow(
       "pm contracts failed with exit code 4",
     );
 
@@ -136,7 +118,7 @@ describe("sdk-contract-consumer example", () => {
         return { status: 0, stdout: null, stderr: "" };
       }),
     }));
-    await expect(importRepoModule(SCRIPT, "contractsActionsNotArray")).rejects.toThrow(
+    await expect(importExampleScript(SCRIPT, "contractsActionsNotArray")).rejects.toThrow(
       'Action "create" is not currently invocable in this runtime.',
     );
 
@@ -156,7 +138,7 @@ describe("sdk-contract-consumer example", () => {
       })),
     }));
     const consumerOutputSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-    await importRepoModule(SCRIPT, "contractsDefaultActionMatched");
+    await importExampleScript(SCRIPT, "contractsDefaultActionMatched");
     expect(String(consumerOutputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"runtime_available": true');
     expect(String(consumerOutputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"policy_state": "enabled"');
     consumerOutputSpy.mockRestore();
@@ -168,7 +150,7 @@ describe("sdk-contract-consumer example", () => {
     vi.doMock("node:child_process", () => ({
       spawnSync: vi.fn(() => ({ status: 0, stdout: null, stderr: "" })),
     }));
-    await expect(importRepoModule(SCRIPT, "contractsNullStdout")).rejects.toThrow(
+    await expect(importExampleScript(SCRIPT, "contractsNullStdout")).rejects.toThrow(
       'Action "create" is not currently invocable in this runtime.',
     );
 
@@ -188,7 +170,7 @@ describe("sdk-contract-consumer example", () => {
       })),
     }));
     const consumerOutputSpy2 = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-    await importRepoModule(SCRIPT, "contractsNoAvailabilityMatch");
+    await importExampleScript(SCRIPT, "contractsNoAvailabilityMatch");
     expect(String(consumerOutputSpy2.mock.calls.at(-1)?.[0] ?? "")).toContain('"runtime_available": false');
     expect(String(consumerOutputSpy2.mock.calls.at(-1)?.[0] ?? "")).toContain('"policy_state": null');
     consumerOutputSpy2.mockRestore();
