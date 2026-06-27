@@ -2,6 +2,14 @@
 
 Generate `CHANGELOG.md` from pm-cli items.
 
+[![pm total](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-changelog&metric=items&style=flat&rt=1)](https://pm-cli.unbrained.dev/badges)
+[![pm open](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-changelog&metric=status&status=open&style=flat&rt=1)](https://pm-cli.unbrained.dev/badges)
+[![pm in progress](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-changelog&metric=status&status=in_progress&style=flat&rt=1)](https://pm-cli.unbrained.dev/badges)
+[![pm closed](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-changelog&metric=closed&style=flat&rt=1)](https://pm-cli.unbrained.dev/badges)
+[![pm completion](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-changelog&metric=completion&style=flat&rt=1)](https://pm-cli.unbrained.dev/badges)
+[![pm last activity](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-changelog&metric=last-activity&style=flat&rt=1)](https://pm-cli.unbrained.dev/badges)
+[![pm history events](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-changelog&metric=history-events&style=flat&rt=1)](https://pm-cli.unbrained.dev/badges)
+
 ## Install
 
 ```bash

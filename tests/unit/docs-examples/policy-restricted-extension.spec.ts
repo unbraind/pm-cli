@@ -1,6 +1,5 @@
-import { pathToFileURL } from "node:url";
-import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { importExampleScript, resetExampleScriptHarness } from "./example-script-harness.js";
 
 /**
  * Branch coverage for the policy-restricted-extension reference example
@@ -9,15 +8,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
  * itself the manifest entry the loader imports directly via Node's native type
  * stripping (ADR pm-2c28 / pm-m1uz) — there is no compiled `.js`.
  */
-
-function cacheBustToken(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
-async function importRepoModule<T>(relativePath: string, queryPrefix: string): Promise<T> {
-  const absolutePath = path.join(process.cwd(), relativePath);
-  return (await import(`${pathToFileURL(absolutePath).href}?${queryPrefix}=${cacheBustToken()}`)) as T;
-}
 
 interface PolicyArtifacts {
   commands: Array<Record<string, unknown>>;
@@ -43,14 +33,11 @@ function createPolicyApi(): { api: Record<string, unknown>; artifacts: PolicyArt
   return { api, artifacts };
 }
 
-afterEach(() => {
-  vi.restoreAllMocks();
-  vi.resetModules();
-});
+afterEach(resetExampleScriptHarness);
 
 describe("policy-restricted-extension example", () => {
   it("registers a command, service, and before-command hook with runtime behavior", async () => {
-    const policyModule = await importRepoModule<{ default: { activate: (api: Record<string, unknown>) => void } }>(
+    const policyModule = await importExampleScript<{ default: { activate: (api: Record<string, unknown>) => void } }>(
       "docs/examples/policy-restricted-extension/index.ts",
       "policyExample",
     );

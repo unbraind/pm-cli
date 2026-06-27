@@ -1,6 +1,6 @@
 {
   "name": "pm-changelog",
-  "version": "2026.6.20",
+  "version": "2026.6.27",
   "manifest_version": 2,
   "description": "Generate CHANGELOG.md release notes from pm-cli items",
   "author": "@unbraind",
