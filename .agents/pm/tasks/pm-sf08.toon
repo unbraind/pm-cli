@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:packages","area:sdk",compatibility
 created_at: "2026-06-27T14:01:55.215Z"
-updated_at: "2026-06-27T14:43:27.418Z"
+updated_at: "2026-06-27T14:51:45.041Z"
 author: codex-20260627
 acceptance_criteria: "Generated package and extension manifests declare a pm_min_version that matches the SDK/runtime primitives they use; generated package.json peerDependencies enforce the same floor; package-author README text explains the floor; scaffold tests cover imperative and declarative package output; verification includes focused scaffold tests, coverage/static checks, and an isolated temp-package install/doctor smoke."
 parent: pm-ugqx
@@ -27,7 +27,8 @@ tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-scaffold-define-guidance.spec.ts tests/unit/extensions/extension-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   "pnpm changelog:pm:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   "pnpm quality:static",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mqwfta96-m8j9j1,test,failed,"2026-06-27T14:04:49.713Z","2026-06-27T14:10:29.034Z","2026-06-27T14:10:29.034Z",null,null,2,2,0,null,null,null
+  test-local-mqwhacqo-y2wsnh,test,passed,"2026-06-27T14:51:13.238Z","2026-06-27T14:51:45.024Z","2026-06-27T14:51:45.024Z",null,null,1,0,0,null,null,null
 close_reason: "Generated scaffolds now declare the correct 2026.6.24 SDK/runtime compatibility floor in manifests, README text, and package peerDependencies, with focused tests, 100% repo coverage, static/release-adjacent gates, and isolated package-author smoke passing."
 body: ""
