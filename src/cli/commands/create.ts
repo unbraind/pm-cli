@@ -72,7 +72,13 @@ import {
   parseConfidenceInput,
   parseRegressionInput,
 } from "./metadata-normalizers.js";
-import { assertNoLegacyNoneToken, assertNoLegacyNoneTokens, isLegacyNoneToken } from "./legacy-none-tokens.js";
+import {
+  applyLegacyNoneCollectionNormalizers,
+  assertNoLegacyNoneToken,
+  assertNoLegacyNoneTokens,
+  isLegacyNoneToken,
+  type LegacyNoneCollectionNormalizer,
+} from "./legacy-none-tokens.js";
 import {
   suggestNextLifecycleTransition,
   type LifecycleTransitionSuggestion,
@@ -92,6 +98,7 @@ import { looksLikeStructuredLinkedTestEntry, normalizeStructuredLinkedTestEntry 
 import {
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
   COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR,
+  resolveRuntimeUnsetFieldDefinition,
   type CommandUnsetFieldDefinition,
 } from "./shared-unset-fields.js";
 import { ensureEnumValue } from "./recurrence-parsers.js";
@@ -306,14 +313,7 @@ function parseCreatedAt(value: string | undefined, currentIso: string): string {
   return new Date(parsed).toISOString();
 }
 
-interface LegacyNoneCollectionNormalizationDefinition {
-  optionKey: keyof CreateCommandOptions;
-  clearFlagKey: keyof CreateCommandOptions;
-  valueFlag: string;
-  clearFlag: string;
-}
-
-const CREATE_LEGACY_NONE_COLLECTION_NORMALIZERS: ReadonlyArray<LegacyNoneCollectionNormalizationDefinition> = [
+const CREATE_LEGACY_NONE_COLLECTION_NORMALIZERS: ReadonlyArray<LegacyNoneCollectionNormalizer<CreateCommandOptions>> = [
   { optionKey: "dep", clearFlagKey: "clearDeps", valueFlag: "--dep", clearFlag: "--clear-deps" },
   { optionKey: "comment", clearFlagKey: "clearComments", valueFlag: "--comment", clearFlag: "--clear-comments" },
   { optionKey: "note", clearFlagKey: "clearNotes", valueFlag: "--note", clearFlag: "--clear-notes" },
@@ -358,62 +358,12 @@ function normalizeLegacyNoneCreateOptions(options: CreateCommandOptions): Create
     /* c8 ignore stop */
   }
 
-  for (const definition of CREATE_LEGACY_NONE_COLLECTION_NORMALIZERS) {
-    const entries = normalized[definition.optionKey];
-    if (!Array.isArray(entries) || entries.length === 0) {
-      continue;
-    }
-    const hasLegacy = entries.some((entry) => isLegacyNoneToken(entry));
-    if (!hasLegacy) {
-      continue;
-    }
-    const concreteEntries = entries.filter((entry) => !isLegacyNoneToken(entry));
-    if (concreteEntries.length > 0) {
-      throw new PmCliError(
-        `Cannot mix legacy clear token "none"/"null" with concrete ${definition.valueFlag} entries. Use ${definition.clearFlag} to clear or provide explicit entries.`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    normalized[definition.optionKey] = undefined;
-    normalized[definition.clearFlagKey] = true;
-  }
-
-  return normalized;
+  return applyLegacyNoneCollectionNormalizers(normalized, CREATE_LEGACY_NONE_COLLECTION_NORMALIZERS);
 }
 
 function parseOptionalString(value: string | undefined): string | undefined {
   if (value === undefined) return undefined;
   return value;
-}
-
-function resolveRuntimeCreateUnsetDefinition(
-  token: string,
-  runtimeFieldRegistry: RuntimeFieldRegistry | undefined,
-): CreateUnsetFieldDefinition | undefined {
-  if (!runtimeFieldRegistry) {
-    return undefined;
-  }
-  for (const definition of runtimeFieldRegistry.definitions) {
-    if (definition.allow_unset === false) {
-      continue;
-    }
-    const candidates = new Set<string>([
-      definition.key,
-      definition.metadata_key,
-      definition.cli_flag.replaceAll("-", "_"),
-      definition.cli_flag,
-      ...definition.cli_aliases.map((alias) => alias.replaceAll("-", "_")),
-      ...definition.cli_aliases,
-    ]);
-    if (!candidates.has(token)) {
-      continue;
-    }
-    return {
-      optionKey: definition.key,
-      frontMatterKey: definition.metadata_key,
-    };
-  }
-  return undefined;
 }
 
 function parseCreateUnsetTargets(
@@ -437,7 +387,7 @@ function parseCreateUnsetTargets(
         EXIT_CODE.USAGE,
       );
     }
-    const definition = CREATE_UNSET_ALIAS_MAP.get(trimmed) ?? resolveRuntimeCreateUnsetDefinition(trimmed, runtimeFieldRegistry);
+    const definition = CREATE_UNSET_ALIAS_MAP.get(trimmed) ?? resolveRuntimeUnsetFieldDefinition(trimmed, runtimeFieldRegistry);
     if (!definition) {
       throw new PmCliError(
         `Unsupported --unset field "${entry}". Supported fields: ${CREATE_UNSET_SUPPORTED_CANONICAL_FIELDS}`,
@@ -2037,6 +1987,6 @@ export const _testOnlyCreateCommand = {
   parseCreateUnsetTargets,
   requireStringOption,
   readTemplateOptionsFromRuntimeResult,
-  resolveRuntimeCreateUnsetDefinition,
+  resolveRuntimeCreateUnsetDefinition: resolveRuntimeUnsetFieldDefinition,
   typeOptionExampleValue,
 };

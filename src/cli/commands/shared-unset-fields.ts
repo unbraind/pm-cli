@@ -3,6 +3,7 @@
  *
  * Single-sources unset-field metadata shared by create and update command handlers.
  */
+import type { RuntimeFieldRegistry } from "../../core/schema/runtime-schema.js";
 
 /**
  * Describes one command option that can be removed from item front matter through `--unset`.
@@ -131,3 +132,44 @@ export const COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR: readonly CommandUnsetF
     frontMatterKey: "customer_impact",
   },
 ] as const;
+
+/**
+ * Result of matching a runtime schema field against a command `--unset` token.
+ */
+export interface RuntimeUnsetFieldDefinition {
+  optionKey: string;
+  frontMatterKey: string;
+}
+
+/**
+ * Resolve a runtime-schema field definition from a command `--unset` token.
+ */
+export function resolveRuntimeUnsetFieldDefinition(
+  token: string,
+  runtimeFieldRegistry: RuntimeFieldRegistry | undefined,
+): RuntimeUnsetFieldDefinition | undefined {
+  if (!runtimeFieldRegistry) {
+    return undefined;
+  }
+  for (const definition of runtimeFieldRegistry.definitions) {
+    if (definition.allow_unset === false) {
+      continue;
+    }
+    const candidates = new Set<string>([
+      definition.key,
+      definition.metadata_key,
+      definition.cli_flag.replaceAll("-", "_"),
+      definition.cli_flag,
+      ...definition.cli_aliases.map((alias) => alias.replaceAll("-", "_")),
+      ...definition.cli_aliases,
+    ]);
+    if (!candidates.has(token)) {
+      continue;
+    }
+    return {
+      optionKey: definition.key,
+      frontMatterKey: definition.metadata_key,
+    };
+  }
+  return undefined;
+}

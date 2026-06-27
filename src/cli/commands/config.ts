@@ -4,7 +4,7 @@
  * Implements the pm config command surface and its agent-facing runtime behavior.
  */
 import { pathExists } from "../../core/fs/fs-utils.js";
-import { resolveConfigPositionalValue } from "../../core/config/positional-value.js";
+import { resolveConfigPositionalValue, type ConfigKey } from "../../core/config/positional-value.js";
 import {
   NESTED_SETTING_DESCRIPTORS,
   parseNestedSettingValue,
@@ -97,31 +97,6 @@ const CONFIG_KEY_VALUES = [
   "context",
 ] as const;
 type ConfigAction = "get" | "set" | "list" | "export";
-type ConfigKey =
-  | "definition_of_done"
-  | "item_format"
-  | "history_missing_stream_policy"
-  | "sprint_release_format_policy"
-  | "parent_reference_policy"
-  | "metadata_validation_profile"
-  | "metadata_required_fields"
-  | "lifecycle_stale_blocker_reason_patterns"
-  | "lifecycle_closure_like_blocked_reason_patterns"
-  | "lifecycle_closure_like_resolution_patterns"
-  | "lifecycle_closure_like_actual_result_patterns"
-  | "governance_preset"
-  | "governance_ownership_enforcement"
-  | "governance_create_mode_default"
-  | "governance_close_validation_default"
-  | "governance_require_close_reason"
-  | "governance_create_default_type"
-  | "governance_workflow_enforcement"
-  | "governance_parent_reference_policy"
-  | "governance_metadata_validation_profile"
-  | "governance_force_required_for_stale_lock"
-  | "test_result_tracking"
-  | "telemetry_tracking"
-  | "context";
 type HistoryMissingStreamPolicy = "auto_create" | "strict_error";
 type TestResultTrackingPolicy = "enabled" | "disabled";
 type TelemetryTrackingPolicy = "enabled" | "disabled";
