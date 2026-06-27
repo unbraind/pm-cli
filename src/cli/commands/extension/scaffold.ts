@@ -15,7 +15,7 @@ import { normalizeManagedDirectoryName } from "./shared.js";
 // first released host that supports that full generated contract is v2026.6.24.
 // manifest_version tracks the manifest schema generation (currently 1).
 const SCAFFOLD_MANIFEST_VERSION = 1;
-const SCAFFOLD_PM_MIN_VERSION = "2026.6.24";
+export const SCAFFOLD_PM_MIN_VERSION = "2026.6.24";
 const SCAFFOLD_NODE_ENGINE = ">=22.18.0";
 const SCAFFOLD_DECLARED_PERMISSIONS = {
   fs_read: false,

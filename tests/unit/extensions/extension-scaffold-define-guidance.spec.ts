@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildStarterExtensionScaffoldFiles,
+  SCAFFOLD_PM_MIN_VERSION,
   type ExtensionScaffoldCapability,
 } from "../../../src/cli/commands/extension/scaffold.js";
 
@@ -278,9 +279,9 @@ describe("extension scaffold define builder guidance", () => {
     // stripping (Node >=22.18): there is no build step, `typecheck` validates the
     // source, and `test` runs `node --test` (which strips types on load).
     expect(packageJson.engines?.node).toBe(">=22.18.0");
-    expect(packageJson.peerDependencies?.["@unbrained/pm-cli"]).toBe(">=2026.6.24");
-    expect(manifest.pm_min_version).toBe("2026.6.24");
-    expect(scaffold["README.md"]).toContain("Scaffolded as `2026.6.24`");
+    expect(packageJson.peerDependencies?.["@unbrained/pm-cli"]).toBe(`>=${SCAFFOLD_PM_MIN_VERSION}`);
+    expect(manifest.pm_min_version).toBe(SCAFFOLD_PM_MIN_VERSION);
+    expect(scaffold["README.md"]).toContain(`Scaffolded as \`${SCAFFOLD_PM_MIN_VERSION}\``);
     expect(packageJson.scripts?.build).toBeUndefined();
     expect(packageJson.scripts?.typecheck).toBe("tsc --noEmit");
     expect(packageJson.scripts?.test).toBe("node --test");
@@ -322,8 +323,8 @@ describe("extension scaffold define builder guidance", () => {
     // a tsconfig, with the README documenting the compile step.
     expect(entrypoint).toContain('import type { ExtensionApi } from "@unbrained/pm-cli/sdk";');
     expect(entrypoint).toContain("export function activate(api: ExtensionApi): void {");
-    expect(manifest.pm_min_version).toBe("2026.6.24");
-    expect(readme).toContain("Scaffolded as `2026.6.24`");
+    expect(manifest.pm_min_version).toBe(SCAFFOLD_PM_MIN_VERSION);
+    expect(readme).toContain(`Scaffolded as \`${SCAFFOLD_PM_MIN_VERSION}\``);
     expect(scaffold["tsconfig.json"]).toBeTruthy();
     expect(scaffold["index.js"]).toBeUndefined();
     expect(readme).toContain("npm install -D typescript @types/node @unbrained/pm-cli");
