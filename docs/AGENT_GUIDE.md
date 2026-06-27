@@ -102,7 +102,7 @@ pm release <item-id>
 
 | Need | Command |
 |------|---------|
-| The single next action + why | `pm next` (concrete ready leaf first, completed-container closeout only after leaf work, plus ranked ready/blocked queues; `--ready-only` for the tightest output) |
+| The single next action + why | `pm next` (concrete ready leaves first; completed-container closeout rows surface only when no leaf work is ready; `--ready-only` for the tightest output) |
 | Next ready work in one epic | `pm next --parent <id>` |
 | Next work and agenda | `pm context --limit 10` |
 | Comprehensive whole-tracker snapshot | `pm context --depth full` (every section, no per-section row cap) |
