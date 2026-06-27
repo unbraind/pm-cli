@@ -4,7 +4,7 @@
   "description": "SDK-first starter extension demonstrating all pm extension capabilities.",
   "entry": "./index.ts",
   "manifest_version": 2,
-  "pm_min_version": "2026.5.0",
+  "pm_min_version": "2026.6.24",
   "trusted": true,
   "provenance": {
     "source": "docs/examples/starter-extension",

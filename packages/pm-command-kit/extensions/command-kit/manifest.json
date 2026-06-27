@@ -15,7 +15,7 @@
   },
   "capabilities": ["commands", "schema", "parser"],
   "manifest_version": 1,
-  "pm_min_version": "2026.5.0",
+  "pm_min_version": "2026.6.24",
   "activation": {
     "commands": ["command-kit echo", "list"]
   }

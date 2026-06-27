@@ -53,6 +53,9 @@ importers:
       eslint-plugin-unicorn:
         specifier: ^69.0.0
         version: 69.0.0(eslint@10.6.0(jiti@2.7.0))
+      greptile:
+        specifier: ^3.1.1
+        version: 3.1.1
       jscpd:
         specifier: ^5.0.11
         version: 5.0.11
@@ -999,6 +1002,11 @@ packages:
   globals@17.7.0:
     resolution: {integrity: sha512-Czmyns5dUsq4seFBR/Kdydhmo8y9kC79hiSkPn0YcGtNnYWnrgt0vjrSjx9tspoDGWm2CMarffRuLjM4xUz8xg==}
     engines: {node: '>=18'}
+
+  greptile@3.1.1:
+    resolution: {integrity: sha512-f2ogDU4PjQ4LPBuWL4yg+ypxh/LY8E49a6RJNVaMm/ftk1gycEPUYvSBm8DPHTCltCDnX1veq3rs0YjP0PVGBQ==}
+    engines: {node: '>=22.0.0'}
+    hasBin: true
 
   has-flag@4.0.0:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
@@ -2273,6 +2281,8 @@ snapshots:
       is-glob: 4.0.3
 
   globals@17.7.0: {}
+
+  greptile@3.1.1: {}
 
   has-flag@4.0.0: {}
 

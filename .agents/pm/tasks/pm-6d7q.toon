@@ -1,0 +1,48 @@
+id: pm-6d7q
+title: First-party package manifests declare current SDK compatibility floor
+description: Align shipped first-party package extension manifests with the current TypeScript SDK scaffold compatibility floor so package-author examples and bundled packages advertise the same minimum host contract.
+type: Task
+status: closed
+priority: 2
+tags[3]: "area:packages","area:sdk",code-quality
+created_at: "2026-06-27T15:15:01.727Z"
+updated_at: "2026-06-27T16:05:17.989Z"
+author: codex-gpt5-sdk-cli-20260627
+acceptance_criteria: All first-party package extension manifests use the current scaffold SDK compatibility floor; validation coverage derives the expected floor from the exported scaffold constant; focused package manifest tests and temp-project package install/doctor smoke pass.
+parent: pm-92if
+resolution: "Aligned shipped first-party package manifests and public example manifests to the current SDK scaffold floor, and added a local review:greptile gate."
+expected_result: "Bundled package and docs example manifests advertise the same minimum host contract as generated scaffolds, with validation coverage preventing drift."
+actual_result: "All package/docs manifest pm_min_version values now use 2026.6.24; package manifest tests derive the expected value from SCAFFOLD_PM_MIN_VERSION; focused, coverage, temp smoke, security, health, and observability gates passed."
+comments[5]{created_at,author,text}:
+  "2026-06-27T15:15:09.448Z",codex-gpt5-sdk-cli-20260627,"Duplicate-check evidence: status-all searches for first-party package pm_min_version compatibility floor found closed scaffold task pm-sf08 and related historical SDK/package items, but no active item for shipped first-party package manifests. GitHub state before implementation: no open PRs, issue #374 remains external RELEASE_PAT blocker, open Dependabot/code-scanning alerts are zero, pnpm audit is clean."
+  "2026-06-27T15:28:48.818Z",codex-gpt5-sdk-cli-20260627,"Evidence: implemented first-party package/docs manifest SDK floor alignment to 2026.6.24 and added local review:greptile script. Focused linked tests passed via pm test (package manifest + docs examples). Broader gates passed: typecheck, lint/static quality, contracts:check, security:scan, git diff --check, package doctor deep, pm health summary, Sentry/telemetry gate (critical=0 high=0 telemetry finish_error_rate_pct=0.72), pnpm audit low clean, manual temp PM_PATH/PM_GLOBAL_PATH smoke installed command-kit and verified installed pm_min_version=2026.6.24. Full coverage passed: 256 files, 5137 tests, 100/100/100/100. pm validate history_drift ok; known pre-existing resolution warnings remain 258."
+  "2026-06-27T15:36:47.139Z",codex-gpt5-sdk-cli-20260627,"Greptile local review 4fa84d28-4679-4e2f-9cbd-7214d6a687ad before push reported two P2 gaps: docs example manifests were not under the strict SDK floor assertion, and review:greptile relied on an undeclared global binary. Follow-up fixes added docs example manifest coverage to tests/unit/packages/package-manifest.spec.ts and declared greptile@3.1.1 in devDependencies with pnpm-lock.yaml."
+  "2026-06-27T15:40:40.305Z",codex-gpt5-sdk-cli-20260627,"Greptile local review 4813df49-075c-41a1-ac5d-be88db62f104 on the amended commit reported one P2 style issue: greptile should follow the repo devDependency caret-range convention. Updated package.json and pnpm-lock.yaml to use ^3.1.1; focused package/docs manifest tests and git diff --check passed after the change."
+  "2026-06-27T16:05:17.989Z",codex-gpt5-sdk-cli-20260627,"PR #387 Greptile review comment 3486344266 requested dynamic docs example manifest discovery instead of static paths. Updated tests/unit/packages/package-manifest.spec.ts to scan docs/examples for directories that actually contain manifest.json, preserving coverage for current examples and future manifest-bearing docs examples. Focused package/docs tests, typecheck, git diff --check, and lint/static quality passed after the change."
+files[14]{path,scope,note}:
+  package.json,project,"add local review:greptile CI gate script"
+  packages/pm-beads/extensions/beads/manifest.json,project,align first-party package manifest SDK floor
+  packages/pm-calendar/extensions/calendar/manifest.json,project,align first-party package manifest SDK floor
+  packages/pm-command-kit/extensions/command-kit/manifest.json,project,align first-party package manifest SDK floor
+  packages/pm-governance-audit/extensions/governance-audit/manifest.json,project,align first-party package manifest SDK floor
+  packages/pm-guide-shell/extensions/guide-shell/manifest.json,project,align first-party package manifest SDK floor
+  packages/pm-kanban/extensions/kanban/manifest.json,project,align first-party package manifest SDK floor
+  packages/pm-lifecycle-hooks/extensions/lifecycle-hooks/manifest.json,project,align first-party package manifest SDK floor
+  packages/pm-linked-test-adapters/extensions/linked-test-adapters/manifest.json,project,align first-party package manifest SDK floor
+  packages/pm-search-advanced/extensions/search-advanced/manifest.json,project,align first-party package manifest SDK floor
+  packages/pm-templates/extensions/templates/manifest.json,project,align first-party package manifest SDK floor
+  packages/pm-todos/extensions/todos/manifest.json,project,align first-party package manifest SDK floor
+  pnpm-lock.yaml,project,Locks the declared greptile dev dependency used by the local review script.
+  tests/unit/packages/package-manifest.spec.ts,project,derive first-party manifest pm_min_version validation from scaffold SDK floor
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/packages/package-manifest.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/packages/package-manifest.spec.ts tests/unit/docs-examples/starter-extension.spec.ts tests/unit/docs-examples/policy-restricted-extension.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqwi792z-s2bh3z,test,passed,"2026-06-27T15:17:12.526Z","2026-06-27T15:17:19.931Z","2026-06-27T15:17:19.931Z",null,null,1,0,0,null,null,null
+  test-local-mqwi9b26-fslt7l,test,passed,"2026-06-27T15:18:42.346Z","2026-06-27T15:18:55.807Z","2026-06-27T15:18:55.807Z",null,null,2,0,0,null,null,null
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,package-owned changelog regenerated after closing item
+  docs/examples/policy-restricted-extension/manifest.json,project,align public policy example manifest with current SDK floor
+  docs/examples/starter-extension/manifest.json,project,align public starter example manifest with current SDK floor
+close_reason: First-party package and docs manifests now declare the current SDK compatibility floor and local Greptile review is available as a package script.
+body: ""
