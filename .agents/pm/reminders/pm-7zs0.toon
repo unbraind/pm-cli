@@ -6,13 +6,13 @@ status: in_progress
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-06-27T23:32:57.898Z"
+updated_at: "2026-06-27T23:42:55.639Z"
 reminders[1]{at,text}:
   "2026-06-08T10:24:45.889Z",Confirm daily auto-release tagged a new version AND npm latest advanced; else inspect publish + Sentry-gate steps
 assignee: claude-code-agent
 author: maintainer-agent
 parent: pm-u9d0
-comments[20]{created_at,author,text}:
+comments[21]{created_at,author,text}:
   "2026-06-10T14:44:30.277Z",maintainer-agent,"2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
   "2026-06-16T11:26:49.976Z",codex-sdk-cli-consolidation-20260616,"Auto-release gate reproduced locally with SENTRY_PERSONAL_ADMIN_TOKEN; failing high issue was PM-CLI-1Q (handled CommandError: all items failed to apply). Added count-agnostic handled pattern 'item(s) failed to apply' and blocking_short_ids/blocking_titles output for diagnostics. Gate now passes in strict mode with max-high=0."
   "2026-06-16T11:46:33.866Z",codex-sdk-cli-consolidation-20260616,"Release-health verification: sentry-telemetry gate now passes in strict mode (max-critical=0,max-high=0) after expected handled-CommandError classification update; output now includes blocking_short_ids/blocking_titles for actionable diagnostics."
@@ -33,6 +33,7 @@ comments[20]{created_at,author,text}:
   "2026-06-27T08:04:27.572Z",codex-sdk-cli-20260627,"Merge evidence: PR #385 merged to main as 753410df with pm-changelog project package refreshed to 2026.6.27 and package doctor deep clean. Post-merge release-health checks passed: pm health summary ok, history drift validation ok, package doctor deep ok, and Sentry/telemetry gate critical=0 high=0 telemetry finish_error_rate_pct=0.72. Daily Auto Release remains externally blocked by GitHub issue #374 because RELEASE_PAT is absent from the release environment; no code-side blocker found in this lane."
   "2026-06-27T23:24:23.273Z",claude-code-agent,"Implementation start: duplicate-safe all-status search found existing release-health item pm-7zs0 plus blocked external credential issue pm-9gxi/#374; no new pm item created. Scope is code-side auto-release issue lifecycle cleanup: close the blocked scheduled-release issue only after a scheduled run actually publishes a tag and the downstream Release workflow succeeds, while preserving the external RELEASE_PAT blocker."
   "2026-06-27T23:32:57.898Z",claude-code-agent,"Evidence: implemented scheduled Auto Release success cleanup so a scheduled run only closes the stale Auto Release blocked issue after it publishes a tag and the downstream Release workflow succeeds. Validation passed: focused workflow contract test, linked pm test run 7/7, pnpm build, pnpm typecheck, pnpm lint, pnpm quality:static, pnpm contracts:check, pnpm security:scan, pnpm audit --audit-level moderate, pnpm changelog:pm:check using pm-changelog 2026.6.27 with CHANGELOG.md unchanged, pm health summary ok, history drift ok, full coverage 100/100/100/100, Sentry/telemetry gate critical=0 high=0 telemetry finish_error_rate_pct=0.76, and isolated temp-directory smoke passed with PM_PATH/PM_GLOBAL_PATH at /tmp/tmp.zLjtqymDaG. pm validate still reports existing resolution metadata backlog of 258 closed items; not introduced by this branch."
+  "2026-06-27T23:42:55.639Z",claude-code-agent,"Review fix evidence: addressed CodeRabbit/Cubic feedback on PR #392. Auto Release now exports the tagged release commit SHA with published_sha and uses it in the success cleanup comment; stale blocked-issue query/close failures now log and exit 0 so a successful scheduled publish cannot trigger the blocked-release alert. Post-fix validation passed: focused workflow contract test, pnpm build, pnpm quality:static, git diff --check, and pm test pm-7zs0 --run --progress 7/7."
 files[6]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,record project pm-changelog 2026.6.27 managed package metadata
   .agents/pm/extensions/pm-changelog,project,refresh project-managed pm-changelog package files to 2026.6.27
@@ -48,9 +49,10 @@ tests[7]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/scripts/release/sentry-telemetry-gate.spec.ts tests/unit/scripts/release/run-gates.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   "pnpm quality:static",null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mqw0pnxi-coga1f,test,passed,"2026-06-27T07:07:41.177Z","2026-06-27T07:07:45.894Z","2026-06-27T07:07:45.894Z",null,null,3,0,0,null,null,null
   test-local-mqwzntpx-bck9yj,test,passed,"2026-06-27T23:25:38.329Z","2026-06-27T23:26:06.645Z","2026-06-27T23:26:06.645Z",null,null,7,0,0,null,null,null
+  test-local-mqx09aji-bcp53i,test,passed,"2026-06-27T23:42:21.521Z","2026-06-27T23:42:48.222Z","2026-06-27T23:42:48.222Z",null,null,7,0,0,null,null,null
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,document scheduled publish closing blocked auto-release issues
 body: ""
