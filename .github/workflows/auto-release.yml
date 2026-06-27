@@ -99,6 +99,7 @@ jobs:
         run: pnpm build
 
       - name: Run auto release pipeline
+        id: auto_release
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           # GitHub Actions evaluates boolean `false` as falsy in `&& ... || ...`
@@ -166,6 +167,32 @@ jobs:
             exit 1
           fi
           gh run watch "${RELEASE_RUN_ID}" --compact --exit-status --interval 30
+          echo "published_tag=${NEW_TAG}" >> "${GITHUB_OUTPUT}"
+
+      - name: Resolve blocked scheduled auto-release issue
+        if: success() && github.event_name == 'schedule' && steps.auto_release.outputs.published_tag != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RELEASE_SHA: ${{ github.sha }}
+          RELEASE_TAG: ${{ steps.auto_release.outputs.published_tag }}
+        run: |
+          set -euo pipefail
+          title="Auto Release blocked: scheduled run failed"
+          existing_issue="$(gh issue list --state open --search "\"${title}\" in:title" --json number --jq '.[0].number // empty')"
+          if [[ -z "${existing_issue}" ]]; then
+            echo "No open blocked auto-release issue found."
+            exit 0
+          fi
+          body="Scheduled Auto Release succeeded and published \`${RELEASE_TAG}\`.
+
+          Run: ${RUN_URL}
+          Commit: ${RELEASE_SHA}
+
+          Closing this stale blocker because the scheduled production path pushed a release tag and the downstream Release workflow completed successfully."
+
+          gh issue close "${existing_issue}" --comment "${body}" --reason completed
 
       - name: Alert on blocked scheduled auto-release
         if: failure() && github.event_name == 'schedule'
