@@ -1,0 +1,36 @@
+id: pm-2qte
+title: SDK test harness summary/render surface
+description: Add fluent createExtensionTestHarness convenience methods for describeExtensionActivation and renderExtensionSurfaceMarkdown so package authors can inspect activation summaries and generate extension surface docs from the same harness they use for assert/run/deactivate tests.
+type: Feature
+status: closed
+priority: 2
+tags[3]: "area:packages","area:sdk",context-management
+created_at: "2026-06-27T16:27:57.458Z"
+updated_at: "2026-06-27T17:18:04.701Z"
+author: codex-20260627
+parent: pm-ugqx
+resolution: SDK harness activationSummary/renderMarkdown shipped for package-author context surfaces.
+expected_result: "Package authors can use createExtensionTestHarness to activate an extension, inspect its activation summary, and render markdown documentation without wiring standalone helpers manually."
+actual_result: "createExtensionTestHarness now exposes activationSummary() and renderMarkdown(), exports RenderExtensionHarnessMarkdownOptions, documents the flow in docs/SDK.md, and verifies it with unit, repo-wide, temp-project, security, changelog, telemetry, and coverage gates."
+comments[5]{created_at,author,text}:
+  "2026-06-27T16:27:57.458Z",codex-20260627,"Duplicate check: searched all statuses for createExtensionTestHarness describe/render markdown surface and harness describeExtensionActivation renderExtensionSurfaceMarkdown. Existing closed items pm-jcyn, pm-16ue, pm-dmum, and pm-u2tm shipped the harness and standalone describe/render helpers; none binds describe/render into the fluent harness. Reusing parent epic pm-ugqx for this narrow package-author primitive."
+  "2026-06-27T16:39:24.367Z",codex-20260627,"Evidence: implemented SDK harness describe/renderMarkdown convenience methods and exported RenderExtensionHarnessMarkdownOptions so package authors can inspect and publish extension surfaces from the same createExtensionTestHarness primitive. Verification passed: focused linked test via pm test (tests/unit/sdk/sdk-index.spec.ts, 109 tests), pnpm typecheck, pnpm lint, pnpm contracts:check, pnpm security:scan, pnpm changelog:pm:check with pm-changelog 2026.6.27 and unchanged CHANGELOG.md before closure, repo coverage 100/100/100/100 across 5,137 tests, temp-dir smoke with isolated PM_PATH/PM_GLOBAL_PATH importing dist/sdk/testing.js and rendering harness markdown, pm health clean after telemetry flush, and Sentry telemetry gate clean for critical/high blockers. GitHub checks before implementation: no open PRs, no Dependabot/secret/code-scanning/security-advisory alerts, open issue #374 remains an external RELEASE_PAT configuration blocker for scheduled auto-release rather than a code defect."
+  "2026-06-27T16:50:53.723Z",codex-20260627,"Review follow-up: addressed Gemini/Greptile feedback by renaming the fluent summary helper from describe() to activationSummary() to avoid Jest/Vitest global shadowing when destructured, simplifying renderMarkdown option forwarding to pass { extensionName }, and restoring SDK barrel export ordering."
+  "2026-06-27T16:58:01.728Z",codex-20260627,"Review follow-up verification: focused SDK test, typecheck, static quality/docstring coverage, isolated temp-project built-SDK smoke, linked pm test, contracts snapshot, secret scan, changelog check, and fresh repo coverage all pass after renaming describe() to activationSummary(); coverage remains 100/100/100/100 across 5,137 tests."
+  "2026-06-27T17:17:49.628Z",codex-20260627,"Review follow-up: addressed latest Gemini feedback by making renderMarkdown tolerate an explicit null options value at runtime, while keeping the TypeScript surface typed as optional RenderExtensionHarnessMarkdownOptions; focused SDK test now covers the defensive path."
+files[3]{path,scope,note}:
+  src/sdk/index.ts,project,re-export harness render option type from main SDK barrel
+  src/sdk/testing.ts,project,add fluent describe/renderMarkdown harness helpers and testing subpath render export
+  tests/unit/sdk/sdk-index.spec.ts,project,cover harness describe/renderMarkdown methods and testing subpath renderer binding
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqwl37ye-zteh91,test,passed,"2026-06-27T16:38:01.700Z","2026-06-27T16:38:10.694Z","2026-06-27T16:38:10.694Z",null,null,1,0,0,null,null,null
+  test-local-mqwl8ae6-716eod,test,passed,"2026-06-27T16:41:58.115Z","2026-06-27T16:42:07.134Z","2026-06-27T16:42:07.134Z",null,null,1,0,0,null,null,null
+  test-local-mqwls9sc-mx8b2h,test,passed,"2026-06-27T16:57:30.061Z","2026-06-27T16:57:39.468Z","2026-06-27T16:57:39.468Z",null,null,1,0,0,null,null,null
+  test-local-mqwmij5h-h09arm,test,passed,"2026-06-27T17:17:50.180Z","2026-06-27T17:18:04.661Z","2026-06-27T17:18:04.661Z",null,null,1,0,0,null,null,null
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,generated release changelog entry via pm-changelog 2026.6.27
+  docs/SDK.md,project,document harness describe/renderMarkdown package-author workflow
+close_reason: "Shipped SDK harness activationSummary/renderMarkdown package-author surface with docs, tests, temp-project verification, clean health, clean security/changelog/Sentry gates, and 100/100/100/100 coverage."
+body: ""

@@ -1,0 +1,27 @@
+id: pm-bnh3
+title: Windows background stop progress assertion
+description: "Make the background test-run stop regression tolerate platform timing where a linked-test progress heartbeat is recorded after the stop signal, while still asserting the stopped final state."
+type: Issue
+status: closed
+priority: 2
+tags[3]: "area:ci","area:test-runs",windows
+created_at: "2026-06-27T17:06:34.917Z"
+updated_at: "2026-06-27T17:08:16.332Z"
+author: codex-20260627
+parent: pm-2kkl
+resolution: Windows stopped background-run progress assertion now tolerates retained linked-test heartbeat fields.
+expected_result: Windows regression tests should pass whether the final stopped record sees the test-all end line or a linked-test heartbeat last.
+actual_result: "The stopped-run assertion now requires the stable finished/stopped fields and allows retained synthetic linked-test progress values, matching the background-run finalizer behavior across platforms."
+comments[2]{created_at,author,text}:
+  "2026-06-27T17:06:34.917Z",codex-20260627,"Duplicate check: searched all statuses for Windows test-runs stopped worker linked_test_index and test-runs command Windows process signals progress. Reusing closed Windows CI lineage pm-2kkl as parent; no exact item covers this linked-test heartbeat ordering assertion from PR #388 Windows regression."
+  "2026-06-27T17:07:45.544Z",codex-20260627,"Evidence: GitHub Windows regression on PR #388 failed at tests/unit/commands/test-runs-command.spec.ts:913 because Windows retained linked_test_index=1 on a stopped background run. Focused local verification passed: node scripts/run-tests.mjs test -- tests/unit/commands/test-runs-command.spec.ts (28 tests), and linked pm test passed in a sandbox."
+files[1]{path,scope,note}:
+  tests/unit/commands/test-runs-command.spec.ts,project,tolerate platform timing for retained linked-test progress on stopped background runs
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/test-runs-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqwm58tb-9ekehw,test,passed,"2026-06-27T17:07:30.842Z","2026-06-27T17:07:44.735Z","2026-06-27T17:07:44.735Z",null,null,1,0,0,null,null,null
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,generated release changelog entry via pm-changelog 2026.6.27
+close_reason: Adjusted stopped background-run progress assertions for platform timing after PR #388 Windows regression; focused local and linked sandbox tests passed.
+body: ""

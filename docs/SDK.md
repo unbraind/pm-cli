@@ -146,8 +146,13 @@ never threads `activation.registrations` vs `activation.commands` vs
 surfaces as a confusing `available: (none)` error. Write
 `const ext = await createExtensionTestHarness(module, { capabilities: ["commands"] })`,
 then `ext.assertCommandContract({ command })`, `await ext.runCommand({ command })`,
-and `await ext.deactivate()`. The methods do not use `this`, so they remain safe
-to destructure (`const { runCommand } = ext;`), and the raw `ext.activation`
+`ext.activationSummary()`, `ext.renderMarkdown({ title: "My package" })`, and
+`await ext.deactivate()`. `activationSummary()` returns the same
+`ExtensionActivationSummary` as `describeExtensionActivation(ext.activation)`;
+`renderMarkdown()` feeds that summary through `renderExtensionSurfaceMarkdown`,
+with an optional `extensionName` filter for scoped package docs. The methods do
+not use `this`, so they remain safe to destructure
+(`const { runCommand, renderMarkdown } = ext;`), and the raw `ext.activation`
 stays public as an escape hatch to the standalone helpers for any surface a
 convenience method does not cover.
 
@@ -449,6 +454,8 @@ const ext = await createExtensionTestHarness(extensionModule, { capabilities: ["
 ext.assertCommandContract({ command: "incident triage", flags: ["--severity"] });
 ext.assertFlags({ targetCommand: "list", flags: ["--incident-filter"] });
 const { result } = await ext.runCommand({ command: "incident triage", options: { severity: "high" } });
+const summary = ext.activationSummary();
+const reference = ext.renderMarkdown({ title: "incident package surfaces" });
 await ext.deactivate();
 ```
 

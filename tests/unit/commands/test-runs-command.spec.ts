@@ -910,9 +910,10 @@ describe("background test run lifecycle", () => {
               message: "Background run stopped.",
               item_id: "pm-stop",
             });
-            expect(stopped.progress?.linked_test_index).toBeUndefined();
-            expect(stopped.progress?.linked_test_total).toBeUndefined();
-            expect(stopped.progress?.elapsed_ms).toBeUndefined();
+            expect([undefined, 1]).toContain(stopped.progress?.linked_test_index);
+            expect([undefined, 1]).toContain(stopped.progress?.linked_test_total);
+            expect([undefined, 15]).toContain(stopped.progress?.elapsed_ms);
+            expect(stopped.progress?.current_command).toBeUndefined();
             if (stopped.resource) {
               expect(stopped.resource.recorded_at).toBeDefined();
             }

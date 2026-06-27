@@ -97,6 +97,13 @@ import {
   lintExtensionBlueprint,
   preflightExtension,
 } from "./compose.js";
+import { describeExtensionActivation } from "../core/extensions/activation-summary.js";
+import type {
+  DescribeExtensionActivationOptions,
+  ExtensionActivationSummary,
+} from "../core/extensions/activation-summary.js";
+import { renderExtensionSurfaceMarkdown } from "../core/extensions/activation-summary-markdown.js";
+import type { ExtensionSurfaceMarkdownOptions } from "../core/extensions/activation-summary-markdown.js";
 import type {
   ExtensionBlueprint,
   ExtensionBlueprintLintCode,
@@ -120,9 +127,13 @@ import type { PmPackageManifest, PmPackageResourceKind } from "../core/packages/
 // `@unbrained/pm-cli/sdk/testing` subpath.
 export {
   describeExtensionActivation,
-  type DescribeExtensionActivationOptions,
-  type ExtensionActivationSummary,
+  renderExtensionSurfaceMarkdown,
+};
+export type {
+  DescribeExtensionActivationOptions,
+  ExtensionActivationSummary,
 } from "../core/extensions/activation-summary.js";
+export type { ExtensionSurfaceMarkdownOptions } from "../core/extensions/activation-summary-markdown.js";
 
 // `composeExtension`'s author-time companions: describe a blueprint's surface map
 // and preflight it for capability drift / duplicate / empty-surface footguns
@@ -594,6 +605,17 @@ export interface PackageManifestExpectation {
   packageName?: string;
   aliases?: readonly string[];
   resources?: PackageManifestResourceExpectation;
+}
+
+/**
+ * Options for {@link ExtensionTestHarness.renderMarkdown}.
+ */
+export interface RenderExtensionHarnessMarkdownOptions extends ExtensionSurfaceMarkdownOptions {
+  /**
+   * Restrict the rendered summary to one activated extension by name. Defaults
+   * to the full activation union, matching {@link ExtensionTestHarness.activationSummary}.
+   */
+  extensionName?: string;
 }
 
 function normalizeSdkIdentifier(value: string): string {
@@ -2122,6 +2144,15 @@ export interface ExtensionTestHarness {
   /** The underlying activation result; use it to reach standalone helpers directly. */
   readonly activation: ExtensionActivationResult;
 
+  /** Bound {@link describeExtensionActivation} over the whole `activation`. */
+  activationSummary(options?: DescribeExtensionActivationOptions): ExtensionActivationSummary;
+  /**
+   * Bound {@link renderExtensionSurfaceMarkdown} over {@link activationSummary},
+   * so tests and README generators can produce deterministic surface docs from
+   * the same harness they use for assert/run coverage.
+   */
+  renderMarkdown(options?: RenderExtensionHarnessMarkdownOptions): string;
+
   /** Bound {@link assertRegisteredCommandContract} over `activation.registrations`. */
   assertCommandContract(expectation: RegisteredCommandContractExpectation): RegisteredCommandContractAssertion;
   /** Bound {@link assertRegisteredFlags} over `activation.registrations`. */
@@ -2251,6 +2282,13 @@ export async function createExtensionTestHarness(
     name,
     layer,
     activation,
+    activationSummary(describeOptions) {
+      return describeExtensionActivation(activation, describeOptions);
+    },
+    renderMarkdown(markdownOptions = {}) {
+      const { extensionName, ...renderOptions } = markdownOptions ?? {};
+      return renderExtensionSurfaceMarkdown(describeExtensionActivation(activation, { extensionName }), renderOptions);
+    },
     assertCommandContract(expectation) {
       return assertRegisteredCommandContract(activation.registrations, expectation);
     },
