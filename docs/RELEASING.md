@@ -59,6 +59,7 @@ Policy:
 - release reliability gating requires `SENTRY_PERSONAL_ADMIN_TOKEN` for issue-threshold checks; Auto Release fails before creating the version commit/tag when the token is missing and `push=true`, while sourcemap upload remains optional through `SENTRY_AUTH_TOKEN`
 - after creating and pushing a new tag, auto-release dispatches `.github/workflows/release.yml` with that tag and waits for the publish workflow to finish, because GitHub does not start normal push/tag workflows from `GITHUB_TOKEN` pushes
 - scheduled failure issues include the preflight state (`push`, `dry_run`, `release_pat_configured`, and `sentry_personal_admin_token_configured`) plus a detected cause so agents can distinguish missing release secrets from Sentry gate failures without scanning the full workflow log first
+- after a scheduled run publishes a tag and the downstream release workflow succeeds, auto-release closes any open `Auto Release blocked` issue so the GitHub tracker reflects current release health
 
 Pipeline entrypoint:
 

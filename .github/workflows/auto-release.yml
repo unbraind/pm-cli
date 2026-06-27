@@ -99,6 +99,7 @@ jobs:
         run: pnpm build
 
       - name: Run auto release pipeline
+        id: auto_release
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           # GitHub Actions evaluates boolean `false` as falsy in `&& ... || ...`
@@ -166,6 +167,41 @@ jobs:
             exit 1
           fi
           gh run watch "${RELEASE_RUN_ID}" --compact --exit-status --interval 30
+          PUBLISHED_SHA="$(git rev-list -n 1 "${NEW_TAG}")"
+          echo "published_tag=${NEW_TAG}" >> "${GITHUB_OUTPUT}"
+          echo "published_sha=${PUBLISHED_SHA}" >> "${GITHUB_OUTPUT}"
+
+      - name: Resolve blocked scheduled auto-release issue
+        if: success() && github.event_name == 'schedule' && steps.auto_release.outputs.published_tag
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RELEASE_SHA: ${{ steps.auto_release.outputs.published_sha }}
+          RELEASE_TAG: ${{ steps.auto_release.outputs.published_tag }}
+        run: |
+          set -euo pipefail
+          title="Auto Release blocked: scheduled run failed"
+          existing_issue=""
+          if ! existing_issue="$(gh issue list --state open --search "\"${title}\" in:title" --json number --jq '.[0].number // empty')"; then
+            echo "Could not query blocked auto-release issues after successful publish; leaving release status successful."
+            exit 0
+          fi
+          if [[ -z "${existing_issue}" ]]; then
+            echo "No open blocked auto-release issue found."
+            exit 0
+          fi
+          body="Scheduled Auto Release succeeded and published \`${RELEASE_TAG}\`.
+
+          Run: ${RUN_URL}
+          Commit: ${RELEASE_SHA}
+
+          Closing this stale blocker because the scheduled production path pushed a release tag and the downstream Release workflow completed successfully."
+
+          if ! gh issue close "${existing_issue}" --comment "${body}" --reason completed; then
+            echo "Could not close blocked auto-release issue #${existing_issue} after successful publish; leaving release status successful."
+            exit 0
+          fi
 
       - name: Alert on blocked scheduled auto-release
         if: failure() && github.event_name == 'schedule'
