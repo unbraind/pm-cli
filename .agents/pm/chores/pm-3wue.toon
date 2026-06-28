@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: "area:sdk",code-quality,codefactor,pm-cli
 created_at: "2026-06-28T18:30:43.218Z"
-updated_at: "2026-06-28T18:34:11.583Z"
+updated_at: "2026-06-28T18:59:50.339Z"
 author: claude-code-agent
 parent: pm-92if
 dependencies[2]{id,kind,created_at,author,source_kind}:
@@ -14,10 +14,11 @@ dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-3cbk,related,"2026-06-28T18:30:56.675Z",null,null
 learnings[1]{created_at,author,text}:
   "2026-06-28T18:32:02.652Z",claude-code-agent,"Splitting the cli-contracts barrel: re-point the ToolOptionFlagContract type import in tool-option-contracts.ts from ../cli-contracts.js to the ./flag-contracts.js sibling (importing from the barrel while it re-exports tool-option-contracts is a cycle). Keep toUniqueFlagContracts exported from flag-contracts (tool-schema's _testOnlyCliContracts needs it) but OUT of the barrel re-export list so the public SDK surface stays unchanged. _testOnlyCliContracts (object literal) needs no docstring — the gate only requires docstrings on exported functions/interfaces/types."
-files[4]{path,scope,note}:
+files[5]{path,scope,note}:
   src/sdk/cli-contracts.ts,project,null
   src/sdk/cli-contracts/flag-contracts.ts,project,null
   src/sdk/cli-contracts/string-lists.ts,project,null
+  src/sdk/cli-contracts/tool-option-contracts.ts,project,null
   src/sdk/cli-contracts/tool-schema.ts,project,null
 docs[1]{path,scope,note}:
   "https://github.com/unbraind/pm-cli/pull/396",project,"PR: cli-contracts decomposition"

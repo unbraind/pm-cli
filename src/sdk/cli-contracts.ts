@@ -1,12 +1,14 @@
 /**
  * @module sdk/cli-contracts
  *
- * Public barrel for the pm CLI/MCP contract surface. Re-exports the focused
- * sibling modules — Commander option contracts, enum/guard contracts, MCP tool
- * option contracts and parameter tables, per-command flag contracts, and the
- * tool-parameter JSON Schemas — so existing import sites (sdk/index.ts,
+ * Public barrel for the pm CLI/MCP contract surface. Re-exports the public
+ * members of the focused sibling modules — Commander option contracts,
+ * enum/guard contracts, MCP tool option contracts, per-command flag contracts,
+ * and the tool-parameter JSON Schemas — so existing import sites (sdk/index.ts,
  * mcp/server.ts, commands/contracts.ts, completion.ts, …) keep importing
- * everything from "./cli-contracts.js" unchanged.
+ * everything from "./cli-contracts.js" unchanged. (The raw tool-parameter
+ * property/metadata tables stay internal to tool-schema and are not surfaced
+ * here.)
  */
 export type { CommanderOptionAliasContract, CommanderOptionRegistrationContract } from "./cli-contracts/commander-types.js";
 export {
