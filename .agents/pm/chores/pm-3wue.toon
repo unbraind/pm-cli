@@ -6,12 +6,15 @@ status: open
 priority: 2
 tags[4]: "area:sdk",code-quality,codefactor,pm-cli
 created_at: "2026-06-28T18:30:43.218Z"
-updated_at: "2026-06-28T18:59:50.339Z"
+updated_at: "2026-06-28T19:01:50.634Z"
 author: claude-code-agent
 parent: pm-92if
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-2evy,related,"2026-06-28T18:30:56.675Z",null,null
   pm-3cbk,related,"2026-06-28T18:30:56.675Z",null,null
+  pm-zx13,related,"2026-06-28T19:01:50.184Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-06-28T19:01:50.634Z",claude-code-agent,"PR #396 round-2 review: applied trim-before-dedup (CodeRabbit+Gemini) and resolver completeness for guide/completion/dedupe-audit/comments-audit (CodeRabbit Major). Barrel docstring + file-link nits (cubic) fixed. Greptile surface-change flag rebutted (144 exports identical main vs branch). MCP/CLI action-schema drift deferred to pm-zx13 (changes contract + needs per-param metadata)."
 learnings[1]{created_at,author,text}:
   "2026-06-28T18:32:02.652Z",claude-code-agent,"Splitting the cli-contracts barrel: re-point the ToolOptionFlagContract type import in tool-option-contracts.ts from ../cli-contracts.js to the ./flag-contracts.js sibling (importing from the barrel while it re-exports tool-option-contracts is a cycle). Keep toUniqueFlagContracts exported from flag-contracts (tool-schema's _testOnlyCliContracts needs it) but OUT of the barrel re-export list so the public SDK surface stays unchanged. _testOnlyCliContracts (object literal) needs no docstring — the gate only requires docstrings on exported functions/interfaces/types."
 files[5]{path,scope,note}:

@@ -849,9 +849,12 @@ function toProviderCompatibleParameterDefinition(key: string, definition: unknow
   const firstTypedVariant = anyOf.find((variant) => typeof variant.type === "string");
   if (firstTypedVariant) {
     const { anyOf: _anyOf, ...rest } = decorated;
+    // Spread the whole typed variant (type plus any enum/minimum/maximum/pattern
+    // constraints) so the flat provider schema keeps the variant's validation,
+    // then let the decorated top-level fields (description, examples) win.
     return {
+      ...firstTypedVariant,
       ...rest,
-      type: firstTypedVariant.type,
     };
   }
   const { anyOf: _anyOf, ...rest } = decorated;

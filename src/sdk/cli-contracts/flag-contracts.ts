@@ -1585,6 +1585,10 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(AGGREGATE_FLAG_CONTRACTS);
     case "dedupe-audit":
       return withSubcommandGlobalFlags(DEDUPE_AUDIT_FLAG_CONTRACTS);
+    case "dedupe-merge":
+      return withSubcommandGlobalFlags(DEDUPE_MERGE_FLAG_CONTRACTS);
+    case "normalize":
+      return withSubcommandGlobalFlags(NORMALIZE_FLAG_CONTRACTS);
     case "calendar":
       return withSubcommandGlobalFlags(CALENDAR_FLAG_CONTRACTS);
     case "context":

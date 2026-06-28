@@ -779,6 +779,8 @@ describe("public sdk entrypoint", () => {
     expect(flagsFor("guide")).toEqual(expect.arrayContaining(["--list", "--depth"]));
     expect(flagsFor("completion")).toEqual(expect.arrayContaining(["--eager-tags"]));
     expect(flagsFor("dedupe-audit")).toEqual(expect.arrayContaining(["--mode", "--threshold"]));
+    expect(flagsFor("dedupe-merge")).toEqual(expect.arrayContaining(["--keep", "--apply"]));
+    expect(flagsFor("normalize")).toEqual(expect.arrayContaining(["--filter-status", "--apply"]));
     expect(flagsFor("comments-audit")).toEqual(expect.arrayContaining(["--limit-items", "--latest"]));
     expect(flagsFor("cal")).toEqual(expect.arrayContaining(["--from", "--to"]));
     expect(flagsFor("ctx")).toEqual(expect.arrayContaining(["--depth"]));
