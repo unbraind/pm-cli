@@ -42,6 +42,7 @@ const {
 } = _testOnly;
 const PRIVATE_TEST_IP = ["192", "168", "42", "17"].join(".");
 const TEST_LOCAL_PATH = ["/home", "example", "project"].join("/");
+type SentryPayload = Record<string, unknown>;
 
 describe("sentry helpers", () => {
   it("does not capture expected CLI errors as Sentry exceptions", () => {
@@ -403,9 +404,9 @@ describe("ensureSentryInit", () => {
       serverName: unknown;
       sendDefaultPii: boolean;
       initialScope: { tags: Record<string, string> };
-      beforeSend: (event: Record<string, any>) => Record<string, any> | null;
-      beforeSendTransaction: (event: Record<string, any>) => Record<string, any>;
-      beforeBreadcrumb: (breadcrumb: Record<string, any>) => Record<string, any> | null;
+      beforeSend: (event: SentryPayload) => SentryPayload | null;
+      beforeSendTransaction: (event: SentryPayload) => SentryPayload;
+      beforeBreadcrumb: (breadcrumb: SentryPayload) => SentryPayload | null;
     };
     expect(options.dsn).toBe("https://example.invalid/custom");
     expect(options.release).toMatch(/^pm-cli@/);
@@ -490,7 +491,7 @@ describe("ensureSentryInit", () => {
     await ensureSentryInit();
     let options = sentryNodeMock.init.mock.calls[0]?.[0] as {
       environment: string;
-      beforeSendTransaction: (event: Record<string, any>) => Record<string, any>;
+      beforeSendTransaction: (event: SentryPayload) => SentryPayload;
     };
     expect(options.environment).toBe("ci");
 

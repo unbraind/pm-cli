@@ -7,6 +7,7 @@ import { statSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { PM_DIRNAME, SETTINGS_FILENAME, TYPE_TO_FOLDER } from "../shared/constants.js";
+import { toDefaultFolder } from "../item/type-registry.js";
 import type { ItemFormat, ItemType } from "../../types/index.js";
 
 export const ITEM_FILE_EXTENSION_BY_FORMAT: Record<ItemFormat, ".md" | ".toon"> = {
@@ -93,42 +94,11 @@ export function getSettingsPath(pmRoot: string): string {
   return path.join(pmRoot, SETTINGS_FILENAME);
 }
 
-function deriveDefaultTypeFolder(type: string): string {
-  const normalized = toSlugToken(type);
-  if (normalized.length === 0) {
-    return "items";
-  }
-  return normalized.endsWith("s") ? normalized : `${normalized}s`;
-}
-
-function toSlugToken(value: string): string {
-  const trimmed = value.trim().toLowerCase();
-  let slug = "";
-  let pendingDash = false;
-  for (const character of trimmed) {
-    const code = character.charCodeAt(0);
-    const isAlpha = code >= 97 && code <= 122;
-    const isDigit = code >= 48 && code <= 57;
-    if (isAlpha || isDigit) {
-      if (pendingDash && slug.length > 0) {
-        slug += "-";
-      }
-      slug += character;
-      pendingDash = false;
-      continue;
-    }
-    if (slug.length > 0) {
-      pendingDash = true;
-    }
-  }
-  return slug;
-}
-
 /**
  * Implements get type dir path for the public runtime surface of this module.
  */
 export function getTypeDirPath(pmRoot: string, type: ItemType, typeToFolder: Record<string, string> = TYPE_TO_FOLDER): string {
-  const folder = typeToFolder[type] ?? deriveDefaultTypeFolder(type);
+  const folder = typeToFolder[type] ?? toDefaultFolder(type);
   return path.join(pmRoot, folder);
 }
 
