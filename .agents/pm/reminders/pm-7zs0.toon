@@ -6,10 +6,9 @@ status: in_progress
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-06-28T12:06:18.990Z"
+updated_at: "2026-06-28T12:23:17.499Z"
 reminders[1]{at,text}:
   "2026-06-08T10:24:45.889Z",Confirm daily auto-release tagged a new version AND npm latest advanced; else inspect publish + Sentry-gate steps
-assignee: claude-code-agent
 author: maintainer-agent
 parent: pm-u9d0
 comments[23]{created_at,author,text}:
