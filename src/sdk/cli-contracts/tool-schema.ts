@@ -308,7 +308,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   "list-canceled": { optional: LIST_CONTRACT_PARAMETER_KEYS },
   aggregate: { optional: AGGREGATE_CONTRACT_PARAMETER_KEYS },
   "dedupe-audit": { optional: DEDUPE_AUDIT_CONTRACT_PARAMETER_KEYS },
-  guide: { optional: ["format", "depth"] },
+  guide: { optional: ["list", "format", "depth"] },
   context: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
   ctx: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
   get: { required: ["id"], optional: ["depth", "full", "fields", "tree", "treeDepth", "format"] },
@@ -599,6 +599,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
       "noRefresh",
       "refreshVectors",
       "verboseStaleItems",
+      "brief",
       "summary",
       "skipVectors",
       "skipIntegrity",
@@ -614,6 +615,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
       "checkLifecycle",
       "checkStaleBlockers",
       "dependencyCycleSeverity",
+      "parentCycleSeverity",
       "checkFiles",
       "scanMode",
       "includePmInternals",
@@ -632,7 +634,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
     ],
   },
   gc: { optional: ["dryRun", "gcScope"] },
-  contracts: { optional: ["contractAction", "command", "schemaOnly", "flagsOnly", "availabilityOnly", "runtimeOnly", "activeOnly"] },
+  contracts: { optional: ["contractAction", "command", "schemaOnly", "flagsOnly", "availabilityOnly", "runtimeOnly", "activeOnly", "full"] },
   completion: { required: ["shell"], optional: ["eagerTags"] },
   claim: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   release: { required: ["id"], optional: ["allowAuditRelease", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
@@ -816,7 +818,7 @@ function createLazyContractSchema(
  * the MAJOR for breaking changes — the major also drives the `$id`
  * `tool-parameters-v{major}` slug, so the two never drift.
  */
-export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.0.4" as const;
+export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.0.5" as const;
 
 /**
  * Major component of {@link PM_TOOL_PARAMETERS_SCHEMA_VERSION}, used to build the

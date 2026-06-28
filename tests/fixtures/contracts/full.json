@@ -22309,7 +22309,7 @@
             "type": "boolean"
           },
           "list": {
-            "description": "When true for files/docs action, list the current linked paths without mutating them.",
+            "description": "When true, list command-specific entries without mutating state (for example linked paths for files/docs or topics for guide).",
             "examples": [
               true
             ],
@@ -23033,6 +23033,10 @@
             "const": "health",
             "description": "Tool action to execute."
           },
+          "brief": {
+            "description": "Brief.",
+            "type": "boolean"
+          },
           "checkOnly": {
             "description": "For health action, run read-only diagnostics without refreshing vectors.",
             "type": "boolean"
@@ -23256,6 +23260,20 @@
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
           },
+          "parentCycleSeverity": {
+            "description": "Set parent-cycle warning policy for lifecycle checks.",
+            "enum": [
+              "off",
+              "warn",
+              "error"
+            ],
+            "examples": [
+              "off",
+              "warn",
+              "error"
+            ],
+            "type": "string"
+          },
           "path": {
             "description": "Optional PM data root override for this invocation.",
             "examples": [
@@ -23438,6 +23456,10 @@
           },
           "flagsOnly": {
             "description": "When true, contracts action returns only command flag surface payloads (mutually exclusive projection mode).",
+            "type": "boolean"
+          },
+          "full": {
+            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
           },
           "json": {
@@ -24121,10 +24143,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.0.4"
+    "x-schema-version": "4.0.5"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.0.4",
+  "schema_version": "4.0.5",
   "selected": {
     "action": null,
     "availability_only": false,

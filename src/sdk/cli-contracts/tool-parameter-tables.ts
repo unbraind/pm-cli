@@ -259,6 +259,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   checkLifecycle: { type: "boolean" },
   checkStaleBlockers: { type: "boolean" },
   dependencyCycleSeverity: { type: "string", enum: ["off", "warn", "error"] },
+  parentCycleSeverity: { type: "string", enum: ["off", "warn", "error"] },
   checkFiles: { type: "boolean" },
   strictDirectories: { type: "boolean" },
   checkOnly: { type: "boolean" },
@@ -969,6 +970,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     description: "Set dependency-cycle warning policy for lifecycle checks.",
     examples: ["off", "warn", "error"],
   },
+  parentCycleSeverity: {
+    description: "Set parent-cycle warning policy for lifecycle checks.",
+    examples: ["off", "warn", "error"],
+  },
   checkFiles: {
     description: "Run linked-file and orphaned-file checks.",
   },
@@ -1095,7 +1100,8 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     examples: ["command wiring"],
   },
   list: {
-    description: "When true for files/docs action, list the current linked paths without mutating them.",
+    description:
+      "When true, list command-specific entries without mutating state (for example linked paths for files/docs or topics for guide).",
     examples: [true],
   },
   stream: {
