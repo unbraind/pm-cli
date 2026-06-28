@@ -304,14 +304,17 @@ describe("extension scaffold define builder guidance", () => {
 
     // pm loads the ./index.ts manifest entry directly via Node's native type
     // stripping (Node >=22.18): there is no build step, `typecheck` validates the
-    // source, and `test` runs `node --test` (which strips types on load).
+    // source, `test:runtime` runs node:test, and `test` is the self-validating gate.
     expect(packageJson.engines?.node).toBe(">=22.18.0");
     expect(packageJson.peerDependencies?.["@unbrained/pm-cli"]).toBe(`>=${SCAFFOLD_PM_MIN_VERSION}`);
     expect(manifest.pm_min_version).toBe(SCAFFOLD_PM_MIN_VERSION);
     expect(scaffold["README.md"]).toContain(`Scaffolded as \`${SCAFFOLD_PM_MIN_VERSION}\``);
     expect(packageJson.scripts?.build).toBeUndefined();
     expect(packageJson.scripts?.typecheck).toBe("tsc --noEmit");
-    expect(packageJson.scripts?.test).toBe("node --test");
+    expect(packageJson.scripts?.["test:runtime"]).toBe("node --test");
+    expect(packageJson.scripts?.test).toBe("npm run typecheck && npm run test:runtime");
+    expect(scaffold["README.md"]).toContain("`npm test` is the default");
+    expect(scaffold["README.md"]).toContain("npm run test:runtime");
     expect(packageJson.devDependencies?.typescript).toBeTruthy();
     // `@types/node` is required: the colocated index.test.ts imports node:test/node:assert.
     expect(packageJson.devDependencies?.["@types/node"]).toBeTruthy();
