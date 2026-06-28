@@ -24,27 +24,17 @@ function requireOptionContract(
 }
 
 describe("tool option contract composition", () => {
-  it("does not share mutable option objects between exported contract arrays", () => {
+  it("does not share option objects between exported contract arrays", () => {
     const listStatus = requireOptionContract(TOOL_LIST_FILTER_OPTION_CONTRACTS, "status");
     const searchStatus = requireOptionContract(TOOL_SEARCH_FILTER_OPTION_CONTRACTS, "status");
     const aggregateStatus = requireOptionContract(TOOL_AGGREGATE_OPTION_CONTRACTS, "status");
     const dedupeStatus = requireOptionContract(TOOL_DEDUPE_AUDIT_OPTION_CONTRACTS, "status");
     const updateManyStatus = requireOptionContract(TOOL_UPDATE_MANY_FILTER_OPTION_CONTRACTS, "filterStatus");
     const closeManyStatus = requireOptionContract(TOOL_CLOSE_MANY_FILTER_OPTION_CONTRACTS, "filterStatus");
-    const originalListFlag = listStatus.flag;
-    const originalUpdateManyFlag = updateManyStatus.flag;
 
-    try {
-      listStatus.flag = "--mutated-status";
-      updateManyStatus.flag = "--mutated-filter-status";
-
-      expect(searchStatus.flag).toBe("--status");
-      expect(aggregateStatus.flag).toBe("--status");
-      expect(dedupeStatus.flag).toBe("--status");
-      expect(closeManyStatus.flag).toBe("--filter-status");
-    } finally {
-      listStatus.flag = originalListFlag;
-      updateManyStatus.flag = originalUpdateManyFlag;
-    }
+    expect(listStatus).not.toBe(searchStatus);
+    expect(listStatus).not.toBe(aggregateStatus);
+    expect(listStatus).not.toBe(dedupeStatus);
+    expect(updateManyStatus).not.toBe(closeManyStatus);
   });
 });
