@@ -5,13 +5,23 @@
  */
 import type { ToolOptionFlagContract } from "../cli-contracts.js";
 
-const TOOL_BASIC_ITEM_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
+const TOOL_ITEM_BASE_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "status", flag: "--status" },
   { param: "type", flag: "--type" },
   { param: "tag", flag: "--tag" },
   { param: "priority", flag: "--priority" },
   { param: "deadlineBefore", flag: "--deadline-before" },
   { param: "deadlineAfter", flag: "--deadline-after" },
+];
+
+const TOOL_ITEM_WINDOW_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
+  { param: "updatedAfter", flag: "--updated-after" },
+  { param: "updatedBefore", flag: "--updated-before" },
+  { param: "createdAfter", flag: "--created-after" },
+  { param: "createdBefore", flag: "--created-before" },
+];
+
+const TOOL_ITEM_RELATION_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "assignee", flag: "--assignee" },
   { param: "assigneeFilter", flag: "--assignee-filter" },
   { param: "parent", flag: "--parent" },
@@ -19,13 +29,22 @@ const TOOL_BASIC_ITEM_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "release", flag: "--release" },
 ];
 
+const TOOL_SEARCH_RELATION_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
+  { param: "assignee", flag: "--assignee" },
+  { param: "sprint", flag: "--sprint" },
+  { param: "release", flag: "--release" },
+  { param: "parent", flag: "--parent" },
+];
+
+const TOOL_BASIC_ITEM_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
+  ...TOOL_ITEM_BASE_FILTER_OPTION_CONTRACTS,
+  ...TOOL_ITEM_RELATION_FILTER_OPTION_CONTRACTS,
+];
+
 const TOOL_INCREMENTAL_ITEM_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
-  ...TOOL_BASIC_ITEM_FILTER_OPTION_CONTRACTS.slice(0, 6),
-  { param: "updatedAfter", flag: "--updated-after" },
-  { param: "updatedBefore", flag: "--updated-before" },
-  { param: "createdAfter", flag: "--created-after" },
-  { param: "createdBefore", flag: "--created-before" },
-  ...TOOL_BASIC_ITEM_FILTER_OPTION_CONTRACTS.slice(6),
+  ...TOOL_ITEM_BASE_FILTER_OPTION_CONTRACTS,
+  ...TOOL_ITEM_WINDOW_FILTER_OPTION_CONTRACTS,
+  ...TOOL_ITEM_RELATION_FILTER_OPTION_CONTRACTS,
 ];
 
 const TOOL_GOVERNANCE_MISSING_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
@@ -58,9 +77,10 @@ const TOOL_CONTENT_PRESENCE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
 ];
 
 export const TOOL_LIST_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
-  ...TOOL_INCREMENTAL_ITEM_FILTER_OPTION_CONTRACTS.slice(0, 10),
+  ...TOOL_ITEM_BASE_FILTER_OPTION_CONTRACTS,
+  ...TOOL_ITEM_WINDOW_FILTER_OPTION_CONTRACTS,
   { param: "ids", flag: "--ids" },
-  ...TOOL_INCREMENTAL_ITEM_FILTER_OPTION_CONTRACTS.slice(10),
+  ...TOOL_ITEM_RELATION_FILTER_OPTION_CONTRACTS,
   { param: "filterAcMissing", flag: "--filter-ac-missing" },
   { param: "filterEstimatesMissing", flag: "--filter-estimates-missing" },
   { param: "filterResolutionMissing", flag: "--filter-resolution-missing" },
@@ -95,11 +115,9 @@ export const TOOL_SEARCH_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "minScore", flag: "--min-score" },
   { param: "count", flag: "--count", booleanish: true },
   { param: "semanticWeight", flag: "--semantic-weight" },
-  ...TOOL_INCREMENTAL_ITEM_FILTER_OPTION_CONTRACTS.slice(0, 10),
-  { param: "assignee", flag: "--assignee" },
-  { param: "sprint", flag: "--sprint" },
-  { param: "release", flag: "--release" },
-  { param: "parent", flag: "--parent" },
+  ...TOOL_ITEM_BASE_FILTER_OPTION_CONTRACTS,
+  ...TOOL_ITEM_WINDOW_FILTER_OPTION_CONTRACTS,
+  ...TOOL_SEARCH_RELATION_FILTER_OPTION_CONTRACTS,
   ...TOOL_GOVERNANCE_MISSING_OPTION_CONTRACTS,
   ...TOOL_CONTENT_PRESENCE_OPTION_CONTRACTS,
   { param: "fields", flag: "--fields" },
