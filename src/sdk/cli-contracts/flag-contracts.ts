@@ -1583,12 +1583,16 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(FOCUS_FLAG_CONTRACTS);
     case "aggregate":
       return withSubcommandGlobalFlags(AGGREGATE_FLAG_CONTRACTS);
+    case "dedupe-audit":
+      return withSubcommandGlobalFlags(DEDUPE_AUDIT_FLAG_CONTRACTS);
     case "calendar":
       return withSubcommandGlobalFlags(CALENDAR_FLAG_CONTRACTS);
     case "context":
       return withSubcommandGlobalFlags(CONTEXT_FLAG_CONTRACTS);
     case "get":
       return withSubcommandGlobalFlags(GET_FLAG_CONTRACTS);
+    case "guide":
+      return withSubcommandGlobalFlags(GUIDE_FLAG_CONTRACTS);
     case "search":
       return withSubcommandGlobalFlags(SEARCH_FLAG_CONTRACTS);
     case "next":
@@ -1627,6 +1631,8 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(APPEND_FLAG_CONTRACTS);
     case "comments":
       return withSubcommandGlobalFlags(COMMENTS_FLAG_CONTRACTS);
+    case "comments-audit":
+      return withSubcommandGlobalFlags(COMMENTS_AUDIT_FLAG_CONTRACTS);
     case "notes":
       return withSubcommandGlobalFlags(NOTES_FLAG_CONTRACTS);
     case "learnings":
@@ -1653,6 +1659,8 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(STATS_FLAG_CONTRACTS);
     case "contracts":
       return withSubcommandGlobalFlags(CONTRACTS_FLAG_CONTRACTS);
+    case "completion":
+      return withSubcommandGlobalFlags(COMPLETION_FLAG_CONTRACTS);
     case "claim":
       return withSubcommandGlobalFlags(CLAIM_FLAG_CONTRACTS);
     case "release":
