@@ -9,6 +9,9 @@ import {
   TOOL_UPDATE_MANY_FILTER_OPTION_CONTRACTS,
 } from "../../../src/sdk/cli-contracts/tool-option-contracts.js";
 
+/**
+ * Finds a named option contract or fails the regression test with a focused error.
+ */
 function requireOptionContract(
   contracts: readonly ToolOptionFlagContract[],
   param: string,

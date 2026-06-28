@@ -7,6 +7,9 @@ import type { ToolOptionFlagContract } from "../cli-contracts.js";
 
 type SharedToolOptionFlagContract = Readonly<ToolOptionFlagContract>;
 
+/**
+ * Returns fresh option contract objects so exported arrays cannot share mutable entries.
+ */
 function cloneOptionContracts(
   contracts: readonly SharedToolOptionFlagContract[],
 ): ToolOptionFlagContract[] {
