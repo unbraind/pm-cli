@@ -22190,6 +22190,13 @@
             "description": "Emit machine-readable JSON output.",
             "type": "boolean"
           },
+          "list": {
+            "description": "When true, list command-specific entries without mutating state (for example linked paths for files/docs or topics for guide).",
+            "examples": [
+              true
+            ],
+            "type": "boolean"
+          },
           "message": {
             "description": "History message for mutation audit trail.",
             "type": "string"

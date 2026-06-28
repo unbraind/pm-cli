@@ -489,6 +489,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
       "addGlob",
       "remove",
       "migrate",
+      "list",
       // GH-170 (pm-pfnx): `addNote` is the MCP spelling of the CLI --note flag
       // (the shared `note` parameter is the array-typed create/update note
       // seed, so files/docs use a distinct single-string key).
