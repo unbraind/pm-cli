@@ -3,7 +3,7 @@
  *
  * Defines SDK command-contract metadata for Tool Option Contracts.
  */
-import type { ToolOptionFlagContract } from "../cli-contracts.js";
+import type { ToolOptionFlagContract } from "./flag-contracts.js";
 
 type SharedToolOptionFlagContract = Readonly<ToolOptionFlagContract>;
 
