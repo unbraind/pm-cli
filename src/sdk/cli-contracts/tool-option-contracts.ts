@@ -41,12 +41,6 @@ const TOOL_BASIC_ITEM_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   ...TOOL_ITEM_RELATION_FILTER_OPTION_CONTRACTS,
 ];
 
-const TOOL_INCREMENTAL_ITEM_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
-  ...TOOL_ITEM_BASE_FILTER_OPTION_CONTRACTS,
-  ...TOOL_ITEM_WINDOW_FILTER_OPTION_CONTRACTS,
-  ...TOOL_ITEM_RELATION_FILTER_OPTION_CONTRACTS,
-];
-
 const TOOL_GOVERNANCE_MISSING_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "filterReviewerMissing", flag: "--filter-reviewer-missing" },
   { param: "filterRiskMissing", flag: "--filter-risk-missing" },
