@@ -308,7 +308,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   "list-canceled": { optional: LIST_CONTRACT_PARAMETER_KEYS },
   aggregate: { optional: AGGREGATE_CONTRACT_PARAMETER_KEYS },
   "dedupe-audit": { optional: DEDUPE_AUDIT_CONTRACT_PARAMETER_KEYS },
-  guide: { optional: ["format", "depth"] },
+  guide: { optional: ["list", "format", "depth"] },
   context: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
   ctx: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
   get: { required: ["id"], optional: ["depth", "full", "fields", "tree", "treeDepth", "format"] },
@@ -449,7 +449,20 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   update: { required: ["id"], optional: UPDATE_CONTRACT_PARAMETER_KEYS },
   "update-many": { optional: UPDATE_MANY_CONTRACT_PARAMETER_KEYS },
   normalize: { optional: NORMALIZE_CONTRACT_PARAMETER_KEYS },
-  close: { required: ["id"], optional: ["text", "duplicateOf", "validateClose", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  close: {
+    required: ["id"],
+    optional: [
+      "text",
+      "reason",
+      "closeReason",
+      "duplicateOf",
+      "validateClose",
+      "resolution",
+      "expectedResult",
+      "actualResult",
+      ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
+    ],
+  },
   "close-many": { optional: CLOSE_MANY_CONTRACT_PARAMETER_KEYS },
   delete: { required: ["id"], optional: ["dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   append: { required: ["id", "body"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
@@ -489,6 +502,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
       "addGlob",
       "remove",
       "migrate",
+      "list",
       // GH-170 (pm-pfnx): `addNote` is the MCP spelling of the CLI --note flag
       // (the shared `note` parameter is the array-typed create/update note
       // seed, so files/docs use a distinct single-string key).
@@ -599,6 +613,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
       "noRefresh",
       "refreshVectors",
       "verboseStaleItems",
+      "brief",
       "summary",
       "skipVectors",
       "skipIntegrity",
@@ -614,6 +629,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
       "checkLifecycle",
       "checkStaleBlockers",
       "dependencyCycleSeverity",
+      "parentCycleSeverity",
       "checkFiles",
       "scanMode",
       "includePmInternals",
@@ -632,13 +648,13 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
     ],
   },
   gc: { optional: ["dryRun", "gcScope"] },
-  contracts: { optional: ["contractAction", "command", "schemaOnly", "flagsOnly", "availabilityOnly", "runtimeOnly", "activeOnly"] },
+  contracts: { optional: ["contractAction", "command", "schemaOnly", "flagsOnly", "availabilityOnly", "runtimeOnly", "activeOnly", "full"] },
   completion: { required: ["shell"], optional: ["eagerTags"] },
   claim: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   release: { required: ["id"], optional: ["allowAuditRelease", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   "start-task": { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   "pause-task": { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
-  "close-task": { required: ["id"], optional: ["text", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  "close-task": { required: ["id"], optional: ["text", "validateClose", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
 };
 
 export const PM_TOOL_ACTION_PARAMETER_CONTRACTS: Readonly<Record<PmToolAction, PmActionSchemaContract>> =
@@ -816,7 +832,7 @@ function createLazyContractSchema(
  * the MAJOR for breaking changes — the major also drives the `$id`
  * `tool-parameters-v{major}` slug, so the two never drift.
  */
-export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.0.4" as const;
+export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.0.5" as const;
 
 /**
  * Major component of {@link PM_TOOL_PARAMETERS_SCHEMA_VERSION}, used to build the
