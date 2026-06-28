@@ -1,0 +1,14 @@
+id: pm-zx13
+title: "MCP action-schema contracts drifted from CLI flag tables (guide.list, health.brief, validate.parentCycleSeverity, contracts.full)"
+description: ""
+type: Issue
+status: open
+priority: 2
+tags[4]: "area:contracts","area:mcp",parity,pm-cli
+created_at: "2026-06-28T18:58:20.379Z"
+updated_at: "2026-06-28T18:58:20.379Z"
+author: claude-code-agent
+parent: pm-5k4v
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-3wue,related,"2026-06-28T18:58:20.379Z",null,null
+body: "The MCP per-action parameter contracts (`PM_TOOL_ACTION_SCHEMA_CONTRACTS` in\n`src/sdk/cli-contracts/tool-schema.ts`) have drifted from the CLI flag tables in\n`flag-contracts.ts`: several flags the CLI advertises are missing from the\naction's required/optional key set, so the strict MCP/SDK schema rejects options\nthe CLI still accepts. Surfaced by CodeRabbit during PR #396 (cli-contracts\ndecomposition); the drift is pre-existing (the contracts were relocated verbatim,\nnot introduced by the split).\n\n## Confirmed missing (CLI flag present, MCP action key absent)\n\n- `guide.list` — `--list`. Property `list` exists but its metadata description is\n  files/docs-specific (\"list the current linked paths\"); needs a broadened or\n  action-scoped description so the guide schema reads correctly.\n- `health.brief` — `--brief`. Property `brief` exists (sibling of the already\n  exposed `summary`); add to the `health` optional list.\n- `validate.parentCycleSeverity` — `--parent-cycle-severity`. Sibling of the\n  already exposed `dependencyCycleSeverity`, but has NO property definition in\n  `tool-parameter-tables.ts` — add a `{ type: \"string\", enum: [\"off\",\"warn\",\"error\"] }`\n  property + metadata mirroring `dependencyCycleSeverity`, then add to `validate`\n  optional.\n- `contracts.full` — `--full`. Property `full` exists; add to the `contracts`\n  optional list.\n\n## Why deferred from PR #396\n\nPR #396 is a behavior-preserving decomposition (byte-identical `full.json`\nsnapshot). These fixes change the MCP contract + regenerate `full.json`, and\nrequire per-param metadata judgment (guide.list description; new\nparentCycleSeverity property). They belong in a focused contract-parity PR.\n\n## Scope / acceptance\n\n- Audit ALL action contracts vs their `*_FLAG_CONTRACTS` for the same\n  sibling-omission pattern (only expose flags meant for MCP — exclude\n  interactive-only flags like `--stream`/`--watch`/`--progress`).\n- Add the missing property defs + metadata; regenerate `tests/fixtures/contracts/full.json`.\n- Add a parity test asserting each MCP action contract key set is a superset of\n  its non-interactive CLI flags so the drift cannot recur."
