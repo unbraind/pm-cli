@@ -30,8 +30,9 @@ function camelCaseFlagName(flag: string): string {
 }
 
 describe("action-scoped MCP schema parity", () => {
-  it("accepts non-interactive CLI flags that reviewers identified as schema drift", () => {
-    for (const { action, command, flags } of SCHEMA_PARITY_CASES) {
+  it.each(SCHEMA_PARITY_CASES)(
+    "accepts non-interactive CLI flags for action $action",
+    ({ action, command, flags }) => {
       const commandFlags = new Set(resolveSubcommandFlagContractsForCommand(command).map((contract) => contract.flag));
       const schema = _testOnlyCliContracts.buildActionScopedToolSchema(action) as SchemaWithProperties;
       const schemaProperties = new Set(Object.keys(schema.properties ?? {}));
@@ -42,7 +43,7 @@ describe("action-scoped MCP schema parity", () => {
         expect(schemaProperties.has(parameter), `${action} schema should accept ${parameter} for ${flag}`).toBe(true);
       }
     }
-  });
+  );
 
   it("documents newly exposed terse health output for MCP clients", () => {
     const schema = _testOnlyCliContracts.buildActionScopedToolSchema("health") as {
