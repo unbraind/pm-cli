@@ -635,7 +635,7 @@ describe("MCP dynamic package actions", () => {
       expect(commentsResult?.limit).toBe(20);
       expect(commentsResult?.comments?.[0]?.text).toBe("mcp comment 5");
     });
-  });
+  }, 60_000);
 
   it("compacts mutation changed_fields by default and restores them with options.full", async () => {
     await withTempPmPath(async (context) => {

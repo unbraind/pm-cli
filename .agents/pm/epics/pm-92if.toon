@@ -6,10 +6,11 @@ status: in_progress
 priority: 2
 tags[3]: code-quality,codefactor,tech-debt
 created_at: "2026-06-26T13:29:14.359Z"
-updated_at: "2026-06-28T08:31:25.851Z"
+updated_at: "2026-06-28T12:06:18.554Z"
+assignee: claude-code-agent
 author: claude-code-agent
 acceptance_criteria: "CodeFactor overall repository grade reaches A+ (or the highest attainable) on branch main; CodeFactor reports 0 outstanding issues across Complexity, Maintainability, and Duplication; local lint/quality parity tooling exists so findings can be reproduced and kept at zero (no regressions on new PRs)."
-comments[36]{created_at,author,text}:
+comments[38]{created_at,author,text}:
   "2026-06-26T15:46:30.976Z",codex-gpt5,"Progress update: live CodeFactor for main still reports 255 issues until this branch lands (83 maintainability, 152 complexity, 20 duplication). This branch completes the maintainability groups tracked by pm-xsth, pm-m8yl, and pm-x878/Codecov; complexity pm-arzz and duplication pm-fmjy remain open for dedicated refactor follow-up."
   "2026-06-26T18:50:54.481Z",codex-codefactor-sdk-cli-20260626,"Investigation note: live 2026-06-26 CodeFactor public issues page reports A rating, 601 analyzed files, 172 issues after the merged maintainability branch; PM snapshot still tracks remaining complexity and duplication children. GitHub state: no open PRs, no open Dependabot or code-scanning alerts; issue #374 remains open and externally blocked on missing RELEASE_PAT in release environment; pnpm audit --audit-level moderate reports no known vulnerabilities. Dependency drift from pnpm outdated: @sentry/cli 3.5.1 -> 3.6.0, @sentry/node 10.61.0 -> 10.62.0, @types/node held at Node 22 types despite latest 26.x."
   "2026-06-26T19:05:47.605Z",codex-codefactor-sdk-cli-20260626,"Evidence update: CodeFactor remediation bundle now covers the remaining duplication primitives and generated/test analysis scope. Verification passed: pnpm build; targeted 254-test suite; pnpm contracts:check; pnpm quality:static; pnpm typecheck; pnpm security:scan; full coverage 100/100/100/100 across 5133 tests; manual isolated temp-project smoke with PM_PATH/PM_GLOBAL_PATH passed package install/doctor and shared unset behavior. Remaining release issue #374 is external to code changes: GitHub scheduled Auto Release requires RELEASE_PAT in the release environment."
@@ -46,17 +47,23 @@ comments[36]{created_at,author,text}:
   "2026-06-28T08:13:42.609Z",codex-gpt5,"Final review-cleanup evidence 2026-06-28 for PR #394: addressed CodeRabbit summary docstring-coverage warning by adding targeted docstrings to the SDK cloneOptionContracts helper and the new test requireOptionContract helper. This is comment-only for executable behavior; the prior full coverage run on the same code paths remains 257 files / 5139 tests / 100% statements, branches, functions, and lines, and GitHub coverage will re-run on the pushed head. Verification after docstring cleanup: focused tests node scripts/run-tests.mjs test -- tests/unit/sdk/tool-option-contracts.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts passed 3 files / 148 tests; pnpm typecheck passed; pnpm lint passed with static quality gate passed; pnpm contracts:check passed; pnpm security:scan found no credential-like secrets; pnpm audit --audit-level moderate found no known vulnerabilities; git diff --check passed."
   "2026-06-28T08:22:35.177Z",codex-gpt5,"Review response 2026-06-28 for PR #394 Gemini test-state feedback: changed tests/unit/sdk/tool-option-contracts.spec.ts to prove exported contract object isolation with side-effect-free reference inequality assertions instead of mutating and restoring exported module state. Verification after the fix: focused tests node scripts/run-tests.mjs test -- tests/unit/sdk/tool-option-contracts.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts passed 3 files / 148 tests; pnpm typecheck passed; pnpm lint passed with static quality gate passed and duplicate count unchanged at 26 known clones / 809 TS lines; pnpm contracts:check passed; pnpm security:scan found no credential-like secrets; pnpm audit --audit-level moderate found no known vulnerabilities; git diff --check passed."
   "2026-06-28T08:31:18.530Z",codex-gpt5,"Review response 2026-06-28 for PR #394 Gemini double-clone feedback: simplified TOOL_BASIC_ITEM_FILTER_OPTION_CONTRACTS to compose readonly base and relation contract groups directly, leaving cloning at exported array boundaries where mutable public ToolOptionFlagContract[] arrays are produced. Verification after the fix: focused tests node scripts/run-tests.mjs test -- tests/unit/sdk/tool-option-contracts.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts passed 3 files / 148 tests; pnpm typecheck passed; pnpm lint passed with static quality gate passed and duplicate count unchanged at 26 known clones / 809 TS lines; pnpm contracts:check passed; pnpm security:scan found no credential-like secrets; pnpm audit --audit-level moderate found no known vulnerabilities; git diff --check passed."
-files[22]{path,scope,note}:
+  "2026-06-28T11:43:51.127Z",claude-code-agent,"Implementation start: continuing active pm SDK/CLI work after duplicate-safe all-status search and GitHub sweep. No open PRs; GitHub issue #374 remains externally blocked on missing RELEASE_PAT; Dependabot, code-scanning, and secret-scanning alerts are empty; pnpm audit is clean. Reusing pm-92if plus release-health pm-7zs0 instead of creating duplicate items."
+  "2026-06-28T12:06:18.554Z",claude-code-agent,"Evidence: shared list/search item filter option contracts extracted into src/cli/commands/item-filter-options.ts, with list/search option interfaces now reusing the same command-local SDK/package-facing shape. Stabilized the MCP compact-output integration test under full coverage load with a 60s timeout. Verification passed: pnpm build; full coverage node scripts/run-tests.mjs coverage = 257 files / 5139 tests / 100% statements, branches, functions, and lines; pm test pm-92if --run --progress passed 17/17 linked checks; focused list/search/contracts/SDK suite passed; pnpm contracts:check; pnpm changelog:pm:check using pm-changelog 2026.6.27 with CHANGELOG.md unchanged item_count=1363; package doctor deep ok; pm health summary ok; history drift ok with only existing resolution metadata warning backlog validate_resolution_missing_fields:258; git diff --check passed. Manual temp smoke at /tmp/tmp.64AMBk8DSx used isolated PM_PATH/PM_GLOBAL_PATH and passed init with research type preset, custom Experiment type storage, Task/Experiment create, list/search shared filters, health, and validate. GitHub sweep found no open PRs, issue #374 remains external RELEASE_PAT config, no Dependabot/code-scanning/secret-scanning alerts, pnpm audit clean. Sentry CLI returned recent scrubbed unresolved issue records and sentry-telemetry gate reported critical=0 high=0 telemetry finish_error_rate_pct=0.76."
+files[26]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,pm-changelog package-owned check refreshed managed extension install timestamp
   src/cli/commands/config.ts,project,reuse shared canonical config key type
   src/cli/commands/create.ts,project,reuse shared legacy-none and runtime-unset helpers
   src/cli/commands/extension/scaffold.ts,project,generate imperative package starter tests through createExtensionTestHarness for common command/teardown flow
+  src/cli/commands/item-filter-options.ts,project,single-source shared list/search item filter option contracts
   src/cli/commands/legacy-none-tokens.ts,project,share legacy none/null collection normalization across create and update
+  src/cli/commands/list.ts,project,reuse shared item filter option contract for list options
+  src/cli/commands/search.ts,project,reuse shared item filter option contract for search options
   src/cli/commands/shared-unset-fields.ts,project,share runtime schema unset token lookup
   src/cli/commands/update.ts,project,reuse shared legacy-none and runtime-unset helpers
   src/core/config/positional-value.ts,project,single-source canonical config key type for command and positional router
   src/core/store/paths.ts,project,reuse type-registry default-folder derivation for custom item storage
   src/sdk/cli-contracts/tool-option-contracts.ts,project,deduplicate SDK tool option contract groups while preserving generated contract snapshot
+  tests/integration/mcp-dynamic-package-actions.spec.ts,project,stabilize long MCP compact-output integration coverage timeout
   tests/unit/commands/create-command.spec.ts,project,Review-fix coverage for command-scoped runtime unset registry fixtures
   tests/unit/commands/legacy-none-tokens.spec.ts,project,Review-fix coverage for malformed legacy none collection payloads
   tests/unit/commands/update-command.spec.ts,project,Review-fix coverage for command-scoped runtime unset registry fixtures
@@ -69,11 +76,14 @@ files[22]{path,scope,note}:
   tests/unit/extensions/extension-command.spec.ts,project,Updates package-root scaffold expectations for SDK harness-based starter tests.
   tests/unit/extensions/extension-scaffold-define-guidance.spec.ts,project,regression coverage for harness-based generated starter tests
   tests/unit/sdk/tool-option-contracts.spec.ts,project,regression coverage for exported SDK option contract object isolation
-tests[15]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[19]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+  "node scripts/run-tests.mjs test -- tests/integration/mcp-dynamic-package-actions.spec.ts -t \"normalizes scalar update log fields and defaults list output to compact\"",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/unit/commands/config-command.spec.ts tests/unit/commands/config-key-aliases-search.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/unit/sdk/sdk-index.spec.ts,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs test -- tests/unit/commands/legacy-none-tokens.spec.ts,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/commands/list-command.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs test -- tests/unit/core/store/store-paths.spec.ts tests/unit/core/sentry/sentry-helpers.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs test -- tests/unit/docs-examples/sdk-app-embedding.spec.ts tests/unit/docs-examples/sdk-contract-consumer.spec.ts tests/unit/docs-examples/starter-extension.spec.ts tests/unit/docs-examples/policy-restricted-extension.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   "node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts -t \"scaffolds package-root metadata via package init while keeping installable extension resources\"",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
@@ -81,11 +91,12 @@ tests[15]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,s
   node scripts/run-tests.mjs test -- tests/unit/sdk/tool-option-contracts.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   pm telemetry stats --json,null,project,60,null,null,null,null,null,null,null,null,null,null,null,null
   pnpm audit --audit-level moderate,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm contracts:check",null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
   pnpm lint,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   "pnpm quality:static",null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
   "pnpm security:scan",null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
   pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[19]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+test_runs[20]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mqw0kk1b-ny2017,test,failed,"2026-06-27T07:02:42.078Z","2026-06-27T07:03:47.567Z","2026-06-27T07:03:47.567Z",null,null,4,1,0,null,null,null
   test-local-mqw0mxnv-pjj9c9,test,failed,"2026-06-27T07:04:30.903Z","2026-06-27T07:05:38.540Z","2026-06-27T07:05:38.540Z",null,null,4,1,0,null,null,null
   test-local-mqw0qzac-pf9id2,test,passed,"2026-06-27T07:07:41.149Z","2026-06-27T07:08:47.268Z","2026-06-27T07:08:47.268Z",null,null,4,0,0,null,null,null
@@ -105,4 +116,5 @@ test_runs[19]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resu
   test-local-mqxfnpid-d8d3gb,test,passed,"2026-06-28T06:50:43.462Z","2026-06-28T06:53:55.045Z","2026-06-28T06:53:55.045Z",null,null,14,0,0,null,null,null
   test-local-mqxg9fx9-f462lm,test,passed,"2026-06-28T07:10:39.647Z","2026-06-28T07:10:49.053Z","2026-06-28T07:10:49.053Z",null,null,1,0,0,null,null,null
   test-local-mqxi4yd3-niso3y,test,passed,"2026-06-28T08:03:09.795Z","2026-06-28T08:03:18.903Z","2026-06-28T08:03:18.903Z",null,null,1,0,0,null,null,null
+  test-local-mqxqrvks-yhyeo9,test,passed,"2026-06-28T12:01:34.241Z","2026-06-28T12:05:05.308Z","2026-06-28T12:05:05.308Z",null,null,17,0,0,null,null,null
 body: ""

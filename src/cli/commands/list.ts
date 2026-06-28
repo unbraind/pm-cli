@@ -39,27 +39,14 @@ import { HEAVY_METADATA_KEYS } from "../../core/store/front-matter-cache.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter, ItemStatus, ItemType } from "../../types/index.js";
+import type { SharedItemFilterOptions } from "./item-filter-options.js";
 
 /**
  * Documents the list options payload exchanged by command, SDK, and package integrations.
  */
-export interface ListOptions {
-  status?: string;
-  type?: string;
-  tag?: string;
-  priority?: string;
-  deadlineBefore?: string;
-  deadlineAfter?: string;
-  updatedAfter?: string;
-  updatedBefore?: string;
-  createdAfter?: string;
-  createdBefore?: string;
+export interface ListOptions extends SharedItemFilterOptions {
   ids?: string;
-  assignee?: string;
   assigneeFilter?: string;
-  parent?: string;
-  sprint?: string;
-  release?: string;
   limit?: string;
   offset?: string;
   noTruncate?: boolean;
@@ -77,35 +64,6 @@ export interface ListOptions {
   filterEstimatesMissing?: boolean;
   filterResolutionMissing?: boolean;
   filterMetadataMissing?: boolean;
-  filterReviewerMissing?: boolean;
-  filterRiskMissing?: boolean;
-  filterConfidenceMissing?: boolean;
-  filterSprintMissing?: boolean;
-  filterReleaseMissing?: boolean;
-  // Content-field presence filters (GH-242). The has*/no* companions mirror the
-  // commander flag camelCase (e.g. --no-notes → noNotes, --empty-body → emptyBody)
-  // so the MCP param names and ListOptions fields stay identical (the MCP path
-  // forwards params verbatim, unlike the CLI which normalizes first). A field may
-  // be requested present XOR absent — a both-set request is a usage error.
-  hasNotes?: boolean;
-  hasLearnings?: boolean;
-  hasFiles?: boolean;
-  hasDocs?: boolean;
-  hasTests?: boolean;
-  hasComments?: boolean;
-  hasDeps?: boolean;
-  hasBody?: boolean;
-  hasLinkedCommand?: boolean;
-  noNotes?: boolean;
-  noLearnings?: boolean;
-  noFiles?: boolean;
-  noDocs?: boolean;
-  noTests?: boolean;
-  noComments?: boolean;
-  noDeps?: boolean;
-  emptyBody?: boolean;
-  noLinkedCommand?: boolean;
-  [key: string]: unknown;
 }
 
 /** Extract the missing-metadata selection filters from list/update-many options. */
