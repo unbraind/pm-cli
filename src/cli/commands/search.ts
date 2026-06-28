@@ -97,11 +97,12 @@ import { listAllFrontMatter } from "../../core/store/item-store.js";
 import { getItemPath, getSettingsPath, resolveGlobalPmRoot, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemDocument, ItemFormat, ItemFrontMatter, ItemStatus, ItemType, PmSettings } from "../../types/index.js";
+import type { SharedItemFilterOptions } from "./item-filter-options.js";
 
 /**
  * Documents the search options payload exchanged by command, SDK, and package integrations.
  */
-export interface SearchOptions {
+export interface SearchOptions extends SharedItemFilterOptions {
   mode?: string;
   matchMode?: string;
   minScore?: string | number;
@@ -110,20 +111,6 @@ export interface SearchOptions {
   includeLinked?: boolean;
   titleExact?: boolean;
   phraseExact?: boolean;
-  status?: string;
-  type?: string;
-  tag?: string;
-  priority?: string;
-  deadlineBefore?: string;
-  deadlineAfter?: string;
-  updatedAfter?: string;
-  updatedBefore?: string;
-  createdAfter?: string;
-  createdBefore?: string;
-  assignee?: string;
-  sprint?: string;
-  release?: string;
-  parent?: string;
   limit?: string;
   compact?: boolean;
   full?: boolean;
@@ -131,32 +118,6 @@ export interface SearchOptions {
   // GH-157: emit per-field matched-text snippets on each hit (off by default for
   // token efficiency). Highlighted spans are wrapped with the «…» markers.
   highlight?: boolean;
-  // Governance-missing selection filters (GH-236).
-  filterReviewerMissing?: boolean;
-  filterRiskMissing?: boolean;
-  filterConfidenceMissing?: boolean;
-  filterSprintMissing?: boolean;
-  filterReleaseMissing?: boolean;
-  // Content-field presence/absence selection filters (GH-242).
-  hasNotes?: boolean;
-  hasLearnings?: boolean;
-  hasFiles?: boolean;
-  hasDocs?: boolean;
-  hasTests?: boolean;
-  hasComments?: boolean;
-  hasDeps?: boolean;
-  hasBody?: boolean;
-  hasLinkedCommand?: boolean;
-  noNotes?: boolean;
-  noLearnings?: boolean;
-  noFiles?: boolean;
-  noDocs?: boolean;
-  noTests?: boolean;
-  noComments?: boolean;
-  noDeps?: boolean;
-  emptyBody?: boolean;
-  noLinkedCommand?: boolean;
-  [key: string]: unknown;
 }
 
 /**
