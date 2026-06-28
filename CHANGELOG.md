@@ -25,6 +25,7 @@
 
 ### Fixed
 
+- MCP action-schema contracts drifted from CLI flag tables (guide.list, health.brief, validate.parentCycleSeverity, contracts.full) ([pm-zx13](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zx13.toon))
 - pm next hides completed-container closeout rows while leaf work exists ([pm-9g87](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9g87.toon))
 - Windows background stop progress assertion ([pm-bnh3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bnh3.toon))
 - GH-348/GH-376: Windows nightly Vitest worker fork exits unexpectedly after passing tests ([pm-2kkl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2kkl.toon))
