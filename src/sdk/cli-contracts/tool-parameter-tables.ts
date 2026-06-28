@@ -1140,6 +1140,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   compact: {
     description: "Render compact projection output for search and list-family actions.",
   },
+  brief: {
+    description: "Emit compact low-token output for commands that support terse projections or health details.",
+    examples: [true],
+  },
   full: {
     description: "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
   },

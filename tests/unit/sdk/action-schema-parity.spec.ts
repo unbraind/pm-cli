@@ -41,6 +41,15 @@ describe("action-scoped MCP schema parity", () => {
     }
   });
 
+  it("documents newly exposed terse health output for MCP clients", () => {
+    const schema = _testOnlyCliContracts.buildActionScopedToolSchema("health") as {
+      properties?: { brief?: { description?: string; examples?: unknown[] } };
+    };
+
+    expect(schema.properties?.brief?.description).toContain("low-token");
+    expect(schema.properties?.brief?.examples).toEqual([true]);
+  });
+
   it("keeps the package-owned guide contract aligned with its CLI flag table", () => {
     const guideFlags = new Set(resolveSubcommandFlagContractsForCommand("guide").map((contract) => contract.flag));
     const guideContract = _testOnlyCliContracts.toolActionSchemaContracts.guide;
