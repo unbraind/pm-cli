@@ -5,32 +5,62 @@
  */
 import type { ToolOptionFlagContract } from "../cli-contracts.js";
 
-export const TOOL_LIST_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
+type SharedToolOptionFlagContract = Readonly<ToolOptionFlagContract>;
+
+/**
+ * Returns fresh option contract objects so exported arrays cannot share mutable entries.
+ */
+function cloneOptionContracts(
+  contracts: readonly SharedToolOptionFlagContract[],
+): ToolOptionFlagContract[] {
+  return contracts.map((contract) => ({ ...contract }));
+}
+
+const TOOL_ITEM_BASE_FILTER_OPTION_CONTRACTS: readonly SharedToolOptionFlagContract[] = [
   { param: "status", flag: "--status" },
   { param: "type", flag: "--type" },
   { param: "tag", flag: "--tag" },
   { param: "priority", flag: "--priority" },
   { param: "deadlineBefore", flag: "--deadline-before" },
   { param: "deadlineAfter", flag: "--deadline-after" },
+];
+
+const TOOL_ITEM_WINDOW_FILTER_OPTION_CONTRACTS: readonly SharedToolOptionFlagContract[] = [
   { param: "updatedAfter", flag: "--updated-after" },
   { param: "updatedBefore", flag: "--updated-before" },
   { param: "createdAfter", flag: "--created-after" },
   { param: "createdBefore", flag: "--created-before" },
-  { param: "ids", flag: "--ids" },
+];
+
+const TOOL_ITEM_RELATION_FILTER_OPTION_CONTRACTS: readonly SharedToolOptionFlagContract[] = [
   { param: "assignee", flag: "--assignee" },
   { param: "assigneeFilter", flag: "--assignee-filter" },
   { param: "parent", flag: "--parent" },
   { param: "sprint", flag: "--sprint" },
   { param: "release", flag: "--release" },
-  { param: "filterAcMissing", flag: "--filter-ac-missing" },
-  { param: "filterEstimatesMissing", flag: "--filter-estimates-missing" },
-  { param: "filterResolutionMissing", flag: "--filter-resolution-missing" },
-  { param: "filterMetadataMissing", flag: "--filter-metadata-missing" },
+];
+
+const TOOL_SEARCH_RELATION_FILTER_OPTION_CONTRACTS: readonly SharedToolOptionFlagContract[] = [
+  { param: "assignee", flag: "--assignee" },
+  { param: "sprint", flag: "--sprint" },
+  { param: "release", flag: "--release" },
+  { param: "parent", flag: "--parent" },
+];
+
+const TOOL_BASIC_ITEM_FILTER_OPTION_CONTRACTS: readonly SharedToolOptionFlagContract[] = [
+  ...TOOL_ITEM_BASE_FILTER_OPTION_CONTRACTS,
+  ...TOOL_ITEM_RELATION_FILTER_OPTION_CONTRACTS,
+];
+
+const TOOL_GOVERNANCE_MISSING_OPTION_CONTRACTS: readonly SharedToolOptionFlagContract[] = [
   { param: "filterReviewerMissing", flag: "--filter-reviewer-missing" },
   { param: "filterRiskMissing", flag: "--filter-risk-missing" },
   { param: "filterConfidenceMissing", flag: "--filter-confidence-missing" },
   { param: "filterSprintMissing", flag: "--filter-sprint-missing" },
   { param: "filterReleaseMissing", flag: "--filter-release-missing" },
+];
+
+const TOOL_CONTENT_PRESENCE_OPTION_CONTRACTS: readonly SharedToolOptionFlagContract[] = [
   { param: "hasNotes", flag: "--has-notes" },
   { param: "noNotes", flag: "--no-notes" },
   { param: "hasLearnings", flag: "--has-learnings" },
@@ -49,6 +79,19 @@ export const TOOL_LIST_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "emptyBody", flag: "--empty-body" },
   { param: "hasLinkedCommand", flag: "--has-linked-command" },
   { param: "noLinkedCommand", flag: "--no-linked-command" },
+];
+
+export const TOOL_LIST_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
+  ...cloneOptionContracts(TOOL_ITEM_BASE_FILTER_OPTION_CONTRACTS),
+  ...cloneOptionContracts(TOOL_ITEM_WINDOW_FILTER_OPTION_CONTRACTS),
+  { param: "ids", flag: "--ids" },
+  ...cloneOptionContracts(TOOL_ITEM_RELATION_FILTER_OPTION_CONTRACTS),
+  { param: "filterAcMissing", flag: "--filter-ac-missing" },
+  { param: "filterEstimatesMissing", flag: "--filter-estimates-missing" },
+  { param: "filterResolutionMissing", flag: "--filter-resolution-missing" },
+  { param: "filterMetadataMissing", flag: "--filter-metadata-missing" },
+  ...cloneOptionContracts(TOOL_GOVERNANCE_MISSING_OPTION_CONTRACTS),
+  ...cloneOptionContracts(TOOL_CONTENT_PRESENCE_OPTION_CONTRACTS),
   { param: "limit", flag: "--limit" },
   { param: "offset", flag: "--offset" },
   { param: "fields", flag: "--fields" },
@@ -62,34 +105,14 @@ export const TOOL_AGGREGATE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "groupBy", flag: "--group-by" },
   { param: "sum", flag: "--sum" },
   { param: "avg", flag: "--avg" },
-  { param: "status", flag: "--status" },
-  { param: "type", flag: "--type" },
-  { param: "tag", flag: "--tag" },
-  { param: "priority", flag: "--priority" },
-  { param: "deadlineBefore", flag: "--deadline-before" },
-  { param: "deadlineAfter", flag: "--deadline-after" },
-  { param: "assignee", flag: "--assignee" },
-  { param: "assigneeFilter", flag: "--assignee-filter" },
-  { param: "parent", flag: "--parent" },
-  { param: "sprint", flag: "--sprint" },
-  { param: "release", flag: "--release" },
+  ...cloneOptionContracts(TOOL_BASIC_ITEM_FILTER_OPTION_CONTRACTS),
 ];
 
 export const TOOL_DEDUPE_AUDIT_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "mode", flag: "--mode" },
   { param: "limit", flag: "--limit" },
   { param: "threshold", flag: "--threshold" },
-  { param: "status", flag: "--status" },
-  { param: "type", flag: "--type" },
-  { param: "tag", flag: "--tag" },
-  { param: "priority", flag: "--priority" },
-  { param: "deadlineBefore", flag: "--deadline-before" },
-  { param: "deadlineAfter", flag: "--deadline-after" },
-  { param: "assignee", flag: "--assignee" },
-  { param: "assigneeFilter", flag: "--assignee-filter" },
-  { param: "parent", flag: "--parent" },
-  { param: "sprint", flag: "--sprint" },
-  { param: "release", flag: "--release" },
+  ...cloneOptionContracts(TOOL_BASIC_ITEM_FILTER_OPTION_CONTRACTS),
 ];
 
 export const TOOL_SEARCH_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
@@ -97,43 +120,11 @@ export const TOOL_SEARCH_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "minScore", flag: "--min-score" },
   { param: "count", flag: "--count", booleanish: true },
   { param: "semanticWeight", flag: "--semantic-weight" },
-  { param: "status", flag: "--status" },
-  { param: "type", flag: "--type" },
-  { param: "tag", flag: "--tag" },
-  { param: "priority", flag: "--priority" },
-  { param: "deadlineBefore", flag: "--deadline-before" },
-  { param: "deadlineAfter", flag: "--deadline-after" },
-  { param: "updatedAfter", flag: "--updated-after" },
-  { param: "updatedBefore", flag: "--updated-before" },
-  { param: "createdAfter", flag: "--created-after" },
-  { param: "createdBefore", flag: "--created-before" },
-  { param: "assignee", flag: "--assignee" },
-  { param: "sprint", flag: "--sprint" },
-  { param: "release", flag: "--release" },
-  { param: "parent", flag: "--parent" },
-  { param: "filterReviewerMissing", flag: "--filter-reviewer-missing" },
-  { param: "filterRiskMissing", flag: "--filter-risk-missing" },
-  { param: "filterConfidenceMissing", flag: "--filter-confidence-missing" },
-  { param: "filterSprintMissing", flag: "--filter-sprint-missing" },
-  { param: "filterReleaseMissing", flag: "--filter-release-missing" },
-  { param: "hasNotes", flag: "--has-notes" },
-  { param: "noNotes", flag: "--no-notes" },
-  { param: "hasLearnings", flag: "--has-learnings" },
-  { param: "noLearnings", flag: "--no-learnings" },
-  { param: "hasFiles", flag: "--has-files" },
-  { param: "noFiles", flag: "--no-files" },
-  { param: "hasDocs", flag: "--has-docs" },
-  { param: "noDocs", flag: "--no-docs" },
-  { param: "hasTests", flag: "--has-tests" },
-  { param: "noTests", flag: "--no-tests" },
-  { param: "hasComments", flag: "--has-comments" },
-  { param: "noComments", flag: "--no-comments" },
-  { param: "hasDeps", flag: "--has-deps" },
-  { param: "noDeps", flag: "--no-deps" },
-  { param: "hasBody", flag: "--has-body" },
-  { param: "emptyBody", flag: "--empty-body" },
-  { param: "hasLinkedCommand", flag: "--has-linked-command" },
-  { param: "noLinkedCommand", flag: "--no-linked-command" },
+  ...cloneOptionContracts(TOOL_ITEM_BASE_FILTER_OPTION_CONTRACTS),
+  ...cloneOptionContracts(TOOL_ITEM_WINDOW_FILTER_OPTION_CONTRACTS),
+  ...cloneOptionContracts(TOOL_SEARCH_RELATION_FILTER_OPTION_CONTRACTS),
+  ...cloneOptionContracts(TOOL_GOVERNANCE_MISSING_OPTION_CONTRACTS),
+  ...cloneOptionContracts(TOOL_CONTENT_PRESENCE_OPTION_CONTRACTS),
   { param: "fields", flag: "--fields" },
   { param: "limit", flag: "--limit" },
 ];
@@ -259,7 +250,7 @@ export const TOOL_UPDATE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "allowAuditDepUpdate", flag: "--allow-audit-dep-update" },
 ];
 
-const TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
+const TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACTS: readonly SharedToolOptionFlagContract[] = [
   { param: "filterStatus", flag: "--filter-status" },
   { param: "filterType", flag: "--filter-type" },
   { param: "filterTag", flag: "--filter-tag" },
@@ -304,7 +295,7 @@ const TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
 ];
 
 export const TOOL_UPDATE_MANY_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
-  ...TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACTS,
+  ...cloneOptionContracts(TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACTS),
 ];
 
 // normalize keeps the original filter family (no --ids / date-window filters):
@@ -327,7 +318,7 @@ export const TOOL_NORMALIZE_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = 
 ];
 
 export const TOOL_CLOSE_MANY_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
-  ...TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACTS,
+  ...cloneOptionContracts(TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACTS),
 ];
 
 export const TOOL_CALENDAR_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
