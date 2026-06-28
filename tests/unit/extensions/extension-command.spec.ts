@@ -2078,7 +2078,8 @@ describe("extension command runtime", () => {
         type: "module",
         scripts: {
           typecheck: "tsc --noEmit",
-          test: "node --test",
+          "test:runtime": "node --test",
+          test: "npm run typecheck && npm run test:runtime",
         },
         pm: {
           aliases: ["starter-package"],

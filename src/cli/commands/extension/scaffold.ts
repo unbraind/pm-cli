@@ -707,9 +707,10 @@ function buildActivateBodyLines(
 
 /**
  * Build the colocated `node:test` sample suite (`index.test.ts`) for the chosen
- * capability. Authored in TypeScript and run through `npm test` (`node --test`,
- * which strips types on Node >=22.18), it imports the `./index.ts` manifest entry
- * directly under NodeNext resolution.
+ * capability. Authored in TypeScript and run through the generated package's
+ * `npm test` script (typecheck first, then `node --test`, which strips types on
+ * Node >=22.18), it imports the `./index.ts` manifest entry directly under
+ * NodeNext resolution.
  * Every variant covers activation, command invocation, and teardown via
  * `createExtensionTestHarness`; capability variants add tests that use the
  * harness-bound `assert*`/`run*` helpers and deactivate in `finally`.
@@ -2109,20 +2110,20 @@ function buildDeclarativePackageReadme(
     "  derives, so `manifest.json`'s `capabilities` never drift.",
     "",
     "## Validate the Package",
-    "`npm install` pulls the peer SDK and TypeScript; `npm run typecheck` checks the",
-    "source against the SDK contracts and `npm test` runs the colocated sample:",
+    "`npm install` pulls the peer SDK and TypeScript. `npm test` is the default",
+    "validation gate: it type-checks the package, then runs the colocated sample:",
     "```bash",
     "npm install",
-    "npm run typecheck",
     "npm test",
     "```",
     "`index.test.ts` exercises both authoring capstones: `assertExtensionPreflight`",
     "(the author-time lint + manifest synthesis + version-compatibility check over the",
     "exported `blueprint`) and `createExtensionTestHarness` (the runtime fixture whose",
     "`assert*`/`run*`/`deactivate` methods bind to the right activation sub-registry).",
-    "`npm test` runs `node --test`, which strips types on load and executes",
-    "`index.test.ts` directly against the `@unbrained/pm-cli/sdk/testing` helpers - no",
-    "compile step and no extra test runner required.",
+    "`npm run typecheck` is available when you only want the SDK contract check.",
+    "`npm run test:runtime` runs just `node --test`, which strips types on load and",
+    "executes `index.test.ts` directly against the `@unbrained/pm-cli/sdk/testing`",
+    "helpers - no compile step and no extra test runner required.",
     ...activationSection,
     "",
     "## Compatibility Bounds",
@@ -2225,12 +2226,15 @@ export function buildStarterExtensionScaffoldFiles(
         // There is no build step: pm loads the `./index.ts` manifest entry
         // directly via Node's native type stripping (Node >=22.18). `typecheck`
         // validates the source against the SDK contracts (`tsc --noEmit`), and
-        // `test` runs the colocated sample with Node's built-in runner (which
-        // strips types on load) against the peer SDK testing helpers — no
-        // third-party test runner or compile required.
+        // `test` is the self-validating author gate: typecheck first, then run
+        // the colocated sample with Node's built-in runner (which strips types
+        // on load) against the peer SDK testing helpers — no third-party test
+        // runner or compile output required. `test:runtime` remains available
+        // for tight loops after a separate `npm run typecheck`.
         scripts: {
           typecheck: "tsc --noEmit",
-          test: "node --test",
+          "test:runtime": "node --test",
+          test: "npm run typecheck && npm run test:runtime",
         },
         peerDependencies: {
           "@unbrained/pm-cli": `>=${SCAFFOLD_PM_MIN_VERSION}`,
@@ -2507,16 +2511,16 @@ export function buildStarterExtensionScaffoldFiles(
       "```",
       "",
       "## Validate the Package",
-      "`npm install` pulls the peer SDK and TypeScript; `npm run typecheck` checks the",
-      "source against the SDK contracts and `npm test` runs the colocated sample:",
+      "`npm install` pulls the peer SDK and TypeScript. `npm test` is the default",
+      "validation gate: it type-checks the package, then runs the colocated sample:",
       "```bash",
       "npm install",
-      "npm run typecheck",
       "npm test",
       "```",
-      "`npm test` runs `node --test`, which strips types on load and executes",
-      "`index.test.ts` directly against the `@unbrained/pm-cli/sdk/testing` helpers -",
-      "no compile step and no extra test runner required.",
+      "`npm run typecheck` is available when you only want the SDK contract check.",
+      "`npm run test:runtime` runs just `node --test`, which strips types on load and",
+      "executes `index.test.ts` directly against the `@unbrained/pm-cli/sdk/testing`",
+      "helpers - no compile step and no extra test runner required.",
       "",
       "## Authoring With define* Builders",
       "`index.ts` is authored fully in TypeScript so every registration is checked",
