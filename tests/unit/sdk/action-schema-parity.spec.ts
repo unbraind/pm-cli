@@ -15,6 +15,8 @@ const SCHEMA_PARITY_CASES: Array<{
   command: string;
   flags: string[];
 }> = [
+  { action: "close", command: "close", flags: ["--reason", "--close-reason", "--validate-close", "--resolution", "--expected-result", "--actual-result"] },
+  { action: "close-task", command: "close-task", flags: ["--validate-close"] },
   { action: "files", command: "files", flags: ["--list"] },
   { action: "health", command: "health", flags: ["--brief", "--summary", "--full"] },
   { action: "validate", command: "validate", flags: ["--dependency-cycle-severity", "--parent-cycle-severity"] },

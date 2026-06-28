@@ -20730,6 +20730,10 @@
             "const": "close",
             "description": "Tool action to execute."
           },
+          "actualResult": {
+            "description": "Actual Result.",
+            "type": "string"
+          },
           "author": {
             "description": "Mutation author identity.",
             "examples": [
@@ -20737,8 +20741,16 @@
             ],
             "type": "string"
           },
+          "closeReason": {
+            "description": "Close Reason.",
+            "type": "string"
+          },
           "duplicateOf": {
             "description": "Duplicate Of.",
+            "type": "string"
+          },
+          "expectedResult": {
+            "description": "Expected Result.",
             "type": "string"
           },
           "force": {
@@ -20795,6 +20807,14 @@
           "quiet": {
             "description": "Suppress stdout payload output.",
             "type": "boolean"
+          },
+          "reason": {
+            "description": "Reason.",
+            "type": "string"
+          },
+          "resolution": {
+            "description": "Resolution.",
+            "type": "string"
           },
           "text": {
             "description": "Text.",
@@ -23929,6 +23949,20 @@
               120000
             ],
             "type": "number"
+          },
+          "validateClose": {
+            "description": "Close-time metadata validation mode (\"off\", \"warn\", or \"strict\").",
+            "enum": [
+              "off",
+              "warn",
+              "strict"
+            ],
+            "examples": [
+              "off",
+              "warn",
+              "strict"
+            ],
+            "type": "string"
           }
         },
         "required": [

@@ -449,7 +449,20 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   update: { required: ["id"], optional: UPDATE_CONTRACT_PARAMETER_KEYS },
   "update-many": { optional: UPDATE_MANY_CONTRACT_PARAMETER_KEYS },
   normalize: { optional: NORMALIZE_CONTRACT_PARAMETER_KEYS },
-  close: { required: ["id"], optional: ["text", "duplicateOf", "validateClose", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  close: {
+    required: ["id"],
+    optional: [
+      "text",
+      "reason",
+      "closeReason",
+      "duplicateOf",
+      "validateClose",
+      "resolution",
+      "expectedResult",
+      "actualResult",
+      ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
+    ],
+  },
   "close-many": { optional: CLOSE_MANY_CONTRACT_PARAMETER_KEYS },
   delete: { required: ["id"], optional: ["dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   append: { required: ["id", "body"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
@@ -641,7 +654,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   release: { required: ["id"], optional: ["allowAuditRelease", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   "start-task": { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   "pause-task": { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
-  "close-task": { required: ["id"], optional: ["text", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  "close-task": { required: ["id"], optional: ["text", "validateClose", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
 };
 
 export const PM_TOOL_ACTION_PARAMETER_CONTRACTS: Readonly<Record<PmToolAction, PmActionSchemaContract>> =
