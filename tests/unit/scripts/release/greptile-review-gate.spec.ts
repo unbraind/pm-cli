@@ -100,7 +100,7 @@ describe("scripts/release/greptile-review-gate", () => {
   it("skips when a non-zero review exit includes clean-review text", async () => {
     mockSpawn(
       () => ({ status: 0, stdout: "signed in", stderr: "" }),
-      () => ({ status: 2, stdout: "No review comments.", stderr: "" }),
+      () => ({ status: 2, stdout: "No review comments.", stderr: "transient transport warning" }),
     );
     const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     await runGate(["--json"], "greptileNonZeroCleanText");
@@ -172,6 +172,19 @@ describe("scripts/release/greptile-review-gate", () => {
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     await runGate([], "greptileCleanHuman");
     expect(String(logSpy.mock.calls.at(-1)?.[0] ?? "")).toContain("no findings");
+    expect(process.exitCode).toBe(0);
+  });
+
+  it("passes when a clean stdout review includes stderr warnings", async () => {
+    mockSpawn(
+      () => ({ status: 0, stdout: "signed in", stderr: "" }),
+      () => ({ status: 0, stdout: "No review comments.", stderr: "progress warning" }),
+    );
+    const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    await runGate(["--json"], "greptileCleanStdoutWithStderrWarning");
+    const payload = JSON.parse(String(writeSpy.mock.calls.at(-1)?.[0] ?? "{}"));
+    expect(payload).toMatchObject({ ok: true, skipped: false, findings: 0 });
+    expect(payload.review).toContain("progress warning");
     expect(process.exitCode).toBe(0);
   });
 

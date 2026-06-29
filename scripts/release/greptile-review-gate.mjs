@@ -88,10 +88,11 @@ function main() {
     reviewArgs.push("--branch", base);
   }
   const review = runGreptile(reviewArgs, timeoutMs);
+  const stdoutOutput = review.stdout.trim();
   const output = `${review.stdout}\n${review.stderr}`.trim();
-  // The Greptile agent output ends with "No review comments." when the branch is
-  // clean; any other completed review means it surfaced findings.
-  const clean = CLEAN_REVIEW_PATTERN.test(output);
+  // Greptile writes the clean-review sentinel to stdout. Stderr can carry
+  // progress or warning text and must not turn a clean review into findings.
+  const clean = CLEAN_REVIEW_PATTERN.test(stdoutOutput);
   if (review.timedOut) {
     report(outputJson, { ok: true, skipped: true, reason: `greptile review timed out after ${timeoutMs}ms` }, 0);
     return;
