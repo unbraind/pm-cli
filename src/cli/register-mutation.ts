@@ -1668,6 +1668,12 @@ export function registerMutationCommands(program: Command): void {
     } else if (!globalOptions.quiet) {
       renderProfileResultHuman(profileModule, result);
     }
+    // `pm profile lint` is a validation gate: exit non-zero when the profile has
+    // error-severity findings so shell/CI callers can fail on them. Warnings keep
+    // `ok` true and never fail the command.
+    if (result.action === "lint" && !result.ok) {
+      process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+    }
     if (globalOptions.profile) {
       printError(`profile:command=profile took_ms=${Date.now() - startedAt}`);
     }

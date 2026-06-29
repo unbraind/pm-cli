@@ -1422,6 +1422,19 @@ describe("mutation command actions", () => {
     await runCliRaw("profile", "lint", "agile");
     expect(vi.mocked(runProfileLint)).toHaveBeenCalledWith("agile");
     expect(vi.mocked(formatProfileLintHuman)).toHaveBeenCalledTimes(1);
+    // A clean lint (ok=true) leaves the success exit code untouched.
+    expect(process.exitCode === undefined || process.exitCode === 0).toBe(true);
+
+    // A lint with error findings fails the command for CI gating.
+    vi.mocked(runProfileLint).mockReturnValueOnce({
+      action: "lint",
+      ok: false,
+      findings: [{ severity: "error", code: "config_key_unknown", dimension: "config", message: "bad" }],
+      warnings: [],
+    } as never);
+    await runCliRaw("profile", "lint", "broken");
+    expect(process.exitCode).toBe(1);
+    process.exitCode = 0;
 
     await runCliRaw("profile", "apply", "agile", "--dry-run", "--author", "tester", "--force");
     expect(vi.mocked(runProfileApply)).toHaveBeenCalledWith(
