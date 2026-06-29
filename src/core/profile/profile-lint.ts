@@ -73,12 +73,14 @@ export const PROFILE_LINT_CODES = [
   "status_duplicate",
   "field_invalid",
   "field_duplicate",
+  "workflow_type_empty",
   "workflow_type_unknown",
   "workflow_duplicate_type",
   "workflow_transition_malformed",
   "workflow_status_unknown",
   "config_key_unknown",
   "config_value_invalid",
+  "config_duplicate",
   "template_type_unknown",
   "package_spec_empty",
 ] as const;
@@ -290,20 +292,23 @@ function lintWorkflows(
   findings: ProjectProfileLintFinding[],
 ): void {
   const seenTypes = new Set<string>();
-  const reportedUnknownStatuses = new Set<string>();
   for (const [index, workflow] of profile.workflows.entries()) {
     const typeKey = workflow.type.trim().toLowerCase();
     if (typeKey.length === 0) {
       findings.push({
         severity: "error",
-        code: "workflow_type_unknown",
+        code: "workflow_type_empty",
         dimension: "workflows",
         target: `#${index}`,
         message: "Workflow has an empty type; the workflow resolver drops entries without a type.",
       });
       continue;
     }
-    if (seenTypes.has(typeKey)) {
+    const duplicate = seenTypes.has(typeKey);
+    seenTypes.add(typeKey);
+    if (duplicate) {
+      // The unknown-type check already fired for the first occurrence, so only
+      // report the duplication here to avoid a redundant second finding.
       findings.push({
         severity: "warning",
         code: "workflow_duplicate_type",
@@ -311,9 +316,7 @@ function lintWorkflows(
         target: workflow.type,
         message: `Workflow type "${workflow.type}" is declared more than once; the later transition set wins.`,
       });
-    }
-    seenTypes.add(typeKey);
-    if (!BUILTIN_TYPE_KEYS.has(typeKey) && !declaredTypes.has(typeKey)) {
+    } else if (!BUILTIN_TYPE_KEYS.has(typeKey) && !declaredTypes.has(typeKey)) {
       findings.push({
         severity: "warning",
         code: "workflow_type_unknown",
@@ -322,6 +325,10 @@ function lintWorkflows(
         message: `Workflow governs type "${workflow.type}" which is neither a built-in type nor declared by this profile; it has no effect unless that type already exists.`,
       });
     }
+    // Each unknown status is reported once per workflow (not globally) so a later
+    // workflow referencing the same unresolved token is still surfaced in its own
+    // context.
+    const reportedUnknownStatuses = new Set<string>();
     for (const pair of workflow.allowed_transitions) {
       const from = normalizeStatusToken(pair[0]);
       const to = normalizeStatusToken(pair[1]);
@@ -352,8 +359,12 @@ function lintWorkflows(
   }
 }
 
-/** Lint the config knobs by resolving each descriptor and parsing its value. */
+/**
+ * Lint the config knobs: resolve each descriptor, flag duplicates that would
+ * silently overwrite an earlier knob, and parse each value.
+ */
 function lintConfig(profile: ProjectProfileDefinition, findings: ProjectProfileLintFinding[]): void {
+  const seen = new Set<string>();
   for (const entry of profile.config) {
     const descriptor = resolveNestedSettingDescriptor(entry.key);
     if (descriptor === undefined) {
@@ -365,6 +376,19 @@ function lintConfig(profile: ProjectProfileDefinition, findings: ProjectProfileL
         message: `Config knob "${entry.key}" is not a recognized setting; apply rejects it with a usage error.`,
       });
       continue;
+    }
+    // Dedupe on the resolved descriptor key so two entries that differ only by
+    // alias/casing (e.g. `search-provider` and `search_provider`) are caught.
+    if (seen.has(descriptor.key)) {
+      findings.push({
+        severity: "error",
+        code: "config_duplicate",
+        dimension: "config",
+        target: descriptor.key,
+        message: `Config knob "${descriptor.key}" is set more than once; the later value silently overwrites the earlier one.`,
+      });
+    } else {
+      seen.add(descriptor.key);
     }
     const parsed = parseNestedSettingValue(descriptor, entry.value);
     if (!parsed.ok) {

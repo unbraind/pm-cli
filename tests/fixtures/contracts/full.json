@@ -9397,12 +9397,7 @@
             "type": "boolean"
           },
           "name": {
-            "description": "Profile name for show/apply/lint. Required for those subcommands.",
-            "enum": [
-              "agile",
-              "ops",
-              "research"
-            ],
+            "description": "Profile name for show/apply/lint. Required for those subcommands. Built-ins are agile, ops, and research; an active extension can contribute additional archetype names that resolve here too.",
             "type": "string"
           },
           "options": {
@@ -19166,6 +19161,23 @@
               "properties": {
                 "subcommand": {
                   "const": "apply"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "name"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "lint"
                 }
               },
               "required": [

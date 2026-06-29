@@ -157,7 +157,7 @@ describe("lintProjectProfile", () => {
   describe("workflows", () => {
     it("errors on a workflow with an empty type", () => {
       const report = lintProjectProfile(makeProfile({ workflows: [{ type: "  ", allowed_transitions: [] }] }));
-      expect(report.findings[0]).toMatchObject({ code: "workflow_type_unknown", severity: "error", target: "#0" });
+      expect(report.findings[0]).toMatchObject({ code: "workflow_type_empty", severity: "error", target: "#0" });
     });
 
     it("warns when a workflow governs an undeclared type", () => {
@@ -193,6 +193,34 @@ describe("lintProjectProfile", () => {
         }),
       );
       expect(codes).toContain("workflow_duplicate_type");
+    });
+
+    it("does not emit workflow_type_unknown twice for a duplicate undeclared type", () => {
+      const codes = codesOf(
+        makeProfile({
+          workflows: [
+            { type: "Ghost", allowed_transitions: [] },
+            { type: "Ghost", allowed_transitions: [] },
+          ],
+        }),
+      );
+      // First occurrence: unknown (warning). Second: duplicate only — not a
+      // redundant second unknown.
+      expect(codes.filter((code) => code === "workflow_type_unknown")).toHaveLength(1);
+      expect(codes).toContain("workflow_duplicate_type");
+    });
+
+    it("reports an unknown status once per workflow, not globally", () => {
+      const report = lintProjectProfile(
+        makeProfile({
+          workflows: [
+            { type: "Task", allowed_transitions: [["open", "reviewed"]] },
+            { type: "Chore", allowed_transitions: [["open", "reviewed"]] },
+          ],
+        }),
+      );
+      const unknown = report.findings.filter((entry) => entry.code === "workflow_status_unknown");
+      expect(unknown).toHaveLength(2);
     });
 
     it("errors on transitions with an empty from or to status", () => {
@@ -253,6 +281,19 @@ describe("lintProjectProfile", () => {
 
     it("accepts a valid config knob", () => {
       expect(codesOf(makeProfile({ config: [{ key: "search_provider", value: "bm25", summary: "" }] }))).toEqual([]);
+    });
+
+    it("errors on a duplicate config knob (alias-folded to the same descriptor)", () => {
+      const report = lintProjectProfile(
+        makeProfile({
+          config: [
+            { key: "search_provider", value: "bm25", summary: "" },
+            { key: "search-provider", value: "bm25", summary: "" },
+          ],
+        }),
+      );
+      expect(report.findings).toHaveLength(1);
+      expect(report.findings[0]).toMatchObject({ code: "config_duplicate", target: "search_provider" });
     });
   });
 

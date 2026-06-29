@@ -69,6 +69,25 @@ describe("describeProjectProfile", () => {
     expect(description.packages).toEqual([]);
   });
 
+  it("falls back to the raw name for a type that fails normalization instead of throwing", () => {
+    const description = describeProjectProfile({
+      name: "lenient",
+      title: "Lenient",
+      summary: "",
+      // "Epic" is a reserved built-in name, so normalizeAddTypeInput throws; describe
+      // must surface the raw name rather than crash `pm profile show`. An undeclared
+      // empty name normalizes to "".
+      types: [{ name: "Epic" }, { name: undefined }],
+      statuses: [],
+      fields: [],
+      workflows: [],
+      config: [],
+      templates: [],
+      packages: [],
+    });
+    expect(description.types).toEqual(["Epic", ""]);
+  });
+
   it("coerces missing status ids and field keys to empty strings", () => {
     const description = describeProjectProfile({
       name: "sparse",

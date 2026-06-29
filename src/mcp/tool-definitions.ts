@@ -424,8 +424,8 @@ export const TOOLS: ToolDefinition[] = [
         },
         name: {
           type: "string",
-          enum: ["agile", "ops", "research"],
-          description: "Profile name for show/apply/lint. Required for those subcommands.",
+          description:
+            "Profile name for show/apply/lint. Required for those subcommands. Built-ins are agile, ops, and research; an active extension can contribute additional archetype names that resolve here too.",
         },
         dryRun: { type: "boolean", description: "Preview the apply diff without writing any files (apply)." },
         author: { type: "string", description: "Mutation author for apply." },

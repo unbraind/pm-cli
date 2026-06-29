@@ -12,6 +12,11 @@
  * upserts: item type names flow through the same `normalizeAddTypeInput`
  * canonicalization the planner uses, while statuses, fields, workflows, config,
  * templates, and packages surface their authored identity verbatim.
+ *
+ * Describe is intentionally lenient: it feeds read-only `pm profile show`/`list`,
+ * so a malformed type entry from an untrusted extension-contributed profile falls
+ * back to its raw name rather than throwing — surfacing the actual defect is the
+ * job of {@link module:core/profile/profile-lint lintProjectProfile}, not describe.
  */
 import { normalizeAddTypeInput } from "../schema/item-types-file.js";
 import type { ProjectProfileDefinition } from "./profile-presets.js";
@@ -98,7 +103,14 @@ export function describeProjectProfile(profile: ProjectProfileDefinition): Proje
     title: profile.title,
     summary: profile.summary,
     composition: describeProfileComposition(profile),
-    types: profile.types.map((type) => normalizeAddTypeInput(type).name),
+    types: profile.types.map((type) => {
+      try {
+        return normalizeAddTypeInput(type).name;
+      } catch {
+        // A malformed type still surfaces its raw name here; lint reports the defect.
+        return String(type.name ?? "");
+      }
+    }),
     statuses: profile.statuses.map((status) => String(status.id ?? "")),
     fields: profile.fields.map((field) => String(field.key ?? "")),
     workflows: profile.workflows.map((workflow) => workflow.type),

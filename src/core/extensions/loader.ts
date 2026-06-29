@@ -1573,6 +1573,53 @@ const PROJECT_PROFILE_DIMENSIONS = [
   "packages",
 ] as const;
 
+/**
+ * Validates the field shapes the profile planner, `pm profile show/apply/lint`,
+ * and `describeProjectProfile` dereference without re-checking, so a structurally
+ * well-formed but type-violating extension entry (e.g. a workflow whose `type` is
+ * a number, or whose `allowed_transitions` is not an array) is rejected here
+ * rather than crashing a downstream consumer. Dimensions whose consumers already
+ * coerce or gracefully reject malformed values (statuses, fields, config) need no
+ * shape check. The `entry` is an already-confirmed non-null object.
+ */
+function validateProjectProfileEntryShape(dimension: string, index: number, entry: Record<string, unknown>): void {
+  const at = `registerProfile profile.${dimension}[${index}]`;
+  if (dimension === "types") {
+    if (entry.name !== undefined && typeof entry.name !== "string") {
+      throw new TypeError(`${at}.name must be a string when provided`);
+    }
+    return;
+  }
+  if (dimension === "workflows") {
+    if (typeof entry.type !== "string") {
+      throw new TypeError(`${at}.type must be a string`);
+    }
+    if (!Array.isArray(entry.allowed_transitions)) {
+      throw new TypeError(`${at}.allowed_transitions must be an array`);
+    }
+    for (const [pairIndex, pair] of entry.allowed_transitions.entries()) {
+      if (!Array.isArray(pair)) {
+        throw new TypeError(`${at}.allowed_transitions[${pairIndex}] must be a [from, to] array`);
+      }
+    }
+    return;
+  }
+  if (dimension === "templates") {
+    if (typeof entry.name !== "string") {
+      throw new TypeError(`${at}.name must be a string`);
+    }
+    if (typeof entry.options !== "object" || entry.options === null || Array.isArray(entry.options)) {
+      throw new TypeError(`${at}.options must be an object`);
+    }
+    return;
+  }
+  if (dimension === "packages") {
+    if (typeof entry.spec !== "string") {
+      throw new TypeError(`${at}.spec must be a string`);
+    }
+  }
+}
+
 function validateProjectProfileDefinition(profile: unknown): void {
   const record = asRegistrationRecord("registerProfile profile", profile);
   assertNonEmptyString("registerProfile profile.name", record.name);
@@ -1596,6 +1643,10 @@ function validateProjectProfileDefinition(profile: unknown): void {
       if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
         throw new TypeError(`registerProfile profile.${dimension}[${index}] must be an object`);
       }
+      // Beyond "is an object", validate the specific field shapes consumers
+      // dereference so a type-violating entry can never crash the planner, the
+      // `pm profile` surfaces, or describeProjectProfile downstream.
+      validateProjectProfileEntryShape(dimension, index, entry as Record<string, unknown>);
     }
   }
 }

@@ -42,6 +42,7 @@ import {
   type ResolveProfileEntryResult,
 } from "../../core/profile/profile-presets.js";
 import {
+  describeProfileComposition,
   describeProjectProfile,
   type ProjectProfileComposition,
 } from "../../core/profile/profile-describe.js";
@@ -243,7 +244,7 @@ export function runProfileList(): ProfileListResult {
       summary: resolved.definition.summary,
       source: resolved.source,
       ...(resolved.package !== undefined ? { package: resolved.package } : {}),
-      composition: describeProjectProfile(resolved.definition).composition,
+      composition: describeProfileComposition(resolved.definition),
     })),
     warnings,
     generated_at: nowIso(),
@@ -584,9 +585,13 @@ export function formatProfileShowHuman(result: ProfileShowResult): string {
  */
 export function formatProfileLintHuman(result: ProfileLintResult): string {
   const origin = result.source === "extension" ? ` [${result.package ?? "extension"}]` : "";
+  // Catalog merge warnings are rendered below alongside lint-finding warnings, so
+  // fold them into the headline count to avoid an "ok (0 warnings)" verdict that
+  // is immediately followed by `warning:` lines.
+  const totalWarningCount = result.warning_count + result.warnings.length;
   const verdict = result.ok
-    ? `Profile ${result.name}${origin}: ok (${result.warning_count} warning${result.warning_count === 1 ? "" : "s"})`
-    : `Profile ${result.name}${origin}: ${result.error_count} error${result.error_count === 1 ? "" : "s"}, ${result.warning_count} warning${result.warning_count === 1 ? "" : "s"}`;
+    ? `Profile ${result.name}${origin}: ok (${totalWarningCount} warning${totalWarningCount === 1 ? "" : "s"})`
+    : `Profile ${result.name}${origin}: ${result.error_count} error${result.error_count === 1 ? "" : "s"}, ${totalWarningCount} warning${totalWarningCount === 1 ? "" : "s"}`;
   const lines = [verdict];
   for (const finding of result.findings) {
     const target = finding.target !== undefined ? ` (${finding.target})` : "";
