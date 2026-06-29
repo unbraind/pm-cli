@@ -368,6 +368,7 @@ export async function mutateItem(params: {
   message?: string;
   force?: boolean;
   bypassAssigneeConflict?: boolean;
+  skipNoop?: boolean;
   extensionFieldNames?: readonly string[];
   typeToFolder?: Record<string, string>;
   mutate: (document: ItemDocument) => {
@@ -401,13 +402,6 @@ export async function mutateItem(params: {
   } = prepared;
 
   try {
-    const historyPolicy = await enforceHistoryStreamPolicyForItem({
-      pmRoot: params.pmRoot,
-      settings: params.settings,
-      itemId: located.id,
-      commandLabel: params.op,
-    });
-
     const beforeDocument = canonicalDocument(document, {
       schema: params.settings.schema,
       extensionFieldNames: params.extensionFieldNames,
@@ -417,6 +411,20 @@ export async function mutateItem(params: {
       extensionFieldNames: params.extensionFieldNames,
     });
     const mutation = params.mutate(mutableDocument);
+    if (params.skipNoop === true && mutation.changedFields.length === 0) {
+      return {
+        item: beforeDocument.metadata,
+        body: beforeDocument.body,
+        changedFields: [],
+        warnings: [...parseWarnings, ...(mutation.warnings ?? [])],
+      };
+    }
+    const historyPolicy = await enforceHistoryStreamPolicyForItem({
+      pmRoot: params.pmRoot,
+      settings: params.settings,
+      itemId: located.id,
+      commandLabel: params.op,
+    });
     mutableDocument.metadata.updated_at = nowIso();
     const afterDocument = canonicalDocument(mutableDocument, {
       schema: params.settings.schema,

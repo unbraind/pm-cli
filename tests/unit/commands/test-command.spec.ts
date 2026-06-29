@@ -1153,6 +1153,21 @@ describe("runTest", () => {
       const pathEntry = added.tests.find((entry) => entry.path === "tests/example.spec.ts");
       expect(pathEntry?.scope).toBe("project");
 
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const historyBeforeDuplicate = (await readFile(historyPath, "utf8")).trim().split("\n").length;
+      const duplicateOnly = await runTest(
+        id,
+        {
+          add: ["command=node --version,scope=project,timeout_seconds=2,note=duplicate only"],
+          message: "attempt duplicate linked test",
+        },
+        { path: context.pmPath },
+      );
+      expect(duplicateOnly.changed).toBe(false);
+      expect(duplicateOnly.count).toBe(3);
+      const historyAfterDuplicate = (await readFile(historyPath, "utf8")).trim().split("\n").length;
+      expect(historyAfterDuplicate).toBe(historyBeforeDuplicate);
+
       const noOpRemoval = await runTest(
         id,
         {
@@ -1161,7 +1176,7 @@ describe("runTest", () => {
         },
         { path: context.pmPath },
       );
-      expect(noOpRemoval.changed).toBe(true);
+      expect(noOpRemoval.changed).toBe(false);
       expect(noOpRemoval.count).toBe(3);
 
       const removed = await runTest(
@@ -1174,6 +1189,46 @@ describe("runTest", () => {
       );
       expect(removed.changed).toBe(true);
       expect(removed.count).toBe(0);
+    });
+  });
+
+  it("skips history policy for duplicate linked-test no-op mutations", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "strict-history-noop-tests");
+      const added = await runTest(
+        id,
+        {
+          add: ["command=node --version,scope=project,timeout_seconds=2"],
+          message: "add linked test before strict history no-op",
+        },
+        { path: context.pmPath },
+      );
+      expect(added.changed).toBe(true);
+      expect(added.count).toBe(1);
+
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      await rm(historyPath);
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        history?: { missing_stream?: "auto_create" | "strict_error" };
+      };
+      settings.history = {
+        ...settings.history,
+        missing_stream: "strict_error",
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const duplicateOnly = await runTest(
+        id,
+        {
+          add: ["command=node --version,scope=project,timeout_seconds=2,note=duplicate only"],
+          message: "attempt duplicate linked test with strict missing history",
+        },
+        { path: context.pmPath },
+      );
+      expect(duplicateOnly.changed).toBe(false);
+      expect(duplicateOnly.count).toBe(1);
+      await expect(readFile(historyPath, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
     });
   });
 

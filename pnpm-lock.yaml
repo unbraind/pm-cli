@@ -39,7 +39,7 @@ importers:
         specifier: ^3.6.0
         version: 3.6.0
       '@types/node':
-        specifier: ^22.0.0
+        specifier: ^22.20.0
         version: 22.20.0
       '@vitest/coverage-v8':
         specifier: ^4.1.9

@@ -52,6 +52,7 @@
 
 ### Other
 
+- Decompose cli-contracts.ts monolith into flag-contracts + tool-schema sibling modules ([pm-3wue](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-3wue.toon))
 - First-party package manifests declare current SDK compatibility floor ([pm-6d7q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-6d7q.toon))
 - Package scaffolds declare current SDK compatibility floor ([pm-sf08](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-sf08.toon))
 - Refresh Sentry release and telemetry dependencies ([pm-4dz7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-4dz7.toon))
