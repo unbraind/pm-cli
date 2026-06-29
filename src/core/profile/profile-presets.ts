@@ -494,9 +494,10 @@ export function resolveProfileEntry(
   contributions: readonly ExtensionProfileContribution[] = [],
 ): ResolveProfileEntryResult {
   const { profiles, warnings } = resolveProfileCatalog(contributions);
-  // `== null` guards both `undefined` and a `null` slipping in from an untyped
-  // JS caller or parsed payload, so the `.trim()` below never throws.
-  if (rawValue == null || rawValue.trim().length === 0) {
+  // Treat any non-string name as missing — undefined, null, or a non-string
+  // primitive slipping in from an untyped JS caller or parsed payload — so the
+  // `.trim()` below never throws.
+  if (typeof rawValue !== "string" || rawValue.trim().length === 0) {
     throw new Error(`Profile name is required. Allowed: ${formatAvailableProfileNames(profiles)}.`);
   }
   const key = normalizeProfileLookupKey(rawValue);

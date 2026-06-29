@@ -2055,10 +2055,10 @@ function createExtensionApi(
       return;
     }
     // Snapshot first, then validate and default the snapshot: cloning resolves
-    // any getters once into plain data, so validation and storage operate on the
-    // exact same immutable object — a getter cannot present one value to
-    // validation and another to the registry. Defaults are applied only after
-    // validation, so an invalid type is rejected rather than silently coerced.
+    // any getters once into plain data decoupled from the caller's object, so
+    // validation and storage operate on the same value — a getter cannot present
+    // one value to validation and another to the registry. Defaults are applied
+    // only after validation, so an invalid type is rejected, not silently coerced.
     const snapshot = cloneRuntimeRegistrationValue(profile);
     validateProjectProfileDefinition(snapshot);
     registrations.profiles.push({
