@@ -53,10 +53,10 @@
 
 ### Other
 
+- Dogfood: pm-kanban registers kanbanProfile so pm profile apply kanban works ([pm-kj7x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kj7x.toon))
 - Docs: SDK.md/EXTENSIONS.md document api.registerProfile + regenerate contracts/full.json ([pm-ol8j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ol8j.toon))
 - pm profile list/show/apply merges extension-registered profiles with source labels ([pm-vpwt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-vpwt.toon))
 - registerProfile core registration surface: ExtensionApi + registry + loader gate + capability-usage + policy surface ([pm-6oox](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-6oox.toon))
-- Dogfood: pm-kanban registers kanbanProfile so \`pm profile apply kanban\` works ([pm-kj7x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kj7x.toon))
 - SDK profile parity: assertRegisteredProfile + composeExtension blueprint.profiles + deriveExtensionCapabilities + describe ([pm-l8fl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-l8fl.toon))
 - Decompose cli-contracts.ts monolith into flag-contracts + tool-schema sibling modules ([pm-3wue](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-3wue.toon))
 - First-party package manifests declare current SDK compatibility floor ([pm-6d7q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-6d7q.toon))
