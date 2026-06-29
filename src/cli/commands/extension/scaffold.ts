@@ -72,11 +72,14 @@ const SCAFFOLD_TSCONFIG = {
  * reactor; `search` wires an in-memory provider/adapter pair; `importers` wires
  * importer and exporter command primitives so authors can customize project
  * context movement; `schema` registers a custom item type, item field, and
- * migration so authors can model their own project domain; `renderers` overrides
- * how a command's output is serialized for a format; `parser` rewrites a
- * command's parsed options before its handler runs; `preflight` adjusts pm's
- * pre-run migration/format gate decision; and `services` overrides a built-in pm
- * service (e.g. output formatting) — without starting from a blank extension.
+ * migration so authors can model their own project domain; `profile` registers a
+ * complete project-profile archetype (item types, statuses, fields, a workflow,
+ * config, a template, and package recommendations) via `api.registerProfile` so
+ * `pm profile apply` can tailor a tracker in one shot; `renderers` overrides how
+ * a command's output is serialized for a format; `parser` rewrites a command's
+ * parsed options before its handler runs; `preflight` adjusts pm's pre-run
+ * migration/format gate decision; and `services` overrides a built-in pm service
+ * (e.g. output formatting) — without starting from a blank extension.
  */
 export const SCAFFOLD_CAPABILITIES = [
   "commands",
@@ -84,6 +87,7 @@ export const SCAFFOLD_CAPABILITIES = [
   "search",
   "importers",
   "schema",
+  "profile",
   "renderers",
   "parser",
   "preflight",
@@ -101,6 +105,10 @@ const SCAFFOLD_MANIFEST_CAPABILITIES: Record<ExtensionScaffoldCapability, readon
   search: ["commands", "search"],
   importers: ["commands", "schema", "importers"],
   schema: ["commands", "schema"],
+  // A profile registration IS a schema+config bundle, so the loader gate requires
+  // the `schema` capability (no separate `profile` capability) — same grant as the
+  // schema starter, mirroring the bundled pm-kanban exemplar.
+  profile: ["commands", "schema"],
   renderers: ["commands", "renderers"],
   // The parser starter declares `--shout`/`--upper` command flags so the
   // override is runnable through `pm <command> --shout`; flag metadata is
@@ -116,6 +124,7 @@ const SAMPLE_TEST_CAPABILITIES_LITERAL: Record<ExtensionScaffoldCapability, stri
   search: '["commands", "search"]',
   importers: '["commands", "schema", "importers"]',
   schema: '["commands", "schema"]',
+  profile: '["commands", "schema"]',
   renderers: '["commands", "renderers"]',
   parser: '["commands", "parser", "schema"]',
   preflight: '["commands", "preflight"]',
@@ -132,6 +141,8 @@ const ENTRYPOINT_BULLETS: Record<ExtensionScaffoldCapability, string> = {
     "- `index.ts`: the TypeScript manifest entry — starter command registration, importer/exporter command registrations, and a `deactivate` teardown stub.",
   schema:
     "- `index.ts`: the TypeScript manifest entry — starter command registration, a custom item type, a custom item field, a schema migration, and a `deactivate` teardown stub.",
+  profile:
+    "- `index.ts`: the TypeScript manifest entry — starter command registration, a project profile (item types, statuses, fields, a workflow, config, a template, and package recommendations) registered via `api.registerProfile`, and a `deactivate` teardown stub.",
   renderers:
     "- `index.ts`: the TypeScript manifest entry — starter command registration, a `toon` output renderer override, and a `deactivate` teardown stub.",
   parser:
@@ -153,6 +164,8 @@ const SAMPLE_TEST_BULLETS: Record<ExtensionScaffoldCapability, string> = {
     "- `index.test.ts`: sample `node:test` suite covering activation, command invocation, importer/exporter invocation, and teardown via the SDK testing helpers.",
   schema:
     "- `index.test.ts`: sample `node:test` suite covering activation, command invocation, item type/field/migration registration, migration invocation, and teardown via the SDK testing helpers.",
+  profile:
+    "- `index.test.ts`: sample `node:test` suite covering activation, command invocation, project-profile registration (asserting the bundled archetype dimensions), and teardown via the SDK testing helpers.",
   renderers:
     "- `index.test.ts`: sample `node:test` suite covering activation, command invocation, renderer override registration and invocation (including format pass-through), and teardown via the SDK testing helpers.",
   parser:
@@ -208,6 +221,20 @@ const PACKAGE_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, re
     "model; the `schema` capability in `manifest.json` grants all three",
     "registrations. Once installed, the custom type is usable everywhere, e.g.",
     "`pm create <type> \"<title>\"` and `pm list --type <type>`.",
+  ],
+  profile: [
+    "",
+    "## Project Profile",
+    "`index.ts` registers a complete project-profile archetype through",
+    "`api.registerProfile`. A profile is the broadest customization primitive pm",
+    "has — one declarative bundle of item types, custom statuses, fields, a per-type",
+    "workflow, config knobs, create templates, and package recommendations. Once the",
+    "package is installed the profile resolves by name through `pm profile list`,",
+    "`pm profile show <name>`, and `pm profile apply <name>`, which stages every",
+    "dimension idempotently — exactly like a core archetype (agile/ops/research),",
+    "with no consumer code required. Replace the sample archetype with your own",
+    "domain; the `schema` capability in `manifest.json` grants the registration (a",
+    "profile is a schema+config bundle, so it needs no separate capability).",
   ],
   renderers: [
     "",
@@ -289,6 +316,18 @@ const EXTENSION_CAPABILITY_README_SECTIONS: Record<ExtensionScaffoldCapability, 
     "type/field/migration with your own domain model; the `schema` capability in",
     "`manifest.json` grants all three registrations. Once installed, the custom",
     'type is usable everywhere, e.g. `pm create <type> "<title>"`.',
+  ],
+  profile: [
+    "",
+    "## Project Profile",
+    "`index.ts` registers a complete project-profile archetype through",
+    "`api.registerProfile` — one declarative bundle of item types, custom statuses,",
+    "fields, a per-type workflow, config knobs, create templates, and package",
+    "recommendations. Once installed the profile resolves by name through",
+    "`pm profile list`, `pm profile show <name>`, and `pm profile apply <name>`,",
+    "which stages every dimension idempotently like a core archetype. Replace the",
+    "sample archetype with your own domain; the `schema` capability in",
+    "`manifest.json` grants the registration.",
   ],
   renderers: [
     "",
@@ -387,6 +426,71 @@ const SCHEMA_ACTIVATION_README_SECTION: Record<"package" | "extension", readonly
   ],
 };
 
+// README activation explainer for the `profile` starter: the contributed profile
+// is resolved by the built-in `pm profile list/show/apply` commands (which the
+// package does not own), so it intentionally omits `activation.commands` and relies
+// on pm's conservative activation tier (granted by the `schema` capability).
+const PROFILE_ACTIVATION_README_SECTION: Record<"package" | "extension", readonly string[]> = {
+  package: [
+    "",
+    "## Activation",
+    "This package contributes a project profile resolved by the built-in",
+    "`pm profile list`, `pm profile show <name>`, and `pm profile apply <name>`",
+    "commands — commands the package does not own — so `manifest.json` intentionally",
+    "declares no `activation.commands`. pm activates the package conservatively (for",
+    "every command, granted by the `schema` capability) so the profile is present",
+    "whenever `pm profile` runs. Declaring narrow `activation.commands` here would",
+    "gate activation to only the listed commands and silently leave the profile",
+    "unregistered for `pm profile`.",
+  ],
+  extension: [
+    "",
+    "## Activation",
+    "This extension contributes a project profile resolved by the built-in",
+    "`pm profile list`, `pm profile show <name>`, and `pm profile apply <name>`",
+    "commands, so `manifest.json` intentionally declares no `activation.commands`. pm",
+    "activates the extension conservatively (for every command, granted by the",
+    "`schema` capability) so the profile is present whenever `pm profile` runs.",
+    "Declaring narrow `activation.commands` here would silently leave the profile",
+    "unregistered for `pm profile`.",
+  ],
+};
+
+/**
+ * Build the README "Included Files" bullet describing `manifest.json` for the
+ * chosen capability and vocabulary. The `schema` and `profile` starters omit
+ * `activation.commands` (see {@link buildScaffoldActivationCommands}), so their
+ * bullet explains the global-contribution tradeoff instead of referencing a field
+ * they deliberately lack.
+ */
+function buildScaffoldManifestBullet(capability: ExtensionScaffoldCapability, vocabulary: "extension" | "package"): string {
+  if (capability === "schema") {
+    return `- \`manifest.json\`: ${vocabulary} metadata and capabilities (no \`activation.commands\` — the custom item type activates for every command).`;
+  }
+  if (capability === "profile") {
+    return `- \`manifest.json\`: ${vocabulary} metadata and capabilities (no \`activation.commands\` — the contributed profile resolves through \`pm profile\` for every command).`;
+  }
+  return `- \`manifest.json\`: ${vocabulary} metadata, capabilities, and \`activation.commands\` (the command paths that lazily activate this ${vocabulary}).`;
+}
+
+/**
+ * Select the README activation section for the chosen capability and vocabulary:
+ * the `schema` and `profile` starters explain conservative activation (they omit
+ * `activation.commands`); every other capability documents lazy activation.
+ */
+function buildScaffoldActivationReadmeSection(
+  capability: ExtensionScaffoldCapability,
+  vocabulary: "extension" | "package",
+): readonly string[] {
+  if (capability === "schema") {
+    return SCHEMA_ACTIVATION_README_SECTION[vocabulary];
+  }
+  if (capability === "profile") {
+    return PROFILE_ACTIVATION_README_SECTION[vocabulary];
+  }
+  return LAZY_ACTIVATION_README_SECTION[vocabulary];
+}
+
 interface ExtensionScaffoldFileResult {
   path: string;
   status: "created" | "unchanged";
@@ -414,6 +518,97 @@ interface ExtensionScaffoldResult {
  * capability — see {@link buildDeclarativeEntrypoint}).
  */
 export type ExtensionScaffoldStyle = "imperative" | "declarative";
+
+/**
+ * Build the project-profile archetype object literal the `profile` starter
+ * registers — a complete {@link ProjectProfileDefinition} derived from the package
+ * name: one custom item type, a custom status, a custom field, a per-type workflow,
+ * offline search config, a create template, and an advisory package recommendation.
+ *
+ * Returned as the lines BETWEEN the object braces at a two-space base indent. Both
+ * authoring styles read from this single source so they never drift: the imperative
+ * {@link buildActivateBodyLines} wraps them in `api.registerProfile({ ... })`
+ * (re-indenting by the `activate` body offset) and the declarative
+ * {@link buildDeclarativeBlueprintSurface} wraps them in
+ * `defineProjectProfile({ ... })`.
+ */
+function buildProfileArchetypeFieldLines(extensionName: string): string[] {
+  const typeName = extensionName;
+  const typeFolder = `${extensionName}s`;
+  // De-hyphenate for a short alias; omit a redundant self-alias for single-word names.
+  const typeAlias = extensionName.replace(/-/g, "");
+  const typeAliases = typeAlias === typeName ? [] : [typeAlias];
+  const fieldKey = `${extensionName.replace(/-/g, "_")}_owner`;
+  const statusId = "reviewing";
+  return [
+    `  name: ${JSON.stringify(extensionName)},`,
+    `  title: ${JSON.stringify(`${extensionName} archetype`)},`,
+    '  summary: "Starter project profile. Replace these dimensions with your own archetype.",',
+    "  // Item types the profile upserts into the project schema when applied.",
+    "  types: [",
+    "    {",
+    `      name: ${JSON.stringify(typeName)},`,
+    `      folder: ${JSON.stringify(typeFolder)},`,
+    `      aliases: ${JSON.stringify(typeAliases)},`,
+    `      description: ${JSON.stringify(`A ${extensionName} work item that flows to done.`)},`,
+    "    },",
+    "  ],",
+    "  // Custom statuses upserted into the project status set.",
+    "  statuses: [",
+    "    {",
+    `      id: ${JSON.stringify(statusId)},`,
+    '      roles: ["active"],',
+    '      aliases: ["in-review"],',
+    '      description: "Work is implementation-complete and awaiting review.",',
+    "    },",
+    "  ],",
+    "  // Custom front-matter fields the archetype tracks.",
+    "  fields: [",
+    "    {",
+    `      key: ${JSON.stringify(fieldKey)},`,
+    '      type: "string",',
+    '      commands: ["create", "update", "list"],',
+    '      description: "Stakeholder accountable for the item.",',
+    "    },",
+    "  ],",
+    "  // Per-type workflow transition allow-list staged into settings.",
+    "  workflows: [",
+    "    {",
+    `      type: ${JSON.stringify(typeName)},`,
+    "      allowed_transitions: [",
+    '        ["open", "in_progress"],',
+    `        ["in_progress", ${JSON.stringify(statusId)}],`,
+    `        [${JSON.stringify(statusId)}, "in_progress"],`,
+    `        [${JSON.stringify(statusId)}, "closed"],`,
+    '        ["in_progress", "blocked"],',
+    '        ["blocked", "in_progress"],',
+    "      ],",
+    "    },",
+    "  ],",
+    "  // Nested-settings knobs staged when the profile is applied.",
+    "  config: [",
+    '    { key: "search_provider", value: "bm25", summary: "Offline BM25 lexical search needs no embedding service." },',
+    '    { key: "search_max_results", value: "20", summary: "Result cap tuned for quick triage." },',
+    "  ],",
+    "  // Create templates staged into <pmRoot>/templates.",
+    "  templates: [",
+    "    {",
+    `      name: ${JSON.stringify(extensionName)},`,
+    "      options: {",
+    `        type: ${JSON.stringify(typeName)},`,
+    '        priority: "2",',
+    `        tags: ${JSON.stringify(extensionName)},`,
+    '        acceptanceCriteria: "Item delivers the stated outcome with tests and docs updated.",',
+    '        body: "## Context\\n\\n## Acceptance\\n- [ ] \\n",',
+    "      },",
+    "    },",
+    "  ],",
+    "  // Advisory package recommendations (never auto-installed).",
+    "  packages: [",
+    '    { spec: "templates", reason: "Reusable create templates for recurring item shapes." },',
+    "  ],",
+  ];
+}
 
 /**
  * Build the `activate` body lines for the starter entrypoint. The base body
@@ -532,6 +727,24 @@ function buildActivateBodyLines(
       `    description: ${JSON.stringify(`Initialize ${extensionName} schema state.`)},`,
       "    mandatory: false,",
       "    run: async (context) => ({ migrated: true, id: context.id }),",
+      "  });",
+    ];
+  }
+  if (capability === "profile") {
+    return [
+      ...commandLines,
+      "",
+      "  // A project profile is the broadest customization primitive pm has: one",
+      "  // declarative bundle of item types, custom statuses, fields, a per-type",
+      "  // workflow, config knobs, create templates, and package recommendations. Once",
+      "  // this package is installed the profile resolves by name through `pm profile",
+      "  // list`, `pm profile show`, and `pm profile apply`, which stages every dimension",
+      "  // idempotently like a core archetype. A profile registration is a schema+config",
+      "  // bundle, so the `schema` capability in manifest.json grants it.",
+      "  api.registerProfile({",
+      // The archetype field lines are all non-empty, so re-indent each by the
+      // `activate` body offset (object braces sit at two spaces, fields at four).
+      ...buildProfileArchetypeFieldLines(extensionName).map((line) => `  ${line}`),
       "  });",
     ];
   }
@@ -724,6 +937,7 @@ function buildSampleTestSource(
   const searchEnabled = capability === "search";
   const importersEnabled = capability === "importers";
   const schemaEnabled = capability === "schema";
+  const profileEnabled = capability === "profile";
   const renderersEnabled = capability === "renderers";
   const parserEnabled = capability === "parser";
   const preflightEnabled = capability === "preflight";
@@ -905,6 +1119,36 @@ function buildSampleTestSource(
         "    // as your migration grows.",
         `    const migrated = await ext.runMigration({ migration: ${JSON.stringify(migrationId)} });`,
         `    assert.deepEqual(migrated, { migrated: true, id: ${JSON.stringify(migrationId)} });`,
+        "    const teardown = await ext.deactivate();",
+        "    assertExtensionDeactivated(teardown);",
+        "    deactivated = true;",
+        "  } finally {",
+        "    if (!deactivated) {",
+        "      try {",
+        "        await ext.deactivate();",
+        "      } catch {}",
+        "    }",
+        "  }",
+        "});",
+        "",
+      ]
+    : [];
+  const profileTestLines = profileEnabled
+    ? [
+        `test(${JSON.stringify(`${extensionName} registers its project profile`)}, async () => {`,
+        "  const ext = await createExtensionTestHarness(extension, {",
+        `    name: ${JSON.stringify(extensionName)},`,
+        `    capabilities: ${capabilitiesLiteral},`,
+        "  });",
+        "  let deactivated = false;",
+        "  try {",
+        "    // assertProfile throws unless the profile is registered, so reaching the next",
+        "    // line already proves the wiring; assert on the returned definition to inspect",
+        "    // the bundled archetype dimensions.",
+        `    const { profile } = ext.assertProfile({ profile: ${JSON.stringify(extensionName)}, extensionName: ${JSON.stringify(extensionName)} });`,
+        `    assert.equal(profile.title, ${JSON.stringify(`${extensionName} archetype`)});`,
+        "    assert.equal(profile.types.length, 1);",
+        "    assert.equal(profile.workflows.length, 1);",
         "    const teardown = await ext.deactivate();",
         "    assertExtensionDeactivated(teardown);",
         "    deactivated = true;",
@@ -1171,6 +1415,7 @@ function buildSampleTestSource(
     ...searchTestLines,
     ...importerTestLines,
     ...schemaTestLines,
+    ...profileTestLines,
     ...rendererTestLines,
     ...parserTestLines,
     ...preflightTestLines,
@@ -1205,21 +1450,23 @@ function buildSampleTestSource(
  * enumerate the contributed commands). The `importers` variant additionally
  * registers paired import/export command handlers under the adapter name.
  *
- * The `schema` variant is the deliberate exception: it returns an empty list so
- * the manifest omits `activation.commands`. Custom item types and fields are
- * GLOBAL schema contributions that built-in commands (`pm create <type>`,
- * `pm list --type <type>`, `pm validate`) must see — commands the package does
- * not own and cannot enumerate. Declaring narrow `activation.commands` there
- * would gate activation to only the listed commands and silently leave the
- * custom type unregistered for `pm create`; omitting it lets pm's conservative
- * activation tier (which covers `schema`) load the package for every command.
+ * The `schema` and `profile` variants are the deliberate exceptions: each returns
+ * an empty list so the manifest omits `activation.commands`. Custom item types and
+ * fields are GLOBAL schema contributions that built-in commands (`pm create
+ * <type>`, `pm list --type <type>`, `pm validate`) must see, and a contributed
+ * project profile is resolved by the built-in `pm profile list/show/apply` commands
+ * — commands the package does not own and cannot enumerate. Declaring narrow
+ * `activation.commands` there would gate activation to only the listed commands and
+ * silently leave the custom type or profile unregistered for those built-ins;
+ * omitting it lets pm's conservative activation tier (which covers `schema`) load
+ * the package for every command.
  */
 function buildScaffoldActivationCommands(
   extensionName: string,
   commandName: string,
   capability: ExtensionScaffoldCapability,
 ): string[] {
-  if (capability === "schema") {
+  if (capability === "schema" || capability === "profile") {
     return [];
   }
   if (capability === "importers") {
@@ -1238,6 +1485,7 @@ const DECLARATIVE_ENTRYPOINT_SURFACE_PHRASE: Record<ExtensionScaffoldCapability,
   search: "starter command, search provider, and vector-store adapter",
   importers: "starter command, importer, and exporter",
   schema: "starter command, custom item type, item field, and migration",
+  profile: "starter command and project profile",
   renderers: "starter command and toon renderer override",
   parser: "starter command and parser override",
   preflight: "starter command and preflight override",
@@ -1253,6 +1501,7 @@ const DECLARATIVE_CAPABILITY_BLUEPRINT_FIELDS: Record<ExtensionScaffoldCapabilit
   search: "`commands`, `searchProviders`, and `vectorStoreAdapters`",
   importers: "`commands`, `importers`, and `exporters`",
   schema: "`commands`, `itemTypes`, `itemFields`, and `migrations`",
+  profile: "`commands` and `profiles`",
   renderers: "`commands` and `renderers`",
   parser: "`commands` and `parsers`",
   preflight: "`commands` and `preflights`",
@@ -1509,6 +1758,22 @@ function buildDeclarativeBlueprintSurface(
         "});",
       );
       blueprintFields.push("  itemTypes: [itemType],", "  itemFields: [noteField],", "  migrations: [initMigration],");
+      break;
+    case "profile":
+      builderImports.push("defineProjectProfile");
+      definitions.push(
+        "",
+        "// A project profile is the broadest customization primitive pm has: one",
+        "// declarative bundle of item types, custom statuses, fields, a per-type workflow,",
+        "// config knobs, create templates, and package recommendations. Once installed it",
+        "// resolves by name through `pm profile list/show/apply`, which stages every",
+        "// dimension idempotently like a core archetype. A profile registration is a",
+        "// schema+config bundle, so the `schema` capability grants it.",
+        "export const starterProfile = defineProjectProfile({",
+        ...buildProfileArchetypeFieldLines(extensionName),
+        "});",
+      );
+      blueprintFields.push("  profiles: [starterProfile],");
       break;
     case "renderers":
       builderImports.push("defineRendererOverride");
@@ -1808,6 +2073,21 @@ function buildDeclarativeCapabilityTestBlock(
         "});",
         "",
       ];
+    case "profile":
+      return [
+        `test(${JSON.stringify(`${extensionName} registers its project profile`)}, async () => {`,
+        ...withHarnessCleanup([
+          "  // assertProfile throws unless the profile is registered, so reaching the next",
+          "  // line already proves the wiring; assert on the returned definition to inspect",
+          "  // the bundled archetype dimensions.",
+          `  const { profile } = ext.assertProfile({ profile: ${JSON.stringify(extensionName)}, extensionName: ${JSON.stringify(extensionName)} });`,
+          `  assert.equal(profile.title, ${JSON.stringify(`${extensionName} archetype`)});`,
+          "  assert.equal(profile.types.length, 1);",
+          "  assert.equal(profile.workflows.length, 1);",
+        ]),
+        "});",
+        "",
+      ];
     case "renderers":
       return [
         `test(${JSON.stringify(`${extensionName} registers and invokes its renderer override`)}, async () => {`,
@@ -2062,14 +2342,11 @@ function buildDeclarativePackageReadme(
   commandName: string,
   capability: ExtensionScaffoldCapability,
 ): string {
-  // The schema starter omits `activation.commands` (its custom type is global), so
-  // describe the manifest accurately and use the conservative-activation section.
-  const manifestBullet =
-    capability === "schema"
-      ? "- `manifest.json`: package metadata and capabilities (no `activation.commands` — the custom item type activates for every command)."
-      : "- `manifest.json`: package metadata, capabilities, and `activation.commands` (the command paths that lazily activate this package).";
-  const activationSection =
-    capability === "schema" ? SCHEMA_ACTIVATION_README_SECTION.package : LAZY_ACTIVATION_README_SECTION.package;
+  // The schema/profile starters omit `activation.commands` (their surface is a
+  // global contribution), so describe the manifest accurately and use the
+  // conservative-activation section.
+  const manifestBullet = buildScaffoldManifestBullet(capability, "package");
+  const activationSection = buildScaffoldActivationReadmeSection(capability, "package");
   return [
     `# ${packageName}`,
     "",
@@ -2170,8 +2447,9 @@ export function buildStarterExtensionScaffoldFiles(
       // Declares the exact command paths `activate` registers so pm activates
       // this package lazily — only when an invoked command matches — mirroring
       // every first-party bundled package. Keep it in sync with the entrypoint.
-      // The schema starter omits this field (empty list) so its global custom
-      // item type/field stay available to built-in commands (see
+      // The schema and profile starters omit this field (empty list) so their
+      // global contribution — a custom item type/field, or a project profile
+      // resolved by `pm profile` — stays available to built-in commands (see
       // buildScaffoldActivationCommands).
       ...(activationCommands.length > 0 ? { activation: { commands: activationCommands } } : {}),
     },
@@ -2206,12 +2484,10 @@ export function buildStarterExtensionScaffoldFiles(
   // README bullet describing what index.ts wires, kept in sync with the chosen
   // capability so the generated docs match the generated code.
   const entrypointBullet = ENTRYPOINT_BULLETS[capability];
-  // The schema starter omits `activation.commands` (its custom type is global),
-  // so describe the manifest accurately instead of referencing a field it lacks.
-  const manifestBullet =
-    capability === "schema"
-      ? `- \`manifest.json\`: ${vocabulary} metadata and capabilities (no \`activation.commands\` — the custom item type activates for every command).`
-      : `- \`manifest.json\`: ${vocabulary} metadata, capabilities, and \`activation.commands\` (the command paths that lazily activate this ${vocabulary}).`;
+  // The schema/profile starters omit `activation.commands` (their surface is a
+  // global contribution), so describe the manifest accurately instead of
+  // referencing a field they deliberately lack.
+  const manifestBullet = buildScaffoldManifestBullet(capability, vocabulary);
   if (vocabulary === "package") {
     const packageJson = `${JSON.stringify(
       {
@@ -2290,6 +2566,7 @@ export function buildStarterExtensionScaffoldFiles(
       ...(capability === "search" ? ["defineSearchProvider", "defineVectorStoreAdapter"] : []),
       ...(capability === "importers" ? ["defineImporter", "defineExporter"] : []),
       ...(capability === "schema" ? ["defineItemType", "defineItemField", "defineMigration"] : []),
+      ...(capability === "profile" ? ["defineProjectProfile"] : []),
       ...(capability === "renderers" ? ["defineRendererOverride"] : []),
       ...(capability === "parser" ? ["defineParserOverride"] : []),
       ...(capability === "preflight" ? ["definePreflightOverride"] : []),
@@ -2383,6 +2660,22 @@ export function buildStarterExtensionScaffoldFiles(
         "});",
       );
     }
+    if (capability === "profile") {
+      // Abbreviated illustration; the generated index.ts populates every archetype
+      // dimension (types, statuses, fields, workflow, config, template, packages).
+      defineBuilderSnippet.push(
+        "",
+        "export const starterProfile = defineProjectProfile({",
+        `  name: ${JSON.stringify(extensionName)},`,
+        `  title: ${JSON.stringify(`${extensionName} archetype`)},`,
+        '  summary: "Starter project profile. Replace these dimensions with your own archetype.",',
+        "  types: [",
+        `    { name: ${JSON.stringify(itemTypeName)}, folder: ${JSON.stringify(itemTypeFolder)} },`,
+        "  ],",
+        "  // ...plus statuses, fields, workflows, config, templates, and packages.",
+        "});",
+      );
+    }
     if (capability === "renderers") {
       defineBuilderSnippet.push(
         "",
@@ -2449,6 +2742,9 @@ export function buildStarterExtensionScaffoldFiles(
         "  api.registerItemTypes([itemType]);",
         "  api.registerMigration(initMigration);",
       );
+    }
+    if (capability === "profile") {
+      defineBuilderSnippet.push("  api.registerProfile(starterProfile);");
     }
     if (capability === "importers") {
       defineBuilderSnippet.push(
@@ -2531,7 +2827,7 @@ export function buildStarterExtensionScaffoldFiles(
       "The builders return their argument unchanged; runtime validation still lives",
       "in `api.register*`, and behavior validation lives in `sdk/testing`.",
       ...PACKAGE_CAPABILITY_README_SECTIONS[capability],
-      ...(capability === "schema" ? SCHEMA_ACTIVATION_README_SECTION.package : LAZY_ACTIVATION_README_SECTION.package),
+      ...buildScaffoldActivationReadmeSection(capability, "package"),
       "",
       "## Compatibility Bounds",
       "`manifest.json` cannot hold comments, so the version-compatibility fields are documented here:",
@@ -2586,7 +2882,7 @@ export function buildStarterExtensionScaffoldFiles(
     "pm extension --doctor --project --detail summary",
     "```",
     ...EXTENSION_CAPABILITY_README_SECTIONS[capability],
-    ...(capability === "schema" ? SCHEMA_ACTIVATION_README_SECTION.extension : LAZY_ACTIVATION_README_SECTION.extension),
+    ...buildScaffoldActivationReadmeSection(capability, "extension"),
     "",
     "## Compatibility Bounds",
     "`manifest.json` cannot hold comments, so the version-compatibility fields are documented here:",

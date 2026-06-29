@@ -2603,6 +2603,60 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("scaffolds profile-capability packages with runnable SDK profile tests", async () => {
+    await withTempPmPath(async (context) => {
+      const scaffoldPath = path.join(context.tempRoot, "starter-profile");
+      const scaffold = await runExtension(scaffoldPath, {
+        init: true,
+        project: true,
+        vocabulary: "package",
+        capability: "profile",
+      }, { path: context.pmPath });
+
+      expect(scaffold.details).toMatchObject({
+        capability: "profile",
+        extension: {
+          name: "starter-profile",
+          command: "starter profile ping",
+        },
+      });
+
+      const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
+      // A profile registration is a schema+config bundle, so the loader grants it
+      // through the existing `schema` capability (no separate `profile` capability).
+      expect(manifest.capabilities).toEqual(["commands", "schema"]);
+      // The contributed profile is resolved by the built-in `pm profile` commands,
+      // so the starter must NOT gate activation behind narrow activation.commands
+      // (which would hide it from `pm profile list`); the field is omitted.
+      expect(manifest.activation).toBeUndefined();
+
+      const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
+      expect(entry).toContain("api.registerProfile({");
+      expect(entry).toContain('title: "starter-profile archetype"');
+      expect(entry).toContain('folder: "starter-profiles"');
+      expect(entry).toContain('id: "reviewing"');
+      expect(entry).toContain('key: "starter_profile_owner"');
+
+      const sampleTest = await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8");
+      expect(sampleTest).toContain('capabilities: ["commands", "schema"]');
+      expect(sampleTest).toContain("const { profile } = ext.assertProfile({");
+      expect(sampleTest).toContain('profile: "starter-profile"');
+      expect(sampleTest).toContain('assert.equal(profile.title, "starter-profile archetype");');
+      expect(sampleTest).toContain("assert.equal(profile.types.length, 1);");
+      expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
+
+      const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
+      expect(readme).toContain("## Project Profile");
+      expect(readme).toContain("api.registerProfile");
+      // The profile starter documents conservative (non-lazy) activation.
+      expect(readme).toContain("## Activation");
+      expect(readme).not.toContain("## Lazy Activation");
+      // README define* guidance includes the profile builder.
+      expect(readme).toContain("defineProjectProfile");
+      expect(readme).toContain("no `activation.commands`");
+    });
+  });
+
   it("scaffolds hook-capability standalone extensions without package test files", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-hook-ext");
@@ -2747,6 +2801,45 @@ describe("extension command runtime", () => {
       expect(readme).toContain("## Activation");
       expect(readme).not.toContain("## Lazy Activation");
       expect(readme).toContain("api.registerItemTypes");
+      await expect(readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).rejects.toMatchObject({
+        code: "ENOENT",
+      });
+    });
+  });
+
+  it("scaffolds profile-capability standalone extensions without package test files", async () => {
+    await withTempPmPath(async (context) => {
+      const scaffoldPath = path.join(context.tempRoot, "starter-profile-ext");
+      const scaffold = await runExtension(scaffoldPath, {
+        init: true,
+        project: true,
+        capability: "profile",
+      }, { path: context.pmPath });
+
+      expect(scaffold.details).toMatchObject({
+        capability: "profile",
+        extension: {
+          name: "starter-profile-ext",
+          command: "starter profile ext ping",
+        },
+      });
+      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
+        "manifest.json",
+        "index.ts",
+        "tsconfig.json",
+        "README.md",
+      ]);
+
+      const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
+      expect(manifest.capabilities).toEqual(["commands", "schema"]);
+      expect(manifest.activation).toBeUndefined();
+      const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
+      expect(entry).toContain("api.registerProfile({");
+      const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
+      expect(readme).toContain("## Project Profile");
+      expect(readme).toContain("## Activation");
+      expect(readme).not.toContain("## Lazy Activation");
+      expect(readme).toContain("api.registerProfile");
       await expect(readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).rejects.toMatchObject({
         code: "ENOENT",
       });
