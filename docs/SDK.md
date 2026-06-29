@@ -581,7 +581,8 @@ and a runnable `node:test` file that exercises `assertRegisteredItemType`,
 project domain. Pass `--capability profile` to scaffold a command plus a complete
 project-profile archetype (item types, statuses, fields, a per-type workflow,
 config, a create template, and package recommendations via `registerProfile`) and
-a `node:test` file exercising `assertRegisteredProfile`; it omits
+a `node:test` file exercising the harness-bound `assertProfile` (the public
+`assertRegisteredProfile`); it omits
 `activation.commands` (granted by the same `schema` capability) so the contributed
 profile resolves through `pm profile list/show/apply` and `pm profile apply <name>`
 tailors a fresh tracker in one shot — the broadest customization primitive in one
