@@ -1153,6 +1153,21 @@ describe("runTest", () => {
       const pathEntry = added.tests.find((entry) => entry.path === "tests/example.spec.ts");
       expect(pathEntry?.scope).toBe("project");
 
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const historyBeforeDuplicate = (await readFile(historyPath, "utf8")).trim().split("\n").length;
+      const duplicateOnly = await runTest(
+        id,
+        {
+          add: ["command=node --version,scope=project,timeout_seconds=2,note=duplicate only"],
+          message: "attempt duplicate linked test",
+        },
+        { path: context.pmPath },
+      );
+      expect(duplicateOnly.changed).toBe(false);
+      expect(duplicateOnly.count).toBe(3);
+      const historyAfterDuplicate = (await readFile(historyPath, "utf8")).trim().split("\n").length;
+      expect(historyAfterDuplicate).toBe(historyBeforeDuplicate);
+
       const noOpRemoval = await runTest(
         id,
         {
@@ -1161,7 +1176,7 @@ describe("runTest", () => {
         },
         { path: context.pmPath },
       );
-      expect(noOpRemoval.changed).toBe(true);
+      expect(noOpRemoval.changed).toBe(false);
       expect(noOpRemoval.count).toBe(3);
 
       const removed = await runTest(

@@ -1833,6 +1833,7 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
 
   let tests: LinkedTest[] = [];
   let itemId: string;
+  let changed = false;
 
   if (shouldMutate) {
     const author = resolveAuthor(options.author, settings.author_default);
@@ -1844,7 +1845,9 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
       author,
       message: options.message,
       force: options.force,
+      skipNoop: true,
       mutate(document) {
+        const previous = document.metadata.tests ?? [];
         const next = [...(document.metadata.tests ?? [])];
         for (const add of adds) {
           const exists = next.some(
@@ -1867,11 +1870,12 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
           }
         }
         document.metadata.tests = next;
-        return { changedFields: ["tests"] };
+        return { changedFields: stableValueEquals(previous, next) ? [] : ["tests"] };
       },
     });
     tests = result.item.tests ?? [];
     itemId = result.item.id;
+    changed = result.changedFields.length > 0;
   } else {
     const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
     if (!located) {
@@ -2006,7 +2010,7 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
       : undefined,
     fail_on_skipped_triggered: failOnSkippedTriggered ? true : undefined,
     warnings: warnings.length > 0 ? warnings : undefined,
-    changed: shouldMutate,
+    changed,
     count: tests.length,
   };
 }
