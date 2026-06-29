@@ -1,0 +1,12 @@
+id: pm-6oox
+title: "registerProfile core registration surface: ExtensionApi + registry + loader gate + capability-usage + policy surface"
+description: "Add api.registerProfile(profile) to ExtensionApi. New RegisteredExtensionProjectProfile type; profiles[] on ExtensionRegistrationRegistry + count on ExtensionRegistrationCounts; profiles:[] in createEmptyExtensionRegistrationRegistry. Loader registerProfile: validate the ProjectProfileDefinition, assertExtensionCapability(schema), allowRegistration('schema.profiles'). Add 'schema.profiles' to KNOWN_EXTENSION_POLICY_SURFACES. capability-usage: registerProfile under schema surfaces + record(registrations.profiles,'schema')."
+type: Task
+status: open
+priority: 1
+tags[3]: "area:extensions","area:schema",pm-cli
+created_at: "2026-06-29T09:02:05.070Z"
+updated_at: "2026-06-29T09:02:05.070Z"
+author: claude-code-agent
+parent: pm-08sv
+body: ""

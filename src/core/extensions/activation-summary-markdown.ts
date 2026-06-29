@@ -75,6 +75,7 @@ const SURFACE_SECTIONS = [
   ["item_types", "Item types"],
   ["item_fields", "Item fields"],
   ["migrations", "Migrations"],
+  ["profiles", "Profiles"],
   ["importers", "Importers"],
   ["exporters", "Exporters"],
   ["search_providers", "Search providers"],

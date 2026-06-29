@@ -28,7 +28,7 @@ export const EXTENSION_CAPABILITY_REGISTRATION_SURFACES = {
   commands: ["registerCommand", "command override", "command handler"],
   renderers: ["registerRenderer"],
   hooks: ["hooks.beforeCommand", "hooks.afterCommand", "hooks.onWrite", "hooks.onRead", "hooks.onIndex"],
-  schema: ["registerFlags", "registerItemFields", "registerItemTypes", "registerMigration"],
+  schema: ["registerFlags", "registerItemFields", "registerItemTypes", "registerMigration", "registerProfile"],
   importers: ["registerImporter", "registerExporter"],
   search: ["registerSearchProvider", "registerVectorStoreAdapter"],
   parser: ["registerParser"],
@@ -130,6 +130,7 @@ function attributeCapabilityUsage(activation: ExtensionActivationResult): Map<st
   record(registrations.item_fields, "schema");
   record(registrations.item_types, "schema");
   record(registrations.migrations, "schema");
+  record(registrations.profiles, "schema");
   record(registrations.importers, "importers");
   record(registrations.exporters, "importers");
   record(registrations.search_providers, "search");

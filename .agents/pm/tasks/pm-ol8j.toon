@@ -1,0 +1,15 @@
+id: pm-ol8j
+title: "Docs: SDK.md/EXTENSIONS.md document api.registerProfile + regenerate contracts/full.json"
+description: Document registerProfile in docs/SDK.md and docs/EXTENSIONS.md (with the tracker ref per AGENTS.md rule for new docs sections). Regenerate full.json + verify pm contracts reflects the new schema.profiles policy surface and any registration-count assertions. Update CLAUDE_CODE_PLUGIN.md if profile surface counts are asserted.
+type: Task
+status: open
+priority: 2
+tags[3]: "area:docs",pm-cli,sdk
+created_at: "2026-06-29T09:02:20.683Z"
+updated_at: "2026-06-29T09:03:07.007Z"
+author: claude-code-agent
+parent: pm-08sv
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-l8fl,blocked_by,"2026-06-29T09:03:07.004Z",null,null
+  pm-vpwt,blocked_by,"2026-06-29T09:03:07.004Z",null,null
+body: ""

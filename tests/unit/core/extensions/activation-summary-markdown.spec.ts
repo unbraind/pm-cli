@@ -15,6 +15,7 @@ function makeSummary(overrides: Partial<ExtensionActivationSummary> = {}): Exten
     item_types: [],
     item_fields: [],
     migrations: [],
+    profiles: [],
     importers: [],
     exporters: [],
     search_providers: [],

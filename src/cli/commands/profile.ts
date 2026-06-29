@@ -31,12 +31,15 @@ import {
   resolveNestedSettingDescriptor,
   writeNestedSettingValue,
 } from "../../core/config/nested-settings.js";
-import { runActiveOnWriteHooks } from "../../core/extensions/index.js";
+import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../core/extensions/index.js";
 import {
-  listProfiles,
-  resolveProfile,
+  resolveProfileCatalog,
+  resolveProfileEntry,
+  type ExtensionProfileContribution,
+  type ProfileSourceKind,
   type ProfileTemplateOptions,
   type ProjectProfileDefinition,
+  type ResolvedProfile,
 } from "../../core/profile/profile-presets.js";
 import {
   planProfileApplication,
@@ -84,6 +87,10 @@ export interface ProfileListEntry {
   title: string;
   /** One-line archetype summary. */
   summary: string;
+  /** Whether the profile is core-baked or contributed by an active extension. */
+  source: ProfileSourceKind;
+  /** Owning package/extension name for an extension profile; omitted for builtins. */
+  package?: string;
   /** Per-dimension counts. */
   composition: ProfileComposition;
 }
@@ -92,8 +99,10 @@ export interface ProfileListEntry {
 export interface ProfileListResult {
   /** Discriminant for the profile result union. */
   action: "list";
-  /** All built-in profiles in canonical order. */
+  /** Built-in profiles in canonical order followed by active extension profiles. */
   profiles: ProfileListEntry[];
+  /** Non-fatal merge warnings (built-in shadowing attempts, duplicate names). */
+  warnings: string[];
   /** ISO timestamp the result was produced. */
   generated_at: string;
 }
@@ -108,6 +117,10 @@ export interface ProfileShowResult {
   title: string;
   /** One-line archetype summary. */
   summary: string;
+  /** Whether the profile is core-baked or contributed by an active extension. */
+  source: ProfileSourceKind;
+  /** Owning package/extension name for an extension profile; omitted for builtins. */
+  package?: string;
   /** Per-dimension counts. */
   composition: ProfileComposition;
   /** Item type names the profile registers. */
@@ -190,37 +203,60 @@ function compositionOf(profile: ProjectProfileDefinition): ProfileComposition {
 }
 
 /**
- * Lists every built-in profile with its per-dimension composition counts.
+ * Collects the profiles contributed by active extensions, mapping the live
+ * registration registry onto the resolver's contribution shape. Returns an empty
+ * list when extensions are disabled or none registered a profile.
+ */
+function collectExtensionProfileContributions(): ExtensionProfileContribution[] {
+  const registrations = getActiveExtensionRegistrations();
+  if (registrations === null) {
+    return [];
+  }
+  return registrations.profiles.map((entry) => ({ name: entry.name, profile: entry.profile }));
+}
+
+/**
+ * Lists every available profile — the built-in archetypes followed by profiles
+ * contributed by active extensions — with per-dimension composition counts and
+ * the source each came from. Surfaces any non-fatal merge collisions as warnings.
  */
 export function runProfileList(): ProfileListResult {
+  const { profiles, warnings } = resolveProfileCatalog(collectExtensionProfileContributions());
   return {
     action: "list",
-    profiles: listProfiles().map((profile) => ({
-      name: profile.name,
-      title: profile.title,
-      summary: profile.summary,
-      composition: compositionOf(profile),
+    profiles: profiles.map((resolved) => ({
+      name: resolved.definition.name,
+      title: resolved.definition.title,
+      summary: resolved.definition.summary,
+      source: resolved.source,
+      ...(resolved.package !== undefined ? { package: resolved.package } : {}),
+      composition: compositionOf(resolved.definition),
     })),
+    warnings,
     generated_at: nowIso(),
   };
 }
 
 /**
- * Shows the full composition of a single profile. Throws a USAGE error for a
- * missing or unknown profile name.
+ * Shows the full composition of a single profile, resolved across built-in and
+ * extension-contributed archetypes. Throws a USAGE error for a missing or unknown
+ * profile name.
  */
 export function runProfileShow(name: string | undefined): ProfileShowResult {
-  let profile: ProjectProfileDefinition;
+  let resolved: ResolvedProfile;
   try {
-    profile = resolveProfile(name);
+    resolved = resolveProfileEntry(name, collectExtensionProfileContributions());
   } catch (error) {
     throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.USAGE);
   }
+  const profile = resolved.definition;
   return {
     action: "show",
     name: profile.name,
     title: profile.title,
     summary: profile.summary,
+    source: resolved.source,
+    ...(resolved.package !== undefined ? { package: resolved.package } : {}),
     composition: compositionOf(profile),
     types: profile.types.map((type) => normalizeAddTypeInput(type).name),
     statuses: profile.statuses.map((status) => String(status.id ?? "")),
@@ -354,7 +390,7 @@ export async function runProfileApply(
 
   let profile: ProjectProfileDefinition;
   try {
-    profile = resolveProfile(name);
+    profile = resolveProfileEntry(name, collectExtensionProfileContributions()).definition;
   } catch (error) {
     throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.USAGE);
   }
@@ -474,7 +510,11 @@ function formatDimensionLine(label: string, dimension: ProfileApplyDimension): s
 export function formatProfileListHuman(result: ProfileListResult): string {
   const lines = ["Project profiles:"];
   for (const profile of result.profiles) {
-    lines.push(`  ${profile.name} — ${profile.title}: ${profile.summary}`);
+    const origin = profile.source === "extension" ? ` [${profile.package ?? "extension"}]` : "";
+    lines.push(`  ${profile.name} — ${profile.title}: ${profile.summary}${origin}`);
+  }
+  for (const warning of result.warnings) {
+    lines.push(`  warning: ${warning}`);
   }
   return lines.join("\n");
 }
@@ -483,7 +523,8 @@ export function formatProfileListHuman(result: ProfileListResult): string {
  * Renders the `pm profile show` result as human-readable text.
  */
 export function formatProfileShowHuman(result: ProfileShowResult): string {
-  const lines = [`${result.name} — ${result.title}`, result.summary, ""];
+  const origin = result.source === "extension" ? ` [${result.package ?? "extension"}]` : "";
+  const lines = [`${result.name} — ${result.title}${origin}`, result.summary, ""];
   lines.push(`types: ${result.types.join(", ") || "(none)"}`);
   lines.push(`statuses: ${result.statuses.join(", ") || "(none)"}`);
   lines.push(`fields: ${result.fields.join(", ") || "(none)"}`);

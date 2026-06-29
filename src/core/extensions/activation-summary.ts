@@ -83,6 +83,8 @@ export interface ExtensionActivationSummary {
   item_fields: string[];
   /** Schema migration ids registered via `registerMigration` (id-less migrations are omitted — they carry no identifier). */
   migrations: string[];
+  /** Project profile names registered via `registerProfile`. */
+  profiles: string[];
   /** Importer names registered via `registerImporter`. */
   importers: string[];
   /** Exporter names registered via `registerExporter`. */
@@ -161,6 +163,7 @@ export function describeExtensionActivation(
     migrations: collectFlat(registrations.migrations, (entry) =>
       typeof entry.definition.id === "string" ? [entry.definition.id] : [],
     ),
+    profiles: collect(registrations.profiles, (entry) => entry.profile.name),
     importers: collect(registrations.importers, (entry) => entry.importer),
     exporters: collect(registrations.exporters, (entry) => entry.exporter),
     search_providers: collect(registrations.search_providers, (entry) => entry.definition.name),

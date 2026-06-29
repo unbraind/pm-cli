@@ -35,7 +35,7 @@ describe("pm-kanban archetype package", () => {
     expect(kanbanExtension.deactivate).toBe(deactivate);
   });
 
-  it("registers the Card item type and flow fields, then deactivates cleanly", async () => {
+  it("registers the Card item type, flow fields, and the kanban profile, then deactivates cleanly", async () => {
     const ext = await createExtensionTestHarness(kanbanExtension, { capabilities: ["schema"] });
 
     const cardType = ext.assertItemType({ itemType: "Card" });
@@ -44,6 +44,12 @@ describe("pm-kanban archetype package", () => {
     for (const field of KANBAN_ITEM_FIELDS) {
       expect(ext.assertItemField({ field: field.name }).field.name).toBe(field.name);
     }
+
+    // The profile is registered through the same schema capability, so the
+    // archetype is reachable via `pm profile apply kanban` once installed.
+    const profile = ext.assertProfile({ profile: "kanban" });
+    expect(profile.profile.name).toBe("kanban");
+    expect(profile.registration.name).toBe(manifest.name);
 
     assertExtensionDeactivated(await ext.deactivate());
   });

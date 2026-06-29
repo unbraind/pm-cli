@@ -351,3 +351,128 @@ export function resolveProfile(rawValue: string | undefined): ProjectProfileDefi
 export function listProfiles(): ProjectProfileDefinition[] {
   return PROFILE_NAMES.map((name) => BUILTIN_PROFILES[name]);
 }
+
+/**
+ * Whether a resolved profile is core-baked or contributed by an active extension.
+ */
+export type ProfileSourceKind = "builtin" | "extension";
+
+/**
+ * A profile definition paired with where it came from, returned by the merged
+ * `pm profile` resolution so callers can label a profile's origin.
+ */
+export interface ResolvedProfile {
+  /** The profile definition. */
+  definition: ProjectProfileDefinition;
+  /** Whether the profile is core-baked or contributed by an active extension. */
+  source: ProfileSourceKind;
+  /** For an extension profile, the owning package/extension name; absent for builtins. */
+  package?: string;
+}
+
+/**
+ * A profile contributed by an active extension, fed into the merge resolver.
+ *
+ * This intentionally mirrors the loader's `RegisteredExtensionProjectProfile`
+ * without importing `core/extensions` — `extension-types` depends on this module
+ * for {@link ProjectProfileDefinition}, so importing back would form a cycle. The
+ * CLI maps the active registration registry onto this shape.
+ */
+export interface ExtensionProfileContribution {
+  /** Owning extension/package name, surfaced as the resolved profile's source. */
+  name: string;
+  /** The profile definition the extension registered. */
+  profile: ProjectProfileDefinition;
+}
+
+/**
+ * Result of {@link resolveProfileCatalog}: the merged profile list plus any
+ * non-fatal collisions encountered while merging.
+ */
+export interface ResolveProfileCatalogResult {
+  /** Builtins first (in {@link PROFILE_NAMES} order), then accepted extension profiles in contribution order. */
+  profiles: ResolvedProfile[];
+  /** Non-fatal merge warnings (built-in shadowing attempts, duplicate or empty names). */
+  warnings: string[];
+}
+
+/**
+ * Canonical lookup key for a profile name: trimmed, lowercased, hyphens folded to
+ * underscores. Shared by both sides of every catalog match so the user can type
+ * `my-flow`, `my_flow`, or `My Flow ` interchangeably, mirroring
+ * {@link normalizeProfileName}'s leniency for the built-in set.
+ */
+function normalizeProfileLookupKey(rawValue: string): string {
+  return rawValue.trim().toLowerCase().replaceAll("-", "_");
+}
+
+function formatAvailableProfileNames(profiles: readonly ResolvedProfile[]): string {
+  return profiles.map((entry) => entry.definition.name).join(", ");
+}
+
+/**
+ * Merges the core-baked {@link BUILTIN_PROFILES} with profiles contributed by
+ * active extensions into one resolvable catalog.
+ *
+ * Built-in names are reserved: an extension profile whose normalized name
+ * collides with a built-in archetype is dropped with a warning, so a package can
+ * never silently shadow a core profile. Two extension profiles that normalize to
+ * the same key keep the first contribution and warn on each later duplicate. An
+ * extension profile with a blank name is skipped with a warning. Builtins always
+ * sort first, preserving the established `pm profile list` ordering.
+ */
+export function resolveProfileCatalog(
+  contributions: readonly ExtensionProfileContribution[] = [],
+): ResolveProfileCatalogResult {
+  const profiles: ResolvedProfile[] = PROFILE_NAMES.map((name) => ({
+    definition: BUILTIN_PROFILES[name],
+    source: "builtin" as const,
+  }));
+  const builtinKeys = new Set<string>(PROFILE_NAMES.map((name) => normalizeProfileLookupKey(name)));
+  const seen = new Set<string>(builtinKeys);
+  const warnings: string[] = [];
+  for (const contribution of contributions) {
+    const key = normalizeProfileLookupKey(contribution.profile.name);
+    if (key.length === 0) {
+      warnings.push(`Extension "${contribution.name}" registered a profile with a blank name; ignored.`);
+      continue;
+    }
+    if (builtinKeys.has(key)) {
+      warnings.push(
+        `Extension "${contribution.name}" profile "${contribution.profile.name}" collides with built-in profile "${key}" and was ignored.`,
+      );
+      continue;
+    }
+    if (seen.has(key)) {
+      warnings.push(
+        `Profile "${contribution.profile.name}" from extension "${contribution.name}" duplicates an already-registered profile and was ignored.`,
+      );
+      continue;
+    }
+    seen.add(key);
+    profiles.push({ definition: contribution.profile, source: "extension", package: contribution.name });
+  }
+  return { profiles, warnings };
+}
+
+/**
+ * Resolves a single profile by name from the merged catalog (builtins +
+ * extension contributions). Throws a plain Error with a stable, name-listing
+ * message when the value is missing or unknown, so CLI layers map it to a USAGE
+ * exit code — the extension-aware counterpart to {@link resolveProfile}.
+ */
+export function resolveProfileEntry(
+  rawValue: string | undefined,
+  contributions: readonly ExtensionProfileContribution[] = [],
+): ResolvedProfile {
+  const { profiles } = resolveProfileCatalog(contributions);
+  if (rawValue === undefined || rawValue.trim().length === 0) {
+    throw new Error(`Profile name is required. Allowed: ${formatAvailableProfileNames(profiles)}.`);
+  }
+  const key = normalizeProfileLookupKey(rawValue);
+  const match = profiles.find((entry) => normalizeProfileLookupKey(entry.definition.name) === key);
+  if (match === undefined) {
+    throw new Error(`Invalid profile "${rawValue}". Allowed: ${formatAvailableProfileNames(profiles)}.`);
+  }
+  return match;
+}

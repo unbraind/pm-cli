@@ -53,6 +53,20 @@ function buildFullBlueprint(observed: { imperative: boolean }): ExtensionBluepri
     itemTypes: [{ name: "ComposeIncident", folder: "compose-incidents", aliases: ["compose-incident"] }],
     itemFields: [{ name: "compose_severity", type: "string" }],
     migrations: [{ id: "compose-migration", description: "demo migration" }],
+    profiles: [
+      {
+        name: "compose-archetype",
+        title: "Compose archetype",
+        summary: "Profile wired through the blueprint.",
+        types: [{ name: "ComposeIncident" }],
+        statuses: [],
+        fields: [],
+        workflows: [],
+        config: [],
+        templates: [],
+        packages: [],
+      },
+    ],
     searchProviders: [{ name: "compose-search", query: async () => ({ hits: [] }) }],
     vectorStoreAdapters: [{ name: "compose-vector", query: async () => [] }],
     importers: [{ name: "compose-import", importer: () => ({ imported: 0 }) }],
@@ -114,11 +128,13 @@ describe("sdk composeExtension", () => {
       item_types: 1,
       item_fields: 1,
       migrations: 1,
+      profiles: 1,
       importers: 1,
       exporters: 1,
       search_providers: 1,
       vector_store_adapters: 1,
     });
+    expect(activation.registrations.profiles[0]?.profile.name).toBe("compose-archetype");
     expect(activation.command_override_count).toBe(1);
     expect(activation.parser_override_count).toBe(1);
     expect(activation.preflight_override_count).toBe(1);
@@ -215,6 +231,24 @@ describe("sdk deriveExtensionCapabilities", () => {
     expect(deriveExtensionCapabilities({ itemTypes: [{ name: "T", folder: "t" }] })).toEqual(["schema"]);
     expect(deriveExtensionCapabilities({ itemFields: [{ name: "f", type: "string" }] })).toEqual(["schema"]);
     expect(deriveExtensionCapabilities({ migrations: [{ id: "m", description: "d" }] })).toEqual(["schema"]);
+    expect(
+      deriveExtensionCapabilities({
+        profiles: [
+          {
+            name: "p",
+            title: "P",
+            summary: "",
+            types: [],
+            statuses: [],
+            fields: [],
+            workflows: [],
+            config: [],
+            templates: [],
+            packages: [],
+          },
+        ],
+      }),
+    ).toEqual(["schema"]);
     expect(deriveExtensionCapabilities({ parsers: { "a b": () => ({}) } })).toEqual(["parser"]);
     expect(deriveExtensionCapabilities({ renderers: { toon: () => null } })).toEqual(["renderers"]);
     expect(deriveExtensionCapabilities({ services: { output_format: () => undefined } })).toEqual(["services"]);
@@ -313,6 +347,20 @@ function buildParityBlueprint(): ExtensionBlueprint {
       { name: "demo_score", type: "number" },
     ],
     migrations: [{ id: "demo-migration", description: "demo migration" }],
+    profiles: [
+      {
+        name: "demo-archetype",
+        title: "Demo archetype",
+        summary: "Profile staged through the parity blueprint.",
+        types: [{ name: "DemoTask" }],
+        statuses: [],
+        fields: [],
+        workflows: [],
+        config: [],
+        templates: [],
+        packages: [],
+      },
+    ],
     searchProviders: [{ name: "demo-search", query: async () => ({ hits: [] }) }],
     vectorStoreAdapters: [{ name: "demo-vector", query: async () => [] }],
     importers: [
@@ -376,6 +424,7 @@ describe("sdk describeExtensionBlueprint", () => {
     expect(summary.flag_commands).toEqual(["demo flagged", "demo run", "demo-export export", "demo-import import"]);
     expect(summary.item_types).toEqual(["DemoIncident", "DemoTask"]);
     expect(summary.migrations).toEqual(["demo-migration"]);
+    expect(summary.profiles).toEqual(["demo-archetype"]);
     expect(summary.hooks).toEqual(["before_command", "after_command", "on_write", "on_read", "on_index"]);
     expect(summary.preflight_overrides).toBe(1);
   });
@@ -391,6 +440,7 @@ describe("sdk describeExtensionBlueprint", () => {
       item_types: [],
       item_fields: [],
       migrations: [],
+      profiles: [],
       importers: [],
       exporters: [],
       search_providers: [],
@@ -960,6 +1010,20 @@ describe("sdk mergeExtensionBlueprints", () => {
       flags: { "kit alpha": [{ long: "--alpha", value_type: "string", value_name: "text" }] },
       commandOverrides: { list: overrideA },
       parsers: { "kit alpha": parserA },
+      profiles: [
+        {
+          name: "kit-archetype",
+          title: "Kit archetype",
+          summary: "",
+          types: [],
+          statuses: [],
+          fields: [],
+          workflows: [],
+          config: [],
+          templates: [],
+          packages: [],
+        },
+      ],
       hooks: { beforeCommand: [() => undefined] },
       activate: () => {
         order.push("activate-a");
@@ -994,6 +1058,7 @@ describe("sdk mergeExtensionBlueprints", () => {
     // Array surfaces concatenate in argument order.
     expect(merged.commands?.map((command) => command.name)).toEqual(["kit alpha", "kit beta"]);
     expect(merged.searchProviders?.map((provider) => provider.name)).toEqual(["kit-search"]);
+    expect(merged.profiles?.map((profile) => profile.name)).toEqual(["kit-archetype"]);
     // A shared flag target command concatenates both modules' flag arrays.
     expect(merged.flags?.["kit alpha"].map((flag) => flag.long)).toEqual(["--alpha", "--alpha-extra"]);
     // Single-handler record collision: the later module wins the key.

@@ -16,7 +16,7 @@ core-baked profiles (`agile`, `ops`, `research`) without modifying core.
 | --- | --- |
 | `api.registerItemTypes([...])` | Registers the `Card` flow item type (`folder: cards`, alias `kanban-card`) as a GLOBAL schema contribution. |
 | `api.registerItemFields([...])` | Registers the flow fields `wip_limit` (number), `class_of_service` (string), and `impediment` (string). |
-| `ProjectProfileDefinition` (`kanbanProfile`) | Exports the complete archetype — types, custom statuses (`doing`, `verifying`), fields, the `Card` workflow, offline search config, a `card` create template, and package recommendations — consumable by the SDK profile planner. |
+| `api.registerProfile(kanbanProfile)` | Registers the complete archetype — types, custom statuses (`doing`, `verifying`), fields, the `Card` workflow, offline search config, a `card` create template, and package recommendations — so `pm profile apply kanban` stages it idempotently, alongside the core `agile`/`ops`/`research` archetypes. |
 
 ## Install
 
@@ -43,18 +43,18 @@ without minting a bespoke flag per field.
 
 ### Staging the full archetype
 
-The live schema (types/fields) is applied on install. The remaining profile
-dimensions — custom statuses, search config, and the `card` template — are
-described by `kanbanProfile` and staged the same way the built-in profiles are:
+The live schema (types/fields) is applied on install. Because the package also
+registers `kanbanProfile` as a project profile, the remaining dimensions — custom
+statuses, the `Card` workflow, search config, and the `card` template — are staged
+in one idempotent command, exactly like a built-in archetype:
 
 ```bash
-pm schema add-status doing --role active --alias wip
-pm schema add-status verifying --role active --alias verify
-pm config set search_provider bm25
-pm config set search_max_results 30
+pm profile list                  # kanban appears, labelled [builtin-kanban-profile]
+pm profile show kanban           # full composition of the archetype
+pm profile apply kanban          # stage every dimension (idempotent; re-runs are no-ops)
 ```
 
-SDK consumers can compute the idempotent diff programmatically:
+SDK consumers can also compute the idempotent diff programmatically:
 
 ```ts
 import { planProfileApplication } from "@unbrained/pm-cli/sdk";

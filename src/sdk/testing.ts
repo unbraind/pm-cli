@@ -41,6 +41,7 @@ import type {
   RegisteredExtensionImporter,
   RegisteredExtensionParserOverride,
   RegisteredExtensionPreflightOverride,
+  RegisteredExtensionProjectProfile,
   RegisteredExtensionRendererOverride,
   RegisteredExtensionSchemaFieldDefinitions,
   RegisteredExtensionSchemaItemTypeDefinitions,
@@ -102,6 +103,7 @@ import type {
   DescribeExtensionActivationOptions,
   ExtensionActivationSummary,
 } from "../core/extensions/activation-summary.js";
+import type { ProjectProfileDefinition } from "../core/profile/profile-presets.js";
 import { renderExtensionSurfaceMarkdown } from "../core/extensions/activation-summary-markdown.js";
 import type { ExtensionSurfaceMarkdownOptions } from "../core/extensions/activation-summary-markdown.js";
 import type {
@@ -560,6 +562,26 @@ export interface RegisteredMigrationExpectation {
   migration: string;
   extensionName?: string;
   mandatory?: boolean;
+}
+
+/**
+ * Documents the registered project-profile expectation payload exchanged by command, SDK, and package integrations.
+ */
+export interface RegisteredProfileExpectation {
+  /** Profile name to assert is registered (case-insensitive). */
+  profile: string;
+  /** Restrict the match to a single extension when several are active. */
+  extensionName?: string;
+}
+
+/**
+ * Documents the registered project-profile assertion payload exchanged by command, SDK, and package integrations.
+ */
+export interface RegisteredProfileAssertion {
+  /** The matching registration entry. */
+  registration: RegisteredExtensionProjectProfile;
+  /** The registered profile definition. */
+  profile: ProjectProfileDefinition;
 }
 
 /**
@@ -1686,6 +1708,42 @@ export function assertRegisteredItemType(
 }
 
 /**
+ * Assert that an activated extension registration registry contains a project
+ * profile registered via `api.registerProfile(profile)` (optionally scoped to a
+ * specific extension).
+ *
+ * This is the test-time counterpart to the declarative `defineProjectProfile`
+ * authoring helper and the `pm profile list/show/apply` runtime surface: it
+ * proves a package's archetype reached the registry so a downstream consumer can
+ * resolve and apply it by name. Like the other declarative-surface assertions
+ * (item types, item fields), a profile is verified by presence — it is staged,
+ * not executed — so there is no `runRegisteredProfileForTest` counterpart.
+ */
+export function assertRegisteredProfile(
+  registrations: ExtensionRegistrationRegistry,
+  expectation: RegisteredProfileExpectation,
+): RegisteredProfileAssertion {
+  const expectedProfile = normalizeSdkIdentifier(expectation.profile);
+  if (expectedProfile.length === 0) {
+    throw new Error("Expected profile name must be a non-empty string");
+  }
+
+  const match = registrations.profiles
+    .filter((entry) => expectation.extensionName === undefined || entry.name === expectation.extensionName)
+    .find((entry) => normalizeSdkIdentifier(entry.profile.name) === expectedProfile);
+  if (!match) {
+    const available = sortedUnique(registrations.profiles.map((entry) => entry.profile.name));
+    throw new Error(
+      `Expected profile "${expectedProfile}"${extensionNameSuffix(
+        expectation.extensionName,
+      )} to be registered. Available profiles: ${formatAvailable(available)}`,
+    );
+  }
+
+  return { registration: match, profile: match.profile };
+}
+
+/**
  * Assert that an activated extension command registry contains a command
  * override registered via `api.registerCommand(command, override)` (optionally
  * scoped to a specific extension).
@@ -2161,6 +2219,8 @@ export interface ExtensionTestHarness {
   assertItemField(expectation: RegisteredItemFieldExpectation): RegisteredItemFieldAssertion;
   /** Bound {@link assertRegisteredItemType} over `activation.registrations`. */
   assertItemType(expectation: RegisteredItemTypeExpectation): RegisteredItemTypeAssertion;
+  /** Bound {@link assertRegisteredProfile} over `activation.registrations`. */
+  assertProfile(expectation: RegisteredProfileExpectation): RegisteredProfileAssertion;
   /** Bound {@link assertRegisteredHook} over `activation.hooks`. */
   assertHook<TKind extends RegisteredHookKind>(
     expectation: RegisteredHookExpectation & { kind: TKind },
@@ -2300,6 +2360,9 @@ export async function createExtensionTestHarness(
     },
     assertItemType(expectation) {
       return assertRegisteredItemType(activation.registrations, expectation);
+    },
+    assertProfile(expectation) {
+      return assertRegisteredProfile(activation.registrations, expectation);
     },
     assertHook(expectation) {
       return assertRegisteredHook(activation.hooks, expectation);

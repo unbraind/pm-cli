@@ -5,6 +5,10 @@ import {
   normalizeProfileName,
   PROFILE_NAMES,
   resolveProfile,
+  resolveProfileCatalog,
+  resolveProfileEntry,
+  type ExtensionProfileContribution,
+  type ProjectProfileDefinition,
 } from "../../../../src/core/profile/profile-presets.js";
 import { normalizeAddTypeInput } from "../../../../src/core/schema/item-types-file.js";
 import { normalizeAddStatusInput } from "../../../../src/core/schema/status-defs-file.js";
@@ -103,5 +107,119 @@ describe("BUILTIN_PROFILES definitions", () => {
         expect(Object.keys(template.options).length).toBeGreaterThan(0);
       }
     }
+  });
+});
+
+/** Build a minimal extension-contributed profile definition for the merge resolver. */
+function extensionProfile(name: string, overrides: Partial<ProjectProfileDefinition> = {}): ProjectProfileDefinition {
+  return {
+    name,
+    title: `${name} archetype`,
+    summary: `${name} summary`,
+    types: [],
+    statuses: [],
+    fields: [],
+    workflows: [],
+    config: [],
+    templates: [],
+    packages: [],
+    ...overrides,
+  };
+}
+
+/** Wrap a profile definition as a contribution from the named package. */
+function contribution(pkg: string, profile: ProjectProfileDefinition): ExtensionProfileContribution {
+  return { name: pkg, profile };
+}
+
+describe("resolveProfileCatalog", () => {
+  it("returns the built-in profiles (no extensions) labeled as builtin, in canonical order", () => {
+    const { profiles, warnings } = resolveProfileCatalog();
+    expect(profiles.map((entry) => entry.definition.name)).toEqual([...PROFILE_NAMES]);
+    expect(profiles.every((entry) => entry.source === "builtin")).toBe(true);
+    expect(profiles.every((entry) => entry.package === undefined)).toBe(true);
+    expect(warnings).toEqual([]);
+  });
+
+  it("appends extension profiles after the builtins with their owning package as source", () => {
+    const { profiles, warnings } = resolveProfileCatalog([contribution("pm-kanban", extensionProfile("kanban"))]);
+    expect(profiles).toHaveLength(PROFILE_NAMES.length + 1);
+    const kanban = profiles.at(-1)!;
+    expect(kanban.definition.name).toBe("kanban");
+    expect(kanban.source).toBe("extension");
+    expect(kanban.package).toBe("pm-kanban");
+    expect(warnings).toEqual([]);
+  });
+
+  it("reserves built-in names: an extension profile colliding with a builtin is ignored with a warning", () => {
+    const { profiles, warnings } = resolveProfileCatalog([
+      contribution("rogue-pkg", extensionProfile("Agile", { title: "Hijacked" })),
+    ]);
+    expect(profiles).toHaveLength(PROFILE_NAMES.length);
+    expect(profiles.find((entry) => entry.definition.name === "agile")?.source).toBe("builtin");
+    expect(warnings).toEqual([
+      'Extension "rogue-pkg" profile "Agile" collides with built-in profile "agile" and was ignored.',
+    ]);
+  });
+
+  it("keeps the first contribution when two extension profiles share a normalized name", () => {
+    const { profiles, warnings } = resolveProfileCatalog([
+      contribution("pkg-a", extensionProfile("flow", { title: "First" })),
+      contribution("pkg-b", extensionProfile("FLOW", { title: "Second" })),
+    ]);
+    const flowEntries = profiles.filter((entry) => entry.definition.name.toLowerCase() === "flow");
+    expect(flowEntries).toHaveLength(1);
+    expect(flowEntries[0].definition.title).toBe("First");
+    expect(flowEntries[0].package).toBe("pkg-a");
+    expect(warnings).toEqual([
+      'Profile "FLOW" from extension "pkg-b" duplicates an already-registered profile and was ignored.',
+    ]);
+  });
+
+  it("folds hyphens to underscores for collision detection so kebab/snake variants dedupe", () => {
+    const { profiles, warnings } = resolveProfileCatalog([
+      contribution("pkg-a", extensionProfile("my-flow")),
+      contribution("pkg-b", extensionProfile("my_flow")),
+    ]);
+    expect(profiles.filter((entry) => entry.source === "extension")).toHaveLength(1);
+    expect(warnings).toHaveLength(1);
+  });
+
+  it("skips an extension profile with a blank name and warns", () => {
+    const { profiles, warnings } = resolveProfileCatalog([contribution("blank-pkg", extensionProfile("   "))]);
+    expect(profiles).toHaveLength(PROFILE_NAMES.length);
+    expect(warnings).toEqual(['Extension "blank-pkg" registered a profile with a blank name; ignored.']);
+  });
+});
+
+describe("resolveProfileEntry", () => {
+  it("resolves a built-in profile by name (case/format-insensitive)", () => {
+    const resolved = resolveProfileEntry("AGILE");
+    expect(resolved.definition.name).toBe("agile");
+    expect(resolved.source).toBe("builtin");
+  });
+
+  it("resolves an extension-contributed profile by name", () => {
+    const resolved = resolveProfileEntry("kanban", [contribution("pm-kanban", extensionProfile("kanban"))]);
+    expect(resolved.definition.name).toBe("kanban");
+    expect(resolved.source).toBe("extension");
+    expect(resolved.package).toBe("pm-kanban");
+  });
+
+  it("throws a name-listing error when the profile name is required but missing", () => {
+    expect(() => resolveProfileEntry(undefined)).toThrow(/Profile name is required\. Allowed: agile, ops, research\./);
+    expect(() => resolveProfileEntry("   ")).toThrow(/Profile name is required\./);
+  });
+
+  it("throws a name-listing error for an unknown profile, including extension names", () => {
+    expect(() => resolveProfileEntry("nope", [contribution("pm-kanban", extensionProfile("kanban"))])).toThrow(
+      /Invalid profile "nope"\. Allowed: agile, ops, research, kanban\./,
+    );
+  });
+
+  it("never resolves a built-in-colliding extension profile (the builtin wins)", () => {
+    const resolved = resolveProfileEntry("agile", [contribution("rogue", extensionProfile("agile", { title: "X" }))]);
+    expect(resolved.source).toBe("builtin");
+    expect(resolved.definition.title).not.toBe("X");
   });
 });

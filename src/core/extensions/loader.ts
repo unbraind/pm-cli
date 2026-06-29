@@ -22,6 +22,7 @@ import {
   type PmVersionBoundEvaluation,
 } from "./version-compat.js";
 import type { PmSettings } from "../../types/index.js";
+import type { ProjectProfileDefinition } from "../profile/profile-presets.js";
 // Cohesive helper groups now live in sibling modules. They are imported for the
 // discovery/activation code that stays here and re-exported below so existing
 // import sites (sdk/index.ts, commands/extension.ts, health.ts, tests, …) keep
@@ -1557,6 +1558,56 @@ function validateMigrationDefinition(definition: unknown): void {
   }
 }
 
+/**
+ * The seven array-valued dimensions a {@link ProjectProfileDefinition} stages.
+ * Each is "optional-by-emptiness": an omitted dimension normalizes to an empty
+ * array so the profile planner can iterate every dimension unconditionally.
+ */
+const PROJECT_PROFILE_DIMENSIONS = [
+  "types",
+  "statuses",
+  "fields",
+  "workflows",
+  "config",
+  "templates",
+  "packages",
+] as const;
+
+function validateProjectProfileDefinition(profile: unknown): void {
+  const record = asRegistrationRecord("registerProfile profile", profile);
+  assertNonEmptyString("registerProfile profile.name", record.name);
+  assertNonEmptyString("registerProfile profile.title", record.title);
+  if (record.summary !== undefined && typeof record.summary !== "string") {
+    throw new TypeError("registerProfile profile.summary must be a string when provided");
+  }
+  for (const dimension of PROJECT_PROFILE_DIMENSIONS) {
+    if (record[dimension] !== undefined && !Array.isArray(record[dimension])) {
+      throw new TypeError(`registerProfile profile.${dimension} must be an array when provided`);
+    }
+  }
+}
+
+/**
+ * Deep-clones a validated profile and defaults every missing dimension to an
+ * empty array (and an absent `summary` to an empty string), so the stored
+ * definition always has the full {@link ProjectProfileDefinition} shape the
+ * profile planner and `pm profile` resolution rely on. Profiles are pure data —
+ * no function members — so the clone is a faithful structural snapshot decoupled
+ * from the author's live object.
+ */
+function normalizeProjectProfileDefinition(profile: ProjectProfileDefinition): ProjectProfileDefinition {
+  const cloned = cloneRuntimeRegistrationValue(profile) as Record<string, unknown>;
+  if (typeof cloned.summary !== "string") {
+    cloned.summary = "";
+  }
+  for (const dimension of PROJECT_PROFILE_DIMENSIONS) {
+    if (cloned[dimension] === undefined) {
+      cloned[dimension] = [];
+    }
+  }
+  return cloned as unknown as ProjectProfileDefinition;
+}
+
 function attachRuntimeDefinition<TEntry extends { definition: Record<string, unknown> }>(
   entry: TEntry,
   runtimeDefinition: Record<string, unknown>,
@@ -1986,6 +2037,18 @@ function createExtensionApi(
       ) as RegisteredExtensionSchemaMigrationDefinition,
     );
   };
+  const registerProfile = (profile: ProjectProfileDefinition): void => {
+    assertExtensionCapability(extension, "schema", "registerProfile");
+    if (!allowRegistration("schema.profiles", "registerProfile", "schema")) {
+      return;
+    }
+    validateProjectProfileDefinition(profile);
+    registrations.profiles.push({
+      layer: extension.layer,
+      name: extension.name,
+      profile: normalizeProjectProfileDefinition(profile),
+    });
+  };
   const applyImportExportCommandMetadata = (
     method: "registerImporter" | "registerExporter",
     commandPath: string,
@@ -2209,6 +2272,7 @@ function createExtensionApi(
     registerItemFields,
     registerItemTypes,
     registerMigration,
+    registerProfile,
     registerRenderer,
     registerImporter,
     registerExporter,
@@ -2235,6 +2299,7 @@ function getRegistrationCounts(registrations: ExtensionRegistrationRegistry): Ex
     item_fields: itemFieldCount,
     item_types: itemTypeCount,
     migrations: registrations.migrations.length,
+    profiles: registrations.profiles.length,
     importers: registrations.importers.length,
     exporters: registrations.exporters.length,
     search_providers: registrations.search_providers.length,
