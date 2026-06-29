@@ -1601,24 +1601,23 @@ function validateProjectProfileDefinition(profile: unknown): void {
 }
 
 /**
- * Deep-clones a validated profile and defaults every missing dimension to an
- * empty array (and an absent `summary` to an empty string), so the stored
- * definition always has the full {@link ProjectProfileDefinition} shape the
- * profile planner and `pm profile` resolution rely on. Profiles are pure data —
- * no function members — so the clone is a faithful structural snapshot decoupled
- * from the author's live object.
+ * Fills an already-validated profile snapshot's optional surfaces — an absent
+ * `summary` becomes an empty string and every omitted dimension an empty array —
+ * so the stored definition always has the full {@link ProjectProfileDefinition}
+ * shape the profile planner and `pm profile` resolution rely on. It runs after
+ * validation on the cloned snapshot, so it only ever supplies missing defaults
+ * and never has to coerce an invalid type (those are already rejected).
  */
-function normalizeProjectProfileDefinition(profile: ProjectProfileRegistrationInput): ProjectProfileDefinition {
-  const cloned = cloneRuntimeRegistrationValue(profile) as Record<string, unknown>;
-  if (typeof cloned.summary !== "string") {
-    cloned.summary = "";
+function applyProjectProfileDefaults(profile: Record<string, unknown>): ProjectProfileDefinition {
+  if (profile.summary === undefined) {
+    profile.summary = "";
   }
   for (const dimension of PROJECT_PROFILE_DIMENSIONS) {
-    if (cloned[dimension] === undefined) {
-      cloned[dimension] = [];
+    if (profile[dimension] === undefined) {
+      profile[dimension] = [];
     }
   }
-  return cloned as unknown as ProjectProfileDefinition;
+  return profile as unknown as ProjectProfileDefinition;
 }
 
 function attachRuntimeDefinition<TEntry extends { definition: Record<string, unknown> }>(
@@ -2055,11 +2054,17 @@ function createExtensionApi(
     if (!allowRegistration("schema.profiles", "registerProfile", "schema")) {
       return;
     }
-    validateProjectProfileDefinition(profile);
+    // Snapshot first, then validate and default the snapshot: cloning resolves
+    // any getters once into plain data, so validation and storage operate on the
+    // exact same immutable object — a getter cannot present one value to
+    // validation and another to the registry. Defaults are applied only after
+    // validation, so an invalid type is rejected rather than silently coerced.
+    const snapshot = cloneRuntimeRegistrationValue(profile);
+    validateProjectProfileDefinition(snapshot);
     registrations.profiles.push({
       layer: extension.layer,
       name: extension.name,
-      profile: normalizeProjectProfileDefinition(profile),
+      profile: applyProjectProfileDefaults(snapshot as Record<string, unknown>),
     });
   };
   const applyImportExportCommandMetadata = (
