@@ -402,13 +402,6 @@ export async function mutateItem(params: {
   } = prepared;
 
   try {
-    const historyPolicy = await enforceHistoryStreamPolicyForItem({
-      pmRoot: params.pmRoot,
-      settings: params.settings,
-      itemId: located.id,
-      commandLabel: params.op,
-    });
-
     const beforeDocument = canonicalDocument(document, {
       schema: params.settings.schema,
       extensionFieldNames: params.extensionFieldNames,
@@ -423,9 +416,15 @@ export async function mutateItem(params: {
         item: beforeDocument.metadata,
         body: beforeDocument.body,
         changedFields: [],
-        warnings: [...parseWarnings, ...(mutation.warnings ?? []), ...historyPolicy.warnings],
+        warnings: [...parseWarnings, ...(mutation.warnings ?? [])],
       };
     }
+    const historyPolicy = await enforceHistoryStreamPolicyForItem({
+      pmRoot: params.pmRoot,
+      settings: params.settings,
+      itemId: located.id,
+      commandLabel: params.op,
+    });
     mutableDocument.metadata.updated_at = nowIso();
     const afterDocument = canonicalDocument(mutableDocument, {
       schema: params.settings.schema,
