@@ -79,6 +79,19 @@ describe("scripts/release/greptile-review-gate", () => {
     expect(payload.reason).toContain("null");
   });
 
+  it("skips when a non-zero review exit includes clean-review text", async () => {
+    mockSpawn(
+      () => ({ status: 0, stdout: "signed in", stderr: "" }),
+      () => ({ status: 2, stdout: "No review comments.", stderr: "transient transport failure" }),
+    );
+    const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    await runGate(["--json"], "greptileNonZeroCleanText");
+    const payload = JSON.parse(String(writeSpy.mock.calls.at(-1)?.[0] ?? "{}"));
+    expect(payload).toMatchObject({ ok: true, skipped: true });
+    expect(payload.reason).toContain("did not complete");
+    expect(payload.reason).toContain("2");
+  });
+
   it("passes (JSON) on a clean review and forwards --base", async () => {
     const spawnSync = mockSpawn(
       () => ({ status: 0, stdout: "signed in", stderr: "" }),
@@ -90,7 +103,7 @@ describe("scripts/release/greptile-review-gate", () => {
     expect(payload).toMatchObject({ ok: true, skipped: false, findings: 0 });
     expect(process.exitCode).toBe(0);
     const reviewCall = spawnSync.mock.calls.find((call) => (call[1] as string[])[0] === "review");
-    expect(reviewCall?.[1]).toEqual(["review", "--agent", "--base", "main"]);
+    expect(reviewCall?.[1]).toEqual(["review", "--agent", "--branch", "main"]);
   });
 
   it("passes (human) on a clean review without a base", async () => {

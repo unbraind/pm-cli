@@ -214,11 +214,6 @@
       "count": 1
     }
   },
-  "src/cli/commands/repeatable-metadata-parsers.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "src/cli/commands/restore.ts": {
     "complexity": {
       "count": 2
@@ -359,11 +354,6 @@
       "count": 1
     }
   },
-  "src/core/schema/fields-file.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "src/core/schema/runtime-schema.ts": {
     "complexity": {
       "count": 1
@@ -389,11 +379,6 @@
       "count": 1
     }
   },
-  "src/core/shared/serialization.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "src/core/store/front-matter-cache.ts": {
     "complexity": {
       "count": 2
@@ -407,11 +392,6 @@
   "src/core/store/settings.ts": {
     "complexity": {
       "count": 3
-    }
-  },
-  "src/core/telemetry/observability.ts": {
-    "complexity": {
-      "count": 1
     }
   },
   "src/core/test/background-runs.ts": {

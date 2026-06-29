@@ -75,7 +75,7 @@ function main() {
 
   const reviewArgs = ["review", "--agent"];
   if (base.length > 0) {
-    reviewArgs.push("--base", base);
+    reviewArgs.push("--branch", base);
   }
   const review = runGreptile(reviewArgs, timeoutMs);
   if (review.timedOut) {
@@ -86,7 +86,7 @@ function main() {
   // The Greptile agent output ends with "No review comments." when the branch is
   // clean; any other completed review means it surfaced findings.
   const clean = /no review comments/i.test(output);
-  if (review.status !== 0 && !clean) {
+  if (review.status !== 0) {
     report(outputJson, { ok: true, skipped: true, reason: `greptile review did not complete (exit ${review.status ?? "null"})` }, 0);
     return;
   }

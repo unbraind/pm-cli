@@ -45,6 +45,11 @@ interface InferTelemetryErrorCodeParams {
   exitCode?: number;
 }
 
+interface TelemetryErrorMessageClassifier {
+  code: string;
+  matches: (message: string) => boolean;
+}
+
 const SETUP_ROOT_COMMANDS = new Set(["init", "config", "completion", "completion-statuses", "completion-tags", "completion-types"]);
 const QUERY_ROOT_COMMANDS = new Set([
   "list",
@@ -102,6 +107,49 @@ function normalizeErrorCode(errorCode: string | undefined): string | undefined {
   return normalized && normalized.length > 0 ? normalized : undefined;
 }
 
+const TELEMETRY_ERROR_MESSAGE_CLASSIFIERS: readonly TelemetryErrorMessageClassifier[] = [
+  { code: "unknown_command", matches: (message) => message.includes("unknown command") },
+  { code: "unknown_option", matches: (message) => message.includes("unknown option") },
+  {
+    code: "missing_required_option",
+    matches: (message) => message.includes("missing required options") || message.includes("missing required option"),
+  },
+  { code: "missing_required_argument", matches: (message) => message.includes("missing required argument") },
+  { code: "no_update_fields", matches: (message) => message.includes("no update flags provided") },
+  {
+    code: "ownership_conflict",
+    matches: (message) => message.includes("is assigned to") && message.includes("use --force"),
+  },
+  { code: "lock_conflict", matches: (message) => message.includes("is locked") },
+  {
+    code: "terminal_state_conflict",
+    matches: (message) => message.includes("already terminal") && message.includes("use --force"),
+  },
+  { code: "tracker_not_initialized", matches: (message) => message.includes("tracker is not initialized") },
+  { code: "item_not_found", matches: (message) => message.includes(" not found") },
+  {
+    code: "close_through_update",
+    matches: (message) =>
+      message.includes("use \"pm close <id> <text>\" to close an item") ||
+      (message.includes("invalid --status value") && message.includes("\"closed\"")),
+  },
+  {
+    code: "invalid_argument_value",
+    matches: (message) => message.startsWith("invalid ") || message.includes(" must be ") || message.includes(" requires "),
+  },
+  {
+    code: "invalid_command_usage",
+    matches: (message) => message.includes("either as positional") && message.includes("not both"),
+  },
+];
+
+const TELEMETRY_EXIT_CODE_FALLBACKS: ReadonlyMap<number, string> = new Map([
+  [EXIT_CODE.USAGE, "invalid_command_usage"],
+  [EXIT_CODE.NOT_FOUND, "item_not_found"],
+  [EXIT_CODE.CONFLICT, "lock_conflict"],
+  [EXIT_CODE.DEPENDENCY_FAILED, "dependency_failed"],
+]);
+
 /**
  * Implements derive telemetry command taxonomy for the public runtime surface of this module.
  */
@@ -151,64 +199,18 @@ export function inferTelemetryErrorCode(params: InferTelemetryErrorCodeParams): 
   }
 
   const message = (params.errorMessage ?? "").trim().toLowerCase();
-  if (message.includes("unknown command")) {
-    return "unknown_command";
-  }
-  if (message.includes("unknown option")) {
-    return "unknown_option";
-  }
-  if (message.includes("missing required options") || message.includes("missing required option")) {
-    return "missing_required_option";
-  }
-  if (message.includes("missing required argument")) {
-    return "missing_required_argument";
-  }
-  if (message.includes("no update flags provided")) {
-    return "no_update_fields";
-  }
-  if (message.includes("is assigned to") && message.includes("use --force")) {
-    return "ownership_conflict";
-  }
-  if (message.includes("is locked")) {
-    return "lock_conflict";
-  }
-  if (message.includes("already terminal") && message.includes("use --force")) {
-    return "terminal_state_conflict";
-  }
-  if (message.includes("tracker is not initialized")) {
-    return "tracker_not_initialized";
-  }
-  if (message.includes(" not found")) {
-    return "item_not_found";
-  }
-  if (
-    message.includes("use \"pm close <id> <text>\" to close an item") ||
-    (message.includes("invalid --status value") && message.includes("\"closed\""))
-  ) {
-    return "close_through_update";
-  }
-  if (message.startsWith("invalid ") || message.includes(" must be ") || message.includes(" requires ")) {
-    return "invalid_argument_value";
-  }
   // NOTE: A "strict create mode requires concrete values for --" message is always
-  // classified as invalid_argument_value by the ` requires ` check above, so a
-  // dedicated branch here would be unreachable and is intentionally omitted.
-  if (message.includes("either as positional") && message.includes("not both")) {
-    return "invalid_command_usage";
+  // classified as invalid_argument_value by the ordered ` requires ` classifier,
+  // so a dedicated branch would be unreachable and is intentionally omitted.
+  for (const classifier of TELEMETRY_ERROR_MESSAGE_CLASSIFIERS) {
+    if (classifier.matches(message)) {
+      return classifier.code;
+    }
   }
 
   const exitCode = Number.isFinite(params.exitCode) ? Math.max(0, Math.trunc(params.exitCode as number)) : undefined;
-  if (exitCode === EXIT_CODE.USAGE) {
-    return "invalid_command_usage";
-  }
-  if (exitCode === EXIT_CODE.NOT_FOUND) {
-    return "item_not_found";
-  }
-  if (exitCode === EXIT_CODE.CONFLICT) {
-    return "lock_conflict";
-  }
-  if (exitCode === EXIT_CODE.DEPENDENCY_FAILED) {
-    return "dependency_failed";
+  if (exitCode !== undefined) {
+    return TELEMETRY_EXIT_CODE_FALLBACKS.get(exitCode) ?? "command_failed";
   }
   return "command_failed";
 }

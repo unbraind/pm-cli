@@ -175,6 +175,28 @@ function dedupeStringList(values: string[] | undefined): string[] {
 }
 
 /**
+ * Normalizes the command allow-list stored for a custom field definition.
+ */
+function normalizeFieldCommands(rawCommands: string[] | undefined): RuntimeFieldCommand[] {
+  const seen = new Set<string>();
+  const normalized: RuntimeFieldCommand[] = [];
+  for (const rawCommand of rawCommands ?? []) {
+    const command = rawCommand.trim().toLowerCase();
+    if (command.length === 0) {
+      continue;
+    }
+    if (!RUNTIME_FIELD_COMMAND_SET.has(command)) {
+      throw new Error(`Invalid field command "${rawCommand}". Allowed: ${RUNTIME_FIELD_COMMAND_VALUES.join(", ")}.`);
+    }
+    if (!seen.has(command)) {
+      seen.add(command);
+      normalized.push(command as RuntimeFieldCommand);
+    }
+  }
+  return rawCommands === undefined || normalized.length === 0 ? [...DEFAULT_FIELD_COMMANDS] : normalized;
+}
+
+/**
  * Validates and normalizes raw add-field CLI input. Throws a plain Error with a
  * stable message when the key is missing/empty, collides with a built-in field,
  * or carries an invalid type/command; the CLI layer maps these to PmCliError
@@ -193,33 +215,14 @@ export function normalizeAddFieldInput(raw: RawAddFieldInput): NormalizedAddFiel
     );
   }
 
-  const typeCandidate = typeof raw.type === "string" && raw.type.trim().length > 0 ? raw.type.trim().toLowerCase() : "string";
+  const typeCandidate =
+    typeof raw.type === "string" && raw.type.trim().length > 0 ? raw.type.trim().toLowerCase() : "string";
   if (!RUNTIME_FIELD_TYPE_SET.has(typeCandidate)) {
     throw new Error(`Invalid field type "${raw.type}". Allowed: ${RUNTIME_FIELD_TYPE_VALUES.join(", ")}.`);
   }
   const type = typeCandidate as RuntimeFieldType;
 
-  let commands: RuntimeFieldCommand[];
-  if (raw.commands === undefined) {
-    commands = [...DEFAULT_FIELD_COMMANDS];
-  } else {
-    const seen = new Set<string>();
-    const normalized: RuntimeFieldCommand[] = [];
-    for (const rawCommand of raw.commands) {
-      const command = rawCommand.trim().toLowerCase();
-      if (command.length === 0) {
-        continue;
-      }
-      if (!RUNTIME_FIELD_COMMAND_SET.has(command)) {
-        throw new Error(`Invalid field command "${rawCommand}". Allowed: ${RUNTIME_FIELD_COMMAND_VALUES.join(", ")}.`);
-      }
-      if (!seen.has(command)) {
-        seen.add(command);
-        normalized.push(command as RuntimeFieldCommand);
-      }
-    }
-    commands = normalized.length > 0 ? normalized : [...DEFAULT_FIELD_COMMANDS];
-  }
+  const commands = normalizeFieldCommands(raw.commands);
 
   const cliFlagToken = normalizeCliToken(raw.cliFlag);
   const cliFlag = cliFlagToken.length > 0 && cliFlagToken !== keyToDefaultCliFlag(key) ? cliFlagToken : undefined;
