@@ -147,6 +147,18 @@ describe("scripts/release/greptile-review-gate", () => {
     expect(process.exitCode).toBe(1);
   });
 
+  it("fails (human) without printing an empty review body", async () => {
+    mockSpawn(
+      () => ({ status: 0, stdout: "signed in", stderr: "" }),
+      () => ({ status: 0, stdout: "", stderr: "" }),
+    );
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    await runGate([], "greptileFindingsEmptyBody");
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(String(errorSpy.mock.calls[0]?.[0] ?? "")).toContain("review findings");
+    expect(process.exitCode).toBe(1);
+  });
+
   it("does not fail on findings under --report-only", async () => {
     mockSpawn(
       () => ({ status: 0, stdout: "signed in", stderr: "" }),
