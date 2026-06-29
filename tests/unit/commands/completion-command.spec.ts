@@ -674,7 +674,7 @@ describe("generateZshScript", () => {
     const script = generateZshScript();
     expect(script).toContain("--trace[Include registration traces in doctor deep diagnostics]");
     expect(script).toContain(
-      "--capability[Capability the init scaffold targets]:capability:(commands hooks search importers schema renderers parser preflight services)",
+      "--capability[Capability the init scaffold targets]:capability:(commands hooks search importers schema profile renderers parser preflight services)",
     );
     expect(script).toContain("--runtime-probe[Opt-in runtime activation probe for manage output]");
     expect(script).toContain("--fix-managed-state[Adopt unmanaged extensions before diagnostics/update checks]");

@@ -578,7 +578,15 @@ and migration (via `registerItemTypes`/`registerItemFields`/`registerMigration`)
 and a runnable `node:test` file that exercises `assertRegisteredItemType`,
 `assertRegisteredItemField`, `assertRegisteredMigration`, and
 `runRegisteredMigrationForTest` — a copyable starting point for modeling a
-project domain.
+project domain. Pass `--capability profile` to scaffold a command plus a complete
+project-profile archetype (item types, statuses, fields, a per-type workflow,
+config, a create template, and package recommendations via `registerProfile`) and
+a `node:test` file exercising the harness-bound `assertProfile` (the public
+`assertRegisteredProfile`); it omits
+`activation.commands` (granted by the same `schema` capability) so the contributed
+profile resolves through `pm profile list/show/apply` and `pm profile apply <name>`
+tailors a fresh tracker in one shot — the broadest customization primitive in one
+copyable starter.
 
 The four override surfaces complete the matrix to one starter per SDK
 registration capability. Pass `--capability renderers` to scaffold a `toon`

@@ -520,6 +520,20 @@ describe("declarative composeExtension package scaffold", () => {
       surfacePhrase: "starter command, custom item type, item field, and migration",
     },
     {
+      capability: "profile",
+      builderImports: ["defineProjectProfile"],
+      blueprintFields: ["  profiles: [starterProfile],"],
+      entrypointMarkers: ["export const starterProfile = defineProjectProfile({", '      key: "kit_owner",'],
+      // A profile registration derives the `schema` capability (it is a
+      // schema+config bundle), so the sorted set matches the schema starter.
+      testMarkers: [
+        'const { profile } = ext.assertProfile({ profile: "kit", extensionName: "kit" });',
+        "assert.equal(profile.types.length, 1);",
+      ],
+      derivedCapabilities: '["commands","schema"]',
+      surfacePhrase: "starter command and project profile",
+    },
+    {
       capability: "renderers",
       builderImports: ["defineRendererOverride"],
       blueprintFields: ["  renderers: { toon: toonRenderer },"],

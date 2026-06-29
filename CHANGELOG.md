@@ -4,6 +4,7 @@
 
 ### Added
 
+- pm package/extension init --capability profile: scaffold a project-profile starter package ([pm-h2hk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-h2hk.toon))
 - Extension-contributed project profiles: api.registerProfile end-to-end ([pm-08sv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-08sv.toon))
 - SDK test harness summary/render surface ([pm-2qte](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-2qte.toon))
 - Describe --markdown writes reference docs to a file ([pm-u2tm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-u2tm.toon))

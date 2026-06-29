@@ -1,0 +1,26 @@
+id: pm-h2hk
+title: "pm package/extension init --capability profile: scaffold a project-profile starter package"
+description: "Add a 'profile' shape to SCAFFOLD_CAPABILITIES so pm package init / pm extension init can scaffold a starter package whose entrypoint registers a ProjectProfileDefinition through api.registerProfile (imperative) or composeExtension({ profiles: [...] }) (declarative). Mirrors the existing schema/search/renderers/etc. capability starters: manifest capability mapping (profile -> [commands, schema] since a profile registration requires the schema capability), per-capability README sections, define* guidance snippet (defineProjectProfile), colocated node:test using the harness assertProfile helper, declarative blueprint surface + test block, and conservative activation (omit activation.commands like schema so pm profile list/show/apply can resolve the contributed profile). Update completion (bash/zsh/fish via SCAFFOLD_CAPABILITIES interpolation), register-setup help text, cli-contracts/full.json, and EXTENSIONS.md/SDK.md."
+type: Feature
+status: closed
+priority: 2
+tags[6]: "area:extensions","area:profile",dx,living-map,pm-cli,scaffold
+created_at: "2026-06-29T14:36:07.310Z"
+updated_at: "2026-06-29T15:08:04.642Z"
+author: claude-code-agent
+acceptance_criteria: "pm package init --capability profile and pm extension init --capability profile both emit a runnable starter that registers a project profile via api.registerProfile (imperative) and composeExtension blueprint.profiles (declarative); the colocated index.test.ts asserts the profile registration via the harness and passes preflight; derived capabilities resolve to [commands, schema]; completion + register-setup + cli-contracts + docs updated; 100% test + docstring coverage; manual e2e proves pm profile list/show/apply surfaces the scaffolded profile"
+goal: project management = context management
+value: "An author can scaffold a complete, runnable project-profile package in one command, completing the profile authoring lifecycle (define → register → compose → derive → describe → test → scaffold)"
+why_now: "Extension-contributed profiles shipped in #401/#402 (api.registerProfile) but the scaffolder had no --capability profile starter — the only registration surface without one; profiles are the broadest customization primitive, so the gap blocked the easiest on-ramp for new archetype packages"
+parent: pm-ugqx
+resolution: "Added profile to SCAFFOLD_CAPABILITIES with a shared buildProfileArchetypeFieldLines single-source archetype builder feeding both imperative (api.registerProfile) and declarative (composeExtension blueprint.profiles via defineProjectProfile) starters; manifest grants the existing schema capability; activation.commands omitted (conservative tier) so pm profile list/show/apply resolve the contributed profile; colocated node:test uses harness assertProfile (+ assertExtensionPreflight in declarative mode); completion/register-setup auto-update via SCAFFOLD_CAPABILITIES interpolation; EXTENSIONS.md + SDK.md updated; two README helpers extracted to remove repeated schema-only ternaries."
+expected_result: pm package init --capability profile and pm extension init --capability profile emit a runnable profile-contributing starter that installs and resolves via pm profile; 100/100/100/100 coverage and 100% docstrings maintained.
+actual_result: "Both styles verified end-to-end in a temp tracker: scaffold -> tsc --noEmit + node --test green against the real SDK; pm install --project -> pm profile list/show/apply (idempotent) -> pm schema list shows staged type/status/field -> pm create custom-typed item -> pm package doctor green (0 warnings) -> command dispatches. Full suite 5174 tests, coverage 100% stmts/branches/funcs/lines."
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-08sv,related,"2026-06-29T14:36:16.802Z",null,null
+  pm-a7o4,related,"2026-06-29T14:36:16.802Z",null,null
+  pm-d1ig,related,"2026-06-29T14:36:16.802Z",null,null
+  pm-l8fl,related,"2026-06-29T14:36:16.802Z",null,null
+  pm-nhby,related,"2026-06-29T14:36:16.802Z",null,null
+close_reason: Delivered pm package/extension init --capability profile
+body: ""
