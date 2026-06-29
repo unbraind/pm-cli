@@ -2,13 +2,15 @@ id: pm-vpwt
 title: pm profile list/show/apply merges extension-registered profiles with source labels
 description: "Core resolver in profile-presets.ts that merges BUILTIN_PROFILES with extension-registered ProjectProfileDefinitions, attaching a source (builtin | package name). Builtin names reserved: extension collisions warn + are ignored; duplicate extension names: first wins + warn. profile.ts CLI threads getActiveExtensionRegistrations()?.profiles into list/show/apply and surfaces the source in output (CLI + MCP pm_profile)."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[3]: "area:config","area:schema",pm-cli
 created_at: "2026-06-29T09:02:07.988Z"
-updated_at: "2026-06-29T09:03:01.531Z"
+updated_at: "2026-06-29T13:38:32.971Z"
 author: claude-code-agent
 parent: pm-08sv
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-6oox,blocked_by,"2026-06-29T09:03:01.526Z",null,null
+resolution: "Extension profile catalog resolution shipped in PR #401: profile list/show/apply merges builtins with active extension profiles and surfaces source/package labels and warnings."
+expected_result: pm profile list/show/apply resolves installed extension profiles idempotently while preserving builtin names as reserved.
+actual_result: resolveProfileCatalog/resolveProfileEntry and CLI/MCP profile paths include extension sources; temp smoke applied kanban and second dry-run was unchanged.
+close_reason: "Shipped in #401 (92fe8bae): resolveProfileCatalog/resolveProfileEntry merge builtins + extension profiles with source labels and merge warnings; pm profile list/show/apply surface source + warnings (CLI + MCP); builtin names reserved."
 body: ""

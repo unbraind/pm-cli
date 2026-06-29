@@ -2,13 +2,26 @@ id: pm-l8fl
 title: "SDK profile parity: assertRegisteredProfile + composeExtension blueprint.profiles + deriveExtensionCapabilities + describe"
 description: "testing.ts: assertRegisteredProfile + RegisteredProfileExpectation/Assertion + harness binding. compose.ts: ExtensionBlueprint.profiles auto-wires registerProfile; deriveExtensionCapabilities maps profiles->schema; mergeBlueprints assign('profiles'); describeExtensionBlueprint includes profiles. activation-summary.ts + activation-summary-markdown.ts include profiles. sdk/index.ts re-exports assertRegisteredProfile, RegisteredProfileExpectation, RegisteredExtensionProjectProfile."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[3]: "area:extensions",pm-cli,sdk
 created_at: "2026-06-29T09:02:15.031Z"
-updated_at: "2026-06-29T09:03:02.351Z"
+updated_at: "2026-06-29T13:37:44.519Z"
 author: claude-code-agent
 parent: pm-08sv
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-6oox,blocked_by,"2026-06-29T09:03:02.347Z",null,null
+resolution: "Closed the SDK parity gap for extension-contributed profiles: public assertRegisteredProfile, harness assertProfile, composeExtension profiles, capability derivation, merge support, describe summaries, markdown, and barrel exports are present on main."
+expected_result: "Package authors can define, compose, register, describe, and assert profile contributions entirely through public SDK primitives."
+actual_result: Profile SDK parity is implemented and verified by focused SDK/profile tests and full coverage 100/100/100/100.
+comments[1]{created_at,author,text}:
+  "2026-06-29T13:37:42.905Z",claude-code-agent,"Evidence: PR #401 on main ships assertRegisteredProfile, composeExtension blueprint.profiles auto-registration, deriveExtensionCapabilities profiles->schema, describe activation/blueprint profile summaries, and SDK barrel exports. Verified focused SDK/profile tests (194 profile-adjacent tests within the 228-test focused run) and full coverage 100/100/100/100 across 259 files / 5171 tests."
+files[5]{path,scope,note}:
+  src/core/extensions/activation-summary-markdown.ts,project,markdown summaries render profiles
+  src/core/extensions/activation-summary.ts,project,activation summaries include registered profiles
+  src/sdk/compose.ts,project,"blueprint profiles,capability derivation,merge,describe support"
+  src/sdk/index.ts,project,public SDK barrel exports profile helper/types
+  src/sdk/testing.ts,project,assertRegisteredProfile and harness profile assertion
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,420,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts tests/unit/sdk/sdk-compose.spec.ts tests/unit/extensions/extension-register-profile.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Shipped SDK profile parity in PR #401 and verified profile-focused tests plus full 100% coverage.
 body: ""

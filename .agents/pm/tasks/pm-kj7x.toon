@@ -2,14 +2,24 @@ id: pm-kj7x
 title: "Dogfood: pm-kanban registers kanbanProfile so `pm profile apply kanban` works"
 description: packages/pm-kanban/extensions/kanban/index.ts activate() calls api.registerProfile(kanbanProfile) (import-free; references only the passed api + local value). Update module + activate docstrings to reflect the now-reachable `pm profile apply kanban` path. Extend the package's index.test.js to assert the profile registers via the SDK testing harness.
 type: Task
-status: open
+status: closed
 priority: 2
 tags[3]: "area:extensions",dogfood,pm-cli
 created_at: "2026-06-29T09:02:17.897Z"
-updated_at: "2026-06-29T09:03:06.133Z"
+updated_at: "2026-06-29T13:38:03.409Z"
 author: claude-code-agent
 parent: pm-08sv
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-6oox,blocked_by,"2026-06-29T09:03:06.130Z",null,null
-  pm-vpwt,blocked_by,"2026-06-29T09:03:06.130Z",null,null
+resolution: The bundled pm-kanban exemplar now registers kanbanProfile through the public ExtensionApi so installed projects can use pm profile list/show/apply kanban.
+expected_result: An isolated project can install kanban and apply the kanban profile idempotently as an extension-contributed archetype.
+actual_result: "Temp project /tmp/tmp.kDiR5fMIN8 installed kanban, surfaced kanban with extension source, applied it, and reported changed=false on the second dry-run."
+comments[1]{created_at,author,text}:
+  "2026-06-29T13:38:02.193Z",claude-code-agent,"Evidence: PR #401 makes packages/pm-kanban activate() call api.registerProfile(kanbanProfile), documents pm install kanban --project and pm profile apply kanban, and verifies the harness profile assertion. Manual temp smoke in /tmp/tmp.kDiR5fMIN8 installed kanban into isolated PM_PATH/PM_GLOBAL_PATH, listed kanban as extension source builtin-kanban-profile, showed it, applied it, then confirmed a second dry-run changed=false."
+files[3]{path,scope,note}:
+  packages/pm-kanban/extensions/kanban/index.ts,project,activate registers kanbanProfile through api.registerProfile
+  packages/pm-kanban/README.md,project,documents installable kanban profile workflow
+  tests/unit/packages/kanban-extension.spec.ts,project,asserts package registers the kanban profile via SDK harness
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/packages/kanban-extension.spec.ts tests/integration/profile-command.integration.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "TEMP E2E: pm init profile-smoke --force; pm install kanban --project; pm profile list/show/apply kanban; second dry-run unchanged",null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Shipped pm-kanban registerProfile dogfood in PR #401 and verified installed temp-project behavior.
 body: ""

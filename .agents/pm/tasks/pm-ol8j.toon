@@ -2,14 +2,29 @@ id: pm-ol8j
 title: "Docs: SDK.md/EXTENSIONS.md document api.registerProfile + regenerate contracts/full.json"
 description: Document registerProfile in docs/SDK.md and docs/EXTENSIONS.md (with the tracker ref per AGENTS.md rule for new docs sections). Regenerate full.json + verify pm contracts reflects the new schema.profiles policy surface and any registration-count assertions. Update CLAUDE_CODE_PLUGIN.md if profile surface counts are asserted.
 type: Task
-status: open
+status: closed
 priority: 2
 tags[3]: "area:docs",pm-cli,sdk
 created_at: "2026-06-29T09:02:20.683Z"
-updated_at: "2026-06-29T09:03:07.007Z"
+updated_at: "2026-06-29T13:39:51.216Z"
 author: claude-code-agent
 parent: pm-08sv
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-l8fl,blocked_by,"2026-06-29T09:03:07.004Z",null,null
-  pm-vpwt,blocked_by,"2026-06-29T09:03:07.004Z",null,null
+resolution: "Profile extension docs and contracts are aligned with the registerProfile SDK/CLI surface, including package-author guidance and tests/fixtures/contracts/full.json."
+expected_result: "Agents and package authors can discover api.registerProfile, extension profile resolution, and kanban package usage from public docs and current contracts."
+actual_result: "SDK.md, EXTENSIONS.md, COMMANDS.md, pm-kanban README, and contracts/full.json reflect the profile surface; contracts:check passes."
+comments[2]{created_at,author,text}:
+  "2026-06-29T13:38:20.155Z",claude-code-agent,"Evidence: Docs now cover api.registerProfile in SDK.md, EXTENSIONS.md, COMMANDS.md, and pm-kanban README. Contract snapshot is current and includes schema.profiles. Verification passed: pnpm contracts:check. pnpm changelog:pm:check was run before final tracker closeout and correctly reported CHANGELOG.md out of date; final changelog regeneration/check will run after all profile items are closed in this PR."
+  "2026-06-29T13:39:51.216Z",claude-code-agent,"Final changelog evidence: regenerated CHANGELOG.md with pm-changelog 2026.6.27 after closing pm-08sv/l8fl/kj7x/ol8j and backfilling pm-6oox/pm-vpwt resolution metadata; follow-up pnpm changelog:pm:check passed unchanged with item_count=1371 and bytes=221021."
+files[2]{path,scope,note}:
+  CHANGELOG.md,project,pm-changelog regenerated after profile item closeout
+  tests/fixtures/contracts/full.json,project,regenerated contracts include schema.profiles and profile command docs
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "pnpm changelog:pm:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm contracts:check",null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
+docs[4]{path,scope,note}:
+  docs/COMMANDS.md,project,documents profile list/show/apply extension behavior
+  docs/EXTENSIONS.md,project,documents extension-contributed profiles
+  docs/SDK.md,project,documents api.registerProfile and SDK profile parity
+  packages/pm-kanban/README.md,project,documents installable kanban archetype profile
+close_reason: Shipped profile docs and contract snapshot in PR #401; final changelog refresh is part of this closeout branch.
 body: ""
