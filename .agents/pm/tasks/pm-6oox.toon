@@ -2,11 +2,15 @@ id: pm-6oox
 title: "registerProfile core registration surface: ExtensionApi + registry + loader gate + capability-usage + policy surface"
 description: "Add api.registerProfile(profile) to ExtensionApi. New RegisteredExtensionProjectProfile type; profiles[] on ExtensionRegistrationRegistry + count on ExtensionRegistrationCounts; profiles:[] in createEmptyExtensionRegistrationRegistry. Loader registerProfile: validate the ProjectProfileDefinition, assertExtensionCapability(schema), allowRegistration('schema.profiles'). Add 'schema.profiles' to KNOWN_EXTENSION_POLICY_SURFACES. capability-usage: registerProfile under schema surfaces + record(registrations.profiles,'schema')."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[3]: "area:extensions","area:schema",pm-cli
 created_at: "2026-06-29T09:02:05.070Z"
-updated_at: "2026-06-29T09:02:05.070Z"
+updated_at: "2026-06-29T13:38:32.547Z"
 author: claude-code-agent
 parent: pm-08sv
+resolution: "Core registerProfile registration surface shipped in PR #401: ExtensionApi, registry/counts, loader validation/gating, schema.profiles policy surface, and capability usage are on main."
+expected_result: Extensions with schema capability can register validated project profiles through api.registerProfile without shadowing core contracts.
+actual_result: "registerProfile is implemented in core loader/types/registries/policy/capability usage and verified by extension-register-profile, loader, profile, SDK, and full coverage tests."
+close_reason: "Shipped in #401 (92fe8bae): api.registerProfile + RegisteredExtensionProjectProfile + registry/counts + loader gate (schema cap + schema.profiles policy surface) + clone→validate→default with per-entry object validation; capability-usage attributes profiles to schema."
 body: ""
