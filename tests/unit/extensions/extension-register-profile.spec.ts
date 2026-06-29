@@ -162,4 +162,57 @@ describe("api.registerProfile", () => {
     expect(activation.registrations.profiles).toEqual([]);
     expect(activation.failed[0].error).toContain("schema");
   });
+
+  it("fails activation when a type entry name is not a string", async () => {
+    const activation = await activateProfileExtension((api) => {
+      api.registerProfile({ name: "x", title: "X", types: [{ name: 42 }] } as never);
+    });
+    expect(activation.failed[0].error).toContain("registerProfile profile.types[0].name must be a string when provided");
+  });
+
+  it("fails activation when a workflow type is not a string", async () => {
+    const activation = await activateProfileExtension((api) => {
+      api.registerProfile({ name: "x", title: "X", workflows: [{ allowed_transitions: [] }] } as never);
+    });
+    expect(activation.failed[0].error).toContain("registerProfile profile.workflows[0].type must be a string");
+  });
+
+  it("fails activation when workflow allowed_transitions is not an array", async () => {
+    const activation = await activateProfileExtension((api) => {
+      api.registerProfile({ name: "x", title: "X", workflows: [{ type: "T", allowed_transitions: "nope" }] } as never);
+    });
+    expect(activation.failed[0].error).toContain(
+      "registerProfile profile.workflows[0].allowed_transitions must be an array",
+    );
+  });
+
+  it("fails activation when a workflow transition pair is not an array", async () => {
+    const activation = await activateProfileExtension((api) => {
+      api.registerProfile({ name: "x", title: "X", workflows: [{ type: "T", allowed_transitions: ["open->closed"] }] } as never);
+    });
+    expect(activation.failed[0].error).toContain(
+      "registerProfile profile.workflows[0].allowed_transitions[0] must be a [from, to] array",
+    );
+  });
+
+  it("fails activation when a template name is not a string", async () => {
+    const activation = await activateProfileExtension((api) => {
+      api.registerProfile({ name: "x", title: "X", templates: [{ options: {} }] } as never);
+    });
+    expect(activation.failed[0].error).toContain("registerProfile profile.templates[0].name must be a string");
+  });
+
+  it("fails activation when template options is not an object", async () => {
+    const activation = await activateProfileExtension((api) => {
+      api.registerProfile({ name: "x", title: "X", templates: [{ name: "t", options: [] }] } as never);
+    });
+    expect(activation.failed[0].error).toContain("registerProfile profile.templates[0].options must be an object");
+  });
+
+  it("fails activation when a package spec is not a string", async () => {
+    const activation = await activateProfileExtension((api) => {
+      api.registerProfile({ name: "x", title: "X", packages: [{ reason: "why" }] } as never);
+    });
+    expect(activation.failed[0].error).toContain("registerProfile profile.packages[0].spec must be a string");
+  });
 });

@@ -385,6 +385,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
     conditionalRequired: [
       { property: "subcommand", value: "show", required: ["name"] },
       { property: "subcommand", value: "apply", required: ["name"] },
+      { property: "subcommand", value: "lint", required: ["name"] },
     ],
   },
   plan: {

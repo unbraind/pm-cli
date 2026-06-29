@@ -42,6 +42,15 @@ import {
   type ResolveProfileEntryResult,
 } from "../../core/profile/profile-presets.js";
 import {
+  describeProfileComposition,
+  describeProjectProfile,
+  type ProjectProfileComposition,
+} from "../../core/profile/profile-describe.js";
+import {
+  lintProjectProfile,
+  type ProjectProfileLintFinding,
+} from "../../core/profile/profile-lint.js";
+import {
   planProfileApplication,
   type ProfileApplicationPlan,
   type ProfileChangeStatus,
@@ -51,7 +60,7 @@ import { ensureTypeFolderScaffold } from "./schema.js";
 import { runTemplatesSave } from "./templates.js";
 
 /** Ordered `pm profile` subcommands. */
-export const PROFILE_SUBCOMMANDS = ["list", "show", "apply"] as const;
+export const PROFILE_SUBCOMMANDS = ["list", "show", "apply", "lint"] as const;
 /**
  * Restricts profile subcommand values accepted by command, SDK, and storage contracts.
  */
@@ -61,23 +70,12 @@ const PROFILE_TYPES_LOCK_ID = "schema-types";
 const PROFILE_STATUSES_LOCK_ID = "schema-statuses";
 const PROFILE_FIELDS_LOCK_ID = "schema-fields";
 
-/** Per-dimension counts summarizing how much a profile stages. */
-export interface ProfileComposition {
-  /** Number of item types the profile registers. */
-  types: number;
-  /** Number of custom statuses. */
-  statuses: number;
-  /** Number of custom fields. */
-  fields: number;
-  /** Number of per-type workflows. */
-  workflows: number;
-  /** Number of config knobs. */
-  config: number;
-  /** Number of create templates. */
-  templates: number;
-  /** Number of recommended packages. */
-  packages: number;
-}
+/**
+ * Per-dimension counts summarizing how much a profile stages. Aliases the shared
+ * {@link ProjectProfileComposition} so the CLI result shape and the core describe
+ * primitive never drift.
+ */
+export type ProfileComposition = ProjectProfileComposition;
 
 /** A single profile entry in the `pm profile list` payload. */
 export interface ProfileListEntry {
@@ -187,22 +185,36 @@ export interface ProfileApplyResult {
   generated_at: string;
 }
 
+/** Result of `pm profile lint [name]`. */
+export interface ProfileLintResult {
+  /** Discriminant for the profile result union. */
+  action: "lint";
+  /** Linted profile name. */
+  name: string;
+  /** Display title. */
+  title: string;
+  /** Whether the profile is core-baked or contributed by an active extension. */
+  source: ProfileSourceKind;
+  /** Owning package/extension name for an extension profile; omitted for builtins. */
+  package?: string;
+  /** True when the profile produced no error-severity findings. */
+  ok: boolean;
+  /** Count of error-severity findings. */
+  error_count: number;
+  /** Count of warning-severity findings. */
+  warning_count: number;
+  /** Every graded consistency finding in dimension order. */
+  findings: ProjectProfileLintFinding[];
+  /** Non-fatal catalog merge warnings (built-in shadowing attempts, duplicate names). */
+  warnings: string[];
+  /** ISO timestamp the result was produced. */
+  generated_at: string;
+}
+
 /** Discriminated union of every `pm profile` result shape. */
-export type ProfileResult = ProfileListResult | ProfileShowResult | ProfileApplyResult;
+export type ProfileResult = ProfileListResult | ProfileShowResult | ProfileApplyResult | ProfileLintResult;
 
 /* c8 ignore start -- profile command I/O orchestration and formatting is covered by profile integration workflows; the idempotent diff is unit-tested in core/profile/profile-plan. */
-
-function compositionOf(profile: ProjectProfileDefinition): ProfileComposition {
-  return {
-    types: profile.types.length,
-    statuses: profile.statuses.length,
-    fields: profile.fields.length,
-    workflows: profile.workflows.length,
-    config: profile.config.length,
-    templates: profile.templates.length,
-    packages: profile.packages.length,
-  };
-}
 
 /**
  * Collects the profiles contributed by active extensions, mapping the live
@@ -232,7 +244,7 @@ export function runProfileList(): ProfileListResult {
       summary: resolved.definition.summary,
       source: resolved.source,
       ...(resolved.package !== undefined ? { package: resolved.package } : {}),
-      composition: compositionOf(resolved.definition),
+      composition: describeProfileComposition(resolved.definition),
     })),
     warnings,
     generated_at: nowIso(),
@@ -252,22 +264,41 @@ export function runProfileShow(name: string | undefined): ProfileShowResult {
     throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.USAGE);
   }
   const { resolved } = entry;
-  const profile = resolved.definition;
   return {
     action: "show",
-    name: profile.name,
-    title: profile.title,
-    summary: profile.summary,
+    ...describeProjectProfile(resolved.definition),
     source: resolved.source,
     ...(resolved.package !== undefined ? { package: resolved.package } : {}),
-    composition: compositionOf(profile),
-    types: profile.types.map((type) => normalizeAddTypeInput(type).name),
-    statuses: profile.statuses.map((status) => String(status.id ?? "")),
-    fields: profile.fields.map((field) => String(field.key ?? "")),
-    workflows: profile.workflows.map((workflow) => workflow.type),
-    config: profile.config.map((entry) => `${entry.key}=${entry.value}`),
-    templates: profile.templates.map((template) => template.name),
-    packages: profile.packages.map((pkg) => ({ spec: pkg.spec, reason: pkg.reason })),
+    warnings: entry.warnings,
+    generated_at: nowIso(),
+  };
+}
+
+/**
+ * Lints a single profile, resolved across built-in and extension-contributed
+ * archetypes, returning every graded consistency finding plus any catalog merge
+ * warnings. Throws a USAGE error for a missing or unknown profile name. This is
+ * the read-only author-time validation surface; it never writes to the tracker.
+ */
+export function runProfileLint(name: string | undefined): ProfileLintResult {
+  let entry: ResolveProfileEntryResult;
+  try {
+    entry = resolveProfileEntry(name, collectExtensionProfileContributions());
+  } catch (error) {
+    throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.USAGE);
+  }
+  const { resolved } = entry;
+  const report = lintProjectProfile(resolved.definition);
+  return {
+    action: "lint",
+    name: resolved.definition.name,
+    title: resolved.definition.title,
+    source: resolved.source,
+    ...(resolved.package !== undefined ? { package: resolved.package } : {}),
+    ok: report.ok,
+    error_count: report.errorCount,
+    warning_count: report.warningCount,
+    findings: report.findings,
     warnings: entry.warnings,
     generated_at: nowIso(),
   };
@@ -544,6 +575,30 @@ export function formatProfileShowHuman(result: ProfileShowResult): string {
   lines.push(`packages: ${result.packages.map((pkg) => pkg.spec).join(", ") || "(none)"}`);
   for (const warning of result.warnings) {
     lines.push(`warning: ${warning}`);
+  }
+  return lines.join("\n");
+}
+
+/**
+ * Renders the `pm profile lint` result as human-readable text: a one-line verdict
+ * followed by each finding prefixed with its severity, code, and dimension.
+ */
+export function formatProfileLintHuman(result: ProfileLintResult): string {
+  const origin = result.source === "extension" ? ` [${result.package ?? "extension"}]` : "";
+  // Catalog merge warnings are rendered below alongside lint-finding warnings, so
+  // fold them into the headline count to avoid an "ok (0 warnings)" verdict that
+  // is immediately followed by `warning:` lines.
+  const totalWarningCount = result.warning_count + result.warnings.length;
+  const verdict = result.ok
+    ? `Profile ${result.name}${origin}: ok (${totalWarningCount} warning${totalWarningCount === 1 ? "" : "s"})`
+    : `Profile ${result.name}${origin}: ${result.error_count} error${result.error_count === 1 ? "" : "s"}, ${totalWarningCount} warning${totalWarningCount === 1 ? "" : "s"}`;
+  const lines = [verdict];
+  for (const finding of result.findings) {
+    const target = finding.target !== undefined ? ` (${finding.target})` : "";
+    lines.push(`  ${finding.severity} [${finding.code}] ${finding.dimension}${target}: ${finding.message}`);
+  }
+  for (const warning of result.warnings) {
+    lines.push(`  warning: ${warning}`);
   }
   return lines.join("\n");
 }

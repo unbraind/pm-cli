@@ -35,6 +35,30 @@ describe("pm profile command", () => {
     });
   });
 
+  it("lints a built-in profile clean over JSON and human render paths", async () => {
+    await withTempPmPath(async (context) => {
+      const lintJson = context.runCli(["profile", "lint", "agile", "--json"], { expectJson: true });
+      expect(lintJson.code).toBe(0);
+      expect(lintJson.json).toMatchObject({
+        action: "lint",
+        name: "agile",
+        source: "builtin",
+        ok: true,
+        error_count: 0,
+        warning_count: 0,
+      });
+      expect((lintJson.json as { findings: unknown[] }).findings).toEqual([]);
+
+      const lintHuman = context.runCli(["profile", "lint", "ops"]);
+      expect(lintHuman.code).toBe(0);
+      expect(lintHuman.stdout).toContain("Profile ops: ok (0 warnings)");
+
+      const unknown = context.runCli(["profile", "lint", "waterfall"]);
+      expect(unknown.code).toBe(2);
+      expect(unknown.stderr).toContain("Invalid profile");
+    });
+  });
+
   it("applies a profile idempotently and stages every dimension", async () => {
     await withTempPmPath(async (context) => {
       const dryRun = context.runCli(["profile", "apply", "agile", "--dry-run", "--json"], { expectJson: true });
@@ -124,7 +148,7 @@ describe("pm profile command", () => {
     });
   });
 
-  it("routes the pm_profile MCP tool for list, show, apply, and rejects unknown subcommands", async () => {
+  it("routes the pm_profile MCP tool for list, show, apply, lint, and rejects unknown subcommands", async () => {
     await withTempPmPath(async (context) => {
       const callProfile = (args: Record<string, unknown>) =>
         handleRequest({
@@ -142,6 +166,12 @@ describe("pm profile command", () => {
       const show = await callProfile({ subcommand: "show", name: "research" });
       const showContent = show?.structuredContent as { result?: { name?: string } } | undefined;
       expect(showContent?.result?.name).toBe("research");
+
+      const lint = await callProfile({ subcommand: "lint", name: "research" });
+      const lintContent = lint?.structuredContent as
+        | { result?: { action?: string; ok?: boolean } }
+        | undefined;
+      expect(lintContent?.result).toMatchObject({ action: "lint", ok: true });
 
       const apply = await callProfile({ subcommand: "apply", name: "ops", dryRun: true, author: "mcp", force: false });
       const applyContent = apply?.structuredContent as

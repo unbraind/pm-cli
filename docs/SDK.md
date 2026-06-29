@@ -68,8 +68,19 @@ Registration builders (`define*`, zero-cost identity — see [Authoring Builders
 Project profiles:
 
 - `defineProjectProfile` / `BUILTIN_PROFILES` / `PROFILE_NAMES` / `resolveProfile` / `listProfiles` / `normalizeProfileName`
+- `describeProjectProfile` (pure composition summary — per-dimension counts plus resolved entry identifiers; the project-profile analogue of `describeExtensionBlueprint`) and `describeProfileComposition`
+- `lintProjectProfile` (pure, tracker-independent author-time consistency check that grades findings `error`/`warning` across every dimension — invalid/duplicate types, statuses, fields; workflows governing undeclared types or referencing undeclared statuses; unknown/invalid config knobs; templates creating undeclared types; empty package specs) and its `ProjectProfileLintReport` / `ProjectProfileLintFinding` types
+- `assertProjectProfile` (the throwing test counterpart: fails on any `error` finding, or on warnings too with `{ strict: true }` — the profile analogue of `assertExtensionBlueprint`)
 - `planProfileApplication` (pure, idempotent diff of a profile against the current tracker state) and its `ProfileApplicationPlan` / `ProfileCurrentState` types
 - The bundled [pm-kanban exemplar](../packages/pm-kanban/README.md) ships a complete archetype as an installable package: it registers the live schema (`Card` type + flow fields) and exports a `ProjectProfileDefinition` the planner can stage, all on public SDK primitives.
+
+Author-time lifecycle: `defineProjectProfile` → `lintProjectProfile` / `assertProjectProfile` (validate before registering) → `api.registerProfile` → `describeProjectProfile` / `planProfileApplication` (preview) → `pm profile apply`. Validate a profile in a package test before it ships:
+
+```ts
+import { assertProjectProfile } from "@unbrained/pm-cli/sdk/testing";
+
+assertProjectProfile(kanbanProfile); // throws on any error finding
+```
 
 Package manifest exports:
 

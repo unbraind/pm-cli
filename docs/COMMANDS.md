@@ -35,7 +35,7 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 | Verification | `test`, `test-all`, `test-runs`, `validate`, `gc` | run linked tests and repository checks |
 | History | `history`, `history-compact`, `history-redact`, `history-repair`, `activity`, `restore`, `stats` | inspect, compact, redact, re-anchor, and recover item state |
 | Schema | `schema add-type` / `remove-type` / `add-status` / `remove-status` / `add-field` / `remove-field` / `apply-preset` | manage config-driven custom item types (`.agents/pm/schema/types.json`), statuses (`.agents/pm/schema/statuses.json`), and custom metadata fields (`.agents/pm/schema/fields.json`); `apply-preset` adopts a domain type preset; `add-type --infer` derives types from title-prefix conventions |
-| Profiles | `profile list` / `show` / `apply` | compose item types, statuses, fields, workflows, config, templates, and recommended packages into archetype bundles (agile/ops/research); `apply` stages every dimension idempotently |
+| Profiles | `profile list` / `show` / `apply` / `lint` | compose item types, statuses, fields, workflows, config, templates, and recommended packages into archetype bundles (agile/ops/research); `apply` stages every dimension idempotently; `lint` reports author-time consistency findings without writing |
 | Calendar | `calendar`, `cal` | project deadlines, reminders, and events |
 | Packages | `install`, `upgrade`, `package`, `packages`, `extension`, package/extension command groups | install, upgrade, manage, and run package-backed extension commands |
 | Machines | `contracts`, `help`, optional `guide`/`completion` | command contracts plus optional guide-shell docs routing and shell helpers |
@@ -765,13 +765,14 @@ The option composes with `--defaults`, `--preset`, `--author`, `--agent-guidance
 
 ## Project Profiles
 
-Tracker references: [pm-v37g](../.agents/pm/features/pm-v37g.toon), [pm-bhmk](../.agents/pm/tasks/pm-bhmk.toon).
+Tracker references: [pm-v37g](../.agents/pm/features/pm-v37g.toon), [pm-bhmk](../.agents/pm/tasks/pm-bhmk.toon), [pm-j1fj](../.agents/pm/features/pm-j1fj.toon).
 
 `pm profile` composes the schema, config, template, and package primitives into complete project-management archetypes. Where a type preset only registers item types, a profile bundles item types, custom statuses, custom fields, per-type workflows, config knobs, create templates, and recommended packages so a fresh tracker can be tailored to an archetype in one idempotent command.
 
 ```bash
 pm profile list                  # show built-in archetypes and their composition counts
 pm profile show agile            # full composition of one profile
+pm profile lint agile            # author-time consistency check (graded error/warning; never writes)
 pm profile apply agile --dry-run # preview the diff without writing
 pm profile apply agile           # stage every dimension (idempotent; re-runs are no-ops)
 ```
@@ -783,6 +784,8 @@ Built-in profiles:
 - `research`: Experiment/Hypothesis types, an `analyzing` status, `hypothesis`/`method` fields, an Experiment workflow, an `experiment` template. Recommends `search-advanced`, `templates`, `beads`.
 
 Apply reports a per-dimension diff (`added` / `updated` / `unchanged`). Re-applying an already-applied profile performs zero writes. Package recommendations are advisory — apply never installs packages; `pm profile show <name>` lists the suggested `pm package install <spec>` candidates. The same surface is available to agents through the `pm_profile` MCP tool.
+
+`pm profile lint <name>` runs an author-time consistency check on a built-in or extension-contributed profile without touching the tracker, surfacing graded findings: `error` for problems that would make `apply` throw or silently lose data (invalid/duplicate types, statuses, or fields; unknown/invalid config knobs; malformed workflow transitions) and `warning` for structurally-valid but suspicious content (workflows governing or referencing types/statuses the profile never declares, templates creating an undeclared type, a non-canonical profile name, empty title/summary/package spec). It exits non-zero when the profile has any `error`-severity finding (warnings keep it green), so it gates cleanly in CI as `pm profile lint <name>`. The same check is exposed to package authors as the SDK `lintProjectProfile` / `assertProjectProfile` primitives — see [SDK.md](./SDK.md).
 
 Profiles are extensible: a package can ship its own archetype with `api.registerProfile(profile)` (built on the public SDK `defineProjectProfile` primitive — see [SDK.md](./SDK.md)). When the package is active, its profile appears in `pm profile list` (labelled with its source package) and resolves through `pm profile show`/`apply` exactly like a built-in. Built-in names are reserved, so a package profile can never silently shadow `agile`/`ops`/`research`. The bundled [pm-kanban](../packages/pm-kanban/README.md) package registers a `kanban` continuous-flow archetype this way.
 
