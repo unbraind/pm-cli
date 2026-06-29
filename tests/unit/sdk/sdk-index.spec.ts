@@ -22,6 +22,9 @@ import {
   assertExtensionManifestMatchesBlueprint as assertExtensionManifestMatchesBlueprintFromBarrel,
   assertExtensionPreflight as assertExtensionPreflightFromBarrel,
   assertPackageManifest as assertPackageManifestFromBarrel,
+  assertProjectProfile as assertProjectProfileFromBarrel,
+  describeProjectProfile,
+  lintProjectProfile,
   synthesizeExtensionManifest as synthesizeExtensionManifestFromBarrel,
   assertRegisteredCommandContract as assertRegisteredCommandContractFromBarrel,
   assertRegisteredCommandOverride as assertRegisteredCommandOverrideFromBarrel,
@@ -96,6 +99,7 @@ import {
   assertExtensionManifestMatchesBlueprint,
   assertExtensionPreflight,
   assertPackageManifest,
+  assertProjectProfile,
   assertRegisteredCommandContract,
   assertRegisteredCommandOverride,
   assertRegisteredExporter,
@@ -3259,6 +3263,56 @@ describe("sdk assertExtensionBlueprint", () => {
         { declaredCapabilities: [] },
       ),
     ).toThrow(/failed preflight with 2 errors:/);
+  });
+});
+
+describe("sdk project profile lint/describe/assert", () => {
+  const cleanProfile = {
+    name: "flow",
+    title: "Flow",
+    summary: "Flow archetype.",
+    types: [{ name: "Story" }],
+    statuses: [{ id: "review" }],
+    fields: [],
+    workflows: [{ type: "Story", allowed_transitions: [["open", "review"]] as [string, string][] }],
+    config: [],
+    templates: [],
+    packages: [],
+  };
+
+  it("re-exports the profile lint/describe/assert helpers by identity from the barrel", () => {
+    expect(assertProjectProfileFromBarrel).toBe(assertProjectProfile);
+    expect(typeof lintProjectProfile).toBe("function");
+    expect(typeof describeProjectProfile).toBe("function");
+  });
+
+  it("describes a profile's composition and entry identifiers", () => {
+    const description = describeProjectProfile(cleanProfile);
+    expect(description.composition.types).toBe(1);
+    expect(description.types).toEqual(["Story"]);
+    expect(description.workflows).toEqual(["Story"]);
+  });
+
+  it("lints a clean profile with no findings", () => {
+    expect(lintProjectProfile(cleanProfile).ok).toBe(true);
+  });
+
+  it("returns the lint report for a profile whose only findings are warnings", () => {
+    const report = assertProjectProfile({ ...cleanProfile, title: "" });
+    expect(report.ok).toBe(true);
+    expect(report.findings.some((finding) => finding.code === "profile_title_empty")).toBe(true);
+  });
+
+  it("throws when a profile has error-severity findings", () => {
+    expect(() =>
+      assertProjectProfile({ ...cleanProfile, config: [{ key: "nope", value: "x", summary: "" }] }),
+    ).toThrow(/failed lint with 1 issue:\n\s+- error \[config_key_unknown\]/);
+  });
+
+  it("throws in strict mode when only warnings are present, pluralizing the summary", () => {
+    expect(() => assertProjectProfile({ ...cleanProfile, title: "", summary: "" }, { strict: true })).toThrow(
+      /failed lint with 2 issues:/,
+    );
   });
 });
 

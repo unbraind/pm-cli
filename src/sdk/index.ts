@@ -59,6 +59,23 @@ export {
   type ProfileWorkflowPlan,
 } from "../core/profile/profile-plan.js";
 export {
+  describeProfileComposition,
+  describeProjectProfile,
+  type ProjectProfileComposition,
+  type ProjectProfileDescription,
+  type ProjectProfilePackageSummary,
+} from "../core/profile/profile-describe.js";
+export {
+  lintProjectProfile,
+  PROFILE_LINT_CODES,
+  PROFILE_LINT_DIMENSIONS,
+  type ProfileLintCode,
+  type ProfileLintDimension,
+  type ProfileLintSeverity,
+  type ProjectProfileLintFinding,
+  type ProjectProfileLintReport,
+} from "../core/profile/profile-lint.js";
+export {
   assertExtensionBlueprint,
   assertExtensionCapabilityUsage,
   assertExtensionDeactivated,
@@ -66,6 +83,7 @@ export {
   assertExtensionManifestMatchesBlueprint,
   assertExtensionPreflight,
   assertPackageManifest,
+  assertProjectProfile,
   assertRegisteredCommandContract,
   assertRegisteredCommandOverride,
   assertRegisteredExporter,
@@ -99,6 +117,7 @@ export {
   runRegisteredServiceOverrideForTest,
   runRegisteredVectorStoreAdapterForTest,
   type ActivateExtensionForTestOptions,
+  type AssertProjectProfileOptions,
   type DeactivateExtensionForTestOptions,
   type DescribeExtensionActivationOptions,
   type ExtensionActivationSummary,

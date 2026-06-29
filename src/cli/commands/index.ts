@@ -142,15 +142,18 @@ export {
 } from "./schema.js";
 export {
   runProfileApply,
+  runProfileLint,
   runProfileList,
   runProfileShow,
   formatProfileApplyHuman,
+  formatProfileLintHuman,
   formatProfileListHuman,
   formatProfileShowHuman,
   PROFILE_SUBCOMMANDS,
   type ProfileSubcommand,
   type ProfileApplyCommandOptions,
   type ProfileApplyResult,
+  type ProfileLintResult,
   type ProfileListResult,
   type ProfileShowResult,
   type ProfileResult,

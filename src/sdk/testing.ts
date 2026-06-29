@@ -104,6 +104,7 @@ import type {
   ExtensionActivationSummary,
 } from "../core/extensions/activation-summary.js";
 import type { ProjectProfileDefinition } from "../core/profile/profile-presets.js";
+import { lintProjectProfile, type ProjectProfileLintReport } from "../core/profile/profile-lint.js";
 import { renderExtensionSurfaceMarkdown } from "../core/extensions/activation-summary-markdown.js";
 import type { ExtensionSurfaceMarkdownOptions } from "../core/extensions/activation-summary-markdown.js";
 import type {
@@ -2051,6 +2052,44 @@ export function assertExtensionBlueprint(
     );
   }
   return result;
+}
+
+/** Options for {@link assertProjectProfile}. */
+export interface AssertProjectProfileOptions {
+  /**
+   * Also throw when the profile produces `warning`-severity findings (e.g. a
+   * workflow transition referencing a status no profile or built-in defines).
+   * Off by default so warnings stay advisory; turn on for strict CI gates.
+   */
+  strict?: boolean;
+}
+
+/**
+ * Assert a {@link ProjectProfileDefinition} is internally consistent in a test,
+ * throwing on any `error`-severity finding (and on `warning`-severity findings
+ * too when `strict` is set). The author-time counterpart to `defineProjectProfile`
+ * and the project-profile analogue of {@link assertExtensionBlueprint}: drop
+ * `assertProjectProfile(myProfile)` into a package's `node:test`/Vitest suite to
+ * fail CI before the profile is ever registered via `api.registerProfile` or
+ * applied via `pm profile apply`. The full {@link ProjectProfileLintReport} is
+ * returned on success so a test can still inspect advisory warnings without
+ * failing on them.
+ */
+export function assertProjectProfile(
+  profile: ProjectProfileDefinition,
+  options: AssertProjectProfileOptions = {},
+): ProjectProfileLintReport {
+  const report = lintProjectProfile(profile);
+  const blocking = report.findings.filter(
+    (finding) => finding.severity === "error" || (options.strict === true && finding.severity === "warning"),
+  );
+  if (blocking.length > 0) {
+    throw new Error(
+      `Project profile "${report.profile}" failed lint with ${blocking.length} ${blocking.length === 1 ? "issue" : "issues"}:\n` +
+        blocking.map((finding) => `  - ${finding.severity} [${finding.code}] ${finding.message}`).join("\n"),
+    );
+  }
+  return report;
 }
 
 /**

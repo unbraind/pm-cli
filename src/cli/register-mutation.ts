@@ -276,6 +276,7 @@ type ProfileCommandModule = typeof import("./commands/profile.js");
 type ProfileCommandResult =
   | ReturnType<ProfileCommandModule["runProfileList"]>
   | ReturnType<ProfileCommandModule["runProfileShow"]>
+  | ReturnType<ProfileCommandModule["runProfileLint"]>
   | Awaited<ReturnType<ProfileCommandModule["runProfileApply"]>>;
 
 /**
@@ -294,6 +295,8 @@ async function dispatchProfileSubcommand(
       return profile.runProfileList();
     case "show":
       return profile.runProfileShow(name);
+    case "lint":
+      return profile.runProfileLint(name);
     default:
       return profile.runProfileApply(
         name,
@@ -318,6 +321,9 @@ function renderProfileResultHuman(profile: ProfileCommandModule, result: Profile
       return;
     case "show":
       writeStdout(`${profile.formatProfileShowHuman(result)}\n`);
+      return;
+    case "lint":
+      writeStdout(`${profile.formatProfileLintHuman(result)}\n`);
       return;
     default:
       writeStdout(`${profile.formatProfileApplyHuman(result)}\n`);
@@ -1623,13 +1629,13 @@ export function registerMutationCommands(program: Command): void {
 
   const profileCommand = program
     .command("profile")
-    .argument("[subcommand]", "Profile subcommand: list, show, or apply")
-    .argument("[name]", "Profile name for show/apply: agile, ops, or research")
+    .argument("[subcommand]", "Profile subcommand: list, show, apply, or lint")
+    .argument("[name]", "Profile name for show/apply/lint: agile, ops, or research")
     .option("--dry-run", "Preview the apply diff without writing any files (apply)")
     .option("--author <value>", "Mutation author")
     .option("--force", "Force ownership/lock override")
     .description(
-      "List, show, and apply project profiles — archetype bundles of item types, statuses, fields, workflows, config, templates, and recommended packages.",
+      "List, show, apply, and lint project profiles — archetype bundles of item types, statuses, fields, workflows, config, templates, and recommended packages.",
     );
   profileCommand.action(async (
     subcommand: string | undefined,
@@ -1645,7 +1651,7 @@ export function registerMutationCommands(program: Command): void {
     if (!normalizedSubcommand) {
       throw new PmCliError(`pm profile requires a subcommand. Allowed: ${PROFILE_SUBCOMMANDS.join(", ")}`, EXIT_CODE.USAGE, {
         code: "missing_required_argument",
-        examples: ["pm profile list", "pm profile show agile", "pm profile apply agile --dry-run", "pm profile apply ops"],
+        examples: ["pm profile list", "pm profile show agile", "pm profile apply agile --dry-run", "pm profile lint agile"],
       });
     }
     if (!PROFILE_SUBCOMMANDS.includes(normalizedSubcommand as (typeof PROFILE_SUBCOMMANDS)[number])) {

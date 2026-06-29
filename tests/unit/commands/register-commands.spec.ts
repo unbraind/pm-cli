@@ -113,13 +113,15 @@ vi.mock("../../../src/cli/commands/schema.js", () => ({
   formatSchemaShowStatusHuman: vi.fn(() => "schema status"),
 }));
 vi.mock("../../../src/cli/commands/profile.js", () => ({
-  PROFILE_SUBCOMMANDS: ["list", "show", "apply"],
+  PROFILE_SUBCOMMANDS: ["list", "show", "apply", "lint"],
   runProfileList: vi.fn(() => ({ action: "list" })),
   runProfileShow: vi.fn(() => ({ action: "show" })),
   runProfileApply: vi.fn(() => ({ action: "apply", warnings: [] })),
+  runProfileLint: vi.fn(() => ({ action: "lint", ok: true, findings: [], warnings: [] })),
   formatProfileListHuman: vi.fn(() => "profile list"),
   formatProfileShowHuman: vi.fn(() => "profile show"),
   formatProfileApplyHuman: vi.fn(() => "profile apply"),
+  formatProfileLintHuman: vi.fn(() => "profile lint"),
 }));
 vi.mock("../../../src/cli/commands/comments.js", () => ({ runComments: vi.fn() }));
 vi.mock("../../../src/cli/commands/notes.js", () => ({ runNotes: vi.fn() }));
@@ -216,9 +218,11 @@ import {
 } from "../../../src/cli/commands/schema.js";
 import {
   formatProfileApplyHuman,
+  formatProfileLintHuman,
   formatProfileListHuman,
   formatProfileShowHuman,
   runProfileApply,
+  runProfileLint,
   runProfileList,
   runProfileShow,
 } from "../../../src/cli/commands/profile.js";
@@ -1414,6 +1418,10 @@ describe("mutation command actions", () => {
     await runCliRaw("profile", "show", "agile");
     expect(vi.mocked(runProfileShow)).toHaveBeenCalledWith("agile");
     expect(vi.mocked(formatProfileShowHuman)).toHaveBeenCalledTimes(1);
+
+    await runCliRaw("profile", "lint", "agile");
+    expect(vi.mocked(runProfileLint)).toHaveBeenCalledWith("agile");
+    expect(vi.mocked(formatProfileLintHuman)).toHaveBeenCalledTimes(1);
 
     await runCliRaw("profile", "apply", "agile", "--dry-run", "--author", "tester", "--force");
     expect(vi.mocked(runProfileApply)).toHaveBeenCalledWith(

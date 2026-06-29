@@ -9376,7 +9376,7 @@
       "required": []
     },
     {
-      "description": "List, show, or apply project profiles (pm profile) — archetype bundles that stage item types, statuses, fields, per-type workflows, config knobs, create templates, and recommended packages. subcommand selects the operation; name carries the profile name (agile, ops, research) for show/apply. apply stages every dimension idempotently; dryRun previews the diff without writing. Profile staging writes workspace config/schema files, not item history.",
+      "description": "List, show, apply, or lint project profiles (pm profile) — archetype bundles that stage item types, statuses, fields, per-type workflows, config knobs, create templates, and recommended packages. subcommand selects the operation; name carries the profile name (agile, ops, research) for show/apply/lint. apply stages every dimension idempotently; dryRun previews the diff without writing; lint reports author-time consistency findings (graded error/warning) without touching the tracker. Profile staging writes workspace config/schema files, not item history.",
       "input_schema": {
         "additionalProperties": true,
         "properties": {
@@ -9397,7 +9397,7 @@
             "type": "boolean"
           },
           "name": {
-            "description": "Profile name for show/apply. Required for those subcommands.",
+            "description": "Profile name for show/apply/lint. Required for those subcommands.",
             "enum": [
               "agile",
               "ops",
@@ -9418,7 +9418,8 @@
             "enum": [
               "list",
               "show",
-              "apply"
+              "apply",
+              "lint"
             ],
             "type": "string"
           }
@@ -19014,7 +19015,7 @@
             "type": "number"
           },
           "name": {
-            "description": "Custom item type name (schema add-type/remove-type/show), custom status id (schema show-status/add-status/remove-status), custom field key (schema add-field/remove-field/show-field), or profile name (profile show/apply).",
+            "description": "Custom item type name (schema add-type/remove-type/show), custom status id (schema show-status/add-status/remove-status), custom field key (schema add-field/remove-field/show-field), or profile name (profile show/apply/lint).",
             "examples": [
               "Spike",
               "review",
@@ -19204,7 +19205,7 @@
             "type": "boolean"
           },
           "name": {
-            "description": "Custom item type name (schema add-type/remove-type/show), custom status id (schema show-status/add-status/remove-status), custom field key (schema add-field/remove-field/show-field), or profile name (profile show/apply).",
+            "description": "Custom item type name (schema add-type/remove-type/show), custom status id (schema show-status/add-status/remove-status), custom field key (schema add-field/remove-field/show-field), or profile name (profile show/apply/lint).",
             "examples": [
               "Spike",
               "review",

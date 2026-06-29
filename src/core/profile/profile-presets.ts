@@ -431,7 +431,7 @@ export interface ResolveProfileEntryResult {
  * `my_flow ` interchangeably. Interior spaces are preserved — only the
  * hyphen/underscore distinction and surrounding whitespace/casing are folded.
  */
-function normalizeProfileLookupKey(rawValue: string): string {
+export function normalizeProfileLookupKey(rawValue: string): string {
   return rawValue.trim().toLowerCase().replaceAll("-", "_");
 }
 

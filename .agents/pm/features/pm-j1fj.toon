@@ -1,0 +1,17 @@
+id: pm-j1fj
+title: "Project profile author-time validation: lintProjectProfile + assertProjectProfile + pm profile lint"
+description: "Profiles (defineProjectProfile / api.registerProfile) have no author-time consistency check, unlike the extension surface (lintExtensionBlueprint/assertExtensionBlueprint/preflightExtension). Problems only surface at 'pm profile apply' (config-knob errors, fail-fast) or never (a workflow transition referencing an undeclared status silently stages a dead/unreachable rule; a workflow governing an undeclared item type; duplicate type/status/field keys with silent last-wins upsert). Add a pure core lintProjectProfile(profile) returning graded findings (error/warning) across every dimension, the SDK assertProjectProfile test helper, an author-facing describeProjectProfile describe primitive (parity with describeExtensionBlueprint, dedupes the CLI compositionOf), and a 'pm profile lint [name]' CLI subcommand + pm_profile MCP action so operators/agents can validate builtin or extension-contributed profiles before applying. Completes the profile author->register->describe->lint->apply lifecycle."
+type: Feature
+status: in_progress
+priority: 1
+tags[5]: "area:config","area:schema",living-map,pm-cli,sdk
+created_at: "2026-06-29T19:03:29.843Z"
+updated_at: "2026-06-29T19:03:50.441Z"
+assignee: claude-code-agent
+author: claude-code-agent
+acceptance_criteria: "lintProjectProfile pure + 100% covered; graded findings (error/warning) with stable codes across profile/types/statuses/fields/workflows/config/templates/packages; assertProjectProfile throws on errors (strict also on warnings); describeProjectProfile dedupes CLI compositionOf; 'pm profile lint' wired into CLI dispatch, MCP pm_profile (lint action), completion (bash/zsh/fish), contracts full.json; builtin agile/ops/research profiles lint clean; docs + CHANGELOG updated."
+parent: pm-8jdc
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-08sv,related,"2026-06-29T19:03:49.434Z",null,null
+  pm-qcdu,related,"2026-06-29T19:03:49.434Z",null,null
+body: ""

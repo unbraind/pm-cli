@@ -95,6 +95,7 @@ import {
   runSchemaShowField,
   runSchemaShowStatus,
   runProfileApply,
+  runProfileLint,
   runProfileList,
   runProfileShow,
   runSearch,
@@ -1059,6 +1060,9 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       if (normalizedSubcommand === "show") {
         return runProfileShow(profileName);
       }
+      if (normalizedSubcommand === "lint") {
+        return runProfileLint(profileName);
+      }
       if (normalizedSubcommand === "apply") {
         return runProfileApply(
           profileName,
@@ -1070,7 +1074,7 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
           global,
         );
       }
-      throw new PmCliError(`Unknown pm profile subcommand "${subcommand}". Allowed: list, show, apply`, 64);
+      throw new PmCliError(`Unknown pm profile subcommand "${subcommand}". Allowed: list, show, apply, lint`, 64);
     }
     case "stats":
       return runStats(global, {
