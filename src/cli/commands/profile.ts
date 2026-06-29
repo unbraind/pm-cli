@@ -39,7 +39,7 @@ import {
   type ProfileSourceKind,
   type ProfileTemplateOptions,
   type ProjectProfileDefinition,
-  type ResolvedProfile,
+  type ResolveProfileEntryResult,
 } from "../../core/profile/profile-presets.js";
 import {
   planProfileApplication,
@@ -137,6 +137,8 @@ export interface ProfileShowResult {
   templates: string[];
   /** Recommended package specs with rationale. */
   packages: Array<{ spec: string; reason: string }>;
+  /** Non-fatal merge warnings (built-in shadowing attempts, duplicate names). */
+  warnings: string[];
   /** ISO timestamp the result was produced. */
   generated_at: string;
 }
@@ -243,12 +245,13 @@ export function runProfileList(): ProfileListResult {
  * profile name.
  */
 export function runProfileShow(name: string | undefined): ProfileShowResult {
-  let resolved: ResolvedProfile;
+  let entry: ResolveProfileEntryResult;
   try {
-    resolved = resolveProfileEntry(name, collectExtensionProfileContributions());
+    entry = resolveProfileEntry(name, collectExtensionProfileContributions());
   } catch (error) {
     throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.USAGE);
   }
+  const { resolved } = entry;
   const profile = resolved.definition;
   return {
     action: "show",
@@ -265,6 +268,7 @@ export function runProfileShow(name: string | undefined): ProfileShowResult {
     config: profile.config.map((entry) => `${entry.key}=${entry.value}`),
     templates: profile.templates.map((template) => template.name),
     packages: profile.packages.map((pkg) => ({ spec: pkg.spec, reason: pkg.reason })),
+    warnings: entry.warnings,
     generated_at: nowIso(),
   };
 }
@@ -389,8 +393,14 @@ export async function runProfileApply(
   }
 
   let profile: ProjectProfileDefinition;
+  // Catalog-level merge warnings (e.g. an extension profile shadowed by a
+  // built-in) seed the result so `apply` surfaces them the same way `list`
+  // does, rather than silently swallowing them.
+  const mergeWarnings: string[] = [];
   try {
-    profile = resolveProfileEntry(name, collectExtensionProfileContributions()).definition;
+    const entry = resolveProfileEntry(name, collectExtensionProfileContributions());
+    profile = entry.resolved.definition;
+    mergeWarnings.push(...entry.warnings);
   } catch (error) {
     throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.USAGE);
   }
@@ -402,13 +412,13 @@ export async function runProfileApply(
   if (dryRun) {
     const state = await loadProfileCurrentState(pmRoot, schema, settings, profile);
     const plan = planProfile(profile, state);
-    return buildApplyResult(profile, plan, false, true, []);
+    return buildApplyResult(profile, plan, false, true, [...mergeWarnings]);
   }
 
   const author = resolveAuthor(options.author, settings.author_default);
   const governance = resolveGovernanceKnobs(settings);
   const force = Boolean(options.force);
-  const warnings: string[] = [];
+  const warnings: string[] = [...mergeWarnings];
 
   // Acquire all three schema locks inside the try so a later acquisition that
   // throws (held/stale lock without --force) still releases the earlier ones in
@@ -532,6 +542,9 @@ export function formatProfileShowHuman(result: ProfileShowResult): string {
   lines.push(`config: ${result.config.join(", ") || "(none)"}`);
   lines.push(`templates: ${result.templates.join(", ") || "(none)"}`);
   lines.push(`packages: ${result.packages.map((pkg) => pkg.spec).join(", ") || "(none)"}`);
+  for (const warning of result.warnings) {
+    lines.push(`warning: ${warning}`);
+  }
   return lines.join("\n");
 }
 
@@ -562,6 +575,9 @@ export function formatProfileApplyHuman(result: ProfileApplyResult): string {
   const recommended = result.packages.filter((pkg) => pkg.status === "recommended");
   if (recommended.length > 0) {
     lines.push(`  recommended packages: ${recommended.map((pkg) => pkg.spec).join(", ")}`);
+  }
+  for (const warning of result.warnings) {
+    lines.push(`  warning: ${warning}`);
   }
   return lines.join("\n");
 }

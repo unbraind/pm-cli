@@ -66,9 +66,10 @@ describe("api.registerProfile", () => {
 
   it("defaults a blank summary and omitted dimensions to an empty string and arrays", async () => {
     const activation = await activateProfileExtension((api) => {
-      // A `.js` author omitting the optional-by-emptiness dimensions: the loader
-      // must normalize them so the planner can iterate every dimension safely.
-      api.registerProfile({ name: "sparse", title: "Sparse" } as never);
+      // A sparse archetype is a first-class typed call (only name + title are
+      // required); the loader normalizes the omitted dimensions and summary so
+      // the planner can iterate every dimension safely.
+      api.registerProfile({ name: "sparse", title: "Sparse" });
     });
 
     expect(activation.failed).toEqual([]);
@@ -141,10 +142,20 @@ describe("api.registerProfile", () => {
     expect(activation.failed[0].error).toContain("registerProfile profile.config must be an array when provided");
   });
 
+  it("fails activation when a profile dimension contains a non-object entry", async () => {
+    const activation = await activateProfileExtension((api) => {
+      // A primitive/null entry survives an array-only check but crashes the
+      // planner and `pm profile show` downstream, so it is rejected here.
+      api.registerProfile({ name: "x", title: "X", statuses: [null] } as never);
+    });
+    expect(activation.registrations.profiles).toEqual([]);
+    expect(activation.failed[0].error).toContain("registerProfile profile.statuses[0] must be an object");
+  });
+
   it("fails activation when registerProfile is called without the schema capability", async () => {
     const activation = await activateProfileExtension(
       (api) => {
-        api.registerProfile({ name: "x", title: "X" } as never);
+        api.registerProfile({ name: "x", title: "X" });
       },
       ["commands"],
     );

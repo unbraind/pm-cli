@@ -95,6 +95,21 @@ export interface ProjectProfileDefinition {
 }
 
 /**
+ * The shape an extension passes to `api.registerProfile(profile)`.
+ *
+ * Only `name` and `title` are required; every other dimension is optional and
+ * defaults to an empty array (and `summary` to an empty string) during
+ * registration, matching the "optional-by-emptiness" model of
+ * {@link ProjectProfileDefinition}. The loader normalizes a registration input
+ * into a full {@link ProjectProfileDefinition} before storing it, so a sparse
+ * `{ name, title }` archetype is a first-class, fully-typed call — no casts —
+ * while a complete definition (a built-in or `defineProjectProfile`-typed value)
+ * also satisfies it.
+ */
+export type ProjectProfileRegistrationInput = Pick<ProjectProfileDefinition, "name" | "title"> &
+  Partial<Omit<ProjectProfileDefinition, "name" | "title">>;
+
+/**
  * Ordered list of first-party profile names. Drives CLI help, completion,
  * contracts, and the `pm profile list` ordering.
  */
@@ -320,7 +335,7 @@ export function normalizeProfileName(rawValue: string | undefined): ProfileName 
   if (rawValue === undefined) {
     return undefined;
   }
-  const normalized = rawValue.trim().toLowerCase().replaceAll("-", "_");
+  const normalized = normalizeProfileLookupKey(rawValue);
   if (normalized.length === 0) {
     throw new Error("Profile name must not be empty.");
   }
@@ -392,15 +407,29 @@ export interface ExtensionProfileContribution {
 export interface ResolveProfileCatalogResult {
   /** Builtins first (in {@link PROFILE_NAMES} order), then accepted extension profiles in contribution order. */
   profiles: ResolvedProfile[];
-  /** Non-fatal merge warnings (built-in shadowing attempts, duplicate or empty names). */
+  /** Non-fatal merge warnings (built-in shadowing attempts, duplicate names). */
   warnings: string[];
 }
 
 /**
- * Canonical lookup key for a profile name: trimmed, lowercased, hyphens folded to
- * underscores. Shared by both sides of every catalog match so the user can type
- * `my-flow`, `my_flow`, or `My Flow ` interchangeably, mirroring
- * {@link normalizeProfileName}'s leniency for the built-in set.
+ * Result of {@link resolveProfileEntry}: the single resolved profile plus the
+ * same non-fatal merge `warnings` {@link resolveProfileCatalog} produced, so
+ * `pm profile show`/`apply` surface a shadowed or duplicate extension profile
+ * just like `pm profile list` does rather than swallowing it.
+ */
+export interface ResolveProfileEntryResult {
+  /** The resolved profile and its source. */
+  resolved: ResolvedProfile;
+  /** Non-fatal merge warnings from building the catalog the entry was resolved against. */
+  warnings: string[];
+}
+
+/**
+ * Canonical lookup key for a profile name: trimmed, lowercased, with hyphens
+ * folded to underscores. Shared by both sides of every catalog match (and by
+ * {@link normalizeProfileName}) so a user can type `my-flow`, `My-Flow`, or
+ * `my_flow ` interchangeably. Interior spaces are preserved — only the
+ * hyphen/underscore distinction and surrounding whitespace/casing are folded.
  */
 function normalizeProfileLookupKey(rawValue: string): string {
   return rawValue.trim().toLowerCase().replaceAll("-", "_");
@@ -417,9 +446,11 @@ function formatAvailableProfileNames(profiles: readonly ResolvedProfile[]): stri
  * Built-in names are reserved: an extension profile whose normalized name
  * collides with a built-in archetype is dropped with a warning, so a package can
  * never silently shadow a core profile. Two extension profiles that normalize to
- * the same key keep the first contribution and warn on each later duplicate. An
- * extension profile with a blank name is skipped with a warning. Builtins always
- * sort first, preserving the established `pm profile list` ordering.
+ * the same key keep the first contribution and warn on each later duplicate.
+ * Builtins always sort first, preserving the established `pm profile list`
+ * ordering. Names are non-blank by construction — the loader's
+ * `registerProfile` validation rejects an empty `name` before it can reach the
+ * registry that feeds this resolver.
  */
 export function resolveProfileCatalog(
   contributions: readonly ExtensionProfileContribution[] = [],
@@ -433,13 +464,9 @@ export function resolveProfileCatalog(
   const warnings: string[] = [];
   for (const contribution of contributions) {
     const key = normalizeProfileLookupKey(contribution.profile.name);
-    if (key.length === 0) {
-      warnings.push(`Extension "${contribution.name}" registered a profile with a blank name; ignored.`);
-      continue;
-    }
     if (builtinKeys.has(key)) {
       warnings.push(
-        `Extension "${contribution.name}" profile "${contribution.profile.name}" collides with built-in profile "${key}" and was ignored.`,
+        `Extension "${contribution.name}" profile "${contribution.profile.name}" uses a name reserved by a built-in archetype and was ignored.`,
       );
       continue;
     }
@@ -457,15 +484,16 @@ export function resolveProfileCatalog(
 
 /**
  * Resolves a single profile by name from the merged catalog (builtins +
- * extension contributions). Throws a plain Error with a stable, name-listing
- * message when the value is missing or unknown, so CLI layers map it to a USAGE
- * exit code — the extension-aware counterpart to {@link resolveProfile}.
+ * extension contributions), returning it alongside the catalog's merge warnings.
+ * Throws a plain Error with a stable, name-listing message when the value is
+ * missing or unknown, so CLI layers map it to a USAGE exit code — the
+ * extension-aware counterpart to {@link resolveProfile}.
  */
 export function resolveProfileEntry(
   rawValue: string | undefined,
   contributions: readonly ExtensionProfileContribution[] = [],
-): ResolvedProfile {
-  const { profiles } = resolveProfileCatalog(contributions);
+): ResolveProfileEntryResult {
+  const { profiles, warnings } = resolveProfileCatalog(contributions);
   if (rawValue === undefined || rawValue.trim().length === 0) {
     throw new Error(`Profile name is required. Allowed: ${formatAvailableProfileNames(profiles)}.`);
   }
@@ -474,5 +502,5 @@ export function resolveProfileEntry(
   if (match === undefined) {
     throw new Error(`Invalid profile "${rawValue}". Allowed: ${formatAvailableProfileNames(profiles)}.`);
   }
-  return match;
+  return { resolved: match, warnings };
 }

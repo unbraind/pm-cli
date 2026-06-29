@@ -22,7 +22,7 @@ import {
   type PmVersionBoundEvaluation,
 } from "./version-compat.js";
 import type { PmSettings } from "../../types/index.js";
-import type { ProjectProfileDefinition } from "../profile/profile-presets.js";
+import type { ProjectProfileDefinition, ProjectProfileRegistrationInput } from "../profile/profile-presets.js";
 // Cohesive helper groups now live in sibling modules. They are imported for the
 // discovery/activation code that stays here and re-exported below so existing
 // import sites (sdk/index.ts, commands/extension.ts, health.ts, tests, …) keep
@@ -1581,8 +1581,21 @@ function validateProjectProfileDefinition(profile: unknown): void {
     throw new TypeError("registerProfile profile.summary must be a string when provided");
   }
   for (const dimension of PROJECT_PROFILE_DIMENSIONS) {
-    if (record[dimension] !== undefined && !Array.isArray(record[dimension])) {
+    const value = record[dimension];
+    if (value === undefined) {
+      continue;
+    }
+    if (!Array.isArray(value)) {
       throw new TypeError(`registerProfile profile.${dimension} must be an array when provided`);
+    }
+    // Each dimension entry must be a non-null object: a primitive or null entry
+    // (e.g. `statuses: [null]`, `types: [42]`) survives an array-only check but
+    // crashes the profile planner and `pm profile show` when they read `entry.id`
+    // / `entry.key` / `entry.type` later. Reject it at the registration boundary.
+    for (const [index, entry] of value.entries()) {
+      if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
+        throw new TypeError(`registerProfile profile.${dimension}[${index}] must be an object`);
+      }
     }
   }
 }
@@ -1595,7 +1608,7 @@ function validateProjectProfileDefinition(profile: unknown): void {
  * no function members — so the clone is a faithful structural snapshot decoupled
  * from the author's live object.
  */
-function normalizeProjectProfileDefinition(profile: ProjectProfileDefinition): ProjectProfileDefinition {
+function normalizeProjectProfileDefinition(profile: ProjectProfileRegistrationInput): ProjectProfileDefinition {
   const cloned = cloneRuntimeRegistrationValue(profile) as Record<string, unknown>;
   if (typeof cloned.summary !== "string") {
     cloned.summary = "";
@@ -2037,7 +2050,7 @@ function createExtensionApi(
       ) as RegisteredExtensionSchemaMigrationDefinition,
     );
   };
-  const registerProfile = (profile: ProjectProfileDefinition): void => {
+  const registerProfile = (profile: ProjectProfileRegistrationInput): void => {
     assertExtensionCapability(extension, "schema", "registerProfile");
     if (!allowRegistration("schema.profiles", "registerProfile", "schema")) {
       return;

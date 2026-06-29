@@ -12,7 +12,7 @@ import type {
   PmSettings,
 } from "../../types/index.js";
 import type { GlobalOptions } from "../shared/command-types.js";
-import type { ProjectProfileDefinition } from "../profile/profile-presets.js";
+import type { ProjectProfileDefinition, ProjectProfileRegistrationInput } from "../profile/profile-presets.js";
 
 export const KNOWN_EXTENSION_CAPABILITIES = [
   "commands",
@@ -1168,7 +1168,7 @@ export interface ExtensionApi {
   registerItemFields(fields: SchemaFieldDefinition[]): void;
   registerItemTypes(types: SchemaItemTypeDefinition[]): void;
   registerMigration(definition: SchemaMigrationDefinition): void;
-  registerProfile(profile: ProjectProfileDefinition): void;
+  registerProfile(profile: ProjectProfileRegistrationInput): void;
   registerRenderer(format: OutputRendererFormat, renderer: RendererOverride): void;
   registerImporter(name: string, importer: Importer, options?: ImportExportRegistrationOptions): void;
   registerExporter(name: string, exporter: Exporter, options?: ImportExportRegistrationOptions): void;

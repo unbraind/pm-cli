@@ -53,7 +53,7 @@ import type {
   VectorStoreAdapterDefinition,
 } from "../core/extensions/loader.js";
 import type { ExtensionActivationSummary } from "../core/extensions/activation-summary.js";
-import type { ProjectProfileDefinition } from "../core/profile/profile-presets.js";
+import type { ProjectProfileRegistrationInput } from "../core/profile/profile-presets.js";
 import type { PmMaxVersionExceededMode } from "../core/extensions/extension-types.js";
 import {
   normalizeKnownExtensionCapability,
@@ -188,7 +188,7 @@ export interface ExtensionBlueprint {
   /** Schema migrations registered one at a time via `api.registerMigration(definition)`. */
   migrations?: SchemaMigrationDefinition[];
   /** Project profiles registered one at a time via `api.registerProfile(profile)`. */
-  profiles?: ProjectProfileDefinition[];
+  profiles?: ProjectProfileRegistrationInput[];
   /** Search providers registered via `api.registerSearchProvider(provider)`. */
   searchProviders?: SearchProviderDefinition[];
   /** Vector store adapters registered via `api.registerVectorStoreAdapter(adapter)`. */

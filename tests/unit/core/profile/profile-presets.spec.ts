@@ -158,7 +158,7 @@ describe("resolveProfileCatalog", () => {
     expect(profiles).toHaveLength(PROFILE_NAMES.length);
     expect(profiles.find((entry) => entry.definition.name === "agile")?.source).toBe("builtin");
     expect(warnings).toEqual([
-      'Extension "rogue-pkg" profile "Agile" collides with built-in profile "agile" and was ignored.',
+      'Extension "rogue-pkg" profile "Agile" uses a name reserved by a built-in archetype and was ignored.',
     ]);
   });
 
@@ -185,25 +185,39 @@ describe("resolveProfileCatalog", () => {
     expect(warnings).toHaveLength(1);
   });
 
-  it("skips an extension profile with a blank name and warns", () => {
-    const { profiles, warnings } = resolveProfileCatalog([contribution("blank-pkg", extensionProfile("   "))]);
-    expect(profiles).toHaveLength(PROFILE_NAMES.length);
-    expect(warnings).toEqual(['Extension "blank-pkg" registered a profile with a blank name; ignored.']);
-  });
 });
 
 describe("resolveProfileEntry", () => {
   it("resolves a built-in profile by name (case/format-insensitive)", () => {
-    const resolved = resolveProfileEntry("AGILE");
+    const { resolved, warnings } = resolveProfileEntry("AGILE");
     expect(resolved.definition.name).toBe("agile");
     expect(resolved.source).toBe("builtin");
+    expect(warnings).toEqual([]);
   });
 
   it("resolves an extension-contributed profile by name", () => {
-    const resolved = resolveProfileEntry("kanban", [contribution("pm-kanban", extensionProfile("kanban"))]);
+    const { resolved } = resolveProfileEntry("kanban", [contribution("pm-kanban", extensionProfile("kanban"))]);
     expect(resolved.definition.name).toBe("kanban");
     expect(resolved.source).toBe("extension");
     expect(resolved.package).toBe("pm-kanban");
+  });
+
+  it("resolves an extension profile by mixed-case and kebab/snake equivalents", () => {
+    const contributions = [contribution("pkg", extensionProfile("my-flow"))];
+    expect(resolveProfileEntry("MY-FLOW", contributions).resolved.definition.name).toBe("my-flow");
+    expect(resolveProfileEntry("my_flow", contributions).resolved.definition.name).toBe("my-flow");
+    expect(resolveProfileEntry("  My_Flow ", contributions).resolved.definition.name).toBe("my-flow");
+  });
+
+  it("surfaces the catalog's merge warnings alongside the resolved profile", () => {
+    const { resolved, warnings } = resolveProfileEntry("agile", [
+      contribution("rogue", extensionProfile("agile", { title: "X" })),
+    ]);
+    // The built-in is resolved, and the shadowing attempt is reported (not swallowed).
+    expect(resolved.source).toBe("builtin");
+    expect(warnings).toEqual([
+      'Extension "rogue" profile "agile" uses a name reserved by a built-in archetype and was ignored.',
+    ]);
   });
 
   it("throws a name-listing error when the profile name is required but missing", () => {
@@ -218,7 +232,7 @@ describe("resolveProfileEntry", () => {
   });
 
   it("never resolves a built-in-colliding extension profile (the builtin wins)", () => {
-    const resolved = resolveProfileEntry("agile", [contribution("rogue", extensionProfile("agile", { title: "X" }))]);
+    const { resolved } = resolveProfileEntry("agile", [contribution("rogue", extensionProfile("agile", { title: "X" }))]);
     expect(resolved.source).toBe("builtin");
     expect(resolved.definition.title).not.toBe("X");
   });

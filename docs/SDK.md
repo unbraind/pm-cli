@@ -1345,7 +1345,7 @@ The three core archetypes (`agile`/`ops`/`research`) are baked in; a package add
 its own with `api.registerProfile(profile)` under the `schema` capability:
 
 ```ts
-import { defineProjectProfile } from "@unbrained/pm-cli/sdk";
+import { defineProjectProfile, type ExtensionApi } from "@unbrained/pm-cli/sdk";
 
 export const kanbanProfile = defineProjectProfile({
   name: "kanban",

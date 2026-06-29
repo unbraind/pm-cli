@@ -41,6 +41,7 @@ export {
   type ProfileTemplateEntry,
   type ProfileTemplateOptions,
   type ProjectProfileDefinition,
+  type ProjectProfileRegistrationInput,
 } from "../core/profile/profile-presets.js";
 export {
   planProfileApplication,
