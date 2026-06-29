@@ -114,7 +114,7 @@ function main() {
   }
   report(
     outputJson,
-    { ok: false, skipped: false, reason: "greptile reported review findings", review: review.stdout.trim() },
+    { ok: false, skipped: false, reason: "greptile reported review findings", review: output },
     reportOnly ? 0 : 1,
   );
 }

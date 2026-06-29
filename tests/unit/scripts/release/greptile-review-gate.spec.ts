@@ -199,6 +199,19 @@ describe("scripts/release/greptile-review-gate", () => {
     expect(process.exitCode).toBe(1);
   });
 
+  it("fails with stderr-only findings when the review exits successfully", async () => {
+    mockSpawn(
+      () => ({ status: 0, stdout: "signed in", stderr: "" }),
+      () => ({ status: 0, stdout: "", stderr: "src/x.ts:1 use const here" }),
+    );
+    const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    await runGate(["--json"], "greptileStderrFindings");
+    const payload = JSON.parse(String(writeSpy.mock.calls.at(-1)?.[0] ?? "{}"));
+    expect(payload).toMatchObject({ ok: false, skipped: false });
+    expect(payload.review).toContain("src/x.ts:1 use const here");
+    expect(process.exitCode).toBe(1);
+  });
+
   it("fails (human) without printing an empty review body", async () => {
     mockSpawn(
       () => ({ status: 0, stdout: "signed in", stderr: "" }),
