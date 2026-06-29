@@ -9,15 +9,20 @@
  * for "what does this profile stage?" rather than each recomputing it inline.
  *
  * Identifier derivation deliberately mirrors what {@link module:core/profile/profile-plan}
- * upserts: item type names flow through the same `normalizeAddTypeInput`
- * canonicalization the planner uses, while statuses, fields, workflows, config,
- * templates, and packages surface their authored identity verbatim.
+ * upserts: item type names, status ids, and field keys all flow through the same
+ * `normalizeAddTypeInput` / `normalizeAddStatusInput` / `normalizeAddFieldInput`
+ * canonicalization the planner uses, so describe reports the exact ids/keys
+ * `pm profile apply` stages (not the author's raw casing/spelling). Workflows,
+ * config, templates, and packages surface their authored identity verbatim.
  *
  * Describe is intentionally lenient: it feeds read-only `pm profile show`/`list`,
- * so a malformed type entry from an untrusted extension-contributed profile falls
- * back to its raw name rather than throwing — surfacing the actual defect is the
+ * so a semantically-invalid entry from an untrusted extension-contributed profile
+ * (a built-in-named or empty type/status/field the normalizer rejects) falls back
+ * to its raw identifier rather than throwing — surfacing the actual defect is the
  * job of {@link module:core/profile/profile-lint lintProjectProfile}, not describe.
  */
+import { normalizeAddFieldInput } from "../schema/fields-file.js";
+import { normalizeAddStatusInput } from "../schema/status-defs-file.js";
 import { normalizeAddTypeInput } from "../schema/item-types-file.js";
 import type { ProjectProfileDefinition } from "./profile-presets.js";
 
@@ -103,19 +108,33 @@ export function describeProjectProfile(profile: ProjectProfileDefinition): Proje
     title: profile.title,
     summary: profile.summary,
     composition: describeProfileComposition(profile),
-    types: profile.types.map((type) => {
-      try {
-        return normalizeAddTypeInput(type).name;
-      } catch {
-        // A malformed type still surfaces its raw name here; lint reports the defect.
-        return String(type.name ?? "");
-      }
-    }),
-    statuses: profile.statuses.map((status) => String(status.id ?? "")),
-    fields: profile.fields.map((field) => String(field.key ?? "")),
+    types: profile.types.map((type) =>
+      lenientIdentifier(() => normalizeAddTypeInput(type).name, () => String(type.name ?? "")),
+    ),
+    statuses: profile.statuses.map((status) =>
+      lenientIdentifier(() => normalizeAddStatusInput(status).id, () => String(status.id ?? "")),
+    ),
+    fields: profile.fields.map((field) =>
+      lenientIdentifier(() => normalizeAddFieldInput(field).key, () => String(field.key ?? "")),
+    ),
     workflows: profile.workflows.map((workflow) => workflow.type),
     config: profile.config.map((entry) => `${entry.key}=${entry.value}`),
     templates: profile.templates.map((template) => template.name),
     packages: profile.packages.map((recommendation) => ({ spec: recommendation.spec, reason: recommendation.reason })),
   };
+}
+
+/**
+ * Resolves a dimension entry's identifier through the planner's canonicalizing
+ * normalizer so describe reports exactly what `pm profile apply` stages, falling
+ * back to the entry's raw identifier when the normalizer rejects a semantically
+ * invalid value (a built-in-named or empty type/status/field) — surfacing the
+ * defect is the job of {@link module:core/profile/profile-lint}, not describe.
+ */
+function lenientIdentifier(normalize: () => string, raw: () => string): string {
+  try {
+    return normalize();
+  } catch {
+    return raw();
+  }
 }

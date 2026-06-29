@@ -88,6 +88,23 @@ describe("describeProjectProfile", () => {
     expect(description.types).toEqual(["Epic", ""]);
   });
 
+  it("canonicalizes status ids and field keys to the values apply stages", () => {
+    const description = describeProjectProfile({
+      name: "canon",
+      title: "Canon",
+      summary: "",
+      types: [],
+      statuses: [{ id: "In-Review" }],
+      fields: [{ key: "My-Field" }],
+      workflows: [],
+      config: [],
+      templates: [],
+      packages: [],
+    });
+    expect(description.statuses).toEqual(["in_review"]);
+    expect(description.fields).toEqual(["my_field"]);
+  });
+
   it("coerces missing status ids and field keys to empty strings", () => {
     const description = describeProjectProfile({
       name: "sparse",
