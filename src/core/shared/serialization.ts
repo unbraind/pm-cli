@@ -156,6 +156,14 @@ function comparePlainObjectValues(left: object, right: object): boolean {
   return true;
 }
 
+const SPECIALIZED_STABLE_VALUE_COMPARISONS = [
+  compareRegExpValues,
+  compareDateValues,
+  compareSetValues,
+  compareMapValues,
+  compareArrayValues,
+] as const;
+
 /**
  * Implements stable value equals for the public runtime surface of this module.
  */
@@ -166,14 +174,7 @@ export function stableValueEquals(left: unknown, right: unknown): boolean {
   if (left === null || right === null || typeof left !== "object" || typeof right !== "object") {
     return false;
   }
-  const specializedComparisons = [
-    compareRegExpValues,
-    compareDateValues,
-    compareSetValues,
-    compareMapValues,
-    compareArrayValues,
-  ] as const;
-  for (const compare of specializedComparisons) {
+  for (const compare of SPECIALIZED_STABLE_VALUE_COMPARISONS) {
     const result = compare(left, right);
     if (result !== undefined) {
       return result;

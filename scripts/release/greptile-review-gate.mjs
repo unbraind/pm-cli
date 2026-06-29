@@ -16,9 +16,10 @@
  *     [--report-only] [--timeout-ms 600000]
  */
 import { spawnSync } from "node:child_process";
-import { commandFor, fail, flagBool, flagString, parseFlags } from "./utils.mjs";
+import { commandFor, flagBool, flagString, parseFlags } from "./utils.mjs";
 
 const GREPTILE = commandFor("greptile");
+const DEFAULT_TIMEOUT_MS = 600000;
 
 /** Run a Greptile subcommand, capturing output and never throwing on failure. */
 function runGreptile(args, timeoutMs) {
@@ -46,6 +47,9 @@ function report(outputJson, payload, exitCode) {
     console.log("Greptile review gate passed: no findings.");
   } else {
     console.error(`Greptile review gate failed: ${payload.reason}`);
+    if (typeof payload.review === "string" && payload.review.length > 0) {
+      console.error(payload.review);
+    }
   }
   process.exitCode = exitCode;
 }
@@ -59,7 +63,8 @@ function main() {
   const outputJson = flagBool(flags, "json", false);
   const reportOnly = flagBool(flags, "report-only", false);
   const base = flagString(flags, "base", "");
-  const timeoutMs = Number.parseInt(flagString(flags, "timeout-ms", "600000"), 10);
+  const parsedTimeoutMs = Number.parseInt(flagString(flags, "timeout-ms", String(DEFAULT_TIMEOUT_MS)), 10);
+  const timeoutMs = Number.isFinite(parsedTimeoutMs) && parsedTimeoutMs > 0 ? parsedTimeoutMs : DEFAULT_TIMEOUT_MS;
 
   // Skip gracefully when Greptile is unavailable or unauthenticated so the gate
   // never blocks CI environments without a Greptile token.
@@ -82,14 +87,14 @@ function main() {
     report(outputJson, { ok: true, skipped: true, reason: `greptile review timed out after ${timeoutMs}ms` }, 0);
     return;
   }
-  const output = `${review.stdout}\n${review.stderr}`;
-  // The Greptile agent output ends with "No review comments." when the branch is
-  // clean; any other completed review means it surfaced findings.
-  const clean = /no review comments/i.test(output);
   if (review.status !== 0) {
     report(outputJson, { ok: true, skipped: true, reason: `greptile review did not complete (exit ${review.status ?? "null"})` }, 0);
     return;
   }
+  const output = `${review.stdout}\n${review.stderr}`;
+  // The Greptile agent output ends with "No review comments." when the branch is
+  // clean; any other completed review means it surfaced findings.
+  const clean = /no review comments/i.test(output);
   if (clean) {
     report(outputJson, { ok: true, skipped: false, findings: 0, review: review.stdout.trim() }, 0);
     return;

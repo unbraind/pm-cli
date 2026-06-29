@@ -1,8 +1,13 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createScriptHarness } from "../../../helpers/scriptModule";
 
 const harness = createScriptHarness();
+
+afterEach(() => {
+  process.exitCode = undefined;
+  vi.restoreAllMocks();
+});
 
 /** A spawnSync stub: whoami uses `onWhoami`, the review call uses `onReview`. */
 function mockSpawn(onWhoami: () => unknown, onReview: (args: string[]) => unknown) {
@@ -65,6 +70,19 @@ describe("scripts/release/greptile-review-gate", () => {
     expect(payload.reason).toContain("timed out");
   });
 
+  it("uses the default timeout when --timeout-ms is invalid", async () => {
+    const spawnSync = mockSpawn(
+      () => ({ status: 0, stdout: "signed in", stderr: "" }),
+      () => ({ status: 0, stdout: "No review comments.", stderr: "" }),
+    );
+    const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    await runGate(["--json", "--timeout-ms", "-5"], "greptileInvalidTimeout");
+    const reviewCall = spawnSync.mock.calls.find((call) => (call[1] as string[])[0] === "review");
+    expect(reviewCall?.[2]).toMatchObject({ timeout: 600000 });
+    const payload = JSON.parse(String(writeSpy.mock.calls.at(-1)?.[0] ?? "{}"));
+    expect(payload).toMatchObject({ ok: true, skipped: false, findings: 0 });
+  });
+
   it("skips when the review does not complete (null exit status)", async () => {
     // A null status with no error exercises the `status ?? "null"` reason branch.
     mockSpawn(
@@ -124,7 +142,8 @@ describe("scripts/release/greptile-review-gate", () => {
     );
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     await runGate([], "greptileFindings");
-    expect(String(errorSpy.mock.calls.at(-1)?.[0] ?? "")).toContain("review findings");
+    expect(errorSpy.mock.calls.some((call) => String(call[0]).includes("review findings"))).toBe(true);
+    expect(errorSpy.mock.calls.some((call) => String(call[0]).includes("src/x.ts:1 use const here"))).toBe(true);
     expect(process.exitCode).toBe(1);
   });
 
