@@ -8585,6 +8585,7 @@
       "schema.itemfields",
       "schema.itemtypes",
       "schema.migrations",
+      "schema.profiles",
       "parser.override",
       "preflight.override",
       "services.override",

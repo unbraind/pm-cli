@@ -3140,6 +3140,7 @@ describe("extension loader", () => {
       flags: 1,
       item_fields: 1,
       migrations: 1,
+      profiles: 0,
       importers: 1,
       exporters: 1,
       item_types: 0,
@@ -5203,6 +5204,18 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
           api.registerItemFields([{ name: "severity", type: "string" }]);
           api.registerItemTypes([{ name: "bug" }]);
           api.registerMigration({ id: "migrate-severity", run: () => undefined });
+          api.registerProfile({
+            name: "blocked-profile",
+            title: "Blocked profile",
+            summary: "Should be denied by policy.",
+            types: [],
+            statuses: [],
+            fields: [],
+            workflows: [],
+            config: [],
+            templates: [],
+            packages: [],
+          });
           api.registerImporter("jsonl", () => ({ ok: true }));
           api.registerExporter("jsonl", () => ({ ok: true }));
           api.registerSearchProvider({ name: "semantic", query: () => [] });
@@ -5224,6 +5237,7 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
         "schema.itemfields",
         "schema.itemtypes",
         "schema.migrations",
+        "schema.profiles",
         "importers.importer",
         "importers.exporter",
         "search.provider",
@@ -5242,6 +5256,7 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
       item_fields: 0,
       item_types: 0,
       migrations: 0,
+      profiles: 0,
       importers: 0,
       exporters: 0,
       search_providers: 0,
@@ -5256,6 +5271,7 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
       "extension_policy_blocked_registration:project:blocked-non-command-apis:reason=surface_blocked:capability=schema:method=registeritemfields:surface=schema.itemfields",
       "extension_policy_blocked_registration:project:blocked-non-command-apis:reason=surface_blocked:capability=schema:method=registeritemtypes:surface=schema.itemtypes",
       "extension_policy_blocked_registration:project:blocked-non-command-apis:reason=surface_blocked:capability=schema:method=registermigration:surface=schema.migrations",
+      "extension_policy_blocked_registration:project:blocked-non-command-apis:reason=surface_blocked:capability=schema:method=registerprofile:surface=schema.profiles",
       "extension_policy_blocked_registration:project:blocked-non-command-apis:reason=surface_blocked:capability=importers:method=registerimporter:surface=importers.importer",
       "extension_policy_blocked_registration:project:blocked-non-command-apis:reason=surface_blocked:capability=importers:method=registerexporter:surface=importers.exporter",
       "extension_policy_blocked_registration:project:blocked-non-command-apis:reason=surface_blocked:capability=search:method=registersearchprovider:surface=search.provider",

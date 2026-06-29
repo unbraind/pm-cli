@@ -300,12 +300,11 @@ Common APIs:
 - `api.registerItemFields(fields)` adds custom metadata fields. Agents can set declared fields with repeatable `pm create --field name=value` and `pm update <id> --field name=value`; undeclared names are rejected. Each field `type` is validated against `string | number | boolean | array | object` at activation, with a did-you-mean hint on typos.
 - `api.registerItemTypes(types)` adds custom item types.
 - `api.registerMigration(definition)` adds schema migrations.
+- `api.registerProfile(profile)` contributes a project profile — a declarative archetype bundling item types, statuses, fields, per-type workflows, config, templates, and package recommendations. Once active it resolves by name through `pm profile list/show/apply` alongside the core `agile`/`ops`/`research` archetypes (built-in names are reserved; a colliding registration is ignored with a warning). Requires the `schema` capability.
 - `api.registerService("output_format", handler)` customizes output formatting through the service override API. Return `context.payload`, `null`, or `undefined` for commands the extension does not own.
 - `api.registerRenderer("toon" | "json", renderer)` adds format-specific renderers. Return `null` for unrelated payloads so pm falls back to native rendering.
 - `api.hooks.beforeCommand(handler)`, `api.hooks.afterCommand(handler)`, `api.hooks.onWrite(handler)`, `api.hooks.onRead(handler)`, and `api.hooks.onIndex(handler)` add lifecycle hooks.
-  `afterCommand` receives command outcome fields plus optional compact `affected`
-  item entries for mutations, including `previous_status`, `status`,
-  `changed_fields`, and partial `previous`/`current` front matter snapshots.
+  `afterCommand` receives command outcome fields plus optional compact `affected` item entries for mutations, including `previous_status`, `status`, `changed_fields`, and partial `previous`/`current` front matter snapshots.
   `onWrite` always includes `path`, `scope`, and `op`; item mutations also add optional `item_id`, `item_type`, `before`, `after`, and `changed_fields`.
 - An optional module-level `deactivate()` export (VS Code-style) is invoked by the host on shutdown/reload — including by the long-running MCP server between native-action requests — to close connections, clear timers, and release resources opened during `activate`. Teardown is best-effort and timeout-bounded by default so it does not block other extensions, except when a host explicitly disables waiting limits with `deactivate_timeout_ms: 0` or `Infinity`, which can wait indefinitely for a hanging `deactivate()` hook.
 

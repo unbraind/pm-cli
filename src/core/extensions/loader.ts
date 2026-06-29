@@ -22,6 +22,7 @@ import {
   type PmVersionBoundEvaluation,
 } from "./version-compat.js";
 import type { PmSettings } from "../../types/index.js";
+import type { ProjectProfileDefinition, ProjectProfileRegistrationInput } from "../profile/profile-presets.js";
 // Cohesive helper groups now live in sibling modules. They are imported for the
 // discovery/activation code that stays here and re-exported below so existing
 // import sites (sdk/index.ts, commands/extension.ts, health.ts, tests, …) keep
@@ -1557,6 +1558,68 @@ function validateMigrationDefinition(definition: unknown): void {
   }
 }
 
+/**
+ * The seven array-valued dimensions a {@link ProjectProfileDefinition} stages.
+ * Each is "optional-by-emptiness": an omitted dimension normalizes to an empty
+ * array so the profile planner can iterate every dimension unconditionally.
+ */
+const PROJECT_PROFILE_DIMENSIONS = [
+  "types",
+  "statuses",
+  "fields",
+  "workflows",
+  "config",
+  "templates",
+  "packages",
+] as const;
+
+function validateProjectProfileDefinition(profile: unknown): void {
+  const record = asRegistrationRecord("registerProfile profile", profile);
+  assertNonEmptyString("registerProfile profile.name", record.name);
+  assertNonEmptyString("registerProfile profile.title", record.title);
+  if (record.summary !== undefined && typeof record.summary !== "string") {
+    throw new TypeError("registerProfile profile.summary must be a string when provided");
+  }
+  for (const dimension of PROJECT_PROFILE_DIMENSIONS) {
+    const value = record[dimension];
+    if (value === undefined) {
+      continue;
+    }
+    if (!Array.isArray(value)) {
+      throw new TypeError(`registerProfile profile.${dimension} must be an array when provided`);
+    }
+    // Each dimension entry must be a non-null object: a primitive or null entry
+    // (e.g. `statuses: [null]`, `types: [42]`) survives an array-only check but
+    // crashes the profile planner and `pm profile show` when they read `entry.id`
+    // / `entry.key` / `entry.type` later. Reject it at the registration boundary.
+    for (const [index, entry] of value.entries()) {
+      if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
+        throw new TypeError(`registerProfile profile.${dimension}[${index}] must be an object`);
+      }
+    }
+  }
+}
+
+/**
+ * Fills an already-validated profile snapshot's optional surfaces — an absent
+ * `summary` becomes an empty string and every omitted dimension an empty array —
+ * so the stored definition always has the full {@link ProjectProfileDefinition}
+ * shape the profile planner and `pm profile` resolution rely on. It runs after
+ * validation on the cloned snapshot, so it only ever supplies missing defaults
+ * and never has to coerce an invalid type (those are already rejected).
+ */
+function applyProjectProfileDefaults(profile: Record<string, unknown>): ProjectProfileDefinition {
+  if (profile.summary === undefined) {
+    profile.summary = "";
+  }
+  for (const dimension of PROJECT_PROFILE_DIMENSIONS) {
+    if (profile[dimension] === undefined) {
+      profile[dimension] = [];
+    }
+  }
+  return profile as unknown as ProjectProfileDefinition;
+}
+
 function attachRuntimeDefinition<TEntry extends { definition: Record<string, unknown> }>(
   entry: TEntry,
   runtimeDefinition: Record<string, unknown>,
@@ -1986,6 +2049,24 @@ function createExtensionApi(
       ) as RegisteredExtensionSchemaMigrationDefinition,
     );
   };
+  const registerProfile = (profile: ProjectProfileRegistrationInput): void => {
+    assertExtensionCapability(extension, "schema", "registerProfile");
+    if (!allowRegistration("schema.profiles", "registerProfile", "schema")) {
+      return;
+    }
+    // Snapshot first, then validate and default the snapshot: cloning resolves
+    // any getters once into plain data decoupled from the caller's object, so
+    // validation and storage operate on the same value — a getter cannot present
+    // one value to validation and another to the registry. Defaults are applied
+    // only after validation, so an invalid type is rejected, not silently coerced.
+    const snapshot = cloneRuntimeRegistrationValue(profile);
+    validateProjectProfileDefinition(snapshot);
+    registrations.profiles.push({
+      layer: extension.layer,
+      name: extension.name,
+      profile: applyProjectProfileDefaults(snapshot as Record<string, unknown>),
+    });
+  };
   const applyImportExportCommandMetadata = (
     method: "registerImporter" | "registerExporter",
     commandPath: string,
@@ -2209,6 +2290,7 @@ function createExtensionApi(
     registerItemFields,
     registerItemTypes,
     registerMigration,
+    registerProfile,
     registerRenderer,
     registerImporter,
     registerExporter,
@@ -2235,6 +2317,7 @@ function getRegistrationCounts(registrations: ExtensionRegistrationRegistry): Ex
     item_fields: itemFieldCount,
     item_types: itemTypeCount,
     migrations: registrations.migrations.length,
+    profiles: registrations.profiles.length,
     importers: registrations.importers.length,
     exporters: registrations.exporters.length,
     search_providers: registrations.search_providers.length,

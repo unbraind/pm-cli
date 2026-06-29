@@ -126,6 +126,7 @@ Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 - `assertRegisteredVectorStoreAdapter`
 - `assertRegisteredItemField`
 - `assertRegisteredItemType`
+- `assertRegisteredProfile`
 - `assertRegisteredServiceOverride`
 - `assertRegisteredMigration`
 - `assertExtensionCapabilityUsage`
@@ -471,6 +472,7 @@ For provider-safe schemas, use `PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`. It is flat 
 | `registerItemFields` | `schema` |
 | `registerItemTypes` | `schema` |
 | `registerMigration` | `schema` |
+| `registerProfile` | `schema` |
 | `registerImporter` | `importers` |
 | `registerExporter` | `importers` |
 | `registerParser` | `parser` |
@@ -1331,9 +1333,58 @@ const migration = assertRegisteredMigration(activation.registrations, {
 // migration.definition is the normalized SchemaMigrationDefinition
 ```
 
+### Project profiles (`registerProfile`)
+
+Tracked: [pm-08sv](../.agents/pm/features/pm-08sv.toon).
+
+A **project profile** is the broadest customization primitive a package can ship:
+one declarative `ProjectProfileDefinition` that bundles item types, custom
+statuses, fields, per-type workflows, config knobs, create templates, and package
+recommendations into a single archetype `pm profile apply` stages idempotently.
+The three core archetypes (`agile`/`ops`/`research`) are baked in; a package adds
+its own with `api.registerProfile(profile)` under the `schema` capability:
+
+```ts
+import { defineProjectProfile, type ExtensionApi } from "@unbrained/pm-cli/sdk";
+
+export const kanbanProfile = defineProjectProfile({
+  name: "kanban",
+  title: "Kanban continuous flow",
+  summary: "WIP-limited flow with a verifying stage.",
+  types: [{ name: "Card", folder: "cards" }],
+  statuses: [{ id: "doing", roles: ["active"] }],
+  fields: [{ key: "wip_limit", type: "number", commands: ["create", "update"] }],
+  workflows: [{ type: "Card", allowed_transitions: [["open", "doing"]] }],
+  config: [{ key: "search_provider", value: "bm25", summary: "Offline lexical search." }],
+  templates: [{ name: "card", options: { type: "Card" } }],
+  packages: [{ spec: "templates", reason: "Reusable card shapes." }],
+});
+
+export function activate(api: ExtensionApi): void {
+  api.registerProfile(kanbanProfile);
+}
+```
+
+Once the package is active, the profile resolves by name through `pm profile list`
+(labelled with its source package), `pm profile show <name>`, and
+`pm profile apply <name>` — exactly like a core archetype, with no consumer code.
+Built-in names are reserved: a registered profile that collides with a core name
+(or another package's profile) is ignored with a warning rather than shadowing it.
+Profiles flow through the declarative loop too — `composeExtension({ profiles: [...] })`
+auto-wires `registerProfile`, and `deriveExtensionCapabilities` maps a `profiles`
+surface to `schema`. Prove a profile registered with `assertRegisteredProfile`:
+
+```ts
+import { assertRegisteredProfile } from "@unbrained/pm-cli/sdk/testing";
+
+const { profile } = assertRegisteredProfile(activation.registrations, { profile: "kanban" });
+// profile is the normalized ProjectProfileDefinition
+```
+
 Together these complete the SDK assertion surface: every extension `register*`
-method now has a matching `assertRegistered*` helper, so packages can prove any
-registration without importing private registry internals.
+method (including `registerProfile`) now has a matching `assertRegistered*`
+helper, so packages can prove any registration without importing private registry
+internals.
 
 The three executable registration surfaces add `runRegistered*ForTest` invoke
 helpers on top of those assertions, so a package can exercise the real behavior of

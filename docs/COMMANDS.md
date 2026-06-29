@@ -782,7 +782,9 @@ Built-in profiles:
 - `ops`: Incident/Runbook types, `mitigating`/`monitoring` statuses, `severity`/`service` fields, an Incident workflow, an `incident` template. Recommends `lifecycle-hooks`, `governance-audit`, `calendar`.
 - `research`: Experiment/Hypothesis types, an `analyzing` status, `hypothesis`/`method` fields, an Experiment workflow, an `experiment` template. Recommends `search-advanced`, `templates`, `beads`.
 
-Apply reports a per-dimension diff (`added` / `updated` / `unchanged`). Re-applying an already-applied profile performs zero writes. Package recommendations are advisory — apply never installs packages; `pm profile show <name>` lists the suggested `pm package install <spec>` candidates. The same surface is available to agents through the `pm_profile` MCP tool. Profiles are extensible: package authors build their own archetypes on the public SDK `defineProjectProfile` primitive (see [SDK.md](./SDK.md)).
+Apply reports a per-dimension diff (`added` / `updated` / `unchanged`). Re-applying an already-applied profile performs zero writes. Package recommendations are advisory — apply never installs packages; `pm profile show <name>` lists the suggested `pm package install <spec>` candidates. The same surface is available to agents through the `pm_profile` MCP tool.
+
+Profiles are extensible: a package can ship its own archetype with `api.registerProfile(profile)` (built on the public SDK `defineProjectProfile` primitive — see [SDK.md](./SDK.md)). When the package is active, its profile appears in `pm profile list` (labelled with its source package) and resolves through `pm profile show`/`apply` exactly like a built-in. Built-in names are reserved, so a package profile can never silently shadow `agile`/`ops`/`research`. The bundled [pm-kanban](../packages/pm-kanban/README.md) package registers a `kanban` continuous-flow archetype this way.
 
 ## Plan Workflow
 

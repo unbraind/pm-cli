@@ -53,6 +53,7 @@ import type {
   VectorStoreAdapterDefinition,
 } from "../core/extensions/loader.js";
 import type { ExtensionActivationSummary } from "../core/extensions/activation-summary.js";
+import type { ProjectProfileRegistrationInput } from "../core/profile/profile-presets.js";
 import type { PmMaxVersionExceededMode } from "../core/extensions/extension-types.js";
 import {
   normalizeKnownExtensionCapability,
@@ -186,6 +187,8 @@ export interface ExtensionBlueprint {
   itemFields?: SchemaFieldDefinition[];
   /** Schema migrations registered one at a time via `api.registerMigration(definition)`. */
   migrations?: SchemaMigrationDefinition[];
+  /** Project profiles registered one at a time via `api.registerProfile(profile)`. */
+  profiles?: ProjectProfileRegistrationInput[];
   /** Search providers registered via `api.registerSearchProvider(provider)`. */
   searchProviders?: SearchProviderDefinition[];
   /** Vector store adapters registered via `api.registerVectorStoreAdapter(adapter)`. */
@@ -232,8 +235,8 @@ export function defineExtensionBlueprint<TBlueprint extends ExtensionBlueprint>(
  * The returned module's `activate` registers every populated surface through the
  * matching `api.register*` method in a deterministic order (commands → overrides
  * → flags → parsers → renderers → services → preflights → item types → item
- * fields → migrations → search providers → vector store adapters → importers →
- * exporters → hooks), then awaits the blueprint's optional imperative `activate`
+ * fields → migrations → profiles → search providers → vector store adapters →
+ * importers → exporters → hooks), then awaits the blueprint's optional imperative `activate`
  * so it can layer on anything the declarative form cannot express. `manifest`
  * and `deactivate` are copied onto the module verbatim.
  *
@@ -279,6 +282,9 @@ export function composeExtension(blueprint: ExtensionBlueprint): ExtensionModule
     }
     for (const migration of blueprint.migrations ?? []) {
       api.registerMigration(migration);
+    }
+    for (const profile of blueprint.profiles ?? []) {
+      api.registerProfile(profile);
     }
     for (const provider of blueprint.searchProviders ?? []) {
       api.registerSearchProvider(provider);
@@ -438,8 +444,8 @@ function mergeHookSurfaces(
  * combines the way its underlying `api.register*` call composes:
  *
  * - **Array surfaces** — `commands`, `preflights`, `itemTypes`, `itemFields`,
- *   `migrations`, `searchProviders`, `vectorStoreAdapters`, `importers`,
- *   `exporters` — concatenate in argument order.
+ *   `migrations`, `profiles`, `searchProviders`, `vectorStoreAdapters`,
+ *   `importers`, `exporters` — concatenate in argument order.
  * - **`flags`** concatenates the flag arrays of any shared target command,
  *   mirroring additive `api.registerFlags`: every module's flags reach the command.
  * - **Single-handler records** — `commandOverrides`, `parsers`, `renderers`,
@@ -480,6 +486,7 @@ export function mergeExtensionBlueprints(...blueprints: ExtensionBlueprint[]): E
   assign("itemTypes", mergeArraySurface(blueprints.map((blueprint) => blueprint.itemTypes)));
   assign("itemFields", mergeArraySurface(blueprints.map((blueprint) => blueprint.itemFields)));
   assign("migrations", mergeArraySurface(blueprints.map((blueprint) => blueprint.migrations)));
+  assign("profiles", mergeArraySurface(blueprints.map((blueprint) => blueprint.profiles)));
   assign("searchProviders", mergeArraySurface(blueprints.map((blueprint) => blueprint.searchProviders)));
   assign("vectorStoreAdapters", mergeArraySurface(blueprints.map((blueprint) => blueprint.vectorStoreAdapters)));
   assign("importers", mergeArraySurface(blueprints.map((blueprint) => blueprint.importers)));
@@ -556,6 +563,7 @@ const BLUEPRINT_FIELD_CAPABILITIES: ReadonlyArray<readonly [BlueprintRegistratio
   ["itemTypes", "schema"],
   ["itemFields", "schema"],
   ["migrations", "schema"],
+  ["profiles", "schema"],
   ["parsers", "parser"],
   ["renderers", "renderers"],
   ["services", "services"],
@@ -577,6 +585,7 @@ type BlueprintRegistrationField =
   | "itemTypes"
   | "itemFields"
   | "migrations"
+  | "profiles"
   | "searchProviders"
   | "vectorStoreAdapters"
   | "importers"
@@ -747,6 +756,7 @@ export function describeExtensionBlueprint(blueprint: ExtensionBlueprint): Exten
     migrations: sortUnique(
       (blueprint.migrations ?? []).flatMap((migration) => (typeof migration.id === "string" ? [migration.id] : [])),
     ),
+    profiles: sortUnique((blueprint.profiles ?? []).map((profile) => profile.name)),
     importers: sortUnique(importers.map((entry) => normalizeCommandName(entry.name))),
     exporters: sortUnique(exporters.map((entry) => normalizeCommandName(entry.name))),
     search_providers: sortUnique((blueprint.searchProviders ?? []).map((provider) => provider.name)),
@@ -779,6 +789,7 @@ const BLUEPRINT_LINTABLE_SURFACE_FIELDS = [
   "itemTypes",
   "itemFields",
   "migrations",
+  "profiles",
   "searchProviders",
   "vectorStoreAdapters",
   "importers",

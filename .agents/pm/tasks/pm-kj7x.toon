@@ -1,0 +1,15 @@
+id: pm-kj7x
+title: "Dogfood: pm-kanban registers kanbanProfile so `pm profile apply kanban` works"
+description: packages/pm-kanban/extensions/kanban/index.ts activate() calls api.registerProfile(kanbanProfile) (import-free; references only the passed api + local value). Update module + activate docstrings to reflect the now-reachable `pm profile apply kanban` path. Extend the package's index.test.js to assert the profile registers via the SDK testing harness.
+type: Task
+status: open
+priority: 2
+tags[3]: "area:extensions",dogfood,pm-cli
+created_at: "2026-06-29T09:02:17.897Z"
+updated_at: "2026-06-29T09:03:06.133Z"
+author: claude-code-agent
+parent: pm-08sv
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-6oox,blocked_by,"2026-06-29T09:03:06.130Z",null,null
+  pm-vpwt,blocked_by,"2026-06-29T09:03:06.130Z",null,null
+body: ""

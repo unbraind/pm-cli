@@ -34,6 +34,7 @@ import {
   assertRegisteredMigration as assertRegisteredMigrationFromBarrel,
   assertRegisteredParserOverride as assertRegisteredParserOverrideFromBarrel,
   assertRegisteredPreflightOverride as assertRegisteredPreflightOverrideFromBarrel,
+  assertRegisteredProfile as assertRegisteredProfileFromBarrel,
   assertRegisteredRendererOverride as assertRegisteredRendererOverrideFromBarrel,
   assertRegisteredSearchProvider as assertRegisteredSearchProviderFromBarrel,
   assertRegisteredServiceOverride as assertRegisteredServiceOverrideFromBarrel,
@@ -106,6 +107,7 @@ import {
   assertRegisteredMigration,
   assertRegisteredParserOverride,
   assertRegisteredPreflightOverride,
+  assertRegisteredProfile,
   assertRegisteredRendererOverride,
   assertRegisteredSearchProvider,
   assertRegisteredServiceOverride,
@@ -317,6 +319,24 @@ function createRegistrationRegistry(): ExtensionRegistrationRegistry {
       },
     ],
     migrations: [],
+    profiles: [
+      {
+        layer: "project",
+        name: "kanban-ext",
+        profile: {
+          name: "kanban",
+          title: "Kanban",
+          summary: "Continuous flow.",
+          types: [],
+          statuses: [],
+          fields: [],
+          workflows: [],
+          config: [],
+          templates: [],
+          packages: [],
+        },
+      },
+    ],
     importers: [
       { layer: "project", name: "todos-ext", importer: "todos" },
       { layer: "global", name: "beads-ext", importer: "beads" },
@@ -910,6 +930,7 @@ describe("public sdk entrypoint", () => {
     expect(typeof assertRegisteredExporterFromBarrel).toBe("function");
     expect(typeof assertRegisteredItemFieldFromBarrel).toBe("function");
     expect(typeof assertRegisteredItemTypeFromBarrel).toBe("function");
+    expect(assertRegisteredProfileFromBarrel).toBe(assertRegisteredProfile);
     expect(typeof assertRegisteredVectorStoreAdapterFromBarrel).toBe("function");
     expect(typeof activateExtensionForTestFromBarrel).toBe("function");
     expect(typeof deactivateExtensionForTestFromBarrel).toBe("function");
@@ -1826,6 +1847,52 @@ describe("sdk testing helpers", () => {
 
     expect(() => assertRegisteredItemType(createRegistrationRegistry(), { itemType: "   " })).toThrow(
       "Expected item type name must be a non-empty string",
+    );
+  });
+
+  it("asserts project profile registrations with actionable failures", () => {
+    const profile = assertRegisteredProfile(createRegistrationRegistry(), {
+      profile: "KANBAN",
+      extensionName: "kanban-ext",
+    });
+    expect(profile.registration.name).toBe("kanban-ext");
+    expect(profile.profile.name).toBe("kanban");
+
+    // Profiles resolve hyphen-insensitively at runtime, so the assertion folds
+    // the separator too: a profile registered as "my-flow" matches "my_flow".
+    const hyphenRegistry = createRegistrationRegistry();
+    hyphenRegistry.profiles.push({
+      layer: "project",
+      name: "flow-ext",
+      profile: {
+        name: "my-flow",
+        title: "My flow",
+        summary: "",
+        types: [],
+        statuses: [],
+        fields: [],
+        workflows: [],
+        config: [],
+        templates: [],
+        packages: [],
+      },
+    });
+    expect(assertRegisteredProfile(hyphenRegistry, { profile: "my_flow" }).profile.name).toBe("my-flow");
+
+    expect(() =>
+      assertRegisteredProfile(createRegistrationRegistry(), { profile: "kanban", extensionName: "other-ext" }),
+    ).toThrow(/from extension "other-ext".*Available profiles: kanban/);
+
+    expect(() => assertRegisteredProfile(createRegistrationRegistry(), { profile: "missing" })).toThrow(
+      /Expected profile "missing" to be registered\. Available profiles: kanban/,
+    );
+
+    expect(() => assertRegisteredProfile({ ...createRegistrationRegistry(), profiles: [] }, { profile: "kanban" })).toThrow(
+      /Available profiles: \(none\)/,
+    );
+
+    expect(() => assertRegisteredProfile(createRegistrationRegistry(), { profile: "   " })).toThrow(
+      "Expected profile name must be a non-empty string",
     );
   });
 
@@ -2891,6 +2958,18 @@ describe("createExtensionTestHarness", () => {
       });
       api.registerItemFields([{ name: "risk", type: "string" }]);
       api.registerItemTypes([{ name: "Risk", folder: "risks", required_create_fields: ["risk"] }]);
+      api.registerProfile({
+        name: "harness-archetype",
+        title: "Harness archetype",
+        summary: "Profile registered by the harness fixture.",
+        types: [{ name: "Risk" }],
+        statuses: [],
+        fields: [],
+        workflows: [],
+        config: [],
+        templates: [],
+        packages: [],
+      });
       api.hooks.afterCommand((context) => {
         events.push(`after:${context.ok}`);
       });
@@ -2957,6 +3036,7 @@ describe("createExtensionTestHarness", () => {
     expect(harness.assertFlags({ targetCommand: "harness hello", flags: ["--name"] }).target_command).toBe("harness hello");
     expect(harness.assertItemField({ field: "risk", type: "string" }).field.name).toBe("risk");
     expect(harness.assertItemType({ itemType: "Risk", folder: "risks" }).itemType.folder).toBe("risks");
+    expect(harness.assertProfile({ profile: "harness-archetype" }).profile.name).toBe("harness-archetype");
     expect(typeof harness.assertHook({ kind: "after_command" }).run).toBe("function");
     expect(harness.assertCommandOverride({ command: "transform run" }).command).toBe("transform run");
     expect(harness.assertParserOverride({ command: "transform run" }).command).toBe("transform run");

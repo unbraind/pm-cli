@@ -41,6 +41,7 @@ export {
   type ProfileTemplateEntry,
   type ProfileTemplateOptions,
   type ProjectProfileDefinition,
+  type ProjectProfileRegistrationInput,
 } from "../core/profile/profile-presets.js";
 export {
   planProfileApplication,
@@ -76,6 +77,7 @@ export {
   assertRegisteredMigration,
   assertRegisteredParserOverride,
   assertRegisteredPreflightOverride,
+  assertRegisteredProfile,
   assertRegisteredRendererOverride,
   assertRegisteredSearchProvider,
   assertRegisteredServiceOverride,
@@ -134,6 +136,8 @@ export {
   type RegisteredMigrationExpectation,
   type RegisteredParserOverrideExpectation,
   type RegisteredPreflightOverrideExpectation,
+  type RegisteredProfileAssertion,
+  type RegisteredProfileExpectation,
   type RegisteredRendererOverrideExpectation,
   type RegisteredSearchProviderExpectation,
   type RegisteredServiceOverrideExpectation,
@@ -265,6 +269,7 @@ export type {
   RegisteredExtensionFlagDefinitions,
   RegisteredExtensionHook,
   RegisteredExtensionImporter,
+  RegisteredExtensionProjectProfile,
   RegisteredExtensionSchemaMigrationDefinition,
   RegisteredExtensionSearchProvider,
   RegisteredExtensionServiceOverride,

@@ -2411,6 +2411,7 @@ describe("setup command actions", () => {
       item_types: [],
       item_fields: [],
       migrations: [],
+      profiles: [],
       importers: [],
       exporters: [],
       search_providers: [],

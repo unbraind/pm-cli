@@ -20,10 +20,11 @@
  * 2. **Profile spec** — {@link kanbanProfile} is a {@link ProjectProfileDefinition}
  *    describing the *complete* archetype (item types, custom statuses, fields, the
  *    `Card` workflow, offline search config, a starter template, and package
- *    recommendations). It is consumable by the SDK profile planner
- *    (`planProfileApplication`) exactly like the built-in archetypes, so a
- *    consumer can stage the non-schema dimensions (statuses/config/templates) the
- *    same way `pm profile apply` stages a core profile.
+ *    recommendations). `activate` registers it through `api.registerProfile`, so
+ *    once the package is installed it resolves by name through `pm profile list`,
+ *    `pm profile show kanban`, and `pm profile apply kanban` — staging the
+ *    non-schema dimensions (statuses/config/templates) idempotently exactly like a
+ *    core archetype, with no consumer code required.
  *
  * The extension is intentionally pure: no filesystem, network, environment, or
  * process access — so its manifest declares `sandbox_profile: "strict"` with all
@@ -76,10 +77,11 @@ export const KANBAN_ITEM_FIELDS: SchemaFieldDefinition[] = [
  * This is the authoring anchor a profile package builds on: it bundles the item
  * type, two flow statuses, the flow fields, the `Card` workflow, offline-friendly
  * search config, a starter create template, and advisory package recommendations
- * into one declarative archetype the SDK profile planner can stage idempotently.
- * The field keys and type name are kept in lockstep with {@link KANBAN_ITEM_TYPE}
- * and {@link KANBAN_ITEM_FIELDS} (the live registration surfaces); the package
- * test asserts they never drift.
+ * into one declarative archetype. `activate` hands it to `api.registerProfile`, so
+ * `pm profile apply kanban` stages every dimension idempotently. The field keys
+ * and type name are kept in lockstep with {@link KANBAN_ITEM_TYPE} and
+ * {@link KANBAN_ITEM_FIELDS} (the live registration surfaces); the package test
+ * asserts they never drift.
  */
 export const kanbanProfile: ProjectProfileDefinition = {
   name: "kanban",
@@ -166,15 +168,17 @@ export const kanbanProfile: ProjectProfileDefinition = {
 };
 
 /**
- * Register the Kanban archetype's live schema. Item types and fields are GLOBAL
+ * Register the Kanban archetype. The item types and fields are GLOBAL schema
  * contributions, so they are available to every built-in command the moment the
- * package is installed. The non-schema profile dimensions (statuses/config/
- * templates) are intentionally NOT registered here — they are staged from
- * {@link kanbanProfile} via the SDK profile planner.
+ * package is installed. The {@link kanbanProfile} is registered as a project
+ * profile so `pm profile apply kanban` can stage the remaining archetype
+ * dimensions (statuses/config/templates/workflow) idempotently. All three calls
+ * are covered by the package's single declared `schema` capability.
  */
 export function activate(api: ExtensionApi): void {
   api.registerItemFields(KANBAN_ITEM_FIELDS);
   api.registerItemTypes([KANBAN_ITEM_TYPE]);
+  api.registerProfile(kanbanProfile);
 }
 
 /** No teardown state to release; the archetype schema is host-managed. */

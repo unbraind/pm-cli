@@ -12,6 +12,7 @@ import type {
   PmSettings,
 } from "../../types/index.js";
 import type { GlobalOptions } from "../shared/command-types.js";
+import type { ProjectProfileDefinition, ProjectProfileRegistrationInput } from "../profile/profile-presets.js";
 
 export const KNOWN_EXTENSION_CAPABILITIES = [
   "commands",
@@ -82,6 +83,7 @@ export const KNOWN_EXTENSION_POLICY_SURFACES = [
   "schema.itemfields",
   "schema.itemtypes",
   "schema.migrations",
+  "schema.profiles",
   "parser.override",
   "preflight.override",
   "services.override",
@@ -1087,6 +1089,23 @@ export interface RegisteredExtensionVectorStoreAdapter {
 }
 
 /**
+ * Documents a project profile contributed by an extension via
+ * `api.registerProfile(profile)`.
+ *
+ * A profile is the broadest customization primitive an extension can ship: it
+ * bundles item types, custom statuses, fields, per-type workflows, config knobs,
+ * create templates, and package recommendations into one declarative archetype
+ * that `pm profile apply` stages idempotently — the same shape as the
+ * core-baked archetypes. Registering one makes it resolvable by name through
+ * `pm profile list/show/apply` for as long as the owning package is active.
+ */
+export interface RegisteredExtensionProjectProfile {
+  layer: ExtensionLayer;
+  name: string;
+  profile: ProjectProfileDefinition;
+}
+
+/**
  * Documents the extension registration registry payload exchanged by command, SDK, and package integrations.
  */
 export interface ExtensionRegistrationRegistry {
@@ -1095,6 +1114,7 @@ export interface ExtensionRegistrationRegistry {
   item_fields: RegisteredExtensionSchemaFieldDefinitions[];
   item_types: RegisteredExtensionSchemaItemTypeDefinitions[];
   migrations: RegisteredExtensionSchemaMigrationDefinition[];
+  profiles: RegisteredExtensionProjectProfile[];
   importers: RegisteredExtensionImporter[];
   exporters: RegisteredExtensionExporter[];
   search_providers: RegisteredExtensionSearchProvider[];
@@ -1110,6 +1130,7 @@ export interface ExtensionRegistrationCounts {
   item_fields: number;
   item_types: number;
   migrations: number;
+  profiles: number;
   importers: number;
   exporters: number;
   search_providers: number;
@@ -1147,6 +1168,7 @@ export interface ExtensionApi {
   registerItemFields(fields: SchemaFieldDefinition[]): void;
   registerItemTypes(types: SchemaItemTypeDefinition[]): void;
   registerMigration(definition: SchemaMigrationDefinition): void;
+  registerProfile(profile: ProjectProfileRegistrationInput): void;
   registerRenderer(format: OutputRendererFormat, renderer: RendererOverride): void;
   registerImporter(name: string, importer: Importer, options?: ImportExportRegistrationOptions): void;
   registerExporter(name: string, exporter: Exporter, options?: ImportExportRegistrationOptions): void;

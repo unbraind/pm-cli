@@ -50,6 +50,18 @@ function registerEverySurface(api: ExtensionApi): void {
   api.registerItemFields([{ name: "team", type: "string" }]);
   api.registerItemTypes([{ name: "Ticket" }]);
   api.registerMigration({ id: "ext-a-migration", run: () => ({}) });
+  api.registerProfile({
+    name: "ext-a-profile",
+    title: "Ext A archetype",
+    summary: "Synthetic archetype for the every-surface fixture.",
+    types: [],
+    statuses: [],
+    fields: [],
+    workflows: [],
+    config: [],
+    templates: [],
+    packages: [],
+  });
   api.registerImporter("ext-a-import", async () => ({ items: [] }));
   api.registerExporter("ext-a-export", async () => ({}));
   api.registerSearchProvider({ name: "ext-a-search", query: () => [] });
@@ -86,6 +98,7 @@ describe("describeExtensionActivation", () => {
       item_types: ["Ticket"],
       item_fields: ["team"],
       migrations: ["ext-a-migration"],
+      profiles: ["ext-a-profile"],
       importers: ["ext-a-import"],
       exporters: ["ext-a-export"],
       search_providers: ["ext-a-search"],
@@ -193,6 +206,7 @@ describe("describeExtensionActivation", () => {
       item_types: [],
       item_fields: [],
       migrations: [],
+      profiles: [],
       importers: [],
       exporters: [],
       search_providers: [],
