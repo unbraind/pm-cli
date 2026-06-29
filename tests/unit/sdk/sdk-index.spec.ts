@@ -1858,6 +1858,27 @@ describe("sdk testing helpers", () => {
     expect(profile.registration.name).toBe("kanban-ext");
     expect(profile.profile.name).toBe("kanban");
 
+    // Profiles resolve hyphen-insensitively at runtime, so the assertion folds
+    // the separator too: a profile registered as "my-flow" matches "my_flow".
+    const hyphenRegistry = createRegistrationRegistry();
+    hyphenRegistry.profiles.push({
+      layer: "project",
+      name: "flow-ext",
+      profile: {
+        name: "my-flow",
+        title: "My flow",
+        summary: "",
+        types: [],
+        statuses: [],
+        fields: [],
+        workflows: [],
+        config: [],
+        templates: [],
+        packages: [],
+      },
+    });
+    expect(assertRegisteredProfile(hyphenRegistry, { profile: "my_flow" }).profile.name).toBe("my-flow");
+
     expect(() =>
       assertRegisteredProfile(createRegistrationRegistry(), { profile: "kanban", extensionName: "other-ext" }),
     ).toThrow(/from extension "other-ext".*Available profiles: kanban/);

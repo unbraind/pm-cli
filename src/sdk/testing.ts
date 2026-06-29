@@ -644,6 +644,19 @@ function normalizeSdkIdentifier(value: string): string {
   return value.trim().toLowerCase();
 }
 
+/**
+ * Match key for profile-name assertions. Extends {@link normalizeSdkIdentifier}
+ * with hyphen→underscore folding so the assertion mirrors the runtime profile
+ * resolution (`pm profile`), which treats `my-flow` and `my_flow` as the same
+ * archetype. Profiles are the one registration surface that resolves
+ * hyphen-insensitively (item types resolve by alias, migrations by exact id), so
+ * — unlike the other `assertRegistered*` helpers — this one folds the separator
+ * to stay in lockstep with how a profile is actually looked up by name.
+ */
+function normalizeSdkProfileMatchKey(value: string): string {
+  return normalizeSdkIdentifier(value).replaceAll("-", "_");
+}
+
 function extensionNameSuffix(extensionName: string | undefined): string {
   return extensionName ? ` from extension "${extensionName}"` : "";
 }
@@ -1723,14 +1736,14 @@ export function assertRegisteredProfile(
   registrations: ExtensionRegistrationRegistry,
   expectation: RegisteredProfileExpectation,
 ): RegisteredProfileAssertion {
-  const expectedProfile = normalizeSdkIdentifier(expectation.profile);
+  const expectedProfile = normalizeSdkProfileMatchKey(expectation.profile);
   if (expectedProfile.length === 0) {
     throw new Error("Expected profile name must be a non-empty string");
   }
 
   const match = registrations.profiles
     .filter((entry) => expectation.extensionName === undefined || entry.name === expectation.extensionName)
-    .find((entry) => normalizeSdkIdentifier(entry.profile.name) === expectedProfile);
+    .find((entry) => normalizeSdkProfileMatchKey(entry.profile.name) === expectedProfile);
   if (!match) {
     const available = sortedUnique(registrations.profiles.map((entry) => entry.profile.name));
     throw new Error(
