@@ -1,0 +1,13 @@
+id: pm-bkcv
+title: "CodeFactor no-regression gate: complexity ceiling + ESLint suppressions baseline + Greptile in local CI/CD"
+description: "Make 'no new CodeFactor issue' a mandatory gate so the codebase only improves. CodeFactor grade is A with ~155 issues dominated by 'Complex Method' (cyclomatic complexity) findings; the local ESLint parity used complexity max 260 (never fired). Lower the complexity ceiling to 17 (errors at CC>=18, matching CodeFactor's flagged range) and grandfather every pre-existing violation in eslint-suppressions.json via ESLint native bulk suppressions, so a newly-introduced complex method fails 'pnpm lint' in CI while existing debt is baselined. Fixing a complex method requires pruning its suppression (--prune-suppressions), so the baseline only shrinks — the path to a CodeFactor A+. Also wire the Greptile CLI reviewer into the local CI/CD via scripts/release/greptile-review-gate.mjs (best-effort: fails on findings when authenticated, skips gracefully in token-less CI) and run-gates.mjs. Driving the 161-entry baseline to zero is the remaining A+ work under this epic."
+type: Chore
+status: open
+priority: 1
+tags[5]: "area:ci","area:quality",codefactor,living-map,pm-cli
+created_at: "2026-06-29T21:31:08.795Z"
+updated_at: "2026-06-29T21:31:08.795Z"
+author: claude-code-agent
+acceptance_criteria: complexity ceiling lowered to 17 with committed eslint-suppressions.json baseline; pnpm lint passes on existing code and FAILS on any new CC>=18 method; fixing a method forces a suppression prune (only-improve); greptile-review-gate.mjs added (best-effort skip when unauthenticated) and wired into run-gates.mjs + package.json; CONTRIBUTING documents the policy; all gates green; net A+ path documented.
+parent: pm-92if
+body: ""

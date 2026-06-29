@@ -1,8 +1,16 @@
 import tseslint from "typescript-eslint";
 import unicorn from "eslint-plugin-unicorn";
 
+// Cyclomatic-complexity ceiling for the "Complex Method" no-regression gate.
+// Calibrated to CodeFactor's "Complex Method" detector (which flags methods at
+// cyclomatic complexity >= 18): `max: 17` makes ESLint error on any function at
+// CC >= 18, so a newly-introduced complex method fails `pnpm lint` in CI. Every
+// pre-existing violation is grandfathered in `eslint-suppressions.json`
+// (regenerate with `pnpm lint:eslint:suppress`), so the gate blocks *new*
+// complexity without forcing a repo-wide refactor first; pruning that baseline to
+// empty is the path to a CodeFactor A+ (tracked under epic pm-92if).
 const CODEFACTOR_MAINTAINABILITY_RULES = {
-  complexity: ["error", { max: 260 }],
+  complexity: ["error", { max: 17 }],
   "no-unsafe-optional-chaining": "error",
   "unicorn/no-thenable": "error",
   "unicorn/no-useless-fallback-in-spread": "error",

@@ -29,6 +29,7 @@ describe("scripts/release/run-gates", () => {
       "--json",
       "--skip-dogfood",
       "--skip-compatibility",
+      "--skip-greptile",
       "--skip-telemetry-sentry",
       "--telemetry-mode",
       "required",
@@ -39,6 +40,7 @@ describe("scripts/release/run-gates", () => {
     expect(payload.ok).toBe(true);
     expect(payload.checks.some((entry) => entry.name === "package-first-dogfood" && entry.skipped === true)).toBe(true);
     expect(payload.checks.some((entry) => entry.name === "compatibility-check" && entry.skipped === true)).toBe(true);
+    expect(payload.checks.some((entry) => entry.name === "greptile-review" && entry.skipped === true)).toBe(true);
     expect(payload.checks.some((entry) => entry.name === "sentry-telemetry-gate" && entry.skipped === true)).toBe(true);
     expect(spawnSync).toHaveBeenCalled();
   });
@@ -52,6 +54,9 @@ describe("scripts/release/run-gates", () => {
       if (joined.includes("sentry-telemetry-gate.mjs")) {
         return { status: 0, stdout: '{"ok":true,"mode":"best-effort"}', stderr: "" };
       }
+      if (joined.includes("greptile-review-gate.mjs")) {
+        return { status: 0, stdout: '{"ok":true,"skipped":false,"findings":0}', stderr: "" };
+      }
       return { status: 0, stdout: "", stderr: "" };
     });
     vi.doMock("node:child_process", () => ({ spawnSync }));
@@ -63,6 +68,9 @@ describe("scripts/release/run-gates", () => {
     ).toBe(true);
     expect(
       spawnSync.mock.calls.some((c) => [c[0], ...(c[1] as string[])].join(" ").includes("sentry-telemetry-gate.mjs")),
+    ).toBe(true);
+    expect(
+      spawnSync.mock.calls.some((c) => [c[0], ...(c[1] as string[])].join(" ").includes("greptile-review-gate.mjs")),
     ).toBe(true);
     expect(
       spawnSync.mock.calls.some(([, args]) => {

@@ -74,6 +74,36 @@ When changing validation behavior, include targeted checks for:
 - `pm validate --check-files --scan-mode tracked-all`
 - `pm validate --check-files --scan-mode tracked-all-strict`
 
+## Code Quality Gates (no regressions)
+
+Every change must *only improve* the codebase — CI blocks any pull request that
+introduces a new quality issue. Run the lint suite before pushing:
+
+```bash
+pnpm lint           # eslint (complexity + maintainability) + jscpd duplication + static-quality gate
+```
+
+**Complex Method no-regression gate.** ESLint enforces a cyclomatic-complexity
+ceiling (`complexity` max 17 — a function at CC ≥ 18 fails), calibrated to
+CodeFactor's "Complex Method" detector. The full set of pre-existing violations is
+grandfathered in `eslint-suppressions.json` (ESLint native bulk suppressions), so:
+
+- A **new** complex method (or making an existing one worse) fails `pnpm lint` in
+  CI — you must simplify it.
+- **Fixing** a complex method makes its suppression unused, which also fails lint
+  until you prune the baseline. Run `pnpm lint:eslint:prune` and commit the smaller
+  `eslint-suppressions.json` — the baseline only ever shrinks.
+
+Do not regenerate the whole baseline (`pnpm lint:complexity:baseline`) to silence a
+new violation; that defeats the gate. Driving the baseline to empty is the path to a
+CodeFactor **A+** (tracked under epic `pm-92if`).
+
+**Greptile review.** `pnpm review:greptile:gate` runs the Greptile CLI reviewer over
+the current branch and fails on findings. It is wired into `pnpm release:gates`
+(skip with `--skip-greptile`) and skips gracefully when the Greptile CLI is
+unavailable or unauthenticated, so token-less CI never blocks on it; the Greptile
+GitHub App still reviews every PR independently.
+
 ## Terminal Compatibility Checks
 
 When changing stdin, output, exit handling, or linked test execution, run targeted terminal-compatibility regressions before full-suite validation:
