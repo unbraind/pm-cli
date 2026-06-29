@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: "area:extensions",dogfood,pm-cli
 created_at: "2026-06-29T09:02:17.897Z"
-updated_at: "2026-06-29T13:56:48.827Z"
+updated_at: "2026-06-29T14:04:47.751Z"
 author: claude-code-agent
 parent: pm-08sv
 resolution: The bundled pm-kanban exemplar now registers kanbanProfile through the public ExtensionApi so installed projects can use pm profile list/show/apply kanban.
@@ -18,8 +18,9 @@ files[3]{path,scope,note}:
   packages/pm-kanban/extensions/kanban/index.ts,project,activate registers kanbanProfile through api.registerProfile
   packages/pm-kanban/README.md,project,documents installable kanban profile workflow
   tests/unit/packages/kanban-extension.spec.ts,project,asserts package registers the kanban profile via SDK harness
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/packages/kanban-extension.spec.ts tests/integration/profile-command.integration.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "TEMP E2E: pm init profile-smoke --force; pm install kanban --project; pm profile list/show/apply kanban; second dry-run unchanged",null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqzaho8v-q53bei,test,passed,"2026-06-29T14:04:31.148Z","2026-06-29T14:04:47.743Z","2026-06-29T14:04:47.743Z",null,null,1,0,0,null,null,null
 close_reason: Shipped pm-kanban registerProfile dogfood in PR #401 and verified installed temp-project behavior.
 body: ""
