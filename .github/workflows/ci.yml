@@ -48,7 +48,7 @@ jobs:
           cache: pnpm
 
       - name: Restore TypeScript and Vitest caches
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
           path: |
             .cache/tsbuildinfo
@@ -59,7 +59,7 @@ jobs:
             pm-cli-validation-cache-${{ runner.os }}-
 
       - name: Restore LanceDB cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
           path: |
             .agents/pm/search/lancedb
@@ -159,7 +159,7 @@ jobs:
           cache: pnpm
 
       - name: Restore TypeScript and Vitest caches
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
           path: |
             .cache/tsbuildinfo
@@ -170,7 +170,7 @@ jobs:
             pm-cli-validation-cache-${{ runner.os }}-
 
       - name: Restore LanceDB cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
           path: |
             .agents/pm/search/lancedb
@@ -292,7 +292,7 @@ jobs:
           cache: pnpm
 
       - name: Restore TypeScript and Vitest caches
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
           path: |
             .cache/tsbuildinfo
