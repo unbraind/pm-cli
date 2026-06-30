@@ -369,14 +369,13 @@ describe("GitHub workflow contract", () => {
     expect(releaseWorkflow).not.toContain("Sandboxed PM regression");
   });
 
-  it("keeps auto-release workflow aligned with one-per-day and manual override policy", async () => {
+  it("keeps auto-release workflow aligned with one-production-release-per-day policy", async () => {
     const autoReleasePath = path.resolve(repoRoot, ".github/workflows/auto-release.yml");
     const autoReleaseWorkflow = normalizeWorkflow(await readFile(autoReleasePath, "utf8"));
 
     expectContainsAll(autoReleaseWorkflow, [
       "schedule:",
       "workflow_dispatch:",
-      "allow_same_day_release",
       "dry_run",
       "push:",
       "telemetry_mode",
@@ -400,7 +399,6 @@ describe("GitHub workflow contract", () => {
       ".agents/pm/search/lancedb",
       "key: pm-cli-observability-cache-${{ runner.os }}-node24-${{ hashFiles('pnpm-lock.yaml', '.agents/pm/settings.json', '.agents/pm/**/*.toon', '.agents/pm/**/*.md', 'src/**/*.ts', 'scripts/**/*.mjs', 'tests/**/*.ts') }}",
       "run: pnpm install --frozen-lockfile",
-      "--allow-same-day-release",
       "--dry-run",
       "--push",
       "RELEASE_PAT_CONFIGURED: ${{ secrets.RELEASE_PAT != '' }}",
@@ -442,6 +440,8 @@ describe("GitHub workflow contract", () => {
       "gh issue comment",
     ]);
     expect(autoReleaseWorkflow).not.toContain("gh workflow run release.yml");
+    expect(autoReleaseWorkflow).not.toContain("allow_same_day_release");
+    expect(autoReleaseWorkflow).not.toContain("--allow-same-day-release");
     expect(autoReleaseWorkflow).not.toContain("token: ${{ secrets.RELEASE_PAT || github.token }}");
   });
 

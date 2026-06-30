@@ -5,11 +5,6 @@ on:
     - cron: "35 2 * * *"
   workflow_dispatch:
     inputs:
-      allow_same_day_release:
-        description: "Allow manual same-day follow-up release (YYYY.M.D-N)"
-        type: boolean
-        required: false
-        default: false
       push:
         description: "Push commit and tag to trigger publish workflow"
         type: boolean
@@ -107,7 +102,6 @@ jobs:
           # an explicit `push=false`. Nest a second ternary that coerces the
           # boolean input into the literal string 'true'/'false' first, then
           # fall through to the schedule default with the outer ternary.
-          INPUT_ALLOW_SAME_DAY_RELEASE: ${{ github.event_name == 'workflow_dispatch' && (inputs.allow_same_day_release && 'true' || 'false') || 'false' }}
           INPUT_PUSH: ${{ github.event_name == 'workflow_dispatch' && (inputs.push && 'true' || 'false') || 'true' }}
           INPUT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && (inputs.dry_run && 'true' || 'false') || 'false' }}
           INPUT_TELEMETRY_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.telemetry_mode || 'off' }}
@@ -134,9 +128,6 @@ jobs:
           fi
 
           args=(--json --author "github-actions[bot]" --telemetry-mode "${INPUT_TELEMETRY_MODE}")
-          if [[ "${INPUT_ALLOW_SAME_DAY_RELEASE}" == "true" ]]; then
-            args+=(--allow-same-day-release)
-          fi
           if [[ "${INPUT_DRY_RUN}" == "true" ]]; then
             args+=(--dry-run)
           fi
