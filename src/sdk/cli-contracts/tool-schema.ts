@@ -25,6 +25,7 @@ import {
 import {
   PM_TOOL_PARAMETER_PROPERTIES,
   PM_TOOL_PARAMETER_METADATA,
+  PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA,
   PLAN_ACTION_PARAMETER_PROPERTIES,
   PLAN_ACTION_PARAMETER_METADATA,
 } from "./tool-parameter-tables.js";
@@ -689,6 +690,10 @@ function actionScopedToolParameterMetadata(
   if (action === "plan" && Object.prototype.hasOwnProperty.call(PLAN_ACTION_PARAMETER_METADATA, key)) {
     return PLAN_ACTION_PARAMETER_METADATA[key];
   }
+  const actionOverrides = PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA[action];
+  if (actionOverrides && Object.prototype.hasOwnProperty.call(actionOverrides, key)) {
+    return actionOverrides[key];
+  }
   return PM_TOOL_PARAMETER_METADATA[key];
 }
 
@@ -833,7 +838,7 @@ function createLazyContractSchema(
  * the MAJOR for breaking changes — the major also drives the `$id`
  * `tool-parameters-v{major}` slug, so the two never drift.
  */
-export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.0.5" as const;
+export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.0.6" as const;
 
 /**
  * Major component of {@link PM_TOOL_PARAMETERS_SCHEMA_VERSION}, used to build the

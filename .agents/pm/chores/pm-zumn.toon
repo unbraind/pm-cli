@@ -1,14 +1,25 @@
 id: pm-zumn
-title: "MCP built-in actions are not extension-aware: pm_profile/pm_list etc. don't activate extensions before running"
+title: "Built-in MCP actions are now extension-aware: pm_profile/pm_list/pm_schema activate workspace extensions like the CLI"
 description: "cubic (PR #404) noted that MCP pm_profile lint (and show/apply) resolve only built-in profiles because runAction (src/mcp/server.ts) runs built-in native actions WITHOUT activating workspace extensions or setting the active registration registry — only the dynamic-extension-dispatch fallback (runDynamicExtensionAction) activates+sets registrations. So getActiveExtensionRegistrations() is empty for built-in actions, and extension-contributed profiles/item-types are invisible over MCP, while the CLI path (main.ts activates extensions for every command) IS extension-aware. This is a pre-existing, broad asymmetry affecting all built-in MCP actions that read extension registrations, not just profile. Fix: wrap built-in runAction dispatch in a load/activate/setActive.../teardown cycle (mirroring runDynamicExtensionActionExclusively) so MCP built-in actions see active extensions consistently with the CLI. Deferred from #404 (pm-j1fj); lint is consistent with show/apply today."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[4]: "area:extensions","area:mcp",living-map,pm-cli
 created_at: "2026-06-29T20:28:26.280Z"
-updated_at: "2026-06-29T20:28:31.450Z"
+updated_at: "2026-06-30T06:10:43.169Z"
 author: claude-code-agent
 parent: pm-5k4v
-dependencies[1]{id,kind,created_at,author,source_kind}:
+resolution: "Wrapped every native MCP action dispatch in a single resilient extension activation cycle (withActiveExtensions) so built-in actions see extension-contributed item types, fields, and profiles consistently with the CLI; unified the former dynamic-extension dispatch into the same cycle."
+expected_result: "MCP built-in actions (pm_profile/pm_list/pm_schema/pm_create/...) resolve extension-contributed registrations exactly like the CLI, and a broken extension can never break a built-in action."
+actual_result: "src/mcp/server.ts now loads/activates/publishes/tears down extensions per request via withActiveExtensions + withActiveExtensionsExclusively, with load/activate failures swallowed (CLI loadRuntimeExtensionSnapshot parity) so built-ins stay resilient; pm_profile list/show/lint over MCP now surface an extension-registered profile end to end (verified by integration test + manual stdio smoke); 100% coverage retained (262 files / 5257 tests)."
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-j1fj,related,"2026-06-29T20:28:31.434Z",null,null
+  pm-fq80,related,"2026-06-30T05:32:42.373Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-06-30T05:32:57.262Z",claude-code-agent,"Implementation evidence: runAction now delegates to withActiveExtensions(global, dispatchAction); the former runDynamicExtensionAction/runDynamicExtensionActionExclusively pair was replaced by withActiveExtensions (skips activation for the --no-extensions flag and missing-workspace paths, runs `init` etc. without a workspace), withActiveExtensionsExclusively (serialized load/activate/publish/run/clear/deactivate, load/activate failures swallowed to a null active runtime — CLI loadRuntimeExtensionSnapshot parity), and dispatchActiveExtensionAction (resolves dynamic actions against the already-published registries). The pm-bl6m concurrency serialization (extensionActivationQueue) now protects built-in actions too. Verified: full coverage node scripts/run-tests.mjs coverage 262 files / 5257 tests 100% stmts/branches/funcs/lines; pnpm lint; pnpm typecheck; pnpm contracts:check current. Manual stdio smoke in an isolated temp workspace: a hand-placed schema-capability extension that calls api.registerProfile now resolves over MCP via pm_profile list (agile/ops/research + flow(extension)), pm_profile show flow (types [Card]), and pm_profile lint flow (ok); pm_create/pm_list/pm_health all intact; --no-extensions and broken-extension paths keep built-in pm_list working."
+files[3]{path,scope,note}:
+  src/mcp/server.ts,project,withActiveExtensions/withActiveExtensionsExclusively/dispatchActiveExtensionAction unify the activation cycle for all native actions
+  tests/integration/profile-command.integration.spec.ts,project,end-to-end pm_profile list/show/lint over MCP surfaces an extension-registered profile
+  tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,"unit coverage for the activation cycle, resilient activation-failure fallback, and noExtensions/missing-workspace skip paths"
+close_reason: "MCP built-in actions are now extension-aware via a unified, resilient activation cycle (withActiveExtensions); verified with full coverage, lint/typecheck/contracts, an end-to-end integration test, and a manual stdio smoke proving extension-contributed profiles resolve over MCP. Shipping in PR for feat/mcp-extension-aware-builtin-actions."
 body: ""

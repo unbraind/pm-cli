@@ -2,13 +2,25 @@ id: pm-fq80
 title: "Action-scoped MCP parameter descriptions: split shared name/target description per action (schema vs profile)"
 description: "CodeRabbit (PR #404) noted the shared 'name'/'target' parameter description in the pm_run aggregated action schema (src/sdk/cli-contracts/tool-parameter-tables.ts) enumerates BOTH schema uses (type/status/field key) and profile uses (profile name) for every action that takes name, so the schema action's name mentions profiles and vice versa. The narrow tools (pm_schema, pm_profile) already carry action-specific name descriptions; only the generic pm_run per-action schema shares one table entry. Fixing this cleanly requires action-scoped parameter description overrides in the contracts system (a parameter table keyed by action+param, not just param). Deferred from #404 (pm-j1fj) as a focused contracts enhancement."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[4]: "area:contracts","area:mcp",living-map,pm-cli
 created_at: "2026-06-29T20:09:21.158Z"
-updated_at: "2026-06-29T20:09:34.355Z"
+updated_at: "2026-06-30T05:33:48.374Z"
 author: claude-code-agent
 parent: pm-5k4v
-dependencies[1]{id,kind,created_at,author,source_kind}:
+resolution: "Added a per-action parameter-description override table (PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA) consulted by actionScopedToolParameterMetadata, so the pm_run aggregated action schema gives the schema and profile actions their own `name` description instead of one shared entry enumerating both."
+expected_result: "In the action-scoped strict tool schema, the schema action's `name` describes only schema uses and the profile action's `name` describes only profile uses; the flat provider schema keeps a single combined `name` description."
+actual_result: "PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA added in tool-parameter-tables.ts and wired through actionScopedToolParameterMetadata in tool-schema.ts; strict schema version bumped 4.0.5→4.0.6; full.json regenerated; schema.name='Custom item type name (...)/status id/field key', profile.name='Profile name for show/apply/lint ...'; flat provider `name` unchanged; 100% coverage retained."
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-j1fj,related,"2026-06-29T20:09:34.272Z",null,null
+  pm-zumn,related,"2026-06-30T05:33:18.033Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-06-30T05:33:43.382Z",claude-code-agent,"Implementation evidence: generalized the existing plan-only action override hook into PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA (keyed action->param->{description,examples}); actionScopedToolParameterMetadata now checks plan first, then this table, then the shared PM_TOOL_PARAMETER_METADATA. Only `name` was conflated (schema and profile are the only actions taking it; `target` is in neither contract). schema.name and profile.name now carry action-scoped descriptions matching the narrow pm_schema/pm_profile tool wording; the flat provider schema keeps the combined description. Strict schema bumped 4.0.5->4.0.6 (additive). Verified: pnpm contracts:check current; node scripts/run-tests.mjs test action-schema-parity + contracts-command + sdk-index (163 tests); full coverage 100%."
+files[4]{path,scope,note}:
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,"PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: per-action name overrides for schema and profile"
+  src/sdk/cli-contracts/tool-schema.ts,project,actionScopedToolParameterMetadata consults the per-action override table; strict schema version 4.0.6
+  tests/fixtures/contracts/full.json,project,regenerated contract snapshot with divergent per-action name descriptions and x-schema-version 4.0.6
+  tests/unit/sdk/action-schema-parity.spec.ts,project,asserts schema vs profile name descriptions diverge and the flat provider name stays combined
+close_reason: "Action-scoped name descriptions delivered: the schema and profile actions now carry their own `name` description in the aggregated pm_run schema via PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA, with the flat provider schema keeping the combined entry. Verified by contract tests, snapshot regen, and full coverage. Shipping in PR for feat/mcp-extension-aware-builtin-actions."
 body: ""

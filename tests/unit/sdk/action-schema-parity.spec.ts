@@ -62,4 +62,31 @@ describe("action-scoped MCP schema parity", () => {
     expect(guideContract?.optional).toEqual(expect.arrayContaining(["list", "format", "depth"]));
     expect(_testOnlyCliContracts.toolParameterMetadata.list?.description).toContain("topics for guide");
   });
+
+  it("scopes the shared name parameter description per action so schema and profile do not cross-reference (pm-fq80)", () => {
+    const schemaName = (
+      _testOnlyCliContracts.buildActionScopedToolSchema("schema") as {
+        properties?: { name?: { description?: string; examples?: unknown[] } };
+      }
+    ).properties?.name;
+    const profileName = (
+      _testOnlyCliContracts.buildActionScopedToolSchema("profile") as {
+        properties?: { name?: { description?: string; examples?: unknown[] } };
+      }
+    ).properties?.name;
+
+    // The schema action's `name` describes only schema uses (no profiles), and the
+    // profile action's `name` describes only profiles (no item types / statuses / fields).
+    expect(schemaName?.description).toContain("Custom item type name");
+    expect(schemaName?.description).not.toMatch(/profile/i);
+    expect(schemaName?.examples).toEqual(["Spike", "review", "component"]);
+
+    expect(profileName?.description).toContain("Profile name for show/apply/lint");
+    expect(profileName?.description).not.toMatch(/item type|status id|field key/i);
+    expect(profileName?.examples).toEqual(["agile", "ops", "research"]);
+
+    // The flat provider schema keeps a single combined `name` description because its
+    // one property must cover every action at once.
+    expect(_testOnlyCliContracts.toolParameterMetadata.name?.description).toMatch(/profile/i);
+  });
 });

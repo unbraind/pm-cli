@@ -2,18 +2,26 @@ id: pm-j1fj
 title: "Project profile author-time validation: lintProjectProfile + assertProjectProfile + pm profile lint"
 description: "Profiles (defineProjectProfile / api.registerProfile) have no author-time consistency check, unlike the extension surface (lintExtensionBlueprint/assertExtensionBlueprint/preflightExtension). Problems only surface at 'pm profile apply' (config-knob errors, fail-fast) or never (a workflow transition referencing an undeclared status silently stages a dead/unreachable rule; a workflow governing an undeclared item type; duplicate type/status/field keys with silent last-wins upsert). Add a pure core lintProjectProfile(profile) returning graded findings (error/warning) across every dimension, the SDK assertProjectProfile test helper, an author-facing describeProjectProfile describe primitive (parity with describeExtensionBlueprint, dedupes the CLI compositionOf), and a 'pm profile lint [name]' CLI subcommand + pm_profile MCP action so operators/agents can validate builtin or extension-contributed profiles before applying. Completes the profile author->register->describe->lint->apply lifecycle."
 type: Feature
-status: in_progress
+status: closed
 priority: 1
 tags[5]: "area:config","area:schema",living-map,pm-cli,sdk
 created_at: "2026-06-29T19:03:29.843Z"
-updated_at: "2026-06-29T19:36:19.552Z"
-assignee: claude-code-agent
+updated_at: "2026-06-30T05:34:40.038Z"
 author: claude-code-agent
 acceptance_criteria: "lintProjectProfile pure + 100% covered; graded findings (error/warning) with stable codes across profile/types/statuses/fields/workflows/config/templates/packages; assertProjectProfile throws on errors (strict also on warnings); describeProjectProfile dedupes CLI compositionOf; 'pm profile lint' wired into CLI dispatch, MCP pm_profile (lint action), completion (bash/zsh/fish), contracts full.json; builtin agile/ops/research profiles lint clean; docs + CHANGELOG updated."
 parent: pm-8jdc
+resolution: "Shipped author-time project-profile validation: pure core lintProjectProfile with graded error/warning findings, SDK assertProjectProfile, describeProjectProfile parity primitive, and the `pm profile lint [name]` CLI subcommand + pm_profile lint MCP action. Merged in PR #404 (5e209103); this closeout records the lineage after the two deferred follow-ups (pm-zumn, pm-fq80) were also completed."
+expected_result: "Operators and agents can validate builtin or extension-contributed profiles before applying, completing the profile author->register->describe->lint->apply lifecycle with errors that break apply and warnings for suspicious-but-valid cross-references."
+actual_result: "PR #404 delivered core/profile/profile-lint.ts (475 lines) + profile-describe.ts, SDK assertProjectProfile/describeProjectProfile, CLI `pm profile lint`, MCP pm_profile lint action, contracts (full.json + tool schema), and docs; builtin agile/ops/research lint clean; 100% coverage. Deferred MCP follow-ups pm-zumn (extension-aware built-in actions) and pm-fq80 (action-scoped name descriptions) are now closed in feat/mcp-extension-aware-builtin-actions."
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-08sv,related,"2026-06-29T19:03:49.434Z",null,null
   pm-qcdu,related,"2026-06-29T19:03:49.434Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-29T19:36:19.551Z",claude-code-agent,"Shipped via PR #404 (branch feat/profile-author-lint-describe): lintProjectProfile + describeProjectProfile core primitives, assertProjectProfile SDK test helper, and pm profile lint CLI/MCP subcommand. 5224 tests 100% cov; contracts/lint/typecheck/secrets green."
+files[4]{path,scope,note}:
+  src/cli/commands/profile.ts,project,pm profile lint subcommand wiring (shipped #404)
+  src/core/profile/profile-describe.ts,project,describeProjectProfile parity primitive (shipped #404)
+  src/core/profile/profile-lint.ts,project,pure lintProjectProfile with graded error/warning findings (shipped #404)
+  src/sdk/testing.ts,project,assertProjectProfile SDK test helper (shipped #404)
+close_reason: "Author-time profile validation (lintProjectProfile + assertProjectProfile + describeProjectProfile + pm profile lint CLI/MCP) shipped and merged in PR #404 (5e209103); item was left in_progress. Closing now that the two deferred MCP follow-ups it spawned (pm-zumn, pm-fq80) are also complete. All acceptance criteria met at #404 merge with 100% coverage and green checks."
 body: ""

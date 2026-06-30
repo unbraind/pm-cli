@@ -19010,7 +19010,7 @@
             "type": "number"
           },
           "name": {
-            "description": "Custom item type name (schema add-type/remove-type/show), custom status id (schema show-status/add-status/remove-status), custom field key (schema add-field/remove-field/show-field), or profile name (profile show/apply/lint).",
+            "description": "Custom item type name (add-type/remove-type/show), custom status id (show-status/add-status/remove-status), or custom field key (add-field/remove-field/show-field). Required for those subcommands.",
             "examples": [
               "Spike",
               "review",
@@ -19217,11 +19217,11 @@
             "type": "boolean"
           },
           "name": {
-            "description": "Custom item type name (schema add-type/remove-type/show), custom status id (schema show-status/add-status/remove-status), custom field key (schema add-field/remove-field/show-field), or profile name (profile show/apply/lint).",
+            "description": "Profile name for show/apply/lint. Built-in profiles are agile, ops, and research; an active extension can contribute additional archetype names that resolve here too.",
             "examples": [
-              "Spike",
-              "review",
-              "component"
+              "agile",
+              "ops",
+              "research"
             ],
             "type": "string"
           },
@@ -24225,10 +24225,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.0.5"
+    "x-schema-version": "4.0.6"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.0.5",
+  "schema_version": "4.0.6",
   "selected": {
     "action": null,
     "availability_only": false,

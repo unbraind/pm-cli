@@ -9,6 +9,7 @@ import {
   PLAN_STEP_LINK_KIND_VALUES,
   PLAN_STEP_STATUS_VALUES,
 } from "../../types/index.js";
+import type { PmToolAction } from "./enum-contracts.js";
 
 export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   json: { type: "boolean", default: true },
@@ -1241,5 +1242,34 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   staleThreshold: {
     description: "Staleness cutoff in days for context staleness section (e.g. 7 or 7d).",
     examples: ["7", "14d", "30"],
+  },
+};
+
+/**
+ * Per-action overrides for tool parameters that are shared across actions in the
+ * aggregated `pm_run` schema. The action-scoped strict schema builds one sub-schema per
+ * action, but every action reuses the single {@link PM_TOOL_PARAMETER_METADATA} entry
+ * for a given parameter — so a parameter used by more than one action (notably `name`,
+ * carried by both `schema` and `profile`) would otherwise describe every action's usage
+ * inside every action's schema (the `schema` action mentioning profiles and vice versa).
+ * Keying the override by action then parameter lets each action carry only its own usage,
+ * matching the action-specific descriptions on the narrow pm_schema / pm_profile tools
+ * (pm-fq80). The flat provider schema keeps using {@link PM_TOOL_PARAMETER_METADATA}
+ * because its single `name` property must cover every action at once.
+ */
+export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<Record<PmToolAction, Record<string, { description: string; examples?: unknown[] }>>> = {
+  schema: {
+    name: {
+      description:
+        "Custom item type name (add-type/remove-type/show), custom status id (show-status/add-status/remove-status), or custom field key (add-field/remove-field/show-field). Required for those subcommands.",
+      examples: ["Spike", "review", "component"],
+    },
+  },
+  profile: {
+    name: {
+      description:
+        "Profile name for show/apply/lint. Built-in profiles are agile, ops, and research; an active extension can contribute additional archetype names that resolve here too.",
+      examples: ["agile", "ops", "research"],
+    },
   },
 };

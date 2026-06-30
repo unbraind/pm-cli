@@ -1145,6 +1145,27 @@ function escapeMarkdown(value) {
     return value.replace(/([\\`*_[\]()#|>])/g, "\\$1");
 }
 function escapeItemTitleMarkdown(value) {
+    let result = "";
+    let index = 0;
+    while (index < value.length) {
+        const start = value.indexOf("`", index);
+        if (start === -1) {
+            result += escapeItemTitleText(value.slice(index));
+            break;
+        }
+        result += escapeItemTitleText(value.slice(index, start));
+        const fence = value.slice(start).match(/^`+/)?.[0] ?? "`";
+        const end = value.indexOf(fence, start + fence.length);
+        if (end === -1) {
+            result += escapeItemTitleText(value.slice(start));
+            break;
+        }
+        result += value.slice(start, end + fence.length);
+        index = end + fence.length;
+    }
+    return result;
+}
+function escapeItemTitleText(value) {
     const escaped = value.replace(/([\\`*[\]#|>])/g, "\\$1");
     return escaped.replace(/_/g, (underscore, index) => {
         const previous = escaped[index - 1] ?? "";
