@@ -144,10 +144,12 @@ function buildSpawnSync(overrides: Overrides = {}) {
       if (sub === "doctor") {
         return pmJson({ details: { summary: { activation_failure_count: 0, blocking_failure_count: 0 }, triage: { warning_codes: [] } } });
       }
-      if (sub === "init") return pmJson({ details: { extension: { command: "scaffold package ping" } } });
+      if (sub === "init") return pmJson({ details: { extension: { command: "starter scaffold package ping" } } });
     }
 
-    if (cmd === "scaffold") return pmJson({ ok: true, command: "scaffold package ping" });
+    if (cmd === "starter" && pmArgs.slice(1).join(" ") === "scaffold package ping") {
+      return pmJson({ ok: true, command: "starter scaffold package ping" });
+    }
     if (cmd === "guide" && pmArgs.includes("--list")) return pmJson({ topics: [{ id: "workflows" }] });
     if (cmd === "dedupe-audit") return pmJson({ clusters: [] });
     if (cmd === "comments-audit") return pmJson({ items: [] });

@@ -5,9 +5,11 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
+import { EXECUTABLE_COMMAND_ALIASES } from "../../bootstrap-args.js";
 import { pathExists } from "../../../core/fs/fs-utils.js";
 import { EXIT_CODE } from "../../../core/shared/constants.js";
 import { PmCliError } from "../../../core/shared/errors.js";
+import { PM_CORE_COMMAND_NAMES } from "../../../sdk/cli-contracts.js";
 import { normalizeManagedDirectoryName } from "./shared.js";
 
 // Safe compatibility floor emitted into scaffolded manifests. The current
@@ -26,6 +28,14 @@ const SCAFFOLD_DECLARED_PERMISSIONS = {
   process_spawn: false,
 };
 
+const RESERVED_SCAFFOLD_COMMAND_ROOTS = new Set([
+  ...PM_CORE_COMMAND_NAMES.map((commandName) => commandName.split("-")[0]!.toLowerCase()),
+  ...Object.keys(EXECUTABLE_COMMAND_ALIASES).map((alias) => alias.toLowerCase()),
+  // "scaffold" is a Commander command that currently lives outside both
+  // PM_CORE_COMMAND_NAMES and EXECUTABLE_COMMAND_ALIASES.
+  "scaffold",
+]);
+
 // TypeScript dev-dependency floor for scaffolded packages, matching the CLI's own
 // toolchain so generated packages compile against the same compiler generation.
 const SCAFFOLD_TYPESCRIPT_VERSION = "^6.0.0";
@@ -35,6 +45,27 @@ const SCAFFOLD_TYPESCRIPT_VERSION = "^6.0.0";
 // to type-check. Pinned to the engines floor (Node >=22.18), matching the CLI
 // itself — the version where Node strips TypeScript types on load by default.
 const SCAFFOLD_TYPES_NODE_VERSION = "^22.0.0";
+
+const SAMPLE_HARNESS_CLEANUP_LINES = [
+  "type StarterHarness = Awaited<ReturnType<typeof createExtensionTestHarness>>;",
+  "",
+  "async function deactivateIfNeeded(ext: StarterHarness, deactivated: boolean): Promise<void> {",
+  "  if (!deactivated) {",
+  "    try {",
+  "      await ext.deactivate();",
+  "    } catch {",
+  "      // Preserve the original assertion error; cleanup is best effort.",
+  "    }",
+  "  }",
+  "}",
+  "",
+] as const;
+
+const SAMPLE_HARNESS_FINALLY_LINES = [
+  "  } finally {",
+  "    await deactivateIfNeeded(ext, deactivated);",
+  "  }",
+] as const;
 
 // Strict NodeNext tsconfig emitted into every scaffold (ADR pm-2c28 / pm-m1uz:
 // extensions are authored AND loaded as TypeScript). It is a type-check-only
@@ -520,6 +551,35 @@ interface ExtensionScaffoldResult {
 export type ExtensionScaffoldStyle = "imperative" | "declarative";
 
 /**
+ * Builds the starter command path from the normalized package/extension name.
+ * Names that start with a built-in pm command or executable alias are prefixed
+ * with `starter` so the generated command dispatches to the package instead of
+ * being consumed by core command parsing.
+ */
+export function buildScaffoldCommandName(extensionName: string): string {
+  const commandWords = extensionName
+    .replace(/-/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0);
+  if (commandWords.length === 0) {
+    return "starter ping";
+  }
+  const firstWordLower = commandWords[0]!.toLowerCase();
+  let leadingStarterWords = 0;
+  while (commandWords[leadingStarterWords]?.toLowerCase() === "starter") {
+    leadingStarterWords += 1;
+  }
+  const nextStarterWord = commandWords[leadingStarterWords]?.toLowerCase();
+  const starterRootCollision =
+    leadingStarterWords > 0 &&
+    (leadingStarterWords === commandWords.length || (nextStarterWord !== undefined && RESERVED_SCAFFOLD_COMMAND_ROOTS.has(nextStarterWord)));
+  const reservedRoot = RESERVED_SCAFFOLD_COMMAND_ROOTS.has(firstWordLower) || starterRootCollision;
+  const resolvedWords = reservedRoot ? ["starter", ...commandWords] : commandWords;
+  return `${resolvedWords.join(" ")} ping`;
+}
+
+/**
  * Build the project-profile archetype object literal the `profile` starter
  * registers — a complete {@link ProjectProfileDefinition} derived from the package
  * name: one custom item type, a custom status, a custom field, a per-type workflow,
@@ -986,13 +1046,7 @@ function buildSampleTestSource(
         "    const teardown = await ext.deactivate();",
         "    assertExtensionDeactivated(teardown);",
         "    deactivated = true;",
-        "  } finally {",
-        "    if (!deactivated) {",
-        "      try {",
-        "        await ext.deactivate();",
-        "      } catch {}",
-        "    }",
-        "  }",
+        ...SAMPLE_HARNESS_FINALLY_LINES,
         "});",
         "",
       ]
@@ -1044,13 +1098,7 @@ function buildSampleTestSource(
         "    const teardown = await ext.deactivate();",
         "    assertExtensionDeactivated(teardown);",
         "    deactivated = true;",
-        "  } finally {",
-        "    if (!deactivated) {",
-        "      try {",
-        "        await ext.deactivate();",
-        "      } catch {}",
-        "    }",
-        "  }",
+        ...SAMPLE_HARNESS_FINALLY_LINES,
         "});",
         "",
       ]
@@ -1085,13 +1133,7 @@ function buildSampleTestSource(
         "    const teardown = await ext.deactivate();",
         "    assertExtensionDeactivated(teardown);",
         "    deactivated = true;",
-        "  } finally {",
-        "    if (!deactivated) {",
-        "      try {",
-        "        await ext.deactivate();",
-        "      } catch {}",
-        "    }",
-        "  }",
+        ...SAMPLE_HARNESS_FINALLY_LINES,
         "});",
         "",
       ]
@@ -1122,13 +1164,7 @@ function buildSampleTestSource(
         "    const teardown = await ext.deactivate();",
         "    assertExtensionDeactivated(teardown);",
         "    deactivated = true;",
-        "  } finally {",
-        "    if (!deactivated) {",
-        "      try {",
-        "        await ext.deactivate();",
-        "      } catch {}",
-        "    }",
-        "  }",
+        ...SAMPLE_HARNESS_FINALLY_LINES,
         "});",
         "",
       ]
@@ -1152,13 +1188,7 @@ function buildSampleTestSource(
         "    const teardown = await ext.deactivate();",
         "    assertExtensionDeactivated(teardown);",
         "    deactivated = true;",
-        "  } finally {",
-        "    if (!deactivated) {",
-        "      try {",
-        "        await ext.deactivate();",
-        "      } catch {}",
-        "    }",
-        "  }",
+        ...SAMPLE_HARNESS_FINALLY_LINES,
         "});",
         "",
       ]
@@ -1198,13 +1228,7 @@ function buildSampleTestSource(
         "    const teardown = await ext.deactivate();",
         "    assertExtensionDeactivated(teardown);",
         "    deactivated = true;",
-        "  } finally {",
-        "    if (!deactivated) {",
-        "      try {",
-        "        await ext.deactivate();",
-        "      } catch {}",
-        "    }",
-        "  }",
+        ...SAMPLE_HARNESS_FINALLY_LINES,
         "});",
         "",
       ]
@@ -1250,13 +1274,7 @@ function buildSampleTestSource(
         "    const teardown = await ext.deactivate();",
         "    assertExtensionDeactivated(teardown);",
         "    deactivated = true;",
-        "  } finally {",
-        "    if (!deactivated) {",
-        "      try {",
-        "        await ext.deactivate();",
-        "      } catch {}",
-        "    }",
-        "  }",
+        ...SAMPLE_HARNESS_FINALLY_LINES,
         "});",
         "",
       ]
@@ -1296,13 +1314,7 @@ function buildSampleTestSource(
         "    const teardown = await ext.deactivate();",
         "    assertExtensionDeactivated(teardown);",
         "    deactivated = true;",
-        "  } finally {",
-        "    if (!deactivated) {",
-        "      try {",
-        "        await ext.deactivate();",
-        "      } catch {}",
-        "    }",
-        "  }",
+        ...SAMPLE_HARNESS_FINALLY_LINES,
         "});",
         "",
       ]
@@ -1341,13 +1353,7 @@ function buildSampleTestSource(
         "    const teardown = await ext.deactivate();",
         "    assertExtensionDeactivated(teardown);",
         "    deactivated = true;",
-        "  } finally {",
-        "    if (!deactivated) {",
-        "      try {",
-        "        await ext.deactivate();",
-        "      } catch {}",
-        "    }",
-        "  }",
+        ...SAMPLE_HARNESS_FINALLY_LINES,
         "});",
         "",
       ]
@@ -1363,6 +1369,7 @@ function buildSampleTestSource(
     ...(searchEnabled ? ['import type { ItemDocument, PmSettings } from "@unbrained/pm-cli/sdk";'] : []),
     'import extension from "./index.ts";',
     "",
+    ...SAMPLE_HARNESS_CLEANUP_LINES,
     `test(${JSON.stringify(`${extensionName} registers its starter command`)}, async () => {`,
     "  // `capabilities` mirrors manifest.json so the in-memory activation grants",
     "  // the capabilities the entrypoint relies on.",
@@ -1402,13 +1409,7 @@ function buildSampleTestSource(
     "    const teardown = await ext.deactivate();",
     "    assertExtensionDeactivated(teardown);",
     "    deactivated = true;",
-    "  } finally {",
-    "    if (!deactivated) {",
-    "      try {",
-    "        await ext.deactivate();",
-    "      } catch {}",
-    "    }",
-    "  }",
+    ...SAMPLE_HARNESS_FINALLY_LINES,
     "});",
     "",
     ...hookTestLines,
@@ -1950,13 +1951,7 @@ function buildDeclarativeCapabilityTestBlock(
     "    const teardown = await ext.deactivate();",
     "    assertExtensionDeactivated(teardown);",
     "    deactivated = true;",
-    "  } finally {",
-    "    if (!deactivated) {",
-    "      try {",
-    "        await ext.deactivate();",
-    "      } catch {}",
-    "    }",
-    "  }",
+    ...SAMPLE_HARNESS_FINALLY_LINES,
   ];
   switch (capability) {
     case "hooks":
@@ -2254,6 +2249,7 @@ function buildDeclarativeSampleTestSource(
     ...(capability === "search" ? ['import type { ItemDocument, PmSettings } from "@unbrained/pm-cli/sdk";'] : []),
     'import extension, { blueprint } from "./index.ts";',
     "",
+    ...SAMPLE_HARNESS_CLEANUP_LINES,
     `test(${JSON.stringify(`${extensionName} passes author-time preflight`)}, () => {`,
     "  // assertExtensionPreflight is the author-time capstone: it lints the blueprint,",
     "  // synthesizes the least-privilege manifest from `identity`, and checks the version",
@@ -2312,13 +2308,7 @@ function buildDeclarativeSampleTestSource(
     "    const teardown = await ext.deactivate();",
     "    assertExtensionDeactivated(teardown);",
     "    deactivated = true;",
-    "  } finally {",
-    "    if (!deactivated) {",
-    "      try {",
-    "        await ext.deactivate();",
-    "      } catch {}",
-    "    }",
-    "  }",
+    ...SAMPLE_HARNESS_FINALLY_LINES,
     "});",
     "",
     ...buildDeclarativeCapabilityTestBlock(extensionName, commandName, capability, capabilitiesLiteral),
@@ -2938,10 +2928,9 @@ export async function scaffoldExtensionProject(
   const normalizedTarget = target.trim();
   const targetPath = path.resolve(process.cwd(), normalizedTarget);
   const extensionName = normalizeManagedDirectoryName(path.basename(targetPath));
-  // Hyphenated top-level command groups can surface in help but fail dispatch in
-  // Commander, so generated starters use space-separated command words while the
-  // manifest and package identity keep their normalized directory names.
-  const commandName = `${extensionName.replace(/-/g, " ")} ping`;
+  // Hyphenated names become space-separated command words; reserved roots get a
+  // `starter` prefix so core commands and aliases cannot intercept dispatch.
+  const commandName = buildScaffoldCommandName(extensionName);
   const scaffoldFiles = buildStarterExtensionScaffoldFiles(extensionName, commandName, vocabulary, resolvedCapability, declarative);
 
   let createdDirectory = false;

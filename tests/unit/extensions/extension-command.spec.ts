@@ -98,6 +98,18 @@ function runGit(args: string[]): { status: number | null; stdout: string; stderr
   };
 }
 
+function expectBestEffortCleanup(sampleTest: string): void {
+  expect(sampleTest).toContain("let deactivated = false;");
+  expect(sampleTest).toContain("} finally {");
+  expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
+  expect(sampleTest).toContain("async function deactivateIfNeeded");
+  expect(sampleTest).toContain("if (!deactivated) {");
+  expect(sampleTest).toContain("try {");
+  expect(sampleTest).toContain("cleanup is best effort");
+  expect(sampleTest).toContain("await deactivateIfNeeded(ext, deactivated);");
+  expect(sampleTest).toContain("await ext.deactivate();");
+}
+
 describe("extension command runtime", () => {
   it("covers pure extension command helper decisions", () => {
     expect(extensionCommandTestOnly.resolveAction("doctor", {})).toBe("doctor");
@@ -2044,7 +2056,7 @@ describe("extension command runtime", () => {
       expect(scaffold.details).toMatchObject({
         extension: {
           name: "starter-package",
-          command: "starter package ping",
+          command: "starter starter package ping",
         },
         capability: "commands",
         target_path: scaffoldPath,
@@ -2124,7 +2136,7 @@ describe("extension command runtime", () => {
       expect(entry).toContain('import type { ExtensionApi } from "@unbrained/pm-cli/sdk";');
       expect(entry).toContain("export function activate(api: ExtensionApi): void {");
       expect(entry).toContain("export function deactivate(): void {}");
-      expect(entry).toContain('name: "starter package ping"');
+      expect(entry).toContain('name: "starter starter package ping"');
 
       const sampleTest = await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8");
       expect(sampleTest).toContain('import assert from "node:assert/strict";');
@@ -2141,7 +2153,7 @@ describe("extension command runtime", () => {
       // NodeNext resolution: the .ts test imports the ./index.ts manifest entry directly.
       expect(sampleTest).toContain('import extension from "./index.ts";');
       expect(sampleTest).toContain('capabilities: ["commands"]');
-      expect(sampleTest).toContain('command: "starter package ping"');
+      expect(sampleTest).toContain('command: "starter starter package ping"');
       expect(sampleTest).toContain('assert.equal(typeof registered.command.description, "string");');
       // The invoke step demonstrates exercising the handler's behavior through
       // pm's real dispatch engine, not just asserting it is registered. The
@@ -2150,15 +2162,11 @@ describe("extension command runtime", () => {
       expect(sampleTest).toContain("const ext = await createExtensionTestHarness(extension, {");
       expect(sampleTest).toContain("const registered = ext.assertCommandContract({");
       expect(sampleTest).toContain("const invocation = await ext.runCommand({");
-      expect(sampleTest).toContain("  let deactivated = false;");
-      expect(sampleTest).toContain("  try {");
-      expect(sampleTest).toContain("  } finally {");
-      expect(sampleTest).toContain("    if (!deactivated) {");
-      expect(sampleTest).toContain("      try {");
-      expect(sampleTest).toContain("      } catch {}");
+      expect(sampleTest).toContain("type StarterHarness = Awaited<ReturnType<typeof createExtensionTestHarness>>;");
+      expectBestEffortCleanup(sampleTest);
       expect(sampleTest).toContain("assert.equal(invocation.handled, true);");
       expect(sampleTest).toContain("assert.deepEqual(invocation.result, {");
-      expect(sampleTest).toContain('command: "starter package ping",');
+      expect(sampleTest).toContain('command: "starter starter package ping",');
       expect(sampleTest).not.toContain("invocation.result.ok");
       expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
       expect(sampleTest).toContain("deactivated = true;");
@@ -2196,18 +2204,18 @@ describe("extension command runtime", () => {
           name: "starter-package",
         },
         activated: true,
-        command_paths: ["starter package ping"],
-        action_paths: ["starter-package-ping"],
+        command_paths: ["starter starter package ping"],
+        action_paths: ["starter-starter-package-ping"],
         command_discovery: {
           package_name: "starter-package",
           extension_name: "starter-package",
-          command_paths: ["starter package ping"],
-          action_paths: ["starter-package-ping"],
-          help_commands: ["pm starter package ping --help"],
-          next_steps: ["pm starter package ping --help"],
+          command_paths: ["starter starter package ping"],
+          action_paths: ["starter-starter-package-ping"],
+          help_commands: ["pm starter starter package ping --help"],
+          next_steps: ["pm starter starter package ping --help"],
         },
       });
-      const invoked = spawnSync(process.execPath, [path.join(process.cwd(), "dist/cli.js"), "--path", context.pmPath, "starter", "package", "ping", "--json"], {
+      const invoked = spawnSync(process.execPath, [path.join(process.cwd(), "dist/cli.js"), "--path", context.pmPath, "starter", "starter", "package", "ping", "--json"], {
         cwd: process.cwd(),
         encoding: "utf8",
         env: {
@@ -2219,7 +2227,7 @@ describe("extension command runtime", () => {
       expect(invoked.status).toBe(0);
       expect(JSON.parse(invoked.stdout) as Record<string, unknown>).toMatchObject({
         ok: true,
-        command: "starter package ping",
+        command: "starter starter package ping",
       });
     });
   });
@@ -2405,13 +2413,7 @@ describe("extension command runtime", () => {
       expect(sampleTest).toContain('kind: "after_command"');
       expect(sampleTest).toContain("const warnings = await ext.runHook({");
       expect(sampleTest).toContain("assert.deepEqual(warnings, []);");
-      expect(sampleTest).toContain("let deactivated = false;");
-      expect(sampleTest).toContain("} finally {");
-      expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
-      expect(sampleTest).toContain("if (!deactivated) {");
-      expect(sampleTest).toContain("try {");
-      expect(sampleTest).toContain("} catch {}");
-      expect(sampleTest).toContain("await ext.deactivate();");
+      expectBestEffortCleanup(sampleTest);
 
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Lifecycle Hook");
@@ -2433,7 +2435,7 @@ describe("extension command runtime", () => {
         capability: "search",
         extension: {
           name: "starter-search",
-          command: "starter search ping",
+          command: "starter starter search ping",
         },
       });
 
@@ -2461,13 +2463,7 @@ describe("extension command runtime", () => {
       expect(sampleTest).toContain("const vectorHits = await ext.runVectorStoreAdapter({");
       expect(sampleTest).toContain('assert.deepEqual(embedding, [3]);');
       expect(sampleTest).toContain('assert.deepEqual(vectorHits, [{ id: "starter-vector-hit", score: 2 }]);');
-      expect(sampleTest).toContain("let deactivated = false;");
-      expect(sampleTest).toContain("} finally {");
-      expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
-      expect(sampleTest).toContain("if (!deactivated) {");
-      expect(sampleTest).toContain("try {");
-      expect(sampleTest).toContain("} catch {}");
-      expect(sampleTest).toContain("await ext.deactivate();");
+      expectBestEffortCleanup(sampleTest);
 
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Search Provider");
@@ -2516,13 +2512,7 @@ describe("extension command runtime", () => {
       expect(sampleTest).toContain("const exported = await ext.runExporter({");
       expect(sampleTest).toContain("assert.equal(exported.handled, true);");
       expect(sampleTest).toContain('assert.deepEqual(exported.result, { exported: true, destination: "archive", args: ["done"] });');
-      expect(sampleTest).toContain("let deactivated = false;");
-      expect(sampleTest).toContain("} finally {");
-      expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
-      expect(sampleTest).toContain("if (!deactivated) {");
-      expect(sampleTest).toContain("try {");
-      expect(sampleTest).toContain("} catch {}");
-      expect(sampleTest).toContain("await ext.deactivate();");
+      expectBestEffortCleanup(sampleTest);
 
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Importer and Exporter");
@@ -2545,7 +2535,7 @@ describe("extension command runtime", () => {
         capability: "schema",
         extension: {
           name: "starter-schema",
-          command: "starter schema ping",
+          command: "starter starter schema ping",
         },
       });
 
@@ -2579,13 +2569,7 @@ describe("extension command runtime", () => {
       expect(sampleTest).toContain('migration: "starter-schema-0001-init"');
       expect(sampleTest).toContain("const migrated = await ext.runMigration({");
       expect(sampleTest).toContain('assert.deepEqual(migrated, { migrated: true, id: "starter-schema-0001-init" });');
-      expect(sampleTest).toContain("let deactivated = false;");
-      expect(sampleTest).toContain("} finally {");
-      expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
-      expect(sampleTest).toContain("if (!deactivated) {");
-      expect(sampleTest).toContain("try {");
-      expect(sampleTest).toContain("} catch {}");
-      expect(sampleTest).toContain("await ext.deactivate();");
+      expectBestEffortCleanup(sampleTest);
 
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Custom Schema");
@@ -2617,7 +2601,7 @@ describe("extension command runtime", () => {
         capability: "profile",
         extension: {
           name: "starter-profile",
-          command: "starter profile ping",
+          command: "starter starter profile ping",
         },
       });
 
@@ -2705,7 +2689,7 @@ describe("extension command runtime", () => {
         capability: "search",
         extension: {
           name: "starter-search-ext",
-          command: "starter search ext ping",
+          command: "starter starter search ext ping",
         },
       });
       expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
@@ -2779,7 +2763,7 @@ describe("extension command runtime", () => {
         capability: "schema",
         extension: {
           name: "starter-schema-ext",
-          command: "starter schema ext ping",
+          command: "starter starter schema ext ping",
         },
       });
       expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
@@ -2820,7 +2804,7 @@ describe("extension command runtime", () => {
         capability: "profile",
         extension: {
           name: "starter-profile-ext",
-          command: "starter profile ext ping",
+          command: "starter starter profile ext ping",
         },
       });
       expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([

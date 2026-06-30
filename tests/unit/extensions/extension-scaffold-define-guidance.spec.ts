@@ -1,11 +1,30 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildScaffoldCommandName,
   buildStarterExtensionScaffoldFiles,
   SCAFFOLD_PM_MIN_VERSION,
   type ExtensionScaffoldCapability,
 } from "../../../src/cli/commands/extension/scaffold.js";
 
 describe("extension scaffold define builder guidance", () => {
+  it("builds starter command paths without colliding with built-in command roots", () => {
+    expect(buildScaffoldCommandName("tool-kit")).toBe("tool kit ping");
+    expect(buildScaffoldCommandName("view-kit")).toBe("starter view kit ping");
+    expect(buildScaffoldCommandName("View-Kit")).toBe("starter View Kit ping");
+    expect(buildScaffoldCommandName("show-kit")).toBe("starter show kit ping");
+    expect(buildScaffoldCommandName("search-kit")).toBe("starter search kit ping");
+    expect(buildScaffoldCommandName("scaffold-kit")).toBe("starter scaffold kit ping");
+    expect(buildScaffoldCommandName("Scaffold-Kit")).toBe("starter Scaffold Kit ping");
+    expect(buildScaffoldCommandName("starter")).toBe("starter starter ping");
+    expect(buildScaffoldCommandName("Starter")).toBe("starter Starter ping");
+    expect(buildScaffoldCommandName("starter-package")).toBe("starter starter package ping");
+    expect(buildScaffoldCommandName("starter-search-kit")).toBe("starter starter search kit ping");
+    expect(buildScaffoldCommandName("Starter-Search-Kit")).toBe("starter Starter Search Kit ping");
+    expect(buildScaffoldCommandName("starter-starter-search")).toBe("starter starter starter search ping");
+    expect(buildScaffoldCommandName("starter-tool-kit")).toBe("starter tool kit ping");
+    expect(buildScaffoldCommandName("  ")).toBe("starter ping");
+  });
+
   it("documents the define* builder upgrade path for commands-only package scaffolds", () => {
     const scaffold = buildStarterExtensionScaffoldFiles("tool-kit", "tool kit ping", "package", "commands");
     const readme = scaffold["README.md"] ?? "";
@@ -130,7 +149,8 @@ describe("extension scaffold define builder guidance", () => {
   });
 
   it("scaffolds a runnable renderer override starter scoped to its own command", () => {
-    const scaffold = buildStarterExtensionScaffoldFiles("view-kit", "view kit ping", "package", "renderers");
+    const commandName = buildScaffoldCommandName("view-kit");
+    const scaffold = buildStarterExtensionScaffoldFiles("view-kit", commandName, "package", "renderers");
     const entry = scaffold["index.ts"] ?? "";
     const sampleTest = scaffold["index.test.ts"] ?? "";
     const readme = scaffold["README.md"] ?? "";
@@ -142,11 +162,11 @@ describe("extension scaffold define builder guidance", () => {
     expect(manifest.capabilities).toEqual(["commands", "renderers"]);
     // A renderer override is global, but the starter still registers the `ping`
     // command, so it declares activation.commands for lazy command dispatch.
-    expect(manifest.activation?.commands).toEqual(["view kit ping"]);
+    expect(manifest.activation?.commands).toEqual(["starter view kit ping"]);
     // The override scopes itself to its own command and passes other output
     // through (returns null) so installing it never disrupts unrelated commands.
     expect(entry).toContain('api.registerRenderer("toon", (context) => {');
-    expect(entry).toContain('if (context.command !== "view kit ping") {');
+    expect(entry).toContain('if (context.command !== "starter view kit ping") {');
     expect(entry).toContain("return null;");
     expect(entry).toContain('return "view-kit: " + JSON.stringify(context.result);');
     expect(sampleTest).toContain("  createExtensionTestHarness,");
@@ -155,9 +175,11 @@ describe("extension scaffold define builder guidance", () => {
     expect(sampleTest).toContain("assert.equal(passthrough.overridden, false);");
     expect(sampleTest).toContain("} finally {");
     expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
+    expect(sampleTest).toContain("async function deactivateIfNeeded");
     expect(sampleTest).toContain("if (!deactivated) {");
     expect(sampleTest).toContain("try {");
-    expect(sampleTest).toContain("} catch {}");
+    expect(sampleTest).toContain("cleanup is best effort");
+    expect(sampleTest).toContain("await deactivateIfNeeded(ext, deactivated);");
     expect(sampleTest).toContain("await ext.deactivate();");
     expect(readme).toContain(
       'import { defineCommand, defineRendererOverride } from "@unbrained/pm-cli/sdk";',
@@ -201,9 +223,11 @@ describe("extension scaffold define builder guidance", () => {
     expect(sampleTest).toContain("      upper: true,");
     expect(sampleTest).toContain("} finally {");
     expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
+    expect(sampleTest).toContain("async function deactivateIfNeeded");
     expect(sampleTest).toContain("if (!deactivated) {");
     expect(sampleTest).toContain("try {");
-    expect(sampleTest).toContain("} catch {}");
+    expect(sampleTest).toContain("cleanup is best effort");
+    expect(sampleTest).toContain("await deactivateIfNeeded(ext, deactivated);");
     expect(sampleTest).toContain("await ext.deactivate();");
     expect(readme).toContain(
       'import { defineCommand, defineParserOverride } from "@unbrained/pm-cli/sdk";',
@@ -236,9 +260,11 @@ describe("extension scaffold define builder guidance", () => {
     expect(sampleTest).toContain("assert.deepEqual(result.decision, decision);");
     expect(sampleTest).toContain("} finally {");
     expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
+    expect(sampleTest).toContain("async function deactivateIfNeeded");
     expect(sampleTest).toContain("if (!deactivated) {");
     expect(sampleTest).toContain("try {");
-    expect(sampleTest).toContain("} catch {}");
+    expect(sampleTest).toContain("cleanup is best effort");
+    expect(sampleTest).toContain("await deactivateIfNeeded(ext, deactivated);");
     expect(sampleTest).toContain("await ext.deactivate();");
     expect(readme).toContain(
       'import { defineCommand, definePreflightOverride } from "@unbrained/pm-cli/sdk";',
@@ -273,9 +299,11 @@ describe("extension scaffold define builder guidance", () => {
     expect(sampleTest).toContain("assert.equal(passthrough.handled, false);");
     expect(sampleTest).toContain("} finally {");
     expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
+    expect(sampleTest).toContain("async function deactivateIfNeeded");
     expect(sampleTest).toContain("if (!deactivated) {");
     expect(sampleTest).toContain("try {");
-    expect(sampleTest).toContain("} catch {}");
+    expect(sampleTest).toContain("cleanup is best effort");
+    expect(sampleTest).toContain("await deactivateIfNeeded(ext, deactivated);");
     expect(sampleTest).toContain("await ext.deactivate();");
     expect(readme).toContain(
       'import { defineCommand, defineServiceOverride } from "@unbrained/pm-cli/sdk";',
@@ -414,9 +442,11 @@ describe("declarative composeExtension package scaffold", () => {
     expect(sampleTest).toContain("  let deactivated = false;");
     expect(sampleTest).toContain("  try {");
     expect(sampleTest).toContain("  } finally {");
-    expect(sampleTest).toContain("    if (!deactivated) {");
-    expect(sampleTest).toContain("      try {");
-    expect(sampleTest).toContain("      } catch {}");
+    expect(sampleTest).toContain("async function deactivateIfNeeded");
+    expect(sampleTest).toContain("  if (!deactivated) {");
+    expect(sampleTest).toContain("    try {");
+    expect(sampleTest).toContain("cleanup is best effort");
+    expect(sampleTest).toContain("    await deactivateIfNeeded(ext, deactivated);");
     expect(sampleTest).toContain("const teardown = await ext.deactivate();");
     expect(sampleTest).toContain("assertExtensionDeactivated(teardown);");
     expect(sampleTest).toContain("deactivated = true;");
