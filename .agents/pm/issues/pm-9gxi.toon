@@ -2,16 +2,16 @@ id: pm-9gxi
 title: "Auto Release blocked: bot cannot push version commit to protected main (GH006, 12 required checks)"
 description: "The daily Auto Release (.github/workflows/auto-release.yml -> scripts/release/run-release-pipeline.mjs) failed on 2026-06-25 (run 28151547639). ALL gates passed (250 test files, Sentry/telemetry reliability gate green, static/docs/compat) — the failure is the final step pushReleaseRefs: 'git push --atomic origin HEAD v2026.6.25' is rejected with 'remote: error: GH006: Protected branch update failed for refs/heads/main'. The pipeline creates a version-bump commit (git add package.json CHANGELOG.md + commit, run-release-pipeline.mjs:395) and pushes that fresh commit to main. main's branch protection requires 12 status checks (Build foundation, Runtime smoke x3, Gates x5, Windows regression (Node 24), Docs and Skills, Analyze) and enforce_admins=false. The github-actions bot using GITHUB_TOKEN is NOT an admin, so its direct push of an unchecked commit is rejected; an admin push (owner) bypasses (enforce_admins=false), which is why manual pushes succeed. This worked through 2026-06-24 and regressed 2026-06-25, consistent with required checks being added/enforced on main (the Windows regression check is recent). Net effect: npm is stuck at 2026.6.24 while version:next=2026.6.25; releasable changes (incl. the GH-363 Windows fix in #365) are not being published. Secondary: the 'Auto Release blocked' alert's gh issue create failed that run with 'Resource not accessible by integration (createIssue)' ONLY because pm-qawd/#364 (issues:write) merged at 08:40Z, after the 06:32Z run — issues:write is now on main so the alert will fire on the next scheduled run. REMEDIATION OPTIONS (owner decision; requires a secret or a security-posture change): (1) RECOMMENDED — add a fine-grained PAT secret (e.g. RELEASE_PAT) from an admin with contents:write, and have the auto-release checkout use token: ${{ secrets.RELEASE_PAT || github.token }} so the version-commit push bypasses required checks like an admin; no-regression fallback to GITHUB_TOKEN when unset. (2) Migrate main to a repository ruleset with a bypass actor for the release workflow/bot. (3) Stop committing to main during release — derive the version from the calendar tag only and push just the tag (tags are not branch-protected), moving CHANGELOG regeneration to the existing chore-commit flow. Until resolved, releases can be cut manually by an admin running release:pipeline locally."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[5]: "area:ci",auto-release,branch-protection,release,reliability
 created_at: "2026-06-25T11:02:40.952Z"
-updated_at: "2026-06-30T09:33:43.000Z"
-assignee: claude-code-agent
+updated_at: "2026-06-30T09:35:35.117Z"
 author: claude-code-agent
 parent: pm-u9d0
+resolution: "Configured RELEASE_PAT, verified protected-main release push, fixed duplicate Auto Release dispatch race, and documented/preserved release evidence in pm."
 expected_result: "Auto Release production runs use a configured maintainer RELEASE_PAT to push the checked version commit and tag to protected main after gates pass, and missing release credentials fail fast with clear recovery guidance."
-actual_result: "Workflow code now validates production push runs before expensive release gates, does not persist elevated checkout credentials, passes RELEASE_PUSH_TOKEN only into run-release-pipeline, deletes it from child process inheritance, and injects git push auth through a per-push extraheader; docs capture the setup requirement. The current release environment still lacks RELEASE_PAT, so scheduled release remains blocked on external secret configuration."
+actual_result: "RELEASE_PAT is configured in the GitHub Actions release environment. Auto Release can push release commits/tags to protected main with push-only credentials, v2026.6.30 was published to npm and GitHub Releases, and Auto Release now waits for the tag-push Release workflow instead of dispatching a duplicate publishing run."
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-7zs0,related,"2026-06-25T11:02:54.128Z",null,null
   pm-nb08,related,"2026-06-25T11:02:54.430Z",null,null
@@ -55,4 +55,5 @@ test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resum
   test-local-mqum1wes-x0dzw0,test,passed,"2026-06-26T07:29:33.941Z","2026-06-26T07:29:36.340Z","2026-06-26T07:29:36.340Z",null,null,1,0,0,null,null,null
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,document release push token setup and fail-fast policy
+close_reason: "RELEASE_PAT is configured, v2026.6.30 published, duplicate Auto Release dispatch race fixed on main, and focused workflow/changelog checks passed. Final same-day Auto Release verification will use this closeout as changelog evidence."
 body: ""
