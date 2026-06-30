@@ -182,6 +182,78 @@ export async function resolveBundledAliasManifestName(input: string): Promise<st
 }
 
 /**
+ * Resolve the catalog link block for a bundled package, preferring the explicit
+ * `catalog.links.*` manifest fields and falling back to the package's
+ * repository/bugs/homepage/npm metadata. The npm link is synthesized from the
+ * package name unless the package is private or unnamed.
+ */
+function buildBundledCatalogLinks(manifest: Awaited<ReturnType<typeof readPmPackageManifest>>): {
+  docs: string | undefined;
+  npm: string | undefined;
+  repository: string | undefined;
+  report: string | undefined;
+} {
+  return {
+    docs: manifest.catalog?.links?.docs ?? manifest.package_homepage,
+    npm:
+      manifest.catalog?.links?.npm ??
+      (manifest.package_name && manifest.package_private !== true
+        ? `https://www.npmjs.com/package/${encodeURIComponent(manifest.package_name)}`
+        : undefined),
+    repository: manifest.catalog?.links?.repository ?? manifest.package_repository_url,
+    report: manifest.catalog?.links?.report ?? manifest.package_bugs_url,
+  };
+}
+
+/**
+ * Build one bundled-package catalog entry from its manifest, marking it
+ * `installed` when the managed state for `scope` already records the package by
+ * built-in alias or resolved location, and projecting the metadata-only resource
+ * kinds (everything except installable `extensions`) that the package ships.
+ */
+function buildBundledCatalogPackageEntry(
+  manifest: Awaited<ReturnType<typeof readPmPackageManifest>>,
+  bundledEntry: BundledPackageEntry,
+  scope: ExtensionScope,
+  installedBuiltinAliases: Set<string>,
+  installedLocations: Set<string>,
+): Record<string, unknown> {
+  const installScopeFlag = scope === "global" ? "--global" : "--project";
+  const metadataOnlyResources = Object.fromEntries(
+    PM_PACKAGE_RESOURCE_KINDS
+      .filter((resourceKind) => resourceKind !== "extensions")
+      .map((resourceKind) => [resourceKind, manifest.resources[resourceKind] ?? []])
+      .filter(([, entries]) => Array.isArray(entries) && entries.length > 0),
+  );
+  return {
+    alias: bundledEntry.alias,
+    bundled: true,
+    available: true,
+    installed:
+      installedBuiltinAliases.has(bundledEntry.alias) ||
+      installedLocations.has(path.resolve(bundledEntry.package_root)),
+    install_target: bundledEntry.alias,
+    install_command: `pm install ${bundledEntry.alias} ${installScopeFlag}`,
+    package_name: manifest.package_name,
+    package_version: manifest.package_version,
+    description: manifest.catalog?.summary ?? manifest.package_description,
+    keywords: manifest.package_keywords ?? [],
+    resources: manifest.resources,
+    installable_resources: {
+      extensions: manifest.resources.extensions ?? [],
+    },
+    metadata_only_resources: metadataOnlyResources,
+    catalog: {
+      display_name: manifest.catalog?.display_name,
+      category: manifest.catalog?.category,
+      tags: manifest.catalog?.tags ?? manifest.package_keywords ?? [],
+      links: buildBundledCatalogLinks(manifest),
+      media: manifest.catalog?.media,
+    },
+  };
+}
+
+/**
  * Implements build bundled package catalog for the public runtime surface of this module.
  */
 export async function buildBundledPackageCatalog(scope: ExtensionScope, global: GlobalOptions, options: ExtensionCommandOptions = {}): Promise<{
@@ -210,53 +282,10 @@ export async function buildBundledPackageCatalog(scope: ExtensionScope, global: 
   const packages: Array<Record<string, unknown>> = [];
 
   for (const bundledEntry of await collectBundledPackageEntries()) {
-    const alias = bundledEntry.alias;
-    const packageRoot = bundledEntry.package_root;
-    const installScopeFlag = scope === "global" ? "--global" : "--project";
-
-    const manifest = await readPmPackageManifest(packageRoot);
-    const repository = manifest.catalog?.links?.repository ?? manifest.package_repository_url;
-    const report = manifest.catalog?.links?.report ?? manifest.package_bugs_url;
-    const docs = manifest.catalog?.links?.docs ?? manifest.package_homepage;
-    const npm = manifest.catalog?.links?.npm ??
-      (manifest.package_name && manifest.package_private !== true
-        ? `https://www.npmjs.com/package/${encodeURIComponent(manifest.package_name)}`
-        : undefined);
-    const metadataOnlyResources = Object.fromEntries(
-      PM_PACKAGE_RESOURCE_KINDS
-        .filter((resourceKind) => resourceKind !== "extensions")
-        .map((resourceKind) => [resourceKind, manifest.resources[resourceKind] ?? []])
-        .filter(([, entries]) => Array.isArray(entries) && entries.length > 0),
+    const manifest = await readPmPackageManifest(bundledEntry.package_root);
+    packages.push(
+      buildBundledCatalogPackageEntry(manifest, bundledEntry, scope, installedBuiltinAliases, installedLocations),
     );
-    packages.push({
-      alias,
-      bundled: true,
-      available: true,
-      installed: installedBuiltinAliases.has(alias) || installedLocations.has(path.resolve(packageRoot)),
-      install_target: alias,
-      install_command: `pm install ${alias} ${installScopeFlag}`,
-      package_name: manifest.package_name,
-      package_version: manifest.package_version,
-      description: manifest.catalog?.summary ?? manifest.package_description,
-      keywords: manifest.package_keywords ?? [],
-      resources: manifest.resources,
-      installable_resources: {
-        extensions: manifest.resources.extensions ?? [],
-      },
-      metadata_only_resources: metadataOnlyResources,
-      catalog: {
-        display_name: manifest.catalog?.display_name,
-        category: manifest.catalog?.category,
-        tags: manifest.catalog?.tags ?? manifest.package_keywords ?? [],
-        links: {
-          docs,
-          npm,
-          repository,
-          report,
-        },
-        media: manifest.catalog?.media,
-      },
-    });
   }
 
   const fields = parsePackageCatalogFields(options.fields);

@@ -124,6 +124,116 @@ export function managedExtensionSourcesEquivalent(left: ManagedExtensionSource, 
 }
 
 /**
+ * Narrow `value` to a string, or `undefined` for any other type — the
+ * normalization applied to every optional managed-state string field so an
+ * absent or malformed value is dropped rather than carried through as `unknown`.
+ */
+function optionalString(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+/**
+ * Type guard asserting `entry` carries every always-present managed-record field
+ * with the right primitive type: a non-empty `name`/`directory`, a known
+ * {@link ExtensionScope}, string manifest metadata, a `string[]` capability
+ * list, and string `installed_at`/`updated_at` timestamps. The optional columns
+ * (`source` plus the update-check fields) are validated separately by the
+ * caller, so this guard narrows only the required columns.
+ */
+function hasRequiredManagedRecordFields(
+  entry: Record<string, unknown>,
+): entry is Record<string, unknown> &
+  Pick<
+    ManagedExtensionRecord,
+    "name" | "directory" | "scope" | "manifest_version" | "manifest_entry" | "capabilities" | "installed_at" | "updated_at"
+  > {
+  return (
+    typeof entry.name === "string" &&
+    entry.name.trim().length > 0 &&
+    typeof entry.directory === "string" &&
+    entry.directory.trim().length > 0 &&
+    (entry.scope === "project" || entry.scope === "global") &&
+    typeof entry.manifest_version === "string" &&
+    typeof entry.manifest_entry === "string" &&
+    Array.isArray(entry.capabilities) &&
+    entry.capabilities.every((value): value is string => typeof value === "string") &&
+    typeof entry.installed_at === "string" &&
+    typeof entry.updated_at === "string"
+  );
+}
+
+/**
+ * Normalize one persisted managed-extension source object, returning `null` when
+ * the discriminant (`kind`) or the required `input`/`location` strings are
+ * missing or malformed so the caller can skip the owning record.
+ */
+function normalizeManagedSource(raw: unknown): ManagedExtensionSource | null {
+  if (typeof raw !== "object" || raw === null) {
+    return null;
+  }
+  const source = raw as Record<string, unknown>;
+  if (
+    (source.kind !== "local" && source.kind !== "github" && source.kind !== "npm" && source.kind !== "builtin") ||
+    typeof source.input !== "string" ||
+    typeof source.location !== "string"
+  ) {
+    return null;
+  }
+  return {
+    kind: source.kind,
+    input: source.input,
+    location: source.location,
+    name: optionalString(source.name),
+    package: optionalString(source.package),
+    version: optionalString(source.version),
+    repository: optionalString(source.repository),
+    owner: optionalString(source.owner),
+    repo: optionalString(source.repo),
+    ref: optionalString(source.ref),
+    subpath: optionalString(source.subpath),
+    commit: optionalString(source.commit),
+  };
+}
+
+/**
+ * Normalize one persisted managed-extension record, returning `null` when any
+ * required field or its `source` is missing or malformed so {@link
+ * normalizeManagedState} can drop the entry without discarding the rest of the
+ * file.
+ */
+function normalizeManagedRecord(raw: unknown): ManagedExtensionRecord | null {
+  if (typeof raw !== "object" || raw === null) {
+    return null;
+  }
+  const entry = raw as Record<string, unknown>;
+  if (!hasRequiredManagedRecordFields(entry)) {
+    return null;
+  }
+  const source = normalizeManagedSource(entry.source);
+  if (!source) {
+    return null;
+  }
+  return {
+    name: entry.name.trim(),
+    directory: entry.directory.trim(),
+    scope: entry.scope,
+    manifest_version: entry.manifest_version,
+    manifest_entry: entry.manifest_entry,
+    capabilities: normalizeStringList(entry.capabilities),
+    installed_at: entry.installed_at,
+    updated_at: entry.updated_at,
+    source,
+    last_update_check_at: optionalString(entry.last_update_check_at),
+    last_update_remote_commit: optionalString(entry.last_update_remote_commit),
+    update_available:
+      typeof entry.update_available === "boolean" || entry.update_available === null
+        ? entry.update_available
+        : undefined,
+    update_error: optionalString(entry.update_error),
+  };
+}
+
+/**
  * Implements normalize managed state for the public runtime surface of this module.
  */
 export function normalizeManagedState(raw: unknown): ManagedExtensionState | null {
@@ -137,71 +247,14 @@ export function normalizeManagedState(raw: unknown): ManagedExtensionState | nul
 
   const entries: ManagedExtensionRecord[] = [];
   for (const rawEntry of candidate.entries) {
-    if (typeof rawEntry !== "object" || rawEntry === null) {
-      continue;
+    const record = normalizeManagedRecord(rawEntry);
+    if (record) {
+      entries.push(record);
     }
-    const entry = rawEntry as Record<string, unknown>;
-    if (
-      typeof entry.name !== "string" ||
-      entry.name.trim().length === 0 ||
-      typeof entry.directory !== "string" ||
-      entry.directory.trim().length === 0 ||
-      (entry.scope !== "project" && entry.scope !== "global") ||
-      typeof entry.manifest_version !== "string" ||
-      typeof entry.manifest_entry !== "string" ||
-      !Array.isArray(entry.capabilities) ||
-      entry.capabilities.some((value) => typeof value !== "string") ||
-      typeof entry.installed_at !== "string" ||
-      typeof entry.updated_at !== "string" ||
-      typeof entry.source !== "object" ||
-      entry.source === null
-    ) {
-      continue;
-    }
-    const source = entry.source as Record<string, unknown>;
-    if (
-      (source.kind !== "local" && source.kind !== "github" && source.kind !== "npm" && source.kind !== "builtin") ||
-      typeof source.input !== "string" ||
-      typeof source.location !== "string"
-    ) {
-      continue;
-    }
-    entries.push({
-      name: entry.name.trim(),
-      directory: entry.directory.trim(),
-      scope: entry.scope,
-      manifest_version: entry.manifest_version,
-      manifest_entry: entry.manifest_entry,
-      capabilities: normalizeStringList(entry.capabilities as string[]),
-      installed_at: entry.installed_at,
-      updated_at: entry.updated_at,
-      source: {
-        kind: source.kind,
-        input: source.input,
-        location: source.location,
-        name: typeof source.name === "string" ? source.name : undefined,
-        package: typeof source.package === "string" ? source.package : undefined,
-        version: typeof source.version === "string" ? source.version : undefined,
-        repository: typeof source.repository === "string" ? source.repository : undefined,
-        owner: typeof source.owner === "string" ? source.owner : undefined,
-        repo: typeof source.repo === "string" ? source.repo : undefined,
-        ref: typeof source.ref === "string" ? source.ref : undefined,
-        subpath: typeof source.subpath === "string" ? source.subpath : undefined,
-        commit: typeof source.commit === "string" ? source.commit : undefined,
-      },
-      last_update_check_at: typeof entry.last_update_check_at === "string" ? entry.last_update_check_at : undefined,
-      last_update_remote_commit:
-        typeof entry.last_update_remote_commit === "string" ? entry.last_update_remote_commit : undefined,
-      update_available:
-        typeof entry.update_available === "boolean" || entry.update_available === null
-          ? entry.update_available
-          : undefined,
-      update_error: typeof entry.update_error === "string" ? entry.update_error : undefined,
-    });
   }
   return {
     version: MANAGED_EXTENSION_STATE_VERSION,
-    updated_at: typeof candidate.updated_at === "string" ? candidate.updated_at : nowIso(),
+    updated_at: optionalString(candidate.updated_at) ?? nowIso(),
     entries: sortManagedEntries(entries),
   };
 }

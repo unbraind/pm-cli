@@ -149,6 +149,25 @@ function renderSection(heading: string, level: number, entries: readonly string[
 }
 
 /**
+ * Render the preflight-overrides section: a count line when any are registered,
+ * `_None._` when {@link ExtensionSurfaceMarkdownOptions.includeEmpty} forces the
+ * empty section, or no lines at all otherwise. Preflight overrides carry no
+ * per-entry identifier, so they have a bespoke renderer rather than reusing
+ * {@link renderSection}.
+ */
+function renderPreflightSection(count: number, level: number, includeEmpty: boolean): string[] {
+  if (count === 0 && !includeEmpty) {
+    return [];
+  }
+  return [
+    `${headingPrefix(level)} Preflight overrides`,
+    "",
+    count > 0 ? `- ${count} registered (this surface carries no per-entry identifier)` : "_None._",
+    "",
+  ];
+}
+
+/**
  * Render an {@link ExtensionActivationSummary} as a deterministic Markdown
  * reference document.
  *
@@ -186,28 +205,19 @@ export function renderExtensionSurfaceMarkdown(
     lines.push(renderCapabilitiesLine(summary.capabilities), "");
   }
 
-  let renderedSurface = false;
   for (const [field, heading] of SURFACE_SECTIONS) {
     const entries = summary[field];
     if (entries.length === 0 && !includeEmpty) {
       continue;
     }
-    renderedSurface = renderedSurface || entries.length > 0;
     lines.push(...renderSection(heading, sectionLevel, entries));
   }
 
-  if (summary.preflight_overrides > 0 || includeEmpty) {
-    renderedSurface = renderedSurface || summary.preflight_overrides > 0;
-    lines.push(`${headingPrefix(sectionLevel)} Preflight overrides`, "");
-    lines.push(
-      summary.preflight_overrides > 0
-        ? `- ${summary.preflight_overrides} registered (this surface carries no per-entry identifier)`
-        : "_None._",
-      "",
-    );
-  }
+  lines.push(...renderPreflightSection(summary.preflight_overrides, sectionLevel, includeEmpty));
 
-  if (!renderedSurface && !includeEmpty) {
+  const hasAnySurface =
+    summary.preflight_overrides > 0 || SURFACE_SECTIONS.some(([field]) => summary[field].length > 0);
+  if (!hasAnySurface && !includeEmpty) {
     lines.push("_This extension registers no surfaces._", "");
   }
 
