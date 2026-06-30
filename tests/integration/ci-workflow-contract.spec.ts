@@ -409,7 +409,8 @@ describe("GitHub workflow contract", () => {
       "RELEASE_PAT is required before Auto Release can push",
       "node scripts/release/run-release-pipeline.mjs",
       "--telemetry-mode",
-      "gh workflow run release.yml --ref main -f tag=\"${NEW_TAG}\"",
+      "Waiting for tag-push Release workflow for ${NEW_TAG}.",
+      "gh run list --workflow Release --event push --branch \"${NEW_TAG}\"",
       "gh run watch \"${RELEASE_RUN_ID}\" --compact --exit-status --interval 30",
       "id: auto_release",
       "PUBLISHED_SHA=\"$(git rev-list -n 1 \"${NEW_TAG}\")\"",
@@ -440,6 +441,7 @@ describe("GitHub workflow contract", () => {
       "gh issue create --title",
       "gh issue comment",
     ]);
+    expect(autoReleaseWorkflow).not.toContain("gh workflow run release.yml");
     expect(autoReleaseWorkflow).not.toContain("token: ${{ secrets.RELEASE_PAT || github.token }}");
   });
 
