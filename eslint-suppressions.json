@@ -134,26 +134,6 @@
       "count": 4
     }
   },
-  "src/cli/commands/extension/bundled-catalog.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
-  "src/cli/commands/extension/doctor.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
-  "src/cli/commands/extension/managed-state.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
-  "src/cli/commands/extension/scaffold.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "src/cli/commands/get.ts": {
     "complexity": {
       "count": 1
@@ -305,11 +285,6 @@
     }
   },
   "src/core/config/nested-settings.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
-  "src/core/extensions/activation-summary-markdown.ts": {
     "complexity": {
       "count": 1
     }

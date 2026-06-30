@@ -385,6 +385,195 @@ export function classifyUnusedCapabilityWarnings(
 }
 
 /**
+ * Inputs every triage remediation message can reference: the lifecycle command
+ * options and resolved `scopeFlag`/`scope`, plus the two numeric totals
+ * (`updateCheckFailedTotal`, `policyWarningCount`) whose own warning-driven rules
+ * fire purely on a count rather than a warning prefix.
+ */
+interface TriageRemediationContext {
+  options: ExtensionCommandOptions;
+  scope: ExtensionScope;
+  scopeFlag: string;
+  updateCheckFailedTotal: number;
+  policyWarningCount: number;
+}
+
+/**
+ * One warning-driven remediation rule: `matches` decides whether the emitted
+ * warning set (or a {@link TriageRemediationContext} count) warrants the hint,
+ * and `build` renders the scope-aware message. Replacing the former
+ * if-prefix ladder with this table keeps {@link buildExtensionTriageSummary}
+ * under the complexity ceiling while preserving message order and content.
+ */
+interface TriageRemediationRule {
+  matches: (warnings: readonly string[], ctx: TriageRemediationContext) => boolean;
+  build: (ctx: TriageRemediationContext) => string;
+}
+
+/**
+ * Ordered remediation rules evaluated while at least one warning is present. The
+ * order is load-bearing — it is the order remediation hints appear in doctor
+ * output — so new rules must be inserted at the intended position rather than
+ * appended.
+ */
+const TRIAGE_REMEDIATION_RULES: readonly TriageRemediationRule[] = [
+  {
+    matches: (warnings) => warnings.some((warning) => warning.startsWith("extension_manifest_")),
+    build: (ctx) =>
+      `Run ${lifecycleFlagCommand(ctx.options, "explore")} ${ctx.scopeFlag} to inspect discovered manifests and directories.`,
+  },
+  {
+    matches: (warnings) => warnings.some((warning) => warning.startsWith("extension_capability_unknown:")),
+    build: () =>
+      `Unknown extension capabilities detected. Allowed capabilities: ${KNOWN_EXTENSION_CAPABILITIES.join(", ")}. ` +
+      "Review extension_capability_unknown warning details for suggested replacements.",
+  },
+  {
+    matches: (warnings) => warnings.some((warning) => warning.startsWith("extension_capability_legacy_alias:")),
+    build: () =>
+      "Legacy extension capability aliases were auto-remapped to canonical capabilities. " +
+      "Update manifests to canonical names (migration/validation -> schema).",
+  },
+  {
+    matches: (warnings) => warnings.some((warning) => warning.startsWith("extension_capability_missing:")),
+    build: (ctx) =>
+      `Extension activation failed because code registered a surface missing from manifest capabilities. ` +
+      `Run ${lifecycleFlagCommand(ctx.options, "doctor")} ${ctx.scopeFlag} --detail deep --trace and add the reported missing_capability to manifest.json before publishing.`,
+  },
+  {
+    matches: (warnings) => warnings.some((warning) => warning.startsWith("extension_capability_unused:")),
+    build: (ctx) =>
+      "Extension manifests declare capabilities that are never registered against. " +
+      `Remove each reported unused capability from manifest.json to keep least privilege, or add the matching registration. Run ${lifecycleFlagCommand(ctx.options, "doctor")} ${ctx.scopeFlag} --detail deep --trace for per-extension registration counts.`,
+  },
+  {
+    matches: (warnings) => warnings.some((warning) => warning.startsWith("extension_command_definition_legacy_handler_alias:")),
+    build: () =>
+      "Extension command definitions using legacy handler were auto-remapped. " +
+      "Update command definitions to use run: (context) => ... for forward compatibility.",
+  },
+  {
+    matches: (warnings) =>
+      warnings.some(
+        (warning) =>
+          warning.startsWith("extension_output_service_override_global:") ||
+          warning.startsWith("extension_output_renderer_override_global:"),
+      ),
+    build: () =>
+      "Global output service/renderer overrides are active. For output_format, return context.payload/null/undefined unless the extension owns the command. For renderers, return null for unrelated payloads so pm falls back to native rendering.",
+  },
+  {
+    matches: (warnings) => warnings.some((warning) => warning.startsWith("extension_schema_narrow_activation:")),
+    build: () =>
+      "A package registers custom item types/fields (a GLOBAL schema contribution) but also declares narrow activation.commands, so it never activates for built-in commands like pm create <type> and the custom type silently fails to register. Remove activation.commands from manifest.json so pm activates the package for every command, or — if the schema is intentionally command-scoped — knowingly ignore this advisory.",
+  },
+  {
+    matches: (warnings) => warnings.some((warning) => warning.startsWith("extension_load_failed_sdk_dependency_missing:")),
+    build: (ctx) =>
+      `Detected extension load failures caused by missing SDK dependency resolution. ` +
+      `Ensure extension package dependencies include "@unbrained/pm-cli" and reinstall dependencies before running ${lifecycleFlagCommand(ctx.options, "doctor")} ${ctx.scopeFlag}.`,
+  },
+  {
+    matches: (warnings) => warnings.some((warning) => warning.startsWith("extension_load_failed_module_mode_mismatch:")),
+    build: (ctx) =>
+      `Detected extension module-mode mismatches. For ESM-based extension entries/imports, set package.json "type": "module" ` +
+      `or use an explicit .mjs entry and rerun ${lifecycleFlagCommand(ctx.options, "doctor")} ${ctx.scopeFlag}.`,
+  },
+  {
+    matches: (warnings) =>
+      warnings.some(
+        (warning) =>
+          warning.startsWith("extension_pm_min_version_") || warning.startsWith("extension_pm_max_version_"),
+      ),
+    build: (ctx) =>
+      "Extension pm version-bound warnings detected. Align each package manifest's pm_min_version/pm_max_version " +
+      `with the installed pm CLI version (see the warning's required/allowed=...:current=... details), or upgrade/downgrade the pm CLI to satisfy the declared bounds, then rerun ${lifecycleFlagCommand(ctx.options, "doctor")} ${ctx.scopeFlag}.`,
+  },
+  {
+    matches: (_warnings, ctx) => ctx.updateCheckFailedTotal > 0,
+    build: (ctx) =>
+      `Run ${lifecycleFlagCommand(ctx.options, "manage")} ${ctx.scopeFlag} after validating network and repository access.`,
+  },
+  {
+    matches: (warnings) => warnings.some((warning) => warning.startsWith("extension_manager_state_")),
+    build: (ctx) => `Review and repair ${ctx.scope} managed extension state file if schema/read warnings persist.`,
+  },
+  {
+    matches: (_warnings, ctx) => ctx.policyWarningCount > 0,
+    build: () =>
+      "Extension governance policy warnings detected. Review settings.extensions.policy mode and allow/block lists to confirm intended capabilities and registration surfaces.",
+  },
+];
+
+/**
+ * Build the ordered remediation hints for a triage summary. Warning-driven rules
+ * (collision remediation first, then {@link TRIAGE_REMEDIATION_RULES}) only run
+ * when at least one warning is present; the update-health coverage and
+ * availability hints always run; and a "no immediate action" fallback is
+ * appended when nothing else applied.
+ */
+function buildExtensionTriageRemediation(params: {
+  normalizedWarnings: string[];
+  options: ExtensionCommandOptions;
+  scope: ExtensionScope;
+  scopeFlag: string;
+  updateCheckFailedTotal: number;
+  policyWarningCount: number;
+  updateHealthPartial: boolean;
+  skippedUnmanagedTotal: number;
+  skippedNonGithubTotal: number;
+  updateAvailableTotal: number;
+}): string[] {
+  const {
+    normalizedWarnings,
+    options,
+    scope,
+    scopeFlag,
+    updateCheckFailedTotal,
+    policyWarningCount,
+    updateHealthPartial,
+    skippedUnmanagedTotal,
+    skippedNonGithubTotal,
+    updateAvailableTotal,
+  } = params;
+  const remediation: string[] = [];
+  const ctx: TriageRemediationContext = { options, scope, scopeFlag, updateCheckFailedTotal, policyWarningCount };
+  if (normalizedWarnings.length > 0) {
+    const registrationCollisionRemediation = buildRegistrationCollisionRemediation(normalizedWarnings, {
+      deactivate: `${lifecycleFlagCommand(options, "deactivate")} <name> ${scopeFlag}`,
+      doctor: `${lifecycleFlagCommand(options, "doctor")} ${scopeFlag} --detail deep --trace`,
+    });
+    if (registrationCollisionRemediation) {
+      remediation.push(registrationCollisionRemediation);
+    }
+    for (const rule of TRIAGE_REMEDIATION_RULES) {
+      if (rule.matches(normalizedWarnings, ctx)) {
+        remediation.push(rule.build(ctx));
+      }
+    }
+  }
+  if (updateHealthPartial) {
+    remediation.push(
+      `Update-check coverage is partial because unmanaged extensions need adoption. Adopt existing installs via ${lifecycleFlagCommand(options, "manage")} ${scopeFlag} --fix-managed-state (or ${lifecycleFlagCommand(options, "adopt-all")} ${scopeFlag}, ${lifecycleFlagCommand(options, "adopt")} <name> ${scopeFlag}, or reinstall via ${lifecycleFlagCommand(options, "install")} ${scopeFlag} <source>).`,
+    );
+  } else if (skippedUnmanagedTotal > 0) {
+    remediation.push(
+      `Loaded unmanaged extensions are currently treated as informational. Use ${lifecycleFlagCommand(options, "manage")} ${scopeFlag} --fix-managed-state to adopt them for update checks.`,
+    );
+  }
+  if (skippedNonGithubTotal > 0) {
+    remediation.push(`Non-GitHub managed extensions are skipped by update checks. Use doctor output for non-update diagnostics.`);
+  }
+  if (updateAvailableTotal > 0) {
+    remediation.push(`Update available managed extensions via ${lifecycleFlagCommand(options, "install")} ${scopeFlag} <source>.`);
+  }
+  if (remediation.length === 0) {
+    remediation.push(`No immediate action required. Re-run ${lifecycleFlagCommand(options, "manage")} ${scopeFlag} after extension changes.`);
+  }
+  return remediation;
+}
+
+/**
  * Implements build extension triage summary for the public runtime surface of this module.
  */
 export function buildExtensionTriageSummary(
@@ -433,118 +622,19 @@ export function buildExtensionTriageSummary(
   );
   const policyWarnings = summarizePolicyWarnings(effectiveWarnings);
   const scopeFlag = scope === "global" ? "--global" : "--project";
-  const remediation: string[] = [];
-  if (normalizedWarnings.length > 0) {
-    const registrationCollisionRemediation = buildRegistrationCollisionRemediation(normalizedWarnings, {
-      deactivate: `${lifecycleFlagCommand(options, "deactivate")} <name> ${scopeFlag}`,
-      doctor: `${lifecycleFlagCommand(options, "doctor")} ${scopeFlag} --detail deep --trace`,
-    });
-    if (registrationCollisionRemediation) {
-      remediation.push(registrationCollisionRemediation);
-    }
-    if (normalizedWarnings.some((warning) => warning.startsWith("extension_manifest_"))) {
-      remediation.push(`Run ${lifecycleFlagCommand(options, "explore")} ${scopeFlag} to inspect discovered manifests and directories.`);
-    }
-    if (normalizedWarnings.some((warning) => warning.startsWith("extension_capability_unknown:"))) {
-      remediation.push(
-        `Unknown extension capabilities detected. Allowed capabilities: ${KNOWN_EXTENSION_CAPABILITIES.join(", ")}. ` +
-          "Review extension_capability_unknown warning details for suggested replacements.",
-      );
-    }
-    if (normalizedWarnings.some((warning) => warning.startsWith("extension_capability_legacy_alias:"))) {
-      remediation.push(
-        "Legacy extension capability aliases were auto-remapped to canonical capabilities. " +
-          "Update manifests to canonical names (migration/validation -> schema).",
-      );
-    }
-    if (normalizedWarnings.some((warning) => warning.startsWith("extension_capability_missing:"))) {
-      remediation.push(
-        `Extension activation failed because code registered a surface missing from manifest capabilities. ` +
-          `Run ${lifecycleFlagCommand(options, "doctor")} ${scopeFlag} --detail deep --trace and add the reported missing_capability to manifest.json before publishing.`,
-      );
-    }
-    if (normalizedWarnings.some((warning) => warning.startsWith("extension_capability_unused:"))) {
-      remediation.push(
-        "Extension manifests declare capabilities that are never registered against. " +
-          `Remove each reported unused capability from manifest.json to keep least privilege, or add the matching registration. Run ${lifecycleFlagCommand(options, "doctor")} ${scopeFlag} --detail deep --trace for per-extension registration counts.`,
-      );
-    }
-    if (normalizedWarnings.some((warning) => warning.startsWith("extension_command_definition_legacy_handler_alias:"))) {
-      remediation.push(
-        "Extension command definitions using legacy handler were auto-remapped. " +
-          "Update command definitions to use run: (context) => ... for forward compatibility.",
-      );
-    }
-    if (
-      normalizedWarnings.some(
-        (warning) =>
-          warning.startsWith("extension_output_service_override_global:") ||
-          warning.startsWith("extension_output_renderer_override_global:"),
-      )
-    ) {
-      remediation.push(
-        "Global output service/renderer overrides are active. For output_format, return context.payload/null/undefined unless the extension owns the command. For renderers, return null for unrelated payloads so pm falls back to native rendering.",
-      );
-    }
-    if (normalizedWarnings.some((warning) => warning.startsWith("extension_schema_narrow_activation:"))) {
-      remediation.push(
-        "A package registers custom item types/fields (a GLOBAL schema contribution) but also declares narrow activation.commands, so it never activates for built-in commands like pm create <type> and the custom type silently fails to register. Remove activation.commands from manifest.json so pm activates the package for every command, or — if the schema is intentionally command-scoped — knowingly ignore this advisory.",
-      );
-    }
-    if (normalizedWarnings.some((warning) => warning.startsWith("extension_load_failed_sdk_dependency_missing:"))) {
-      remediation.push(
-        `Detected extension load failures caused by missing SDK dependency resolution. ` +
-          `Ensure extension package dependencies include "@unbrained/pm-cli" and reinstall dependencies before running ${lifecycleFlagCommand(options, "doctor")} ${scopeFlag}.`,
-      );
-    }
-    if (normalizedWarnings.some((warning) => warning.startsWith("extension_load_failed_module_mode_mismatch:"))) {
-      remediation.push(
-        `Detected extension module-mode mismatches. For ESM-based extension entries/imports, set package.json "type": "module" ` +
-          `or use an explicit .mjs entry and rerun ${lifecycleFlagCommand(options, "doctor")} ${scopeFlag}.`,
-      );
-    }
-    if (
-      normalizedWarnings.some(
-        (warning) =>
-          warning.startsWith("extension_pm_min_version_") || warning.startsWith("extension_pm_max_version_"),
-      )
-    ) {
-      remediation.push(
-        "Extension pm version-bound warnings detected. Align each package manifest's pm_min_version/pm_max_version " +
-          `with the installed pm CLI version (see the warning's required/allowed=...:current=... details), or upgrade/downgrade the pm CLI to satisfy the declared bounds, then rerun ${lifecycleFlagCommand(options, "doctor")} ${scopeFlag}.`,
-      );
-    }
-    if (updateCheckFailedTotal > 0) {
-      remediation.push(`Run ${lifecycleFlagCommand(options, "manage")} ${scopeFlag} after validating network and repository access.`);
-    }
-    if (normalizedWarnings.some((warning) => warning.startsWith("extension_manager_state_"))) {
-      remediation.push(`Review and repair ${scope} managed extension state file if schema/read warnings persist.`);
-    }
-    if (policyWarnings.warning_count > 0) {
-      remediation.push(
-        "Extension governance policy warnings detected. Review settings.extensions.policy mode and allow/block lists to confirm intended capabilities and registration surfaces.",
-      );
-    }
-  }
   const collisionPlan = buildRegistrationCollisionPlan(scope, normalizedWarnings, extensions, options);
-  if (updateHealthPartial) {
-    remediation.push(
-      `Update-check coverage is partial because unmanaged extensions need adoption. Adopt existing installs via ${lifecycleFlagCommand(options, "manage")} ${scopeFlag} --fix-managed-state (or ${lifecycleFlagCommand(options, "adopt-all")} ${scopeFlag}, ${lifecycleFlagCommand(options, "adopt")} <name> ${scopeFlag}, or reinstall via ${lifecycleFlagCommand(options, "install")} ${scopeFlag} <source>).`,
-    );
-  } else if (skippedUnmanagedTotal > 0) {
-    remediation.push(
-      `Loaded unmanaged extensions are currently treated as informational. Use ${lifecycleFlagCommand(options, "manage")} ${scopeFlag} --fix-managed-state to adopt them for update checks.`,
-    );
-  }
-  if (skippedNonGithubTotal > 0) {
-    remediation.push(`Non-GitHub managed extensions are skipped by update checks. Use doctor output for non-update diagnostics.`);
-  }
-  if (updateAvailableTotal > 0) {
-    remediation.push(`Update available managed extensions via ${lifecycleFlagCommand(options, "install")} ${scopeFlag} <source>.`);
-  }
-  if (remediation.length === 0) {
-    remediation.push(`No immediate action required. Re-run ${lifecycleFlagCommand(options, "manage")} ${scopeFlag} after extension changes.`);
-  }
+  const remediation = buildExtensionTriageRemediation({
+    normalizedWarnings,
+    options,
+    scope,
+    scopeFlag,
+    updateCheckFailedTotal,
+    policyWarningCount: policyWarnings.warning_count,
+    updateHealthPartial,
+    skippedUnmanagedTotal,
+    skippedNonGithubTotal,
+    updateAvailableTotal,
+  });
   return {
     status: effectiveWarnings.length === 0 ? "ok" : "warn",
     warning_count: effectiveWarnings.length,

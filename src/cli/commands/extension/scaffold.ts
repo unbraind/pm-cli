@@ -2411,6 +2411,283 @@ function buildDeclarativePackageReadme(
 }
 
 /**
+ * Derived, deterministic identifier set the package `define*` README snippets
+ * reference: the search/vector adapter names, the importer/exporter adapter
+ * label, the custom item type/folder/aliases, the note field, and the seed
+ * migration id. All are projected from `extensionName` so the generated snippet
+ * matches the generated `index.ts`.
+ */
+interface ScaffoldSnippetNames {
+  searchProviderName: string;
+  vectorAdapterName: string;
+  adapterName: string;
+  itemTypeName: string;
+  itemTypeFolder: string;
+  itemTypeAliases: string[];
+  fieldName: string;
+  migrationId: string;
+}
+
+/**
+ * Project the {@link ScaffoldSnippetNames} for `extensionName`, omitting a
+ * redundant self-alias when the de-hyphenated form already equals the type name.
+ */
+function buildScaffoldSnippetNames(extensionName: string): ScaffoldSnippetNames {
+  const itemTypeName = extensionName;
+  const itemTypeAlias = extensionName.replace(/-/g, "");
+  return {
+    searchProviderName: `${extensionName}-search`,
+    vectorAdapterName: `${extensionName}-vector`,
+    adapterName: `${extensionName.replace(/-/g, " ")} items`,
+    itemTypeName,
+    itemTypeFolder: `${extensionName}s`,
+    itemTypeAliases: itemTypeAlias === itemTypeName ? [] : [itemTypeAlias],
+    fieldName: `${extensionName.replace(/-/g, "_")}_note`,
+    migrationId: `${extensionName}-0001-init`,
+  };
+}
+
+/**
+ * Build the comma-separated `define*` builder import list for the README
+ * snippet, including only the builders the chosen capability demonstrates.
+ */
+function buildDefineBuilderImports(capability: ExtensionScaffoldCapability): string {
+  return [
+    "defineCommand",
+    ...(capability === "hooks" ? ["defineAfterCommandHook"] : []),
+    ...(capability === "search" ? ["defineSearchProvider", "defineVectorStoreAdapter"] : []),
+    ...(capability === "importers" ? ["defineImporter", "defineExporter"] : []),
+    ...(capability === "schema" ? ["defineItemType", "defineItemField", "defineMigration"] : []),
+    ...(capability === "profile" ? ["defineProjectProfile"] : []),
+    ...(capability === "renderers" ? ["defineRendererOverride"] : []),
+    ...(capability === "parser" ? ["defineParserOverride"] : []),
+    ...(capability === "preflight" ? ["definePreflightOverride"] : []),
+    ...(capability === "services" ? ["defineServiceOverride"] : []),
+  ].join(", ");
+}
+
+/**
+ * Build the exported `define*` declarations for the README snippet: the base
+ * `pingCommand` (with parser flags for the parser capability) plus the one
+ * capability-specific export the chosen capability demonstrates.
+ */
+function buildDefineBuilderExports(
+  extensionName: string,
+  commandName: string,
+  capability: ExtensionScaffoldCapability,
+  names: ScaffoldSnippetNames,
+): string[] {
+  const lines = [
+    "export const pingCommand = defineCommand({",
+    `  name: ${JSON.stringify(commandName)},`,
+    '  description: "Starter scaffold command. Replace with your own behavior.",',
+    // The parser starter's command declares the flags its override normalizes so
+    // the demo is runnable through `pm <command> --shout`, and surfaces the
+    // canonical `upper` flag in the result.
+    ...(capability === "parser"
+      ? [
+          "  flags: [",
+          '    { long: "--shout", value_type: "boolean", description: "Deprecated alias for --upper." },',
+          '    { long: "--upper", value_type: "boolean", description: "Canonical flag the parser produces." },',
+          "  ],",
+          "  run: (context) => ({ ok: true, command: context.command, upper: context.options.upper === true }),",
+        ]
+      : ["  run: (context) => ({ ok: true, command: context.command }),"]),
+    "});",
+  ];
+  if (capability === "hooks") {
+    lines.push(
+      "",
+      "export const afterCommandHook = defineAfterCommandHook((context) => {",
+      "  if (!context.ok) return;",
+      "  // React to context.affected here as your package grows.",
+      "});",
+    );
+  }
+  if (capability === "search") {
+    lines.push(
+      "",
+      "export const searchProvider = defineSearchProvider({",
+      `  name: ${JSON.stringify(names.searchProviderName)},`,
+      "  query: async (context) => ({",
+      "    hits: context.documents",
+      "      .filter((document) => String(document.metadata.title ?? \"\").toLowerCase().includes(context.query.toLowerCase()))",
+      "      .map((document) => ({ id: document.metadata.id, score: 1, matched_fields: [\"title\"] })),",
+      "  }),",
+      "  embed: async (context) => [context.input.length],",
+      "});",
+      "",
+      "export const vectorStoreAdapter = defineVectorStoreAdapter({",
+      `  name: ${JSON.stringify(names.vectorAdapterName)},`,
+      "  query: async (context) => [{ id: \"starter-vector-hit\", score: context.limit }],",
+      "  upsert: async (context) => ({ upserted: context.points.length }),",
+      "  delete: async (context) => ({ deleted: context.ids.length }),",
+      "});",
+    );
+  }
+  if (capability === "importers") {
+    lines.push(
+      "",
+      "export const importer = defineImporter(async (context) => ({",
+      "  imported: 1,",
+      "  source: context.options.source ?? \"starter\",",
+      "  args: context.args,",
+      "}));",
+      "",
+      "export const exporter = defineExporter(async (context) => ({",
+      "  exported: true,",
+      "  destination: context.options.destination ?? \"stdout\",",
+      "  args: context.args,",
+      "}));",
+    );
+  }
+  if (capability === "schema") {
+    lines.push(
+      "",
+      `export const noteField = defineItemField({ name: ${JSON.stringify(names.fieldName)}, type: "string", optional: true });`,
+      "",
+      "export const itemType = defineItemType({",
+      `  name: ${JSON.stringify(names.itemTypeName)},`,
+      `  folder: ${JSON.stringify(names.itemTypeFolder)},`,
+      `  aliases: ${JSON.stringify(names.itemTypeAliases)},`,
+      "  required_create_fields: [],",
+      "});",
+      "",
+      "export const initMigration = defineMigration({",
+      `  id: ${JSON.stringify(names.migrationId)},`,
+      `  description: ${JSON.stringify(`Initialize ${extensionName} schema state.`)},`,
+      "  mandatory: false,",
+      "  run: async (context) => ({ migrated: true, id: context.id }),",
+      "});",
+    );
+  }
+  if (capability === "profile") {
+    // Abbreviated illustration; the generated index.ts populates every archetype
+    // dimension (types, statuses, fields, workflow, config, template, packages).
+    lines.push(
+      "",
+      "export const starterProfile = defineProjectProfile({",
+      `  name: ${JSON.stringify(extensionName)},`,
+      `  title: ${JSON.stringify(`${extensionName} archetype`)},`,
+      '  summary: "Starter project profile. Replace these dimensions with your own archetype.",',
+      "  types: [",
+      `    { name: ${JSON.stringify(names.itemTypeName)}, folder: ${JSON.stringify(names.itemTypeFolder)} },`,
+      "  ],",
+      "  // ...plus statuses, fields, workflows, config, templates, and packages.",
+      "});",
+    );
+  }
+  if (capability === "renderers") {
+    lines.push(
+      "",
+      "export const toonRenderer = defineRendererOverride((context) => {",
+      `  if (context.command !== ${JSON.stringify(commandName)}) return null;`,
+      `  return ${JSON.stringify(`${extensionName}: `)} + JSON.stringify(context.result);`,
+      "});",
+    );
+  }
+  if (capability === "parser") {
+    lines.push(
+      "",
+      "export const pingParser = defineParserOverride((context) => {",
+      "  const options = { ...context.options };",
+      "  if (options.shout === true) options.upper = true;",
+      "  delete options.shout;",
+      "  return { options };",
+      "});",
+    );
+  }
+  if (capability === "preflight") {
+    lines.push(
+      "",
+      "// Return a delta of the gate-decision keys you want to change; returning",
+      "// context.decision unchanged is a safe no-op (e.g. { run_extension_migrations: false }).",
+      "export const preflightOverride = definePreflightOverride((context) => context.decision);",
+    );
+  }
+  if (capability === "services") {
+    lines.push(
+      "",
+      "export const outputService = defineServiceOverride((context) => {",
+      `  if (context.command !== ${JSON.stringify(commandName)}) return context.payload;`,
+      `  return { rendered_by: ${JSON.stringify(extensionName)}, payload: context.payload };`,
+      "});",
+    );
+  }
+  return lines;
+}
+
+/**
+ * Build the `activate` body registrations for the README snippet: one
+ * `api.register*`/`api.hooks.*` call wiring the capability-specific exports
+ * produced by {@link buildDefineBuilderExports}.
+ */
+function buildDefineBuilderActivate(
+  commandName: string,
+  capability: ExtensionScaffoldCapability,
+  names: ScaffoldSnippetNames,
+): string[] {
+  const lines: string[] = [];
+  if (capability === "renderers") {
+    lines.push('  api.registerRenderer("toon", toonRenderer);');
+  }
+  if (capability === "parser") {
+    lines.push(`  api.registerParser(${JSON.stringify(commandName)}, pingParser);`);
+  }
+  if (capability === "preflight") {
+    lines.push("  api.registerPreflight(preflightOverride);");
+  }
+  if (capability === "services") {
+    lines.push('  api.registerService("output_format", outputService);');
+  }
+  if (capability === "hooks") {
+    lines.push("  api.hooks.afterCommand(afterCommandHook);");
+  }
+  if (capability === "search") {
+    lines.push("  api.registerSearchProvider(searchProvider);", "  api.registerVectorStoreAdapter(vectorStoreAdapter);");
+  }
+  if (capability === "schema") {
+    lines.push(
+      "  api.registerItemFields([noteField]);",
+      "  api.registerItemTypes([itemType]);",
+      "  api.registerMigration(initMigration);",
+    );
+  }
+  if (capability === "profile") {
+    lines.push("  api.registerProfile(starterProfile);");
+  }
+  if (capability === "importers") {
+    lines.push(
+      `  api.registerImporter(${JSON.stringify(names.adapterName)}, importer, {`,
+      `    action: ${JSON.stringify(`${names.adapterName} import`)},`,
+      '    description: "Import starter records into pm context.",',
+      "    flags: [",
+      "      {",
+      '        long: "--source",',
+      '        value_name: "name",',
+      '        value_type: "string",',
+      '        description: "Source name or path to import from.",',
+      "      },",
+      "    ],",
+      "  });",
+      `  api.registerExporter(${JSON.stringify(names.adapterName)}, exporter, {`,
+      `    action: ${JSON.stringify(`${names.adapterName} export`)},`,
+      '    description: "Export pm context into starter records.",',
+      "    flags: [",
+      "      {",
+      '        long: "--destination",',
+      '        value_name: "name",',
+      '        value_type: "string",',
+      '        description: "Destination name or path to export to.",',
+      "      },",
+      "    ],",
+      "  });",
+    );
+  }
+  return lines;
+}
+
+/**
  * Implements build starter extension scaffold files for the public runtime surface of this module.
  */
 export function buildStarterExtensionScaffoldFiles(
@@ -2540,238 +2817,25 @@ export function buildStarterExtensionScaffoldFiles(
       "*.tsbuildinfo",
       "",
     ].join("\n");
-    const searchProviderName = `${extensionName}-search`;
-    const vectorAdapterName = `${extensionName}-vector`;
-    const adapterName = `${extensionName.replace(/-/g, " ")} items`;
-    const itemTypeName = extensionName;
-    const itemTypeFolder = `${extensionName}s`;
-    const itemTypeAlias = extensionName.replace(/-/g, "");
-    // Omit a redundant self-alias when the de-hyphenated form equals the type name.
-    const itemTypeAliases = itemTypeAlias === itemTypeName ? [] : [itemTypeAlias];
-    const fieldName = `${extensionName.replace(/-/g, "_")}_note`;
-    const migrationId = `${extensionName}-0001-init`;
-    const defineBuilderImports = [
-      "defineCommand",
-      ...(capability === "hooks" ? ["defineAfterCommandHook"] : []),
-      ...(capability === "search" ? ["defineSearchProvider", "defineVectorStoreAdapter"] : []),
-      ...(capability === "importers" ? ["defineImporter", "defineExporter"] : []),
-      ...(capability === "schema" ? ["defineItemType", "defineItemField", "defineMigration"] : []),
-      ...(capability === "profile" ? ["defineProjectProfile"] : []),
-      ...(capability === "renderers" ? ["defineRendererOverride"] : []),
-      ...(capability === "parser" ? ["defineParserOverride"] : []),
-      ...(capability === "preflight" ? ["definePreflightOverride"] : []),
-      ...(capability === "services" ? ["defineServiceOverride"] : []),
-    ].join(", ");
+    const names = buildScaffoldSnippetNames(extensionName);
+    const defineBuilderImports = buildDefineBuilderImports(capability);
     const defineBuilderSnippet = [
       "```ts",
       `import { ${defineBuilderImports} } from "@unbrained/pm-cli/sdk";`,
       'import type { ExtensionApi } from "@unbrained/pm-cli/sdk";',
       "",
-      "export const pingCommand = defineCommand({",
-      `  name: ${JSON.stringify(commandName)},`,
-      '  description: "Starter scaffold command. Replace with your own behavior.",',
-      // The parser starter's command declares the flags its override normalizes so
-      // the demo is runnable through `pm <command> --shout`, and surfaces the
-      // canonical `upper` flag in the result.
-      ...(capability === "parser"
-        ? [
-            "  flags: [",
-            '    { long: "--shout", value_type: "boolean", description: "Deprecated alias for --upper." },',
-            '    { long: "--upper", value_type: "boolean", description: "Canonical flag the parser produces." },',
-            "  ],",
-            "  run: (context) => ({ ok: true, command: context.command, upper: context.options.upper === true }),",
-          ]
-        : ["  run: (context) => ({ ok: true, command: context.command }),"]),
-      "});",
-    ];
-    if (capability === "hooks") {
-      defineBuilderSnippet.push(
-        "",
-        "export const afterCommandHook = defineAfterCommandHook((context) => {",
-        "  if (!context.ok) return;",
-        "  // React to context.affected here as your package grows.",
-        "});",
-      );
-    }
-    if (capability === "search") {
-      defineBuilderSnippet.push(
-        "",
-        "export const searchProvider = defineSearchProvider({",
-        `  name: ${JSON.stringify(searchProviderName)},`,
-        "  query: async (context) => ({",
-        "    hits: context.documents",
-        "      .filter((document) => String(document.metadata.title ?? \"\").toLowerCase().includes(context.query.toLowerCase()))",
-        "      .map((document) => ({ id: document.metadata.id, score: 1, matched_fields: [\"title\"] })),",
-        "  }),",
-        "  embed: async (context) => [context.input.length],",
-        "});",
-        "",
-        "export const vectorStoreAdapter = defineVectorStoreAdapter({",
-        `  name: ${JSON.stringify(vectorAdapterName)},`,
-        "  query: async (context) => [{ id: \"starter-vector-hit\", score: context.limit }],",
-        "  upsert: async (context) => ({ upserted: context.points.length }),",
-        "  delete: async (context) => ({ deleted: context.ids.length }),",
-        "});",
-      );
-    }
-    if (capability === "importers") {
-      defineBuilderSnippet.push(
-        "",
-        "export const importer = defineImporter(async (context) => ({",
-        "  imported: 1,",
-        "  source: context.options.source ?? \"starter\",",
-        "  args: context.args,",
-        "}));",
-        "",
-        "export const exporter = defineExporter(async (context) => ({",
-        "  exported: true,",
-        "  destination: context.options.destination ?? \"stdout\",",
-        "  args: context.args,",
-        "}));",
-      );
-    }
-    if (capability === "schema") {
-      defineBuilderSnippet.push(
-        "",
-        `export const noteField = defineItemField({ name: ${JSON.stringify(fieldName)}, type: "string", optional: true });`,
-        "",
-        "export const itemType = defineItemType({",
-        `  name: ${JSON.stringify(itemTypeName)},`,
-        `  folder: ${JSON.stringify(itemTypeFolder)},`,
-        `  aliases: ${JSON.stringify(itemTypeAliases)},`,
-        "  required_create_fields: [],",
-        "});",
-        "",
-        "export const initMigration = defineMigration({",
-        `  id: ${JSON.stringify(migrationId)},`,
-        `  description: ${JSON.stringify(`Initialize ${extensionName} schema state.`)},`,
-        "  mandatory: false,",
-        "  run: async (context) => ({ migrated: true, id: context.id }),",
-        "});",
-      );
-    }
-    if (capability === "profile") {
-      // Abbreviated illustration; the generated index.ts populates every archetype
-      // dimension (types, statuses, fields, workflow, config, template, packages).
-      defineBuilderSnippet.push(
-        "",
-        "export const starterProfile = defineProjectProfile({",
-        `  name: ${JSON.stringify(extensionName)},`,
-        `  title: ${JSON.stringify(`${extensionName} archetype`)},`,
-        '  summary: "Starter project profile. Replace these dimensions with your own archetype.",',
-        "  types: [",
-        `    { name: ${JSON.stringify(itemTypeName)}, folder: ${JSON.stringify(itemTypeFolder)} },`,
-        "  ],",
-        "  // ...plus statuses, fields, workflows, config, templates, and packages.",
-        "});",
-      );
-    }
-    if (capability === "renderers") {
-      defineBuilderSnippet.push(
-        "",
-        "export const toonRenderer = defineRendererOverride((context) => {",
-        `  if (context.command !== ${JSON.stringify(commandName)}) return null;`,
-        `  return ${JSON.stringify(`${extensionName}: `)} + JSON.stringify(context.result);`,
-        "});",
-      );
-    }
-    if (capability === "parser") {
-      defineBuilderSnippet.push(
-        "",
-        "export const pingParser = defineParserOverride((context) => {",
-        "  const options = { ...context.options };",
-        "  if (options.shout === true) options.upper = true;",
-        "  delete options.shout;",
-        "  return { options };",
-        "});",
-      );
-    }
-    if (capability === "preflight") {
-      defineBuilderSnippet.push(
-        "",
-        "// Return a delta of the gate-decision keys you want to change; returning",
-        "// context.decision unchanged is a safe no-op (e.g. { run_extension_migrations: false }).",
-        "export const preflightOverride = definePreflightOverride((context) => context.decision);",
-      );
-    }
-    if (capability === "services") {
-      defineBuilderSnippet.push(
-        "",
-        "export const outputService = defineServiceOverride((context) => {",
-        `  if (context.command !== ${JSON.stringify(commandName)}) return context.payload;`,
-        `  return { rendered_by: ${JSON.stringify(extensionName)}, payload: context.payload };`,
-        "});",
-      );
-    }
-    defineBuilderSnippet.push(
+      ...buildDefineBuilderExports(extensionName, commandName, capability, names),
       "",
       "export function activate(api: ExtensionApi): void {",
       "  api.registerCommand(pingCommand);",
-    );
-    if (capability === "renderers") {
-      defineBuilderSnippet.push('  api.registerRenderer("toon", toonRenderer);');
-    }
-    if (capability === "parser") {
-      defineBuilderSnippet.push(`  api.registerParser(${JSON.stringify(commandName)}, pingParser);`);
-    }
-    if (capability === "preflight") {
-      defineBuilderSnippet.push("  api.registerPreflight(preflightOverride);");
-    }
-    if (capability === "services") {
-      defineBuilderSnippet.push('  api.registerService("output_format", outputService);');
-    }
-    if (capability === "hooks") {
-      defineBuilderSnippet.push("  api.hooks.afterCommand(afterCommandHook);");
-    }
-    if (capability === "search") {
-      defineBuilderSnippet.push("  api.registerSearchProvider(searchProvider);", "  api.registerVectorStoreAdapter(vectorStoreAdapter);");
-    }
-    if (capability === "schema") {
-      defineBuilderSnippet.push(
-        "  api.registerItemFields([noteField]);",
-        "  api.registerItemTypes([itemType]);",
-        "  api.registerMigration(initMigration);",
-      );
-    }
-    if (capability === "profile") {
-      defineBuilderSnippet.push("  api.registerProfile(starterProfile);");
-    }
-    if (capability === "importers") {
-      defineBuilderSnippet.push(
-        `  api.registerImporter(${JSON.stringify(adapterName)}, importer, {`,
-        `    action: ${JSON.stringify(`${adapterName} import`)},`,
-        '    description: "Import starter records into pm context.",',
-        "    flags: [",
-        "      {",
-        '        long: "--source",',
-        '        value_name: "name",',
-        '        value_type: "string",',
-        '        description: "Source name or path to import from.",',
-        "      },",
-        "    ],",
-        "  });",
-        `  api.registerExporter(${JSON.stringify(adapterName)}, exporter, {`,
-        `    action: ${JSON.stringify(`${adapterName} export`)},`,
-        '    description: "Export pm context into starter records.",',
-        "    flags: [",
-        "      {",
-        '        long: "--destination",',
-        '        value_name: "name",',
-        '        value_type: "string",',
-        '        description: "Destination name or path to export to.",',
-        "      },",
-        "    ],",
-        "  });",
-      );
-    }
-    defineBuilderSnippet.push(
+      ...buildDefineBuilderActivate(commandName, capability, names),
       "}",
       "",
       "export function deactivate(): void {}",
       "",
       "export default { activate, deactivate };",
       "```",
-    );
+    ];
     const packageReadme = [
       `# ${packageName}`,
       "",
