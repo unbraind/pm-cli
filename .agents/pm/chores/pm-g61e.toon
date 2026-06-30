@@ -1,0 +1,19 @@
+id: pm-g61e
+title: "AGENTS.md: mandate reading full live pm item data (status/resolution/comments) before any state claim"
+description: "Add a top-priority Non-Negotiable + Working Rule to AGENTS.md requiring agents to read the FULL current data of every relevant pm item (status, resolution, close_reason, expected/actual_result, all comments, notes, history) via pm get/pm comments BEFORE making or repeating ANY claim about its state, and to NEVER report a feature/release/fix/blocker as blocked/broken/working/done from memory, a prior summary, or a recalled system-reminder. Live pm data cross-checked against the real system (npm view, gh run/release list, workflow files) wins over stale memory. Trigger: in the 2026-06-30 PR#408 session the agent wrongly reported the daily auto-release as 'blocked (RELEASE_PAT absent)' from stale memory, when pm-9gxi was already CLOSED (RELEASE_PAT configured, v2026.6.30 published to npm latest + GitHub Releases). Prevents recurrence."
+type: Chore
+status: closed
+priority: 1
+tags[4]: agent-guidance,"area:docs",living-map,reliability
+created_at: "2026-06-30T15:52:28.052Z"
+updated_at: "2026-06-30T15:53:02.696Z"
+author: claude-code-agent
+parent: pm-u9d0
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-9gxi,related,"2026-06-30T15:52:37.654Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-06-30T15:53:02.081Z",claude-code-agent,"Added Non-Negotiable + 'Verify before you claim' Working Rule to AGENTS.md. docs-skills + docs-links gates pass. Root cause: PR#408 session reported auto-release blocked from stale memory while pm-9gxi was closed (RELEASE_PAT configured, v2026.6.30 on npm latest)."
+files[1]{path,scope,note}:
+  AGENTS.md,project,Mandate reading full live pm item data before any state claim
+close_reason: AGENTS.md now mandates reading full live pm item data before any state claim; docs gates green.
+body: ""

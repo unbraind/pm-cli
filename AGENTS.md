@@ -26,6 +26,7 @@ pm guide <topic>
 ## Non-Negotiables
 
 - `pm` is the system of record. Do not edit `.agents/pm` files directly.
+- **Never claim the state of any tracked work from memory, a prior summary, or a recalled `<system-reminder>` — recalled context is frequently stale. Before stating that ANY `pm` item (or the feature/release/fix/blocker it tracks) is blocked, broken, working, or done, read its full live data — `status`, `resolution`, `close_reason`, `comments`, `history` — with `pm get <id>` / `pm comments <id>`, and cross-check the real system. Live data always wins; when it disagrees with memory, correct the stale memory.** (Verification recipe: see the "Verify before you claim" Working Rule.)
 - Every code, docs, or test change must be linked to a `pm` item with files/docs/tests and evidence comments.
 - Before creating work, search existing items and reuse the canonical lineage when possible.
 - Claim before substantial edits; release when paused, handed off, closed, or canceled.
@@ -82,6 +83,7 @@ Set `PM_AUTHOR=<stable-agent-id>` before mutations.
 ## Working Rules
 
 - **Orient:** run `pm context`, `pm search`, `pm list-open`, and `pm list-in-progress` before `pm create`. If net-new work is required, create or reuse the parent lineage first and record duplicate-check evidence in a create-time comment.
+- **Verify before you claim:** the verification recipe for the Non-Negotiable above. A `closed` item whose `resolution`/`close_reason` describes the fix represents completed, shipped work — never describe it as outstanding. Confirm release/CI/infra status against the live system, e.g. `pm get pm-9gxi`, `npm view @unbrained/pm-cli version`, `gh release list`, `gh run list --workflow=auto-release.yml`.
 - **Implement:** keep edits scoped to the claimed item. Link changed files with `pm files`, docs with `pm docs`, and runnable verification with `pm test`.
 - **Record:** use `pm comments`, `pm notes`, and `pm learnings` for progress, rationale, and durable lessons. Prefer append-style updates over rewriting item content.
 - **Verify:** use sandbox-safe commands. For documentation-only work, run at least `pnpm build` and a focused link/content check. For broader work, run linked tests, coverage, validation, and release gates as appropriate.
