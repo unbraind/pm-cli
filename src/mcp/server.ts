@@ -456,9 +456,14 @@ async function withActiveExtensions<T>(
   global: GlobalOptions,
   run: (active: ActiveExtensionRuntime | null) => Promise<T>,
 ): Promise<T> {
+  // Capture the request cwd BEFORE enqueueing: the queued task can run after another
+  // concurrent request (tests, a future concurrent transport) has chdir'd the process,
+  // so resolving process.cwd() inside the task would bind this request to the wrong
+  // workspace. handleRequest chdirs per request via withCwd, so snapshot it here.
+  const cwd = process.cwd();
   return extensionActivationQueue.enqueue(async () => {
     try {
-      return await withActiveExtensionsExclusively(global, run);
+      return await withActiveExtensionsExclusively(global, cwd, run);
     } finally {
       clearWorkspaceContractsCache();
     }
@@ -479,12 +484,13 @@ async function withActiveExtensions<T>(
  */
 async function withActiveExtensionsExclusively<T>(
   global: GlobalOptions,
+  cwd: string,
   run: (active: ActiveExtensionRuntime | null) => Promise<T>,
 ): Promise<T> {
   if (global.noExtensions) {
     return run(null);
   }
-  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  const pmRoot = resolvePmRoot(cwd, global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     return run(null);
   }
@@ -492,7 +498,7 @@ async function withActiveExtensionsExclusively<T>(
   let activated: { loadResult: Awaited<ReturnType<typeof loadExtensions>>; activationResult: ExtensionActivationResult } | undefined;
   try {
     const settings = await readSettings(pmRoot);
-    const loadResult = await loadExtensions({ pmRoot, settings, cwd: process.cwd(), noExtensions: false });
+    const loadResult = await loadExtensions({ pmRoot, settings, cwd, noExtensions: false });
     const activationResult = await activateExtensions({ ...loadResult, loaded: loadResult.loaded });
     // Record the teardown handle BEFORE publishing the registries so a throw from any
     // setActive* setter still runs deactivateExtensions for resources opened during
