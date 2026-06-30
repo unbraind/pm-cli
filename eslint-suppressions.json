@@ -294,11 +294,6 @@
       "count": 3
     }
   },
-  "src/core/extensions/loader.ts": {
-    "complexity": {
-      "count": 3
-    }
-  },
   "src/core/governance/metadata-coverage.ts": {
     "complexity": {
       "count": 1
@@ -379,19 +374,9 @@
       "count": 1
     }
   },
-  "src/sdk/cli-contracts/flag-contracts.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "src/sdk/cli-contracts/tool-schema.ts": {
     "complexity": {
       "count": 1
-    }
-  },
-  "src/sdk/compose.ts": {
-    "complexity": {
-      "count": 2
     }
   }
 }

@@ -230,6 +230,104 @@ export function defineExtensionBlueprint<TBlueprint extends ExtensionBlueprint>(
 }
 
 /**
+ * Register a blueprint's command-layer surfaces — fresh command definitions,
+ * command overrides, flag tables, and parser/renderer/service overrides — in the
+ * deterministic order {@link composeExtension} documents.
+ */
+function registerBlueprintCommandSurfaces(api: ExtensionApi, blueprint: ExtensionBlueprint): void {
+  for (const command of blueprint.commands ?? []) {
+    api.registerCommand(command);
+  }
+  for (const [command, override] of Object.entries(blueprint.commandOverrides ?? {})) {
+    api.registerCommand(command, override);
+  }
+  for (const [targetCommand, flags] of Object.entries(blueprint.flags ?? {})) {
+    api.registerFlags(targetCommand, flags);
+  }
+  for (const [command, override] of Object.entries(blueprint.parsers ?? {})) {
+    api.registerParser(command, override);
+  }
+  for (const [format, renderer] of Object.entries(blueprint.renderers ?? {}) as Array<
+    [OutputRendererFormat, RendererOverride]
+  >) {
+    api.registerRenderer(format, renderer);
+  }
+  for (const [service, override] of Object.entries(blueprint.services ?? {}) as Array<
+    [ExtensionServiceName, ServiceOverride]
+  >) {
+    api.registerService(service, override);
+  }
+}
+
+/**
+ * Register a blueprint's schema-layer surfaces — preflight overrides, item types,
+ * item fields, schema migrations, and project profiles — preserving the
+ * batch-registration semantics of `registerItemTypes`/`registerItemFields`
+ * (only invoked when at least one entry is present).
+ */
+function registerBlueprintSchemaSurfaces(api: ExtensionApi, blueprint: ExtensionBlueprint): void {
+  for (const override of blueprint.preflights ?? []) {
+    api.registerPreflight(override);
+  }
+  const itemTypes = blueprint.itemTypes ?? [];
+  if (itemTypes.length > 0) {
+    api.registerItemTypes(itemTypes);
+  }
+  const itemFields = blueprint.itemFields ?? [];
+  if (itemFields.length > 0) {
+    api.registerItemFields(itemFields);
+  }
+  for (const migration of blueprint.migrations ?? []) {
+    api.registerMigration(migration);
+  }
+  for (const profile of blueprint.profiles ?? []) {
+    api.registerProfile(profile);
+  }
+}
+
+/**
+ * Register a blueprint's retrieval and interchange surfaces — search providers,
+ * vector store adapters, importers, and exporters — passing each importer's and
+ * exporter's optional registration options through verbatim.
+ */
+function registerBlueprintRetrievalSurfaces(api: ExtensionApi, blueprint: ExtensionBlueprint): void {
+  for (const provider of blueprint.searchProviders ?? []) {
+    api.registerSearchProvider(provider);
+  }
+  for (const adapter of blueprint.vectorStoreAdapters ?? []) {
+    api.registerVectorStoreAdapter(adapter);
+  }
+  for (const entry of blueprint.importers ?? []) {
+    api.registerImporter(entry.name, entry.importer, entry.options);
+  }
+  for (const entry of blueprint.exporters ?? []) {
+    api.registerExporter(entry.name, entry.exporter, entry.options);
+  }
+}
+
+/**
+ * Register a blueprint's lifecycle hooks in canonical order
+ * (beforeCommand → afterCommand → onWrite → onRead → onIndex).
+ */
+function registerBlueprintHooks(api: ExtensionApi, hooks: ExtensionBlueprintHooks): void {
+  for (const hook of hooks.beforeCommand ?? []) {
+    api.hooks.beforeCommand(hook);
+  }
+  for (const hook of hooks.afterCommand ?? []) {
+    api.hooks.afterCommand(hook);
+  }
+  for (const hook of hooks.onWrite ?? []) {
+    api.hooks.onWrite(hook);
+  }
+  for (const hook of hooks.onRead ?? []) {
+    api.hooks.onRead(hook);
+  }
+  for (const hook of hooks.onIndex ?? []) {
+    api.hooks.onIndex(hook);
+  }
+}
+
+/**
  * Assemble an {@link ExtensionModule} from a declarative {@link ExtensionBlueprint}.
  *
  * The returned module's `activate` registers every populated surface through the
@@ -247,77 +345,14 @@ export function defineExtensionBlueprint<TBlueprint extends ExtensionBlueprint>(
  */
 export function composeExtension(blueprint: ExtensionBlueprint): ExtensionModule {
   const activate = async (api: ExtensionApi): Promise<void> => {
-    for (const command of blueprint.commands ?? []) {
-      api.registerCommand(command);
-    }
-    for (const [command, override] of Object.entries(blueprint.commandOverrides ?? {})) {
-      api.registerCommand(command, override);
-    }
-    for (const [targetCommand, flags] of Object.entries(blueprint.flags ?? {})) {
-      api.registerFlags(targetCommand, flags);
-    }
-    for (const [command, override] of Object.entries(blueprint.parsers ?? {})) {
-      api.registerParser(command, override);
-    }
-    for (const [format, renderer] of Object.entries(blueprint.renderers ?? {}) as Array<
-      [OutputRendererFormat, RendererOverride]
-    >) {
-      api.registerRenderer(format, renderer);
-    }
-    for (const [service, override] of Object.entries(blueprint.services ?? {}) as Array<
-      [ExtensionServiceName, ServiceOverride]
-    >) {
-      api.registerService(service, override);
-    }
-    for (const override of blueprint.preflights ?? []) {
-      api.registerPreflight(override);
-    }
-    const itemTypes = blueprint.itemTypes ?? [];
-    if (itemTypes.length > 0) {
-      api.registerItemTypes(itemTypes);
-    }
-    const itemFields = blueprint.itemFields ?? [];
-    if (itemFields.length > 0) {
-      api.registerItemFields(itemFields);
-    }
-    for (const migration of blueprint.migrations ?? []) {
-      api.registerMigration(migration);
-    }
-    for (const profile of blueprint.profiles ?? []) {
-      api.registerProfile(profile);
-    }
-    for (const provider of blueprint.searchProviders ?? []) {
-      api.registerSearchProvider(provider);
-    }
-    for (const adapter of blueprint.vectorStoreAdapters ?? []) {
-      api.registerVectorStoreAdapter(adapter);
-    }
-    for (const entry of blueprint.importers ?? []) {
-      api.registerImporter(entry.name, entry.importer, entry.options);
-    }
-    for (const entry of blueprint.exporters ?? []) {
-      api.registerExporter(entry.name, entry.exporter, entry.options);
-    }
+    registerBlueprintCommandSurfaces(api, blueprint);
+    registerBlueprintSchemaSurfaces(api, blueprint);
+    registerBlueprintRetrievalSurfaces(api, blueprint);
     // `?? {}` (rather than a `!== undefined` guard) so an explicit `hooks: null`
     // crossing an untyped boundary (e.g. a blueprint hydrated from JSON) is
     // treated the same as omitting it, instead of throwing on the first
     // `hooks.beforeCommand` access.
-    const hooks: ExtensionBlueprintHooks = blueprint.hooks ?? {};
-    for (const hook of hooks.beforeCommand ?? []) {
-      api.hooks.beforeCommand(hook);
-    }
-    for (const hook of hooks.afterCommand ?? []) {
-      api.hooks.afterCommand(hook);
-    }
-    for (const hook of hooks.onWrite ?? []) {
-      api.hooks.onWrite(hook);
-    }
-    for (const hook of hooks.onRead ?? []) {
-      api.hooks.onRead(hook);
-    }
-    for (const hook of hooks.onIndex ?? []) {
-      api.hooks.onIndex(hook);
-    }
+    registerBlueprintHooks(api, blueprint.hooks ?? {});
     await blueprint.activate?.(api);
   };
 
@@ -887,39 +922,17 @@ function normalizeDeclaredCapabilities(capabilities: readonly string[]): Extensi
 }
 
 /**
- * Preflight a declarative {@link ExtensionBlueprint} at author time, returning the
- * structured issues that would otherwise only surface at activation.
- *
- * It is the author-time inverse of the runtime extension guardrails — pure data
- * analysis with no loading, activation, or side effects:
- *
- * - capability drift in both directions: a capability a surface exercises but the
- *   declared set omits is an `error` (the loader throws `extension_capability_missing`
- *   at activation); a declared capability no surface exercises is a `warning` (the
- *   author-time form of the `pm package doctor` `extension_capability_unused` note,
- *   making this the static inverse of `reconcileExtensionCapabilityUsage`).
- * - structural footguns: a command path declared twice (`duplicate_command`), a
- *   path declared as both a command and an override (`command_override_conflict`),
- *   and a registration field present but empty (`empty_surface`).
- *
- * The declared set is taken from `options.declaredCapabilities` or, failing that,
- * `blueprint.manifest.capabilities`; with neither, capability reconciliation is
- * skipped and a single `manifest_capabilities_absent` warning suggests adopting
- * {@link deriveExtensionCapabilities}. Like {@link describeExtensionBlueprint},
- * the imperative `activate` escape hatch is invisible to this static check.
+ * Reconcile a blueprint's exercised capabilities against its declared set: a
+ * used-but-undeclared capability is an `error` (activation throws
+ * `extension_capability_missing`), a declared-but-unused one a `warning`, and a
+ * wholly absent declared set (`declared === null`) yields the single
+ * `manifest_capabilities_absent` adoption hint.
  */
-export function lintExtensionBlueprint(
-  blueprint: ExtensionBlueprint,
-  options: LintExtensionBlueprintOptions = {},
-): ExtensionBlueprintLintResult {
+function collectBlueprintCapabilityFindings(
+  used: ExtensionCapability[],
+  declared: ExtensionCapability[] | null,
+): ExtensionBlueprintLintFinding[] {
   const findings: ExtensionBlueprintLintFinding[] = [];
-  const used = deriveExtensionCapabilities(blueprint);
-
-  // A non-array declared source (an untyped `.js` author's malformed manifest, or
-  // a missing field) is treated as "no declared set" rather than "declares nothing".
-  const declaredSource = options.declaredCapabilities ?? blueprint.manifest?.capabilities;
-  const declared = Array.isArray(declaredSource) ? normalizeDeclaredCapabilities(declaredSource) : null;
-
   if (declared === null) {
     if (used.length > 0) {
       findings.push({
@@ -928,32 +941,41 @@ export function lintExtensionBlueprint(
         message: `Blueprint exercises ${used.length === 1 ? "capability" : "capabilities"} [${used.join(", ")}] but declares none; set capabilities to deriveExtensionCapabilities(blueprint) so the manifest grant matches.`,
       });
     }
-  } else {
-    const declaredSet = new Set(declared);
-    const usedSet = new Set(used);
-    for (const capability of used) {
-      if (!declaredSet.has(capability)) {
-        findings.push({
-          code: "capability_undeclared",
-          severity: "error",
-          message: `Blueprint exercises capability "${capability}" but it is absent from the declared capabilities; activation throws extension_capability_missing — add "${capability}" to the manifest capabilities.`,
-          capability,
-        });
-      }
-    }
-    for (const capability of declared) {
-      if (!usedSet.has(capability)) {
-        findings.push({
-          code: "capability_unused",
-          severity: "warning",
-          message: `Capability "${capability}" is declared but no blueprint surface exercises it; drop it to keep the manifest least-privilege (pm package doctor reports this as extension_capability_unused).`,
-          capability,
-        });
-      }
+    return findings;
+  }
+  const declaredSet = new Set(declared);
+  const usedSet = new Set(used);
+  for (const capability of used) {
+    if (!declaredSet.has(capability)) {
+      findings.push({
+        code: "capability_undeclared",
+        severity: "error",
+        message: `Blueprint exercises capability "${capability}" but it is absent from the declared capabilities; activation throws extension_capability_missing — add "${capability}" to the manifest capabilities.`,
+        capability,
+      });
     }
   }
+  for (const capability of declared) {
+    if (!usedSet.has(capability)) {
+      findings.push({
+        code: "capability_unused",
+        severity: "warning",
+        message: `Capability "${capability}" is declared but no blueprint surface exercises it; drop it to keep the manifest least-privilege (pm package doctor reports this as extension_capability_unused).`,
+        capability,
+      });
+    }
+  }
+  return findings;
+}
 
-  // Duplicate command paths within the declared command definitions.
+/**
+ * Detect structural command footguns in a blueprint: a command path declared
+ * more than once (`duplicate_command`, the later registration shadowing the
+ * earlier at dispatch) and a path declared both as a fresh command definition
+ * and as an override (`command_override_conflict`).
+ */
+function collectBlueprintCommandFindings(blueprint: ExtensionBlueprint): ExtensionBlueprintLintFinding[] {
+  const findings: ExtensionBlueprintLintFinding[] = [];
   const commandPathCounts = new Map<string, number>();
   for (const command of blueprint.commands ?? []) {
     const path = normalizeCommandName(command.name);
@@ -969,8 +991,6 @@ export function lintExtensionBlueprint(
       });
     }
   }
-
-  // A command path declared as both a fresh definition and an override.
   const overridePaths = new Set(
     Object.keys(blueprint.commandOverrides ?? {}).map((command) => normalizeCommandName(command)),
   );
@@ -984,8 +1004,16 @@ export function lintExtensionBlueprint(
       });
     }
   }
+  return findings;
+}
 
-  // Registration fields present on the blueprint but contributing nothing.
+/**
+ * Flag blueprint registration fields that are present but contribute nothing —
+ * an empty array/record surface, or a `hooks` object registering no lifecycle
+ * hook — each reported as an `empty_surface` warning (fields first, then hooks).
+ */
+function collectBlueprintEmptySurfaceFindings(blueprint: ExtensionBlueprint): ExtensionBlueprintLintFinding[] {
+  const findings: ExtensionBlueprintLintFinding[] = [];
   for (const field of BLUEPRINT_LINTABLE_SURFACE_FIELDS) {
     if (field in blueprint && !hasEntries(blueprint[field])) {
       findings.push({
@@ -1010,6 +1038,52 @@ export function lintExtensionBlueprint(
       });
     }
   }
+  return findings;
+}
+
+/**
+ * Preflight a declarative {@link ExtensionBlueprint} at author time, returning the
+ * structured issues that would otherwise only surface at activation.
+ *
+ * It is the author-time inverse of the runtime extension guardrails — pure data
+ * analysis with no loading, activation, or side effects:
+ *
+ * - capability drift in both directions: a capability a surface exercises but the
+ *   declared set omits is an `error` (the loader throws `extension_capability_missing`
+ *   at activation); a declared capability no surface exercises is a `warning` (the
+ *   author-time form of the `pm package doctor` `extension_capability_unused` note,
+ *   making this the static inverse of `reconcileExtensionCapabilityUsage`).
+ * - structural footguns: a command path declared twice (`duplicate_command`), a
+ *   path declared as both a command and an override (`command_override_conflict`),
+ *   and a registration field present but empty (`empty_surface`).
+ *
+ * The declared set is taken from `options.declaredCapabilities` or, failing that,
+ * `blueprint.manifest.capabilities`; with neither, capability reconciliation is
+ * skipped and a single `manifest_capabilities_absent` warning suggests adopting
+ * {@link deriveExtensionCapabilities}. Like {@link describeExtensionBlueprint},
+ * the imperative `activate` escape hatch is invisible to this static check. The
+ * findings are assembled from the per-dimension collectors
+ * ({@link collectBlueprintCapabilityFindings}, {@link collectBlueprintCommandFindings},
+ * {@link collectBlueprintEmptySurfaceFindings}) in that detection order.
+ */
+export function lintExtensionBlueprint(
+  blueprint: ExtensionBlueprint,
+  options: LintExtensionBlueprintOptions = {},
+): ExtensionBlueprintLintResult {
+  const used = deriveExtensionCapabilities(blueprint);
+
+  // A non-array declared source (an untyped `.js` author's malformed manifest, or
+  // a missing field) is treated as "no declared set" rather than "declares nothing".
+  const declaredSource = options.declaredCapabilities ?? blueprint.manifest?.capabilities;
+  const declared = Array.isArray(declaredSource) ? normalizeDeclaredCapabilities(declaredSource) : null;
+
+  // Findings accumulate in detection order: capability drift, then command
+  // duplicates/conflicts, then empty surfaces.
+  const findings: ExtensionBlueprintLintFinding[] = [
+    ...collectBlueprintCapabilityFindings(used, declared),
+    ...collectBlueprintCommandFindings(blueprint),
+    ...collectBlueprintEmptySurfaceFindings(blueprint),
+  ];
 
   return {
     ok: findings.every((finding) => finding.severity !== "error"),
