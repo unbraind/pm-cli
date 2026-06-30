@@ -75,6 +75,8 @@
     "test:coverage": "node scripts/run-tests.mjs coverage",
     "lint": "pnpm lint:eslint && pnpm lint:duplicates && pnpm lint:codefactor",
     "lint:eslint": "eslint . --max-warnings=0",
+    "lint:eslint:prune": "eslint . --prune-suppressions",
+    "lint:complexity:baseline": "eslint . --suppress-rule complexity",
     "lint:duplicates": "jscpd --config .jscpd.json",
     "lint:codefactor": "pnpm quality:static",
     "quality:static": "node scripts/release/static-quality-gate.mjs",
@@ -97,6 +99,7 @@
     "release:pipeline:dry-run": "node scripts/release/run-release-pipeline.mjs --dry-run",
     "release:verify-published": "node scripts/release/verify-published-release.mjs",
     "review:greptile": "greptile review --agent",
+    "review:greptile:gate": "node scripts/release/greptile-review-gate.mjs",
     "security:scan": "node scripts/check-secrets.mjs",
     "smoke:npx": "node scripts/smoke-npx-from-pack.mjs",
     "sentry:inject": "sentry-cli sourcemaps inject dist/",
@@ -147,7 +150,7 @@
     "jscpd": "^5.0.11",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.62.0",
+    "typescript-eslint": "^8.62.1",
     "vitest": "^4.1.9"
   },
   "pnpm": {

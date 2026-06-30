@@ -106,17 +106,16 @@ export function parseEventEntries(raw: string[], nowValue: Date, options: ParseE
     const description = descriptionRaw?.trim();
     const location = locationRaw?.trim();
     const timezone = timezoneRaw?.trim();
-    if (titleRaw !== undefined && !title) {
-      throw new PmCliError("--event title must not be empty", EXIT_CODE.USAGE);
-    }
-    if (descriptionRaw !== undefined && !description) {
-      throw new PmCliError("--event description must not be empty", EXIT_CODE.USAGE);
-    }
-    if (locationRaw !== undefined && !location) {
-      throw new PmCliError("--event location must not be empty", EXIT_CODE.USAGE);
-    }
-    if (timezoneRaw !== undefined && !timezone) {
-      throw new PmCliError("--event timezone must not be empty", EXIT_CODE.USAGE);
+    const optionalTextFields = [
+      ["title", titleRaw, title],
+      ["description", descriptionRaw, description],
+      ["location", locationRaw, location],
+      ["timezone", timezoneRaw, timezone],
+    ] as const;
+    for (const [fieldLabel, rawValue, trimmedValue] of optionalTextFields) {
+      if (rawValue !== undefined && !trimmedValue) {
+        throw new PmCliError(`--event ${fieldLabel} must not be empty`, EXIT_CODE.USAGE);
+      }
     }
 
     const allDayRaw = kv.all_day?.trim();

@@ -874,6 +874,7 @@ describe("context command module", () => {
         type: "Feature",
         status: "open",
         priority: "1",
+        deadline: "2026-06-01T00:00:00.000Z",
       });
 
       const result = await runContext(

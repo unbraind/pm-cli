@@ -57,77 +57,88 @@ export function stableStringify(value: unknown): string {
   return JSON.stringify(sortObjectKeys(value));
 }
 
-/**
- * Implements stable value equals for the public runtime surface of this module.
- */
-export function stableValueEquals(left: unknown, right: unknown): boolean {
-  if (Object.is(left, right)) {
-    return true;
+function hasUnmatchedEquivalent<T>(
+  leftValue: T,
+  rightValues: readonly T[],
+  matchedIndexes: Set<number>,
+  equals: (leftEntry: T, rightEntry: T) => boolean,
+): boolean {
+  for (let index = 0; index < rightValues.length; index += 1) {
+    if (matchedIndexes.has(index)) {
+      continue;
+    }
+    if (equals(leftValue, rightValues[index] as T)) {
+      matchedIndexes.add(index);
+      return true;
+    }
   }
-  if (left === null || right === null || typeof left !== "object" || typeof right !== "object") {
+  return false;
+}
+
+function compareRegExpValues(left: unknown, right: unknown): boolean | undefined {
+  if (!(left instanceof RegExp || right instanceof RegExp)) {
+    return undefined;
+  }
+  return left instanceof RegExp && right instanceof RegExp && left.toString() === right.toString();
+}
+
+function compareDateValues(left: unknown, right: unknown): boolean | undefined {
+  if (!(left instanceof Date || right instanceof Date)) {
+    return undefined;
+  }
+  return left instanceof Date && right instanceof Date && left.getTime() === right.getTime();
+}
+
+function compareSetValues(left: unknown, right: unknown): boolean | undefined {
+  if (!(left instanceof Set || right instanceof Set)) {
+    return undefined;
+  }
+  if (!(left instanceof Set && right instanceof Set) || left.size !== right.size) {
     return false;
   }
-  if (left instanceof RegExp || right instanceof RegExp) {
-    return left instanceof RegExp && right instanceof RegExp && left.toString() === right.toString();
-  }
-  if (left instanceof Date || right instanceof Date) {
-    return left instanceof Date && right instanceof Date && left.getTime() === right.getTime();
-  }
-  if (left instanceof Set || right instanceof Set) {
-    if (!(left instanceof Set && right instanceof Set) || left.size !== right.size) {
+  const rightValues = [...right];
+  const matched = new Set<number>();
+  for (const leftValue of left) {
+    if (!hasUnmatchedEquivalent(leftValue, rightValues, matched, stableValueEquals)) {
       return false;
     }
-    const rightValues = [...right];
-    const matched = new Set<number>();
-    for (const leftValue of left) {
-      let found = false;
-      for (let index = 0; index < rightValues.length; index += 1) {
-        if (matched.has(index)) {
-          continue;
-        }
-        if (stableValueEquals(leftValue, rightValues[index])) {
-          matched.add(index);
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        return false;
-      }
-    }
-    return true;
   }
-  if (left instanceof Map || right instanceof Map) {
-    if (!(left instanceof Map && right instanceof Map) || left.size !== right.size) {
+  return true;
+}
+
+function compareMapValues(left: unknown, right: unknown): boolean | undefined {
+  if (!(left instanceof Map || right instanceof Map)) {
+    return undefined;
+  }
+  if (!(left instanceof Map && right instanceof Map) || left.size !== right.size) {
+    return false;
+  }
+  const rightEntries = [...right.entries()];
+  const matched = new Set<number>();
+  for (const [leftKey, leftValue] of left.entries()) {
+    const leftEntry: [unknown, unknown] = [leftKey, leftValue];
+    if (
+      !hasUnmatchedEquivalent(leftEntry, rightEntries, matched, ([candidateKey, candidateValue], [rightKey, rightValue]) =>
+        stableValueEquals(candidateKey, rightKey) && stableValueEquals(candidateValue, rightValue),
+      )
+    ) {
       return false;
     }
-    const rightEntries = [...right.entries()];
-    const matched = new Set<number>();
-    for (const [leftKey, leftValue] of left.entries()) {
-      let found = false;
-      for (let index = 0; index < rightEntries.length; index += 1) {
-        if (matched.has(index)) {
-          continue;
-        }
-        const [rightKey, rightValue] = rightEntries[index]!;
-        if (stableValueEquals(leftKey, rightKey) && stableValueEquals(leftValue, rightValue)) {
-          matched.add(index);
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        return false;
-      }
-    }
-    return true;
   }
-  if (Array.isArray(left) || Array.isArray(right)) {
-    if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
-      return false;
-    }
-    return left.every((value, index) => stableValueEquals(value, right[index]));
+  return true;
+}
+
+function compareArrayValues(left: unknown, right: unknown): boolean | undefined {
+  if (!(Array.isArray(left) || Array.isArray(right))) {
+    return undefined;
   }
+  if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
+    return false;
+  }
+  return left.every((value, index) => stableValueEquals(value, right[index]));
+}
+
+function comparePlainObjectValues(left: object, right: object): boolean {
   const leftKeys = Object.keys(left).sort((a, b) => a.localeCompare(b));
   const rightKeys = Object.keys(right).sort((a, b) => a.localeCompare(b));
   if (leftKeys.length !== rightKeys.length) {
@@ -143,6 +154,33 @@ export function stableValueEquals(left: unknown, right: unknown): boolean {
     }
   }
   return true;
+}
+
+const SPECIALIZED_STABLE_VALUE_COMPARISONS = [
+  compareRegExpValues,
+  compareDateValues,
+  compareSetValues,
+  compareMapValues,
+  compareArrayValues,
+] as const;
+
+/**
+ * Implements stable value equals for the public runtime surface of this module.
+ */
+export function stableValueEquals(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) {
+    return true;
+  }
+  if (left === null || right === null || typeof left !== "object" || typeof right !== "object") {
+    return false;
+  }
+  for (const compare of SPECIALIZED_STABLE_VALUE_COMPARISONS) {
+    const result = compare(left, right);
+    if (result !== undefined) {
+      return result;
+    }
+  }
+  return comparePlainObjectValues(left, right);
 }
 
 /**

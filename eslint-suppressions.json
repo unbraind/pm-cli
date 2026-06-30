@@ -1,0 +1,422 @@
+{
+  "packages/pm-beads/extensions/beads/runtime.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "packages/pm-guide-shell/extensions/guide-shell/runtime.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "packages/pm-todos/extensions/todos/runtime.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "scripts/dogfood-package-first.mjs": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "scripts/generate-release-notes.mjs": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "scripts/release/compatibility-check.mjs": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "scripts/release/docs-skills-gate.mjs": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "scripts/release/run-release-pipeline.mjs": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "scripts/release/sentry-telemetry-gate.mjs": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "scripts/release/static-quality-gate.mjs": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "scripts/release/utils.mjs": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "scripts/smoke-external-packages.mjs": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "scripts/smoke-npx-from-pack.mjs": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/bootstrap-args.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commander-usage.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/aggregate.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/calendar.ts": {
+    "complexity": {
+      "count": 5
+    }
+  },
+  "src/cli/commands/close-many.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/close.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/comments-audit.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/config.ts": {
+    "complexity": {
+      "count": 4
+    }
+  },
+  "src/cli/commands/context.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/cli/commands/contracts.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/cli/commands/create.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/dedupe-audit.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/dedupe-merge.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/extension.ts": {
+    "complexity": {
+      "count": 4
+    }
+  },
+  "src/cli/commands/extension/bundled-catalog.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/extension/doctor.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/extension/managed-state.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/extension/scaffold.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/get.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/health.ts": {
+    "complexity": {
+      "count": 4
+    }
+  },
+  "src/cli/commands/history-compact.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/cli/commands/history-redact.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/history-repair.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/init.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/list-filter-shared.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/list.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/cli/commands/next.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/plan.ts": {
+    "complexity": {
+      "count": 5
+    }
+  },
+  "src/cli/commands/recurrence-parsers.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/reindex.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/restore.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/cli/commands/schema.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/search.ts": {
+    "complexity": {
+      "count": 5
+    }
+  },
+  "src/cli/commands/telemetry.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/test-all.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/test.ts": {
+    "complexity": {
+      "count": 6
+    }
+  },
+  "src/cli/commands/update-many.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/update.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "src/cli/commands/validate.ts": {
+    "complexity": {
+      "count": 5
+    }
+  },
+  "src/cli/error-guidance.ts": {
+    "complexity": {
+      "count": 4
+    }
+  },
+  "src/cli/extension-command-options.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/main.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "src/cli/migration-gates.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/register-list-query.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/cli/register-mutation.ts": {
+    "complexity": {
+      "count": 6
+    }
+  },
+  "src/cli/register-operations.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/cli/register-setup.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/cli/registration-helpers.ts": {
+    "complexity": {
+      "count": 4
+    }
+  },
+  "src/core/config/nested-settings.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/core/extensions/activation-summary-markdown.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/core/extensions/extension-policy.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "src/core/extensions/loader.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "src/core/governance/metadata-coverage.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/core/history/drift-scan.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/core/item/item-format.ts": {
+    "complexity": {
+      "count": 8
+    }
+  },
+  "src/core/item/item-type-definition.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/core/item/type-registry.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/core/output/mutation-projection.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/core/schema/runtime-schema.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/core/search/semantic-defaults.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/core/search/vector-stores.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/core/sentry/helpers.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/core/sentry/instrument.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/core/store/front-matter-cache.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/core/store/item-store.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/core/store/settings.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "src/core/test/background-runs.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/mcp/server.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/sdk/cli-contracts/flag-contracts.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/sdk/cli-contracts/tool-schema.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/sdk/compose.ts": {
+    "complexity": {
+      "count": 2
+    }
+  }
+}

@@ -7,6 +7,7 @@ function usage() {
   node scripts/release/run-gates.mjs [--json]
     [--skip-compatibility]
     [--skip-dogfood]
+    [--skip-greptile]
     [--skip-telemetry-sentry]
     [--telemetry-mode off|best-effort|required]
     [--sentry-window-days 14]
@@ -54,6 +55,7 @@ function main() {
   const outputJson = flagBool(flags, "json", false);
   const skipCompatibility = flagBool(flags, "skip-compatibility", false);
   const skipDogfood = flagBool(flags, "skip-dogfood", false);
+  const skipGreptile = flagBool(flags, "skip-greptile", false);
   const skipTelemetrySentry = flagBool(flags, "skip-telemetry-sentry", false);
   const telemetryMode = flagString(flags, "telemetry-mode", "best-effort");
   const sentryWindowDays = flagString(flags, "sentry-window-days", "14");
@@ -146,6 +148,26 @@ function main() {
     });
   } else {
     checks.push({ name: "sentry-telemetry-gate", ok: true, skipped: true });
+  }
+
+  // Greptile review is a best-effort gate: it surfaces the Greptile CLI reviewer
+  // in the local pipeline and fails on findings when authenticated, but skips
+  // gracefully where the Greptile CLI is unavailable (e.g. GitHub Actions has no
+  // Greptile token), so it never blocks environments that cannot run it.
+  if (!skipGreptile) {
+    const greptile = runCheckedStep(
+      "greptile-review",
+      process.execPath,
+      ["scripts/release/greptile-review-gate.mjs", "--json"],
+      { capture: true },
+    );
+    checks.push({
+      name: "greptile-review",
+      ok: true,
+      details: parseJson(greptile.stdout, "greptile-review"),
+    });
+  } else {
+    checks.push({ name: "greptile-review", ok: true, skipped: true });
   }
 
   if (outputJson) {
