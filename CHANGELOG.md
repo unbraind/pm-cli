@@ -56,6 +56,7 @@
 
 ### Other
 
+- PR \#406 review follow-up: clear partial MCP extension registries before fallback execution ([pm-dyzy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-dyzy.toon))
 - Built-in MCP actions are now extension-aware: pm_profile/pm_list/pm_schema activate workspace extensions like the CLI ([pm-zumn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-zumn.toon))
 - ADR: profile lint severity model — errors break apply, warnings flag suspicious-but-valid cross-references ([pm-qcdu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-qcdu.toon))
 - Action-scoped MCP parameter descriptions: split shared name/target description per action (schema vs profile) ([pm-fq80](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-fq80.toon))

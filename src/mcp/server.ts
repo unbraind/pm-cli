@@ -438,6 +438,20 @@ type ActiveExtensionRuntime = {
 };
 
 /**
+ * Publishes empty active extension registries so built-in fallback actions cannot
+ * observe stale or partially published extension state from a failed activation cycle.
+ */
+function resetActiveExtensionRegistries(): void {
+  setActiveExtensionHooks(createEmptyExtensionHookRegistry());
+  setActiveExtensionCommands(createEmptyExtensionCommandRegistry());
+  setActiveExtensionParsers(createEmptyExtensionParserRegistry());
+  setActiveExtensionPreflight(createEmptyExtensionPreflightRegistry());
+  setActiveExtensionServices(createEmptyExtensionServiceRegistry());
+  setActiveExtensionRenderers(createEmptyExtensionRendererRegistry());
+  setActiveExtensionRegistrations(createEmptyExtensionRegistrationRegistry());
+}
+
+/**
  * Run `run` with workspace extensions loaded, activated, and published to the
  * process-global active registries, then torn down afterwards. pm-zumn: built-in native
  * actions (pm_list/pm_profile/pm_schema/pm_create/...) read
@@ -519,6 +533,7 @@ async function withActiveExtensionsExclusively<T>(
     setActiveExtensionRegistrations(activationResult.registrations);
     active = { registrations: activationResult.registrations, commands: activationResult.commands, pmRoot };
   } catch (error) {
+    resetActiveExtensionRegistries();
     // CLI parity (loadRuntimeExtensionSnapshot): a load/activate failure must never
     // break a built-in action — fall back to running with no active extensions. Surface
     // the cause on stderr so a broken extension is diagnosable instead of being silently
@@ -532,13 +547,7 @@ async function withActiveExtensionsExclusively<T>(
     // Reset the process-global active registries FIRST so a torn-down extension's
     // overrides/hooks cannot leak into a later request in this long-running server
     // (for example a subsequent pm_list/pm_create) even if teardown below misbehaves.
-    setActiveExtensionHooks(createEmptyExtensionHookRegistry());
-    setActiveExtensionCommands(createEmptyExtensionCommandRegistry());
-    setActiveExtensionParsers(createEmptyExtensionParserRegistry());
-    setActiveExtensionPreflight(createEmptyExtensionPreflightRegistry());
-    setActiveExtensionServices(createEmptyExtensionServiceRegistry());
-    setActiveExtensionRenderers(createEmptyExtensionRendererRegistry());
-    setActiveExtensionRegistrations(createEmptyExtensionRegistrationRegistry());
+    resetActiveExtensionRegistries();
     // Best-effort teardown of extensions that activated successfully. Skipped when
     // activation never completed (nothing was set up); guarded so an unexpected throw
     // cannot escape the finally.

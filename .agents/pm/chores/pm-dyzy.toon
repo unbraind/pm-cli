@@ -1,0 +1,40 @@
+id: pm-dyzy
+title: "PR #406 review follow-up: clear partial MCP extension registries before fallback execution"
+description: "Follow-up from CodeRabbit on PR #406 under pm-zumn. If a setActive* publish call throws after earlier process-global extension registries were set, withActiveExtensionsExclusively currently falls back to run(active=null) before the finally clears those partially published globals. Fix by resetting the active extension registries immediately in the catch path before fallback execution, and reuse the same reset logic in final teardown so built-in fallback actions observe a clean inactive registry."
+type: Chore
+status: closed
+priority: 2
+tags[4]: "area:extensions","area:mcp",pm-cli,review-followup
+created_at: "2026-06-30T08:03:03.421Z"
+updated_at: "2026-06-30T08:25:19.577Z"
+author: claude-code-agent
+parent: pm-zumn
+resolution: "Added resetActiveExtensionRegistries() and invoked it in the activation catch path before run(active=null), with final teardown using the same reset helper; consumed pm-changelog 2026.6.30 via project install."
+expected_result: "If any active-extension registry publish step throws, fallback built-in MCP actions run with empty active registries and no partially published extension state; changelog generation remains current with the latest pm-changelog package."
+actual_result: Fallback execution now observes empty hook/command/parser/preflight/service/renderer/registration registries before run(active=null); targeted regression and full gates passed; temp-dir smoke with pm-changelog 2026.6.30 passed.
+comments[4]{created_at,author,text}:
+  "2026-06-30T08:03:03.421Z",claude-code-agent,"Duplicate check: searched all statuses for 'partial published registry fallback MCP setActive catch' and 'extension activation failed continuing without active extensions registry clear'. Existing canonical lineage is closed pm-zumn; no open/in-progress duplicate for this PR #406 reviewer follow-up."
+  "2026-06-30T08:14:13.517Z",claude-code-agent,"Evidence: implemented PR #406 reviewer follow-up by adding resetActiveExtensionRegistries() in src/mcp/server.ts and invoking it immediately in the activation catch path before fallback run(active=null), with final teardown using the same reset helper. Added regression coverage in tests/unit/mcp/mcp-server-branch-residual.spec.ts that simulates a setActiveExtensionCommands publish failure and asserts fallback stats execution only happens after hooks/commands/parsers/preflight/services/renderers/registrations have all been reset to empty registries. Focused linked test passed. Broader gates passed: pnpm build; pnpm lint including static quality gate; pnpm typecheck; pnpm contracts:check; node scripts/run-tests.mjs coverage = 262 files / 5258 tests / 100% statements, branches, functions, lines; pnpm changelog:pm:check using pm-changelog 2026.6.30 with CHANGELOG.md unchanged; pnpm security:scan no credential-like secrets; pnpm audit --audit-level moderate no known vulnerabilities; manual temp-dir smoke passed after correcting init syntax (init/create/list/install pm-changelog/package doctor/changelog generate); Sentry CLI returned recent PM-CLI issue data; sentry-telemetry gate passed with zero critical/high blocking Sentry issues and telemetry finish_error_rate_pct 0.78."
+  "2026-06-30T08:15:08.674Z",claude-code-agent,"GitHub/release-health evidence: gh issue list shows only open issue #374 (Auto Release blocked: scheduled run failed). gh issue view #374 and gh run view 28425418015 show the current June 30 scheduled Auto Release failed in the Run auto release pipeline step because release_pat_configured=false while sentry_personal_admin_token_configured=true. Latest five Auto Release workflow runs are all scheduled main failures for the same missing RELEASE_PAT protected-main publish path. This is existing release-environment configuration debt, not a code regression from PR #406; canonical pm item is pm-7zs0, so no duplicate pm item was created."
+  "2026-06-30T08:25:19.574Z",claude-code-agent,"Greptile pre-push review evidence: greptile review show f1fdb0fe-76e8-42ba-9b9e-542fa38ee9e3 completed on committed head 3513e8a5 with Confidence 4/5, Safe to merge, and 'No review comments.'"
+files[6]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,"pm install npm:pm-changelog --project refreshed managed package metadata to 2026.6.30"
+  .agents/pm/extensions/pm-changelog/dist/generator.js,project,managed pm-changelog generator update preserving inline code spans while escaping titles
+  .agents/pm/extensions/pm-changelog/manifest.json,project,managed pm-changelog manifest version 2026.6.30
+  .agents/pm/extensions/pm-changelog/package.json,project,managed pm-changelog package version 2026.6.30
+  src/mcp/server.ts,project,reset partial active extension registries before fallback execution
+  tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,regression coverage for setter-failure fallback cleanup
+tests[9]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/mcp/mcp-server-branch-residual.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm changelog:pm:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm contracts:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm lint,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm security:scan",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mr0d2wt3-wl1n7h,test,passed,"2026-06-30T08:04:40.571Z","2026-06-30T08:05:04.023Z","2026-06-30T08:05:04.023Z",null,null,1,0,0,null,null,null
+close_reason: "PR #406 reviewer follow-up complete: partial MCP active extension registries are cleared before activation-failure fallback execution, regression coverage added, latest pm-changelog consumed, and verification evidence recorded."
+body: ""

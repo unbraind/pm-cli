@@ -2,6 +2,15 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  createEmptyExtensionCommandRegistry,
+  createEmptyExtensionHookRegistry,
+  createEmptyExtensionParserRegistry,
+  createEmptyExtensionPreflightRegistry,
+  createEmptyExtensionRegistrationRegistry,
+  createEmptyExtensionRendererRegistry,
+  createEmptyExtensionServiceRegistry,
+} from "../../../src/core/extensions/extension-registries.js";
 import { createDefaultExtensionGovernancePolicy } from "../../../src/core/extensions/extension-types.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -363,6 +372,71 @@ describe("mcp server branch residual coverage", () => {
     const warnings = server._testOnly.detectUnexpectedTopLevelKeys("pm_test_no_properties", { typo: "value" });
     expect(warnings).toHaveLength(1);
     expect(warnings[0]).toContain("declared arguments are:");
+  });
+
+  it("clears partial active registries before running the activation-failure fallback", async () => {
+    const setActiveExtensionHooks = vi.fn();
+    let setCommandCalls = 0;
+    const setActiveExtensionCommands = vi.fn(() => {
+      setCommandCalls += 1;
+      if (setCommandCalls === 1) {
+        throw new Error("command registry publish failed");
+      }
+    });
+    const setActiveExtensionParsers = vi.fn();
+    const setActiveExtensionPreflight = vi.fn();
+    const setActiveExtensionServices = vi.fn();
+    const setActiveExtensionRenderers = vi.fn();
+    const setActiveExtensionRegistrations = vi.fn();
+    const commandMocks = {
+      ...buildCommandMocks(),
+      runStats: vi.fn(async () => {
+        expect(setActiveExtensionHooks).toHaveBeenLastCalledWith(createEmptyExtensionHookRegistry());
+        expect(setActiveExtensionCommands).toHaveBeenLastCalledWith(createEmptyExtensionCommandRegistry());
+        expect(setActiveExtensionParsers).toHaveBeenLastCalledWith(createEmptyExtensionParserRegistry());
+        expect(setActiveExtensionPreflight).toHaveBeenLastCalledWith(createEmptyExtensionPreflightRegistry());
+        expect(setActiveExtensionServices).toHaveBeenLastCalledWith(createEmptyExtensionServiceRegistry());
+        expect(setActiveExtensionRenderers).toHaveBeenLastCalledWith(createEmptyExtensionRendererRegistry());
+        expect(setActiveExtensionRegistrations).toHaveBeenLastCalledWith(createEmptyExtensionRegistrationRegistry());
+        return { action: "stats" };
+      }),
+    };
+    const server = await importServerWithCommandMocks(commandMocks, () => {
+      vi.doMock(EXTENSIONS_MODULE, async () => {
+        const actual = await vi.importActual<typeof import("../../../src/core/extensions/index.js")>(EXTENSIONS_MODULE);
+        return {
+          ...actual,
+          loadExtensions: vi.fn(async () => ({ loaded: [] })),
+          activateExtensions: vi.fn(async () => ({
+            hooks: createEmptyExtensionHookRegistry(),
+            commands: createEmptyExtensionCommandRegistry(),
+            parsers: createEmptyExtensionParserRegistry(),
+            preflight: createEmptyExtensionPreflightRegistry(),
+            services: createEmptyExtensionServiceRegistry(),
+            renderers: createEmptyExtensionRendererRegistry(),
+            registrations: createEmptyExtensionRegistrationRegistry(),
+          })),
+          deactivateExtensions: vi.fn(async () => undefined),
+          setActiveExtensionHooks,
+          setActiveExtensionCommands,
+          setActiveExtensionParsers,
+          setActiveExtensionPreflight,
+          setActiveExtensionServices,
+          setActiveExtensionRenderers,
+          setActiveExtensionRegistrations,
+        };
+      });
+    });
+
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    await withTempPmPath(async (context) => {
+      await expect(server._testOnly.runAction({ action: "stats", path: context.pmPath, options: {} })).resolves.toEqual({
+        action: "stats",
+      });
+    });
+    expect(commandMocks.runStats).toHaveBeenCalledTimes(1);
+    expect(setCommandCalls).toBe(3);
+    errorSpy.mockRestore();
   });
 
   it("skips extension activation for the no-extensions flag and missing-workspace paths (pm-zumn)", async () => {
