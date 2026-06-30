@@ -353,22 +353,25 @@ describe("mcp server branch residual coverage", () => {
     });
 
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    await withTempPmPath(async (context) => {
-      // CLI parity (pm-zumn): a load/activate failure must never break a built-in
-      // action — it falls back to running with no active extensions.
-      const stats = await server._testOnly.runAction({ action: "stats", path: context.pmPath, options: {} });
-      expect(stats).toEqual({ action: "stats" });
-      // A dynamic extension action, by contrast, cannot resolve once activation failed.
-      await expect(server._testOnly.runAction({ action: "custom", path: context.pmPath, options: {} })).rejects.toThrow(
-        /Unsupported native pm action: custom/,
+    try {
+      await withTempPmPath(async (context) => {
+        // CLI parity (pm-zumn): a load/activate failure must never break a built-in
+        // action — it falls back to running with no active extensions.
+        const stats = await server._testOnly.runAction({ action: "stats", path: context.pmPath, options: {} });
+        expect(stats).toEqual({ action: "stats" });
+        // A dynamic extension action, by contrast, cannot resolve once activation failed.
+        await expect(server._testOnly.runAction({ action: "custom", path: context.pmPath, options: {} })).rejects.toThrow(
+          /Unsupported native pm action: custom/,
+        );
+      });
+      // The swallowed activation failure is surfaced on stderr for diagnosability.
+      expect(errorSpy).toHaveBeenCalledWith(
+        "[pm-mcp] extension activation failed; continuing without active extensions:",
+        expect.any(Error),
       );
-    });
-    // The swallowed activation failure is surfaced on stderr for diagnosability.
-    expect(errorSpy).toHaveBeenCalledWith(
-      "[pm-mcp] extension activation failed; continuing without active extensions:",
-      expect.any(Error),
-    );
-    errorSpy.mockRestore();
+    } finally {
+      errorSpy.mockRestore();
+    }
     const warnings = server._testOnly.detectUnexpectedTopLevelKeys("pm_test_no_properties", { typo: "value" });
     expect(warnings).toHaveLength(1);
     expect(warnings[0]).toContain("declared arguments are:");
@@ -388,6 +391,7 @@ describe("mcp server branch residual coverage", () => {
     const setActiveExtensionServices = vi.fn();
     const setActiveExtensionRenderers = vi.fn();
     const setActiveExtensionRegistrations = vi.fn();
+    const deactivateExtensions = vi.fn(async () => undefined);
     const commandMocks = {
       ...buildCommandMocks(),
       runStats: vi.fn(async () => {
@@ -416,7 +420,7 @@ describe("mcp server branch residual coverage", () => {
             renderers: createEmptyExtensionRendererRegistry(),
             registrations: createEmptyExtensionRegistrationRegistry(),
           })),
-          deactivateExtensions: vi.fn(async () => undefined),
+          deactivateExtensions,
           setActiveExtensionHooks,
           setActiveExtensionCommands,
           setActiveExtensionParsers,
@@ -429,14 +433,18 @@ describe("mcp server branch residual coverage", () => {
     });
 
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    await withTempPmPath(async (context) => {
-      await expect(server._testOnly.runAction({ action: "stats", path: context.pmPath, options: {} })).resolves.toEqual({
-        action: "stats",
+    try {
+      await withTempPmPath(async (context) => {
+        await expect(server._testOnly.runAction({ action: "stats", path: context.pmPath, options: {} })).resolves.toEqual({
+          action: "stats",
+        });
       });
-    });
-    expect(commandMocks.runStats).toHaveBeenCalledTimes(1);
-    expect(setCommandCalls).toBe(3);
-    errorSpy.mockRestore();
+      expect(commandMocks.runStats).toHaveBeenCalledTimes(1);
+      expect(setCommandCalls).toBe(3);
+      expect(deactivateExtensions).toHaveBeenCalledTimes(1);
+    } finally {
+      errorSpy.mockRestore();
+    }
   });
 
   it("skips extension activation for the no-extensions flag and missing-workspace paths (pm-zumn)", async () => {
