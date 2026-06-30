@@ -273,21 +273,8 @@ function parseRequiredManifestString(candidate: Record<string, unknown>, field: 
   return value.trim();
 }
 
-/** Parse the optional integer `priority`, defaulting to {@link DEFAULT_EXTENSION_PRIORITY} when absent and rejecting (`null`) a non-integer. */
-function parseManifestPriority(candidate: Record<string, unknown>): number | null {
-  const value = candidate.priority;
-  if (value === undefined || value === null) {
-    return DEFAULT_EXTENSION_PRIORITY;
-  }
-  if (typeof value !== "number" || !Number.isInteger(value)) {
-    return null;
-  }
-  return value;
-}
-
-/** Parse an optional integer manifest field (`undefined` absent, `null` invalid). */
-function parseOptionalManifestInteger(candidate: Record<string, unknown>, field: string): number | null | undefined {
-  const value = candidate[field];
+/** Parse an optional integer value (`undefined` when absent, `null` when present but not an integer). */
+function parseOptionalIntegerValue(value: unknown): number | null | undefined {
   if (value === undefined || value === null) {
     return undefined;
   }
@@ -297,9 +284,8 @@ function parseOptionalManifestInteger(candidate: Record<string, unknown>, field:
   return value;
 }
 
-/** Parse an optional boolean manifest field (`undefined` absent, `null` invalid). */
-function parseOptionalManifestBoolean(candidate: Record<string, unknown>, field: string): boolean | null | undefined {
-  const value = candidate[field];
+/** Parse an optional boolean value (`undefined` when absent, `null` when present but not a boolean). */
+function parseOptionalBooleanValue(value: unknown): boolean | null | undefined {
   if (value === undefined || value === null) {
     return undefined;
   }
@@ -307,6 +293,12 @@ function parseOptionalManifestBoolean(candidate: Record<string, unknown>, field:
     return null;
   }
   return value;
+}
+
+/** Parse the optional integer `priority`, defaulting to {@link DEFAULT_EXTENSION_PRIORITY} when absent and rejecting (`null`) a non-integer. */
+function parseManifestPriority(candidate: Record<string, unknown>): number | null {
+  const value = parseOptionalIntegerValue(candidate.priority);
+  return value === undefined ? DEFAULT_EXTENSION_PRIORITY : value;
 }
 
 /** Parse the optional `sandbox_profile`, rejecting (`null`) any value that does not round-trip through {@link normalizePolicySandboxProfile}. */
@@ -368,21 +360,12 @@ function parseManifestPermissions(value: unknown): ExtensionManifest["permission
   if (!permissionsRecord) {
     return null;
   }
-  const parseOptionalBoolean = (entry: unknown): boolean | undefined | null => {
-    if (entry === undefined || entry === null) {
-      return undefined;
-    }
-    if (typeof entry !== "boolean") {
-      return null;
-    }
-    return entry;
-  };
-  const fsRead = parseOptionalBoolean(permissionsRecord.fs_read);
-  const fsWrite = parseOptionalBoolean(permissionsRecord.fs_write);
-  const network = parseOptionalBoolean(permissionsRecord.network);
-  const envRead = parseOptionalBoolean(permissionsRecord.env_read);
-  const envWrite = parseOptionalBoolean(permissionsRecord.env_write);
-  const processSpawn = parseOptionalBoolean(permissionsRecord.process_spawn);
+  const fsRead = parseOptionalBooleanValue(permissionsRecord.fs_read);
+  const fsWrite = parseOptionalBooleanValue(permissionsRecord.fs_write);
+  const network = parseOptionalBooleanValue(permissionsRecord.network);
+  const envRead = parseOptionalBooleanValue(permissionsRecord.env_read);
+  const envWrite = parseOptionalBooleanValue(permissionsRecord.env_write);
+  const processSpawn = parseOptionalBooleanValue(permissionsRecord.process_spawn);
   if ([fsRead, fsWrite, network, envRead, envWrite, processSpawn].includes(null)) {
     return null;
   }
@@ -453,7 +436,7 @@ interface ParsedManifestMetadata {
 
 /** Parse every optional manifest metadata field, returning `null` as soon as any one is malformed. */
 function parseManifestMetadata(candidate: Record<string, unknown>): ParsedManifestMetadata | null {
-  const manifestVersion = parseOptionalManifestInteger(candidate, "manifest_version");
+  const manifestVersion = parseOptionalIntegerValue(candidate.manifest_version);
   if (manifestVersion === null) {
     return null;
   }
@@ -469,7 +452,7 @@ function parseManifestMetadata(candidate: Record<string, unknown>): ParsedManife
   if (engines === null) {
     return null;
   }
-  const trusted = parseOptionalManifestBoolean(candidate, "trusted");
+  const trusted = parseOptionalBooleanValue(candidate.trusted);
   if (trusted === null) {
     return null;
   }
