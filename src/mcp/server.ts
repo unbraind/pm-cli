@@ -454,24 +454,26 @@ type ActiveExtensionRuntime = {
  */
 async function withActiveExtensions<T>(
   global: GlobalOptions,
-  requestedCwd: unknown,
+  explicitCwd: string | undefined,
+  resolutionCwd: string,
   run: (active: ActiveExtensionRuntime | null) => Promise<T>,
 ): Promise<T> {
-  // Pin the working directory INSIDE the serialized queue slot rather than before
-  // enqueueing. process.cwd() is process-global and changes per request, so performing
-  // the chdir here guarantees that both extension activation AND the built-in action run
-  // against this request's workspace — even when concurrent callers (tests, a future
-  // concurrent transport) target different directories. The queue makes the chdir/restore
-  // exclusive, so it can never be clobbered mid-flight.
-  return extensionActivationQueue.enqueue(() =>
-    withCwd(requestedCwd, async () => {
-      try {
-        return await withActiveExtensionsExclusively(global, process.cwd(), run);
-      } finally {
-        clearWorkspaceContractsCache();
-      }
-    }),
-  );
+  // Run the whole cycle on the queue so registry mutations never interleave. Only an
+  // EXPLICIT cwd mutates process.cwd() — pinned inside this serialized slot so the chdir
+  // can't be clobbered mid-flight and the built-in handler resolves against it too. A
+  // request without an explicit cwd runs in the server's current directory and never
+  // touches process.cwd() (important so concurrent direct callers can't corrupt a shared
+  // cwd). Either way activation resolves against resolutionCwd, the entry-time snapshot,
+  // so it never depends on a deferred process.cwd() read.
+  return extensionActivationQueue.enqueue(async () => {
+    try {
+      return explicitCwd === undefined
+        ? await withActiveExtensionsExclusively(global, resolutionCwd, run)
+        : await withCwd(explicitCwd, () => withActiveExtensionsExclusively(global, resolutionCwd, run));
+    } finally {
+      clearWorkspaceContractsCache();
+    }
+  });
 }
 
 /**
@@ -584,10 +586,10 @@ async function dispatchActiveExtensionAction(
   return handlerResult.result;
 }
 
-async function withCwd<T>(cwd: unknown, run: () => Promise<T>): Promise<T> {
-  if (typeof cwd !== "string" || cwd.trim().length === 0) {
-    return run();
-  }
+async function withCwd<T>(cwd: string, run: () => Promise<T>): Promise<T> {
+  // Only ever called with an explicit, non-empty cwd (readString filters blanks), from
+  // inside the serialized activation queue, so the chdir/restore is exclusive per request
+  // and can never be clobbered by a concurrent caller.
   const previous = process.cwd();
   process.chdir(cwd);
   try {
@@ -732,10 +734,15 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
   const action = readRequiredString(args, "action");
   const global = globalOptions(args);
   // pm-zumn: dispatch every action (built-in and dynamic) inside one extension
-  // activation cycle so built-in actions see extension-contributed item types,
-  // fields, and profiles, consistent with the CLI. The request cwd is pinned inside
-  // that cycle so activation and execution share one workspace under concurrency.
-  return withActiveExtensions(global, args.cwd, (activeExtensions) => dispatchAction(action, args, global, activeExtensions));
+  // activation cycle so built-in actions see extension-contributed item types, fields,
+  // and profiles, consistent with the CLI. Snapshot the effective resolution cwd HERE,
+  // at request entry (the explicit args.cwd, else the server's current directory), so the
+  // queued cycle resolves against the directory the request arrived in rather than a value
+  // process.cwd() might hold by the time the task runs. Only an explicit cwd additionally
+  // pins process.cwd() (inside the serialized slot) for the built-in handler.
+  const explicitCwd = readString(args, "cwd");
+  const resolutionCwd = explicitCwd ?? process.cwd();
+  return withActiveExtensions(global, explicitCwd, resolutionCwd, (activeExtensions) => dispatchAction(action, args, global, activeExtensions));
 }
 
 async function dispatchAction(
