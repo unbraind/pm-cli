@@ -9,6 +9,55 @@ interface HasListFilterOptions {
   includePagination?: boolean;
 }
 
+const LIST_VALUE_FILTER_KEYS = [
+  "status",
+  "type",
+  "tag",
+  "priority",
+  "deadlineBefore",
+  "deadlineAfter",
+  "updatedAfter",
+  "updatedBefore",
+  "createdAfter",
+  "createdBefore",
+  "ids",
+  "assignee",
+  "assigneeFilter",
+  "parent",
+  "sprint",
+  "release",
+] as const satisfies readonly (keyof ListOptions)[];
+
+const LIST_BOOLEAN_FILTER_KEYS = [
+  "filterAcMissing",
+  "filterEstimatesMissing",
+  "filterResolutionMissing",
+  "filterMetadataMissing",
+  "filterReviewerMissing",
+  "filterRiskMissing",
+  "filterConfidenceMissing",
+  "filterSprintMissing",
+  "filterReleaseMissing",
+  "hasNotes",
+  "hasLearnings",
+  "hasFiles",
+  "hasDocs",
+  "hasTests",
+  "hasComments",
+  "hasDeps",
+  "hasBody",
+  "hasLinkedCommand",
+  "noNotes",
+  "noLearnings",
+  "noFiles",
+  "noDocs",
+  "noTests",
+  "noComments",
+  "noDeps",
+  "emptyBody",
+  "noLinkedCommand",
+] as const satisfies readonly (keyof ListOptions)[];
+
 function isActiveListFilterValue(value: unknown): boolean {
   return value != null && (typeof value !== "string" || value.split(",").some((entry) => entry.trim().length > 0));
 }
@@ -22,53 +71,13 @@ export function hasListFilters(
   options: HasListFilterOptions = {},
 ): boolean {
   const includePagination = options.includePagination !== false;
+  const valueCandidates = [
+    status,
+    ...LIST_VALUE_FILTER_KEYS.map((key) => list?.[key]),
+    ...(includePagination ? [list?.limit, list?.offset] : []),
+  ];
   return (
-    isActiveListFilterValue(status) ||
-    isActiveListFilterValue(list?.status) ||
-    isActiveListFilterValue(list?.type) ||
-    isActiveListFilterValue(list?.tag) ||
-    isActiveListFilterValue(list?.priority) ||
-    isActiveListFilterValue(list?.deadlineBefore) ||
-    isActiveListFilterValue(list?.deadlineAfter) ||
-    isActiveListFilterValue(list?.updatedAfter) ||
-    isActiveListFilterValue(list?.updatedBefore) ||
-    isActiveListFilterValue(list?.createdAfter) ||
-    isActiveListFilterValue(list?.createdBefore) ||
-    isActiveListFilterValue(list?.ids) ||
-    isActiveListFilterValue(list?.assignee) ||
-    isActiveListFilterValue(list?.assigneeFilter) ||
-    isActiveListFilterValue(list?.parent) ||
-    isActiveListFilterValue(list?.sprint) ||
-    isActiveListFilterValue(list?.release) ||
-    list?.filterAcMissing === true ||
-    list?.filterEstimatesMissing === true ||
-    list?.filterResolutionMissing === true ||
-    list?.filterMetadataMissing === true ||
-    list?.filterReviewerMissing === true ||
-    list?.filterRiskMissing === true ||
-    list?.filterConfidenceMissing === true ||
-    list?.filterSprintMissing === true ||
-    list?.filterReleaseMissing === true ||
-    list?.hasNotes === true ||
-    list?.hasLearnings === true ||
-    list?.hasFiles === true ||
-    list?.hasDocs === true ||
-    list?.hasTests === true ||
-    list?.hasComments === true ||
-    list?.hasDeps === true ||
-    list?.hasBody === true ||
-    list?.hasLinkedCommand === true ||
-    list?.noNotes === true ||
-    list?.noLearnings === true ||
-    list?.noFiles === true ||
-    list?.noDocs === true ||
-    list?.noTests === true ||
-    list?.noComments === true ||
-    list?.noDeps === true ||
-    list?.emptyBody === true ||
-    list?.noLinkedCommand === true ||
-    (includePagination && isActiveListFilterValue(list?.limit)) ||
-    (includePagination && isActiveListFilterValue(list?.offset))
+    valueCandidates.some(isActiveListFilterValue) || LIST_BOOLEAN_FILTER_KEYS.some((key) => list?.[key] === true)
   );
 }
 

@@ -731,21 +731,63 @@ function filterItems(
     throw new PmCliError("Cannot combine --assignee with --assignee-filter unassigned", EXIT_CODE.USAGE);
   }
 
-  return items.filter((item) => {
-    if (typeFilter && item.type !== typeFilter) return false;
-    if (tagFilter && !item.tags.some((tag) => tag.trim().toLowerCase() === tagFilter)) return false;
-    if (priorityFilter !== undefined && item.priority !== priorityFilter) return false;
-    if (statusFilter && item.status !== statusFilter) return false;
-    if (assigneeModeFilter === "assigned" && !item.assignee) return false;
-    if (assigneeModeFilter === "unassigned" && item.assignee) return false;
-    if (assigneeFilter !== undefined && item.assignee !== assigneeFilter) {
-      return false;
-    }
-    if (sprintFilter !== undefined && item.sprint !== sprintFilter) return false;
-    if (releaseFilter !== undefined && item.release !== releaseFilter) return false;
-    if (!matchesRuntimeFilters(item as Record<string, unknown>, runtimeFieldFilters)) return false;
-    return true;
-  });
+  return items.filter((item) =>
+    itemMatchesCalendarFilters(item, {
+      typeFilter,
+      tagFilter,
+      priorityFilter,
+      statusFilter,
+      assigneeFilter,
+      assigneeModeFilter,
+      sprintFilter,
+      releaseFilter,
+      runtimeFieldFilters,
+    }),
+  );
+}
+
+function itemMatchesCalendarFilters(
+  item: ItemFrontMatter,
+  filters: {
+    typeFilter: ItemType | undefined;
+    tagFilter: string | undefined;
+    priorityFilter: number | undefined;
+    statusFilter: ItemStatus | undefined;
+    assigneeFilter: string | undefined;
+    assigneeModeFilter: "assigned" | "unassigned" | undefined;
+    sprintFilter: string | undefined;
+    releaseFilter: string | undefined;
+    runtimeFieldFilters: Record<string, unknown>;
+  },
+): boolean {
+  return (
+    itemMatchesCalendarIdentityFilters(item, filters) &&
+    itemMatchesCalendarOwnerFilters(item, filters) &&
+    matchesRuntimeFilters(item as Record<string, unknown>, filters.runtimeFieldFilters)
+  );
+}
+
+function itemMatchesCalendarIdentityFilters(
+  item: ItemFrontMatter,
+  filters: Parameters<typeof itemMatchesCalendarFilters>[1],
+): boolean {
+  if (filters.typeFilter && item.type !== filters.typeFilter) return false;
+  if (filters.tagFilter && !item.tags.some((tag) => tag.trim().toLowerCase() === filters.tagFilter)) return false;
+  if (filters.priorityFilter !== undefined && item.priority !== filters.priorityFilter) return false;
+  if (filters.statusFilter && item.status !== filters.statusFilter) return false;
+  return true;
+}
+
+function itemMatchesCalendarOwnerFilters(
+  item: ItemFrontMatter,
+  filters: Parameters<typeof itemMatchesCalendarFilters>[1],
+): boolean {
+  if (filters.assigneeModeFilter === "assigned" && !item.assignee) return false;
+  if (filters.assigneeModeFilter === "unassigned" && item.assignee) return false;
+  if (filters.assigneeFilter !== undefined && item.assignee !== filters.assigneeFilter) return false;
+  if (filters.sprintFilter !== undefined && item.sprint !== filters.sprintFilter) return false;
+  if (filters.releaseFilter !== undefined && item.release !== filters.releaseFilter) return false;
+  return true;
 }
 
 function includeEventInWindow(event: CalendarRow, start: string | undefined, end: string | undefined): boolean {
@@ -792,59 +834,61 @@ function buildRange(
   }
 
   if (view === "agenda") {
-    if (fullPeriodRequested) {
-      throw new PmCliError(
-        "--full-period is only supported for --view day|week|month. For agenda windows, use --from and --to.",
-        EXIT_CODE.USAGE,
-      );
-    }
-    const start = from ?? (options.date ? anchor : includePast ? undefined : nowValue);
-    return {
-      anchor,
-      start,
-      end: to,
-      fullPeriod: false,
-    };
+    return buildAgendaRange(anchor, options, nowValue, includePast, fullPeriodRequested, from, to);
   }
 
   if (view === "day") {
     const dayStart = startOfUtcDay(anchor);
-    const fullPeriod = includePast || fullPeriodRequested;
-    const start = fullPeriod ? dayStart : maxTimestamp(dayStart, nowValue);
-    return {
-      anchor,
-      start,
-      end: addUtcDays(dayStart, 1),
-      periodStart: dayStart,
-      periodEnd: addUtcDays(dayStart, 1),
-      fullPeriod,
-    };
+    return buildFixedPeriodRange(anchor, nowValue, includePast, fullPeriodRequested, dayStart, addUtcDays(dayStart, 1));
   }
 
   if (view === "week") {
     const weekStart = startOfUtcWeekMonday(anchor);
-    const fullPeriod = includePast || fullPeriodRequested;
-    const start = fullPeriod ? weekStart : maxTimestamp(weekStart, nowValue);
-    return {
-      anchor,
-      start,
-      end: addUtcDays(weekStart, 7),
-      periodStart: weekStart,
-      periodEnd: addUtcDays(weekStart, 7),
-      fullPeriod,
-    };
+    return buildFixedPeriodRange(anchor, nowValue, includePast, fullPeriodRequested, weekStart, addUtcDays(weekStart, 7));
   }
 
   const monthStart = startOfUtcMonth(anchor);
-  const monthEnd = startOfNextUtcMonth(anchor);
-  const fullPeriod = includePast || fullPeriodRequested;
-  const start = fullPeriod ? monthStart : maxTimestamp(monthStart, nowValue);
+  return buildFixedPeriodRange(anchor, nowValue, includePast, fullPeriodRequested, monthStart, startOfNextUtcMonth(anchor));
+}
+
+function buildAgendaRange(
+  anchor: string,
+  options: CalendarOptions,
+  nowValue: string,
+  includePast: boolean,
+  fullPeriodRequested: boolean,
+  from: string | undefined,
+  to: string | undefined,
+): ReturnType<typeof buildRange> {
+  if (fullPeriodRequested) {
+    throw new PmCliError(
+      "--full-period is only supported for --view day|week|month. For agenda windows, use --from and --to.",
+      EXIT_CODE.USAGE,
+    );
+  }
   return {
     anchor,
-    start,
-    end: monthEnd,
-    periodStart: monthStart,
-    periodEnd: monthEnd,
+    start: from ?? (options.date ? anchor : includePast ? undefined : nowValue),
+    end: to,
+    fullPeriod: false,
+  };
+}
+
+function buildFixedPeriodRange(
+  anchor: string,
+  nowValue: string,
+  includePast: boolean,
+  fullPeriodRequested: boolean,
+  periodStart: string,
+  periodEnd: string,
+): ReturnType<typeof buildRange> {
+  const fullPeriod = includePast || fullPeriodRequested;
+  return {
+    anchor,
+    start: fullPeriod ? periodStart : maxTimestamp(periodStart, nowValue),
+    end: periodEnd,
+    periodStart,
+    periodEnd,
     fullPeriod,
   };
 }

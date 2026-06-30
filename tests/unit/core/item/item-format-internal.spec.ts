@@ -130,6 +130,20 @@ describe("item-format internal normalization helpers", () => {
       },
     ] as never);
     expect(sortedTests).toHaveLength(2);
+
+    expect(
+      _testOnlyItemFormat.sortTests([
+        {
+          scope: "project",
+          command: "npm test",
+          env_set: { " ": "kept out", EMPTY: " " },
+          env_clear: [" "],
+          assert_stdout_contains: [" "],
+          assert_json_field_equals: { " ": "kept out", EMPTY: " " },
+          assert_json_field_gte: { " ": 1, missing: Number.NaN },
+        },
+      ] as never),
+    ).toEqual([{ command: "npm test", scope: "project" }]);
   });
 
   it("normalizes nested plan metadata collections with invalid entries", () => {

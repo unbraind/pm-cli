@@ -483,25 +483,26 @@ function extractPmInvocationArgsFromSegment(segment: string): string[] | null {
   if (executable === "node" && args.length > 0 && isPmCliScriptToken(args[0])) {
     return args.slice(1);
   }
+  return extractPackageManagerPmInvocationArgs(executable, args);
+}
+
+function extractPackageManagerPmInvocationArgs(executable: string, args: string[]): string[] | null {
+  const parsed = parsePackageManagerPmInvocation(executable, args);
+  if (!parsed || (!isPmExecutableToken(parsed.command) && !isPmCliPackageToken(parsed.command))) {
+    return null;
+  }
+  return parsed.args;
+}
+
+function parsePackageManagerPmInvocation(executable: string, args: string[]): { command: string; args: string[] } | null {
   if (executable === "npx" || executable === "bunx") {
-    const parsed = parseNpxCommand(args);
-    /* c8 ignore start -- npx launcher edge permutations are covered by command-parser integration suites */
-    if (parsed && (isPmExecutableToken(parsed.command) || isPmCliPackageToken(parsed.command))) {
-      return parsed.args;
-    }
-    /* c8 ignore stop */
+    return parseNpxCommand(args);
   }
   if (executable === "pnpm") {
-    const parsed = parsePnpmDlxCommand(args);
-    if (parsed && (isPmExecutableToken(parsed.command) || isPmCliPackageToken(parsed.command))) {
-      return parsed.args;
-    }
+    return parsePnpmDlxCommand(args);
   }
   if (executable === "npm") {
-    const parsed = parseNpmExecCommand(args);
-    if (parsed && (isPmExecutableToken(parsed.command) || isPmCliPackageToken(parsed.command))) {
-      return parsed.args;
-    }
+    return parseNpmExecCommand(args);
   }
   return null;
 }
@@ -684,32 +685,29 @@ function segmentInvokesUnsafeDirectTestRunner(normalizedSegment: string): boolea
     return true;
   }
   if (executable === "node") {
-    return (
-      args.includes("--test") ||
-      args.some((arg) => arg === "vitest" || arg === "vitest.mjs" || arg.endsWith("/vitest") || arg.endsWith("/vitest.mjs"))
-    );
+    return nodeArgsInvokeUnsafeDirectTestRunner(args);
   }
+  return packageManagerInvokesUnsafeDirectTestRunner(executable, args);
+}
+
+function nodeArgsInvokeUnsafeDirectTestRunner(args: string[]): boolean {
+  return (
+    args.includes("--test") ||
+    args.some((arg) => arg === "vitest" || arg === "vitest.mjs" || arg.endsWith("/vitest") || arg.endsWith("/vitest.mjs"))
+  );
+}
+
+function packageManagerInvokesUnsafeDirectTestRunner(executable: string, args: string[]): boolean {
   if (executable === "npx" || executable === "bunx") {
     return isDirectTestRunnerSubcommand(parseNpxCommand(args)?.command);
   }
-  if (executable === "pnpm") {
-    const dlx = parsePnpmDlxCommand(args);
-    if (isDirectTestRunnerSubcommand(dlx?.command)) {
-      return true;
-    }
-    return firstDirectTestRunnerSubcommand(executable, args) === "vitest";
+  if (executable === "pnpm" || executable === "npm") {
+    return (
+      isDirectTestRunnerSubcommand(parsePackageManagerPmInvocation(executable, args)?.command) ||
+      firstDirectTestRunnerSubcommand(executable, args) === "vitest"
+    );
   }
-  if (executable === "npm") {
-    const exec = parseNpmExecCommand(args);
-    if (isDirectTestRunnerSubcommand(exec?.command)) {
-      return true;
-    }
-    return firstDirectTestRunnerSubcommand(executable, args) === "vitest";
-  }
-  if (executable === "yarn" || executable === "bun") {
-    return firstDirectTestRunnerSubcommand(executable, args) === "vitest";
-  }
-  return false;
+  return (executable === "yarn" || executable === "bun") && firstDirectTestRunnerSubcommand(executable, args) === "vitest";
 }
 
 function assertSandboxSafeTestRunnerCommand(command: string): void {
@@ -739,53 +737,54 @@ function getRuntimeSafetySkipReason(command: string): string | undefined {
 
 function parseAddEntries(raw: string[] | undefined): LinkedTest[] {
   if (!raw) return [];
-  return raw.map((entry) => {
-    const trimmed = entry.trim();
-    const kv = looksLikeStructuredLinkedTestEntry(trimmed)
-      ? normalizeStructuredLinkedTestEntry(parseCsvKv(entry, "--add"), "--add")
-      : { command: trimmed };
-    const command = kv.command?.trim() || undefined;
-    const filePath = kv.path?.trim() || undefined;
-    if (!command) {
-      throw new PmCliError("--add requires command=<value> or a bare command (path=<value> is optional metadata)", EXIT_CODE.USAGE);
-    }
-    const sharedHostSafe = parseLinkedTestBooleanValue(kv.shared_host_safe?.trim(), "--add", "shared_host_safe");
-    /* c8 ignore start -- command is guaranteed present after the non-empty guard above */
-    if (command) {
-      assertNoRecursiveTestAllCommand(command);
-      assertSandboxSafeTestRunnerCommand(command);
-    }
-    /* c8 ignore stop */
-    const timeoutSecondsRaw = kv.timeout_seconds?.trim();
-    const timeoutAliasRaw = kv.timeout?.trim();
-    if (timeoutSecondsRaw && timeoutAliasRaw && timeoutSecondsRaw !== timeoutAliasRaw) {
-      throw new PmCliError("--add timeout and timeout_seconds must match when both are provided", EXIT_CODE.USAGE);
-    }
-    const timeoutRaw = timeoutSecondsRaw ?? timeoutAliasRaw;
-    const timeoutSeconds =
-      timeoutRaw === undefined ? undefined : Math.floor(parseOptionalNumber(timeoutRaw, "timeout_seconds"));
-    const envSet = parseLinkedTestEnvSetValue(kv.env_set?.trim(), "--add");
-    const envClear = parseLinkedTestEnvClearValue(kv.env_clear?.trim(), "--add");
-    const pmContextMode = parseLinkedTestContextModeValue(kv.pm_context_mode?.trim(), "--add");
-    return {
-      command,
-      path: filePath,
-      scope: ensureScope(kv.scope),
-      timeout_seconds: timeoutSeconds,
-      pm_context_mode: pmContextMode,
-      env_set: envSet,
-      env_clear: envClear,
-      shared_host_safe: sharedHostSafe,
-      assert_stdout_contains: parseLinkedTestStringList(kv.assert_stdout_contains?.trim()),
-      assert_stdout_regex: parseLinkedTestRegexList(kv.assert_stdout_regex?.trim(), "--add", "assert_stdout_regex"),
-      assert_stderr_contains: parseLinkedTestStringList(kv.assert_stderr_contains?.trim()),
-      assert_stderr_regex: parseLinkedTestRegexList(kv.assert_stderr_regex?.trim(), "--add", "assert_stderr_regex"),
-      assert_stdout_min_lines: parseLinkedTestMinLines(kv.assert_stdout_min_lines?.trim(), "--add"),
-      assert_json_field_equals: parseLinkedTestAssertionEqualsMap(kv.assert_json_field_equals?.trim(), "--add"),
-      assert_json_field_gte: parseLinkedTestAssertionGteMap(kv.assert_json_field_gte?.trim(), "--add"),
-      note: kv.note?.trim() || undefined,
-    };
-  });
+  return raw.map(parseAddEntry);
+}
+
+function parseAddEntry(entry: string): LinkedTest {
+  const trimmed = entry.trim();
+  const kv = looksLikeStructuredLinkedTestEntry(trimmed)
+    ? normalizeStructuredLinkedTestEntry(parseCsvKv(entry, "--add"), "--add")
+    : { command: trimmed };
+  const command = trimLinkedTestEntryField(kv.command);
+  if (!command) {
+    throw new PmCliError("--add requires command=<value> or a bare command (path=<value> is optional metadata)", EXIT_CODE.USAGE);
+  }
+  assertNoRecursiveTestAllCommand(command);
+  assertSandboxSafeTestRunnerCommand(command);
+  return {
+    command,
+    path: trimLinkedTestEntryField(kv.path),
+    scope: ensureScope(kv.scope),
+    timeout_seconds: parseLinkedTestTimeoutSeconds(
+      trimLinkedTestEntryField(kv.timeout_seconds),
+      trimLinkedTestEntryField(kv.timeout),
+    ),
+    pm_context_mode: parseLinkedTestContextModeValue(trimLinkedTestEntryField(kv.pm_context_mode), "--add"),
+    env_set: parseLinkedTestEnvSetValue(trimLinkedTestEntryField(kv.env_set), "--add"),
+    env_clear: parseLinkedTestEnvClearValue(trimLinkedTestEntryField(kv.env_clear), "--add"),
+    shared_host_safe: parseLinkedTestBooleanValue(trimLinkedTestEntryField(kv.shared_host_safe), "--add", "shared_host_safe"),
+    assert_stdout_contains: parseLinkedTestStringList(trimLinkedTestEntryField(kv.assert_stdout_contains)),
+    assert_stdout_regex: parseLinkedTestRegexList(trimLinkedTestEntryField(kv.assert_stdout_regex), "--add", "assert_stdout_regex"),
+    assert_stderr_contains: parseLinkedTestStringList(trimLinkedTestEntryField(kv.assert_stderr_contains)),
+    assert_stderr_regex: parseLinkedTestRegexList(trimLinkedTestEntryField(kv.assert_stderr_regex), "--add", "assert_stderr_regex"),
+    assert_stdout_min_lines: parseLinkedTestMinLines(trimLinkedTestEntryField(kv.assert_stdout_min_lines), "--add"),
+    assert_json_field_equals: parseLinkedTestAssertionEqualsMap(trimLinkedTestEntryField(kv.assert_json_field_equals), "--add"),
+    assert_json_field_gte: parseLinkedTestAssertionGteMap(trimLinkedTestEntryField(kv.assert_json_field_gte), "--add"),
+    note: trimLinkedTestEntryField(kv.note),
+  };
+}
+
+function trimLinkedTestEntryField(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed && trimmed.length > 0 ? trimmed : undefined;
+}
+
+function parseLinkedTestTimeoutSeconds(timeoutSecondsRaw: string | undefined, timeoutAliasRaw: string | undefined): number | undefined {
+  if (timeoutSecondsRaw && timeoutAliasRaw && timeoutSecondsRaw !== timeoutAliasRaw) {
+    throw new PmCliError("--add timeout and timeout_seconds must match when both are provided", EXIT_CODE.USAGE);
+  }
+  const timeoutRaw = timeoutSecondsRaw ?? timeoutAliasRaw;
+  return timeoutRaw === undefined ? undefined : Math.floor(parseOptionalNumber(timeoutRaw, "timeout_seconds"));
 }
 
 /* c8 ignore start -- add-json validation matrix is covered by linked-test parser integration suites */
@@ -1434,45 +1433,11 @@ function compareAssertionValues(actual: unknown, expected: unknown): boolean {
 /* c8 ignore start -- assertion failure-path permutations are covered by linked-test integration fixtures */
 function evaluateLinkedTestAssertions(linkedTest: LinkedTest, stdout: string, stderr: string): string[] {
   const failures: string[] = [];
-  for (const expected of linkedTest.assert_stdout_contains ?? []) {
-    if (!stdout.includes(expected)) {
-      failures.push(`stdout missing required text: "${expected}"`);
-    }
-  }
-  for (const pattern of linkedTest.assert_stdout_regex ?? []) {
-    try {
-      const regex = new RegExp(pattern, "m");
-      if (!regex.test(stdout)) {
-        failures.push(`stdout failed regex assertion: /${pattern}/m`);
-      }
-    } catch (error: unknown) {
-      failures.push(`stdout regex assertion is invalid: /${pattern}/ (${error instanceof Error ? error.message : String(error)})`);
-    }
-  }
-  for (const expected of linkedTest.assert_stderr_contains ?? []) {
-    if (!stderr.includes(expected)) {
-      failures.push(`stderr missing required text: "${expected}"`);
-    }
-  }
-  for (const pattern of linkedTest.assert_stderr_regex ?? []) {
-    try {
-      const regex = new RegExp(pattern, "m");
-      if (!regex.test(stderr)) {
-        failures.push(`stderr failed regex assertion: /${pattern}/m`);
-      }
-    } catch (error: unknown) {
-      failures.push(`stderr regex assertion is invalid: /${pattern}/ (${error instanceof Error ? error.message : String(error)})`);
-    }
-  }
-  if (typeof linkedTest.assert_stdout_min_lines === "number") {
-    const lineCount = stdout
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0).length;
-    if (lineCount < linkedTest.assert_stdout_min_lines) {
-      failures.push(`stdout line count ${lineCount} is below required minimum ${linkedTest.assert_stdout_min_lines}`);
-    }
-  }
+  failures.push(...evaluateContainsAssertions("stdout", stdout, linkedTest.assert_stdout_contains));
+  failures.push(...evaluateRegexAssertions("stdout", stdout, linkedTest.assert_stdout_regex));
+  failures.push(...evaluateContainsAssertions("stderr", stderr, linkedTest.assert_stderr_contains));
+  failures.push(...evaluateRegexAssertions("stderr", stderr, linkedTest.assert_stderr_regex));
+  failures.push(...evaluateStdoutLineCountAssertion(stdout, linkedTest.assert_stdout_min_lines));
 
   const jsonEqualsAssertions = linkedTest.assert_json_field_equals ?? {};
   const jsonGteAssertions = linkedTest.assert_json_field_gte ?? {};
@@ -1523,6 +1488,42 @@ function evaluateLinkedTestAssertions(linkedTest: LinkedTest, stdout: string, st
   return failures;
 }
 /* c8 ignore stop */
+
+function evaluateContainsAssertions(streamName: "stdout" | "stderr", output: string, expectedValues: string[] | undefined): string[] {
+  const failures: string[] = [];
+  for (const expected of expectedValues ?? []) {
+    if (!output.includes(expected)) {
+      failures.push(`${streamName} missing required text: "${expected}"`);
+    }
+  }
+  return failures;
+}
+
+function evaluateRegexAssertions(streamName: "stdout" | "stderr", output: string, patterns: string[] | undefined): string[] {
+  const failures: string[] = [];
+  for (const pattern of patterns ?? []) {
+    try {
+      const regex = new RegExp(pattern, "m");
+      if (!regex.test(output)) {
+        failures.push(`${streamName} failed regex assertion: /${pattern}/m`);
+      }
+    } catch (error: unknown) {
+      failures.push(`${streamName} regex assertion is invalid: /${pattern}/ (${error instanceof Error ? error.message : String(error)})`);
+    }
+  }
+  return failures;
+}
+
+function evaluateStdoutLineCountAssertion(stdout: string, minimum: number | undefined): string[] {
+  if (typeof minimum !== "number") {
+    return [];
+  }
+  const lineCount = stdout
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0).length;
+  return lineCount < minimum ? [`stdout line count ${lineCount} is below required minimum ${minimum}`] : [];
+}
 
 const EMPTY_LINKED_TEST_RUN_PATTERNS: Array<{ code: string; regex: RegExp }> = [
   { code: "no_projects_matched_filters", regex: /\bNo projects matched the filters\b/i },

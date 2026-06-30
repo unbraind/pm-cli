@@ -422,20 +422,20 @@ function buildVerboseSearchFilters(params: {
   return {
     mode: effectiveMode,
     match_mode: matchMode,
-    status: isStatusAllFilterInput(options.status) ? "all" : options.status ?? null,
-    type: options.type ?? null,
-    tag: options.tag ?? null,
-    priority: options.priority ?? null,
-    deadline_before: options.deadlineBefore ?? null,
-    deadline_after: options.deadlineAfter ?? null,
-    updated_after: options.updatedAfter ?? null,
-    updated_before: options.updatedBefore ?? null,
-    created_after: options.createdAfter ?? null,
-    created_before: options.createdBefore ?? null,
-    assignee: options.assignee ?? null,
-    sprint: options.sprint ?? null,
-    release: options.release ?? null,
-    parent: options.parent ?? null,
+    status: isStatusAllFilterInput(options.status) ? "all" : valueOrNull(options.status),
+    type: valueOrNull(options.type),
+    tag: valueOrNull(options.tag),
+    priority: valueOrNull(options.priority),
+    deadline_before: valueOrNull(options.deadlineBefore),
+    deadline_after: valueOrNull(options.deadlineAfter),
+    updated_after: valueOrNull(options.updatedAfter),
+    updated_before: valueOrNull(options.updatedBefore),
+    created_after: valueOrNull(options.createdAfter),
+    created_before: valueOrNull(options.createdBefore),
+    assignee: valueOrNull(options.assignee),
+    sprint: valueOrNull(options.sprint),
+    release: valueOrNull(options.release),
+    parent: valueOrNull(options.parent),
     ...buildGovernanceMissingFilterEcho(options as Record<string, unknown>),
     ...buildContentFilterEcho(options as Record<string, unknown>),
     include_linked: includeLinked,
@@ -448,9 +448,13 @@ function buildVerboseSearchFilters(params: {
     rerank_enabled: rerank.enabled,
     rerank_model: rerank.model,
     rerank_top_k: rerank.top_k,
-    limit: options.limit ?? null,
+    limit: valueOrNull(options.limit),
     runtime_filters: runtimeFieldFilters,
   };
+}
+
+function valueOrNull(value: unknown): unknown {
+  return value ?? null;
 }
 
 interface ExtensionSearchProviderContext {
@@ -1034,16 +1038,32 @@ function resolveSearchMetadataFilterSet(
 }
 
 function matchesScalarSearchFilters(item: ItemFrontMatter, filters: SearchMetadataFilterSet): boolean {
+  return (
+    matchesIdentitySearchFilters(item, filters) &&
+    matchesTimestampSearchFilters(item, filters) &&
+    matchesOwnerSearchFilters(item, filters)
+  );
+}
+
+function matchesIdentitySearchFilters(item: ItemFrontMatter, filters: SearchMetadataFilterSet): boolean {
   if (filters.statusSet && !filters.statusSet.has(item.status)) return false;
   if (filters.typeFilter && item.type !== filters.typeFilter) return false;
   if (filters.tagFilter && !stringArray(item.tags).includes(filters.tagFilter)) return false;
   if (filters.priorityFilter !== undefined && item.priority !== filters.priorityFilter) return false;
+  return true;
+}
+
+function matchesTimestampSearchFilters(item: ItemFrontMatter, filters: SearchMetadataFilterSet): boolean {
   if (filters.deadlineBefore && (!item.deadline || compareTimestampStrings(item.deadline, filters.deadlineBefore) > 0)) return false;
   if (filters.deadlineAfter && (!item.deadline || compareTimestampStrings(item.deadline, filters.deadlineAfter) < 0)) return false;
   if (filters.updatedAfter && compareTimestampStrings(item.updated_at, filters.updatedAfter) < 0) return false;
   if (filters.updatedBefore && compareTimestampStrings(item.updated_at, filters.updatedBefore) > 0) return false;
   if (filters.createdAfter && compareTimestampStrings(item.created_at, filters.createdAfter) < 0) return false;
   if (filters.createdBefore && compareTimestampStrings(item.created_at, filters.createdBefore) > 0) return false;
+  return true;
+}
+
+function matchesOwnerSearchFilters(item: ItemFrontMatter, filters: SearchMetadataFilterSet): boolean {
   if (filters.assigneeFilter !== undefined && item.assignee !== filters.assigneeFilter) return false;
   if (filters.sprintFilter !== undefined && item.sprint !== filters.sprintFilter) return false;
   /* c8 ignore start -- release/parent metadata filter combinations are covered by integration search fixtures */
@@ -1358,6 +1378,94 @@ function buildHitHighlights(document: ItemDocument, matchedFields: string[], tok
   return highlights;
 }
 
+interface SearchableScoringField {
+  name: string;
+  value: string;
+  weight: number;
+}
+
+interface SearchScoreState {
+  score: number;
+  matched: Set<string>;
+  matchedTokens: Set<string>;
+}
+
+function buildSearchableScoringFields(document: ItemDocument, linkedCorpus: string, tuning: SearchTuning): SearchableScoringField[] {
+  return [
+    ...SEARCHABLE_FIELD_BUILDERS.map((builder) => ({
+      name: builder.name,
+      value: builder.value(document),
+      weight: tuning[builder.weightKey],
+    })),
+    { name: "linked_content", value: linkedCorpus, weight: tuning.linked_content_weight },
+  ];
+}
+
+function buildExactIdSearchHit(item: ItemFrontMatter, normalizedQuery: string, idPrefix: string): SearchHit | null {
+  const normalizedId = normalizeSearchPhrase(item.id);
+  const normalizedIdPrefix = typeof idPrefix === "string" ? idPrefix.trim().toLowerCase() : "";
+  const normalizedIdPrefixPhrase = normalizeSearchPhrase(normalizedIdPrefix);
+  const normalizedShortId =
+    normalizedIdPrefixPhrase.length > 0 && normalizedId.startsWith(normalizedIdPrefixPhrase)
+      ? normalizedId.slice(normalizedIdPrefixPhrase.length).trim()
+      : normalizedId;
+  if (normalizedQuery !== normalizedId && normalizedQuery !== normalizedShortId) {
+    return null;
+  }
+  return {
+    item,
+    score: normalizedQuery === normalizedId ? EXACT_ID_MATCH_SCORE : SHORT_ID_MATCH_SCORE,
+    matched_fields: ["id"],
+    matched_all_terms: true,
+    exact_id_match: true,
+  };
+}
+
+function scoreTokenMatches(
+  tokens: string[],
+  titleTokenCounts: Map<string, number>,
+  searchableFields: SearchableScoringField[],
+  tuning: SearchTuning,
+  state: SearchScoreState,
+): void {
+  for (const token of tokens) {
+    const exactTitleMatches = titleTokenCounts.get(token) ?? 0;
+    if (exactTitleMatches > 0) {
+      state.score += exactTitleMatches * tuning.title_exact_bonus;
+      state.matched.add("title");
+      state.matchedTokens.add(token);
+    }
+    for (const field of searchableFields) {
+      const occurrences = countOccurrences(field.value.toLowerCase(), token);
+      if (occurrences > 0) {
+        state.score += occurrences * field.weight;
+        state.matched.add(field.name);
+        state.matchedTokens.add(token);
+      }
+    }
+  }
+}
+
+function scorePhraseMatches(
+  item: ItemFrontMatter,
+  normalizedQuery: string,
+  searchableFields: SearchableScoringField[],
+  state: SearchScoreState,
+): void {
+  const normalizedTitle = normalizeSearchPhrase(item.title);
+  if (normalizedTitle === normalizedQuery) {
+    state.score += LONG_QUERY_TITLE_EXACT_BONUS;
+    state.matched.add("title");
+  }
+  for (const field of searchableFields) {
+    const phraseOccurrences = countOccurrences(normalizeSearchPhrase(field.value), normalizedQuery);
+    if (phraseOccurrences > 0) {
+      state.score += phraseOccurrences * field.weight * LONG_QUERY_PHRASE_MULTIPLIER;
+      state.matched.add(field.name);
+    }
+  }
+}
+
 function scoreDocument(
   document: ItemDocument,
   tokens: string[],
@@ -1368,90 +1476,40 @@ function scoreDocument(
   applyCoverageBonus = false,
 ): SearchHit | null {
   const item = document.metadata;
-  const normalizedId = normalizeSearchPhrase(item.id);
-  const normalizedIdPrefix = typeof idPrefix === "string" ? idPrefix.trim().toLowerCase() : "";
-  const normalizedIdPrefixPhrase = normalizeSearchPhrase(normalizedIdPrefix);
-  const normalizedShortId =
-    normalizedIdPrefixPhrase.length > 0 && normalizedId.startsWith(normalizedIdPrefixPhrase)
-      ? normalizedId.slice(normalizedIdPrefixPhrase.length).trim()
-      : normalizedId;
-  if (normalizedQuery === normalizedId || normalizedQuery === normalizedShortId) {
-    return {
-      item,
-      score: normalizedQuery === normalizedId ? EXACT_ID_MATCH_SCORE : SHORT_ID_MATCH_SCORE,
-      matched_fields: ["id"],
-      matched_all_terms: true,
-      exact_id_match: true,
-    };
+  const exactIdHit = buildExactIdSearchHit(item, normalizedQuery, idPrefix);
+  if (exactIdHit) {
+    return exactIdHit;
   }
   const titleTokenCounts = new Map<string, number>();
   for (const token of tokenizeForExactTokenMatch(item.title)) {
     titleTokenCounts.set(token, (titleTokenCounts.get(token) ?? 0) + 1);
   }
-  const searchableFields: Array<{ name: string; value: string; weight: number }> = [
-    ...SEARCHABLE_FIELD_BUILDERS.map((builder) => ({
-      name: builder.name,
-      value: builder.value(document),
-      weight: tuning[builder.weightKey],
-    })),
-    { name: "linked_content", value: linkedCorpus, weight: tuning.linked_content_weight },
-  ];
-
-  let score = 0;
-  const matched = new Set<string>();
-  const matchedTokens = new Set<string>();
-  for (const token of tokens) {
-    const exactTitleMatches = titleTokenCounts.get(token) ?? 0;
-    if (exactTitleMatches > 0) {
-      score += exactTitleMatches * tuning.title_exact_bonus;
-      matched.add("title");
-      matchedTokens.add(token);
-    }
-    for (const field of searchableFields) {
-      const fieldValue = field.value.toLowerCase();
-      const occurrences = countOccurrences(fieldValue, token);
-      if (occurrences > 0) {
-        score += occurrences * field.weight;
-        matched.add(field.name);
-        matchedTokens.add(token);
-      }
-    }
-  }
+  const searchableFields = buildSearchableScoringFields(document, linkedCorpus, tuning);
+  const state: SearchScoreState = { score: 0, matched: new Set(), matchedTokens: new Set() };
+  scoreTokenMatches(tokens, titleTokenCounts, searchableFields, tuning, state);
   const distinctTokens = new Set(tokens);
   // matchedTokens only ever holds entries drawn from `tokens`, so it is always a
   // subset of distinctTokens — exact size equality means every distinct term matched.
-  const matchedAllTerms = distinctTokens.size > 0 && matchedTokens.size === distinctTokens.size;
+  const matchedAllTerms = distinctTokens.size > 0 && state.matchedTokens.size === distinctTokens.size;
   // GH-181 default-mode all-terms ranking bonus: only meaningful for multi-token
   // queries where every distinct token matched somewhere.
   if (applyCoverageBonus && distinctTokens.size > 1 && matchedAllTerms) {
-    score += ALL_TERMS_COVERAGE_BONUS;
+    state.score += ALL_TERMS_COVERAGE_BONUS;
   }
 
   const isLongPhraseQuery = tokens.length >= LONG_QUERY_TOKEN_THRESHOLD && normalizedQuery.includes(" ");
   if (isLongPhraseQuery) {
-    const normalizedTitle = normalizeSearchPhrase(item.title);
-    if (normalizedTitle === normalizedQuery) {
-      score += LONG_QUERY_TITLE_EXACT_BONUS;
-      matched.add("title");
-    }
-    for (const field of searchableFields) {
-      const normalizedField = normalizeSearchPhrase(field.value);
-      const phraseOccurrences = countOccurrences(normalizedField, normalizedQuery);
-      if (phraseOccurrences > 0) {
-        score += phraseOccurrences * field.weight * LONG_QUERY_PHRASE_MULTIPLIER;
-        matched.add(field.name);
-      }
-    }
+    scorePhraseMatches(item, normalizedQuery, searchableFields, state);
   }
 
-  if (score <= 0) {
+  if (state.score <= 0) {
     return null;
   }
 
   return {
     item,
-    score,
-    matched_fields: [...matched].sort((a, b) => a.localeCompare(b)),
+    score: state.score,
+    matched_fields: [...state.matched].sort((a, b) => a.localeCompare(b)),
     matched_all_terms: matchedAllTerms,
   };
 }

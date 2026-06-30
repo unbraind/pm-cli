@@ -242,37 +242,30 @@ function collectExtensionPolicyOverrides(
 }
 
 /**
- * Implements normalize extension policy for the public runtime surface of this module.
+ * Collect the deduplicated, alphabetically-sorted `extension_policy_unknown_*`
+ * warnings for a normalized policy: every allow/block capability and surface
+ * token — at the top level and inside each per-extension override — that is not a
+ * recognized {@link ExtensionCapability} or known policy surface. Overrides are
+ * walked in name order and the final list is re-sorted, so the result is stable
+ * regardless of insertion order.
  */
-export function normalizeExtensionPolicy(settings: PmSettings): NormalizedExtensionPolicy {
-  const policy = settings.extensions.policy as ExtensionGovernancePolicy | undefined;
-  const mode = normalizePolicyMode(policy?.mode);
-  const trustMode = normalizePolicyTrustMode(policy?.trust_mode);
-  const pmMaxVersionExceededMode = normalizePmMaxVersionExceededMode(policy?.pm_max_version_exceeded_mode);
-  const requireProvenance = policy?.require_provenance === true;
-  const trustedExtensions = normalizePolicyStringSet(policy?.trusted_extensions);
-  const defaultSandboxProfile = normalizePolicySandboxProfile(policy?.default_sandbox_profile);
-  const allowedExtensions = normalizePolicyStringSet(policy?.allowed_extensions);
-  const blockedExtensions = normalizePolicyStringSet(policy?.blocked_extensions);
-  const allowedCapabilities = normalizePolicyStringSet(policy?.allowed_capabilities);
-  const blockedCapabilities = normalizePolicyStringSet(policy?.blocked_capabilities);
-  const allowedSurfaces = normalizePolicySurfaceSet(policy?.allowed_surfaces);
-  const blockedSurfaces = normalizePolicySurfaceSet(policy?.blocked_surfaces);
-  const allowedCommands = normalizePolicyStringSet(policy?.allowed_commands);
-  const blockedCommands = normalizePolicyStringSet(policy?.blocked_commands);
-  const allowedActions = normalizePolicyStringSet(policy?.allowed_actions);
-  const blockedActions = normalizePolicyStringSet(policy?.blocked_actions);
-  const allowedServices = normalizePolicyStringSet(policy?.allowed_services);
-  const blockedServices = normalizePolicyStringSet(policy?.blocked_services);
-  const overridesByName = collectExtensionPolicyOverrides(policy?.extension_overrides);
-
+function collectExtensionPolicyWarnings(normalized: {
+  allowedCapabilities: Set<string>;
+  blockedCapabilities: Set<string>;
+  allowedSurfaces: Set<string>;
+  blockedSurfaces: Set<string>;
+  overridesByName: Map<string, NormalizedExtensionPolicyOverride>;
+}): string[] {
   const warnings: string[] = [];
-  for (const capability of toSortedList([...allowedCapabilities, ...blockedCapabilities])) {
+  const sortedOverrides = [...normalized.overridesByName.values()].sort((left, right) =>
+    left.name.localeCompare(right.name),
+  );
+  for (const capability of toSortedList([...normalized.allowedCapabilities, ...normalized.blockedCapabilities])) {
     if (!isKnownExtensionCapability(capability)) {
       warnings.push(`extension_policy_unknown_capability:${capability}`);
     }
   }
-  for (const override of [...overridesByName.values()].sort((left, right) => left.name.localeCompare(right.name))) {
+  for (const override of sortedOverrides) {
     for (const capability of toSortedList([...override.allowedCapabilities, ...override.blockedCapabilities])) {
       if (!isKnownExtensionCapability(capability)) {
         warnings.push(`extension_policy_unknown_capability:${override.name}:${capability}`);
@@ -280,40 +273,63 @@ export function normalizeExtensionPolicy(settings: PmSettings): NormalizedExtens
     }
   }
   const knownSurfaces = new Set<string>(KNOWN_EXTENSION_POLICY_SURFACES);
-  for (const surface of toSortedList([...allowedSurfaces, ...blockedSurfaces])) {
+  for (const surface of toSortedList([...normalized.allowedSurfaces, ...normalized.blockedSurfaces])) {
     if (!knownSurfaces.has(surface)) {
       warnings.push(`extension_policy_unknown_surface:${surface}`);
     }
   }
-  for (const override of [...overridesByName.values()].sort((left, right) => left.name.localeCompare(right.name))) {
+  for (const override of sortedOverrides) {
     for (const surface of toSortedList([...override.allowedSurfaces, ...override.blockedSurfaces])) {
       if (!knownSurfaces.has(surface)) {
         warnings.push(`extension_policy_unknown_surface:${override.name}:${surface}`);
       }
     }
   }
+  return [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
+}
 
+/**
+ * Normalize the raw `extensions.policy` settings block into the canonical
+ * {@link NormalizedExtensionPolicy} used across loading, registration, and the
+ * doctor surface: modes/trust/sandbox coerced to known values, every allow/block
+ * list lower-cased and de-duplicated into a set, per-extension overrides indexed by
+ * name, and unknown-capability/surface tokens surfaced as warnings. A missing
+ * policy block resolves to the all-defaults policy (mode/trust `off`).
+ */
+export function normalizeExtensionPolicy(settings: PmSettings): NormalizedExtensionPolicy {
+  const policy: Partial<ExtensionGovernancePolicy> = (settings.extensions.policy as ExtensionGovernancePolicy | undefined) ?? {};
+  const allowedCapabilities = normalizePolicyStringSet(policy.allowed_capabilities);
+  const blockedCapabilities = normalizePolicyStringSet(policy.blocked_capabilities);
+  const allowedSurfaces = normalizePolicySurfaceSet(policy.allowed_surfaces);
+  const blockedSurfaces = normalizePolicySurfaceSet(policy.blocked_surfaces);
+  const overridesByName = collectExtensionPolicyOverrides(policy.extension_overrides);
   return {
-    mode,
-    trustMode,
-    pmMaxVersionExceededMode,
-    requireProvenance,
-    trustedExtensions,
-    defaultSandboxProfile,
-    allowedExtensions,
-    blockedExtensions,
+    mode: normalizePolicyMode(policy.mode),
+    trustMode: normalizePolicyTrustMode(policy.trust_mode),
+    pmMaxVersionExceededMode: normalizePmMaxVersionExceededMode(policy.pm_max_version_exceeded_mode),
+    requireProvenance: policy.require_provenance === true,
+    trustedExtensions: normalizePolicyStringSet(policy.trusted_extensions),
+    defaultSandboxProfile: normalizePolicySandboxProfile(policy.default_sandbox_profile),
+    allowedExtensions: normalizePolicyStringSet(policy.allowed_extensions),
+    blockedExtensions: normalizePolicyStringSet(policy.blocked_extensions),
     allowedCapabilities,
     blockedCapabilities,
     allowedSurfaces,
     blockedSurfaces,
-    allowedCommands,
-    blockedCommands,
-    allowedActions,
-    blockedActions,
-    allowedServices,
-    blockedServices,
+    allowedCommands: normalizePolicyStringSet(policy.allowed_commands),
+    blockedCommands: normalizePolicyStringSet(policy.blocked_commands),
+    allowedActions: normalizePolicyStringSet(policy.allowed_actions),
+    blockedActions: normalizePolicyStringSet(policy.blocked_actions),
+    allowedServices: normalizePolicyStringSet(policy.allowed_services),
+    blockedServices: normalizePolicyStringSet(policy.blocked_services),
     overridesByName,
-    warnings: [...new Set(warnings)].sort((left, right) => left.localeCompare(right)),
+    warnings: collectExtensionPolicyWarnings({
+      allowedCapabilities,
+      blockedCapabilities,
+      allowedSurfaces,
+      blockedSurfaces,
+      overridesByName,
+    }),
   };
 }
 
@@ -597,7 +613,13 @@ function buildPolicyWarning(
 }
 
 /**
- * Implements evaluate extension policy for extension for the public runtime surface of this module.
+ * Evaluate the layer-level governance policy for one extension by combining the
+ * extension allow/block decision, the trust-mode decision, and the sandbox-profile
+ * decision. Reasons are weighed in extension → trust → sandbox order: the first
+ * reason whose governing mode is `enforce` blocks the extension; otherwise the
+ * first whose mode is `warn` surfaces a non-blocking violation warning; otherwise
+ * the extension is allowed. The all-`off` short-circuit skips reason resolution
+ * entirely.
  */
 export function evaluateExtensionPolicyForExtension(
   policy: NormalizedExtensionPolicy,
@@ -606,55 +628,32 @@ export function evaluateExtensionPolicyForExtension(
   if (policy.mode === "off" && policy.trustMode === "off") {
     return { allowed: true, warning: null };
   }
+  const violations: Array<{
+    reason: string;
+    scope: "extension" | "trust";
+    mode: ExtensionPolicyMode | ExtensionTrustMode;
+  }> = [];
   const reason = resolvePolicyExtensionReason(policy, extension);
+  if (reason) {
+    violations.push({ reason, scope: "extension", mode: policy.mode });
+  }
   const trustReason = resolvePolicyTrustReason(policy, extension);
+  if (trustReason) {
+    violations.push({ reason: trustReason, scope: "trust", mode: policy.trustMode });
+  }
   const sandboxReason = resolvePolicySandboxReason(policy, extension);
-  const extensionEnforced = reason && policy.mode === "enforce";
-  const trustEnforced = trustReason && policy.trustMode === "enforce";
-  const sandboxEnforced = sandboxReason && policy.mode === "enforce";
-  if (!reason && !trustReason && !sandboxReason) {
-    return { allowed: true, warning: null };
+  if (sandboxReason) {
+    violations.push({ reason: sandboxReason, scope: "extension", mode: policy.mode });
   }
-  if (extensionEnforced) {
-    return {
-      allowed: false,
-      warning: buildPolicyWarning("blocked", "extension", extension, reason),
-    };
+  const enforced = violations.find((violation) => violation.mode === "enforce");
+  if (enforced) {
+    return { allowed: false, warning: buildPolicyWarning("blocked", enforced.scope, extension, enforced.reason) };
   }
-  if (trustEnforced) {
-    return {
-      allowed: false,
-      warning: buildPolicyWarning("blocked", "trust", extension, trustReason),
-    };
+  const warned = violations.find((violation) => violation.mode === "warn");
+  if (warned) {
+    return { allowed: true, warning: buildPolicyWarning("violation", warned.scope, extension, warned.reason) };
   }
-  if (sandboxEnforced) {
-    return {
-      allowed: false,
-      warning: buildPolicyWarning("blocked", "extension", extension, sandboxReason),
-    };
-  }
-  if (reason && policy.mode === "warn") {
-    return {
-      allowed: true,
-      warning: buildPolicyWarning("violation", "extension", extension, reason),
-    };
-  }
-  if (trustReason && policy.trustMode === "warn") {
-    return {
-      allowed: true,
-      warning: buildPolicyWarning("violation", "trust", extension, trustReason),
-    };
-  }
-  if (sandboxReason && policy.mode === "warn") {
-    return {
-      allowed: true,
-      warning: buildPolicyWarning("violation", "extension", extension, sandboxReason),
-    };
-  }
-  return {
-    allowed: true,
-    warning: null,
-  };
+  return { allowed: true, warning: null };
 }
 
 /**
@@ -684,8 +683,71 @@ export function evaluateExtensionPolicyForCapability(
   };
 }
 
+/** Optional command/action/service identifiers carried by a surface registration. */
+interface RegistrationPolicyDetails {
+  command?: string;
+  action?: string;
+  service?: string;
+}
+
 /**
- * Implements evaluate extension policy for registration for the public runtime surface of this module.
+ * Resolve the first applicable registration-policy reason for a surface
+ * registration, weighed in capability → surface → command → action → service
+ * precedence. Returns `null` when the registration violates no allow/block rule.
+ */
+function resolveRegistrationPolicyReason(
+  policy: NormalizedExtensionPolicy,
+  extension: PolicyExtensionRef,
+  surface: ExtensionPolicySurface,
+  capability: ExtensionCapability | undefined,
+  detail: RegistrationPolicyDetails,
+): string | null {
+  const capabilityReason =
+    typeof capability === "string" ? resolvePolicyCapabilityReason(policy, extension, capability) : null;
+  const surfaceReason = resolvePolicySurfaceReason(policy, extension, surface);
+  const commandReason = detail.command ? resolvePolicyCommandReason(policy, extension, detail.command) : null;
+  const actionReason = detail.action ? resolvePolicyActionReason(policy, extension, detail.action) : null;
+  const serviceReason = detail.service ? resolvePolicyServiceReason(policy, extension, detail.service) : null;
+  return capabilityReason ?? surfaceReason ?? commandReason ?? actionReason ?? serviceReason;
+}
+
+/**
+ * Build the detail token map attached to a registration-policy warning: the
+ * normalized method and surface plus whichever of capability/command/action/service
+ * the registration carries. {@link buildPolicyWarning} sorts and joins these into
+ * the warning's `key=value` suffix.
+ */
+function buildRegistrationPolicyWarningDetails(
+  method: string,
+  surface: ExtensionPolicySurface,
+  capability: ExtensionCapability | undefined,
+  detail: RegistrationPolicyDetails,
+): Record<string, string> {
+  const warningDetails: Record<string, string> = {
+    method: normalizePolicyName(method).replace(/\s+/g, "_"),
+    surface,
+  };
+  if (capability) {
+    warningDetails.capability = capability;
+  }
+  if (detail.command) {
+    warningDetails.command = normalizeCommandName(detail.command);
+  }
+  if (detail.action) {
+    warningDetails.action = normalizePolicyName(detail.action).replace(/\s+/g, "-");
+  }
+  if (detail.service) {
+    warningDetails.service = normalizePolicyName(detail.service);
+  }
+  return warningDetails;
+}
+
+/**
+ * Evaluate the governance policy for a single capability/surface registration an
+ * extension performs during activation. When `mode` is `off` the registration is
+ * always allowed; otherwise the first allow/block reason (capability → surface →
+ * command → action → service) blocks the registration under `enforce` or surfaces
+ * a non-blocking violation warning under `warn`.
  */
 export function evaluateExtensionPolicyForRegistration(
   policy: NormalizedExtensionPolicy,
@@ -702,38 +764,17 @@ export function evaluateExtensionPolicyForRegistration(
   if (policy.mode === "off") {
     return { allowed: true, warning: null };
   }
-  const capabilityReason =
-    typeof capability === "string" ? resolvePolicyCapabilityReason(policy, extension, capability) : null;
-  const surfaceReason = resolvePolicySurfaceReason(policy, extension, surface);
-  const commandReason = details?.command ? resolvePolicyCommandReason(policy, extension, details.command) : null;
-  const actionReason = details?.action ? resolvePolicyActionReason(policy, extension, details.action) : null;
-  const serviceReason = details?.service ? resolvePolicyServiceReason(policy, extension, details.service) : null;
-  const reason = capabilityReason ?? surfaceReason ?? commandReason ?? actionReason ?? serviceReason;
+  const detail = details ?? {};
+  const reason = resolveRegistrationPolicyReason(policy, extension, surface, capability, detail);
   if (!reason) {
     return { allowed: true, warning: null };
-  }
-  const warningDetails: Record<string, string> = {
-    method: normalizePolicyName(method).replace(/\s+/g, "_"),
-    surface,
-  };
-  if (capability) {
-    warningDetails.capability = capability;
-  }
-  if (details?.command) {
-    warningDetails.command = normalizeCommandName(details.command);
-  }
-  if (details?.action) {
-    warningDetails.action = normalizePolicyName(details.action).replace(/\s+/g, "-");
-  }
-  if (details?.service) {
-    warningDetails.service = normalizePolicyName(details.service);
   }
   const warning = buildPolicyWarning(
     policy.mode === "warn" ? "violation" : "blocked",
     "registration",
     extension,
     reason,
-    warningDetails,
+    buildRegistrationPolicyWarningDetails(method, surface, capability, detail),
   );
   return {
     allowed: policy.mode === "warn",

@@ -1530,9 +1530,20 @@ describe("MCP dynamic package actions", () => {
       );
       expect((missingPackageInstallTarget as Error).message).toContain("requires extension source input");
 
-      const upgrade = await handleRequest({
+      const missingInstallTarget = await handleRequest({
         jsonrpc: "2.0",
         id: 136,
+        method: "tools/call",
+        params: { name: "pm_run", arguments: { path: context.pmPath, action: "install" } },
+      }).then(
+        () => undefined,
+        (error: unknown) => error,
+      );
+      expect((missingInstallTarget as Error).message).toContain("requires extension source input");
+
+      const upgrade = await handleRequest({
+        jsonrpc: "2.0",
+        id: 137,
         method: "tools/call",
         params: { name: "pm_run", arguments: { path: context.pmPath, action: "upgrade", options: { dryRun: true } } },
       });
@@ -1540,7 +1551,7 @@ describe("MCP dynamic package actions", () => {
 
       const missingDeleteId = await handleRequest({
         jsonrpc: "2.0",
-        id: 137,
+        id: 138,
         method: "tools/call",
         params: { name: "pm_run", arguments: { path: context.pmPath, action: "delete" } },
       }).then(

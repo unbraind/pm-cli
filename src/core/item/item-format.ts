@@ -53,6 +53,7 @@ import { orderObject } from "../shared/serialization.js";
 import { compareTimestampStrings, isTimestampLiteral } from "../shared/time.js";
 
 const LINKED_TEST_PM_CONTEXT_MODE_VALUES = new Set(["schema", "tracker", "auto"]);
+const ITEM_TEST_RUN_STATUS_VALUES = new Set(["passed", "failed", "stopped", "canceled"]);
 
 function normalizePathValue(value: string): string {
   return value.replaceAll("\\", "/");
@@ -65,6 +66,14 @@ function firstNonZeroComparison(comparisons: readonly number[]): number {
     }
   }
   return 0;
+}
+
+function deleteUndefinedFields(record: Record<string, unknown>): void {
+  for (const [key, value] of Object.entries(record)) {
+    if (value === undefined) {
+      delete record[key];
+    }
+  }
 }
 
 const REQUIRED_STRING_FIELDS = [
@@ -148,6 +157,69 @@ function assertTimestampField(record: Record<string, unknown>, fieldName: "creat
   assertFrontMatterCondition(isTimestampLiteral(timestamp), `${fieldName} must be a valid ISO timestamp`);
 }
 
+function assertPositiveIntegerField(
+  record: Record<string, unknown>,
+  fieldName: string,
+  messagePrefix: string,
+): void {
+  const value = record[fieldName];
+  if (value === undefined) {
+    return;
+  }
+  assertFrontMatterCondition(
+    typeof value === "number" && Number.isInteger(value) && value >= 1,
+    `${messagePrefix} must be an integer >= 1`,
+  );
+}
+
+function assertOptionalTimestampString(record: Record<string, unknown>, fieldName: string, messagePrefix: string): void {
+  const value = record[fieldName];
+  if (value === undefined) {
+    return;
+  }
+  assertFrontMatterCondition(typeof value === "string", `${messagePrefix} must be a string`);
+  assertFrontMatterCondition(isTimestampLiteral(value as string), `${messagePrefix} must be a valid ISO timestamp`);
+}
+
+function assertRecurrenceWeekdays(value: unknown): void {
+  if (value === undefined) {
+    return;
+  }
+  assertFrontMatterCondition(Array.isArray(value), "event.recurrence.by_weekday must be an array");
+  for (const weekday of value as unknown[]) {
+    assertFrontMatterCondition(typeof weekday === "string", "event.recurrence.by_weekday entries must be strings");
+    const normalizedWeekday = (weekday as string).trim().toLowerCase();
+    assertFrontMatterCondition(
+      RECURRENCE_WEEKDAY_VALUES.includes(normalizedWeekday as (typeof RECURRENCE_WEEKDAY_VALUES)[number]),
+      `event.recurrence.by_weekday entries must be one of: ${RECURRENCE_WEEKDAY_VALUES.join(", ")}`,
+    );
+  }
+}
+
+function assertRecurrenceMonthDays(value: unknown): void {
+  if (value === undefined) {
+    return;
+  }
+  assertFrontMatterCondition(Array.isArray(value), "event.recurrence.by_month_day must be an array");
+  for (const day of value as unknown[]) {
+    assertFrontMatterCondition(
+      typeof day === "number" && Number.isInteger(day) && day >= 1 && day <= 31,
+      "event.recurrence.by_month_day entries must be integers 1..31",
+    );
+  }
+}
+
+function assertRecurrenceExdates(value: unknown): void {
+  if (value === undefined) {
+    return;
+  }
+  assertFrontMatterCondition(Array.isArray(value), "event.recurrence.exdates must be an array");
+  for (const exdate of value as unknown[]) {
+    assertFrontMatterCondition(typeof exdate === "string", "event.recurrence.exdates entries must be strings");
+    assertFrontMatterCondition(isTimestampLiteral(exdate as string), "event.recurrence.exdates entries must be valid ISO timestamps");
+  }
+}
+
 function assertValidRecurrenceRule(recurrence: unknown): void {
   assertFrontMatterCondition(
     typeof recurrence === "object" && recurrence !== null && !Array.isArray(recurrence),
@@ -161,71 +233,15 @@ function assertValidRecurrenceRule(recurrence: unknown): void {
     `event.recurrence.freq must be one of: ${RECURRENCE_FREQUENCY_VALUES.join(", ")}`,
   );
 
-  if (recurrenceRecord.interval !== undefined) {
-    assertFrontMatterCondition(
-      typeof recurrenceRecord.interval === "number" &&
-        Number.isInteger(recurrenceRecord.interval) &&
-        (recurrenceRecord.interval as number) >= 1,
-      "event.recurrence.interval must be an integer >= 1",
-    );
-  }
-
-  if (recurrenceRecord.count !== undefined) {
-    assertFrontMatterCondition(
-      typeof recurrenceRecord.count === "number" && Number.isInteger(recurrenceRecord.count) && (recurrenceRecord.count as number) >= 1,
-      "event.recurrence.count must be an integer >= 1",
-    );
-  }
-
-  if (recurrenceRecord.until !== undefined) {
-    assertFrontMatterCondition(typeof recurrenceRecord.until === "string", "event.recurrence.until must be a string");
-    assertFrontMatterCondition(
-      isTimestampLiteral(recurrenceRecord.until as string),
-      "event.recurrence.until must be a valid ISO timestamp",
-    );
-  }
-
-  if (recurrenceRecord.by_weekday !== undefined) {
-    assertFrontMatterCondition(Array.isArray(recurrenceRecord.by_weekday), "event.recurrence.by_weekday must be an array");
-    for (const weekday of recurrenceRecord.by_weekday as unknown[]) {
-      assertFrontMatterCondition(typeof weekday === "string", "event.recurrence.by_weekday entries must be strings");
-      const normalizedWeekday = (weekday as string).trim().toLowerCase();
-      assertFrontMatterCondition(
-        RECURRENCE_WEEKDAY_VALUES.includes(normalizedWeekday as (typeof RECURRENCE_WEEKDAY_VALUES)[number]),
-        `event.recurrence.by_weekday entries must be one of: ${RECURRENCE_WEEKDAY_VALUES.join(", ")}`,
-      );
-    }
-  }
-
-  if (recurrenceRecord.by_month_day !== undefined) {
-    assertFrontMatterCondition(Array.isArray(recurrenceRecord.by_month_day), "event.recurrence.by_month_day must be an array");
-    for (const day of recurrenceRecord.by_month_day as unknown[]) {
-      assertFrontMatterCondition(
-        typeof day === "number" && Number.isInteger(day) && day >= 1 && day <= 31,
-        "event.recurrence.by_month_day entries must be integers 1..31",
-      );
-    }
-  }
-
-  if (recurrenceRecord.exdates !== undefined) {
-    assertFrontMatterCondition(Array.isArray(recurrenceRecord.exdates), "event.recurrence.exdates must be an array");
-    for (const exdate of recurrenceRecord.exdates as unknown[]) {
-      assertFrontMatterCondition(typeof exdate === "string", "event.recurrence.exdates entries must be strings");
-      assertFrontMatterCondition(isTimestampLiteral(exdate as string), "event.recurrence.exdates entries must be valid ISO timestamps");
-    }
-  }
+  assertPositiveIntegerField(recurrenceRecord, "interval", "event.recurrence.interval");
+  assertPositiveIntegerField(recurrenceRecord, "count", "event.recurrence.count");
+  assertOptionalTimestampString(recurrenceRecord, "until", "event.recurrence.until");
+  assertRecurrenceWeekdays(recurrenceRecord.by_weekday);
+  assertRecurrenceMonthDays(recurrenceRecord.by_month_day);
+  assertRecurrenceExdates(recurrenceRecord.exdates);
 }
 
-function assertValidFrontMatter(
-  frontMatter: unknown,
-  runtimeContext?: RuntimeSchemaValidationContext,
-): asserts frontMatter is ItemMetadata {
-  assertFrontMatterCondition(
-    typeof frontMatter === "object" && frontMatter !== null && !Array.isArray(frontMatter),
-    "front matter must be an object",
-  );
-
-  const record = frontMatter as Record<string, unknown>;
+function assertRequiredFrontMatterFields(record: Record<string, unknown>): string {
   for (const fieldName of REQUIRED_STRING_FIELDS) {
     assertFrontMatterCondition(typeof record[fieldName] === "string", `${fieldName} is required and must be a string`);
   }
@@ -240,7 +256,10 @@ function assertValidFrontMatter(
       `pm_format_version must be an integer >= ${BASELINE_ITEM_FORMAT_VERSION}`,
     );
   }
+  return itemType as string;
+}
 
+function assertStatusFrontMatterField(record: Record<string, unknown>, runtimeContext?: RuntimeSchemaValidationContext): void {
   const status = record.status;
   assertFrontMatterCondition(
     typeof status === "string" && status.trim().length > 0,
@@ -252,7 +271,9 @@ function assertValidFrontMatter(
     ? statusRegistry.definitions.map((definition) => definition.id)
     : [...STATUS_VALUES];
   assertFrontMatterCondition(normalizedStatus !== undefined, `status must be one of: ${statusDomain.join(", ")}`);
+}
 
+function assertPriorityAndTags(record: Record<string, unknown>): void {
   const priority = record.priority;
   assertFrontMatterCondition(
     typeof priority === "number" && Number.isInteger(priority) && [0, 1, 2, 3, 4].includes(priority),
@@ -264,168 +285,234 @@ function assertValidFrontMatter(
   for (const tag of tags as unknown[]) {
     assertFrontMatterCondition(typeof tag === "string", "tags entries must be strings");
   }
+}
 
+function assertConfidenceFrontMatterField(record: Record<string, unknown>): void {
   const confidence = record.confidence;
-  if (confidence !== undefined) {
-    if (typeof confidence === "number") {
+  if (confidence === undefined) {
+    return;
+  }
+  if (typeof confidence === "number") {
+    assertFrontMatterCondition(
+      Number.isInteger(confidence) && confidence >= 0 && confidence <= 100,
+      "confidence number value must be an integer 0..100",
+    );
+    return;
+  }
+  if (typeof confidence === "string") {
+    const normalizedConfidence = confidence.trim().toLowerCase();
+    const isKnownTextConfidence =
+      normalizedConfidence === "med" || CONFIDENCE_TEXT_VALUES.includes(normalizedConfidence as (typeof CONFIDENCE_TEXT_VALUES)[number]);
+    assertFrontMatterCondition(
+      isKnownTextConfidence,
+      `confidence string value must be one of: ${[...CONFIDENCE_TEXT_VALUES, "med"].join(", ")}`,
+    );
+    return;
+  }
+  assertFrontMatterCondition(false, "confidence must be a number or string");
+}
+
+function assertSeverityFrontMatterField(record: Record<string, unknown>): void {
+  const severity = record.severity;
+  if (severity === undefined) {
+    return;
+  }
+  if (typeof severity !== "string") {
+    validationError("severity must be a string");
+  }
+  const normalizedSeverity = severity.trim().toLowerCase();
+  const isKnownSeverity =
+    normalizedSeverity === "med" || ISSUE_SEVERITY_VALUES.includes(normalizedSeverity as (typeof ISSUE_SEVERITY_VALUES)[number]);
+  assertFrontMatterCondition(
+    isKnownSeverity,
+    `severity value must be one of: ${[...ISSUE_SEVERITY_VALUES, "med"].join(", ")}`,
+  );
+}
+
+function assertRegressionFrontMatterField(record: Record<string, unknown>): void {
+  if (record.regression !== undefined && typeof record.regression !== "boolean") {
+    validationError("regression must be a boolean");
+  }
+}
+
+function assertReminderEntries(record: Record<string, unknown>): void {
+  const reminders = record.reminders;
+  if (reminders === undefined) {
+    return;
+  }
+  assertFrontMatterCondition(Array.isArray(reminders), "reminders must be an array");
+  for (const reminder of reminders as unknown[]) {
+    assertFrontMatterCondition(typeof reminder === "object" && reminder !== null && !Array.isArray(reminder), "reminders entries must be objects");
+    const reminderRecord = reminder as Record<string, unknown>;
+    assertFrontMatterCondition(typeof reminderRecord.at === "string", "reminder.at must be a string");
+    assertFrontMatterCondition(isTimestampLiteral(reminderRecord.at as string), "reminder.at must be a valid ISO timestamp");
+    assertFrontMatterCondition(typeof reminderRecord.text === "string", "reminder.text must be a string");
+    assertFrontMatterCondition((reminderRecord.text as string).trim().length > 0, "reminder.text must not be empty");
+  }
+}
+
+function assertEventStringFields(eventRecord: Record<string, unknown>): void {
+  for (const stringField of ["title", "description", "location", "timezone"] as const) {
+    if (eventRecord[stringField] !== undefined) {
+      assertFrontMatterCondition(typeof eventRecord[stringField] === "string", `event.${stringField} must be a string`);
       assertFrontMatterCondition(
-        Number.isInteger(confidence) && confidence >= 0 && confidence <= 100,
-        "confidence number value must be an integer 0..100",
+        (eventRecord[stringField] as string).trim().length > 0,
+        `event.${stringField} must not be empty`,
       );
-    } else if (typeof confidence === "string") {
-      const normalizedConfidence = confidence.trim().toLowerCase();
-      const isKnownTextConfidence =
-        normalizedConfidence === "med" || CONFIDENCE_TEXT_VALUES.includes(normalizedConfidence as (typeof CONFIDENCE_TEXT_VALUES)[number]);
-      assertFrontMatterCondition(
-        isKnownTextConfidence,
-        `confidence string value must be one of: ${[...CONFIDENCE_TEXT_VALUES, "med"].join(", ")}`,
-      );
-    } else {
-      assertFrontMatterCondition(false, "confidence must be a number or string");
     }
   }
+}
 
-  const severity = record.severity;
-  if (severity !== undefined) {
-    if (typeof severity !== "string") {
-      validationError("severity must be a string");
-    }
-    const normalizedSeverity = severity.trim().toLowerCase();
-    const isKnownSeverity =
-      normalizedSeverity === "med" || ISSUE_SEVERITY_VALUES.includes(normalizedSeverity as (typeof ISSUE_SEVERITY_VALUES)[number]);
+function assertEventRecurrence(eventRecord: Record<string, unknown>): void {
+  if (eventRecord.recurrence === undefined) {
+    return;
+  }
+  assertValidRecurrenceRule(eventRecord.recurrence);
+  if ((eventRecord.recurrence as Record<string, unknown>).until !== undefined) {
     assertFrontMatterCondition(
-      isKnownSeverity,
-      `severity value must be one of: ${[...ISSUE_SEVERITY_VALUES, "med"].join(", ")}`,
+      compareTimestampStrings(
+        (eventRecord.recurrence as Record<string, unknown>).until as string,
+        eventRecord.start_at as string,
+      ) >= 0,
+      "event.recurrence.until must be at or after event.start_at",
+    );
+  }
+}
+
+function assertCalendarEventEntry(event: unknown): void {
+  assertFrontMatterCondition(typeof event === "object" && event !== null && !Array.isArray(event), "events entries must be objects");
+  const eventRecord = event as Record<string, unknown>;
+  assertFrontMatterCondition(typeof eventRecord.start_at === "string", "event.start_at must be a string");
+  assertFrontMatterCondition(isTimestampLiteral(eventRecord.start_at as string), "event.start_at must be a valid ISO timestamp");
+
+  if (eventRecord.end_at !== undefined) {
+    assertFrontMatterCondition(typeof eventRecord.end_at === "string", "event.end_at must be a string");
+    assertFrontMatterCondition(isTimestampLiteral(eventRecord.end_at as string), "event.end_at must be a valid ISO timestamp");
+    assertFrontMatterCondition(
+      compareTimestampStrings(eventRecord.end_at as string, eventRecord.start_at as string) > 0,
+      "event.end_at must be after event.start_at",
     );
   }
 
-  const regression = record.regression;
-  if (regression !== undefined) {
-    if (typeof regression !== "boolean") {
-      validationError("regression must be a boolean");
-    }
+  assertEventStringFields(eventRecord);
+  if (eventRecord.all_day !== undefined) {
+    assertFrontMatterCondition(typeof eventRecord.all_day === "boolean", "event.all_day must be a boolean");
   }
+  assertEventRecurrence(eventRecord);
+}
 
-  assertTimestampField(record, "created_at");
-  assertTimestampField(record, "updated_at");
-  if (record.deadline !== undefined) {
-    assertTimestampField(record, "deadline");
+function assertCalendarEvents(record: Record<string, unknown>): void {
+  const events = record.events;
+  if (events === undefined) {
+    return;
   }
-  if (record.reminders !== undefined) {
-    const reminders = record.reminders;
-    assertFrontMatterCondition(Array.isArray(reminders), "reminders must be an array");
-    for (const reminder of reminders as unknown[]) {
-      assertFrontMatterCondition(typeof reminder === "object" && reminder !== null && !Array.isArray(reminder), "reminders entries must be objects");
-      const reminderRecord = reminder as Record<string, unknown>;
-      assertFrontMatterCondition(typeof reminderRecord.at === "string", "reminder.at must be a string");
-      assertFrontMatterCondition(isTimestampLiteral(reminderRecord.at as string), "reminder.at must be a valid ISO timestamp");
-      assertFrontMatterCondition(typeof reminderRecord.text === "string", "reminder.text must be a string");
-      assertFrontMatterCondition((reminderRecord.text as string).trim().length > 0, "reminder.text must not be empty");
-    }
+  assertFrontMatterCondition(Array.isArray(events), "events must be an array");
+  for (const event of events as unknown[]) {
+    assertCalendarEventEntry(event);
   }
-  if (record.events !== undefined) {
-    const events = record.events;
-    assertFrontMatterCondition(Array.isArray(events), "events must be an array");
-    for (const event of events as unknown[]) {
-      assertFrontMatterCondition(typeof event === "object" && event !== null && !Array.isArray(event), "events entries must be objects");
-      const eventRecord = event as Record<string, unknown>;
-      assertFrontMatterCondition(typeof eventRecord.start_at === "string", "event.start_at must be a string");
-      assertFrontMatterCondition(isTimestampLiteral(eventRecord.start_at as string), "event.start_at must be a valid ISO timestamp");
+}
 
-      if (eventRecord.end_at !== undefined) {
-        assertFrontMatterCondition(typeof eventRecord.end_at === "string", "event.end_at must be a string");
-        assertFrontMatterCondition(isTimestampLiteral(eventRecord.end_at as string), "event.end_at must be a valid ISO timestamp");
-        assertFrontMatterCondition(
-          compareTimestampStrings(eventRecord.end_at as string, eventRecord.start_at as string) > 0,
-          "event.end_at must be after event.start_at",
-        );
-      }
-
-      for (const stringField of ["title", "description", "location", "timezone"] as const) {
-        if (eventRecord[stringField] !== undefined) {
-          assertFrontMatterCondition(typeof eventRecord[stringField] === "string", `event.${stringField} must be a string`);
-          assertFrontMatterCondition(
-            (eventRecord[stringField] as string).trim().length > 0,
-            `event.${stringField} must not be empty`,
-          );
-        }
-      }
-
-      if (eventRecord.all_day !== undefined) {
-        assertFrontMatterCondition(typeof eventRecord.all_day === "boolean", "event.all_day must be a boolean");
-      }
-
-      if (eventRecord.recurrence !== undefined) {
-        assertValidRecurrenceRule(eventRecord.recurrence);
-        if ((eventRecord.recurrence as Record<string, unknown>).until !== undefined) {
-          assertFrontMatterCondition(
-            compareTimestampStrings(
-              (eventRecord.recurrence as Record<string, unknown>).until as string,
-              eventRecord.start_at as string,
-            ) >= 0,
-            "event.recurrence.until must be at or after event.start_at",
-          );
-        }
-      }
-    }
-  }
-  if (record.closed_at !== undefined) {
-    const closedAt = record.closed_at;
-    assertFrontMatterCondition(typeof closedAt === "string", "closed_at must be a string");
-    assertFrontMatterCondition(isTimestampLiteral(closedAt as string), "closed_at must be a valid ISO timestamp");
-  }
+function assertOptionalStringFields(record: Record<string, unknown>): void {
   for (const fieldName of ["source_type", "source_owner", "design", "external_ref"] as const) {
     const value = record[fieldName];
     if (value !== undefined) {
       assertFrontMatterCondition(typeof value === "string", `${fieldName} must be a string`);
     }
   }
+}
+
+function assertTypeOptionsField(record: Record<string, unknown>): void {
   const typeOptions = record.type_options;
-  if (typeOptions !== undefined) {
-    assertFrontMatterCondition(
-      typeof typeOptions === "object" && typeOptions !== null && !Array.isArray(typeOptions),
-      "type_options must be an object",
-    );
-    for (const [optionKey, optionValue] of Object.entries(typeOptions as Record<string, unknown>)) {
-      assertFrontMatterCondition(optionKey.trim().length > 0, "type_options keys must be non-empty");
-      assertFrontMatterCondition(typeof optionValue === "string", "type_options values must be strings");
-      const optionText = optionValue as string;
-      assertFrontMatterCondition(optionText.trim().length > 0, "type_options values must be non-empty strings");
-    }
+  if (typeOptions === undefined) {
+    return;
   }
+  assertFrontMatterCondition(
+    typeof typeOptions === "object" && typeOptions !== null && !Array.isArray(typeOptions),
+    "type_options must be an object",
+  );
+  for (const [optionKey, optionValue] of Object.entries(typeOptions as Record<string, unknown>)) {
+    assertFrontMatterCondition(optionKey.trim().length > 0, "type_options keys must be non-empty");
+    assertFrontMatterCondition(typeof optionValue === "string", "type_options values must be strings");
+    const optionText = optionValue as string;
+    assertFrontMatterCondition(optionText.trim().length > 0, "type_options values must be non-empty strings");
+  }
+}
 
-  if (runtimeContext?.fieldRegistry) {
-    for (const definition of runtimeContext.fieldRegistry.definitions) {
-      const fieldValue = record[definition.metadata_key];
-      if (fieldValue === undefined) {
-        if (runtimeFieldRequiredForType(definition, itemType as string)) {
-          validationError(`missing required schema field: ${definition.metadata_key}`);
-        }
-        continue;
+function coerceRuntimeFrontMatterFields(
+  record: Record<string, unknown>,
+  itemType: string,
+  runtimeContext?: RuntimeSchemaValidationContext,
+): void {
+  if (!runtimeContext?.fieldRegistry) {
+    return;
+  }
+  for (const definition of runtimeContext.fieldRegistry.definitions) {
+    const fieldValue = record[definition.metadata_key];
+    if (fieldValue === undefined) {
+      if (runtimeFieldRequiredForType(definition, itemType)) {
+        validationError(`missing required schema field: ${definition.metadata_key}`);
       }
-      try {
-        record[definition.metadata_key] = coerceRuntimeFieldValue(
-          definition,
-          fieldValue,
-          `metadata field "${definition.metadata_key}"`,
-        );
-      } catch (error: unknown) {
-        validationError(String((error as { message?: unknown })?.message).replace(/^Invalid\s+/u, ""));
-      }
+      continue;
+    }
+    try {
+      record[definition.metadata_key] = coerceRuntimeFieldValue(
+        definition,
+        fieldValue,
+        `metadata field "${definition.metadata_key}"`,
+      );
+    } catch (error: unknown) {
+      validationError(String((error as { message?: unknown })?.message).replace(/^Invalid\s+/u, ""));
     }
   }
+}
 
-  if (runtimeContext && runtimeContext.unknownFieldPolicy !== "allow") {
-    const knownKeys = buildKnownFrontMatterKeys(runtimeContext);
-    const unknownKeys = Object.keys(record).filter((key) => !knownKeys.has(key)).sort((left, right) => left.localeCompare(right));
-    if (unknownKeys.length > 0) {
-      if (runtimeContext.unknownFieldPolicy === "reject") {
-        validationError(`unknown schema fields are not allowed: ${unknownKeys.join(", ")}`);
-      } else {
-        runtimeContext.onWarning?.(`item_unknown_schema_fields:${unknownKeys.join(",")}`);
-      }
-    }
+function assertRuntimeUnknownFrontMatterFields(
+  record: Record<string, unknown>,
+  runtimeContext?: RuntimeSchemaValidationContext,
+): void {
+  if (!runtimeContext || runtimeContext.unknownFieldPolicy === "allow") {
+    return;
   }
+  const knownKeys = buildKnownFrontMatterKeys(runtimeContext);
+  const unknownKeys = Object.keys(record).filter((key) => !knownKeys.has(key)).sort((left, right) => left.localeCompare(right));
+  if (unknownKeys.length === 0) {
+    return;
+  }
+  if (runtimeContext.unknownFieldPolicy === "reject") {
+    validationError(`unknown schema fields are not allowed: ${unknownKeys.join(", ")}`);
+  } else {
+    runtimeContext.onWarning?.(`item_unknown_schema_fields:${unknownKeys.join(",")}`);
+  }
+}
+
+function assertValidFrontMatter(
+  frontMatter: unknown,
+  runtimeContext?: RuntimeSchemaValidationContext,
+): asserts frontMatter is ItemMetadata {
+  assertFrontMatterCondition(
+    typeof frontMatter === "object" && frontMatter !== null && !Array.isArray(frontMatter),
+    "front matter must be an object",
+  );
+
+  const record = frontMatter as Record<string, unknown>;
+  const itemType = assertRequiredFrontMatterFields(record);
+  assertStatusFrontMatterField(record, runtimeContext);
+  assertPriorityAndTags(record);
+  assertConfidenceFrontMatterField(record);
+  assertSeverityFrontMatterField(record);
+  assertRegressionFrontMatterField(record);
+  assertTimestampField(record, "created_at");
+  assertTimestampField(record, "updated_at");
+  if (record.deadline !== undefined) {
+    assertTimestampField(record, "deadline");
+  }
+  assertReminderEntries(record);
+  assertCalendarEvents(record);
+  assertOptionalTimestampString(record, "closed_at", "closed_at");
+  assertOptionalStringFields(record);
+  assertTypeOptionsField(record);
+  coerceRuntimeFrontMatterFields(record, itemType, runtimeContext);
+  assertRuntimeUnknownFrontMatterFields(record, runtimeContext);
 }
 
 function sortDependencies(values: Dependency[] | undefined): Dependency[] | undefined {
@@ -534,43 +621,36 @@ function sortEvents(values: CalendarEvent[] | undefined): CalendarEvent[] | unde
   if (!values || values.length === 0) {
     return undefined;
   }
-  const normalized = [...values]
-    .map((value) => {
-      const event: CalendarEvent = {
-        start_at: value.start_at,
-        end_at: value.end_at || undefined,
-        title: value.title?.trim() || undefined,
-        description: value.description?.trim() || undefined,
-        location: value.location?.trim() || undefined,
-        all_day: value.all_day,
-        timezone: value.timezone?.trim() || undefined,
-        recurrence: normalizeRecurrenceRule(value.recurrence),
-      };
-      for (const [key, fieldValue] of Object.entries(event)) {
-        if (fieldValue === undefined) {
-          delete (event as unknown as Record<string, unknown>)[key];
-        }
-      }
-      return event;
-    })
-    .sort((a, b) => {
-      const byStart = compareTimestampStrings(a.start_at, b.start_at);
-      if (byStart !== 0) return byStart;
-      const byEnd = (a.end_at ?? "").localeCompare(b.end_at ?? "");
-      if (byEnd !== 0) return byEnd;
-      const byTitle = (a.title ?? "").localeCompare(b.title ?? "");
-      if (byTitle !== 0) return byTitle;
-      const byAllDay = Number(Boolean(a.all_day)) - Number(Boolean(b.all_day));
-      if (byAllDay !== 0) return byAllDay;
-      const byTimezone = (a.timezone ?? "").localeCompare(b.timezone ?? "");
-      if (byTimezone !== 0) return byTimezone;
-      const byLocation = (a.location ?? "").localeCompare(b.location ?? "");
-      if (byLocation !== 0) return byLocation;
-      const byDescription = (a.description ?? "").localeCompare(b.description ?? "");
-      if (byDescription !== 0) return byDescription;
-      return JSON.stringify(a.recurrence ?? {}).localeCompare(JSON.stringify(b.recurrence ?? {}));
-    });
+  const normalized = [...values].map(normalizeCalendarEvent).sort(compareCalendarEvents);
   return normalized;
+}
+
+function normalizeCalendarEvent(value: CalendarEvent): CalendarEvent {
+  const event: CalendarEvent = {
+    start_at: value.start_at,
+    end_at: value.end_at || undefined,
+    title: value.title?.trim() || undefined,
+    description: value.description?.trim() || undefined,
+    location: value.location?.trim() || undefined,
+    all_day: value.all_day,
+    timezone: value.timezone?.trim() || undefined,
+    recurrence: normalizeRecurrenceRule(value.recurrence),
+  };
+  deleteUndefinedFields(event as unknown as Record<string, unknown>);
+  return event;
+}
+
+function compareCalendarEvents(a: CalendarEvent, b: CalendarEvent): number {
+  return firstNonZeroComparison([
+    compareTimestampStrings(a.start_at, b.start_at),
+    (a.end_at ?? "").localeCompare(b.end_at ?? ""),
+    (a.title ?? "").localeCompare(b.title ?? ""),
+    Number(Boolean(a.all_day)) - Number(Boolean(b.all_day)),
+    (a.timezone ?? "").localeCompare(b.timezone ?? ""),
+    (a.location ?? "").localeCompare(b.location ?? ""),
+    (a.description ?? "").localeCompare(b.description ?? ""),
+    JSON.stringify(a.recurrence ?? {}).localeCompare(JSON.stringify(b.recurrence ?? {})),
+  ]);
 }
 
 function normalizeFiles(values: LinkedFile[] | undefined): LinkedFile[] | undefined {
@@ -586,45 +666,7 @@ function normalizeFiles(values: LinkedFile[] | undefined): LinkedFile[] | undefi
 function normalizeTestRunSummaries(values: ItemTestRunSummary[] | undefined): ItemTestRunSummary[] | undefined {
   if (!values || values.length === 0) return undefined;
   const normalized = values
-    .map((value) => {
-      const runId = typeof value.run_id === "string" ? value.run_id.trim() : "";
-      const kind = value.kind === "test" || value.kind === "test-all" ? value.kind : "test";
-      const status =
-        value.status === "passed" || value.status === "failed" || value.status === "stopped" || value.status === "canceled"
-          ? value.status
-          : "failed";
-      const startedAt = typeof value.started_at === "string" ? value.started_at : "";
-      const finishedAt = typeof value.finished_at === "string" ? value.finished_at : "";
-      const recordedAt = typeof value.recorded_at === "string" ? value.recorded_at : "";
-      const passed = typeof value.passed === "number" && Number.isFinite(value.passed) ? Math.max(0, Math.floor(value.passed)) : 0;
-      const failed = typeof value.failed === "number" && Number.isFinite(value.failed) ? Math.max(0, Math.floor(value.failed)) : 0;
-      const skipped = typeof value.skipped === "number" && Number.isFinite(value.skipped) ? Math.max(0, Math.floor(value.skipped)) : 0;
-      return {
-        run_id: runId,
-        kind,
-        status,
-        started_at: startedAt,
-        finished_at: finishedAt,
-        recorded_at: recordedAt,
-        attempt:
-          typeof value.attempt === "number" && Number.isFinite(value.attempt) && value.attempt >= 1
-            ? Math.floor(value.attempt)
-            : undefined,
-        resumed_from: value.resumed_from?.trim() || undefined,
-        passed,
-        failed,
-        skipped,
-        items:
-          typeof value.items === "number" && Number.isFinite(value.items) && value.items >= 0
-            ? Math.floor(value.items)
-            : undefined,
-        linked_tests:
-          typeof value.linked_tests === "number" && Number.isFinite(value.linked_tests) && value.linked_tests >= 0
-            ? Math.floor(value.linked_tests)
-            : undefined,
-        fail_on_skipped_triggered: value.fail_on_skipped_triggered === true ? true : undefined,
-      };
-    })
+    .map(normalizeTestRunSummary)
     .filter((value) => value.run_id.length > 0 && value.started_at.length > 0 && value.finished_at.length > 0 && value.recorded_at.length > 0)
     .sort((a, b) =>
       firstNonZeroComparison([
@@ -636,102 +678,140 @@ function normalizeTestRunSummaries(values: ItemTestRunSummary[] | undefined): It
   return normalized.length > 0 ? normalized : undefined;
 }
 
+function normalizeNonNegativeInteger(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 ? Math.floor(value) : undefined;
+}
+
+function normalizePositiveInteger(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) && value >= 1 ? Math.floor(value) : undefined;
+}
+
+function stringOrEmpty(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+function normalizeTestRunSummary(value: ItemTestRunSummary): ItemTestRunSummary {
+  const runId = typeof value.run_id === "string" ? value.run_id.trim() : "";
+  const kind = value.kind === "test" || value.kind === "test-all" ? value.kind : "test";
+  const status = ITEM_TEST_RUN_STATUS_VALUES.has(value.status) ? value.status : "failed";
+  return {
+    run_id: runId,
+    kind,
+    status,
+    started_at: stringOrEmpty(value.started_at),
+    finished_at: stringOrEmpty(value.finished_at),
+    recorded_at: stringOrEmpty(value.recorded_at),
+    attempt: normalizePositiveInteger(value.attempt),
+    resumed_from: value.resumed_from?.trim() || undefined,
+    passed: normalizeNonNegativeInteger(value.passed) ?? 0,
+    failed: normalizeNonNegativeInteger(value.failed) ?? 0,
+    skipped: normalizeNonNegativeInteger(value.skipped) ?? 0,
+    items: normalizeNonNegativeInteger(value.items),
+    linked_tests: normalizeNonNegativeInteger(value.linked_tests),
+    fail_on_skipped_triggered: value.fail_on_skipped_triggered === true ? true : undefined,
+  };
+}
+
 function sortTests(values: LinkedTest[] | undefined): LinkedTest[] | undefined {
   if (!values || values.length === 0) return undefined;
-  return [...values]
-    .map((value) => ({
-      command: value.command?.trim() || undefined,
-      path: value.path ? normalizePathValue(value.path) : undefined,
-      scope: value.scope,
-      timeout_seconds:
-        typeof value.timeout_seconds === "number" && Number.isFinite(value.timeout_seconds) && value.timeout_seconds > 0
-          ? value.timeout_seconds
-          : undefined,
-      pm_context_mode: (() => {
-        const normalized = value.pm_context_mode?.trim().toLowerCase();
-        if (!normalized || !LINKED_TEST_PM_CONTEXT_MODE_VALUES.has(normalized)) {
-          return undefined;
-        }
-        return normalized as LinkedTest["pm_context_mode"];
-      })(),
-      env_set: value.env_set
-        ? Object.fromEntries(
-            Object.entries(value.env_set)
-              .map(([key, envValue]) => [key.trim(), String(envValue).trim()] as const)
-              .filter(([key, envValue]) => key.length > 0 && envValue.length > 0)
-              .sort(([left], [right]) => left.localeCompare(right)),
-          )
+  return [...values].map(normalizeLinkedTest).sort(compareLinkedTests);
+}
+
+function normalizeTrimmedStringList(value: readonly string[] | undefined): string[] | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const normalized = [...new Set(value.map((entry) => entry.trim()).filter((entry) => entry.length > 0))].sort((a, b) =>
+    a.localeCompare(b),
+  );
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function normalizeStringRecord(value: Record<string, string> | undefined): Record<string, string> | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const entries = Object.entries(value)
+    .map(([key, recordValue]) => [key.trim(), String(recordValue).trim()] as const)
+    .filter(([key, recordValue]) => key.length > 0 && recordValue.length > 0)
+    .sort(([left], [right]) => left.localeCompare(right));
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+}
+
+function normalizeNumericRecord(value: Record<string, number> | undefined): Record<string, number> | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const entries = Object.entries(value)
+    .map(([key, recordValue]) => [key.trim(), Number(recordValue)] as const)
+    .filter(([key, recordValue]) => key.length > 0 && Number.isFinite(recordValue))
+    .sort(([left], [right]) => left.localeCompare(right));
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+}
+
+function normalizeLinkedTestContextMode(value: string | undefined): LinkedTest["pm_context_mode"] | undefined {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized || !LINKED_TEST_PM_CONTEXT_MODE_VALUES.has(normalized)) {
+    return undefined;
+  }
+  return normalized as LinkedTest["pm_context_mode"];
+}
+
+function normalizeLinkedTest(value: LinkedTest): LinkedTest {
+  return {
+    command: value.command?.trim() || undefined,
+    path: value.path ? normalizePathValue(value.path) : undefined,
+    scope: value.scope,
+    timeout_seconds:
+      typeof value.timeout_seconds === "number" && Number.isFinite(value.timeout_seconds) && value.timeout_seconds > 0
+        ? value.timeout_seconds
         : undefined,
-      env_clear: value.env_clear
-        ? [...new Set(value.env_clear.map((entry) => entry.trim()).filter((entry) => entry.length > 0))].sort((a, b) =>
-            a.localeCompare(b),
-          )
-        : undefined,
-      shared_host_safe: value.shared_host_safe === true ? true : undefined,
-      assert_stdout_contains: value.assert_stdout_contains
-        ? [...new Set(value.assert_stdout_contains.map((entry) => entry.trim()).filter((entry) => entry.length > 0))].sort((a, b) =>
-            a.localeCompare(b),
-          )
-        : undefined,
-      assert_stdout_regex: value.assert_stdout_regex
-        ? [...new Set(value.assert_stdout_regex.map((entry) => entry.trim()).filter((entry) => entry.length > 0))].sort((a, b) =>
-            a.localeCompare(b),
-          )
-        : undefined,
-      assert_stderr_contains: value.assert_stderr_contains
-        ? [...new Set(value.assert_stderr_contains.map((entry) => entry.trim()).filter((entry) => entry.length > 0))].sort((a, b) =>
-            a.localeCompare(b),
-          )
-        : undefined,
-      assert_stderr_regex: value.assert_stderr_regex
-        ? [...new Set(value.assert_stderr_regex.map((entry) => entry.trim()).filter((entry) => entry.length > 0))].sort((a, b) =>
-            a.localeCompare(b),
-          )
-        : undefined,
-      assert_stdout_min_lines:
-        typeof value.assert_stdout_min_lines === "number" &&
-          Number.isFinite(value.assert_stdout_min_lines) &&
-          value.assert_stdout_min_lines >= 0
-          ? Math.floor(value.assert_stdout_min_lines)
-          : undefined,
-      assert_json_field_equals: value.assert_json_field_equals
-        ? Object.fromEntries(
-            Object.entries(value.assert_json_field_equals)
-              .map(([key, expectedValue]) => [key.trim(), String(expectedValue).trim()] as const)
-              .filter(([key, expectedValue]) => key.length > 0 && expectedValue.length > 0)
-              .sort(([left], [right]) => left.localeCompare(right)),
-          )
-        : undefined,
-      assert_json_field_gte: value.assert_json_field_gte
-        ? Object.fromEntries(
-            Object.entries(value.assert_json_field_gte)
-              .map(([key, expectedValue]) => [key.trim(), Number(expectedValue)] as const)
-              .filter(([key, expectedValue]) => key.length > 0 && Number.isFinite(expectedValue))
-              .sort(([left], [right]) => left.localeCompare(right)),
-          )
-        : undefined,
-      note: value.note?.trim() || undefined,
-    }))
-    .sort((a, b) =>
-      firstNonZeroComparison([
-        a.scope.localeCompare(b.scope),
-        (a.path ?? "").localeCompare(b.path ?? ""),
-        (a.command ?? "").localeCompare(b.command ?? ""),
-        (a.timeout_seconds ?? 0) - (b.timeout_seconds ?? 0),
-        (a.pm_context_mode ?? "").localeCompare(b.pm_context_mode ?? ""),
-        Number(Boolean(a.shared_host_safe)) - Number(Boolean(b.shared_host_safe)),
-        JSON.stringify(a.env_clear ?? []).localeCompare(JSON.stringify(b.env_clear ?? [])),
-        JSON.stringify(a.env_set ?? {}).localeCompare(JSON.stringify(b.env_set ?? {})),
-        JSON.stringify(a.assert_stdout_contains ?? []).localeCompare(JSON.stringify(b.assert_stdout_contains ?? [])),
-        JSON.stringify(a.assert_stdout_regex ?? []).localeCompare(JSON.stringify(b.assert_stdout_regex ?? [])),
-        JSON.stringify(a.assert_stderr_contains ?? []).localeCompare(JSON.stringify(b.assert_stderr_contains ?? [])),
-        JSON.stringify(a.assert_stderr_regex ?? []).localeCompare(JSON.stringify(b.assert_stderr_regex ?? [])),
-        (a.assert_stdout_min_lines ?? 0) - (b.assert_stdout_min_lines ?? 0),
-        JSON.stringify(a.assert_json_field_equals ?? {}).localeCompare(JSON.stringify(b.assert_json_field_equals ?? {})),
-        JSON.stringify(a.assert_json_field_gte ?? {}).localeCompare(JSON.stringify(b.assert_json_field_gte ?? {})),
-        (a.note ?? "").localeCompare(b.note ?? ""),
-      ]),
-    );
+    pm_context_mode: normalizeLinkedTestContextMode(value.pm_context_mode),
+    env_set: normalizeStringRecord(value.env_set),
+    env_clear: normalizeTrimmedStringList(value.env_clear),
+    shared_host_safe: value.shared_host_safe === true ? true : undefined,
+    assert_stdout_contains: normalizeTrimmedStringList(value.assert_stdout_contains),
+    assert_stdout_regex: normalizeTrimmedStringList(value.assert_stdout_regex),
+    assert_stderr_contains: normalizeTrimmedStringList(value.assert_stderr_contains),
+    assert_stderr_regex: normalizeTrimmedStringList(value.assert_stderr_regex),
+    assert_stdout_min_lines: normalizeNonNegativeInteger(value.assert_stdout_min_lines),
+    assert_json_field_equals: normalizeStringRecord(value.assert_json_field_equals),
+    assert_json_field_gte: normalizeNumericRecord(value.assert_json_field_gte),
+    note: value.note?.trim() || undefined,
+  };
+}
+
+function compareLinkedTests(a: LinkedTest, b: LinkedTest): number {
+  return firstNonZeroComparison([
+    a.scope.localeCompare(b.scope),
+    compareOptionalStrings(a.path, b.path),
+    compareOptionalStrings(a.command, b.command),
+    compareOptionalNumbers(a.timeout_seconds, b.timeout_seconds),
+    compareOptionalStrings(a.pm_context_mode, b.pm_context_mode),
+    Number(Boolean(a.shared_host_safe)) - Number(Boolean(b.shared_host_safe)),
+    compareJsonValues(a.env_clear, b.env_clear, []),
+    compareJsonValues(a.env_set, b.env_set, {}),
+    compareJsonValues(a.assert_stdout_contains, b.assert_stdout_contains, []),
+    compareJsonValues(a.assert_stdout_regex, b.assert_stdout_regex, []),
+    compareJsonValues(a.assert_stderr_contains, b.assert_stderr_contains, []),
+    compareJsonValues(a.assert_stderr_regex, b.assert_stderr_regex, []),
+    compareOptionalNumbers(a.assert_stdout_min_lines, b.assert_stdout_min_lines),
+    compareJsonValues(a.assert_json_field_equals, b.assert_json_field_equals, {}),
+    compareJsonValues(a.assert_json_field_gte, b.assert_json_field_gte, {}),
+    compareOptionalStrings(a.note, b.note),
+  ]);
+}
+
+function compareOptionalStrings(left: string | undefined, right: string | undefined): number {
+  return (left ?? "").localeCompare(right ?? "");
+}
+
+function compareOptionalNumbers(left: number | undefined, right: number | undefined): number {
+  return (left ?? 0) - (right ?? 0);
+}
+
+function compareJsonValues(left: unknown, right: unknown, fallback: unknown): number {
+  return JSON.stringify(left ?? fallback).localeCompare(JSON.stringify(right ?? fallback));
 }
 
 function sortDocs(values: LinkedDoc[] | undefined): LinkedDoc[] | undefined {
@@ -828,51 +908,71 @@ function normalizePlanStepDocs(value: unknown): PlanStepDoc[] | undefined {
   return out.length > 0 ? out : undefined;
 }
 
+function normalizePlanStepEntry(entry: unknown): PlanStep | undefined {
+  if (entry === null || typeof entry !== "object") {
+    return undefined;
+  }
+  const record = entry as Record<string, unknown>;
+  const id = trimStringOrUndefined(record.id);
+  const title = trimStringOrUndefined(record.title);
+  const status = trimStringOrUndefined(record.status);
+  const orderRaw = record.order;
+  const order = typeof orderRaw === "number" && Number.isFinite(orderRaw) ? orderRaw : Number(orderRaw);
+  const created_at = typeof record.created_at === "string" ? record.created_at : "";
+  const updated_at = typeof record.updated_at === "string" ? record.updated_at : "";
+  if (!id || !title || !status || !Number.isFinite(order) || !created_at || !updated_at) {
+    return undefined;
+  }
+  const step: PlanStep = {
+    id,
+    order,
+    title,
+    status: status as PlanStepStatus,
+    created_at,
+    updated_at,
+  };
+  applyPlanStepOptionalFields(step, record);
+  return step;
+}
+
+function applyPlanStepOptionalFields(step: PlanStep, record: Record<string, unknown>): void {
+  const stringFields = [
+    ["body", "body"],
+    ["owner", "owner"],
+    ["evidence", "evidence"],
+    ["blocked_reason", "blocked_reason"],
+    ["superseded_by", "superseded_by"],
+  ] as const satisfies readonly (readonly [keyof PlanStep, string])[];
+  for (const [target, source] of stringFields) {
+    const value = trimStringOrUndefined(record[source]);
+    if (value) {
+      step[target] = value as never;
+    }
+  }
+  const completedAt = typeof record.completed_at === "string" ? record.completed_at : undefined;
+  if (completedAt && completedAt.length > 0) {
+    step.completed_at = completedAt;
+  }
+  const collectionFields = [
+    ["linked_items", "linked_items", normalizePlanStepLinks],
+    ["files", "files", normalizePlanStepFiles],
+    ["tests", "tests", normalizePlanStepTests],
+    ["docs", "docs", normalizePlanStepDocs],
+  ] as const;
+  for (const [target, source, normalize] of collectionFields) {
+    const value = normalize(record[source]);
+    if (value) {
+      step[target] = value as never;
+    }
+  }
+}
+
 function normalizePlanSteps(value: unknown): PlanStep[] | undefined {
   if (!Array.isArray(value)) return undefined;
-  const out: PlanStep[] = [];
-  for (const entry of value) {
-    if (entry === null || typeof entry !== "object") continue;
-    const record = entry as Record<string, unknown>;
-    const id = trimStringOrUndefined(record.id);
-    const title = trimStringOrUndefined(record.title);
-    const status = trimStringOrUndefined(record.status);
-    const orderRaw = record.order;
-    const order = typeof orderRaw === "number" && Number.isFinite(orderRaw) ? orderRaw : Number(orderRaw);
-    if (!id || !title || !status || !Number.isFinite(order)) continue;
-    const created_at = typeof record.created_at === "string" ? record.created_at : "";
-    const updated_at = typeof record.updated_at === "string" ? record.updated_at : "";
-    if (!created_at || !updated_at) continue;
-    const step: PlanStep = {
-      id,
-      order,
-      title,
-      status: status as PlanStepStatus,
-      created_at,
-      updated_at,
-    };
-    const body = trimStringOrUndefined(record.body);
-    if (body) step.body = body;
-    const owner = trimStringOrUndefined(record.owner);
-    if (owner) step.owner = owner;
-    const evidence = trimStringOrUndefined(record.evidence);
-    if (evidence) step.evidence = evidence;
-    const blockedReason = trimStringOrUndefined(record.blocked_reason);
-    if (blockedReason) step.blocked_reason = blockedReason;
-    const supersededBy = trimStringOrUndefined(record.superseded_by);
-    if (supersededBy) step.superseded_by = supersededBy;
-    const completedAt = typeof record.completed_at === "string" ? record.completed_at : undefined;
-    if (completedAt && completedAt.length > 0) step.completed_at = completedAt;
-    const links = normalizePlanStepLinks(record.linked_items);
-    if (links) step.linked_items = links;
-    const files = normalizePlanStepFiles(record.files);
-    if (files) step.files = files;
-    const tests = normalizePlanStepTests(record.tests);
-    if (tests) step.tests = tests;
-    const docs = normalizePlanStepDocs(record.docs);
-    if (docs) step.docs = docs;
-    out.push(step);
-  }
+  const out = value.flatMap((entry) => {
+    const step = normalizePlanStepEntry(entry);
+    return step ? [step] : [];
+  });
   out.sort((left, right) => left.order - right.order);
   return out.length > 0 ? out : undefined;
 }
@@ -988,6 +1088,59 @@ function normalizeSeverityValue(value: ItemMetadata["severity"] | undefined): It
   return undefined;
 }
 
+function emptyStringToUndefined(value: string | undefined): string | undefined {
+  return value || undefined;
+}
+
+function copyExtensionFrontMatterFields(normalized: ItemMetadata, source: ItemMetadata): void {
+  const targetRecord = normalized as unknown as Record<string, unknown>;
+  const sourceRecord = source as unknown as Record<string, unknown>;
+  for (const [key, value] of Object.entries(sourceRecord)) {
+    if (Object.prototype.hasOwnProperty.call(targetRecord, key) || value === undefined) {
+      continue;
+    }
+    targetRecord[key] = value;
+  }
+}
+
+function coerceNormalizedRuntimeFields(
+  normalized: ItemMetadata,
+  runtimeContext: RuntimeSchemaValidationContext | undefined,
+): void {
+  if (!runtimeContext?.fieldRegistry) {
+    return;
+  }
+  const record = normalized as unknown as Record<string, unknown>;
+  for (const definition of runtimeContext.fieldRegistry.definitions) {
+    const currentValue = record[definition.metadata_key];
+    if (currentValue === undefined) {
+      continue;
+    }
+    record[definition.metadata_key] = coerceRuntimeFieldValue(
+      definition,
+      currentValue,
+      `metadata field "${definition.metadata_key}"`,
+    );
+  }
+}
+
+function assertNormalizedUnknownFields(
+  normalized: ItemMetadata,
+  runtimeContext: RuntimeSchemaValidationContext | undefined,
+): void {
+  if (!runtimeContext || runtimeContext.unknownFieldPolicy === "allow") {
+    return;
+  }
+  const knownKeys = buildKnownFrontMatterKeys(runtimeContext);
+  const record = normalized as unknown as Record<string, unknown>;
+  const unknownKeys = Object.keys(record)
+    .filter((key) => !knownKeys.has(key))
+    .sort((left, right) => left.localeCompare(right));
+  if (unknownKeys.length > 0 && runtimeContext.unknownFieldPolicy === "reject") {
+    validationError(`unknown schema fields are not allowed: ${unknownKeys.join(", ")}`);
+  }
+}
+
 /**
  * Implements normalize front matter for the public runtime surface of this module.
  */
@@ -1006,7 +1159,7 @@ export function normalizeFrontMatter(
     description: frontMatter.description,
     type: frontMatter.type,
     pm_format_version: normalizeItemFormatVersion(frontMatter.pm_format_version),
-    source_type: frontMatter.source_type?.trim() || undefined,
+    source_type: trimStringOrUndefined(frontMatter.source_type),
     type_options: normalizeTypeOptions(frontMatter.type_options),
     status: normalizedStatus,
     priority: frontMatter.priority,
@@ -1021,47 +1174,47 @@ export function normalizeFrontMatter(
     tests: sortTests(frontMatter.tests),
     test_runs: normalizeTestRunSummaries(frontMatter.test_runs),
     docs: sortDocs(frontMatter.docs),
-    deadline: frontMatter.deadline || undefined,
+    deadline: emptyStringToUndefined(frontMatter.deadline),
     reminders: sortReminders(frontMatter.reminders),
     events: sortEvents(frontMatter.events),
-    closed_at: frontMatter.closed_at || undefined,
-    assignee: frontMatter.assignee?.trim() || undefined,
-    source_owner: frontMatter.source_owner?.trim() || undefined,
-    author: frontMatter.author || undefined,
+    closed_at: emptyStringToUndefined(frontMatter.closed_at),
+    assignee: trimStringOrUndefined(frontMatter.assignee),
+    source_owner: trimStringOrUndefined(frontMatter.source_owner),
+    author: emptyStringToUndefined(frontMatter.author),
     estimated_minutes: frontMatter.estimated_minutes,
     acceptance_criteria: frontMatter.acceptance_criteria ?? undefined,
     design: frontMatter.design ?? undefined,
     external_ref: frontMatter.external_ref ?? undefined,
-    definition_of_ready: frontMatter.definition_of_ready?.trim() || undefined,
+    definition_of_ready: trimStringOrUndefined(frontMatter.definition_of_ready),
     order: frontMatter.order,
-    goal: frontMatter.goal?.trim() || undefined,
-    objective: frontMatter.objective?.trim() || undefined,
-    value: frontMatter.value?.trim() || undefined,
-    impact: frontMatter.impact?.trim() || undefined,
-    outcome: frontMatter.outcome?.trim() || undefined,
-    why_now: frontMatter.why_now?.trim() || undefined,
-    parent: frontMatter.parent?.trim() || undefined,
-    reviewer: frontMatter.reviewer?.trim() || undefined,
+    goal: trimStringOrUndefined(frontMatter.goal),
+    objective: trimStringOrUndefined(frontMatter.objective),
+    value: trimStringOrUndefined(frontMatter.value),
+    impact: trimStringOrUndefined(frontMatter.impact),
+    outcome: trimStringOrUndefined(frontMatter.outcome),
+    why_now: trimStringOrUndefined(frontMatter.why_now),
+    parent: trimStringOrUndefined(frontMatter.parent),
+    reviewer: trimStringOrUndefined(frontMatter.reviewer),
     risk: frontMatter.risk ?? undefined,
     confidence: normalizeConfidenceValue(frontMatter.confidence),
-    sprint: frontMatter.sprint?.trim() || undefined,
-    release: frontMatter.release?.trim() || undefined,
-    blocked_by: frontMatter.blocked_by?.trim() || undefined,
-    blocked_reason: frontMatter.blocked_reason?.trim() || undefined,
-    unblock_note: frontMatter.unblock_note?.trim() || undefined,
-    reporter: frontMatter.reporter?.trim() || undefined,
+    sprint: trimStringOrUndefined(frontMatter.sprint),
+    release: trimStringOrUndefined(frontMatter.release),
+    blocked_by: trimStringOrUndefined(frontMatter.blocked_by),
+    blocked_reason: trimStringOrUndefined(frontMatter.blocked_reason),
+    unblock_note: trimStringOrUndefined(frontMatter.unblock_note),
+    reporter: trimStringOrUndefined(frontMatter.reporter),
     severity: normalizeSeverityValue(frontMatter.severity),
-    environment: frontMatter.environment?.trim() || undefined,
-    repro_steps: frontMatter.repro_steps?.trim() || undefined,
-    resolution: frontMatter.resolution?.trim() || undefined,
-    expected_result: frontMatter.expected_result?.trim() || undefined,
-    actual_result: frontMatter.actual_result?.trim() || undefined,
-    affected_version: frontMatter.affected_version?.trim() || undefined,
-    fixed_version: frontMatter.fixed_version?.trim() || undefined,
-    component: frontMatter.component?.trim() || undefined,
+    environment: trimStringOrUndefined(frontMatter.environment),
+    repro_steps: trimStringOrUndefined(frontMatter.repro_steps),
+    resolution: trimStringOrUndefined(frontMatter.resolution),
+    expected_result: trimStringOrUndefined(frontMatter.expected_result),
+    actual_result: trimStringOrUndefined(frontMatter.actual_result),
+    affected_version: trimStringOrUndefined(frontMatter.affected_version),
+    fixed_version: trimStringOrUndefined(frontMatter.fixed_version),
+    component: trimStringOrUndefined(frontMatter.component),
     regression: frontMatter.regression,
-    customer_impact: frontMatter.customer_impact?.trim() || undefined,
-    close_reason: frontMatter.close_reason || undefined,
+    customer_impact: trimStringOrUndefined(frontMatter.customer_impact),
+    close_reason: emptyStringToUndefined(frontMatter.close_reason),
     plan_mode: trimStringOrUndefined(frontMatter.plan_mode) as ItemMetadata["plan_mode"],
     plan_scope: trimStringOrUndefined(frontMatter.plan_scope),
     plan_harness: trimStringOrUndefined(frontMatter.plan_harness) as ItemMetadata["plan_harness"],
@@ -1071,45 +1224,10 @@ export function normalizeFrontMatter(
     plan_discoveries: normalizePlanDiscoveries(frontMatter.plan_discoveries),
     plan_validation: normalizePlanValidation(frontMatter.plan_validation),
   };
-  const sourceRecord = frontMatter as unknown as Record<string, unknown>;
-  for (const [key, value] of Object.entries(sourceRecord)) {
-    if (Object.prototype.hasOwnProperty.call(normalized, key) || value === undefined) {
-      continue;
-    }
-    (normalized as unknown as Record<string, unknown>)[key] = value;
-  }
-
-  if (runtimeContext?.fieldRegistry) {
-    for (const definition of runtimeContext.fieldRegistry.definitions) {
-      const currentValue = (normalized as unknown as Record<string, unknown>)[definition.metadata_key];
-      if (currentValue === undefined) {
-        continue;
-      }
-      (normalized as unknown as Record<string, unknown>)[definition.metadata_key] = coerceRuntimeFieldValue(
-        definition,
-        currentValue,
-        `metadata field "${definition.metadata_key}"`,
-      );
-    }
-  }
-
-  if (runtimeContext && runtimeContext.unknownFieldPolicy !== "allow") {
-    const knownKeys = buildKnownFrontMatterKeys(runtimeContext);
-    const unknownKeys = Object.keys(normalized as unknown as Record<string, unknown>)
-      .filter((key) => !knownKeys.has(key))
-      .sort((left, right) => left.localeCompare(right));
-    if (unknownKeys.length > 0) {
-      if (runtimeContext.unknownFieldPolicy === "reject") {
-        validationError(`unknown schema fields are not allowed: ${unknownKeys.join(", ")}`);
-      }
-    }
-  }
-
-  for (const [key, value] of Object.entries(normalized)) {
-    if (value === undefined) {
-      delete (normalized as unknown as Record<string, unknown>)[key];
-    }
-  }
+  copyExtensionFrontMatterFields(normalized, frontMatter);
+  coerceNormalizedRuntimeFields(normalized, runtimeContext);
+  assertNormalizedUnknownFields(normalized, runtimeContext);
+  deleteUndefinedFields(normalized as unknown as Record<string, unknown>);
   return normalized;
 }
 
