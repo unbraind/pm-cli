@@ -8,6 +8,7 @@
 
 ### Other
 
+- AGENTS.md: mandate reading full live pm item data (status/resolution/comments) before any state claim ([pm-g61e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-g61e.toon))
 - CodeFactor/Complexity: cut cyclomatic-complexity debt across the extension authoring, management & diagnostics surface ([pm-zro7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-zro7.toon))
 
 ## 2026.6.30 - 2026-06-30
