@@ -8,6 +8,7 @@
 
 ### Other
 
+- CodeFactor/Complexity: zero out the SDK contract-resolution, extension-loader and composition surface ([pm-lzzp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lzzp.toon))
 - AGENTS.md: mandate reading full live pm item data (status/resolution/comments) before any state claim ([pm-g61e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-g61e.toon))
 - CodeFactor/Complexity: cut cyclomatic-complexity debt across the extension authoring, management & diagnostics surface ([pm-zro7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-zro7.toon))
 
