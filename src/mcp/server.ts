@@ -766,6 +766,10 @@ interface McpActionDispatchContext {
 
 type McpActionHandler = (ctx: McpActionDispatchContext) => Promise<unknown> | unknown;
 
+function getOwnHandler<T>(handlers: Readonly<Record<string, T>>, key: string): T | undefined {
+  return Object.prototype.hasOwnProperty.call(handlers, key) ? handlers[key] : undefined;
+}
+
 function readMcpTarget(ctx: McpActionDispatchContext): string | undefined {
   return readString(ctx.args, "target") ?? readString(ctx.options, "target");
 }
@@ -943,6 +947,23 @@ function parseMcpInteger(value: unknown, label: string): number | undefined {
   return undefined;
 }
 
+function parseMcpIntegerPrefix(value: unknown, label: string): number | undefined {
+  if (typeof value === "number") {
+    if (!Number.isInteger(value)) {
+      throw new PmCliError(`${label} must be a finite integer.`, 64);
+    }
+    return value;
+  }
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = Number.parseInt(value, 10);
+    if (!Number.isInteger(parsed)) {
+      throw new PmCliError(`${label} must be a finite integer.`, 64);
+    }
+    return parsed;
+  }
+  return undefined;
+}
+
 function runMcpPlanAction(ctx: McpActionDispatchContext): Promise<unknown> {
   const subcommand = readRequiredString(ctx.options, "subcommand");
   const planRecord = ctx.options as Record<string, unknown>;
@@ -950,7 +971,7 @@ function runMcpPlanAction(ctx: McpActionDispatchContext): Promise<unknown> {
     subcommand: subcommand as never,
     id: typeof ctx.id === "string" ? ctx.id : typeof planRecord.id === "string" ? (planRecord.id as string) : undefined,
     stepRef: readMcpPlanStepRef(ctx),
-    reorderTo: parseMcpInteger(planRecord.reorderTo ?? ctx.args.reorderTo, "plan reorderTo"),
+    reorderTo: parseMcpIntegerPrefix(planRecord.reorderTo ?? ctx.args.reorderTo, "plan reorderTo"),
     options: ctx.options as never,
     global: ctx.global,
   });
@@ -1000,7 +1021,8 @@ function runMcpSchemaReadOrRemoveAction(schema: McpSchemaContext): Promise<unkno
     "apply-preset": () =>
       runSchemaApplyPreset(readString(ctx.args, "typePreset") ?? readString(ctx.options, "typePreset"), { author, force }, ctx.global),
   };
-  return simpleHandlers[subcommand]?.() ?? null;
+  const handler = getOwnHandler(simpleHandlers, subcommand);
+  return handler ? handler() : null;
 }
 
 function runMcpSchemaAddFieldAction(schema: McpSchemaContext): Promise<unknown> {
@@ -1075,18 +1097,18 @@ function runMcpSchemaAction(ctx: McpActionDispatchContext): Promise<unknown> | u
   if (schema.subcommand === "add-status") {
     return runMcpSchemaAddStatusAction(schema);
   }
-  if (ctx.args.infer === true || ctx.options.infer === true) {
-    return runSchemaInferTypes(
-      {
-        minCount: parseMcpInteger(ctx.args.minCount ?? ctx.options.minCount, "schema infer minCount"),
-        apply: ctx.args.apply === true || ctx.options.apply === true,
-        author: schema.author,
-        force: schema.force,
-      },
-      ctx.global,
-    );
-  }
   if (schema.subcommand === "add-type") {
+    if (ctx.args.infer === true || ctx.options.infer === true) {
+      return runSchemaInferTypes(
+        {
+          minCount: parseMcpInteger(ctx.args.minCount ?? ctx.options.minCount, "schema infer minCount"),
+          apply: ctx.args.apply === true || ctx.options.apply === true,
+          author: schema.author,
+          force: schema.force,
+        },
+        ctx.global,
+      );
+    }
     return runMcpSchemaAddTypeAction(schema);
   }
   throw new PmCliError(
@@ -1114,7 +1136,7 @@ function runMcpProfileAction(ctx: McpActionDispatchContext): Promise<unknown> | 
         ctx.global,
       ),
   };
-  const handler = handlers[normalizedSubcommand];
+  const handler = getOwnHandler(handlers, normalizedSubcommand);
   if (!handler) {
     throw new PmCliError(`Unknown pm profile subcommand "${subcommand}". Allowed: list, show, apply, lint`, 64);
   }
@@ -1226,7 +1248,7 @@ async function dispatchAction(
     global,
     activeExtensions,
   };
-  const handler = MCP_ACTION_HANDLERS[action];
+  const handler = getOwnHandler(MCP_ACTION_HANDLERS, action);
   return handler ? handler(ctx) : dispatchActiveExtensionAction(action, args, options, global, activeExtensions);
 }
 
@@ -1327,7 +1349,7 @@ export async function handleRequest(request: JsonRpcRequest): Promise<Record<str
   if (request.method === "tools/call") {
     const params = asRecordClone(request.params);
     const name = readRequiredString(params, "name");
-    const handler = HANDLERS[name];
+    const handler = getOwnHandler(HANDLERS, name);
     if (!handler) {
       throw new PmCliError(`Unknown pm MCP tool: ${name}`, 64);
     }

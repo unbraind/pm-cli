@@ -633,7 +633,7 @@ interface ValuedListFlagOccurrence {
   value: string;
 }
 
-function copyValueConsumingFlag(argv: string[], index: number, result: string[]): number {
+function copyValueConsumingFlag(argv: string[], index: number, result: (string | null)[]): number {
   result.push(argv[index]);
   const next = argv[index + 1];
   if (typeof next === "string" && next !== "--") {
@@ -771,7 +771,7 @@ export function coalesceRepeatedListFlags(
     // even when that value begins with "--". Emit both verbatim so the value is
     // never misread as a list-flag occurrence.
     if (valueConsumingFlags.has(token)) {
-      index = copyValueConsumingFlag(argv, index, result as string[]);
+      index = copyValueConsumingFlag(argv, index, result);
       continue;
     }
     const parsed = splitCanonicalListToken(token);

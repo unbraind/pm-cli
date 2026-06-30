@@ -31,6 +31,7 @@ import type { ItemFormat } from "../../types/index.js";
 import {
   CONFIDENCE_TEXT_VALUES,
   ISSUE_SEVERITY_VALUES,
+  PLAN_STEP_STATUS_VALUES,
   RECURRENCE_FREQUENCY_VALUES,
   RECURRENCE_WEEKDAY_VALUES,
   STATUS_VALUES,
@@ -54,6 +55,7 @@ import { compareTimestampStrings, isTimestampLiteral } from "../shared/time.js";
 
 const LINKED_TEST_PM_CONTEXT_MODE_VALUES = new Set(["schema", "tracker", "auto"]);
 const ITEM_TEST_RUN_STATUS_VALUES = new Set(["passed", "failed", "stopped", "canceled"]);
+const PLAN_STEP_STATUS_SET = new Set<string>(PLAN_STEP_STATUS_VALUES);
 
 function normalizePathValue(value: string): string {
   return value.replaceAll("\\", "/");
@@ -694,7 +696,7 @@ function normalizeTestRunSummary(value: ItemTestRunSummary): ItemTestRunSummary 
   const runId = typeof value.run_id === "string" ? value.run_id.trim() : "";
   const kind = value.kind === "test" || value.kind === "test-all" ? value.kind : "test";
   const status = ITEM_TEST_RUN_STATUS_VALUES.has(value.status) ? value.status : "failed";
-  return {
+  const summary: ItemTestRunSummary = {
     run_id: runId,
     kind,
     status,
@@ -710,6 +712,8 @@ function normalizeTestRunSummary(value: ItemTestRunSummary): ItemTestRunSummary 
     linked_tests: normalizeNonNegativeInteger(value.linked_tests),
     fail_on_skipped_triggered: value.fail_on_skipped_triggered === true ? true : undefined,
   };
+  deleteUndefinedFields(summary as unknown as Record<string, unknown>);
+  return summary;
 }
 
 function sortTests(values: LinkedTest[] | undefined): LinkedTest[] | undefined {
@@ -758,7 +762,7 @@ function normalizeLinkedTestContextMode(value: string | undefined): LinkedTest["
 }
 
 function normalizeLinkedTest(value: LinkedTest): LinkedTest {
-  return {
+  const test: LinkedTest = {
     command: value.command?.trim() || undefined,
     path: value.path ? normalizePathValue(value.path) : undefined,
     scope: value.scope,
@@ -779,6 +783,8 @@ function normalizeLinkedTest(value: LinkedTest): LinkedTest {
     assert_json_field_gte: normalizeNumericRecord(value.assert_json_field_gte),
     note: value.note?.trim() || undefined,
   };
+  deleteUndefinedFields(test as unknown as Record<string, unknown>);
+  return test;
 }
 
 function compareLinkedTests(a: LinkedTest, b: LinkedTest): number {
@@ -915,9 +921,15 @@ function normalizePlanStepEntry(entry: unknown): PlanStep | undefined {
   const record = entry as Record<string, unknown>;
   const id = trimStringOrUndefined(record.id);
   const title = trimStringOrUndefined(record.title);
-  const status = trimStringOrUndefined(record.status);
+  const statusRaw = trimStringOrUndefined(record.status);
+  const status = statusRaw && PLAN_STEP_STATUS_SET.has(statusRaw) ? (statusRaw as PlanStepStatus) : undefined;
   const orderRaw = record.order;
-  const order = typeof orderRaw === "number" && Number.isFinite(orderRaw) ? orderRaw : Number(orderRaw);
+  const order =
+    typeof orderRaw === "number" && Number.isFinite(orderRaw)
+      ? orderRaw
+      : typeof orderRaw === "string" && orderRaw.trim().length > 0
+        ? Number(orderRaw)
+        : Number.NaN;
   const created_at = typeof record.created_at === "string" ? record.created_at : "";
   const updated_at = typeof record.updated_at === "string" ? record.updated_at : "";
   if (!id || !title || !status || !Number.isFinite(order) || !created_at || !updated_at) {
@@ -927,7 +939,7 @@ function normalizePlanStepEntry(entry: unknown): PlanStep | undefined {
     id,
     order,
     title,
-    status: status as PlanStepStatus,
+    status,
     created_at,
     updated_at,
   };
@@ -1139,6 +1151,9 @@ function assertNormalizedUnknownFields(
   if (unknownKeys.length > 0 && runtimeContext.unknownFieldPolicy === "reject") {
     validationError(`unknown schema fields are not allowed: ${unknownKeys.join(", ")}`);
   }
+  if (unknownKeys.length > 0) {
+    runtimeContext.onWarning?.(`item_unknown_schema_fields:${unknownKeys.join(",")}`);
+  }
 }
 
 /**
@@ -1313,6 +1328,13 @@ function stripLeadingYamlDocument(content: string): { content: string; stripped:
   return { content: normalizedContent, stripped: false };
 }
 
+function normalizeParsedFrontMatter(
+  frontMatter: ItemMetadata,
+  options: Pick<ItemDocumentFormatOptions, "schema" | "extensionFieldNames" | "onWarning">,
+): ItemMetadata {
+  return normalizeFrontMatter(frontMatter, { ...options, onWarning: undefined });
+}
+
 function parseJsonMarkdownItemDocument(
   content: string,
   runtimeContext?: RuntimeSchemaValidationContext,
@@ -1340,7 +1362,7 @@ function parseJsonMarkdownItemDocument(
   assertValidFrontMatter(parsed, runtimeContext);
 
   return {
-    metadata: normalizeFrontMatter(parsed, options),
+    metadata: normalizeParsedFrontMatter(parsed, options),
     body: normalizeBody(body),
   };
 }
@@ -1374,7 +1396,7 @@ function parseToonItemDocument(
       "TOON item document body must be a string",
     );
     return {
-      metadata: normalizeFrontMatter(record.front_matter, options),
+      metadata: normalizeParsedFrontMatter(record.front_matter, options),
       body: normalizeBody(typeof record.body === "string" ? record.body : ""),
     };
   }
@@ -1386,7 +1408,7 @@ function parseToonItemDocument(
   );
   assertValidFrontMatter(frontMatterRecord, runtimeContext);
   return {
-    metadata: normalizeFrontMatter(frontMatterRecord, options),
+    metadata: normalizeParsedFrontMatter(frontMatterRecord, options),
     body: normalizeBody(typeof body === "string" ? body : ""),
   };
 }
