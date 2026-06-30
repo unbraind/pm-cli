@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { _testOnlyItemFormat, normalizeFrontMatter, serializeItemDocument } from "../../../../src/core/item/item-format.js";
+import {
+  _testOnlyItemFormat,
+  canonicalDocument,
+  normalizeFrontMatter,
+  serializeItemDocument,
+} from "../../../../src/core/item/item-format.js";
 
 const FIXED_TS = "2026-02-22T00:00:00.000Z";
 
@@ -299,6 +304,30 @@ describe("item-format internal normalization helpers", () => {
         onWarning: (warning) => warnings.push(warning),
       }),
     ).toMatchObject({ unknown_runtime_field: "kept" });
+    expect(warnings).toEqual(["item_unknown_schema_fields:unknown_runtime_field"]);
+  });
+
+  it("warns for canonical unknown schema fields in warn mode", () => {
+    const warnings: string[] = [];
+    const metadata = {
+      id: "pm-1",
+      title: "Title",
+      status: "open",
+      priority: 1,
+      type: "Task",
+      created_at: FIXED_TS,
+      updated_at: FIXED_TS,
+      tags: [],
+      unknown_runtime_field: "kept",
+    };
+    const canonical = canonicalDocument(
+      { metadata: metadata as never, body: "Body" },
+      {
+        schema: { unknown_field_policy: "warn" } as never,
+        onWarning: (warning) => warnings.push(warning),
+      },
+    );
+    expect(canonical.metadata).toMatchObject({ unknown_runtime_field: "kept" });
     expect(warnings).toEqual(["item_unknown_schema_fields:unknown_runtime_field"]);
   });
 
