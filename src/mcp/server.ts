@@ -446,15 +446,38 @@ type ActiveExtensionRuntime = {
  * command). Previously only the dynamic-extension dispatch activated, leaving
  * extension-contributed schema and profiles invisible over MCP for every built-in
  * action. Activation is skipped (`run` receives `null`) when extensions are disabled or
- * no workspace exists yet (for example `init`), and the whole cycle is serialized on
- * {@link extensionActivationQueue} so concurrent requests cannot cross-corrupt the
- * shared registries. The two short-circuit paths below dispatch outside the queue;
- * they never publish extension registries (run receives `null`), but a built-in
- * action they dispatch still reads the process-global registries, so they are safe
- * only because the stdio transport processes requests sequentially. If a truly
- * concurrent transport is ever added, route these through the queue as well.
+ * no workspace exists yet (for example `init`). EVERY action — activating or not — is
+ * serialized on {@link extensionActivationQueue} so a built-in action's reads of the
+ * process-global active registries can never interleave with another request's
+ * activation cycle; per-request isolation therefore holds even if a truly concurrent
+ * transport is added later (not just because the stdio transport is sequential today).
  */
 async function withActiveExtensions<T>(
+  global: GlobalOptions,
+  run: (active: ActiveExtensionRuntime | null) => Promise<T>,
+): Promise<T> {
+  return extensionActivationQueue.enqueue(async () => {
+    try {
+      return await withActiveExtensionsExclusively(global, run);
+    } finally {
+      clearWorkspaceContractsCache();
+    }
+  });
+}
+
+/**
+ * Body of the activation cycle. Must only ever run under {@link extensionActivationQueue}
+ * (see {@link withActiveExtensions}): it is the exclusive owner of the process-global
+ * active extension registries while it runs. Returns early with `run(null)` — still
+ * inside the serialized critical section — when extensions are disabled or no workspace
+ * exists yet, so those built-in actions also observe a stable (empty) registry. This MCP
+ * server reloads + reactivates extensions per request, so each call is a fresh cycle with
+ * teardown in a finally to release resources opened during activate() (the
+ * long-running-server reload contract, pm-k1e4). Load/activate failures are swallowed and
+ * `run` is invoked with `null`, mirroring the CLI's resilient snapshot loader
+ * (loadRuntimeExtensionSnapshot) so a broken extension can never break a built-in action.
+ */
+async function withActiveExtensionsExclusively<T>(
   global: GlobalOptions,
   run: (active: ActiveExtensionRuntime | null) => Promise<T>,
 ): Promise<T> {
@@ -465,35 +488,16 @@ async function withActiveExtensions<T>(
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     return run(null);
   }
-  return extensionActivationQueue.enqueue(async () => {
-    try {
-      return await withActiveExtensionsExclusively(pmRoot, run);
-    } finally {
-      clearWorkspaceContractsCache();
-    }
-  });
-}
-
-/**
- * Body of the activation cycle. Must only ever run under {@link extensionActivationQueue}
- * (see {@link withActiveExtensions}): it is the exclusive owner of the process-global
- * active extension registries while it runs. This MCP server reloads + reactivates
- * extensions per request, so each call is a fresh cycle with teardown in a finally to
- * release resources opened during activate() (the long-running-server reload contract,
- * pm-k1e4). Load/activate failures are swallowed and `run` is invoked with `null`,
- * mirroring the CLI's resilient snapshot loader (loadRuntimeExtensionSnapshot) so a
- * broken extension can never break a built-in action.
- */
-async function withActiveExtensionsExclusively<T>(
-  pmRoot: string,
-  run: (active: ActiveExtensionRuntime | null) => Promise<T>,
-): Promise<T> {
   let active: ActiveExtensionRuntime | null = null;
   let activated: { loadResult: Awaited<ReturnType<typeof loadExtensions>>; activationResult: ExtensionActivationResult } | undefined;
   try {
     const settings = await readSettings(pmRoot);
     const loadResult = await loadExtensions({ pmRoot, settings, cwd: process.cwd(), noExtensions: false });
     const activationResult = await activateExtensions({ ...loadResult, loaded: loadResult.loaded });
+    // Record the teardown handle BEFORE publishing the registries so a throw from any
+    // setActive* setter still runs deactivateExtensions for resources opened during
+    // activate() instead of silently leaking them.
+    activated = { loadResult, activationResult };
     setActiveExtensionHooks(activationResult.hooks);
     setActiveExtensionCommands(activationResult.commands);
     setActiveExtensionParsers(activationResult.parsers);
@@ -501,7 +505,6 @@ async function withActiveExtensionsExclusively<T>(
     setActiveExtensionServices(activationResult.services);
     setActiveExtensionRenderers(activationResult.renderers);
     setActiveExtensionRegistrations(activationResult.registrations);
-    activated = { loadResult, activationResult };
     active = { registrations: activationResult.registrations, commands: activationResult.commands, pmRoot };
   } catch (error) {
     // CLI parity (loadRuntimeExtensionSnapshot): a load/activate failure must never

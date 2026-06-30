@@ -1,12 +1,12 @@
 id: pm-zumn
-title: "MCP built-in actions are not extension-aware: pm_profile/pm_list etc. don't activate extensions before running"
+title: "Built-in MCP actions are now extension-aware: pm_profile/pm_list/pm_schema activate workspace extensions like the CLI"
 description: "cubic (PR #404) noted that MCP pm_profile lint (and show/apply) resolve only built-in profiles because runAction (src/mcp/server.ts) runs built-in native actions WITHOUT activating workspace extensions or setting the active registration registry — only the dynamic-extension-dispatch fallback (runDynamicExtensionAction) activates+sets registrations. So getActiveExtensionRegistrations() is empty for built-in actions, and extension-contributed profiles/item-types are invisible over MCP, while the CLI path (main.ts activates extensions for every command) IS extension-aware. This is a pre-existing, broad asymmetry affecting all built-in MCP actions that read extension registrations, not just profile. Fix: wrap built-in runAction dispatch in a load/activate/setActive.../teardown cycle (mirroring runDynamicExtensionActionExclusively) so MCP built-in actions see active extensions consistently with the CLI. Deferred from #404 (pm-j1fj); lint is consistent with show/apply today."
 type: Chore
 status: closed
 priority: 2
 tags[4]: "area:extensions","area:mcp",living-map,pm-cli
 created_at: "2026-06-29T20:28:26.280Z"
-updated_at: "2026-06-30T05:33:04.613Z"
+updated_at: "2026-06-30T06:10:43.169Z"
 author: claude-code-agent
 parent: pm-5k4v
 resolution: "Wrapped every native MCP action dispatch in a single resilient extension activation cycle (withActiveExtensions) so built-in actions see extension-contributed item types, fields, and profiles consistently with the CLI; unified the former dynamic-extension dispatch into the same cycle."

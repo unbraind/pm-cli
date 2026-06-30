@@ -9,6 +9,7 @@ import {
   PLAN_STEP_LINK_KIND_VALUES,
   PLAN_STEP_STATUS_VALUES,
 } from "../../types/index.js";
+import type { PmToolAction } from "./enum-contracts.js";
 
 export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   json: { type: "boolean", default: true },
@@ -1256,7 +1257,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
  * (pm-fq80). The flat provider schema keeps using {@link PM_TOOL_PARAMETER_METADATA}
  * because its single `name` property must cover every action at once.
  */
-export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Record<string, Record<string, { description: string; examples?: unknown[] }>> = {
+export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<Record<PmToolAction, Record<string, { description: string; examples?: unknown[] }>>> = {
   schema: {
     name: {
       description:

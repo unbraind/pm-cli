@@ -2,6 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createDefaultExtensionGovernancePolicy } from "../../../src/core/extensions/extension-types.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 const COMMANDS_MODULE = "../../../src/cli/commands/index.js";
@@ -13,24 +14,29 @@ type CommandModule = typeof import("../../../src/cli/commands/index.js");
 const INITIAL_PM_PACKAGE_ROOT = process.env.PM_CLI_PACKAGE_ROOT;
 
 // pm-zumn: every native action now runs inside the extension activation cycle.
-// Stub load/activate/teardown to a cheap no-op so option-normalization unit tests
-// stay hermetic and fast instead of activating the repo's real extensions per call.
-function mockNoopExtensionActivation() {
+// Force a zero-extension workspace by stubbing only the loader, then let the REAL
+// activate/teardown engine run over it — so the activation result the cycle sees always
+// matches the production contract (no hand-rolled registry shape that could silently
+// drift), while option-normalization unit tests stay hermetic and fast instead of
+// activating the repo's own extensions on every call.
+function mockEmptyExtensionWorkspace() {
   vi.doMock(EXTENSIONS_MODULE, async () => {
     const actual = await vi.importActual<typeof import("../../../src/core/extensions/index.js")>(EXTENSIONS_MODULE);
+    const emptyLoadResult = {
+      disabled_by_flag: false,
+      roots: { global: "", project: "" },
+      configured_enabled: [],
+      configured_disabled: [],
+      discovered: [],
+      effective: [],
+      warnings: [],
+      policy: createDefaultExtensionGovernancePolicy(),
+      failed: [],
+      loaded: [],
+    };
     return {
       ...actual,
-      loadExtensions: vi.fn(async () => ({ loaded: [] })),
-      activateExtensions: vi.fn(async () => ({
-        commands: { handlers: [] },
-        hooks: { before: [], after: [] },
-        parsers: { itemTypes: [] },
-        preflight: { checks: [] },
-        services: { records: new Map() },
-        renderers: { itemSections: [] },
-        registrations: { commands: [] },
-      })),
-      deactivateExtensions: vi.fn(async () => undefined),
+      loadExtensions: vi.fn(async () => emptyLoadResult),
     };
   });
 }
@@ -127,7 +133,7 @@ describe("mcp server branch residual coverage", () => {
 
   it("covers runAction option-fallback branches with mocked command handlers", async () => {
     const commandMocks = buildCommandMocks();
-    const server = await importServerWithCommandMocks(commandMocks, mockNoopExtensionActivation);
+    const server = await importServerWithCommandMocks(commandMocks, mockEmptyExtensionWorkspace);
     const runAction = server._testOnly.runAction;
 
     await runAction({ action: "get", options: { id: "pm-1" } });
