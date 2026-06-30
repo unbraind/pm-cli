@@ -454,20 +454,24 @@ type ActiveExtensionRuntime = {
  */
 async function withActiveExtensions<T>(
   global: GlobalOptions,
+  requestedCwd: unknown,
   run: (active: ActiveExtensionRuntime | null) => Promise<T>,
 ): Promise<T> {
-  // Capture the request cwd BEFORE enqueueing: the queued task can run after another
-  // concurrent request (tests, a future concurrent transport) has chdir'd the process,
-  // so resolving process.cwd() inside the task would bind this request to the wrong
-  // workspace. handleRequest chdirs per request via withCwd, so snapshot it here.
-  const cwd = process.cwd();
-  return extensionActivationQueue.enqueue(async () => {
-    try {
-      return await withActiveExtensionsExclusively(global, cwd, run);
-    } finally {
-      clearWorkspaceContractsCache();
-    }
-  });
+  // Pin the working directory INSIDE the serialized queue slot rather than before
+  // enqueueing. process.cwd() is process-global and changes per request, so performing
+  // the chdir here guarantees that both extension activation AND the built-in action run
+  // against this request's workspace — even when concurrent callers (tests, a future
+  // concurrent transport) target different directories. The queue makes the chdir/restore
+  // exclusive, so it can never be clobbered mid-flight.
+  return extensionActivationQueue.enqueue(() =>
+    withCwd(requestedCwd, async () => {
+      try {
+        return await withActiveExtensionsExclusively(global, process.cwd(), run);
+      } finally {
+        clearWorkspaceContractsCache();
+      }
+    }),
+  );
 }
 
 /**
@@ -729,8 +733,9 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
   const global = globalOptions(args);
   // pm-zumn: dispatch every action (built-in and dynamic) inside one extension
   // activation cycle so built-in actions see extension-contributed item types,
-  // fields, and profiles, consistent with the CLI.
-  return withActiveExtensions(global, (activeExtensions) => dispatchAction(action, args, global, activeExtensions));
+  // fields, and profiles, consistent with the CLI. The request cwd is pinned inside
+  // that cycle so activation and execution share one workspace under concurrency.
+  return withActiveExtensions(global, args.cwd, (activeExtensions) => dispatchAction(action, args, global, activeExtensions));
 }
 
 async function dispatchAction(
@@ -1299,7 +1304,9 @@ export async function handleRequest(request: JsonRpcRequest): Promise<Record<str
     for (const warning of warnings) {
       console.error(`[pm-mcp] ${warning}`);
     }
-    const result = await withCwd(args.cwd, () => handler(args));
+    // cwd is applied inside the serialized activation cycle (see withActiveExtensions),
+    // so the chdir/restore is exclusive per request and cannot race a concurrent caller.
+    const result = await handler(args);
     return resultContent(result, warnings);
   }
   throw new PmCliError(`Unsupported MCP method: ${request.method ?? "(missing)"}`, 64);
