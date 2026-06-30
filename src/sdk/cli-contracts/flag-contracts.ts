@@ -1468,7 +1468,7 @@ function withSubcommandGlobalFlags(contracts: CliFlagContract[]): CliFlagContrac
   return withFlagAliasMetadata(toUniqueFlagContracts([...SUBCOMMAND_GLOBAL_FLAG_CONTRACTS, ...contracts]));
 }
 
-const LIST_COMMAND_NAME_CONTRACTS = new Set([
+const LIST_COMMAND_FLAG_ALIASES = [
   "list",
   "list-all",
   "list-draft",
@@ -1477,11 +1477,100 @@ const LIST_COMMAND_NAME_CONTRACTS = new Set([
   "list-blocked",
   "list-closed",
   "list-canceled",
+];
+
+// Single-token command (plus the `list`/`cal`/`ctx`/`templates` aliases) → its
+// dedicated flag-contract table. Lookups fall back to the subcommand-global set,
+// so tokens absent here (`reindex`, `help`, or any unknown command) degrade to
+// globals exactly as the prior `switch` `default` arm did. A `Map` (rather than a
+// plain object) keeps an untrusted command token from ever resolving an inherited
+// member such as `constructor` or `toString`.
+const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>([
+  ...LIST_COMMAND_FLAG_ALIASES.map((command): [string, CliFlagContract[]] => [command, LIST_FILTER_FLAG_CONTRACTS]),
+  ["templates", CREATE_FLAG_CONTRACTS],
+  ["cal", CALENDAR_FLAG_CONTRACTS],
+  ["ctx", CONTEXT_FLAG_CONTRACTS],
+  ["test-runs-worker", TEST_RUNS_FLAG_CONTRACTS],
+  ["init", INIT_FLAG_CONTRACTS],
+  ["config", CONFIG_FLAG_CONTRACTS],
+  ["extension", EXTENSION_FLAG_CONTRACTS],
+  // `--declarative` is package-only (see PACKAGE_FLAG_CONTRACTS).
+  ["package", PACKAGE_FLAG_CONTRACTS],
+  ["packages", PACKAGE_FLAG_CONTRACTS],
+  ["install", INSTALL_FLAG_CONTRACTS],
+  ["upgrade", UPGRADE_FLAG_CONTRACTS],
+  ["create", CREATE_FLAG_CONTRACTS],
+  ["copy", COPY_FLAG_CONTRACTS],
+  ["focus", FOCUS_FLAG_CONTRACTS],
+  ["aggregate", AGGREGATE_FLAG_CONTRACTS],
+  ["dedupe-audit", DEDUPE_AUDIT_FLAG_CONTRACTS],
+  ["dedupe-merge", DEDUPE_MERGE_FLAG_CONTRACTS],
+  ["normalize", NORMALIZE_FLAG_CONTRACTS],
+  ["calendar", CALENDAR_FLAG_CONTRACTS],
+  ["context", CONTEXT_FLAG_CONTRACTS],
+  ["get", GET_FLAG_CONTRACTS],
+  ["guide", GUIDE_FLAG_CONTRACTS],
+  ["search", SEARCH_FLAG_CONTRACTS],
+  ["next", NEXT_FLAG_CONTRACTS],
+  ["eval", EVAL_FLAG_CONTRACTS],
+  ["history", HISTORY_FLAG_CONTRACTS],
+  ["history-redact", HISTORY_REDACT_FLAG_CONTRACTS],
+  ["history-repair", HISTORY_REPAIR_FLAG_CONTRACTS],
+  ["history-compact", HISTORY_COMPACT_FLAG_CONTRACTS],
+  ["schema", SCHEMA_FLAG_CONTRACTS],
+  ["profile", PROFILE_FLAG_CONTRACTS],
+  ["plan", PLAN_FLAG_CONTRACTS],
+  ["activity", ACTIVITY_FLAG_CONTRACTS],
+  ["restore", RESTORE_FLAG_CONTRACTS],
+  ["update", UPDATE_FLAG_CONTRACTS],
+  ["update-many", UPDATE_MANY_FLAG_CONTRACTS],
+  ["close", CLOSE_FLAG_CONTRACTS],
+  ["close-many", CLOSE_MANY_FLAG_CONTRACTS],
+  ["delete", DELETE_FLAG_CONTRACTS],
+  ["append", APPEND_FLAG_CONTRACTS],
+  ["comments", COMMENTS_FLAG_CONTRACTS],
+  ["comments-audit", COMMENTS_AUDIT_FLAG_CONTRACTS],
+  ["notes", NOTES_FLAG_CONTRACTS],
+  ["learnings", LEARNINGS_FLAG_CONTRACTS],
+  ["files", FILES_FLAG_CONTRACTS],
+  ["docs", DOCS_FLAG_CONTRACTS],
+  ["deps", DEPS_FLAG_CONTRACTS],
+  ["test", TEST_FLAG_CONTRACTS],
+  ["test-all", TEST_ALL_FLAG_CONTRACTS],
+  ["telemetry", TELEMETRY_FLAG_CONTRACTS],
+  ["health", HEALTH_FLAG_CONTRACTS],
+  ["validate", VALIDATE_FLAG_CONTRACTS],
+  ["gc", GC_FLAG_CONTRACTS],
+  ["stats", STATS_FLAG_CONTRACTS],
+  ["contracts", CONTRACTS_FLAG_CONTRACTS],
+  ["completion", COMPLETION_FLAG_CONTRACTS],
+  ["claim", CLAIM_FLAG_CONTRACTS],
+  ["release", RELEASE_FLAG_CONTRACTS],
+  ["start-task", START_TASK_FLAG_CONTRACTS],
+  ["pause-task", PAUSE_TASK_FLAG_CONTRACTS],
+  ["close-task", CLOSE_TASK_FLAG_CONTRACTS],
+  ["meet", MEET_FLAG_CONTRACTS],
+  ["event", EVENT_FLAG_CONTRACTS],
+  ["remind", REMIND_FLAG_CONTRACTS],
 ]);
 
-const NO_SURFACE_COMMAND_NAME_CONTRACTS = new Set([
-  "reindex",
-  "help",
+// `extension`/`package`/`packages <subcommand>` lifecycle flag tables. `init` is
+// resolved separately because its `--declarative` flag is package-only; every
+// other lifecycle subcommand shares one table across the extension and package
+// command roots.
+const EXTENSION_LIFECYCLE_FLAG_CONTRACTS_BY_SUBCOMMAND = new Map<string, CliFlagContract[]>([
+  ["install", EXTENSION_INSTALL_FLAG_CONTRACTS],
+  ["uninstall", EXTENSION_UNINSTALL_FLAG_CONTRACTS],
+  ["explore", EXTENSION_EXPLORE_FLAG_CONTRACTS],
+  ["manage", EXTENSION_MANAGE_FLAG_CONTRACTS],
+  ["describe", EXTENSION_DESCRIBE_FLAG_CONTRACTS],
+  ["reload", EXTENSION_RELOAD_FLAG_CONTRACTS],
+  ["doctor", EXTENSION_DOCTOR_FLAG_CONTRACTS],
+  ["catalog", EXTENSION_CATALOG_FLAG_CONTRACTS],
+  ["adopt", EXTENSION_ADOPT_FLAG_CONTRACTS],
+  ["adopt-all", EXTENSION_ADOPT_ALL_FLAG_CONTRACTS],
+  ["activate", EXTENSION_ACTIVATE_FLAG_CONTRACTS],
+  ["deactivate", EXTENSION_DEACTIVATE_FLAG_CONTRACTS],
 ]);
 
 function normalizeCommandNameForContracts(commandName: string | undefined): string {
@@ -1489,6 +1578,21 @@ function normalizeCommandNameForContracts(commandName: string | undefined): stri
     return "";
   }
   return commandName.trim().toLowerCase();
+}
+
+/**
+ * Resolves the flag contracts an `extension`/`package <subcommand>` lifecycle
+ * invocation accepts. `init` carries the package-only `--declarative` flag, so
+ * `package`/`packages init` resolve to the package init table while `extension
+ * init` resolves to the extension init table; every other lifecycle subcommand
+ * shares one table, and an unknown subcommand falls back to globals-only.
+ */
+function resolveExtensionLifecycleFlagContracts(rootCommand: string, lifecycleSubcommand: string): CliFlagContract[] {
+  if (lifecycleSubcommand === "init") {
+    // `--declarative` is package-only, so `package init` / `packages init` carry it.
+    return rootCommand === "extension" ? EXTENSION_INIT_FLAG_CONTRACTS : PACKAGE_INIT_FLAG_CONTRACTS;
+  }
+  return EXTENSION_LIFECYCLE_FLAG_CONTRACTS_BY_SUBCOMMAND.get(lifecycleSubcommand) ?? [];
 }
 
 /**
@@ -1502,188 +1606,15 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
   if (normalized.length === 0) {
     return withSubcommandGlobalFlags([]);
   }
-  if (LIST_COMMAND_NAME_CONTRACTS.has(normalized)) {
-    return withSubcommandGlobalFlags(LIST_FILTER_FLAG_CONTRACTS);
-  }
-  if (NO_SURFACE_COMMAND_NAME_CONTRACTS.has(normalized)) {
-    return withSubcommandGlobalFlags([]);
-  }
-  if (normalized === "templates") {
-    return withSubcommandGlobalFlags(CREATE_FLAG_CONTRACTS);
-  }
-  if (normalized === "cal") {
-    return withSubcommandGlobalFlags(CALENDAR_FLAG_CONTRACTS);
-  }
-  if (normalized === "ctx") {
-    return withSubcommandGlobalFlags(CONTEXT_FLAG_CONTRACTS);
-  }
-  if (normalized === "test-runs-worker") {
-    return withSubcommandGlobalFlags(TEST_RUNS_FLAG_CONTRACTS);
-  }
   const [rootCommand, lifecycleSubcommand, ...extraParts] = normalized.split(/\s+/);
   if (
     (rootCommand === "extension" || rootCommand === "package" || rootCommand === "packages") &&
-    lifecycleSubcommand &&
+    lifecycleSubcommand !== undefined &&
     extraParts.length === 0
   ) {
-    switch (lifecycleSubcommand) {
-      case "init":
-        // `--declarative` is package-only, so `package init` / `packages init` carry it.
-        return withSubcommandGlobalFlags(
-          rootCommand === "extension" ? EXTENSION_INIT_FLAG_CONTRACTS : PACKAGE_INIT_FLAG_CONTRACTS,
-        );
-      case "install":
-        return withSubcommandGlobalFlags(EXTENSION_INSTALL_FLAG_CONTRACTS);
-      case "uninstall":
-        return withSubcommandGlobalFlags(EXTENSION_UNINSTALL_FLAG_CONTRACTS);
-      case "explore":
-        return withSubcommandGlobalFlags(EXTENSION_EXPLORE_FLAG_CONTRACTS);
-      case "manage":
-        return withSubcommandGlobalFlags(EXTENSION_MANAGE_FLAG_CONTRACTS);
-      case "describe":
-        return withSubcommandGlobalFlags(EXTENSION_DESCRIBE_FLAG_CONTRACTS);
-      case "reload":
-        return withSubcommandGlobalFlags(EXTENSION_RELOAD_FLAG_CONTRACTS);
-      case "doctor":
-        return withSubcommandGlobalFlags(EXTENSION_DOCTOR_FLAG_CONTRACTS);
-      case "catalog":
-        return withSubcommandGlobalFlags(EXTENSION_CATALOG_FLAG_CONTRACTS);
-      case "adopt":
-        return withSubcommandGlobalFlags(EXTENSION_ADOPT_FLAG_CONTRACTS);
-      case "adopt-all":
-        return withSubcommandGlobalFlags(EXTENSION_ADOPT_ALL_FLAG_CONTRACTS);
-      case "activate":
-        return withSubcommandGlobalFlags(EXTENSION_ACTIVATE_FLAG_CONTRACTS);
-      case "deactivate":
-        return withSubcommandGlobalFlags(EXTENSION_DEACTIVATE_FLAG_CONTRACTS);
-      default:
-        return withSubcommandGlobalFlags([]);
-    }
+    return withSubcommandGlobalFlags(resolveExtensionLifecycleFlagContracts(rootCommand, lifecycleSubcommand));
   }
-  switch (normalized) {
-    case "init":
-      return withSubcommandGlobalFlags(INIT_FLAG_CONTRACTS);
-    case "config":
-      return withSubcommandGlobalFlags(CONFIG_FLAG_CONTRACTS);
-    case "extension":
-      return withSubcommandGlobalFlags(EXTENSION_FLAG_CONTRACTS);
-    case "package":
-    case "packages":
-      // `--declarative` is package-only (see PACKAGE_FLAG_CONTRACTS).
-      return withSubcommandGlobalFlags(PACKAGE_FLAG_CONTRACTS);
-    case "install":
-      return withSubcommandGlobalFlags(INSTALL_FLAG_CONTRACTS);
-    case "upgrade":
-      return withSubcommandGlobalFlags(UPGRADE_FLAG_CONTRACTS);
-    case "create":
-      return withSubcommandGlobalFlags(CREATE_FLAG_CONTRACTS);
-    case "copy":
-      return withSubcommandGlobalFlags(COPY_FLAG_CONTRACTS);
-    case "focus":
-      return withSubcommandGlobalFlags(FOCUS_FLAG_CONTRACTS);
-    case "aggregate":
-      return withSubcommandGlobalFlags(AGGREGATE_FLAG_CONTRACTS);
-    case "dedupe-audit":
-      return withSubcommandGlobalFlags(DEDUPE_AUDIT_FLAG_CONTRACTS);
-    case "dedupe-merge":
-      return withSubcommandGlobalFlags(DEDUPE_MERGE_FLAG_CONTRACTS);
-    case "normalize":
-      return withSubcommandGlobalFlags(NORMALIZE_FLAG_CONTRACTS);
-    case "calendar":
-      return withSubcommandGlobalFlags(CALENDAR_FLAG_CONTRACTS);
-    case "context":
-      return withSubcommandGlobalFlags(CONTEXT_FLAG_CONTRACTS);
-    case "get":
-      return withSubcommandGlobalFlags(GET_FLAG_CONTRACTS);
-    case "guide":
-      return withSubcommandGlobalFlags(GUIDE_FLAG_CONTRACTS);
-    case "search":
-      return withSubcommandGlobalFlags(SEARCH_FLAG_CONTRACTS);
-    case "next":
-      return withSubcommandGlobalFlags(NEXT_FLAG_CONTRACTS);
-    case "eval":
-      return withSubcommandGlobalFlags(EVAL_FLAG_CONTRACTS);
-    case "history":
-      return withSubcommandGlobalFlags(HISTORY_FLAG_CONTRACTS);
-    case "history-redact":
-      return withSubcommandGlobalFlags(HISTORY_REDACT_FLAG_CONTRACTS);
-    case "history-repair":
-      return withSubcommandGlobalFlags(HISTORY_REPAIR_FLAG_CONTRACTS);
-    case "history-compact":
-      return withSubcommandGlobalFlags(HISTORY_COMPACT_FLAG_CONTRACTS);
-    case "schema":
-      return withSubcommandGlobalFlags(SCHEMA_FLAG_CONTRACTS);
-    case "profile":
-      return withSubcommandGlobalFlags(PROFILE_FLAG_CONTRACTS);
-    case "plan":
-      return withSubcommandGlobalFlags(PLAN_FLAG_CONTRACTS);
-    case "activity":
-      return withSubcommandGlobalFlags(ACTIVITY_FLAG_CONTRACTS);
-    case "restore":
-      return withSubcommandGlobalFlags(RESTORE_FLAG_CONTRACTS);
-    case "update":
-      return withSubcommandGlobalFlags(UPDATE_FLAG_CONTRACTS);
-    case "update-many":
-      return withSubcommandGlobalFlags(UPDATE_MANY_FLAG_CONTRACTS);
-    case "close":
-      return withSubcommandGlobalFlags(CLOSE_FLAG_CONTRACTS);
-    case "close-many":
-      return withSubcommandGlobalFlags(CLOSE_MANY_FLAG_CONTRACTS);
-    case "delete":
-      return withSubcommandGlobalFlags(DELETE_FLAG_CONTRACTS);
-    case "append":
-      return withSubcommandGlobalFlags(APPEND_FLAG_CONTRACTS);
-    case "comments":
-      return withSubcommandGlobalFlags(COMMENTS_FLAG_CONTRACTS);
-    case "comments-audit":
-      return withSubcommandGlobalFlags(COMMENTS_AUDIT_FLAG_CONTRACTS);
-    case "notes":
-      return withSubcommandGlobalFlags(NOTES_FLAG_CONTRACTS);
-    case "learnings":
-      return withSubcommandGlobalFlags(LEARNINGS_FLAG_CONTRACTS);
-    case "files":
-      return withSubcommandGlobalFlags(FILES_FLAG_CONTRACTS);
-    case "docs":
-      return withSubcommandGlobalFlags(DOCS_FLAG_CONTRACTS);
-    case "deps":
-      return withSubcommandGlobalFlags(DEPS_FLAG_CONTRACTS);
-    case "test":
-      return withSubcommandGlobalFlags(TEST_FLAG_CONTRACTS);
-    case "test-all":
-      return withSubcommandGlobalFlags(TEST_ALL_FLAG_CONTRACTS);
-    case "telemetry":
-      return withSubcommandGlobalFlags(TELEMETRY_FLAG_CONTRACTS);
-    case "health":
-      return withSubcommandGlobalFlags(HEALTH_FLAG_CONTRACTS);
-    case "validate":
-      return withSubcommandGlobalFlags(VALIDATE_FLAG_CONTRACTS);
-    case "gc":
-      return withSubcommandGlobalFlags(GC_FLAG_CONTRACTS);
-    case "stats":
-      return withSubcommandGlobalFlags(STATS_FLAG_CONTRACTS);
-    case "contracts":
-      return withSubcommandGlobalFlags(CONTRACTS_FLAG_CONTRACTS);
-    case "completion":
-      return withSubcommandGlobalFlags(COMPLETION_FLAG_CONTRACTS);
-    case "claim":
-      return withSubcommandGlobalFlags(CLAIM_FLAG_CONTRACTS);
-    case "release":
-      return withSubcommandGlobalFlags(RELEASE_FLAG_CONTRACTS);
-    case "start-task":
-      return withSubcommandGlobalFlags(START_TASK_FLAG_CONTRACTS);
-    case "pause-task":
-      return withSubcommandGlobalFlags(PAUSE_TASK_FLAG_CONTRACTS);
-    case "close-task":
-      return withSubcommandGlobalFlags(CLOSE_TASK_FLAG_CONTRACTS);
-    case "meet":
-      return withSubcommandGlobalFlags(MEET_FLAG_CONTRACTS);
-    case "event":
-      return withSubcommandGlobalFlags(EVENT_FLAG_CONTRACTS);
-    case "remind":
-      return withSubcommandGlobalFlags(REMIND_FLAG_CONTRACTS);
-    default:
-      return withSubcommandGlobalFlags([]);
-  }
+  return withSubcommandGlobalFlags(SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND.get(normalized) ?? []);
 }
 
 /**

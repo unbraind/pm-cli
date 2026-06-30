@@ -1,0 +1,22 @@
+id: pm-lzzp
+title: "CodeFactor/Complexity: zero out the SDK contract-resolution, extension-loader and composition surface"
+description: "Behavior-preserving cyclomatic-complexity reduction driving three SDK / extension-platform source files to ZERO CodeFactor Complex Method findings (CC>=18), the next ESLint-suppression baseline reduction after pm-zro7 (which explicitly deferred these). Targets (eslint complexity max 17): src/sdk/cli-contracts/flag-contracts.ts resolveSubcommandFlagContractsForCommand (CC 87 -> table-driven); src/core/extensions/loader.ts parseManifest (CC 75), scanExtensionDirectory (CC 21), registerCommand api closure (CC 22); src/sdk/compose.ts composeExtension activate (CC 43), lintExtensionBlueprint (CC 26). Public SDK surface and contracts full.json stay byte-identical; 100 percent coverage and exported-docstring coverage maintained; eslint-suppressions.json baseline pruned (flag-contracts 1->0, compose 2->0, loader 3->0; total 79->76)."
+type: Task
+status: closed
+priority: 2
+tags[3]: code-quality,codefactor,tech-debt
+created_at: "2026-06-30T16:28:31.914Z"
+updated_at: "2026-06-30T17:07:27.793Z"
+author: claude-code-agent
+acceptance_criteria: "All six functions report CC<=17 under eslint complexity:[error,max:17]; eslint-suppressions.json no longer lists flag-contracts.ts/loader.ts/compose.ts (79->76); contracts full.json byte-identical; pnpm lint + build + 100% test/docstring coverage green; greptile and PR review bots report no outstanding findings."
+parent: pm-92if
+resolution: "Drove src/sdk/cli-contracts/flag-contracts.ts, src/core/extensions/loader.ts and src/sdk/compose.ts to zero CodeFactor Complex Method findings via behavior-preserving extraction. flag-contracts resolveSubcommandFlagContractsForCommand (CC87) -> two lookup Maps + resolveExtensionLifecycleFlagContracts; loader parseManifest (CC75) -> per-field parsers + parseManifestMetadata aggregator + shared optionalTrimmedString, scanExtensionDirectory (CC21) -> buildUnavailableExtensionScan + collectScannedExtensionWarnings, registerCommand (CC22) -> registerCommandOverride/registerCommandDefinition + resolveCommandDefinitionRunHandler; compose composeExtension.activate (CC43) -> 4 phase helpers (order-preserving), lintExtensionBlueprint (CC26) -> 3 finding collectors. eslint-suppressions.json 79->76. Greptile 5/5 no regressions (1 P2 declined: false positive on untouched deriveExtensionCapabilities — isPresent narrows nullish only, so the typeof object guard is intentional untyped-boundary robustness)."
+expected_result: All six functions report CC<=17 (eslint complexity max 17); eslint-suppressions.json drops flag-contracts/loader/compose; full.json byte-identical; pnpm lint + build + 100% test/branch/function/docstring coverage green.
+actual_result: All six at CC<=17; suppressions 79->76; full.json byte-identical (md5 unchanged); pnpm lint green; build green; 5259 tests pass at 100/100/100/100; static-quality-gate (incl 100% exported docstrings) green; temp-dir smoke (init/create/list/package init/install/dispatch/explore/health/contracts) all functional.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-arzz,related,"2026-06-30T16:29:01.491Z",null,null
+  pm-zro7,related,"2026-06-30T16:29:01.491Z",null,null
+docs[1]{path,scope,note}:
+  "https://github.com/unbraind/pm-cli/pull/410",project,null
+close_reason: "Drove src/sdk/cli-contracts/flag-contracts.ts, src/core/extensions/loader.ts and src/sdk/compose.ts to zero CodeFactor Complex Method findings via behavior-preserving extraction. flag-contracts resolveSubcommandFlagContractsForCommand (CC87) -> two lookup Maps + resolveExtensionLifecycleFlagContracts; loader parseManifest (CC75) -> per-field parsers + parseManifestMetadata aggregator + shared optionalTrimmedString, scanExtensionDirectory (CC21) -> buildUnavailableExtensionScan + collectScannedExtensionWarnings, registerCommand (CC22) -> registerCommandOverride/registerCommandDefinition + resolveCommandDefinitionRunHandler; compose composeExtension.activate (CC43) -> 4 phase helpers (order-preserving), lintExtensionBlueprint (CC26) -> 3 finding collectors. eslint-suppressions.json 79->76. Greptile 5/5 no regressions (1 P2 declined: false positive on untouched deriveExtensionCapabilities — isPresent narrows nullish only, so the typeof object guard is intentional untyped-boundary robustness)."
+body: ""

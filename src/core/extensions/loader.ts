@@ -264,195 +264,275 @@ function parseManifestEngines(value: unknown): ExtensionManifestEngines | null |
   return Object.keys(engines).length > 0 ? engines : undefined;
 }
 
-function parseManifest(raw: unknown): ExtensionManifest | null {
-  if (typeof raw !== "object" || raw === null) {
+/** Parse a required manifest string field, returning `null` when it is absent, non-string, or blank. */
+function parseRequiredManifestString(candidate: Record<string, unknown>, field: string): string | null {
+  const value = candidate[field];
+  if (typeof value !== "string" || value.trim().length === 0) {
     return null;
   }
+  return value.trim();
+}
 
-  const candidate = raw as Record<string, unknown>;
-  if (typeof candidate.name !== "string" || candidate.name.trim().length === 0) {
+/** Parse an optional integer value (`undefined` when absent, `null` when present but not an integer). */
+function parseOptionalIntegerValue(value: unknown): number | null | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value !== "number" || !Number.isInteger(value)) {
     return null;
   }
-  if (typeof candidate.version !== "string" || candidate.version.trim().length === 0) {
+  return value;
+}
+
+/** Parse an optional boolean value (`undefined` when absent, `null` when present but not a boolean). */
+function parseOptionalBooleanValue(value: unknown): boolean | null | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value !== "boolean") {
     return null;
   }
-  if (typeof candidate.entry !== "string" || candidate.entry.trim().length === 0) {
+  return value;
+}
+
+/** Parse the optional integer `priority`, defaulting to {@link DEFAULT_EXTENSION_PRIORITY} when absent and rejecting (`null`) a non-integer. */
+function parseManifestPriority(candidate: Record<string, unknown>): number | null {
+  const value = parseOptionalIntegerValue(candidate.priority);
+  return value === undefined ? DEFAULT_EXTENSION_PRIORITY : value;
+}
+
+/** Parse the optional `sandbox_profile`, rejecting (`null`) any value that does not round-trip through {@link normalizePolicySandboxProfile}. */
+function parseManifestSandboxProfile(candidate: Record<string, unknown>): ExtensionSandboxProfile | null | undefined {
+  const value = candidate.sandbox_profile;
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value !== "string") {
     return null;
   }
-
-  let priority = DEFAULT_EXTENSION_PRIORITY;
-  if ("priority" in candidate && candidate.priority !== undefined && candidate.priority !== null) {
-    if (typeof candidate.priority !== "number" || !Number.isInteger(candidate.priority)) {
-      return null;
-    }
-    priority = candidate.priority;
+  const normalizedProfile = normalizePolicySandboxProfile(value);
+  if (normalizedProfile !== value.trim().toLowerCase()) {
+    return null;
   }
+  return normalizedProfile;
+}
 
-  let manifestVersion: number | undefined;
-  if ("manifest_version" in candidate && candidate.manifest_version !== undefined && candidate.manifest_version !== null) {
-    if (typeof candidate.manifest_version !== "number" || !Number.isInteger(candidate.manifest_version)) {
-      return null;
-    }
-    manifestVersion = candidate.manifest_version;
+/** Return the trimmed string when `value` is a non-blank string, otherwise `undefined`. */
+function optionalTrimmedString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+/** Parse the optional `provenance` record (`undefined` absent, `null` malformed), keeping only the present trimmed string fields and a boolean `verified`. */
+function parseManifestProvenance(value: unknown): ExtensionManifest["provenance"] | null | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
   }
+  const provenanceRecord = asRecordLoose(value);
+  if (!provenanceRecord) {
+    return null;
+  }
+  const source = optionalTrimmedString(provenanceRecord.source);
+  const signature = optionalTrimmedString(provenanceRecord.signature);
+  const attestation = optionalTrimmedString(provenanceRecord.attestation);
+  const verified =
+    provenanceRecord.verified === undefined || provenanceRecord.verified === null
+      ? undefined
+      : typeof provenanceRecord.verified === "boolean"
+        ? provenanceRecord.verified
+        : null;
+  if (verified === null) {
+    return null;
+  }
+  return {
+    ...(source ? { source } : {}),
+    ...(signature ? { signature } : {}),
+    ...(attestation ? { attestation } : {}),
+    ...(typeof verified === "boolean" ? { verified } : {}),
+  };
+}
 
+/** Parse the optional `permissions` record (`undefined` absent, `null` malformed), keeping only the boolean grants that are present. */
+function parseManifestPermissions(value: unknown): ExtensionManifest["permissions"] | null | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  const permissionsRecord = asRecordLoose(value);
+  if (!permissionsRecord) {
+    return null;
+  }
+  const fsRead = parseOptionalBooleanValue(permissionsRecord.fs_read);
+  const fsWrite = parseOptionalBooleanValue(permissionsRecord.fs_write);
+  const network = parseOptionalBooleanValue(permissionsRecord.network);
+  const envRead = parseOptionalBooleanValue(permissionsRecord.env_read);
+  const envWrite = parseOptionalBooleanValue(permissionsRecord.env_write);
+  const processSpawn = parseOptionalBooleanValue(permissionsRecord.process_spawn);
+  if ([fsRead, fsWrite, network, envRead, envWrite, processSpawn].includes(null)) {
+    return null;
+  }
+  return {
+    ...(typeof fsRead === "boolean" ? { fs_read: fsRead } : {}),
+    ...(typeof fsWrite === "boolean" ? { fs_write: fsWrite } : {}),
+    ...(typeof network === "boolean" ? { network } : {}),
+    ...(typeof envRead === "boolean" ? { env_read: envRead } : {}),
+    ...(typeof envWrite === "boolean" ? { env_write: envWrite } : {}),
+    ...(typeof processSpawn === "boolean" ? { process_spawn: processSpawn } : {}),
+  };
+}
+
+/** Parse the optional `capabilities` array, normalizing legacy aliases; returns empty lists when absent and `null` when the field is not a string array. */
+function parseManifestCapabilities(
+  value: unknown,
+): { capabilities: string[]; legacy_aliases: LegacyExtensionCapabilityAliasMapping[] } | null {
+  if (value === undefined || value === null) {
+    return { capabilities: [], legacy_aliases: [] };
+  }
+  if (!Array.isArray(value) || value.some((entry) => typeof entry !== "string")) {
+    return null;
+  }
+  const normalizedCapabilities = normalizeManifestCapabilities(value as string[]);
+  return { capabilities: normalizedCapabilities.capabilities, legacy_aliases: normalizedCapabilities.legacy_aliases };
+}
+
+/** Parse the optional `activation` block, returning the de-duplicated sorted `commands` set, `undefined` when no command activation is declared, and `null` when the block is malformed. */
+function parseManifestActivation(value: unknown): ExtensionManifest["activation"] | null | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  const activationRecord = asRecordLoose(value);
+  if (!activationRecord) {
+    return null;
+  }
+  const rawCommands = activationRecord.commands;
+  if (rawCommands === undefined || rawCommands === null) {
+    return undefined;
+  }
+  if (!Array.isArray(rawCommands) || rawCommands.some((entry) => typeof entry !== "string")) {
+    return null;
+  }
+  const commands = [
+    ...new Set(
+      rawCommands
+        .map((entry) => normalizeCommandName(entry))
+        .filter((entry) => entry.length > 0),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
+  return commands.length > 0 ? { commands } : undefined;
+}
+
+/** The optional metadata fields a manifest may declare, parsed and validated as a single bundle so {@link parseManifest} stays a thin orchestrator. */
+interface ParsedManifestMetadata {
+  manifest_version: number | undefined;
+  pm_min_version: string | undefined;
+  pm_max_version: string | undefined;
+  engines: ExtensionManifestEngines | undefined;
+  trusted: boolean | undefined;
+  sandbox_profile: ExtensionSandboxProfile | undefined;
+  provenance: ExtensionManifest["provenance"];
+  permissions: ExtensionManifest["permissions"];
+  capabilities: string[];
+  legacy_capability_aliases: LegacyExtensionCapabilityAliasMapping[];
+  activation: ExtensionManifest["activation"];
+}
+
+/** Parse every optional manifest metadata field, returning `null` as soon as any one is malformed. */
+function parseManifestMetadata(candidate: Record<string, unknown>): ParsedManifestMetadata | null {
+  const manifestVersion = parseOptionalIntegerValue(candidate.manifest_version);
+  if (manifestVersion === null) {
+    return null;
+  }
   const pmMinVersion = parseOptionalManifestString(candidate, "pm_min_version");
   if (pmMinVersion === null) {
     return null;
   }
-
   const pmMaxVersion = parseOptionalManifestString(candidate, "pm_max_version");
   if (pmMaxVersion === null) {
     return null;
   }
-
   const engines = parseManifestEngines(candidate.engines);
   if (engines === null) {
     return null;
   }
-
-  let trusted: boolean | undefined;
-  if ("trusted" in candidate && candidate.trusted !== undefined && candidate.trusted !== null) {
-    if (typeof candidate.trusted !== "boolean") {
-      return null;
-    }
-    trusted = candidate.trusted;
+  const trusted = parseOptionalBooleanValue(candidate.trusted);
+  if (trusted === null) {
+    return null;
   }
-
-  let sandboxProfile: ExtensionSandboxProfile | undefined;
-  if ("sandbox_profile" in candidate && candidate.sandbox_profile !== undefined && candidate.sandbox_profile !== null) {
-    if (typeof candidate.sandbox_profile !== "string") {
-      return null;
-    }
-    const normalizedProfile = normalizePolicySandboxProfile(candidate.sandbox_profile);
-    if (normalizedProfile !== candidate.sandbox_profile.trim().toLowerCase()) {
-      return null;
-    }
-    sandboxProfile = normalizedProfile;
+  const sandboxProfile = parseManifestSandboxProfile(candidate);
+  if (sandboxProfile === null) {
+    return null;
   }
-
-  let provenance: ExtensionManifest["provenance"] | undefined;
-  if ("provenance" in candidate && candidate.provenance !== undefined && candidate.provenance !== null) {
-    const provenanceRecord = asRecordLoose(candidate.provenance);
-    if (!provenanceRecord) {
-      return null;
-    }
-    const source =
-      typeof provenanceRecord.source === "string" && provenanceRecord.source.trim().length > 0
-        ? provenanceRecord.source.trim()
-        : undefined;
-    const signature =
-      typeof provenanceRecord.signature === "string" && provenanceRecord.signature.trim().length > 0
-        ? provenanceRecord.signature.trim()
-        : undefined;
-    const attestation =
-      typeof provenanceRecord.attestation === "string" && provenanceRecord.attestation.trim().length > 0
-        ? provenanceRecord.attestation.trim()
-        : undefined;
-    const verified =
-      provenanceRecord.verified === undefined || provenanceRecord.verified === null
-        ? undefined
-        : typeof provenanceRecord.verified === "boolean"
-          ? provenanceRecord.verified
-          : null;
-    if (verified === null) {
-      return null;
-    }
-    provenance = {
-      ...(source ? { source } : {}),
-      ...(signature ? { signature } : {}),
-      ...(attestation ? { attestation } : {}),
-      ...(typeof verified === "boolean" ? { verified } : {}),
-    };
+  const provenance = parseManifestProvenance(candidate.provenance);
+  if (provenance === null) {
+    return null;
   }
-
-  let permissions: ExtensionManifest["permissions"] | undefined;
-  if ("permissions" in candidate && candidate.permissions !== undefined && candidate.permissions !== null) {
-    const permissionsRecord = asRecordLoose(candidate.permissions);
-    if (!permissionsRecord) {
-      return null;
-    }
-    const parseOptionalBoolean = (value: unknown): boolean | undefined | null => {
-      if (value === undefined || value === null) {
-        return undefined;
-      }
-      if (typeof value !== "boolean") {
-        return null;
-      }
-      return value;
-    };
-    const fsRead = parseOptionalBoolean(permissionsRecord.fs_read);
-    const fsWrite = parseOptionalBoolean(permissionsRecord.fs_write);
-    const network = parseOptionalBoolean(permissionsRecord.network);
-    const envRead = parseOptionalBoolean(permissionsRecord.env_read);
-    const envWrite = parseOptionalBoolean(permissionsRecord.env_write);
-    const processSpawn = parseOptionalBoolean(permissionsRecord.process_spawn);
-    if ([fsRead, fsWrite, network, envRead, envWrite, processSpawn].includes(null)) {
-      return null;
-    }
-    permissions = {
-      ...(typeof fsRead === "boolean" ? { fs_read: fsRead } : {}),
-      ...(typeof fsWrite === "boolean" ? { fs_write: fsWrite } : {}),
-      ...(typeof network === "boolean" ? { network } : {}),
-      ...(typeof envRead === "boolean" ? { env_read: envRead } : {}),
-      ...(typeof envWrite === "boolean" ? { env_write: envWrite } : {}),
-      ...(typeof processSpawn === "boolean" ? { process_spawn: processSpawn } : {}),
-    };
+  const permissions = parseManifestPermissions(candidate.permissions);
+  if (permissions === null) {
+    return null;
   }
-
-  let capabilities: string[] = [];
-  let legacyCapabilityAliases: LegacyExtensionCapabilityAliasMapping[] = [];
-  if ("capabilities" in candidate && candidate.capabilities !== undefined && candidate.capabilities !== null) {
-    if (!Array.isArray(candidate.capabilities) || candidate.capabilities.some((value) => typeof value !== "string")) {
-      return null;
-    }
-    const normalizedCapabilities = normalizeManifestCapabilities(candidate.capabilities as string[]);
-    capabilities = normalizedCapabilities.capabilities;
-    legacyCapabilityAliases = normalizedCapabilities.legacy_aliases;
+  const capabilities = parseManifestCapabilities(candidate.capabilities);
+  if (capabilities === null) {
+    return null;
   }
-
-  let activation: ExtensionManifest["activation"] | undefined;
-  if ("activation" in candidate && candidate.activation !== undefined && candidate.activation !== null) {
-    const activationRecord = asRecordLoose(candidate.activation);
-    if (!activationRecord) {
-      return null;
-    }
-    const rawCommands = activationRecord.commands;
-    if (rawCommands !== undefined && rawCommands !== null) {
-      if (!Array.isArray(rawCommands) || rawCommands.some((value) => typeof value !== "string")) {
-        return null;
-      }
-      const commands = [
-        ...new Set(
-          rawCommands
-            .map((value) => normalizeCommandName(value))
-            .filter((value) => value.length > 0),
-        ),
-      ].sort((left, right) => left.localeCompare(right));
-      if (commands.length > 0) {
-        activation = {
-          commands,
-        };
-      }
-    }
+  const activation = parseManifestActivation(candidate.activation);
+  if (activation === null) {
+    return null;
   }
-
   return {
-    name: candidate.name.trim(),
-    version: candidate.version.trim(),
-    entry: candidate.entry.trim(),
-    priority,
     manifest_version: manifestVersion,
     pm_min_version: pmMinVersion,
     pm_max_version: pmMaxVersion,
     engines,
     trusted,
-    provenance,
     sandbox_profile: sandboxProfile,
+    provenance,
     permissions,
+    capabilities: capabilities.capabilities,
+    legacy_capability_aliases: capabilities.legacy_aliases,
     activation,
-    capabilities,
-    legacy_capability_aliases: legacyCapabilityAliases.length > 0 ? legacyCapabilityAliases : undefined,
+  };
+}
+
+function parseManifest(raw: unknown): ExtensionManifest | null {
+  if (typeof raw !== "object" || raw === null) {
+    return null;
+  }
+  const candidate = raw as Record<string, unknown>;
+  const name = parseRequiredManifestString(candidate, "name");
+  if (name === null) {
+    return null;
+  }
+  const version = parseRequiredManifestString(candidate, "version");
+  if (version === null) {
+    return null;
+  }
+  const entry = parseRequiredManifestString(candidate, "entry");
+  if (entry === null) {
+    return null;
+  }
+  const priority = parseManifestPriority(candidate);
+  if (priority === null) {
+    return null;
+  }
+  const metadata = parseManifestMetadata(candidate);
+  if (metadata === null) {
+    return null;
+  }
+  return {
+    name,
+    version,
+    entry,
+    priority,
+    manifest_version: metadata.manifest_version,
+    pm_min_version: metadata.pm_min_version,
+    pm_max_version: metadata.pm_max_version,
+    engines: metadata.engines,
+    trusted: metadata.trusted,
+    provenance: metadata.provenance,
+    sandbox_profile: metadata.sandbox_profile,
+    permissions: metadata.permissions,
+    activation: metadata.activation,
+    capabilities: metadata.capabilities,
+    legacy_capability_aliases:
+      metadata.legacy_capability_aliases.length > 0 ? metadata.legacy_capability_aliases : undefined,
   };
 }
 
@@ -619,71 +699,48 @@ async function scanExtensionLayer(
   return { diagnostics, warnings, candidates };
 }
 
-async function scanExtensionDirectory(
+/**
+ * Build the `warn`-status scan result for a directory whose manifest is missing
+ * or unparseable, carrying the supplied diagnostic warning and no candidate.
+ */
+function buildUnavailableExtensionScan(
   layer: ExtensionLayer,
-  extensionsRoot: string,
   directory: string,
-  enabled: Set<string>,
-  disabled: Set<string>,
-  managedSourcePackages: ReadonlyMap<string, string>,
-  pmMaxVersionExceededMode: PmMaxVersionExceededMode,
-): Promise<ScannedExtensionDirectory> {
-  const extensionDir = path.join(extensionsRoot, directory);
-  const manifestPath = path.join(extensionDir, "manifest.json");
-  if (!(await pathExists(manifestPath))) {
-    return {
-      diagnostic: {
-        layer,
-        directory,
-        manifest_path: manifestPath,
-        name: null,
-        version: null,
-        entry: null,
-        priority: null,
-        entry_path: null,
-        enabled: null,
-        status: "warn",
-      },
-      warnings: [`extension_manifest_missing:${layer}:${directory}`],
-      candidate: null,
-    };
-  }
+  manifestPath: string,
+  warning: string,
+): ScannedExtensionDirectory {
+  return {
+    diagnostic: {
+      layer,
+      directory,
+      manifest_path: manifestPath,
+      name: null,
+      version: null,
+      entry: null,
+      priority: null,
+      entry_path: null,
+      enabled: null,
+      status: "warn",
+    },
+    warnings: [warning],
+    candidate: null,
+  };
+}
 
-  let manifest: ExtensionManifest | null = null;
-  try {
-    const parsed = JSON.parse(await fs.readFile(manifestPath, "utf8")) as unknown;
-    manifest = parseManifest(parsed);
-  } catch {
-    manifest = null;
-  }
-
-  if (!manifest) {
-    return {
-      diagnostic: {
-        layer,
-        directory,
-        manifest_path: manifestPath,
-        name: null,
-        version: null,
-        entry: null,
-        priority: null,
-        entry_path: null,
-        enabled: null,
-        status: "warn",
-      },
-      warnings: [`extension_manifest_invalid:${layer}:${directory}`],
-      candidate: null,
-    };
-  }
-
-  const entryPath = path.resolve(extensionDir, manifest.entry);
-  const entryWithinDirectoryByPath = isPathWithinDirectory(extensionDir, entryPath);
-  const entryExists = entryWithinDirectoryByPath ? await pathExists(entryPath) : false;
-  const entryWithinDirectory =
-    entryWithinDirectoryByPath && entryExists
-      ? await isCanonicalPathWithinDirectory(extensionDir, entryPath)
-      : entryWithinDirectoryByPath;
-  const enabledForLoad = shouldEnable(manifest.name, enabled, disabled);
+/**
+ * Collect the non-fatal load warnings for a parsed extension manifest, in
+ * detection order: legacy capability aliases, unknown capabilities, an entry
+ * outside or absent from the extension directory, then the pm version
+ * floor/ceiling incompatibility warnings.
+ */
+function collectScannedExtensionWarnings(
+  layer: ExtensionLayer,
+  manifest: ExtensionManifest,
+  entryWithinDirectory: boolean,
+  entryExists: boolean,
+  pmVersionCompatibility: { allowed: boolean; warning?: string },
+  pmMaxVersionCompatibility: { allowed: boolean; warning?: string },
+): string[] {
   const extensionWarnings: string[] = [];
   if (Array.isArray(manifest.legacy_capability_aliases) && manifest.legacy_capability_aliases.length > 0) {
     extensionWarnings.push(
@@ -698,14 +755,60 @@ async function scanExtensionDirectory(
   } else if (!entryExists) {
     extensionWarnings.push(`extension_entry_missing:${layer}:${manifest.name}`);
   }
-  const pmVersionCompatibility = await evaluatePmMinVersionCompatibility(layer, manifest);
   if (pmVersionCompatibility.warning) {
     extensionWarnings.push(pmVersionCompatibility.warning);
   }
-  const pmMaxVersionCompatibility = await evaluatePmMaxVersionCompatibility(layer, manifest, pmMaxVersionExceededMode);
   if (pmMaxVersionCompatibility.warning) {
     extensionWarnings.push(pmMaxVersionCompatibility.warning);
   }
+  return extensionWarnings;
+}
+
+async function scanExtensionDirectory(
+  layer: ExtensionLayer,
+  extensionsRoot: string,
+  directory: string,
+  enabled: Set<string>,
+  disabled: Set<string>,
+  managedSourcePackages: ReadonlyMap<string, string>,
+  pmMaxVersionExceededMode: PmMaxVersionExceededMode,
+): Promise<ScannedExtensionDirectory> {
+  const extensionDir = path.join(extensionsRoot, directory);
+  const manifestPath = path.join(extensionDir, "manifest.json");
+  if (!(await pathExists(manifestPath))) {
+    return buildUnavailableExtensionScan(layer, directory, manifestPath, `extension_manifest_missing:${layer}:${directory}`);
+  }
+
+  let manifest: ExtensionManifest | null = null;
+  try {
+    const parsed = JSON.parse(await fs.readFile(manifestPath, "utf8")) as unknown;
+    manifest = parseManifest(parsed);
+  } catch {
+    manifest = null;
+  }
+
+  if (!manifest) {
+    return buildUnavailableExtensionScan(layer, directory, manifestPath, `extension_manifest_invalid:${layer}:${directory}`);
+  }
+
+  const entryPath = path.resolve(extensionDir, manifest.entry);
+  const entryWithinDirectoryByPath = isPathWithinDirectory(extensionDir, entryPath);
+  const entryExists = entryWithinDirectoryByPath ? await pathExists(entryPath) : false;
+  const entryWithinDirectory =
+    entryWithinDirectoryByPath && entryExists
+      ? await isCanonicalPathWithinDirectory(extensionDir, entryPath)
+      : entryWithinDirectoryByPath;
+  const enabledForLoad = shouldEnable(manifest.name, enabled, disabled);
+  const pmVersionCompatibility = await evaluatePmMinVersionCompatibility(layer, manifest);
+  const pmMaxVersionCompatibility = await evaluatePmMaxVersionCompatibility(layer, manifest, pmMaxVersionExceededMode);
+  const extensionWarnings = collectScannedExtensionWarnings(
+    layer,
+    manifest,
+    entryWithinDirectory,
+    entryExists,
+    pmVersionCompatibility,
+    pmMaxVersionCompatibility,
+  );
   const extensionReady =
     entryWithinDirectory &&
     entryExists &&
@@ -1799,98 +1902,104 @@ function createExtensionApi(
     hint,
   });
 
-  const registerCommand = (commandOrDefinition: string | CommandDefinition, override?: CommandOverride): void => {
-    assertExtensionCapability(extension, "commands", "registerCommand");
-    if (typeof commandOrDefinition === "string") {
-      const normalizedCommand = normalizeCommandName(commandOrDefinition);
-      if (normalizedCommand.length === 0) {
-        throw createRegistrationValidationError(
-          "registerCommand requires a non-empty command name",
-          registerCommandTrace(
-            "override",
-            commandOrDefinition,
-            'registerCommand("<command>", (context) => unknown)',
-            commandOrDefinition,
-            "Provide a non-empty command path as the first argument.",
-          ),
-        );
-      }
-      if (typeof override !== "function") {
-        const trace = registerCommandTrace(
+  const registerCommandOverride = (command: string, override: CommandOverride | undefined): void => {
+    const normalizedCommand = normalizeCommandName(command);
+    if (normalizedCommand.length === 0) {
+      throw createRegistrationValidationError(
+        "registerCommand requires a non-empty command name",
+        registerCommandTrace(
           "override",
-          normalizedCommand,
+          command,
           'registerCommand("<command>", (context) => unknown)',
-          { command: commandOrDefinition, override },
-          "Provide a function as the second registerCommand argument.",
-        );
-        throw createRegistrationValidationError(
-          `registerCommand requires an override function when command name is provided (command="${normalizedCommand}", registration_index=${trace.registration_index})`,
-          trace,
-        );
-      }
-      if (!allowRegistration("commands.override", "registerCommand", "commands", { command: normalizedCommand })) {
-        return;
-      }
-      commands.overrides.push({
-        layer: extension.layer,
-        name: extension.name,
-        command: normalizedCommand,
-        run: override,
-      });
+          command,
+          "Provide a non-empty command path as the first argument.",
+        ),
+      );
+    }
+    if (typeof override !== "function") {
+      const trace = registerCommandTrace(
+        "override",
+        normalizedCommand,
+        'registerCommand("<command>", (context) => unknown)',
+        { command, override },
+        "Provide a function as the second registerCommand argument.",
+      );
+      throw createRegistrationValidationError(
+        `registerCommand requires an override function when command name is provided (command="${normalizedCommand}", registration_index=${trace.registration_index})`,
+        trace,
+      );
+    }
+    if (!allowRegistration("commands.override", "registerCommand", "commands", { command: normalizedCommand })) {
       return;
     }
-    if (typeof commandOrDefinition !== "object" || commandOrDefinition === null) {
+    commands.overrides.push({
+      layer: extension.layer,
+      name: extension.name,
+      command: normalizedCommand,
+      run: override,
+    });
+  };
+
+  const resolveCommandDefinitionRunHandler = (
+    definition: CommandDefinition,
+    normalizedCommand: string,
+  ): CommandHandler | undefined => {
+    const runHandler = typeof definition.run === "function" ? definition.run : undefined;
+    const legacyHandler = typeof definition.handler === "function" ? definition.handler : undefined;
+    if (!runHandler && legacyHandler) {
+      activationWarnings.push(
+        `extension_command_definition_legacy_handler_alias:${extension.layer}:${extension.name}:${normalizedCommand}`,
+      );
+    }
+    return runHandler ?? legacyHandler;
+  };
+
+  const registerCommandDefinition = (definition: CommandDefinition): void => {
+    if (typeof definition !== "object" || definition === null) {
       throw createRegistrationValidationError(
         "registerCommand requires a command definition object",
         registerCommandTrace(
           "definition",
           undefined,
           "{ name: string; run: (context) => unknown; }",
-          commandOrDefinition,
+          definition,
           "Use registerCommand({ name: \"command path\", run: (context) => ... }).",
         ),
       );
     }
-    if (typeof commandOrDefinition.name !== "string") {
+    if (typeof definition.name !== "string") {
       throw createRegistrationValidationError(
         "registerCommand requires a command definition name",
         registerCommandTrace(
           "definition",
           undefined,
           "{ name: string; run: (context) => unknown; }",
-          commandOrDefinition,
+          definition,
           "Set command definition.name to a non-empty string command path.",
         ),
       );
     }
 
-    const normalizedCommand = normalizeCommandName(commandOrDefinition.name);
+    const normalizedCommand = normalizeCommandName(definition.name);
     if (normalizedCommand.length === 0) {
       throw createRegistrationValidationError(
         "registerCommand requires a non-empty command definition name",
         registerCommandTrace(
           "definition",
-          commandOrDefinition.name,
+          definition.name,
           "{ name: string; run: (context) => unknown; }",
-          commandOrDefinition,
+          definition,
           "Ensure command definition.name contains a non-empty command path.",
         ),
       );
     }
-    const runHandler = typeof commandOrDefinition.run === "function" ? commandOrDefinition.run : undefined;
-    const legacyHandler = typeof commandOrDefinition.handler === "function" ? commandOrDefinition.handler : undefined;
-    if (!runHandler && legacyHandler) {
-      activationWarnings.push(
-        `extension_command_definition_legacy_handler_alias:${extension.layer}:${extension.name}:${normalizedCommand}`,
-      );
-    }
-    const resolvedHandler = runHandler ?? legacyHandler;
+    const resolvedHandler = resolveCommandDefinitionRunHandler(definition, normalizedCommand);
     if (typeof resolvedHandler !== "function") {
       const trace = registerCommandTrace(
         "definition",
         normalizedCommand,
         "{ name: string; run: (context) => unknown; }",
-        commandOrDefinition,
+        definition,
         "Define command definition.run as a function.",
       );
       throw createRegistrationValidationError(
@@ -1899,30 +2008,30 @@ function createExtensionApi(
       );
     }
     try {
-      assertOptionalStringField("registerCommand definition.action", commandOrDefinition.action);
-      assertOptionalStringField("registerCommand definition.description", commandOrDefinition.description);
-      assertOptionalStringField("registerCommand definition.intent", commandOrDefinition.intent);
-      const action = resolveCommandDefinitionAction(normalizedCommand, commandOrDefinition.action);
+      assertOptionalStringField("registerCommand definition.action", definition.action);
+      assertOptionalStringField("registerCommand definition.description", definition.description);
+      assertOptionalStringField("registerCommand definition.intent", definition.intent);
+      const action = resolveCommandDefinitionAction(normalizedCommand, definition.action);
       if (!allowRegistration("commands.handler", "registerCommand", "commands", { command: normalizedCommand, action })) {
         return;
       }
-      const description = commandOrDefinition.description?.trim();
-      const intent = commandOrDefinition.intent?.trim();
-      const examples = normalizeOptionalStringArrayField("registerCommand definition.examples", commandOrDefinition.examples);
+      const description = definition.description?.trim();
+      const intent = definition.intent?.trim();
+      const examples = normalizeOptionalStringArrayField("registerCommand definition.examples", definition.examples);
       const failureHints = normalizeOptionalStringArrayField(
         "registerCommand definition.failure_hints",
-        commandOrDefinition.failure_hints,
+        definition.failure_hints,
       );
-      const argumentsDefinition = normalizeCommandDefinitionArguments(commandOrDefinition.arguments);
+      const argumentsDefinition = normalizeCommandDefinitionArguments(definition.arguments);
 
-      if (commandOrDefinition.flags !== undefined) {
+      if (definition.flags !== undefined) {
         assertExtensionCapability(extension, "schema", "registerCommand flags");
-        validateFlagDefinitions(commandOrDefinition.flags);
+        validateFlagDefinitions(definition.flags);
         registrations.flags.push({
           layer: extension.layer,
           name: extension.name,
           target_command: normalizedCommand,
-          flags: normalizeRegistrationRecordList("registerCommand definition.flags", commandOrDefinition.flags),
+          flags: normalizeRegistrationRecordList("registerCommand definition.flags", definition.flags),
         });
       }
 
@@ -1949,7 +2058,7 @@ function createExtensionApi(
         "definition",
         normalizedCommand,
         "{ name: string; run: (context) => unknown; action?: string; arguments?: object[]; flags?: object[]; }",
-        commandOrDefinition,
+        definition,
         "Use schema-style metadata (action/arguments/flags/examples/intent) with valid values.",
       );
       throw createRegistrationValidationError(
@@ -1963,6 +2072,15 @@ function createExtensionApi(
       command: normalizedCommand,
       run: resolvedHandler,
     });
+  };
+
+  const registerCommand = (commandOrDefinition: string | CommandDefinition, override?: CommandOverride): void => {
+    assertExtensionCapability(extension, "commands", "registerCommand");
+    if (typeof commandOrDefinition === "string") {
+      registerCommandOverride(commandOrDefinition, override);
+      return;
+    }
+    registerCommandDefinition(commandOrDefinition);
   };
   const registerParser = (command: string, override: ParserOverride): void => {
     assertExtensionCapability(extension, "parser", "registerParser");
