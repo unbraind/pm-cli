@@ -410,79 +410,90 @@ function extensionOptionsFromArgs(args: Record<string, unknown>, options: Record
   return normalizedOptions;
 }
 
-// pm-bl6m: runDynamicExtensionAction mutates the process-global active extension
-// registries (set globals -> run handler -> clear globals in a finally). The stdio
-// transport already processes JSON-RPC lines sequentially, but handleRequest is a
-// public entry point (tests, future concurrent transports) — if two native-action
-// requests ever ran concurrently, the newer request would overwrite the globals
-// mid-flight and whichever finished first would clear them out from under the
-// other (its lazily-read hooks/overrides would silently vanish). Serialize the
-// whole activation cycle (load -> activate -> set -> run -> clear -> deactivate)
-// on a dedicated FIFO queue so the critical section can never interleave. Full
+// pm-bl6m / pm-zumn: every native MCP action runs inside an activation cycle that
+// mutates the process-global active extension registries (set globals -> run -> clear
+// globals in a finally). The stdio transport already processes JSON-RPC lines
+// sequentially, but handleRequest is a public entry point (tests, future concurrent
+// transports) — if two requests ever ran concurrently, the newer one would overwrite
+// the globals mid-flight and whichever finished first would clear them out from under
+// the other (its lazily-read hooks/overrides would silently vanish). Serialize the
+// whole activation cycle (load -> activate -> set -> run -> clear -> deactivate) on a
+// dedicated FIFO queue so the critical section can never interleave. Full
 // request-scoped registry plumbing remains possible later if true intra-server
 // concurrency is ever needed.
-const dynamicExtensionActionQueue = createSerialQueue();
+const extensionActivationQueue = createSerialQueue();
 
-async function runDynamicExtensionAction(
-  action: string,
-  args: Record<string, unknown>,
-  options: Record<string, unknown>,
+type ExtensionActivationResult = Awaited<ReturnType<typeof activateExtensions>>;
+
+/**
+ * The active extension runtime exposed to an action while it executes: the merged
+ * registration registry (custom item types, fields, profiles) plus the command handler
+ * registry used to dispatch extension-contributed actions. `null` when extensions are
+ * disabled, no workspace exists yet, or activation failed (see {@link withActiveExtensions}).
+ */
+type ActiveExtensionRuntime = {
+  registrations: ExtensionActivationResult["registrations"];
+  commands: ExtensionActivationResult["commands"];
+  pmRoot: string;
+};
+
+/**
+ * Run `run` with workspace extensions loaded, activated, and published to the
+ * process-global active registries, then torn down afterwards. pm-zumn: built-in native
+ * actions (pm_list/pm_profile/pm_schema/pm_create/...) read
+ * `getActiveExtensionRegistrations()` for custom item types, fields, and profiles, so
+ * they must activate extensions exactly like the CLI (main.ts activates for every
+ * command). Previously only the dynamic-extension dispatch activated, leaving
+ * extension-contributed schema and profiles invisible over MCP for every built-in
+ * action. Activation is skipped (`run` receives `null`) when extensions are disabled or
+ * no workspace exists yet (for example `init`), and the whole cycle is serialized on
+ * {@link extensionActivationQueue} so concurrent requests cannot cross-corrupt the
+ * shared registries. The two short-circuit paths below dispatch outside the queue;
+ * they never publish extension registries (run receives `null`), but a built-in
+ * action they dispatch still reads the process-global registries, so they are safe
+ * only because the stdio transport processes requests sequentially. If a truly
+ * concurrent transport is ever added, route these through the queue as well.
+ */
+async function withActiveExtensions<T>(
   global: GlobalOptions,
-): Promise<unknown> {
+  run: (active: ActiveExtensionRuntime | null) => Promise<T>,
+): Promise<T> {
   if (global.noExtensions) {
-    throw new PmCliError(`Unsupported native pm action: ${action}`, 64);
+    return run(null);
   }
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Unsupported native pm action: ${action}`, 64);
+    return run(null);
   }
-  return dynamicExtensionActionQueue.enqueue(async () => {
+  return extensionActivationQueue.enqueue(async () => {
     try {
-      return await runDynamicExtensionActionExclusively(action, args, options, global, pmRoot);
+      return await withActiveExtensionsExclusively(pmRoot, run);
     } finally {
       clearWorkspaceContractsCache();
     }
   });
 }
 
-// Body of the dynamic-action activation cycle. Must only ever run under
-// dynamicExtensionActionQueue (see runDynamicExtensionAction above): it is the
-// exclusive owner of the process-global active extension registries while it runs.
-async function runDynamicExtensionActionExclusively(
-  action: string,
-  args: Record<string, unknown>,
-  options: Record<string, unknown>,
-  global: GlobalOptions,
+/**
+ * Body of the activation cycle. Must only ever run under {@link extensionActivationQueue}
+ * (see {@link withActiveExtensions}): it is the exclusive owner of the process-global
+ * active extension registries while it runs. This MCP server reloads + reactivates
+ * extensions per request, so each call is a fresh cycle with teardown in a finally to
+ * release resources opened during activate() (the long-running-server reload contract,
+ * pm-k1e4). Load/activate failures are swallowed and `run` is invoked with `null`,
+ * mirroring the CLI's resilient snapshot loader (loadRuntimeExtensionSnapshot) so a
+ * broken extension can never break a built-in action.
+ */
+async function withActiveExtensionsExclusively<T>(
   pmRoot: string,
-): Promise<unknown> {
-  const settings = await readSettings(pmRoot);
-  const loadResult = await loadExtensions({
-    pmRoot,
-    settings,
-    cwd: process.cwd(),
-    noExtensions: false,
-  });
-  // This MCP server reloads + reactivates extensions per native-action request,
-  // so each request is a fresh activation cycle. Run the extension teardown
-  // lifecycle in a finally to release any resources opened during activate(),
-  // matching the long-running-server reload contract (pm-k1e4).
-  let activationResult: Awaited<ReturnType<typeof activateExtensions>> | undefined;
+  run: (active: ActiveExtensionRuntime | null) => Promise<T>,
+): Promise<T> {
+  let active: ActiveExtensionRuntime | null = null;
+  let activated: { loadResult: Awaited<ReturnType<typeof loadExtensions>>; activationResult: ExtensionActivationResult } | undefined;
   try {
-    activationResult = await activateExtensions({
-      ...loadResult,
-      loaded: loadResult.loaded,
-    });
-
-    const normalizedAction = normalizeActionName(action);
-    const definition = activationResult.registrations.commands.find((entry) =>
-      normalizeActionName(entry.action) === normalizedAction
-    );
-    const command = definition?.command ??
-      activationResult.commands.handlers.find((entry) => normalizeActionName(entry.command) === normalizedAction)?.command;
-    if (!command) {
-      throw new PmCliError(`Unsupported native pm action: ${action}`, 64);
-    }
-
+    const settings = await readSettings(pmRoot);
+    const loadResult = await loadExtensions({ pmRoot, settings, cwd: process.cwd(), noExtensions: false });
+    const activationResult = await activateExtensions({ ...loadResult, loaded: loadResult.loaded });
     setActiveExtensionHooks(activationResult.hooks);
     setActiveExtensionCommands(activationResult.commands);
     setActiveExtensionParsers(activationResult.parsers);
@@ -490,23 +501,22 @@ async function runDynamicExtensionActionExclusively(
     setActiveExtensionServices(activationResult.services);
     setActiveExtensionRenderers(activationResult.renderers);
     setActiveExtensionRegistrations(activationResult.registrations);
-
-    const handlerResult = await runActiveCommandHandler({
-      command: normalizeCommandPath(command),
-      args: readStringArray(options.args ?? args.args),
-      options: extensionOptionsFromArgs(args, options),
-      global,
-      pm_root: pmRoot,
-    });
-    if (!handlerResult.handled) {
-      const suffix = handlerResult.warnings.length > 0 ? ` (${handlerResult.warnings.join(", ")})` : "";
-      throw new PmCliError(`Unsupported native pm action: ${action}${suffix}`, 64);
-    }
-    return handlerResult.result;
+    activated = { loadResult, activationResult };
+    active = { registrations: activationResult.registrations, commands: activationResult.commands, pmRoot };
+  } catch (error) {
+    // CLI parity (loadRuntimeExtensionSnapshot): a load/activate failure must never
+    // break a built-in action — fall back to running with no active extensions. Surface
+    // the cause on stderr so a broken extension is diagnosable instead of being silently
+    // indistinguishable from a workspace that simply has no extensions.
+    console.error("[pm-mcp] extension activation failed; continuing without active extensions:", error);
+    active = null;
+  }
+  try {
+    return await run(active);
   } finally {
     // Reset the process-global active registries FIRST so a torn-down extension's
     // overrides/hooks cannot leak into a later request in this long-running server
-    // (e.g. a subsequent pm_list/pm_create) even if teardown below misbehaves.
+    // (for example a subsequent pm_list/pm_create) even if teardown below misbehaves.
     setActiveExtensionHooks(createEmptyExtensionHookRegistry());
     setActiveExtensionCommands(createEmptyExtensionCommandRegistry());
     setActiveExtensionParsers(createEmptyExtensionParserRegistry());
@@ -514,13 +524,51 @@ async function runDynamicExtensionActionExclusively(
     setActiveExtensionServices(createEmptyExtensionServiceRegistry());
     setActiveExtensionRenderers(createEmptyExtensionRendererRegistry());
     setActiveExtensionRegistrations(createEmptyExtensionRegistrationRegistry());
-    // Best-effort teardown of extensions that activated successfully. Skip
-    // entirely if activation itself never produced a result (nothing was set
-    // up), and guard so an unexpected throw cannot escape the finally.
-    if (activationResult) {
-      await deactivateExtensions(loadResult, activationResult).catch(() => undefined);
+    // Best-effort teardown of extensions that activated successfully. Skipped when
+    // activation never completed (nothing was set up); guarded so an unexpected throw
+    // cannot escape the finally.
+    if (activated) {
+      await deactivateExtensions(activated.loadResult, activated.activationResult).catch(() => undefined);
     }
   }
+}
+
+/**
+ * Resolve `action` against the active extension command registrations and dispatch it.
+ * Reached by runAction's default case for dynamic (non-built-in) actions after
+ * {@link withActiveExtensions} has published the active registries. `active` is `null`
+ * when no extensions are active (disabled, no workspace, or activation failed), in
+ * which case no extension command can match and the action is reported unsupported.
+ */
+async function dispatchActiveExtensionAction(
+  action: string,
+  args: Record<string, unknown>,
+  options: Record<string, unknown>,
+  global: GlobalOptions,
+  active: ActiveExtensionRuntime | null,
+): Promise<unknown> {
+  if (!active) {
+    throw new PmCliError(`Unsupported native pm action: ${action}`, 64);
+  }
+  const normalizedAction = normalizeActionName(action);
+  const definition = active.registrations.commands.find((entry) => normalizeActionName(entry.action) === normalizedAction);
+  const command = definition?.command ??
+    active.commands.handlers.find((entry) => normalizeActionName(entry.command) === normalizedAction)?.command;
+  if (!command) {
+    throw new PmCliError(`Unsupported native pm action: ${action}`, 64);
+  }
+  const handlerResult = await runActiveCommandHandler({
+    command: normalizeCommandPath(command),
+    args: readStringArray(options.args ?? args.args),
+    options: extensionOptionsFromArgs(args, options),
+    global,
+    pm_root: active.pmRoot,
+  });
+  if (!handlerResult.handled) {
+    const suffix = handlerResult.warnings.length > 0 ? ` (${handlerResult.warnings.join(", ")})` : "";
+    throw new PmCliError(`Unsupported native pm action: ${action}${suffix}`, 64);
+  }
+  return handlerResult.result;
 }
 
 async function withCwd<T>(cwd: unknown, run: () => Promise<T>): Promise<T> {
@@ -670,6 +718,18 @@ function updateManyOptionsFromFlat(options: Record<string, unknown>): UpdateMany
 async function runAction(args: Record<string, unknown>): Promise<unknown> {
   const action = readRequiredString(args, "action");
   const global = globalOptions(args);
+  // pm-zumn: dispatch every action (built-in and dynamic) inside one extension
+  // activation cycle so built-in actions see extension-contributed item types,
+  // fields, and profiles, consistent with the CLI.
+  return withActiveExtensions(global, (activeExtensions) => dispatchAction(action, args, global, activeExtensions));
+}
+
+async function dispatchAction(
+  action: string,
+  args: Record<string, unknown>,
+  global: GlobalOptions,
+  activeExtensions: ActiveExtensionRuntime | null,
+): Promise<unknown> {
   const options = optionsWithAuthor(args, action);
   const id = readString(args, "id");
   const force = args.force === true;
@@ -1112,7 +1172,7 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
     case "gc":
       return runGc(global, options);
     default:
-      return runDynamicExtensionAction(action, args, options, global);
+      return dispatchActiveExtensionAction(action, args, options, global, activeExtensions);
   }
 }
 

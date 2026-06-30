@@ -1,3 +1,6 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -8,6 +11,29 @@ const TOOLS_MODULE = "../../../src/mcp/tool-definitions.js";
 
 type CommandModule = typeof import("../../../src/cli/commands/index.js");
 const INITIAL_PM_PACKAGE_ROOT = process.env.PM_CLI_PACKAGE_ROOT;
+
+// pm-zumn: every native action now runs inside the extension activation cycle.
+// Stub load/activate/teardown to a cheap no-op so option-normalization unit tests
+// stay hermetic and fast instead of activating the repo's real extensions per call.
+function mockNoopExtensionActivation() {
+  vi.doMock(EXTENSIONS_MODULE, async () => {
+    const actual = await vi.importActual<typeof import("../../../src/core/extensions/index.js")>(EXTENSIONS_MODULE);
+    return {
+      ...actual,
+      loadExtensions: vi.fn(async () => ({ loaded: [] })),
+      activateExtensions: vi.fn(async () => ({
+        commands: { handlers: [] },
+        hooks: { before: [], after: [] },
+        parsers: { itemTypes: [] },
+        preflight: { checks: [] },
+        services: { records: new Map() },
+        renderers: { itemSections: [] },
+        registrations: { commands: [] },
+      })),
+      deactivateExtensions: vi.fn(async () => undefined),
+    };
+  });
+}
 
 function buildCommandMocks() {
   return {
@@ -101,7 +127,7 @@ describe("mcp server branch residual coverage", () => {
 
   it("covers runAction option-fallback branches with mocked command handlers", async () => {
     const commandMocks = buildCommandMocks();
-    const server = await importServerWithCommandMocks(commandMocks);
+    const server = await importServerWithCommandMocks(commandMocks, mockNoopExtensionActivation);
     const runAction = server._testOnly.runAction;
 
     await runAction({ action: "get", options: { id: "pm-1" } });
@@ -311,11 +337,51 @@ describe("mcp server branch residual coverage", () => {
       });
     });
 
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
     await withTempPmPath(async (context) => {
-      await expect(server._testOnly.runAction({ action: "custom", path: context.pmPath, options: {} })).rejects.toThrow(/activation failed/);
+      // CLI parity (pm-zumn): a load/activate failure must never break a built-in
+      // action — it falls back to running with no active extensions.
+      const stats = await server._testOnly.runAction({ action: "stats", path: context.pmPath, options: {} });
+      expect(stats).toEqual({ action: "stats" });
+      // A dynamic extension action, by contrast, cannot resolve once activation failed.
+      await expect(server._testOnly.runAction({ action: "custom", path: context.pmPath, options: {} })).rejects.toThrow(
+        /Unsupported native pm action: custom/,
+      );
     });
+    // The swallowed activation failure is surfaced on stderr for diagnosability.
+    expect(errorSpy).toHaveBeenCalledWith(
+      "[pm-mcp] extension activation failed; continuing without active extensions:",
+      expect.any(Error),
+    );
+    errorSpy.mockRestore();
     const warnings = server._testOnly.detectUnexpectedTopLevelKeys("pm_test_no_properties", { typo: "value" });
     expect(warnings).toHaveLength(1);
     expect(warnings[0]).toContain("declared arguments are:");
+  });
+
+  it("skips extension activation for the no-extensions flag and missing-workspace paths (pm-zumn)", async () => {
+    const commandMocks = buildCommandMocks();
+    const server = await importServerWithCommandMocks(commandMocks);
+    const runAction = server._testOnly.runAction;
+
+    // --no-extensions short-circuit: built-in actions still run; dynamic actions
+    // cannot resolve because nothing was activated.
+    await runAction({ action: "get", noExtensions: true, options: { id: "pm-1" } });
+    await expect(runAction({ action: "custom", noExtensions: true, options: {} })).rejects.toThrow(
+      /Unsupported native pm action: custom/,
+    );
+
+    // Missing-workspace path: with no settings file the activation cycle is skipped
+    // entirely, so a built-in action runs and a dynamic action is unsupported.
+    const emptyDir = await mkdtemp(path.join(tmpdir(), "pm-mcp-no-ws-"));
+    try {
+      await runAction({ action: "get", path: emptyDir, options: { id: "pm-2" } });
+      await expect(runAction({ action: "custom", path: emptyDir, options: {} })).rejects.toThrow(
+        /Unsupported native pm action: custom/,
+      );
+    } finally {
+      await rm(emptyDir, { recursive: true, force: true });
+    }
+    expect(commandMocks.runGet).toHaveBeenCalledTimes(2);
   });
 });

@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { handleRequest } from "../../src/mcp/server.js";
+import { writeTestExtension } from "../helpers/extensions.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 /**
@@ -197,6 +198,60 @@ describe("pm profile command", () => {
       expect(applyViaOptionsContent?.result?.name).toBe("agile");
 
       await expect(callProfile({ subcommand: "frobnicate" })).rejects.toThrow(/Unknown pm profile subcommand/);
+    });
+  });
+
+  it("surfaces extension-contributed profiles to built-in MCP profile reads (pm-zumn)", async () => {
+    await withTempPmPath(async (context) => {
+      // A schema-capability extension registers a project profile during activation.
+      await writeTestExtension({
+        root: path.join(context.pmPath, "extensions"),
+        directory: "mcp-flow-ext",
+        name: "mcp-flow-ext",
+        manifestOverrides: { capabilities: ["schema"] },
+        entrySource: [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerProfile({",
+          "      name: 'flow',",
+          "      title: 'Flow Board',",
+          "      summary: 'Continuous-flow archetype.',",
+          "      types: [{ name: 'Card' }],",
+          "    });",
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+      });
+
+      const callProfile = (args: Record<string, unknown>) =>
+        handleRequest({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "tools/call",
+          params: { name: "pm_profile", arguments: { path: context.pmPath, ...args } },
+        });
+
+      // Before pm-zumn, built-in MCP actions never activated workspace extensions, so
+      // pm_profile only ever resolved the three built-in archetypes. The extension's
+      // `flow` profile now resolves over MCP exactly as it does on the CLI.
+      const list = await callProfile({ subcommand: "list" });
+      expect(list?.isError).not.toBe(true);
+      const listResult = (list?.structuredContent as {
+        result?: { profiles?: Array<{ name: string; source: string }> };
+      } | undefined)?.result;
+      expect(listResult?.profiles?.map((profile) => profile.name)).toEqual(
+        expect.arrayContaining(["agile", "ops", "research", "flow"]),
+      );
+      expect(listResult?.profiles?.find((profile) => profile.name === "flow")?.source).toBe("extension");
+
+      // show and lint resolve the extension profile too — cubic's #404 finding was
+      // that lint/show/apply only ever saw the built-ins over MCP.
+      const show = await callProfile({ subcommand: "show", name: "flow" });
+      expect((show?.structuredContent as { result?: { name?: string } } | undefined)?.result?.name).toBe("flow");
+
+      const lint = await callProfile({ subcommand: "lint", name: "flow" });
+      expect((lint?.structuredContent as { result?: { ok?: boolean } } | undefined)?.result?.ok).toBe(true);
     });
   });
 });
