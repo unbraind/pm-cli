@@ -27,6 +27,7 @@
 
 ### Fixed
 
+- CodeFactor no-regression gate: complexity ceiling + ESLint suppressions baseline + Greptile in local CI/CD ([pm-bkcv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-bkcv.toon))
 - MCP action-schema contracts drifted from CLI flag tables (guide.list, health.brief, validate.parentCycleSeverity, contracts.full) ([pm-zx13](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zx13.toon))
 - pm next hides completed-container closeout rows while leaf work exists ([pm-9g87](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9g87.toon))
 - Windows background stop progress assertion ([pm-bnh3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bnh3.toon))
