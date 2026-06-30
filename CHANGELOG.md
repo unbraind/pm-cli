@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Auto Release blocked: bot cannot push version commit to protected main (GH006, 12 required checks) ([pm-9gxi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9gxi.toon))
+
 ## 2026.6.30 - 2026-06-30
 
 ### Added
