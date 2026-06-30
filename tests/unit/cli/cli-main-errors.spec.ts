@@ -691,6 +691,8 @@ describe("CLI settings-read warning surfacing", () => {
   });
 });
 
+const CALENDAR_VERSION_PATTERN = /^\d{4}\.\d+\.\d+(?:-\d+)?$/;
+
 describe("CLI bootstrap entrypoints", () => {
   it("covers the direct cli.ts fast-version entrypoint and exported startup helpers", async () => {
     const previousArgv = process.argv;
@@ -711,7 +713,7 @@ describe("CLI bootstrap entrypoints", () => {
       process.argv = ["node", "pm", "--no-extensions", "--version"];
       const cliModule = await importFreshSourceModule<typeof CliEntrypointModule>("cli.js", "entryFastVersion");
 
-      expect(logSpy.mock.calls.map((call) => String(call[0])).join("").trim()).toMatch(/^\d{4}\.\d+\.\d+$/);
+      expect(logSpy.mock.calls.map((call) => String(call[0])).join("").trim()).toMatch(CALENDAR_VERSION_PATTERN);
       expect(cliModule._testOnly.findPackageJson(nested)).toBe(path.join(tempRoot, "package.json"));
       expect(cliModule._testOnly.findPackageJson(path.parse(tempRoot).root)).toBeUndefined();
       expect(cliModule._testOnly.readPackageVersionForPath(nested)).toBe("9.8.7");
@@ -733,7 +735,7 @@ describe("CLI bootstrap entrypoints", () => {
       logSpy.mockClear();
       process.argv = ["node", "pm", "--no-extensions", "-V"];
       expect(cliModule._testOnly.printFastVersionIfRequested()).toBe(true);
-      expect(logSpy.mock.calls.map((call) => String(call[0])).join("").trim()).toMatch(/^\d{4}\.\d+\.\d+$/);
+      expect(logSpy.mock.calls.map((call) => String(call[0])).join("").trim()).toMatch(CALENDAR_VERSION_PATTERN);
 
       process.argv = ["node", "pm", "--no-extensions", "--version", "--json"];
       expect(cliModule._testOnly.printFastVersionIfRequested()).toBe(false);
@@ -777,7 +779,7 @@ describe("CLI bootstrap entrypoints", () => {
     await withTempPmPath(async (context) => {
       const result = context.runCli(["--no-extensions", "--version"]);
       expect(result.code).toBe(EXIT_CODE.SUCCESS);
-      expect(result.stdout.trim()).toMatch(/^\d{4}\.\d+\.\d+$/);
+      expect(result.stdout.trim()).toMatch(CALENDAR_VERSION_PATTERN);
       expect(result.stderr).toBe("");
     });
   });
@@ -829,7 +831,7 @@ describe("CLI bootstrap entrypoints", () => {
         await importFreshSourceModule<typeof CliEntrypointModule>("cli.js", "entryFallthrough");
 
         expect(process.exitCode ?? EXIT_CODE.SUCCESS).toBe(EXIT_CODE.SUCCESS);
-        expect(stdoutSpy.mock.calls.map((call) => String(call[0])).join("").trim()).toMatch(/^\d{4}\.\d+\.\d+$/);
+        expect(stdoutSpy.mock.calls.map((call) => String(call[0])).join("").trim()).toMatch(CALENDAR_VERSION_PATTERN);
         expect(stderrSpy).not.toHaveBeenCalled();
       } finally {
         stdoutSpy.mockRestore();
@@ -880,7 +882,7 @@ describe("CLI bootstrap entrypoints", () => {
         code: EXIT_CODE.SUCCESS,
         stderr: "",
       });
-      expect(version.stdout.trim()).toMatch(/^\d{4}\.\d+\.\d+$/);
+      expect(version.stdout.trim()).toMatch(CALENDAR_VERSION_PATTERN);
 
       const help = await runSourceCli(["--no-extensions", "list", "--help"], context.env);
       expect(help.code).toBe(EXIT_CODE.SUCCESS);

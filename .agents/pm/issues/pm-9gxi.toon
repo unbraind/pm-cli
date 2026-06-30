@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:ci",auto-release,branch-protection,release,reliability
 created_at: "2026-06-25T11:02:40.952Z"
-updated_at: "2026-06-30T09:35:35.117Z"
+updated_at: "2026-06-30T09:44:13.605Z"
 author: claude-code-agent
 parent: pm-u9d0
 resolution: "Configured RELEASE_PAT, verified protected-main release push, fixed duplicate Auto Release dispatch race, and documented/preserved release evidence in pm."
@@ -16,7 +16,7 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-7zs0,related,"2026-06-25T11:02:54.128Z",null,null
   pm-nb08,related,"2026-06-25T11:02:54.430Z",null,null
   pm-y1o4,related,"2026-06-25T11:23:26.383Z",null,null
-comments[15]{created_at,author,text}:
+comments[17]{created_at,author,text}:
   "2026-06-25T11:53:04.258Z",codex-20260625,"Evidence: implemented RELEASE_PAT checkout token fallback, production push preflight, and blocked-release alert guidance; documented release environment setup. Verification passed: focused workflow tests (21 tests), full run-gates with telemetry-mode off (build/typecheck/docs/static/coverage/version/secret-scan/npx/package dogfood/npm pack/compat/Sentry all ok), live Sentry/telemetry gate best-effort (Sentry critical=0 high=0, telemetry finish_error_rate_pct=0.78, missing error-code rows=0), pnpm audit low clean, pnpm security:scan clean, no open GitHub PRs/issues/Dependabot/secret alerts. Manual temp smoke passed in /tmp/pm-cli-manual-smoke-NS6WJB with create/claim/update/files/docs/tests/comment/list/validate/health/close/release under sandboxed PM_PATH and PM_GLOBAL_PATH. Remaining external setup: release environment currently has NPM_TOKEN, SENTRY_AUTH_TOKEN, and SENTRY_PERSONAL_ADMIN_TOKEN, but no RELEASE_PAT; scheduled Auto Release will now fail fast until that maintainer token is configured."
   "2026-06-25T12:24:45.475Z",codex-20260625,"Review response: addressed CodeRabbit security finding by setting checkout persist-credentials=false, passing RELEASE_PUSH_TOKEN only to run-release-pipeline, deleting it from process.env before child gates run, and injecting a Git extraheader only for git push. Addressed Gemini maintainability feedback by removing the duplicate auto-release workflow assertion block from release-automation-contract.spec.ts and keeping the comprehensive CI workflow contract as the single workflow surface check. Verification: focused review-response tests passed 90 tests; run-release-pipeline unit test passed 33 tests; full coverage passed 100/100/100/100 (5097 tests)."
   "2026-06-25T12:38:47.894Z",codex-gpt5,"Review response follow-up: accepted Gemini compatibility feedback and standardized the temporary git push auth extraheader to 'Authorization: Basic' while preserving per-push RELEASE_PUSH_TOKEN scoping and checkout persist-credentials=false. Verification passed after the patch: node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts (33 tests), node scripts/run-tests.mjs coverage (100/100/100/100; 5097 tests), node scripts/release/static-quality-gate.mjs --json (source docstrings 237/237 and exported docstrings 1840/1840), pnpm contracts:check, changelog --check unchanged, pm health summary ok, git diff --check clean."
@@ -32,7 +32,9 @@ comments[15]{created_at,author,text}:
   "2026-06-30T09:14:29.565Z",claude-code-agent,"Operational fix: configured the GitHub Actions release environment secret RELEASE_PAT from the authenticated maintainer gh token using gh secret set without exposing the token value. Verified gh secret list --env release --app actions now reports RELEASE_PAT alongside NPM_TOKEN and Sentry release secrets."
   "2026-06-30T09:33:13.546Z",claude-code-agent,"Evidence: configured release environment RELEASE_PAT and triggered Auto Release run 28433548157 with push=true/dry_run=false. The protected-main release push succeeded and created commit 1091d66f plus tag v2026.6.30; tag-push Release run 28433986968 succeeded through coverage/static/changelog/compatibility/reliability/Sentry/package dogfood, published npm @unbrained/pm-cli@2026.6.30, and created GitHub release v2026.6.30. Root cause of remaining parent failure: Auto Release also dispatched a workflow_dispatch Release run 28433985833 for the same tag while the tag-push Release run was publishing, causing duplicate npm publish E403. Follow-up fix removes the duplicate dispatch and waits for the tag-push Release run instead. Focused verification passed: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts (9 tests)."
   "2026-06-30T09:33:42.997Z",claude-code-agent,"Verification: pnpm changelog:pm:check passed with pm-changelog 2026.6.30, CHANGELOG.md unchanged, 1378 closed items included. Timestamp-only .agents/pm/extensions/.managed-extensions.json churn from the install check was removed before commit."
-files[7]{path,scope,note}:
+  "2026-06-30T09:43:40.178Z",claude-code-agent,"CI follow-up: Auto Release same-day verification run 28434770958 reached the coverage gate for target 2026.6.30-2,then failed because CLI bootstrap version tests only accepted YYYY.M.D. Updated the test contract to accept the supported YYYY.M.D-N same-day release ordinal."
+  "2026-06-30T09:44:13.586Z",claude-code-agent,"Verification: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts passed locally after allowing YYYY.M.D-N same-day release versions (116 tests)."
+files[8]{path,scope,note}:
   .github/workflows/auto-release.yml,project,wire RELEASE_PAT checkout token and push preflight
   package.json,project,refresh @sentry/node dependency for release reliability
   pnpm-lock.yaml,project,lock @sentry/node 10.61.0 dependency graph
@@ -40,6 +42,7 @@ files[7]{path,scope,note}:
   tests/integration/ci-workflow-contract.spec.ts,project,assert auto-release workflow token and alert contract
   tests/integration/release-automation-contract.spec.ts,project,assert auto-release RELEASE_PAT contract
   tests/unit/scripts/release/run-release-pipeline.spec.ts,project,cover release push token scoping
+  tests/unit/cli/cli-main-errors.spec.ts,project,Allow CLI --version tests to accept same-day release ordinals
 tests[9]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/release/run-gates.mjs --json --telemetry-mode off,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
