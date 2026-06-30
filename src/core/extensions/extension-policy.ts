@@ -297,7 +297,7 @@ function collectExtensionPolicyWarnings(normalized: {
  * policy block resolves to the all-defaults policy (mode/trust `off`).
  */
 export function normalizeExtensionPolicy(settings: PmSettings): NormalizedExtensionPolicy {
-  const policy: Partial<ExtensionGovernancePolicy> = (settings.extensions.policy as ExtensionGovernancePolicy | undefined) ?? {};
+  const policy: Partial<ExtensionGovernancePolicy> = (settings.extensions?.policy as ExtensionGovernancePolicy | undefined) ?? {};
   const allowedCapabilities = normalizePolicyStringSet(policy.allowed_capabilities);
   const blockedCapabilities = normalizePolicyStringSet(policy.blocked_capabilities);
   const allowedSurfaces = normalizePolicySurfaceSet(policy.allowed_surfaces);
