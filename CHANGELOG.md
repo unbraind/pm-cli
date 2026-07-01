@@ -6,6 +6,10 @@
 
 - Auto Release blocked: bot cannot push version commit to protected main (GH006, 12 required checks) ([pm-9gxi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9gxi.toon))
 
+### Removed
+
+- CodeFactor/Complexity: remove 33 suppressions and split 100+ complexity-point dispatch hot spots ([pm-o34s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-o34s.toon))
+
 ### Other
 
 - CodeFactor/Complexity: zero out the SDK contract-resolution, extension-loader and composition surface ([pm-lzzp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lzzp.toon))
