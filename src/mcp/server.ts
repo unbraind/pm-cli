@@ -754,6 +754,489 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
   return withActiveExtensions(global, explicitCwd, resolutionCwd, (activeExtensions) => dispatchAction(action, args, global, activeExtensions));
 }
 
+interface McpActionDispatchContext {
+  action: string;
+  args: Record<string, unknown>;
+  options: Record<string, unknown>;
+  id: string | undefined;
+  force: boolean;
+  global: GlobalOptions;
+  activeExtensions: ActiveExtensionRuntime | null;
+}
+
+type McpActionHandler = (ctx: McpActionDispatchContext) => Promise<unknown> | unknown;
+
+function getOwnHandler<T>(handlers: Readonly<Record<string, T>>, key: string): T | undefined {
+  return Object.prototype.hasOwnProperty.call(handlers, key) ? handlers[key] : undefined;
+}
+
+function readMcpTarget(ctx: McpActionDispatchContext): string | undefined {
+  return readString(ctx.args, "target") ?? readString(ctx.options, "target");
+}
+
+function requireMcpItemId(ctx: McpActionDispatchContext, source: Record<string, unknown> = ctx.options): string {
+  return ctx.id ?? readRequiredString(source, "id");
+}
+
+async function runMcpListAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  const listOptions: Record<string, unknown> = { ...ctx.options };
+  if (
+    listOptions.compact === undefined &&
+    listOptions.brief === undefined &&
+    listOptions.fields === undefined &&
+    listOptions.includeBody === undefined
+  ) {
+    listOptions.compact = true;
+  }
+  // pm-rmjy: echo applied filters + projection mode so agents get structured confirmation.
+  return withQuerySummary(
+    (await runList(readString(ctx.args, "status"), listOptions as never, ctx.global)) as unknown as Record<string, unknown>,
+    listOptions,
+  );
+}
+
+async function runMcpSearchAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  const searchOptions: Parameters<typeof runSearch>[1] = { ...ctx.options };
+  if (searchOptions.compact === undefined && searchOptions.full === undefined && searchOptions.fields === undefined) {
+    searchOptions.compact = true;
+  }
+  return withQuerySummary(
+    (await runSearch(readRequiredString(ctx.args, "query"), searchOptions, ctx.global)) as unknown as Record<string, unknown>,
+    searchOptions as Record<string, unknown>,
+  );
+}
+
+async function runMcpCreateAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(ctx.args, ctx.options);
+  return projectMutationResult(await runCreate(runnerOptions as never, ctx.global), { changedFields, idOnly });
+}
+
+async function runMcpCopyAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(ctx.args, ctx.options);
+  const copyOptions: Record<string, unknown> = {
+    ...runnerOptions,
+    ...(runnerOptions.title === undefined && typeof ctx.args.title === "string" ? { title: ctx.args.title } : {}),
+    ...(runnerOptions.message === undefined && typeof ctx.args.message === "string" ? { message: ctx.args.message } : {}),
+  };
+  return projectMutationResult(await runCopy(requireMcpItemId(ctx, copyOptions), copyOptions as never, ctx.global), {
+    changedFields,
+    idOnly,
+  });
+}
+
+async function runMcpUpdateAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(ctx.args, ctx.options);
+  return projectMutationResult(await runUpdate(requireMcpItemId(ctx, runnerOptions), runnerOptions as never, ctx.global), {
+    changedFields,
+    idOnly,
+  });
+}
+
+async function runMcpCloseAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(ctx.args, ctx.options);
+  const closeReason =
+    readString(ctx.args, "reason") ??
+    readString(ctx.args, "text") ??
+    readString(runnerOptions, "reason") ??
+    readString(runnerOptions, "text");
+  return projectMutationResult(
+    await runClose(requireMcpItemId(ctx, runnerOptions), closeReason, runnerOptions as never, ctx.global),
+    { changedFields, idOnly },
+  );
+}
+
+function runMcpCommentsAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  const commentOptions: Record<string, unknown> = { ...ctx.options };
+  const isListing =
+    commentOptions.add === undefined &&
+    commentOptions.stdin === undefined &&
+    commentOptions.file === undefined &&
+    commentOptions.edit === undefined &&
+    commentOptions.delete === undefined;
+  if (isListing) {
+    commentOptions.includeMeta = true;
+    if (commentOptions.limit === undefined && commentOptions.full !== true) {
+      commentOptions.limit = "20";
+    }
+  }
+  delete commentOptions.full;
+  return runComments(requireMcpItemId(ctx), commentOptions, ctx.global);
+}
+
+function runMcpFilesAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  const fileId = requireMcpItemId(ctx);
+  return ctx.options.discover === true
+    ? runFilesDiscover(fileId, withFilesDiscoveryOptions(ctx.options), ctx.global)
+    : runFiles(fileId, withAddNoteOption(ctx.options), ctx.global);
+}
+
+function runMcpTelemetryAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  return runTelemetry(
+    {
+      subcommand: readString(ctx.args, "subcommand") ?? readString(ctx.options, "subcommand"),
+      limit: resolveMcpTelemetryLimit(ctx.args, ctx.options),
+    },
+    ctx.global,
+  );
+}
+
+function resolveMcpTelemetryLimit(args: Record<string, unknown>, options: Record<string, unknown>): number | string | undefined {
+  if (typeof args.limit === "number" && Number.isFinite(args.limit)) {
+    return args.limit;
+  }
+  if (typeof options.limit === "number" && Number.isFinite(options.limit)) {
+    return options.limit;
+  }
+  return readString(args, "limit") ?? readString(options, "limit");
+}
+
+function runMcpHealthAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  const healthOptions: Record<string, unknown> = { ...ctx.options };
+  if (healthOptions.brief === undefined && healthOptions.summary === undefined && healthOptions.full === undefined) {
+    healthOptions.summary = true;
+  }
+  return runHealth(ctx.global, healthOptions as never);
+}
+
+function runMcpConfigAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  const configAction =
+    readString(ctx.args, "configAction") ?? readString(ctx.options, "configAction") ?? readString(ctx.options, "action");
+  if (configAction === undefined) {
+    throw new PmCliError("Missing required argument: configAction", 64);
+  }
+  return runConfig(
+    readString(ctx.args, "scope") ?? readString(ctx.options, "scope") ?? "project",
+    configAction,
+    readString(ctx.args, "key") ?? readString(ctx.options, "key"),
+    ctx.options,
+    ctx.global,
+    readString(ctx.args, "value") ?? readString(ctx.options, "value"),
+  );
+}
+
+function runMcpActivityAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  const activityOptions = { ...ctx.options } as Parameters<typeof runActivity>[0] & { full?: unknown };
+  if (activityOptions.compact === undefined) {
+    activityOptions.compact = activityOptions.full === true ? false : true;
+  }
+  delete activityOptions.full;
+  return runActivity(activityOptions, ctx.global);
+}
+
+function runMcpHistoryRepairAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  const repairAll = ctx.options.all === true;
+  const repairId = ctx.id ?? readString(ctx.options, "id");
+  assertHistoryRepairTarget(repairId, repairAll);
+  return repairAll ? runHistoryRepairAll(ctx.options, ctx.global) : runHistoryRepair(repairId as string, ctx.options, ctx.global);
+}
+
+function parseMcpInteger(value: unknown, label: string): number | undefined {
+  if (typeof value === "number") {
+    if (!Number.isInteger(value)) {
+      throw new PmCliError(`${label} must be a finite integer.`, 64);
+    }
+    return value;
+  }
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed)) {
+      throw new PmCliError(`${label} must be a finite integer.`, 64);
+    }
+    return parsed;
+  }
+  return undefined;
+}
+
+function parseMcpIntegerPrefix(value: unknown, label: string): number | undefined {
+  if (typeof value === "number") {
+    const parsed = Number.parseInt(String(value), 10);
+    if (!Number.isInteger(parsed)) {
+      throw new PmCliError(`${label} must be a finite integer.`, 64);
+    }
+    return parsed;
+  }
+  if (typeof value === "string" && value.trim().length > 0) {
+    const trimmed = value.trim();
+    if (!/^[+-]?\d+(?:st|nd|rd|th)?$/i.test(trimmed)) {
+      throw new PmCliError(`${label} must be a finite integer.`, 64);
+    }
+    const parsed = Number.parseInt(trimmed, 10);
+    if (!Number.isInteger(parsed)) {
+      throw new PmCliError(`${label} must be a finite integer.`, 64);
+    }
+    return parsed;
+  }
+  return undefined;
+}
+
+function runMcpPlanAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  const subcommand = readRequiredString(ctx.options, "subcommand");
+  const planRecord = ctx.options as Record<string, unknown>;
+  return runPlan({
+    subcommand: subcommand as never,
+    id: typeof ctx.id === "string" ? ctx.id : typeof planRecord.id === "string" ? (planRecord.id as string) : undefined,
+    stepRef: readMcpPlanStepRef(ctx),
+    reorderTo: parseMcpIntegerPrefix(planRecord.reorderTo ?? ctx.args.reorderTo, "plan reorderTo"),
+    options: ctx.options as never,
+    global: ctx.global,
+  });
+}
+
+function readMcpPlanStepRef(ctx: McpActionDispatchContext): string | undefined {
+  return typeof ctx.options.stepRef === "string"
+    ? (ctx.options.stepRef as string)
+    : typeof ctx.args.stepRef === "string"
+      ? (ctx.args.stepRef as string)
+      : undefined;
+}
+
+interface McpSchemaContext {
+  ctx: McpActionDispatchContext;
+  subcommand: string;
+  name: string | undefined;
+  author: string | undefined;
+  force: boolean;
+  aliases: string[] | undefined;
+}
+
+function createMcpSchemaContext(ctx: McpActionDispatchContext): McpSchemaContext {
+  const subcommand = readString(ctx.args, "subcommand") ?? readRequiredString(ctx.options, "subcommand");
+  const aliasSource = ctx.args.alias ?? ctx.options.alias;
+  return {
+    ctx,
+    subcommand: subcommand.trim().toLowerCase(),
+    name: readString(ctx.args, "name") ?? readString(ctx.options, "name"),
+    author: readString(ctx.args, "author") ?? readString(ctx.options, "author"),
+    force: ctx.args.force === true || ctx.options.force === true,
+    aliases: aliasSource === undefined ? undefined : readStringArray(aliasSource),
+  };
+}
+
+function runMcpSchemaReadOrRemoveAction(schema: McpSchemaContext): Promise<unknown> | unknown | null {
+  const { ctx, subcommand, name, author, force } = schema;
+  const simpleHandlers: Record<string, () => Promise<unknown> | unknown> = {
+    list: () => runSchemaList(ctx.global),
+    show: () => runSchemaShow(name, ctx.global),
+    "show-status": () => runSchemaShowStatus(name, ctx.global),
+    "list-fields": () => runSchemaListFields(ctx.global),
+    "show-field": () => runSchemaShowField(name, ctx.global),
+    "remove-type": () => runSchemaRemoveType(name, { author, force }, ctx.global),
+    "remove-field": () => runSchemaRemoveField(name, { author, force }, ctx.global),
+    "remove-status": () => runSchemaRemoveStatus(name, { author, force }, ctx.global),
+    "apply-preset": () =>
+      runSchemaApplyPreset(readString(ctx.args, "typePreset") ?? readString(ctx.options, "typePreset"), { author, force }, ctx.global),
+  };
+  const handler = getOwnHandler(simpleHandlers, subcommand);
+  return handler ? handler() : null;
+}
+
+function runMcpSchemaAddFieldAction(schema: McpSchemaContext): Promise<unknown> {
+  const { ctx, name, author, force, aliases } = schema;
+  const commandsSource = ctx.args.commands ?? ctx.options.commands;
+  const requiredTypesSource = ctx.args.requiredTypes ?? ctx.options.requiredTypes;
+  return runSchemaAddField(
+    name,
+    {
+      type: readString(ctx.args, "fieldType") ?? readString(ctx.options, "fieldType"),
+      commands: commandsSource === undefined ? undefined : readStringArray(commandsSource),
+      description: readString(ctx.args, "description") ?? readString(ctx.options, "description"),
+      cliFlag: readString(ctx.args, "cliFlag") ?? readString(ctx.options, "cliFlag"),
+      alias: aliases,
+      required: ctx.args.required === true || ctx.options.required === true,
+      requiredOnCreate: ctx.args.requiredOnCreate === true || ctx.options.requiredOnCreate === true,
+      allowUnset: !(ctx.args.allowUnset === false || ctx.options.allowUnset === false),
+      requiredTypes: requiredTypesSource === undefined ? undefined : readStringArray(requiredTypesSource),
+      author,
+      force,
+    },
+    ctx.global,
+  );
+}
+
+function runMcpSchemaAddStatusAction(schema: McpSchemaContext): Promise<unknown> {
+  const { ctx, name, author, force, aliases } = schema;
+  const roleSource = ctx.args.role ?? ctx.options.role;
+  return runSchemaAddStatus(
+    name,
+    {
+      role: roleSource === undefined ? undefined : readStringArray(roleSource),
+      alias: aliases,
+      description: readString(ctx.args, "description") ?? readString(ctx.options, "description"),
+      order: parseMcpInteger(ctx.args.order ?? ctx.options.order, "schema add-status order"),
+      author,
+      force,
+    },
+    ctx.global,
+  );
+}
+
+function runMcpSchemaAddTypeAction(schema: McpSchemaContext): Promise<unknown> {
+  const { ctx, name, author, force, aliases } = schema;
+  return runSchemaAddType(
+    name,
+    {
+      description: readString(ctx.args, "description") ?? readString(ctx.options, "description"),
+      defaultStatus:
+        readString(ctx.args, "defaultStatus") ??
+        readString(ctx.args, "default_status") ??
+        readString(ctx.options, "defaultStatus") ??
+        readString(ctx.options, "default_status"),
+      folder: readString(ctx.args, "folder") ?? readString(ctx.options, "folder"),
+      alias: aliases,
+      author,
+      force,
+    },
+    ctx.global,
+  );
+}
+
+function runMcpSchemaAction(ctx: McpActionDispatchContext): Promise<unknown> | unknown {
+  const schema = createMcpSchemaContext(ctx);
+  const simpleResult = runMcpSchemaReadOrRemoveAction(schema);
+  if (simpleResult !== null) {
+    return simpleResult;
+  }
+  if (schema.subcommand === "add-field") {
+    return runMcpSchemaAddFieldAction(schema);
+  }
+  if (schema.subcommand === "add-status") {
+    return runMcpSchemaAddStatusAction(schema);
+  }
+  if (schema.subcommand === "add-type") {
+    if (ctx.args.infer === true || ctx.options.infer === true) {
+      return runSchemaInferTypes(
+        {
+          minCount: parseMcpInteger(ctx.args.minCount ?? ctx.options.minCount, "schema infer minCount"),
+          apply: ctx.args.apply === true || ctx.options.apply === true,
+          author: schema.author,
+          force: schema.force,
+        },
+        ctx.global,
+      );
+    }
+    return runMcpSchemaAddTypeAction(schema);
+  }
+  throw new PmCliError(
+    `Unknown pm schema subcommand "${schema.subcommand}". Allowed: add-type, remove-type, add-status, remove-status, add-field, remove-field, list-fields, show-field, apply-preset, list, show, show-status`,
+    64,
+  );
+}
+
+function runMcpProfileAction(ctx: McpActionDispatchContext): Promise<unknown> | unknown {
+  const subcommand = readString(ctx.args, "subcommand") ?? readRequiredString(ctx.options, "subcommand");
+  const normalizedSubcommand = subcommand.trim().toLowerCase();
+  const profileName = readString(ctx.args, "name") ?? readString(ctx.options, "name");
+  const handlers: Record<string, () => Promise<unknown> | unknown> = {
+    list: () => runProfileList(),
+    show: () => runProfileShow(profileName),
+    lint: () => runProfileLint(profileName),
+    apply: () =>
+      runProfileApply(
+        profileName,
+        {
+          dryRun: ctx.args.dryRun === true || ctx.options.dryRun === true,
+          author: readString(ctx.args, "author") ?? readString(ctx.options, "author"),
+          force: ctx.args.force === true || ctx.options.force === true,
+        },
+        ctx.global,
+      ),
+  };
+  const handler = getOwnHandler(handlers, normalizedSubcommand);
+  if (!handler) {
+    throw new PmCliError(`Unknown pm profile subcommand "${subcommand}". Allowed: list, show, apply, lint`, 64);
+  }
+  return handler();
+}
+
+function runMcpStatsAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  return runStats(ctx.global, {
+    storage: ctx.options.storage === true,
+    metadataCoverage: ctx.options.metadataCoverage === true,
+    fieldUtilization: ctx.options.fieldUtilization === true,
+    byAssignee: ctx.options.byAssignee === true,
+    byTag: ctx.options.byTag === true,
+    byPriority: ctx.options.byPriority === true,
+    tagPrefix: typeof ctx.options.tagPrefix === "string" ? ctx.options.tagPrefix : undefined,
+  });
+}
+
+async function runMcpAppendAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  const { changedFields, runnerOptions } = withMutationCompaction(ctx.args, ctx.options);
+  return projectMutationResult(await runAppend(requireMcpItemId(ctx, runnerOptions), runnerOptions as never, ctx.global), {
+    changedFields,
+  });
+}
+
+async function runMcpUpdateManyAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  const { changedFields, runnerOptions } = withMutationCompaction(ctx.args, ctx.options);
+  return projectMutationResult(await runUpdateMany(updateManyOptionsFromFlat(runnerOptions), ctx.global), { changedFields });
+}
+
+async function runMcpCloseManyAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  const { changedFields, runnerOptions } = withMutationCompaction(ctx.args, ctx.options);
+  const topLevelReason = readString(ctx.args, "reason");
+  const closeManyRunnerOptions: Record<string, unknown> =
+    topLevelReason !== undefined && runnerOptions.reason === undefined
+      ? { ...runnerOptions, reason: topLevelReason }
+      : { ...runnerOptions };
+  if (ctx.force && closeManyRunnerOptions.force === undefined) {
+    closeManyRunnerOptions.force = true;
+  }
+  return projectMutationResult(await runCloseMany(closeManyOptionsFromFlat(closeManyRunnerOptions), ctx.global), { changedFields });
+}
+
+const MCP_ACTION_HANDLERS: Record<string, McpActionHandler> = {
+  init: (ctx) => runInit(readString(ctx.args, "prefix"), ctx.global, ctx.options),
+  context: (ctx) => runContext(ctx.options, ctx.global),
+  next: (ctx) => runNext(ctx.options, ctx.global),
+  list: runMcpListAction,
+  get: (ctx) => runGet(requireMcpItemId(ctx), ctx.global, ctx.options),
+  search: runMcpSearchAction,
+  create: runMcpCreateAction,
+  copy: runMcpCopyAction,
+  focus: (ctx) => runFocus(ctx.id, { clear: ctx.options.clear === true || ctx.args.clear === true }, ctx.global),
+  update: runMcpUpdateAction,
+  claim: (ctx) => runClaim(requireMcpItemId(ctx), ctx.force, ctx.global, ctx.options),
+  release: (ctx) => runRelease(requireMcpItemId(ctx), ctx.force, ctx.global, ctx.options),
+  close: runMcpCloseAction,
+  comments: runMcpCommentsAction,
+  notes: (ctx) => runNotes(requireMcpItemId(ctx), ctx.options, ctx.global),
+  learnings: (ctx) => runLearnings(requireMcpItemId(ctx), ctx.options, ctx.global),
+  files: runMcpFilesAction,
+  docs: (ctx) => runDocs(requireMcpItemId(ctx), withAddNoteOption(ctx.options), ctx.global),
+  test: (ctx) => runTest(requireMcpItemId(ctx), ctx.options, ctx.global),
+  "test-all": (ctx) => runTestAll(ctx.options, ctx.global),
+  telemetry: runMcpTelemetryAction,
+  validate: (ctx) => runValidate(ctx.options, ctx.global),
+  health: runMcpHealthAction,
+  contracts: (ctx) => runContracts(ctx.options, ctx.global),
+  config: runMcpConfigAction,
+  activity: runMcpActivityAction,
+  aggregate: (ctx) => runAggregate(ctx.options, ctx.global),
+  extension: (ctx) => runExtension(readMcpTarget(ctx), ctx.options, ctx.global),
+  "extension-reload": (ctx) => runExtension(undefined, { ...ctx.options, reload: true }, ctx.global),
+  package: (ctx) => runExtension(readMcpTarget(ctx), ctx.options, ctx.global),
+  "package-install": (ctx) => runExtension(readMcpTarget(ctx), { ...ctx.options, install: true }, ctx.global),
+  install: (ctx) => runExtension(readMcpTarget(ctx), { ...ctx.options, install: true }, ctx.global),
+  "package-catalog": (ctx) => runExtension(undefined, { ...ctx.options, catalog: true, vocabulary: "package" }, ctx.global),
+  upgrade: (ctx) => runUpgrade(readMcpTarget(ctx), ctx.options, ctx.global),
+  delete: (ctx) => runDelete(requireMcpItemId(ctx), ctx.options, ctx.global),
+  deps: (ctx) => runDeps(requireMcpItemId(ctx), ctx.options, ctx.global),
+  "files-discover": (ctx) => runFilesDiscover(requireMcpItemId(ctx), ctx.options, ctx.global),
+  history: (ctx) => runHistory(requireMcpItemId(ctx), ctx.options, ctx.global),
+  "history-redact": (ctx) => runHistoryRedact(requireMcpItemId(ctx), ctx.options, ctx.global),
+  "history-repair": runMcpHistoryRepairAction,
+  "history-compact": (ctx) => runHistoryCompact(requireMcpItemId(ctx), ctx.options, ctx.global),
+  plan: runMcpPlanAction,
+  schema: runMcpSchemaAction,
+  profile: runMcpProfileAction,
+  stats: runMcpStatsAction,
+  append: runMcpAppendAction,
+  "update-many": runMcpUpdateManyAction,
+  "close-many": runMcpCloseManyAction,
+  gc: (ctx) => runGc(ctx.global, ctx.options),
+};
+
 async function dispatchAction(
   action: string,
   args: Record<string, unknown>,
@@ -761,449 +1244,17 @@ async function dispatchAction(
   activeExtensions: ActiveExtensionRuntime | null,
 ): Promise<unknown> {
   const options = optionsWithAuthor(args, action);
-  const id = readString(args, "id");
-  const force = args.force === true;
-
-  switch (action) {
-    case "init":
-      return runInit(readString(args, "prefix"), global, options);
-    case "context":
-      return runContext(options, global);
-    case "next":
-      return runNext(options, global);
-    case "list": {
-      const listOptions: Record<string, unknown> = { ...options };
-      if (
-        listOptions.compact === undefined &&
-        listOptions.brief === undefined &&
-        listOptions.fields === undefined &&
-        listOptions.includeBody === undefined
-      ) {
-        listOptions.compact = true;
-      }
-      // pm-rmjy: echo the applied filters + resolved projection mode so agents
-      // get structured confirmation of what the server actually ran.
-      return withQuerySummary(
-        (await runList(readString(args, "status"), listOptions as never, global)) as unknown as Record<string, unknown>,
-        listOptions,
-      );
-    }
-    case "get":
-      return runGet(id ?? readRequiredString(options, "id"), global, options);
-    case "search": {
-      const searchOptions: Parameters<typeof runSearch>[1] = { ...options };
-      if (
-        searchOptions.compact === undefined &&
-        searchOptions.full === undefined &&
-        searchOptions.fields === undefined
-      ) {
-        searchOptions.compact = true;
-      }
-      // pm-rmjy: echo the applied filters + resolved projection mode (see list).
-      return withQuerySummary(
-        (await runSearch(readRequiredString(args, "query"), searchOptions, global)) as unknown as Record<string, unknown>,
-        searchOptions as Record<string, unknown>,
-      );
-    }
-    case "create": {
-      const { changedFields, idOnly, runnerOptions } = withMutationCompaction(args, options);
-      return projectMutationResult(await runCreate(runnerOptions as never, global), { changedFields, idOnly });
-    }
-    case "copy": {
-      const { changedFields, idOnly, runnerOptions } = withMutationCompaction(args, options);
-      const copyOptions: Record<string, unknown> = {
-        ...runnerOptions,
-        ...(runnerOptions.title === undefined && typeof args.title === "string" ? { title: args.title } : {}),
-        ...(runnerOptions.message === undefined && typeof args.message === "string" ? { message: args.message } : {}),
-      };
-      return projectMutationResult(
-        await runCopy(
-          id ?? readRequiredString(copyOptions, "id"),
-          copyOptions as never,
-          global,
-        ),
-        { changedFields, idOnly },
-      );
-    }
-    case "focus": {
-      const clear = options.clear === true || args.clear === true;
-      return runFocus(id, { clear }, global);
-    }
-    case "update": {
-      const { changedFields, idOnly, runnerOptions } = withMutationCompaction(args, options);
-      return projectMutationResult(
-        await runUpdate(id ?? readRequiredString(runnerOptions, "id"), runnerOptions as never, global),
-        { changedFields, idOnly },
-      );
-    }
-    case "claim":
-      return runClaim(id ?? readRequiredString(options, "id"), force, global, options);
-    case "release":
-      return runRelease(id ?? readRequiredString(options, "id"), force, global, options);
-    case "close": {
-      const { changedFields, idOnly, runnerOptions } = withMutationCompaction(args, options);
-      const closeReason =
-        readString(args, "reason") ??
-        readString(args, "text") ??
-        readString(runnerOptions, "reason") ??
-        readString(runnerOptions, "text");
-      return projectMutationResult(
-        await runClose(
-          id ?? readRequiredString(runnerOptions, "id"),
-          closeReason,
-          runnerOptions as never,
-          global,
-        ),
-        { changedFields, idOnly },
-      );
-    }
-    case "comments": {
-      const commentOptions: Record<string, unknown> = { ...options };
-      const isListing =
-        commentOptions.add === undefined &&
-        commentOptions.stdin === undefined &&
-        commentOptions.file === undefined &&
-        commentOptions.edit === undefined &&
-        commentOptions.delete === undefined;
-      if (isListing) {
-        commentOptions.includeMeta = true;
-        if (commentOptions.limit === undefined && commentOptions.full !== true) {
-          commentOptions.limit = "20";
-        }
-      }
-      delete commentOptions.full;
-      return runComments(id ?? readRequiredString(options, "id"), commentOptions, global);
-    }
-    case "notes":
-      return runNotes(id ?? readRequiredString(options, "id"), options, global);
-    case "learnings":
-      return runLearnings(id ?? readRequiredString(options, "id"), options, global);
-    case "files": {
-      const fileId = id ?? readRequiredString(options, "id");
-      if (options.discover === true) {
-        return runFilesDiscover(fileId, withFilesDiscoveryOptions(options), global);
-      }
-      return runFiles(fileId, withAddNoteOption(options), global);
-    }
-    case "docs":
-      return runDocs(id ?? readRequiredString(options, "id"), withAddNoteOption(options), global);
-    case "test":
-      return runTest(id ?? readRequiredString(options, "id"), options, global);
-    case "test-all":
-      return runTestAll(options, global);
-    case "telemetry":
-      return runTelemetry(
-        {
-          subcommand: readString(args, "subcommand") ?? readString(options, "subcommand"),
-          limit:
-            typeof args.limit === "number" && Number.isFinite(args.limit)
-              ? args.limit
-              : typeof options.limit === "number" && Number.isFinite(options.limit)
-                ? options.limit
-              : readString(args, "limit") ?? readString(options, "limit"),
-        },
-        global,
-      );
-    case "validate":
-      return runValidate(options, global);
-    case "health": {
-      // Default to the compact `summary` projection for agents (ok + per-check
-      // status + warning samples; ~22x smaller than the full payload). Callers
-      // opt into detail with brief/summary/full or the deep remediation payload
-      // via full=true. Mirrors the compact-by-default list/search behavior (F2).
-      const healthOptions: Record<string, unknown> = { ...options };
-      if (
-        healthOptions.brief === undefined &&
-        healthOptions.summary === undefined &&
-        healthOptions.full === undefined
-      ) {
-        healthOptions.summary = true;
-      }
-      return runHealth(global, healthOptions as never);
-    }
-    case "contracts":
-      return runContracts(options, global);
-    case "config": {
-      // pm-v68d: the narrow pm_config tool declares configAction top-level;
-      // options.configAction/options.action remain accepted for pm_run parity.
-      const configAction =
-        readString(args, "configAction") ?? readString(options, "configAction") ?? readString(options, "action");
-      if (configAction === undefined) {
-        throw new PmCliError("Missing required argument: configAction", 64);
-      }
-      return runConfig(
-        readString(args, "scope") ?? readString(options, "scope") ?? "project",
-        configAction,
-        readString(args, "key") ?? readString(options, "key"),
-        options,
-        global,
-        readString(args, "value") ?? readString(options, "value"),
-      );
-    }
-    case "activity": {
-      const activityOptions = { ...options } as Parameters<typeof runActivity>[0] & { full?: unknown };
-      if (activityOptions.compact === undefined) {
-        activityOptions.compact = activityOptions.full === true ? false : true;
-      }
-      delete activityOptions.full;
-      return runActivity(activityOptions, global);
-    }
-    case "aggregate":
-      return runAggregate(options, global);
-    case "extension":
-      return runExtension(readString(args, "target") ?? readString(options, "target"), options, global);
-    case "extension-reload":
-      return runExtension(undefined, { ...options, reload: true }, global);
-    case "package":
-      return runExtension(readString(args, "target") ?? readString(options, "target"), options, global);
-    case "package-install":
-    case "install":
-      return runExtension(readString(args, "target") ?? readString(options, "target"), { ...options, install: true }, global);
-    case "package-catalog":
-      return runExtension(undefined, { ...options, catalog: true, vocabulary: "package" }, global);
-    case "upgrade":
-      return runUpgrade(readString(args, "target") ?? readString(options, "target"), options, global);
-    case "delete":
-      return runDelete(id ?? readRequiredString(options, "id"), options, global);
-    case "deps":
-      return runDeps(id ?? readRequiredString(options, "id"), options, global);
-    case "files-discover":
-      return runFilesDiscover(id ?? readRequiredString(options, "id"), options, global);
-    case "history":
-      return runHistory(id ?? readRequiredString(options, "id"), options, global);
-    case "history-redact":
-      return runHistoryRedact(id ?? readRequiredString(options, "id"), options, global);
-    case "history-repair": {
-      const repairAll = options.all === true;
-      const repairId = id ?? readString(options, "id");
-      assertHistoryRepairTarget(repairId, repairAll);
-      return repairAll ? runHistoryRepairAll(options, global) : runHistoryRepair(repairId as string, options, global);
-    }
-    case "history-compact":
-      return runHistoryCompact(id ?? readRequiredString(options, "id"), options, global);
-    case "plan": {
-      const subcommand = readRequiredString(options, "subcommand");
-      const planRecord = options as Record<string, unknown>;
-      const reorderToken = planRecord.reorderTo ?? args.reorderTo;
-      const reorderTo =
-        typeof reorderToken === "number" && Number.isFinite(reorderToken)
-          ? reorderToken
-          : typeof reorderToken === "string" && reorderToken.trim().length > 0
-            ? Number.parseInt(reorderToken, 10)
-            : undefined;
-      const stepRef = typeof planRecord.stepRef === "string"
-        ? (planRecord.stepRef as string)
-        : typeof args.stepRef === "string"
-          ? (args.stepRef as string)
-          : undefined;
-      return runPlan({
-        subcommand: subcommand as never,
-        id: typeof id === "string" ? id : typeof planRecord.id === "string" ? (planRecord.id as string) : undefined,
-        stepRef,
-        reorderTo,
-        options: options as never,
-        global,
-      });
-    }
-    case "schema": {
-      // subcommand/name are top-level fields in the published action contract,
-      // so accept them from args first and fall back to options for parity.
-      const subcommand = readString(args, "subcommand") ?? readRequiredString(options, "subcommand");
-      const normalizedSubcommand = subcommand.trim().toLowerCase();
-      const schemaName = readString(args, "name") ?? readString(options, "name");
-      const schemaAuthor = readString(args, "author") ?? readString(options, "author");
-      const schemaForce = args.force === true || options.force === true;
-      if (normalizedSubcommand === "list") {
-        return runSchemaList(global);
-      }
-      if (normalizedSubcommand === "show") {
-        return runSchemaShow(schemaName, global);
-      }
-      if (normalizedSubcommand === "show-status") {
-        return runSchemaShowStatus(schemaName, global);
-      }
-      if (normalizedSubcommand === "list-fields") {
-        return runSchemaListFields(global);
-      }
-      if (normalizedSubcommand === "show-field") {
-        return runSchemaShowField(schemaName, global);
-      }
-      if (normalizedSubcommand === "remove-type") {
-        return runSchemaRemoveType(schemaName, { author: schemaAuthor, force: schemaForce }, global);
-      }
-      if (normalizedSubcommand === "remove-field") {
-        return runSchemaRemoveField(schemaName, { author: schemaAuthor, force: schemaForce }, global);
-      }
-      if (normalizedSubcommand === "apply-preset") {
-        const presetSource = readString(args, "typePreset") ?? readString(options, "typePreset");
-        return runSchemaApplyPreset(presetSource, { author: schemaAuthor, force: schemaForce }, global);
-      }
-      const aliasSource = args.alias ?? options.alias;
-      const aliases = aliasSource === undefined ? undefined : readStringArray(aliasSource);
-      if (normalizedSubcommand === "add-field") {
-        const commandsSource = args.commands ?? options.commands;
-        const commands = commandsSource === undefined ? undefined : readStringArray(commandsSource);
-        const requiredTypesSource = args.requiredTypes ?? options.requiredTypes;
-        const requiredTypes = requiredTypesSource === undefined ? undefined : readStringArray(requiredTypesSource);
-        return runSchemaAddField(
-          schemaName,
-          {
-            type: readString(args, "fieldType") ?? readString(options, "fieldType"),
-            commands,
-            description: readString(args, "description") ?? readString(options, "description"),
-            cliFlag: readString(args, "cliFlag") ?? readString(options, "cliFlag"),
-            alias: aliases,
-            required: args.required === true || options.required === true,
-            requiredOnCreate: args.requiredOnCreate === true || options.requiredOnCreate === true,
-            // allow_unset defaults true; only an explicit false disables it.
-            allowUnset: !(args.allowUnset === false || options.allowUnset === false),
-            requiredTypes,
-            author: schemaAuthor,
-            force: schemaForce,
-          },
-          global,
-        );
-      }
-      if (normalizedSubcommand === "add-status") {
-        const roleSource = args.role ?? options.role;
-        const roles = roleSource === undefined ? undefined : readStringArray(roleSource);
-        const orderSource = args.order ?? options.order;
-        let order: number | undefined;
-        if (typeof orderSource === "number") {
-          if (!Number.isInteger(orderSource)) {
-            throw new PmCliError("schema add-status order must be a finite integer.", 64);
-          }
-          order = orderSource;
-        } else if (typeof orderSource === "string" && orderSource.trim().length > 0) {
-          const parsed = Number(orderSource);
-          if (!Number.isInteger(parsed)) {
-            throw new PmCliError("schema add-status order must be a finite integer.", 64);
-          }
-          order = parsed;
-        }
-        return runSchemaAddStatus(
-          schemaName,
-          {
-            role: roles,
-            alias: aliases,
-            description: readString(args, "description") ?? readString(options, "description"),
-            order,
-            author: schemaAuthor,
-            force: schemaForce,
-          },
-          global,
-        );
-      }
-      if (normalizedSubcommand === "remove-status") {
-        return runSchemaRemoveStatus(schemaName, { author: schemaAuthor, force: schemaForce }, global);
-      }
-      if (normalizedSubcommand !== "add-type") {
-        throw new PmCliError(
-          `Unknown pm schema subcommand "${subcommand}". Allowed: add-type, remove-type, add-status, remove-status, add-field, remove-field, list-fields, show-field, apply-preset, list, show, show-status`,
-          64,
-        );
-      }
-      if (args.infer === true || options.infer === true) {
-        const minCountSource = args.minCount ?? options.minCount;
-        const minCount =
-          typeof minCountSource === "number"
-            ? minCountSource
-            : typeof minCountSource === "string" && minCountSource.trim().length > 0
-              ? Number(minCountSource)
-              : undefined;
-        return runSchemaInferTypes(
-          {
-            minCount,
-            apply: args.apply === true || options.apply === true,
-            author: schemaAuthor,
-            force: schemaForce,
-          },
-          global,
-        );
-      }
-      return runSchemaAddType(
-        schemaName,
-        {
-          description: readString(args, "description") ?? readString(options, "description"),
-          defaultStatus:
-            readString(args, "defaultStatus") ??
-            readString(args, "default_status") ??
-            readString(options, "defaultStatus") ??
-            readString(options, "default_status"),
-          folder: readString(args, "folder") ?? readString(options, "folder"),
-          alias: aliases,
-          author: schemaAuthor,
-          force: schemaForce,
-        },
-        global,
-      );
-    }
-    case "profile": {
-      // subcommand/name are top-level fields in the published action contract,
-      // so accept them from args first and fall back to options for parity.
-      const subcommand = readString(args, "subcommand") ?? readRequiredString(options, "subcommand");
-      const normalizedSubcommand = subcommand.trim().toLowerCase();
-      const profileName = readString(args, "name") ?? readString(options, "name");
-      if (normalizedSubcommand === "list") {
-        return runProfileList();
-      }
-      if (normalizedSubcommand === "show") {
-        return runProfileShow(profileName);
-      }
-      if (normalizedSubcommand === "lint") {
-        return runProfileLint(profileName);
-      }
-      if (normalizedSubcommand === "apply") {
-        return runProfileApply(
-          profileName,
-          {
-            dryRun: args.dryRun === true || options.dryRun === true,
-            author: readString(args, "author") ?? readString(options, "author"),
-            force: args.force === true || options.force === true,
-          },
-          global,
-        );
-      }
-      throw new PmCliError(`Unknown pm profile subcommand "${subcommand}". Allowed: list, show, apply, lint`, 64);
-    }
-    case "stats":
-      return runStats(global, {
-        storage: options.storage === true,
-        metadataCoverage: options.metadataCoverage === true,
-        fieldUtilization: options.fieldUtilization === true,
-        byAssignee: options.byAssignee === true,
-        byTag: options.byTag === true,
-        byPriority: options.byPriority === true,
-        tagPrefix: typeof options.tagPrefix === "string" ? options.tagPrefix : undefined,
-      });
-    case "append": {
-      const { changedFields, runnerOptions } = withMutationCompaction(args, options);
-      return projectMutationResult(
-        await runAppend(id ?? readRequiredString(runnerOptions, "id"), runnerOptions as never, global),
-        { changedFields },
-      );
-    }
-    case "update-many": {
-      const { changedFields, runnerOptions } = withMutationCompaction(args, options);
-      return projectMutationResult(await runUpdateMany(updateManyOptionsFromFlat(runnerOptions), global), { changedFields });
-    }
-    case "close-many": {
-      const { changedFields, runnerOptions } = withMutationCompaction(args, options);
-      const topLevelReason = readString(args, "reason");
-      const closeManyRunnerOptions: Record<string, unknown> =
-        topLevelReason !== undefined && runnerOptions.reason === undefined
-          ? { ...runnerOptions, reason: topLevelReason }
-          : { ...runnerOptions };
-      if (force && closeManyRunnerOptions.force === undefined) {
-        closeManyRunnerOptions.force = true;
-      }
-      return projectMutationResult(await runCloseMany(closeManyOptionsFromFlat(closeManyRunnerOptions), global), { changedFields });
-    }
-    case "gc":
-      return runGc(global, options);
-    default:
-      return dispatchActiveExtensionAction(action, args, options, global, activeExtensions);
-  }
+  const ctx: McpActionDispatchContext = {
+    action,
+    args,
+    options,
+    id: readString(args, "id"),
+    force: args.force === true,
+    global,
+    activeExtensions,
+  };
+  const handler = getOwnHandler(MCP_ACTION_HANDLERS, action);
+  return handler ? handler(ctx) : dispatchActiveExtensionAction(action, args, options, global, activeExtensions);
 }
 
 const HANDLERS: Record<string, ToolHandler> = {
@@ -1303,7 +1354,7 @@ export async function handleRequest(request: JsonRpcRequest): Promise<Record<str
   if (request.method === "tools/call") {
     const params = asRecordClone(request.params);
     const name = readRequiredString(params, "name");
-    const handler = HANDLERS[name];
+    const handler = getOwnHandler(HANDLERS, name);
     if (!handler) {
       throw new PmCliError(`Unknown pm MCP tool: ${name}`, 64);
     }

@@ -675,47 +675,71 @@ function buildUnknownLifecycleActionError(target: string, options: ExtensionComm
   );
 }
 
+// Maps each boolean action flag to the lifecycle action it selects. `scaffold`
+// aliases `init` and `adoptAll` selects `adopt-all`; every other flag maps to its
+// like-named action. Dispatching through the table keeps `resolveAction` flat.
+const EXTENSION_ACTION_FLAG_SELECTORS = [
+  ["install", "install"],
+  ["uninstall", "uninstall"],
+  ["explore", "explore"],
+  ["manage", "manage"],
+  ["describe", "describe"],
+  ["reload", "reload"],
+  ["doctor", "doctor"],
+  ["catalog", "catalog"],
+  ["init", "init"],
+  ["scaffold", "init"],
+  ["adopt", "adopt"],
+  ["adoptAll", "adopt-all"],
+  ["activate", "activate"],
+  ["deactivate", "deactivate"],
+] as const satisfies readonly (readonly [keyof ExtensionCommandOptions, ExtensionCommandAction])[];
+
+/**
+ * Map a bare positional token (already trimmed and lower-cased) to the lifecycle
+ * action it implies for `pm extension <token>` / `pm package <token>`: the
+ * `doctor`/`reload`/`catalog`/`init`/`scaffold`/`explore`/`manage` keywords, with
+ * `list` and the empty string both meaning `explore`. Returns `null` for anything
+ * else so the caller can raise a did-you-mean error.
+ */
+function resolveImplicitActionFromTarget(normalizedTarget: string): ExtensionCommandAction | null {
+  if (normalizedTarget === "doctor") {
+    return "doctor";
+  }
+  if (normalizedTarget === "reload") {
+    return "reload";
+  }
+  if (normalizedTarget === "catalog") {
+    return "catalog";
+  }
+  if (normalizedTarget === "init" || normalizedTarget === "scaffold") {
+    return "init";
+  }
+  if (normalizedTarget === "explore") {
+    return "explore";
+  }
+  if (normalizedTarget === "manage") {
+    return "manage";
+  }
+  if (normalizedTarget === "list" || normalizedTarget === "") {
+    return "explore";
+  }
+  return null;
+}
+
 function resolveAction(target: string | undefined, options: ExtensionCommandOptions): ExtensionCommandAction {
-  const selected = [...new Set([
-    options.install ? "install" : null,
-    options.uninstall ? "uninstall" : null,
-    options.explore ? "explore" : null,
-    options.manage ? "manage" : null,
-    options.describe ? "describe" : null,
-    options.reload ? "reload" : null,
-    options.doctor ? "doctor" : null,
-    options.catalog ? "catalog" : null,
-    options.init ? "init" : null,
-    options.scaffold ? "init" : null,
-    options.adopt ? "adopt" : null,
-    options.adoptAll ? "adopt-all" : null,
-    options.activate ? "activate" : null,
-    options.deactivate ? "deactivate" : null,
-  ].filter((value): value is ExtensionCommandAction => value !== null))];
+  const selected = [
+    ...new Set(
+      EXTENSION_ACTION_FLAG_SELECTORS.filter(([flag]) => options[flag] === true).map(([, mappedAction]) => mappedAction),
+    ),
+  ];
   if (selected.length === 0) {
-    if (typeof target === "string" && target.trim().toLowerCase() === "doctor") {
-      return "doctor";
-    }
-    if (typeof target === "string" && target.trim().toLowerCase() === "reload") {
-      return "reload";
-    }
-    if (typeof target === "string" && target.trim().toLowerCase() === "catalog") {
-      return "catalog";
-    }
-    if (typeof target === "string" && (target.trim().toLowerCase() === "init" || target.trim().toLowerCase() === "scaffold")) {
-      return "init";
-    }
-    if (typeof target === "string" && target.trim().toLowerCase() === "explore") {
-      return "explore";
-    }
-    if (typeof target === "string" && target.trim().toLowerCase() === "manage") {
-      return "manage";
-    }
-    if (typeof target === "string" && (target.trim().toLowerCase() === "list" || target.trim() === "")) {
-      return "explore";
-    }
     if (target === undefined) {
       return "explore";
+    }
+    const implicitAction = resolveImplicitActionFromTarget(target.trim().toLowerCase());
+    if (implicitAction) {
+      return implicitAction;
     }
     throw buildUnknownLifecycleActionError(target, options);
   }
@@ -777,6 +801,40 @@ function resolveUpdateCheckResolution(managedEntry: ManagedExtensionRecord | und
   };
 }
 
+/**
+ * Assemble a {@link ManagedExtensionSummary} from a directory's resolved identity
+ * (name/version/entry/enabled state) and its managed-state record, projecting the
+ * managed-source provenance and the resolved update-check status. Runtime
+ * activation fields default to "not yet probed" (`runtime_active: null`,
+ * `activation_status: "unknown"`) so a later runtime probe can overlay live state.
+ */
+function buildInstalledExtensionSummary(
+  identity: { name: string; directory: string; version: string; entry: string; enabled: boolean },
+  scope: ExtensionScope,
+  managedEntry: ManagedExtensionRecord | undefined,
+  updateCheck: ExtensionUpdateCheckResolution,
+): ManagedExtensionSummary {
+  return {
+    name: identity.name,
+    directory: identity.directory,
+    version: identity.version,
+    entry: identity.entry,
+    scope,
+    active: identity.enabled,
+    enabled: identity.enabled,
+    runtime_active: null,
+    activation_status: "unknown",
+    managed: Boolean(managedEntry),
+    source: managedEntry?.source,
+    update_available: managedEntry?.update_available,
+    last_update_check_at: managedEntry?.last_update_check_at,
+    last_update_remote_commit: managedEntry?.last_update_remote_commit,
+    update_error: managedEntry?.update_error,
+    update_check_status: updateCheck.status,
+    update_check_reason: updateCheck.reason,
+  };
+}
+
 async function listInstalledExtensions(
   extensionsRoot: string,
   scope: ExtensionScope,
@@ -811,27 +869,20 @@ async function listInstalledExtensions(
     if (!(await pathExists(manifestPath))) {
       warnings.push(`extension_manifest_missing:${scope}:${directoryName}`);
       const managedEntry = managedByDirectory.get(normalizeExtensionNameForMatch(directoryName));
-      const updateCheck = resolveUpdateCheckResolution(managedEntry);
-      const enabled = managedEntry ? isExtensionEnabled(settings, managedEntry.name) : false;
-      summaries.push({
-        name: managedEntry?.name ?? directoryName,
-        directory: directoryName,
-        version: managedEntry?.manifest_version ?? "unknown",
-        entry: managedEntry?.manifest_entry ?? "unknown",
-        scope,
-        active: enabled,
-        enabled,
-        runtime_active: null,
-        activation_status: "unknown",
-        managed: Boolean(managedEntry),
-        source: managedEntry?.source,
-        update_available: managedEntry?.update_available,
-        last_update_check_at: managedEntry?.last_update_check_at,
-        last_update_remote_commit: managedEntry?.last_update_remote_commit,
-        update_error: managedEntry?.update_error,
-        update_check_status: updateCheck.status,
-        update_check_reason: updateCheck.reason,
-      });
+      summaries.push(
+        buildInstalledExtensionSummary(
+          {
+            name: managedEntry?.name ?? directoryName,
+            directory: directoryName,
+            version: managedEntry?.manifest_version ?? "unknown",
+            entry: managedEntry?.manifest_entry ?? "unknown",
+            enabled: managedEntry ? isExtensionEnabled(settings, managedEntry.name) : false,
+          },
+          scope,
+          managedEntry,
+          resolveUpdateCheckResolution(managedEntry),
+        ),
+      );
       continue;
     }
 
@@ -850,27 +901,20 @@ async function listInstalledExtensions(
     const managedEntry =
       managedByName.get(normalizeExtensionNameForMatch(manifest.name)) ??
       managedByDirectory.get(normalizeExtensionNameForMatch(directoryName));
-    const updateCheck = resolveUpdateCheckResolution(managedEntry);
-    const enabled = isExtensionEnabled(settings, manifest.name);
-    summaries.push({
-      name: manifest.name,
-      directory: directoryName,
-      version: manifest.version,
-      entry: manifest.entry,
-      scope,
-      active: enabled,
-      enabled,
-      runtime_active: null,
-      activation_status: "unknown",
-      managed: Boolean(managedEntry),
-      source: managedEntry?.source,
-      update_available: managedEntry?.update_available,
-      last_update_check_at: managedEntry?.last_update_check_at,
-      last_update_remote_commit: managedEntry?.last_update_remote_commit,
-      update_error: managedEntry?.update_error,
-      update_check_status: updateCheck.status,
-      update_check_reason: updateCheck.reason,
-    });
+    summaries.push(
+      buildInstalledExtensionSummary(
+        {
+          name: manifest.name,
+          directory: directoryName,
+          version: manifest.version,
+          entry: manifest.entry,
+          enabled: isExtensionEnabled(settings, manifest.name),
+        },
+        scope,
+        managedEntry,
+        resolveUpdateCheckResolution(managedEntry),
+      ),
+    );
   }
   return {
     extensions: summaries.sort((left, right) => left.name.localeCompare(right.name)),
@@ -1296,7 +1340,109 @@ function collectSchemaNarrowActivationDoctorWarnings(
 }
 
 /**
- * Implements run extension for the public runtime surface of this module.
+ * Shared, per-invocation context threaded to each extension action handler: the
+ * resolved action/scope/roots, the alias-normalized target, the accumulating
+ * warnings sink, the caller options/globals, and the `withResult` builder that
+ * stamps the canonical {@link ExtensionCommandResult} envelope.
+ */
+interface ExtensionActionContext {
+  action: ExtensionCommandAction;
+  normalizedTarget: string | undefined;
+  scope: ExtensionScope;
+  resolvedRoots: ReturnType<typeof resolveExtensionRootsForScope>;
+  warnings: string[];
+  options: ExtensionCommandOptions;
+  global: GlobalOptions;
+  withResult: (details: Record<string, unknown>) => ExtensionCommandResult;
+}
+
+/**
+ * Reject option/action combinations that are only meaningful for a specific
+ * lifecycle action — `--trace`/`--strict-exit`/`--fail-on-warn` require `--doctor`,
+ * `--watch` requires `--reload`, `--runtime-probe` requires `--manage`,
+ * `--fix-managed-state` requires `--manage`/`--doctor`, and
+ * `--capability`/`--declarative` require `--init`/`--scaffold`. Each guard pairs a
+ * "flag is set" predicate with the action(s) that permit it and throws a USAGE
+ * error on the first mismatch.
+ */
+function assertExtensionActionOptionScope(action: ExtensionCommandAction, options: ExtensionCommandOptions): void {
+  const guards: Array<{ triggered: boolean; allowed: boolean; message: string }> = [
+    {
+      triggered: options.strictExit === true || options.failOnWarn === true,
+      allowed: action === "doctor",
+      message: "--strict-exit and --fail-on-warn are only valid with --doctor.",
+    },
+    { triggered: options.trace === true, allowed: action === "doctor", message: "--trace is only valid with --doctor." },
+    { triggered: options.watch === true, allowed: action === "reload", message: "--watch is only valid with --reload." },
+    {
+      triggered: options.runtimeProbe === true,
+      allowed: action === "manage",
+      message: "--runtime-probe is only valid with --manage.",
+    },
+    {
+      triggered: options.fixManagedState === true,
+      allowed: action === "manage" || action === "doctor",
+      message: "--fix-managed-state is only valid with --manage or --doctor.",
+    },
+    {
+      triggered: options.capability !== undefined,
+      allowed: action === "init",
+      message: "--capability is only valid with --init/--scaffold.",
+    },
+    {
+      triggered: options.declarative === true,
+      allowed: action === "init",
+      message: "--declarative is only valid with --init/--scaffold.",
+    },
+  ];
+  for (const guard of guards) {
+    if (guard.triggered && !guard.allowed) {
+      throw new PmCliError(guard.message, EXIT_CODE.USAGE);
+    }
+  }
+}
+
+/* c8 ignore start -- alias-normalization matrix is covered by resolveAction tests; this only rewrites positional aliases */
+/**
+ * Collapse a positional target that merely repeats the action keyword
+ * (`pm extension doctor`, `reload`, `catalog`, or `init`/`scaffold`) to
+ * `undefined` so the action handlers treat it as "no target" rather than an
+ * extension name; otherwise the original target is returned unchanged.
+ */
+function resolveNormalizedExtensionTarget(
+  target: string | undefined,
+  action: ExtensionCommandAction,
+  options: ExtensionCommandOptions,
+): string | undefined {
+  const normalizedInput = target?.trim().toLowerCase();
+  if (action === "doctor" && normalizedInput === "doctor") {
+    return undefined;
+  }
+  if (action === "reload" && normalizedInput === "reload") {
+    return undefined;
+  }
+  if (action === "catalog" && normalizedInput === "catalog") {
+    return undefined;
+  }
+  const inferredInitAlias =
+    action === "init" &&
+    options.init !== true &&
+    options.scaffold !== true &&
+    (normalizedInput === "init" || normalizedInput === "scaffold");
+  if (inferredInitAlias) {
+    return undefined;
+  }
+  return target;
+}
+/* c8 ignore stop */
+
+/**
+ * Entry point for the `pm extension` / `pm package` command surface. Resolves the
+ * requested lifecycle action and scope, rejects out-of-scope option usage,
+ * normalizes positional aliases, then dispatches to the matching action handler —
+ * each of which reads and writes managed-extension state, runtime-probes, and
+ * returns the canonical {@link ExtensionCommandResult}. `--doctor` results are
+ * flagged for native (non-JSON-wrapped) output.
  */
 export async function runExtension(
   target: string | undefined,
@@ -1304,54 +1450,11 @@ export async function runExtension(
   global: GlobalOptions,
 ): Promise<ExtensionCommandResult> {
   const action = resolveAction(target, options);
-  if ((options.strictExit === true || options.failOnWarn === true) && action !== "doctor") {
-    throw new PmCliError("--strict-exit and --fail-on-warn are only valid with --doctor.", EXIT_CODE.USAGE);
-  }
-  if (options.trace === true && action !== "doctor") {
-    throw new PmCliError("--trace is only valid with --doctor.", EXIT_CODE.USAGE);
-  }
-  if (options.watch === true && action !== "reload") {
-    throw new PmCliError("--watch is only valid with --reload.", EXIT_CODE.USAGE);
-  }
-  if (options.runtimeProbe === true && action !== "manage") {
-    throw new PmCliError("--runtime-probe is only valid with --manage.", EXIT_CODE.USAGE);
-  }
-  if (options.fixManagedState === true && action !== "manage" && action !== "doctor") {
-    throw new PmCliError("--fix-managed-state is only valid with --manage or --doctor.", EXIT_CODE.USAGE);
-  }
-  if (options.capability !== undefined && action !== "init") {
-    throw new PmCliError("--capability is only valid with --init/--scaffold.", EXIT_CODE.USAGE);
-  }
-  if (options.declarative === true && action !== "init") {
-    throw new PmCliError("--declarative is only valid with --init/--scaffold.", EXIT_CODE.USAGE);
-  }
-  /* c8 ignore start -- alias-normalization matrix is covered by resolveAction tests; this IIFE only rewrites positional aliases */
-  const normalizedTarget = (() => {
-    const normalizedInput = target?.trim().toLowerCase();
-    if (action === "doctor" && normalizedInput === "doctor") {
-      return undefined;
-    }
-    if (action === "reload" && normalizedInput === "reload") {
-      return undefined;
-    }
-    if (action === "catalog" && normalizedInput === "catalog") {
-      return undefined;
-    }
-    const inferredInitAlias =
-      action === "init" &&
-      options.init !== true &&
-      options.scaffold !== true &&
-      (normalizedInput === "init" || normalizedInput === "scaffold");
-    if (inferredInitAlias) {
-      return undefined;
-    }
-    return target;
-  })();
-  /* c8 ignore stop */
+  assertExtensionActionOptionScope(action, options);
+  const normalizedTarget = resolveNormalizedExtensionTarget(target, action, options);
   const scope = resolveScope(options);
   const resolvedRoots = resolveExtensionRootsForScope(scope, global);
   const warnings: string[] = [];
-
   const withResult = (details: Record<string, unknown>): ExtensionCommandResult => {
     const result: ExtensionCommandResult = {
       ok: true,
@@ -1382,563 +1485,954 @@ export async function runExtension(
     }
     return result;
   };
+  const ctx: ExtensionActionContext = {
+    action,
+    normalizedTarget,
+    scope,
+    resolvedRoots,
+    warnings,
+    options,
+    global,
+    withResult,
+  };
+  return EXTENSION_ACTION_HANDLERS[action](ctx);
+}
 
-  if (action === "init") {
-    const githubOption = resolveGithubOption(options);
-    if (githubOption !== undefined || (typeof options.ref === "string" && options.ref.trim().length > 0)) {
-      throw new PmCliError('Action "init" does not accept --gh/--github/--ref options.', EXIT_CODE.USAGE);
-    }
-    const scaffoldTarget = requireTarget(normalizedTarget, action, options);
-    const scaffold = await scaffoldExtensionProject(
-      scaffoldTarget,
-      options.vocabulary ?? "extension",
-      options.capability,
-      options.declarative === true,
-    );
-    const quotedTargetPath = JSON.stringify(scaffold.target_path);
-    // Forward-slash the path for the copy-pasteable `cd` hint: Windows cmd.exe /
-    // PowerShell reject the doubled backslashes JSON.stringify emits, while both
-    // shells (and POSIX) accept forward slashes.
-    const quotedShellTargetPath = JSON.stringify(scaffold.target_path.replace(/\\/g, "/"));
-    return withResult({
-      scaffolded: scaffold.created_directory || scaffold.files.some((entry) => entry.status === "created"),
-      extension: {
-        name: scaffold.extension_name,
-        command: scaffold.command_name,
-      },
-      capability: scaffold.capability,
-      style: scaffold.style,
-      target_path: scaffold.target_path,
-      created_directory: scaffold.created_directory,
-      files: scaffold.files,
-      next_steps: [
-        // Extensions are authored AND loaded as TypeScript (ADR pm-2c28 / pm-m1uz):
-        // the manifest entry is ./index.ts and pm strips types on load (Node
-        // >=22.18), so there is no compile/build step — install dependencies, then
-        // install the scaffold directly.
-        ...(options.vocabulary === "package"
-          ? [`Install dependencies: cd ${quotedShellTargetPath}, then run "npm install"`]
-          : [
-              `Install type-check dependencies: cd ${quotedShellTargetPath}, then run "npm install -D typescript @types/node @unbrained/pm-cli"`,
-            ]),
-        `Install the scaffold: ${options.vocabulary === "package" ? "pm install --project" : "pm extension --install --project"} ${quotedTargetPath}`,
-        `Smoke-test command path: pm ${scaffold.command_name}`,
-        ...(options.vocabulary === "package"
-          ? [`Validate the package: cd ${quotedShellTargetPath}, then run "npm run typecheck" and "npm test"`]
-          : [`Type-check the source (optional): cd ${quotedShellTargetPath}, then run "npx tsc --noEmit"`]),
-        `Run diagnostics: ${options.vocabulary === "package" ? "pm package doctor" : "pm extension --doctor"} --project --detail summary`,
-      ],
-    });
+async function runExtensionInitAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
+  const { action, normalizedTarget, options, withResult } = ctx;
+  const githubOption = resolveGithubOption(options);
+  if (githubOption !== undefined || (typeof options.ref === "string" && options.ref.trim().length > 0)) {
+    throw new PmCliError('Action "init" does not accept --gh/--github/--ref options.', EXIT_CODE.USAGE);
   }
+  const scaffoldTarget = requireTarget(normalizedTarget, action, options);
+  const scaffold = await scaffoldExtensionProject(
+    scaffoldTarget,
+    options.vocabulary ?? "extension",
+    options.capability,
+    options.declarative === true,
+  );
+  const quotedTargetPath = JSON.stringify(scaffold.target_path);
+  // Forward-slash the path for the copy-pasteable `cd` hint: Windows cmd.exe /
+  // PowerShell reject the doubled backslashes JSON.stringify emits, while both
+  // shells (and POSIX) accept forward slashes.
+  const quotedShellTargetPath = JSON.stringify(scaffold.target_path.replace(/\\/g, "/"));
+  return withResult({
+    scaffolded: scaffold.created_directory || scaffold.files.some((entry) => entry.status === "created"),
+    extension: {
+      name: scaffold.extension_name,
+      command: scaffold.command_name,
+    },
+    capability: scaffold.capability,
+    style: scaffold.style,
+    target_path: scaffold.target_path,
+    created_directory: scaffold.created_directory,
+    files: scaffold.files,
+    next_steps: [
+      // Extensions are authored AND loaded as TypeScript (ADR pm-2c28 / pm-m1uz):
+      // the manifest entry is ./index.ts and pm strips types on load (Node
+      // >=22.18), so there is no compile/build step — install dependencies, then
+      // install the scaffold directly.
+      ...(options.vocabulary === "package"
+        ? [`Install dependencies: cd ${quotedShellTargetPath}, then run "npm install"`]
+        : [
+            `Install type-check dependencies: cd ${quotedShellTargetPath}, then run "npm install -D typescript @types/node @unbrained/pm-cli"`,
+          ]),
+      `Install the scaffold: ${options.vocabulary === "package" ? "pm install --project" : "pm extension --install --project"} ${quotedTargetPath}`,
+      `Smoke-test command path: pm ${scaffold.command_name}`,
+      ...(options.vocabulary === "package"
+        ? [`Validate the package: cd ${quotedShellTargetPath}, then run "npm run typecheck" and "npm test"`]
+        : [`Type-check the source (optional): cd ${quotedShellTargetPath}, then run "npx tsc --noEmit"`]),
+      `Run diagnostics: ${options.vocabulary === "package" ? "pm package doctor" : "pm extension --doctor"} --project --detail summary`,
+    ],
+  });
+}
 
-  if (action === "reload") {
-    if (normalizedTarget !== undefined) {
-      throw new PmCliError('Action "reload" does not accept a target argument.', EXIT_CODE.USAGE);
-    }
-    const settings = await readSettings(resolvedRoots.settings_root);
-    const reloadToken = nextExtensionReloadToken();
-    const reloaded = await loadExtensions({
-      pmRoot: resolvedRoots.settings_root,
-      settings,
-      cwd: process.cwd(),
-      noExtensions: global.noExtensions,
-      reload_token: reloadToken,
+async function runExtensionReloadAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
+  const { normalizedTarget, resolvedRoots, warnings, options, global, withResult } = ctx;
+  if (normalizedTarget !== undefined) {
+    throw new PmCliError('Action "reload" does not accept a target argument.', EXIT_CODE.USAGE);
+  }
+  const settings = await readSettings(resolvedRoots.settings_root);
+  const reloadToken = nextExtensionReloadToken();
+  const reloaded = await loadExtensions({
+    pmRoot: resolvedRoots.settings_root,
+    settings,
+    cwd: process.cwd(),
+    noExtensions: global.noExtensions,
+    reload_token: reloadToken,
+    cache_bust: true,
+  });
+  warnings.push(...reloaded.warnings);
+  const activation = await activateExtensions(reloaded);
+  warnings.push(...activation.warnings);
+  const details = {
+    reload: {
+      token: reloadToken,
       cache_bust: true,
-    });
-    warnings.push(...reloaded.warnings);
-    const activation = await activateExtensions(reloaded);
-    warnings.push(...activation.warnings);
-    const details = {
-      reload: {
-        token: reloadToken,
-        cache_bust: true,
-        watch: options.watch === true,
-      },
-      loaded_count: reloaded.loaded.length,
-      failed_count: reloaded.failed.length,
-      activated_count: Math.max(0, reloaded.loaded.length - activation.failed.length),
-      activation_failed_count: activation.failed.length,
-      loaded_extensions: reloaded.loaded.map((entry) => ({
-        name: entry.name,
-        layer: entry.layer,
-        version: entry.version,
-      })),
-      failed_extensions: reloaded.failed.map((entry) => ({
-        name: entry.name,
-        layer: entry.layer,
-        error: entry.error,
-      })),
-      activation_failures: activation.failed.map((entry) => ({
-        name: entry.name,
-        layer: entry.layer,
-        error: entry.error,
-      })),
+      watch: options.watch === true,
+    },
+    loaded_count: reloaded.loaded.length,
+    failed_count: reloaded.failed.length,
+    activated_count: Math.max(0, reloaded.loaded.length - activation.failed.length),
+    activation_failed_count: activation.failed.length,
+    loaded_extensions: reloaded.loaded.map((entry) => ({
+      name: entry.name,
+      layer: entry.layer,
+      version: entry.version,
+    })),
+    failed_extensions: reloaded.failed.map((entry) => ({
+      name: entry.name,
+      layer: entry.layer,
+      error: entry.error,
+    })),
+    activation_failures: activation.failed.map((entry) => ({
+      name: entry.name,
+      layer: entry.layer,
+      error: entry.error,
+    })),
+  };
+  if (options.watch === true) {
+    warnings.push("extension_reload_watch_hint:watch_mode_requested_non_interactive_single_pass_only");
+  }
+  return withResult(details);
+}
+
+async function runExtensionCatalogAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
+  const { normalizedTarget, scope, options, global, withResult } = ctx;
+  if (typeof normalizedTarget === "string" && normalizedTarget.length > 0 && normalizedTarget !== "catalog") {
+    throw new PmCliError('Action "catalog" does not accept a package target.', EXIT_CODE.USAGE);
+  }
+  return withResult(await buildBundledPackageCatalog(scope, global, options));
+}
+
+/* c8 ignore start -- source-shape branch combinations are exercised in install-source focused tests */
+/**
+ * Build the persisted managed-source record for an install from its resolved
+ * shape: a bundled builtin alias, a local path, an npm package, or (the default) a
+ * GitHub repository, capturing the location/commit/subpath provenance the manage
+ * and upgrade flows later read back.
+ */
+function buildInstallManagedSource(
+  bundledAliasName: string | null,
+  installSource: ReturnType<typeof parseExtensionInstallSource>,
+  resolvedSource: Awaited<ReturnType<typeof resolveInstallSource>>,
+): ManagedExtensionSource {
+  if (bundledAliasName) {
+    return {
+      kind: "builtin",
+      input: bundledAliasName,
+      location: bundledAliasName,
+      name: bundledAliasName,
     };
-    if (options.watch === true) {
-      warnings.push("extension_reload_watch_hint:watch_mode_requested_non_interactive_single_pass_only");
-    }
-    return withResult(details);
+  }
+  if (installSource.kind === "local") {
+    return {
+      kind: "local",
+      input: installSource.input,
+      location: installSource.absolute_path,
+    };
+  }
+  if (installSource.kind === "npm") {
+    return {
+      kind: "npm",
+      input: installSource.input,
+      location: resolvedSource.resolved_subpath ?? ".",
+      package: resolvedSource.npm_package,
+      version: resolvedSource.npm_version,
+    };
+  }
+  return {
+    kind: "github",
+    input: installSource.input,
+    location: resolvedSource.resolved_subpath ?? installSource.subpath ?? ".",
+    repository: installSource.repository,
+    owner: installSource.owner,
+    repo: installSource.repo,
+    ref: installSource.ref,
+    subpath: resolvedSource.resolved_subpath ?? installSource.subpath,
+    commit: resolvedSource.commit,
+  };
+}
+/* c8 ignore stop */
+
+/**
+ * Run the install body while holding the per-destination install lock: read
+ * settings and managed state, copy the validated extension into the scope root
+ * unless it is already installed in place, upsert the managed entry and activation
+ * state, scaffold any contributed item-type folders, runtime-probe the freshly
+ * installed command paths, and return the install result envelope.
+ */
+async function performExtensionInstallUnderLock(
+  ctx: ExtensionActionContext,
+  input: {
+    validated: Awaited<ReturnType<typeof validateExtensionDirectory>>;
+    destinationDirectoryName: string;
+    bundledAliasName: string | null;
+    installSource: ReturnType<typeof parseExtensionInstallSource>;
+    resolvedSource: Awaited<ReturnType<typeof resolveInstallSource>>;
+  },
+): Promise<ExtensionCommandResult> {
+  const { scope, resolvedRoots, warnings, global, withResult } = ctx;
+  const { validated, destinationDirectoryName, bundledAliasName, installSource, resolvedSource } = input;
+  const settings = await readSettings(resolvedRoots.settings_root);
+  const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
+  warnings.push(...managedStateRead.warnings);
+  const destinationDirectory = path.join(resolvedRoots.selected_root, destinationDirectoryName);
+  const destinationExists = await pathExists(destinationDirectory);
+  const installInPlace = await areDirectoriesEquivalent(validated.directory, destinationDirectory);
+
+  await fs.mkdir(resolvedRoots.selected_root, { recursive: true });
+  if (!installInPlace) {
+    await copyExtensionDirectoryForInstall(validated.directory, destinationDirectory);
   }
 
-  if (action === "catalog") {
-    if (typeof normalizedTarget === "string" && normalizedTarget.length > 0 && normalizedTarget !== "catalog") {
-      throw new PmCliError('Action "catalog" does not accept a package target.', EXIT_CODE.USAGE);
-    }
-    return withResult(await buildBundledPackageCatalog(scope, global, options));
+  const sourceRecord = buildInstallManagedSource(bundledAliasName, installSource, resolvedSource);
+
+  const now = nowIso();
+  const existingManagedEntry = managedStateRead.state.entries.find(
+    (entry) => normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(validated.manifest.name),
+  );
+  const sourceUnchanged =
+    existingManagedEntry !== undefined &&
+    existingManagedEntry.manifest_version === validated.manifest.version &&
+    managedExtensionSourcesEquivalent(existingManagedEntry.source, sourceRecord);
+  const managedState = upsertManagedEntry(managedStateRead.state, {
+    name: validated.manifest.name,
+    directory: destinationDirectoryName,
+    scope,
+    manifest_version: validated.manifest.version,
+    manifest_entry: validated.manifest.entry,
+    capabilities: [...validated.manifest.capabilities],
+    installed_at: existingManagedEntry?.installed_at ?? now,
+    updated_at: sourceUnchanged ? existingManagedEntry.updated_at : now,
+    source: sourceRecord,
+  });
+  await writeManagedExtensionState(resolvedRoots.selected_root, managedState);
+
+  const activationChanged = ensureActivated(settings, validated.manifest.name);
+  if (activationChanged) {
+    await writeSettings(resolvedRoots.settings_root, settings, "settings:write");
   }
-
-  if (action === "install") {
-    const githubOption = resolveGithubOption(options);
-    const explicitSourceInput = githubOption ?? requireTarget(normalizedTarget, action, options);
-    if (typeof githubOption !== "string" && isBundledPackageInstallAllTarget(explicitSourceInput)) {
-      if (typeof options.ref === "string" && options.ref.trim().length > 0) {
-        throw new PmCliError('Action "install all" does not accept --ref.', EXIT_CODE.USAGE);
-      }
-      const aliases = await listBundledPackageAliases();
-      const packages: Array<{ alias: string; result: ExtensionCommandResult }> = [];
-      for (const alias of aliases) {
-        packages.push({
-          alias,
-          result: await runExtension(alias, { ...options, install: true }, global),
-        });
-      }
-      for (const entry of packages) {
-        warnings.push(...entry.result.warnings);
-      }
-      return withResult({
-        installed_all: true,
-        installed_count: packages.length,
-        packages: packages.map((entry) => ({
-          alias: entry.alias,
-          ok: entry.result.ok,
-          extension: (entry.result.details as { extension?: unknown }).extension,
-          source: (entry.result.details as { source?: unknown }).source,
-          destination_path: (entry.result.details as { destination_path?: unknown }).destination_path,
-          activated: (entry.result.details as { activated?: unknown }).activated,
-          settings_changed: (entry.result.details as { settings_changed?: unknown }).settings_changed,
-          command_paths: (entry.result.details as { command_paths?: unknown }).command_paths,
-          action_paths: (entry.result.details as { action_paths?: unknown }).action_paths,
-          command_discovery: (entry.result.details as { command_discovery?: unknown }).command_discovery,
-          warnings: entry.result.warnings,
-        })),
-      });
-    }
-    /* c8 ignore start -- github/local alias-source split is exercised in install-action integration tests */
-    const bundledAliasSource =
-      typeof githubOption === "string" ? null : await resolveBundledExtensionAliasSource(explicitSourceInput);
-    /* c8 ignore stop */
-    const bundledAliasName = bundledAliasSource === null ? null : explicitSourceInput.trim().toLowerCase();
-    const sourceInput = bundledAliasSource ?? explicitSourceInput;
-    /* c8 ignore start -- install-source branch combinations are covered in install-sources focused tests */
-    const installSource = parseExtensionInstallSource(sourceInput, {
-      forceGithub: typeof githubOption === "string",
-      ref: options.ref,
-    });
-    /* c8 ignore stop */
-    const resolvedSource = await resolveInstallSource(installSource);
-    try {
-      const validated = await validateExtensionDirectory(resolvedSource.directory);
-      const destinationDirectoryName = normalizeManagedDirectoryName(validated.manifest.name);
-      return await withExtensionInstallLock(resolvedRoots.settings_root, destinationDirectoryName, async () => {
-        const settings = await readSettings(resolvedRoots.settings_root);
-        const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
-        warnings.push(...managedStateRead.warnings);
-        const destinationDirectory = path.join(resolvedRoots.selected_root, destinationDirectoryName);
-        const destinationExists = await pathExists(destinationDirectory);
-        const installInPlace = await areDirectoriesEquivalent(validated.directory, destinationDirectory);
-
-        await fs.mkdir(resolvedRoots.selected_root, { recursive: true });
-        if (!installInPlace) {
-          await copyExtensionDirectoryForInstall(validated.directory, destinationDirectory);
-        }
-
-        /* c8 ignore start -- source-shape branch combinations are exercised in install-source focused tests */
-        const sourceRecord: ManagedExtensionSource =
-          bundledAliasName
-            ? {
-                kind: "builtin",
-                input: bundledAliasName,
-                location: bundledAliasName,
-                name: bundledAliasName,
-              }
-            : installSource.kind === "local"
-            ? {
-                kind: "local",
-                input: installSource.input,
-                location: installSource.absolute_path,
-              }
-            : installSource.kind === "npm"
-              ? {
-                  kind: "npm",
-                  input: installSource.input,
-                  location: resolvedSource.resolved_subpath ?? ".",
-                  package: resolvedSource.npm_package,
-                  version: resolvedSource.npm_version,
-                }
-              : {
-                kind: "github",
-                input: installSource.input,
-                location: resolvedSource.resolved_subpath ?? installSource.subpath ?? ".",
-                repository: installSource.repository,
-                owner: installSource.owner,
-                repo: installSource.repo,
-                ref: installSource.ref,
-                subpath: resolvedSource.resolved_subpath ?? installSource.subpath,
-                commit: resolvedSource.commit,
-              };
-        /* c8 ignore stop */
-
-        const now = nowIso();
-        const existingManagedEntry = managedStateRead.state.entries.find(
-          (entry) => normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(validated.manifest.name),
-        );
-        const sourceUnchanged =
-          existingManagedEntry !== undefined &&
-          existingManagedEntry.manifest_version === validated.manifest.version &&
-          managedExtensionSourcesEquivalent(existingManagedEntry.source, sourceRecord);
-        const managedState = upsertManagedEntry(managedStateRead.state, {
-          name: validated.manifest.name,
-          directory: destinationDirectoryName,
-          scope,
-          manifest_version: validated.manifest.version,
-          manifest_entry: validated.manifest.entry,
-          capabilities: [...validated.manifest.capabilities],
-          installed_at: existingManagedEntry?.installed_at ?? now,
-          updated_at: sourceUnchanged ? existingManagedEntry.updated_at : now,
-          source: sourceRecord,
-        });
-        await writeManagedExtensionState(resolvedRoots.selected_root, managedState);
-
-        const activationChanged = ensureActivated(settings, validated.manifest.name);
-        if (activationChanged) {
-          await writeSettings(resolvedRoots.settings_root, settings, "settings:write");
-        }
-        const refreshedInstalled = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedState);
-        warnings.push(...refreshedInstalled.warnings);
-        const runtimeProbe = await probeRuntimeCommandPathsForInstall(
-          resolvedRoots.pm_root,
-          settings,
-          refreshedInstalled.extensions,
-          global,
-        );
-        warnings.push(...runtimeProbe.warnings);
-        // Scaffold the folders for any item types the installed package contributes
-        // so the tracker is immediately healthy — matching `pm schema add-type` and
-        // `pm profile apply`, the other paths that register a type. Without this a
-        // freshly-installed schema package leaves a `missing_directory` health
-        // warning until the first item of its type is created. Scoped to project
-        // installs, where `pm_root` is unambiguously the tracker the type folders
-        // belong to; a global install is not tied to one tracker, so its folders are
-        // created lazily on first use in each project.
-        const installedItemTypeDefinitions = runtimeProbe.item_type_registrations
-          .filter((entry) => normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(validated.manifest.name))
-          .flatMap((entry) => entry.types.map((type) => ({ name: type.name, folder: type.folder })));
-        if (scope === "project" && installedItemTypeDefinitions.length > 0) {
-          await ensureTypeFolderScaffold(resolvedRoots.pm_root, installedItemTypeDefinitions, warnings, "install:type-folder");
-        }
-        const commandSummary = summarizeRuntimeCommandPathsForExtension(validated.manifest.name, runtimeProbe.installed);
-        const installActivationFailure = findActivationFailureByName(
-          validated.manifest.name,
-          runtimeProbe.activation_failures,
-          scope,
-        );
-        const runtimeActivationStatus = resolveInstallRuntimeActivationStatus(
-          validated.manifest.name,
-          scope,
-          runtimeProbe.installed,
-          installActivationFailure,
-        );
-
-        return withResult({
-          extension: {
-            name: validated.manifest.name,
-            version: validated.manifest.version,
-            entry: validated.manifest.entry,
-            capabilities: validated.manifest.capabilities,
-            directory: destinationDirectoryName,
-          },
-          source: sourceRecord,
-          destination_path: destinationDirectory,
-          overwritten: destinationExists && !installInPlace,
-          installed_in_place: installInPlace,
-          activated: true,
-          settings_changed: activationChanged,
-          runtime_activation_status: runtimeActivationStatus,
-          command_paths: commandSummary.command_paths,
-          action_paths: commandSummary.action_paths,
-          command_discovery: buildInstallCommandDiscovery(validated.manifest.name, sourceRecord, commandSummary),
-          activation_diagnostics: {
-            failed_count: runtimeProbe.activation_failures.length,
-            failed: runtimeProbe.activation_failures,
-            installed_extension_failed: installActivationFailure ?? null,
-          },
-        });
-      });
-    } finally {
-      /* c8 ignore start -- cleanup hooks are only present for transient install sources */
-      if (resolvedSource.cleanup) {
-        await resolvedSource.cleanup();
-      }
-      /* c8 ignore stop */
-    }
+  const refreshedInstalled = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedState);
+  warnings.push(...refreshedInstalled.warnings);
+  const runtimeProbe = await probeRuntimeCommandPathsForInstall(
+    resolvedRoots.pm_root,
+    settings,
+    refreshedInstalled.extensions,
+    global,
+  );
+  warnings.push(...runtimeProbe.warnings);
+  // Scaffold the folders for any item types the installed package contributes
+  // so the tracker is immediately healthy — matching `pm schema add-type` and
+  // `pm profile apply`, the other paths that register a type. Without this a
+  // freshly-installed schema package leaves a `missing_directory` health
+  // warning until the first item of its type is created. Scoped to project
+  // installs, where `pm_root` is unambiguously the tracker the type folders
+  // belong to; a global install is not tied to one tracker, so its folders are
+  // created lazily on first use in each project.
+  const installedItemTypeDefinitions = runtimeProbe.item_type_registrations
+    .filter((entry) => normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(validated.manifest.name))
+    .flatMap((entry) => entry.types.map((type) => ({ name: type.name, folder: type.folder })));
+  if (scope === "project" && installedItemTypeDefinitions.length > 0) {
+    await ensureTypeFolderScaffold(resolvedRoots.pm_root, installedItemTypeDefinitions, warnings, "install:type-folder");
   }
+  const commandSummary = summarizeRuntimeCommandPathsForExtension(validated.manifest.name, runtimeProbe.installed);
+  const installActivationFailure = findActivationFailureByName(
+    validated.manifest.name,
+    runtimeProbe.activation_failures,
+    scope,
+  );
+  const runtimeActivationStatus = resolveInstallRuntimeActivationStatus(
+    validated.manifest.name,
+    scope,
+    runtimeProbe.installed,
+    installActivationFailure,
+  );
 
-  if (action === "adopt-all") {
-    if (normalizedTarget !== undefined) {
-      throw new PmCliError('Action "adopt-all" does not accept a target argument.', EXIT_CODE.USAGE);
-    }
-    const githubOption = resolveGithubOption(options);
-    if (githubOption !== undefined || (typeof options.ref === "string" && options.ref.trim().length > 0)) {
-      throw new PmCliError('Action "adopt-all" does not accept --gh/--github/--ref options.', EXIT_CODE.USAGE);
-    }
-    const settings = await readSettings(resolvedRoots.settings_root);
-    const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
-    warnings.push(...managedStateRead.warnings);
-    const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
-    warnings.push(...installed.warnings);
-    const adoption = await adoptUnmanagedExtensions(
-      resolvedRoots.selected_root,
-      scope,
-      installed.extensions,
-      managedStateRead.state,
-    );
-    const refreshedInstalled = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, adoption.state);
-    warnings.push(...refreshedInstalled.warnings);
-    const triage = buildExtensionTriageSummary(scope, warnings, refreshedInstalled.extensions, options);
-    warnings.push(...triage.warnings);
-    /* c8 ignore start -- refresh-entry optional metadata is display-only and exercised indirectly */
-    const adoptedDetails = adoption.adopted_entries.map((entry) => {
-      const refreshedEntry =
-        refreshedInstalled.extensions.find(
-          (candidate) =>
-            normalizeExtensionNameForMatch(candidate.name) === normalizeExtensionNameForMatch(entry.name) &&
-            normalizeExtensionNameForMatch(candidate.directory) === normalizeExtensionNameForMatch(entry.directory),
-        ) ??
-        /* c8 ignore next 3 -- fallback only matters if a manifest renames between adopt and refresh */
-        refreshedInstalled.extensions.find(
-          (candidate) => normalizeExtensionNameForMatch(candidate.directory) === normalizeExtensionNameForMatch(entry.directory),
-        );
-      return {
-        ...entry,
-        update_check_status: refreshedEntry?.update_check_status ?? null,
-        update_check_reason: refreshedEntry?.update_check_reason ?? null,
-      };
-    });
-    /* c8 ignore stop */
-    /* c8 ignore start -- adopt-all summary booleans are deterministic mirrors of adoptedDetails length */
-    return withResult({
-      adopted_all: adoptedDetails.length > 0,
-      adopted_count: adoptedDetails.length,
-      already_managed_count: adoption.already_managed_count,
-      extensions: adoptedDetails,
-      triage,
-      warning_codes: triage.warning_codes,
-      update_health_partial: triage.update_health_partial,
-      update_health_coverage: triage.update_health_coverage,
-    });
-    /* c8 ignore stop */
-  }
-
-  if (action === "adopt") {
-    const extensionTarget = requireTarget(normalizedTarget, action, options);
-    const githubOption = resolveGithubOption(options);
-    const settings = await readSettings(resolvedRoots.settings_root);
-    const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
-    warnings.push(...managedStateRead.warnings);
-    const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
-    warnings.push(...installed.warnings);
-    const candidate = await resolveInstalledExtensionCandidate(installed.extensions, extensionTarget);
-    if (!candidate) {
-      throw new PmCliError(`Installed extension "${extensionTarget}" was not found in ${scope} scope.`, EXIT_CODE.NOT_FOUND);
-    }
-    if (candidate.managed) {
-      return withResult({
-        adopted: false,
-        already_managed: true,
-        extension: {
-          name: candidate.name,
-          directory: candidate.directory,
-        },
-      });
-    }
-
-    const extensionDirectory = path.join(resolvedRoots.selected_root, candidate.directory);
-    const validated = await validateExtensionDirectory(extensionDirectory);
-    const now = nowIso();
-    const sourceRecord: ManagedExtensionSource =
-      githubOption === undefined
-        ? {
-            kind: "local",
-            input: extensionTarget,
-            location: extensionDirectory,
-          }
-        : (() => {
-            const parsed = parseExtensionInstallSource(githubOption, {
-              forceGithub: true,
-              ref: options.ref,
-            });
-            /* c8 ignore start -- forceGithub guarantees a github-kind install source */
-            if (parsed.kind !== "github") {
-              throw new PmCliError(`Invalid GitHub shorthand "${githubOption}".`, EXIT_CODE.USAGE);
-            }
-            /* c8 ignore stop */
-            /* c8 ignore start -- github subpath defaults are validated in install-source parser tests */
-            return {
-              kind: "github",
-              input: parsed.input,
-              location: parsed.subpath ?? ".",
-              repository: parsed.repository,
-              owner: parsed.owner,
-              repo: parsed.repo,
-              ref: parsed.ref,
-              subpath: parsed.subpath,
-            };
-            /* c8 ignore stop */
-          })();
-    const managedState = upsertManagedEntry(managedStateRead.state, {
+  return withResult({
+    extension: {
       name: validated.manifest.name,
-      directory: candidate.directory,
-      scope,
-      manifest_version: validated.manifest.version,
-      manifest_entry: validated.manifest.entry,
-      capabilities: [...validated.manifest.capabilities],
-      installed_at: now,
-      updated_at: now,
-      source: sourceRecord,
+      version: validated.manifest.version,
+      entry: validated.manifest.entry,
+      capabilities: validated.manifest.capabilities,
+      directory: destinationDirectoryName,
+    },
+    source: sourceRecord,
+    destination_path: destinationDirectory,
+    overwritten: destinationExists && !installInPlace,
+    installed_in_place: installInPlace,
+    activated: true,
+    settings_changed: activationChanged,
+    runtime_activation_status: runtimeActivationStatus,
+    command_paths: commandSummary.command_paths,
+    action_paths: commandSummary.action_paths,
+    command_discovery: buildInstallCommandDiscovery(validated.manifest.name, sourceRecord, commandSummary),
+    activation_diagnostics: {
+      failed_count: runtimeProbe.activation_failures.length,
+      failed: runtimeProbe.activation_failures,
+      installed_extension_failed: installActivationFailure ?? null,
+    },
+  });
+}
+
+async function runExtensionInstallAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
+  const { action, normalizedTarget, resolvedRoots, warnings, options, global, withResult } = ctx;
+  const githubOption = resolveGithubOption(options);
+  const explicitSourceInput = githubOption ?? requireTarget(normalizedTarget, action, options);
+  if (typeof githubOption !== "string" && isBundledPackageInstallAllTarget(explicitSourceInput)) {
+    if (typeof options.ref === "string" && options.ref.trim().length > 0) {
+      throw new PmCliError('Action "install all" does not accept --ref.', EXIT_CODE.USAGE);
+    }
+    const aliases = await listBundledPackageAliases();
+    const packages: Array<{ alias: string; result: ExtensionCommandResult }> = [];
+    for (const alias of aliases) {
+      packages.push({
+        alias,
+        result: await runExtension(alias, { ...options, install: true }, global),
+      });
+    }
+    for (const entry of packages) {
+      warnings.push(...entry.result.warnings);
+    }
+    return withResult({
+      installed_all: true,
+      installed_count: packages.length,
+      packages: packages.map((entry) => ({
+        alias: entry.alias,
+        ok: entry.result.ok,
+        extension: (entry.result.details as { extension?: unknown }).extension,
+        source: (entry.result.details as { source?: unknown }).source,
+        destination_path: (entry.result.details as { destination_path?: unknown }).destination_path,
+        activated: (entry.result.details as { activated?: unknown }).activated,
+        settings_changed: (entry.result.details as { settings_changed?: unknown }).settings_changed,
+        command_paths: (entry.result.details as { command_paths?: unknown }).command_paths,
+        action_paths: (entry.result.details as { action_paths?: unknown }).action_paths,
+        command_discovery: (entry.result.details as { command_discovery?: unknown }).command_discovery,
+        warnings: entry.result.warnings,
+      })),
     });
-    await writeManagedExtensionState(resolvedRoots.selected_root, managedState);
-    const refreshedInstalled = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedState);
-    warnings.push(...refreshedInstalled.warnings);
-    /* c8 ignore start -- fallback only matters if a manifest renames between adopt and refresh */
+  }
+  /* c8 ignore start -- github/local alias-source split is exercised in install-action integration tests */
+  const bundledAliasSource =
+    typeof githubOption === "string" ? null : await resolveBundledExtensionAliasSource(explicitSourceInput);
+  /* c8 ignore stop */
+  const bundledAliasName = bundledAliasSource === null ? null : explicitSourceInput.trim().toLowerCase();
+  const sourceInput = bundledAliasSource ?? explicitSourceInput;
+  /* c8 ignore start -- install-source branch combinations are covered in install-sources focused tests */
+  const installSource = parseExtensionInstallSource(sourceInput, {
+    forceGithub: typeof githubOption === "string",
+    ref: options.ref,
+  });
+  /* c8 ignore stop */
+  const resolvedSource = await resolveInstallSource(installSource);
+  try {
+    const validated = await validateExtensionDirectory(resolvedSource.directory);
+    const destinationDirectoryName = normalizeManagedDirectoryName(validated.manifest.name);
+    return await withExtensionInstallLock(resolvedRoots.settings_root, destinationDirectoryName, () =>
+      performExtensionInstallUnderLock(ctx, {
+        validated,
+        destinationDirectoryName,
+        bundledAliasName,
+        installSource,
+        resolvedSource,
+      }),
+    );
+  } finally {
+    /* c8 ignore start -- cleanup hooks are only present for transient install sources */
+    if (resolvedSource.cleanup) {
+      await resolvedSource.cleanup();
+    }
+    /* c8 ignore stop */
+  }
+}
+
+async function runExtensionAdoptAllAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
+  const { normalizedTarget, scope, resolvedRoots, warnings, options, withResult } = ctx;
+  if (normalizedTarget !== undefined) {
+    throw new PmCliError('Action "adopt-all" does not accept a target argument.', EXIT_CODE.USAGE);
+  }
+  const githubOption = resolveGithubOption(options);
+  if (githubOption !== undefined || (typeof options.ref === "string" && options.ref.trim().length > 0)) {
+    throw new PmCliError('Action "adopt-all" does not accept --gh/--github/--ref options.', EXIT_CODE.USAGE);
+  }
+  const settings = await readSettings(resolvedRoots.settings_root);
+  const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
+  warnings.push(...managedStateRead.warnings);
+  const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
+  warnings.push(...installed.warnings);
+  const adoption = await adoptUnmanagedExtensions(
+    resolvedRoots.selected_root,
+    scope,
+    installed.extensions,
+    managedStateRead.state,
+  );
+  const refreshedInstalled = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, adoption.state);
+  warnings.push(...refreshedInstalled.warnings);
+  const triage = buildExtensionTriageSummary(scope, warnings, refreshedInstalled.extensions, options);
+  warnings.push(...triage.warnings);
+  /* c8 ignore start -- refresh-entry optional metadata is display-only and exercised indirectly */
+  const adoptedDetails = adoption.adopted_entries.map((entry) => {
     const refreshedEntry =
       refreshedInstalled.extensions.find(
-        (entry) => normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(validated.manifest.name),
+        (candidate) =>
+          normalizeExtensionNameForMatch(candidate.name) === normalizeExtensionNameForMatch(entry.name) &&
+          normalizeExtensionNameForMatch(candidate.directory) === normalizeExtensionNameForMatch(entry.directory),
       ) ??
+      /* c8 ignore next 3 -- fallback only matters if a manifest renames between adopt and refresh */
       refreshedInstalled.extensions.find(
-        (entry) => normalizeExtensionNameForMatch(entry.directory) === normalizeExtensionNameForMatch(candidate.directory),
+        (candidate) => normalizeExtensionNameForMatch(candidate.directory) === normalizeExtensionNameForMatch(entry.directory),
       );
-    /* c8 ignore stop */
-
-    /* c8 ignore start -- adopt result mirrors refreshedEntry optionals for display only */
-    return withResult({
-      adopted: true,
-      extension: {
-        name: validated.manifest.name,
-        directory: candidate.directory,
-        version: validated.manifest.version,
-        entry: validated.manifest.entry,
-      },
-      source: sourceRecord,
+    return {
+      ...entry,
       update_check_status: refreshedEntry?.update_check_status ?? null,
       update_check_reason: refreshedEntry?.update_check_reason ?? null,
-    });
-    /* c8 ignore stop */
-  }
-
-  if (action === "uninstall") {
-    const extensionTarget = requireTarget(normalizedTarget, action, options);
-    const settings = await readSettings(resolvedRoots.settings_root);
-    const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
-    warnings.push(...managedStateRead.warnings);
-    const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
-    warnings.push(...installed.warnings);
-    const candidate = await resolveInstalledExtensionCandidate(installed.extensions, extensionTarget);
-    if (!candidate) {
-      throw new PmCliError(`Installed extension "${extensionTarget}" was not found in ${scope} scope.`, EXIT_CODE.NOT_FOUND);
-    }
-    const destinationDirectory = path.join(resolvedRoots.selected_root, candidate.directory);
-    await fs.rm(destinationDirectory, { recursive: true, force: true });
-
-    const updatedState: ManagedExtensionState = {
-      ...managedStateRead.state,
-      updated_at: nowIso(),
-      /* c8 ignore start -- uninstall filter keeps both name+directory guards for legacy managed-state migrations */
-      entries: managedStateRead.state.entries.filter(
-        (entry) =>
-          normalizeExtensionNameForMatch(entry.name) !== normalizeExtensionNameForMatch(candidate.name) &&
-          normalizeExtensionNameForMatch(entry.directory) !== normalizeExtensionNameForMatch(candidate.directory),
-      ),
-      /* c8 ignore stop */
     };
-    await writeManagedExtensionState(resolvedRoots.selected_root, updatedState);
+  });
+  /* c8 ignore stop */
+  /* c8 ignore start -- adopt-all summary booleans are deterministic mirrors of adoptedDetails length */
+  return withResult({
+    adopted_all: adoptedDetails.length > 0,
+    adopted_count: adoptedDetails.length,
+    already_managed_count: adoption.already_managed_count,
+    extensions: adoptedDetails,
+    triage,
+    warning_codes: triage.warning_codes,
+    update_health_partial: triage.update_health_partial,
+    update_health_coverage: triage.update_health_coverage,
+  });
+  /* c8 ignore stop */
+}
 
-    const stateChanged = clearExtensionState(settings, candidate.name);
-    if (stateChanged) {
-      await writeSettings(resolvedRoots.settings_root, settings, "settings:write");
-    }
-
+async function runExtensionAdoptAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
+  const { action, normalizedTarget, scope, resolvedRoots, warnings, options, withResult } = ctx;
+  const extensionTarget = requireTarget(normalizedTarget, action, options);
+  const githubOption = resolveGithubOption(options);
+  const settings = await readSettings(resolvedRoots.settings_root);
+  const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
+  warnings.push(...managedStateRead.warnings);
+  const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
+  warnings.push(...installed.warnings);
+  const candidate = await resolveInstalledExtensionCandidate(installed.extensions, extensionTarget);
+  if (!candidate) {
+    throw new PmCliError(`Installed extension "${extensionTarget}" was not found in ${scope} scope.`, EXIT_CODE.NOT_FOUND);
+  }
+  if (candidate.managed) {
     return withResult({
-      removed: true,
+      adopted: false,
+      already_managed: true,
       extension: {
         name: candidate.name,
         directory: candidate.directory,
       },
-      destination_path: destinationDirectory,
-      settings_changed: stateChanged,
     });
   }
 
-  if (action === "activate" || action === "deactivate") {
-    const extensionTarget = requireTarget(normalizedTarget, action, options);
-    const settings = await readSettings(resolvedRoots.settings_root);
-    const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
-    warnings.push(...managedStateRead.warnings);
-    const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
-    warnings.push(...installed.warnings);
-    const candidate = await resolveInstalledExtensionCandidate(installed.extensions, extensionTarget);
-    if (!candidate) {
-      throw new PmCliError(`Installed extension "${extensionTarget}" was not found in ${scope} scope.`, EXIT_CODE.NOT_FOUND);
-    }
+  const extensionDirectory = path.join(resolvedRoots.selected_root, candidate.directory);
+  const validated = await validateExtensionDirectory(extensionDirectory);
+  const now = nowIso();
+  const sourceRecord: ManagedExtensionSource =
+    githubOption === undefined
+      ? {
+          kind: "local",
+          input: extensionTarget,
+          location: extensionDirectory,
+        }
+      : (() => {
+          const parsed = parseExtensionInstallSource(githubOption, {
+            forceGithub: true,
+            ref: options.ref,
+          });
+          /* c8 ignore start -- forceGithub guarantees a github-kind install source */
+          if (parsed.kind !== "github") {
+            throw new PmCliError(`Invalid GitHub shorthand "${githubOption}".`, EXIT_CODE.USAGE);
+          }
+          /* c8 ignore stop */
+          /* c8 ignore start -- github subpath defaults are validated in install-source parser tests */
+          return {
+            kind: "github",
+            input: parsed.input,
+            location: parsed.subpath ?? ".",
+            repository: parsed.repository,
+            owner: parsed.owner,
+            repo: parsed.repo,
+            ref: parsed.ref,
+            subpath: parsed.subpath,
+          };
+          /* c8 ignore stop */
+        })();
+  const managedState = upsertManagedEntry(managedStateRead.state, {
+    name: validated.manifest.name,
+    directory: candidate.directory,
+    scope,
+    manifest_version: validated.manifest.version,
+    manifest_entry: validated.manifest.entry,
+    capabilities: [...validated.manifest.capabilities],
+    installed_at: now,
+    updated_at: now,
+    source: sourceRecord,
+  });
+  await writeManagedExtensionState(resolvedRoots.selected_root, managedState);
+  const refreshedInstalled = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedState);
+  warnings.push(...refreshedInstalled.warnings);
+  /* c8 ignore start -- fallback only matters if a manifest renames between adopt and refresh */
+  const refreshedEntry =
+    refreshedInstalled.extensions.find(
+      (entry) => normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(validated.manifest.name),
+    ) ??
+    refreshedInstalled.extensions.find(
+      (entry) => normalizeExtensionNameForMatch(entry.directory) === normalizeExtensionNameForMatch(candidate.directory),
+    );
+  /* c8 ignore stop */
 
-    const settingsChanged = action === "activate" ? ensureActivated(settings, candidate.name) : ensureDeactivated(settings, candidate.name);
-    if (settingsChanged) {
-      await writeSettings(resolvedRoots.settings_root, settings, "settings:write");
-    }
+  /* c8 ignore start -- adopt result mirrors refreshedEntry optionals for display only */
+  return withResult({
+    adopted: true,
+    extension: {
+      name: validated.manifest.name,
+      directory: candidate.directory,
+      version: validated.manifest.version,
+      entry: validated.manifest.entry,
+    },
+    source: sourceRecord,
+    update_check_status: refreshedEntry?.update_check_status ?? null,
+    update_check_reason: refreshedEntry?.update_check_reason ?? null,
+  });
+  /* c8 ignore stop */
+}
 
-    return withResult({
-      extension: {
-        name: candidate.name,
-        directory: candidate.directory,
-      },
-      active: action === "activate",
-      settings_changed: settingsChanged,
-      settings: {
-        enabled: [...settings.extensions.enabled],
-        disabled: [...settings.extensions.disabled],
-      },
-    });
+async function runExtensionUninstallAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
+  const { action, normalizedTarget, scope, resolvedRoots, warnings, options, withResult } = ctx;
+  const extensionTarget = requireTarget(normalizedTarget, action, options);
+  const settings = await readSettings(resolvedRoots.settings_root);
+  const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
+  warnings.push(...managedStateRead.warnings);
+  const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
+  warnings.push(...installed.warnings);
+  const candidate = await resolveInstalledExtensionCandidate(installed.extensions, extensionTarget);
+  if (!candidate) {
+    throw new PmCliError(`Installed extension "${extensionTarget}" was not found in ${scope} scope.`, EXIT_CODE.NOT_FOUND);
+  }
+  const destinationDirectory = path.join(resolvedRoots.selected_root, candidate.directory);
+  await fs.rm(destinationDirectory, { recursive: true, force: true });
+
+  const updatedState: ManagedExtensionState = {
+    ...managedStateRead.state,
+    updated_at: nowIso(),
+    /* c8 ignore start -- uninstall filter keeps both name+directory guards for legacy managed-state migrations */
+    entries: managedStateRead.state.entries.filter(
+      (entry) =>
+        normalizeExtensionNameForMatch(entry.name) !== normalizeExtensionNameForMatch(candidate.name) &&
+        normalizeExtensionNameForMatch(entry.directory) !== normalizeExtensionNameForMatch(candidate.directory),
+    ),
+    /* c8 ignore stop */
+  };
+  await writeManagedExtensionState(resolvedRoots.selected_root, updatedState);
+
+  const stateChanged = clearExtensionState(settings, candidate.name);
+  if (stateChanged) {
+    await writeSettings(resolvedRoots.settings_root, settings, "settings:write");
   }
 
-  if (action === "doctor") {
-    if (normalizedTarget && normalizedTarget.trim().length > 0) {
-      throw new PmCliError('Action "doctor" does not accept a target argument.', EXIT_CODE.USAGE);
-    }
-    const detailMode = parseDoctorDetailMode(options.detail);
-    const includeTrace = options.trace === true;
-    if (includeTrace && detailMode !== "deep") {
-      throw new PmCliError("--trace requires --detail deep with --doctor.", EXIT_CODE.USAGE);
-    }
-    const settings = await readSettings(resolvedRoots.settings_root);
-    const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
-    warnings.push(...managedStateRead.warnings);
-    const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
-    warnings.push(...installed.warnings);
-    let managedState = managedStateRead.state;
-    const managedStateFix =
-      options.fixManagedState === true
-        ? await adoptUnmanagedExtensions(
-            resolvedRoots.selected_root,
-            scope,
-            installed.extensions,
-            managedStateRead.state,
-          )
-        : null;
-    if (managedStateFix) {
-      managedState = managedStateFix.state;
-    }
-    const refreshedInstalled = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedState);
-    warnings.push(...refreshedInstalled.warnings);
+  return withResult({
+    removed: true,
+    extension: {
+      name: candidate.name,
+      directory: candidate.directory,
+    },
+    destination_path: destinationDirectory,
+    settings_changed: stateChanged,
+  });
+}
 
+async function runExtensionActivateDeactivateAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
+  const { action, normalizedTarget, scope, resolvedRoots, warnings, options, withResult } = ctx;
+  const extensionTarget = requireTarget(normalizedTarget, action, options);
+  const settings = await readSettings(resolvedRoots.settings_root);
+  const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
+  warnings.push(...managedStateRead.warnings);
+  const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
+  warnings.push(...installed.warnings);
+  const candidate = await resolveInstalledExtensionCandidate(installed.extensions, extensionTarget);
+  if (!candidate) {
+    throw new PmCliError(`Installed extension "${extensionTarget}" was not found in ${scope} scope.`, EXIT_CODE.NOT_FOUND);
+  }
+
+  const settingsChanged = action === "activate" ? ensureActivated(settings, candidate.name) : ensureDeactivated(settings, candidate.name);
+  if (settingsChanged) {
+    await writeSettings(resolvedRoots.settings_root, settings, "settings:write");
+  }
+
+  return withResult({
+    extension: {
+      name: candidate.name,
+      directory: candidate.directory,
+    },
+    active: action === "activate",
+    settings_changed: settingsChanged,
+    settings: {
+      enabled: [...settings.extensions.enabled],
+      disabled: [...settings.extensions.disabled],
+    },
+  });
+}
+
+/**
+ * Assemble the doctor remediation hints: the triage remediations, vocabulary-aware
+ * advice to inspect load failures and activation failures, and a note when a
+ * managed-state fix adopted entries. Blank entries are trimmed and the list is
+ * de-duplicated.
+ */
+function buildDoctorRemediation(
+  baseRemediation: string[],
+  loadFailureCount: number,
+  activationFailureCount: number,
+  vocabulary: ExtensionCommandOptions["vocabulary"],
+  managedStateFix: AdoptUnmanagedExtensionsResult | null,
+): string[] {
+  return [
+    ...new Set(
+      [
+        ...baseRemediation,
+        /* c8 ignore start -- vocabulary-specific remediation branches are copy-only variants */
+        ...(loadFailureCount > 0
+          ? [
+            vocabulary === "package"
+              ? "Run pm package explore --project and pm package explore --global to inspect load failures."
+              : "Run pm extension --explore --project and pm extension --explore --global to inspect load failures.",
+          ]
+          : []),
+        ...(activationFailureCount > 0
+          ? [
+            vocabulary === "package"
+              ? "Review activation failures in pm package doctor --detail deep output."
+              : "Review activation failures in pm extension --doctor --detail deep output.",
+          ]
+          : []),
+        /* c8 ignore stop */
+        ...(managedStateFix && managedStateFix.adopted_entries.length > 0
+          ? [`Managed-state fix adopted ${managedStateFix.adopted_entries.length} extension(s).`]
+          : []),
+      ].map((entry) => entry.trim()).filter((entry) => entry.length > 0),
+    ),
+  ];
+}
+
+async function runExtensionDoctorAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
+  const { normalizedTarget, scope, resolvedRoots, warnings, options, global, withResult } = ctx;
+  if (normalizedTarget && normalizedTarget.trim().length > 0) {
+    throw new PmCliError('Action "doctor" does not accept a target argument.', EXIT_CODE.USAGE);
+  }
+  const detailMode = parseDoctorDetailMode(options.detail);
+  const includeTrace = options.trace === true;
+  if (includeTrace && detailMode !== "deep") {
+    throw new PmCliError("--trace requires --detail deep with --doctor.", EXIT_CODE.USAGE);
+  }
+  const settings = await readSettings(resolvedRoots.settings_root);
+  const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
+  warnings.push(...managedStateRead.warnings);
+  const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
+  warnings.push(...installed.warnings);
+  let managedState = managedStateRead.state;
+  const managedStateFix =
+    options.fixManagedState === true
+      ? await adoptUnmanagedExtensions(
+          resolvedRoots.selected_root,
+          scope,
+          installed.extensions,
+          managedStateRead.state,
+        )
+      : null;
+  if (managedStateFix) {
+    managedState = managedStateFix.state;
+  }
+  const refreshedInstalled = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedState);
+  warnings.push(...refreshedInstalled.warnings);
+
+  const loadResult = await loadExtensions({
+    pmRoot: resolvedRoots.pm_root,
+    settings,
+    cwd: process.cwd(),
+    noExtensions: global.noExtensions === true,
+  });
+  const activationResult = await activateExtensions({
+    ...loadResult,
+    loaded: loadResult.loaded,
+  });
+  warnings.push(...loadResult.warnings);
+  warnings.push(...classifyDoctorLoadFailureWarnings(loadResult.failed));
+  warnings.push(...activationResult.warnings);
+  warnings.push(...classifyDoctorActivationFailureWarnings(activationResult.failed));
+  warnings.push(...classifyUnusedCapabilityWarnings(loadResult, activationResult));
+  warnings.push(...collectGlobalOutputOverrideDoctorWarnings(activationResult));
+  warnings.push(...collectSchemaNarrowActivationDoctorWarnings(loadResult, activationResult));
+  const runtimeInstalledExtensions = applyDoctorRuntimeActivationState(refreshedInstalled.extensions, loadResult, activationResult);
+  const doctorConsistency = buildDoctorConsistencySummary(
+    scope,
+    runtimeInstalledExtensions,
+    loadResult.loaded.map((entry) => ({ layer: entry.layer, name: entry.name })),
+    loadResult.failed.map((entry) => ({ name: entry.name })),
+    loadResult.disabled_by_flag,
+  );
+  warnings.push(...doctorConsistency.warnings);
+  const updateCheckWarnings = runtimeInstalledExtensions
+    .filter((entry) => entry.update_check_status === "failed")
+    .map((entry) => `extension_update_check_failed:${entry.name}`);
+  warnings.push(...updateCheckWarnings);
+
+  const triage = buildExtensionTriageSummary(scope, warnings, runtimeInstalledExtensions, options);
+  warnings.push(...triage.warnings);
+  const normalizedWarnings = [...triage.warnings];
+  const policySummary = {
+    mode: loadResult.policy.mode,
+    trust_mode: loadResult.policy.trust_mode,
+    require_provenance: loadResult.policy.require_provenance,
+    default_sandbox_profile: loadResult.policy.default_sandbox_profile,
+    // Honest trust model (ADR pm-6ef3): keep this caveat to one concise line.
+    sandbox_enforcement:
+      "advisory: sandbox_profile/permissions are declaration-based load gates, not runtime isolation (ADR pm-6ef3)",
+    trusted_extensions_count: loadResult.policy.trusted_extensions.length,
+    allowed_extensions_count: loadResult.policy.allowed_extensions.length,
+    blocked_extensions_count: loadResult.policy.blocked_extensions.length,
+    allowed_capabilities_count: loadResult.policy.allowed_capabilities.length,
+    blocked_capabilities_count: loadResult.policy.blocked_capabilities.length,
+    allowed_surfaces_count: loadResult.policy.allowed_surfaces.length,
+    blocked_surfaces_count: loadResult.policy.blocked_surfaces.length,
+    allowed_commands_count: loadResult.policy.allowed_commands.length,
+    blocked_commands_count: loadResult.policy.blocked_commands.length,
+    allowed_actions_count: loadResult.policy.allowed_actions.length,
+    blocked_actions_count: loadResult.policy.blocked_actions.length,
+    allowed_services_count: loadResult.policy.allowed_services.length,
+    blocked_services_count: loadResult.policy.blocked_services.length,
+    extension_override_count: loadResult.policy.extension_overrides.length,
+  };
+  const capabilityGuidance = collectUnknownCapabilityGuidance(normalizedWarnings);
+  const capabilityContract = buildCapabilityContractMetadata();
+  const warningCodes = triage.warning_codes;
+  const remediation = buildDoctorRemediation(
+    triage.remediation,
+    loadResult.failed.length,
+    activationResult.failed.length,
+    options.vocabulary,
+    managedStateFix,
+  );
+
+  const summary = {
+    status: triage.status,
+    scope,
+    warning_count: triage.warning_count,
+    warning_codes: warningCodes,
+    total_extensions: runtimeInstalledExtensions.length,
+    managed_total: runtimeInstalledExtensions.filter((entry) => entry.managed).length,
+    enabled_total: runtimeInstalledExtensions.filter((entry) => entry.enabled).length,
+    active_total: runtimeInstalledExtensions.filter((entry) => entry.active).length,
+    unmanaged_loaded_extension_count: triage.unmanaged_loaded_extension_count,
+    unmanaged_action_required_extension_count: triage.unmanaged_action_required_extension_count,
+    unmanaged_expected_extension_count: triage.unmanaged_expected_extension_count,
+    runtime_active_total: runtimeInstalledExtensions.filter((entry) => entry.runtime_active === true).length,
+    activation_status_totals: {
+      ok: runtimeInstalledExtensions.filter((entry) => entry.activation_status === "ok").length,
+      failed: runtimeInstalledExtensions.filter((entry) => entry.activation_status === "failed").length,
+      not_loaded: runtimeInstalledExtensions.filter((entry) => entry.activation_status === "not_loaded").length,
+      unknown: runtimeInstalledExtensions.filter((entry) => entry.activation_status === "unknown").length,
+    },
+    unknown_capability_count: capabilityGuidance.length,
+    capability_contract_version: capabilityContract.version,
+    update_available_total: runtimeInstalledExtensions.filter((entry) => entry.update_available === true).length,
+    update_health_coverage: triage.update_health_coverage,
+    update_health_partial: triage.update_health_partial,
+    update_check_failed_total: runtimeInstalledExtensions.filter((entry) => entry.update_check_status === "failed").length,
+    load_failure_count: loadResult.failed.length,
+    activation_failure_count: activationResult.failed.length,
+    blocking_failure_count: loadResult.failed.length + activationResult.failed.length,
+    has_blocking_failures: loadResult.failed.length + activationResult.failed.length > 0,
+    consistency_warning_count: doctorConsistency.warnings.length,
+    trace_enabled: includeTrace,
+    policy: policySummary,
+    remediation,
+  };
+
+  const managedStateFixSummary = managedStateFix
+    ? {
+        requested: true,
+        applied: managedStateFix.adopted_entries.length > 0,
+        adopted_count: managedStateFix.adopted_entries.length,
+        already_managed_count: managedStateFix.already_managed_count,
+        adopted_extensions: managedStateFix.adopted_entries.map((entry) => entry.name),
+      }
+    : {
+        requested: false,
+        applied: false,
+        adopted_count: 0,
+        already_managed_count: refreshedInstalled.extensions.filter((entry) => entry.managed).length,
+        adopted_extensions: [] as string[],
+      };
+
+  const details: Record<string, unknown> = {
+    mode: detailMode,
+    summary,
+    triage,
+    trace_enabled: includeTrace,
+    capability_contract: capabilityContract,
+    capability_guidance: capabilityGuidance,
+    managed_state_fix: managedStateFixSummary,
+    policy: loadResult.policy,
+  };
+  if (detailMode === "deep") {
+    const activationFailedDetails = includeTrace
+      ? activationResult.failed
+      : activationResult.failed.map((entry) => {
+          const { trace: _trace, ...rest } = entry;
+          return rest;
+        });
+    details.deep = {
+      warnings: normalizedWarnings,
+      warning_codes: warningCodes,
+      capability_contract: capabilityContract,
+      capability_guidance: capabilityGuidance,
+      trace_enabled: includeTrace,
+      managed_state: {
+        path: managedStateRead.path,
+        count: managedState.entries.length,
+        entries: managedState.entries,
+      },
+      installed_extensions: runtimeInstalledExtensions,
+      load: {
+        roots: loadResult.roots,
+        policy: loadResult.policy,
+        warnings: loadResult.warnings,
+        failed: loadResult.failed,
+        loaded: loadResult.loaded.map((entry) => ({
+          layer: entry.layer,
+          directory: entry.directory,
+          name: entry.name,
+          version: entry.version,
+          entry: entry.entry,
+          priority: entry.priority,
+        })),
+      },
+      activation: {
+        failed: activationFailedDetails,
+        warnings: activationResult.warnings,
+        hook_counts: activationResult.hook_counts,
+        registration_counts: activationResult.registration_counts,
+        parser_override_count: activationResult.parser_override_count,
+        preflight_override_count: activationResult.preflight_override_count,
+        service_override_count: activationResult.service_override_count,
+        renderer_override_count: activationResult.renderer_override_count,
+      },
+      consistency: doctorConsistency.summary,
+    };
+    if (includeTrace) {
+      (details.deep as Record<string, unknown>).trace = {
+        activation_failures: activationResult.failed
+          .filter((entry) => entry.trace !== undefined)
+          .map((entry) => ({
+            layer: entry.layer,
+            name: entry.name,
+            entry_path: entry.entry_path,
+            error: entry.error,
+            method: entry.trace?.method,
+            command: entry.trace?.command,
+            capability: entry.trace?.capability,
+            missing_capability: entry.trace?.missing_capability,
+            registration_index: entry.trace?.registration_index,
+            expected_schema: entry.trace?.expected_schema,
+            hint: entry.trace?.hint,
+            received: entry.trace?.received,
+          })),
+      };
+    }
+  }
+  return withResult(details);
+}
+
+async function runExtensionDescribeAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
+  const { normalizedTarget, scope, resolvedRoots, warnings, options, global, withResult } = ctx;
+  const settings = await readSettings(resolvedRoots.settings_root);
+  const loadResult = await loadExtensions({
+    pmRoot: resolvedRoots.pm_root,
+    settings,
+    cwd: process.cwd(),
+    noExtensions: global.noExtensions === true,
+  });
+  const activationResult = await activateExtensions(loadResult);
+  warnings.push(...loadResult.warnings);
+  warnings.push(...activationResult.warnings);
+  const describeResult = buildExtensionDescribeResult(normalizedTarget, loadResult, activationResult);
+  if (normalizedTarget !== undefined && describeResult.extensions.length === 0) {
+    const noun = options.vocabulary === "package" ? "package" : "extension";
+    throw new PmCliError(
+      `No loaded ${noun} named "${normalizedTarget}" was found in ${scope} scope. Run pm ${noun} explore to list discovered ${noun}s.`,
+      EXIT_CODE.NOT_FOUND,
+    );
+  }
+  return withResult({
+    target: describeResult.target,
+    total: describeResult.total,
+    extensions: describeResult.extensions,
+    union: describeResult.union,
+  });
+}
+
+/* c8 ignore start -- explore/manage action split is validated by dedicated command-action tests */
+async function runExtensionExploreManageAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
+  const { action, scope, resolvedRoots, warnings, options, global, withResult } = ctx;
+  const settings = await readSettings(resolvedRoots.settings_root);
+  const configuredPolicy = buildExtensionPolicyDetails(settings.extensions.policy);
+  const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
+  warnings.push(...managedStateRead.warnings);
+  const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
+  warnings.push(...installed.warnings);
+
+  let managedState = managedStateRead.state;
+  const managedStateFix =
+    action === "manage" && options.fixManagedState === true
+      ? await adoptUnmanagedExtensions(
+          resolvedRoots.selected_root,
+          scope,
+          installed.extensions,
+          managedStateRead.state,
+        )
+      : null;
+  if (managedStateFix) {
+    managedState = managedStateFix.state;
+  }
+  if (action === "manage") {
+    const updates = await Promise.all(
+      managedState.entries.map(async (entry) => {
+        if (entry.source.kind !== "github") {
+          return entry;
+        }
+        const updateStatus = await checkGithubUpdate(entry.source);
+        return {
+          ...entry,
+          last_update_check_at: updateStatus.checked_at,
+          last_update_remote_commit: updateStatus.remote_commit,
+          update_available: updateStatus.available,
+          update_error: updateStatus.error,
+        };
+      }),
+    );
+    managedState = {
+      ...managedState,
+      updated_at: nowIso(),
+      entries: sortManagedEntries(updates),
+    };
+    await writeManagedExtensionState(resolvedRoots.selected_root, managedState);
+  }
+
+  const refreshedInstalled = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedState);
+  warnings.push(...refreshedInstalled.warnings);
+  if (action === "manage") {
+    const updateWarnings = refreshedInstalled.extensions
+      .filter((entry) => entry.update_check_status === "failed")
+      .map((entry) => `extension_update_check_failed:${entry.name}`);
+    warnings.push(...updateWarnings);
+  }
+  let runtimeProbeSummary: Record<string, unknown> | undefined;
+  let runtimeInstalledExtensions = refreshedInstalled.extensions;
+  let runtimeActivationFailures: ActivationFailureDiagnostic[] | undefined;
+  if (action === "explore" || options.runtimeProbe === true) {
     const loadResult = await loadExtensions({
       pmRoot: resolvedRoots.pm_root,
       settings,
@@ -1950,374 +2444,90 @@ export async function runExtension(
       loaded: loadResult.loaded,
     });
     warnings.push(...loadResult.warnings);
-    warnings.push(...classifyDoctorLoadFailureWarnings(loadResult.failed));
     warnings.push(...activationResult.warnings);
-    warnings.push(...classifyDoctorActivationFailureWarnings(activationResult.failed));
-    warnings.push(...classifyUnusedCapabilityWarnings(loadResult, activationResult));
-    warnings.push(...collectGlobalOutputOverrideDoctorWarnings(activationResult));
-    warnings.push(...collectSchemaNarrowActivationDoctorWarnings(loadResult, activationResult));
-    const runtimeInstalledExtensions = applyDoctorRuntimeActivationState(refreshedInstalled.extensions, loadResult, activationResult);
-    const doctorConsistency = buildDoctorConsistencySummary(
-      scope,
-      runtimeInstalledExtensions,
-      loadResult.loaded.map((entry) => ({ layer: entry.layer, name: entry.name })),
-      loadResult.failed.map((entry) => ({ name: entry.name })),
-      loadResult.disabled_by_flag,
-    );
-    warnings.push(...doctorConsistency.warnings);
-    const updateCheckWarnings = runtimeInstalledExtensions
-      .filter((entry) => entry.update_check_status === "failed")
-      .map((entry) => `extension_update_check_failed:${entry.name}`);
-    warnings.push(...updateCheckWarnings);
-
-    const triage = buildExtensionTriageSummary(scope, warnings, runtimeInstalledExtensions, options);
-    warnings.push(...triage.warnings);
-    const normalizedWarnings = [...triage.warnings];
-    const policySummary = {
-      mode: loadResult.policy.mode,
-      trust_mode: loadResult.policy.trust_mode,
-      require_provenance: loadResult.policy.require_provenance,
-      default_sandbox_profile: loadResult.policy.default_sandbox_profile,
-      // Honest trust model (ADR pm-6ef3): keep this caveat to one concise line.
-      sandbox_enforcement:
-        "advisory: sandbox_profile/permissions are declaration-based load gates, not runtime isolation (ADR pm-6ef3)",
-      trusted_extensions_count: loadResult.policy.trusted_extensions.length,
-      allowed_extensions_count: loadResult.policy.allowed_extensions.length,
-      blocked_extensions_count: loadResult.policy.blocked_extensions.length,
-      allowed_capabilities_count: loadResult.policy.allowed_capabilities.length,
-      blocked_capabilities_count: loadResult.policy.blocked_capabilities.length,
-      allowed_surfaces_count: loadResult.policy.allowed_surfaces.length,
-      blocked_surfaces_count: loadResult.policy.blocked_surfaces.length,
-      allowed_commands_count: loadResult.policy.allowed_commands.length,
-      blocked_commands_count: loadResult.policy.blocked_commands.length,
-      allowed_actions_count: loadResult.policy.allowed_actions.length,
-      blocked_actions_count: loadResult.policy.blocked_actions.length,
-      allowed_services_count: loadResult.policy.allowed_services.length,
-      blocked_services_count: loadResult.policy.blocked_services.length,
-      extension_override_count: loadResult.policy.extension_overrides.length,
-    };
-    const capabilityGuidance = collectUnknownCapabilityGuidance(normalizedWarnings);
-    const capabilityContract = buildCapabilityContractMetadata();
-    const warningCodes = triage.warning_codes;
-    const remediation = [
-      ...new Set(
-        [
-          ...triage.remediation,
-          /* c8 ignore start -- vocabulary-specific remediation branches are copy-only variants */
-          ...(loadResult.failed.length > 0
-            ? [
-              options.vocabulary === "package"
-                ? "Run pm package explore --project and pm package explore --global to inspect load failures."
-                : "Run pm extension --explore --project and pm extension --explore --global to inspect load failures.",
-            ]
-            : []),
-          ...(activationResult.failed.length > 0
-            ? [
-              options.vocabulary === "package"
-                ? "Review activation failures in pm package doctor --detail deep output."
-                : "Review activation failures in pm extension --doctor --detail deep output.",
-            ]
-            : []),
-          /* c8 ignore stop */
-          ...(managedStateFix && managedStateFix.adopted_entries.length > 0
-            ? [`Managed-state fix adopted ${managedStateFix.adopted_entries.length} extension(s).`]
-            : []),
-        ].map((entry) => entry.trim()).filter((entry) => entry.length > 0),
-      ),
-    ];
-
-    const summary = {
-      status: triage.status,
-      scope,
-      warning_count: triage.warning_count,
-      warning_codes: warningCodes,
-      total_extensions: runtimeInstalledExtensions.length,
-      managed_total: runtimeInstalledExtensions.filter((entry) => entry.managed).length,
-      enabled_total: runtimeInstalledExtensions.filter((entry) => entry.enabled).length,
-      active_total: runtimeInstalledExtensions.filter((entry) => entry.active).length,
-      unmanaged_loaded_extension_count: triage.unmanaged_loaded_extension_count,
-      unmanaged_action_required_extension_count: triage.unmanaged_action_required_extension_count,
-      unmanaged_expected_extension_count: triage.unmanaged_expected_extension_count,
-      runtime_active_total: runtimeInstalledExtensions.filter((entry) => entry.runtime_active === true).length,
-      activation_status_totals: {
-        ok: runtimeInstalledExtensions.filter((entry) => entry.activation_status === "ok").length,
-        failed: runtimeInstalledExtensions.filter((entry) => entry.activation_status === "failed").length,
-        not_loaded: runtimeInstalledExtensions.filter((entry) => entry.activation_status === "not_loaded").length,
-        unknown: runtimeInstalledExtensions.filter((entry) => entry.activation_status === "unknown").length,
-      },
-      unknown_capability_count: capabilityGuidance.length,
-      capability_contract_version: capabilityContract.version,
-      update_available_total: runtimeInstalledExtensions.filter((entry) => entry.update_available === true).length,
-      update_health_coverage: triage.update_health_coverage,
-      update_health_partial: triage.update_health_partial,
-      update_check_failed_total: runtimeInstalledExtensions.filter((entry) => entry.update_check_status === "failed").length,
+    runtimeInstalledExtensions = applyDoctorRuntimeActivationState(refreshedInstalled.extensions, loadResult, activationResult);
+    runtimeActivationFailures = collectActivationFailureDiagnostics(activationResult.failed);
+    runtimeProbeSummary = {
+      requested: true,
+      executed: true,
+      reason: action === "explore" ? "explore_defaults_to_runtime_probe" : "runtime_probe_requested",
       load_failure_count: loadResult.failed.length,
       activation_failure_count: activationResult.failed.length,
-      blocking_failure_count: loadResult.failed.length + activationResult.failed.length,
-      has_blocking_failures: loadResult.failed.length + activationResult.failed.length > 0,
-      consistency_warning_count: doctorConsistency.warnings.length,
-      trace_enabled: includeTrace,
-      policy: policySummary,
-      remediation,
-    };
-
-    const managedStateFixSummary = managedStateFix
-      ? {
-          requested: true,
-          applied: managedStateFix.adopted_entries.length > 0,
-          adopted_count: managedStateFix.adopted_entries.length,
-          already_managed_count: managedStateFix.already_managed_count,
-          adopted_extensions: managedStateFix.adopted_entries.map((entry) => entry.name),
-        }
-      : {
-          requested: false,
-          applied: false,
-          adopted_count: 0,
-          already_managed_count: refreshedInstalled.extensions.filter((entry) => entry.managed).length,
-          adopted_extensions: [] as string[],
-        };
-
-    const details: Record<string, unknown> = {
-      mode: detailMode,
-      summary,
-      triage,
-      trace_enabled: includeTrace,
-      capability_contract: capabilityContract,
-      capability_guidance: capabilityGuidance,
-      managed_state_fix: managedStateFixSummary,
+      warning_count: [...new Set([...loadResult.warnings, ...activationResult.warnings])].length,
       policy: loadResult.policy,
     };
-    if (detailMode === "deep") {
-      const activationFailedDetails = includeTrace
-        ? activationResult.failed
-        : activationResult.failed.map((entry) => {
-            const { trace: _trace, ...rest } = entry;
-            return rest;
-          });
-      details.deep = {
-        warnings: normalizedWarnings,
-        warning_codes: warningCodes,
-        capability_contract: capabilityContract,
-        capability_guidance: capabilityGuidance,
-        trace_enabled: includeTrace,
-        managed_state: {
-          path: managedStateRead.path,
-          count: managedState.entries.length,
-          entries: managedState.entries,
-        },
-        installed_extensions: runtimeInstalledExtensions,
-        load: {
-          roots: loadResult.roots,
-          policy: loadResult.policy,
-          warnings: loadResult.warnings,
-          failed: loadResult.failed,
-          loaded: loadResult.loaded.map((entry) => ({
-            layer: entry.layer,
-            directory: entry.directory,
-            name: entry.name,
-            version: entry.version,
-            entry: entry.entry,
-            priority: entry.priority,
-          })),
-        },
-        activation: {
-          failed: activationFailedDetails,
-          warnings: activationResult.warnings,
-          hook_counts: activationResult.hook_counts,
-          registration_counts: activationResult.registration_counts,
-          parser_override_count: activationResult.parser_override_count,
-          preflight_override_count: activationResult.preflight_override_count,
-          service_override_count: activationResult.service_override_count,
-          renderer_override_count: activationResult.renderer_override_count,
-        },
-        consistency: doctorConsistency.summary,
-      };
-      if (includeTrace) {
-        (details.deep as Record<string, unknown>).trace = {
-          activation_failures: activationResult.failed
-            .filter((entry) => entry.trace !== undefined)
-            .map((entry) => ({
-              layer: entry.layer,
-              name: entry.name,
-              entry_path: entry.entry_path,
-              error: entry.error,
-              method: entry.trace?.method,
-              command: entry.trace?.command,
-              capability: entry.trace?.capability,
-              missing_capability: entry.trace?.missing_capability,
-              registration_index: entry.trace?.registration_index,
-              expected_schema: entry.trace?.expected_schema,
-              hint: entry.trace?.hint,
-              received: entry.trace?.received,
-            })),
-        };
-      }
-    }
-    return withResult(details);
-  }
-
-  if (action === "describe") {
-    const settings = await readSettings(resolvedRoots.settings_root);
-    const loadResult = await loadExtensions({
-      pmRoot: resolvedRoots.pm_root,
-      settings,
-      cwd: process.cwd(),
-      noExtensions: global.noExtensions === true,
-    });
-    const activationResult = await activateExtensions(loadResult);
-    warnings.push(...loadResult.warnings);
-    warnings.push(...activationResult.warnings);
-    const describeResult = buildExtensionDescribeResult(normalizedTarget, loadResult, activationResult);
-    if (normalizedTarget !== undefined && describeResult.extensions.length === 0) {
-      const noun = options.vocabulary === "package" ? "package" : "extension";
-      throw new PmCliError(
-        `No loaded ${noun} named "${normalizedTarget}" was found in ${scope} scope. Run pm ${noun} explore to list discovered ${noun}s.`,
-        EXIT_CODE.NOT_FOUND,
-      );
-    }
-    return withResult({
-      target: describeResult.target,
-      total: describeResult.total,
-      extensions: describeResult.extensions,
-      union: describeResult.union,
-    });
-  }
-
-  /* c8 ignore start -- explore/manage action split is validated by dedicated command-action tests */
-  if (action === "explore" || action === "manage") {
-    const settings = await readSettings(resolvedRoots.settings_root);
-    const configuredPolicy = buildExtensionPolicyDetails(settings.extensions.policy);
-    const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
-    warnings.push(...managedStateRead.warnings);
-    const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
-    warnings.push(...installed.warnings);
-
-    let managedState = managedStateRead.state;
-    const managedStateFix =
-      action === "manage" && options.fixManagedState === true
-        ? await adoptUnmanagedExtensions(
-            resolvedRoots.selected_root,
-            scope,
-            installed.extensions,
-            managedStateRead.state,
-          )
-        : null;
-    if (managedStateFix) {
-      managedState = managedStateFix.state;
-    }
-    if (action === "manage") {
-      const updates = await Promise.all(
-        managedState.entries.map(async (entry) => {
-          if (entry.source.kind !== "github") {
-            return entry;
-          }
-          const updateStatus = await checkGithubUpdate(entry.source);
-          return {
-            ...entry,
-            last_update_check_at: updateStatus.checked_at,
-            last_update_remote_commit: updateStatus.remote_commit,
-            update_available: updateStatus.available,
-            update_error: updateStatus.error,
-          };
-        }),
-      );
-      managedState = {
-        ...managedState,
-        updated_at: nowIso(),
-        entries: sortManagedEntries(updates),
-      };
-      await writeManagedExtensionState(resolvedRoots.selected_root, managedState);
-    }
-
-    const refreshedInstalled = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedState);
-    warnings.push(...refreshedInstalled.warnings);
-    if (action === "manage") {
-      const updateWarnings = refreshedInstalled.extensions
-        .filter((entry) => entry.update_check_status === "failed")
-        .map((entry) => `extension_update_check_failed:${entry.name}`);
-      warnings.push(...updateWarnings);
-    }
-    let runtimeProbeSummary: Record<string, unknown> | undefined;
-    let runtimeInstalledExtensions = refreshedInstalled.extensions;
-    let runtimeActivationFailures: ActivationFailureDiagnostic[] | undefined;
-    if (action === "explore" || options.runtimeProbe === true) {
-      const loadResult = await loadExtensions({
-        pmRoot: resolvedRoots.pm_root,
-        settings,
-        cwd: process.cwd(),
-        noExtensions: global.noExtensions === true,
-      });
-      const activationResult = await activateExtensions({
-        ...loadResult,
-        loaded: loadResult.loaded,
-      });
-      warnings.push(...loadResult.warnings);
-      warnings.push(...activationResult.warnings);
-      runtimeInstalledExtensions = applyDoctorRuntimeActivationState(refreshedInstalled.extensions, loadResult, activationResult);
-      runtimeActivationFailures = collectActivationFailureDiagnostics(activationResult.failed);
-      runtimeProbeSummary = {
-        requested: true,
-        executed: true,
-        reason: action === "explore" ? "explore_defaults_to_runtime_probe" : "runtime_probe_requested",
-        load_failure_count: loadResult.failed.length,
-        activation_failure_count: activationResult.failed.length,
-        warning_count: [...new Set([...loadResult.warnings, ...activationResult.warnings])].length,
-        policy: loadResult.policy,
-      };
-    } else if (action === "manage") {
-      runtimeProbeSummary = {
-        requested: false,
-        executed: false,
-      };
-    }
-
-    const triage = buildExtensionTriageSummary(scope, warnings, runtimeInstalledExtensions, options);
-    warnings.push(...triage.warnings);
-    const details: Record<string, unknown> = {
-      total: runtimeInstalledExtensions.length,
-      managed_total: runtimeInstalledExtensions.filter((entry) => entry.managed).length,
-      enabled_total: runtimeInstalledExtensions.filter((entry) => entry.enabled).length,
-      active_total: runtimeInstalledExtensions.filter((entry) => entry.active).length,
-      extensions: runtimeInstalledExtensions,
-      triage,
-      policy: configuredPolicy,
+  } else if (action === "manage") {
+    runtimeProbeSummary = {
+      requested: false,
+      executed: false,
     };
-    if (runtimeActivationFailures !== undefined) {
-      details.activation_diagnostics = {
-        failed_count: runtimeActivationFailures.length,
-        failed: runtimeActivationFailures,
-      };
-    }
-    if (action === "explore") {
-      details.runtime_probe = runtimeProbeSummary;
-    }
-    if (action === "manage") {
-      details.runtime_probe = runtimeProbeSummary;
-      details.managed_state_fix =
-        managedStateFix !== null
-          ? {
-              requested: true,
-              applied: managedStateFix.adopted_entries.length > 0,
-              adopted_count: managedStateFix.adopted_entries.length,
-              adopted_extensions: managedStateFix.adopted_entries.map((entry) => entry.name),
-              already_managed_count: managedStateFix.already_managed_count,
-            }
-          : {
-              requested: false,
-              applied: false,
-              adopted_count: 0,
-              adopted_extensions: [],
-              already_managed_count: runtimeInstalledExtensions.filter((entry) => entry.managed).length,
-            };
-    }
-    return withResult(details);
   }
-  /* c8 ignore stop */
 
-  /* c8 ignore start -- resolveAction returns a closed ExtensionCommandAction union */
-  throw new PmCliError(`Unsupported extension action "${action}".`, EXIT_CODE.USAGE);
-  /* c8 ignore stop */
+  const triage = buildExtensionTriageSummary(scope, warnings, runtimeInstalledExtensions, options);
+  warnings.push(...triage.warnings);
+  const details: Record<string, unknown> = {
+    total: runtimeInstalledExtensions.length,
+    managed_total: runtimeInstalledExtensions.filter((entry) => entry.managed).length,
+    enabled_total: runtimeInstalledExtensions.filter((entry) => entry.enabled).length,
+    active_total: runtimeInstalledExtensions.filter((entry) => entry.active).length,
+    extensions: runtimeInstalledExtensions,
+    triage,
+    policy: configuredPolicy,
+  };
+  if (runtimeActivationFailures !== undefined) {
+    details.activation_diagnostics = {
+      failed_count: runtimeActivationFailures.length,
+      failed: runtimeActivationFailures,
+    };
+  }
+  if (action === "explore") {
+    details.runtime_probe = runtimeProbeSummary;
+  }
+  if (action === "manage") {
+    details.runtime_probe = runtimeProbeSummary;
+    details.managed_state_fix =
+      managedStateFix !== null
+        ? {
+            requested: true,
+            applied: managedStateFix.adopted_entries.length > 0,
+            adopted_count: managedStateFix.adopted_entries.length,
+            adopted_extensions: managedStateFix.adopted_entries.map((entry) => entry.name),
+            already_managed_count: managedStateFix.already_managed_count,
+          }
+        : {
+            requested: false,
+            applied: false,
+            adopted_count: 0,
+            adopted_extensions: [],
+            already_managed_count: runtimeInstalledExtensions.filter((entry) => entry.managed).length,
+          };
+  }
+  return withResult(details);
 }
+/* c8 ignore stop */
+
+// Dispatch table from lifecycle action to its handler. `explore`/`manage` and
+// `activate`/`deactivate` share a handler that branches on `ctx.action`; the
+// closed ExtensionCommandAction union guarantees every action has an entry, so
+// runExtension needs no unsupported-action fallthrough.
+const EXTENSION_ACTION_HANDLERS: Record<
+  ExtensionCommandAction,
+  (ctx: ExtensionActionContext) => Promise<ExtensionCommandResult>
+> = {
+  init: runExtensionInitAction,
+  install: runExtensionInstallAction,
+  uninstall: runExtensionUninstallAction,
+  explore: runExtensionExploreManageAction,
+  manage: runExtensionExploreManageAction,
+  describe: runExtensionDescribeAction,
+  reload: runExtensionReloadAction,
+  doctor: runExtensionDoctorAction,
+  catalog: runExtensionCatalogAction,
+  adopt: runExtensionAdoptAction,
+  "adopt-all": runExtensionAdoptAllAction,
+  activate: runExtensionActivateDeactivateAction,
+  deactivate: runExtensionActivateDeactivateAction,
+};
 
 export const _testOnly = {
   adoptUnmanagedExtensions,

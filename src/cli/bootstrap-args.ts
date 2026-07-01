@@ -615,6 +615,126 @@ function splitCanonicalListToken(token: string): { flag: string; inlineValue?: s
   };
 }
 
+interface ListFlagSlot {
+  outputIndex: number;
+  originalTokens: string[];
+  values: string[];
+  occurrences: number;
+}
+
+interface ListFlagOccurrence {
+  originalTokens: string[];
+  value: string | undefined;
+  consumed: number;
+}
+
+interface ValuedListFlagOccurrence {
+  originalTokens: string[];
+  value: string;
+}
+
+function copyValueConsumingFlag(argv: string[], index: number, result: (string | null)[]): number {
+  result.push(argv[index]);
+  const next = argv[index + 1];
+  if (typeof next === "string" && next !== "--") {
+    result.push(next);
+    return index + 2;
+  }
+  return index + 1;
+}
+
+function readListFlagOccurrence(
+  argv: string[],
+  index: number,
+  parsed: { flag: string; inlineValue?: string },
+  multiValueListFlags: Set<string>,
+): ListFlagOccurrence {
+  if (parsed.inlineValue !== undefined) {
+    return {
+      originalTokens: [argv[index]],
+      value: parsed.inlineValue,
+      consumed: 1,
+    };
+  }
+
+  const values: string[] = [];
+  let valueIndex = index + 1;
+  while (
+    valueIndex < argv.length &&
+    argv[valueIndex] !== "--" &&
+    !argv[valueIndex].startsWith("-") &&
+    (values.length === 0 || multiValueListFlags.has(parsed.flag))
+  ) {
+    values.push(argv[valueIndex]);
+    valueIndex += 1;
+  }
+
+  const consumed = values.length === 0 ? 1 : 1 + values.length;
+  return {
+    originalTokens: argv.slice(index, index + consumed),
+    value: values.length === 0 ? undefined : values.join(","),
+    consumed,
+  };
+}
+
+function recordListFlagOccurrence(
+  slots: Map<string, ListFlagSlot>,
+  result: (string | null)[],
+  flag: string,
+  occurrence: ValuedListFlagOccurrence,
+): void {
+  const existing = slots.get(flag);
+  if (existing) {
+    existing.values.push(occurrence.value);
+    existing.occurrences += 1;
+    return;
+  }
+
+  slots.set(flag, {
+    outputIndex: result.length,
+    originalTokens: occurrence.originalTokens,
+    values: [occurrence.value],
+    occurrences: 1,
+  });
+  // Reserve the anchor position; finalized after the walk so we know the full
+  // merged value or can restore the original token form for single uses.
+  result.push(null);
+}
+
+function buildListFlagCoalescingSplices(
+  slots: Map<string, ListFlagSlot>,
+  multiValueListFlags: Set<string>,
+): {
+  events: BootstrapNormalizationEvent[];
+  splices: Array<{ outputIndex: number; tokens: string[] }>;
+} {
+  const events: BootstrapNormalizationEvent[] = [];
+  const splices: Array<{ outputIndex: number; tokens: string[] }> = [];
+  for (const [flag, slot] of slots) {
+    const shouldMerge = slot.occurrences >= 2 || (multiValueListFlags.has(flag) && slot.originalTokens.length > 2);
+    if (!shouldMerge) {
+      splices.push({ outputIndex: slot.outputIndex, tokens: slot.originalTokens });
+      continue;
+    }
+    const mergedToken = `${flag}=${slot.values.join(",")}`;
+    splices.push({ outputIndex: slot.outputIndex, tokens: [mergedToken] });
+    events.push({
+      from: `${flag} (x${slot.occurrences})`,
+      to: [mergedToken],
+      reason: "list_merge",
+      confidence: "high",
+    });
+  }
+  return { events, splices };
+}
+
+function applyListFlagSplices(result: (string | null)[], splices: Array<{ outputIndex: number; tokens: string[] }>): void {
+  splices.sort((a, b) => b.outputIndex - a.outputIndex);
+  for (const splice of splices) {
+    result.splice(splice.outputIndex, 1, ...splice.tokens);
+  }
+}
+
 /**
  * Coalesce repeated occurrences of comma-separated list flags into a single
  * `--flag=v1,v2,v3` token anchored at the FIRST occurrence. Without this,
@@ -638,13 +758,6 @@ export function coalesceRepeatedListFlags(
     return { argv: [...argv], events: [] };
   }
 
-  interface ListFlagSlot {
-    outputIndex: number;
-    originalTokens: string[];
-    values: string[];
-    occurrences: number;
-  }
-
   const result: (string | null)[] = [];
   const slots = new Map<string, ListFlagSlot>();
   let index = 0;
@@ -658,14 +771,7 @@ export function coalesceRepeatedListFlags(
     // even when that value begins with "--". Emit both verbatim so the value is
     // never misread as a list-flag occurrence.
     if (valueConsumingFlags.has(token)) {
-      result.push(token);
-      const next = argv[index + 1];
-      if (typeof next === "string" && next !== "--") {
-        result.push(next);
-        index += 2;
-      } else {
-        index += 1;
-      }
+      index = copyValueConsumingFlag(argv, index, result);
       continue;
     }
     const parsed = splitCanonicalListToken(token);
@@ -675,82 +781,25 @@ export function coalesceRepeatedListFlags(
       continue;
     }
 
-    // Determine this occurrence's value (if any) and how many argv tokens it
-    // consumes. Most list flags consume one value per occurrence; selected
-    // agent-facing flags such as create --tags also accept several adjacent
-    // non-flag values in one occurrence.
-    let value: string | undefined;
-    let consumed = 1;
-    if (parsed.inlineValue !== undefined) {
-      value = parsed.inlineValue;
-    } else {
-      const next = argv[index + 1];
-      if (typeof next === "string" && next !== "--" && !next.startsWith("-")) {
-        const values = [next];
-        if (multiValueListFlags.has(parsed.flag)) {
-          let valueIndex = index + 2;
-          while (valueIndex < argv.length && argv[valueIndex] !== "--" && !argv[valueIndex].startsWith("-")) {
-            values.push(argv[valueIndex]);
-            valueIndex += 1;
-          }
-        }
-        value = values.join(",");
-        consumed = 1 + values.length;
-      }
-    }
-
-    if (value === undefined) {
+    const occurrence = readListFlagOccurrence(argv, index, parsed, multiValueListFlags);
+    if (occurrence.value === undefined) {
       // Value-less occurrence: leave untouched, do not coalesce.
       result.push(token);
-      index += consumed;
+      index += occurrence.consumed;
       continue;
     }
 
-    const originalTokens = argv.slice(index, index + consumed);
-    const existing = slots.get(parsed.flag);
-    if (existing) {
-      existing.values.push(value);
-      existing.occurrences += 1;
-    } else {
-      const slot: ListFlagSlot = {
-        outputIndex: result.length,
-        originalTokens,
-        values: [value],
-        occurrences: 1,
-      };
-      slots.set(parsed.flag, slot);
-      // Reserve the anchor position; finalized after the walk so we know the
-      // full merged value (or restore the original tokens for single uses).
-      result.push(null);
-    }
-    index += consumed;
-  }
-
-  const events: BootstrapNormalizationEvent[] = [];
-  const splices: Array<{ outputIndex: number; tokens: string[] }> = [];
-  for (const [flag, slot] of slots) {
-    const shouldMerge = slot.occurrences >= 2 || (multiValueListFlags.has(flag) && slot.originalTokens.length > 2);
-    if (shouldMerge) {
-      const mergedToken = `${flag}=${slot.values.join(",")}`;
-      splices.push({ outputIndex: slot.outputIndex, tokens: [mergedToken] });
-      events.push({
-        from: `${flag} (x${slot.occurrences})`,
-        to: [mergedToken],
-        reason: "list_merge",
-        confidence: "high",
-      });
-    } else {
-      // Single occurrence: restore the original token form verbatim.
-      splices.push({ outputIndex: slot.outputIndex, tokens: slot.originalTokens });
-    }
+    recordListFlagOccurrence(slots, result, parsed.flag, {
+      originalTokens: occurrence.originalTokens,
+      value: occurrence.value,
+    });
+    index += occurrence.consumed;
   }
 
   // Apply anchor splices from the end so earlier indices stay valid when a
   // single-occurrence anchor expands back into two tokens.
-  splices.sort((a, b) => b.outputIndex - a.outputIndex);
-  for (const splice of splices) {
-    result.splice(splice.outputIndex, 1, ...splice.tokens);
-  }
+  const { events, splices } = buildListFlagCoalescingSplices(slots, multiValueListFlags);
+  applyListFlagSplices(result, splices);
 
   return { argv: result as string[], events };
 }

@@ -1085,7 +1085,7 @@ describe("item-format front-matter validation", () => {
         {
           id: "step-2",
           title: "Second",
-          status: "open",
+          status: "pending",
           order: 2,
           created_at: FIXED_TS,
           updated_at: FIXED_TS,
@@ -1101,7 +1101,7 @@ describe("item-format front-matter validation", () => {
         {
           id: "step-1",
           title: "First",
-          status: "open",
+          status: "pending",
           order: 1,
           created_at: FIXED_TS,
           updated_at: FIXED_TS,
@@ -1109,7 +1109,7 @@ describe("item-format front-matter validation", () => {
         {
           id: "",
           title: "Invalid",
-          status: "open",
+          status: "pending",
           order: 3,
           created_at: FIXED_TS,
           updated_at: FIXED_TS,
@@ -1218,7 +1218,7 @@ describe("item-format front-matter validation", () => {
       {
         id: "step-1",
         title: "Step 1",
-        status: "open",
+        status: "pending",
         order: "1",
         created_at: FIXED_TS,
         updated_at: FIXED_TS,

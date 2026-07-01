@@ -721,12 +721,12 @@ function actionScopedToolParameterDefinition(action: PmToolAction, key: string):
   return PM_TOOL_PARAMETER_PROPERTIES[key];
 }
 
-function buildActionScopedToolSchema(action: PmToolAction): Record<string, unknown> {
-  const contract = PM_TOOL_ACTION_SCHEMA_CONTRACTS[action];
-  const required = toSchemaKeyList(contract.required ?? []);
-  const optional = toSchemaKeyList(contract.optional ?? []);
-  const mutationParameterKeys = PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS[action] ?? [];
-  const allowedKeys = toSchemaKeyList(["action", ...PM_TOOL_GLOBAL_PARAMETER_KEYS, ...mutationParameterKeys, ...required, ...optional]);
+/**
+ * Build the `properties` map for one action-scoped schema: the fixed `action`
+ * literal followed by every allowed parameter that resolves to a concrete
+ * definition, each decorated with its action-scoped description and examples.
+ */
+function buildActionScopedSchemaProperties(action: PmToolAction, allowedKeys: string[]): Record<string, unknown> {
   const properties: Record<string, unknown> = {
     action: {
       const: action,
@@ -742,46 +742,58 @@ function buildActionScopedToolSchema(action: PmToolAction): Record<string, unkno
       properties[key] = decorateActionScopedToolParameterDefinition(action, key, definition);
     }
   }
-  const schema: Record<string, unknown> = {
-    type: "object",
-    additionalProperties: false,
-    required: ["action", ...required],
-    title: `pm action "${action}" parameters`,
-    properties,
-  };
-  if (contract.anyOfRequired && contract.anyOfRequired.length > 0) {
-    schema.anyOf = contract.anyOfRequired.map((requiredFields) => ({
+  return properties;
+}
+
+/**
+ * Build the `oneOf` branches for an action whose contract requires exactly one of
+ * several field groups. Each branch requires its own group and — when sibling
+ * groups exist — forbids any field drawn from them, so the schema rejects the same
+ * overlapping combinations the runtime rejects; `history-repair`'s `all` branch
+ * additionally pins `all` to the literal `true`.
+ */
+function buildOneOfSchemaEntries(
+  action: PmToolAction,
+  oneOfRequiredGroups: Array<string[]>,
+): Array<Record<string, unknown>> {
+  const allOneOfFields = oneOfRequiredGroups.flat();
+  return oneOfRequiredGroups.map((requiredFields) => {
+    const otherFields = allOneOfFields.filter((field) => !requiredFields.includes(field));
+    return {
       required: [...requiredFields],
-    }));
-  }
-  const oneOfRequiredGroups = contract.oneOfRequired;
-  if (oneOfRequiredGroups && oneOfRequiredGroups.length > 0) {
-    const allOneOfFields = oneOfRequiredGroups.flat();
-    schema.oneOf = oneOfRequiredGroups.map((requiredFields) => {
-      const otherFields = allOneOfFields.filter((field) => !requiredFields.includes(field));
-      return {
-        required: [...requiredFields],
-        ...(otherFields.length > 0 ? { not: { anyOf: otherFields.map((field) => ({ required: [field] })) } } : {}),
-        ...(action === "history-repair" && requiredFields.includes("all") ? { properties: { all: { const: true } } } : {}),
-      };
-    });
-  }
+      ...(otherFields.length > 0 ? { not: { anyOf: otherFields.map((field) => ({ required: [field] })) } } : {}),
+      ...(action === "history-repair" && requiredFields.includes("all") ? { properties: { all: { const: true } } } : {}),
+    };
+  });
+}
+
+/**
+ * Build the consolidated `allOf` constraint list for an action's contract,
+ * appending branches in a fixed order — conditional-required (`if`/`then`), then
+ * dependent any-of-required, then mutually-exclusive (`not`/`required`) — so a
+ * given contract always serializes to a byte-identical schema. Returns an empty
+ * array when the contract declares none of these constraints, letting the caller
+ * omit the `allOf` key entirely.
+ */
+function buildActionScopedAllOf(contract: PmActionSchemaContract): Array<Record<string, unknown>> {
+  const allOf: Array<Record<string, unknown>> = [];
   if (contract.conditionalRequired && contract.conditionalRequired.length > 0) {
-    schema.allOf = contract.conditionalRequired.map((entry) => ({
-      if: {
-        properties: {
-          [entry.property]: { const: entry.value },
+    for (const entry of contract.conditionalRequired) {
+      allOf.push({
+        if: {
+          properties: {
+            [entry.property]: { const: entry.value },
+          },
+          required: [entry.property],
         },
-        required: [entry.property],
-      },
-      // eslint-disable-next-line unicorn/no-thenable -- JSON Schema conditional keyword, not a Promise-like object.
-      then: {
-        required: entry.required,
-      },
-    }));
+        // eslint-disable-next-line unicorn/no-thenable -- JSON Schema conditional keyword, not a Promise-like object.
+        then: {
+          required: entry.required,
+        },
+      });
+    }
   }
   if (contract.dependentAnyOfRequired && contract.dependentAnyOfRequired.length > 0) {
-    const allOf = Array.isArray(schema.allOf) ? [...(schema.allOf as Array<Record<string, unknown>>)] : [];
     for (const entry of contract.dependentAnyOfRequired) {
       allOf.push({
         if: { required: [entry.property] },
@@ -793,13 +805,38 @@ function buildActionScopedToolSchema(action: PmToolAction): Record<string, unkno
         },
       });
     }
-    schema.allOf = allOf;
   }
   if (contract.mutuallyExclusive && contract.mutuallyExclusive.length > 0) {
-    const allOf = Array.isArray(schema.allOf) ? [...(schema.allOf as Array<Record<string, unknown>>)] : [];
     for (const group of contract.mutuallyExclusive) {
       allOf.push({ not: { required: toSchemaKeyList(group) } });
     }
+  }
+  return allOf;
+}
+
+function buildActionScopedToolSchema(action: PmToolAction): Record<string, unknown> {
+  const contract = PM_TOOL_ACTION_SCHEMA_CONTRACTS[action];
+  const required = toSchemaKeyList(contract.required ?? []);
+  const optional = toSchemaKeyList(contract.optional ?? []);
+  const mutationParameterKeys = PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS[action] ?? [];
+  const allowedKeys = toSchemaKeyList(["action", ...PM_TOOL_GLOBAL_PARAMETER_KEYS, ...mutationParameterKeys, ...required, ...optional]);
+  const schema: Record<string, unknown> = {
+    type: "object",
+    additionalProperties: false,
+    required: ["action", ...required],
+    title: `pm action "${action}" parameters`,
+    properties: buildActionScopedSchemaProperties(action, allowedKeys),
+  };
+  if (contract.anyOfRequired && contract.anyOfRequired.length > 0) {
+    schema.anyOf = contract.anyOfRequired.map((requiredFields) => ({
+      required: [...requiredFields],
+    }));
+  }
+  if (contract.oneOfRequired && contract.oneOfRequired.length > 0) {
+    schema.oneOf = buildOneOfSchemaEntries(action, contract.oneOfRequired);
+  }
+  const allOf = buildActionScopedAllOf(contract);
+  if (allOf.length > 0) {
     schema.allOf = allOf;
   }
   return schema;

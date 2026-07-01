@@ -192,6 +192,30 @@ function pushRepeatableValueFlag(args: string[], flag: string, values: unknown):
   }
 }
 
+function optionTrue(options: Record<string, unknown>, key: string): true | undefined {
+  return options[key] === true ? true : undefined;
+}
+
+function optionFalse(options: Record<string, unknown>, key: string): true | undefined {
+  return options[key] === false ? true : undefined;
+}
+
+function anyOptionTrue(options: Record<string, unknown>, keys: readonly string[]): true | undefined {
+  return keys.some((key) => options[key] === true) ? true : undefined;
+}
+
+function copyUnknownOptions(target: Record<string, unknown>, source: Record<string, unknown>): void {
+  for (const [key, value] of Object.entries(source)) {
+    if (key === "__proto__" || key === "constructor" || key === "prototype") {
+      continue;
+    }
+    if (Object.hasOwn(target, key)) {
+      continue;
+    }
+    target[key] = value;
+  }
+}
+
 /**
  * Implements build background test command args for the public runtime surface of this module.
  */
@@ -305,7 +329,7 @@ export function normalizeCreateOptions(
     message: readCreateString("message"),
     assignee: readCreateString("assignee"),
     parent: readCreateString("parent"),
-    allowMissingParent: commandOptions.allowMissingParent === true,
+    allowMissingParent: optionTrue(commandOptions, "allowMissingParent") === true,
     reviewer: readCreateString("reviewer"),
     risk: readCreateString("risk"),
     confidence: readCreateString("confidence"),
@@ -338,23 +362,18 @@ export function normalizeCreateOptions(
     typeOption: readCreateList("typeOption"),
     field: readCreateList("field"),
     unset: readCreateList("unset"),
-    clearDeps: commandOptions.clearDeps === true ? true : undefined,
-    clearComments: commandOptions.clearComments === true ? true : undefined,
-    clearNotes: commandOptions.clearNotes === true ? true : undefined,
-    clearLearnings: commandOptions.clearLearnings === true ? true : undefined,
-    clearFiles: commandOptions.clearFiles === true ? true : undefined,
-    clearTests: commandOptions.clearTests === true ? true : undefined,
-    clearDocs: commandOptions.clearDocs === true ? true : undefined,
-    clearReminders: commandOptions.clearReminders === true ? true : undefined,
-    clearEvents: commandOptions.clearEvents === true ? true : undefined,
-    clearTypeOptions: commandOptions.clearTypeOptions === true ? true : undefined,
-  };
-  for (const [key, value] of Object.entries(commandOptions)) {
-    if (Object.hasOwn(normalized, key)) {
-      continue;
-    }
-    normalized[key] = value;
+    clearDeps: optionTrue(commandOptions, "clearDeps"),
+    clearComments: optionTrue(commandOptions, "clearComments"),
+    clearNotes: optionTrue(commandOptions, "clearNotes"),
+    clearLearnings: optionTrue(commandOptions, "clearLearnings"),
+    clearFiles: optionTrue(commandOptions, "clearFiles"),
+    clearTests: optionTrue(commandOptions, "clearTests"),
+    clearDocs: optionTrue(commandOptions, "clearDocs"),
+    clearReminders: optionTrue(commandOptions, "clearReminders"),
+    clearEvents: optionTrue(commandOptions, "clearEvents"),
+    clearTypeOptions: optionTrue(commandOptions, "clearTypeOptions"),
   }
+  copyUnknownOptions(normalized, commandOptions);
   return normalized as CreateCommandOptions;
 }
 
@@ -399,10 +418,8 @@ export function normalizeUpdateOptions(commandOptions: Record<string, unknown>):
     author: readUpdateString("author"),
     message: readUpdateString("message"),
     force: Boolean(commandOptions.force),
-    allowAuditUpdate:
-      commandOptions.allowAuditUpdate === true || commandOptions.allow_audit_update === true ? true : undefined,
-    allowAuditDepUpdate:
-      commandOptions.allowAuditDepUpdate === true || commandOptions.allow_audit_dep_update === true ? true : undefined,
+    allowAuditUpdate: anyOptionTrue(commandOptions, ["allowAuditUpdate", "allow_audit_update"]),
+    allowAuditDepUpdate: anyOptionTrue(commandOptions, ["allowAuditDepUpdate", "allow_audit_dep_update"]),
     assignee: readUpdateString("assignee"),
     parent: readUpdateString("parent"),
     reviewer: readUpdateString("reviewer"),
@@ -427,8 +444,8 @@ export function normalizeUpdateOptions(commandOptions: Record<string, unknown>):
     customerImpact: readUpdateString("customerImpact"),
     dep: readUpdateList("dep"),
     depRemove: readUpdateList("depRemove"),
-    replaceDeps: commandOptions.replaceDeps === true ? true : undefined,
-    replaceTests: commandOptions.replaceTests === true ? true : undefined,
+    replaceDeps: optionTrue(commandOptions, "replaceDeps"),
+    replaceTests: optionTrue(commandOptions, "replaceTests"),
     comment: readUpdateList("comment"),
     note: readUpdateList("note"),
     learning: readUpdateList("learning"),
@@ -440,23 +457,18 @@ export function normalizeUpdateOptions(commandOptions: Record<string, unknown>):
     typeOption: readUpdateList("typeOption"),
     field: readUpdateList("field"),
     unset: readUpdateList("unset"),
-    clearDeps: commandOptions.clearDeps === true ? true : undefined,
-    clearComments: commandOptions.clearComments === true ? true : undefined,
-    clearNotes: commandOptions.clearNotes === true ? true : undefined,
-    clearLearnings: commandOptions.clearLearnings === true ? true : undefined,
-    clearFiles: commandOptions.clearFiles === true ? true : undefined,
-    clearTests: commandOptions.clearTests === true ? true : undefined,
-    clearDocs: commandOptions.clearDocs === true ? true : undefined,
-    clearReminders: commandOptions.clearReminders === true ? true : undefined,
-    clearEvents: commandOptions.clearEvents === true ? true : undefined,
-    clearTypeOptions: commandOptions.clearTypeOptions === true ? true : undefined,
-  };
-  for (const [key, value] of Object.entries(commandOptions)) {
-    if (Object.hasOwn(normalized, key)) {
-      continue;
-    }
-    normalized[key] = value;
+    clearDeps: optionTrue(commandOptions, "clearDeps"),
+    clearComments: optionTrue(commandOptions, "clearComments"),
+    clearNotes: optionTrue(commandOptions, "clearNotes"),
+    clearLearnings: optionTrue(commandOptions, "clearLearnings"),
+    clearFiles: optionTrue(commandOptions, "clearFiles"),
+    clearTests: optionTrue(commandOptions, "clearTests"),
+    clearDocs: optionTrue(commandOptions, "clearDocs"),
+    clearReminders: optionTrue(commandOptions, "clearReminders"),
+    clearEvents: optionTrue(commandOptions, "clearEvents"),
+    clearTypeOptions: optionTrue(commandOptions, "clearTypeOptions"),
   }
+  copyUnknownOptions(normalized, commandOptions);
   return normalized;
 }
 
@@ -571,55 +583,49 @@ export function normalizeListOptions(options: Record<string, unknown>): ListOpti
     limit: readListOptionString(options, "limit"),
     offset: readListOptionString(options, "offset"),
     // Commander stores --no-truncate as truncate=false; --all is the positive alias.
-    noTruncate: options.truncate === false || options.all === true ? true : undefined,
-    includeBody: options.includeBody === true ? true : undefined,
-    compact: options.compact === true ? true : undefined,
-    brief: options.brief === true ? true : undefined,
-    full: options.full === true ? true : undefined,
+    noTruncate: optionFalse(options, "truncate") ?? optionTrue(options, "all"),
+    includeBody: optionTrue(options, "includeBody"),
+    compact: optionTrue(options, "compact"),
+    brief: optionTrue(options, "brief"),
+    full: optionTrue(options, "full"),
     fields: readListOptionString(options, "fields"),
     sort: readListOptionString(options, "sort"),
     order: readListOptionString(options, "order"),
-    tree: options.tree === true ? true : undefined,
+    tree: optionTrue(options, "tree"),
     treeDepth: readListOptionString(options, "treeDepth"),
-    filterAcMissing: options.filterAcMissing === true ? true : undefined,
-    filterEstimatesMissing:
-      options.filterEstimatesMissing === true || options.filterEstimateMissing === true ? true : undefined,
-    filterResolutionMissing: options.filterResolutionMissing === true ? true : undefined,
-    filterMetadataMissing: options.filterMetadataMissing === true ? true : undefined,
+    filterAcMissing: optionTrue(options, "filterAcMissing"),
+    filterEstimatesMissing: anyOptionTrue(options, ["filterEstimatesMissing", "filterEstimateMissing"]),
+    filterResolutionMissing: optionTrue(options, "filterResolutionMissing"),
+    filterMetadataMissing: optionTrue(options, "filterMetadataMissing"),
     // Governance-missing selection filters (GH-236).
-    filterReviewerMissing: options.filterReviewerMissing === true ? true : undefined,
-    filterRiskMissing: options.filterRiskMissing === true ? true : undefined,
-    filterConfidenceMissing: options.filterConfidenceMissing === true ? true : undefined,
-    filterSprintMissing: options.filterSprintMissing === true ? true : undefined,
-    filterReleaseMissing: options.filterReleaseMissing === true ? true : undefined,
+    filterReviewerMissing: optionTrue(options, "filterReviewerMissing"),
+    filterRiskMissing: optionTrue(options, "filterRiskMissing"),
+    filterConfidenceMissing: optionTrue(options, "filterConfidenceMissing"),
+    filterSprintMissing: optionTrue(options, "filterSprintMissing"),
+    filterReleaseMissing: optionTrue(options, "filterReleaseMissing"),
     // Content-field presence/absence selection filters (GH-242). Presence flags
     // are plain booleans; absence uses commander negation (`--no-notes` stores
     // notes=false) except --empty-body which is its own dest.
-    hasNotes: options.hasNotes === true ? true : undefined,
-    hasLearnings: options.hasLearnings === true ? true : undefined,
-    hasFiles: options.hasFiles === true ? true : undefined,
-    hasDocs: options.hasDocs === true ? true : undefined,
-    hasTests: options.hasTests === true ? true : undefined,
-    hasComments: options.hasComments === true ? true : undefined,
-    hasDeps: options.hasDeps === true ? true : undefined,
-    hasBody: options.hasBody === true ? true : undefined,
-    hasLinkedCommand: options.hasLinkedCommand === true ? true : undefined,
-    noNotes: options.notes === false ? true : undefined,
-    noLearnings: options.learnings === false ? true : undefined,
-    noFiles: options.files === false ? true : undefined,
-    noDocs: options.docs === false ? true : undefined,
-    noTests: options.tests === false ? true : undefined,
-    noComments: options.comments === false ? true : undefined,
-    noDeps: options.deps === false ? true : undefined,
-    emptyBody: options.emptyBody === true ? true : undefined,
-    noLinkedCommand: options.linkedCommand === false ? true : undefined,
-  };
-  for (const [key, value] of Object.entries(options)) {
-    if (Object.hasOwn(normalized, key)) {
-      continue;
-    }
-    normalized[key] = value;
+    hasNotes: optionTrue(options, "hasNotes"),
+    hasLearnings: optionTrue(options, "hasLearnings"),
+    hasFiles: optionTrue(options, "hasFiles"),
+    hasDocs: optionTrue(options, "hasDocs"),
+    hasTests: optionTrue(options, "hasTests"),
+    hasComments: optionTrue(options, "hasComments"),
+    hasDeps: optionTrue(options, "hasDeps"),
+    hasBody: optionTrue(options, "hasBody"),
+    hasLinkedCommand: optionTrue(options, "hasLinkedCommand"),
+    noNotes: optionFalse(options, "notes"),
+    noLearnings: optionFalse(options, "learnings"),
+    noFiles: optionFalse(options, "files"),
+    noDocs: optionFalse(options, "docs"),
+    noTests: optionFalse(options, "tests"),
+    noComments: optionFalse(options, "comments"),
+    noDeps: optionFalse(options, "deps"),
+    emptyBody: optionTrue(options, "emptyBody"),
+    noLinkedCommand: optionFalse(options, "linkedCommand"),
   }
+  copyUnknownOptions(normalized, options);
   return normalized as ListOptions;
 }
 
@@ -759,12 +765,12 @@ export function normalizeSearchOptions(options: Record<string, unknown>): Record
     mode,
     matchMode: readSearchString("matchMode"),
     minScore: readSearchStringOrNumber("minScore"),
-    count: options.count === true ? true : undefined,
+    count: optionTrue(options, "count"),
     semanticWeight: readSearchStringOrNumber("semanticWeight"),
-    includeLinked: options.includeLinked === true ? true : undefined,
-    titleExact: options.titleExact === true ? true : undefined,
-    phraseExact: options.phraseExact === true ? true : undefined,
-    highlight: options.highlight === true ? true : undefined,
+    includeLinked: optionTrue(options, "includeLinked"),
+    titleExact: optionTrue(options, "titleExact"),
+    phraseExact: optionTrue(options, "phraseExact"),
+    highlight: optionTrue(options, "highlight"),
     status: readSearchString("status"),
     type: readSearchString("type"),
     tag: readSearchString("tag"),
@@ -782,41 +788,36 @@ export function normalizeSearchOptions(options: Record<string, unknown>): Record
     limit: readSearchString("limit"),
     fields,
     compact: compactRequested || defaultCompact ? true : undefined,
-    full: fullRequested ? true : undefined,
+    full: optionTrue(options, "full"),
     // Governance-missing selection filters (GH-236).
-    filterReviewerMissing: options.filterReviewerMissing === true ? true : undefined,
-    filterRiskMissing: options.filterRiskMissing === true ? true : undefined,
-    filterConfidenceMissing: options.filterConfidenceMissing === true ? true : undefined,
-    filterSprintMissing: options.filterSprintMissing === true ? true : undefined,
-    filterReleaseMissing: options.filterReleaseMissing === true ? true : undefined,
+    filterReviewerMissing: optionTrue(options, "filterReviewerMissing"),
+    filterRiskMissing: optionTrue(options, "filterRiskMissing"),
+    filterConfidenceMissing: optionTrue(options, "filterConfidenceMissing"),
+    filterSprintMissing: optionTrue(options, "filterSprintMissing"),
+    filterReleaseMissing: optionTrue(options, "filterReleaseMissing"),
     // Content-field presence/absence selection filters (GH-242). Mirror
     // normalizeListOptions: presence flags are booleans; absence uses commander
     // negation (notes=false) except --empty-body which is its own dest.
-    hasNotes: options.hasNotes === true ? true : undefined,
-    hasLearnings: options.hasLearnings === true ? true : undefined,
-    hasFiles: options.hasFiles === true ? true : undefined,
-    hasDocs: options.hasDocs === true ? true : undefined,
-    hasTests: options.hasTests === true ? true : undefined,
-    hasComments: options.hasComments === true ? true : undefined,
-    hasDeps: options.hasDeps === true ? true : undefined,
-    hasBody: options.hasBody === true ? true : undefined,
-    hasLinkedCommand: options.hasLinkedCommand === true ? true : undefined,
-    noNotes: options.notes === false ? true : undefined,
-    noLearnings: options.learnings === false ? true : undefined,
-    noFiles: options.files === false ? true : undefined,
-    noDocs: options.docs === false ? true : undefined,
-    noTests: options.tests === false ? true : undefined,
-    noComments: options.comments === false ? true : undefined,
-    noDeps: options.deps === false ? true : undefined,
-    emptyBody: options.emptyBody === true ? true : undefined,
-    noLinkedCommand: options.linkedCommand === false ? true : undefined,
-  };
-  for (const [key, value] of Object.entries(options)) {
-    if (Object.hasOwn(normalized, key)) {
-      continue;
-    }
-    normalized[key] = value;
+    hasNotes: optionTrue(options, "hasNotes"),
+    hasLearnings: optionTrue(options, "hasLearnings"),
+    hasFiles: optionTrue(options, "hasFiles"),
+    hasDocs: optionTrue(options, "hasDocs"),
+    hasTests: optionTrue(options, "hasTests"),
+    hasComments: optionTrue(options, "hasComments"),
+    hasDeps: optionTrue(options, "hasDeps"),
+    hasBody: optionTrue(options, "hasBody"),
+    hasLinkedCommand: optionTrue(options, "hasLinkedCommand"),
+    noNotes: optionFalse(options, "notes"),
+    noLearnings: optionFalse(options, "learnings"),
+    noFiles: optionFalse(options, "files"),
+    noDocs: optionFalse(options, "docs"),
+    noTests: optionFalse(options, "tests"),
+    noComments: optionFalse(options, "comments"),
+    noDeps: optionFalse(options, "deps"),
+    emptyBody: optionTrue(options, "emptyBody"),
+    noLinkedCommand: optionFalse(options, "linkedCommand"),
   }
+  copyUnknownOptions(normalized, options);
   return normalized;
 }
 
@@ -863,6 +864,9 @@ export function normalizeActivityOptions(options: Record<string, unknown>): {
   };
 }
 
+const ACTIVITY_STREAM_ENABLED_VALUES = new Set(["", "rows", "ndjson", "jsonl", "true", "1", "yes", "on"]);
+const ACTIVITY_STREAM_DISABLED_VALUES = new Set(["false", "off", "none", "0"]);
+
 /**
  * Implements resolve activity stream mode for the public runtime surface of this module.
  */
@@ -875,19 +879,10 @@ export function resolveActivityStreamMode(raw: unknown): boolean {
   }
   if (typeof raw === "string") {
     const normalized = raw.trim().toLowerCase();
-    if (
-      normalized.length === 0 ||
-      normalized === "rows" ||
-      normalized === "ndjson" ||
-      normalized === "jsonl" ||
-      normalized === "true" ||
-      normalized === "1" ||
-      normalized === "yes" ||
-      normalized === "on"
-    ) {
+    if (ACTIVITY_STREAM_ENABLED_VALUES.has(normalized)) {
       return true;
     }
-    if (normalized === "false" || normalized === "off" || normalized === "none" || normalized === "0") {
+    if (ACTIVITY_STREAM_DISABLED_VALUES.has(normalized)) {
       return false;
     }
   }

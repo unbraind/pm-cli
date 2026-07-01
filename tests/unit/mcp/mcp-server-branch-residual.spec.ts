@@ -72,6 +72,7 @@ function buildCommandMocks() {
     runPlan: vi.fn(async () => ({ action: "plan" })),
     runSchemaAddStatus: vi.fn(async () => ({ action: "schema-add-status" })),
     runSchemaAddType: vi.fn(async () => ({ action: "schema-add-type" })),
+    runSchemaInferTypes: vi.fn(async () => ({ action: "schema-infer-types" })),
     runStats: vi.fn(async () => ({ action: "stats" })),
     runAppend: vi.fn(async () => ({ action: "append" })),
     runUpdateMany: vi.fn(async () => ({ action: "update-many" })),
@@ -196,9 +197,10 @@ describe("mcp server branch residual coverage", () => {
     await runAction({ action: "history-repair", options: { id: "pm-15" } });
     await runAction({ action: "history-repair", options: { all: true } });
 
-    await runAction({ action: "plan", options: { subcommand: "show", id: "pm-16", reorderTo: "7" } });
+    await runAction({ action: "plan", options: { subcommand: "show", id: "pm-16", reorderTo: "7th" } });
     await runAction({ action: "plan", options: { subcommand: "show", id: "pm-16a", reorderTo: 4 } });
     await runAction({ action: "plan", options: { subcommand: "show", id: "pm-16b", stepRef: "step-1" } });
+    await runAction({ action: "plan", options: { subcommand: "show", id: "pm-16c", reorderTo: 1.5 } });
     await runAction({
       action: "schema",
       subcommand: "add-status",
@@ -218,6 +220,13 @@ describe("mcp server branch residual coverage", () => {
       name: "Initiative",
       options: {},
     });
+    await runAction({
+      action: "schema",
+      subcommand: "add-type",
+      name: "Inferred",
+      infer: true,
+      options: {},
+    });
     await runAction({ action: "stats", options: { tagPrefix: "topic:" } });
     await runAction({ action: "stats", options: { tagPrefix: 42 } });
     await runAction({ action: "append", options: { id: "pm-17", body: "body" } });
@@ -233,6 +242,27 @@ describe("mcp server branch residual coverage", () => {
         options: {},
       }),
     ).rejects.toThrow(/finite integer/);
+
+    await expect(runAction({ action: "plan", options: { subcommand: "show", id: "pm-16d", reorderTo: "abc" } })).rejects.toThrow(
+      /finite integer/,
+    );
+    await expect(runAction({ action: "plan", options: { subcommand: "show", id: "pm-16f", reorderTo: "1.5" } })).rejects.toThrow(
+      /finite integer/,
+    );
+    await expect(
+      runAction({ action: "plan", options: { subcommand: "show", id: "pm-16g", reorderTo: "9".repeat(400) } }),
+    ).rejects.toThrow(/finite integer/);
+    await expect(
+      runAction({ action: "plan", options: { subcommand: "show", id: "pm-16e", reorderTo: Number.NaN } }),
+    ).rejects.toThrow(/finite integer/);
+
+    await expect(runAction({ action: "toString", options: {} })).rejects.toThrow(/Unsupported native pm action: toString/);
+    await expect(runAction({ action: "schema", subcommand: "typo", infer: true, options: {} })).rejects.toThrow(
+      /Unknown pm schema subcommand "typo"/,
+    );
+    await expect(runAction({ action: "profile", options: { subcommand: "constructor" } })).rejects.toThrow(
+      /Unknown pm profile subcommand "constructor"/,
+    );
 
     expect(server._testOnly.updateManyOptionsFromFlat({ update: { title: "bulk" } } as never)).toMatchObject({
       list: expect.any(Object),
@@ -259,6 +289,15 @@ describe("mcp server branch residual coverage", () => {
     } as never);
     expect(commandMocks.runFocus).toHaveBeenCalled();
 
+    await expect(
+      server.handleRequest({
+        jsonrpc: "2.0",
+        id: 43,
+        method: "tools/call",
+        params: { name: "toString", arguments: {} },
+      } as never),
+    ).rejects.toThrow(/Unknown pm MCP tool: toString/);
+
     expect(server._testOnly.errorContent(new Error("plain-error"))).toMatchObject({ isError: true });
     expect(server._testOnly.errorContent("primitive-error")).toMatchObject({ isError: true });
 
@@ -277,6 +316,8 @@ describe("mcp server branch residual coverage", () => {
     expect(commandMocks.runHistoryRepair).toHaveBeenCalledTimes(1);
     expect(commandMocks.runHistoryRepairAll).toHaveBeenCalledTimes(1);
     expect(commandMocks.assertHistoryRepairTarget).toHaveBeenCalledTimes(2);
+    expect(commandMocks.runSchemaInferTypes).toHaveBeenCalledTimes(1);
+    expect(commandMocks.runPlan).toHaveBeenCalledWith(expect.objectContaining({ id: "pm-16c", reorderTo: 1 }));
   });
 
   it("covers extension-dispatch fallback branches", async () => {

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { _testOnlyItemFormat, serializeItemDocument } from "../../../../src/core/item/item-format.js";
+import {
+  _testOnlyItemFormat,
+  canonicalDocument,
+  normalizeFrontMatter,
+  serializeItemDocument,
+} from "../../../../src/core/item/item-format.js";
 
 const FIXED_TS = "2026-02-22T00:00:00.000Z";
 
@@ -90,6 +95,17 @@ describe("item-format internal normalization helpers", () => {
       },
     ] as never);
     expect(summaries?.map((entry) => entry.kind)).toEqual(["test", "test-all"]);
+    expect(summaries?.[0]).toStrictEqual({
+      run_id: "run-1",
+      kind: "test",
+      status: "passed",
+      started_at: FIXED_TS,
+      finished_at: FIXED_TS,
+      recorded_at: FIXED_TS,
+      passed: 1,
+      failed: 0,
+      skipped: 0,
+    });
 
     const sortedTests = _testOnlyItemFormat.sortTests([
       {
@@ -130,6 +146,64 @@ describe("item-format internal normalization helpers", () => {
       },
     ] as never);
     expect(sortedTests).toHaveLength(2);
+
+    expect(
+      _testOnlyItemFormat.sortTests([
+        {
+          scope: "project",
+          command: "npm test",
+          env_set: { " ": "kept out", EMPTY: " " },
+          env_clear: [" "],
+          assert_stdout_contains: [" "],
+          assert_json_field_equals: { " ": "kept out", EMPTY: " " },
+          assert_json_field_gte: { " ": 1, missing: Number.NaN },
+        },
+      ] as never),
+    ).toStrictEqual([{ command: "npm test", scope: "project" }]);
+    expect(_testOnlyItemFormat.sortTests("npm test" as never)).toBeUndefined();
+    const nullPrototypeEnvSet = Object.assign(Object.create(null) as Record<string, string>, { SAFE: " value " });
+    Object.defineProperty(nullPrototypeEnvSet, "__proto__", {
+      enumerable: true,
+      value: "blocked",
+    });
+    const numericAssertions = { count: 2, constructor: 3 };
+    Object.defineProperty(numericAssertions, "__proto__", {
+      enumerable: true,
+      value: 4,
+    });
+
+    expect(
+      _testOnlyItemFormat.sortTests([
+        {
+          scope: "project",
+          command: "npm test",
+          env_set: nullPrototypeEnvSet,
+          env_clear: ["KEEP", 1],
+          assert_stdout_contains: ["ok", 2],
+          assert_json_field_equals: "not-a-record",
+          assert_json_field_gte: numericAssertions,
+        },
+        {
+          scope: "project",
+          command: "pnpm test",
+          env_set: ["not-a-record"],
+          assert_json_field_gte: ["not-a-record"],
+        },
+      ] as never),
+    ).toStrictEqual([
+      {
+        command: "npm test",
+        scope: "project",
+        env_set: { SAFE: "value" },
+        env_clear: ["KEEP"],
+        assert_stdout_contains: ["ok"],
+        assert_json_field_gte: { count: 2 },
+      },
+      {
+        command: "pnpm test",
+        scope: "project",
+      },
+    ]);
   });
 
   it("normalizes nested plan metadata collections with invalid entries", () => {
@@ -176,7 +250,7 @@ describe("item-format internal normalization helpers", () => {
       {
         id: "step-2",
         title: "Second",
-        status: "open",
+        status: "pending",
         order: 2,
         created_at: FIXED_TS,
         updated_at: FIXED_TS,
@@ -184,7 +258,7 @@ describe("item-format internal normalization helpers", () => {
       {
         id: "step-1",
         title: "First",
-        status: "open",
+        status: "pending",
         order: 1,
         created_at: FIXED_TS,
         updated_at: FIXED_TS,
@@ -192,9 +266,25 @@ describe("item-format internal normalization helpers", () => {
       {
         id: "missing-time",
         title: "Invalid",
-        status: "open",
+        status: "pending",
         order: 3,
         created_at: "",
+        updated_at: FIXED_TS,
+      },
+      {
+        id: "bad-status",
+        title: "Invalid",
+        status: "bogus",
+        order: 4,
+        created_at: FIXED_TS,
+        updated_at: FIXED_TS,
+      },
+      {
+        id: "blank-order",
+        title: "Invalid",
+        status: "pending",
+        order: " ",
+        created_at: FIXED_TS,
         updated_at: FIXED_TS,
       },
     ] as never);
@@ -204,7 +294,7 @@ describe("item-format internal normalization helpers", () => {
         {
           id: "bad-types",
           title: "Invalid",
-          status: "open",
+          status: "pending",
           order: 1,
           created_at: 123,
           updated_at: {},
@@ -237,6 +327,83 @@ describe("item-format internal normalization helpers", () => {
     expect(
       _testOnlyItemFormat.normalizePlanValidation([null, {}, { text: "run tests", command: "pnpm test", expected: "pass" }] as never),
     ).toEqual([{ text: "run tests", command: "pnpm test", expected: "pass" }]);
+  });
+
+  it("warns for normalized unknown schema fields in warn mode", () => {
+    const warnings: string[] = [];
+    const metadata = {
+      id: "pm-1",
+      title: "Title",
+      status: "open",
+      priority: 1,
+      type: "Task",
+      created_at: FIXED_TS,
+      updated_at: FIXED_TS,
+      tags: [],
+      unknown_runtime_field: "kept",
+    };
+    expect(
+      normalizeFrontMatter(metadata as never, {
+        schema: { unknown_field_policy: "warn" } as never,
+        onWarning: (warning) => warnings.push(warning),
+      }),
+    ).toMatchObject({ unknown_runtime_field: "kept" });
+    expect(warnings).toEqual(["item_unknown_schema_fields:unknown_runtime_field"]);
+  });
+
+  it("warns for canonical unknown schema fields in warn mode", () => {
+    const warnings: string[] = [];
+    const metadata = {
+      id: "pm-1",
+      title: "Title",
+      status: "open",
+      priority: 1,
+      type: "Task",
+      created_at: FIXED_TS,
+      updated_at: FIXED_TS,
+      tags: [],
+      unknown_runtime_field: "kept",
+    };
+    const canonical = canonicalDocument(
+      { metadata: metadata as never, body: "Body" },
+      {
+        schema: { unknown_field_policy: "warn" } as never,
+        onWarning: (warning) => warnings.push(warning),
+      },
+    );
+    expect(canonical.metadata).toMatchObject({ unknown_runtime_field: "kept" });
+    expect(warnings).toEqual(["item_unknown_schema_fields:unknown_runtime_field"]);
+  });
+
+  it("skips unsafe and malformed front matter extension fields", () => {
+    const metadata = {
+      id: "pm-1",
+      title: "Title",
+      status: "open",
+      priority: 1,
+      type: "Task",
+      created_at: FIXED_TS,
+      updated_at: FIXED_TS,
+      tags: [],
+      events: "not-an-array",
+      custom_runtime_field: "kept",
+      constructor: "blocked",
+      prototype: "blocked",
+    };
+    Object.defineProperty(metadata, "__proto__", {
+      enumerable: true,
+      value: "blocked",
+    });
+
+    const normalized = normalizeFrontMatter(metadata as never, {
+      schema: { unknown_field_policy: "allow" } as never,
+    });
+
+    expect(normalized).toMatchObject({ custom_runtime_field: "kept" });
+    expect(normalized.events).toBeUndefined();
+    expect(Object.hasOwn(normalized, "__proto__")).toBe(false);
+    expect(Object.hasOwn(normalized, "constructor")).toBe(false);
+    expect(Object.hasOwn(normalized, "prototype")).toBe(false);
   });
 
   it("serializes json-markdown with undefined body fallback", () => {

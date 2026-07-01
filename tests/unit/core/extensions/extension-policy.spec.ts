@@ -19,6 +19,20 @@ function settingsWithPolicy(policy: Partial<ExtensionGovernancePolicy>): PmSetti
 }
 
 describe("extension-policy normalization edge cases", () => {
+  it("uses default governance policy when the settings policy block is absent", () => {
+    const policy = normalizeExtensionPolicy({ extensions: {} } as PmSettings);
+    expect(policy.mode).toBe("off");
+    expect(policy.trustMode).toBe("off");
+    expect(policy.allowedCapabilities.size).toBe(0);
+    expect(policy.warnings).toEqual([]);
+
+    const policyWithoutExtensions = normalizeExtensionPolicy({} as PmSettings);
+    expect(policyWithoutExtensions.mode).toBe("off");
+    expect(policyWithoutExtensions.trustMode).toBe("off");
+    expect(policyWithoutExtensions.allowedCapabilities.size).toBe(0);
+    expect(policyWithoutExtensions.warnings).toEqual([]);
+  });
+
   it("normalizes a non-string override name to empty and drops it", () => {
     const policy = normalizeExtensionPolicy(
       settingsWithPolicy({

@@ -220,29 +220,44 @@ export function validateLooseCommandOptionsWithFlagDefinitions(
   }
 }
 
-function coerceLooseOptionValue(value: unknown, kind: LooseOptionCoercionKind): unknown {
-  if (Array.isArray(value)) {
-    return value.map((entry) => coerceLooseOptionValue(entry, kind));
-  }
-  if (kind === "string") {
-    if (typeof value === "string") {
-      return value;
-    }
-    if (value === null || value === undefined) {
-      return value;
-    }
-    return String(value);
-  }
-  if (kind === "number") {
-    if (typeof value === "number") {
-      return Number.isFinite(value) ? value : value;
-    }
-    if (typeof value === "string" && value.trim().length > 0) {
-      const parsed = Number(value);
-      return Number.isFinite(parsed) ? parsed : value;
-    }
+/**
+ * Coerce a scalar value to a string. Existing strings pass through untouched and
+ * the `null`/`undefined` sentinels are preserved so an explicitly-cleared flag
+ * stays distinguishable from an omitted one; every other primitive is stringified.
+ */
+function coerceLooseStringOptionValue(value: unknown): unknown {
+  if (typeof value === "string") {
     return value;
   }
+  if (value === null || value === undefined) {
+    return value;
+  }
+  return String(value);
+}
+
+/**
+ * Coerce a scalar value to a number. Existing numbers pass through; a non-blank
+ * numeric string is parsed and adopted only when it yields a finite number,
+ * otherwise the original value is returned unchanged so malformed input reaches
+ * validation rather than silently degrading to `NaN`.
+ */
+function coerceLooseNumberOptionValue(value: unknown): unknown {
+  if (typeof value === "number") {
+    return value;
+  }
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : value;
+  }
+  return value;
+}
+
+/**
+ * Coerce a scalar value to a boolean. Booleans pass through; the case-insensitive
+ * tokens `true`/`1` and `false`/`0` map to their boolean values and any other
+ * input is returned unchanged for validation to reject.
+ */
+function coerceLooseBooleanOptionValue(value: unknown): unknown {
   if (typeof value === "boolean") {
     return value;
   }
@@ -256,6 +271,22 @@ function coerceLooseOptionValue(value: unknown, kind: LooseOptionCoercionKind): 
     }
   }
   return value;
+}
+
+// Per-kind scalar coercers dispatched by the declared flag value type. The table
+// keeps `coerceLooseOptionValue` a flat array-or-scalar branch instead of a
+// per-kind `if` ladder.
+const LOOSE_OPTION_VALUE_COERCERS: Record<LooseOptionCoercionKind, (value: unknown) => unknown> = {
+  string: coerceLooseStringOptionValue,
+  number: coerceLooseNumberOptionValue,
+  boolean: coerceLooseBooleanOptionValue,
+};
+
+function coerceLooseOptionValue(value: unknown, kind: LooseOptionCoercionKind): unknown {
+  if (Array.isArray(value)) {
+    return value.map((entry) => coerceLooseOptionValue(entry, kind));
+  }
+  return LOOSE_OPTION_VALUE_COERCERS[kind](value);
 }
 
 /**
