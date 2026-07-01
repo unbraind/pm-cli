@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- CodeFactor/Complexity: decompose runCreate (CC 172) and the audit-scope update guard (CC 38) ([pm-g7vl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-g7vl.toon))
+
 ### Fixed
 
 - Auto Release blocked: bot cannot push version commit to protected main (GH006, 12 required checks) ([pm-9gxi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9gxi.toon))

@@ -492,81 +492,31 @@ function enforceAllowAuditUpdateScope(id: string, options: UpdateCommandOptions,
   }
 
   const disallowedFlags: string[] = [];
-  if (options.status !== undefined) {
-    disallowedFlags.push("--status");
-  }
-  if (options.closeReason !== undefined) {
-    disallowedFlags.push("--close-reason");
-  }
-  if (options.assignee !== undefined) {
-    disallowedFlags.push("--assignee");
-  }
-  if (options.parent !== undefined) {
-    disallowedFlags.push("--parent");
-  }
-  if (options.blockedBy !== undefined) {
-    disallowedFlags.push("--blocked-by");
-  }
-  if (options.blockedReason !== undefined) {
-    disallowedFlags.push("--blocked-reason");
-  }
-  if (options.unblockNote !== undefined) {
-    disallowedFlags.push("--unblock-note");
-  }
-  if (options.dep !== undefined) {
-    disallowedFlags.push("--dep");
-  }
-  if (options.depRemove !== undefined) {
-    disallowedFlags.push("--dep-remove");
-  }
-  if (options.replaceDeps === true) {
-    disallowedFlags.push("--replace-deps");
-  }
-  if (options.replaceTests === true) {
-    disallowedFlags.push("--replace-tests");
-  }
-  if (options.note !== undefined) {
-    disallowedFlags.push("--note");
-  }
-  if (options.learning !== undefined) {
-    disallowedFlags.push("--learning");
-  }
-  if (options.test !== undefined) {
-    disallowedFlags.push("--test");
-  }
-  if (options.reminder !== undefined) {
-    disallowedFlags.push("--reminder");
-  }
-  if (options.event !== undefined) {
-    disallowedFlags.push("--event");
-  }
-  if (options.clearDeps === true) {
-    disallowedFlags.push("--clear-deps");
-  }
-  if (options.clearComments === true) {
-    disallowedFlags.push("--clear-comments");
-  }
-  if (options.clearNotes === true) {
-    disallowedFlags.push("--clear-notes");
-  }
-  if (options.clearLearnings === true) {
-    disallowedFlags.push("--clear-learnings");
-  }
-  if (options.clearFiles === true) {
-    disallowedFlags.push("--clear-files");
-  }
-  if (options.clearTests === true) {
-    disallowedFlags.push("--clear-tests");
-  }
-  if (options.clearDocs === true) {
-    disallowedFlags.push("--clear-docs");
-  }
-  if (options.clearReminders === true) {
-    disallowedFlags.push("--clear-reminders");
-  }
-  if (options.clearEvents === true) {
-    disallowedFlags.push("--clear-events");
-  }
+  pushIf(options.status !== undefined, "--status", disallowedFlags);
+  pushIf(options.closeReason !== undefined, "--close-reason", disallowedFlags);
+  pushIf(options.assignee !== undefined, "--assignee", disallowedFlags);
+  pushIf(options.parent !== undefined, "--parent", disallowedFlags);
+  pushIf(options.blockedBy !== undefined, "--blocked-by", disallowedFlags);
+  pushIf(options.blockedReason !== undefined, "--blocked-reason", disallowedFlags);
+  pushIf(options.unblockNote !== undefined, "--unblock-note", disallowedFlags);
+  pushIf(options.dep !== undefined, "--dep", disallowedFlags);
+  pushIf(options.depRemove !== undefined, "--dep-remove", disallowedFlags);
+  pushIf(options.replaceDeps === true, "--replace-deps", disallowedFlags);
+  pushIf(options.replaceTests === true, "--replace-tests", disallowedFlags);
+  pushIf(options.note !== undefined, "--note", disallowedFlags);
+  pushIf(options.learning !== undefined, "--learning", disallowedFlags);
+  pushIf(options.test !== undefined, "--test", disallowedFlags);
+  pushIf(options.reminder !== undefined, "--reminder", disallowedFlags);
+  pushIf(options.event !== undefined, "--event", disallowedFlags);
+  pushIf(options.clearDeps === true, "--clear-deps", disallowedFlags);
+  pushIf(options.clearComments === true, "--clear-comments", disallowedFlags);
+  pushIf(options.clearNotes === true, "--clear-notes", disallowedFlags);
+  pushIf(options.clearLearnings === true, "--clear-learnings", disallowedFlags);
+  pushIf(options.clearFiles === true, "--clear-files", disallowedFlags);
+  pushIf(options.clearTests === true, "--clear-tests", disallowedFlags);
+  pushIf(options.clearDocs === true, "--clear-docs", disallowedFlags);
+  pushIf(options.clearReminders === true, "--clear-reminders", disallowedFlags);
+  pushIf(options.clearEvents === true, "--clear-events", disallowedFlags);
 
   /* c8 ignore start -- audit unset ordering fallback is validated by audit-governance integration coverage. */
   const disallowedUnset = [...clearFrontMatterKeys]
