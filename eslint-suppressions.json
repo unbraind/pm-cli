@@ -209,11 +209,6 @@
       "count": 1
     }
   },
-  "src/cli/commands/update.ts": {
-    "complexity": {
-      "count": 2
-    }
-  },
   "src/cli/commands/validate.ts": {
     "complexity": {
       "count": 5
@@ -237,11 +232,6 @@
   "src/cli/register-list-query.ts": {
     "complexity": {
       "count": 2
-    }
-  },
-  "src/cli/register-mutation.ts": {
-    "complexity": {
-      "count": 6
     }
   },
   "src/cli/register-operations.ts": {

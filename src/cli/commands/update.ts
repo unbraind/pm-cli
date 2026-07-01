@@ -86,6 +86,7 @@ import type {
   Dependency,
   GovernanceWorkflowEnforcement,
   ItemFormat,
+  ItemDocument,
   ItemFrontMatter,
   ItemStatus,
   LinkedDoc,
@@ -991,6 +992,141 @@ interface UpdateScalarMutationDefinition {
   transform?: (value: string, context: UpdateScalarMutationContext) => unknown;
 }
 
+interface UpdateClearCollectionDefinition {
+  enabled: boolean | undefined;
+  optionKey: string;
+  clearFlag: string;
+  valueFlag: string;
+  values: string[] | undefined;
+  frontMatterKey: string;
+}
+
+interface UpdateMutationContext {
+  options: UpdateCommandOptions;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  typeRegistry: ReturnType<typeof resolveItemTypeRegistry>;
+  statusRegistry: RuntimeStatusRegistry;
+  runtimeFieldRegistry: RuntimeFieldRegistry;
+  extensionRegistrations: ReturnType<typeof getActiveExtensionRegistrations>;
+  extensionFieldNames: readonly string[];
+  clearFrontMatterKeys: ReadonlySet<string>;
+  dependencyUpdates: ParsedDependencyUpdates;
+  dependencyRemovals: DependencyRemovalSelector[];
+  commentUpdates: ReturnType<typeof parseLogSeed>;
+  noteUpdates: ReturnType<typeof parseLogSeed>;
+  learningUpdates: ReturnType<typeof parseLogSeed>;
+  fileUpdates: ReturnType<typeof parseFiles>;
+  testUpdates: ReturnType<typeof parseTests>;
+  docUpdates: ReturnType<typeof parseDocs>;
+  resolvedParentValue: string | undefined;
+  resolvedBlockedByDependencyId: string | undefined;
+  runtimeFieldUpdates: Record<string, unknown>;
+  nowValue: Date;
+  nowIso: string;
+  author: string;
+  pmRoot: string;
+}
+
+interface CloseRouteContext {
+  options: UpdateCommandOptions;
+  fieldFlags: Record<string, boolean>;
+  statusRegistry: RuntimeStatusRegistry;
+  workflowTransitionWarnings: readonly string[];
+  global: GlobalOptions;
+  id: string;
+}
+
+const UPDATE_LEGACY_SCALAR_OPTION_KEYS: readonly (keyof UpdateCommandOptions)[] = [
+  "tags",
+  "closeReason",
+  "deadline",
+  "estimatedMinutes",
+  "acceptanceCriteria",
+  "definitionOfReady",
+  "goal",
+  "objective",
+  "value",
+  "impact",
+  "outcome",
+  "whyNow",
+  "assignee",
+  "parent",
+  "reviewer",
+  "risk",
+  "confidence",
+  "sprint",
+  "release",
+  "blockedBy",
+  "blockedReason",
+  "unblockNote",
+  "reporter",
+  "severity",
+  "environment",
+  "reproSteps",
+  "resolution",
+  "expectedResult",
+  "actualResult",
+  "affectedVersion",
+  "fixedVersion",
+  "component",
+  "regression",
+  "customerImpact",
+];
+
+const UPDATE_SIMPLE_FIELD_FLAG_KEYS: readonly (keyof UpdateCommandOptions)[] = [
+  "title",
+  "description",
+  "body",
+  "status",
+  "closeReason",
+  "priority",
+  "type",
+  "deadline",
+  "estimatedMinutes",
+  "acceptanceCriteria",
+  "definitionOfReady",
+  "goal",
+  "objective",
+  "value",
+  "impact",
+  "outcome",
+  "whyNow",
+  "assignee",
+  "parent",
+  "reviewer",
+  "risk",
+  "confidence",
+  "sprint",
+  "release",
+  "blockedBy",
+  "blockedReason",
+  "unblockNote",
+  "reporter",
+  "severity",
+  "environment",
+  "reproSteps",
+  "resolution",
+  "expectedResult",
+  "actualResult",
+  "affectedVersion",
+  "fixedVersion",
+  "component",
+  "regression",
+  "customerImpact",
+  "dep",
+  "depRemove",
+  "comment",
+  "note",
+  "learning",
+  "file",
+  "test",
+  "doc",
+  "reminder",
+  "event",
+  "typeOption",
+  "field",
+];
+
 const UPDATE_POST_TAG_SCALAR_MUTATIONS: ReadonlyArray<UpdateScalarMutationDefinition> = [
   {
     optionKey: "deadline",
@@ -1068,12 +1204,9 @@ function applyUpdateScalarMutations(
   }
 }
 
-/**
- * Implements run update for the public runtime surface of this module.
- */
-export async function runUpdate(id: string, options: UpdateCommandOptions, global: GlobalOptions): Promise<UpdateResult> {
+async function resolveStdinUpdateOptions(options: UpdateCommandOptions): Promise<UpdateCommandOptions> {
   const stdinResolver = createStdinTokenResolver();
-  options = normalizeLegacyNoneUpdateOptions({
+  return normalizeLegacyNoneUpdateOptions({
     ...options,
     body: await stdinResolver.resolveValue(options.body, "--body"),
     dep: await stdinResolver.resolveList(options.dep, "--dep"),
@@ -1089,34 +1222,10 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     typeOption: await stdinResolver.resolveList(options.typeOption, "--type-option"),
     field: await stdinResolver.resolveList(options.field, "--field"),
   });
-  const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
-  }
-  const settings = await readSettings(pmRoot);
-  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-  const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
-  const extensionRegistrations = getActiveExtensionRegistrations();
-  const extensionFieldNames = collectRegisteredItemFieldNames(extensionRegistrations);
-  const typeRegistry = resolveItemTypeRegistry(settings, extensionRegistrations);
-  // Per-type allowed-transition enforcement is read RAW (not preset-derived) so
-  // existing projects are unaffected when unset; defaults to "off".
-  const workflowEnforcement: GovernanceWorkflowEnforcement = settings.governance.workflow_enforcement ?? "off";
-  const typeWorkflows = workflowEnforcement === "off" ? [] : resolveTypeWorkflows(settings.schema);
-  const parentReferencePolicy = settings.validation.parent_reference;
-  const sprintReleasePolicy = settings.validation.sprint_release_format;
-  const unsetTargets = parseUpdateUnsetTargets(options.unset, runtimeFieldRegistry, extensionFieldNames);
-  const clearOptionKeys = new Set<string>(unsetTargets.optionKeys);
-  const clearFrontMatterKeys = new Set<string>(unsetTargets.frontMatterKeys);
+}
 
-  const clearCollectionDefinitions: ReadonlyArray<{
-    enabled: boolean | undefined;
-    optionKey: string;
-    clearFlag: string;
-    valueFlag: string;
-    values: string[] | undefined;
-    frontMatterKey: string;
-  }> = [
+function buildClearCollectionDefinitions(options: UpdateCommandOptions): readonly UpdateClearCollectionDefinition[] {
+  return [
     {
       enabled: options.clearDeps || options.replaceDeps,
       optionKey: "dep",
@@ -1198,6 +1307,9 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
       frontMatterKey: "type_options",
     },
   ];
+}
+
+function validateReplaceOptions(options: UpdateCommandOptions): void {
   if (options.replaceDeps === true && (options.dep === undefined || options.dep.length === 0)) {
     throw new PmCliError("--replace-deps requires at least one --dep entry", EXIT_CODE.USAGE);
   }
@@ -1210,62 +1322,40 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   if (options.replaceTests === true && options.clearTests === true) {
     throw new PmCliError("--replace-tests cannot be combined with --clear-tests", EXIT_CODE.USAGE);
   }
-  for (const definition of clearCollectionDefinitions) {
+}
+
+function applyClearCollectionDefinitions(params: {
+  definitions: readonly UpdateClearCollectionDefinition[];
+  options: UpdateCommandOptions;
+  clearOptionKeys: Set<string>;
+  clearFrontMatterKeys: Set<string>;
+}): void {
+  for (const definition of params.definitions) {
     if (!definition.enabled) {
       continue;
     }
-    if (
-      definition.values &&
-      definition.values.length > 0 &&
-      !(
-        (definition.optionKey === "dep" && options.replaceDeps === true) ||
-        (definition.optionKey === "test" && options.replaceTests === true)
-      )
-    ) {
+    const isReplacement =
+      (definition.optionKey === "dep" && params.options.replaceDeps === true) ||
+      (definition.optionKey === "test" && params.options.replaceTests === true);
+    if (definition.values && definition.values.length > 0 && !isReplacement) {
       throw new PmCliError(`Cannot combine ${definition.clearFlag} with ${definition.valueFlag}`, EXIT_CODE.USAGE);
     }
-    clearOptionKeys.add(definition.optionKey);
-    clearFrontMatterKeys.add(definition.frontMatterKey);
+    params.clearOptionKeys.add(definition.optionKey);
+    params.clearFrontMatterKeys.add(definition.frontMatterKey);
   }
-  enforceAllowAuditUpdateScope(id, options, clearFrontMatterKeys);
+}
 
-  const scalarOptionPresence: Record<string, boolean> = {
-    tags: options.tags !== undefined,
-    closeReason: options.closeReason !== undefined,
-    deadline: options.deadline !== undefined,
-    estimatedMinutes: options.estimatedMinutes !== undefined,
-    acceptanceCriteria: options.acceptanceCriteria !== undefined,
-    definitionOfReady: options.definitionOfReady !== undefined,
-    order: options.order !== undefined || options.rank !== undefined,
-    goal: options.goal !== undefined,
-    objective: options.objective !== undefined,
-    value: options.value !== undefined,
-    impact: options.impact !== undefined,
-    outcome: options.outcome !== undefined,
-    whyNow: options.whyNow !== undefined,
-    assignee: options.assignee !== undefined,
-    parent: options.parent !== undefined,
-    reviewer: options.reviewer !== undefined,
-    risk: options.risk !== undefined,
-    confidence: options.confidence !== undefined,
-    sprint: options.sprint !== undefined,
-    release: options.release !== undefined,
-    blockedBy: options.blockedBy !== undefined,
-    blockedReason: options.blockedReason !== undefined,
-    unblockNote: options.unblockNote !== undefined,
-    reporter: options.reporter !== undefined,
-    severity: options.severity !== undefined,
-    environment: options.environment !== undefined,
-    reproSteps: options.reproSteps !== undefined,
-    resolution: options.resolution !== undefined,
-    expectedResult: options.expectedResult !== undefined,
-    actualResult: options.actualResult !== undefined,
-    affectedVersion: options.affectedVersion !== undefined,
-    fixedVersion: options.fixedVersion !== undefined,
-    component: options.component !== undefined,
-    regression: options.regression !== undefined,
-    customerImpact: options.customerImpact !== undefined,
-  };
+function buildScalarOptionPresence(options: UpdateCommandOptions): Record<string, boolean> {
+  const presence: Record<string, boolean> = {};
+  for (const key of UPDATE_LEGACY_SCALAR_OPTION_KEYS) {
+    presence[String(key)] = options[key] !== undefined;
+  }
+  presence.order = options.order !== undefined || options.rank !== undefined;
+  return presence;
+}
+
+function rejectUnsetScalarConflicts(options: UpdateCommandOptions, unsetTargets: { optionKeys: Set<string>; frontMatterKeys: Set<string> }): void {
+  const scalarOptionPresence = buildScalarOptionPresence(options);
   for (const [optionKey, hasValue] of Object.entries(scalarOptionPresence)) {
     if (!hasValue || !unsetTargets.optionKeys.has(optionKey)) {
       continue;
@@ -1276,60 +1366,724 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
       EXIT_CODE.USAGE,
     );
   }
-  // `--add-tags`/`--remove-tags` aren't in the scalar presence map above (they
-  // are repeatable), but combining them with `--unset tags` is the same
-  // contradiction as `--unset tags --tags ...`, so reject it explicitly.
-  if (clearFrontMatterKeys.has("tags")) {
-    if (Array.isArray(options.addTags) && options.addTags.length > 0) {
-      throw new PmCliError("Cannot combine --unset tags with --add-tags", EXIT_CODE.USAGE);
-    }
-    if (Array.isArray(options.removeTags) && options.removeTags.length > 0) {
-      throw new PmCliError("Cannot combine --unset tags with --remove-tags", EXIT_CODE.USAGE);
-    }
+  if (!unsetTargets.frontMatterKeys.has("tags")) {
+    return;
   }
+  if (Array.isArray(options.addTags) && options.addTags.length > 0) {
+    throw new PmCliError("Cannot combine --unset tags with --add-tags", EXIT_CODE.USAGE);
+  }
+  if (Array.isArray(options.removeTags) && options.removeTags.length > 0) {
+    throw new PmCliError("Cannot combine --unset tags with --remove-tags", EXIT_CODE.USAGE);
+  }
+}
 
+function rejectLegacyScalarTokens(options: UpdateCommandOptions): void {
   const assertNoLegacyScalarToken = (value: string | undefined, optionKey: string): void => {
     const unsetField = UPDATE_OPTION_KEY_TO_UNSET_CANONICAL.get(optionKey);
     const hint = unsetField ? `Use --unset ${unsetField} to clear this field.` : undefined;
     assertNoLegacyNoneToken(value, commandOptionFlagLabel("update", optionKey), hint);
   };
-  assertNoLegacyScalarToken(options.tags, "tags");
-  assertNoLegacyScalarToken(options.closeReason, "closeReason");
-  assertNoLegacyScalarToken(options.deadline, "deadline");
-  assertNoLegacyScalarToken(options.estimatedMinutes, "estimatedMinutes");
-  assertNoLegacyScalarToken(options.acceptanceCriteria, "acceptanceCriteria");
-  assertNoLegacyScalarToken(options.definitionOfReady, "definitionOfReady");
+  for (const key of UPDATE_LEGACY_SCALAR_OPTION_KEYS) {
+    assertNoLegacyScalarToken(options[key] as string | undefined, String(key));
+  }
   assertNoLegacyScalarToken(options.order ?? options.rank, "order");
-  assertNoLegacyScalarToken(options.goal, "goal");
-  assertNoLegacyScalarToken(options.objective, "objective");
-  assertNoLegacyScalarToken(options.value, "value");
-  assertNoLegacyScalarToken(options.impact, "impact");
-  assertNoLegacyScalarToken(options.outcome, "outcome");
-  assertNoLegacyScalarToken(options.whyNow, "whyNow");
-  assertNoLegacyScalarToken(options.assignee, "assignee");
-  assertNoLegacyScalarToken(options.parent, "parent");
-  assertNoLegacyScalarToken(options.reviewer, "reviewer");
-  assertNoLegacyScalarToken(options.risk, "risk");
-  assertNoLegacyScalarToken(options.confidence, "confidence");
-  assertNoLegacyScalarToken(options.sprint, "sprint");
-  assertNoLegacyScalarToken(options.release, "release");
-  assertNoLegacyScalarToken(options.blockedBy, "blockedBy");
-  assertNoLegacyScalarToken(options.blockedReason, "blockedReason");
-  assertNoLegacyScalarToken(options.unblockNote, "unblockNote");
-  assertNoLegacyScalarToken(options.reporter, "reporter");
-  assertNoLegacyScalarToken(options.severity, "severity");
-  assertNoLegacyScalarToken(options.environment, "environment");
-  assertNoLegacyScalarToken(options.reproSteps, "reproSteps");
-  assertNoLegacyScalarToken(options.resolution, "resolution");
-  assertNoLegacyScalarToken(options.expectedResult, "expectedResult");
-  assertNoLegacyScalarToken(options.actualResult, "actualResult");
-  assertNoLegacyScalarToken(options.affectedVersion, "affectedVersion");
-  assertNoLegacyScalarToken(options.fixedVersion, "fixedVersion");
-  assertNoLegacyScalarToken(options.component, "component");
-  assertNoLegacyScalarToken(options.regression, "regression");
-  assertNoLegacyScalarToken(options.customerImpact, "customerImpact");
   assertNoLegacyNoneTokens(options.reminder, "--reminder", "Use --clear-reminders to clear reminders.");
   assertNoLegacyNoneTokens(options.event, "--event", "Use --clear-events to clear linked events.");
+}
+
+function buildUpdateFieldFlags(options: UpdateCommandOptions, runtimeFieldUpdates: Record<string, unknown>): Record<string, boolean> {
+  const flags: Record<string, boolean> = {};
+  for (const key of UPDATE_SIMPLE_FIELD_FLAG_KEYS) {
+    flags[String(key)] = options[key] !== undefined;
+  }
+  flags.tags = options.tags !== undefined;
+  flags.addTags = Array.isArray(options.addTags) && options.addTags.length > 0;
+  flags.removeTags = Array.isArray(options.removeTags) && options.removeTags.length > 0;
+  flags.order = options.order !== undefined;
+  flags.rank = options.rank !== undefined;
+  flags.replaceDeps = options.replaceDeps === true;
+  flags.replaceTests = options.replaceTests === true;
+  flags.unset = options.unset !== undefined && options.unset.length > 0;
+  flags.clearDeps = options.clearDeps === true;
+  flags.clearComments = options.clearComments === true;
+  flags.clearNotes = options.clearNotes === true;
+  flags.clearLearnings = options.clearLearnings === true;
+  flags.clearFiles = options.clearFiles === true;
+  flags.clearTests = options.clearTests === true;
+  flags.clearDocs = options.clearDocs === true;
+  flags.clearReminders = options.clearReminders === true;
+  flags.clearEvents = options.clearEvents === true;
+  flags.clearTypeOptions = options.clearTypeOptions === true;
+  flags.runtimeFields = Object.keys(runtimeFieldUpdates).length > 0;
+  return flags;
+}
+
+async function buildNoopUpdateResult(params: {
+  pmRoot: string;
+  id: string;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  typeRegistry: ReturnType<typeof resolveItemTypeRegistry>;
+}): Promise<UpdateResult> {
+  const located = await locateItem(
+    params.pmRoot,
+    params.id,
+    params.settings.id_prefix,
+    params.settings.item_format,
+    params.typeRegistry.type_to_folder,
+  );
+  if (!located) {
+    throw await buildItemNotFoundError(params.pmRoot, params.id, params.settings.id_prefix, params.typeRegistry.type_to_folder);
+  }
+  const { document } = await readLocatedItem(located, { schema: params.settings.schema });
+  return {
+    item: toItemRecord(document.metadata),
+    changed_fields: [],
+    warnings: ["noop_no_update_fields"],
+  };
+}
+
+async function assertUpdateTrackerInitialized(pmRoot: string): Promise<void> {
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+  }
+}
+
+function assertMatchingOrderRank(options: UpdateCommandOptions): void {
+  if (options.order !== undefined && options.rank !== undefined && options.order !== options.rank) {
+    throw new PmCliError("--order and --rank must match when both are provided", EXIT_CODE.USAGE);
+  }
+}
+
+async function resolveParentReferenceForUpdate(params: {
+  options: UpdateCommandOptions;
+  unsetTargets: { frontMatterKeys: Set<string> };
+  pmRoot: string;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  typeRegistry: ReturnType<typeof resolveItemTypeRegistry>;
+  parentReferencePolicy: Awaited<ReturnType<typeof readSettings>>["validation"]["parent_reference"];
+}): Promise<{ resolvedParentValue: string | undefined; warnings: string[] }> {
+  if (params.options.parent === undefined || params.unsetTargets.frontMatterKeys.has("parent")) {
+    return { resolvedParentValue: undefined, warnings: [] };
+  }
+  const resolvedParentValue = normalizeParentReferenceValue(params.options.parent);
+  const parentLocated = await locateItem(
+    params.pmRoot,
+    resolvedParentValue,
+    params.settings.id_prefix,
+    params.settings.item_format,
+    params.typeRegistry.type_to_folder,
+  );
+  if (parentLocated) {
+    return { resolvedParentValue, warnings: [] };
+  }
+  const normalizedParentId = normalizeItemId(resolvedParentValue, params.settings.id_prefix);
+  return {
+    resolvedParentValue,
+    warnings: validateMissingParentReference(normalizedParentId, params.parentReferencePolicy).warnings,
+  };
+}
+
+function blockedByResolutionWarnings(resolution: { unresolved?: string }): string[] {
+  return resolution.unresolved === undefined ? [] : [`blocked_by_unresolved:${resolution.unresolved}`];
+}
+
+async function collectWorkflowTransitionWarnings(params: {
+  options: UpdateCommandOptions;
+  fieldFlags: Record<string, boolean>;
+  workflowEnforcement: GovernanceWorkflowEnforcement;
+  typeWorkflows: NormalizedTypeWorkflow[];
+  statusRegistry: RuntimeStatusRegistry;
+  typeRegistry: ReturnType<typeof resolveItemTypeRegistry>;
+  pmRoot: string;
+  id: string;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+}): Promise<string[]> {
+  if (params.workflowEnforcement === "off" || params.typeWorkflows.length === 0 || !params.fieldFlags.status || params.options.status === undefined) {
+    return [];
+  }
+  const located = await locateItem(
+    params.pmRoot,
+    params.id,
+    params.settings.id_prefix,
+    params.settings.item_format,
+    params.typeRegistry.type_to_folder,
+  );
+  if (!located) {
+    throw await buildItemNotFoundError(params.pmRoot, params.id, params.settings.id_prefix, params.typeRegistry.type_to_folder);
+  }
+  const { document } = await readLocatedItem(located, { schema: params.settings.schema });
+  const effectiveType =
+    params.options.type !== undefined
+      ? (resolveTypeName(params.options.type, params.typeRegistry) ?? params.options.type)
+      : (document.metadata?.type ?? "");
+  const warning = enforceTypeWorkflowTransition({
+    enforcement: params.workflowEnforcement,
+    typeWorkflows: params.typeWorkflows,
+    statusRegistry: params.statusRegistry,
+    typeName: effectiveType,
+    fromStatus: document.metadata?.status ?? "",
+    toStatus: params.options.status,
+  });
+  return warning ? [warning] : [];
+}
+
+async function routeCloseStatusUpdate(context: CloseRouteContext): Promise<UpdateResult | undefined> {
+  if (!context.fieldFlags.status) {
+    return undefined;
+  }
+  const targetStatus = normalizeStatusInput(context.options.status as ItemStatus, context.statusRegistry);
+  if (targetStatus !== context.statusRegistry.close_status) {
+    return undefined;
+  }
+
+  const otherFieldKeys = Object.entries(context.fieldFlags)
+    .filter(([key, value]) => value && key !== "status" && key !== "closeReason")
+    .map(([key]) => key);
+  const routeWarnings: string[] = [];
+  let preChangedFields: string[] = [];
+  if (otherFieldKeys.length > 0) {
+    const preUpdate = await runUpdate(
+      context.id,
+      { ...context.options, status: undefined, closeReason: undefined, message: undefined },
+      context.global,
+    );
+    preChangedFields = preUpdate.changed_fields;
+    routeWarnings.push(...preUpdate.warnings);
+  }
+
+  const explicitReason = typeof context.options.closeReason === "string" ? context.options.closeReason.trim() : "";
+  const fallbackMessage = typeof context.options.message === "string" ? context.options.message.trim() : "";
+  const closeReason = explicitReason || fallbackMessage || "Closed via pm update";
+  const closeResult = await runClose(
+    context.id,
+    closeReason,
+    {
+      author: context.options.author,
+      message: context.options.message,
+      force: context.options.force,
+    },
+    context.global,
+  );
+
+  const warnings = [
+    ...context.workflowTransitionWarnings,
+    ...routeWarnings,
+    ...closeResult.warnings,
+    "auto_routed_from_update_to_close",
+  ];
+  if (explicitReason.length === 0 && fallbackMessage.length === 0) {
+    warnings.push("close_reason_defaulted");
+  }
+  return {
+    item: closeResult.item,
+    changed_fields: [...preChangedFields, ...closeResult.changed_fields],
+    warnings,
+  };
+}
+
+function applySimpleItemMutations(
+  document: ItemDocument,
+  options: UpdateCommandOptions,
+  statusRegistry: RuntimeStatusRegistry,
+  changedFields: string[],
+): string {
+  if (options.title !== undefined) {
+    document.metadata.title = options.title;
+    changedFields.push("title");
+  }
+  if (options.description !== undefined) {
+    document.metadata.description = options.description;
+    changedFields.push("description");
+  }
+  if (options.body !== undefined) {
+    document.body = options.body;
+    changedFields.push("body");
+  }
+  return normalizeStatusInput(document.metadata.status, statusRegistry) ?? document.metadata.status;
+}
+
+function applyStatusAndCloseReasonMutations(
+  document: ItemDocument,
+  context: UpdateMutationContext,
+  previousStatusNormalized: string,
+  changedFields: string[],
+): void {
+  if (context.options.status !== undefined) {
+    const status = parseStatus(context.options.status, context.statusRegistry);
+    document.metadata.status = status;
+    if (status === context.statusRegistry.canceled_status) {
+      delete document.metadata.assignee;
+    }
+    changedFields.push("status");
+  }
+  if (context.options.closeReason !== undefined || context.clearFrontMatterKeys.has("close_reason")) {
+    if (context.clearFrontMatterKeys.has("close_reason")) {
+      delete document.metadata.close_reason;
+    } else {
+      const closeReason = context.options.closeReason?.trim() ?? "";
+      if (closeReason.length === 0) {
+        throw new PmCliError("--close-reason must not be empty", EXIT_CODE.USAGE);
+      }
+      document.metadata.close_reason = closeReason;
+    }
+    changedFields.push("close_reason");
+    return;
+  }
+  if (
+    context.options.status !== undefined &&
+    previousStatusNormalized === context.statusRegistry.close_status &&
+    document.metadata.status !== context.statusRegistry.canceled_status &&
+    document.metadata.close_reason !== undefined
+  ) {
+    delete document.metadata.close_reason;
+    changedFields.push("close_reason");
+  }
+}
+
+function applyPriorityTypeAndOptions(
+  document: ItemDocument,
+  context: UpdateMutationContext,
+  changedFields: string[],
+): string {
+  let activeTypeName = resolveTypeName(document.metadata.type, context.typeRegistry) ?? document.metadata.type;
+  if (context.options.priority !== undefined) {
+    document.metadata.priority = ensurePriority(context.options.priority);
+    changedFields.push("priority");
+  }
+  if (context.options.type !== undefined) {
+    const resolvedTypeName = resolveTypeName(context.options.type, context.typeRegistry);
+    if (!resolvedTypeName) {
+      throw new PmCliError(
+        buildInvalidTypeError(context.options.type, context.typeRegistry.types, resolveItemTypesFilePath(context.pmRoot, context.settings.schema)),
+        EXIT_CODE.USAGE,
+      );
+    }
+    document.metadata.type = resolvedTypeName;
+    activeTypeName = resolvedTypeName;
+    changedFields.push("type");
+  }
+  enforceUpdateOptionsByType(activeTypeName, context.options, context.typeRegistry, context.extensionFieldNames);
+  applyTypeOptionMutation(document, context, activeTypeName, changedFields);
+  return activeTypeName;
+}
+
+function applyTypeOptionMutation(
+  document: ItemDocument,
+  context: UpdateMutationContext,
+  activeTypeName: string,
+  changedFields: string[],
+): void {
+  if (context.options.typeOption !== undefined || context.clearFrontMatterKeys.has("type_options")) {
+    if (context.clearFrontMatterKeys.has("type_options")) {
+      delete document.metadata.type_options;
+    } else {
+      const parsedTypeOptions = parseTypeOptionEntries(context.options.typeOption ?? []);
+      const validation = validateTypeOptions(activeTypeName, parsedTypeOptions, context.typeRegistry);
+      if (validation.errors.length > 0) {
+        throw new PmCliError(validation.errors.join("; "), EXIT_CODE.USAGE);
+      }
+      document.metadata.type_options = validation.normalized;
+    }
+    changedFields.push("type_options");
+    return;
+  }
+  if (context.options.type === undefined || document.metadata.type_options === undefined) {
+    return;
+  }
+  const validation = validateTypeOptions(activeTypeName, document.metadata.type_options, context.typeRegistry);
+  if (validation.errors.length > 0) {
+    throw new PmCliError(
+      `Current type options are incompatible with type "${activeTypeName}". ${validation.errors.join("; ")}. Use --clear-type-options to clear them.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  document.metadata.type_options = validation.normalized;
+}
+
+function applyDependencyMutations(document: ItemDocument, context: UpdateMutationContext, changedFields: string[]): void {
+  if (
+    context.options.dep === undefined &&
+    context.options.depRemove === undefined &&
+    !context.clearFrontMatterKeys.has("dependencies")
+  ) {
+    return;
+  }
+  let nextDependencies = context.clearFrontMatterKeys.has("dependencies") ? [] : [...(document.metadata.dependencies ?? [])];
+  if (context.dependencyUpdates.additions.length > 0) {
+    const seen = new Set(nextDependencies.map((entry) => dependencyKey(entry)));
+    for (const addition of context.dependencyUpdates.additions) {
+      const key = dependencyKey(addition);
+      if (!seen.has(key)) {
+        nextDependencies.push(addition);
+        seen.add(key);
+      }
+    }
+  }
+  if (context.dependencyRemovals.length > 0) {
+    nextDependencies = nextDependencies.filter(
+      (entry) => !context.dependencyRemovals.some((selector) => matchesDependencySelector(entry, selector)),
+    );
+  }
+  if (nextDependencies.length === 0) {
+    delete document.metadata.dependencies;
+  } else {
+    document.metadata.dependencies = nextDependencies;
+  }
+  changedFields.push("dependencies");
+}
+
+function applyLogCollectionMutations(document: ItemDocument, context: UpdateMutationContext, changedFields: string[]): void {
+  applyLogCollectionMutation(document, "comments", context.options.comment, context.commentUpdates.values as Comment[] | undefined, context.clearFrontMatterKeys, changedFields);
+  applyLogCollectionMutation(document, "notes", context.options.note, context.noteUpdates.values as LogNote[] | undefined, context.clearFrontMatterKeys, changedFields);
+  applyLogCollectionMutation(document, "learnings", context.options.learning, context.learningUpdates.values as LogNote[] | undefined, context.clearFrontMatterKeys, changedFields);
+}
+
+function applyLogCollectionMutation(
+  document: ItemDocument,
+  key: "comments" | "notes" | "learnings",
+  optionValue: string[] | undefined,
+  values: Comment[] | LogNote[] | undefined,
+  clearFrontMatterKeys: ReadonlySet<string>,
+  changedFields: string[],
+): void {
+  if (optionValue === undefined && !clearFrontMatterKeys.has(key)) {
+    return;
+  }
+  if (clearFrontMatterKeys.has(key) || !values || values.length === 0) {
+    delete document.metadata[key];
+  } else {
+    document.metadata[key] = [...(document.metadata[key] ?? []), ...values] as never;
+  }
+  changedFields.push(key);
+}
+
+function applyEvidenceCollectionMutations(document: ItemDocument, context: UpdateMutationContext, changedFields: string[]): void {
+  applyUniqueLinkedCollectionMutation(document, "files", context.options.file, context.fileUpdates.values, fileKey, context.clearFrontMatterKeys, changedFields);
+  applyTestCollectionMutation(document, context, changedFields);
+  applyUniqueLinkedCollectionMutation(document, "docs", context.options.doc, context.docUpdates.values, docKey, context.clearFrontMatterKeys, changedFields);
+}
+
+function applyUniqueLinkedCollectionMutation<T extends LinkedFile | LinkedDoc>(
+  document: ItemDocument,
+  key: "files" | "docs",
+  optionValue: string[] | undefined,
+  values: T[] | undefined,
+  keyOf: (value: T) => string,
+  clearFrontMatterKeys: ReadonlySet<string>,
+  changedFields: string[],
+): void {
+  if (optionValue === undefined && !clearFrontMatterKeys.has(key)) {
+    return;
+  }
+  if (clearFrontMatterKeys.has(key) || !values || values.length === 0) {
+    delete document.metadata[key];
+  } else {
+    const next = [...((document.metadata[key] as T[] | undefined) ?? [])];
+    const seen = new Set(next.map((entry) => keyOf(entry)));
+    for (const entry of values) {
+      const keyValue = keyOf(entry);
+      if (!seen.has(keyValue)) {
+        next.push(entry);
+        seen.add(keyValue);
+      }
+    }
+    document.metadata[key] = next as never;
+  }
+  changedFields.push(key);
+}
+
+function applyTestCollectionMutation(document: ItemDocument, context: UpdateMutationContext, changedFields: string[]): void {
+  if (context.options.test === undefined && !context.clearFrontMatterKeys.has("tests")) {
+    return;
+  }
+  if (context.clearFrontMatterKeys.has("tests") && context.options.replaceTests === true) {
+    document.metadata.tests = dedupeLinkedTests(context.testUpdates.values) ?? [];
+  } else if (context.clearFrontMatterKeys.has("tests") || !context.testUpdates.values || context.testUpdates.values.length === 0) {
+    delete document.metadata.tests;
+  } else {
+    document.metadata.tests = dedupeLinkedTests([...(document.metadata.tests ?? []), ...context.testUpdates.values]);
+  }
+  if (document.metadata.tests !== undefined && document.metadata.tests.length === 0) {
+    delete document.metadata.tests;
+  }
+  changedFields.push("tests");
+}
+
+function dedupeLinkedTests(values: LinkedTest[] | undefined): LinkedTest[] | undefined {
+  if (!values || values.length === 0) {
+    return undefined;
+  }
+  const next: LinkedTest[] = [];
+  const seen = new Set<string>();
+  for (const entry of values) {
+    const key = testKey(entry);
+    if (!seen.has(key)) {
+      next.push(entry);
+      seen.add(key);
+    }
+  }
+  return next;
+}
+
+function applyTagsAndPlanningMutations(
+  document: ItemDocument,
+  context: UpdateMutationContext,
+  scalarMutationContext: UpdateScalarMutationContext,
+): void {
+  const addTagsValues = context.options.addTags;
+  const removeTagsValues = context.options.removeTags;
+  const hasAdditiveTagMutation =
+    (Array.isArray(addTagsValues) && addTagsValues.length > 0) ||
+    (Array.isArray(removeTagsValues) && removeTagsValues.length > 0);
+  if (context.options.tags !== undefined || context.clearFrontMatterKeys.has("tags") || hasAdditiveTagMutation) {
+    const baseTags = context.clearFrontMatterKeys.has("tags")
+      ? []
+      : context.options.tags !== undefined
+        ? parseTags(context.options.tags)
+        : Array.isArray(document.metadata.tags)
+          ? [...(document.metadata.tags as string[])]
+          : [];
+    document.metadata.tags = applyTagRemovals(mergeAdditiveTags(baseTags, addTagsValues), removeTagsValues);
+    scalarMutationContext.changedFields.push("tags");
+  }
+  applyUpdateScalarMutations(UPDATE_POST_TAG_SCALAR_MUTATIONS, context.options, scalarMutationContext);
+  applyOrderMutation(document, context, scalarMutationContext.changedFields);
+}
+
+function applyOrderMutation(document: ItemDocument, context: UpdateMutationContext, changedFields: string[]): void {
+  const orderRaw = context.options.order ?? context.options.rank;
+  if (orderRaw === undefined && !context.clearFrontMatterKeys.has("order")) {
+    return;
+  }
+  if (context.clearFrontMatterKeys.has("order")) {
+    delete document.metadata.order;
+  } else {
+    const parsedOrder = parseOptionalNumber(orderRaw ?? "", "order");
+    if (!Number.isInteger(parsedOrder)) {
+      throw new PmCliError("Order must be an integer", EXIT_CODE.USAGE);
+    }
+    document.metadata.order = parsedOrder;
+  }
+  changedFields.push("order");
+}
+
+function applyOwnershipAndIssueMutations(
+  document: ItemDocument,
+  context: UpdateMutationContext,
+  scalarMutationContext: UpdateScalarMutationContext,
+  warnings: string[],
+): void {
+  applyAssigneeMutation(document, context, scalarMutationContext.changedFields);
+  applyParentMutation(document, context, scalarMutationContext.changedFields);
+  applyUpdateScalarMutations(UPDATE_STAKEHOLDER_SCALAR_MUTATIONS, context.options, scalarMutationContext);
+  applySprintReleaseMutation(document, context, "sprint", warnings, scalarMutationContext.changedFields);
+  applySprintReleaseMutation(document, context, "release", warnings, scalarMutationContext.changedFields);
+  applyBlockedByMutation(document, context, scalarMutationContext.changedFields);
+  applyUpdateScalarMutations(UPDATE_ISSUE_SCALAR_MUTATIONS, context.options, scalarMutationContext);
+}
+
+function applyAssigneeMutation(document: ItemDocument, context: UpdateMutationContext, changedFields: string[]): void {
+  if (context.options.assignee === undefined && !context.clearFrontMatterKeys.has("assignee")) {
+    return;
+  }
+  if (context.clearFrontMatterKeys.has("assignee")) {
+    delete document.metadata.assignee;
+  } else {
+    const assignee = context.options.assignee?.trim() ?? "";
+    if (assignee === "") {
+      throw new PmCliError("--assignee must not be empty. Use --unset assignee to clear it.", EXIT_CODE.USAGE);
+    }
+    document.metadata.assignee = assignee;
+  }
+  changedFields.push("assignee");
+}
+
+function applyParentMutation(document: ItemDocument, context: UpdateMutationContext, changedFields: string[]): void {
+  if (context.options.parent === undefined && !context.clearFrontMatterKeys.has("parent")) {
+    return;
+  }
+  if (context.clearFrontMatterKeys.has("parent")) {
+    delete document.metadata.parent;
+  } else {
+    document.metadata.parent = context.resolvedParentValue ?? "";
+  }
+  changedFields.push("parent");
+}
+
+function applySprintReleaseMutation(
+  document: ItemDocument,
+  context: UpdateMutationContext,
+  key: "sprint" | "release",
+  warnings: string[],
+  changedFields: string[],
+): void {
+  if (context.options[key] === undefined && !context.clearFrontMatterKeys.has(key)) {
+    return;
+  }
+  if (context.clearFrontMatterKeys.has(key)) {
+    delete document.metadata[key];
+  } else {
+    const validation = validateSprintOrReleaseValue(key, context.options[key] ?? "", context.settings.validation.sprint_release_format);
+    document.metadata[key] = validation.value;
+    warnings.push(...validation.warnings);
+  }
+  changedFields.push(key);
+}
+
+function applyBlockedByMutation(document: ItemDocument, context: UpdateMutationContext, changedFields: string[]): void {
+  if (context.options.blockedBy === undefined && !context.clearFrontMatterKeys.has("blocked_by")) {
+    return;
+  }
+  if (context.clearFrontMatterKeys.has("blocked_by")) {
+    delete document.metadata.blocked_by;
+  } else {
+    document.metadata.blocked_by = context.options.blockedBy?.trim() ?? "";
+  }
+  changedFields.push("blocked_by");
+  applyBlockedByDependencyEdge(
+    document.metadata,
+    context.resolvedBlockedByDependencyId,
+    context.nowIso,
+    context.author,
+    changedFields,
+  );
+}
+
+function applyScheduleMutations(document: ItemDocument, context: UpdateMutationContext, changedFields: string[]): void {
+  if (context.options.reminder !== undefined || context.clearFrontMatterKeys.has("reminders")) {
+    if (context.clearFrontMatterKeys.has("reminders")) {
+      delete document.metadata.reminders;
+    } else {
+      document.metadata.reminders = parseReminderEntries(context.options.reminder ?? [], context.nowValue, { valueMode: "trimmed" });
+    }
+    changedFields.push("reminders");
+  }
+  if (context.options.event !== undefined || context.clearFrontMatterKeys.has("events")) {
+    if (context.clearFrontMatterKeys.has("events")) {
+      delete document.metadata.events;
+    } else {
+      document.metadata.events = parseEventEntries(context.options.event ?? [], context.nowValue, {
+        allDayEmptyGuard: "truthy",
+        recurrenceEmptyNumericGuard: "truthy",
+      });
+    }
+    changedFields.push("events");
+  }
+}
+
+function applyRuntimeAndRegisteredFieldMutations(
+  metadataRecord: Record<string, unknown>,
+  context: UpdateMutationContext,
+  changedFields: string[],
+): void {
+  clearDynamicFields(metadataRecord, context.runtimeFieldRegistry.definitions.map((definition) => definition.metadata_key), context.clearFrontMatterKeys, changedFields);
+  clearDynamicFields(metadataRecord, context.extensionFieldNames, context.clearFrontMatterKeys, changedFields);
+  for (const [fieldKey, fieldValue] of Object.entries(context.runtimeFieldUpdates)) {
+    if (context.clearFrontMatterKeys.has(fieldKey) || stableValueEquals(metadataRecord[fieldKey], fieldValue)) {
+      continue;
+    }
+    metadataRecord[fieldKey] = fieldValue;
+    changedFields.push(fieldKey);
+  }
+
+  const registeredItemFieldUpdates = parseRegisteredItemFieldAssignments(context.options.field, context.extensionRegistrations);
+  for (const fieldKey of Object.keys(registeredItemFieldUpdates)) {
+    if (context.clearFrontMatterKeys.has(fieldKey)) {
+      throw new PmCliError(
+        `Cannot combine --unset ${fieldKey.replaceAll("_", "-")} with --field ${fieldKey}=...`,
+        EXIT_CODE.USAGE,
+      );
+    }
+  }
+  for (const [fieldKey, fieldValue] of Object.entries(registeredItemFieldUpdates)) {
+    if (!stableValueEquals(metadataRecord[fieldKey], fieldValue)) {
+      metadataRecord[fieldKey] = fieldValue;
+      changedFields.push(fieldKey);
+    }
+  }
+}
+
+function clearDynamicFields(
+  metadataRecord: Record<string, unknown>,
+  fieldKeys: readonly string[],
+  clearFrontMatterKeys: ReadonlySet<string>,
+  changedFields: string[],
+): void {
+  for (const fieldKey of fieldKeys) {
+    if (!clearFrontMatterKeys.has(fieldKey) || metadataRecord[fieldKey] === undefined) {
+      continue;
+    }
+    delete metadataRecord[fieldKey];
+    changedFields.push(fieldKey);
+  }
+}
+
+function mutateUpdateDocument(document: ItemDocument, context: UpdateMutationContext): { changedFields: string[]; warnings: string[] } {
+  const changedFields: string[] = [];
+  const warnings: string[] = [];
+  const previousStatusNormalized = applySimpleItemMutations(document, context.options, context.statusRegistry, changedFields);
+  const metadataRecord = toItemRecord(document.metadata);
+  const scalarMutationContext: UpdateScalarMutationContext = {
+    metadataRecord,
+    clearFrontMatterKeys: context.clearFrontMatterKeys,
+    changedFields,
+    nowValue: context.nowValue,
+  };
+
+  applyStatusAndCloseReasonMutations(document, context, previousStatusNormalized, changedFields);
+  applyPriorityTypeAndOptions(document, context, changedFields);
+  applyDependencyMutations(document, context, changedFields);
+  applyLogCollectionMutations(document, context, changedFields);
+  applyEvidenceCollectionMutations(document, context, changedFields);
+  applyTagsAndPlanningMutations(document, context, scalarMutationContext);
+  applyOwnershipAndIssueMutations(document, context, scalarMutationContext, warnings);
+  applyScheduleMutations(document, context, changedFields);
+  applyRuntimeAndRegisteredFieldMutations(metadataRecord, context, changedFields);
+  try {
+    applyRegisteredItemFieldDefaultsAndValidation(
+      metadataRecord,
+      context.extensionRegistrations,
+      { skipDefaultFields: context.clearFrontMatterKeys },
+    );
+  } catch (error: unknown) {
+    throw new PmCliError(error instanceof Error ? error.message : "Invalid extension item field values", EXIT_CODE.USAGE);
+  }
+  return { changedFields, warnings };
+}
+
+/**
+ * Implements run update for the public runtime surface of this module.
+ */
+export async function runUpdate(id: string, options: UpdateCommandOptions, global: GlobalOptions): Promise<UpdateResult> {
+  options = await resolveStdinUpdateOptions(options);
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  await assertUpdateTrackerInitialized(pmRoot);
+  const settings = await readSettings(pmRoot);
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
+  const extensionRegistrations = getActiveExtensionRegistrations();
+  const extensionFieldNames = collectRegisteredItemFieldNames(extensionRegistrations);
+  const typeRegistry = resolveItemTypeRegistry(settings, extensionRegistrations);
+  // Per-type allowed-transition enforcement is read RAW (not preset-derived) so
+  // existing projects are unaffected when unset; defaults to "off".
+  const workflowEnforcement: GovernanceWorkflowEnforcement = settings.governance.workflow_enforcement ?? "off";
+  const typeWorkflows = workflowEnforcement === "off" ? [] : resolveTypeWorkflows(settings.schema);
+  const parentReferencePolicy = settings.validation.parent_reference;
+  const unsetTargets = parseUpdateUnsetTargets(options.unset, runtimeFieldRegistry, extensionFieldNames);
+  const clearOptionKeys = new Set<string>(unsetTargets.optionKeys);
+  const clearFrontMatterKeys = new Set<string>(unsetTargets.frontMatterKeys);
+
+  validateReplaceOptions(options);
+  applyClearCollectionDefinitions({
+    definitions: buildClearCollectionDefinitions(options),
+    options,
+    clearOptionKeys,
+    clearFrontMatterKeys,
+  });
+  enforceAllowAuditUpdateScope(id, options, clearFrontMatterKeys);
+
+  rejectUnsetScalarConflicts(options, unsetTargets);
+  rejectLegacyScalarTokens(options);
 
   const author = toAuthor(options.author, settings.author_default);
   const nowValue = new Date();
@@ -1348,23 +2102,15 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   const fileUpdates = parseFiles(options.file);
   const testUpdates = parseTests(options.test);
   const docUpdates = parseDocs(options.doc);
-  const parentReferenceWarnings: string[] = [];
   const workflowTransitionWarnings: string[] = [];
-  let resolvedParentValue: string | undefined;
-  if (options.parent !== undefined && !unsetTargets.frontMatterKeys.has("parent")) {
-    resolvedParentValue = normalizeParentReferenceValue(options.parent);
-    const parentLocated = await locateItem(
-      pmRoot,
-      resolvedParentValue,
-      settings.id_prefix,
-      settings.item_format,
-      typeRegistry.type_to_folder,
-    );
-    if (!parentLocated) {
-      const normalizedParentId = normalizeItemId(resolvedParentValue, settings.id_prefix);
-      parentReferenceWarnings.push(...validateMissingParentReference(normalizedParentId, parentReferencePolicy).warnings);
-    }
-  }
+  const parentReference = await resolveParentReferenceForUpdate({
+    options,
+    unsetTargets,
+    pmRoot,
+    settings,
+    typeRegistry,
+    parentReferencePolicy,
+  });
 
   // pm-kyd6: resolve the --blocked-by target up front (async) so the sync
   // mutate callback can mirror create.ts and add a `blocked_by` dependency edge.
@@ -1377,207 +2123,43 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     typeRegistry.type_to_folder,
   );
   const resolvedBlockedByDependencyId = blockedByResolution.id;
-  if (blockedByResolution.unresolved !== undefined) {
-    parentReferenceWarnings.push(`blocked_by_unresolved:${blockedByResolution.unresolved}`);
-  }
+  const parentReferenceWarnings = [...parentReference.warnings, ...blockedByResolutionWarnings(blockedByResolution)];
 
   const runtimeFieldUpdates = collectRuntimeUpdateFieldValues(
     options as Record<string, unknown>,
     runtimeFieldRegistry,
     options.runtimeFieldCommands,
   );
-  const fieldFlags: Record<string, boolean> = {
-    title: options.title !== undefined,
-    description: options.description !== undefined,
-    body: options.body !== undefined,
-    status: options.status !== undefined,
-    closeReason: options.closeReason !== undefined,
-    priority: options.priority !== undefined,
-    type: options.type !== undefined,
-    tags: options.tags !== undefined,
-    addTags: Array.isArray(options.addTags) && options.addTags.length > 0,
-    removeTags: Array.isArray(options.removeTags) && options.removeTags.length > 0,
-    deadline: options.deadline !== undefined,
-    estimatedMinutes: options.estimatedMinutes !== undefined,
-    acceptanceCriteria: options.acceptanceCriteria !== undefined,
-    definitionOfReady: options.definitionOfReady !== undefined,
-    order: options.order !== undefined,
-    rank: options.rank !== undefined,
-    goal: options.goal !== undefined,
-    objective: options.objective !== undefined,
-    value: options.value !== undefined,
-    impact: options.impact !== undefined,
-    outcome: options.outcome !== undefined,
-    whyNow: options.whyNow !== undefined,
-    assignee: options.assignee !== undefined,
-    parent: options.parent !== undefined,
-    reviewer: options.reviewer !== undefined,
-    risk: options.risk !== undefined,
-    confidence: options.confidence !== undefined,
-    sprint: options.sprint !== undefined,
-    release: options.release !== undefined,
-    blockedBy: options.blockedBy !== undefined,
-    blockedReason: options.blockedReason !== undefined,
-    unblockNote: options.unblockNote !== undefined,
-    reporter: options.reporter !== undefined,
-    severity: options.severity !== undefined,
-    environment: options.environment !== undefined,
-    reproSteps: options.reproSteps !== undefined,
-    resolution: options.resolution !== undefined,
-    expectedResult: options.expectedResult !== undefined,
-    actualResult: options.actualResult !== undefined,
-    affectedVersion: options.affectedVersion !== undefined,
-    fixedVersion: options.fixedVersion !== undefined,
-    component: options.component !== undefined,
-    regression: options.regression !== undefined,
-    customerImpact: options.customerImpact !== undefined,
-    dep: options.dep !== undefined,
-    depRemove: options.depRemove !== undefined,
-    replaceDeps: options.replaceDeps === true,
-    comment: options.comment !== undefined,
-    note: options.note !== undefined,
-    learning: options.learning !== undefined,
-    file: options.file !== undefined,
-    test: options.test !== undefined,
-    replaceTests: options.replaceTests === true,
-    doc: options.doc !== undefined,
-    reminder: options.reminder !== undefined,
-    event: options.event !== undefined,
-    typeOption: options.typeOption !== undefined,
-    field: options.field !== undefined,
-    unset: options.unset !== undefined && options.unset.length > 0,
-    clearDeps: options.clearDeps === true,
-    clearComments: options.clearComments === true,
-    clearNotes: options.clearNotes === true,
-    clearLearnings: options.clearLearnings === true,
-    clearFiles: options.clearFiles === true,
-    clearTests: options.clearTests === true,
-    clearDocs: options.clearDocs === true,
-    clearReminders: options.clearReminders === true,
-    clearEvents: options.clearEvents === true,
-    clearTypeOptions: options.clearTypeOptions === true,
-    runtimeFields: Object.keys(runtimeFieldUpdates).length > 0,
-  };
+  const fieldFlags = buildUpdateFieldFlags(options, runtimeFieldUpdates);
   const changedFlags = Object.values(fieldFlags).some(Boolean);
 
   if (!changedFlags) {
-    const located = await locateItem(
-      pmRoot,
-      id,
-      settings.id_prefix,
-      settings.item_format,
-      typeRegistry.type_to_folder,
-    );
-    if (!located) {
-      throw await buildItemNotFoundError(pmRoot, id, settings.id_prefix, typeRegistry.type_to_folder);
-    }
-    const { document } = await readLocatedItem(located, { schema: settings.schema });
-    return {
-      item: toItemRecord(document.metadata),
-      changed_fields: [],
-      warnings: ["noop_no_update_fields"],
-    };
+    return buildNoopUpdateResult({ pmRoot, id, settings, typeRegistry });
   }
 
-  // Per-type allowed-transition enforcement runs BEFORE the close-reroute so a
-  // transition toward the close status is gated too. We read the item's current
-  // status + type once (only when enforcement is active and --status is set) so
-  // the default `off` path adds zero extra work. A `strict` violation throws; a
-  // `warn` violation surfaces a warning on the result.
-  if (workflowEnforcement !== "off" && typeWorkflows.length > 0 && fieldFlags.status && options.status !== undefined) {
-    const located = await locateItem(
-      pmRoot,
-      id,
-      settings.id_prefix,
-      settings.item_format,
-      typeRegistry.type_to_folder,
-    );
-    if (!located) {
-      throw await buildItemNotFoundError(pmRoot, id, settings.id_prefix, typeRegistry.type_to_folder);
-    }
-    const { document } = await readLocatedItem(located, { schema: settings.schema });
-    // When this update also changes --type, gate the transition against the
-    // EFFECTIVE (post-update) type, so a combined --type/--status change can't
-    // bypass a target-type rule (or be wrongly blocked by the pre-update type's
-    // rule that will no longer apply). Falls back to the raw value when --type is
-    // unresolved; the later type resolution surfaces an invalid-type error.
-    const effectiveType =
-      options.type !== undefined
-        ? (resolveTypeName(options.type, typeRegistry) ?? options.type)
-        : (document.metadata?.type ?? "");
-    const warning = enforceTypeWorkflowTransition({
-      enforcement: workflowEnforcement,
-      typeWorkflows,
-      statusRegistry,
-      typeName: effectiveType,
-      fromStatus: document.metadata?.status ?? "",
-      toStatus: options.status ?? "",
-    });
-    if (warning) {
-      workflowTransitionWarnings.push(warning);
-    }
+  workflowTransitionWarnings.push(...await collectWorkflowTransitionWarnings({
+    options,
+    fieldFlags,
+    workflowEnforcement,
+    typeWorkflows,
+    statusRegistry,
+    typeRegistry,
+    pmRoot,
+    id,
+    settings,
+  }));
+  const routedClose = await routeCloseStatusUpdate({
+    options,
+    fieldFlags,
+    statusRegistry,
+    workflowTransitionWarnings,
+    global,
+    id,
+  });
+  if (routedClose) {
+    return routedClose;
   }
-
-  // `pm update --status <close_status>` always routes to the auditable close
-  // workflow so agents are never blocked by close-through-update errors. Any
-  // other field updates in the same call are applied first, then the item is
-  // closed with the supplied --close-reason (or a derived default when omitted).
-  if (fieldFlags.status) {
-    const targetStatus = normalizeStatusInput(options.status as ItemStatus, statusRegistry);
-    if (targetStatus === statusRegistry.close_status) {
-      const otherFieldKeys = Object.entries(fieldFlags)
-        .filter(([key, value]) => value && key !== "status" && key !== "closeReason")
-        .map(([key]) => key);
-
-      const routeWarnings: string[] = [];
-      let preChangedFields: string[] = [];
-      if (otherFieldKeys.length > 0) {
-        const preUpdate = await runUpdate(
-          id,
-          { ...options, status: undefined, closeReason: undefined, message: undefined },
-          global,
-        );
-        preChangedFields = preUpdate.changed_fields;
-        routeWarnings.push(...preUpdate.warnings);
-      }
-
-      const explicitReason = typeof options.closeReason === "string" ? options.closeReason.trim() : "";
-      const fallbackMessage = typeof options.message === "string" ? options.message.trim() : "";
-      const closeReason = explicitReason || fallbackMessage || "Closed via pm update";
-      // Only flag a defaulted reason when neither --close-reason nor --message
-      // supplied any text and we had to invent the generic placeholder.
-      const reasonDefaulted = explicitReason.length === 0 && fallbackMessage.length === 0;
-
-      const closeResult = await runClose(
-        id,
-        closeReason,
-        {
-          author: options.author,
-          message: options.message,
-          force: options.force,
-        },
-        global,
-      );
-
-      const warnings = [
-        ...workflowTransitionWarnings,
-        ...routeWarnings,
-        ...closeResult.warnings,
-        "auto_routed_from_update_to_close",
-      ];
-      if (reasonDefaulted) {
-        warnings.push("close_reason_defaulted");
-      }
-      return {
-        item: closeResult.item,
-        changed_fields: [...preChangedFields, ...closeResult.changed_fields],
-        warnings,
-      };
-    }
-  }
-  if (options.order !== undefined && options.rank !== undefined && options.order !== options.rank) {
-    throw new PmCliError("--order and --rank must match when both are provided", EXIT_CODE.USAGE);
-  }
+  assertMatchingOrderRank(options);
 
   const result = await mutateItem({
     pmRoot,
@@ -1591,397 +2173,31 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     bypassAssigneeConflict: options.allowAuditUpdate === true || options.allowAuditDepUpdate === true,
     extensionFieldNames,
     mutate(document) {
-      const changedFields: string[] = [];
-      const warnings: string[] = [];
-      let activeTypeName = resolveTypeName(document.metadata.type, typeRegistry) ?? document.metadata.type;
-
-      // Declarative set-or-clear helpers for the many string scalar fields that
-      // share an identical shape: set from `--flag` (optionally transformed) or
-      // delete when `--unset <field>` was requested, then record the change.
-      // Each call is placed in the same position the inline block occupied so
-      // the order of `changedFields` is preserved exactly (pm-why9).
-      const metadataRecord = toItemRecord(document.metadata);
-      const scalarMutationContext: UpdateScalarMutationContext = {
-        metadataRecord,
+      return mutateUpdateDocument(document, {
+        options,
+        settings,
+        typeRegistry,
+        statusRegistry,
+        runtimeFieldRegistry,
+        extensionRegistrations,
+        extensionFieldNames,
         clearFrontMatterKeys,
-        changedFields,
+        dependencyUpdates,
+        dependencyRemovals,
+        commentUpdates,
+        noteUpdates,
+        learningUpdates,
+        fileUpdates,
+        testUpdates,
+        docUpdates,
+        resolvedParentValue: parentReference.resolvedParentValue,
+        resolvedBlockedByDependencyId,
+        runtimeFieldUpdates,
         nowValue,
-      };
-
-      if (options.title !== undefined) {
-        document.metadata.title = options.title;
-        changedFields.push("title");
-      }
-      if (options.description !== undefined) {
-        document.metadata.description = options.description;
-        changedFields.push("description");
-      }
-      if (options.body !== undefined) {
-        document.body = options.body;
-        changedFields.push("body");
-      }
-      const previousStatus = document.metadata.status;
-      const previousStatusNormalized = normalizeStatusInput(previousStatus, statusRegistry) ?? previousStatus;
-      if (options.status !== undefined) {
-        // Close-status routing (with reason + audit) is handled before mutateItem
-        // by the close gate above, so only non-close transitions reach this path.
-        const status = parseStatus(options.status, statusRegistry);
-        document.metadata.status = status;
-        if (status === statusRegistry.canceled_status) {
-          delete document.metadata.assignee;
-        }
-        changedFields.push("status");
-      }
-      if (options.closeReason !== undefined || clearFrontMatterKeys.has("close_reason")) {
-        if (clearFrontMatterKeys.has("close_reason")) {
-          delete document.metadata.close_reason;
-        } else {
-          const closeReason = options.closeReason?.trim() ?? "";
-          if (closeReason.length === 0) {
-            throw new PmCliError("--close-reason must not be empty", EXIT_CODE.USAGE);
-          }
-          document.metadata.close_reason = closeReason;
-        }
-        changedFields.push("close_reason");
-      } else if (
-        options.status !== undefined &&
-        previousStatusNormalized === statusRegistry.close_status &&
-        document.metadata.status !== statusRegistry.canceled_status &&
-        document.metadata.close_reason !== undefined
-      ) {
-        delete document.metadata.close_reason;
-        changedFields.push("close_reason");
-      }
-      if (options.priority !== undefined) {
-        document.metadata.priority = ensurePriority(options.priority);
-        changedFields.push("priority");
-      }
-      if (options.type !== undefined) {
-        const resolvedTypeName = resolveTypeName(options.type, typeRegistry);
-        if (!resolvedTypeName) {
-          throw new PmCliError(
-            buildInvalidTypeError(options.type, typeRegistry.types, resolveItemTypesFilePath(pmRoot, settings.schema)),
-            EXIT_CODE.USAGE,
-          );
-        }
-        document.metadata.type = resolvedTypeName;
-        activeTypeName = resolvedTypeName;
-        changedFields.push("type");
-      }
-      enforceUpdateOptionsByType(activeTypeName, options, typeRegistry, extensionFieldNames);
-      if (options.typeOption !== undefined || clearFrontMatterKeys.has("type_options")) {
-        if (clearFrontMatterKeys.has("type_options")) {
-          delete document.metadata.type_options;
-        } else {
-          const parsedTypeOptions = parseTypeOptionEntries(options.typeOption ?? []);
-          const validation = validateTypeOptions(activeTypeName, parsedTypeOptions, typeRegistry);
-          if (validation.errors.length > 0) {
-            throw new PmCliError(validation.errors.join("; "), EXIT_CODE.USAGE);
-          }
-          document.metadata.type_options = validation.normalized;
-        }
-        changedFields.push("type_options");
-      } else if (options.type !== undefined && document.metadata.type_options !== undefined) {
-        const validation = validateTypeOptions(activeTypeName, document.metadata.type_options, typeRegistry);
-        if (validation.errors.length > 0) {
-          throw new PmCliError(
-            `Current type options are incompatible with type "${activeTypeName}". ${validation.errors.join("; ")}. Use --clear-type-options to clear them.`,
-            EXIT_CODE.USAGE,
-          );
-        }
-        document.metadata.type_options = validation.normalized;
-      }
-      if (options.dep !== undefined || options.depRemove !== undefined || clearFrontMatterKeys.has("dependencies")) {
-        let nextDependencies = clearFrontMatterKeys.has("dependencies") ? [] : [...(document.metadata.dependencies ?? [])];
-        if (dependencyUpdates.additions.length > 0) {
-          const seen = new Set(nextDependencies.map((entry) => dependencyKey(entry)));
-          for (const addition of dependencyUpdates.additions) {
-            const key = dependencyKey(addition);
-            if (seen.has(key)) {
-              continue;
-            }
-            nextDependencies.push(addition);
-            seen.add(key);
-          }
-        }
-        if (dependencyRemovals.length > 0) {
-          nextDependencies = nextDependencies.filter(
-            (entry) => !dependencyRemovals.some((selector) => matchesDependencySelector(entry, selector)),
-          );
-        }
-        if (nextDependencies.length === 0) {
-          delete document.metadata.dependencies;
-        } else {
-          document.metadata.dependencies = nextDependencies;
-        }
-        changedFields.push("dependencies");
-      }
-      if (options.comment !== undefined || clearFrontMatterKeys.has("comments")) {
-        if (clearFrontMatterKeys.has("comments") || !commentUpdates.values || commentUpdates.values.length === 0) {
-          delete document.metadata.comments;
-        } else {
-          document.metadata.comments = [...(document.metadata.comments ?? []), ...(commentUpdates.values as Comment[])];
-        }
-        changedFields.push("comments");
-      }
-      if (options.note !== undefined || clearFrontMatterKeys.has("notes")) {
-        if (clearFrontMatterKeys.has("notes") || !noteUpdates.values || noteUpdates.values.length === 0) {
-          delete document.metadata.notes;
-        } else {
-          document.metadata.notes = [...(document.metadata.notes ?? []), ...(noteUpdates.values as LogNote[])];
-        }
-        changedFields.push("notes");
-      }
-      if (options.learning !== undefined || clearFrontMatterKeys.has("learnings")) {
-        if (clearFrontMatterKeys.has("learnings") || !learningUpdates.values || learningUpdates.values.length === 0) {
-          delete document.metadata.learnings;
-        } else {
-          document.metadata.learnings = [...(document.metadata.learnings ?? []), ...(learningUpdates.values as LogNote[])];
-        }
-        changedFields.push("learnings");
-      }
-      if (options.file !== undefined || clearFrontMatterKeys.has("files")) {
-        if (clearFrontMatterKeys.has("files") || !fileUpdates.values || fileUpdates.values.length === 0) {
-          delete document.metadata.files;
-        } else {
-          const nextFiles = [...(document.metadata.files ?? [])];
-          const seen = new Set(nextFiles.map((entry) => fileKey(entry)));
-          for (const entry of fileUpdates.values) {
-            const key = fileKey(entry);
-            if (seen.has(key)) {
-              continue;
-            }
-            nextFiles.push(entry);
-            seen.add(key);
-          }
-          document.metadata.files = nextFiles;
-        }
-        changedFields.push("files");
-      }
-      if (options.test !== undefined || clearFrontMatterKeys.has("tests")) {
-        if (clearFrontMatterKeys.has("tests") && options.replaceTests === true) {
-          if (!testUpdates.values || testUpdates.values.length === 0) {
-            delete document.metadata.tests;
-          } else {
-            const replacementTests: LinkedTest[] = [];
-            const seen = new Set<string>();
-            for (const entry of testUpdates.values) {
-              const key = testKey(entry);
-              if (seen.has(key)) {
-                continue;
-              }
-              replacementTests.push(entry);
-              seen.add(key);
-            }
-            document.metadata.tests = replacementTests;
-          }
-        } else if (clearFrontMatterKeys.has("tests") || !testUpdates.values || testUpdates.values.length === 0) {
-          delete document.metadata.tests;
-        } else {
-          const nextTests = [...(document.metadata.tests ?? [])];
-          const seen = new Set(nextTests.map((entry) => testKey(entry)));
-          for (const entry of testUpdates.values) {
-            const key = testKey(entry);
-            if (seen.has(key)) {
-              continue;
-            }
-            nextTests.push(entry);
-            seen.add(key);
-          }
-          document.metadata.tests = nextTests;
-        }
-        changedFields.push("tests");
-      }
-      if (options.doc !== undefined || clearFrontMatterKeys.has("docs")) {
-        if (clearFrontMatterKeys.has("docs") || !docUpdates.values || docUpdates.values.length === 0) {
-          delete document.metadata.docs;
-        } else {
-          const nextDocs = [...(document.metadata.docs ?? [])];
-          const seen = new Set(nextDocs.map((entry) => docKey(entry)));
-          for (const entry of docUpdates.values) {
-            const key = docKey(entry);
-            if (seen.has(key)) {
-              continue;
-            }
-            nextDocs.push(entry);
-            seen.add(key);
-          }
-          document.metadata.docs = nextDocs;
-        }
-        changedFields.push("docs");
-      }
-      const addTagsValues = options.addTags;
-      const removeTagsValues = options.removeTags;
-      const hasAdditiveTagMutation =
-        (Array.isArray(addTagsValues) && addTagsValues.length > 0) ||
-        (Array.isArray(removeTagsValues) && removeTagsValues.length > 0);
-      if (options.tags !== undefined || clearFrontMatterKeys.has("tags") || hasAdditiveTagMutation) {
-        const baseTags = clearFrontMatterKeys.has("tags")
-          ? []
-          : options.tags !== undefined
-            ? parseTags(options.tags)
-            : Array.isArray(document.metadata.tags)
-              ? [...(document.metadata.tags as string[])]
-              : [];
-        const withAdditions = mergeAdditiveTags(baseTags, addTagsValues);
-        const finalTags = applyTagRemovals(withAdditions, removeTagsValues);
-        document.metadata.tags = finalTags;
-        changedFields.push("tags");
-      }
-      applyUpdateScalarMutations(UPDATE_POST_TAG_SCALAR_MUTATIONS, options, scalarMutationContext);
-      const orderRaw = options.order ?? options.rank;
-      if (orderRaw !== undefined || clearFrontMatterKeys.has("order")) {
-        if (clearFrontMatterKeys.has("order")) {
-          delete document.metadata.order;
-        } else {
-          const parsedOrder = parseOptionalNumber(orderRaw ?? "", "order");
-          if (!Number.isInteger(parsedOrder)) {
-            throw new PmCliError("Order must be an integer", EXIT_CODE.USAGE);
-          }
-          document.metadata.order = parsedOrder;
-        }
-        changedFields.push("order");
-      }
-      if (options.assignee !== undefined || clearFrontMatterKeys.has("assignee")) {
-        if (clearFrontMatterKeys.has("assignee")) {
-          delete document.metadata.assignee;
-        } else {
-          const assignee = options.assignee?.trim() ?? "";
-          if (assignee === "") {
-            throw new PmCliError("--assignee must not be empty. Use --unset assignee to clear it.", EXIT_CODE.USAGE);
-          }
-          document.metadata.assignee = assignee;
-        }
-        changedFields.push("assignee");
-      }
-      if (options.parent !== undefined || clearFrontMatterKeys.has("parent")) {
-        if (clearFrontMatterKeys.has("parent")) {
-          delete document.metadata.parent;
-        } else {
-          document.metadata.parent = resolvedParentValue ?? "";
-        }
-        changedFields.push("parent");
-      }
-      applyUpdateScalarMutations(UPDATE_STAKEHOLDER_SCALAR_MUTATIONS, options, scalarMutationContext);
-      if (options.sprint !== undefined || clearFrontMatterKeys.has("sprint")) {
-        if (clearFrontMatterKeys.has("sprint")) {
-          delete document.metadata.sprint;
-        } else {
-          const sprintValidation = validateSprintOrReleaseValue("sprint", options.sprint ?? "", sprintReleasePolicy);
-          document.metadata.sprint = sprintValidation.value;
-          warnings.push(...sprintValidation.warnings);
-        }
-        changedFields.push("sprint");
-      }
-      if (options.release !== undefined || clearFrontMatterKeys.has("release")) {
-        if (clearFrontMatterKeys.has("release")) {
-          delete document.metadata.release;
-        } else {
-          const releaseValidation = validateSprintOrReleaseValue("release", options.release ?? "", sprintReleasePolicy);
-          document.metadata.release = releaseValidation.value;
-          warnings.push(...releaseValidation.warnings);
-        }
-        changedFields.push("release");
-      }
-      if (options.blockedBy !== undefined || clearFrontMatterKeys.has("blocked_by")) {
-        if (clearFrontMatterKeys.has("blocked_by")) {
-          delete document.metadata.blocked_by;
-        } else {
-          document.metadata.blocked_by = options.blockedBy?.trim() ?? "";
-        }
-        changedFields.push("blocked_by");
-        // pm-kyd6: keep the dependency graph in sync with the blocked_by scalar.
-        applyBlockedByDependencyEdge(
-          document.metadata,
-          resolvedBlockedByDependencyId,
-          nowIso,
-          author,
-          changedFields,
-        );
-      }
-      applyUpdateScalarMutations(UPDATE_ISSUE_SCALAR_MUTATIONS, options, scalarMutationContext);
-      if (options.reminder !== undefined || clearFrontMatterKeys.has("reminders")) {
-        if (clearFrontMatterKeys.has("reminders")) {
-          delete document.metadata.reminders;
-        } else {
-          document.metadata.reminders = parseReminderEntries(options.reminder ?? [], nowValue, { valueMode: "trimmed" });
-        }
-        changedFields.push("reminders");
-      }
-      if (options.event !== undefined || clearFrontMatterKeys.has("events")) {
-        if (clearFrontMatterKeys.has("events")) {
-          delete document.metadata.events;
-        } else {
-          document.metadata.events = parseEventEntries(options.event ?? [], nowValue, {
-            allDayEmptyGuard: "truthy",
-            recurrenceEmptyNumericGuard: "truthy",
-          });
-        }
-        changedFields.push("events");
-      }
-
-      for (const definition of runtimeFieldRegistry.definitions) {
-        if (!clearFrontMatterKeys.has(definition.metadata_key)) {
-          continue;
-        }
-        if (metadataRecord[definition.metadata_key] === undefined) {
-          continue;
-        }
-        delete metadataRecord[definition.metadata_key];
-        changedFields.push(definition.metadata_key);
-      }
-
-      for (const fieldKey of extensionFieldNames) {
-        if (!clearFrontMatterKeys.has(fieldKey)) {
-          continue;
-        }
-        if (metadataRecord[fieldKey] === undefined) {
-          continue;
-        }
-        delete metadataRecord[fieldKey];
-        changedFields.push(fieldKey);
-      }
-
-      for (const [fieldKey, fieldValue] of Object.entries(runtimeFieldUpdates)) {
-        if (clearFrontMatterKeys.has(fieldKey)) {
-          continue;
-        }
-        if (stableValueEquals(metadataRecord[fieldKey], fieldValue)) {
-          continue;
-        }
-        metadataRecord[fieldKey] = fieldValue;
-        changedFields.push(fieldKey);
-      }
-
-      const registeredItemFieldUpdates = parseRegisteredItemFieldAssignments(options.field, extensionRegistrations);
-      for (const fieldKey of Object.keys(registeredItemFieldUpdates)) {
-        if (!clearFrontMatterKeys.has(fieldKey)) {
-          continue;
-        }
-        throw new PmCliError(
-          `Cannot combine --unset ${fieldKey.replaceAll("_", "-")} with --field ${fieldKey}=...`,
-          EXIT_CODE.USAGE,
-        );
-      }
-      for (const [fieldKey, fieldValue] of Object.entries(registeredItemFieldUpdates)) {
-        if (stableValueEquals(metadataRecord[fieldKey], fieldValue)) {
-          continue;
-        }
-        metadataRecord[fieldKey] = fieldValue;
-        changedFields.push(fieldKey);
-      }
-
-      try {
-        applyRegisteredItemFieldDefaultsAndValidation(
-          metadataRecord,
-          extensionRegistrations,
-          { skipDefaultFields: clearFrontMatterKeys },
-        );
-      } catch (error: unknown) {
-        throw new PmCliError(error instanceof Error ? error.message : "Invalid extension item field values", EXIT_CODE.USAGE);
-      }
-
-      return { changedFields, warnings };
+        nowIso,
+        author,
+        pmRoot,
+      });
     },
   });
 
