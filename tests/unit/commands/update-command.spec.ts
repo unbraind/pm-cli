@@ -285,6 +285,12 @@ describe("update command helper coverage", () => {
         allowAuditUpdate: true,
         unset: ["external-field"],
       } as UpdateCommandOptions,
+      {
+        definitions: [],
+        by_key: new Map(),
+        by_cli_token: new Map(),
+        command_to_fields: new Map(),
+      },
       ["external_field"],
     );
     expect([...provided].sort()).toEqual(expect.arrayContaining(["allowAuditUpdate", "dep", "field", "tags", "test"]));
@@ -1059,6 +1065,20 @@ describe("runUpdate", () => {
       expect(item.customer_impact).toBeUndefined();
       expect(item.reminders).toBeUndefined();
       expect(item.events).toBeUndefined();
+
+      const assignedCancelId = createTask(context, "update-canceled-overrides-assignee", { assignee: "active-owner" });
+      const assignedCancel = await runUpdate(
+        assignedCancelId,
+        {
+          status: "canceled",
+          assignee: "new-owner",
+          author: "active-owner",
+          message: "cancel while attempting reassignment",
+        },
+        { path: context.pmPath },
+      );
+      expect((assignedCancel.item as { assignee?: string }).assignee).toBeUndefined();
+      expect(assignedCancel.changed_fields).toEqual(expect.arrayContaining(["status", "assignee"]));
     });
   });
 
@@ -2816,6 +2836,44 @@ describe("runUpdate", () => {
       );
       expect(sameValues.changed_fields).not.toContain("review_url");
       expect(sameValues.changed_fields).not.toContain("github_url");
+    });
+  });
+
+  it("rejects combining --unset and runtime schema field values on update", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        schema?: { fields?: Array<Record<string, unknown>> };
+      };
+      settings.schema = {
+        ...settings.schema,
+        fields: [
+          {
+            key: "reviewUrl",
+            metadata_key: "review_link",
+            type: "string",
+            cli_flag: "review-url",
+            commands: ["update"],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const id = createTask(context, "update-runtime-field-unset-conflict");
+      await expect(
+        runUpdate(
+          id,
+          {
+            unset: ["review-url"],
+            reviewUrl: "https://example.test/review",
+            message: "conflicting runtime field update",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Cannot combine --unset review-link with --review-url"),
+      });
     });
   });
 

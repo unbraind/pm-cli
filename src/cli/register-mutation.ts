@@ -498,6 +498,494 @@ function buildUpdateManyListOptions(options: Record<string, unknown>): Record<st
   };
 }
 
+function pickStringOption(...candidates: unknown[]): string | undefined {
+  for (const candidate of candidates) {
+    if (typeof candidate === "string") {
+      return candidate;
+    }
+  }
+  return undefined;
+}
+
+function readOptionString(options: Record<string, unknown>, key: string): string | undefined {
+  return typeof options[key] === "string" ? options[key] : undefined;
+}
+
+function stringArrayOption(value: unknown): string[] | undefined {
+  if (Array.isArray(value)) {
+    return value as string[];
+  }
+  if (typeof value === "string") {
+    return [value];
+  }
+  return undefined;
+}
+
+function resolveCreatePositionals(
+  typeOrTitle: string | undefined,
+  secondTitle: string | undefined,
+  options: Record<string, unknown>,
+): { positionalType: string | undefined; positionalTitle: string | undefined } {
+  if (typeof secondTitle === "string" && secondTitle.length > 0) {
+    return { positionalType: typeOrTitle, positionalTitle: secondTitle };
+  }
+  if (typeof typeOrTitle !== "string" || typeOrTitle.length === 0) {
+    return { positionalType: undefined, positionalTitle: undefined };
+  }
+  const explicitTitleProvided = typeof options.title === "string" && options.title.trim().length > 0;
+  return explicitTitleProvided && options.type === undefined
+    ? { positionalType: typeOrTitle, positionalTitle: undefined }
+    : { positionalType: undefined, positionalTitle: typeOrTitle };
+}
+
+function assertCreatePositionalTypeHasTitle(positionalType: string | undefined, positionalTitle: string | undefined, options: Record<string, unknown>): void {
+  if (
+    positionalType !== undefined ||
+    typeof positionalTitle !== "string" ||
+    positionalTitle.length === 0 ||
+    options.title !== undefined ||
+    options.type !== undefined ||
+    !BUILTIN_TYPE_NAME_LOOKUP.has(positionalTitle.trim().toLowerCase())
+  ) {
+    return;
+  }
+  const matchedType = positionalTitle.trim();
+  throw new PmCliError(
+    `pm create needs a title — "${matchedType}" looks like an item type, not a title. Use either: pm create ${matchedType} "<title>" or pm create "<title>" --type ${matchedType}.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "create_positional_type_without_title",
+      why: "Without this guard the single positional is used as the title and the type defaults to Task — so the command would silently create a Task literally titled \"" + matchedType + "\".",
+      examples: [
+        `pm create ${matchedType} "Wire up SSO for the agent harness"`,
+        `pm create "Wire up SSO for the agent harness" --type ${matchedType}`,
+      ],
+      nextSteps: [
+        `Re-run with both type and title: pm create ${matchedType} "<title>"`,
+      ],
+    },
+  );
+}
+
+async function runCreateAction(
+  typeOrTitle: string | undefined,
+  secondTitle: string | undefined,
+  options: Record<string, unknown>,
+  command: Command,
+): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const positionals = resolveCreatePositionals(typeOrTitle, secondTitle, options);
+  assertCreatePositionalTypeHasTitle(positionals.positionalType, positionals.positionalTitle, options);
+  if (typeof positionals.positionalType === "string" && positionals.positionalType.length > 0 && options.type === undefined) {
+    options.type = positionals.positionalType;
+  }
+  if (typeof positionals.positionalTitle === "string" && positionals.positionalTitle.length > 0 && options.title === undefined) {
+    options.title = positionals.positionalTitle;
+  }
+  if (typeof options.bodyFile === "string") {
+    options.body = await resolveBodyFileContent(
+      options.bodyFile,
+      options.body !== undefined ? String(options.body) : undefined,
+    );
+    delete options.bodyFile;
+  }
+  const normalized = normalizeCreateOptions(options, { requireType: false });
+  const { runCreate } = await import("./commands/create.js");
+  const result = await runCreate(normalized, globalOptions);
+  await invalidateSearchCachesForMutation(globalOptions, result);
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=create took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+function buildCloseManyListOptions(options: Record<string, unknown>): Record<string, unknown> {
+  return {
+    type: readOptionString(options, "filterType"),
+    tag: readOptionString(options, "filterTag"),
+    priority: readOptionString(options, "filterPriority"),
+    deadlineBefore: readOptionString(options, "filterDeadlineBefore"),
+    deadlineAfter: readOptionString(options, "filterDeadlineAfter"),
+    updatedAfter: readOptionString(options, "filterUpdatedAfter"),
+    updatedBefore: readOptionString(options, "filterUpdatedBefore"),
+    createdAfter: readOptionString(options, "filterCreatedAfter"),
+    createdBefore: readOptionString(options, "filterCreatedBefore"),
+    ids: readOptionString(options, "ids"),
+    assignee: readOptionString(options, "filterAssignee"),
+    assigneeFilter: pickStringOption(options.filterAssigneeFilter, options.filterAssignee_filter),
+    parent: readOptionString(options, "filterParent"),
+    sprint: readOptionString(options, "filterSprint"),
+    release: readOptionString(options, "filterRelease"),
+    ...mapBulkContentAndGovernanceFilters(options),
+    limit: readOptionString(options, "limit"),
+    offset: readOptionString(options, "offset"),
+  };
+}
+
+async function runCloseManyAction(options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runCloseMany } = await import("./commands/close-many.js");
+  const result = await runCloseMany(
+    {
+      status: readOptionString(options, "filterStatus"),
+      list: buildCloseManyListOptions(options),
+      reason: readOptionString(options, "reason"),
+      resolution: readOptionString(options, "resolution"),
+      expectedResult: pickStringOption(options.expectedResult, options.expected_result, options.expected),
+      actualResult: pickStringOption(options.actualResult, options.actual_result, options.actual),
+      validateClose:
+        options.validateClose === true
+          ? "warn"
+          : readOptionString(options, "validateClose"),
+      author: readOptionString(options, "author"),
+      message: readOptionString(options, "message"),
+      force: Boolean(options.force),
+      dryRun: options.dryRun === true ? true : undefined,
+      rollback: readOptionString(options, "rollback"),
+      checkpoint: options.checkpoint === false ? false : undefined,
+    },
+    globalOptions,
+  );
+  await invalidateSearchCachesForMutation(globalOptions, result);
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=close-many took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+function normalizePlanAliases(options: Record<string, unknown>): Record<string, unknown> {
+  const planOptions: Record<string, unknown> = { ...options };
+  const aliasPairs: Array<[string, string]> = [
+    ["blocked_by", "blockedBy"],
+    ["resume_context", "resumeContext"],
+    ["from_search", "fromSearch"],
+    ["step_title", "stepTitle"],
+    ["step_body", "stepBody"],
+    ["step_owner", "stepOwner"],
+    ["step_status", "stepStatus"],
+    ["step_evidence", "stepEvidence"],
+    ["step_blocked_reason", "stepBlockedReason"],
+    ["step_replacement", "stepReplacement"],
+    ["depends_on", "dependsOn"],
+    ["link_kind", "linkKind"],
+    ["link_note", "linkNote"],
+    ["promote_to_item_dep", "promoteToItemDep"],
+    ["allow_multiple_active", "allowMultipleActive"],
+    ["decision_text", "decisionText"],
+    ["decision_rationale", "decisionRationale"],
+    ["decision_evidence", "decisionEvidence"],
+    ["discovery_text", "discoveryText"],
+    ["validation_text", "validationText"],
+    ["validation_command", "validationCommand"],
+    ["validation_expected", "validationExpected"],
+    ["materialize_type", "materializeType"],
+    ["materialize_parent", "materializeParent"],
+    ["materialize_tags", "materializeTags"],
+  ];
+  for (const [snake, camel] of aliasPairs) {
+    if (planOptions[snake] !== undefined && planOptions[camel] === undefined) {
+      planOptions[camel] = planOptions[snake];
+    }
+  }
+  return planOptions;
+}
+
+function assertKnownPlanSubcommand(subcommand: string | undefined, normalized: string, allowed: readonly string[]): void {
+  if (!normalized) {
+    throw new PmCliError(
+      `pm plan requires a subcommand. Allowed: ${allowed.join(", ")}`,
+      EXIT_CODE.USAGE,
+      {
+        code: "missing_required_argument",
+        examples: [
+          'pm plan create --title "Refactor lock retry"',
+          "pm plan show pm-a1b2 --depth standard",
+          'pm plan add-step pm-a1b2 --step-title "Read lock.ts"',
+        ],
+      },
+    );
+  }
+  if (allowed.includes(normalized)) {
+    return;
+  }
+  const examples = normalized === "list" || normalized === "ls" ? ['pm list --type Plan', 'pm list-all --type Plan'] : undefined;
+  throw new PmCliError(
+    `Unknown pm plan subcommand "${subcommand}". Allowed: ${allowed.join(", ")}`,
+    EXIT_CODE.USAGE,
+    examples ? { code: "unknown_subcommand", examples } : undefined,
+  );
+}
+
+function parsePlanReorderTo(normalizedSubcommand: string, reorderToken: string | undefined): number | undefined {
+  if (normalizedSubcommand !== "reorder-step" || typeof reorderToken !== "string") {
+    return undefined;
+  }
+  const parsed = Number.parseInt(reorderToken, 10);
+  if (!Number.isFinite(parsed)) {
+    throw new PmCliError(`reorder-step requires an integer new order, got "${reorderToken}"`, EXIT_CODE.USAGE);
+  }
+  return parsed;
+}
+
+async function runPlanAction(
+  subcommand: string | undefined,
+  id: string | undefined,
+  stepRef: string | undefined,
+  reorderToken: string | undefined,
+  options: Record<string, unknown>,
+  command: Command,
+): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runPlan, PLAN_SUBCOMMANDS } = await import("./commands/plan.js");
+  const normalizedSubcommand = (subcommand ?? "").trim().toLowerCase();
+  assertKnownPlanSubcommand(subcommand, normalizedSubcommand, PLAN_SUBCOMMANDS);
+  const planOptions = normalizePlanAliases(options);
+  const reorderTo = parsePlanReorderTo(normalizedSubcommand, reorderToken);
+  const planId = normalizedSubcommand === "create" && typeof id === "string" && id.length > 0 && planOptions.title === undefined
+    ? undefined
+    : id;
+  if (planId === undefined && typeof id === "string" && id.length > 0) {
+    planOptions.title = id;
+  }
+  const result = await runPlan({
+    subcommand: normalizedSubcommand as typeof PLAN_SUBCOMMANDS[number],
+    id: planId,
+    stepRef,
+    reorderTo,
+    options: planOptions as Record<string, never>,
+    global: globalOptions,
+  });
+  await invalidateSearchCachesForMutation(globalOptions, result);
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=plan took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+function parseNonNegativeIntFlag(raw: unknown, flag: string): number | undefined {
+  if (typeof raw !== "string") {
+    return undefined;
+  }
+  if (!/^\d+$/.test(raw.trim())) {
+    throw new PmCliError(`history-compact ${flag} must be a non-negative integer.`, EXIT_CODE.USAGE);
+  }
+  return Number.parseInt(raw, 10);
+}
+
+async function runHistoryCompactAction(id: string | undefined, options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runHistoryCompact, runHistoryCompactBulk, assertHistoryCompactTarget } = await import(
+    "./commands/history-compact.js"
+  );
+  const ids = typeof options.ids === "string" ? splitCommaList(options.ids) : undefined;
+  const allOver = parseNonNegativeIntFlag(options.allOver, "--all-over");
+  const minEntries = parseNonNegativeIntFlag(options.minEntries, "--min-entries");
+  if (options.closed === true && options.allStreams === true) {
+    throw new PmCliError(
+      "history-compact: --closed and --all-streams are mutually exclusive; pick one lifecycle scope.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  const scope = options.closed === true ? "closed" : options.allStreams === true ? "all-streams" : undefined;
+  const isBulk = ids !== undefined || allOver !== undefined || scope !== undefined;
+  if (isBulk && typeof options.before === "string") {
+    throw new PmCliError(
+      "history-compact: --before applies only in single-id mode (bulk mode always compacts full streams).",
+      EXIT_CODE.USAGE,
+    );
+  }
+  assertHistoryCompactTarget(id, { ids, allOver, scope });
+  if (id === undefined) {
+    const result = await runHistoryCompactBulk(
+      {
+        ids,
+        scope,
+        allOver,
+        minEntries,
+        dryRun: options.dryRun === true,
+        author: readOptionString(options, "author"),
+        message: readOptionString(options, "message"),
+        force: Boolean(options.force),
+      },
+      globalOptions,
+    );
+    printResult(result, globalOptions);
+    if (result.totals.items_errored > 0) {
+      process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+    }
+  } else {
+    const result = await runHistoryCompact(
+      id,
+      {
+        before: readOptionString(options, "before"),
+        dryRun: options.dryRun === true,
+        author: readOptionString(options, "author"),
+        message: readOptionString(options, "message"),
+        force: Boolean(options.force),
+      },
+      globalOptions,
+    );
+    printResult(result, globalOptions);
+  }
+  if (globalOptions.profile) {
+    printError(`profile:command=history-compact took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+function splitCollectedCommaList(raw: unknown): string[] | undefined {
+  if (!Array.isArray(raw)) {
+    return undefined;
+  }
+  return (raw as string[])
+    .flatMap((value) => value.split(","))
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+}
+
+async function runSchemaAction(
+  subcommand: string | undefined,
+  name: string | undefined,
+  options: Record<string, unknown>,
+  command: Command,
+): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const schemaModule = await import("./commands/schema.js");
+  const { SCHEMA_SUBCOMMANDS } = schemaModule;
+  let normalizedSubcommand = (subcommand ?? "").trim().toLowerCase();
+  let typeName = name;
+  assertSchemaSubcommandPresent(normalizedSubcommand, SCHEMA_SUBCOMMANDS);
+  if (
+    !SCHEMA_SUBCOMMANDS.includes(normalizedSubcommand as typeof SCHEMA_SUBCOMMANDS[number]) &&
+    typeName === undefined &&
+    !looksLikeSchemaSubcommandTypo(normalizedSubcommand)
+  ) {
+    typeName = subcommand;
+    normalizedSubcommand = "add-type";
+  }
+  if (!SCHEMA_SUBCOMMANDS.includes(normalizedSubcommand as typeof SCHEMA_SUBCOMMANDS[number])) {
+    throw new PmCliError(
+      `Unknown pm schema subcommand "${subcommand}". Allowed: ${SCHEMA_SUBCOMMANDS.join(", ")}`,
+      EXIT_CODE.USAGE,
+      { code: "unknown_subcommand" },
+    );
+  }
+  const result = await dispatchSchemaSubcommand(schemaModule, {
+    normalizedSubcommand,
+    typeName,
+    options,
+    aliases: stringArrayOption(options.alias),
+    roles: stringArrayOption(options.role),
+    commands: splitCollectedCommaList(options.commands),
+    requiredTypes: splitCollectedCommaList(options.requiredTypes),
+    defaultStatus: pickStringOption(options.defaultStatus, options.default_status),
+    order: parseSchemaOrderOption(options.order),
+    minCount: parseSchemaOrderOption(options.minCount),
+    author: readOptionString(options, "author"),
+    force: Boolean(options.force),
+    description: readOptionString(options, "description"),
+    globalOptions,
+  });
+  if (globalOptions.json === true || globalOptions.defaultOutputFormat === "json") {
+    printResult(result, globalOptions);
+  } else if (!globalOptions.quiet) {
+    renderSchemaResultHuman(schemaModule, result);
+  }
+  if (globalOptions.profile) {
+    printError(`profile:command=schema took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+function assertSchemaSubcommandPresent(normalizedSubcommand: string, allowed: readonly string[]): void {
+  if (normalizedSubcommand) {
+    return;
+  }
+  throw new PmCliError(
+    `pm schema requires a subcommand. Allowed: ${allowed.join(", ")}`,
+    EXIT_CODE.USAGE,
+    {
+      code: "missing_required_argument",
+      examples: [
+        "pm schema list",
+        "pm schema show Task",
+        "pm schema show-status open",
+        'pm schema add-type Spike --description "Time-boxed investigation" --default-status open',
+        "pm schema remove-type Spike",
+        "pm schema add-status review --role active --alias in_review",
+        "pm schema remove-status review",
+        "pm schema add-field severity_level --type string --commands create,update",
+        "pm schema list-fields",
+        "pm schema apply-preset agile",
+        "pm schema add-type --infer --min-count 10",
+      ],
+    },
+  );
+}
+
+function resolveCommentSources(text: string | undefined, options: Record<string, unknown>): {
+  add: string | undefined;
+  readFromStdin: boolean;
+  readFromFile: string | undefined;
+  editIndex: number | undefined;
+  deleteIndex: number | undefined;
+  isMutation: boolean;
+} {
+  const editIndex = typeof options.edit === "number" ? options.edit : undefined;
+  const deleteIndex = typeof options.delete === "number" ? options.delete : undefined;
+  const addFromOption = readOptionString(options, "add");
+  const addFromPositional = typeof text === "string" ? text : undefined;
+  const readFromStdin = options.stdin === true;
+  const readFromFile = readOptionString(options, "file");
+  const sourceCount =
+    Number(addFromOption !== undefined) +
+    Number(addFromPositional !== undefined) +
+    Number(readFromStdin) +
+    Number(readFromFile !== undefined);
+  if (sourceCount > 1) {
+    if (addFromOption !== undefined && addFromPositional !== undefined && !readFromStdin && readFromFile === undefined) {
+      throw new PmCliError("Specify comment text either as positional [text] or with --add, not both", EXIT_CODE.USAGE);
+    }
+    throw new PmCliError(
+      "Specify comment text with exactly one source: positional [text], --add, --stdin, or --file",
+      EXIT_CODE.USAGE,
+    );
+  }
+  const add = addFromOption ?? addFromPositional;
+  const isMutation =
+    typeof add === "string" || readFromStdin || readFromFile !== undefined || editIndex !== undefined || deleteIndex !== undefined;
+  return { add, readFromStdin, readFromFile, editIndex, deleteIndex, isMutation };
+}
+
+async function runCommentsAction(id: string, text: string | undefined, options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const sources = resolveCommentSources(text, options);
+  const { runComments } = await import("./commands/comments.js");
+  const result = await runComments(id, {
+    add: sources.add,
+    stdin: sources.readFromStdin,
+    file: sources.readFromFile,
+    edit: sources.editIndex,
+    delete: sources.deleteIndex,
+    limit: readOptionString(options, "limit"),
+    author: readOptionString(options, "author"),
+    message: readOptionString(options, "message"),
+    allowAuditComment: Boolean(options.allowAuditComment),
+    force: Boolean(options.force),
+  }, globalOptions);
+  if (sources.isMutation) {
+    await invalidateSearchCachesForMutation(globalOptions, result);
+  }
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=comments took_ms=${Date.now() - startedAt}`);
+  }
+}
+
 /**
  * Implements register mutation commands for the public runtime surface of this module.
  */
@@ -520,87 +1008,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--clear-reminders", "Clear reminders")
     .option("--clear-events", "Clear events")
     .option("--clear-type-options", "Clear type options")
-    .action(async (
-      typeOrTitle: string | undefined,
-      secondTitle: string | undefined,
-      options: Record<string, unknown>,
-      command,
-    ) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      // Support both `pm create "<title>"` and the natural subcommand-style
-      // `pm create <type> "<title>"` so agents are never blocked by argument
-      // count. When two positionals are given, the first is the item type.
-      let positionalType: string | undefined;
-      let positionalTitle: string | undefined;
-      if (typeof secondTitle === "string" && secondTitle.length > 0) {
-        positionalType = typeOrTitle;
-        positionalTitle = secondTitle;
-      } else if (typeof typeOrTitle === "string" && typeOrTitle.length > 0) {
-        // Honor `pm create <type> --title ...` by treating the lone positional as
-        // type when an explicit --title is already present.
-        const explicitTitleProvided = typeof options.title === "string" && options.title.trim().length > 0;
-        if (explicitTitleProvided && options.type === undefined) {
-          positionalType = typeOrTitle;
-        } else {
-          positionalTitle = typeOrTitle;
-        }
-      }
-      // pm-edge #1 (2026-05-28): when the sole positional matches a known
-      // item type AND no --title was supplied, refuse early instead of
-      // silently creating a Task titled with the type name (e.g. `pm create
-      // Epic` would previously produce a Task literally titled "Epic"). The
-      // guard fires only for the ambiguous single-positional case so the
-      // documented `pm create <type> <title>` flow stays a never-block.
-      if (
-        positionalType === undefined &&
-        typeof positionalTitle === "string" &&
-        positionalTitle.length > 0 &&
-        options.title === undefined &&
-        options.type === undefined &&
-        BUILTIN_TYPE_NAME_LOOKUP.has(positionalTitle.trim().toLowerCase())
-      ) {
-        const matchedType = positionalTitle.trim();
-        throw new PmCliError(
-          `pm create needs a title — "${matchedType}" looks like an item type, not a title. Use either: pm create ${matchedType} "<title>" or pm create "<title>" --type ${matchedType}.`,
-          EXIT_CODE.USAGE,
-          {
-            code: "create_positional_type_without_title",
-            why: "Without this guard the single positional is used as the title and the type defaults to Task — so the command would silently create a Task literally titled \"" + matchedType + "\".",
-            examples: [
-              `pm create ${matchedType} "Wire up SSO for the agent harness"`,
-              `pm create "Wire up SSO for the agent harness" --type ${matchedType}`,
-            ],
-            nextSteps: [
-              `Re-run with both type and title: pm create ${matchedType} "<title>"`,
-            ],
-          },
-        );
-      }
-      if (typeof positionalType === "string" && positionalType.length > 0 && options.type === undefined) {
-        options.type = positionalType;
-      }
-      if (typeof positionalTitle === "string" && positionalTitle.length > 0 && options.title === undefined) {
-        options.title = positionalTitle;
-      }
-      // GH-214: resolve --body-file into the existing body field before
-      // normalization so the rest of create is unchanged. CLI-only input alias.
-      if (typeof options.bodyFile === "string") {
-        options.body = await resolveBodyFileContent(
-          options.bodyFile,
-          options.body !== undefined ? String(options.body) : undefined,
-        );
-        delete options.bodyFile;
-      }
-      const normalized = normalizeCreateOptions(options, { requireType: false });
-      const { runCreate } = await import("./commands/create.js");
-      const result = await runCreate(normalized, globalOptions);
-      await invalidateSearchCachesForMutation(globalOptions, result);
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=create took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runCreateAction);
 
   program
     .command("copy")
@@ -960,66 +1368,7 @@ export function registerMutationCommands(program: Command): void {
   addHiddenOption(closeManyCommand, "--filter-assignee_filter <value>", "Alias for --filter-assignee-filter", false);
   addHiddenOption(closeManyCommand, "--expected_result <value>", "Alias for --expected-result", false);
   addHiddenOption(closeManyCommand, "--actual_result <value>", "Alias for --actual-result", false);
-  closeManyCommand.action(async (options: Record<string, unknown>, command) => {
-    const globalOptions = getGlobalOptions(command);
-    const startedAt = Date.now();
-    const pickString = (...candidates: unknown[]): string | undefined => {
-      for (const candidate of candidates) {
-        if (typeof candidate === "string") {
-          return candidate;
-        }
-      }
-      return undefined;
-    };
-    const { runCloseMany } = await import("./commands/close-many.js");
-    const result = await runCloseMany(
-      {
-        status: typeof options.filterStatus === "string" ? options.filterStatus : undefined,
-        list: {
-          type: typeof options.filterType === "string" ? options.filterType : undefined,
-          tag: typeof options.filterTag === "string" ? options.filterTag : undefined,
-          priority: typeof options.filterPriority === "string" ? options.filterPriority : undefined,
-          deadlineBefore: typeof options.filterDeadlineBefore === "string" ? options.filterDeadlineBefore : undefined,
-          deadlineAfter: typeof options.filterDeadlineAfter === "string" ? options.filterDeadlineAfter : undefined,
-          updatedAfter: typeof options.filterUpdatedAfter === "string" ? options.filterUpdatedAfter : undefined,
-          updatedBefore: typeof options.filterUpdatedBefore === "string" ? options.filterUpdatedBefore : undefined,
-          createdAfter: typeof options.filterCreatedAfter === "string" ? options.filterCreatedAfter : undefined,
-          createdBefore: typeof options.filterCreatedBefore === "string" ? options.filterCreatedBefore : undefined,
-          ids: typeof options.ids === "string" ? options.ids : undefined,
-          assignee: typeof options.filterAssignee === "string" ? options.filterAssignee : undefined,
-          assigneeFilter: pickString(options.filterAssigneeFilter, options.filterAssignee_filter),
-          parent: typeof options.filterParent === "string" ? options.filterParent : undefined,
-          sprint: typeof options.filterSprint === "string" ? options.filterSprint : undefined,
-          release: typeof options.filterRelease === "string" ? options.filterRelease : undefined,
-          ...mapBulkContentAndGovernanceFilters(options),
-          limit: typeof options.limit === "string" ? options.limit : undefined,
-          offset: typeof options.offset === "string" ? options.offset : undefined,
-        },
-        reason: typeof options.reason === "string" ? options.reason : undefined,
-        resolution: typeof options.resolution === "string" ? options.resolution : undefined,
-        expectedResult: pickString(options.expectedResult, options.expected_result, options.expected),
-        actualResult: pickString(options.actualResult, options.actual_result, options.actual),
-        validateClose:
-          options.validateClose === true
-            ? "warn"
-            : typeof options.validateClose === "string"
-              ? options.validateClose
-              : undefined,
-        author: typeof options.author === "string" ? options.author : undefined,
-        message: typeof options.message === "string" ? options.message : undefined,
-        force: Boolean(options.force),
-        dryRun: options.dryRun === true ? true : undefined,
-        rollback: typeof options.rollback === "string" ? options.rollback : undefined,
-        checkpoint: options.checkpoint === false ? false : undefined,
-      },
-      globalOptions,
-    );
-    await invalidateSearchCachesForMutation(globalOptions, result);
-    printResult(result, globalOptions);
-    if (globalOptions.profile) {
-      printError(`profile:command=close-many took_ms=${Date.now() - startedAt}`);
-    }
-  });
+  closeManyCommand.action(runCloseManyAction);
 
   program
     .command("delete")
@@ -1212,104 +1561,7 @@ export function registerMutationCommands(program: Command): void {
   ] as const) {
     addHiddenOption(planCommand, flags, description, true);
   }
-  planCommand
-    .action(async (subcommand: string | undefined, id: string | undefined, stepRef: string | undefined, reorderToken: string | undefined, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const { runPlan, PLAN_SUBCOMMANDS } = await import("./commands/plan.js");
-      const normalizedSubcommand = (subcommand ?? "").trim().toLowerCase();
-      if (!normalizedSubcommand) {
-        throw new PmCliError(
-          `pm plan requires a subcommand. Allowed: ${PLAN_SUBCOMMANDS.join(", ")}`,
-          EXIT_CODE.USAGE,
-          {
-            code: "missing_required_argument",
-            examples: [
-              'pm plan create --title "Refactor lock retry"',
-              "pm plan show pm-a1b2 --depth standard",
-              'pm plan add-step pm-a1b2 --step-title "Read lock.ts"',
-            ],
-          },
-        );
-      }
-      if (!PLAN_SUBCOMMANDS.includes(normalizedSubcommand as typeof PLAN_SUBCOMMANDS[number])) {
-        const didYouMean =
-          normalizedSubcommand === "list" || normalizedSubcommand === "ls"
-            ? ['pm list --type Plan', 'pm list-all --type Plan']
-            : undefined;
-        throw new PmCliError(
-          `Unknown pm plan subcommand "${subcommand}". Allowed: ${PLAN_SUBCOMMANDS.join(", ")}`,
-          EXIT_CODE.USAGE,
-          didYouMean ? { code: "unknown_subcommand", examples: didYouMean } : undefined,
-        );
-      }
-      const planOptions: Record<string, unknown> = { ...options };
-      // Normalize alternate-snake/camel aliases that Commander parses as different keys.
-      const aliasPairs: Array<[string, string]> = [
-        ["blocked_by", "blockedBy"],
-        ["resume_context", "resumeContext"],
-        ["from_search", "fromSearch"],
-        // pm-6mit: "step" is no longer folded into stepTitle here — it is a
-        // first-class repeatable option normalized inside runPlan (create
-        // accumulates ordered steps; other subcommands accept a single value
-        // as a stepTitle alias).
-        ["step_title", "stepTitle"],
-        ["step_body", "stepBody"],
-        ["step_owner", "stepOwner"],
-        ["step_status", "stepStatus"],
-        ["step_evidence", "stepEvidence"],
-        ["step_blocked_reason", "stepBlockedReason"],
-        ["step_replacement", "stepReplacement"],
-        ["depends_on", "dependsOn"],
-        ["link_kind", "linkKind"],
-        ["link_note", "linkNote"],
-        ["promote_to_item_dep", "promoteToItemDep"],
-        ["allow_multiple_active", "allowMultipleActive"],
-        ["decision_text", "decisionText"],
-        ["decision_rationale", "decisionRationale"],
-        ["decision_evidence", "decisionEvidence"],
-        ["discovery_text", "discoveryText"],
-        ["validation_text", "validationText"],
-        ["validation_command", "validationCommand"],
-        ["validation_expected", "validationExpected"],
-        ["materialize_type", "materializeType"],
-        ["materialize_parent", "materializeParent"],
-        ["materialize_tags", "materializeTags"],
-      ];
-      for (const [snake, camel] of aliasPairs) {
-        if (planOptions[snake] !== undefined && planOptions[camel] === undefined) {
-          planOptions[camel] = planOptions[snake];
-        }
-      }
-      let reorderTo: number | undefined;
-      if (normalizedSubcommand === "reorder-step" && typeof reorderToken === "string") {
-        const parsed = Number.parseInt(reorderToken, 10);
-        if (!Number.isFinite(parsed)) {
-          throw new PmCliError(`reorder-step requires an integer new order, got "${reorderToken}"`, EXIT_CODE.USAGE);
-        }
-        reorderTo = parsed;
-      }
-      // Allow positional title for `pm plan create "Title"` (mirrors pm create UX).
-      // Plan create never takes an id positional; the second token is the title.
-      let planId = id;
-      if (normalizedSubcommand === "create" && typeof id === "string" && id.length > 0 && planOptions.title === undefined) {
-        planOptions.title = id;
-        planId = undefined;
-      }
-      const result = await runPlan({
-        subcommand: normalizedSubcommand as typeof PLAN_SUBCOMMANDS[number],
-        id: planId,
-        stepRef,
-        reorderTo,
-        options: planOptions as Record<string, never>,
-        global: globalOptions,
-      });
-      await invalidateSearchCachesForMutation(globalOptions, result);
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=plan took_ms=${Date.now() - startedAt}`);
-      }
-    });
+  planCommand.action(runPlanAction);
   void planCommand;
 
   program
@@ -1409,79 +1661,7 @@ export function registerMutationCommands(program: Command): void {
     .description(
       "Compact item history streams into a synthetic baseline plus retained tail entries. Pass an item id for one stream, or a bulk selector (--ids/--all-over/--closed/--all-streams) to compact many.",
     )
-    .action(async (id: string | undefined, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const { runHistoryCompact, runHistoryCompactBulk, assertHistoryCompactTarget } = await import(
-        "./commands/history-compact.js"
-      );
-      const parseNonNegativeIntFlag = (raw: unknown, flag: string): number | undefined => {
-        if (typeof raw !== "string") {
-          return undefined;
-        }
-        // Strict: reject "10abc"/"3.5"/"-3" that Number.parseInt would silently truncate.
-        if (!/^\d+$/.test(raw.trim())) {
-          throw new PmCliError(`history-compact ${flag} must be a non-negative integer.`, EXIT_CODE.USAGE);
-        }
-        return Number.parseInt(raw, 10);
-      };
-      const ids = typeof options.ids === "string" ? splitCommaList(options.ids) : undefined;
-      const allOver = parseNonNegativeIntFlag(options.allOver, "--all-over");
-      const minEntries = parseNonNegativeIntFlag(options.minEntries, "--min-entries");
-      if (options.closed === true && options.allStreams === true) {
-        throw new PmCliError(
-          "history-compact: --closed and --all-streams are mutually exclusive; pick one lifecycle scope.",
-          EXIT_CODE.USAGE,
-        );
-      }
-      const scope = options.closed === true ? "closed" : options.allStreams === true ? "all-streams" : undefined;
-      const isBulk = ids !== undefined || allOver !== undefined || scope !== undefined;
-      if (isBulk && typeof options.before === "string") {
-        throw new PmCliError(
-          "history-compact: --before applies only in single-id mode (bulk mode always compacts full streams).",
-          EXIT_CODE.USAGE,
-        );
-      }
-      assertHistoryCompactTarget(id, { ids, allOver, scope });
-      if (id === undefined) {
-        const result = await runHistoryCompactBulk(
-          {
-            ids,
-            scope,
-            allOver,
-            minEntries,
-            dryRun: options.dryRun === true,
-            author: typeof options.author === "string" ? options.author : undefined,
-            message: typeof options.message === "string" ? options.message : undefined,
-            force: Boolean(options.force),
-          },
-          globalOptions,
-        );
-        printResult(result, globalOptions);
-        if (result.totals.items_errored > 0) {
-          // One failing stream never aborts the pass, but the command must still
-          // fail for gating callers.
-          process.exitCode = EXIT_CODE.GENERIC_FAILURE;
-        }
-      } else {
-        const result = await runHistoryCompact(
-          id,
-          {
-            before: typeof options.before === "string" ? options.before : undefined,
-            dryRun: options.dryRun === true,
-            author: typeof options.author === "string" ? options.author : undefined,
-            message: typeof options.message === "string" ? options.message : undefined,
-            force: Boolean(options.force),
-          },
-          globalOptions,
-        );
-        printResult(result, globalOptions);
-      }
-      // history-compact only rewrites the history stream; item content is untouched.
-      if (globalOptions.profile) {
-        printError(`profile:command=history-compact took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runHistoryCompactAction);
 
   const schemaCommand = program
     .command("schema")
@@ -1512,120 +1692,7 @@ export function registerMutationCommands(program: Command): void {
   // Hidden pure snake_case underscore-duplicate alias.
   addHiddenOption(schemaCommand, "--default_status <status>", "Alias for --default-status", false);
   schemaCommand
-    .action(async (
-      subcommand: string | undefined,
-      name: string | undefined,
-      options: Record<string, unknown>,
-      command,
-    ) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const schemaModule = await import("./commands/schema.js");
-      const { SCHEMA_SUBCOMMANDS } = schemaModule;
-      let normalizedSubcommand = (subcommand ?? "").trim().toLowerCase();
-      let typeName = name;
-      if (!normalizedSubcommand) {
-        throw new PmCliError(
-          `pm schema requires a subcommand. Allowed: ${SCHEMA_SUBCOMMANDS.join(", ")}`,
-          EXIT_CODE.USAGE,
-          {
-            code: "missing_required_argument",
-            examples: [
-              "pm schema list",
-              "pm schema show Task",
-              "pm schema show-status open",
-              'pm schema add-type Spike --description "Time-boxed investigation" --default-status open',
-              "pm schema remove-type Spike",
-              "pm schema add-status review --role active --alias in_review",
-              "pm schema remove-status review",
-              "pm schema add-field severity_level --type string --commands create,update",
-              "pm schema list-fields",
-              "pm schema apply-preset agile",
-              "pm schema add-type --infer --min-count 10",
-            ],
-          },
-        );
-      }
-      const aliases =
-        /* c8 ignore next -- --alias is registered with commander `collect`, so it is always an array here; the string arm is a defensive guard for non-CLI (programmatic) callers */
-        typeof options.alias === "string"
-          ? [options.alias]
-          : Array.isArray(options.alias)
-            ? (options.alias as string[])
-            : undefined;
-      const roles =
-        /* c8 ignore next -- --role is registered with commander `collect`, so it is always an array here; the string arm is a defensive guard for non-CLI (programmatic) callers */
-        typeof options.role === "string"
-          ? [options.role]
-          : Array.isArray(options.role)
-            ? (options.role as string[])
-            : undefined;
-      const defaultStatus =
-        typeof options.defaultStatus === "string"
-          ? options.defaultStatus
-          : typeof options.default_status === "string"
-            ? (options.default_status as string)
-            : undefined;
-      const order = parseSchemaOrderOption(options.order);
-      // --commands/--required-types are repeatable Commander `collect` flags, so
-      // their value is always a string[] (or undefined when omitted); each entry
-      // may itself be a comma-list, which we split and flatten here.
-      const splitCollectedCommaList = (raw: unknown): string[] | undefined => {
-        if (!Array.isArray(raw)) {
-          return undefined;
-        }
-        return (raw as string[])
-          .flatMap((value) => value.split(","))
-          .map((value) => value.trim())
-          .filter((value) => value.length > 0);
-      };
-      const commands = splitCollectedCommaList(options.commands);
-      const requiredTypes = splitCollectedCommaList(options.requiredTypes);
-      const minCount = parseSchemaOrderOption(options.minCount);
-      if (
-        !SCHEMA_SUBCOMMANDS.includes(normalizedSubcommand as typeof SCHEMA_SUBCOMMANDS[number]) &&
-        typeName === undefined &&
-        !looksLikeSchemaSubcommandTypo(normalizedSubcommand)
-      ) {
-        typeName = subcommand;
-        normalizedSubcommand = "add-type";
-      }
-      if (!SCHEMA_SUBCOMMANDS.includes(normalizedSubcommand as typeof SCHEMA_SUBCOMMANDS[number])) {
-        throw new PmCliError(
-          `Unknown pm schema subcommand "${subcommand}". Allowed: ${SCHEMA_SUBCOMMANDS.join(", ")}`,
-          EXIT_CODE.USAGE,
-          { code: "unknown_subcommand" },
-        );
-      }
-      const author = typeof options.author === "string" ? options.author : undefined;
-      const force = Boolean(options.force);
-      const description = typeof options.description === "string" ? options.description : undefined;
-      const result = await dispatchSchemaSubcommand(schemaModule, {
-        normalizedSubcommand,
-        typeName,
-        options,
-        aliases,
-        roles,
-        commands,
-        requiredTypes,
-        defaultStatus,
-        order,
-        minCount,
-        author,
-        force,
-        description,
-        globalOptions,
-      });
-      // Schema inspection and type registration do not touch item content, so search caches stay valid.
-      if (globalOptions.json === true || globalOptions.defaultOutputFormat === "json") {
-        printResult(result, globalOptions);
-      } else if (!globalOptions.quiet) {
-        renderSchemaResultHuman(schemaModule, result);
-      }
-      if (globalOptions.profile) {
-        printError(`profile:command=schema took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runSchemaAction);
 
   const profileCommand = program
     .command("profile")
@@ -1694,53 +1761,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--allow-audit-comment", "Allow non-owner append-only comment audits (add/edit/delete) without requiring --force")
     .option("--force", "Force ownership override")
     .description("List, add, edit, or delete comments for an item.")
-    .action(async (id: string, text: string | undefined, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const editIndex = typeof options.edit === "number" ? options.edit : undefined;
-      const deleteIndex = typeof options.delete === "number" ? options.delete : undefined;
-      const addFromOption = typeof options.add === "string" ? options.add : undefined;
-      const addFromPositional = typeof text === "string" ? text : undefined;
-      const readFromStdin = options.stdin === true;
-      const readFromFile = typeof options.file === "string" ? options.file : undefined;
-      const sourceCount =
-        Number(addFromOption !== undefined) +
-        Number(addFromPositional !== undefined) +
-        Number(readFromStdin) +
-        Number(readFromFile !== undefined);
-      if (sourceCount > 1) {
-        if (addFromOption !== undefined && addFromPositional !== undefined && !readFromStdin && readFromFile === undefined) {
-          throw new PmCliError("Specify comment text either as positional [text] or with --add, not both", EXIT_CODE.USAGE);
-        }
-        throw new PmCliError(
-          "Specify comment text with exactly one source: positional [text], --add, --stdin, or --file",
-          EXIT_CODE.USAGE,
-        );
-      }
-      const add = addFromOption ?? addFromPositional;
-      const { runComments } = await import("./commands/comments.js");
-      const result = await runComments(id, {
-        add,
-        stdin: readFromStdin,
-        file: readFromFile,
-        edit: editIndex,
-        delete: deleteIndex,
-        limit: typeof options.limit === "string" ? options.limit : undefined,
-        author: typeof options.author === "string" ? options.author : undefined,
-        message: typeof options.message === "string" ? options.message : undefined,
-        allowAuditComment: Boolean(options.allowAuditComment),
-        force: Boolean(options.force),
-      }, globalOptions);
-      const isMutation =
-        typeof add === "string" || readFromStdin || readFromFile !== undefined || editIndex !== undefined || deleteIndex !== undefined;
-      if (isMutation) {
-        await invalidateSearchCachesForMutation(globalOptions, result);
-      }
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=comments took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runCommentsAction);
 
   program
     .command("notes")

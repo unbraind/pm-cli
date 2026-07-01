@@ -2066,6 +2066,22 @@ describe("mutation command actions", () => {
       expect.anything(),
     );
 
+    await runCliRaw(
+      "schema", "add-status", "blocked",
+      "--role", "active",
+      "--role", "blocked",
+      "--alias", "waiting",
+      "--alias", "hold",
+    );
+    expect(vi.mocked(runSchemaAddStatus)).toHaveBeenLastCalledWith(
+      "blocked",
+      expect.objectContaining({
+        role: ["active", "blocked"],
+        alias: ["waiting", "hold"],
+      }),
+      expect.anything(),
+    );
+
     // --default-status (kebab) provides defaultStatus as a direct string.
     await runCliRaw("schema", "add-type", "Spike", "--description", "Investigation", "--folder", "spikes", "--default-status", "open", "--author", "agent");
     expect(vi.mocked(runSchemaAddType)).toHaveBeenCalledWith(
@@ -2079,6 +2095,27 @@ describe("mutation command actions", () => {
     const bareAddType = lastCallArg<Record<string, unknown>>(vi.mocked(runSchemaAddType) as never, 1);
     expect(bareAddType.description).toBeUndefined();
     expect(bareAddType.folder).toBeUndefined();
+  });
+
+  it("preserves defensive string coercion for programmatic schema alias and role options", async () => {
+    const program = buildProgram();
+    const schemaCommand = program.commands.find((candidate) => candidate.name() === "schema");
+    if (!schemaCommand) {
+      throw new Error("schema command was not registered");
+    }
+    schemaCommand.setOptionValue("alias", "in_review");
+    schemaCommand.setOptionValue("role", "active");
+
+    await schemaCommand.parseAsync(["add-status", "review"], { from: "user" });
+
+    expect(vi.mocked(runSchemaAddStatus)).toHaveBeenLastCalledWith(
+      "review",
+      expect.objectContaining({
+        alias: ["in_review"],
+        role: ["active"],
+      }),
+      expect.anything(),
+    );
   });
 
   it("rejects read-like unknown schema subcommands instead of add-type shorthand mutation (GH-293)", async () => {
