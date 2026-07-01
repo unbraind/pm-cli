@@ -1988,9 +1988,9 @@ function applyRuntimeAndRegisteredFieldMutations(
   clearDynamicFields(metadataRecord, context.extensionFieldNames, context.clearFrontMatterKeys, changedFields);
   for (const [fieldKey, fieldValue] of Object.entries(context.runtimeFieldUpdates)) {
     if (context.clearFrontMatterKeys.has(fieldKey)) {
-      const definition = context.runtimeFieldRegistry.definitions.find((candidate) => candidate.metadata_key === fieldKey)!;
+      const fieldFlag = fieldKey.replaceAll("_", "-");
       throw new PmCliError(
-        `Cannot combine --unset ${fieldKey.replaceAll("_", "-")} with --${definition.cli_flag}`,
+        `Cannot combine --unset ${fieldFlag} with --${fieldFlag}`,
         EXIT_CODE.USAGE,
       );
     }
