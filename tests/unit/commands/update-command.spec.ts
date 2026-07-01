@@ -2850,7 +2850,7 @@ describe("runUpdate", () => {
         fields: [
           {
             key: "reviewUrl",
-            metadata_key: "review_url",
+            metadata_key: "review_link",
             type: "string",
             cli_flag: "review-url",
             commands: ["update"],
@@ -2872,7 +2872,7 @@ describe("runUpdate", () => {
         ),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
-        message: expect.stringContaining("Cannot combine --unset review-url with --review-url"),
+        message: expect.stringContaining("Cannot combine --unset review-link with --review-url"),
       });
     });
   });
