@@ -246,6 +246,12 @@ describe("mcp server branch residual coverage", () => {
     await expect(runAction({ action: "plan", options: { subcommand: "show", id: "pm-16d", reorderTo: "abc" } })).rejects.toThrow(
       /finite integer/,
     );
+    await expect(runAction({ action: "plan", options: { subcommand: "show", id: "pm-16f", reorderTo: "1.5" } })).rejects.toThrow(
+      /finite integer/,
+    );
+    await expect(
+      runAction({ action: "plan", options: { subcommand: "show", id: "pm-16g", reorderTo: "9".repeat(400) } }),
+    ).rejects.toThrow(/finite integer/);
     await expect(
       runAction({ action: "plan", options: { subcommand: "show", id: "pm-16e", reorderTo: Number.NaN } }),
     ).rejects.toThrow(/finite integer/);

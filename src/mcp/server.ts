@@ -956,7 +956,11 @@ function parseMcpIntegerPrefix(value: unknown, label: string): number | undefine
     return parsed;
   }
   if (typeof value === "string" && value.trim().length > 0) {
-    const parsed = Number.parseInt(value, 10);
+    const trimmed = value.trim();
+    if (!/^[+-]?\d+(?:st|nd|rd|th)?$/i.test(trimmed)) {
+      throw new PmCliError(`${label} must be a finite integer.`, 64);
+    }
+    const parsed = Number.parseInt(trimmed, 10);
     if (!Number.isInteger(parsed)) {
       throw new PmCliError(`${label} must be a finite integer.`, 64);
     }
