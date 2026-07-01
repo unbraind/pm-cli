@@ -6,13 +6,13 @@ status: in_progress
 priority: 2
 tags[4]: "area:cli",code-quality,codefactor,tech-debt
 created_at: "2026-07-01T05:35:48.850Z"
-updated_at: "2026-07-01T09:19:56.850Z"
+updated_at: "2026-07-01T09:34:19.512Z"
 assignee: claude-code-agent
 author: claude-code-agent
 parent: pm-92if
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-g7vl,related,"2026-07-01T05:35:57.931Z",null,null
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-07-01T07:10:59.487Z",claude-code-agent,"Implementation start: duplicate-safe all-status search reused existing CodeFactor child pm-0n6p under pm-92if. Live sweep on 2026-07-01: no open PRs, no open GitHub issues, no open Dependabot alerts, no open code-scanning alerts; scheduled Auto Release run 28499297083 succeeded on main b2617dac and npm latest is @unbrained/pm-cli 2026.7.1. Scope is behavior-preserving complexity decomposition for update command and MCP register-mutation handlers with contracts unchanged and 100% coverage."
   "2026-07-01T08:04:10.045Z",claude-code-agent,"Evidence: implemented CodeFactor complexity remediation for update/register-mutation. Removed target complexity suppressions, added register-mutation schema repeatable alias/role coverage, and manually smoke-tested installed pm in /tmp/tmp.3bglbDFU7O with custom status aliases, custom type, runtime schema field CLI flags, create/update/list/health. Gates: linked pm test run passed all 4 commands under tracker context (coverage 100/100/100/100, focused update/register tests, contracts check, lint/static quality); direct pnpm typecheck, pnpm build, pnpm contracts:check, pnpm lint, pnpm changelog:pm:check, secrets scan, pnpm audit, pm health summary, git diff --check passed. GitHub: no open PRs/issues, no Dependabot/code-scanning alerts, latest Auto Release 28499297083 success on 2026-07-01T06:52:39Z. Sentry: issue list reachable; sampled unresolved PM-CLI-16 and PM-CLI-1Q are stale with lastSeen 2026-06-13, not new current-regression evidence; telemetry status enabled with last successful flush 2026-07-01T08:03:07.606Z. pm validate strict-exit still reports pre-existing closed-item resolution metadata warnings, but command references and history drift are clean."
   "2026-07-01T08:13:20.768Z",claude-code-agent,"Greptile pre-push review ee898fbd-4a0d-48f9-9fce-5b22c99f77c5 found one P2 cleanup: unused sprintReleasePolicy in src/cli/commands/update.ts after helper extraction. Removed the dead local and reran focused gates: unsuppressed ESLint for update/register/test files passed; pnpm typecheck passed; node scripts/run-tests.mjs test -- tests/unit/commands/update-command.spec.ts tests/unit/commands/register-commands.spec.ts passed (174 tests)."
@@ -21,6 +21,7 @@ comments[8]{created_at,author,text}:
   "2026-07-01T09:06:34.568Z",claude-code-agent,"CodeRabbit PR #413 review follow-up: verified thread-aware review data and fixed all still-valid comments. Moved canceled-status assignee cleanup after ownership mutations and records assignee in changed_fields; made runtime schema field set/unset conflicts explicit and taught update command option-policy presence to resolve runtime unset fields with the runtime registry; replaced the register-command test's private Commander _actionHandler access with the public parseAsync path while retaining defensive string coercion coverage. Verification so far: unsuppressed ESLint for changed update/register tests passed; pnpm typecheck passed; node scripts/run-tests.mjs test -- tests/unit/commands/update-command.spec.ts tests/unit/commands/register-commands.spec.ts passed (176 tests); node scripts/run-tests.mjs coverage passed 262 files / 5266 tests with 100% statements, branches, functions, and lines."
   "2026-07-01T09:12:55.600Z",claude-code-agent,"Final PR #413 review-fix verification: linked pm test run passed all 4 registered commands under tracker context after CodeRabbit fixes: node scripts/run-tests.mjs coverage, focused update/register test suites, pnpm contracts:check, and pnpm lint. Coverage remained 100/100/100/100 and lint/static quality gate passed."
   "2026-07-01T09:19:56.850Z",claude-code-agent,Greptile review-fix pre-push review 57d09f62-a984-4c4f-9632-ddbfb38162ef returned COMMENTS=0 and confidence 4 after CodeRabbit fixes. Greptile noted the canceled-status assignee ordering and runtime-field unset conflict behavior as intentional correctness improvements with dedicated tests.
+  "2026-07-01T09:34:19.512Z",claude-code-agent,"Evidence: merged origin/main release commit a4ee2a15 into the PR branch without conflicts; post-merge focused tests and typecheck passed; linked pm test run passed coverage, focused update/register tests, contracts, and lint. Local Greptile review against origin/main returned zero comments and confidence 4 before committing this evidence."
 files[4]{path,scope,note}:
   eslint-suppressions.json,project,Prune update/register-mutation complexity suppression baseline after refactor
   src/cli/commands/update.ts,project,Decompose runUpdate and update mutate callback to remove CodeFactor complexity suppressions
@@ -31,9 +32,10 @@ tests[4]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/update-command.spec.ts tests/unit/commands/register-commands.spec.ts,project,240
   "pnpm contracts:check",project,180
   pnpm lint,project,240
-test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mr1rfk6w-uuqerr,test,failed,"2026-07-01T07:28:34.578Z","2026-07-01T07:34:35.000Z","2026-07-01T07:34:35.000Z",2,2,0
   test-local-mr1scxge-78a0xc,test,passed,"2026-07-01T07:54:30.248Z","2026-07-01T08:00:31.838Z","2026-07-01T08:00:31.838Z",4,0,0
   test-local-mr1tmtbv-72ybib,test,passed,"2026-07-01T08:30:08.968Z","2026-07-01T08:36:12.668Z","2026-07-01T08:36:12.668Z",4,0,0
   test-local-mr1uxtmt-7nb6at,test,passed,"2026-07-01T09:06:40.419Z","2026-07-01T09:12:45.893Z","2026-07-01T09:12:45.893Z",4,0,0
+  test-local-mr1vorkh-fd5a65,test,passed,"2026-07-01T09:27:42.377Z","2026-07-01T09:33:42.929Z","2026-07-01T09:33:42.929Z",4,0,0
 body: ""
