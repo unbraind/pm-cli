@@ -852,7 +852,11 @@ function normalizeUpdatePolicyOptionKey(raw: string, typeName: string): string {
   return canonical;
 }
 
-function collectProvidedUpdatePolicyOptions(options: UpdateCommandOptions, extensionFieldNames: readonly string[]): Set<string> {
+function collectProvidedUpdatePolicyOptions(
+  options: UpdateCommandOptions,
+  runtimeFieldRegistry: RuntimeFieldRegistry,
+  extensionFieldNames: readonly string[],
+): Set<string> {
   const provided = new Set<string>();
   const mark = (optionKey: string, isProvided: boolean): void => {
     if (isProvided) {
@@ -936,7 +940,7 @@ function collectProvidedUpdatePolicyOptions(options: UpdateCommandOptions, exten
   mark("event", options.clearEvents === true);
   mark("typeOption", options.clearTypeOptions === true);
   if (options.unset && options.unset.length > 0) {
-    const unsetTargets = parseUpdateUnsetTargets(options.unset, undefined, extensionFieldNames);
+    const unsetTargets = parseUpdateUnsetTargets(options.unset, runtimeFieldRegistry, extensionFieldNames);
     for (const optionKey of unsetTargets.optionKeys) {
       mark(optionKey, true);
     }
@@ -948,6 +952,7 @@ function enforceUpdateOptionsByType(
   typeName: string,
   options: UpdateCommandOptions,
   typeRegistry: ReturnType<typeof resolveItemTypeRegistry>,
+  runtimeFieldRegistry: RuntimeFieldRegistry,
   extensionFieldNames: readonly string[],
 ): void {
   const typeDefinition = resolveTypeDefinition(typeName, typeRegistry);
@@ -959,7 +964,7 @@ function enforceUpdateOptionsByType(
     throw new PmCliError(policyState.errors.join("; "), EXIT_CODE.CONFLICT);
   }
 
-  const provided = collectProvidedUpdatePolicyOptions(options, extensionFieldNames);
+  const provided = collectProvidedUpdatePolicyOptions(options, runtimeFieldRegistry, extensionFieldNames);
   for (const disabled of policyState.disabled) {
     if (provided.has(normalizeUpdatePolicyOptionKey(disabled, typeName))) {
       throw new PmCliError(
@@ -1611,9 +1616,6 @@ function applyStatusAndCloseReasonMutations(
   if (context.options.status !== undefined) {
     const status = parseStatus(context.options.status, context.statusRegistry);
     document.metadata.status = status;
-    if (status === context.statusRegistry.canceled_status) {
-      delete document.metadata.assignee;
-    }
     changedFields.push("status");
   }
   if (context.options.closeReason !== undefined || context.clearFrontMatterKeys.has("close_reason")) {
@@ -1662,7 +1664,13 @@ function applyPriorityTypeAndOptions(
     activeTypeName = resolvedTypeName;
     changedFields.push("type");
   }
-  enforceUpdateOptionsByType(activeTypeName, context.options, context.typeRegistry, context.extensionFieldNames);
+  enforceUpdateOptionsByType(
+    activeTypeName,
+    context.options,
+    context.typeRegistry,
+    context.runtimeFieldRegistry,
+    context.extensionFieldNames,
+  );
   applyTypeOptionMutation(document, context, activeTypeName, changedFields);
   return activeTypeName;
 }
@@ -1979,7 +1987,14 @@ function applyRuntimeAndRegisteredFieldMutations(
   clearDynamicFields(metadataRecord, context.runtimeFieldRegistry.definitions.map((definition) => definition.metadata_key), context.clearFrontMatterKeys, changedFields);
   clearDynamicFields(metadataRecord, context.extensionFieldNames, context.clearFrontMatterKeys, changedFields);
   for (const [fieldKey, fieldValue] of Object.entries(context.runtimeFieldUpdates)) {
-    if (context.clearFrontMatterKeys.has(fieldKey) || stableValueEquals(metadataRecord[fieldKey], fieldValue)) {
+    if (context.clearFrontMatterKeys.has(fieldKey)) {
+      const definition = context.runtimeFieldRegistry.definitions.find((candidate) => candidate.metadata_key === fieldKey)!;
+      throw new PmCliError(
+        `Cannot combine --unset ${fieldKey.replaceAll("_", "-")} with --${definition.cli_flag}`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    if (stableValueEquals(metadataRecord[fieldKey], fieldValue)) {
       continue;
     }
     metadataRecord[fieldKey] = fieldValue;
@@ -2037,6 +2052,15 @@ function mutateUpdateDocument(document: ItemDocument, context: UpdateMutationCon
   applyEvidenceCollectionMutations(document, context, changedFields);
   applyTagsAndPlanningMutations(document, context, scalarMutationContext);
   applyOwnershipAndIssueMutations(document, context, scalarMutationContext, warnings);
+  if (
+    normalizeStatusInput(document.metadata.status, context.statusRegistry) === context.statusRegistry.canceled_status &&
+    document.metadata.assignee !== undefined
+  ) {
+    delete document.metadata.assignee;
+    if (!changedFields.includes("assignee")) {
+      changedFields.push("assignee");
+    }
+  }
   applyScheduleMutations(document, context, changedFields);
   applyRuntimeAndRegisteredFieldMutations(metadataRecord, context, changedFields);
   try {

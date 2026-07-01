@@ -2103,16 +2103,10 @@ describe("mutation command actions", () => {
     if (!schemaCommand) {
       throw new Error("schema command was not registered");
     }
-    const actionHandler = (schemaCommand as unknown as {
-      _actionHandler?: (args: string[]) => Promise<void> | void;
-    })._actionHandler;
-    if (typeof actionHandler !== "function") {
-      throw new Error("schema command action was not registered");
-    }
     schemaCommand.setOptionValue("alias", "in_review");
     schemaCommand.setOptionValue("role", "active");
 
-    await actionHandler(["add-status", "review"]);
+    await schemaCommand.parseAsync(["add-status", "review"], { from: "user" });
 
     expect(vi.mocked(runSchemaAddStatus)).toHaveBeenLastCalledWith(
       "review",
