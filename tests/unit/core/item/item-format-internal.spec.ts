@@ -160,6 +160,50 @@ describe("item-format internal normalization helpers", () => {
         },
       ] as never),
     ).toStrictEqual([{ command: "npm test", scope: "project" }]);
+    expect(_testOnlyItemFormat.sortTests("npm test" as never)).toBeUndefined();
+    const nullPrototypeEnvSet = Object.assign(Object.create(null) as Record<string, string>, { SAFE: " value " });
+    Object.defineProperty(nullPrototypeEnvSet, "__proto__", {
+      enumerable: true,
+      value: "blocked",
+    });
+    const numericAssertions = { count: 2, constructor: 3 };
+    Object.defineProperty(numericAssertions, "__proto__", {
+      enumerable: true,
+      value: 4,
+    });
+
+    expect(
+      _testOnlyItemFormat.sortTests([
+        {
+          scope: "project",
+          command: "npm test",
+          env_set: nullPrototypeEnvSet,
+          env_clear: ["KEEP", 1],
+          assert_stdout_contains: ["ok", 2],
+          assert_json_field_equals: "not-a-record",
+          assert_json_field_gte: numericAssertions,
+        },
+        {
+          scope: "project",
+          command: "pnpm test",
+          env_set: ["not-a-record"],
+          assert_json_field_gte: ["not-a-record"],
+        },
+      ] as never),
+    ).toStrictEqual([
+      {
+        command: "npm test",
+        scope: "project",
+        env_set: { SAFE: "value" },
+        env_clear: ["KEEP"],
+        assert_stdout_contains: ["ok"],
+        assert_json_field_gte: { count: 2 },
+      },
+      {
+        command: "pnpm test",
+        scope: "project",
+      },
+    ]);
   });
 
   it("normalizes nested plan metadata collections with invalid entries", () => {
@@ -329,6 +373,37 @@ describe("item-format internal normalization helpers", () => {
     );
     expect(canonical.metadata).toMatchObject({ unknown_runtime_field: "kept" });
     expect(warnings).toEqual(["item_unknown_schema_fields:unknown_runtime_field"]);
+  });
+
+  it("skips unsafe and malformed front matter extension fields", () => {
+    const metadata = {
+      id: "pm-1",
+      title: "Title",
+      status: "open",
+      priority: 1,
+      type: "Task",
+      created_at: FIXED_TS,
+      updated_at: FIXED_TS,
+      tags: [],
+      events: "not-an-array",
+      custom_runtime_field: "kept",
+      constructor: "blocked",
+      prototype: "blocked",
+    };
+    Object.defineProperty(metadata, "__proto__", {
+      enumerable: true,
+      value: "blocked",
+    });
+
+    const normalized = normalizeFrontMatter(metadata as never, {
+      schema: { unknown_field_policy: "allow" } as never,
+    });
+
+    expect(normalized).toMatchObject({ custom_runtime_field: "kept" });
+    expect(normalized.events).toBeUndefined();
+    expect(Object.hasOwn(normalized, "__proto__")).toBe(false);
+    expect(Object.hasOwn(normalized, "constructor")).toBe(false);
+    expect(Object.hasOwn(normalized, "prototype")).toBe(false);
   });
 
   it("serializes json-markdown with undefined body fallback", () => {

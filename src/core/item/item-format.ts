@@ -620,7 +620,7 @@ function normalizeRecurrenceRule(value: RecurrenceRule | undefined): RecurrenceR
 }
 
 function sortEvents(values: CalendarEvent[] | undefined): CalendarEvent[] | undefined {
-  if (!values || values.length === 0) {
+  if (!Array.isArray(values) || values.length === 0) {
     return undefined;
   }
   const normalized = [...values].map(normalizeCalendarEvent).sort(compareCalendarEvents);
@@ -717,38 +717,55 @@ function normalizeTestRunSummary(value: ItemTestRunSummary): ItemTestRunSummary 
 }
 
 function sortTests(values: LinkedTest[] | undefined): LinkedTest[] | undefined {
-  if (!values || values.length === 0) return undefined;
+  if (!Array.isArray(values) || values.length === 0) return undefined;
   return [...values].map(normalizeLinkedTest).sort(compareLinkedTests);
 }
 
 function normalizeTrimmedStringList(value: readonly string[] | undefined): string[] | undefined {
-  if (!value) {
+  if (!Array.isArray(value)) {
     return undefined;
   }
-  const normalized = [...new Set(value.map((entry) => entry.trim()).filter((entry) => entry.length > 0))].sort((a, b) =>
-    a.localeCompare(b),
-  );
+  const normalized = [
+    ...new Set(
+      value
+        .filter((entry) => typeof entry === "string")
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0),
+    ),
+  ].sort((a, b) => a.localeCompare(b));
   return normalized.length > 0 ? normalized : undefined;
 }
 
+function isPlainObjectRecord(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function isUnsafeObjectKey(key: string): boolean {
+  return key === "__proto__" || key === "constructor" || key === "prototype";
+}
+
 function normalizeStringRecord(value: Record<string, string> | undefined): Record<string, string> | undefined {
-  if (!value) {
+  if (!isPlainObjectRecord(value)) {
     return undefined;
   }
   const entries = Object.entries(value)
     .map(([key, recordValue]) => [key.trim(), String(recordValue).trim()] as const)
-    .filter(([key, recordValue]) => key.length > 0 && recordValue.length > 0)
+    .filter(([key, recordValue]) => key.length > 0 && !isUnsafeObjectKey(key) && recordValue.length > 0)
     .sort(([left], [right]) => left.localeCompare(right));
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 }
 
 function normalizeNumericRecord(value: Record<string, number> | undefined): Record<string, number> | undefined {
-  if (!value) {
+  if (!isPlainObjectRecord(value)) {
     return undefined;
   }
   const entries = Object.entries(value)
     .map(([key, recordValue]) => [key.trim(), Number(recordValue)] as const)
-    .filter(([key, recordValue]) => key.length > 0 && Number.isFinite(recordValue))
+    .filter(([key, recordValue]) => key.length > 0 && !isUnsafeObjectKey(key) && Number.isFinite(recordValue))
     .sort(([left], [right]) => left.localeCompare(right));
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 }
@@ -1108,7 +1125,7 @@ function copyExtensionFrontMatterFields(normalized: ItemMetadata, source: ItemMe
   const targetRecord = normalized as unknown as Record<string, unknown>;
   const sourceRecord = source as unknown as Record<string, unknown>;
   for (const [key, value] of Object.entries(sourceRecord)) {
-    if (Object.prototype.hasOwnProperty.call(targetRecord, key) || value === undefined) {
+    if (isUnsafeObjectKey(key) || Object.prototype.hasOwnProperty.call(targetRecord, key) || value === undefined) {
       continue;
     }
     targetRecord[key] = value;

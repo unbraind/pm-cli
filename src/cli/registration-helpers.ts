@@ -206,6 +206,9 @@ function anyOptionTrue(options: Record<string, unknown>, keys: readonly string[]
 
 function copyUnknownOptions(target: Record<string, unknown>, source: Record<string, unknown>): void {
   for (const [key, value] of Object.entries(source)) {
+    if (key === "__proto__" || key === "constructor" || key === "prototype") {
+      continue;
+    }
     if (Object.hasOwn(target, key)) {
       continue;
     }

@@ -949,10 +949,11 @@ function parseMcpInteger(value: unknown, label: string): number | undefined {
 
 function parseMcpIntegerPrefix(value: unknown, label: string): number | undefined {
   if (typeof value === "number") {
-    if (!Number.isInteger(value)) {
+    const parsed = Number.parseInt(String(value), 10);
+    if (!Number.isInteger(parsed)) {
       throw new PmCliError(`${label} must be a finite integer.`, 64);
     }
-    return value;
+    return parsed;
   }
   if (typeof value === "string" && value.trim().length > 0) {
     const parsed = Number.parseInt(value, 10);

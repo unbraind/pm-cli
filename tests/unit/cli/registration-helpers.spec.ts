@@ -296,6 +296,27 @@ describe("registration helpers", () => {
     });
   });
 
+  it("skips unsafe prototype keys while preserving unknown extension options", () => {
+    const options: Record<string, unknown> = {
+      title: "Title",
+      type: "Task",
+      customRuntimeField: "kept",
+      constructor: "blocked",
+      prototype: "blocked",
+    };
+    Object.defineProperty(options, "__proto__", {
+      enumerable: true,
+      value: "blocked",
+    });
+
+    const normalized = normalizeCreateOptions(options, { requireType: false });
+
+    expect(normalized).toMatchObject({ title: "Title", type: "Task", customRuntimeField: "kept" });
+    expect(Object.hasOwn(normalized, "__proto__")).toBe(false);
+    expect(Object.hasOwn(normalized, "constructor")).toBe(false);
+    expect(Object.hasOwn(normalized, "prototype")).toBe(false);
+  });
+
   it("emits profiled search refresh warnings for mutation invalidation", async () => {
     const cacheModule = await import("../../../src/core/search/cache.js");
     const backgroundRefreshModule = await import("../../../src/core/search/background-refresh.js");

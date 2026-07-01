@@ -200,6 +200,7 @@ describe("mcp server branch residual coverage", () => {
     await runAction({ action: "plan", options: { subcommand: "show", id: "pm-16", reorderTo: "7th" } });
     await runAction({ action: "plan", options: { subcommand: "show", id: "pm-16a", reorderTo: 4 } });
     await runAction({ action: "plan", options: { subcommand: "show", id: "pm-16b", stepRef: "step-1" } });
+    await runAction({ action: "plan", options: { subcommand: "show", id: "pm-16c", reorderTo: 1.5 } });
     await runAction({
       action: "schema",
       subcommand: "add-status",
@@ -242,12 +243,12 @@ describe("mcp server branch residual coverage", () => {
       }),
     ).rejects.toThrow(/finite integer/);
 
-    await expect(runAction({ action: "plan", options: { subcommand: "show", id: "pm-16c", reorderTo: 1.5 } })).rejects.toThrow(
-      /finite integer/,
-    );
     await expect(runAction({ action: "plan", options: { subcommand: "show", id: "pm-16d", reorderTo: "abc" } })).rejects.toThrow(
       /finite integer/,
     );
+    await expect(
+      runAction({ action: "plan", options: { subcommand: "show", id: "pm-16e", reorderTo: Number.NaN } }),
+    ).rejects.toThrow(/finite integer/);
 
     await expect(runAction({ action: "toString", options: {} })).rejects.toThrow(/Unsupported native pm action: toString/);
     await expect(runAction({ action: "schema", subcommand: "typo", infer: true, options: {} })).rejects.toThrow(
@@ -310,6 +311,7 @@ describe("mcp server branch residual coverage", () => {
     expect(commandMocks.runHistoryRepairAll).toHaveBeenCalledTimes(1);
     expect(commandMocks.assertHistoryRepairTarget).toHaveBeenCalledTimes(2);
     expect(commandMocks.runSchemaInferTypes).toHaveBeenCalledTimes(1);
+    expect(commandMocks.runPlan).toHaveBeenCalledWith(expect.objectContaining({ id: "pm-16c", reorderTo: 1 }));
   });
 
   it("covers extension-dispatch fallback branches", async () => {
