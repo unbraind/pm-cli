@@ -1,0 +1,14 @@
+id: pm-0n6p
+title: "CodeFactor/Complexity: decompose runUpdate, the update mutate apply-callback, and register-mutation MCP arrows"
+description: "Follow-up to pm-g7vl. Reduce the remaining item-mutation Complex Methods to <=17: runUpdate (CC 77) and the nested mutate apply-callback (CC 148) in src/cli/commands/update.ts, and the 6 shared register-mutation.ts arrows (CC 18-28). Behavior-preserving extraction; prune suppressions; 100% coverage; contracts/full.json byte-identical. Prefer extracting shared create/update field-resolution helpers into a common module to also cut duplication."
+type: Task
+status: open
+priority: 2
+tags[4]: "area:cli",code-quality,codefactor,tech-debt
+created_at: "2026-07-01T05:35:48.850Z"
+updated_at: "2026-07-01T05:35:57.943Z"
+author: claude-code-agent
+parent: pm-92if
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-g7vl,related,"2026-07-01T05:35:57.931Z",null,null
+body: ""

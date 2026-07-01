@@ -1,0 +1,22 @@
+id: pm-g7vl
+title: "CodeFactor/Complexity: decompose runCreate (CC 172) and the audit-scope update guard (CC 38)"
+description: "Eliminate the largest CodeFactor 'Complex Method' finding in the repo — runCreate (CC 172, src/cli/commands/create.ts) — plus the audit-scope guard enforceAllowAuditUpdateScope (CC 38, src/cli/commands/update.ts), behavior-preservingly. Decompose into pure, well-named, fully-docstringed helpers; prune eslint-suppressions.json for both functions; keep 100% coverage and contracts/full.json byte-identical. runUpdate (77), the update mutate apply-callback (148), and the register-mutation MCP arrows (18-28) are tracked as the follow-up stage."
+type: Task
+status: closed
+priority: 2
+tags[4]: "area:cli",code-quality,codefactor,tech-debt
+created_at: "2026-07-01T05:09:48.517Z"
+updated_at: "2026-07-01T05:41:46.454Z"
+author: claude-code-agent
+acceptance_criteria: runCreate and enforceAllowAuditUpdateScope both drop to cyclomatic complexity <=17 (no ESLint complexity suppression); eslint-suppressions.json pruned for both; 100/100/100/100 coverage retained; contracts snapshot + full.json byte-identical; changelog regenerated; all review bots green.
+parent: pm-92if
+resolution: "Decomposed runCreate (CC 172→≤17) into pure, docstringed helpers (resolveUnsettableOptionalString/Transformed, resolveCreateTypeSelection, collectCreateClearTargets, assert* conflict guards, assertNoMissingRequiredCreateOptions, resolveCreateTags/Order/CloseReason, inheritFocusedParent, validateCreateParentReference, resolveCreateSprintOrRelease, resolveCreateBlockedByDependency, collectCreateScheduleWarnings, writeCreatedItem) and reduced enforceAllowAuditUpdateScope (CC 38→≤17) via the shared pushIf helper. Pruned eslint-suppressions.json (create.ts 1→0, update.ts 3→2)."
+expected_result: runCreate and enforceAllowAuditUpdateScope drop to CC<=17 with no complexity suppression; 100% coverage retained; contracts/full.json byte-identical.
+actual_result: Both functions revealed at CC<=17 with an empty suppressions baseline; 5264 tests 100/100/100/100; full.json byte-identical; manual temp-dir smoke of create/update paths behaves identically. runUpdate/mutate/register-mutation tracked as pm-0n6p.
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-arzz,related,"2026-07-01T05:09:59.028Z",null,null
+  pm-lzzp,related,"2026-07-01T05:09:59.028Z",null,null
+  pm-zro7,related,"2026-07-01T05:09:59.028Z",null,null
+  pm-0n6p,related,"2026-07-01T05:35:58.304Z",null,null
+close_reason: "Decomposed runCreate (CC 172→≤17) into pure, docstringed helpers (resolveUnsettableOptionalString/Transformed, resolveCreateTypeSelection, collectCreateClearTargets, assert* conflict guards, assertNoMissingRequiredCreateOptions, resolveCreateTags/Order/CloseReason, inheritFocusedParent, validateCreateParentReference, resolveCreateSprintOrRelease, resolveCreateBlockedByDependency, collectCreateScheduleWarnings, writeCreatedItem) and reduced enforceAllowAuditUpdateScope (CC 38→≤17) via the shared pushIf helper. Pruned eslint-suppressions.json (create.ts 1→0, update.ts 3→2)."
+body: ""

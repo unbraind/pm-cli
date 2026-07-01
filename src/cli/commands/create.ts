@@ -28,6 +28,7 @@ import { CREATE_DIRECT_CLOSE_REASON_DEFAULT } from "../../core/shared/constants.
 import {
   canonicalizeCommandOptionKey,
   commandOptionFlagLabel,
+  type ItemTypeRegistry,
   resolveItemTypeRegistry,
   resolveCommandOptionPolicyState,
   type ResolvedItemTypeDefinition,
@@ -118,6 +119,7 @@ import type {
   LinkedFile,
   LinkedTest,
   LogNote,
+  PmSettings,
   Reminder,
 } from "../../types/index.js";
 import {
@@ -1128,17 +1130,250 @@ function ensureInitHasRun(pmRoot: string): Promise<void> {
 }
 
 /**
- * Implements run create for the public runtime surface of this module.
+ * Resolve an optional string front-matter field for {@link runCreate}: yields
+ * `undefined` when the field is being cleared via `--unset <key>` or was never
+ * supplied, otherwise the (identity-parsed) raw value. Collapses the pervasive
+ * `unset ? undefined : raw === undefined ? undefined : parseOptionalString(raw)`
+ * triple-ternary each optional scalar field repeated inline, keeping `runCreate`
+ * under the complexity ceiling without changing any resolved value.
  */
-export async function runCreate(options: CreateCommandOptions, global: GlobalOptions): Promise<CreateResult> {
-  let resolvedOptions = normalizeLegacyNoneCreateOptions(await resolveCreateStdinInputs(options));
-  const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  await ensureInitHasRun(pmRoot);
+function resolveUnsettableOptionalString(
+  unsetKeys: ReadonlySet<string>,
+  frontMatterKey: string,
+  raw: string | undefined,
+): string | undefined {
+  return unsetKeys.has(frontMatterKey) || raw === undefined ? undefined : parseOptionalString(raw);
+}
 
-  const settings = await readSettings(pmRoot);
-  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-  const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+/**
+ * Resolve an optional field that maps its raw string through `transform` once
+ * present: yields `undefined` when the field is being cleared via `--unset` or
+ * was never supplied, otherwise `transform(raw)`. The non-string return type is
+ * inferred from `transform`, so this serves numeric, ISO-date, and enum fields
+ * alike while keeping the unset/absent guard in one place.
+ */
+function resolveUnsettableTransformed<Value>(
+  unsetKeys: ReadonlySet<string>,
+  frontMatterKey: string,
+  raw: string | undefined,
+  transform: (value: string) => Value,
+): Value | undefined {
+  return unsetKeys.has(frontMatterKey) || raw === undefined ? undefined : transform(raw);
+}
+
+/** Calendar-relevant item types whose entries are invisible on `pm calendar` without a schedule. */
+const CALENDAR_RELEVANT_CREATE_TYPES = new Set(["milestone", "meeting", "reminder", "event"]);
+
+/**
+ * Whether a calendar-relevant item would be invisible on `pm calendar`: a
+ * Milestone/Meeting/Reminder/Event created with no deadline AND no reminders AND
+ * no events never surfaces there. Shared by the structured create warning and the
+ * post-write stderr hint so both stay in lockstep.
+ */
+function createItemLacksSchedule(
+  type: string,
+  deadline: string | undefined,
+  reminders: readonly unknown[] | undefined,
+  events: readonly unknown[] | undefined,
+): boolean {
+  const hasDeadline = deadline !== undefined;
+  const hasReminders = reminders !== undefined && reminders.length > 0;
+  const hasEvents = events !== undefined && events.length > 0;
+  return CALENDAR_RELEVANT_CREATE_TYPES.has(type.toLowerCase()) && !hasDeadline && !hasReminders && !hasEvents;
+}
+
+/**
+ * Build the never-blocking schedule-visibility warnings for a new item: an
+ * `event_without_schedule` token for Event-type items with no attached events,
+ * and a `calendar_item_without_schedule` token (with an actionable hint) for any
+ * calendar-relevant type that would be invisible on `pm calendar`. The structured
+ * prefixes are stable for automation/telemetry (pm-2cgu / GH-174).
+ */
+function collectCreateScheduleWarnings(
+  type: string,
+  id: string,
+  deadline: string | undefined,
+  reminders: readonly unknown[] | undefined,
+  events: readonly unknown[] | undefined,
+): string[] {
+  const warnings: string[] = [];
+  if (type.toLowerCase() === "event" && (events === undefined || events.length === 0)) {
+    warnings.push(`event_without_schedule:${id}:no_time_set`);
+  }
+  if (createItemLacksSchedule(type, deadline, reminders, events)) {
+    warnings.push(
+      `calendar_item_without_schedule:${id}:no_deadline_or_reminder_or_event (hint: set --deadline <ISO> or --reminder "<when>", or link an Event via --event "start=<ISO>,end=<ISO>"; otherwise this item never appears on pm calendar)`,
+    );
+  }
+  return warnings;
+}
+
+/**
+ * Resolve the effective parent for a new item, inheriting the session-focused
+ * item (set via `pm focus <id>`) only when no explicit `--parent` was supplied
+ * and parent is not being unset (GH-161 / pm-72xf). An explicit `--parent`
+ * (including `--parent ""`) always overrides focus; the inherited value flows
+ * through the same locate/validate path as an explicit parent.
+ */
+async function inheritFocusedParent(
+  parent: string | undefined,
+  resolvedOptions: CreateCommandOptions,
+  unsetKeys: ReadonlySet<string>,
+  pmRoot: string,
+): Promise<{ parent: string | undefined; parentSource: "focus" | undefined }> {
+  if (parent !== undefined || unsetKeys.has("parent") || resolvedOptions.parent !== undefined) {
+    return { parent, parentSource: undefined };
+  }
+  const focused = await getFocusedItem(pmRoot);
+  if (focused === undefined) {
+    return { parent, parentSource: undefined };
+  }
+  return { parent: focused, parentSource: "focus" };
+}
+
+/**
+ * Normalize and locate a new item's parent reference, returning the normalized
+ * value plus any never-blocking missing-parent warnings the configured
+ * `parent_reference` policy produces when the target does not resolve.
+ */
+async function validateCreateParentReference(
+  pmRoot: string,
+  settings: PmSettings,
+  typeRegistry: ItemTypeRegistry,
+  parent: string,
+  policy: Parameters<typeof validateMissingParentReference>[1],
+): Promise<{ parent: string; warnings: string[] }> {
+  const normalized = normalizeParentReferenceValue(parent);
+  const parentLocated = await locateItem(pmRoot, normalized, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
+  if (parentLocated) {
+    return { parent: normalized, warnings: [] };
+  }
+  const normalizedParentId = normalizeItemId(normalized, settings.id_prefix);
+  return { parent: normalized, warnings: validateMissingParentReference(normalizedParentId, policy).warnings };
+}
+
+/**
+ * Resolve a sprint or release field: `undefined` when cleared/absent, otherwise
+ * the format-validated value plus any never-blocking format warnings from the
+ * configured `sprint_release_format` policy.
+ */
+function resolveCreateSprintOrRelease(
+  unsetKeys: ReadonlySet<string>,
+  frontMatterKey: string,
+  raw: string | undefined,
+  field: Parameters<typeof validateSprintOrReleaseValue>[0],
+  policy: Parameters<typeof validateSprintOrReleaseValue>[2],
+): { value: string | undefined; warnings: string[] } {
+  const resolved = resolveUnsettableOptionalString(unsetKeys, frontMatterKey, raw);
+  if (resolved === undefined) {
+    return { value: undefined, warnings: [] };
+  }
+  const validation = validateSprintOrReleaseValue(field, resolved, policy);
+  return { value: validation.value, warnings: validation.warnings };
+}
+
+/**
+ * Apply the `--blocked-by` convenience: when the target locates, add a
+ * `blocked_by` dependency (if not already present) and, unless `--status` was
+ * given explicitly, move the new item into the blocked status. Returns the
+ * (possibly augmented) dependency list and the (possibly rerouted) status; a
+ * `blockedBy` that is absent or does not locate leaves both unchanged.
+ */
+async function resolveCreateBlockedByDependency(params: {
+  pmRoot: string;
+  settings: PmSettings;
+  typeRegistry: ItemTypeRegistry;
+  statusRegistry: RuntimeStatusRegistry;
+  blockedBy: string | undefined;
+  dependencyValues: Dependency[] | undefined;
+  status: ItemStatus;
+  statusExplicit: boolean;
+  nowValue: string;
+  author: string;
+}): Promise<{ dependencyValues: Dependency[] | undefined; status: ItemStatus }> {
+  const { pmRoot, settings, typeRegistry, statusRegistry, blockedBy, status, statusExplicit, nowValue, author } = params;
+  let dependencyValues = params.dependencyValues;
+  if (blockedBy === undefined) {
+    return { dependencyValues, status };
+  }
+  const normalizedBlockedBy = normalizeItemId(blockedBy, settings.id_prefix);
+  const blockedByLocated = await locateItem(pmRoot, normalizedBlockedBy, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
+  if (!blockedByLocated) {
+    return { dependencyValues, status };
+  }
+  const hasBlockedByDependency = (dependencyValues ?? []).some(
+    (dependency) => dependency.id === blockedByLocated.id && dependency.kind === "blocked_by",
+  );
+  if (!hasBlockedByDependency) {
+    dependencyValues = [
+      ...(dependencyValues ?? []),
+      { id: blockedByLocated.id, kind: "blocked_by", created_at: nowValue, author },
+    ];
+  }
+  if (statusExplicit) {
+    return { dependencyValues, status };
+  }
+  const blockedStatus = statusRegistry.blocked_statuses.has("blocked")
+    ? "blocked"
+    : [...statusRegistry.blocked_statuses].sort((left, right) => left.localeCompare(right))[0] ?? statusRegistry.open_status;
+  return { dependencyValues, status: blockedStatus };
+}
+
+/**
+ * Apply the governance default-type fallback when `pm create` was invoked with no
+ * `--type`: honor `governance.create_default_type` when it resolves in the active
+ * registry, else fall back to the built-in `Task`. Suppressed under explicit
+ * `--create-mode strict`, where the strict required-option contract must surface
+ * the missing_required_option envelope instead. Mutates `resolvedOptions.type`.
+ */
+function applyCreateDefaultType(
+  resolvedOptions: CreateCommandOptions,
+  settings: PmSettings,
+  typeRegistry: ItemTypeRegistry,
+): void {
+  // Default-type fallback is suppressed under explicit --create-mode strict, where the strict
+  // required-option contract takes precedence and surfaces the missing_required_option envelope.
+  /* c8 ignore next -- explicit strict-mode template interactions are exercised in governance integration tests. */
+  const explicitStrictMode =
+    typeof resolvedOptions.createMode === "string" && resolvedOptions.createMode.trim().toLowerCase() === "strict";
+  if (explicitStrictMode) {
+    return;
+  }
+  /* c8 ignore next -- governance default-type fallback is validated in governance integration tests. */
+  const defaultType = settings.governance.create_default_type?.trim();
+  if (defaultType && defaultType.length > 0 && resolveTypeName(defaultType, typeRegistry)) {
+    resolvedOptions.type = defaultType;
+    return;
+  }
+  /* c8 ignore start -- "Task" is a built-in type present in every default registry; reaching this arm requires a custom schema that removed Task with no create_default_type configured. */
+  if (resolveTypeName("Task", typeRegistry)) {
+    resolvedOptions.type = "Task";
+  }
+  /* c8 ignore stop */
+}
+
+/**
+ * Resolve the target item type and creation mode for `pm create`: merge any
+ * `--template` options, apply the governance default-type fallback, map a
+ * near-miss `--type` to its canonical synonym (never blocking), and derive the
+ * schedule preset and effective create mode. Returns the (possibly
+ * template-merged) options alongside the resolved type definition, canonical
+ * type name, schedule preset, and create mode.
+ */
+async function resolveCreateTypeSelection(
+  options: CreateCommandOptions,
+  global: GlobalOptions,
+  pmRoot: string,
+  settings: PmSettings,
+  typeRegistry: ItemTypeRegistry,
+): Promise<{
+  resolvedOptions: CreateCommandOptions;
+  typeDefinition: ResolvedItemTypeDefinition;
+  type: string;
+  schedulePreset: ReturnType<typeof resolveScheduleCreatePreset>;
+  createMode: ReturnType<typeof resolveEffectiveCreateMode>;
+}> {
+  let resolvedOptions = options;
   if (resolvedOptions.template !== undefined) {
     const templateName = resolvedOptions.template.trim();
     if (templateName.length === 0) {
@@ -1149,24 +1384,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     resolvedOptions = normalizeLegacyNoneCreateOptions(mergeCreateOptionsWithTemplate(templateOptions, resolvedOptions));
   }
   if (resolvedOptions.type === undefined) {
-    // Default-type fallback is suppressed under explicit --create-mode strict, where the strict
-    // required-option contract takes precedence and surfaces the missing_required_option envelope.
-    /* c8 ignore next -- explicit strict-mode template interactions are exercised in governance integration tests. */
-    const explicitStrictMode = typeof resolvedOptions.createMode === "string"
-      && resolvedOptions.createMode.trim().toLowerCase() === "strict";
-    if (!explicitStrictMode) {
-      /* c8 ignore next -- governance default-type fallback is validated in governance integration tests. */
-      const defaultType = settings.governance.create_default_type?.trim();
-      if (defaultType && defaultType.length > 0 && resolveTypeName(defaultType, typeRegistry)) {
-        resolvedOptions.type = defaultType;
-      } else {
-        /* c8 ignore start -- "Task" is a built-in type present in every default registry; reaching the false arm requires a custom schema that removed Task with no create_default_type configured. */
-        if (resolveTypeName("Task", typeRegistry)) {
-          resolvedOptions.type = "Task";
-        }
-        /* c8 ignore stop */
-      }
-    }
+    applyCreateDefaultType(resolvedOptions, settings, typeRegistry);
   }
   /* c8 ignore start -- missing/invalid type fallback guards are exercised by create command integration suites. */
   if (resolvedOptions.type === undefined) {
@@ -1208,15 +1426,24 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
       EXIT_CODE.USAGE,
     );
   }
-  const createMode = resolveEffectiveCreateMode(
-    resolvedOptions.createMode,
-    schedulePreset,
-    settings.governance.create_mode_default,
-  );
-  const unsetTargets = parseCreateUnsetTargets(resolvedOptions.unset, runtimeFieldRegistry);
+  const createMode = resolveEffectiveCreateMode(resolvedOptions.createMode, schedulePreset, settings.governance.create_mode_default);
+  return { resolvedOptions, typeDefinition, type, schedulePreset, createMode };
+}
+
+/**
+ * Seed the explicit-unset and clear-option key sets from the parsed `--unset`
+ * targets, then fold in each enabled `--clear-<collection>` flag: it marks the
+ * collection's front-matter key as explicitly unset and its option key as
+ * cleared, and rejects combining a clear flag with its own value flag. Returns
+ * the augmented sets used downstream for required-flag relaxation and history
+ * messaging.
+ */
+function collectCreateClearTargets(
+  resolvedOptions: CreateCommandOptions,
+  unsetTargets: { frontMatterKeys: Set<string>; optionKeys: Set<string> },
+): { explicitUnsets: Set<string>; clearOptionKeys: Set<string> } {
   const explicitUnsets = new Set<string>(unsetTargets.frontMatterKeys);
   const clearOptionKeys = new Set<string>(unsetTargets.optionKeys);
-
   const clearCollectionDefinitions: ReadonlyArray<{
     enabled: boolean | undefined;
     optionKey: string;
@@ -1225,86 +1452,16 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     values: string[] | undefined;
     frontMatterKey: string;
   }> = [
-    {
-      enabled: resolvedOptions.clearDeps,
-      optionKey: "dep",
-      clearFlag: "--clear-deps",
-      valueFlag: "--dep",
-      values: resolvedOptions.dep,
-      frontMatterKey: "dependencies",
-    },
-    {
-      enabled: resolvedOptions.clearComments,
-      optionKey: "comment",
-      clearFlag: "--clear-comments",
-      valueFlag: "--comment",
-      values: resolvedOptions.comment,
-      frontMatterKey: "comments",
-    },
-    {
-      enabled: resolvedOptions.clearNotes,
-      optionKey: "note",
-      clearFlag: "--clear-notes",
-      valueFlag: "--note",
-      values: resolvedOptions.note,
-      frontMatterKey: "notes",
-    },
-    {
-      enabled: resolvedOptions.clearLearnings,
-      optionKey: "learning",
-      clearFlag: "--clear-learnings",
-      valueFlag: "--learning",
-      values: resolvedOptions.learning,
-      frontMatterKey: "learnings",
-    },
-    {
-      enabled: resolvedOptions.clearFiles,
-      optionKey: "file",
-      clearFlag: "--clear-files",
-      valueFlag: "--file",
-      values: resolvedOptions.file,
-      frontMatterKey: "files",
-    },
-    {
-      enabled: resolvedOptions.clearTests,
-      optionKey: "test",
-      clearFlag: "--clear-tests",
-      valueFlag: "--test",
-      values: resolvedOptions.test,
-      frontMatterKey: "tests",
-    },
-    {
-      enabled: resolvedOptions.clearDocs,
-      optionKey: "doc",
-      clearFlag: "--clear-docs",
-      valueFlag: "--doc",
-      values: resolvedOptions.doc,
-      frontMatterKey: "docs",
-    },
-    {
-      enabled: resolvedOptions.clearReminders,
-      optionKey: "reminder",
-      clearFlag: "--clear-reminders",
-      valueFlag: "--reminder",
-      values: resolvedOptions.reminder,
-      frontMatterKey: "reminders",
-    },
-    {
-      enabled: resolvedOptions.clearEvents,
-      optionKey: "event",
-      clearFlag: "--clear-events",
-      valueFlag: "--event",
-      values: resolvedOptions.event,
-      frontMatterKey: "events",
-    },
-    {
-      enabled: resolvedOptions.clearTypeOptions,
-      optionKey: "typeOption",
-      clearFlag: "--clear-type-options",
-      valueFlag: "--type-option",
-      values: resolvedOptions.typeOption,
-      frontMatterKey: "type_options",
-    },
+    { enabled: resolvedOptions.clearDeps, optionKey: "dep", clearFlag: "--clear-deps", valueFlag: "--dep", values: resolvedOptions.dep, frontMatterKey: "dependencies" },
+    { enabled: resolvedOptions.clearComments, optionKey: "comment", clearFlag: "--clear-comments", valueFlag: "--comment", values: resolvedOptions.comment, frontMatterKey: "comments" },
+    { enabled: resolvedOptions.clearNotes, optionKey: "note", clearFlag: "--clear-notes", valueFlag: "--note", values: resolvedOptions.note, frontMatterKey: "notes" },
+    { enabled: resolvedOptions.clearLearnings, optionKey: "learning", clearFlag: "--clear-learnings", valueFlag: "--learning", values: resolvedOptions.learning, frontMatterKey: "learnings" },
+    { enabled: resolvedOptions.clearFiles, optionKey: "file", clearFlag: "--clear-files", valueFlag: "--file", values: resolvedOptions.file, frontMatterKey: "files" },
+    { enabled: resolvedOptions.clearTests, optionKey: "test", clearFlag: "--clear-tests", valueFlag: "--test", values: resolvedOptions.test, frontMatterKey: "tests" },
+    { enabled: resolvedOptions.clearDocs, optionKey: "doc", clearFlag: "--clear-docs", valueFlag: "--doc", values: resolvedOptions.doc, frontMatterKey: "docs" },
+    { enabled: resolvedOptions.clearReminders, optionKey: "reminder", clearFlag: "--clear-reminders", valueFlag: "--reminder", values: resolvedOptions.reminder, frontMatterKey: "reminders" },
+    { enabled: resolvedOptions.clearEvents, optionKey: "event", clearFlag: "--clear-events", valueFlag: "--event", values: resolvedOptions.event, frontMatterKey: "events" },
+    { enabled: resolvedOptions.clearTypeOptions, optionKey: "typeOption", clearFlag: "--clear-type-options", valueFlag: "--type-option", values: resolvedOptions.typeOption, frontMatterKey: "type_options" },
   ];
   for (const definition of clearCollectionDefinitions) {
     if (!definition.enabled) {
@@ -1317,7 +1474,18 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     explicitUnsets.add(definition.frontMatterKey);
     clearOptionKeys.add(definition.optionKey);
   }
+  return { explicitUnsets, clearOptionKeys };
+}
 
+/**
+ * Reject combining `--unset <field>` with the same field's scalar value flag
+ * (for example `--unset goal --goal ...`) — the single-value analog of the
+ * collection clear/value conflict enforced by {@link collectCreateClearTargets}.
+ */
+function assertNoCreateScalarUnsetConflicts(
+  resolvedOptions: CreateCommandOptions,
+  unsetTargets: { optionKeys: Set<string> },
+): void {
   const scalarOptionPresence: Record<string, boolean> = {
     tags: resolvedOptions.tags !== undefined,
     deadline: resolvedOptions.deadline !== undefined,
@@ -1369,7 +1537,14 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
       EXIT_CODE.USAGE,
     );
   }
+}
 
+/**
+ * Reject the legacy literal `none`/`null` sentinel on any create scalar option,
+ * pointing the author at the modern `--unset <field>` clear syntax (surfacing the
+ * canonical unset key in the hint when the option maps to one).
+ */
+function assertNoLegacyCreateScalarTokens(resolvedOptions: CreateCommandOptions): void {
   const assertNoLegacyScalarToken = (value: string | undefined, optionKey: string): void => {
     const unsetField = CREATE_OPTION_KEY_TO_UNSET_CANONICAL.get(optionKey);
     const hint = unsetField ? `Use --unset ${unsetField} to clear this field.` : undefined;
@@ -1411,6 +1586,233 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   assertNoLegacyScalarToken(resolvedOptions.component, "component");
   assertNoLegacyScalarToken(resolvedOptions.regression, "regression");
   assertNoLegacyScalarToken(resolvedOptions.customerImpact, "customerImpact");
+}
+
+/**
+ * Reject combining `--unset <field>` with an extension-registered or
+ * runtime-schema field's value flag. These custom fields are validated
+ * separately from the built-in scalar options but honor the same clear/value
+ * mutual exclusion.
+ */
+function assertNoCreateFieldUnsetConflicts(
+  registeredItemFieldValues: Record<string, unknown>,
+  runtimeCreateFieldValues: { values?: Record<string, unknown> },
+  unsetTargets: { frontMatterKeys: Set<string> },
+): void {
+  for (const fieldKey of Object.keys(registeredItemFieldValues)) {
+    if (!unsetTargets.frontMatterKeys.has(fieldKey)) {
+      continue;
+    }
+    throw new PmCliError(`Cannot combine --unset ${fieldKey.replaceAll("_", "-")} with --field ${fieldKey}=...`, EXIT_CODE.USAGE);
+  }
+  /* c8 ignore start -- collectRuntimeCreateFieldValues always returns a `values` object, so the `?? {}` fallback is unreachable. */
+  for (const fieldKey of Object.keys(runtimeCreateFieldValues.values ?? {})) {
+    /* c8 ignore stop */
+    if (!unsetTargets.frontMatterKeys.has(fieldKey)) {
+      continue;
+    }
+    throw new PmCliError(`Cannot combine --unset ${fieldKey.replaceAll("_", "-")} with its value flag`, EXIT_CODE.USAGE);
+  }
+}
+
+/**
+ * Throw the aggregated `missing_required_option` error when a type's required
+ * create options and/or required type-option keys were not all supplied in one
+ * invocation. Builds a type-aware valid example and staged-onboarding next steps
+ * (a strict-mode invocation also carries a compact recovery envelope). A no-op
+ * when nothing is missing.
+ */
+function assertNoMissingRequiredCreateOptions(params: {
+  combinedMissingFlags: string[];
+  typeDefinition: ResolvedItemTypeDefinition;
+  missingRequiredCreateFlags: string[];
+  missingRequiredTypeOptionKeys: string[];
+  openStatus: string;
+  type: string;
+  createMode: ReturnType<typeof resolveEffectiveCreateMode>;
+}): void {
+  const { combinedMissingFlags, typeDefinition, missingRequiredCreateFlags, missingRequiredTypeOptionKeys, openStatus, type, createMode } = params;
+  if (combinedMissingFlags.length === 0) {
+    return;
+  }
+  const nextValidExample = buildTypeSpecificCreateExample(typeDefinition, missingRequiredCreateFlags, missingRequiredTypeOptionKeys, openStatus);
+  const nextSteps = [`Run "pm create --help --type ${type}" for type-aware required option guidance.`];
+  if (combinedMissingFlags.includes("--title")) {
+    nextSteps.push('Title can also be passed as the first positional argument (example: pm create "Your title" --type ' + type + ").");
+  }
+  if (createMode === "strict") {
+    nextSteps.push('For staged onboarding, retry with "--create-mode progressive".');
+    if (SCHEDULE_CREATE_PRESET_TYPES.has(type)) {
+      nextSteps.push('For minimal scheduling inputs, try "--schedule-preset lightweight".');
+    }
+  }
+  const errorMessage =
+    combinedMissingFlags.length === 1
+      ? `Missing required option ${combinedMissingFlags[0]} for type "${type}"`
+      : `Missing required options ${combinedMissingFlags.join(", ")} for type "${type}"`;
+  throw new PmCliError(errorMessage, EXIT_CODE.USAGE, {
+    code: "missing_required_option",
+    required: `Provide all required create options and type options for type "${type}" in one invocation.`,
+    examples: [nextValidExample],
+    nextSteps,
+    recovery:
+      createMode === "strict"
+        ? {
+            recovery_mode: "compact",
+            missing_required_fields: combinedMissingFlags,
+            suggested_flags: ["--create-mode progressive", ...combinedMissingFlags],
+          }
+        : undefined,
+  });
+}
+
+/**
+ * Resolve the new item's tags: an empty list when `--unset tags` clears the
+ * field (rejecting a contradictory `--add-tags`), otherwise the parsed `--tags`
+ * merged with any additive `--add-tags`.
+ */
+function resolveCreateTags(unsetKeys: ReadonlySet<string>, resolvedOptions: CreateCommandOptions): string[] {
+  if (unsetKeys.has("tags") && Array.isArray(resolvedOptions.addTags) && resolvedOptions.addTags.length > 0) {
+    throw new PmCliError("Cannot combine --unset tags with --add-tags", EXIT_CODE.USAGE);
+  }
+  const baseTags = unsetKeys.has("tags") ? [] : resolvedOptions.tags !== undefined ? parseTags(resolvedOptions.tags) : [];
+  return mergeAdditiveTags(baseTags, resolvedOptions.addTags);
+}
+
+/**
+ * Resolve the new item's integer `order`: `undefined` when cleared/absent, else
+ * the parsed value. Rejects mismatched `--order`/`--rank` and non-integer values.
+ */
+function resolveCreateOrder(unsetKeys: ReadonlySet<string>, resolvedOptions: CreateCommandOptions): number | undefined {
+  if (resolvedOptions.order !== undefined && resolvedOptions.rank !== undefined && resolvedOptions.order !== resolvedOptions.rank) {
+    throw new PmCliError("--order and --rank must match when both are provided", EXIT_CODE.USAGE);
+  }
+  const orderRaw = resolvedOptions.order ?? resolvedOptions.rank;
+  const order = resolveUnsettableTransformed(unsetKeys, "order", orderRaw, (raw) => parseOptionalNumber(raw, "order"));
+  if (order !== undefined && !Number.isInteger(order)) {
+    throw new PmCliError("Order must be an integer", EXIT_CODE.USAGE);
+  }
+  return order;
+}
+
+/**
+ * Resolve the close reason for an item created directly in the close status
+ * (GH-249): honor `governance.require_close_reason` like `pm close`, deriving it
+ * from `--message` > `--resolution` and falling back to a stable placeholder,
+ * warning `close_reason_defaulted` when neither was supplied. Returns `undefined`
+ * (and no warnings) when the item is not being created closed or the policy is
+ * off.
+ */
+function resolveCreateCloseReason(
+  status: ItemStatus,
+  statusRegistry: RuntimeStatusRegistry,
+  settings: PmSettings,
+  resolvedOptions: CreateCommandOptions,
+  resolution: string | undefined,
+): { closeReason: string | undefined; warnings: string[] } {
+  if (status !== statusRegistry.close_status || !settings.governance.require_close_reason) {
+    return { closeReason: undefined, warnings: [] };
+  }
+  const messageText = typeof resolvedOptions.message === "string" ? resolvedOptions.message.trim() : "";
+  const resolutionText = typeof resolution === "string" ? resolution.trim() : "";
+  const closeReason = messageText || resolutionText || CREATE_DIRECT_CLOSE_REASON_DEFAULT;
+  const warnings = messageText.length === 0 && resolutionText.length === 0 ? ["close_reason_defaulted"] : [];
+  return { closeReason, warnings };
+}
+
+/**
+ * Commit a freshly built item under its per-id lock: write the serialized
+ * document, append the create history entry (rolling back the item file if the
+ * history append throws), run the item + history `onWrite` hooks, and record the
+ * after-command affected item. Returns the collected hook warnings; the lock is
+ * always released.
+ */
+async function writeCreatedItem(params: {
+  pmRoot: string;
+  type: string;
+  id: string;
+  settings: PmSettings;
+  typeRegistry: ItemTypeRegistry;
+  author: string;
+  extensionFieldNames: ReturnType<typeof collectRegisteredItemFieldNames>;
+  afterDocument: ItemDocument;
+  beforeDocument: ItemDocument;
+  historyMessage: string | undefined;
+  changedFields: ReturnType<typeof buildChangedFields>;
+  nowValue: string;
+}): Promise<string[]> {
+  const { pmRoot, type, id, settings, typeRegistry, author, extensionFieldNames, afterDocument, beforeDocument, historyMessage, changedFields, nowValue } = params;
+  const itemPath = getItemPath(pmRoot, type, id, settings.item_format, typeRegistry.type_to_folder);
+  const historyPath = getHistoryPath(pmRoot, id);
+  const lockRelease = await acquireLock(pmRoot, id, settings.locks.ttl_seconds, author, false, settings.governance.force_required_for_stale_lock);
+  let hookWarnings: string[] = [];
+  try {
+    await writeFileAtomic(
+      itemPath,
+      serializeItemDocument(afterDocument, { format: settings.item_format, schema: settings.schema, extensionFieldNames }),
+    );
+    try {
+      const entry = createHistoryEntry({ nowIso: nowValue, author, op: "create", before: beforeDocument, after: afterDocument, message: historyMessage });
+      await appendHistoryEntry(historyPath, entry);
+    } catch (error: unknown) {
+      await removeFileIfExists(itemPath);
+      throw error;
+    }
+    hookWarnings = [
+      ...(await runActiveOnWriteHooks({
+        path: itemPath,
+        scope: "project",
+        op: "create",
+        item_id: afterDocument.metadata.id,
+        item_type: afterDocument.metadata.type,
+        before: beforeDocument,
+        after: afterDocument,
+        changed_fields: changedFields,
+      })),
+      ...(await runActiveOnWriteHooks({
+        path: historyPath,
+        scope: "project",
+        op: "create:history",
+        item_id: afterDocument.metadata.id,
+        item_type: afterDocument.metadata.type,
+        before: beforeDocument,
+        after: afterDocument,
+        changed_fields: changedFields,
+      })),
+    ];
+    recordAfterCommandAffectedItem({
+      id: afterDocument.metadata.id,
+      op: "create",
+      item_type: afterDocument.metadata.type,
+      status: afterDocument.metadata.status,
+      current: projectAfterCommandItemSnapshot(afterDocument.metadata, changedFields),
+      changed_fields: changedFields,
+    });
+  } finally {
+    await lockRelease();
+  }
+  return hookWarnings;
+}
+
+/**
+ * Implements run create for the public runtime surface of this module.
+ */
+export async function runCreate(options: CreateCommandOptions, global: GlobalOptions): Promise<CreateResult> {
+  let resolvedOptions = normalizeLegacyNoneCreateOptions(await resolveCreateStdinInputs(options));
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  await ensureInitHasRun(pmRoot);
+
+  const settings = await readSettings(pmRoot);
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const typeSelection = await resolveCreateTypeSelection(resolvedOptions, global, pmRoot, settings, typeRegistry);
+  resolvedOptions = typeSelection.resolvedOptions;
+  const { typeDefinition, type, createMode } = typeSelection;
+  const unsetTargets = parseCreateUnsetTargets(resolvedOptions.unset, runtimeFieldRegistry);
+  const { explicitUnsets, clearOptionKeys } = collectCreateClearTargets(resolvedOptions, unsetTargets);
+  assertNoCreateScalarUnsetConflicts(resolvedOptions, unsetTargets);
+  assertNoLegacyCreateScalarTokens(resolvedOptions);
 
   const missingRequiredCreateFlags = requireCreateOptionByType(typeDefinition, resolvedOptions, createMode, clearOptionKeys);
   const nowValue = nowIso();
@@ -1430,25 +1832,12 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const extensionRegistrations = getActiveExtensionRegistrations();
   const extensionFieldNames = collectRegisteredItemFieldNames(extensionRegistrations);
   const registeredItemFieldValues = parseRegisteredItemFieldAssignments(resolvedOptions.field, extensionRegistrations);
-  for (const fieldKey of Object.keys(registeredItemFieldValues)) {
-    if (!unsetTargets.frontMatterKeys.has(fieldKey)) {
-      continue;
-    }
-    throw new PmCliError(`Cannot combine --unset ${fieldKey.replaceAll("_", "-")} with --field ${fieldKey}=...`, EXIT_CODE.USAGE);
-  }
   const runtimeCreateFieldValues = collectRuntimeCreateFieldValues(
     resolvedOptions as Record<string, unknown>,
     runtimeFieldRegistry,
     type,
   );
-  /* c8 ignore start -- collectRuntimeCreateFieldValues always returns a `values` object, so the `?? {}` fallback is unreachable. */
-  for (const fieldKey of Object.keys(runtimeCreateFieldValues.values ?? {})) {
-    /* c8 ignore stop */
-    if (!unsetTargets.frontMatterKeys.has(fieldKey)) {
-      continue;
-    }
-    throw new PmCliError(`Cannot combine --unset ${fieldKey.replaceAll("_", "-")} with its value flag`, EXIT_CODE.USAGE);
-  }
+  assertNoCreateFieldUnsetConflicts(registeredItemFieldValues, runtimeCreateFieldValues, unsetTargets);
   const missingRequiredTypeOptionKeys = collectMissingRequiredTypeOptionKeys(validatedTypeOptions.errors, type);
   const missingRequiredTypeOptionFlags = missingRequiredTypeOptionKeys.map((key) => `--type-option ${key}=<value>`);
   const combinedMissingFlags = [
@@ -1459,41 +1848,15 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
       ...runtimeCreateFieldValues.missing_required_flags,
     ]),
   ].sort((left, right) => left.localeCompare(right));
-  if (combinedMissingFlags.length > 0) {
-    const nextValidExample = buildTypeSpecificCreateExample(
-      typeDefinition,
-      missingRequiredCreateFlags,
-      missingRequiredTypeOptionKeys,
-      statusRegistry.open_status,
-    );
-    const nextSteps = [`Run "pm create --help --type ${type}" for type-aware required option guidance.`];
-    if (combinedMissingFlags.includes("--title")) {
-      nextSteps.push('Title can also be passed as the first positional argument (example: pm create "Your title" --type ' + type + ').');
-    }
-    if (createMode === "strict") {
-      nextSteps.push('For staged onboarding, retry with "--create-mode progressive".');
-      if (SCHEDULE_CREATE_PRESET_TYPES.has(type)) {
-        nextSteps.push('For minimal scheduling inputs, try "--schedule-preset lightweight".');
-      }
-    }
-    const errorMessage =
-      combinedMissingFlags.length === 1
-        ? `Missing required option ${combinedMissingFlags[0]} for type "${type}"`
-        : `Missing required options ${combinedMissingFlags.join(", ")} for type "${type}"`;
-    throw new PmCliError(errorMessage, EXIT_CODE.USAGE, {
-      code: "missing_required_option",
-      required: `Provide all required create options and type options for type "${type}" in one invocation.`,
-      examples: [nextValidExample],
-      nextSteps,
-      recovery: createMode === "strict"
-        ? {
-            recovery_mode: "compact",
-            missing_required_fields: combinedMissingFlags,
-            suggested_flags: ["--create-mode progressive", ...combinedMissingFlags],
-          }
-        : undefined,
-    });
-  }
+  assertNoMissingRequiredCreateOptions({
+    combinedMissingFlags,
+    typeDefinition,
+    missingRequiredCreateFlags,
+    missingRequiredTypeOptionKeys,
+    openStatus: statusRegistry.open_status,
+    type,
+    createMode,
+  });
   const nonMissingTypeOptionErrors = filterNonMissingTypeOptionErrors(validatedTypeOptions.errors, type);
   if (nonMissingTypeOptionErrors.length > 0) {
     const nextValidExample = buildTypeSpecificCreateExample(typeDefinition, [], [], statusRegistry.open_status);
@@ -1511,279 +1874,96 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
       ? parseStatusValue(resolvedOptions.status, statusRegistry)
       : resolveCreateDefaultStatus(typeDefinition, statusRegistry);
   const priority = resolvedOptions.priority !== undefined ? ensurePriority(resolvedOptions.priority) : 2;
-  // `--unset tags` clears the field; combining it with `--add-tags` is the same
-  // contradiction that `--unset tags --tags ...` already rejects, so reject it
-  // here rather than silently letting the additions win over the clear.
-  if (
-    unsetTargets.frontMatterKeys.has("tags") &&
-    Array.isArray(resolvedOptions.addTags) &&
-    resolvedOptions.addTags.length > 0
-  ) {
-    throw new PmCliError("Cannot combine --unset tags with --add-tags", EXIT_CODE.USAGE);
-  }
-  const baseTags = unsetTargets.frontMatterKeys.has("tags")
-    ? []
-    : resolvedOptions.tags !== undefined
-      ? parseTags(resolvedOptions.tags)
-      : [];
-  const tags = mergeAdditiveTags(baseTags, resolvedOptions.addTags);
-
-  const deadline = unsetTargets.frontMatterKeys.has("deadline")
-    ? undefined
-    : resolvedOptions.deadline === undefined
-      ? undefined
-      : resolveIsoOrRelative(resolvedOptions.deadline, new Date(nowValue), "deadline");
-  const estimatedMinutes = unsetTargets.frontMatterKeys.has("estimated_minutes")
-    ? undefined
-    : resolvedOptions.estimatedMinutes === undefined
-      ? undefined
-      : parseOptionalNumber(resolvedOptions.estimatedMinutes, "estimated-minutes");
-  const acceptanceCriteria = unsetTargets.frontMatterKeys.has("acceptance_criteria")
-    ? undefined
-    : resolvedOptions.acceptanceCriteria === undefined
-      ? undefined
-      : resolvedOptions.acceptanceCriteria;
-  const definitionOfReady =
-    unsetTargets.frontMatterKeys.has("definition_of_ready") || resolvedOptions.definitionOfReady === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.definitionOfReady);
-  if (
-    resolvedOptions.order !== undefined &&
-    resolvedOptions.rank !== undefined &&
-    resolvedOptions.order !== resolvedOptions.rank
-  ) {
-    throw new PmCliError("--order and --rank must match when both are provided", EXIT_CODE.USAGE);
-  }
-  const orderRaw = resolvedOptions.order ?? resolvedOptions.rank;
-  const order =
-    unsetTargets.frontMatterKeys.has("order") || orderRaw === undefined ? undefined : parseOptionalNumber(orderRaw, "order");
-  if (order !== undefined && !Number.isInteger(order)) {
-    throw new PmCliError("Order must be an integer", EXIT_CODE.USAGE);
-  }
-  const goal =
-    unsetTargets.frontMatterKeys.has("goal") || resolvedOptions.goal === undefined ? undefined : parseOptionalString(resolvedOptions.goal);
-  const objective =
-    unsetTargets.frontMatterKeys.has("objective") || resolvedOptions.objective === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.objective);
-  const value =
-    unsetTargets.frontMatterKeys.has("value") || resolvedOptions.value === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.value);
-  const impact =
-    unsetTargets.frontMatterKeys.has("impact") || resolvedOptions.impact === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.impact);
-  const outcome =
-    unsetTargets.frontMatterKeys.has("outcome") || resolvedOptions.outcome === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.outcome);
-  const whyNow =
-    unsetTargets.frontMatterKeys.has("why_now") || resolvedOptions.whyNow === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.whyNow);
-  const assignee =
-    unsetTargets.frontMatterKeys.has("assignee") || resolvedOptions.assignee === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.assignee);
-  const authorValue = unsetTargets.frontMatterKeys.has("author")
-    ? undefined
-    : parseOptionalString(resolvedOptions.author) ?? author;
-  let parent =
-    unsetTargets.frontMatterKeys.has("parent") || resolvedOptions.parent === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.parent);
-  // GH-161 (pm-72xf): when no explicit --parent was given (and parent is not
-  // being unset), default the parent to the session "focused" item set via
-  // `pm focus <id>`. An explicit --parent (even `--parent ""` to unset)
-  // overrides focus. The inherited value flows through the same locateItem /
-  // validateMissingParentReference path below, so a stale focus produces the
-  // same clear missing-parent error/warning as an explicit stale --parent.
-  let parentSource: "focus" | undefined;
-  if (
-    parent === undefined &&
-    !unsetTargets.frontMatterKeys.has("parent") &&
-    resolvedOptions.parent === undefined
-  ) {
-    const focused = await getFocusedItem(pmRoot);
-    if (focused !== undefined) {
-      parent = focused;
-      parentSource = "focus";
-    }
-  }
-  const reviewer =
-    unsetTargets.frontMatterKeys.has("reviewer") || resolvedOptions.reviewer === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.reviewer);
-  const riskRaw =
-    unsetTargets.frontMatterKeys.has("risk") || resolvedOptions.risk === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.risk);
-  const risk = riskRaw !== undefined ? ensureEnumValue(normalizeRiskInput(riskRaw), RISK_VALUES, "risk") : undefined;
-  const confidenceRaw =
-    unsetTargets.frontMatterKeys.has("confidence") || resolvedOptions.confidence === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.confidence);
-  const confidence = confidenceRaw !== undefined ? parseConfidenceInput(confidenceRaw) : undefined;
+  const unsetKeys = unsetTargets.frontMatterKeys;
+  const tags = resolveCreateTags(unsetKeys, resolvedOptions);
+  const deadline = resolveUnsettableTransformed(unsetKeys, "deadline", resolvedOptions.deadline, (raw) =>
+    resolveIsoOrRelative(raw, new Date(nowValue), "deadline"),
+  );
+  const estimatedMinutes = resolveUnsettableTransformed(unsetKeys, "estimated_minutes", resolvedOptions.estimatedMinutes, (raw) =>
+    parseOptionalNumber(raw, "estimated-minutes"),
+  );
+  const acceptanceCriteria = resolveUnsettableOptionalString(unsetKeys, "acceptance_criteria", resolvedOptions.acceptanceCriteria);
+  const definitionOfReady = resolveUnsettableOptionalString(unsetKeys, "definition_of_ready", resolvedOptions.definitionOfReady);
+  const order = resolveCreateOrder(unsetKeys, resolvedOptions);
+  const goal = resolveUnsettableOptionalString(unsetKeys, "goal", resolvedOptions.goal);
+  const objective = resolveUnsettableOptionalString(unsetKeys, "objective", resolvedOptions.objective);
+  const value = resolveUnsettableOptionalString(unsetKeys, "value", resolvedOptions.value);
+  const impact = resolveUnsettableOptionalString(unsetKeys, "impact", resolvedOptions.impact);
+  const outcome = resolveUnsettableOptionalString(unsetKeys, "outcome", resolvedOptions.outcome);
+  const whyNow = resolveUnsettableOptionalString(unsetKeys, "why_now", resolvedOptions.whyNow);
+  const assignee = resolveUnsettableOptionalString(unsetKeys, "assignee", resolvedOptions.assignee);
+  const authorValue = unsetKeys.has("author") ? undefined : parseOptionalString(resolvedOptions.author) ?? author;
+  // GH-161 (pm-72xf): inherit the session-focused parent when no explicit
+  // --parent was supplied and parent is not being unset; an explicit --parent
+  // (including `--parent ""`) overrides focus. The inherited value flows through
+  // the same locate/validate path below as an explicit parent.
+  const initialParent = resolveUnsettableOptionalString(unsetKeys, "parent", resolvedOptions.parent);
+  const inheritedParent = await inheritFocusedParent(initialParent, resolvedOptions, unsetKeys, pmRoot);
+  let parent = inheritedParent.parent;
+  const parentSource = inheritedParent.parentSource;
+  const reviewer = resolveUnsettableOptionalString(unsetKeys, "reviewer", resolvedOptions.reviewer);
+  const risk = resolveUnsettableTransformed(unsetKeys, "risk", resolvedOptions.risk, (raw) =>
+    ensureEnumValue(normalizeRiskInput(raw), RISK_VALUES, "risk"),
+  );
+  const confidence = resolveUnsettableTransformed(unsetKeys, "confidence", resolvedOptions.confidence, (raw) => parseConfidenceInput(raw));
   const parentReferencePolicy =
     resolvedOptions.allowMissingParent === true && settings.validation.parent_reference === "strict_error"
       ? "warn"
       : settings.validation.parent_reference;
   const sprintReleasePolicy = settings.validation.sprint_release_format;
-  const validationWarnings: string[] = [];
-  // Event-type items with no attached schedule never surface on the calendar; warn (never block).
-  if (type.toLowerCase() === "event" && (events.values === undefined || events.values.length === 0)) {
-    validationWarnings.push(`event_without_schedule:${id}:no_time_set`);
-  }
-  // Calendar-relevant types (Milestone, Meeting, Reminder, Event) with NO deadline AND no
-  // reminders AND no events are invisible on `pm calendar`. Warn (never block) so the agent
-  // can attach a schedule via `pm update`.
-  const calendarRelevantTypes = new Set(["milestone", "meeting", "reminder", "event"]);
-  const hasDeadline = deadline !== undefined;
-  const hasReminders = reminders.values !== undefined && reminders.values.length > 0;
-  const hasEvents = events.values !== undefined && events.values.length > 0;
-  if (calendarRelevantTypes.has(type.toLowerCase()) && !hasDeadline && !hasReminders && !hasEvents) {
-    // Keep the structured `calendar_item_without_schedule:<id>:<code>` prefix
-    // stable (automation/telemetry match on it) and append the actionable hint
-    // after the token (pm-2cgu / GH-174).
-    validationWarnings.push(
-      `calendar_item_without_schedule:${id}:no_deadline_or_reminder_or_event (hint: set --deadline <ISO> or --reminder "<when>", or link an Event via --event "start=<ISO>,end=<ISO>"; otherwise this item never appears on pm calendar)`,
-    );
-  }
+  const validationWarnings: string[] = collectCreateScheduleWarnings(type, id, deadline, reminders.values, events.values);
   if (parent !== undefined) {
-    parent = normalizeParentReferenceValue(parent);
-    const parentLocated = await locateItem(pmRoot, parent, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
-    if (!parentLocated) {
-      const normalizedParentId = normalizeItemId(parent, settings.id_prefix);
-      validationWarnings.push(...validateMissingParentReference(normalizedParentId, parentReferencePolicy).warnings);
-    }
+    const parentValidation = await validateCreateParentReference(pmRoot, settings, typeRegistry, parent, parentReferencePolicy);
+    parent = parentValidation.parent;
+    validationWarnings.push(...parentValidation.warnings);
   }
-  let sprint =
-    unsetTargets.frontMatterKeys.has("sprint") || resolvedOptions.sprint === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.sprint);
-  if (sprint !== undefined) {
-    const sprintValidation = validateSprintOrReleaseValue("sprint", sprint, sprintReleasePolicy);
-    sprint = sprintValidation.value;
-    validationWarnings.push(...sprintValidation.warnings);
-  }
-  let release =
-    unsetTargets.frontMatterKeys.has("release") || resolvedOptions.release === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.release);
-  if (release !== undefined) {
-    const releaseValidation = validateSprintOrReleaseValue("release", release, sprintReleasePolicy);
-    release = releaseValidation.value;
-    validationWarnings.push(...releaseValidation.warnings);
-  }
-  const blockedBy =
-    unsetTargets.frontMatterKeys.has("blocked_by") || resolvedOptions.blockedBy === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.blockedBy);
-  let dependencyValues = dependencies.values;
-  if (blockedBy !== undefined) {
-    const normalizedBlockedBy = normalizeItemId(blockedBy, settings.id_prefix);
-    const blockedByLocated = await locateItem(pmRoot, normalizedBlockedBy, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
-    if (blockedByLocated) {
-      const hasBlockedByDependency = (dependencyValues ?? []).some(
-        (dependency) => dependency.id === blockedByLocated.id && dependency.kind === "blocked_by",
-      );
-      if (!hasBlockedByDependency) {
-        dependencyValues = [
-          ...(dependencyValues ?? []),
-          {
-            id: blockedByLocated.id,
-            kind: "blocked_by",
-            created_at: nowValue,
-            author,
-          },
-        ];
-      }
-      if (resolvedOptions.status === undefined) {
-        status = statusRegistry.blocked_statuses.has("blocked")
-          ? "blocked"
-          : [...statusRegistry.blocked_statuses].sort((left, right) => left.localeCompare(right))[0] ?? statusRegistry.open_status;
-      }
-    }
-  }
-  const blockedReason =
-    unsetTargets.frontMatterKeys.has("blocked_reason") || resolvedOptions.blockedReason === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.blockedReason);
-  const unblockNote =
-    unsetTargets.frontMatterKeys.has("unblock_note") || resolvedOptions.unblockNote === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.unblockNote);
-  const reporter =
-    /* c8 ignore next -- reporter normalization branch is covered in issue-template integration tests. */
-    unsetTargets.frontMatterKeys.has("reporter") || resolvedOptions.reporter === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.reporter);
-  const severityRaw =
-    unsetTargets.frontMatterKeys.has("severity") || resolvedOptions.severity === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.severity);
-  const severity =
-    severityRaw !== undefined ? ensureEnumValue(normalizeSeverityInput(severityRaw), ISSUE_SEVERITY_VALUES, "severity") : undefined;
-  const environment =
-    unsetTargets.frontMatterKeys.has("environment") || resolvedOptions.environment === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.environment);
-  const reproSteps =
-    unsetTargets.frontMatterKeys.has("repro_steps") || resolvedOptions.reproSteps === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.reproSteps);
-  const resolution =
-    unsetTargets.frontMatterKeys.has("resolution") || resolvedOptions.resolution === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.resolution);
-  const expectedResult =
-    unsetTargets.frontMatterKeys.has("expected_result") || resolvedOptions.expectedResult === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.expectedResult);
-  const actualResult =
-    unsetTargets.frontMatterKeys.has("actual_result") || resolvedOptions.actualResult === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.actualResult);
-  const affectedVersion =
-    unsetTargets.frontMatterKeys.has("affected_version") || resolvedOptions.affectedVersion === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.affectedVersion);
-  const fixedVersion =
-    unsetTargets.frontMatterKeys.has("fixed_version") || resolvedOptions.fixedVersion === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.fixedVersion);
-  const component =
-    unsetTargets.frontMatterKeys.has("component") || resolvedOptions.component === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.component);
-  const regressionRaw =
-    unsetTargets.frontMatterKeys.has("regression") || resolvedOptions.regression === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.regression);
-  const regression = regressionRaw !== undefined ? parseRegressionInput(regressionRaw) : undefined;
-  const customerImpact =
-    unsetTargets.frontMatterKeys.has("customer_impact") || resolvedOptions.customerImpact === undefined
-      ? undefined
-      : parseOptionalString(resolvedOptions.customerImpact);
+  const sprintResolved = resolveCreateSprintOrRelease(unsetKeys, "sprint", resolvedOptions.sprint, "sprint", sprintReleasePolicy);
+  const sprint = sprintResolved.value;
+  validationWarnings.push(...sprintResolved.warnings);
+  const releaseResolved = resolveCreateSprintOrRelease(unsetKeys, "release", resolvedOptions.release, "release", sprintReleasePolicy);
+  const release = releaseResolved.value;
+  validationWarnings.push(...releaseResolved.warnings);
+  const blockedBy = resolveUnsettableOptionalString(unsetKeys, "blocked_by", resolvedOptions.blockedBy);
+  const blockedByResolution = await resolveCreateBlockedByDependency({
+    pmRoot,
+    settings,
+    typeRegistry,
+    statusRegistry,
+    blockedBy,
+    dependencyValues: dependencies.values,
+    status,
+    statusExplicit: resolvedOptions.status !== undefined,
+    nowValue,
+    author,
+  });
+  const dependencyValues = blockedByResolution.dependencyValues;
+  status = blockedByResolution.status;
+  const blockedReason = resolveUnsettableOptionalString(unsetKeys, "blocked_reason", resolvedOptions.blockedReason);
+  const unblockNote = resolveUnsettableOptionalString(unsetKeys, "unblock_note", resolvedOptions.unblockNote);
+  const reporter = resolveUnsettableOptionalString(unsetKeys, "reporter", resolvedOptions.reporter);
+  const severity = resolveUnsettableTransformed(unsetKeys, "severity", resolvedOptions.severity, (raw) =>
+    ensureEnumValue(normalizeSeverityInput(raw), ISSUE_SEVERITY_VALUES, "severity"),
+  );
+  const environment = resolveUnsettableOptionalString(unsetKeys, "environment", resolvedOptions.environment);
+  const reproSteps = resolveUnsettableOptionalString(unsetKeys, "repro_steps", resolvedOptions.reproSteps);
+  const resolution = resolveUnsettableOptionalString(unsetKeys, "resolution", resolvedOptions.resolution);
+  const expectedResult = resolveUnsettableOptionalString(unsetKeys, "expected_result", resolvedOptions.expectedResult);
+  const actualResult = resolveUnsettableOptionalString(unsetKeys, "actual_result", resolvedOptions.actualResult);
+  const affectedVersion = resolveUnsettableOptionalString(unsetKeys, "affected_version", resolvedOptions.affectedVersion);
+  const fixedVersion = resolveUnsettableOptionalString(unsetKeys, "fixed_version", resolvedOptions.fixedVersion);
+  const component = resolveUnsettableOptionalString(unsetKeys, "component", resolvedOptions.component);
+  const regression = resolveUnsettableTransformed(unsetKeys, "regression", resolvedOptions.regression, (raw) => parseRegressionInput(raw));
+  const customerImpact = resolveUnsettableOptionalString(unsetKeys, "customer_impact", resolvedOptions.customerImpact);
   const title = requireStringOption(resolvedOptions.title, "--title");
   const description = resolvedOptions.description ?? "";
   const body = resolvedOptions.body ?? "";
 
   // GH-249: creating an item directly in the close status must honor
   // governance.require_close_reason, just like `pm close` (errors when missing)
-  // and `pm update --status closed` (defaults + warns). Record a close_reason
-  // derived from --message > --resolution, else a stable placeholder, and warn
-  // when defaulted so the create path stops silently bypassing governance.
-  let closeReason: string | undefined;
-  if (status === statusRegistry.close_status && settings.governance.require_close_reason) {
-    const messageText = typeof resolvedOptions.message === "string" ? resolvedOptions.message.trim() : "";
-    const resolutionText = typeof resolution === "string" ? resolution.trim() : "";
-    closeReason = messageText || resolutionText || CREATE_DIRECT_CLOSE_REASON_DEFAULT;
-    if (messageText.length === 0 && resolutionText.length === 0) {
-      validationWarnings.push("close_reason_defaulted");
-    }
-  }
+  // and `pm update --status closed` (defaults + warns).
+  const closeReasonResolution = resolveCreateCloseReason(status, statusRegistry, settings, resolvedOptions, resolution);
+  const closeReason = closeReasonResolution.closeReason;
+  validationWarnings.push(...closeReasonResolution.warnings);
 
   const frontMatter: ItemMetadata = normalizeFrontMatter({
     id,
@@ -1866,16 +2046,6 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     body: "",
   };
 
-  const itemPath = getItemPath(pmRoot, type, id, settings.item_format, typeRegistry.type_to_folder);
-  const historyPath = getHistoryPath(pmRoot, id);
-  const lockRelease = await acquireLock(
-    pmRoot,
-    id,
-    settings.locks.ttl_seconds,
-    author,
-    false,
-    settings.governance.force_required_for_stale_lock,
-  );
   const explicitUnsetKeys = [...explicitUnsets].sort((left, right) => left.localeCompare(right));
   const historyMessage = buildHistoryMessage(resolvedOptions.message, explicitUnsetKeys);
   const changedFields = buildChangedFields(frontMatter, body, explicitUnsetKeys, [
@@ -1884,64 +2054,20 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     ...Object.keys(runtimeCreateFieldValues.values ?? {}),
     /* c8 ignore stop */
   ]);
-  let hookWarnings: string[] = [];
-
-  try {
-    await writeFileAtomic(
-      itemPath,
-      serializeItemDocument(afterDocument, {
-        format: settings.item_format,
-        schema: settings.schema,
-        extensionFieldNames,
-      }),
-    );
-    try {
-      const entry = createHistoryEntry({
-        nowIso: nowValue,
-        author,
-        op: "create",
-        before: beforeDocument,
-        after: afterDocument,
-        message: historyMessage,
-      });
-      await appendHistoryEntry(historyPath, entry);
-    } catch (error: unknown) {
-      await removeFileIfExists(itemPath);
-      throw error;
-    }
-    hookWarnings = [
-      ...(await runActiveOnWriteHooks({
-        path: itemPath,
-        scope: "project",
-        op: "create",
-        item_id: afterDocument.metadata.id,
-        item_type: afterDocument.metadata.type,
-        before: beforeDocument,
-        after: afterDocument,
-        changed_fields: changedFields,
-      })),
-      ...(await runActiveOnWriteHooks({
-        path: historyPath,
-        scope: "project",
-        op: "create:history",
-        item_id: afterDocument.metadata.id,
-        item_type: afterDocument.metadata.type,
-        before: beforeDocument,
-        after: afterDocument,
-        changed_fields: changedFields,
-      })),
-    ];
-    recordAfterCommandAffectedItem({
-      id: afterDocument.metadata.id,
-      op: "create",
-      item_type: afterDocument.metadata.type,
-      status: afterDocument.metadata.status,
-      current: projectAfterCommandItemSnapshot(afterDocument.metadata, changedFields),
-      changed_fields: changedFields,
-    });
-  } finally {
-    await lockRelease();
-  }
+  const hookWarnings = await writeCreatedItem({
+    pmRoot,
+    type,
+    id,
+    settings,
+    typeRegistry,
+    author,
+    extensionFieldNames,
+    afterDocument,
+    beforeDocument,
+    historyMessage,
+    changedFields,
+    nowValue,
+  });
 
   const outputItem = structuredClone(frontMatter);
 
@@ -1955,7 +2081,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   // calendar`. The structured `calendar_item_without_schedule:*` warning above is what
   // automation reads; this stderr line is the human/agent-facing version with a
   // copy-pasteable `pm update` recipe.
-  if (calendarRelevantTypes.has(type.toLowerCase()) && !hasDeadline && !hasReminders && !hasEvents) {
+  if (createItemLacksSchedule(type, deadline, reminders.values, events.values)) {
     printError(
       `[pm] warning: ${type} '${id}' has no deadline/reminder/event — it will not appear on the calendar. Add one via 'pm update ${id} --deadline <ISO>' or 'pm update ${id} --event "start=<ISO>,end=<ISO>"'.`,
     );

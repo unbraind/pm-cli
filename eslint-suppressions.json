@@ -109,11 +109,6 @@
       "count": 2
     }
   },
-  "src/cli/commands/create.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "src/cli/commands/dedupe-audit.ts": {
     "complexity": {
       "count": 1
@@ -216,7 +211,7 @@
   },
   "src/cli/commands/update.ts": {
     "complexity": {
-      "count": 3
+      "count": 2
     }
   },
   "src/cli/commands/validate.ts": {
