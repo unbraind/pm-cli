@@ -136,6 +136,51 @@ function assertCalendarMarkdown(label, markdown) {
   assert(markdown.includes("Dogfood calendar event"), `${label} did not render dogfood calendar event`);
 }
 
+function runSemanticCommand(label, semanticEnv, args) {
+  const startedAt = Date.now();
+  const result = spawnSync(process.execPath, [cliPath, "--json", ...args], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    env: semanticEnv,
+    maxBuffer: 20 * 1024 * 1024,
+  });
+  timings.push({ label, took_ms: Date.now() - startedAt, code: result.status ?? 1 });
+  if (result.status !== 0) {
+    const stdout = trimOutput(result.stdout);
+    const stderr = trimOutput(result.stderr);
+    throw new Error(
+      [
+        `${label} failed with exit ${result.status ?? "unknown"}`,
+        stdout ? `stdout:\n${stdout}` : "",
+        stderr ? `stderr:\n${stderr}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    );
+  }
+  return JSON.parse(result.stdout);
+}
+
+function assertSemanticReindexPayload(payload) {
+  assert(payload?.semantic?.enabled === true, "semantic hybrid reindex did not report semantic.enabled=true");
+  assert((payload?.semantic?.batches_completed ?? 0) >= 1, "semantic hybrid reindex completed no batches");
+  assert((payload?.semantic?.embedded_items ?? 0) >= 1, "semantic hybrid reindex embedded no items");
+  assert((payload?.semantic?.vector_upserted ?? 0) >= 1, "semantic hybrid reindex upserted no vectors");
+}
+
+function assertSemanticSearchPayload(payload) {
+  assert(payload?.mode === "hybrid", "semantic hybrid search did not report mode=hybrid");
+  assert((payload?.items ?? []).length >= 1, "semantic hybrid search returned no items");
+}
+
+function assertSemanticAdvancedSearchPayload(payload) {
+  assert(payload?.mode === "hybrid", "search-advanced --hybrid alias did not select hybrid mode");
+  assert(
+    payload?.query === "package workflow",
+    "search-advanced --hybrid should not leak into query text",
+  );
+}
+
 function runSemanticDogfoodProbe() {
   if (!semanticDogfoodEnabled) {
     timings.push({ label: "semantic dogfood skipped", took_ms: 0, code: 0 });
@@ -145,65 +190,18 @@ function runSemanticDogfoodProbe() {
     ...env,
     PM_OLLAMA_MODEL: process.env.PM_OLLAMA_MODEL || "qwen3-embedding:0.6b",
   };
-  const startedAt = Date.now();
-  const reindex = spawnSync(process.execPath, [cliPath, "--json", "reindex", "--mode", "hybrid", "--progress"], {
-    cwd: repoRoot,
-    encoding: "utf8",
-    env: semanticEnv,
-    maxBuffer: 20 * 1024 * 1024,
-  });
-  const tookMs = Date.now() - startedAt;
-  timings.push({ label: "semantic hybrid reindex", took_ms: tookMs, code: reindex.status ?? 1 });
-  if (reindex.status !== 0) {
-    throw new Error(
-      [
-        `semantic hybrid reindex failed with exit ${reindex.status ?? "unknown"}`,
-        reindex.stdout.trim() ? `stdout:\n${reindex.stdout.trim()}` : "",
-        reindex.stderr.trim() ? `stderr:\n${reindex.stderr.trim()}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n"),
-    );
-  }
-  const reindexPayload = JSON.parse(reindex.stdout);
-  assert(reindexPayload?.semantic?.enabled === true, "semantic hybrid reindex did not report semantic.enabled=true");
-  assert((reindexPayload?.semantic?.batches_completed ?? 0) >= 1, "semantic hybrid reindex completed no batches");
-  assert((reindexPayload?.semantic?.embedded_items ?? 0) >= 1, "semantic hybrid reindex embedded no items");
-  assert((reindexPayload?.semantic?.vector_upserted ?? 0) >= 1, "semantic hybrid reindex upserted no vectors");
-
-  const search = spawnSync(process.execPath, [cliPath, "--json", "search", "package workflow", "--mode", "hybrid", "--limit", "5"], {
-    cwd: repoRoot,
-    encoding: "utf8",
-    env: semanticEnv,
-    maxBuffer: 20 * 1024 * 1024,
-  });
-  timings.push({ label: "semantic hybrid search", took_ms: 0, code: search.status ?? 1 });
-  if (search.status !== 0) {
-    throw new Error(`semantic hybrid search failed: ${search.stderr.trim() || search.stdout.trim()}`);
-  }
-  const searchPayload = JSON.parse(search.stdout);
-  assert(searchPayload?.mode === "hybrid", "semantic hybrid search did not report mode=hybrid");
-  assert((searchPayload?.items ?? []).length >= 1, "semantic hybrid search returned no items");
-
-  const searchAdvanced = spawnSync(
-    process.execPath,
-    [cliPath, "--json", "search-advanced", "--hybrid", "package workflow", "--limit", "5"],
-    {
-      cwd: repoRoot,
-      encoding: "utf8",
-      env: semanticEnv,
-      maxBuffer: 20 * 1024 * 1024,
-    },
+  assertSemanticReindexPayload(runSemanticCommand("semantic hybrid reindex", semanticEnv, ["reindex", "--mode", "hybrid", "--progress"]));
+  assertSemanticSearchPayload(
+    runSemanticCommand("semantic hybrid search", semanticEnv, ["search", "package workflow", "--mode", "hybrid", "--limit", "5"]),
   );
-  timings.push({ label: "semantic search-advanced hybrid alias", took_ms: 0, code: searchAdvanced.status ?? 1 });
-  if (searchAdvanced.status !== 0) {
-    throw new Error(`semantic search-advanced --hybrid failed: ${searchAdvanced.stderr.trim() || searchAdvanced.stdout.trim()}`);
-  }
-  const searchAdvancedPayload = JSON.parse(searchAdvanced.stdout);
-  assert(searchAdvancedPayload?.mode === "hybrid", "search-advanced --hybrid alias did not select hybrid mode");
-  assert(
-    searchAdvancedPayload?.query === "package workflow",
-    "search-advanced --hybrid should not leak into query text",
+  assertSemanticAdvancedSearchPayload(
+    runSemanticCommand("semantic search-advanced --hybrid", semanticEnv, [
+      "search-advanced",
+      "--hybrid",
+      "package workflow",
+      "--limit",
+      "5",
+    ]),
   );
   return { attempted: true, model: semanticEnv.PM_OLLAMA_MODEL };
 }

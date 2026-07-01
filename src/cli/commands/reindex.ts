@@ -52,6 +52,7 @@ const MANIFEST_PATH = "index/manifest.json";
 const EMBEDDINGS_PATH = "search/embeddings.jsonl";
 const EMBEDDING_MIGRATION_REINDEX_HINT =
   "Provider or model has changed since last index. Run pm reindex --mode semantic to rebuild.";
+type ReindexMode = "keyword" | "semantic" | "hybrid";
 
 /**
  * Documents the reindex options payload exchanged by command, SDK, and package integrations.
@@ -67,7 +68,7 @@ export interface ReindexOptions {
  */
 export interface ReindexResult {
   ok: boolean;
-  mode: "keyword" | "semantic" | "hybrid";
+  mode: ReindexMode;
   total_items: number;
   semantic: {
     enabled: boolean;
@@ -100,7 +101,7 @@ function emitReindexProgress(enabled: boolean, message: string): void {
   }
 }
 
-function parseMode(raw: string | undefined): "keyword" | "semantic" | "hybrid" {
+function parseMode(raw: string | undefined): ReindexMode {
   const normalized = (raw ?? "keyword").trim().toLowerCase();
   if (normalized === "keyword") {
     return "keyword";
@@ -170,7 +171,7 @@ async function hydrateDocuments(
 
 function buildKeywordRecord(
   document: ItemDocument,
-  mode: "keyword" | "semantic" | "hybrid",
+  mode: ReindexMode,
   corpusFields?: string[],
 ): Record<string, unknown> {
   const item = document.metadata;
@@ -219,6 +220,26 @@ interface ReindexEmbeddingExecutionResult {
   embeddingIdentity: VectorizationEmbeddingIdentity;
 }
 
+interface ReindexSemanticRuntime {
+  activeEmbeddingProvider: ReturnType<typeof resolveEmbeddingProviders>["active"];
+  activeVectorStore: ReturnType<typeof resolveVectorStores>["active"];
+}
+
+interface ReindexLoadedCorpus {
+  metadataDocuments: ItemDocument[];
+  documentCandidates: CachedDocumentCandidate[];
+  warnings: string[];
+}
+
+interface ReindexSemanticPlan {
+  ledgerEntries: Record<string, string>;
+  ledgerEmbedding: VectorizationEmbeddingMetadata | null;
+  orphanIds: string[];
+  resetRequired: boolean;
+  staleDocuments: ItemDocument[];
+  freshDocuments: number;
+}
+
 const toOptionalNonEmptyString = toNonEmptyStringOrUndefined;
 
 export const _testOnly = {
@@ -237,6 +258,7 @@ export const _testOnly = {
   collectLedgerOrphanIds,
   resetVectorStoreForReindex,
   pruneReindexOrphanVectors,
+  upsertReindexVectors,
 };
 
 function resolveExtensionSearchEmbedding(
@@ -535,6 +557,500 @@ async function pruneReindexOrphanVectors(
   }
 }
 
+function createReindexSemanticSummary(mode: ReindexMode): ReindexResult["semantic"] {
+  return {
+    enabled: mode !== "keyword",
+    stale_items: 0,
+    unchanged_items: 0,
+    embedded_items: 0,
+    vector_upserted: 0,
+    batches_completed: 0,
+  };
+}
+
+function buildReindexManifest(mode: ReindexMode, generatedAt: string, metadataDocuments: ItemDocument[]): {
+  version: number;
+  mode: ReindexMode;
+  generated_at: string;
+  total_items: number;
+  items: Array<{
+    id: string;
+    type: string;
+    status: string;
+    priority: ItemDocument["metadata"]["priority"];
+    updated_at: string;
+  }>;
+} {
+  return {
+    version: 1,
+    mode,
+    generated_at: generatedAt,
+    total_items: metadataDocuments.length,
+    items: metadataDocuments.map((document) => ({
+      id: document.metadata.id,
+      type: document.metadata.type,
+      status: document.metadata.status,
+      priority: document.metadata.priority,
+      updated_at: document.metadata.updated_at,
+    })),
+  };
+}
+
+function assertSemanticRuntimeAvailable(params: {
+  requestedMode: ReindexMode;
+  settings: PmSettings;
+  extensionEmbedding: { name: string; embedBatch?: ExtensionEmbedBatch; embed?: ExtensionEmbedOne } | null;
+  extensionVectorAdapter: ExtensionVectorAdapter | null;
+}): ReindexSemanticRuntime {
+  if (params.requestedMode === "keyword") {
+    return {
+      activeEmbeddingProvider: null,
+      activeVectorStore: null,
+    };
+  }
+  const providerResolution = resolveEmbeddingProviders(params.settings);
+  if (!providerResolution.active && !params.extensionEmbedding) {
+    throw new PmCliError(
+      `Reindex mode '${params.requestedMode}' requires a configured embedding provider in settings.providers.openai/settings.providers.ollama or an extension provider selected by settings.search.provider`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  const vectorResolution = resolveVectorStores(params.settings);
+  if (!vectorResolution.active && !params.extensionVectorAdapter) {
+    throw new PmCliError(
+      `Reindex mode '${params.requestedMode}' requires a configured vector store in settings.vector_store.qdrant/settings.vector_store.lancedb or an extension adapter selected by settings.vector_store.adapter`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  return {
+    activeEmbeddingProvider: providerResolution.active,
+    activeVectorStore: vectorResolution.active,
+  };
+}
+
+async function loadReindexCorpus(params: {
+  pmRoot: string;
+  settings: PmSettings;
+}): Promise<ReindexLoadedCorpus> {
+  const typeRegistry = resolveItemTypeRegistry(params.settings, getActiveExtensionRegistrations());
+  const loadedCandidates = await loadDocumentCandidates(
+    params.pmRoot,
+    params.settings.item_format,
+    typeRegistry.type_to_folder,
+    params.settings.schema,
+  );
+  return {
+    documentCandidates: loadedCandidates.candidates,
+    warnings: [...loadedCandidates.warnings],
+    metadataDocuments: loadedCandidates.candidates.map((candidate) => ({
+      metadata: candidate.metadata,
+      body: typeof candidate.body === "string" ? candidate.body : "",
+    })),
+  };
+}
+
+async function appendKeywordLedgerWarnings(params: {
+  pmRoot: string;
+  settings: PmSettings;
+  forceFullSemantic: boolean;
+  extensionEmbedding: { name: string; embedBatch?: ExtensionEmbedBatch; embed?: ExtensionEmbedOne } | null;
+  reindexWarnings: string[];
+}): Promise<void> {
+  const ledger = await readVectorizationStatusLedger(params.pmRoot);
+  params.reindexWarnings.push(...ledger.warnings);
+  if (params.forceFullSemantic) {
+    params.reindexWarnings.push("search_semantic_reindex_full_ignored:mode_keyword");
+  }
+  if (!ledger.embedding) {
+    return;
+  }
+  const currentEmbeddingIdentity = (() => {
+    try {
+      return resolveReindexEmbeddingIdentity(params.settings, resolveEmbeddingProviders(params.settings).active, params.extensionEmbedding);
+    } catch {
+      return null;
+    }
+  })();
+  if (currentEmbeddingIdentity && hasVectorizationEmbeddingIdentityChanged(ledger.embedding, currentEmbeddingIdentity)) {
+    params.reindexWarnings.push("search_semantic_reindex_requires_rebuild:embedding_identity_changed");
+    params.reindexWarnings.push(EMBEDDING_MIGRATION_REINDEX_HINT);
+  }
+}
+
+async function planSemanticReindex(params: {
+  pmRoot: string;
+  settings: PmSettings;
+  activeEmbeddingProvider: ReturnType<typeof resolveEmbeddingProviders>["active"];
+  extensionEmbedding: { name: string; embedBatch?: ExtensionEmbedBatch; embed?: ExtensionEmbedOne } | null;
+  documentCandidates: CachedDocumentCandidate[];
+  metadataDocuments: ItemDocument[];
+  forceFullSemantic: boolean;
+  semanticWarnings: string[];
+  reindexWarnings: string[];
+}): Promise<ReindexSemanticPlan> {
+  const ledger = await readVectorizationStatusLedger(params.pmRoot);
+  params.semanticWarnings.push(...ledger.warnings);
+  const embeddingIdentity = resolveReindexEmbeddingIdentity(
+    params.settings,
+    params.activeEmbeddingProvider,
+    params.extensionEmbedding,
+  );
+  const currentIds = new Set(params.metadataDocuments.map((document) => document.metadata.id));
+  const orphanIds = collectLedgerOrphanIds(ledger.entries, currentIds);
+  const resetRequired = hasVectorizationEmbeddingIdentityChanged(ledger.embedding, embeddingIdentity);
+  if (params.forceFullSemantic && !resetRequired) {
+    params.semanticWarnings.push("search_semantic_reindex_full_rebuild_forced");
+  }
+  const staleSourceDocuments =
+    params.forceFullSemantic || resetRequired
+      ? params.metadataDocuments
+      : params.metadataDocuments.filter((document) => ledger.entries[document.metadata.id] !== document.metadata.updated_at);
+  const staleIds = new Set(staleSourceDocuments.map((document) => document.metadata.id));
+  const staleDocuments = staleIds.size > 0
+    ? await hydrateDocuments(params.pmRoot, params.documentCandidates, params.settings.schema, params.reindexWarnings, staleIds)
+    : [];
+  return {
+    ledgerEntries: ledger.entries,
+    ledgerEmbedding: ledger.embedding,
+    orphanIds,
+    resetRequired,
+    staleDocuments,
+    freshDocuments: params.metadataDocuments.length - staleDocuments.length,
+  };
+}
+
+async function rerunSemanticEmbeddingAfterDimensionChange(params: {
+  pmRoot: string;
+  settings: PmSettings;
+  requestedMode: ReindexMode;
+  activeEmbeddingProvider: ReturnType<typeof resolveEmbeddingProviders>["active"];
+  extensionEmbedding: { name: string; embedBatch?: ExtensionEmbedBatch; embed?: ExtensionEmbedOne } | null;
+  documentCandidates: CachedDocumentCandidate[];
+  metadataDocuments: ItemDocument[];
+  semanticWarnings: string[];
+  reindexWarnings: string[];
+  semanticSummary: ReindexResult["semantic"];
+  progressEnabled: boolean;
+}): Promise<ReindexEmbeddingExecutionResult & { staleDocuments: ItemDocument[]; vectorDimension: number }> {
+  const staleIds = new Set(params.metadataDocuments.map((document) => document.metadata.id));
+  const staleDocuments = await hydrateDocuments(
+    params.pmRoot,
+    params.documentCandidates,
+    params.settings.schema,
+    params.reindexWarnings,
+    staleIds,
+  );
+  params.semanticSummary.stale_items = staleDocuments.length;
+  params.semanticSummary.unchanged_items = 0;
+  emitReindexProgress(params.progressEnabled, `embedding_dimension_changed reset_items=${staleDocuments.length}`);
+  const embeddingResult = await executeReindexEmbedding(
+    params.settings,
+    params.requestedMode,
+    params.activeEmbeddingProvider,
+    params.extensionEmbedding,
+    staleDocuments,
+    params.semanticWarnings,
+    params.semanticSummary,
+    params.progressEnabled,
+  );
+  return {
+    ...embeddingResult,
+    staleDocuments,
+    vectorDimension: inferConsistentVectorDimension(embeddingResult.vectors, "Reindex embeddings"),
+  };
+}
+
+async function resolveSemanticEmbeddingForUpsert(params: {
+  pmRoot: string;
+  settings: PmSettings;
+  requestedMode: ReindexMode;
+  activeEmbeddingProvider: ReturnType<typeof resolveEmbeddingProviders>["active"];
+  extensionEmbedding: { name: string; embedBatch?: ExtensionEmbedBatch; embed?: ExtensionEmbedOne } | null;
+  documentCandidates: CachedDocumentCandidate[];
+  metadataDocuments: ItemDocument[];
+  staleDocuments: ItemDocument[];
+  ledgerEmbedding: VectorizationEmbeddingMetadata | null;
+  resetRequired: boolean;
+  semanticWarnings: string[];
+  reindexWarnings: string[];
+  semanticSummary: ReindexResult["semantic"];
+  progressEnabled: boolean;
+}): Promise<ReindexEmbeddingExecutionResult & { staleDocuments: ItemDocument[]; vectorDimension: number; resetRequired: boolean }> {
+  let embeddingResult = await executeReindexEmbedding(
+    params.settings,
+    params.requestedMode,
+    params.activeEmbeddingProvider,
+    params.extensionEmbedding,
+    params.staleDocuments,
+    params.semanticWarnings,
+    params.semanticSummary,
+    params.progressEnabled,
+  );
+  let vectors = embeddingResult.vectors;
+  let actualEmbeddingIdentity = embeddingResult.embeddingIdentity;
+  let vectorDimension = inferConsistentVectorDimension(vectors, "Reindex embeddings");
+  const dimensionChanged =
+    !params.resetRequired &&
+    (hasVectorizationEmbeddingIdentityChanged(params.ledgerEmbedding, actualEmbeddingIdentity) ||
+      hasVectorizationVectorDimensionChanged(params.ledgerEmbedding, vectorDimension));
+  if (!dimensionChanged) {
+    return {
+      vectors,
+      embeddingIdentity: actualEmbeddingIdentity,
+      staleDocuments: params.staleDocuments,
+      vectorDimension,
+      resetRequired: params.resetRequired,
+    };
+  }
+  const rerun = await rerunSemanticEmbeddingAfterDimensionChange(params);
+  vectors = rerun.vectors;
+  actualEmbeddingIdentity = rerun.embeddingIdentity;
+  vectorDimension = rerun.vectorDimension;
+  return {
+    vectors,
+    embeddingIdentity: actualEmbeddingIdentity,
+    staleDocuments: rerun.staleDocuments,
+    vectorDimension,
+    resetRequired: true,
+  };
+}
+
+async function upsertReindexVectors(params: {
+  requestedMode: ReindexMode;
+  activeVectorStore: ReturnType<typeof resolveVectorStores>["active"];
+  extensionVectorAdapter: ExtensionVectorAdapter | null;
+  settings: PmSettings;
+  points: Array<{
+    id: string;
+    vector: number[];
+    payload: Record<string, unknown>;
+  }>;
+  semanticWarnings: string[];
+  semanticSummary: ReindexResult["semantic"];
+  progressEnabled: boolean;
+}): Promise<void> {
+  if (params.extensionVectorAdapter) {
+    try {
+      emitReindexProgress(params.progressEnabled, `vector_upsert_start adapter=${params.extensionVectorAdapter.name} points=${params.points.length}`);
+      await Promise.resolve(params.extensionVectorAdapter.upsert({ points: params.points, settings: params.settings }));
+      params.semanticSummary.vector_upserted = params.points.length;
+      emitReindexProgress(params.progressEnabled, `vector_upsert_complete adapter=${params.extensionVectorAdapter.name}`);
+      return;
+    } catch (error: unknown) {
+      if (!params.activeVectorStore) {
+        throw new PmCliError(
+          `Extension vector adapter "${params.extensionVectorAdapter.name}" failed to upsert vectors: ${error instanceof Error ? error.message : String(error)}`,
+          EXIT_CODE.GENERIC_FAILURE,
+        );
+      }
+      params.semanticWarnings.push(
+        `Extension vector adapter "${params.extensionVectorAdapter.name}" failed; falling back to built-in vector store (${error instanceof Error ? error.message : String(error)})`,
+      );
+      emitReindexProgress(params.progressEnabled, "vector_upsert_fallback built_in_store");
+    }
+  }
+  if (params.activeVectorStore) {
+    emitReindexProgress(params.progressEnabled, `vector_upsert_start adapter=${params.activeVectorStore.name} points=${params.points.length}`);
+    await executeVectorUpsert(params.activeVectorStore, params.points);
+    params.semanticSummary.vector_upserted = params.points.length;
+    emitReindexProgress(params.progressEnabled, `vector_upsert_complete adapter=${params.activeVectorStore.name}`);
+    return;
+  }
+  /* c8 ignore start -- guarded by semantic-mode provider/vector-store preflight above */
+  throw new PmCliError(
+    `No vector upsert executor available for reindex mode '${params.requestedMode}'`,
+    EXIT_CODE.USAGE,
+  );
+  /* c8 ignore stop */
+}
+
+function buildReindexVectorPoints(staleDocuments: ItemDocument[], vectors: number[][]): Array<{
+  id: string;
+  vector: number[];
+  payload: Record<string, unknown>;
+}> {
+  return staleDocuments.map((document, index) => ({
+    id: document.metadata.id,
+    vector: assertVector(vectors[index], `reindex embeddings output at index ${index}`),
+    payload: {
+      id: document.metadata.id,
+      type: document.metadata.type,
+      status: document.metadata.status,
+      priority: document.metadata.priority,
+      updated_at: document.metadata.updated_at,
+    },
+  }));
+}
+
+async function executeSemanticVectorRefresh(params: {
+  pmRoot: string;
+  settings: PmSettings;
+  requestedMode: ReindexMode;
+  activeEmbeddingProvider: ReturnType<typeof resolveEmbeddingProviders>["active"];
+  activeVectorStore: ReturnType<typeof resolveVectorStores>["active"];
+  extensionEmbedding: { name: string; embedBatch?: ExtensionEmbedBatch; embed?: ExtensionEmbedOne } | null;
+  extensionVectorAdapter: ExtensionVectorAdapter | null;
+  documentCandidates: CachedDocumentCandidate[];
+  metadataDocuments: ItemDocument[];
+  plan: ReindexSemanticPlan;
+  semanticWarnings: string[];
+  reindexWarnings: string[];
+  semanticSummary: ReindexResult["semantic"];
+  progressEnabled: boolean;
+}): Promise<{ staleDocuments: ItemDocument[]; embeddingMetadata: VectorizationEmbeddingMetadata }> {
+  emitReindexProgress(params.progressEnabled, `embedding_start items=${params.plan.staleDocuments.length} unchanged_items=${params.plan.freshDocuments}`);
+  const embedding = await resolveSemanticEmbeddingForUpsert({
+    pmRoot: params.pmRoot,
+    settings: params.settings,
+    requestedMode: params.requestedMode,
+    activeEmbeddingProvider: params.activeEmbeddingProvider,
+    extensionEmbedding: params.extensionEmbedding,
+    documentCandidates: params.documentCandidates,
+    metadataDocuments: params.metadataDocuments,
+    staleDocuments: params.plan.staleDocuments,
+    ledgerEmbedding: params.plan.ledgerEmbedding,
+    resetRequired: params.plan.resetRequired,
+    semanticWarnings: params.semanticWarnings,
+    reindexWarnings: params.reindexWarnings,
+    semanticSummary: params.semanticSummary,
+    progressEnabled: params.progressEnabled,
+  });
+  if (embedding.resetRequired) {
+    emitReindexProgress(params.progressEnabled, "vector_reset_start");
+    await resetVectorStoreForReindex(
+      params.activeVectorStore,
+      params.extensionVectorAdapter,
+      params.plan.ledgerEntries,
+      params.settings,
+      params.semanticWarnings,
+      params.plan.ledgerEmbedding ? embedding.vectorDimension : undefined,
+    );
+    emitReindexProgress(params.progressEnabled, "vector_reset_complete");
+  } else {
+    await pruneReindexOrphanVectors(
+      params.activeVectorStore,
+      params.extensionVectorAdapter,
+      params.plan.orphanIds,
+      params.settings,
+      params.semanticWarnings,
+    );
+  }
+  const points = buildReindexVectorPoints(embedding.staleDocuments, embedding.vectors);
+  params.semanticSummary.embedded_items = embedding.vectors.length;
+  await upsertReindexVectors({
+    requestedMode: params.requestedMode,
+    activeVectorStore: params.activeVectorStore,
+    extensionVectorAdapter: params.extensionVectorAdapter,
+    settings: params.settings,
+    points,
+    semanticWarnings: params.semanticWarnings,
+    semanticSummary: params.semanticSummary,
+    progressEnabled: params.progressEnabled,
+  });
+  return {
+    staleDocuments: embedding.staleDocuments,
+    embeddingMetadata: buildVectorizationEmbeddingMetadata(embedding.embeddingIdentity, embedding.vectorDimension),
+  };
+}
+
+async function runSemanticReindex(params: {
+  pmRoot: string;
+  settings: PmSettings;
+  requestedMode: ReindexMode;
+  activeEmbeddingProvider: ReturnType<typeof resolveEmbeddingProviders>["active"];
+  activeVectorStore: ReturnType<typeof resolveVectorStores>["active"];
+  extensionEmbedding: { name: string; embedBatch?: ExtensionEmbedBatch; embed?: ExtensionEmbedOne } | null;
+  extensionVectorAdapter: ExtensionVectorAdapter | null;
+  documentCandidates: CachedDocumentCandidate[];
+  metadataDocuments: ItemDocument[];
+  documentsForKeywordArtifacts: ItemDocument[];
+  forceFullSemantic: boolean;
+  reindexWarnings: string[];
+  semanticWarnings: string[];
+  semanticSummary: ReindexResult["semantic"];
+  progressEnabled: boolean;
+}): Promise<{
+  documentsForKeywordArtifacts: ItemDocument[];
+  vectorizationLedgerEntries: Record<string, string>;
+  vectorizationEmbeddingMetadata: VectorizationEmbeddingMetadata | null;
+}> {
+  const plan = await planSemanticReindex(params);
+  params.semanticSummary.stale_items = plan.staleDocuments.length;
+  params.semanticSummary.unchanged_items = plan.freshDocuments;
+  const vectorizationLedgerEntries = Object.fromEntries(
+    params.metadataDocuments.map((document) => [document.metadata.id, document.metadata.updated_at]),
+  );
+  emitReindexProgress(
+    params.progressEnabled,
+    `semantic_stale_items stale=${plan.staleDocuments.length} total=${params.metadataDocuments.length} unchanged=${plan.freshDocuments} full=${params.forceFullSemantic || plan.resetRequired}`,
+  );
+  if (plan.staleDocuments.length === 0) {
+    emitReindexProgress(params.progressEnabled, `embedding_skipped unchanged_items=${plan.freshDocuments}`);
+    params.semanticWarnings.push(`search_semantic_reindex_skipped_unchanged:count=${plan.freshDocuments}`);
+    await pruneReindexOrphanVectors(
+      params.activeVectorStore,
+      params.extensionVectorAdapter,
+      plan.orphanIds,
+      params.settings,
+      params.semanticWarnings,
+    );
+    return {
+      documentsForKeywordArtifacts: params.documentsForKeywordArtifacts,
+      vectorizationLedgerEntries,
+      vectorizationEmbeddingMetadata: plan.ledgerEmbedding,
+    };
+  }
+  const refresh = await executeSemanticVectorRefresh({ ...params, plan });
+  if (plan.freshDocuments > 0) {
+    params.semanticWarnings.push(`search_semantic_reindex_skipped_unchanged:count=${plan.freshDocuments}`);
+  }
+  const staleDocumentsById = new Map(refresh.staleDocuments.map((document) => [document.metadata.id, document]));
+  return {
+    documentsForKeywordArtifacts: params.metadataDocuments.map(
+      (document) => staleDocumentsById.get(document.metadata.id) ?? document,
+    ),
+    vectorizationLedgerEntries,
+    vectorizationEmbeddingMetadata: refresh.embeddingMetadata,
+  };
+}
+
+async function writeReindexArtifacts(params: {
+  pmRoot: string;
+  mode: ReindexMode;
+  manifest: ReturnType<typeof buildReindexManifest>;
+  documentsForKeywordArtifacts: ItemDocument[];
+  settings: PmSettings;
+  vectorizationLedgerEntries: Record<string, string>;
+  vectorizationEmbeddingMetadata: VectorizationEmbeddingMetadata | null;
+  progressEnabled: boolean;
+}): Promise<string[]> {
+  const manifestPath = path.join(params.pmRoot, MANIFEST_PATH);
+  const embeddingsPath = path.join(params.pmRoot, EMBEDDINGS_PATH);
+  const keywordCorpusFields = resolveSearchCorpusFields(params.settings);
+  const embeddingsLines = params.documentsForKeywordArtifacts
+    .map((document) => JSON.stringify(buildKeywordRecord(document, params.mode, keywordCorpusFields)))
+    .join("\n");
+  emitReindexProgress(params.progressEnabled, "writing keyword artifacts");
+  await writeFileAtomic(manifestPath, `${JSON.stringify(params.manifest, null, 2)}\n`);
+  await writeFileAtomic(embeddingsPath, `${embeddingsLines}\n`);
+  const vectorizationWarnings: string[] = [];
+  if (params.mode !== "keyword") {
+    try {
+      emitReindexProgress(params.progressEnabled, "writing vectorization status ledger");
+      await writeVectorizationStatusLedger(
+        params.pmRoot,
+        params.vectorizationLedgerEntries,
+        params.vectorizationEmbeddingMetadata,
+      );
+    } catch (error: unknown) {
+      vectorizationWarnings.push(
+        `search_vectorization_status_ledger_write_failed:${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+  return vectorizationWarnings;
+}
+
 /**
  * Implements run reindex for the public runtime surface of this module.
  */
@@ -579,55 +1095,22 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
   }
 
   try {
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const extensionEmbedding = resolveExtensionSearchEmbedding(settings);
   const extensionVectorAdapter = resolveExtensionVectorAdapter(settings);
-  let activeEmbeddingProvider: ReturnType<typeof resolveEmbeddingProviders>["active"] = null;
-  let activeVectorStore: ReturnType<typeof resolveVectorStores>["active"] = null;
-  if (requestedMode !== "keyword") {
-    const providerResolution = resolveEmbeddingProviders(settings);
-    if (!providerResolution.active && !extensionEmbedding) {
-      throw new PmCliError(
-        `Reindex mode '${requestedMode}' requires a configured embedding provider in settings.providers.openai/settings.providers.ollama or an extension provider selected by settings.search.provider`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    const vectorResolution = resolveVectorStores(settings);
-    if (!vectorResolution.active && !extensionVectorAdapter) {
-      throw new PmCliError(
-        `Reindex mode '${requestedMode}' requires a configured vector store in settings.vector_store.qdrant/settings.vector_store.lancedb or an extension adapter selected by settings.vector_store.adapter`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    activeEmbeddingProvider = providerResolution.active;
-    activeVectorStore = vectorResolution.active;
-  }
+  const semanticRuntime = assertSemanticRuntimeAvailable({
+    requestedMode,
+    settings,
+    extensionEmbedding,
+    extensionVectorAdapter,
+  });
   const mode = requestedMode;
   emitReindexProgress(progressEnabled, "loading item corpus");
-  const loadedCandidates = await loadDocumentCandidates(pmRoot, settings.item_format, typeRegistry.type_to_folder, settings.schema);
-  const reindexWarnings = [...loadedCandidates.warnings];
-  const documentCandidates = loadedCandidates.candidates;
-  const metadataDocuments: ItemDocument[] = documentCandidates.map((candidate) => ({
-    metadata: candidate.metadata,
-    body: typeof candidate.body === "string" ? candidate.body : "",
-  }));
+  const corpus = await loadReindexCorpus({ pmRoot, settings });
+  const reindexWarnings = corpus.warnings;
+  const { documentCandidates, metadataDocuments } = corpus;
   emitReindexProgress(progressEnabled, `loaded_items=${metadataDocuments.length}`);
   const generatedAt = nowIso();
-
-  const manifest = {
-    version: 1,
-    mode,
-    generated_at: generatedAt,
-    total_items: metadataDocuments.length,
-    items: metadataDocuments.map((document) => ({
-      id: document.metadata.id,
-      type: document.metadata.type,
-      status: document.metadata.status,
-      priority: document.metadata.priority,
-      updated_at: document.metadata.updated_at,
-    })),
-  };
-
+  const manifest = buildReindexManifest(mode, generatedAt, metadataDocuments);
   const manifestPath = path.join(pmRoot, MANIFEST_PATH);
   const embeddingsPath = path.join(pmRoot, EMBEDDINGS_PATH);
 
@@ -636,209 +1119,44 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
       ? await hydrateDocuments(pmRoot, documentCandidates, settings.schema, reindexWarnings)
       : metadataDocuments;
   const semanticWarnings: string[] = [];
-  const vectorizationLedgerEntries: Record<string, string> = {};
+  let vectorizationLedgerEntries: Record<string, string> = {};
   let vectorizationEmbeddingMetadata: VectorizationEmbeddingMetadata | null = null;
-  const semanticSummary = {
-    enabled: mode !== "keyword",
-    stale_items: 0,
-    unchanged_items: 0,
-    embedded_items: 0,
-    vector_upserted: 0,
-    batches_completed: 0,
-  };
+  const semanticSummary = createReindexSemanticSummary(mode);
   if (mode === "keyword") {
-    const ledger = await readVectorizationStatusLedger(pmRoot);
-    reindexWarnings.push(...ledger.warnings);
-    if (forceFullSemantic) {
-      reindexWarnings.push("search_semantic_reindex_full_ignored:mode_keyword");
-    }
-    if (ledger.embedding) {
-      const currentEmbeddingIdentity = (() => {
-        try {
-          return resolveReindexEmbeddingIdentity(settings, resolveEmbeddingProviders(settings).active, extensionEmbedding);
-        } catch {
-          return null;
-        }
-      })();
-      if (currentEmbeddingIdentity && hasVectorizationEmbeddingIdentityChanged(ledger.embedding, currentEmbeddingIdentity)) {
-        reindexWarnings.push("search_semantic_reindex_requires_rebuild:embedding_identity_changed");
-        reindexWarnings.push(EMBEDDING_MIGRATION_REINDEX_HINT);
-      }
-    }
+    await appendKeywordLedgerWarnings({ pmRoot, settings, forceFullSemantic, extensionEmbedding, reindexWarnings });
   }
   if (mode !== "keyword" && metadataDocuments.length > 0) {
-    const ledger = await readVectorizationStatusLedger(pmRoot);
-    semanticWarnings.push(...ledger.warnings);
-    const embeddingIdentity = resolveReindexEmbeddingIdentity(settings, activeEmbeddingProvider, extensionEmbedding);
-    const currentIds = new Set(metadataDocuments.map((document) => document.metadata.id));
-    const orphanIds = collectLedgerOrphanIds(ledger.entries, currentIds);
-    let resetRequired = hasVectorizationEmbeddingIdentityChanged(ledger.embedding, embeddingIdentity);
-    if (forceFullSemantic && !resetRequired) {
-      semanticWarnings.push("search_semantic_reindex_full_rebuild_forced");
-    }
-    const staleSourceDocuments =
-      forceFullSemantic || resetRequired
-        ? metadataDocuments
-        : metadataDocuments.filter((document) => ledger.entries[document.metadata.id] !== document.metadata.updated_at);
-    let staleIds = new Set(
-      staleSourceDocuments.map((document) => document.metadata.id),
-    );
-    let staleDocuments = staleIds.size > 0
-      ? await hydrateDocuments(pmRoot, documentCandidates, settings.schema, reindexWarnings, staleIds)
-      : [];
-    let freshDocuments = metadataDocuments.length - staleDocuments.length;
-    semanticSummary.stale_items = staleDocuments.length;
-    semanticSummary.unchanged_items = freshDocuments;
-    for (const document of metadataDocuments) {
-      vectorizationLedgerEntries[document.metadata.id] = document.metadata.updated_at;
-    }
-    emitReindexProgress(
+    const semantic = await runSemanticReindex({
+      pmRoot,
+      settings,
+      requestedMode,
+      activeEmbeddingProvider: semanticRuntime.activeEmbeddingProvider,
+      activeVectorStore: semanticRuntime.activeVectorStore,
+      extensionEmbedding,
+      extensionVectorAdapter,
+      documentCandidates,
+      metadataDocuments,
+      documentsForKeywordArtifacts,
+      forceFullSemantic,
+      reindexWarnings,
+      semanticWarnings,
+      semanticSummary,
       progressEnabled,
-      `semantic_stale_items stale=${staleDocuments.length} total=${metadataDocuments.length} unchanged=${freshDocuments} full=${forceFullSemantic || resetRequired}`,
-    );
-    if (staleDocuments.length === 0) {
-      emitReindexProgress(progressEnabled, `embedding_skipped unchanged_items=${freshDocuments}`);
-      semanticWarnings.push(`search_semantic_reindex_skipped_unchanged:count=${freshDocuments}`);
-    } else {
-      emitReindexProgress(progressEnabled, `embedding_start items=${staleDocuments.length} unchanged_items=${freshDocuments}`);
-      let embeddingResult = await executeReindexEmbedding(
-        settings,
-        requestedMode,
-        activeEmbeddingProvider,
-        extensionEmbedding,
-        staleDocuments,
-        semanticWarnings,
-        semanticSummary,
-        progressEnabled,
-      );
-      let vectors = embeddingResult.vectors;
-      let actualEmbeddingIdentity = embeddingResult.embeddingIdentity;
-      let vectorDimension = inferConsistentVectorDimension(vectors, "Reindex embeddings");
-      if (
-        !resetRequired &&
-        (hasVectorizationEmbeddingIdentityChanged(ledger.embedding, actualEmbeddingIdentity) ||
-          hasVectorizationVectorDimensionChanged(ledger.embedding, vectorDimension))
-      ) {
-        resetRequired = true;
-        staleIds = new Set(metadataDocuments.map((document) => document.metadata.id));
-        staleDocuments = await hydrateDocuments(pmRoot, documentCandidates, settings.schema, reindexWarnings, staleIds);
-        freshDocuments = 0;
-        semanticSummary.stale_items = staleDocuments.length;
-        semanticSummary.unchanged_items = 0;
-        emitReindexProgress(progressEnabled, `embedding_dimension_changed reset_items=${staleDocuments.length}`);
-        embeddingResult = await executeReindexEmbedding(
-          settings,
-          requestedMode,
-          activeEmbeddingProvider,
-          extensionEmbedding,
-          staleDocuments,
-          semanticWarnings,
-          semanticSummary,
-          progressEnabled,
-        );
-        vectors = embeddingResult.vectors;
-        actualEmbeddingIdentity = embeddingResult.embeddingIdentity;
-        vectorDimension = inferConsistentVectorDimension(vectors, "Reindex embeddings");
-      }
-      if (resetRequired) {
-        emitReindexProgress(progressEnabled, "vector_reset_start");
-        await resetVectorStoreForReindex(
-          activeVectorStore,
-          extensionVectorAdapter,
-          ledger.entries,
-          settings,
-          semanticWarnings,
-          ledger.embedding ? vectorDimension : undefined,
-        );
-        emitReindexProgress(progressEnabled, "vector_reset_complete");
-      } else {
-        await pruneReindexOrphanVectors(activeVectorStore, extensionVectorAdapter, orphanIds, settings, semanticWarnings);
-      }
-      vectorizationEmbeddingMetadata = buildVectorizationEmbeddingMetadata(actualEmbeddingIdentity, vectorDimension);
-      const points = staleDocuments.map((document, index) => ({
-        id: document.metadata.id,
-        vector: assertVector(vectors[index], `reindex embeddings output at index ${index}`),
-        payload: {
-          id: document.metadata.id,
-          type: document.metadata.type,
-          status: document.metadata.status,
-          priority: document.metadata.priority,
-          updated_at: document.metadata.updated_at,
-        },
-      }));
-      semanticSummary.embedded_items = vectors.length;
-      /* c8 ignore start -- semantic preflight guarantees a vector upsert executor path */
-      if (extensionVectorAdapter) {
-        try {
-          emitReindexProgress(progressEnabled, `vector_upsert_start adapter=${extensionVectorAdapter.name} points=${points.length}`);
-          await Promise.resolve(
-            extensionVectorAdapter.upsert({
-              points,
-              settings,
-            }),
-          );
-          semanticSummary.vector_upserted = points.length;
-          emitReindexProgress(progressEnabled, `vector_upsert_complete adapter=${extensionVectorAdapter.name}`);
-        } catch (error: unknown) {
-          if (!activeVectorStore) {
-            throw new PmCliError(
-              `Extension vector adapter "${extensionVectorAdapter.name}" failed to upsert vectors: ${error instanceof Error ? error.message : String(error)}`,
-              EXIT_CODE.GENERIC_FAILURE,
-            );
-          }
-          semanticWarnings.push(
-            `Extension vector adapter "${extensionVectorAdapter.name}" failed; falling back to built-in vector store (${error instanceof Error ? error.message : String(error)})`,
-          );
-          emitReindexProgress(progressEnabled, "vector_upsert_fallback built_in_store");
-          await executeVectorUpsert(activeVectorStore, points);
-          semanticSummary.vector_upserted = points.length;
-          emitReindexProgress(progressEnabled, `vector_upsert_complete adapter=${activeVectorStore.name}`);
-        }
-      } else if (activeVectorStore) {
-        emitReindexProgress(progressEnabled, `vector_upsert_start adapter=${activeVectorStore.name} points=${points.length}`);
-        await executeVectorUpsert(activeVectorStore, points);
-        semanticSummary.vector_upserted = points.length;
-        emitReindexProgress(progressEnabled, `vector_upsert_complete adapter=${activeVectorStore.name}`);
-      } else {
-        /* c8 ignore start -- guarded by semantic-mode provider/vector-store preflight above */
-        throw new PmCliError(
-          `No vector upsert executor available for reindex mode '${requestedMode}'`,
-          EXIT_CODE.USAGE,
-        );
-        /* c8 ignore stop */
-      }
-      /* c8 ignore stop */
-      if (freshDocuments > 0) {
-        semanticWarnings.push(`search_semantic_reindex_skipped_unchanged:count=${freshDocuments}`);
-      }
-      const staleDocumentsById = new Map(staleDocuments.map((document) => [document.metadata.id, document]));
-      documentsForKeywordArtifacts = metadataDocuments.map(
-        (document) => staleDocumentsById.get(document.metadata.id) ?? document,
-      );
-    }
-    if (staleDocuments.length === 0) {
-      await pruneReindexOrphanVectors(activeVectorStore, extensionVectorAdapter, orphanIds, settings, semanticWarnings);
-      vectorizationEmbeddingMetadata = ledger.embedding;
-    }
+    });
+    documentsForKeywordArtifacts = semantic.documentsForKeywordArtifacts;
+    vectorizationLedgerEntries = semantic.vectorizationLedgerEntries;
+    vectorizationEmbeddingMetadata = semantic.vectorizationEmbeddingMetadata;
   }
-  const keywordCorpusFields = resolveSearchCorpusFields(settings);
-  const embeddingsLines = documentsForKeywordArtifacts
-    .map((document) => JSON.stringify(buildKeywordRecord(document, mode, keywordCorpusFields)))
-    .join("\n");
-  emitReindexProgress(progressEnabled, "writing keyword artifacts");
-  await writeFileAtomic(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
-  await writeFileAtomic(embeddingsPath, `${embeddingsLines}\n`);
-  const vectorizationWarnings: string[] = [];
-  if (mode !== "keyword") {
-    try {
-      emitReindexProgress(progressEnabled, "writing vectorization status ledger");
-      await writeVectorizationStatusLedger(pmRoot, vectorizationLedgerEntries, vectorizationEmbeddingMetadata);
-    } catch (error: unknown) {
-      vectorizationWarnings.push(
-        `search_vectorization_status_ledger_write_failed:${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
-  }
+  const vectorizationWarnings = await writeReindexArtifacts({
+    pmRoot,
+    mode,
+    manifest,
+    documentsForKeywordArtifacts,
+    settings,
+    vectorizationLedgerEntries,
+    vectorizationEmbeddingMetadata,
+    progressEnabled,
+  });
   const hookWarnings = [
     ...(await runActiveOnWriteHooks({
       path: manifestPath,

@@ -356,6 +356,50 @@ async function prepareLockedItem(params: {
   }
 }
 
+function resolveItemStoreWriteOverride(
+  serviceWriteOverride: { handled: boolean; result?: unknown },
+  targetItemPath: string,
+  serializedAfter: string,
+): {
+  effectiveTargetItemPath: string;
+  effectiveSerializedAfter: string;
+  skipItemWrite: boolean;
+} {
+  if (!serviceWriteOverride.handled || typeof serviceWriteOverride.result !== "object" || serviceWriteOverride.result === null) {
+    return { effectiveTargetItemPath: targetItemPath, effectiveSerializedAfter: serializedAfter, skipItemWrite: false };
+  }
+  const overrideRecord = serviceWriteOverride.result as {
+    target_item_path?: unknown;
+    contents?: unknown;
+    skip_write?: unknown;
+  };
+  return {
+    effectiveTargetItemPath:
+      typeof overrideRecord.target_item_path === "string" && overrideRecord.target_item_path.trim().length > 0
+        ? overrideRecord.target_item_path
+        : targetItemPath,
+    effectiveSerializedAfter: typeof overrideRecord.contents === "string" ? overrideRecord.contents : serializedAfter,
+    skipItemWrite: overrideRecord.skip_write === true,
+  };
+}
+
+async function rollbackMutatedItemWrite(params: {
+  skipItemWrite: boolean;
+  effectiveTargetItemPath: string;
+  originalItemPath: string;
+  originalRaw: string;
+}): Promise<void> {
+  if (params.skipItemWrite) {
+    return;
+  }
+  if (params.effectiveTargetItemPath !== params.originalItemPath) {
+    await writeFileAtomic(params.originalItemPath, params.originalRaw);
+    await fs.rm(params.effectiveTargetItemPath, { force: true });
+    return;
+  }
+  await writeFileAtomic(params.originalItemPath, params.originalRaw);
+}
+
 /**
  * Implements mutate item for the public runtime surface of this module.
  */
@@ -456,29 +500,11 @@ export async function mutateItem(params: {
       after: afterDocument,
       contents: serializedAfter,
     });
-    let effectiveTargetItemPath = targetItemPath;
-    let effectiveSerializedAfter = serializedAfter;
-    let skipItemWrite = false;
-    if (
-      serviceWriteOverride.handled &&
-      typeof serviceWriteOverride.result === "object" &&
-      serviceWriteOverride.result !== null
-    ) {
-      const overrideRecord = serviceWriteOverride.result as {
-        target_item_path?: unknown;
-        contents?: unknown;
-        skip_write?: unknown;
-      };
-      if (typeof overrideRecord.target_item_path === "string" && overrideRecord.target_item_path.trim().length > 0) {
-        effectiveTargetItemPath = overrideRecord.target_item_path;
-      }
-      if (typeof overrideRecord.contents === "string") {
-        effectiveSerializedAfter = overrideRecord.contents;
-      }
-      if (overrideRecord.skip_write === true) {
-        skipItemWrite = true;
-      }
-    }
+    const { effectiveTargetItemPath, effectiveSerializedAfter, skipItemWrite } = resolveItemStoreWriteOverride(
+      serviceWriteOverride,
+      targetItemPath,
+      serializedAfter,
+    );
 
     if (!skipItemWrite) {
       await writeFileAtomic(effectiveTargetItemPath, effectiveSerializedAfter);
@@ -498,12 +524,12 @@ export async function mutateItem(params: {
     try {
       await appendHistoryEntry(historyPath, entry);
     } catch (error: unknown) {
-      if (!skipItemWrite && effectiveTargetItemPath !== located.itemPath) {
-        await writeFileAtomic(located.itemPath, originalRaw);
-        await fs.rm(effectiveTargetItemPath, { force: true });
-      } else if (!skipItemWrite) {
-        await writeFileAtomic(located.itemPath, originalRaw);
-      }
+      await rollbackMutatedItemWrite({
+        skipItemWrite,
+        effectiveTargetItemPath,
+        originalItemPath: located.itemPath,
+        originalRaw,
+      });
       throw error;
     }
     const hookWarnings = [

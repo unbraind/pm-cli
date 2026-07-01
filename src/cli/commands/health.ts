@@ -307,7 +307,7 @@ async function listItemDocumentPaths(pmRoot: string, typeToFolder: Record<string
 }
 
 function shouldReportHistoryDirectoryUnreadable(error: unknown): boolean {
-  return (error as { code?: string }).code !== "ENOENT";
+  return !(typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "ENOENT");
 }
 
 async function buildIntegrityCheck(

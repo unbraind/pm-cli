@@ -65,6 +65,12 @@ interface HistoryCompactBoundary {
   retainedCount: number;
 }
 
+interface HistoryCompactCurrentItem {
+  loadedItem: Awaited<ReturnType<typeof readLocatedItem>> | null;
+  currentItemRawBeforeLock: string | null;
+  matchedChainBefore: boolean | null;
+}
+
 /**
  * Documents the history compact result payload exchanged by command, SDK, and package integrations.
  */
@@ -232,6 +238,128 @@ function reanchorRetainedEntries(
   };
 }
 
+async function loadHistoryCompactCurrentItem(
+  subject: Awaited<ReturnType<typeof resolveHistorySubject>>,
+  settings: Awaited<ReturnType<typeof readSettings>>,
+  historyEntries: HistoryEntry[],
+): Promise<HistoryCompactCurrentItem> {
+  const loadedItem = subject.located ? await readLocatedItem(subject.located, { schema: settings.schema }) : null;
+  if (!loadedItem) {
+    return { loadedItem: null, currentItemRawBeforeLock: null, matchedChainBefore: null };
+  }
+  return {
+    loadedItem,
+    currentItemRawBeforeLock: loadedItem.raw,
+    matchedChainBefore: replayHash(toReplayDocument(loadedItem.document)) === historyEntries[historyEntries.length - 1]?.after_hash,
+  };
+}
+
+function buildHistoryCompactMessage(options: HistoryCompactCommandOptions, boundary: HistoryCompactBoundary): string {
+  if (typeof options.message === "string" && options.message.trim().length > 0) {
+    return options.message;
+  }
+  if (boundary.raw === null) {
+    return `history-compact compacted full stream (${boundary.compactCount} entr${
+      boundary.compactCount === 1 ? "y" : "ies"
+    }).`;
+  }
+  return `history-compact compacted ${boundary.compactCount} entr${
+    boundary.compactCount === 1 ? "y" : "ies"
+  } before ${boundary.raw}.`;
+}
+
+function buildHistoryCompactBaselineMessage(boundary: HistoryCompactBoundary): string {
+  if (boundary.raw === null) {
+    return `history-compact baseline snapshot after compacting ${boundary.compactCount} entr${
+      boundary.compactCount === 1 ? "y" : "ies"
+    }.`;
+  }
+  return `history-compact baseline snapshot before ${boundary.raw}.`;
+}
+
+function buildHistoryCompactEntries(params: {
+  historyEntries: HistoryEntry[];
+  boundary: HistoryCompactBoundary;
+  changed: boolean;
+  dryRun: boolean;
+  author: string;
+  options: HistoryCompactCommandOptions;
+}): { rewrittenEntries: HistoryEntry[]; baselineEntryAdded: boolean; auditEntryAdded: boolean } {
+  if (!params.changed) {
+    return { rewrittenEntries: params.historyEntries, baselineEntryAdded: false, auditEntryAdded: false };
+  }
+  const { checkpoint, finalReplay } = replayHistoryAndResolveCheckpoint(params.historyEntries, params.boundary.compactCount);
+  const retained = params.historyEntries.slice(params.boundary.compactCount);
+  const reanchored = reanchorRetainedEntries(retained, checkpoint, params.boundary.compactCount);
+  const baselineEntry = createHistoryEntry({
+    nowIso: nowIso(),
+    author: params.author,
+    op: "history_compact_baseline",
+    before: replayToItemDocument(cloneEmptyReplayDocument()),
+    after: replayToItemDocument(checkpoint),
+    message: buildHistoryCompactBaselineMessage(params.boundary),
+  });
+  const rewrittenEntries = [baselineEntry, ...reanchored.entries];
+  if (!params.dryRun) {
+    rewrittenEntries.push(
+      createHistoryEntry({
+        nowIso: nowIso(),
+        author: params.author,
+        op: "history_compact",
+        before: replayToItemDocument(finalReplay),
+        after: replayToItemDocument(finalReplay),
+        message: buildHistoryCompactMessage(params.options, params.boundary),
+      }),
+    );
+  }
+  return { rewrittenEntries, baselineEntryAdded: true, auditEntryAdded: !params.dryRun };
+}
+
+async function applyHistoryCompactRewrite(params: {
+  pmRoot: string;
+  subject: Awaited<ReturnType<typeof resolveHistorySubject>>;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  typeRegistry: ReturnType<typeof resolveItemTypeRegistry>;
+  historyRawBeforeLock: string;
+  currentItemRawBeforeLock: string | null;
+  author: string;
+  force: boolean | undefined;
+  loadedItem: Awaited<ReturnType<typeof readLocatedItem>> | null;
+  historyPath: string;
+  rewrittenEntries: HistoryEntry[];
+}): Promise<string[]> {
+  return executeHistoryRewrite({
+    pmRoot: params.pmRoot,
+    subject: params.subject,
+    settings: params.settings,
+    typeRegistry: params.typeRegistry,
+    historyRawBeforeLock: params.historyRawBeforeLock,
+    currentItemRawBeforeLock: params.currentItemRawBeforeLock,
+    operation: "history-compact",
+    author: params.author,
+    force: params.force,
+    itemDocument: params.loadedItem?.document ?? null,
+    applyRewrite: async ({ historyRawUnderLock }) => {
+      try {
+        await writeFileAtomic(params.historyPath, historyEntriesToRaw(params.rewrittenEntries));
+      } catch (error) {
+        if (historyRawUnderLock === null) {
+          await fs.rm(params.historyPath, { force: true });
+        } else {
+          await writeFileAtomic(params.historyPath, historyRawUnderLock);
+        }
+        throw error;
+      }
+    },
+    applyPostRewrite: async () =>
+      runActiveOnWriteHooks({
+        path: params.historyPath,
+        scope: "project",
+        op: "history_compact:history",
+      }),
+  });
+}
+
 /**
  * Implements run history compact for the public runtime surface of this module.
  */
@@ -275,63 +403,19 @@ export async function runHistoryCompact(
     warnings.push("history_compact_noop_before_boundary");
   }
 
-  const loadedItem = subject.located ? await readLocatedItem(subject.located, { schema: settings.schema }) : null;
-  const currentItemRawBeforeLock = loadedItem?.raw ?? null;
-  const matchedChainBefore =
-    loadedItem === null
-      ? null
-      : replayHash(toReplayDocument(loadedItem.document)) === historyEntries[historyEntries.length - 1]?.after_hash;
-  if (matchedChainBefore === false) {
+  const currentItem = await loadHistoryCompactCurrentItem(subject, settings, historyEntries);
+  if (currentItem.matchedChainBefore === false) {
     warnings.push("history_compact_item_chain_mismatch");
   }
 
-  let rewrittenEntries: HistoryEntry[] = historyEntries;
-  let baselineEntryAdded = false;
-  let auditEntryAdded = false;
-
-  if (changed) {
-    const { checkpoint, finalReplay } = replayHistoryAndResolveCheckpoint(historyEntries, boundary.compactCount);
-    const retained = historyEntries.slice(boundary.compactCount);
-    const reanchored = reanchorRetainedEntries(retained, checkpoint, boundary.compactCount);
-    const baselineEntry = createHistoryEntry({
-      nowIso: nowIso(),
-      author,
-      op: "history_compact_baseline",
-      before: replayToItemDocument(cloneEmptyReplayDocument()),
-      after: replayToItemDocument(checkpoint),
-      message:
-        boundary.raw === null
-          ? `history-compact baseline snapshot after compacting ${boundary.compactCount} entr${
-              boundary.compactCount === 1 ? "y" : "ies"
-            }.`
-          : `history-compact baseline snapshot before ${boundary.raw}.`,
-    });
-    rewrittenEntries = [baselineEntry, ...reanchored.entries];
-    baselineEntryAdded = true;
-    const compactMessage =
-      typeof options.message === "string" && options.message.trim().length > 0
-        ? options.message
-        : boundary.raw === null
-          ? `history-compact compacted full stream (${boundary.compactCount} entr${
-              boundary.compactCount === 1 ? "y" : "ies"
-            }).`
-          : `history-compact compacted ${boundary.compactCount} entr${
-              boundary.compactCount === 1 ? "y" : "ies"
-            } before ${boundary.raw}.`;
-    if (!dryRun) {
-      rewrittenEntries.push(
-        createHistoryEntry({
-          nowIso: nowIso(),
-          author,
-          op: "history_compact",
-          before: replayToItemDocument(finalReplay),
-          after: replayToItemDocument(finalReplay),
-          message: compactMessage,
-        }),
-      );
-      auditEntryAdded = true;
-    }
-  }
+  const { rewrittenEntries, baselineEntryAdded, auditEntryAdded } = buildHistoryCompactEntries({
+    historyEntries,
+    boundary,
+    changed,
+    dryRun,
+    author,
+    options,
+  });
 
   const rewrittenVerify = verifyHistoryChain(rewrittenEntries);
   if (!rewrittenVerify.ok) {
@@ -343,35 +427,18 @@ export async function runHistoryCompact(
 
   if (changed && !dryRun) {
     warnings.push(
-      ...(await executeHistoryRewrite({
+      ...(await applyHistoryCompactRewrite({
         pmRoot,
         subject,
         settings,
         typeRegistry,
         historyRawBeforeLock,
-        currentItemRawBeforeLock,
-        operation: "history-compact",
+        currentItemRawBeforeLock: currentItem.currentItemRawBeforeLock,
         author,
         force: options.force,
-        itemDocument: loadedItem?.document ?? null,
-        applyRewrite: async ({ historyRawUnderLock }) => {
-          try {
-            await writeFileAtomic(historyPath, historyEntriesToRaw(rewrittenEntries));
-          } catch (error) {
-            if (historyRawUnderLock === null) {
-              await fs.rm(historyPath, { force: true });
-            } else {
-              await writeFileAtomic(historyPath, historyRawUnderLock);
-            }
-            throw error;
-          }
-        },
-        applyPostRewrite: async () =>
-          runActiveOnWriteHooks({
-            path: historyPath,
-            scope: "project",
-            op: "history_compact:history",
-          }),
+        loadedItem: currentItem.loadedItem,
+        historyPath,
+        rewrittenEntries,
       })),
     );
   }
@@ -400,7 +467,7 @@ export async function runHistoryCompact(
     item: {
       exists: subject.located !== null,
       path: subject.located?.itemPath ?? null,
-      matched_chain_before: matchedChainBefore,
+      matched_chain_before: currentItem.matchedChainBefore,
     },
     warnings: [...new Set(warnings)].sort((left, right) => left.localeCompare(right)),
     generated_at: nowIso(),
@@ -501,6 +568,119 @@ function countHistoryStreamEntries(raw: string): number {
   return count;
 }
 
+async function collectHistoryCompactBulkCandidates(params: {
+  pmRoot: string;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  typeToFolder: Record<string, string>;
+}): Promise<{ candidates: HistoryCompactBulkCandidate[]; preselectionErrors: HistoryCompactBulkItemResult[] }> {
+  const statusRegistry = resolveRuntimeStatusRegistry(params.settings.schema);
+  const classifier = lifecycleClassifierFromStatusRegistry(statusRegistry);
+  const items = await listAllFrontMatterLight(
+    params.pmRoot,
+    params.settings.item_format,
+    params.typeToFolder,
+    undefined,
+    params.settings.schema,
+  );
+  const bucketById = new Map(items.map((item) => [item.id, classifier.classify(item.status)] as const));
+  const historyDir = path.join(params.pmRoot, "history");
+  const candidates: HistoryCompactBulkCandidate[] = [];
+  const preselectionErrors: HistoryCompactBulkItemResult[] = [];
+  if (!(await pathExists(historyDir))) {
+    return { candidates, preselectionErrors };
+  }
+  const historyFiles = (await fs.readdir(historyDir))
+    .filter((entry) => entry.endsWith(".jsonl"))
+    .sort((left, right) => left.localeCompare(right));
+  for (const fileName of historyFiles) {
+    const historyPath = path.join(historyDir, fileName);
+    const id = fileName.slice(0, -".jsonl".length);
+    try {
+      const raw = await fs.readFile(historyPath, "utf8");
+      await runActiveOnReadHooks({ path: historyPath, scope: "project" });
+      candidates.push({ id, entries: countHistoryStreamEntries(raw), bucket: bucketById.get(id) ?? null });
+    } catch (error) {
+      preselectionErrors.push({
+        id,
+        outcome: "errored",
+        entries_before: 0,
+        entries_after: null,
+        skip_reason: null,
+        changed: false,
+        /* c8 ignore next -- non-Error throws are normalized in defensive fallback. */
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  return { candidates, preselectionErrors };
+}
+
+async function runHistoryCompactBulkRow(params: {
+  row: ReturnType<typeof selectHistoryCompactBulkTargets>[number];
+  options: HistoryCompactBulkCommandOptions;
+  dryRun: boolean;
+  global: GlobalOptions;
+}): Promise<{ result: HistoryCompactBulkItemResult; selected: boolean; compacted: boolean; errored: boolean }> {
+  if (!params.row.selected) {
+    return {
+      selected: false,
+      compacted: false,
+      errored: false,
+      result: {
+        id: params.row.id,
+        outcome: "skipped",
+        entries_before: params.row.entries,
+        entries_after: null,
+        skip_reason: params.row.skip_reason,
+        changed: false,
+        error: null,
+      },
+    };
+  }
+  try {
+    const result = await runHistoryCompact(
+      params.row.id,
+      {
+        dryRun: params.dryRun,
+        author: params.options.author,
+        message: params.options.message,
+        force: params.options.force,
+      },
+      params.global,
+    );
+    return {
+      selected: true,
+      compacted: true,
+      errored: false,
+      result: {
+        id: params.row.id,
+        outcome: "compacted",
+        entries_before: params.row.entries,
+        entries_after: result.history.entries_after,
+        skip_reason: null,
+        changed: result.changed,
+        error: null,
+      },
+    };
+  } catch (error) {
+    return {
+      selected: true,
+      compacted: false,
+      errored: true,
+      result: {
+        id: params.row.id,
+        outcome: "errored",
+        entries_before: params.row.entries,
+        entries_after: null,
+        skip_reason: null,
+        changed: false,
+        /* c8 ignore next -- non-Error throws are normalized in defensive fallback. */
+        error: error instanceof Error ? error.message : String(error),
+      },
+    };
+  }
+}
+
 /**
  * Bulk history compaction: compact every history stream matching the requested
  * selection (explicit `--ids`, a `--scope` lifecycle filter, and/or an
@@ -524,41 +704,11 @@ export async function runHistoryCompactBulk(
 
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-  const classifier = lifecycleClassifierFromStatusRegistry(statusRegistry);
-  const items = await listAllFrontMatterLight(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema);
-  const bucketById = new Map(items.map((item) => [item.id, classifier.classify(item.status)] as const));
-
-  const historyDir = path.join(pmRoot, "history");
-  const candidates: HistoryCompactBulkCandidate[] = [];
-  // A stream that cannot be read during enumeration is isolated as an errored
-  // row (mirroring per-stream compaction failures) rather than aborting the pass.
-  const preselectionErrors: HistoryCompactBulkItemResult[] = [];
-  if (await pathExists(historyDir)) {
-    const historyFiles = (await fs.readdir(historyDir))
-      .filter((entry) => entry.endsWith(".jsonl"))
-      .sort((left, right) => left.localeCompare(right));
-    for (const fileName of historyFiles) {
-      const historyPath = path.join(historyDir, fileName);
-      const id = fileName.slice(0, -".jsonl".length);
-      try {
-        const raw = await fs.readFile(historyPath, "utf8");
-        await runActiveOnReadHooks({ path: historyPath, scope: "project" });
-        candidates.push({ id, entries: countHistoryStreamEntries(raw), bucket: bucketById.get(id) ?? null });
-      } catch (error) {
-        preselectionErrors.push({
-          id,
-          outcome: "errored",
-          entries_before: 0,
-          entries_after: null,
-          skip_reason: null,
-          changed: false,
-          /* c8 ignore next -- non-Error throws are normalized in defensive fallback. */
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    }
-  }
+  const { candidates, preselectionErrors } = await collectHistoryCompactBulkCandidates({
+    pmRoot,
+    settings,
+    typeToFolder: typeRegistry.type_to_folder,
+  });
 
   const mode: "ids" | "scan" = options.ids !== undefined && options.ids.length > 0 ? "ids" : "scan";
   const minEntries = options.minEntries ?? HISTORY_COMPACT_BULK_DEFAULT_MIN_ENTRIES;
@@ -583,53 +733,18 @@ export async function runHistoryCompactBulk(
     items_errored: preselectionErrors.length,
   };
   for (const row of selection) {
-    if (!row.selected) {
+    const outcome = await runHistoryCompactBulkRow({ row, options, dryRun, global });
+    results.push(outcome.result);
+    if (!outcome.selected) {
       totals.items_skipped += 1;
-      results.push({
-        id: row.id,
-        outcome: "skipped",
-        entries_before: row.entries,
-        entries_after: null,
-        skip_reason: row.skip_reason,
-        changed: false,
-        error: null,
-      });
       continue;
     }
     totals.selected += 1;
-    try {
-      const result = await runHistoryCompact(
-        row.id,
-        {
-          dryRun,
-          author: options.author,
-          message: options.message,
-          force: options.force,
-        },
-        global,
-      );
+    if (outcome.compacted) {
       totals.items_compacted += 1;
-      results.push({
-        id: row.id,
-        outcome: "compacted",
-        entries_before: row.entries,
-        entries_after: result.history.entries_after,
-        skip_reason: null,
-        changed: result.changed,
-        error: null,
-      });
-    } catch (error) {
+    }
+    if (outcome.errored) {
       totals.items_errored += 1;
-      results.push({
-        id: row.id,
-        outcome: "errored",
-        entries_before: row.entries,
-        entries_after: null,
-        skip_reason: null,
-        changed: false,
-        /* c8 ignore next -- non-Error throws are normalized in defensive fallback. */
-        error: error instanceof Error ? error.message : String(error),
-      });
     }
   }
 

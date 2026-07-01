@@ -371,6 +371,30 @@ describe("runBeadsImport", () => {
     });
   });
 
+  it("drops negative numeric linked-test timeouts during import", async () => {
+    await withTempPmPath(async (context) => {
+      const sourcePath = path.join(context.tempRoot, "negative-timeout.jsonl");
+      await writeFile(
+        sourcePath,
+        `${JSON.stringify({
+          id: "negative-timeout",
+          title: "Negative timeout import",
+          tests: [{ command: "pnpm test", timeout_seconds: -5, note: "negative timeout must be ignored" }],
+        })}\n`,
+        "utf8",
+      );
+
+      const result = await runBeadsImport({ file: sourcePath }, { path: context.pmPath });
+      expect(result.imported).toBe(1);
+
+      const imported = context.runCli(["get", "pm-negative-timeout", "--full", "--json"], { expectJson: true });
+      expect(imported.code).toBe(0);
+      expect((imported.json as { item: { tests?: Array<{ timeout_seconds?: number }> } }).item.tests).toEqual([
+        { command: "pnpm test", scope: "project", note: "negative timeout must be ignored" },
+      ]);
+    });
+  });
+
   it("maps additional Beads dependency kind aliases deterministically", async () => {
     await withTempPmPath(async (context) => {
       const sourcePath = path.join(context.tempRoot, "dependency-aliases.jsonl");

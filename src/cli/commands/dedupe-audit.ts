@@ -387,6 +387,60 @@ function compareClusters(left: DedupeAuditCluster, right: DedupeAuditCluster): n
   return left.canonical.id.localeCompare(right.canonical.id);
 }
 
+function collectDedupeClusters(
+  mode: DedupeAuditMode,
+  prepared: DedupeAuditPreparedCandidate[],
+  fuzzyThreshold: number,
+): DedupeAuditCluster[] {
+  if (mode === "title_exact") {
+    return collectExactTitleClusters(prepared);
+  }
+  if (mode === "parent_scope") {
+    return collectParentScopedClusters(prepared);
+  }
+  return collectFuzzyTitleClusters(prepared, fuzzyThreshold);
+}
+
+function toPreparedDedupeCandidate(item: Awaited<ReturnType<typeof runList>>["items"][number]): DedupeAuditPreparedCandidate {
+  return {
+    id: item.id,
+    title: item.title,
+    type: item.type,
+    status: item.status,
+    parent: item.parent ?? null,
+    priority: item.priority,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+    normalized_title: normalizeLowercaseWhitespace(item.title),
+    title_tokens: tokenizeAlphaNumeric(item.title),
+  };
+}
+
+function buildDedupeAuditFilters(params: {
+  mode: DedupeAuditMode;
+  status: ItemStatus | undefined;
+  options: DedupeAuditOptions;
+  limit: number | undefined;
+  fuzzyThreshold: number;
+}): DedupeAuditResult["filters"] {
+  return {
+    mode: params.mode,
+    status: params.status ?? null,
+    type: params.options.type ?? null,
+    tag: params.options.tag ?? null,
+    priority: params.options.priority ?? null,
+    deadline_before: params.options.deadlineBefore ?? null,
+    deadline_after: params.options.deadlineAfter ?? null,
+    assignee: params.options.assignee ?? null,
+    assignee_filter: params.options.assigneeFilter ?? null,
+    parent: params.options.parent ?? null,
+    sprint: params.options.sprint ?? null,
+    release: params.options.release ?? null,
+    limit: params.limit ?? null,
+    threshold: params.mode === "title_fuzzy" ? params.fuzzyThreshold : null,
+  };
+}
+
 /**
  * Implements run dedupe audit for the public runtime surface of this module.
  */
@@ -409,28 +463,9 @@ export async function runDedupeAudit(options: DedupeAuditOptions, global: Global
     global,
   );
 
-  const prepared: DedupeAuditPreparedCandidate[] = listed.items.map((item) => ({
-    id: item.id,
-    title: item.title,
-    type: item.type,
-    status: item.status,
-    parent: item.parent ?? null,
-    priority: item.priority,
-    created_at: item.created_at,
-    updated_at: item.updated_at,
-    normalized_title: normalizeLowercaseWhitespace(item.title),
-    title_tokens: tokenizeAlphaNumeric(item.title),
-  }));
+  const prepared = listed.items.map((item) => toPreparedDedupeCandidate(item));
 
-  const clusters = (() => {
-    if (mode === "title_exact") {
-      return collectExactTitleClusters(prepared);
-    }
-    if (mode === "parent_scope") {
-      return collectParentScopedClusters(prepared);
-    }
-    return collectFuzzyTitleClusters(prepared, fuzzyThreshold);
-  })();
+  const clusters = collectDedupeClusters(mode, prepared, fuzzyThreshold);
 
   const sortedClusters = clusters.sort(compareClusters);
   const limitedClusters = limit === undefined ? sortedClusters : sortedClusters.slice(0, limit);
@@ -448,22 +483,7 @@ export async function runDedupeAudit(options: DedupeAuditOptions, global: Global
       duplicate_candidates: duplicateCandidates,
       merge_suggestions: mergeSuggestions,
     },
-    filters: {
-      mode,
-      status: status ?? null,
-      type: options.type ?? null,
-      tag: options.tag ?? null,
-      priority: options.priority ?? null,
-      deadline_before: options.deadlineBefore ?? null,
-      deadline_after: options.deadlineAfter ?? null,
-      assignee: options.assignee ?? null,
-      assignee_filter: options.assigneeFilter ?? null,
-      parent: options.parent ?? null,
-      sprint: options.sprint ?? null,
-      release: options.release ?? null,
-      limit: limit ?? null,
-      threshold: mode === "title_fuzzy" ? fuzzyThreshold : null,
-    },
+    filters: buildDedupeAuditFilters({ mode, status, options, limit, fuzzyThreshold }),
     now: nowIso(),
     /* c8 ignore next -- warnings are omitted when undefined to keep stable result payloads. */
     ...(warnings ? { warnings } : {}),

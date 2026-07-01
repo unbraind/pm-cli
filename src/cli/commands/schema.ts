@@ -778,6 +778,39 @@ function toSchemaFieldSummary(field: ReturnType<typeof resolveRuntimeFieldRegist
   };
 }
 
+function toExistingStatusDefinition(
+  resolvedExisting: ReturnType<typeof resolveRuntimeStatusRegistry>["definitions"][number] | undefined,
+): RuntimeStatusDefinition | undefined {
+  if (!resolvedExisting) {
+    return undefined;
+  }
+  return {
+    id: resolvedExisting.id,
+    ...(resolvedExisting.roles.length > 0 ? { roles: [...resolvedExisting.roles] } : {}),
+    ...(resolvedExisting.aliases.length > 0 ? { aliases: [...resolvedExisting.aliases] } : {}),
+    ...(resolvedExisting.description ? { description: resolvedExisting.description } : {}),
+    ...(typeof resolvedExisting.order === "number" ? { order: resolvedExisting.order } : {}),
+  };
+}
+
+function buildStatusFileAliasMap(statuses: RuntimeStatusDefinition[]): Map<string, string> {
+  const fileAliasToId = new Map<string, string>();
+  for (const definition of statuses) {
+    const defId = normalizeStatusToken(definition.id);
+    if (defId.length === 0) {
+      continue;
+    }
+    fileAliasToId.set(defId, defId);
+    for (const alias of Array.isArray(definition.aliases) ? definition.aliases : []) {
+      const aliasToken = normalizeStatusToken(alias);
+      if (aliasToken.length > 0 && !fileAliasToId.has(aliasToken)) {
+        fileAliasToId.set(aliasToken, defId);
+      }
+    }
+  }
+  return fileAliasToId;
+}
+
 /**
  * Implements run schema add status for the public runtime surface of this module.
  */
@@ -818,20 +851,7 @@ export async function runSchemaAddStatus(
   // Seed the upsert from the resolved (settings-or-file) definition so omitting
   // --role/--alias preserves metadata defined in settings.schema.statuses, not
   // only what is already in statuses.json.
-  const resolvedExisting = statusRegistry.by_id.get(normalized.id);
-  const baseDefinition: RuntimeStatusDefinition | undefined = resolvedExisting
-    ? {
-        id: resolvedExisting.id,
-        ...(Array.isArray(resolvedExisting.roles) && resolvedExisting.roles.length > 0
-          ? { roles: [...resolvedExisting.roles] }
-          : {}),
-        ...(Array.isArray(resolvedExisting.aliases) && resolvedExisting.aliases.length > 0
-          ? { aliases: [...resolvedExisting.aliases] }
-          : {}),
-        ...(resolvedExisting.description ? { description: resolvedExisting.description } : {}),
-        ...(typeof resolvedExisting.order === "number" ? { order: resolvedExisting.order } : {}),
-      }
-    : undefined;
+  const baseDefinition = toExistingStatusDefinition(statusRegistry.by_id.get(normalized.id));
 
   const warnings: string[] = [];
   const author = toAuthor(options.author, settings.author_default);
@@ -858,20 +878,7 @@ export async function runSchemaAddStatus(
     // check used the registry loaded before acquiring schema-statuses, so a
     // concurrent add-status could have written a colliding id/alias in between.
     // The lock serializes writes; this serializes the collision decision too.
-    const fileAliasToId = new Map<string, string>();
-    for (const definition of parsed.statuses) {
-      const defId = normalizeStatusToken(definition.id);
-      if (defId.length === 0) {
-        continue;
-      }
-      fileAliasToId.set(defId, defId);
-      for (const alias of Array.isArray(definition.aliases) ? definition.aliases : []) {
-        const aliasToken = normalizeStatusToken(alias);
-        if (aliasToken.length > 0 && !fileAliasToId.has(aliasToken)) {
-          fileAliasToId.set(aliasToken, defId);
-        }
-      }
-    }
+    const fileAliasToId = buildStatusFileAliasMap(parsed.statuses);
     try {
       assertStatusTokensAvailable(normalized, fileAliasToId);
     } catch (error) {

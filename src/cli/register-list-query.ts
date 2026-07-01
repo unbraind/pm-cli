@@ -91,6 +91,97 @@ function resolveReadCommandOutputFormat(
   };
 }
 
+function applyDefaultBriefListMode(
+  listOptions: ReturnType<typeof normalizeListOptions>,
+  defaultBrief: boolean | undefined,
+): void {
+  if (
+    defaultBrief === true &&
+    listOptions.includeBody !== true &&
+    listOptions.compact !== true &&
+    listOptions.brief !== true &&
+    listOptions.full !== true &&
+    listOptions.fields === undefined
+  ) {
+    listOptions.brief = true;
+  }
+}
+
+function addHiddenOption(command: Command, flags: string, description: string): void {
+  command.addOption(new Option(flags, description).hideHelp());
+}
+
+function registerContentAndGovernanceFilters(command: Command): void {
+  command
+    .option("--has-notes", "Show only items that have notes")
+    .option("--has-learnings", "Show only items that have learnings")
+    .option("--has-files", "Show only items that have linked files")
+    .option("--has-docs", "Show only items that have linked docs")
+    .option("--has-tests", "Show only items that have linked tests")
+    .option("--has-comments", "Show only items that have comments")
+    .option("--has-deps", "Show only items that have dependencies")
+    .option("--has-body", "Show only items that have a non-empty body")
+    .option("--has-linked-command", "Show only items whose linked tests carry a runnable command")
+    .option("--no-notes", "Show only items that have no notes")
+    .option("--no-learnings", "Show only items that have no learnings")
+    .option("--no-files", "Show only items that have no linked files")
+    .option("--no-docs", "Show only items that have no linked docs")
+    .option("--no-tests", "Show only items that have no linked tests")
+    .option("--no-comments", "Show only items that have no comments")
+    .option("--no-deps", "Show only items that have no dependencies")
+    .option("--empty-body", "Show only items with an empty body")
+    .option("--no-linked-command", "Show only items whose linked tests carry no runnable command")
+    .option("--filter-reviewer-missing", "Show only items missing reviewer")
+    .option("--filter-risk-missing", "Show only items missing risk")
+    .option("--filter-confidence-missing", "Show only items missing confidence")
+    .option("--filter-sprint-missing", "Show only items missing sprint")
+    .option("--filter-release-missing", "Show only items missing release");
+}
+
+async function runRegisteredListCommand(params: {
+  name: string;
+  status?: ItemStatus;
+  excludeTerminal?: boolean;
+  defaultBrief?: boolean;
+  options: Record<string, unknown>;
+  actionCommand: Command;
+}): Promise<void> {
+  const globalOptions = getGlobalOptions(params.actionCommand);
+  const startedAt = Date.now();
+  const listOptions = normalizeListOptions(params.options);
+  applyDefaultBriefListMode(listOptions, params.defaultBrief);
+  if (params.excludeTerminal) listOptions.excludeTerminal = true;
+  const { runList } = await import("./commands/list.js");
+  const result = await runList(params.status, listOptions, globalOptions);
+  const streamMode = params.options.stream === true;
+  const listFormat = parseListFormat(params.options.format);
+  const tabular = listFormat === "csv" || listFormat === "table";
+  const effectiveGlobal =
+    listFormat === "json" || listFormat === "toon"
+      ? resolveReadCommandOutputFormat("List", params.options.format, globalOptions)
+      : globalOptions;
+  if (streamMode && !effectiveGlobal.json) {
+    throw new PmCliError("--stream requires --json output mode.", EXIT_CODE.USAGE);
+  }
+  if (tabular && streamMode) {
+    throw new PmCliError("--format csv|table cannot be combined with --stream (line-delimited JSON).", EXIT_CODE.USAGE);
+  }
+  if (tabular) {
+    const rows = result.items as Array<Record<string, unknown>>;
+    const rendered = listFormat === "csv" ? renderRowsAsCsv(rows) : renderRowsAsTable(rows);
+    if (!effectiveGlobal.quiet && rendered.length > 0) {
+      writeStdout(`${rendered}\n`);
+    }
+  } else if (streamMode) {
+    printListJsonStream(params.name, result, effectiveGlobal);
+  } else {
+    printResult(result, effectiveGlobal);
+  }
+  if (globalOptions.profile) {
+    printError(`profile:command=${params.name} took_ms=${Date.now() - startedAt}`);
+  }
+}
+
 /**
  * Implements register list query commands for the public runtime surface of this module.
  */
@@ -102,43 +193,6 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
   // (e.g. --assignee_filter for --assignee-filter) so they no longer bloat
   // --help output. The option still appears in command.options, so JSON help
   // and completion are unchanged.
-  function addHiddenOption(command: Command, flags: string, description: string): void {
-    command.addOption(new Option(flags, description).hideHelp());
-  }
-
-  // Register the content-field presence/absence filters (GH-242) and the
-  // governance-missing filters (GH-236) on a list-family or search command.
-  // Presence flags are plain booleans; absence flags use commander negation
-  // (`--no-notes` stores notes=false) except `--empty-body` which is its own
-  // dest so it composes with a future `--has-body`. linked_command tracks
-  // whether a linked test carries a runnable command.
-  function registerContentAndGovernanceFilters(command: Command): void {
-    command
-      .option("--has-notes", "Show only items that have notes")
-      .option("--has-learnings", "Show only items that have learnings")
-      .option("--has-files", "Show only items that have linked files")
-      .option("--has-docs", "Show only items that have linked docs")
-      .option("--has-tests", "Show only items that have linked tests")
-      .option("--has-comments", "Show only items that have comments")
-      .option("--has-deps", "Show only items that have dependencies")
-      .option("--has-body", "Show only items that have a non-empty body")
-      .option("--has-linked-command", "Show only items whose linked tests carry a runnable command")
-      .option("--no-notes", "Show only items that have no notes")
-      .option("--no-learnings", "Show only items that have no learnings")
-      .option("--no-files", "Show only items that have no linked files")
-      .option("--no-docs", "Show only items that have no linked docs")
-      .option("--no-tests", "Show only items that have no linked tests")
-      .option("--no-comments", "Show only items that have no comments")
-      .option("--no-deps", "Show only items that have no dependencies")
-      .option("--empty-body", "Show only items with an empty body")
-      .option("--no-linked-command", "Show only items whose linked tests carry no runnable command")
-      .option("--filter-reviewer-missing", "Show only items missing reviewer")
-      .option("--filter-risk-missing", "Show only items missing risk")
-      .option("--filter-confidence-missing", "Show only items missing confidence")
-      .option("--filter-sprint-missing", "Show only items missing sprint")
-      .option("--filter-release-missing", "Show only items missing release");
-  }
-
   function registerListCommand(
     name: string,
     description: string,
@@ -191,51 +245,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
     registerContentAndGovernanceFilters(command);
     command
       .action(async (options: Record<string, unknown>, actionCommand) => {
-        const globalOptions = getGlobalOptions(actionCommand);
-        const startedAt = Date.now();
-        const listOptions = normalizeListOptions(options);
-        if (
-          defaultBrief === true &&
-          listOptions.includeBody !== true &&
-          listOptions.compact !== true &&
-          listOptions.brief !== true &&
-          listOptions.full !== true &&
-          listOptions.fields === undefined
-        ) {
-          listOptions.brief = true;
-        }
-        if (excludeTerminal) listOptions.excludeTerminal = true;
-        const { runList } = await import("./commands/list.js");
-        const result = await runList(status, listOptions, globalOptions);
-        const streamMode = options.stream === true;
-        const listFormat = parseListFormat(options.format);
-        const tabular = listFormat === "csv" || listFormat === "table";
-        // json|toon reuse the shared read-command override (honours the
-        // --json + --format toon conflict); csv|table are human render modes.
-        const effectiveGlobal =
-          listFormat === "json" || listFormat === "toon"
-            ? resolveReadCommandOutputFormat("List", options.format, globalOptions)
-            : globalOptions;
-        if (streamMode && !effectiveGlobal.json) {
-          throw new PmCliError("--stream requires --json output mode.", EXIT_CODE.USAGE);
-        }
-        if (tabular && streamMode) {
-          throw new PmCliError("--format csv|table cannot be combined with --stream (line-delimited JSON).", EXIT_CODE.USAGE);
-        }
-        if (tabular) {
-          const rows = result.items as Array<Record<string, unknown>>;
-          const rendered = listFormat === "csv" ? renderRowsAsCsv(rows) : renderRowsAsTable(rows);
-          if (!effectiveGlobal.quiet && rendered.length > 0) {
-            writeStdout(`${rendered}\n`);
-          }
-        } else if (streamMode) {
-          printListJsonStream(name, result, effectiveGlobal);
-        } else {
-          printResult(result, effectiveGlobal);
-        }
-        if (globalOptions.profile) {
-          printError(`profile:command=${name} took_ms=${Date.now() - startedAt}`);
-        }
+        await runRegisteredListCommand({ name, status, excludeTerminal, defaultBrief, options, actionCommand });
       });
     // Positive alias for --no-truncate (Commander stores the negation as truncate=false).
     addHiddenOption(command, "--all", "Alias for --no-truncate");
@@ -247,29 +257,34 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
     addHiddenOption(command, "--filter-estimate-missing", "Alias for --filter-estimates-missing");
   }
 
-  if (shouldRegister("list")) {
-    registerListCommand("list", "List active items with optional filters.", undefined, true, true, true);
-  }
-  if (shouldRegister("list-all")) {
-    registerListCommand("list-all", "List all items with optional filters.", undefined, false, true);
-  }
-  if (shouldRegister("list-draft")) {
-    registerListCommand("list-draft", "List draft items with optional filters.", "draft");
-  }
-  if (shouldRegister("list-open")) {
-    registerListCommand("list-open", "List open items with optional filters.", "open", false, false, true);
-  }
-  if (shouldRegister("list-in-progress")) {
-    registerListCommand("list-in-progress", "List in-progress items with optional filters.", "in_progress", false, false, true);
-  }
-  if (shouldRegister("list-blocked")) {
-    registerListCommand("list-blocked", "List blocked items with optional filters.", "blocked", false, false, true);
-  }
-  if (shouldRegister("list-closed")) {
-    registerListCommand("list-closed", "List closed items with optional filters.", "closed");
-  }
-  if (shouldRegister("list-canceled")) {
-    registerListCommand("list-canceled", "List canceled items with optional filters.", "canceled");
+  const listCommandDescriptors: Array<{
+    name: string;
+    description: string;
+    status?: ItemStatus;
+    excludeTerminal?: boolean;
+    allowStatusFilter?: boolean;
+    defaultBrief?: boolean;
+  }> = [
+    { name: "list", description: "List active items with optional filters.", excludeTerminal: true, allowStatusFilter: true, defaultBrief: true },
+    { name: "list-all", description: "List all items with optional filters.", excludeTerminal: false, allowStatusFilter: true },
+    { name: "list-draft", description: "List draft items with optional filters.", status: "draft" },
+    { name: "list-open", description: "List open items with optional filters.", status: "open", excludeTerminal: false, allowStatusFilter: false, defaultBrief: true },
+    { name: "list-in-progress", description: "List in-progress items with optional filters.", status: "in_progress", excludeTerminal: false, allowStatusFilter: false, defaultBrief: true },
+    { name: "list-blocked", description: "List blocked items with optional filters.", status: "blocked", excludeTerminal: false, allowStatusFilter: false, defaultBrief: true },
+    { name: "list-closed", description: "List closed items with optional filters.", status: "closed" },
+    { name: "list-canceled", description: "List canceled items with optional filters.", status: "canceled" },
+  ];
+  for (const descriptor of listCommandDescriptors) {
+    if (shouldRegister(descriptor.name)) {
+      registerListCommand(
+        descriptor.name,
+        descriptor.description,
+        descriptor.status,
+        descriptor.excludeTerminal,
+        descriptor.allowStatusFilter,
+        descriptor.defaultBrief,
+      );
+    }
   }
 
   if (shouldRegister("aggregate")) {

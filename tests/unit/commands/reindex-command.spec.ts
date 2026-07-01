@@ -274,6 +274,47 @@ describe("runReindex", () => {
         "search_semantic_reindex_reset_skipped:adapter=ext-vector:known_ids=1",
         "search_semantic_reindex_orphan_prune_skipped:adapter=ext-vector:count=1",
       ]);
+      const builtInVectorSummary = {
+        enabled: true,
+        stale_items: 0,
+        unchanged_items: 0,
+        embedded_items: 0,
+        vector_upserted: 0,
+        batches_completed: 0,
+      };
+      const builtInVectorPath = path.join(context.pmPath, "unit-vector-store");
+      await reindexInternals.upsertReindexVectors({
+        requestedMode: "semantic",
+        activeVectorStore: { name: "lancedb", path: builtInVectorPath },
+        extensionVectorAdapter: null,
+        settings,
+        points: [
+          {
+            id: "pm-vector",
+            vector: [1, 2, 3],
+            payload: { id: "pm-vector" },
+          },
+        ],
+        semanticWarnings: [],
+        semanticSummary: builtInVectorSummary,
+        progressEnabled: false,
+      });
+      expect(builtInVectorSummary.vector_upserted).toBe(1);
+      await expect(readLocalVectorSnapshot(builtInVectorPath)).resolves.toMatchObject({
+        records: [{ id: "pm-vector", vector: [1, 2, 3], payload: { id: "pm-vector" } }],
+      });
+      await expect(
+        reindexInternals.upsertReindexVectors({
+          requestedMode: "semantic",
+          activeVectorStore: null,
+          extensionVectorAdapter: null,
+          settings,
+          points: [],
+          semanticWarnings: [],
+          semanticSummary: builtInVectorSummary,
+          progressEnabled: false,
+        }),
+      ).rejects.toThrow("No vector upsert executor available");
 
       await expect(
         reindexInternals.resetVectorStoreForReindex(

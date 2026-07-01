@@ -140,7 +140,7 @@ describe("release automation contract", () => {
     expect(gateSource).toMatch(/lastSeen:-\$\{windowDays\}d/);
     expect(gateSource).toContain('"sentry-window-days"');
     expect(gateSource).toContain("buildSentryGateQuery(sentryWindowDays)");
-    expect(gateSource).toContain("window_days: sentryWindowDays");
+    expect(gateSource).toContain("window_days: params.sentryWindowDays");
 
     // The release + auto-release surfaces invoke the gate with an explicit window.
     const releaseWorkflow = await readFile(path.join(repoRoot, ".github/workflows/release.yml"), "utf8");
@@ -198,9 +198,9 @@ describe("release automation contract", () => {
     expect(pipelineSource).toContain("replace");
     expect(pipelineSource).toContain("--release-version");
     expect(pipelineSource).toContain("--all-release-tags");
-    expect(pipelineSource).toContain("ensureGeneratedReleaseSectionHasContent(targetVersion, generatedChangelogPath)");
+    expect(pipelineSource).toContain("ensureGeneratedReleaseSectionHasContent(params.targetVersion, generatedChangelogPath)");
     expect(pipelineSource).toContain("empty_generated_changelog_section_for_target_version");
-    expect(pipelineSource).toContain('"add", "package.json", "CHANGELOG.md"');
+    expect(pipelineSource).toContain('git(["add", "package.json", "CHANGELOG.md"])');
     expect(pipelineSource).not.toContain("CHANGELOG.pm.md");
   });
 

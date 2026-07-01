@@ -167,6 +167,112 @@ async function loadItem(
   return { id: located.id, title: loaded.document.metadata.title, metadata: loaded.document.metadata };
 }
 
+function buildChildrenByParentForDedupeMerge(
+  items: Awaited<ReturnType<typeof runList>>["items"],
+  statusRegistry: ReturnType<typeof resolveRuntimeStatusRegistry>,
+): Map<string, { id: string; title: string; terminal: boolean }[]> {
+  const childrenByParent = new Map<string, { id: string; title: string; terminal: boolean }[]>();
+  for (const item of items) {
+    const parent = item.parent?.trim();
+    if (!parent) {
+      continue;
+    }
+    const bucket = childrenByParent.get(parent) ?? [];
+    bucket.push({ id: item.id, title: item.title, terminal: isTerminalStatus(item.status, statusRegistry) });
+    childrenByParent.set(parent, bucket);
+  }
+  return childrenByParent;
+}
+
+async function applyDedupeMergeReparents(params: {
+  children: { id: string; title: string; terminal: boolean }[];
+  duplicateId: string;
+  keep: string;
+  apply: boolean;
+  options: DedupeMergeOptions;
+  global: GlobalOptions;
+  warnings: string[];
+}): Promise<{
+  reparented: DedupeMergeChildReparent[];
+  skippedChildren: { child_id: string; child_title: string; reason: "terminal" }[];
+}> {
+  const reparentTargets = params.options.reparentChildren !== false ? params.children.filter((child) => !child.terminal) : [];
+  const skippedChildren = (params.options.reparentChildren !== false ? params.children.filter((child) => child.terminal) : []).map((child) => ({
+    child_id: child.id,
+    child_title: child.title,
+    reason: "terminal" as const,
+  }));
+  const reparented: DedupeMergeChildReparent[] = [];
+  for (const child of reparentTargets) {
+    const record: DedupeMergeChildReparent = {
+      child_id: child.id,
+      child_title: child.title,
+      from_parent: params.duplicateId,
+      to_parent: params.keep,
+      applied: false,
+    };
+    if (params.apply) {
+      try {
+        await runUpdate(
+          child.id,
+          {
+            parent: params.keep,
+            author: params.options.author,
+            message: params.options.message ?? `dedupe-merge: re-parent from ${params.duplicateId} to ${params.keep}`,
+          },
+          params.global,
+        );
+        record.applied = true;
+      } catch (error) {
+        params.warnings.push(`reparent_failed:${child.id}:${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+    reparented.push(record);
+  }
+  return { reparented, skippedChildren };
+}
+
+async function applyDedupeMergeClose(params: {
+  duplicate: ResolvedItem;
+  keep: string;
+  apply: boolean;
+  options: DedupeMergeOptions;
+  global: GlobalOptions;
+  statusRegistry: ReturnType<typeof resolveRuntimeStatusRegistry>;
+  warnings: string[];
+}): Promise<DedupeMergeCloseAction> {
+  const reason = `Duplicate of ${params.keep}`;
+  const close: DedupeMergeCloseAction = { duplicate_of: params.keep, reason, applied: false };
+  if (isTerminalStatus(params.duplicate.metadata.status, params.statusRegistry)) {
+    close.skipped_reason = "already_terminal";
+    if (params.duplicate.metadata.duplicate_of?.trim() !== params.keep) {
+      params.warnings.push(`close_skipped_terminal:${params.duplicate.id}:already_closed`);
+    }
+    return close;
+  }
+  if (!params.apply) {
+    close.skipped_reason = "dry_run";
+    return close;
+  }
+  try {
+    await runClose(
+      params.duplicate.id,
+      undefined,
+      {
+        duplicateOf: params.keep,
+        author: params.options.author,
+        message: params.options.message ?? `dedupe-merge: close ${params.duplicate.id} as duplicate of ${params.keep}`,
+      },
+      params.global,
+    );
+    close.applied = true;
+  } catch (error) {
+    close.skipped_reason = "failed";
+    params.warnings.push(`close_failed:${params.duplicate.id}:${error instanceof Error ? error.message : String(error)}`);
+  }
+  return close;
+}
+
 /**
  * Implements run dedupe merge for the public runtime surface of this module.
  */
@@ -179,7 +285,6 @@ export async function runDedupeMerge(options: DedupeMergeOptions, global: Global
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const keep = parseRequiredId(options.keep, "--keep");
   const duplicateIds = parseDuplicateIds(options.close, keep);
-  const reparentChildren = options.reparentChildren !== false;
   // Explicit dry-run always wins over apply so a preview can be forced safely.
   const apply = options.apply === true && options.dryRun !== true;
 
@@ -194,16 +299,7 @@ export async function runDedupeMerge(options: DedupeMergeOptions, global: Global
   // A single full listing supplies every child lookup without re-reading the
   // corpus per duplicate.
   const corpus = await runList(undefined, {}, global);
-  const childrenByParent = new Map<string, { id: string; title: string; terminal: boolean }[]>();
-  for (const item of corpus.items) {
-    const parent = item.parent?.trim();
-    if (!parent) {
-      continue;
-    }
-    const bucket = childrenByParent.get(parent) ?? [];
-    bucket.push({ id: item.id, title: item.title, terminal: isTerminalStatus(item.status, statusRegistry) });
-    childrenByParent.set(parent, bucket);
-  }
+  const childrenByParent = buildChildrenByParentForDedupeMerge(corpus.items, statusRegistry);
 
   const warnings: string[] = [];
   const outcomes: DedupeMergeDuplicateOutcome[] = [];
@@ -221,72 +317,19 @@ export async function runDedupeMerge(options: DedupeMergeOptions, global: Global
         nextSteps: ["Pass distinct ids: --keep <canonical> and --close <duplicate>."],
       });
     }
-    const reason = `Duplicate of ${keep}`;
     // The canonical can never be re-parented onto itself; terminal children are
     // historical and keep their frozen parent link, so only active children move.
     const children = (childrenByParent.get(duplicate.id) ?? []).filter((child) => child.id !== keep);
-    const reparentTargets = reparentChildren ? children.filter((child) => !child.terminal) : [];
-    const skippedChildren = (reparentChildren ? children.filter((child) => child.terminal) : []).map((child) => ({
-      child_id: child.id,
-      child_title: child.title,
-      reason: "terminal" as const,
-    }));
-
-    const reparented: DedupeMergeChildReparent[] = [];
-    for (const child of reparentTargets) {
-      const record: DedupeMergeChildReparent = {
-        child_id: child.id,
-        child_title: child.title,
-        from_parent: duplicate.id,
-        to_parent: keep,
-        applied: false,
-      };
-      if (apply) {
-        try {
-          await runUpdate(
-            child.id,
-            {
-              parent: keep,
-              author: options.author,
-              message: options.message ?? `dedupe-merge: re-parent from ${duplicate.id} to ${keep}`,
-            },
-            global,
-          );
-          record.applied = true;
-        } catch (error) {
-          warnings.push(`reparent_failed:${child.id}:${error instanceof Error ? error.message : String(error)}`);
-        }
-      }
-      reparented.push(record);
-    }
-
-    const alreadyTerminal = isTerminalStatus(duplicate.metadata.status, statusRegistry);
-    const close: DedupeMergeCloseAction = { duplicate_of: keep, reason, applied: false };
-    if (alreadyTerminal) {
-      close.skipped_reason = "already_terminal";
-      if (duplicate.metadata.duplicate_of?.trim() !== keep) {
-        warnings.push(`close_skipped_terminal:${duplicate.id}:already_closed`);
-      }
-    } else if (!apply) {
-      close.skipped_reason = "dry_run";
-    } else {
-      try {
-        await runClose(
-          duplicate.id,
-          undefined,
-          {
-            duplicateOf: keep,
-            author: options.author,
-            message: options.message ?? `dedupe-merge: close ${duplicate.id} as duplicate of ${keep}`,
-          },
-          global,
-        );
-        close.applied = true;
-      } catch (error) {
-        close.skipped_reason = "failed";
-        warnings.push(`close_failed:${duplicate.id}:${error instanceof Error ? error.message : String(error)}`);
-      }
-    }
+    const { reparented, skippedChildren } = await applyDedupeMergeReparents({
+      children,
+      duplicateId: duplicate.id,
+      keep,
+      apply,
+      options,
+      global,
+      warnings,
+    });
+    const close = await applyDedupeMergeClose({ duplicate, keep, apply, options, global, statusRegistry, warnings });
 
     outcomes.push({
       duplicate_id: duplicate.id,

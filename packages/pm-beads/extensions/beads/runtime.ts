@@ -496,7 +496,7 @@ function toLinkedTests(value: unknown): LinkedTest[] | undefined {
 }
 
 function toLinkedTestTimeout(value: unknown): number | undefined {
-  if (typeof value === "number" && Number.isFinite(value)) {
+  if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
     return value;
   }
   if (typeof value !== "string") {

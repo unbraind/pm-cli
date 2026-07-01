@@ -87,6 +87,54 @@ export interface TestAllResult {
   results: TestAllItemResult[];
 }
 
+type TestAllSelectedItem = Awaited<ReturnType<typeof listAllFrontMatterLight>>[number];
+
+interface TestAllItemTests {
+  item: TestAllSelectedItem;
+  tests: LinkedTest[];
+}
+
+interface TestAllItemRunContext {
+  pmRoot: string;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  options: TestAllCommandOptions;
+  defaultTimeoutSeconds: number | undefined;
+  sourceRoots: { projectPmRoot: string; globalPmRoot: string };
+  seenTestKeys: Set<string>;
+  effectiveTimeoutByKey: Map<string, number | undefined>;
+  trackingEnabled: boolean;
+  trackingAuthor: string;
+  trackingRunId: string;
+  trackingAttempt: number | undefined;
+  trackingResumedFrom: string | undefined;
+  runStartedAt: string;
+}
+
+interface TestAllItemExecution {
+  result: TestAllItemResult;
+  passed: number;
+  failed: number;
+  skipped: number;
+  trackingWarnings: string[];
+  failureCategories: Record<LinkedTestFailureCategory, number>;
+}
+
+interface TestAllSelection {
+  filteredItems: TestAllSelectedItem[];
+  statusFilter: ItemStatus | undefined;
+  limitFilter: number | undefined;
+  offsetFilter: number;
+}
+
+interface TestAllAccumulation {
+  results: TestAllItemResult[];
+  passed: number;
+  failed: number;
+  skipped: number;
+  failureCategories: Record<LinkedTestFailureCategory, number>;
+  trackingWarnings: string[];
+}
+
 function parseStatus(raw: string | undefined, statusRegistry: RuntimeStatusRegistry): ItemStatus | undefined {
   if (raw === undefined) {
     return undefined;
@@ -234,22 +282,45 @@ function emitTestAllProgress(options: TestAllCommandOptions, message: string): v
   }
 }
 
-/**
- * Implements run test all for the public runtime surface of this module.
- */
-export async function runTestAll(options: TestAllCommandOptions, global: GlobalOptions): Promise<TestAllResult> {
-  const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+async function collectTestAllItemTests(
+  filteredItems: TestAllSelectedItem[],
+  global: GlobalOptions,
+  pmRoot: string,
+): Promise<{ itemTests: TestAllItemTests[]; linkedTests: number }> {
+  const itemTests: TestAllItemTests[] = [];
+  let linkedTests = 0;
+  for (const item of filteredItems) {
+    const readResult = await runTest(
+      item.id,
+      { run: false },
+      {
+        ...global,
+        path: pmRoot,
+      },
+    );
+    linkedTests += readResult.tests.length;
+    itemTests.push({ item, tests: readResult.tests });
   }
+  return { itemTests, linkedTests };
+}
 
-  const settings = await readSettings(pmRoot);
-  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const statusFilter = parseStatus(options.status, statusRegistry);
-  const limitFilter = parseNonNegativeInteger(options.limit, "--limit");
-  const offsetFilter = parseNonNegativeInteger(options.offset, "--offset") ?? 0;
-  const allItems = await listAllFrontMatterLight(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema);
+async function selectTestAllItems(params: {
+  pmRoot: string;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  options: TestAllCommandOptions;
+}): Promise<TestAllSelection> {
+  const statusRegistry = resolveRuntimeStatusRegistry(params.settings.schema);
+  const typeRegistry = resolveItemTypeRegistry(params.settings, getActiveExtensionRegistrations());
+  const statusFilter = parseStatus(params.options.status, statusRegistry);
+  const limitFilter = parseNonNegativeInteger(params.options.limit, "--limit");
+  const offsetFilter = parseNonNegativeInteger(params.options.offset, "--offset") ?? 0;
+  const allItems = await listAllFrontMatterLight(
+    params.pmRoot,
+    params.settings.item_format,
+    typeRegistry.type_to_folder,
+    undefined,
+    params.settings.schema,
+  );
   const statusFilteredItems = allItems
     .filter((item) => (statusFilter ? item.status === statusFilter : true))
     .sort((a, b) => a.id.localeCompare(b.id));
@@ -257,61 +328,10 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
     limitFilter === undefined
       ? statusFilteredItems.slice(offsetFilter)
       : statusFilteredItems.slice(offsetFilter, offsetFilter + limitFilter);
-  const defaultTimeoutSeconds = parseTimeout(options.timeout);
-  const sourceRoots = {
-    projectPmRoot: pmRoot,
-    globalPmRoot: resolveGlobalPmRoot(process.cwd()),
-  };
-  const runStartedAt = nowIso();
-  const trackingEnabled = settings.testing.record_results_to_items === true;
-  const trackingRunId = resolveTrackedRunId();
-  const trackingAuthor = resolveAuthor(undefined, settings.author_default);
-  const trackingAttemptRaw = process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT?.trim();
-  const trackingParsedAttempt = trackingAttemptRaw ? Number.parseInt(trackingAttemptRaw, 10) : Number.NaN;
-  const trackingResumedFrom = process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM?.trim();
-  const trackingWarnings: string[] = [];
+  return { filteredItems, statusFilter, limitFilter, offsetFilter };
+}
 
-  const results: TestAllItemResult[] = [];
-  const seenTestKeys = new Set<string>();
-  let passed = 0;
-  let failed = 0;
-  let skipped = 0;
-  let linkedTests = 0;
-  const failureCategories = countFailureCategories([]);
-  const itemTests: Array<{ item: (typeof filteredItems)[number]; tests: LinkedTest[] }> = [];
-
-  for (const item of filteredItems) {
-    const readResult = await runTest(
-      item.id,
-      {
-        run: false,
-      },
-      {
-        ...global,
-        path: pmRoot,
-      },
-    );
-
-    linkedTests += readResult.tests.length;
-    itemTests.push({ item, tests: readResult.tests });
-  }
-  emitTestAllProgress(
-    options,
-    `selection items=${filteredItems.length} linked_tests=${linkedTests}` +
-      `${statusFilter ? ` status=${statusFilter}` : ""}` +
-      `${limitFilter === undefined ? "" : ` limit=${limitFilter}`}` +
-      `${offsetFilter > 0 ? ` offset=${offsetFilter}` : ""}`,
-  );
-
-  const failOnEmptyTestRunTriggered = options.failOnEmptyTestRun === true && linkedTests === 0;
-  if (failOnEmptyTestRunTriggered) {
-    failed += 1;
-    failureCategories.empty_run += 1;
-    trackingWarnings.push(
-      `empty_linked_test_selection:items=${filteredItems.length};linked_tests=0;fail_on_empty_test_run=true`,
-    );
-  }
-
+function buildEffectiveTimeoutByKey(itemTests: TestAllItemTests[]): Map<string, number | undefined> {
   const effectiveTimeoutByKey = new Map<string, number | undefined>();
   for (const { tests } of itemTests) {
     for (const test of tests) {
@@ -323,146 +343,288 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
       effectiveTimeoutByKey.set(key, maxTimeoutSeconds(effectiveTimeoutByKey.get(key), test.timeout_seconds));
     }
   }
+  return effectiveTimeoutByKey;
+}
 
-  for (const [itemIndex, { item, tests }] of itemTests.entries()) {
-    emitTestAllProgress(options, `item ${itemIndex + 1}/${itemTests.length} start id=${item.id} linked_tests=${tests.length}`);
-    const testsToRun: LinkedTest[] = [];
-    const keyedTests = tests.map((test) => {
-      const key = buildLinkedTestKey(test);
-      const duplicate = seenTestKeys.has(key);
-      if (!duplicate) {
-        seenTestKeys.add(key);
-        const effectiveTimeoutSeconds = effectiveTimeoutByKey.get(key);
-        testsToRun.push(
-          effectiveTimeoutSeconds === undefined ? test : { ...test, timeout_seconds: effectiveTimeoutSeconds },
-        );
-      }
-      return { test, key, duplicate };
-    });
-
-    const executedResults =
-      testsToRun.length > 0
-        ? await runLinkedTests(testsToRun, defaultTimeoutSeconds, {
-            progress: options.progress,
-            sourceRoots,
-            envSet: options.envSet,
-            envClear: options.envClear,
-            sharedHostSafe: options.sharedHostSafe,
-            pmContext: options.pmContext,
-            overrideLinkedPmContext: options.overrideLinkedPmContext,
-            failOnContextMismatch: options.failOnContextMismatch,
-            failOnEmptyTestRun: options.failOnEmptyTestRun,
-            requireAssertionsForPm: options.requireAssertionsForPm,
-            checkContext: options.checkContext,
-            autoPmContext: options.autoPmContext,
-          })
-        : [];
-    let executedIndex = 0;
-    const runResults = keyedTests.map(({ test, key, duplicate }) => {
-      if (!duplicate) {
-        const executed = executedResults[executedIndex];
-        executedIndex += 1;
-        return executed;
-      }
-      return {
-        command: test.command,
-        path: test.path,
-        status: "skipped" as const,
-        error: `Duplicate linked test skipped (key=${key}).`,
-      };
-    });
-
-    const summary = countStatuses(runResults);
-    const itemFailureCategories = countFailureCategories(runResults);
-    mergeFailureCategoryCounts(failureCategories, itemFailureCategories);
-    passed += summary.passed;
-    failed += summary.failed;
-    skipped += summary.skipped;
-    if (trackingEnabled) {
-      try {
-        await appendTrackedTestRunSummary({
-          pmRoot,
-          settings,
-          itemId: item.id,
-          author: trackingAuthor,
-          message: `Track test-all run summary (${trackingRunId})`,
-          entry: {
-            run_id: trackingRunId,
-            kind: "test-all",
-            status: summary.failed > 0 || (options.failOnSkipped === true && summary.skipped > 0) ? "failed" : "passed",
-            started_at: runStartedAt,
-            finished_at: nowIso(),
-            recorded_at: nowIso(),
-            attempt: Number.isFinite(trackingParsedAttempt) && trackingParsedAttempt >= 1 ? trackingParsedAttempt : undefined,
-            resumed_from: trackingResumedFrom && trackingResumedFrom.length > 0 ? trackingResumedFrom : undefined,
-            passed: summary.passed,
-            failed: summary.failed,
-            skipped: summary.skipped,
-            items: 1,
-            linked_tests: tests.length,
-            fail_on_skipped_triggered: options.failOnSkipped === true && summary.skipped > 0 ? true : undefined,
-          },
-        });
-      } catch (error: unknown) {
-        trackingWarnings.push(`test_result_tracking_failed:${item.id}:${formatTrackingError(error)}`);
-      }
+async function runTestAllItem(
+  entry: TestAllItemTests,
+  context: TestAllItemRunContext,
+): Promise<TestAllItemExecution> {
+  const testsToRun: LinkedTest[] = [];
+  const keyedTests = entry.tests.map((test) => {
+    const key = buildLinkedTestKey(test);
+    const duplicate = context.seenTestKeys.has(key);
+    if (!duplicate) {
+      context.seenTestKeys.add(key);
+      const effectiveTimeoutSeconds = context.effectiveTimeoutByKey.get(key);
+      testsToRun.push(effectiveTimeoutSeconds === undefined ? test : { ...test, timeout_seconds: effectiveTimeoutSeconds });
     }
-    results.push({
-      ok: summary.failed === 0 && !(options.failOnSkipped === true && summary.skipped > 0),
-      id: item.id,
-      status: item.status,
-      test_count: tests.length,
+    return { test, key, duplicate };
+  });
+
+  const executedResults =
+    testsToRun.length > 0
+      ? await runLinkedTests(testsToRun, context.defaultTimeoutSeconds, {
+          progress: context.options.progress,
+          sourceRoots: context.sourceRoots,
+          envSet: context.options.envSet,
+          envClear: context.options.envClear,
+          sharedHostSafe: context.options.sharedHostSafe,
+          pmContext: context.options.pmContext,
+          overrideLinkedPmContext: context.options.overrideLinkedPmContext,
+          failOnContextMismatch: context.options.failOnContextMismatch,
+          failOnEmptyTestRun: context.options.failOnEmptyTestRun,
+          requireAssertionsForPm: context.options.requireAssertionsForPm,
+          checkContext: context.options.checkContext,
+          autoPmContext: context.options.autoPmContext,
+        })
+      : [];
+  let executedIndex = 0;
+  const runResults = keyedTests.map(({ test, key, duplicate }) => {
+    if (!duplicate) {
+      const executed = executedResults[executedIndex];
+      executedIndex += 1;
+      return executed;
+    }
+    return {
+      command: test.command,
+      path: test.path,
+      status: "skipped" as const,
+      error: `Duplicate linked test skipped (key=${key}).`,
+    };
+  });
+  const summary = countStatuses(runResults);
+  const failureCategories = countFailureCategories(runResults);
+  const trackingWarnings = await appendTestAllItemTracking(entry, summary, context);
+  return {
+    passed: summary.passed,
+    failed: summary.failed,
+    skipped: summary.skipped,
+    trackingWarnings,
+    failureCategories,
+    result: {
+      ok: summary.failed === 0 && !(context.options.failOnSkipped === true && summary.skipped > 0),
+      id: entry.item.id,
+      status: entry.item.status,
+      test_count: entry.tests.length,
       passed: summary.passed,
       failed: summary.failed,
       skipped: summary.skipped,
       run_results: runResults,
-      failure_categories: itemFailureCategories,
+      failure_categories: failureCategories,
+    },
+  };
+}
+
+async function appendTestAllItemTracking(
+  entry: TestAllItemTests,
+  summary: { passed: number; failed: number; skipped: number },
+  context: TestAllItemRunContext,
+): Promise<string[]> {
+  if (!context.trackingEnabled) {
+    return [];
+  }
+  try {
+    await appendTrackedTestRunSummary({
+      pmRoot: context.pmRoot,
+      settings: context.settings,
+      itemId: entry.item.id,
+      author: context.trackingAuthor,
+      message: `Track test-all run summary (${context.trackingRunId})`,
+      entry: {
+        run_id: context.trackingRunId,
+        kind: "test-all",
+        status: summary.failed > 0 || (context.options.failOnSkipped === true && summary.skipped > 0) ? "failed" : "passed",
+        started_at: context.runStartedAt,
+        finished_at: nowIso(),
+        recorded_at: nowIso(),
+        attempt: context.trackingAttempt,
+        resumed_from: context.trackingResumedFrom,
+        passed: summary.passed,
+        failed: summary.failed,
+        skipped: summary.skipped,
+        items: 1,
+        linked_tests: entry.tests.length,
+        fail_on_skipped_triggered: context.options.failOnSkipped === true && summary.skipped > 0 ? true : undefined,
+      },
     });
+  } catch (error: unknown) {
+    return [`test_result_tracking_failed:${entry.item.id}:${formatTrackingError(error)}`];
+  }
+  return [];
+}
+
+function buildTestAllItemRunContext(params: {
+  pmRoot: string;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  options: TestAllCommandOptions;
+  itemTests: TestAllItemTests[];
+  defaultTimeoutSeconds: number | undefined;
+  runStartedAt: string;
+}): TestAllItemRunContext {
+  const trackingAttemptRaw = process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT?.trim();
+  const trackingParsedAttempt = trackingAttemptRaw ? Number.parseInt(trackingAttemptRaw, 10) : Number.NaN;
+  const trackingResumedFrom = process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM?.trim();
+  return {
+    pmRoot: params.pmRoot,
+    settings: params.settings,
+    options: params.options,
+    defaultTimeoutSeconds: params.defaultTimeoutSeconds,
+    sourceRoots: {
+      projectPmRoot: params.pmRoot,
+      globalPmRoot: resolveGlobalPmRoot(process.cwd()),
+    },
+    seenTestKeys: new Set<string>(),
+    effectiveTimeoutByKey: buildEffectiveTimeoutByKey(params.itemTests),
+    trackingEnabled: params.settings.testing.record_results_to_items === true,
+    trackingAuthor: resolveAuthor(undefined, params.settings.author_default),
+    trackingRunId: resolveTrackedRunId(),
+    trackingAttempt: Number.isFinite(trackingParsedAttempt) && trackingParsedAttempt >= 1 ? trackingParsedAttempt : undefined,
+    trackingResumedFrom: trackingResumedFrom && trackingResumedFrom.length > 0 ? trackingResumedFrom : undefined,
+    runStartedAt: params.runStartedAt,
+  };
+}
+
+function initializeTestAllAccumulation(
+  options: TestAllCommandOptions,
+  linkedTests: number,
+  filteredItems: TestAllSelectedItem[],
+): { accumulation: TestAllAccumulation; failOnEmptyTestRunTriggered: boolean } {
+  const accumulation: TestAllAccumulation = {
+    results: [],
+    passed: 0,
+    failed: 0,
+    skipped: 0,
+    failureCategories: countFailureCategories([]),
+    trackingWarnings: [],
+  };
+  const failOnEmptyTestRunTriggered = options.failOnEmptyTestRun === true && linkedTests === 0;
+  if (failOnEmptyTestRunTriggered) {
+    accumulation.failed += 1;
+    accumulation.failureCategories.empty_run += 1;
+    accumulation.trackingWarnings.push(
+      `empty_linked_test_selection:items=${filteredItems.length};linked_tests=0;fail_on_empty_test_run=true`,
+    );
+  }
+  return { accumulation, failOnEmptyTestRunTriggered };
+}
+
+async function runTestAllItems(
+  itemTests: TestAllItemTests[],
+  context: TestAllItemRunContext,
+  accumulation: TestAllAccumulation,
+): Promise<void> {
+  for (const [itemIndex, entry] of itemTests.entries()) {
+    emitTestAllProgress(context.options, `item ${itemIndex + 1}/${itemTests.length} start id=${entry.item.id} linked_tests=${entry.tests.length}`);
+    const execution = await runTestAllItem(entry, context);
+    mergeFailureCategoryCounts(accumulation.failureCategories, execution.failureCategories);
+    accumulation.passed += execution.passed;
+    accumulation.failed += execution.failed;
+    accumulation.skipped += execution.skipped;
+    accumulation.trackingWarnings.push(...execution.trackingWarnings);
+    accumulation.results.push(execution.result);
     emitTestAllProgress(
-      options,
-      `item ${itemIndex + 1}/${itemTests.length} end id=${item.id}` +
-        ` status=${summary.failed === 0 ? "passed" : "failed"}` +
-        ` passed=${summary.passed} failed=${summary.failed} skipped=${summary.skipped}`,
+      context.options,
+      `item ${itemIndex + 1}/${itemTests.length} end id=${entry.item.id}` +
+        ` status=${execution.failed === 0 ? "passed" : "failed"}` +
+        ` passed=${execution.passed} failed=${execution.failed} skipped=${execution.skipped}`,
     );
   }
+}
 
-  const failOnSkippedTriggered = options.failOnSkipped === true && skipped > 0;
-  if (options.checkContext === true) {
-    const allRunResults = results.flatMap((entry) => entry.run_results);
-    const preflight = summarizeContextPreflight(allRunResults);
-    trackingWarnings.push(
-      `context_preflight:checked_pm_commands=${preflight.checked_pm_commands};` +
-        `tracker_read_commands=${preflight.tracker_read_commands};` +
-        `mismatches=${preflight.mismatches};` +
-        `auto_remediated=${preflight.auto_remediated}`,
-    );
+function appendContextPreflightWarning(options: TestAllCommandOptions, accumulation: TestAllAccumulation): void {
+  if (options.checkContext !== true) {
+    return;
+  }
+  const allRunResults = accumulation.results.flatMap((entry) => entry.run_results);
+  const preflight = summarizeContextPreflight(allRunResults);
+  accumulation.trackingWarnings.push(
+    `context_preflight:checked_pm_commands=${preflight.checked_pm_commands};` +
+      `tracker_read_commands=${preflight.tracker_read_commands};` +
+      `mismatches=${preflight.mismatches};` +
+      `auto_remediated=${preflight.auto_remediated}`,
+  );
+}
+
+function buildTestAllResult(params: {
+  ok: boolean;
+  filteredItems: TestAllSelectedItem[];
+  linkedTests: number;
+  accumulation: TestAllAccumulation;
+  failOnSkippedTriggered: boolean;
+  failOnEmptyTestRunTriggered: boolean;
+}): TestAllResult {
+  return {
+    ok: params.ok,
+    totals: {
+      items: params.filteredItems.length,
+      linked_tests: params.linkedTests,
+      passed: params.accumulation.passed,
+      failed: params.accumulation.failed,
+      skipped: params.accumulation.skipped,
+      failure_categories: params.accumulation.failureCategories,
+    },
+    failed: params.accumulation.failed,
+    passed: params.accumulation.passed,
+    skipped: params.accumulation.skipped,
+    fail_on_skipped_triggered: params.failOnSkippedTriggered ? true : undefined,
+    fail_on_empty_test_run_triggered: params.failOnEmptyTestRunTriggered ? true : undefined,
+    warnings: params.accumulation.trackingWarnings.length > 0 ? params.accumulation.trackingWarnings : undefined,
+    results: params.accumulation.results,
+  };
+}
+
+/**
+ * Implements run test all for the public runtime surface of this module.
+ */
+export async function runTestAll(options: TestAllCommandOptions, global: GlobalOptions): Promise<TestAllResult> {
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
 
-  const ok = failed === 0 && failOnSkippedTriggered !== true && failOnEmptyTestRunTriggered !== true;
+  const settings = await readSettings(pmRoot);
+  const { filteredItems, statusFilter, limitFilter, offsetFilter } = await selectTestAllItems({ pmRoot, settings, options });
+  const defaultTimeoutSeconds = parseTimeout(options.timeout);
+  const runStartedAt = nowIso();
+  const { itemTests, linkedTests } = await collectTestAllItemTests(filteredItems, global, pmRoot);
+  emitTestAllProgress(
+    options,
+    `selection items=${filteredItems.length} linked_tests=${linkedTests}` +
+      `${statusFilter ? ` status=${statusFilter}` : ""}` +
+      `${limitFilter === undefined ? "" : ` limit=${limitFilter}`}` +
+      `${offsetFilter > 0 ? ` offset=${offsetFilter}` : ""}`,
+  );
+
+  const { accumulation, failOnEmptyTestRunTriggered } = initializeTestAllAccumulation(options, linkedTests, filteredItems);
+  const itemRunContext = buildTestAllItemRunContext({
+    pmRoot,
+    settings,
+    options,
+    itemTests,
+    defaultTimeoutSeconds,
+    runStartedAt,
+  });
+  await runTestAllItems(itemTests, itemRunContext, accumulation);
+
+  const failOnSkippedTriggered = options.failOnSkipped === true && accumulation.skipped > 0;
+  appendContextPreflightWarning(options, accumulation);
+
+  const ok = accumulation.failed === 0 && failOnSkippedTriggered !== true && failOnEmptyTestRunTriggered !== true;
   emitTestAllProgress(
     options,
     `end status=${ok ? "passed" : "failed"} items=${filteredItems.length} linked_tests=${linkedTests}` +
-      ` passed=${passed} failed=${failed} skipped=${skipped}`,
+      ` passed=${accumulation.passed} failed=${accumulation.failed} skipped=${accumulation.skipped}`,
   );
 
-  return {
+  return buildTestAllResult({
     ok,
-    totals: {
-      items: filteredItems.length,
-      linked_tests: linkedTests,
-      passed,
-      failed,
-      skipped,
-      failure_categories: failureCategories,
-    },
-    failed,
-    passed,
-    skipped,
-    fail_on_skipped_triggered: failOnSkippedTriggered ? true : undefined,
-    fail_on_empty_test_run_triggered: failOnEmptyTestRunTriggered ? true : undefined,
-    warnings: trackingWarnings.length > 0 ? trackingWarnings : undefined,
-    results,
-  };
+    filteredItems,
+    linkedTests,
+    accumulation,
+    failOnSkippedTriggered,
+    failOnEmptyTestRunTriggered,
+  });
 }
 
 export const _testOnlyTestAll = {

@@ -205,6 +205,28 @@ export function hasMissingMetadataFilter(filters: MissingMetadataFilters): boole
   );
 }
 
+function itemMatchesSpecificMetadataFilters(
+  item: CoverageItem,
+  filters: MissingMetadataFilters,
+  classifier: LifecycleClassifier,
+): boolean {
+  const checks: Array<[boolean | undefined, boolean]> = [
+    [filters.acMissing, isAcMissing(item)],
+    [filters.estimatesMissing, isEstimateMissing(item)],
+    [filters.resolutionMissing, isResolutionMissing(item, classifier)],
+    [filters.reviewerMissing, isReviewerMissing(item)],
+    [filters.riskMissing, isRiskMissing(item)],
+    [filters.confidenceMissing, isConfidenceMissing(item)],
+    [filters.sprintMissing, isSprintMissing(item)],
+    [filters.releaseMissing, isReleaseMissing(item)],
+  ];
+  return checks.every(([requested, matched]) => requested !== true || matched);
+}
+
+function itemMatchesCoreMetadataMissingUnion(item: CoverageItem, classifier: LifecycleClassifier): boolean {
+  return isAcMissing(item) || isEstimateMissing(item) || isResolutionMissing(item, classifier);
+}
+
 /**
  * Does a single item satisfy the requested missing-metadata filters?
  *
@@ -224,36 +246,11 @@ export function itemMatchesMissingMetadata(
   if (!hasMissingMetadataFilter(filters)) {
     return true;
   }
-  if (filters.acMissing && !isAcMissing(item)) {
+  if (!itemMatchesSpecificMetadataFilters(item, filters, classifier)) {
     return false;
   }
-  if (filters.estimatesMissing && !isEstimateMissing(item)) {
+  if (filters.metadataMissing && !itemMatchesCoreMetadataMissingUnion(item, classifier)) {
     return false;
-  }
-  if (filters.resolutionMissing && !isResolutionMissing(item, classifier)) {
-    return false;
-  }
-  if (filters.reviewerMissing && !isReviewerMissing(item)) {
-    return false;
-  }
-  if (filters.riskMissing && !isRiskMissing(item)) {
-    return false;
-  }
-  if (filters.confidenceMissing && !isConfidenceMissing(item)) {
-    return false;
-  }
-  if (filters.sprintMissing && !isSprintMissing(item)) {
-    return false;
-  }
-  if (filters.releaseMissing && !isReleaseMissing(item)) {
-    return false;
-  }
-  if (filters.metadataMissing) {
-    const anyMissing =
-      isAcMissing(item) || isEstimateMissing(item) || isResolutionMissing(item, classifier);
-    if (!anyMissing) {
-      return false;
-    }
   }
   return true;
 }

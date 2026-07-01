@@ -303,6 +303,84 @@ export function validateGuideCommands(topicResult, availableCommands, failures) 
   }
 }
 
+function initializeGuideRuntime(runtimeEnv) {
+  runCommand(process.execPath, ["dist/cli.js", "init", "--defaults", "--author", "docs-skills-gate", "--json"], {
+    cwd: REPO_ROOT,
+    capture: true,
+    env: runtimeEnv,
+  });
+  runCommand(process.execPath, ["dist/cli.js", "install", "all", "--project", "--json"], {
+    cwd: REPO_ROOT,
+    capture: true,
+    env: runtimeEnv,
+  });
+}
+
+function loadAvailableGuideCommands(runtimeEnv) {
+  const contractsResult = runCommand(
+    process.execPath,
+    ["dist/cli.js", "contracts", "--runtime-only", "--availability-only", "--json"],
+    {
+      cwd: REPO_ROOT,
+      capture: true,
+      env: runtimeEnv,
+    },
+  );
+  const contractsPayload = parseJson(contractsResult.stdout, "pm contracts --runtime-only --availability-only --json");
+  return new Set(Array.isArray(contractsPayload.commands) ? contractsPayload.commands : []);
+}
+
+function loadGuideIndex(runtimeEnv, failures) {
+  const guideIndexResult = runCommand(process.execPath, ["dist/cli.js", "guide", "--json"], {
+    cwd: REPO_ROOT,
+    capture: true,
+    env: runtimeEnv,
+  });
+  const guideIndex = parseJson(guideIndexResult.stdout, "pm guide --json");
+  if (!guideIndex || guideIndex.mode !== "index" || !Array.isArray(guideIndex.topics)) {
+    failures.push("pm guide --json did not return an index payload");
+    return null;
+  }
+  return guideIndex;
+}
+
+function validateGuideTopic(topic, runtimeEnv, availableCommands, failures) {
+  const topicId = typeof topic?.id === "string" ? topic.id : null;
+  if (!topicId) {
+    failures.push("pm guide index includes a topic without an id");
+    return;
+  }
+  const topicResultRaw = runCommand(
+    process.execPath,
+    ["dist/cli.js", "guide", topicId, "--depth", "standard", "--json"],
+    {
+      cwd: REPO_ROOT,
+      capture: true,
+      env: runtimeEnv,
+    },
+  );
+  const topicResult = parseJson(topicResultRaw.stdout, `pm guide ${topicId} --json`);
+  if (!topicResult || topicResult.mode !== "topic" || !topicResult.topic) {
+    failures.push(`pm guide ${topicId} did not return a topic payload`);
+    return;
+  }
+  if (Array.isArray(topicResult.warnings) && topicResult.warnings.length > 0) {
+    for (const warning of topicResult.warnings) {
+      failures.push(`Guide topic "${topicId}" warning: ${warning}`);
+    }
+  }
+  if (!Array.isArray(topicResult.docs)) {
+    failures.push(`Guide topic "${topicId}" is missing docs metadata`);
+    return;
+  }
+  for (const doc of topicResult.docs) {
+    if (doc && doc.exists === false && doc.optional !== true) {
+      failures.push(`Guide topic "${topicId}" missing required document: ${doc.path}`);
+    }
+  }
+  validateGuideCommands(topicResult, availableCommands, failures);
+}
+
 export async function runGuideChecks(failures) {
   const tempRoot = await mkdtemp(path.join(tmpdir(), "pm-docs-skills-gate-"));
   const runtimeEnv = {
@@ -311,75 +389,15 @@ export async function runGuideChecks(failures) {
     PM_AUTHOR: "docs-skills-gate",
   };
   try {
-    runCommand(process.execPath, ["dist/cli.js", "init", "--defaults", "--author", "docs-skills-gate", "--json"], {
-      cwd: REPO_ROOT,
-      capture: true,
-      env: runtimeEnv,
-    });
-    runCommand(process.execPath, ["dist/cli.js", "install", "all", "--project", "--json"], {
-      cwd: REPO_ROOT,
-      capture: true,
-      env: runtimeEnv,
-    });
-
-    const contractsResult = runCommand(
-      process.execPath,
-      ["dist/cli.js", "contracts", "--runtime-only", "--availability-only", "--json"],
-      {
-        cwd: REPO_ROOT,
-        capture: true,
-        env: runtimeEnv,
-      },
-    );
-    const contractsPayload = parseJson(contractsResult.stdout, "pm contracts --runtime-only --availability-only --json");
-    const availableCommands = new Set(Array.isArray(contractsPayload.commands) ? contractsPayload.commands : []);
-
-    const guideIndexResult = runCommand(process.execPath, ["dist/cli.js", "guide", "--json"], {
-      cwd: REPO_ROOT,
-      capture: true,
-      env: runtimeEnv,
-    });
-    const guideIndex = parseJson(guideIndexResult.stdout, "pm guide --json");
-    if (!guideIndex || guideIndex.mode !== "index" || !Array.isArray(guideIndex.topics)) {
-      failures.push("pm guide --json did not return an index payload");
+    initializeGuideRuntime(runtimeEnv);
+    const availableCommands = loadAvailableGuideCommands(runtimeEnv);
+    const guideIndex = loadGuideIndex(runtimeEnv, failures);
+    if (!guideIndex) {
       return;
     }
 
     for (const topic of guideIndex.topics) {
-      const topicId = typeof topic?.id === "string" ? topic.id : null;
-      if (!topicId) {
-        failures.push("pm guide index includes a topic without an id");
-        continue;
-      }
-      const topicResultRaw = runCommand(
-        process.execPath,
-        ["dist/cli.js", "guide", topicId, "--depth", "standard", "--json"],
-        {
-          cwd: REPO_ROOT,
-          capture: true,
-          env: runtimeEnv,
-        },
-      );
-      const topicResult = parseJson(topicResultRaw.stdout, `pm guide ${topicId} --json`);
-      if (!topicResult || topicResult.mode !== "topic" || !topicResult.topic) {
-        failures.push(`pm guide ${topicId} did not return a topic payload`);
-        continue;
-      }
-      if (Array.isArray(topicResult.warnings) && topicResult.warnings.length > 0) {
-        for (const warning of topicResult.warnings) {
-          failures.push(`Guide topic "${topicId}" warning: ${warning}`);
-        }
-      }
-      if (!Array.isArray(topicResult.docs)) {
-        failures.push(`Guide topic "${topicId}" is missing docs metadata`);
-        continue;
-      }
-      for (const doc of topicResult.docs) {
-        if (doc && doc.exists === false && doc.optional !== true) {
-          failures.push(`Guide topic "${topicId}" missing required document: ${doc.path}`);
-        }
-      }
-      validateGuideCommands(topicResult, availableCommands, failures);
+      validateGuideTopic(topic, runtimeEnv, availableCommands, failures);
     }
   } finally {
     await rm(tempRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });

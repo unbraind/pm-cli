@@ -36,6 +36,20 @@ function isAutoDefaultsDisabled(): boolean {
   return normalized === "1" || normalized === "true" || normalized === "yes";
 }
 
+function hasConfiguredValue(values: readonly unknown[]): boolean {
+  return values.some((entry) => toOptionalNonEmptyString(entry) !== null);
+}
+
+function hasCompetingProvider(provider: unknown): boolean {
+  const normalized = toOptionalNonEmptyString(provider);
+  return Boolean(normalized && normalized.toLowerCase() !== "ollama");
+}
+
+function hasCompetingVectorAdapter(adapter: unknown): boolean {
+  const normalized = toOptionalNonEmptyString(adapter);
+  return Boolean(normalized && normalized.toLowerCase() !== "lancedb");
+}
+
 /**
  * True only when the user has opted into a provider/store that COMPETES with the
  * Ollama + LanceDB auto-default stack: an explicit non-Ollama search provider, a
@@ -45,27 +59,23 @@ function isAutoDefaultsDisabled(): boolean {
  * semantic search and then hard-error `pm reindex`.
  */
 function hasCompetingSemanticConfiguration(settings: PmSettings): boolean {
-  const provider = toOptionalNonEmptyString(settings.search?.provider);
-  if (provider && provider.toLowerCase() !== "ollama") {
+  if (hasCompetingProvider(settings.search?.provider)) {
     return true;
   }
-  const adapter = toOptionalNonEmptyString(settings.vector_store?.adapter);
-  if (adapter && adapter.toLowerCase() !== "lancedb") {
+  if (hasCompetingVectorAdapter(settings.vector_store?.adapter)) {
     return true;
   }
-  const openaiConfigured = [
+  if (hasConfiguredValue([
     settings.providers?.openai?.base_url,
     settings.providers?.openai?.model,
     settings.providers?.openai?.api_key,
-  ].some((entry) => toOptionalNonEmptyString(entry) !== null);
-  if (openaiConfigured) {
+  ])) {
     return true;
   }
-  const qdrantConfigured = [
+  return hasConfiguredValue([
     settings.vector_store?.qdrant?.url,
     settings.vector_store?.qdrant?.api_key,
-  ].some((entry) => toOptionalNonEmptyString(entry) !== null);
-  return qdrantConfigured;
+  ]);
 }
 
 function isOllamaInstalled(): boolean {
@@ -124,6 +134,57 @@ function resolveAutoOllamaModel(settings: PmSettings): string {
   return DEFAULT_OLLAMA_MODEL;
 }
 
+interface SemanticDefaultNeeds {
+  baseUrl: boolean;
+  model: boolean;
+  lancedbPath: boolean;
+  embeddingModel: boolean;
+}
+
+function resolveSemanticDefaultNeeds(settings: PmSettings): SemanticDefaultNeeds {
+  return {
+    baseUrl: toOptionalNonEmptyString(settings.providers?.ollama?.base_url) === null,
+    model: toOptionalNonEmptyString(settings.providers?.ollama?.model) === null,
+    lancedbPath: toOptionalNonEmptyString(settings.vector_store?.lancedb?.path) === null,
+    embeddingModel: toOptionalNonEmptyString(settings.search?.embedding_model) === null,
+  };
+}
+
+function needsAnySemanticDefault(needs: SemanticDefaultNeeds): boolean {
+  return needs.baseUrl || needs.model || needs.lancedbPath || needs.embeddingModel;
+}
+
+function applyOllamaProviderDefaults(settings: PmSettings, needs: SemanticDefaultNeeds, resolvedModel: string): void {
+  if (!needs.baseUrl && !needs.model) {
+    return;
+  }
+  const providers = (settings.providers ??= {} as PmSettings["providers"]);
+  const ollama = (providers.ollama ??= {} as PmSettings["providers"]["ollama"]);
+  if (needs.baseUrl) {
+    ollama.base_url = DEFAULT_OLLAMA_BASE_URL;
+  }
+  if (needs.model) {
+    ollama.model = resolvedModel;
+  }
+}
+
+function applyVectorStoreDefaults(settings: PmSettings, needs: SemanticDefaultNeeds): void {
+  if (!needs.lancedbPath) {
+    return;
+  }
+  const vectorStore = (settings.vector_store ??= {} as PmSettings["vector_store"]);
+  const lancedb = (vectorStore.lancedb ??= {} as PmSettings["vector_store"]["lancedb"]);
+  lancedb.path = DEFAULT_LANCEDB_PATH;
+}
+
+function applySearchEmbeddingDefaults(settings: PmSettings, needs: SemanticDefaultNeeds, resolvedModel: string): void {
+  if (!needs.embeddingModel) {
+    return;
+  }
+  const search = (settings.search ??= {} as PmSettings["search"]);
+  search.embedding_model = resolvedModel;
+}
+
 /**
  * Implements resolve settings with semantic runtime defaults for the public runtime surface of this module.
  */
@@ -139,11 +200,8 @@ export function resolveSettingsWithSemanticRuntimeDefaults(settings: PmSettings)
     return unchanged;
   }
 
-  const needsBaseUrl = toOptionalNonEmptyString(settings.providers?.ollama?.base_url) === null;
-  const needsModel = toOptionalNonEmptyString(settings.providers?.ollama?.model) === null;
-  const needsLancedbPath = toOptionalNonEmptyString(settings.vector_store?.lancedb?.path) === null;
-  const needsEmbeddingModel = toOptionalNonEmptyString(settings.search?.embedding_model) === null;
-  if (!needsBaseUrl && !needsModel && !needsLancedbPath && !needsEmbeddingModel) {
+  const needs = resolveSemanticDefaultNeeds(settings);
+  if (!needsAnySemanticDefault(needs)) {
     // A fully-configured Ollama/LanceDB stack — nothing to fill, and no need to
     // probe for Ollama at all.
     return unchanged;
@@ -153,7 +211,7 @@ export function resolveSettingsWithSemanticRuntimeDefaults(settings: PmSettings)
   // requires Ollama to be installed. When a model is already configured we mirror it
   // into the remaining leaves without forcing an Ollama probe; when it is missing we
   // require Ollama to actually be present rather than writing an unusable default.
-  if (needsModel && !isOllamaInstalled()) {
+  if (needs.model && !isOllamaInstalled()) {
     return unchanged;
   }
 
@@ -163,25 +221,9 @@ export function resolveSettingsWithSemanticRuntimeDefaults(settings: PmSettings)
   // exported and runs on the search hot path with caller-supplied settings, so a
   // partial object (e.g. providers/vector_store set but no `search` block) must
   // fill the missing leaf rather than throwing on an undefined parent.
-  if (needsBaseUrl || needsModel) {
-    const providers = (nextSettings.providers ??= {} as PmSettings["providers"]);
-    const ollama = (providers.ollama ??= {} as PmSettings["providers"]["ollama"]);
-    if (needsBaseUrl) {
-      ollama.base_url = DEFAULT_OLLAMA_BASE_URL;
-    }
-    if (needsModel) {
-      ollama.model = resolvedModel;
-    }
-  }
-  if (needsLancedbPath) {
-    const vectorStore = (nextSettings.vector_store ??= {} as PmSettings["vector_store"]);
-    const lancedb = (vectorStore.lancedb ??= {} as PmSettings["vector_store"]["lancedb"]);
-    lancedb.path = DEFAULT_LANCEDB_PATH;
-  }
-  if (needsEmbeddingModel) {
-    const search = (nextSettings.search ??= {} as PmSettings["search"]);
-    search.embedding_model = resolvedModel;
-  }
+  applyOllamaProviderDefaults(nextSettings, needs, resolvedModel);
+  applyVectorStoreDefaults(nextSettings, needs);
+  applySearchEmbeddingDefaults(nextSettings, needs, resolvedModel);
   return {
     settings: nextSettings,
     auto_ollama_defaults_applied: true,

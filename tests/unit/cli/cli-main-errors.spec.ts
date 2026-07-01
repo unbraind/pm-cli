@@ -263,6 +263,26 @@ describe("CLI main error helpers", () => {
     expect(_testOnly.isCommanderError(new Error("plain"))).toBe(false);
   });
 
+  it("recognizes commander catch-path candidates without capturing generic coded errors", () => {
+    expect(_testOnly.shouldHandleRunPmCliCommanderError({ code: "commander.unknownOption" })).toBe(true);
+    expect(_testOnly.shouldHandleRunPmCliCommanderError({ code: "commander.version" })).toBe(true);
+    expect(_testOnly.shouldHandleRunPmCliCommanderError({ code: "not-commander", message: "rendered (outputHelp)" })).toBe(true);
+    expect(_testOnly.shouldHandleRunPmCliCommanderError({ code: "not-commander", message: 42 })).toBe(false);
+    expect(_testOnly.shouldHandleRunPmCliCommanderError({ code: "not-commander" })).toBe(false);
+    expect(_testOnly.shouldHandleRunPmCliCommanderError(new Error("plain"))).toBe(false);
+  });
+
+  it("resolves unknown help tokens from command path, command name, and fallback", () => {
+    expect(_testOnly.resolveUnknownHelpToken(["help", "missing-command"])).toBe("missing-command");
+    expect(_testOnly.resolveUnknownHelpToken(["unknown-command"])).toBe("unknown-command");
+    expect(_testOnly.resolveUnknownHelpToken([])).toBe("<command>");
+  });
+
+  it("sets recovered extension services for both null and loaded snapshots", () => {
+    expect(() => _testOnly.setRecoveredExtensionServices(null)).not.toThrow();
+    expect(() => _testOnly.setRecoveredExtensionServices({ services: { overrides: [] } })).not.toThrow();
+  });
+
   it("makes top-level command registration idempotent so re-entry never throws (pm-zyez / PM-CLI-1R)", () => {
     const program = new Command();
     _testOnly.ensureIdempotentTopLevelCommandRegistration(program);
@@ -1897,6 +1917,13 @@ export default {
         await expect(_testOnly.maybeLoadRuntimeExtensions(late)).resolves.toBeNull();
       });
       expect(stderr).toContain("profile:extensions");
+      await expect(
+        _testOnly.prepareExtensionServicesForRunPmCliError({
+          invocationArgv: ["late"],
+          bootstrapGlobal: parseBootstrapGlobalOptions(["--pm-path", context.pmPath, "late"]),
+          bootstrapPmRoot: context.pmPath,
+        }),
+      ).resolves.toBeUndefined();
     });
   });
 
@@ -1910,6 +1937,13 @@ export default {
       const command = root.command("missing");
       command.setOptionValue("pmPath", fileRoot);
       await expect(_testOnly.maybeLoadRuntimeExtensions(command)).resolves.toBeNull();
+      await expect(
+        _testOnly.prepareExtensionServicesForRunPmCliError({
+          invocationArgv: ["missing"],
+          bootstrapGlobal: parseBootstrapGlobalOptions(["--pm-path", fileRoot, "missing"]),
+          bootstrapPmRoot: fileRoot,
+        }),
+      ).resolves.toBeUndefined();
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

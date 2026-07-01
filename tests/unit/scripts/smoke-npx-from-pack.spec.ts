@@ -356,7 +356,7 @@ describe("smoke-npx-from-pack", () => {
     await expect(harness.importModule(SCRIPT)).rejects.toThrow(/npx fallback produced empty output[\s\S]*npx boom blank/);
   });
 
-  it("throws when the direct bare-npx version is empty (empty-output fallback message)", async () => {
+  it("throws when the direct bare-npx version is empty (version-output fallback message)", async () => {
     vi.doMock("../../../scripts/smoke-cleanup.mjs", () => ({ cleanupTempRoot: vi.fn() }));
     mockFs();
     vi.doMock("node:child_process", () => ({
@@ -366,10 +366,10 @@ describe("smoke-npx-from-pack", () => {
     }));
     vi.spyOn(console, "log").mockImplementation(() => {});
     process.argv = ["node", SCRIPT_ABS];
-    await expect(harness.importModule(SCRIPT)).rejects.toThrow(/Bare npx package smoke returned empty output instead of/);
+    await expect(harness.importModule(SCRIPT)).rejects.toThrow(/Bare npx package smoke returned empty version output instead of/);
   });
 
-  it("throws when the pm-cli alias version is empty (empty-output fallback message)", async () => {
+  it("throws when the pm-cli alias version is empty (version-output fallback message)", async () => {
     vi.doMock("../../../scripts/smoke-cleanup.mjs", () => ({ cleanupTempRoot: vi.fn() }));
     mockFs();
     vi.doMock("node:child_process", () => ({
@@ -379,7 +379,7 @@ describe("smoke-npx-from-pack", () => {
     }));
     vi.spyOn(console, "log").mockImplementation(() => {});
     process.argv = ["node", SCRIPT_ABS];
-    await expect(harness.importModule(SCRIPT)).rejects.toThrow(/pm-cli bin alias smoke returned empty output instead of/);
+    await expect(harness.importModule(SCRIPT)).rejects.toThrow(/pm-cli bin alias smoke returned empty version output instead of/);
   });
 
   it("throws when the calendar payload omits summary.events entirely", async () => {

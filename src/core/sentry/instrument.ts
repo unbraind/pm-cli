@@ -239,6 +239,57 @@ function resolveTracesSampleRate(): number {
   return parsed;
 }
 
+function scrubSentryExceptionValues(event: {
+  exception?: { values?: Array<{ value?: string; stacktrace?: { frames?: unknown[] } }> };
+}): void {
+  if (!event.exception?.values) {
+    return;
+  }
+  for (const exception of event.exception.values) {
+    if (exception.value) {
+      exception.value = scrubString(exception.value, "value");
+    }
+    if (exception.stacktrace?.frames) {
+      for (const frame of exception.stacktrace.frames) {
+        scrubStackFrame(frame as Record<string, unknown>);
+      }
+    }
+  }
+}
+
+function scrubSentryBreadcrumbs(event: { breadcrumbs?: Array<{ message?: string; data?: unknown }> }): void {
+  if (!event.breadcrumbs) {
+    return;
+  }
+  for (const breadcrumb of event.breadcrumbs) {
+    if (breadcrumb.message) {
+      breadcrumb.message = scrubString(breadcrumb.message);
+    }
+    if (breadcrumb.data && typeof breadcrumb.data === "object") {
+      breadcrumb.data = scrubEventData(breadcrumb.data as Record<string, unknown>);
+    }
+  }
+}
+
+function scrubSentryContexts(event: { contexts?: Record<string, unknown> }): void {
+  if (!event.contexts) {
+    return;
+  }
+  for (const [ctxKey, ctx] of Object.entries(event.contexts)) {
+    if (ctx && typeof ctx === "object") {
+      event.contexts[ctxKey] = scrubEventData(ctx as Record<string, unknown>);
+    }
+  }
+}
+
+function scrubSentryRecordField(event: object, key: string): void {
+  const target = event as Record<string, unknown>;
+  const value = target[key];
+  if (value && typeof value === "object") {
+    target[key] = scrubEventData(value as Record<string, unknown>);
+  }
+}
+
 /**
  * Implements ensure sentry init for the public runtime surface of this module.
  */
@@ -293,50 +344,13 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
         event.transaction = scrubString(event.transaction, "transaction");
       }
 
-      if (event.exception?.values) {
-        for (const exception of event.exception.values) {
-          if (exception.value) {
-            exception.value = scrubString(exception.value, "value");
-          }
-          if (exception.stacktrace?.frames) {
-            for (const frame of exception.stacktrace.frames) {
-              scrubStackFrame(frame as unknown as Record<string, unknown>);
-            }
-          }
-        }
-      }
-
-      if (event.breadcrumbs) {
-        for (const breadcrumb of event.breadcrumbs) {
-          if (breadcrumb.message) {
-            breadcrumb.message = scrubString(breadcrumb.message);
-          }
-          if (breadcrumb.data && typeof breadcrumb.data === "object") {
-            breadcrumb.data = scrubEventData(breadcrumb.data as Record<string, unknown>);
-          }
-        }
-      }
-
-      if (event.extra && typeof event.extra === "object") {
-        event.extra = scrubEventData(event.extra as Record<string, unknown>);
-      }
-
-      if (event.contexts) {
-        for (const [ctxKey, ctx] of Object.entries(event.contexts)) {
-          if (ctx && typeof ctx === "object") {
-            event.contexts![ctxKey] = scrubEventData(ctx as Record<string, unknown>);
-          }
-        }
-      }
-      if (event.request && typeof event.request === "object") {
-        event.request = scrubEventData(event.request as Record<string, unknown>) as typeof event.request;
-      }
-      if (event.user && typeof event.user === "object") {
-        event.user = scrubEventData(event.user as Record<string, unknown>) as typeof event.user;
-      }
-      if (event.tags && typeof event.tags === "object") {
-        event.tags = scrubEventData(event.tags as Record<string, unknown>) as typeof event.tags;
-      }
+      scrubSentryExceptionValues(event);
+      scrubSentryBreadcrumbs(event);
+      scrubSentryRecordField(event, "extra");
+      scrubSentryContexts(event);
+      scrubSentryRecordField(event, "request");
+      scrubSentryRecordField(event, "user");
+      scrubSentryRecordField(event, "tags");
 
       return event;
     },

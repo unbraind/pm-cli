@@ -233,6 +233,349 @@ function statMatches(signature: StatSignature, mtimeMs: number, ctimeMs: number,
   return signature.mtime_ms === mtimeMs && signature.ctime_ms === ctimeMs && signature.size === size;
 }
 
+interface DocumentCacheMissState {
+  metadata: boolean;
+  body: boolean;
+  collections: boolean;
+}
+
+interface DocumentCacheMutableState {
+  newEntries: Record<string, CachedEntry>;
+  newBodies: Record<string, CachedBody>;
+  newCollections: Record<string, CachedCollections>;
+  documentsById: Map<string, { candidate: CachedDocumentCandidate; itemFormat: ItemFormat }>;
+  misses: DocumentCacheMissState;
+}
+
+interface DocumentCacheReadContext {
+  pmRoot: string;
+  preferredFormat: ItemFormat | undefined;
+  warnings: string[] | undefined;
+  schema: RuntimeSchemaSettings | undefined;
+  extensionFieldNames: readonly string[];
+  includeBody: boolean;
+  includeCollections: boolean;
+  dispatchReadHooks: boolean;
+  previousEntries: Record<string, CachedEntry>;
+  previousBodies: Record<string, CachedBody>;
+  previousCollections: Record<string, CachedCollections>;
+  state: DocumentCacheMutableState;
+}
+
+interface CachedDocumentReadParts {
+  mtimeMs: number;
+  ctimeMs: number;
+  size: number;
+  itemFormat: ItemFormat;
+  lightMetadata: ItemMetadata;
+  heavyMetadata: Record<string, unknown> | undefined;
+  bodyLength: number;
+  body: string | undefined;
+}
+
+async function readItemDirectoryFiles(
+  pmRoot: string,
+  folder: string,
+  warnings: string[] | undefined,
+): Promise<{ folder: string; dirPath: string; files: string[] }> {
+  const dirPath = path.join(pmRoot, folder);
+  try {
+    const files = await fs.readdir(dirPath);
+    return { folder, dirPath, files };
+  } catch (error: unknown) {
+    if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code !== "ENOENT") {
+      appendWarning(warnings, `item_list_directory_read_failed:${folder}`);
+    }
+    return { folder, dirPath, files: [] };
+  }
+}
+
+function isItemDocumentFile(file: string): boolean {
+  return ITEM_FILE_EXTENSIONS.some((ext) => file.toLowerCase().endsWith(ext));
+}
+
+function markDocumentCacheMisses(
+  misses: DocumentCacheMissState,
+  includeBody: boolean,
+  includeCollections: boolean,
+  metadataCached: boolean,
+  bodyCached: boolean,
+  collectionsCached: boolean,
+): void {
+  if (!metadataCached) {
+    misses.metadata = true;
+  }
+  if (includeBody && !bodyCached) {
+    misses.body = true;
+  }
+  if (includeCollections && !collectionsCached) {
+    misses.collections = true;
+  }
+}
+
+async function dispatchCachedDocumentReadHooks(
+  filePath: string,
+  warnings: string[] | undefined,
+  dispatchReadHooks: boolean,
+): Promise<void> {
+  if (!dispatchReadHooks) {
+    return;
+  }
+  for (const warning of await runActiveOnReadHooks({ path: filePath, scope: "project" })) {
+    appendWarning(warnings, warning);
+  }
+}
+
+async function readCachedDocumentParts(
+  filePath: string,
+  relativePath: string,
+  context: DocumentCacheReadContext,
+): Promise<CachedDocumentReadParts> {
+  const stat = await fs.stat(filePath);
+  const mtimeMs = stat.mtimeMs;
+  const ctimeMs = stat.ctimeMs;
+  const { size } = stat;
+  const itemFormat = getItemFormatFromPath(filePath) as ItemFormat;
+
+  await dispatchCachedDocumentReadHooks(filePath, context.warnings, context.dispatchReadHooks);
+
+  const cachedEntry = context.previousEntries[relativePath];
+  const metadataCached = cachedEntry !== undefined && statMatches(cachedEntry, mtimeMs, ctimeMs, size);
+  const cachedBody = context.previousBodies[relativePath];
+  const bodyCached = cachedBody !== undefined && statMatches(cachedBody, mtimeMs, ctimeMs, size);
+  const cachedCollections = context.previousCollections[relativePath];
+  const collectionsCached = cachedCollections !== undefined && statMatches(cachedCollections, mtimeMs, ctimeMs, size);
+  const needRead =
+    !metadataCached || (context.includeBody && !bodyCached) || (context.includeCollections && !collectionsCached);
+
+  if (!needRead) {
+    return {
+      mtimeMs,
+      ctimeMs,
+      size,
+      itemFormat,
+      lightMetadata: cachedEntry.metadata,
+      heavyMetadata: context.includeCollections && cachedCollections ? cachedCollections.collections : undefined,
+      bodyLength: cachedEntry.body_length,
+      body: context.includeBody ? cachedBody.body : undefined,
+    };
+  }
+
+  const raw = await fs.readFile(filePath, "utf8");
+  const parsed = parseItemDocument(raw, {
+    format: itemFormat,
+    schema: context.schema,
+    extensionFieldNames: context.extensionFieldNames,
+    onWarning: (warning) => appendWarning(context.warnings, warning),
+  });
+  const split = splitHeavyMetadata(parsed.metadata);
+  markDocumentCacheMisses(
+    context.state.misses,
+    context.includeBody,
+    context.includeCollections,
+    metadataCached,
+    bodyCached,
+    collectionsCached,
+  );
+  return {
+    mtimeMs,
+    ctimeMs,
+    size,
+    itemFormat,
+    lightMetadata: metadataCached ? cachedEntry.metadata : split.light,
+    heavyMetadata: context.includeCollections
+      ? collectionsCached
+        ? cachedCollections.collections
+        : split.heavy
+      : undefined,
+    bodyLength: metadataCached ? cachedEntry.body_length : parsed.body.length,
+    body: context.includeBody ? parsed.body : undefined,
+  };
+}
+
+function recordCachedDocumentCandidate(
+  filePath: string,
+  relativePath: string,
+  context: DocumentCacheReadContext,
+  parts: CachedDocumentReadParts,
+): void {
+  context.state.newEntries[relativePath] = {
+    mtime_ms: parts.mtimeMs,
+    ctime_ms: parts.ctimeMs,
+    size: parts.size,
+    metadata: parts.lightMetadata,
+    body_length: parts.bodyLength,
+  };
+  if (context.includeBody && parts.body !== undefined) {
+    context.state.newBodies[relativePath] = {
+      mtime_ms: parts.mtimeMs,
+      ctime_ms: parts.ctimeMs,
+      size: parts.size,
+      body: parts.body,
+    };
+  }
+  if (context.includeCollections && parts.heavyMetadata !== undefined) {
+    context.state.newCollections[relativePath] = {
+      mtime_ms: parts.mtimeMs,
+      ctime_ms: parts.ctimeMs,
+      size: parts.size,
+      collections: parts.heavyMetadata,
+    };
+  }
+
+  const metadata = context.includeCollections ? mergeHeavyMetadata(parts.lightMetadata, parts.heavyMetadata) : parts.lightMetadata;
+  const existing = context.state.documentsById.get(metadata.id);
+  const candidate: CachedDocumentCandidate = {
+    metadata,
+    body: parts.body,
+    item_format: parts.itemFormat,
+    item_path: filePath,
+  };
+  if (!existing || shouldReplaceCachedDocumentCandidate(existing.itemFormat, parts.itemFormat, context.preferredFormat)) {
+    context.state.documentsById.set(metadata.id, { candidate, itemFormat: parts.itemFormat });
+  }
+}
+
+async function processCachedDocumentFile(
+  folder: string,
+  filePath: string,
+  relativePath: string,
+  context: DocumentCacheReadContext,
+): Promise<void> {
+  try {
+    const parts = await readCachedDocumentParts(filePath, relativePath, context);
+    recordCachedDocumentCandidate(filePath, relativePath, context, parts);
+  } catch {
+    appendWarning(context.warnings, `item_list_item_read_failed:${folder}/${path.basename(filePath)}`);
+  }
+}
+
+function selectPreviousMetadataEntries(
+  existingCache: CacheEnvelope | null,
+  contextFingerprint: string,
+): Record<string, CachedEntry> {
+  return existingCache && existingCache.context_fingerprint === contextFingerprint ? existingCache.entries : {};
+}
+
+function selectPreviousBodyEntries(
+  existingBodyCache: BodyCacheEnvelope | null,
+  contextFingerprint: string,
+): Record<string, CachedBody> {
+  return existingBodyCache && existingBodyCache.context_fingerprint === contextFingerprint ? existingBodyCache.bodies : {};
+}
+
+function selectPreviousCollectionEntries(
+  existingCollectionsCache: CollectionsCacheEnvelope | null,
+  contextFingerprint: string,
+): Record<string, CachedCollections> {
+  return existingCollectionsCache && existingCollectionsCache.context_fingerprint === contextFingerprint
+    ? existingCollectionsCache.collections
+    : {};
+}
+
+function createDocumentCacheMutableState(): DocumentCacheMutableState {
+  return {
+    newEntries: {},
+    newBodies: {},
+    newCollections: {},
+    documentsById: new Map<string, { candidate: CachedDocumentCandidate; itemFormat: ItemFormat }>(),
+    misses: {
+      metadata: false,
+      body: false,
+      collections: false,
+    },
+  };
+}
+
+function collectCachedDocumentParseTasks(
+  dirResults: Array<{ folder: string; dirPath: string; files: string[] }>,
+  context: DocumentCacheReadContext,
+): Array<Promise<void>> {
+  const parseTasks: Array<Promise<void>> = [];
+  for (const { folder, dirPath, files } of dirResults) {
+    for (const file of files) {
+      if (!isItemDocumentFile(file)) {
+        continue;
+      }
+      const filePath = path.join(dirPath, file);
+      const relativePath = path.relative(context.pmRoot, filePath);
+      parseTasks.push(processCachedDocumentFile(folder, filePath, relativePath, context));
+    }
+  }
+  return parseTasks;
+}
+
+async function persistMetadataCacheIfNeeded(params: {
+  pmRoot: string;
+  contextFingerprint: string;
+  existingCache: CacheEnvelope | null;
+  previousEntries: Record<string, CachedEntry>;
+  state: DocumentCacheMutableState;
+}): Promise<void> {
+  const metadataDirty = params.state.misses.metadata ||
+    Object.keys(params.previousEntries).length !== Object.keys(params.state.newEntries).length;
+  if (!metadataDirty && params.existingCache !== null && params.existingCache.context_fingerprint === params.contextFingerprint) {
+    return;
+  }
+  await persistCache(getCachePath(params.pmRoot), {
+    version: CACHE_VERSION,
+    context_fingerprint: params.contextFingerprint,
+    entries: params.state.newEntries,
+  }).catch(() => {});
+}
+
+async function persistBodyCacheIfNeeded(params: {
+  pmRoot: string;
+  contextFingerprint: string;
+  existingBodyCache: BodyCacheEnvelope | null;
+  previousBodies: Record<string, CachedBody>;
+  state: DocumentCacheMutableState;
+}): Promise<void> {
+  const bodyDirty = params.state.misses.body ||
+    Object.keys(params.previousBodies).length !== Object.keys(params.state.newBodies).length;
+  if (
+    !bodyDirty &&
+    params.existingBodyCache !== null &&
+    params.existingBodyCache.context_fingerprint === params.contextFingerprint
+  ) {
+    return;
+  }
+  await persistCache(getBodyCachePath(params.pmRoot), {
+    version: CACHE_VERSION,
+    context_fingerprint: params.contextFingerprint,
+    bodies: params.state.newBodies,
+  }).catch(() => {});
+}
+
+async function persistCollectionsCacheIfNeeded(params: {
+  pmRoot: string;
+  contextFingerprint: string;
+  existingCollectionsCache: CollectionsCacheEnvelope | null;
+  previousCollections: Record<string, CachedCollections>;
+  state: DocumentCacheMutableState;
+}): Promise<void> {
+  const collectionsDirty = params.state.misses.collections ||
+    Object.keys(params.previousCollections).length !== Object.keys(params.state.newCollections).length;
+  if (
+    !collectionsDirty &&
+    params.existingCollectionsCache !== null &&
+    params.existingCollectionsCache.context_fingerprint === params.contextFingerprint
+  ) {
+    return;
+  }
+  await persistCache(getCollectionsCachePath(params.pmRoot), {
+    version: CACHE_VERSION,
+    context_fingerprint: params.contextFingerprint,
+    collections: params.state.newCollections,
+  }).catch(() => {});
+}
+
+function sortedCachedDocumentCandidates(state: DocumentCacheMutableState): CachedDocumentCandidate[] {
+  return [...state.documentsById.values()]
+    .sort((left, right) => left.candidate.metadata.id.localeCompare(right.candidate.metadata.id))
+    .map((entry) => entry.candidate);
+}
+
 /**
  * Documents the list cache options payload exchanged by command, SDK, and package integrations.
  */
@@ -277,194 +620,49 @@ export async function listAllDocumentCandidatesCached(
   const contextFingerprint = computeContextFingerprint(preferredFormat, typeToFolder, schema, extensionFieldNames);
 
   const existingCache = await loadCache(pmRoot);
-  const previousEntries: Record<string, CachedEntry> =
-    existingCache && existingCache.context_fingerprint === contextFingerprint ? existingCache.entries : {};
+  const previousEntries = selectPreviousMetadataEntries(existingCache, contextFingerprint);
 
   const existingBodyCache = includeBody ? await loadBodyCache(pmRoot) : null;
-  const previousBodies: Record<string, CachedBody> =
-    existingBodyCache && existingBodyCache.context_fingerprint === contextFingerprint ? existingBodyCache.bodies : {};
+  const previousBodies = selectPreviousBodyEntries(existingBodyCache, contextFingerprint);
 
   const existingCollectionsCache = includeCollections ? await loadCollectionsCache(pmRoot) : null;
-  const previousCollections: Record<string, CachedCollections> =
-    existingCollectionsCache && existingCollectionsCache.context_fingerprint === contextFingerprint
-      ? existingCollectionsCache.collections
-      : {};
+  const previousCollections = selectPreviousCollectionEntries(existingCollectionsCache, contextFingerprint);
 
   const entries = Object.entries(typeToFolder) as Array<[ItemType, string]>;
-  const dirResults = await Promise.all(
-    entries.map(async ([, folder]) => {
-      const dirPath = path.join(pmRoot, folder);
-      try {
-        const files = await fs.readdir(dirPath);
-        return { folder, dirPath, files };
-      } catch (error: unknown) {
-        if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code !== "ENOENT") {
-          appendWarning(warnings, `item_list_directory_read_failed:${folder}`);
-        }
-        return { folder, dirPath, files: [] as string[] };
-      }
-    }),
-  );
+  const dirResults = await Promise.all(entries.map(([, folder]) => readItemDirectoryFiles(pmRoot, folder, warnings)));
 
   const dispatchReadHooks = hasActiveOnReadHooks();
-  const newEntries: Record<string, CachedEntry> = {};
-  const newBodies: Record<string, CachedBody> = {};
-  const newCollections: Record<string, CachedCollections> = {};
-  const documentsById = new Map<string, { candidate: CachedDocumentCandidate; itemFormat: ItemFormat }>();
-  let metadataMiss = false;
-  let bodyMiss = false;
-  let collectionsMiss = false;
+  const state = createDocumentCacheMutableState();
+  const context: DocumentCacheReadContext = {
+    pmRoot,
+    preferredFormat,
+    warnings,
+    schema,
+    extensionFieldNames,
+    includeBody,
+    includeCollections,
+    dispatchReadHooks,
+    previousEntries,
+    previousBodies,
+    previousCollections,
+    state,
+  };
 
-  const parseTasks: Array<Promise<void>> = [];
-
-  for (const { folder, dirPath, files } of dirResults) {
-    for (const file of files) {
-      if (!ITEM_FILE_EXTENSIONS.some((ext) => file.toLowerCase().endsWith(ext))) {
-        continue;
-      }
-      const filePath = path.join(dirPath, file);
-      const relativePath = path.relative(pmRoot, filePath);
-
-      parseTasks.push(
-        (async () => {
-          try {
-            const stat = await fs.stat(filePath);
-            const mtimeMs = stat.mtimeMs;
-            const ctimeMs = stat.ctimeMs;
-            const { size } = stat;
-            const itemFormat = getItemFormatFromPath(filePath) as ItemFormat;
-
-            // Preserve onRead hook semantics even when served from cache, but only
-            // when an extension actually observes reads. Surface hook warnings so
-            // read-hook failures are not silently hidden.
-            if (dispatchReadHooks) {
-              for (const warning of await runActiveOnReadHooks({ path: filePath, scope: "project" })) {
-                appendWarning(warnings, warning);
-              }
-            }
-
-            const cachedEntry = previousEntries[relativePath];
-            const metadataCached = cachedEntry !== undefined && statMatches(cachedEntry, mtimeMs, ctimeMs, size);
-            const cachedBody = previousBodies[relativePath];
-            const bodyCached = cachedBody !== undefined && statMatches(cachedBody, mtimeMs, ctimeMs, size);
-            const cachedCollections = previousCollections[relativePath];
-            const collectionsCached =
-              cachedCollections !== undefined && statMatches(cachedCollections, mtimeMs, ctimeMs, size);
-
-            const needRead =
-              !metadataCached || (includeBody && !bodyCached) || (includeCollections && !collectionsCached);
-            let lightMetadata: ItemMetadata;
-            let heavyMetadata: Record<string, unknown> | undefined;
-            let bodyLength: number;
-            let body: string | undefined;
-
-            if (needRead) {
-            const raw = await fs.readFile(filePath, "utf8");
-            const parsed = parseItemDocument(raw, {
-              format: itemFormat,
-              schema,
-              extensionFieldNames,
-              onWarning: (w) => appendWarning(warnings, w),
-            });
-              const split = splitHeavyMetadata(parsed.metadata);
-              lightMetadata = metadataCached ? cachedEntry.metadata : split.light;
-              bodyLength = metadataCached ? cachedEntry.body_length : parsed.body.length;
-              body = includeBody ? parsed.body : undefined;
-              if (includeCollections) {
-                heavyMetadata = collectionsCached ? cachedCollections.collections : split.heavy;
-              }
-              if (!metadataCached) {
-                metadataMiss = true;
-              }
-              if (includeBody && !bodyCached) {
-                bodyMiss = true;
-              }
-              if (includeCollections && !collectionsCached) {
-                collectionsMiss = true;
-              }
-            } else {
-              lightMetadata = cachedEntry.metadata;
-              bodyLength = cachedEntry.body_length;
-              body = includeBody ? cachedBody.body : undefined;
-              heavyMetadata = includeCollections && cachedCollections ? cachedCollections.collections : undefined;
-            }
-
-            newEntries[relativePath] = {
-              mtime_ms: mtimeMs,
-              ctime_ms: ctimeMs,
-              size,
-              metadata: lightMetadata,
-              body_length: bodyLength,
-            };
-            if (includeBody && body !== undefined) {
-              newBodies[relativePath] = { mtime_ms: mtimeMs, ctime_ms: ctimeMs, size, body };
-            }
-            if (includeCollections && heavyMetadata !== undefined) {
-              newCollections[relativePath] = { mtime_ms: mtimeMs, ctime_ms: ctimeMs, size, collections: heavyMetadata };
-            }
-
-            const metadata = includeCollections ? mergeHeavyMetadata(lightMetadata, heavyMetadata) : lightMetadata;
-            const existing = documentsById.get(metadata.id);
-            const candidate: CachedDocumentCandidate = {
-              metadata,
-              body,
-              item_format: itemFormat,
-              item_path: filePath,
-            };
-            if (!existing || shouldReplaceCachedDocumentCandidate(existing.itemFormat, itemFormat, preferredFormat)) {
-              documentsById.set(metadata.id, { candidate, itemFormat });
-            }
-          } catch {
-            appendWarning(warnings, `item_list_item_read_failed:${folder}/${file}`);
-          }
-        })(),
-      );
-    }
-  }
-
-  await Promise.all(parseTasks);
+  await Promise.all(collectCachedDocumentParseTasks(dirResults, context));
 
   // Rewrite a cache file only when its contents changed: any re-parsed (missing or
   // stale) entry, or a different set of keys (additions/deletions).
-  const metadataDirty = metadataMiss || Object.keys(previousEntries).length !== Object.keys(newEntries).length;
-  if (metadataDirty || existingCache === null || existingCache.context_fingerprint !== contextFingerprint) {
-    await persistCache(getCachePath(pmRoot), {
-      version: CACHE_VERSION,
-      context_fingerprint: contextFingerprint,
-      entries: newEntries,
-    }).catch(() => {});
-  }
+  await persistMetadataCacheIfNeeded({ pmRoot, contextFingerprint, existingCache, previousEntries, state });
 
   if (includeBody) {
-    const bodyDirty = bodyMiss || Object.keys(previousBodies).length !== Object.keys(newBodies).length;
-    if (bodyDirty || existingBodyCache === null || existingBodyCache.context_fingerprint !== contextFingerprint) {
-      await persistCache(getBodyCachePath(pmRoot), {
-        version: CACHE_VERSION,
-        context_fingerprint: contextFingerprint,
-        bodies: newBodies,
-      }).catch(() => {});
-    }
+    await persistBodyCacheIfNeeded({ pmRoot, contextFingerprint, existingBodyCache, previousBodies, state });
   }
 
   if (includeCollections) {
-    const collectionsDirty =
-      collectionsMiss || Object.keys(previousCollections).length !== Object.keys(newCollections).length;
-    if (
-      collectionsDirty ||
-      existingCollectionsCache === null ||
-      existingCollectionsCache.context_fingerprint !== contextFingerprint
-    ) {
-      await persistCache(getCollectionsCachePath(pmRoot), {
-        version: CACHE_VERSION,
-        context_fingerprint: contextFingerprint,
-        collections: newCollections,
-      }).catch(() => {});
-    }
+    await persistCollectionsCacheIfNeeded({ pmRoot, contextFingerprint, existingCollectionsCache, previousCollections, state });
   }
 
-  return [...documentsById.values()]
-    .sort((left, right) => left.candidate.metadata.id.localeCompare(right.candidate.metadata.id))
-    .map((entry) => entry.candidate);
+  return sortedCachedDocumentCandidates(state);
 }
 
 /**

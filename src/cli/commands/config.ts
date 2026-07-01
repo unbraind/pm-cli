@@ -1128,6 +1128,14 @@ async function writeConfigSettingsIfChanged(
   }
 }
 
+function hasGovernanceValidationMirrorChange<T extends ParentReferencePolicy | ValidateMetadataProfile>(
+  governanceValue: T,
+  validationValue: T,
+  nextPolicy: T,
+): boolean {
+  return governanceValue !== nextPolicy || validationValue !== nextPolicy;
+}
+
 function buildPolicyResult(
   context: ConfigExecutionContext,
   key: ConfigKey,
@@ -1364,7 +1372,11 @@ async function setGovernanceValidationConfig(
     const nextPolicy = normalizeParentReferencePolicy(options.policy);
     const changed =
       context.settings.governance.preset !== "custom" ||
-      context.settings.governance.parent_reference !== nextPolicy;
+      hasGovernanceValidationMirrorChange(
+        context.settings.governance.parent_reference,
+        context.settings.validation.parent_reference,
+        nextPolicy,
+      );
     context.settings.governance.preset = "custom";
     context.settings.governance.parent_reference = nextPolicy;
     context.settings.validation.parent_reference = nextPolicy;
@@ -1375,7 +1387,11 @@ async function setGovernanceValidationConfig(
     const nextPolicy = normalizeValidateMetadataProfile(options.policy);
     const changed =
       context.settings.governance.preset !== "custom" ||
-      context.settings.governance.metadata_profile !== nextPolicy;
+      hasGovernanceValidationMirrorChange(
+        context.settings.governance.metadata_profile,
+        context.settings.validation.metadata_profile,
+        nextPolicy,
+      );
     context.settings.governance.preset = "custom";
     context.settings.governance.metadata_profile = nextPolicy;
     context.settings.validation.metadata_profile = nextPolicy;
@@ -1536,6 +1552,7 @@ export async function runConfig(
 }
 
 export const _testOnlyConfigCommand = {
+  hasGovernanceValidationMirrorChange,
   applyPositionalValue,
   normalizeAction,
   normalizeCriteria,

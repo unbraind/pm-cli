@@ -121,6 +121,18 @@ export interface NormalizeItemTypeDefinitionOptions {
   resolvePolicyCommand?: ResolvePolicyCommand;
 }
 
+function normalizeOptionalStringList(
+  values: string[] | undefined,
+  preservePresence: boolean,
+): string[] | undefined {
+  return preservePresence ? normalizeItemTypeStringList(values) : undefined;
+}
+
+function optionalNonEmptyString(value: string | undefined): string | undefined {
+  const normalized = value?.trim();
+  return normalized && normalized.length > 0 ? normalized : undefined;
+}
+
 /**
  * Normalize a full {@link ItemTypeDefinition}, returning null when the name is blank.
  *
@@ -144,9 +156,6 @@ export function normalizeItemTypeDefinition(
   const hasOptions = definition.options !== undefined;
   const hasCommandOptionPolicies = definition.command_option_policies !== undefined;
 
-  const folder = definition.folder?.trim();
-  const description = definition.description?.trim();
-  const defaultStatus = definition.default_status?.trim();
   const aliases = normalizeItemTypeStringList(definition.aliases);
   const normalizedOptions = (definition.options ?? [])
     .map((option) => normalizeItemTypeOption(option))
@@ -159,16 +168,15 @@ export function normalizeItemTypeDefinition(
 
   return {
     name,
-    description: description && description.length > 0 ? description : undefined,
-    default_status: defaultStatus && defaultStatus.length > 0 ? defaultStatus : undefined,
-    folder: folder && folder.length > 0 ? folder : undefined,
+    description: optionalNonEmptyString(definition.description),
+    default_status: optionalNonEmptyString(definition.default_status),
+    folder: optionalNonEmptyString(definition.folder),
     aliases: aliases.length > 0 ? aliases : undefined,
-    required_create_fields: hasRequiredCreateFields
-      ? normalizeItemTypeStringList(definition.required_create_fields)
-      : undefined,
-    required_create_repeatables: hasRequiredCreateRepeatables
-      ? normalizeItemTypeStringList(definition.required_create_repeatables)
-      : undefined,
+    required_create_fields: normalizeOptionalStringList(definition.required_create_fields, hasRequiredCreateFields),
+    required_create_repeatables: normalizeOptionalStringList(
+      definition.required_create_repeatables,
+      hasRequiredCreateRepeatables,
+    ),
     options: hasOptions ? normalizedOptions : undefined,
     command_option_policies: hasCommandOptionPolicies ? commandOptionPolicies : undefined,
   };

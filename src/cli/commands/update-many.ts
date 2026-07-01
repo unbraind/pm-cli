@@ -580,6 +580,83 @@ function assertPlannedUpdateValuesValid(
   }
 }
 
+async function runUpdateManyRollback(params: {
+  pmRoot: string;
+  rollbackId: string;
+  options: UpdateManyCommandOptions;
+  global: GlobalOptions;
+}): Promise<UpdateManyResult> {
+  const checkpoint = await loadMutationCheckpoint(
+    params.pmRoot,
+    UPDATE_MANY_CHECKPOINT_SUBDIR,
+    params.rollbackId,
+    UPDATE_MANY_CHECKPOINT_SCHEMA_VERSION,
+  );
+  const restoreMessage = params.options.update?.message ?? `Rollback update-many checkpoint ${checkpoint.id}`;
+  const rollback = await restoreCheckpointItems(checkpoint.items, (id, targetUpdatedAt) =>
+    runRestore(
+      id,
+      targetUpdatedAt,
+      {
+        author: params.options.update?.author,
+        message: restoreMessage,
+        force: params.options.update?.force ?? true,
+      },
+      params.global,
+    ),
+  );
+  return {
+    mode: "rollback",
+    matched_count: checkpoint.items.length,
+    dry_run: false,
+    rollback_checkpoint_id: checkpoint.id,
+    checkpoint: {
+      id: checkpoint.id,
+      created_at: checkpoint.created_at,
+      path: checkpoint.path,
+      rollback_command: `pm update-many --rollback ${checkpoint.id}`,
+    },
+    restored_count: rollback.restored_ids.length,
+    failed_count: rollback.failed_count,
+    rows: rollback.rows,
+    ids: rollback.restored_ids,
+  };
+}
+
+async function writeUpdateManyCheckpoint(params: {
+  pmRoot: string;
+  checkpointId: string;
+  nowValue: string;
+  options: UpdateManyCommandOptions;
+  statusFilter: string | undefined;
+  filters: Record<string, unknown>;
+  updateSummary: Record<string, unknown>;
+  checkpointItems: MutationCheckpointItem[];
+}): Promise<UpdateManyResult["checkpoint"]> {
+  const checkpointPayload: UpdateManyCheckpoint = {
+    schema_version: UPDATE_MANY_CHECKPOINT_SCHEMA_VERSION,
+    id: params.checkpointId,
+    created_at: params.nowValue,
+    author: resolveAuthor(params.options.update.author, "unknown"),
+    status_filter: params.statusFilter ?? null,
+    list_filters: params.filters,
+    update_options: params.updateSummary,
+    items: params.checkpointItems,
+  };
+  const checkpointPath = await writeMutationCheckpoint(
+    params.pmRoot,
+    UPDATE_MANY_CHECKPOINT_SUBDIR,
+    params.checkpointId,
+    checkpointPayload,
+  );
+  return {
+    id: params.checkpointId,
+    created_at: params.nowValue,
+    path: checkpointPath,
+    rollback_command: `pm update-many --rollback ${params.checkpointId}`,
+  };
+}
+
 
 /**
  * Implements run update many for the public runtime surface of this module.
@@ -608,42 +685,7 @@ export async function runUpdateMany(options: UpdateManyCommandOptions, global: G
     if (Object.keys(updateSummary).length > 0) {
       throw new PmCliError("Rollback mode does not accept update mutation flags", EXIT_CODE.USAGE);
     }
-
-    const checkpoint = await loadMutationCheckpoint(
-      pmRoot,
-      UPDATE_MANY_CHECKPOINT_SUBDIR,
-      rollbackId,
-      UPDATE_MANY_CHECKPOINT_SCHEMA_VERSION,
-    );
-    const restoreMessage = options.update?.message ?? `Rollback update-many checkpoint ${checkpoint.id}`;
-    const rollback = await restoreCheckpointItems(checkpoint.items, (id, targetUpdatedAt) =>
-      runRestore(
-        id,
-        targetUpdatedAt,
-        {
-          author: options.update?.author,
-          message: restoreMessage,
-          force: options.update?.force ?? true,
-        },
-        global,
-      ),
-    );
-    return {
-      mode: "rollback",
-      matched_count: checkpoint.items.length,
-      dry_run: false,
-      rollback_checkpoint_id: checkpoint.id,
-      checkpoint: {
-        id: checkpoint.id,
-        created_at: checkpoint.created_at,
-        path: checkpoint.path,
-        rollback_command: `pm update-many --rollback ${checkpoint.id}`,
-      },
-      restored_count: rollback.restored_ids.length,
-      failed_count: rollback.failed_count,
-      rows: rollback.rows,
-      ids: rollback.restored_ids,
-    };
+    return runUpdateManyRollback({ pmRoot, rollbackId, options, global });
   }
 
   if (!hasAnyUpdateMutationInput(options.update)) {
@@ -703,28 +745,16 @@ export async function runUpdateMany(options: UpdateManyCommandOptions, global: G
 
   let checkpointInfo: UpdateManyResult["checkpoint"] | undefined;
   if (checkpointEnabled) {
-    const checkpointPayload: UpdateManyCheckpoint = {
-      schema_version: UPDATE_MANY_CHECKPOINT_SCHEMA_VERSION,
-      id: checkpointId,
-      created_at: nowValue,
-      author: resolveAuthor(options.update.author, "unknown"),
-      status_filter: statusFilter ?? null,
-      list_filters: listed.filters,
-      update_options: updateSummary,
-      items: checkpointItems,
-    };
-    const checkpointPath = await writeMutationCheckpoint(
+    checkpointInfo = await writeUpdateManyCheckpoint({
       pmRoot,
-      UPDATE_MANY_CHECKPOINT_SUBDIR,
       checkpointId,
-      checkpointPayload,
-    );
-    checkpointInfo = {
-      id: checkpointId,
-      created_at: nowValue,
-      path: checkpointPath,
-      rollback_command: `pm update-many --rollback ${checkpointId}`,
-    };
+      nowValue,
+      options,
+      statusFilter,
+      filters: listed.filters,
+      updateSummary,
+      checkpointItems,
+    });
   }
 
   const applyRows: UpdateManyApplyResultRow[] = [];

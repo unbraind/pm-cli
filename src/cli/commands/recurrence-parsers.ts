@@ -89,6 +89,57 @@ export const RECURRENCE_CSV_KEYS = [
   "recur_exdates",
 ] as const;
 
+function numericRecurrenceValueProvided(raw: string | undefined, guard: RecurrenceEmptyNumericGuard): boolean {
+  return guard === "defined" ? raw !== undefined : Boolean(raw);
+}
+
+function parsePositiveRecurrenceInteger(raw: string | undefined, label: string, guard: RecurrenceEmptyNumericGuard): number | undefined {
+  if (!numericRecurrenceValueProvided(raw, guard)) {
+    return undefined;
+  }
+  const parsed = parseOptionalNumber(raw as string, `event ${label}`);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new PmCliError(`--event ${label} must be an integer >= 1`, EXIT_CODE.USAGE);
+  }
+  return parsed;
+}
+
+function parseRecurrenceUntil(untilRaw: string | undefined, startAt: string, nowValue: Date): string | undefined {
+  const until = untilRaw ? resolveIsoOrRelative(untilRaw, nowValue, "event.recur_until") : undefined;
+  if (until && until < startAt) {
+    throw new PmCliError("--event recur_until must be at or after start", EXIT_CODE.USAGE);
+  }
+  return until;
+}
+
+function parseRecurrenceWeekdays(raw: string | undefined): Array<(typeof RECURRENCE_WEEKDAY_VALUES)[number]> {
+  return Array.from(
+    new Set(
+      parseDelimitedList(raw).map((value) => ensureEnumValue(value.toLowerCase(), RECURRENCE_WEEKDAY_VALUES, "event weekday")),
+    ),
+  ).sort((left, right) => weekdayOrderIndex(left) - weekdayOrderIndex(right));
+}
+
+function parseRecurrenceMonthDays(raw: string | undefined): number[] {
+  return Array.from(
+    new Set(
+      parseDelimitedList(raw).map((value) => {
+        const day = parseOptionalNumber(value, "event recur_by_month_day");
+        if (!Number.isInteger(day) || day < 1 || day > 31) {
+          throw new PmCliError("--event recur_by_month_day values must be integers 1..31", EXIT_CODE.USAGE);
+        }
+        return day;
+      }),
+    ),
+  ).sort((left, right) => left - right);
+}
+
+function parseRecurrenceExdates(raw: string | undefined, nowValue: Date): string[] {
+  return Array.from(
+    new Set(parseDelimitedList(raw).map((value) => resolveIsoOrRelative(value, nowValue, "event.recur_exdates"))),
+  ).sort((left, right) => left.localeCompare(right));
+}
+
 /**
  * Implements parse recurrence rule for the public runtime surface of this module.
  */
@@ -116,48 +167,13 @@ export function parseRecurrenceRule(
     throw new PmCliError("--event recurrence fields require recur_freq=<daily|weekly|monthly|yearly>", EXIT_CODE.USAGE);
   }
 
-  const numericProvided = (raw: string | undefined): boolean =>
-    emptyNumericGuard === "defined" ? raw !== undefined : Boolean(raw);
-
   const freq = ensureEnumValue(freqRaw.toLowerCase(), RECURRENCE_FREQUENCY_VALUES, "event recurrence frequency");
-  const interval = numericProvided(intervalRaw) ? parseOptionalNumber(intervalRaw as string, "event recur_interval") : undefined;
-  if (interval !== undefined && (!Number.isInteger(interval) || interval < 1)) {
-    throw new PmCliError("--event recur_interval must be an integer >= 1", EXIT_CODE.USAGE);
-  }
-  const count = numericProvided(countRaw) ? parseOptionalNumber(countRaw as string, "event recur_count") : undefined;
-  if (count !== undefined && (!Number.isInteger(count) || count < 1)) {
-    throw new PmCliError("--event recur_count must be an integer >= 1", EXIT_CODE.USAGE);
-  }
-  const until = untilRaw ? resolveIsoOrRelative(untilRaw, nowValue, "event.recur_until") : undefined;
-  if (until && until < startAt) {
-    throw new PmCliError("--event recur_until must be at or after start", EXIT_CODE.USAGE);
-  }
-
-  const byWeekday = Array.from(
-    new Set(
-      parseDelimitedList(byWeekdayRaw).map((value) => ensureEnumValue(value.toLowerCase(), RECURRENCE_WEEKDAY_VALUES, "event weekday")),
-    ),
-  ).sort(
-    (left, right) =>
-      weekdayOrderIndex(left as (typeof RECURRENCE_WEEKDAY_VALUES)[number]) -
-      weekdayOrderIndex(right as (typeof RECURRENCE_WEEKDAY_VALUES)[number]),
-  );
-
-  const byMonthDay = Array.from(
-    new Set(
-      parseDelimitedList(byMonthDayRaw).map((value) => {
-        const day = parseOptionalNumber(value, "event recur_by_month_day");
-        if (!Number.isInteger(day) || day < 1 || day > 31) {
-          throw new PmCliError("--event recur_by_month_day values must be integers 1..31", EXIT_CODE.USAGE);
-        }
-        return day;
-      }),
-    ),
-  ).sort((left, right) => left - right);
-
-  const exdates = Array.from(
-    new Set(parseDelimitedList(exdatesRaw).map((value) => resolveIsoOrRelative(value, nowValue, "event.recur_exdates"))),
-  ).sort((left, right) => left.localeCompare(right));
+  const interval = parsePositiveRecurrenceInteger(intervalRaw, "recur_interval", emptyNumericGuard);
+  const count = parsePositiveRecurrenceInteger(countRaw, "recur_count", emptyNumericGuard);
+  const until = parseRecurrenceUntil(untilRaw, startAt, nowValue);
+  const byWeekday = parseRecurrenceWeekdays(byWeekdayRaw);
+  const byMonthDay = parseRecurrenceMonthDays(byMonthDayRaw);
+  const exdates = parseRecurrenceExdates(exdatesRaw, nowValue);
 
   return {
     freq,

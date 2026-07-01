@@ -125,6 +125,73 @@ describe("runValidate", () => {
     });
   });
 
+  it("covers metadata summary helper defensive fallback branches", () => {
+    type MetadataPolicy = Parameters<typeof validateInternals.buildMissingFieldOccurrences>[0];
+    type MissingByField = Parameters<typeof validateInternals.buildMissingFieldOccurrences>[1];
+    type ItemsById = Parameters<typeof validateInternals.buildMissingFieldOccurrences>[2];
+    type ItemForValidate = ItemsById extends Map<string, infer Item> ? Item : never;
+    const metadataPolicy = {
+      required_fields: ["author", "acceptance_criteria", "close_reason", "estimated_minutes"],
+    } as MetadataPolicy;
+    const missingByField = {
+      acceptance_criteria: ["pm-known", "pm-unknown-type"],
+      close_reason: ["pm-closed"],
+      estimated_minutes: ["pm-estimate"],
+    } as MissingByField;
+    const itemsById = new Map<string, ItemForValidate>([
+      ["pm-known", { type: "Bug" } as ItemForValidate],
+      ["pm-unknown-type", { type: "" } as ItemForValidate],
+      ["pm-closed", { resolution: "Fixed" } as ItemForValidate],
+      ["pm-estimate", { type: "Task" } as ItemForValidate],
+    ]);
+
+    expect(validateInternals.buildMissingFieldOccurrences(metadataPolicy, missingByField, itemsById)).toEqual([
+      { item_type: "Bug", field: "acceptance_criteria" },
+      { item_type: "Unknown", field: "acceptance_criteria" },
+      { item_type: "Unknown", field: "close_reason" },
+      { item_type: "Task", field: "estimated_minutes" },
+    ]);
+    expect(validateInternals.buildMetadataCounts(metadataPolicy, missingByField)).toMatchObject({
+      missing_acceptance_criteria: 2,
+      closed_missing_close_reason: 1,
+      missing_estimated_minutes: 1,
+    });
+    expect(
+      validateInternals.buildCloseReasonBackfillRows(
+        { required_fields: ["author"] } as MetadataPolicy,
+        missingByField,
+        itemsById,
+      ),
+    ).toEqual([]);
+    expect(
+      validateInternals.buildCloseReasonBackfillRows(
+        { required_fields: ["close_reason"] } as MetadataPolicy,
+        {} as MissingByField,
+        itemsById,
+      ),
+    ).toEqual([]);
+    expect(validateInternals.buildCloseReasonBackfillRows(metadataPolicy, missingByField, itemsById)).toEqual([
+      { id: "pm-closed", resolution: "Fixed" },
+    ]);
+    expect(
+      validateInternals.buildEstimateBackfillRows(
+        { required_fields: ["author"] } as MetadataPolicy,
+        missingByField,
+        itemsById,
+      ),
+    ).toEqual([]);
+    expect(
+      validateInternals.buildEstimateBackfillRows(
+        { required_fields: ["estimated_minutes"] } as MetadataPolicy,
+        {} as MissingByField,
+        itemsById,
+      ),
+    ).toEqual([]);
+    expect(validateInternals.buildEstimateBackfillRows(metadataPolicy, missingByField, itemsById)).toEqual([
+      { id: "pm-estimate", type: "Task" },
+    ]);
+  });
+
   it("reports a clean format-version check for a baseline tracker", async () => {
     await withTempPmPath(async (context) => {
       createTask(context, "validate-format-version-baseline");

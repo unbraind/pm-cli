@@ -19,6 +19,12 @@ export function commandFor(binary) {
   return `${binary}.cmd`;
 }
 
+function formatCommandFailure(command, args, result, capture) {
+  const stderr = capture ? (result.stderr || "").trim() : "";
+  const detail = stderr.length > 0 ? `\n${stderr}` : "";
+  return `Command failed: ${command} ${args.join(" ")}${detail}`;
+}
+
 export function runCommand(command, args, options = {}) {
   const {
     cwd = repoRoot,
@@ -39,9 +45,7 @@ export function runCommand(command, args, options = {}) {
 
   const status = result.status ?? 1;
   if (status !== 0 && !allowFailure) {
-    const stderr = capture ? (result.stderr || "").trim() : "";
-    const detail = stderr.length > 0 ? `\n${stderr}` : "";
-    fail(`Command failed: ${command} ${args.join(" ")}${detail}`, status);
+    fail(formatCommandFailure(command, args, result, capture), status);
   }
 
   return {

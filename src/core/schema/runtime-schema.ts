@@ -198,6 +198,41 @@ function normalizeRuntimeWorkflow(workflow: RuntimeWorkflowDefinition | undefine
   };
 }
 
+interface TypeWorkflowAccumulatorRecord {
+  type: string;
+  pairs: [string, string][];
+  denyAll: boolean;
+}
+
+function appendTypeWorkflowPair(record: TypeWorkflowAccumulatorRecord, pair: unknown): void {
+  if (!Array.isArray(pair) || pair.length !== 2) {
+    return;
+  }
+  const from = normalizeStatusToken(pair[0]);
+  const to = normalizeStatusToken(pair[1]);
+  if (from.length === 0 || to.length === 0) {
+    return;
+  }
+  if (record.pairs.some((candidate) => candidate[0] === from && candidate[1] === to)) {
+    return;
+  }
+  record.pairs.push([from, to]);
+}
+
+function normalizedTypeWorkflowEntry(
+  entry: TypeWorkflowDefinition,
+): { typeKey: string; record: TypeWorkflowAccumulatorRecord } | null {
+  const rawType = typeof entry?.type === "string" ? entry.type.trim() : "";
+  if (rawType.length === 0 || !Array.isArray(entry?.allowed_transitions)) {
+    return null;
+  }
+  const record: TypeWorkflowAccumulatorRecord = { type: rawType, pairs: [], denyAll: entry.allowed_transitions.length === 0 };
+  for (const pair of entry.allowed_transitions) {
+    appendTypeWorkflowPair(record, pair);
+  }
+  return { typeKey: rawType.toLowerCase(), record };
+}
+
 function normalizeTypeWorkflowDefinitions(
   workflows: TypeWorkflowDefinition[] | undefined,
 ): TypeWorkflowDefinition[] | undefined {
@@ -214,37 +249,18 @@ function normalizeTypeWorkflowDefinitions(
   // malformed (e.g. a 3-element tuple typo) must be DROPPED like other malformed
   // schema-file content, NOT silently turned into a deny-all rule — otherwise a
   // typo would start failing every update for that type under strict enforcement.
-  const byTypeKey = new Map<string, { type: string; pairs: [string, string][]; denyAll: boolean }>();
+  const byTypeKey = new Map<string, TypeWorkflowAccumulatorRecord>();
   for (const entry of workflows) {
-    const rawType = typeof entry?.type === "string" ? entry.type.trim() : "";
-    if (rawType.length === 0) {
+    const normalized = normalizedTypeWorkflowEntry(entry);
+    if (normalized === null) {
       continue;
     }
-    if (!Array.isArray(entry?.allowed_transitions)) {
-      continue;
+    const record = byTypeKey.get(normalized.typeKey) ?? normalized.record;
+    record.denyAll ||= normalized.record.denyAll;
+    for (const pair of normalized.record.pairs) {
+      appendTypeWorkflowPair(record, pair);
     }
-    const typeKey = rawType.toLowerCase();
-    const pairs = entry.allowed_transitions;
-    const record = byTypeKey.get(typeKey) ?? { type: rawType, pairs: [], denyAll: false };
-    // Only an explicitly empty array signals an intentional deny-all.
-    if (pairs.length === 0) {
-      record.denyAll = true;
-    }
-    for (const pair of pairs) {
-      if (!Array.isArray(pair) || pair.length !== 2) {
-        continue;
-      }
-      const from = normalizeStatusToken(pair[0]);
-      const to = normalizeStatusToken(pair[1]);
-      if (from.length === 0 || to.length === 0) {
-        continue;
-      }
-      if (record.pairs.some((candidate) => candidate[0] === from && candidate[1] === to)) {
-        continue;
-      }
-      record.pairs.push([from, to]);
-    }
-    byTypeKey.set(typeKey, record);
+    byTypeKey.set(normalized.typeKey, record);
   }
   const normalized: TypeWorkflowDefinition[] = [];
   for (const record of byTypeKey.values()) {
