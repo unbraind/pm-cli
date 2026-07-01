@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:cli",code-quality,codefactor,tech-debt
 created_at: "2026-07-01T05:35:48.850Z"
-updated_at: "2026-07-01T10:15:43.027Z"
+updated_at: "2026-07-01T10:24:32.954Z"
 author: claude-code-agent
 parent: pm-92if
 resolution: fixed
@@ -40,5 +40,7 @@ test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-mr1tmtbv-72ybib,test,passed,"2026-07-01T08:30:08.968Z","2026-07-01T08:36:12.668Z","2026-07-01T08:36:12.668Z",4,0,0
   test-local-mr1uxtmt-7nb6at,test,passed,"2026-07-01T09:06:40.419Z","2026-07-01T09:12:45.893Z","2026-07-01T09:12:45.893Z",4,0,0
   test-local-mr1vorkh-fd5a65,test,passed,"2026-07-01T09:27:42.377Z","2026-07-01T09:33:42.929Z","2026-07-01T09:33:42.929Z",4,0,0
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated pm-changelog entry after closing pm-0n6p
 close_reason: "Implemented CodeFactor complexity remediation for update/register-mutation, fixed review feedback, and verified PR #413 green on head dfb8d641 with coverage/typecheck/static/smoke/Windows/CodeQL/CodeFactor/CodeRabbit/Gemini/Greptile all clean; manual installed-package temp smoke and linked pm tests passed."
 body: ""

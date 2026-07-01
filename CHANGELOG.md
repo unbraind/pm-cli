@@ -1,9 +1,10 @@
 # Changelog
 
-## 2026.7.1 - 2026-07-01
+## Unreleased
 
 ### Changed
 
+- CodeFactor/Complexity: decompose runUpdate, the update mutate apply-callback, and register-mutation MCP arrows ([pm-0n6p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0n6p.toon))
 - CodeFactor/Complexity: decompose runCreate (CC 172) and the audit-scope update guard (CC 38) ([pm-g7vl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-g7vl.toon))
 
 ### Fixed
