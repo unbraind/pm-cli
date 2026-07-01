@@ -119,6 +119,13 @@ export interface RunHealthOptions {
   summary?: boolean;
 }
 
+interface VectorRefreshPolicy {
+  enabled: boolean;
+  checkOnly: boolean;
+  noRefresh: boolean;
+  refreshVectors: boolean;
+}
+
 interface MigrationStatusEntry {
   layer: "global" | "project";
   name: string;
@@ -299,6 +306,10 @@ async function listItemDocumentPaths(pmRoot: string, typeToFolder: Record<string
   return itemPaths;
 }
 
+function shouldReportHistoryDirectoryUnreadable(error: unknown): boolean {
+  return (error as { code?: string }).code !== "ENOENT";
+}
+
 async function buildIntegrityCheck(
   pmRoot: string,
   typeToFolder: Record<string, string>,
@@ -347,7 +358,7 @@ async function buildIntegrityCheck(
     historyFiles = (await fs.readdir(historyDir)).filter((entry) => entry.endsWith(".jsonl")).sort((left, right) => left.localeCompare(right));
   } catch (error: unknown) {
     /* c8 ignore start -- ENOENT/non-ENOENT differentiation requires filesystem fault injection */
-    if (!(typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "ENOENT")) {
+    if (shouldReportHistoryDirectoryUnreadable(error)) {
       historyUnreadable.push("history");
     }
     /* c8 ignore stop */
@@ -1062,6 +1073,20 @@ function selectStaleItemDetail(
   };
 }
 
+type VectorizationRuntimeDefaults = ReturnType<typeof resolveSettingsWithSemanticRuntimeDefaults>;
+type VectorizationProviderResolution = ReturnType<typeof resolveEmbeddingProviders>;
+type VectorizationStoreResolution = ReturnType<typeof resolveVectorStores>;
+type VectorizationLedger = Awaited<ReturnType<typeof readVectorizationStatusLedger>>;
+type VectorizationRefreshResult = Awaited<ReturnType<typeof refreshSemanticEmbeddingsForMutatedItems>>;
+
+interface VectorizationRuntimeSnapshot {
+  runtimeDefaults: VectorizationRuntimeDefaults;
+  providerResolution: VectorizationProviderResolution;
+  vectorStoreResolution: VectorizationStoreResolution;
+  runtimeEmbeddingIdentity: ReturnType<typeof buildVectorizationEmbeddingIdentity> | null;
+  semanticRuntimeAvailable: boolean;
+}
+
 interface TelemetryRuntimeStateRecord {
   endpoint?: string;
   queue_entries?: number;
@@ -1159,6 +1184,133 @@ function parseTelemetryQueue(raw: string): {
   };
 }
 
+type TelemetryQueueSummary = ReturnType<typeof parseTelemetryQueue>;
+
+interface TelemetryEndpointProbeSummary {
+  attempted: boolean;
+  probe_url?: string;
+  ok?: boolean;
+  status?: number;
+  max_schema_version?: string;
+  error?: string;
+}
+
+function emptyTelemetryQueueSummary(): TelemetryQueueSummary {
+  return { validEntries: 0, invalidRows: 0, totalRows: 0, highRetryEntries: 0, maxAttempts: 0 };
+}
+
+/* c8 ignore start -- telemetry state corruption and otel-failure branches require runtime-coordinated fixture mutation */
+function parseTelemetryRuntimeState(stateRaw: string | null): { runtimeState: TelemetryRuntimeStateRecord; stateParseFailed: boolean } {
+  if (!stateRaw || stateRaw.trim().length === 0) {
+    return { runtimeState: {}, stateParseFailed: false };
+  }
+  try {
+    const parsed = JSON.parse(stateRaw) as TelemetryRuntimeStateRecord;
+    if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+      return { runtimeState: parsed, stateParseFailed: false };
+    }
+    return { runtimeState: {}, stateParseFailed: true };
+  } catch {
+    return { runtimeState: {}, stateParseFailed: true };
+  }
+}
+
+async function maybeProbeTelemetryEndpoint(
+  settings: PmSettings,
+  checkTelemetry: boolean,
+): Promise<TelemetryEndpointProbeSummary | undefined> {
+  const endpoint = settings.telemetry.endpoint.trim();
+  if (!checkTelemetry || !settings.telemetry.enabled || endpoint.length === 0) {
+    return undefined;
+  }
+  const probe = await probeTelemetryEndpointHealth(endpoint);
+  return {
+    attempted: true,
+    ...probe,
+  };
+}
+
+function collectTelemetryQueueWarnings(
+  settings: PmSettings,
+  queueSummary: TelemetryQueueSummary,
+  runtimeState: TelemetryRuntimeStateRecord,
+): string[] {
+  const warnings: string[] = [];
+  if (queueSummary.invalidRows > 0) {
+    warnings.push(`telemetry_queue_invalid_rows:${queueSummary.invalidRows}`);
+  }
+  if (!settings.telemetry.enabled || queueSummary.validEntries === 0) {
+    return warnings;
+  }
+  const lastSuccess = runtimeState.last_successful_flush_at;
+  const lastFailure = runtimeState.last_failed_flush_at;
+  const activeFailure = lastFailure && (!lastSuccess || lastFailure > lastSuccess);
+  const neverFlushed = !lastSuccess;
+  const highWater = queueSummary.validEntries >= TELEMETRY_QUEUE_HIGH_WATER_MARK;
+  if (activeFailure || neverFlushed || highWater) {
+    warnings.push(`telemetry_queue_pending:${queueSummary.validEntries}`);
+  }
+  if (queueSummary.highRetryEntries > 0) {
+    warnings.push(`telemetry_queue_high_retries:${queueSummary.highRetryEntries}`);
+  }
+  return warnings;
+}
+
+function collectTelemetryEndpointWarnings(endpointProbe: TelemetryEndpointProbeSummary | undefined): string[] {
+  if (!endpointProbe || endpointProbe.ok !== false) {
+    return [];
+  }
+  return typeof endpointProbe.status === "number"
+    ? [`telemetry_endpoint_probe_http_status:${endpointProbe.status}`]
+    : ["telemetry_endpoint_probe_failed"];
+}
+
+function collectTelemetrySchemaWarnings(endpointProbe: TelemetryEndpointProbeSummary | undefined): string[] {
+  const parsedMaxSchemaVersion = Number.parseInt(endpointProbe?.max_schema_version ?? "", 10);
+  if (endpointProbe?.ok === true && Number.isInteger(parsedMaxSchemaVersion) && parsedMaxSchemaVersion > TELEMETRY_SCHEMA_VERSION) {
+    return [`telemetry_schema_version_behind:${parsedMaxSchemaVersion}`];
+  }
+  return [];
+}
+
+function collectTelemetryOtelWarnings(settings: PmSettings, runtimeState: TelemetryRuntimeStateRecord): string[] {
+  const pendingOtelSpans = typeof runtimeState.pending_otel_spans === "number" ? runtimeState.pending_otel_spans : 0;
+  const lastOtelSuccess = runtimeState.last_otel_success_at;
+  const lastOtelFailure = runtimeState.last_otel_failure_at;
+  const otelExportFailing =
+    settings.telemetry.enabled &&
+    pendingOtelSpans > 0 &&
+    Boolean(lastOtelFailure) &&
+    // >= so a mixed-outcome batch (success + failure share the same attempt
+    // timestamp) still surfaces the warning rather than being masked by the tie.
+    (!lastOtelSuccess || (lastOtelFailure as string) >= lastOtelSuccess);
+  return otelExportFailing ? [`telemetry_otel_export_failing:${pendingOtelSpans}`] : [];
+}
+
+function buildTelemetryEnvOverrideDetails(): Record<string, unknown> {
+  return {
+    telemetry_disabled: telemetryEnvFlagEnabled("PM_TELEMETRY_DISABLED") || telemetryEnvFlagEnabled("PM_NO_TELEMETRY"),
+    pm_no_telemetry: telemetryEnvFlagEnabled("PM_NO_TELEMETRY"),
+    telemetry_otel_disabled: telemetryEnvFlagEnabled("PM_TELEMETRY_OTEL_DISABLED"),
+    telemetry_inline_flush: telemetryEnvFlagEnabled("PM_TELEMETRY_INLINE_FLUSH"),
+    telemetry_source_context: telemetrySourceContextOverride(),
+  };
+}
+/* c8 ignore stop */
+
+function telemetryQueueHasEntries(settings: PmSettings, queueSummary: TelemetryQueueSummary): boolean {
+  return settings.telemetry.enabled && queueSummary.validEntries > 0;
+}
+
+function isTelemetryQueueDraining(queueHasEntries: boolean, warnings: string[]): boolean {
+  return (
+    queueHasEntries &&
+    warnings.every(
+      (warning) => !warning.startsWith("telemetry_queue_pending:") && !warning.startsWith("telemetry_queue_high_retries:"),
+    )
+  );
+}
+
 async function probeTelemetryEndpointHealth(endpoint: string): Promise<{
   probe_url: string;
   ok: boolean;
@@ -1216,100 +1368,27 @@ async function buildTelemetryCheck(
   const queueRaw = await readFileIfExists(queuePath);
   const queueExists = queueRaw !== null;
   const queueSizeBytes = queueRaw ? Buffer.byteLength(queueRaw, "utf8") : 0;
-  const queueSummary = queueRaw
-    ? parseTelemetryQueue(queueRaw)
-    : { validEntries: 0, invalidRows: 0, totalRows: 0, highRetryEntries: 0, maxAttempts: 0 };
+  const queueSummary = queueRaw ? parseTelemetryQueue(queueRaw) : emptyTelemetryQueueSummary();
 
   const stateRaw = await readFileIfExists(statePath);
-  let runtimeState: TelemetryRuntimeStateRecord = {};
-  let stateParseFailed = false;
-  /* c8 ignore start -- telemetry state corruption and otel-failure branches require runtime-coordinated fixture mutation */
-  if (stateRaw && stateRaw.trim().length > 0) {
-    try {
-      const parsed = JSON.parse(stateRaw) as TelemetryRuntimeStateRecord;
-      if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
-        runtimeState = parsed;
-      } else {
-        /* c8 ignore next -- malformed runtime-state payloads are integration-only corruption cases */
-        stateParseFailed = true;
-      }
-    } catch {
-      stateParseFailed = true;
-    }
-  }
+  const { runtimeState, stateParseFailed } = parseTelemetryRuntimeState(stateRaw);
 
   const endpoint = settings.telemetry.endpoint.trim();
   const endpointDisplay = normalizeEndpointForDisplay(endpoint);
-  let endpointProbe:
-    | {
-        attempted: boolean;
-        probe_url: string;
-        ok: boolean;
-        status?: number;
-        max_schema_version?: string;
-        error?: string;
-      }
-    | undefined;
-  if (options.checkTelemetry && settings.telemetry.enabled && endpoint.length > 0) {
-    const probe = await probeTelemetryEndpointHealth(endpoint);
-    endpointProbe = {
-      attempted: true,
-      ...probe,
-    };
-  }
+  const endpointProbe = await maybeProbeTelemetryEndpoint(settings, options.checkTelemetry);
 
   const warnings: string[] = [];
   if (stateParseFailed) {
     warnings.push("telemetry_state_invalid_json");
   }
-  if (queueSummary.invalidRows > 0) {
-    warnings.push(`telemetry_queue_invalid_rows:${queueSummary.invalidRows}`);
-  }
-  const queueHasEntries = settings.telemetry.enabled && queueSummary.validEntries > 0;
-  if (queueHasEntries) {
-    const lastSuccess = runtimeState.last_successful_flush_at;
-    const lastFailure = runtimeState.last_failed_flush_at;
-    const activeFailure = lastFailure && (!lastSuccess || lastFailure > lastSuccess);
-    const neverFlushed = !lastSuccess;
-    const highWater = queueSummary.validEntries >= TELEMETRY_QUEUE_HIGH_WATER_MARK;
-    const highRetries = queueSummary.highRetryEntries > 0;
-    if (activeFailure || neverFlushed || highWater) {
-      warnings.push(`telemetry_queue_pending:${queueSummary.validEntries}`);
-    }
-    if (highRetries) {
-      warnings.push(`telemetry_queue_high_retries:${queueSummary.highRetryEntries}`);
-    }
-  }
-  if (endpointProbe && !endpointProbe.ok) {
-    if (typeof endpointProbe.status === "number") {
-      warnings.push(`telemetry_endpoint_probe_http_status:${endpointProbe.status}`);
-    } else {
-      warnings.push("telemetry_endpoint_probe_failed");
-    }
-  }
-  const parsedMaxSchemaVersion = Number.parseInt(endpointProbe?.max_schema_version ?? "", 10);
-  if (
-    endpointProbe &&
-    endpointProbe.ok &&
-    Number.isInteger(parsedMaxSchemaVersion) &&
-    parsedMaxSchemaVersion > TELEMETRY_SCHEMA_VERSION
-  ) {
-    warnings.push(`telemetry_schema_version_behind:${parsedMaxSchemaVersion}`);
-  }
+  warnings.push(
+    ...collectTelemetryQueueWarnings(settings, queueSummary, runtimeState),
+    ...collectTelemetryEndpointWarnings(endpointProbe),
+    ...collectTelemetrySchemaWarnings(endpointProbe),
+    ...collectTelemetryOtelWarnings(settings, runtimeState),
+  );
+  const queueHasEntries = telemetryQueueHasEntries(settings, queueSummary);
   const pendingOtelSpans = typeof runtimeState.pending_otel_spans === "number" ? runtimeState.pending_otel_spans : 0;
-  const lastOtelSuccess = runtimeState.last_otel_success_at;
-  const lastOtelFailure = runtimeState.last_otel_failure_at;
-  const otelExportFailing =
-    settings.telemetry.enabled &&
-    pendingOtelSpans > 0 &&
-    Boolean(lastOtelFailure) &&
-    // >= so a mixed-outcome batch (success + failure share the same attempt
-    // timestamp) still surfaces the warning rather than being masked by the tie.
-    (!lastOtelSuccess || (lastOtelFailure as string) >= lastOtelSuccess);
-  if (otelExportFailing) {
-    warnings.push(`telemetry_otel_export_failing:${pendingOtelSpans}`);
-  }
-  /* c8 ignore stop */
 
   return {
     check: {
@@ -1323,12 +1402,7 @@ async function buildTelemetryCheck(
         queue_path: queuePath,
         queue_exists: queueExists,
         queue_entries: queueSummary.validEntries,
-        queue_draining:
-          queueHasEntries &&
-          warnings.every(
-            (warning) =>
-              !warning.startsWith("telemetry_queue_pending:") && !warning.startsWith("telemetry_queue_high_retries:"),
-          ),
+        queue_draining: isTelemetryQueueDraining(queueHasEntries, warnings),
         queue_invalid_rows: queueSummary.invalidRows,
         queue_rows_total: queueSummary.totalRows,
         queue_size_bytes: queueSizeBytes,
@@ -1345,18 +1419,8 @@ async function buildTelemetryCheck(
         last_otel_success_at: runtimeState.last_otel_success_at ?? null,
         last_otel_failure_at: runtimeState.last_otel_failure_at ?? null,
         last_otel_failure_error: runtimeState.last_otel_failure_error ?? null,
-        endpoint_probe: endpointProbe ?? {
-          attempted: false,
-        },
-        /* c8 ignore start -- env-override combinations are validated through runtime integration suites */
-        env_overrides: {
-          telemetry_disabled: telemetryEnvFlagEnabled("PM_TELEMETRY_DISABLED") || telemetryEnvFlagEnabled("PM_NO_TELEMETRY"),
-          pm_no_telemetry: telemetryEnvFlagEnabled("PM_NO_TELEMETRY"),
-          telemetry_otel_disabled: telemetryEnvFlagEnabled("PM_TELEMETRY_OTEL_DISABLED"),
-          telemetry_inline_flush: telemetryEnvFlagEnabled("PM_TELEMETRY_INLINE_FLUSH"),
-          telemetry_source_context: telemetrySourceContextOverride(),
-        },
-        /* c8 ignore stop */
+        endpoint_probe: endpointProbe ?? { attempted: false },
+        env_overrides: buildTelemetryEnvOverrideDetails(),
       },
     },
     warnings,
@@ -1456,99 +1520,182 @@ async function buildHistoryDriftCheck(
   };
 }
 
-async function buildVectorizationCheck(
-  pmRoot: string,
-  settings: PmSettings,
-  items: ItemWithBody[],
-  refreshPolicy: {
-    enabled: boolean;
-    checkOnly: boolean;
-    noRefresh: boolean;
-    refreshVectors: boolean;
-  },
-  verboseStaleItems: boolean,
-): Promise<{ check: HealthCheck; warnings: string[] }> {
+function buildVectorizationRuntimeSnapshot(settings: PmSettings): VectorizationRuntimeSnapshot {
   const runtimeDefaults = resolveSettingsWithSemanticRuntimeDefaults(settings);
   const providerResolution = resolveEmbeddingProviders(runtimeDefaults.settings);
   const vectorStoreResolution = resolveVectorStores(runtimeDefaults.settings);
   const runtimeEmbeddingIdentity = providerResolution.active
     ? buildVectorizationEmbeddingIdentity(providerResolution.active.name, providerResolution.active.model)
     : null;
-  const semanticRuntimeAvailable = Boolean(providerResolution.active && vectorStoreResolution.active);
-  const ledgerBefore = await readVectorizationStatusLedger(pmRoot);
-  const staleBefore = semanticRuntimeAvailable ? collectStaleVectorizationIds(items, ledgerBefore.entries) : [];
-  let refreshResult: Awaited<ReturnType<typeof refreshSemanticEmbeddingsForMutatedItems>> = {
+  return {
+    runtimeDefaults,
+    providerResolution,
+    vectorStoreResolution,
+    runtimeEmbeddingIdentity,
+    semanticRuntimeAvailable: Boolean(providerResolution.active && vectorStoreResolution.active),
+  };
+}
+
+function emptyVectorizationRefreshResult(): VectorizationRefreshResult {
+  return {
     refreshed: [],
     skipped: [],
     warnings: [],
   };
-  if (refreshPolicy.enabled && semanticRuntimeAvailable && staleBefore.length > 0) {
-    refreshResult = await refreshSemanticEmbeddingsForMutatedItems(pmRoot, staleBefore, {
-      settings: runtimeDefaults.settings,
-      apply_runtime_defaults: false,
-    });
+}
+
+async function refreshStaleVectorizationItems(params: {
+  pmRoot: string;
+  snapshot: VectorizationRuntimeSnapshot;
+  refreshPolicy: VectorRefreshPolicy;
+  staleBefore: string[];
+}): Promise<VectorizationRefreshResult> {
+  if (!params.refreshPolicy.enabled || !params.snapshot.semanticRuntimeAvailable || params.staleBefore.length === 0) {
+    return emptyVectorizationRefreshResult();
   }
-  const ledgerAfter = await readVectorizationStatusLedger(pmRoot);
-  const staleAfter = semanticRuntimeAvailable ? collectStaleVectorizationIds(items, ledgerAfter.entries) : [];
-  const strictVectorizationWarnings = !runtimeDefaults.auto_ollama_defaults_applied;
-  const embeddingIdentityChanged =
-    strictVectorizationWarnings &&
-    semanticRuntimeAvailable &&
+  return refreshSemanticEmbeddingsForMutatedItems(params.pmRoot, params.staleBefore, {
+    settings: params.snapshot.runtimeDefaults.settings,
+    apply_runtime_defaults: false,
+  });
+}
+
+function vectorizationEmbeddingIdentityChanged(params: {
+  strictVectorizationWarnings: boolean;
+  semanticRuntimeAvailable: boolean;
+  ledgerBefore: VectorizationLedger;
+  runtimeEmbeddingIdentity: VectorizationRuntimeSnapshot["runtimeEmbeddingIdentity"];
+}): boolean {
+  return (
+    params.strictVectorizationWarnings &&
+    params.semanticRuntimeAvailable &&
     Boolean(
-      ledgerBefore.embedding &&
-        runtimeEmbeddingIdentity &&
-        hasVectorizationEmbeddingIdentityChanged(ledgerBefore.embedding, runtimeEmbeddingIdentity),
-    );
-  /* c8 ignore start -- strict-vectorization warning synthesis branches are integration-only policy permutations */
-  const warningSet = new Set<string>([...ledgerBefore.warnings, ...ledgerAfter.warnings]);
-  if (strictVectorizationWarnings) {
-    for (const warning of refreshResult.warnings) {
+      params.ledgerBefore.embedding &&
+        params.runtimeEmbeddingIdentity &&
+        hasVectorizationEmbeddingIdentityChanged(params.ledgerBefore.embedding, params.runtimeEmbeddingIdentity),
+    )
+  );
+}
+
+/* c8 ignore start -- strict-vectorization warning synthesis branches are integration-only policy permutations */
+function collectVectorizationWarnings(params: {
+  ledgerBefore: VectorizationLedger;
+  ledgerAfter: VectorizationLedger;
+  refreshResult: VectorizationRefreshResult;
+  strictVectorizationWarnings: boolean;
+  semanticRuntimeAvailable: boolean;
+  embeddingIdentityChanged: boolean;
+  staleAfter: string[];
+}): string[] {
+  const warningSet = new Set<string>([...params.ledgerBefore.warnings, ...params.ledgerAfter.warnings]);
+  if (params.strictVectorizationWarnings) {
+    for (const warning of params.refreshResult.warnings) {
       warningSet.add(warning);
     }
   }
-  if (embeddingIdentityChanged) {
+  if (params.embeddingIdentityChanged) {
     warningSet.add("vectorization_embedding_identity_changed");
   }
-  if (strictVectorizationWarnings && semanticRuntimeAvailable && staleAfter.length > 0) {
-    warningSet.add(`vectorization_stale_items_remaining:${staleAfter.length}`);
+  if (params.strictVectorizationWarnings && params.semanticRuntimeAvailable && params.staleAfter.length > 0) {
+    warningSet.add(`vectorization_stale_items_remaining:${params.staleAfter.length}`);
   }
-  const warnings = [...warningSet].sort((left, right) => left.localeCompare(right));
+  return [...warningSet].sort((left, right) => left.localeCompare(right));
+}
+/* c8 ignore stop */
+
+function resolveVectorizationRefreshSkippedReason(
+  refreshPolicy: VectorRefreshPolicy,
+  semanticRuntimeAvailable: boolean,
+  staleBefore: string[],
+): string | null {
+  if (refreshPolicy.enabled && semanticRuntimeAvailable && staleBefore.length > 0) {
+    return null;
+  }
+  if (!refreshPolicy.enabled) {
+    return "refresh_disabled";
+  }
+  return semanticRuntimeAvailable ? "no_stale_items" : "semantic_runtime_unavailable";
+}
+
+function buildVectorizationProviderDetails(settings: PmSettings, snapshot: VectorizationRuntimeSnapshot): Record<string, unknown> {
+  const activeProvider = snapshot.providerResolution.active?.name ?? null;
+  const activeVectorStore = snapshot.vectorStoreResolution.active?.name ?? null;
+  return {
+    provider_active: activeProvider,
+    // GH-244: surface the persisted (possibly empty) configured value and
+    // how the active resolution was sourced, so a config audit can tell
+    // "auto-detected" apart from a genuine misconfiguration when
+    // settings.search.provider / vector_store.adapter are empty strings.
+    provider_configured: typeof settings.search?.provider === "string" ? settings.search.provider : null,
+    provider_source: resolveProviderConfigSource(activeProvider, settings.search?.provider ?? null),
+    vector_store_active: activeVectorStore,
+    vector_store_configured: typeof settings.vector_store?.adapter === "string" ? settings.vector_store.adapter : null,
+    vector_store_source: resolveProviderConfigSource(activeVectorStore, settings.vector_store?.adapter ?? null),
+  };
+}
+
+function buildVectorizationRefreshPolicyDetails(refreshPolicy: VectorRefreshPolicy): Record<string, unknown> {
+  return {
+    enabled: refreshPolicy.enabled,
+    check_only: refreshPolicy.checkOnly,
+    no_refresh: refreshPolicy.noRefresh,
+    refresh_vectors: refreshPolicy.refreshVectors,
+  };
+}
+
+function vectorizationRefreshAttempted(
+  refreshPolicy: VectorRefreshPolicy,
+  semanticRuntimeAvailable: boolean,
+  staleBefore: string[],
+): boolean {
+  return refreshPolicy.enabled && staleBefore.length > 0 && semanticRuntimeAvailable;
+}
+
+async function buildVectorizationCheck(
+  pmRoot: string,
+  settings: PmSettings,
+  items: ItemWithBody[],
+  refreshPolicy: VectorRefreshPolicy,
+  verboseStaleItems: boolean,
+): Promise<{ check: HealthCheck; warnings: string[] }> {
+  const snapshot = buildVectorizationRuntimeSnapshot(settings);
+  const ledgerBefore = await readVectorizationStatusLedger(pmRoot);
+  const staleBefore = snapshot.semanticRuntimeAvailable ? collectStaleVectorizationIds(items, ledgerBefore.entries) : [];
+  const refreshResult = await refreshStaleVectorizationItems({ pmRoot, snapshot, refreshPolicy, staleBefore });
+  const ledgerAfter = await readVectorizationStatusLedger(pmRoot);
+  const staleAfter = snapshot.semanticRuntimeAvailable ? collectStaleVectorizationIds(items, ledgerAfter.entries) : [];
+  const strictVectorizationWarnings = !snapshot.runtimeDefaults.auto_ollama_defaults_applied;
+  const embeddingIdentityChanged = vectorizationEmbeddingIdentityChanged({
+    strictVectorizationWarnings,
+    semanticRuntimeAvailable: snapshot.semanticRuntimeAvailable,
+    ledgerBefore,
+    runtimeEmbeddingIdentity: snapshot.runtimeEmbeddingIdentity,
+  });
+  const warnings = collectVectorizationWarnings({
+    ledgerBefore,
+    ledgerAfter,
+    refreshResult,
+    strictVectorizationWarnings,
+    semanticRuntimeAvailable: snapshot.semanticRuntimeAvailable,
+    embeddingIdentityChanged,
+    staleAfter,
+  });
   const staleBeforeDetail = selectStaleItemDetail(staleBefore, verboseStaleItems);
   const staleAfterDetail = selectStaleItemDetail(staleAfter, verboseStaleItems);
+  const refreshAttempted = vectorizationRefreshAttempted(refreshPolicy, snapshot.semanticRuntimeAvailable, staleBefore);
 
   return {
     check: {
       name: "vectorization",
       status: warnings.length === 0 ? "ok" : "warn",
       details: {
-        semantic_runtime_available: semanticRuntimeAvailable,
-        compatibility_mode_auto_defaults: runtimeDefaults.auto_ollama_defaults_applied,
-        auto_ollama_defaults_applied: runtimeDefaults.auto_ollama_defaults_applied,
-        refresh_policy: {
-          enabled: refreshPolicy.enabled,
-          check_only: refreshPolicy.checkOnly,
-          no_refresh: refreshPolicy.noRefresh,
-          refresh_vectors: refreshPolicy.refreshVectors,
-        },
-        provider_active: providerResolution.active?.name ?? null,
-        // GH-244: surface the persisted (possibly empty) configured value and
-        // how the active resolution was sourced, so a config audit can tell
-        // "auto-detected" apart from a genuine misconfiguration when
-        // settings.search.provider / vector_store.adapter are empty strings.
-        provider_configured: typeof settings.search?.provider === "string" ? settings.search.provider : null,
-        provider_source: resolveProviderConfigSource(
-          providerResolution.active?.name ?? null,
-          settings.search?.provider ?? null,
-        ),
-        vector_store_active: vectorStoreResolution.active?.name ?? null,
-        vector_store_configured: typeof settings.vector_store?.adapter === "string" ? settings.vector_store.adapter : null,
-        vector_store_source: resolveProviderConfigSource(
-          vectorStoreResolution.active?.name ?? null,
-          settings.vector_store?.adapter ?? null,
-        ),
+        semantic_runtime_available: snapshot.semanticRuntimeAvailable,
+        compatibility_mode_auto_defaults: snapshot.runtimeDefaults.auto_ollama_defaults_applied,
+        auto_ollama_defaults_applied: snapshot.runtimeDefaults.auto_ollama_defaults_applied,
+        refresh_policy: buildVectorizationRefreshPolicyDetails(refreshPolicy),
+        ...buildVectorizationProviderDetails(settings, snapshot),
         embedding_identity_changed: embeddingIdentityChanged,
         embedding_identity_before: ledgerBefore.embedding ?? null,
-        embedding_identity_runtime: runtimeEmbeddingIdentity ?? null,
+        embedding_identity_runtime: snapshot.runtimeEmbeddingIdentity ?? null,
         items: items.length,
         ledger_entries_before: Object.keys(ledgerBefore.entries).length,
         stale_items_detail_mode: verboseStaleItems ? "full" : "summary",
@@ -1556,15 +1703,12 @@ async function buildVectorizationCheck(
         stale_items_before_total: staleBeforeDetail.total,
         stale_items_before: staleBeforeDetail.values,
         stale_items_before_truncated: staleBeforeDetail.truncated,
-        refresh_attempted: refreshPolicy.enabled && staleBefore.length > 0 && semanticRuntimeAvailable,
-        refresh_skipped_reason:
-          refreshPolicy.enabled && semanticRuntimeAvailable && staleBefore.length > 0
-            ? null
-            : !refreshPolicy.enabled
-              ? "refresh_disabled"
-              : !semanticRuntimeAvailable
-                ? "semantic_runtime_unavailable"
-                : "no_stale_items",
+        refresh_attempted: refreshAttempted,
+        refresh_skipped_reason: resolveVectorizationRefreshSkippedReason(
+          refreshPolicy,
+          snapshot.semanticRuntimeAvailable,
+          staleBefore,
+        ),
         refresh_result: refreshResult,
         ledger_entries_after: Object.keys(ledgerAfter.entries).length,
         stale_items_after_total: staleAfterDetail.total,
@@ -1574,7 +1718,6 @@ async function buildVectorizationCheck(
     },
     warnings,
   };
-  /* c8 ignore stop */
 }
 
 function validateSettingsValues(settings: PmSettings): string[] {
@@ -1588,12 +1731,7 @@ function validateSettingsValues(settings: PmSettings): string[] {
   return warnings;
 }
 
-function resolveVectorRefreshPolicy(options: RunHealthOptions): {
-  enabled: boolean;
-  checkOnly: boolean;
-  noRefresh: boolean;
-  refreshVectors: boolean;
-} {
+function resolveVectorRefreshPolicy(options: RunHealthOptions): VectorRefreshPolicy {
   const checkOnly = options.checkOnly === true;
   const noRefresh = options.noRefresh === true || checkOnly;
   const refreshVectors = options.refreshVectors === true;
@@ -1611,6 +1749,295 @@ function resolveVectorRefreshPolicy(options: RunHealthOptions): {
   };
 }
 
+type HealthCheckResult = { check: HealthCheck; warnings: string[] };
+type HealthTypeRegistry = ReturnType<typeof resolveItemTypeRegistry>;
+
+interface HealthDirectoryState {
+  requiredDirs: string[];
+  optionalDirs: string[];
+  missingRequiredDirs: string[];
+  missingOptionalDirs: string[];
+  missingDirs: string[];
+  hookWarnings: string[];
+}
+
+interface HealthSkipPolicy {
+  summaryMode: boolean;
+  skipIntegrity: boolean;
+  skipDrift: boolean;
+  skipVectors: boolean;
+}
+
+function resolveHealthDirectoryLists(typeRegistry: HealthTypeRegistry): {
+  requiredDirs: string[];
+  optionalDirs: string[];
+  optionalDirSet: Set<string>;
+} {
+  const optionalBuiltinDirs = new Set<string>(PM_OPTIONAL_TYPE_SUBDIRS.filter((entry) => entry.length > 0));
+  const requiredDirSet = new Set<string>(PM_CORE_REQUIRED_SUBDIRS.filter((entry) => entry.length > 0));
+  const optionalDirSet = new Set<string>();
+  for (const folder of typeRegistry.folders) {
+    if (optionalBuiltinDirs.has(folder)) {
+      optionalDirSet.add(folder);
+      continue;
+    }
+    requiredDirSet.add(folder);
+  }
+  return {
+    requiredDirs: [...requiredDirSet].sort((left, right) => left.localeCompare(right)),
+    optionalDirs: [...optionalDirSet].sort((left, right) => left.localeCompare(right)),
+    optionalDirSet,
+  };
+}
+
+async function scanHealthDirectories(
+  pmRoot: string,
+  typeRegistry: HealthTypeRegistry,
+  strictDirectories: boolean,
+): Promise<HealthDirectoryState> {
+  const { requiredDirs, optionalDirs, optionalDirSet } = resolveHealthDirectoryLists(typeRegistry);
+  const missingRequiredDirs: string[] = [];
+  const missingOptionalDirs: string[] = [];
+  const hookWarnings: string[] = [];
+  for (const relativeDir of [...requiredDirs, ...optionalDirs]) {
+    const directoryPath = path.join(pmRoot, relativeDir);
+    hookWarnings.push(...(await runActiveOnReadHooks({ path: directoryPath, scope: "project" })));
+    if (await isDirectory(directoryPath)) {
+      continue;
+    }
+    if (optionalDirSet.has(relativeDir)) {
+      missingOptionalDirs.push(relativeDir);
+    } else {
+      missingRequiredDirs.push(relativeDir);
+    }
+  }
+  return {
+    requiredDirs,
+    optionalDirs,
+    missingRequiredDirs,
+    missingOptionalDirs,
+    missingDirs: strictDirectories ? [...missingRequiredDirs, ...missingOptionalDirs] : [...missingRequiredDirs],
+    hookWarnings,
+  };
+}
+
+function resolveHealthSkipPolicy(options: RunHealthOptions): HealthSkipPolicy {
+  const summaryMode = options.summary === true && options.full !== true;
+  const fastProjectionCheckOnly =
+    options.checkOnly === true && (options.brief === true || options.summary === true) && options.full !== true;
+  return {
+    summaryMode,
+    skipIntegrity: (options.skipIntegrity === true || fastProjectionCheckOnly) && options.full !== true,
+    skipDrift: (options.skipDrift === true || fastProjectionCheckOnly) && options.full !== true,
+    skipVectors: (options.skipVectors === true || fastProjectionCheckOnly) && options.full !== true,
+  };
+}
+
+async function readHealthItems(params: {
+  pmRoot: string;
+  settings: PmSettings;
+  typeRegistry: HealthTypeRegistry;
+  skipPolicy: HealthSkipPolicy;
+  itemReadWarnings: string[];
+}): Promise<Array<ItemMetadata | ItemWithBody>> {
+  if (params.skipPolicy.skipDrift && params.skipPolicy.skipVectors) {
+    return listAllFrontMatter(
+      params.pmRoot,
+      params.settings.item_format,
+      params.typeRegistry.type_to_folder,
+      params.itemReadWarnings,
+      params.settings.schema,
+    );
+  }
+  return listAllFrontMatterWithBody(
+    params.pmRoot,
+    params.settings.item_format,
+    params.typeRegistry.type_to_folder,
+    params.itemReadWarnings,
+    params.settings.schema,
+  );
+}
+
+function buildSkippedHealthCheck(name: Extract<HealthCheck["name"], "integrity" | "history_drift" | "vectorization">): HealthCheckResult {
+  return { check: { name, status: "ok", details: { skipped: true } }, warnings: [] };
+}
+
+function buildSettingsHealthCheck(
+  settingsPath: string,
+  settings: PmSettings,
+  normalizedSettingsReadWarnings: string[],
+): HealthCheck {
+  return {
+    name: "settings",
+    /* c8 ignore next -- settings read-warning status split is covered in broader read-settings integration tests */
+    status: normalizedSettingsReadWarnings.length === 0 ? "ok" : "warn",
+    details: {
+      path: settingsPath,
+      version: settings.version,
+      id_prefix: settings.id_prefix,
+      locks_ttl_seconds: settings.locks.ttl_seconds,
+      warnings: normalizedSettingsReadWarnings,
+    },
+  };
+}
+
+function buildDirectoriesHealthCheck(directoryState: HealthDirectoryState, strictDirectories: boolean): HealthCheck {
+  return {
+    name: "directories",
+    status: directoryState.missingDirs.length === 0 ? "ok" : "warn",
+    details: {
+      required: directoryState.requiredDirs,
+      optional: directoryState.optionalDirs,
+      missing_required: directoryState.missingRequiredDirs,
+      missing_optional: directoryState.missingOptionalDirs,
+      missing: directoryState.missingDirs,
+      strict_directories: strictDirectories,
+    },
+  };
+}
+
+function buildSettingsValuesHealthCheck(settingWarnings: string[]): HealthCheck {
+  return {
+    name: "settings_values",
+    status: settingWarnings.length === 0 ? "ok" : "warn",
+    details: { warnings: settingWarnings },
+  };
+}
+
+function buildStorageHealthCheck(
+  items: Array<ItemMetadata | ItemWithBody>,
+  settings: PmSettings,
+  historySummary: HistoryStreamSummary,
+): HealthCheck {
+  return {
+    name: "storage",
+    status: historySummary.over_threshold.length === 0 ? "ok" : "warn",
+    details: {
+      items: items.length,
+      history_streams: historySummary.count,
+      ...(historySummary.max_entries !== null
+        ? {
+            compact_policy: {
+              enabled: settings.history.compact_policy.enabled,
+              max_entries: historySummary.max_entries,
+              trigger: settings.history.compact_policy.trigger,
+              over_threshold_count: historySummary.over_threshold.length,
+              over_threshold: historySummary.over_threshold,
+            },
+          }
+        : {}),
+    },
+  };
+}
+
+function collectHealthWarnings(params: {
+  directoryState: HealthDirectoryState;
+  normalizedSettingsReadWarnings: string[];
+  settingWarnings: string[];
+  normalizedItemReadWarnings: string[];
+  telemetryCheck: HealthCheckResult;
+  extensionCheck: HealthCheckResult;
+  historyPolicyWarnings: string[];
+  historySummary: HistoryStreamSummary;
+  locksCheck: HealthCheckResult;
+  integrityCheck: HealthCheckResult;
+  historyDriftCheck: HealthCheckResult;
+  vectorizationCheck: HealthCheckResult;
+}): string[] {
+  const warnings = [
+    ...params.directoryState.missingDirs.map((dir) => `missing_directory:${dir}`),
+    ...params.normalizedSettingsReadWarnings,
+    ...params.settingWarnings,
+    ...params.normalizedItemReadWarnings,
+    ...params.telemetryCheck.warnings,
+    ...params.extensionCheck.warnings,
+    ...params.historyPolicyWarnings,
+    ...params.historySummary.warnings,
+    ...params.locksCheck.warnings,
+    ...params.integrityCheck.warnings,
+    ...params.historyDriftCheck.warnings,
+    ...params.vectorizationCheck.warnings,
+    ...params.directoryState.hookWarnings,
+  ];
+  return [...new Set(warnings)];
+}
+
+function extractHistoryDriftedCount(historyDriftCheck: HealthCheckResult): number {
+  const counts = historyDriftCheck.check.details.counts as { drifted?: unknown } | undefined;
+  return typeof counts?.drifted === "number" ? counts.drifted : 0;
+}
+
+function buildHealthRemediationSources(params: {
+  directoryState: HealthDirectoryState;
+  normalizedSettingsReadWarnings: string[];
+  settingWarnings: string[];
+  telemetryCheck: HealthCheckResult;
+  extensionCheck: HealthCheckResult;
+  historySummary: HistoryStreamSummary;
+  locksCheck: HealthCheckResult;
+  integrityCheck: HealthCheckResult;
+  historyDriftCheck: HealthCheckResult;
+  vectorizationCheck: HealthCheckResult;
+}): Record<HealthCheck["name"], string[]> {
+  return {
+    settings: params.normalizedSettingsReadWarnings,
+    directories: params.directoryState.missingDirs.map((dir) => `missing_directory:${dir}`),
+    settings_values: params.settingWarnings,
+    telemetry: params.telemetryCheck.warnings,
+    extensions: params.extensionCheck.warnings,
+    storage: params.historySummary.over_threshold.map((id) => `history_stream_over_compact_threshold:${id}`),
+    locks: params.locksCheck.warnings,
+    integrity: params.integrityCheck.warnings,
+    history_drift: params.historyDriftCheck.warnings,
+    vectorization: params.vectorizationCheck.warnings,
+  };
+}
+
+function rewriteBulkHealthRemediation(params: {
+  check: HealthCheck;
+  remediationMap: Record<string, string>;
+  historyDriftedCount: number;
+  overThresholdCount: number;
+}): void {
+  if (params.check.name === "history_drift" && params.historyDriftedCount > 1) {
+    for (const code of Object.keys(params.remediationMap)) {
+      params.remediationMap[code] = "pm history-repair --all";
+    }
+  }
+  if (params.check.name === "storage" && params.overThresholdCount > 1) {
+    for (const code of Object.keys(params.remediationMap)) {
+      params.remediationMap[code] = "pm history-compact --all-streams";
+    }
+  }
+}
+
+function attachHealthRemediationMaps(params: {
+  checks: HealthCheck[];
+  remediationSources: Record<HealthCheck["name"], string[]>;
+  historyDriftedCount: number;
+  overThresholdCount: number;
+}): void {
+  for (const check of params.checks) {
+    const remediationMap = buildRemediationMap(params.remediationSources[check.name]);
+    rewriteBulkHealthRemediation({
+      check,
+      remediationMap,
+      historyDriftedCount: params.historyDriftedCount,
+      overThresholdCount: params.overThresholdCount,
+    });
+    if (Object.keys(remediationMap).length > 0) {
+      check.details = { ...check.details, remediation_map: remediationMap };
+    }
+  }
+}
+
+function projectHealthResult(result: HealthResult, options: RunHealthOptions, summaryMode: boolean): HealthResult {
+  if (summaryMode) {
+    return applySummaryHealthProjection(result);
+  }
+  return options.brief === true ? applyBriefHealthProjection(result) : result;
+}
+
 /**
  * Implements run health for the public runtime surface of this module.
  */
@@ -1626,63 +2053,18 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const strictDirectories = options.strictDirectories === true;
   const refreshPolicy = resolveVectorRefreshPolicy(options);
-  const optionalBuiltinDirs = new Set<string>(PM_OPTIONAL_TYPE_SUBDIRS.filter((entry) => entry.length > 0));
-  const requiredDirSet = new Set<string>(PM_CORE_REQUIRED_SUBDIRS.filter((entry) => entry.length > 0));
-  const optionalDirSet = new Set<string>();
-  for (const folder of typeRegistry.folders) {
-    if (optionalBuiltinDirs.has(folder)) {
-      optionalDirSet.add(folder);
-      continue;
-    }
-    requiredDirSet.add(folder);
-  }
-  const requiredDirs = [...requiredDirSet].sort((left, right) => left.localeCompare(right));
-  const optionalDirs = [...optionalDirSet].sort((left, right) => left.localeCompare(right));
-  const missingRequiredDirs: string[] = [];
-  const missingOptionalDirs: string[] = [];
-  const hookWarnings: string[] = [];
-  for (const relativeDir of [...requiredDirs, ...optionalDirs]) {
-    const directoryPath = path.join(pmRoot, relativeDir);
-    hookWarnings.push(
-      ...(await runActiveOnReadHooks({
-        path: directoryPath,
-        scope: "project",
-      })),
-    );
-    if (!(await isDirectory(directoryPath))) {
-      if (optionalDirSet.has(relativeDir)) {
-        missingOptionalDirs.push(relativeDir);
-      } else {
-        missingRequiredDirs.push(relativeDir);
-      }
-    }
-  }
-  const missingDirs = strictDirectories ? [...missingRequiredDirs, ...missingOptionalDirs] : [...missingRequiredDirs];
-
+  const directoryState = await scanHealthDirectories(pmRoot, typeRegistry, strictDirectories);
   const settingWarnings = validateSettingsValues(settings);
   const telemetryCheck = await buildTelemetryCheck(settings, {
     checkTelemetry: options.checkTelemetry === true,
   });
   const extensionCheck = await buildExtensionCheck(pmRoot, settings, Boolean(global.noExtensions));
-  const summaryMode = options.summary === true && options.full !== true;
-  const fastProjectionCheckOnly =
-    options.checkOnly === true && (options.brief === true || options.summary === true) && options.full !== true;
-  const skipIntegrity = (options.skipIntegrity === true || fastProjectionCheckOnly) && options.full !== true;
-  const skipDrift = (options.skipDrift === true || fastProjectionCheckOnly) && options.full !== true;
-  const skipVectors = (options.skipVectors === true || fastProjectionCheckOnly) && options.full !== true;
+  const skipPolicy = resolveHealthSkipPolicy(options);
   const itemReadWarnings: string[] = [];
-  const items = skipDrift && skipVectors
-    ? await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, itemReadWarnings, settings.schema)
-    : await listAllFrontMatterWithBody(
-        pmRoot,
-        settings.item_format,
-        typeRegistry.type_to_folder,
-        itemReadWarnings,
-        settings.schema,
-      );
+  const items = await readHealthItems({ pmRoot, settings, typeRegistry, skipPolicy, itemReadWarnings });
   const itemsWithBody = items as Array<ItemMetadata & { body: string }>;
   const normalizedItemReadWarnings = [...new Set(itemReadWarnings)];
-  const historyPolicy = skipDrift
+  const historyPolicy = skipPolicy.skipDrift
     ? { warnings: [] }
     : await enforceHistoryStreamPolicyForItems({
         pmRoot,
@@ -1692,140 +2074,60 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
       });
   const historySummary = await countHistoryStreams(pmRoot, settings.history.compact_policy);
   const locksCheck = await buildLocksCheck(pmRoot);
-  const integrityCheck = skipIntegrity
-    ? { check: { name: "integrity" as const, status: "ok" as const, details: { skipped: true } }, warnings: [] }
+  const integrityCheck = skipPolicy.skipIntegrity
+    ? buildSkippedHealthCheck("integrity")
     : await buildIntegrityCheck(pmRoot, typeRegistry.type_to_folder, settings.schema);
-  const historyDriftCheck = skipDrift
-    ? { check: { name: "history_drift" as const, status: "ok" as const, details: { skipped: true } }, warnings: [] }
+  const historyDriftCheck = skipPolicy.skipDrift
+    ? buildSkippedHealthCheck("history_drift")
     : await buildHistoryDriftCheck(pmRoot, itemsWithBody);
-  const vectorizationCheck = skipVectors
-    ? { check: { name: "vectorization" as const, status: "ok" as const, details: { skipped: true } }, warnings: [] }
+  const vectorizationCheck = skipPolicy.skipVectors
+    ? buildSkippedHealthCheck("vectorization")
     : await buildVectorizationCheck(pmRoot, settings, itemsWithBody, refreshPolicy, options.verboseStaleItems === true);
 
   const checks: HealthCheck[] = [
-    {
-      name: "settings",
-      /* c8 ignore next -- settings read-warning status split is covered in broader read-settings integration tests */
-      status: normalizedSettingsReadWarnings.length === 0 ? "ok" : "warn",
-      details: {
-        path: settingsPath,
-        version: settings.version,
-        id_prefix: settings.id_prefix,
-        locks_ttl_seconds: settings.locks.ttl_seconds,
-        warnings: normalizedSettingsReadWarnings,
-      },
-    },
-    {
-      name: "directories",
-      status: missingDirs.length === 0 ? "ok" : "warn",
-      details: {
-        required: requiredDirs,
-        optional: optionalDirs,
-        missing_required: missingRequiredDirs,
-        missing_optional: missingOptionalDirs,
-        missing: missingDirs,
-        strict_directories: strictDirectories,
-      },
-    },
-    {
-      name: "settings_values",
-      status: settingWarnings.length === 0 ? "ok" : "warn",
-      details: {
-        warnings: settingWarnings,
-      },
-    },
+    buildSettingsHealthCheck(settingsPath, settings, normalizedSettingsReadWarnings),
+    buildDirectoriesHealthCheck(directoryState, strictDirectories),
+    buildSettingsValuesHealthCheck(settingWarnings),
     telemetryCheck.check,
     extensionCheck.check,
-    {
-      name: "storage",
-      status: historySummary.over_threshold.length === 0 ? "ok" : "warn",
-      details: {
-        items: items.length,
-        history_streams: historySummary.count,
-        ...(historySummary.max_entries !== null
-          ? {
-              compact_policy: {
-                enabled: settings.history.compact_policy.enabled,
-                max_entries: historySummary.max_entries,
-                trigger: settings.history.compact_policy.trigger,
-                over_threshold_count: historySummary.over_threshold.length,
-                over_threshold: historySummary.over_threshold,
-              },
-            }
-          : {}),
-      },
-    },
+    buildStorageHealthCheck(items, settings, historySummary),
     locksCheck.check,
     integrityCheck.check,
     historyDriftCheck.check,
     vectorizationCheck.check,
   ];
 
-  const warnings = [
-    ...missingDirs.map((dir) => `missing_directory:${dir}`),
-    ...normalizedSettingsReadWarnings,
-    ...settingWarnings,
-    ...normalizedItemReadWarnings,
-    ...telemetryCheck.warnings,
-    ...extensionCheck.warnings,
-    ...historyPolicy.warnings,
-    ...historySummary.warnings,
-    ...locksCheck.warnings,
-    ...integrityCheck.warnings,
-    ...historyDriftCheck.warnings,
-    ...vectorizationCheck.warnings,
-    ...hookWarnings,
-  ];
-  const normalizedWarnings = [...new Set(warnings)];
-  // Attach a machine-executable remediation_map (warning-code-prefix -> fix
-  // command) to each non-extension check so agents gating on `pm health --json`
-  // never have to hardcode the warning-code -> fix mapping. The extensions check
-  // keeps its richer, contextual `details.triage.remediation`; brief/summary
-  // projections omit remediation_map (it lives only in full check details).
-  // Every health check contributes its warning tokens as a remediation source.
-  // Most resolve to a registered fix command; the extensions check passes its
-  // full warning list because only the system-wide partial-coverage adoption
-  // gap is registered — per-extension findings resolve to nothing here and keep
-  // their richer `details.triage.remediation`, so buildRemediationMap simply
-  // skips every unregistered code (pm-bdvm). The map is total over
-  // HealthCheck["name"], so no check is ever silently missing a source.
-  const checkRemediationSources: Record<HealthCheck["name"], string[]> = {
-    settings: normalizedSettingsReadWarnings,
-    directories: missingDirs.map((dir) => `missing_directory:${dir}`),
-    settings_values: settingWarnings,
-    telemetry: telemetryCheck.warnings,
-    extensions: extensionCheck.warnings,
-    storage: historySummary.over_threshold.map((id) => `history_stream_over_compact_threshold:${id}`),
-    locks: locksCheck.warnings,
-    integrity: integrityCheck.warnings,
-    history_drift: historyDriftCheck.warnings,
-    vectorization: vectorizationCheck.warnings,
-  };
-  const historyDriftedCount =
-    typeof (historyDriftCheck.check.details.counts as { drifted?: unknown } | undefined)?.drifted === "number"
-      ? ((historyDriftCheck.check.details.counts as { drifted: number }).drifted)
-      : 0;
-  for (const check of checks) {
-    const remediationMap = buildRemediationMap(checkRemediationSources[check.name]);
-    // With multiple drifted streams the per-item `pm history-repair <id>`
-    // template would have to be run once per stream; suggest the bulk audited
-    // pass instead so agents repair everything in one command.
-    if (check.name === "history_drift" && historyDriftedCount > 1) {
-      for (const code of Object.keys(remediationMap)) {
-        remediationMap[code] = "pm history-repair --all";
-      }
-    }
-    // With multiple over-threshold streams, point at the one-pass bulk sweep
-    // rather than a per-stream `pm history-compact <id>` template.
-    if (check.name === "storage" && historySummary.over_threshold.length > 1) {
-      for (const code of Object.keys(remediationMap)) {
-        remediationMap[code] = "pm history-compact --all-streams";
-      }
-    }
-    if (Object.keys(remediationMap).length > 0) {
-      check.details = { ...check.details, remediation_map: remediationMap };
-    }
-  }
+  const normalizedWarnings = collectHealthWarnings({
+    directoryState,
+    normalizedSettingsReadWarnings,
+    settingWarnings,
+    normalizedItemReadWarnings,
+    telemetryCheck,
+    extensionCheck,
+    historyPolicyWarnings: historyPolicy.warnings,
+    historySummary,
+    locksCheck,
+    integrityCheck,
+    historyDriftCheck,
+    vectorizationCheck,
+  });
+  attachHealthRemediationMaps({
+    checks,
+    remediationSources: buildHealthRemediationSources({
+      directoryState,
+      normalizedSettingsReadWarnings,
+      settingWarnings,
+      telemetryCheck,
+      extensionCheck,
+      historySummary,
+      locksCheck,
+      integrityCheck,
+      historyDriftCheck,
+      vectorizationCheck,
+    }),
+    historyDriftedCount: extractHistoryDriftedCount(historyDriftCheck),
+    overThresholdCount: historySummary.over_threshold.length,
+  });
   // Telemetry is an opt-out, non-critical observability feature. Its operational
   // state (queue backlog, unreachable endpoint, corrupt local state) is advisory:
   // it must never flip overall project health to not-ok. Such warnings are still
@@ -1837,15 +2139,13 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
     warnings: normalizedWarnings,
     generated_at: nowIso(),
   };
-  if (summaryMode) {
-    return applySummaryHealthProjection(result);
-  }
-  return options.brief === true ? applyBriefHealthProjection(result) : result;
+  return projectHealthResult(result, options, skipPolicy.summaryMode);
 }
 
 export const _testOnlyHealthCommand = {
   buildExtensionHealthTriageSummary,
   buildCapabilityContractMetadata,
+  buildVectorizationProviderDetails,
   collectUnknownCapabilityGuidance,
   isAdvisoryHealthWarning,
   isDirectory,

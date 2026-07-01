@@ -330,6 +330,36 @@ const COMPACT_LIST_VALUE_FILTER_ECHO_ENTRIES: ReadonlyArray<FilterValueEchoEntry
   { optionKey: "release", summaryKey: "release" },
 ] as const;
 
+const VERBOSE_LIST_VALUE_FILTER_ECHO_ENTRIES: ReadonlyArray<FilterValueEchoEntry> = [
+  { optionKey: "type", summaryKey: "type" },
+  { optionKey: "tag", summaryKey: "tag" },
+  { optionKey: "priority", summaryKey: "priority" },
+  { optionKey: "deadlineBefore", summaryKey: "deadline_before" },
+  { optionKey: "deadlineAfter", summaryKey: "deadline_after" },
+  { optionKey: "updatedAfter", summaryKey: "updated_after" },
+  { optionKey: "updatedBefore", summaryKey: "updated_before" },
+  { optionKey: "createdAfter", summaryKey: "created_after" },
+  { optionKey: "createdBefore", summaryKey: "created_before" },
+  { optionKey: "ids", summaryKey: "ids" },
+  { optionKey: "assignee", summaryKey: "assignee" },
+  { optionKey: "assigneeFilter", summaryKey: "assignee_filter" },
+  { optionKey: "parent", summaryKey: "parent" },
+  { optionKey: "sprint", summaryKey: "sprint" },
+  { optionKey: "release", summaryKey: "release" },
+  { optionKey: "limit", summaryKey: "limit" },
+  { optionKey: "offset", summaryKey: "offset" },
+  { optionKey: "includeBody", summaryKey: "include_body" },
+  { optionKey: "compact", summaryKey: "compact" },
+  { optionKey: "fields", summaryKey: "fields" },
+] as const;
+
+const VERBOSE_LIST_BOOLEAN_FILTER_ECHO_ENTRIES: ReadonlyArray<{ key: string; summaryKey: string }> = [
+  { key: "filterAcMissing", summaryKey: "filter_ac_missing" },
+  { key: "filterEstimatesMissing", summaryKey: "filter_estimates_missing" },
+  { key: "filterResolutionMissing", summaryKey: "filter_resolution_missing" },
+  { key: "filterMetadataMissing", summaryKey: "filter_metadata_missing" },
+] as const;
+
 function buildCompactListFilterSummary(params: {
   filtersStatus: string | string[] | null;
   options: ListOptions;
@@ -690,25 +720,44 @@ function matchesListScalarFilters(
   filters: ListFilterSet,
   statusRegistry: RuntimeStatusRegistry,
 ): boolean {
+  return matchesListIdentityFilters(item, filters, statusRegistry) &&
+    matchesListDateFilters(item, filters) &&
+    matchesListAssigneeFilterSet(item, filters) &&
+    matchesListScopeFilters(item, filters);
+}
+
+function matchesListIdentityFilters(
+  item: ListedItem,
+  filters: ListFilterSet,
+  statusRegistry: RuntimeStatusRegistry,
+): boolean {
   if (filters.idsFilter && !filters.idsFilter.has(item.id)) return false;
   if (filters.statusSet && !filters.statusSet.has(item.status)) return false;
   if (filters.excludeTerminal && isTerminalStatus(item.status, statusRegistry)) return false;
   if (filters.typeFilter && item.type !== filters.typeFilter) return false;
   if (filters.tagFilter && !item.tags.includes(filters.tagFilter)) return false;
-  if (filters.priorityFilter !== undefined && item.priority !== filters.priorityFilter) return false;
+  return filters.priorityFilter === undefined || item.priority === filters.priorityFilter;
+}
+
+function matchesListDateFilters(item: ListedItem, filters: ListFilterSet): boolean {
   if (filters.deadlineBefore && (!item.deadline || compareTimestampStrings(item.deadline, filters.deadlineBefore) > 0)) return false;
   if (filters.deadlineAfter && (!item.deadline || compareTimestampStrings(item.deadline, filters.deadlineAfter) < 0)) return false;
   if (filters.updatedAfter && compareTimestampStrings(item.updated_at, filters.updatedAfter) < 0) return false;
   if (filters.updatedBefore && compareTimestampStrings(item.updated_at, filters.updatedBefore) > 0) return false;
   if (filters.createdAfter && compareTimestampStrings(item.created_at, filters.createdAfter) < 0) return false;
-  if (filters.createdBefore && compareTimestampStrings(item.created_at, filters.createdBefore) > 0) return false;
+  return !filters.createdBefore || compareTimestampStrings(item.created_at, filters.createdBefore) <= 0;
+}
+
+function matchesListAssigneeFilterSet(item: ListedItem, filters: ListFilterSet): boolean {
   if (filters.assigneeModeFilter === "assigned" && !item.assignee) return false;
   if (filters.assigneeModeFilter === "unassigned" && item.assignee) return false;
-  if (filters.assigneeFilter !== undefined && item.assignee !== filters.assigneeFilter) return false;
+  return filters.assigneeFilter === undefined || item.assignee === filters.assigneeFilter;
+}
+
+function matchesListScopeFilters(item: ListedItem, filters: ListFilterSet): boolean {
   if (filters.parentFilter !== undefined && !filters.treeEnabled && item.parent !== filters.parentFilter) return false;
   if (filters.sprintFilter !== undefined && item.sprint !== filters.sprintFilter) return false;
-  if (filters.releaseFilter !== undefined && item.release !== filters.releaseFilter) return false;
-  return true;
+  return filters.releaseFilter === undefined || item.release === filters.releaseFilter;
 }
 
 function matchesListFilterSet(
@@ -914,10 +963,37 @@ function runtimeMetadataKeysForProjection(definitions: Array<{ metadata_key: str
   return keys;
 }
 
-/**
- * Implements run list for the public runtime surface of this module.
- */
-export async function runList(status: ItemStatus | undefined, options: ListOptions, global: GlobalOptions): Promise<ListResult> {
+interface ListRuntimeContext {
+  pmRoot: string;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  statusRegistry: RuntimeStatusRegistry;
+  runtimeFieldFilters: Record<string, unknown>;
+  typeRegistry: ItemTypeRegistry;
+  projection: ListProjectionConfig;
+}
+
+interface ListOrderingOptions {
+  sortField: ListSortField | undefined;
+  sortOrder: ListSortOrder;
+  treeEnabled: boolean;
+  treeDepth: number | undefined;
+  parentRoot: string | undefined;
+}
+
+interface ResolvedListStatus {
+  resolvedStatus: ItemStatus[] | undefined;
+  explicitAllStatuses: boolean;
+  effectiveOptions: ListOptions;
+  filtersStatus: string | string[] | null;
+}
+
+interface ListPageResult {
+  projected: ListedItem[];
+  totalMatched: number;
+  truncationExtras: { total: number } | Record<string, never>;
+}
+
+async function resolveListRuntimeContext(options: ListOptions, global: GlobalOptions): Promise<ListRuntimeContext> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
@@ -925,141 +1001,214 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
-  const runtimeFieldFilters = collectRuntimeFilterValues(options as Record<string, unknown>, runtimeFieldRegistry, "list");
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const projection = parseProjectionConfig(options);
-  const runtimeMetadataKeys = runtimeMetadataKeysForProjection(runtimeFieldRegistry.definitions);
-  validateListProjectionFields(projection, runtimeMetadataKeys);
-  const listWarnings: string[] = [];
-  const projectionNeedsBody = projection.fields.some((field) => normalizeProjectionField(field) === "body");
-  // The heavy collection fields are only emitted by `--full` (verbatim items) or an
-  // explicit `--fields <heavy>` selection. Every other projection (default brief,
-  // `--compact`, light `--fields`) reads only light scalar fields, so it takes the
-  // light path that skips the large collections cache (the hot-path JSON.parse win).
+  validateListProjectionFields(projection, runtimeMetadataKeysForProjection(runtimeFieldRegistry.definitions));
+  return {
+    pmRoot,
+    settings,
+    statusRegistry,
+    runtimeFieldFilters: collectRuntimeFilterValues(options as Record<string, unknown>, runtimeFieldRegistry, "list"),
+    typeRegistry: resolveItemTypeRegistry(settings, getActiveExtensionRegistrations()),
+    projection,
+  };
+}
+
+async function loadListItems(
+  options: ListOptions,
+  runtime: ListRuntimeContext,
+  listWarnings: string[],
+): Promise<ListedItem[]> {
+  const projectionNeedsBody = runtime.projection.fields.some((field) => normalizeProjectionField(field) === "body");
   const projectionNeedsCollections =
-    projection.mode === "full" ||
-    projection.fields.some((field) => HEAVY_PROJECTION_FIELDS.has(normalizeProjectionField(field)));
-  // Content-field filters (GH-242) inspect the heavy collection arrays and/or the
-  // body, so they force the matching load path even when the projection alone
-  // would take the light path. notes/learnings/files/docs/tests/comments/deps/
-  // linked_command live in the heavy collections; body needs the body load.
+    runtime.projection.mode === "full" ||
+    runtime.projection.fields.some((field) => HEAVY_PROJECTION_FIELDS.has(normalizeProjectionField(field)));
   const contentFieldFilters = resolveContentFieldFilters(options as Record<string, unknown>);
   const contentNeedsCollections = contentFiltersNeedCollections(contentFieldFilters);
   const contentNeedsBody = contentFiltersNeedBody(contentFieldFilters);
-  let items: ListedItem[];
   if (options.includeBody || projectionNeedsBody || contentNeedsBody) {
-    items = await listAllFrontMatterWithBody(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings, settings.schema);
-  } else if (projectionNeedsCollections || contentNeedsCollections) {
-    items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings, settings.schema);
-  } else {
-    items = await listAllFrontMatterLight(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings, settings.schema);
+    return await listAllFrontMatterWithBody(
+      runtime.pmRoot,
+      runtime.settings.item_format,
+      runtime.typeRegistry.type_to_folder,
+      listWarnings,
+      runtime.settings.schema,
+    );
   }
+  if (projectionNeedsCollections || contentNeedsCollections) {
+    return await listAllFrontMatter(
+      runtime.pmRoot,
+      runtime.settings.item_format,
+      runtime.typeRegistry.type_to_folder,
+      listWarnings,
+      runtime.settings.schema,
+    );
+  }
+  return await listAllFrontMatterLight(
+    runtime.pmRoot,
+    runtime.settings.item_format,
+    runtime.typeRegistry.type_to_folder,
+    listWarnings,
+    runtime.settings.schema,
+  );
+}
+
+function resolveListOrderingOptions(options: ListOptions): ListOrderingOptions {
   const sortField = parseSortField(options.sort);
   const sortOrder = parseSortOrder(options.order) ?? "asc";
   const treeEnabled = options.tree === true;
   if (!treeEnabled && options.treeDepth !== undefined) {
     throw new PmCliError("List --tree-depth requires --tree", EXIT_CODE.USAGE);
   }
-  const treeDepth = treeEnabled ? parseTreeDepth(options.treeDepth) : undefined;
-  const parentRoot = treeEnabled ? trimNonEmpty(options.parent) : undefined;
   if (!sortField && options.order !== undefined) {
     throw new PmCliError("List --order requires --sort", EXIT_CODE.USAGE);
   }
+  return {
+    sortField,
+    sortOrder,
+    treeEnabled,
+    treeDepth: treeEnabled ? parseTreeDepth(options.treeDepth) : undefined,
+    parentRoot: treeEnabled ? trimNonEmpty(options.parent) : undefined,
+  };
+}
+
+function resolveListStatusSelection(
+  status: ItemStatus | undefined,
+  options: ListOptions,
+  statusRegistry: RuntimeStatusRegistry,
+): ResolvedListStatus {
   const explicitStatus = resolveStatusFilter(options.status as ItemStatus | undefined, statusRegistry);
   const resolvedStatus = explicitStatus ?? resolveStatusFilter(status, statusRegistry);
   const explicitAllStatuses = isStatusAllFilterInput(options.status);
   const effectiveOptions = explicitStatus || explicitAllStatuses ? { ...options, excludeTerminal: false } : options;
-  const filtered = applyFilters(items, resolvedStatus, effectiveOptions, typeRegistry, statusRegistry, runtimeFieldFilters);
   const filtersStatus =
     explicitAllStatuses
       ? "all"
       : resolvedStatus === undefined
-      ? null
-      : resolvedStatus.length === 1
-        ? resolvedStatus[0]
-        : resolvedStatus;
-  const sorted = sortItems(filtered, sortField, sortOrder, statusRegistry);
-  const ordered = treeEnabled ? orderItemsAsTree(sorted, parentRoot, treeDepth) : sorted;
-  // --no-truncate (alias --all) forces full results, overriding any --limit so an
-  // agent can pull the entire matched set in one call (GH-154).
+        ? null
+        : resolvedStatus.length === 1
+          ? resolvedStatus[0]
+          : resolvedStatus;
+  return { resolvedStatus, explicitAllStatuses, effectiveOptions, filtersStatus };
+}
+
+function pageAndProjectListItems(
+  ordered: ListedItem[],
+  options: ListOptions,
+  projection: ListProjectionConfig,
+  treeEnabled: boolean,
+): ListPageResult {
   const noTruncate = options.noTruncate === true;
   const limit = noTruncate ? undefined : parseIntegerLimit(options.limit);
   const offset = parseOffset(options.offset) ?? 0;
   const limited = limit === undefined ? ordered.slice(offset) : ordered.slice(offset, offset + limit);
   const projected = projectListItems(limited, projection, treeEnabled);
   const totalMatched = ordered.length;
-  // Surface the pre-pagination total only when rows were actually omitted.
-  const truncationExtras = projected.length < totalMatched ? { total: totalMatched } : {};
+  return {
+    projected,
+    totalMatched,
+    truncationExtras: projected.length < totalMatched ? { total: totalMatched } : {},
+  };
+}
+
+function buildVerboseListFilters(params: {
+  filtersStatus: string | string[] | null;
+  options: ListOptions;
+  noTruncate: boolean;
+  treeEnabled: boolean;
+  treeDepth: number | undefined;
+  sortField: ListSortField | undefined;
+  sortOrder: ListSortOrder;
+  runtimeFieldFilters: Record<string, unknown>;
+}): Record<string, unknown> {
+  const { filtersStatus, options, noTruncate, treeEnabled, treeDepth, sortField, sortOrder, runtimeFieldFilters } = params;
+  const filters: Record<string, unknown> = { status: filtersStatus };
+  const optionRecord = options as Record<string, unknown>;
+  for (const entry of VERBOSE_LIST_VALUE_FILTER_ECHO_ENTRIES) {
+    filters[entry.summaryKey] = optionRecord[entry.optionKey] ?? null;
+  }
+  for (const entry of VERBOSE_LIST_BOOLEAN_FILTER_ECHO_ENTRIES) {
+    if (optionRecord[entry.key] === true) {
+      filters[entry.summaryKey] = true;
+    }
+  }
+  Object.assign(filters, buildGovernanceMissingFilterEcho(options), buildContentFilterEcho(options));
+  if (noTruncate) {
+    filters.no_truncate = true;
+  }
+  if (treeEnabled) {
+    filters.tree = true;
+    filters.tree_depth = treeDepth ?? null;
+  }
+  filters.sort = sortField ?? null;
+  filters.order = sortField ? sortOrder : null;
+  filters.runtime_filters = runtimeFieldFilters;
+  return filters;
+}
+
+/**
+ * Implements run list for the public runtime surface of this module.
+ */
+export async function runList(status: ItemStatus | undefined, options: ListOptions, global: GlobalOptions): Promise<ListResult> {
+  const runtime = await resolveListRuntimeContext(options, global);
+  const listWarnings: string[] = [];
+  const items = await loadListItems(options, runtime, listWarnings);
+  const ordering = resolveListOrderingOptions(options);
+  const statusSelection = resolveListStatusSelection(status, options, runtime.statusRegistry);
+  const filtered = applyFilters(
+    items,
+    statusSelection.resolvedStatus,
+    statusSelection.effectiveOptions,
+    runtime.typeRegistry,
+    runtime.statusRegistry,
+    runtime.runtimeFieldFilters,
+  );
+  const sorted = sortItems(filtered, ordering.sortField, ordering.sortOrder, runtime.statusRegistry);
+  const ordered = ordering.treeEnabled ? orderItemsAsTree(sorted, ordering.parentRoot, ordering.treeDepth) : sorted;
+  const noTruncate = options.noTruncate === true;
+  const page = pageAndProjectListItems(ordered, options, runtime.projection, ordering.treeEnabled);
   const now = nowIso();
   const warnings = [...new Set(listWarnings)].sort((left, right) => left.localeCompare(right));
-  const projectionFields = projection.mode === "full" ? null : [...projection.fields];
-  // pm-vhx6: compact-mode list output is primarily consumed by agents. Keep the
-  // metadata trailer token-light by returning only active/user-supplied filters
-  // and omitting projection/sorting/now boilerplate in this path.
-  const compactSummaryMode = projection.mode === "compact" && options.compact === true;
+  const projectionFields = runtime.projection.mode === "full" ? null : [...runtime.projection.fields];
+  const compactSummaryMode = runtime.projection.mode === "compact" && options.compact === true;
   if (compactSummaryMode) {
     const compactFilters = buildCompactListFilterSummary({
-      filtersStatus,
+      filtersStatus: statusSelection.filtersStatus,
       options,
-      treeEnabled,
-      treeDepth,
-      sortField,
-      sortOrder,
-      runtimeFieldFilters,
+      treeEnabled: ordering.treeEnabled,
+      treeDepth: ordering.treeDepth,
+      sortField: ordering.sortField,
+      sortOrder: ordering.sortOrder,
+      runtimeFieldFilters: runtime.runtimeFieldFilters,
     });
     return {
-      items: projected,
-      count: projected.length,
-      ...truncationExtras,
+      items: page.projected,
+      count: page.projected.length,
+      ...page.truncationExtras,
       filters: compactFilters,
       ...(warnings.length > 0 ? { warnings } : {}),
     };
   }
   return {
-    items: projected,
-    count: projected.length,
-    ...truncationExtras,
-    filters: {
-      status: filtersStatus,
-      type: options.type ?? null,
-      tag: options.tag ?? null,
-      priority: options.priority ?? null,
-      deadline_before: options.deadlineBefore ?? null,
-      deadline_after: options.deadlineAfter ?? null,
-      updated_after: options.updatedAfter ?? null,
-      updated_before: options.updatedBefore ?? null,
-      created_after: options.createdAfter ?? null,
-      created_before: options.createdBefore ?? null,
-      ids: options.ids ?? null,
-      assignee: options.assignee ?? null,
-      assignee_filter: options.assigneeFilter ?? null,
-      parent: options.parent ?? null,
-      sprint: options.sprint ?? null,
-      release: options.release ?? null,
-      ...(options.filterAcMissing === true ? { filter_ac_missing: true } : {}),
-      ...(options.filterEstimatesMissing === true ? { filter_estimates_missing: true } : {}),
-      ...(options.filterResolutionMissing === true ? { filter_resolution_missing: true } : {}),
-      ...(options.filterMetadataMissing === true ? { filter_metadata_missing: true } : {}),
-      ...buildGovernanceMissingFilterEcho(options),
-      ...buildContentFilterEcho(options),
-      limit: options.limit ?? null,
-      offset: options.offset ?? null,
-      ...(noTruncate ? { no_truncate: true } : {}),
-      include_body: options.includeBody ?? null,
-      compact: options.compact ?? null,
-      fields: options.fields ?? null,
-      ...(treeEnabled ? { tree: true, tree_depth: treeDepth ?? null } : {}),
-      sort: sortField ?? null,
-      order: sortField ? sortOrder : null,
-      runtime_filters: runtimeFieldFilters,
-    },
+    items: page.projected,
+    count: page.projected.length,
+    ...page.truncationExtras,
+    filters: buildVerboseListFilters({
+      filtersStatus: statusSelection.filtersStatus,
+      options,
+      noTruncate,
+      treeEnabled: ordering.treeEnabled,
+      treeDepth: ordering.treeDepth,
+      sortField: ordering.sortField,
+      sortOrder: ordering.sortOrder,
+      runtimeFieldFilters: runtime.runtimeFieldFilters,
+    }),
     projection: {
-      mode: projection.mode,
+      mode: runtime.projection.mode,
       fields: projectionFields,
     },
     sorting: {
-      sort: sortField ?? "default",
-      order: sortField ? sortOrder : "asc",
+      sort: ordering.sortField ?? "default",
+      order: ordering.sortField ? ordering.sortOrder : "asc",
     },
     now,
     ...(warnings.length > 0 ? { warnings } : {}),

@@ -212,8 +212,6 @@ const LONG_QUERY_PHRASE_MULTIPLIER = 6;
 const ALL_TERMS_COVERAGE_BONUS = 40;
 const EXACT_ID_MATCH_SCORE = 1_000;
 const SHORT_ID_MATCH_SCORE = 900;
-const IMPLICIT_HYBRID_EMBEDDING_TIMEOUT_MS = 8_000;
-const IMPLICIT_HYBRID_VECTOR_TIMEOUT_MS = 8_000;
 
 // GH-157 matched-text highlighting (--highlight): markers wrapping each matching
 // token run, and the number of characters of surrounding context retained on
@@ -576,17 +574,6 @@ export function classifyImplicitSemanticFallbackReason(error: unknown): Implicit
   return "error";
 }
 
-function buildImplicitSemanticFallbackWarning(error: unknown): string {
-  const reason = classifyImplicitSemanticFallbackReason(error);
-  if (reason === "timeout") {
-    return "search_implicit_semantic_fallback:timeout:using_keyword_mode";
-  }
-  if (reason === "connection") {
-    return "search_implicit_semantic_fallback:connection:using_keyword_mode";
-  }
-  return "search_implicit_semantic_fallback:error:using_keyword_mode";
-}
-
 // Explicit --semantic/--hybrid searches must never hard-fail an agent when the
 // embedding/vector backend is unreachable or unconfigured: degrade to keyword
 // search and surface a machine-readable warning instead of an unknown_error.
@@ -767,7 +754,6 @@ export const _testOnlySearchCommand = {
   buildExplicitSemanticFallbackWarning,
   buildCompactSearchFilterSummary,
   buildHybridLexicalScore,
-  buildImplicitSemanticFallbackWarning,
   buildRerankCorpus,
   buildSemanticHits,
   classifyImplicitSemanticFallbackReason,
@@ -2117,76 +2103,216 @@ function buildRerankCorpus(document: ItemDocument): string {
 /* c8 ignore stop */
 
 /* c8 ignore start -- semantic expansion/rerank fallback matrices are covered by end-to-end semantic search tests */
+async function resolveExpandedSemanticQueries(context: SemanticQueryContext, queryTrimmed: string): Promise<string[]> {
+  const baseExpandedQueries = context.queryExpansion.enabled
+    ? buildDeterministicQueryExpansions(queryTrimmed, context.queryExpansion.max_queries)
+    : [queryTrimmed];
+  const expandedQueries = baseExpandedQueries.length > 0 ? baseExpandedQueries : [queryTrimmed];
+  if (!context.queryExpansion.enabled) {
+    return expandedQueries;
+  }
+  if (context.queryExpansionExtension?.expand) {
+    try {
+      const rawExpansion = await Promise.resolve(
+        context.queryExpansionExtension.expand({
+          query: queryTrimmed,
+          mode: context.requestedMode,
+          settings: context.settings,
+        }),
+      );
+      return mergeQueryExpansions(
+        expandedQueries,
+        normalizeQueryExpansionOutput(rawExpansion),
+        context.queryExpansion.max_queries,
+      );
+    } catch {
+      context.warnings.push(
+        `search_query_expansion_provider_failed:${context.queryExpansionExtension.providerName}:using_builtin`,
+      );
+      return expandedQueries;
+    }
+  }
+  if (
+    context.queryExpansion.provider &&
+    context.queryExpansion.provider !== "openai" &&
+    context.queryExpansion.provider !== "ollama"
+  ) {
+    context.warnings.push(`search_query_expansion_provider_unavailable:${context.queryExpansion.provider}:using_builtin`);
+  }
+  return expandedQueries;
+}
+
+async function executeSemanticVectorQuery(
+  context: SemanticQueryContext,
+  semanticVector: number[],
+  semanticLimit: number,
+  vectorQueryOptions: { timeout_ms?: number },
+): Promise<VectorQueryHit[]> {
+  if (context.extensionVectorAdapter?.query) {
+    try {
+      return await Promise.resolve(
+        context.extensionVectorAdapter.query({
+          vector: semanticVector,
+          limit: semanticLimit,
+          settings: context.settings,
+        }),
+      );
+    } catch (error: unknown) {
+      if (!context.vectorStore) {
+        throw new PmCliError(
+          `Extension vector adapter query failed and no built-in fallback store is configured (${error instanceof Error ? error.message : String(error)})`,
+          EXIT_CODE.GENERIC_FAILURE,
+        );
+      }
+      return await executeVectorQuery(context.vectorStore, semanticVector, semanticLimit, vectorQueryOptions);
+    }
+  }
+  if (context.vectorStore) {
+    return await executeVectorQuery(context.vectorStore, semanticVector, semanticLimit, vectorQueryOptions);
+  }
+  throw new PmCliError(
+    "Semantic search requires either a configured vector store or an extension vector adapter query handler",
+    EXIT_CODE.USAGE,
+  );
+}
+
+function buildRerankCandidateContexts(
+  hybridHits: SearchHit[],
+  filteredById: Map<string, ItemDocument>,
+  topK: number,
+): Array<{ hit: SearchHit; text: string }> {
+  const sortedForCandidates = [...hybridHits].sort((left, right) => {
+    if (left.score !== right.score) {
+      return right.score - left.score;
+    }
+    return left.item.id.localeCompare(right.item.id);
+  });
+  return sortedForCandidates
+    .slice(0, topK)
+    .map((hit) => {
+      const document = filteredById.get(hit.item.id);
+      return document ? { hit, text: buildRerankCorpus(document) } : null;
+    })
+    .filter((entry): entry is { hit: SearchHit; text: string } => entry !== null);
+}
+
+async function resolveExtensionRerankScores(
+  context: SemanticQueryContext,
+  queryTrimmed: string,
+  candidateContexts: Array<{ hit: SearchHit; text: string }>,
+): Promise<Map<string, number> | null> {
+  if (!context.rerankExtension?.rerank) {
+    return null;
+  }
+  try {
+    const rawRerank = await Promise.resolve(
+      context.rerankExtension.rerank({
+        query: queryTrimmed,
+        mode: "hybrid",
+        model: context.rerank.model,
+        top_k: context.rerank.top_k,
+        settings: context.settings,
+        candidates: candidateContexts.map((entry) => ({
+          id: entry.hit.item.id,
+          text: entry.text,
+          score: entry.hit.score,
+        })),
+      }),
+    );
+    const normalizedRerank = normalizeRerankOutput(rawRerank);
+    if (normalizedRerank.length > 0) {
+      return new Map(normalizedRerank.map((entry) => [entry.id, entry.score]));
+    }
+    context.warnings.push(
+      `search_rerank_provider_invalid_response:${context.rerankExtension.providerName}:using_builtin`,
+    );
+    return null;
+  } catch {
+    context.warnings.push(`search_rerank_provider_failed:${context.rerankExtension.providerName}:using_builtin`);
+    return null;
+  }
+}
+
+async function resolveRerankScores(
+  context: SemanticQueryContext,
+  queryTrimmed: string,
+  candidateContexts: Array<{ hit: SearchHit; text: string }>,
+): Promise<Map<string, number> | null> {
+  const extensionScores = await resolveExtensionRerankScores(context, queryTrimmed, candidateContexts);
+  if (extensionScores) {
+    return extensionScores;
+  }
+  const rerankCandidates: RerankCandidate[] = candidateContexts.map((entry) => ({
+    id: entry.hit.item.id,
+    text: entry.text,
+  }));
+  try {
+    return await rerankCandidatesWithEmbeddings(
+      context.provider,
+      context.rerank.model,
+      queryTrimmed,
+      rerankCandidates,
+      context.embeddingTimeoutMs,
+    );
+  } catch {
+    context.warnings.push("search_rerank_failed:using_hybrid_scores");
+    return null;
+  }
+}
+
+function applyRerankScores(hybridHits: SearchHit[], rerankScores: Map<string, number>): SearchHit[] {
+  const rerankedIds = new Set(rerankScores.keys());
+  const rerankedHits = hybridHits.map((hit) => {
+    const rerankScore = rerankScores.get(hit.item.id);
+    if (rerankScore === undefined) {
+      return hit;
+    }
+    const matchedFields = new Set(hit.matched_fields);
+    matchedFields.add("rerank");
+    return {
+      ...hit,
+      score: rerankScore,
+      matched_fields: [...matchedFields].sort((left, right) => left.localeCompare(right)),
+    };
+  });
+  rerankedHits.sort((left, right) => {
+    const leftWasReranked = rerankedIds.has(left.item.id);
+    const rightWasReranked = rerankedIds.has(right.item.id);
+    if (leftWasReranked !== rightWasReranked) {
+      return leftWasReranked ? -1 : 1;
+    }
+    if (left.score !== right.score) {
+      return right.score - left.score;
+    }
+    return left.item.id.localeCompare(right.item.id);
+  });
+  return rerankedHits;
+}
+
+async function applyHybridRerank(
+  context: SemanticQueryContext,
+  queryTrimmed: string,
+  hybridHits: SearchHit[],
+  filteredById: Map<string, ItemDocument>,
+): Promise<SearchHit[]> {
+  if (!context.rerank.enabled || hybridHits.length <= 1) {
+    return hybridHits;
+  }
+  const candidateContexts = buildRerankCandidateContexts(hybridHits, filteredById, context.rerank.top_k);
+  const rerankScores = await resolveRerankScores(context, queryTrimmed, candidateContexts);
+  return rerankScores && rerankScores.size > 0 ? applyRerankScores(hybridHits, rerankScores) : hybridHits;
+}
+
 async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promise<SemanticQueryResult> {
   const semanticLimit = context.limit ?? context.maxResults;
   const embeddingOptions = context.embeddingTimeoutMs !== undefined ? { timeout_ms: context.embeddingTimeoutMs } : {};
   const vectorQueryOptions = context.vectorQueryTimeoutMs !== undefined ? { timeout_ms: context.vectorQueryTimeoutMs } : {};
   const queryTrimmed = context.query.trim();
-  const baseExpandedQueries = context.queryExpansion.enabled
-    ? buildDeterministicQueryExpansions(queryTrimmed, context.queryExpansion.max_queries)
-    : [queryTrimmed];
-  let expandedQueries = baseExpandedQueries.length > 0 ? baseExpandedQueries : [queryTrimmed];
-  if (context.queryExpansion.enabled) {
-    if (context.queryExpansionExtension?.expand) {
-      try {
-        const rawExpansion = await Promise.resolve(
-          context.queryExpansionExtension.expand({
-            query: queryTrimmed,
-            mode: context.requestedMode,
-            settings: context.settings,
-          }),
-        );
-        const extensionExpansion = normalizeQueryExpansionOutput(rawExpansion);
-        expandedQueries = mergeQueryExpansions(expandedQueries, extensionExpansion, context.queryExpansion.max_queries);
-      } catch {
-        context.warnings.push(
-          `search_query_expansion_provider_failed:${context.queryExpansionExtension.providerName}:using_builtin`,
-        );
-      }
-    } else if (
-      context.queryExpansion.provider &&
-      context.queryExpansion.provider !== "openai" &&
-      context.queryExpansion.provider !== "ollama"
-    ) {
-      context.warnings.push(
-        `search_query_expansion_provider_unavailable:${context.queryExpansion.provider}:using_builtin`,
-      );
-    }
-  }
-
+  const expandedQueries = await resolveExpandedSemanticQueries(context, queryTrimmed);
   const queryVectors = await executeEmbeddingRequest(context.provider, expandedQueries, embeddingOptions);
-
-  const executeVectorQueryWithFallback = async (semanticVector: number[]): Promise<VectorQueryHit[]> => {
-    if (context.extensionVectorAdapter?.query) {
-      try {
-        return await Promise.resolve(
-          context.extensionVectorAdapter.query({
-            vector: semanticVector,
-            limit: semanticLimit,
-            settings: context.settings,
-          }),
-        );
-      } catch (error: unknown) {
-        if (!context.vectorStore) {
-          throw new PmCliError(
-            `Extension vector adapter query failed and no built-in fallback store is configured (${error instanceof Error ? error.message : String(error)})`,
-            EXIT_CODE.GENERIC_FAILURE,
-          );
-        }
-        return await executeVectorQuery(context.vectorStore, semanticVector, semanticLimit, vectorQueryOptions);
-      }
-    }
-    if (context.vectorStore) {
-      return await executeVectorQuery(context.vectorStore, semanticVector, semanticLimit, vectorQueryOptions);
-    }
-    throw new PmCliError(
-      "Semantic search requires either a configured vector store or an extension vector adapter query handler",
-      EXIT_CODE.USAGE,
-    );
-  };
-
   const queryVectorGroups = await Promise.all(
-    queryVectors.map(async (semanticVector) => await executeVectorQueryWithFallback(semanticVector)),
+    queryVectors.map(async (semanticVector) =>
+      await executeSemanticVectorQuery(context, semanticVector, semanticLimit, vectorQueryOptions)),
   );
   const vectorHits = mergeVectorHitsById(queryVectorGroups);
   const filteredById = new Map(context.filteredDocuments.map((document) => [document.metadata.id, document]));
@@ -2197,98 +2323,12 @@ async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promi
     // semantic mode, where it otherwise carries no vector hit at all.
     return { hits: forceExactIdHitsToTop(semanticHits, context.keywordHits), vectorMatchCount };
   }
-  let hybridHits = combineHybridHits(filteredById, semanticScores, context.keywordHits, context.hybridSemanticWeight);
-  if (context.rerank.enabled && hybridHits.length > 1) {
-    const sortedForCandidates = [...hybridHits].sort((left, right) => {
-      if (left.score !== right.score) {
-        return right.score - left.score;
-      }
-      return left.item.id.localeCompare(right.item.id);
-    });
-    const candidateHits = sortedForCandidates.slice(0, context.rerank.top_k);
-    const candidateContexts = candidateHits
-      .map((hit) => {
-        const document = filteredById.get(hit.item.id);
-        if (!document) {
-          return null;
-        }
-        return { hit, text: buildRerankCorpus(document) };
-      })
-      .filter((entry): entry is { hit: SearchHit; text: string } => entry !== null);
-    const rerankCandidates: RerankCandidate[] = candidateContexts.map((entry) => ({
-      id: entry.hit.item.id,
-      text: entry.text,
-    }));
-    let rerankScores: Map<string, number> | null = null;
-    if (context.rerankExtension?.rerank) {
-      try {
-        const rawRerank = await Promise.resolve(
-          context.rerankExtension.rerank({
-            query: queryTrimmed,
-            mode: "hybrid",
-            model: context.rerank.model,
-            top_k: context.rerank.top_k,
-            settings: context.settings,
-            candidates: candidateContexts.map((entry) => ({
-              id: entry.hit.item.id,
-              text: entry.text,
-              score: entry.hit.score,
-            })),
-          }),
-        );
-        const normalizedRerank = normalizeRerankOutput(rawRerank);
-        if (normalizedRerank.length > 0) {
-          rerankScores = new Map(normalizedRerank.map((entry) => [entry.id, entry.score]));
-        } else {
-          context.warnings.push(
-            `search_rerank_provider_invalid_response:${context.rerankExtension.providerName}:using_builtin`,
-          );
-        }
-      } catch {
-        context.warnings.push(`search_rerank_provider_failed:${context.rerankExtension.providerName}:using_builtin`);
-      }
-    }
-    if (!rerankScores) {
-      try {
-        rerankScores = await rerankCandidatesWithEmbeddings(
-          context.provider,
-          context.rerank.model,
-          queryTrimmed,
-          rerankCandidates,
-          context.embeddingTimeoutMs,
-        );
-      } catch {
-        context.warnings.push("search_rerank_failed:using_hybrid_scores");
-      }
-    }
-    if (rerankScores && rerankScores.size > 0) {
-      const rerankedIds = new Set(rerankScores.keys());
-      hybridHits = hybridHits.map((hit) => {
-        const rerankScore = rerankScores.get(hit.item.id);
-        if (rerankScore === undefined) {
-          return hit;
-        }
-        const matchedFields = new Set(hit.matched_fields);
-        matchedFields.add("rerank");
-        return {
-          ...hit,
-          score: rerankScore,
-          matched_fields: [...matchedFields].sort((left, right) => left.localeCompare(right)),
-        };
-      });
-      hybridHits.sort((left, right) => {
-        const leftWasReranked = rerankedIds.has(left.item.id);
-        const rightWasReranked = rerankedIds.has(right.item.id);
-        if (leftWasReranked !== rightWasReranked) {
-          return leftWasReranked ? -1 : 1;
-        }
-        if (left.score !== right.score) {
-          return right.score - left.score;
-        }
-        return left.item.id.localeCompare(right.item.id);
-      });
-    }
-  }
+  const hybridHits = await applyHybridRerank(
+    context,
+    queryTrimmed,
+    combineHybridHits(filteredById, semanticScores, context.keywordHits, context.hybridSemanticWeight),
+    filteredById,
+  );
   return {
     // GH-281: applied LAST (after any rerank reordering) so an exact full-ID /
     // short-ID keyword match always ranks #1 in hybrid mode regardless of the
@@ -2422,14 +2462,99 @@ function projectSearchHits(hits: SearchHit[], projection: SearchProjectionConfig
   });
 }
 
-/**
- * Implements run search for the public runtime surface of this module.
- */
-export async function runSearch(rawQuery: string, rawOptions: SearchOptions, global: GlobalOptions): Promise<SearchResult> {
-  // GH-157 inline query syntax: pull `field:value` filter tokens out of the raw
-  // query before any other parsing. Explicit flags win — an inline token only
-  // applies when its flag is unset, and a conflicting token surfaces as a
-  // warning. The residual keyword text drives tokenization/scoring as usual.
+interface PreparedSearchInput {
+  query: string;
+  options: SearchOptions;
+  inlineWarnings: string[];
+  highlight: boolean;
+  includeLinked: boolean;
+  titleExact: boolean;
+  phraseExact: boolean;
+  matchMode: SearchMatchMode;
+  minScoreOverride: number | undefined;
+  countOnly: boolean;
+  tokens: string[];
+  normalizedQuery: string;
+  limit: number | undefined;
+  projection: SearchProjectionConfig;
+  modeWasExplicit: boolean;
+}
+
+interface SearchRuntimeContext {
+  pmRoot: string;
+  settings: PmSettings;
+  statusRegistry: RuntimeStatusRegistry;
+  runtimeFieldRegistry: RuntimeFieldRegistry;
+  runtimeFieldFilters: Record<string, unknown>;
+  typeRegistry: ItemTypeRegistry;
+  maxResults: number;
+  scoreThreshold: number;
+  semanticWeightProvided: boolean;
+  semanticWeightOverride: number | undefined;
+  hybridSemanticWeight: number;
+  tuning: SearchTuning;
+  providerResolution: EmbeddingProviderResolution;
+  vectorResolution: VectorStoreResolution;
+  extensionSearchProvider: ReturnType<typeof resolveExtensionSearchProvider>;
+  extensionVectorAdapter: ReturnType<typeof resolveExtensionVectorAdapter>;
+  bm25Mode: BuiltInBm25Mode | null;
+  queryExpansion: QueryExpansionConfig;
+  queryExpansionExtension: { providerName: string; expand: ExtensionSearchProviderQueryExpansion } | null;
+  rerank: RerankConfig;
+  rerankExtension: { providerName: string; rerank: ExtensionSearchProviderRerank } | null;
+  effectiveMode: SearchMode;
+}
+
+interface FilteredSearchCorpus {
+  warnings: string[];
+  allDocuments: ItemDocument[];
+  filteredDocuments: ItemDocument[];
+}
+
+interface SearchResponseContext {
+  query: string;
+  effectiveMode: SearchMode;
+  matchMode: SearchMatchMode;
+  options: SearchOptions;
+  includeLinked: boolean;
+  titleExact: boolean;
+  phraseExact: boolean;
+  scoreThreshold: number;
+  hybridSemanticWeight: number;
+  queryExpansion: QueryExpansionConfig;
+  rerank: RerankConfig;
+  projection: SearchProjectionConfig;
+  warnings: string[];
+  runtimeFieldFilters: Record<string, unknown>;
+}
+
+interface SearchModeExecutionInput {
+  prepared: PreparedSearchInput;
+  runtime: SearchRuntimeContext;
+  filteredDocuments: ItemDocument[];
+  keywordHits: SearchHit[];
+  warnings: string[];
+  modeWasExplicit: boolean;
+}
+
+interface SearchModeExecutionResult {
+  effectiveMode: SearchMode;
+  hits: SearchHit[];
+}
+
+function resolveQueryExpansionExtension(
+  queryExpansion: QueryExpansionConfig,
+): { providerName: string; expand: ExtensionSearchProviderQueryExpansion } | null {
+  const provider = resolveExtensionSearchProviderByName(queryExpansion.provider ?? undefined);
+  return provider?.queryExpansion ? { providerName: provider.providerName, expand: provider.queryExpansion } : null;
+}
+
+function resolveRerankExtension(settings: PmSettings): { providerName: string; rerank: ExtensionSearchProviderRerank } | null {
+  const provider = resolveExtensionSearchProviderByName(toOptionalNonEmptyString(settings.search?.provider));
+  return provider?.rerank ? { providerName: provider.providerName, rerank: provider.rerank } : null;
+}
+
+function prepareSearchInput(rawQuery: string, rawOptions: SearchOptions): PreparedSearchInput {
   const inlineWarnings: string[] = [];
   const inlineParse = parseInlineQueryFilters(rawQuery);
   const hasInlineFilters = Object.keys(inlineParse.inlineFilters).length > 0;
@@ -2447,446 +2572,528 @@ export async function runSearch(rawQuery: string, rawOptions: SearchOptions, glo
   }
   const query = hasInlineFilters ? inlineParse.residualQuery : rawQuery;
   const options = applyInlineQueryFilters(rawOptions, inlineParse.inlineFilters, inlineWarnings);
-  const highlight = options.highlight === true;
-  const includeLinked = parseIncludeLinked(options.includeLinked);
-  const titleExact = parseTitleExact(options.titleExact);
-  const phraseExact = parsePhraseExact(options.phraseExact);
-  const matchMode = parseMatchMode(typeof options.matchMode === "string" ? options.matchMode : undefined);
-  const minScoreOverride = parseMinScoreOverride(options.minScore);
-  const countOnly = options.count === true;
-  const tokens = parseTokens(query);
-  const normalizedQuery = normalizeSearchPhrase(query);
-  const limit = parseLimit(options.limit);
-  const projection = parseProjectionConfig(options);
-  const modeWasExplicit = typeof options.mode === "string" && options.mode.trim().length > 0;
+  return {
+    query,
+    options,
+    inlineWarnings,
+    highlight: options.highlight === true,
+    includeLinked: parseIncludeLinked(options.includeLinked),
+    titleExact: parseTitleExact(options.titleExact),
+    phraseExact: parsePhraseExact(options.phraseExact),
+    matchMode: parseMatchMode(typeof options.matchMode === "string" ? options.matchMode : undefined),
+    minScoreOverride: parseMinScoreOverride(options.minScore),
+    countOnly: options.count === true,
+    tokens: parseTokens(query),
+    normalizedQuery: normalizeSearchPhrase(query),
+    limit: parseLimit(options.limit),
+    projection: parseProjectionConfig(options),
+    modeWasExplicit: typeof options.mode === "string" && options.mode.trim().length > 0,
+  };
+}
+
+async function resolveSearchRuntimeContext(
+  prepared: PreparedSearchInput,
+  global: GlobalOptions,
+): Promise<SearchRuntimeContext> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
   const storedSettings = await readSettings(pmRoot);
-  const runtimeDefaultsResolution = resolveSettingsWithSemanticRuntimeDefaults(storedSettings);
-  const settings = runtimeDefaultsResolution.settings;
+  const settings = resolveSettingsWithSemanticRuntimeDefaults(storedSettings).settings;
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
-  validateSearchProjectionFields(projection, runtimeFieldRegistry);
-  const runtimeFieldFilters = collectRuntimeFilterValues(options as Record<string, unknown>, runtimeFieldRegistry, "search");
-  // `pm search --status` resolves strictly (a typo'd status surfaces a
-  // did-you-mean hint) so agents can scope retrieval to open work and drop
-  // closed-history noise without re-listing. Resolved before the corpus scan so
-  // an invalid value fails fast.
-  const statusFilter = parseStatusFilterCsv(
-    typeof options.status === "string" ? options.status : undefined,
-    statusRegistry,
-    { strict: true },
+  validateSearchProjectionFields(prepared.projection, runtimeFieldRegistry);
+  const runtimeFieldFilters = collectRuntimeFilterValues(
+    prepared.options as Record<string, unknown>,
+    runtimeFieldRegistry,
+    "search",
   );
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const maxResults = resolveSearchMaxResults(settings);
-  // pm-cstl: --min-score overrides the persistent search.score_threshold for this
-  // query only; the effective threshold is reflected in filters.score_threshold.
-  const scoreThreshold = minScoreOverride ?? resolveSearchScoreThreshold(settings);
-  const semanticWeightProvided = options.semanticWeight !== undefined;
-  const semanticWeightOverride = parseSemanticWeightOverride(options.semanticWeight);
-  const hybridSemanticWeight = semanticWeightOverride ?? resolveHybridSemanticWeight(settings);
-  const tuning = resolveSearchTuning(settings);
   const providerResolution = resolveEmbeddingProviders(settings);
   const vectorResolution = resolveVectorStores(settings);
   const extensionSearchProvider = resolveExtensionSearchProvider(settings);
   const extensionVectorAdapter = resolveExtensionVectorAdapter(settings);
-  // pm-75k9: offline BM25 lexical provider. When active, a semantic/hybrid query
-  // ranks the corpus locally with BM25 instead of requiring an embedding service
-  // + vector store — enabling dense-quality offline retrieval in air-gapped, CI,
-  // and zero-setup environments. Resolved here so the semantic block can branch.
-  const bm25Mode = resolveBuiltInBm25Mode({
-    configuredProvider: toOptionalNonEmptyString(settings.search?.provider),
-    hasEmbeddingProvider: providerResolution.active !== null,
-    hasExtensionSearchProvider: extensionSearchProvider !== null,
-  });
+  const semanticWeightOverride = parseSemanticWeightOverride(prepared.options.semanticWeight);
   const queryExpansion = resolveQueryExpansionConfig(settings, providerResolution.active?.name ?? null);
   const rerank = resolveRerankConfig(
     settings,
     providerResolution.active?.model ?? toOptionalNonEmptyString(settings.search?.embedding_model) ?? "text-embedding-3-small",
   );
-  const queryExpansionProvider = resolveExtensionSearchProviderByName(queryExpansion.provider ?? undefined);
-  const queryExpansionExtension = queryExpansionProvider?.queryExpansion
-    ? { providerName: queryExpansionProvider.providerName, expand: queryExpansionProvider.queryExpansion }
-    : null;
-  const rerankProvider = resolveExtensionSearchProviderByName(toOptionalNonEmptyString(settings.search?.provider));
-  const rerankExtension = rerankProvider?.rerank
-    ? { providerName: rerankProvider.providerName, rerank: rerankProvider.rerank }
-    : null;
-  let effectiveMode = parseMode(options.mode, {
-    hasProvider: providerResolution.active !== null || extensionSearchProvider !== null,
-    hasVectorStore: vectorResolution.active !== null || extensionVectorAdapter !== null,
-  });
-  const loadedDocuments = await loadDocuments(
+  return {
     pmRoot,
-    settings.item_format ?? "toon",
-    typeRegistry.type_to_folder,
-    settings.schema,
-  );
-  const warnings = loadedDocuments.warnings;
-  if (inlineWarnings.length > 0) {
-    warnings.push(...inlineWarnings);
-  }
-  if (effectiveMode === "hybrid" && semanticWeightProvided && semanticWeightOverride === undefined) {
-    warnings.push("search_hybrid_semantic_weight_override_invalid:using_settings_default");
-  }
-  const allDocuments = loadedDocuments.documents;
-  const lifecycleClassifier = lifecycleClassifierFromStatusRegistry(statusRegistry);
-  const metadataFilteredDocuments = applyFilters(
-    allDocuments,
-    options,
-    typeRegistry,
+    settings,
+    statusRegistry,
+    runtimeFieldRegistry,
     runtimeFieldFilters,
+    typeRegistry,
+    maxResults: resolveSearchMaxResults(settings),
+    scoreThreshold: prepared.minScoreOverride ?? resolveSearchScoreThreshold(settings),
+    semanticWeightProvided: prepared.options.semanticWeight !== undefined,
+    semanticWeightOverride,
+    hybridSemanticWeight: semanticWeightOverride ?? resolveHybridSemanticWeight(settings),
+    tuning: resolveSearchTuning(settings),
+    providerResolution,
+    vectorResolution,
+    extensionSearchProvider,
+    extensionVectorAdapter,
+    bm25Mode: resolveBuiltInBm25Mode({
+      configuredProvider: toOptionalNonEmptyString(settings.search?.provider),
+      hasEmbeddingProvider: providerResolution.active !== null,
+      hasExtensionSearchProvider: extensionSearchProvider !== null,
+    }),
+    queryExpansion,
+    queryExpansionExtension: resolveQueryExpansionExtension(queryExpansion),
+    rerank,
+    rerankExtension: resolveRerankExtension(settings),
+    effectiveMode: parseMode(prepared.options.mode, {
+      hasProvider: providerResolution.active !== null || extensionSearchProvider !== null,
+      hasVectorStore: vectorResolution.active !== null || extensionVectorAdapter !== null,
+    }),
+  };
+}
+
+async function loadFilteredSearchCorpus(
+  prepared: PreparedSearchInput,
+  runtime: SearchRuntimeContext,
+): Promise<FilteredSearchCorpus> {
+  const loadedDocuments = await loadDocuments(
+    runtime.pmRoot,
+    runtime.settings.item_format ?? "toon",
+    runtime.typeRegistry.type_to_folder,
+    runtime.settings.schema,
+  );
+  const statusFilter = parseStatusFilterCsv(
+    typeof prepared.options.status === "string" ? prepared.options.status : undefined,
+    runtime.statusRegistry,
+    { strict: true },
+  );
+  const lifecycleClassifier = lifecycleClassifierFromStatusRegistry(runtime.statusRegistry);
+  const metadataFilteredDocuments = applyFilters(
+    loadedDocuments.documents,
+    prepared.options,
+    runtime.typeRegistry,
+    runtime.runtimeFieldFilters,
     statusFilter,
     lifecycleClassifier,
   );
-  const filteredDocuments = applyExactQueryFilters(metadataFilteredDocuments, normalizedQuery, {
-    titleExact,
-    // --match-mode exact reuses the exact-phrase containment logic so the whole
-    // normalized query must appear as a contiguous phrase in some searchable field.
-    phraseExact: phraseExact || matchMode === "exact",
-  });
-  if (effectiveMode === "keyword" && (filteredDocuments.length === 0 || limit === 0)) {
-    return emptySearchResult(
-      query,
-      effectiveMode,
-      matchMode,
-      options,
-      includeLinked,
-      scoreThreshold,
-      hybridSemanticWeight,
-      queryExpansion,
-      rerank,
-      projection,
-      warnings,
-      runtimeFieldFilters,
-      countOnly,
-    );
-  }
+  return {
+    warnings: loadedDocuments.warnings,
+    allDocuments: loadedDocuments.documents,
+    filteredDocuments: applyExactQueryFilters(metadataFilteredDocuments, prepared.normalizedQuery, {
+      titleExact: prepared.titleExact,
+      phraseExact: prepared.phraseExact || prepared.matchMode === "exact",
+    }),
+  };
+}
 
-  const projectRoot = process.cwd();
-  const globalRoot = resolveGlobalPmRoot(projectRoot);
+async function collectLinkedCorpusById(
+  includeLinked: boolean,
+  effectiveMode: SearchMode,
+  filteredDocuments: ItemDocument[],
+): Promise<Map<string, string>> {
   const linkedCorpusById = new Map<string, string>();
-  if (includeLinked && (effectiveMode === "keyword" || effectiveMode === "hybrid")) {
-    const linkedCorpusRoots = await resolveLinkedCorpusRoots(projectRoot, globalRoot);
-    const linkedCorpusEntries = await Promise.all(
-      filteredDocuments.map(async (document) => [document.metadata.id, await loadLinkedCorpus(document, linkedCorpusRoots)] as const),
-    );
-    for (const [id, corpus] of linkedCorpusEntries) {
-      linkedCorpusById.set(id, corpus);
-    }
+  if (!includeLinked || (effectiveMode !== "keyword" && effectiveMode !== "hybrid")) {
+    return linkedCorpusById;
   }
+  const projectRoot = process.cwd();
+  const linkedCorpusRoots = await resolveLinkedCorpusRoots(projectRoot, resolveGlobalPmRoot(projectRoot));
+  const linkedCorpusEntries = await Promise.all(
+    filteredDocuments.map(async (document) => [document.metadata.id, await loadLinkedCorpus(document, linkedCorpusRoots)] as const),
+  );
+  for (const [id, corpus] of linkedCorpusEntries) {
+    linkedCorpusById.set(id, corpus);
+  }
+  return linkedCorpusById;
+}
 
-  // GH-181: the all-terms coverage RANKING bonus only applies in default OR mode
-  // (no hard term filter) so multi-term queries prefer items covering all tokens.
-  // and/exact modes hard-filter instead, so the additive bonus would be redundant.
-  const applyCoverageBonus = matchMode === "or";
-  const keywordHits = filteredDocuments
+async function computeKeywordSearchHits(
+  prepared: PreparedSearchInput,
+  runtime: SearchRuntimeContext,
+  filteredDocuments: ItemDocument[],
+): Promise<SearchHit[]> {
+  const linkedCorpusById = await collectLinkedCorpusById(prepared.includeLinked, runtime.effectiveMode, filteredDocuments);
+  const applyCoverageBonus = prepared.matchMode === "or";
+  return filteredDocuments
     .map((document) =>
       buildHybridLexicalScore(
         document,
-        tokens,
-        normalizedQuery,
-        // Linked corpus is only collected into linkedCorpusById when the user
-        // passed --include-linked (and mode is keyword/hybrid), so pass the
-        // parsed flag directly rather than re-deriving it from the mode.
-        includeLinked,
+        prepared.tokens,
+        prepared.normalizedQuery,
+        prepared.includeLinked,
         linkedCorpusById,
-        tuning,
-        settings.id_prefix,
+        runtime.tuning,
+        runtime.settings.id_prefix,
         applyCoverageBonus,
       ),
     )
     .filter((entry): entry is SearchHit => entry !== null)
-    // --match-mode and: hard-filter to items where EVERY distinct query token
-    // matched some searchable field.
-    .filter((entry) => matchMode !== "and" || entry.matched_all_terms === true);
+    .filter((entry) => prepared.matchMode !== "and" || entry.matched_all_terms === true);
+}
 
+function buildEmptySearchResultFromContext(
+  response: SearchResponseContext,
+  countOnly: boolean,
+): SearchResult {
+  return emptySearchResult(
+    response.query,
+    response.effectiveMode,
+    response.matchMode,
+    response.options,
+    response.includeLinked,
+    response.scoreThreshold,
+    response.hybridSemanticWeight,
+    response.queryExpansion,
+    response.rerank,
+    response.projection,
+    response.warnings,
+    response.runtimeFieldFilters,
+    countOnly,
+  );
+}
+
+async function executeBuiltInBm25Search(
+  prepared: PreparedSearchInput,
+  runtime: SearchRuntimeContext,
+  filteredDocuments: ItemDocument[],
+  keywordHits: SearchHit[],
+  warnings: string[],
+): Promise<SearchHit[] | null> {
+  if (runtime.bm25Mode === null || runtime.effectiveMode === "keyword") {
+    return null;
+  }
+  const hits = computeBuiltInBm25Hits({
+    requestedMode: runtime.effectiveMode,
+    query: prepared.query,
+    filteredDocuments,
+    keywordHits,
+    corpusFields: resolveSearchCorpusFields(runtime.settings),
+    bm25Params: resolveBm25Params(runtime.settings),
+    hybridSemanticWeight: runtime.hybridSemanticWeight,
+  });
+  if (runtime.bm25Mode === "auto-fallback") {
+    warnings.push(`search_${runtime.effectiveMode}_offline_bm25:no_embedding_provider:using_lexical_bm25`);
+  }
+  return hits;
+}
+
+async function executeExtensionSearchProvider(
+  prepared: PreparedSearchInput,
+  runtime: SearchRuntimeContext,
+  filteredDocuments: ItemDocument[],
+  filteredById: Map<string, ItemDocument>,
+): Promise<SearchHit[] | null> {
+  if (!runtime.extensionSearchProvider) {
+    return null;
+  }
+  const canUseBuiltInSemantic =
+    runtime.providerResolution.active !== null &&
+    (runtime.vectorResolution.active !== null || runtime.extensionVectorAdapter !== null);
+  try {
+    const providerResponse = await Promise.resolve(
+      runtime.extensionSearchProvider.query({
+        query: prepared.query,
+        mode: runtime.effectiveMode,
+        tokens: prepared.tokens,
+        options: prepared.options,
+        settings: runtime.settings,
+        documents: filteredDocuments,
+      }),
+    );
+    return normalizeExtensionProviderHits(runtime.extensionSearchProvider.providerName, providerResponse, filteredById);
+  } catch (error: unknown) {
+    if (!canUseBuiltInSemantic) {
+      throw new PmCliError(
+        `Extension search provider "${runtime.extensionSearchProvider.providerName}" failed: ${error instanceof Error ? error.message : String(error)}`,
+        EXIT_CODE.GENERIC_FAILURE,
+      );
+    }
+    return null;
+  }
+}
+
+function maybeApplyNoVectorFallback(
+  effectiveMode: Exclude<SearchMode, "keyword">,
+  semanticResult: Awaited<ReturnType<typeof computeSemanticOrHybridHits>>,
+  keywordHits: SearchHit[],
+  warnings: string[],
+): SearchHit[] {
+  if (semanticResult.vectorMatchCount > 0) {
+    return semanticResult.hits;
+  }
+  warnings.push(`search_${effectiveMode}_degraded:no_vector_matches:results_are_lexical`);
+  return effectiveMode === "semantic" ? keywordHits : semanticResult.hits;
+}
+
+async function prepareBuiltInSemanticSearch(
+  runtime: SearchRuntimeContext,
+  effectiveMode: Exclude<SearchMode, "keyword">,
+  filteredDocuments: ItemDocument[],
+  warnings: string[],
+  modeWasExplicit: boolean,
+): Promise<void> {
+  const builtInSemanticWillRun =
+    !runtime.extensionSearchProvider &&
+    runtime.providerResolution.active !== null &&
+    (runtime.vectorResolution.active !== null || runtime.extensionVectorAdapter !== null);
+  if (modeWasExplicit && builtInSemanticWillRun) {
+    await maybeEmitVectorIndexStaleWarning(runtime.pmRoot, filteredDocuments, warnings);
+  }
+  if (!runtime.extensionSearchProvider) {
+    requireSemanticDependencies(
+      effectiveMode,
+      runtime.providerResolution,
+      runtime.vectorResolution,
+      runtime.extensionVectorAdapter !== null,
+    );
+  }
+}
+
+async function executeSemanticSearch(input: SearchModeExecutionInput): Promise<SearchModeExecutionResult> {
+  const { prepared, runtime, filteredDocuments, keywordHits, warnings, modeWasExplicit } = input;
   let hits = keywordHits;
-  // pm-75k9: offline BM25 path. Runs entirely in-process (no embedding service,
-  // vector store, or HTTP), so it sits OUTSIDE the semantic try/catch fallback
-  // block below — it cannot fail on a backend error. Empty corpus / limit-0 are
-  // handled by the shared threshold+limit path that follows, so no early-return
-  // guard is needed here.
-  const useBuiltInBm25 = bm25Mode !== null && effectiveMode !== "keyword";
-  if (bm25Mode !== null && effectiveMode !== "keyword") {
-    hits = computeBuiltInBm25Hits({
-      requestedMode: effectiveMode,
-      query,
-      filteredDocuments,
-      keywordHits,
-      corpusFields: resolveSearchCorpusFields(settings),
-      bm25Params: resolveBm25Params(settings),
-      hybridSemanticWeight,
-    });
-    if (bm25Mode === "auto-fallback") {
-      warnings.push(`search_${effectiveMode}_offline_bm25:no_embedding_provider:using_lexical_bm25`);
-    }
+  const bm25Hits = await executeBuiltInBm25Search(prepared, runtime, filteredDocuments, keywordHits, warnings);
+  const semanticMode = runtime.effectiveMode;
+  if (bm25Hits !== null || semanticMode === "keyword") {
+    return { effectiveMode: runtime.effectiveMode, hits: bm25Hits ?? hits };
   }
-  /* c8 ignore start -- semantic/provider fallback + compact/count warning-shape permutations are covered by integration command-contract tests */
-  if (effectiveMode !== "keyword" && !useBuiltInBm25) {
-    // Surface vector-index staleness once per query so agents notice when a
-    // refresh is overdue. Only emitted when:
-    //   (1) the user explicitly asked for semantic/hybrid mode (implicit
-    //       upgrades fall back silently to keyword on any failure path below
-    //       and shouldn't carry noise), AND
-    //   (2) the BUILT-IN semantic path is what will run — an extension search
-    //       provider has its own indexing lifecycle and the local ledger we
-    //       read is irrelevant to it.
-    const builtInSemanticWillRun =
-      !extensionSearchProvider &&
-      providerResolution.active !== null &&
-      (vectorResolution.active !== null || extensionVectorAdapter !== null);
-    if (modeWasExplicit && builtInSemanticWillRun) {
-      await maybeEmitVectorIndexStaleWarning(pmRoot, filteredDocuments, warnings);
+  try {
+    await prepareBuiltInSemanticSearch(runtime, semanticMode, filteredDocuments, warnings, modeWasExplicit);
+    if (filteredDocuments.length === 0 || prepared.limit === 0) {
+      return { effectiveMode: runtime.effectiveMode, hits: [] };
     }
-    try {
-      if (!extensionSearchProvider) {
-        requireSemanticDependencies(effectiveMode, providerResolution, vectorResolution, extensionVectorAdapter !== null);
-      }
-      if (filteredDocuments.length === 0 || limit === 0) {
-        return emptySearchResult(
-          query,
-          effectiveMode,
-          matchMode,
-          options,
-          includeLinked,
-          scoreThreshold,
-          hybridSemanticWeight,
-          queryExpansion,
-          rerank,
-          projection,
-          warnings,
-          runtimeFieldFilters,
-          countOnly,
-        );
-      }
-      const filteredById = new Map(filteredDocuments.map((document) => [document.metadata.id, document]));
-      const canUseBuiltInSemantic =
-        providerResolution.active !== null && (vectorResolution.active !== null || extensionVectorAdapter !== null);
-      if (extensionSearchProvider) {
-        try {
-          const providerResponse = await Promise.resolve(
-            extensionSearchProvider.query({
-              query,
-              mode: effectiveMode,
-              tokens,
-              options,
-              settings,
-              documents: filteredDocuments,
-            }),
-          );
-          hits = normalizeExtensionProviderHits(extensionSearchProvider.providerName, providerResponse, filteredById);
-        } catch (error: unknown) {
-          if (!canUseBuiltInSemantic) {
-            throw new PmCliError(
-              `Extension search provider "${extensionSearchProvider.providerName}" failed: ${error instanceof Error ? error.message : String(error)}`,
-              EXIT_CODE.GENERIC_FAILURE,
-            );
-          }
-        }
-      }
-      if (hits === keywordHits) {
-        const implicitHybridMode = !modeWasExplicit && effectiveMode === "hybrid";
-        const { provider, vectorStore } = requireSemanticDependencies(
-          effectiveMode,
-          providerResolution,
-          vectorResolution,
-          extensionVectorAdapter !== null,
-        );
-        const semanticResult = await computeSemanticOrHybridHits({
-          requestedMode: effectiveMode,
-          query,
-          filteredDocuments,
-          keywordHits,
-          hybridSemanticWeight,
-          limit,
-          maxResults,
-          provider,
-          vectorStore,
-          extensionVectorAdapter,
-          queryExpansion,
-          queryExpansionExtension,
-          rerank,
-          rerankExtension,
-          warnings,
-          settings,
-          /* c8 ignore next 5 -- reserved for future implicit-hybrid auto-mode; current parseMode defaults keyword when mode is omitted */
-          ...(implicitHybridMode
-            ? {
-                embeddingTimeoutMs: IMPLICIT_HYBRID_EMBEDDING_TIMEOUT_MS,
-                vectorQueryTimeoutMs: IMPLICIT_HYBRID_VECTOR_TIMEOUT_MS,
-              }
-            : {}),
-        });
-        hits = semanticResult.hits;
-        // The semantic/hybrid query ran without error, but vector ranking
-        // contributed no hits for this query/filter set. Pure semantic mode would
-        // otherwise return an empty set, so degrade to the locally computed
-        // keyword hits (hybrid already blends them in) and warn so agents do not
-        // mistake them for true vector ranking. The reported mode is left
-        // unchanged; the warning is the signal.
-        if (semanticResult.vectorMatchCount === 0) {
-          if (effectiveMode === "semantic") {
-            hits = keywordHits;
-          }
-          warnings.push(`search_${effectiveMode}_degraded:no_vector_matches:results_are_lexical`);
-        }
-      }
-    } catch (error: unknown) {
-      // Any semantic/hybrid attempt that fails (backend down, timeout, or the
-      // project is not configured for semantic search) degrades to keyword mode
-      // so agents are never blocked. Keyword hits are always computed locally
-      // before this point, so the fallback is guaranteed to succeed.
-      const fallbackWarning = modeWasExplicit
-        ? buildExplicitSemanticFallbackWarning(effectiveMode, error)
-        /* c8 ignore next -- reserved for future implicit semantic/hybrid auto-mode fallback */
-        : buildImplicitSemanticFallbackWarning(error);
-      effectiveMode = "keyword";
-      hits = keywordHits;
-      warnings.push(fallbackWarning);
-    }
-  }
-
-  // GH-281: an exact full-ID / short-ID match is always retained regardless of
-  // the (possibly user-raised --min-score) threshold so the exact-target lookup
-  // is never silently dropped in any mode.
-  const thresholded = hits.filter((entry) => entry.exact_id_match === true || entry.score >= scoreThreshold);
-  const sorted = sortHits(thresholded, statusRegistry);
-  // total = matched hits after filters + threshold, BEFORE limit truncation.
-  const total = sorted.length;
-  // GH-181: keyword mode now also falls back to the configured max_results (50)
-  // default when --limit is omitted, so a broad query no longer returns ALL hits.
-  const resolvedLimit = limit ?? maxResults;
-  const limited = sorted.slice(0, resolvedLimit);
-  const projectionFields = projection.mode === "full" ? null : [...projection.fields];
-  const compactSummaryMode = projection.mode === "compact" && options.compact === true;
-
-  // --count: count-only response. Skips projecting/returning hit rows entirely so
-  // an agent asking "how many" pays minimal tokens. `count` carries the matched
-  // total (post-filter, post-threshold, pre-limit).
-  if (countOnly) {
-    if (compactSummaryMode) {
-      const compactFilters = buildCompactSearchFilterSummary({
-        mode: effectiveMode,
-        matchMode,
-        options,
-        includeLinked,
-        titleExact,
-        phraseExact,
-        scoreThreshold,
-        hybridSemanticWeight,
-        runtimeFieldFilters,
+    const filteredById = new Map(filteredDocuments.map((document) => [document.metadata.id, document]));
+    hits = await executeExtensionSearchProvider(prepared, runtime, filteredDocuments, filteredById) ?? hits;
+    if (hits === keywordHits) {
+      const { provider, vectorStore } = requireSemanticDependencies(
+        semanticMode,
+        runtime.providerResolution,
+        runtime.vectorResolution,
+        runtime.extensionVectorAdapter !== null,
+      );
+      const semanticResult = await computeSemanticOrHybridHits({
+        requestedMode: semanticMode,
+        query: prepared.query,
+        filteredDocuments,
+        keywordHits,
+        hybridSemanticWeight: runtime.hybridSemanticWeight,
+        limit: prepared.limit,
+        maxResults: runtime.maxResults,
+        provider,
+        vectorStore,
+        extensionVectorAdapter: runtime.extensionVectorAdapter,
+        queryExpansion: runtime.queryExpansion,
+        queryExpansionExtension: runtime.queryExpansionExtension,
+        rerank: runtime.rerank,
+        rerankExtension: runtime.rerankExtension,
+        warnings,
+        settings: runtime.settings,
       });
-      return {
-        query: query.trim(),
-        mode: effectiveMode,
-        items: [],
-        count: total,
-        total,
-        count_only: true,
-        filters: compactFilters,
-        ...(warnings.length > 0 ? { warnings } : {}),
-      };
+      hits = maybeApplyNoVectorFallback(semanticMode, semanticResult, keywordHits, warnings);
     }
-    return {
-      query: query.trim(),
-      mode: effectiveMode,
+    return { effectiveMode: runtime.effectiveMode, hits };
+  } catch (error: unknown) {
+    warnings.push(buildExplicitSemanticFallbackWarning(runtime.effectiveMode, error));
+    return { effectiveMode: "keyword", hits: keywordHits };
+  }
+}
+
+function buildCountOnlySearchResult(response: SearchResponseContext, total: number): SearchResult {
+  if (response.projection.mode === "compact" && response.options.compact === true) {
+    return withSearchWarnings({
+      query: response.query.trim(),
+      mode: response.effectiveMode,
       items: [],
       count: total,
       total,
       count_only: true,
-      filters: buildVerboseSearchFilters({
-        effectiveMode,
-        matchMode,
-        options,
-        includeLinked,
-        titleExact,
-        phraseExact,
-        scoreThreshold,
-        hybridSemanticWeight,
-        queryExpansion,
-        rerank,
-        runtimeFieldFilters,
+      filters: buildCompactSearchFilterSummary({
+        mode: response.effectiveMode,
+        matchMode: response.matchMode,
+        options: response.options,
+        includeLinked: response.includeLinked,
+        titleExact: response.titleExact,
+        phraseExact: response.phraseExact,
+        scoreThreshold: response.scoreThreshold,
+        hybridSemanticWeight: response.hybridSemanticWeight,
+        runtimeFieldFilters: response.runtimeFieldFilters,
       }),
-      projection: {
-        mode: projection.mode,
-        fields: projectionFields,
-      },
-      now: nowIso(),
-      ...(warnings.length > 0 ? { warnings } : {}),
-    };
+    }, response.warnings);
   }
+  const projectionFields = response.projection.mode === "full" ? null : [...response.projection.fields];
+  return withSearchWarnings({
+    query: response.query.trim(),
+    mode: response.effectiveMode,
+    items: [],
+    count: total,
+    total,
+    count_only: true,
+    filters: buildVerboseSearchFilters({
+      effectiveMode: response.effectiveMode,
+      matchMode: response.matchMode,
+      options: response.options,
+      includeLinked: response.includeLinked,
+      titleExact: response.titleExact,
+      phraseExact: response.phraseExact,
+      scoreThreshold: response.scoreThreshold,
+      hybridSemanticWeight: response.hybridSemanticWeight,
+      queryExpansion: response.queryExpansion,
+      rerank: response.rerank,
+      runtimeFieldFilters: response.runtimeFieldFilters,
+    }),
+    projection: {
+      mode: response.projection.mode,
+      fields: projectionFields,
+    },
+    now: nowIso(),
+  }, response.warnings);
+}
 
-  // GH-157 --highlight: attach per-field matched-text snippets to the returned
-  // page of hits (only the post-limit slice pays the cost). In compact/fields
-  // projections we add "highlights" to the projected field set so the snippets
-  // are actually emitted; full mode already carries them on the hit.
-  let projectedHits: SearchHit[] = limited;
-  let effectiveProjection = projection;
-  if (highlight) {
-    const documentById = new Map(filteredDocuments.map((document) => [document.metadata.id, document]));
-    projectedHits = limited.map((hit) => ({
-      ...hit,
-      highlights: buildHitHighlights(documentById.get(hit.item.id)!, hit.matched_fields, tokens),
-    }));
-    if (projection.mode !== "full" && !projection.fields.includes("highlights")) {
-      effectiveProjection = { mode: projection.mode, fields: [...projection.fields, "highlights"] };
-    }
+function withSearchWarnings(result: SearchResult, warnings: string[]): SearchResult {
+  if (warnings.length === 0) {
+    return result;
   }
-  const projectedItems = projectSearchHits(projectedHits, effectiveProjection);
-  const finalProjectionFields = effectiveProjection.mode === "full" ? null : [...effectiveProjection.fields];
-  // Surface the pre-limit total only when the limit actually dropped rows.
-  const truncationExtras = limited.length < total ? { total } : {};
-  if (compactSummaryMode) {
-    const compactFilters = buildCompactSearchFilterSummary({
-      mode: effectiveMode,
-      matchMode,
-      options,
-      includeLinked,
-      titleExact,
-      phraseExact,
-      scoreThreshold,
-      hybridSemanticWeight,
-      runtimeFieldFilters,
-    });
-    return {
-      query: query.trim(),
-      mode: effectiveMode,
+  return { ...result, warnings };
+}
+
+function attachSearchHighlights(
+  prepared: PreparedSearchInput,
+  filteredDocuments: ItemDocument[],
+  limited: SearchHit[],
+): { hits: SearchHit[]; projection: SearchProjectionConfig } {
+  if (!prepared.highlight) {
+    return { hits: limited, projection: prepared.projection };
+  }
+  const documentById = new Map(filteredDocuments.map((document) => [document.metadata.id, document]));
+  const hits = limited.map((hit) => ({
+    ...hit,
+    highlights: buildHitHighlights(documentById.get(hit.item.id)!, hit.matched_fields, prepared.tokens),
+  }));
+  if (prepared.projection.mode === "full" || prepared.projection.fields.includes("highlights")) {
+    return { hits, projection: prepared.projection };
+  }
+  return { hits, projection: { mode: prepared.projection.mode, fields: [...prepared.projection.fields, "highlights"] } };
+}
+
+function buildSearchResultForHits(
+  response: SearchResponseContext,
+  projectedItems: SearchResultItem[],
+  total: number,
+  limitedCount: number,
+  effectiveProjection: SearchProjectionConfig,
+): SearchResult {
+  const truncationExtras = limitedCount < total ? { total } : {};
+  if (response.projection.mode === "compact" && response.options.compact === true) {
+    return withSearchWarnings({
+      query: response.query.trim(),
+      mode: response.effectiveMode,
       items: projectedItems,
       count: projectedItems.length,
       ...truncationExtras,
-      filters: compactFilters,
-      ...(warnings.length > 0 ? { warnings } : {}),
-    };
+      filters: buildCompactSearchFilterSummary({
+        mode: response.effectiveMode,
+        matchMode: response.matchMode,
+        options: response.options,
+        includeLinked: response.includeLinked,
+        titleExact: response.titleExact,
+        phraseExact: response.phraseExact,
+        scoreThreshold: response.scoreThreshold,
+        hybridSemanticWeight: response.hybridSemanticWeight,
+        runtimeFieldFilters: response.runtimeFieldFilters,
+      }),
+    }, response.warnings);
   }
-  /* c8 ignore stop */
-
+  const finalProjectionFields = effectiveProjection.mode === "full" ? null : [...effectiveProjection.fields];
   return {
-    query: query.trim(),
-    mode: effectiveMode,
+    query: response.query.trim(),
+    mode: response.effectiveMode,
     items: projectedItems,
     count: projectedItems.length,
     ...truncationExtras,
     filters: buildVerboseSearchFilters({
-      effectiveMode,
-      matchMode,
-      options,
-      includeLinked,
-      titleExact,
-      phraseExact,
-      scoreThreshold,
-      hybridSemanticWeight,
-      queryExpansion,
-      rerank,
-      runtimeFieldFilters,
+      effectiveMode: response.effectiveMode,
+      matchMode: response.matchMode,
+      options: response.options,
+      includeLinked: response.includeLinked,
+      titleExact: response.titleExact,
+      phraseExact: response.phraseExact,
+      scoreThreshold: response.scoreThreshold,
+      hybridSemanticWeight: response.hybridSemanticWeight,
+      queryExpansion: response.queryExpansion,
+      rerank: response.rerank,
+      runtimeFieldFilters: response.runtimeFieldFilters,
     }),
     projection: {
       mode: effectiveProjection.mode,
       fields: finalProjectionFields,
     },
     now: nowIso(),
-    ...(warnings.length > 0 ? { warnings } : {}),
+    ...(response.warnings.length > 0 ? { warnings: response.warnings } : {}),
   };
+}
+
+/**
+ * Implements run search for the public runtime surface of this module.
+ */
+export async function runSearch(rawQuery: string, rawOptions: SearchOptions, global: GlobalOptions): Promise<SearchResult> {
+  const prepared = prepareSearchInput(rawQuery, rawOptions);
+  const runtime = await resolveSearchRuntimeContext(prepared, global);
+  const corpus = await loadFilteredSearchCorpus(prepared, runtime);
+  const warnings = corpus.warnings;
+  warnings.push(...prepared.inlineWarnings);
+  if (runtime.effectiveMode === "hybrid" && runtime.semanticWeightProvided && runtime.semanticWeightOverride === undefined) {
+    warnings.push("search_hybrid_semantic_weight_override_invalid:using_settings_default");
+  }
+  const responseBase = {
+    query: prepared.query,
+    matchMode: prepared.matchMode,
+    options: prepared.options,
+    includeLinked: prepared.includeLinked,
+    titleExact: prepared.titleExact,
+    phraseExact: prepared.phraseExact,
+    scoreThreshold: runtime.scoreThreshold,
+    hybridSemanticWeight: runtime.hybridSemanticWeight,
+    queryExpansion: runtime.queryExpansion,
+    rerank: runtime.rerank,
+    projection: prepared.projection,
+    warnings,
+    runtimeFieldFilters: runtime.runtimeFieldFilters,
+  };
+  if (runtime.effectiveMode === "keyword" && (corpus.filteredDocuments.length === 0 || prepared.limit === 0)) {
+    return buildEmptySearchResultFromContext(
+      { ...responseBase, effectiveMode: runtime.effectiveMode },
+      prepared.countOnly,
+    );
+  }
+  const keywordHits = await computeKeywordSearchHits(prepared, runtime, corpus.filteredDocuments);
+  const modeResult = await executeSemanticSearch({
+    prepared,
+    runtime,
+    filteredDocuments: corpus.filteredDocuments,
+    keywordHits,
+    warnings,
+    modeWasExplicit: prepared.modeWasExplicit,
+  });
+  if (modeResult.effectiveMode !== "keyword" && modeResult.hits.length === 0 && (corpus.filteredDocuments.length === 0 || prepared.limit === 0)) {
+    return buildEmptySearchResultFromContext(
+      { ...responseBase, effectiveMode: modeResult.effectiveMode },
+      prepared.countOnly,
+    );
+  }
+  const thresholded = modeResult.hits.filter((entry) => entry.exact_id_match === true || entry.score >= runtime.scoreThreshold);
+  const sorted = sortHits(thresholded, runtime.statusRegistry);
+  const total = sorted.length;
+  const resolvedLimit = prepared.limit ?? runtime.maxResults;
+  const limited = sorted.slice(0, resolvedLimit);
+  const response = { ...responseBase, effectiveMode: modeResult.effectiveMode };
+  if (prepared.countOnly) {
+    return buildCountOnlySearchResult(response, total);
+  }
+  const { hits: projectedHits, projection: effectiveProjection } = attachSearchHighlights(
+    prepared,
+    corpus.filteredDocuments,
+    limited,
+  );
+  const projectedItems = projectSearchHits(projectedHits, effectiveProjection);
+  return buildSearchResultForHits(response, projectedItems, total, limited.length, effectiveProjection);
 }

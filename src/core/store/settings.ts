@@ -616,31 +616,54 @@ function normalizePmMaxVersionExceededModeSetting(
   return undefined;
 }
 
+type ExtensionPolicyListKey =
+  | "trusted_extensions"
+  | "allowed_extensions"
+  | "blocked_extensions"
+  | "allowed_capabilities"
+  | "blocked_capabilities"
+  | "allowed_surfaces"
+  | "blocked_surfaces"
+  | "allowed_commands"
+  | "blocked_commands"
+  | "allowed_actions"
+  | "blocked_actions"
+  | "allowed_services"
+  | "blocked_services";
+
+function normalizeExtensionPolicyList(
+  policy: Partial<ExtensionGovernancePolicy> | undefined,
+  key: ExtensionPolicyListKey,
+): string[] {
+  return normalizeLowerStringList(policy?.[key] ?? SETTINGS_DEFAULTS.extensions.policy[key]);
+}
+
 function normalizeExtensionPolicySettings(
   policy: Partial<ExtensionGovernancePolicy> | undefined,
 ): ExtensionGovernancePolicy {
-  const defaults = SETTINGS_DEFAULTS.extensions.policy;
   const pmMaxVersionExceededMode = normalizePmMaxVersionExceededModeSetting(policy?.pm_max_version_exceeded_mode);
   return {
     mode: normalizeExtensionPolicyMode(policy?.mode),
     trust_mode: normalizeExtensionTrustMode(policy?.trust_mode),
     ...(pmMaxVersionExceededMode !== undefined ? { pm_max_version_exceeded_mode: pmMaxVersionExceededMode } : {}),
     require_provenance: policy?.require_provenance === true,
-    trusted_extensions: normalizeLowerStringList(policy?.trusted_extensions ?? defaults.trusted_extensions),
+    trusted_extensions: normalizeExtensionPolicyList(policy, "trusted_extensions"),
     default_sandbox_profile: normalizeExtensionSandboxProfile(policy?.default_sandbox_profile),
-    allowed_extensions: normalizeLowerStringList(policy?.allowed_extensions ?? defaults.allowed_extensions),
-    blocked_extensions: normalizeLowerStringList(policy?.blocked_extensions ?? defaults.blocked_extensions),
-    allowed_capabilities: normalizeLowerStringList(policy?.allowed_capabilities ?? defaults.allowed_capabilities),
-    blocked_capabilities: normalizeLowerStringList(policy?.blocked_capabilities ?? defaults.blocked_capabilities),
-    allowed_surfaces: normalizeLowerStringList(policy?.allowed_surfaces ?? defaults.allowed_surfaces),
-    blocked_surfaces: normalizeLowerStringList(policy?.blocked_surfaces ?? defaults.blocked_surfaces),
-    allowed_commands: normalizeLowerStringList(policy?.allowed_commands ?? defaults.allowed_commands),
-    blocked_commands: normalizeLowerStringList(policy?.blocked_commands ?? defaults.blocked_commands),
-    allowed_actions: normalizeLowerStringList(policy?.allowed_actions ?? defaults.allowed_actions),
-    blocked_actions: normalizeLowerStringList(policy?.blocked_actions ?? defaults.blocked_actions),
-    allowed_services: normalizeLowerStringList(policy?.allowed_services ?? defaults.allowed_services),
-    blocked_services: normalizeLowerStringList(policy?.blocked_services ?? defaults.blocked_services),
-    extension_overrides: normalizeExtensionPolicyOverrides(policy?.extension_overrides ?? defaults.extension_overrides),
+    allowed_extensions: normalizeExtensionPolicyList(policy, "allowed_extensions"),
+    blocked_extensions: normalizeExtensionPolicyList(policy, "blocked_extensions"),
+    allowed_capabilities: normalizeExtensionPolicyList(policy, "allowed_capabilities"),
+    blocked_capabilities: normalizeExtensionPolicyList(policy, "blocked_capabilities"),
+    allowed_surfaces: normalizeExtensionPolicyList(policy, "allowed_surfaces"),
+    blocked_surfaces: normalizeExtensionPolicyList(policy, "blocked_surfaces"),
+    allowed_commands: normalizeExtensionPolicyList(policy, "allowed_commands"),
+    blocked_commands: normalizeExtensionPolicyList(policy, "blocked_commands"),
+    allowed_actions: normalizeExtensionPolicyList(policy, "allowed_actions"),
+    blocked_actions: normalizeExtensionPolicyList(policy, "blocked_actions"),
+    allowed_services: normalizeExtensionPolicyList(policy, "allowed_services"),
+    blocked_services: normalizeExtensionPolicyList(policy, "blocked_services"),
+    extension_overrides: normalizeExtensionPolicyOverrides(
+      policy?.extension_overrides ?? SETTINGS_DEFAULTS.extensions.policy.extension_overrides,
+    ),
   };
 }
 
@@ -681,6 +704,100 @@ function arrayOrEmpty<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
+function buildValidationSettings(settings: ParsedSettings, defaults: PmSettings, governance: GovernanceSettings): PmSettings["validation"] {
+  return {
+    ...defaults.validation,
+    ...settings.validation,
+    parent_reference: governance.parent_reference,
+    metadata_profile: governance.metadata_profile,
+    metadata_required_fields: normalizeValidationMetadataRequiredFields(settings.validation?.metadata_required_fields),
+    lifecycle_stale_blocker_reason_patterns: normalizeValidationPatternList(
+      settings.validation?.lifecycle_stale_blocker_reason_patterns ??
+        defaults.validation.lifecycle_stale_blocker_reason_patterns,
+    ),
+    lifecycle_closure_like_blocked_reason_patterns: normalizeValidationPatternList(
+      settings.validation?.lifecycle_closure_like_blocked_reason_patterns ??
+        defaults.validation.lifecycle_closure_like_blocked_reason_patterns,
+    ),
+    lifecycle_closure_like_resolution_patterns: normalizeValidationPatternList(
+      settings.validation?.lifecycle_closure_like_resolution_patterns ??
+        defaults.validation.lifecycle_closure_like_resolution_patterns,
+    ),
+    lifecycle_closure_like_actual_result_patterns: normalizeValidationPatternList(
+      settings.validation?.lifecycle_closure_like_actual_result_patterns ??
+        defaults.validation.lifecycle_closure_like_actual_result_patterns,
+    ),
+    estimate_defaults_by_type: normalizeEstimateDefaultOverrides(settings.validation?.estimate_defaults_by_type),
+  };
+}
+
+function buildTelemetrySettings(settings: ParsedSettings, defaults: PmSettings): PmSettings["telemetry"] {
+  return {
+    enabled: settings.telemetry?.enabled ?? defaults.telemetry.enabled,
+    first_run_prompt_completed: settings.telemetry?.first_run_prompt_completed ?? defaults.telemetry.first_run_prompt_completed,
+    capture_level: settings.telemetry?.capture_level ?? defaults.telemetry.capture_level,
+    endpoint: settings.telemetry?.endpoint ?? defaults.telemetry.endpoint,
+    installation_id: settings.telemetry?.installation_id ?? defaults.telemetry.installation_id,
+    retention_days: settings.telemetry?.retention_days ?? defaults.telemetry.retention_days,
+  };
+}
+
+function buildSearchSettings(settings: ParsedSettings, defaults: PmSettings): PmSettings["search"] {
+  return {
+    ...defaults.search,
+    ...settings.search,
+    mutation_refresh_policy: normalizeSearchMutationRefreshPolicy(settings.search?.mutation_refresh_policy),
+    query_expansion: {
+      ...defaults.search.query_expansion,
+      ...settings.search?.query_expansion,
+      enabled: normalizeSearchQueryExpansionEnabled(settings.search?.query_expansion?.enabled),
+      provider: normalizeSearchQueryExpansionProvider(settings.search?.query_expansion?.provider),
+    },
+    rerank: {
+      ...defaults.search.rerank,
+      ...settings.search?.rerank,
+      enabled: normalizeSearchRerankEnabled(settings.search?.rerank?.enabled),
+      model: normalizeSearchRerankModel(settings.search?.rerank?.model),
+      top_k: normalizeSearchRerankTopK(settings.search?.rerank?.top_k),
+    },
+  };
+}
+
+function buildVectorStoreSettings(settings: ParsedSettings, defaults: PmSettings): PmSettings["vector_store"] {
+  return {
+    adapter: settings.vector_store.adapter ?? defaults.vector_store.adapter,
+    collection_name: normalizeVectorStoreCollectionName(settings.vector_store.collection_name),
+    qdrant: { ...defaults.vector_store.qdrant, ...settings.vector_store.qdrant },
+    lancedb: { ...defaults.vector_store.lancedb, ...settings.vector_store.lancedb },
+  };
+}
+
+function normalizeSettingsItemFormat(settings: ParsedSettings, defaults: PmSettings): PmSettings["item_format"] {
+  if (settings.item_format === "json_markdown") {
+    return "toon";
+  }
+  return settings.item_format ?? defaults.item_format;
+}
+
+function buildContextSettings(settings: ParsedSettings, defaults: PmSettings): PmSettings["context"] {
+  return {
+    default_depth: settings.context?.default_depth ?? defaults.context.default_depth,
+    activity_limit: settings.context?.activity_limit ?? defaults.context.activity_limit,
+    stale_threshold_days: settings.context?.stale_threshold_days ?? defaults.context.stale_threshold_days,
+    sections: {
+      ...defaults.context.sections,
+      ...settings.context?.sections,
+    },
+  };
+}
+
+function buildProviderSettings(settings: ParsedSettings, defaults: PmSettings): PmSettings["providers"] {
+  return {
+    openai: { ...defaults.providers.openai, ...settings.providers.openai },
+    ollama: { ...defaults.providers.ollama, ...settings.providers.ollama },
+  };
+}
+
 /**
  * Implements normalize item type definitions for the public runtime surface of this module.
  */
@@ -703,7 +820,7 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
   return {
     ...defaults,
     ...settings,
-    item_format: settings.item_format === "json_markdown" ? "toon" : (settings.item_format ?? defaults.item_format),
+    item_format: normalizeSettingsItemFormat(settings, defaults),
     locks: { ...defaults.locks, ...settings.locks },
     checkpoints: { ...defaults.checkpoints, ...settings.checkpoints },
     output: { ...defaults.output, ...settings.output },
@@ -715,30 +832,7 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
         ...settings.history?.compact_policy,
       },
     },
-    validation: {
-      ...defaults.validation,
-      ...settings.validation,
-      parent_reference: governance.parent_reference,
-      metadata_profile: governance.metadata_profile,
-      metadata_required_fields: normalizeValidationMetadataRequiredFields(settings.validation?.metadata_required_fields),
-      lifecycle_stale_blocker_reason_patterns: normalizeValidationPatternList(
-        settings.validation?.lifecycle_stale_blocker_reason_patterns ??
-          defaults.validation.lifecycle_stale_blocker_reason_patterns,
-      ),
-      lifecycle_closure_like_blocked_reason_patterns: normalizeValidationPatternList(
-        settings.validation?.lifecycle_closure_like_blocked_reason_patterns ??
-          defaults.validation.lifecycle_closure_like_blocked_reason_patterns,
-      ),
-      lifecycle_closure_like_resolution_patterns: normalizeValidationPatternList(
-        settings.validation?.lifecycle_closure_like_resolution_patterns ??
-          defaults.validation.lifecycle_closure_like_resolution_patterns,
-      ),
-      lifecycle_closure_like_actual_result_patterns: normalizeValidationPatternList(
-        settings.validation?.lifecycle_closure_like_actual_result_patterns ??
-          defaults.validation.lifecycle_closure_like_actual_result_patterns,
-      ),
-      estimate_defaults_by_type: normalizeEstimateDefaultOverrides(settings.validation?.estimate_defaults_by_type),
-    },
+    validation: buildValidationSettings(settings, defaults, governance),
     governance,
     workflow: {
       definition_of_done: [...(settings.workflow?.definition_of_done ?? defaults.workflow.definition_of_done)],
@@ -746,204 +840,28 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
     testing: {
       record_results_to_items: settings.testing?.record_results_to_items ?? defaults.testing.record_results_to_items,
     },
-    telemetry: {
-      enabled: settings.telemetry?.enabled ?? defaults.telemetry.enabled,
-      first_run_prompt_completed:
-        settings.telemetry?.first_run_prompt_completed ?? defaults.telemetry.first_run_prompt_completed,
-      capture_level: settings.telemetry?.capture_level ?? defaults.telemetry.capture_level,
-      endpoint: settings.telemetry?.endpoint ?? defaults.telemetry.endpoint,
-      installation_id: settings.telemetry?.installation_id ?? defaults.telemetry.installation_id,
-      retention_days: settings.telemetry?.retention_days ?? defaults.telemetry.retention_days,
-    },
+    telemetry: buildTelemetrySettings(settings, defaults),
     agent_guidance: normalizeAgentGuidanceSettings(settings.agent_guidance ?? defaults.agent_guidance),
     item_types: {
       definitions: normalizeItemTypeDefinitions(settings.item_types?.definitions),
     },
     schema: normalizeRuntimeSchemaSettings(settings.schema ?? defaults.schema),
-    context: {
-      default_depth: settings.context?.default_depth ?? defaults.context.default_depth,
-      activity_limit: settings.context?.activity_limit ?? defaults.context.activity_limit,
-      stale_threshold_days: settings.context?.stale_threshold_days ?? defaults.context.stale_threshold_days,
-      sections: {
-        ...defaults.context.sections,
-        ...settings.context?.sections,
-      },
-    },
+    context: buildContextSettings(settings, defaults),
     extensions: {
       enabled: [...settings.extensions.enabled],
       disabled: [...settings.extensions.disabled],
       policy: normalizeExtensionPolicySettings(settings.extensions.policy ?? defaults.extensions.policy),
     },
-    search: {
-      ...defaults.search,
-      ...settings.search,
-      mutation_refresh_policy: normalizeSearchMutationRefreshPolicy(settings.search?.mutation_refresh_policy),
-      query_expansion: {
-        ...defaults.search.query_expansion,
-        ...settings.search?.query_expansion,
-        enabled: normalizeSearchQueryExpansionEnabled(settings.search?.query_expansion?.enabled),
-        provider: normalizeSearchQueryExpansionProvider(settings.search?.query_expansion?.provider),
-      },
-      rerank: {
-        ...defaults.search.rerank,
-        ...settings.search?.rerank,
-        enabled: normalizeSearchRerankEnabled(settings.search?.rerank?.enabled),
-        model: normalizeSearchRerankModel(settings.search?.rerank?.model),
-        top_k: normalizeSearchRerankTopK(settings.search?.rerank?.top_k),
-      },
-    },
-    providers: {
-      openai: { ...defaults.providers.openai, ...settings.providers.openai },
-      ollama: { ...defaults.providers.ollama, ...settings.providers.ollama },
-    },
-    vector_store: {
-      adapter: settings.vector_store.adapter ?? defaults.vector_store.adapter,
-      collection_name: normalizeVectorStoreCollectionName(settings.vector_store.collection_name),
-      qdrant: { ...defaults.vector_store.qdrant, ...settings.vector_store.qdrant },
-      lancedb: { ...defaults.vector_store.lancedb, ...settings.vector_store.lancedb },
-    },
+    search: buildSearchSettings(settings, defaults),
+    providers: buildProviderSettings(settings, defaults),
+    vector_store: buildVectorStoreSettings(settings, defaults),
   };
 }
 
-/**
- * Implements serialize settings for the public runtime surface of this module.
- */
-export function serializeSettings(settings: PmSettings, options: SerializeSettingsOptions = {}): string {
-  const baseSettings = {
-    ...settings,
-    locks: valueOrDefault(settings.locks, SETTINGS_DEFAULTS.locks),
-    checkpoints: valueOrDefault(settings.checkpoints, SETTINGS_DEFAULTS.checkpoints),
-    output: valueOrDefault(settings.output, SETTINGS_DEFAULTS.output),
-    history: valueOrDefault(settings.history, SETTINGS_DEFAULTS.history),
-    validation: valueOrDefault(settings.validation, SETTINGS_DEFAULTS.validation),
-    workflow: valueOrDefault(settings.workflow, SETTINGS_DEFAULTS.workflow),
-    testing: valueOrDefault(settings.testing, SETTINGS_DEFAULTS.testing),
-    telemetry: valueOrDefault(settings.telemetry, SETTINGS_DEFAULTS.telemetry),
-    agent_guidance: valueOrDefault(settings.agent_guidance, SETTINGS_DEFAULTS.agent_guidance),
-    item_types: valueOrDefault(settings.item_types, SETTINGS_DEFAULTS.item_types),
-    schema: valueOrDefault(settings.schema, SETTINGS_DEFAULTS.schema),
-    context: valueOrDefault(settings.context, SETTINGS_DEFAULTS.context),
-    extensions: valueOrDefault(settings.extensions, SETTINGS_DEFAULTS.extensions),
-    search: valueOrDefault(settings.search, SETTINGS_DEFAULTS.search),
-    providers: valueOrDefault(settings.providers, SETTINGS_DEFAULTS.providers),
-    vector_store: valueOrDefault(settings.vector_store, SETTINGS_DEFAULTS.vector_store),
-  } as PmSettings;
-  const governance = resolveGovernanceKnobs(baseSettings);
-  const normalizedSchema = normalizeRuntimeSchemaSettings(baseSettings.schema);
-  const persistedFileBackedSections = resolvePersistedFileBackedSchemaSections(baseSettings, options.persist_source);
-  const normalizedSettings: PmSettings = {
-    ...baseSettings,
-    item_format: "toon",
-    validation: {
-      ...baseSettings.validation,
-      parent_reference: governance.parent_reference,
-      metadata_profile: governance.metadata_profile,
-      metadata_required_fields: normalizeValidationMetadataRequiredFields(baseSettings.validation?.metadata_required_fields),
-      lifecycle_stale_blocker_reason_patterns: normalizeValidationPatternList(
-        baseSettings.validation?.lifecycle_stale_blocker_reason_patterns ??
-          SETTINGS_DEFAULTS.validation.lifecycle_stale_blocker_reason_patterns,
-      ),
-      lifecycle_closure_like_blocked_reason_patterns: normalizeValidationPatternList(
-        baseSettings.validation?.lifecycle_closure_like_blocked_reason_patterns ??
-          SETTINGS_DEFAULTS.validation.lifecycle_closure_like_blocked_reason_patterns,
-      ),
-      lifecycle_closure_like_resolution_patterns: normalizeValidationPatternList(
-        baseSettings.validation?.lifecycle_closure_like_resolution_patterns ??
-          SETTINGS_DEFAULTS.validation.lifecycle_closure_like_resolution_patterns,
-      ),
-      lifecycle_closure_like_actual_result_patterns: normalizeValidationPatternList(
-        baseSettings.validation?.lifecycle_closure_like_actual_result_patterns ??
-          SETTINGS_DEFAULTS.validation.lifecycle_closure_like_actual_result_patterns,
-      ),
-      estimate_defaults_by_type: normalizeEstimateDefaultOverrides(baseSettings.validation?.estimate_defaults_by_type),
-    },
-    governance,
-    agent_guidance: normalizeAgentGuidanceSettings(baseSettings.agent_guidance),
-    item_types: {
-      definitions: persistedFileBackedSections.item_type_definitions,
-    },
-    schema: {
-      ...normalizedSchema,
-      statuses: persistedFileBackedSections.schema_statuses,
-      fields: persistedFileBackedSections.schema_fields,
-      type_workflows: persistedFileBackedSections.schema_type_workflows,
-    },
-    search: {
-      ...SETTINGS_DEFAULTS.search,
-      ...baseSettings.search,
-      mutation_refresh_policy: normalizeSearchMutationRefreshPolicy(baseSettings.search?.mutation_refresh_policy),
-      query_expansion: {
-        ...SETTINGS_DEFAULTS.search.query_expansion,
-        ...baseSettings.search?.query_expansion,
-        enabled: normalizeSearchQueryExpansionEnabled(baseSettings.search?.query_expansion?.enabled),
-        provider: normalizeSearchQueryExpansionProvider(baseSettings.search?.query_expansion?.provider),
-      },
-      rerank: {
-        ...SETTINGS_DEFAULTS.search.rerank,
-        ...baseSettings.search?.rerank,
-        enabled: normalizeSearchRerankEnabled(baseSettings.search?.rerank?.enabled),
-        model: normalizeSearchRerankModel(baseSettings.search?.rerank?.model),
-        top_k: normalizeSearchRerankTopK(baseSettings.search?.rerank?.top_k),
-      },
-    },
-    context: {
-      default_depth: baseSettings.context?.default_depth ?? SETTINGS_DEFAULTS.context.default_depth,
-      activity_limit: baseSettings.context?.activity_limit ?? SETTINGS_DEFAULTS.context.activity_limit,
-      stale_threshold_days: baseSettings.context?.stale_threshold_days ?? SETTINGS_DEFAULTS.context.stale_threshold_days,
-      sections: {
-        ...SETTINGS_DEFAULTS.context.sections,
-        ...baseSettings.context?.sections,
-      },
-    },
-    extensions: {
-      enabled: normalizeStringList(baseSettings.extensions?.enabled),
-      disabled: normalizeStringList(baseSettings.extensions?.disabled),
-      policy: normalizeExtensionPolicySettings(baseSettings.extensions?.policy),
-    },
-    vector_store: {
-      ...baseSettings.vector_store,
-      adapter: baseSettings.vector_store?.adapter ?? SETTINGS_DEFAULTS.vector_store.adapter,
-      collection_name: normalizeVectorStoreCollectionName(baseSettings.vector_store?.collection_name),
-      qdrant: { ...baseSettings.vector_store?.qdrant },
-      lancedb: { ...baseSettings.vector_store?.lancedb },
-    },
-  };
-  const ordered = orderObject(
-    {
-      ...(normalizedSettings as unknown as Record<string, unknown>),
-      governance: normalizeGovernanceForPersist(governance) as unknown,
-    },
-    [
-    "version",
-    "id_prefix",
-    "author_default",
-    "item_format",
-    "locks",
-    "checkpoints",
-    "output",
-    "history",
-    "validation",
-    "governance",
-    "workflow",
-    "testing",
-    "telemetry",
-    "agent_guidance",
-    "item_types",
-    "schema",
-    "context",
-    "extensions",
-    "search",
-    "providers",
-    "vector_store",
-    ],
-  );
-
+function orderSerializedSettingsSections(ordered: Record<string, unknown>): void {
   ordered.locks = orderObject(ordered.locks as Record<string, unknown>, ["ttl_seconds"]);
   ordered.checkpoints = orderObject(ordered.checkpoints as Record<string, unknown>, ["retention_days"]);
   ordered.output = orderObject(ordered.output as Record<string, unknown>, ["default_format"]);
-  // compact_policy's own keys are emitted in deterministic order by mergeSettings
-  // (it rebuilds the object as {enabled, max_entries, trigger}); only the top-level
-  // history keys need explicit ordering here.
   ordered.history = orderObject(ordered.history as Record<string, unknown>, ["missing_stream", "compact_policy"]);
   ordered.validation = orderObject(ordered.validation as Record<string, unknown>, [
     "sprint_release_format",
@@ -1104,6 +1022,175 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
     recordOrEmpty((ordered.vector_store as Record<string, unknown>).lancedb),
     ["path"],
   );
+}
+
+function buildSerializeBaseSettings(settings: PmSettings): PmSettings {
+  return {
+    ...settings,
+    locks: valueOrDefault(settings.locks, SETTINGS_DEFAULTS.locks),
+    checkpoints: valueOrDefault(settings.checkpoints, SETTINGS_DEFAULTS.checkpoints),
+    output: valueOrDefault(settings.output, SETTINGS_DEFAULTS.output),
+    history: valueOrDefault(settings.history, SETTINGS_DEFAULTS.history),
+    validation: valueOrDefault(settings.validation, SETTINGS_DEFAULTS.validation),
+    workflow: valueOrDefault(settings.workflow, SETTINGS_DEFAULTS.workflow),
+    testing: valueOrDefault(settings.testing, SETTINGS_DEFAULTS.testing),
+    telemetry: valueOrDefault(settings.telemetry, SETTINGS_DEFAULTS.telemetry),
+    agent_guidance: valueOrDefault(settings.agent_guidance, SETTINGS_DEFAULTS.agent_guidance),
+    item_types: valueOrDefault(settings.item_types, SETTINGS_DEFAULTS.item_types),
+    schema: valueOrDefault(settings.schema, SETTINGS_DEFAULTS.schema),
+    context: valueOrDefault(settings.context, SETTINGS_DEFAULTS.context),
+    extensions: valueOrDefault(settings.extensions, SETTINGS_DEFAULTS.extensions),
+    search: valueOrDefault(settings.search, SETTINGS_DEFAULTS.search),
+    providers: valueOrDefault(settings.providers, SETTINGS_DEFAULTS.providers),
+    vector_store: valueOrDefault(settings.vector_store, SETTINGS_DEFAULTS.vector_store),
+  } as PmSettings;
+}
+
+function buildSerializedValidationSettings(baseSettings: PmSettings, governance: GovernanceSettings): PmSettings["validation"] {
+  return {
+    ...baseSettings.validation,
+    parent_reference: governance.parent_reference,
+    metadata_profile: governance.metadata_profile,
+    metadata_required_fields: normalizeValidationMetadataRequiredFields(baseSettings.validation?.metadata_required_fields),
+    lifecycle_stale_blocker_reason_patterns: normalizeValidationPatternList(
+      baseSettings.validation?.lifecycle_stale_blocker_reason_patterns ??
+        SETTINGS_DEFAULTS.validation.lifecycle_stale_blocker_reason_patterns,
+    ),
+    lifecycle_closure_like_blocked_reason_patterns: normalizeValidationPatternList(
+      baseSettings.validation?.lifecycle_closure_like_blocked_reason_patterns ??
+        SETTINGS_DEFAULTS.validation.lifecycle_closure_like_blocked_reason_patterns,
+    ),
+    lifecycle_closure_like_resolution_patterns: normalizeValidationPatternList(
+      baseSettings.validation?.lifecycle_closure_like_resolution_patterns ??
+        SETTINGS_DEFAULTS.validation.lifecycle_closure_like_resolution_patterns,
+    ),
+    lifecycle_closure_like_actual_result_patterns: normalizeValidationPatternList(
+      baseSettings.validation?.lifecycle_closure_like_actual_result_patterns ??
+        SETTINGS_DEFAULTS.validation.lifecycle_closure_like_actual_result_patterns,
+    ),
+    estimate_defaults_by_type: normalizeEstimateDefaultOverrides(baseSettings.validation?.estimate_defaults_by_type),
+  };
+}
+
+function buildSerializedSearchSettings(baseSettings: PmSettings): PmSettings["search"] {
+  return {
+    ...SETTINGS_DEFAULTS.search,
+    ...baseSettings.search,
+    mutation_refresh_policy: normalizeSearchMutationRefreshPolicy(baseSettings.search?.mutation_refresh_policy),
+    query_expansion: {
+      ...SETTINGS_DEFAULTS.search.query_expansion,
+      ...baseSettings.search?.query_expansion,
+      enabled: normalizeSearchQueryExpansionEnabled(baseSettings.search?.query_expansion?.enabled),
+      provider: normalizeSearchQueryExpansionProvider(baseSettings.search?.query_expansion?.provider),
+    },
+    rerank: {
+      ...SETTINGS_DEFAULTS.search.rerank,
+      ...baseSettings.search?.rerank,
+      enabled: normalizeSearchRerankEnabled(baseSettings.search?.rerank?.enabled),
+      model: normalizeSearchRerankModel(baseSettings.search?.rerank?.model),
+      top_k: normalizeSearchRerankTopK(baseSettings.search?.rerank?.top_k),
+    },
+  };
+}
+
+function buildSerializedContextSettings(baseSettings: PmSettings): PmSettings["context"] {
+  return {
+    default_depth: baseSettings.context?.default_depth ?? SETTINGS_DEFAULTS.context.default_depth,
+    activity_limit: baseSettings.context?.activity_limit ?? SETTINGS_DEFAULTS.context.activity_limit,
+    stale_threshold_days: baseSettings.context?.stale_threshold_days ?? SETTINGS_DEFAULTS.context.stale_threshold_days,
+    sections: {
+      ...SETTINGS_DEFAULTS.context.sections,
+      ...baseSettings.context?.sections,
+    },
+  };
+}
+
+function buildSerializedVectorStoreSettings(baseSettings: PmSettings): PmSettings["vector_store"] {
+  return {
+    ...baseSettings.vector_store,
+    adapter: baseSettings.vector_store?.adapter ?? SETTINGS_DEFAULTS.vector_store.adapter,
+    collection_name: normalizeVectorStoreCollectionName(baseSettings.vector_store?.collection_name),
+    qdrant: { ...baseSettings.vector_store?.qdrant },
+    lancedb: { ...baseSettings.vector_store?.lancedb },
+  };
+}
+
+function buildNormalizedSettingsForSerialization(
+  baseSettings: PmSettings,
+  governance: GovernanceSettings,
+  normalizedSchema: PmSettings["schema"],
+  persistedFileBackedSections: ReturnType<typeof resolvePersistedFileBackedSchemaSections>,
+): PmSettings {
+  return {
+    ...baseSettings,
+    item_format: "toon",
+    validation: buildSerializedValidationSettings(baseSettings, governance),
+    governance,
+    agent_guidance: normalizeAgentGuidanceSettings(baseSettings.agent_guidance),
+    item_types: {
+      definitions: persistedFileBackedSections.item_type_definitions,
+    },
+    schema: {
+      ...normalizedSchema,
+      statuses: persistedFileBackedSections.schema_statuses,
+      fields: persistedFileBackedSections.schema_fields,
+      type_workflows: persistedFileBackedSections.schema_type_workflows,
+    },
+    search: buildSerializedSearchSettings(baseSettings),
+    context: buildSerializedContextSettings(baseSettings),
+    extensions: {
+      enabled: normalizeStringList(baseSettings.extensions?.enabled),
+      disabled: normalizeStringList(baseSettings.extensions?.disabled),
+      policy: normalizeExtensionPolicySettings(baseSettings.extensions?.policy),
+    },
+    vector_store: buildSerializedVectorStoreSettings(baseSettings),
+  };
+}
+
+/**
+ * Implements serialize settings for the public runtime surface of this module.
+ */
+export function serializeSettings(settings: PmSettings, options: SerializeSettingsOptions = {}): string {
+  const baseSettings = buildSerializeBaseSettings(settings);
+  const governance = resolveGovernanceKnobs(baseSettings);
+  const normalizedSchema = normalizeRuntimeSchemaSettings(baseSettings.schema);
+  const persistedFileBackedSections = resolvePersistedFileBackedSchemaSections(baseSettings, options.persist_source);
+  const normalizedSettings = buildNormalizedSettingsForSerialization(
+    baseSettings,
+    governance,
+    normalizedSchema,
+    persistedFileBackedSections,
+  );
+  const ordered = orderObject(
+    {
+      ...(normalizedSettings as unknown as Record<string, unknown>),
+      governance: normalizeGovernanceForPersist(governance) as unknown,
+    },
+    [
+    "version",
+    "id_prefix",
+    "author_default",
+    "item_format",
+    "locks",
+    "checkpoints",
+    "output",
+    "history",
+    "validation",
+    "governance",
+    "workflow",
+    "testing",
+    "telemetry",
+    "agent_guidance",
+    "item_types",
+    "schema",
+    "context",
+    "extensions",
+    "search",
+    "providers",
+    "vector_store",
+    ],
+  );
+  orderSerializedSettingsSections(ordered);
 
   return `${JSON.stringify(ordered, null, 2)}\n`;
 }

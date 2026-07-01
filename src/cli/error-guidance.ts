@@ -131,72 +131,87 @@ function renderList(title: string, entries: string[]): string[] {
   return [title, ...entries.map((entry) => `  - ${entry}`)];
 }
 
+function normalizeStringArray(values: unknown): string[] | undefined {
+  if (!Array.isArray(values)) {
+    return undefined;
+  }
+  const normalized = values
+    .filter((entry): entry is string => typeof entry === "string")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function normalizeRecoveryCandidates(
+  candidates: PmCliErrorRecoveryPayload["fallback_candidates"],
+): PmCliErrorRecoveryPayload["fallback_candidates"] | undefined {
+  if (!Array.isArray(candidates)) {
+    return undefined;
+  }
+  const normalized = candidates
+    .map((entry) => ({
+      source: typeof entry?.source === "string" ? entry.source.trim() : "",
+      command: typeof entry?.command === "string" ? entry.command.trim() : "",
+      reason: typeof entry?.reason === "string" ? entry.reason.trim() : "",
+    }))
+    .filter((entry) => entry.source.length > 0 && entry.command.length > 0 && entry.reason.length > 0);
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function assignRecoveryString(
+  normalized: PmCliErrorRecoveryPayload,
+  key: "attempted_command" | "suggested_retry" | "next_best_command",
+  value: unknown,
+): void {
+  if (typeof value === "string" && value.trim().length > 0) {
+    normalized[key] = value.trim();
+  }
+}
+
+function assignRecoveryStringArray(
+  normalized: PmCliErrorRecoveryPayload,
+  key: "normalized_args" | "provided_fields" | "missing" | "missing_required_fields" | "suggested_flags",
+  value: unknown,
+): void {
+  const values = normalizeStringArray(value);
+  if (values) {
+    normalized[key] = values;
+  }
+}
+
 function normalizeRecoveryPayload(payload: PmCliErrorRecoveryPayload | undefined): PmCliErrorRecoveryPayload | undefined {
   if (!payload || typeof payload !== "object") {
     return undefined;
   }
-  const normalizeStringArray = (values: unknown): string[] | undefined => {
-    if (!Array.isArray(values)) {
-      return undefined;
-    }
-    const normalized = values
-      .filter((entry): entry is string => typeof entry === "string")
-      .map((entry) => entry.trim())
-      .filter((entry) => entry.length > 0);
-    return normalized.length > 0 ? normalized : undefined;
-  };
   const normalized: PmCliErrorRecoveryPayload = {};
   if (payload.recovery_mode === "compact") {
     normalized.recovery_mode = "compact";
   }
-  if (typeof payload.attempted_command === "string" && payload.attempted_command.trim().length > 0) {
-    normalized.attempted_command = payload.attempted_command.trim();
+  assignRecoveryString(normalized, "attempted_command", payload.attempted_command);
+  assignRecoveryStringArray(normalized, "normalized_args", payload.normalized_args);
+  assignRecoveryStringArray(normalized, "provided_fields", payload.provided_fields);
+  assignRecoveryStringArray(normalized, "missing", payload.missing);
+  assignRecoveryStringArray(normalized, "missing_required_fields", payload.missing_required_fields);
+  assignRecoveryStringArray(normalized, "suggested_flags", payload.suggested_flags);
+  assignRecoveryString(normalized, "suggested_retry", payload.suggested_retry);
+  const fallbackCandidates = normalizeRecoveryCandidates(payload.fallback_candidates);
+  if (fallbackCandidates) {
+    normalized.fallback_candidates = fallbackCandidates;
   }
-  if (Array.isArray(payload.normalized_args)) {
-    const args = payload.normalized_args.map((entry) => entry.trim()).filter((entry) => entry.length > 0);
-    if (args.length > 0) {
-      normalized.normalized_args = args;
-    }
-  }
-  if (Array.isArray(payload.provided_fields)) {
-    const fields = payload.provided_fields.map((entry) => entry.trim()).filter((entry) => entry.length > 0);
-    if (fields.length > 0) {
-      normalized.provided_fields = fields;
-    }
-  }
-  if (Array.isArray(payload.missing)) {
-    const missing = payload.missing.map((entry) => entry.trim()).filter((entry) => entry.length > 0);
-    if (missing.length > 0) {
-      normalized.missing = missing;
-    }
-  }
-  const missingRequiredFields = normalizeStringArray(payload.missing_required_fields);
-  if (missingRequiredFields) {
-    normalized.missing_required_fields = missingRequiredFields;
-  }
-  const suggestedFlags = normalizeStringArray(payload.suggested_flags);
-  if (suggestedFlags) {
-    normalized.suggested_flags = suggestedFlags;
-  }
-  if (typeof payload.suggested_retry === "string" && payload.suggested_retry.trim().length > 0) {
-    normalized.suggested_retry = payload.suggested_retry.trim();
-  }
-  if (Array.isArray(payload.fallback_candidates)) {
-    const fallbackCandidates = payload.fallback_candidates
-      .map((entry) => ({
-        source: typeof entry?.source === "string" ? entry.source.trim() : "",
-        command: typeof entry?.command === "string" ? entry.command.trim() : "",
-        reason: typeof entry?.reason === "string" ? entry.reason.trim() : "",
-      }))
-      .filter((entry) => entry.source.length > 0 && entry.command.length > 0 && entry.reason.length > 0);
-    if (fallbackCandidates.length > 0) {
-      normalized.fallback_candidates = fallbackCandidates;
-    }
-  }
-  if (typeof payload.next_best_command === "string" && payload.next_best_command.trim().length > 0) {
-    normalized.next_best_command = payload.next_best_command.trim();
-  }
+  assignRecoveryString(normalized, "next_best_command", payload.next_best_command);
   return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+function appendRecoveryTextLine(lines: string[], label: string, value: string | undefined): void {
+  if (value) {
+    lines.push(`  ${label}: ${value}`);
+  }
+}
+
+function appendRecoveryListLine(lines: string[], label: string, values: string[] | undefined, separator: string): void {
+  if (values && values.length > 0) {
+    lines.push(`  ${label}: ${values.join(separator)}`);
+  }
 }
 
 function renderRecoveryBundle(recovery: PmCliErrorRecoveryPayload | undefined): string[] {
@@ -205,30 +220,14 @@ function renderRecoveryBundle(recovery: PmCliErrorRecoveryPayload | undefined): 
     return [];
   }
   const lines = ["Recovery bundle:"];
-  if (normalized.attempted_command) {
-    lines.push(`  attempted_command: ${normalized.attempted_command}`);
-  }
-  if (normalized.normalized_args && normalized.normalized_args.length > 0) {
-    lines.push(`  normalized_args: ${normalized.normalized_args.join(" ")}`);
-  }
-  if (normalized.provided_fields && normalized.provided_fields.length > 0) {
-    lines.push(`  provided_fields: ${normalized.provided_fields.join(", ")}`);
-  }
-  if (normalized.missing && normalized.missing.length > 0) {
-    lines.push(`  missing: ${normalized.missing.join(", ")}`);
-  }
-  if (normalized.missing_required_fields && normalized.missing_required_fields.length > 0) {
-    lines.push(`  missing_required_fields: ${normalized.missing_required_fields.join(", ")}`);
-  }
-  if (normalized.suggested_flags && normalized.suggested_flags.length > 0) {
-    lines.push(`  suggested_flags: ${normalized.suggested_flags.join(", ")}`);
-  }
-  if (normalized.suggested_retry) {
-    lines.push(`  suggested_retry: ${normalized.suggested_retry}`);
-  }
-  if (normalized.next_best_command) {
-    lines.push(`  next_best_command: ${normalized.next_best_command}`);
-  }
+  appendRecoveryTextLine(lines, "attempted_command", normalized.attempted_command);
+  appendRecoveryListLine(lines, "normalized_args", normalized.normalized_args, " ");
+  appendRecoveryListLine(lines, "provided_fields", normalized.provided_fields, ", ");
+  appendRecoveryListLine(lines, "missing", normalized.missing, ", ");
+  appendRecoveryListLine(lines, "missing_required_fields", normalized.missing_required_fields, ", ");
+  appendRecoveryListLine(lines, "suggested_flags", normalized.suggested_flags, ", ");
+  appendRecoveryTextLine(lines, "suggested_retry", normalized.suggested_retry);
+  appendRecoveryTextLine(lines, "next_best_command", normalized.next_best_command);
   if (normalized.fallback_candidates && normalized.fallback_candidates.length > 0) {
     lines.push("  fallback_candidates:");
     for (const candidate of normalized.fallback_candidates) {
@@ -431,180 +430,238 @@ function applyPmCliErrorContext(
   };
 }
 
-function buildPmCliErrorGuidance(rawMessage: string, context?: PmCliErrorContext): GuidanceMessage {
-  const message = normalizeMessage(rawMessage);
-
+function buildTrackerNotInitializedGuidance(
+  rawMessage: string,
+  message: string,
+  context: PmCliErrorContext | undefined,
+): GuidanceMessage | null {
   const trackerNotInitialized = message.match(/^Tracker is not initialized at (.+)\. Run pm init first\.$/);
-  if (trackerNotInitialized) {
-    return applyPmCliErrorContext(
-      makeGuidanceMessage({
-        code: "tracker_not_initialized",
-        title: "Tracker is not initialized",
-        happened: `pm data path does not contain initialized tracker metadata (${trackerNotInitialized[1]}).`,
-        required: "Initialize tracker storage before running this command.",
-        why: "Most commands require settings and tracker directories created by pm init.",
-        examples: ["pm init", "pm init acme"],
-        nextSteps: ['Run "pm init", then rerun your original command.'],
-      }),
-      rawMessage,
-      context,
-    );
+  if (!trackerNotInitialized) {
+    return null;
   }
+  return applyPmCliErrorContext(
+    makeGuidanceMessage({
+      code: "tracker_not_initialized",
+      title: "Tracker is not initialized",
+      happened: `pm data path does not contain initialized tracker metadata (${trackerNotInitialized[1]}).`,
+      required: "Initialize tracker storage before running this command.",
+      why: "Most commands require settings and tracker directories created by pm init.",
+      examples: ["pm init", "pm init acme"],
+      nextSteps: ['Run "pm init", then rerun your original command.'],
+    }),
+    rawMessage,
+    context,
+  );
+}
 
+function buildItemNotFoundGuidance(
+  rawMessage: string,
+  message: string,
+  context: PmCliErrorContext | undefined,
+): GuidanceMessage | null {
   const itemNotFound = message.match(/^Item ([^ ]+) not found$/);
-  if (itemNotFound) {
-    const badId = itemNotFound[1];
-    const isPlaceholder = /^(undefined|null|<.*>|\[.*\]|{.*}|)$/.test(badId);
-    const happened = isPlaceholder
-      ? `The item ID "${badId}" looks like a placeholder or unresolved variable. Ensure the ID argument is resolved before calling pm.`
-      : `No item with id "${badId}" exists in the active tracker scope.`;
-    const nextSteps = isPlaceholder
-      ? [
-          "Check that the variable holding the item ID is defined before passing it to pm.",
-          'Use "pm list-open --limit 20" to find valid IDs.',
-        ]
-      : ["Confirm the active --path/PM_PATH scope, then retry with a valid id."];
-    return applyPmCliErrorContext(
-      makeGuidanceMessage({
-        code: "item_not_found",
-        title: "Item ID not found",
-        happened,
-        required: "Use an existing item ID from current tracker data.",
-        why: "Mutation and read commands operate only on known IDs.",
-        examples: ['pm list-open --limit 20', 'pm search "<keyword>" --limit 10'],
-        nextSteps,
-      }),
-      rawMessage,
-      context,
-    );
+  if (!itemNotFound) {
+    return null;
   }
+  const badId = itemNotFound[1];
+  const isPlaceholder = /^(undefined|null|<.*>|\[.*\]|{.*}|)$/.test(badId);
+  const happened = isPlaceholder
+    ? `The item ID "${badId}" looks like a placeholder or unresolved variable. Ensure the ID argument is resolved before calling pm.`
+    : `No item with id "${badId}" exists in the active tracker scope.`;
+  const nextSteps = isPlaceholder
+    ? [
+        "Check that the variable holding the item ID is defined before passing it to pm.",
+        'Use "pm list-open --limit 20" to find valid IDs.',
+      ]
+    : ["Confirm the active --path/PM_PATH scope, then retry with a valid id."];
+  return applyPmCliErrorContext(
+    makeGuidanceMessage({
+      code: "item_not_found",
+      title: "Item ID not found",
+      happened,
+      required: "Use an existing item ID from current tracker data.",
+      why: "Mutation and read commands operate only on known IDs.",
+      examples: ['pm list-open --limit 20', 'pm search "<keyword>" --limit 10'],
+      nextSteps,
+    }),
+    rawMessage,
+    context,
+  );
+}
 
-  if (message.includes("is assigned to") && message.includes("Use --force to override")) {
-    return applyPmCliErrorContext(
-      makeGuidanceMessage({
-        code: "ownership_conflict",
-        title: "Ownership conflict",
-        happened: message,
-        required:
-          "Run as assigned owner, use audit flags for safe non-owner updates, or use --force only for approved override scenarios.",
-        why: "Ownership checks prevent accidental concurrent mutations on claimed items and protect against conflicting writes.",
-        examples: [
-          'pm update pm-a1b2 --allow-audit-update --description "..." --author "audit-agent"',
-          'pm update pm-a1b2 --allow-audit-dep-update --dep "..." --author "audit-agent"',
-          'pm comments pm-a1b2 "..." --allow-audit-comment --author "audit-agent"',
-          'pm claim pm-a1b2 --author "codex-agent"',
-          'pm release pm-a1b2 --allow-audit-release --author "reviewer"',
-          'pm update pm-a1b2 --status in_progress --force',
-        ],
-        nextSteps: [
-          "Use --allow-audit-update for metadata-only non-owner updates (excludes lifecycle/ownership fields).",
-          "Use --allow-audit-dep-update for dependency-only non-owner additions.",
-          "Use --allow-audit-comment on comments/notes/learnings for append-only audit entries.",
-          "Use --force for PM audits and systematic metadata updates performed by leads/maintainers.",
-          "Use --force when correcting known stale metadata after coordinating ownership changes.",
-          'For non-terminal reassignment, prefer "pm claim <ID> --author <you>" before running other mutations.',
-          'For assignee handoff release workflows, prefer "pm release <ID> --allow-audit-release --author <you>" before using --force.',
-        ],
-      }),
-      rawMessage,
-      context,
-    );
+function buildOwnershipConflictGuidance(
+  rawMessage: string,
+  message: string,
+  context: PmCliErrorContext | undefined,
+): GuidanceMessage | null {
+  if (!message.includes("is assigned to") || !message.includes("Use --force to override")) {
+    return null;
   }
+  return applyPmCliErrorContext(
+    makeGuidanceMessage({
+      code: "ownership_conflict",
+      title: "Ownership conflict",
+      happened: message,
+      required:
+        "Run as assigned owner, use audit flags for safe non-owner updates, or use --force only for approved override scenarios.",
+      why: "Ownership checks prevent accidental concurrent mutations on claimed items and protect against conflicting writes.",
+      examples: [
+        'pm update pm-a1b2 --allow-audit-update --description "..." --author "audit-agent"',
+        'pm update pm-a1b2 --allow-audit-dep-update --dep "..." --author "audit-agent"',
+        'pm comments pm-a1b2 "..." --allow-audit-comment --author "audit-agent"',
+        'pm claim pm-a1b2 --author "codex-agent"',
+        'pm release pm-a1b2 --allow-audit-release --author "reviewer"',
+        'pm update pm-a1b2 --status in_progress --force',
+      ],
+      nextSteps: [
+        "Use --allow-audit-update for metadata-only non-owner updates (excludes lifecycle/ownership fields).",
+        "Use --allow-audit-dep-update for dependency-only non-owner additions.",
+        "Use --allow-audit-comment on comments/notes/learnings for append-only audit entries.",
+        "Use --force for PM audits and systematic metadata updates performed by leads/maintainers.",
+        "Use --force when correcting known stale metadata after coordinating ownership changes.",
+        'For non-terminal reassignment, prefer "pm claim <ID> --author <you>" before running other mutations.',
+        'For assignee handoff release workflows, prefer "pm release <ID> --allow-audit-release --author <you>" before using --force.',
+      ],
+    }),
+    rawMessage,
+    context,
+  );
+}
 
-  if (message.includes("is locked")) {
-    return applyPmCliErrorContext(
-      makeGuidanceMessage({
-        code: "lock_conflict",
-        title: "Lock conflict",
-        happened: message,
-        required: "Wait for lock release, or use --force where supported if lock is stale and safe to override.",
-        why: "Locking protects item files from concurrent write races.",
-        examples: ['pm update pm-a1b2 --status in_progress --force --author "codex-agent"'],
-      }),
-      rawMessage,
-      context,
-    );
+function buildLockConflictGuidance(
+  rawMessage: string,
+  message: string,
+  context: PmCliErrorContext | undefined,
+): GuidanceMessage | null {
+  if (!message.includes("is locked")) {
+    return null;
   }
+  return applyPmCliErrorContext(
+    makeGuidanceMessage({
+      code: "lock_conflict",
+      title: "Lock conflict",
+      happened: message,
+      required: "Wait for lock release, or use --force where supported if lock is stale and safe to override.",
+      why: "Locking protects item files from concurrent write races.",
+      examples: ['pm update pm-a1b2 --status in_progress --force --author "codex-agent"'],
+    }),
+    rawMessage,
+    context,
+  );
+}
 
+function buildPmMissingRequiredOptionGuidance(
+  rawMessage: string,
+  message: string,
+  context: PmCliErrorContext | undefined,
+): GuidanceMessage | null {
   const missingRequiredOption = message.match(/^Missing required option /);
   const missingRequiredOptions = message.match(/^Missing required options /);
-  if (missingRequiredOption || missingRequiredOptions) {
-    const plural = Boolean(missingRequiredOptions);
-    const missingOptionFlag = !plural ? message.replace(/^Missing required option\s+/, "").trim() : null;
-    const missingOptionLabel = missingOptionFlag ?? "";
-    const missingOptionRequired = missingOptionFlag
-      ? `Pass ${missingOptionFlag} with a valid value before running the command.`
-      : "Provide the required option for this command invocation.";
-    return applyPmCliErrorContext(
-      makeGuidanceMessage({
-        code: "missing_required_option",
-        title: plural ? "Missing required options" : `Missing required option ${missingOptionLabel}`,
-        happened: message,
-        required: plural
-          ? "Provide every required option for this command invocation."
-          : missingOptionRequired,
-        why: "Required options define command intent and enforce deterministic write contracts.",
-        examples: [
-          'pm create --title "Task title" --description "Task details" --type Task --create-mode progressive',
-          'pm create --title "Task title" --description "Task details" --type Task --status open --priority 1 --message "Create task" --dep "id=pm-epic01,kind=parent,author=codex-agent,created_at=now" --comment "author=codex-agent,created_at=now,text=Why this task exists." --note "author=codex-agent,created_at=now,text=Initial implementation note." --learning "author=codex-agent,created_at=now,text=Durable lesson placeholder." --file "path=src/example.ts,scope=project" --test "command=node scripts/run-tests.mjs test,scope=project,timeout_seconds=240" --doc "path=README.md,scope=project"',
-        ],
-        nextSteps: [
-          'Run "pm <command> --help" to view required and recommended flags.',
-          "For staged triage without placeholder linkage values, use --create-mode progressive.",
-        ],
-      }),
-      rawMessage,
-      context,
-    );
+  if (!missingRequiredOption && !missingRequiredOptions) {
+    return null;
   }
+  const plural = Boolean(missingRequiredOptions);
+  const missingOptionFlag = !plural ? message.replace(/^Missing required option\s+/, "").trim() : null;
+  const missingOptionLabel = missingOptionFlag ?? "";
+  const missingOptionRequired = missingOptionFlag
+    ? `Pass ${missingOptionFlag} with a valid value before running the command.`
+    : "Provide the required option for this command invocation.";
+  return applyPmCliErrorContext(
+    makeGuidanceMessage({
+      code: "missing_required_option",
+      title: plural ? "Missing required options" : `Missing required option ${missingOptionLabel}`,
+      happened: message,
+      required: plural ? "Provide every required option for this command invocation." : missingOptionRequired,
+      why: "Required options define command intent and enforce deterministic write contracts.",
+      examples: [
+        'pm create --title "Task title" --description "Task details" --type Task --create-mode progressive',
+        'pm create --title "Task title" --description "Task details" --type Task --status open --priority 1 --message "Create task" --dep "id=pm-epic01,kind=parent,author=codex-agent,created_at=now" --comment "author=codex-agent,created_at=now,text=Why this task exists." --note "author=codex-agent,created_at=now,text=Initial implementation note." --learning "author=codex-agent,created_at=now,text=Durable lesson placeholder." --file "path=src/example.ts,scope=project" --test "command=node scripts/run-tests.mjs test,scope=project,timeout_seconds=240" --doc "path=README.md,scope=project"',
+      ],
+      nextSteps: [
+        'Run "pm <command> --help" to view required and recommended flags.',
+        "For staged triage without placeholder linkage values, use --create-mode progressive.",
+      ],
+    }),
+    rawMessage,
+    context,
+  );
+}
 
-  if (message.startsWith("No update flags provided")) {
-    return applyPmCliErrorContext(
-      makeGuidanceMessage({
-        code: "no_update_fields",
-        title: "No update fields supplied",
-        happened: "The update command was called without any field-changing flags.",
-        required:
-          "Provide at least one field-changing flag such as --status, --priority, --title, --tags, --description, or --body. Use --message only to label a real mutation.",
-        why: "pm update mutates existing item fields; no-op invocations are rejected to avoid ambiguous history.",
-        examples: [
-          'pm update pm-a1b2 --status in_progress --message "Start implementation"',
-          'pm update pm-a1b2 --description "Clarified implementation scope" --message "Clarify task intent"',
-          'pm append pm-a1b2 --body "Detailed progress notes" --message "Append progress notes"',
-        ],
-        nextSteps: [
-          "Choose the item field you intend to change, then pair that change with --message for history context.",
-          "Use pm comments, pm notes, pm learnings, or pm append when you only need to add narrative context.",
-        ],
-      }),
-      rawMessage,
-      context,
-    );
+function buildNoUpdateFieldsGuidance(
+  rawMessage: string,
+  message: string,
+  context: PmCliErrorContext | undefined,
+): GuidanceMessage | null {
+  if (!message.startsWith("No update flags provided")) {
+    return null;
   }
+  return applyPmCliErrorContext(
+    makeGuidanceMessage({
+      code: "no_update_fields",
+      title: "No update fields supplied",
+      happened: "The update command was called without any field-changing flags.",
+      required:
+        "Provide at least one field-changing flag such as --status, --priority, --title, --tags, --description, or --body. Use --message only to label a real mutation.",
+      why: "pm update mutates existing item fields; no-op invocations are rejected to avoid ambiguous history.",
+      examples: [
+        'pm update pm-a1b2 --status in_progress --message "Start implementation"',
+        'pm update pm-a1b2 --description "Clarified implementation scope" --message "Clarify task intent"',
+        'pm append pm-a1b2 --body "Detailed progress notes" --message "Append progress notes"',
+      ],
+      nextSteps: [
+        "Choose the item field you intend to change, then pair that change with --message for history context.",
+        "Use pm comments, pm notes, pm learnings, or pm append when you only need to add narrative context.",
+      ],
+    }),
+    rawMessage,
+    context,
+  );
+}
 
-  if (message.startsWith("Invalid ") || message.includes(" must be ") || message.includes(" requires ")) {
-    const recovery = normalizeRecoveryPayload(context?.recovery);
-    const commandName = inferCommandNameFromRecovery(recovery);
-    const helpExample = commandName ? `pm ${commandName} --help` : "pm <command> --help";
-    const allowedValues = inferAllowedValuesFromMessage(message);
-    const retryExample = buildAllowedValueRetryCommand(recovery, allowedValues);
-    const examples = retryExample ? [retryExample, helpExample] : [helpExample, "pm contracts --command <command> --flags-only --json"];
-    const nextSteps = allowedValues.length > 0
-      ? [`Allowed values: ${allowedValues.join("|")}`, `Run "${helpExample}" to confirm command-specific constraints.`]
-      : ["Check allowed values in command help, then rerun with corrected input."];
-    return applyPmCliErrorContext(
-      makeGuidanceMessage({
-        code: "invalid_argument_value",
-        title: "Invalid argument value",
-        happened: message,
-        required: "Use values that match documented command constraints.",
-        why: "Validation protects data consistency and deterministic behavior across commands.",
-        examples,
-        nextSteps,
-      }),
-      rawMessage,
-      context,
-    );
+function buildInvalidArgumentGuidance(
+  rawMessage: string,
+  message: string,
+  context: PmCliErrorContext | undefined,
+): GuidanceMessage | null {
+  if (!message.startsWith("Invalid ") && !message.includes(" must be ") && !message.includes(" requires ")) {
+    return null;
+  }
+  const recovery = normalizeRecoveryPayload(context?.recovery);
+  const commandName = inferCommandNameFromRecovery(recovery);
+  const helpExample = commandName ? `pm ${commandName} --help` : "pm <command> --help";
+  const allowedValues = inferAllowedValuesFromMessage(message);
+  const retryExample = buildAllowedValueRetryCommand(recovery, allowedValues);
+  const examples = retryExample ? [retryExample, helpExample] : [helpExample, "pm contracts --command <command> --flags-only --json"];
+  const nextSteps = allowedValues.length > 0
+    ? [`Allowed values: ${allowedValues.join("|")}`, `Run "${helpExample}" to confirm command-specific constraints.`]
+    : ["Check allowed values in command help, then rerun with corrected input."];
+  return applyPmCliErrorContext(
+    makeGuidanceMessage({
+      code: "invalid_argument_value",
+      title: "Invalid argument value",
+      happened: message,
+      required: "Use values that match documented command constraints.",
+      why: "Validation protects data consistency and deterministic behavior across commands.",
+      examples,
+      nextSteps,
+    }),
+    rawMessage,
+    context,
+  );
+}
+
+function buildPmCliErrorGuidance(rawMessage: string, context?: PmCliErrorContext): GuidanceMessage {
+  const message = normalizeMessage(rawMessage);
+  const guidance =
+    buildTrackerNotInitializedGuidance(rawMessage, message, context) ??
+    buildItemNotFoundGuidance(rawMessage, message, context) ??
+    buildOwnershipConflictGuidance(rawMessage, message, context) ??
+    buildLockConflictGuidance(rawMessage, message, context) ??
+    buildPmMissingRequiredOptionGuidance(rawMessage, message, context) ??
+    buildNoUpdateFieldsGuidance(rawMessage, message, context) ??
+    buildInvalidArgumentGuidance(rawMessage, message, context);
+  if (guidance) {
+    return guidance;
   }
 
   return applyPmCliErrorContext(
@@ -759,6 +816,217 @@ export function buildLinkedTestQuotedRetryCommand(argv: string[] | undefined): s
   return undefined;
 }
 
+function buildMissingRequiredOptionGuidance(
+  message: string,
+  commandName: string | undefined,
+  allowedTypes: string,
+  context: CommanderGuidanceContext | undefined,
+): GuidanceMessage | null {
+  const requiredOption = message.match(/required option '([^']+)' not specified/);
+  if (!requiredOption) {
+    return null;
+  }
+  const optionFlag = normalizeRequiredOptionLabel(requiredOption[1]);
+  const isType = optionFlag.startsWith("--type");
+  const retryCommand = context?.suggestedRetryCommand;
+  const providedFlags = normalizeOptionFlags(context?.providedOptionFlags);
+  const missing = [optionFlag];
+  const examples = commandExampleForRequiredOption(commandName, optionFlag, allowedTypes);
+  const examplesWithRetry = retryCommand ? appendIfMissing(examples, retryCommand) : examples;
+  const nextStepsBase = isType
+    ? [`Allowed type values: ${allowedTypes}`, `Run "pm ${commandName ?? "create"} --help --type <value>" for type-aware policy details.`]
+    : [`Run "pm ${commandName ?? "<command>"} --help" for required option guidance.`];
+  const nextStepsWithRetry = retryCommand
+    ? appendIfMissing(nextStepsBase, `Replay with preserved arguments: ${retryCommand}`)
+    : nextStepsBase;
+  const nextSteps =
+    providedFlags && providedFlags.length > 0
+      ? appendIfMissing(nextStepsWithRetry, `Already provided options: ${providedFlags.join(", ")}`)
+      : nextStepsWithRetry;
+  return makeGuidanceMessage({
+    code: "missing_required_option",
+    title: `Missing required option ${optionFlag}`,
+    happened: `Commander rejected the command because ${optionFlag} was not provided.`,
+    required: `Pass ${optionFlag} with a valid value before running the command.`,
+    why: isType
+      ? "--type selects item contract and policy routing, including required/disabled option rules."
+      : "Required flags define mandatory command intent and prevent ambiguous execution.",
+    examples: examplesWithRetry,
+    nextSteps,
+    recovery: buildCommanderRecoveryPayload(context, { missing }),
+  });
+}
+
+function buildMissingRequiredArgumentGuidance(
+  message: string,
+  commandName: string | undefined,
+  context: CommanderGuidanceContext | undefined,
+): GuidanceMessage | null {
+  const missingArgument = message.match(/missing required argument '([^']+)'/);
+  if (!missingArgument) {
+    return null;
+  }
+  const argumentName = missingArgument[1];
+  return makeGuidanceMessage({
+    code: "missing_required_argument",
+    title: `Missing required argument ${argumentName}`,
+    happened: `Command invocation omitted positional argument ${argumentName}.`,
+    required: `Provide ${argumentName} in the expected command position.`,
+    why: "Positional arguments identify the target entity or action context for the command.",
+    examples: [`pm ${commandName ?? "<command>"} --help`],
+    recovery: buildCommanderRecoveryPayload(context, { missing: [argumentName] }),
+  });
+}
+
+function buildUnsupportedUpdateOptionGuidance(
+  optionName: string,
+  context: CommanderGuidanceContext | undefined,
+  suggestions: string[] | undefined,
+): GuidanceMessage {
+  return makeGuidanceMessage({
+    code: "unsupported_update_option",
+    title: `Unsupported option ${optionName} for update`,
+    happened: `pm update does not accept ${optionName} for linked artifact mutations.`,
+    required: "Use dedicated linked-artifact commands instead of pm update for files/docs changes.",
+    why: "pm update manages scalar item metadata, while linked files/docs are managed by pm files and pm docs.",
+    examples: [
+      'pm files pm-a1b2 --add "path=src/cli/main.ts,scope=project,note=implementation surface"',
+      'pm docs pm-a1b2 --add "path=README.md,scope=project,note=user-facing contract"',
+    ],
+    nextSteps: ['Run "pm files --help" and "pm docs --help" for add/remove payload formats.'],
+    recovery: buildCommanderRecoveryPayload(context, {
+      missing: suggestions,
+    }),
+  });
+}
+
+function buildUnknownOptionGuidance(
+  message: string,
+  commandName: string | undefined,
+  context: CommanderGuidanceContext | undefined,
+): GuidanceMessage | null {
+  const unknownOption = message.match(/unknown option '([^']+)'/);
+  if (!unknownOption) {
+    return null;
+  }
+  const optionName = unknownOption[1];
+  const suggestions = normalizeOptionFlags(context?.unknownOptionSuggestions);
+  const retryCommand = context?.suggestedRetryCommand;
+  if (commandName === "update" && (optionName === "--file" || optionName === "--doc")) {
+    return buildUnsupportedUpdateOptionGuidance(optionName, context, suggestions);
+  }
+  const otherCommands = normalizeContextList(context?.unknownOptionOtherCommands);
+  const nextSteps = [
+    "Run command help to confirm the exact option contracts for this command path.",
+    ...(suggestions && suggestions.length > 0 ? [`Nearest supported options: ${suggestions.join(", ")}`] : []),
+    ...(otherCommands && otherCommands.length > 0
+      ? [`${optionName} is a valid option on: ${otherCommands.join(", ")}. If you meant one of those, run that command instead.`]
+      : []),
+    ...(retryCommand ? [`Replay with suggested correction: ${retryCommand}`] : []),
+  ];
+  const examples = [
+    ...(retryCommand ? [retryCommand] : []),
+    `pm ${commandName ?? "<command>"} --help`,
+  ];
+  return makeGuidanceMessage({
+    code: "unknown_option",
+    title: `Unknown option ${optionName}`,
+    happened: `Commander does not recognize option ${optionName} for this command path.`,
+    required: "Use supported options only, or move option to the correct subcommand.",
+    why: "Option contracts are command-specific and intentionally validated.",
+    examples,
+    nextSteps,
+    recovery: buildCommanderRecoveryPayload(context, {
+      missing: suggestions,
+    }),
+  });
+}
+
+function buildKnownPackageCommandGuidance(
+  commandToken: string,
+  packageHint: PackageCommandHint,
+  baseExamples: string[],
+  baseNextSteps: string[],
+  context: CommanderGuidanceContext | undefined,
+): GuidanceMessage {
+  const installStep = `"${commandToken}" is provided by the ${packageHint.packageName} package. Install it with: ${packageHint.installCommand}`;
+  return makeGuidanceMessage({
+    code: "unknown_command",
+    title: `Unknown command ${commandToken}`,
+    happened: `pm does not expose command path "${commandToken}" in current runtime configuration. It is shipped by the optional ${packageHint.packageName} package.`,
+    required: `Install the ${packageHint.packageName} package, or use a valid command name or subcommand path.`,
+    why: "Command registry includes core commands plus active extension command handlers; package-provided commands appear only after the package is installed.",
+    examples: dedupeStrings([packageHint.installCommand, ...baseExamples]),
+    nextSteps: dedupeStrings([installStep, ...baseNextSteps]),
+    recovery: buildCommanderRecoveryPayload(context),
+  });
+}
+
+function buildUnknownCommandGuidance(
+  message: string,
+  context: CommanderGuidanceContext | undefined,
+): GuidanceMessage | null {
+  const unknownCommand = message.match(/unknown command '([^']+)'/);
+  if (!unknownCommand) {
+    return null;
+  }
+  const commandToken = unknownCommand[1];
+  const runtimeExamples = normalizeContextList(context?.unknownCommandExamples);
+  const runtimeNextSteps = normalizeContextList(context?.unknownCommandNextSteps);
+  const packageHint = resolveKnownPackageCommandHint(commandToken);
+  const baseExamples = runtimeExamples ?? ["pm --help"];
+  const baseNextSteps = runtimeNextSteps ?? ["Verify spelling and active extensions, then rerun."];
+  if (packageHint) {
+    return buildKnownPackageCommandGuidance(commandToken, packageHint, baseExamples, baseNextSteps, context);
+  }
+  return makeGuidanceMessage({
+    code: "unknown_command",
+    title: `Unknown command ${commandToken}`,
+    happened: `pm does not expose command path "${commandToken}" in current runtime configuration.`,
+    required: "Use a valid command name or subcommand path.",
+    why: "Command registry includes core commands plus active extension command handlers.",
+    examples: baseExamples,
+    nextSteps: baseNextSteps,
+    recovery: buildCommanderRecoveryPayload(context),
+  });
+}
+
+function buildLinkedTestValueNotQuotedGuidance(
+  message: string,
+  commandName: string | undefined,
+  allowedTypes: string,
+  context: CommanderGuidanceContext | undefined,
+): GuidanceMessage | null {
+  if (!/too many arguments/i.test(message) || commandName !== "test") {
+    return null;
+  }
+  const argv = context?.normalizedInvocationArgs;
+  const mutationFlag = findLinkedTestMutationFlag(argv);
+  if (!mutationFlag) {
+    return null;
+  }
+  const retryCommand = buildLinkedTestQuotedRetryCommand(argv);
+  return makeGuidanceMessage({
+    code: "linked_test_value_not_quoted",
+    title: `Linked-test ${mutationFlag} value must be one argument`,
+    happened: `Commander saw extra positional tokens after the item id — usually a ${mutationFlag} value containing spaces (for example a command with " -- ") that the shell split into multiple tokens.`,
+    required: `Quote the whole ${mutationFlag} value as a single argument. Accepted forms: --add "command=npm test -- parser", --add command "npm test -- parser" (two-token form with the value quoted), or --add-json for complex commands.`,
+    why: "The shell splits unquoted values before pm can see them, so pm cannot reassemble the intended command unambiguously.",
+    examples: [
+      ...(retryCommand ? [retryCommand] : []),
+      'pm test pm-a1b2 --add "command=npm test -- parser"',
+      'pm test pm-a1b2 --add command "npm test -- parser"',
+      `pm test pm-a1b2 --add-json '{"command":"npm test -- parser"}'`,
+    ],
+    nextSteps: [
+      ...(retryCommand ? [`Replay with the value re-joined into one argument: ${retryCommand}`] : []),
+      "Prefer --add-json for commands containing commas, equals signs, or quotes.",
+      'Run "pm test --help" for linked-test entry contracts.',
+    ],
+    recovery: buildCommanderRecoveryPayload(context, retryCommand ? { suggested_retry: retryCommand } : {}),
+  });
+}
+
 function buildCommanderErrorGuidance(
   rawMessage: string,
   commandName: string | undefined,
@@ -766,161 +1034,14 @@ function buildCommanderErrorGuidance(
   context?: CommanderGuidanceContext,
 ): GuidanceMessage {
   const message = normalizeMessage(rawMessage);
-
-  const requiredOption = message.match(/required option '([^']+)' not specified/);
-  if (requiredOption) {
-    const optionFlag = normalizeRequiredOptionLabel(requiredOption[1]);
-    const isType = optionFlag.startsWith("--type");
-    const retryCommand = context?.suggestedRetryCommand;
-    const providedFlags = normalizeOptionFlags(context?.providedOptionFlags);
-    const missing = [optionFlag];
-    const examples = commandExampleForRequiredOption(commandName, optionFlag, allowedTypes);
-    const examplesWithRetry = retryCommand ? appendIfMissing(examples, retryCommand) : examples;
-    const nextStepsBase = isType
-      ? [`Allowed type values: ${allowedTypes}`, `Run "pm ${commandName ?? "create"} --help --type <value>" for type-aware policy details.`]
-      : [`Run "pm ${commandName ?? "<command>"} --help" for required option guidance.`];
-    const nextStepsWithRetry = retryCommand
-      ? appendIfMissing(nextStepsBase, `Replay with preserved arguments: ${retryCommand}`)
-      : nextStepsBase;
-    const nextSteps =
-      providedFlags && providedFlags.length > 0
-        ? appendIfMissing(nextStepsWithRetry, `Already provided options: ${providedFlags.join(", ")}`)
-        : nextStepsWithRetry;
-    return makeGuidanceMessage({
-      code: "missing_required_option",
-      title: `Missing required option ${optionFlag}`,
-      happened: `Commander rejected the command because ${optionFlag} was not provided.`,
-      required: `Pass ${optionFlag} with a valid value before running the command.`,
-      why: isType
-        ? "--type selects item contract and policy routing, including required/disabled option rules."
-        : "Required flags define mandatory command intent and prevent ambiguous execution.",
-      examples: examplesWithRetry,
-      nextSteps,
-      recovery: buildCommanderRecoveryPayload(context, { missing }),
-    });
-  }
-
-  const missingArgument = message.match(/missing required argument '([^']+)'/);
-  if (missingArgument) {
-    const argumentName = missingArgument[1];
-    return makeGuidanceMessage({
-      code: "missing_required_argument",
-      title: `Missing required argument ${argumentName}`,
-      happened: `Command invocation omitted positional argument ${argumentName}.`,
-      required: `Provide ${argumentName} in the expected command position.`,
-      why: "Positional arguments identify the target entity or action context for the command.",
-      examples: [`pm ${commandName ?? "<command>"} --help`],
-      recovery: buildCommanderRecoveryPayload(context, { missing: [argumentName] }),
-    });
-  }
-
-  const unknownOption = message.match(/unknown option '([^']+)'/);
-  if (unknownOption) {
-    const optionName = unknownOption[1];
-    const suggestions = normalizeOptionFlags(context?.unknownOptionSuggestions);
-    const retryCommand = context?.suggestedRetryCommand;
-    if (commandName === "update" && (optionName === "--file" || optionName === "--doc")) {
-      return makeGuidanceMessage({
-        code: "unsupported_update_option",
-        title: `Unsupported option ${optionName} for update`,
-        happened: `pm update does not accept ${optionName} for linked artifact mutations.`,
-        required: "Use dedicated linked-artifact commands instead of pm update for files/docs changes.",
-        why: "pm update manages scalar item metadata, while linked files/docs are managed by pm files and pm docs.",
-        examples: [
-          'pm files pm-a1b2 --add "path=src/cli/main.ts,scope=project,note=implementation surface"',
-          'pm docs pm-a1b2 --add "path=README.md,scope=project,note=user-facing contract"',
-        ],
-        nextSteps: ['Run "pm files --help" and "pm docs --help" for add/remove payload formats.'],
-        recovery: buildCommanderRecoveryPayload(context, {
-          missing: suggestions,
-        }),
-      });
-    }
-    const otherCommands = normalizeContextList(context?.unknownOptionOtherCommands);
-    const nextSteps = [
-      "Run command help to confirm the exact option contracts for this command path.",
-      ...(suggestions && suggestions.length > 0 ? [`Nearest supported options: ${suggestions.join(", ")}`] : []),
-      ...(otherCommands && otherCommands.length > 0
-        ? [`${optionName} is a valid option on: ${otherCommands.join(", ")}. If you meant one of those, run that command instead.`]
-        : []),
-      ...(retryCommand ? [`Replay with suggested correction: ${retryCommand}`] : []),
-    ];
-    const examples = [
-      ...(retryCommand ? [retryCommand] : []),
-      `pm ${commandName ?? "<command>"} --help`,
-    ];
-    return makeGuidanceMessage({
-      code: "unknown_option",
-      title: `Unknown option ${optionName}`,
-      happened: `Commander does not recognize option ${optionName} for this command path.`,
-      required: "Use supported options only, or move option to the correct subcommand.",
-      why: "Option contracts are command-specific and intentionally validated.",
-      examples,
-      nextSteps,
-      recovery: buildCommanderRecoveryPayload(context, {
-        missing: suggestions,
-      }),
-    });
-  }
-
-  const unknownCommand = message.match(/unknown command '([^']+)'/);
-  if (unknownCommand) {
-    const commandToken = unknownCommand[1];
-    const runtimeExamples = normalizeContextList(context?.unknownCommandExamples);
-    const runtimeNextSteps = normalizeContextList(context?.unknownCommandNextSteps);
-    const packageHint = resolveKnownPackageCommandHint(commandToken);
-    const baseExamples = runtimeExamples ?? ["pm --help"];
-    const baseNextSteps = runtimeNextSteps ?? ["Verify spelling and active extensions, then rerun."];
-    if (packageHint) {
-      const installStep = `"${commandToken}" is provided by the ${packageHint.packageName} package. Install it with: ${packageHint.installCommand}`;
-      return makeGuidanceMessage({
-        code: "unknown_command",
-        title: `Unknown command ${commandToken}`,
-        happened: `pm does not expose command path "${commandToken}" in current runtime configuration. It is shipped by the optional ${packageHint.packageName} package.`,
-        required: `Install the ${packageHint.packageName} package, or use a valid command name or subcommand path.`,
-        why: "Command registry includes core commands plus active extension command handlers; package-provided commands appear only after the package is installed.",
-        examples: dedupeStrings([packageHint.installCommand, ...baseExamples]),
-        nextSteps: dedupeStrings([installStep, ...baseNextSteps]),
-        recovery: buildCommanderRecoveryPayload(context),
-      });
-    }
-    return makeGuidanceMessage({
-      code: "unknown_command",
-      title: `Unknown command ${commandToken}`,
-      happened: `pm does not expose command path "${commandToken}" in current runtime configuration.`,
-      required: "Use a valid command name or subcommand path.",
-      why: "Command registry includes core commands plus active extension command handlers.",
-      examples: baseExamples,
-      nextSteps: baseNextSteps,
-      recovery: buildCommanderRecoveryPayload(context),
-    });
-  }
-
-  if (/too many arguments/i.test(message) && commandName === "test") {
-    const argv = context?.normalizedInvocationArgs;
-    const mutationFlag = findLinkedTestMutationFlag(argv);
-    if (mutationFlag) {
-      const retryCommand = buildLinkedTestQuotedRetryCommand(argv);
-      return makeGuidanceMessage({
-        code: "linked_test_value_not_quoted",
-        title: `Linked-test ${mutationFlag} value must be one argument`,
-        happened: `Commander saw extra positional tokens after the item id — usually a ${mutationFlag} value containing spaces (for example a command with " -- ") that the shell split into multiple tokens.`,
-        required: `Quote the whole ${mutationFlag} value as a single argument. Accepted forms: --add "command=npm test -- parser", --add command "npm test -- parser" (two-token form with the value quoted), or --add-json for complex commands.`,
-        why: "The shell splits unquoted values before pm can see them, so pm cannot reassemble the intended command unambiguously.",
-        examples: [
-          ...(retryCommand ? [retryCommand] : []),
-          'pm test pm-a1b2 --add "command=npm test -- parser"',
-          'pm test pm-a1b2 --add command "npm test -- parser"',
-          `pm test pm-a1b2 --add-json '{"command":"npm test -- parser"}'`,
-        ],
-        nextSteps: [
-          ...(retryCommand ? [`Replay with the value re-joined into one argument: ${retryCommand}`] : []),
-          "Prefer --add-json for commands containing commas, equals signs, or quotes.",
-          'Run "pm test --help" for linked-test entry contracts.',
-        ],
-        recovery: buildCommanderRecoveryPayload(context, retryCommand ? { suggested_retry: retryCommand } : {}),
-      });
-    }
+  const guidance =
+    buildMissingRequiredOptionGuidance(message, commandName, allowedTypes, context) ??
+    buildMissingRequiredArgumentGuidance(message, commandName, context) ??
+    buildUnknownOptionGuidance(message, commandName, context) ??
+    buildUnknownCommandGuidance(message, context) ??
+    buildLinkedTestValueNotQuotedGuidance(message, commandName, allowedTypes, context);
+  if (guidance) {
+    return guidance;
   }
 
   return makeGuidanceMessage({

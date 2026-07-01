@@ -9,7 +9,7 @@ import {
 } from "../../../src/cli/commands/extension/doctor.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../../src/core/extensions/index.js";
 import { writeVectorizationStatusLedger } from "../../../src/core/search/cache.js";
-import { EXIT_CODE } from "../../../src/core/shared/constants.js";
+import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
 import { readSettings, writeSettings } from "../../../src/core/store/settings.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
 import { installFailingFetchMock, installSemanticFetchMock } from "../../helpers/semanticFetchMock.js";
@@ -139,6 +139,21 @@ describe("runHealth", () => {
     expect(healthInternals.buildCapabilityContractMetadata).toBe(doctorBuildCapabilityContractMetadata);
     expect(healthInternals.collectUnknownCapabilityGuidance).toBe(doctorCollectUnknownCapabilityGuidance);
     expect(healthInternals.buildCapabilityContractMetadata().capabilities.length).toBeGreaterThan(0);
+    const vectorizationDetails = healthInternals.buildVectorizationProviderDetails(
+      {
+        ...structuredClone(SETTINGS_DEFAULTS),
+        search: {},
+        vector_store: {},
+      },
+      {
+        providerResolution: { active: null },
+        vectorStoreResolution: { active: null },
+      } as Parameters<typeof healthInternals.buildVectorizationProviderDetails>[1],
+    );
+    expect(vectorizationDetails).toMatchObject({
+      provider_configured: null,
+      vector_store_configured: null,
+    });
   });
 
   it("covers additional health helper edge branches", async () => {
@@ -394,6 +409,7 @@ describe("runHealth", () => {
         `${JSON.stringify(
           {
             last_successful_flush_at: "2026-04-26T10:11:12.000Z",
+            pending_otel_spans: "not-a-number",
             queue_entries: 1,
           },
           null,
@@ -413,6 +429,7 @@ describe("runHealth", () => {
         queue_draining: true,
         queue_exists: true,
         last_successful_flush_at: "2026-04-26T10:11:12.000Z",
+        pending_otel_spans: 0,
       });
     });
   });
@@ -433,6 +450,7 @@ describe("runHealth", () => {
           {
             last_successful_flush_at: "2026-04-26T10:00:00.000Z",
             last_failed_flush_at: "2026-04-26T11:00:00.000Z",
+            pending_otel_spans: 3,
             queue_entries: 1,
           },
           null,
@@ -452,6 +470,7 @@ describe("runHealth", () => {
         queue_entries: 1,
         queue_draining: false,
         queue_exists: true,
+        pending_otel_spans: 3,
       });
     });
   });
@@ -978,6 +997,16 @@ describe("runHealth", () => {
             skipped: [],
             warnings: [],
           },
+        });
+
+        const settledHealth = await runHealth({ path: context.pmPath });
+        const settledVectorizationCheck = settledHealth.checks.find((check) => check.name === "vectorization");
+        expect(settledVectorizationCheck?.details).toMatchObject({
+          semantic_runtime_available: true,
+          stale_items_before: [],
+          stale_items_after: [],
+          refresh_attempted: false,
+          refresh_skipped_reason: "no_stale_items",
         });
         expect(semanticMock.calls).toEqual([
           "https://api.example.test/v1/embeddings",

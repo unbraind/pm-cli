@@ -139,54 +139,77 @@ interface TodosSdkModule {
   writeFileAtomic: (targetPath: string, content: string) => Promise<void>;
 }
 
-async function loadTodosSdkModule(): Promise<TodosSdkModule> {
+const TODOS_SDK_ARRAY_EXPORTS = [
+  "CONFIDENCE_TEXT_VALUES",
+  "DEPENDENCY_KIND_VALUES",
+  "ISSUE_SEVERITY_VALUES",
+  "RISK_VALUES",
+] as const satisfies readonly (keyof TodosSdkModule)[];
+
+const TODOS_SDK_FUNCTION_EXPORTS = [
+  "PmCliError",
+  "canonicalDocument",
+  "commitImportedItem",
+  "ensureTrackerInitialized",
+  "generateItemId",
+  "getActiveExtensionRegistrations",
+  "getItemPath",
+  "listAllFrontMatter",
+  "locateItem",
+  "normalizeFrontMatter",
+  "normalizeItemId",
+  "nowIso",
+  "readLocatedItem",
+  "readSettings",
+  "resolveItemTypeRegistry",
+  "resolvePmRoot",
+  "runActiveOnReadHooks",
+  "runActiveOnWriteHooks",
+  "selectImportAuthor",
+  "splitFrontMatter",
+  "toEstimatedMinutesValue",
+  "toImportPriority",
+  "toImportStatus",
+  "toImportTags",
+  "toNonEmptyImportString",
+  "writeFileAtomic",
+] as const satisfies readonly (keyof TodosSdkModule)[];
+
+function resolveTodosSdkModulePath(): string {
   const envRoot = process.env[PM_PACKAGE_ROOT_ENV];
   const hasConfiguredPackageRoot = typeof envRoot === "string" && envRoot.trim().length > 0;
-  const packageRoot =
-    hasConfiguredPackageRoot
-      ? path.resolve(envRoot.trim())
-      : path.resolve(CURRENT_RUNTIME_ROOT, "../../../..");
-  const modulePath = hasConfiguredPackageRoot
+  const packageRoot = hasConfiguredPackageRoot ? path.resolve(envRoot.trim()) : path.resolve(CURRENT_RUNTIME_ROOT, "../../../..");
+  return hasConfiguredPackageRoot
     ? path.join(packageRoot, "dist", "sdk", "index.js")
     : path.join(packageRoot, "src", "sdk", "index.ts");
+}
+
+function hasTodosSdkArrayExports(loaded: Partial<TodosSdkModule>): boolean {
+  return TODOS_SDK_ARRAY_EXPORTS.every((key) => Array.isArray(loaded[key]));
+}
+
+function hasTodosSdkFunctionExports(loaded: Partial<TodosSdkModule>): boolean {
+  return TODOS_SDK_FUNCTION_EXPORTS.every((key) => typeof loaded[key] === "function");
+}
+
+function hasTodosSdkExitCodeExports(loaded: Partial<TodosSdkModule>): boolean {
+  return (
+    typeof loaded.EXIT_CODE === "object" &&
+    loaded.EXIT_CODE !== null &&
+    typeof loaded.EXIT_CODE.NOT_FOUND === "number"
+  );
+}
+
+function isTodosSdkModule(loaded: Partial<TodosSdkModule>): loaded is TodosSdkModule {
+  return hasTodosSdkArrayExports(loaded) && hasTodosSdkFunctionExports(loaded) && hasTodosSdkExitCodeExports(loaded);
+}
+
+async function loadTodosSdkModule(): Promise<TodosSdkModule> {
+  const modulePath = resolveTodosSdkModulePath();
   try {
     const loaded = (await import(pathToFileURL(modulePath).href)) as Partial<TodosSdkModule>;
-    if (
-      Array.isArray(loaded.CONFIDENCE_TEXT_VALUES) &&
-      Array.isArray(loaded.DEPENDENCY_KIND_VALUES) &&
-      typeof loaded.EXIT_CODE === "object" &&
-      loaded.EXIT_CODE !== null &&
-      typeof loaded.EXIT_CODE.NOT_FOUND === "number" &&
-      Array.isArray(loaded.ISSUE_SEVERITY_VALUES) &&
-      typeof loaded.PmCliError === "function" &&
-      Array.isArray(loaded.RISK_VALUES) &&
-      typeof loaded.canonicalDocument === "function" &&
-      typeof loaded.commitImportedItem === "function" &&
-      typeof loaded.ensureTrackerInitialized === "function" &&
-      typeof loaded.generateItemId === "function" &&
-      typeof loaded.getActiveExtensionRegistrations === "function" &&
-      typeof loaded.getItemPath === "function" &&
-      typeof loaded.listAllFrontMatter === "function" &&
-      typeof loaded.locateItem === "function" &&
-      typeof loaded.normalizeFrontMatter === "function" &&
-      typeof loaded.normalizeItemId === "function" &&
-      typeof loaded.nowIso === "function" &&
-      typeof loaded.readLocatedItem === "function" &&
-      typeof loaded.readSettings === "function" &&
-      typeof loaded.resolveItemTypeRegistry === "function" &&
-      typeof loaded.resolvePmRoot === "function" &&
-      typeof loaded.runActiveOnReadHooks === "function" &&
-      typeof loaded.runActiveOnWriteHooks === "function" &&
-      typeof loaded.selectImportAuthor === "function" &&
-      typeof loaded.splitFrontMatter === "function" &&
-      typeof loaded.toEstimatedMinutesValue === "function" &&
-      typeof loaded.toImportPriority === "function" &&
-      typeof loaded.toImportStatus === "function" &&
-      typeof loaded.toImportTags === "function" &&
-      typeof loaded.toNonEmptyImportString === "function" &&
-      typeof loaded.writeFileAtomic === "function"
-    ) {
-      return loaded as TodosSdkModule;
+    if (isTodosSdkModule(loaded)) {
+      return loaded;
     }
   } catch (error: unknown) {
     throw new Error(`builtin-todos failed to load SDK exports from ${modulePath}.`, { cause: error });

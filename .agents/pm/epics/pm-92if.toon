@@ -6,10 +6,11 @@ status: in_progress
 priority: 2
 tags[3]: code-quality,codefactor,tech-debt
 created_at: "2026-06-26T13:29:14.359Z"
-updated_at: "2026-07-01T13:57:02.413Z"
+updated_at: "2026-07-01T19:58:40.410Z"
+assignee: claude-code-agent
 author: claude-code-agent
 acceptance_criteria: "CodeFactor overall repository grade reaches A+ (or the highest attainable) on branch main; CodeFactor reports 0 outstanding issues across Complexity, Maintainability, and Duplication; local lint/quality parity tooling exists so findings can be reproduced and kept at zero (no regressions on new PRs)."
-comments[60]{created_at,author,text}:
+comments[64]{created_at,author,text}:
   "2026-06-26T15:46:30.976Z",codex-gpt5,"Progress update: live CodeFactor for main still reports 255 issues until this branch lands (83 maintainability, 152 complexity, 20 duplication). This branch completes the maintainability groups tracked by pm-xsth, pm-m8yl, and pm-x878/Codecov; complexity pm-arzz and duplication pm-fmjy remain open for dedicated refactor follow-up."
   "2026-06-26T18:50:54.481Z",codex-codefactor-sdk-cli-20260626,"Investigation note: live 2026-06-26 CodeFactor public issues page reports A rating, 601 analyzed files, 172 issues after the merged maintainability branch; PM snapshot still tracks remaining complexity and duplication children. GitHub state: no open PRs, no open Dependabot or code-scanning alerts; issue #374 remains open and externally blocked on missing RELEASE_PAT in release environment; pnpm audit --audit-level moderate reports no known vulnerabilities. Dependency drift from pnpm outdated: @sentry/cli 3.5.1 -> 3.6.0, @sentry/node 10.61.0 -> 10.62.0, @types/node held at Node 22 types despite latest 26.x."
   "2026-06-26T19:05:47.605Z",codex-codefactor-sdk-cli-20260626,"Evidence update: CodeFactor remediation bundle now covers the remaining duplication primitives and generated/test analysis scope. Verification passed: pnpm build; targeted 254-test suite; pnpm contracts:check; pnpm quality:static; pnpm typecheck; pnpm security:scan; full coverage 100/100/100/100 across 5133 tests; manual isolated temp-project smoke with PM_PATH/PM_GLOBAL_PATH passed package install/doctor and shared unset behavior. Remaining release issue #374 is external to code changes: GitHub scheduled Auto Release requires RELEASE_PAT in the release environment."
@@ -70,30 +71,49 @@ comments[60]{created_at,author,text}:
   "2026-06-30T13:36:11.335Z",claude-code-agent,"Review follow-up evidence: addressed current-head scaffold review feedback by lowercasing reserved command roots at initialization and narrowing starter-prefixed collision handling. Non-reserved starter package names such as starter-tool-kit now remain readable as 'starter tool kit ping', while reserved descendants such as starter-package, starter-search, and starter-starter-search keep an added starter prefix because package/search are existing pm command roots and starter-only names would otherwise collide with the fallback prefix. Verification after this change: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-scaffold-define-guidance.spec.ts (28/28), node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts (113/113), pnpm typecheck, pnpm lint, git diff --check, manual temp smoke at /tmp/pm-scaffold-review4-smoke-IbixgD for starter-package/starter-search/starter-starter-search/starter-tool-kit generated install invoke doctor flows, and node scripts/run-tests.mjs coverage (262 files, 5259 tests, 100% statements/branches/functions/lines: 32128/32128 statements, 24854/24854 branches, 5510/5510 functions, 30832/30832 lines)."
   "2026-07-01T13:54:04.989Z",claude-code-agent,"PR #413 closeout check: current head 460f0a06 has no unresolved non-outdated review threads, all required branch-protection checks are green (CI, Docs, CodeQL Analyze), CodeFactor/CodeRabbit/Gemini/Greptile are clean, and gh pr checks reports all current checks passing. GitHub mergeStateStatus still reports BLOCKED despite required_pull_request_reviews=null and satisfied strict status checks, so next step is normal merge attempt before any policy/admin fallback."
   "2026-07-01T13:56:56.562Z",claude-code-agent,"Post-merge evidence: PR #413 merged to main as 7d171eff on 2026-07-01T13:54:30Z after admin merge was required because normal merge was blocked by base-branch policy and repository auto-merge is disabled. Post-merge main verification passed: pnpm build; pnpm quality:static; pnpm changelog:pm:check using pm-changelog 2026.6.30 unchanged item_count=1385; pm health summary ok; pm validate history_drift ok with known pre-existing validate_resolution_missing_fields:260 warning backlog; pnpm audit --audit-level moderate clean; GitHub open PRs/issues/dependabot/code-scanning/secret-scanning alerts all zero; sentry telemetry gate ok with critical=0 high=0 telemetry finish_error_rate_pct=0.8; manual temp smoke /tmp/tmp.tQRXPcnjq8 passed init, schema add-field github_url, create/update via --github-url, runtime set/unset conflict error, list, and health. Latest scheduled Auto Release on 2026-07-01T06:52:39Z succeeded on b2617dac and npm latest remains @unbrained/pm-cli 2026.7.1."
-files[33]{path,scope,note}:
+  "2026-07-01T16:45:14.455Z",claude-code-agent,"Implementation start: continuing active SDK/CLI quality lane after live duplicate-safe search and GitHub sweep. Current findings: no open PRs/issues/Dependabot/code-scanning/secret-scanning alerts, pnpm audit clean, CodeFactor public page still reports rating A with outstanding issue count, and dependency drift is limited to @sentry/node 10.62.0 -> 10.63.0 while @types/node latest 26.x remains held for the Node 22 support floor. Scope: compatible Sentry patch refresh plus release-health evidence on pm-7zs0; no duplicate pm item created."
+  "2026-07-01T16:57:47.574Z",claude-code-agent,"Evidence: refreshed @sentry/node from 10.62.0 to 10.63.0 for the release-health/telemetry path after live GitHub and dependency sweep found no open PRs/issues/Dependabot/code-scanning/secret-scanning alerts and pnpm audit clean. Verification passed: pnpm build; pnpm typecheck; focused Sentry/release automation tests (99/99); pnpm security:scan; pnpm audit --audit-level moderate; pnpm lint; pnpm contracts:check; pnpm quality:static; pnpm changelog:pm:check with pm-changelog 2026.6.30 unchanged; sentry telemetry gate best-effort ok with critical=0 high=0 telemetry finish_error_rate_pct=0.77; pm health ok; pm validate history_drift ok with known pre-existing validate_resolution_missing_fields:260 warning backlog; full coverage 262 files, 5266 tests, 100/100/100/100; manual packed temp install smoke passed init/create/comments/get/health/validate/telemetry/package doctor with item sentry-refresh-smoke-e3ab."
+  "2026-07-01T17:13:13.821Z",claude-code-agent,"Progress update: expanded the branch from the Sentry release-health refresh into concrete CodeFactor complexity remediation. Local ESLint complexity baseline before this refactor: 103 suppressed findings, total complexity 3169, over-threshold sum 1418. Current after config/settings refactors: 98 suppressed findings, total complexity 2920, over-threshold sum 1254. Removed 5 complexity findings across src/cli/commands/config.ts and src/core/store/settings.ts, reducing over-threshold complexity by 164 points; config.ts now has zero complexity suppressions. Focused verification passed: config/settings store tests 123/123, pnpm typecheck, pnpm lint, pnpm quality:static, git diff --check."
+  "2026-07-01T19:58:40.410Z",claude-code-agent,"Evidence: expanded CodeFactor complexity remediation across 15 command/package/runtime files plus focused tests. Suppressions-disabled ESLint complexity moved from the earlier branch baseline of 103 findings / total complexity 3169 / over-threshold 1418 to 67 findings / total complexity 1780 / over-threshold 641, reducing 36 findings and 777 over-threshold complexity points. Verification passed: focused contracts+plan+search+search-cache tests 203/203; config focused tests plus pnpm typecheck; pnpm lint including jscpd/static-quality; pnpm audit --audit-level moderate; pnpm contracts:check; pnpm security:scan; sentry telemetry gate best-effort critical=0 high=0 telemetry finish_error_rate_pct=0.76; node scripts/run-tests.mjs coverage 262 files / 5266 tests / 100% statements, branches, functions, and lines; pm health summary ok; pm validate history_drift ok with known pre-existing validate_resolution_missing_fields:260 backlog; pnpm changelog:pm and changelog:pm:check unchanged with pm-changelog 2026.6.30 item_count=1385; git diff --check passed. Manual packed install smoke passed in /tmp/pm-cli-complexity-smoke-xmJ9w6 using tarball /tmp/pm-cli-complexity-smoke-xmJ9w6/pack/unbrained-pm-cli-2026.7.1.tgz: init, create pm-wft0, comments, get, search, close with resolution metadata, health, validate, and package doctor."
+files[48]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,pm-changelog package-owned check refreshed managed extension install timestamp
+  eslint-suppressions.json,project,Prune resolved complexity suppressions after config/settings refactors
   package.json,project,Align @types/node range to Node 22 supported floor after Dependabot PR #399 review
+  packages/pm-beads/extensions/beads/runtime.ts,project,split Beads runtime import validation and execution helpers to reduce complexity
+  packages/pm-todos/extensions/todos/runtime.ts,project,split todos runtime SDK export validation and path resolution helpers
   pnpm-lock.yaml,project,Lock @types/node 22.20.0 and undici-types 6.21.0 for Node 22 support
   scripts/dogfood-package-first.mjs,project,Update package-first dogfood smoke to expect starter-prefixed reserved scaffold command
+  src/cli/commands/aggregate.ts,project,split aggregate accumulation and filter assembly helpers to reduce complexity
   src/cli/commands/config.ts,project,reuse shared canonical config key type
+  src/cli/commands/context.ts,project,split context rendering and section aggregation helpers to reduce complexity
+  src/cli/commands/contracts.ts,project,split contracts runtime/schema/action shaping and extension schema branch helpers
   src/cli/commands/create.ts,project,reuse shared legacy-none and runtime-unset helpers
   src/cli/commands/extension/scaffold.ts,project,generate imperative package starter tests through createExtensionTestHarness for common command/teardown flow
+  src/cli/commands/get.ts,project,split get/list projection routing helpers to reduce complexity
+  src/cli/commands/health.ts,project,split health telemetry vectorization and integrity helpers to reduce complexity
   src/cli/commands/item-filter-options.ts,project,single-source shared list/search item filter option contracts
   src/cli/commands/legacy-none-tokens.ts,project,share legacy none/null collection normalization across create and update
   src/cli/commands/list.ts,project,reuse shared item filter option contract for list options
+  src/cli/commands/plan.ts,project,split plan dispatch and materialize helpers to reduce complexity
   src/cli/commands/search.ts,project,reuse shared item filter option contract for search options
   src/cli/commands/shared-unset-fields.ts,project,share runtime schema unset token lookup
   src/cli/commands/test.ts,project,report linked-test duplicate add/remove no-ops without misleading history writes
   src/cli/commands/update.ts,project,reuse shared legacy-none and runtime-unset helpers
+  src/cli/error-guidance.ts,project,split CLI error guidance and recovery helpers to reduce complexity
   src/core/config/positional-value.ts,project,single-source canonical config key type for command and positional router
   src/core/store/item-store.ts,project,suppress no-op mutateItem writes when changedFields is empty
   src/core/store/paths.ts,project,reuse type-registry default-folder derivation for custom item storage
+  src/core/store/settings.ts,project,Refactor extension policy normalization to reduce settings complexity baseline
   src/sdk/cli-contracts/tool-option-contracts.ts,project,deduplicate SDK tool option contract groups while preserving generated contract snapshot
   tests/integration/mcp-dynamic-package-actions.spec.ts,project,stabilize long MCP compact-output integration coverage timeout
   tests/unit/commands/create-command.spec.ts,project,Review-fix coverage for command-scoped runtime unset registry fixtures
+  tests/unit/commands/health-command.spec.ts,project,branch coverage for health vectorization and telemetry helper splits
   tests/unit/commands/legacy-none-tokens.spec.ts,project,Review-fix coverage for malformed legacy none collection payloads
+  tests/unit/commands/plan-command.spec.ts,project,regression coverage for plan step reference and materialize split paths
+  tests/unit/commands/search-command.spec.ts,project,regression coverage for search projection and provider failure split paths
   tests/unit/commands/test-command.spec.ts,project,regression coverage for duplicate linked-test add no-op history
   tests/unit/commands/update-command.spec.ts,project,Review-fix coverage for command-scoped runtime unset registry fixtures
+  tests/unit/core/search/search-cache.spec.ts,project,updated semantic fallback expectations after search helper split
   tests/unit/core/sentry/sentry-helpers.spec.ts,project,replace unnecessary any payload typings in Sentry helper tests
   tests/unit/docs-examples/example-script-harness.ts,project,shared SDK docs-example script import and mock reset harness
   tests/unit/docs-examples/policy-restricted-extension.spec.ts,project,reuse shared docs-example import harness after review feedback
@@ -104,14 +124,18 @@ files[33]{path,scope,note}:
   tests/unit/extensions/extension-scaffold-define-guidance.spec.ts,project,regression coverage for harness-based generated starter tests
   tests/unit/scripts/dogfood-package-first.spec.ts,project,Align dogfood script harness with starter-prefixed reserved scaffold command
   tests/unit/sdk/tool-option-contracts.spec.ts,project,regression coverage for exported SDK option contract object isolation
-tests[20]{command,scope,timeout_seconds}:
+tests[24]{command,scope,timeout_seconds}:
   node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,project,180
   node scripts/run-tests.mjs coverage,project,900
   "node scripts/run-tests.mjs test -- tests/integration/mcp-dynamic-package-actions.spec.ts -t \"normalizes scalar update log fields and defaults list output to compact\"",project,120
+  node scripts/run-tests.mjs test -- tests/unit/commands/config-command.spec.ts && pnpm typecheck,project,300
+  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/unit/commands/plan-command.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/core/search/search-cache.spec.ts,project,300
   node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/unit/commands/config-command.spec.ts tests/unit/commands/config-key-aliases-search.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/unit/sdk/sdk-index.spec.ts,project,180
   node scripts/run-tests.mjs test -- tests/unit/commands/legacy-none-tokens.spec.ts,project,120
   node scripts/run-tests.mjs test -- tests/unit/commands/list-command.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts,project,300
+  node scripts/run-tests.mjs test -- tests/unit/core/sentry/sentry-helpers.spec.ts tests/unit/scripts/release/sentry-telemetry-gate.spec.ts tests/integration/release-automation-contract.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/core/store/settings-store.spec.ts tests/unit/core/store/settings-internal.spec.ts tests/unit/core/store/settings-validator.spec.ts tests/unit/commands/config-command.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/core/store/store-paths.spec.ts tests/unit/core/sentry/sentry-helpers.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/docs-examples/sdk-app-embedding.spec.ts tests/unit/docs-examples/sdk-contract-consumer.spec.ts tests/unit/docs-examples/starter-extension.spec.ts tests/unit/docs-examples/policy-restricted-extension.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts,project,240

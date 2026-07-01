@@ -882,15 +882,9 @@ describe("cli/commands/search", () => {
       release: "r1",
       parent: "pm-parent",
     });
-    expect(searchInternals.buildImplicitSemanticFallbackWarning(new Error("timed out"))).toBe(
-      "search_implicit_semantic_fallback:timeout:using_keyword_mode",
-    );
-    expect(searchInternals.buildImplicitSemanticFallbackWarning(new Error("fetch failed"))).toBe(
-      "search_implicit_semantic_fallback:connection:using_keyword_mode",
-    );
-    expect(searchInternals.buildImplicitSemanticFallbackWarning(new Error("boom"))).toBe(
-      "search_implicit_semantic_fallback:error:using_keyword_mode",
-    );
+    expect(searchInternals.classifyImplicitSemanticFallbackReason(new Error("timed out"))).toBe("timeout");
+    expect(searchInternals.classifyImplicitSemanticFallbackReason(new Error("fetch failed"))).toBe("connection");
+    expect(searchInternals.classifyImplicitSemanticFallbackReason(new Error("boom"))).toBe("error");
     expect(searchInternals.buildExplicitSemanticFallbackWarning("hybrid", new Error("boom"))).toBe(
       "search_hybrid_fallback:error:using_keyword_mode",
     );
