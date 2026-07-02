@@ -175,6 +175,7 @@ const METADATA_TRUNCATED_KEY_BY_FIELD: Record<ValidateMetadataRequiredField, str
 const GIT_LS_FILES_MAX_BUFFER = 32 * 1024 * 1024;
 const FILE_LIST_SUMMARY_LIMIT = 40;
 const DIAGNOSTIC_LIST_SUMMARY_LIMIT = 5;
+// Conservative pre-stat guard for common filesystem limits; over-limit links are unreadable, not prune-safe.
 const LINKED_ARTIFACT_MAX_PATH_LENGTH = 4096;
 const LINKED_ARTIFACT_MAX_SEGMENT_LENGTH = 255;
 const execFileAsync = promisify(execFile);
@@ -1707,7 +1708,7 @@ function linkedArtifactPathExceedsFilesystemLimits(artifactPath: string): boolea
   const normalized = normalizeRelativePath(artifactPath);
   return (
     normalized.length > LINKED_ARTIFACT_MAX_PATH_LENGTH ||
-    normalized.split("/").some((segment) => segment.length > LINKED_ARTIFACT_MAX_SEGMENT_LENGTH)
+    normalized.split(/[\\/]/).some((segment) => segment.length > LINKED_ARTIFACT_MAX_SEGMENT_LENGTH)
   );
 }
 
