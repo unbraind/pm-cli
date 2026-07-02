@@ -473,5 +473,17 @@ describe("error-guidance helper edge branches", () => {
       { type: " custom.type " } as never,
     );
     expect(contextual.type).toBe("custom.type");
+
+    const missingFallbackRequired = _testOnly.applyPmCliErrorContext(
+      {
+        type: "urn:pm-cli:error:base",
+        code: "base",
+        title: "Base",
+        happened: "Base happened",
+      } as never,
+      "",
+      { required: 42 } as never,
+    );
+    expect(missingFallbackRequired.required).toBeUndefined();
   });
 });

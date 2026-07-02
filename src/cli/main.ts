@@ -854,8 +854,12 @@ function collectExtensionFlagDefinitionsForInvocation(
   return nestedMatch.length > 0 ? nestedMatch : exact;
 }
 
+function dynamicCommandArguments(descriptor: ExtensionCommandHelpDescriptor): ExtensionCommandHelpDescriptor["arguments"] {
+  return descriptor.arguments ?? [];
+}
+
 function formatDynamicCommandUsage(descriptor: ExtensionCommandHelpDescriptor): string {
-  const argumentSuffix = descriptor.arguments
+  const argumentSuffix = dynamicCommandArguments(descriptor)
     .map((argument) => {
       const label = argument.variadic ? `${argument.name}...` : argument.name;
       return argument.required ? `<${label}>` : `[${label}]`;
@@ -890,10 +894,12 @@ function validateDynamicExtensionCommandArgs(
   descriptor: ExtensionCommandHelpDescriptor,
   args: string[],
 ): void {
-  const requiredCount = descriptor.arguments.filter((argument) => argument.required).length;
-  const variadic = descriptor.arguments.some((argument) => argument.variadic);
-  const maxCount = variadic ? Number.POSITIVE_INFINITY : descriptor.arguments.length;
-  const hintSuffix = descriptor.failure_hints.length > 0 ? ` ${descriptor.failure_hints.join(" ")}` : "";
+  const descriptorArguments = dynamicCommandArguments(descriptor);
+  const requiredCount = descriptorArguments.filter((argument) => argument.required).length;
+  const variadic = descriptorArguments.some((argument) => argument.variadic);
+  const maxCount = variadic ? Number.POSITIVE_INFINITY : descriptorArguments.length;
+  const failureHints = descriptor.failure_hints ?? [];
+  const hintSuffix = failureHints.length > 0 ? ` ${failureHints.join(" ")}` : "";
   if (args.length < requiredCount) {
     throw new PmCliError(
       `Missing required argument for extension command '${descriptor.command}'. Usage: ${formatDynamicCommandUsage(descriptor)}${hintSuffix}`,
@@ -1670,19 +1676,59 @@ async function runRequiredExtensionCommand(
 
 const WRAPPED_ACTION_HANDLER = Symbol("pm.wrappedActionHandler");
 
+type ActionMutableCommand = Command & {
+  _actionHandler?: (...args: unknown[]) => unknown;
+  [WRAPPED_ACTION_HANDLER]?: boolean;
+};
+
+function resolveActionCommand(actionArgs: unknown[], fallback: Command): Command {
+  const possibleCommand = actionArgs[actionArgs.length - 1];
+  /* c8 ignore next */
+  return possibleCommand instanceof Command ? possibleCommand : fallback;
+}
+
+function maybePrintExtensionProfileWarnings(enabled: boolean | undefined, label: string, warnings: string[]): void {
+  if (enabled && warnings.length > 0) {
+    printError(`profile:extensions ${label}=${formatHookWarnings(warnings)}`);
+  }
+}
+
+function validateDynamicInvocationArgs(params: {
+  activeRegistrations: ReturnType<typeof getActiveExtensionRegistrations>;
+  commandPath: string;
+  commandArgs: string[];
+  extensionFlagDefinitions: Array<Record<string, unknown>>;
+}): void {
+  const dynamicDescriptor = activeRuntimeExtensionCommandDescriptors.get(normalizeExtensionCommandPath(params.commandPath));
+  if (!dynamicDescriptor || !isImporterOrExporterCommandPath(params.activeRegistrations, params.commandPath)) {
+    return;
+  }
+  const positionalArgs =
+    dynamicCommandArguments(dynamicDescriptor).length === 0
+      ? collectLoosePositionalArgs(params.commandArgs)
+      : stripLooseCommandOptionTokens(params.commandArgs, params.extensionFlagDefinitions);
+  validateDynamicExtensionCommandArgs(dynamicDescriptor, positionalArgs);
+}
+
+function syncCommanderActionArgs(actionCommand: Command, actionArgs: unknown[], commandArgs: string[]): void {
+  actionCommand.args = [...commandArgs];
+  /* c8 ignore next */
+  if ("_processArguments" in actionCommand && typeof actionCommand._processArguments === "function") {
+    actionCommand._processArguments();
+  }
+  /* c8 ignore next */
+  if (actionArgs.length > 0 && Array.isArray(actionArgs[0])) {
+    actionArgs[0] = [...actionCommand.processedArgs];
+  }
+}
+
 function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
   const visit = (entry: Command): void => {
-    type ActionMutableCommand = Command & {
-      _actionHandler?: (...args: unknown[]) => unknown;
-      [WRAPPED_ACTION_HANDLER]?: boolean;
-    };
     const actionEntry = entry as ActionMutableCommand;
     if (typeof actionEntry._actionHandler === "function" && actionEntry[WRAPPED_ACTION_HANDLER] !== true) {
       const originalAction = actionEntry._actionHandler;
       actionEntry._actionHandler = async function wrappedActionHandler(this: unknown, ...actionArgs: unknown[]): Promise<unknown> {
-        const possibleCommand = actionArgs[actionArgs.length - 1];
-        /* c8 ignore next */
-        const actionCommand = possibleCommand instanceof Command ? possibleCommand : entry;
+        const actionCommand = resolveActionCommand(actionArgs, entry);
         const startedAt = Date.now();
         clearResolvedGlobalOptions(actionCommand);
         let globalOptions = getGlobalOptions(actionCommand);
@@ -1705,9 +1751,7 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
           global: globalOptions,
           pm_root: pmRoot,
         });
-        if (globalOptions.profile && parserOverride.warnings.length > 0) {
-          printError(`profile:extensions parser_warnings=${formatHookWarnings(parserOverride.warnings)}`);
-        }
+        maybePrintExtensionProfileWarnings(globalOptions.profile, "parser_warnings", parserOverride.warnings);
         commandArgs = parserOverride.context.args;
         commandOptions = parserOverride.context.options;
         globalOptions = parserOverride.context.global;
@@ -1716,25 +1760,10 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         // only arity validation, so excess positionals could reach handlers.
         // Free-form `registerCommand` commands intentionally accept positionals
         // via context.args, and core commands have no descriptor.
-        const dynamicDescriptor = activeRuntimeExtensionCommandDescriptors.get(normalizeExtensionCommandPath(commandPath));
-        if (dynamicDescriptor && isImporterOrExporterCommandPath(activeRegistrations, commandPath)) {
-          const positionalArgs =
-            dynamicDescriptor.arguments.length === 0
-              ? collectLoosePositionalArgs(commandArgs)
-              : stripLooseCommandOptionTokens(commandArgs, extensionFlagDefinitions);
-          validateDynamicExtensionCommandArgs(dynamicDescriptor, positionalArgs);
-        }
+        validateDynamicInvocationArgs({ activeRegistrations, commandPath, commandArgs, extensionFlagDefinitions });
         globalOptions = await applyDefaultOutputFormat(globalOptions);
         setResolvedGlobalOptions(actionCommand, globalOptions);
-        actionCommand.args = [...commandArgs];
-        /* c8 ignore next */
-        if ("_processArguments" in actionCommand && typeof actionCommand._processArguments === "function") {
-          actionCommand._processArguments();
-        }
-        /* c8 ignore next */
-        if (actionArgs.length > 0 && Array.isArray(actionArgs[0])) {
-          actionArgs[0] = [...actionCommand.processedArgs];
-        }
+        syncCommanderActionArgs(actionCommand, actionArgs, commandArgs);
         for (const [key, value] of Object.entries(commandOptions)) {
           actionCommand.setOptionValueWithSource(key, value, "cli");
         }
@@ -1754,9 +1783,7 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
           global: globalOptions,
           pm_root: pmRoot,
         });
-        if (globalOptions.profile && extensionCommandResult.warnings.length > 0) {
-          printError(`profile:extensions command_handler_warnings=${formatHookWarnings(extensionCommandResult.warnings)}`);
-        }
+        maybePrintExtensionProfileWarnings(globalOptions.profile, "command_handler_warnings", extensionCommandResult.warnings);
         if (extensionCommandResult.handled) {
           setActiveCommandResult(extensionCommandResult.result);
           printResult(extensionCommandResult.result, {

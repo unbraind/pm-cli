@@ -322,6 +322,44 @@ async function writeGuidanceFile(filePath: string): Promise<{ changed: boolean; 
   };
 }
 
+function buildInitAgentGuidanceSummary(params: {
+  mode: InitAgentGuidanceMode;
+  scans: AgentGuidanceFileScan[];
+  projectRoot: string;
+  targetRelativePath: string;
+  prompted: boolean;
+  applied: boolean;
+  skipped: boolean;
+  state: PmSettings["agent_guidance"];
+}): InitAgentGuidanceSummary {
+  return {
+    mode: params.mode,
+    present: params.scans.some((entry) => entry.has_guidance),
+    prompted: params.prompted,
+    applied: params.applied,
+    skipped: params.skipped,
+    declined: params.state.declined,
+    prompt_completed: params.state.prompt_completed,
+    template_version: params.state.template_version,
+    target_file: params.targetRelativePath,
+    checked_files: params.scans.map((entry) => toPortableRelativePath(params.projectRoot, entry.file_path)),
+    files_with_guidance: params.scans
+      .filter((entry) => entry.has_guidance)
+      .map((entry) => toPortableRelativePath(params.projectRoot, entry.file_path)),
+    missing_files: params.scans
+      .filter((entry) => !entry.exists)
+      .map((entry) => toPortableRelativePath(params.projectRoot, entry.file_path)),
+  };
+}
+
+async function refreshGuidanceScansAfterApply(
+  applied: boolean,
+  scans: AgentGuidanceFileScan[],
+  projectRoot: string,
+): Promise<AgentGuidanceFileScan[]> {
+  return applied ? await scanGuidanceFiles(projectRoot) : scans;
+}
+
 /**
  * Implements run init agent guidance for the public runtime surface of this module.
  */
@@ -420,28 +458,18 @@ export async function runInitAgentGuidance(options: RunInitAgentGuidanceOptions)
   }
 
   const stateUpdate = applyAgentGuidanceState(options.settings, state);
-  if (applied) {
-    scans = await scanGuidanceFiles(projectRoot);
-  }
+  scans = await refreshGuidanceScansAfterApply(applied, scans, projectRoot);
 
-  const summary: InitAgentGuidanceSummary = {
+  const summary = buildInitAgentGuidanceSummary({
     mode: options.mode,
-    present: scans.some((entry) => entry.has_guidance),
+    scans,
+    projectRoot,
+    targetRelativePath,
     prompted,
     applied,
     skipped,
-    declined: state.declined,
-    prompt_completed: state.prompt_completed,
-    template_version: state.template_version,
-    target_file: targetRelativePath,
-    checked_files: scans.map((entry) => toPortableRelativePath(projectRoot, entry.file_path)),
-    files_with_guidance: scans
-      .filter((entry) => entry.has_guidance)
-      .map((entry) => toPortableRelativePath(projectRoot, entry.file_path)),
-    missing_files: scans
-      .filter((entry) => !entry.exists)
-      .map((entry) => toPortableRelativePath(projectRoot, entry.file_path)),
-  };
+    state,
+  });
 
   return {
     summary,

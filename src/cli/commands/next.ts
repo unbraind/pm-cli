@@ -305,6 +305,21 @@ function buildNextSuggestions(recommended: NextRecommendation | null, blockedRow
   ];
 }
 
+function filterCandidatesByParentScope(
+  candidates: ItemFrontMatter[],
+  corpus: ItemFrontMatter[],
+  parentScope: string,
+): ItemFrontMatter[] {
+  if (!parentScope) {
+    return candidates;
+  }
+  const subtree = collectSubtreeIds(corpus, parentScope);
+  if (!subtree.found) {
+    throw new PmCliError(`Next --parent item not found: ${parentScope}`, EXIT_CODE.NOT_FOUND);
+  }
+  return candidates.filter((item) => subtree.ids.has(item.id.trim().toLowerCase()));
+}
+
 /**
  * Implements `pm next`: computes the ranked ready/blocked actionable queues and a
  * single recommended next item with rationale for the public runtime surface.
@@ -326,16 +341,8 @@ export async function runNext(options: NextOptions, global: GlobalOptions): Prom
   // type) would be missing and the blocked item misread as ready.
   const candidatesList = await runList(undefined, nextListOptions(options, { excludeTerminal: true }), global);
   const corpusList = await runList(undefined, { excludeTerminal: false, noTruncate: true }, global);
-  let candidates = candidatesList.items as ItemFrontMatter[];
+  const candidates = filterCandidatesByParentScope(candidatesList.items as ItemFrontMatter[], corpusList.items as ItemFrontMatter[], parentScope);
   const corpus = corpusList.items as ItemFrontMatter[];
-
-  if (parentScope.length > 0) {
-    const subtree = collectSubtreeIds(corpus, parentScope);
-    if (!subtree.found) {
-      throw new PmCliError(`Next --parent item not found: ${parentScope}`, EXIT_CODE.NOT_FOUND);
-    }
-    candidates = candidates.filter((item) => subtree.ids.has(item.id.trim().toLowerCase()));
-  }
 
   const report = computeActionabilityReport(candidates, corpus, statusRegistry);
   const childrenByParent = buildChildrenByParent(corpus);

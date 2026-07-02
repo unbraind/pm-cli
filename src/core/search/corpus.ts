@@ -121,18 +121,19 @@ export function buildEventCorpus(item: ItemMetadata): string[] {
 /**
  * Implements build plan flat corpus for the public runtime surface of this module.
  */
-export function buildPlanFlatCorpus(item: ItemMetadata): string {
-  const segments: Array<string | undefined> = [];
-  segments.push(item.plan_mode, item.plan_scope, item.plan_harness, item.plan_resume_context);
-  for (const step of item.plan_steps ?? []) {
-    segments.push(step.title, step.body, step.status, step.owner, step.evidence, step.blocked_reason, step.superseded_by);
-    for (const link of step.linked_items ?? []) {
-      segments.push(`${link.kind} ${link.id}`, link.note);
-    }
-    for (const file of step.files ?? []) segments.push(file.path, file.note);
-    for (const test of step.tests ?? []) segments.push(test.command, test.path, test.note);
-    for (const doc of step.docs ?? []) segments.push(doc.path, doc.note);
+type PlanStepCorpusEntry = NonNullable<ItemMetadata["plan_steps"]>[number];
+
+function appendPlanStepFlatCorpus(segments: Array<string | undefined>, step: PlanStepCorpusEntry): void {
+  segments.push(step.title, step.body, step.status, step.owner, step.evidence, step.blocked_reason, step.superseded_by);
+  for (const link of step.linked_items ?? []) {
+    segments.push(`${link.kind} ${link.id}`, link.note);
   }
+  for (const file of step.files ?? []) segments.push(file.path, file.note);
+  for (const test of step.tests ?? []) segments.push(test.command, test.path, test.note);
+  for (const doc of step.docs ?? []) segments.push(doc.path, doc.note);
+}
+
+function appendPlanMetadataFlatCorpus(segments: Array<string | undefined>, item: ItemMetadata): void {
   for (const decision of item.plan_decisions ?? []) {
     segments.push(decision.decision, decision.rationale, decision.evidence);
   }
@@ -142,6 +143,18 @@ export function buildPlanFlatCorpus(item: ItemMetadata): string {
   for (const check of item.plan_validation ?? []) {
     segments.push(check.text, check.command, check.expected);
   }
+}
+
+/**
+ * Implements build plan flat corpus for the public runtime surface of this module.
+ */
+export function buildPlanFlatCorpus(item: ItemMetadata): string {
+  const segments: Array<string | undefined> = [];
+  segments.push(item.plan_mode, item.plan_scope, item.plan_harness, item.plan_resume_context);
+  for (const step of item.plan_steps ?? []) {
+    appendPlanStepFlatCorpus(segments, step);
+  }
+  appendPlanMetadataFlatCorpus(segments, item);
   return segments.filter((segment): segment is string => typeof segment === "string" && segment.length > 0).join(" ");
 }
 

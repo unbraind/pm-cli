@@ -201,13 +201,8 @@ function normalizeExtensionCommandArguments(
     .filter((entry): entry is ExtensionCommandArgumentHelpDescriptor => entry !== null);
 }
 
-/**
- * Implements collect extension command help descriptors for the public runtime surface of this module.
- */
-export function collectExtensionCommandHelpDescriptors(
-  commandHandlers: string[],
+function collectExtensionDefinitionsByCommand(
   commandDefinitions: RegisteredExtensionCommandDefinition[],
-  flagRegistrations: RegisteredExtensionFlagDefinitions[],
 ): Map<string, ExtensionCommandHelpDescriptor> {
   const definitionsByCommand = new Map<string, ExtensionCommandHelpDescriptor>();
   for (const definition of commandDefinitions) {
@@ -239,7 +234,12 @@ export function collectExtensionCommandHelpDescriptors(
       },
     });
   }
+  return definitionsByCommand;
+}
 
+function collectExtensionFlagsByCommand(
+  flagRegistrations: RegisteredExtensionFlagDefinitions[],
+): Map<string, Array<Record<string, unknown>>> {
   const flagsByCommand = new Map<string, Array<Record<string, unknown>>>();
   for (const registration of flagRegistrations) {
     const commandPath = normalizeExtensionCommandPath(registration.target_command);
@@ -250,7 +250,14 @@ export function collectExtensionCommandHelpDescriptors(
     existing.push(...registration.flags);
     flagsByCommand.set(commandPath, existing);
   }
+  return flagsByCommand;
+}
 
+function collectExtensionHelpCommandSet(
+  commandHandlers: string[],
+  definitionsByCommand: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
+  flagsByCommand: ReadonlyMap<string, Array<Record<string, unknown>>>,
+): Set<string> {
   const commandSet = new Set<string>();
   for (const commandPath of commandHandlers) {
     const normalized = normalizeExtensionCommandPath(commandPath);
@@ -264,7 +271,20 @@ export function collectExtensionCommandHelpDescriptors(
   for (const commandPath of flagsByCommand.keys()) {
     commandSet.add(commandPath);
   }
+  return commandSet;
+}
 
+/**
+ * Implements collect extension command help descriptors for the public runtime surface of this module.
+ */
+export function collectExtensionCommandHelpDescriptors(
+  commandHandlers: string[],
+  commandDefinitions: RegisteredExtensionCommandDefinition[],
+  flagRegistrations: RegisteredExtensionFlagDefinitions[],
+): Map<string, ExtensionCommandHelpDescriptor> {
+  const definitionsByCommand = collectExtensionDefinitionsByCommand(commandDefinitions);
+  const flagsByCommand = collectExtensionFlagsByCommand(flagRegistrations);
+  const commandSet = collectExtensionHelpCommandSet(commandHandlers, definitionsByCommand, flagsByCommand);
   const descriptors = new Map<string, ExtensionCommandHelpDescriptor>();
   const sortedCommands = [...commandSet].sort((left, right) => left.localeCompare(right));
   for (const commandPath of sortedCommands) {
@@ -307,7 +327,7 @@ export function applyDynamicExtensionArguments(command: Command, descriptor: Ext
   }
 }
 
-function formatDynamicExtensionOptionFlags(definition: Record<string, unknown>): string | null {
+function normalizeDynamicExtensionOptionNames(definition: Record<string, unknown>): string[] | null {
   const visible = toOptionalBoolean(definition.visible);
   if (visible === false) {
     return null;
@@ -316,32 +336,29 @@ function formatDynamicExtensionOptionFlags(definition: Record<string, unknown>):
   const shortName = toNonEmptyFlagString(definition.short);
   const normalizedShort = shortName && shortName.startsWith("-") && !shortName.startsWith("--") ? shortName : null;
   const normalizedLong = longName && longName.startsWith("--") && longName.length > 2 ? longName : null;
-  if (!normalizedLong && !normalizedShort) {
+  const optionNames = [normalizedShort, normalizedLong].filter((entry): entry is string => entry !== null);
+  return optionNames.length > 0 ? optionNames : null;
+}
+
+function formatDynamicExtensionOptionFlags(definition: Record<string, unknown>): string | null {
+  const optionNames = normalizeDynamicExtensionOptionNames(definition);
+  if (!optionNames) {
     return null;
   }
   const optionValueName = toNonEmptyFlagString(definition.value_name);
   const optionValueSuffix = optionValueName ? ` <${optionValueName}>` : "";
-  const optionNames = [normalizedShort, normalizedLong].filter((entry): entry is string => entry !== null);
   return `${optionNames.join(", ")}${optionValueSuffix}`;
 }
 
 function formatDynamicExtensionParseOptionFlags(definition: Record<string, unknown>): string | null {
-  const visible = toOptionalBoolean(definition.visible);
-  if (visible === false) {
-    return null;
-  }
-  const longName = toNonEmptyFlagString(definition.long);
-  const shortName = toNonEmptyFlagString(definition.short);
-  const normalizedShort = shortName && shortName.startsWith("-") && !shortName.startsWith("--") ? shortName : null;
-  const normalizedLong = longName && longName.startsWith("--") && longName.length > 2 ? longName : null;
-  if (!normalizedLong && !normalizedShort) {
+  const optionNames = normalizeDynamicExtensionOptionNames(definition);
+  if (!optionNames) {
     return null;
   }
   const valueType = toNonEmptyFlagString(definition.value_type) ?? toNonEmptyFlagString(definition.type);
   const valueName = toNonEmptyFlagString(definition.value_name);
   const requiresValue = valueType !== "boolean" && (valueName !== null || valueType !== null || toOptionalBoolean(definition.required) === true);
   const valueSuffix = requiresValue ? ` <${valueName ?? "value"}>` : "";
-  const optionNames = [normalizedShort, normalizedLong].filter((entry): entry is string => entry !== null);
   return `${optionNames.join(", ")}${valueSuffix}`;
 }
 

@@ -59,6 +59,23 @@ export function normalizeManagedDirectoryName(name: string): string {
   return normalized;
 }
 
+function parseOptionalManifestPriority(value: unknown): number | null {
+  if (value === undefined || value === null) {
+    return DEFAULT_EXTENSION_PRIORITY;
+  }
+  return typeof value === "number" && Number.isInteger(value) ? value : null;
+}
+
+function parseOptionalManifestCapabilities(value: unknown): string[] | null {
+  if (value === undefined || value === null) {
+    return [];
+  }
+  if (!Array.isArray(value) || value.some((entry) => typeof entry !== "string")) {
+    return null;
+  }
+  return normalizeStringList(value.map((entry) => String(entry).toLowerCase()));
+}
+
 /**
  * Implements parse extension manifest for the public runtime surface of this module.
  */
@@ -77,20 +94,10 @@ export function parseExtensionManifest(raw: unknown): ExtensionManifest | null {
     return null;
   }
 
-  let priority = DEFAULT_EXTENSION_PRIORITY;
-  if (candidate.priority !== undefined && candidate.priority !== null) {
-    if (typeof candidate.priority !== "number" || !Number.isInteger(candidate.priority)) {
-      return null;
-    }
-    priority = candidate.priority;
-  }
-
-  let capabilities: string[] = [];
-  if (candidate.capabilities !== undefined && candidate.capabilities !== null) {
-    if (!Array.isArray(candidate.capabilities) || candidate.capabilities.some((value) => typeof value !== "string")) {
-      return null;
-    }
-    capabilities = normalizeStringList(candidate.capabilities.map((value) => String(value).toLowerCase()));
+  const priority = parseOptionalManifestPriority(candidate.priority);
+  const capabilities = parseOptionalManifestCapabilities(candidate.capabilities);
+  if (priority === null || capabilities === null) {
+    return null;
   }
 
   return {

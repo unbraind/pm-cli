@@ -245,6 +245,36 @@ function buildHelpSubcommandSummaries(command: Command): HelpSubcommandSummary[]
     .sort((left, right) => left.name.localeCompare(right.name));
 }
 
+function buildJsonHelpNarrative(
+  detailMode: ReturnType<typeof resolveHelpDetailMode>,
+  fallbackNarrative: ReturnType<typeof resolveHelpNarrative>,
+  extensionDescriptor: ExtensionCommandHelpDescriptor | undefined,
+): ReturnType<typeof resolveHelpNarrative> {
+  if (!extensionDescriptor) {
+    return fallbackNarrative;
+  }
+  const extensionExamples = extensionDescriptor.examples ?? [];
+  const extensionFailureHints = extensionDescriptor.failure_hints ?? [];
+  return {
+    intent: extensionDescriptor.intent ?? extensionDescriptor.description ?? fallbackNarrative.intent,
+    examples:
+      detailMode === "detailed"
+        ? extensionExamples.length > 0
+          ? [...extensionExamples]
+          : [...fallbackNarrative.examples]
+        : extensionExamples.length > 0
+          ? [extensionExamples[0]]
+          : [...fallbackNarrative.examples],
+    tips:
+      detailMode === "detailed"
+        ? extensionFailureHints.length > 0
+          ? [...extensionFailureHints]
+          : [...fallbackNarrative.tips]
+        : [],
+    detail_mode: detailMode,
+  };
+}
+
 function buildJsonHelpPayload(
   rootProgram: Command,
   targetCommand: Command,
@@ -257,28 +287,7 @@ function buildJsonHelpPayload(
   const commandPath = resolvedPath.length > 0 ? resolvedPath : undefined;
   const fallbackNarrative = resolveHelpNarrative(commandPath, detailMode);
   const extensionDescriptor = commandPath ? extensionDescriptors.get(commandPath) : undefined;
-  const extensionExamples = extensionDescriptor?.examples ?? [];
-  const extensionFailureHints = extensionDescriptor?.failure_hints ?? [];
-  const narrative = extensionDescriptor
-    ? {
-        intent: extensionDescriptor.intent ?? extensionDescriptor.description ?? fallbackNarrative.intent,
-        examples:
-          detailMode === "detailed"
-            ? extensionExamples.length > 0
-              ? [...extensionExamples]
-              : [...fallbackNarrative.examples]
-            : extensionExamples.length > 0
-              ? [extensionExamples[0]]
-              : [...fallbackNarrative.examples],
-        tips:
-          detailMode === "detailed"
-            ? extensionFailureHints.length > 0
-              ? [...extensionFailureHints]
-              : [...fallbackNarrative.tips]
-            : [],
-        detail_mode: detailMode,
-      }
-    : fallbackNarrative;
+  const narrative = buildJsonHelpNarrative(detailMode, fallbackNarrative, extensionDescriptor);
   const optionSummaries = compactHelpOptionAliases(
     mergeHelpOptionSummaries(
       buildHelpOptionSummaries(targetCommand),
@@ -350,6 +359,37 @@ export async function maybeRenderBootstrapJsonHelp(
   return true;
 }
 
+function buildCreateUpdatePolicyIntro(commandName: "create" | "update", typeRegistry: ReturnType<typeof resolveItemTypeRegistry>): string {
+  const lines = [
+    "",
+    "Type-aware option policies:",
+    "  pass --type <value> with --help to render required/disabled/hidden option policy details for that type.",
+    `  active type values: ${typeRegistry.types.join("|")}`,
+  ];
+  if (commandName === "create") {
+    lines.push("  scheduling shortcut: use --schedule-preset lightweight for Reminder/Meeting/Event minimal create flows.");
+  }
+  return lines.join("\n");
+}
+
+function appendTypeOptionHelpLines(lines: string[], typeDefinition: NonNullable<ReturnType<typeof resolveTypeDefinition>>): void {
+  if (typeDefinition.options.length === 0) {
+    lines.push("  type options: none");
+    return;
+  }
+  lines.push("  type options:");
+  for (const option of typeDefinition.options) {
+    const requiredLabel = option.required ? " (required)" : "";
+    const aliases = option.aliases ?? [];
+    lines.push(`    - ${option.key}${requiredLabel}`);
+    lines.push(`      values: ${option.values.length > 0 ? option.values.join("|") : "any non-empty string"}`);
+    lines.push(`      aliases: ${aliases.length > 0 ? aliases.join("|") : "none"}`);
+    if (option.description && option.description.trim().length > 0) {
+      lines.push(`      description: ${option.description.trim()}`);
+    }
+  }
+}
+
 function buildCreateUpdatePolicyHelpText(
   commandName: "create" | "update",
   typeRegistry: ReturnType<typeof resolveItemTypeRegistry>,
@@ -357,19 +397,7 @@ function buildCreateUpdatePolicyHelpText(
 ): string {
   const selectedTypeRaw = parseBootstrapTypeValue(argv);
   if (!selectedTypeRaw) {
-    const allowed = typeRegistry.types.join("|");
-    const lines = [
-      "",
-      "Type-aware option policies:",
-      "  pass --type <value> with --help to render required/disabled/hidden option policy details for that type.",
-      `  active type values: ${allowed}`,
-    ];
-    if (commandName === "create") {
-      lines.push(
-        "  scheduling shortcut: use --schedule-preset lightweight for Reminder/Meeting/Event minimal create flows.",
-      );
-    }
-    return lines.join("\n");
+    return buildCreateUpdatePolicyIntro(commandName, typeRegistry);
   }
 
   const typeDefinition = resolveTypeDefinition(selectedTypeRaw, typeRegistry);
@@ -403,21 +431,7 @@ function buildCreateUpdatePolicyHelpText(
     );
     lines.push("  strict parity remains available via --create-mode strict.");
   }
-  if (typeDefinition.options.length === 0) {
-    lines.push("  type options: none");
-  } else {
-    lines.push("  type options:");
-    for (const option of typeDefinition.options) {
-      const requiredLabel = option.required ? " (required)" : "";
-      const aliases = option.aliases ?? [];
-      lines.push(`    - ${option.key}${requiredLabel}`);
-      lines.push(`      values: ${option.values.length > 0 ? option.values.join("|") : "any non-empty string"}`);
-      lines.push(`      aliases: ${aliases.length > 0 ? aliases.join("|") : "none"}`);
-      if (option.description && option.description.trim().length > 0) {
-        lines.push(`      description: ${option.description.trim()}`);
-      }
-    }
-  }
+  appendTypeOptionHelpLines(lines, typeDefinition);
   if (policyState.errors.length > 0) {
     lines.push(`  config errors: ${policyState.errors.join("; ")}`);
   }

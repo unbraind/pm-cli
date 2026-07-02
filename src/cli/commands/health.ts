@@ -865,49 +865,53 @@ function summarizeStringList(value: unknown, limit: number): { count: number; sa
   };
 }
 
-/* c8 ignore start -- brief/summary projection matrix branches are validated in projection integration tests */
-function summarizeHealthCheckDetails(check: HealthCheck, limit: number): Record<string, unknown> {
-  const details = check.details;
-  if (check.name === "settings") {
-    return {
-      version: details.version,
-      id_prefix: details.id_prefix,
-      locks_ttl_seconds: details.locks_ttl_seconds,
-      warnings: summarizeStringList(details.warnings, limit),
-    };
+type HealthDetailSummarizer = (details: Record<string, unknown>, limit: number) => Record<string, unknown>;
+
+function summarizeActivationMigrationStatus(value: unknown): Record<string, unknown> | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
   }
-  if (check.name === "directories") {
-    return {
-      required_count: Array.isArray(details.required) ? details.required.length : 0,
-      optional_count: Array.isArray(details.optional) ? details.optional.length : 0,
-      missing_required: summarizeStringList(details.missing_required, limit),
-      missing_optional: summarizeStringList(details.missing_optional, limit),
-      missing: summarizeStringList(details.missing, limit),
-      strict_directories: details.strict_directories,
-    };
-  }
-  if (check.name === "settings_values") {
-    return {
-      warnings: summarizeStringList(details.warnings, limit),
-    };
-  }
-  if (check.name === "telemetry") {
-    return {
-      enabled: details.enabled,
-      capture_level: details.capture_level,
-      endpoint: details.endpoint,
-      queue_exists: details.queue_exists,
-      queue_entries: details.queue_entries,
-      queue_draining: details.queue_draining,
-      queue_invalid_rows: details.queue_invalid_rows,
-      queue_rows_total: details.queue_rows_total,
-      last_successful_flush_at: details.last_successful_flush_at,
-      last_failed_flush_at: details.last_failed_flush_at,
-      endpoint_probe: details.endpoint_probe,
-      env_overrides: details.env_overrides,
-    };
-  }
-  if (check.name === "extensions") {
+  const status = value as Record<string, unknown>;
+  return {
+    applied_count: status.applied_count,
+    pending_count: status.pending_count,
+    failed_count: status.failed_count,
+  };
+}
+
+const HEALTH_DETAIL_SUMMARIZERS = {
+  settings: (details, limit) => ({
+    version: details.version,
+    id_prefix: details.id_prefix,
+    locks_ttl_seconds: details.locks_ttl_seconds,
+    warnings: summarizeStringList(details.warnings, limit),
+  }),
+  directories: (details, limit) => ({
+    required_count: Array.isArray(details.required) ? details.required.length : 0,
+    optional_count: Array.isArray(details.optional) ? details.optional.length : 0,
+    missing_required: summarizeStringList(details.missing_required, limit),
+    missing_optional: summarizeStringList(details.missing_optional, limit),
+    missing: summarizeStringList(details.missing, limit),
+    strict_directories: details.strict_directories,
+  }),
+  settings_values: (details, limit) => ({
+    warnings: summarizeStringList(details.warnings, limit),
+  }),
+  telemetry: (details) => ({
+    enabled: details.enabled,
+    capture_level: details.capture_level,
+    endpoint: details.endpoint,
+    queue_exists: details.queue_exists,
+    queue_entries: details.queue_entries,
+    queue_draining: details.queue_draining,
+    queue_invalid_rows: details.queue_invalid_rows,
+    queue_rows_total: details.queue_rows_total,
+    last_successful_flush_at: details.last_successful_flush_at,
+    last_failed_flush_at: details.last_failed_flush_at,
+    endpoint_probe: details.endpoint_probe,
+    env_overrides: details.env_overrides,
+  }),
+  extensions: (details, limit) => {
     const activation = typeof details.activation === "object" && details.activation !== null ? (details.activation as Record<string, unknown>) : {};
     return {
       disabled_by_flag: details.disabled_by_flag,
@@ -924,80 +928,68 @@ function summarizeHealthCheckDetails(check: HealthCheck, limit: number): Record<
         service_override_count: activation.service_override_count,
         renderer_override_count: activation.renderer_override_count,
         registration_counts: activation.registration_counts,
-        migration_status:
-          typeof activation.migration_status === "object" && activation.migration_status !== null
-            ? {
-                applied_count: (activation.migration_status as Record<string, unknown>).applied_count,
-                pending_count: (activation.migration_status as Record<string, unknown>).pending_count,
-                failed_count: (activation.migration_status as Record<string, unknown>).failed_count,
-              }
-            : null,
+        migration_status: summarizeActivationMigrationStatus(activation.migration_status),
       },
       triage: details.triage,
       capability_contract: details.capability_contract,
       capability_guidance: summarizeRecordList(details.capability_guidance, limit),
     };
-  }
-  if (check.name === "storage") {
-    return details;
-  }
-  if (check.name === "locks") {
-    // Counts only: drops remediation_map, which is full-output-only by contract.
-    return {
-      active_lock_count: details.active_lock_count,
-      stale_lock_count: details.stale_lock_count,
-      unreadable_lock_count: details.unreadable_lock_count,
-      unparseable_lock_count: details.unparseable_lock_count,
-    };
-  }
-  if (check.name === "integrity") {
-    return {
-      checked_item_files: details.checked_item_files,
-      checked_history_streams: details.checked_history_streams,
-      counts: details.counts,
-      item_unreadable: summarizeStringList(details.item_unreadable, limit),
-      item_conflict_markers: summarizeRecordList(details.item_conflict_markers, limit),
-      item_parse_failures: summarizeStringList(details.item_parse_failures, limit),
-      history_unreadable: summarizeStringList(details.history_unreadable, limit),
-      history_conflict_markers: summarizeRecordList(details.history_conflict_markers, limit),
-      history_invalid_json: summarizeRecordList(details.history_invalid_json, limit),
-      skipped: details.skipped,
-    };
-  }
-  if (check.name === "history_drift") {
-    return {
-      checked_items: details.checked_items,
-      counts: details.counts,
-      drifted_items: summarizeStringList(details.drifted_items, limit),
-      missing_streams: summarizeStringList(details.missing_streams, limit),
-      unreadable_streams: summarizeStringList(details.unreadable_streams, limit),
-      hash_mismatches: summarizeStringList(details.hash_mismatches, limit),
-      chain_mismatches: summarizeStringList(details.chain_mismatches, limit),
-      skipped: details.skipped,
-    };
-  }
-  if (check.name === "vectorization") {
-    return {
-      semantic_runtime_available: details.semantic_runtime_available,
-      compatibility_mode_auto_defaults: details.compatibility_mode_auto_defaults,
-      auto_ollama_defaults_applied: details.auto_ollama_defaults_applied,
-      refresh_policy: details.refresh_policy,
-      provider_active: details.provider_active,
-      vector_store_active: details.vector_store_active,
-      items: details.items,
-      ledger_entries_before: details.ledger_entries_before,
-      stale_items_before_total: details.stale_items_before_total,
-      stale_items_before: summarizeStringList(details.stale_items_before, limit),
-      refresh_attempted: details.refresh_attempted,
-      refresh_skipped_reason: details.refresh_skipped_reason,
-      refresh_result: details.refresh_result,
-      ledger_entries_after: details.ledger_entries_after,
-      stale_items_after_total: details.stale_items_after_total,
-      stale_items_after: summarizeStringList(details.stale_items_after, limit),
-      skipped: details.skipped,
-    };
-  }
-  return details;
+  },
+  // Storage details are already compact counters; keep the pre-refactor pass-through shape.
+  storage: (details) => details,
+  locks: (details) => ({
+    active_lock_count: details.active_lock_count,
+    stale_lock_count: details.stale_lock_count,
+    unreadable_lock_count: details.unreadable_lock_count,
+    unparseable_lock_count: details.unparseable_lock_count,
+  }),
+  integrity: (details, limit) => ({
+    checked_item_files: details.checked_item_files,
+    checked_history_streams: details.checked_history_streams,
+    counts: details.counts,
+    item_unreadable: summarizeStringList(details.item_unreadable, limit),
+    item_conflict_markers: summarizeRecordList(details.item_conflict_markers, limit),
+    item_parse_failures: summarizeStringList(details.item_parse_failures, limit),
+    history_unreadable: summarizeStringList(details.history_unreadable, limit),
+    history_conflict_markers: summarizeRecordList(details.history_conflict_markers, limit),
+    history_invalid_json: summarizeRecordList(details.history_invalid_json, limit),
+    skipped: details.skipped,
+  }),
+  history_drift: (details, limit) => ({
+    checked_items: details.checked_items,
+    counts: details.counts,
+    drifted_items: summarizeStringList(details.drifted_items, limit),
+    missing_streams: summarizeStringList(details.missing_streams, limit),
+    unreadable_streams: summarizeStringList(details.unreadable_streams, limit),
+    hash_mismatches: summarizeStringList(details.hash_mismatches, limit),
+    chain_mismatches: summarizeStringList(details.chain_mismatches, limit),
+    skipped: details.skipped,
+  }),
+  vectorization: (details, limit) => ({
+    semantic_runtime_available: details.semantic_runtime_available,
+    compatibility_mode_auto_defaults: details.compatibility_mode_auto_defaults,
+    auto_ollama_defaults_applied: details.auto_ollama_defaults_applied,
+    refresh_policy: details.refresh_policy,
+    provider_active: details.provider_active,
+    vector_store_active: details.vector_store_active,
+    items: details.items,
+    ledger_entries_before: details.ledger_entries_before,
+    stale_items_before_total: details.stale_items_before_total,
+    stale_items_before: summarizeStringList(details.stale_items_before, limit),
+    refresh_attempted: details.refresh_attempted,
+    refresh_skipped_reason: details.refresh_skipped_reason,
+    refresh_result: details.refresh_result,
+    ledger_entries_after: details.ledger_entries_after,
+    stale_items_after_total: details.stale_items_after_total,
+    stale_items_after: summarizeStringList(details.stale_items_after, limit),
+    skipped: details.skipped,
+  }),
+} satisfies Record<HealthCheck["name"], HealthDetailSummarizer>;
+
+/* c8 ignore start -- brief/summary projection matrix branches are validated in projection integration tests */
+function summarizeHealthCheckDetails(check: HealthCheck, limit: number): Record<string, unknown> {
+  const summarize = HEALTH_DETAIL_SUMMARIZERS[check.name];
+  return summarize ? summarize(check.details, limit) : check.details;
 }
 /* c8 ignore stop */
 
