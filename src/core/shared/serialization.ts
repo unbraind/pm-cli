@@ -7,7 +7,7 @@ import crypto from "node:crypto";
 
 type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 
-function sortObjectKeys(value: unknown): JsonValue {
+function sortScalarValue(value: unknown): JsonValue | undefined {
   if (value === null) return null;
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
     return value;
@@ -24,6 +24,27 @@ function sortObjectKeys(value: unknown): JsonValue {
   if (typeof value === "function") {
     return `[function:${value.name || "anonymous"}]`;
   }
+  return undefined;
+}
+
+function sortPlainObjectKeys(value: Record<string, unknown>): Record<string, JsonValue> {
+  const sortedKeys = Object.keys(value).sort((a, b) => a.localeCompare(b));
+  const result: Record<string, JsonValue> = {};
+  for (const key of sortedKeys) {
+    const nested = value[key];
+    if (nested === undefined) {
+      continue;
+    }
+    result[key] = sortObjectKeys(nested);
+  }
+  return result;
+}
+
+function sortObjectKeys(value: unknown): JsonValue {
+  const scalarValue = sortScalarValue(value);
+  if (scalarValue !== undefined) {
+    return scalarValue;
+  }
   if (Array.isArray(value)) {
     return value.map((entry) => sortObjectKeys(entry));
   }
@@ -37,17 +58,7 @@ function sortObjectKeys(value: unknown): JsonValue {
       return sortObjectKeys(normalized);
     }
   }
-  const obj = value as Record<string, unknown>;
-  const sortedKeys = Object.keys(obj).sort((a, b) => a.localeCompare(b));
-  const result: Record<string, JsonValue> = {};
-  for (const key of sortedKeys) {
-    const nested = obj[key];
-    if (nested === undefined) {
-      continue;
-    }
-    result[key] = sortObjectKeys(nested);
-  }
-  return result;
+  return sortPlainObjectKeys(value as Record<string, unknown>);
 }
 
 /**

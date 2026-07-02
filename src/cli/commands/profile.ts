@@ -405,6 +405,24 @@ function buildApplyResult(
   };
 }
 
+async function assertProfileTrackerInitialized(pmRoot: string): Promise<void> {
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+  }
+}
+
+function resolveProfileForCommand(name: string | undefined): { profile: ProjectProfileDefinition; warnings: string[] } {
+  try {
+    const entry = resolveProfileEntry(name, collectExtensionProfileContributions());
+    return {
+      profile: entry.resolved.definition,
+      warnings: entry.warnings,
+    };
+  } catch (error) {
+    throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.USAGE);
+  }
+}
+
 /**
  * Applies a profile to the initialized tracker, or previews the idempotent diff
  * when `dryRun` is set. Schema files are written under their respective locks;
@@ -419,22 +437,14 @@ export async function runProfileApply(
   global: GlobalOptions,
 ): Promise<ProfileApplyResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
-  }
+  await assertProfileTrackerInitialized(pmRoot);
 
-  let profile: ProjectProfileDefinition;
   // Catalog-level merge warnings (e.g. an extension profile shadowed by a
   // built-in) seed the result so `apply` surfaces them the same way `list`
   // does, rather than silently swallowing them.
-  const mergeWarnings: string[] = [];
-  try {
-    const entry = resolveProfileEntry(name, collectExtensionProfileContributions());
-    profile = entry.resolved.definition;
-    mergeWarnings.push(...entry.warnings);
-  } catch (error) {
-    throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.USAGE);
-  }
+  const resolvedProfile = resolveProfileForCommand(name);
+  const profile = resolvedProfile.profile;
+  const mergeWarnings = resolvedProfile.warnings;
 
   const dryRun = options.dryRun === true;
   const settings = await readSettings(pmRoot);

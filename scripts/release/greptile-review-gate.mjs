@@ -22,6 +22,18 @@ const GREPTILE = commandFor("greptile");
 const DEFAULT_TIMEOUT_MS = 600000;
 const CLEAN_REVIEW_PATTERN = /no review comments\.?$/i;
 
+function parseGateOptions(argv) {
+  const { flags } = parseFlags(argv);
+  const parsedTimeoutMs = Number.parseInt(flagString(flags, "timeout-ms", String(DEFAULT_TIMEOUT_MS)), 10);
+  return {
+    help: flags.get("help") || flags.get("h"),
+    outputJson: flagBool(flags, "json", false),
+    reportOnly: flagBool(flags, "report-only", false),
+    base: flagString(flags, "base", flagString(flags, "branch", "")),
+    timeoutMs: Number.isFinite(parsedTimeoutMs) && parsedTimeoutMs > 0 ? parsedTimeoutMs : DEFAULT_TIMEOUT_MS,
+  };
+}
+
 /** Run a Greptile subcommand, capturing output and never throwing on failure. */
 function runGreptile(args, timeoutMs) {
   const result = spawnSync(GREPTILE, args, {
@@ -56,67 +68,62 @@ function report(outputJson, payload, exitCode) {
 }
 
 function main() {
-  const { flags } = parseFlags(process.argv.slice(2));
-  if (flags.get("help") || flags.get("h")) {
+  const options = parseGateOptions(process.argv.slice(2));
+  if (options.help) {
     console.log(
       "Usage: node scripts/release/greptile-review-gate.mjs [--json] [--base <branch>|--branch <branch>] [--report-only] [--timeout-ms 600000]",
     );
     return;
   }
-  const outputJson = flagBool(flags, "json", false);
-  const reportOnly = flagBool(flags, "report-only", false);
-  const base = flagString(flags, "base", flagString(flags, "branch", ""));
-  const parsedTimeoutMs = Number.parseInt(flagString(flags, "timeout-ms", String(DEFAULT_TIMEOUT_MS)), 10);
-  const timeoutMs = Number.isFinite(parsedTimeoutMs) && parsedTimeoutMs > 0 ? parsedTimeoutMs : DEFAULT_TIMEOUT_MS;
 
   // Skip gracefully when Greptile is unavailable or unauthenticated so the gate
   // never blocks CI environments without a Greptile token.
   const whoami = runGreptile(["whoami"], 60000);
   if (whoami.spawnFailed) {
-    report(outputJson, { ok: true, skipped: true, reason: "greptile CLI not installed" }, 0);
+    report(options.outputJson, { ok: true, skipped: true, reason: "greptile CLI not installed" }, 0);
     return;
   }
   if (whoami.status !== 0) {
-    report(outputJson, { ok: true, skipped: true, reason: "greptile CLI not authenticated" }, 0);
+    report(options.outputJson, { ok: true, skipped: true, reason: "greptile CLI not authenticated" }, 0);
     return;
   }
 
   const reviewArgs = ["review", "--agent"];
-  if (base.length > 0) {
+  if (options.base.length > 0) {
     // Greptile names the comparison base branch `--branch`; keep `--base` as the
     // pm wrapper's compatibility alias while forwarding the native flag.
-    reviewArgs.push("--branch", base);
+    reviewArgs.push("--branch", options.base);
   }
-  const review = runGreptile(reviewArgs, timeoutMs);
+  const review = runGreptile(reviewArgs, options.timeoutMs);
   const stdoutOutput = review.stdout.trim();
   const output = `${review.stdout}\n${review.stderr}`.trim();
   // Greptile writes the clean-review sentinel to stdout. Stderr can carry
   // progress or warning text and must not turn a clean review into findings.
   const clean = CLEAN_REVIEW_PATTERN.test(stdoutOutput);
   if (review.timedOut) {
-    report(outputJson, { ok: true, skipped: true, reason: `greptile review timed out after ${timeoutMs}ms` }, 0);
+    report(options.outputJson, { ok: true, skipped: true, reason: `greptile review timed out after ${options.timeoutMs}ms` }, 0);
     return;
   }
   if (review.status !== 0) {
     if (output.length === 0 || clean) {
-      report(outputJson, { ok: true, skipped: true, reason: `greptile review did not complete (exit ${review.status ?? "null"})` }, 0);
+      report(options.outputJson, { ok: true, skipped: true, reason: `greptile review did not complete (exit ${review.status ?? "null"})` }, 0);
       return;
     }
     report(
-      outputJson,
+      options.outputJson,
       { ok: false, skipped: false, reason: `greptile reported review findings before exiting ${review.status ?? "null"}`, review: output },
-      reportOnly ? 0 : 1,
+      options.reportOnly ? 0 : 1,
     );
     return;
   }
   if (clean) {
-    report(outputJson, { ok: true, skipped: false, findings: 0, review: output }, 0);
+    report(options.outputJson, { ok: true, skipped: false, findings: 0, review: output }, 0);
     return;
   }
   report(
-    outputJson,
+    options.outputJson,
     { ok: false, skipped: false, reason: "greptile reported review findings", review: output },
-    reportOnly ? 0 : 1,
+    options.reportOnly ? 0 : 1,
   );
 }
 

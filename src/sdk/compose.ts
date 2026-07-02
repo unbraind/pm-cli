@@ -717,6 +717,87 @@ function isPresent<TValue>(value: TValue | null | undefined): value is TValue {
   return value !== null && value !== undefined;
 }
 
+function importerCommandPath(entry: ExtensionBlueprintImporter): string {
+  return normalizeCommandName(`${entry.name} import`);
+}
+
+function exporterCommandPath(entry: ExtensionBlueprintExporter): string {
+  return normalizeCommandName(`${entry.name} export`);
+}
+
+function collectBlueprintCommandPaths(
+  commands: CommandDefinition[],
+  importers: ExtensionBlueprintImporter[],
+  exporters: ExtensionBlueprintExporter[],
+): string[] {
+  return [
+    ...commands.map((command) => normalizeCommandName(command.name)),
+    ...importers.filter((entry) => entry.options !== undefined).map(importerCommandPath),
+    ...exporters.filter((entry) => entry.options !== undefined).map(exporterCommandPath),
+  ];
+}
+
+function collectBlueprintFlagCommands(
+  blueprint: ExtensionBlueprint,
+  commands: CommandDefinition[],
+  importers: ExtensionBlueprintImporter[],
+  exporters: ExtensionBlueprintExporter[],
+): string[] {
+  return [
+    ...Object.keys(blueprint.flags ?? {}).map((command) => normalizeCommandName(command)),
+    ...commands.filter((command) => command.flags !== undefined).map((command) => normalizeCommandName(command.name)),
+    ...importers.filter((entry) => entry.options?.flags !== undefined).map(importerCommandPath),
+    ...exporters.filter((entry) => entry.options?.flags !== undefined).map(exporterCommandPath),
+  ];
+}
+
+function collectBlueprintHookKinds(hooks: ExtensionBlueprintHooks): string[] {
+  return BLUEPRINT_HOOK_FIELD_TO_KIND.filter(([field]) => (hooks[field]?.length ?? 0) > 0).map(([, kind]) => kind);
+}
+
+function collectBlueprintSurfaceSummary(
+  blueprint: ExtensionBlueprint,
+  importers: ExtensionBlueprintImporter[],
+  exporters: ExtensionBlueprintExporter[],
+): Pick<
+  ExtensionActivationSummary,
+  | "item_types"
+  | "item_fields"
+  | "migrations"
+  | "profiles"
+  | "importers"
+  | "exporters"
+  | "search_providers"
+  | "vector_store_adapters"
+  | "parser_overrides"
+  | "service_overrides"
+  | "renderer_overrides"
+  | "preflight_overrides"
+> {
+  return {
+    item_types: sortUnique((blueprint.itemTypes ?? []).map((type) => type.name)),
+    item_fields: sortUnique((blueprint.itemFields ?? []).map((field) => field.name)),
+    // id-less migrations register but carry no identifier, so they are omitted —
+    // exactly as describeExtensionActivation drops them from its `migrations` list.
+    migrations: sortUnique(
+      (blueprint.migrations ?? []).flatMap((migration) => (typeof migration.id === "string" ? [migration.id] : [])),
+    ),
+    profiles: sortUnique((blueprint.profiles ?? []).map((profile) => profile.name)),
+    importers: sortUnique(importers.map((entry) => normalizeCommandName(entry.name))),
+    exporters: sortUnique(exporters.map((entry) => normalizeCommandName(entry.name))),
+    search_providers: sortUnique((blueprint.searchProviders ?? []).map((provider) => provider.name)),
+    vector_store_adapters: sortUnique((blueprint.vectorStoreAdapters ?? []).map((adapter) => adapter.name)),
+    parser_overrides: sortUnique(Object.keys(blueprint.parsers ?? {}).map((command) => normalizeCommandName(command))),
+    service_overrides: sortUnique(
+      Object.keys(blueprint.services ?? {}).map((service) => String(service).trim().toLowerCase() as ExtensionServiceName),
+    ),
+    renderer_overrides: sortUnique(
+      Object.keys(blueprint.renderers ?? {}).map((format) => String(format).trim().toLowerCase() as OutputRendererFormat),
+    ),
+    preflight_overrides: (blueprint.preflights ?? []).length,
+  };
+}
+
 /**
  * Compute, without activating, the exact {@link ExtensionActivationSummary} that
  * {@link composeExtension}'s generated `activate` would produce for a blueprint.
@@ -745,35 +826,15 @@ export function describeExtensionBlueprint(blueprint: ExtensionBlueprint): Exten
   const commands = (blueprint.commands ?? []).filter(isPresent);
   const importers = (blueprint.importers ?? []).filter(isPresent);
   const exporters = (blueprint.exporters ?? []).filter(isPresent);
-  const importerPaths = importers.map((entry) => normalizeCommandName(`${entry.name} import`));
-  const exporterPaths = exporters.map((entry) => normalizeCommandName(`${entry.name} export`));
-  const importerCommandDefinitionPaths = importers
-    .filter((entry) => entry.options !== undefined)
-    .map((entry) => normalizeCommandName(`${entry.name} import`));
-  const exporterCommandDefinitionPaths = exporters
-    .filter((entry) => entry.options !== undefined)
-    .map((entry) => normalizeCommandName(`${entry.name} export`));
-  const commandPaths = [
-    ...commands.map((command) => normalizeCommandName(command.name)),
-    ...importerCommandDefinitionPaths,
-    ...exporterCommandDefinitionPaths,
-  ];
+  const importerPaths = importers.map(importerCommandPath);
+  const exporterPaths = exporters.map(exporterCommandPath);
+  const commandPaths = collectBlueprintCommandPaths(commands, importers, exporters);
   // A command definition with inline `flags` registers a flag target under its own
   // path in addition to any top-level `flags` record. Import/export options with
   // `flags` register through the same runtime metadata path, so union all sources.
-  const flagCommands = [
-    ...Object.keys(blueprint.flags ?? {}).map((command) => normalizeCommandName(command)),
-    ...commands
-      .filter((command) => command.flags !== undefined)
-      .map((command) => normalizeCommandName(command.name)),
-    ...importers
-      .filter((entry) => entry.options?.flags !== undefined)
-      .map((entry) => normalizeCommandName(`${entry.name} import`)),
-    ...exporters
-      .filter((entry) => entry.options?.flags !== undefined)
-      .map((entry) => normalizeCommandName(`${entry.name} export`)),
-  ];
+  const flagCommands = collectBlueprintFlagCommands(blueprint, commands, importers, exporters);
   const hooks: ExtensionBlueprintHooks = blueprint.hooks ?? {};
+  const surfaces = collectBlueprintSurfaceSummary(blueprint, importers, exporters);
 
   return {
     capabilities: deriveExtensionCapabilities(blueprint),
@@ -782,28 +843,9 @@ export function describeExtensionBlueprint(blueprint: ExtensionBlueprint): Exten
     // command_handlers is a superset of commands that also carries the synthesized
     // importer/exporter command paths, but never the override-only paths.
     command_handlers: sortUnique([...commandPaths, ...importerPaths, ...exporterPaths]),
-    hooks: BLUEPRINT_HOOK_FIELD_TO_KIND.filter(([field]) => (hooks[field]?.length ?? 0) > 0).map(([, kind]) => kind),
+    hooks: collectBlueprintHookKinds(hooks),
     flag_commands: sortUnique(flagCommands),
-    item_types: sortUnique((blueprint.itemTypes ?? []).map((type) => type.name)),
-    item_fields: sortUnique((blueprint.itemFields ?? []).map((field) => field.name)),
-    // id-less migrations register but carry no identifier, so they are omitted —
-    // exactly as describeExtensionActivation drops them from its `migrations` list.
-    migrations: sortUnique(
-      (blueprint.migrations ?? []).flatMap((migration) => (typeof migration.id === "string" ? [migration.id] : [])),
-    ),
-    profiles: sortUnique((blueprint.profiles ?? []).map((profile) => profile.name)),
-    importers: sortUnique(importers.map((entry) => normalizeCommandName(entry.name))),
-    exporters: sortUnique(exporters.map((entry) => normalizeCommandName(entry.name))),
-    search_providers: sortUnique((blueprint.searchProviders ?? []).map((provider) => provider.name)),
-    vector_store_adapters: sortUnique((blueprint.vectorStoreAdapters ?? []).map((adapter) => adapter.name)),
-    parser_overrides: sortUnique(Object.keys(blueprint.parsers ?? {}).map((command) => normalizeCommandName(command))),
-    service_overrides: sortUnique(
-      Object.keys(blueprint.services ?? {}).map((service) => String(service).trim().toLowerCase() as ExtensionServiceName),
-    ),
-    renderer_overrides: sortUnique(
-      Object.keys(blueprint.renderers ?? {}).map((format) => String(format).trim().toLowerCase() as OutputRendererFormat),
-    ),
-    preflight_overrides: (blueprint.preflights ?? []).length,
+    ...surfaces,
   };
 }
 

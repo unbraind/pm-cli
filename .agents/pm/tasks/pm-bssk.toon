@@ -1,0 +1,46 @@
+id: pm-bssk
+title: CodeFactor residual complexity and duplication cleanup for 27-issue main snapshot
+description: "Clean up the current public CodeFactor main snapshot reported on 2026-07-02: 27 active issues across 16 complexity and 11 duplication findings after the earlier ESLint complexity and jscpd gates were zeroed. Scope includes the remaining CodeFactor-specific complexity hotspots and duplicate blocks in CLI, SDK, package runtime loaders, and plugin scripts. Parent: pm-92if."
+type: Task
+status: closed
+priority: 2
+tags[4]: code-quality,codefactor,complexity,duplication
+created_at: "2026-07-02T15:11:04.147Z"
+updated_at: "2026-07-02T15:51:18.168Z"
+author: claude-code-agent
+parent: pm-92if
+resolution: Extracted focused helpers and dispatch tables across residual complexity hotspots while preserving command behavior and SDK surfaces.
+expected_result: "CodeFactor-facing complexity debt is reduced without regressions, duplicate detection stays clean, and package-installed pm CLI smoke workflows continue to work."
+actual_result: "Reduced local strict complexity(max=15) findings from 65 to 48, kept jscpd at 0 clones, passed 100/100/100/100 coverage, pm-linked gates, lint/static quality/typecheck, security/audit/changelog checks, health/validate history-drift, and packed temp install smoke."
+comments[2]{created_at,author,text}:
+  "2026-07-02T15:11:16.507Z",claude-code-agent,"Investigation note: duplicate-safe all-status search found canonical CodeFactor epic pm-92if and closed category children pm-arzz/pm-fmjy/pm-0n6p/pm-g7vl/pm-zro7/pm-lzzp; no active child covered the fresh 2026-07-02 CodeFactor main snapshot. Public CodeFactor currently reports 27 active issues: 16 complexity and 11 duplication. GitHub sweep found no open PRs, no open issues, and no open Dependabot/code-scanning/secret-scanning alerts."
+  "2026-07-02T15:50:28.169Z",claude-code-agent,"Evidence: refactored residual CodeFactor complexity hotspots across 15 production files plus focused branch coverage in health/error-guidance tests. Live CodeFactor snapshot at start was 27 issues on main; local stricter ESLint complexity(max=15) probe reduced from 65 to 48 findings. Verification passed: pm test pm-bssk --run --progress (git diff --check, node scripts/run-tests.mjs coverage at 100/100/100/100, focused create/health/init/next/profile/cli-main/sdk tests, pnpm lint with 0 jscpd clones, pnpm quality:static, pnpm typecheck). Manual packed install smoke passed in a fresh temp project using pnpm pack + npm install tarball: pm init --defaults --json, pm create --json, pm list --format json, pm search --status all, pm health --check-only --summary --json, pm validate --check-history-drift --json."
+files[17]{path,scope,note}:
+  scripts/release/greptile-review-gate.mjs,project,residual CodeFactor complexity refactor target
+  src/cli/commands/create.ts,project,residual CodeFactor complexity refactor target
+  src/cli/commands/extension/shared.ts,project,residual CodeFactor complexity refactor target
+  src/cli/commands/health.ts,project,residual CodeFactor complexity refactor target
+  src/cli/commands/init-agent-guidance.ts,project,residual CodeFactor complexity refactor target
+  src/cli/commands/next.ts,project,residual CodeFactor complexity refactor target
+  src/cli/commands/profile.ts,project,residual CodeFactor complexity refactor target
+  src/cli/error-guidance.ts,project,residual CodeFactor complexity refactor target
+  src/cli/extension-command-help.ts,project,residual CodeFactor complexity refactor target
+  src/cli/help-json-payload.ts,project,residual CodeFactor complexity refactor target
+  src/cli/main.ts,project,residual CodeFactor complexity refactor target
+  src/core/item/type-registry.ts,project,residual CodeFactor complexity refactor target
+  src/core/search/corpus.ts,project,residual CodeFactor complexity refactor target
+  src/core/shared/serialization.ts,project,residual CodeFactor complexity refactor target
+  src/sdk/compose.ts,project,residual CodeFactor complexity refactor target
+  tests/unit/cli/error-guidance.spec.ts,project,covers error guidance fallback branch after complexity refactor
+  tests/unit/commands/health-command.spec.ts,project,covers health detail summarizer branch paths after complexity refactor
+tests[6]{command,scope,timeout_seconds}:
+  git diff --check,project,60
+  node scripts/run-tests.mjs coverage,project,900
+  node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/commands/health-command.spec.ts tests/unit/commands/init-command.spec.ts tests/unit/commands/next-command.spec.ts tests/unit/commands/profile-command.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/sdk/sdk-index.spec.ts,project,360
+  pnpm lint,project,300
+  "pnpm quality:static",project,240
+  pnpm typecheck,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mr3okrv1-wihhb3,test,passed,"2026-07-02T15:44:11.677Z","2026-07-02T15:50:11.725Z","2026-07-02T15:50:11.725Z",6,0,0
+close_reason: Refactored residual CodeFactor complexity hotspots and verified repo quality gates
+body: ""

@@ -722,6 +722,35 @@ export function resolveCommandOptionPolicyState(
   };
 }
 
+function buildTypeOptionAliasMap(typeDefinition: ResolvedItemTypeDefinition): Map<string, ItemTypeOptionDefinition> {
+  const optionByAlias = new Map<string, ItemTypeOptionDefinition>();
+  for (const option of typeDefinition.options) {
+    optionByAlias.set(option.key.toLowerCase(), option);
+    for (const alias of option.aliases ?? []) {
+      optionByAlias.set(alias.toLowerCase(), option);
+    }
+  }
+  return optionByAlias;
+}
+
+function resolveTypeOptionValue(
+  optionDefinition: ItemTypeOptionDefinition,
+  trimmedValue: string,
+  errors: string[],
+): string | undefined {
+  const allowedValues = optionDefinition.values;
+  if (allowedValues.length === 0) {
+    return trimmedValue;
+  }
+  const valueLookup = new Map(allowedValues.map((value) => [value.toLowerCase(), value]));
+  const canonical = valueLookup.get(trimmedValue.toLowerCase());
+  if (!canonical) {
+    errors.push(`Invalid value "${trimmedValue}" for type option "${optionDefinition.key}". Allowed: ${allowedValues.join(", ")}`);
+    return undefined;
+  }
+  return canonical;
+}
+
 /**
  * Implements validate type options for the public runtime surface of this module.
  */
@@ -738,13 +767,7 @@ export function validateTypeOptions(
     };
   }
   const errors: string[] = [];
-  const optionByAlias = new Map<string, ItemTypeOptionDefinition>();
-  for (const option of typeDefinition.options) {
-    optionByAlias.set(option.key.toLowerCase(), option);
-    for (const alias of option.aliases ?? []) {
-      optionByAlias.set(alias.toLowerCase(), option);
-    }
-  }
+  const optionByAlias = buildTypeOptionAliasMap(typeDefinition);
 
   const normalized: Record<string, string> = {};
   for (const [rawKey, rawValue] of Object.entries(rawTypeOptions ?? {})) {
@@ -768,18 +791,9 @@ export function validateTypeOptions(
       );
       continue;
     }
-    const allowedValues = optionDefinition.values;
-    let resolvedValue = trimmedValue;
-    if (allowedValues.length > 0) {
-      const valueLookup = new Map(allowedValues.map((value) => [value.toLowerCase(), value]));
-      const canonical = valueLookup.get(trimmedValue.toLowerCase());
-      if (!canonical) {
-        errors.push(
-          `Invalid value "${trimmedValue}" for type option "${optionDefinition.key}". Allowed: ${allowedValues.join(", ")}`,
-        );
-        continue;
-      }
-      resolvedValue = canonical;
+    const resolvedValue = resolveTypeOptionValue(optionDefinition, trimmedValue, errors);
+    if (resolvedValue === undefined) {
+      continue;
     }
     normalized[optionDefinition.key] = resolvedValue;
   }

@@ -187,6 +187,36 @@ describe("runHealth", () => {
         3,
       ),
     ).toEqual({ value: 1 });
+    expect(
+      healthInternals.summarizeHealthCheckDetails(
+        {
+          name: "extensions",
+          status: "ok",
+          details: { activation: { migration_status: "invalid" } },
+        } as never,
+        3,
+      ),
+    ).toMatchObject({ activation: { migration_status: null } });
+    expect(
+      healthInternals.summarizeHealthCheckDetails(
+        {
+          name: "directories",
+          status: "ok",
+          details: { required: "invalid", optional: "invalid" },
+        } as never,
+        3,
+      ),
+    ).toMatchObject({ required_count: 0, optional_count: 0 });
+    expect(
+      healthInternals.summarizeHealthCheckDetails(
+        {
+          name: "extensions",
+          status: "ok",
+          details: { activation: "invalid" },
+        } as never,
+        3,
+      ),
+    ).toMatchObject({ activation: { failed: { count: 0 }, warnings: { count: 0 } } });
 
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-health-list-paths-"));
     try {

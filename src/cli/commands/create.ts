@@ -935,6 +935,25 @@ function filterNonMissingTypeOptionErrors(errors: string[], typeName: string): s
   });
 }
 
+function assertNoInvalidTypeOptions(
+  errors: string[],
+  type: string,
+  typeDefinition: ResolvedItemTypeDefinition,
+  statusRegistry: RuntimeStatusRegistry,
+): void {
+  const nonMissingTypeOptionErrors = filterNonMissingTypeOptionErrors(errors, type);
+  if (nonMissingTypeOptionErrors.length === 0) {
+    return;
+  }
+  const nextValidExample = buildTypeSpecificCreateExample(typeDefinition, [], [], statusRegistry.open_status);
+  throw new PmCliError(nonMissingTypeOptionErrors.join("; "), EXIT_CODE.USAGE, {
+    code: "invalid_argument_value",
+    required: `Provide valid --type-option key/value pairs for type "${type}".`,
+    examples: [nextValidExample],
+    nextSteps: [`Run "pm create --help --type ${type}" to review allowed type-option keys and values.`],
+  });
+}
+
 function typeOptionExampleValue(typeDefinition: ResolvedItemTypeDefinition, key: string): string {
   const optionDefinition = typeDefinition.options.find((option) => option.key === key);
   const firstAllowed = optionDefinition?.values[0];
@@ -1250,6 +1269,26 @@ async function validateCreateParentReference(
   }
   const normalizedParentId = normalizeItemId(normalized, settings.id_prefix);
   return { parent: normalized, warnings: validateMissingParentReference(normalizedParentId, policy).warnings };
+}
+
+async function resolveCreateParentWithWarnings(params: {
+  parent: string | undefined;
+  pmRoot: string;
+  settings: PmSettings;
+  typeRegistry: ItemTypeRegistry;
+  policy: Parameters<typeof validateMissingParentReference>[1];
+}): Promise<{ parent: string | undefined; warnings: string[] }> {
+  if (params.parent === undefined) {
+    return { parent: undefined, warnings: [] };
+  }
+  const parentValidation = await validateCreateParentReference(
+    params.pmRoot,
+    params.settings,
+    params.typeRegistry,
+    params.parent,
+    params.policy,
+  );
+  return parentValidation;
 }
 
 /**
@@ -1857,16 +1896,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     type,
     createMode,
   });
-  const nonMissingTypeOptionErrors = filterNonMissingTypeOptionErrors(validatedTypeOptions.errors, type);
-  if (nonMissingTypeOptionErrors.length > 0) {
-    const nextValidExample = buildTypeSpecificCreateExample(typeDefinition, [], [], statusRegistry.open_status);
-    throw new PmCliError(nonMissingTypeOptionErrors.join("; "), EXIT_CODE.USAGE, {
-      code: "invalid_argument_value",
-      required: `Provide valid --type-option key/value pairs for type "${type}".`,
-      examples: [nextValidExample],
-      nextSteps: [`Run "pm create --help --type ${type}" to review allowed type-option keys and values.`],
-    });
-  }
+  assertNoInvalidTypeOptions(validatedTypeOptions.errors, type, typeDefinition, statusRegistry);
 
   const id = await generateItemId(pmRoot, settings.id_prefix);
   let status =
@@ -1912,11 +1942,15 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
       : settings.validation.parent_reference;
   const sprintReleasePolicy = settings.validation.sprint_release_format;
   const validationWarnings: string[] = collectCreateScheduleWarnings(type, id, deadline, reminders.values, events.values);
-  if (parent !== undefined) {
-    const parentValidation = await validateCreateParentReference(pmRoot, settings, typeRegistry, parent, parentReferencePolicy);
-    parent = parentValidation.parent;
-    validationWarnings.push(...parentValidation.warnings);
-  }
+  const parentValidation = await resolveCreateParentWithWarnings({
+    parent,
+    pmRoot,
+    settings,
+    typeRegistry,
+    policy: parentReferencePolicy,
+  });
+  parent = parentValidation.parent;
+  validationWarnings.push(...parentValidation.warnings);
   const sprintResolved = resolveCreateSprintOrRelease(unsetKeys, "sprint", resolvedOptions.sprint, "sprint", sprintReleasePolicy);
   const sprint = sprintResolved.value;
   validationWarnings.push(...sprintResolved.warnings);

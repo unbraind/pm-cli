@@ -401,6 +401,14 @@ function buildFallbackTitleFromMessage(message: string): string | undefined {
   return `${firstLine.slice(0, 117)}...`;
 }
 
+function contextString(value: unknown, fallback: string): string {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : fallback;
+}
+
+function contextOptionalString(value: unknown, fallback: string | undefined): string | undefined {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : fallback;
+}
+
 function applyPmCliErrorContext(
   guidance: GuidanceMessage,
   rawMessage: string,
@@ -410,8 +418,8 @@ function applyPmCliErrorContext(
     return guidance;
   }
   const normalizedRawMessage = normalizeMessage(rawMessage);
-  const code = typeof context.code === "string" && context.code.trim().length > 0 ? context.code.trim() : guidance.code;
-  const type = typeof context.type === "string" && context.type.trim().length > 0 ? context.type.trim() : errorType(code);
+  const code = contextString(context.code, guidance.code);
+  const type = contextString(context.type, errorType(code));
   const examples = normalizeContextList(context.examples) ?? guidance.examples;
   const nextSteps = normalizeContextList(context.nextSteps) ?? guidance.nextSteps;
   const fallbackTitle = guidance.code === "command_failed" && context.code ? buildFallbackTitleFromMessage(normalizedRawMessage) : undefined;
@@ -422,8 +430,8 @@ function applyPmCliErrorContext(
     type,
     title: fallbackTitle ?? guidance.title,
     happened: normalizedRawMessage.length > 0 ? normalizedRawMessage : guidance.happened,
-    required: typeof context.required === "string" && context.required.trim().length > 0 ? context.required.trim() : guidance.required,
-    why: typeof context.why === "string" && context.why.trim().length > 0 ? context.why.trim() : guidance.why,
+    required: contextString(context.required, guidance.required ?? ""),
+    why: contextOptionalString(context.why, guidance.why),
     examples,
     nextSteps,
     recovery,
