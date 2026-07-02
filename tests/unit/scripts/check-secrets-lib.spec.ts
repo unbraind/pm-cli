@@ -74,6 +74,7 @@ describe("check-secrets-lib", () => {
     expect(rulesFor("a.txt", `ssh user@${privateIp}`)).toContain("private-ssh-target");
     expect(rulesFor("a.txt", privateIp)).toContain("private-ip");
     expect(rulesFor("a.txt", `sk-ant-${"a".repeat(24)}`)).toContain("anthropic-api-key");
+    expect(rulesFor("a.txt", `sk-ant-${"a".repeat(24)}`)).not.toContain("openai-api-key");
     expect(rulesFor("a.txt", `sk-${"a1".repeat(12)}`)).toContain("openai-api-key");
     expect(rulesFor("a.txt", `sk-proj-${"a1".repeat(12)}`)).toContain("openai-api-key");
     expect(rulesFor("a.txt", `sk-proj-${"a_".repeat(12)}`)).toContain("openai-api-key");
