@@ -1,0 +1,19 @@
+id: pm-chxp
+title: "Zero the jscpd clone baseline: dedupe registration-helpers/flag-contracts source clones and 21 test-spec clones"
+description: "Epic pm-92if (CodeFactor A->A+): eliminate all 24 remaining jscpd clones reported by 'pnpm lint:duplicates'. Source: src/cli/registration-helpers.ts internal clone (599-629 vs 791-821), src/sdk/cli-contracts/flag-contracts.ts two internal clones (147-171 vs 1405-1429; 650-677 vs 1123-1150). Tests: 21 clones across search-command, test/test-all/test-runs, dedupe-audit/merge, packages runtime specs (calendar/governance-audit/linked-test-adapters/guide-shell), activation-summary/capability-usage, drift-scan, telemetry-runtime, extension-command, extension-loader, docs-skills-gate, cli.integration specs. Behavior-preserving: contracts full.json byte-identical, 100% coverage, no duplicated tests. Follow-up to pm-fmjy (closed narrow) using pm-6sqo jscpd parity tooling."
+type: Task
+status: in_progress
+priority: 2
+tags[4]: "area:cli",code-quality,codefactor,tech-debt
+created_at: "2026-07-02T06:39:46.062Z"
+updated_at: "2026-07-02T06:55:08.826Z"
+assignee: claude-code-agent
+author: claude-code-agent
+parent: pm-92if
+files[5]{path,scope,note}:
+  src/cli/registration-helpers.ts,project,Extract shared governance/content selection-filter option normalization slice
+  src/sdk/cli-contracts/flag-contracts.ts,project,Shared module-private governance/content filter flag-contract constants
+  tests/helpers/extensions.ts,project,Shared synthetic-extension activation fixtures for activation-summary/capability-usage
+  tests/helpers/packageRuntime.ts,project,New shared package-runtime spec scaffolding helper
+  tests/helpers/pmWorkspace.ts,project,New shared task-document workspace helpers for test/test-all specs
+body: ""

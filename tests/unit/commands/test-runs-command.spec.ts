@@ -56,6 +56,24 @@ function withTemporaryEnv<T>(name: string, value: string, callback: () => Promis
   });
 }
 
+function withTemporaryEnvValues<T>(overrides: Record<string, string>, callback: () => Promise<T>): Promise<T> {
+  const previous = new Map<string, string | undefined>(
+    Object.keys(overrides).map((name) => [name, process.env[name]]),
+  );
+  for (const [name, value] of Object.entries(overrides)) {
+    process.env[name] = value;
+  }
+  return callback().finally(() => {
+    for (const [name, value] of previous) {
+      if (value === undefined) {
+        delete process.env[name];
+      } else {
+        process.env[name] = value;
+      }
+    }
+  });
+}
+
 async function withTemporaryCwd<T>(cwd: string, callback: () => Promise<T>): Promise<T> {
   const previous = process.cwd();
   process.chdir(cwd);
@@ -176,11 +194,7 @@ describe("test-runs command attribution fallback", () => {
   it("falls back to USER when PM_AUTHOR and settings author_default are blank", async () => {
     await withTempPmPath(async (context) => {
       await setSettingsAuthorDefault(context.pmPath, "   ");
-      const previousPmAuthor = process.env.PM_AUTHOR;
-      const previousUser = process.env.USER;
-      try {
-        process.env.PM_AUTHOR = "   ";
-        process.env.USER = "fallback-user";
+      await withTemporaryEnvValues({ PM_AUTHOR: "   ", USER: "fallback-user" }, async () => {
         const started = await runStartBackgroundRun(
           {
             kind: "test",
@@ -193,18 +207,7 @@ describe("test-runs command attribution fallback", () => {
           },
         );
         expect((started.run as { requested_by?: string }).requested_by).toBe("fallback-user");
-      } finally {
-        if (previousPmAuthor === undefined) {
-          delete process.env.PM_AUTHOR;
-        } else {
-          process.env.PM_AUTHOR = previousPmAuthor;
-        }
-        if (previousUser === undefined) {
-          delete process.env.USER;
-        } else {
-          process.env.USER = previousUser;
-        }
-      }
+      });
     });
   });
 
@@ -218,49 +221,23 @@ describe("test-runs command attribution fallback", () => {
         homedir: "/tmp",
         shell: "/bin/bash",
       });
-      const previousPmAuthor = process.env.PM_AUTHOR;
-      const previousUser = process.env.USER;
-      const previousLogname = process.env.LOGNAME;
-      const previousUsername = process.env.USERNAME;
       try {
-        process.env.PM_AUTHOR = " ";
-        process.env.USER = "";
-        process.env.LOGNAME = "";
-        process.env.USERNAME = "";
-        const started = await runStartBackgroundRun(
-          {
-            kind: "test-all",
-            commandArgs: ["test-runs", "list", "--json"],
-            noExtensions: true,
-          },
-          {
-            path: context.pmPath,
-            noExtensions: true,
-          },
-        );
-        expect((started.run as { requested_by?: string }).requested_by).toBe("whoami-fallback");
+        await withTemporaryEnvValues({ PM_AUTHOR: " ", USER: "", LOGNAME: "", USERNAME: "" }, async () => {
+          const started = await runStartBackgroundRun(
+            {
+              kind: "test-all",
+              commandArgs: ["test-runs", "list", "--json"],
+              noExtensions: true,
+            },
+            {
+              path: context.pmPath,
+              noExtensions: true,
+            },
+          );
+          expect((started.run as { requested_by?: string }).requested_by).toBe("whoami-fallback");
+        });
       } finally {
         userInfoSpy.mockRestore();
-        if (previousPmAuthor === undefined) {
-          delete process.env.PM_AUTHOR;
-        } else {
-          process.env.PM_AUTHOR = previousPmAuthor;
-        }
-        if (previousUser === undefined) {
-          delete process.env.USER;
-        } else {
-          process.env.USER = previousUser;
-        }
-        if (previousLogname === undefined) {
-          delete process.env.LOGNAME;
-        } else {
-          process.env.LOGNAME = previousLogname;
-        }
-        if (previousUsername === undefined) {
-          delete process.env.USERNAME;
-        } else {
-          process.env.USERNAME = previousUsername;
-        }
       }
     });
   });
@@ -271,49 +248,23 @@ describe("test-runs command attribution fallback", () => {
       const userInfoSpy = vi.spyOn(os, "userInfo").mockImplementation(() => {
         throw new Error("no-userinfo");
       });
-      const previousPmAuthor = process.env.PM_AUTHOR;
-      const previousUser = process.env.USER;
-      const previousLogname = process.env.LOGNAME;
-      const previousUsername = process.env.USERNAME;
       try {
-        process.env.PM_AUTHOR = " ";
-        process.env.USER = "";
-        process.env.LOGNAME = "";
-        process.env.USERNAME = "";
-        const started = await runStartBackgroundRun(
-          {
-            kind: "test",
-            commandArgs: ["test-runs", "list", "--json"],
-            noExtensions: true,
-          },
-          {
-            path: context.pmPath,
-            noExtensions: true,
-          },
-        );
-        expect((started.run as { requested_by?: string }).requested_by).toBe("unknown");
+        await withTemporaryEnvValues({ PM_AUTHOR: " ", USER: "", LOGNAME: "", USERNAME: "" }, async () => {
+          const started = await runStartBackgroundRun(
+            {
+              kind: "test",
+              commandArgs: ["test-runs", "list", "--json"],
+              noExtensions: true,
+            },
+            {
+              path: context.pmPath,
+              noExtensions: true,
+            },
+          );
+          expect((started.run as { requested_by?: string }).requested_by).toBe("unknown");
+        });
       } finally {
         userInfoSpy.mockRestore();
-        if (previousPmAuthor === undefined) {
-          delete process.env.PM_AUTHOR;
-        } else {
-          process.env.PM_AUTHOR = previousPmAuthor;
-        }
-        if (previousUser === undefined) {
-          delete process.env.USER;
-        } else {
-          process.env.USER = previousUser;
-        }
-        if (previousLogname === undefined) {
-          delete process.env.LOGNAME;
-        } else {
-          process.env.LOGNAME = previousLogname;
-        }
-        if (previousUsername === undefined) {
-          delete process.env.USERNAME;
-        } else {
-          process.env.USERNAME = previousUsername;
-        }
       }
     });
   });

@@ -80,6 +80,71 @@ async function loadSettings(context: TempPmContext) {
   return readSettings(context.pmPath);
 }
 
+interface OverrideActivationApi {
+  registerCommand: (
+    command: string,
+    run: (context: {
+      result: unknown;
+      command: string;
+      args: string[];
+      options: Record<string, unknown>;
+      global: { json: boolean; quiet: boolean; noExtensions: boolean; profile: boolean };
+      pm_root: string;
+    }) => unknown,
+  ) => void;
+  registerRenderer: (
+    format: "toon" | "json",
+    run: (context: {
+      format: "toon" | "json";
+      command: string;
+      args: string[];
+      options: Record<string, unknown>;
+      global: { json: boolean; quiet: boolean; noExtensions: boolean; profile: boolean };
+      pm_root: string;
+      result: unknown;
+    }) => string,
+  ) => void;
+}
+
+/**
+ * Builds a loaded-extension entry for the given layer whose activate hook
+ * registers a `list-open` command override plus a JSON renderer override, both
+ * tagging their output with the layer name as `source` so override precedence
+ * between layers stays observable.
+ */
+function buildOverrideLoadedExtension(layer: "global" | "project", name: string, priority: number) {
+  return {
+    layer,
+    directory: name,
+    manifest_path: `/tmp/${layer}/${name}/manifest.json`,
+    name,
+    version: "1.0.0",
+    entry: "./index.mjs",
+    priority,
+    entry_path: `/tmp/${layer}/${name}/index.mjs`,
+    module: {
+      activate(api: OverrideActivationApi) {
+        api.registerCommand("list-open", (context) => ({
+          ...(context.result as Record<string, unknown>),
+          source: layer,
+          limit: context.options.limit,
+          json: context.global.json,
+        }));
+        api.registerRenderer("json", (context) =>
+          JSON.stringify({
+            source: layer,
+            command: context.command,
+            limit: context.options.limit,
+            json: context.global.json,
+            pm_root: context.pm_root,
+            result: context.result,
+          }),
+        );
+      },
+    },
+  };
+}
+
 describe("extension loader", () => {
   it("creates independent extension policy defaults", () => {
     const first = createDefaultExtensionGovernancePolicy();
@@ -2366,114 +2431,8 @@ describe("extension loader", () => {
       effective: [],
       warnings: [],
       loaded: [
-        {
-          layer: "global",
-          directory: "global-overrides",
-          manifest_path: "/tmp/global/global-overrides/manifest.json",
-          name: "global-overrides",
-          version: "1.0.0",
-          entry: "./index.mjs",
-          priority: 10,
-          entry_path: "/tmp/global/global-overrides/index.mjs",
-          module: {
-            activate(api: {
-              registerCommand: (
-                command: string,
-                run: (context: {
-                  result: unknown;
-                  command: string;
-                  args: string[];
-                  options: Record<string, unknown>;
-                  global: { json: boolean; quiet: boolean; noExtensions: boolean; profile: boolean };
-                  pm_root: string;
-                }) => unknown,
-              ) => void;
-              registerRenderer: (
-                format: "toon" | "json",
-                run: (context: {
-                  format: "toon" | "json";
-                  command: string;
-                  args: string[];
-                  options: Record<string, unknown>;
-                  global: { json: boolean; quiet: boolean; noExtensions: boolean; profile: boolean };
-                  pm_root: string;
-                  result: unknown;
-                }) => string,
-              ) => void;
-            }) {
-              api.registerCommand("list-open", (context) => ({
-                ...(context.result as Record<string, unknown>),
-                source: "global",
-                limit: context.options.limit,
-                json: context.global.json,
-              }));
-              api.registerRenderer("json", (context) =>
-                JSON.stringify({
-                  source: "global",
-                  command: context.command,
-                  limit: context.options.limit,
-                  json: context.global.json,
-                  pm_root: context.pm_root,
-                  result: context.result,
-                }),
-              );
-            },
-          },
-        },
-        {
-          layer: "project",
-          directory: "project-overrides",
-          manifest_path: "/tmp/project/project-overrides/manifest.json",
-          name: "project-overrides",
-          version: "1.0.0",
-          entry: "./index.mjs",
-          priority: 20,
-          entry_path: "/tmp/project/project-overrides/index.mjs",
-          module: {
-            activate(api: {
-              registerCommand: (
-                command: string,
-                run: (context: {
-                  result: unknown;
-                  command: string;
-                  args: string[];
-                  options: Record<string, unknown>;
-                  global: { json: boolean; quiet: boolean; noExtensions: boolean; profile: boolean };
-                  pm_root: string;
-                }) => unknown,
-              ) => void;
-              registerRenderer: (
-                format: "toon" | "json",
-                run: (context: {
-                  format: "toon" | "json";
-                  command: string;
-                  args: string[];
-                  options: Record<string, unknown>;
-                  global: { json: boolean; quiet: boolean; noExtensions: boolean; profile: boolean };
-                  pm_root: string;
-                  result: unknown;
-                }) => string,
-              ) => void;
-            }) {
-              api.registerCommand("list-open", (context) => ({
-                ...(context.result as Record<string, unknown>),
-                source: "project",
-                limit: context.options.limit,
-                json: context.global.json,
-              }));
-              api.registerRenderer("json", (context) =>
-                JSON.stringify({
-                  source: "project",
-                  command: context.command,
-                  limit: context.options.limit,
-                  json: context.global.json,
-                  pm_root: context.pm_root,
-                  result: context.result,
-                }),
-              );
-            },
-          },
-        },
+        buildOverrideLoadedExtension("global", "global-overrides", 10),
+        buildOverrideLoadedExtension("project", "project-overrides", 20),
       ],
       failed: [],
     });

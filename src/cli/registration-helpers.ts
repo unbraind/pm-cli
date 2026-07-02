@@ -559,6 +559,39 @@ function readListOptionString(options: Record<string, unknown>, target: string):
   return undefined;
 }
 
+// Shared governance-missing (GH-236) + content-field presence/absence (GH-242)
+// selection-filter fields. Presence flags are plain booleans; absence uses
+// commander negation (`--no-notes` stores notes=false) except --empty-body
+// which is its own dest. Spread into normalizeListOptions and
+// normalizeSearchOptions at the same position so key order is preserved.
+function readSelectionFilterOptionFields(options: Record<string, unknown>): Record<string, true | undefined> {
+  return {
+    filterReviewerMissing: optionTrue(options, "filterReviewerMissing"),
+    filterRiskMissing: optionTrue(options, "filterRiskMissing"),
+    filterConfidenceMissing: optionTrue(options, "filterConfidenceMissing"),
+    filterSprintMissing: optionTrue(options, "filterSprintMissing"),
+    filterReleaseMissing: optionTrue(options, "filterReleaseMissing"),
+    hasNotes: optionTrue(options, "hasNotes"),
+    hasLearnings: optionTrue(options, "hasLearnings"),
+    hasFiles: optionTrue(options, "hasFiles"),
+    hasDocs: optionTrue(options, "hasDocs"),
+    hasTests: optionTrue(options, "hasTests"),
+    hasComments: optionTrue(options, "hasComments"),
+    hasDeps: optionTrue(options, "hasDeps"),
+    hasBody: optionTrue(options, "hasBody"),
+    hasLinkedCommand: optionTrue(options, "hasLinkedCommand"),
+    noNotes: optionFalse(options, "notes"),
+    noLearnings: optionFalse(options, "learnings"),
+    noFiles: optionFalse(options, "files"),
+    noDocs: optionFalse(options, "docs"),
+    noTests: optionFalse(options, "tests"),
+    noComments: optionFalse(options, "comments"),
+    noDeps: optionFalse(options, "deps"),
+    emptyBody: optionTrue(options, "emptyBody"),
+    noLinkedCommand: optionFalse(options, "linkedCommand"),
+  };
+}
+
 /**
  * Implements normalize list options for the public runtime surface of this module.
  */
@@ -597,33 +630,8 @@ export function normalizeListOptions(options: Record<string, unknown>): ListOpti
     filterEstimatesMissing: anyOptionTrue(options, ["filterEstimatesMissing", "filterEstimateMissing"]),
     filterResolutionMissing: optionTrue(options, "filterResolutionMissing"),
     filterMetadataMissing: optionTrue(options, "filterMetadataMissing"),
-    // Governance-missing selection filters (GH-236).
-    filterReviewerMissing: optionTrue(options, "filterReviewerMissing"),
-    filterRiskMissing: optionTrue(options, "filterRiskMissing"),
-    filterConfidenceMissing: optionTrue(options, "filterConfidenceMissing"),
-    filterSprintMissing: optionTrue(options, "filterSprintMissing"),
-    filterReleaseMissing: optionTrue(options, "filterReleaseMissing"),
-    // Content-field presence/absence selection filters (GH-242). Presence flags
-    // are plain booleans; absence uses commander negation (`--no-notes` stores
-    // notes=false) except --empty-body which is its own dest.
-    hasNotes: optionTrue(options, "hasNotes"),
-    hasLearnings: optionTrue(options, "hasLearnings"),
-    hasFiles: optionTrue(options, "hasFiles"),
-    hasDocs: optionTrue(options, "hasDocs"),
-    hasTests: optionTrue(options, "hasTests"),
-    hasComments: optionTrue(options, "hasComments"),
-    hasDeps: optionTrue(options, "hasDeps"),
-    hasBody: optionTrue(options, "hasBody"),
-    hasLinkedCommand: optionTrue(options, "hasLinkedCommand"),
-    noNotes: optionFalse(options, "notes"),
-    noLearnings: optionFalse(options, "learnings"),
-    noFiles: optionFalse(options, "files"),
-    noDocs: optionFalse(options, "docs"),
-    noTests: optionFalse(options, "tests"),
-    noComments: optionFalse(options, "comments"),
-    noDeps: optionFalse(options, "deps"),
-    emptyBody: optionTrue(options, "emptyBody"),
-    noLinkedCommand: optionFalse(options, "linkedCommand"),
+    // Governance-missing (GH-236) + content presence/absence (GH-242) filters.
+    ...readSelectionFilterOptionFields(options),
   }
   copyUnknownOptions(normalized, options);
   return normalized as ListOptions;
@@ -789,33 +797,9 @@ export function normalizeSearchOptions(options: Record<string, unknown>): Record
     fields,
     compact: compactRequested || defaultCompact ? true : undefined,
     full: optionTrue(options, "full"),
-    // Governance-missing selection filters (GH-236).
-    filterReviewerMissing: optionTrue(options, "filterReviewerMissing"),
-    filterRiskMissing: optionTrue(options, "filterRiskMissing"),
-    filterConfidenceMissing: optionTrue(options, "filterConfidenceMissing"),
-    filterSprintMissing: optionTrue(options, "filterSprintMissing"),
-    filterReleaseMissing: optionTrue(options, "filterReleaseMissing"),
-    // Content-field presence/absence selection filters (GH-242). Mirror
-    // normalizeListOptions: presence flags are booleans; absence uses commander
-    // negation (notes=false) except --empty-body which is its own dest.
-    hasNotes: optionTrue(options, "hasNotes"),
-    hasLearnings: optionTrue(options, "hasLearnings"),
-    hasFiles: optionTrue(options, "hasFiles"),
-    hasDocs: optionTrue(options, "hasDocs"),
-    hasTests: optionTrue(options, "hasTests"),
-    hasComments: optionTrue(options, "hasComments"),
-    hasDeps: optionTrue(options, "hasDeps"),
-    hasBody: optionTrue(options, "hasBody"),
-    hasLinkedCommand: optionTrue(options, "hasLinkedCommand"),
-    noNotes: optionFalse(options, "notes"),
-    noLearnings: optionFalse(options, "learnings"),
-    noFiles: optionFalse(options, "files"),
-    noDocs: optionFalse(options, "docs"),
-    noTests: optionFalse(options, "tests"),
-    noComments: optionFalse(options, "comments"),
-    noDeps: optionFalse(options, "deps"),
-    emptyBody: optionTrue(options, "emptyBody"),
-    noLinkedCommand: optionFalse(options, "linkedCommand"),
+    // Governance-missing (GH-236) + content presence/absence (GH-242) filters,
+    // mirroring normalizeListOptions via the shared field slice.
+    ...readSelectionFilterOptionFields(options),
   }
   copyUnknownOptions(normalized, options);
   return normalized;

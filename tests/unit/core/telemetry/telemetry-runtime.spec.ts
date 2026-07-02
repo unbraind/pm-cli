@@ -88,6 +88,38 @@ async function waitForFetchCalls(fetchMock: { mock: { calls: unknown[] } }, coun
   throw new Error(`Timed out waiting for ${count} telemetry fetch call(s)`);
 }
 
+/**
+ * Asserts that setting the given opt-out environment variable makes
+ * {@link startTelemetryCommand} return null without queueing events or
+ * touching the ingest endpoint.
+ */
+async function expectOptOutEnvSkipsCommandCollection(envVar: "PM_TELEMETRY_DISABLED" | "PM_NO_TELEMETRY"): Promise<void> {
+  await withTempGlobalRoot(async (globalRoot) => {
+    process.env[envVar] = "1";
+    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const active = await startTelemetryCommand({
+      command: "list-open",
+      pm_version: "9.9.9-test",
+      args: [],
+      options: {},
+      global: {
+        json: true,
+        quiet: false,
+        noExtensions: false,
+        noPager: false,
+        profile: false,
+      },
+      pm_root: "/tmp/project/.agents/pm",
+    });
+
+    expect(active).toBeNull();
+    await expect(fs.access(telemetryQueuePath(globalRoot))).rejects.toMatchObject({ code: "ENOENT" });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+}
+
 async function setTelemetryCaptureLevel(globalRoot: string, level: "minimal" | "redacted" | "max"): Promise<void> {
   const settings = await readSettings(globalRoot);
   settings.telemetry.capture_level = level;
@@ -882,57 +914,11 @@ describe("core/telemetry/runtime", () => {
   });
 
   it("skips telemetry command collection when PM_TELEMETRY_DISABLED is set", async () => {
-    await withTempGlobalRoot(async (globalRoot) => {
-      process.env.PM_TELEMETRY_DISABLED = "1";
-      const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
-      globalThis.fetch = fetchMock as unknown as typeof fetch;
-
-      const active = await startTelemetryCommand({
-        command: "list-open",
-        pm_version: "9.9.9-test",
-        args: [],
-        options: {},
-        global: {
-          json: true,
-          quiet: false,
-          noExtensions: false,
-          noPager: false,
-          profile: false,
-        },
-        pm_root: "/tmp/project/.agents/pm",
-      });
-
-      expect(active).toBeNull();
-      await expect(fs.access(telemetryQueuePath(globalRoot))).rejects.toMatchObject({ code: "ENOENT" });
-      expect(fetchMock).not.toHaveBeenCalled();
-    });
+    await expectOptOutEnvSkipsCommandCollection("PM_TELEMETRY_DISABLED");
   });
 
   it("skips telemetry command collection when PM_NO_TELEMETRY is set", async () => {
-    await withTempGlobalRoot(async (globalRoot) => {
-      process.env.PM_NO_TELEMETRY = "1";
-      const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
-      globalThis.fetch = fetchMock as unknown as typeof fetch;
-
-      const active = await startTelemetryCommand({
-        command: "list-open",
-        pm_version: "9.9.9-test",
-        args: [],
-        options: {},
-        global: {
-          json: true,
-          quiet: false,
-          noExtensions: false,
-          noPager: false,
-          profile: false,
-        },
-        pm_root: "/tmp/project/.agents/pm",
-      });
-
-      expect(active).toBeNull();
-      await expect(fs.access(telemetryQueuePath(globalRoot))).rejects.toMatchObject({ code: "ENOENT" });
-      expect(fetchMock).not.toHaveBeenCalled();
-    });
+    await expectOptOutEnvSkipsCommandCollection("PM_NO_TELEMETRY");
   });
 
   it("skips telemetry clear commands and disabled flush workers", async () => {

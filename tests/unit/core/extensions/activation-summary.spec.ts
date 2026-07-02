@@ -1,80 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { activateExtensions } from "../../../../src/core/extensions/loader.js";
-import {
-  KNOWN_EXTENSION_CAPABILITIES,
-  createDefaultExtensionGovernancePolicy,
-} from "../../../../src/core/extensions/extension-types.js";
+import { KNOWN_EXTENSION_CAPABILITIES } from "../../../../src/core/extensions/extension-types.js";
 import { describeExtensionActivation } from "../../../../src/core/extensions/activation-summary.js";
 import { describeExtensionActivation as describeFromSdkBarrel } from "../../../../src/sdk/index.js";
 import { describeExtensionActivation as describeFromSdkTesting } from "../../../../src/sdk/testing.js";
-import type { ExtensionActivationResult, ExtensionApi, ExtensionLayer } from "../../../../src/core/extensions/loader.js";
+import { activateSyntheticExtensions as activate, registerEverySurfaceForTest } from "../../../helpers/extensions.js";
+import type { ExtensionApi } from "../../../../src/core/extensions/loader.js";
 
-interface SyntheticExtension {
-  name: string;
-  layer?: ExtensionLayer;
-  capabilities: string[];
-  activate?: (api: ExtensionApi) => void;
-}
-
-/** Activate one or more in-memory extension modules through the real engine. */
-async function activate(extensions: SyntheticExtension[]): Promise<ExtensionActivationResult> {
-  return activateExtensions({
-    disabled_by_flag: false,
-    roots: { global: "", project: "" },
-    configured_enabled: [],
-    configured_disabled: [],
-    discovered: [],
-    effective: [],
-    warnings: [],
-    policy: createDefaultExtensionGovernancePolicy(),
-    failed: [],
-    loaded: extensions.map((extension) => ({
-      layer: extension.layer ?? "project",
-      directory: "",
-      manifest_path: "",
-      name: extension.name,
-      version: "0.0.0",
-      entry: "./index.js",
-      priority: 0,
-      entry_path: "",
-      capabilities: extension.capabilities,
-      module: { activate: extension.activate ?? (() => undefined) },
-    })),
-  });
-}
-
-/** Register at least one surface for every known capability under one extension. */
+/** Register at least one surface for every known capability (including a profile) under one extension. */
 function registerEverySurface(api: ExtensionApi): void {
-  api.registerCommand({ name: "ext-a cmd", run: () => ({ ok: true }) });
-  api.registerCommand("list", (context) => context.result);
-  api.registerItemFields([{ name: "team", type: "string" }]);
-  api.registerItemTypes([{ name: "Ticket" }]);
-  api.registerMigration({ id: "ext-a-migration", run: () => ({}) });
-  api.registerProfile({
-    name: "ext-a-profile",
-    title: "Ext A archetype",
-    summary: "Synthetic archetype for the every-surface fixture.",
-    types: [],
-    statuses: [],
-    fields: [],
-    workflows: [],
-    config: [],
-    templates: [],
-    packages: [],
-  });
-  api.registerImporter("ext-a-import", async () => ({ items: [] }));
-  api.registerExporter("ext-a-export", async () => ({}));
-  api.registerSearchProvider({ name: "ext-a-search", query: () => [] });
-  api.registerVectorStoreAdapter({ name: "ext-a-vector", query: () => [] });
-  api.registerParser("ext-a cmd", () => ({}));
-  api.registerPreflight(() => ({}));
-  api.registerService("output_format", () => null);
-  api.registerRenderer("toon", () => null);
-  api.hooks.beforeCommand(() => undefined);
-  api.hooks.afterCommand(() => undefined);
-  api.hooks.onWrite(() => undefined);
-  api.hooks.onRead(() => undefined);
-  api.hooks.onIndex(() => undefined);
+  registerEverySurfaceForTest(api, { includeProfile: true });
 }
 
 describe("describeExtensionActivation", () => {
