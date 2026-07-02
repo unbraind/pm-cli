@@ -1713,10 +1713,10 @@ function linkedArtifactPathExceedsFilesystemLimits(artifactPath: string): boolea
 }
 
 async function linkedArtifactIsMissing(workspaceRoot: string, artifactPath: string): Promise<boolean> {
-  if (linkedArtifactPathExceedsFilesystemLimits(artifactPath)) {
+  const absolutePath = path.isAbsolute(artifactPath) ? artifactPath : path.resolve(workspaceRoot, artifactPath);
+  if (linkedArtifactPathExceedsFilesystemLimits(absolutePath)) {
     return false;
   }
-  const absolutePath = path.isAbsolute(artifactPath) ? artifactPath : path.resolve(workspaceRoot, artifactPath);
   try {
     const stats = await fs.stat(absolutePath);
     return !stats.isFile() && !stats.isDirectory();
