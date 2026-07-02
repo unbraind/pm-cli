@@ -78,6 +78,7 @@ describe("check-secrets-lib", () => {
     expect(rulesFor("a.txt", `sk-${"a1".repeat(12)}`)).toContain("openai-api-key");
     expect(rulesFor("a.txt", `sk-proj-${"a1".repeat(12)}`)).toContain("openai-api-key");
     expect(rulesFor("a.txt", `sk-proj-${"a_".repeat(12)}`)).toContain("openai-api-key");
+    expect(rulesFor("a.txt", `sk-svcacct-${"a1".repeat(12)}`)).toContain("openai-api-key");
     expect(rulesFor("a.txt", `glpat-${"b".repeat(20)}`)).toContain("gitlab-token");
   });
 
