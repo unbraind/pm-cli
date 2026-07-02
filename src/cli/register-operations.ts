@@ -62,6 +62,114 @@ function resolveTelemetrySubcommand(namespaceOrSubcommand: string | undefined, s
   return normalizedNamespace;
 }
 
+function collectTestMutationValues(options: Record<string, unknown>): {
+  addValues: string[];
+  addJsonValues: string[];
+  removeValues: string[];
+} {
+  return {
+    addValues: Array.isArray(options.add) ? (options.add as string[]) : [],
+    addJsonValues: Array.isArray(options.addJson) ? (options.addJson as string[]) : [],
+    removeValues: Array.isArray(options.remove) ? (options.remove as string[]) : [],
+  };
+}
+
+function validateBackgroundTestOptions(
+  options: Record<string, unknown>,
+  values: { addValues: string[]; addJsonValues: string[]; removeValues: string[] },
+): void {
+  if (options.background !== true) {
+    return;
+  }
+  if (options.run !== true) {
+    throw new PmCliError("--background requires --run", EXIT_CODE.USAGE);
+  }
+  if (values.addValues.length > 0 || values.addJsonValues.length > 0 || values.removeValues.length > 0) {
+    throw new PmCliError("--background does not support --add/--add-json/--remove; update linked tests first, then run in background", EXIT_CODE.USAGE);
+  }
+}
+
+async function runBackgroundLinkedTests(
+  id: string,
+  options: Record<string, unknown>,
+  globalOptions: ReturnType<typeof getGlobalOptions>,
+  values: { addValues: string[]; addJsonValues: string[]; removeValues: string[] },
+): Promise<void> {
+  const { runStartBackgroundRun } = await import("./commands/test-runs.js");
+  const result = await runStartBackgroundRun({
+    kind: "test",
+    commandArgs: buildBackgroundTestCommandArgs(id, { ...options, add: values.addValues, addJson: values.addJsonValues, remove: values.removeValues }),
+    targetId: id,
+    author: typeof options.author === "string" ? options.author : undefined,
+    noExtensions: globalOptions.noExtensions === true,
+  }, globalOptions);
+  printResult(result, globalOptions);
+}
+
+function buildRunTestOptions(
+  options: Record<string, unknown>,
+  values: { addValues: string[]; addJsonValues: string[]; removeValues: string[] },
+) {
+  return {
+    add: values.addValues,
+    addJson: values.addJsonValues,
+    remove: values.removeValues,
+    list: Boolean(options.list),
+    run: Boolean(options.run),
+    match: typeof options.match === "string" ? options.match : undefined,
+    onlyIndex: typeof options.onlyIndex === "string" || typeof options.onlyIndex === "number" ? options.onlyIndex : undefined,
+    onlyLast: Boolean(options.onlyLast),
+    timeout: typeof options.timeout === "string" ? options.timeout : undefined,
+    progress: Boolean(options.progress),
+    envSet: Array.isArray(options.envSet) ? (options.envSet as string[]) : [],
+    envClear: Array.isArray(options.envClear) ? (options.envClear as string[]) : [],
+    sharedHostSafe: Boolean(options.sharedHostSafe),
+    pmContext: typeof options.pmContext === "string" ? options.pmContext : undefined,
+    overrideLinkedPmContext: Boolean(options.overrideLinkedPmContext),
+    failOnContextMismatch: Boolean(options.failOnContextMismatch),
+    failOnSkipped: Boolean(options.failOnSkipped),
+    failOnEmptyTestRun: Boolean(options.failOnEmptyTestRun),
+    requireAssertionsForPm: Boolean(options.requireAssertionsForPm),
+    checkContext: Boolean(options.checkContext),
+    autoPmContext: Boolean(options.autoPmContext),
+    author: typeof options.author === "string" ? options.author : undefined,
+    message: typeof options.message === "string" ? options.message : undefined,
+    force: Boolean(options.force),
+  };
+}
+
+async function runForegroundLinkedTests(
+  id: string,
+  options: Record<string, unknown>,
+  globalOptions: ReturnType<typeof getGlobalOptions>,
+  values: { addValues: string[]; addJsonValues: string[]; removeValues: string[] },
+): Promise<void> {
+  const { runTest } = await import("./commands/test.js");
+  const result = await runTest(id, buildRunTestOptions(options, values), globalOptions);
+  if (values.addValues.length > 0 || values.addJsonValues.length > 0 || values.removeValues.length > 0 || options.run === true) {
+    await invalidateSearchCachesForMutation(globalOptions, result);
+  }
+  printResult(result, globalOptions);
+  if (result.run_results.some((entry) => entry.status === "failed") || result.fail_on_skipped_triggered === true) {
+    process.exitCode = EXIT_CODE.DEPENDENCY_FAILED;
+  }
+}
+
+async function runTestCommandAction(id: string, options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const values = collectTestMutationValues(options);
+  validateBackgroundTestOptions(options, values);
+  if (options.background === true) {
+    await runBackgroundLinkedTests(id, options, globalOptions, values);
+  } else {
+    await runForegroundLinkedTests(id, options, globalOptions, values);
+  }
+  if (globalOptions.profile) {
+    printError(`profile:command=test took_ms=${Date.now() - startedAt}`);
+  }
+}
+
 
 
 /**
@@ -98,70 +206,7 @@ export function registerOperationCommands(program: Command): void {
     .option("--force", "Force ownership override")
     .description("Manage tests linked to an item and optionally run them.")
     .action(async (id: string, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const addValues = Array.isArray(options.add) ? (options.add as string[]) : [];
-      const addJsonValues = Array.isArray(options.addJson) ? (options.addJson as string[]) : [];
-      const removeValues = Array.isArray(options.remove) ? (options.remove as string[]) : [];
-      const runInBackground = options.background === true;
-      if (runInBackground && options.run !== true) {
-        throw new PmCliError("--background requires --run", EXIT_CODE.USAGE);
-      }
-      if (runInBackground && (addValues.length > 0 || addJsonValues.length > 0 || removeValues.length > 0)) {
-        throw new PmCliError("--background does not support --add/--add-json/--remove; update linked tests first, then run in background", EXIT_CODE.USAGE);
-      }
-      if (runInBackground) {
-        const { runStartBackgroundRun } = await import("./commands/test-runs.js");
-        const result = await runStartBackgroundRun({
-          kind: "test",
-          commandArgs: buildBackgroundTestCommandArgs(id, { ...options, add: addValues, addJson: addJsonValues, remove: removeValues }),
-          targetId: id,
-          author: typeof options.author === "string" ? options.author : undefined,
-          noExtensions: globalOptions.noExtensions === true,
-        }, globalOptions);
-        printResult(result, globalOptions);
-        if (globalOptions.profile) {
-          printError(`profile:command=test took_ms=${Date.now() - startedAt}`);
-        }
-        return;
-      }
-      const { runTest } = await import("./commands/test.js");
-      const result = await runTest(id, {
-        add: addValues,
-        addJson: addJsonValues,
-        remove: removeValues,
-        list: Boolean(options.list),
-        run: Boolean(options.run),
-        match: typeof options.match === "string" ? options.match : undefined,
-        onlyIndex: typeof options.onlyIndex === "string" || typeof options.onlyIndex === "number" ? options.onlyIndex : undefined,
-        onlyLast: Boolean(options.onlyLast),
-        timeout: typeof options.timeout === "string" ? options.timeout : undefined,
-        progress: Boolean(options.progress),
-        envSet: Array.isArray(options.envSet) ? (options.envSet as string[]) : [],
-        envClear: Array.isArray(options.envClear) ? (options.envClear as string[]) : [],
-        sharedHostSafe: Boolean(options.sharedHostSafe),
-        pmContext: typeof options.pmContext === "string" ? options.pmContext : undefined,
-        overrideLinkedPmContext: Boolean(options.overrideLinkedPmContext),
-        failOnContextMismatch: Boolean(options.failOnContextMismatch),
-        failOnSkipped: Boolean(options.failOnSkipped),
-        failOnEmptyTestRun: Boolean(options.failOnEmptyTestRun),
-        requireAssertionsForPm: Boolean(options.requireAssertionsForPm),
-        checkContext: Boolean(options.checkContext),
-        autoPmContext: Boolean(options.autoPmContext),
-        author: typeof options.author === "string" ? options.author : undefined,
-        message: typeof options.message === "string" ? options.message : undefined,
-        force: Boolean(options.force),
-      }, globalOptions);
-      if (addValues.length > 0 || addJsonValues.length > 0 || removeValues.length > 0 || options.run === true) {
-        await invalidateSearchCachesForMutation(globalOptions, result);
-      }
-      printResult(result, globalOptions);
-      if (result.run_results.some((entry) => entry.status === "failed") || result.fail_on_skipped_triggered === true) {
-        process.exitCode = EXIT_CODE.DEPENDENCY_FAILED;
-      }
-      if (globalOptions.profile) {
-        printError(`profile:command=test took_ms=${Date.now() - startedAt}`);
-      }
+      await runTestCommandAction(id, options, command);
     });
 
   program

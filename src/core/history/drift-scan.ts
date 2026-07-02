@@ -81,6 +81,13 @@ interface StreamVerification {
   contentHash: string;
 }
 
+interface DriftScanAccumulator {
+  missingStreams: string[];
+  unreadableStreams: string[];
+  hashMismatches: string[];
+  chainMismatches: string[];
+}
+
 function hashContent(raw: string): string {
   return createHash("sha256").update(raw).digest("hex");
 }
@@ -126,6 +133,74 @@ async function verifyHistoryStream(historyPath: string): Promise<StreamVerificat
   };
 }
 
+function cacheMetadataMatches(cached: DriftCacheEntry | undefined, stat: Awaited<ReturnType<typeof fs.stat>>): boolean {
+  return cached !== undefined && cached.mtime_ms === stat.mtimeMs && cached.ctime_ms === stat.ctimeMs && cached.size === stat.size;
+}
+
+async function loadFreshStreamVerification(
+  itemId: string,
+  historyPath: string,
+  accumulator: DriftScanAccumulator,
+): Promise<StreamVerification | null> {
+  try {
+    const loaded = await verifyHistoryStream(historyPath);
+    if (!loaded) {
+      accumulator.missingStreams.push(itemId);
+      return null;
+    }
+    return loaded;
+  } catch {
+    accumulator.unreadableStreams.push(itemId);
+    return null;
+  }
+}
+
+async function resolveStreamVerification(params: {
+  itemId: string;
+  historyPath: string;
+  stat: Awaited<ReturnType<typeof fs.stat>>;
+  cached: DriftCacheEntry | undefined;
+  verifyCacheHitByContent: boolean;
+  accumulator: DriftScanAccumulator;
+}): Promise<{ verification: StreamVerification | null; cacheDirty: boolean }> {
+  const cachedContentHash =
+    typeof params.cached?.content_hash === "string" && params.cached.content_hash.length > 0
+      ? params.cached.content_hash
+      : undefined;
+  const canUseCache = cacheMetadataMatches(params.cached, params.stat) && cachedContentHash !== undefined && params.cached !== undefined;
+  if (!canUseCache || !params.cached) {
+    return {
+      verification: await loadFreshStreamVerification(params.itemId, params.historyPath, params.accumulator),
+      cacheDirty: true,
+    };
+  }
+  let currentContentHash: string;
+  if (params.verifyCacheHitByContent) {
+    try {
+      currentContentHash = await readHistoryContentHash(params.historyPath);
+    } catch {
+      params.accumulator.unreadableStreams.push(params.itemId);
+      return { verification: null, cacheDirty: false };
+    }
+  } else {
+    currentContentHash = cachedContentHash;
+  }
+  if (!params.verifyCacheHitByContent || currentContentHash === cachedContentHash) {
+    return {
+      verification: {
+        latestAfterHash: params.cached.latest_after_hash,
+        chainOk: params.cached.chain_ok,
+        contentHash: currentContentHash,
+      },
+      cacheDirty: false,
+    };
+  }
+  return {
+    verification: await loadFreshStreamVerification(params.itemId, params.historyPath, params.accumulator),
+    cacheDirty: true,
+  };
+}
+
 /**
  * Scan every item's history stream for drift (missing/unreadable streams, broken
  * hash chains, and item/history hash mismatches).
@@ -141,10 +216,12 @@ export async function scanHistoryDrift(
   items: Array<ItemMetadata & { body: string }>,
   options: DriftScanOptions = {},
 ): Promise<DriftScanResult> {
-  const missingStreams: string[] = [];
-  const unreadableStreams: string[] = [];
-  const hashMismatches: string[] = [];
-  const chainMismatches: string[] = [];
+  const accumulator: DriftScanAccumulator = {
+    missingStreams: [],
+    unreadableStreams: [],
+    hashMismatches: [],
+    chainMismatches: [],
+  };
 
   const cache = await loadDriftCache(pmRoot);
   const previousEntries: Record<string, DriftCacheEntry> = cache?.entries ?? {};
@@ -162,89 +239,37 @@ export async function scanHistoryDrift(
       stat = await fs.stat(historyPath);
     } catch (error: unknown) {
       if (isErrno(error, "ENOENT")) {
-        missingStreams.push(item.id);
+        accumulator.missingStreams.push(item.id);
       } else {
-        unreadableStreams.push(item.id);
+        accumulator.unreadableStreams.push(item.id);
       }
       continue;
     }
 
-    const loadStreamVerification = async (): Promise<StreamVerification | null | "unreadable"> => {
-      try {
-        return await verifyHistoryStream(historyPath);
-      } catch {
-        return "unreadable";
-      }
-    };
-
-    const loadFreshVerification = async (): Promise<StreamVerification | null> => {
-      const loaded = await loadStreamVerification();
-      if (loaded === "unreadable") {
-        unreadableStreams.push(item.id);
-        return null;
-      }
-      if (!loaded) {
-        missingStreams.push(item.id);
-        return null;
-      }
-      return loaded;
-    };
-
     const cached = previousEntries[item.id];
-    let verification: StreamVerification;
-    const metadataMatchesCache =
-      cached !== undefined &&
-      cached.mtime_ms === stat.mtimeMs &&
-      cached.ctime_ms === stat.ctimeMs &&
-      cached.size === stat.size;
-    const cachedContentHash =
-      typeof cached?.content_hash === "string" && cached.content_hash.length > 0 ? cached.content_hash : undefined;
-    const canUseCache = metadataMatchesCache && cachedContentHash !== undefined;
-    if (canUseCache && cached) {
-      let currentContentHash: string;
-      if (verifyCacheHitByContent) {
-        try {
-          currentContentHash = await readHistoryContentHash(historyPath);
-        } catch {
-          unreadableStreams.push(item.id);
-          continue;
-        }
-      } else {
-        currentContentHash = cachedContentHash;
-      }
-      if (!verifyCacheHitByContent || currentContentHash === cachedContentHash) {
-        verification = {
-          latestAfterHash: cached.latest_after_hash,
-          chainOk: cached.chain_ok,
-          contentHash: currentContentHash,
-        };
-      } else {
-        cacheDirty = true;
-        const refreshed = await loadFreshVerification();
-        if (!refreshed) {
-          continue;
-        }
-        verification = refreshed;
-      }
-    } else {
-      cacheDirty = true;
-      const refreshed = await loadFreshVerification();
-      if (!refreshed) {
-        continue;
-      }
-      verification = refreshed;
+    const resolved = await resolveStreamVerification({
+      itemId: item.id,
+      historyPath,
+      stat,
+      cached,
+      verifyCacheHitByContent,
+      accumulator,
+    });
+    cacheDirty ||= resolved.cacheDirty;
+    if (!resolved.verification) {
+      continue;
     }
 
-    if (!verification.chainOk) {
-      chainMismatches.push(item.id);
+    if (!resolved.verification.chainOk) {
+      accumulator.chainMismatches.push(item.id);
     }
     nextEntries[item.id] = {
       mtime_ms: stat.mtimeMs,
       ctime_ms: stat.ctimeMs,
       size: stat.size,
-      content_hash: verification.contentHash,
-      latest_after_hash: verification.latestAfterHash,
-      chain_ok: verification.chainOk,
+      content_hash: resolved.verification.contentHash,
+      latest_after_hash: resolved.verification.latestAfterHash,
+      chain_ok: resolved.verification.chainOk,
     };
 
     const { body, ...frontMatter } = item;
@@ -252,8 +277,8 @@ export async function scanHistoryDrift(
       metadata: frontMatter as ItemMetadata,
       body,
     });
-    if (currentHash !== verification.latestAfterHash) {
-      hashMismatches.push(item.id);
+    if (currentHash !== resolved.verification.latestAfterHash) {
+      accumulator.hashMismatches.push(item.id);
     }
   }
 
@@ -267,8 +292,13 @@ export async function scanHistoryDrift(
     }
   }
 
-  const driftedItems = [...new Set([...missingStreams, ...unreadableStreams, ...hashMismatches, ...chainMismatches])].sort((a, b) =>
-    a.localeCompare(b),
-  );
-  return { missingStreams, unreadableStreams, hashMismatches, chainMismatches, driftedItems };
+  const driftedItems = [
+    ...new Set([
+      ...accumulator.missingStreams,
+      ...accumulator.unreadableStreams,
+      ...accumulator.hashMismatches,
+      ...accumulator.chainMismatches,
+    ]),
+  ].sort((a, b) => a.localeCompare(b));
+  return { ...accumulator, driftedItems };
 }

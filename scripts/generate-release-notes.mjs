@@ -137,34 +137,66 @@ function loadPmItems() {
   }
 }
 
+function itemChangedInReleaseWindow(item, since, until) {
+  const timestampSource = item.closed_at ?? item.updated_at ?? item.created_at;
+  const timestamp = typeof timestampSource === "string" ? Date.parse(timestampSource) : Number.NaN;
+  const status = typeof item.status === "string" ? item.status : "unknown";
+  return status === "closed" && Number.isFinite(timestamp) && timestamp > since && timestamp <= until;
+}
+
+function comparePmReleaseItems(left, right) {
+  const priorityDelta = Number(left.priority ?? 99) - Number(right.priority ?? 99);
+  if (priorityDelta !== 0) return priorityDelta;
+  return String(right.updated_at ?? "").localeCompare(String(left.updated_at ?? ""));
+}
+
+function collectPmSummaryCounts(items) {
+  const byType = new Map();
+  const byStatus = new Map();
+  for (const item of items) {
+    byType.set(item.type ?? "Unknown", (byType.get(item.type ?? "Unknown") ?? 0) + 1);
+    byStatus.set(item.status, (byStatus.get(item.status) ?? 0) + 1);
+  }
+  return { byType, byStatus };
+}
+
+function isReleaseRelatedPmItem(item) {
+  const title = typeof item.title === "string" ? item.title.toLowerCase() : "";
+  const tags = Array.isArray(item.tags) ? item.tags.map((tag) => String(tag).toLowerCase()) : [];
+  return (
+    title.includes("release") ||
+    title.includes("compatib") ||
+    tags.some((tag) => ["release", "compatibility", "migration", "changelog", "publishing"].includes(tag))
+  );
+}
+
+function appendReleaseRelatedPmItems(lines, releaseRelated) {
+  if (releaseRelated.length === 0) {
+    lines.push("- No release-tagged pm items found in the selected window.");
+    return;
+  }
+
+  for (const item of releaseRelated.slice(0, 20)) {
+    const id = typeof item.id === "string" ? item.id : "unknown";
+    const title = typeof item.title === "string" ? item.title : "Untitled";
+    const type = typeof item.type === "string" ? item.type : "Unknown";
+    lines.push(`- ${id} [${type}/${item.status}] ${title}`);
+  }
+  if (releaseRelated.length > 20) {
+    lines.push(`- ... ${releaseRelated.length - 20} more release-related tracker items omitted from release notes.`);
+  }
+}
+
 function formatPmSummary(items, sinceIso, untilIso) {
   const since = sinceIso ? Date.parse(sinceIso) : Number.NEGATIVE_INFINITY;
   const until = untilIso ? Date.parse(untilIso) : Number.POSITIVE_INFINITY;
-  const changed = items
-    .filter((item) => {
-      const timestampSource = item.closed_at ?? item.updated_at ?? item.created_at;
-      const timestamp = typeof timestampSource === "string" ? Date.parse(timestampSource) : Number.NaN;
-      const status = typeof item.status === "string" ? item.status : "unknown";
-      return status === "closed" && Number.isFinite(timestamp) && timestamp > since && timestamp <= until;
-    })
-    .sort((left, right) => {
-      const priorityDelta = Number(left.priority ?? 99) - Number(right.priority ?? 99);
-      if (priorityDelta !== 0) return priorityDelta;
-      return String(right.updated_at ?? "").localeCompare(String(left.updated_at ?? ""));
-    });
+  const changed = items.filter((item) => itemChangedInReleaseWindow(item, since, until)).sort(comparePmReleaseItems);
 
   if (changed.length === 0) {
     return ["No closed pm tracker items were updated in the selected release window."];
   }
 
-  const byType = new Map();
-  const byStatus = new Map();
-  for (const item of changed) {
-    byType.set(item.type ?? "Unknown", (byType.get(item.type ?? "Unknown") ?? 0) + 1);
-    /* c8 ignore next -- changed[] is pre-filtered to status === "closed", so item.status is always the string "closed"; the ?? "unknown" default is unreachable */
-    byStatus.set(item.status ?? "unknown", (byStatus.get(item.status ?? "unknown") ?? 0) + 1);
-  }
-
+  const { byType, byStatus } = collectPmSummaryCounts(changed);
   const lines = [
     `Closed pm items in release window: ${changed.length}`,
     `By type: ${[...byType.entries()].map(([key, value]) => `${key}=${value}`).join(", ")}`,
@@ -173,38 +205,7 @@ function formatPmSummary(items, sinceIso, untilIso) {
     "Selected release-related tracker items:",
   ];
 
-  const releaseRelated = changed.filter((item) => {
-    const title = typeof item.title === "string" ? item.title.toLowerCase() : "";
-    /* c8 ignore next -- changed[] is pre-filtered to status === "closed"; the non-string status branch and the canceled check below are unreachable here */
-    const status = typeof item.status === "string" ? item.status : "unknown";
-    const tags = Array.isArray(item.tags) ? item.tags.map((tag) => String(tag).toLowerCase()) : [];
-    /* c8 ignore next 3 -- status is always "closed" within changed[]; the canceled early-return is unreachable */
-    if (status === "canceled") {
-      return false;
-    }
-    return (
-      title.includes("release") ||
-      title.includes("compatib") ||
-      tags.some((tag) => ["release", "compatibility", "migration", "changelog", "publishing"].includes(tag))
-    );
-  });
-
-  if (releaseRelated.length === 0) {
-    lines.push("- No release-tagged pm items found in the selected window.");
-    return lines;
-  }
-
-  for (const item of releaseRelated.slice(0, 20)) {
-    const id = typeof item.id === "string" ? item.id : "unknown";
-    const title = typeof item.title === "string" ? item.title : "Untitled";
-    const type = typeof item.type === "string" ? item.type : "Unknown";
-    /* c8 ignore next -- releaseRelated items come from changed[] (status === "closed"); the non-string status default is unreachable */
-    const status = typeof item.status === "string" ? item.status : "unknown";
-    lines.push(`- ${id} [${type}/${status}] ${title}`);
-  }
-  if (releaseRelated.length > 20) {
-    lines.push(`- ... ${releaseRelated.length - 20} more release-related tracker items omitted from release notes.`);
-  }
+  appendReleaseRelatedPmItems(lines, changed.filter(isReleaseRelatedPmItem));
   return lines;
 }
 

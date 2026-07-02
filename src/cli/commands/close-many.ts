@@ -235,6 +235,118 @@ function hierarchyDepth(id: string, parentByChild: Map<string, string>, cache?: 
   return depth;
 }
 
+async function runCloseManyRollback(params: {
+  pmRoot: string;
+  rollbackId: string;
+  options: CloseManyCommandOptions;
+  global: GlobalOptions;
+}): Promise<CloseManyResult> {
+  const checkpoint = await loadMutationCheckpoint(
+    params.pmRoot,
+    CLOSE_MANY_CHECKPOINT_SUBDIR,
+    params.rollbackId,
+    CLOSE_MANY_CHECKPOINT_SCHEMA_VERSION,
+  );
+  const restoreMessage = params.options.message ?? `Rollback close-many checkpoint ${checkpoint.id}`;
+  const rollback = await restoreCheckpointItems(checkpoint.items, (id, targetUpdatedAt) =>
+    runRestore(id, targetUpdatedAt, { author: params.options.author, message: restoreMessage, force: true }, params.global),
+  );
+  return {
+    mode: "rollback",
+    matched_count: checkpoint.items.length,
+    dry_run: false,
+    rollback_checkpoint_id: checkpoint.id,
+    checkpoint: {
+      id: checkpoint.id,
+      created_at: checkpoint.created_at,
+      path: checkpoint.path,
+      rollback_command: `pm close-many --rollback ${checkpoint.id}`,
+    },
+    restored_count: rollback.restored_ids.length,
+    failed_count: rollback.failed_count,
+    rows: rollback.rows,
+    ids: rollback.restored_ids,
+  };
+}
+
+function planCloseManyRows(
+  matched: ListedItem[],
+  childrenByParent: Map<string, string[]>,
+  closePlannedIds: Set<string>,
+  statusRegistry: ReturnType<typeof resolveRuntimeStatusRegistry>,
+  force: boolean,
+): CloseManyPlanRow[] {
+  return matched.map((item) => {
+    const alreadyTerminal = isTerminalStatus(item.status, statusRegistry);
+    const activeChildIds = (childrenByParent.get(item.id) ?? []).filter((childId) => !closePlannedIds.has(childId));
+    const willSkip = alreadyTerminal && !force;
+    return {
+      id: item.id,
+      title: typeof item.title === "string" ? item.title : "",
+      status: item.status,
+      action: willSkip ? "skip" : "close",
+      ...(willSkip ? { skip_reason: "already_terminal" } : {}),
+      ...(activeChildIds.length > 0 ? { active_child_ids: activeChildIds } : {}),
+    };
+  });
+}
+
+async function writeCloseManyCheckpoint(params: {
+  pmRoot: string;
+  checkpointId: string;
+  nowValue: string;
+  options: CloseManyCommandOptions;
+  reason: string | undefined;
+  filters: Record<string, unknown>;
+  checkpointItems: MutationCheckpointItem[];
+}): Promise<CloseManyResult["checkpoint"]> {
+  const checkpointPath = await writeMutationCheckpoint(params.pmRoot, CLOSE_MANY_CHECKPOINT_SUBDIR, params.checkpointId, {
+    schema_version: CLOSE_MANY_CHECKPOINT_SCHEMA_VERSION,
+    id: params.checkpointId,
+    created_at: params.nowValue,
+    author: resolveAuthor(params.options.author, "unknown"),
+    ...(params.reason !== undefined ? { reason: params.reason } : {}),
+    filters: params.filters,
+    items: params.checkpointItems,
+  });
+  return {
+    id: params.checkpointId,
+    created_at: params.nowValue,
+    path: checkpointPath,
+    rollback_command: `pm close-many --rollback ${params.checkpointId}`,
+  };
+}
+
+async function applyCloseManyRows(params: {
+  matched: ListedItem[];
+  closableIds: Set<string>;
+  reason: string | undefined;
+  closeOptions: CloseCommandOptions;
+  global: GlobalOptions;
+}): Promise<{ rows: CloseManyApplyRow[]; closedIds: string[] }> {
+  const rows: CloseManyApplyRow[] = [];
+  const closedIds: string[] = [];
+  for (const item of params.matched) {
+    if (!params.closableIds.has(item.id)) {
+      rows.push({ id: item.id, status: "skipped", skip_reason: "already_terminal" });
+      continue;
+    }
+    try {
+      const result = await runClose(item.id, params.reason, params.closeOptions, params.global);
+      rows.push({
+        id: item.id,
+        status: "closed",
+        changed_fields: result.changed_fields,
+        ...(result.warnings && result.warnings.length > 0 ? { warnings: result.warnings } : {}),
+      });
+      closedIds.push(item.id);
+    } catch (error: unknown) {
+      rows.push({ id: item.id, status: "failed", error: toErrorMessage(error) });
+    }
+  }
+  return { rows, closedIds };
+}
+
 /**
  * Implements run close many for the public runtime surface of this module.
  */
@@ -257,32 +369,7 @@ export async function runCloseMany(options: CloseManyCommandOptions, global: Glo
     if (hasCloseManyRollbackConflicts(options.list, options.status)) {
       throw new PmCliError("Rollback mode does not accept filter options", EXIT_CODE.USAGE);
     }
-    const checkpoint = await loadMutationCheckpoint(
-      pmRoot,
-      CLOSE_MANY_CHECKPOINT_SUBDIR,
-      rollbackId,
-      CLOSE_MANY_CHECKPOINT_SCHEMA_VERSION,
-    );
-    const restoreMessage = options.message ?? `Rollback close-many checkpoint ${checkpoint.id}`;
-    const rollback = await restoreCheckpointItems(checkpoint.items, (id, targetUpdatedAt) =>
-      runRestore(id, targetUpdatedAt, { author: options.author, message: restoreMessage, force: true }, global),
-    );
-    return {
-      mode: "rollback",
-      matched_count: checkpoint.items.length,
-      dry_run: false,
-      rollback_checkpoint_id: checkpoint.id,
-      checkpoint: {
-        id: checkpoint.id,
-        created_at: checkpoint.created_at,
-        path: checkpoint.path,
-        rollback_command: `pm close-many --rollback ${checkpoint.id}`,
-      },
-      restored_count: rollback.restored_ids.length,
-      failed_count: rollback.failed_count,
-      rows: rollback.rows,
-      ids: rollback.restored_ids,
-    };
+    return runCloseManyRollback({ pmRoot, rollbackId, options, global });
   }
 
   if (!hasCloseManyFilters(options.list, options.status)) {
@@ -310,19 +397,7 @@ export async function runCloseMany(options: CloseManyCommandOptions, global: Glo
       .map((item) => item.id),
   );
 
-  const planRows: CloseManyPlanRow[] = matched.map((item) => {
-    const alreadyTerminal = isTerminalStatus(item.status, statusRegistry);
-    const activeChildIds = (childrenByParent.get(item.id) ?? []).filter((childId) => !closePlannedIds.has(childId));
-    const willSkip = alreadyTerminal && !force;
-    return {
-      id: item.id,
-      title: typeof item.title === "string" ? item.title : "",
-      status: item.status,
-      action: willSkip ? "skip" : "close",
-      ...(willSkip ? { skip_reason: "already_terminal" } : {}),
-      ...(activeChildIds.length > 0 ? { active_child_ids: activeChildIds } : {}),
-    };
-  });
+  const planRows = planCloseManyRows(matched, childrenByParent, closePlannedIds, statusRegistry, force);
 
   if (dryRun) {
     return {
@@ -347,21 +422,15 @@ export async function runCloseMany(options: CloseManyCommandOptions, global: Glo
     const checkpointItems: MutationCheckpointItem[] = matched
       .filter((item) => closableIds.has(item.id))
       .map((item) => ({ id: item.id, target_updated_at: item.updated_at }));
-    const checkpointPath = await writeMutationCheckpoint(pmRoot, CLOSE_MANY_CHECKPOINT_SUBDIR, checkpointId, {
-      schema_version: CLOSE_MANY_CHECKPOINT_SCHEMA_VERSION,
-      id: checkpointId,
-      created_at: nowValue,
-      author: resolveAuthor(options.author, "unknown"),
-      ...(reason !== undefined ? { reason } : {}),
+    checkpointInfo = await writeCloseManyCheckpoint({
+      pmRoot,
+      checkpointId,
+      nowValue,
+      options,
+      reason,
       filters: listed.filters,
-      items: checkpointItems,
+      checkpointItems,
     });
-    checkpointInfo = {
-      id: checkpointId,
-      created_at: nowValue,
-      path: checkpointPath,
-      rollback_command: `pm close-many --rollback ${checkpointId}`,
-    };
   }
 
   const closeOptions: CloseCommandOptions = {
@@ -374,26 +443,7 @@ export async function runCloseMany(options: CloseManyCommandOptions, global: Glo
     actualResult: options.actualResult,
   };
 
-  const rows: CloseManyApplyRow[] = [];
-  const closedIds: string[] = [];
-  for (const item of matched) {
-    if (!closableIds.has(item.id)) {
-      rows.push({ id: item.id, status: "skipped", skip_reason: "already_terminal" });
-      continue;
-    }
-    try {
-      const result = await runClose(item.id, reason, closeOptions, global);
-      rows.push({
-        id: item.id,
-        status: "closed",
-        changed_fields: result.changed_fields,
-        ...(result.warnings && result.warnings.length > 0 ? { warnings: result.warnings } : {}),
-      });
-      closedIds.push(item.id);
-    } catch (error: unknown) {
-      rows.push({ id: item.id, status: "failed", error: toErrorMessage(error) });
-    }
-  }
+  const { rows, closedIds } = await applyCloseManyRows({ matched, closableIds, reason, closeOptions, global });
 
   return {
     mode: "apply",

@@ -68,11 +68,148 @@ export interface HistoryRepairResult {
   generated_at: string;
 }
 
+interface HistoryRepairItemReplayContext {
+  currentItemReplay: ReplayDocument | null;
+  currentItemPath: string | null;
+  matchedChainBefore: boolean | null;
+  currentItemRawBeforeLock: string | null;
+  loadedItem: Awaited<ReturnType<typeof readLocatedItem>> | null;
+}
+
 function toAuthor(candidate: string | undefined, defaultAuthor: string): string {
   /* c8 ignore next -- PM_AUTHOR fallback branch is environment-dependent in CI. */
   const resolved = candidate ?? process.env.PM_AUTHOR ?? defaultAuthor;
   const trimmed = resolved.trim();
   return trimmed.length > 0 ? trimmed : "unknown";
+}
+
+async function loadHistoryRepairItemReplay(
+  subject: Awaited<ReturnType<typeof resolveHistorySubject>>,
+  settings: Awaited<ReturnType<typeof readSettings>>,
+  historyEntries: HistoryEntry[],
+): Promise<HistoryRepairItemReplayContext> {
+  const currentItemPath = subject.located?.itemPath ?? null;
+  const loadedItem = subject.located ? await readLocatedItem(subject.located, { schema: settings.schema }) : null;
+  if (!loadedItem) {
+    return {
+      currentItemReplay: null,
+      currentItemPath,
+      matchedChainBefore: null,
+      currentItemRawBeforeLock: null,
+      loadedItem: null,
+    };
+  }
+  const currentItemReplay = toReplayDocument(loadedItem.document);
+  const lastOriginalAfterHash = historyEntries[historyEntries.length - 1]?.after_hash;
+  return {
+    currentItemReplay,
+    currentItemPath,
+    matchedChainBefore: replayHash(currentItemReplay) === lastOriginalAfterHash,
+    currentItemRawBeforeLock: loadedItem.raw,
+    loadedItem,
+  };
+}
+
+function buildHistoryRepairMessage(params: {
+  message: string | undefined;
+  entriesRehashed: number;
+  entriesPatchRepaired: number;
+  reconcileNeeded: boolean;
+}): string {
+  if (typeof params.message === "string" && params.message.trim().length > 0) {
+    return params.message;
+  }
+  /* v8 ignore start -- message suffix/plural variants are deterministic formatting fallbacks around the covered repair outcomes */
+  return `history-repair re-anchored ${params.entriesRehashed} entr${
+    params.entriesRehashed === 1 ? "y" : "ies"
+  }${params.entriesPatchRepaired > 0 ? `, repaired ${params.entriesPatchRepaired} patch(es)` : ""}${
+    params.reconcileNeeded ? ", reconciled chain with on-disk item" : ""
+  }.`;
+  /* v8 ignore stop */
+}
+
+function buildHistoryRepairEntries(params: {
+  reanchorEntries: HistoryEntry[];
+  changed: boolean;
+  reconcileNeeded: boolean;
+  currentItemReplay: ReplayDocument | null;
+  finalReplay: ReplayDocument;
+  author: string;
+  message: string;
+}): { rewrittenEntries: HistoryEntry[]; auditEntryAdded: boolean } {
+  const rewrittenEntries: HistoryEntry[] = [...params.reanchorEntries];
+  if (!params.changed) {
+    return { rewrittenEntries, auditEntryAdded: false };
+  }
+  const afterReplay = params.reconcileNeeded && params.currentItemReplay ? params.currentItemReplay : params.finalReplay;
+  rewrittenEntries.push({
+    ts: nowIso(),
+    author: params.author,
+    op: "history_repair",
+    patch: params.reconcileNeeded && params.currentItemReplay
+      ? (jsonPatch.compare(params.finalReplay, params.currentItemReplay) as HistoryPatchOp[])
+      : [],
+    before_hash: replayHash(params.finalReplay),
+    after_hash: replayHash(afterReplay),
+    message: params.message,
+  });
+  return { rewrittenEntries, auditEntryAdded: true };
+}
+
+function collectHistoryRepairWarnings(changed: boolean, skippedOps: number): string[] {
+  const warnings: string[] = [];
+  if (!changed) {
+    warnings.push("history_repair_no_changes");
+  }
+  if (skippedOps > 0) {
+    warnings.push(`history_repair_skipped_unresolvable_ops:${skippedOps}`);
+  }
+  return warnings;
+}
+
+async function applyHistoryRepairRewrite(params: {
+  pmRoot: string;
+  subject: Awaited<ReturnType<typeof resolveHistorySubject>>;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  typeRegistry: ReturnType<typeof resolveItemTypeRegistry>;
+  historyRawBeforeLock: string | null;
+  currentItemRawBeforeLock: string | null;
+  author: string;
+  force: boolean | undefined;
+  loadedItem: Awaited<ReturnType<typeof readLocatedItem>> | null;
+  historyPath: string;
+  rewrittenEntries: HistoryEntry[];
+}): Promise<string[]> {
+  return executeHistoryRewrite({
+    pmRoot: params.pmRoot,
+    subject: params.subject,
+    settings: params.settings,
+    typeRegistry: params.typeRegistry,
+    historyRawBeforeLock: params.historyRawBeforeLock,
+    currentItemRawBeforeLock: params.currentItemRawBeforeLock,
+    operation: "history-repair",
+    author: params.author,
+    force: params.force,
+    itemDocument: params.loadedItem?.document ?? null,
+    applyRewrite: async ({ historyRawUnderLock }) => {
+      try {
+        await writeFileAtomic(params.historyPath, historyEntriesToRaw(params.rewrittenEntries));
+      } catch (error) {
+        if (historyRawUnderLock === null) {
+          await fs.rm(params.historyPath, { force: true });
+        } else {
+          await writeFileAtomic(params.historyPath, historyRawUnderLock);
+        }
+        throw error;
+      }
+    },
+    applyPostRewrite: async () =>
+      runActiveOnWriteHooks({
+        path: params.historyPath,
+        scope: "project",
+        op: "history_repair:history",
+      }),
+  });
 }
 
 /**
@@ -104,68 +241,31 @@ export async function runHistoryRepair(
   const chainBefore = verifyHistoryChain(historyEntries);
   const reanchor = reanchorHistoryEntries(historyEntries);
 
-  // Reconcile the replayed chain with the current on-disk item document so the
-  // latest after_hash matches what pm validate/health compute for the item.
-  let currentItemReplay: ReplayDocument | null = null;
-  const currentItemPath: string | null = subject.located?.itemPath ?? null;
-  let matchedChainBefore: boolean | null = null;
-  const loadedItem = subject.located
-    ? await readLocatedItem(subject.located, { schema: settings.schema })
-    : null;
-  const currentItemRawBeforeLock = loadedItem?.raw ?? null;
-  if (loadedItem) {
-    // Use the shared canonical replay form so reconciliation hashing matches the
-    // semantics pm validate/health use for the on-disk item (avoids hash divergence).
-    currentItemReplay = toReplayDocument(loadedItem.document);
-    const lastOriginalAfterHash = historyEntries[historyEntries.length - 1]?.after_hash;
-    matchedChainBefore = replayHash(currentItemReplay) === lastOriginalAfterHash;
-  }
+  const itemReplayContext = await loadHistoryRepairItemReplay(subject, settings, historyEntries);
 
   const finalReplay = reanchor.finalDocument;
   const reconcileNeeded =
-    currentItemReplay !== null && replayHash(finalReplay) !== replayHash(currentItemReplay);
+    itemReplayContext.currentItemReplay !== null && replayHash(finalReplay) !== replayHash(itemReplayContext.currentItemReplay);
 
   const changed = reanchor.entriesRehashed > 0 || reanchor.entriesPatchRepaired > 0 || reconcileNeeded;
   const author = toAuthor(options.author, settings.author_default);
   const dryRun = Boolean(options.dryRun);
 
-  const repairMessage =
-    /* c8 ignore next -- generated repair summaries include optional clauses based on rare drift shapes. */
-    typeof options.message === "string" && options.message.trim().length > 0
-      ? options.message
-      : `history-repair re-anchored ${reanchor.entriesRehashed} entr${
-          reanchor.entriesRehashed === 1 ? "y" : "ies"
-        }${reanchor.entriesPatchRepaired > 0 ? `, repaired ${reanchor.entriesPatchRepaired} patch(es)` : ""}${
-          reconcileNeeded ? ", reconciled chain with on-disk item" : ""
-        }.`;
-
-  const rewrittenEntries: HistoryEntry[] = [...reanchor.entries];
-  let auditEntryAdded = false;
-  if (changed) {
-    /* c8 ignore next -- reconcile append branch requires hash-drift plus loadable on-disk replay. */
-    if (reconcileNeeded && currentItemReplay) {
-      rewrittenEntries.push({
-        ts: nowIso(),
-        author,
-        op: "history_repair",
-        patch: jsonPatch.compare(finalReplay, currentItemReplay) as HistoryPatchOp[],
-        before_hash: replayHash(finalReplay),
-        after_hash: replayHash(currentItemReplay),
-        message: repairMessage,
-      });
-    } else {
-      rewrittenEntries.push({
-        ts: nowIso(),
-        author,
-        op: "history_repair",
-        patch: [],
-        before_hash: replayHash(finalReplay),
-        after_hash: replayHash(finalReplay),
-        message: repairMessage,
-      });
-    }
-    auditEntryAdded = true;
-  }
+  const repairMessage = buildHistoryRepairMessage({
+    message: options.message,
+    entriesRehashed: reanchor.entriesRehashed,
+    entriesPatchRepaired: reanchor.entriesPatchRepaired,
+    reconcileNeeded,
+  });
+  const { rewrittenEntries, auditEntryAdded } = buildHistoryRepairEntries({
+    reanchorEntries: reanchor.entries,
+    changed,
+    reconcileNeeded,
+    currentItemReplay: itemReplayContext.currentItemReplay,
+    finalReplay,
+    author,
+    message: repairMessage,
+  });
 
   const historyVerify = verifyHistoryChain(rewrittenEntries);
   if (!historyVerify.ok) {
@@ -175,45 +275,22 @@ export async function runHistoryRepair(
     );
   }
 
-  const warnings: string[] = [];
-  if (!changed) {
-    warnings.push("history_repair_no_changes");
-  }
-  if (reanchor.skippedOps > 0) {
-    warnings.push(`history_repair_skipped_unresolvable_ops:${reanchor.skippedOps}`);
-  }
+  const warnings = collectHistoryRepairWarnings(changed, reanchor.skippedOps);
 
   if (changed && !dryRun) {
     warnings.push(
-      ...(await executeHistoryRewrite({
+      ...(await applyHistoryRepairRewrite({
         pmRoot,
         subject,
         settings,
         typeRegistry,
         historyRawBeforeLock,
-        currentItemRawBeforeLock,
-        operation: "history-repair",
+        currentItemRawBeforeLock: itemReplayContext.currentItemRawBeforeLock,
         author,
         force: options.force,
-        itemDocument: loadedItem?.document ?? null,
-        applyRewrite: async ({ historyRawUnderLock }) => {
-          try {
-            await writeFileAtomic(subject.historyPath, historyEntriesToRaw(rewrittenEntries));
-          } catch (error) {
-            if (historyRawUnderLock === null) {
-              await fs.rm(subject.historyPath, { force: true });
-            } else {
-              await writeFileAtomic(subject.historyPath, historyRawUnderLock);
-            }
-            throw error;
-          }
-        },
-        applyPostRewrite: async () =>
-          runActiveOnWriteHooks({
-            path: subject.historyPath,
-            scope: "project",
-            op: "history_repair:history",
-          }),
+        loadedItem: itemReplayContext.loadedItem,
+        historyPath: subject.historyPath,
+        rewrittenEntries,
       })),
     );
   }
@@ -236,9 +313,9 @@ export async function runHistoryRepair(
       verify_errors: historyVerify.errors,
     },
     item: {
-      exists: currentItemPath !== null,
-      path: currentItemPath,
-      matched_chain_before: matchedChainBefore,
+      exists: itemReplayContext.currentItemPath !== null,
+      path: itemReplayContext.currentItemPath,
+      matched_chain_before: itemReplayContext.matchedChainBefore,
     },
     warnings: [...new Set(warnings)].sort((left, right) => left.localeCompare(right)),
     generated_at: nowIso(),

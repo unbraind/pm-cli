@@ -58,6 +58,24 @@ interface RuntimeBundle {
 
 let runtimeBundle: RuntimeBundle | null = null;
 let runtimeBundlePromise: Promise<RuntimeBundle> | null = null;
+const REQUIRED_RUNTIME_SDK_EXPORTS = [
+  "runGuide",
+  "resolveGuideOutputFormat",
+  "renderGuideMarkdown",
+  "runCompletion",
+  "pathExists",
+  "getSettingsPath",
+  "resolvePmRoot",
+  "readSettings",
+  "resolveItemTypeRegistry",
+  "resolveRuntimeStatusRegistry",
+  "resolveRuntimeFieldRegistry",
+  "listAllFrontMatter",
+  "getActiveExtensionRegistrations",
+  "readStringOption",
+  "readBooleanOption",
+  "readCsvListOption",
+] as const satisfies ReadonlyArray<keyof RuntimeSdkModule>;
 
 async function ensureRuntimeBundle(): Promise<RuntimeBundle> {
   if (runtimeBundle) {
@@ -80,24 +98,7 @@ async function loadRuntimeBundle(): Promise<RuntimeBundle> {
   const modulePath = path.join(path.resolve(envRoot.trim()), "dist", "sdk", "runtime.js");
   try {
     const sdkLoaded = (await import(pathToFileURL(modulePath).href)) as Partial<RuntimeSdkModule>;
-    if (
-      typeof sdkLoaded.runGuide === "function" &&
-      typeof sdkLoaded.resolveGuideOutputFormat === "function" &&
-      typeof sdkLoaded.renderGuideMarkdown === "function" &&
-      typeof sdkLoaded.runCompletion === "function" &&
-      typeof sdkLoaded.pathExists === "function" &&
-      typeof sdkLoaded.getSettingsPath === "function" &&
-      typeof sdkLoaded.resolvePmRoot === "function" &&
-      typeof sdkLoaded.readSettings === "function" &&
-      typeof sdkLoaded.resolveItemTypeRegistry === "function" &&
-      typeof sdkLoaded.resolveRuntimeStatusRegistry === "function" &&
-      typeof sdkLoaded.resolveRuntimeFieldRegistry === "function" &&
-      typeof sdkLoaded.listAllFrontMatter === "function" &&
-      typeof sdkLoaded.getActiveExtensionRegistrations === "function" &&
-      typeof sdkLoaded.readStringOption === "function" &&
-      typeof sdkLoaded.readBooleanOption === "function" &&
-      typeof sdkLoaded.readCsvListOption === "function"
-    ) {
+    if (REQUIRED_RUNTIME_SDK_EXPORTS.every((key) => typeof sdkLoaded[key] === "function")) {
       return {
         sdk: sdkLoaded as RuntimeSdkModule,
       };
@@ -240,6 +241,45 @@ function collectTagsFromItems(items: Array<{ metadata: { tags?: string[] } }>): 
   return [...tagSet].sort((left, right) => left.localeCompare(right));
 }
 
+function readStringArrayResult(result: unknown, key: "tags" | "statuses" | "types"): string[] {
+  if (typeof result !== "object" || result === null) {
+    return [];
+  }
+  const value = (result as Record<string, unknown>)[key];
+  return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
+}
+
+function renderJsonOrWords(payload: unknown, result: unknown, key: "tags" | "statuses" | "types"): string {
+  if (readPayloadFormat(payload) === "json") {
+    return `${JSON.stringify(result, null, 2)}\n`;
+  }
+  return `${readStringArrayResult(result, key).join(" ")}\n`;
+}
+
+function renderCompletionPackageOutput(payload: unknown, result: unknown): string | null {
+  if (readPayloadFormat(payload) === "json") {
+    return `${JSON.stringify(result, null, 2)}\n`;
+  }
+  if (typeof result === "object" && result !== null && typeof (result as { script?: unknown }).script === "string") {
+    const script = (result as { script: string }).script;
+    return script.endsWith("\n") ? script : `${script}\n`;
+  }
+  return null;
+}
+
+function renderGuidePackageOutput(bundle: RuntimeBundle, context: ServiceOverrideContext, result: unknown): string | null {
+  const options = (context.options ?? {}) as Record<string, unknown>;
+  const global = (context.global ?? {}) as GlobalOptions;
+  const outputFormat = bundle.sdk.resolveGuideOutputFormat(options, global);
+  if (outputFormat === "markdown") {
+    return `${bundle.sdk.renderGuideMarkdown(result)}\n`;
+  }
+  if (outputFormat === "json" || readPayloadFormat(context.payload) === "json") {
+    return `${JSON.stringify(result, null, 2)}\n`;
+  }
+  return null;
+}
+
 export async function runGuidePackage(
   args: string[],
   options: Record<string, unknown>,
@@ -317,58 +357,25 @@ export async function runCompletionTypesPackage(global: GlobalOptions): Promise<
 }
 
 export function renderGuideShellPackageOutput(context: ServiceOverrideContext): string | null {
-  if (!runtimeBundle) {
+  const bundle = runtimeBundle;
+  if (!bundle) {
     return null;
   }
   const result = readPayloadResult(context.payload);
   if (context.command === "guide") {
-    const options = (context.options ?? {}) as Record<string, unknown>;
-    const global = (context.global ?? {}) as GlobalOptions;
-    const outputFormat = runtimeBundle.sdk.resolveGuideOutputFormat(options, global);
-    if (outputFormat === "markdown") {
-      return `${runtimeBundle.sdk.renderGuideMarkdown(result)}\n`;
-    }
-    if (outputFormat === "json" || readPayloadFormat(context.payload) === "json") {
-      return `${JSON.stringify(result, null, 2)}\n`;
-    }
-    return null;
+    return renderGuidePackageOutput(bundle, context, result);
   }
   if (context.command === "completion") {
-    if (readPayloadFormat(context.payload) === "json") {
-      return `${JSON.stringify(result, null, 2)}\n`;
-    }
-    if (typeof result === "object" && result !== null && typeof (result as { script?: unknown }).script === "string") {
-      const script = (result as { script: string }).script;
-      return script.endsWith("\n") ? script : `${script}\n`;
-    }
-    return null;
+    return renderCompletionPackageOutput(context.payload, result);
   }
   if (context.command === "completion-tags") {
-    if (readPayloadFormat(context.payload) === "json") {
-      return `${JSON.stringify(result, null, 2)}\n`;
-    }
-    const tags = typeof result === "object" && result !== null && Array.isArray((result as { tags?: unknown }).tags)
-      ? ((result as { tags: unknown[] }).tags.filter((entry): entry is string => typeof entry === "string"))
-      : [];
-    return `${tags.join(" ")}\n`;
+    return renderJsonOrWords(context.payload, result, "tags");
   }
   if (context.command === "completion-statuses") {
-    if (readPayloadFormat(context.payload) === "json") {
-      return `${JSON.stringify(result, null, 2)}\n`;
-    }
-    const statuses = typeof result === "object" && result !== null && Array.isArray((result as { statuses?: unknown }).statuses)
-      ? ((result as { statuses: unknown[] }).statuses.filter((entry): entry is string => typeof entry === "string"))
-      : [];
-    return `${statuses.join(" ")}\n`;
+    return renderJsonOrWords(context.payload, result, "statuses");
   }
   if (context.command === "completion-types") {
-    if (readPayloadFormat(context.payload) === "json") {
-      return `${JSON.stringify(result, null, 2)}\n`;
-    }
-    const types = typeof result === "object" && result !== null && Array.isArray((result as { types?: unknown }).types)
-      ? ((result as { types: unknown[] }).types.filter((entry): entry is string => typeof entry === "string"))
-      : [];
-    return `${types.join(" ")}\n`;
+    return renderJsonOrWords(context.payload, result, "types");
   }
   return null;
 }

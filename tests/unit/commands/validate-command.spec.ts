@@ -125,6 +125,73 @@ describe("runValidate", () => {
     });
   });
 
+  it("covers metadata summary helper defensive fallback branches", () => {
+    type MetadataPolicy = Parameters<typeof validateInternals.buildMissingFieldOccurrences>[0];
+    type MissingByField = Parameters<typeof validateInternals.buildMissingFieldOccurrences>[1];
+    type ItemsById = Parameters<typeof validateInternals.buildMissingFieldOccurrences>[2];
+    type ItemForValidate = ItemsById extends Map<string, infer Item> ? Item : never;
+    const metadataPolicy = {
+      required_fields: ["author", "acceptance_criteria", "close_reason", "estimated_minutes"],
+    } as MetadataPolicy;
+    const missingByField = {
+      acceptance_criteria: ["pm-known", "pm-unknown-type"],
+      close_reason: ["pm-closed"],
+      estimated_minutes: ["pm-estimate"],
+    } as MissingByField;
+    const itemsById = new Map<string, ItemForValidate>([
+      ["pm-known", { type: "Bug" } as ItemForValidate],
+      ["pm-unknown-type", { type: "" } as ItemForValidate],
+      ["pm-closed", { resolution: "Fixed" } as ItemForValidate],
+      ["pm-estimate", { type: "Task" } as ItemForValidate],
+    ]);
+
+    expect(validateInternals.buildMissingFieldOccurrences(metadataPolicy, missingByField, itemsById)).toEqual([
+      { item_type: "Bug", field: "acceptance_criteria" },
+      { item_type: "Unknown", field: "acceptance_criteria" },
+      { item_type: "Unknown", field: "close_reason" },
+      { item_type: "Task", field: "estimated_minutes" },
+    ]);
+    expect(validateInternals.buildMetadataCounts(metadataPolicy, missingByField)).toMatchObject({
+      missing_acceptance_criteria: 2,
+      closed_missing_close_reason: 1,
+      missing_estimated_minutes: 1,
+    });
+    expect(
+      validateInternals.buildCloseReasonBackfillRows(
+        { required_fields: ["author"] } as MetadataPolicy,
+        missingByField,
+        itemsById,
+      ),
+    ).toEqual([]);
+    expect(
+      validateInternals.buildCloseReasonBackfillRows(
+        { required_fields: ["close_reason"] } as MetadataPolicy,
+        {} as MissingByField,
+        itemsById,
+      ),
+    ).toEqual([]);
+    expect(validateInternals.buildCloseReasonBackfillRows(metadataPolicy, missingByField, itemsById)).toEqual([
+      { id: "pm-closed", resolution: "Fixed" },
+    ]);
+    expect(
+      validateInternals.buildEstimateBackfillRows(
+        { required_fields: ["author"] } as MetadataPolicy,
+        missingByField,
+        itemsById,
+      ),
+    ).toEqual([]);
+    expect(
+      validateInternals.buildEstimateBackfillRows(
+        { required_fields: ["estimated_minutes"] } as MetadataPolicy,
+        {} as MissingByField,
+        itemsById,
+      ),
+    ).toEqual([]);
+    expect(validateInternals.buildEstimateBackfillRows(metadataPolicy, missingByField, itemsById)).toEqual([
+      { id: "pm-estimate", type: "Task" },
+    ]);
+  });
+
   it("reports a clean format-version check for a baseline tracker", async () => {
     await withTempPmPath(async (context) => {
       createTask(context, "validate-format-version-baseline");
@@ -690,7 +757,7 @@ describe("runValidate", () => {
           childId,
           "--json",
           "--parent",
-          parentId,
+          parentId.toUpperCase(),
           "--resolution",
           "Closed with implementation evidence captured for lifecycle validation.",
           "--actual-result",
@@ -2228,35 +2295,54 @@ describe("runValidate", () => {
         estimate: "15",
         parent: grandparentId,
       });
+      const missingGrandparentId = createTask(context, "auto-fix-missing-grandparent");
+      const missingGrandparentParentId = createTestItemId(context, {
+        title: "auto-fix-terminal-missing-grandparent",
+        tags: "validate,unit",
+        estimate: "15",
+        parent: missingGrandparentId.toUpperCase(),
+      });
       const childId = createTestItemId(context, {
         title: "auto-fix-active-child",
         tags: "validate,unit",
         estimate: "15",
-        parent: parentId,
+        parent: parentId.toUpperCase(),
       });
+      const missingGrandparentChildId = createTestItemId(context, {
+        title: "auto-fix-active-missing-grandparent-child",
+        tags: "validate,unit",
+        estimate: "15",
+        parent: missingGrandparentParentId.toUpperCase(),
+      });
+      const deletedGrandparent = context.runCli(["delete", missingGrandparentId, "--force", "--json"], { expectJson: true });
+      expect(deletedGrandparent.code).toBe(0);
       await runClose(parentId, "parent done", {}, { path: context.pmPath });
+      await runClose(missingGrandparentParentId, "missing grandparent parent done", {}, { path: context.pmPath });
 
       const preview = await runValidate(
         { checkLifecycle: true, autoFix: true, dryRun: true },
         { path: context.pmPath },
       );
-      expect(preview.fixes?.planned_fixes).toEqual([
-        {
+      expect(preview.fixes?.planned_fixes).toEqual(expect.arrayContaining([
+        expect.objectContaining({
           item_id: childId,
           check: "lifecycle",
           field: "parent",
           command: `pm update ${childId} --parent ${grandparentId}`,
           gate: "lifecycle",
-        },
-      ]);
-      expect(preview.fixes?.gated_count).toBe(1);
+        }),
+        expect.objectContaining({
+          item_id: missingGrandparentChildId,
+          command: `pm update ${missingGrandparentChildId} --unset parent`,
+        }),
+      ]));
+      expect(preview.fixes?.gated_count).toBe(2);
 
       // Without the explicit lifecycle grant nothing is applied.
       const withheld = await runValidate({ checkLifecycle: true, autoFix: true }, { path: context.pmPath });
       expect(withheld.fixes?.applied_count).toBe(0);
-      expect(withheld.fixes?.gated_count).toBe(1);
+      expect(withheld.fixes?.gated_count).toBe(2);
       expect(withheld.fixes?.gated_fixes[0]).toMatchObject({
-        item_id: childId,
         gate: "lifecycle",
         gate_hint: "Withheld: re-run with --fix-scope lifecycle to apply.",
       });
@@ -2266,11 +2352,13 @@ describe("runValidate", () => {
         { path: context.pmPath },
       );
       expect(granted.fixes?.granted_fix_scopes).toEqual(["lifecycle"]);
-      expect(granted.fixes?.applied_count).toBe(1);
+      expect(granted.fixes?.applied_count).toBe(2);
       expect(granted.fixes?.failed_count).toBe(0);
 
       const after = context.runCli(["get", childId, "--json"], { expectJson: true });
       expect((after.json as { item: { parent?: string } }).item.parent).toBe(grandparentId);
+      const missingGrandparentAfter = context.runCli(["get", missingGrandparentChildId, "--json"], { expectJson: true });
+      expect((missingGrandparentAfter.json as { item: { parent?: string } }).item.parent).toBeUndefined();
     });
   });
 
@@ -2577,6 +2665,20 @@ describe("runValidate", () => {
       ).toEqual(["src/old/moved-file.ts"]);
       const docsAfter = context.runCli(["docs", id, "--json", "--list"], { expectJson: true });
       expect((docsAfter.json as { docs: Array<{ path: string }> }).docs ?? []).toEqual([]);
+    });
+  });
+
+  it("does not classify unreadable linked artifacts as missing prune targets", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "unreadable-linked-artifact");
+      const overlongPath = `src/${"a".repeat(5000)}.ts`;
+      const linkedFiles = context.runCli(["files", id, "--json", "--add", `path=${overlongPath},scope=project`], { expectJson: true });
+      expect(linkedFiles.code).toBe(0);
+
+      const result = await runValidate({ pruneMissing: true, dryRun: true }, { path: context.pmPath });
+      expect(checkByName(result, "files").details).toMatchObject({
+        missing_linked_paths: [],
+      });
     });
   });
 

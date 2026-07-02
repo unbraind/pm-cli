@@ -264,16 +264,82 @@ describe("runReindex", () => {
       const warnings: string[] = [];
       await reindexInternals.resetVectorStoreForReindex(
         null,
-        { name: "ext-vector", upsert: () => undefined },
+        { adapterName: "ext-vector", upsert: () => undefined },
         { "pm-known": "2026-01-01T00:00:00.000Z" },
         settings,
         warnings,
       );
-      await reindexInternals.pruneReindexOrphanVectors(null, { name: "ext-vector", upsert: () => undefined }, ["pm-orphan"], settings, warnings);
+      await reindexInternals.pruneReindexOrphanVectors(
+        null,
+        { adapterName: "ext-vector", upsert: () => undefined },
+        ["pm-orphan"],
+        settings,
+        warnings,
+      );
       expect(warnings).toEqual([
         "search_semantic_reindex_reset_skipped:adapter=ext-vector:known_ids=1",
         "search_semantic_reindex_orphan_prune_skipped:adapter=ext-vector:count=1",
       ]);
+      await expect(
+        reindexInternals.upsertReindexVectors({
+          requestedMode: "semantic",
+          activeVectorStore: null,
+          extensionVectorAdapter: { adapterName: "query-only-adapter" },
+          settings,
+          points: [],
+          semanticWarnings: [],
+          semanticSummary: {
+            enabled: true,
+            stale_items: 0,
+            unchanged_items: 0,
+            embedded_items: 0,
+            vector_upserted: 0,
+            batches_completed: 0,
+          },
+          progressEnabled: false,
+        }),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      const builtInVectorSummary = {
+        enabled: true,
+        stale_items: 0,
+        unchanged_items: 0,
+        embedded_items: 0,
+        vector_upserted: 0,
+        batches_completed: 0,
+      };
+      const builtInVectorPath = path.join(context.pmPath, "unit-vector-store");
+      await reindexInternals.upsertReindexVectors({
+        requestedMode: "semantic",
+        activeVectorStore: { name: "lancedb", path: builtInVectorPath },
+        extensionVectorAdapter: null,
+        settings,
+        points: [
+          {
+            id: "pm-vector",
+            vector: [1, 2, 3],
+            payload: { id: "pm-vector" },
+          },
+        ],
+        semanticWarnings: [],
+        semanticSummary: builtInVectorSummary,
+        progressEnabled: false,
+      });
+      expect(builtInVectorSummary.vector_upserted).toBe(1);
+      await expect(readLocalVectorSnapshot(builtInVectorPath)).resolves.toMatchObject({
+        records: [{ id: "pm-vector", vector: [1, 2, 3], payload: { id: "pm-vector" } }],
+      });
+      await expect(
+        reindexInternals.upsertReindexVectors({
+          requestedMode: "semantic",
+          activeVectorStore: null,
+          extensionVectorAdapter: null,
+          settings,
+          points: [],
+          semanticWarnings: [],
+          semanticSummary: builtInVectorSummary,
+          progressEnabled: false,
+        }),
+      ).rejects.toThrow("No vector upsert executor available");
 
       await expect(
         reindexInternals.resetVectorStoreForReindex(
@@ -344,7 +410,7 @@ describe("runReindex", () => {
       ).toMatchObject({ name: "runtime-name" });
       expect(
         reindexInternals.resolveExtensionVectorAdapter({ ...settings, vector_store: { ...settings.vector_store, adapter: "bad-adapter" } }),
-      ).toBeNull();
+      ).toMatchObject({ adapterName: "bad-adapter" });
       expect(
         reindexInternals.resolveExtensionSearchEmbedding({
           ...settings,
@@ -356,7 +422,7 @@ describe("runReindex", () => {
           ...settings,
           vector_store: { ...settings.vector_store, adapter: "definition-name-adapter" },
         }),
-      ).toMatchObject({ name: "definition-name-adapter" });
+      ).toMatchObject({ adapterName: "definition-name-adapter" });
       expect(
         reindexInternals.resolveExtensionSearchEmbedding({
           ...settings,
@@ -368,7 +434,7 @@ describe("runReindex", () => {
           ...settings,
           vector_store: { ...settings.vector_store, adapter: "definition-only-adapter" },
         }),
-      ).toMatchObject({ name: "definition-only-adapter" });
+      ).toMatchObject({ adapterName: "definition-only-adapter" });
       expect(
         reindexInternals.resolveExtensionVectorAdapter({
           ...settings,
@@ -411,7 +477,7 @@ describe("runReindex", () => {
         ...settings,
         vector_store: { ...settings.vector_store, adapter: "fallback-adapter" },
       });
-      expect(resolvedAdapter).toMatchObject({ name: "fallback-adapter" });
+      expect(resolvedAdapter).toMatchObject({ adapterName: "fallback-adapter" });
 
       // Multi-orphan sort comparator (>1 orphan exercises localeCompare branch).
       expect(
@@ -425,7 +491,7 @@ describe("runReindex", () => {
       await reindexInternals.resetVectorStoreForReindex(
         null,
         {
-          name: "ext-vector",
+          adapterName: "ext-vector",
           upsert: () => undefined,
           delete: ({ ids }: { ids: string[] }) => {
             deletedDuringReset.push([...ids]);
@@ -441,7 +507,7 @@ describe("runReindex", () => {
       await reindexInternals.pruneReindexOrphanVectors(
         null,
         {
-          name: "ext-vector",
+          adapterName: "ext-vector",
           upsert: () => undefined,
           delete: ({ ids }: { ids: string[] }) => {
             deletedDuringPrune.push([...ids]);
@@ -458,7 +524,7 @@ describe("runReindex", () => {
         reindexInternals.pruneReindexOrphanVectors(
           null,
           {
-            name: "ext-vector",
+            adapterName: "ext-vector",
             upsert: () => undefined,
             delete: () => {
               throw new Error("prune delete failed");
@@ -968,6 +1034,49 @@ describe("runReindex", () => {
       } finally {
         semanticMock.restore();
       }
+    });
+  });
+
+  it("prunes orphaned local vectors and ledger entries when semantic corpus is empty", async () => {
+    await withTempPmPath(async (context) => {
+      const storePath = path.join(context.pmPath, "search", "lancedb-empty-corpus");
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.lancedb.path = storePath;
+      await writeSettings(context.pmPath, settings);
+      await executeVectorUpsert(
+        {
+          name: "lancedb",
+          path: storePath,
+        },
+        [{ id: "pm-orphan-empty", vector: [0.9, 0.1], payload: { kind: "orphan" } }],
+      );
+      await writeVectorizationStatusLedger(
+        context.pmPath,
+        {
+          "pm-orphan-empty": "2026-01-01T00:00:00.000Z",
+        },
+        {
+          provider: "openai",
+          model: "text-embedding-3-small",
+          vector_dimension: 2,
+        },
+      );
+
+      const result = await runReindex({ mode: "semantic" }, { path: context.pmPath });
+      expect(result.semantic).toMatchObject({
+        stale_items: 0,
+        unchanged_items: 0,
+        embedded_items: 0,
+        vector_upserted: 0,
+      });
+
+      await expect(
+        readFile(path.join(path.resolve(storePath), LANCE_DB_SNAPSHOT_DIR, "pm_items.json"), "utf8"),
+      ).rejects.toMatchObject({ code: "ENOENT" });
+      const ledger = await readVectorizationStatusLedger(context.pmPath);
+      expect(ledger.entries).toEqual({});
     });
   });
 

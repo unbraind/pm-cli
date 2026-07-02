@@ -381,6 +381,138 @@ function buildTelemetryCommandInvocation(commandPath, telemetryDays) {
   };
 }
 
+function buildInitialTelemetrySummary(telemetryMode) {
+  return {
+    checked: false,
+    mode: telemetryMode,
+    ok: true,
+    warning: null,
+    finish_error_rate_pct: null,
+    failures_without_error_code_rows: null,
+  };
+}
+
+function buildTelemetrySummaryFromCommand(telemetryCommand, telemetryMode, maxTelemetryErrorRate, maxTelemetryMissingRows) {
+  if (telemetryCommand.status !== 0) {
+    const stderr = typeof telemetryCommand.stderr === "string" ? telemetryCommand.stderr.trim() : "";
+    return {
+      checked: true,
+      mode: telemetryMode,
+      ok: telemetryMode === "best-effort",
+      warning: stderr || "telemetry_query_failed",
+      finish_error_rate_pct: null,
+      failures_without_error_code_rows: null,
+    };
+  }
+  const metrics = parseTelemetryMetrics(telemetryCommand.stdout);
+  if (!metrics.ok) {
+    return {
+      checked: true,
+      mode: telemetryMode,
+      ok: false,
+      warning: metrics.reason,
+      finish_error_rate_pct: null,
+      failures_without_error_code_rows: null,
+    };
+  }
+  return {
+    checked: true,
+    mode: telemetryMode,
+    ok:
+      metrics.finish_error_rate_pct <= maxTelemetryErrorRate &&
+      metrics.failures_without_error_code_rows <= maxTelemetryMissingRows,
+    warning: null,
+    finish_error_rate_pct: metrics.finish_error_rate_pct,
+    failures_without_error_code_rows: metrics.failures_without_error_code_rows,
+  };
+}
+
+function runTelemetryGateCommand(telemetryCommandPath, telemetryDays, telemetryMode) {
+  const telemetryInvocation = telemetryCommandPath
+    ? buildTelemetryCommandInvocation(telemetryCommandPath, telemetryDays)
+    : null;
+  return telemetryInvocation
+    ? runCommand(
+        telemetryInvocation.command,
+        telemetryInvocation.args,
+        {
+          capture: true,
+          allowFailure: telemetryMode !== "required",
+        },
+      )
+    : {
+        status: 127,
+        stdout: "",
+        stderr:
+          "telemetry_query_command_missing: set --telemetry-command or PM_TELEMETRY_QUERY_COMMAND to a private/local telemetry query adapter",
+      };
+}
+
+function buildSentryTelemetryGateResult(params) {
+  return {
+    ok: params.ok,
+    thresholds: {
+      sentry: {
+        max_critical: params.maxCritical,
+        max_high: params.maxHigh,
+      },
+      telemetry: {
+        mode: params.telemetryMode,
+        max_error_rate_pct: params.maxTelemetryErrorRate,
+        max_missing_error_code_rows: params.maxTelemetryMissingRows,
+      },
+    },
+    sentry: {
+      project: params.sentryProject,
+      window_days: params.sentryWindowDays,
+      checked: params.sentryFetch.ok,
+      warning: params.sentryFetch.ok ? null : params.sentryFetch.reason,
+      token_source: params.sentryFetch.ok ? params.sentryFetch.token_source : null,
+      critical: params.sentrySummary.critical,
+      high: params.sentrySummary.high,
+      total: params.sentrySummary.total,
+      blocking_short_ids: params.sentryPartition.relevant
+        .map((issue) => issue?.shortId)
+        .filter((value) => typeof value === "string")
+        .slice(0, 25),
+      blocking_titles: params.sentryPartition.relevant
+        .map((issue) => issue?.title)
+        .filter((value) => typeof value === "string")
+        .slice(0, 8),
+      ignored_noise_total: params.sentryPartition.ignoredNoise.length,
+      ignored_noise_short_ids: params.sentryPartition.ignoredNoise
+        .map((issue) => issue?.shortId)
+        .filter((value) => typeof value === "string")
+        .slice(0, 25),
+      ignored_expected_cli_error_total: params.sentryPartition.ignoredExpected.length,
+      ignored_expected_cli_error_short_ids: params.sentryPartition.ignoredExpected
+        .map((issue) => issue?.shortId)
+        .filter((value) => typeof value === "string")
+        .slice(0, 25),
+      access_ok: params.sentryAccessOk,
+      threshold_ok: params.sentryThresholdOk,
+    },
+    telemetry: params.telemetrySummary,
+  };
+}
+
+function printSentryTelemetryGateResult(result, outputJson, context) {
+  if (outputJson) {
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return;
+  }
+  const message =
+    `Sentry/telemetry gate ${result.ok ? "passed" : "failed"} ` +
+    `(critical=${context.sentrySummary.critical}, high=${context.sentrySummary.high}, ` +
+    `sentry_window_days=${context.sentryWindowDays}, ignored_noise=${context.sentryPartition.ignoredNoise.length}, ` +
+    `ignored_expected_cli=${context.sentryPartition.ignoredExpected.length}, telemetry_mode=${context.telemetryMode}).`;
+  if (result.ok) {
+    console.log(message);
+  } else {
+    console.error(message);
+  }
+}
+
 async function main() {
   const { flags } = parseFlags(process.argv.slice(2));
   if (flags.get("help") || flags.get("h")) {
@@ -434,132 +566,39 @@ async function main() {
   const sentryThresholdOk =
     sentryAccessOk && sentrySummary.critical <= maxCritical && sentrySummary.high <= maxHigh;
 
-  let telemetrySummary = {
-    checked: false,
-    mode: telemetryMode,
-    ok: true,
-    warning: null,
-    finish_error_rate_pct: null,
-    failures_without_error_code_rows: null,
-  };
+  let telemetrySummary = buildInitialTelemetrySummary(telemetryMode);
 
   if (telemetryMode !== "off") {
     if (telemetryMode === "required" && !telemetryCommandPath) {
       fail("telemetry_query_command_missing: set --telemetry-command or PM_TELEMETRY_QUERY_COMMAND to a private/local telemetry query adapter");
     }
-    const telemetryInvocation = telemetryCommandPath
-      ? buildTelemetryCommandInvocation(telemetryCommandPath, telemetryDays)
-      : null;
-    const telemetryCommand = telemetryInvocation
-      ? runCommand(
-          telemetryInvocation.command,
-          telemetryInvocation.args,
-          {
-            capture: true,
-            allowFailure: telemetryMode !== "required",
-          },
-        )
-      : {
-          status: 127,
-          stdout: "",
-          stderr:
-            "telemetry_query_command_missing: set --telemetry-command or PM_TELEMETRY_QUERY_COMMAND to a private/local telemetry query adapter",
-        };
-
-    if (telemetryCommand.status === 0) {
-      const metrics = parseTelemetryMetrics(telemetryCommand.stdout);
-      if (!metrics.ok) {
-        telemetrySummary = {
-          checked: true,
-          mode: telemetryMode,
-          ok: false,
-          warning: metrics.reason,
-          finish_error_rate_pct: null,
-          failures_without_error_code_rows: null,
-        };
-      } else {
-        const thresholdOk =
-          metrics.finish_error_rate_pct <= maxTelemetryErrorRate &&
-          metrics.failures_without_error_code_rows <= maxTelemetryMissingRows;
-        telemetrySummary = {
-          checked: true,
-          mode: telemetryMode,
-          ok: thresholdOk,
-          warning: null,
-          finish_error_rate_pct: metrics.finish_error_rate_pct,
-          failures_without_error_code_rows: metrics.failures_without_error_code_rows,
-        };
-      }
-    } else {
-      telemetrySummary = {
-        checked: true,
-        mode: telemetryMode,
-        ok: telemetryMode === "best-effort",
-        warning: telemetryCommand.stderr.trim() || "telemetry_query_failed",
-        finish_error_rate_pct: null,
-        failures_without_error_code_rows: null,
-      };
-    }
+    telemetrySummary = buildTelemetrySummaryFromCommand(
+      runTelemetryGateCommand(telemetryCommandPath, telemetryDays, telemetryMode),
+      telemetryMode,
+      maxTelemetryErrorRate,
+      maxTelemetryMissingRows,
+    );
   }
 
   const ok = sentryThresholdOk && telemetrySummary.ok;
-  const result = {
+  const result = buildSentryTelemetryGateResult({
     ok,
-    thresholds: {
-      sentry: {
-        max_critical: maxCritical,
-        max_high: maxHigh,
-      },
-      telemetry: {
-        mode: telemetryMode,
-        max_error_rate_pct: maxTelemetryErrorRate,
-        max_missing_error_code_rows: maxTelemetryMissingRows,
-      },
-    },
-    sentry: {
-      project: sentryProject,
-      window_days: sentryWindowDays,
-      checked: sentryFetch.ok,
-      warning: sentryFetch.ok ? null : sentryFetch.reason,
-      token_source: sentryFetch.ok ? sentryFetch.token_source : null,
-      critical: sentrySummary.critical,
-      high: sentrySummary.high,
-      total: sentrySummary.total,
-      blocking_short_ids: sentryPartition.relevant
-        .map((issue) => issue?.shortId)
-        .filter((value) => typeof value === "string")
-        .slice(0, 25),
-      blocking_titles: sentryPartition.relevant
-        .map((issue) => issue?.title)
-        .filter((value) => typeof value === "string")
-        .slice(0, 8),
-      ignored_noise_total: sentryPartition.ignoredNoise.length,
-      ignored_noise_short_ids: sentryPartition.ignoredNoise
-        .map((issue) => issue?.shortId)
-        .filter((value) => typeof value === "string")
-        .slice(0, 25),
-      ignored_expected_cli_error_total: sentryPartition.ignoredExpected.length,
-      ignored_expected_cli_error_short_ids: sentryPartition.ignoredExpected
-        .map((issue) => issue?.shortId)
-        .filter((value) => typeof value === "string")
-        .slice(0, 25),
-      access_ok: sentryAccessOk,
-      threshold_ok: sentryThresholdOk,
-    },
-    telemetry: telemetrySummary,
-  };
+    maxCritical,
+    maxHigh,
+    telemetryMode,
+    maxTelemetryErrorRate,
+    maxTelemetryMissingRows,
+    sentryProject,
+    sentryWindowDays,
+    sentryFetch,
+    sentrySummary,
+    sentryPartition,
+    sentryAccessOk,
+    sentryThresholdOk,
+    telemetrySummary,
+  });
 
-  if (outputJson) {
-    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-  } else if (ok) {
-    console.log(
-      `Sentry/telemetry gate passed (critical=${sentrySummary.critical}, high=${sentrySummary.high}, sentry_window_days=${sentryWindowDays}, ignored_noise=${sentryPartition.ignoredNoise.length}, ignored_expected_cli=${sentryPartition.ignoredExpected.length}, telemetry_mode=${telemetryMode}).`,
-    );
-  } else {
-    console.error(
-      `Sentry/telemetry gate failed (critical=${sentrySummary.critical}, high=${sentrySummary.high}, sentry_window_days=${sentryWindowDays}, ignored_noise=${sentryPartition.ignoredNoise.length}, ignored_expected_cli=${sentryPartition.ignoredExpected.length}, telemetry_mode=${telemetryMode}).`,
-    );
-  }
+  printSentryTelemetryGateResult(result, outputJson, { sentrySummary, sentryWindowDays, sentryPartition, telemetryMode });
 
   if (!ok) {
     process.exitCode = 1;

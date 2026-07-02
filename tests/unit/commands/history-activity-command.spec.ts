@@ -534,6 +534,22 @@ describe("runHistory and runActivity", () => {
     await withTempPmPath(async (context) => {
       const id = createItem(context, "History Redact Type Move");
       expect(context.runCli(["schema", "add-type", "Spike", "--folder", "spikes"]).code).toBe(0);
+      const writePaths: string[] = [];
+      setActiveExtensionHooks({
+        beforeCommand: [],
+        afterCommand: [],
+        onRead: [],
+        onIndex: [],
+        onWrite: [
+          {
+            layer: "project",
+            name: "history-redact-write-hook",
+            run: (hookContext) => {
+              writePaths.push(hookContext.path);
+            },
+          },
+        ],
+      });
 
       const beforePath = path.join(context.pmPath, "tasks", `${id}.toon`);
       const afterPath = path.join(context.pmPath, "spikes", `${id}.toon`);
@@ -552,6 +568,11 @@ describe("runHistory and runActivity", () => {
       expect(result.item.changed).toBe(true);
       expect(await readFile(afterPath, "utf8")).toContain("type: Spike");
       await expect(readFile(beforePath, "utf8")).rejects.toThrow();
+      expect(writePaths).toEqual(expect.arrayContaining([
+        afterPath,
+        beforePath,
+        path.join(context.pmPath, "history", `${id}.jsonl`),
+      ]));
     });
   });
 

@@ -1143,6 +1143,202 @@ function formatAgendaLine(event: CalendarRow): string {
   return base;
 }
 
+function pushContextFocusSection(
+  lines: string[],
+  title: string,
+  rows: ContextFocusItem[],
+  emptyText: string,
+  renderFocus: (item: ContextFocusItem) => string,
+): void {
+  lines.push(`## ${title}`);
+  if (rows.length === 0) {
+    lines.push(emptyText);
+  } else {
+    for (const item of rows) {
+      lines.push(`- ${renderFocus(item)}`);
+    }
+  }
+  lines.push("");
+}
+
+function pushBlockedFallbackSection(
+  lines: string[],
+  result: ContextResult,
+  renderFocus: (item: ContextFocusItem) => string,
+): void {
+  if (result.blocked_fallback.length === 0) {
+    return;
+  }
+  lines.push("## Blocked fallback");
+  for (const item of result.blocked_fallback) {
+    lines.push(`- ${renderFocus(item)}`);
+  }
+  lines.push("");
+}
+
+function pushAgendaSection(lines: string[], result: ContextResult): void {
+  lines.push("## Agenda");
+  lines.push(
+    `- events: ${result.agenda.summary.events} (deadlines: ${result.agenda.summary.deadlines}, reminders: ${result.agenda.summary.reminders}, scheduled: ${result.agenda.summary.scheduled})`,
+  );
+  if (result.agenda.events.length === 0) {
+    lines.push("No agenda events matched the selected filters.");
+  } else {
+    for (const event of result.agenda.events) {
+      lines.push(`- ${formatAgendaLine(event)}`);
+    }
+  }
+  lines.push("");
+}
+
+function pushHierarchySection(lines: string[], result: ContextResult): void {
+  if (!result.hierarchy || result.hierarchy.length === 0) {
+    return;
+  }
+  lines.push("## Hierarchy");
+  for (const node of result.hierarchy) {
+    const pct = node.children_total > 0 ? Math.round((node.children_closed / node.children_total) * 100) : 0;
+    lines.push(`- ${node.id} ${node.type} ${node.status} "${node.title}" [${node.children_closed}/${node.children_total} done ${pct}%]`);
+    for (const child of node.children) {
+      const cpct = child.children_total > 0 ? Math.round((child.children_closed / child.children_total) * 100) : 0;
+      lines.push(`  - ${child.id} ${child.type} ${child.status} "${child.title}" [${child.children_closed}/${child.children_total} done ${cpct}%]`);
+    }
+  }
+  lines.push("");
+}
+
+function pushProgressSection(lines: string[], result: ContextResult): void {
+  if (!result.progress || result.progress.length === 0) {
+    return;
+  }
+  lines.push("## Progress");
+  for (const entry of result.progress) {
+    lines.push(`- ${entry.id} "${entry.title}" ${entry.completion_pct}% (${entry.closed}/${entry.total} closed, ${entry.in_progress} wip, ${entry.open} open, ${entry.blocked} blocked)`);
+  }
+  lines.push("");
+}
+
+function pushRecentlyCreatedSection(
+  lines: string[],
+  result: ContextResult,
+  focusFields: string[] | undefined,
+  renderFocus: (item: ContextFocusItem) => string,
+): void {
+  if (!result.recently_created || result.recently_created.length === 0) {
+    return;
+  }
+  lines.push("## Recently created");
+  for (const item of result.recently_created) {
+    lines.push(focusFields ? `- ${renderFocus(item)}` : `- ${dateTokenForTimestamp(item.created_at)} ${formatFocusLine(item)}`);
+  }
+  lines.push("");
+}
+
+function pushUnparentedSection(
+  lines: string[],
+  result: ContextResult,
+  renderFocus: (item: ContextFocusItem) => string,
+): void {
+  if (!result.unparented || result.unparented.length === 0) {
+    return;
+  }
+  lines.push("## Unparented");
+  for (const item of result.unparented) {
+    lines.push(`- ${renderFocus(item)}`);
+  }
+  lines.push("");
+}
+
+function pushActivitySection(lines: string[], result: ContextResult): void {
+  if (!result.activity || result.activity.length === 0) {
+    return;
+  }
+  lines.push("## Recent activity");
+  for (const entry of result.activity) {
+    const msg = entry.msg ? ` ${entry.msg}` : "";
+    lines.push(`- ${entry.ts.slice(0, 16)}Z ${entry.id} ${entry.op} by:${entry.author}${msg}`);
+  }
+  lines.push("");
+}
+
+function pushBlockersSection(lines: string[], result: ContextResult): void {
+  if (!result.blockers || result.blockers.length === 0) {
+    return;
+  }
+  lines.push("## Blockers");
+  for (const entry of result.blockers) {
+    const by = entry.blocked_by ? `blocked_by:${entry.blocked_by}(${entry.blocked_by_status ?? "?"})` : "blocked_by:-";
+    const reason = entry.blocked_reason ? ` reason:"${entry.blocked_reason}"` : "";
+    const note = entry.unblock_note ? ` unblock:"${entry.unblock_note}"` : "";
+    lines.push(`- ${entry.id} "${entry.title}" ${by}${reason}${note}`);
+  }
+  lines.push("");
+}
+
+function pushFilesSection(lines: string[], result: ContextResult): void {
+  if (!result.files || result.files.length === 0) {
+    return;
+  }
+  lines.push("## Hot files");
+  for (const file of result.files) {
+    lines.push(`- ${file.path} refs:${file.references} items:[${file.items.join(",")}]`);
+  }
+  lines.push("");
+}
+
+function pushWorkloadSection(lines: string[], result: ContextResult): void {
+  if (!result.workload || result.workload.length === 0) {
+    return;
+  }
+  lines.push("## Workload");
+  for (const entry of result.workload) {
+    const who = entry.assignee ?? "(unassigned)";
+    lines.push(`- ${who} active:${entry.active} wip:${entry.in_progress} items:[${entry.items.join(",")}]`);
+  }
+  lines.push("");
+}
+
+function pushStalenessSection(lines: string[], result: ContextResult): void {
+  if (!result.staleness || result.staleness.length === 0) {
+    return;
+  }
+  lines.push("## Stale items");
+  for (const entry of result.staleness) {
+    lines.push(`- ${entry.id} ${entry.status} stale:${entry.stale_days}d last:${entry.updated_at.slice(0, 10)} "${entry.title}"`);
+  }
+  lines.push("");
+}
+
+function pushTestHealthSection(lines: string[], result: ContextResult): void {
+  if (!result.tests) {
+    return;
+  }
+  lines.push("## Test health");
+  lines.push(`- items_with_tests: ${result.tests.items_with_tests}`);
+  lines.push(`- items_with_recent_runs: ${result.tests.items_with_recent_runs}`);
+  lines.push(`- passed: ${result.tests.recent_runs.passed}, failed: ${result.tests.recent_runs.failed}, skipped: ${result.tests.recent_runs.skipped}`);
+  if (result.tests.items_failing.length > 0) {
+    lines.push(`- items_failing: [${result.tests.items_failing.join(",")}]`);
+  }
+  lines.push("");
+}
+
+function pushEmptyContextSuggestions(lines: string[], result: ContextResult): void {
+  const isEmpty =
+    result.summary.active_items === 0 &&
+    result.summary.blocked === 0 &&
+    result.agenda.summary.events === 0;
+  if (!isEmpty) {
+    return;
+  }
+  lines.push("## Suggestions");
+  lines.push("No active work items or upcoming events. Consider:");
+  lines.push("- `pm create --type Task --title \"...\"` to add a new work item");
+  lines.push("- `pm list --status closed --limit 5` to review recent completions");
+  lines.push("- `pm search <keywords>` to find related past work");
+  lines.push("- `pm aggregate` for a full project status overview");
+}
+
 /**
  * Implements render context markdown for the public runtime surface of this module.
  */
@@ -1172,154 +1368,21 @@ export function renderContextMarkdown(result: ContextResult): string {
   }
   lines.push("");
 
-  lines.push("## High-level focus");
-  if (result.high_level.length === 0) {
-    lines.push("No high-level active items.");
-  } else {
-    for (const item of result.high_level) {
-      lines.push(`- ${renderFocus(item)}`);
-    }
-  }
-  lines.push("");
-
-  lines.push("## Low-level focus");
-  if (result.low_level.length === 0) {
-    lines.push("No low-level active items.");
-  } else {
-    for (const item of result.low_level) {
-      lines.push(`- ${renderFocus(item)}`);
-    }
-  }
-  lines.push("");
-
-  if (result.blocked_fallback.length > 0) {
-    lines.push("## Blocked fallback");
-    for (const item of result.blocked_fallback) {
-      lines.push(`- ${renderFocus(item)}`);
-    }
-    lines.push("");
-  }
-
-  lines.push("## Agenda");
-  lines.push(
-    `- events: ${result.agenda.summary.events} (deadlines: ${result.agenda.summary.deadlines}, reminders: ${result.agenda.summary.reminders}, scheduled: ${result.agenda.summary.scheduled})`,
-  );
-  if (result.agenda.events.length === 0) {
-    lines.push("No agenda events matched the selected filters.");
-  } else {
-    for (const event of result.agenda.events) {
-      lines.push(`- ${formatAgendaLine(event)}`);
-    }
-  }
-  lines.push("");
-
-  if (result.hierarchy && result.hierarchy.length > 0) {
-    lines.push("## Hierarchy");
-    for (const node of result.hierarchy) {
-      const pct = node.children_total > 0 ? Math.round((node.children_closed / node.children_total) * 100) : 0;
-      lines.push(`- ${node.id} ${node.type} ${node.status} "${node.title}" [${node.children_closed}/${node.children_total} done ${pct}%]`);
-      for (const child of node.children) {
-        const cpct = child.children_total > 0 ? Math.round((child.children_closed / child.children_total) * 100) : 0;
-        lines.push(`  - ${child.id} ${child.type} ${child.status} "${child.title}" [${child.children_closed}/${child.children_total} done ${cpct}%]`);
-      }
-    }
-    lines.push("");
-  }
-
-  if (result.progress && result.progress.length > 0) {
-    lines.push("## Progress");
-    for (const entry of result.progress) {
-      lines.push(`- ${entry.id} "${entry.title}" ${entry.completion_pct}% (${entry.closed}/${entry.total} closed, ${entry.in_progress} wip, ${entry.open} open, ${entry.blocked} blocked)`);
-    }
-    lines.push("");
-  }
-
-  if (result.recently_created && result.recently_created.length > 0) {
-    lines.push("## Recently created");
-    for (const item of result.recently_created) {
-      // The date prefix is dropped under --fields: created_at may be projected
-      // out, and the projected line already surfaces whatever fields were asked.
-      lines.push(focusFields ? `- ${renderFocus(item)}` : `- ${dateTokenForTimestamp(item.created_at)} ${formatFocusLine(item)}`);
-    }
-    lines.push("");
-  }
-
-  if (result.unparented && result.unparented.length > 0) {
-    lines.push("## Unparented");
-    for (const item of result.unparented) {
-      lines.push(`- ${renderFocus(item)}`);
-    }
-    lines.push("");
-  }
-
-  if (result.activity && result.activity.length > 0) {
-    lines.push("## Recent activity");
-    for (const entry of result.activity) {
-      const msg = entry.msg ? ` ${entry.msg}` : "";
-      lines.push(`- ${entry.ts.slice(0, 16)}Z ${entry.id} ${entry.op} by:${entry.author}${msg}`);
-    }
-    lines.push("");
-  }
-
-  if (result.blockers && result.blockers.length > 0) {
-    lines.push("## Blockers");
-    for (const entry of result.blockers) {
-      const by = entry.blocked_by ? `blocked_by:${entry.blocked_by}(${entry.blocked_by_status ?? "?"})` : "blocked_by:-";
-      const reason = entry.blocked_reason ? ` reason:"${entry.blocked_reason}"` : "";
-      const note = entry.unblock_note ? ` unblock:"${entry.unblock_note}"` : "";
-      lines.push(`- ${entry.id} "${entry.title}" ${by}${reason}${note}`);
-    }
-    lines.push("");
-  }
-
-  if (result.files && result.files.length > 0) {
-    lines.push("## Hot files");
-    for (const file of result.files) {
-      lines.push(`- ${file.path} refs:${file.references} items:[${file.items.join(",")}]`);
-    }
-    lines.push("");
-  }
-
-  if (result.workload && result.workload.length > 0) {
-    lines.push("## Workload");
-    for (const entry of result.workload) {
-      const who = entry.assignee ?? "(unassigned)";
-      lines.push(`- ${who} active:${entry.active} wip:${entry.in_progress} items:[${entry.items.join(",")}]`);
-    }
-    lines.push("");
-  }
-
-  if (result.staleness && result.staleness.length > 0) {
-    lines.push("## Stale items");
-    for (const entry of result.staleness) {
-      lines.push(`- ${entry.id} ${entry.status} stale:${entry.stale_days}d last:${entry.updated_at.slice(0, 10)} "${entry.title}"`);
-    }
-    lines.push("");
-  }
-
-  if (result.tests) {
-    lines.push("## Test health");
-    lines.push(`- items_with_tests: ${result.tests.items_with_tests}`);
-    lines.push(`- items_with_recent_runs: ${result.tests.items_with_recent_runs}`);
-    lines.push(`- passed: ${result.tests.recent_runs.passed}, failed: ${result.tests.recent_runs.failed}, skipped: ${result.tests.recent_runs.skipped}`);
-    if (result.tests.items_failing.length > 0) {
-      lines.push(`- items_failing: [${result.tests.items_failing.join(",")}]`);
-    }
-    lines.push("");
-  }
-
-  const isEmpty =
-    result.summary.active_items === 0 &&
-    result.summary.blocked === 0 &&
-    result.agenda.summary.events === 0;
-  if (isEmpty) {
-    lines.push("## Suggestions");
-    lines.push("No active work items or upcoming events. Consider:");
-    lines.push("- `pm create --type Task --title \"...\"` to add a new work item");
-    lines.push("- `pm list --status closed --limit 5` to review recent completions");
-    lines.push("- `pm search <keywords>` to find related past work");
-    lines.push("- `pm aggregate` for a full project status overview");
-  }
+  pushContextFocusSection(lines, "High-level focus", result.high_level, "No high-level active items.", renderFocus);
+  pushContextFocusSection(lines, "Low-level focus", result.low_level, "No low-level active items.", renderFocus);
+  pushBlockedFallbackSection(lines, result, renderFocus);
+  pushAgendaSection(lines, result);
+  pushHierarchySection(lines, result);
+  pushProgressSection(lines, result);
+  pushRecentlyCreatedSection(lines, result, focusFields, renderFocus);
+  pushUnparentedSection(lines, result, renderFocus);
+  pushActivitySection(lines, result);
+  pushBlockersSection(lines, result);
+  pushFilesSection(lines, result);
+  pushWorkloadSection(lines, result);
+  pushStalenessSection(lines, result);
+  pushTestHealthSection(lines, result);
+  pushEmptyContextSuggestions(lines, result);
 
   return lines.join("\n");
 }
@@ -1328,10 +1391,51 @@ export function renderContextMarkdown(result: ContextResult): string {
 // Main runner
 // ---------------------------------------------------------------------------
 
-/**
- * Implements run context for the public runtime surface of this module.
- */
-export async function runContext(options: ContextOptions, global: GlobalOptions): Promise<ContextResult> {
+interface ContextRuntime {
+  settings: PmSettings;
+  contextSettings: ContextSettings;
+  statusRegistry: RuntimeStatusRegistry;
+  depth: ContextDepth;
+  limit: number;
+  sectionsIncluded: ContextSectionName[];
+  activityLimit: number;
+  staleThresholdDays: number;
+  parentScope: string | undefined;
+  focusFields: string[] | undefined;
+  baseListOptions: Record<string, unknown>;
+}
+
+interface ContextCorpus {
+  listed: Awaited<ReturnType<typeof runList>>;
+  listedFrontMatter: ItemFrontMatter[];
+  allItems: ItemFrontMatter[];
+  fullCorpus: ItemFrontMatter[];
+  subtreeIds: Set<string> | undefined;
+}
+
+interface ContextFocusGroups {
+  activeItems: ItemFrontMatter[];
+  blockedItems: ItemFrontMatter[];
+  highLevel: ContextFocusItem[];
+  lowLevel: ContextFocusItem[];
+  blockedFallback: ContextFocusItem[];
+  blockedFallbackUsed: boolean;
+}
+
+interface ContextOptionalSections {
+  hierarchy?: HierarchyNode[];
+  activity?: CompactActivityEntry[];
+  progress?: ProgressEntry[];
+  blockersSection?: BlockerEntry[];
+  recentlyCreated?: RecentContextItem[];
+  unparented?: ContextFocusItem[];
+  filesSection?: HotFile[];
+  workload?: WorkloadEntry[];
+  staleness?: StaleEntry[];
+  tests?: TestHealthSummary;
+}
+
+async function resolveContextRuntime(options: ContextOptions, global: GlobalOptions): Promise<ContextRuntime> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settings = await readSettings(pmRoot);
   /* c8 ignore start -- settings persistence currently always materializes context defaults */
@@ -1339,77 +1443,92 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
   /* c8 ignore stop */
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const depth = parseContextDepth(options.depth, contextSettings);
-  const limit = parseContextLimit(options.limit, depth);
-  const sectionsIncluded = parseContextSections(options.section, depth, contextSettings);
-  const activityLimit = parseActivityLimit(options.activityLimit, contextSettings);
-  const staleThresholdDays = parseStaleThresholdDays(options.staleThreshold, contextSettings);
-  const parentScope = parseContextParent(options.parent);
-  const focusFields = parseContextFocusFields(options.fields);
+  return {
+    settings,
+    contextSettings,
+    statusRegistry,
+    depth,
+    limit: parseContextLimit(options.limit, depth),
+    sectionsIncluded: parseContextSections(options.section, depth, contextSettings),
+    activityLimit: parseActivityLimit(options.activityLimit, contextSettings),
+    staleThresholdDays: parseStaleThresholdDays(options.staleThreshold, contextSettings),
+    parentScope: parseContextParent(options.parent),
+    focusFields: parseContextFocusFields(options.fields),
+    baseListOptions: stripListProjectionFlags(options),
+  };
+}
 
-  const needsAllItems = sectionsIncluded.some((s) =>
-    ["hierarchy", "progress", "blockers", "staleness", "recently_created", "unparented"].includes(s),
+function contextNeedsAllItems(sectionsIncluded: ContextSectionName[]): boolean {
+  return sectionsIncluded.some((section) =>
+    ["hierarchy", "progress", "blockers", "staleness", "recently_created", "unparented"].includes(section),
   );
+}
 
-  const baseListOptions = stripListProjectionFlags(options);
-  // Structural reads must see the FULL corpus: --limit/--offset are per-section
-  // display caps applied later via .slice(0, limit), not corpus filters. Passing
-  // them to runList would truncate the data the hierarchy/progress rollups and
-  // (critically) --parent subtree resolution depend on — yielding wrong rollups
-  // or a false NOT_FOUND for an anchor that paginated out of view.
-  const unpaginatedListOptions = (extra: Partial<ListOptions>): ListOptions => ({
+function buildUnpaginatedContextListOptions(baseListOptions: Record<string, unknown>, extra: Partial<ListOptions>): ListOptions {
+  return {
     ...baseListOptions,
     ...extra,
     noTruncate: true,
     limit: undefined,
     offset: undefined,
-  });
-  // Subtree scoping also needs the complete active set before filtering, so the
-  // focus rows aren't pre-truncated by --limit ahead of the parent filter.
-  const listOptions: ListOptions = parentScope === undefined
-    ? { ...baseListOptions, excludeTerminal: true }
-    : unpaginatedListOptions({ excludeTerminal: true });
+  };
+}
+
+async function loadContextCorpus(
+  options: ContextOptions,
+  global: GlobalOptions,
+  runtime: ContextRuntime,
+): Promise<ContextCorpus> {
+  const needsAllItems = contextNeedsAllItems(runtime.sectionsIncluded);
+  const listOptions: ListOptions = runtime.parentScope === undefined
+    ? { ...runtime.baseListOptions, excludeTerminal: true }
+    : buildUnpaginatedContextListOptions(runtime.baseListOptions, { excludeTerminal: true });
   const listed = await runList(undefined, listOptions, global);
   let listedFrontMatter = listed.items as ItemFrontMatter[];
-
-  // --parent needs the whole corpus to walk descendants; so do hierarchy-style
-  // sections. Fetch it once (unpaginated) and reuse for both.
   let allItems: ItemFrontMatter[] = listedFrontMatter;
-  if (needsAllItems || parentScope !== undefined) {
-    const allListed = await runList(undefined, unpaginatedListOptions({ excludeTerminal: false }), global);
+  if (needsAllItems || runtime.parentScope !== undefined) {
+    const allListed = await runList(
+      undefined,
+      buildUnpaginatedContextListOptions(runtime.baseListOptions, { excludeTerminal: false }),
+      global,
+    );
     allItems = allListed.items as ItemFrontMatter[];
   }
-  // The unfiltered corpus stays the reference for cross-item metadata resolution
-  // (e.g. a subtree blocker whose blocked_by points OUTSIDE the subtree must still
-  // resolve its title/status). Only the enumeration sets below get subtree-scoped.
   const fullCorpus = allItems;
-
-  let subtreeIds: Set<string> | undefined;
-  if (parentScope !== undefined) {
-    const subtree = collectSubtreeIds(fullCorpus, parentScope);
-    if (!subtree.found) {
-      throw new PmCliError(`Context --parent item not found: ${parentScope}`, EXIT_CODE.NOT_FOUND);
-    }
-    subtreeIds = subtree.ids;
-    listedFrontMatter = listedFrontMatter.filter((item) => subtreeIds?.has(item.id.trim().toLowerCase()));
-    allItems = allItems.filter((item) => subtreeIds?.has(item.id.trim().toLowerCase()));
+  const subtreeIds = resolveContextSubtreeIds(runtime.parentScope, fullCorpus);
+  if (subtreeIds) {
+    listedFrontMatter = listedFrontMatter.filter((item) => subtreeIds.has(item.id.trim().toLowerCase()));
+    allItems = allItems.filter((item) => subtreeIds.has(item.id.trim().toLowerCase()));
   }
+  return { listed, listedFrontMatter, allItems, fullCorpus, subtreeIds };
+}
 
+function resolveContextSubtreeIds(parentScope: string | undefined, fullCorpus: ItemFrontMatter[]): Set<string> | undefined {
+  if (parentScope === undefined) {
+    return undefined;
+  }
+  const subtree = collectSubtreeIds(fullCorpus, parentScope);
+  if (!subtree.found) {
+    throw new PmCliError(`Context --parent item not found: ${parentScope}`, EXIT_CODE.NOT_FOUND);
+  }
+  return subtree.ids;
+}
+
+function resolveContextFocusGroups(
+  listedFrontMatter: ItemFrontMatter[],
+  allItems: ItemFrontMatter[],
+  statusRegistry: RuntimeStatusRegistry,
+  sectionsIncluded: ContextSectionName[],
+  limit: number,
+): ContextFocusGroups {
   const ranked = [...listedFrontMatter].sort((left, right) => compareCriticalItems(left, right, statusRegistry));
-  /* c8 ignore start -- fallback applies only to custom schemas that intentionally define no active statuses */
-  const activeStatuses =
-    statusRegistry.active_statuses.size > 0
-      ? statusRegistry.active_statuses
-      : new Set<ItemStatus>([statusRegistry.open_status]);
-  /* c8 ignore stop */
-  const blockedStatuses = statusRegistry.blocked_statuses;
+  const activeStatuses = statusRegistry.active_statuses;
   const activeItems = ranked.filter((item) => activeStatuses.has(normalizeStatusForRegistry(item.status, statusRegistry)));
   const blockedItems = ranked.filter((item) =>
-    blockedStatuses.has(normalizeStatusForRegistry(item.status, statusRegistry)),
+    statusRegistry.blocked_statuses.has(normalizeStatusForRegistry(item.status, statusRegistry)),
   );
-
   const childrenByParent = buildChildrenByParent(allItems);
-  const focusChildrenByParent = needsAllItems ? childrenByParent : undefined;
-
+  const focusChildrenByParent = contextNeedsAllItems(sectionsIncluded) ? childrenByParent : undefined;
   const highLevel = activeItems
     .filter((item) => HIGH_LEVEL_TYPES.has(item.type))
     .slice(0, limit)
@@ -1418,88 +1537,182 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
     .filter((item) => !HIGH_LEVEL_TYPES.has(item.type))
     .slice(0, limit)
     .map((item) => toContextFocusItem(item, statusRegistry, focusChildrenByParent));
-
   const blockedFallbackUsed = activeItems.length === 0;
-  const blockedFallback = blockedFallbackUsed
-    ? blockedItems.slice(0, limit).map((item) => toContextFocusItem(item, statusRegistry, focusChildrenByParent))
-    : [];
+  return {
+    activeItems,
+    blockedItems,
+    highLevel,
+    lowLevel,
+    blockedFallback: blockedFallbackUsed
+      ? blockedItems.slice(0, limit).map((item) => toContextFocusItem(item, statusRegistry, focusChildrenByParent))
+      : [],
+    blockedFallbackUsed,
+  };
+}
 
+async function buildContextAgenda(
+  options: ContextOptions,
+  global: GlobalOptions,
+  runtime: ContextRuntime,
+  subtreeIds: Set<string> | undefined,
+): Promise<{ agenda: Awaited<ReturnType<typeof runCalendar>>; agendaEvents: CalendarRow[]; agendaSummary: ContextAgendaSummary }> {
   const calendarOptions: CalendarOptions = {
-    ...baseListOptions,
+    ...runtime.baseListOptions,
     view: "agenda",
     include: "all",
-    // When scoping to a subtree, pull the full agenda so the subtree filter sees
-    // every candidate event before the final per-section slice.
-    limit: parentScope === undefined ? String(limit) : undefined,
+    limit: runtime.parentScope === undefined ? String(runtime.limit) : undefined,
   };
   const agenda = await runCalendar(calendarOptions, global);
   const scopedAgenda =
     subtreeIds === undefined
       ? agenda.events
       : agenda.events.filter((event) => subtreeIds.has(event.item_id.trim().toLowerCase()));
-  const agendaEvents = filterTerminalCalendarEvents(scopedAgenda, statusRegistry).slice(0, limit);
-  const agendaSummary = summarizeAgenda(agendaEvents);
-  const warnings = mergeSortedWarnings(listed.warnings, agenda.warnings);
+  const agendaEvents = filterTerminalCalendarEvents(scopedAgenda, runtime.statusRegistry).slice(0, runtime.limit);
+  return { agenda, agendaEvents, agendaSummary: summarizeAgenda(agendaEvents) };
+}
 
-  const inProgressStatus = normalizeStatusInput("in_progress", statusRegistry);
-  const openStatus = normalizeStatusInput("open", statusRegistry);
-  const inProgressCount = activeItems.filter(
-    (item) => normalizeStatusForRegistry(item.status, statusRegistry) === inProgressStatus,
-  ).length;
-  const openCount = activeItems.filter((item) => normalizeStatusForRegistry(item.status, statusRegistry) === openStatus).length;
+function countContextStatus(items: ItemFrontMatter[], status: string | undefined, statusRegistry: RuntimeStatusRegistry): number {
+  const targetStatus = String(status);
+  return items.filter((item) => normalizeStatusForRegistry(item.status, statusRegistry) === targetStatus).length;
+}
 
-  const now = agenda.now;
+async function buildOptionalContextSections(params: {
+  runtime: ContextRuntime;
+  allItems: ItemFrontMatter[];
+  fullCorpus: ItemFrontMatter[];
+  focusGroups: ContextFocusGroups;
+  now: string;
+  global: GlobalOptions;
+}): Promise<ContextOptionalSections> {
+  const { runtime, allItems, fullCorpus, focusGroups, now, global } = params;
+  const childrenByParent = buildChildrenByParent(allItems);
+  const itemMap = new Map(fullCorpus.map((item) => [item.id, item]));
+  const allNonTerminal = allItems.filter((item) => !isTerminalStatus(item.status, runtime.statusRegistry));
+  const has = (section: ContextSectionName) => runtime.sectionsIncluded.includes(section);
+  return {
+    hierarchy: has("hierarchy") ? buildHierarchy(allItems, focusGroups.activeItems, runtime.statusRegistry, runtime.limit) : undefined,
+    activity: has("activity") ? await buildActivity(runtime.activityLimit, global) : undefined,
+    progress: has("progress") ? buildProgress(allItems, focusGroups.activeItems, runtime.statusRegistry, runtime.limit) : undefined,
+    blockersSection: has("blockers") ? buildBlockers(focusGroups.blockedItems, itemMap, runtime.limit) : undefined,
+    recentlyCreated: has("recently_created")
+      ? buildRecentlyCreated(allNonTerminal, runtime.statusRegistry, childrenByParent, runtime.limit)
+      : undefined,
+    unparented: has("unparented") ? buildUnparented(allNonTerminal, runtime.statusRegistry, childrenByParent, runtime.limit) : undefined,
+    filesSection: has("files") ? buildHotFiles(focusGroups.activeItems, runtime.limit) : undefined,
+    workload: has("workload") ? buildWorkload(focusGroups.activeItems, runtime.statusRegistry, runtime.limit) : undefined,
+    staleness: has("staleness") ? buildStaleness(allNonTerminal, runtime.staleThresholdDays, now, runtime.limit) : undefined,
+    tests: has("tests") ? buildTestHealth(focusGroups.activeItems) : undefined,
+  };
+}
 
-  // Resolve blocker/dependency metadata against the full corpus so references
-  // that point outside a --parent subtree still render their title/status.
-  const itemMap = new Map<string, ItemFrontMatter>();
-  for (const item of fullCorpus) {
-    itemMap.set(item.id, item);
+function buildContextSummaryExtras(
+  needsAllItems: boolean,
+  allItems: ItemFrontMatter[],
+  statusRegistry: RuntimeStatusRegistry,
+): Pick<ContextSummary, "total_items" | "closed" | "canceled"> {
+  if (!needsAllItems) {
+    return {};
   }
+  const canceledStatus = normalizeStatusInput("canceled", statusRegistry);
+  return {
+    total_items: allItems.length,
+    closed: allItems.filter((item) => isClosedStatus(item.status, statusRegistry)).length,
+    canceled: allItems.filter((item) => normalizeStatusForRegistry(item.status, statusRegistry) === canceledStatus).length,
+  };
+}
 
-  const allNonTerminal = allItems.filter((item) => !isTerminalStatus(item.status, statusRegistry));
+function attachOptionalContextSections(result: ContextResult, sections: ContextOptionalSections): void {
+  if (sections.hierarchy) result.hierarchy = sections.hierarchy;
+  if (sections.activity) result.activity = sections.activity;
+  if (sections.progress) result.progress = sections.progress;
+  if (sections.blockersSection) result.blockers = sections.blockersSection;
+  if (sections.recentlyCreated) result.recently_created = sections.recentlyCreated;
+  if (sections.unparented) result.unparented = sections.unparented;
+  if (sections.filesSection) result.files = sections.filesSection;
+  if (sections.workload) result.workload = sections.workload;
+  if (sections.staleness) result.staleness = sections.staleness;
+  if (sections.tests) result.tests = sections.tests;
+}
 
-  const has = (section: ContextSectionName) => sectionsIncluded.includes(section);
+function applyContextFocusProjection(result: ContextResult, focusFields: string[] | undefined): void {
+  if (!focusFields) {
+    return;
+  }
+  result.focus_fields = focusFields;
+  result.high_level = projectContextFocusRows(result.high_level, focusFields);
+  result.low_level = projectContextFocusRows(result.low_level, focusFields);
+  result.blocked_fallback = projectContextFocusRows(result.blocked_fallback, focusFields);
+  if (result.recently_created) {
+    result.recently_created = projectContextFocusRows(result.recently_created, focusFields) as RecentContextItem[];
+  }
+  if (result.unparented) {
+    result.unparented = projectContextFocusRows(result.unparented, focusFields);
+  }
+}
 
-  const hierarchy = has("hierarchy") ? buildHierarchy(allItems, activeItems, statusRegistry, limit) : undefined;
-  const activity = has("activity") ? await buildActivity(activityLimit, global) : undefined;
-  const progress = has("progress") ? buildProgress(allItems, activeItems, statusRegistry, limit) : undefined;
-  const blockersSection = has("blockers") ? buildBlockers(blockedItems, itemMap, limit) : undefined;
-  const recentlyCreated = has("recently_created")
-    ? buildRecentlyCreated(allNonTerminal, statusRegistry, childrenByParent, limit)
-    : undefined;
-  const unparented = has("unparented")
-    ? buildUnparented(allNonTerminal, statusRegistry, childrenByParent, limit)
-    : undefined;
-  const filesSection = has("files") ? buildHotFiles(activeItems, limit) : undefined;
-  const workload = has("workload") ? buildWorkload(activeItems, statusRegistry, limit) : undefined;
-  const staleness = has("staleness") ? buildStaleness(allNonTerminal, staleThresholdDays, now, limit) : undefined;
-  const tests = has("tests") ? buildTestHealth(activeItems) : undefined;
+function maybeAttachEmptyContextSuggestions(result: ContextResult, activeItems: ItemFrontMatter[], blockedItems: ItemFrontMatter[]): void {
+  if (activeItems.length > 0 || blockedItems.length > 0 || result.agenda.events.length > 0) {
+    return;
+  }
+  result.suggestions = [
+    'pm create --type Task --title "..." to add a new work item',
+    "pm list --status closed --limit 5 to review recent completions",
+    "pm search <keywords> to find related past work",
+    "pm aggregate for a full project status overview",
+  ];
+}
 
-  const summaryExtras: Pick<ContextSummary, "total_items" | "closed" | "canceled"> =
-    needsAllItems
-      ? {
-          total_items: allItems.length,
-          closed: allItems.filter((i) => isClosedStatus(i.status, statusRegistry)).length,
-          canceled: allItems.filter((i) => {
-            const canceledStatus = normalizeStatusInput("canceled", statusRegistry);
-            return normalizeStatusForRegistry(i.status, statusRegistry) === canceledStatus;
-          }).length,
-        }
-      : {};
+/**
+ * Implements run context for the public runtime surface of this module.
+ */
+export async function runContext(options: ContextOptions, global: GlobalOptions): Promise<ContextResult> {
+  const runtime = await resolveContextRuntime(options, global);
+  const corpus = await loadContextCorpus(options, global, runtime);
+  const focusGroups = resolveContextFocusGroups(
+    corpus.listedFrontMatter,
+    corpus.allItems,
+    runtime.statusRegistry,
+    runtime.sectionsIncluded,
+    runtime.limit,
+  );
+  const agendaContext = await buildContextAgenda(options, global, runtime, corpus.subtreeIds);
+  const warnings = mergeSortedWarnings(corpus.listed.warnings, agendaContext.agenda.warnings);
+  const inProgressCount = countContextStatus(
+    focusGroups.activeItems,
+    normalizeStatusInput("in_progress", runtime.statusRegistry),
+    runtime.statusRegistry,
+  );
+  const openCount = countContextStatus(
+    focusGroups.activeItems,
+    normalizeStatusInput("open", runtime.statusRegistry),
+    runtime.statusRegistry,
+  );
+  const sections = await buildOptionalContextSections({
+    runtime,
+    allItems: corpus.allItems,
+    fullCorpus: corpus.fullCorpus,
+    focusGroups,
+    now: agendaContext.agenda.now,
+    global,
+  });
+  const summaryExtras = buildContextSummaryExtras(
+    contextNeedsAllItems(runtime.sectionsIncluded),
+    corpus.allItems,
+    runtime.statusRegistry,
+  );
 
   const result: ContextResult = {
     output_default: "toon",
-    now,
-    depth,
-    sections_included: sectionsIncluded,
+    now: agendaContext.agenda.now,
+    depth: runtime.depth,
+    sections_included: runtime.sectionsIncluded,
     window: {
-      anchor: agenda.anchor,
-      start: agenda.range.start,
-      end: agenda.range.end,
-      past: agenda.range.past,
-      from: agenda.range.from,
-      to: agenda.range.to,
+      anchor: agendaContext.agenda.anchor,
+      start: agendaContext.agenda.range.start,
+      end: agendaContext.agenda.range.end,
+      past: agendaContext.agenda.range.past,
+      from: agendaContext.agenda.range.from,
+      to: agendaContext.agenda.range.to,
     },
     filters: {
       type: options.type ?? null,
@@ -1510,61 +1723,34 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
       sprint: options.sprint ?? null,
       release: options.release ?? null,
       limit: options.limit ?? null,
-      parent: parentScope ?? null,
+      parent: runtime.parentScope ?? null,
       /* c8 ignore next -- listed/calendar runtime filters are always materialized by their command handlers */
-      runtime_filters: (listed.filters.runtime_filters ?? agenda.filters.runtime_filters ?? {}) as Record<string, unknown>,
+      runtime_filters: (corpus.listed.filters.runtime_filters ?? agendaContext.agenda.filters.runtime_filters ?? {}) as Record<string, unknown>,
     },
     summary: {
-      active_items: activeItems.length,
+      active_items: focusGroups.activeItems.length,
       in_progress: inProgressCount,
       open: openCount,
-      blocked: blockedItems.length,
-      blocked_fallback_used: blockedFallbackUsed,
-      high_level: highLevel.length,
-      low_level: lowLevel.length,
-      agenda_events: agendaSummary.events,
+      blocked: focusGroups.blockedItems.length,
+      blocked_fallback_used: focusGroups.blockedFallbackUsed,
+      high_level: focusGroups.highLevel.length,
+      low_level: focusGroups.lowLevel.length,
+      agenda_events: agendaContext.agendaSummary.events,
       ...summaryExtras,
     },
-    high_level: highLevel,
-    low_level: lowLevel,
-    blocked_fallback: blockedFallback,
+    high_level: focusGroups.highLevel,
+    low_level: focusGroups.lowLevel,
+    blocked_fallback: focusGroups.blockedFallback,
     agenda: {
-      summary: agendaSummary,
-      events: agendaEvents,
+      summary: agendaContext.agendaSummary,
+      events: agendaContext.agendaEvents,
     },
   };
 
-  if (hierarchy) result.hierarchy = hierarchy;
-  if (activity) result.activity = activity;
-  if (progress) result.progress = progress;
-  if (blockersSection) result.blockers = blockersSection;
-  if (recentlyCreated) result.recently_created = recentlyCreated;
-  if (unparented) result.unparented = unparented;
-  if (filesSection) result.files = filesSection;
-  if (workload) result.workload = workload;
-  if (staleness) result.staleness = staleness;
-  if (tests) result.tests = tests;
-  if (focusFields) {
-    result.focus_fields = focusFields;
-    result.high_level = projectContextFocusRows(result.high_level, focusFields);
-    result.low_level = projectContextFocusRows(result.low_level, focusFields);
-    result.blocked_fallback = projectContextFocusRows(result.blocked_fallback, focusFields);
-    if (result.recently_created) {
-      result.recently_created = projectContextFocusRows(result.recently_created, focusFields) as RecentContextItem[];
-    }
-    if (result.unparented) {
-      result.unparented = projectContextFocusRows(result.unparented, focusFields);
-    }
-  }
+  attachOptionalContextSections(result, sections);
+  applyContextFocusProjection(result, runtime.focusFields);
   if (warnings.length > 0) result.warnings = warnings;
-  if (activeItems.length === 0 && blockedItems.length === 0 && agendaEvents.length === 0) {
-    result.suggestions = [
-      'pm create --type Task --title "..." to add a new work item',
-      "pm list --status closed --limit 5 to review recent completions",
-      "pm search <keywords> to find related past work",
-      "pm aggregate for a full project status overview",
-    ];
-  }
+  maybeAttachEmptyContextSuggestions(result, focusGroups.activeItems, focusGroups.blockedItems);
 
   return result;
 }

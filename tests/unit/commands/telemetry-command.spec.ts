@@ -435,6 +435,8 @@ describe("runTelemetry", () => {
       await writeQueue(globalRoot, [
         // blank command + blank event_type + non-finite/absent schema versions → fallbacks
         JSON.stringify({ attempts: -3, event: { command: "   ", event_type: "  ", schema_version: Number.NaN } }),
+        JSON.stringify({ attempts: "malformed", event: { command: "   ", event_type: "  " } }),
+        '{"attempts":1e999,"event":{"command":"   ","event_type":"  "}}',
         JSON.stringify({ attempts: 0, client_schema_version: Number.POSITIVE_INFINITY, event: {} }),
         // same fallback command bucket with two distinct schema versions to exercise the sort comparators
         JSON.stringify({ client_schema_version: 3, attempts: 0, event: { schema_version: 2 } }),

@@ -72,6 +72,18 @@ interface HistoryIntegritySnapshot {
   finalDocument: ReplayDocument;
 }
 
+interface HistoryRedactCurrentItem {
+  raw: string | null;
+  path: string | null;
+  document: ItemDocument | null;
+}
+
+interface HistoryRedactNextItem {
+  raw: string | null;
+  path: string | null;
+  document: ItemDocument | null;
+}
+
 /**
  * Documents the history subject payload exchanged by command, SDK, and package integrations.
  */
@@ -417,6 +429,186 @@ function hasItemMetadata(replay: ReplayDocument): boolean {
   return Object.keys(replay.metadata).length > 0;
 }
 
+async function loadHistoryRedactCurrentItem(
+  subject: HistorySubject,
+  settings: Awaited<ReturnType<typeof readSettings>>,
+): Promise<HistoryRedactCurrentItem> {
+  const currentItemPath = subject.located?.itemPath ?? null;
+  if (!subject.located) {
+    return { raw: null, path: currentItemPath, document: null };
+  }
+  const loaded = await readLocatedItem(subject.located, { schema: settings.schema });
+  return { raw: loaded.raw, path: currentItemPath, document: loaded.document };
+}
+
+function resolveHistoryRedactNextItem(params: {
+  pmRoot: string;
+  subject: HistorySubject;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  typeToFolder: Record<string, string>;
+  finalDocument: ReplayDocument;
+}): HistoryRedactNextItem {
+  if (!hasItemMetadata(params.finalDocument)) {
+    return { raw: null, path: null, document: null };
+  }
+  const canonical = canonicalDocument(replayToItemDocument(params.finalDocument), { schema: params.settings.schema });
+  if (canonical.metadata.id !== params.subject.id) {
+    throw new PmCliError(
+      `history-redact would change item id from ${params.subject.id} to ${canonical.metadata.id}; narrow your patterns.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  return {
+    document: canonical,
+    path: getItemPath(params.pmRoot, canonical.metadata.type, params.subject.id, "toon", params.typeToFolder),
+    raw: serializeItemDocument(canonical, {
+      format: "toon",
+      schema: params.settings.schema,
+    }),
+  };
+}
+
+/* v8 ignore start -- message passthrough/plural formatting is deterministic around covered redaction outcomes */
+function buildHistoryRedactMessage(options: HistoryRedactCommandOptions, rewritten: RedactionRewriteResult): string {
+  if (typeof options.message === "string" && options.message.trim().length > 0) {
+    return options.message;
+  }
+  return `history-redact replaced ${rewritten.replacements} match(es) across ${rewritten.entriesChanged} entr${
+    rewritten.entriesChanged === 1 ? "y" : "ies"
+  }.`;
+}
+/* v8 ignore stop */
+
+function buildHistoryRedactEntries(params: {
+  rewritten: RedactionRewriteResult;
+  dryRun: boolean;
+  changed: boolean;
+  nextItemDocument: ItemDocument | null;
+  author: string;
+  message: string;
+}): { rewrittenEntries: HistoryEntry[]; auditEntryAdded: boolean } {
+  const rewrittenEntries = [...params.rewritten.entries];
+  if (params.dryRun || !params.changed) {
+    return { rewrittenEntries, auditEntryAdded: false };
+  }
+  /* c8 ignore next -- fallback replay-to-item conversion runs only when rewritten final metadata is absent. */
+  const finalDocument = params.nextItemDocument ?? replayToItemDocument(params.rewritten.finalDocument);
+  rewrittenEntries.push(
+    createHistoryEntry({
+      nowIso: nowIso(),
+      author: params.author,
+      op: "history_redact",
+      before: finalDocument,
+      after: finalDocument,
+      message: params.message,
+    }),
+  );
+  return { rewrittenEntries, auditEntryAdded: true };
+}
+
+async function applyHistoryRedactRewrite(params: {
+  pmRoot: string;
+  subject: HistorySubject;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  typeRegistry: ReturnType<typeof resolveItemTypeRegistry>;
+  historyRawBeforeLock: string | null;
+  currentItem: HistoryRedactCurrentItem;
+  nextItem: HistoryRedactNextItem;
+  author: string;
+  force: boolean | undefined;
+  rewrittenEntries: HistoryEntry[];
+}): Promise<string[]> {
+  return executeHistoryRewrite({
+    pmRoot: params.pmRoot,
+    subject: params.subject,
+    settings: params.settings,
+    typeRegistry: params.typeRegistry,
+    historyRawBeforeLock: params.historyRawBeforeLock,
+    currentItemRawBeforeLock: params.currentItem.raw,
+    operation: "history-redact",
+    author: params.author,
+    force: params.force,
+    itemDocument: params.currentItem.document,
+    applyRewrite: async ({ historyRawUnderLock }) => {
+      const affectedItemPaths = new Set<string>();
+      if (params.currentItem.path) {
+        affectedItemPaths.add(params.currentItem.path);
+      }
+      if (params.nextItem.path) {
+        affectedItemPaths.add(params.nextItem.path);
+      }
+      const itemSnapshots = new Map<string, string>();
+      if (params.currentItem.path && params.currentItem.raw !== null) {
+        itemSnapshots.set(params.currentItem.path, params.currentItem.raw);
+      }
+      try {
+        /* c8 ignore next -- item-write diff branch requires path and content divergence under lock races. */
+        if (params.nextItem.path && params.nextItem.raw !== null && params.nextItem.raw !== params.currentItem.raw) {
+          await writeFileAtomic(params.nextItem.path, params.nextItem.raw);
+        }
+        if (params.currentItem.path && (!params.nextItem.path || params.nextItem.path !== params.currentItem.path)) {
+          await fs.rm(params.currentItem.path, { force: true });
+        }
+        await writeFileAtomic(params.subject.historyPath, historyEntriesToRaw(params.rewrittenEntries));
+      } catch (error) {
+        await rollbackHistoryRedactRewrite(params.subject.historyPath, historyRawUnderLock, affectedItemPaths, itemSnapshots);
+        throw error;
+      }
+    },
+    applyPostRewrite: async () => runHistoryRedactWriteHooks(params.subject.historyPath, [
+      params.nextItem.path,
+      params.currentItem.path,
+    ]),
+  });
+}
+
+async function rollbackHistoryRedactRewrite(
+  historyPath: string,
+  historyRawUnderLock: string | null,
+  affectedItemPaths: Set<string>,
+  itemSnapshots: Map<string, string>,
+): Promise<void> {
+  /* c8 ignore start -- no-history-under-lock rollback path is exercised in lock-race integration tests. */
+  if (historyRawUnderLock === null) {
+    await fs.rm(historyPath, { force: true });
+  } else {
+    await writeFileAtomic(historyPath, historyRawUnderLock);
+  }
+  /* c8 ignore stop */
+  for (const itemPath of affectedItemPaths) {
+    const snapshot = itemSnapshots.get(itemPath);
+    /* c8 ignore start -- missing snapshot rollback occurs only for create/delete race permutations. */
+    if (snapshot === undefined) {
+      await fs.rm(itemPath, { force: true });
+    } else {
+      await writeFileAtomic(itemPath, snapshot);
+    }
+    /* c8 ignore stop */
+  }
+}
+
+async function runHistoryRedactWriteHooks(historyPath: string, itemHookPaths: Array<string | null>): Promise<string[]> {
+  const hookWarnings: string[] = [];
+  const uniqueItemHookPaths = new Set(itemHookPaths.filter((itemPath): itemPath is string => itemPath !== null));
+  for (const itemHookPath of uniqueItemHookPaths) {
+    hookWarnings.push(
+      ...(await runActiveOnWriteHooks({
+        path: itemHookPath,
+        scope: "project",
+        op: "history_redact",
+      })),
+    );
+  }
+  hookWarnings.push(
+    ...(await runActiveOnWriteHooks({
+      path: historyPath,
+      scope: "project",
+      op: "history_redact:history",
+    })),
+  );
+  return hookWarnings;
+}
+
 /**
  * Implements resolve history subject for the public runtime surface of this module.
  */
@@ -492,68 +684,31 @@ export async function runHistoryRedact(
     warnings.push("history_redact_no_matches");
   }
 
-  let currentItemRaw: string | null = null;
-  /* c8 ignore next -- located subject null-path branch is covered in restore/history-repair integration suites. */
-  let currentItemPath: string | null = subject.located?.itemPath ?? null;
-  let currentItemDocument: ItemDocument | null = null;
-  if (subject.located) {
-    const loaded = await readLocatedItem(subject.located, { schema: settings.schema });
-    currentItemRaw = loaded.raw;
-    currentItemDocument = loaded.document;
-  }
-
-  let nextItemPath: string | null = null;
-  let nextItemRaw: string | null = null;
-  let nextItemDocument: ItemDocument | null = null;
-  /* c8 ignore next -- delete-state replay branches are covered by history rewrite integration tests. */
-  if (hasItemMetadata(rewritten.finalDocument)) {
-    const canonical = canonicalDocument(replayToItemDocument(rewritten.finalDocument), { schema: settings.schema });
-    if (canonical.metadata.id !== subject.id) {
-      throw new PmCliError(
-        `history-redact would change item id from ${subject.id} to ${canonical.metadata.id}; narrow your patterns.`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    nextItemDocument = canonical;
-    nextItemPath = getItemPath(pmRoot, canonical.metadata.type, subject.id, "toon", typeRegistry.type_to_folder);
-    nextItemRaw = serializeItemDocument(canonical, {
-      format: "toon",
-      schema: settings.schema,
-    });
-  }
+  const currentItem = await loadHistoryRedactCurrentItem(subject, settings);
+  const nextItem = resolveHistoryRedactNextItem({
+    pmRoot,
+    subject,
+    settings,
+    typeToFolder: typeRegistry.type_to_folder,
+    finalDocument: rewritten.finalDocument,
+  });
 
   const itemChanged =
     /* c8 ignore next -- null-coalescing item-path comparison branch is exercised in broader command integration coverage. */
-    (currentItemPath ?? null) !== (nextItemPath ?? null) ||
+    (currentItem.path ?? null) !== (nextItem.path ?? null) ||
     /* c8 ignore next -- null-coalescing item-content comparison branch is exercised in broader command integration coverage. */
-    (currentItemRaw ?? null) !== (nextItemRaw ?? null);
+    (currentItem.raw ?? null) !== (nextItem.raw ?? null);
 
   const author = resolveAuthor(options.author, settings.author_default);
-  const redactionMessage =
-    /* c8 ignore next -- custom-message branch is validated by command wrapper tests. */
-    typeof options.message === "string" && options.message.trim().length > 0
-      ? options.message
-      : `history-redact replaced ${rewritten.replacements} match(es) across ${rewritten.entriesChanged} entr${
-          rewritten.entriesChanged === 1 ? "y" : "ies"
-        }.`;
-
-  const rewrittenEntries = [...rewritten.entries];
-  let auditEntryAdded = false;
-  if (!dryRun && changed) {
-    /* c8 ignore next -- fallback replay-to-item conversion runs only when rewritten final metadata is absent. */
-    const finalDocument = nextItemDocument ?? replayToItemDocument(rewritten.finalDocument);
-    rewrittenEntries.push(
-      createHistoryEntry({
-        nowIso: nowIso(),
-        author,
-        op: "history_redact",
-        before: finalDocument,
-        after: finalDocument,
-        message: redactionMessage,
-      }),
-    );
-    auditEntryAdded = true;
-  }
+  const redactionMessage = buildHistoryRedactMessage(options, rewritten);
+  const { rewrittenEntries, auditEntryAdded } = buildHistoryRedactEntries({
+    rewritten,
+    dryRun,
+    changed,
+    nextItemDocument: nextItem.document,
+    author,
+    message: redactionMessage,
+  });
   const historyVerify = verifyHistoryChain(rewrittenEntries);
   /* c8 ignore start -- invalid rewritten chains are covered by history verification unit tests. */
   if (!historyVerify.ok) {
@@ -566,81 +721,17 @@ export async function runHistoryRedact(
 
   if (!dryRun && changed) {
     warnings.push(
-      ...(await executeHistoryRewrite({
+      ...(await applyHistoryRedactRewrite({
         pmRoot,
         subject,
         settings,
         typeRegistry,
         historyRawBeforeLock,
-        currentItemRawBeforeLock: currentItemRaw,
-        operation: "history-redact",
+        currentItem,
+        nextItem,
         author,
         force: options.force,
-        itemDocument: currentItemDocument,
-        applyRewrite: async ({ historyRawUnderLock }) => {
-          const affectedItemPaths = new Set<string>();
-          if (currentItemPath) {
-            affectedItemPaths.add(currentItemPath);
-          }
-          if (nextItemPath) {
-            affectedItemPaths.add(nextItemPath);
-          }
-          const itemSnapshots = new Map<string, string>();
-          if (currentItemPath && currentItemRaw !== null) {
-            itemSnapshots.set(currentItemPath, currentItemRaw);
-          }
-
-          try {
-            /* c8 ignore next -- item-write diff branch requires path and content divergence under lock races. */
-            if (nextItemPath && nextItemRaw !== null && nextItemRaw !== currentItemRaw) {
-              await writeFileAtomic(nextItemPath, nextItemRaw);
-            }
-            if (currentItemPath && (!nextItemPath || nextItemPath !== currentItemPath)) {
-              await fs.rm(currentItemPath, { force: true });
-            }
-            await writeFileAtomic(subject.historyPath, historyEntriesToRaw(rewrittenEntries));
-          } catch (error) {
-            /* c8 ignore start -- no-history-under-lock rollback path is exercised in lock-race integration tests. */
-            if (historyRawUnderLock === null) {
-              await fs.rm(subject.historyPath, { force: true });
-            } else {
-              await writeFileAtomic(subject.historyPath, historyRawUnderLock);
-            }
-            /* c8 ignore stop */
-            for (const itemPath of affectedItemPaths) {
-              const snapshot = itemSnapshots.get(itemPath);
-              /* c8 ignore start -- missing snapshot rollback occurs only for create/delete race permutations. */
-              if (snapshot === undefined) {
-                await fs.rm(itemPath, { force: true });
-              } else {
-                await writeFileAtomic(itemPath, snapshot);
-              }
-              /* c8 ignore stop */
-            }
-            throw error;
-          }
-        },
-        applyPostRewrite: async () => {
-          const hookWarnings: string[] = [];
-          const itemHookPath = nextItemPath ?? currentItemPath;
-          if (itemHookPath) {
-            hookWarnings.push(
-              ...(await runActiveOnWriteHooks({
-                path: itemHookPath,
-                scope: "project",
-                op: "history_redact",
-              })),
-            );
-          }
-          hookWarnings.push(
-            ...(await runActiveOnWriteHooks({
-              path: subject.historyPath,
-              scope: "project",
-              op: "history_redact:history",
-            })),
-          );
-          return hookWarnings;
-        },
+        rewrittenEntries,
       })),
     );
   }
@@ -667,10 +758,10 @@ export async function runHistoryRedact(
       verify_errors: historyVerify.errors,
     },
     item: {
-      existed_before: currentItemPath !== null,
-      exists_after: nextItemPath !== null,
-      path_before: currentItemPath,
-      path_after: nextItemPath,
+      existed_before: currentItem.path !== null,
+      exists_after: nextItem.path !== null,
+      path_before: currentItem.path,
+      path_after: nextItem.path,
       changed: itemChanged,
     },
     /* c8 ignore next -- warning dedupe ordering is covered indirectly by command-level smoke tests. */

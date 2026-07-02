@@ -130,6 +130,10 @@ describe("config command helper coverage", () => {
     expect(() => _testOnlyConfigCommand.normalizeMetadataRequiredFields(["close_reason"], true)).toThrow(
       expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
     );
+    expect(_testOnlyConfigCommand.hasGovernanceValidationMirrorChange("warn", "strict_error", "warn")).toBe(true);
+    expect(_testOnlyConfigCommand.hasGovernanceValidationMirrorChange("warn", "warn", "warn")).toBe(false);
+    expect(_testOnlyConfigCommand.hasGovernanceValidationMirrorChange("strict", "core", "strict")).toBe(true);
+    expect(_testOnlyConfigCommand.hasGovernanceValidationMirrorChange("strict", "strict", "strict")).toBe(false);
   });
 
   it("covers positional routing defensive guards and conflict errors", () => {

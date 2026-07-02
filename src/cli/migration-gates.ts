@@ -102,55 +102,33 @@ function hasMutatingListValues(value: unknown): boolean {
   return Array.isArray(value) && value.length > 0;
 }
 
+const ALWAYS_MUTATING_COMMANDS = new Set(["create", "beads import", "todos import"]);
+const FORCEABLE_MUTATING_COMMANDS = new Set(["restore", "update", "close", "delete", "append", "claim", "release"]);
+const TEXT_APPEND_COMMANDS = new Set(["comments", "notes", "learnings"]);
+const LIST_MUTATION_COMMANDS = new Set(["files", "docs", "test"]);
+
 /**
  * Implements decide write gate for the public runtime surface of this module.
  */
 export function decideWriteGate(commandPath: string, options: Record<string, unknown>): WriteGateDecision {
   const forceRequested = options.force === true;
-  switch (commandPath) {
-    case "create":
-    case "beads import":
-    case "todos import":
-      return {
-        isMutation: true,
-        forceCapable: false,
-        forceRequested: false,
-      };
-    case "restore":
-    case "update":
-    case "close":
-    case "delete":
-    case "append":
-    case "claim":
-    case "release":
-      return {
-        isMutation: true,
-        forceCapable: true,
-        forceRequested,
-      };
-    case "comments":
-    case "notes":
-    case "learnings":
-      return {
-        isMutation: typeof options.add === "string",
-        forceCapable: true,
-        forceRequested,
-      };
-    case "files":
-    case "docs":
-    case "test":
-      return {
-        isMutation: hasMutatingListValues(options.add) || hasMutatingListValues(options.remove),
-        forceCapable: true,
-        forceRequested,
-      };
-    default:
-      return {
-        isMutation: false,
-        forceCapable: false,
-        forceRequested: false,
-      };
+  if (ALWAYS_MUTATING_COMMANDS.has(commandPath)) {
+    return { isMutation: true, forceCapable: false, forceRequested: false };
   }
+  if (FORCEABLE_MUTATING_COMMANDS.has(commandPath)) {
+    return { isMutation: true, forceCapable: true, forceRequested };
+  }
+  if (TEXT_APPEND_COMMANDS.has(commandPath)) {
+    return { isMutation: typeof options.add === "string", forceCapable: true, forceRequested };
+  }
+  if (LIST_MUTATION_COMMANDS.has(commandPath)) {
+    return {
+      isMutation: hasMutatingListValues(options.add) || hasMutatingListValues(options.remove),
+      forceCapable: true,
+      forceRequested,
+    };
+  }
+  return { isMutation: false, forceCapable: false, forceRequested: false };
 }
 
 /**

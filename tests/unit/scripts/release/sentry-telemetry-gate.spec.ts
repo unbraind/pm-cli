@@ -484,6 +484,16 @@ describe("scripts/release/sentry-telemetry-gate: telemetry metric parsing", () =
     expect(json.telemetry.warning).toBe("telemetry_query_failed");
   });
 
+  it("best-effort telemetry handles missing stderr on failed query commands", async () => {
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "best-effort", "--telemetry-command", "telemetry.sh"],
+      existsSync: true,
+      runCommand: (command) =>
+        command === "bash" ? { status: 1, stdout: "" } : { status: 0, stdout: "", stderr: "" },
+    });
+    expect(json.telemetry.warning).toBe("telemetry_query_failed");
+  });
+
   it("auto-discovers the telemetry command from the default path when present", async () => {
     const { json, runCommand } = await runSentryGate({
       argv: ["--json", "--telemetry-mode", "best-effort"],

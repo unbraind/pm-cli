@@ -258,6 +258,65 @@ function buildCommentsAuditSummary(items: CommentsAuditEntry[]): CommentsAuditSu
   };
 }
 
+function resolveCommentsAuditLimits(options: CommentsAuditOptions): {
+  fullHistory: boolean;
+  latest: number | undefined;
+  limitItems: number | undefined;
+} {
+  const fullHistory = options.fullHistory === true;
+  const latestParsed = parseNonNegativeInteger(options.latest, "--latest");
+  if (fullHistory && latestParsed !== undefined) {
+    throw new PmCliError("--full-history cannot be combined with --latest", EXIT_CODE.USAGE);
+  }
+  const limitItemsPrimary = parseNonNegativeInteger(options.limitItems, "--limit-items");
+  const limitItemsAlias = parseNonNegativeInteger(options.limit, "--limit");
+  if (limitItemsPrimary !== undefined && limitItemsAlias !== undefined && limitItemsPrimary !== limitItemsAlias) {
+    throw new PmCliError("--limit and --limit-items must match when both are provided", EXIT_CODE.USAGE);
+  }
+  return {
+    fullHistory,
+    latest: fullHistory ? undefined : latestParsed ?? 1,
+    limitItems: limitItemsPrimary ?? limitItemsAlias,
+  };
+}
+
+function toCommentsAuditEntry(item: Awaited<ReturnType<typeof runList>>["items"][number], latest: number | undefined): CommentsAuditEntry {
+  const comments = item.comments ?? [];
+  return {
+    id: item.id,
+    title: item.title,
+    type: item.type,
+    status: item.status,
+    assignee: item.assignee ?? null,
+    updated_at: item.updated_at,
+    comment_count: comments.length,
+    comments: latest === undefined ? comments : limitComments(comments, latest),
+  };
+}
+
+function buildCommentsAuditFilters(
+  options: CommentsAuditOptions,
+  status: ItemStatus | undefined,
+  limitItems: number | undefined,
+  latest: number | undefined,
+  fullHistory: boolean,
+): CommentsAuditResult["filters"] {
+  return {
+    status: status ?? null,
+    type: options.type ?? null,
+    tag: options.tag ?? null,
+    priority: options.priority === undefined ? null : Number(options.priority),
+    parent: options.parent ?? null,
+    sprint: options.sprint ?? null,
+    release: options.release ?? null,
+    assignee: options.assignee ?? null,
+    assignee_filter: options.assigneeFilter ?? null,
+    limit_items: limitItems ?? null,
+    latest: latest ?? null,
+    full_history: fullHistory,
+  };
+}
+
 /**
  * Implements run comments audit for the public runtime surface of this module.
  */
@@ -266,22 +325,7 @@ export async function runCommentsAudit(options: CommentsAuditOptions, global: Gl
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const status = parseStatus(options.status, statusRegistry);
-  const fullHistory = options.fullHistory === true;
-  const latestParsed = parseNonNegativeInteger(options.latest, "--latest");
-  if (fullHistory && latestParsed !== undefined) {
-    throw new PmCliError("--full-history cannot be combined with --latest", EXIT_CODE.USAGE);
-  }
-  const latest = fullHistory ? undefined : latestParsed ?? 1;
-  const limitItemsPrimary = parseNonNegativeInteger(options.limitItems, "--limit-items");
-  const limitItemsAlias = parseNonNegativeInteger(options.limit, "--limit");
-  if (
-    limitItemsPrimary !== undefined &&
-    limitItemsAlias !== undefined &&
-    limitItemsPrimary !== limitItemsAlias
-  ) {
-    throw new PmCliError("--limit and --limit-items must match when both are provided", EXIT_CODE.USAGE);
-  }
-  const limitItems = limitItemsPrimary ?? limitItemsAlias;
+  const { fullHistory, latest, limitItems } = resolveCommentsAuditLimits(options);
 
   const listed = await runList(
     status,
@@ -299,19 +343,7 @@ export async function runCommentsAudit(options: CommentsAuditOptions, global: Gl
     global,
   );
 
-  const items = listed.items.map((item) => {
-    const comments = item.comments ?? [];
-    return {
-      id: item.id,
-      title: item.title,
-      type: item.type,
-      status: item.status,
-      assignee: item.assignee ?? null,
-      updated_at: item.updated_at,
-      comment_count: comments.length,
-      comments: latest === undefined ? comments : limitComments(comments, latest),
-    };
-  });
+  const items = listed.items.map((item) => toCommentsAuditEntry(item, latest));
   const rows = fullHistory ? toHistoryRows(items) : undefined;
   const latestRowCount = items.reduce((sum, entry) => sum + entry.comments.length, 0);
 
@@ -319,20 +351,7 @@ export async function runCommentsAudit(options: CommentsAuditOptions, global: Gl
     items,
     count: items.length,
     summary: buildCommentsAuditSummary(items),
-    filters: {
-      status: status ?? null,
-      type: options.type ?? null,
-      tag: options.tag ?? null,
-      priority: options.priority === undefined ? null : Number(options.priority),
-      parent: options.parent ?? null,
-      sprint: options.sprint ?? null,
-      release: options.release ?? null,
-      assignee: options.assignee ?? null,
-      assignee_filter: options.assigneeFilter ?? null,
-      limit_items: limitItems ?? null,
-      latest: latest ?? null,
-      full_history: fullHistory,
-    },
+    filters: buildCommentsAuditFilters(options, status, limitItems, latest, fullHistory),
     export: {
       mode: fullHistory ? "full_history" : "latest",
       /* c8 ignore next -- rows is always materialized from toHistoryRows() when fullHistory=true. */

@@ -70,6 +70,11 @@ export interface InitRegisteredTypePresetSummary {
 }
 
 /**
+ * Documents the init agent-guidance summary plus generated next-step hints returned by init.
+ */
+export type InitAgentGuidanceResult = InitAgentGuidanceSummary & { next_steps: string[] };
+
+/**
  * Documents the init result payload exchanged by command, SDK, and package integrations.
  */
 export interface InitResult {
@@ -83,7 +88,7 @@ export interface InitResult {
   registered_type_preset?: InitRegisteredTypePresetSummary;
   installed_packages?: InitInstalledPackagesSummary;
   next_steps: string[];
-  agent_guidance: InitAgentGuidanceSummary;
+  agent_guidance: InitAgentGuidanceResult;
 }
 
 /**
@@ -124,7 +129,7 @@ export interface InitConciseResult {
   registered_type_preset?: InitRegisteredTypePresetSummary;
   installed_packages?: InitInstalledPackagesSummary;
   next_steps: string[];
-  agent_guidance: InitAgentGuidanceSummary;
+  agent_guidance: InitAgentGuidanceResult;
   hint: string;
 }
 
@@ -173,6 +178,22 @@ export const _testOnly = {
 
 type InitReadlineInterface = ReturnType<typeof readline.createInterface>;
 let createInitReadlineInterface = (): InitReadlineInterface => readline.createInterface({ input, output });
+
+interface InitNormalizedOptions {
+  presetFromOption: BuiltinGovernancePreset | undefined;
+  useDefaults: boolean;
+  authorFromOption: string | undefined;
+  installBundledPackages: boolean;
+  agentGuidanceMode: InitAgentGuidanceMode;
+  typePreset: InitTypePresetName | undefined;
+}
+
+interface InitSettingsResolution {
+  settings: PmSettings;
+  normalizedPrefix: string;
+  chosenPreset: BuiltinGovernancePreset | undefined;
+  wizardUsed: boolean;
+}
 
 function setInitReadlineFactoryForTests(factory: (() => InitReadlineInterface) | undefined): void {
   createInitReadlineInterface = factory ?? (() => readline.createInterface({ input, output }));
@@ -407,6 +428,32 @@ async function assertExplicitTrackerPathIsNotWorkspaceRoot(pmRoot: string, globa
   );
 }
 
+async function ensureInitDirectories(pmRoot: string, subdirs: readonly string[]): Promise<{
+  createdDirs: string[];
+  warnings: string[];
+}> {
+  const createdDirs: string[] = [];
+  const warnings: string[] = [];
+  for (const subdir of subdirs) {
+    const target = subdir ? path.join(pmRoot, subdir) : pmRoot;
+    const existed = await pathExists(target);
+    await fs.mkdir(target, { recursive: true });
+    if (existed) {
+      warnings.push(`already_exists:${target}`);
+    } else {
+      createdDirs.push(target);
+    }
+    warnings.push(
+      ...(await runActiveOnWriteHooks({
+        path: target,
+        scope: "project",
+        op: "init:ensure_dir",
+      })),
+    );
+  }
+  return { createdDirs, warnings };
+}
+
 async function runInitWizard(initialPrefix: string, telemetryDefault: boolean): Promise<{
   prefix: string;
   preset: BuiltinGovernancePreset;
@@ -457,6 +504,317 @@ async function runInitWizard(initialPrefix: string, telemetryDefault: boolean): 
   }
 }
 
+function normalizeInitCommandOptions(options: InitCommandOptions): InitNormalizedOptions {
+  return {
+    presetFromOption: normalizeInitGovernancePreset(options.preset),
+    useDefaults: options.defaults === true,
+    authorFromOption: normalizeOptionalInitAuthor(options.author),
+    installBundledPackages: options.withPackages === true,
+    agentGuidanceMode: normalizeInitAgentGuidanceMode(options.agentGuidance),
+    typePreset: normalizeInitTypePreset(options.typePreset),
+  };
+}
+
+function collectExistingSettingsPendingChanges(params: {
+  settings: PmSettings;
+  normalizedPrefix: string;
+  prefixArg: string | undefined;
+  presetFromOption: BuiltinGovernancePreset | undefined;
+  authorFromOption: string | undefined;
+}): string[] {
+  const pendingChanges: string[] = [];
+  if (params.prefixArg !== undefined && params.settings.id_prefix !== params.normalizedPrefix) {
+    pendingChanges.push("id_prefix");
+  }
+  if (params.presetFromOption !== undefined && params.settings.governance.preset !== params.presetFromOption) {
+    pendingChanges.push("governance_preset");
+  }
+  if (params.authorFromOption !== undefined && params.settings.author_default !== params.authorFromOption) {
+    pendingChanges.push("author_default");
+  }
+  return pendingChanges;
+}
+
+function assertExistingSettingsUpdateAllowed(settingsPath: string, pendingChanges: string[], force: boolean): void {
+  if (pendingChanges.length === 0 || force) {
+    return;
+  }
+  throw new PmCliError(
+    `Refusing to update existing tracker settings at ${settingsPath} without --force.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "init_existing_settings_requires_force",
+      type: "urn:pm-cli:error:init_existing_settings_requires_force",
+      required: `--force for ${pendingChanges.join(", ")}`,
+      why: "pm init is safe to rerun, but changing id prefix, governance preset, or default author on an existing tracker can corrupt long-lived project context when an agent meant to initialize a sandbox path.",
+      examples: [
+        "pm init --yes",
+        "pm init ./sandbox-pm --yes",
+        "pm init acme --yes --force",
+      ],
+      nextSteps: [
+        "If you meant to initialize a sandbox tracker, pass a path-like positional such as ./sandbox-pm or /tmp/pm-test.",
+        "If you intentionally want to rewrite this existing tracker's init-managed settings, rerun with --force.",
+      ],
+    },
+  );
+}
+
+function applyExistingSettingsUpdates(params: {
+  settings: PmSettings;
+  normalizedPrefix: string;
+  prefixArg: string | undefined;
+  presetFromOption: BuiltinGovernancePreset | undefined;
+  authorFromOption: string | undefined;
+  warnings: string[];
+}): boolean {
+  let changed = false;
+  if (params.prefixArg !== undefined && params.settings.id_prefix !== params.normalizedPrefix) {
+    params.settings.id_prefix = params.normalizedPrefix;
+    params.warnings.push(`updated:id_prefix:${params.normalizedPrefix}`);
+    changed = true;
+  }
+  if (params.presetFromOption !== undefined && params.settings.governance.preset !== params.presetFromOption) {
+    applyGovernancePreset(params.settings, params.presetFromOption);
+    params.warnings.push(`updated:governance_preset:${params.presetFromOption}`);
+    changed = true;
+  }
+  if (params.authorFromOption !== undefined && params.settings.author_default !== params.authorFromOption) {
+    params.settings.author_default = params.authorFromOption;
+    params.warnings.push(`updated:author_default:${params.authorFromOption}`);
+    changed = true;
+  }
+  return changed;
+}
+
+async function loadExistingInitSettings(params: {
+  pmRoot: string;
+  settingsPath: string;
+  normalizedPrefix: string;
+  prefixArg: string | undefined;
+  options: InitCommandOptions;
+  normalizedOptions: InitNormalizedOptions;
+  warnings: string[];
+}): Promise<InitSettingsResolution> {
+  const settings = await readSettings(params.pmRoot);
+  params.warnings.push(`already_exists:${params.settingsPath}`);
+  const pendingChanges = collectExistingSettingsPendingChanges({
+    settings,
+    normalizedPrefix: params.normalizedPrefix,
+    prefixArg: params.prefixArg,
+    presetFromOption: params.normalizedOptions.presetFromOption,
+    authorFromOption: params.normalizedOptions.authorFromOption,
+  });
+  assertExistingSettingsUpdateAllowed(params.settingsPath, pendingChanges, params.options.force === true);
+  if (
+    applyExistingSettingsUpdates({
+      settings,
+      normalizedPrefix: params.normalizedPrefix,
+      prefixArg: params.prefixArg,
+      presetFromOption: params.normalizedOptions.presetFromOption,
+      authorFromOption: params.normalizedOptions.authorFromOption,
+      warnings: params.warnings,
+    })
+  ) {
+    await writeSettings(params.pmRoot, settings);
+  }
+  return {
+    settings,
+    normalizedPrefix: params.normalizedPrefix,
+    chosenPreset: params.normalizedOptions.presetFromOption,
+    wizardUsed: false,
+  };
+}
+
+async function createNewInitSettings(params: {
+  pmRoot: string;
+  normalizedPrefix: string;
+  normalizedOptions: InitNormalizedOptions;
+}): Promise<InitSettingsResolution> {
+  let normalizedPrefix = params.normalizedPrefix;
+  let chosenPreset = params.normalizedOptions.presetFromOption;
+  let chosenTelemetryEnabled: boolean | undefined;
+  let wizardUsed = false;
+  if (
+    params.normalizedOptions.presetFromOption === undefined &&
+    !params.normalizedOptions.useDefaults &&
+    process.stdin.isTTY === true &&
+    process.stdout.isTTY === true
+  ) {
+    const wizardChoices = await runInitWizard(normalizedPrefix, SETTINGS_DEFAULTS.telemetry.enabled);
+    normalizedPrefix = wizardChoices.prefix;
+    chosenPreset = wizardChoices.preset;
+    chosenTelemetryEnabled = wizardChoices.telemetry_enabled;
+    wizardUsed = true;
+  }
+  const effectivePreset = chosenPreset ?? "minimal";
+  const settings = cloneDefaults();
+  settings.id_prefix = normalizedPrefix;
+  applyGovernancePreset(settings, effectivePreset);
+  if (params.normalizedOptions.authorFromOption !== undefined) {
+    settings.author_default = params.normalizedOptions.authorFromOption;
+  }
+  if (chosenTelemetryEnabled !== undefined) {
+    settings.telemetry.enabled = chosenTelemetryEnabled;
+    settings.telemetry.first_run_prompt_completed = true;
+  }
+  await writeSettings(params.pmRoot, settings);
+  return {
+    settings,
+    normalizedPrefix,
+    chosenPreset,
+    wizardUsed,
+  };
+}
+
+async function resolveInitSettings(params: {
+  pmRoot: string;
+  settingsPath: string;
+  settingsExists: boolean;
+  normalizedPrefix: string;
+  prefixArg: string | undefined;
+  options: InitCommandOptions;
+  normalizedOptions: InitNormalizedOptions;
+  warnings: string[];
+}): Promise<InitSettingsResolution> {
+  if (params.settingsExists) {
+    return await loadExistingInitSettings(params);
+  }
+  return await createNewInitSettings({
+    pmRoot: params.pmRoot,
+    normalizedPrefix: params.normalizedPrefix,
+    normalizedOptions: params.normalizedOptions,
+  });
+}
+
+async function applyInitAgentGuidance(params: {
+  pmRoot: string;
+  cwd: string;
+  agentGuidanceMode: InitAgentGuidanceMode;
+  settings: PmSettings;
+  warnings: string[];
+}): Promise<InitAgentGuidanceResult> {
+  const agentGuidanceResult = await runInitAgentGuidance({
+    pm_root: params.pmRoot,
+    cwd: params.cwd,
+    mode: params.agentGuidanceMode,
+    interactive: process.stdin.isTTY === true && process.stdout.isTTY === true,
+    settings: params.settings,
+  });
+  params.warnings.push(...agentGuidanceResult.warnings);
+  if (agentGuidanceResult.settings_changed) {
+    await writeSettings(params.pmRoot, params.settings);
+  }
+  return {
+    ...agentGuidanceResult.summary,
+    next_steps: agentGuidanceResult.next_steps,
+  };
+}
+
+async function ensureInitRuntimeSchemaFiles(
+  pmRoot: string,
+  settings: PmSettings,
+): Promise<{
+  createdDirs: string[];
+  warnings: string[];
+}> {
+  const createdDirs: string[] = [];
+  const warnings: string[] = [];
+  const runtimeSchemaScaffold = await ensureRuntimeSchemaFileScaffold(pmRoot, settings.schema);
+  for (const createdPath of runtimeSchemaScaffold.created_paths) {
+    createdDirs.push(createdPath);
+    warnings.push(
+      ...(await runActiveOnWriteHooks({
+        path: createdPath,
+        scope: "project",
+        op: "init:runtime_schema_file",
+      })),
+    );
+  }
+  return { createdDirs, warnings };
+}
+
+async function maybeRegisterInitTypePreset(params: {
+  pmRoot: string;
+  settings: PmSettings;
+  typePreset: InitTypePresetName | undefined;
+  warnings: string[];
+}): Promise<InitRegisteredTypePresetSummary | undefined> {
+  if (params.typePreset === undefined) {
+    return undefined;
+  }
+  const registeredTypePreset = await registerInitTypePreset(params.pmRoot, params.settings, params.typePreset);
+  params.warnings.push(`registered_type_preset:${params.typePreset}`);
+  params.warnings.push(
+    ...(await runActiveOnWriteHooks({
+      path: registeredTypePreset.file,
+      scope: "project",
+      op: "init:type_preset",
+    })),
+  );
+  return registeredTypePreset;
+}
+
+async function ensureInitTypeDirectories(params: {
+  pmRoot: string;
+  settings: PmSettings;
+  createdDirs: string[];
+  warnings: string[];
+}): Promise<void> {
+  const typeRegistry = resolveItemTypeRegistry(params.settings, getActiveExtensionRegistrations());
+  const customTypeFolders = typeRegistry.folders.filter((folder) => !(PM_REQUIRED_SUBDIRS as readonly string[]).includes(folder));
+  const scaffold = await ensureInitDirectories(params.pmRoot, customTypeFolders);
+  params.createdDirs.push(...scaffold.createdDirs);
+  params.warnings.push(...scaffold.warnings);
+}
+
+async function maybeInstallInitBundledPackages(
+  installBundledPackages: boolean,
+  global: GlobalOptions,
+  warnings: string[],
+): Promise<InitInstalledPackagesSummary | undefined> {
+  if (!installBundledPackages) {
+    return undefined;
+  }
+  const packageInstallResult = await runExtension("all", { install: true, project: true }, global);
+  warnings.push(...packageInstallResult.warnings);
+  const installedPackages = summarizeInstalledPackages(packageInstallResult);
+  if (!installedPackages.installed_all || installedPackages.packages.some((entry) => !entry.ok)) {
+    throw new PmCliError("pm init --with-packages did not install all bundled packages successfully.", EXIT_CODE.GENERIC_FAILURE);
+  }
+  return installedPackages;
+}
+
+function buildInitNextSteps(params: {
+  installBundledPackages: boolean;
+  registeredTypePreset: InitRegisteredTypePresetSummary | undefined;
+  agentGuidanceNextSteps: string[];
+}): string[] {
+  const nextSteps: string[] = [
+    'Create your first item: pm create --type Task --title "<title>"',
+    'List active items: pm list',
+    'Get agent-friendly project context: pm context',
+  ];
+  if (!params.installBundledPackages) {
+    nextSteps.push(
+      "Add optional packages for richer workflows: pm install calendar --project, pm install templates --project, pm install guide-shell --project",
+    );
+    nextSteps.push("Or install everything bundled: pm init --with-packages (idempotent on re-run)");
+  } else {
+    nextSteps.push("Explore newly-available commands: pm cal, pm templates, pm guide");
+  }
+  if (params.registeredTypePreset) {
+    nextSteps.push(`Inspect registered preset types: pm schema list, pm schema show ${params.registeredTypePreset.registered[0] ?? params.registeredTypePreset.updated[0]}`);
+  }
+  nextSteps.push("Set PM_AUTHOR=<your-agent-id> so mutations attribute to the right caller.");
+  for (const guidanceNextStep of params.agentGuidanceNextSteps) {
+    if (!nextSteps.includes(guidanceNextStep)) {
+      nextSteps.push(guidanceNextStep);
+    }
+  }
+  return nextSteps;
+}
+
 /**
  * Implements run init for the public runtime surface of this module.
  */
@@ -472,209 +830,55 @@ export async function runInit(
   await assertExplicitTrackerPathIsNotWorkspaceRoot(pmRoot, global, options.force === true);
   const createdDirs: string[] = [];
   const warnings: string[] = [];
-  let wizardUsed = false;
-
-  for (const subdir of PM_REQUIRED_SUBDIRS) {
-    const target = subdir ? path.join(pmRoot, subdir) : pmRoot;
-    const existed = await pathExists(target);
-    await fs.mkdir(target, { recursive: true });
-    if (existed) {
-      warnings.push(`already_exists:${target}`);
-    } else {
-      createdDirs.push(target);
-    }
-    warnings.push(
-      ...(await runActiveOnWriteHooks({
-        path: target,
-        scope: "project",
-        op: "init:ensure_dir",
-      })),
-    );
-  }
+  const baseDirs = await ensureInitDirectories(pmRoot, PM_REQUIRED_SUBDIRS);
+  createdDirs.push(...baseDirs.createdDirs);
+  warnings.push(...baseDirs.warnings);
 
   const settingsPath = path.join(pmRoot, "settings.json");
   const settingsExists = await pathExists(settingsPath);
-  let normalizedPrefix = normalizePrefix(prefixArg);
-  const presetFromOption = normalizeInitGovernancePreset(options.preset);
-  const useDefaults = options.defaults === true;
-  const authorFromOption = normalizeOptionalInitAuthor(options.author);
-  const installBundledPackages = options.withPackages === true;
-  const agentGuidanceMode = normalizeInitAgentGuidanceMode(options.agentGuidance);
-  const typePreset = normalizeInitTypePreset(options.typePreset);
-  let chosenPreset = presetFromOption;
-  let chosenTelemetryEnabled: boolean | undefined;
-
-  let settings: PmSettings;
-  if (settingsExists) {
-    settings = await readSettings(pmRoot);
-    warnings.push(`already_exists:${settingsPath}`);
-    const pendingChanges: string[] = [];
-    const shouldUpdatePrefix = prefixArg !== undefined && settings.id_prefix !== normalizedPrefix;
-    const shouldUpdatePreset = presetFromOption !== undefined && settings.governance.preset !== presetFromOption;
-    const shouldUpdateAuthor = authorFromOption !== undefined && settings.author_default !== authorFromOption;
-    if (shouldUpdatePrefix) {
-      pendingChanges.push("id_prefix");
-    }
-    if (shouldUpdatePreset) {
-      pendingChanges.push("governance_preset");
-    }
-    if (shouldUpdateAuthor) {
-      pendingChanges.push("author_default");
-    }
-    if (pendingChanges.length > 0 && options.force !== true) {
-      throw new PmCliError(
-        `Refusing to update existing tracker settings at ${settingsPath} without --force.`,
-        EXIT_CODE.USAGE,
-        {
-          code: "init_existing_settings_requires_force",
-          type: "urn:pm-cli:error:init_existing_settings_requires_force",
-          required: `--force for ${pendingChanges.join(", ")}`,
-          why: "pm init is safe to rerun, but changing id prefix, governance preset, or default author on an existing tracker can corrupt long-lived project context when an agent meant to initialize a sandbox path.",
-          examples: [
-            "pm init --yes",
-            "pm init ./sandbox-pm --yes",
-            "pm init acme --yes --force",
-          ],
-          nextSteps: [
-            "If you meant to initialize a sandbox tracker, pass a path-like positional such as ./sandbox-pm or /tmp/pm-test.",
-            "If you intentionally want to rewrite this existing tracker's init-managed settings, rerun with --force.",
-          ],
-        },
-      );
-    }
-    let changed = false;
-    if (shouldUpdatePrefix) {
-      settings.id_prefix = normalizedPrefix;
-      warnings.push(`updated:id_prefix:${normalizedPrefix}`);
-      changed = true;
-    }
-    if (shouldUpdatePreset) {
-      applyGovernancePreset(settings, presetFromOption!);
-      warnings.push(`updated:governance_preset:${presetFromOption}`);
-      changed = true;
-    }
-    if (shouldUpdateAuthor) {
-      settings.author_default = authorFromOption!;
-      warnings.push(`updated:author_default:${authorFromOption}`);
-      changed = true;
-    }
-    if (changed) {
-      await writeSettings(pmRoot, settings);
-    }
-  } else {
-    if (presetFromOption === undefined && !useDefaults && process.stdin.isTTY === true && process.stdout.isTTY === true) {
-      const wizardChoices = await runInitWizard(normalizedPrefix, SETTINGS_DEFAULTS.telemetry.enabled);
-      normalizedPrefix = wizardChoices.prefix;
-      chosenPreset = wizardChoices.preset;
-      chosenTelemetryEnabled = wizardChoices.telemetry_enabled;
-      wizardUsed = true;
-    }
-    const effectivePreset = chosenPreset ?? "minimal";
-    settings = cloneDefaults();
-    settings.id_prefix = normalizedPrefix;
-    applyGovernancePreset(settings, effectivePreset);
-    if (authorFromOption !== undefined) {
-      settings.author_default = authorFromOption;
-    }
-    if (chosenTelemetryEnabled !== undefined) {
-      settings.telemetry.enabled = chosenTelemetryEnabled;
-      settings.telemetry.first_run_prompt_completed = true;
-    }
-    await writeSettings(pmRoot, settings);
-  }
-
-  const agentGuidanceResult = await runInitAgentGuidance({
-    pm_root: pmRoot,
-    cwd,
-    mode: agentGuidanceMode,
-    interactive: process.stdin.isTTY === true && process.stdout.isTTY === true,
-    settings,
+  const normalizedOptions = normalizeInitCommandOptions(options);
+  let settingsResolution = await resolveInitSettings({
+    pmRoot,
+    settingsPath,
+    settingsExists,
+    normalizedPrefix: normalizePrefix(prefixArg),
+    prefixArg,
+    options,
+    normalizedOptions,
+    warnings,
   });
-  warnings.push(...agentGuidanceResult.warnings);
-  if (agentGuidanceResult.settings_changed) {
-    await writeSettings(pmRoot, settings);
-  }
+  let { settings } = settingsResolution;
 
-  const runtimeSchemaScaffold = await ensureRuntimeSchemaFileScaffold(pmRoot, settings.schema);
-  for (const createdPath of runtimeSchemaScaffold.created_paths) {
-    createdDirs.push(createdPath);
-    warnings.push(
-      ...(await runActiveOnWriteHooks({
-        path: createdPath,
-        scope: "project",
-        op: "init:runtime_schema_file",
-      })),
-    );
-  }
+  const agentGuidance = await applyInitAgentGuidance({
+    pmRoot,
+    cwd,
+    agentGuidanceMode: normalizedOptions.agentGuidanceMode,
+    settings,
+    warnings,
+  });
 
-  let registeredTypePreset: InitRegisteredTypePresetSummary | undefined;
-  if (typePreset !== undefined) {
-    registeredTypePreset = await registerInitTypePreset(pmRoot, settings, typePreset);
-    warnings.push(`registered_type_preset:${typePreset}`);
-    warnings.push(
-      ...(await runActiveOnWriteHooks({
-        path: registeredTypePreset.file,
-        scope: "project",
-        op: "init:type_preset",
-      })),
-    );
+  const schemaFiles = await ensureInitRuntimeSchemaFiles(pmRoot, settings);
+  createdDirs.push(...schemaFiles.createdDirs);
+  warnings.push(...schemaFiles.warnings);
+
+  const registeredTypePreset = await maybeRegisterInitTypePreset({
+    pmRoot,
+    settings,
+    typePreset: normalizedOptions.typePreset,
+    warnings,
+  });
+  if (registeredTypePreset) {
     settings = await readSettings(pmRoot);
   }
 
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  for (const typeFolder of typeRegistry.folders) {
-    if ((PM_REQUIRED_SUBDIRS as readonly string[]).includes(typeFolder)) {
-      continue;
-    }
-    const target = path.join(pmRoot, typeFolder);
-    const existed = await pathExists(target);
-    await fs.mkdir(target, { recursive: true });
-    if (existed) {
-      warnings.push(`already_exists:${target}`);
-    } else {
-      createdDirs.push(target);
-    }
-    warnings.push(
-      ...(await runActiveOnWriteHooks({
-        path: target,
-        scope: "project",
-        op: "init:ensure_dir",
-      })),
-    );
-  }
+  await ensureInitTypeDirectories({ pmRoot, settings, createdDirs, warnings });
+  const installedPackages = await maybeInstallInitBundledPackages(normalizedOptions.installBundledPackages, global, warnings);
 
-  let installedPackages: InitInstalledPackagesSummary | undefined;
-  if (installBundledPackages) {
-    const packageInstallResult = await runExtension("all", { install: true, project: true }, global);
-    warnings.push(...packageInstallResult.warnings);
-    installedPackages = summarizeInstalledPackages(packageInstallResult);
-    if (!installedPackages.installed_all || installedPackages.packages.some((entry) => !entry.ok)) {
-      throw new PmCliError("pm init --with-packages did not install all bundled packages successfully.", EXIT_CODE.GENERIC_FAILURE);
-    }
-  }
-
-  const nextSteps: string[] = [
-    'Create your first item: pm create --type Task --title "<title>"',
-    'List active items: pm list',
-    'Get agent-friendly project context: pm context',
-  ];
-  if (!installBundledPackages) {
-    nextSteps.push(
-      "Add optional packages for richer workflows: pm install calendar --project, pm install templates --project, pm install guide-shell --project",
-    );
-    nextSteps.push("Or install everything bundled: pm init --with-packages (idempotent on re-run)");
-  } else {
-    nextSteps.push("Explore newly-available commands: pm cal, pm templates, pm guide");
-  }
-  if (registeredTypePreset) {
-    nextSteps.push(`Inspect registered preset types: pm schema list, pm schema show ${registeredTypePreset.registered[0] ?? registeredTypePreset.updated[0]}`);
-  }
-  nextSteps.push("Set PM_AUTHOR=<your-agent-id> so mutations attribute to the right caller.");
-  for (const guidanceNextStep of agentGuidanceResult.next_steps) {
-    if (!nextSteps.includes(guidanceNextStep)) {
-      nextSteps.push(guidanceNextStep);
-    }
-  }
+  const nextSteps = buildInitNextSteps({
+    installBundledPackages: normalizedOptions.installBundledPackages,
+    registeredTypePreset,
+    agentGuidanceNextSteps: agentGuidance.next_steps,
+  });
 
   return {
     ok: true,
@@ -683,10 +887,10 @@ export async function runInit(
     created_dirs: createdDirs,
     warnings,
     governance_preset: settings.governance.preset,
-    wizard_used: wizardUsed,
+    wizard_used: settingsResolution.wizardUsed,
     ...(registeredTypePreset ? { registered_type_preset: registeredTypePreset } : {}),
     ...(installedPackages ? { installed_packages: installedPackages } : {}),
     next_steps: nextSteps,
-    agent_guidance: agentGuidanceResult.summary,
+    agent_guidance: agentGuidance,
   };
 }

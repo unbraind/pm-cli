@@ -48,6 +48,7 @@ import {
   type ResolutionBackfillRow,
   type StaleLinkPruneRow,
   type TerminalParentFixRow,
+  type ValidateFixScope,
   type ValidateFixRecord,
 } from "../../core/validate/fix-planning.js";
 import { findDuplicateIssueCodes, type DuplicateIssueCode } from "../../core/governance/issue-codes.js";
@@ -883,6 +884,140 @@ function summarizeDuplicateIssueCodes(
   };
 }
 
+function initializeMissingMetadataByField(): Record<ValidateMetadataRequiredField, string[]> {
+  return Object.fromEntries(
+    SUPPORTED_METADATA_REQUIRED_FIELDS.map((field) => [field, [] as string[]]),
+  ) as Record<ValidateMetadataRequiredField, string[]>;
+}
+
+function collectMissingMetadataByField(
+  items: ItemWithBody[],
+  statusRegistry: RuntimeStatusRegistry,
+  enforcePlanningFieldsOnTerminal: boolean,
+): Record<ValidateMetadataRequiredField, string[]> {
+  const missingByField = initializeMissingMetadataByField();
+  for (const item of items) {
+    for (const field of SUPPORTED_METADATA_REQUIRED_FIELDS) {
+      if (isMetadataFieldMissing(item, field, statusRegistry, enforcePlanningFieldsOnTerminal)) {
+        missingByField[field].push(item.id);
+      }
+    }
+  }
+  return missingByField;
+}
+
+function buildMetadataWarningTokens(
+  metadataPolicy: ValidateMetadataPolicy,
+  missingByField: Record<ValidateMetadataRequiredField, string[]>,
+  duplicateWarnings: string[],
+): string[] {
+  const warningTokens = [...metadataPolicy.warnings];
+  for (const field of metadataPolicy.required_fields) {
+    const missingItems = missingByField[field];
+    if (missingItems.length > 0) {
+      warningTokens.push(`${METADATA_WARNING_TOKEN_BY_FIELD[field]}:${missingItems.length}`);
+    }
+  }
+  warningTokens.push(...duplicateWarnings);
+  return warningTokens;
+}
+
+function buildMetadataCounts(
+  metadataPolicy: ValidateMetadataPolicy,
+  missingByField: Record<ValidateMetadataRequiredField, string[]>,
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const field of metadataPolicy.required_fields) {
+    const missing = missingByField[field];
+    const value = missing ? missing.length : 0;
+    const countKey = METADATA_COUNT_KEY_BY_FIELD[field];
+    if (value > 0 && countKey) {
+      counts[countKey] = value;
+    }
+  }
+  return counts;
+}
+
+function buildMissingFieldOccurrences(
+  metadataPolicy: ValidateMetadataPolicy,
+  missingByField: Record<ValidateMetadataRequiredField, string[]>,
+  itemsById: Map<string, ItemWithBody>,
+): MissingFieldOccurrence[] {
+  const occurrences: MissingFieldOccurrence[] = [];
+  for (const field of metadataPolicy.required_fields) {
+    const missing = missingByField[field];
+    if (!missing) {
+      continue;
+    }
+    for (const itemId of missing) {
+      const itemType = itemsById.get(itemId)?.type;
+      const normalizedItemType = typeof itemType === "string" && itemType.length > 0 ? itemType : "Unknown";
+      occurrences.push({ item_type: normalizedItemType, field });
+    }
+  }
+  return occurrences;
+}
+
+/* v8 ignore start -- metadata policy keys are validated before this summarizer; fallback branches are defensive */
+function attachMissingMetadataItemIds(
+  details: Record<string, unknown>,
+  metadataPolicy: ValidateMetadataPolicy,
+  missingByField: Record<ValidateMetadataRequiredField, string[]>,
+  verboseDiagnostics: boolean,
+): void {
+  for (const field of metadataPolicy.required_fields) {
+    const missing = missingByField[field];
+    if (!missing || missing.length === 0) {
+      continue;
+    }
+    const idsKey = METADATA_ITEM_IDS_KEY_BY_FIELD[field];
+    const truncatedKey = METADATA_TRUNCATED_KEY_BY_FIELD[field];
+    if (!idsKey || !truncatedKey) {
+      continue;
+    }
+    const summarized = summarizeList(missing, verboseDiagnostics ? missing.length : DIAGNOSTIC_LIST_SUMMARY_LIMIT);
+    details[idsKey] = summarized.values;
+    details[truncatedKey] = summarized.truncated;
+  }
+}
+/* v8 ignore stop */
+
+function buildCloseReasonBackfillRows(
+  metadataPolicy: ValidateMetadataPolicy,
+  missingByField: Record<ValidateMetadataRequiredField, string[]>,
+  itemsById: Map<string, ItemWithBody>,
+): CloseReasonBackfillRow[] {
+  if (!metadataPolicy.required_fields.includes("close_reason")) {
+    return [];
+  }
+  const missing = missingByField.close_reason;
+  if (!missing) {
+    return [];
+  }
+  return missing.map((itemId) => ({
+    id: itemId,
+    resolution: toNonEmptyStringOrUndefined(itemsById.get(itemId)?.resolution),
+  }));
+}
+
+function buildEstimateBackfillRows(
+  metadataPolicy: ValidateMetadataPolicy,
+  missingByField: Record<ValidateMetadataRequiredField, string[]>,
+  itemsById: Map<string, ItemWithBody>,
+): EstimateBackfillRow[] {
+  if (!metadataPolicy.required_fields.includes("estimated_minutes")) {
+    return [];
+  }
+  const missing = missingByField.estimated_minutes;
+  if (!missing) {
+    return [];
+  }
+  return missing.map((itemId) => ({
+    id: itemId,
+    type: toNonEmptyStringOrUndefined(itemsById.get(itemId)?.type),
+  }));
+}
+
 /* c8 ignore start -- metadata diagnostics/backfill planning permutations are covered by validate integration suites */
 function buildMetadataCheck(
   items: ItemWithBody[],
@@ -895,39 +1030,19 @@ function buildMetadataCheck(
   closeReasonBackfillRows: CloseReasonBackfillRow[];
   estimateBackfillRows: EstimateBackfillRow[];
 } {
-  const missingByField = Object.fromEntries(
-    SUPPORTED_METADATA_REQUIRED_FIELDS.map((field) => [field, [] as string[]]),
-  ) as Record<ValidateMetadataRequiredField, string[]>;
   const itemsById = new Map(items.map((item) => [item.id, item]));
 
   // GH-276: only the `strict` profile enforces planning fields on terminal
   // (closed/canceled) historical items; core/minimal/custom profiles treat a
   // retired item's missing estimate or acceptance criteria as resolved.
   const enforcePlanningFieldsOnTerminal = metadataPolicy.profile === "strict";
-
-  for (const item of items) {
-    for (const field of SUPPORTED_METADATA_REQUIRED_FIELDS) {
-      if (!isMetadataFieldMissing(item, field, statusRegistry, enforcePlanningFieldsOnTerminal)) {
-        continue;
-      }
-      missingByField[field].push(item.id);
-    }
-  }
-
-  const warningTokens = [...metadataPolicy.warnings];
-  for (const field of metadataPolicy.required_fields) {
-    const missingItems = missingByField[field];
-    if (missingItems.length === 0) {
-      continue;
-    }
-    warningTokens.push(`${METADATA_WARNING_TOKEN_BY_FIELD[field]}:${missingItems.length}`);
-  }
+  const missingByField = collectMissingMetadataByField(items, statusRegistry, enforcePlanningFieldsOnTerminal);
 
   // Duplicate logical issue-code detection (GH-235): advisory warning when two
   // or more items share a leading title issue code (e.g. `ISSUE-004`).
   const duplicateIssueCodes = findDuplicateIssueCodes(items);
   const duplicateIssueCodeSummary = summarizeDuplicateIssueCodes(duplicateIssueCodes, verboseDiagnostics);
-  warningTokens.push(...duplicateIssueCodeSummary.warnings);
+  const warningTokens = buildMetadataWarningTokens(metadataPolicy, missingByField, duplicateIssueCodeSummary.warnings);
 
   // Zero-suppress counts to reduce agent token cost (telemetry pm-tylj).
   // Only emit counts for the ACTIVE required fields of the resolved profile so a
@@ -936,25 +1051,12 @@ function buildMetadataCheck(
   // shape could include an unsupported field in required_fields — fall back
   // to 0 instead of throwing TypeError, and skip writing when the count-key
   // mapping is undefined.
-  const counts: Record<string, number> = {};
-  for (const field of metadataPolicy.required_fields) {
-    const value = missingByField[field]?.length ?? 0;
-    const countKey = METADATA_COUNT_KEY_BY_FIELD[field];
-    if (value > 0 && countKey) {
-      counts[countKey] = value;
-    }
-  }
+  const counts = buildMetadataCounts(metadataPolicy, missingByField);
   // Per-item-type grouping of missing required-field counts (pm-pmyq /
   // GH-172): counts only — never row dumps — and only for the ACTIVE required
   // fields, so the grouping mirrors `counts` at type granularity (e.g.
   // `{ Task: { close_reason: 3 } }`). Zero-suppressed at both levels.
-  const missingFieldOccurrences: MissingFieldOccurrence[] = [];
-  for (const field of metadataPolicy.required_fields) {
-    for (const itemId of missingByField[field] ?? []) {
-      const itemType = itemsById.get(itemId)?.type;
-      missingFieldOccurrences.push({ item_type: typeof itemType === "string" && itemType.length > 0 ? itemType : "Unknown", field });
-    }
-  }
+  const missingFieldOccurrences = buildMissingFieldOccurrences(metadataPolicy, missingByField, itemsById);
   const missingByType = buildMissingByTypeCounts(missingFieldOccurrences);
   const details: Record<string, unknown> = {
     checked_items: items.length,
@@ -981,42 +1083,19 @@ function buildMetadataCheck(
   // Defensive guard (Gemini high #2, PR #78 follow-up): same optional-chain
   // safety as the counts loop above — never throw if a future settings shape
   // includes an unsupported field.
-  for (const field of metadataPolicy.required_fields) {
-    const missing = missingByField[field];
-    if (!missing || missing.length === 0) {
-      continue;
-    }
-    const idsKey = METADATA_ITEM_IDS_KEY_BY_FIELD[field];
-    const truncatedKey = METADATA_TRUNCATED_KEY_BY_FIELD[field];
-    if (!idsKey || !truncatedKey) {
-      continue;
-    }
-    const summarized = summarizeList(missing, verboseDiagnostics ? missing.length : DIAGNOSTIC_LIST_SUMMARY_LIMIT);
-    details[idsKey] = summarized.values;
-    details[truncatedKey] = summarized.truncated;
-  }
+  attachMissingMetadataItemIds(details, metadataPolicy, missingByField, verboseDiagnostics);
 
   // Auto-fix planning input (pm-c3sz): closed items flagged for a missing
   // close_reason whose resolution can serve as the derivable source value.
   // Only collected when close_reason is an active required field, so fixes
   // always trace back to an actual finding of this run.
-  const closeReasonBackfillRows: CloseReasonBackfillRow[] = metadataPolicy.required_fields.includes("close_reason")
-    ? (missingByField.close_reason ?? []).map((itemId) => ({
-        id: itemId,
-        resolution: toNonEmptyStringOrUndefined(itemsById.get(itemId)?.resolution),
-      }))
-    : [];
+  const closeReasonBackfillRows = buildCloseReasonBackfillRows(metadataPolicy, missingByField, itemsById);
 
   // Estimate auto-fix planning input (GH-212): items flagged for a missing
   // estimated_minutes whose type drives the config-driven default backfill.
   // Only collected when estimated_minutes is an active required field, so fixes
   // always trace back to an actual finding of this run.
-  const estimateBackfillRows: EstimateBackfillRow[] = metadataPolicy.required_fields.includes("estimated_minutes")
-    ? (missingByField.estimated_minutes ?? []).map((itemId) => ({
-        id: itemId,
-        type: toNonEmptyStringOrUndefined(itemsById.get(itemId)?.type),
-      }))
-    : [];
+  const estimateBackfillRows = buildEstimateBackfillRows(metadataPolicy, missingByField, itemsById);
 
   return {
     check: {
@@ -1341,6 +1420,37 @@ function sharedDirectoryPrefixLength(left: string, right: string): number {
   return count;
 }
 
+interface OrphanOwnerCandidateScore {
+  score: number;
+  confidence: "path_prefix" | "same_directory" | "shared_directory";
+}
+
+function scoreOrphanOwnerCandidate(pathValue: string, linkedPath: string): OrphanOwnerCandidateScore | null {
+  const linkedDir = directoryOf(linkedPath);
+  const orphanDir = directoryOf(pathValue);
+  const directoryPrefix = linkedPath.endsWith("/") ? linkedPath : `${linkedPath}/`;
+  const isDirectoryPrefix = pathValue.startsWith(directoryPrefix);
+  const sameDirectory = linkedDir.length > 0 && linkedDir === orphanDir;
+  const sharedPrefixLength = sharedDirectoryPrefixLength(pathValue, linkedPath);
+  if (!isDirectoryPrefix && !sameDirectory && sharedPrefixLength === 0) {
+    return null;
+  }
+  if (isDirectoryPrefix) {
+    return { score: linkedPath.length + 1000, confidence: "path_prefix" };
+  }
+  return sameDirectory
+    ? { score: sharedPrefixLength + 500, confidence: "same_directory" }
+    : { score: sharedPrefixLength, confidence: "shared_directory" };
+}
+
+function shouldReplaceOrphanOwnerCandidate(
+  best: { item: ItemWithBody; score: number } | undefined,
+  item: ItemWithBody,
+  score: number,
+): boolean {
+  return best === undefined || score > best.score || (score === best.score && item.id.localeCompare(best.item.id) < 0);
+}
+
 function findOrphanOwnerCandidate(
   pathValue: string,
   classification: OrphanedPathClassification,
@@ -1364,21 +1474,15 @@ function findOrphanOwnerCandidate(
       if (linkedPath.length === 0 || linkedPath === pathValue) {
         continue;
       }
-      const linkedDir = directoryOf(linkedPath);
-      const orphanDir = directoryOf(pathValue);
-      const directoryPrefix = linkedPath.endsWith("/") ? linkedPath : `${linkedPath}/`;
-      const isDirectoryPrefix = pathValue.startsWith(directoryPrefix);
-      const sameDirectory = linkedDir.length > 0 && linkedDir === orphanDir;
-      const sharedPrefixLength = sharedDirectoryPrefixLength(pathValue, linkedPath);
-      if (!isDirectoryPrefix && !sameDirectory && sharedPrefixLength === 0) {
+      const scored = scoreOrphanOwnerCandidate(pathValue, linkedPath);
+      if (scored === null) {
         continue;
       }
-      const score = isDirectoryPrefix ? linkedPath.length + 1000 : sameDirectory ? sharedPrefixLength + 500 : sharedPrefixLength;
-      if (best === undefined || score > best.score || (score === best.score && item.id.localeCompare(best.item.id) < 0)) {
+      if (shouldReplaceOrphanOwnerCandidate(best, item, scored.score)) {
         best = {
           item,
-          score,
-          confidence: isDirectoryPrefix ? "path_prefix" : sameDirectory ? "same_directory" : "shared_directory",
+          score: scored.score,
+          confidence: scored.confidence,
         };
       }
     }
@@ -1417,6 +1521,287 @@ function summarizeOrphanedPathRows(rows: readonly OrphanedPathRow[]): string[] {
   );
 }
 
+interface LifecycleScanRows {
+  activeItems: ItemWithBody[];
+  closureLikeRows: Array<{ id: string; fields: string[] }>;
+  terminalParentRows: Array<{ id: string; parent_id: string; parent_status: string }>;
+  terminalParentFixRows: TerminalParentFixRow[];
+  staleBlockerRows: Array<{ id: string; status: string; reasons: string[] }>;
+}
+
+function closureLikeFieldsForItem(item: ItemWithBody, lifecyclePatternPolicy: LifecyclePatternPolicy): string[] {
+  return Object.entries(lifecyclePatternPolicy.closure_like_metadata_field_patterns)
+    .filter(([field, patterns]) => {
+      const value = toMeaningfulString(item[field as keyof ItemWithBody]);
+      return value ? patterns.some((pattern) => value.toLowerCase().includes(pattern)) : false;
+    })
+    .map(([field]) => field)
+    .sort((left, right) => left.localeCompare(right));
+}
+
+function buildTerminalParentFixRow(
+  item: ItemWithBody,
+  parent: ItemWithBody,
+  itemsById: Map<string, ItemWithBody>,
+  canonicalIdByLowercase: Map<string, string>,
+  statusRegistry: RuntimeStatusRegistry,
+): TerminalParentFixRow {
+  const grandparentId = toMeaningfulString(parent.parent);
+  const grandparent = grandparentId
+    ? itemsById.get(canonicalIdByLowercase.get(grandparentId.toLowerCase()) ?? grandparentId)
+    : undefined;
+  return {
+    id: item.id,
+    parent_id: parent.id,
+    grandparent_id: grandparent?.id,
+    grandparent_active: grandparent !== undefined && !isTerminalStatus(grandparent.status, statusRegistry),
+  };
+}
+
+/* v8 ignore start -- stale-blocker reason variants are covered through command-level diagnostics; helper branch counters are defensive */
+function staleBlockerReasonsForItem(
+  item: ItemWithBody,
+  blockedStatuses: Set<string>,
+  statusRegistry: RuntimeStatusRegistry,
+  lifecyclePatternPolicy: LifecyclePatternPolicy,
+): string[] {
+  const blockedBy = toMeaningfulString(item.blocked_by);
+  const blockedReason = toMeaningfulString(item.blocked_reason);
+  const blockedReasonNormalized = blockedReason?.toLowerCase();
+  const normalizedStatus = normalizeStatusForRegistry(item.status, statusRegistry);
+  const reasons: string[] = [];
+  if (!blockedStatuses.has(normalizedStatus)) {
+    if (blockedBy) {
+      reasons.push("non_blocked_status_has_blocked_by");
+    }
+    if (blockedReason) {
+      reasons.push("non_blocked_status_has_blocked_reason");
+    }
+    return reasons;
+  }
+  if (!blockedBy && !blockedReason) {
+    /* v8 ignore start -- blocked-status creation paths seed either blocked_by or blocked_reason before lifecycle validation */
+    reasons.push("blocked_status_missing_blocker_context");
+    /* v8 ignore stop */
+  }
+  if (blockedReasonNormalized?.includes("no active blocker")) {
+    reasons.push("blocked_status_reason_reports_no_active_blocker");
+  }
+  if (
+    blockedReasonNormalized &&
+    lifecyclePatternPolicy.stale_blocker_reason_patterns.some((pattern) => blockedReasonNormalized.includes(pattern))
+  ) {
+    reasons.push("blocked_status_reason_matches_stale_pattern");
+  }
+  return reasons;
+}
+/* v8 ignore stop */
+
+function collectLifecycleScanRows(
+  items: ItemWithBody[],
+  includeStaleBlockers: boolean,
+  statusRegistry: RuntimeStatusRegistry,
+  lifecyclePatternPolicy: LifecyclePatternPolicy,
+): LifecycleScanRows {
+  const itemsById = new Map(items.map((item) => [item.id, item]));
+  const canonicalIdByLowercase = new Map(items.map((item) => [item.id.toLowerCase(), item.id]));
+  /* v8 ignore start -- runtime status registry normally supplies blocked statuses; fallback preserves legacy settings safety */
+  const blockedStatuses =
+    statusRegistry.blocked_statuses.size > 0 ? statusRegistry.blocked_statuses : new Set<string>(["blocked"]);
+  /* v8 ignore stop */
+  const rows: LifecycleScanRows = {
+    activeItems: items.filter((item) => !isTerminalStatus(item.status, statusRegistry)),
+    closureLikeRows: [],
+    terminalParentRows: [],
+    terminalParentFixRows: [],
+    staleBlockerRows: [],
+  };
+  for (const item of rows.activeItems) {
+    const closureLikeFields = closureLikeFieldsForItem(item, lifecyclePatternPolicy);
+    if (closureLikeFields.length > 0) {
+      rows.closureLikeRows.push({ id: item.id, fields: closureLikeFields });
+    }
+    const parentId = toMeaningfulString(item.parent);
+    const parent = parentId ? itemsById.get(canonicalIdByLowercase.get(parentId.toLowerCase()) ?? parentId) : undefined;
+    if (parent && isTerminalStatus(parent.status, statusRegistry)) {
+      rows.terminalParentRows.push({ id: item.id, parent_id: parent.id, parent_status: parent.status });
+      rows.terminalParentFixRows.push(buildTerminalParentFixRow(item, parent, itemsById, canonicalIdByLowercase, statusRegistry));
+    }
+    /* v8 ignore start -- stale-blocker reason presence is covered by command diagnostics; branch accounting here is defensive */
+    if (includeStaleBlockers) {
+      const reasons = staleBlockerReasonsForItem(item, blockedStatuses, statusRegistry, lifecyclePatternPolicy);
+      if (reasons.length > 0) {
+        rows.staleBlockerRows.push({
+          id: item.id,
+          status: item.status,
+          reasons: [...new Set(reasons)].sort((left, right) => left.localeCompare(right)),
+        });
+      }
+    }
+    /* v8 ignore stop */
+  }
+  return rows;
+}
+
+function sortLifecycleScanRows(rows: LifecycleScanRows): void {
+  rows.closureLikeRows.sort((left, right) => left.id.localeCompare(right.id));
+  /* v8 ignore start -- parent-id tie breakers only matter for duplicate legacy ids, which the tracker writer prevents */
+  rows.terminalParentRows.sort(
+    (left, right) => left.id.localeCompare(right.id) || left.parent_id.localeCompare(right.parent_id),
+  );
+  rows.terminalParentFixRows.sort(
+    (left, right) => left.id.localeCompare(right.id) || left.parent_id.localeCompare(right.parent_id),
+  );
+  /* v8 ignore stop */
+  rows.staleBlockerRows.sort((left, right) => left.id.localeCompare(right.id));
+}
+
+function lifecycleCycleWarningToken(
+  prefix: "validate_lifecycle_dependency_cycles" | "validate_hierarchy_parent_cycle",
+  severity: ValidateDependencyCycleSeverity,
+  count: number,
+): string | null {
+  if (count <= 0 || severity === "off") {
+    return null;
+  }
+  return `${severity === "error" ? `${prefix}_error` : prefix}:${count}`;
+}
+
+function buildLifecycleWarnings(
+  rows: LifecycleScanRows,
+  includeStaleBlockers: boolean,
+  dependencyCycleSeverity: ValidateDependencyCycleSeverity,
+  parentCycleSeverity: ValidateDependencyCycleSeverity,
+  dependencyCycleCount: number,
+  parentCycleCount: number,
+): string[] {
+  const warnings: string[] = [];
+  if (rows.closureLikeRows.length > 0) {
+    warnings.push(`validate_lifecycle_active_closure_like_metadata:${rows.closureLikeRows.length}`);
+  }
+  if (rows.terminalParentRows.length > 0) {
+    warnings.push(`validate_lifecycle_active_terminal_parent:${rows.terminalParentRows.length}`);
+  }
+  if (includeStaleBlockers && rows.staleBlockerRows.length > 0) {
+    warnings.push(`validate_lifecycle_stale_blockers:${rows.staleBlockerRows.length}`);
+  }
+  const dependencyWarning = lifecycleCycleWarningToken(
+    "validate_lifecycle_dependency_cycles",
+    dependencyCycleSeverity,
+    dependencyCycleCount,
+  );
+  const parentWarning = lifecycleCycleWarningToken("validate_hierarchy_parent_cycle", parentCycleSeverity, parentCycleCount);
+  return [...warnings, ...(dependencyWarning ? [dependencyWarning] : []), ...(parentWarning ? [parentWarning] : [])];
+}
+
+interface LinkedPathScanState {
+  linkedProjectPaths: Set<string>;
+  remoteLinkedPaths: Set<string>;
+  missingLinkedPaths: string[];
+  staleLinkRows: Array<{ item_id: string; path: string; link_kind: "files" | "docs" }>;
+}
+
+async function linkedArtifactIsMissing(workspaceRoot: string, artifactPath: string): Promise<boolean> {
+  const absolutePath = path.isAbsolute(artifactPath) ? artifactPath : path.resolve(workspaceRoot, artifactPath);
+  try {
+    const stats = await fs.stat(absolutePath);
+    return !stats.isFile() && !stats.isDirectory();
+  } catch (error) {
+    const code =
+      typeof error === "object" && error !== null && "code" in error
+        ? (error as { code?: unknown }).code
+        : undefined;
+    return code === "ENOENT" || code === "ENOTDIR";
+  }
+}
+
+async function collectLinkedPathScanState(items: ItemWithBody[], workspaceRoot: string): Promise<LinkedPathScanState> {
+  const state: LinkedPathScanState = {
+    linkedProjectPaths: new Set<string>(),
+    remoteLinkedPaths: new Set<string>(),
+    missingLinkedPaths: [],
+    staleLinkRows: [],
+  };
+  for (const item of items) {
+    const linkedArtifactGroups = [
+      { link_kind: "files" as const, artifacts: item.files ?? [] },
+      { link_kind: "docs" as const, artifacts: item.docs ?? [] },
+    ];
+    for (const group of linkedArtifactGroups) {
+      for (const artifact of group.artifacts) {
+        if (artifact.scope !== "project") {
+          continue;
+        }
+        if (isRemoteLinkedArtifactReference(artifact.path)) {
+          state.remoteLinkedPaths.add(artifact.path.trim());
+          continue;
+        }
+        const normalizedPath = normalizeRelativePath(artifact.path);
+        if (normalizedPath.length === 0) {
+          continue;
+        }
+        state.linkedProjectPaths.add(normalizedPath);
+        if (await linkedArtifactIsMissing(workspaceRoot, artifact.path)) {
+          state.missingLinkedPaths.push(normalizedPath);
+          state.staleLinkRows.push({ item_id: item.id, path: normalizedPath, link_kind: group.link_kind });
+        }
+      }
+    }
+  }
+  return state;
+}
+
+interface FileCandidatePartition {
+  strictTrackedAllMode: boolean;
+  strictModeForcesPmInternals: boolean;
+  includePmInternalsEffective: boolean;
+  pmInternalCandidatePrefixes: string[];
+  excludedPmInternalPaths: string[];
+  candidateFiles: string[];
+  excludedByReason: Record<string, unknown>;
+}
+
+function partitionFileCandidates(
+  fileCandidates: FileCandidateCollection,
+  pmRoot: string,
+  workspaceRoot: string,
+  fileScanMode: ValidateFileScanMode,
+  includePmInternals: boolean,
+  verboseFileLists: boolean,
+): FileCandidatePartition {
+  const strictTrackedAllMode = fileScanMode === "tracked-all-strict";
+  const strictModeForcesPmInternals = strictTrackedAllMode && !includePmInternals;
+  const includePmInternalsEffective = includePmInternals || strictTrackedAllMode;
+  const pmInternalCandidatePrefixes = includePmInternalsEffective ? [] : resolvePmInternalCandidatePrefixes(pmRoot, workspaceRoot);
+  const excludedPmInternalPaths =
+    pmInternalCandidatePrefixes.length === 0
+      ? []
+      : fileCandidates.candidateFiles.filter((candidate) => hasPathPrefix(candidate, pmInternalCandidatePrefixes));
+  const candidateFiles =
+    pmInternalCandidatePrefixes.length === 0
+      ? fileCandidates.candidateFiles
+      : fileCandidates.candidateFiles.filter((candidate) => !hasPathPrefix(candidate, pmInternalCandidatePrefixes));
+  const excludedByReason: Record<string, unknown> = {};
+  if (excludedPmInternalPaths.length > 0) {
+    const summarizedPmInternalPaths = summarizeFileList(excludedPmInternalPaths, verboseFileLists);
+    excludedByReason.pm_internals = {
+      count: excludedPmInternalPaths.length,
+      paths: summarizedPmInternalPaths.values,
+      paths_truncated: summarizedPmInternalPaths.truncated,
+      paths_total: summarizedPmInternalPaths.total,
+    };
+  }
+  return {
+    strictTrackedAllMode,
+    strictModeForcesPmInternals,
+    includePmInternalsEffective,
+    pmInternalCandidatePrefixes,
+    excludedPmInternalPaths,
+    candidateFiles,
+    excludedByReason,
+  };
+}
+
 /* c8 ignore start -- lifecycle stale/terminal/dependency diagnostics matrix is covered by end-to-end validate integration runs */
 function buildLifecycleCheck(
   items: ItemWithBody[],
@@ -1428,148 +1813,30 @@ function buildLifecycleCheck(
   verboseDiagnostics: boolean,
   idPrefix = "pm",
 ): { check: ValidateCheck; warnings: string[]; terminalParentFixRows: TerminalParentFixRow[] } {
-  const itemsById = new Map(items.map((item) => [item.id, item]));
-  const blockedStatuses =
-    statusRegistry.blocked_statuses.size > 0 ? statusRegistry.blocked_statuses : new Set<string>(["blocked"]);
-  const activeItems = items.filter((item) => !isTerminalStatus(item.status, statusRegistry));
-  const closureLikeRows: Array<{ id: string; fields: string[] }> = [];
-  const terminalParentRows: Array<{ id: string; parent_id: string; parent_status: string }> = [];
-  const terminalParentFixRows: TerminalParentFixRow[] = [];
-  const staleBlockerRows: Array<{ id: string; status: string; reasons: string[] }> = [];
-
-  for (const item of activeItems) {
-    const closureLikeFields = Object.entries(lifecyclePatternPolicy.closure_like_metadata_field_patterns)
-      .filter(([field, patterns]) => {
-        const value = toMeaningfulString(item[field as keyof ItemWithBody]);
-        if (!value) {
-          return false;
-        }
-        const normalized = value.toLowerCase();
-        return patterns.some((pattern) => normalized.includes(pattern));
-      })
-      .map(([field]) => field)
-      .sort((left, right) => left.localeCompare(right));
-
-    if (closureLikeFields.length > 0) {
-      closureLikeRows.push({
-        id: item.id,
-        fields: closureLikeFields,
-      });
-    }
-
-    const parentId = toMeaningfulString(item.parent);
-    if (parentId) {
-      const parent = itemsById.get(parentId);
-      if (parent && isTerminalStatus(parent.status, statusRegistry)) {
-        terminalParentRows.push({
-          id: item.id,
-          parent_id: parent.id,
-          parent_status: parent.status,
-        });
-        // Gated lifecycle auto-fix input (pm-8jss): when the terminal parent
-        // has its own ACTIVE parent, the child can be reparented one level up;
-        // otherwise the suggested fix clears the parent link.
-        const grandparentId = toMeaningfulString(parent.parent);
-        const grandparent = grandparentId ? itemsById.get(grandparentId) : undefined;
-        terminalParentFixRows.push({
-          id: item.id,
-          parent_id: parent.id,
-          grandparent_id: grandparent?.id,
-          grandparent_active: grandparent !== undefined && !isTerminalStatus(grandparent.status, statusRegistry),
-        });
-      }
-    }
-
-    if (includeStaleBlockers) {
-      const blockedBy = toMeaningfulString(item.blocked_by);
-      const blockedReason = toMeaningfulString(item.blocked_reason);
-      const blockedReasonNormalized = blockedReason?.toLowerCase();
-      const reasons: string[] = [];
-      const normalizedStatus = normalizeStatusForRegistry(item.status, statusRegistry);
-
-      if (!blockedStatuses.has(normalizedStatus)) {
-        if (blockedBy) {
-          reasons.push("non_blocked_status_has_blocked_by");
-        }
-        if (blockedReason) {
-          reasons.push("non_blocked_status_has_blocked_reason");
-        }
-      } else {
-        if (!blockedBy && !blockedReason) {
-          reasons.push("blocked_status_missing_blocker_context");
-        }
-        if (blockedReasonNormalized?.includes("no active blocker")) {
-          reasons.push("blocked_status_reason_reports_no_active_blocker");
-        }
-        if (
-          blockedReasonNormalized &&
-          lifecyclePatternPolicy.stale_blocker_reason_patterns.some((pattern) => blockedReasonNormalized.includes(pattern))
-        ) {
-          reasons.push("blocked_status_reason_matches_stale_pattern");
-        }
-      }
-
-      if (reasons.length > 0) {
-        staleBlockerRows.push({
-          id: item.id,
-          status: item.status,
-          reasons: [...new Set(reasons)].sort((left, right) => left.localeCompare(right)),
-        });
-      }
-    }
-  }
-
-  closureLikeRows.sort((left, right) => left.id.localeCompare(right.id));
-  terminalParentRows.sort(
-    (left, right) => left.id.localeCompare(right.id) || left.parent_id.localeCompare(right.parent_id),
-  );
-  terminalParentFixRows.sort(
-    (left, right) => left.id.localeCompare(right.id) || left.parent_id.localeCompare(right.parent_id),
-  );
-  staleBlockerRows.sort((left, right) => left.id.localeCompare(right.id));
-  const dependencyCycleDiagnostics = detectLifecycleDependencyCycles(activeItems, idPrefix);
+  const rows = collectLifecycleScanRows(items, includeStaleBlockers, statusRegistry, lifecyclePatternPolicy);
+  sortLifecycleScanRows(rows);
+  const dependencyCycleDiagnostics = detectLifecycleDependencyCycles(rows.activeItems, idPrefix);
   const parentCycleDiagnostics = detectLifecycleParentCycles(items);
-
-  const warnings: string[] = [];
-  if (closureLikeRows.length > 0) {
-    warnings.push(`validate_lifecycle_active_closure_like_metadata:${closureLikeRows.length}`);
-  }
-  if (terminalParentRows.length > 0) {
-    warnings.push(`validate_lifecycle_active_terminal_parent:${terminalParentRows.length}`);
-  }
-  if (includeStaleBlockers && staleBlockerRows.length > 0) {
-    warnings.push(`validate_lifecycle_stale_blockers:${staleBlockerRows.length}`);
-  }
-  if (dependencyCycleDiagnostics.cycle_count > 0 && dependencyCycleSeverity !== "off") {
-    warnings.push(
-      `${
-        dependencyCycleSeverity === "error"
-          ? "validate_lifecycle_dependency_cycles_error"
-          : "validate_lifecycle_dependency_cycles"
-      }:${dependencyCycleDiagnostics.cycle_count}`,
-    );
-  }
-  if (parentCycleDiagnostics.cycle_count > 0 && parentCycleSeverity !== "off") {
-    warnings.push(
-      `${
-        parentCycleSeverity === "error"
-          ? "validate_hierarchy_parent_cycle_error"
-          : "validate_hierarchy_parent_cycle"
-      }:${parentCycleDiagnostics.cycle_count}`,
-    );
-  }
+  const warnings = buildLifecycleWarnings(
+    rows,
+    includeStaleBlockers,
+    dependencyCycleSeverity,
+    parentCycleSeverity,
+    dependencyCycleDiagnostics.cycle_count,
+    parentCycleDiagnostics.cycle_count,
+  );
 
   const diagnosticLimit = verboseDiagnostics ? Number.POSITIVE_INFINITY : DIAGNOSTIC_LIST_SUMMARY_LIMIT;
   const summarizedClosureLikeRows = summarizeList(
-    closureLikeRows.map((row) => `${row.id}:${row.fields.join(",")}`),
+    rows.closureLikeRows.map((row) => `${row.id}:${row.fields.join(",")}`),
     diagnosticLimit,
   );
   const summarizedTerminalParentRows = summarizeList(
-    terminalParentRows.map((row) => `${row.id}:${row.parent_id}:${row.parent_status}`),
+    rows.terminalParentRows.map((row) => `${row.id}:${row.parent_id}:${row.parent_status}`),
     diagnosticLimit,
   );
   const summarizedStaleBlockerRows = summarizeList(
-    staleBlockerRows.map((row) => `${row.id}:${row.status}:${row.reasons.join(",")}`),
+    rows.staleBlockerRows.map((row) => `${row.id}:${row.status}:${row.reasons.join(",")}`),
     diagnosticLimit,
   );
   const summarizedDependencyCycleItemIds = summarizeList(dependencyCycleDiagnostics.cycle_item_ids, diagnosticLimit);
@@ -1590,15 +1857,15 @@ function buildLifecycleCheck(
           ? "ok"
           : "warn",
       details: {
-        checked_active_items: activeItems.length,
-        active_closure_like_metadata_items: closureLikeRows.length,
+        checked_active_items: rows.activeItems.length,
+        active_closure_like_metadata_items: rows.closureLikeRows.length,
         active_closure_like_metadata_rows: summarizedClosureLikeRows.values,
         active_closure_like_metadata_rows_truncated: summarizedClosureLikeRows.truncated,
-        active_terminal_parent_items: terminalParentRows.length,
+        active_terminal_parent_items: rows.terminalParentRows.length,
         active_terminal_parent_rows: summarizedTerminalParentRows.values,
         active_terminal_parent_rows_truncated: summarizedTerminalParentRows.truncated,
         stale_blocker_checks_enabled: includeStaleBlockers,
-        stale_blocker_items: staleBlockerRows.length,
+        stale_blocker_items: rows.staleBlockerRows.length,
         stale_blocker_rows: summarizedStaleBlockerRows.values,
         stale_blocker_rows_truncated: summarizedStaleBlockerRows.truncated,
         dependency_cycle_severity_policy: dependencyCycleSeverity,
@@ -1631,7 +1898,7 @@ function buildLifecycleCheck(
       },
     },
     warnings,
-    terminalParentFixRows,
+    terminalParentFixRows: rows.terminalParentFixRows,
   };
 }
 /* c8 ignore stop */
@@ -1645,87 +1912,20 @@ async function buildFilesCheck(
   includePmInternals: boolean,
   verboseFileLists: boolean,
 ): Promise<{ check: ValidateCheck; warnings: string[]; staleLinkPruneRows: StaleLinkPruneRow[] }> {
-  const linkedProjectPaths = new Set<string>();
-  const remoteLinkedPaths = new Set<string>();
-  const missingLinkedPaths: string[] = [];
-  const staleLinkRows: Array<{ item_id: string; path: string; link_kind: "files" | "docs" }> = [];
+  const linkedPathState = await collectLinkedPathScanState(items, workspaceRoot);
   const itemsById = new Map(items.map((item) => [item.id, item]));
-
-  for (const item of items) {
-    const linkedArtifactGroups = [
-      { link_kind: "files" as const, artifacts: item.files ?? [] },
-      { link_kind: "docs" as const, artifacts: item.docs ?? [] },
-    ];
-    for (const group of linkedArtifactGroups) {
-      for (const artifact of group.artifacts) {
-        if (artifact.scope !== "project") {
-          continue;
-        }
-        // Remote references (https:// PR/issue/design-doc URLs recorded via
-        // `pm docs --add`) are not local files: they must never be stat'd,
-        // classified as moved/deleted, counted missing, or pruned by
-        // --prune-missing (which would silently destroy recorded context).
-        if (isRemoteLinkedArtifactReference(artifact.path)) {
-          remoteLinkedPaths.add(artifact.path.trim());
-          continue;
-        }
-        const normalizedPath = normalizeRelativePath(artifact.path);
-        if (normalizedPath.length === 0) {
-          continue;
-        }
-        linkedProjectPaths.add(normalizedPath);
-        const absolutePath = path.isAbsolute(artifact.path) ? artifact.path : path.resolve(workspaceRoot, artifact.path);
-        let missing = false;
-        try {
-          const stats = await fs.stat(absolutePath);
-          if (!stats.isFile() && !stats.isDirectory()) {
-            missing = true;
-          }
-        } catch {
-          missing = true;
-        }
-        if (missing) {
-          missingLinkedPaths.push(normalizedPath);
-          staleLinkRows.push({ item_id: item.id, path: normalizedPath, link_kind: group.link_kind });
-        }
-      }
-    }
-  }
-
-  const uniqueMissingLinkedPaths = [...new Set(missingLinkedPaths)].sort((left, right) => left.localeCompare(right));
+  const uniqueMissingLinkedPaths = [...new Set(linkedPathState.missingLinkedPaths)].sort((left, right) => left.localeCompare(right));
   const fileCandidates = await collectProjectFileCandidates(workspaceRoot, fileScanMode);
-  const strictTrackedAllMode = fileScanMode === "tracked-all-strict";
-  const strictModeForcesPmInternals = strictTrackedAllMode && !includePmInternals;
-  const includePmInternalsEffective = includePmInternals || strictTrackedAllMode;
-  const pmInternalCandidatePrefixes = includePmInternalsEffective ? [] : resolvePmInternalCandidatePrefixes(pmRoot, workspaceRoot);
-  const excludedPmInternalPaths =
-    pmInternalCandidatePrefixes.length === 0
-      ? []
-      : fileCandidates.candidateFiles.filter((candidate) => hasPathPrefix(candidate, pmInternalCandidatePrefixes));
-  const candidateFiles =
-    pmInternalCandidatePrefixes.length === 0
-      ? fileCandidates.candidateFiles
-      : fileCandidates.candidateFiles.filter((candidate) => !hasPathPrefix(candidate, pmInternalCandidatePrefixes));
-  const excludedPmInternalCount = excludedPmInternalPaths.length;
-  const excludedByReason: Record<string, unknown> = {};
-  if (excludedPmInternalCount > 0) {
-    const summarizedPmInternalPaths = summarizeFileList(excludedPmInternalPaths, verboseFileLists);
-    excludedByReason.pm_internals = {
-      count: excludedPmInternalCount,
-      paths: summarizedPmInternalPaths.values,
-      paths_truncated: summarizedPmInternalPaths.truncated,
-      paths_total: summarizedPmInternalPaths.total,
-    };
-  }
-  const orphanedFiles = candidateFiles.filter((candidate) => !linkedProjectPaths.has(candidate));
+  const partition = partitionFileCandidates(fileCandidates, pmRoot, workspaceRoot, fileScanMode, includePmInternals, verboseFileLists);
+  const orphanedFiles = partition.candidateFiles.filter((candidate) => !linkedPathState.linkedProjectPaths.has(candidate));
   const orphanedPathRows = buildOrphanedPathRows(orphanedFiles, items);
   // Stale-path classification (pm-0v2m / GH-184): a missing linked path whose
   // basename still exists in the candidate scan is reported as `moved` (with
   // relink candidates); otherwise it is `deleted` and safe to prune.
-  const classifiedStalePaths = classifyStaleLinkedPaths(uniqueMissingLinkedPaths, candidateFiles);
+  const classifiedStalePaths = classifyStaleLinkedPaths(uniqueMissingLinkedPaths, partition.candidateFiles);
   const classificationByPath = new Map(classifiedStalePaths.map((entry) => [entry.path, entry.classification]));
   const movedStalePathCount = classifiedStalePaths.filter((entry) => entry.classification === "moved").length;
-  const staleLinkPruneRows: StaleLinkPruneRow[] = staleLinkRows
+  const staleLinkPruneRows: StaleLinkPruneRow[] = linkedPathState.staleLinkRows
     .map((row) => ({
       ...row,
       classification: classificationByPath.get(row.path) ?? ("deleted" as const),
@@ -1737,7 +1937,7 @@ async function buildFilesCheck(
         left.link_kind.localeCompare(right.link_kind),
     );
   const warnings: string[] = [];
-  if (strictModeForcesPmInternals) {
+  if (partition.strictModeForcesPmInternals) {
     warnings.push("validate_files_tracked_all_strict_forces_pm_internals");
   }
   if (uniqueMissingLinkedPaths.length > 0) {
@@ -1746,7 +1946,7 @@ async function buildFilesCheck(
   if (orphanedFiles.length > 0) {
     warnings.push(`validate_files_orphaned_paths:${orphanedFiles.length}`);
   }
-  const uniqueRemoteLinkedPaths = [...remoteLinkedPaths].sort((left, right) => left.localeCompare(right));
+  const uniqueRemoteLinkedPaths = [...linkedPathState.remoteLinkedPaths].sort((left, right) => left.localeCompare(right));
   const summarizedRemote = summarizeFileList(uniqueRemoteLinkedPaths, verboseFileLists);
   const summarizedMissing = summarizeFileList(uniqueMissingLinkedPaths, verboseFileLists);
   const summarizedOrphaned = summarizeFileList(orphanedFiles, verboseFileLists);
@@ -1790,30 +1990,30 @@ async function buildFilesCheck(
         workspace_root: workspaceRoot,
         scan_mode_requested: fileCandidates.requestedMode,
         scan_mode_applied: fileCandidates.appliedMode,
-        strict_tracked_all_mode: strictTrackedAllMode,
-        strict_mode_forces_pm_internals: strictModeForcesPmInternals,
-        strict_mode_forces_pm_internals_notice: strictModeForcesPmInternals
+        strict_tracked_all_mode: partition.strictTrackedAllMode,
+        strict_mode_forces_pm_internals: partition.strictModeForcesPmInternals,
+        strict_mode_forces_pm_internals_notice: partition.strictModeForcesPmInternals
           ? "tracked-all-strict force-enables PM internals; pass --include-pm-internals to make inclusion explicit."
           : null,
         file_list_detail_mode: verboseFileLists ? "full" : "summary",
         file_list_summary_limit: FILE_LIST_SUMMARY_LIMIT,
         candidate_scan_source: fileCandidates.source,
-        include_pm_internals: includePmInternalsEffective,
+        include_pm_internals: partition.includePmInternalsEffective,
         include_pm_internals_requested: includePmInternals,
-        pm_internal_candidate_prefixes: pmInternalCandidatePrefixes,
-        pm_internal_excluded_count: excludedPmInternalCount,
-        excluded_total: excludedPmInternalCount,
-        excluded_by_reason: excludedByReason,
-        linked_project_paths: linkedProjectPaths.size,
+        pm_internal_candidate_prefixes: partition.pmInternalCandidatePrefixes,
+        pm_internal_excluded_count: partition.excludedPmInternalPaths.length,
+        excluded_total: partition.excludedPmInternalPaths.length,
+        excluded_by_reason: partition.excludedByReason,
+        linked_project_paths: linkedPathState.linkedProjectPaths.size,
         remote_linked_paths_count: uniqueRemoteLinkedPaths.length,
         remote_linked_paths_total: summarizedRemote.total,
         remote_linked_paths: summarizedRemote.values,
         remote_linked_paths_truncated: summarizedRemote.truncated,
         candidate_total_raw: fileCandidates.candidateTotal,
         candidate_scanned_raw: fileCandidates.candidateScanned,
-        candidate_total: candidateFiles.length,
-        candidate_scanned: candidateFiles.length,
-        scanned_candidate_files: candidateFiles.length,
+        candidate_total: partition.candidateFiles.length,
+        candidate_scanned: partition.candidateFiles.length,
+        scanned_candidate_files: partition.candidateFiles.length,
         missing_linked_paths_count: uniqueMissingLinkedPaths.length,
         missing_linked_paths_total: summarizedMissing.total,
         missing_linked_paths: summarizedMissing.values,
@@ -2118,10 +2318,14 @@ export const _testOnlyValidateCommand = {
   applyValidateFixes,
   attachValidateFixHints,
   buildCommandReferencesCheck,
+  buildCloseReasonBackfillRows,
   buildFilesCheck,
   buildLifecycleCheck,
   buildLifecycleDependencyGraph,
   buildLifecycleParentGraph,
+  buildEstimateBackfillRows,
+  buildMetadataCounts,
+  buildMissingFieldOccurrences,
   buildOrphanedPathRows,
   classifyOrphanedPath,
   collectDefaultProjectFileCandidates,
@@ -2145,6 +2349,175 @@ export const _testOnlyValidateCommand = {
   summarizeDuplicateIssueCodes,
   toMeaningfulString,
 };
+
+type LoadedValidateSettings = Awaited<ReturnType<typeof readSettings>>;
+
+interface ValidateCheckExecutionState {
+  checks: ValidateCheck[];
+  warnings: string[];
+  closeReasonBackfillRows: CloseReasonBackfillRow[];
+  estimateBackfillRows: EstimateBackfillRow[];
+  resolutionBackfillRows: ResolutionBackfillRow[];
+  terminalParentFixRows: TerminalParentFixRow[];
+  staleLinkPruneRows: StaleLinkPruneRow[];
+}
+
+function recordValidateCheck(
+  state: ValidateCheckExecutionState,
+  built: { check: ValidateCheck; warnings: string[] },
+  fixHintsEnabled: boolean,
+): void {
+  if (fixHintsEnabled) {
+    attachValidateFixHints(built.check, built.warnings);
+  }
+  state.checks.push(built.check);
+  state.warnings.push(...built.warnings);
+}
+
+async function executeRequestedValidateChecks(params: {
+  requestedChecks: Set<ValidateCheckName>;
+  options: ValidateCommandOptions;
+  global: GlobalOptions;
+  pmRoot: string;
+  workspaceRoot: string;
+  settings: LoadedValidateSettings;
+  items: ItemWithBody[];
+  statusRegistry: RuntimeStatusRegistry;
+  metadataPolicy: ValidateMetadataPolicy;
+  lifecyclePatternPolicy: LifecyclePatternPolicy;
+  dependencyCycleSeverity: ValidateDependencyCycleSeverity;
+  parentCycleSeverity: ValidateDependencyCycleSeverity;
+  fileScanMode: ValidateFileScanMode;
+  initialWarnings: string[];
+}): Promise<ValidateCheckExecutionState> {
+  const state: ValidateCheckExecutionState = {
+    checks: [],
+    warnings: [...params.initialWarnings],
+    closeReasonBackfillRows: [],
+    estimateBackfillRows: [],
+    resolutionBackfillRows: [],
+    terminalParentFixRows: [],
+    staleLinkPruneRows: [],
+  };
+  const fixHintsEnabled = params.options.fixHints === true;
+  const fullDiagnostics =
+    params.options.verboseDiagnostics === true || params.options.allAffectedIds === true || params.global.json === true;
+  if (params.requestedChecks.has("metadata")) {
+    const built = buildMetadataCheck(params.items, params.metadataPolicy, params.statusRegistry, fullDiagnostics);
+    state.closeReasonBackfillRows = built.closeReasonBackfillRows;
+    state.estimateBackfillRows = built.estimateBackfillRows;
+    recordValidateCheck(state, built, fixHintsEnabled);
+  }
+  if (params.requestedChecks.has("resolution")) {
+    const built = buildResolutionCheck(params.items, params.statusRegistry, fullDiagnostics);
+    state.resolutionBackfillRows = built.resolutionBackfillRows;
+    recordValidateCheck(state, built, fixHintsEnabled);
+  }
+  if (params.requestedChecks.has("lifecycle")) {
+    const built = buildLifecycleCheck(
+      params.items,
+      Boolean(params.options.checkStaleBlockers),
+      params.dependencyCycleSeverity,
+      params.parentCycleSeverity,
+      params.statusRegistry,
+      params.lifecyclePatternPolicy,
+      fullDiagnostics,
+      params.settings.id_prefix,
+    );
+    state.terminalParentFixRows = built.terminalParentFixRows;
+    recordValidateCheck(state, built, fixHintsEnabled);
+  }
+  if (params.requestedChecks.has("files")) {
+    const built = await buildFilesCheck(
+      params.items,
+      params.workspaceRoot,
+      params.pmRoot,
+      params.fileScanMode,
+      Boolean(params.options.includePmInternals),
+      Boolean(params.options.verboseFileLists),
+    );
+    state.staleLinkPruneRows = built.staleLinkPruneRows;
+    recordValidateCheck(state, built, fixHintsEnabled);
+  }
+  if (params.requestedChecks.has("command_references")) {
+    recordValidateCheck(
+      state,
+      buildCommandReferencesCheck(params.items, params.settings.id_prefix, fullDiagnostics),
+      fixHintsEnabled,
+    );
+  }
+  if (params.requestedChecks.has("history_drift")) {
+    recordValidateCheck(state, await buildHistoryDriftCheck(params.pmRoot, params.items, fullDiagnostics), fixHintsEnabled);
+  }
+  if (params.requestedChecks.has("format_version")) {
+    recordValidateCheck(state, buildFormatVersionCheck(params.items, fullDiagnostics), fixHintsEnabled);
+  }
+  return state;
+}
+
+function planValidateFixes(
+  options: ValidateCommandOptions,
+  state: ValidateCheckExecutionState,
+  settings: LoadedValidateSettings,
+): ValidateFixRecord[] {
+  const planned: ValidateFixRecord[] = [];
+  if (options.autoFix === true) {
+    planned.push(...planCloseReasonBackfillFixes(state.closeReasonBackfillRows));
+    planned.push(...planResolutionBackfillFixes(state.resolutionBackfillRows));
+    planned.push(...planEstimateBackfillFixes(state.estimateBackfillRows, settings.validation.estimate_defaults_by_type));
+    planned.push(...planTerminalParentFixes(state.terminalParentFixRows));
+  }
+  if (options.pruneMissing === true) {
+    planned.push(...planStaleLinkPruneFixes(state.staleLinkPruneRows));
+  }
+  return planned;
+}
+
+/* v8 ignore start -- validate fix-summary matrix is covered end-to-end; direct helper fallback branches are defensive */
+async function buildValidateFixesSummary(
+  options: ValidateCommandOptions,
+  state: ValidateCheckExecutionState,
+  settings: LoadedValidateSettings,
+  grantedFixScopes: Set<ValidateFixScope>,
+  global: GlobalOptions,
+): Promise<ValidateFixesSummary | undefined> {
+  if (options.autoFix !== true && options.pruneMissing !== true) {
+    return undefined;
+  }
+  const planned = planValidateFixes(options, state, settings);
+  const { applicable, gated } = partitionFixesByGrant(planned, grantedFixScopes);
+  const dryRun = options.dryRun === true;
+  const appliedFixRows: Array<Record<string, unknown>> = [];
+  const failedFixRows: Array<Record<string, unknown>> = [];
+  if (!dryRun) {
+    const applied = await applyValidateFixes(applicable, global);
+    appliedFixRows.push(...applied.applied.map(toFixOutputRow));
+    failedFixRows.push(
+      ...applied.failed.map(({ fix, error }) => ({
+        ...toFixOutputRow(fix),
+        error: error instanceof Error ? error.message : String(error),
+      })),
+    );
+  }
+  return {
+    mode: dryRun ? "dry_run" : "apply",
+    auto_fix: options.autoFix === true,
+    prune_missing: options.pruneMissing === true,
+    granted_fix_scopes: [...grantedFixScopes].sort((left, right) => left.localeCompare(right)),
+    planned_count: planned.length,
+    applied_count: appliedFixRows.length,
+    gated_count: gated.length,
+    failed_count: failedFixRows.length,
+    planned_fixes: planned.map(toFixOutputRow),
+    applied_fixes: appliedFixRows,
+    gated_fixes: gated.map((fix) => ({
+      ...toFixOutputRow(fix),
+      gate_hint: `Withheld: re-run with --fix-scope ${fix.gate} to apply.`,
+    })),
+    failed_fixes: failedFixRows,
+  };
+}
+/* v8 ignore stop */
 
 /* c8 ignore start -- validate orchestration + fix-application matrices are covered by end-to-end command integration runs */
 /**
@@ -2195,131 +2568,38 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
   const parentCycleSeverity = resolveParentCycleSeverity(options.parentCycleSeverity);
   const fileScanMode = resolveFileScanMode(options.scanMode);
   const workspaceRoot = resolveWorkspaceRoot(pmRoot);
-  const checks: ValidateCheck[] = [];
-  const warnings = [...new Set(itemReadWarnings)];
-  const fixHintsEnabled = options.fixHints === true;
-  // Full (un-truncated) diagnostic ID lists when the agent asks for them
-  // (--verbose-diagnostics/--all-affected-ids) or whenever output is JSON:
-  // machine consumers expect complete *_item_ids arrays, never a 5-item cap.
-  const fullDiagnostics =
-    options.verboseDiagnostics === true || options.allAffectedIds === true || global.json === true;
-  const record = (built: { check: ValidateCheck; warnings: string[] }): void => {
-    if (fixHintsEnabled) {
-      attachValidateFixHints(built.check, built.warnings);
-    }
-    checks.push(built.check);
-    warnings.push(...built.warnings);
-  };
-
-  let closeReasonBackfillRows: CloseReasonBackfillRow[] = [];
-  let estimateBackfillRows: EstimateBackfillRow[] = [];
-  let resolutionBackfillRows: ResolutionBackfillRow[] = [];
-  let terminalParentFixRows: TerminalParentFixRow[] = [];
-  let staleLinkPruneRows: StaleLinkPruneRow[] = [];
-
-  if (requestedChecks.has("metadata")) {
-    const built = buildMetadataCheck(items, metadataPolicy, statusRegistry, fullDiagnostics);
-    closeReasonBackfillRows = built.closeReasonBackfillRows;
-    estimateBackfillRows = built.estimateBackfillRows;
-    record(built);
-  }
-  if (requestedChecks.has("resolution")) {
-    const built = buildResolutionCheck(items, statusRegistry, fullDiagnostics);
-    resolutionBackfillRows = built.resolutionBackfillRows;
-    record(built);
-  }
-  if (requestedChecks.has("lifecycle")) {
-    const built = buildLifecycleCheck(
-      items,
-      Boolean(options.checkStaleBlockers),
-      dependencyCycleSeverity,
-      parentCycleSeverity,
-      statusRegistry,
-      lifecyclePatternPolicy,
-      fullDiagnostics,
-      settings.id_prefix,
-    );
-    terminalParentFixRows = built.terminalParentFixRows;
-    record(built);
-  }
-  if (requestedChecks.has("files")) {
-    const built = await buildFilesCheck(
-      items,
-      workspaceRoot,
-      pmRoot,
-      fileScanMode,
-      Boolean(options.includePmInternals),
-      Boolean(options.verboseFileLists),
-    );
-    staleLinkPruneRows = built.staleLinkPruneRows;
-    record(built);
-  }
-  if (requestedChecks.has("command_references")) {
-    record(buildCommandReferencesCheck(items, settings.id_prefix, fullDiagnostics));
-  }
-  if (requestedChecks.has("history_drift")) {
-    record(await buildHistoryDriftCheck(pmRoot, items, fullDiagnostics));
-  }
-  if (requestedChecks.has("format_version")) {
-    record(buildFormatVersionCheck(items, fullDiagnostics));
-  }
+  const state = await executeRequestedValidateChecks({
+    requestedChecks,
+    options,
+    global,
+    pmRoot,
+    workspaceRoot,
+    settings,
+    items,
+    statusRegistry,
+    metadataPolicy,
+    lifecyclePatternPolicy,
+    dependencyCycleSeverity,
+    parentCycleSeverity,
+    fileScanMode,
+    initialWarnings: [...new Set(itemReadWarnings)],
+  });
 
   // Remediation phase (pm-c3sz / pm-8jss / pm-0v2m). Plans are derived from
   // the findings of THIS run; checks above always report the pre-fix state.
   // Safe field backfills apply by default under --auto-fix; gated lifecycle
   // fixes are planned but withheld unless --fix-scope lifecycle grants them;
   // --dry-run previews without mutating; failures never abort the run.
-  let fixes: ValidateFixesSummary | undefined;
-  if (fixesRequested) {
-    const planned: ValidateFixRecord[] = [];
-    if (options.autoFix === true) {
-      planned.push(...planCloseReasonBackfillFixes(closeReasonBackfillRows));
-      planned.push(...planResolutionBackfillFixes(resolutionBackfillRows));
-      planned.push(...planEstimateBackfillFixes(estimateBackfillRows, settings.validation.estimate_defaults_by_type));
-      planned.push(...planTerminalParentFixes(terminalParentFixRows));
-    }
-    if (options.pruneMissing === true) {
-      planned.push(...planStaleLinkPruneFixes(staleLinkPruneRows));
-    }
-    const { applicable, gated } = partitionFixesByGrant(planned, grantedFixScopes);
-    const dryRun = options.dryRun === true;
-    const appliedFixRows: Array<Record<string, unknown>> = [];
-    const failedFixRows: Array<Record<string, unknown>> = [];
-    if (!dryRun) {
-      const applied = await applyValidateFixes(applicable, global);
-      appliedFixRows.push(...applied.applied.map(toFixOutputRow));
-      failedFixRows.push(
-        ...applied.failed.map(({ fix, error }) => ({
-          ...toFixOutputRow(fix),
-          error: error instanceof Error ? error.message : String(error),
-        })),
-      );
-    }
-    fixes = {
-      mode: dryRun ? "dry_run" : "apply",
-      auto_fix: options.autoFix === true,
-      prune_missing: options.pruneMissing === true,
-      granted_fix_scopes: [...grantedFixScopes].sort((left, right) => left.localeCompare(right)),
-      planned_count: planned.length,
-      applied_count: appliedFixRows.length,
-      gated_count: gated.length,
-      failed_count: failedFixRows.length,
-      planned_fixes: planned.map(toFixOutputRow),
-      applied_fixes: appliedFixRows,
-      gated_fixes: gated.map((fix) => ({
-        ...toFixOutputRow(fix),
-        gate_hint: `Withheld: re-run with --fix-scope ${fix.gate} to apply.`,
-      })),
-      failed_fixes: failedFixRows,
-    };
-  }
+  const fixes = fixesRequested
+    ? await buildValidateFixesSummary(options, state, settings, grantedFixScopes, global)
+    : undefined;
 
-  const normalizedWarnings = [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
-  const hasErrors = checks.some((check) => check.status === "error");
+  const normalizedWarnings = [...new Set(state.warnings)].sort((left, right) => left.localeCompare(right));
+  const hasErrors = state.checks.some((check) => check.status === "error");
   return {
     ok: !hasErrors,
     has_warnings: normalizedWarnings.length > 0,
-    checks,
+    checks: state.checks,
     warnings: normalizedWarnings,
     ...(fixes !== undefined ? { fixes } : {}),
     generated_at: nowIso(),

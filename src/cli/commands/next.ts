@@ -249,6 +249,62 @@ function nextListOptions(options: NextOptions, extra: Partial<ListOptions>): Lis
   };
 }
 
+function rankNextReadyEntries(
+  ready: ActionableEntry[],
+  childrenByParent: Map<string, ItemFrontMatter[]>,
+  statusRegistry: RuntimeStatusRegistry,
+): ActionableEntry[] {
+  return [...ready].sort((left, right) => {
+    const leftCompletedContainer = hasCompletedDescendants(left.item, childrenByParent);
+    const rightCompletedContainer = hasCompletedDescendants(right.item, childrenByParent);
+    if (leftCompletedContainer !== rightCompletedContainer) {
+      return Number(leftCompletedContainer) - Number(rightCompletedContainer);
+    }
+    return compareCriticalItems(left.item, right.item, statusRegistry);
+  });
+}
+
+function buildNextRecommendation(params: {
+  projectedReady: ActionableEntry[];
+  readyRows: NextActionableItem[];
+  statusRegistry: RuntimeStatusRegistry;
+  now: string;
+  completedContainer: boolean;
+}): NextRecommendation | null {
+  if (params.projectedReady.length === 0) {
+    return null;
+  }
+  return {
+    ...params.readyRows[0],
+    reasons: buildRecommendationReasons(
+      params.projectedReady[0],
+      params.statusRegistry,
+      params.now,
+      params.completedContainer,
+    ),
+  };
+}
+
+function buildNextSuggestions(recommended: NextRecommendation | null, blockedRows: NextActionableItem[]): string[] | undefined {
+  if (recommended !== null) {
+    return undefined;
+  }
+  if (blockedRows.length > 0) {
+    return [
+      `${blockedRows.length} item(s) are blocked; unblock the top one by closing ${blockedRows[0].blockers
+        .map((blocker) => blocker.id)
+        .join(", ")}`,
+      "pm next --ready-only after a blocker closes to re-check ready work",
+      'pm create --type Task --title "..." to add new ready work',
+    ];
+  }
+  return [
+    'pm create --type Task --title "..." to add a new work item',
+    "pm list --status in_progress to review work already underway",
+    "pm context --depth deep for the full project snapshot",
+  ];
+}
+
 /**
  * Implements `pm next`: computes the ranked ready/blocked actionable queues and a
  * single recommended next item with rationale for the public runtime surface.
@@ -283,14 +339,7 @@ export async function runNext(options: NextOptions, global: GlobalOptions): Prom
 
   const report = computeActionabilityReport(candidates, corpus, statusRegistry);
   const childrenByParent = buildChildrenByParent(corpus);
-  const rankedReady = [...report.ready].sort((left, right) => {
-    const leftCompletedContainer = hasCompletedDescendants(left.item, childrenByParent);
-    const rightCompletedContainer = hasCompletedDescendants(right.item, childrenByParent);
-    if (leftCompletedContainer !== rightCompletedContainer) {
-      return Number(leftCompletedContainer) - Number(rightCompletedContainer);
-    }
-    return compareCriticalItems(left.item, right.item, statusRegistry);
-  });
+  const rankedReady = rankNextReadyEntries(report.ready, childrenByParent, statusRegistry);
   const rankedBlocked = [...report.blocked].sort((left, right) =>
     compareCriticalItems(left.item, right.item, statusRegistry),
   );
@@ -300,18 +349,13 @@ export async function runNext(options: NextOptions, global: GlobalOptions): Prom
   const readyRows = projectedReady.map((entry) => toNextActionableItem(entry, statusRegistry, childrenByParent));
   const blockedRows = rankedBlocked.map((entry) => toNextActionableItem(entry, statusRegistry, childrenByParent));
 
-  const recommended: NextRecommendation | null =
-    projectedReady.length > 0
-      ? {
-          ...readyRows[0],
-          reasons: buildRecommendationReasons(
-            projectedReady[0],
-            statusRegistry,
-            now,
-            concreteReady.length === 0,
-          ),
-        }
-      : null;
+  const recommended = buildNextRecommendation({
+    projectedReady,
+    readyRows,
+    statusRegistry,
+    now,
+    completedContainer: concreteReady.length === 0,
+  });
 
   const result: NextResult = {
     output_default: "toon",
@@ -347,22 +391,7 @@ export async function runNext(options: NextOptions, global: GlobalOptions): Prom
   );
   if (warnings.length > 0) result.warnings = warnings;
 
-  if (recommended === null) {
-    result.suggestions =
-      blockedRows.length > 0
-        ? [
-            `${blockedRows.length} item(s) are blocked; unblock the top one by closing ${blockedRows[0].blockers
-              .map((blocker) => blocker.id)
-              .join(", ")}`,
-            "pm next --ready-only after a blocker closes to re-check ready work",
-            'pm create --type Task --title "..." to add new ready work',
-          ]
-        : [
-            'pm create --type Task --title "..." to add a new work item',
-            "pm list --status in_progress to review work already underway",
-            "pm context --depth deep for the full project snapshot",
-          ];
-  }
+  result.suggestions = buildNextSuggestions(recommended, blockedRows);
 
   return result;
 }

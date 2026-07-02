@@ -328,6 +328,115 @@ export type NestedSettingParseResult =
   | { ok: true; parsed: NestedSettingParsedValue }
   | { ok: false; error: NestedSettingParseError };
 
+function parseNestedBooleanValue(descriptor: NestedSettingDescriptor, rawValue: string): NestedSettingParseResult {
+  const normalized = rawValue.trim().toLowerCase();
+  if (normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "on") {
+    return { ok: true, parsed: { descriptor, value: true } };
+  }
+  if (normalized === "false" || normalized === "0" || normalized === "no" || normalized === "off") {
+    return { ok: true, parsed: { descriptor, value: false } };
+  }
+  return {
+    ok: false,
+    error: {
+      message: `Config set ${descriptor.key} requires a boolean value (true|false), got "${rawValue}"`,
+    },
+  };
+}
+
+function parseNestedStringValue(
+  descriptor: NestedSettingDescriptor,
+  rawValue: string,
+  trimmed: string,
+): NestedSettingParseResult {
+  if (descriptor.non_empty === true && trimmed.length === 0) {
+    return {
+      ok: false,
+      error: { message: `Config set ${descriptor.key} requires a non-empty value` },
+    };
+  }
+  if (descriptor.choices && !descriptor.choices.includes(trimmed)) {
+    return {
+      ok: false,
+      error: {
+        message: `Config set ${descriptor.key} must be one of ${descriptor.choices.join("|")}, got "${rawValue}"`,
+      },
+    };
+  }
+  return { ok: true, parsed: { descriptor, value: trimmed } };
+}
+
+function parseFiniteNestedNumber(
+  descriptor: NestedSettingDescriptor,
+  rawValue: string,
+  trimmed: string,
+): { ok: true; value: number } | { ok: false; error: NestedSettingParseError } {
+  if (trimmed.length === 0) {
+    return {
+      ok: false,
+      error: { message: `Config set ${descriptor.key} requires a non-empty value` },
+    };
+  }
+  const parsed = Number(trimmed);
+  if (!Number.isFinite(parsed)) {
+    return {
+      ok: false,
+      error: { message: `Config set ${descriptor.key} requires a finite number, got "${rawValue}"` },
+    };
+  }
+  return { ok: true, value: parsed };
+}
+
+function parseNestedIntegerValue(
+  descriptor: NestedSettingDescriptor,
+  rawValue: string,
+  value: number,
+): NestedSettingParseResult {
+  if (!Number.isInteger(value) || value < 0) {
+    return {
+      ok: false,
+      error: { message: `Config set ${descriptor.key} requires a non-negative integer, got "${rawValue}"` },
+    };
+  }
+  if (descriptor.min !== undefined && value < descriptor.min) {
+    return {
+      ok: false,
+      error: {
+        message: `Config set ${descriptor.key} requires an integer >= ${descriptor.min}, got "${rawValue}" (the runtime silently ignores 0 here and falls back to the default)`,
+      },
+    };
+  }
+  return { ok: true, parsed: { descriptor, value } };
+}
+
+function parseNestedRatioValue(
+  descriptor: NestedSettingDescriptor,
+  rawValue: string,
+  value: number,
+): NestedSettingParseResult {
+  if (value < 0 || value > 1) {
+    return {
+      ok: false,
+      error: { message: `Config set ${descriptor.key} requires a number in [0, 1], got "${rawValue}"` },
+    };
+  }
+  return { ok: true, parsed: { descriptor, value } };
+}
+
+function parseNestedNumberValue(
+  descriptor: NestedSettingDescriptor,
+  rawValue: string,
+  value: number,
+): NestedSettingParseResult {
+  if (descriptor.min !== undefined && value < descriptor.min) {
+    return {
+      ok: false,
+      error: { message: `Config set ${descriptor.key} requires a number >= ${descriptor.min}, got "${rawValue}"` },
+    };
+  }
+  return { ok: true, parsed: { descriptor, value } };
+}
+
 /**
  * Validate and coerce a raw string value for a nested-leaf setting. The
  * returned value is the typed leaf that should be written into PmSettings.
@@ -343,88 +452,26 @@ export function parseNestedSettingValue(
   }
   const trimmed = rawValue.trim();
   if (descriptor.kind === "boolean") {
-    const normalized = trimmed.toLowerCase();
-    if (normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "on") {
-      return { ok: true, parsed: { descriptor, value: true } };
-    }
-    if (normalized === "false" || normalized === "0" || normalized === "no" || normalized === "off") {
-      return { ok: true, parsed: { descriptor, value: false } };
-    }
-    return {
-      ok: false,
-      error: {
-        message: `Config set ${descriptor.key} requires a boolean value (true|false), got "${rawValue}"`,
-      },
-    };
+    return parseNestedBooleanValue(descriptor, rawValue);
   }
   if (descriptor.kind === "string") {
-    if (descriptor.non_empty === true && trimmed.length === 0) {
-      return {
-        ok: false,
-        error: { message: `Config set ${descriptor.key} requires a non-empty value` },
-      };
-    }
-    if (descriptor.choices && !descriptor.choices.includes(trimmed)) {
-      return {
-        ok: false,
-        error: {
-          message: `Config set ${descriptor.key} must be one of ${descriptor.choices.join("|")}, got "${rawValue}"`,
-        },
-      };
-    }
-    return { ok: true, parsed: { descriptor, value: trimmed } };
+    return parseNestedStringValue(descriptor, rawValue, trimmed);
   }
 
   // Number("") === 0, which would silently accept empty / whitespace-only input
   // as a valid zero. Reject explicitly so misconfigurations don't slip through.
-  if (trimmed.length === 0) {
-    return {
-      ok: false,
-      error: { message: `Config set ${descriptor.key} requires a non-empty value` },
-    };
-  }
-
-  const parsed = Number(trimmed);
-  if (!Number.isFinite(parsed)) {
-    return {
-      ok: false,
-      error: { message: `Config set ${descriptor.key} requires a finite number, got "${rawValue}"` },
-    };
+  const parsed = parseFiniteNestedNumber(descriptor, rawValue, trimmed);
+  if (!parsed.ok) {
+    return { ok: false, error: parsed.error };
   }
   if (descriptor.kind === "integer") {
-    if (!Number.isInteger(parsed) || parsed < 0) {
-      return {
-        ok: false,
-        error: { message: `Config set ${descriptor.key} requires a non-negative integer, got "${rawValue}"` },
-      };
-    }
-    if (descriptor.min !== undefined && parsed < descriptor.min) {
-      return {
-        ok: false,
-        error: {
-          message: `Config set ${descriptor.key} requires an integer >= ${descriptor.min}, got "${rawValue}" (the runtime silently ignores 0 here and falls back to the default)`,
-        },
-      };
-    }
-    return { ok: true, parsed: { descriptor, value: parsed } };
+    return parseNestedIntegerValue(descriptor, rawValue, parsed.value);
   }
   if (descriptor.kind === "ratio") {
-    if (parsed < 0 || parsed > 1) {
-      return {
-        ok: false,
-        error: { message: `Config set ${descriptor.key} requires a number in [0, 1], got "${rawValue}"` },
-      };
-    }
-    return { ok: true, parsed: { descriptor, value: parsed } };
+    return parseNestedRatioValue(descriptor, rawValue, parsed.value);
   }
   // kind === "number" — negatives are allowed; only apply an explicit `min`.
-  if (descriptor.min !== undefined && parsed < descriptor.min) {
-    return {
-      ok: false,
-      error: { message: `Config set ${descriptor.key} requires a number >= ${descriptor.min}, got "${rawValue}"` },
-    };
-  }
-  return { ok: true, parsed: { descriptor, value: parsed } };
+  return parseNestedNumberValue(descriptor, rawValue, parsed.value);
 }
 
 /** Walk a dotted path on an arbitrary record (best-effort, returns null on miss). */

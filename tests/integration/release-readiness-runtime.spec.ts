@@ -1903,7 +1903,9 @@ describe("release readiness runtime coverage", () => {
 
   it("keeps mutation-triggered search refresh wiring for test run-tracking paths", async () => {
     const opsSource = await readRepoText("src/cli/register-operations.ts");
-    expect(opsSource).toContain("addValues.length > 0 || addJsonValues.length > 0 || removeValues.length > 0 || options.run === true");
+    expect(opsSource).toContain(
+      "values.addValues.length > 0 || values.addJsonValues.length > 0 || values.removeValues.length > 0 || options.run === true",
+    );
     expect(opsSource).toContain("ids: result.results.map((entry) => entry.id)");
   });
 

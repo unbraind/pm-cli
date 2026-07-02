@@ -276,27 +276,48 @@ async function removeTempRoot(tempRoot) {
   throw lastError;
 }
 
+function assertNonEmptyArray(value, message) {
+  if (!Array.isArray(value) || value.length === 0) {
+    fail(message);
+  }
+}
+
+function assertNoBlockingHealthChecks(health) {
+  const healthChecks = Array.isArray(health?.checks) ? health.checks : [];
+  const blockingHealthChecks = healthChecks.filter((entry) => {
+    const status = String(entry?.status ?? "").toLowerCase();
+    return status === "error" || status === "failed" || status === "fail";
+  });
+  if (blockingHealthChecks.length > 0) {
+    fail(
+      `Compatibility gate failed: health --check-only reported blocking checks (${blockingHealthChecks
+        .map((entry) => String(entry?.name ?? "unknown"))
+        .join(", ")}).`,
+    );
+  }
+  return blockingHealthChecks;
+}
+
+async function assertMarkdownMigratedToToon(env, taskId) {
+  const taskToonPath = path.join(env.PM_PATH, "tasks", `${taskId}.toon`);
+  const taskMarkdownPath = path.join(env.PM_PATH, "tasks", `${taskId}.md`);
+  if (!(await pathExistsAbsolute(taskToonPath))) {
+    fail("Compatibility gate failed: mixed-frontmatter markdown item did not migrate to TOON.");
+  }
+  if (await pathExistsAbsolute(taskMarkdownPath)) {
+    fail("Compatibility gate failed: markdown item variant persisted after TOON migration.");
+  }
+}
+
 async function runCurrentChecks(seedState, env, author) {
   const distCli = path.join(repoRoot, "dist", "cli.js");
   const current = (...args) =>
     runJsonCommand(process.execPath, [distCli, ...args, "--json"], env, args.join(" "), seedState.projectRoot);
 
-  const commentsBefore = current("comments", seedState.taskId);
-  if (!Array.isArray(commentsBefore?.comments) || commentsBefore.comments.length === 0) {
-    fail("Compatibility gate failed: expected legacy comments to survive current build read path.");
-  }
-  const notesBefore = current("notes", seedState.taskId);
-  if (!Array.isArray(notesBefore?.notes) || notesBefore.notes.length === 0) {
-    fail("Compatibility gate failed: expected legacy notes to survive current build read path.");
-  }
-  const learningsBefore = current("learnings", seedState.taskId);
-  if (!Array.isArray(learningsBefore?.learnings) || learningsBefore.learnings.length === 0) {
-    fail("Compatibility gate failed: expected legacy learnings to survive current build read path.");
-  }
-  const testsBefore = current("test", seedState.taskId);
-  if (!Array.isArray(testsBefore?.tests) || testsBefore.tests.length === 0) {
-    fail("Compatibility gate failed: expected legacy linked tests to survive current build read path.");
-  }
+  assertNonEmptyArray(current("comments", seedState.taskId)?.comments, "Compatibility gate failed: expected legacy comments to survive current build read path.");
+  assertNonEmptyArray(current("notes", seedState.taskId)?.notes, "Compatibility gate failed: expected legacy notes to survive current build read path.");
+  assertNonEmptyArray(current("learnings", seedState.taskId)?.learnings, "Compatibility gate failed: expected legacy learnings to survive current build read path.");
+  assertNonEmptyArray(current("test", seedState.taskId)?.tests, "Compatibility gate failed: expected legacy linked tests to survive current build read path.");
 
   current(
     "update",
@@ -308,14 +329,7 @@ async function runCurrentChecks(seedState, env, author) {
     "--message",
     "current-build compatibility mutation",
   );
-  const taskToonPath = path.join(env.PM_PATH, "tasks", `${seedState.taskId}.toon`);
-  const taskMarkdownPath = path.join(env.PM_PATH, "tasks", `${seedState.taskId}.md`);
-  if (!(await pathExistsAbsolute(taskToonPath))) {
-    fail("Compatibility gate failed: mixed-frontmatter markdown item did not migrate to TOON.");
-  }
-  if (await pathExistsAbsolute(taskMarkdownPath)) {
-    fail("Compatibility gate failed: markdown item variant persisted after TOON migration.");
-  }
+  await assertMarkdownMigratedToToon(env, seedState.taskId);
   current(
     "comments",
     seedState.taskId,
@@ -332,18 +346,7 @@ async function runCurrentChecks(seedState, env, author) {
     fail("Compatibility gate failed: validate --check-resolution --check-history-drift returned ok=false.");
   }
   const health = current("health", "--check-only");
-  const healthChecks = Array.isArray(health?.checks) ? health.checks : [];
-  const blockingHealthChecks = healthChecks.filter((entry) => {
-    const status = String(entry?.status ?? "").toLowerCase();
-    return status === "error" || status === "failed" || status === "fail";
-  });
-  if (blockingHealthChecks.length > 0) {
-    fail(
-      `Compatibility gate failed: health --check-only reported blocking checks (${blockingHealthChecks
-        .map((entry) => String(entry?.name ?? "unknown"))
-        .join(", ")}).`,
-    );
-  }
+  const blockingHealthChecks = assertNoBlockingHealthChecks(health);
 
   const afterList = current("list-all", "--limit", "200");
   const itemCountAfter = Number(afterList?.count ?? 0);

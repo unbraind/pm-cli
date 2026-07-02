@@ -82,17 +82,50 @@ function replaceRows(envelope: Record<string, unknown>, rows: unknown[]): Record
   return projected;
 }
 
+function projectIdOnlyResult(result: unknown): unknown | null {
+  if (!isPlainObject(result) || !isPlainObject(result.item)) {
+    return null;
+  }
+  const id = typeof result.item.id === "string" ? result.item.id : undefined;
+  const status = typeof result.item.status === "string" ? result.item.status : undefined;
+  if (!id) {
+    return null;
+  }
+  return status ? { id, status } : { id };
+}
+
+function compactUpdateManyRows(envelope: Record<string, unknown>): { projected: Record<string, unknown>; changed: boolean } {
+  const rows = isUpdateManyMutationEnvelope(envelope) ? envelope[ROWS_KEY] : undefined;
+  if (!Array.isArray(rows)) {
+    return { projected: envelope, changed: false };
+  }
+  let rowsChanged = false;
+  const nextRows = rows.map((row) => {
+    if (!isPlainObject(row)) {
+      return row;
+    }
+    const compactedRow = compactOwnChangedFields(row);
+    if (compactedRow) {
+      rowsChanged = true;
+      return compactedRow;
+    }
+    return row;
+  });
+  return rowsChanged
+    ? { projected: replaceRows(envelope, nextRows), changed: true }
+    : { projected: envelope, changed: false };
+}
+
 /**
  * Returns a copy of a mutation result with the envelope `changed_fields` arrays
  * replaced by `changed_field_count` when compact mode is requested. Inputs that are
  * not a mutation envelope (or full mode) are returned unchanged (same reference).
  */
 export function projectMutationResult(result: unknown, options: MutationProjectionOptions = {}): unknown {
-  if (options.idOnly === true && isPlainObject(result) && isPlainObject(result.item)) {
-    const id = typeof result.item.id === "string" ? result.item.id : undefined;
-    const status = typeof result.item.status === "string" ? result.item.status : undefined;
-    if (id) {
-      return status ? { id, status } : { id };
+  if (options.idOnly === true) {
+    const idOnly = projectIdOnlyResult(result);
+    if (idOnly !== null) {
+      return idOnly;
     }
   }
 
@@ -110,25 +143,10 @@ export function projectMutationResult(result: unknown, options: MutationProjecti
     changed = true;
   }
 
-  // update-many reports its per-item delta under rows[*].changed_fields.
-  const rows = isUpdateManyMutationEnvelope(projected) ? projected[ROWS_KEY] : undefined;
-  if (Array.isArray(rows)) {
-    let rowsChanged = false;
-    const nextRows = rows.map((row) => {
-      if (!isPlainObject(row)) {
-        return row;
-      }
-      const compactedRow = compactOwnChangedFields(row);
-      if (compactedRow) {
-        rowsChanged = true;
-        return compactedRow;
-      }
-      return row;
-    });
-    if (rowsChanged) {
-      projected = replaceRows(projected, nextRows);
-      changed = true;
-    }
+  const rowProjection = compactUpdateManyRows(projected);
+  if (rowProjection.changed) {
+    projected = rowProjection.projected;
+    changed = true;
   }
 
   return changed ? projected : result;
