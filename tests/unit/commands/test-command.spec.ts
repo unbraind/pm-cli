@@ -19,9 +19,16 @@ import {
   resolveLinkedTestRunSelection,
 } from "../../../src/core/test/run-selectors.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
-import { parseItemDocument, serializeItemDocument } from "../../../src/core/item/item-format.js";
 import { readSettings } from "../../../src/core/store/settings.js";
 import { createTestItemId } from "../../helpers/itemFactory.js";
+import {
+  loadTaskFrontMatter,
+  overwriteTaskTestRuns,
+  overwriteTaskTests,
+  setGovernancePreset,
+  setTestResultTracking,
+  writeSchemaTypeExtension,
+} from "../../helpers/pmWorkspace.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
 
 afterEach(() => {
@@ -54,111 +61,47 @@ async function setSettingsAuthorDefault(pmPath: string, authorDefault: string): 
   await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
 }
 
-async function setTestResultTracking(pmPath: string, enabled: boolean): Promise<void> {
-  const settingsPath = path.join(pmPath, "settings.json");
-  const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-    testing?: { record_results_to_items?: boolean };
-  };
-  settings.testing = {
-    ...settings.testing,
-    record_results_to_items: enabled,
-  };
-  await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
-}
-
-function setGovernancePreset(context: TempPmContext, preset: "minimal" | "default" | "strict" | "custom"): void {
-  const result = context.runCli(["config", "project", "set", "governance-preset", "--policy", preset, "--json"], {
-    expectJson: true,
+async function expectHeartbeatProgressRun(
+  context: TempPmContext,
+  id: string,
+  options: { isTTY: boolean; progress?: boolean },
+): Promise<void> {
+  const previousHeartbeatInterval = process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;
+  process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS = "10";
+  const originalIsTTY = process.stderr.isTTY;
+  Object.defineProperty(process.stderr, "isTTY", {
+    value: options.isTTY,
+    configurable: true,
   });
-  expect(result.code).toBe(0);
-}
-
-async function loadTaskFrontMatter(context: TempPmContext, id: string): Promise<Record<string, unknown>> {
-  const toonPath = path.join(context.pmPath, "tasks", `${id}.toon`);
-  const markdownPath = path.join(context.pmPath, "tasks", `${id}.md`);
-  let taskPath = toonPath;
-  let source: string;
+  const stderrWriteSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
   try {
-    source = await readFile(taskPath, "utf8");
-  } catch {
-    taskPath = markdownPath;
-    source = await readFile(taskPath, "utf8");
-  }
-  const format = taskPath.endsWith(".toon") ? "toon" : "json_markdown";
-  return parseItemDocument(source, { format }).metadata as unknown as Record<string, unknown>;
-}
-
-async function overwriteTaskTests(
-  context: TempPmContext,
-  id: string,
-  tests: Array<Record<string, unknown>>,
-): Promise<void> {
-  const toonPath = path.join(context.pmPath, "tasks", `${id}.toon`);
-  const markdownPath = path.join(context.pmPath, "tasks", `${id}.md`);
-  let taskPath = toonPath;
-  let source: string;
-  try {
-    source = await readFile(taskPath, "utf8");
-  } catch {
-    taskPath = markdownPath;
-    source = await readFile(taskPath, "utf8");
-  }
-  const format = taskPath.endsWith(".toon") ? "toon" : "json_markdown";
-  const parsed = parseItemDocument(source, { format });
-  parsed.metadata.tests = tests as unknown as never;
-  await writeFile(taskPath, serializeItemDocument(parsed, { format }), "utf8");
-}
-
-async function overwriteTaskTestRuns(
-  context: TempPmContext,
-  id: string,
-  testRuns: Array<Record<string, unknown>>,
-): Promise<void> {
-  const toonPath = path.join(context.pmPath, "tasks", `${id}.toon`);
-  const markdownPath = path.join(context.pmPath, "tasks", `${id}.md`);
-  let taskPath = toonPath;
-  let source: string;
-  try {
-    source = await readFile(taskPath, "utf8");
-  } catch {
-    taskPath = markdownPath;
-    source = await readFile(taskPath, "utf8");
-  }
-  const format = taskPath.endsWith(".toon") ? "toon" : "json_markdown";
-  const parsed = parseItemDocument(source, { format });
-  parsed.metadata.test_runs = testRuns as unknown as never;
-  await writeFile(taskPath, serializeItemDocument(parsed, { format }), "utf8");
-}
-
-async function writeSchemaTypeExtension(pmRoot: string, extensionDirName: string, typeName: string): Promise<void> {
-  const extensionDir = path.join(pmRoot, "extensions", extensionDirName);
-  await mkdir(extensionDir, { recursive: true });
-  await writeFile(
-    path.join(extensionDir, "manifest.json"),
-    `${JSON.stringify(
+    const run = await runTest(
+      id,
       {
-        name: `${extensionDirName}-ext`,
-        version: "1.0.0",
-        entry: "index.mjs",
-        capabilities: ["schema"],
+        run: true,
+        timeout: "5",
+        ...(options.progress ? { progress: true } : {}),
       },
-      null,
-      2,
-    )}\n`,
-    "utf8",
-  );
-  await writeFile(
-    path.join(extensionDir, "index.mjs"),
-    [
-      "export function activate(api) {",
-      "  api.registerItemTypes([",
-      `    { name: \"${typeName}\", folder: \"${typeName.toLowerCase()}\" },`,
-      "  ]);",
-      "}",
-      "",
-    ].join("\n"),
-    "utf8",
-  );
+      { path: context.pmPath },
+    );
+    expect(run.run_results).toHaveLength(1);
+    expect(run.run_results[0]?.status).toBe("passed");
+
+    const stderrOutput = stderrWriteSpy.mock.calls.map((entry) => String(entry[0])).join("");
+    expect(stderrOutput).toContain("[pm test] linked-test 1/1 start");
+    expect(stderrOutput).toContain("[pm test] linked-test 1/1 running");
+    expect(stderrOutput).toContain("[pm test] linked-test 1/1 end status=passed");
+  } finally {
+    if (previousHeartbeatInterval === undefined) {
+      delete process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;
+    } else {
+      process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS = previousHeartbeatInterval;
+    }
+    Object.defineProperty(process.stderr, "isTTY", {
+      value: originalIsTTY,
+      configurable: true,
+    });
+  }
 }
 
 describe("runTest", () => {
@@ -2291,41 +2234,7 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
 
-      const previousHeartbeatInterval = process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;
-      process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS = "10";
-      const originalIsTTY = process.stderr.isTTY;
-      Object.defineProperty(process.stderr, "isTTY", {
-        value: true,
-        configurable: true,
-      });
-      const stderrWriteSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
-      try {
-        const run = await runTest(
-          id,
-          {
-            run: true,
-            timeout: "5",
-          },
-          { path: context.pmPath },
-        );
-        expect(run.run_results).toHaveLength(1);
-        expect(run.run_results[0]?.status).toBe("passed");
-
-        const stderrOutput = stderrWriteSpy.mock.calls.map((entry) => String(entry[0])).join("");
-        expect(stderrOutput).toContain("[pm test] linked-test 1/1 start");
-        expect(stderrOutput).toContain("[pm test] linked-test 1/1 running");
-        expect(stderrOutput).toContain("[pm test] linked-test 1/1 end status=passed");
-      } finally {
-        if (previousHeartbeatInterval === undefined) {
-          delete process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;
-        } else {
-          process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS = previousHeartbeatInterval;
-        }
-        Object.defineProperty(process.stderr, "isTTY", {
-          value: originalIsTTY,
-          configurable: true,
-        });
-      }
+      await expectHeartbeatProgressRun(context, id, { isTTY: true });
     });
   });
 
@@ -2341,42 +2250,7 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
 
-      const previousHeartbeatInterval = process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;
-      process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS = "10";
-      const originalIsTTY = process.stderr.isTTY;
-      Object.defineProperty(process.stderr, "isTTY", {
-        value: false,
-        configurable: true,
-      });
-      const stderrWriteSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
-      try {
-        const run = await runTest(
-          id,
-          {
-            run: true,
-            timeout: "5",
-            progress: true,
-          },
-          { path: context.pmPath },
-        );
-        expect(run.run_results).toHaveLength(1);
-        expect(run.run_results[0]?.status).toBe("passed");
-
-        const stderrOutput = stderrWriteSpy.mock.calls.map((entry) => String(entry[0])).join("");
-        expect(stderrOutput).toContain("[pm test] linked-test 1/1 start");
-        expect(stderrOutput).toContain("[pm test] linked-test 1/1 running");
-        expect(stderrOutput).toContain("[pm test] linked-test 1/1 end status=passed");
-      } finally {
-        if (previousHeartbeatInterval === undefined) {
-          delete process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;
-        } else {
-          process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS = previousHeartbeatInterval;
-        }
-        Object.defineProperty(process.stderr, "isTTY", {
-          value: originalIsTTY,
-          configurable: true,
-        });
-      }
+      await expectHeartbeatProgressRun(context, id, { isTTY: false, progress: true });
     });
   });
 

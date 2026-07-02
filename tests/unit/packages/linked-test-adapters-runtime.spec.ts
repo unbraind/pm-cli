@@ -1,8 +1,16 @@
-import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import os from "node:os";
+import { copyFile, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
+import {
+  PM_PACKAGE_ROOT_ENV,
+  cacheBustToken,
+  importRepoModule,
+  readGlobalCallLog,
+  resetGlobalCallLog,
+  setupPackageRuntimeSpec,
+  writeSdkRuntimeModule,
+} from "../../helpers/packageRuntime.js";
 
 /**
  * Branch coverage for the pm-linked-test-adapters package runtime wrappers
@@ -12,54 +20,14 @@ import { afterEach, describe, expect, it } from "vitest";
  * sharing branch.
  */
 
-const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
-const ORIGINAL_PACKAGE_ROOT = process.env[PM_PACKAGE_ROOT_ENV];
-
 const RUNTIME_PATH = "packages/pm-linked-test-adapters/extensions/linked-test-adapters/runtime.ts";
 type RuntimeModule = typeof import("../../../packages/pm-linked-test-adapters/extensions/linked-test-adapters/runtime.ts");
 
-const tempRoots: string[] = [];
-
-function cacheBustToken(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
-function resetGlobalCallLog(key: string): void {
-  (globalThis as Record<string, unknown>)[key] = [];
-}
-
-function readGlobalCallLog<T>(key: string): T[] {
-  const value = (globalThis as Record<string, unknown>)[key];
-  return Array.isArray(value) ? (value as T[]) : [];
-}
-
-async function createTempRoot(prefix: string): Promise<string> {
-  const root = await mkdtemp(path.join(os.tmpdir(), prefix));
-  tempRoots.push(root);
-  return root;
-}
-
-async function writeSdkRuntimeModule(root: string, source: string): Promise<void> {
-  const sdkRoot = path.join(root, "dist", "sdk");
-  await mkdir(sdkRoot, { recursive: true });
-  await writeFile(path.join(sdkRoot, "runtime.js"), source, "utf8");
-}
+const { createTempRoot } = setupPackageRuntimeSpec();
 
 async function importRuntime(queryPrefix: string): Promise<RuntimeModule> {
-  const absolutePath = path.join(process.cwd(), RUNTIME_PATH);
-  return (await import(`${pathToFileURL(absolutePath).href}?${queryPrefix}=${cacheBustToken()}`)) as RuntimeModule;
+  return importRepoModule<RuntimeModule>(RUNTIME_PATH, queryPrefix);
 }
-
-afterEach(async () => {
-  if (ORIGINAL_PACKAGE_ROOT === undefined) {
-    delete process.env[PM_PACKAGE_ROOT_ENV];
-  } else {
-    process.env[PM_PACKAGE_ROOT_ENV] = ORIGINAL_PACKAGE_ROOT;
-  }
-  for (const root of tempRoots.splice(0)) {
-    await rm(root, { recursive: true, force: true });
-  }
-});
 
 describe("linked-test-adapters package runtime", () => {
   it("ships local ESM metadata for copied extension installs", async () => {

@@ -71,6 +71,44 @@ function mockFsPromises(impl: Partial<typeof import("node:fs/promises")>): void 
   });
 }
 
+// Mocks runCommand (passing contracts + empty guide index) and node:fs/promises
+// (valid skills, docs with the required guide markers) so `main` in full mode
+// takes the all-green path; the caller only picks the output mode to assert.
+function mockFullModePassingEnvironment(): void {
+  const runCommand = vi.fn((command: string, args: string[]) => {
+    if (args.includes("contracts")) {
+      return { status: 0, stdout: JSON.stringify({ commands: ["list"] }), stderr: "" };
+    }
+    if (args.includes("guide")) {
+      return { status: 0, stdout: JSON.stringify({ mode: "index", topics: [] }), stderr: "" };
+    }
+    return { status: 0, stdout: "{}", stderr: "" };
+  });
+  mockUtilsWithRun(runCommand);
+  const validSkill = [
+    "---",
+    "name: __SKILLNAME__",
+    'description: "Use when working with pm."',
+    "---",
+    "",
+    "Body mentions pm guide and pm install guide-shell.",
+  ].join("\n");
+  mockFsPromises({
+    readdir: vi.fn(async () => [] as never) as never,
+    readFile: vi.fn(async (p: string) => {
+      // Match either separator so the skill path resolves on windows-latest,
+      // where the gate reads native backslash absolute paths.
+      const s = String(p).replaceAll("\\", "/");
+      const match = s.match(/\.agents\/skills\/([^/]+)\/SKILL\.md$/);
+      if (match) {
+        return validSkill.replace("__SKILLNAME__", match[1]);
+      }
+      return "# Title\npm guide\npm install guide-shell";
+    }) as never,
+    stat: vi.fn(async () => ({ isFile: () => true }) as unknown as import("node:fs").Stats) as never,
+  });
+}
+
 describe("docs-skills-gate", () => {
   describe("pure helpers", () => {
     it("covers usage(), isMissingError, parseJson success + failure", async () => {
@@ -500,38 +538,7 @@ describe("docs-skills-gate", () => {
     });
 
     it("main full mode passing path prints success (text)", async () => {
-      const runCommand = vi.fn((command: string, args: string[]) => {
-        if (args.includes("contracts")) {
-          return { status: 0, stdout: JSON.stringify({ commands: ["list"] }), stderr: "" };
-        }
-        if (args.includes("guide")) {
-          return { status: 0, stdout: JSON.stringify({ mode: "index", topics: [] }), stderr: "" };
-        }
-        return { status: 0, stdout: "{}", stderr: "" };
-      });
-      mockUtilsWithRun(runCommand);
-      const validSkill = [
-        "---",
-        "name: __SKILLNAME__",
-        'description: "Use when working with pm."',
-        "---",
-        "",
-        "Body mentions pm guide and pm install guide-shell.",
-      ].join("\n");
-      mockFsPromises({
-        readdir: vi.fn(async () => [] as never) as never,
-        readFile: vi.fn(async (p: string) => {
-          // Match either separator so the skill path resolves on windows-latest,
-          // where the gate reads native backslash absolute paths.
-          const s = String(p).replaceAll("\\", "/");
-          const match = s.match(/\.agents\/skills\/([^/]+)\/SKILL\.md$/);
-          if (match) {
-            return validSkill.replace("__SKILLNAME__", match[1]);
-          }
-          return "# Title\npm guide\npm install guide-shell";
-        }) as never,
-        stat: vi.fn(async () => ({ isFile: () => true }) as unknown as import("node:fs").Stats) as never,
-      });
+      mockFullModePassingEnvironment();
       const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
       const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
       process.argv = ["node", "x"];
@@ -540,38 +547,7 @@ describe("docs-skills-gate", () => {
     });
 
     it("main full mode passing path emits JSON payload", async () => {
-      const runCommand = vi.fn((command: string, args: string[]) => {
-        if (args.includes("contracts")) {
-          return { status: 0, stdout: JSON.stringify({ commands: ["list"] }), stderr: "" };
-        }
-        if (args.includes("guide")) {
-          return { status: 0, stdout: JSON.stringify({ mode: "index", topics: [] }), stderr: "" };
-        }
-        return { status: 0, stdout: "{}", stderr: "" };
-      });
-      mockUtilsWithRun(runCommand);
-      const validSkill = [
-        "---",
-        "name: __SKILLNAME__",
-        'description: "Use when working with pm."',
-        "---",
-        "",
-        "Body mentions pm guide and pm install guide-shell.",
-      ].join("\n");
-      mockFsPromises({
-        readdir: vi.fn(async () => [] as never) as never,
-        readFile: vi.fn(async (p: string) => {
-          // Match either separator so the skill path resolves on windows-latest,
-          // where the gate reads native backslash absolute paths.
-          const s = String(p).replaceAll("\\", "/");
-          const match = s.match(/\.agents\/skills\/([^/]+)\/SKILL\.md$/);
-          if (match) {
-            return validSkill.replace("__SKILLNAME__", match[1]);
-          }
-          return "# Title\npm guide\npm install guide-shell";
-        }) as never,
-        stat: vi.fn(async () => ({ isFile: () => true }) as unknown as import("node:fs").Stats) as never,
-      });
+      mockFullModePassingEnvironment();
       const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
       const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
       process.argv = ["node", "x", "--json"];

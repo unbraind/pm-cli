@@ -140,6 +140,103 @@ function parseJsonBody<T>(body: unknown): T {
   return JSON.parse(body) as T;
 }
 
+function makeSemanticSearchSettings(overrides: Record<string, unknown> = {}): { id_prefix: string } {
+  return {
+    providers: {
+      openai: {
+        base_url: "https://api.example.test/v1",
+        model: "text-embedding-3-small",
+        api_key: "",
+      },
+    },
+    vector_store: {
+      qdrant: {
+        url: "https://qdrant.example.test:6333",
+        api_key: "",
+      },
+    },
+    ...overrides,
+  } as unknown as { id_prefix: string };
+}
+
+function makeJsonResponse(payload: unknown): Response {
+  return {
+    ok: true,
+    status: 200,
+    statusText: "OK",
+    json: async () => payload,
+    text: async () => "",
+  } as unknown as Response;
+}
+
+function makeEmbeddingAndVectorSearchFetch(options: {
+  embedding?: number[];
+  vectorResult: Array<{ id: string; score: number }>;
+}): typeof globalThis.fetch {
+  return (async (url: unknown) => {
+    const target = resolveFetchTarget(url);
+    if (target.endsWith("/v1/embeddings")) {
+      return makeJsonResponse({ data: [{ embedding: options.embedding ?? [0.9, 0.1] }] });
+    }
+    if (target.endsWith("/collections/pm_items/points/search")) {
+      return makeJsonResponse({ result: options.vectorResult });
+    }
+    throw new Error(`Unexpected fetch target: ${target}`);
+  }) as typeof globalThis.fetch;
+}
+
+function mockOllamaAutoDetectAvailable(): void {
+  readSettingsMock.mockResolvedValue(makeDefaultSettings() as unknown as { id_prefix: string });
+  spawnSyncMock.mockImplementation((_command: string, args: string[]) => {
+    if (args[0] === "--version") {
+      return {
+        status: 0,
+        stdout: "ollama version is 0.0.0",
+        stderr: "",
+      };
+    }
+    if (args[0] === "list") {
+      return {
+        status: 0,
+        stdout: "NAME ID SIZE MODIFIED\nqwen3-embedding:0.6b abc 380 MB now\n",
+        stderr: "",
+      };
+    }
+    return {
+      status: 1,
+      stdout: "",
+      stderr: "",
+    };
+  });
+}
+
+function seedSingleTokenItem(overrides: Partial<ItemFrontMatter> & Pick<ItemFrontMatter, "id">): void {
+  const item = makeFrontMatter(overrides);
+  listAllFrontMatterMock.mockResolvedValue([item]);
+  readFileMock.mockResolvedValue(serializeDocument(item, "token body"));
+}
+
+function setupExtensionVectorAdapterScenario(options: {
+  id: string;
+  title: string;
+  vectorStore?: Record<string, unknown>;
+  query: () => unknown;
+}): void {
+  const item = makeFrontMatter({ id: options.id, title: options.title });
+  listAllFrontMatterMock.mockResolvedValue([item]);
+  readFileMock.mockResolvedValue(serializeDocument(item, "semantic body"));
+  readSettingsMock.mockResolvedValue(
+    makeSemanticSearchSettings({ vector_store: options.vectorStore ?? { adapter: "ext-vector" } }),
+  );
+  activeExtensionRegistrations = createExtensionRegistrations();
+  (activeExtensionRegistrations.vector_store_adapters as Array<Record<string, unknown>>).push({
+    layer: "project",
+    name: "vector-ext",
+    definition: { name: "ext-vector" },
+    runtime_definition: { name: "ext-vector", query: options.query },
+  });
+}
+
 describe("runSearch", () => {
   beforeEach(() => {
     pathExistsMock.mockReset();
@@ -499,28 +596,7 @@ describe("runSearch", () => {
   });
 
   it("keeps the SDK default keyword-first even when Ollama auto-defaults are available", async () => {
-    readSettingsMock.mockResolvedValue(makeDefaultSettings() as unknown as { id_prefix: string });
-    spawnSyncMock.mockImplementation((_command: string, args: string[]) => {
-      if (args[0] === "--version") {
-        return {
-          status: 0,
-          stdout: "ollama version is 0.0.0",
-          stderr: "",
-        };
-      }
-      if (args[0] === "list") {
-        return {
-          status: 0,
-          stdout: "NAME ID SIZE MODIFIED\nqwen3-embedding:0.6b abc 380 MB now\n",
-          stderr: "",
-        };
-      }
-      return {
-        status: 1,
-        stdout: "",
-        stderr: "",
-      };
-    });
+    mockOllamaAutoDetectAvailable();
 
     const { runSearch } = await import("../../../src/cli/commands/search.js");
     const result = await runSearch("token", {}, { path: "/tmp/pm-search" });
@@ -529,36 +605,13 @@ describe("runSearch", () => {
   });
 
   it("does not invoke implicit Ollama semantic execution for default search", async () => {
-    readSettingsMock.mockResolvedValue(makeDefaultSettings() as unknown as { id_prefix: string });
-    spawnSyncMock.mockImplementation((_command: string, args: string[]) => {
-      if (args[0] === "--version") {
-        return {
-          status: 0,
-          stdout: "ollama version is 0.0.0",
-          stderr: "",
-        };
-      }
-      if (args[0] === "list") {
-        return {
-          status: 0,
-          stdout: "NAME ID SIZE MODIFIED\nqwen3-embedding:0.6b abc 380 MB now\n",
-          stderr: "",
-        };
-      }
-      return {
-        status: 1,
-        stdout: "",
-        stderr: "",
-      };
-    });
-    const autoItem = makeFrontMatter({
+    mockOllamaAutoDetectAvailable();
+    seedSingleTokenItem({
       id: "pm-ollama-auto-fallback",
       title: "token title",
       description: "token description",
       tags: ["token"],
     });
-    listAllFrontMatterMock.mockResolvedValue([autoItem]);
-    readFileMock.mockResolvedValue(serializeDocument(autoItem, "token body"));
 
     const fetchMock = vi.fn(async () => {
       throw new Error("connect ECONNREFUSED 127.0.0.1:11434");
@@ -584,36 +637,13 @@ describe("runSearch", () => {
   });
 
   it("keeps default search keyword-first when auto semantic execution would time out", async () => {
-    readSettingsMock.mockResolvedValue(makeDefaultSettings() as unknown as { id_prefix: string });
-    spawnSyncMock.mockImplementation((_command: string, args: string[]) => {
-      if (args[0] === "--version") {
-        return {
-          status: 0,
-          stdout: "ollama version is 0.0.0",
-          stderr: "",
-        };
-      }
-      if (args[0] === "list") {
-        return {
-          status: 0,
-          stdout: "NAME ID SIZE MODIFIED\nqwen3-embedding:0.6b abc 380 MB now\n",
-          stderr: "",
-        };
-      }
-      return {
-        status: 1,
-        stdout: "",
-        stderr: "",
-      };
-    });
-    const autoItem = makeFrontMatter({
+    mockOllamaAutoDetectAvailable();
+    seedSingleTokenItem({
       id: "pm-ollama-timeout-fallback",
       title: "token timeout",
       description: "token timeout description",
       tags: ["token"],
     });
-    listAllFrontMatterMock.mockResolvedValue([autoItem]);
-    readFileMock.mockResolvedValue(serializeDocument(autoItem, "token body"));
 
     const fetchMock = vi.fn(async () => {
       throw new Error("Embedding request timed out after 8000ms");
@@ -633,29 +663,13 @@ describe("runSearch", () => {
   });
 
   it("keeps default search keyword-first for configured semantic providers", async () => {
-    const configuredItem = makeFrontMatter({
+    readSettingsMock.mockResolvedValue(makeSemanticSearchSettings());
+    seedSingleTokenItem({
       id: "pm-configured-timeout-fallback",
       title: "token configured timeout",
       description: "token timeout description",
       tags: ["token"],
     });
-    readSettingsMock.mockResolvedValue({
-      providers: {
-        openai: {
-          base_url: "https://api.example.test/v1",
-          model: "text-embedding-3-small",
-          api_key: "",
-        },
-      },
-      vector_store: {
-        qdrant: {
-          url: "https://qdrant.example.test:6333",
-          api_key: "",
-        },
-      },
-    } as unknown as { id_prefix: string });
-    listAllFrontMatterMock.mockResolvedValue([configuredItem]);
-    readFileMock.mockResolvedValue(serializeDocument(configuredItem, "token body"));
 
     const fetchMock = vi.fn(async () => {
       throw new Error("Embedding request timed out after 8000ms");
@@ -680,21 +694,7 @@ describe("runSearch", () => {
   });
 
   it("returns deterministic empty semantic and hybrid results for limit=0 without embedding/vector requests", async () => {
-    const semanticSettings = {
-      providers: {
-        openai: {
-          base_url: "https://api.example.test/v1",
-          model: "text-embedding-3-small",
-          api_key: "",
-        },
-      },
-      vector_store: {
-        qdrant: {
-          url: "https://qdrant.example.test:6333",
-          api_key: "",
-        },
-      },
-    } as unknown as { id_prefix: string };
+    const semanticSettings = makeSemanticSearchSettings();
     const indexedItem = makeFrontMatter({
       id: "pm-limit-zero",
       title: "token title",
@@ -816,50 +816,17 @@ describe("runSearch", () => {
   });
 
   it("supports extension vector adapter queries for semantic mode", async () => {
-    const semanticItem = makeFrontMatter({
+    setupExtensionVectorAdapterScenario({
       id: "pm-vector-adapter",
       title: "vector extension",
-    });
-    listAllFrontMatterMock.mockResolvedValue([semanticItem]);
-    readFileMock.mockResolvedValue(serializeDocument(semanticItem, "semantic body"));
-    readSettingsMock.mockResolvedValue({
-      providers: {
-        openai: {
-          base_url: "https://api.example.test/v1",
-          model: "text-embedding-3-small",
-          api_key: "",
-        },
-      },
-      vector_store: {
-        adapter: "ext-vector",
-      },
-    } as unknown as { id_prefix: string });
-    activeExtensionRegistrations = createExtensionRegistrations();
-    (activeExtensionRegistrations.vector_store_adapters as Array<Record<string, unknown>>).push({
-      layer: "project",
-      name: "vector-ext",
-      definition: {
-        name: "ext-vector",
-      },
-      runtime_definition: {
-        name: "ext-vector",
-        query: () => [{ id: "pm-vector-adapter", score: 0.87 }],
-      },
+      query: () => [{ id: "pm-vector-adapter", score: 0.87 }],
     });
 
     const fetchMock = vi.fn(async (url: unknown) => {
       if (!String(url).includes("/v1/embeddings")) {
         throw new Error(`Unexpected fetch target: ${String(url)}`);
       }
-      return {
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        json: async () => ({
-          data: [{ index: 0, embedding: [0.1, 0.2] }],
-        }),
-        text: async () => "",
-      } as unknown as Response;
+      return makeJsonResponse({ data: [{ index: 0, embedding: [0.1, 0.2] }] });
     });
     const originalFetch = globalThis.fetch;
     globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
@@ -877,50 +844,19 @@ describe("runSearch", () => {
   });
 
   it("warns that semantic results are effectively lexical when vector matching contributes no hits", async () => {
-    const semanticItem = makeFrontMatter({
+    setupExtensionVectorAdapterScenario({
       id: "pm-empty-corpus",
       title: "vector extension",
-    });
-    listAllFrontMatterMock.mockResolvedValue([semanticItem]);
-    readFileMock.mockResolvedValue(serializeDocument(semanticItem, "semantic body"));
-    readSettingsMock.mockResolvedValue({
-      providers: {
-        openai: {
-          base_url: "https://api.example.test/v1",
-          model: "text-embedding-3-small",
-          api_key: "",
-        },
-      },
-      vector_store: {
-        adapter: "ext-vector",
-      },
-    } as unknown as { id_prefix: string });
-    activeExtensionRegistrations = createExtensionRegistrations();
-    (activeExtensionRegistrations.vector_store_adapters as Array<Record<string, unknown>>).push({
-      layer: "project",
-      name: "vector-ext",
-      definition: { name: "ext-vector" },
-      runtime_definition: {
-        name: "ext-vector",
-        // Empty vector matches: the query runs successfully but vector ranking
-        // contributes nothing for this query/filter set.
-        query: () => [],
-      },
+      // Empty vector matches: the query runs successfully but vector ranking
+      // contributes nothing for this query/filter set.
+      query: () => [],
     });
 
     const fetchMock = vi.fn(async (url: unknown) => {
       if (!String(url).includes("/v1/embeddings")) {
         throw new Error(`Unexpected fetch target: ${String(url)}`);
       }
-      return {
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        json: async () => ({
-          data: [{ index: 0, embedding: [0.1, 0.2] }],
-        }),
-        text: async () => "",
-      } as unknown as Response;
+      return makeJsonResponse({ data: [{ index: 0, embedding: [0.1, 0.2] }] });
     });
     const originalFetch = globalThis.fetch;
     globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
@@ -948,46 +884,17 @@ describe("runSearch", () => {
   });
 
   it("does not warn about degraded vector matching when semantic matches exist", async () => {
-    const semanticItem = makeFrontMatter({
+    setupExtensionVectorAdapterScenario({
       id: "pm-corpus-present",
       title: "vector extension",
-    });
-    listAllFrontMatterMock.mockResolvedValue([semanticItem]);
-    readFileMock.mockResolvedValue(serializeDocument(semanticItem, "semantic body"));
-    readSettingsMock.mockResolvedValue({
-      providers: {
-        openai: {
-          base_url: "https://api.example.test/v1",
-          model: "text-embedding-3-small",
-          api_key: "",
-        },
-      },
-      vector_store: {
-        adapter: "ext-vector",
-      },
-    } as unknown as { id_prefix: string });
-    activeExtensionRegistrations = createExtensionRegistrations();
-    (activeExtensionRegistrations.vector_store_adapters as Array<Record<string, unknown>>).push({
-      layer: "project",
-      name: "vector-ext",
-      definition: { name: "ext-vector" },
-      runtime_definition: {
-        name: "ext-vector",
-        query: () => [{ id: "pm-corpus-present", score: 0.87 }],
-      },
+      query: () => [{ id: "pm-corpus-present", score: 0.87 }],
     });
 
     const fetchMock = vi.fn(async (url: unknown) => {
       if (!String(url).includes("/v1/embeddings")) {
         throw new Error(`Unexpected fetch target: ${String(url)}`);
       }
-      return {
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        json: async () => ({ data: [{ index: 0, embedding: [0.1, 0.2] }] }),
-        text: async () => "",
-      } as unknown as Response;
+      return makeJsonResponse({ data: [{ index: 0, embedding: [0.1, 0.2] }] });
     });
     const originalFetch = globalThis.fetch;
     globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
@@ -1004,60 +911,28 @@ describe("runSearch", () => {
   });
 
   it("warns and uses the built-in vector store when an extension vector adapter query fails", async () => {
-    const semanticItem = makeFrontMatter({
+    setupExtensionVectorAdapterScenario({
       id: "pm-vector-fallback",
       title: "vector extension fallback",
-    });
-    listAllFrontMatterMock.mockResolvedValue([semanticItem]);
-    readFileMock.mockResolvedValue(serializeDocument(semanticItem, "semantic body"));
-    readSettingsMock.mockResolvedValue({
-      providers: {
-        openai: {
-          base_url: "https://api.example.test/v1",
-          model: "text-embedding-3-small",
-          api_key: "",
-        },
-      },
-      vector_store: {
+      vectorStore: {
         adapter: "ext-vector",
         qdrant: {
           url: "https://qdrant.example.test:6333",
           api_key: "",
         },
       },
-    } as unknown as { id_prefix: string });
-    activeExtensionRegistrations = createExtensionRegistrations();
-    (activeExtensionRegistrations.vector_store_adapters as Array<Record<string, unknown>>).push({
-      layer: "project",
-      name: "vector-ext",
-      definition: { name: "ext-vector" },
-      runtime_definition: {
-        name: "ext-vector",
-        query: () => {
-          throw new Error("adapter unavailable");
-        },
+      query: () => {
+        throw new Error("adapter unavailable");
       },
     });
 
     const fetchMock = vi.fn(async (url: unknown) => {
       const target = resolveFetchTarget(url);
       if (target.endsWith("/v1/embeddings")) {
-        return {
-          ok: true,
-          status: 200,
-          statusText: "OK",
-          json: async () => ({ data: [{ index: 0, embedding: [0.1, 0.2] }] }),
-          text: async () => "",
-        } as unknown as Response;
+        return makeJsonResponse({ data: [{ index: 0, embedding: [0.1, 0.2] }] });
       }
       if (target.endsWith("/collections/pm_items/points/search")) {
-        return {
-          ok: true,
-          status: 200,
-          statusText: "OK",
-          json: async () => ({ result: [{ id: "pm-vector-fallback", score: 0.91 }] }),
-          text: async () => "",
-        } as unknown as Response;
+        return makeJsonResponse({ result: [{ id: "pm-vector-fallback", score: 0.91 }] });
       }
       throw new Error(`Unexpected fetch target: ${target}`);
     });
@@ -1076,46 +951,15 @@ describe("runSearch", () => {
   });
 
   it("degrades to keyword when extension vector adapter query fails without built-in fallback", async () => {
-    const semanticItem = makeFrontMatter({
+    setupExtensionVectorAdapterScenario({
       id: "pm-vector-adapter-fail",
       title: "vector extension fail",
-    });
-    listAllFrontMatterMock.mockResolvedValue([semanticItem]);
-    readFileMock.mockResolvedValue(serializeDocument(semanticItem, "semantic body"));
-    readSettingsMock.mockResolvedValue({
-      providers: {
-        openai: {
-          base_url: "https://api.example.test/v1",
-          model: "text-embedding-3-small",
-          api_key: "",
-        },
-      },
-      vector_store: {
-        adapter: "ext-vector",
-      },
-    } as unknown as { id_prefix: string });
-    activeExtensionRegistrations = createExtensionRegistrations();
-    (activeExtensionRegistrations.vector_store_adapters as Array<Record<string, unknown>>).push({
-      layer: "project",
-      name: "vector-ext",
-      definition: { name: "ext-vector" },
-      runtime_definition: {
-        name: "ext-vector",
-        query: () => {
-          throw new Error("vector adapter failed");
-        },
+      query: () => {
+        throw new Error("vector adapter failed");
       },
     });
 
-    const fetchMock = vi.fn(async () => ({
-      ok: true,
-      status: 200,
-      statusText: "OK",
-      json: async () => ({
-        data: [{ index: 0, embedding: [0.1, 0.2] }],
-      }),
-      text: async () => "",
-    }));
+    const fetchMock = vi.fn(async () => makeJsonResponse({ data: [{ index: 0, embedding: [0.1, 0.2] }] }));
     const originalFetch = globalThis.fetch;
     globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
 
@@ -1574,29 +1418,18 @@ describe("runSearch", () => {
       }
       return serializeDocument(match, "rerank body");
     });
-    readSettingsMock.mockResolvedValue({
-      search: {
-        max_results: 5,
-        rerank: {
-          enabled: true,
-          model: "rerank-model-v1",
-          top_k: 2,
+    readSettingsMock.mockResolvedValue(
+      makeSemanticSearchSettings({
+        search: {
+          max_results: 5,
+          rerank: {
+            enabled: true,
+            model: "rerank-model-v1",
+            top_k: 2,
+          },
         },
-      },
-      providers: {
-        openai: {
-          base_url: "https://api.example.test/v1",
-          model: "text-embedding-3-small",
-          api_key: "",
-        },
-      },
-      vector_store: {
-        qdrant: {
-          url: "https://qdrant.example.test:6333",
-          api_key: "",
-        },
-      },
-    } as unknown as { id_prefix: string });
+      }),
+    );
 
     const originalFetch = globalThis.fetch;
     let embeddingCallCount = 0;
@@ -1605,45 +1438,27 @@ describe("runSearch", () => {
       if (target.endsWith("/v1/embeddings")) {
         embeddingCallCount += 1;
         if (embeddingCallCount === 1) {
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({ data: [{ embedding: [1, 0] }] }),
-            text: async () => "",
-          } as unknown as Response;
+          return makeJsonResponse({ data: [{ embedding: [1, 0] }] });
         }
         const body = parseJsonBody<{ model?: string; input?: string | string[] }>(init?.body);
         const rerankInputs = Array.isArray(body.input) ? body.input : [body.input ?? ""];
         expect(body.model).toBe("rerank-model-v1");
         expect(rerankInputs).toHaveLength(3);
-        return {
-          ok: true,
-          status: 200,
-          statusText: "OK",
-          json: async () => ({
-            data: [
-              { index: 0, embedding: [1, 0] },
-              { index: 1, embedding: [0, 1] },
-              { index: 2, embedding: [1, 0] },
-            ],
-          }),
-          text: async () => "",
-        } as unknown as Response;
+        return makeJsonResponse({
+          data: [
+            { index: 0, embedding: [1, 0] },
+            { index: 1, embedding: [0, 1] },
+            { index: 2, embedding: [1, 0] },
+          ],
+        });
       }
       if (target.endsWith("/collections/pm_items/points/search")) {
-        return {
-          ok: true,
-          status: 200,
-          statusText: "OK",
-          json: async () => ({
-            result: [
-              { id: "pm-rerank-a", score: 0.95 },
-              { id: "pm-rerank-b", score: 0.9 },
-            ],
-          }),
-          text: async () => "",
-        } as unknown as Response;
+        return makeJsonResponse({
+          result: [
+            { id: "pm-rerank-a", score: 0.95 },
+            { id: "pm-rerank-b", score: 0.9 },
+          ],
+        });
       }
       throw new Error(`Unexpected fetch target: ${target}`);
     }) as typeof globalThis.fetch;
@@ -1684,29 +1499,18 @@ describe("runSearch", () => {
       }
       return serializeDocument(match, "rerank priority body");
     });
-    readSettingsMock.mockResolvedValue({
-      search: {
-        max_results: 5,
-        rerank: {
-          enabled: true,
-          model: "rerank-model-v1",
-          top_k: 1,
+    readSettingsMock.mockResolvedValue(
+      makeSemanticSearchSettings({
+        search: {
+          max_results: 5,
+          rerank: {
+            enabled: true,
+            model: "rerank-model-v1",
+            top_k: 1,
+          },
         },
-      },
-      providers: {
-        openai: {
-          base_url: "https://api.example.test/v1",
-          model: "text-embedding-3-small",
-          api_key: "",
-        },
-      },
-      vector_store: {
-        qdrant: {
-          url: "https://qdrant.example.test:6333",
-          api_key: "",
-        },
-      },
-    } as unknown as { id_prefix: string });
+      }),
+    );
 
     const originalFetch = globalThis.fetch;
     let embeddingCallCount = 0;
@@ -1715,43 +1519,25 @@ describe("runSearch", () => {
       if (target.endsWith("/v1/embeddings")) {
         embeddingCallCount += 1;
         if (embeddingCallCount === 1) {
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({ data: [{ embedding: [1, 0] }] }),
-            text: async () => "",
-          } as unknown as Response;
+          return makeJsonResponse({ data: [{ embedding: [1, 0] }] });
         }
         const body = parseJsonBody<{ input?: string | string[] }>(init?.body);
         const rerankInputs = Array.isArray(body.input) ? body.input : [body.input ?? ""];
         expect(rerankInputs).toHaveLength(2);
-        return {
-          ok: true,
-          status: 200,
-          statusText: "OK",
-          json: async () => ({
-            data: [
-              { index: 0, embedding: [1, 0] },
-              { index: 1, embedding: [0, 1] },
-            ],
-          }),
-          text: async () => "",
-        } as unknown as Response;
+        return makeJsonResponse({
+          data: [
+            { index: 0, embedding: [1, 0] },
+            { index: 1, embedding: [0, 1] },
+          ],
+        });
       }
       if (target.endsWith("/collections/pm_items/points/search")) {
-        return {
-          ok: true,
-          status: 200,
-          statusText: "OK",
-          json: async () => ({
-            result: [
-              { id: "pm-rerank-priority-a", score: 0.95 },
-              { id: "pm-rerank-priority-b", score: 0.9 },
-            ],
-          }),
-          text: async () => "",
-        } as unknown as Response;
+        return makeJsonResponse({
+          result: [
+            { id: "pm-rerank-priority-a", score: 0.95 },
+            { id: "pm-rerank-priority-b", score: 0.9 },
+          ],
+        });
       }
       throw new Error(`Unexpected fetch target: ${target}`);
     }) as typeof globalThis.fetch;
@@ -1790,28 +1576,17 @@ describe("runSearch", () => {
       }
       return serializeDocument(match, "rerank fallback body");
     });
-    readSettingsMock.mockResolvedValue({
-      search: {
-        rerank: {
-          enabled: true,
-          model: "rerank-model-v1",
-          top_k: 2,
+    readSettingsMock.mockResolvedValue(
+      makeSemanticSearchSettings({
+        search: {
+          rerank: {
+            enabled: true,
+            model: "rerank-model-v1",
+            top_k: 2,
+          },
         },
-      },
-      providers: {
-        openai: {
-          base_url: "https://api.example.test/v1",
-          model: "text-embedding-3-small",
-          api_key: "",
-        },
-      },
-      vector_store: {
-        qdrant: {
-          url: "https://qdrant.example.test:6333",
-          api_key: "",
-        },
-      },
-    } as unknown as { id_prefix: string });
+      }),
+    );
 
     const originalFetch = globalThis.fetch;
     let embeddingCallCount = 0;
@@ -1820,29 +1595,17 @@ describe("runSearch", () => {
       if (target.endsWith("/v1/embeddings")) {
         embeddingCallCount += 1;
         if (embeddingCallCount === 1) {
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({ data: [{ embedding: [1, 0] }] }),
-            text: async () => "",
-          } as unknown as Response;
+          return makeJsonResponse({ data: [{ embedding: [1, 0] }] });
         }
         throw new Error("rerank provider unavailable");
       }
       if (target.endsWith("/collections/pm_items/points/search")) {
-        return {
-          ok: true,
-          status: 200,
-          statusText: "OK",
-          json: async () => ({
-            result: [
-              { id: "pm-rerank-fail-a", score: 0.9 },
-              { id: "pm-rerank-fail-b", score: 0.8 },
-            ],
-          }),
-          text: async () => "",
-        } as unknown as Response;
+        return makeJsonResponse({
+          result: [
+            { id: "pm-rerank-fail-a", score: 0.9 },
+            { id: "pm-rerank-fail-b", score: 0.8 },
+          ],
+        });
       }
       throw new Error(`Unexpected fetch target: ${target}`);
     }) as typeof globalThis.fetch;
@@ -2859,54 +2622,22 @@ describe("runSearch", () => {
       }
       return serializeDocument(match, match.id === "pm-rival" ? "pm-fk49 body mention pm-fk49" : "body without lookup token");
     });
-    readSettingsMock.mockResolvedValue({
-      search: {
-        // Default weight: keyword contribution caps at 0.3 — pre-fix the rival wins.
-        hybrid_semantic_weight: 0.7,
-      },
-      providers: {
-        openai: {
-          base_url: "https://api.example.test/v1",
-          model: "text-embedding-3-small",
-          api_key: "",
+    readSettingsMock.mockResolvedValue(
+      makeSemanticSearchSettings({
+        search: {
+          // Default weight: keyword contribution caps at 0.3 — pre-fix the rival wins.
+          hybrid_semantic_weight: 0.7,
         },
-      },
-      vector_store: {
-        qdrant: {
-          url: "https://qdrant.example.test:6333",
-          api_key: "",
-        },
-      },
-    } as unknown as { id_prefix: string });
+      }),
+    );
 
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = (async (url: unknown) => {
-      const target = resolveFetchTarget(url);
-      if (target.endsWith("/v1/embeddings")) {
-        return {
-          ok: true,
-          status: 200,
-          statusText: "OK",
-          json: async () => ({ data: [{ embedding: [0.9, 0.1] }] }),
-          text: async () => "",
-        } as unknown as Response;
-      }
-      if (target.endsWith("/collections/pm_items/points/search")) {
-        return {
-          ok: true,
-          status: 200,
-          statusText: "OK",
-          json: async () => ({
-            result: [
-              { id: "pm-rival", score: 0.99 },
-              { id: "pm-fk49", score: 0.05 },
-            ],
-          }),
-          text: async () => "",
-        } as unknown as Response;
-      }
-      throw new Error(`Unexpected fetch target: ${target}`);
-    }) as typeof globalThis.fetch;
+    globalThis.fetch = makeEmbeddingAndVectorSearchFetch({
+      vectorResult: [
+        { id: "pm-rival", score: 0.99 },
+        { id: "pm-fk49", score: 0.05 },
+      ],
+    });
 
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
@@ -2954,43 +2685,20 @@ describe("runSearch", () => {
       }
       return serializeDocument(match, match.id === "pm-rival" ? "fk49 fk49 body" : "no lookup token");
     });
-    readSettingsMock.mockResolvedValue({
-      id_prefix: "pm-",
-      search: { hybrid_semantic_weight: 0.7 },
-      providers: {
-        openai: { base_url: "https://api.example.test/v1", model: "text-embedding-3-small", api_key: "" },
-      },
-      vector_store: { qdrant: { url: "https://qdrant.example.test:6333", api_key: "" } },
-    } as unknown as { id_prefix: string });
+    readSettingsMock.mockResolvedValue(
+      makeSemanticSearchSettings({
+        id_prefix: "pm-",
+        search: { hybrid_semantic_weight: 0.7 },
+      }),
+    );
 
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = (async (url: unknown) => {
-      const target = resolveFetchTarget(url);
-      if (target.endsWith("/v1/embeddings")) {
-        return {
-          ok: true,
-          status: 200,
-          statusText: "OK",
-          json: async () => ({ data: [{ embedding: [0.9, 0.1] }] }),
-          text: async () => "",
-        } as unknown as Response;
-      }
-      if (target.endsWith("/collections/pm_items/points/search")) {
-        return {
-          ok: true,
-          status: 200,
-          statusText: "OK",
-          json: async () => ({
-            result: [
-              { id: "pm-rival", score: 0.99 },
-              { id: "pm-fk49", score: 0.02 },
-            ],
-          }),
-          text: async () => "",
-        } as unknown as Response;
-      }
-      throw new Error(`Unexpected fetch target: ${target}`);
-    }) as typeof globalThis.fetch;
+    globalThis.fetch = makeEmbeddingAndVectorSearchFetch({
+      vectorResult: [
+        { id: "pm-rival", score: 0.99 },
+        { id: "pm-fk49", score: 0.02 },
+      ],
+    });
 
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");
@@ -3030,38 +2738,14 @@ describe("runSearch", () => {
       }
       return serializeDocument(match, "semantic body");
     });
-    readSettingsMock.mockResolvedValue({
-      providers: {
-        openai: { base_url: "https://api.example.test/v1", model: "text-embedding-3-small", api_key: "" },
-      },
-      vector_store: { qdrant: { url: "https://qdrant.example.test:6333", api_key: "" } },
-    } as unknown as { id_prefix: string });
+    readSettingsMock.mockResolvedValue(makeSemanticSearchSettings());
 
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = (async (url: unknown) => {
-      const target = resolveFetchTarget(url);
-      if (target.endsWith("/v1/embeddings")) {
-        return {
-          ok: true,
-          status: 200,
-          statusText: "OK",
-          json: async () => ({ data: [{ embedding: [0.9, 0.1] }] }),
-          text: async () => "",
-        } as unknown as Response;
-      }
-      if (target.endsWith("/collections/pm_items/points/search")) {
-        // Only the rival carries a vector hit; the exact-id target has none, so
-        // pre-fix it would be absent from a pure-semantic result entirely.
-        return {
-          ok: true,
-          status: 200,
-          statusText: "OK",
-          json: async () => ({ result: [{ id: "pm-rival", score: 0.99 }] }),
-          text: async () => "",
-        } as unknown as Response;
-      }
-      throw new Error(`Unexpected fetch target: ${target}`);
-    }) as typeof globalThis.fetch;
+    // Only the rival carries a vector hit; the exact-id target has none, so
+    // pre-fix it would be absent from a pure-semantic result entirely.
+    globalThis.fetch = makeEmbeddingAndVectorSearchFetch({
+      vectorResult: [{ id: "pm-rival", score: 0.99 }],
+    });
 
     try {
       const { runSearch } = await import("../../../src/cli/commands/search.js");

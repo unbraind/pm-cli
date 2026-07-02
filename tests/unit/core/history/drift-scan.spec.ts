@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { scanHistoryDrift } from "../../../../src/core/history/drift-scan.js";
 import { getHistoryPath } from "../../../../src/core/store/paths.js";
 import { listAllFrontMatterWithBody } from "../../../../src/core/store/item-store.js";
-import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
+import { withTempPmPath, type TempPmContext } from "../../../helpers/withTempPmPath.js";
 import { createTestItem } from "../../../helpers/itemFactory.js";
 
 const DRIFT_CACHE_RELATIVE = path.join("runtime", "history-drift-cache.json");
@@ -25,6 +25,53 @@ interface DriftCacheFixture {
 
 async function readDriftCache(pmRoot: string): Promise<DriftCacheFixture> {
   return JSON.parse(await fs.readFile(path.join(pmRoot, DRIFT_CACHE_RELATIVE), "utf8"));
+}
+
+// Seeds one item, scans to populate the cache, mutates the history stream via
+// `mutateStream`, then forges a cache row whose stat tuple (mtime/ctime/size)
+// matches the mutated stream while keeping the stale content hash/chain status.
+// Returns the created item id plus the scanned item list for the follow-up scan.
+async function seedStaleMetadataMatchedCache(
+  context: TempPmContext,
+  title: string,
+  mutateStream: (historyPath: string) => Promise<void>,
+): Promise<{ createdId: string; items: Awaited<ReturnType<typeof listAllFrontMatterWithBody>> }> {
+  const created = createTestItem(context, { title });
+  const items = await listAllFrontMatterWithBody(context.pmPath);
+  await scanHistoryDrift(context.pmPath, items);
+  const cachePath = path.join(context.pmPath, DRIFT_CACHE_RELATIVE);
+  const cache = await readDriftCache(context.pmPath);
+  const staleEntry = cache.entries[created.id];
+  if (!staleEntry) {
+    throw new Error("expected cache entry for created item");
+  }
+
+  const historyPath = getHistoryPath(context.pmPath, created.id);
+  await mutateStream(historyPath);
+  const mutatedStat = await fs.stat(historyPath);
+  const forgedCache: DriftCacheFixture = {
+    version: 3,
+    entries: {
+      [created.id]: {
+        ...staleEntry,
+        mtime_ms: mutatedStat.mtimeMs,
+        ctime_ms: mutatedStat.ctimeMs,
+        size: mutatedStat.size,
+      },
+    },
+  };
+  await fs.writeFile(cachePath, `${JSON.stringify(forgedCache, null, 2)}\n`, "utf8");
+  return { createdId: created.id, items };
+}
+
+// Rewrites a history stream with a single entry that does not replay from the
+// empty document, so any hash-guarded re-verification reports a chain mismatch.
+async function writeInvalidChainStream(historyPath: string): Promise<void> {
+  await fs.writeFile(
+    historyPath,
+    `${JSON.stringify({ before_hash: "deadbeef", after_hash: "feedface", patch: [] })}\n`,
+    "utf8",
+  );
 }
 
 describe("core/history/drift-scan", () => {
@@ -158,75 +205,19 @@ describe("core/history/drift-scan", () => {
 
   it("detects metadata-matching stale cache rows when content hash changes", async () => {
     await withTempPmPath(async (context) => {
-      const created = createTestItem(context, { title: "Hash guard" });
-      const items = await listAllFrontMatterWithBody(context.pmPath);
-      await scanHistoryDrift(context.pmPath, items);
-      const cachePath = path.join(context.pmPath, DRIFT_CACHE_RELATIVE);
-      const cache = await readDriftCache(context.pmPath);
-      const staleEntry = cache.entries[created.id];
-      if (!staleEntry) {
-        throw new Error("expected cache entry for created item");
-      }
-
-      // Replace the stream with a different (invalid-chain) payload.
-      await fs.writeFile(
-        getHistoryPath(context.pmPath, created.id),
-        `${JSON.stringify({ before_hash: "deadbeef", after_hash: "feedface", patch: [] })}\n`,
-        "utf8",
-      );
-      const tamperedStat = await fs.stat(getHistoryPath(context.pmPath, created.id));
-
-      // Craft a stale cache row that matches the file metadata tuple but keeps the
-      // old content hash/chain status. Hash-guarded cache hits must invalidate this.
-      const forgedCache: DriftCacheFixture = {
-        version: 3,
-        entries: {
-          [created.id]: {
-            ...staleEntry,
-            mtime_ms: tamperedStat.mtimeMs,
-            ctime_ms: tamperedStat.ctimeMs,
-            size: tamperedStat.size,
-          },
-        },
-      };
-      await fs.writeFile(cachePath, `${JSON.stringify(forgedCache, null, 2)}\n`, "utf8");
+      // Replace the stream with a different (invalid-chain) payload behind a
+      // metadata-matched cache row. Hash-guarded cache hits must invalidate it.
+      const { createdId, items } = await seedStaleMetadataMatchedCache(context, "Hash guard", writeInvalidChainStream);
 
       const result = await scanHistoryDrift(context.pmPath, items);
-      expect(result.chainMismatches).toContain(created.id);
-      expect(result.driftedItems).toContain(created.id);
+      expect(result.chainMismatches).toContain(createdId);
+      expect(result.driftedItems).toContain(createdId);
     });
   });
 
   it("metadata mode skips content rereads and trusts stat-matched cache entries after content changes", async () => {
     await withTempPmPath(async (context) => {
-      const created = createTestItem(context, { title: "Metadata trusted" });
-      const items = await listAllFrontMatterWithBody(context.pmPath);
-      await scanHistoryDrift(context.pmPath, items);
-      const cachePath = path.join(context.pmPath, DRIFT_CACHE_RELATIVE);
-      const cache = await readDriftCache(context.pmPath);
-      const staleEntry = cache.entries[created.id];
-      if (!staleEntry) {
-        throw new Error("expected cache entry for created item");
-      }
-
-      await fs.writeFile(
-        getHistoryPath(context.pmPath, created.id),
-        `${JSON.stringify({ before_hash: "deadbeef", after_hash: "feedface", patch: [] })}\n`,
-        "utf8",
-      );
-      const tamperedStat = await fs.stat(getHistoryPath(context.pmPath, created.id));
-      const forgedCache: DriftCacheFixture = {
-        version: 3,
-        entries: {
-          [created.id]: {
-            ...staleEntry,
-            mtime_ms: tamperedStat.mtimeMs,
-            ctime_ms: tamperedStat.ctimeMs,
-            size: tamperedStat.size,
-          },
-        },
-      };
-      await fs.writeFile(cachePath, `${JSON.stringify(forgedCache, null, 2)}\n`, "utf8");
+      const { items } = await seedStaleMetadataMatchedCache(context, "Metadata trusted", writeInvalidChainStream);
 
       const result = await scanHistoryDrift(context.pmPath, items, { cacheHitVerification: "metadata" });
       expect(result.driftedItems).toEqual([]);
@@ -235,72 +226,34 @@ describe("core/history/drift-scan", () => {
 
   it("marks cached metadata hits unreadable when content-hash read fails", async () => {
     await withTempPmPath(async (context) => {
-      const created = createTestItem(context, { title: "Hash read failure" });
-      const items = await listAllFrontMatterWithBody(context.pmPath);
-      await scanHistoryDrift(context.pmPath, items);
-      const cachePath = path.join(context.pmPath, DRIFT_CACHE_RELATIVE);
-      const cache = await readDriftCache(context.pmPath);
-      const staleEntry = cache.entries[created.id];
-      if (!staleEntry) {
-        throw new Error("expected cache entry for created item");
-      }
-
-      const historyPath = getHistoryPath(context.pmPath, created.id);
-      await fs.rm(historyPath, { force: true });
-      await fs.mkdir(historyPath, { recursive: true });
-      const dirStat = await fs.stat(historyPath);
-
-      const forgedCache: DriftCacheFixture = {
-        version: 3,
-        entries: {
-          [created.id]: {
-            ...staleEntry,
-            mtime_ms: dirStat.mtimeMs,
-            ctime_ms: dirStat.ctimeMs,
-            size: dirStat.size,
-          },
+      const { createdId, items } = await seedStaleMetadataMatchedCache(
+        context,
+        "Hash read failure",
+        async (historyPath) => {
+          await fs.rm(historyPath, { force: true });
+          await fs.mkdir(historyPath, { recursive: true });
         },
-      };
-      await fs.writeFile(cachePath, `${JSON.stringify(forgedCache, null, 2)}\n`, "utf8");
+      );
 
       const result = await scanHistoryDrift(context.pmPath, items);
-      expect(result.unreadableStreams).toContain(created.id);
-      expect(result.driftedItems).toContain(created.id);
+      expect(result.unreadableStreams).toContain(createdId);
+      expect(result.driftedItems).toContain(createdId);
     });
   });
 
   it("reclassifies stale metadata hits as missing when re-verified stream is empty", async () => {
     await withTempPmPath(async (context) => {
-      const created = createTestItem(context, { title: "Hash mismatch to empty" });
-      const items = await listAllFrontMatterWithBody(context.pmPath);
-      await scanHistoryDrift(context.pmPath, items);
-      const cachePath = path.join(context.pmPath, DRIFT_CACHE_RELATIVE);
-      const cache = await readDriftCache(context.pmPath);
-      const staleEntry = cache.entries[created.id];
-      if (!staleEntry) {
-        throw new Error("expected cache entry for created item");
-      }
-
-      const historyPath = getHistoryPath(context.pmPath, created.id);
-      await fs.writeFile(historyPath, "\n", "utf8");
-      const emptyStat = await fs.stat(historyPath);
-
-      const forgedCache: DriftCacheFixture = {
-        version: 3,
-        entries: {
-          [created.id]: {
-            ...staleEntry,
-            mtime_ms: emptyStat.mtimeMs,
-            ctime_ms: emptyStat.ctimeMs,
-            size: emptyStat.size,
-          },
+      const { createdId, items } = await seedStaleMetadataMatchedCache(
+        context,
+        "Hash mismatch to empty",
+        async (historyPath) => {
+          await fs.writeFile(historyPath, "\n", "utf8");
         },
-      };
-      await fs.writeFile(cachePath, `${JSON.stringify(forgedCache, null, 2)}\n`, "utf8");
+      );
 
       const result = await scanHistoryDrift(context.pmPath, items);
-      expect(result.missingStreams).toContain(created.id);
-      expect(result.driftedItems).toContain(created.id);
+      expect(result.missingStreams).toContain(createdId);
+      expect(result.driftedItems).toContain(createdId);
     });
   });
 });

@@ -1,12 +1,18 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { _testOnlyTestAll, runTestAll } from "../../../src/cli/commands/test-all.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
-import { parseItemDocument, serializeItemDocument } from "../../../src/core/item/item-format.js";
 import * as itemTestRunTracking from "../../../src/core/test/item-test-run-tracking.js";
+import {
+  loadTaskFrontMatter,
+  overwriteTaskTests,
+  setGovernancePreset,
+  setTestResultTracking,
+  writeSchemaTypeExtension,
+} from "../../helpers/pmWorkspace.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
 
 afterEach(() => {
@@ -71,92 +77,6 @@ function createTaskWithTests(
   const result = context.runCli(args, { expectJson: true });
   expect(result.code).toBe(0);
   return (result.json as { item: { id: string } }).item.id;
-}
-
-async function overwriteTaskTests(
-  context: TempPmContext,
-  id: string,
-  tests: Array<Record<string, unknown>>,
-): Promise<void> {
-  const toonPath = path.join(context.pmPath, "tasks", `${id}.toon`);
-  const markdownPath = path.join(context.pmPath, "tasks", `${id}.md`);
-  let taskPath = toonPath;
-  let source: string;
-  try {
-    source = await readFile(taskPath, "utf8");
-  } catch {
-    taskPath = markdownPath;
-    source = await readFile(taskPath, "utf8");
-  }
-  const format = taskPath.endsWith(".toon") ? "toon" : "json_markdown";
-  const parsed = parseItemDocument(source, { format });
-  parsed.metadata.tests = tests as unknown as never;
-  await writeFile(taskPath, serializeItemDocument(parsed, { format }), "utf8");
-}
-
-async function setTestResultTracking(pmPath: string, enabled: boolean): Promise<void> {
-  const settingsPath = path.join(pmPath, "settings.json");
-  const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-    testing?: { record_results_to_items?: boolean };
-  };
-  settings.testing = {
-    ...settings.testing,
-    record_results_to_items: enabled,
-  };
-  await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
-}
-
-function setGovernancePreset(context: TempPmContext, preset: "minimal" | "default" | "strict" | "custom"): void {
-  const result = context.runCli(["config", "project", "set", "governance-preset", "--policy", preset, "--json"], {
-    expectJson: true,
-  });
-  expect(result.code).toBe(0);
-}
-
-async function loadTaskFrontMatter(context: TempPmContext, id: string): Promise<Record<string, unknown>> {
-  const toonPath = path.join(context.pmPath, "tasks", `${id}.toon`);
-  const markdownPath = path.join(context.pmPath, "tasks", `${id}.md`);
-  let taskPath = toonPath;
-  let source: string;
-  try {
-    source = await readFile(taskPath, "utf8");
-  } catch {
-    taskPath = markdownPath;
-    source = await readFile(taskPath, "utf8");
-  }
-  const format = taskPath.endsWith(".toon") ? "toon" : "json_markdown";
-  return parseItemDocument(source, { format }).metadata as unknown as Record<string, unknown>;
-}
-
-async function writeSchemaTypeExtension(pmRoot: string, extensionDirName: string, typeName: string): Promise<void> {
-  const extensionDir = path.join(pmRoot, "extensions", extensionDirName);
-  await mkdir(extensionDir, { recursive: true });
-  await writeFile(
-    path.join(extensionDir, "manifest.json"),
-    `${JSON.stringify(
-      {
-        name: `${extensionDirName}-ext`,
-        version: "1.0.0",
-        entry: "index.mjs",
-        capabilities: ["schema"],
-      },
-      null,
-      2,
-    )}\n`,
-    "utf8",
-  );
-  await writeFile(
-    path.join(extensionDir, "index.mjs"),
-    [
-      "export function activate(api) {",
-      "  api.registerItemTypes([",
-      `    { name: \"${typeName}\", folder: \"${typeName.toLowerCase()}\" },`,
-      "  ]);",
-      "}",
-      "",
-    ].join("\n"),
-    "utf8",
-  );
 }
 
 describe("runTestAll", () => {

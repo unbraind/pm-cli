@@ -1,69 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { activateExtensions } from "../../../../src/core/extensions/loader.js";
-import { createDefaultExtensionGovernancePolicy } from "../../../../src/core/extensions/extension-types.js";
 import { KNOWN_EXTENSION_CAPABILITIES } from "../../../../src/core/extensions/extension-types.js";
 import {
   EXTENSION_CAPABILITY_REGISTRATION_SURFACES,
   collectUsedExtensionCapabilities,
   reconcileExtensionCapabilityUsage,
 } from "../../../../src/core/extensions/capability-usage.js";
-import type { ExtensionActivationResult, ExtensionApi, ExtensionLayer } from "../../../../src/core/extensions/loader.js";
-
-interface SyntheticExtension {
-  name: string;
-  layer?: ExtensionLayer;
-  capabilities: string[];
-  activate?: (api: ExtensionApi) => void;
-}
-
-/** Activate one or more in-memory extension modules through the real engine. */
-async function activate(extensions: SyntheticExtension[]): Promise<ExtensionActivationResult> {
-  return activateExtensions({
-    disabled_by_flag: false,
-    roots: { global: "", project: "" },
-    configured_enabled: [],
-    configured_disabled: [],
-    discovered: [],
-    effective: [],
-    warnings: [],
-    policy: createDefaultExtensionGovernancePolicy(),
-    failed: [],
-    loaded: extensions.map((extension) => ({
-      layer: extension.layer ?? "project",
-      directory: "",
-      manifest_path: "",
-      name: extension.name,
-      version: "0.0.0",
-      entry: "./index.js",
-      priority: 0,
-      entry_path: "",
-      capabilities: extension.capabilities,
-      module: { activate: extension.activate ?? (() => undefined) },
-    })),
-  });
-}
-
-/** Register at least one surface for every known capability. */
-function registerEverySurface(api: ExtensionApi): void {
-  api.registerCommand({ name: "ext-a cmd", run: () => ({ ok: true }) });
-  api.registerCommand("list", (context) => context.result);
-  api.registerItemFields([{ name: "team", type: "string" }]);
-  api.registerItemTypes([{ name: "Ticket" }]);
-  api.registerMigration({ id: "ext-a-migration", run: () => ({}) });
-  api.registerImporter("ext-a-import", async () => ({ items: [] }));
-  api.registerExporter("ext-a-export", async () => ({}));
-  api.registerSearchProvider({ name: "ext-a-search", query: () => [] });
-  api.registerVectorStoreAdapter({ name: "ext-a-vector", query: () => [] });
-  api.registerParser("ext-a cmd", () => ({}));
-  api.registerPreflight(() => ({}));
-  api.registerService("output_format", () => null);
-  api.registerRenderer("toon", () => null);
-  api.hooks.beforeCommand(() => undefined);
-  api.hooks.afterCommand(() => undefined);
-  api.hooks.onWrite(() => undefined);
-  api.hooks.onRead(() => undefined);
-  api.hooks.onIndex(() => undefined);
-}
+import {
+  activateSyntheticExtensions as activate,
+  registerEverySurfaceForTest as registerEverySurface,
+} from "../../../helpers/extensions.js";
 
 describe("extension capability usage reconciliation", () => {
   it("maps every known capability to at least one registration surface", () => {

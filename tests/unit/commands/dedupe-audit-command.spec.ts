@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { _testOnly as dedupeInternals, runDedupeAudit } from "../../../src/cli/commands/dedupe-audit.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
+import { createTestItemId } from "../../helpers/itemFactory.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
 
 afterEach(() => {
@@ -21,56 +22,15 @@ function createItem(
     parent?: string;
   },
 ): string {
-  const args = [
-    "create",
-    "--json",
-    "--title",
-    params.title,
-    "--description",
-    `${params.title} description`,
-    "--type",
-    params.type ?? "Task",
-    "--status",
-    params.status ?? "open",
-    "--priority",
-    "1",
-    "--tags",
-    "dedupe,unit",
-    "--body",
-    "",
-    "--deadline",
-    "none",
-    "--estimate",
-    "15",
-    "--acceptance-criteria",
-    `${params.title} acceptance`,
-    "--author",
-    "test-author",
-    "--message",
-    `Create ${params.title}`,
-    "--assignee",
-    "none",
-    "--dep",
-    "none",
-    "--comment",
-    "none",
-    "--note",
-    "none",
-    "--learning",
-    "none",
-    "--file",
-    "none",
-    "--test",
-    "none",
-    "--doc",
-    "none",
-  ];
-  if (params.parent) {
-    args.push("--parent", params.parent);
-  }
-  const created = context.runCli(args, { expectJson: true });
-  expect(created.code).toBe(0);
-  return (created.json as { item: { id: string } }).item.id;
+  return createTestItemId(context, {
+    title: params.title,
+    type: params.type,
+    status: params.status,
+    parent: params.parent,
+    tags: "dedupe,unit",
+    estimate: "15",
+    author: "test-author",
+  });
 }
 
 function preparedCandidate(

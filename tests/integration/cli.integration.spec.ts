@@ -6,7 +6,72 @@ import { describe, expect, it } from "vitest";
 import { splitFrontMatter } from "../../src/core/item/item-format.js";
 import { distCliPath, runDirectDistCli } from "../helpers/cliRunner.js";
 import { expectJsonErrorEnvelope, parseJsonErrorEnvelope } from "../helpers/jsonErrorEnvelope.js";
-import { withTempPmPath } from "../helpers/withTempPmPath.js";
+import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
+
+/**
+ * Runs `pm create` with the full explicit-flag matrix shared by the
+ * item-format preflight tests, asserts success, and returns the created id
+ * plus the markdown/toon file paths derived for the new task.
+ */
+function createItemFormatFixtureItem(
+  context: TempPmContext,
+  options: { title: string; description: string; tags: string; acceptanceCriteria: string; message: string },
+): { createdId: string; markdownPath: string; toonPath: string } {
+  const createResult = context.runCli(
+    [
+      "create",
+      "--json",
+      "--title",
+      options.title,
+      "--description",
+      options.description,
+      "--type",
+      "Task",
+      "--status",
+      "open",
+      "--priority",
+      "1",
+      "--tags",
+      options.tags,
+      "--body",
+      "",
+      "--deadline",
+      "none",
+      "--estimate",
+      "20",
+      "--acceptance-criteria",
+      options.acceptanceCriteria,
+      "--author",
+      "integration-test",
+      "--message",
+      options.message,
+      "--assignee",
+      "none",
+      "--dep",
+      "none",
+      "--comment",
+      "none",
+      "--note",
+      "none",
+      "--learning",
+      "none",
+      "--file",
+      "none",
+      "--test",
+      "none",
+      "--doc",
+      "none",
+    ],
+    { expectJson: true },
+  );
+  expect(createResult.code).toBe(0);
+  const createdId = (createResult.json as { item: { id: string } }).item.id;
+  return {
+    createdId,
+    markdownPath: path.join(context.pmPath, "tasks", `${createdId}.md`),
+    toonPath: path.join(context.pmPath, "tasks", `${createdId}.toon`),
+  };
+}
 
 describe("CLI integration (sandboxed PM_PATH)", () => {
   it("accepts --list as an alias for --explore on package and extension (pm-fu5d U3)", async () => {
@@ -4567,57 +4632,13 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       legacySettings.item_format = "json_markdown";
       await writeFile(settingsPath, `${JSON.stringify(legacySettings, null, 2)}\n`, "utf8");
 
-      const createResult = context.runCli(
-        [
-          "create",
-          "--json",
-          "--title",
-          "Legacy item format mutation",
-          "--description",
-          "Mutation should auto-select a format and migrate existing files",
-          "--type",
-          "Task",
-          "--status",
-          "open",
-          "--priority",
-          "1",
-          "--tags",
-          "integration,item-format",
-          "--body",
-          "",
-          "--deadline",
-          "none",
-          "--estimate",
-          "20",
-          "--acceptance-criteria",
-          "Update succeeds after automatic format selection",
-          "--author",
-          "integration-test",
-          "--message",
-          "Create markdown legacy item",
-          "--assignee",
-          "none",
-          "--dep",
-          "none",
-          "--comment",
-          "none",
-          "--note",
-          "none",
-          "--learning",
-          "none",
-          "--file",
-          "none",
-          "--test",
-          "none",
-          "--doc",
-          "none",
-        ],
-        { expectJson: true },
-      );
-      expect(createResult.code).toBe(0);
-      const createdId = (createResult.json as { item: { id: string } }).item.id;
-      const markdownPath = path.join(context.pmPath, "tasks", `${createdId}.md`);
-      const toonPath = path.join(context.pmPath, "tasks", `${createdId}.toon`);
+      const { createdId, markdownPath, toonPath } = createItemFormatFixtureItem(context, {
+        title: "Legacy item format mutation",
+        description: "Mutation should auto-select a format and migrate existing files",
+        tags: "integration,item-format",
+        acceptanceCriteria: "Update succeeds after automatic format selection",
+        message: "Create markdown legacy item",
+      });
       await expect(readFile(toonPath, "utf8")).resolves.toContain(createdId);
       await expect(readFile(markdownPath, "utf8")).rejects.toBeDefined();
 
@@ -4687,112 +4708,26 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         "utf8",
       );
 
-      const createResult = context.runCli(
-        [
-          "create",
-          "--json",
-          "--title",
-          "Bypassed legacy auto-selection",
-          "--description",
-          "Preflight extension disables legacy format sync for this test",
-          "--type",
-          "Task",
-          "--status",
-          "open",
-          "--priority",
-          "1",
-          "--tags",
-          "integration,preflight",
-          "--body",
-          "",
-          "--deadline",
-          "none",
-          "--estimate",
-          "20",
-          "--acceptance-criteria",
-          "Preflight override bypasses automatic format selection",
-          "--author",
-          "integration-test",
-          "--message",
-          "Create with preflight override",
-          "--assignee",
-          "none",
-          "--dep",
-          "none",
-          "--comment",
-          "none",
-          "--note",
-          "none",
-          "--learning",
-          "none",
-          "--file",
-          "none",
-          "--test",
-          "none",
-          "--doc",
-          "none",
-        ],
-        { expectJson: true },
-      );
-      expect(createResult.code).toBe(0);
-      const created = createResult.json as { item: { id: string } };
-      expect(created.item.id.startsWith("pm-")).toBe(true);
+      const { createdId } = createItemFormatFixtureItem(context, {
+        title: "Bypassed legacy auto-selection",
+        description: "Preflight extension disables legacy format sync for this test",
+        tags: "integration,preflight",
+        acceptanceCriteria: "Preflight override bypasses automatic format selection",
+        message: "Create with preflight override",
+      });
+      expect(createdId.startsWith("pm-")).toBe(true);
     });
   });
 
   it("auto-migrates item files before mutation when settings item_format is manually changed", async () => {
     await withTempPmPath(async (context) => {
-      const createResult = context.runCli(
-        [
-          "create",
-          "--json",
-          "--title",
-          "Manual settings migration preflight",
-          "--description",
-          "Verify pre-mutation item format sync",
-          "--type",
-          "Task",
-          "--status",
-          "open",
-          "--priority",
-          "1",
-          "--tags",
-          "integration,item-format",
-          "--body",
-          "",
-          "--deadline",
-          "none",
-          "--estimate",
-          "20",
-          "--acceptance-criteria",
-          "Mutation preflight migrates item format",
-          "--author",
-          "integration-test",
-          "--message",
-          "Create markdown item",
-          "--assignee",
-          "none",
-          "--dep",
-          "none",
-          "--comment",
-          "none",
-          "--note",
-          "none",
-          "--learning",
-          "none",
-          "--file",
-          "none",
-          "--test",
-          "none",
-          "--doc",
-          "none",
-        ],
-        { expectJson: true },
-      );
-      expect(createResult.code).toBe(0);
-      const createdId = (createResult.json as { item: { id: string } }).item.id;
-      const markdownPath = path.join(context.pmPath, "tasks", `${createdId}.md`);
-      const toonPath = path.join(context.pmPath, "tasks", `${createdId}.toon`);
+      const { createdId, markdownPath, toonPath } = createItemFormatFixtureItem(context, {
+        title: "Manual settings migration preflight",
+        description: "Verify pre-mutation item format sync",
+        tags: "integration,item-format",
+        acceptanceCriteria: "Mutation preflight migrates item format",
+        message: "Create markdown item",
+      });
       await expect(readFile(toonPath, "utf8")).resolves.toContain(createdId);
 
       const getCreated = context.runCli(["get", createdId, "--json"], { expectJson: true });

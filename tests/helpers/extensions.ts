@@ -1,6 +1,13 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { activateExtensions } from "../../src/core/extensions/loader.js";
+import { createDefaultExtensionGovernancePolicy } from "../../src/core/extensions/extension-types.js";
+import type {
+  ExtensionActivationResult,
+  ExtensionApi,
+  ExtensionLayer,
+} from "../../src/core/extensions/loader.js";
 
 type ManifestRecord = Record<string, unknown>;
 
@@ -93,4 +100,83 @@ export function writeTestExtensionSync(options: WriteTestExtensionOptions): Writ
 
 export function defaultTestExtensionEntrySource(): string {
   return DEFAULT_ENTRY_SOURCE;
+}
+
+/** In-memory extension module descriptor for {@link activateSyntheticExtensions}. */
+export interface SyntheticExtension {
+  name: string;
+  layer?: ExtensionLayer;
+  capabilities: string[];
+  activate?: (api: ExtensionApi) => void;
+}
+
+/** Activate one or more in-memory extension modules through the real engine. */
+export async function activateSyntheticExtensions(
+  extensions: SyntheticExtension[],
+): Promise<ExtensionActivationResult> {
+  return activateExtensions({
+    disabled_by_flag: false,
+    roots: { global: "", project: "" },
+    configured_enabled: [],
+    configured_disabled: [],
+    discovered: [],
+    effective: [],
+    warnings: [],
+    policy: createDefaultExtensionGovernancePolicy(),
+    failed: [],
+    loaded: extensions.map((extension) => ({
+      layer: extension.layer ?? "project",
+      directory: "",
+      manifest_path: "",
+      name: extension.name,
+      version: "0.0.0",
+      entry: "./index.js",
+      priority: 0,
+      entry_path: "",
+      capabilities: extension.capabilities,
+      module: { activate: extension.activate ?? (() => undefined) },
+    })),
+  });
+}
+
+/** Options for {@link registerEverySurfaceForTest}. */
+export interface RegisterEverySurfaceOptions {
+  /** When true, additionally registers the `ext-a-profile` archetype profile. */
+  includeProfile?: boolean;
+}
+
+/** Register at least one surface for every known capability under one extension. */
+export function registerEverySurfaceForTest(api: ExtensionApi, options: RegisterEverySurfaceOptions = {}): void {
+  api.registerCommand({ name: "ext-a cmd", run: () => ({ ok: true }) });
+  api.registerCommand("list", (context) => context.result);
+  api.registerItemFields([{ name: "team", type: "string" }]);
+  api.registerItemTypes([{ name: "Ticket" }]);
+  api.registerMigration({ id: "ext-a-migration", run: () => ({}) });
+  if (options.includeProfile === true) {
+    api.registerProfile({
+      name: "ext-a-profile",
+      title: "Ext A archetype",
+      summary: "Synthetic archetype for the every-surface fixture.",
+      types: [],
+      statuses: [],
+      fields: [],
+      workflows: [],
+      config: [],
+      templates: [],
+      packages: [],
+    });
+  }
+  api.registerImporter("ext-a-import", async () => ({ items: [] }));
+  api.registerExporter("ext-a-export", async () => ({}));
+  api.registerSearchProvider({ name: "ext-a-search", query: () => [] });
+  api.registerVectorStoreAdapter({ name: "ext-a-vector", query: () => [] });
+  api.registerParser("ext-a cmd", () => ({}));
+  api.registerPreflight(() => ({}));
+  api.registerService("output_format", () => null);
+  api.registerRenderer("toon", () => null);
+  api.hooks.beforeCommand(() => undefined);
+  api.hooks.afterCommand(() => undefined);
+  api.hooks.onWrite(() => undefined);
+  api.hooks.onRead(() => undefined);
+  api.hooks.onIndex(() => undefined);
 }

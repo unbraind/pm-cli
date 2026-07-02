@@ -110,6 +110,47 @@ function expectBestEffortCleanup(sampleTest: string): void {
   expect(sampleTest).toContain("await ext.deactivate();");
 }
 
+/**
+ * Asserts the scaffolded manifest.json locked-down policy defaults plus the
+ * shared TypeScript entrypoint contract, returning the entry source so callers
+ * can layer scenario-specific expectations on top.
+ *
+ * ADR pm-2c28 / pm-m1uz: extensions are authored AND loaded as TypeScript. The
+ * standalone entrypoint imports the `ExtensionApi` type (erased on load by
+ * Node's native type stripping, so the `.ts` entry carries no runtime SDK
+ * import), types the `activate` parameter against the SDK contract, and emits
+ * a documented `deactivate` teardown stub so the full lifecycle is modelled.
+ */
+async function expectScaffoldedStrictManifestAndTypedEntry(
+  scaffoldPath: string,
+  options: { name: string; manifestExtras?: Record<string, unknown> },
+): Promise<string> {
+  const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
+  expect(manifest).toMatchObject({
+    name: options.name,
+    entry: "./index.ts",
+    capabilities: ["commands"],
+    trusted: true,
+    sandbox_profile: "strict",
+    permissions: {
+      fs_read: false,
+      fs_write: false,
+      network: false,
+      env_read: false,
+      env_write: false,
+      process_spawn: false,
+    },
+    ...(options.manifestExtras ?? {}),
+  });
+  const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
+  expect(entry).not.toContain('import { defineExtension }');
+  expect(entry).not.toContain("@param");
+  expect(entry).toContain('import type { ExtensionApi } from "@unbrained/pm-cli/sdk";');
+  expect(entry).toContain("export function activate(api: ExtensionApi): void {");
+  expect(entry).toContain("export function deactivate(): void {}");
+  return entry;
+}
+
 describe("extension command runtime", () => {
   it("covers pure extension command helper decisions", () => {
     expect(extensionCommandTestOnly.resolveAction("doctor", {})).toBe("doctor");
@@ -1980,34 +2021,8 @@ describe("extension command runtime", () => {
         created_directory: true,
       });
 
-      const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
-      expect(manifest).toMatchObject({
-        name: "starter-ext",
-        entry: "./index.ts",
-        capabilities: ["commands"],
-        trusted: true,
-        sandbox_profile: "strict",
-        permissions: {
-          fs_read: false,
-          fs_write: false,
-          network: false,
-          env_read: false,
-          env_write: false,
-          process_spawn: false,
-        },
-      });
-      const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
-      // ADR pm-2c28 / pm-m1uz: extensions are authored AND loaded as TypeScript. The
-      // standalone entrypoint imports the `ExtensionApi` type (erased on load by
-      // Node's native type stripping, so the `.ts` entry carries no runtime SDK
-      // import) and types the `activate` parameter against the SDK contract.
-      expect(entry).not.toContain('import { defineExtension }');
-      expect(entry).not.toContain("@param");
-      expect(entry).toContain('import type { ExtensionApi } from "@unbrained/pm-cli/sdk";');
-      expect(entry).toContain("export function activate(api: ExtensionApi): void {");
-      // The starter also emits a documented `deactivate` teardown stub so the
-      // full lifecycle is modelled (and the default export wires both hooks).
-      expect(entry).toContain("export function deactivate(): void {}");
+      // The default export wires both lifecycle hooks emitted by the starter.
+      const entry = await expectScaffoldedStrictManifestAndTypedEntry(scaffoldPath, { name: "starter-ext" });
       expect(entry).toContain("  deactivate,");
       expect(entry).toContain("export default {");
       expect(entry).toContain('name: "starter ext ping"');
@@ -2113,29 +2128,10 @@ describe("extension command runtime", () => {
       expect(scaffoldTsconfig.compilerOptions?.types).toEqual(["node"]);
       expect(scaffoldTsconfig.compilerOptions?.outDir).toBeUndefined();
 
-      const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
-      expect(manifest).toMatchObject({
+      const entry = await expectScaffoldedStrictManifestAndTypedEntry(scaffoldPath, {
         name: "starter-package",
-        entry: "./index.ts",
-        pm_min_version: SCAFFOLD_PM_MIN_VERSION,
-        capabilities: ["commands"],
-        trusted: true,
-        sandbox_profile: "strict",
-        permissions: {
-          fs_read: false,
-          fs_write: false,
-          network: false,
-          env_read: false,
-          env_write: false,
-          process_spawn: false,
-        },
+        manifestExtras: { pm_min_version: SCAFFOLD_PM_MIN_VERSION },
       });
-      const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
-      expect(entry).not.toContain('import { defineExtension }');
-      expect(entry).not.toContain("@param");
-      expect(entry).toContain('import type { ExtensionApi } from "@unbrained/pm-cli/sdk";');
-      expect(entry).toContain("export function activate(api: ExtensionApi): void {");
-      expect(entry).toContain("export function deactivate(): void {}");
       expect(entry).toContain('name: "starter starter package ping"');
 
       const sampleTest = await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8");
