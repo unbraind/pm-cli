@@ -18,7 +18,10 @@ async function readTaskDocument(context: TempPmContext, id: string): Promise<Tas
   let source: string;
   try {
     source = await readFile(taskPath, "utf8");
-  } catch {
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw error;
+    }
     taskPath = markdownPath;
     source = await readFile(taskPath, "utf8");
   }

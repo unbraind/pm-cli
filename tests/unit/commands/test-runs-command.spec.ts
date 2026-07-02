@@ -56,14 +56,16 @@ function withTemporaryEnv<T>(name: string, value: string, callback: () => Promis
   });
 }
 
-function withTemporaryEnvValues<T>(overrides: Record<string, string>, callback: () => Promise<T>): Promise<T> {
+async function withTemporaryEnvValues<T>(overrides: Record<string, string>, callback: () => Promise<T>): Promise<T> {
   const previous = new Map<string, string | undefined>(
     Object.keys(overrides).map((name) => [name, process.env[name]]),
   );
   for (const [name, value] of Object.entries(overrides)) {
     process.env[name] = value;
   }
-  return callback().finally(() => {
+  try {
+    return await callback();
+  } finally {
     for (const [name, value] of previous) {
       if (value === undefined) {
         delete process.env[name];
@@ -71,7 +73,7 @@ function withTemporaryEnvValues<T>(overrides: Record<string, string>, callback: 
         process.env[name] = value;
       }
     }
-  });
+  }
 }
 
 async function withTemporaryCwd<T>(cwd: string, callback: () => Promise<T>): Promise<T> {

@@ -6,14 +6,34 @@ status: in_progress
 priority: 2
 tags[4]: "area:cli",code-quality,codefactor,tech-debt
 created_at: "2026-07-02T06:39:46.062Z"
-updated_at: "2026-07-02T06:55:08.826Z"
+updated_at: "2026-07-02T07:28:14.593Z"
 assignee: claude-code-agent
 author: claude-code-agent
 parent: pm-92if
-files[5]{path,scope,note}:
+files[23]{path,scope,note}:
   src/cli/registration-helpers.ts,project,Extract shared governance/content selection-filter option normalization slice
   src/sdk/cli-contracts/flag-contracts.ts,project,Shared module-private governance/content filter flag-contract constants
   tests/helpers/extensions.ts,project,Shared synthetic-extension activation fixtures for activation-summary/capability-usage
   tests/helpers/packageRuntime.ts,project,New shared package-runtime spec scaffolding helper
   tests/helpers/pmWorkspace.ts,project,New shared task-document workspace helpers for test/test-all specs
+  tests/integration/cli.integration.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/commands/dedupe-audit-command.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/commands/dedupe-merge-command.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/commands/search-command.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/commands/test-all-command.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/commands/test-command.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/commands/test-runs-command.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/core/extensions/activation-summary.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/core/extensions/capability-usage.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/core/history/drift-scan.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/core/telemetry/telemetry-runtime.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/extensions/extension-command.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/extensions/extension-loader.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/packages/calendar-runtime.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/packages/governance-audit-runtime.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/packages/guide-shell-runtime.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/packages/linked-test-adapters-runtime.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/scripts/release/docs-skills-gate.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+docs[1]{path,scope,note}:
+  "https://github.com/unbraind/pm-cli/pull/415",project,"Dedup PR: zero jscpd clone baseline"
 body: ""
