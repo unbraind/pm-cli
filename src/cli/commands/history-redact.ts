@@ -555,7 +555,10 @@ async function applyHistoryRedactRewrite(params: {
         throw error;
       }
     },
-    applyPostRewrite: async () => runHistoryRedactWriteHooks(params.subject.historyPath, params.nextItem.path ?? params.currentItem.path),
+    applyPostRewrite: async () => runHistoryRedactWriteHooks(params.subject.historyPath, [
+      params.nextItem.path,
+      params.currentItem.path,
+    ]),
   });
 }
 
@@ -584,9 +587,10 @@ async function rollbackHistoryRedactRewrite(
   }
 }
 
-async function runHistoryRedactWriteHooks(historyPath: string, itemHookPath: string | null): Promise<string[]> {
+async function runHistoryRedactWriteHooks(historyPath: string, itemHookPaths: Array<string | null>): Promise<string[]> {
   const hookWarnings: string[] = [];
-  if (itemHookPath) {
+  const uniqueItemHookPaths = new Set(itemHookPaths.filter((itemPath): itemPath is string => itemPath !== null));
+  for (const itemHookPath of uniqueItemHookPaths) {
     hookWarnings.push(
       ...(await runActiveOnWriteHooks({
         path: itemHookPath,

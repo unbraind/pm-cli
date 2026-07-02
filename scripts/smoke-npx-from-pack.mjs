@@ -58,9 +58,6 @@ function buildPackedPmRunner(npm, npx, tarballPath) {
       return runSmokeCommand(npx, ["--yes", "--package", tarballPath, "pm", ...args], options);
     } catch (npxError) {
       const output = runSmokeCommand(npm, ["exec", "--yes", "--package", tarballPath, "--", "pm", ...args], options);
-      if (output.length === 0 && !args.includes("--version")) {
-        return output;
-      }
       if (output.length === 0) {
         throw new Error(`npx fallback produced empty output.\n${readCommandError(npxError)}`);
       }

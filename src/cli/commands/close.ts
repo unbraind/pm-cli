@@ -447,8 +447,11 @@ function clearClosedBlockerSignals(metadata: ItemFrontMatter): { changedFields: 
     }
     changedFields.push("dependencies");
   }
-  const reportedBlocker = previousBlockedBy || blockedByEdge?.id || "unknown";
-  return { changedFields, warnings: [`closed_cleared_blocked_by:${metadata.id}:${reportedBlocker}`] };
+  const reportedBlocker = previousBlockedBy || blockedByEdge?.id;
+  return {
+    changedFields,
+    warnings: reportedBlocker ? [`closed_cleared_blocked_by:${metadata.id}:${reportedBlocker}`] : [],
+  };
 }
 
 function mutateCloseMetadata(metadata: ItemFrontMatter, context: CloseMutationContext): { changedFields: string[]; warnings?: string[] } {

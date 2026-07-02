@@ -506,7 +506,7 @@ function consumeRecurrenceCandidate(context: RecurrenceExpansionContext, candida
   if (compareTimestampStrings(candidateAt, context.window.start) >= 0) {
     context.occurrences.push(candidateAt);
   }
-  return context.produced >= context.countLimit ? "stop" : "continue";
+  return context.produced >= context.countLimit || context.occurrences.length >= context.maxOccurrences ? "stop" : "continue";
 }
 
 function recurrenceDayMatchesFilters(context: RecurrenceExpansionContext, candidateAt: string): boolean {
@@ -1185,7 +1185,11 @@ function resolveCalendarExecutionInputs(options: CalendarOptions): CalendarExecu
     throw new PmCliError("Calendar occurrence limit must be >= 1", EXIT_CODE.USAGE);
   }
   const eventsOnly = includeSources.has("events") && !includeSources.has("deadlines") && !includeSources.has("reminders");
-  const hasExplicitBounds = options.to !== undefined || explicitLookahead !== undefined || occurrenceLimit !== undefined;
+  const hasExplicitBounds =
+    options.to !== undefined ||
+    explicitLookahead !== undefined ||
+    recurrenceLookbackDays !== undefined ||
+    occurrenceLimit !== undefined;
   const eventsOnlyCapApplied = eventsOnly && !hasExplicitBounds;
   return {
     nowValue,

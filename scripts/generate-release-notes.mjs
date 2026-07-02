@@ -155,8 +155,7 @@ function collectPmSummaryCounts(items) {
   const byStatus = new Map();
   for (const item of items) {
     byType.set(item.type ?? "Unknown", (byType.get(item.type ?? "Unknown") ?? 0) + 1);
-    /* c8 ignore next -- changed[] is pre-filtered to status === "closed", so item.status is always the string "closed"; the ?? "unknown" default is unreachable */
-    byStatus.set(item.status ?? "unknown", (byStatus.get(item.status ?? "unknown") ?? 0) + 1);
+    byStatus.set(item.status, (byStatus.get(item.status) ?? 0) + 1);
   }
   return { byType, byStatus };
 }
@@ -181,9 +180,7 @@ function appendReleaseRelatedPmItems(lines, releaseRelated) {
     const id = typeof item.id === "string" ? item.id : "unknown";
     const title = typeof item.title === "string" ? item.title : "Untitled";
     const type = typeof item.type === "string" ? item.type : "Unknown";
-    /* c8 ignore next -- releaseRelated items come from changed[] (status === "closed"); the non-string status default is unreachable */
-    const status = typeof item.status === "string" ? item.status : "unknown";
-    lines.push(`- ${id} [${type}/${status}] ${title}`);
+    lines.push(`- ${id} [${type}/${item.status}] ${title}`);
   }
   if (releaseRelated.length > 20) {
     lines.push(`- ... ${releaseRelated.length - 20} more release-related tracker items omitted from release notes.`);

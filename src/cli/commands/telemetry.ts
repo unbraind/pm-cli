@@ -192,7 +192,7 @@ function recordTelemetryQueueEntry(
 ): void {
   const normalized = normalizeTelemetryQueueEntry(entry);
   const current = grouped.get(normalized.command) ?? createTelemetryStatsAccumulator();
-  const attempts = Math.max(0, Math.trunc(entry.attempts));
+  const attempts = Number.isFinite(entry.attempts) ? Math.max(0, Math.trunc(entry.attempts)) : 0;
   current.count += 1;
   current.max_attempts = Math.max(current.max_attempts, attempts);
   current.event_type_counts[normalized.eventType] = (current.event_type_counts[normalized.eventType] ?? 0) + 1;

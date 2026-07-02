@@ -647,6 +647,10 @@ describe("CLI bootstrap and usage helper tails", () => {
       );
       expect(emptyTypes.allowedTypes).toBe(BUILTIN_TYPE_HELP_VALUES);
 
+      process.argv = ["node", "pm", "--no-extensions", "--pm-path", pmRoot, "alpha", "--bta"];
+      await resolveCommanderUsageContext(new Error("error: unknown option '--bta'"), command, new Map());
+      expect(registrySpy.mock.calls.at(-1)?.[1]).toBeUndefined();
+
       process.argv = ["node", "pm", "--pm-path", path.join(tempRoot, "missing"), "alpha", "--bta"];
       const missingSettings = await resolveCommanderUsageContext(
         new Error("error: unknown option '--bta'"),

@@ -539,7 +539,8 @@ async function resolveAllowedTypesForUsage(bootstrapGlobal: ReturnType<typeof pa
       return BUILTIN_TYPE_HELP_VALUES;
     }
     const settings = await readSettings(pmRoot);
-    const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+    const extensionRegistrations = bootstrapGlobal.noExtensions ? undefined : getActiveExtensionRegistrations();
+    const typeRegistry = resolveItemTypeRegistry(settings, extensionRegistrations);
     return typeRegistry.types.length > 0 ? typeRegistry.types.join("|") : BUILTIN_TYPE_HELP_VALUES;
   } catch {
     /* v8 ignore start -- defensive fallback for corrupted settings during usage-error rendering; command behavior is covered through normal settings paths */

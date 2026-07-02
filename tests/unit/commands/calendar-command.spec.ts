@@ -795,6 +795,20 @@ describe("calendar command module", () => {
       );
       expect(boundedOccurrenceLimit.events).toHaveLength(2);
 
+      const boundedLookback = await runCalendar(
+        {
+          view: "agenda",
+          include: "events",
+          past: true,
+          recurrenceLookbackDays: "3",
+          tag: "recurrence-controls",
+        },
+        { path: context.pmPath },
+      );
+      expect(boundedLookback.warnings ?? []).not.toContain(
+        "recurring_events_default_cap_applied:lookback=0d,lookahead=28d -- use --recurrence-lookback-days/--recurrence-lookahead-days or --to for wider range",
+      );
+
       vi.useFakeTimers();
       vi.setSystemTime(new Date("2026-04-10T00:00:00.000Z"));
       try {
@@ -996,6 +1010,27 @@ describe("calendar command module", () => {
         { path: context.pmPath },
       );
       expect(yearlyContinue.events.map((event) => event.at)).toEqual(["2024-02-29T09:00:00.000Z"]);
+
+      createCalendarItem(context, {
+        title: "Monthly multi-candidate cap",
+        tags: "calendar,recurrence-monthly-cap",
+        events: ["start=2026-01-01T09:00:00.000Z,title=monthly cap,recur_freq=monthly,recur_by_month_day=1|2|3"],
+      });
+      const monthlyCap = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-01-01T00:00:00.000Z",
+          to: "2026-02-01T00:00:00.000Z",
+          include: "events",
+          tag: "recurrence-monthly-cap",
+          occurrenceLimit: "2",
+        },
+        { path: context.pmPath },
+      );
+      expect(monthlyCap.events.map((event) => event.at)).toEqual([
+        "2026-01-01T09:00:00.000Z",
+        "2026-01-02T09:00:00.000Z",
+      ]);
 
       const yearlyStop = await runCalendar(
         {

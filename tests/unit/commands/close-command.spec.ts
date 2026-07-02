@@ -982,7 +982,7 @@ describe("runClose", () => {
       const item = result.item as Record<string, unknown>;
       expect(item.blocked_reason).toBeUndefined();
       expect(result.changed_fields).toContain("blocked_reason");
-      expect(result.warnings).toContain(`closed_cleared_blocked_by:${id}:unknown`);
+      expect(result.warnings).not.toContain(`closed_cleared_blocked_by:${id}:unknown`);
     });
   });
 

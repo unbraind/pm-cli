@@ -2668,6 +2668,20 @@ describe("runValidate", () => {
     });
   });
 
+  it("does not classify unreadable linked artifacts as missing prune targets", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "unreadable-linked-artifact");
+      const overlongPath = `src/${"a".repeat(5000)}.ts`;
+      const linkedFiles = context.runCli(["files", id, "--json", "--add", `path=${overlongPath},scope=project`], { expectJson: true });
+      expect(linkedFiles.code).toBe(0);
+
+      const result = await runValidate({ pruneMissing: true, dryRun: true }, { path: context.pmPath });
+      expect(checkByName(result, "files").details).toMatchObject({
+        missing_linked_paths: [],
+      });
+    });
+  });
+
   it("reports failed batched prune fixes without aborting validation", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "prune-missing-link-failure");

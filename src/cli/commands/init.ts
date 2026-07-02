@@ -70,6 +70,11 @@ export interface InitRegisteredTypePresetSummary {
 }
 
 /**
+ * Documents the init agent-guidance summary plus generated next-step hints returned by init.
+ */
+export type InitAgentGuidanceResult = InitAgentGuidanceSummary & { next_steps: string[] };
+
+/**
  * Documents the init result payload exchanged by command, SDK, and package integrations.
  */
 export interface InitResult {
@@ -83,7 +88,7 @@ export interface InitResult {
   registered_type_preset?: InitRegisteredTypePresetSummary;
   installed_packages?: InitInstalledPackagesSummary;
   next_steps: string[];
-  agent_guidance: InitAgentGuidanceSummary;
+  agent_guidance: InitAgentGuidanceResult;
 }
 
 /**
@@ -124,7 +129,7 @@ export interface InitConciseResult {
   registered_type_preset?: InitRegisteredTypePresetSummary;
   installed_packages?: InitInstalledPackagesSummary;
   next_steps: string[];
-  agent_guidance: InitAgentGuidanceSummary;
+  agent_guidance: InitAgentGuidanceResult;
   hint: string;
 }
 
@@ -688,7 +693,7 @@ async function applyInitAgentGuidance(params: {
   agentGuidanceMode: InitAgentGuidanceMode;
   settings: PmSettings;
   warnings: string[];
-}): Promise<InitAgentGuidanceSummary & { next_steps: string[] }> {
+}): Promise<InitAgentGuidanceResult> {
   const agentGuidanceResult = await runInitAgentGuidance({
     pm_root: params.pmRoot,
     cwd: params.cwd,
