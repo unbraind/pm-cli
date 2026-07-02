@@ -4954,10 +4954,10 @@ describe("CLI rich help content", () => {
         },
       ],
     ]);
-    // Descriptor without intent/examples/hints exercises the fallback-narrative path
-    // for both intent (description-less) and example/tips defaulting.
+    // Descriptor without intent/examples/hints exercises the defensive fallback
+    // path for malformed extension descriptors and example/tips defaulting.
     const sparseDescriptors = new Map([
-      ["tools export", { command: "tools export", examples: [], failure_hints: [], flags: [] }],
+      ["tools export", { command: "tools export", flags: [] }],
     ]);
 
     const originalExitCode = process.exitCode;

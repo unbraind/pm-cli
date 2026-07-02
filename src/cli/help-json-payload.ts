@@ -253,8 +253,8 @@ function buildJsonHelpNarrative(
   if (!extensionDescriptor) {
     return fallbackNarrative;
   }
-  const extensionExamples = extensionDescriptor.examples;
-  const extensionFailureHints = extensionDescriptor.failure_hints;
+  const extensionExamples = extensionDescriptor.examples ?? [];
+  const extensionFailureHints = extensionDescriptor.failure_hints ?? [];
   return {
     intent: extensionDescriptor.intent ?? extensionDescriptor.description ?? fallbackNarrative.intent,
     examples:

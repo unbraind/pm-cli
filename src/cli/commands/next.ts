@@ -310,7 +310,7 @@ function filterCandidatesByParentScope(
   corpus: ItemFrontMatter[],
   parentScope: string,
 ): ItemFrontMatter[] {
-  if (parentScope.length === 0) {
+  if (!parentScope) {
     return candidates;
   }
   const subtree = collectSubtreeIds(corpus, parentScope);
