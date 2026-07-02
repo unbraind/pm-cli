@@ -1,0 +1,13 @@
+id: pm-3wsi
+title: "Declarative extension install: activation failure is misreported and scaffold next_steps break when @unbrained/pm-cli is unresolvable"
+description: "Installing a declarative (composeExtension) package into a workspace that cannot resolve @unbrained/pm-cli fails runtime activation ('Cannot find package'), yet pm install reports activated:true with runtime_activation_status:failed and failed_count:0 (contradictory). The failed install-time activation also skips item-type folder scaffolding, leaving a lingering health warning. Scaffold next_steps do not warn that the workspace must be able to resolve the SDK. Found in 2026-07-02 audit (Lane B, pm-6vy7)."
+type: Issue
+status: open
+priority: 1
+tags[3]: audit-followup,extensions,sdk
+created_at: "2026-07-02T21:55:19.923Z"
+updated_at: "2026-07-02T21:55:52.927Z"
+author: claude-code-agent
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-fpod,related,"2026-07-02T21:55:52.911Z",null,null
+body: ""

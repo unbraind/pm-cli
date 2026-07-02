@@ -30,9 +30,9 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 | Bulk | `update-many`, `close-many` | apply one change across a matched, dry-run-previewed set with a rollback checkpoint |
 | Scheduling | `meet`, `event`, `remind` | low-friction Meeting/Event/Reminder creation |
 | Planning | `plan create`, `plan add-step`, `plan update-step`, `plan complete-step`, `plan link`, `plan approve`, `plan materialize` | agent-optimized living plans with ordered steps, evidence, decisions, validation, and materialization |
-| Logs | `comments`, `notes`, `learnings`, `comments-audit` | record progress and durable context |
+| Logs | `comments`, `notes`, `learnings`, `comments-audit`* | record progress and durable context |
 | Links | `files`, `docs`, `test`, `deps` | connect items to artifacts, tests, and relationships |
-| Verification | `test`, `test-all`, `test-runs`, `validate`, `gc` | run linked tests and repository checks |
+| Verification | `test`, `test-all`, `test-runs`†, `validate`, `gc` | run linked tests and repository checks |
 | History | `history`, `history-compact`, `history-redact`, `history-repair`, `activity`, `restore`, `stats` | inspect, compact, redact, re-anchor, and recover item state |
 | Schema | `schema add-type` / `remove-type` / `add-status` / `remove-status` / `add-field` / `remove-field` / `apply-preset` | manage config-driven custom item types (`.agents/pm/schema/types.json`), statuses (`.agents/pm/schema/statuses.json`), and custom metadata fields (`.agents/pm/schema/fields.json`); `apply-preset` adopts a domain type preset; `add-type --infer` derives types from title-prefix conventions |
 | Profiles | `profile list` / `show` / `apply` / `lint` | compose item types, statuses, fields, workflows, config, templates, and recommended packages into archetype bundles (agile/ops/research); `apply` stages every dimension idempotently; `lint` reports author-time consistency findings without writing |
@@ -40,7 +40,9 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 | Packages | `install`, `upgrade`, `package`, `packages`, `extension`, package/extension command groups | install, upgrade, manage, and run package-backed extension commands |
 | Machines | `contracts`, `help`, optional `guide`/`completion` | command contracts plus optional guide-shell docs routing and shell helpers |
 
-`*` `dedupe-audit` and `dedupe-merge` are provided by the optional `governance-audit` package (`pm install governance-audit --project`).
+`*` `dedupe-audit`, `dedupe-merge`, `comments-audit`, and `normalize` are provided by the optional `governance-audit` package (`pm install governance-audit --project`).
+
+`†` `test-runs` subcommands are provided by the optional `linked-test-adapters` package (`pm install linked-test-adapters --project`).
 
 ## Bootstrap
 
@@ -746,7 +748,7 @@ pm create Spike "Investigate retry backoff"
 - `add-type` is an idempotent UPSERT keyed on the type name (case-insensitive); re-running it merges aliases and overrides supplied fields while preserving everything else.
 - `remove-type <Name>` removes a custom type definition (case-insensitive). Built-in types are refused. It WARNS (non-blocking) with `items_using_type:<N>` when items of that type still exist, then removes the definition.
 - `add-status <id>` writes a custom lifecycle status (idempotent UPSERT keyed on the normalized id; re-adding sets `replaced: true`). Roles are validated against the runtime status roles: `draft`, `active`, `blocked`, `terminal`, `terminal_done`, `terminal_canceled`, `default_open`, `default_close`, `default_cancel`.
-- `remove-status <id>` removes a custom status. The five built-in default statuses (`open`, `in_progress`, `blocked`, `closed`, `canceled`, plus `draft`) are refused. It WARNS (non-blocking) with `items_using_status:<N>` when items currently use that status.
+- `remove-status <id>` removes a custom status. The six built-in statuses (`open`, `in_progress`, `blocked`, `closed`, `canceled`, `draft`) are refused. It WARNS (non-blocking) with `items_using_status:<N>` when items currently use that status.
 - Built-in types (Chore, Decision, Epic, Event, Feature, Issue, Meeting, Milestone, Plan, Reminder, Task) are reserved and cannot be redefined or removed.
 - `add-field <key>` registers a custom metadata field in `.agents/pm/schema/fields.json` (shape: `{ "fields": [RuntimeFieldDefinition...] }`). Each custom field dynamically registers a CLI flag on create/update (and any other commands you list) so projects can capture typed project-specific metadata without hand-editing JSON. It is an idempotent UPSERT keyed on the normalized key, and refuses keys that shadow a built-in field. `list-fields` / `show-field <key>` inspect registered fields; `remove-field <key>` drops one and WARNS (non-blocking) with `items_using_field:<N>` when items still carry a value. See [CONFIGURATION.md](CONFIGURATION.md) for the full `schema/fields.json` format.
 - `apply-preset <agile|ops|research>` batch-registers a domain type preset into an already-initialized project (the same vocabulary `pm init --type-preset` seeds); it is idempotent (re-running reports `replaced` entries) and shares its definitions with init.
@@ -855,6 +857,8 @@ pm help create --json
 Agents should use runtime contracts instead of hard-coding flag lists. Contract output includes extension-provided command surfaces when active.
 
 ## Completion
+
+`pm completion` is provided by the optional `guide-shell` package (`pm install guide-shell --project`).
 
 ```bash
 pm completion bash

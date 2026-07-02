@@ -8,6 +8,13 @@
 
 ### Other
 
+- 2026-07-02 full ecosystem audit & optimization pass (CLI+SDK+packages+docs+CI) ([pm-fpod](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fpod.toon))
+- Lane C: Code quality audit (complexity, dead code, cross-file duplication, long files, type safety, dependencies) ([pm-hfli](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hfli.toon))
+- Lane F: CI/CD best-practice + secret/PII leak scan incl. pm history files ([pm-mo2v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mo2v.toon))
+- Lane E: Docs audit (progressive disclosure, minimal README, link graph, duplicated docs/skills) ([pm-p99b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-p99b.toon))
+- Lane B: SDK best-practice + package-authoring DX review (define/compose/harness/preflight loop, scaffold matrix) ([pm-6vy7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-6vy7.toon))
+- Lane A: E2E ecosystem smoke in temp workspace (pack+install CLI, all first-party packages, full command surface, agent UX/token-efficiency) ([pm-kes3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kes3.toon))
+- Lane D: Performance audit (startup latency, per-command responsiveness, hot paths) ([pm-3l76](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-3l76.toon))
 - CodeFactor residual complexity and duplication cleanup for 27-issue main snapshot ([pm-bssk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-bssk.toon))
 - Zero the jscpd clone baseline: dedupe registration-helpers/flag-contracts source clones and 21 test-spec clones ([pm-chxp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-chxp.toon))
 

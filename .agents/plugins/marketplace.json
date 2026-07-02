@@ -19,7 +19,7 @@
     },
     {
       "name": "pm-claude",
-      "version": "1.4.0",
+      "version": "1.4.1",
       "source": {
         "source": "local",
         "path": "./plugins/pm-claude"

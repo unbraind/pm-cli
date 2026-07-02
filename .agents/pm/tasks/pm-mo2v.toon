@@ -1,0 +1,17 @@
+id: pm-mo2v
+title: "Lane F: CI/CD best-practice + secret/PII leak scan incl. pm history files"
+description: ""
+type: Task
+status: closed
+priority: 1
+tags[2]: audit,session-2026-07-02
+created_at: "2026-07-02T21:26:42.208Z"
+updated_at: "2026-07-02T21:56:14.099Z"
+author: unknown
+parent: pm-fpod
+comments[3]{created_at,author,text}:
+  "2026-07-02T21:28:24.867Z",claude-code-agent,"Audit started: CI/CD workflows review + repo-wide secret/PII scan + npm pack inspection + gh settings check"
+  "2026-07-02T21:31:16.500Z",claude-code-agent,"Audit complete. Secrets: CLEAN (0 real leaks; only test fixtures + audit-evidence text; public Sentry DSN intentional). npm tarball clean (1089 files, no .agents/tests/env; no /home/steve in dist or sourcemaps). Branch protection 12 required checks exactly match workflow job names. CI/CD hygiene strong (SHA-pinned, least-priv, concurrency, timeouts, caches). Nits: auto-release actions:write likely unneeded; release env has no protection rules/reviewers; secret_scanning_non_provider_patterns+validity_checks disabled; check-secrets lacks sk-/AIzaSy-adjacent OpenAI/Anthropic patterns (has AIza) — minor. Today's Windows nightly failure already tracked+closed via GH-416/PR-417."
+  "2026-07-02T21:33:26.824Z",claude-code-agent,"Lane F COMPLETE. Verdict: no confirmed leaks (3673 tracked files incl. history jsonl scanned; npm tarball clean, 1089 files). CI/CD already best-practice (SHA-pinned actions, least-priv, concurrency, timeouts, shared build artifact). 4 hygiene fixes queued: auto-release actions:write->read; release environment protection rules; enable secret_scanning non-provider patterns+validity checks; add sk-/sk-ant-/glpat- rules to check-secrets-lib."
+close_reason: "CI/CD+secret scan complete, fixes applied: auto-release actions:write->read; release environment deployment branch policy restricted to main + v*.*.* tags (live via gh api); check-secrets-lib gained anthropic-api-key/openai-api-key/gitlab-token rules (+spec coverage, repo scan clean). secret_scanning_non_provider_patterns/validity_checks require paid GitHub Secret Protection — unavailable on free plan, PATCH silently ignored; declined by policy (free services only)."
+body: ""

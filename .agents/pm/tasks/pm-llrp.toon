@@ -1,0 +1,13 @@
+id: pm-llrp
+title: "SDK authoring DX polish: manifest-drift guard in scaffold tests, expectation key naming, repeated --capability, define* index signatures"
+description: "Bundle of P3 SDK DX findings from the 2026-07-02 audit (Lane B, pm-6vy7): (1) generated scaffold test should call assertExtensionManifestMatchesBlueprint so manifest.json drift fails the starter suite; (2) test-expectation key drift across helpers (command/itemType/field/targetCommand/provider) is inconsistent; (3) repeated --capability flags silently last-win instead of erroring or composing; (4) [key: string]: unknown index signatures on define* option types weaken excess-property checking."
+type: Task
+status: open
+priority: 3
+tags[3]: audit-followup,dx,sdk
+created_at: "2026-07-02T21:55:34.594Z"
+updated_at: "2026-07-02T21:55:54.093Z"
+author: claude-code-agent
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-fpod,related,"2026-07-02T21:55:54.067Z",null,null
+body: ""

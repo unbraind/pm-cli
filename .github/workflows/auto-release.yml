@@ -26,7 +26,8 @@ on:
           - "required"
 
 permissions:
-  actions: write
+  # gh run list / gh run watch only read Actions run state.
+  actions: read
   contents: write
   # The "Alert on blocked scheduled auto-release" step opens/updates a tracking
   # issue when a scheduled release is blocked; without issues:write the alert

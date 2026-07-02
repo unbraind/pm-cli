@@ -380,7 +380,7 @@ describe("GitHub workflow contract", () => {
       "push:",
       "telemetry_mode",
       "permissions:",
-      "actions: write",
+      "actions: read",
       "contents: write",
       "issues: write",
       "concurrency:",

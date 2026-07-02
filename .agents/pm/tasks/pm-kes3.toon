@@ -1,0 +1,16 @@
+id: pm-kes3
+title: "Lane A: E2E ecosystem smoke in temp workspace (pack+install CLI, all first-party packages, full command surface, agent UX/token-efficiency)"
+description: ""
+type: Task
+status: closed
+priority: 1
+tags[2]: audit,session-2026-07-02
+created_at: "2026-07-02T21:26:39.897Z"
+updated_at: "2026-07-02T21:56:11.936Z"
+author: unknown
+parent: pm-fpod
+comments[2]{created_at,author,text}:
+  "2026-07-02T21:27:29.143Z",claude-code-agent,"Lane A E2E audit started: npm pack -> fresh install -> core loop -> packages -> agent-UX probes"
+  "2026-07-02T21:33:14.652Z",claude-code-agent,"Milestone: fresh install + core loop OK (create/deps/next/claim/focus/context/comments/notes/learnings/docs/files/update/append/close/search/lists/validate/health/schema/config/profile apply). Interrupt: /tmp ENOSPC from external fill, recovered. Findings so far: unknown-option errors don't list valid flags; list-closed defaults to full projection (verbose); schema add-field help buried in shared option list. Now: plan + packages."
+close_reason: "E2E smoke complete: fresh pack+install, full core loop and package surface verified green. UX findings filed as pm-gdi7."
+body: ""

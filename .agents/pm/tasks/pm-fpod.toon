@@ -1,0 +1,28 @@
+id: pm-fpod
+title: 2026-07-02 full ecosystem audit & optimization pass (CLI+SDK+packages+docs+CI)
+description: "Session-scoped audit umbrella: E2E ecosystem smoke in temp workspace, SDK best-practice review, code quality/complexity/dead-code, performance, docs progressive-disclosure, CI/CD + secret-leak scan. Findings become dedicated items; fixes land via PR. Philosophy: project management = context management."
+type: Task
+status: closed
+priority: 1
+tags[2]: audit,session-2026-07-02
+created_at: "2026-07-02T21:26:27.682Z"
+updated_at: "2026-07-02T22:36:11.239Z"
+author: unknown
+comments[1]{created_at,author,text}:
+  "2026-07-02T22:36:11.238Z",claude-code-agent,"PR #420 opened (branch docs-freshness-and-ci-hardening): docs freshness + CI hardening fixes, greptile pre-push review iterated to clean (5/5 confidence, 0 comments over 4 rounds: openai-key char class + sk-ant overlap + svcacct coverage + stale marketplace tool count). Awaiting GitHub checks + AI bot reviews."
+learnings[1]{created_at,author,text}:
+  "2026-07-02T22:04:17.464Z",claude-code-agent,"Concurrent test invocations corrupt coverage: pm test --run (or any build/vitest call) while node scripts/run-tests.mjs coverage is running clobbers coverage/.tmp -> ENOENT in V8CoverageProvider. Serialize all test/build commands."
+files[3]{path,scope,note}:
+  .github/workflows/auto-release.yml,project,"actions:read least-privilege"
+  README.md,project,28-tool claim fix
+  scripts/check-secrets-lib.mjs,project,anthropic/openai/gitlab token rules
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/check-secrets-lib.spec.ts,project,240
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mr41stoc-4b74pe,test,passed,"2026-07-02T22:00:04.338Z","2026-07-02T22:00:22.332Z","2026-07-02T22:00:22.332Z",1,0,0
+  test-local-mr41tbuw-09qufp,test,passed,"2026-07-02T22:00:30.996Z","2026-07-02T22:00:45.896Z","2026-07-02T22:00:45.896Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,package-only caveats
+  docs/EXTENSIONS.md,project,capability-matrix dedupe + package README links
+close_reason: "2026-07-02/03 full ecosystem audit complete. Six lanes executed and closed with evidence (A pm-kes3, B pm-6vy7, C pm-hfli, D pm-3l76, E pm-p99b, F pm-mo2v). Fixes shipped on branch docs-freshness-and-ci-hardening: docs freshness (28 MCP tools, Node 22.18, CI matrix, package caveats, capability-matrix dedupe, orphan links, starter-extension vocabulary), CI hardening (auto-release actions:read, 3 new secret-scan rules, release env branch policy live). Follow-ups filed: pm-3wsi, pm-ghf1, pm-llrp, pm-gdi7, pm-z1pv. Verification: 5278 tests 100% coverage, eslint zero output, docs gate green, secret scan clean, Sentry 0 crit/high, telemetry real-time 0.62% error rate."
+body: ""

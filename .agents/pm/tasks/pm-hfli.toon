@@ -1,0 +1,18 @@
+id: pm-hfli
+title: "Lane C: Code quality audit (complexity, dead code, cross-file duplication, long files, type safety, dependencies)"
+description: ""
+type: Task
+status: closed
+priority: 1
+tags[2]: audit,session-2026-07-02
+created_at: "2026-07-02T21:26:40.863Z"
+updated_at: "2026-07-02T22:16:46.682Z"
+author: unknown
+parent: pm-fpod
+comments[4]{created_at,author,text}:
+  "2026-07-02T21:27:51.655Z",claude-code-agent,"Lane C quality audit start: complexity (eslint suppressions), jscpd, dead code, long files, type safety, deps, lint/test health."
+  "2026-07-02T21:30:59.342Z",claude-code-agent,"Milestone: suppressions=0 (complexity debt fully cleared, pm-0n6p closed); eslint . green; jscpd 0 clones (547 files); 253 fns CC12-17 (top: 17x18 fns at ceiling); 22 non-spec files >1500 LOC (max search.ts 3119); non-null ! in src=39 (sdk=2, register-setup 8); no as-any/ts-ignore; pnpm audit clean; outdated: @types/node 22 (policy ^20-line? currently ^22), unicorn 69->70, typebox 1.1->1.3. Tests running."
+  "2026-07-02T21:36:13.866Z",claude-code-agent,"Milestone 2: confirmed PR#414 (merged 2026-07-02) zeroed eslint-suppressions.json; eslint . exits 0 with ZERO output (no warnings); all 5 runtime deps imported; typebox=optional peer '*' (outdated report benign); engines >=22.18 so @types/node ^22 is policy-correct (decline 26 major); ts-prune: 578 sdk hits all public barrel (FP), real candidates are _testOnly exports + types/index.ts type aliases. Awaiting full test suite result (rerun after ENOSPC /tmp incident - first run's 134 fails were all mkdtemp ENOSPC, not real)."
+  "2026-07-02T22:04:07.489Z",claude-code-agent,"Verification rerun 2026-07-03: build+typecheck green, eslint . zero output, docs-skills gate green, secret scan clean (incl. 3 new rules), plugin smoke green after known session-start flake rerun. Full coverage suite rerunning cleanly (first run's coverage/.tmp was clobbered by a concurrent linked-test invocation — process-level lesson: never run pm test --run while the coverage suite is live)."
+close_reason: "Quality audit complete: eslint-suppressions.json at 0 (complexity debt cleared), eslint . zero output, jscpd 0 clones, pnpm audit clean, deps policy-correct; full suite 5278 tests / 100% coverage on all four metrics."
+body: ""

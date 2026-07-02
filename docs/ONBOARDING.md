@@ -14,7 +14,7 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon), [pm-oh5
 
 ## Prerequisites
 
-- Node.js 20 or newer
+- Node.js 22.18 or newer
 - pnpm 10 or newer
 - Git + GitHub CLI (`gh`) authenticated for this repository
 
@@ -73,6 +73,8 @@ pm validate --check-resolution --check-history-drift
 ```
 
 ## Real Tracker Workflow (Canonical Loop)
+
+The canonical loop is maintained in [AGENT_GUIDE.md](AGENT_GUIDE.md) — this is the condensed contributor version.
 
 1) Orient and dedupe
 
@@ -141,7 +143,7 @@ pnpm release:pipeline
 ```bash
 pm health --check-only
 pm validate --check-resolution --check-history-drift
-pm normalize --dry-run --json
+pm normalize --dry-run --json   # requires the governance-audit package
 pm package doctor --project --detail summary
 pm contracts --command <command> --flags-only --json
 ```
