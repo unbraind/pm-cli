@@ -1543,10 +1543,13 @@ function buildTerminalParentFixRow(
   item: ItemWithBody,
   parent: ItemWithBody,
   itemsById: Map<string, ItemWithBody>,
+  canonicalIdByLowercase: Map<string, string>,
   statusRegistry: RuntimeStatusRegistry,
 ): TerminalParentFixRow {
   const grandparentId = toMeaningfulString(parent.parent);
-  const grandparent = grandparentId ? itemsById.get(grandparentId) : undefined;
+  const grandparent = grandparentId
+    ? itemsById.get(canonicalIdByLowercase.get(grandparentId.toLowerCase()) ?? grandparentId)
+    : undefined;
   return {
     id: item.id,
     parent_id: parent.id,
@@ -1601,6 +1604,7 @@ function collectLifecycleScanRows(
   lifecyclePatternPolicy: LifecyclePatternPolicy,
 ): LifecycleScanRows {
   const itemsById = new Map(items.map((item) => [item.id, item]));
+  const canonicalIdByLowercase = new Map(items.map((item) => [item.id.toLowerCase(), item.id]));
   /* v8 ignore start -- runtime status registry normally supplies blocked statuses; fallback preserves legacy settings safety */
   const blockedStatuses =
     statusRegistry.blocked_statuses.size > 0 ? statusRegistry.blocked_statuses : new Set<string>(["blocked"]);
@@ -1618,10 +1622,10 @@ function collectLifecycleScanRows(
       rows.closureLikeRows.push({ id: item.id, fields: closureLikeFields });
     }
     const parentId = toMeaningfulString(item.parent);
-    const parent = parentId ? itemsById.get(parentId) : undefined;
+    const parent = parentId ? itemsById.get(canonicalIdByLowercase.get(parentId.toLowerCase()) ?? parentId) : undefined;
     if (parent && isTerminalStatus(parent.status, statusRegistry)) {
       rows.terminalParentRows.push({ id: item.id, parent_id: parent.id, parent_status: parent.status });
-      rows.terminalParentFixRows.push(buildTerminalParentFixRow(item, parent, itemsById, statusRegistry));
+      rows.terminalParentFixRows.push(buildTerminalParentFixRow(item, parent, itemsById, canonicalIdByLowercase, statusRegistry));
     }
     /* v8 ignore start -- stale-blocker reason presence is covered by command diagnostics; branch accounting here is defensive */
     if (includeStaleBlockers) {

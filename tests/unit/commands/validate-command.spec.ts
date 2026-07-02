@@ -757,7 +757,7 @@ describe("runValidate", () => {
           childId,
           "--json",
           "--parent",
-          parentId,
+          parentId.toUpperCase(),
           "--resolution",
           "Closed with implementation evidence captured for lifecycle validation.",
           "--actual-result",
@@ -2295,35 +2295,54 @@ describe("runValidate", () => {
         estimate: "15",
         parent: grandparentId,
       });
+      const missingGrandparentId = createTask(context, "auto-fix-missing-grandparent");
+      const missingGrandparentParentId = createTestItemId(context, {
+        title: "auto-fix-terminal-missing-grandparent",
+        tags: "validate,unit",
+        estimate: "15",
+        parent: missingGrandparentId.toUpperCase(),
+      });
       const childId = createTestItemId(context, {
         title: "auto-fix-active-child",
         tags: "validate,unit",
         estimate: "15",
-        parent: parentId,
+        parent: parentId.toUpperCase(),
       });
+      const missingGrandparentChildId = createTestItemId(context, {
+        title: "auto-fix-active-missing-grandparent-child",
+        tags: "validate,unit",
+        estimate: "15",
+        parent: missingGrandparentParentId.toUpperCase(),
+      });
+      const deletedGrandparent = context.runCli(["delete", missingGrandparentId, "--force", "--json"], { expectJson: true });
+      expect(deletedGrandparent.code).toBe(0);
       await runClose(parentId, "parent done", {}, { path: context.pmPath });
+      await runClose(missingGrandparentParentId, "missing grandparent parent done", {}, { path: context.pmPath });
 
       const preview = await runValidate(
         { checkLifecycle: true, autoFix: true, dryRun: true },
         { path: context.pmPath },
       );
-      expect(preview.fixes?.planned_fixes).toEqual([
-        {
+      expect(preview.fixes?.planned_fixes).toEqual(expect.arrayContaining([
+        expect.objectContaining({
           item_id: childId,
           check: "lifecycle",
           field: "parent",
           command: `pm update ${childId} --parent ${grandparentId}`,
           gate: "lifecycle",
-        },
-      ]);
-      expect(preview.fixes?.gated_count).toBe(1);
+        }),
+        expect.objectContaining({
+          item_id: missingGrandparentChildId,
+          command: `pm update ${missingGrandparentChildId} --unset parent`,
+        }),
+      ]));
+      expect(preview.fixes?.gated_count).toBe(2);
 
       // Without the explicit lifecycle grant nothing is applied.
       const withheld = await runValidate({ checkLifecycle: true, autoFix: true }, { path: context.pmPath });
       expect(withheld.fixes?.applied_count).toBe(0);
-      expect(withheld.fixes?.gated_count).toBe(1);
+      expect(withheld.fixes?.gated_count).toBe(2);
       expect(withheld.fixes?.gated_fixes[0]).toMatchObject({
-        item_id: childId,
         gate: "lifecycle",
         gate_hint: "Withheld: re-run with --fix-scope lifecycle to apply.",
       });
@@ -2333,11 +2352,13 @@ describe("runValidate", () => {
         { path: context.pmPath },
       );
       expect(granted.fixes?.granted_fix_scopes).toEqual(["lifecycle"]);
-      expect(granted.fixes?.applied_count).toBe(1);
+      expect(granted.fixes?.applied_count).toBe(2);
       expect(granted.fixes?.failed_count).toBe(0);
 
       const after = context.runCli(["get", childId, "--json"], { expectJson: true });
       expect((after.json as { item: { parent?: string } }).item.parent).toBe(grandparentId);
+      const missingGrandparentAfter = context.runCli(["get", missingGrandparentChildId, "--json"], { expectJson: true });
+      expect((missingGrandparentAfter.json as { item: { parent?: string } }).item.parent).toBeUndefined();
     });
   });
 

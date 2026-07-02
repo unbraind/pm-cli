@@ -163,13 +163,7 @@ function collectPmSummaryCounts(items) {
 
 function isReleaseRelatedPmItem(item) {
   const title = typeof item.title === "string" ? item.title.toLowerCase() : "";
-  /* c8 ignore next -- changed[] is pre-filtered to status === "closed"; the non-string status branch and the canceled check below are unreachable here */
-  const status = typeof item.status === "string" ? item.status : "unknown";
   const tags = Array.isArray(item.tags) ? item.tags.map((tag) => String(tag).toLowerCase()) : [];
-  /* c8 ignore next 3 -- status is always "closed" within changed[]; the canceled early-return is unreachable */
-  if (status === "canceled") {
-    return false;
-  }
   return (
     title.includes("release") ||
     title.includes("compatib") ||

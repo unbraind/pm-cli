@@ -154,11 +154,10 @@ function run() {
   const npx = resolveCommand("npx");
   const tempRoot = mkdtempSync(path.join(tmpdir(), "pm-pack-smoke-"));
 
-  const tarballPath = packCurrentPackage(npm, tempRoot);
-  const tarballSpec = `file:${tarballPath}`;
-  const runPackedPm = buildPackedPmRunner(npm, npx, tarballPath);
-
   try {
+    const tarballPath = packCurrentPackage(npm, tempRoot);
+    const tarballSpec = `file:${tarballPath}`;
+    const runPackedPm = buildPackedPmRunner(npm, npx, tarballPath);
     const version = runPackedPm(["--version"]);
     assertNonEmptyOutput("npx smoke test", version, "version output");
     assertPackedBinarySmoke(npx, tarballPath, tarballSpec, version);

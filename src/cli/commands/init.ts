@@ -747,7 +747,6 @@ async function maybeRegisterInitTypePreset(params: {
       op: "init:type_preset",
     })),
   );
-  params.settings = await readSettings(params.pmRoot);
   return registeredTypePreset;
 }
 

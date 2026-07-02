@@ -196,8 +196,9 @@ async function applyDedupeMergeReparents(params: {
   reparented: DedupeMergeChildReparent[];
   skippedChildren: { child_id: string; child_title: string; reason: "terminal" }[];
 }> {
-  const reparentTargets = params.options.reparentChildren !== false ? params.children.filter((child) => !child.terminal) : [];
-  const skippedChildren = (params.options.reparentChildren !== false ? params.children.filter((child) => child.terminal) : []).map((child) => ({
+  const reparentEnabled = params.options.reparentChildren !== false;
+  const reparentTargets = reparentEnabled ? params.children.filter((child) => !child.terminal) : [];
+  const skippedChildren = (reparentEnabled ? params.children.filter((child) => child.terminal) : []).map((child) => ({
     child_id: child.id,
     child_title: child.title,
     reason: "terminal" as const,

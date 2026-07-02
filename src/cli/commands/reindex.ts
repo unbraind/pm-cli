@@ -1125,7 +1125,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
   if (mode === "keyword") {
     await appendKeywordLedgerWarnings({ pmRoot, settings, forceFullSemantic, extensionEmbedding, reindexWarnings });
   }
-  if (mode !== "keyword" && metadataDocuments.length > 0) {
+  if (mode !== "keyword") {
     const semantic = await runSemanticReindex({
       pmRoot,
       settings,

@@ -1012,6 +1012,49 @@ describe("runReindex", () => {
     });
   });
 
+  it("prunes orphaned local vectors and ledger entries when semantic corpus is empty", async () => {
+    await withTempPmPath(async (context) => {
+      const storePath = path.join(context.pmPath, "search", "lancedb-empty-corpus");
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.lancedb.path = storePath;
+      await writeSettings(context.pmPath, settings);
+      await executeVectorUpsert(
+        {
+          name: "lancedb",
+          path: storePath,
+        },
+        [{ id: "pm-orphan-empty", vector: [0.9, 0.1], payload: { kind: "orphan" } }],
+      );
+      await writeVectorizationStatusLedger(
+        context.pmPath,
+        {
+          "pm-orphan-empty": "2026-01-01T00:00:00.000Z",
+        },
+        {
+          provider: "openai",
+          model: "text-embedding-3-small",
+          vector_dimension: 2,
+        },
+      );
+
+      const result = await runReindex({ mode: "semantic" }, { path: context.pmPath });
+      expect(result.semantic).toMatchObject({
+        stale_items: 0,
+        unchanged_items: 0,
+        embedded_items: 0,
+        vector_upserted: 0,
+      });
+
+      await expect(
+        readFile(path.join(path.resolve(storePath), LANCE_DB_SNAPSHOT_DIR, "pm_items.json"), "utf8"),
+      ).rejects.toMatchObject({ code: "ENOENT" });
+      const ledger = await readVectorizationStatusLedger(context.pmPath);
+      expect(ledger.entries).toEqual({});
+    });
+  });
+
   it("supports semantic reindex through extension embedding and vector adapter registrations", async () => {
     await withTempPmPath(async (context) => {
       createSeedItem(context, "Extension Semantic", "extension semantic body", false);

@@ -4194,6 +4194,18 @@ describe("CLI Commander usage recovery helpers", () => {
         "--statu-one",
       ]),
     ).toEqual(["--status", "--statu-one", "--statu-two"]);
+    expect(
+      commanderUsageTestOnly.resolveSuggestedRetryForMissingOption(
+        "error: required option '--add <value>' not specified",
+        ["test", "pm-123", "--add-json", "{}"],
+      ),
+    ).toContain('--add "<value>"');
+    expect(
+      commanderUsageTestOnly.resolveSuggestedRetryForMissingOption(
+        "error: required option '--add <value>' not specified",
+        ["test", "pm-123", "--add=command"],
+      ),
+    ).toBeUndefined();
   });
 
   it("falls back to a default commander usage message for non-object errors", async () => {

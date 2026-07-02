@@ -463,6 +463,8 @@ function buildRecurrenceExpansionContext(
   window: { start: string; end: string },
   occurrenceLimit: number | undefined,
 ): RecurrenceExpansionContext {
+  const hasWeekdayFilter = recurrence.by_weekday !== undefined;
+  const hasMonthDayFilter = recurrence.by_month_day !== undefined;
   const recurrenceWeekdays =
     recurrence.by_weekday && recurrence.by_weekday.length > 0 ? [...recurrence.by_weekday] : [weekdayToken(startAt)];
   const recurrenceMonthDays =
@@ -476,8 +478,8 @@ function buildRecurrenceExpansionContext(
     countLimit: recurrence.count ?? Number.POSITIVE_INFINITY,
     until: recurrence.until,
     excluded: buildExcludedInstantSet(recurrence.exdates),
-    weekdayFilter: recurrence.by_weekday ? new Set(recurrence.by_weekday) : undefined,
-    monthDayFilter: recurrence.by_month_day ? new Set(recurrence.by_month_day) : undefined,
+    weekdayFilter: hasWeekdayFilter ? new Set(recurrenceWeekdays) : undefined,
+    monthDayFilter: hasMonthDayFilter ? new Set(recurrenceMonthDays) : undefined,
     sortedWeekdays: [...new Set(recurrenceWeekdays)].sort(
       (left, right) => weekdayOrderIndex(left) - weekdayOrderIndex(right),
     ),

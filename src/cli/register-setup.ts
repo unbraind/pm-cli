@@ -177,10 +177,14 @@ function applyExtensionDoctorStrictExit(
   if (result.action !== "doctor" || !strictExit) {
     return;
   }
-  const detailsRecord = result.details as Record<string, unknown>;
-  const summary = (detailsRecord.summary ?? null) as Record<string, unknown> | null;
+  const detailsRecord = result.details !== null && typeof result.details === "object"
+    ? result.details as Record<string, unknown>
+    : {};
+  const summary = detailsRecord.summary !== null && typeof detailsRecord.summary === "object"
+    ? detailsRecord.summary as Record<string, unknown>
+    : null;
   const summaryStatus = summary && typeof summary.status === "string" ? summary.status : undefined;
-  const shouldFail = summaryStatus ? summaryStatus !== "ok" : result.warnings.length > 0;
+  const shouldFail = result.warnings.length > 0 || (summaryStatus !== undefined && summaryStatus !== "ok");
   if (shouldFail) {
     process.exitCode = EXIT_CODE.GENERIC_FAILURE;
   }

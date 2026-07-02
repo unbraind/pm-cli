@@ -587,7 +587,7 @@ function resolveSuggestedRetryForMissingOption(message: string, invocationArgv: 
   if (!requiredOptionToken?.startsWith("--")) {
     return undefined;
   }
-  const hasFlag = invocationArgv.some((token) => token.startsWith(requiredOptionToken));
+  const hasFlag = invocationArgv.some((token) => token === requiredOptionToken || token.startsWith(`${requiredOptionToken}=`));
   return hasFlag ? undefined : renderAttemptedCommand([...invocationArgv, requiredOptionToken, "<value>"]);
 }
 
@@ -701,5 +701,6 @@ export const _testOnly = {
   collectKnownLongFlags,
   collectInstalledPackageCommandPathHints,
   resolveOptionalPackageInstallHint,
+  resolveSuggestedRetryForMissingOption,
   suggestNearestLongFlags,
 };
