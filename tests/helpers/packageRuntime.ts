@@ -60,8 +60,13 @@ export function setupPackageRuntimeSpec(): PackageRuntimeSpecContext {
       process.env[PM_PACKAGE_ROOT_ENV] = originalPackageRoot;
     }
 
-    for (const root of tempRoots.splice(0)) {
-      await rm(root, { recursive: true, force: true });
+    // Attempt every removal even if one fails, then surface the first failure.
+    const removals = await Promise.allSettled(
+      tempRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
+    );
+    const failed = removals.find((entry): entry is PromiseRejectedResult => entry.status === "rejected");
+    if (failed) {
+      throw failed.reason;
     }
   });
 
