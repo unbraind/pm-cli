@@ -1003,6 +1003,78 @@ describe("runSearch", () => {
     }
   });
 
+  it("warns and uses the built-in vector store when an extension vector adapter query fails", async () => {
+    const semanticItem = makeFrontMatter({
+      id: "pm-vector-fallback",
+      title: "vector extension fallback",
+    });
+    listAllFrontMatterMock.mockResolvedValue([semanticItem]);
+    readFileMock.mockResolvedValue(serializeDocument(semanticItem, "semantic body"));
+    readSettingsMock.mockResolvedValue({
+      providers: {
+        openai: {
+          base_url: "https://api.example.test/v1",
+          model: "text-embedding-3-small",
+          api_key: "",
+        },
+      },
+      vector_store: {
+        adapter: "ext-vector",
+        qdrant: {
+          url: "https://qdrant.example.test:6333",
+          api_key: "",
+        },
+      },
+    } as unknown as { id_prefix: string });
+    activeExtensionRegistrations = createExtensionRegistrations();
+    (activeExtensionRegistrations.vector_store_adapters as Array<Record<string, unknown>>).push({
+      layer: "project",
+      name: "vector-ext",
+      definition: { name: "ext-vector" },
+      runtime_definition: {
+        name: "ext-vector",
+        query: () => {
+          throw new Error("adapter unavailable");
+        },
+      },
+    });
+
+    const fetchMock = vi.fn(async (url: unknown) => {
+      const target = resolveFetchTarget(url);
+      if (target.endsWith("/v1/embeddings")) {
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          json: async () => ({ data: [{ index: 0, embedding: [0.1, 0.2] }] }),
+          text: async () => "",
+        } as unknown as Response;
+      }
+      if (target.endsWith("/collections/pm_items/points/search")) {
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          json: async () => ({ result: [{ id: "pm-vector-fallback", score: 0.91 }] }),
+          text: async () => "",
+        } as unknown as Response;
+      }
+      throw new Error(`Unexpected fetch target: ${target}`);
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../../src/cli/commands/search.js");
+      const result = await runSearch("vector", { mode: "semantic" }, { path: "/tmp/pm-search" });
+      expect(result.mode).toBe("semantic");
+      expect(result.items[0].item.id).toBe("pm-vector-fallback");
+      expect(result.warnings).toContain("search_vector_adapter_failed:ext-vector:using_builtin");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("degrades to keyword when extension vector adapter query fails without built-in fallback", async () => {
     const semanticItem = makeFrontMatter({
       id: "pm-vector-adapter-fail",

@@ -514,6 +514,7 @@ type ExtensionVectorQuery = (
 ) => Promise<VectorQueryHit[]> | VectorQueryHit[];
 
 type ExtensionVectorAdapter = {
+  adapterName: string;
   query?: ExtensionVectorQuery;
 };
 
@@ -1802,7 +1803,13 @@ function resolveExtensionVectorAdapter(settings: PmSettings): ExtensionVectorAda
   if (typeof query !== "function") {
     return null;
   }
+  const runtimeAdapterName =
+    toOptionalNonEmptyString((runtimeDefinition as { name?: unknown }).name) ??
+    toOptionalNonEmptyString((resolved.definition as { name?: unknown }).name) ??
+    adapterName ??
+    "extension";
   return {
+    adapterName: runtimeAdapterName,
     query: query as ExtensionVectorQuery,
   };
 }
@@ -2164,6 +2171,7 @@ async function executeSemanticVectorQuery(
           EXIT_CODE.GENERIC_FAILURE,
         );
       }
+      context.warnings.push(`search_vector_adapter_failed:${context.extensionVectorAdapter.adapterName}:using_builtin`);
       return await executeVectorQuery(context.vectorStore, semanticVector, semanticLimit, vectorQueryOptions);
     }
   }
