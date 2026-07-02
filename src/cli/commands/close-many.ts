@@ -82,6 +82,18 @@ interface CloseManyApplyRow {
   error?: string;
 }
 
+interface CloseManyPlanContext {
+  pmRoot: string;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  statusRegistry: ReturnType<typeof resolveRuntimeStatusRegistry>;
+  reason: string | undefined;
+  validateCloseMode: string | undefined;
+  force: boolean;
+  listed: Awaited<ReturnType<typeof runList>>;
+  matched: ListedItem[];
+  planRows: CloseManyPlanRow[];
+}
+
 /**
  * Documents the close many result payload exchanged by command, SDK, and package integrations.
  */
@@ -277,9 +289,8 @@ function planCloseManyRows(
   force: boolean,
 ): CloseManyPlanRow[] {
   return matched.map((item) => {
-    const alreadyTerminal = isTerminalStatus(item.status, statusRegistry);
     const activeChildIds = (childrenByParent.get(item.id) ?? []).filter((childId) => !closePlannedIds.has(childId));
-    const willSkip = alreadyTerminal && !force;
+    const willSkip = !canCloseManyItem(item, statusRegistry, force);
     return {
       id: item.id,
       title: typeof item.title === "string" ? item.title : "",
@@ -347,6 +358,120 @@ async function applyCloseManyRows(params: {
   return { rows, closedIds };
 }
 
+function resolveCloseManyRollbackId(options: CloseManyCommandOptions): string | undefined {
+  return typeof options.rollback === "string" ? options.rollback : undefined;
+}
+
+function validateCloseManyRollbackOptions(options: CloseManyCommandOptions, rollbackId: string): void {
+  if (rollbackId.trim().length === 0) {
+    throw new PmCliError("--rollback requires a checkpoint id", EXIT_CODE.USAGE);
+  }
+  if (options.dryRun === true) {
+    throw new PmCliError("--dry-run cannot be combined with --rollback", EXIT_CODE.USAGE);
+  }
+  if (hasCloseManyRollbackConflicts(options.list, options.status)) {
+    throw new PmCliError("Rollback mode does not accept filter options", EXIT_CODE.USAGE);
+  }
+}
+
+function assertCloseManyHasFilters(options: CloseManyCommandOptions): void {
+  if (hasCloseManyFilters(options.list, options.status)) {
+    return;
+  }
+  throw new PmCliError(
+    `close-many requires at least one filter to scope the close (for example: ${CLOSE_MANY_FILTER_GUIDANCE}). Refusing to match every item.`,
+    EXIT_CODE.USAGE,
+  );
+}
+
+function sortCloseManyMatchedItems(matched: ListedItem[], parentByChild: Map<string, string>): ListedItem[] {
+  const depthCache = new Map<string, number>();
+  return [...matched].sort((left, right) => {
+    const depthDelta = hierarchyDepth(right.id, parentByChild, depthCache) - hierarchyDepth(left.id, parentByChild, depthCache);
+    return depthDelta !== 0 ? depthDelta : left.id.localeCompare(right.id);
+  });
+}
+
+function canCloseManyItem(
+  item: ListedItem,
+  statusRegistry: ReturnType<typeof resolveRuntimeStatusRegistry>,
+  force: boolean,
+): boolean {
+  return force || !isTerminalStatus(item.status, statusRegistry);
+}
+
+function resolveCloseManyPlannedIds(
+  matched: ListedItem[],
+  statusRegistry: ReturnType<typeof resolveRuntimeStatusRegistry>,
+  force: boolean,
+): Set<string> {
+  return new Set(matched.filter((item) => canCloseManyItem(item, statusRegistry, force)).map((item) => item.id));
+}
+
+async function buildCloseManyPlanContext(params: {
+  pmRoot: string;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  options: CloseManyCommandOptions;
+  global: GlobalOptions;
+}): Promise<CloseManyPlanContext> {
+  assertCloseManyHasFilters(params.options);
+  const statusRegistry = resolveRuntimeStatusRegistry(params.settings.schema);
+  const reason = resolveReason(params.options.reason, params.settings.governance.require_close_reason);
+  const force = params.options.force === true;
+  const listed = await runList(params.options.status, activeListOptions(params.options.list), params.global);
+  const { childrenByParent, parentByChild } = await buildActiveChildrenByParent(params.pmRoot, params.settings);
+  const matched = sortCloseManyMatchedItems(listed.items as ListedItem[], parentByChild);
+  const closePlannedIds = resolveCloseManyPlannedIds(matched, statusRegistry, force);
+  return {
+    pmRoot: params.pmRoot,
+    settings: params.settings,
+    statusRegistry,
+    reason,
+    validateCloseMode: params.options.validateClose,
+    force,
+    listed,
+    matched,
+    planRows: planCloseManyRows(matched, childrenByParent, closePlannedIds, statusRegistry, force),
+  };
+}
+
+function buildCloseManyDryRunResult(context: CloseManyPlanContext): CloseManyResult {
+  return {
+    mode: "dry_run",
+    matched_count: context.matched.length,
+    dry_run: true,
+    ...(context.reason !== undefined ? { reason: context.reason } : {}),
+    filters: context.listed.filters,
+    ...(context.validateCloseMode ? { validate_close: context.validateCloseMode } : {}),
+    item_plans: context.planRows,
+    ids: [],
+  };
+}
+
+async function resolveCloseManyCheckpointInfo(params: {
+  context: CloseManyPlanContext;
+  options: CloseManyCommandOptions;
+  closableIds: Set<string>;
+  checkpointId: string;
+  nowValue: string;
+}): Promise<CloseManyResult["checkpoint"]> {
+  if (params.options.checkpoint === false || params.closableIds.size === 0) {
+    return undefined;
+  }
+  const checkpointItems: MutationCheckpointItem[] = params.context.matched
+    .filter((item) => params.closableIds.has(item.id))
+    .map((item) => ({ id: item.id, target_updated_at: item.updated_at }));
+  return writeCloseManyCheckpoint({
+    pmRoot: params.context.pmRoot,
+    checkpointId: params.checkpointId,
+    nowValue: params.nowValue,
+    options: params.options,
+    reason: params.context.reason,
+    filters: params.context.listed.filters,
+    checkpointItems,
+  });
+}
+
 /**
  * Implements run close many for the public runtime surface of this module.
  */
@@ -356,102 +481,52 @@ export async function runCloseMany(options: CloseManyCommandOptions, global: Glo
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
   const settings = await readSettings(pmRoot);
-  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
 
   const dryRun = options.dryRun === true;
-  const rollbackId = typeof options.rollback === "string" ? options.rollback : undefined;
+  const rollbackId = resolveCloseManyRollbackId(options);
   rejectBlankIdsFilter(options.list);
 
-  if (rollbackId) {
-    if (dryRun) {
-      throw new PmCliError("--dry-run cannot be combined with --rollback", EXIT_CODE.USAGE);
-    }
-    if (hasCloseManyRollbackConflicts(options.list, options.status)) {
-      throw new PmCliError("Rollback mode does not accept filter options", EXIT_CODE.USAGE);
-    }
+  if (rollbackId !== undefined) {
+    validateCloseManyRollbackOptions(options, rollbackId);
     return runCloseManyRollback({ pmRoot, rollbackId, options, global });
   }
 
-  if (!hasCloseManyFilters(options.list, options.status)) {
-    throw new PmCliError(
-      `close-many requires at least one filter to scope the close (for example: ${CLOSE_MANY_FILTER_GUIDANCE}). Refusing to match every item.`,
-      EXIT_CODE.USAGE,
-    );
-  }
-
-  const reason = resolveReason(options.reason, settings.governance.require_close_reason);
-  const validateCloseMode = options.validateClose;
-  const force = options.force === true;
-
-  const listOptions = activeListOptions(options.list);
-  const listed = await runList(options.status, listOptions, global);
-  const { childrenByParent, parentByChild } = await buildActiveChildrenByParent(pmRoot, settings);
-  const depthCache = new Map<string, number>();
-  const matched = [...(listed.items as ListedItem[])].sort((left, right) => {
-    const depthDelta = hierarchyDepth(right.id, parentByChild, depthCache) - hierarchyDepth(left.id, parentByChild, depthCache);
-    return depthDelta !== 0 ? depthDelta : left.id.localeCompare(right.id);
-  });
-  const closePlannedIds = new Set(
-    matched
-      .filter((item) => force || !isTerminalStatus(item.status, statusRegistry))
-      .map((item) => item.id),
-  );
-
-  const planRows = planCloseManyRows(matched, childrenByParent, closePlannedIds, statusRegistry, force);
+  const context = await buildCloseManyPlanContext({ pmRoot, settings, options, global });
 
   if (dryRun) {
-    return {
-      mode: "dry_run",
-      matched_count: matched.length,
-      dry_run: true,
-      ...(reason !== undefined ? { reason } : {}),
-      filters: listed.filters,
-      ...(validateCloseMode ? { validate_close: validateCloseMode } : {}),
-      item_plans: planRows,
-      ids: [],
-    };
+    return buildCloseManyDryRunResult(context);
   }
 
-  const closableIds = new Set(planRows.filter((row) => row.action === "close").map((row) => row.id));
-
+  const closableIds = new Set(context.planRows.filter((row) => row.action === "close").map((row) => row.id));
   const nowValue = nowIso();
   const checkpointId = createCheckpointId(CLOSE_MANY_CHECKPOINT_SUBDIR, nowValue);
-  const checkpointEnabled = options.checkpoint !== false;
-  let checkpointInfo: CloseManyResult["checkpoint"] | undefined;
-  if (checkpointEnabled && closableIds.size > 0) {
-    const checkpointItems: MutationCheckpointItem[] = matched
-      .filter((item) => closableIds.has(item.id))
-      .map((item) => ({ id: item.id, target_updated_at: item.updated_at }));
-    checkpointInfo = await writeCloseManyCheckpoint({
-      pmRoot,
-      checkpointId,
-      nowValue,
-      options,
-      reason,
-      filters: listed.filters,
-      checkpointItems,
-    });
-  }
+  const checkpointInfo = await resolveCloseManyCheckpointInfo({ context, options, closableIds, checkpointId, nowValue });
 
   const closeOptions: CloseCommandOptions = {
     author: options.author,
     message: options.message ?? `close-many apply ${checkpointId}`,
-    validateClose: validateCloseMode,
-    force,
+    validateClose: context.validateCloseMode,
+    force: context.force,
     resolution: options.resolution,
     expectedResult: options.expectedResult,
     actualResult: options.actualResult,
   };
 
-  const { rows, closedIds } = await applyCloseManyRows({ matched, closableIds, reason, closeOptions, global });
+  const { rows, closedIds } = await applyCloseManyRows({
+    matched: context.matched,
+    closableIds,
+    reason: context.reason,
+    closeOptions,
+    global,
+  });
 
   return {
     mode: "apply",
-    matched_count: matched.length,
+    matched_count: context.matched.length,
     dry_run: false,
-    ...(reason !== undefined ? { reason } : {}),
-    filters: listed.filters,
-    ...(validateCloseMode ? { validate_close: validateCloseMode } : {}),
+    ...(context.reason !== undefined ? { reason: context.reason } : {}),
+    filters: context.listed.filters,
+    ...(context.validateCloseMode ? { validate_close: context.validateCloseMode } : {}),
     ...(checkpointInfo ? { checkpoint: checkpointInfo } : {}),
     closed_count: rows.filter((row) => row.status === "closed").length,
     skipped_count: rows.filter((row) => row.status === "skipped").length,

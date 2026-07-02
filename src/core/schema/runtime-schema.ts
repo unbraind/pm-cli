@@ -316,6 +316,82 @@ function normalizeRuntimeFieldDefinition(definition: RuntimeFieldDefinition): Ru
   };
 }
 
+function normalizeRuntimeStatusDefinitions(
+  statusesSource: ReadonlyArray<RuntimeStatusDefinition>,
+): RuntimeStatusDefinitionResolved[] {
+  const dedupedById = new Map<string, RuntimeStatusDefinitionResolved>();
+  for (const [index, definition] of statusesSource.entries()) {
+    const normalized = normalizeRuntimeStatusDefinition(definition, index);
+    if (normalized) {
+      dedupedById.set(normalized.id, normalized);
+    }
+  }
+  const values = sortRuntimeStatusDefinitions([...dedupedById.values()]);
+  if (values.length > 0) {
+    return values;
+  }
+  return sortRuntimeStatusDefinitions(DEFAULT_RUNTIME_STATUS_DEFINITIONS.map((definition, index) =>
+    normalizeRuntimeStatusDefinition(definition, index),
+  ).filter((definition): definition is RuntimeStatusDefinitionResolved => definition !== null));
+}
+
+function sortRuntimeStatusDefinitions(
+  definitions: RuntimeStatusDefinitionResolved[],
+): RuntimeStatusDefinitionResolved[] {
+  return definitions.sort((left, right) =>
+    left.order === right.order ? left.id.localeCompare(right.id) : left.order - right.order,
+  );
+}
+
+function normalizeRuntimeFieldDefinitions(
+  fieldsSource: ReadonlyArray<RuntimeFieldDefinition> | undefined,
+): RuntimeFieldDefinitionResolved[] {
+  const dedupedByKey = new Map<string, RuntimeFieldDefinitionResolved>();
+  for (const definition of fieldsSource ?? []) {
+    const normalized = normalizeRuntimeFieldDefinition(definition);
+    if (normalized) {
+      dedupedByKey.set(normalized.key, normalized);
+    }
+  }
+  return [...dedupedByKey.values()].sort((left, right) => left.key.localeCompare(right.key));
+}
+
+function serializeRuntimeStatusDefinition(definition: RuntimeStatusDefinitionResolved): RuntimeStatusDefinition {
+  return {
+    id: definition.id,
+    aliases: definition.aliases.length > 0 ? [...definition.aliases] : undefined,
+    roles: definition.roles.length > 0 ? [...definition.roles] : undefined,
+    description: definition.description,
+    order: definition.order,
+  };
+}
+
+function serializeRuntimeFieldDefinition(definition: RuntimeFieldDefinitionResolved): RuntimeFieldDefinition {
+  return {
+    key: definition.key,
+    metadata_key: definition.metadata_key !== definition.key ? definition.metadata_key : undefined,
+    cli_flag: definition.cli_flag !== keyToDefaultCliFlag(definition.key) ? definition.cli_flag : undefined,
+    cli_aliases: definition.cli_aliases.length > 0 ? [...definition.cli_aliases] : undefined,
+    description: definition.description,
+    type: definition.type,
+    commands: [...definition.commands],
+    repeatable: definition.repeatable === true ? true : undefined,
+    required: definition.required === true ? true : undefined,
+    required_on_create: definition.required_on_create === true ? true : undefined,
+    required_types: definition.required_types.length > 0 ? [...definition.required_types] : undefined,
+    allow_unset: definition.allow_unset === false ? false : undefined,
+  };
+}
+
+function normalizeUnknownFieldPolicy(
+  policy: RuntimeSchemaSettings["unknown_field_policy"] | undefined,
+): RuntimeSchemaSettings["unknown_field_policy"] {
+  const candidate = typeof policy === "string" ? policy.trim().toLowerCase() : "allow";
+  return RUNTIME_UNKNOWN_FIELD_POLICY_SET.has(candidate)
+    ? candidate as RuntimeSchemaSettings["unknown_field_policy"]
+    : "allow";
+}
+
 /**
  * Implements normalize runtime schema settings for the public runtime surface of this module.
  */
@@ -325,71 +401,19 @@ export function normalizeRuntimeSchemaSettings(schema: Partial<RuntimeSchemaSett
     ...schema?.files,
   };
   const statusesSource = schema?.statuses && schema.statuses.length > 0 ? schema.statuses : DEFAULT_RUNTIME_STATUS_DEFINITIONS;
-  const normalizedStatuses = (() => {
-    const dedupedById = new Map<string, RuntimeStatusDefinitionResolved>();
-    for (const [index, definition] of statusesSource.entries()) {
-      const normalized = normalizeRuntimeStatusDefinition(definition, index);
-      if (!normalized) {
-        continue;
-      }
-      dedupedById.set(normalized.id, normalized);
-    }
-    const values = [...dedupedById.values()].sort((left, right) =>
-      left.order === right.order ? left.id.localeCompare(right.id) : left.order - right.order,
-    );
-    if (values.length > 0) {
-      return values;
-    }
-    return DEFAULT_RUNTIME_STATUS_DEFINITIONS.map((definition, index) =>
-      normalizeRuntimeStatusDefinition(definition, index),
-    ).filter((definition): definition is RuntimeStatusDefinitionResolved => definition !== null);
-  })();
-  const normalizedFields = (() => {
-    const dedupedByKey = new Map<string, RuntimeFieldDefinitionResolved>();
-    for (const definition of schema?.fields ?? []) {
-      const normalized = normalizeRuntimeFieldDefinition(definition);
-      if (!normalized) {
-        continue;
-      }
-      dedupedByKey.set(normalized.key, normalized);
-    }
-    return [...dedupedByKey.values()].sort((left, right) => left.key.localeCompare(right.key));
-  })();
-  const unknownFieldPolicyCandidate =
-    typeof schema?.unknown_field_policy === "string" ? schema.unknown_field_policy.trim().toLowerCase() : "allow";
-  const unknownFieldPolicy = RUNTIME_UNKNOWN_FIELD_POLICY_SET.has(unknownFieldPolicyCandidate)
-    ? unknownFieldPolicyCandidate
-    : "allow";
+  const normalizedStatuses = normalizeRuntimeStatusDefinitions(statusesSource);
+  const normalizedFields = normalizeRuntimeFieldDefinitions(schema?.fields);
   return {
     version: typeof schema?.version === "number" && Number.isFinite(schema.version) ? Math.floor(schema.version) : 1,
     files,
-    statuses: normalizedStatuses.map((definition) => ({
-      id: definition.id,
-      aliases: definition.aliases.length > 0 ? [...definition.aliases] : undefined,
-      roles: definition.roles.length > 0 ? [...definition.roles] : undefined,
-      description: definition.description,
-      order: definition.order,
-    })),
-    fields: normalizedFields.map((definition) => ({
-      key: definition.key,
-      metadata_key: definition.metadata_key !== definition.key ? definition.metadata_key : undefined,
-      cli_flag: definition.cli_flag !== keyToDefaultCliFlag(definition.key) ? definition.cli_flag : undefined,
-      cli_aliases: definition.cli_aliases.length > 0 ? [...definition.cli_aliases] : undefined,
-      description: definition.description,
-      type: definition.type,
-      commands: [...definition.commands],
-      repeatable: definition.repeatable === true ? true : undefined,
-      required: definition.required === true ? true : undefined,
-      required_on_create: definition.required_on_create === true ? true : undefined,
-      required_types: definition.required_types.length > 0 ? [...definition.required_types] : undefined,
-      allow_unset: definition.allow_unset === false ? false : undefined,
-    })),
+    statuses: normalizedStatuses.map(serializeRuntimeStatusDefinition),
+    fields: normalizedFields.map(serializeRuntimeFieldDefinition),
     workflow: {
       ...DEFAULT_RUNTIME_WORKFLOW,
       ...normalizeRuntimeWorkflow(schema?.workflow),
     },
     type_workflows: normalizeTypeWorkflowDefinitions(schema?.type_workflows),
-    unknown_field_policy: unknownFieldPolicy as RuntimeSchemaSettings["unknown_field_policy"],
+    unknown_field_policy: normalizeUnknownFieldPolicy(schema?.unknown_field_policy),
   };
 }
 

@@ -62,6 +62,20 @@ export interface ActivityResult {
   limit: number | null;
 }
 
+interface ActivityFilters {
+  id: string | undefined;
+  op: string | undefined;
+  author: string | undefined;
+  from: string | undefined;
+  to: string | undefined;
+  limit: number | undefined;
+}
+
+interface ActivityRuntimeContext {
+  pmRoot: string;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+}
+
 function parseNonEmptyFilter(raw: string | undefined, flagLabel: string): string | undefined {
   if (raw === undefined) return undefined;
   const normalized = raw.trim();
@@ -139,6 +153,97 @@ async function listHistoryFiles(historyDir: string): Promise<string[]> {
   }
 }
 
+function resolveActivityFilters(options: ActivityCommandOptions): ActivityFilters {
+  const nowValue = nowIso();
+  const from = parseRangeBound(options.from, nowValue, "--from");
+  const to = parseRangeBound(options.to, nowValue, "--to");
+  if (from && to && compareTimestampStrings(from, to) >= 0) {
+    throw new PmCliError("Activity --from must be before --to", EXIT_CODE.USAGE);
+  }
+  return {
+    id: parseNonEmptyFilter(options.id, "Activity --id"),
+    op: parseNonEmptyFilter(options.op, "Activity --op"),
+    author: parseNonEmptyFilter(options.author, "Activity --author"),
+    from,
+    to,
+    limit: parseLimit(options.limit),
+  };
+}
+
+async function resolveActivityRuntimeContext(global: GlobalOptions): Promise<ActivityRuntimeContext> {
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+  }
+  return {
+    pmRoot,
+    settings: await readSettings(pmRoot),
+  };
+}
+
+async function prepareActivityHistoryRead(context: ActivityRuntimeContext): Promise<string> {
+  const typeRegistry = resolveItemTypeRegistry(context.settings, getActiveExtensionRegistrations());
+  const items = await listAllFrontMatterLight(
+    context.pmRoot,
+    context.settings.item_format,
+    typeRegistry.type_to_folder,
+    undefined,
+    context.settings.schema,
+  );
+  await enforceHistoryStreamPolicyForItems({
+    pmRoot: context.pmRoot,
+    settings: context.settings,
+    itemIds: items.map((item) => item.id),
+    commandLabel: "activity",
+  });
+  const historyDir = path.join(context.pmRoot, "history");
+  await runActiveOnReadHooks({
+    path: historyDir,
+    scope: "project",
+  });
+  return historyDir;
+}
+
+function includeActivityEntry(entry: HistoryEntry, candidate: ActivityEntry, filters: ActivityFilters): boolean {
+  // Preserve legacy filter semantics: op/author filters compare the raw
+  // history row before missing metadata is normalized to "unknown" for display.
+  if (filters.op && entry.op !== filters.op) {
+    return false;
+  }
+  if (filters.author && entry.author !== filters.author) {
+    return false;
+  }
+  return includeByTimeWindow(candidate, filters.from, filters.to);
+}
+
+async function collectActivityEntries(historyDir: string, filters: ActivityFilters): Promise<ActivityEntry[]> {
+  const combined: ActivityEntry[] = [];
+  for (const file of await listHistoryFiles(historyDir)) {
+    const id = file.slice(0, -".jsonl".length);
+    if (filters.id && id !== filters.id) {
+      continue;
+    }
+    const entries = await readHistoryEntries(path.join(historyDir, file), id);
+    for (const entry of entries) {
+      const candidate = normalizeActivityEntry(id, entry);
+      if (includeActivityEntry(entry, candidate, filters)) {
+        combined.push(candidate);
+      }
+    }
+  }
+  return combined;
+}
+
+function formatCompactActivity(activity: ActivityEntry[]): CompactActivityEntry[] {
+  return activity.map((entry): CompactActivityEntry => ({
+    id: entry.id,
+    op: entry.op,
+    ts: entry.ts,
+    author: entry.author,
+    ...(entry.message ? { msg: entry.message } : {}),
+  }));
+}
+
 export const _testOnly = {
   parseNonEmptyFilter,
   parseRangeBound,
@@ -154,77 +259,17 @@ export const _testOnly = {
  * Implements run activity for the public runtime surface of this module.
  */
 export async function runActivity(options: ActivityCommandOptions, global: GlobalOptions): Promise<ActivityResult> {
-  const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
-  }
-
-  const nowValue = nowIso();
-  const idFilter = parseNonEmptyFilter(options.id, "Activity --id");
-  const opFilter = parseNonEmptyFilter(options.op, "Activity --op");
-  const authorFilter = parseNonEmptyFilter(options.author, "Activity --author");
-  const fromBound = parseRangeBound(options.from, nowValue, "--from");
-  const toBound = parseRangeBound(options.to, nowValue, "--to");
-  if (fromBound && toBound && compareTimestampStrings(fromBound, toBound) >= 0) {
-    throw new PmCliError("Activity --from must be before --to", EXIT_CODE.USAGE);
-  }
-  const limit = parseLimit(options.limit);
-  const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const items = await listAllFrontMatterLight(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema);
-  await enforceHistoryStreamPolicyForItems({
-    pmRoot,
-    settings,
-    itemIds: items.map((item) => item.id),
-    commandLabel: "activity",
-  });
-  const historyDir = path.join(pmRoot, "history");
-  await runActiveOnReadHooks({
-    path: historyDir,
-    scope: "project",
-  });
-  const historyFiles = await listHistoryFiles(historyDir);
-
-  const combined: ActivityEntry[] = [];
-  for (const file of historyFiles) {
-    const id = file.slice(0, -".jsonl".length);
-    if (idFilter && id !== idFilter) {
-      continue;
-    }
-    const entries = await readHistoryEntries(path.join(historyDir, file), id);
-    for (const entry of entries) {
-      if (opFilter && entry.op !== opFilter) {
-        continue;
-      }
-      if (authorFilter && entry.author !== authorFilter) {
-        continue;
-      }
-      const candidate = normalizeActivityEntry(id, entry);
-      if (!includeByTimeWindow(candidate, fromBound, toBound)) {
-        continue;
-      }
-      combined.push({
-        ...candidate,
-      });
-    }
-  }
-
-  const activity = limitEntries(sortActivity(combined), limit);
+  const context = await resolveActivityRuntimeContext(global);
+  const filters = resolveActivityFilters(options);
+  const historyDir = await prepareActivityHistoryRead(context);
+  const activity = limitEntries(sortActivity(await collectActivityEntries(historyDir, filters)), filters.limit);
   const compact = options.compact === true;
-  const compactActivity = compact
-    ? activity.map((entry): CompactActivityEntry => ({
-        id: entry.id,
-        op: entry.op,
-        ts: entry.ts,
-        author: entry.author,
-        ...(entry.message ? { msg: entry.message } : {}),
-      }))
-    : undefined;
+  const compactActivity = compact ? formatCompactActivity(activity) : undefined;
   return {
     activity: compact ? [] : activity,
     compact_activity: compactActivity,
     compact,
     count: activity.length,
-    limit: limit ?? null,
+    limit: filters.limit ?? null,
   };
 }

@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { _testOnly as closeManyInternals } from "../../../src/cli/commands/close-many.js";
+import { _testOnly as closeManyInternals, runCloseMany } from "../../../src/cli/commands/close-many.js";
 import { _testOnlyCloseCommand, runClose } from "../../../src/cli/commands/close.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
@@ -1472,8 +1472,6 @@ describe("runCloseMany via CLI", () => {
 
   it("rejects dry-run rollback mode before reading a checkpoint", async () => {
     await withTempPmPath(async (context) => {
-      const { runCloseMany } = await import("../../../src/cli/commands/close-many.js");
-
       await expect(
         runCloseMany(
           {
@@ -1486,6 +1484,15 @@ describe("runCloseMany via CLI", () => {
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
         message: "--dry-run cannot be combined with --rollback",
+      });
+    });
+  });
+
+  it("rejects blank rollback checkpoint ids before falling back to filter mode", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(runCloseMany({ rollback: "   ", list: {} }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: "--rollback requires a checkpoint id",
       });
     });
   });

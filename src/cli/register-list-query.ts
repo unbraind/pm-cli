@@ -182,89 +182,253 @@ async function runRegisteredListCommand(params: {
   }
 }
 
+interface ListCommandDescriptor {
+  name: string;
+  description: string;
+  status?: ItemStatus;
+  excludeTerminal?: boolean;
+  allowStatusFilter?: boolean;
+  defaultBrief?: boolean;
+}
+
+function registerListCommand(program: Command, descriptor: ListCommandDescriptor): void {
+  const { name, description, status, excludeTerminal, allowStatusFilter, defaultBrief } = descriptor;
+  const command = program.command(name).description(description);
+  if (allowStatusFilter) {
+    command.option("--status <value>", "Filter by status (use all for no status restriction)");
+  }
+  command
+    .option("--type <value>", "Filter by item type")
+    .option("--tag <value>", "Filter by tag")
+    .option("--priority <value>", "Filter by priority")
+    .option("--deadline-before <value>", "Filter by deadline upper bound (ISO/date string or relative)")
+    .option("--deadline-after <value>", "Filter by deadline lower bound (ISO/date string or relative)")
+    .option("--updated-after <value>", 'Filter by updated_at lower bound: ISO timestamp or signed relative (e.g. "-2h"/"-7d" for the past). "Changed since my last window" → --updated-after <ISO>')
+    .option("--updated-before <value>", "Filter by updated_at upper bound: ISO timestamp or signed relative (-2h/+1d)")
+    .option("--created-after <value>", "Filter by created_at lower bound: ISO timestamp or signed relative (-2h/+1d)")
+    .option("--created-before <value>", "Filter by created_at upper bound: ISO timestamp or signed relative (-2h/+1d)")
+    .option("--ids <value>", "Filter by explicit item IDs (comma-separated or repeatable)")
+    .option("--assignee <value>", "Filter by assignee")
+    .option("--assignee-filter <value>", "Filter assignee presence: assigned|unassigned")
+    .option("--parent <value>", "Filter by parent item ID")
+    .option("--sprint <value>", "Filter by sprint")
+    .option("--release <value>", "Filter by release")
+    .option("--filter-ac-missing", "Show only items missing acceptance_criteria")
+    .option("--filter-estimates-missing", "Show only items missing estimated_minutes")
+    .option("--filter-resolution-missing", "Show only terminal items missing resolution")
+    .option("--filter-metadata-missing", "Show only items missing any tracked metadata (AC, estimate, or resolution)")
+    .option("--limit <n>", "Limit returned item count")
+    .option("--offset <n>", "Skip the first n matching rows before limit is applied")
+    .option("--no-truncate", "Return every matched row, overriding any --limit (alias: --all)")
+    .option("--include-body", "Include item body in each returned list row")
+    .option("--compact", "Render compact list projection fields (mutually exclusive with --brief/--full/--fields)")
+    .option("--brief", "Ultra-compact output: id, status, type, title only (agent-optimized, mutually exclusive with --compact/--full/--fields)")
+    .option("--full", "Render full list projection fields (mutually exclusive with --compact/--brief/--fields)")
+    .option(
+      "--fields <value>",
+      "Render custom comma-separated list fields (mutually exclusive with --compact/--brief/--full; valid: --fields id,title)",
+    )
+    .option("--sort <value>", "Sort field: priority|deadline|updated_at|created_at|title|parent (aliases: updated, created)")
+    .option("--order <value>", "Sort order: asc|desc (requires --sort)")
+    .option("--tree", "Render rows in parent/child tree order")
+    .option("--tree-depth <n>", "Maximum recursion depth with --tree (0 keeps root rows only)")
+    .option("--format <value>", "Output render mode: csv|table (human export) or json|toon (machine output override)")
+    .option("--stream", "Emit line-delimited JSON rows (requires --json)");
+  registerContentAndGovernanceFilters(command);
+  command.action(async (options: Record<string, unknown>, actionCommand) => {
+    await runRegisteredListCommand({ name, status, excludeTerminal, defaultBrief, options, actionCommand });
+  });
+  // Positive alias for --no-truncate (Commander stores the negation as truncate=false).
+  addHiddenOption(command, "--all", "Alias for --no-truncate");
+  // Hidden pure snake_case underscore-duplicate alias (kept parse-functional).
+  addHiddenOption(command, "--tags <value>", "Alias for --tag");
+  addHiddenOption(command, "--assignee_filter <value>", "Alias for --assignee-filter");
+  addHiddenOption(command, "--tree_depth <n>", "Alias for --tree-depth");
+  // Singular alias so `--filter-estimate-missing` works (matches update-many spelling).
+  addHiddenOption(command, "--filter-estimate-missing", "Alias for --filter-estimates-missing");
+}
+
+async function runAggregateAction(options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runAggregate } = await import("./commands/aggregate.js");
+  const result = await runAggregate(normalizeAggregateOptions(options), globalOptions);
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=aggregate took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runContextAction(options: Record<string, unknown>, actionCommand: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(actionCommand);
+  const startedAt = Date.now();
+  const normalized = normalizeContextOptions(options);
+  const commands = await import("./commands/context.js");
+  const result = await commands.runContext(normalized, globalOptions);
+  const outputFormat = commands.resolveContextOutputFormat(normalized, globalOptions);
+  if (outputFormat === "markdown") {
+    if (!globalOptions.quiet) {
+      writeStdout(`${commands.renderContextMarkdown(result)}\n`);
+    }
+  } else {
+    printResult(result, {
+      ...globalOptions,
+      json: outputFormat === "json",
+    });
+  }
+  if (globalOptions.profile) {
+    printError(`profile:command=context took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runNextAction(options: Record<string, unknown>, actionCommand: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(actionCommand);
+  const startedAt = Date.now();
+  const commands = await import("./commands/next.js");
+  const nextOptions = normalizeNextOptions(options);
+  const result = await commands.runNext(nextOptions, globalOptions);
+  const outputFormat = commands.resolveNextOutputFormat(nextOptions, globalOptions);
+  if (outputFormat === "markdown") {
+    if (!globalOptions.quiet) {
+      writeStdout(`${commands.renderNextMarkdown(result)}\n`);
+    }
+  } else {
+    printResult(result, { ...globalOptions, json: outputFormat === "json" });
+  }
+  if (globalOptions.profile) {
+    printError(`profile:command=next took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runSearchAction(keywords: string[], options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runSearch } = await import("./commands/search.js");
+  const searchOptions = normalizeSearchOptions(options);
+  const result = await runSearch(
+    normalizeSearchKeywordsInput(keywords),
+    {
+      ...searchOptions,
+      mode:
+        typeof searchOptions.mode === "string" && searchOptions.mode.trim().length > 0
+          ? searchOptions.mode
+          : "keyword",
+    },
+    globalOptions,
+  );
+  printResult(result, resolveReadCommandOutputFormat("Search", options.format, globalOptions));
+  if (globalOptions.profile) {
+    printError(`profile:command=search took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runEvalAction(options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runEval } = await import("./commands/eval.js");
+  const result = await runEval(
+    {
+      mode: typeof options.mode === "string" ? options.mode : undefined,
+      k: typeof options.k === "string" ? options.k : undefined,
+      failUnder: typeof options.failUnder === "string" ? options.failUnder : undefined,
+      queries: typeof options.queries === "string" ? options.queries : undefined,
+      format: typeof options.format === "string" ? options.format : undefined,
+    },
+    globalOptions,
+  );
+  printResult(result, resolveReadCommandOutputFormat("Eval", options.format, globalOptions));
+  if (globalOptions.profile) {
+    printError(`profile:command=eval took_ms=${Date.now() - startedAt}`);
+  }
+  if (!result.passed) {
+    throw new PmCliError(
+      `Eval gate failed: aggregate nDCG@${result.k} ${result.aggregate.ndcg} is below --fail-under ${result.fail_under}`,
+      EXIT_CODE.GENERIC_FAILURE,
+    );
+  }
+}
+
+async function runGetAction(id: string, options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runGet } = await import("./commands/get.js");
+  const result = await runGet(
+    id,
+    globalOptions,
+    {
+      depth: typeof options.depth === "string" ? options.depth : undefined,
+      fields: typeof options.fields === "string" ? options.fields : undefined,
+      full: Boolean(options.full),
+      tree: options.tree === true,
+      treeDepth:
+        typeof options.treeDepth === "string"
+          ? options.treeDepth
+          : typeof options.tree_depth === "string"
+            ? options.tree_depth
+            : undefined,
+    },
+  );
+  printResult(result, resolveReadCommandOutputFormat("Get", options.format, globalOptions));
+  if (globalOptions.profile) {
+    printError(`profile:command=get took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runHistoryAction(id: string, options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  if (options.compact === true && options.full === true) {
+    throw new PmCliError("History projection options are mutually exclusive. Use either --compact or --full.", EXIT_CODE.USAGE);
+  }
+  const field = typeof options.field === "string" ? options.field : undefined;
+  const { runHistory } = await import("./commands/history.js");
+  const result = await runHistory(
+    id,
+    {
+      limit: typeof options.limit === "string" ? options.limit : undefined,
+      compact: options.full === true ? false : true,
+      diff: Boolean(options.diff) || field !== undefined,
+      field,
+      verify: Boolean(options.verify),
+    },
+    globalOptions,
+  );
+  printResult(result, resolveReadCommandOutputFormat("History", options.format, globalOptions));
+  if (globalOptions.profile) {
+    printError(`profile:command=history took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runActivityAction(options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  if (options.compact === true && options.full === true) {
+    throw new PmCliError("Activity projection options are mutually exclusive. Use either --compact or --full.", EXIT_CODE.USAGE);
+  }
+  const normalized = normalizeActivityOptions(options);
+  const { runActivity } = await import("./commands/activity.js");
+  const result = await runActivity(normalized, globalOptions);
+  const streamMode = resolveActivityStreamMode(options.stream);
+  if (streamMode && !globalOptions.json) {
+    throw new PmCliError("--stream requires --json output mode.", EXIT_CODE.USAGE);
+  }
+  if (streamMode) {
+    printActivityJsonStream(result, normalized, globalOptions);
+  } else {
+    printResult(result, globalOptions);
+  }
+  if (globalOptions.profile) {
+    printError(`profile:command=activity took_ms=${Date.now() - startedAt}`);
+  }
+}
+
 /**
  * Implements register list query commands for the public runtime surface of this module.
  */
 export function registerListQueryCommands(program: Command, options?: RegisterListQueryCommandsOptions): void {
   const commandFilter = options?.commandFilter;
   const shouldRegister = (commandName: string): boolean => shouldRegisterListQueryCommand(commandName, commandFilter);
-  // Register a flag and hide it from --help text while keeping it functional as
-  // a parse-time alias. Used for pure snake_case underscore-duplicate aliases
-  // (e.g. --assignee_filter for --assignee-filter) so they no longer bloat
-  // --help output. The option still appears in command.options, so JSON help
-  // and completion are unchanged.
-  function registerListCommand(
-    name: string,
-    description: string,
-    status?: ItemStatus,
-    excludeTerminal?: boolean,
-    allowStatusFilter?: boolean,
-    defaultBrief?: boolean,
-  ): void {
-    const command = program.command(name).description(description);
-    if (allowStatusFilter) {
-      command.option("--status <value>", "Filter by status (use all for no status restriction)");
-    }
-    command
-      .option("--type <value>", "Filter by item type")
-      .option("--tag <value>", "Filter by tag")
-      .option("--priority <value>", "Filter by priority")
-      .option("--deadline-before <value>", "Filter by deadline upper bound (ISO/date string or relative)")
-      .option("--deadline-after <value>", "Filter by deadline lower bound (ISO/date string or relative)")
-      .option("--updated-after <value>", 'Filter by updated_at lower bound: ISO timestamp or signed relative (e.g. "-2h"/"-7d" for the past). "Changed since my last window" → --updated-after <ISO>')
-      .option("--updated-before <value>", "Filter by updated_at upper bound: ISO timestamp or signed relative (-2h/+1d)")
-      .option("--created-after <value>", "Filter by created_at lower bound: ISO timestamp or signed relative (-2h/+1d)")
-      .option("--created-before <value>", "Filter by created_at upper bound: ISO timestamp or signed relative (-2h/+1d)")
-      .option("--ids <value>", "Filter by explicit item IDs (comma-separated or repeatable)")
-      .option("--assignee <value>", "Filter by assignee")
-      .option("--assignee-filter <value>", "Filter assignee presence: assigned|unassigned")
-      .option("--parent <value>", "Filter by parent item ID")
-      .option("--sprint <value>", "Filter by sprint")
-      .option("--release <value>", "Filter by release")
-      .option("--filter-ac-missing", "Show only items missing acceptance_criteria")
-      .option("--filter-estimates-missing", "Show only items missing estimated_minutes")
-      .option("--filter-resolution-missing", "Show only terminal items missing resolution")
-      .option("--filter-metadata-missing", "Show only items missing any tracked metadata (AC, estimate, or resolution)")
-      .option("--limit <n>", "Limit returned item count")
-      .option("--offset <n>", "Skip the first n matching rows before limit is applied")
-      .option("--no-truncate", "Return every matched row, overriding any --limit (alias: --all)")
-      .option("--include-body", "Include item body in each returned list row")
-      .option("--compact", "Render compact list projection fields (mutually exclusive with --brief/--full/--fields)")
-      .option("--brief", "Ultra-compact output: id, status, type, title only (agent-optimized, mutually exclusive with --compact/--full/--fields)")
-      .option("--full", "Render full list projection fields (mutually exclusive with --compact/--brief/--fields)")
-      .option(
-        "--fields <value>",
-        "Render custom comma-separated list fields (mutually exclusive with --compact/--brief/--full; valid: --fields id,title)",
-      )
-      .option("--sort <value>", "Sort field: priority|deadline|updated_at|created_at|title|parent (aliases: updated, created)")
-      .option("--order <value>", "Sort order: asc|desc (requires --sort)")
-      .option("--tree", "Render rows in parent/child tree order")
-      .option("--tree-depth <n>", "Maximum recursion depth with --tree (0 keeps root rows only)")
-      .option("--format <value>", "Output render mode: csv|table (human export) or json|toon (machine output override)")
-      .option("--stream", "Emit line-delimited JSON rows (requires --json)");
-    registerContentAndGovernanceFilters(command);
-    command
-      .action(async (options: Record<string, unknown>, actionCommand) => {
-        await runRegisteredListCommand({ name, status, excludeTerminal, defaultBrief, options, actionCommand });
-      });
-    // Positive alias for --no-truncate (Commander stores the negation as truncate=false).
-    addHiddenOption(command, "--all", "Alias for --no-truncate");
-    // Hidden pure snake_case underscore-duplicate alias (kept parse-functional).
-    addHiddenOption(command, "--tags <value>", "Alias for --tag");
-    addHiddenOption(command, "--assignee_filter <value>", "Alias for --assignee-filter");
-    addHiddenOption(command, "--tree_depth <n>", "Alias for --tree-depth");
-    // Singular alias so `--filter-estimate-missing` works (matches update-many spelling).
-    addHiddenOption(command, "--filter-estimate-missing", "Alias for --filter-estimates-missing");
-  }
-
-  const listCommandDescriptors: Array<{
-    name: string;
-    description: string;
-    status?: ItemStatus;
-    excludeTerminal?: boolean;
-    allowStatusFilter?: boolean;
-    defaultBrief?: boolean;
-  }> = [
+  const listCommandDescriptors: ListCommandDescriptor[] = [
     { name: "list", description: "List active items with optional filters.", excludeTerminal: true, allowStatusFilter: true, defaultBrief: true },
     { name: "list-all", description: "List all items with optional filters.", excludeTerminal: false, allowStatusFilter: true },
     { name: "list-draft", description: "List draft items with optional filters.", status: "draft" },
@@ -276,14 +440,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
   ];
   for (const descriptor of listCommandDescriptors) {
     if (shouldRegister(descriptor.name)) {
-      registerListCommand(
-        descriptor.name,
-        descriptor.description,
-        descriptor.status,
-        descriptor.excludeTerminal,
-        descriptor.allowStatusFilter,
-        descriptor.defaultBrief,
-      );
+      registerListCommand(program, descriptor);
     }
   }
 
@@ -314,17 +471,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
     // Hidden pure snake_case underscore-duplicate aliases (kept parse-functional).
     addHiddenOption(aggregateCommand, "--include_unparented", "Alias for --include-unparented");
     addHiddenOption(aggregateCommand, "--assignee_filter <value>", "Alias for --assignee-filter");
-    aggregateCommand
-      .action(async (options: Record<string, unknown>, command) => {
-        const globalOptions = getGlobalOptions(command);
-        const startedAt = Date.now();
-        const { runAggregate } = await import("./commands/aggregate.js");
-        const result = await runAggregate(normalizeAggregateOptions(options), globalOptions);
-        printResult(result, globalOptions);
-        if (globalOptions.profile) {
-          printError(`profile:command=aggregate took_ms=${Date.now() - startedAt}`);
-        }
-      });
+    aggregateCommand.action(runAggregateAction);
   }
 
   if (shouldRegister("context")) {
@@ -353,28 +500,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--stale-threshold <value>", "Staleness cutoff in days (e.g. 7 or 7d; default: settings or 7)");
     // Hidden pure snake_case underscore-duplicate alias (kept parse-functional).
     addHiddenOption(contextCommand, "--assignee_filter <value>", "Alias for --assignee-filter");
-    contextCommand
-      .action(async (options: Record<string, unknown>, actionCommand) => {
-        const globalOptions = getGlobalOptions(actionCommand);
-        const startedAt = Date.now();
-        const normalized = normalizeContextOptions(options);
-        const commands = await import("./commands/context.js");
-        const result = await commands.runContext(normalized, globalOptions);
-        const outputFormat = commands.resolveContextOutputFormat(normalized, globalOptions);
-        if (outputFormat === "markdown") {
-          if (!globalOptions.quiet) {
-            writeStdout(`${commands.renderContextMarkdown(result)}\n`);
-          }
-        } else {
-          printResult(result, {
-            ...globalOptions,
-            json: outputFormat === "json",
-          });
-        }
-        if (globalOptions.profile) {
-          printError(`profile:command=context took_ms=${Date.now() - startedAt}`);
-        }
-      });
+    contextCommand.action(runContextAction);
   }
 
   if (shouldRegister("next")) {
@@ -396,24 +522,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
     addHiddenOption(nextCommand, "--assignee_filter <value>", "Alias for --assignee-filter");
     addHiddenOption(nextCommand, "--blocked_limit <n>", "Alias for --blocked-limit");
     addHiddenOption(nextCommand, "--ready_only", "Alias for --ready-only");
-    nextCommand.action(async (options: Record<string, unknown>, actionCommand) => {
-      const globalOptions = getGlobalOptions(actionCommand);
-      const startedAt = Date.now();
-      const commands = await import("./commands/next.js");
-      const nextOptions = normalizeNextOptions(options);
-      const result = await commands.runNext(nextOptions, globalOptions);
-      const outputFormat = commands.resolveNextOutputFormat(nextOptions, globalOptions);
-      if (outputFormat === "markdown") {
-        if (!globalOptions.quiet) {
-          writeStdout(`${commands.renderNextMarkdown(result)}\n`);
-        }
-      } else {
-        printResult(result, { ...globalOptions, json: outputFormat === "json" });
-      }
-      if (globalOptions.profile) {
-        printError(`profile:command=next took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    nextCommand.action(runNextAction);
   }
 
   if (shouldRegister("search")) {
@@ -467,28 +576,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--format <value>", "Search output format override: json|toon")
       .option("--limit <n>", "Limit returned item count");
     registerContentAndGovernanceFilters(searchCommand);
-    searchCommand
-      .action(async (keywords: string[], options: Record<string, unknown>, command) => {
-        const globalOptions = getGlobalOptions(command);
-        const startedAt = Date.now();
-        const { runSearch } = await import("./commands/search.js");
-        const searchOptions = normalizeSearchOptions(options);
-        const result = await runSearch(
-          normalizeSearchKeywordsInput(keywords),
-          {
-            ...searchOptions,
-            mode:
-              typeof searchOptions.mode === "string" && searchOptions.mode.trim().length > 0
-                ? searchOptions.mode
-                : "keyword",
-          },
-          globalOptions,
-        );
-        printResult(result, resolveReadCommandOutputFormat("Search", options.format, globalOptions));
-        if (globalOptions.profile) {
-          printError(`profile:command=search took_ms=${Date.now() - startedAt}`);
-        }
-      });
+    searchCommand.action(runSearchAction);
     addHiddenOption(searchCommand, "--tags <value>", "Alias for --tag");
   }
 
@@ -504,31 +592,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--fail-under <value>", "Exit non-zero when aggregate nDCG@k falls below this threshold (0..1); CI gate")
       .option("--queries <path>", "Path to the golden-query JSON file (default: <pmRoot>/search/eval-queries.json)")
       .option("--format <value>", "Eval output format override: json|toon")
-      .action(async (options: Record<string, unknown>, command) => {
-        const globalOptions = getGlobalOptions(command);
-        const startedAt = Date.now();
-        const { runEval } = await import("./commands/eval.js");
-        const result = await runEval(
-          {
-            mode: typeof options.mode === "string" ? options.mode : undefined,
-            k: typeof options.k === "string" ? options.k : undefined,
-            failUnder: typeof options.failUnder === "string" ? options.failUnder : undefined,
-            queries: typeof options.queries === "string" ? options.queries : undefined,
-            format: typeof options.format === "string" ? options.format : undefined,
-          },
-          globalOptions,
-        );
-        printResult(result, resolveReadCommandOutputFormat("Eval", options.format, globalOptions));
-        if (globalOptions.profile) {
-          printError(`profile:command=eval took_ms=${Date.now() - startedAt}`);
-        }
-        if (!result.passed) {
-          throw new PmCliError(
-            `Eval gate failed: aggregate nDCG@${result.k} ${result.aggregate.ndcg} is below --fail-under ${result.fail_under}`,
-            EXIT_CODE.GENERIC_FAILURE,
-          );
-        }
-      });
+      .action(runEvalAction);
   }
 
   if (shouldRegister("get")) {
@@ -542,31 +606,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--tree-depth <n>", "Maximum subtree depth for --tree descendants")
       .option("--format <value>", "Get output format override: json|toon")
       .description("Show item details by ID.")
-      .action(async (id: string, options: Record<string, unknown>, command) => {
-        const globalOptions = getGlobalOptions(command);
-        const startedAt = Date.now();
-        const { runGet } = await import("./commands/get.js");
-        const result = await runGet(
-          id,
-          globalOptions,
-          {
-            depth: typeof options.depth === "string" ? options.depth : undefined,
-            fields: typeof options.fields === "string" ? options.fields : undefined,
-            full: Boolean(options.full),
-            tree: options.tree === true,
-            treeDepth:
-              typeof options.treeDepth === "string"
-                ? options.treeDepth
-                : typeof options.tree_depth === "string"
-                  ? options.tree_depth
-                  : undefined,
-          },
-        );
-        printResult(result, resolveReadCommandOutputFormat("Get", options.format, globalOptions));
-        if (globalOptions.profile) {
-          printError(`profile:command=get took_ms=${Date.now() - startedAt}`);
-        }
-      });
+      .action(runGetAction);
     addHiddenOption(getCommand, "--tree_depth <n>", "Alias for --tree-depth");
   }
 
@@ -582,30 +622,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--verify", "Verify hash chain and replay integrity for the full history stream")
       .option("--format <value>", "History output format override: json|toon")
       .description("Show item history entries.")
-      .action(async (id: string, options: Record<string, unknown>, command) => {
-        const globalOptions = getGlobalOptions(command);
-        const startedAt = Date.now();
-        if (options.compact === true && options.full === true) {
-          throw new PmCliError("History projection options are mutually exclusive. Use either --compact or --full.", EXIT_CODE.USAGE);
-        }
-        const field = typeof options.field === "string" ? options.field : undefined;
-        const { runHistory } = await import("./commands/history.js");
-        const result = await runHistory(
-          id,
-          {
-            limit: typeof options.limit === "string" ? options.limit : undefined,
-            compact: options.full === true ? false : true,
-            diff: Boolean(options.diff) || field !== undefined,
-            field,
-            verify: Boolean(options.verify),
-          },
-          globalOptions,
-        );
-        printResult(result, resolveReadCommandOutputFormat("History", options.format, globalOptions));
-        if (globalOptions.profile) {
-          printError(`profile:command=history took_ms=${Date.now() - startedAt}`);
-        }
-      });
+      .action(runHistoryAction);
   }
 
   if (shouldRegister("activity")) {
@@ -621,28 +638,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--full", "Show full activity entries with JSON Patch payloads")
       .option("--stream [mode]", "Emit line-delimited JSON rows (requires --json). Optional mode: rows|ndjson|jsonl")
       .description("Show recent activity across items.")
-      .action(async (options: Record<string, unknown>, command) => {
-        const globalOptions = getGlobalOptions(command);
-        const startedAt = Date.now();
-        if (options.compact === true && options.full === true) {
-          throw new PmCliError("Activity projection options are mutually exclusive. Use either --compact or --full.", EXIT_CODE.USAGE);
-        }
-        const normalized = normalizeActivityOptions(options);
-        const { runActivity } = await import("./commands/activity.js");
-        const result = await runActivity(normalized, globalOptions);
-        const streamMode = resolveActivityStreamMode(options.stream);
-        if (streamMode && !globalOptions.json) {
-          throw new PmCliError("--stream requires --json output mode.", EXIT_CODE.USAGE);
-        }
-        if (streamMode) {
-          printActivityJsonStream(result, normalized, globalOptions);
-        } else {
-          printResult(result, globalOptions);
-        }
-        if (globalOptions.profile) {
-          printError(`profile:command=activity took_ms=${Date.now() - startedAt}`);
-        }
-      });
+      .action(runActivityAction);
   }
 }
 

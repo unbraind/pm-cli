@@ -200,6 +200,13 @@ function optionFalse(options: Record<string, unknown>, key: string): true | unde
   return options[key] === false ? true : undefined;
 }
 
+/**
+ * Reads an option value when Commander supplied it as a string.
+ */
+export function readOptionString(options: Record<string, unknown>, key: string): string | undefined {
+  return typeof options[key] === "string" ? options[key] : undefined;
+}
+
 function anyOptionTrue(options: Record<string, unknown>, keys: readonly string[]): true | undefined {
   return keys.some((key) => options[key] === true) ? true : undefined;
 }
