@@ -379,6 +379,69 @@ function rewriteUnknownOptionArgv(argv: string[], unknownOption: string, replace
   return undefined;
 }
 
+function scoreRuntimeCommandCandidates(params: {
+  commandPaths: string[];
+  normalizedUnknown: string;
+  primaryToken: string;
+}): string[] {
+  const commandPathSet = new Set(params.commandPaths);
+  const scoreAgainstUnknown = (candidatePath: string): number =>
+    Math.min(
+      scoreCommandPathMatch(candidatePath, params.normalizedUnknown),
+      params.primaryToken !== params.normalizedUnknown
+        ? scoreCommandPathMatch(candidatePath, params.primaryToken)
+        : Number.POSITIVE_INFINITY,
+    );
+  const scoresByCommandPath = new Map<string, number>();
+  const recordCandidateScore = (commandPath: string, score: number): void => {
+    if (!Number.isFinite(score) || !commandPathSet.has(commandPath)) {
+      return;
+    }
+    const existing = scoresByCommandPath.get(commandPath);
+    if (existing === undefined || score < existing) {
+      scoresByCommandPath.set(commandPath, score);
+    }
+  };
+  for (const commandPath of params.commandPaths) {
+    recordCandidateScore(commandPath, scoreAgainstUnknown(commandPath));
+  }
+  for (const [aliasToken, canonicalPath] of Object.entries(EXECUTABLE_COMMAND_ALIASES)) {
+    recordCandidateScore(canonicalPath, scoreAgainstUnknown(aliasToken));
+  }
+  return [...scoresByCommandPath.entries()]
+    .sort(([leftPath, leftScore], [rightPath, rightScore]) =>
+      leftScore !== rightScore ? leftScore - rightScore : leftPath.localeCompare(rightPath),
+    )
+    .map(([commandPath]) => commandPath);
+}
+
+function resolveUnknownCommandCandidates(params: {
+  commandPaths: string[];
+  normalizedUnknown: string;
+  primaryToken: string;
+  extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>;
+}): string[] {
+  const rankedCandidates = scoreRuntimeCommandCandidates(params);
+  const installedPackageCandidates = collectInstalledPackageCommandPathHints(
+    params.primaryToken,
+    params.extensionDescriptors,
+  ).filter((commandPath) => params.commandPaths.includes(commandPath));
+  return dedupeStrings([...rankedCandidates, ...installedPackageCandidates]);
+}
+
+function resolveUnknownCommandFallbacks(commandPaths: string[]): string[] {
+  const topLevel = [...new Set(commandPaths.map((commandPath) => commandPath.split(" ")[0]).filter((segment) => segment.length > 0))];
+  return topLevel.sort((left, right) => left.localeCompare(right));
+}
+
+function buildUnknownCommandExamples(suggestedPaths: string[], hasConcreteCandidates: boolean): string[] {
+  const suggestedExamples = suggestedPaths.map((path) => `pm ${path} --help`);
+  if (hasConcreteCandidates) {
+    return [...new Set([...suggestedExamples, "pm --help"])];
+  }
+  return [...new Set(["pm --help", ...suggestedExamples])];
+}
+
 /**
  * Implements build unknown command guidance from runtime for the public runtime surface of this module.
  */
@@ -401,57 +464,19 @@ export function buildUnknownCommandGuidanceFromRuntime(
   }
 
   const primaryToken = normalizedUnknown.split(" ")[0];
-  const commandPathSet = new Set(commandPaths);
-  const scoreAgainstUnknown = (candidatePath: string): number =>
-    Math.min(
-      scoreCommandPathMatch(candidatePath, normalizedUnknown),
-      primaryToken !== normalizedUnknown ? scoreCommandPathMatch(candidatePath, primaryToken) : Number.POSITIVE_INFINITY,
-    );
-  // Score every runtime command path against the unknown token, keeping the best
-  // (lowest) score per path.
-  const scoresByCommandPath = new Map<string, number>();
-  const recordCandidateScore = (commandPath: string, score: number): void => {
-    if (!Number.isFinite(score) || !commandPathSet.has(commandPath)) {
-      return;
-    }
-    const existing = scoresByCommandPath.get(commandPath);
-    if (existing === undefined || score < existing) {
-      scoresByCommandPath.set(commandPath, score);
-    }
-  };
-  for (const commandPath of commandPaths) {
-    recordCandidateScore(commandPath, scoreAgainstUnknown(commandPath));
-  }
-  // Executable command aliases (e.g. `show` -> `get`) are rewritten to their
-  // canonical command before commander parses, so they are never themselves
-  // runtime command paths and a typo of one (`shwo`) cannot match a real path.
-  // Fuzzy-match the alias token and attribute the score to its canonical command
-  // so the suggestion points at the command that would actually run.
-  for (const [aliasToken, canonicalPath] of Object.entries(EXECUTABLE_COMMAND_ALIASES)) {
-    recordCandidateScore(canonicalPath, scoreAgainstUnknown(aliasToken));
-  }
-  const rankedCandidates = [...scoresByCommandPath.entries()]
-    .sort(([leftPath, leftScore], [rightPath, rightScore]) =>
-      leftScore !== rightScore ? leftScore - rightScore : leftPath.localeCompare(rightPath),
-    )
-    .map(([commandPath]) => commandPath);
-
-  const installedPackageCandidates = collectInstalledPackageCommandPathHints(primaryToken, extensionDescriptors).filter((commandPath) =>
-    commandPaths.includes(commandPath),
-  );
-  const combinedCandidates = dedupeStrings([...rankedCandidates, ...installedPackageCandidates]);
-
-  const fallbackTopLevel = [...new Set(commandPaths.map((commandPath) => commandPath.split(" ")[0]).filter((segment) => segment.length > 0))];
-  fallbackTopLevel.sort((left, right) => left.localeCompare(right));
+  // Executable aliases are scored against their canonical runtime command, so a
+  // typo of an alias still points at the command path that would actually run.
+  const combinedCandidates = resolveUnknownCommandCandidates({
+    commandPaths,
+    normalizedUnknown,
+    primaryToken,
+    extensionDescriptors,
+  });
+  const fallbackTopLevel = resolveUnknownCommandFallbacks(commandPaths);
   const suggestedPaths = (combinedCandidates.length > 0 ? combinedCandidates : fallbackTopLevel).slice(0, 3);
-  const suggestedExamples = suggestedPaths.map((path) => `pm ${path} --help`);
-  // When we have a concrete did-you-mean candidate, lead examples with that
-  // candidate and keep the broader "pm --help" fallback after it.
-  const examples = combinedCandidates.length > 0
-    ? [...new Set([...suggestedExamples, "pm --help"])]
-    : [...new Set(["pm --help", ...suggestedExamples])];
+  const examples = buildUnknownCommandExamples(suggestedPaths, combinedCandidates.length > 0);
   const optionalPackageHint = resolveOptionalPackageInstallHint(normalizedUnknown);
-  const didYouMean = combinedCandidates.length > 0 ? `Did you mean: ${combinedCandidates.slice(0, 3).join(", ")}?` : null;
+  const didYouMean = combinedCandidates.length > 0 ? `Did you mean: ${suggestedPaths.join(", ")}?` : null;
 
   return {
     unknownCommandExamples: examples,

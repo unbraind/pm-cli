@@ -22,6 +22,7 @@ import {
   invalidateSearchCachesForMutation,
   printError,
   printResult,
+  readOptionString,
 } from "./registration-helpers.js";
 
 /**
@@ -170,6 +171,322 @@ async function runTestCommandAction(id: string, options: Record<string, unknown>
   }
 }
 
+function buildLifecycleMutationOptions(options: Record<string, unknown>): {
+  author: string | undefined;
+  message: string | undefined;
+} {
+  return {
+    author: readOptionString(options, "author"),
+    message: readOptionString(options, "message"),
+  };
+}
+
+async function runTestAllAction(options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const runInBackground = options.background === true;
+  if (runInBackground) {
+    const { runStartBackgroundRun } = await import("./commands/test-runs.js");
+    const result = await runStartBackgroundRun({
+      kind: "test-all",
+      commandArgs: buildBackgroundTestAllCommandArgs(options),
+      statusFilter: readOptionString(options, "status"),
+      noExtensions: globalOptions.noExtensions === true,
+    }, globalOptions);
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=test-all took_ms=${Date.now() - startedAt}`);
+    }
+    return;
+  }
+  const { runTestAll } = await import("./commands/test-all.js");
+  const result = await runTestAll({
+    status: readOptionString(options, "status"),
+    limit: readOptionString(options, "limit"),
+    offset: readOptionString(options, "offset"),
+    timeout: readOptionString(options, "timeout"),
+    progress: Boolean(options.progress),
+    envSet: Array.isArray(options.envSet) ? (options.envSet as string[]) : [],
+    envClear: Array.isArray(options.envClear) ? (options.envClear as string[]) : [],
+    sharedHostSafe: Boolean(options.sharedHostSafe),
+    pmContext: readOptionString(options, "pmContext"),
+    overrideLinkedPmContext: Boolean(options.overrideLinkedPmContext),
+    failOnContextMismatch: Boolean(options.failOnContextMismatch),
+    failOnSkipped: Boolean(options.failOnSkipped),
+    failOnEmptyTestRun: Boolean(options.failOnEmptyTestRun),
+    requireAssertionsForPm: Boolean(options.requireAssertionsForPm),
+    checkContext: Boolean(options.checkContext),
+    autoPmContext: Boolean(options.autoPmContext),
+  }, globalOptions);
+  await invalidateSearchCachesForMutation(globalOptions, { ids: result.results.map((entry) => entry.id) });
+  printResult(result, globalOptions);
+  if (result.failed > 0 || result.fail_on_skipped_triggered === true) {
+    process.exitCode = EXIT_CODE.DEPENDENCY_FAILED;
+  }
+  if (globalOptions.profile) {
+    printError(`profile:command=test-all took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runTelemetryAction(
+  namespaceOrSubcommand: string | undefined,
+  subcommand: string | undefined,
+  options: Record<string, unknown>,
+  command: Command,
+): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runTelemetry } = await import("./commands/telemetry.js");
+  const result = await runTelemetry(
+    {
+      subcommand: resolveTelemetrySubcommand(namespaceOrSubcommand, subcommand),
+      // Commander always parses `--limit <n>` to a string (or leaves it
+      // undefined), so a string passthrough covers every CLI-reachable input.
+      limit: readOptionString(options, "limit"),
+    },
+    globalOptions,
+  );
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=telemetry took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runStatsAction(options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runStats } = await import("./commands/stats.js");
+  const result = await runStats(globalOptions, {
+    storage: options.storage === true,
+    metadataCoverage: options.metadataCoverage === true,
+    byAssignee: options.byAssignee === true,
+    byTag: options.byTag === true,
+    byPriority: options.byPriority === true,
+    tagPrefix: readOptionString(options, "tagPrefix"),
+    fieldUtilization: options.fieldUtilization === true,
+  });
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=stats took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runHealthAction(options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runHealth } = await import("./commands/health.js");
+  const result = await runHealth(globalOptions, {
+    strictDirectories: Boolean(options.strictDirectories),
+    checkOnly: Boolean(options.checkOnly),
+    checkTelemetry: Boolean(options.checkTelemetry),
+    noRefresh: Boolean(options.noRefresh),
+    refreshVectors: Boolean(options.refreshVectors),
+    verboseStaleItems: Boolean(options.verboseStaleItems),
+    brief: Boolean(options.brief),
+    summary: Boolean(options.summary),
+    skipVectors: Boolean(options.skipVectors),
+    skipIntegrity: Boolean(options.skipIntegrity),
+    skipDrift: Boolean(options.skipDrift),
+    full: Boolean(options.full),
+  });
+  printResult(result, globalOptions);
+  const strictExit = Boolean(options.strictExit) || Boolean(options.failOnWarn);
+  if (strictExit && !result.ok) {
+    setActiveCommandResult({
+      ...result,
+      exit_code: EXIT_CODE.GENERIC_FAILURE,
+      error_code: "health_findings",
+      error_category: "validation",
+      command_resolution: "health_findings",
+      resolution_stage: "execute",
+    });
+    process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+  }
+  if (globalOptions.profile) {
+    printError(`profile:command=health took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runValidateAction(options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runValidate } = await import("./commands/validate.js");
+  const result = await runValidate({
+    checkMetadata: Boolean(options.checkMetadata),
+    metadataProfile: readOptionString(options, "metadataProfile"),
+    checkResolution: Boolean(options.checkResolution),
+    checkLifecycle: Boolean(options.checkLifecycle),
+    checkStaleBlockers: Boolean(options.checkStaleBlockers),
+    dependencyCycleSeverity: readOptionString(options, "dependencyCycleSeverity"),
+    parentCycleSeverity: readOptionString(options, "parentCycleSeverity"),
+    checkFiles: Boolean(options.checkFiles),
+    checkCommandReferences: Boolean(options.checkCommandReferences),
+    scanMode: readOptionString(options, "scanMode"),
+    includePmInternals: Boolean(options.includePmInternals),
+    verboseFileLists: Boolean(options.verboseFileLists),
+    verboseDiagnostics: Boolean(options.verboseDiagnostics),
+    allAffectedIds: Boolean(options.allAffectedIds),
+    checkHistoryDrift: Boolean(options.checkHistoryDrift),
+    fixHints: Boolean(options.fixHints),
+    autoFix: Boolean(options.autoFix),
+    dryRun: Boolean(options.dryRun),
+    fixScope: Array.isArray(options.fixScope) ? (options.fixScope as string[]) : undefined,
+    pruneMissing: Boolean(options.pruneMissing),
+  }, globalOptions);
+  printResult(result, globalOptions);
+  const strictExit = Boolean(options.strictExit) || Boolean(options.failOnWarn);
+  if (strictExit && (result.has_warnings || !result.ok)) {
+    setActiveCommandResult({
+      ...result,
+      exit_code: EXIT_CODE.GENERIC_FAILURE,
+      error_code: "validation_findings",
+      error_category: "validation",
+      command_resolution: "validation_findings",
+      resolution_stage: "execute",
+    });
+    process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+  }
+  if (globalOptions.profile) {
+    printError(`profile:command=validate took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runGcAction(options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runGc } = await import("./commands/gc.js");
+  const result = await runGc(globalOptions, {
+    dryRun: options.dryRun === true,
+    scope: Array.isArray(options.scope) ? (options.scope as string[]) : [],
+  });
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=gc took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runContractsAction(options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runContracts } = await import("./commands/contracts.js");
+  const result = await runContracts({
+    action: readOptionString(options, "action"),
+    command: readOptionString(options, "command"),
+    schemaOnly: Boolean(options.schemaOnly),
+    flagsOnly: Boolean(options.flagsOnly),
+    availabilityOnly: Boolean(options.availabilityOnly),
+    runtimeOnly: Boolean(options.runtimeOnly) || Boolean(options.activeOnly),
+    full: Boolean(options.full),
+  }, globalOptions);
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=contracts took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runClaimAction(id: string, options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runClaim } = await import("./commands/claim.js");
+  const result = await runClaim(id, Boolean(options.force), globalOptions, {
+    ...buildLifecycleMutationOptions(options),
+    ifAvailable: options.ifAvailable === true,
+  });
+  await invalidateSearchCachesForMutation(globalOptions, result);
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=claim took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runReleaseAction(id: string, options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runRelease } = await import("./commands/claim.js");
+  const result = await runRelease(id, Boolean(options.force), globalOptions, {
+    ...buildLifecycleMutationOptions(options),
+    allowAuditRelease: options.allowAuditRelease === true,
+  });
+  await invalidateSearchCachesForMutation(globalOptions, result);
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=release took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runStartTaskAction(id: string, options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+  const settings = await readSettings(pmRoot);
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const inProgressStatus = resolveStartTaskInProgressStatus(statusRegistry);
+  const force = Boolean(options.force);
+  const mutationOptions = buildLifecycleMutationOptions(options);
+  const [{ runClaim }, { runUpdate }] = await Promise.all([
+    import("./commands/claim.js"),
+    import("./commands/update.js"),
+  ]);
+  const claimResult = await runClaim(id, force, globalOptions, mutationOptions);
+  await invalidateSearchCachesForMutation(globalOptions, claimResult);
+  const updateResult = await runUpdate(id, { ...mutationOptions, status: inProgressStatus, force }, globalOptions);
+  await invalidateSearchCachesForMutation(globalOptions, updateResult);
+  printResult({ id, action: "start_task", claim: claimResult, update: updateResult }, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=start-task took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runPauseTaskAction(id: string, options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+  const settings = await readSettings(pmRoot);
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const force = Boolean(options.force);
+  const mutationOptions = buildLifecycleMutationOptions(options);
+  const [{ runUpdate }, { runRelease }] = await Promise.all([
+    import("./commands/update.js"),
+    import("./commands/claim.js"),
+  ]);
+  const updateResult = await runUpdate(id, { ...mutationOptions, status: statusRegistry.open_status, force }, globalOptions);
+  await invalidateSearchCachesForMutation(globalOptions, updateResult);
+  const releaseResult = await runRelease(id, force, globalOptions, mutationOptions);
+  await invalidateSearchCachesForMutation(globalOptions, releaseResult);
+  printResult({ id, action: "pause_task", update: updateResult, release: releaseResult }, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=pause-task took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runCloseTaskAction(
+  id: string,
+  reason: string | undefined,
+  options: Record<string, unknown>,
+  command: Command,
+): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const force = Boolean(options.force);
+  const mutationOptions = buildLifecycleMutationOptions(options);
+  const [{ runClose }, { runRelease }] = await Promise.all([
+    import("./commands/close.js"),
+    import("./commands/claim.js"),
+  ]);
+  const closeResult = await runClose(id, reason, {
+    ...mutationOptions,
+    validateClose: readOptionString(options, "validateClose"),
+    force,
+  }, globalOptions);
+  await invalidateSearchCachesForMutation(globalOptions, closeResult);
+  const releaseResult = await runRelease(id, force, globalOptions, mutationOptions);
+  await invalidateSearchCachesForMutation(globalOptions, releaseResult);
+  printResult({ id, action: "close_task", close: closeResult, release: releaseResult }, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=close-task took_ms=${Date.now() - startedAt}`);
+  }
+}
+
 
 
 /**
@@ -205,9 +522,7 @@ export function registerOperationCommands(program: Command): void {
     .option("--message <value>", "History message")
     .option("--force", "Force ownership override")
     .description("Manage tests linked to an item and optionally run them.")
-    .action(async (id: string, options: Record<string, unknown>, command) => {
-      await runTestCommandAction(id, options, command);
-    });
+    .action(runTestCommandAction);
 
   program
     .command("test-all")
@@ -229,52 +544,7 @@ export function registerOperationCommands(program: Command): void {
     .option("--require-assertions-for-pm", "Require assertion metadata for linked PM command tests")
     .option("--check-context", "Preflight linked PM command context diagnostics before executing commands")
     .option("--auto-pm-context", "Auto-remediate PM tracker-read context mismatches by routing those linked commands through tracker context")
-    .action(async (options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const runInBackground = options.background === true;
-      if (runInBackground) {
-        const { runStartBackgroundRun } = await import("./commands/test-runs.js");
-        const result = await runStartBackgroundRun({
-          kind: "test-all",
-          commandArgs: buildBackgroundTestAllCommandArgs(options),
-          statusFilter: typeof options.status === "string" ? options.status : undefined,
-          noExtensions: globalOptions.noExtensions === true,
-        }, globalOptions);
-        printResult(result, globalOptions);
-        if (globalOptions.profile) {
-          printError(`profile:command=test-all took_ms=${Date.now() - startedAt}`);
-        }
-        return;
-      }
-      const { runTestAll } = await import("./commands/test-all.js");
-      const result = await runTestAll({
-        status: typeof options.status === "string" ? options.status : undefined,
-        limit: typeof options.limit === "string" ? options.limit : undefined,
-        offset: typeof options.offset === "string" ? options.offset : undefined,
-        timeout: typeof options.timeout === "string" ? options.timeout : undefined,
-        progress: Boolean(options.progress),
-        envSet: Array.isArray(options.envSet) ? (options.envSet as string[]) : [],
-        envClear: Array.isArray(options.envClear) ? (options.envClear as string[]) : [],
-        sharedHostSafe: Boolean(options.sharedHostSafe),
-        pmContext: typeof options.pmContext === "string" ? options.pmContext : undefined,
-        overrideLinkedPmContext: Boolean(options.overrideLinkedPmContext),
-        failOnContextMismatch: Boolean(options.failOnContextMismatch),
-        failOnSkipped: Boolean(options.failOnSkipped),
-        failOnEmptyTestRun: Boolean(options.failOnEmptyTestRun),
-        requireAssertionsForPm: Boolean(options.requireAssertionsForPm),
-        checkContext: Boolean(options.checkContext),
-        autoPmContext: Boolean(options.autoPmContext),
-      }, globalOptions);
-      await invalidateSearchCachesForMutation(globalOptions, { ids: result.results.map((entry) => entry.id) });
-      printResult(result, globalOptions);
-      if (result.failed > 0 || result.fail_on_skipped_triggered === true) {
-        process.exitCode = EXIT_CODE.DEPENDENCY_FAILED;
-      }
-      if (globalOptions.profile) {
-        printError(`profile:command=test-all took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runTestAllAction);
 
   program
     .command("test-runs-worker", { hidden: true })
@@ -292,24 +562,7 @@ export function registerOperationCommands(program: Command): void {
     .argument("[subcommand]", "Compatibility alias target for local-analytics: status, flush, stats, clear")
     .option("--limit <n>", "Maximum command groups returned by telemetry stats")
     .description("Inspect and manage local telemetry queue/runtime state.")
-    .action(async (namespaceOrSubcommand: string | undefined, subcommand: string | undefined, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const { runTelemetry } = await import("./commands/telemetry.js");
-      const result = await runTelemetry(
-        {
-          subcommand: resolveTelemetrySubcommand(namespaceOrSubcommand, subcommand),
-          // Commander always parses `--limit <n>` to a string (or leaves it
-          // undefined), so a string passthrough covers every CLI-reachable input.
-          limit: typeof options.limit === "string" ? options.limit : undefined,
-        },
-        globalOptions,
-      );
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=telemetry took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runTelemetryAction);
 
   program
     .command("stats")
@@ -330,24 +583,7 @@ export function registerOperationCommands(program: Command): void {
       "--field-utilization",
       "Report content-field utilization rates (notes/learnings/files/docs/tests/comments/deps/body) for governance audits",
     )
-    .action(async (options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const { runStats } = await import("./commands/stats.js");
-      const result = await runStats(globalOptions, {
-        storage: options.storage === true,
-        metadataCoverage: options.metadataCoverage === true,
-        byAssignee: options.byAssignee === true,
-        byTag: options.byTag === true,
-        byPriority: options.byPriority === true,
-        tagPrefix: typeof options.tagPrefix === "string" ? options.tagPrefix : undefined,
-        fieldUtilization: options.fieldUtilization === true,
-      });
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=stats took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runStatsAction);
 
   program
     .command("health")
@@ -369,41 +605,7 @@ export function registerOperationCommands(program: Command): void {
       "Return non-zero exit when health is not ok (advisory telemetry warnings are excluded; see warnings[])",
     )
     .option("--fail-on-warn", "Alias for --strict-exit")
-    .action(async (options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const { runHealth } = await import("./commands/health.js");
-      const result = await runHealth(globalOptions, {
-        strictDirectories: Boolean(options.strictDirectories),
-        checkOnly: Boolean(options.checkOnly),
-        checkTelemetry: Boolean(options.checkTelemetry),
-        noRefresh: Boolean(options.noRefresh),
-        refreshVectors: Boolean(options.refreshVectors),
-        verboseStaleItems: Boolean(options.verboseStaleItems),
-        brief: Boolean(options.brief),
-        summary: Boolean(options.summary),
-        skipVectors: Boolean(options.skipVectors),
-        skipIntegrity: Boolean(options.skipIntegrity),
-        skipDrift: Boolean(options.skipDrift),
-        full: Boolean(options.full),
-      });
-      printResult(result, globalOptions);
-      const strictExit = Boolean(options.strictExit) || Boolean(options.failOnWarn);
-      if (strictExit && !result.ok) {
-        setActiveCommandResult({
-          ...result,
-          exit_code: EXIT_CODE.GENERIC_FAILURE,
-          error_code: "health_findings",
-          error_category: "validation",
-          command_resolution: "health_findings",
-          resolution_stage: "execute",
-        });
-        process.exitCode = EXIT_CODE.GENERIC_FAILURE;
-      }
-      if (globalOptions.profile) {
-        printError(`profile:command=health took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runHealthAction);
 
   program
     .command("validate")
@@ -430,68 +632,14 @@ export function registerOperationCommands(program: Command): void {
     .option("--fix-scope <scope>", "Grant --auto-fix scopes (metadata, resolution, lifecycle; comma-separated or repeatable). Default: metadata, resolution; lifecycle must be named explicitly", collect)
     .option("--prune-missing", "Remove stale linked-file/doc LINKS whose paths classified as deleted (never touches real files)")
     .option("--check-history-drift", "Run item/history hash drift checks")
-    .action(async (options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const { runValidate } = await import("./commands/validate.js");
-      const result = await runValidate({
-        checkMetadata: Boolean(options.checkMetadata),
-        metadataProfile: typeof options.metadataProfile === "string" ? options.metadataProfile : undefined,
-        checkResolution: Boolean(options.checkResolution),
-        checkLifecycle: Boolean(options.checkLifecycle),
-        checkStaleBlockers: Boolean(options.checkStaleBlockers),
-        dependencyCycleSeverity: typeof options.dependencyCycleSeverity === "string" ? options.dependencyCycleSeverity : undefined,
-        parentCycleSeverity: typeof options.parentCycleSeverity === "string" ? options.parentCycleSeverity : undefined,
-        checkFiles: Boolean(options.checkFiles),
-        checkCommandReferences: Boolean(options.checkCommandReferences),
-        scanMode: typeof options.scanMode === "string" ? options.scanMode : undefined,
-        includePmInternals: Boolean(options.includePmInternals),
-        verboseFileLists: Boolean(options.verboseFileLists),
-        verboseDiagnostics: Boolean(options.verboseDiagnostics),
-        allAffectedIds: Boolean(options.allAffectedIds),
-        checkHistoryDrift: Boolean(options.checkHistoryDrift),
-        fixHints: Boolean(options.fixHints),
-        autoFix: Boolean(options.autoFix),
-        dryRun: Boolean(options.dryRun),
-        fixScope: Array.isArray(options.fixScope) ? (options.fixScope as string[]) : undefined,
-        pruneMissing: Boolean(options.pruneMissing),
-      }, globalOptions);
-      printResult(result, globalOptions);
-      const strictExit = Boolean(options.strictExit) || Boolean(options.failOnWarn);
-      if (strictExit && (result.has_warnings || !result.ok)) {
-        setActiveCommandResult({
-          ...result,
-          exit_code: EXIT_CODE.GENERIC_FAILURE,
-          error_code: "validation_findings",
-          error_category: "validation",
-          command_resolution: "validation_findings",
-          resolution_stage: "execute",
-        });
-        process.exitCode = EXIT_CODE.GENERIC_FAILURE;
-      }
-      if (globalOptions.profile) {
-        printError(`profile:command=validate took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runValidateAction);
 
   program
     .command("gc")
     .option("--dry-run", "Preview cleanup targets without deleting files; without this flag, pm gc deletes matched artifacts")
     .option("--scope <value>", "Limit cleanup to one or more scopes (comma-separated or repeatable): index, embeddings, runtime, locks, checkpoints", collect)
     .description("Delete optional cache artifacts by default (including expired lock debris) and show a summary.")
-    .action(async (options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const { runGc } = await import("./commands/gc.js");
-      const result = await runGc(globalOptions, {
-        dryRun: options.dryRun === true,
-        scope: Array.isArray(options.scope) ? (options.scope as string[]) : [],
-      });
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=gc took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runGcAction);
 
   program
     .command("contracts")
@@ -507,24 +655,7 @@ export function registerOperationCommands(program: Command): void {
       "--full",
       "Include full schema and command-flag surfaces (large; default brief output omits heavy sections for unfiltered queries)",
     )
-    .action(async (options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const { runContracts } = await import("./commands/contracts.js");
-      const result = await runContracts({
-        action: typeof options.action === "string" ? options.action : undefined,
-        command: typeof options.command === "string" ? options.command : undefined,
-        schemaOnly: Boolean(options.schemaOnly),
-        flagsOnly: Boolean(options.flagsOnly),
-        availabilityOnly: Boolean(options.availabilityOnly),
-        runtimeOnly: Boolean(options.runtimeOnly) || Boolean(options.activeOnly),
-        full: Boolean(options.full),
-      }, globalOptions);
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=contracts took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runContractsAction);
 
   program
     .command("claim")
@@ -534,21 +665,7 @@ export function registerOperationCommands(program: Command): void {
     .option("--force", "Force claim override")
     .option("--if-available", "Skip silently when the item is already claimed by another author (returns skipped=true)")
     .description("Claim an item for active work.")
-    .action(async (id: string, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const { runClaim } = await import("./commands/claim.js");
-      const result = await runClaim(id, Boolean(options.force), globalOptions, {
-        author: typeof options.author === "string" ? options.author : undefined,
-        message: typeof options.message === "string" ? options.message : undefined,
-        ifAvailable: options.ifAvailable === true,
-      });
-      await invalidateSearchCachesForMutation(globalOptions, result);
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=claim took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runClaimAction);
 
   program
     .command("release")
@@ -558,21 +675,7 @@ export function registerOperationCommands(program: Command): void {
     .option("--allow-audit-release", "Allow non-owner release handoffs without requiring --force")
     .option("--force", "Force release override")
     .description("Release an item's active claim.")
-    .action(async (id: string, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const { runRelease } = await import("./commands/claim.js");
-      const result = await runRelease(id, Boolean(options.force), globalOptions, {
-        author: typeof options.author === "string" ? options.author : undefined,
-        message: typeof options.message === "string" ? options.message : undefined,
-        allowAuditRelease: options.allowAuditRelease === true,
-      });
-      await invalidateSearchCachesForMutation(globalOptions, result);
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=release took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runReleaseAction);
 
   program
     .command("start-task")
@@ -581,31 +684,7 @@ export function registerOperationCommands(program: Command): void {
     .option("--message <value>", "History message")
     .option("--force", "Force ownership or terminal override when required")
     .description("Lifecycle alias: claim an item and move it to in_progress.")
-    .action(async (id: string, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
-      const settings = await readSettings(pmRoot);
-      const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-      const inProgressStatus = resolveStartTaskInProgressStatus(statusRegistry);
-      const force = Boolean(options.force);
-      const mutationOptions = {
-        author: typeof options.author === "string" ? options.author : undefined,
-        message: typeof options.message === "string" ? options.message : undefined,
-      };
-      const [{ runClaim }, { runUpdate }] = await Promise.all([
-        import("./commands/claim.js"),
-        import("./commands/update.js"),
-      ]);
-      const claimResult = await runClaim(id, force, globalOptions, mutationOptions);
-      await invalidateSearchCachesForMutation(globalOptions, claimResult);
-      const updateResult = await runUpdate(id, { ...mutationOptions, status: inProgressStatus, force }, globalOptions);
-      await invalidateSearchCachesForMutation(globalOptions, updateResult);
-      printResult({ id, action: "start_task", claim: claimResult, update: updateResult }, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=start-task took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runStartTaskAction);
 
   program
     .command("pause-task")
@@ -614,31 +693,7 @@ export function registerOperationCommands(program: Command): void {
     .option("--message <value>", "History message")
     .option("--force", "Force ownership override when required")
     .description("Lifecycle alias: move an item to open and release its claim.")
-    .action(async (id: string, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
-      const settings = await readSettings(pmRoot);
-      const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-      const openStatus = statusRegistry.open_status;
-      const force = Boolean(options.force);
-      const mutationOptions = {
-        author: typeof options.author === "string" ? options.author : undefined,
-        message: typeof options.message === "string" ? options.message : undefined,
-      };
-      const [{ runUpdate }, { runRelease }] = await Promise.all([
-        import("./commands/update.js"),
-        import("./commands/claim.js"),
-      ]);
-      const updateResult = await runUpdate(id, { ...mutationOptions, status: openStatus, force }, globalOptions);
-      await invalidateSearchCachesForMutation(globalOptions, updateResult);
-      const releaseResult = await runRelease(id, force, globalOptions, mutationOptions);
-      await invalidateSearchCachesForMutation(globalOptions, releaseResult);
-      printResult({ id, action: "pause_task", update: updateResult, release: releaseResult }, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=pause-task took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runPauseTaskAction);
 
   program
     .command("close-task")
@@ -649,31 +704,7 @@ export function registerOperationCommands(program: Command): void {
     .option("--validate-close <value>", "Close-time validation mode: off|warn|strict")
     .option("--force", "Force ownership or terminal override when required")
     .description("Lifecycle alias: close an item and release assignment metadata.")
-    .action(async (id: string, reason: string | undefined, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const force = Boolean(options.force);
-      const mutationOptions = {
-        author: typeof options.author === "string" ? options.author : undefined,
-        message: typeof options.message === "string" ? options.message : undefined,
-      };
-      const [{ runClose }, { runRelease }] = await Promise.all([
-        import("./commands/close.js"),
-        import("./commands/claim.js"),
-      ]);
-      const closeResult = await runClose(id, reason, {
-        ...mutationOptions,
-        validateClose: typeof options.validateClose === "string" ? options.validateClose : undefined,
-        force,
-      }, globalOptions);
-      await invalidateSearchCachesForMutation(globalOptions, closeResult);
-      const releaseResult = await runRelease(id, force, globalOptions, mutationOptions);
-      await invalidateSearchCachesForMutation(globalOptions, releaseResult);
-      printResult({ id, action: "close_task", close: closeResult, release: releaseResult }, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=close-task took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runCloseTaskAction);
 
   registerSchedulingShortcutCommands(program);
 }

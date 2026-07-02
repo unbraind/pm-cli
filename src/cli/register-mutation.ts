@@ -32,6 +32,7 @@ import {
   normalizeUpdateOptions,
   printError,
   printResult,
+  readOptionString,
   writeStdout,
 } from "./registration-helpers.js";
 
@@ -50,6 +51,16 @@ function addHiddenOption(command: Command, flags: string, description: string, r
     option.argParser(collect);
   }
   command.addOption(option);
+}
+
+function addHiddenOptions(
+  command: Command,
+  aliases: ReadonlyArray<readonly [flags: string, description: string]>,
+  repeatable: boolean,
+): void {
+  for (const [flags, description] of aliases) {
+    addHiddenOption(command, flags, description, repeatable);
+  }
 }
 
 const SCHEMA_SHORTHAND_RESERVED_PREFIXES = ["add-", "apply-", "list-", "remove-", "show-"] as const;
@@ -507,10 +518,6 @@ function pickStringOption(...candidates: unknown[]): string | undefined {
   return undefined;
 }
 
-function readOptionString(options: Record<string, unknown>, key: string): string | undefined {
-  return typeof options[key] === "string" ? options[key] : undefined;
-}
-
 function stringArrayOption(value: unknown): string[] | undefined {
   if (Array.isArray(value)) {
     return value as string[];
@@ -652,6 +659,67 @@ async function runCloseManyAction(options: Record<string, unknown>, command: Com
   printResult(result, globalOptions);
   if (globalOptions.profile) {
     printError(`profile:command=close-many took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runUpdateManyAction(options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runUpdateMany } = await import("./commands/update-many.js");
+  const result = await runUpdateMany(
+    {
+      status: readOptionString(options, "filterStatus"),
+      list: buildUpdateManyListOptions(options),
+      update: normalizeUpdateOptions(extractUpdateManyMutationOptionSource(options)),
+      dryRun: options.dryRun === true ? true : undefined,
+      rollback: readOptionString(options, "rollback"),
+      checkpoint: options.checkpoint === false ? false : undefined,
+    },
+    globalOptions,
+  );
+  await invalidateSearchCachesForMutation(globalOptions, result);
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=update-many took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runCloseAction(
+  id: string,
+  text: string | undefined,
+  options: Record<string, unknown>,
+  command: Command,
+): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runClose } = await import("./commands/close.js");
+  const reasonFromOption =
+    (typeof options.reason === "string" && options.reason.trim().length > 0 && options.reason) ||
+    (typeof options.closeReason === "string" && options.closeReason.trim().length > 0 && options.closeReason) ||
+    undefined;
+  const resolvedText = typeof text === "string" && text.length > 0 ? text : reasonFromOption;
+  const result = await runClose(
+    id,
+    resolvedText,
+    {
+      author: readOptionString(options, "author"),
+      message: readOptionString(options, "message"),
+      validateClose:
+        options.validateClose === true
+          ? "warn"
+          : readOptionString(options, "validateClose"),
+      force: Boolean(options.force),
+      duplicateOf: readOptionString(options, "duplicateOf"),
+      resolution: readOptionString(options, "resolution"),
+      expectedResult: pickStringOption(options.expectedResult, options.expected_result, options.expected),
+      actualResult: pickStringOption(options.actualResult, options.actual_result, options.actual),
+    },
+    globalOptions,
+  );
+  await invalidateSearchCachesForMutation(globalOptions, result);
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=close took_ms=${Date.now() - startedAt}`);
   }
 }
 
@@ -986,6 +1054,333 @@ async function runCommentsAction(id: string, text: string | undefined, options: 
   }
 }
 
+async function runCopyAction(id: string, options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runCopy } = await import("./commands/copy.js");
+  const result = await runCopy(
+    id,
+    {
+      title: readOptionString(options, "title"),
+      author: readOptionString(options, "author"),
+      message: readOptionString(options, "message"),
+    },
+    globalOptions,
+  );
+  await invalidateSearchCachesForMutation(globalOptions, result);
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=copy took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runFocusAction(id: string | undefined, options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runFocus } = await import("./commands/focus.js");
+  const result = await runFocus(id, { clear: options.clear === true }, globalOptions);
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=focus took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runUpdateAction(id: string, options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  // GH-214: resolve --body-file into the existing body field before
+  // normalization so the rest of update is unchanged. CLI-only input alias.
+  if (typeof options.bodyFile === "string") {
+    options.body = await resolveBodyFileContent(
+      options.bodyFile,
+      options.body !== undefined ? String(options.body) : undefined,
+    );
+    delete options.bodyFile;
+  }
+  const { runUpdate } = await import("./commands/update.js");
+  const result = await runUpdate(id, normalizeUpdateOptions(options), globalOptions);
+  await invalidateSearchCachesForMutation(globalOptions, result);
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=update took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runDeleteAction(id: string, options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runDelete } = await import("./commands/delete.js");
+  const result = await runDelete(id, {
+    author: readOptionString(options, "author"),
+    message: readOptionString(options, "message"),
+    force: Boolean(options.force),
+    dryRun: options.dryRun === true,
+  }, globalOptions);
+  if (result.dry_run !== true) {
+    await invalidateSearchCachesForMutation(globalOptions, result);
+  }
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=delete took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+function resolveSingleTextSource(label: string, positional: string | undefined, options: Record<string, unknown>): string | undefined {
+  const addFromOption = readOptionString(options, "add");
+  const addFromPositional = typeof positional === "string" ? positional : undefined;
+  if (addFromOption !== undefined && addFromPositional !== undefined) {
+    throw new PmCliError(`Specify ${label} text either as positional [text] or with --add, not both`, EXIT_CODE.USAGE);
+  }
+  return addFromOption ?? addFromPositional;
+}
+
+function resolveAppendBody(text: string | undefined, options: Record<string, unknown>): string {
+  const bodyFromOption = readOptionString(options, "body");
+  const bodyFromAlias = readOptionString(options, "text");
+  const bodyFromPositional = typeof text === "string" ? text : undefined;
+  const bodySourceCount = [bodyFromOption, bodyFromAlias, bodyFromPositional].filter((value) => value !== undefined).length;
+  if (bodySourceCount > 1) {
+    throw new PmCliError("Specify append text with exactly one source: positional [text], --body, or --text", EXIT_CODE.USAGE);
+  }
+  const resolvedBody = bodyFromOption ?? bodyFromAlias ?? bodyFromPositional;
+  if (resolvedBody === undefined) {
+    throw new PmCliError(
+      "Missing append text. Provide it as positional [text], --body <value>, or --text <value> (use - for stdin).",
+      EXIT_CODE.USAGE,
+    );
+  }
+  return resolvedBody;
+}
+
+async function runAppendAction(id: string, text: string | undefined, options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runAppend } = await import("./commands/append.js");
+  const result = await runAppend(id, {
+    body: resolveAppendBody(text, options),
+    author: readOptionString(options, "author"),
+    message: readOptionString(options, "message"),
+    force: Boolean(options.force),
+  }, globalOptions);
+  await invalidateSearchCachesForMutation(globalOptions, result);
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=append took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runRestoreAction(id: string, target: string, options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runRestore } = await import("./commands/restore.js");
+  const result = await runRestore(id, target, {
+    author: readOptionString(options, "author"),
+    message: readOptionString(options, "message"),
+    force: Boolean(options.force),
+  }, globalOptions);
+  await invalidateSearchCachesForMutation(globalOptions, result);
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=restore took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runProfileAction(
+  subcommand: string | undefined,
+  name: string | undefined,
+  options: Record<string, unknown>,
+  command: Command,
+): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const profileModule = await import("./commands/profile.js");
+  const { PROFILE_SUBCOMMANDS } = profileModule;
+  const normalizedSubcommand = (subcommand ?? "").trim().toLowerCase();
+  if (!normalizedSubcommand) {
+    throw new PmCliError(`pm profile requires a subcommand. Allowed: ${PROFILE_SUBCOMMANDS.join(", ")}`, EXIT_CODE.USAGE, {
+      code: "missing_required_argument",
+      examples: ["pm profile list", "pm profile show agile", "pm profile apply agile --dry-run", "pm profile lint agile"],
+    });
+  }
+  if (!PROFILE_SUBCOMMANDS.includes(normalizedSubcommand as (typeof PROFILE_SUBCOMMANDS)[number])) {
+    throw new PmCliError(
+      `Unknown pm profile subcommand "${subcommand}". Allowed: ${PROFILE_SUBCOMMANDS.join(", ")}`,
+      EXIT_CODE.USAGE,
+      { code: "unknown_subcommand" },
+    );
+  }
+  const result = await dispatchProfileSubcommand(profileModule, normalizedSubcommand, name, options, globalOptions);
+  // Profile inspection and schema staging do not mutate item content, so search caches stay valid (mirrors pm schema).
+  if (globalOptions.json === true || globalOptions.defaultOutputFormat === "json") {
+    printResult(result, globalOptions);
+  } else if (!globalOptions.quiet) {
+    renderProfileResultHuman(profileModule, result);
+  }
+  // `pm profile lint` is a validation gate: exit non-zero when the profile has
+  // error-severity findings so shell/CI callers can fail on them. Warnings keep
+  // `ok` true and never fail the command.
+  if (result.action === "lint" && !result.ok) {
+    process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+  }
+  if (globalOptions.profile) {
+    printError(`profile:command=profile took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runNotesAction(id: string, text: string | undefined, options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const add = resolveSingleTextSource("note", text, options);
+  const { runNotes } = await import("./commands/notes.js");
+  const result = await runNotes(id, {
+    add,
+    limit: readOptionString(options, "limit"),
+    author: readOptionString(options, "author"),
+    message: readOptionString(options, "message"),
+    allowAuditComment: Boolean(options.allowAuditNote || options.allowAuditComment),
+    force: Boolean(options.force),
+  }, globalOptions);
+  if (typeof add === "string") {
+    await invalidateSearchCachesForMutation(globalOptions, result);
+  }
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=notes took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runLearningsAction(id: string, text: string | undefined, options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const add = resolveSingleTextSource("learning", text, options);
+  const { runLearnings } = await import("./commands/learnings.js");
+  const result = await runLearnings(id, {
+    add,
+    limit: readOptionString(options, "limit"),
+    author: readOptionString(options, "author"),
+    message: readOptionString(options, "message"),
+    allowAuditComment: Boolean(options.allowAuditLearning || options.allowAuditComment),
+    force: Boolean(options.force),
+  }, globalOptions);
+  if (typeof add === "string") {
+    await invalidateSearchCachesForMutation(globalOptions, result);
+  }
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=learnings took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+function readStringArrayOption(options: Record<string, unknown>, key: string): string[] {
+  return stringArrayOption(options[key]) ?? [];
+}
+
+async function runFilesAction(id: string, options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const addValues = readStringArrayOption(options, "add");
+  const addGlobValues = readStringArrayOption(options, "addGlob");
+  const removeValues = readStringArrayOption(options, "remove");
+  const migrateValues = readStringArrayOption(options, "migrate");
+  const { runFiles } = await import("./commands/files.js");
+  const result = await runFiles(id, {
+    add: addValues,
+    addGlob: addGlobValues,
+    remove: removeValues,
+    migrate: migrateValues,
+    note: readOptionString(options, "note"),
+    list: Boolean(options.list),
+    appendStable: Boolean(options.appendStable),
+    validatePaths: Boolean(options.validatePaths),
+    audit: Boolean(options.audit),
+    author: readOptionString(options, "author"),
+    message: readOptionString(options, "message"),
+    force: Boolean(options.force),
+  }, globalOptions);
+  if (addValues.length > 0 || addGlobValues.length > 0 || removeValues.length > 0 || migrateValues.length > 0) {
+    await invalidateSearchCachesForMutation(globalOptions, result);
+  }
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=files took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runFilesDiscoverAction(id: string, options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  // Flags also declared on the parent files command (--note/--append-stable/
+  // --author/--message/--force) are consumed by the parent during parse, so
+  // merge ancestor opts back in (own options win) instead of reading opts() alone.
+  const mergedOptions: Record<string, unknown> = { ...command.optsWithGlobals(), ...options };
+  const { runFilesDiscover } = await import("./commands/files.js");
+  const result = await runFilesDiscover(id, {
+    apply: Boolean(mergedOptions.apply),
+    note: readOptionString(mergedOptions, "note"),
+    appendStable: Boolean(mergedOptions.appendStable),
+    author: readOptionString(mergedOptions, "author"),
+    message: readOptionString(mergedOptions, "message"),
+    force: Boolean(mergedOptions.force),
+  }, globalOptions);
+  if (result.changed) {
+    await invalidateSearchCachesForMutation(globalOptions, result);
+  }
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=files.discover took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runDocsAction(id: string, options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const addValues = readStringArrayOption(options, "add");
+  const addGlobValues = readStringArrayOption(options, "addGlob");
+  const removeValues = readStringArrayOption(options, "remove");
+  const migrateValues = readStringArrayOption(options, "migrate");
+  const { runDocs } = await import("./commands/docs.js");
+  const result = await runDocs(id, {
+    add: addValues,
+    addGlob: addGlobValues,
+    remove: removeValues,
+    migrate: migrateValues,
+    note: readOptionString(options, "note"),
+    list: Boolean(options.list),
+    validatePaths: Boolean(options.validatePaths),
+    audit: Boolean(options.audit),
+    author: readOptionString(options, "author"),
+    message: readOptionString(options, "message"),
+    force: Boolean(options.force),
+  }, globalOptions);
+  if (addValues.length > 0 || addGlobValues.length > 0 || removeValues.length > 0 || migrateValues.length > 0) {
+    await invalidateSearchCachesForMutation(globalOptions, result);
+  }
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=docs took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runDepsAction(id: string, options: Record<string, unknown>, command: Command): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runDeps } = await import("./commands/deps.js");
+  // --format and --collapse carry commander defaults ("tree"/"none"), so
+  // they are always strings by the time the action runs; --maxDepth has no
+  // default and may be unset. Use `as string` rather than String(...) so an
+  // omitted option stays undefined instead of becoming the literal "undefined".
+  const result = await runDeps(id, {
+    format: options.format as string,
+    maxDepth: readOptionString(options, "maxDepth"),
+    collapse: options.collapse as string,
+    summary: options.summary === true,
+  }, globalOptions);
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=deps took_ms=${Date.now() - startedAt}`);
+  }
+}
+
 /**
  * Implements register mutation commands for the public runtime surface of this module.
  */
@@ -1017,45 +1412,14 @@ export function registerMutationCommands(program: Command): void {
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
     .description("Copy an item into a new item id while resetting lifecycle fields.")
-    .action(async (id: string, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const { runCopy } = await import("./commands/copy.js");
-      const result = await runCopy(
-        id,
-        {
-          title: typeof options.title === "string" ? options.title : undefined,
-          author: typeof options.author === "string" ? options.author : undefined,
-          message: typeof options.message === "string" ? options.message : undefined,
-        },
-        globalOptions,
-      );
-      await invalidateSearchCachesForMutation(globalOptions, result);
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=copy took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runCopyAction);
 
   program
     .command("focus")
     .argument("[id]", "Item id to focus (omit to show current focus)")
     .option("--clear", "Clear the focused item")
     .description("Set/clear/show the session focused item that new items default --parent to.")
-    .action(async (id: string | undefined, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const { runFocus } = await import("./commands/focus.js");
-      const result = await runFocus(
-        id,
-        { clear: options.clear === true },
-        globalOptions,
-      );
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=focus took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runFocusAction);
 
   const updateCommand = program
     .command("update")
@@ -1081,27 +1445,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--force", "Force ownership override");
   addHiddenOption(updateCommand, "--allow_audit_update", "Alias for --allow-audit-update", false);
   addHiddenOption(updateCommand, "--allow_audit_dep_update", "Alias for --allow-audit-dep-update", false);
-  updateCommand
-    .action(async (id: string, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      // GH-214: resolve --body-file into the existing body field before
-      // normalization so the rest of update is unchanged. CLI-only input alias.
-      if (typeof options.bodyFile === "string") {
-        options.body = await resolveBodyFileContent(
-          options.bodyFile,
-          options.body !== undefined ? String(options.body) : undefined,
-        );
-        delete options.bodyFile;
-      }
-      const { runUpdate } = await import("./commands/update.js");
-      const result = await runUpdate(id, normalizeUpdateOptions(options), globalOptions);
-      await invalidateSearchCachesForMutation(globalOptions, result);
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=update took_ms=${Date.now() - startedAt}`);
-      }
-    });
+  updateCommand.action(runUpdateAction);
 
   const updateManyCommand = program
     .command("update-many")
@@ -1210,7 +1554,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--force", "Force ownership override");
   // Hidden pure snake_case underscore-duplicate aliases (kept parse-functional,
   // omitted from --help to save agent context).
-  for (const [flags, description] of [
+  addHiddenOptions(updateManyCommand, [
     ["--filter-assignee_filter <value>", "Alias for --filter-assignee-filter"],
     ["--estimated_minutes <value>", "Alias for --estimated-minutes"],
     ["--acceptance_criteria <value>", "Alias for --acceptance-criteria"],
@@ -1228,39 +1572,14 @@ export function registerMutationCommands(program: Command): void {
     ["--allow_audit_update", "Alias for --allow-audit-update"],
     ["--allow_audit_dep_update", "Alias for --allow-audit-dep-update"],
     ["--filter-estimate-missing", "Alias for --filter-estimates-missing"],
-  ] as const) {
-    addHiddenOption(updateManyCommand, flags, description, false);
-  }
-  for (const [flags, description] of [
+  ], false);
+  addHiddenOptions(updateManyCommand, [
     ["--dep_remove <value>", "Alias for --dep-remove"],
     ["--type_option <value>", "Alias for --type-option"],
     ["--add_tags <value>", "Alias for --add-tags"],
     ["--remove_tags <value>", "Alias for --remove-tags"],
-  ] as const) {
-    addHiddenOption(updateManyCommand, flags, description, true);
-  }
-  updateManyCommand
-    .action(async (options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const { runUpdateMany } = await import("./commands/update-many.js");
-      const result = await runUpdateMany(
-        {
-          status: typeof options.filterStatus === "string" ? options.filterStatus : undefined,
-          list: buildUpdateManyListOptions(options),
-          update: normalizeUpdateOptions(extractUpdateManyMutationOptionSource(options)),
-          dryRun: options.dryRun === true ? true : undefined,
-          rollback: typeof options.rollback === "string" ? options.rollback : undefined,
-          checkpoint: options.checkpoint === false ? false : undefined,
-        },
-        globalOptions,
-      );
-      await invalidateSearchCachesForMutation(globalOptions, result);
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=update-many took_ms=${Date.now() - startedAt}`);
-      }
-    });
+  ], true);
+  updateManyCommand.action(runUpdateManyAction);
 
   const closeCommand = program
     .command("close")
@@ -1284,50 +1603,7 @@ export function registerMutationCommands(program: Command): void {
   // Unknown option error; the rendered help stays clean (aliases hidden).
   addHiddenOption(closeCommand, "--expected_result <value>", "Alias for --expected-result", false);
   addHiddenOption(closeCommand, "--actual_result <value>", "Alias for --actual-result", false);
-  closeCommand
-    .action(async (id: string, text: string | undefined, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const { runClose } = await import("./commands/close.js");
-      const reasonFromOption =
-        (typeof options.reason === "string" && options.reason.trim().length > 0 && options.reason) ||
-        (typeof options.closeReason === "string" && options.closeReason.trim().length > 0 && options.closeReason) ||
-        undefined;
-      const resolvedText = typeof text === "string" && text.length > 0 ? text : reasonFromOption;
-      const pickInlineString = (...candidates: unknown[]): string | undefined => {
-        for (const candidate of candidates) {
-          if (typeof candidate === "string") {
-            return candidate;
-          }
-        }
-        return undefined;
-      };
-      const result = await runClose(
-        id,
-        resolvedText,
-        {
-          author: typeof options.author === "string" ? options.author : undefined,
-          message: typeof options.message === "string" ? options.message : undefined,
-          validateClose:
-            options.validateClose === true
-              ? "warn"
-              : typeof options.validateClose === "string"
-                ? options.validateClose
-                : undefined,
-          force: Boolean(options.force),
-          duplicateOf: typeof options.duplicateOf === "string" ? options.duplicateOf : undefined,
-          resolution: typeof options.resolution === "string" ? options.resolution : undefined,
-          expectedResult: pickInlineString(options.expectedResult, options.expected_result, options.expected),
-          actualResult: pickInlineString(options.actualResult, options.actual_result, options.actual),
-        },
-        globalOptions,
-      );
-      await invalidateSearchCachesForMutation(globalOptions, result);
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=close took_ms=${Date.now() - startedAt}`);
-      }
-    });
+  closeCommand.action(runCloseAction);
 
   const closeManyCommand = program
     .command("close-many")
@@ -1378,24 +1654,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--force", "Force ownership override")
     .option("--dry-run", "Preview the item file that would be deleted without mutating")
     .description("Delete an item and record the change in history.")
-    .action(async (id: string, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const { runDelete } = await import("./commands/delete.js");
-      const result = await runDelete(id, {
-        author: typeof options.author === "string" ? options.author : undefined,
-        message: typeof options.message === "string" ? options.message : undefined,
-        force: Boolean(options.force),
-        dryRun: options.dryRun === true,
-      }, globalOptions);
-      if (result.dry_run !== true) {
-        await invalidateSearchCachesForMutation(globalOptions, result);
-      }
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=delete took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runDeleteAction);
 
   program
     .command("append")
@@ -1407,36 +1666,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--message <value>", "Mutation message")
     .option("--force", "Force ownership override")
     .description("Append text to an item's body.")
-    .action(async (id: string, text: string | undefined, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const bodyFromOption = typeof options.body === "string" ? options.body : undefined;
-      const bodyFromAlias = typeof options.text === "string" ? options.text : undefined;
-      const bodyFromPositional = typeof text === "string" ? text : undefined;
-      const bodySourceCount = [bodyFromOption, bodyFromAlias, bodyFromPositional].filter((value) => value !== undefined).length;
-      if (bodySourceCount > 1) {
-        throw new PmCliError("Specify append text with exactly one source: positional [text], --body, or --text", EXIT_CODE.USAGE);
-      }
-      const resolvedBody = bodyFromOption ?? bodyFromAlias ?? bodyFromPositional;
-      if (resolvedBody === undefined) {
-        throw new PmCliError(
-          "Missing append text. Provide it as positional [text], --body <value>, or --text <value> (use - for stdin).",
-          EXIT_CODE.USAGE,
-        );
-      }
-      const { runAppend } = await import("./commands/append.js");
-      const result = await runAppend(id, {
-        body: resolvedBody,
-        author: typeof options.author === "string" ? options.author : undefined,
-        message: typeof options.message === "string" ? options.message : undefined,
-        force: Boolean(options.force),
-      }, globalOptions);
-      await invalidateSearchCachesForMutation(globalOptions, result);
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=append took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runAppendAction);
 
   program
     .command("restore")
@@ -1446,21 +1676,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--message <value>", "History message")
     .option("--force", "Force ownership/lock override")
     .description("Restore an item to an earlier timestamp or version.")
-    .action(async (id: string, target: string, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const { runRestore } = await import("./commands/restore.js");
-      const result = await runRestore(id, target, {
-        author: typeof options.author === "string" ? options.author : undefined,
-        message: typeof options.message === "string" ? options.message : undefined,
-        force: Boolean(options.force),
-      }, globalOptions);
-      await invalidateSearchCachesForMutation(globalOptions, result);
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=restore took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runRestoreAction);
 
   const planCommand = program
     .command("plan")
@@ -1528,7 +1744,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--force", "Force ownership override");
   // Hidden pure snake_case underscore-duplicate aliases (kept parse-functional,
   // omitted from --help to save agent context).
-  for (const [flags, description] of [
+  addHiddenOptions(planCommand, [
     ["--resume_context <value>", "Alias for --resume-context"],
     ["--from_search <value>", "Alias for --from-search"],
     ["--step_title <value>", "Alias for --step-title"],
@@ -1552,15 +1768,11 @@ export function registerMutationCommands(program: Command): void {
     ["--materialize_type <value>", "Alias for --materialize-type"],
     ["--materialize_parent <value>", "Alias for --materialize-parent"],
     ["--materialize_tags <value>", "Alias for --materialize-tags"],
-  ] as const) {
-    addHiddenOption(planCommand, flags, description, false);
-  }
-  for (const [flags, description] of [
+  ], false);
+  addHiddenOptions(planCommand, [
     ["--blocked_by <value>", "Alias for --blocked-by"],
     ["--depends_on <value>", "Alias for --depends-on"],
-  ] as const) {
-    addHiddenOption(planCommand, flags, description, true);
-  }
+  ], true);
   planCommand.action(runPlanAction);
   void planCommand;
 
@@ -1704,47 +1916,7 @@ export function registerMutationCommands(program: Command): void {
     .description(
       "List, show, apply, and lint project profiles — archetype bundles of item types, statuses, fields, workflows, config, templates, and recommended packages.",
     );
-  profileCommand.action(async (
-    subcommand: string | undefined,
-    name: string | undefined,
-    options: Record<string, unknown>,
-    command,
-  ) => {
-    const globalOptions = getGlobalOptions(command);
-    const startedAt = Date.now();
-    const profileModule = await import("./commands/profile.js");
-    const { PROFILE_SUBCOMMANDS } = profileModule;
-    const normalizedSubcommand = (subcommand ?? "").trim().toLowerCase();
-    if (!normalizedSubcommand) {
-      throw new PmCliError(`pm profile requires a subcommand. Allowed: ${PROFILE_SUBCOMMANDS.join(", ")}`, EXIT_CODE.USAGE, {
-        code: "missing_required_argument",
-        examples: ["pm profile list", "pm profile show agile", "pm profile apply agile --dry-run", "pm profile lint agile"],
-      });
-    }
-    if (!PROFILE_SUBCOMMANDS.includes(normalizedSubcommand as (typeof PROFILE_SUBCOMMANDS)[number])) {
-      throw new PmCliError(
-        `Unknown pm profile subcommand "${subcommand}". Allowed: ${PROFILE_SUBCOMMANDS.join(", ")}`,
-        EXIT_CODE.USAGE,
-        { code: "unknown_subcommand" },
-      );
-    }
-    const result = await dispatchProfileSubcommand(profileModule, normalizedSubcommand, name, options, globalOptions);
-    // Profile inspection and schema staging do not mutate item content, so search caches stay valid (mirrors pm schema).
-    if (globalOptions.json === true || globalOptions.defaultOutputFormat === "json") {
-      printResult(result, globalOptions);
-    } else if (!globalOptions.quiet) {
-      renderProfileResultHuman(profileModule, result);
-    }
-    // `pm profile lint` is a validation gate: exit non-zero when the profile has
-    // error-severity findings so shell/CI callers can fail on them. Warnings keep
-    // `ok` true and never fail the command.
-    if (result.action === "lint" && !result.ok) {
-      process.exitCode = EXIT_CODE.GENERIC_FAILURE;
-    }
-    if (globalOptions.profile) {
-      printError(`profile:command=profile took_ms=${Date.now() - startedAt}`);
-    }
-  });
+  profileCommand.action(runProfileAction);
 
   program
     .command("comments")
@@ -1775,32 +1947,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--allow-audit-comment", "Backward-compatible alias for --allow-audit-note")
     .option("--force", "Force ownership override")
     .description("List or add notes for an item.")
-    .action(async (id: string, text: string | undefined, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const addFromOption = typeof options.add === "string" ? options.add : undefined;
-      const addFromPositional = typeof text === "string" ? text : undefined;
-      if (addFromOption !== undefined && addFromPositional !== undefined) {
-        throw new PmCliError("Specify note text either as positional [text] or with --add, not both", EXIT_CODE.USAGE);
-      }
-      const add = addFromOption ?? addFromPositional;
-      const { runNotes } = await import("./commands/notes.js");
-      const result = await runNotes(id, {
-        add,
-        limit: typeof options.limit === "string" ? options.limit : undefined,
-        author: typeof options.author === "string" ? options.author : undefined,
-        message: typeof options.message === "string" ? options.message : undefined,
-        allowAuditComment: Boolean(options.allowAuditNote || options.allowAuditComment),
-        force: Boolean(options.force),
-      }, globalOptions);
-      if (typeof add === "string") {
-        await invalidateSearchCachesForMutation(globalOptions, result);
-      }
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=notes took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runNotesAction);
 
   program
     .command("learnings")
@@ -1814,32 +1961,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--allow-audit-comment", "Backward-compatible alias for --allow-audit-learning")
     .option("--force", "Force ownership override")
     .description("List or add learnings for an item.")
-    .action(async (id: string, text: string | undefined, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const addFromOption = typeof options.add === "string" ? options.add : undefined;
-      const addFromPositional = typeof text === "string" ? text : undefined;
-      if (addFromOption !== undefined && addFromPositional !== undefined) {
-        throw new PmCliError("Specify learning text either as positional [text] or with --add, not both", EXIT_CODE.USAGE);
-      }
-      const add = addFromOption ?? addFromPositional;
-      const { runLearnings } = await import("./commands/learnings.js");
-      const result = await runLearnings(id, {
-        add,
-        limit: typeof options.limit === "string" ? options.limit : undefined,
-        author: typeof options.author === "string" ? options.author : undefined,
-        message: typeof options.message === "string" ? options.message : undefined,
-        allowAuditComment: Boolean(options.allowAuditLearning || options.allowAuditComment),
-        force: Boolean(options.force),
-      }, globalOptions);
-      if (typeof add === "string") {
-        await invalidateSearchCachesForMutation(globalOptions, result);
-      }
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=learnings took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runLearningsAction);
 
   const filesCommand = program
     .command("files")
@@ -1859,36 +1981,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
     .option("--force", "Force ownership override")
-    .action(async (id: string, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const addValues = Array.isArray(options.add) ? (options.add as string[]) : [];
-      const addGlobValues = Array.isArray(options.addGlob) ? (options.addGlob as string[]) : [];
-      const removeValues = Array.isArray(options.remove) ? (options.remove as string[]) : [];
-      const migrateValues = Array.isArray(options.migrate) ? (options.migrate as string[]) : [];
-      const { runFiles } = await import("./commands/files.js");
-      const result = await runFiles(id, {
-        add: addValues,
-        addGlob: addGlobValues,
-        remove: removeValues,
-        migrate: migrateValues,
-        note: typeof options.note === "string" ? options.note : undefined,
-        list: Boolean(options.list),
-        appendStable: Boolean(options.appendStable),
-        validatePaths: Boolean(options.validatePaths),
-        audit: Boolean(options.audit),
-        author: typeof options.author === "string" ? options.author : undefined,
-        message: typeof options.message === "string" ? options.message : undefined,
-        force: Boolean(options.force),
-      }, globalOptions);
-      if (addValues.length > 0 || addGlobValues.length > 0 || removeValues.length > 0 || migrateValues.length > 0) {
-        await invalidateSearchCachesForMutation(globalOptions, result);
-      }
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=files took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runFilesAction);
 
   filesCommand
     .command("discover")
@@ -1900,30 +1993,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--message <value>", "History message")
     .option("--force", "Force ownership override")
     .description("Discover existing file paths referenced in item text and optionally link missing files.")
-    .action(async (id: string, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      // Flags also declared on the parent files command (--note/--append-stable/
-      // --author/--message/--force) are consumed by the parent during parse, so
-      // merge ancestor opts back in (own options win) instead of reading opts() alone.
-      const mergedOptions: Record<string, unknown> = { ...command.optsWithGlobals(), ...options };
-      const { runFilesDiscover } = await import("./commands/files.js");
-      const result = await runFilesDiscover(id, {
-        apply: Boolean(mergedOptions.apply),
-        note: typeof mergedOptions.note === "string" ? mergedOptions.note : undefined,
-        appendStable: Boolean(mergedOptions.appendStable),
-        author: typeof mergedOptions.author === "string" ? mergedOptions.author : undefined,
-        message: typeof mergedOptions.message === "string" ? mergedOptions.message : undefined,
-        force: Boolean(mergedOptions.force),
-      }, globalOptions);
-      if (result.changed) {
-        await invalidateSearchCachesForMutation(globalOptions, result);
-      }
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=files.discover took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runFilesDiscoverAction);
 
   program
     .command("docs")
@@ -1940,35 +2010,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--message <value>", "History message")
     .option("--force", "Force ownership override")
     .description("Manage docs linked to an item.")
-    .action(async (id: string, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const addValues = Array.isArray(options.add) ? (options.add as string[]) : [];
-      const addGlobValues = Array.isArray(options.addGlob) ? (options.addGlob as string[]) : [];
-      const removeValues = Array.isArray(options.remove) ? (options.remove as string[]) : [];
-      const migrateValues = Array.isArray(options.migrate) ? (options.migrate as string[]) : [];
-      const { runDocs } = await import("./commands/docs.js");
-      const result = await runDocs(id, {
-        add: addValues,
-        addGlob: addGlobValues,
-        remove: removeValues,
-        migrate: migrateValues,
-        note: typeof options.note === "string" ? options.note : undefined,
-        list: Boolean(options.list),
-        validatePaths: Boolean(options.validatePaths),
-        audit: Boolean(options.audit),
-        author: typeof options.author === "string" ? options.author : undefined,
-        message: typeof options.message === "string" ? options.message : undefined,
-        force: Boolean(options.force),
-      }, globalOptions);
-      if (addValues.length > 0 || addGlobValues.length > 0 || removeValues.length > 0 || migrateValues.length > 0) {
-        await invalidateSearchCachesForMutation(globalOptions, result);
-      }
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=docs took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runDocsAction);
 
   program
     .command("deps")
@@ -1978,23 +2020,5 @@ export function registerMutationCommands(program: Command): void {
     .option("--collapse <value>", "Collapse mode (none or repeated)", "none")
     .option("--summary", "Return counts only without full tree/graph payload")
     .description("Show dependency relationships for an item.")
-    .action(async (id: string, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const { runDeps } = await import("./commands/deps.js");
-      // --format and --collapse carry commander defaults ("tree"/"none"), so
-      // they are always strings by the time the action runs; --maxDepth has no
-      // default and may be unset. Use `as string` rather than String(...) so an
-      // omitted option stays undefined instead of becoming the literal "undefined".
-      const result = await runDeps(id, {
-        format: options.format as string,
-        maxDepth: typeof options.maxDepth === "string" ? options.maxDepth : undefined,
-        collapse: options.collapse as string,
-        summary: options.summary === true,
-      }, globalOptions);
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=deps took_ms=${Date.now() - startedAt}`);
-      }
-    });
+    .action(runDepsAction);
 }
