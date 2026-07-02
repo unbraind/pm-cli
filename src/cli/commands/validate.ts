@@ -175,6 +175,9 @@ const METADATA_TRUNCATED_KEY_BY_FIELD: Record<ValidateMetadataRequiredField, str
 const GIT_LS_FILES_MAX_BUFFER = 32 * 1024 * 1024;
 const FILE_LIST_SUMMARY_LIMIT = 40;
 const DIAGNOSTIC_LIST_SUMMARY_LIMIT = 5;
+// Conservative pre-stat guard for common filesystem limits; over-limit links are unreadable, not prune-safe.
+const LINKED_ARTIFACT_MAX_PATH_LENGTH = 4096;
+const LINKED_ARTIFACT_MAX_SEGMENT_LENGTH = 255;
 const execFileAsync = promisify(execFile);
 
 /**
@@ -1701,8 +1704,19 @@ interface LinkedPathScanState {
   staleLinkRows: Array<{ item_id: string; path: string; link_kind: "files" | "docs" }>;
 }
 
+function linkedArtifactPathExceedsFilesystemLimits(artifactPath: string): boolean {
+  const normalized = normalizeRelativePath(artifactPath);
+  return (
+    normalized.length > LINKED_ARTIFACT_MAX_PATH_LENGTH ||
+    normalized.split(/[\\/]/).some((segment) => segment.length > LINKED_ARTIFACT_MAX_SEGMENT_LENGTH)
+  );
+}
+
 async function linkedArtifactIsMissing(workspaceRoot: string, artifactPath: string): Promise<boolean> {
   const absolutePath = path.isAbsolute(artifactPath) ? artifactPath : path.resolve(workspaceRoot, artifactPath);
+  if (linkedArtifactPathExceedsFilesystemLimits(absolutePath)) {
+    return false;
+  }
   try {
     const stats = await fs.stat(absolutePath);
     return !stats.isFile() && !stats.isDirectory();
@@ -2336,6 +2350,7 @@ export const _testOnlyValidateCommand = {
   extractItemIds,
   findLifecycleDependencyCycleComponents,
   isMetadataFieldMissing,
+  linkedArtifactPathExceedsFilesystemLimits,
   listFilesRecursive,
   resolveDependencyCycleSeverity,
   resolveParentCycleSeverity,

@@ -276,6 +276,10 @@ describe("runValidate", () => {
     const statusRegistry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
     expect(validateInternals.toMeaningfulString(" none ")).toBeUndefined();
     expect(validateInternals.toMeaningfulString("value")).toBe("value");
+    expect(validateInternals.linkedArtifactPathExceedsFilesystemLimits(`src/${"a".repeat(5000)}.ts`)).toBe(true);
+    expect(validateInternals.linkedArtifactPathExceedsFilesystemLimits(`src/${"a".repeat(256)}.ts`)).toBe(true);
+    expect(validateInternals.linkedArtifactPathExceedsFilesystemLimits(`src\\${"a".repeat(256)}.ts`)).toBe(true);
+    expect(validateInternals.linkedArtifactPathExceedsFilesystemLimits("src/normal.ts")).toBe(false);
     expect(validateInternals.resolveValidateMetadataProfile("   ")).toBe("core");
     expect(validateInternals.resolveDependencyCycleSeverity("   ")).toBe("warn");
     expect(

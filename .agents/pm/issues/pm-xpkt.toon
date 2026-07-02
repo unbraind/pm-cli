@@ -1,0 +1,46 @@
+id: pm-xpkt
+title: "GH-416: Windows nightly validate linked-artifact prune classification"
+description: "Fix GitHub issue #416: scheduled Nightly Validation run 28573486269 failed on windows-latest / Node 24 because validate-command.spec.ts expected an overlong linked artifact path to be treated as unreadable, but Windows classified it as a missing linked path and included it in prune-missing output. Reuse existing validate linked-artifact lineage (pm-0v2m, pm-k2n4) and Windows nightly lineage (pm-83rt, pm-2kkl) without reopening terminal work. Acceptance: Windows-compatible regression coverage, focused validate tests, full quality gates, temp-dir smoke, GH issue/PR evidence."
+type: Issue
+status: in_progress
+priority: 1
+tags[5]: "area:ci","area:validate",github-issue-416,reliability,windows
+created_at: "2026-07-02T10:27:34.579Z"
+updated_at: "2026-07-02T11:08:58.381Z"
+assignee: claude-code-agent
+author: claude-code-agent
+parent: pm-u9d0
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-0v2m,related,"2026-07-02T10:27:51.278Z",null,null
+  pm-2kkl,related,"2026-07-02T10:27:51.278Z",null,null
+  pm-83rt,related,"2026-07-02T10:27:51.278Z",null,null
+  pm-k2n4,related,"2026-07-02T10:27:51.278Z",null,null
+comments[7]{created_at,author,text}:
+  "2026-07-02T10:29:27.447Z",claude-code-agent,"Investigation: GitHub issue #416 comes from scheduled Nightly run 28573486269 on 2026-07-02, windows-latest / Node 24. The only failed test was tests/unit/commands/validate-command.spec.ts 'does not classify unreadable linked artifacts as missing prune targets': Windows reported the overlong linked artifact path in missing_linked_paths while Linux did not. No exact live pm duplicate existed; related terminal lineage is pm-k2n4, pm-0v2m, pm-83rt, and pm-2kkl."
+  "2026-07-02T10:37:45.631Z",claude-code-agent,"Evidence: implemented validate prune-missing guard for clearly unstatable linked artifact paths and added focused regression coverage. Verification passed so far: selected GH-416 regression (2 tests); full validate-command spec (87/87); pnpm typecheck; pnpm lint with jscpd 0 clones and static quality gate; contracts snapshot check; security scan; pnpm audit --audit-level moderate; no-suppression ESLint complexity_count=0; full coverage 262 files / 5277 tests / 100% statements, branches, functions, and lines; pm-changelog regenerated CHANGELOG.md and pnpm changelog:pm:check passed with item_count=1386; pm health warning_count=0; pm validate history_drift ok with known existing validate_resolution_missing_fields:260 backlog; Sentry/telemetry gate critical=0 high=0 telemetry finish_error_rate_pct=0.59. Manual installed-package temp smoke from packed @unbrained/pm-cli@2026.7.2 passed at /tmp/pm-cli-gh416-smoke-6syh9z/work: init/create/files add overlong path/validate prune dry-run/close/health, with missing_linked_paths=0 and planned_fixes=0."
+  "2026-07-02T10:44:43.765Z",claude-code-agent,"Evidence: addressed local Greptile review abe9d4d2 before push by using normalized linked-artifact length for filesystem-limit checks and adding an isolated per-segment limit assertion. Fresh gates passed: node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts -t 'unreadable linked artifacts|helper edge branches'; node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts; pnpm typecheck; pnpm lint."
+  "2026-07-02T10:50:32.929Z",claude-code-agent,"Evidence: current HEAD after the Greptile response fix passed node scripts/run-tests.mjs coverage with 262 files, 5277 tests, and 100% statements/branches/functions/lines. pnpm changelog:pm:check remained unchanged for CHANGELOG.md at item_count=1386, git diff --check main...HEAD passed. Greptile CLI rerun returned cached review abe9d4d2 with stale comments already fixed in the branch diff."
+  "2026-07-02T10:51:21.970Z",claude-code-agent,"Evidence: opened PR #417 https://github.com/unbraind/pm-cli/pull/417 and triggered review bots with @greptileai, /gemini review, @gemini-code-assist, and @coderabbitai full review on current head 0f3c7b35."
+  "2026-07-02T10:59:48.303Z",claude-code-agent,"Review response: addressed Gemini/Sourcery feedback from PR #417 by documenting the filesystem-limit guard rationale, splitting linked-artifact path segments on both slash styles, and adding a Windows-style backslash segment-limit assertion. Fresh gates passed: selected validate regression/helper test, full validate-command spec (87/87), pnpm typecheck, and pnpm lint with jscpd 0 clones/static quality."
+  "2026-07-02T11:08:58.380Z",claude-code-agent,"Review response: addressed latest Gemini PR #417 thread by checking linked-artifact filesystem limits against the resolved absolute path that fs.stat receives, covering deep workspace roots as well as overlong relative paths. Fresh gates passed: selected validate regression/helper test, full validate-command spec (87/87), pnpm typecheck, and pnpm lint with jscpd 0 clones/static quality."
+files[2]{path,scope,note}:
+  src/cli/commands/validate.ts,project,Guard validate prune-missing against clearly unstatable linked artifact paths before fs.stat
+  tests/unit/commands/validate-command.spec.ts,project,Regression coverage for GH-416 Windows overlong linked artifact path classification
+tests[13]{command,scope,timeout_seconds}:
+  git diff --check,project,60
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,project,180
+  node scripts/run-tests.mjs coverage,project,900
+  node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts,project,240
+  "node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts -t \"unreadable linked artifacts|helper edge branches\"",project,240
+  PM_AUTHOR=claude-code-agent pm health --check-only --summary --json,project,120
+  PM_AUTHOR=claude-code-agent pm validate --check-resolution --check-history-drift --json,project,180
+  pnpm audit --audit-level moderate,project,180
+  "pnpm changelog:pm:check",project,180
+  "pnpm contracts:check",project,180
+  pnpm lint,project,240
+  "pnpm security:scan",project,180
+  pnpm typecheck,project,240
+docs[2]{path,scope,note}:
+  "https://github.com/unbraind/pm-cli/issues/416",project,GitHub issue opened by Nightly failure alert for windows-latest Node 24
+  "https://github.com/unbraind/pm-cli/pull/417",project,Implementation PR for GH-416 validate prune classification fix
+body: ""

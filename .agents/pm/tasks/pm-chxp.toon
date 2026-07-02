@@ -2,14 +2,16 @@ id: pm-chxp
 title: "Zero the jscpd clone baseline: dedupe registration-helpers/flag-contracts source clones and 21 test-spec clones"
 description: "Epic pm-92if (CodeFactor A->A+): eliminate all 24 remaining jscpd clones reported by 'pnpm lint:duplicates'. Source: src/cli/registration-helpers.ts internal clone (599-629 vs 791-821), src/sdk/cli-contracts/flag-contracts.ts two internal clones (147-171 vs 1405-1429; 650-677 vs 1123-1150). Tests: 21 clones across search-command, test/test-all/test-runs, dedupe-audit/merge, packages runtime specs (calendar/governance-audit/linked-test-adapters/guide-shell), activation-summary/capability-usage, drift-scan, telemetry-runtime, extension-command, extension-loader, docs-skills-gate, cli.integration specs. Behavior-preserving: contracts full.json byte-identical, 100% coverage, no duplicated tests. Follow-up to pm-fmjy (closed narrow) using pm-6sqo jscpd parity tooling."
 type: Task
-status: in_progress
+status: closed
 priority: 2
 tags[4]: "area:cli",code-quality,codefactor,tech-debt
 created_at: "2026-07-02T06:39:46.062Z"
-updated_at: "2026-07-02T07:28:14.593Z"
-assignee: claude-code-agent
+updated_at: "2026-07-02T08:14:22.595Z"
 author: claude-code-agent
 parent: pm-92if
+resolution: fixed
+expected_result: "pnpm lint:duplicates reports 0 jscpd clones repo-wide with behavior preserved: contracts full.json byte-identical, public SDK surface unchanged, per-file test counts identical, 100% coverage."
+actual_result: "PR #415 merged (squash 17798d15): extracted readSelectionFilterOptionFields (registration-helpers) and two module-private flag-contract constants (flag-contracts), new tests/helpers/packageRuntime.ts + pmWorkspace.ts, extended extensions.ts, file-local helpers across 11 specs. jscpd 0 clones; 5277 tests 100/100/100/100; contracts:check byte-identical; manual temp-dir smoke on built CLI passed; greptile 5/5 no comments; all 20 PR checks green over 3 bot-review rounds."
 files[23]{path,scope,note}:
   src/cli/registration-helpers.ts,project,Extract shared governance/content selection-filter option normalization slice
   src/sdk/cli-contracts/flag-contracts.ts,project,Shared module-private governance/content filter flag-contract constants
@@ -36,4 +38,5 @@ files[23]{path,scope,note}:
   tests/unit/scripts/release/docs-skills-gate.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
 docs[1]{path,scope,note}:
   "https://github.com/unbraind/pm-cli/pull/415",project,"Dedup PR: zero jscpd clone baseline"
+close_reason: "Merged PR #415: jscpd clone baseline zeroed (24->0) toward CodeFactor A+"
 body: ""
