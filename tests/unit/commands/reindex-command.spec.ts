@@ -264,16 +264,41 @@ describe("runReindex", () => {
       const warnings: string[] = [];
       await reindexInternals.resetVectorStoreForReindex(
         null,
-        { name: "ext-vector", upsert: () => undefined },
+        { adapterName: "ext-vector", upsert: () => undefined },
         { "pm-known": "2026-01-01T00:00:00.000Z" },
         settings,
         warnings,
       );
-      await reindexInternals.pruneReindexOrphanVectors(null, { name: "ext-vector", upsert: () => undefined }, ["pm-orphan"], settings, warnings);
+      await reindexInternals.pruneReindexOrphanVectors(
+        null,
+        { adapterName: "ext-vector", upsert: () => undefined },
+        ["pm-orphan"],
+        settings,
+        warnings,
+      );
       expect(warnings).toEqual([
         "search_semantic_reindex_reset_skipped:adapter=ext-vector:known_ids=1",
         "search_semantic_reindex_orphan_prune_skipped:adapter=ext-vector:count=1",
       ]);
+      await expect(
+        reindexInternals.upsertReindexVectors({
+          requestedMode: "semantic",
+          activeVectorStore: null,
+          extensionVectorAdapter: { adapterName: "query-only-adapter" },
+          settings,
+          points: [],
+          semanticWarnings: [],
+          semanticSummary: {
+            enabled: true,
+            stale_items: 0,
+            unchanged_items: 0,
+            embedded_items: 0,
+            vector_upserted: 0,
+            batches_completed: 0,
+          },
+          progressEnabled: false,
+        }),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
       const builtInVectorSummary = {
         enabled: true,
         stale_items: 0,
@@ -385,7 +410,7 @@ describe("runReindex", () => {
       ).toMatchObject({ name: "runtime-name" });
       expect(
         reindexInternals.resolveExtensionVectorAdapter({ ...settings, vector_store: { ...settings.vector_store, adapter: "bad-adapter" } }),
-      ).toBeNull();
+      ).toMatchObject({ adapterName: "bad-adapter" });
       expect(
         reindexInternals.resolveExtensionSearchEmbedding({
           ...settings,
@@ -397,7 +422,7 @@ describe("runReindex", () => {
           ...settings,
           vector_store: { ...settings.vector_store, adapter: "definition-name-adapter" },
         }),
-      ).toMatchObject({ name: "definition-name-adapter" });
+      ).toMatchObject({ adapterName: "definition-name-adapter" });
       expect(
         reindexInternals.resolveExtensionSearchEmbedding({
           ...settings,
@@ -409,7 +434,7 @@ describe("runReindex", () => {
           ...settings,
           vector_store: { ...settings.vector_store, adapter: "definition-only-adapter" },
         }),
-      ).toMatchObject({ name: "definition-only-adapter" });
+      ).toMatchObject({ adapterName: "definition-only-adapter" });
       expect(
         reindexInternals.resolveExtensionVectorAdapter({
           ...settings,
@@ -452,7 +477,7 @@ describe("runReindex", () => {
         ...settings,
         vector_store: { ...settings.vector_store, adapter: "fallback-adapter" },
       });
-      expect(resolvedAdapter).toMatchObject({ name: "fallback-adapter" });
+      expect(resolvedAdapter).toMatchObject({ adapterName: "fallback-adapter" });
 
       // Multi-orphan sort comparator (>1 orphan exercises localeCompare branch).
       expect(
@@ -466,7 +491,7 @@ describe("runReindex", () => {
       await reindexInternals.resetVectorStoreForReindex(
         null,
         {
-          name: "ext-vector",
+          adapterName: "ext-vector",
           upsert: () => undefined,
           delete: ({ ids }: { ids: string[] }) => {
             deletedDuringReset.push([...ids]);
@@ -482,7 +507,7 @@ describe("runReindex", () => {
       await reindexInternals.pruneReindexOrphanVectors(
         null,
         {
-          name: "ext-vector",
+          adapterName: "ext-vector",
           upsert: () => undefined,
           delete: ({ ids }: { ids: string[] }) => {
             deletedDuringPrune.push([...ids]);
@@ -499,7 +524,7 @@ describe("runReindex", () => {
         reindexInternals.pruneReindexOrphanVectors(
           null,
           {
-            name: "ext-vector",
+            adapterName: "ext-vector",
             upsert: () => undefined,
             delete: () => {
               throw new Error("prune delete failed");

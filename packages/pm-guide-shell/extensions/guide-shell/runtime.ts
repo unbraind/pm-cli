@@ -267,12 +267,12 @@ function renderCompletionPackageOutput(payload: unknown, result: unknown): strin
   return null;
 }
 
-function renderGuidePackageOutput(context: ServiceOverrideContext, result: unknown): string | null {
+function renderGuidePackageOutput(bundle: RuntimeBundle, context: ServiceOverrideContext, result: unknown): string | null {
   const options = (context.options ?? {}) as Record<string, unknown>;
   const global = (context.global ?? {}) as GlobalOptions;
-  const outputFormat = runtimeBundle!.sdk.resolveGuideOutputFormat(options, global);
+  const outputFormat = bundle.sdk.resolveGuideOutputFormat(options, global);
   if (outputFormat === "markdown") {
-    return `${runtimeBundle!.sdk.renderGuideMarkdown(result)}\n`;
+    return `${bundle.sdk.renderGuideMarkdown(result)}\n`;
   }
   if (outputFormat === "json" || readPayloadFormat(context.payload) === "json") {
     return `${JSON.stringify(result, null, 2)}\n`;
@@ -357,12 +357,13 @@ export async function runCompletionTypesPackage(global: GlobalOptions): Promise<
 }
 
 export function renderGuideShellPackageOutput(context: ServiceOverrideContext): string | null {
-  if (!runtimeBundle) {
+  const bundle = runtimeBundle;
+  if (!bundle) {
     return null;
   }
   const result = readPayloadResult(context.payload);
   if (context.command === "guide") {
-    return renderGuidePackageOutput(context, result);
+    return renderGuidePackageOutput(bundle, context, result);
   }
   if (context.command === "completion") {
     return renderCompletionPackageOutput(context.payload, result);

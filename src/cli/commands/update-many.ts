@@ -637,7 +637,7 @@ async function writeUpdateManyCheckpoint(params: {
     schema_version: UPDATE_MANY_CHECKPOINT_SCHEMA_VERSION,
     id: params.checkpointId,
     created_at: params.nowValue,
-    author: resolveAuthor(params.options.update.author, "unknown"),
+    author: resolveAuthor(params.options.update?.author, "unknown"),
     status_filter: params.statusFilter ?? null,
     list_filters: params.filters,
     update_options: params.updateSummary,

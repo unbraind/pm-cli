@@ -447,6 +447,7 @@ function clearClosedBlockerSignals(metadata: ItemFrontMatter): { changedFields: 
     }
     changedFields.push("dependencies");
   }
+  // A stale reason-only close has no blocker identity; omit the blocker-clear warning instead of inventing one.
   const reportedBlocker = previousBlockedBy || blockedByEdge?.id;
   return {
     changedFields,

@@ -395,6 +395,30 @@ describe("runBeadsImport", () => {
     });
   });
 
+  it("drops blank string linked-test timeouts during import", async () => {
+    await withTempPmPath(async (context) => {
+      const sourcePath = path.join(context.tempRoot, "blank-timeout.jsonl");
+      await writeFile(
+        sourcePath,
+        `${JSON.stringify({
+          id: "blank-timeout",
+          title: "Blank timeout import",
+          tests: [{ command: "pnpm test", timeout_seconds: "   ", note: "blank timeout must be ignored" }],
+        })}\n`,
+        "utf8",
+      );
+
+      const result = await runBeadsImport({ file: sourcePath }, { path: context.pmPath });
+      expect(result.imported).toBe(1);
+
+      const imported = context.runCli(["get", "pm-blank-timeout", "--full", "--json"], { expectJson: true });
+      expect(imported.code).toBe(0);
+      expect((imported.json as { item: { tests?: Array<{ timeout_seconds?: number }> } }).item.tests).toEqual([
+        { command: "pnpm test", scope: "project", note: "blank timeout must be ignored" },
+      ]);
+    });
+  });
+
   it("maps additional Beads dependency kind aliases deterministically", async () => {
     await withTempPmPath(async (context) => {
       const sourcePath = path.join(context.tempRoot, "dependency-aliases.jsonl");

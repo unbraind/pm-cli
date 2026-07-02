@@ -499,7 +499,11 @@ function toLinkedTestTimeout(value: unknown): number | undefined {
   if (typeof value !== "string") {
     return undefined;
   }
-  const parsed = Number(value);
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  const parsed = Number(trimmed);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
 }
 

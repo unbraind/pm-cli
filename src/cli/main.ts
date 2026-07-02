@@ -379,7 +379,7 @@ function projectExistingRecoveryOptionalFields(
   const projected: Partial<PmCliErrorRecoveryPayload> = {};
   for (const field of optionalFields) {
     const value = existingRecovery[field];
-    if (value !== undefined) {
+    if (value !== undefined && value !== null) {
       (projected as Record<string, unknown>)[field] = value;
     }
   }

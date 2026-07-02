@@ -1794,7 +1794,7 @@ describe("calendar command module", () => {
         ]);
         expect(mockedResult.events[0]?.event_end).toBe("invalid-end");
         expect(mockedResult.events.some((event) => event.event_end === "2026-04-02T13:00:00.000Z")).toBe(true);
-        expect(mockedResult.events.some((event) => event.event_title === "Empty recurrence filters")).toBe(true);
+        expect(mockedResult.events.some((event) => event.event_title === "Empty recurrence filters")).toBe(false);
       } finally {
         vi.doUnmock("../../../src/core/store/item-store.js");
         vi.resetModules();

@@ -513,9 +513,19 @@ type ExtensionVectorQuery = (
   },
 ) => Promise<VectorQueryHit[]> | VectorQueryHit[];
 
+type ExtensionVectorUpsert = (context: {
+  points: Array<{
+    id: string;
+    vector: number[];
+    payload: Record<string, unknown>;
+  }>;
+  settings: PmSettings;
+}) => Promise<void> | void;
+
 type ExtensionVectorAdapter = {
   adapterName: string;
   query?: ExtensionVectorQuery;
+  upsert?: ExtensionVectorUpsert;
 };
 
 
@@ -1803,6 +1813,7 @@ function resolveExtensionVectorAdapter(settings: PmSettings): ExtensionVectorAda
   if (typeof query !== "function") {
     return null;
   }
+  const upsert = (runtimeDefinition as { upsert?: unknown }).upsert;
   const runtimeAdapterName =
     toOptionalNonEmptyString((runtimeDefinition as { name?: unknown }).name) ??
     toOptionalNonEmptyString((resolved.definition as { name?: unknown }).name) ??
@@ -1811,6 +1822,7 @@ function resolveExtensionVectorAdapter(settings: PmSettings): ExtensionVectorAda
   return {
     adapterName: runtimeAdapterName,
     query: query as ExtensionVectorQuery,
+    ...(typeof upsert === "function" ? { upsert: upsert as ExtensionVectorUpsert } : {}),
   };
 }
 /* c8 ignore stop */

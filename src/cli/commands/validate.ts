@@ -1707,7 +1707,10 @@ async function linkedArtifactIsMissing(workspaceRoot: string, artifactPath: stri
     const stats = await fs.stat(absolutePath);
     return !stats.isFile() && !stats.isDirectory();
   } catch (error) {
-    const code = typeof error === "object" && error !== null && "code" in error ? error.code : undefined;
+    const code =
+      typeof error === "object" && error !== null && "code" in error
+        ? (error as { code?: unknown }).code
+        : undefined;
     return code === "ENOENT" || code === "ENOTDIR";
   }
 }

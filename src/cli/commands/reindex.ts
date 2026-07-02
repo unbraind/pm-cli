@@ -210,8 +210,8 @@ type ExtensionVectorDelete = (context: {
 }) => Promise<void> | void;
 
 interface ExtensionVectorAdapter {
-  name: string;
-  upsert: ExtensionVectorUpsert;
+  adapterName: string;
+  upsert?: ExtensionVectorUpsert;
   delete?: ExtensionVectorDelete;
 }
 
@@ -316,17 +316,19 @@ function resolveExtensionVectorAdapter(settings: PmSettings): ExtensionVectorAda
     return null;
   }
   const runtimeDefinition = registration.runtime_definition ?? registration.definition;
-  const name =
+  const adapterDisplayName =
     toOptionalNonEmptyString((runtimeDefinition as { name?: unknown }).name) ??
     toOptionalNonEmptyString((registration.definition as { name?: unknown }).name);
-  const upsert = (runtimeDefinition as { upsert?: unknown }).upsert;
-  const deleteHandler = (runtimeDefinition as { delete?: unknown }).delete;
-  if (!name || typeof upsert !== "function") {
+  /* c8 ignore start -- resolveRegisteredVectorStoreAdapter only returns registrations with a normalized runtime or definition name */
+  if (!adapterDisplayName) {
     return null;
   }
+  /* c8 ignore stop */
+  const upsert = (runtimeDefinition as { upsert?: unknown }).upsert;
+  const deleteHandler = (runtimeDefinition as { delete?: unknown }).delete;
   return {
-    name,
-    upsert: upsert as ExtensionVectorUpsert,
+    adapterName: adapterDisplayName,
+    ...(typeof upsert === "function" ? { upsert: upsert as ExtensionVectorUpsert } : {}),
     ...(typeof deleteHandler === "function" ? { delete: deleteHandler as ExtensionVectorDelete } : {}),
   };
 }
@@ -505,13 +507,13 @@ async function resetVectorStoreForReindex(
         await Promise.resolve(extensionVectorAdapter.delete({ ids: knownIds.sort((left, right) => left.localeCompare(right)), settings }));
       } catch (error: unknown) {
         throw new PmCliError(
-          `Extension vector adapter "${extensionVectorAdapter.name}" failed to delete vectors during reindex reset: ${error instanceof Error ? error.message : String(error)}`,
+          `Extension vector adapter "${extensionVectorAdapter.adapterName}" failed to delete vectors during reindex reset: ${error instanceof Error ? error.message : String(error)}`,
           EXIT_CODE.GENERIC_FAILURE,
         );
       }
     } else if (knownIds.length > 0) {
       semanticWarnings.push(
-        `search_semantic_reindex_reset_skipped:adapter=${extensionVectorAdapter.name}:known_ids=${knownIds.length}`,
+        `search_semantic_reindex_reset_skipped:adapter=${extensionVectorAdapter.adapterName}:known_ids=${knownIds.length}`,
       );
     }
     if (!activeVectorStore) {
@@ -539,13 +541,13 @@ async function pruneReindexOrphanVectors(
         await Promise.resolve(extensionVectorAdapter.delete({ ids: orphanIds, settings }));
       } catch (error: unknown) {
         throw new PmCliError(
-          `Extension vector adapter "${extensionVectorAdapter.name}" failed to delete orphan vectors during reindex: ${error instanceof Error ? error.message : String(error)}`,
+          `Extension vector adapter "${extensionVectorAdapter.adapterName}" failed to delete orphan vectors during reindex: ${error instanceof Error ? error.message : String(error)}`,
           EXIT_CODE.GENERIC_FAILURE,
         );
       }
     } else {
       semanticWarnings.push(
-        `search_semantic_reindex_orphan_prune_skipped:adapter=${extensionVectorAdapter.name}:count=${orphanIds.length}`,
+        `search_semantic_reindex_orphan_prune_skipped:adapter=${extensionVectorAdapter.adapterName}:count=${orphanIds.length}`,
       );
     }
     if (!activeVectorStore) {
@@ -831,20 +833,30 @@ async function upsertReindexVectors(params: {
 }): Promise<void> {
   if (params.extensionVectorAdapter) {
     try {
-      emitReindexProgress(params.progressEnabled, `vector_upsert_start adapter=${params.extensionVectorAdapter.name} points=${params.points.length}`);
+      const adapterName = params.extensionVectorAdapter.adapterName;
+      emitReindexProgress(params.progressEnabled, `vector_upsert_start adapter=${adapterName} points=${params.points.length}`);
+      if (typeof params.extensionVectorAdapter.upsert !== "function") {
+        throw new PmCliError(
+          `Extension vector adapter "${adapterName}" does not support upserting vectors.`,
+          EXIT_CODE.USAGE,
+        );
+      }
       await Promise.resolve(params.extensionVectorAdapter.upsert({ points: params.points, settings: params.settings }));
       params.semanticSummary.vector_upserted = params.points.length;
-      emitReindexProgress(params.progressEnabled, `vector_upsert_complete adapter=${params.extensionVectorAdapter.name}`);
+      emitReindexProgress(params.progressEnabled, `vector_upsert_complete adapter=${adapterName}`);
       return;
     } catch (error: unknown) {
+      if (error instanceof PmCliError) {
+        throw error;
+      }
       if (!params.activeVectorStore) {
         throw new PmCliError(
-          `Extension vector adapter "${params.extensionVectorAdapter.name}" failed to upsert vectors: ${error instanceof Error ? error.message : String(error)}`,
+          `Extension vector adapter "${params.extensionVectorAdapter.adapterName}" failed to upsert vectors: ${error instanceof Error ? error.message : String(error)}`,
           EXIT_CODE.GENERIC_FAILURE,
         );
       }
       params.semanticWarnings.push(
-        `Extension vector adapter "${params.extensionVectorAdapter.name}" failed; falling back to built-in vector store (${error instanceof Error ? error.message : String(error)})`,
+        `Extension vector adapter "${params.extensionVectorAdapter.adapterName}" failed; falling back to built-in vector store (${error instanceof Error ? error.message : String(error)})`,
       );
       emitReindexProgress(params.progressEnabled, "vector_upsert_fallback built_in_store");
     }
