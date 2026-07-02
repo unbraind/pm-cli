@@ -298,12 +298,7 @@ async function resolveGetClaimState(context: GetItemContext, includeClaimState: 
     return undefined;
   }
   const historyPath = getHistoryPath(context.pmRoot, context.locatedId);
-  let history: ClaimHistoryEntry[] = [];
-  try {
-    history = await readHistoryEntries(historyPath, context.locatedId);
-  } catch {
-    history = [];
-  }
+  const history = await readHistoryEntries(historyPath, context.locatedId);
   return resolveClaimStateContext(context.metadata.assignee, history);
 }
 

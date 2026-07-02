@@ -310,6 +310,16 @@ describe("runList", () => {
     ).toEqual([]);
     expect(
       listInternals.applyFilters(
+        [{ ...openItem, tags: undefined }],
+        undefined,
+        { tag: "missing-legacy-tag" },
+        permissiveTypeRegistry as never,
+        statusRegistry,
+        {},
+      ),
+    ).toEqual([]);
+    expect(
+      listInternals.applyFilters(
         [{ ...openItem }],
         undefined,
         { updatedBefore: "2026-01-01T00:00:00.000Z" },

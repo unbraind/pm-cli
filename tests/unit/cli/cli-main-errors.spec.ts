@@ -3577,7 +3577,7 @@ describe("CLI error guidance helpers", () => {
     expect(updateFile).toMatchObject({
       code: "unsupported_update_option",
       recovery: {
-        missing: ["--files"],
+        suggested_flags: ["--files"],
         provided_fields: ["--file"],
       },
     });

@@ -339,7 +339,9 @@ function prepareReleaseChangelog(params) {
       "https://github.com/unbraind/pm-cli/blob/main/.agents/pm",
     ]);
     if (!ensureGeneratedReleaseSectionHasContent(params.targetVersion, generatedChangelogPath)) {
-      return { prepared: false, generatedChangelogPath };
+      const retainedChangelogPath = path.join(tmpdir(), `pm-cli-empty-release-changelog-${params.targetVersion.replaceAll(".", "-")}.md`);
+      writeFileSync(retainedChangelogPath, readFileSync(generatedChangelogPath, "utf8"), "utf8");
+      return { prepared: false, generatedChangelogPath: retainedChangelogPath };
     }
     const npm = commandFor("npm");
     runCommand(npm, ["version", "--no-git-tag-version", params.targetVersion]);

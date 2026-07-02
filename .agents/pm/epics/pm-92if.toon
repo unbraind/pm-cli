@@ -6,11 +6,11 @@ status: in_progress
 priority: 2
 tags[3]: code-quality,codefactor,tech-debt
 created_at: "2026-06-26T13:29:14.359Z"
-updated_at: "2026-07-02T01:35:19.972Z"
+updated_at: "2026-07-02T02:39:44.023Z"
 assignee: claude-code-agent
 author: claude-code-agent
 acceptance_criteria: "CodeFactor overall repository grade reaches A+ (or the highest attainable) on branch main; CodeFactor reports 0 outstanding issues across Complexity, Maintainability, and Duplication; local lint/quality parity tooling exists so findings can be reproduced and kept at zero (no regressions on new PRs)."
-comments[71]{created_at,author,text}:
+comments[73]{created_at,author,text}:
   "2026-06-26T15:46:30.976Z",codex-gpt5,"Progress update: live CodeFactor for main still reports 255 issues until this branch lands (83 maintainability, 152 complexity, 20 duplication). This branch completes the maintainability groups tracked by pm-xsth, pm-m8yl, and pm-x878/Codecov; complexity pm-arzz and duplication pm-fmjy remain open for dedicated refactor follow-up."
   "2026-06-26T18:50:54.481Z",codex-codefactor-sdk-cli-20260626,"Investigation note: live 2026-06-26 CodeFactor public issues page reports A rating, 601 analyzed files, 172 issues after the merged maintainability branch; PM snapshot still tracks remaining complexity and duplication children. GitHub state: no open PRs, no open Dependabot or code-scanning alerts; issue #374 remains open and externally blocked on missing RELEASE_PAT in release environment; pnpm audit --audit-level moderate reports no known vulnerabilities. Dependency drift from pnpm outdated: @sentry/cli 3.5.1 -> 3.6.0, @sentry/node 10.61.0 -> 10.62.0, @types/node held at Node 22 types despite latest 26.x."
   "2026-06-26T19:05:47.605Z",codex-codefactor-sdk-cli-20260626,"Evidence update: CodeFactor remediation bundle now covers the remaining duplication primitives and generated/test analysis scope. Verification passed: pnpm build; targeted 254-test suite; pnpm contracts:check; pnpm quality:static; pnpm typecheck; pnpm security:scan; full coverage 100/100/100/100 across 5133 tests; manual isolated temp-project smoke with PM_PATH/PM_GLOBAL_PATH passed package install/doctor and shared unset behavior. Remaining release issue #374 is external to code changes: GitHub scheduled Auto Release requires RELEASE_PAT in the release environment."
@@ -82,7 +82,9 @@ comments[71]{created_at,author,text}:
   "2026-07-02T00:43:18.183Z",claude-code-agent,"Review-fix evidence: addressed still-valid CodeRabbit findings across release-note relevance, packed npx smoke cleanup, commander missing-option retry matching, calendar empty recurrence filters, dedupe reparent flow, init preset reads, semantic reindex empty-corpus cleanup, telemetry attempts normalization, lifecycle parent lookup casing, and doctor strict warning exits. Verification passed: focused telemetry coverage 20 tests at 100/100/100/100; pnpm typecheck; pnpm build; pnpm lint; git diff --check; node scripts/run-tests.mjs coverage (262 files, 5272 tests, 100/100/100/100); node scripts/smoke-npx-from-pack.mjs (packed package smoke passed, version 2026.7.1, packages=11)."
   "2026-07-02T00:50:47.699Z",claude-code-agent,"Pre-push Greptile evidence for review-fix commit 3d2c18cb: greptile review e805c690-6795-4671-bb28-c7c6e88ad74c completed with confidence 4/5, Safe to merge, and no review comments. Greptile summarized the PR as wide-scale complexity refactoring with zero ESLint complexity suppressions and recognized the empty recurrence filter behavior as intentional and tested."
   "2026-07-02T01:35:19.971Z",claude-code-agent,"Review-fix evidence for PR #414 current head: addressed latest CodeRabbit findings by keeping --no-extensions usage recovery from loading active extension registries, treating recurrence-lookback as an explicit calendar bound, capping emitted recurrence occurrences, narrowing close stale-blocker warnings to real blocker clears, dispatching history-redact write hooks for old and new item paths plus history, adding init agent_guidance next_steps to the public result type, pruning linked artifacts only on ENOENT/ENOTDIR, failing packed npx fallback commands on empty output, removing unreachable release-note status fallbacks, and normalizing non-finite telemetry attempts. Verification passed: focused review-fix suite 9 files / 432 tests; pnpm typecheck; pnpm build; pnpm lint/static quality; no-suppression ESLint complexity scan complexity_count=0; git diff --check; pnpm contracts:check; pnpm changelog:pm:check with pm-changelog 2026.6.30 unchanged item_count=1385; pnpm audit --audit-level moderate; pnpm security:scan; node scripts/run-tests.mjs coverage 262 files / 5273 tests / 100% statements, branches, functions, and lines; node scripts/smoke-npx-from-pack.mjs passed packed package smoke 2026.7.1 packages=11; pm health summary ok with 0 warnings; pm validate history_drift ok with known pre-existing validate_resolution_missing_fields:260 backlog; Sentry/telemetry gate ok with critical=0 high=0 telemetry finish_error_rate_pct=0.69 failures_without_error_code_rows=0."
-files[108]{path,scope,note}:
+  "2026-07-02T02:26:15.914Z",claude-code-agent,"Review-fix evidence for PR #414 latest local head: addressed current-head review findings by preserving extension list flag contracts and alias-selected command filtering, surfacing corrupt claim history instead of swallowing decode failures, moving unsupported-option hints to suggested_flags, using the loaded Beads SDK module consistently, retaining empty-release changelog diagnostics outside deleted temp dirs, guarding missing telemetry stderr summaries, and covering malformed legacy list rows missing tags. Verification passed: focused review-fix suite 5 files / 159 tests; focused list-command suite 25 tests; pnpm typecheck; pnpm lint/static quality; pnpm contracts:check; no-suppression ESLint complexity scan complexity_count=0; git diff --check; node scripts/run-tests.mjs coverage 262 files / 5275 tests / 100% statements, branches, functions, and lines; pnpm security:scan no secrets; pnpm audit --audit-level moderate no vulnerabilities; pnpm changelog:pm:check with pm-changelog 2026.6.30 unchanged item_count=1385; node scripts/smoke-npx-from-pack.mjs packed package smoke passed 2026.7.1 packages=11; Sentry/telemetry gate ok with critical=0 high=0 telemetry finish_error_rate_pct=0.68 failures_without_error_code_rows=0; pm health summary ok with 0 warnings; pm validate history_drift ok with known pre-existing validate_resolution_missing_fields:260 backlog."
+  "2026-07-02T02:39:44.022Z",claude-code-agent,"Pre-push Greptile evidence for commit c1521326: greptile review --branch main --json started review 24a3cea3-4dc4-467e-899e-18be4b5fa586 but the backend returned 'Agent (claude) did not call submit_review' when reopened. Retried with greptile review --branch main --agent, review 47e9a341-a1d8-48f6-a03a-88541ab05ce5, which stayed in Reviewing files with no findings for several minutes and was interrupted to avoid leaving a live session. No Greptile findings were available to fix; PR review bots will be retriggered after push."
+files[112]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,pm-changelog package-owned check refreshed managed extension install timestamp
   eslint-suppressions.json,project,Prune resolved complexity suppressions after config/settings refactors
   package.json,project,Align @types/node range to Node 22 supported floor after Dependabot PR #399 review
@@ -167,10 +169,13 @@ files[108]{path,scope,note}:
   tests/unit/commands/calendar-command.spec.ts,project,Regression coverage for recurrence bound and cap behavior
   tests/unit/commands/close-command.spec.ts,project,Regression coverage for stale blocked_reason warning behavior
   tests/unit/commands/config-command.spec.ts,project,regression coverage for governance validation mirror comparison
+  tests/unit/commands/contracts-command.spec.ts,project,"regression coverage for extension list flags,array schemas,and alias command selection"
   tests/unit/commands/create-command.spec.ts,project,Review-fix coverage for command-scoped runtime unset registry fixtures
+  tests/unit/commands/get-append-command.spec.ts,project,regression coverage for corrupt claim-history surfacing with projection-safe avoidance
   tests/unit/commands/health-command.spec.ts,project,branch coverage for health vectorization and telemetry helper splits
   tests/unit/commands/history-activity-command.spec.ts,project,Regression coverage for history-redact affected hook paths
   tests/unit/commands/legacy-none-tokens.spec.ts,project,Review-fix coverage for malformed legacy none collection payloads
+  tests/unit/commands/list-command.spec.ts,project,regression coverage for legacy rows missing tags under tag filters
   tests/unit/commands/plan-command.spec.ts,project,regression coverage for plan step reference and materialize split paths
   tests/unit/commands/reindex-command.spec.ts,project,complexity sweep zero ESLint complexity findings
   tests/unit/commands/search-command.spec.ts,project,regression coverage for search projection and provider failure split paths
@@ -189,9 +194,10 @@ files[108]{path,scope,note}:
   tests/unit/extensions/extension-scaffold-define-guidance.spec.ts,project,regression coverage for harness-based generated starter tests
   tests/unit/packages/beads-command.spec.ts,project,regression coverage for negative Beads linked-test timeout import
   tests/unit/scripts/dogfood-package-first.spec.ts,project,Align dogfood script harness with starter-prefixed reserved scaffold command
+  tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,regression coverage for missing stderr telemetry command summaries
   tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,complexity sweep zero ESLint complexity findings
   tests/unit/sdk/tool-option-contracts.spec.ts,project,regression coverage for exported SDK option contract object isolation
-tests[31]{command,scope,timeout_seconds}:
+tests[36]{command,scope,timeout_seconds}:
   git diff --check,project,60
   node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,project,180
   node scripts/run-tests.mjs coverage,project,900
@@ -210,12 +216,17 @@ tests[31]{command,scope,timeout_seconds}:
   "node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts -t \"scaffolds package-root metadata via package init while keeping installable extension resources\"",project,240
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-scaffold-define-guidance.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/sdk/tool-option-contracts.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts,project,240
+  node scripts/smoke-npx-from-pack.mjs,project,240
   pm telemetry stats --json,project,60
+  PM_AUTHOR=claude-code-agent pm health --check-only --summary --json,project,120
+  PM_AUTHOR=claude-code-agent pm validate --check-resolution --check-history-drift --json,project,180
   pnpm audit --audit-level moderate,project,180
   pnpm build,project,240
   "pnpm changelog:pm:check",project,180
   "pnpm contracts:check",project,180
   pnpm exec vitest run tests/unit/cli/cli-main-errors.spec.ts tests/unit/commands/reindex-command.spec.ts tests/unit/commands/validate-command.spec.ts --coverage.enabled --coverage.reporter=text --coverage.include=src/cli/main.ts --coverage.include=src/cli/commands/reindex.ts --coverage.include=src/cli/commands/validate.ts,project,300
+  pnpm exec vitest run tests/unit/commands/contracts-command.spec.ts tests/unit/commands/get-append-command.spec.ts tests/unit/packages/beads-command.spec.ts tests/unit/scripts/release/sentry-telemetry-gate.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,project,240
+  pnpm exec vitest run tests/unit/commands/list-command.spec.ts,project,120
   pnpm exec vitest run tests/unit/packages/beads-command.spec.ts tests/unit/commands/config-command.spec.ts,project,180
   pnpm exec vitest run tests/unit/packages/beads-command.spec.ts tests/unit/commands/config-command.spec.ts --coverage.enabled --coverage.reporter=text --coverage.include=packages/pm-beads/extensions/beads/runtime.ts --coverage.include=src/cli/commands/config.ts,project,300
   pnpm lint,project,240

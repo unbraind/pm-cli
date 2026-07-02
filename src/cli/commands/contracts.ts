@@ -688,6 +688,16 @@ function normalizeStringList(values: string[] | undefined): string[] {
   return normalized;
 }
 
+function assignExtensionFlagBoolean(
+  contract: CliFlagContract,
+  key: "required" | "repeatable" | "list",
+  enabled: boolean,
+): void {
+  if (enabled) {
+    contract[key] = true;
+  }
+}
+
 function toExtensionFlagContract(
   definition: Record<string, unknown>,
 ): CliFlagContract | null {
@@ -709,15 +719,12 @@ function toExtensionFlagContract(
   if (normalizedShort && normalizedLong) {
     contract.short = normalizedShort;
   }
+  assignExtensionFlagBoolean(contract, "required", definition.required === true);
+  assignExtensionFlagBoolean(contract, "repeatable", definition.repeatable === true);
+  assignExtensionFlagBoolean(contract, "list", definition.list === true);
   const description = toOptionalTrimmedString(definition.description);
   if (description) {
     contract.description = description;
-  }
-  if (definition.required === true) {
-    contract.required = true;
-  }
-  if (definition.repeatable === true) {
-    contract.repeatable = true;
   }
   const valueName = toOptionalTrimmedString(definition.value_name);
   if (valueName) {
@@ -945,9 +952,10 @@ function buildExtensionArgumentSchema(
 function buildExtensionFlagSchema(flag: CliFlagContract, action: string): Record<string, unknown> {
   const valueType = flag.value_type ?? "boolean";
   const schemaType = valueType === "boolean" ? "boolean" : valueType === "number" ? ["number", "string"] : "string";
+  const acceptsMultipleValues = flag.repeatable === true || flag.list === true;
   return {
-    type: flag.repeatable ? "array" : schemaType,
-    ...(flag.repeatable ? { items: { type: schemaType } } : {}),
+    type: acceptsMultipleValues ? "array" : schemaType,
+    ...(acceptsMultipleValues ? { items: { type: schemaType } } : {}),
     description: flag.description ?? `Extension option '${flag.flag}' for action '${action}'.`,
   };
 }
@@ -1960,10 +1968,15 @@ function resolveExtensionCommandContracts(
   outputCommands: string[],
 ): ExtensionCommandContract[] {
   if (selection.selectedCommand) {
-    return runtime.extensionContracts.filter((entry) => entry.command === selection.selectedCommand);
+    return runtime.extensionContracts.filter((entry) =>
+      splitCommandPathAliases(entry.command).includes(selection.selectedCommand as string),
+    );
   }
   if (selection.selectedAction) {
-    return runtime.extensionContracts.filter((entry) => outputCommands.includes(normalizeCommandPath(entry.command)));
+    const outputCommandSet = new Set(outputCommands);
+    return runtime.extensionContracts.filter((entry) =>
+      splitCommandPathAliases(entry.command).some((command) => outputCommandSet.has(command)),
+    );
   }
   return runtime.extensionContracts;
 }

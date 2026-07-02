@@ -394,11 +394,12 @@ function buildInitialTelemetrySummary(telemetryMode) {
 
 function buildTelemetrySummaryFromCommand(telemetryCommand, telemetryMode, maxTelemetryErrorRate, maxTelemetryMissingRows) {
   if (telemetryCommand.status !== 0) {
+    const stderr = typeof telemetryCommand.stderr === "string" ? telemetryCommand.stderr.trim() : "";
     return {
       checked: true,
       mode: telemetryMode,
       ok: telemetryMode === "best-effort",
-      warning: telemetryCommand.stderr.trim() || "telemetry_query_failed",
+      warning: stderr || "telemetry_query_failed",
       finish_error_rate_pct: null,
       failures_without_error_code_rows: null,
     };

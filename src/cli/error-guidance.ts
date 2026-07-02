@@ -895,7 +895,7 @@ function buildUnsupportedUpdateOptionGuidance(
     ],
     nextSteps: ['Run "pm files --help" and "pm docs --help" for add/remove payload formats.'],
     recovery: buildCommanderRecoveryPayload(context, {
-      missing: suggestions,
+      suggested_flags: suggestions,
     }),
   });
 }
@@ -937,7 +937,7 @@ function buildUnknownOptionGuidance(
     examples,
     nextSteps,
     recovery: buildCommanderRecoveryPayload(context, {
-      missing: suggestions,
+      suggested_flags: suggestions,
     }),
   });
 }

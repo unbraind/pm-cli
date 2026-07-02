@@ -735,7 +735,7 @@ function matchesListIdentityFilters(
   if (filters.statusSet && !filters.statusSet.has(item.status)) return false;
   if (filters.excludeTerminal && isTerminalStatus(item.status, statusRegistry)) return false;
   if (filters.typeFilter && item.type !== filters.typeFilter) return false;
-  if (filters.tagFilter && !item.tags.includes(filters.tagFilter)) return false;
+  if (filters.tagFilter && !(item.tags ?? []).includes(filters.tagFilter)) return false;
   return filters.priorityFilter === undefined || item.priority === filters.priorityFilter;
 }
 

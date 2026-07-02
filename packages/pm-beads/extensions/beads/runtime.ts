@@ -89,6 +89,7 @@ interface ItemTypeRegistry {
 }
 
 interface BeadsImportRuntime {
+  sdk: BeadsSdkModule;
   pmRoot: string;
   settings: PmSettings;
   typeRegistry: ItemTypeRegistry;
@@ -221,19 +222,15 @@ async function loadBeadsSdkModule(): Promise<BeadsSdkModule> {
   throw new Error(`builtin-beads failed to load SDK exports from ${modulePath}.`);
 }
 
+const beadsSdk = await loadBeadsSdkModule();
+
 const {
   DEPENDENCY_KIND_VALUES,
   EXIT_CODE,
   PmCliError,
-  canonicalDocument,
-  commitImportedItem,
   ensureTrackerInitialized,
-  generateItemId,
   getActiveExtensionRegistrations,
-  getItemPath,
   isTimestampLiteral,
-  locateItem,
-  normalizeFrontMatter,
   normalizeItemId,
   normalizeRawItemId,
   nowIso,
@@ -248,7 +245,7 @@ const {
   toImportStatus,
   toImportTags,
   toNonEmptyImportString,
-} = await loadBeadsSdkModule();
+} = beadsSdk;
 
 // Shared, behavior-identical value coercers are sourced from the SDK adapter
 // surface; package-specific mappings (timestamps, item types, dependencies,
@@ -661,7 +658,7 @@ async function resolveBeadsImportId(record: BeadsRecord, runtime: BeadsImportRun
   const rawId = toNonEmptyString(record.id);
   return rawId
     ? normalizeImportedId(rawId, runtime.settings.id_prefix, runtime.preserveSourceIds)
-    : await generateItemId(runtime.pmRoot, runtime.settings.id_prefix);
+    : await runtime.sdk.generateItemId(runtime.pmRoot, runtime.settings.id_prefix);
 }
 
 function buildBeadsImportedBody(record: BeadsRecord): string {
@@ -691,7 +688,7 @@ async function importBeadsRecord(record: BeadsRecord, lineNumber: number, runtim
   const type = typeMapping.type;
   const closedAt = toIsoString(record.closed_at);
   const assignee = toNonEmptyString(record.assignee) ?? toNonEmptyString(record.owner);
-  const frontMatter = normalizeFrontMatter({
+  const frontMatter = runtime.sdk.normalizeFrontMatter({
     id,
     title,
     description: toNonEmptyString(record.description) ?? "",
@@ -720,11 +717,11 @@ async function importBeadsRecord(record: BeadsRecord, lineNumber: number, runtim
     tests: toLinkedTests(record.tests),
     docs: toLinkedDocs(record.docs),
   });
-  const afterDocument = canonicalDocument({
+  const afterDocument = runtime.sdk.canonicalDocument({
     metadata: frontMatter,
     body: buildBeadsImportedBody(record),
   });
-  const existing = await locateItem(
+  const existing = await runtime.sdk.locateItem(
     runtime.pmRoot,
     id,
     runtime.settings.id_prefix,
@@ -734,8 +731,8 @@ async function importBeadsRecord(record: BeadsRecord, lineNumber: number, runtim
   if (existing) {
     return { warning: `beads_import_item_exists:${id}` };
   }
-  const itemPath = getItemPath(runtime.pmRoot, type, id, "toon", runtime.typeRegistry.type_to_folder);
-  const commit = await commitImportedItem({
+  const itemPath = runtime.sdk.getItemPath(runtime.pmRoot, type, id, "toon", runtime.typeRegistry.type_to_folder);
+  const commit = await runtime.sdk.commitImportedItem({
     pmRoot: runtime.pmRoot,
     id,
     itemPath,
@@ -774,6 +771,7 @@ export async function runBeadsImport(options: BeadsImportOptions, global: Global
   let imported = 0;
   let skipped = 0;
   const runtime: BeadsImportRuntime = {
+    sdk: beadsSdk,
     pmRoot,
     settings,
     typeRegistry,
