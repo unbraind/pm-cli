@@ -935,6 +935,7 @@ const HEALTH_DETAIL_SUMMARIZERS = {
       capability_guidance: summarizeRecordList(details.capability_guidance, limit),
     };
   },
+  // Storage details are already compact counters; keep the pre-refactor pass-through shape.
   storage: (details) => details,
   locks: (details) => ({
     active_lock_count: details.active_lock_count,

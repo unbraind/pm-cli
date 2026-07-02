@@ -327,25 +327,7 @@ export function applyDynamicExtensionArguments(command: Command, descriptor: Ext
   }
 }
 
-function formatDynamicExtensionOptionFlags(definition: Record<string, unknown>): string | null {
-  const visible = toOptionalBoolean(definition.visible);
-  if (visible === false) {
-    return null;
-  }
-  const longName = toNonEmptyFlagString(definition.long);
-  const shortName = toNonEmptyFlagString(definition.short);
-  const normalizedShort = shortName && shortName.startsWith("-") && !shortName.startsWith("--") ? shortName : null;
-  const normalizedLong = longName && longName.startsWith("--") && longName.length > 2 ? longName : null;
-  if (!normalizedLong && !normalizedShort) {
-    return null;
-  }
-  const optionValueName = toNonEmptyFlagString(definition.value_name);
-  const optionValueSuffix = optionValueName ? ` <${optionValueName}>` : "";
-  const optionNames = [normalizedShort, normalizedLong].filter((entry): entry is string => entry !== null);
-  return `${optionNames.join(", ")}${optionValueSuffix}`;
-}
-
-function dynamicExtensionOptionNames(definition: Record<string, unknown>): string[] | null {
+function normalizeDynamicExtensionOptionNames(definition: Record<string, unknown>): string[] | null {
   const visible = toOptionalBoolean(definition.visible);
   if (visible === false) {
     return null;
@@ -358,8 +340,18 @@ function dynamicExtensionOptionNames(definition: Record<string, unknown>): strin
   return optionNames.length > 0 ? optionNames : null;
 }
 
+function formatDynamicExtensionOptionFlags(definition: Record<string, unknown>): string | null {
+  const optionNames = normalizeDynamicExtensionOptionNames(definition);
+  if (!optionNames) {
+    return null;
+  }
+  const optionValueName = toNonEmptyFlagString(definition.value_name);
+  const optionValueSuffix = optionValueName ? ` <${optionValueName}>` : "";
+  return `${optionNames.join(", ")}${optionValueSuffix}`;
+}
+
 function formatDynamicExtensionParseOptionFlags(definition: Record<string, unknown>): string | null {
-  const optionNames = dynamicExtensionOptionNames(definition);
+  const optionNames = normalizeDynamicExtensionOptionNames(definition);
   if (!optionNames) {
     return null;
   }

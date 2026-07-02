@@ -28,7 +28,8 @@ function sortScalarValue(value: unknown): JsonValue | undefined {
 }
 
 function sortPlainObjectKeys(value: Record<string, unknown>): Record<string, JsonValue> {
-  const sortedKeys = Object.keys(value).sort((a, b) => a.localeCompare(b));
+  // Use locale-independent Unicode code-unit ordering so canonical hashes stay reproducible.
+  const sortedKeys = Object.keys(value).sort();
   const result: Record<string, JsonValue> = {};
   for (const key of sortedKeys) {
     const nested = value[key];

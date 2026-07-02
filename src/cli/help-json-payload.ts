@@ -263,7 +263,7 @@ function buildJsonHelpNarrative(
           ? [...extensionExamples]
           : [...fallbackNarrative.examples]
         : extensionExamples.length > 0
-          ? [extensionExamples[0] as string]
+          ? [extensionExamples[0]]
           : [...fallbackNarrative.examples],
     tips:
       detailMode === "detailed"
