@@ -1,0 +1,20 @@
+id: pm-p99b
+title: "Lane E: Docs audit (progressive disclosure, minimal README, link graph, duplicated docs/skills)"
+description: ""
+type: Task
+status: closed
+priority: 1
+tags[2]: audit,session-2026-07-02
+created_at: "2026-07-02T21:26:41.769Z"
+updated_at: "2026-07-02T21:56:13.356Z"
+author: unknown
+parent: pm-fpod
+comments[6]{created_at,author,text}:
+  "2026-07-02T21:28:10.564Z",claude-code-agent,"Docs audit started: inventorying docs, link graph, freshness cross-checks."
+  "2026-07-02T21:31:07.729Z",claude-code-agent,"Milestone: link graph built over 83 md files (root+docs+packages+plugins+.agents/skills). 0 broken relative links. Orphans from README: AGENTS.md, PRD.md, .agents/skills/*, 9/11 package READMEs. Stale found: README.md:66 claims 26 MCP tools (actual 28). 3 parallel freshness audits running (COMMANDS, SDK/EXTENSIONS, remaining docs)."
+  "2026-07-02T21:33:57.070Z",claude-code-agent,"Milestone: COMMANDS.md audit done (1 MED: normalize listed without package caveat; 3 LOW: five-vs-six statuses, comments-audit/test-runs missing package footnote, completion section missing optional note). Plugin surface stale in 4 places: README.md:66, plugins/pm-claude/README.md:9/32/40 + plugin.json description all say 26 MCP tools (actual 28); plugin README narrow-tool table missing pm_next/pm_focus/pm_profile. CLAUDE_CODE_PLUGIN.md:58/116 already correct at 28."
+  "2026-07-02T21:36:15.922Z",claude-code-agent,"Milestone: SDK/EXTENSIONS audit done. Clean on SCAFFOLD_CAPABILITIES(10), package list(11 incl pm-kanban), SDK export claims (0 nonexistent). Findings: plugins/pm-claude/README.md 26-vs-28 tools + missing pm_next/pm_profile rows (HIGH); EXTENSIONS.md:89 vs SDK.md:573-620 duplicate 10-capability matrix (MED); starter-extension README uses legacy 'pm extension --install/--doctor' vocabulary (LOW). Awaiting final audit lane (QUICKSTART/CONFIG/ARCH/plugin docs)."
+  "2026-07-02T21:36:51.440Z",claude-code-agent,"Audit complete. Totals: 0 broken links across 83 md files; 6 HIGH (26-vs-28 MCP tools in README.md:66 + plugins/pm-claude/README.md x3 + plugin.json; Node-20 claims in ONBOARDING:17, ARCHITECTURE:17, CONTRIBUTING:7; stale CI matrix CONTRIBUTING:178), 4 MED (package-only cmds shown as core in AGENT_GUIDE/ONBOARDING/CONFIGURATION/ARCHITECTURE + COMMANDS.md normalize; canonical-loop tripled in AGENT_GUIDE/ONBOARDING/QUICKSTART; capability matrix duplicated EXTENSIONS.md:89 vs SDK.md:573-620), ~8 LOW. Orphans: AGENTS.md, PRD.md, 9/11 package READMEs. Full structured findings + target doc tree returned to coordinator."
+  "2026-07-02T21:38:07.532Z",claude-code-agent,"Lane E COMPLETE: 0 broken links; 6 HIGH stale claims (26->28 MCP tools x3 sites, Node 20->22.18 x3), 4 MED duplication/omission clusters, 10 LOW nits. Fixes being applied on branch docs-freshness-and-ci-hardening."
+close_reason: "Docs audit complete and fixes applied on branch docs-freshness-and-ci-hardening: 26->28 MCP tools (README, plugin README x3, plugin.json), Node 20->22.18 (CONTRIBUTING/ARCHITECTURE/ONBOARDING), stale CI matrix, package-only command caveats (COMMANDS/AGENT_GUIDE/ONBOARDING/CONFIGURATION/ARCHITECTURE), EXTENSIONS-vs-SDK capability-matrix dedupe, canonical-loop pointer, starter-extension package-first vocabulary, six-statuses wording, completion/guide-shell note, orphan links (AGENTS.md, PRD.md, 11 package READMEs)."
+body: ""

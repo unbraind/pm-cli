@@ -168,7 +168,7 @@ pm get <id> --full --json
 pm contracts --json
 ```
 
-`pm calendar` defaults to markdown because date-centric summaries are easier to scan in that format.
+`pm calendar` (provided by the optional `calendar` package — `pm install calendar --project`) defaults to markdown because date-centric summaries are easier to scan in that format.
 
 ## Validation Policies
 

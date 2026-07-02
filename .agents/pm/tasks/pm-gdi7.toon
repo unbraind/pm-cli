@@ -1,0 +1,13 @@
+id: pm-gdi7
+title: "Agent-UX output polish: unknown-option errors should suggest valid flags; list-closed projection too verbose; schema add-field help discoverability"
+description: "From 2026-07-02 audit (Lane A, pm-kes3): (1) unknown-option errors do not list valid flags or a nearest-match suggestion, forcing an extra contracts round-trip (agents should never be blocked by wrong flags); (2) pm list-closed defaults to the full projection (verbose for agents; closed queries are usually triage scans); (3) pm schema add-field help is buried in the shared option list, hard to discover the field-definition flags."
+type: Task
+status: open
+priority: 2
+tags[3]: agent-ux,audit-followup,cli
+created_at: "2026-07-02T21:55:37.614Z"
+updated_at: "2026-07-02T21:55:55.089Z"
+author: claude-code-agent
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-fpod,related,"2026-07-02T21:55:55.076Z",null,null
+body: ""

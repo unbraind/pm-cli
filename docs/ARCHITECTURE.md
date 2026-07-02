@@ -14,7 +14,7 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 
 ## System Overview
 
-`pm-cli` is a TypeScript ESM CLI for Node.js 20+. It is file-backed, git-native, deterministic, and designed for concurrent human plus agent workflows.
+`pm-cli` is a TypeScript ESM CLI for Node.js 22.18+. It is file-backed, git-native, deterministic, and designed for concurrent human plus agent workflows.
 
 High-level flow:
 
@@ -304,7 +304,7 @@ Useful commands:
 
 ```bash
 pm search "restore history" --mode keyword --limit 10
-pm reindex --mode hybrid --progress
+pm reindex --mode hybrid --progress   # requires the search-advanced package
 pm health --check-only
 ```
 

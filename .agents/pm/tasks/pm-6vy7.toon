@@ -1,0 +1,17 @@
+id: pm-6vy7
+title: "Lane B: SDK best-practice + package-authoring DX review (define/compose/harness/preflight loop, scaffold matrix)"
+description: ""
+type: Task
+status: closed
+priority: 1
+tags[2]: audit,session-2026-07-02
+created_at: "2026-07-02T21:26:40.363Z"
+updated_at: "2026-07-02T21:56:12.543Z"
+author: unknown
+parent: pm-fpod
+comments[3]{created_at,author,text}:
+  "2026-07-02T21:27:41.822Z",claude-code-agent,"Starting SDK/package-authoring DX audit (lane B): reading src/sdk/*, docs/SDK.md, then authoring a real extension in temp dir via public SDK."
+  "2026-07-02T21:37:16.946Z",claude-code-agent,"Milestone: authored triage-kit (commands+schema+hooks) via npm-packed SDK, declarative scaffold, harness tests green, installed E2E into fresh workspace. Key findings so far: (1) P1: installed declarative extension fails runtime activation unless @unbrained/pm-cli resolvable from workspace ('Cannot find package' — why first-party pkgs stay import-free; scaffold next_steps don't warn); (2) P2: assertExtensionPreflight/harness pass an item field named 'severity' but runtime rejects it (reserved-metadata collision undetected at author time); (3) failed install-time activation also skips item-type folder scaffold -> lingering health warn; (4) P3 naming drift in test expectations (command/itemType/field/targetCommand/provider keys). Now auditing export surface + docs."
+  "2026-07-02T21:38:45.078Z",claude-code-agent,"Audit complete. Loop verdict: coherent+complete (define*->compose->derive/synthesize->lint/preflight->harness->describe), docs ordered correctly, E2E works once SDK resolvable. Final findings: P1 install-resolution trap (scaffold next_steps break when workspace can't resolve @unbrained/pm-cli; install reports activated:true + runtime_activation_status:failed + failed_count:0 contradiction); P2 reserved item-field collision (FRONT_MATTER_KEY_ORDER) invisible to lint/preflight/harness, only enforced at pm create/update — green package can brick create; RESERVED_ITEM_FIELD_NAMES unexported; P2 scaffold test doesn't guard manifest.json drift via assertExtensionManifestMatchesBlueprint; P3 expectation key drift (command/itemType/field/targetCommand), repeated --capability silently last-wins, [key:string]:unknown index signatures weaken define* checking. First-party packages: uniformly import-free imperative (intentional per docs) => declarative flagship path has zero first-party production dogfooding."
+close_reason: "SDK DX audit complete: define*->compose->synthesize->preflight->harness loop coherent and E2E-verified. Findings filed: pm-3wsi (P1 install-resolution), pm-ghf1 (P2 reserved fields), pm-llrp (P3 DX bundle)."
+body: ""

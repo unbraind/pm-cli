@@ -47,7 +47,7 @@ Initialize pm project tracking using native MCP tools. Argument: `$ARGUMENTS` (o
    - pm initialized at `.agents/pm/`
    - guidance mode defaults to `ask` (TTY prompt only); use `agentGuidance=add|skip|status` in `pm_run` options for deterministic behavior
    - Available slash commands: `/pm-status`, `/pm-new`, `/pm-start-task`, `/pm-close-task`, `/pm-list`, `/pm-search`, `/pm-triage`, `/pm-calendar`, `/pm-developer`, `/pm-planner`, `/pm-release`, `/pm-audit`, `/pm-workflow`
-   - All 26 MCP tools available: `pm_context`, `pm_search`, `pm_list`, `pm_get`, `pm_create`, `pm_copy`, `pm_focus`, `pm_update`, `pm_append`, `pm_claim`, `pm_release`, `pm_close`, `pm_comments`, `pm_files`, `pm_docs`, `pm_notes`, `pm_learnings`, `pm_deps`, `pm_test`, `pm_validate`, `pm_health`, `pm_contracts`, `pm_schema`, `pm_config`, `pm_plan`, `pm_run`
+   - All 28 MCP tools available: `pm_next`, `pm_context`, `pm_search`, `pm_list`, `pm_get`, `pm_create`, `pm_copy`, `pm_focus`, `pm_update`, `pm_append`, `pm_claim`, `pm_release`, `pm_close`, `pm_comments`, `pm_files`, `pm_docs`, `pm_notes`, `pm_learnings`, `pm_deps`, `pm_test`, `pm_validate`, `pm_health`, `pm_contracts`, `pm_schema`, `pm_config`, `pm_profile`, `pm_plan`, `pm_run`
    - Next: use `/pm-new <title>` to create your first item, or `/pm-status` to see the tracker state
 
 If initialization fails, report the error and suggest running `pm init` manually in the terminal.

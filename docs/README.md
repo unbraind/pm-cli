@@ -61,6 +61,8 @@ pm guide release --json
 
 Community files:
 
+- [Agent operating rules](../AGENTS.md)
+- [Product requirements](../PRD.md)
 - [Contributing](../CONTRIBUTING.md)
 - [Security](../SECURITY.md)
 - [Code of Conduct](../CODE_OF_CONDUCT.md)

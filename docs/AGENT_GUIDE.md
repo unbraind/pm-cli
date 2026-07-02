@@ -120,7 +120,7 @@ pm release <item-id>
 | Full machine payload | `pm get <id> --full --json` |
 | Command flags | `pm <command> --help --json` |
 | Low-noise machine contracts | `pm contracts --command <command> --flags-only --json` |
-| Semantic index refresh | `pm reindex --mode semantic --progress` (stale-first by default; add `--full` to force full rebuild) |
+| Semantic index refresh | `pm reindex --mode semantic --progress` (stale-first by default; add `--full` to force full rebuild; requires the `search-advanced` package) |
 | Timeline | `pm activity --id <id> --limit 20` |
 | Audited history redaction | `pm history-redact <id> --literal "<secret>" --replacement "[redacted]" --dry-run` |
 | Audited history re-anchor | `pm history-repair <id> --dry-run` (clears drift flagged by `pm health`/`pm validate`) |
@@ -189,7 +189,7 @@ Use these defaults unless the task requires otherwise:
 - `pm schema add-status <id> --role <role>` / `pm schema remove-status <id>` manage custom lifecycle statuses in `.agents/pm/schema/statuses.json`; roles come from the runtime status-role vocabulary, the upsert is idempotent, and built-in default statuses cannot be removed. `pm schema list` now reports statuses (builtin vs custom) alongside types.
 - `pm init --type-preset agile|ops|research` for new projects that should start with domain item types instead of generic tasks only.
 - After switching embedding provider/model, run `pm reindex --mode semantic --full` or `pm reindex --mode hybrid --full` to rebuild vectors completely; `pm reindex --mode keyword` ignores `--full` and now warns when ledger identity drift is detected.
-- `pm normalize --dry-run --json` before lifecycle metadata cleanups.
+- `pm normalize --dry-run --json` before lifecycle metadata cleanups (requires the `governance-audit` package).
 - `pm health --check-only` when inspecting repository health without refresh side effects.
 - Mistyped command names get a `Did you mean: <command>?` hint, including typos of the executable shortcut aliases — `pm shwo <id>` suggests `get` (the canonical of `show`/`view`), and `pm comemnt` suggests `comments`.
 

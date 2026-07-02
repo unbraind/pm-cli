@@ -36,28 +36,29 @@ cd .agents/pm/extensions/starter-extension
 npm install
 cd -
 
-# 3) Install/activate in project scope
-pm extension --install --project .agents/pm/extensions/starter-extension
+# 3) Install/activate in project scope (package-first vocabulary;
+#    `pm extension --install` remains as a compatibility form)
+pm install .agents/pm/extensions/starter-extension --project
 
 # 4) Run a starter command
 pm starter ping --name "agent"
 
 # 5) Reload extension modules after edits
-pm extension --reload --project
+pm package --reload --project
 
 # 6) Optional watch-mode semantics
-pm extension --reload --project --watch
+pm package --reload --project --watch
 
 # 7) Verify runtime health
-pm extension --doctor --project --detail summary
+pm package doctor --project --detail summary
 ```
 
 Expected outcomes:
 
 - `pm starter ping` returns deterministic output (plain text when starter service overrides output formatting).
-- `extension --doctor` shows `details.summary.status` as `ok` or `warn`.
+- `pm package doctor` shows `details.summary.status` as `ok` or `warn`.
 - If `warn`, inspect `details.summary.warning_codes` and `details.triage.remediation`.
-- `extension --reload` returns deterministic load/activation diagnostics for cache-busted imports.
+- `pm package --reload` returns deterministic load/activation diagnostics for cache-busted imports.
 
 ## Policy-Restricted Variant
 
@@ -65,15 +66,15 @@ To test governance controls with this extension:
 
 1. Set `settings.extensions.policy.mode` to `warn` or `enforce`.
 2. Block one surface (for example `commands.override`).
-3. Re-run `pm extension --doctor --detail summary`.
+3. Re-run `pm package doctor --detail summary`.
 
 You should see `extension_policy_*` warnings and policy counters in `details.triage`.
 
 ## CI-Friendly Verification Commands
 
 ```bash
-pm contracts --command extension --flags-only --json
-pm extension --doctor --project --detail summary --strict-exit
+pm contracts --command package --flags-only --json
+pm package doctor --project --detail summary --strict-exit
 node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extension-command.spec.ts
 ```
 

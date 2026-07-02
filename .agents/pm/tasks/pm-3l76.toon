@@ -1,0 +1,16 @@
+id: pm-3l76
+title: "Lane D: Performance audit (startup latency, per-command responsiveness, hot paths)"
+description: ""
+type: Task
+status: closed
+priority: 1
+tags[2]: audit,session-2026-07-02
+created_at: "2026-07-02T21:26:41.340Z"
+updated_at: "2026-07-02T21:55:57.253Z"
+author: unknown
+parent: pm-fpod
+comments[2]{created_at,author,text}:
+  "2026-07-02T21:28:01.660Z",claude-code-agent,"Perf audit start: startup, common reads, mutations (temp ws), CPU profiles"
+  "2026-07-02T21:55:56.575Z",claude-code-agent,"Perf audit results (repo tracker, 857 items, warm): pm --version 61ms; get 335ms; list-open 430ms; health --check-only 566ms; search 690ms; context/next ~700ms. Startup overhead is fine; corpus load dominates context/next. Filed pm-z1pv (target <300ms common reads). No pathological hotspots found."
+close_reason: "Perf audit complete: startup 61ms, reads 300-900ms on 857-item tracker; context/next hot path follow-up filed as pm-z1pv."
+body: ""

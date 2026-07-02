@@ -4,7 +4,7 @@ Thanks for helping improve `pm-cli`. This project is designed for deterministic,
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 22.18+
 - pnpm 10+
 
 ## Setup
@@ -175,7 +175,7 @@ When unmanaged extension state is expected to be managed, use `pm extension --do
 
 - Include focused scope and rationale.
 - Confirm all checks pass (`pnpm build && pnpm typecheck && pnpm test:coverage`).
-- CI runs the full build/test matrix — `ubuntu-latest` (Node 20, 22, 24) and `macos-latest` (Node 20) — on every pull request and on `main` pushes (doc/markdown-only pushes to `main` are skipped via `paths-ignore`; pull requests always run regardless of the changed paths). Nightly keeps broader regression coverage (Windows and Node 25).
+- CI runs the full build/test matrix — `ubuntu-latest` (Node 22, 24) and `macos-latest` (Node 24) — on every pull request and on `main` pushes (doc/markdown-only pushes to `main` are skipped via `paths-ignore`; pull requests always run regardless of the changed paths). Nightly keeps broader regression coverage (Windows and Node 25).
 - Update relevant user-facing docs when behavior changes, but keep enforcement in `pm` data and runtime tests.
 - Keep private operations artifacts out of tracked public docs and package output.
 - Add/maintain tests for any new behavior (100% coverage required).
