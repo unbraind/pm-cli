@@ -484,6 +484,6 @@ describe("error-guidance helper edge branches", () => {
       "",
       { required: 42 } as never,
     );
-    expect(missingFallbackRequired.required).toBe("");
+    expect(missingFallbackRequired.required).toBeUndefined();
   });
 });

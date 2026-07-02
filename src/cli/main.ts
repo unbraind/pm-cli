@@ -854,8 +854,12 @@ function collectExtensionFlagDefinitionsForInvocation(
   return nestedMatch.length > 0 ? nestedMatch : exact;
 }
 
+function dynamicCommandArguments(descriptor: ExtensionCommandHelpDescriptor): ExtensionCommandHelpDescriptor["arguments"] {
+  return descriptor.arguments ?? [];
+}
+
 function formatDynamicCommandUsage(descriptor: ExtensionCommandHelpDescriptor): string {
-  const argumentSuffix = descriptor.arguments
+  const argumentSuffix = dynamicCommandArguments(descriptor)
     .map((argument) => {
       const label = argument.variadic ? `${argument.name}...` : argument.name;
       return argument.required ? `<${label}>` : `[${label}]`;
@@ -890,10 +894,12 @@ function validateDynamicExtensionCommandArgs(
   descriptor: ExtensionCommandHelpDescriptor,
   args: string[],
 ): void {
-  const requiredCount = descriptor.arguments.filter((argument) => argument.required).length;
-  const variadic = descriptor.arguments.some((argument) => argument.variadic);
-  const maxCount = variadic ? Number.POSITIVE_INFINITY : descriptor.arguments.length;
-  const hintSuffix = descriptor.failure_hints.length > 0 ? ` ${descriptor.failure_hints.join(" ")}` : "";
+  const descriptorArguments = dynamicCommandArguments(descriptor);
+  const requiredCount = descriptorArguments.filter((argument) => argument.required).length;
+  const variadic = descriptorArguments.some((argument) => argument.variadic);
+  const maxCount = variadic ? Number.POSITIVE_INFINITY : descriptorArguments.length;
+  const failureHints = descriptor.failure_hints ?? [];
+  const hintSuffix = failureHints.length > 0 ? ` ${failureHints.join(" ")}` : "";
   if (args.length < requiredCount) {
     throw new PmCliError(
       `Missing required argument for extension command '${descriptor.command}'. Usage: ${formatDynamicCommandUsage(descriptor)}${hintSuffix}`,
@@ -1698,7 +1704,7 @@ function validateDynamicInvocationArgs(params: {
     return;
   }
   const positionalArgs =
-    dynamicDescriptor.arguments.length === 0
+    dynamicCommandArguments(dynamicDescriptor).length === 0
       ? collectLoosePositionalArgs(params.commandArgs)
       : stripLooseCommandOptionTokens(params.commandArgs, params.extensionFlagDefinitions);
   validateDynamicExtensionCommandArgs(dynamicDescriptor, positionalArgs);

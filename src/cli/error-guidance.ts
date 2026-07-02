@@ -426,7 +426,7 @@ function applyPmCliErrorContext(
     type,
     title: fallbackTitle ?? guidance.title,
     happened: normalizedRawMessage.length > 0 ? normalizedRawMessage : guidance.happened,
-    required: normalizeContextValue(context.required, guidance.required ?? ""),
+    required: normalizeContextValue(context.required, guidance.required),
     why: normalizeContextValue(context.why, guidance.why),
     examples,
     nextSteps,
