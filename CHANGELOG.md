@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- GH-416: Windows nightly validate linked-artifact prune classification ([pm-xpkt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xpkt.toon))
+
 ### Other
 
 - Zero the jscpd clone baseline: dedupe registration-helpers/flag-contracts source clones and 21 test-spec clones ([pm-chxp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-chxp.toon))
