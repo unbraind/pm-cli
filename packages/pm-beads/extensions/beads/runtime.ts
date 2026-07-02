@@ -88,6 +88,19 @@ interface ItemTypeRegistry {
   type_to_folder: Record<string, string>;
 }
 
+interface BeadsImportRuntime {
+  sdk: BeadsSdkModule;
+  pmRoot: string;
+  settings: PmSettings;
+  typeRegistry: ItemTypeRegistry;
+  preserveSourceIds: boolean;
+  author: string;
+  message: string;
+}
+
+type BeadsImportLineResult = { id: string; writeWarnings: string[] } | { warning: string };
+type ParsedBeadsLine = { record: BeadsRecord } | { warning: string } | null;
+
 interface BeadsSdkModule {
   DEPENDENCY_KIND_VALUES: readonly Dependency["kind"][];
   EXIT_CODE: {
@@ -135,50 +148,73 @@ interface BeadsSdkModule {
   toNonEmptyImportString: (value: unknown) => string | undefined;
 }
 
-async function loadBeadsSdkModule(): Promise<BeadsSdkModule> {
+const BEADS_SDK_ARRAY_EXPORTS = [
+  "DEPENDENCY_KIND_VALUES",
+] as const satisfies readonly (keyof BeadsSdkModule)[];
+
+const BEADS_SDK_FUNCTION_EXPORTS = [
+  "PmCliError",
+  "canonicalDocument",
+  "commitImportedItem",
+  "ensureTrackerInitialized",
+  "generateItemId",
+  "getActiveExtensionRegistrations",
+  "getItemPath",
+  "isTimestampLiteral",
+  "locateItem",
+  "normalizeFrontMatter",
+  "normalizeItemId",
+  "normalizeRawItemId",
+  "nowIso",
+  "pathExists",
+  "readSettings",
+  "resolveItemTypeRegistry",
+  "resolvePmRoot",
+  "runActiveOnReadHooks",
+  "selectImportAuthor",
+  "toEstimatedMinutesValue",
+  "toImportPriority",
+  "toImportStatus",
+  "toImportTags",
+  "toNonEmptyImportString",
+] as const satisfies readonly (keyof BeadsSdkModule)[];
+
+function resolveBeadsSdkModulePath(): string {
   const envRoot = process.env[PM_PACKAGE_ROOT_ENV];
   const hasConfiguredPackageRoot = typeof envRoot === "string" && envRoot.trim().length > 0;
-  const packageRoot =
-    hasConfiguredPackageRoot
-      ? path.resolve(envRoot.trim())
-      : path.resolve(CURRENT_RUNTIME_ROOT, "../../../..");
-  const modulePath = hasConfiguredPackageRoot
+  const packageRoot = hasConfiguredPackageRoot ? path.resolve(envRoot.trim()) : path.resolve(CURRENT_RUNTIME_ROOT, "../../../..");
+  return hasConfiguredPackageRoot
     ? path.join(packageRoot, "dist", "sdk", "index.js")
     : path.join(packageRoot, "src", "sdk", "index.ts");
+}
+
+function hasBeadsSdkArrayExports(loaded: Partial<BeadsSdkModule>): boolean {
+  return BEADS_SDK_ARRAY_EXPORTS.every((key) => Array.isArray(loaded[key]));
+}
+
+function hasBeadsSdkFunctionExports(loaded: Partial<BeadsSdkModule>): boolean {
+  return BEADS_SDK_FUNCTION_EXPORTS.every((key) => typeof loaded[key] === "function");
+}
+
+function hasBeadsSdkExitCodeExports(loaded: Partial<BeadsSdkModule>): boolean {
+  return (
+    typeof loaded.EXIT_CODE === "object" &&
+    loaded.EXIT_CODE !== null &&
+    typeof loaded.EXIT_CODE.NOT_FOUND === "number" &&
+    typeof loaded.EXIT_CODE.USAGE === "number"
+  );
+}
+
+function isBeadsSdkModule(loaded: Partial<BeadsSdkModule>): loaded is BeadsSdkModule {
+  return hasBeadsSdkArrayExports(loaded) && hasBeadsSdkFunctionExports(loaded) && hasBeadsSdkExitCodeExports(loaded);
+}
+
+async function loadBeadsSdkModule(): Promise<BeadsSdkModule> {
+  const modulePath = resolveBeadsSdkModulePath();
   try {
     const loaded = (await import(pathToFileURL(modulePath).href)) as Partial<BeadsSdkModule>;
-    if (
-      Array.isArray(loaded.DEPENDENCY_KIND_VALUES) &&
-      typeof loaded.EXIT_CODE === "object" &&
-      loaded.EXIT_CODE !== null &&
-      typeof loaded.EXIT_CODE.NOT_FOUND === "number" &&
-      typeof loaded.EXIT_CODE.USAGE === "number" &&
-      typeof loaded.PmCliError === "function" &&
-      typeof loaded.canonicalDocument === "function" &&
-      typeof loaded.commitImportedItem === "function" &&
-      typeof loaded.ensureTrackerInitialized === "function" &&
-      typeof loaded.generateItemId === "function" &&
-      typeof loaded.getActiveExtensionRegistrations === "function" &&
-      typeof loaded.getItemPath === "function" &&
-      typeof loaded.isTimestampLiteral === "function" &&
-      typeof loaded.locateItem === "function" &&
-      typeof loaded.normalizeFrontMatter === "function" &&
-      typeof loaded.normalizeItemId === "function" &&
-      typeof loaded.normalizeRawItemId === "function" &&
-      typeof loaded.nowIso === "function" &&
-      typeof loaded.pathExists === "function" &&
-      typeof loaded.readSettings === "function" &&
-      typeof loaded.resolveItemTypeRegistry === "function" &&
-      typeof loaded.resolvePmRoot === "function" &&
-      typeof loaded.runActiveOnReadHooks === "function" &&
-      typeof loaded.selectImportAuthor === "function" &&
-      typeof loaded.toEstimatedMinutesValue === "function" &&
-      typeof loaded.toImportPriority === "function" &&
-      typeof loaded.toImportStatus === "function" &&
-      typeof loaded.toImportTags === "function" &&
-      typeof loaded.toNonEmptyImportString === "function"
-    ) {
-      return loaded as BeadsSdkModule;
+    if (isBeadsSdkModule(loaded)) {
+      return loaded;
     }
   } catch (error: unknown) {
     throw new Error(`builtin-beads failed to load SDK exports from ${modulePath}.`, { cause: error });
@@ -186,19 +222,15 @@ async function loadBeadsSdkModule(): Promise<BeadsSdkModule> {
   throw new Error(`builtin-beads failed to load SDK exports from ${modulePath}.`);
 }
 
+const beadsSdk = await loadBeadsSdkModule();
+
 const {
   DEPENDENCY_KIND_VALUES,
   EXIT_CODE,
   PmCliError,
-  canonicalDocument,
-  commitImportedItem,
   ensureTrackerInitialized,
-  generateItemId,
   getActiveExtensionRegistrations,
-  getItemPath,
   isTimestampLiteral,
-  locateItem,
-  normalizeFrontMatter,
   normalizeItemId,
   normalizeRawItemId,
   nowIso,
@@ -213,7 +245,7 @@ const {
   toImportStatus,
   toImportTags,
   toNonEmptyImportString,
-} = await loadBeadsSdkModule();
+} = beadsSdk;
 
 // Shared, behavior-identical value coercers are sourced from the SDK adapter
 // surface; package-specific mappings (timestamps, item types, dependencies,
@@ -451,34 +483,43 @@ function toLinkedTests(value: unknown): LinkedTest[] | undefined {
       if (c) tests.push({ command: c, scope: "project" });
       continue;
     }
-    if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
-      continue;
+    const linkedTest = toLinkedTestFromRecord(entry);
+    if (linkedTest) {
+      tests.push(linkedTest);
     }
-    const candidate = entry as Record<string, unknown>;
-    const command = toNonEmptyString(candidate.command) ?? toNonEmptyString(candidate.test);
-    const p = toNonEmptyString(candidate.path);
-    if (!command && !p) continue;
-
-    let timeout: number | undefined;
-    if (typeof candidate.timeout_seconds === "number" && Number.isFinite(candidate.timeout_seconds)) {
-      timeout = candidate.timeout_seconds;
-    } else if (typeof candidate.timeout_seconds === "string") {
-      const parsed = Number(candidate.timeout_seconds);
-      if (Number.isFinite(parsed) && parsed >= 0) {
-        timeout = parsed;
-      }
-    }
-
-    tests.push({
-      command,
-      path: p,
-      scope: toNonEmptyString(candidate.scope) === "global" ? "global" : "project",
-      timeout_seconds: timeout,
-      note: toNonEmptyString(candidate.note),
-    });
   }
 
   return tests.length > 0 ? tests : undefined;
+}
+
+function toLinkedTestTimeout(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
+    return value;
+  }
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+}
+
+function toLinkedTestFromRecord(value: unknown): LinkedTest | undefined {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return undefined;
+  }
+  const candidate = value as Record<string, unknown>;
+  const command = toNonEmptyString(candidate.command) ?? toNonEmptyString(candidate.test);
+  const p = toNonEmptyString(candidate.path);
+  if (!command && !p) {
+    return undefined;
+  }
+  return {
+    command,
+    path: p,
+    scope: toNonEmptyString(candidate.scope) === "global" ? "global" : "project",
+    timeout_seconds: toLinkedTestTimeout(candidate.timeout_seconds),
+    note: toNonEmptyString(candidate.note),
+  };
 }
 
 function toLinkedDocs(value: unknown): LinkedDoc[] | undefined {
@@ -596,6 +637,114 @@ async function resolveBeadsSource(rawPath: string | undefined): Promise<{
   );
 }
 
+function parseBeadsLine(line: string, lineNumber: number): ParsedBeadsLine {
+  const trimmed = line.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(trimmed) as unknown;
+  } catch {
+    return { warning: `beads_import_invalid_jsonl_line:${lineNumber}` };
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return { warning: `beads_import_invalid_record:${lineNumber}` };
+  }
+  return { record: parsed as BeadsRecord };
+}
+
+async function resolveBeadsImportId(record: BeadsRecord, runtime: BeadsImportRuntime): Promise<string> {
+  const rawId = toNonEmptyString(record.id);
+  return rawId
+    ? normalizeImportedId(rawId, runtime.settings.id_prefix, runtime.preserveSourceIds)
+    : await runtime.sdk.generateItemId(runtime.pmRoot, runtime.settings.id_prefix);
+}
+
+function buildBeadsImportedBody(record: BeadsRecord): string {
+  const rawBody = toNonEmptyString(record.body) ?? "";
+  const design = toNonEmptyString(record.design);
+  const externalRef = toNonEmptyString(record.external_ref);
+  let finalBody = rawBody;
+  if (design) {
+    finalBody += (finalBody ? "\n\n" : "") + "## Design\n\n" + design;
+  }
+  if (externalRef) {
+    finalBody += (finalBody ? "\n\n" : "") + "## External Reference\n" + externalRef;
+  }
+  return finalBody;
+}
+
+async function importBeadsRecord(record: BeadsRecord, lineNumber: number, runtime: BeadsImportRuntime): Promise<BeadsImportLineResult> {
+  const title = toNonEmptyString(record.title);
+  if (!title) {
+    return { warning: `beads_import_missing_title:${lineNumber}` };
+  }
+
+  const createdAt = toIsoString(record.created_at) ?? nowIso();
+  const updatedAt = toIsoString(record.updated_at) ?? createdAt;
+  const id = await resolveBeadsImportId(record, runtime);
+  const typeMapping = toItemType(record.issue_type ?? record.type);
+  const type = typeMapping.type;
+  const closedAt = toIsoString(record.closed_at);
+  const assignee = toNonEmptyString(record.assignee) ?? toNonEmptyString(record.owner);
+  const frontMatter = runtime.sdk.normalizeFrontMatter({
+    id,
+    title,
+    description: toNonEmptyString(record.description) ?? "",
+    type,
+    source_type: typeMapping.sourceType,
+    status: toStatus(record.status),
+    priority: toPriority(record.priority),
+    tags: toTags(record.tags ?? record.labels),
+    created_at: createdAt,
+    updated_at: updatedAt,
+    deadline: toIsoString(record.due_at ?? record.deadline),
+    closed_at: closedAt,
+    assignee,
+    source_owner: toNonEmptyString(record.owner),
+    author: toNonEmptyString(record.author) ?? toNonEmptyString(record.created_by) ?? runtime.author,
+    estimated_minutes: toEstimatedMinutes(record.estimated_minutes),
+    acceptance_criteria: toNonEmptyString(record.acceptance_criteria),
+    design: toNonEmptyString(record.design),
+    external_ref: toNonEmptyString(record.external_ref),
+    close_reason: toNonEmptyString(record.close_reason),
+    dependencies: toDependencies(record.dependencies, createdAt, runtime.settings.id_prefix, runtime.preserveSourceIds),
+    comments: toLogEntries(record.comments, createdAt, runtime.author),
+    notes: toLogEntries(record.notes, createdAt, runtime.author),
+    learnings: toLogEntries(record.learnings, createdAt, runtime.author),
+    files: toLinkedFiles(record.files),
+    tests: toLinkedTests(record.tests),
+    docs: toLinkedDocs(record.docs),
+  });
+  const afterDocument = runtime.sdk.canonicalDocument({
+    metadata: frontMatter,
+    body: buildBeadsImportedBody(record),
+  });
+  const existing = await runtime.sdk.locateItem(
+    runtime.pmRoot,
+    id,
+    runtime.settings.id_prefix,
+    runtime.settings.item_format,
+    runtime.typeRegistry.type_to_folder,
+  );
+  if (existing) {
+    return { warning: `beads_import_item_exists:${id}` };
+  }
+  const itemPath = runtime.sdk.getItemPath(runtime.pmRoot, type, id, "toon", runtime.typeRegistry.type_to_folder);
+  const commit = await runtime.sdk.commitImportedItem({
+    pmRoot: runtime.pmRoot,
+    id,
+    itemPath,
+    document: afterDocument,
+    author: runtime.author,
+    message: runtime.message,
+    settings: runtime.settings,
+    conflictWarningPrefix: "beads_import_lock_conflict",
+  });
+  return commit.committed ? { id, writeWarnings: commit.writeWarnings } : { warning: commit.conflictWarning };
+}
+
 export async function runBeadsImport(options: BeadsImportOptions, global: GlobalOptions): Promise<BeadsImportResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await ensureInitHasRun(pmRoot);
@@ -621,115 +770,35 @@ export async function runBeadsImport(options: BeadsImportOptions, global: Global
   const ids: string[] = [];
   let imported = 0;
   let skipped = 0;
+  const runtime: BeadsImportRuntime = {
+    sdk: beadsSdk,
+    pmRoot,
+    settings,
+    typeRegistry,
+    preserveSourceIds,
+    author,
+    message,
+  };
 
   for (let index = 0; index < lines.length; index += 1) {
     const lineNumber = index + 1;
-    const line = lines[index].trim();
-    if (line.length === 0) {
+    const parsed = parseBeadsLine(lines[index], lineNumber);
+    if (!parsed) {
       continue;
     }
-
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(line) as unknown;
-    } catch {
-      warnings.push(`beads_import_invalid_jsonl_line:${lineNumber}`);
+    if ("warning" in parsed) {
+      warnings.push(parsed.warning);
       skipped += 1;
       continue;
     }
-
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-      warnings.push(`beads_import_invalid_record:${lineNumber}`);
+    const importedLine = await importBeadsRecord(parsed.record, lineNumber, runtime);
+    if ("warning" in importedLine) {
+      warnings.push(importedLine.warning);
       skipped += 1;
       continue;
     }
-    const record = parsed as BeadsRecord;
-
-    const title = toNonEmptyString(record.title);
-    if (!title) {
-      warnings.push(`beads_import_missing_title:${lineNumber}`);
-      skipped += 1;
-      continue;
-    }
-
-    const createdAt = toIsoString(record.created_at) ?? nowIso();
-    const updatedAt = toIsoString(record.updated_at) ?? createdAt;
-    const id = toNonEmptyString(record.id)
-      ? normalizeImportedId(toNonEmptyString(record.id) as string, settings.id_prefix, preserveSourceIds)
-      : await generateItemId(pmRoot, settings.id_prefix);
-    const typeMapping = toItemType(record.issue_type ?? record.type);
-    const type = typeMapping.type;
-    const closedAt = toIsoString(record.closed_at);
-    const assignee = toNonEmptyString(record.assignee) ?? toNonEmptyString(record.owner);
-    const frontMatter = normalizeFrontMatter({
-      id,
-      title,
-      description: toNonEmptyString(record.description) ?? "",
-      type,
-      source_type: typeMapping.sourceType,
-      status: toStatus(record.status),
-      priority: toPriority(record.priority),
-      tags: toTags(record.tags ?? record.labels),
-      created_at: createdAt,
-      updated_at: updatedAt,
-      deadline: toIsoString(record.due_at ?? record.deadline),
-      closed_at: closedAt,
-      assignee,
-      source_owner: toNonEmptyString(record.owner),
-      author: toNonEmptyString(record.author) ?? toNonEmptyString(record.created_by) ?? author,
-      estimated_minutes: toEstimatedMinutes(record.estimated_minutes),
-      acceptance_criteria: toNonEmptyString(record.acceptance_criteria),
-      design: toNonEmptyString(record.design),
-      external_ref: toNonEmptyString(record.external_ref),
-      close_reason: toNonEmptyString(record.close_reason),
-      dependencies: toDependencies(record.dependencies, createdAt, settings.id_prefix, preserveSourceIds),
-      comments: toLogEntries(record.comments, createdAt, author),
-      notes: toLogEntries(record.notes, createdAt, author),
-      learnings: toLogEntries(record.learnings, createdAt, author),
-      files: toLinkedFiles(record.files),
-      tests: toLinkedTests(record.tests),
-      docs: toLinkedDocs(record.docs),
-    });
-    const rawBody = toNonEmptyString(record.body) ?? "";
-    const design = toNonEmptyString(record.design);
-    const externalRef = toNonEmptyString(record.external_ref);
-    let finalBody = rawBody;
-    if (design) {
-      finalBody += (finalBody ? "\n\n" : "") + "## Design\n\n" + design;
-    }
-    if (externalRef) {
-      finalBody += (finalBody ? "\n\n" : "") + "## External Reference\n" + externalRef;
-    }
-    const afterDocument = canonicalDocument({
-      metadata: frontMatter,
-      body: finalBody,
-    });
-    const existing = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
-    if (existing) {
-      warnings.push(`beads_import_item_exists:${id}`);
-      skipped += 1;
-      continue;
-    }
-    const itemPath = getItemPath(pmRoot, type, id, "toon", typeRegistry.type_to_folder);
-
-    const commit = await commitImportedItem({
-      pmRoot,
-      id,
-      itemPath,
-      document: afterDocument,
-      author,
-      message,
-      settings,
-      conflictWarningPrefix: "beads_import_lock_conflict",
-    });
-    if (!commit.committed) {
-      warnings.push(commit.conflictWarning);
-      skipped += 1;
-      continue;
-    }
-    warnings.push(...commit.writeWarnings);
-
-    ids.push(id);
+    warnings.push(...importedLine.writeWarnings);
+    ids.push(importedLine.id);
     imported += 1;
   }
 

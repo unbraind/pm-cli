@@ -532,6 +532,66 @@ export function isKnownHelpCommandPath(root: Command, commandPathTokens: string[
   return matchedAny;
 }
 
+async function resolveAllowedTypesForUsage(bootstrapGlobal: ReturnType<typeof parseBootstrapGlobalOptions>): Promise<string> {
+  try {
+    const pmRoot = resolvePmRoot(process.cwd(), bootstrapGlobal.path);
+    if (!(await pathExists(getSettingsPath(pmRoot)))) {
+      return BUILTIN_TYPE_HELP_VALUES;
+    }
+    const settings = await readSettings(pmRoot);
+    const extensionRegistrations = bootstrapGlobal.noExtensions ? undefined : getActiveExtensionRegistrations();
+    const typeRegistry = resolveItemTypeRegistry(settings, extensionRegistrations);
+    return typeRegistry.types.length > 0 ? typeRegistry.types.join("|") : BUILTIN_TYPE_HELP_VALUES;
+  } catch {
+    /* v8 ignore start -- defensive fallback for corrupted settings during usage-error rendering; command behavior is covered through normal settings paths */
+    return BUILTIN_TYPE_HELP_VALUES;
+    /* v8 ignore stop */
+  }
+}
+
+function resolveUnknownOptionSuggestions(
+  message: string,
+  commandName: string | undefined,
+): { match: RegExpMatchArray | null; suggestions: string[] | undefined; otherCommands: string[] } {
+  const match = message.match(/unknown option '([^']+)'/i);
+  const suggestions =
+    match && commandName
+      ? dedupeStrings([
+          ...getSemanticUnknownOptionSuggestions(commandName, match[1]),
+          ...suggestNearestLongFlags(match[1], collectKnownLongFlags(commandName)),
+        ])
+      : undefined;
+  return {
+    match,
+    suggestions,
+    otherCommands: match ? findOtherCommandsForFlag(match[1], commandName) : [],
+  };
+}
+
+function resolveSuggestedRetryForUnknownOption(
+  invocationArgv: string[],
+  unknownOptionMatch: RegExpMatchArray | null,
+  unknownOptionSuggestions: string[] | undefined,
+): string | undefined {
+  if (!unknownOptionMatch || !unknownOptionSuggestions || unknownOptionSuggestions.length === 0) {
+    return undefined;
+  }
+  const rewritten = rewriteUnknownOptionArgv(invocationArgv, unknownOptionMatch[1], unknownOptionSuggestions[0]);
+  return rewritten ? renderAttemptedCommand(rewritten) : undefined;
+}
+
+function resolveSuggestedRetryForMissingOption(message: string, invocationArgv: string[]): string | undefined {
+  const missingRequiredOption = message.match(/required option '([^']+)' not specified/i);
+  const requiredOptionToken = missingRequiredOption?.[1]
+    ? trimTrailingPunctuationToken(firstWhitespaceSeparatedToken(missingRequiredOption[1].trim()))
+    : undefined;
+  if (!requiredOptionToken?.startsWith("--")) {
+    return undefined;
+  }
+  const hasFlag = invocationArgv.some((token) => token === requiredOptionToken || token.startsWith(`${requiredOptionToken}=`));
+  return hasFlag ? undefined : renderAttemptedCommand([...invocationArgv, requiredOptionToken, "<value>"]);
+}
+
 /**
  * Implements resolve commander usage context for the public runtime surface of this module.
  */
@@ -547,50 +607,12 @@ export async function resolveCommanderUsageContext(
   const commandName = parseBootstrapCommandName(invocationArgv);
   const attemptedCommand = renderAttemptedCommand(invocationArgv);
   const providedOptionFlags = extractProvidedOptionFlags(invocationArgv);
-  let allowedTypes = BUILTIN_TYPE_HELP_VALUES;
-  try {
-    const pmRoot = resolvePmRoot(process.cwd(), bootstrapGlobal.path);
-    if (await pathExists(getSettingsPath(pmRoot))) {
-      const settings = await readSettings(pmRoot);
-      const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-      if (typeRegistry.types.length > 0) {
-        allowedTypes = typeRegistry.types.join("|");
-      }
-    }
-  } catch {
-    // Fall back to built-in type guidance when settings cannot be read.
-  }
+  const allowedTypes = await resolveAllowedTypesForUsage(bootstrapGlobal);
   const unknownCommandGuidance = buildUnknownCommandGuidanceFromRuntime(message, rootProgram, extensionDescriptors);
-  const unknownOptionMatch = message.match(/unknown option '([^']+)'/i);
-  const unknownOptionSuggestions =
-    unknownOptionMatch && commandName
-      ? dedupeStrings([
-          ...getSemanticUnknownOptionSuggestions(commandName, unknownOptionMatch[1]),
-          ...suggestNearestLongFlags(unknownOptionMatch[1], collectKnownLongFlags(commandName)),
-        ])
-      : undefined;
-  const unknownOptionOtherCommands = unknownOptionMatch
-    ? findOtherCommandsForFlag(unknownOptionMatch[1], commandName)
-    : [];
-  let suggestedRetryCommand: string | undefined;
-  if (unknownOptionMatch && unknownOptionSuggestions && unknownOptionSuggestions.length > 0) {
-    const rewritten = rewriteUnknownOptionArgv(invocationArgv, unknownOptionMatch[1], unknownOptionSuggestions[0]);
-    if (rewritten) {
-      suggestedRetryCommand = renderAttemptedCommand(rewritten);
-    }
-  }
-  if (!suggestedRetryCommand) {
-    const missingRequiredOption = message.match(/required option '([^']+)' not specified/i);
-    const requiredOptionToken = missingRequiredOption?.[1]
-      ? trimTrailingPunctuationToken(firstWhitespaceSeparatedToken(missingRequiredOption[1].trim()))
-      : undefined;
-    if (requiredOptionToken?.startsWith("--")) {
-      const hasFlag = invocationArgv.some((token) => token.startsWith(requiredOptionToken));
-      if (!hasFlag) {
-        suggestedRetryCommand = renderAttemptedCommand([...invocationArgv, requiredOptionToken, "<value>"]);
-      }
-    }
-  }
+  const unknownOption = resolveUnknownOptionSuggestions(message, commandName);
+  const suggestedRetryCommand =
+    resolveSuggestedRetryForUnknownOption(invocationArgv, unknownOption.match, unknownOption.suggestions) ??
+    resolveSuggestedRetryForMissingOption(message, invocationArgv);
   return {
     message,
     commandName,
@@ -598,8 +620,8 @@ export async function resolveCommanderUsageContext(
     attemptedCommand,
     normalizedInvocationArgs: [...invocationArgv],
     providedOptionFlags,
-    unknownOptionSuggestions,
-    unknownOptionOtherCommands: unknownOptionOtherCommands.length > 0 ? unknownOptionOtherCommands : undefined,
+    unknownOptionSuggestions: unknownOption.suggestions,
+    unknownOptionOtherCommands: unknownOption.otherCommands.length > 0 ? unknownOption.otherCommands : undefined,
     suggestedRetryCommand,
     ...unknownCommandGuidance,
   };
@@ -680,5 +702,6 @@ export const _testOnly = {
   collectKnownLongFlags,
   collectInstalledPackageCommandPathHints,
   resolveOptionalPackageInstallHint,
+  resolveSuggestedRetryForMissingOption,
   suggestNearestLongFlags,
 };

@@ -4,7 +4,7 @@
  * Runs and records linked-test orchestration for Background Runs.
  */
 import fs from "node:fs/promises";
-import { spawn } from "node:child_process";
+import { spawn, type ChildProcess } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import path from "node:path";
 import { ensureDir, pathExists, readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
@@ -205,6 +205,15 @@ export interface BackgroundRunLogsResult {
 interface WorkerEvaluationResult {
   summary: BackgroundRunSummary;
   parsedResult: unknown | null;
+}
+
+interface BackgroundWorkerStopState {
+  stopRequested: boolean;
+}
+
+interface BackgroundRunRecordWriteScheduler {
+  schedule: () => void;
+  flush: () => Promise<void>;
 }
 
 function nowMs(): number {
@@ -670,6 +679,181 @@ async function appendFileOrdered(queue: Promise<void>, filePath: string, text: s
   await fs.appendFile(filePath, text, "utf8");
 }
 
+function resolvePositiveEnvInteger(name: string, fallback: number): number {
+  const parsed = Number.parseInt(process.env[name] ?? "", 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function buildBackgroundWorkerEnv(record: BackgroundTestRunRecord): NodeJS.ProcessEnv {
+  return {
+    ...process.env,
+    PM_PATH: record.pm_root,
+    PM_GLOBAL_PATH: record.global_pm_root,
+    FORCE_COLOR: "0",
+  };
+}
+
+function buildBackgroundWorkerChildArgs(record: BackgroundTestRunRecord, noExtensions: boolean): string[] {
+  return noExtensions ? ["--no-extensions", ...record.command_args] : [...record.command_args];
+}
+
+function createBackgroundRunRecordWriteScheduler(
+  pmRoot: string,
+  record: BackgroundTestRunRecord,
+): BackgroundRunRecordWriteScheduler {
+  let writeQueue: Promise<void> = Promise.resolve();
+  return {
+    schedule(): void {
+      writeQueue = writeQueue.then(async () => {
+        try {
+          await writeBackgroundRunRecord(pmRoot, record);
+        } catch {
+          // Keep worker alive even if a single metadata write fails.
+        }
+      });
+    },
+    async flush(): Promise<void> {
+      await writeQueue;
+    },
+  };
+}
+
+function requestChildSignal(child: ChildProcess, signal: NodeJS.Signals): void {
+  try {
+    child.kill(signal);
+  } catch {
+    // Child may already be gone.
+  }
+}
+
+async function requestBackgroundWorkerStop(
+  record: BackgroundTestRunRecord,
+  child: ChildProcess,
+  state: BackgroundWorkerStopState,
+  scheduleRecordWrite: () => void,
+): Promise<void> {
+  if (state.stopRequested) {
+    return;
+  }
+  state.stopRequested = true;
+  record.stop_requested_at = nowIso();
+  record.progress = {
+    ...record.progress,
+    phase: "stopping",
+    message: "Stop requested for background run.",
+    heartbeat_at: nowIso(),
+  };
+  scheduleRecordWrite();
+  requestChildSignal(child, "SIGTERM");
+  const forceTimer = setTimeout(() => requestChildSignal(child, "SIGKILL"), resolvePositiveEnvInteger(
+    "PM_BACKGROUND_RUN_FORCE_KILL_DELAY_MS",
+    DEFAULT_BACKGROUND_RUN_FORCE_KILL_DELAY_MS,
+  ));
+  forceTimer.unref?.();
+}
+
+function buildItemBackgroundProgress(line: string, progressPatch: Partial<BackgroundRunProgress>, phase: "running" | "stopping"): BackgroundRunProgress {
+  return {
+    phase,
+    message: line,
+    heartbeat_at: nowIso(),
+    item_index: progressPatch.item_index,
+    item_total: progressPatch.item_total,
+    item_id: progressPatch.item_id,
+    linked_test_index: undefined,
+    linked_test_total: undefined,
+    current_command: undefined,
+    elapsed_ms: undefined,
+  };
+}
+
+function buildLinkedTestBackgroundProgress(
+  line: string,
+  record: BackgroundTestRunRecord,
+  progressPatch: Partial<BackgroundRunProgress>,
+  phase: "running" | "stopping",
+): BackgroundRunProgress {
+  return {
+    phase,
+    message: line,
+    heartbeat_at: nowIso(),
+    item_index: progressPatch.item_index ?? record.progress?.item_index,
+    item_total: progressPatch.item_total ?? record.progress?.item_total,
+    item_id: progressPatch.item_id ?? record.progress?.item_id,
+    linked_test_index: progressPatch.linked_test_index,
+    linked_test_total: progressPatch.linked_test_total,
+    current_command: progressPatch.current_command,
+    elapsed_ms: progressPatch.elapsed_ms,
+  };
+}
+
+function applyBackgroundWorkerProgressLine(record: BackgroundTestRunRecord, line: string, stopRequested: boolean): boolean {
+  const progressPatch = parseProgressLine(line);
+  if (!progressPatch) {
+    return false;
+  }
+  const phase = record.progress?.phase === "stopping" ? "stopping" : "running";
+  record.progress = progressPatch.item_id
+    ? buildItemBackgroundProgress(line, progressPatch, phase)
+    : buildLinkedTestBackgroundProgress(line, record, progressPatch, phase);
+  if (progressPatch.phase === "finished" && !stopRequested) {
+    record.progress.phase = "running";
+  }
+  return true;
+}
+
+function parseBackgroundWorkerStdout(stdoutBuffer: string): unknown | null {
+  if (stdoutBuffer.trim().length === 0) {
+    return null;
+  }
+  try {
+    return JSON.parse(stdoutBuffer) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+function resolveBackgroundWorkerFinalStatus(record: BackgroundTestRunRecord, stopRequested: boolean): BackgroundTestRunStatus {
+  if (stopRequested) {
+    return "stopped";
+  }
+  const passed = record.exit_code === 0 && (record.summary?.failed ?? 0) === 0 && record.summary?.fail_on_skipped_triggered !== true;
+  return passed ? "passed" : "failed";
+}
+
+function buildFinishedBackgroundProgress(record: BackgroundTestRunRecord, stopRequested: boolean): BackgroundRunProgress {
+  return {
+    phase: "finished",
+    message: stopRequested ? "Background run stopped." : `Background run finished with status=${record.status}.`,
+    heartbeat_at: nowIso(),
+    item_index: record.progress?.item_index,
+    item_total: record.progress?.item_total,
+    item_id: record.progress?.item_id,
+    linked_test_index: record.progress?.linked_test_index,
+    linked_test_total: record.progress?.linked_test_total,
+    current_command: record.progress?.current_command,
+    elapsed_ms: record.progress?.elapsed_ms,
+  };
+}
+
+async function writeBackgroundWorkerResult(record: BackgroundTestRunRecord, parsedResult: unknown | null, stdoutBuffer: string): Promise<void> {
+  if (parsedResult !== null) {
+    await writeFileAtomic(record.result_path, `${JSON.stringify(parsedResult, null, 2)}\n`);
+    return;
+  }
+  await writeFileAtomic(
+    record.result_path,
+    `${JSON.stringify(
+      {
+        parse_error: "Background run output was not valid JSON.",
+        stdout_excerpt: tailLines(stdoutBuffer, DEFAULT_BACKGROUND_RUN_LOG_TAIL_LINES),
+      },
+      null,
+      2,
+    )}\n`,
+  );
+}
+
 /**
  * Implements run background test run worker for the public runtime surface of this module.
  */
@@ -690,15 +874,10 @@ export async function runBackgroundTestRunWorker(pmRoot: string, runId: string, 
     },
   };
   const cliEntry = await resolveBackgroundCliEntry(process.cwd());
-  const env: NodeJS.ProcessEnv = {
-    ...process.env,
-    PM_PATH: record.pm_root,
-    PM_GLOBAL_PATH: record.global_pm_root,
-    FORCE_COLOR: "0",
-  };
+  const env = buildBackgroundWorkerEnv(record);
   await writeBackgroundRunRecord(pmRoot, record);
 
-  const childArgs = noExtensions ? ["--no-extensions", ...record.command_args] : [...record.command_args];
+  const childArgs = buildBackgroundWorkerChildArgs(record, noExtensions);
   const child = spawn(process.execPath, [cliEntry, ...childArgs], {
     cwd: process.cwd(),
     env,
@@ -708,72 +887,28 @@ export async function runBackgroundTestRunWorker(pmRoot: string, runId: string, 
   });
   record.child_pid = child.pid as number | undefined;
 
-  let writeQueue: Promise<void> = Promise.resolve();
-  const scheduleRecordWrite = (): void => {
-    writeQueue = writeQueue.then(async () => {
-      try {
-        await writeBackgroundRunRecord(pmRoot, record);
-      } catch {
-        // Keep worker alive even if a single metadata write fails.
-      }
-    });
-  };
+  const recordWriteScheduler = createBackgroundRunRecordWriteScheduler(pmRoot, record);
+  const scheduleRecordWrite = recordWriteScheduler.schedule;
 
   let stdoutWriteQueue: Promise<void> = Promise.resolve();
   let stderrWriteQueue: Promise<void> = Promise.resolve();
   let stdoutBuffer = "";
   let stderrBuffer = "";
-  let stopRequested = false;
-
-  const requestStop = async (): Promise<void> => {
-    if (stopRequested) {
-      return;
-    }
-    stopRequested = true;
-    record.stop_requested_at = nowIso();
-    record.progress = {
-      ...record.progress,
-      phase: "stopping",
-      message: "Stop requested for background run.",
-      heartbeat_at: nowIso(),
-    };
-    scheduleRecordWrite();
-    try {
-      child.kill("SIGTERM");
-    } catch {
-      // Child may already be gone.
-    }
-    const forceKillDelayMs = Number.parseInt(process.env.PM_BACKGROUND_RUN_FORCE_KILL_DELAY_MS ?? "", 10);
-    const delay = Number.isFinite(forceKillDelayMs) && forceKillDelayMs > 0
-      ? forceKillDelayMs
-      : DEFAULT_BACKGROUND_RUN_FORCE_KILL_DELAY_MS;
-    const forceTimer = setTimeout(() => {
-      try {
-        child.kill("SIGKILL");
-      } catch {
-        // Child may already be gone.
-      }
-    }, delay);
-    forceTimer.unref?.();
-  };
+  const stopState: BackgroundWorkerStopState = { stopRequested: false };
 
   const onSignal = (): void => {
-    void requestStop();
+    void requestBackgroundWorkerStop(record, child, stopState, scheduleRecordWrite);
   };
   process.on("SIGTERM", onSignal);
   process.on("SIGINT", onSignal);
 
-  const resourceIntervalMs = Number.parseInt(process.env.PM_BACKGROUND_RUN_RESOURCE_INTERVAL_MS ?? "", 10);
-  const resourceInterval = Number.isFinite(resourceIntervalMs) && resourceIntervalMs > 0
-    ? resourceIntervalMs
-    : DEFAULT_BACKGROUND_RUN_RESOURCE_SNAPSHOT_INTERVAL_MS;
   const resourceTimer = setInterval(() => {
     void (async () => {
       record.resource = await buildResourceSnapshot(record);
       (record.progress as BackgroundRunProgress).heartbeat_at = nowIso();
       scheduleRecordWrite();
     })();
-  }, resourceInterval);
+  }, resolvePositiveEnvInteger("PM_BACKGROUND_RUN_RESOURCE_INTERVAL_MS", DEFAULT_BACKGROUND_RUN_RESOURCE_SNAPSHOT_INTERVAL_MS));
   resourceTimer.unref?.();
 
   child.stdout?.on("data", (chunk) => {
@@ -781,44 +916,6 @@ export async function runBackgroundTestRunWorker(pmRoot: string, runId: string, 
     stdoutBuffer += text;
     stdoutWriteQueue = appendFileOrdered(stdoutWriteQueue, record.stdout_path, text);
   });
-
-  const applyProgressLine = (line: string): boolean => {
-    const progressPatch = parseProgressLine(line);
-    if (!progressPatch) {
-      return false;
-    }
-    if (progressPatch.item_id) {
-      record.progress = {
-        phase: (record.progress as BackgroundRunProgress).phase === "stopping" ? "stopping" : "running",
-        message: line,
-        heartbeat_at: nowIso(),
-        item_index: progressPatch.item_index,
-        item_total: progressPatch.item_total,
-        item_id: progressPatch.item_id,
-        linked_test_index: undefined,
-        linked_test_total: undefined,
-        current_command: undefined,
-        elapsed_ms: undefined,
-      };
-      return true;
-    }
-    record.progress = {
-      phase: (record.progress as BackgroundRunProgress).phase === "stopping" ? "stopping" : "running",
-      message: line,
-      heartbeat_at: nowIso(),
-      item_index: progressPatch.item_index ?? record.progress?.item_index,
-      item_total: progressPatch.item_total ?? record.progress?.item_total,
-      item_id: progressPatch.item_id ?? record.progress?.item_id,
-      linked_test_index: progressPatch.linked_test_index,
-      linked_test_total: progressPatch.linked_test_total,
-      current_command: progressPatch.current_command,
-      elapsed_ms: progressPatch.elapsed_ms,
-    };
-    if (progressPatch.phase === "finished" && !stopRequested) {
-      record.progress.phase = "running";
-    }
-    return true;
-  };
 
   child.stderr?.on("data", (chunk) => {
     const text = chunk.toString("utf8");
@@ -829,7 +926,7 @@ export async function runBackgroundTestRunWorker(pmRoot: string, runId: string, 
     let progressChanged = false;
     for (const part of parts) {
       const line = part.trimEnd();
-      if (line.length > 0 && applyProgressLine(line)) {
+      if (line.length > 0 && applyBackgroundWorkerProgressLine(record, line, stopState.stopRequested)) {
         progressChanged = true;
       }
     }
@@ -855,61 +952,23 @@ export async function runBackgroundTestRunWorker(pmRoot: string, runId: string, 
   await stdoutWriteQueue;
   await stderrWriteQueue;
   const trailingStderrLine = stderrBuffer.trimEnd();
-  if (trailingStderrLine.length > 0 && applyProgressLine(trailingStderrLine)) {
+  if (trailingStderrLine.length > 0 && applyBackgroundWorkerProgressLine(record, trailingStderrLine, stopState.stopRequested)) {
     scheduleRecordWrite();
   }
   stderrBuffer = "";
 
-  let parsedResult: unknown | null = null;
-  if (stdoutBuffer.trim().length > 0) {
-    try {
-      parsedResult = JSON.parse(stdoutBuffer);
-    } catch {
-      parsedResult = null;
-    }
-  }
+  const parsedResult = parseBackgroundWorkerStdout(stdoutBuffer);
   const evaluated = evaluateWorkerResult(record.kind, parsedResult);
   record.summary = evaluated.summary;
   record.exit_code = typeof exitCode === "number" ? exitCode : undefined;
   record.signal = signal ?? undefined;
   record.finished_at = nowIso();
-  record.status = stopRequested
-    ? "stopped"
-    : (record.exit_code === 0 &&
-          (record.summary.failed ?? 0) === 0 &&
-          record.summary.fail_on_skipped_triggered !== true)
-      ? "passed"
-      : "failed";
-  record.progress = {
-    phase: "finished",
-    message: stopRequested ? "Background run stopped." : `Background run finished with status=${record.status}.`,
-    heartbeat_at: nowIso(),
-    item_index: record.progress?.item_index,
-    item_total: record.progress?.item_total,
-    item_id: record.progress?.item_id,
-    linked_test_index: record.progress?.linked_test_index,
-    linked_test_total: record.progress?.linked_test_total,
-    current_command: record.progress?.current_command,
-    elapsed_ms: record.progress?.elapsed_ms,
-  };
+  record.status = resolveBackgroundWorkerFinalStatus(record, stopState.stopRequested);
+  record.progress = buildFinishedBackgroundProgress(record, stopState.stopRequested);
   record.resource = await buildResourceSnapshot(record);
-  if (parsedResult !== null) {
-    await writeFileAtomic(record.result_path, `${JSON.stringify(parsedResult, null, 2)}\n`);
-  } else {
-    await writeFileAtomic(
-      record.result_path,
-      `${JSON.stringify(
-        {
-          parse_error: "Background run output was not valid JSON.",
-          stdout_excerpt: tailLines(stdoutBuffer, DEFAULT_BACKGROUND_RUN_LOG_TAIL_LINES),
-        },
-        null,
-        2,
-      )}\n`,
-    );
-  }
+  await writeBackgroundWorkerResult(record, parsedResult, stdoutBuffer);
   await writeBackgroundRunRecord(pmRoot, record);
-  await writeQueue;
+  await recordWriteScheduler.flush();
   return record;
 }
 
@@ -989,6 +1048,39 @@ export async function getBackgroundTestRunStatus(pmRoot: string, runId: string):
   };
 }
 
+/* v8 ignore start -- stop-signal branches depend on live process state; command tests cover observable stop behavior */
+function sendBackgroundRunStopSignal(record: BackgroundTestRunRecord, force: boolean): "SIGTERM" | "SIGKILL" | "none" {
+  const signal: NodeJS.Signals = force ? "SIGKILL" : "SIGTERM";
+  if (!isPidRunning(record.worker_pid) || !record.worker_pid) {
+    return "none";
+  }
+  try {
+    process.kill(record.worker_pid, signal);
+    return signal;
+  } catch {
+    return "none";
+  }
+}
+/* v8 ignore stop */
+
+function buildStoppingBackgroundProgress(
+  record: BackgroundTestRunRecord,
+  signalSent: "SIGTERM" | "SIGKILL" | "none",
+): BackgroundRunProgress {
+  return {
+    phase: "stopping",
+    message: signalSent === "none" ? "Run marked stopped." : `Stop requested via ${signalSent}.`,
+    heartbeat_at: nowIso(),
+    item_index: record.progress?.item_index,
+    item_total: record.progress?.item_total,
+    item_id: record.progress?.item_id,
+    linked_test_index: record.progress?.linked_test_index,
+    linked_test_total: record.progress?.linked_test_total,
+    current_command: record.progress?.current_command,
+    elapsed_ms: record.progress?.elapsed_ms,
+  };
+}
+
 /**
  * Implements stop background test run for the public runtime surface of this module.
  */
@@ -1004,33 +1096,13 @@ export async function stopBackgroundTestRun(pmRoot: string, runId: string, force
       signal_sent: "none",
     };
   }
-  let signalSent: "SIGTERM" | "SIGKILL" | "none" = "none";
-  const signal: NodeJS.Signals = force ? "SIGKILL" : "SIGTERM";
-  if (isPidRunning(refreshed.worker_pid) && refreshed.worker_pid) {
-    try {
-      process.kill(refreshed.worker_pid, signal);
-      signalSent = signal;
-    } catch {
-      signalSent = "none";
-    }
-  }
+  const signalSent = sendBackgroundRunStopSignal(refreshed, force);
   if (signalSent === "none") {
     refreshed.status = "stopped";
     refreshed.finished_at = refreshed.finished_at ?? nowIso();
   }
   refreshed.stop_requested_at = nowIso();
-  refreshed.progress = {
-    phase: "stopping",
-    message: signalSent === "none" ? "Run marked stopped." : `Stop requested via ${signalSent}.`,
-    heartbeat_at: nowIso(),
-    item_index: refreshed.progress?.item_index,
-    item_total: refreshed.progress?.item_total,
-    item_id: refreshed.progress?.item_id,
-    linked_test_index: refreshed.progress?.linked_test_index,
-    linked_test_total: refreshed.progress?.linked_test_total,
-    current_command: refreshed.progress?.current_command,
-    elapsed_ms: refreshed.progress?.elapsed_ms,
-  };
+  refreshed.progress = buildStoppingBackgroundProgress(refreshed, signalSent);
   await writeBackgroundRunRecord(pmRoot, refreshed);
   return {
     run: refreshed,

@@ -38,6 +38,7 @@ import type {
   GovernanceWorkflowEnforcement,
   ItemFormat,
   ParentReferencePolicy,
+  PmSettings,
   SprintReleaseFormatPolicy,
   ValidateMetadataProfile,
   ValidateMetadataRequiredField,
@@ -268,6 +269,11 @@ const CONFIG_KEY_ALIASES: Record<ConfigKey, string[]> = {
 const CANONICAL_CONFIG_KEYS: readonly string[] = (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).map(
   (candidate) => CONFIG_KEY_ALIASES[candidate][0],
 );
+const CONFIG_KEY_BY_ALIAS: Readonly<Record<string, ConfigKey>> = Object.fromEntries(
+  (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).flatMap((key) =>
+    CONFIG_KEY_ALIASES[key].map((alias) => [alias, key] as const),
+  ),
+) as Readonly<Record<string, ConfigKey>>;
 
 const CONFIG_KEY_SUMMARIES: Record<ConfigKey, string> = {
   definition_of_done: "Definition of Done criteria list.",
@@ -300,15 +306,66 @@ const CONFIG_KEY_SUMMARIES: Record<ConfigKey, string> = {
   context: "Context command settings (depth, section toggles, limits).",
 };
 
-const LIFECYCLE_PATTERN_CONFIG_KEYS: ConfigKey[] = [
+const LIFECYCLE_PATTERN_CONFIG_KEYS = [
   "lifecycle_stale_blocker_reason_patterns",
   "lifecycle_closure_like_blocked_reason_patterns",
   "lifecycle_closure_like_resolution_patterns",
   "lifecycle_closure_like_actual_result_patterns",
-];
+] as const satisfies readonly ConfigKey[];
+type LifecyclePatternConfigKey = (typeof LIFECYCLE_PATTERN_CONFIG_KEYS)[number];
+type CriteriaConfigKey = "metadata_required_fields" | LifecyclePatternConfigKey;
+type ValidationConfigKey =
+  | "history_missing_stream_policy"
+  | "sprint_release_format_policy"
+  | "parent_reference_policy"
+  | "metadata_validation_profile";
+type GovernancePolicyConfigKey =
+  | "governance_ownership_enforcement"
+  | "governance_create_mode_default"
+  | "governance_close_validation_default";
+type GovernanceValidationConfigKey =
+  | "governance_parent_reference_policy"
+  | "governance_metadata_validation_profile"
+  | "governance_workflow_enforcement";
+type GovernancePresetOrTypeConfigKey = "governance_preset" | "governance_create_default_type";
+
+const CRITERIA_CONFIG_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
+  "metadata_required_fields",
+  ...LIFECYCLE_PATTERN_CONFIG_KEYS,
+]);
+const TRACKING_CONFIG_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
+  "test_result_tracking",
+  "telemetry_tracking",
+]);
+const GOVERNANCE_BOOLEAN_CONFIG_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
+  "governance_require_close_reason",
+  "governance_force_required_for_stale_lock",
+]);
+const GOVERNANCE_POLICY_CONFIG_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
+  "governance_ownership_enforcement",
+  "governance_create_mode_default",
+  "governance_close_validation_default",
+]);
+const GOVERNANCE_VALIDATION_CONFIG_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
+  "governance_parent_reference_policy",
+  "governance_metadata_validation_profile",
+  "governance_workflow_enforcement",
+]);
+const GOVERNANCE_PRESET_OR_TYPE_CONFIG_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
+  "governance_preset",
+  "governance_create_default_type",
+]);
+
+const isCriteriaValueConfigKey = (key: ConfigKey): key is CriteriaConfigKey => CRITERIA_CONFIG_KEYS.has(key);
+const isGovernancePolicyConfigKey = (key: ConfigKey): key is GovernancePolicyConfigKey =>
+  GOVERNANCE_POLICY_CONFIG_KEYS.has(key);
+const isGovernanceValidationConfigKey = (key: ConfigKey): key is GovernanceValidationConfigKey =>
+  GOVERNANCE_VALIDATION_CONFIG_KEYS.has(key);
+const isGovernancePresetOrTypeConfigKey = (key: ConfigKey): key is GovernancePresetOrTypeConfigKey =>
+  GOVERNANCE_PRESET_OR_TYPE_CONFIG_KEYS.has(key);
 
 function isCriteriaConfigKey(key: ConfigKey): boolean {
-  return key === "definition_of_done" || key === "metadata_required_fields" || LIFECYCLE_PATTERN_CONFIG_KEYS.includes(key);
+  return key === "definition_of_done" || isCriteriaValueConfigKey(key);
 }
 
 function normalizeScope(value: string): ConfigScope {
@@ -329,95 +386,9 @@ function normalizeAction(value: string): ConfigAction {
 }
 
 function normalizeKey(value: string): ConfigKey {
-  if ((CONFIG_KEY_VALUES as readonly string[]).includes(value)) {
-    if (value === "item-format" || value === "item_format") {
-      return "item_format";
-    }
-    if (value === "history-missing-stream-policy" || value === "history_missing_stream_policy") {
-      return "history_missing_stream_policy";
-    }
-    if (value === "sprint-release-format-policy" || value === "sprint_release_format_policy") {
-      return "sprint_release_format_policy";
-    }
-    if (value === "parent-reference-policy" || value === "parent_reference_policy") {
-      return "parent_reference_policy";
-    }
-    if (value === "metadata-validation-profile" || value === "metadata_validation_profile") {
-      return "metadata_validation_profile";
-    }
-    if (value === "metadata-required-fields" || value === "metadata_required_fields") {
-      return "metadata_required_fields";
-    }
-    if (
-      value === "lifecycle-stale-blocker-reason-patterns" ||
-      value === "lifecycle_stale_blocker_reason_patterns"
-    ) {
-      return "lifecycle_stale_blocker_reason_patterns";
-    }
-    if (
-      value === "lifecycle-closure-like-blocked-reason-patterns" ||
-      value === "lifecycle_closure_like_blocked_reason_patterns"
-    ) {
-      return "lifecycle_closure_like_blocked_reason_patterns";
-    }
-    if (
-      value === "lifecycle-closure-like-resolution-patterns" ||
-      value === "lifecycle_closure_like_resolution_patterns"
-    ) {
-      return "lifecycle_closure_like_resolution_patterns";
-    }
-    if (
-      value === "lifecycle-closure-like-actual-result-patterns" ||
-      value === "lifecycle_closure_like_actual_result_patterns"
-    ) {
-      return "lifecycle_closure_like_actual_result_patterns";
-    }
-    if (value === "governance-preset" || value === "governance_preset") {
-      return "governance_preset";
-    }
-    if (value === "governance-ownership-enforcement" || value === "governance_ownership_enforcement") {
-      return "governance_ownership_enforcement";
-    }
-    if (value === "governance-create-mode-default" || value === "governance_create_mode_default") {
-      return "governance_create_mode_default";
-    }
-    if (value === "governance-close-validation-default" || value === "governance_close_validation_default") {
-      return "governance_close_validation_default";
-    }
-    if (value === "governance-require-close-reason" || value === "governance_require_close_reason") {
-      return "governance_require_close_reason";
-    }
-    if (value === "governance-create-default-type" || value === "governance_create_default_type") {
-      return "governance_create_default_type";
-    }
-    if (value === "governance-workflow-enforcement" || value === "governance_workflow_enforcement") {
-      return "governance_workflow_enforcement";
-    }
-    if (value === "governance-parent-reference-policy" || value === "governance_parent_reference_policy") {
-      return "governance_parent_reference_policy";
-    }
-    if (
-      value === "governance-metadata-validation-profile" ||
-      value === "governance_metadata_validation_profile"
-    ) {
-      return "governance_metadata_validation_profile";
-    }
-    if (
-      value === "governance-force-required-for-stale-lock" ||
-      value === "governance_force_required_for_stale_lock"
-    ) {
-      return "governance_force_required_for_stale_lock";
-    }
-    if (value === "test-result-tracking" || value === "test_result_tracking") {
-      return "test_result_tracking";
-    }
-    if (value === "telemetry-tracking" || value === "telemetry_tracking") {
-      return "telemetry_tracking";
-    }
-    if (value === "context") {
-      return "context";
-    }
-    return "definition_of_done";
+  const key = CONFIG_KEY_BY_ALIAS[value];
+  if (key) {
+    return key;
   }
   const nestedKeys = NESTED_SETTING_DESCRIPTORS.map((descriptor) => descriptor.key).join(", ");
   throw new PmCliError(
@@ -747,111 +718,49 @@ function assertConfigKeyDefined(key: ConfigKey | undefined): asserts key is Conf
   }
 }
 
-function readConfigValue(settings: {
-  workflow: { definition_of_done: string[] };
-  item_format: ItemFormat;
-  history: { missing_stream: HistoryMissingStreamPolicy };
-  validation: {
-    sprint_release_format: SprintReleaseFormatPolicy;
-    parent_reference: ParentReferencePolicy;
-    metadata_profile: ValidateMetadataProfile;
-    metadata_required_fields: ValidateMetadataRequiredField[];
-    lifecycle_stale_blocker_reason_patterns: string[];
-    lifecycle_closure_like_blocked_reason_patterns: string[];
-    lifecycle_closure_like_resolution_patterns: string[];
-    lifecycle_closure_like_actual_result_patterns: string[];
-  };
-  governance: {
-    preset: GovernancePreset;
-    ownership_enforcement: GovernanceOwnershipEnforcement;
-    create_mode_default: GovernanceCreateModeDefault;
-    close_validation_default: GovernanceCloseValidationDefault;
-    require_close_reason: boolean;
-    parent_reference: ParentReferencePolicy;
-    metadata_profile: ValidateMetadataProfile;
-    force_required_for_stale_lock: boolean;
-    create_default_type?: string;
-    workflow_enforcement?: GovernanceWorkflowEnforcement;
-  };
-  testing: { record_results_to_items: boolean };
-  telemetry: { enabled: boolean };
-  context: import("../../types/index.js").ContextSettings;
-}, key: ConfigKey): ConfigValue {
-  if (key === "item_format") {
-    return settings.item_format;
-  }
-  if (key === "history_missing_stream_policy") {
-    return settings.history.missing_stream;
-  }
-  if (key === "sprint_release_format_policy") {
-    return settings.validation.sprint_release_format;
-  }
-  if (key === "parent_reference_policy") {
-    return settings.validation.parent_reference;
-  }
-  if (key === "metadata_validation_profile") {
-    return settings.validation.metadata_profile;
-  }
-  if (key === "metadata_required_fields") {
-    return [...settings.validation.metadata_required_fields];
-  }
-  if (key === "lifecycle_stale_blocker_reason_patterns") {
-    return [...settings.validation.lifecycle_stale_blocker_reason_patterns];
-  }
-  if (key === "lifecycle_closure_like_blocked_reason_patterns") {
-    return [...settings.validation.lifecycle_closure_like_blocked_reason_patterns];
-  }
-  if (key === "lifecycle_closure_like_resolution_patterns") {
-    return [...settings.validation.lifecycle_closure_like_resolution_patterns];
-  }
-  if (key === "lifecycle_closure_like_actual_result_patterns") {
-    return [...settings.validation.lifecycle_closure_like_actual_result_patterns];
-  }
-  if (key === "governance_preset") {
-    return settings.governance.preset;
-  }
-  if (key === "governance_ownership_enforcement") {
-    return settings.governance.ownership_enforcement;
-  }
-  if (key === "governance_create_mode_default") {
-    return settings.governance.create_mode_default;
-  }
-  if (key === "governance_close_validation_default") {
-    return settings.governance.close_validation_default;
-  }
-  if (key === "governance_require_close_reason") {
-    return settings.governance.require_close_reason ? "enabled" : "disabled";
-  }
-  if (key === "governance_create_default_type") {
-    return settings.governance.create_default_type ?? "";
-  }
-  if (key === "governance_workflow_enforcement") {
-    return settings.governance.workflow_enforcement ?? "off";
-  }
-  if (key === "governance_parent_reference_policy") {
-    return settings.governance.parent_reference;
-  }
-  if (key === "governance_metadata_validation_profile") {
-    return settings.governance.metadata_profile;
-  }
-  if (key === "governance_force_required_for_stale_lock") {
-    return settings.governance.force_required_for_stale_lock ? "enabled" : "disabled";
-  }
-  if (key === "test_result_tracking") {
-    return settings.testing.record_results_to_items ? "enabled" : "disabled";
-  }
-  if (key === "telemetry_tracking") {
-    return settings.telemetry.enabled ? "enabled" : "disabled";
-  }
-  if (key === "context") {
-    return {
-      default_depth: settings.context.default_depth,
-      activity_limit: settings.context.activity_limit,
-      stale_threshold_days: settings.context.stale_threshold_days,
-      sections: { ...settings.context.sections },
-    } satisfies ContextConfigValue;
-  }
-  return [...settings.workflow.definition_of_done];
+const CONFIG_VALUE_READERS: Readonly<Record<ConfigKey, (settings: PmSettings) => ConfigValue>> = {
+  definition_of_done: (settings) => [...settings.workflow.definition_of_done],
+  item_format: (settings) => settings.item_format,
+  history_missing_stream_policy: (settings) => settings.history.missing_stream,
+  sprint_release_format_policy: (settings) => settings.validation.sprint_release_format,
+  parent_reference_policy: (settings) => settings.validation.parent_reference,
+  metadata_validation_profile: (settings) => settings.validation.metadata_profile,
+  metadata_required_fields: (settings) => [...settings.validation.metadata_required_fields],
+  lifecycle_stale_blocker_reason_patterns: (settings) => [
+    ...settings.validation.lifecycle_stale_blocker_reason_patterns,
+  ],
+  lifecycle_closure_like_blocked_reason_patterns: (settings) => [
+    ...settings.validation.lifecycle_closure_like_blocked_reason_patterns,
+  ],
+  lifecycle_closure_like_resolution_patterns: (settings) => [
+    ...settings.validation.lifecycle_closure_like_resolution_patterns,
+  ],
+  lifecycle_closure_like_actual_result_patterns: (settings) => [
+    ...settings.validation.lifecycle_closure_like_actual_result_patterns,
+  ],
+  governance_preset: (settings) => settings.governance.preset,
+  governance_ownership_enforcement: (settings) => settings.governance.ownership_enforcement,
+  governance_create_mode_default: (settings) => settings.governance.create_mode_default,
+  governance_close_validation_default: (settings) => settings.governance.close_validation_default,
+  governance_require_close_reason: (settings) => settings.governance.require_close_reason ? "enabled" : "disabled",
+  governance_create_default_type: (settings) => settings.governance.create_default_type ?? "",
+  governance_workflow_enforcement: (settings) => settings.governance.workflow_enforcement ?? "off",
+  governance_parent_reference_policy: (settings) => settings.governance.parent_reference,
+  governance_metadata_validation_profile: (settings) => settings.governance.metadata_profile,
+  governance_force_required_for_stale_lock: (settings) =>
+    settings.governance.force_required_for_stale_lock ? "enabled" : "disabled",
+  test_result_tracking: (settings) => settings.testing.record_results_to_items ? "enabled" : "disabled",
+  telemetry_tracking: (settings) => settings.telemetry.enabled ? "enabled" : "disabled",
+  context: (settings) => ({
+    default_depth: settings.context.default_depth,
+    activity_limit: settings.context.activity_limit,
+    stale_threshold_days: settings.context.stale_threshold_days,
+    sections: { ...settings.context.sections },
+  }),
+};
+
+function readConfigValue(settings: PmSettings, key: ConfigKey): ConfigValue {
+  return CONFIG_VALUE_READERS[key](settings);
 }
 
 function withWarnings(result: ConfigResult, warnings: string[]): ConfigResult {
@@ -889,7 +798,7 @@ function parseSectionToggle(raw: string | undefined): boolean | undefined {
 }
 
 async function applyContextConfig(
-  settings: import("../../types/index.js").PmSettings,
+  settings: PmSettings,
   options: ConfigCommandOptions,
   target: { pmRoot: string; settingsPath: string },
   scope: ConfigScope,
@@ -974,6 +883,20 @@ async function applyContextConfig(
   }, warnings);
 }
 
+function applyNestedSettingPositionalValue(
+  keyValue: string,
+  valueValue: string,
+  options: ConfigCommandOptions,
+): ConfigCommandOptions {
+  if (options.value !== undefined && options.value !== valueValue) {
+    throw new PmCliError(
+      `Config set ${keyValue} received both positional value "${valueValue}" and --value "${options.value}". Pass only one.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  return { ...options, value: valueValue };
+}
+
 /**
  * Route an intuitive `pm config set <key> <value>` positional value onto the typed
  * flag it belongs to (--format/--policy/--criterion), applying enabled/disabled
@@ -1003,15 +926,7 @@ function applyPositionalValue(
   }
 
   if (nestedSetting) {
-    if (options.value !== undefined && valueValue !== undefined && options.value !== valueValue) {
-      throw new PmCliError(
-        `Config set ${keyValue} received both positional value "${valueValue}" and --value "${options.value}". Pass only one.`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    // valueValue is guaranteed defined here (the valueValue === undefined early return
-    // above preserves a pre-existing --value), so this never overwrites --value.
-    return { ...options, value: valueValue };
+    return applyNestedSettingPositionalValue(keyValue, valueValue, options);
   }
 
   assertConfigKeyDefined(normalizedKey);
@@ -1059,6 +974,542 @@ function applyPositionalValue(
   return { ...options, policy: routed.value };
 }
 
+interface ConfigExecutionContext {
+  scope: ConfigScope;
+  target: { pmRoot: string; settingsPath: string };
+  settings: PmSettings;
+  metadata: { has_explicit_item_format: boolean };
+  warnings: string[];
+}
+
+function buildConfigListResult(context: ConfigExecutionContext): ConfigResult {
+  const keys = (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).map((candidate) => ({
+    key: candidate,
+    aliases: CONFIG_KEY_ALIASES[candidate],
+    value_kind: candidate === "context"
+      ? ("object" as const)
+      : isCriteriaConfigKey(candidate) ? ("string_array" as const) : ("enum" as const),
+    set_flags:
+      candidate === "context"
+        ? ["--default-depth", "--activity-limit", "--stale-threshold-days", "--section-<name>"]
+        : isCriteriaConfigKey(candidate) ? ["--criterion", "--clear-criteria"] : candidate === "item_format" ? ["--format"] : ["--policy"],
+    summary: CONFIG_KEY_SUMMARIES[candidate],
+    value: readConfigValue(context.settings, candidate),
+  }));
+  const nestedSettings: NestedSettingResultValue[] = NESTED_SETTING_DESCRIPTORS.map((descriptor) => ({
+    key: descriptor.key,
+    path: descriptor.path,
+    kind: descriptor.kind,
+    value: readNestedSettingValue(context.settings, descriptor),
+  }));
+  return withWarnings(
+    {
+      scope: context.scope,
+      keys,
+      nested_settings: nestedSettings,
+      count: keys.length,
+      settings_path: context.target.settingsPath,
+      changed: false,
+    },
+    context.warnings,
+  );
+}
+
+function buildConfigExportResult(context: ConfigExecutionContext): ConfigResult {
+  const values = Object.fromEntries(
+    (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).map((key) => [key, readConfigValue(context.settings, key)]),
+  ) as Record<ConfigKey, ConfigValue>;
+  return withWarnings(
+    {
+      scope: context.scope,
+      values,
+      settings_path: context.target.settingsPath,
+      changed: false,
+    },
+    context.warnings,
+  );
+}
+
+function buildConfigGetResult(context: ConfigExecutionContext, key: ConfigKey): ConfigResult {
+  const value = readConfigValue(context.settings, key);
+  const base = {
+    scope: context.scope,
+    key,
+    settings_path: context.target.settingsPath,
+    changed: false,
+  };
+  if (key === "item_format") {
+    return withWarnings(
+      {
+        ...base,
+        format: context.settings.item_format,
+        has_explicit_item_format: context.metadata.has_explicit_item_format,
+      },
+      context.warnings,
+    );
+  }
+  if (key === "context") {
+    return withWarnings({ ...base, context_settings: value as ContextConfigValue }, context.warnings);
+  }
+  if (Array.isArray(value)) {
+    return withWarnings({ ...base, criteria: value }, context.warnings);
+  }
+  return withWarnings({ ...base, policy: value as ConfigResult["policy"] }, context.warnings);
+}
+
+async function buildNestedSettingResult(
+  context: ConfigExecutionContext,
+  action: ConfigAction,
+  nestedSetting: NestedSettingDescriptor,
+  options: ConfigCommandOptions,
+): Promise<ConfigResult> {
+  if (action === "get") {
+    const currentValue = readNestedSettingValue(context.settings, nestedSetting);
+    return withWarnings(
+      {
+        scope: context.scope,
+        key: nestedSetting.key,
+        nested_setting: {
+          key: nestedSetting.key,
+          path: nestedSetting.path,
+          kind: nestedSetting.kind,
+          value: currentValue,
+        },
+        settings_path: context.target.settingsPath,
+        changed: false,
+      },
+      context.warnings,
+    );
+  }
+
+  const rawValue = options.value;
+  if (typeof rawValue !== "string") {
+    throw new PmCliError(
+      `Config set ${nestedSetting.key} requires a value. Pass it positionally (\`pm config ${context.scope} set ${nestedSetting.key} <value>\`) or via --value.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  const parsed = parseNestedSettingValue(nestedSetting, rawValue);
+  if (!parsed.ok) {
+    throw new PmCliError(parsed.error.message, EXIT_CODE.USAGE);
+  }
+  const changed = writeNestedSettingValue(
+    context.settings as unknown as Record<string, unknown>,
+    nestedSetting,
+    parsed.parsed.value,
+  );
+  if (changed) {
+    await writeSettings(context.target.pmRoot, context.settings, `config:set:${nestedSetting.path}`);
+  }
+  return withWarnings(
+    {
+      scope: context.scope,
+      key: nestedSetting.key,
+      nested_setting: {
+        key: nestedSetting.key,
+        path: nestedSetting.path,
+        kind: nestedSetting.kind,
+        value: parsed.parsed.value,
+      },
+      settings_path: context.target.settingsPath,
+      changed,
+    },
+    context.warnings,
+  );
+}
+
+async function writeConfigSettingsIfChanged(
+  context: ConfigExecutionContext,
+  changed: boolean,
+  reason: string,
+): Promise<void> {
+  if (changed) {
+    await writeSettings(context.target.pmRoot, context.settings, reason);
+  }
+}
+
+function hasGovernanceValidationMirrorChange<T extends ParentReferencePolicy | ValidateMetadataProfile>(
+  governanceValue: T,
+  validationValue: T,
+  nextPolicy: T,
+): boolean {
+  return governanceValue !== nextPolicy || validationValue !== nextPolicy;
+}
+
+function buildPolicyResult(
+  context: ConfigExecutionContext,
+  key: ConfigKey,
+  policy: ConfigResult["policy"],
+  changed: boolean,
+): ConfigResult {
+  return withWarnings(
+    {
+      scope: context.scope,
+      key,
+      policy,
+      settings_path: context.target.settingsPath,
+      changed,
+    },
+    context.warnings,
+  );
+}
+
+function buildCriteriaResult(
+  context: ConfigExecutionContext,
+  key: ConfigKey,
+  criteria: string[],
+  changed: boolean,
+): ConfigResult {
+  return withWarnings(
+    {
+      scope: context.scope,
+      key,
+      criteria,
+      settings_path: context.target.settingsPath,
+      changed,
+    },
+    context.warnings,
+  );
+}
+
+async function setItemFormatConfig(context: ConfigExecutionContext, options: ConfigCommandOptions): Promise<ConfigResult> {
+  const nextFormat = normalizeItemFormat(options.format);
+  const changed = context.settings.item_format !== nextFormat || !context.metadata.has_explicit_item_format;
+  let migration: ConfigResult["migration"] = undefined;
+  if (changed) {
+    const typeRegistry = resolveItemTypeRegistry(context.settings, getActiveExtensionRegistrations());
+    const migrated = await migrateItemFilesToFormat(
+      context.target.pmRoot,
+      nextFormat,
+      "config:set:item_format:migrate",
+      typeRegistry.type_to_folder,
+      context.settings.schema,
+    );
+    migration = {
+      target_format: migrated.target_format,
+      scanned: migrated.scanned,
+      migrated: migrated.migrated,
+      removed: migrated.removed,
+      warnings: migrated.warnings,
+    };
+    context.settings.item_format = nextFormat;
+    await writeSettings(context.target.pmRoot, context.settings, "config:set:item_format");
+  }
+  return withWarnings(
+    {
+      scope: context.scope,
+      key: "item_format",
+      format: context.settings.item_format,
+      has_explicit_item_format: true,
+      migration,
+      settings_path: context.target.settingsPath,
+      changed,
+    },
+    context.warnings,
+  );
+}
+
+async function setValidationConfig(
+  context: ConfigExecutionContext,
+  key: ValidationConfigKey,
+  options: ConfigCommandOptions,
+): Promise<ConfigResult> {
+  if (key === "history_missing_stream_policy") {
+    const nextPolicy = normalizeHistoryMissingStreamPolicy(options.policy);
+    const changed = context.settings.history.missing_stream !== nextPolicy;
+    context.settings.history.missing_stream = nextPolicy;
+    await writeConfigSettingsIfChanged(context, changed, "config:set:history_missing_stream_policy");
+    return buildPolicyResult(context, key, context.settings.history.missing_stream, changed);
+  }
+  if (key === "sprint_release_format_policy") {
+    const nextPolicy = normalizeSprintReleaseFormatPolicy(options.policy);
+    const changed = context.settings.validation.sprint_release_format !== nextPolicy;
+    context.settings.validation.sprint_release_format = nextPolicy;
+    await writeConfigSettingsIfChanged(context, changed, "config:set:sprint_release_format_policy");
+    return buildPolicyResult(context, key, context.settings.validation.sprint_release_format, changed);
+  }
+  if (key === "parent_reference_policy") {
+    const nextPolicy = normalizeParentReferencePolicy(options.policy);
+    const changed =
+      context.settings.validation.parent_reference !== nextPolicy ||
+      context.settings.governance.preset !== "custom" ||
+      context.settings.governance.parent_reference !== nextPolicy;
+    context.settings.validation.parent_reference = nextPolicy;
+    context.settings.governance.preset = "custom";
+    context.settings.governance.parent_reference = nextPolicy;
+    await writeConfigSettingsIfChanged(context, changed, "config:set:parent_reference_policy");
+    return buildPolicyResult(context, key, context.settings.validation.parent_reference, changed);
+  }
+  const nextPolicy = normalizeValidateMetadataProfile(options.policy);
+  const changed =
+    context.settings.validation.metadata_profile !== nextPolicy ||
+    context.settings.governance.preset !== "custom" ||
+    context.settings.governance.metadata_profile !== nextPolicy;
+  context.settings.validation.metadata_profile = nextPolicy;
+  context.settings.governance.preset = "custom";
+  context.settings.governance.metadata_profile = nextPolicy;
+  await writeConfigSettingsIfChanged(context, changed, "config:set:metadata_validation_profile");
+  return buildPolicyResult(context, key, context.settings.validation.metadata_profile, changed);
+}
+
+async function setCriteriaConfig(
+  context: ConfigExecutionContext,
+  key: CriteriaConfigKey,
+  options: ConfigCommandOptions,
+): Promise<ConfigResult> {
+  if (key === "metadata_required_fields") {
+    const nextCriteria = normalizeMetadataRequiredFields(options.criterion, options.clearCriteria);
+    const changed =
+      nextCriteria.length !== context.settings.validation.metadata_required_fields.length ||
+      nextCriteria.some((value, index) => value !== context.settings.validation.metadata_required_fields[index]);
+    context.settings.validation.metadata_required_fields = nextCriteria;
+    await writeConfigSettingsIfChanged(context, changed, "config:set:metadata_required_fields");
+    return buildCriteriaResult(context, key, [...context.settings.validation.metadata_required_fields], changed);
+  }
+
+  const lifecycleTargets: Record<LifecyclePatternConfigKey, string[]> = {
+    lifecycle_stale_blocker_reason_patterns: context.settings.validation.lifecycle_stale_blocker_reason_patterns,
+    lifecycle_closure_like_blocked_reason_patterns:
+      context.settings.validation.lifecycle_closure_like_blocked_reason_patterns,
+    lifecycle_closure_like_resolution_patterns:
+      context.settings.validation.lifecycle_closure_like_resolution_patterns,
+    lifecycle_closure_like_actual_result_patterns:
+      context.settings.validation.lifecycle_closure_like_actual_result_patterns,
+  };
+  const currentCriteria = lifecycleTargets[key];
+
+  const nextCriteria = normalizeLifecyclePatternCriteria(key, options.criterion, options.clearCriteria);
+  const changed =
+    nextCriteria.length !== currentCriteria.length ||
+    nextCriteria.some((value, index) => value !== currentCriteria[index]);
+  currentCriteria.splice(0, currentCriteria.length, ...nextCriteria);
+  await writeConfigSettingsIfChanged(context, changed, `config:set:${key}`);
+  return buildCriteriaResult(context, key, [...currentCriteria], changed);
+}
+
+async function setGovernancePresetOrTypeConfig(
+  context: ConfigExecutionContext,
+  key: GovernancePresetOrTypeConfigKey,
+  options: ConfigCommandOptions,
+): Promise<ConfigResult> {
+  if (key === "governance_preset") {
+    const nextPolicy = normalizeGovernancePreset(options.policy);
+    const changed = context.settings.governance.preset !== nextPolicy;
+    context.settings.governance.preset = nextPolicy;
+    await writeConfigSettingsIfChanged(context, changed, "config:set:governance_preset");
+    return buildPolicyResult(context, key, context.settings.governance.preset, changed);
+  }
+
+  const policyProvided = typeof options.policy === "string";
+  const rawType = policyProvided ? options.policy!.trim() : "";
+  if (policyProvided && rawType.length === 0) {
+    const changed = context.settings.governance.create_default_type !== undefined;
+    delete context.settings.governance.create_default_type;
+    await writeConfigSettingsIfChanged(context, changed, "config:set:governance_create_default_type");
+    return buildPolicyResult(context, key, context.settings.governance.create_default_type ?? "", changed);
+  }
+  if (rawType.length === 0) {
+    throw new PmCliError(
+      'Config set governance-create-default-type requires an item type value (or an empty value "" to clear it)',
+      EXIT_CODE.USAGE,
+    );
+  }
+  const typeRegistry = resolveItemTypeRegistry(context.settings, getActiveExtensionRegistrations());
+  const resolvedType = resolveTypeName(rawType, typeRegistry);
+  if (!resolvedType) {
+    throw new PmCliError(
+      buildInvalidTypeError(rawType, typeRegistry.types, resolveItemTypesFilePath(context.target.pmRoot, context.settings.schema)),
+      EXIT_CODE.USAGE,
+    );
+  }
+  const changed = context.settings.governance.create_default_type !== resolvedType;
+  context.settings.governance.create_default_type = resolvedType;
+  await writeConfigSettingsIfChanged(context, changed, "config:set:governance_create_default_type");
+  return buildPolicyResult(context, key, context.settings.governance.create_default_type, changed);
+}
+
+async function setGovernancePolicyConfig(
+  context: ConfigExecutionContext,
+  key: GovernancePolicyConfigKey,
+  options: ConfigCommandOptions,
+): Promise<ConfigResult> {
+  if (key === "governance_ownership_enforcement") {
+    const nextPolicy = normalizeGovernanceOwnershipEnforcement(options.policy);
+    const changed =
+      context.settings.governance.preset !== "custom" ||
+      context.settings.governance.ownership_enforcement !== nextPolicy;
+    context.settings.governance.preset = "custom";
+    context.settings.governance.ownership_enforcement = nextPolicy;
+    await writeConfigSettingsIfChanged(context, changed, "config:set:governance_ownership_enforcement");
+    return buildPolicyResult(context, key, context.settings.governance.ownership_enforcement, changed);
+  }
+  if (key === "governance_create_mode_default") {
+    const nextPolicy = normalizeGovernanceCreateModeDefault(options.policy);
+    const changed =
+      context.settings.governance.preset !== "custom" ||
+      context.settings.governance.create_mode_default !== nextPolicy;
+    context.settings.governance.preset = "custom";
+    context.settings.governance.create_mode_default = nextPolicy;
+    await writeConfigSettingsIfChanged(context, changed, "config:set:governance_create_mode_default");
+    return buildPolicyResult(context, key, context.settings.governance.create_mode_default, changed);
+  }
+  const nextPolicy = normalizeGovernanceCloseValidationDefault(options.policy);
+  const changed =
+    context.settings.governance.preset !== "custom" ||
+    context.settings.governance.close_validation_default !== nextPolicy;
+  context.settings.governance.preset = "custom";
+  context.settings.governance.close_validation_default = nextPolicy;
+  await writeConfigSettingsIfChanged(context, changed, "config:set:governance_close_validation_default");
+  return buildPolicyResult(context, key, context.settings.governance.close_validation_default, changed);
+}
+
+async function setGovernanceValidationConfig(
+  context: ConfigExecutionContext,
+  key: GovernanceValidationConfigKey,
+  options: ConfigCommandOptions,
+): Promise<ConfigResult> {
+  if (key === "governance_parent_reference_policy") {
+    const nextPolicy = normalizeParentReferencePolicy(options.policy);
+    const changed =
+      context.settings.governance.preset !== "custom" ||
+      hasGovernanceValidationMirrorChange(
+        context.settings.governance.parent_reference,
+        context.settings.validation.parent_reference,
+        nextPolicy,
+      );
+    context.settings.governance.preset = "custom";
+    context.settings.governance.parent_reference = nextPolicy;
+    context.settings.validation.parent_reference = nextPolicy;
+    await writeConfigSettingsIfChanged(context, changed, "config:set:governance_parent_reference_policy");
+    return buildPolicyResult(context, key, context.settings.governance.parent_reference, changed);
+  }
+  if (key === "governance_metadata_validation_profile") {
+    const nextPolicy = normalizeValidateMetadataProfile(options.policy);
+    const changed =
+      context.settings.governance.preset !== "custom" ||
+      hasGovernanceValidationMirrorChange(
+        context.settings.governance.metadata_profile,
+        context.settings.validation.metadata_profile,
+        nextPolicy,
+      );
+    context.settings.governance.preset = "custom";
+    context.settings.governance.metadata_profile = nextPolicy;
+    context.settings.validation.metadata_profile = nextPolicy;
+    await writeConfigSettingsIfChanged(context, changed, "config:set:governance_metadata_validation_profile");
+    return buildPolicyResult(context, key, context.settings.governance.metadata_profile, changed);
+  }
+  const nextPolicy = normalizeGovernanceWorkflowEnforcement(options.policy);
+  const changed = (context.settings.governance.workflow_enforcement ?? "off") !== nextPolicy;
+  context.settings.governance.workflow_enforcement = nextPolicy;
+  await writeConfigSettingsIfChanged(context, changed, "config:set:governance_workflow_enforcement");
+  return buildPolicyResult(context, key, context.settings.governance.workflow_enforcement, changed);
+}
+
+async function setGovernanceBooleanConfig(
+  context: ConfigExecutionContext,
+  key: ConfigKey,
+  options: ConfigCommandOptions,
+): Promise<ConfigResult> {
+  if (key === "governance_require_close_reason") {
+    const nextPolicy = normalizeGovernanceRequireCloseReasonPolicy(options.policy);
+    const nextEnabled = nextPolicy === "enabled";
+    const changed = context.settings.governance.require_close_reason !== nextEnabled;
+    context.settings.governance.require_close_reason = nextEnabled;
+    await writeConfigSettingsIfChanged(context, changed, "config:set:governance_require_close_reason");
+    return buildPolicyResult(context, key, context.settings.governance.require_close_reason ? "enabled" : "disabled", changed);
+  }
+  const nextPolicy = normalizeGovernanceForceRequiredForStaleLockPolicy(options.policy);
+  const nextEnabled = nextPolicy === "enabled";
+  const changed =
+    context.settings.governance.preset !== "custom" ||
+    context.settings.governance.force_required_for_stale_lock !== nextEnabled;
+  context.settings.governance.preset = "custom";
+  context.settings.governance.force_required_for_stale_lock = nextEnabled;
+  await writeConfigSettingsIfChanged(context, changed, "config:set:governance_force_required_for_stale_lock");
+  return buildPolicyResult(
+    context,
+    key,
+    context.settings.governance.force_required_for_stale_lock ? "enabled" : "disabled",
+    changed,
+  );
+}
+
+async function setTrackingConfig(
+  context: ConfigExecutionContext,
+  key: ConfigKey,
+  options: ConfigCommandOptions,
+): Promise<ConfigResult> {
+  if (key === "test_result_tracking") {
+    const nextPolicy = normalizeTestResultTrackingPolicy(options.policy);
+    const nextEnabled = nextPolicy === "enabled";
+    const changed = context.settings.testing.record_results_to_items !== nextEnabled;
+    context.settings.testing.record_results_to_items = nextEnabled;
+    await writeConfigSettingsIfChanged(context, changed, "config:set:test_result_tracking");
+    return buildPolicyResult(context, key, context.settings.testing.record_results_to_items ? "enabled" : "disabled", changed);
+  }
+  const nextPolicy = normalizeTelemetryTrackingPolicy(options.policy);
+  const nextEnabled = nextPolicy === "enabled";
+  const changed =
+    context.settings.telemetry.enabled !== nextEnabled ||
+    !context.settings.telemetry.first_run_prompt_completed;
+  context.settings.telemetry.enabled = nextEnabled;
+  context.settings.telemetry.first_run_prompt_completed = true;
+  await writeConfigSettingsIfChanged(context, changed, "config:set:telemetry_tracking");
+  return buildPolicyResult(context, key, context.settings.telemetry.enabled ? "enabled" : "disabled", changed);
+}
+
+async function setDefinitionOfDoneConfig(
+  context: ConfigExecutionContext,
+  key: ConfigKey,
+  options: ConfigCommandOptions,
+): Promise<ConfigResult> {
+  const nextCriteria = normalizeCriteria(options.criterion, options.clearCriteria);
+  const changed =
+    nextCriteria.length !== context.settings.workflow.definition_of_done.length ||
+    nextCriteria.some((value, index) => value !== context.settings.workflow.definition_of_done[index]);
+  context.settings.workflow.definition_of_done = nextCriteria;
+  await writeConfigSettingsIfChanged(context, changed, "config:set:definition_of_done");
+  return buildCriteriaResult(context, key, [...context.settings.workflow.definition_of_done], changed);
+}
+
+async function setConfigValue(
+  context: ConfigExecutionContext,
+  key: ConfigKey,
+  options: ConfigCommandOptions,
+): Promise<ConfigResult> {
+  if (options.clearCriteria === true && !isCriteriaConfigKey(key)) {
+    throw new PmCliError("--clear-criteria is only supported with config set criteria-list keys", EXIT_CODE.USAGE);
+  }
+  if (key === "item_format") {
+    return setItemFormatConfig(context, options);
+  }
+  if (key === "context") {
+    return applyContextConfig(context.settings, options, context.target, context.scope, context.warnings);
+  }
+  if (key === "definition_of_done") {
+    return setDefinitionOfDoneConfig(context, key, options);
+  }
+  if (isCriteriaValueConfigKey(key)) {
+    return setCriteriaConfig(context, key, options);
+  }
+  if (TRACKING_CONFIG_KEYS.has(key)) {
+    return setTrackingConfig(context, key, options);
+  }
+  if (GOVERNANCE_BOOLEAN_CONFIG_KEYS.has(key)) {
+    return setGovernanceBooleanConfig(context, key, options);
+  }
+  if (isGovernancePolicyConfigKey(key)) {
+    return setGovernancePolicyConfig(context, key, options);
+  }
+  if (isGovernanceValidationConfigKey(key)) {
+    return setGovernanceValidationConfig(context, key, options);
+  }
+  if (isGovernancePresetOrTypeConfigKey(key)) {
+    return setGovernancePresetOrTypeConfig(context, key, options);
+  }
+  return setValidationConfig(context, key as ValidationConfigKey, options);
+}
+
 /**
  * Implements run config for the public runtime surface of this module.
  */
@@ -1072,851 +1523,36 @@ export async function runConfig(
 ): Promise<ConfigResult> {
   const scope = normalizeScope(scopeValue);
   const action = normalizeAction(actionValue);
-  // Nested leaf settings (search/provider/vector-store) are detected before
-  // normalizeKey so they bypass the ConfigKey union without breaking the
-  // existing key-not-found error path for actually-unknown keys.
   const nestedSetting =
     (action === "get" || action === "set") ? resolveNestedSettingDescriptor(keyValue) : undefined;
   const key = nestedSetting ? undefined : normalizeKeyForAction(action, keyValue);
-  options = applyPositionalValue(action, keyValue, key, nestedSetting, valueValue, options);
+  const routedOptions = applyPositionalValue(action, keyValue, key, nestedSetting, valueValue, options);
   const target = await resolveSettingsTarget(scope, global);
   const { settings, metadata, warnings: settingsReadWarnings } = await readSettingsWithMetadata(target.pmRoot);
-  const warnings = normalizeWarnings(settingsReadWarnings);
+  const context: ConfigExecutionContext = {
+    scope,
+    target,
+    settings,
+    metadata,
+    warnings: normalizeWarnings(settingsReadWarnings),
+  };
 
   if (nestedSetting) {
-    if (action === "get") {
-      const currentValue = readNestedSettingValue(settings, nestedSetting);
-      return withWarnings(
-        {
-          scope,
-          key: nestedSetting.key,
-          nested_setting: {
-            key: nestedSetting.key,
-            path: nestedSetting.path,
-            kind: nestedSetting.kind,
-            value: currentValue,
-          },
-          settings_path: target.settingsPath,
-          changed: false,
-        },
-        warnings,
-      );
-    }
-    // action === "set"
-    const rawValue = options.value;
-    if (typeof rawValue !== "string") {
-      throw new PmCliError(
-        `Config set ${nestedSetting.key} requires a value. Pass it positionally (\`pm config ${scope} set ${nestedSetting.key} <value>\`) or via --value.`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    const parsed = parseNestedSettingValue(nestedSetting, rawValue);
-    if (!parsed.ok) {
-      throw new PmCliError(parsed.error.message, EXIT_CODE.USAGE);
-    }
-    const changed = writeNestedSettingValue(
-      settings as unknown as Record<string, unknown>,
-      nestedSetting,
-      parsed.parsed.value,
-    );
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, `config:set:${nestedSetting.path}`);
-    }
-    return withWarnings(
-      {
-        scope,
-        key: nestedSetting.key,
-        nested_setting: {
-          key: nestedSetting.key,
-          path: nestedSetting.path,
-          kind: nestedSetting.kind,
-          value: parsed.parsed.value,
-        },
-        settings_path: target.settingsPath,
-        changed,
-      },
-      warnings,
-    );
+    return buildNestedSettingResult(context, action, nestedSetting, routedOptions);
   }
-
   if (action === "list") {
-    const keys = (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).map((candidate) => ({
-      key: candidate,
-      aliases: CONFIG_KEY_ALIASES[candidate],
-      value_kind: candidate === "context"
-        ? ("object" as const)
-        : isCriteriaConfigKey(candidate) ? ("string_array" as const) : ("enum" as const),
-      set_flags:
-        candidate === "context"
-          ? ["--default-depth", "--activity-limit", "--stale-threshold-days", "--section-<name>"]
-          : isCriteriaConfigKey(candidate) ? ["--criterion", "--clear-criteria"] : candidate === "item_format" ? ["--format"] : ["--policy"],
-      summary: CONFIG_KEY_SUMMARIES[candidate],
-      value: readConfigValue(settings, candidate),
-    }));
-    const nestedSettings: NestedSettingResultValue[] = NESTED_SETTING_DESCRIPTORS.map((descriptor) => ({
-      key: descriptor.key,
-      path: descriptor.path,
-      kind: descriptor.kind,
-      value: readNestedSettingValue(settings, descriptor),
-    }));
-    return withWarnings(
-      {
-        scope,
-        keys,
-        nested_settings: nestedSettings,
-        count: keys.length,
-        settings_path: target.settingsPath,
-        changed: false,
-      },
-      warnings,
-    );
+    return buildConfigListResult(context);
   }
-
   if (action === "export") {
-    const values = {
-      definition_of_done: readConfigValue(settings, "definition_of_done"),
-      item_format: readConfigValue(settings, "item_format"),
-      history_missing_stream_policy: readConfigValue(settings, "history_missing_stream_policy"),
-      sprint_release_format_policy: readConfigValue(settings, "sprint_release_format_policy"),
-      parent_reference_policy: readConfigValue(settings, "parent_reference_policy"),
-      metadata_validation_profile: readConfigValue(settings, "metadata_validation_profile"),
-      metadata_required_fields: readConfigValue(settings, "metadata_required_fields"),
-      lifecycle_stale_blocker_reason_patterns: readConfigValue(settings, "lifecycle_stale_blocker_reason_patterns"),
-      lifecycle_closure_like_blocked_reason_patterns: readConfigValue(
-        settings,
-        "lifecycle_closure_like_blocked_reason_patterns",
-      ),
-      lifecycle_closure_like_resolution_patterns: readConfigValue(settings, "lifecycle_closure_like_resolution_patterns"),
-      lifecycle_closure_like_actual_result_patterns: readConfigValue(
-        settings,
-        "lifecycle_closure_like_actual_result_patterns",
-      ),
-      governance_preset: readConfigValue(settings, "governance_preset"),
-      governance_ownership_enforcement: readConfigValue(settings, "governance_ownership_enforcement"),
-      governance_create_mode_default: readConfigValue(settings, "governance_create_mode_default"),
-      governance_close_validation_default: readConfigValue(settings, "governance_close_validation_default"),
-      governance_require_close_reason: readConfigValue(settings, "governance_require_close_reason"),
-      governance_create_default_type: readConfigValue(settings, "governance_create_default_type"),
-      governance_workflow_enforcement: readConfigValue(settings, "governance_workflow_enforcement"),
-      governance_parent_reference_policy: readConfigValue(settings, "governance_parent_reference_policy"),
-      governance_metadata_validation_profile: readConfigValue(settings, "governance_metadata_validation_profile"),
-      governance_force_required_for_stale_lock: readConfigValue(settings, "governance_force_required_for_stale_lock"),
-      test_result_tracking: readConfigValue(settings, "test_result_tracking"),
-      telemetry_tracking: readConfigValue(settings, "telemetry_tracking"),
-      context: readConfigValue(settings, "context"),
-    } satisfies Record<ConfigKey, ConfigValue>;
-    return withWarnings(
-      {
-        scope,
-        values,
-        settings_path: target.settingsPath,
-        changed: false,
-      },
-      warnings,
-    );
-  }
-
-  // For get/set (non-nested) `normalizeKeyForAction` already guaranteed a key above,
-  // so `key` is defined here. list/export return before reaching these branches.
-  if (action === "get") {
-    assertConfigKeyDefined(key);
-    if (key === "item_format") {
-      return withWarnings({
-        scope,
-        key,
-        format: settings.item_format,
-        has_explicit_item_format: metadata.has_explicit_item_format,
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "history_missing_stream_policy") {
-      return withWarnings({
-        scope,
-        key,
-        policy: settings.history.missing_stream,
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "sprint_release_format_policy") {
-      return withWarnings({
-        scope,
-        key,
-        policy: settings.validation.sprint_release_format,
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "parent_reference_policy") {
-      return withWarnings({
-        scope,
-        key,
-        policy: settings.validation.parent_reference,
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "metadata_validation_profile") {
-      return withWarnings({
-        scope,
-        key,
-        policy: settings.validation.metadata_profile,
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "metadata_required_fields") {
-      return withWarnings({
-        scope,
-        key,
-        criteria: [...settings.validation.metadata_required_fields],
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "lifecycle_stale_blocker_reason_patterns") {
-      return withWarnings({
-        scope,
-        key,
-        criteria: [...settings.validation.lifecycle_stale_blocker_reason_patterns],
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "lifecycle_closure_like_blocked_reason_patterns") {
-      return withWarnings({
-        scope,
-        key,
-        criteria: [...settings.validation.lifecycle_closure_like_blocked_reason_patterns],
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "lifecycle_closure_like_resolution_patterns") {
-      return withWarnings({
-        scope,
-        key,
-        criteria: [...settings.validation.lifecycle_closure_like_resolution_patterns],
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "lifecycle_closure_like_actual_result_patterns") {
-      return withWarnings({
-        scope,
-        key,
-        criteria: [...settings.validation.lifecycle_closure_like_actual_result_patterns],
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "governance_preset") {
-      return withWarnings({
-        scope,
-        key,
-        policy: settings.governance.preset,
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "governance_ownership_enforcement") {
-      return withWarnings({
-        scope,
-        key,
-        policy: settings.governance.ownership_enforcement,
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "governance_create_mode_default") {
-      return withWarnings({
-        scope,
-        key,
-        policy: settings.governance.create_mode_default,
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "governance_close_validation_default") {
-      return withWarnings({
-        scope,
-        key,
-        policy: settings.governance.close_validation_default,
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "governance_require_close_reason") {
-      return withWarnings({
-        scope,
-        key,
-        policy: settings.governance.require_close_reason ? "enabled" : "disabled",
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "governance_create_default_type") {
-      return withWarnings({
-        scope,
-        key,
-        policy: settings.governance.create_default_type ?? "",
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "governance_workflow_enforcement") {
-      return withWarnings({
-        scope,
-        key,
-        policy: settings.governance.workflow_enforcement ?? "off",
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "governance_parent_reference_policy") {
-      return withWarnings({
-        scope,
-        key,
-        policy: settings.governance.parent_reference,
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "governance_metadata_validation_profile") {
-      return withWarnings({
-        scope,
-        key,
-        policy: settings.governance.metadata_profile,
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "governance_force_required_for_stale_lock") {
-      return withWarnings({
-        scope,
-        key,
-        policy: settings.governance.force_required_for_stale_lock ? "enabled" : "disabled",
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "test_result_tracking") {
-      return withWarnings({
-        scope,
-        key,
-        policy: settings.testing.record_results_to_items ? "enabled" : "disabled",
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "telemetry_tracking") {
-      return withWarnings({
-        scope,
-        key,
-        policy: settings.telemetry.enabled ? "enabled" : "disabled",
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    if (key === "context") {
-      return withWarnings({
-        scope,
-        key,
-        context_settings: {
-          default_depth: settings.context.default_depth,
-          activity_limit: settings.context.activity_limit,
-          stale_threshold_days: settings.context.stale_threshold_days,
-          sections: { ...settings.context.sections },
-        },
-        settings_path: target.settingsPath,
-        changed: false,
-      }, warnings);
-    }
-    return withWarnings({
-      scope,
-      key,
-      criteria: [...settings.workflow.definition_of_done],
-      settings_path: target.settingsPath,
-      changed: false,
-    }, warnings);
+    return buildConfigExportResult(context);
   }
 
   assertConfigKeyDefined(key);
-  if (options.clearCriteria === true && !isCriteriaConfigKey(key)) {
-    throw new PmCliError(
-      "--clear-criteria is only supported with config set criteria-list keys",
-      EXIT_CODE.USAGE,
-    );
-  }
-  if (key === "item_format") {
-    const nextFormat = normalizeItemFormat(options.format);
-    const changed = settings.item_format !== nextFormat || !metadata.has_explicit_item_format;
-    let migration: ConfigResult["migration"] = undefined;
-    if (changed) {
-      const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-      const migrated = await migrateItemFilesToFormat(
-        target.pmRoot,
-        nextFormat,
-        "config:set:item_format:migrate",
-        typeRegistry.type_to_folder,
-        settings.schema,
-      );
-      migration = {
-        target_format: migrated.target_format,
-        scanned: migrated.scanned,
-        migrated: migrated.migrated,
-        removed: migrated.removed,
-        warnings: migrated.warnings,
-      };
-      settings.item_format = nextFormat;
-      await writeSettings(target.pmRoot, settings, "config:set:item_format");
-    }
-    return withWarnings({
-      scope,
-      key,
-      format: settings.item_format,
-      has_explicit_item_format: true,
-      migration,
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "history_missing_stream_policy") {
-    const nextPolicy = normalizeHistoryMissingStreamPolicy(options.policy);
-    const changed = settings.history.missing_stream !== nextPolicy;
-    settings.history.missing_stream = nextPolicy;
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:history_missing_stream_policy");
-    }
-    return withWarnings({
-      scope,
-      key,
-      policy: settings.history.missing_stream,
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "sprint_release_format_policy") {
-    const nextPolicy = normalizeSprintReleaseFormatPolicy(options.policy);
-    const changed = settings.validation.sprint_release_format !== nextPolicy;
-    settings.validation.sprint_release_format = nextPolicy;
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:sprint_release_format_policy");
-    }
-    return withWarnings({
-      scope,
-      key,
-      policy: settings.validation.sprint_release_format,
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "parent_reference_policy") {
-    const nextPolicy = normalizeParentReferencePolicy(options.policy);
-    const changed =
-      settings.validation.parent_reference !== nextPolicy ||
-      settings.governance.preset !== "custom" ||
-      settings.governance.parent_reference !== nextPolicy;
-    settings.validation.parent_reference = nextPolicy;
-    settings.governance.preset = "custom";
-    settings.governance.parent_reference = nextPolicy;
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:parent_reference_policy");
-    }
-    return withWarnings({
-      scope,
-      key,
-      policy: settings.validation.parent_reference,
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "metadata_validation_profile") {
-    const nextPolicy = normalizeValidateMetadataProfile(options.policy);
-    const changed =
-      settings.validation.metadata_profile !== nextPolicy ||
-      settings.governance.preset !== "custom" ||
-      settings.governance.metadata_profile !== nextPolicy;
-    settings.validation.metadata_profile = nextPolicy;
-    settings.governance.preset = "custom";
-    settings.governance.metadata_profile = nextPolicy;
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:metadata_validation_profile");
-    }
-    return withWarnings({
-      scope,
-      key,
-      policy: settings.validation.metadata_profile,
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "metadata_required_fields") {
-    const nextCriteria = normalizeMetadataRequiredFields(options.criterion, options.clearCriteria);
-    const changed =
-      nextCriteria.length !== settings.validation.metadata_required_fields.length ||
-      nextCriteria.some((value, index) => value !== settings.validation.metadata_required_fields[index]);
-    settings.validation.metadata_required_fields = nextCriteria;
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:metadata_required_fields");
-    }
-    return withWarnings({
-      scope,
-      key,
-      criteria: [...settings.validation.metadata_required_fields],
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "lifecycle_stale_blocker_reason_patterns") {
-    const nextCriteria = normalizeLifecyclePatternCriteria(key, options.criterion, options.clearCriteria);
-    const changed =
-      nextCriteria.length !== settings.validation.lifecycle_stale_blocker_reason_patterns.length ||
-      nextCriteria.some((value, index) => value !== settings.validation.lifecycle_stale_blocker_reason_patterns[index]);
-    settings.validation.lifecycle_stale_blocker_reason_patterns = nextCriteria;
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:lifecycle_stale_blocker_reason_patterns");
-    }
-    return withWarnings({
-      scope,
-      key,
-      criteria: [...settings.validation.lifecycle_stale_blocker_reason_patterns],
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "lifecycle_closure_like_blocked_reason_patterns") {
-    const nextCriteria = normalizeLifecyclePatternCriteria(key, options.criterion, options.clearCriteria);
-    const changed =
-      nextCriteria.length !== settings.validation.lifecycle_closure_like_blocked_reason_patterns.length ||
-      nextCriteria.some((value, index) => value !== settings.validation.lifecycle_closure_like_blocked_reason_patterns[index]);
-    settings.validation.lifecycle_closure_like_blocked_reason_patterns = nextCriteria;
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:lifecycle_closure_like_blocked_reason_patterns");
-    }
-    return withWarnings({
-      scope,
-      key,
-      criteria: [...settings.validation.lifecycle_closure_like_blocked_reason_patterns],
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "lifecycle_closure_like_resolution_patterns") {
-    const nextCriteria = normalizeLifecyclePatternCriteria(key, options.criterion, options.clearCriteria);
-    const changed =
-      nextCriteria.length !== settings.validation.lifecycle_closure_like_resolution_patterns.length ||
-      nextCriteria.some((value, index) => value !== settings.validation.lifecycle_closure_like_resolution_patterns[index]);
-    settings.validation.lifecycle_closure_like_resolution_patterns = nextCriteria;
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:lifecycle_closure_like_resolution_patterns");
-    }
-    return withWarnings({
-      scope,
-      key,
-      criteria: [...settings.validation.lifecycle_closure_like_resolution_patterns],
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "lifecycle_closure_like_actual_result_patterns") {
-    const nextCriteria = normalizeLifecyclePatternCriteria(key, options.criterion, options.clearCriteria);
-    const changed =
-      nextCriteria.length !== settings.validation.lifecycle_closure_like_actual_result_patterns.length ||
-      nextCriteria.some((value, index) => value !== settings.validation.lifecycle_closure_like_actual_result_patterns[index]);
-    settings.validation.lifecycle_closure_like_actual_result_patterns = nextCriteria;
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:lifecycle_closure_like_actual_result_patterns");
-    }
-    return withWarnings({
-      scope,
-      key,
-      criteria: [...settings.validation.lifecycle_closure_like_actual_result_patterns],
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "governance_preset") {
-    const nextPolicy = normalizeGovernancePreset(options.policy);
-    const changed = settings.governance.preset !== nextPolicy;
-    settings.governance.preset = nextPolicy;
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:governance_preset");
-    }
-    return withWarnings({
-      scope,
-      key,
-      policy: settings.governance.preset,
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "governance_ownership_enforcement") {
-    const nextPolicy = normalizeGovernanceOwnershipEnforcement(options.policy);
-    const changed =
-      settings.governance.preset !== "custom" || settings.governance.ownership_enforcement !== nextPolicy;
-    settings.governance.preset = "custom";
-    settings.governance.ownership_enforcement = nextPolicy;
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:governance_ownership_enforcement");
-    }
-    return withWarnings({
-      scope,
-      key,
-      policy: settings.governance.ownership_enforcement,
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "governance_create_mode_default") {
-    const nextPolicy = normalizeGovernanceCreateModeDefault(options.policy);
-    const changed =
-      settings.governance.preset !== "custom" || settings.governance.create_mode_default !== nextPolicy;
-    settings.governance.preset = "custom";
-    settings.governance.create_mode_default = nextPolicy;
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:governance_create_mode_default");
-    }
-    return withWarnings({
-      scope,
-      key,
-      policy: settings.governance.create_mode_default,
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "governance_close_validation_default") {
-    const nextPolicy = normalizeGovernanceCloseValidationDefault(options.policy);
-    const changed =
-      settings.governance.preset !== "custom" || settings.governance.close_validation_default !== nextPolicy;
-    settings.governance.preset = "custom";
-    settings.governance.close_validation_default = nextPolicy;
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:governance_close_validation_default");
-    }
-    return withWarnings({
-      scope,
-      key,
-      policy: settings.governance.close_validation_default,
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "governance_require_close_reason") {
-    const nextPolicy = normalizeGovernanceRequireCloseReasonPolicy(options.policy);
-    const nextEnabled = nextPolicy === "enabled";
-    const changed = settings.governance.require_close_reason !== nextEnabled;
-    settings.governance.require_close_reason = nextEnabled;
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:governance_require_close_reason");
-    }
-    return withWarnings({
-      scope,
-      key,
-      policy: settings.governance.require_close_reason ? "enabled" : "disabled",
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "governance_create_default_type") {
-    const policyProvided = typeof options.policy === "string";
-    const rawType = policyProvided ? options.policy!.trim() : "";
-    // An explicit empty value clears the setting back to "unset" (matching how
-    // get/export expose unset as ""). Without this clear path there is no CLI
-    // route back from a set value to the governance default.
-    if (policyProvided && rawType.length === 0) {
-      const changed = settings.governance.create_default_type !== undefined;
-      delete settings.governance.create_default_type;
-      if (changed) {
-        await writeSettings(target.pmRoot, settings, "config:set:governance_create_default_type");
-      }
-      return withWarnings({
-        scope,
-        key,
-        policy: settings.governance.create_default_type ?? "",
-        settings_path: target.settingsPath,
-        changed,
-      }, warnings);
-    }
-    if (rawType.length === 0) {
-      throw new PmCliError(
-        'Config set governance-create-default-type requires an item type value (or an empty value "" to clear it)',
-        EXIT_CODE.USAGE,
-      );
-    }
-    // create_default_type is preset-orthogonal: it tunes `pm create` and is
-    // carried through writes regardless of preset, so we do NOT force preset=custom.
-    const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-    const resolvedType = resolveTypeName(rawType, typeRegistry);
-    if (!resolvedType) {
-      throw new PmCliError(
-        buildInvalidTypeError(rawType, typeRegistry.types, resolveItemTypesFilePath(target.pmRoot, settings.schema)),
-        EXIT_CODE.USAGE,
-      );
-    }
-    const changed = settings.governance.create_default_type !== resolvedType;
-    settings.governance.create_default_type = resolvedType;
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:governance_create_default_type");
-    }
-    return withWarnings({
-      scope,
-      key,
-      policy: settings.governance.create_default_type,
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "governance_workflow_enforcement") {
-    const nextPolicy = normalizeGovernanceWorkflowEnforcement(options.policy);
-    // workflow_enforcement is preset-orthogonal (see create_default_type above).
-    const changed = (settings.governance.workflow_enforcement ?? "off") !== nextPolicy;
-    settings.governance.workflow_enforcement = nextPolicy;
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:governance_workflow_enforcement");
-    }
-    return withWarnings({
-      scope,
-      key,
-      policy: settings.governance.workflow_enforcement,
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "governance_parent_reference_policy") {
-    const nextPolicy = normalizeParentReferencePolicy(options.policy);
-    const changed =
-      settings.governance.preset !== "custom" || settings.governance.parent_reference !== nextPolicy;
-    settings.governance.preset = "custom";
-    settings.governance.parent_reference = nextPolicy;
-    settings.validation.parent_reference = nextPolicy;
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:governance_parent_reference_policy");
-    }
-    return withWarnings({
-      scope,
-      key,
-      policy: settings.governance.parent_reference,
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "governance_metadata_validation_profile") {
-    const nextPolicy = normalizeValidateMetadataProfile(options.policy);
-    const changed =
-      settings.governance.preset !== "custom" || settings.governance.metadata_profile !== nextPolicy;
-    settings.governance.preset = "custom";
-    settings.governance.metadata_profile = nextPolicy;
-    settings.validation.metadata_profile = nextPolicy;
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:governance_metadata_validation_profile");
-    }
-    return withWarnings({
-      scope,
-      key,
-      policy: settings.governance.metadata_profile,
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "governance_force_required_for_stale_lock") {
-    const nextPolicy = normalizeGovernanceForceRequiredForStaleLockPolicy(options.policy);
-    const nextEnabled = nextPolicy === "enabled";
-    const changed =
-      settings.governance.preset !== "custom" || settings.governance.force_required_for_stale_lock !== nextEnabled;
-    settings.governance.preset = "custom";
-    settings.governance.force_required_for_stale_lock = nextEnabled;
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:governance_force_required_for_stale_lock");
-    }
-    return withWarnings({
-      scope,
-      key,
-      policy: settings.governance.force_required_for_stale_lock ? "enabled" : "disabled",
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "test_result_tracking") {
-    const nextPolicy = normalizeTestResultTrackingPolicy(options.policy);
-    const nextEnabled = nextPolicy === "enabled";
-    const changed = settings.testing.record_results_to_items !== nextEnabled;
-    settings.testing.record_results_to_items = nextEnabled;
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:test_result_tracking");
-    }
-    return withWarnings({
-      scope,
-      key,
-      policy: settings.testing.record_results_to_items ? "enabled" : "disabled",
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "telemetry_tracking") {
-    const nextPolicy = normalizeTelemetryTrackingPolicy(options.policy);
-    const nextEnabled = nextPolicy === "enabled";
-    const changed = settings.telemetry.enabled !== nextEnabled || !settings.telemetry.first_run_prompt_completed;
-    settings.telemetry.enabled = nextEnabled;
-    settings.telemetry.first_run_prompt_completed = true;
-    if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:telemetry_tracking");
-    }
-    return withWarnings({
-      scope,
-      key,
-      policy: settings.telemetry.enabled ? "enabled" : "disabled",
-      settings_path: target.settingsPath,
-      changed,
-    }, warnings);
-  }
-
-  if (key === "context") {
-    return applyContextConfig(settings, options, target, scope, warnings);
-  }
-
-  const nextCriteria = normalizeCriteria(options.criterion, options.clearCriteria);
-  const changed =
-    nextCriteria.length !== settings.workflow.definition_of_done.length ||
-    nextCriteria.some((value, index) => value !== settings.workflow.definition_of_done[index]);
-
-  settings.workflow.definition_of_done = nextCriteria;
-  if (changed) {
-    await writeSettings(target.pmRoot, settings, "config:set:definition_of_done");
-  }
-
-  return withWarnings({
-    scope,
-    key,
-    criteria: [...settings.workflow.definition_of_done],
-    settings_path: target.settingsPath,
-    changed,
-  }, warnings);
+  return action === "get" ? buildConfigGetResult(context, key) : setConfigValue(context, key, routedOptions);
 }
 
 export const _testOnlyConfigCommand = {
+  hasGovernanceValidationMirrorChange,
   applyPositionalValue,
   normalizeAction,
   normalizeCriteria,

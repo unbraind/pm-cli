@@ -404,6 +404,67 @@ function normalizeTypeDefinition(definition: ItemTypeDefinition): ItemTypeDefini
   return normalizeSharedItemTypeDefinition(definition, { resolvePolicyCommand: strictPolicyCommand });
 }
 
+function readStringArray(record: Record<string, unknown>, key: string): string[] | undefined {
+  const value = record[key];
+  return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : undefined;
+}
+
+function coerceOptionDefinitionFromUnknown(raw: unknown): ItemTypeOptionDefinition | null {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return null;
+  }
+  const optionRecord = raw as Record<string, unknown>;
+  if (typeof optionRecord.key !== "string") {
+    return null;
+  }
+  return {
+    key: optionRecord.key,
+    values: readStringArray(optionRecord, "values") ?? [],
+    required: optionRecord.required === undefined ? undefined : Boolean(optionRecord.required),
+    aliases: readStringArray(optionRecord, "aliases"),
+    description: typeof optionRecord.description === "string" ? optionRecord.description : undefined,
+  };
+}
+
+function coerceCommandOptionPolicyFromUnknown(raw: unknown): ItemTypeCommandOptionPolicy | null {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return null;
+  }
+  const policyRecord = raw as Record<string, unknown>;
+  if (typeof policyRecord.command !== "string" || typeof policyRecord.option !== "string") {
+    return null;
+  }
+  const normalizedCommand = policyRecord.command.trim().toLowerCase();
+  if (normalizedCommand !== "create" && normalizedCommand !== "update") {
+    return null;
+  }
+  return {
+    command: normalizedCommand,
+    option: policyRecord.option,
+    required: policyRecord.required === undefined ? undefined : Boolean(policyRecord.required),
+    visible: policyRecord.visible === undefined ? undefined : Boolean(policyRecord.visible),
+    enabled: policyRecord.enabled === undefined ? undefined : Boolean(policyRecord.enabled),
+  };
+}
+
+function coerceOptionDefinitionsFromRecord(record: Record<string, unknown>): ItemTypeOptionDefinition[] | undefined {
+  if (!Array.isArray(record.options)) {
+    return undefined;
+  }
+  return record.options
+    .map((entry) => coerceOptionDefinitionFromUnknown(entry))
+    .filter((entry): entry is ItemTypeOptionDefinition => entry !== null);
+}
+
+function coerceCommandOptionPoliciesFromRecord(record: Record<string, unknown>): ItemTypeCommandOptionPolicy[] | undefined {
+  if (!Array.isArray(record.command_option_policies)) {
+    return undefined;
+  }
+  return record.command_option_policies
+    .map((entry) => coerceCommandOptionPolicyFromUnknown(entry))
+    .filter((entry): entry is ItemTypeCommandOptionPolicy => entry !== null);
+}
+
 function coerceTypeDefinitionFromUnknown(raw: unknown): ItemTypeDefinition | null {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     return null;
@@ -416,72 +477,53 @@ function coerceTypeDefinitionFromUnknown(raw: unknown): ItemTypeDefinition | nul
   const folder = typeof record.folder === "string" ? record.folder : undefined;
   const description = typeof record.description === "string" ? record.description : undefined;
   const defaultStatus = typeof record.default_status === "string" ? record.default_status : undefined;
-  const aliases = Array.isArray(record.aliases) ? record.aliases.filter((value): value is string => typeof value === "string") : undefined;
-  const requiredCreateFields = Array.isArray(record.required_create_fields)
-    ? record.required_create_fields.filter((value): value is string => typeof value === "string")
-    : undefined;
-  const requiredCreateRepeatables = Array.isArray(record.required_create_repeatables)
-    ? record.required_create_repeatables.filter((value): value is string => typeof value === "string")
-    : undefined;
-  let options: ItemTypeOptionDefinition[] | undefined;
-  if (Array.isArray(record.options)) {
-    options = [];
-    for (const entry of record.options) {
-      if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
-        continue;
-      }
-      const optionRecord = entry as Record<string, unknown>;
-      if (typeof optionRecord.key !== "string") {
-        continue;
-      }
-      options.push({
-        key: optionRecord.key,
-        values: Array.isArray(optionRecord.values)
-          ? optionRecord.values.filter((value): value is string => typeof value === "string")
-          : [],
-        required: optionRecord.required === undefined ? undefined : Boolean(optionRecord.required),
-        aliases: Array.isArray(optionRecord.aliases)
-          ? optionRecord.aliases.filter((value): value is string => typeof value === "string")
-          : undefined,
-        description: typeof optionRecord.description === "string" ? optionRecord.description : undefined,
-      });
-    }
-  }
-  let commandOptionPolicies: ItemTypeCommandOptionPolicy[] | undefined;
-  if (Array.isArray(record.command_option_policies)) {
-    commandOptionPolicies = [];
-    for (const entry of record.command_option_policies) {
-      if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
-        continue;
-      }
-      const policyRecord = entry as Record<string, unknown>;
-      if (typeof policyRecord.command !== "string" || typeof policyRecord.option !== "string") {
-        continue;
-      }
-      const normalizedCommand = policyRecord.command.trim().toLowerCase();
-      if (normalizedCommand !== "create" && normalizedCommand !== "update") {
-        continue;
-      }
-      commandOptionPolicies.push({
-        command: normalizedCommand,
-        option: policyRecord.option,
-        required: policyRecord.required === undefined ? undefined : Boolean(policyRecord.required),
-        visible: policyRecord.visible === undefined ? undefined : Boolean(policyRecord.visible),
-        enabled: policyRecord.enabled === undefined ? undefined : Boolean(policyRecord.enabled),
-      });
-    }
-  }
   return {
     name,
     description,
     default_status: defaultStatus,
     folder,
-    aliases,
-    required_create_fields: requiredCreateFields,
-    required_create_repeatables: requiredCreateRepeatables,
-    options,
-    command_option_policies: commandOptionPolicies,
+    aliases: readStringArray(record, "aliases"),
+    required_create_fields: readStringArray(record, "required_create_fields"),
+    required_create_repeatables: readStringArray(record, "required_create_repeatables"),
+    options: coerceOptionDefinitionsFromRecord(record),
+    command_option_policies: coerceCommandOptionPoliciesFromRecord(record),
   };
+}
+
+function resolveDefinitionRequiredCreateFields(
+  normalizedDefinition: ItemTypeDefinition,
+  existing: ResolvedItemTypeDefinition | undefined,
+): string[] {
+  return normalizedDefinition.required_create_fields
+    ? normalizeItemTypeStringList(normalizedDefinition.required_create_fields)
+    : existing?.required_create_fields ?? [];
+}
+
+function resolveDefinitionRequiredCreateRepeatables(
+  normalizedDefinition: ItemTypeDefinition,
+  existing: ResolvedItemTypeDefinition | undefined,
+): string[] {
+  return normalizedDefinition.required_create_repeatables
+    ? normalizeItemTypeStringList(normalizedDefinition.required_create_repeatables)
+    : existing?.required_create_repeatables ?? [];
+}
+
+function resolveDefinitionOptions(
+  normalizedDefinition: ItemTypeDefinition,
+  existing: ResolvedItemTypeDefinition | undefined,
+): ItemTypeOptionDefinition[] {
+  return normalizedDefinition.options ? normalizedDefinition.options : existing?.options ? [...existing.options] : [];
+}
+
+function resolveDefinitionCommandOptionPolicies(
+  normalizedDefinition: ItemTypeDefinition,
+  existing: ResolvedItemTypeDefinition | undefined,
+): ItemTypeCommandOptionPolicy[] {
+  return normalizedDefinition.command_option_policies
+    ? normalizedDefinition.command_option_policies
+    : existing?.command_option_policies
+      ? [...existing.command_option_policies]
+      : [];
 }
 
 function applyTypeDefinitions(
@@ -501,22 +543,6 @@ function applyTypeDefinitions(
       ...(existing?.aliases ?? []),
       ...(normalizedDefinition.aliases ?? []),
     ]);
-    const requiredCreateFields = normalizedDefinition.required_create_fields
-      ? normalizeItemTypeStringList(normalizedDefinition.required_create_fields)
-      : existing?.required_create_fields ?? [];
-    const requiredCreateRepeatables = normalizedDefinition.required_create_repeatables
-      ? normalizeItemTypeStringList(normalizedDefinition.required_create_repeatables)
-      : existing?.required_create_repeatables ?? [];
-    const options = normalizedDefinition.options
-      ? normalizedDefinition.options
-      : existing?.options
-        ? [...existing.options]
-        : [];
-    const commandOptionPolicies = normalizedDefinition.command_option_policies
-      ? normalizedDefinition.command_option_policies
-      : existing?.command_option_policies
-        ? [...existing.command_option_policies]
-        : [];
     const defaultStatus = normalizedDefinition.default_status ?? existing?.default_status;
     const description = normalizedDefinition.description ?? existing?.description;
     target.set(lowerName, {
@@ -525,10 +551,10 @@ function applyTypeDefinitions(
       ...(defaultStatus ? { default_status: defaultStatus } : {}),
       folder,
       aliases,
-      required_create_fields: requiredCreateFields,
-      required_create_repeatables: requiredCreateRepeatables,
-      options,
-      command_option_policies: commandOptionPolicies,
+      required_create_fields: resolveDefinitionRequiredCreateFields(normalizedDefinition, existing),
+      required_create_repeatables: resolveDefinitionRequiredCreateRepeatables(normalizedDefinition, existing),
+      options: resolveDefinitionOptions(normalizedDefinition, existing),
+      command_option_policies: resolveDefinitionCommandOptionPolicies(normalizedDefinition, existing),
     });
   }
 }

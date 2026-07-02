@@ -235,6 +235,168 @@ export function withReleasePushCredentials(gitOptions = {}, token = releasePushT
   };
 }
 
+function writePipelineResult(result, outputJson, text) {
+  if (outputJson) {
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return;
+  }
+  console.log(text);
+}
+
+function maybeSkipForNoChanges(commitsSinceLastTag, lastTag, outputJson) {
+  if (commitsSinceLastTag !== 0) {
+    return false;
+  }
+  writePipelineResult(
+    {
+      ok: true,
+      skipped: true,
+      reason: "no_changes_since_last_tag",
+      last_tag: lastTag,
+    },
+    outputJson,
+    "No changes since the last release tag. Skipping release pipeline.",
+  );
+  return true;
+}
+
+function maybeSkipForTrackerOnlyChanges(lastTag, commitsSinceLastTag, changedFilesSinceLastTag, releaseRelevantFiles, outputJson) {
+  if (releaseRelevantFiles.length > 0) {
+    return false;
+  }
+  writePipelineResult(
+    {
+      ok: true,
+      skipped: true,
+      reason: "tracker_only_changes_since_last_tag",
+      last_tag: lastTag,
+      commits_since_last_tag: commitsSinceLastTag,
+      ignored_change_paths: changedFilesSinceLastTag,
+    },
+    outputJson,
+    "Only .agents/pm tracker changes exist since the last release tag. Skipping release pipeline.",
+  );
+  return true;
+}
+
+function maybeSkipForSameDayRelease(tagsToday, todayKey, allowSameDayRelease, outputJson) {
+  if (allowSameDayRelease || tagsToday.length === 0) {
+    return false;
+  }
+  writePipelineResult(
+    {
+      ok: true,
+      skipped: true,
+      reason: "release_already_cut_today",
+      tags_today: tagsToday,
+      date_key: todayKey,
+    },
+    outputJson,
+    `Release already exists for ${todayKey}: ${tagsToday.join(", ")}. Skipping.`,
+  );
+  return true;
+}
+
+function maybeBumpSameDayTargetVersion(previousVersion, targetVersion, explicitVersion, allowSameDayRelease, todayKey) {
+  if (!allowSameDayRelease || explicitVersion) {
+    return targetVersion;
+  }
+  const previousParsed = parseCalendarVersion(previousVersion);
+  const targetParsed = parseCalendarVersion(targetVersion);
+  if (
+    previousParsed &&
+    targetParsed &&
+    previousParsed.dateKey === todayKey &&
+    targetParsed.dateKey === todayKey &&
+    targetParsed.ordinal <= previousParsed.ordinal
+  ) {
+    return bumpSameDayOrdinal(previousVersion, todayKey);
+  }
+  return targetVersion;
+}
+
+function prepareReleaseChangelog(params) {
+  const generatedChangelogDir = mkdtempSync(path.join(tmpdir(), "pm-cli-release-"));
+  const generatedChangelogPath = path.join(generatedChangelogDir, `changelog-${params.targetVersion.replaceAll(".", "-")}.md`);
+  try {
+    runCommand(process.execPath, ["dist/cli.js", "install", "npm:pm-changelog", "--project"]);
+    runCommand(process.execPath, [
+      "dist/cli.js",
+      "changelog",
+      "generate",
+      "--output",
+      generatedChangelogPath,
+      "--title",
+      "Changelog",
+      "--mode",
+      "replace",
+      "--release-version",
+      params.targetVersion,
+      "--all-release-tags",
+      "--status",
+      "closed",
+      "--item-url-base",
+      "https://github.com/unbraind/pm-cli/blob/main/.agents/pm",
+    ]);
+    if (!ensureGeneratedReleaseSectionHasContent(params.targetVersion, generatedChangelogPath)) {
+      const retainedChangelogPath = path.join(tmpdir(), `pm-cli-empty-release-changelog-${params.targetVersion.replaceAll(".", "-")}.md`);
+      writeFileSync(retainedChangelogPath, readFileSync(generatedChangelogPath, "utf8"), "utf8");
+      return { prepared: false, generatedChangelogPath: retainedChangelogPath };
+    }
+    const npm = commandFor("npm");
+    runCommand(npm, ["version", "--no-git-tag-version", params.targetVersion]);
+    writeFileSync(path.join(repoRoot, "CHANGELOG.md"), readFileSync(generatedChangelogPath, "utf8"), "utf8");
+    return { prepared: true, generatedChangelogPath };
+  } finally {
+    rmSync(generatedChangelogDir, { recursive: true, force: true });
+  }
+}
+
+function maybeSkipForEmptyGeneratedChangelog(params) {
+  if (params.prepared) {
+    return false;
+  }
+  if (params.explicitVersion) {
+    fail(`Generated changelog file ${params.generatedChangelogPath} is missing a non-empty section for ${params.targetVersion}.`);
+  }
+  writePipelineResult(
+    {
+      ok: true,
+      skipped: true,
+      reason: "empty_generated_changelog_section_for_target_version",
+      last_tag: params.lastTag,
+      target_version: params.targetVersion,
+      commits_since_last_tag: params.commitsSinceLastTag,
+      release_relevant_files: params.releaseRelevantFiles,
+    },
+    params.outputJson,
+    `Generated changelog has no non-empty section for ${params.targetVersion}. Skipping release pipeline.`,
+  );
+  return true;
+}
+
+function commitAndMaybePushRelease(targetVersion, tagName, author, push) {
+  const authorSlug = author.toLowerCase().replaceAll(/[^a-z0-9._-]/g, "-");
+  /* c8 ignore next -- author always defaults to a non-empty slug; `|| "release-bot"` is a defensive fallback (parseFlags maps `--author ""` to the default) */
+  const authorEmail = `${authorSlug || "release-bot"}@users.noreply.github.com`;
+  const gitIdentityEnv = {
+    GIT_AUTHOR_NAME: author,
+    GIT_AUTHOR_EMAIL: authorEmail,
+    GIT_COMMITTER_NAME: author,
+    GIT_COMMITTER_EMAIL: authorEmail,
+  };
+  git(["add", "package.json", "CHANGELOG.md"]);
+  runCommand("git", [
+    "commit",
+    "-m",
+    `chore(release): cut ${targetVersion}\n\nAutomate daily release preparation with strict quality, compatibility, and reliability gates.`,
+  ], { env: gitIdentityEnv });
+  git(["tag", tagName]);
+  if (push) {
+    pushReleaseRefs(tagName, { env: gitIdentityEnv });
+  }
+}
+
 export function runPipeline() {
   const { flags } = parseFlags(process.argv.slice(2));
   if (flags.get("help") || flags.get("h")) {
@@ -264,127 +426,40 @@ export function runPipeline() {
   ensureCleanWorkingTree();
   const lastTag = getLastTag();
   const commitsSinceLastTag = getCommitCountSince(lastTag);
-  if (commitsSinceLastTag === 0) {
-    const result = {
-      ok: true,
-      skipped: true,
-      reason: "no_changes_since_last_tag",
-      last_tag: lastTag,
-    };
-    if (outputJson) {
-      process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-    } else {
-      console.log("No changes since the last release tag. Skipping release pipeline.");
-    }
+  if (maybeSkipForNoChanges(commitsSinceLastTag, lastTag, outputJson)) {
     return;
   }
 
   const changedFilesSinceLastTag = getChangedFilesSince(lastTag);
   const releaseRelevantFiles = changedFilesSinceLastTag.filter(isReleaseRelevantPath);
-  if (releaseRelevantFiles.length === 0) {
-    const result = {
-      ok: true,
-      skipped: true,
-      reason: "tracker_only_changes_since_last_tag",
-      last_tag: lastTag,
-      commits_since_last_tag: commitsSinceLastTag,
-      ignored_change_paths: changedFilesSinceLastTag,
-    };
-    if (outputJson) {
-      process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-    } else {
-      console.log("Only .agents/pm tracker changes exist since the last release tag. Skipping release pipeline.");
-    }
+  if (maybeSkipForTrackerOnlyChanges(lastTag, commitsSinceLastTag, changedFilesSinceLastTag, releaseRelevantFiles, outputJson)) {
     return;
   }
 
   const todayKey = utcDateKey();
   const tagsToday = listTodayTags(todayKey);
-  if (!allowSameDayRelease && tagsToday.length > 0) {
-    const result = {
-      ok: true,
-      skipped: true,
-      reason: "release_already_cut_today",
-      tags_today: tagsToday,
-      date_key: todayKey,
-    };
-    if (outputJson) {
-      process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-    } else {
-      console.log(`Release already exists for ${todayKey}: ${tagsToday.join(", ")}. Skipping.`);
-    }
+  if (maybeSkipForSameDayRelease(tagsToday, todayKey, allowSameDayRelease, outputJson)) {
     return;
   }
 
   const previousVersion = readPackageVersion();
   let targetVersion = resolveVersion(explicitVersion, allowSameDayRelease, todayKey);
-  if (allowSameDayRelease && !explicitVersion) {
-    const previousParsed = parseCalendarVersion(previousVersion);
-    const targetParsed = parseCalendarVersion(targetVersion);
-    if (
-      previousParsed &&
-      targetParsed &&
-      previousParsed.dateKey === todayKey &&
-      targetParsed.dateKey === todayKey &&
-      targetParsed.ordinal <= previousParsed.ordinal
-    ) {
-      targetVersion = bumpSameDayOrdinal(previousVersion, todayKey);
-    }
-  }
+  targetVersion = maybeBumpSameDayTargetVersion(previousVersion, targetVersion, explicitVersion, allowSameDayRelease, todayKey);
   if (!/^\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?$/.test(targetVersion)) {
     fail(`Unsupported target version "${targetVersion}".`);
   }
 
   if (!dryRun) {
-    const generatedChangelogDir = mkdtempSync(path.join(tmpdir(), "pm-cli-release-"));
-    const generatedChangelogPath = path.join(generatedChangelogDir, `changelog-${targetVersion.replaceAll(".", "-")}.md`);
-    try {
-      runCommand(process.execPath, ["dist/cli.js", "install", "npm:pm-changelog", "--project"]);
-      runCommand(process.execPath, [
-        "dist/cli.js",
-        "changelog",
-        "generate",
-        "--output",
-        generatedChangelogPath,
-        "--title",
-        "Changelog",
-        "--mode",
-        "replace",
-        "--release-version",
-        targetVersion,
-        "--all-release-tags",
-        "--status",
-        "closed",
-        "--item-url-base",
-        "https://github.com/unbraind/pm-cli/blob/main/.agents/pm",
-      ]);
-      const hasGeneratedSection = ensureGeneratedReleaseSectionHasContent(targetVersion, generatedChangelogPath);
-      if (!hasGeneratedSection) {
-        if (explicitVersion) {
-          fail(`Generated changelog file ${generatedChangelogPath} is missing a non-empty section for ${targetVersion}.`);
-        }
-        const result = {
-          ok: true,
-          skipped: true,
-          reason: "empty_generated_changelog_section_for_target_version",
-          last_tag: lastTag,
-          target_version: targetVersion,
-          commits_since_last_tag: commitsSinceLastTag,
-          release_relevant_files: releaseRelevantFiles,
-        };
-        if (outputJson) {
-          process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-        } else {
-          console.log(`Generated changelog has no non-empty section for ${targetVersion}. Skipping release pipeline.`);
-        }
-        return;
-      }
-      const npm = commandFor("npm");
-      runCommand(npm, ["version", "--no-git-tag-version", targetVersion]);
-      writeFileSync(path.join(repoRoot, "CHANGELOG.md"), readFileSync(generatedChangelogPath, "utf8"), "utf8");
-    } finally {
-      rmSync(generatedChangelogDir, { recursive: true, force: true });
-    }
+    const changelogPreparation = prepareReleaseChangelog({ targetVersion });
+    if (maybeSkipForEmptyGeneratedChangelog({
+      ...changelogPreparation,
+      explicitVersion,
+      targetVersion,
+      lastTag,
+      commitsSinceLastTag,
+      releaseRelevantFiles,
+      outputJson,
+    })) return;
   }
 
   const gates = runReleaseGates({
@@ -410,25 +485,7 @@ export function runPipeline() {
 
   const tagName = `v${targetVersion}`;
   if (!dryRun) {
-    const authorSlug = author.toLowerCase().replaceAll(/[^a-z0-9._-]/g, "-");
-    /* c8 ignore next -- author always defaults to a non-empty slug; `|| "release-bot"` is a defensive fallback (parseFlags maps `--author ""` to the default) */
-    const authorEmail = `${authorSlug || "release-bot"}@users.noreply.github.com`;
-    const gitIdentityEnv = {
-      GIT_AUTHOR_NAME: author,
-      GIT_AUTHOR_EMAIL: authorEmail,
-      GIT_COMMITTER_NAME: author,
-      GIT_COMMITTER_EMAIL: authorEmail,
-    };
-    git(["add", "package.json", "CHANGELOG.md"]);
-    runCommand("git", [
-      "commit",
-      "-m",
-      `chore(release): cut ${targetVersion}\n\nAutomate daily release preparation with strict quality, compatibility, and reliability gates.`,
-    ], { env: gitIdentityEnv });
-    git(["tag", tagName]);
-    if (push) {
-      pushReleaseRefs(tagName, { env: gitIdentityEnv });
-    }
+    commitAndMaybePushRelease(targetVersion, tagName, author, push);
   }
 
   const result = {

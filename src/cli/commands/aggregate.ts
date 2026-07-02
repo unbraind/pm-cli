@@ -337,6 +337,122 @@ function updateCompletionCounts(accumulator: AggregateAccumulator, status: ItemS
   accumulator.other_count += 1;
 }
 
+function createAggregateAccumulator(
+  group: AggregateGroupRecord,
+  numericValue: number | null,
+): AggregateAccumulator {
+  return {
+    row: {
+      group,
+      count: 1,
+    },
+    numeric_count: numericValue === null ? 0 : 1,
+    numeric_sum: numericValue ?? 0,
+    null_count: numericValue === null ? 1 : 0,
+    open_count: 0,
+    in_progress_count: 0,
+    closed_count: 0,
+    other_count: 0,
+  };
+}
+
+function updateNumericAggregation(accumulator: AggregateAccumulator, numericValue: number | null): void {
+  if (numericValue === null) {
+    accumulator.null_count += 1;
+    return;
+  }
+  accumulator.numeric_count += 1;
+  accumulator.numeric_sum += numericValue;
+}
+
+function updateAggregateAccumulator(params: {
+  accumulator: AggregateAccumulator;
+  item: AggregateListedItem;
+  statusRegistry: RuntimeStatusRegistry;
+  includeCompletion: boolean;
+  numericAggregation: NumericAggregation | null;
+  numericValue: number | null;
+}): void {
+  params.accumulator.row.count += 1;
+  if (params.includeCompletion) {
+    updateCompletionCounts(params.accumulator, params.item.status, params.statusRegistry);
+  }
+  if (params.numericAggregation !== null) {
+    updateNumericAggregation(params.accumulator, params.numericValue);
+  }
+}
+
+function buildAggregateGroup(groupBy: AggregateGroupField[], item: AggregateListedItem): AggregateGroupRecord {
+  const group: AggregateGroupRecord = {};
+  for (const field of groupBy) {
+    group[field] = resolveGroupValue(field, item);
+  }
+  return group;
+}
+
+function finalizeAggregateRow(
+  entry: AggregateAccumulator,
+  groupBy: AggregateGroupField[],
+  includeCompletion: boolean,
+  numericAggregation: NumericAggregation | null,
+): AggregateRow {
+  const row: AggregateRow = {
+    ...entry.row,
+    group_label: buildGroupLabel(groupBy, entry.row.group),
+  };
+  if (includeCompletion) {
+    row.open = entry.open_count;
+    row.in_progress = entry.in_progress_count;
+    row.closed = entry.closed_count;
+    row.other = entry.other_count;
+    row.completion_pct = completionPct(entry.closed_count, entry.row.count);
+  }
+  if (numericAggregation !== null) {
+    row.null_count = entry.null_count;
+    if (numericAggregation.sum) {
+      row.sum = entry.numeric_sum;
+    }
+    if (numericAggregation.avg) {
+      row.avg = entry.numeric_count === 0 ? null : entry.numeric_sum / entry.numeric_count;
+    }
+  }
+  return row;
+}
+
+function buildAggregateFilters(params: {
+  groupBy: AggregateGroupField[];
+  includeCompletion: boolean;
+  includeUnparented: boolean;
+  status: ItemStatus | undefined;
+  options: AggregateOptions;
+  numericAggregation: NumericAggregation | null;
+}): AggregateResult["filters"] {
+  return {
+    group_by: params.groupBy,
+    count: true,
+    completion: params.includeCompletion,
+    include_unparented: params.includeUnparented,
+    status: params.status ?? null,
+    type: params.options.type ?? null,
+    tag: params.options.tag ?? null,
+    priority: params.options.priority ?? null,
+    deadline_before: params.options.deadlineBefore ?? null,
+    deadline_after: params.options.deadlineAfter ?? null,
+    assignee: params.options.assignee ?? null,
+    assignee_filter: params.options.assigneeFilter ?? null,
+    parent: params.options.parent ?? null,
+    sprint: params.options.sprint ?? null,
+    release: params.options.release ?? null,
+    ...(params.numericAggregation !== null
+      ? {
+          sum: params.options.sum ?? null,
+          avg: params.options.avg ?? null,
+          numeric_field: params.numericAggregation.field,
+        }
+      : {}),
+  };
+}
+
 /**
  * Implements run aggregate for the public runtime surface of this module.
  */
@@ -366,10 +482,7 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
 
   for (const listedItem of listed.items) {
     const item = listedItem as AggregateListedItem;
-    const group: AggregateGroupRecord = {};
-    for (const field of groupBy) {
-      group[field] = resolveGroupValue(field, item);
-    }
+    const group = buildAggregateGroup(groupBy, item);
     if (groupBy.includes("parent") && group.parent === null && !includeUnparented) {
       skippedUnparented += 1;
       continue;
@@ -381,32 +494,16 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
         ? null
         : readNumericAggregateValue(item, numericAggregation.field);
     if (existing) {
-      existing.row.count += 1;
-      if (includeCompletion) {
-        updateCompletionCounts(existing, item.status, statusRegistry);
-      }
-      if (numericAggregation !== null) {
-        if (numericValue === null) {
-          existing.null_count += 1;
-        } else {
-          existing.numeric_count += 1;
-          existing.numeric_sum += numericValue;
-        }
-      }
+      updateAggregateAccumulator({
+        accumulator: existing,
+        item,
+        statusRegistry,
+        includeCompletion,
+        numericAggregation,
+        numericValue,
+      });
     } else {
-      const accumulator: AggregateAccumulator = {
-        row: {
-          group,
-          count: 1,
-        },
-        numeric_count: numericValue === null ? 0 : 1,
-        numeric_sum: numericValue ?? 0,
-        null_count: numericValue === null ? 1 : 0,
-        open_count: 0,
-        in_progress_count: 0,
-        closed_count: 0,
-        other_count: 0,
-      };
+      const accumulator = createAggregateAccumulator(group, numericValue);
       if (includeCompletion) {
         updateCompletionCounts(accumulator, item.status, statusRegistry);
       }
@@ -416,29 +513,7 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
   }
 
   const groups = [...grouped.values()]
-    .map((entry) => {
-      const withNumeric: AggregateRow = {
-        ...entry.row,
-        group_label: buildGroupLabel(groupBy, entry.row.group),
-      };
-      if (includeCompletion) {
-        withNumeric.open = entry.open_count;
-        withNumeric.in_progress = entry.in_progress_count;
-        withNumeric.closed = entry.closed_count;
-        withNumeric.other = entry.other_count;
-        withNumeric.completion_pct = completionPct(entry.closed_count, entry.row.count);
-      }
-      if (numericAggregation !== null) {
-        withNumeric.null_count = entry.null_count;
-        if (numericAggregation.sum) {
-          withNumeric.sum = entry.numeric_sum;
-        }
-        if (numericAggregation.avg) {
-          withNumeric.avg = entry.numeric_count === 0 ? null : entry.numeric_sum / entry.numeric_count;
-        }
-      }
-      return withNumeric;
-    })
+    .map((entry) => finalizeAggregateRow(entry, groupBy, includeCompletion, numericAggregation))
     .sort((left, right) => compareAggregateRows(left, right, groupBy));
   const warnings = listed.warnings && listed.warnings.length > 0 ? listed.warnings : undefined;
 
@@ -450,30 +525,7 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
       items_grouped: groupedItemCount,
       items_skipped_unparented: skippedUnparented,
     },
-    filters: {
-      group_by: groupBy,
-      count: true,
-      completion: includeCompletion,
-      include_unparented: includeUnparented,
-      status: status ?? null,
-      type: options.type ?? null,
-      tag: options.tag ?? null,
-      priority: options.priority ?? null,
-      deadline_before: options.deadlineBefore ?? null,
-      deadline_after: options.deadlineAfter ?? null,
-      assignee: options.assignee ?? null,
-      assignee_filter: options.assigneeFilter ?? null,
-      parent: options.parent ?? null,
-      sprint: options.sprint ?? null,
-      release: options.release ?? null,
-      ...(numericAggregation !== null
-        ? {
-            sum: options.sum ?? null,
-            avg: options.avg ?? null,
-            numeric_field: numericAggregation.field,
-          }
-        : {}),
-    },
+    filters: buildAggregateFilters({ groupBy, includeCompletion, includeUnparented, status, options, numericAggregation }),
     now: nowIso(),
     ...(warnings ? { warnings } : {}),
   };

@@ -30,6 +30,49 @@ function setSpanAttribute(
   }
 }
 
+function setSentryTagIfPresent(
+  Sentry: NonNullable<ReturnType<typeof getSentry>>,
+  key: string,
+  value: string | undefined,
+): void {
+  if (typeof value === "string" && value.trim().length > 0) {
+    Sentry.setTag(key, value);
+  }
+}
+
+function setSentryCommandFinishTags(
+  Sentry: NonNullable<ReturnType<typeof getSentry>>,
+  normalizedOk: string,
+  metadata: Parameters<typeof sentryFinishCommandSpan>[2],
+): void {
+  Sentry.setTag("pm.ok", normalizedOk);
+  Sentry.setTag("pm.command_ok", normalizedOk);
+  if (typeof metadata?.exit_code === "number") {
+    Sentry.setTag("pm.exit_code", String(metadata.exit_code));
+    Sentry.setTag("pm.command_exit_code", String(metadata.exit_code));
+  }
+  setSentryTagIfPresent(Sentry, "pm.error_code", metadata?.error_code);
+  setSentryTagIfPresent(Sentry, "pm.error_category", metadata?.error_category);
+  setSentryTagIfPresent(Sentry, "pm.command_resolution", metadata?.command_resolution);
+  setSentryTagIfPresent(Sentry, "pm.resolution_stage", metadata?.resolution_stage);
+}
+
+function setCommandSpanFinishAttributes(
+  span: Span,
+  normalizedOk: string,
+  normalizedExitCode: string | undefined,
+  metadata: Parameters<typeof sentryFinishCommandSpan>[2],
+): void {
+  setSpanAttribute(span, "pm.ok", normalizedOk);
+  setSpanAttribute(span, "pm.command_ok", normalizedOk);
+  setSpanAttribute(span, "pm.exit_code", normalizedExitCode);
+  setSpanAttribute(span, "pm.command_exit_code", normalizedExitCode);
+  setSpanAttribute(span, "pm.error_code", metadata?.error_code);
+  setSpanAttribute(span, "pm.error_category", metadata?.error_category);
+  setSpanAttribute(span, "pm.command_resolution", metadata?.command_resolution);
+  setSpanAttribute(span, "pm.resolution_stage", metadata?.resolution_stage);
+}
+
 /**
  * Implements sentry set command context for the public runtime surface of this module.
  */
@@ -114,33 +157,9 @@ export function sentryFinishCommandSpan(
   const normalizedExitCode = typeof metadata?.exit_code === "number" ? String(metadata.exit_code) : undefined;
   const Sentry = getSentry();
   if (Sentry) {
-    Sentry.setTag("pm.ok", normalizedOk);
-    Sentry.setTag("pm.command_ok", normalizedOk);
-    if (typeof metadata?.exit_code === "number") {
-      Sentry.setTag("pm.exit_code", String(metadata.exit_code));
-      Sentry.setTag("pm.command_exit_code", String(metadata.exit_code));
-    }
-    if (typeof metadata?.error_code === "string" && metadata.error_code.trim().length > 0) {
-      Sentry.setTag("pm.error_code", metadata.error_code);
-    }
-    if (typeof metadata?.error_category === "string" && metadata.error_category.trim().length > 0) {
-      Sentry.setTag("pm.error_category", metadata.error_category);
-    }
-    if (typeof metadata?.command_resolution === "string" && metadata.command_resolution.trim().length > 0) {
-      Sentry.setTag("pm.command_resolution", metadata.command_resolution);
-    }
-    if (typeof metadata?.resolution_stage === "string" && metadata.resolution_stage.trim().length > 0) {
-      Sentry.setTag("pm.resolution_stage", metadata.resolution_stage);
-    }
+    setSentryCommandFinishTags(Sentry, normalizedOk, metadata);
   }
-  setSpanAttribute(activeCommandSpan, "pm.ok", normalizedOk);
-  setSpanAttribute(activeCommandSpan, "pm.command_ok", normalizedOk);
-  setSpanAttribute(activeCommandSpan, "pm.exit_code", normalizedExitCode);
-  setSpanAttribute(activeCommandSpan, "pm.command_exit_code", normalizedExitCode);
-  setSpanAttribute(activeCommandSpan, "pm.error_code", metadata?.error_code);
-  setSpanAttribute(activeCommandSpan, "pm.error_category", metadata?.error_category);
-  setSpanAttribute(activeCommandSpan, "pm.command_resolution", metadata?.command_resolution);
-  setSpanAttribute(activeCommandSpan, "pm.resolution_stage", metadata?.resolution_stage);
+  setCommandSpanFinishAttributes(activeCommandSpan, normalizedOk, normalizedExitCode, metadata);
   activeCommandSpan.setStatus(ok ? { code: 1 } : { code: 2, message: error ?? "command_failed" });
   activeCommandSpan.end();
   activeCommandSpan = undefined;

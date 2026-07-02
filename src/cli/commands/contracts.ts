@@ -688,6 +688,16 @@ function normalizeStringList(values: string[] | undefined): string[] {
   return normalized;
 }
 
+function assignExtensionFlagBoolean(
+  contract: CliFlagContract,
+  key: "required" | "repeatable" | "list",
+  enabled: boolean,
+): void {
+  if (enabled) {
+    contract[key] = true;
+  }
+}
+
 function toExtensionFlagContract(
   definition: Record<string, unknown>,
 ): CliFlagContract | null {
@@ -709,15 +719,12 @@ function toExtensionFlagContract(
   if (normalizedShort && normalizedLong) {
     contract.short = normalizedShort;
   }
+  assignExtensionFlagBoolean(contract, "required", definition.required === true);
+  assignExtensionFlagBoolean(contract, "repeatable", definition.repeatable === true);
+  assignExtensionFlagBoolean(contract, "list", definition.list === true);
   const description = toOptionalTrimmedString(definition.description);
   if (description) {
     contract.description = description;
-  }
-  if (definition.required === true) {
-    contract.required = true;
-  }
-  if (definition.repeatable === true) {
-    contract.repeatable = true;
   }
   const valueName = toOptionalTrimmedString(definition.value_name);
   if (valueName) {
@@ -921,6 +928,38 @@ function extensionSchemaPropertyNameFromFlag(
   return cleaned.length > 0 ? cleaned : null;
 }
 
+function buildExtensionArgumentSchema(
+  argument: ExtensionCommandContract["arguments"][number],
+  action: string,
+): Record<string, unknown> {
+  if (argument.variadic) {
+    return {
+      type: "array",
+      items: { type: "string" },
+      description:
+        argument.description ??
+        `Variadic argument '${argument.name}' for extension action '${action}'.`,
+    };
+  }
+  return {
+    type: "string",
+    description:
+      argument.description ??
+      `Argument '${argument.name}' for extension action '${action}'.`,
+  };
+}
+
+function buildExtensionFlagSchema(flag: CliFlagContract, action: string): Record<string, unknown> {
+  const valueType = flag.value_type ?? "boolean";
+  const schemaType = valueType === "boolean" ? "boolean" : valueType === "number" ? ["number", "string"] : "string";
+  const acceptsMultipleValues = flag.repeatable === true || flag.list === true;
+  return {
+    type: acceptsMultipleValues ? "array" : schemaType,
+    ...(acceptsMultipleValues ? { items: { type: schemaType } } : {}),
+    description: flag.description ?? `Extension option '${flag.flag}' for action '${action}'.`,
+  };
+}
+
 function buildExtensionActionSchemaBranch(
   contract: ExtensionCommandContract,
 ): Record<string, unknown> {
@@ -940,22 +979,7 @@ function buildExtensionActionSchemaBranch(
   };
   const required: string[] = ["action"];
   for (const argument of contract.arguments) {
-    if (argument.variadic) {
-      properties[argument.name] = {
-        type: "array",
-        items: { type: "string" },
-        description:
-          argument.description ??
-          `Variadic argument '${argument.name}' for extension action '${contract.action}'.`,
-      };
-    } else {
-      properties[argument.name] = {
-        type: "string",
-        description:
-          argument.description ??
-          `Argument '${argument.name}' for extension action '${contract.action}'.`,
-      };
-    }
+    properties[argument.name] = buildExtensionArgumentSchema(argument, contract.action);
     if (argument.required) {
       required.push(argument.name);
     }
@@ -965,14 +989,7 @@ function buildExtensionActionSchemaBranch(
     if (!propertyName || properties[propertyName] !== undefined) {
       continue;
     }
-    const valueType = flag.value_type ?? "boolean";
-    const schemaType =
-      valueType === "boolean" ? "boolean" : valueType === "number" ? ["number", "string"] : "string";
-    properties[propertyName] = {
-      type: flag.repeatable ? "array" : schemaType,
-      ...(flag.repeatable ? { items: { type: schemaType } } : {}),
-      description: flag.description ?? `Extension option '${flag.flag}' for action '${contract.action}'.`,
-    };
+    properties[propertyName] = buildExtensionFlagSchema(flag, contract.action);
     if (flag.required === true) {
       required.push(propertyName);
     }
@@ -1539,32 +1556,76 @@ function attachCreateRequiredOptionContracts(
   };
 }
 
-/**
- * Implements run contracts for the public runtime surface of this module.
- */
-export async function runContracts(
-  options: ContractsCommandOptions,
-  global: GlobalOptions,
-): Promise<ContractsResult> {
-  const selectedAction = normalizeToken(options.action);
-  const selectedCommand = normalizeToken(options.command);
+interface ContractsSelection {
+  selectedAction: string | undefined;
+  selectedCommand: string | undefined;
+  schemaOnly: boolean;
+  flagsOnly: boolean;
+  availabilityOnly: boolean;
+  runtimeOnly: boolean;
+  fullOutput: boolean;
+  omitUnfilteredSchema: boolean;
+  omitUnfilteredCommandFlags: boolean;
+  omitUnfilteredCommanderAliases: boolean;
+}
+
+interface ContractsRuntimeContext {
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  runtimeProbe: RuntimeExtensionActionProbe;
+  typeRegistry: ReturnType<typeof resolveItemTypeRegistry>;
+  statusRegistry: ReturnType<typeof resolveRuntimeStatusRegistry>;
+  runtimeFieldRegistry: RuntimeFieldRegistry;
+  runtimeFieldFlagMap: Map<string, CliFlagContract[]>;
+  createRequiredOptionContracts: Record<string, unknown>;
+  extensionContracts: ExtensionCommandContract[];
+  mergedExtensionContracts: ExtensionCommandContract[];
+  extensionFlagMap: ReturnType<typeof collectExtensionFlagContractsByCommand>;
+}
+
+interface ContractsActionContext {
+  actionDescriptors: ActionContractDescriptor[];
+  commandCatalog: string[];
+  commandScopedDescriptors: ActionContractDescriptor[];
+  scopedActionDescriptors: ActionContractDescriptor[];
+  selectedPackageOwnedAction: string | undefined;
+  actionAvailability: ContractsActionAvailability[];
+  actions: string[];
+}
+
+interface ContractsSchemaContext {
+  mergedSchema: Record<string, unknown>;
+  filteredSchema: Record<string, unknown>;
+}
+
+function resolveContractsSelection(options: ContractsCommandOptions): ContractsSelection {
   const schemaOnly = options.schemaOnly === true;
   const flagsOnly = options.flagsOnly === true;
   const availabilityOnly = options.availabilityOnly === true;
   const runtimeOnly = options.runtimeOnly === true;
   const fullOutput = options.full === true;
+  const selectedAction = normalizeToken(options.action);
+  const selectedCommand = normalizeToken(options.command);
   const unfilteredDefaultBriefMode =
     !fullOutput && !schemaOnly && !flagsOnly && !availabilityOnly && !selectedAction && !selectedCommand;
-  // Agent token-cost guard: when no filter and no projection flag and not --full,
-  // skip the giant schema oneOf union (the 200KB+ chunk). Restore via --full
-  // or by scoping to a specific --command/--action.
-  const omitUnfilteredSchema = unfilteredDefaultBriefMode;
-  const omitUnfilteredCommandFlags = unfilteredDefaultBriefMode;
-  const omitUnfilteredCommanderAliases = unfilteredDefaultBriefMode;
-  const projectionFlagsEnabled = [
+  return {
+    selectedAction,
+    selectedCommand,
     schemaOnly,
     flagsOnly,
     availabilityOnly,
+    runtimeOnly,
+    fullOutput,
+    omitUnfilteredSchema: unfilteredDefaultBriefMode,
+    omitUnfilteredCommandFlags: unfilteredDefaultBriefMode,
+    omitUnfilteredCommanderAliases: unfilteredDefaultBriefMode,
+  };
+}
+
+function assertSingleContractsProjection(selection: ContractsSelection): void {
+  const projectionFlagsEnabled = [
+    selection.schemaOnly,
+    selection.flagsOnly,
+    selection.availabilityOnly,
   ].filter((value) => value).length;
   if (projectionFlagsEnabled > 1) {
     throw new PmCliError(
@@ -1572,171 +1633,244 @@ export async function runContracts(
       EXIT_CODE.USAGE,
     );
   }
-  const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  let settings = structuredClone(SETTINGS_DEFAULTS);
+}
+
+async function readContractsSettings(pmRoot: string): Promise<Awaited<ReturnType<typeof readSettings>>> {
   try {
-    settings = await readSettings(pmRoot);
+    return await readSettings(pmRoot);
   } catch {
-    settings = structuredClone(SETTINGS_DEFAULTS);
+    return structuredClone(SETTINGS_DEFAULTS);
   }
+}
+
+async function resolveContractsRuntimeContext(
+  global: GlobalOptions,
+  pmRoot: string,
+): Promise<ContractsRuntimeContext> {
+  const settings = await readContractsSettings(pmRoot);
   const runtimeProbe = await resolveRuntimeExtensionActionProbe(global);
   const typeRegistry = resolveItemTypeRegistry(
     settings,
     runtimeProbe.registrations ?? getActiveExtensionRegistrations(),
   );
-  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
-  const runtimeFieldFlagMap =
-    buildRuntimeFieldFlagContracts(runtimeFieldRegistry);
-  const createRequiredOptionContracts =
-    buildCreateRequiredOptionContracts(typeRegistry);
   const extensionContracts = collectExtensionCommandContracts(runtimeProbe);
-  const mergedExtensionContracts = mergeExtensionContractsByAction(extensionContracts);
-  const extensionFlagMap = collectExtensionFlagContractsByCommand(
-    runtimeProbe.flagRegistrations,
+  return {
+    settings,
+    runtimeProbe,
+    typeRegistry,
+    statusRegistry: resolveRuntimeStatusRegistry(settings.schema),
+    runtimeFieldRegistry,
+    runtimeFieldFlagMap: buildRuntimeFieldFlagContracts(runtimeFieldRegistry),
+    createRequiredOptionContracts: buildCreateRequiredOptionContracts(typeRegistry),
+    extensionContracts,
+    mergedExtensionContracts: mergeExtensionContractsByAction(extensionContracts),
+    extensionFlagMap: collectExtensionFlagContractsByCommand(runtimeProbe.flagRegistrations),
+  };
+}
+
+function shouldIncludePackageOwnedActions(selection: ContractsSelection): boolean {
+  return (
+    selection.availabilityOnly &&
+    ((selection.selectedAction !== undefined && PACKAGE_OWNED_ACTIONS.has(selection.selectedAction)) ||
+      (selection.selectedCommand !== undefined && PACKAGE_OWNED_COMMANDS.has(selection.selectedCommand)))
   );
-  const includePackageOwnedActions =
-    (selectedAction !== undefined && PACKAGE_OWNED_ACTIONS.has(selectedAction) && availabilityOnly) ||
-    (selectedCommand !== undefined && PACKAGE_OWNED_COMMANDS.has(selectedCommand) && availabilityOnly);
-  const actionDescriptors =
-    collectActionContractDescriptors(mergedExtensionContracts, { includePackageOwnedActions });
+}
+
+function collectContractsActionDescriptors(
+  selection: ContractsSelection,
+  mergedExtensionContracts: ExtensionCommandContract[],
+): ActionContractDescriptor[] {
+  const actionDescriptors = collectActionContractDescriptors(mergedExtensionContracts, {
+    includePackageOwnedActions: shouldIncludePackageOwnedActions(selection),
+  });
   if (
-    includePackageOwnedActions &&
-    selectedCommand !== undefined &&
-    PACKAGE_OWNED_COMMANDS.has(selectedCommand) &&
-    !actionDescriptors.some((entry) => entry.command_path === selectedCommand)
+    shouldIncludePackageOwnedActions(selection) &&
+    selection.selectedCommand !== undefined &&
+    PACKAGE_OWNED_COMMANDS.has(selection.selectedCommand) &&
+    !actionDescriptors.some((entry) => entry.command_path === selection.selectedCommand)
   ) {
     actionDescriptors.push({
-      action: packageOwnedActionForCommand(selectedCommand),
+      action: packageOwnedActionForCommand(selection.selectedCommand),
       provider: "extension",
       requires_extension: true,
-      command_path: selectedCommand,
+      command_path: selection.selectedCommand,
     });
   }
-  const actionNames = new Set(actionDescriptors.map((entry) => entry.action));
-  if (selectedAction && !actionNames.has(selectedAction)) {
-    throw new PmCliError(
-      `Unknown action: "${options.action}".`,
-      EXIT_CODE.USAGE,
-    );
-  }
+  return actionDescriptors;
+}
 
-  const commandCatalog = [
+function assertKnownContractsAction(selection: ContractsSelection, actionDescriptors: ActionContractDescriptor[]): void {
+  const actionNames = new Set(actionDescriptors.map((entry) => entry.action));
+  if (selection.selectedAction && !actionNames.has(selection.selectedAction)) {
+    throw new PmCliError(`Unknown action: "${selection.selectedAction}".`, EXIT_CODE.USAGE);
+  }
+}
+
+function buildContractsCommandCatalog(
+  actionDescriptors: ActionContractDescriptor[],
+  mergedExtensionContracts: ExtensionCommandContract[],
+): string[] {
+  return [
     ...new Set([
-      ...PM_CORE_COMMAND_NAMES.filter(
-        (entry) => !PACKAGE_OWNED_COMMANDS.has(entry),
-      ),
-      ...[...CORE_COMMAND_FLAG_CONTRACTS_BY_COMMAND.keys()].filter(
-        (entry) => !PACKAGE_OWNED_COMMANDS.has(entry),
-      ),
+      ...PM_CORE_COMMAND_NAMES.filter((entry) => !PACKAGE_OWNED_COMMANDS.has(entry)),
+      ...[...CORE_COMMAND_FLAG_CONTRACTS_BY_COMMAND.keys()].filter((entry) => !PACKAGE_OWNED_COMMANDS.has(entry)),
       /* c8 ignore next -- action descriptors always include concrete command paths in command-scoped test fixtures. */
-      ...actionDescriptors.flatMap((entry) =>
-        entry.command_path ? splitCommandPathAliases(entry.command_path) : [],
-      ),
+      ...actionDescriptors.flatMap((entry) => entry.command_path ? splitCommandPathAliases(entry.command_path) : []),
       ...mergedExtensionContracts.flatMap((entry) => entry.command.split("|")),
     ]),
   ]
     .map((entry) => normalizeCommandPath(entry))
     .filter((entry) => entry.length > 0)
     .sort((left, right) => left.localeCompare(right));
-  const commandNames = new Set(commandCatalog);
-  if (selectedCommand && !commandNames.has(selectedCommand)) {
-    const namespaceChildren = commandCatalog.filter((command) =>
-      command.startsWith(`${selectedCommand} `),
-    );
-    if (namespaceChildren.length > 0) {
-      const displayedNamespaceChildren = namespaceChildren.slice(0, COMMAND_NAMESPACE_DISPLAY_LIMIT);
-      const hiddenNamespaceChildCount = namespaceChildren.length - displayedNamespaceChildren.length;
-      const displayedChildCommandList = hiddenNamespaceChildCount > 0
-        ? `${displayedNamespaceChildren.join(", ")}, and ${hiddenNamespaceChildCount} more`
-        : displayedNamespaceChildren.join(", ");
-      const fallbackCandidates = namespaceChildren.slice(0, COMMAND_NAMESPACE_FALLBACK_LIMIT);
-      const childCommandExamples = namespaceChildren
-        .slice(0, 5)
-        .map((command) => `pm contracts --command "${command}" --flags-only --json`);
-      const suggestedChildCommand = namespaceChildren[0];
-      throw new PmCliError(
-        `Command "${options.command}" is a command namespace. Choose a concrete child command: ${displayedChildCommandList}.`,
-        EXIT_CODE.USAGE,
-        {
-          code: "command_namespace",
-          required: "Use a concrete child command path listed under this namespace.",
-          why:
-            "Command groups expose help at the namespace root, but command flag contracts belong to executable child commands.",
-          examples: childCommandExamples,
-          nextSteps: [
-            `Retry with a child command, for example: ${childCommandExamples[0]}`,
-          ],
-          recovery: {
-            suggested_retry: `pm contracts --command "${suggestedChildCommand}" --flags-only --json`,
-            fallback_candidates: fallbackCandidates.map((command) => ({
-              source: "command_namespace",
-              command: `pm contracts --command "${command}" --flags-only --json`,
-              reason: `Child command under ${selectedCommand}`,
-            })),
-          },
-        },
-      );
-    }
-    const packageHint = PACKAGE_OWNED_COMMAND_INSTALL_HINTS.get(selectedCommand);
-    if (packageHint) {
-      throw new PmCliError(
-        `Unknown command: "${options.command}". Command "${selectedCommand}" is provided by the optional "${packageHint}" package. Run "pm install ${packageHint} --project" and retry.`,
-        EXIT_CODE.USAGE,
-        {
-          code: "unknown_command",
-          required: `Install the optional "${packageHint}" package, or choose a command from pm contracts --flags-only --json.`,
-          why: "Command contracts include core commands plus commands registered by active packages and extensions.",
-          examples: [`pm install ${packageHint} --project`, `pm contracts --command ${selectedCommand} --flags-only --json`],
-          nextSteps: [`Install the optional package first: pm install ${packageHint} --project`],
-          recovery: {
-            suggested_retry: `pm install ${packageHint} --project`,
-          },
-        },
-      );
-    }
-    throw new PmCliError(
-      `Unknown command: "${options.command}".`,
-      EXIT_CODE.USAGE,
-      {
-        code: "unknown_command",
-        required: "Use a command path listed by pm contracts --flags-only --json.",
-        why: "Command contracts are generated from the active core, package, and extension command registry.",
-        examples: ["pm contracts --flags-only --json", "pm --help"],
-        nextSteps: ["Verify spelling and active packages/extensions, then rerun with a known command path."],
-        recovery: {
-          suggested_retry: "pm contracts --flags-only --json",
-        },
+}
+
+function buildCommandNamespaceError(command: string, namespaceChildren: string[]): PmCliError {
+  const displayedNamespaceChildren = namespaceChildren.slice(0, COMMAND_NAMESPACE_DISPLAY_LIMIT);
+  const hiddenNamespaceChildCount = namespaceChildren.length - displayedNamespaceChildren.length;
+  const displayedChildCommandList = hiddenNamespaceChildCount > 0
+    ? `${displayedNamespaceChildren.join(", ")}, and ${hiddenNamespaceChildCount} more`
+    : displayedNamespaceChildren.join(", ");
+  const fallbackCandidates = namespaceChildren.slice(0, COMMAND_NAMESPACE_FALLBACK_LIMIT);
+  const childCommandExamples = namespaceChildren
+    .slice(0, 5)
+    .map((childCommand) => `pm contracts --command "${childCommand}" --flags-only --json`);
+  const suggestedChildCommand = namespaceChildren[0];
+  return new PmCliError(
+    `Command "${command}" is a command namespace. Choose a concrete child command: ${displayedChildCommandList}.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "command_namespace",
+      required: "Use a concrete child command path listed under this namespace.",
+      why:
+        "Command groups expose help at the namespace root, but command flag contracts belong to executable child commands.",
+      examples: childCommandExamples,
+      nextSteps: [`Retry with a child command, for example: ${childCommandExamples[0]}`],
+      recovery: {
+        suggested_retry: `pm contracts --command "${suggestedChildCommand}" --flags-only --json`,
+        fallback_candidates: fallbackCandidates.map((childCommand) => ({
+          source: "command_namespace",
+          command: `pm contracts --command "${childCommand}" --flags-only --json`,
+          reason: `Child command under ${command}`,
+        })),
       },
-    );
+    },
+  );
+}
+
+function buildPackageOwnedCommandError(command: string, packageHint: string): PmCliError {
+  return new PmCliError(
+    `Unknown command: "${command}". Command "${command}" is provided by the optional "${packageHint}" package. Run "pm install ${packageHint} --project" and retry.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "unknown_command",
+      required: `Install the optional "${packageHint}" package, or choose a command from pm contracts --flags-only --json.`,
+      why: "Command contracts include core commands plus commands registered by active packages and extensions.",
+      examples: [`pm install ${packageHint} --project`, `pm contracts --command ${command} --flags-only --json`],
+      nextSteps: [`Install the optional package first: pm install ${packageHint} --project`],
+      recovery: {
+        suggested_retry: `pm install ${packageHint} --project`,
+      },
+    },
+  );
+}
+
+function buildUnknownCommandError(command: string): PmCliError {
+  return new PmCliError(
+    `Unknown command: "${command}".`,
+    EXIT_CODE.USAGE,
+    {
+      code: "unknown_command",
+      required: "Use a command path listed by pm contracts --flags-only --json.",
+      why: "Command contracts are generated from the active core, package, and extension command registry.",
+      examples: ["pm contracts --flags-only --json", "pm --help"],
+      nextSteps: ["Verify spelling and active packages/extensions, then rerun with a known command path."],
+      recovery: {
+        suggested_retry: "pm contracts --flags-only --json",
+      },
+    },
+  );
+}
+
+function assertKnownContractsCommand(selection: ContractsSelection, commandCatalog: string[]): void {
+  if (!selection.selectedCommand) {
+    return;
   }
-  const selectedPackageOwnedAction = selectedCommand
-    ? PACKAGE_OWNED_COMMAND_ACTIONS.get(selectedCommand)
+  const commandNames = new Set(commandCatalog);
+  if (commandNames.has(selection.selectedCommand)) {
+    return;
+  }
+  const namespaceChildren = commandCatalog.filter((command) => command.startsWith(`${selection.selectedCommand} `));
+  if (namespaceChildren.length > 0) {
+    throw buildCommandNamespaceError(selection.selectedCommand, namespaceChildren);
+  }
+  const packageHint = PACKAGE_OWNED_COMMAND_INSTALL_HINTS.get(selection.selectedCommand);
+  if (packageHint) {
+    throw buildPackageOwnedCommandError(selection.selectedCommand, packageHint);
+  }
+  throw buildUnknownCommandError(selection.selectedCommand);
+}
+
+function resolveContractsActionContext(
+  selection: ContractsSelection,
+  runtime: ContractsRuntimeContext,
+): ContractsActionContext {
+  const actionDescriptors = collectContractsActionDescriptors(selection, runtime.mergedExtensionContracts);
+  assertKnownContractsAction(selection, actionDescriptors);
+  const commandCatalog = buildContractsCommandCatalog(actionDescriptors, runtime.mergedExtensionContracts);
+  assertKnownContractsCommand(selection, commandCatalog);
+  const selectedPackageOwnedAction = selection.selectedCommand
+    ? PACKAGE_OWNED_COMMAND_ACTIONS.get(selection.selectedCommand)
     : undefined;
-  const commandScopedDescriptors = selectedCommand
+  const commandScopedDescriptors = selection.selectedCommand
     ? actionDescriptors.filter((descriptor) =>
         selectedPackageOwnedAction
           ? descriptor.action === selectedPackageOwnedAction
-          : actionDescriptorMatchesSelectedCommand(descriptor, selectedCommand),
+          : actionDescriptorMatchesSelectedCommand(descriptor, selection.selectedCommand as string),
       )
     : actionDescriptors;
   if (
-    selectedCommand &&
-    selectedAction &&
-    !commandScopedDescriptors.some(
-      (descriptor) => descriptor.action === selectedAction,
-    )
+    selection.selectedCommand &&
+    selection.selectedAction &&
+    !commandScopedDescriptors.some((descriptor) => descriptor.action === selection.selectedAction)
   ) {
     throw new PmCliError(
-      `Action "${options.action}" is not mapped to command "${options.command}" in contracts output.`,
+      `Action "${selection.selectedAction}" is not mapped to command "${selection.selectedCommand}" in contracts output.`,
       EXIT_CODE.USAGE,
     );
   }
+  const scopedActionDescriptors = selection.selectedAction
+    ? commandScopedDescriptors.filter((descriptor) => descriptor.action === selection.selectedAction)
+    : commandScopedDescriptors;
+  const allActionAvailability = [
+    ...new Map(
+      scopedActionDescriptors
+        .map((descriptor) => resolveActionAvailability(descriptor, runtime.runtimeProbe))
+        .map((entry) => [
+          /* c8 ignore next -- keyed dedupe by action|path is covered by runtime policy integration tests. */
+          selectedPackageOwnedAction ? entry.action : `${entry.action}|${entry.command_path ?? ""}`,
+          entry,
+        ] as const),
+    ).values(),
+  ];
+  const actionAvailability =
+    selection.runtimeOnly && !selection.selectedAction && !selection.availabilityOnly
+      ? allActionAvailability.filter((entry) => entry.invocable)
+      : allActionAvailability;
+  return {
+    actionDescriptors,
+    commandCatalog,
+    commandScopedDescriptors,
+    scopedActionDescriptors,
+    selectedPackageOwnedAction,
+    actionAvailability,
+    actions: [...new Set(actionAvailability.map((entry) => entry.action))],
+  };
+}
 
-  const schema = PM_TOOL_PARAMETERS_SCHEMA as Record<string, unknown>;
-  const schemaBranches = extractActionBranches(schema);
-  const schemaActionSet = new Set(
-    schemaBranches
+function buildSchemaActionSet(schema: Record<string, unknown>): Set<string> {
+  return new Set(
+    extractActionBranches(schema)
       .map((entry) => {
         const properties = entry.properties;
         /* c8 ignore start -- PM_TOOL_PARAMETERS_SCHEMA action branches always carry a properties object; the property-less fallback is validated in schema-level contract tests. */
@@ -1757,183 +1891,247 @@ export async function runContracts(
       })
       .filter((entry): entry is string => entry !== null),
   );
+}
+
+function buildMergedContractsSchema(mergedExtensionContracts: ExtensionCommandContract[]): Record<string, unknown> {
+  const schema = PM_TOOL_PARAMETERS_SCHEMA as Record<string, unknown>;
+  const schemaBranches = extractActionBranches(schema);
+  const schemaActionSet = buildSchemaActionSet(schema);
   const extensionBranches = mergedExtensionContracts
     .filter((contract) => !schemaActionSet.has(contract.action))
     .map((contract) => buildExtensionActionSchemaBranch(contract));
-  const mergedSchema =
-    extensionBranches.length > 0
-      ? {
-          ...schema,
-          oneOf: [...schemaBranches, ...extensionBranches],
-        }
-      : schema;
+  return extensionBranches.length > 0
+    ? {
+        ...schema,
+        oneOf: [...schemaBranches, ...extensionBranches],
+      }
+    : schema;
+}
 
-  const scopedActionDescriptors = selectedAction
-    ? commandScopedDescriptors.filter(
-        (descriptor) => descriptor.action === selectedAction,
-      )
-    : commandScopedDescriptors;
-  const allActionAvailability = [
-    ...new Map(
-      scopedActionDescriptors
-        .map((descriptor) => resolveActionAvailability(descriptor, runtimeProbe))
-        .map((entry) => [
-          /* c8 ignore next -- keyed dedupe by action|path is covered by runtime policy integration tests. */
-          selectedPackageOwnedAction ? entry.action : `${entry.action}|${entry.command_path ?? ""}`,
-          entry,
-        ] as const),
-    ).values(),
-  ];
-  const actionAvailability =
-    runtimeOnly && !selectedAction && !availabilityOnly
-      ? allActionAvailability.filter((entry) => entry.invocable)
-      : allActionAvailability;
-  const actions = [...new Set(actionAvailability.map((entry) => entry.action))];
-  const descriptorActionSet = new Set(
-    actionDescriptors.map((descriptor) => descriptor.action),
-  );
-  let filteredSchema = selectedAction
-    ? filterSchemaByAction(mergedSchema, selectedAction)
-    : selectedCommand
+function filterContractsSchema(
+  selection: ContractsSelection,
+  actionContext: ContractsActionContext,
+  mergedSchema: Record<string, unknown>,
+): Record<string, unknown> {
+  const descriptorActionSet = new Set(actionContext.actionDescriptors.map((descriptor) => descriptor.action));
+  const filteredSchema = selection.selectedAction
+    ? filterSchemaByAction(mergedSchema, selection.selectedAction)
+    : selection.selectedCommand
       ? filterSchemaByActions(
           mergedSchema,
-          new Set(
-            scopedActionDescriptors.map((descriptor) => descriptor.action),
-          ),
+          new Set(actionContext.scopedActionDescriptors.map((descriptor) => descriptor.action)),
         )
       : filterSchemaByActions(mergedSchema, descriptorActionSet);
-  if (runtimeOnly && !selectedAction) {
-    filteredSchema = filterSchemaByActions(filteredSchema, new Set(actions));
+  return selection.runtimeOnly && !selection.selectedAction
+    ? filterSchemaByActions(filteredSchema, new Set(actionContext.actions))
+    : filteredSchema;
+}
+
+function resolveContractsSchemaContext(
+  selection: ContractsSelection,
+  runtime: ContractsRuntimeContext,
+  actionContext: ContractsActionContext,
+): ContractsSchemaContext {
+  const mergedSchema = buildMergedContractsSchema(runtime.mergedExtensionContracts);
+  const includeSchemaSurface = !selection.flagsOnly && !selection.availabilityOnly;
+  const filteredSchema = includeSchemaSurface
+    ? attachCreateRequiredOptionContracts(
+        filterContractsSchema(selection, actionContext, mergedSchema),
+        runtime.createRequiredOptionContracts,
+      )
+    : filterContractsSchema(selection, actionContext, mergedSchema);
+  return { mergedSchema, filteredSchema };
+}
+
+function resolveContractsCommands(selection: ContractsSelection, actionContext: ContractsActionContext): string[] {
+  if (selection.selectedCommand !== undefined) {
+    return [selection.selectedCommand];
   }
-  const includeSchemaSurface = !flagsOnly && !availabilityOnly;
-  if (includeSchemaSurface) {
-    filteredSchema = attachCreateRequiredOptionContracts(
-      filteredSchema,
-      createRequiredOptionContracts,
+  if (selection.selectedAction) {
+    return resolveScopedCommandsFromActionDescriptors(
+      actionContext.scopedActionDescriptors,
+      actionContext.commandCatalog,
     );
   }
-  const commands =
-    selectedCommand !== undefined
-      ? [selectedCommand]
-      : selectedAction
-        ? resolveScopedCommandsFromActionDescriptors(
-            scopedActionDescriptors,
-            commandCatalog,
-          )
-        : commandCatalog;
-  const outputCommands =
-    flagsOnly && selectedCommand === undefined && selectedAction === undefined
-      ? compactCommandAliasSurface(commands)
-      : commands;
-  const commandAliases = buildCommandAliasSurface(commands);
-  const extensionCommandContracts = selectedCommand
-    ? extensionContracts.filter((entry) => entry.command === selectedCommand)
-    : selectedAction
-      ? extensionContracts.filter((entry) =>
-          outputCommands.includes(normalizeCommandPath(entry.command)),
-        )
-      : extensionContracts;
+  return actionContext.commandCatalog;
+}
 
-  const includeRuntimeContractSections = !(flagsOnly && !fullOutput);
-  const result: ContractsResult = {
+function resolveOutputCommands(selection: ContractsSelection, commands: string[]): string[] {
+  return selection.flagsOnly && selection.selectedCommand === undefined && selection.selectedAction === undefined
+    ? compactCommandAliasSurface(commands)
+    : commands;
+}
+
+function resolveExtensionCommandContracts(
+  selection: ContractsSelection,
+  runtime: ContractsRuntimeContext,
+  outputCommands: string[],
+): ExtensionCommandContract[] {
+  if (selection.selectedCommand) {
+    return runtime.extensionContracts.filter((entry) =>
+      splitCommandPathAliases(entry.command).includes(selection.selectedCommand as string),
+    );
+  }
+  if (selection.selectedAction) {
+    const outputCommandSet = new Set(outputCommands);
+    return runtime.extensionContracts.filter((entry) =>
+      splitCommandPathAliases(entry.command).some((command) => outputCommandSet.has(command)),
+    );
+  }
+  return runtime.extensionContracts;
+}
+
+function createContractsResult(
+  selection: ContractsSelection,
+  schemaContext: ContractsSchemaContext,
+  actionContext: ContractsActionContext,
+  outputCommands: string[],
+): ContractsResult {
+  return {
     schema_version:
       /* c8 ignore next -- schema version/id fallbacks are exercised by schema snapshot tests. */
-      typeof mergedSchema["x-schema-version"] === "string"
-        ? (mergedSchema["x-schema-version"] as string)
+      typeof schemaContext.mergedSchema["x-schema-version"] === "string"
+        ? (schemaContext.mergedSchema["x-schema-version"] as string)
         : null,
     schema_id:
       /* c8 ignore next -- schema version/id fallbacks are exercised by schema snapshot tests. */
-      typeof mergedSchema.$id === "string"
-        ? (mergedSchema.$id as string)
+      typeof schemaContext.mergedSchema.$id === "string"
+        ? (schemaContext.mergedSchema.$id as string)
         : null,
     selected: {
-      action: selectedAction ?? null,
-      command: selectedCommand ?? null,
-      schema_only: schemaOnly,
-      flags_only: flagsOnly,
-      availability_only: availabilityOnly,
-      runtime_only: runtimeOnly,
-      command_scoped: selectedCommand !== undefined,
+      action: selection.selectedAction ?? null,
+      command: selection.selectedCommand ?? null,
+      schema_only: selection.schemaOnly,
+      flags_only: selection.flagsOnly,
+      availability_only: selection.availabilityOnly,
+      runtime_only: selection.runtimeOnly,
+      command_scoped: selection.selectedCommand !== undefined,
     },
     commands: outputCommands,
+    ...(!selection.flagsOnly
+      ? {
+          actions: actionContext.actions,
+          action_availability: actionContext.actionAvailability,
+        }
+      : {}),
   };
+}
 
-  if (includeRuntimeContractSections) {
-    result.runtime_schema = {
-      statuses: statusRegistry.definitions.map((definition) => definition.id),
-      open_status: statusRegistry.open_status,
-      close_status: statusRegistry.close_status,
-      canceled_status: statusRegistry.canceled_status,
-      types: [...typeRegistry.types],
-      fields_by_command: Object.fromEntries(
-        [...runtimeFieldRegistry.command_to_fields.entries()].map(
-          ([command, definitions]) => [
-            command,
-            [
-              ...new Set(
-                definitions.map((definition) => `--${definition.cli_flag}`),
-              ),
-            ].sort((left, right) => left.localeCompare(right)),
-          ],
+function attachRuntimeContractsResult(result: ContractsResult, runtime: ContractsRuntimeContext): void {
+  result.runtime_schema = {
+    statuses: runtime.statusRegistry.definitions.map((definition) => definition.id),
+    open_status: runtime.statusRegistry.open_status,
+    close_status: runtime.statusRegistry.close_status,
+    canceled_status: runtime.statusRegistry.canceled_status,
+    types: [...runtime.typeRegistry.types],
+    fields_by_command: Object.fromEntries(
+      [...runtime.runtimeFieldRegistry.command_to_fields.entries()].map(([command, definitions]) => [
+        command,
+        [...new Set(definitions.map((definition) => `--${definition.cli_flag}`))].sort((left, right) =>
+          left.localeCompare(right),
         ),
-      ),
-    };
-    result.extension_contracts = {
-      capabilities: [...PM_EXTENSION_CAPABILITY_CONTRACTS],
-      services: [...PM_EXTENSION_SERVICE_NAME_CONTRACTS],
-      policy_modes: [...PM_EXTENSION_POLICY_MODE_CONTRACTS],
-      policy_surfaces: [...PM_EXTENSION_POLICY_SURFACE_CONTRACTS],
-      trust_modes: [...PM_EXTENSION_TRUST_MODE_CONTRACTS],
-      sandbox_profiles: [...PM_EXTENSION_SANDBOX_PROFILE_CONTRACTS],
-      manifest_versions: [1, 2],
-      compatibility: {
-        current: "v2",
-        previous: ["v1"],
-        breaking_strategy: "versioned_breaking",
-      },
-    };
-  }
+      ]),
+    ),
+  };
+  result.extension_contracts = {
+    capabilities: [...PM_EXTENSION_CAPABILITY_CONTRACTS],
+    services: [...PM_EXTENSION_SERVICE_NAME_CONTRACTS],
+    policy_modes: [...PM_EXTENSION_POLICY_MODE_CONTRACTS],
+    policy_surfaces: [...PM_EXTENSION_POLICY_SURFACE_CONTRACTS],
+    trust_modes: [...PM_EXTENSION_TRUST_MODE_CONTRACTS],
+    sandbox_profiles: [...PM_EXTENSION_SANDBOX_PROFILE_CONTRACTS],
+    manifest_versions: [1, 2],
+    compatibility: {
+      current: "v2",
+      previous: ["v1"],
+      breaking_strategy: "versioned_breaking",
+    },
+  };
+}
 
-  if (!flagsOnly) {
-    result.actions = actions;
-    result.action_availability = actionAvailability;
+function attachSchemaContractsResult(
+  result: ContractsResult,
+  selection: ContractsSelection,
+  schemaContext: ContractsSchemaContext,
+  extensionCommandContracts: ExtensionCommandContract[],
+): void {
+  if (selection.flagsOnly || selection.availabilityOnly) {
+    return;
   }
-
-  if (includeSchemaSurface && !omitUnfilteredSchema) {
-    result.schema = filteredSchema;
+  if (!selection.omitUnfilteredSchema) {
+    result.schema = schemaContext.filteredSchema;
     result.extension_commands = extensionCommandContracts;
-  } else if (includeSchemaSurface && omitUnfilteredSchema) {
-    result.schema_omitted_reason = "unfiltered_default_brief";
-    result.extension_commands = extensionCommandContracts;
+    return;
   }
+  result.schema_omitted_reason = "unfiltered_default_brief";
+  result.extension_commands = extensionCommandContracts;
+}
 
-  if (!schemaOnly && !availabilityOnly) {
-    if (!omitUnfilteredCommandFlags) {
-      result.command_flags = buildCommandFlagSurface(
-        outputCommands,
-        extensionFlagMap,
-        runtimeFieldFlagMap,
-      );
-    } else {
-      result.command_flags_omitted_reason = "unfiltered_default_brief";
-    }
-    if (commandAliases.length > 0) {
-      result.command_aliases = commandAliases;
-    }
+function attachFlagContractsResult(
+  result: ContractsResult,
+  selection: ContractsSelection,
+  runtime: ContractsRuntimeContext,
+  outputCommands: string[],
+  commandAliases: CommandAliasSurface[],
+): void {
+  if (selection.schemaOnly || selection.availabilityOnly) {
+    return;
   }
+  if (!selection.omitUnfilteredCommandFlags) {
+    result.command_flags = buildCommandFlagSurface(
+      outputCommands,
+      runtime.extensionFlagMap,
+      runtime.runtimeFieldFlagMap,
+    );
+  } else {
+    result.command_flags_omitted_reason = "unfiltered_default_brief";
+  }
+  if (commandAliases.length > 0) {
+    result.command_aliases = commandAliases;
+  }
+}
 
-  if (!schemaOnly && !flagsOnly && !availabilityOnly) {
-    if (!omitUnfilteredCommanderAliases) {
-      result.commander_aliases = buildCommanderAliasSurface();
-    } else {
-      result.commander_aliases_omitted_reason = "unfiltered_default_brief";
-    }
+function attachCommanderAliasContractsResult(result: ContractsResult, selection: ContractsSelection): void {
+  if (selection.schemaOnly || selection.flagsOnly || selection.availabilityOnly) {
+    return;
   }
+  if (!selection.omitUnfilteredCommanderAliases) {
+    result.commander_aliases = buildCommanderAliasSurface();
+    return;
+  }
+  result.commander_aliases_omitted_reason = "unfiltered_default_brief";
+}
+
+/**
+ * Implements run contracts for the public runtime surface of this module.
+ */
+export async function runContracts(
+  options: ContractsCommandOptions,
+  global: GlobalOptions,
+): Promise<ContractsResult> {
+  const selection = resolveContractsSelection(options);
+  assertSingleContractsProjection(selection);
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  const runtime = await resolveContractsRuntimeContext(global, pmRoot);
+  const actionContext = resolveContractsActionContext(selection, runtime);
+  const schemaContext = resolveContractsSchemaContext(selection, runtime, actionContext);
+  const commands = resolveContractsCommands(selection, actionContext);
+  const outputCommands = resolveOutputCommands(selection, commands);
+  const commandAliases = buildCommandAliasSurface(commands);
+  const extensionCommandContracts = resolveExtensionCommandContracts(selection, runtime, outputCommands);
+  const result = createContractsResult(selection, schemaContext, actionContext, outputCommands);
+
+  if (!(selection.flagsOnly && !selection.fullOutput)) {
+    attachRuntimeContractsResult(result, runtime);
+  }
+  attachSchemaContractsResult(result, selection, schemaContext, extensionCommandContracts);
+  attachFlagContractsResult(result, selection, runtime, outputCommands, commandAliases);
+  attachCommanderAliasContractsResult(result, selection);
 
   // pm-4os2: snapshot the static MCP tool surface in the full projection so
   // `pnpm contracts:check` (CI static gate) fails on unintended inputSchema
   // drift in src/mcp/tool-definitions.ts.
-  if (fullOutput && !schemaOnly && !flagsOnly && !availabilityOnly) {
+  if (selection.fullOutput && !selection.schemaOnly && !selection.flagsOnly && !selection.availabilityOnly) {
     result.mcp_tools = buildMcpToolContracts();
   }
 

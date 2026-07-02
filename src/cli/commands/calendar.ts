@@ -440,149 +440,184 @@ function buildRecurringEventWindow(
   };
 }
 
+interface RecurrenceExpansionContext {
+  startAt: string;
+  startDate: Date;
+  window: { start: string; end: string };
+  maxOccurrences: number;
+  interval: number;
+  countLimit: number;
+  until: string | undefined;
+  excluded: Set<string>;
+  weekdayFilter: Set<string> | undefined;
+  monthDayFilter: Set<number> | undefined;
+  sortedWeekdays: Array<(typeof RECURRENCE_WEEKDAY_VALUES)[number]>;
+  sortedMonthDays: number[];
+  occurrences: string[];
+  produced: number;
+}
+
+function buildRecurrenceExpansionContext(
+  startAt: string,
+  recurrence: RecurrenceRule,
+  window: { start: string; end: string },
+  occurrenceLimit: number | undefined,
+): RecurrenceExpansionContext {
+  const hasWeekdayFilter = recurrence.by_weekday !== undefined;
+  const hasMonthDayFilter = recurrence.by_month_day !== undefined;
+  const recurrenceWeekdays =
+    recurrence.by_weekday && recurrence.by_weekday.length > 0 ? [...recurrence.by_weekday] : [weekdayToken(startAt)];
+  const recurrenceMonthDays =
+    recurrence.by_month_day && recurrence.by_month_day.length > 0 ? [...recurrence.by_month_day] : [new Date(startAt).getUTCDate()];
+  return {
+    startAt,
+    startDate: new Date(startAt),
+    window,
+    maxOccurrences: occurrenceLimit ?? MAX_RECURRENCE_OCCURRENCES,
+    interval: recurrence.interval ?? 1,
+    countLimit: recurrence.count ?? Number.POSITIVE_INFINITY,
+    until: recurrence.until,
+    excluded: buildExcludedInstantSet(recurrence.exdates),
+    weekdayFilter: hasWeekdayFilter ? new Set(recurrenceWeekdays) : undefined,
+    monthDayFilter: hasMonthDayFilter ? new Set(recurrenceMonthDays) : undefined,
+    sortedWeekdays: [...new Set(recurrenceWeekdays)].sort(
+      (left, right) => weekdayOrderIndex(left) - weekdayOrderIndex(right),
+    ),
+    sortedMonthDays: [...new Set(recurrenceMonthDays)].sort((left, right) => left - right),
+    occurrences: [],
+    produced: 0,
+  };
+}
+
+function consumeRecurrenceCandidate(context: RecurrenceExpansionContext, candidateAt: string): "continue" | "stop" {
+  if (compareTimestampStrings(candidateAt, context.startAt) < 0) {
+    return "continue";
+  }
+  if (context.until && compareTimestampStrings(candidateAt, context.until) > 0) {
+    return "stop";
+  }
+  if (compareTimestampStrings(candidateAt, context.window.end) >= 0) {
+    return "stop";
+  }
+  if (context.excluded.has(candidateAt)) {
+    return "continue";
+  }
+  context.produced += 1;
+  if (compareTimestampStrings(candidateAt, context.window.start) >= 0) {
+    context.occurrences.push(candidateAt);
+  }
+  return context.produced >= context.countLimit || context.occurrences.length >= context.maxOccurrences ? "stop" : "continue";
+}
+
+function recurrenceDayMatchesFilters(context: RecurrenceExpansionContext, candidateAt: string): boolean {
+  const candidateWeekday = weekdayToken(candidateAt);
+  const candidateMonthDay = new Date(candidateAt).getUTCDate();
+  const weekdayMatches = !context.weekdayFilter || context.weekdayFilter.has(candidateWeekday);
+  const monthDayMatches = !context.monthDayFilter || context.monthDayFilter.has(candidateMonthDay);
+  return weekdayMatches && monthDayMatches;
+}
+
+function expandDailyOccurrences(context: RecurrenceExpansionContext): string[] {
+  let candidateAt = context.startAt;
+  for (let iteration = 0; iteration < context.maxOccurrences; iteration += 1) {
+    if (recurrenceDayMatchesFilters(context, candidateAt) && consumeRecurrenceCandidate(context, candidateAt) === "stop") {
+      break;
+    }
+    candidateAt = addUtcDays(candidateAt, context.interval);
+  }
+  return context.occurrences;
+}
+
+function buildWeeklyCandidateAt(context: RecurrenceExpansionContext, candidateWeekStart: string, weekday: string): string {
+  const dayOffset = weekdayOrderIndex(weekday as (typeof RECURRENCE_WEEKDAY_VALUES)[number]);
+  const candidateDay = addUtcDays(candidateWeekStart, dayOffset);
+  const dayDate = new Date(candidateDay);
+  return new Date(
+    Date.UTC(
+      dayDate.getUTCFullYear(),
+      dayDate.getUTCMonth(),
+      dayDate.getUTCDate(),
+      context.startDate.getUTCHours(),
+      context.startDate.getUTCMinutes(),
+      context.startDate.getUTCSeconds(),
+      context.startDate.getUTCMilliseconds(),
+    ),
+  ).toISOString();
+}
+
+function expandWeeklyOccurrences(context: RecurrenceExpansionContext): string[] {
+  const weekStart = startOfUtcWeekMonday(context.startAt);
+  for (let step = 0; step < context.maxOccurrences; step += 1) {
+    const candidateWeekStart = addUtcDays(weekStart, step * context.interval * 7);
+    for (const weekday of context.sortedWeekdays) {
+      const candidateAt = buildWeeklyCandidateAt(context, candidateWeekStart, weekday);
+      if (!recurrenceDayMatchesFilters(context, candidateAt)) {
+        continue;
+      }
+      if (consumeRecurrenceCandidate(context, candidateAt) === "stop") {
+        return context.occurrences;
+      }
+    }
+  }
+  return context.occurrences;
+}
+
+function expandMonthlyOccurrences(context: RecurrenceExpansionContext): string[] {
+  const startYear = context.startDate.getUTCFullYear();
+  const startMonth = context.startDate.getUTCMonth();
+  for (let step = 0; step < context.maxOccurrences; step += 1) {
+    const monthAnchor = new Date(Date.UTC(startYear, startMonth + step * context.interval, 1, 0, 0, 0, 0));
+    for (const monthDay of context.sortedMonthDays) {
+      const candidateAt = buildUtcTimestamp(monthAnchor.getUTCFullYear(), monthAnchor.getUTCMonth(), monthDay, context.startDate);
+      if (!candidateAt || !recurrenceDayMatchesFilters(context, candidateAt)) {
+        continue;
+      }
+      if (consumeRecurrenceCandidate(context, candidateAt) === "stop") {
+        return context.occurrences;
+      }
+    }
+  }
+  return context.occurrences;
+}
+
+function expandYearlyOccurrences(context: RecurrenceExpansionContext): string[] {
+  const year = context.startDate.getUTCFullYear();
+  const month = context.startDate.getUTCMonth();
+  for (let step = 0; step < context.maxOccurrences; step += 1) {
+    const candidateYear = year + step * context.interval;
+    for (const monthDay of context.sortedMonthDays) {
+      const candidateAt = buildUtcTimestamp(candidateYear, month, monthDay, context.startDate);
+      if (!candidateAt || !recurrenceDayMatchesFilters(context, candidateAt)) {
+        continue;
+      }
+      if (consumeRecurrenceCandidate(context, candidateAt) === "stop") {
+        return context.occurrences;
+      }
+    }
+  }
+  return context.occurrences;
+}
+
 function expandRecurringOccurrences(
   startAt: string,
   recurrence: RecurrenceRule,
   window: { start: string; end: string },
   occurrenceLimit: number | undefined,
 ): string[] {
-  const maxOccurrences = occurrenceLimit ?? MAX_RECURRENCE_OCCURRENCES;
-  const interval = recurrence.interval ?? 1;
-  const countLimit = recurrence.count ?? Number.POSITIVE_INFINITY;
-  const until = recurrence.until;
-  const excluded = buildExcludedInstantSet(recurrence.exdates);
-  const recurrenceWeekdays =
-    recurrence.by_weekday && recurrence.by_weekday.length > 0 ? [...recurrence.by_weekday] : [weekdayToken(startAt)];
-  const recurrenceMonthDays =
-    recurrence.by_month_day && recurrence.by_month_day.length > 0 ? [...recurrence.by_month_day] : [new Date(startAt).getUTCDate()];
-  const weekdayFilter = recurrence.by_weekday ? new Set(recurrence.by_weekday) : undefined;
-  const monthDayFilter = recurrence.by_month_day ? new Set(recurrence.by_month_day) : undefined;
-  const sortedWeekdays = [...new Set(recurrenceWeekdays)].sort(
-    (left, right) =>
-      weekdayOrderIndex(left as (typeof RECURRENCE_WEEKDAY_VALUES)[number]) -
-      weekdayOrderIndex(right as (typeof RECURRENCE_WEEKDAY_VALUES)[number]),
-  );
-  const sortedMonthDays = [...new Set(recurrenceMonthDays)].sort((left, right) => left - right);
-
-  const occurrences: string[] = [];
-  let produced = 0;
-  const consumeCandidate = (candidateAt: string): "continue" | "stop" => {
-    if (compareTimestampStrings(candidateAt, startAt) < 0) {
-      return "continue";
-    }
-    if (until && compareTimestampStrings(candidateAt, until) > 0) {
-      return "stop";
-    }
-    if (compareTimestampStrings(candidateAt, window.end) >= 0) {
-      return "stop";
-    }
-    if (excluded.has(candidateAt)) {
-      return "continue";
-    }
-    produced += 1;
-    if (compareTimestampStrings(candidateAt, window.start) >= 0) {
-      occurrences.push(candidateAt);
-    }
-    if (produced >= countLimit) {
-      return "stop";
-    }
-    return "continue";
-  };
-
-  const startDate = new Date(startAt);
+  const context = buildRecurrenceExpansionContext(startAt, recurrence, window, occurrenceLimit);
   if (recurrence.freq === "daily") {
-    let candidateAt = startAt;
-    for (let iteration = 0; iteration < maxOccurrences; iteration += 1) {
-      const candidateWeekday = weekdayToken(candidateAt);
-      const candidateMonthDay = new Date(candidateAt).getUTCDate();
-      const weekdayMatches = !weekdayFilter || weekdayFilter.has(candidateWeekday);
-      const monthDayMatches = !monthDayFilter || monthDayFilter.has(candidateMonthDay);
-      if (weekdayMatches && monthDayMatches && consumeCandidate(candidateAt) === "stop") {
-        break;
-      }
-      candidateAt = addUtcDays(candidateAt, interval);
-    }
-    return occurrences;
+    return expandDailyOccurrences(context);
   }
 
   if (recurrence.freq === "weekly") {
-    const weekStart = startOfUtcWeekMonday(startAt);
-    for (let step = 0; step < maxOccurrences; step += 1) {
-      const candidateWeekStart = addUtcDays(weekStart, step * interval * 7);
-      for (const weekday of sortedWeekdays) {
-        const dayOffset = weekdayOrderIndex(weekday as (typeof RECURRENCE_WEEKDAY_VALUES)[number]);
-        const candidateDay = addUtcDays(candidateWeekStart, dayOffset);
-        const dayDate = new Date(candidateDay);
-        const candidateAt = new Date(
-          Date.UTC(
-            dayDate.getUTCFullYear(),
-            dayDate.getUTCMonth(),
-            dayDate.getUTCDate(),
-            startDate.getUTCHours(),
-            startDate.getUTCMinutes(),
-            startDate.getUTCSeconds(),
-            startDate.getUTCMilliseconds(),
-          ),
-        ).toISOString();
-        const candidateMonthDay = dayDate.getUTCDate();
-        if (monthDayFilter && !monthDayFilter.has(candidateMonthDay)) {
-          continue;
-        }
-        const consumed = consumeCandidate(candidateAt);
-        if (consumed === "stop") {
-          return occurrences;
-        }
-      }
-    }
-    return occurrences;
+    return expandWeeklyOccurrences(context);
   }
 
   if (recurrence.freq === "monthly") {
-    const startYear = startDate.getUTCFullYear();
-    const startMonth = startDate.getUTCMonth();
-    for (let step = 0; step < maxOccurrences; step += 1) {
-      const monthAnchor = new Date(Date.UTC(startYear, startMonth + step * interval, 1, 0, 0, 0, 0));
-      const year = monthAnchor.getUTCFullYear();
-      const month = monthAnchor.getUTCMonth();
-      for (const monthDay of sortedMonthDays) {
-        const candidateAt = buildUtcTimestamp(year, month, monthDay, startDate);
-        if (!candidateAt) {
-          continue;
-        }
-        const candidateWeekday = weekdayToken(candidateAt);
-        if (weekdayFilter && !weekdayFilter.has(candidateWeekday)) {
-          continue;
-        }
-        const consumed = consumeCandidate(candidateAt);
-        if (consumed === "stop") {
-          return occurrences;
-        }
-      }
-    }
-    return occurrences;
+    return expandMonthlyOccurrences(context);
   }
 
-  const year = startDate.getUTCFullYear();
-  const month = startDate.getUTCMonth();
-  for (let step = 0; step < maxOccurrences; step += 1) {
-    const candidateYear = year + step * interval;
-    for (const monthDay of sortedMonthDays) {
-      const candidateAt = buildUtcTimestamp(candidateYear, month, monthDay, startDate);
-      if (!candidateAt) {
-        continue;
-      }
-      const candidateWeekday = weekdayToken(candidateAt);
-      if (weekdayFilter && !weekdayFilter.has(candidateWeekday)) {
-        continue;
-      }
-      const consumed = consumeCandidate(candidateAt);
-      if (consumed === "stop") {
-        return occurrences;
-      }
-    }
-  }
-
-  return occurrences;
+  return expandYearlyOccurrences(context);
 }
 
 function sortEvents(values: CalendarRow[]): CalendarRow[] {
@@ -601,6 +636,108 @@ function sortEvents(values: CalendarRow[]): CalendarRow[] {
   });
 }
 
+function buildItemCalendarRowBase(item: ItemFrontMatter): Pick<
+  CalendarRow,
+  "item_id" | "item_title" | "item_type" | "item_status" | "item_priority" | "item_assignee" | "item_deadline" | "item_tags"
+> {
+  return {
+    item_id: item.id,
+    item_title: item.title,
+    item_type: item.type,
+    item_status: item.status,
+    item_priority: item.priority,
+    item_assignee: item.assignee ?? null,
+    item_deadline: item.deadline ?? null,
+    item_tags: item.tags,
+  };
+}
+
+function buildDeadlineRow(item: ItemFrontMatter): CalendarRow | null {
+  if (!item.deadline) {
+    return null;
+  }
+  return {
+    at: item.deadline,
+    date: toUtcDayKey(item.deadline),
+    kind: "deadline",
+    reminder_text: null,
+    event_title: null,
+    event_end: null,
+    event_location: null,
+    event_all_day: null,
+    event_timezone: null,
+    event_recurring: null,
+    event_recurrence_rule: null,
+    ...buildItemCalendarRowBase(item),
+    item_deadline: item.deadline,
+  };
+}
+
+function buildReminderRows(item: ItemFrontMatter): CalendarRow[] {
+  return (item.reminders ?? []).map((reminder) => ({
+    at: reminder.at,
+    date: toUtcDayKey(reminder.at),
+    kind: "reminder",
+    reminder_text: reminder.text,
+    event_title: null,
+    event_end: null,
+    event_location: null,
+    event_all_day: null,
+    event_timezone: null,
+    event_recurring: null,
+    event_recurrence_rule: null,
+    ...buildItemCalendarRowBase(item),
+  }));
+}
+
+function recurringDurationMs(startAt: string, endAt: string | undefined): number | null {
+  if (!endAt) {
+    return null;
+  }
+  const duration = Date.parse(endAt) - Date.parse(startAt);
+  return Number.isFinite(duration) && duration > 0 ? duration : null;
+}
+
+function eventOccurrenceEnd(
+  occurrenceAt: string,
+  event: NonNullable<ItemFrontMatter["events"]>[number],
+  durationMs: number | null,
+): string | null {
+  return event.recurrence && durationMs !== null
+    ? new Date(new Date(occurrenceAt).getTime() + durationMs).toISOString()
+    : (event.end_at ?? null);
+}
+
+function buildScheduledEventRows(
+  item: ItemFrontMatter,
+  event: NonNullable<ItemFrontMatter["events"]>[number],
+  recurringWindow: { start: string; end: string },
+  occurrenceLimit: number | undefined,
+): CalendarRow[] {
+  const recurrenceRuleSummary = formatRecurrenceRuleForSummary(event.recurrence);
+  const durationMs = recurringDurationMs(event.start_at, event.end_at);
+  const occurrences = event.recurrence
+    ? expandRecurringOccurrences(event.start_at, event.recurrence, recurringWindow, occurrenceLimit)
+    : [event.start_at];
+  return occurrences.map((occurrenceAt) => ({
+    at: occurrenceAt,
+    // All-day events are timezone-agnostic calendar dates: bucket by the
+    // literal start date. Timed events bucket by their local day in the
+    // event's timezone (defaults to UTC when unset).
+    date: event.all_day === true ? occurrenceAt.slice(0, 10) : toLocalDayKey(occurrenceAt, event.timezone),
+    kind: "event",
+    reminder_text: event.description ?? null,
+    event_title: event.title ?? item.title,
+    event_end: eventOccurrenceEnd(occurrenceAt, event, durationMs),
+    event_location: event.location ?? null,
+    event_all_day: event.all_day ?? null,
+    event_timezone: event.timezone ?? null,
+    event_recurring: event.recurrence ? true : false,
+    event_recurrence_rule: recurrenceRuleSummary,
+    ...buildItemCalendarRowBase(item),
+  }));
+}
+
 function buildEventSeed(
   items: ItemFrontMatter[],
   recurringWindow: { start: string; end: string },
@@ -609,97 +746,15 @@ function buildEventSeed(
 ): CalendarRow[] {
   const events: CalendarRow[] = [];
   for (const item of items) {
-    if (includeSources.has("deadlines") && item.deadline) {
-      events.push({
-        at: item.deadline,
-        date: toUtcDayKey(item.deadline),
-        kind: "deadline",
-        reminder_text: null,
-        event_title: null,
-        event_end: null,
-        event_location: null,
-        event_all_day: null,
-        event_timezone: null,
-        event_recurring: null,
-        event_recurrence_rule: null,
-        item_id: item.id,
-        item_title: item.title,
-        item_type: item.type,
-        item_status: item.status,
-        item_priority: item.priority,
-        item_assignee: item.assignee ?? null,
-        item_deadline: item.deadline,
-        item_tags: item.tags,
-      });
+    const deadlineRow = includeSources.has("deadlines") ? buildDeadlineRow(item) : null;
+    if (deadlineRow) {
+      events.push(deadlineRow);
     }
-    for (const reminder of includeSources.has("reminders") ? (item.reminders ?? []) : []) {
-      events.push({
-        at: reminder.at,
-        date: toUtcDayKey(reminder.at),
-        kind: "reminder",
-        reminder_text: reminder.text,
-        event_title: null,
-        event_end: null,
-        event_location: null,
-        event_all_day: null,
-        event_timezone: null,
-        event_recurring: null,
-        event_recurrence_rule: null,
-        item_id: item.id,
-        item_title: item.title,
-        item_type: item.type,
-        item_status: item.status,
-        item_priority: item.priority,
-        item_assignee: item.assignee ?? null,
-        item_deadline: item.deadline ?? null,
-        item_tags: item.tags,
-      });
+    if (includeSources.has("reminders")) {
+      events.push(...buildReminderRows(item));
     }
     for (const event of includeSources.has("events") ? (item.events ?? []) : []) {
-      const recurrenceRuleSummary = formatRecurrenceRuleForSummary(event.recurrence);
-      const recurringDurationMs = (() => {
-        if (!event.end_at) {
-          return null;
-        }
-        const duration = Date.parse(event.end_at) - Date.parse(event.start_at);
-        return Number.isFinite(duration) && duration > 0 ? duration : null;
-      })();
-      const occurrences = event.recurrence
-        ? expandRecurringOccurrences(event.start_at, event.recurrence, recurringWindow, occurrenceLimit)
-        : [event.start_at];
-      for (const occurrenceAt of occurrences) {
-        const occurrenceEnd =
-          event.recurrence && recurringDurationMs !== null
-            ? new Date(new Date(occurrenceAt).getTime() + recurringDurationMs).toISOString()
-            : (event.end_at ?? null);
-        events.push({
-          at: occurrenceAt,
-          // All-day events are timezone-agnostic calendar dates: bucket by the
-          // literal start date. Timed events bucket by their local day in the
-          // event's timezone (defaults to UTC when unset).
-          date:
-            event.all_day === true
-              ? occurrenceAt.slice(0, 10)
-              : toLocalDayKey(occurrenceAt, event.timezone),
-          kind: "event",
-          reminder_text: event.description ?? null,
-          event_title: event.title ?? item.title,
-          event_end: occurrenceEnd,
-          event_location: event.location ?? null,
-          event_all_day: event.all_day ?? null,
-          event_timezone: event.timezone ?? null,
-          event_recurring: event.recurrence ? true : false,
-          event_recurrence_rule: recurrenceRuleSummary,
-          item_id: item.id,
-          item_title: item.title,
-          item_type: item.type,
-          item_status: item.status,
-          item_priority: item.priority,
-          item_assignee: item.assignee ?? null,
-          item_deadline: item.deadline ?? null,
-          item_tags: item.tags,
-        });
-      }
+      events.push(...buildScheduledEventRows(item, event, recurringWindow, occurrenceLimit));
     }
   }
   return sortEvents(events);
@@ -1105,15 +1160,19 @@ function trimTrailingNewlines(value: string): string {
   return value.slice(0, end);
 }
 
-/**
- * Implements run calendar for the public runtime surface of this module.
- */
-export async function runCalendar(options: CalendarOptions, global: GlobalOptions): Promise<CalendarResult> {
-  const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
-  }
+interface CalendarExecutionInputs {
+  nowValue: string;
+  view: CalendarView;
+  rangeBounds: ReturnType<typeof buildRange>;
+  limit: number | undefined;
+  includeSources: Set<CalendarIncludeKind>;
+  occurrenceLimit: number | undefined;
+  recurrenceLookaheadDays: number | undefined;
+  recurrenceLookbackWindowDays: number | undefined;
+  eventsOnlyCapApplied: boolean;
+}
 
+function resolveCalendarExecutionInputs(options: CalendarOptions): CalendarExecutionInputs {
   const nowValue = nowIso();
   const view = parseView(options.view);
   const rangeBounds = buildRange(view, options, nowValue);
@@ -1125,15 +1184,84 @@ export async function runCalendar(options: CalendarOptions, global: GlobalOption
   if (occurrenceLimit !== undefined && occurrenceLimit < 1) {
     throw new PmCliError("Calendar occurrence limit must be >= 1", EXIT_CODE.USAGE);
   }
-
   const eventsOnly = includeSources.has("events") && !includeSources.has("deadlines") && !includeSources.has("reminders");
-  const hasExplicitBounds = options.to !== undefined || explicitLookahead !== undefined || occurrenceLimit !== undefined;
+  const hasExplicitBounds =
+    options.to !== undefined ||
+    explicitLookahead !== undefined ||
+    recurrenceLookbackDays !== undefined ||
+    occurrenceLimit !== undefined;
   const eventsOnlyCapApplied = eventsOnly && !hasExplicitBounds;
-  const recurrenceLookaheadDays = eventsOnlyCapApplied ? DEFAULT_EVENTS_ONLY_LOOKAHEAD_DAYS : explicitLookahead;
-  const recurrenceLookbackWindowDays =
-    eventsOnlyCapApplied && recurrenceLookbackDays === undefined
-      ? 0
-      : recurrenceLookbackDays;
+  return {
+    nowValue,
+    view,
+    rangeBounds,
+    limit,
+    includeSources,
+    occurrenceLimit,
+    recurrenceLookaheadDays: eventsOnlyCapApplied ? DEFAULT_EVENTS_ONLY_LOOKAHEAD_DAYS : explicitLookahead,
+    recurrenceLookbackWindowDays: eventsOnlyCapApplied && recurrenceLookbackDays === undefined ? 0 : recurrenceLookbackDays,
+    eventsOnlyCapApplied,
+  };
+}
+
+function appendCalendarCapWarning(warnings: string[], capApplied: boolean): void {
+  if (!capApplied) {
+    return;
+  }
+  warnings.push(
+    `recurring_events_default_cap_applied:lookback=0d,lookahead=${DEFAULT_EVENTS_ONLY_LOOKAHEAD_DAYS}d -- use --recurrence-lookback-days/--recurrence-lookahead-days or --to for wider range`,
+  );
+}
+
+function buildCalendarFiltersResult(
+  options: CalendarOptions,
+  runtimeFieldFilters: Record<string, unknown>,
+): CalendarResult["filters"] {
+  return {
+    type: options.type ?? null,
+    tag: options.tag ?? null,
+    priority: options.priority ?? null,
+    status: options.status ?? null,
+    assignee: options.assignee ?? null,
+    assignee_filter: options.assigneeFilter ?? null,
+    sprint: options.sprint ?? null,
+    release: options.release ?? null,
+    runtime_filters: runtimeFieldFilters,
+    limit: options.limit ?? null,
+    include: options.include ?? null,
+    full_period: options.fullPeriod === true ? "true" : null,
+    recurrence_lookahead_days: options.recurrenceLookaheadDays ?? null,
+    recurrence_lookback_days: options.recurrenceLookbackDays ?? null,
+    occurrence_limit: options.occurrenceLimit ?? null,
+  };
+}
+
+function buildCalendarRangeResult(
+  options: CalendarOptions,
+  rangeBounds: ReturnType<typeof buildRange>,
+): CalendarResult["range"] {
+  return {
+    start: rangeBounds.start ?? null,
+    end: rangeBounds.end ?? null,
+    period_start: rangeBounds.periodStart ?? null,
+    period_end: rangeBounds.periodEnd ?? null,
+    full_period: rangeBounds.fullPeriod,
+    past: options.past === true,
+    from: options.from ?? null,
+    to: options.to ?? null,
+  };
+}
+
+/**
+ * Implements run calendar for the public runtime surface of this module.
+ */
+export async function runCalendar(options: CalendarOptions, global: GlobalOptions): Promise<CalendarResult> {
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+  }
+
+  const inputs = resolveCalendarExecutionInputs(options);
 
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
@@ -1141,58 +1269,29 @@ export async function runCalendar(options: CalendarOptions, global: GlobalOption
   const runtimeFieldFilters = collectRuntimeFilterValues(options as Record<string, unknown>, runtimeFieldRegistry, "calendar");
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const listWarnings: string[] = [];
-  if (eventsOnlyCapApplied) {
-    listWarnings.push(
-      `recurring_events_default_cap_applied:lookback=0d,lookahead=${DEFAULT_EVENTS_ONLY_LOOKAHEAD_DAYS}d -- use --recurrence-lookback-days/--recurrence-lookahead-days or --to for wider range`,
-    );
-  }
+  appendCalendarCapWarning(listWarnings, inputs.eventsOnlyCapApplied);
   const items = await listAllFrontMatterLight(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings, settings.schema);
   const filteredItems = filterItems(items, options, typeRegistry, statusRegistry, runtimeFieldFilters);
   const recurringWindow = buildRecurringEventWindow(
-    rangeBounds.start,
-    rangeBounds.end,
-    nowValue,
-    recurrenceLookbackWindowDays,
-    recurrenceLookaheadDays,
+    inputs.rangeBounds.start,
+    inputs.rangeBounds.end,
+    inputs.nowValue,
+    inputs.recurrenceLookbackWindowDays,
+    inputs.recurrenceLookaheadDays,
   );
-  const seededEvents = buildEventSeed(filteredItems, recurringWindow, includeSources, occurrenceLimit);
-  const rangedEvents = seededEvents.filter((event) => includeEventInWindow(event, rangeBounds.start, rangeBounds.end));
-  const limitedEvents = limit === undefined ? rangedEvents : rangedEvents.slice(0, limit);
+  const seededEvents = buildEventSeed(filteredItems, recurringWindow, inputs.includeSources, inputs.occurrenceLimit);
+  const rangedEvents = seededEvents.filter((event) => includeEventInWindow(event, inputs.rangeBounds.start, inputs.rangeBounds.end));
+  const limitedEvents = inputs.limit === undefined ? rangedEvents : rangedEvents.slice(0, inputs.limit);
   const days = bucketEventsByDay(limitedEvents);
   const warnings = [...new Set(listWarnings)].sort((left, right) => left.localeCompare(right));
 
   return {
-    view,
+    view: inputs.view,
     output_default: "markdown",
-    now: nowValue,
-    anchor: rangeBounds.anchor,
-    range: {
-      start: rangeBounds.start ?? null,
-      end: rangeBounds.end ?? null,
-      period_start: rangeBounds.periodStart ?? null,
-      period_end: rangeBounds.periodEnd ?? null,
-      full_period: rangeBounds.fullPeriod,
-      past: options.past === true,
-      from: options.from ?? null,
-      to: options.to ?? null,
-    },
-    filters: {
-      type: options.type ?? null,
-      tag: options.tag ?? null,
-      priority: options.priority ?? null,
-      status: options.status ?? null,
-      assignee: options.assignee ?? null,
-      assignee_filter: options.assigneeFilter ?? null,
-      sprint: options.sprint ?? null,
-      release: options.release ?? null,
-      runtime_filters: runtimeFieldFilters,
-      limit: options.limit ?? null,
-      include: options.include ?? null,
-      full_period: options.fullPeriod === true ? "true" : null,
-      recurrence_lookahead_days: options.recurrenceLookaheadDays ?? null,
-      recurrence_lookback_days: options.recurrenceLookbackDays ?? null,
-      occurrence_limit: options.occurrenceLimit ?? null,
-    },
+    now: inputs.nowValue,
+    anchor: inputs.rangeBounds.anchor,
+    range: buildCalendarRangeResult(options, inputs.rangeBounds),
+    filters: buildCalendarFiltersResult(options, runtimeFieldFilters),
     summary: summarize(limitedEvents),
     events: limitedEvents,
     days,

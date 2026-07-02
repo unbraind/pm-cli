@@ -2705,6 +2705,15 @@ describe("setup command actions", () => {
       warnings: ["advisory"],
     } as never);
     await runCli("extension", "--doctor", "--strict-exit");
+    expect(process.exitCode).toBe(EXIT_CODE.GENERIC_FAILURE);
+    process.exitCode = undefined;
+
+    vi.mocked(runExtension).mockResolvedValue({
+      action: "doctor",
+      details: "not-an-object",
+      warnings: [],
+    } as never);
+    await runCli("extension", "--doctor", "--strict-exit");
     expect(process.exitCode).toBeUndefined();
 
     vi.mocked(runUpgrade).mockResolvedValue({ ok: false } as never);

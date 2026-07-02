@@ -1544,274 +1544,654 @@ function detectEmptyLinkedTestRun(stdout: string, stderr: string): string | null
 }
 
 /* c8 ignore start -- linked-test orchestration branch matrix is covered by end-to-end command integration runs */
+interface RunLinkedTestsOptions {
+  progress?: boolean;
+  sourceRoots?: LinkedTestSandboxSourceRoots;
+  envSet?: string[];
+  envClear?: string[];
+  sharedHostSafe?: boolean;
+  pmContext?: string;
+  overrideLinkedPmContext?: boolean;
+  failOnContextMismatch?: boolean;
+  failOnEmptyTestRun?: boolean;
+  requireAssertionsForPm?: boolean;
+  checkContext?: boolean;
+  autoPmContext?: boolean;
+}
+
+interface LinkedTestSandboxLayout {
+  root: string;
+  schemaProjectPmPath: string;
+  schemaGlobalPmPath: string;
+  trackerProjectPmPath: string;
+  trackerGlobalPmPath: string;
+}
+
+interface LinkedTestSandboxCounts {
+  sourceProjectItemCount: number;
+  sourceGlobalItemCount: number;
+  schemaProjectItemCount: number;
+  schemaGlobalItemCount: number;
+  trackerProjectItemCount: number;
+  trackerGlobalItemCount: number;
+}
+
+interface LinkedTestCommandContext {
+  linkedOverridePmContextMode: LinkedTestPmContextMode | undefined;
+  executionContext: NonNullable<TestRunResult["execution_context"]>;
+}
+
+function createLinkedTestSandboxLayout(sandboxRoot: string): LinkedTestSandboxLayout {
+  return {
+    root: sandboxRoot,
+    schemaProjectPmPath: path.join(sandboxRoot, "schema", "project", ".agents", "pm"),
+    schemaGlobalPmPath: path.join(sandboxRoot, "schema", "global"),
+    trackerProjectPmPath: path.join(sandboxRoot, "tracker", "project", ".agents", "pm"),
+    trackerGlobalPmPath: path.join(sandboxRoot, "tracker", "global"),
+  };
+}
+
+async function initializeLinkedTestSandboxes(layout: LinkedTestSandboxLayout): Promise<void> {
+  await runInit(undefined, { path: layout.schemaProjectPmPath });
+  await runInit(undefined, { path: layout.schemaGlobalPmPath });
+  await runInit(undefined, { path: layout.trackerProjectPmPath });
+  await runInit(undefined, { path: layout.trackerGlobalPmPath });
+}
+
+async function seedLinkedTestSandboxesFromSource(
+  layout: LinkedTestSandboxLayout,
+  sourceRoots: LinkedTestSandboxSourceRoots | undefined,
+): Promise<void> {
+  if (!sourceRoots) {
+    return;
+  }
+  await seedLinkedTestSandbox(layout.schemaProjectPmPath, layout.schemaGlobalPmPath, sourceRoots);
+  await seedLinkedTestSandbox(layout.trackerProjectPmPath, layout.trackerGlobalPmPath, sourceRoots);
+  await seedLinkedTestTrackerData(sourceRoots.projectPmRoot, layout.trackerProjectPmPath);
+  await seedLinkedTestTrackerData(sourceRoots.globalPmRoot, layout.trackerGlobalPmPath);
+}
+
+async function countLinkedTestSandboxItems(
+  layout: LinkedTestSandboxLayout,
+  sourceRoots: LinkedTestSandboxSourceRoots | undefined,
+): Promise<LinkedTestSandboxCounts> {
+  return {
+    sourceProjectItemCount: sourceRoots ? await countLinkedTestItemFiles(sourceRoots.projectPmRoot) : 0,
+    sourceGlobalItemCount: sourceRoots ? await countLinkedTestItemFiles(sourceRoots.globalPmRoot) : 0,
+    schemaProjectItemCount: await countLinkedTestItemFiles(layout.schemaProjectPmPath),
+    schemaGlobalItemCount: await countLinkedTestItemFiles(layout.schemaGlobalPmPath),
+    trackerProjectItemCount: await countLinkedTestItemFiles(layout.trackerProjectPmPath),
+    trackerGlobalItemCount: await countLinkedTestItemFiles(layout.trackerGlobalPmPath),
+  };
+}
+
+function buildLinkedTestExecutionContext(params: {
+  layout: LinkedTestSandboxLayout;
+  counts: LinkedTestSandboxCounts;
+  sourceRoots: LinkedTestSandboxSourceRoots | undefined;
+  isPmCommand: boolean;
+  isPmTrackerReadCommand: boolean;
+  requestedPmContextMode: LinkedTestPmContextMode;
+  effectivePmContextMode: ResolvedLinkedTestPmContextMode;
+  autoPmContextApplied: boolean;
+}): NonNullable<TestRunResult["execution_context"]> {
+  const trackerMode = params.effectivePmContextMode === "tracker";
+  const selectedSandboxProjectPmPath = trackerMode ? params.layout.trackerProjectPmPath : params.layout.schemaProjectPmPath;
+  const selectedSandboxGlobalPmPath = trackerMode ? params.layout.trackerGlobalPmPath : params.layout.schemaGlobalPmPath;
+  const selectedSandboxProjectItemCount = trackerMode ? params.counts.trackerProjectItemCount : params.counts.schemaProjectItemCount;
+  const selectedSandboxGlobalItemCount = trackerMode ? params.counts.trackerGlobalItemCount : params.counts.schemaGlobalItemCount;
+  return {
+    requested_pm_context_mode: params.requestedPmContextMode,
+    pm_context_mode: params.effectivePmContextMode,
+    auto_pm_context_applied: params.autoPmContextApplied,
+    is_pm_command: params.isPmCommand,
+    is_pm_tracker_read_command: params.isPmTrackerReadCommand,
+    source_project_pm_path: params.sourceRoots?.projectPmRoot ?? "",
+    sandbox_project_pm_path: selectedSandboxProjectPmPath,
+    source_global_pm_path: params.sourceRoots?.globalPmRoot ?? "",
+    sandbox_global_pm_path: selectedSandboxGlobalPmPath,
+    source_project_item_count: params.counts.sourceProjectItemCount,
+    sandbox_project_item_count: selectedSandboxProjectItemCount,
+    source_global_item_count: params.counts.sourceGlobalItemCount,
+    sandbox_global_item_count: selectedSandboxGlobalItemCount,
+    mismatch_detected: params.isPmCommand && params.counts.sourceProjectItemCount !== selectedSandboxProjectItemCount,
+    project_extensions_seeded: Boolean(params.sourceRoots),
+    global_extensions_seeded: Boolean(params.sourceRoots),
+  };
+}
+
+function resolveLinkedTestCommandContext(params: {
+  linkedTest: LinkedTest;
+  layout: LinkedTestSandboxLayout;
+  counts: LinkedTestSandboxCounts;
+  sourceRoots: LinkedTestSandboxSourceRoots | undefined;
+  runLevelPmContextMode: LinkedTestPmContextMode;
+  options: RunLinkedTestsOptions | undefined;
+}): LinkedTestCommandContext {
+  const linkedOverridePmContextMode =
+    typeof params.linkedTest.pm_context_mode === "string" && params.linkedTest.pm_context_mode.trim().length > 0
+      ? parsePmContextMode(params.linkedTest.pm_context_mode)
+      : undefined;
+  const command = typeof params.linkedTest.command === "string" && params.linkedTest.command.length > 0
+    ? params.linkedTest.command
+    : undefined;
+  const isPmCommand = command ? commandInvokesPmCli(command) : false;
+  const isPmTrackerReadCommand = isPmCommand && command ? commandInvokesPmTrackerReadCommand(command) : false;
+  const autoPmContextApplied = params.options?.autoPmContext === true && isPmTrackerReadCommand;
+  const requestedPmContextMode = autoPmContextApplied
+    ? "auto"
+    : resolveLinkedTestRequestedContextMode(
+        params.linkedTest,
+        params.runLevelPmContextMode,
+        params.options?.overrideLinkedPmContext === true,
+      );
+  const effectivePmContextMode = resolveLinkedTestEffectiveContextMode(requestedPmContextMode, isPmTrackerReadCommand);
+  return {
+    linkedOverridePmContextMode,
+    executionContext: buildLinkedTestExecutionContext({
+      layout: params.layout,
+      counts: params.counts,
+      sourceRoots: params.sourceRoots,
+      isPmCommand,
+      isPmTrackerReadCommand,
+      requestedPmContextMode,
+      effectivePmContextMode,
+      autoPmContextApplied,
+    }),
+  };
+}
+
+function buildLinkedTestSkippedResult(
+  linkedTest: LinkedTest,
+  executionContext: NonNullable<TestRunResult["execution_context"]>,
+  error: string,
+): TestRunResult {
+  return {
+    command: linkedTest.command,
+    path: linkedTest.path,
+    status: "skipped",
+    execution_context: executionContext,
+    error,
+  };
+}
+
+function buildLinkedTestAssertionFailureResult(
+  linkedTest: LinkedTest,
+  executionContext: NonNullable<TestRunResult["execution_context"]>,
+  error: string,
+  output?: Pick<LinkedTestExecutionResult, "stdout" | "stderr">,
+): TestRunResult {
+  return {
+    command: linkedTest.command,
+    path: linkedTest.path,
+    status: "failed",
+    exit_code: 1,
+    failure_category: "assertion_failure",
+    execution_context: executionContext,
+    ...(output ? { stdout: output.stdout, stderr: output.stderr } : {}),
+    error,
+  };
+}
+
+function resolveLinkedTestPreflightResult(params: {
+  linkedTest: LinkedTest;
+  executionContext: NonNullable<TestRunResult["execution_context"]>;
+  runLevelPmContextMode: LinkedTestPmContextMode;
+  linkedOverridePmContextMode: LinkedTestPmContextMode | undefined;
+  options: RunLinkedTestsOptions | undefined;
+}): TestRunResult | null {
+  if (!params.linkedTest.command) {
+    return buildLinkedTestSkippedResult(params.linkedTest, params.executionContext, "No command configured for this linked test.");
+  }
+  const runtimeSafetySkipReason = getRuntimeSafetySkipReason(params.linkedTest.command);
+  if (runtimeSafetySkipReason) {
+    return buildLinkedTestSkippedResult(params.linkedTest, params.executionContext, runtimeSafetySkipReason);
+  }
+  const failOnMismatchByDefault =
+    params.executionContext.pm_context_mode === "schema" &&
+    params.executionContext.is_pm_tracker_read_command &&
+    params.executionContext.mismatch_detected;
+  const failOnMismatchByFlag =
+    params.options?.failOnContextMismatch === true &&
+    params.executionContext.is_pm_command &&
+    params.executionContext.mismatch_detected;
+  if (failOnMismatchByDefault || failOnMismatchByFlag) {
+    const mismatchHint = buildPmContextMismatchHint({
+      executionContext: params.executionContext,
+      runLevelPmContextMode: params.runLevelPmContextMode,
+      linkedOverridePmContextMode: params.linkedOverridePmContextMode,
+    });
+    const mismatchPrefix =
+      params.options?.checkContext === true
+        ? "Linked test preflight PM context mismatch detected"
+        : "Linked test PM context mismatch detected";
+    return buildLinkedTestAssertionFailureResult(
+      params.linkedTest,
+      params.executionContext,
+      `${mismatchPrefix} (source_project_items=${params.executionContext.source_project_item_count}, ` +
+        `sandbox_project_items=${params.executionContext.sandbox_project_item_count}).${mismatchHint}`,
+    );
+  }
+  if (
+    params.options?.requireAssertionsForPm === true &&
+    params.executionContext.is_pm_command &&
+    !hasLinkedTestAssertions(params.linkedTest)
+  ) {
+    return buildLinkedTestAssertionFailureResult(
+      params.linkedTest,
+      params.executionContext,
+      "Linked PM command requires assertions when --require-assertions-for-pm is enabled.",
+    );
+  }
+  return null;
+}
+
+function buildLinkedTestExecutionEnv(params: {
+  runtimeDirectives: LinkedTestRuntimeDirectives;
+  linkedTest: LinkedTest;
+  executionContext: NonNullable<TestRunResult["execution_context"]>;
+}): NodeJS.ProcessEnv {
+  const effectiveDirectives = resolveEffectiveLinkedTestDirectives(params.runtimeDirectives, params.linkedTest);
+  const executionEnv: NodeJS.ProcessEnv = { ...process.env };
+  applyEnvDirectiveStage(executionEnv, params.runtimeDirectives);
+  applyEnvDirectiveStage(executionEnv, {
+    env_set: params.linkedTest.env_set ?? {},
+    env_clear: params.linkedTest.env_clear ?? [],
+  });
+  if (effectiveDirectives.shared_host_safe) {
+    applySharedHostSafeDefaults(executionEnv);
+  }
+  executionEnv.FORCE_COLOR = "0";
+  executionEnv.PM_PATH = params.executionContext.sandbox_project_pm_path;
+  executionEnv.PM_GLOBAL_PATH = params.executionContext.sandbox_global_pm_path;
+  return executionEnv;
+}
+
+function buildLinkedTestPassedResult(
+  linkedTest: LinkedTest,
+  executionContext: NonNullable<TestRunResult["execution_context"]>,
+  execution: LinkedTestExecutionResult,
+): TestRunResult {
+  return {
+    command: linkedTest.command,
+    path: linkedTest.path,
+    status: "passed",
+    exit_code: 0,
+    execution_context: executionContext,
+    stdout: execution.stdout,
+    stderr: execution.stderr,
+  };
+}
+
+function buildLinkedTestEmptyRunResult(params: {
+  linkedTest: LinkedTest;
+  executionContext: NonNullable<TestRunResult["execution_context"]>;
+  execution: LinkedTestExecutionResult;
+  emptyRunSignal: string;
+}): TestRunResult {
+  return {
+    command: params.linkedTest.command,
+    path: params.linkedTest.path,
+    status: "failed",
+    exit_code: 1,
+    failure_category: "empty_run",
+    execution_context: params.executionContext,
+    stdout: params.execution.stdout,
+    stderr: params.execution.stderr,
+    error:
+      `Linked test reported an empty test run (${params.emptyRunSignal}) while --fail-on-empty-test-run is enabled. ` +
+      "Update test selection or disable --fail-on-empty-test-run for this run.",
+  };
+}
+
+function buildLinkedTestCommandFailureResult(params: {
+  linkedTest: LinkedTest;
+  executionContext: NonNullable<TestRunResult["execution_context"]>;
+  execution: LinkedTestExecutionResult;
+  timeoutMs: number;
+}): TestRunResult {
+  return {
+    command: params.linkedTest.command,
+    path: params.linkedTest.path,
+    status: "failed",
+    exit_code: resolveLinkedTestFailureExitCode(params.execution),
+    failure_category: classifyLinkedTestFailure(params.execution),
+    execution_context: params.executionContext,
+    stdout: params.execution.stdout,
+    stderr: params.execution.stderr,
+    error: formatLinkedTestExecutionError(params.execution, params.timeoutMs),
+  };
+}
+
+function buildLinkedTestPassedExecutionResult(params: {
+  linkedTest: LinkedTest;
+  executionContext: NonNullable<TestRunResult["execution_context"]>;
+  execution: LinkedTestExecutionResult;
+  options: RunLinkedTestsOptions | undefined;
+}): TestRunResult {
+  if (params.options?.failOnEmptyTestRun === true) {
+    const emptyRunSignal = detectEmptyLinkedTestRun(params.execution.stdout, params.execution.stderr);
+    if (emptyRunSignal) {
+      return buildLinkedTestEmptyRunResult({ ...params, emptyRunSignal });
+    }
+  }
+  const assertionFailures = evaluateLinkedTestAssertions(params.linkedTest, params.execution.stdout, params.execution.stderr);
+  if (assertionFailures.length > 0) {
+    return buildLinkedTestAssertionFailureResult(
+      params.linkedTest,
+      params.executionContext,
+      `Linked test assertion(s) failed: ${assertionFailures.join("; ")}`,
+      params.execution,
+    );
+  }
+  return buildLinkedTestPassedResult(params.linkedTest, params.executionContext, params.execution);
+}
+
+async function runSingleLinkedTest(params: {
+  linkedTest: LinkedTest;
+  index: number;
+  total: number;
+  defaultTimeoutSeconds: number | undefined;
+  runtimeDirectives: LinkedTestRuntimeDirectives;
+  progressMode: LinkedTestProgressMode;
+  executionContext: NonNullable<TestRunResult["execution_context"]>;
+  options: RunLinkedTestsOptions | undefined;
+}): Promise<TestRunResult> {
+  const command = params.linkedTest.command ?? "";
+  const timeoutMs = (params.linkedTest.timeout_seconds ?? params.defaultTimeoutSeconds ?? 120) * 1000;
+  const execution = await runLinkedTestCommand(
+    command,
+    timeoutMs,
+    buildLinkedTestExecutionEnv(params),
+    {
+      index: params.index + 1,
+      total: params.total,
+      timeoutMs,
+      command,
+    },
+    params.progressMode,
+  );
+  const passed = execution.exitCode === 0 && !execution.timedOut && !execution.maxBufferExceeded;
+  return passed
+    ? buildLinkedTestPassedExecutionResult({ ...params, execution })
+    : buildLinkedTestCommandFailureResult({ ...params, execution, timeoutMs });
+}
+
 /**
  * Implements run linked tests for the public runtime surface of this module.
  */
 export async function runLinkedTests(
   tests: LinkedTest[],
   defaultTimeoutSeconds: number | undefined,
-  options?: {
-    progress?: boolean;
-    sourceRoots?: LinkedTestSandboxSourceRoots;
-    envSet?: string[];
-    envClear?: string[];
-    sharedHostSafe?: boolean;
-    pmContext?: string;
-    overrideLinkedPmContext?: boolean;
-    failOnContextMismatch?: boolean;
-    failOnEmptyTestRun?: boolean;
-    requireAssertionsForPm?: boolean;
-    checkContext?: boolean;
-    autoPmContext?: boolean;
-  },
+  options?: RunLinkedTestsOptions,
 ): Promise<TestRunResult[]> {
   const results: TestRunResult[] = [];
   const sandboxRoot = await mkdtemp(path.join(tmpdir(), "pm-linked-test-"));
-  const schemaSandboxPmPath = path.join(sandboxRoot, "schema", "project", ".agents", "pm");
-  const schemaSandboxGlobalPath = path.join(sandboxRoot, "schema", "global");
-  const trackerSandboxPmPath = path.join(sandboxRoot, "tracker", "project", ".agents", "pm");
-  const trackerSandboxGlobalPath = path.join(sandboxRoot, "tracker", "global");
+  const layout = createLinkedTestSandboxLayout(sandboxRoot);
   const runLevelPmContextMode = parsePmContextMode(options?.pmContext);
   const progressMode: LinkedTestProgressMode = options?.progress === true ? "always" : "auto";
   const runtimeDirectives = resolveRuntimeDirectives(options?.envSet, options?.envClear, options?.sharedHostSafe);
-  let sourceProjectItemCount = 0;
-  let sourceGlobalItemCount = 0;
-  let schemaSandboxProjectItemCount = 0;
-  let schemaSandboxGlobalItemCount = 0;
-  let trackerSandboxProjectItemCount = 0;
-  let trackerSandboxGlobalItemCount = 0;
   const sourceRoots = options?.sourceRoots;
-  const projectExtensionsSeeded = Boolean(sourceRoots);
-  const globalExtensionsSeeded = Boolean(sourceRoots);
 
   try {
-    await runInit(undefined, { path: schemaSandboxPmPath });
-    await runInit(undefined, { path: schemaSandboxGlobalPath });
-    await runInit(undefined, { path: trackerSandboxPmPath });
-    await runInit(undefined, { path: trackerSandboxGlobalPath });
-    if (sourceRoots) {
-      await seedLinkedTestSandbox(schemaSandboxPmPath, schemaSandboxGlobalPath, sourceRoots);
-      await seedLinkedTestSandbox(trackerSandboxPmPath, trackerSandboxGlobalPath, sourceRoots);
-      await seedLinkedTestTrackerData(sourceRoots.projectPmRoot, trackerSandboxPmPath);
-      await seedLinkedTestTrackerData(sourceRoots.globalPmRoot, trackerSandboxGlobalPath);
-      sourceProjectItemCount = await countLinkedTestItemFiles(sourceRoots.projectPmRoot);
-      sourceGlobalItemCount = await countLinkedTestItemFiles(sourceRoots.globalPmRoot);
-    }
-    schemaSandboxProjectItemCount = await countLinkedTestItemFiles(schemaSandboxPmPath);
-    schemaSandboxGlobalItemCount = await countLinkedTestItemFiles(schemaSandboxGlobalPath);
-    trackerSandboxProjectItemCount = await countLinkedTestItemFiles(trackerSandboxPmPath);
-    trackerSandboxGlobalItemCount = await countLinkedTestItemFiles(trackerSandboxGlobalPath);
-
-    const buildExecutionContext = (
-      isPmCommand: boolean,
-      isPmTrackerReadCommand: boolean,
-      requestedPmContextMode: LinkedTestPmContextMode,
-      effectivePmContextMode: ResolvedLinkedTestPmContextMode,
-      autoPmContextApplied: boolean,
-    ): NonNullable<TestRunResult["execution_context"]> => {
-      const selectedSandboxProjectPmPath = effectivePmContextMode === "tracker" ? trackerSandboxPmPath : schemaSandboxPmPath;
-      const selectedSandboxGlobalPmPath =
-        effectivePmContextMode === "tracker" ? trackerSandboxGlobalPath : schemaSandboxGlobalPath;
-      const selectedSandboxProjectItemCount =
-        effectivePmContextMode === "tracker" ? trackerSandboxProjectItemCount : schemaSandboxProjectItemCount;
-      const selectedSandboxGlobalItemCount =
-        effectivePmContextMode === "tracker" ? trackerSandboxGlobalItemCount : schemaSandboxGlobalItemCount;
-      const mismatchDetected = isPmCommand && sourceProjectItemCount !== selectedSandboxProjectItemCount;
-      return {
-        requested_pm_context_mode: requestedPmContextMode,
-        pm_context_mode: effectivePmContextMode,
-        auto_pm_context_applied: autoPmContextApplied,
-        is_pm_command: isPmCommand,
-        is_pm_tracker_read_command: isPmTrackerReadCommand,
-        source_project_pm_path: sourceRoots?.projectPmRoot ?? "",
-        sandbox_project_pm_path: selectedSandboxProjectPmPath,
-        source_global_pm_path: sourceRoots?.globalPmRoot ?? "",
-        sandbox_global_pm_path: selectedSandboxGlobalPmPath,
-        source_project_item_count: sourceProjectItemCount,
-        sandbox_project_item_count: selectedSandboxProjectItemCount,
-        source_global_item_count: sourceGlobalItemCount,
-        sandbox_global_item_count: selectedSandboxGlobalItemCount,
-        mismatch_detected: mismatchDetected,
-        project_extensions_seeded: projectExtensionsSeeded,
-        global_extensions_seeded: globalExtensionsSeeded,
-      };
-    };
+    await initializeLinkedTestSandboxes(layout);
+    await seedLinkedTestSandboxesFromSource(layout, sourceRoots);
+    const counts = await countLinkedTestSandboxItems(layout, sourceRoots);
 
     for (let index = 0; index < tests.length; index += 1) {
       const linkedTest = tests[index];
-      const linkedOverridePmContextMode =
-        typeof linkedTest.pm_context_mode === "string" && linkedTest.pm_context_mode.trim().length > 0
-          ? parsePmContextMode(linkedTest.pm_context_mode)
-          : undefined;
-      const isPmCommand =
-        typeof linkedTest.command === "string" && linkedTest.command.length > 0
-          ? commandInvokesPmCli(linkedTest.command)
-          : false;
-      const isPmTrackerReadCommand =
-        isPmCommand && typeof linkedTest.command === "string" && linkedTest.command.length > 0
-          ? commandInvokesPmTrackerReadCommand(linkedTest.command)
-          : false;
-      const autoPmContextApplied = options?.autoPmContext === true && isPmTrackerReadCommand;
-      const requestedPmContextMode = autoPmContextApplied
-        ? "auto"
-        : resolveLinkedTestRequestedContextMode(linkedTest, runLevelPmContextMode, options?.overrideLinkedPmContext === true);
-      const effectivePmContextMode = resolveLinkedTestEffectiveContextMode(requestedPmContextMode, isPmTrackerReadCommand);
-      const executionContext = buildExecutionContext(
-        isPmCommand,
-        isPmTrackerReadCommand,
-        requestedPmContextMode,
-        effectivePmContextMode,
-        autoPmContextApplied,
-      );
-      if (!linkedTest.command) {
-        results.push({
-          command: linkedTest.command,
-          path: linkedTest.path,
-          status: "skipped",
-          execution_context: executionContext,
-          error: "No command configured for this linked test.",
-        });
-        continue;
-      }
-      const runtimeSafetySkipReason = getRuntimeSafetySkipReason(linkedTest.command);
-      if (runtimeSafetySkipReason) {
-        results.push({
-          command: linkedTest.command,
-          path: linkedTest.path,
-          status: "skipped",
-          execution_context: executionContext,
-          error: runtimeSafetySkipReason,
-        });
-        continue;
-      }
-      const failOnMismatchByDefault =
-        executionContext.pm_context_mode === "schema" &&
-        executionContext.is_pm_tracker_read_command &&
-        executionContext.mismatch_detected;
-      const failOnMismatchByFlag =
-        options?.failOnContextMismatch === true && executionContext.is_pm_command && executionContext.mismatch_detected;
-      if (failOnMismatchByDefault || failOnMismatchByFlag) {
-        const mismatchHint = buildPmContextMismatchHint({
-          executionContext,
-          runLevelPmContextMode,
-          linkedOverridePmContextMode,
-        });
-        const mismatchPrefix = options?.checkContext === true ? "Linked test preflight PM context mismatch detected" : "Linked test PM context mismatch detected";
-        results.push({
-          command: linkedTest.command,
-          path: linkedTest.path,
-          status: "failed",
-          exit_code: 1,
-          failure_category: "assertion_failure",
-          execution_context: executionContext,
-          error:
-            `${mismatchPrefix} (source_project_items=${executionContext.source_project_item_count}, ` +
-            `sandbox_project_items=${executionContext.sandbox_project_item_count}).${mismatchHint}`,
-        });
-        continue;
-      }
-      if (options?.requireAssertionsForPm === true && executionContext.is_pm_command && !hasLinkedTestAssertions(linkedTest)) {
-        results.push({
-          command: linkedTest.command,
-          path: linkedTest.path,
-          status: "failed",
-          exit_code: 1,
-          failure_category: "assertion_failure",
-          execution_context: executionContext,
-          error: "Linked PM command requires assertions when --require-assertions-for-pm is enabled.",
-        });
-        continue;
-      }
-      const timeoutMs = ((linkedTest.timeout_seconds ?? defaultTimeoutSeconds ?? 120) * 1000);
-      const effectiveDirectives = resolveEffectiveLinkedTestDirectives(runtimeDirectives, linkedTest);
-      const executionEnv: NodeJS.ProcessEnv = { ...process.env };
-      applyEnvDirectiveStage(executionEnv, runtimeDirectives);
-      applyEnvDirectiveStage(executionEnv, {
-        env_set: linkedTest.env_set ?? {},
-        env_clear: linkedTest.env_clear ?? [],
+      const commandContext = resolveLinkedTestCommandContext({
+        linkedTest,
+        layout,
+        counts,
+        sourceRoots,
+        runLevelPmContextMode,
+        options,
       });
-      if (effectiveDirectives.shared_host_safe) {
-        applySharedHostSafeDefaults(executionEnv);
+      const preflightResult = resolveLinkedTestPreflightResult({
+        linkedTest,
+        executionContext: commandContext.executionContext,
+        runLevelPmContextMode,
+        linkedOverridePmContextMode: commandContext.linkedOverridePmContextMode,
+        options,
+      });
+      if (preflightResult) {
+        results.push(preflightResult);
+        continue;
       }
-      executionEnv.FORCE_COLOR = "0";
-      executionEnv.PM_PATH = executionContext.sandbox_project_pm_path;
-      executionEnv.PM_GLOBAL_PATH = executionContext.sandbox_global_pm_path;
-      const execution = await runLinkedTestCommand(
-        linkedTest.command,
-        timeoutMs,
-        executionEnv,
-        {
-          index: index + 1,
+      results.push(
+        await runSingleLinkedTest({
+          linkedTest,
+          index,
           total: tests.length,
-          timeoutMs,
-          command: linkedTest.command,
-        },
-        progressMode,
+          defaultTimeoutSeconds,
+          runtimeDirectives,
+          progressMode,
+          executionContext: commandContext.executionContext,
+          options,
+        }),
       );
-      const passed = execution.exitCode === 0 && !execution.timedOut && !execution.maxBufferExceeded;
-      if (passed) {
-        if (options?.failOnEmptyTestRun === true) {
-          const emptyRunSignal = detectEmptyLinkedTestRun(execution.stdout, execution.stderr);
-          if (emptyRunSignal) {
-            results.push({
-              command: linkedTest.command,
-              path: linkedTest.path,
-              status: "failed",
-              exit_code: 1,
-              failure_category: "empty_run",
-              execution_context: executionContext,
-              stdout: execution.stdout,
-              stderr: execution.stderr,
-              error:
-                `Linked test reported an empty test run (${emptyRunSignal}) while --fail-on-empty-test-run is enabled. ` +
-                "Update test selection or disable --fail-on-empty-test-run for this run.",
-            });
-            continue;
-          }
-        }
-        const assertionFailures = evaluateLinkedTestAssertions(linkedTest, execution.stdout, execution.stderr);
-        if (assertionFailures.length > 0) {
-          results.push({
-            command: linkedTest.command,
-            path: linkedTest.path,
-            status: "failed",
-            exit_code: 1,
-            failure_category: "assertion_failure",
-            execution_context: executionContext,
-            stdout: execution.stdout,
-            stderr: execution.stderr,
-            error: `Linked test assertion(s) failed: ${assertionFailures.join("; ")}`,
-          });
-          continue;
-        }
-        results.push({
-          command: linkedTest.command,
-          path: linkedTest.path,
-          status: "passed",
-          exit_code: 0,
-          execution_context: executionContext,
-          stdout: execution.stdout,
-          stderr: execution.stderr,
-        });
-        continue;
-      }
-      const failureCategory = classifyLinkedTestFailure(execution);
-      results.push({
-        command: linkedTest.command,
-        path: linkedTest.path,
-        status: "failed",
-        exit_code: resolveLinkedTestFailureExitCode(execution),
-        failure_category: failureCategory,
-        execution_context: executionContext,
-        stdout: execution.stdout,
-        stderr: execution.stderr,
-        error: formatLinkedTestExecutionError(execution, timeoutMs),
-      });
     }
   } finally {
-    await rm(sandboxRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+    await rm(layout.root, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
   }
   return results;
+}
+
+interface ResolvedTestItem {
+  itemId: string;
+  tests: LinkedTest[];
+  changed: boolean;
+}
+
+interface ResolvedTestRunOptions {
+  defaultTimeoutSeconds: number | undefined;
+  pmContextMode: LinkedTestPmContextMode;
+  runSelection: LinkedTestRunSelection | undefined;
+  testsToRun: LinkedTest[];
+}
+
+function hasTestRuntimeDirectiveFlags(options: TestCommandOptions): boolean {
+  return (
+    (options.envSet?.length ?? 0) > 0 ||
+    (options.envClear?.length ?? 0) > 0 ||
+    options.sharedHostSafe === true ||
+    options.pmContext !== undefined ||
+    options.overrideLinkedPmContext === true ||
+    options.failOnContextMismatch === true ||
+    options.failOnSkipped === true ||
+    options.failOnEmptyTestRun === true ||
+    options.requireAssertionsForPm === true ||
+    options.checkContext === true ||
+    options.autoPmContext === true
+  );
+}
+
+function assertTestRunFlagUsage(options: TestCommandOptions): void {
+  if (hasTestRuntimeDirectiveFlags(options) && options.run !== true) {
+    throw new PmCliError(
+      "--env-set, --env-clear, --shared-host-safe, --pm-context, --override-linked-pm-context, --fail-on-context-mismatch, --fail-on-skipped, --fail-on-empty-test-run, --require-assertions-for-pm, --check-context, and --auto-pm-context require --run",
+      EXIT_CODE.USAGE,
+    );
+  }
+  const hasSelectorFlags = options.match !== undefined || options.onlyIndex !== undefined || options.onlyLast === true;
+  if (hasSelectorFlags && options.run !== true) {
+    throw new PmCliError("--match, --only-index, and --only-last require --run", EXIT_CODE.USAGE);
+  }
+}
+
+async function resolveLinkedTestItem(params: {
+  id: string;
+  options: TestCommandOptions;
+  pmRoot: string;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  typeToFolder: Record<string, string>;
+  adds: LinkedTest[];
+  removes: string[];
+}): Promise<ResolvedTestItem> {
+  const { id, options, pmRoot, settings, typeToFolder, adds, removes } = params;
+  if (adds.length === 0 && removes.length === 0) {
+    const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeToFolder);
+    if (!located) {
+      throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
+    }
+    const loaded = await readLocatedItem(located, { schema: settings.schema });
+    return { itemId: located.id, tests: loaded.document.metadata.tests ?? [], changed: false };
+  }
+  const result = await mutateItem({
+    pmRoot,
+    settings,
+    id,
+    op: "tests_add",
+    author: resolveAuthor(options.author, settings.author_default),
+    message: options.message,
+    force: options.force,
+    skipNoop: true,
+    mutate(document) {
+      const previous = document.metadata.tests ?? [];
+      const next = [...previous];
+      for (const add of adds) {
+        const exists = next.some(
+          (entry) =>
+            entry.command === add.command &&
+            entry.path === add.path &&
+            entry.scope === add.scope &&
+            entry.pm_context_mode === add.pm_context_mode,
+        );
+        if (!exists) {
+          next.push(add);
+        }
+      }
+      if (removes.length > 0) {
+        for (let i = next.length - 1; i >= 0; i -= 1) {
+          const entry = next[i];
+          if (removes.includes(entry.path ?? "") || removes.includes(entry.command ?? "")) {
+            next.splice(i, 1);
+          }
+        }
+      }
+      document.metadata.tests = next;
+      return { changedFields: stableValueEquals(previous, next) ? [] : ["tests"] };
+    },
+  });
+  return {
+    itemId: result.item.id,
+    tests: result.item.tests ?? [],
+    changed: result.changedFields.length > 0,
+  };
+}
+
+function resolveTestRunOptions(options: TestCommandOptions, tests: LinkedTest[]): ResolvedTestRunOptions {
+  assertTestRunFlagUsage(options);
+  const selectorInput = {
+    match: options.match,
+    onlyIndex: options.onlyIndex === undefined ? undefined : parseOnlyIndexValue(options.onlyIndex),
+    onlyLast: options.onlyLast,
+  };
+  const runSelection = options.run === true ? resolveLinkedTestRunSelection(tests, selectorInput) : undefined;
+  return {
+    defaultTimeoutSeconds: options.timeout === undefined ? undefined : parseOptionalNumber(options.timeout, "timeout"),
+    pmContextMode: parsePmContextMode(options.pmContext),
+    runSelection,
+    testsToRun: runSelection?.selected ?? tests,
+  };
+}
+
+async function executeSelectedLinkedTests(params: {
+  options: TestCommandOptions;
+  runOptions: ResolvedTestRunOptions;
+  pmRoot: string;
+}): Promise<TestRunResult[]> {
+  const { options, runOptions, pmRoot } = params;
+  if (options.run !== true) {
+    return [];
+  }
+  return await runLinkedTests(runOptions.testsToRun, runOptions.defaultTimeoutSeconds, {
+    progress: options.progress,
+    envSet: options.envSet,
+    envClear: options.envClear,
+    sharedHostSafe: options.sharedHostSafe,
+    pmContext: runOptions.pmContextMode,
+    overrideLinkedPmContext: options.overrideLinkedPmContext,
+    failOnContextMismatch: options.failOnContextMismatch,
+    failOnEmptyTestRun: options.failOnEmptyTestRun,
+    requireAssertionsForPm: options.requireAssertionsForPm,
+    checkContext: options.checkContext,
+    autoPmContext: options.autoPmContext,
+    sourceRoots: {
+      projectPmRoot: pmRoot,
+      globalPmRoot: resolveGlobalPmRoot(process.cwd()),
+    },
+  });
+}
+
+function buildTestWarnings(
+  options: TestCommandOptions,
+  runSelection: LinkedTestRunSelection | undefined,
+  runResults: TestRunResult[],
+): string[] {
+  const warnings: string[] = [];
+  if (runSelection && runSelection.selector !== null) {
+    warnings.push(
+      `linked_test_selection:${runSelection.selector}=${runSelection.requested};selected=${runSelection.selected_count};skipped=${runSelection.skipped_count};indexes=${runSelection.selected_indexes.join(",")}`,
+    );
+  }
+  if (options.run === true && options.checkContext === true) {
+    const preflight = summarizeContextPreflight(runResults);
+    warnings.push(
+      `context_preflight:checked_pm_commands=${preflight.checked_pm_commands};` +
+        `tracker_read_commands=${preflight.tracker_read_commands};` +
+        `mismatches=${preflight.mismatches};` +
+        `auto_remediated=${preflight.auto_remediated}`,
+    );
+  }
+  return warnings;
+}
+
+async function recordTestRunSummary(params: {
+  options: TestCommandOptions;
+  pmRoot: string;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  itemId: string;
+  runStartedAt: string | undefined;
+  runResults: TestRunResult[];
+  failOnSkippedTriggered: boolean;
+  warnings: string[];
+}): Promise<void> {
+  const { options, pmRoot, settings, itemId, runStartedAt, runResults, failOnSkippedTriggered, warnings } = params;
+  if (options.run !== true || !runStartedAt || settings.testing.record_results_to_items !== true) {
+    return;
+  }
+  const summary = summarizeRunResultStatuses(runResults);
+  const trackedRunId = resolveTrackedRunId("test");
+  const attemptRaw = process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT?.trim();
+  const parsedAttempt = attemptRaw ? Number.parseInt(attemptRaw, 10) : Number.NaN;
+  const resumedFrom = process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM?.trim();
+  try {
+    await appendTrackedTestRunSummary({
+      pmRoot,
+      settings,
+      itemId,
+      author: resolveAuthor(options.author, settings.author_default),
+      message: `Track test run summary (${trackedRunId})`,
+      entry: {
+        run_id: trackedRunId,
+        kind: "test",
+        status: summary.failed > 0 || failOnSkippedTriggered === true ? "failed" : "passed",
+        started_at: runStartedAt,
+        finished_at: nowIso(),
+        recorded_at: nowIso(),
+        attempt: Number.isFinite(parsedAttempt) && parsedAttempt >= 1 ? parsedAttempt : undefined,
+        resumed_from: resumedFrom && resumedFrom.length > 0 ? resumedFrom : undefined,
+        passed: summary.passed,
+        failed: summary.failed,
+        skipped: summary.skipped,
+        fail_on_skipped_triggered: failOnSkippedTriggered ? true : undefined,
+      },
+    });
+  } catch (error: unknown) {
+    warnings.push(`test_result_tracking_failed:${itemId}:${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 /**
@@ -1830,189 +2210,43 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
   const resolvedRemoves = await stdinResolver.resolveList(options.remove, "--remove");
   const adds = [...parseAddEntries(resolvedAdds), ...parseAddJsonEntries(resolvedAddJsons)];
   const removes = parseRemoveEntries(resolvedRemoves);
-  const shouldMutate = adds.length > 0 || removes.length > 0;
-
-  let tests: LinkedTest[] = [];
-  let itemId: string;
-  let changed = false;
-
-  if (shouldMutate) {
-    const author = resolveAuthor(options.author, settings.author_default);
-    const result = await mutateItem({
-      pmRoot,
-      settings,
-      id,
-      op: "tests_add",
-      author,
-      message: options.message,
-      force: options.force,
-      skipNoop: true,
-      mutate(document) {
-        const previous = document.metadata.tests ?? [];
-        const next = [...(document.metadata.tests ?? [])];
-        for (const add of adds) {
-          const exists = next.some(
-            (entry) =>
-              entry.command === add.command &&
-              entry.path === add.path &&
-              entry.scope === add.scope &&
-              entry.pm_context_mode === add.pm_context_mode,
-          );
-          if (!exists) {
-            next.push(add);
-          }
-        }
-        if (removes.length > 0) {
-          for (let i = next.length - 1; i >= 0; i -= 1) {
-            const entry = next[i];
-            if (removes.includes(entry.path ?? "") || removes.includes(entry.command ?? "")) {
-              next.splice(i, 1);
-            }
-          }
-        }
-        document.metadata.tests = next;
-        return { changedFields: stableValueEquals(previous, next) ? [] : ["tests"] };
-      },
-    });
-    tests = result.item.tests ?? [];
-    itemId = result.item.id;
-    changed = result.changedFields.length > 0;
-  } else {
-    const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
-    if (!located) {
-      throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
-    }
-    itemId = located.id;
-    const loaded = await readLocatedItem(located, { schema: settings.schema });
-    tests = loaded.document.metadata.tests ?? [];
-  }
-
-  let defaultTimeoutSeconds: number | undefined;
-  if (options.timeout !== undefined) {
-    defaultTimeoutSeconds = parseOptionalNumber(options.timeout, "timeout");
-  }
-  const pmContextMode = parsePmContextMode(options.pmContext);
-  const hasRuntimeDirectiveFlags =
-    (options.envSet?.length ?? 0) > 0 ||
-    (options.envClear?.length ?? 0) > 0 ||
-    options.sharedHostSafe === true ||
-    options.pmContext !== undefined ||
-    options.overrideLinkedPmContext === true ||
-    options.failOnContextMismatch === true ||
-    options.failOnSkipped === true ||
-    options.failOnEmptyTestRun === true ||
-    options.requireAssertionsForPm === true ||
-    options.checkContext === true ||
-    options.autoPmContext === true;
-  if (hasRuntimeDirectiveFlags && options.run !== true) {
-    throw new PmCliError(
-      "--env-set, --env-clear, --shared-host-safe, --pm-context, --override-linked-pm-context, --fail-on-context-mismatch, --fail-on-skipped, --fail-on-empty-test-run, --require-assertions-for-pm, --check-context, and --auto-pm-context require --run",
-      EXIT_CODE.USAGE,
-    );
-  }
-  const hasSelectorFlags = options.match !== undefined || options.onlyIndex !== undefined || options.onlyLast === true;
-  if (hasSelectorFlags && options.run !== true) {
-    throw new PmCliError("--match, --only-index, and --only-last require --run", EXIT_CODE.USAGE);
-  }
-  const selectorInput = {
-    match: options.match,
-    onlyIndex: options.onlyIndex === undefined ? undefined : parseOnlyIndexValue(options.onlyIndex),
-    onlyLast: options.onlyLast,
-  };
-  const runSelection = options.run === true ? resolveLinkedTestRunSelection(tests, selectorInput) : undefined;
-  const testsToRun = runSelection?.selected ?? tests;
-
+  const item = await resolveLinkedTestItem({
+    id,
+    options,
+    pmRoot,
+    settings,
+    typeToFolder: typeRegistry.type_to_folder,
+    adds,
+    removes,
+  });
+  const runOptions = resolveTestRunOptions(options, item.tests);
   const runStartedAt = options.run === true ? nowIso() : undefined;
-  const runResults = options.run === true
-    ? await runLinkedTests(testsToRun, defaultTimeoutSeconds, {
-        progress: options.progress,
-        envSet: options.envSet,
-        envClear: options.envClear,
-        sharedHostSafe: options.sharedHostSafe,
-        pmContext: pmContextMode,
-        overrideLinkedPmContext: options.overrideLinkedPmContext,
-        failOnContextMismatch: options.failOnContextMismatch,
-        failOnEmptyTestRun: options.failOnEmptyTestRun,
-        requireAssertionsForPm: options.requireAssertionsForPm,
-        checkContext: options.checkContext,
-        autoPmContext: options.autoPmContext,
-        sourceRoots: {
-          projectPmRoot: pmRoot,
-          globalPmRoot: resolveGlobalPmRoot(process.cwd()),
-        },
-      })
-    : [];
+  const runResults = await executeSelectedLinkedTests({ options, runOptions, pmRoot });
   const failureCategories = countFailureCategories(runResults);
   const failOnSkippedTriggered =
     options.run === true && options.failOnSkipped === true && runResults.some((entry) => entry.status === "skipped");
-  const warnings: string[] = [];
-  if (runSelection && runSelection.selector !== null) {
-    warnings.push(
-      `linked_test_selection:${runSelection.selector}=${runSelection.requested};selected=${runSelection.selected_count};skipped=${runSelection.skipped_count};indexes=${runSelection.selected_indexes.join(",")}`,
-    );
-  }
-  if (options.run === true && options.checkContext === true) {
-    const preflight = summarizeContextPreflight(runResults);
-    warnings.push(
-      `context_preflight:checked_pm_commands=${preflight.checked_pm_commands};` +
-        `tracker_read_commands=${preflight.tracker_read_commands};` +
-        `mismatches=${preflight.mismatches};` +
-        `auto_remediated=${preflight.auto_remediated}`,
-    );
-  }
-
-  if (options.run === true && runStartedAt && settings.testing.record_results_to_items === true) {
-    const summary = summarizeRunResultStatuses(runResults);
-    const trackedRunId = resolveTrackedRunId("test");
-    const attemptRaw = process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT?.trim();
-    const parsedAttempt = attemptRaw ? Number.parseInt(attemptRaw, 10) : Number.NaN;
-    const resumedFrom = process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM?.trim();
-    try {
-      await appendTrackedTestRunSummary({
-        pmRoot,
-        settings,
-        itemId,
-        author: resolveAuthor(options.author, settings.author_default),
-        message: `Track test run summary (${trackedRunId})`,
-        entry: {
-          run_id: trackedRunId,
-          kind: "test",
-          status: summary.failed > 0 || failOnSkippedTriggered === true ? "failed" : "passed",
-          started_at: runStartedAt,
-          finished_at: nowIso(),
-          recorded_at: nowIso(),
-          attempt: Number.isFinite(parsedAttempt) && parsedAttempt >= 1 ? parsedAttempt : undefined,
-          resumed_from: resumedFrom && resumedFrom.length > 0 ? resumedFrom : undefined,
-          passed: summary.passed,
-          failed: summary.failed,
-          skipped: summary.skipped,
-          fail_on_skipped_triggered: failOnSkippedTriggered ? true : undefined,
-        },
-      });
-    } catch (error: unknown) {
-      warnings.push(`test_result_tracking_failed:${itemId}:${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
+  const warnings = buildTestWarnings(options, runOptions.runSelection, runResults);
+  await recordTestRunSummary({ options, pmRoot, settings, itemId: item.itemId, runStartedAt, runResults, failOnSkippedTriggered, warnings });
 
   return {
     ok: runResults.every((entry) => entry.status !== "failed") && failOnSkippedTriggered !== true,
-    id: itemId,
-    tests,
+    id: item.itemId,
+    tests: item.tests,
     run_results: runResults,
     failure_categories: failureCategories,
-    selection: runSelection
+    selection: runOptions.runSelection
       ? {
-          selector: runSelection.selector,
-          requested: runSelection.requested,
-          selected_indexes: runSelection.selected_indexes,
-          selected_count: runSelection.selected_count,
-          skipped_count: runSelection.skipped_count,
+          selector: runOptions.runSelection.selector,
+          requested: runOptions.runSelection.requested,
+          selected_indexes: runOptions.runSelection.selected_indexes,
+          selected_count: runOptions.runSelection.selected_count,
+          skipped_count: runOptions.runSelection.skipped_count,
         }
       : undefined,
     fail_on_skipped_triggered: failOnSkippedTriggered ? true : undefined,
     warnings: warnings.length > 0 ? warnings : undefined,
-    changed,
-    count: tests.length,
+    changed: item.changed,
+    count: item.tests.length,
   };
 }
 /* c8 ignore stop */

@@ -123,6 +123,73 @@ async function normalizeInstallTargets(targets: string[] | undefined): Promise<s
   );
 }
 
+function validateExtensionMarkdownOptions(
+  normalizedOptions: Record<string, unknown>,
+  globalOptions: GlobalOptions,
+  outputPath: string | undefined,
+): void {
+  const wantsMarkdown = normalizedOptions.markdown === true;
+  if (outputPath !== undefined && outputPath === "") {
+    throw new PmCliError("--output requires a non-empty file path.", EXIT_CODE.USAGE);
+  }
+  if (outputPath !== undefined && !wantsMarkdown) {
+    throw new PmCliError("--output is only supported with --markdown describe output.", EXIT_CODE.USAGE);
+  }
+  if (!wantsMarkdown) {
+    return;
+  }
+  if (globalOptions.json) {
+    throw new PmCliError("Cannot combine --json with --markdown.", EXIT_CODE.USAGE);
+  }
+  if (normalizedOptions.describe !== true) {
+    throw new PmCliError("--markdown is only supported by the describe action.", EXIT_CODE.USAGE);
+  }
+}
+
+async function emitExtensionMarkdownResult(params: {
+  result: { details?: unknown; warnings: string[] };
+  vocabulary: LifecycleCommandVocabulary;
+  outputPath: string | undefined;
+  globalOptions: GlobalOptions;
+}): Promise<void> {
+  const markdown = renderExtensionDescribeMarkdown(params.result.details as unknown as ExtensionDescribeResult, params.vocabulary);
+  if (params.outputPath !== undefined) {
+    const resolvedOutputPath = path.resolve(params.outputPath);
+    await fs.mkdir(path.dirname(resolvedOutputPath), { recursive: true });
+    await fs.writeFile(resolvedOutputPath, markdown, "utf8");
+  }
+  if (params.globalOptions.quiet) {
+    return;
+  }
+  for (const warning of params.result.warnings) {
+    printError(`warning: ${warning}`);
+  }
+  if (params.outputPath === undefined) {
+    writeStdout(markdown);
+  }
+}
+
+function applyExtensionDoctorStrictExit(
+  result: { action: string; details?: unknown; warnings: string[] },
+  normalizedOptions: Record<string, unknown>,
+): void {
+  const strictExit = Boolean(normalizedOptions.strictExit) || Boolean(normalizedOptions.failOnWarn);
+  if (result.action !== "doctor" || !strictExit) {
+    return;
+  }
+  const detailsRecord = result.details !== null && typeof result.details === "object"
+    ? result.details as Record<string, unknown>
+    : {};
+  const summary = detailsRecord.summary !== null && typeof detailsRecord.summary === "object"
+    ? detailsRecord.summary as Record<string, unknown>
+    : null;
+  const summaryStatus = summary && typeof summary.status === "string" ? summary.status : undefined;
+  const shouldFail = result.warnings.length > 0 || (summaryStatus !== undefined && summaryStatus !== "ok");
+  if (shouldFail) {
+    process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+  }
+}
+
 async function executeExtensionCommand(
   target: string | undefined,
   options: Record<string, unknown>,
@@ -133,59 +200,17 @@ async function executeExtensionCommand(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   const normalizedOptions = normalizeExtensionOptions(options, forcedAction, vocabulary);
-  const wantsMarkdown = normalizedOptions.markdown === true;
   const outputOption = typeof normalizedOptions.output === "string" ? normalizedOptions.output : undefined;
   const outputPath = outputOption?.trim();
-  if (outputOption !== undefined && outputPath === "") {
-    throw new PmCliError("--output requires a non-empty file path.", EXIT_CODE.USAGE);
-  }
-  if (outputPath !== undefined && !wantsMarkdown) {
-    throw new PmCliError("--output is only supported with --markdown describe output.", EXIT_CODE.USAGE);
-  }
-  if (wantsMarkdown) {
-    // Validate before running so a misdirected --markdown (e.g. on install) fails
-    // fast instead of performing the action and only then rejecting the flag.
-    if (globalOptions.json) {
-      throw new PmCliError("Cannot combine --json with --markdown.", EXIT_CODE.USAGE);
-    }
-    if (normalizedOptions.describe !== true) {
-      throw new PmCliError("--markdown is only supported by the describe action.", EXIT_CODE.USAGE);
-    }
-  }
+  validateExtensionMarkdownOptions(normalizedOptions, globalOptions, outputPath);
   const { runExtension } = await import("./commands/extension.js");
   const result = await runExtension(target, normalizedOptions, globalOptions);
-  if (wantsMarkdown) {
-    // describe resolved above, so `details` is the describe action's ExtensionDescribeResult.
-    const markdown = renderExtensionDescribeMarkdown(result.details as unknown as ExtensionDescribeResult, vocabulary);
-    if (outputPath !== undefined) {
-      const resolvedOutputPath = path.resolve(outputPath);
-      await fs.mkdir(path.dirname(resolvedOutputPath), { recursive: true });
-      await fs.writeFile(resolvedOutputPath, markdown, "utf8");
-    }
-    if (!globalOptions.quiet) {
-      // printResult is bypassed in markdown mode, so surface result warnings (e.g.
-      // extension load/activation failures) to stderr rather than swallowing them,
-      // and emit the rendered doc (already newline-terminated) without an extra newline.
-      for (const warning of result.warnings) {
-        printError(`warning: ${warning}`);
-      }
-      if (outputPath === undefined) {
-        writeStdout(markdown);
-      }
-    }
+  if (normalizedOptions.markdown === true) {
+    await emitExtensionMarkdownResult({ result, vocabulary, outputPath, globalOptions });
   } else {
     printResult(result, globalOptions);
   }
-  const strictExit = Boolean(normalizedOptions.strictExit) || Boolean(normalizedOptions.failOnWarn);
-  if (result.action === "doctor" && strictExit) {
-    const detailsRecord = result.details as Record<string, unknown>;
-    const summary = (detailsRecord.summary ?? null) as Record<string, unknown> | null;
-    const summaryStatus = summary && typeof summary.status === "string" ? summary.status : undefined;
-    const shouldFail = summaryStatus ? summaryStatus !== "ok" : result.warnings.length > 0;
-    if (shouldFail) {
-      process.exitCode = EXIT_CODE.GENERIC_FAILURE;
-    }
-  }
+  applyExtensionDoctorStrictExit(result, normalizedOptions);
   if (globalOptions.profile) {
     printError(`profile:command=extension took_ms=${Date.now() - startedAt}`);
   }
@@ -407,6 +432,98 @@ function registerLifecycleCommand(
   });
 }
 
+async function runInitCommandAction(
+  prefix: string | undefined,
+  options: Record<string, unknown>,
+  command: Command,
+): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runInit, summarizeInitResult } = await import("./commands/init.js");
+  const result = await runInit(
+    prefix,
+    globalOptions,
+    {
+      preset: typeof options.preset === "string" ? options.preset : undefined,
+      defaults: options.defaults === true || options.yes === true,
+      author: typeof options.author === "string" ? options.author : undefined,
+      agentGuidance: typeof options.agentGuidance === "string" ? options.agentGuidance : undefined,
+      typePreset: typeof options.typePreset === "string" ? options.typePreset : undefined,
+      withPackages: options.withPackages === true,
+      force: options.force === true,
+    },
+  );
+  const verbose = options.verbose === true;
+  const emitFullTree = verbose || globalOptions.json === true;
+  printResult(emitFullTree ? result : summarizeInitResult(result), globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=init took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+function resolveConfigPositionals(scope: string | undefined, action: string | undefined, key: string | undefined, value: string | undefined): {
+  resolvedScope: string;
+  resolvedAction: string;
+  resolvedKey: string | undefined;
+  resolvedValue: string | undefined;
+} {
+  const actionShorthands = new Set(["get", "set", "list", "export"]);
+  const scopeShorthand = scope !== undefined && actionShorthands.has(scope);
+  return {
+    resolvedScope: scopeShorthand ? "project" : (scope ?? "project"),
+    resolvedAction: scopeShorthand ? scope : (action ?? "list"),
+    resolvedKey: scopeShorthand ? action : key,
+    resolvedValue: scopeShorthand ? key : value,
+  };
+}
+
+function buildConfigOptions(options: Record<string, unknown>): Record<string, unknown> {
+  return {
+    criterion: Array.isArray(options.criterion) ? (options.criterion as string[]) : [],
+    format: typeof options.format === "string" ? options.format : undefined,
+    policy: typeof options.policy === "string" ? options.policy : undefined,
+    value: typeof options.value === "string" ? options.value : undefined,
+    clearCriteria: options.clearCriteria === true,
+    defaultDepth: typeof options.defaultDepth === "string" ? options.defaultDepth : undefined,
+    activityLimit: typeof options.activityLimit === "string" ? options.activityLimit : undefined,
+    staleThresholdDays: typeof options.staleThresholdDays === "string" ? options.staleThresholdDays : undefined,
+    sectionHierarchy: typeof options.sectionHierarchy === "string" ? options.sectionHierarchy : undefined,
+    sectionActivity: typeof options.sectionActivity === "string" ? options.sectionActivity : undefined,
+    sectionProgress: typeof options.sectionProgress === "string" ? options.sectionProgress : undefined,
+    sectionBlockers: typeof options.sectionBlockers === "string" ? options.sectionBlockers : undefined,
+    sectionFiles: typeof options.sectionFiles === "string" ? options.sectionFiles : undefined,
+    sectionWorkload: typeof options.sectionWorkload === "string" ? options.sectionWorkload : undefined,
+    sectionStaleness: typeof options.sectionStaleness === "string" ? options.sectionStaleness : undefined,
+    sectionTests: typeof options.sectionTests === "string" ? options.sectionTests : undefined,
+  };
+}
+
+async function runConfigCommandAction(
+  scope: string | undefined,
+  action: string | undefined,
+  key: string | undefined,
+  value: string | undefined,
+  options: Record<string, unknown>,
+  command: Command,
+): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const { runConfig } = await import("./commands/config.js");
+  const { resolvedScope, resolvedAction, resolvedKey, resolvedValue } = resolveConfigPositionals(scope, action, key, value);
+  const result = await runConfig(
+    resolvedScope,
+    resolvedAction,
+    resolvedKey,
+    buildConfigOptions(options),
+    globalOptions,
+    typeof resolvedValue === "string" ? resolvedValue : undefined,
+  );
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=config took_ms=${Date.now() - startedAt}`);
+  }
+}
+
 /**
  * Implements register setup commands for the public runtime surface of this module.
  */
@@ -425,30 +542,7 @@ export function registerSetupCommands(program: Command): void {
     .option("--verbose", "Include the full resolved settings tree in the output (default output is a concise summary)")
     .description("Initialize pm storage and defaults for the current workspace or a path-like tracker target.")
     .action(async (prefix: string | undefined, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const { runInit, summarizeInitResult } = await import("./commands/init.js");
-      const result = await runInit(
-        prefix,
-        globalOptions,
-        {
-          preset: typeof options.preset === "string" ? options.preset : undefined,
-          defaults: options.defaults === true || options.yes === true,
-          author: typeof options.author === "string" ? options.author : undefined,
-          agentGuidance: typeof options.agentGuidance === "string" ? options.agentGuidance : undefined,
-          typePreset: typeof options.typePreset === "string" ? options.typePreset : undefined,
-          withPackages: options.withPackages === true,
-          force: options.force === true,
-        },
-      );
-      // Default (toon) output is a concise summary to minimize agent token cost.
-      // --json consumers and --verbose both receive the full settings tree.
-      const verbose = options.verbose === true;
-      const emitFullTree = verbose || globalOptions.json === true;
-      printResult(emitFullTree ? result : summarizeInitResult(result), globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=init took_ms=${Date.now() - startedAt}`);
-      }
+      await runInitCommandAction(prefix, options, command);
     });
 
   program
@@ -491,47 +585,7 @@ export function registerSetupCommands(program: Command): void {
     .option("--section-tests <value>", "Enable/disable context tests section (true|false)")
     .description("Read or update pm settings for the current workspace or global profile.")
     .action(async (scope: string | undefined, action: string | undefined, key: string | undefined, value: string | undefined, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const criteria = Array.isArray(options.criterion) ? (options.criterion as string[]) : [];
-      const { runConfig } = await import("./commands/config.js");
-      const actionShorthands = new Set(["get", "set", "list", "export"]);
-      const scopeShorthand = scope !== undefined && actionShorthands.has(scope);
-      const resolvedScope = scopeShorthand ? "project" : (scope ?? "project");
-      const resolvedAction = scopeShorthand ? scope : (action ?? "list");
-      // When scope is an action shorthand, positionals shift left by one:
-      // [set] [key] [value] -> action=set, key=key, value=value.
-      const resolvedKey = scopeShorthand ? action : key;
-      const resolvedValue = scopeShorthand ? key : value;
-      const result = await runConfig(
-        resolvedScope,
-        resolvedAction,
-        resolvedKey,
-        {
-          criterion: criteria,
-          format: typeof options.format === "string" ? options.format : undefined,
-          policy: typeof options.policy === "string" ? options.policy : undefined,
-          value: typeof options.value === "string" ? options.value : undefined,
-          clearCriteria: options.clearCriteria === true,
-          defaultDepth: typeof options.defaultDepth === "string" ? options.defaultDepth : undefined,
-          activityLimit: typeof options.activityLimit === "string" ? options.activityLimit : undefined,
-          staleThresholdDays: typeof options.staleThresholdDays === "string" ? options.staleThresholdDays : undefined,
-          sectionHierarchy: typeof options.sectionHierarchy === "string" ? options.sectionHierarchy : undefined,
-          sectionActivity: typeof options.sectionActivity === "string" ? options.sectionActivity : undefined,
-          sectionProgress: typeof options.sectionProgress === "string" ? options.sectionProgress : undefined,
-          sectionBlockers: typeof options.sectionBlockers === "string" ? options.sectionBlockers : undefined,
-          sectionFiles: typeof options.sectionFiles === "string" ? options.sectionFiles : undefined,
-          sectionWorkload: typeof options.sectionWorkload === "string" ? options.sectionWorkload : undefined,
-          sectionStaleness: typeof options.sectionStaleness === "string" ? options.sectionStaleness : undefined,
-          sectionTests: typeof options.sectionTests === "string" ? options.sectionTests : undefined,
-        },
-        globalOptions,
-        typeof resolvedValue === "string" ? resolvedValue : undefined,
-      );
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=config took_ms=${Date.now() - startedAt}`);
-      }
+      await runConfigCommandAction(scope, action, key, value, options, command);
     });
 
   registerLifecycleCommand(program, "extension");

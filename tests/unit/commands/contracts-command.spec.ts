@@ -430,6 +430,7 @@ describe("contracts command helper coverage", () => {
       flags: [
         { flag: "--level", value_type: "number", required: true },
         { flag: "--items", repeatable: true, value_type: "string" },
+        { flag: "--labels", list: true, value_type: "string" },
         { flag: "----" },
       ],
       examples: [],
@@ -443,6 +444,7 @@ describe("contracts command helper coverage", () => {
     expect((branch.properties as Record<string, unknown>).rest).toMatchObject({ type: "array" });
     expect((branch.properties as Record<string, unknown>).level).toMatchObject({ type: ["number", "string"] });
     expect((branch.properties as Record<string, unknown>).items).toMatchObject({ type: "array" });
+    expect((branch.properties as Record<string, unknown>).labels).toMatchObject({ type: "array" });
 
     const merged = _testOnlyContractsCommand.mergeExtensionContractsByAction([
       {
@@ -1830,6 +1832,55 @@ describe("contracts command runtime", () => {
         name: "migrate-asset-contracts",
       });
       expect(migrateBranch?.["x-extension-commands"]).toEqual(["migrate-asset"]);
+    });
+  });
+
+  it("keeps extension command aliases selectable in command-scoped output", async () => {
+    await withTempPmPath(async (context) => {
+      await writeTestExtension({
+        root: context.pmPath,
+        placement: "projectRoot",
+        directory: "alias-contracts",
+        name: "alias-contracts",
+        manifest: {
+          name: "alias-contracts",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["commands", "schema"],
+        },
+        entryFilename: "index.mjs",
+        entrySource: [
+          "const flags = [{ long: '--label', list: true, value_type: 'string' }];",
+          "export default {",
+          "  activate(api) {",
+          "    api.registerCommand({ name: 'alias primary', action: 'alias-action', flags, run: () => ({ ok: true }) });",
+          "    api.registerCommand({ name: 'alias alt', action: 'alias-action', flags, run: () => ({ ok: true }) });",
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+      });
+
+      const result = await runContracts(
+        { command: "alias alt" },
+        {
+          ...GLOBAL_OPTIONS,
+          path: context.pmPath,
+        },
+      );
+
+      expect(result.extension_commands).toEqual([
+        expect.objectContaining({
+          command: "alias alt",
+          action: "alias-action",
+          flags: [expect.objectContaining({ flag: "--label", list: true })],
+        }),
+      ]);
+      const oneOf = (result.schema?.oneOf ?? []) as Array<{
+        properties?: Record<string, unknown>;
+      }>;
+      const aliasBranch = oneOf.find((entry) => (entry.properties?.action as { const?: string } | undefined)?.const === "alias-action");
+      expect(aliasBranch?.properties?.label).toMatchObject({ type: "array" });
     });
   });
 

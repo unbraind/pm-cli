@@ -917,6 +917,14 @@ describe("runPlan command family", () => {
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runPlan({
+          subcommand: "complete-step",
+          id: planId,
+          options: { author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          global: { ...GLOBAL, path: context.pmPath },
+        }),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
     });
   });
 

@@ -188,59 +188,72 @@ function runPm(label, args, env, options) {
   }
 }
 
+function setupSmokeProject(tempRoot, packageName, options) {
+  const projectRoot = path.join(tempRoot, "project");
+  const pmPath = path.join(projectRoot, ".agents", "pm");
+  const globalPath = path.join(tempRoot, "global");
+  mkdirSync(projectRoot, { recursive: true });
+  mkdirSync(globalPath, { recursive: true });
+  writeFileSync(path.join(projectRoot, "README.md"), "# External package smoke project\n", "utf8");
+  const env = {
+    ...process.env,
+    PM_PATH: pmPath,
+    PM_GLOBAL_PATH: globalPath,
+    PM_AUTHOR: "external-package-smoke",
+    PM_TELEMETRY_SOURCE_CONTEXT: process.env.PM_TELEMETRY_SOURCE_CONTEXT || "external-package-smoke",
+  };
+  const commands = [];
+  const record = (label, args) => {
+    const result = runPm(label, args, env, {
+      cwd: projectRoot,
+      timeoutMs: options.timeoutMs,
+    });
+    commands.push(result.entry);
+    if (result.entry.code !== 0) {
+      throw new Error(result.entry.error || `${label} failed`);
+    }
+    return result.payload;
+  };
+  return { commands, record, packageName };
+}
+
+function validatePackageDoctor(doctor) {
+  const summary = doctor?.details?.summary ?? {};
+  const activationFailures = summary.activation_failure_count ?? 0;
+  const blockingFailures = summary.blocking_failure_count ?? 0;
+  if (activationFailures > 0 || blockingFailures > 0) {
+    throw new Error(`package doctor reported activation=${activationFailures} blocking=${blockingFailures}`);
+  }
+  return { activationFailures, blockingFailures };
+}
+
+function availableRuntimeActions(contracts) {
+  return Array.isArray(contracts?.action_availability)
+    ? contracts.action_availability
+        .filter((entry) => entry?.invocable === true && typeof entry.action === "string")
+        .map((entry) => entry.action)
+    : [];
+}
+
 function smokePackage(packageName, options) {
   const tempRoot = mkdtempSync(path.join(tmpdir(), "pm-external-package-smoke-"));
-  const commands = [];
   const startedAt = Date.now();
+  let commands = [];
   // Shared so the success and failure returns expose the same temp-root policy
   // through a single branch (kept temp roots are surfaced only when requested).
   const reportedTempRoot = options.keepTemp ? tempRoot : undefined;
 
   try {
-    const projectRoot = path.join(tempRoot, "project");
-    const pmPath = path.join(projectRoot, ".agents", "pm");
-    const globalPath = path.join(tempRoot, "global");
-    mkdirSync(projectRoot, { recursive: true });
-    mkdirSync(globalPath, { recursive: true });
-    writeFileSync(path.join(projectRoot, "README.md"), "# External package smoke project\n", "utf8");
-
-    const env = {
-      ...process.env,
-      PM_PATH: pmPath,
-      PM_GLOBAL_PATH: globalPath,
-      PM_AUTHOR: "external-package-smoke",
-      PM_TELEMETRY_SOURCE_CONTEXT: process.env.PM_TELEMETRY_SOURCE_CONTEXT || "external-package-smoke",
-    };
-
-    function record(label, args) {
-      const result = runPm(label, args, env, {
-        cwd: projectRoot,
-        timeoutMs: options.timeoutMs,
-      });
-      commands.push(result.entry);
-      if (result.entry.code !== 0) {
-        throw new Error(result.entry.error || `${label} failed`);
-      }
-      return result.payload;
-    }
+    const setup = setupSmokeProject(tempRoot, packageName, options);
+    commands = setup.commands;
+    const { record } = setup;
 
     record("init", ["init", "--defaults", "--author", "external-package-smoke"]);
     const install = record("install", ["install", `npm:${packageName}`, "--project"]);
     const doctor = record("package doctor", ["package", "doctor", "--project", "--detail", "deep", "--trace"]);
     const contracts = record("runtime contracts", ["contracts", "--runtime-only", "--availability-only"]);
 
-    const summary = doctor?.details?.summary ?? {};
-    const activationFailures = summary.activation_failure_count ?? 0;
-    const blockingFailures = summary.blocking_failure_count ?? 0;
-    if (activationFailures > 0 || blockingFailures > 0) {
-      throw new Error(`package doctor reported activation=${activationFailures} blocking=${blockingFailures}`);
-    }
-
-    const availableActions = Array.isArray(contracts?.action_availability)
-      ? contracts.action_availability
-          .filter((entry) => entry?.invocable === true && typeof entry.action === "string")
-          .map((entry) => entry.action)
-      : [];
+    const { activationFailures, blockingFailures } = validatePackageDoctor(doctor);
     return {
       package: packageName,
       ok: true,
@@ -250,7 +263,7 @@ function smokePackage(packageName, options) {
       activation_failure_count: activationFailures,
       blocking_failure_count: blockingFailures,
       warning_codes: doctor?.details?.triage?.warning_codes ?? [],
-      available_runtime_actions: availableActions,
+      available_runtime_actions: availableRuntimeActions(contracts),
       commands,
     };
   } catch (error) {

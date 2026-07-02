@@ -803,7 +803,7 @@ describe("runSearch", () => {
       runtime_definition: {
         name: "ext-provider",
         query: () => {
-          throw new Error("provider failed");
+          throw "provider failed";
         },
       },
     });
@@ -3152,6 +3152,13 @@ describe("classifyImplicitSemanticFallbackReason", () => {
       expect(compactCounted.count_only).toBe(true);
       expect(compactCounted.count).toBe(3);
       expect(compactCounted.items).toEqual([]);
+
+      const fieldsCounted = await runSearch(
+        "alpha",
+        { mode: "keyword", count: true, fields: "id,score" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(fieldsCounted.projection).toEqual({ mode: "fields", fields: ["id", "score"] });
     });
 
     it("keeps the count-only shape when --count matches nothing (empty-result path)", async () => {
@@ -3289,6 +3296,13 @@ describe("classifyImplicitSemanticFallbackReason", () => {
         { path: "/tmp/pm-search" },
       );
       expect(compactAllStatus.filters.status).toBe("all");
+
+      const compactWarning = await runSearch(
+        "alpha status:closed",
+        { mode: "keyword", compact: true, status: "open" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(compactWarning.warnings).toEqual(["search_inline_filter_ignored:status:flag_takes_precedence"]);
     });
   });
 });

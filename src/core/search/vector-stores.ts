@@ -422,34 +422,58 @@ function parseLanceDbSnapshot(snapshotPath: string, expectedTable: string, raw: 
   return tableRecords;
 }
 
-async function loadLanceDbLocalTable(storePath: string, table: string): Promise<Map<string, VectorRecord>> {
-  const key = getLanceDbLocalTableKey(storePath, table);
-  const snapshotPath = getLanceDbSnapshotPath(storePath, table);
-  let snapshotStats: { mtimeMs: number; size: number } | null = null;
+async function readLanceDbSnapshotStats(snapshotPath: string): Promise<{ mtimeMs: number; size: number } | null> {
   try {
     const stats = await stat(snapshotPath);
-    snapshotStats = { mtimeMs: stats.mtimeMs, size: stats.size };
+    return { mtimeMs: stats.mtimeMs, size: stats.size };
   } catch (error) {
     if (!isNodeErrorWithCode(error, "ENOENT")) {
       throw error;
     }
+    return null;
   }
+}
+
+function resolveMissingLanceDbSnapshotCache(
+  key: string,
+  cached: LanceDbLocalTableCacheEntry | undefined,
+): Map<string, VectorRecord> | null {
+  if (!cached) {
+    return null;
+  }
+  if (cached.mtimeMs === null && cached.size === null && cached.records.size === 0) {
+    return cached.records;
+  }
+  const loaded = new Map<string, VectorRecord>();
+  lanceDbLocalTables.set(key, { records: loaded, mtimeMs: null, size: null });
+  return loaded;
+}
+
+function cachedLanceDbSnapshotMatches(
+  cached: LanceDbLocalTableCacheEntry | undefined,
+  snapshotStats: { mtimeMs: number; size: number } | null,
+): cached is LanceDbLocalTableCacheEntry {
+  return (
+    cached !== undefined &&
+      snapshotStats !== null &&
+      cached.mtimeMs === snapshotStats.mtimeMs &&
+      cached.size === snapshotStats.size
+  );
+}
+
+async function loadLanceDbLocalTable(storePath: string, table: string): Promise<Map<string, VectorRecord>> {
+  const key = getLanceDbLocalTableKey(storePath, table);
+  const snapshotPath = getLanceDbSnapshotPath(storePath, table);
+  const snapshotStats = await readLanceDbSnapshotStats(snapshotPath);
 
   const cached = lanceDbLocalTables.get(key);
-  if (cached && !snapshotStats) {
-    if (cached.mtimeMs === null && cached.size === null && cached.records.size === 0) {
-      return cached.records;
+  if (!snapshotStats) {
+    const resolved = resolveMissingLanceDbSnapshotCache(key, cached);
+    if (resolved) {
+      return resolved;
     }
-    const loaded = new Map<string, VectorRecord>();
-    lanceDbLocalTables.set(key, { records: loaded, mtimeMs: null, size: null });
-    return loaded;
   }
-  if (
-    cached &&
-    snapshotStats &&
-    cached.mtimeMs === snapshotStats.mtimeMs &&
-    cached.size === snapshotStats.size
-  ) {
+  if (cachedLanceDbSnapshotMatches(cached, snapshotStats)) {
     return cached.records;
   }
 

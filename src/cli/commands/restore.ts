@@ -51,6 +51,19 @@ interface ResolvedRestoreSubject {
   historyPolicyWarnings: string[];
 }
 
+interface RestoreCurrentState {
+  document: ItemDocument;
+  originalRaw: string | null;
+}
+
+interface PatchFailureContext {
+  patchIndex?: number;
+  op?: string;
+  path?: string;
+  from?: string;
+  reason?: string;
+}
+
 /**
  * Documents the restore command options payload exchanged by command, SDK, and package integrations.
  */
@@ -133,8 +146,8 @@ function ensureReplayTarget(target: string, history: HistoryEntry[]): ResolvedRe
 function extractPatchFailureContext(
   patch: HistoryPatchOp[],
   error: unknown,
-): { patchIndex?: number; op?: string; path?: string; from?: string; reason?: string } {
-  const context: { patchIndex?: number; op?: string; path?: string; from?: string; reason?: string } = {};
+): PatchFailureContext {
+  const context: PatchFailureContext = {};
   if (error instanceof Error && error.message.trim().length > 0) {
     context.reason = error.message.trim();
   }
@@ -156,9 +169,20 @@ function extractPatchFailureContext(
       ? (candidate.operation as { op?: unknown; path?: unknown; from?: unknown })
       : null;
   /* c8 ignore stop */
+  enrichPatchFailureContext(context, operationRecord, patch);
+  return context;
+}
+
+function enrichPatchFailureContext(
+  context: PatchFailureContext,
+  operationRecord: { op?: unknown; path?: unknown; from?: unknown } | null,
+  patch: HistoryPatchOp[],
+): void {
+  /* v8 ignore start -- operation replay records always carry a string op when present; this preserves context for malformed future rows */
   if (operationRecord && typeof operationRecord.op === "string") {
     context.op = operationRecord.op;
   }
+  /* v8 ignore stop */
   if (operationRecord && typeof operationRecord.path === "string") {
     context.path = operationRecord.path;
   }
@@ -175,7 +199,6 @@ function extractPatchFailureContext(
     }
     /* c8 ignore stop */
   }
-  return context;
 }
 
 function applyHistoryPatch(
@@ -349,6 +372,108 @@ function changedFields(beforeDocument: ItemDocument, afterDocument: ItemDocument
   return Array.from(fields).sort((a, b) => a.localeCompare(b));
 }
 
+async function loadRestoreStateUnderLock(params: {
+  pmRoot: string;
+  resolvedId: string;
+  subject: ResolvedRestoreSubject;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  typeToFolder: Record<string, string>;
+  historyRawBeforeLock: string | null;
+  currentItemRawBeforeLock: string | null;
+}): Promise<{ loadedItemUnderLock: Awaited<ReturnType<typeof readLocatedItem>> | null; existingItemPath: string | null }> {
+  const historyRawUnderLock = await readFileIfExists(params.subject.historyPath);
+  if (historyRawUnderLock !== params.historyRawBeforeLock) {
+    throw new PmCliError(`History for ${params.resolvedId} changed while waiting for lock; retry restore.`, EXIT_CODE.CONFLICT);
+  }
+  const locatedUnderLock = await locateItem(
+    params.pmRoot,
+    params.resolvedId,
+    params.settings.id_prefix,
+    params.settings.item_format,
+    params.typeToFolder,
+  );
+  const loadedItemUnderLock = locatedUnderLock ? await readLocatedItem(locatedUnderLock, { schema: params.settings.schema }) : null;
+  if ((loadedItemUnderLock?.raw ?? null) !== params.currentItemRawBeforeLock) {
+    throw new PmCliError(`Item ${params.resolvedId} changed while waiting for lock; retry restore.`, EXIT_CODE.CONFLICT);
+  }
+  return { loadedItemUnderLock, existingItemPath: locatedUnderLock?.itemPath ?? null };
+}
+
+function resolveRestoreCurrentState(
+  loadedItemUnderLock: Awaited<ReturnType<typeof readLocatedItem>> | null,
+  history: HistoryEntry[],
+): RestoreCurrentState {
+  if (loadedItemUnderLock) {
+    return { document: loadedItemUnderLock.document, originalRaw: loadedItemUnderLock.raw };
+  }
+  return { document: replayCurrentDocument(history), originalRaw: null };
+}
+
+function collectRestoreOwnershipWarnings(params: {
+  document: ItemDocument;
+  author: string;
+  force: boolean | undefined;
+  enforcement: "strict" | "warn" | "none";
+  resolvedId: string;
+}): string[] {
+  const assigned = params.document.metadata.assignee?.trim();
+  const hasOwnershipConflict = assigned && assigned !== params.author && !params.force;
+  if (!hasOwnershipConflict) {
+    return [];
+  }
+  if (params.enforcement === "strict") {
+    throw new PmCliError(`Item ${params.resolvedId} is assigned to ${assigned}. Use --force to override.`, EXIT_CODE.CONFLICT);
+  }
+  return params.enforcement === "warn" ? [`ownership_warning:assignee_conflict:${params.resolvedId}:${assigned}`] : [];
+}
+
+async function restorePreviousItemAfterHistoryFailure(params: {
+  existingItemPath: string | null;
+  resolvedOriginalRaw: string | null;
+  restoredItemPath: string;
+}): Promise<void> {
+  if (params.existingItemPath && params.resolvedOriginalRaw !== null && params.restoredItemPath !== params.existingItemPath) {
+    await writeFileAtomic(params.existingItemPath, params.resolvedOriginalRaw);
+    await fs.rm(params.restoredItemPath, { force: true });
+    return;
+  }
+  if (params.existingItemPath && params.resolvedOriginalRaw !== null) {
+    await writeFileAtomic(params.existingItemPath, params.resolvedOriginalRaw);
+    return;
+  }
+  await fs.rm(params.restoredItemPath, { force: true });
+}
+
+async function runRestoreWriteHooks(params: {
+  restoredItemPath: string;
+  historyPath: string;
+  before: ItemDocument;
+  after: ItemDocument;
+}): Promise<string[]> {
+  return [
+    ...(await runActiveOnWriteHooks({
+      path: params.restoredItemPath,
+      scope: "project",
+      op: "restore",
+      item_id: params.after.metadata.id,
+      item_type: params.after.metadata.type,
+      before: params.before,
+      after: params.after,
+      changed_fields: ["restored"],
+    })),
+    ...(await runActiveOnWriteHooks({
+      path: params.historyPath,
+      scope: "project",
+      op: "restore:history",
+      item_id: params.after.metadata.id,
+      item_type: params.after.metadata.type,
+      before: params.before,
+      after: params.after,
+      changed_fields: ["restored"],
+    })),
+  ];
+}
+
 /**
  * Implements run restore for the public runtime surface of this module.
  */
@@ -397,49 +522,24 @@ export async function runRestore(
   );
 
   try {
-    const historyRawUnderLock = await readFileIfExists(subject.historyPath);
-    if (historyRawUnderLock !== historyRawBeforeLock) {
-      throw new PmCliError(
-        `History for ${resolvedId} changed while waiting for lock; retry restore.`,
-        EXIT_CODE.CONFLICT,
-      );
-    }
-    const locatedUnderLock = await locateItem(
+    const { loadedItemUnderLock, existingItemPath } = await loadRestoreStateUnderLock({
       pmRoot,
       resolvedId,
-      settings.id_prefix,
-      settings.item_format,
-      typeRegistry.type_to_folder,
-    );
-    const loadedItemUnderLock = locatedUnderLock ? await readLocatedItem(locatedUnderLock, { schema: settings.schema }) : null;
-    if ((loadedItemUnderLock?.raw ?? null) !== currentItemRawBeforeLock) {
-      throw new PmCliError(`Item ${resolvedId} changed while waiting for lock; retry restore.`, EXIT_CODE.CONFLICT);
-    }
-
-    const existingItemPath = locatedUnderLock?.itemPath ?? null;
+      subject,
+      settings,
+      typeToFolder: typeRegistry.type_to_folder,
+      historyRawBeforeLock,
+      currentItemRawBeforeLock,
+    });
     const itemFormat = "toon";
-    let resolvedCurrentDocument: ItemDocument;
-    let resolvedOriginalRaw: string | null = null;
-    if (loadedItemUnderLock) {
-      resolvedCurrentDocument = loadedItemUnderLock.document;
-      resolvedOriginalRaw = loadedItemUnderLock.raw;
-    } else {
-      resolvedCurrentDocument = replayCurrentDocument(history);
-    }
-    const assigned = resolvedCurrentDocument.metadata.assignee?.trim();
-    const ownershipWarnings: string[] = [];
-    const hasOwnershipConflict = assigned && assigned !== author && !options.force;
-    if (hasOwnershipConflict) {
-      if (settings.governance.ownership_enforcement === "strict") {
-        throw new PmCliError(
-          `Item ${resolvedId} is assigned to ${assigned}. Use --force to override.`,
-          EXIT_CODE.CONFLICT,
-        );
-      }
-      if (settings.governance.ownership_enforcement === "warn") {
-        ownershipWarnings.push(`ownership_warning:assignee_conflict:${resolvedId}:${assigned}`);
-      }
-    }
+    const currentState = resolveRestoreCurrentState(loadedItemUnderLock, history);
+    const ownershipWarnings = collectRestoreOwnershipWarnings({
+      document: currentState.document,
+      author,
+      force: options.force,
+      enforcement: settings.governance.ownership_enforcement,
+      resolvedId,
+    });
 
     const serializedRestore = serializeItemDocument(restoredDocument, { format: itemFormat, schema: settings.schema });
     /* c8 ignore next -- restored item path typing is exercised in restore integration workflows. */
@@ -459,7 +559,7 @@ export async function runRestore(
       nowIso: nowIso(),
       author,
       op: "restore",
-      before: resolvedCurrentDocument,
+      before: currentState.document,
       after: restoredDocument,
       message: options.message,
     });
@@ -467,46 +567,27 @@ export async function runRestore(
     try {
       await appendHistoryEntry(subject.historyPath, historyEntry);
     } catch (error: unknown) {
-      if (existingItemPath && resolvedOriginalRaw !== null && restoredItemPath !== existingItemPath) {
-        await writeFileAtomic(existingItemPath, resolvedOriginalRaw);
-        await fs.rm(restoredItemPath, { force: true });
-      } else if (existingItemPath && resolvedOriginalRaw !== null) {
-        await writeFileAtomic(existingItemPath, resolvedOriginalRaw);
-      } else {
-        await fs.rm(restoredItemPath, { force: true });
-      }
+      await restorePreviousItemAfterHistoryFailure({
+        existingItemPath,
+        resolvedOriginalRaw: currentState.originalRaw,
+        restoredItemPath,
+      });
       throw error;
     }
-    const restoreChangedFields = changedFields(resolvedCurrentDocument, restoredDocument);
-    const hookWarnings = [
-      ...(await runActiveOnWriteHooks({
-        path: restoredItemPath,
-        scope: "project",
-        op: "restore",
-        item_id: restoredDocument.metadata.id,
-        item_type: restoredDocument.metadata.type,
-        before: resolvedCurrentDocument,
-        after: restoredDocument,
-        changed_fields: ["restored"],
-      })),
-      ...(await runActiveOnWriteHooks({
-        path: subject.historyPath,
-        scope: "project",
-        op: "restore:history",
-        item_id: restoredDocument.metadata.id,
-        item_type: restoredDocument.metadata.type,
-        before: resolvedCurrentDocument,
-        after: restoredDocument,
-        changed_fields: ["restored"],
-      })),
-    ];
+    const restoreChangedFields = changedFields(currentState.document, restoredDocument);
+    const hookWarnings = await runRestoreWriteHooks({
+      restoredItemPath,
+      historyPath: subject.historyPath,
+      before: currentState.document,
+      after: restoredDocument,
+    });
     recordAfterCommandAffectedItem({
       id: restoredDocument.metadata.id,
       op: "restore",
       item_type: restoredDocument.metadata.type,
-      previous_status: resolvedCurrentDocument.metadata.status,
+      previous_status: currentState.document.metadata.status,
       status: restoredDocument.metadata.status,
-      previous: projectAfterCommandItemSnapshot(resolvedCurrentDocument.metadata, restoreChangedFields),
+      previous: projectAfterCommandItemSnapshot(currentState.document.metadata, restoreChangedFields),
       current: projectAfterCommandItemSnapshot(restoredDocument.metadata, restoreChangedFields),
       changed_fields: restoreChangedFields,
     });

@@ -18,6 +18,7 @@ import { readSettings } from "../../core/store/settings.js";
 import { parseIntegerLimit } from "../shared-parsers.js";
 import type { ItemFrontMatter, LinkedDoc, LinkedFile, LinkedTest } from "../../types/index.js";
 import { readHistoryEntries } from "./history.js";
+import { runList } from "./list.js";
 
 interface ClaimHistoryContext {
   ts: string;
@@ -214,19 +215,38 @@ function fieldsIncludeRoot(fields: string[], name: string): boolean {
   return fields.some((field) => field === name || field.startsWith(`${name}.`));
 }
 
-/**
- * Implements run get for the public runtime surface of this module.
- */
-export async function runGet(id: string, global: GlobalOptions, options: GetOptions = {}): Promise<GetResult> {
+interface ResolvedGetProjection {
+  depth: GetDepth;
+  treeDepth: number | undefined;
+  fields: string[] | null;
+  fieldProjection: boolean;
+}
+
+interface GetItemContext {
+  pmRoot: string;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  typeToFolder: Record<string, string>;
+  locatedId: string;
+  metadata: ItemFrontMatter;
+  body: string;
+}
+
+function resolveGetProjection(options: GetOptions): ResolvedGetProjection {
   if (options.full && (options.fields !== undefined || options.depth !== undefined)) {
     throw new PmCliError("Get projection options are mutually exclusive; remove the extra projection flag and retry.", EXIT_CODE.USAGE);
   }
   if (options.tree !== true && options.treeDepth !== undefined) {
     throw new PmCliError("Get --tree-depth requires --tree", EXIT_CODE.USAGE);
   }
-  const depth = options.full ? "deep" : parseGetDepth(options.depth);
-  const treeDepth = options.tree === true ? parseIntegerLimit(options.treeDepth, "--tree-depth") : undefined;
-  const fields = parseGetFields(options.fields);
+  return {
+    depth: options.full ? "deep" : parseGetDepth(options.depth),
+    treeDepth: options.tree === true ? parseIntegerLimit(options.treeDepth, "--tree-depth") : undefined,
+    fields: parseGetFields(options.fields),
+    fieldProjection: options.fields !== undefined,
+  };
+}
+
+async function loadGetItemContext(id: string, global: GlobalOptions): Promise<GetItemContext> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
@@ -238,92 +258,152 @@ export async function runGet(id: string, global: GlobalOptions, options: GetOpti
     throw await buildItemNotFoundError(pmRoot, id, settings.id_prefix, typeRegistry.type_to_folder);
   }
   const loaded = await readLocatedItem(located, { schema: settings.schema });
-  const runtimeMetadataKeys: string[] = [];
-  for (const field of resolveRuntimeFieldRegistry(settings.schema).definitions) {
-    runtimeMetadataKeys.push(field.metadata_key);
-  }
+  return {
+    pmRoot,
+    settings,
+    typeToFolder: typeRegistry.type_to_folder,
+    locatedId: located.id,
+    metadata: loaded.document.metadata,
+    body: loaded.document.body,
+  };
+}
+
+function validateGetProjectionFields(fields: string[] | null, settings: Awaited<ReturnType<typeof readSettings>>): void {
+  const runtimeMetadataKeys = resolveRuntimeFieldRegistry(settings.schema).definitions.map((field) => field.metadata_key);
   validateGetFields(fields, runtimeMetadataKeys);
-  const files = loaded.document.metadata.files ?? [];
-  const tests = loaded.document.metadata.tests ?? [];
-  const docs = loaded.document.metadata.docs ?? [];
-  const fieldProjection = fields !== null;
-  const includeBody = !fieldProjection ? depth !== "brief" : fieldsInclude(fields, "body");
-  const includeLinked = !fieldProjection ? depth !== "brief" : fieldsInclude(fields, "linked");
+}
+
+function shouldIncludeGetField(params: {
+  fieldProjection: boolean;
+  depth: GetDepth;
+  fields: string[] | null;
+  field: "body" | "linked" | "claim_state" | "children";
+  itemType?: string;
+}): boolean {
+  const { fieldProjection, depth, fields, field, itemType } = params;
+  if (fieldProjection) {
+    if (field === "body" || field === "linked") {
+      return fieldsInclude(fields, field);
+    }
+    return fieldsIncludeRoot(fields as string[], field);
+  }
+  if (field === "children") {
+    return depth !== "brief" && CHILD_ROLLUP_TYPES.has(itemType as string);
+  }
+  return depth !== "brief";
+}
+
+async function resolveGetClaimState(context: GetItemContext, includeClaimState: boolean): Promise<ClaimStateContext | undefined> {
+  if (!includeClaimState) {
+    return undefined;
+  }
+  const historyPath = getHistoryPath(context.pmRoot, context.locatedId);
+  const history = await readHistoryEntries(historyPath, context.locatedId);
+  return resolveClaimStateContext(context.metadata.assignee, history);
+}
+
+function attachGetLinked(
+  result: GetResult,
+  context: GetItemContext,
+  fields: string[] | null,
+  includeLinked: boolean,
+): void {
   const includeLinkedFiles = includeLinked || fieldsInclude(fields, "linked.files");
   const includeLinkedTests = includeLinked || fieldsInclude(fields, "linked.tests");
   const includeLinkedDocs = includeLinked || fieldsInclude(fields, "linked.docs");
-  const includeClaimState = !fieldProjection ? depth !== "brief" : fieldsIncludeRoot(fields, "claim_state");
-  let claimState: ClaimStateContext | undefined;
-  if (includeClaimState) {
-    const historyPath = getHistoryPath(pmRoot, located.id);
-    let history: ClaimHistoryEntry[] = [];
-    try {
-      history = await readHistoryEntries(historyPath, located.id);
-    } catch {
-      history = [];
-    }
-    claimState = resolveClaimStateContext(loaded.document.metadata.assignee, history);
+  if (!includeLinked && !includeLinkedFiles && !includeLinkedTests && !includeLinkedDocs) {
+    return;
   }
+  result.linked = {
+    files: includeLinkedFiles ? context.metadata.files ?? [] : [],
+    tests: includeLinkedTests ? context.metadata.tests ?? [] : [],
+    docs: includeLinkedDocs ? context.metadata.docs ?? [] : [],
+  };
+}
+
+async function buildGetChildrenRollup(context: GetItemContext, includeChildren: boolean): Promise<ChildRollupContext | undefined> {
+  if (!includeChildren) {
+    return undefined;
+  }
+  const statusRegistry = resolveRuntimeStatusRegistry(context.settings.schema);
+  const corpus = await listAllFrontMatterLight(
+    context.pmRoot,
+    context.settings.item_format,
+    context.typeToFolder,
+    undefined,
+    context.settings.schema,
+  );
+  const byStatus: Record<string, number> = {};
+  let active = 0;
+  let count = 0;
+  const locatedId = context.locatedId.trim().toLowerCase();
+  for (const candidate of corpus) {
+    const parentId = typeof candidate.parent === "string" ? candidate.parent.trim().toLowerCase() : "";
+    if (parentId !== locatedId) continue;
+    const candidateStatus = candidate.status.trim().toLowerCase();
+    count += 1;
+    byStatus[candidateStatus] = (byStatus[candidateStatus] ?? 0) + 1;
+    if (!isTerminalStatus(candidateStatus, statusRegistry)) {
+      active += 1;
+    }
+  }
+  return { count, active, by_status: byStatus };
+}
+
+async function buildGetTree(
+  context: GetItemContext,
+  options: GetOptions,
+  treeDepth: number | undefined,
+  global: GlobalOptions,
+): Promise<GetResult["tree"] | undefined> {
+  if (options.tree !== true) {
+    return undefined;
+  }
+  const subtree = await runList(
+    undefined,
+    {
+      parent: context.locatedId,
+      tree: true,
+      treeDepth: treeDepth === undefined ? undefined : String(treeDepth),
+      full: true,
+    },
+    global,
+  );
+  return {
+    root_id: context.locatedId,
+    root_title: context.metadata.title,
+    depth_limit: treeDepth ?? null,
+    count: subtree.count,
+    items: subtree.items.map((entry) => toItemRecord(entry)),
+  };
+}
+
+/**
+ * Implements run get for the public runtime surface of this module.
+ */
+export async function runGet(id: string, global: GlobalOptions, options: GetOptions = {}): Promise<GetResult> {
+  const projection = resolveGetProjection(options);
+  const context = await loadGetItemContext(id, global);
+  validateGetProjectionFields(projection.fields, context.settings);
+  const includeBody = shouldIncludeGetField({ ...projection, field: "body" });
+  const includeLinked = shouldIncludeGetField({ ...projection, field: "linked" });
+  const includeClaimState = shouldIncludeGetField({ ...projection, field: "claim_state" });
+  const itemType = context.metadata.type.trim().toLowerCase();
+  const includeChildren = shouldIncludeGetField({ ...projection, field: "children", itemType });
+  const claimState = await resolveGetClaimState(context, includeClaimState);
   const result: GetResult = {
-    item: fieldProjection
-      ? projectItemForFields(loaded.document.metadata, fields)
-      : projectItemForDepth(loaded.document.metadata, depth),
+    item: projection.fieldProjection
+      ? projectItemForFields(context.metadata, projection.fields as string[])
+      : projectItemForDepth(context.metadata, projection.depth),
   };
   if (includeBody) {
-    result.item.body = loaded.document.body;
+    result.item.body = context.body;
   }
-  if (includeLinked || includeLinkedFiles || includeLinkedTests || includeLinkedDocs) {
-    result.linked = {
-      files: includeLinkedFiles ? files : [],
-      tests: includeLinkedTests ? tests : [],
-      docs: includeLinkedDocs ? docs : [],
-    };
-  }
+  attachGetLinked(result, context, projection.fields, includeLinked);
   if (claimState) {
     result.claim_state = claimState;
   }
-  const itemType = loaded.document.metadata.type.trim().toLowerCase();
-  const includeChildren = fieldProjection
-    ? fieldsIncludeRoot(fields, "children")
-    : depth !== "brief" && CHILD_ROLLUP_TYPES.has(itemType);
-  if (includeChildren) {
-    const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-    const corpus = await listAllFrontMatterLight(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema);
-    const byStatus: Record<string, number> = {};
-    let active = 0;
-    let count = 0;
-    const locatedId = located.id.trim().toLowerCase();
-    for (const candidate of corpus) {
-      const parentId = typeof candidate.parent === "string" ? candidate.parent.trim().toLowerCase() : "";
-      if (parentId !== locatedId) continue;
-      const candidateStatus = candidate.status.trim().toLowerCase();
-      count += 1;
-      byStatus[candidateStatus] = (byStatus[candidateStatus] ?? 0) + 1;
-      if (!isTerminalStatus(candidateStatus, statusRegistry)) {
-        active += 1;
-      }
-    }
-    result.children = { count, active, by_status: byStatus };
-  }
-  if (options.tree === true) {
-    const { runList } = await import("./list.js");
-    const subtree = await runList(
-      undefined,
-      {
-        parent: located.id,
-        tree: true,
-        treeDepth: treeDepth === undefined ? undefined : String(treeDepth),
-        full: true,
-      },
-      global,
-    );
-    result.tree = {
-      root_id: located.id,
-      root_title: loaded.document.metadata.title,
-      depth_limit: treeDepth ?? null,
-      count: subtree.count,
-      items: subtree.items.map((entry) => toItemRecord(entry)),
-    };
-  }
+  result.children = await buildGetChildrenRollup(context, includeChildren);
+  result.tree = await buildGetTree(context, options, projection.treeDepth, global);
   return result;
 }

@@ -104,6 +104,25 @@ interface TelemetryStatsBucket {
   command_resolution_counts?: Record<string, number>;
 }
 
+interface TelemetryStatsBucketAccumulator {
+  count: number;
+  max_attempts: number;
+  event_type_counts: Record<string, number>;
+  event_schema_versions: Set<number>;
+  client_schema_versions: Set<number>;
+  finish_durations_ms: number[];
+  ok_count: number;
+  error_count: number;
+  resolution_counts: Record<string, number>;
+}
+
+interface NormalizedTelemetryQueueEntry {
+  command: string;
+  eventType: string;
+  eventSchemaVersion: number | undefined;
+  clientSchemaVersion: number | undefined;
+}
+
 /**
  * Returns the nearest-rank percentile of an ascending-sorted, non-empty array.
  *
@@ -114,6 +133,110 @@ function nearestRankPercentile(sortedAscending: number[], fraction: number): num
   const rank = Math.ceil(fraction * sortedAscending.length);
   const index = Math.min(sortedAscending.length - 1, Math.max(0, rank - 1));
   return sortedAscending[index];
+}
+
+function normalizeTelemetryQueueEntry(entry: QueuedTelemetryEventRecord): NormalizedTelemetryQueueEntry {
+  const command = typeof entry.event.command === "string" && entry.event.command.trim().length > 0
+    ? entry.event.command
+    : "<unknown>";
+  const eventType = typeof entry.event.event_type === "string" && entry.event.event_type.trim().length > 0
+    ? entry.event.event_type
+    : "unknown";
+  const eventSchemaVersion = typeof entry.event.schema_version === "number" && Number.isFinite(entry.event.schema_version)
+    ? Math.trunc(entry.event.schema_version)
+    : undefined;
+  const clientSchemaVersion =
+    typeof entry.client_schema_version === "number" && Number.isFinite(entry.client_schema_version)
+      ? Math.trunc(entry.client_schema_version)
+      : undefined;
+  return { command, eventType, eventSchemaVersion, clientSchemaVersion };
+}
+
+function createTelemetryStatsAccumulator(): TelemetryStatsBucketAccumulator {
+  return {
+    count: 0,
+    max_attempts: 0,
+    event_type_counts: {},
+    event_schema_versions: new Set<number>(),
+    client_schema_versions: new Set<number>(),
+    finish_durations_ms: [],
+    ok_count: 0,
+    error_count: 0,
+    resolution_counts: {},
+  };
+}
+
+function recordTelemetryFinishPayload(current: TelemetryStatsBucketAccumulator, payload: Record<string, unknown> | undefined): void {
+  const durationMs = typeof payload?.duration_ms === "number" && Number.isFinite(payload.duration_ms)
+    ? payload.duration_ms
+    : undefined;
+  if (durationMs !== undefined) {
+    current.finish_durations_ms.push(durationMs);
+  }
+  if (payload?.ok === true) {
+    current.ok_count += 1;
+  } else {
+    current.error_count += 1;
+  }
+  const resolution = typeof payload?.command_resolution === "string" && payload.command_resolution.trim().length > 0
+    ? payload.command_resolution
+    : undefined;
+  if (resolution !== undefined) {
+    current.resolution_counts[resolution] = (current.resolution_counts[resolution] ?? 0) + 1;
+  }
+}
+
+function recordTelemetryQueueEntry(
+  grouped: Map<string, TelemetryStatsBucketAccumulator>,
+  entry: QueuedTelemetryEventRecord,
+): void {
+  const normalized = normalizeTelemetryQueueEntry(entry);
+  const current = grouped.get(normalized.command) ?? createTelemetryStatsAccumulator();
+  const attempts = Number.isFinite(entry.attempts) ? Math.max(0, Math.trunc(entry.attempts)) : 0;
+  current.count += 1;
+  current.max_attempts = Math.max(current.max_attempts, attempts);
+  current.event_type_counts[normalized.eventType] = (current.event_type_counts[normalized.eventType] ?? 0) + 1;
+  if (normalized.eventSchemaVersion !== undefined) {
+    current.event_schema_versions.add(normalized.eventSchemaVersion);
+  }
+  if (normalized.clientSchemaVersion !== undefined) {
+    current.client_schema_versions.add(normalized.clientSchemaVersion);
+  }
+  if (normalized.eventType === "command_finish") {
+    recordTelemetryFinishPayload(current, entry.event.payload);
+  }
+  grouped.set(normalized.command, current);
+}
+
+function buildTelemetryStatsBucket(command: string, value: TelemetryStatsBucketAccumulator): TelemetryStatsBucket {
+  const finishCount = value.ok_count + value.error_count;
+  const sortedDurations = [...value.finish_durations_ms].sort((left, right) => left - right);
+  const resolutionEntries = Object.entries(value.resolution_counts).sort((left, right) => left[0].localeCompare(right[0]));
+  return {
+    command,
+    count: value.count,
+    event_type_counts: Object.fromEntries(
+      Object.entries(value.event_type_counts).sort((left, right) => left[0].localeCompare(right[0])),
+    ),
+    max_attempts: value.max_attempts,
+    event_schema_versions: [...value.event_schema_versions].sort((left, right) => left - right),
+    client_schema_versions: [...value.client_schema_versions].sort((left, right) => left - right),
+    ...(sortedDurations.length > 0
+      ? {
+          duration_p50_ms: nearestRankPercentile(sortedDurations, 0.5),
+          duration_p95_ms: nearestRankPercentile(sortedDurations, 0.95),
+          duration_max_ms: sortedDurations[sortedDurations.length - 1],
+        }
+      : {}),
+    ...(finishCount > 0
+      ? {
+          ok_count: value.ok_count,
+          error_count: value.error_count,
+          error_rate: value.error_count / finishCount,
+        }
+      : {}),
+    ...(resolutionEntries.length > 0 ? { command_resolution_counts: Object.fromEntries(resolutionEntries) } : {}),
+  };
 }
 
 function normalizeTelemetrySubcommand(value: string | undefined): TelemetrySubcommand {
@@ -242,115 +365,15 @@ async function buildTelemetryStatusSummary(globalPmRoot: string): Promise<Teleme
 }
 
 function buildTelemetryStatsBuckets(entries: QueuedTelemetryEventRecord[]): TelemetryStatsBucket[] {
-  const grouped = new Map<
-    string,
-    {
-      count: number;
-      max_attempts: number;
-      event_type_counts: Record<string, number>;
-      event_schema_versions: Set<number>;
-      client_schema_versions: Set<number>;
-      finish_durations_ms: number[];
-      ok_count: number;
-      error_count: number;
-      resolution_counts: Record<string, number>;
-    }
-  >();
+  const grouped = new Map<string, TelemetryStatsBucketAccumulator>();
   for (const entry of entries) {
-    const command = typeof entry.event.command === "string" && entry.event.command.trim().length > 0
-      ? entry.event.command
-      : "<unknown>";
-    const eventType = typeof entry.event.event_type === "string" && entry.event.event_type.trim().length > 0
-      ? entry.event.event_type
-      : "unknown";
-    const eventSchemaVersion = typeof entry.event.schema_version === "number" && Number.isFinite(entry.event.schema_version)
-      ? Math.trunc(entry.event.schema_version)
-      : undefined;
-    const clientSchemaVersion =
-      typeof entry.client_schema_version === "number" && Number.isFinite(entry.client_schema_version)
-        ? Math.trunc(entry.client_schema_version)
-        : undefined;
-    const current = grouped.get(command) ?? {
-      count: 0,
-      max_attempts: 0,
-      event_type_counts: {},
-      event_schema_versions: new Set<number>(),
-      client_schema_versions: new Set<number>(),
-      finish_durations_ms: [],
-      ok_count: 0,
-      error_count: 0,
-      resolution_counts: {},
-    };
-    current.count += 1;
-    current.max_attempts = Math.max(current.max_attempts, Math.max(0, Math.trunc(entry.attempts)));
-    current.event_type_counts[eventType] = (current.event_type_counts[eventType] ?? 0) + 1;
-    if (eventSchemaVersion !== undefined) {
-      current.event_schema_versions.add(eventSchemaVersion);
-    }
-    if (clientSchemaVersion !== undefined) {
-      current.client_schema_versions.add(clientSchemaVersion);
-    }
     // Latency + outcome distribution come from command_finish payloads only:
     // command_finish always carries duration_ms/ok/command_resolution at every
     // capture level, while start/error events do not.
-    if (eventType === "command_finish") {
-      const payload = entry.event.payload;
-      const durationMs = typeof payload?.duration_ms === "number" && Number.isFinite(payload.duration_ms)
-        ? payload.duration_ms
-        : undefined;
-      if (durationMs !== undefined) {
-        current.finish_durations_ms.push(durationMs);
-      }
-      // Conservative: a finish event whose ok is missing/malformed counts as an error.
-      if (payload?.ok === true) {
-        current.ok_count += 1;
-      } else {
-        current.error_count += 1;
-      }
-      const resolution = typeof payload?.command_resolution === "string" && payload.command_resolution.trim().length > 0
-        ? payload.command_resolution
-        : undefined;
-      if (resolution !== undefined) {
-        current.resolution_counts[resolution] = (current.resolution_counts[resolution] ?? 0) + 1;
-      }
-    }
-    grouped.set(command, current);
+    recordTelemetryQueueEntry(grouped, entry);
   }
   return [...grouped.entries()]
-    .map(([command, value]) => {
-      const finishCount = value.ok_count + value.error_count;
-      const sortedDurations = [...value.finish_durations_ms].sort((left, right) => left - right);
-      const resolutionEntries = Object.entries(value.resolution_counts).sort((left, right) =>
-        left[0].localeCompare(right[0]),
-      );
-      return {
-        command,
-        count: value.count,
-        event_type_counts: Object.fromEntries(
-          Object.entries(value.event_type_counts).sort((left, right) => left[0].localeCompare(right[0])),
-        ),
-        max_attempts: value.max_attempts,
-        event_schema_versions: [...value.event_schema_versions].sort((left, right) => left - right),
-        client_schema_versions: [...value.client_schema_versions].sort((left, right) => left - right),
-        ...(sortedDurations.length > 0
-          ? {
-              duration_p50_ms: nearestRankPercentile(sortedDurations, 0.5),
-              duration_p95_ms: nearestRankPercentile(sortedDurations, 0.95),
-              duration_max_ms: sortedDurations[sortedDurations.length - 1],
-            }
-          : {}),
-        ...(finishCount > 0
-          ? {
-              ok_count: value.ok_count,
-              error_count: value.error_count,
-              error_rate: value.error_count / finishCount,
-            }
-          : {}),
-        ...(resolutionEntries.length > 0
-          ? { command_resolution_counts: Object.fromEntries(resolutionEntries) }
-          : {}),
-      };
-    })
+    .map(([command, value]) => buildTelemetryStatsBucket(command, value))
     .sort((left, right) => right.count - left.count || left.command.localeCompare(right.command));
 }
 

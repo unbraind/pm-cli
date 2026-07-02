@@ -55,6 +55,18 @@ interface AutoUnblockCandidate {
   blocker_ids: string[];
 }
 
+type CloseInlineFieldKey = "resolution" | "expected_result" | "actual_result";
+
+interface CloseMutationContext {
+  statusRegistry: RuntimeStatusRegistry;
+  force: boolean | undefined;
+  options: CloseCommandOptions;
+  duplicateOf: string | undefined;
+  validateCloseMode: ValidateCloseMode;
+  activeChildIds: string[];
+  closeReason: string | undefined;
+}
+
 function toAuthor(candidate: string | undefined, defaultAuthor: string): string {
   const resolved = candidate ?? process.env.PM_AUTHOR ?? defaultAuthor;
   const trimmed = resolved.trim();
@@ -314,6 +326,167 @@ async function autoUnblockResolvedDependents(
   return warnings;
 }
 
+function applyInlineCloseFields(metadata: ItemFrontMatter, options: CloseCommandOptions): CloseInlineFieldKey[] {
+  const changedFields: CloseInlineFieldKey[] = [];
+  const inlineCloseFields: Array<{ option: string | undefined; key: CloseInlineFieldKey }> = [
+    { option: options.resolution, key: "resolution" },
+    { option: options.expectedResult, key: "expected_result" },
+    { option: options.actualResult, key: "actual_result" },
+  ];
+  for (const { option, key } of inlineCloseFields) {
+    if (typeof option !== "string") {
+      continue;
+    }
+    const trimmed = option.trim();
+    if (trimmed.length === 0) {
+      continue;
+    }
+    metadata[key] = trimmed;
+    changedFields.push(key);
+  }
+  return changedFields;
+}
+
+function applyDuplicateCloseMetadata(metadata: ItemFrontMatter, duplicateOf: string | undefined): CloseInlineFieldKey[] {
+  if (duplicateOf === undefined) {
+    return [];
+  }
+  metadata.duplicate_of = duplicateOf;
+  const duplicateFallbackFields: CloseInlineFieldKey[] = [];
+  const fallbackValues: Array<{ key: CloseInlineFieldKey; value: string }> = [
+    { key: "resolution", value: `Duplicate of ${duplicateOf}` },
+    { key: "expected_result", value: `Canonical item ${duplicateOf} tracks the work.` },
+    { key: "actual_result", value: `Closed as duplicate of ${duplicateOf}.` },
+  ];
+  for (const { key, value } of fallbackValues) {
+    if (shouldApplyDuplicateFallback(metadata[key])) {
+      metadata[key] = value;
+      duplicateFallbackFields.push(key);
+    }
+  }
+  return duplicateFallbackFields;
+}
+
+function collectCloseValidationWarnings(
+  metadata: ItemFrontMatter,
+  validateCloseMode: ValidateCloseMode,
+  activeChildIds: string[],
+): string[] {
+  const warnings: string[] = [];
+  if (validateCloseMode !== "off") {
+    const missingFields = findMissingCloseValidationFields(metadata);
+    if (missingFields.length > 0) {
+      if (validateCloseMode === "strict") {
+        throw new PmCliError(
+          `Cannot close item ${metadata.id}: missing ${missingFields.join(", ")}. Populate fields or use --validate-close warn.`,
+          EXIT_CODE.USAGE,
+        );
+      }
+      warnings.push(`close_validation_missing_fields:${metadata.id}:${missingFields.join(",")}`);
+    }
+    if (activeChildIds.length > 0) {
+      if (validateCloseMode === "strict") {
+        throw new PmCliError(
+          `Cannot close item ${metadata.id}: active child items remain open (${activeChildIds.join(", ")}). Close, cancel, or re-parent them first, or use --validate-close warn.`,
+          EXIT_CODE.USAGE,
+        );
+      }
+      warnings.push(`close_validation_active_children:${metadata.id}:${activeChildIds.join(",")}`);
+    }
+    return warnings;
+  }
+  if (activeChildIds.length > 0) {
+    warnings.push(`closed_with_active_children:${metadata.id}:${activeChildIds.join(",")}`);
+  }
+  return warnings;
+}
+
+function applyCloseReason(metadata: ItemFrontMatter, closeReason: string | undefined): string[] {
+  if (closeReason !== undefined) {
+    metadata.close_reason = closeReason;
+    return ["close_reason"];
+  }
+  if (metadata.close_reason !== undefined) {
+    delete metadata.close_reason;
+    return ["close_reason"];
+  }
+  return [];
+}
+
+function clearCloseAssignee(metadata: ItemFrontMatter): string[] {
+  if (metadata.assignee === undefined) {
+    return [];
+  }
+  delete metadata.assignee;
+  return ["assignee"];
+}
+
+function clearClosedBlockerSignals(metadata: ItemFrontMatter): { changedFields: string[]; warnings: string[] } {
+  const previousBlockedBy = typeof metadata.blocked_by === "string" ? metadata.blocked_by.trim() : "";
+  const existingDeps = metadata.dependencies ?? [];
+  const blockedByEdge = existingDeps.find((dep) => dep.kind === "blocked_by");
+  const hadBlockedReason = metadata.blocked_reason !== undefined;
+  if (previousBlockedBy.length === 0 && blockedByEdge === undefined && !hadBlockedReason) {
+    return { changedFields: [], warnings: [] };
+  }
+  const changedFields: string[] = [];
+  if (previousBlockedBy.length > 0) {
+    delete metadata.blocked_by;
+    changedFields.push("blocked_by");
+  }
+  if (hadBlockedReason) {
+    delete metadata.blocked_reason;
+    changedFields.push("blocked_reason");
+  }
+  if (blockedByEdge !== undefined) {
+    const remainingDeps = existingDeps.filter((dep) => dep.kind !== "blocked_by");
+    if (remainingDeps.length > 0) {
+      metadata.dependencies = remainingDeps;
+    } else {
+      delete metadata.dependencies;
+    }
+    changedFields.push("dependencies");
+  }
+  const reportedBlocker = previousBlockedBy || blockedByEdge?.id;
+  return {
+    changedFields,
+    warnings: reportedBlocker ? [`closed_cleared_blocked_by:${metadata.id}:${reportedBlocker}`] : [],
+  };
+}
+
+function mutateCloseMetadata(metadata: ItemFrontMatter, context: CloseMutationContext): { changedFields: string[]; warnings?: string[] } {
+  if (isTerminalStatus(metadata.status, context.statusRegistry) && !context.force) {
+    throw new PmCliError(`Item ${metadata.id} is already terminal; use --force to close again.`, EXIT_CODE.CONFLICT);
+  }
+  const inlineChangedFields = applyInlineCloseFields(metadata, context.options);
+  const duplicateFallbackFields = applyDuplicateCloseMetadata(metadata, context.duplicateOf);
+  const mutationWarnings = collectCloseValidationWarnings(metadata, context.validateCloseMode, context.activeChildIds);
+  metadata.status = context.statusRegistry.close_status;
+  const changedFields = [
+    "status",
+    ...applyCloseReason(metadata, context.closeReason),
+    ...inlineChangedFields,
+  ];
+  if (context.duplicateOf !== undefined) {
+    changedFields.push("duplicate_of");
+    for (const key of duplicateFallbackFields) {
+      /* v8 ignore start -- duplicate fallback keys are already pre-deduped by applyDuplicateCloseMetadata in covered close paths */
+      if (!changedFields.includes(key)) {
+        changedFields.push(key);
+      }
+      /* v8 ignore stop */
+    }
+  }
+  changedFields.push(...clearCloseAssignee(metadata));
+  const blockerCleanup = clearClosedBlockerSignals(metadata);
+  changedFields.push(...blockerCleanup.changedFields);
+  mutationWarnings.push(...blockerCleanup.warnings);
+  return {
+    changedFields,
+    ...(mutationWarnings.length > 0 ? { warnings: mutationWarnings } : {}),
+  };
+}
+
 export const _testOnlyCloseCommand = {
   blockedByIds: collectBlockedByIds,
 };
@@ -383,138 +556,15 @@ export async function runClose(
     message: options.message,
     force: options.force,
     mutate(document) {
-      if (isTerminalStatus(document.metadata.status, statusRegistry) && !options.force) {
-        throw new PmCliError(`Item ${document.metadata.id} is already terminal; use --force to close again.`, EXIT_CODE.CONFLICT);
-      }
-      const mutationWarnings: string[] = [];
-      // pm-fl0c #11: apply inline closure fields BEFORE the validation pass so
-      // a single `pm close <id> "reason" --resolution "..."` call satisfies
-      // strict validation without a prior pm update. Only meaningful trimmed
-      // text writes; an empty/whitespace value is a no-op rather than a clear.
-      const inlineCloseFields: Array<{ option: string | undefined; key: "resolution" | "expected_result" | "actual_result" }> = [
-        { option: options.resolution, key: "resolution" },
-        { option: options.expectedResult, key: "expected_result" },
-        { option: options.actualResult, key: "actual_result" },
-      ];
-      const duplicateFallbackFields: Array<"resolution" | "expected_result" | "actual_result"> = [];
-      for (const { option, key } of inlineCloseFields) {
-        if (typeof option !== "string") continue;
-        const trimmed = option.trim();
-        if (trimmed.length === 0) continue;
-        document.metadata[key] = trimmed;
-      }
-      if (duplicateOf !== undefined) {
-        document.metadata.duplicate_of = duplicateOf;
-        const duplicateResolution = `Duplicate of ${duplicateOf}`;
-        const duplicateExpectedResult = `Canonical item ${duplicateOf} tracks the work.`;
-        const duplicateActualResult = `Closed as duplicate of ${duplicateOf}.`;
-        if (shouldApplyDuplicateFallback(document.metadata.resolution)) {
-          document.metadata.resolution = duplicateResolution;
-          duplicateFallbackFields.push("resolution");
-        }
-        if (shouldApplyDuplicateFallback(document.metadata.expected_result)) {
-          document.metadata.expected_result = duplicateExpectedResult;
-          duplicateFallbackFields.push("expected_result");
-        }
-        if (shouldApplyDuplicateFallback(document.metadata.actual_result)) {
-          document.metadata.actual_result = duplicateActualResult;
-          duplicateFallbackFields.push("actual_result");
-        }
-      }
-      if (validateCloseMode !== "off") {
-        const missingFields = findMissingCloseValidationFields(document.metadata);
-        if (missingFields.length > 0) {
-          if (validateCloseMode === "strict") {
-            throw new PmCliError(
-              `Cannot close item ${document.metadata.id}: missing ${missingFields.join(", ")}. Populate fields or use --validate-close warn.`,
-              EXIT_CODE.USAGE,
-            );
-          }
-          mutationWarnings.push(`close_validation_missing_fields:${document.metadata.id}:${missingFields.join(",")}`);
-        }
-        if (activeChildIds.length > 0) {
-          if (validateCloseMode === "strict") {
-            throw new PmCliError(
-              `Cannot close item ${document.metadata.id}: active child items remain open (${activeChildIds.join(", ")}). Close, cancel, or re-parent them first, or use --validate-close warn.`,
-              EXIT_CODE.USAGE,
-            );
-          }
-          mutationWarnings.push(`close_validation_active_children:${document.metadata.id}:${activeChildIds.join(",")}`);
-        }
-      } else if (activeChildIds.length > 0) {
-        // C3: minimal governance (validate-close off) should still tell the
-        // agent it just closed a parent with open children, without blocking.
-        mutationWarnings.push(`closed_with_active_children:${document.metadata.id}:${activeChildIds.join(",")}`);
-      }
-
-      document.metadata.status = statusRegistry.close_status;
-      const changedFields = ["status"];
-      if (closeReason !== undefined) {
-        document.metadata.close_reason = closeReason;
-        changedFields.push("close_reason");
-      } else if (document.metadata.close_reason !== undefined) {
-        delete document.metadata.close_reason;
-        changedFields.push("close_reason");
-      }
-      for (const { option, key } of inlineCloseFields) {
-        if (typeof option === "string" && option.trim().length > 0) {
-          changedFields.push(key);
-        }
-      }
-      if (duplicateOf !== undefined) {
-        changedFields.push("duplicate_of");
-        if (duplicateFallbackFields.includes("resolution") && !changedFields.includes("resolution")) {
-          changedFields.push("resolution");
-        }
-        if (duplicateFallbackFields.includes("expected_result") && !changedFields.includes("expected_result")) {
-          changedFields.push("expected_result");
-        }
-        if (duplicateFallbackFields.includes("actual_result") && !changedFields.includes("actual_result")) {
-          changedFields.push("actual_result");
-        }
-      }
-      if (document.metadata.assignee !== undefined) {
-        delete document.metadata.assignee;
-        changedFields.push("assignee");
-      }
-
-      // C4 (pm-fu5d): a terminal item is no longer blocked. Clear every active
-      // blocker signal independently — scalar blocked_by, blocked_reason, and the
-      // blocked_by dependency edges (kept consistent with the kyd6 invariant) —
-      // even if only some are present (e.g. an orphaned edge or a stale
-      // blocked_reason left by manual edits), so closed work stops surfacing in
-      // blockers views, and annotate the cleanup.
-      const previousBlockedBy =
-        typeof document.metadata.blocked_by === "string" ? document.metadata.blocked_by.trim() : "";
-      const existingDeps = document.metadata.dependencies ?? [];
-      const blockedByEdge = existingDeps.find((dep) => dep.kind === "blocked_by");
-      const hadBlockedReason = document.metadata.blocked_reason !== undefined;
-      if (previousBlockedBy.length > 0 || blockedByEdge !== undefined || hadBlockedReason) {
-        if (previousBlockedBy.length > 0) {
-          delete document.metadata.blocked_by;
-          changedFields.push("blocked_by");
-        }
-        if (hadBlockedReason) {
-          delete document.metadata.blocked_reason;
-          changedFields.push("blocked_reason");
-        }
-        if (blockedByEdge !== undefined) {
-          const remainingDeps = existingDeps.filter((dep) => dep.kind !== "blocked_by");
-          if (remainingDeps.length > 0) {
-            document.metadata.dependencies = remainingDeps;
-          } else {
-            delete document.metadata.dependencies;
-          }
-          changedFields.push("dependencies");
-        }
-        const reportedBlocker = previousBlockedBy || blockedByEdge?.id || "unknown";
-        mutationWarnings.push(`closed_cleared_blocked_by:${document.metadata.id}:${reportedBlocker}`);
-      }
-
-      return {
-        changedFields,
-        ...(mutationWarnings.length > 0 ? { warnings: mutationWarnings } : {}),
-      };
+      return mutateCloseMetadata(document.metadata, {
+        statusRegistry,
+        force: options.force,
+        options,
+        duplicateOf,
+        validateCloseMode,
+        activeChildIds,
+        closeReason,
+      });
     },
   });
 

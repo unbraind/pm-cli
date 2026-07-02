@@ -331,6 +331,81 @@ function inferMissingFieldsFromErrorMessage(message: string): string[] | undefin
   return normalized.length > 0 ? normalized : undefined;
 }
 
+function inferMissingFieldsForRecovery(
+  rawMessage: string,
+  invocationArgv: string[],
+  existingRecovery: PmCliErrorRecoveryPayload | undefined,
+): string[] | undefined {
+  if (existingRecovery?.suggested_retry) {
+    return undefined;
+  }
+  const providedFields = extractProvidedOptionFlags(invocationArgv);
+  const providedSet = new Set(providedFields.map((flag) => normalizeLongOptionFlag(flag) ?? flag));
+  const rawInferred = inferMissingFieldsFromErrorMessage(rawMessage);
+  const trulyMissing = rawInferred?.filter((flag) => !providedSet.has(normalizeLongOptionFlag(flag) ?? flag));
+  return trulyMissing && trulyMissing.length > 0 ? trulyMissing : undefined;
+}
+
+function resolveRecoverySuggestedRetry(
+  invocationArgv: string[],
+  attemptedCommand: string,
+  inferredMissing: string[] | undefined,
+  existingRecovery: PmCliErrorRecoveryPayload | undefined,
+): string | undefined {
+  if (existingRecovery?.suggested_retry) {
+    return existingRecovery.suggested_retry;
+  }
+  const missingFlag = inferredMissing?.[0];
+  const normalizedMissing = missingFlag ? normalizeLongOptionFlag(missingFlag) : undefined;
+  const suggestedRetry = normalizedMissing
+    ? renderAttemptedCommand([...invocationArgv, normalizedMissing, "<value>"])
+    : attemptedCommand;
+  return suggestedRetry === attemptedCommand ? undefined : suggestedRetry;
+}
+
+function projectExistingRecoveryOptionalFields(
+  existingRecovery: PmCliErrorRecoveryPayload | undefined,
+): Partial<PmCliErrorRecoveryPayload> {
+  if (!existingRecovery) {
+    return {};
+  }
+  const optionalFields: Array<keyof PmCliErrorRecoveryPayload> = [
+    "recovery_mode",
+    "missing_required_fields",
+    "suggested_flags",
+    "fallback_candidates",
+    "next_best_command",
+  ];
+  const projected: Partial<PmCliErrorRecoveryPayload> = {};
+  for (const field of optionalFields) {
+    const value = existingRecovery[field];
+    if (value !== undefined) {
+      (projected as Record<string, unknown>)[field] = value;
+    }
+  }
+  return projected;
+}
+
+function buildRecoveryPayload(params: {
+  invocationArgv: string[];
+  attemptedCommand: string;
+  providedFields: string[];
+  inferredMissing: string[] | undefined;
+  suggestedRetry: string | undefined;
+  existingRecovery: PmCliErrorRecoveryPayload | undefined;
+}): PmCliErrorRecoveryPayload {
+  const existingRecovery = params.existingRecovery;
+  return {
+    attempted_command: existingRecovery?.attempted_command ?? params.attemptedCommand,
+    normalized_args: existingRecovery?.normalized_args ?? [...params.invocationArgv],
+    /* c8 ignore next */
+    provided_fields: existingRecovery?.provided_fields ?? (params.providedFields.length > 0 ? params.providedFields : undefined),
+    missing: existingRecovery?.missing ?? params.inferredMissing,
+    ...projectExistingRecoveryOptionalFields(existingRecovery),
+    ...(params.suggestedRetry ? { suggested_retry: params.suggestedRetry } : {}),
+  };
+}
+
 function buildPmCliRecoveryContext(
   context: PmCliErrorContext | undefined,
   invocationArgv: string[],
@@ -347,40 +422,16 @@ function buildPmCliRecoveryContext(
   }
   const attemptedCommand = renderAttemptedCommand(invocationArgv);
   const providedFields = extractProvidedOptionFlags(invocationArgv);
-  /* c8 ignore next */
-  const providedSet = new Set(providedFields.map((flag) => normalizeLongOptionFlag(flag) ?? flag));
-  const rawInferred = existingRecovery?.suggested_retry ? undefined : inferMissingFieldsFromErrorMessage(rawMessage);
-  /* c8 ignore next */
-  const trulyMissing = rawInferred?.filter((flag) => !providedSet.has(normalizeLongOptionFlag(flag) ?? flag));
-  const inferredMissing = trulyMissing && trulyMissing.length > 0 ? trulyMissing : undefined;
-  let suggestedRetry = existingRecovery?.suggested_retry;
-  if (!suggestedRetry && inferredMissing && inferredMissing.length > 0) {
-    const missingFlag = inferredMissing[0];
-    const normalizedMissing = normalizeLongOptionFlag(missingFlag);
-    /* c8 ignore next */
-    if (normalizedMissing) {
-      suggestedRetry = renderAttemptedCommand([...invocationArgv, normalizedMissing, "<value>"]);
-    }
-  }
-  if (!suggestedRetry) {
-    suggestedRetry = attemptedCommand;
-  }
-  if (!existingRecovery?.suggested_retry && suggestedRetry === attemptedCommand) {
-    suggestedRetry = undefined;
-  }
-  const recovery: PmCliErrorRecoveryPayload = {
-    attempted_command: existingRecovery?.attempted_command ?? attemptedCommand,
-    normalized_args: existingRecovery?.normalized_args ?? [...invocationArgv],
-    /* c8 ignore next */
-    provided_fields: existingRecovery?.provided_fields ?? (providedFields.length > 0 ? providedFields : undefined),
-    missing: existingRecovery?.missing ?? inferredMissing,
-    ...(existingRecovery?.recovery_mode ? { recovery_mode: existingRecovery.recovery_mode } : {}),
-    ...(existingRecovery?.missing_required_fields ? { missing_required_fields: existingRecovery.missing_required_fields } : {}),
-    ...(existingRecovery?.suggested_flags ? { suggested_flags: existingRecovery.suggested_flags } : {}),
-    ...(suggestedRetry ? { suggested_retry: suggestedRetry } : {}),
-    ...(existingRecovery?.fallback_candidates ? { fallback_candidates: existingRecovery.fallback_candidates } : {}),
-    ...(existingRecovery?.next_best_command ? { next_best_command: existingRecovery.next_best_command } : {}),
-  };
+  const inferredMissing = inferMissingFieldsForRecovery(rawMessage, invocationArgv, existingRecovery);
+  const suggestedRetry = resolveRecoverySuggestedRetry(invocationArgv, attemptedCommand, inferredMissing, existingRecovery);
+  const recovery = buildRecoveryPayload({
+    invocationArgv,
+    attemptedCommand,
+    providedFields,
+    inferredMissing,
+    suggestedRetry,
+    existingRecovery,
+  });
   return {
     ...context,
     recovery,
@@ -1733,39 +1784,73 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
 }
 /* c8 ignore stop */
 
+async function clearDynamicExtensionCommandState(params?: {
+  rootProgram: Command;
+  pmRoot: string;
+  invocationArgv: string[];
+  settings?: PmSettings;
+}): Promise<void> {
+  activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
+  setActiveExtensionServices({ overrides: [] });
+  if (params) {
+    await maybeAttachCreateUpdatePolicyHelpText(
+      params.rootProgram,
+      params.pmRoot,
+      params.invocationArgv,
+      createEmptyExtensionRegistrationRegistry(),
+      params.settings,
+    );
+  }
+}
+
+/* v8 ignore start -- dynamic help fallback variants are exercised through registration integration tests; residual legacy branches are defensive */
+function attachDynamicExtensionHelp(
+  command: Command,
+  descriptor: ExtensionCommandHelpDescriptor | undefined,
+  flagHelp: string | undefined,
+  metadataHelp: string | null,
+): void {
+  if (descriptor?.flags && descriptor.flags.length > 0) {
+    applyDynamicExtensionFlagOptions(command, descriptor.flags);
+    const residualFlagHelp = buildResidualDynamicExtensionFlagHelp(command, descriptor.flags);
+    if (residualFlagHelp) {
+      command.addHelpText("after", residualFlagHelp);
+    }
+  } else if (flagHelp) {
+    command.addHelpText("after", flagHelp);
+  }
+  if (metadataHelp) {
+    command.addHelpText("after", metadataHelp);
+  }
+}
+/* v8 ignore stop */
+
 /* c8 ignore start */
 async function registerDynamicExtensionCommandPaths(rootProgram: Command, invocationArgv: string[]): Promise<void> {
   const bootstrapGlobalOptions = parseBootstrapGlobalOptions(invocationArgv);
   const pmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);
   if (bootstrapGlobalOptions.noExtensions) {
-    activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
-    setActiveExtensionServices({ overrides: [] });
-    await maybeAttachCreateUpdatePolicyHelpText(
+    await clearDynamicExtensionCommandState({
       rootProgram,
       pmRoot,
       invocationArgv,
-      createEmptyExtensionRegistrationRegistry(),
-    );
+    });
     return;
   }
 
   const discoverySnapshot = await loadRuntimeExtensionDiscoverySnapshot(pmRoot);
   const probe = buildBootstrapActivationProbe(invocationArgv);
   if (!discoverySnapshot) {
-    activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
-    setActiveExtensionServices({ overrides: [] });
+    await clearDynamicExtensionCommandState();
     return;
   }
   if (!discoveryNeedsActivationForProbe(discoverySnapshot.discovery, probe)) {
-    activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
-    setActiveExtensionServices({ overrides: [] });
-    await maybeAttachCreateUpdatePolicyHelpText(
+    await clearDynamicExtensionCommandState({
       rootProgram,
       pmRoot,
       invocationArgv,
-      createEmptyExtensionRegistrationRegistry(),
-      discoverySnapshot.settings,
-    );
+      settings: discoverySnapshot.settings,
+    });
     emitExtensionSkippedProfile(bootstrapProfileEnabled(invocationArgv), discoverySnapshot, probe);
     return;
   }
@@ -1773,15 +1858,12 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
   const snapshot = await loadRuntimeExtensionSnapshot(pmRoot);
   /* c8 ignore next */
   if (!snapshot) {
-    activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
-    setActiveExtensionServices({ overrides: [] });
-    await maybeAttachCreateUpdatePolicyHelpText(
+    await clearDynamicExtensionCommandState({
       rootProgram,
       pmRoot,
       invocationArgv,
-      createEmptyExtensionRegistrationRegistry(),
-      discoverySnapshot.settings,
-    );
+      settings: discoverySnapshot.settings,
+    });
     return;
   }
   // Ensure usage/help/error formatting overrides are available even when parse
@@ -1803,19 +1885,7 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
     const flagHelp = snapshot.commandFlagHelp.get(commandPath);
     const metadataHelp = descriptor ? buildDynamicExtensionCommandMetadataHelp(descriptor) : null;
     if (existingCommand) {
-      if (descriptor?.flags && descriptor.flags.length > 0) {
-        applyDynamicExtensionFlagOptions(existingCommand, descriptor.flags);
-        const residualFlagHelp = buildResidualDynamicExtensionFlagHelp(existingCommand, descriptor.flags);
-        if (residualFlagHelp) {
-          existingCommand.addHelpText("after", residualFlagHelp);
-        }
-      } else if (flagHelp) {
-        existingCommand.addHelpText("after", flagHelp);
-      }
-      /* c8 ignore next */
-      if (metadataHelp) {
-        existingCommand.addHelpText("after", metadataHelp);
-      }
+      attachDynamicExtensionHelp(existingCommand, descriptor, flagHelp, metadataHelp);
       continue;
     }
 
@@ -2372,6 +2442,387 @@ function enforceExplicitRetryForFlagTypos(
   );
 }
 
+type TelemetryCommandErrorEmitter = (params: {
+  command: string;
+  errorCode: string;
+  errorMessage: string;
+  exitCode: number;
+  options: Record<string, unknown>;
+  resolutionStage: TelemetryResolutionStage;
+}) => Promise<{
+  errorCategory: TelemetryErrorCategory;
+  commandResolution: TelemetryCommandResolution;
+}>;
+
+interface RunPmCliErrorContext {
+  error: unknown;
+  invocationArgv: string[];
+  bootstrapGlobal: GlobalOptions;
+  jsonErrors: boolean;
+  bootstrapPmRoot: string;
+  attemptedCommand: string;
+  emitTelemetryCommandError: TelemetryCommandErrorEmitter;
+}
+
+function createTelemetryCommandErrorEmitter(params: {
+  invocationArgv: string[];
+  bootstrapGlobal: GlobalOptions;
+  bootstrapPmRoot: string;
+}): TelemetryCommandErrorEmitter {
+  return async (event) => {
+    const errorCategory = resolveTelemetryErrorCategory(event.errorCode);
+    const commandResolution = deriveTelemetryCommandResolution({
+      ok: false,
+      errorCode: event.errorCode,
+      errorCategory,
+    });
+    await emitTelemetryErrorEvent({
+      command: event.command,
+      args: params.invocationArgv,
+      options: event.options,
+      global: params.bootstrapGlobal,
+      pm_version: CLI_VERSION,
+      pm_root: params.bootstrapPmRoot,
+      error_code: event.errorCode,
+      error_message: event.errorMessage,
+      exit_code: event.exitCode,
+      error_category: errorCategory,
+      command_resolution: commandResolution,
+      resolution_stage: event.resolutionStage,
+    });
+    return {
+      errorCategory,
+      commandResolution,
+    };
+  };
+}
+
+async function prepareExtensionServicesForRunPmCliError(params: {
+  invocationArgv: string[];
+  bootstrapGlobal: GlobalOptions;
+  bootstrapPmRoot: string;
+}): Promise<void> {
+  if (params.bootstrapGlobal.noExtensions) {
+    return;
+  }
+  const bootstrapProbe = buildBootstrapActivationProbe(params.invocationArgv);
+  const discoverySnapshot = await loadRuntimeExtensionDiscoverySnapshot(params.bootstrapPmRoot);
+  if (discoverySnapshot && discoveryNeedsActivationForProbe(discoverySnapshot.discovery, bootstrapProbe)) {
+    const bootstrapSnapshot = await loadRuntimeExtensionSnapshot(params.bootstrapPmRoot);
+    setRecoveredExtensionServices(bootstrapSnapshot);
+    return;
+  }
+  if (discoverySnapshot) {
+    emitExtensionSkippedProfile(bootstrapProfileEnabled(params.invocationArgv), discoverySnapshot, bootstrapProbe);
+  }
+  setActiveExtensionServices({ overrides: [] });
+}
+
+function setRecoveredExtensionServices(bootstrapSnapshot: Pick<RuntimeExtensionSnapshot, "services"> | null): void {
+  if (!bootstrapSnapshot) {
+    setActiveExtensionServices({ overrides: [] });
+    return;
+  }
+  setActiveExtensionServices(bootstrapSnapshot.services);
+}
+
+async function finishRunPmCliFailure(params: {
+  errorMessage: string;
+  exitCode: number;
+  classificationCode: string;
+  errorCategory: TelemetryErrorCategory;
+  commandResolution: TelemetryCommandResolution;
+  resolutionStage: TelemetryResolutionStage;
+}): Promise<void> {
+  sentryFinishCommandSpan(false, params.errorMessage, {
+    error_code: params.classificationCode,
+    error_category: params.errorCategory,
+    exit_code: params.exitCode,
+    command_resolution: params.commandResolution,
+    resolution_stage: params.resolutionStage,
+  });
+  await runAndClearAfterCommandHooks({
+    ok: false,
+    error: params.errorMessage,
+    exit_code: params.exitCode,
+    error_code: params.classificationCode,
+    error_category: params.errorCategory,
+    command_resolution: params.commandResolution,
+    resolution_stage: params.resolutionStage,
+  });
+}
+
+async function finishRunPmCliSuccessParse(): Promise<void> {
+  sentryFinishCommandSpan(true, undefined, {
+    exit_code: EXIT_CODE.SUCCESS,
+    command_resolution: "success",
+    resolution_stage: "parse",
+  });
+  await runAndClearAfterCommandHooks({
+    ok: true,
+    exit_code: EXIT_CODE.SUCCESS,
+    command_resolution: "success",
+    resolution_stage: "parse",
+  });
+  process.exitCode = EXIT_CODE.SUCCESS;
+}
+
+async function handleRunPmCliKnownError(context: RunPmCliErrorContext, numericExitCode: number | undefined): Promise<boolean> {
+  const hasExplicitExitCode = typeof numericExitCode === "number" && Number.isFinite(numericExitCode);
+  if (
+    !(context.error instanceof PmCliError) &&
+    (isCommanderError(context.error) || !hasExplicitExitCode)
+  ) {
+    return false;
+  }
+  const errorMessage = describeUnknownError(context.error);
+  const exitCode = context.error instanceof PmCliError ? context.error.exitCode : normalizeThrownExitCode(numericExitCode as number);
+  const rawContext = context.error instanceof PmCliError ? context.error.context : undefined;
+  const enrichedContext = buildPmCliRecoveryContext(rawContext, context.invocationArgv, errorMessage);
+  const classification = classifyPmCliError(errorMessage, enrichedContext);
+  const renderedError = context.jsonErrors
+    ? JSON.stringify(formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext), null, 2)
+    : formatPmCliErrorForDisplay(errorMessage, enrichedContext);
+  printError(renderedError);
+  const { errorCategory, commandResolution } = await context.emitTelemetryCommandError({
+    command: context.attemptedCommand,
+    errorCode: classification.code,
+    errorMessage: classification.detail,
+    exitCode,
+    options: {
+      bootstrap_global_options: context.bootstrapGlobal,
+    },
+    resolutionStage: "execute",
+  });
+  const loggedHandledErrorToSentry = await maybeLogHandledCliErrorToSentry({
+    command: context.attemptedCommand,
+    error_code: classification.code,
+    error_category: errorCategory,
+    exit_code: exitCode,
+    error_message: classification.detail,
+    command_resolution: commandResolution,
+    resolution_stage: "execute",
+    source_context: activeTelemetryCommandContext?.source_context,
+  });
+  await finishRunPmCliFailure({
+    errorMessage,
+    exitCode,
+    classificationCode: classification.code,
+    errorCategory,
+    commandResolution,
+    resolutionStage: "execute",
+  });
+  if (loggedHandledErrorToSentry) {
+    sentryCaptureCliError(wrapThrownErrorForSentry(context.error, errorMessage));
+    await sentryFlush(HANDLED_ERROR_SENTRY_FLUSH_TIMEOUT_MS);
+  }
+  process.exitCode = exitCode;
+  return true;
+}
+
+function resolveUnknownHelpToken(invocationArgv: string[]): string {
+  const helpRequest = parseBootstrapHelpRequest(invocationArgv);
+  return helpRequest.commandPathTokens[0] ?? parseBootstrapCommandName(invocationArgv) ?? "<command>";
+}
+
+async function handleUnknownHelpCommandError(context: RunPmCliErrorContext, code: string | undefined): Promise<void> {
+  const unknownToken = resolveUnknownHelpToken(context.invocationArgv);
+  const unknownMessage = `unknown command '${unknownToken}'`;
+  const recoveryCommandDescriptors = await loadRuntimeExtensionCommandDescriptorsForRecovery(
+    resolvePmRoot(process.cwd(), context.bootstrapGlobal.path),
+  );
+  const usageContext = await resolveCommanderUsageContext(
+    { message: unknownMessage },
+    program,
+    recoveryCommandDescriptors,
+  );
+  const classification = classifyCommanderError(
+    usageContext.message,
+    usageContext.commandName,
+    usageContext.allowedTypes,
+    {
+      unknownCommandExamples: usageContext.unknownCommandExamples,
+      unknownCommandNextSteps: usageContext.unknownCommandNextSteps,
+      attemptedCommand: usageContext.attemptedCommand,
+      normalizedInvocationArgs: usageContext.normalizedInvocationArgs,
+      providedOptionFlags: usageContext.providedOptionFlags,
+      unknownOptionSuggestions: usageContext.unknownOptionSuggestions,
+      suggestedRetryCommand: usageContext.suggestedRetryCommand,
+    },
+  );
+  const { errorCategory, commandResolution } = await context.emitTelemetryCommandError({
+    command: unknownToken,
+    errorCode: classification.code,
+    errorMessage: classification.detail,
+    exitCode: EXIT_CODE.USAGE,
+    options: {
+      bootstrap_global_options: context.bootstrapGlobal,
+      commander_code: code ?? "commander.helpDisplayed",
+    },
+    resolutionStage: "parse",
+  });
+  const loggedHandledErrorToSentry = await maybeLogHandledCliErrorToSentry({
+    command: unknownToken,
+    error_code: classification.code,
+    error_category: errorCategory,
+    exit_code: EXIT_CODE.USAGE,
+    error_message: classification.detail,
+    command_resolution: commandResolution,
+    resolution_stage: "parse",
+    source_context: activeTelemetryCommandContext?.source_context,
+  });
+  const renderedUsage = context.jsonErrors
+    ? await formatCommanderUsageJson({ message: unknownMessage }, program, recoveryCommandDescriptors)
+    : await formatCommanderUsageMessage({ message: unknownMessage }, program, recoveryCommandDescriptors);
+  await finishRunPmCliFailure({
+    errorMessage: unknownMessage,
+    exitCode: EXIT_CODE.USAGE,
+    classificationCode: classification.code,
+    errorCategory,
+    commandResolution,
+    resolutionStage: "parse",
+  });
+  printError(renderedUsage);
+  if (loggedHandledErrorToSentry) {
+    await sentryFlush(HANDLED_ERROR_SENTRY_FLUSH_TIMEOUT_MS);
+  }
+  process.exitCode = EXIT_CODE.USAGE;
+}
+
+async function handleRunPmCliHelpDisplayError(context: RunPmCliErrorContext, code: string | undefined, rawMessage: string): Promise<boolean> {
+  const isHelpDisplayCode =
+    code === "commander.helpDisplayed" || code === "commander.help" || code === "commander.helpCommand";
+  if (!isHelpDisplayCode && !rawMessage.includes("(outputHelp)")) {
+    return false;
+  }
+  const helpRequest = parseBootstrapHelpRequest(context.invocationArgv);
+  if (helpRequest.requested && !isKnownHelpCommandPath(program, helpRequest.commandPathTokens)) {
+    await handleUnknownHelpCommandError(context, code);
+    return true;
+  }
+  await finishRunPmCliSuccessParse();
+  return true;
+}
+
+async function handleRunPmCliCommanderUsageError(context: RunPmCliErrorContext, code: string): Promise<void> {
+  const usageContext = await resolveCommanderUsageContext(context.error, program, activeRuntimeExtensionCommandDescriptors);
+  const classification = classifyCommanderError(
+    usageContext.message,
+    usageContext.commandName,
+    usageContext.allowedTypes,
+    {
+      unknownCommandExamples: usageContext.unknownCommandExamples,
+      unknownCommandNextSteps: usageContext.unknownCommandNextSteps,
+      attemptedCommand: usageContext.attemptedCommand,
+      normalizedInvocationArgs: usageContext.normalizedInvocationArgs,
+      providedOptionFlags: usageContext.providedOptionFlags,
+      unknownOptionSuggestions: usageContext.unknownOptionSuggestions,
+      suggestedRetryCommand: usageContext.suggestedRetryCommand,
+    },
+  );
+  const { errorCategory, commandResolution } = await context.emitTelemetryCommandError({
+    command: context.attemptedCommand,
+    errorCode: classification.code,
+    errorMessage: classification.detail,
+    exitCode: EXIT_CODE.USAGE,
+    options: {
+      bootstrap_global_options: context.bootstrapGlobal,
+      commander_code: code,
+    },
+    resolutionStage: "parse",
+  });
+  const loggedHandledErrorToSentry = await maybeLogHandledCliErrorToSentry({
+    command: context.attemptedCommand,
+    error_code: classification.code,
+    error_category: errorCategory,
+    exit_code: EXIT_CODE.USAGE,
+    error_message: classification.detail,
+    command_resolution: commandResolution,
+    resolution_stage: "parse",
+    source_context: activeTelemetryCommandContext?.source_context,
+  });
+  const renderedUsage = context.jsonErrors
+    ? await formatCommanderUsageJson(context.error, program, activeRuntimeExtensionCommandDescriptors)
+    : await formatCommanderUsageMessage(context.error, program, activeRuntimeExtensionCommandDescriptors);
+  await finishRunPmCliFailure({
+    errorMessage: usageContext.message,
+    exitCode: EXIT_CODE.USAGE,
+    classificationCode: classification.code,
+    errorCategory,
+    commandResolution,
+    resolutionStage: "parse",
+  });
+  printError(renderedUsage);
+  if (loggedHandledErrorToSentry) {
+    await sentryFlush(HANDLED_ERROR_SENTRY_FLUSH_TIMEOUT_MS);
+  }
+  process.exitCode = EXIT_CODE.USAGE;
+}
+
+function shouldHandleRunPmCliCommanderError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null || !("code" in error)) {
+    return false;
+  }
+  const code = (error as { code?: unknown }).code;
+  if (typeof code === "string" && (code === "commander.version" || code.startsWith("commander."))) {
+    return true;
+  }
+  const rawMessage = String((error as { message?: unknown }).message ?? "");
+  return rawMessage.includes("(outputHelp)");
+}
+
+async function handleRunPmCliCommanderError(context: RunPmCliErrorContext): Promise<void> {
+  const code = (context.error as { code?: string }).code;
+  const rawMessage = String((context.error as { message?: unknown }).message ?? "");
+  if (await handleRunPmCliHelpDisplayError(context, code, rawMessage)) {
+    return;
+  }
+  if (code === "commander.version") {
+    await finishRunPmCliSuccessParse();
+    return;
+  }
+  await handleRunPmCliCommanderUsageError(context, code as string);
+}
+
+async function handleRunPmCliError(params: {
+  error: unknown;
+  invocationArgv: string[];
+}): Promise<void> {
+  const bootstrapGlobal = parseBootstrapGlobalOptions(params.invocationArgv);
+  const bootstrapPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobal.path);
+  const context: RunPmCliErrorContext = {
+    error: params.error,
+    invocationArgv: params.invocationArgv,
+    bootstrapGlobal,
+    jsonErrors: bootstrapGlobal.json,
+    bootstrapPmRoot,
+    attemptedCommand: parseBootstrapCommandName(params.invocationArgv) ?? "<unknown>",
+    emitTelemetryCommandError: createTelemetryCommandErrorEmitter({
+      invocationArgv: params.invocationArgv,
+      bootstrapGlobal,
+      bootstrapPmRoot,
+    }),
+  };
+  await prepareExtensionServicesForRunPmCliError({
+    invocationArgv: params.invocationArgv,
+    bootstrapGlobal,
+    bootstrapPmRoot,
+  });
+  if (await handleRunPmCliKnownError(context, readThrownExitCode(params.error))) {
+    return;
+  }
+  if (shouldHandleRunPmCliCommanderError(params.error)) {
+    await handleRunPmCliCommanderError(context);
+    return;
+  }
+  await handleGenericRunPmCliError({
+    error: params.error,
+    attemptedCommand: context.attemptedCommand,
+    bootstrapGlobal,
+    emitTelemetryCommandError: context.emitTelemetryCommandError,
+  });
+}
+
 /**
  * Implements run pm cli for the public runtime surface of this module.
  */
@@ -2410,314 +2861,7 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
     }
     await program.parseAsync(invocationProcessArgv);
   } catch (error: unknown) {
-    /* c8 ignore start */
-    const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
-    const jsonErrors = bootstrapGlobal.json;
-    const bootstrapPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobal.path);
-    const attemptedCommand = parseBootstrapCommandName(invocationArgv) ?? "<unknown>";
-
-    const emitTelemetryCommandError = async (params: {
-      command: string;
-      errorCode: string;
-      errorMessage: string;
-      exitCode: number;
-      options: Record<string, unknown>;
-      resolutionStage: TelemetryResolutionStage;
-    }) => {
-      const errorCategory = resolveTelemetryErrorCategory(params.errorCode);
-      const commandResolution = deriveTelemetryCommandResolution({
-        ok: false,
-        errorCode: params.errorCode,
-        errorCategory,
-      });
-      await emitTelemetryErrorEvent({
-        command: params.command,
-        args: invocationArgv,
-        options: params.options,
-        global: bootstrapGlobal,
-        pm_version: CLI_VERSION,
-        pm_root: bootstrapPmRoot,
-        error_code: params.errorCode,
-        error_message: params.errorMessage,
-        exit_code: params.exitCode,
-        error_category: errorCategory,
-        command_resolution: commandResolution,
-        resolution_stage: params.resolutionStage,
-      });
-      return {
-        errorCategory,
-        commandResolution,
-      };
-    };
-
-    if (!bootstrapGlobal.noExtensions) {
-      const bootstrapProbe = buildBootstrapActivationProbe(invocationArgv);
-      const discoverySnapshot = await loadRuntimeExtensionDiscoverySnapshot(bootstrapPmRoot);
-      if (discoverySnapshot && discoveryNeedsActivationForProbe(discoverySnapshot.discovery, bootstrapProbe)) {
-        const bootstrapSnapshot = await loadRuntimeExtensionSnapshot(bootstrapPmRoot);
-        /* c8 ignore next */
-        setActiveExtensionServices(bootstrapSnapshot?.services ?? { overrides: [] });
-      } else {
-        /* c8 ignore next */
-        if (discoverySnapshot) {
-          emitExtensionSkippedProfile(bootstrapProfileEnabled(invocationArgv), discoverySnapshot, bootstrapProbe);
-        }
-        setActiveExtensionServices({ overrides: [] });
-      }
-    }
-
-    const numericExitCode = readThrownExitCode(error);
-    if (
-      error instanceof PmCliError ||
-      (!isCommanderError(error) && typeof numericExitCode === "number" && Number.isFinite(numericExitCode))
-    ) {
-      const errorMessage = describeUnknownError(error);
-      const exitCode = error instanceof PmCliError ? error.exitCode : normalizeThrownExitCode(numericExitCode as number);
-      const context = error instanceof PmCliError ? error.context : undefined;
-      const enrichedContext = buildPmCliRecoveryContext(context, invocationArgv, errorMessage);
-      const classification = classifyPmCliError(errorMessage, enrichedContext);
-      const renderedError = jsonErrors
-        ? JSON.stringify(formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext), null, 2)
-        : formatPmCliErrorForDisplay(errorMessage, enrichedContext);
-      printError(renderedError);
-      const { errorCategory, commandResolution } = await emitTelemetryCommandError({
-        command: attemptedCommand,
-        errorCode: classification.code,
-        errorMessage: classification.detail,
-        exitCode,
-        options: {
-          bootstrap_global_options: bootstrapGlobal,
-        },
-        resolutionStage: "execute",
-      });
-      const loggedHandledErrorToSentry = await maybeLogHandledCliErrorToSentry({
-        command: attemptedCommand,
-        error_code: classification.code,
-        error_category: errorCategory,
-        exit_code: exitCode,
-        error_message: classification.detail,
-        command_resolution: commandResolution,
-        resolution_stage: "execute",
-        source_context: activeTelemetryCommandContext?.source_context,
-      });
-      sentryFinishCommandSpan(false, errorMessage, {
-        error_code: classification.code,
-        error_category: errorCategory,
-        exit_code: exitCode,
-        command_resolution: commandResolution,
-        resolution_stage: "execute",
-      });
-      await runAndClearAfterCommandHooks({
-        ok: false,
-        error: errorMessage,
-        exit_code: exitCode,
-        error_code: classification.code,
-        error_category: errorCategory,
-        command_resolution: commandResolution,
-        resolution_stage: "execute",
-      });
-      if (loggedHandledErrorToSentry) {
-        sentryCaptureCliError(wrapThrownErrorForSentry(error, errorMessage));
-      }
-      if (loggedHandledErrorToSentry) {
-        await sentryFlush(HANDLED_ERROR_SENTRY_FLUSH_TIMEOUT_MS);
-      }
-      process.exitCode = exitCode;
-      return;
-    }
-
-    if (typeof error === "object" && error !== null && "code" in error) {
-      const code = (error as { code?: string }).code;
-      /* c8 ignore next */
-      const rawMessage = typeof (error as { message?: unknown }).message === "string" ? ((error as { message?: string }).message ?? "") : "";
-      const isHelpDisplayCode =
-        code === "commander.helpDisplayed" || code === "commander.help" || code === "commander.helpCommand";
-      if (isHelpDisplayCode || rawMessage.includes("(outputHelp)")) {
-        const helpRequest = parseBootstrapHelpRequest(invocationArgv);
-        if (helpRequest.requested && !isKnownHelpCommandPath(program, helpRequest.commandPathTokens)) {
-          /* c8 ignore next */
-          const unknownToken = helpRequest.commandPathTokens[0] ?? parseBootstrapCommandName(invocationArgv) ?? "<command>";
-          const unknownMessage = `unknown command '${unknownToken}'`;
-          const recoveryCommandDescriptors = await loadRuntimeExtensionCommandDescriptorsForRecovery(
-            resolvePmRoot(process.cwd(), bootstrapGlobal.path),
-          );
-          const usageContext = await resolveCommanderUsageContext(
-            { message: unknownMessage },
-            program,
-            recoveryCommandDescriptors,
-          );
-          const classification = classifyCommanderError(
-            usageContext.message,
-            usageContext.commandName,
-            usageContext.allowedTypes,
-            {
-              unknownCommandExamples: usageContext.unknownCommandExamples,
-              unknownCommandNextSteps: usageContext.unknownCommandNextSteps,
-              attemptedCommand: usageContext.attemptedCommand,
-              normalizedInvocationArgs: usageContext.normalizedInvocationArgs,
-              providedOptionFlags: usageContext.providedOptionFlags,
-              unknownOptionSuggestions: usageContext.unknownOptionSuggestions,
-              suggestedRetryCommand: usageContext.suggestedRetryCommand,
-            },
-          );
-          const { errorCategory, commandResolution } = await emitTelemetryCommandError({
-            command: unknownToken,
-            errorCode: classification.code,
-            errorMessage: classification.detail,
-            exitCode: EXIT_CODE.USAGE,
-            options: {
-              bootstrap_global_options: bootstrapGlobal,
-              commander_code: code ?? "commander.helpDisplayed",
-            },
-            resolutionStage: "parse",
-          });
-          const loggedHandledErrorToSentry = await maybeLogHandledCliErrorToSentry({
-            command: unknownToken,
-            error_code: classification.code,
-            error_category: errorCategory,
-            exit_code: EXIT_CODE.USAGE,
-            error_message: classification.detail,
-            command_resolution: commandResolution,
-            resolution_stage: "parse",
-            source_context: activeTelemetryCommandContext?.source_context,
-          });
-          const renderedUsage = jsonErrors
-            ? await formatCommanderUsageJson({ message: unknownMessage }, program, recoveryCommandDescriptors)
-            : await formatCommanderUsageMessage({ message: unknownMessage }, program, recoveryCommandDescriptors);
-          sentryFinishCommandSpan(false, unknownMessage, {
-            error_code: classification.code,
-            error_category: errorCategory,
-            exit_code: EXIT_CODE.USAGE,
-            command_resolution: commandResolution,
-            resolution_stage: "parse",
-          });
-          await runAndClearAfterCommandHooks({
-            ok: false,
-            error: unknownMessage,
-            exit_code: EXIT_CODE.USAGE,
-            error_code: classification.code,
-            error_category: errorCategory,
-            command_resolution: commandResolution,
-            resolution_stage: "parse",
-          });
-          if (jsonErrors) {
-            printError(renderedUsage);
-          } else {
-            printError(renderedUsage);
-          }
-          if (loggedHandledErrorToSentry) {
-            await sentryFlush(HANDLED_ERROR_SENTRY_FLUSH_TIMEOUT_MS);
-          }
-          process.exitCode = EXIT_CODE.USAGE;
-          return;
-        }
-        sentryFinishCommandSpan(true, undefined, {
-          exit_code: EXIT_CODE.SUCCESS,
-          command_resolution: "success",
-          resolution_stage: "parse",
-        });
-        await runAndClearAfterCommandHooks({
-          ok: true,
-          exit_code: EXIT_CODE.SUCCESS,
-          command_resolution: "success",
-          resolution_stage: "parse",
-        });
-        process.exitCode = EXIT_CODE.SUCCESS;
-        return;
-      }
-      if (code === "commander.version") {
-        sentryFinishCommandSpan(true, undefined, {
-          exit_code: EXIT_CODE.SUCCESS,
-          command_resolution: "success",
-          resolution_stage: "parse",
-        });
-        await runAndClearAfterCommandHooks({
-          ok: true,
-          exit_code: EXIT_CODE.SUCCESS,
-          command_resolution: "success",
-          resolution_stage: "parse",
-        });
-        process.exitCode = EXIT_CODE.SUCCESS;
-        return;
-      }
-      /* c8 ignore next */
-      if (code?.startsWith("commander.")) {
-        const usageContext = await resolveCommanderUsageContext(error, program, activeRuntimeExtensionCommandDescriptors);
-        const classification = classifyCommanderError(
-          usageContext.message,
-          usageContext.commandName,
-          usageContext.allowedTypes,
-          {
-            unknownCommandExamples: usageContext.unknownCommandExamples,
-            unknownCommandNextSteps: usageContext.unknownCommandNextSteps,
-            attemptedCommand: usageContext.attemptedCommand,
-            normalizedInvocationArgs: usageContext.normalizedInvocationArgs,
-            providedOptionFlags: usageContext.providedOptionFlags,
-            unknownOptionSuggestions: usageContext.unknownOptionSuggestions,
-            suggestedRetryCommand: usageContext.suggestedRetryCommand,
-          },
-        );
-        const { errorCategory, commandResolution } = await emitTelemetryCommandError({
-          command: attemptedCommand,
-          errorCode: classification.code,
-          errorMessage: classification.detail,
-          exitCode: EXIT_CODE.USAGE,
-          options: {
-            bootstrap_global_options: bootstrapGlobal,
-            commander_code: code,
-          },
-          resolutionStage: "parse",
-        });
-        const loggedHandledErrorToSentry = await maybeLogHandledCliErrorToSentry({
-          command: attemptedCommand,
-          error_code: classification.code,
-          error_category: errorCategory,
-          exit_code: EXIT_CODE.USAGE,
-          error_message: classification.detail,
-          command_resolution: commandResolution,
-          resolution_stage: "parse",
-          source_context: activeTelemetryCommandContext?.source_context,
-        });
-        const renderedUsage = jsonErrors
-          ? await formatCommanderUsageJson(error, program, activeRuntimeExtensionCommandDescriptors)
-          : await formatCommanderUsageMessage(error, program, activeRuntimeExtensionCommandDescriptors);
-        sentryFinishCommandSpan(false, usageContext.message, {
-          error_code: classification.code,
-          error_category: errorCategory,
-          exit_code: EXIT_CODE.USAGE,
-          command_resolution: commandResolution,
-          resolution_stage: "parse",
-        });
-        await runAndClearAfterCommandHooks({
-          ok: false,
-          error: usageContext.message,
-          exit_code: EXIT_CODE.USAGE,
-          error_code: classification.code,
-          error_category: errorCategory,
-          command_resolution: commandResolution,
-          resolution_stage: "parse",
-        });
-        if (jsonErrors) {
-          printError(renderedUsage);
-        } else {
-          printError(renderedUsage);
-        }
-        if (loggedHandledErrorToSentry) {
-          await sentryFlush(HANDLED_ERROR_SENTRY_FLUSH_TIMEOUT_MS);
-        }
-        process.exitCode = EXIT_CODE.USAGE;
-        return;
-      }
-    }
-
-    /* c8 ignore next */
-    await handleGenericRunPmCliError({
-      error,
-      attemptedCommand,
-      bootstrapGlobal,
-      emitTelemetryCommandError,
-    });
-    /* c8 ignore stop */
+    await handleRunPmCliError({ error, invocationArgv });
   }
 }
 
@@ -2757,6 +2901,12 @@ export const _testOnly = {
   extensionProvidesTemplatesRuntime,
   hasAnyCapability,
   handleGenericRunPmCliError,
+  handleRunPmCliCommanderError,
+  handleRunPmCliError,
+  handleRunPmCliHelpDisplayError,
+  handleRunPmCliKnownError,
+  handleRunPmCliCommanderUsageError,
+  handleUnknownHelpCommandError,
   inferMissingFieldsFromErrorMessage,
   inferPostActionErrorCode,
   inferPostActionFailureMessage,
@@ -2773,12 +2923,14 @@ export const _testOnly = {
   normalizeTelemetryResolutionStage,
   normalizeThrownExitCode,
   probeUsesAnyFlag,
+  prepareExtensionServicesForRunPmCliError,
   readRecordBoolean,
   readRecordNumber,
   readRecordString,
   registerDynamicExtensionCommandPaths,
   registerRuntimeSchemaFieldFlags,
   resolveCoreCommandRegistrationSelection,
+  resolveUnknownHelpToken,
   readThrownExitCode,
   runAndClearAfterCommandHooks,
   runRequiredExtensionCommand,
@@ -2786,8 +2938,10 @@ export const _testOnly = {
   shouldLogHandledErrorToSentry,
   shouldRegisterDynamicExtensionPaths,
   shouldRegisterRuntimeSchemaFlags,
+  shouldHandleRunPmCliCommanderError,
   setActiveExtensionHookContextForTest,
   setActiveRuntimeExtensionCommandDescriptorsForTest,
+  setRecoveredExtensionServices,
   toLooseFieldDefinitionType,
   isImporterOrExporterCommandPath,
   validateDynamicExtensionCommandInvocation,

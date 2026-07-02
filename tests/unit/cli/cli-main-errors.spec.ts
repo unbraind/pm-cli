@@ -263,6 +263,26 @@ describe("CLI main error helpers", () => {
     expect(_testOnly.isCommanderError(new Error("plain"))).toBe(false);
   });
 
+  it("recognizes commander catch-path candidates without capturing generic coded errors", () => {
+    expect(_testOnly.shouldHandleRunPmCliCommanderError({ code: "commander.unknownOption" })).toBe(true);
+    expect(_testOnly.shouldHandleRunPmCliCommanderError({ code: "commander.version" })).toBe(true);
+    expect(_testOnly.shouldHandleRunPmCliCommanderError({ code: "not-commander", message: "rendered (outputHelp)" })).toBe(true);
+    expect(_testOnly.shouldHandleRunPmCliCommanderError({ code: "not-commander", message: 42 })).toBe(false);
+    expect(_testOnly.shouldHandleRunPmCliCommanderError({ code: "not-commander" })).toBe(false);
+    expect(_testOnly.shouldHandleRunPmCliCommanderError(new Error("plain"))).toBe(false);
+  });
+
+  it("resolves unknown help tokens from command path, command name, and fallback", () => {
+    expect(_testOnly.resolveUnknownHelpToken(["help", "missing-command"])).toBe("missing-command");
+    expect(_testOnly.resolveUnknownHelpToken(["unknown-command"])).toBe("unknown-command");
+    expect(_testOnly.resolveUnknownHelpToken([])).toBe("<command>");
+  });
+
+  it("sets recovered extension services for both null and loaded snapshots", () => {
+    expect(() => _testOnly.setRecoveredExtensionServices(null)).not.toThrow();
+    expect(() => _testOnly.setRecoveredExtensionServices({ services: { overrides: [] } })).not.toThrow();
+  });
+
   it("makes top-level command registration idempotent so re-entry never throws (pm-zyez / PM-CLI-1R)", () => {
     const program = new Command();
     _testOnly.ensureIdempotentTopLevelCommandRegistration(program);
@@ -626,6 +646,10 @@ describe("CLI bootstrap and usage helper tails", () => {
         new Map(),
       );
       expect(emptyTypes.allowedTypes).toBe(BUILTIN_TYPE_HELP_VALUES);
+
+      process.argv = ["node", "pm", "--no-extensions", "--pm-path", pmRoot, "alpha", "--bta"];
+      await resolveCommanderUsageContext(new Error("error: unknown option '--bta'"), command, new Map());
+      expect(registrySpy.mock.calls.at(-1)?.[1]).toBeUndefined();
 
       process.argv = ["node", "pm", "--pm-path", path.join(tempRoot, "missing"), "alpha", "--bta"];
       const missingSettings = await resolveCommanderUsageContext(
@@ -1897,6 +1921,13 @@ export default {
         await expect(_testOnly.maybeLoadRuntimeExtensions(late)).resolves.toBeNull();
       });
       expect(stderr).toContain("profile:extensions");
+      await expect(
+        _testOnly.prepareExtensionServicesForRunPmCliError({
+          invocationArgv: ["late"],
+          bootstrapGlobal: parseBootstrapGlobalOptions(["--pm-path", context.pmPath, "late"]),
+          bootstrapPmRoot: context.pmPath,
+        }),
+      ).resolves.toBeUndefined();
     });
   });
 
@@ -1910,6 +1941,13 @@ export default {
       const command = root.command("missing");
       command.setOptionValue("pmPath", fileRoot);
       await expect(_testOnly.maybeLoadRuntimeExtensions(command)).resolves.toBeNull();
+      await expect(
+        _testOnly.prepareExtensionServicesForRunPmCliError({
+          invocationArgv: ["missing"],
+          bootstrapGlobal: parseBootstrapGlobalOptions(["--pm-path", fileRoot, "missing"]),
+          bootstrapPmRoot: fileRoot,
+        }),
+      ).resolves.toBeUndefined();
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
@@ -3539,7 +3577,7 @@ describe("CLI error guidance helpers", () => {
     expect(updateFile).toMatchObject({
       code: "unsupported_update_option",
       recovery: {
-        missing: ["--files"],
+        suggested_flags: ["--files"],
         provided_fields: ["--file"],
       },
     });
@@ -4160,6 +4198,18 @@ describe("CLI Commander usage recovery helpers", () => {
         "--statu-one",
       ]),
     ).toEqual(["--status", "--statu-one", "--statu-two"]);
+    expect(
+      commanderUsageTestOnly.resolveSuggestedRetryForMissingOption(
+        "error: required option '--add <value>' not specified",
+        ["test", "pm-123", "--add-json", "{}"],
+      ),
+    ).toContain('--add "<value>"');
+    expect(
+      commanderUsageTestOnly.resolveSuggestedRetryForMissingOption(
+        "error: required option '--add <value>' not specified",
+        ["test", "pm-123", "--add=command"],
+      ),
+    ).toBeUndefined();
   });
 
   it("falls back to a default commander usage message for non-object errors", async () => {

@@ -795,6 +795,20 @@ describe("calendar command module", () => {
       );
       expect(boundedOccurrenceLimit.events).toHaveLength(2);
 
+      const boundedLookback = await runCalendar(
+        {
+          view: "agenda",
+          include: "events",
+          past: true,
+          recurrenceLookbackDays: "3",
+          tag: "recurrence-controls",
+        },
+        { path: context.pmPath },
+      );
+      expect(boundedLookback.warnings ?? []).not.toContain(
+        "recurring_events_default_cap_applied:lookback=0d,lookahead=28d -- use --recurrence-lookback-days/--recurrence-lookahead-days or --to for wider range",
+      );
+
       vi.useFakeTimers();
       vi.setSystemTime(new Date("2026-04-10T00:00:00.000Z"));
       try {
@@ -996,6 +1010,27 @@ describe("calendar command module", () => {
         { path: context.pmPath },
       );
       expect(yearlyContinue.events.map((event) => event.at)).toEqual(["2024-02-29T09:00:00.000Z"]);
+
+      createCalendarItem(context, {
+        title: "Monthly multi-candidate cap",
+        tags: "calendar,recurrence-monthly-cap",
+        events: ["start=2026-01-01T09:00:00.000Z,title=monthly cap,recur_freq=monthly,recur_by_month_day=1|2|3"],
+      });
+      const monthlyCap = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-01-01T00:00:00.000Z",
+          to: "2026-02-01T00:00:00.000Z",
+          include: "events",
+          tag: "recurrence-monthly-cap",
+          occurrenceLimit: "2",
+        },
+        { path: context.pmPath },
+      );
+      expect(monthlyCap.events.map((event) => event.at)).toEqual([
+        "2026-01-01T09:00:00.000Z",
+        "2026-01-02T09:00:00.000Z",
+      ]);
 
       const yearlyStop = await runCalendar(
         {
@@ -1714,6 +1749,23 @@ describe("calendar command module", () => {
                     exdates: [],
                   },
                 },
+                {
+                  start_at: "2026-04-01T14:00:00.000Z",
+                  end_at: "2026-04-01T15:00:00.000Z",
+                  title: "Empty recurrence filters",
+                  description: null,
+                  all_day: false,
+                  timezone: null,
+                  location: null,
+                  recurrence: {
+                    freq: "monthly",
+                    interval: 1,
+                    count: 1,
+                    by_weekday: [],
+                    by_month_day: [],
+                    exdates: [],
+                  },
+                },
               ],
             },
           ];
@@ -1742,6 +1794,7 @@ describe("calendar command module", () => {
         ]);
         expect(mockedResult.events[0]?.event_end).toBe("invalid-end");
         expect(mockedResult.events.some((event) => event.event_end === "2026-04-02T13:00:00.000Z")).toBe(true);
+        expect(mockedResult.events.some((event) => event.event_title === "Empty recurrence filters")).toBe(true);
       } finally {
         vi.doUnmock("../../../src/core/store/item-store.js");
         vi.resetModules();

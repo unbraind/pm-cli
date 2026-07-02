@@ -498,7 +498,7 @@ describe("runGet and runAppend", () => {
     });
   });
 
-  it("falls back to empty claim history when history entries cannot be decoded", async () => {
+  it("surfaces corrupt claim history when claim state is requested", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, {
         title: "get-history-decode-fallback",
@@ -508,13 +508,8 @@ describe("runGet and runAppend", () => {
       const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
       await writeFile(historyPath, "{not valid jsonl}\n", "utf8");
 
-      const result = await runGet(id, { path: context.pmPath });
-      expect(result.item.id).toBe(id);
-      expect(result.claim_state).toEqual({
-        claimed: false,
-        assignee: null,
-        last_claim: null,
-        last_release: null,
+      await expect(runGet(id, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("contains invalid JSON"),
       });
 
       const projected = await runGet(id, { path: context.pmPath }, { fields: "id,title" });

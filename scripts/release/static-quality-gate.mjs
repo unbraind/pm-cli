@@ -484,46 +484,41 @@ export function parseNumberFlag(flags, key, fallback) {
   return parsed;
 }
 
-export function main() {
-  const { flags } = parseFlags(process.argv.slice(2));
-  if (flags.get("help") || flags.get("h")) {
-    usage();
-    return;
-  }
-
-  const outputJson = flagBool(flags, "json", false);
-  const maxSrcLines = parseNumberFlag(flags, "max-lines", 3400);
-  const maxTestLines = parseNumberFlag(flags, "max-lines-tests", 7000);
-  const maxComplexity = parseNumberFlag(flags, "max-complexity", 260);
-  const maxFilesPerDirectory = parseNumberFlag(flags, "max-files-per-dir", 120);
-  const duplicateWindow = parseNumberFlag(flags, "duplicate-window", 24);
-  const maxDuplicateChunks = parseNumberFlag(flags, "max-duplicate-chunks", 8);
-  const minDocstringCoverage = parseNumberFlag(flags, "min-docstring-coverage", 100);
-  const minExportedDocstringCoverage = parseNumberFlag(flags, "min-exported-docstring-coverage", 100);
-
-  if (duplicateWindow < 5) {
+function parseQualityThresholds(flags) {
+  const thresholds = {
+    maxSrcLines: parseNumberFlag(flags, "max-lines", 3400),
+    maxTestLines: parseNumberFlag(flags, "max-lines-tests", 7000),
+    maxComplexity: parseNumberFlag(flags, "max-complexity", 260),
+    maxFilesPerDirectory: parseNumberFlag(flags, "max-files-per-dir", 120),
+    duplicateWindow: parseNumberFlag(flags, "duplicate-window", 24),
+    maxDuplicateChunks: parseNumberFlag(flags, "max-duplicate-chunks", 8),
+    minDocstringCoverage: parseNumberFlag(flags, "min-docstring-coverage", 100),
+    minExportedDocstringCoverage: parseNumberFlag(flags, "min-exported-docstring-coverage", 100),
+  };
+  if (thresholds.duplicateWindow < 5) {
     fail("--duplicate-window must be >= 5.");
   }
+  return thresholds;
+}
 
-  const files = collectTypeScriptFiles();
-  const duplicateScopeFiles = files.filter((absolutePath) => {
-    const relative = relativeToRepo(absolutePath);
-    return relative.startsWith("src/core/") || relative.startsWith("src/sdk/") || relative.startsWith("src/cli/");
-  });
-  const fileLengthViolations = checkFileLength(files, maxSrcLines, maxTestLines);
-  const directoryViolations = checkDirectoryLoad(files, maxFilesPerDirectory);
-  const duplicateViolations = checkDuplicateChunks(duplicateScopeFiles, duplicateWindow, maxDuplicateChunks);
+function buildQualityReport(files, duplicateScopeFiles, thresholds) {
+  const fileLengthViolations = checkFileLength(files, thresholds.maxSrcLines, thresholds.maxTestLines);
+  const directoryViolations = checkDirectoryLoad(files, thresholds.maxFilesPerDirectory);
+  const duplicateViolations = checkDuplicateChunks(
+    duplicateScopeFiles,
+    thresholds.duplicateWindow,
+    thresholds.maxDuplicateChunks,
+  );
   const orphanViolations = checkOrphanSourceModules(files);
-  const complexityViolations = checkFunctionComplexity(files, maxComplexity);
-  const sourceDocstringCoverage = checkSourceDocstringCoverage(files, minDocstringCoverage);
-  const exportedDocstringCoverage = checkExportedDocstringCoverage(files, minExportedDocstringCoverage);
+  const complexityViolations = checkFunctionComplexity(files, thresholds.maxComplexity);
+  const sourceDocstringCoverage = checkSourceDocstringCoverage(files, thresholds.minDocstringCoverage);
+  const exportedDocstringCoverage = checkExportedDocstringCoverage(files, thresholds.minExportedDocstringCoverage);
   const boilerplateDocstringViolations = checkDocstringBoilerplate(files);
-
-  const report = {
+  return {
     ok:
       fileLengthViolations.length === 0 &&
       directoryViolations.length === 0 &&
-      duplicateViolations.length <= maxDuplicateChunks &&
+      duplicateViolations.length <= thresholds.maxDuplicateChunks &&
       orphanViolations.length === 0 &&
       complexityViolations.length === 0 &&
       sourceDocstringCoverage.ok &&
@@ -532,18 +527,18 @@ export function main() {
     scanned: {
       file_count: files.length,
       duplicate_scope_file_count: duplicateScopeFiles.length,
-      duplicate_window_lines: duplicateWindow,
+      duplicate_window_lines: thresholds.duplicateWindow,
       source_docstring_coverage_percent: sourceDocstringCoverage.coverage_percent,
       exported_docstring_coverage_percent: exportedDocstringCoverage.coverage_percent,
     },
     thresholds: {
-      max_src_lines: maxSrcLines,
-      max_test_lines: maxTestLines,
-      max_complexity: maxComplexity,
-      max_files_per_dir: maxFilesPerDirectory,
-      max_duplicate_chunks: maxDuplicateChunks,
-      min_docstring_coverage_percent: minDocstringCoverage,
-      min_exported_docstring_coverage_percent: minExportedDocstringCoverage,
+      max_src_lines: thresholds.maxSrcLines,
+      max_test_lines: thresholds.maxTestLines,
+      max_complexity: thresholds.maxComplexity,
+      max_files_per_dir: thresholds.maxFilesPerDirectory,
+      max_duplicate_chunks: thresholds.maxDuplicateChunks,
+      min_docstring_coverage_percent: thresholds.minDocstringCoverage,
+      min_exported_docstring_coverage_percent: thresholds.minExportedDocstringCoverage,
     },
     violations: {
       file_length: fileLengthViolations,
@@ -558,44 +553,69 @@ export function main() {
     source_docstrings: sourceDocstringCoverage,
     exported_docstrings: exportedDocstringCoverage,
   };
+}
 
+function printQualityFailureSummary(report) {
+  console.error("Static quality gate failed.");
+  if (report.violations.file_length.length > 0) {
+    console.error(`- file_length violations: ${report.violations.file_length.length}`);
+  }
+  if (report.violations.directory_load.length > 0) {
+    console.error(`- directory_load violations: ${report.violations.directory_load.length}`);
+  }
+  if (report.violations.duplicate_chunks.length > report.thresholds.max_duplicate_chunks) {
+    console.error(`- duplicate_chunks violations: ${report.violations.duplicate_chunks.length}`);
+  }
+  if (report.violations.orphan_modules.length > 0) {
+    console.error(`- orphan_modules violations: ${report.violations.orphan_modules.length}`);
+  }
+  if (report.violations.complexity.length > 0) {
+    console.error(`- complexity violations: ${report.violations.complexity.length}`);
+  }
+  if (!report.source_docstrings.ok) {
+    console.error(
+      `- source_docstring coverage: ${report.source_docstrings.coverage_percent}% ` +
+        `< ${report.source_docstrings.min_coverage_percent}% (${report.source_docstrings.missing.length} missing)`,
+    );
+  }
+  if (!report.exported_docstrings.ok) {
+    console.error(
+      `- exported_docstring coverage: ${report.exported_docstrings.coverage_percent}% ` +
+        `< ${report.exported_docstrings.min_coverage_percent}% (${report.exported_docstrings.missing.length} missing)`,
+    );
+  }
+  if (report.violations.boilerplate_docstrings.length > 0) {
+    console.error(`- boilerplate_docstring violations: ${report.violations.boilerplate_docstrings.length}`);
+  }
+}
+
+function printQualityReport(report, outputJson) {
   if (outputJson) {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
   } else if (report.ok) {
     console.log("Static quality gate passed.");
   } else {
-    console.error("Static quality gate failed.");
-    if (fileLengthViolations.length > 0) {
-      console.error(`- file_length violations: ${fileLengthViolations.length}`);
-    }
-    if (directoryViolations.length > 0) {
-      console.error(`- directory_load violations: ${directoryViolations.length}`);
-    }
-    if (duplicateViolations.length > maxDuplicateChunks) {
-      console.error(`- duplicate_chunks violations: ${duplicateViolations.length}`);
-    }
-    if (orphanViolations.length > 0) {
-      console.error(`- orphan_modules violations: ${orphanViolations.length}`);
-    }
-    if (complexityViolations.length > 0) {
-      console.error(`- complexity violations: ${complexityViolations.length}`);
-    }
-    if (!sourceDocstringCoverage.ok) {
-      console.error(
-        `- source_docstring coverage: ${sourceDocstringCoverage.coverage_percent}% ` +
-          `< ${sourceDocstringCoverage.min_coverage_percent}% (${sourceDocstringCoverage.missing.length} missing)`,
-      );
-    }
-    if (!exportedDocstringCoverage.ok) {
-      console.error(
-        `- exported_docstring coverage: ${exportedDocstringCoverage.coverage_percent}% ` +
-          `< ${exportedDocstringCoverage.min_coverage_percent}% (${exportedDocstringCoverage.missing.length} missing)`,
-      );
-    }
-    if (boilerplateDocstringViolations.length > 0) {
-      console.error(`- boilerplate_docstring violations: ${boilerplateDocstringViolations.length}`);
-    }
+    printQualityFailureSummary(report);
   }
+}
+
+export function main() {
+  const { flags } = parseFlags(process.argv.slice(2));
+  if (flags.get("help") || flags.get("h")) {
+    usage();
+    return;
+  }
+
+  const outputJson = flagBool(flags, "json", false);
+  const thresholds = parseQualityThresholds(flags);
+
+  const files = collectTypeScriptFiles();
+  const duplicateScopeFiles = files.filter((absolutePath) => {
+    const relative = relativeToRepo(absolutePath);
+    return relative.startsWith("src/core/") || relative.startsWith("src/sdk/") || relative.startsWith("src/cli/");
+  });
+  const report = buildQualityReport(files, duplicateScopeFiles, thresholds);
+  printQualityReport(report, outputJson);
 
   if (!report.ok) {
     process.exitCode = 1;
