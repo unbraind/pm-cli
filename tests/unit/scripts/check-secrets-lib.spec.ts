@@ -80,6 +80,7 @@ describe("check-secrets-lib", () => {
     expect(rulesFor("a.txt", `sk-proj-${"a_".repeat(12)}`)).toContain("openai-api-key");
     expect(rulesFor("a.txt", `sk-svcacct-${"a1".repeat(12)}`)).toContain("openai-api-key");
     expect(rulesFor("a.txt", `glpat-${"b".repeat(20)}`)).toContain("gitlab-token");
+    expect(rulesFor("a.txt", `glpat-YV${"a1".repeat(18)}.01.0a1b2c`)).toContain("gitlab-token");
   });
 
   it("does not flag clean documentation content", async () => {

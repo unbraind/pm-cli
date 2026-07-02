@@ -10,7 +10,8 @@ export const RULES = [
   // alternation would be redundant here: the prefixes' characters are a subset
   // of the payload class, so backtracking makes them absorbable either way.
   { name: "openai-api-key", regex: /\bsk-(?!ant-)[A-Za-z0-9_-]{20,}\b/g },
-  { name: "gitlab-token", regex: /\bglpat-[A-Za-z0-9_-]{20,}\b/g },
+  // Dot included for GitLab's newer routable PAT format (glpat-<base64>.<len>.<crc>).
+  { name: "gitlab-token", regex: /\bglpat-[A-Za-z0-9_.-]{20,}\b/g },
   { name: "jwt-like-token", regex: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g },
   { name: "npm-auth-token-assignment", regex: /_authToken\s*=\s*\S+/g },
   { name: "sentry-user-token", regex: /\bsntryu_[A-Za-z0-9]{20,}\b/g },
