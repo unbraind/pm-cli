@@ -6,7 +6,7 @@ export const RULES = [
   { name: "google-api-key", regex: /\bAIza[0-9A-Za-z_-]{35}\b/g },
   { name: "slack-token", regex: /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/g },
   { name: "anthropic-api-key", regex: /\bsk-ant-[A-Za-z0-9_-]{20,}\b/g },
-  { name: "openai-api-key", regex: /\bsk-(?:proj-|svcacct-)?[A-Za-z0-9]{20,}\b/g },
+  { name: "openai-api-key", regex: /\bsk-(?:proj-|svcacct-)?[A-Za-z0-9_-]{20,}\b/g },
   { name: "gitlab-token", regex: /\bglpat-[A-Za-z0-9_-]{20,}\b/g },
   { name: "jwt-like-token", regex: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g },
   { name: "npm-auth-token-assignment", regex: /_authToken\s*=\s*\S+/g },
