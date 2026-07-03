@@ -45,3 +45,36 @@ export interface MutationMetadataCommandOptions {
   regression?: string;
   customerImpact?: string;
 }
+
+/**
+ * Documents repeatable linked-resource option payloads accepted by create/update commands.
+ */
+export interface SharedLinkedResourceOptions {
+  comment?: string[];
+  note?: string[];
+  learning?: string[];
+  file?: string[];
+  test?: string[];
+  doc?: string[];
+  reminder?: string[];
+  event?: string[];
+  typeOption?: string[];
+  field?: string[];
+}
+
+/**
+ * Documents shared linked-resource clear flags accepted by create/update commands.
+ */
+export interface SharedLinkedResourceClearOptions {
+  unset?: string[];
+  clearDeps?: boolean;
+  clearComments?: boolean;
+  clearNotes?: boolean;
+  clearLearnings?: boolean;
+  clearFiles?: boolean;
+  clearTests?: boolean;
+  clearDocs?: boolean;
+  clearReminders?: boolean;
+  clearEvents?: boolean;
+  clearTypeOptions?: boolean;
+}

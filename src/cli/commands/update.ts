@@ -105,15 +105,23 @@ import {
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR,
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
   COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON,
+  parseCommandUnsetTargets,
   resolveRuntimeUnsetFieldDefinition,
   type CommandUnsetFieldDefinition,
 } from "./shared-unset-fields.js";
-import type { MutationMetadataCommandOptions } from "./mutation-command-options.js";
+import type {
+  MutationMetadataCommandOptions,
+  SharedLinkedResourceClearOptions,
+  SharedLinkedResourceOptions,
+} from "./mutation-command-options.js";
 
 /**
  * Documents the update command options payload exchanged by command, SDK, and package integrations.
  */
-export interface UpdateCommandOptions extends MutationMetadataCommandOptions {
+export interface UpdateCommandOptions
+  extends MutationMetadataCommandOptions,
+    SharedLinkedResourceOptions,
+    SharedLinkedResourceClearOptions {
   title?: string;
   description?: string;
   body?: string;
@@ -132,27 +140,6 @@ export interface UpdateCommandOptions extends MutationMetadataCommandOptions {
   replaceDeps?: boolean;
   replaceTests?: boolean;
   runtimeFieldCommands?: Array<"update" | "update_many">;
-  comment?: string[];
-  note?: string[];
-  learning?: string[];
-  file?: string[];
-  test?: string[];
-  doc?: string[];
-  reminder?: string[];
-  event?: string[];
-  typeOption?: string[];
-  field?: string[];
-  unset?: string[];
-  clearDeps?: boolean;
-  clearComments?: boolean;
-  clearNotes?: boolean;
-  clearLearnings?: boolean;
-  clearFiles?: boolean;
-  clearTests?: boolean;
-  clearDocs?: boolean;
-  clearReminders?: boolean;
-  clearEvents?: boolean;
-  clearTypeOptions?: boolean;
   [key: string]: unknown;
 }
 
@@ -272,23 +259,10 @@ function parseUpdateUnsetTargets(
   runtimeFieldRegistry?: RuntimeFieldRegistry,
   extensionFieldNames: readonly string[] = [],
 ): { frontMatterKeys: Set<string>; optionKeys: Set<string> } {
-  const frontMatterKeys = new Set<string>();
-  const optionKeys = new Set<string>();
-  if (!raw || raw.length === 0) {
-    return { frontMatterKeys, optionKeys };
-  }
-
-  for (const entry of raw) {
-    const trimmed = entry.trim().toLowerCase();
-    if (!trimmed) {
-      throw new PmCliError("--unset values must not be empty", EXIT_CODE.USAGE);
-    }
-    if (isLegacyNoneToken(trimmed)) {
-      throw new PmCliError(
-        '--unset no longer accepts "none" or "null". Specify concrete field names such as --unset deadline',
-        EXIT_CODE.USAGE,
-      );
-    }
+  return parseCommandUnsetTargets({
+    raw,
+    supportedFields: UPDATE_UNSET_SUPPORTED_CANONICAL_FIELDS,
+    resolveDefinition: (trimmed) => {
     const extensionFieldName = extensionFieldNames.find((fieldName) => {
       const normalizedFieldName = fieldName.toLowerCase();
       return (
@@ -300,17 +274,9 @@ function parseUpdateUnsetTargets(
     const definition = UPDATE_UNSET_ALIAS_MAP.get(trimmed) ??
       resolveRuntimeUnsetFieldDefinition(trimmed, "update", runtimeFieldRegistry) ??
       (extensionFieldName ? { optionKey: "field", frontMatterKey: extensionFieldName } : undefined);
-    if (!definition) {
-      throw new PmCliError(
-        `Unsupported --unset field "${entry}". Supported fields: ${UPDATE_UNSET_SUPPORTED_CANONICAL_FIELDS}`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    frontMatterKeys.add(definition.frontMatterKey);
-    optionKeys.add(definition.optionKey);
-  }
-
-  return { frontMatterKeys, optionKeys };
+    return definition;
+    },
+  });
 }
 
 // Restricted append-style flags have dedicated commands with their own

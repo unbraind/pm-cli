@@ -4,6 +4,9 @@
  * Single-sources unset-field metadata shared by create and update command handlers.
  */
 import type { RuntimeFieldCommand, RuntimeFieldRegistry } from "../../core/schema/runtime-schema.js";
+import { EXIT_CODE } from "../../core/shared/constants.js";
+import { PmCliError } from "../../core/shared/errors.js";
+import { isLegacyNoneToken } from "./legacy-none-tokens.js";
 
 /**
  * Describes one command option that can be removed from item front matter through `--unset`.
@@ -139,6 +142,55 @@ export const COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR: readonly CommandUnsetF
 export interface RuntimeUnsetFieldDefinition {
   optionKey: string;
   frontMatterKey: string;
+}
+
+/**
+ * Result of parsing command-level `--unset` tokens into metadata and option-key sets.
+ */
+export interface ParsedCommandUnsetTargets {
+  frontMatterKeys: Set<string>;
+  optionKeys: Set<string>;
+}
+
+/**
+ * Resolve one normalized `--unset` token to a front-matter/option pair.
+ */
+export type CommandUnsetTargetResolver = (trimmedToken: string) => RuntimeUnsetFieldDefinition | undefined;
+
+/**
+ * Parse and validate common command `--unset` tokens while preserving command-specific field resolution.
+ */
+export function parseCommandUnsetTargets(options: {
+  readonly raw: readonly string[] | undefined;
+  readonly resolveDefinition: CommandUnsetTargetResolver;
+  readonly supportedFields: string;
+}): ParsedCommandUnsetTargets {
+  const frontMatterKeys = new Set<string>();
+  const optionKeys = new Set<string>();
+  if (!options.raw || options.raw.length === 0) {
+    return { frontMatterKeys, optionKeys };
+  }
+
+  for (const entry of options.raw) {
+    const trimmed = entry.trim().toLowerCase();
+    if (!trimmed) {
+      throw new PmCliError("--unset values must not be empty", EXIT_CODE.USAGE);
+    }
+    if (isLegacyNoneToken(trimmed)) {
+      throw new PmCliError(
+        '--unset no longer accepts "none" or "null". Specify concrete field names such as --unset deadline',
+        EXIT_CODE.USAGE,
+      );
+    }
+    const definition = options.resolveDefinition(trimmed);
+    if (!definition) {
+      throw new PmCliError(`Unsupported --unset field "${entry}". Supported fields: ${options.supportedFields}`, EXIT_CODE.USAGE);
+    }
+    frontMatterKeys.add(definition.frontMatterKey);
+    optionKeys.add(definition.optionKey);
+  }
+
+  return { frontMatterKeys, optionKeys };
 }
 
 /**

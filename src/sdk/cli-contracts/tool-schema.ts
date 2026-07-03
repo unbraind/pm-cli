@@ -217,50 +217,38 @@ const MANAGED_EXTENSION_PACKAGE_OPTION_KEYS = [
   "failOnWarn",
 ];
 
+function managedLifecycleSchemaContracts(prefix: "extension" | "package"): Record<string, PmActionSchemaContract> {
+  return {
+    [`${prefix}-init`]: { required: ["target"], optional: ["scope"] },
+    [`${prefix}-install`]: {
+      optional: ["target", "github", "scope", "ref"],
+      anyOfRequired: [["target"], ["github"]],
+    },
+    [`${prefix}-uninstall`]: { required: ["target"], optional: ["scope"] },
+    [`${prefix}-explore`]: { optional: ["scope"] },
+    [`${prefix}-manage`]: { optional: ["scope", "runtimeProbe", "fixManagedState"] },
+    [`${prefix}-describe`]: { optional: ["target", "scope", "markdown", "output"] },
+    [`${prefix}-reload`]: { optional: ["scope", "watch"] },
+    [`${prefix}-doctor`]: { optional: ["scope", "detail", "trace", "fixManagedState", "strictExit", "failOnWarn"] },
+    [`${prefix}-catalog`]: { optional: ["scope", "fields"] },
+    [`${prefix}-adopt`]: { required: ["target"], optional: ["scope", "github", "ref"] },
+    [`${prefix}-adopt-all`]: { optional: ["scope"] },
+    [`${prefix}-activate`]: { required: ["target"], optional: ["scope"] },
+    [`${prefix}-deactivate`]: { required: ["target"], optional: ["scope"] },
+    [prefix]: {
+      optional: MANAGED_EXTENSION_PACKAGE_OPTION_KEYS,
+    },
+  };
+}
+
 const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = {
   init: { optional: ["prefix", "preset", "typePreset", "defaults", "author", "agentGuidance", "withPackages", "force", "verbose"] },
   config: {
     required: ["scope", "configAction"],
     optional: ["key", "value", "criterion", "clearCriteria", "format", "policy"],
   },
-  "extension-init": { required: ["target"], optional: ["scope"] },
-  "extension-install": {
-    optional: ["target", "github", "scope", "ref"],
-    anyOfRequired: [["target"], ["github"]],
-  },
-  "extension-uninstall": { required: ["target"], optional: ["scope"] },
-  "extension-explore": { optional: ["scope"] },
-  "extension-manage": { optional: ["scope", "runtimeProbe", "fixManagedState"] },
-  "extension-describe": { optional: ["target", "scope", "markdown", "output"] },
-  "extension-reload": { optional: ["scope", "watch"] },
-  "extension-doctor": { optional: ["scope", "detail", "trace", "fixManagedState", "strictExit", "failOnWarn"] },
-  "extension-catalog": { optional: ["scope", "fields"] },
-  "extension-adopt": { required: ["target"], optional: ["scope", "github", "ref"] },
-  "extension-adopt-all": { optional: ["scope"] },
-  "extension-activate": { required: ["target"], optional: ["scope"] },
-  "extension-deactivate": { required: ["target"], optional: ["scope"] },
-  extension: {
-    optional: MANAGED_EXTENSION_PACKAGE_OPTION_KEYS,
-  },
-  "package-init": { required: ["target"], optional: ["scope"] },
-  "package-install": {
-    optional: ["target", "github", "scope", "ref"],
-    anyOfRequired: [["target"], ["github"]],
-  },
-  "package-uninstall": { required: ["target"], optional: ["scope"] },
-  "package-explore": { optional: ["scope"] },
-  "package-manage": { optional: ["scope", "runtimeProbe", "fixManagedState"] },
-  "package-describe": { optional: ["target", "scope", "markdown", "output"] },
-  "package-reload": { optional: ["scope", "watch"] },
-  "package-doctor": { optional: ["scope", "detail", "trace", "fixManagedState", "strictExit", "failOnWarn"] },
-  "package-catalog": { optional: ["scope", "fields"] },
-  "package-adopt": { required: ["target"], optional: ["scope", "github", "ref"] },
-  "package-adopt-all": { optional: ["scope"] },
-  "package-activate": { required: ["target"], optional: ["scope"] },
-  "package-deactivate": { required: ["target"], optional: ["scope"] },
-  package: {
-    optional: MANAGED_EXTENSION_PACKAGE_OPTION_KEYS,
-  },
+  ...managedLifecycleSchemaContracts("extension"),
+  ...managedLifecycleSchemaContracts("package"),
   install: {
     optional: ["target", "github", "scope", "ref"],
     anyOfRequired: [["target"], ["github"]],
