@@ -2,13 +2,15 @@ id: pm-z1pv
 title: "Perf: pm context / pm next hot path ~700ms on an ~850-item tracker"
 description: "From 2026-07-02 audit (Lane D, pm-3l76): node startup is ~60ms, but pm context --limit 5 and pm next take ~700ms warm on this repo (857 items); list-open ~430ms, get ~335ms. Dominant cost is full-corpus load + actionability scan. Candidates: reuse/extend the front-matter cache on the context/next path, lazy-load bodies, avoid re-parsing closed items for ready-leaf computation. Target: common reads under ~300ms."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[2]: audit-followup,performance
 created_at: "2026-07-02T21:55:41.688Z"
-updated_at: "2026-07-03T04:27:46.587Z"
-assignee: claude-code-agent
+updated_at: "2026-07-03T05:18:23.106Z"
 author: claude-code-agent
+resolution: "Merged PR #421: stat-validated in-process memo for the three front-matter cache envelopes (LRU re-insert on hit, cap 24, repopulated on persist) plus capped memos for Date.parse in compareTimestampStrings and normalizeStatusToken; shared evictOldestMemoEntries half-eviction helper in core/shared/memo.ts."
+expected_result: Common reads (pm next/context/list/get) substantially faster warm with byte-identical output; target under ~300ms for common reads.
+actual_result: "Warm on this 857-item tracker: next 1282-1545->564-699ms, context 1233-1579->494-703ms, list --status open 987-1042->425-478ms, get 704-762->262-304ms. get meets the 300ms target; next/context remaining cost is ~300ms ESM bundle load + double corpus stat-scan (build-level lazy-load follow-up candidate). Output verified byte-identical vs published 2026.7.2; 5283 tests 100% coverage; greptile 2 local rounds + PR bots (greptile/gemini/coderabbit) all clean or addressed."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-fpod,related,"2026-07-02T21:55:55.554Z",null,null
 comments[1]{created_at,author,text}:
@@ -21,4 +23,5 @@ tests[3]{command,scope}:
   tests/unit/core/item/front-matter-cache.spec.ts,project
   tests/unit/core/schema/item-types-file.spec.ts,project
   tests/unit/core/shared/shared-helpers.spec.ts,project
+close_reason: "Merged PR #421: stat-validated in-process memo for the three front-matter cache envelopes (LRU re-insert on hit, cap 24, repopulated on persist) plus capped memos for Date.parse in compareTimestampStrings and normalizeStatusToken; shared evictOldestMemoEntries half-eviction helper in core/shared/memo.ts."
 body: ""
