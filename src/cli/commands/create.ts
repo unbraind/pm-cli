@@ -151,7 +151,6 @@ export interface CreateCommandOptions
   addTags?: string[];
   body?: string;
   allowMissingParent?: boolean;
-  dep?: string[];
   template?: string;
   createMode?: string;
   schedulePreset?: string;

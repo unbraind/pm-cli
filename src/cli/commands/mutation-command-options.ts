@@ -56,6 +56,7 @@ export interface SharedLinkedResourceOptions {
   file?: string[];
   test?: string[];
   doc?: string[];
+  dep?: string[];
   reminder?: string[];
   event?: string[];
   typeOption?: string[];

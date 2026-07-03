@@ -485,9 +485,14 @@ describe("generateBashScript", () => {
     }
     const zshListBlockStart = zsh.indexOf("list|list-all|list-draft");
     const zshListBlock = zsh.slice(zshListBlockStart, zsh.indexOf("aggregate)", zshListBlockStart));
+    expect(zshListBlock).toContain("--has-files[");
+    expect(zshListBlock).toContain("--no-files[");
+    expect(zshListBlock).toContain("--filter-files-missing[");
     expect(zshListBlock).toContain("--has-docs[");
     expect(zshListBlock).toContain("--no-docs[");
     expect(zshListBlock).toContain("--filter-docs-missing[");
+    expect(zshListBlock).not.toContain("--filter-has-files[");
+    expect(zshListBlock).not.toContain("--filter-no-files[");
     expect(zshListBlock).not.toContain("--filter-has-docs[");
     expect(zshListBlock).not.toContain("--filter-no-docs[");
     expect(zsh).not.toContain("--reviewer-missing[");

@@ -210,10 +210,10 @@ export function toImportStringMap(value: unknown): Record<string, string> | unde
 }
 
 /**
- * Coerces a record of integer values.
+ * Coerces a record of finite numeric values.
  */
 export function toImportNumberMap(value: unknown): Record<string, number> | undefined {
-  return toImportValueMap(value, toImportInteger);
+  return toImportValueMap(value, toImportFiniteNumber);
 }
 
 /**

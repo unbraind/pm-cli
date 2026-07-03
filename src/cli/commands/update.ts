@@ -135,7 +135,6 @@ export interface UpdateCommandOptions
   force?: boolean;
   allowAuditUpdate?: boolean;
   allowAuditDepUpdate?: boolean;
-  dep?: string[];
   depRemove?: string[];
   replaceDeps?: boolean;
   replaceTests?: boolean;

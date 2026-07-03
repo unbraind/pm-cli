@@ -192,11 +192,16 @@ export function resolveCalendarOutputFormat(options, global) {
     // whose only caller validates payload via isCalendarResult first).
     expect(runtime._testOnly.readPayloadFormat("raw-string")).toBe("toon");
     expect(runtime._testOnly.readPayloadFormat(null)).toBe("toon");
+    expect(runtime._testOnly.readPayloadFormat([{ format: "json" }])).toBe("toon");
     expect(runtime._testOnly.readPayloadFormat({ format: "json" })).toBe("json");
+    expect(runtime._testOnly.readPayloadResult(Object.create({ result: "prototype" }))).toEqual({});
+    expect(runtime._testOnly.readPayloadResult({ result: "own" })).toBe("own");
     expect(runtime._testOnly.readPayloadCommandOptions("raw-string")).toEqual({});
     expect(runtime._testOnly.readPayloadCommandOptions(null)).toEqual({});
+    expect(runtime._testOnly.readPayloadCommandOptions({ command_options: [] })).toEqual({});
     expect(runtime._testOnly.readPayloadGlobalOptions("raw-string")).toEqual({});
     expect(runtime._testOnly.readPayloadGlobalOptions(null)).toEqual({});
+    expect(runtime._testOnly.readPayloadGlobalOptions({ global: [] })).toEqual({});
   });
 
   it("shares a single in-flight calendar runtime load across concurrent callers", async () => {

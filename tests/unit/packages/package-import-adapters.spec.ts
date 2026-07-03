@@ -21,6 +21,7 @@ import {
   toEstimatedMinutesValue,
   toImportLinkedTests,
   toImportLogEntries,
+  toImportNumberMap,
   toImportPriority,
   toImportStatus,
   toImportTags,
@@ -65,6 +66,15 @@ describe("package import adapter primitives", () => {
       expect(toImportStatus("in_progress")).toBe("in_progress");
       expect(toImportStatus("unknown-status")).toBe("open");
       expect(toImportStatus(undefined)).toBe("open");
+    });
+
+    it("toImportNumberMap preserves finite decimal values", () => {
+      expect(toImportNumberMap({ count: 1, ratio: "1.5", bad: Number.NaN, empty: " " })).toEqual({
+        count: 1,
+        ratio: 1.5,
+      });
+      expect(toImportNumberMap({})).toBeUndefined();
+      expect(toImportNumberMap([])).toBeUndefined();
     });
 
     it("coerces log entries and linked tests through option branches", () => {

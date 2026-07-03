@@ -15,6 +15,7 @@ import { resolveGovernanceKnobs } from "../store/settings.js";
 import type { ItemDocument, PmSettings } from "../../types/index.js";
 
 type LoadedItem = Awaited<ReturnType<typeof readLocatedItem>>;
+type HistoryRawWriter = (filePath: string, content: string) => Promise<void>;
 
 /**
  * Documents the history rewrite subject payload exchanged by command, SDK, and package integrations.
@@ -141,15 +142,17 @@ export async function writeHistoryRawWithRollback(params: {
   historyPath: string;
   nextHistoryRaw: string;
   historyRawUnderLock: string | null;
+  writeHistoryRaw?: HistoryRawWriter;
 }): Promise<void> {
+  const writeHistoryRaw = params.writeHistoryRaw ?? writeFileAtomic;
   try {
-    await writeFileAtomic(params.historyPath, params.nextHistoryRaw);
+    await writeHistoryRaw(params.historyPath, params.nextHistoryRaw);
   } catch (error) {
     try {
       if (params.historyRawUnderLock === null) {
         await fs.rm(params.historyPath, { force: true });
       } else {
-        await writeFileAtomic(params.historyPath, params.historyRawUnderLock);
+        await writeHistoryRaw(params.historyPath, params.historyRawUnderLock);
       }
     } catch (rollbackError) {
       throw new AggregateError(

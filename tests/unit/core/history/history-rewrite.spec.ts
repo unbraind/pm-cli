@@ -242,9 +242,11 @@ describe("verifyHistoryRewriteNoDrift", () => {
 
 describe("writeHistoryRawWithRollback", () => {
   let tempRoot: string;
+  let forcedWriteFailureCount = 0;
 
   beforeEach(async () => {
     tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-history-write-rollback-"));
+    forcedWriteFailureCount = 0;
   });
 
   afterEach(async () => {
@@ -269,6 +271,42 @@ describe("writeHistoryRawWithRollback", () => {
       expect(aggregate.errors).toHaveLength(2);
       expect(String(aggregate.errors[0])).toContain("EISDIR");
     }
+  });
+
+  it("restores the prior history content when rollback succeeds", async () => {
+    const historyPath = path.join(tempRoot, "history.jsonl");
+    await fs.writeFile(historyPath, "current\n", "utf8");
+    await expect(
+      writeHistoryRawWithRollback({
+        historyPath,
+        nextHistoryRaw: "next\n",
+        historyRawUnderLock: "previous\n",
+        writeHistoryRaw: async (targetPath, content) => {
+          forcedWriteFailureCount += 1;
+          if (forcedWriteFailureCount === 1) {
+            throw new Error("primary write failed");
+          }
+          await fs.writeFile(targetPath, content, "utf8");
+        },
+      }),
+    ).rejects.toThrow("primary write failed");
+    await expect(fs.readFile(historyPath, "utf8")).resolves.toBe("previous\n");
+  });
+
+  it("deletes the history file when no prior snapshot existed and rollback succeeds", async () => {
+    const historyPath = path.join(tempRoot, "history.jsonl");
+    await fs.writeFile(historyPath, "partial\n", "utf8");
+    await expect(
+      writeHistoryRawWithRollback({
+        historyPath,
+        nextHistoryRaw: "next\n",
+        historyRawUnderLock: null,
+        writeHistoryRaw: async () => {
+          throw new Error("primary write failed");
+        },
+      }),
+    ).rejects.toThrow("primary write failed");
+    await expect(fs.access(historyPath)).rejects.toThrow();
   });
 });
 
