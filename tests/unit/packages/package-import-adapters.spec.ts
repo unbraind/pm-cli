@@ -109,14 +109,14 @@ describe("package import adapter primitives", () => {
       expect(
         toImportLinkedTests(
           [
-            { command: "pnpm test", timeout_seconds: "1.5" },
+            { command: "pnpm test", path: "tests/unit/smoke.spec.ts", timeout_seconds: "1.5" },
             { command: "pnpm lint", timeout_seconds: 0 },
             { command: "pnpm build", timeout_seconds: 0 },
           ],
           { timeoutMinimum: 1 },
         ),
       ).toEqual([
-        { command: "pnpm test", path: undefined, scope: "project", timeout_seconds: 1.5, note: undefined },
+        { command: "pnpm test", path: "tests/unit/smoke.spec.ts", scope: "project", timeout_seconds: 1.5, note: undefined },
         { command: "pnpm lint", path: undefined, scope: "project", timeout_seconds: undefined, note: undefined },
         { command: "pnpm build", path: undefined, scope: "project", timeout_seconds: undefined, note: undefined },
       ]);
@@ -130,9 +130,7 @@ describe("package import adapter primitives", () => {
       expect(toImportLinkedTests([{ command: "pnpm test", timeout_seconds: 0 }])).toEqual([
         { command: "pnpm test", path: undefined, scope: "project", timeout_seconds: 0, note: undefined },
       ]);
-      expect(toImportLinkedTests([{ path: "tests/unit/smoke.spec.ts" }])).toEqual([
-        { path: "tests/unit/smoke.spec.ts", scope: "project", timeout_seconds: undefined, note: undefined },
-      ]);
+      expect(toImportLinkedTests([{ path: "tests/unit/smoke.spec.ts" }])).toBeUndefined();
     });
 
     it("selectImportAuthor prefers explicit, then PM_AUTHOR, then settings", () => {

@@ -295,7 +295,9 @@ const BEADS_DOC_OPTIONS = {
 const BEADS_TEST_OPTIONS = {
   allowScalar: true,
   commandKeys: ["command", "test"],
+  integerTimeout: true,
   timeoutMinimum: 0,
+  timeoutExclusiveMinimum: true,
 } satisfies ToImportLinkedTestsOptions;
 
 function toIsoString(value: unknown): string | undefined {

@@ -4,8 +4,7 @@
  * Implements append-only history and replay behavior for History Rewrite.
  */
 import fs from "node:fs/promises";
-import { readFileIfExists } from "../fs/fs-utils.js";
-import { writeFileAtomic } from "../fs/fs-utils.js";
+import { readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
 import type { ItemTypeRegistry } from "../item/type-registry.js";
 import { acquireLock } from "../lock/lock.js";
 import { EXIT_CODE } from "../shared/constants.js";
