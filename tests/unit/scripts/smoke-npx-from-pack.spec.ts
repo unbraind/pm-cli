@@ -23,6 +23,8 @@ interface ExecResponses {
   pmResponse?: (commandName: string, pmArgs: string[]) => string;
   /** Throw on the first `npx ... pm --version` call, succeed on npm-exec fallback. */
   npxVersionFails?: boolean;
+  /** Throw selected `npx --package pm ...` invocations before npm-exec fallback. */
+  npxPmFailure?: (commandName: string, pmArgs: string[]) => Error | undefined;
   /** Override direct (`npx <spec>`) responses. */
   directResponse?: (args: string[]) => string;
   aliasResponse?: (args: string[]) => string;
@@ -43,43 +45,97 @@ function defaultPm(commandName: string): string {
   return "{}";
 }
 
-function buildExecFileSync(responses: ExecResponses) {
-  let npxVersionFailedOnce = false;
-  const pm = responses.pmResponse ?? ((c: string) => defaultPm(c));
-  return vi.fn((command: string, args: string[]) => {
-    const cmd = baseCommand(command);
-    if (cmd === "npm" && args[0] === "pack") {
-      return responses.packOutput ?? "pm-cli-2026.6.14.tgz\n";
-    }
-    if (cmd === "npm" && args[0] === "exec") {
-      // npm-exec fallback for runPackedPm.
-      const idx = args.indexOf("pm");
-      const pmArgs = idx >= 0 ? args.slice(idx + 1) : [];
-      return pm(pmArgs[0], pmArgs);
-    }
-    if (cmd === "npx" && String(args[1] ?? "").startsWith("file:")) {
-      if (responses.directResponse) return responses.directResponse(args);
-      if (args.includes("--version")) return "2026.6.14\n";
-      if (args.includes("--help")) return "Usage: pm\n";
-    }
-    if (cmd === "npx" && args.includes("--package") && args.includes("pm-cli")) {
-      if (responses.aliasResponse) return responses.aliasResponse(args);
-      if (args.includes("--version")) return "2026.6.14\n";
-      if (args.includes("--help")) return "Usage: pm-cli\n";
-    }
-    if (cmd === "npx" && args.includes("--package") && args.includes("pm")) {
-      const pmArgs = args.slice(args.indexOf("pm") + 1);
-      const commandName = pmArgs[0];
-      if (commandName === "--version" && responses.npxVersionFails && !npxVersionFailedOnce) {
-        npxVersionFailedOnce = true;
-        const error = new Error("npx direct package failed") as Error & { stderr?: string };
-        error.stderr = "npx stderr";
-        throw error;
-      }
-      return pm(commandName, pmArgs);
-    }
+interface ExecState {
+  npxVersionFailedOnce: boolean;
+}
+
+function pmArgsAfterBinary(args: string[], binary: string): string[] {
+  const index = args.indexOf(binary);
+  return index >= 0 ? args.slice(index + 1) : [];
+}
+
+function handleNpmExec(args: string[], pm: (commandName: string, pmArgs: string[]) => string): string {
+  const pmArgs = pmArgsAfterBinary(args, "pm");
+  return pm(pmArgs[0], pmArgs);
+}
+
+function handleBareNpxPackage(args: string[], responses: ExecResponses): string | undefined {
+  if (!String(args[1] ?? "").startsWith("file:")) {
+    return undefined;
+  }
+  if (responses.directResponse) {
+    return responses.directResponse(args);
+  }
+  if (args.includes("--version")) {
+    return "2026.6.14\n";
+  }
+  return args.includes("--help") ? "Usage: pm\n" : undefined;
+}
+
+function handleAliasNpxPackage(args: string[], responses: ExecResponses): string | undefined {
+  if (!args.includes("--package") || !args.includes("pm-cli")) {
+    return undefined;
+  }
+  if (responses.aliasResponse) {
+    return responses.aliasResponse(args);
+  }
+  if (args.includes("--version")) {
+    return "2026.6.14\n";
+  }
+  return args.includes("--help") ? "Usage: pm-cli\n" : undefined;
+}
+
+function handlePmNpxPackage(
+  args: string[],
+  responses: ExecResponses,
+  state: ExecState,
+  pm: (commandName: string, pmArgs: string[]) => string,
+): string | undefined {
+  if (!args.includes("--package") || !args.includes("pm")) {
+    return undefined;
+  }
+  const pmArgs = pmArgsAfterBinary(args, "pm");
+  const commandName = pmArgs[0];
+  const failure = responses.npxPmFailure?.(commandName, pmArgs);
+  if (failure) {
+    throw failure;
+  }
+  if (commandName === "--version" && responses.npxVersionFails && !state.npxVersionFailedOnce) {
+    state.npxVersionFailedOnce = true;
+    const error = new Error("npx direct package failed") as Error & { stderr?: string };
+    error.stderr = "npx stderr";
+    throw error;
+  }
+  return pm(commandName, pmArgs);
+}
+
+function runExecFileSyncMock(
+  command: string,
+  args: string[],
+  responses: ExecResponses,
+  state: ExecState,
+  pm: (commandName: string, pmArgs: string[]) => string,
+): string {
+  const cmd = baseCommand(command);
+  if (cmd === "npm" && args[0] === "pack") {
+    return responses.packOutput ?? "pm-cli-2026.6.14.tgz\n";
+  }
+  if (cmd === "npm" && args[0] === "exec") {
+    return handleNpmExec(args, pm);
+  }
+  if (cmd !== "npx") {
     return "";
-  });
+  }
+  return handleBareNpxPackage(args, responses)
+    ?? handleAliasNpxPackage(args, responses)
+    ?? handlePmNpxPackage(args, responses, state, pm)
+    ?? "";
+}
+
+function buildExecFileSync(responses: ExecResponses) {
+  const state: ExecState = { npxVersionFailedOnce: false };
+  const pm = responses.pmResponse ?? ((c: string) => defaultPm(c));
+  return vi.fn((command: string, args: string[]) => runExecFileSyncMock(command, args, responses, state, pm));
 }
 
 function mockFs() {
@@ -150,35 +206,15 @@ describe("smoke-npx-from-pack", () => {
     mockFs();
     let initFellBack = false;
     vi.doMock("node:child_process", () => ({
-      execFileSync: vi.fn((command: string, args: string[]) => {
-        const cmd = baseCommand(command);
-        if (cmd === "npm" && args[0] === "pack") return "pm-cli-2026.6.14.tgz\n";
-        if (cmd === "npm" && args[0] === "exec") {
-          const idx = args.indexOf("pm");
-          const pmArgs = idx >= 0 ? args.slice(idx + 1) : [];
-          if (pmArgs[0] === "init") {
+      execFileSync: buildExecFileSync({
+        npxPmFailure: (commandName) => (commandName === "init" ? new Error("npx init failed") : undefined),
+        pmResponse: (commandName) => {
+          if (commandName === "init") {
             initFellBack = true;
             return "";
           }
-          return defaultPm(pmArgs[0]);
-        }
-        if (cmd === "npx" && String(args[1] ?? "").startsWith("file:")) {
-          if (args.includes("--version")) return "2026.6.14\n";
-          if (args.includes("--help")) return "Usage: pm\n";
-        }
-        if (cmd === "npx" && args.includes("--package") && args.includes("pm-cli")) {
-          if (args.includes("--version")) return "2026.6.14\n";
-          if (args.includes("--help")) return "Usage: pm-cli\n";
-        }
-        if (cmd === "npx" && args.includes("--package") && args.includes("pm")) {
-          const pmArgs = args.slice(args.indexOf("pm") + 1);
-          if (pmArgs[0] === "init") {
-            // Force the npx call to fail so the fallback (empty) path is taken.
-            throw new Error("npx init failed");
-          }
-          return defaultPm(pmArgs[0]);
-        }
-        return "";
+          return defaultPm(commandName);
+        },
       }),
     }));
     vi.spyOn(console, "log").mockImplementation(() => {});

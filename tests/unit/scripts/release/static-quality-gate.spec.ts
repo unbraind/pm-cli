@@ -57,7 +57,12 @@ type SqModule = {
   collectPragmaScanFiles: () => string[];
   countPragmaMatches: (files: string[], pattern: RegExp) => number;
   checkInlinePragmaBudgets: (
-    budgets: { maxInlineEslintDisables: number; maxCoverageIgnorePragmas: number; maxJscpdIgnorePragmas: number },
+    budgets: {
+      maxInlineEslintDisables: number;
+      maxBroadEslintDisables?: number;
+      maxCoverageIgnorePragmas: number;
+      maxJscpdIgnorePragmas: number;
+    },
     files?: string[],
   ) => {
     ok: boolean;
@@ -65,6 +70,7 @@ type SqModule = {
     budgets: Record<string, { ok: boolean; total: number; max: number }>;
   };
   MAX_INLINE_ESLINT_DISABLES: number;
+  MAX_BROAD_ESLINT_DISABLES: number;
   MAX_COVERAGE_IGNORE_PRAGMAS: number;
   MAX_JSCPD_IGNORE_PRAGMAS: number;
   main: () => void;
@@ -73,6 +79,7 @@ type SqModule = {
 // Pragma fixtures are assembled from fragments so this spec file itself never
 // counts against the repo-wide inline-pragma budgets the gate enforces.
 const ESLINT_DISABLE_PRAGMA = "// eslint-" + "disable-next-line complexity";
+const ESLINT_BROAD_DISABLE_PRAGMA = "/* eslint-" + "disable no-console */";
 const COVERAGE_IGNORE_PRAGMA = "/* v8 " + "ignore next */";
 const JSCPD_IGNORE_PRAGMA = "// jscpd:" + "ignore-start";
 const JSCPD_IGNORE_END_PRAGMA = "// jscpd:" + "ignore-end";
@@ -513,7 +520,7 @@ describe("static-quality-gate", () => {
       await writeFile(`${root}/plugins/node_modules/dep.js`, "module.exports = 4;\n", "utf8");
       mockUtils(root);
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      const relative = mod.collectPragmaScanFiles().map((p) => p.slice(root.length + 1));
+      const relative = mod.collectPragmaScanFiles().map((p) => p.slice(root.length + 1).replaceAll("\\", "/"));
       expect(relative).toEqual(["plugins/c.js", "scripts/b.mjs", "src/a.ts"]);
     });
 
@@ -525,10 +532,12 @@ describe("static-quality-gate", () => {
         [
           ESLINT_DISABLE_PRAGMA,
           "export const a = 1;",
+          ESLINT_BROAD_DISABLE_PRAGMA,
+          "export const broad = 2;",
           COVERAGE_IGNORE_PRAGMA,
-          "export const b = 2;",
+          "export const b = 3;",
           JSCPD_IGNORE_PRAGMA,
-          "export const c = 3;",
+          "export const c = 4;",
           JSCPD_IGNORE_END_PRAGMA,
           "",
         ].join("\n"),
@@ -539,29 +548,47 @@ describe("static-quality-gate", () => {
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
 
       const files = [`${root}/src/pragmas.ts`, `${root}/src/clean.ts`];
-      expect(mod.countPragmaMatches(files, new RegExp("eslint-" + "disable", "g"))).toBe(1);
+      expect(mod.countPragmaMatches(files, new RegExp("eslint-" + "disable-(?:next-line|line)\\b", "g"))).toBe(1);
+      expect(mod.countPragmaMatches(files, new RegExp("eslint-" + "disable\\b(?!-(?:next-line|line)\\b)", "g"))).toBe(
+        1,
+      );
       expect(mod.countPragmaMatches(files, new RegExp("never-matches-anything", "g"))).toBe(0);
 
       const withinBudget = mod.checkInlinePragmaBudgets(
-        { maxInlineEslintDisables: 1, maxCoverageIgnorePragmas: 1, maxJscpdIgnorePragmas: 1 },
+        {
+          maxInlineEslintDisables: 1,
+          maxBroadEslintDisables: 1,
+          maxCoverageIgnorePragmas: 1,
+          maxJscpdIgnorePragmas: 1,
+        },
         files,
       );
       expect(withinBudget.ok).toBe(true);
       expect(withinBudget.scanned_file_count).toBe(2);
       expect(withinBudget.budgets.inline_eslint_disables).toEqual({ ok: true, total: 1, max: 1 });
+      expect(withinBudget.budgets.broad_eslint_disables).toEqual({ ok: true, total: 1, max: 1 });
       expect(withinBudget.budgets.coverage_ignore_pragmas).toEqual({ ok: true, total: 1, max: 1 });
       expect(withinBudget.budgets.jscpd_ignore_pragmas).toEqual({ ok: true, total: 1, max: 1 });
 
       // Default files argument scans the (mocked) repo root itself.
       const overBudget = mod.checkInlinePragmaBudgets({
         maxInlineEslintDisables: 0,
+        maxBroadEslintDisables: 0,
         maxCoverageIgnorePragmas: 0,
         maxJscpdIgnorePragmas: 0,
       });
       expect(overBudget.ok).toBe(false);
       expect(overBudget.budgets.inline_eslint_disables).toEqual({ ok: false, total: 1, max: 0 });
+      expect(overBudget.budgets.broad_eslint_disables).toEqual({ ok: false, total: 1, max: 0 });
+
+      const defaultBroadBudget = mod.checkInlinePragmaBudgets(
+        { maxInlineEslintDisables: 1, maxCoverageIgnorePragmas: 1, maxJscpdIgnorePragmas: 1 },
+        files,
+      );
+      expect(defaultBroadBudget.budgets.broad_eslint_disables).toEqual({ ok: false, total: 1, max: 0 });
 
       expect(mod.MAX_INLINE_ESLINT_DISABLES).toBeGreaterThanOrEqual(0);
+      expect(mod.MAX_BROAD_ESLINT_DISABLES).toBe(0);
       expect(mod.MAX_COVERAGE_IGNORE_PRAGMAS).toBeGreaterThanOrEqual(0);
       expect(mod.MAX_JSCPD_IGNORE_PRAGMAS).toBe(0);
     });
@@ -900,10 +927,12 @@ describe("static-quality-gate", () => {
           'import "./a";',
           ESLINT_DISABLE_PRAGMA,
           "export const p = 1;",
+          ESLINT_BROAD_DISABLE_PRAGMA,
+          "export const p2 = 2;",
           COVERAGE_IGNORE_PRAGMA,
-          "export const q = 2;",
+          "export const q = 3;",
           JSCPD_IGNORE_PRAGMA,
-          "export const r = 3;",
+          "export const r = 4;",
           JSCPD_IGNORE_END_PRAGMA,
           "",
         ].join("\n"),
@@ -921,6 +950,8 @@ describe("static-quality-gate", () => {
         "500",
         "--max-inline-lint-disables",
         "0",
+        "--max-broad-lint-disables",
+        "0",
         "--max-coverage-ignore-pragmas",
         "0",
         "--max-jscpd-ignore-pragmas",
@@ -930,6 +961,7 @@ describe("static-quality-gate", () => {
       expect(process.exitCode).toBe(1);
       const emitted = errorSpy.mock.calls.map((c) => String(c[0]));
       expect(emitted.some((line) => line.includes("inline_eslint_disables budget exceeded: 1 > 0"))).toBe(true);
+      expect(emitted.some((line) => line.includes("broad_eslint_disables budget exceeded: 1 > 0"))).toBe(true);
       expect(emitted.some((line) => line.includes("coverage_ignore_pragmas budget exceeded: 1 > 0"))).toBe(true);
       expect(emitted.some((line) => line.includes("jscpd_ignore_pragmas budget exceeded: 1 > 0"))).toBe(true);
     });

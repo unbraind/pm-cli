@@ -6,13 +6,13 @@ status: in_progress
 priority: 2
 tags[3]: code-quality,codefactor,tech-debt
 created_at: "2026-06-26T13:29:14.359Z"
-updated_at: "2026-07-03T16:57:25.951Z"
+updated_at: "2026-07-03T18:06:58.398Z"
 assignee: claude-code-agent
 author: claude-code-agent
 acceptance_criteria: "CodeFactor overall repository grade reaches A+ (or the highest attainable) on branch main; CodeFactor reports 0 outstanding issues across Complexity, Maintainability, and Duplication; local lint/quality parity tooling exists so findings can be reproduced and kept at zero (no regressions on new PRs)."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-fmjy,related,"2026-07-02T06:39:46.472Z",null,null
-comments[125]{created_at,author,text}:
+comments[128]{created_at,author,text}:
   "2026-06-26T15:46:30.976Z",codex-gpt5,"Progress update: live CodeFactor for main still reports 255 issues until this branch lands (83 maintainability, 152 complexity, 20 duplication). This branch completes the maintainability groups tracked by pm-xsth, pm-m8yl, and pm-x878/Codecov; complexity pm-arzz and duplication pm-fmjy remain open for dedicated refactor follow-up."
   "2026-06-26T18:50:54.481Z",codex-codefactor-sdk-cli-20260626,"Investigation note: live 2026-06-26 CodeFactor public issues page reports A rating, 601 analyzed files, 172 issues after the merged maintainability branch; PM snapshot still tracks remaining complexity and duplication children. GitHub state: no open PRs, no open Dependabot or code-scanning alerts; issue #374 remains open and externally blocked on missing RELEASE_PAT in release environment; pnpm audit --audit-level moderate reports no known vulnerabilities. Dependency drift from pnpm outdated: @sentry/cli 3.5.1 -> 3.6.0, @sentry/node 10.61.0 -> 10.62.0, @types/node held at Node 22 types despite latest 26.x."
   "2026-06-26T19:05:47.605Z",codex-codefactor-sdk-cli-20260626,"Evidence update: CodeFactor remediation bundle now covers the remaining duplication primitives and generated/test analysis scope. Verification passed: pnpm build; targeted 254-test suite; pnpm contracts:check; pnpm quality:static; pnpm typecheck; pnpm security:scan; full coverage 100/100/100/100 across 5133 tests; manual isolated temp-project smoke with PM_PATH/PM_GLOBAL_PATH passed package install/doctor and shared unset behavior. Remaining release issue #374 is external to code changes: GitHub scheduled Auto Release requires RELEASE_PAT in the release environment."
@@ -138,9 +138,12 @@ comments[125]{created_at,author,text}:
   "2026-07-03T16:49:15.584Z",claude-code-agent,"Operational evidence: pnpm changelog:pm:check installed pm-changelog 2026.6.30, activated changelog export/generate, and reported CHANGELOG.md unchanged with item_count=1398 and bytes=226476; timestamp-only managed-extension churn was reverted. Sentry/telemetry gate retry passed with SENTRY_PERSONAL_ADMIN_TOKEN access_ok=true, critical=0, high=0, total=0, telemetry finish_error_rate_pct=0.67, failures_without_error_code_rows=0. GitHub release state shows latest v2026.7.3 published 2026-07-03T06:25:39Z and Auto Release scheduled run 28642049608 succeeded on 2026-07-03T06:09:23Z. GitHub open PR and issue lists were empty; code-scanning and secret-scanning open alert counts were 0. Dependabot alert endpoint retried but hit GitHub EOF/TLS handshake timeouts during this run. Telemetry local stats confirmed 130 queued valid rows, schema version 1, recent command_start/finish events, and 0 local command error rate; outbound pm telemetry flush failed with fetch failed, leaving the queue pending as an external endpoint/egress issue while local action logging remains active."
   "2026-07-03T16:55:17.641Z",claude-code-agent,"Pre-push Greptile evidence for committed head ec78f72d: greptile review --branch main --json had no uncommitted-file warnings, then timed out at the Greptile API after 30s with no findings returned. greptile review --resume --json and greptile review show bed96c36-9612-4d83-95cc-63f8cb4f1678 --json also timed out at the same API endpoint. Local deterministic gates remain green: focused review suite 3 files / 69 tests; full coverage 263 files / 5313 tests / 100/100/100/100; pnpm typecheck; pnpm lint/static quality; pnpm security:scan; pnpm audit --audit-level moderate; git diff --check; changelog unchanged; Sentry/telemetry gate ok. Hosted PR review agents will be triggered after push."
   "2026-07-03T16:57:25.950Z",claude-code-agent,"PR evidence: opened PR #425 from feat/extreme-quality-gates at head d6907255 and triggered hosted review agents with @greptileai review, /gemini review, @gemini-code-assist review, and @coderabbitai full review. Local committed-head Greptile attempts timed out at the API, so hosted PR review is the authoritative follow-up path."
+  "2026-07-03T17:20:11.887Z",claude-code-agent,"Evidence update: fixed the PR #425 CodeFactor complexity annotations by refactoring test/helper setup into table-driven builders and named command-handler mocks, pruned stale ESLint complexity suppressions, and fixed the Windows regression job path separator assertion in static-quality-gate.spec.ts. Verification passed: targeted CodeFactor suites 5 files / 141 tests; itemFactory helper consumer suites 4 files / 219 tests; local Windows-regression job reproduction 36 files / 679 tests; focused static-quality-gate spec 31 tests; pnpm typecheck; pnpm lint with ESLint clean, jscpd 0 clones across 550 files, and static quality passed; pnpm security:scan; pnpm audit --audit-level moderate; git diff --check; full node scripts/run-tests.mjs coverage 263 files / 5313 tests / 100% statements, branches, functions, and lines."
+  "2026-07-03T17:50:52.789Z",claude-code-agent,"Review-fix evidence: pre-push greptile review --branch main --json timed out after 600s with no output, then greptile review --resume --json returned one P2 finding that broad eslint-disable directives were counted the same as single-line disable pragmas. Fixed by splitting static-quality gate budgets into inline_eslint_disables for eslint-disable-next-line/line and broad_eslint_disables with default max 0, plus regression coverage for broad-disable detection and the default budget path. Verification passed after the fix: node scripts/run-tests.mjs test -- tests/unit/scripts/release/static-quality-gate.spec.ts; pnpm typecheck; pnpm lint with ESLint clean, jscpd 0 clones across 550 files, and static quality passed; pnpm security:scan; pnpm audit --audit-level moderate; git diff --check; node scripts/run-tests.mjs coverage = 263 files / 5313 tests / 100% statements, branches, functions, and lines."
+  "2026-07-03T18:06:58.398Z",claude-code-agent,"Pre-push Greptile evidence for committed code head 317967f9: timeout 600 greptile review --branch main --json returned no output and exited 124; timeout 300 greptile review --resume --json also returned no output and exited 124. The previous resumed Greptile P2 finding was fixed before this attempt, and deterministic local gates on the committed code passed: focused static-quality spec, pnpm typecheck, pnpm lint/static quality, pnpm security:scan, pnpm audit --audit-level moderate, git diff --check, changelog unchanged, and full coverage 263 files / 5313 tests / 100/100/100/100. Hosted PR review agents will be retriggered after push."
 notes[1]{created_at,author,text}:
   "2026-07-02T08:14:23.356Z",claude-code-agent,"2026-07-02 pm-chxp/PR#415 merged (17798d15): duplication leg complete — pnpm lint:duplicates now 0 clones repo-wide (was 24). Complexity suppressions already 0 (PR#413/#414). Remaining for A+: await CodeFactor re-analysis of main; verify grade at https://www.codefactor.io/repository/github/unbraind/pm-cli — if findings persist they are in generated runtime-loaders (excluded-by-design candidates via .codefactor.yml)."
-files[144]{path,scope,note}:
+files[149]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,pm-changelog package-owned check refreshed managed extension install timestamp
   .github/workflows/security.yml,project,"Greptile P1 fix: checksum-verified actionlint install without remote script execution"
   eslint-suppressions.json,project,Prune resolved complexity suppressions after config/settings refactors
@@ -239,6 +242,8 @@ files[144]{path,scope,note}:
   src/sdk/package-import-adapters.ts,project,adds shared SDK import coercion primitives for package authors
   src/sdk/runtime.ts,project,exports SDK import adapter primitives from runtime barrel
   tests/fixtures/contracts/full.json,project,Generated runtime contract snapshot for docs/files missing aliases
+  tests/helpers/itemFactory.ts,project,Table-driven test item seed builder to remove CodeFactor complexity finding
+  tests/helpers/withTempPmPath.ts,project,Split legacy create normalization and env restore helpers to remove CodeFactor complexity findings
   tests/integration/mcp-dynamic-package-actions.spec.ts,project,stabilize long MCP compact-output integration coverage timeout
   tests/integration/release-automation-contract.spec.ts,project,complexity sweep zero ESLint complexity findings
   tests/integration/release-readiness-runtime.spec.ts,project,complexity sweep zero ESLint complexity findings
@@ -255,6 +260,7 @@ files[144]{path,scope,note}:
   tests/unit/commands/history-activity-command.spec.ts,project,Regression coverage for history-redact affected hook paths
   tests/unit/commands/legacy-none-tokens.spec.ts,project,Review-fix coverage for malformed legacy none collection payloads
   tests/unit/commands/list-command.spec.ts,project,regression coverage for legacy rows missing tags under tag filters
+  tests/unit/commands/metadata-governance-commands.spec.ts,project,Table-driven metadata seed args to remove CodeFactor complexity finding
   tests/unit/commands/plan-command.spec.ts,project,regression coverage for plan step reference and materialize split paths
   tests/unit/commands/reindex-command.spec.ts,project,complexity sweep zero ESLint complexity findings
   tests/unit/commands/search-command.spec.ts,project,regression coverage for search projection and provider failure split paths
@@ -265,6 +271,7 @@ files[144]{path,scope,note}:
   tests/unit/core/history/history-rewrite.spec.ts,project,Regression coverage for rollback failure diagnostics
   tests/unit/core/search/search-cache.spec.ts,project,updated semantic fallback expectations after search helper split
   tests/unit/core/sentry/sentry-helpers.spec.ts,project,replace unnecessary any payload typings in Sentry helper tests
+  tests/unit/core/telemetry/telemetry-runtime.spec.ts,project,Shared env restore loop removes CodeFactor telemetry spec complexity finding
   tests/unit/docs-examples/example-script-harness.ts,project,shared SDK docs-example script import and mock reset harness
   tests/unit/docs-examples/policy-restricted-extension.spec.ts,project,reuse shared docs-example import harness after review feedback
   tests/unit/docs-examples/sdk-app-embedding.spec.ts,project,reuse shared SDK docs-example harness
@@ -281,11 +288,12 @@ files[144]{path,scope,note}:
   tests/unit/plugins/pm-mcp-server.spec.ts,project,Greptile response coverage for generated Codex wrapper depth-limit null fallback
   tests/unit/scripts/dogfood-package-first.spec.ts,project,Align dogfood script harness with starter-prefixed reserved scaffold command
   tests/unit/scripts/gen-plugin-mcp-wrappers.spec.ts,project,Regression coverage for generated MCP wrapper headers
+  tests/unit/scripts/release/compatibility-check.spec.ts,project,Split compatibility mock command handlers to remove CodeFactor complexity finding
   tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,regression coverage for missing stderr telemetry command summaries
   tests/unit/scripts/release/static-quality-gate.spec.ts,project,Regression coverage for suppression budget calibration and jscpd ignore block counting
   tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,complexity sweep zero ESLint complexity findings
   tests/unit/sdk/tool-option-contracts.spec.ts,project,regression coverage for exported SDK option contract object isolation
-tests[70]:
+tests[74]:
   - command: checksum-verified actionlint v1.7.12 install and lint over .github/workflows/*.yml
     scope: project
     timeout_seconds: 120
@@ -329,12 +337,20 @@ tests[70]:
   - command: "node scripts/run-tests.mjs test -- tests/integration/mcp-dynamic-package-actions.spec.ts -t \"normalizes scalar update log fields and defaults list output to compact\""
     scope: project
     timeout_seconds: 120
+  - command: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/ tests/unit/packages/runtime-loaders.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/test-runs-command.spec.ts
+    scope: project
+    timeout_seconds: 360
+    note: local reproduction of Windows regression job test set
   - command: node scripts/run-tests.mjs test -- tests/unit/cli/register-list-query.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/commands/history-activity-command.spec.ts tests/unit/commands/close-command.spec.ts tests/unit/commands/close-many-branch.spec.ts tests/unit/core/schema/runtime-schema-command-flags.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/unit/extensions/extension-command.spec.ts
     scope: project
     timeout_seconds: 180
   - command: node scripts/run-tests.mjs test -- tests/unit/cli/registration-helpers.spec.ts tests/unit/commands/completion-command.spec.ts
     scope: project
     timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/close-command.spec.ts tests/unit/commands/validate-command.spec.ts tests/unit/commands/test-command.spec.ts tests/unit/core/history/drift-scan.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: itemFactory helper consumer regression suites
   - command: node scripts/run-tests.mjs test -- tests/unit/commands/config-command.spec.ts && pnpm typecheck
     scope: project
     timeout_seconds: 300
@@ -399,9 +415,17 @@ tests[70]:
   - command: node scripts/run-tests.mjs test -- tests/unit/scripts/gen-package-runtime-loaders.spec.ts tests/unit/scripts/gen-plugin-mcp-wrappers.spec.ts tests/unit/packages/runtime-loaders.spec.ts tests/unit/plugins/pm-mcp-server.spec.ts tests/unit/packages/beads-command.spec.ts tests/unit/packages/todos-extension.spec.ts tests/unit/extensions/extension-scaffold-define-guidance.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/commands/init-command.spec.ts tests/unit/sdk/tool-option-contracts.spec.ts
     scope: project
     timeout_seconds: 360
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/static-quality-gate.spec.ts
+    scope: project
+    timeout_seconds: 180
+    note: focused Windows path normalization regression
   - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/static-quality-gate.spec.ts tests/integration/ci-workflow-contract.spec.ts
     scope: project
     timeout_seconds: 180
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-npx-from-pack.spec.ts tests/unit/commands/metadata-governance-commands.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/scripts/release/compatibility-check.spec.ts tests/unit/scripts/dogfood-package-first.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: focused CodeFactor complexity refactor suites
   - command: node scripts/run-tests.mjs test -- tests/unit/sdk/tool-option-contracts.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts
     scope: project
     timeout_seconds: 240

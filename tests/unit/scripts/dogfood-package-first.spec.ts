@@ -22,177 +22,257 @@ interface Overrides {
   tsc?: SpawnResult;
 }
 
-function buildSpawnSync(overrides: Overrides = {}) {
-  let planAddStepCount = 0;
-  let guidancePresent = false;
-  return vi.fn((command: string, args: string[]): SpawnResult => {
-    if (command === process.execPath && args[0] === "--input-type=module") {
-      return overrides.sdk ?? { status: 0, stdout: "", stderr: "" };
+interface DogfoodSpawnState {
+  planAddStepCount: number;
+  guidancePresent: boolean;
+}
+
+type DogfoodPmHandler = (pmArgs: string[], state: DogfoodSpawnState) => SpawnResult | undefined;
+
+function flagRows(flags: string[]): Array<{ flag: string }> {
+  return flags.map((flag) => ({ flag }));
+}
+
+function runtimeActionRows(actions: string[]): Array<{ action: string; available: boolean; invocable: boolean }> {
+  return actions.map((action) => ({ action, available: true, invocable: true }));
+}
+
+function parseSpawnedPmArgs(args: string[]): { jsonMode: boolean; pmArgs: string[]; cmd: string } {
+  const rawPmArgs = args.slice(1);
+  const jsonMode = rawPmArgs[0] === "--json";
+  const pmArgs = jsonMode ? rawPmArgs.slice(1) : rawPmArgs;
+  return { jsonMode, pmArgs, cmd: pmArgs[0] };
+}
+
+function handleTextPmCommand(cmd: string): SpawnResult {
+  const textResponses: Record<string, string | undefined> = {
+    calendar: "# pm calendar\n\nDogfood calendar event\n",
+    completion: "function _pm_completion() {}\n",
+  };
+  return { status: 0, stdout: textResponses[cmd] ?? "", stderr: "" };
+}
+
+function handleInitCommand(pmArgs: string[], state: DogfoodSpawnState): SpawnResult {
+  if (pmArgs[1] === "--agent-guidance") {
+    const action = pmArgs[2];
+    if (action === "status") {
+      return pmJson({ agent_guidance: { present: state.guidancePresent } });
     }
-    if (command === process.execPath && args[0]?.endsWith(path.join("typescript", "bin", "tsc"))) {
-      return overrides.tsc ?? { status: 0, stdout: "", stderr: "" };
+    if (action === "add") {
+      state.guidancePresent = true;
+      return pmJson({ agent_guidance: { present: true, applied: true } });
     }
-    if (command !== process.execPath || !args[0]?.endsWith(CLI_TAIL)) {
-      return { status: 0, stdout: "", stderr: "" };
-    }
-
-    let pmArgs = args.slice(1);
-    const jsonMode = pmArgs[0] === "--json";
-    if (jsonMode) pmArgs = pmArgs.slice(1);
-    const cmd = pmArgs[0];
-
-    const override = overrides.pm?.(cmd, pmArgs, jsonMode);
-    if (override) return override;
-
-    if (overrides.semantic && (cmd === "reindex" || cmd === "search" || cmd === "search-advanced")) {
-      const semantic = overrides.semantic(pmArgs);
-      if (semantic) return semantic;
-    }
-
-    if (!jsonMode) {
-      if (cmd === "calendar") return { status: 0, stdout: "# pm calendar\n\nDogfood calendar event\n", stderr: "" };
-      if (cmd === "completion") return { status: 0, stdout: "function _pm_completion() {}\n", stderr: "" };
-      return { status: 0, stdout: "", stderr: "" };
-    }
-
-    if (cmd === "init") {
-      if (pmArgs[1] === "--agent-guidance") {
-        const action = pmArgs[2];
-        if (action === "status") return pmJson({ agent_guidance: { present: guidancePresent } });
-        if (action === "add") {
-          guidancePresent = true;
-          return pmJson({ agent_guidance: { present: true, applied: true } });
-        }
-      }
-      return pmJson({
-        installed_packages: { installed_all: true, installed_count: 10 },
-        agent_guidance: { mode: "ask", present: false },
-      });
-    }
-
-    if (cmd === "create") {
-      const typeIndex = pmArgs.indexOf("--type");
-      const type = typeIndex >= 0 ? pmArgs[typeIndex + 1] : null;
-      return pmJson({ item: { id: type === "Event" ? "pm-event-1" : "pm-dogfood-1" } });
-    }
-
-    if (cmd === "get") {
-      if (pmArgs.includes("--depth") && pmArgs.includes("brief")) return pmJson({ item: { id: "pm-dogfood-1" } });
-      if (pmArgs.includes("--fields")) {
-        return pmJson({
-          item: { id: "pm-dogfood-1", title: "Dogfood package-first workflow", status: "in_progress", parent: null, type: "Task" },
-        });
-      }
-    }
-
-    if (cmd === "list-open") {
-      return pmJson({ projection: { mode: "compact", fields: ["id", "status", "type", "title"] } });
-    }
-
-    if (cmd === "search-advanced") return pmJson({ mode: "keyword", query: "Dogfood package-first workflow" });
-
-    if (cmd === "contracts") {
-      if (pmArgs.includes("--command") && pmArgs.includes("list-open")) {
-        return pmJson({
-          command_flags: [{ flags: ["--compact", "--brief", "--full", "--fields", "--include-body"].map((flag) => ({ flag })) }],
-        });
-      }
-      if (pmArgs.includes("--command") && pmArgs.includes("search-advanced")) {
-        return pmJson({ command_flags: [{ flags: ["--mode", "--semantic", "--hybrid", "--fields", "--limit"].map((flag) => ({ flag })) }] });
-      }
-      if (pmArgs.includes("--command") && pmArgs.includes("search")) {
-        return pmJson({ command_flags: [{ flags: ["--mode", "--semantic", "--hybrid", "--include-linked"].map((flag) => ({ flag })) }] });
-      }
-      if (pmArgs.includes("--availability-only") && pmArgs.includes("--runtime-only")) {
-        return pmJson({
-          action_availability: [
-            "beads-import", "completion", "comments-audit", "dedupe-audit", "guide",
-            "search-advanced", "templates-save", "templates-show", "test-runs-list", "todos-export",
-          ].map((action) => ({ action, available: true, invocable: true })),
-        });
-      }
-      return pmJson({
-        command_flags: [
-          { command: "package", flags: ["--catalog", "--explore", "--doctor", "--install", "--project", "--global"].map((flag) => ({ flag })) },
-          { command: "upgrade", flags: ["--packages-only", "--dry-run"].map((flag) => ({ flag })) },
-          { command: "init", flags: ["--agent-guidance", "--with-packages"].map((flag) => ({ flag })) },
-          { command: "get", flags: ["--fields"].map((flag) => ({ flag })) },
-        ],
-        command_aliases: [{ canonical: "package", aliases: ["install"] }],
-      });
-    }
-
-    if (cmd === "install") {
-      if (pmArgs[1] === "all") return pmJson({ details: { installed_all: true, installed_count: 10 } });
-      return pmJson({ details: { installed_count: 1 } });
-    }
-
-    if (cmd === "package") {
-      const sub = pmArgs[1];
-      if (sub === "catalog") {
-        return pmJson({
-          details: {
-            total: 10,
-            packages: [
-              "beads", "calendar", "governance-audit", "guide-shell", "kanban", "lifecycle-hooks",
-              "linked-test-adapters", "search-advanced", "templates", "todos",
-            ].map((alias) => ({ alias })),
-          },
-        });
-      }
-      if (sub === "list") return pmJson({ action: "catalog", details: { total: 10 } });
-      if (sub === "doctor") {
-        return pmJson({ details: { summary: { activation_failure_count: 0, blocking_failure_count: 0 }, triage: { warning_codes: [] } } });
-      }
-      if (sub === "init") return pmJson({ details: { extension: { command: "starter scaffold package ping" } } });
-    }
-
-    if (cmd === "starter" && pmArgs.slice(1).join(" ") === "scaffold package ping") {
-      return pmJson({ ok: true, command: "starter scaffold package ping" });
-    }
-    if (cmd === "guide" && pmArgs.includes("--list")) return pmJson({ topics: [{ id: "workflows" }] });
-    if (cmd === "dedupe-audit") return pmJson({ clusters: [] });
-    if (cmd === "comments-audit") return pmJson({ items: [] });
-    if (cmd === "normalize") return pmJson({ dry_run: true });
-    if (cmd === "test-runs" && pmArgs[1] === "list") return pmJson({ runs: [] });
-    if (cmd === "templates" && pmArgs[1] === "save") return pmJson({ name: "dogfood-defaults" });
-    if (cmd === "templates" && pmArgs[1] === "show") return pmJson({ options: { tags: "dogfood,templates" } });
-    if (cmd === "beads" && pmArgs[1] === "import") return pmJson({ imported: 1 });
-    if (cmd === "todos" && pmArgs[1] === "export") return pmJson({ exported: 1 });
-    if (cmd === "upgrade" && pmArgs.includes("--packages-only")) return pmJson({ summary: { requested_packages: true, failed: 0 } });
-    if (cmd === "upgrade" && pmArgs.includes("--dry-run")) {
-      return pmJson({ dry_run: true, summary: { requested_cli: true, requested_packages: true } });
-    }
-
-    if (cmd === "plan") {
-      const sub = pmArgs[1];
-      if (sub === "create") return pmJson({ plan: { id: "plan-dogfood-1" } });
-      if (sub === "add-step") {
-        planAddStepCount += 1;
-        return pmJson({ step: { id: `plan-step-00${planAddStepCount}` } });
-      }
-      if (sub === "update-step") return pmJson({ step: { status: "in_progress" } });
-      if (sub === "complete-step") return pmJson({ step: { status: "completed" } });
-      if (sub === "decision") return pmJson({ plan: { decisions: [{}] } });
-      if (sub === "discovery") return pmJson({ plan: { discoveries: [{}] } });
-      if (sub === "validation") return pmJson({ plan: { validation: [{}] } });
-      if (sub === "resume") return pmJson({ plan: { resume_context: "step 2 pending; materialize next" } });
-      if (sub === "approve") return pmJson({ plan: { mode: "approved" } });
-      if (sub === "materialize") return pmJson({ materialized: [{ id: "pm-materialized-1" }] });
-      if (sub === "show" && pmArgs.includes("--depth")) return pmJson({ plan: { steps: [{}, {}] } });
-      if (sub === "show" && pmArgs.includes("--fields")) {
-        return pmJson({ plan: { id: "plan-dogfood-1", title: "Dogfood plan workflow", steps_summary: { total: 2 } } });
-      }
-    }
-
-    if (cmd === "history" && pmArgs.includes("--verify")) return pmJson({ verification: { ok: true } });
-    if (cmd === "search" && pmArgs[1] === "exponential dogfood") return pmJson({ items: [] });
-    if (cmd === "history-redact" && pmArgs.includes("--dry-run")) return pmJson({ changed: true, history: { audit_entry_added: false } });
-    if (cmd === "history-redact") return pmJson({ changed: true, history: { audit_entry_added: true, verify_ok: true } });
-    if (cmd === "health" && pmArgs.includes("--brief")) return pmJson({ projection: { mode: "brief" } });
-
-    return pmJson({ ok: true });
+  }
+  return pmJson({
+    installed_packages: { installed_all: true, installed_count: 10 },
+    agent_guidance: { mode: "ask", present: false },
   });
+}
+
+function handleCreateCommand(pmArgs: string[]): SpawnResult {
+  const typeIndex = pmArgs.indexOf("--type");
+  const type = typeIndex >= 0 ? pmArgs[typeIndex + 1] : null;
+  return pmJson({ item: { id: type === "Event" ? "pm-event-1" : "pm-dogfood-1" } });
+}
+
+function handleGetCommand(pmArgs: string[]): SpawnResult | undefined {
+  if (pmArgs.includes("--depth") && pmArgs.includes("brief")) {
+    return pmJson({ item: { id: "pm-dogfood-1" } });
+  }
+  if (!pmArgs.includes("--fields")) {
+    return undefined;
+  }
+  return pmJson({
+    item: { id: "pm-dogfood-1", title: "Dogfood package-first workflow", status: "in_progress", parent: null, type: "Task" },
+  });
+}
+
+function fullContractsPayload(): SpawnResult {
+  return pmJson({
+    command_flags: [
+      { command: "package", flags: flagRows(["--catalog", "--explore", "--doctor", "--install", "--project", "--global"]) },
+      { command: "upgrade", flags: flagRows(["--packages-only", "--dry-run"]) },
+      { command: "init", flags: flagRows(["--agent-guidance", "--with-packages"]) },
+      { command: "get", flags: flagRows(["--fields"]) },
+    ],
+    command_aliases: [{ canonical: "package", aliases: ["install"] }],
+  });
+}
+
+function handleContractsCommand(pmArgs: string[]): SpawnResult {
+  if (pmArgs.includes("--command") && pmArgs.includes("list-open")) {
+    return pmJson({ command_flags: [{ flags: flagRows(["--compact", "--brief", "--full", "--fields", "--include-body"]) }] });
+  }
+  if (pmArgs.includes("--command") && pmArgs.includes("search-advanced")) {
+    return pmJson({ command_flags: [{ flags: flagRows(["--mode", "--semantic", "--hybrid", "--fields", "--limit"]) }] });
+  }
+  if (pmArgs.includes("--command") && pmArgs.includes("search")) {
+    return pmJson({ command_flags: [{ flags: flagRows(["--mode", "--semantic", "--hybrid", "--include-linked"]) }] });
+  }
+  if (pmArgs.includes("--availability-only") && pmArgs.includes("--runtime-only")) {
+    return pmJson({
+      action_availability: runtimeActionRows([
+        "beads-import", "completion", "comments-audit", "dedupe-audit", "guide",
+        "search-advanced", "templates-save", "templates-show", "test-runs-list", "todos-export",
+      ]),
+    });
+  }
+  return fullContractsPayload();
+}
+
+function handleInstallCommand(pmArgs: string[]): SpawnResult {
+  if (pmArgs[1] === "all") {
+    return pmJson({ details: { installed_all: true, installed_count: 10 } });
+  }
+  return pmJson({ details: { installed_count: 1 } });
+}
+
+function packageCatalogPayload(): SpawnResult {
+  return pmJson({
+    details: {
+      total: 10,
+      packages: [
+        "beads", "calendar", "governance-audit", "guide-shell", "kanban", "lifecycle-hooks",
+        "linked-test-adapters", "search-advanced", "templates", "todos",
+      ].map((alias) => ({ alias })),
+    },
+  });
+}
+
+function handlePackageCommand(pmArgs: string[]): SpawnResult | undefined {
+  const sub = pmArgs[1];
+  if (sub === "catalog") {
+    return packageCatalogPayload();
+  }
+  if (sub === "list") {
+    return pmJson({ action: "catalog", details: { total: 10 } });
+  }
+  if (sub === "doctor") {
+    return pmJson({ details: { summary: { activation_failure_count: 0, blocking_failure_count: 0 }, triage: { warning_codes: [] } } });
+  }
+  if (sub === "init") {
+    return pmJson({ details: { extension: { command: "starter scaffold package ping" } } });
+  }
+  return undefined;
+}
+
+function handlePlanCommand(pmArgs: string[], state: DogfoodSpawnState): SpawnResult | undefined {
+  const sub = pmArgs[1];
+  if (sub === "add-step") {
+    state.planAddStepCount += 1;
+    return pmJson({ step: { id: `plan-step-00${state.planAddStepCount}` } });
+  }
+  const planResponses: Record<string, SpawnResult | undefined> = {
+    create: pmJson({ plan: { id: "plan-dogfood-1" } }),
+    "update-step": pmJson({ step: { status: "in_progress" } }),
+    "complete-step": pmJson({ step: { status: "completed" } }),
+    decision: pmJson({ plan: { decisions: [{}] } }),
+    discovery: pmJson({ plan: { discoveries: [{}] } }),
+    validation: pmJson({ plan: { validation: [{}] } }),
+    resume: pmJson({ plan: { resume_context: "step 2 pending; materialize next" } }),
+    approve: pmJson({ plan: { mode: "approved" } }),
+    materialize: pmJson({ materialized: [{ id: "pm-materialized-1" }] }),
+  };
+  if (sub === "show" && pmArgs.includes("--depth")) {
+    return pmJson({ plan: { steps: [{}, {}] } });
+  }
+  if (sub === "show" && pmArgs.includes("--fields")) {
+    return pmJson({ plan: { id: "plan-dogfood-1", title: "Dogfood plan workflow", steps_summary: { total: 2 } } });
+  }
+  return planResponses[sub];
+}
+
+function handleStarterCommand(pmArgs: string[]): SpawnResult | undefined {
+  return pmArgs.slice(1).join(" ") === "scaffold package ping" ? pmJson({ ok: true, command: "starter scaffold package ping" }) : undefined;
+}
+
+function handleTemplatesCommand(pmArgs: string[]): SpawnResult | undefined {
+  if (pmArgs[1] === "save") {
+    return pmJson({ name: "dogfood-defaults" });
+  }
+  if (pmArgs[1] === "show") {
+    return pmJson({ options: { tags: "dogfood,templates" } });
+  }
+  return undefined;
+}
+
+function handleUpgradeCommand(pmArgs: string[]): SpawnResult | undefined {
+  if (pmArgs.includes("--packages-only")) {
+    return pmJson({ summary: { requested_packages: true, failed: 0 } });
+  }
+  if (pmArgs.includes("--dry-run")) {
+    return pmJson({ dry_run: true, summary: { requested_cli: true, requested_packages: true } });
+  }
+  return undefined;
+}
+
+function handleHistoryRedactCommand(pmArgs: string[]): SpawnResult {
+  if (pmArgs.includes("--dry-run")) {
+    return pmJson({ changed: true, history: { audit_entry_added: false } });
+  }
+  return pmJson({ changed: true, history: { audit_entry_added: true, verify_ok: true } });
+}
+
+const DOGFOOD_JSON_HANDLERS: Record<string, DogfoodPmHandler | undefined> = {
+  init: handleInitCommand,
+  create: (pmArgs) => handleCreateCommand(pmArgs),
+  get: (pmArgs) => handleGetCommand(pmArgs),
+  "list-open": () => pmJson({ projection: { mode: "compact", fields: ["id", "status", "type", "title"] } }),
+  "search-advanced": () => pmJson({ mode: "keyword", query: "Dogfood package-first workflow" }),
+  contracts: (pmArgs) => handleContractsCommand(pmArgs),
+  install: (pmArgs) => handleInstallCommand(pmArgs),
+  package: (pmArgs) => handlePackageCommand(pmArgs),
+  starter: (pmArgs) => handleStarterCommand(pmArgs),
+  guide: (pmArgs) => (pmArgs.includes("--list") ? pmJson({ topics: [{ id: "workflows" }] }) : undefined),
+  "dedupe-audit": () => pmJson({ clusters: [] }),
+  "comments-audit": () => pmJson({ items: [] }),
+  normalize: () => pmJson({ dry_run: true }),
+  "test-runs": (pmArgs) => (pmArgs[1] === "list" ? pmJson({ runs: [] }) : undefined),
+  templates: (pmArgs) => handleTemplatesCommand(pmArgs),
+  beads: (pmArgs) => (pmArgs[1] === "import" ? pmJson({ imported: 1 }) : undefined),
+  todos: (pmArgs) => (pmArgs[1] === "export" ? pmJson({ exported: 1 }) : undefined),
+  upgrade: (pmArgs) => handleUpgradeCommand(pmArgs),
+  plan: handlePlanCommand,
+  history: (pmArgs) => (pmArgs.includes("--verify") ? pmJson({ verification: { ok: true } }) : undefined),
+  search: (pmArgs) => (pmArgs[1] === "exponential dogfood" ? pmJson({ items: [] }) : undefined),
+  "history-redact": (pmArgs) => handleHistoryRedactCommand(pmArgs),
+  health: (pmArgs) => (pmArgs.includes("--brief") ? pmJson({ projection: { mode: "brief" } }) : undefined),
+};
+
+function defaultDogfoodJsonResponse(cmd: string, pmArgs: string[], state: DogfoodSpawnState): SpawnResult {
+  return DOGFOOD_JSON_HANDLERS[cmd]?.(pmArgs, state) ?? pmJson({ ok: true });
+}
+
+function runDogfoodSpawn(command: string, args: string[], state: DogfoodSpawnState, overrides: Overrides): SpawnResult {
+  if (command === process.execPath && args[0] === "--input-type=module") {
+    return overrides.sdk ?? { status: 0, stdout: "", stderr: "" };
+  }
+  if (command === process.execPath && args[0]?.endsWith(path.join("typescript", "bin", "tsc"))) {
+    return overrides.tsc ?? { status: 0, stdout: "", stderr: "" };
+  }
+  if (command !== process.execPath || !args[0]?.endsWith(CLI_TAIL)) {
+    return { status: 0, stdout: "", stderr: "" };
+  }
+
+  const { jsonMode, pmArgs, cmd } = parseSpawnedPmArgs(args);
+  const override = overrides.pm?.(cmd, pmArgs, jsonMode);
+  if (override) {
+    return override;
+  }
+
+  if (overrides.semantic && (cmd === "reindex" || cmd === "search" || cmd === "search-advanced")) {
+    const semantic = overrides.semantic(pmArgs);
+    if (semantic) {
+      return semantic;
+    }
+  }
+
+  return jsonMode ? defaultDogfoodJsonResponse(cmd, pmArgs, state) : handleTextPmCommand(cmd);
+}
+
+function buildSpawnSync(overrides: Overrides = {}) {
+  const state: DogfoodSpawnState = { planAddStepCount: 0, guidancePresent: false };
+  return vi.fn((command: string, args: string[]): SpawnResult => runDogfoodSpawn(command, args, state, overrides));
 }
 
 function mockFs(rmThrows = false, indexEmitted = true) {

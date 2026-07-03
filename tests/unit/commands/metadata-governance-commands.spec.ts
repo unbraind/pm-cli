@@ -35,6 +35,42 @@ interface SeedItemParams {
   test?: string;
 }
 
+const SEED_OPTION_FLAGS = [
+  ["assignee", "--assignee"],
+  ["tags", "--tags"],
+  ["ac", "--acceptance-criteria"],
+  ["estimate", "--estimate"],
+  ["resolution", "--resolution"],
+  ["reviewer", "--reviewer"],
+  ["risk", "--risk"],
+  ["confidence", "--confidence"],
+  ["sprint", "--sprint"],
+  ["release", "--release"],
+  ["body", "--body"],
+  ["note", "--note"],
+  ["learning", "--learning"],
+  ["file", "--file"],
+  ["doc", "--doc"],
+  ["comment", "--comment"],
+  ["test", "--test"],
+] as const satisfies ReadonlyArray<readonly [keyof SeedItemParams, string]>;
+
+function seedOptionValue(value: string | number | undefined): string | undefined {
+  if (value === undefined || value === "") {
+    return undefined;
+  }
+  return String(value);
+}
+
+function appendSeedOptionArgs(args: string[], params: SeedItemParams): void {
+  for (const [key, flag] of SEED_OPTION_FLAGS) {
+    const value = seedOptionValue(params[key]);
+    if (value !== undefined) {
+      args.push(flag, value);
+    }
+  }
+}
+
 function seed(context: TempPmContext, params: SeedItemParams): string {
   const args = [
     "create",
@@ -50,23 +86,7 @@ function seed(context: TempPmContext, params: SeedItemParams): string {
     "--priority",
     String(params.priority ?? 2),
   ];
-  if (params.assignee) args.push("--assignee", params.assignee);
-  if (params.tags) args.push("--tags", params.tags);
-  if (params.ac) args.push("--acceptance-criteria", params.ac);
-  if (params.estimate !== undefined) args.push("--estimate", String(params.estimate));
-  if (params.resolution) args.push("--resolution", params.resolution);
-  if (params.reviewer) args.push("--reviewer", params.reviewer);
-  if (params.risk) args.push("--risk", params.risk);
-  if (params.confidence) args.push("--confidence", params.confidence);
-  if (params.sprint) args.push("--sprint", params.sprint);
-  if (params.release) args.push("--release", params.release);
-  if (params.body) args.push("--body", params.body);
-  if (params.note) args.push("--note", params.note);
-  if (params.learning) args.push("--learning", params.learning);
-  if (params.file) args.push("--file", params.file);
-  if (params.doc) args.push("--doc", params.doc);
-  if (params.comment) args.push("--comment", params.comment);
-  if (params.test) args.push("--test", params.test);
+  appendSeedOptionArgs(args, params);
   const created = context.runCli(args, { expectJson: true });
   expect(created.code).toBe(0);
   return (created.json as { item: { id: string } }).item.id;
