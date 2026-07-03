@@ -145,6 +145,12 @@ describe("generateBashScript", () => {
     expect(bashScript).toContain("--type-preset");
 
     const zshScript = generateZshScript();
+    const zshInitStart = zshScript.indexOf("        init)");
+    const zshInitBlock = zshScript.slice(zshInitStart, zshScript.indexOf("        config)", zshInitStart));
+    expect(zshInitStart).toBeGreaterThan(-1);
+    expect(zshInitBlock).toContain("_arguments");
+    expect(zshInitBlock).toContain("--preset[Governance preset for new setups]");
+    expect(zshInitBlock).toContain("--defaults[Use non-interactive setup defaults]");
     expect(zshScript).toContain("--agent-guidance[Agent guidance mode]");
     expect(zshScript).toContain("--type-preset[Register domain item types]");
     expect(zshScript).toContain("Alias for --defaults");
