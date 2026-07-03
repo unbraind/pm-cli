@@ -75,7 +75,7 @@ async function startServer(target) {
   if (!target || !(await exists(target))) {
     return false;
   }
-  const server = await import(pathToFileURL(target).href);
+  const server = await import(pathToFileURL(path.resolve(target)).href);
   server.startMcpServer();
   return true;
 }
@@ -121,7 +121,7 @@ async function startReadableServer(target) {
   if (!target || !(await canRead(target))) {
     return false;
   }
-  const server = await import(pathToFileURL(target).href);
+  const server = await import(pathToFileURL(path.resolve(target)).href);
   server.startMcpServer();
   return true;
 }

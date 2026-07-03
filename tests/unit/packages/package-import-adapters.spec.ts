@@ -71,7 +71,7 @@ describe("package import adapter primitives", () => {
       expect(
         toImportLogEntries(
           [
-            { text: " record text ", created_at: "ignored", author: " " },
+            { text: " record text ", created_at: "raw-created-at", author: " " },
             { comment: "not selected by default" },
           ],
           {
@@ -79,7 +79,17 @@ describe("package import adapter primitives", () => {
             fallbackAuthor: "agent",
           },
         ),
-      ).toEqual([{ created_at: "2026-01-01T00:00:00.000Z", author: "agent", text: "record text" }]);
+      ).toEqual([{ created_at: "raw-created-at", author: "agent", text: "record text" }]);
+      expect(
+        toImportLogEntries([{ text: "converted", created_at: "2026-01-02" }, { text: "fallback", created_at: "bad-date" }], {
+          fallbackCreatedAt: "2026-01-01T00:00:00.000Z",
+          fallbackAuthor: "agent",
+          toIsoString: (value) => (value === "2026-01-02" ? "2026-01-02T00:00:00.000Z" : undefined),
+        }),
+      ).toEqual([
+        { created_at: "2026-01-02T00:00:00.000Z", author: "agent", text: "converted" },
+        { created_at: "2026-01-01T00:00:00.000Z", author: "agent", text: "fallback" },
+      ]);
       expect(
         toImportLinkedTests(
           [

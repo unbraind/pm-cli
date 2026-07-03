@@ -374,8 +374,11 @@ function toImportLogEntry(entry: unknown, options: ToImportLogEntriesOptions): L
   }
   const createdAtKey = options.createdAtKey ?? "created_at";
   const authorKey = options.authorKey ?? "author";
+  const createdAt =
+    (options.toIsoString ? options.toIsoString(entry[createdAtKey]) : toNonEmptyImportString(entry[createdAtKey])) ??
+    options.fallbackCreatedAt;
   return {
-    created_at: options.toIsoString?.(entry[createdAtKey]) ?? options.fallbackCreatedAt,
+    created_at: createdAt,
     author: toNonEmptyImportString(entry[authorKey]) ?? options.fallbackAuthor,
     text,
   };

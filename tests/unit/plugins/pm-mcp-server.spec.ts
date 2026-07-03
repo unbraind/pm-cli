@@ -99,6 +99,36 @@ export function startMcpServer() {
     expect(spawnMock).not.toHaveBeenCalled();
   });
 
+  it("resolves relative explicit server paths before importing them", async () => {
+    const root = await createTempRoot("pm-plugin-mcp-relative-explicit-");
+    const explicitServerPath = path.join(root, "relative-explicit-server.mjs");
+    await writeFile(
+      explicitServerPath,
+      `export function startMcpServer() {
+  globalThis.__PM_MCP_STARTS = (globalThis.__PM_MCP_STARTS ?? 0) + 1;
+}
+`,
+      "utf8",
+    );
+    process.env.PM_CLI_MCP_SERVER = path.relative(process.cwd(), explicitServerPath);
+    const spawnMock = vi.fn();
+    const accessMock = vi.fn(async (target: string) => {
+      if (path.resolve(target) === path.resolve(explicitServerPath)) {
+        return;
+      }
+      throw new Error("ENOENT");
+    });
+    vi.doMock("node:child_process", () => ({ spawn: spawnMock }));
+    vi.doMock("node:fs/promises", () => ({ access: accessMock }));
+
+    for (const script of mcpServerScripts) {
+      await importScript(script, `relative-explicit-${path.basename(script)}`);
+    }
+
+    expect((globalThis as Record<string, unknown>).__PM_MCP_STARTS).toBe(2);
+    expect(spawnMock).not.toHaveBeenCalled();
+  });
+
   it("discovers and starts the repo-checkout server when no explicit path is set", async () => {
     delete process.env.PM_CLI_MCP_SERVER;
     const root = await createTempRoot("pm-plugin-mcp-repo-");

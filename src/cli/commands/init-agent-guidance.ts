@@ -419,7 +419,7 @@ function handleAgentGuidanceSkipMode(flow: InitAgentGuidanceFlowState, checkedFi
   markAgentGuidanceRunState(flow, checkedFiles, {
     prompt_completed: true,
     declined: true,
-    declined_at: flow.state.declined_at.length > 0 ? flow.state.declined_at : new Date().toISOString(),
+    declined_at: flow.state.declined_at || new Date().toISOString(),
   });
   flow.warnings.push("agent_guidance:explicit_skip");
   pushUnique(flow.nextSteps, AGENT_GUIDANCE_ADD_LATER_HINT);
