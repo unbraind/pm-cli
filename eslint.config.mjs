@@ -24,13 +24,13 @@ const CODEFACTOR_MAINTAINABILITY_RULES = {
 const NODE_GLOBALS = {
   process: "readonly", console: "readonly", Buffer: "readonly",
   setTimeout: "readonly", clearTimeout: "readonly", setInterval: "readonly",
-  clearInterval: "readonly", setImmediate: "readonly", queueMicrotask: "readonly",
+  clearInterval: "readonly", setImmediate: "readonly", clearImmediate: "readonly", queueMicrotask: "readonly",
   URL: "readonly", URLSearchParams: "readonly", TextEncoder: "readonly",
   TextDecoder: "readonly", fetch: "readonly", AbortController: "readonly",
   AbortSignal: "readonly", performance: "readonly", structuredClone: "readonly",
   crypto: "readonly", atob: "readonly", btoa: "readonly",
-  __dirname: "readonly", __filename: "readonly", require: "readonly", module: "readonly",
-  globalThis: "readonly", WebSocket: "readonly", Blob: "readonly", FormData: "readonly",
+  __dirname: "readonly", __filename: "readonly", require: "readonly", module: "readonly", exports: "readonly",
+  global: "readonly", globalThis: "readonly", WebSocket: "readonly", Blob: "readonly", FormData: "readonly",
   Response: "readonly", Request: "readonly", Headers: "readonly",
 };
 
@@ -53,8 +53,11 @@ export default [
     languageOptions: { globals: NODE_GLOBALS },
     linterOptions: { reportUnusedDisableDirectives: "error" },
     plugins: { unicorn },
+    rules: CODEFACTOR_MAINTAINABILITY_RULES,
+  },
+  {
+    files: ["**/*.ts"],
     rules: {
-      ...CODEFACTOR_MAINTAINABILITY_RULES,
       "@typescript-eslint/no-unused-vars": [
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },

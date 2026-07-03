@@ -91,9 +91,9 @@ export async function setTestResultTracking(pmPath: string, enabled: boolean): P
 export async function writeItemTypeDefinitions(pmPath: string, definitions: Array<Record<string, unknown>>): Promise<void> {
   const settingsPath = path.join(pmPath, "settings.json");
   const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-    item_types?: { definitions?: Array<Record<string, unknown>> };
+    item_types?: Record<string, unknown> & { definitions?: Array<Record<string, unknown>> };
   };
-  settings.item_types = { definitions };
+  settings.item_types = { ...settings.item_types, definitions };
   await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
 }
 

@@ -462,17 +462,37 @@ export function checkFunctionComplexity(files, maxComplexity) {
 // baseline burns down — never raise it.
 export const MAX_ESLINT_SUPPRESSIONS = 175;
 
+function isRecord(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 export function countEslintSuppressions(suppressionsPath) {
   let raw;
   try {
     raw = readFileSync(suppressionsPath, "utf8");
-  } catch {
-    return 0;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Unable to read ESLint suppressions budget file ${suppressionsPath}: ${message}`, { cause: error });
   }
-  const parsed = JSON.parse(raw);
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Invalid ESLint suppressions budget file ${suppressionsPath}: ${message}`, { cause: error });
+  }
+  if (!isRecord(parsed)) {
+    throw new Error(`Invalid ESLint suppressions budget file ${suppressionsPath}: expected an object.`);
+  }
   let total = 0;
   for (const rules of Object.values(parsed)) {
+    if (!isRecord(rules)) {
+      throw new Error(`Invalid ESLint suppressions budget file ${suppressionsPath}: expected rule objects.`);
+    }
     for (const entry of Object.values(rules)) {
+      if (!isRecord(entry) || typeof entry.count !== "number" || !Number.isFinite(entry.count) || entry.count < 0) {
+        throw new Error(`Invalid ESLint suppressions budget file ${suppressionsPath}: expected numeric counts.`);
+      }
       total += entry.count;
     }
   }
@@ -480,8 +500,18 @@ export function countEslintSuppressions(suppressionsPath) {
 }
 
 export function checkEslintSuppressionsBudget(maxSuppressions) {
-  const suppressionsPath = path.join(repoRoot, "eslint-suppressions.json");
-  const total = countEslintSuppressions(suppressionsPath);
+  let total;
+  try {
+    const suppressionsPath = path.join(repoRoot, "eslint-suppressions.json");
+    total = countEslintSuppressions(suppressionsPath);
+  } catch (error) {
+    return {
+      ok: false,
+      total: null,
+      max_suppressions: maxSuppressions,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
   return {
     ok: total <= maxSuppressions,
     total,
@@ -708,10 +738,14 @@ function printQualityFailureSummary(report) {
     console.error(`- boilerplate_docstring violations: ${report.violations.boilerplate_docstrings.length}`);
   }
   if (!report.eslint_suppressions.ok) {
-    console.error(
-      `- eslint_suppressions budget exceeded: ${report.eslint_suppressions.total} ` +
-        `> ${report.eslint_suppressions.max_suppressions} (burn the baseline down, never grow it)`,
-    );
+    if (report.eslint_suppressions.error) {
+      console.error(`- eslint_suppressions budget failed: ${report.eslint_suppressions.error}`);
+    } else {
+      console.error(
+        `- eslint_suppressions budget exceeded: ${report.eslint_suppressions.total} ` +
+          `> ${report.eslint_suppressions.max_suppressions} (burn the baseline down, never grow it)`,
+      );
+    }
   }
   for (const [key, budget] of Object.entries(report.inline_pragmas.budgets)) {
     if (!budget.ok) {

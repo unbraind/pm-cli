@@ -1,6 +1,7 @@
 import type { Stats } from "node:fs";
 import * as fs from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
+import * as nodePath from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { createScriptHarness } from "../../../helpers/scriptModule";
 
@@ -50,8 +51,9 @@ type SqModule = {
   countEslintSuppressions: (suppressionsPath: string) => number;
   checkEslintSuppressionsBudget: (maxSuppressions: number) => {
     ok: boolean;
-    total: number;
+    total: number | null;
     max_suppressions: number;
+    error?: string;
   };
   MAX_ESLINT_SUPPRESSIONS: number;
   collectPragmaScanFiles: () => string[];
@@ -476,11 +478,23 @@ describe("static-quality-gate", () => {
       expect(all.some((v) => v.function_name.startsWith("<anonymous@"))).toBe(true);
     });
 
-    it("countEslintSuppressions: missing file is zero, present file sums rule counts", async () => {
+    it("countEslintSuppressions: rejects unreadable or malformed files and sums valid counts", async () => {
       const root = await harness.createTempRoot("pm-static-quality-suppressions-");
       mockUtils(root);
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      expect(mod.countEslintSuppressions(`${root}/eslint-suppressions.json`)).toBe(0);
+      expect(() => mod.countEslintSuppressions(`${root}/eslint-suppressions.json`)).toThrow(
+        /Unable to read ESLint suppressions budget file/,
+      );
+      await writeFile(`${root}/eslint-suppressions.json`, "{", "utf8");
+      expect(() => mod.countEslintSuppressions(`${root}/eslint-suppressions.json`)).toThrow(
+        /Invalid ESLint suppressions budget file/,
+      );
+      await writeFile(`${root}/eslint-suppressions.json`, "[]", "utf8");
+      expect(() => mod.countEslintSuppressions(`${root}/eslint-suppressions.json`)).toThrow(/expected an object/);
+      await writeFile(`${root}/eslint-suppressions.json`, JSON.stringify({ "src/a.ts": null }), "utf8");
+      expect(() => mod.countEslintSuppressions(`${root}/eslint-suppressions.json`)).toThrow(/expected rule objects/);
+      await writeFile(`${root}/eslint-suppressions.json`, JSON.stringify({ "src/a.ts": { complexity: {} } }), "utf8");
+      expect(() => mod.countEslintSuppressions(`${root}/eslint-suppressions.json`)).toThrow(/expected numeric counts/);
       await writeFile(
         `${root}/eslint-suppressions.json`,
         JSON.stringify({
@@ -492,19 +506,71 @@ describe("static-quality-gate", () => {
       expect(mod.countEslintSuppressions(`${root}/eslint-suppressions.json`)).toBe(6);
     });
 
+    it("countEslintSuppressions: normalizes non-Error read failures", async () => {
+      mockUtils("/repo");
+      mockFs({
+        readFileSync: vi.fn(() => {
+          throw "read-failed";
+        }) as never,
+      });
+      const readFailureMod = await harness.importModuleStable<SqModule>(SCRIPT);
+      expect(() => readFailureMod.countEslintSuppressions("/repo/eslint-suppressions.json")).toThrow(/read-failed/);
+    });
+
+    it("countEslintSuppressions: normalizes non-Error parse failures", async () => {
+      const root = await harness.createTempRoot("pm-static-quality-non-error-parse-");
+      await writeFile(`${root}/eslint-suppressions.json`, "{}", "utf8");
+      mockUtils(root);
+      const parseFailureMod = await harness.importModuleStable<SqModule>(SCRIPT);
+      vi.spyOn(JSON, "parse").mockImplementationOnce(() => {
+        throw "parse-failed";
+      });
+      expect(() => parseFailureMod.countEslintSuppressions(`${root}/eslint-suppressions.json`)).toThrow(/parse-failed/);
+    });
+
     it("checkEslintSuppressionsBudget: within and over budget", async () => {
       const root = await harness.createTempRoot("pm-static-quality-budget-");
       mockUtils(root);
+      expect((await harness.importModuleStable<SqModule>(SCRIPT)).checkEslintSuppressionsBudget(1)).toMatchObject({
+        ok: false,
+        total: null,
+        max_suppressions: 1,
+        error: expect.stringContaining("Unable to read ESLint suppressions budget file"),
+      });
       await writeFile(
         `${root}/eslint-suppressions.json`,
         JSON.stringify({ "src/a.ts": { complexity: { count: 2 } } }),
         "utf8",
       );
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      const actualSuppressionCount = mod.countEslintSuppressions(`${process.cwd()}/eslint-suppressions.json`);
+      const actualSuppressionCount = mod.countEslintSuppressions(`${root}/eslint-suppressions.json`);
       expect(mod.MAX_ESLINT_SUPPRESSIONS).toBeGreaterThanOrEqual(actualSuppressionCount);
       expect(mod.checkEslintSuppressionsBudget(2)).toEqual({ ok: true, total: 2, max_suppressions: 2 });
       expect(mod.checkEslintSuppressionsBudget(1)).toEqual({ ok: false, total: 2, max_suppressions: 1 });
+    });
+
+    it("checkEslintSuppressionsBudget: reports non-Error infrastructure failures", async () => {
+      mockUtils("/repo");
+      vi.doMock("node:path", () => {
+        const pathWithThrowingJoin = {
+          ...nodePath,
+          join() {
+            throw "path-join-failed";
+          },
+        };
+        return {
+          ...nodePath,
+          default: pathWithThrowingJoin,
+          join: pathWithThrowingJoin.join,
+        };
+      });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      expect(mod.checkEslintSuppressionsBudget(1)).toEqual({
+        ok: false,
+        total: null,
+        max_suppressions: 1,
+        error: "path-join-failed",
+      });
     });
 
     it("collectPragmaScanFiles: scans lintable files, skips d.ts/node_modules/missing roots", async () => {
@@ -631,6 +697,7 @@ describe("static-quality-gate", () => {
       for (const segment of ["src", "tests", "packages"]) {
         await mkdir(`${root}/${segment}`, { recursive: true });
       }
+      await writeFile(`${root}/eslint-suppressions.json`, "{}\n", "utf8");
     }
 
     async function seedFixture(root: string): Promise<void> {
@@ -915,6 +982,20 @@ describe("static-quality-gate", () => {
       expect(process.exitCode).toBe(1);
       const emitted = errorSpy.mock.calls.map((c) => String(c[0]));
       expect(emitted.some((line) => line.includes("eslint_suppressions budget exceeded: 2 > 1"))).toBe(true);
+    });
+
+    it("reports eslint_suppressions file failures in text mode", async () => {
+      const root = await harness.createTempRoot("pm-static-quality-suppfile-");
+      await seedFixture(root);
+      await rm(`${root}/eslint-suppressions.json`);
+      mockUtils(root);
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      process.argv = ["node", "x", "--max-lines", "500", "--max-lines-tests", "500"];
+      mod.main();
+      expect(process.exitCode).toBe(1);
+      const emitted = errorSpy.mock.calls.map((c) => String(c[0]));
+      expect(emitted.some((line) => line.includes("eslint_suppressions budget failed"))).toBe(true);
     });
 
     it("reports inline pragma budget violations in text mode", async () => {
