@@ -9,6 +9,7 @@ import { createHash } from "node:crypto";
 import { getActiveExtensionRegistrations, hasActiveOnReadHooks, runActiveOnReadHooks } from "../extensions/index.js";
 import { collectRegisteredItemFieldNames } from "../extensions/item-fields.js";
 import { parseItemDocument } from "../item/item-format.js";
+import { evictOldestMemoEntries } from "../shared/memo.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
 import { ITEM_FILE_EXTENSIONS, getItemFormatFromPath } from "./paths.js";
 import type { ItemDocument, ItemFormat, ItemMetadata, ItemType, RuntimeSchemaSettings } from "../../types/index.js";
@@ -166,7 +167,12 @@ interface MemoizedEnvelope {
  * scan. Envelopes handed out from the memo are shared, so they must be treated as
  * read-only — the write path always goes through `mutateItem` on a `structuredClone`d
  * document parsed fresh from the item file, never through listed cache metadata.
+ *
+ * The cap bounds memory when one long-lived process serves many project roots
+ * (3 envelopes per root); half-eviction of the oldest entries keeps the still-hot
+ * roots resident when the cap is hit.
  */
+const ENVELOPE_MEMO_MAX_ENTRIES = 24;
 const envelopeMemo = new Map<string, MemoizedEnvelope>();
 
 async function loadEnvelopeMemoized<T extends MemoizedEnvelope["envelope"]>(
@@ -189,6 +195,9 @@ async function loadEnvelopeMemoized<T extends MemoizedEnvelope["envelope"]>(
     envelope = parse(await fs.readFile(cachePath, "utf8"));
   } catch {
     envelope = null as T;
+  }
+  if (envelopeMemo.size >= ENVELOPE_MEMO_MAX_ENTRIES && !envelopeMemo.has(cachePath)) {
+    evictOldestMemoEntries(envelopeMemo);
   }
   envelopeMemo.set(cachePath, {
     signature: { mtime_ms: stat.mtimeMs, ctime_ms: stat.ctimeMs, size: stat.size },

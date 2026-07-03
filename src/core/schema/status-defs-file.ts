@@ -6,6 +6,7 @@
 import { RUNTIME_STATUS_ROLE_VALUES } from "../../types/index.js";
 import type { RuntimeStatusDefinition, RuntimeStatusRole } from "../../types/index.js";
 import { DEFAULT_RUNTIME_STATUS_DEFINITIONS } from "./runtime-schema.js";
+import { evictOldestMemoEntries } from "../shared/memo.js";
 
 export type { RuntimeStatusDefinition, RuntimeStatusRole } from "../../types/index.js";
 
@@ -27,8 +28,8 @@ const RUNTIME_STATUS_ROLE_SET = new Set<string>(RUNTIME_STATUS_ROLE_VALUES);
  * Memo for {@link normalizeStatusToken}. Status ranking inside sort comparators
  * normalizes the same handful of status strings O(n log n) times per corpus scan, and
  * the trim/lowercase/regex pipeline shows up in list/next/context profiles. The cap
- * bounds memory in long-lived hosts against unbounded arbitrary inputs; clearing
- * wholesale is fine because entries repopulate on demand. Declared before
+ * bounds memory in long-lived hosts against unbounded arbitrary inputs; half-eviction of the
+ * oldest entries keeps the still-hot half when the cap is hit. Declared before
  * BUILTIN_STATUS_IDS, whose module-level initializer already normalizes tokens.
  */
 const STATUS_TOKEN_MEMO_MAX_ENTRIES = 2_000;
@@ -119,7 +120,7 @@ export function normalizeStatusToken(value: unknown): string {
   }
   const normalized = value.trim().toLowerCase().replaceAll(/[\s-]+/g, "_");
   if (statusTokenMemo.size >= STATUS_TOKEN_MEMO_MAX_ENTRIES) {
-    statusTokenMemo.clear();
+    evictOldestMemoEntries(statusTokenMemo);
   }
   statusTokenMemo.set(value, normalized);
   return normalized;

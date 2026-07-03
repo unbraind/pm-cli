@@ -233,6 +233,51 @@ describe("front matter cache", () => {
     });
   });
 
+  it("caps the envelope memo across many project roots and refreshes stale entries at the cap", async () => {
+    const typeToFolder = { Task: "tasks" };
+    const roots: string[] = [];
+    // 8 roots × 3 envelopes fill the 24-entry memo; a 9th root then forces the
+    // oldest-half eviction branch, and refreshing an already-memoized path while
+    // the memo is full exercises the has(cachePath) no-evict branch.
+    for (let index = 0; index < 9; index += 1) {
+      const pmRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-envelope-cap-"));
+      tempRoots.push(pmRoot);
+      roots.push(pmRoot);
+      const tasksDir = path.join(pmRoot, "tasks");
+      await fs.mkdir(tasksDir, { recursive: true });
+      const metadata = makeTaskMetadata({ id: `pm-cap-${index}`, title: `Cap task ${index}` });
+      await fs.writeFile(
+        path.join(tasksDir, `pm-cap-${index}.toon`),
+        serializeItemDocument({ metadata, body: `cap body ${index}` }, { format: "toon" }),
+        "utf8",
+      );
+      // First call persists the on-disk caches; second call memoizes them.
+      await listAllDocumentCandidatesCached(pmRoot, "toon", typeToFolder, [], undefined);
+      const docs = await listAllDocumentCandidatesCached(pmRoot, "toon", typeToFolder, [], undefined);
+      expect(docs).toHaveLength(1);
+      expect(docs[0]?.metadata.id).toBe(`pm-cap-${index}`);
+    }
+
+    // Evicted roots still resolve correctly by re-reading their cache files; the
+    // re-reads also refill the memo back up to the cap.
+    for (let index = 0; index < 3; index += 1) {
+      const evictedRootDocs = await listAllDocumentCandidatesCached(roots[index], "toon", typeToFolder, [], undefined);
+      expect(evictedRootDocs).toHaveLength(1);
+      expect(evictedRootDocs[0]?.metadata.id).toBe(`pm-cap-${index}`);
+    }
+
+    // Externally rewrite the newest root's metadata envelope so its memo entry is
+    // stale while the memo sits at the cap; the reload must refresh the existing
+    // entry in place without evicting anything.
+    const lastRoot = roots[roots.length - 1];
+    const lastCachePath = path.join(lastRoot, "runtime", "metadata-cache.json");
+    const envelope = JSON.parse(await fs.readFile(lastCachePath, "utf8")) as Record<string, unknown>;
+    await fs.writeFile(lastCachePath, `${JSON.stringify(envelope)} `, "utf8");
+    const refreshed = await listAllDocumentCandidatesCached(lastRoot, "toon", typeToFolder, [], undefined);
+    expect(refreshed).toHaveLength(1);
+    expect(refreshed[0]?.metadata.id).toBe("pm-cap-8");
+  });
+
   it("decides cross-format duplicate winners deterministically regardless of read order", () => {
     // No preferred format: toon wins over any non-toon format, never the reverse.
     expect(shouldReplaceCachedDocumentCandidate("json_markdown", "toon", undefined)).toBe(true);

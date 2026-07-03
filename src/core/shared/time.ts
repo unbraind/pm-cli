@@ -4,6 +4,7 @@
  * Provides shared primitives and utilities for Time.
  */
 import { PmCliError } from "./errors.js";
+import { evictOldestMemoEntries } from "./memo.js";
 import { EXIT_CODE } from "./constants.js";
 
 const RELATIVE_DEADLINE = /^([+-]?)(\d+)([hdwm])$/i;
@@ -31,8 +32,8 @@ export function isTimestampLiteral(input: string): boolean {
  * Memoized `Date.parse` for {@link compareTimestampStrings}. Sort comparators call it
  * O(n log n) times over a corpus whose timestamp strings repeat heavily, and
  * `Date.parse` is expensive enough to show up in list/next/context profiles. The cap
- * bounds memory in long-lived hosts (the MCP server); clearing wholesale is fine
- * because entries are pure string→number mappings that repopulate on demand.
+ * bounds memory in long-lived hosts (the MCP server); half-eviction of the oldest entries
+ * keeps the still-hot half when the cap is hit.
  */
 const TIMESTAMP_PARSE_MEMO_MAX_ENTRIES = 10_000;
 const timestampParseMemo = new Map<string, number>();
@@ -44,7 +45,7 @@ function parseTimestampMsMemoized(value: string): number {
   }
   const parsed = Date.parse(value);
   if (timestampParseMemo.size >= TIMESTAMP_PARSE_MEMO_MAX_ENTRIES) {
-    timestampParseMemo.clear();
+    evictOldestMemoEntries(timestampParseMemo);
   }
   timestampParseMemo.set(value, parsed);
   return parsed;
