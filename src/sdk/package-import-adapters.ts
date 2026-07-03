@@ -75,6 +75,7 @@ export interface ToImportLinkedTestsOptions {
   allowScalar?: boolean;
   commandKeys?: readonly string[];
   pathKeys?: readonly string[];
+  requireCommand?: boolean;
   includeExtendedAssertions?: boolean;
   integerTimeout?: boolean;
   timeoutMinimum?: number;
@@ -437,11 +438,11 @@ function toImportLinkedTest(entry: unknown, options: ToImportLinkedTestsOptions)
   }
   const command = firstNonEmptyImportString(entry, options.commandKeys ?? ["command"]);
   const testPath = firstNonEmptyImportString(entry, options.pathKeys ?? ["path"]);
-  if (!command) {
+  if (!command && (options.requireCommand === true || !testPath)) {
     return undefined;
   }
   return {
-    command,
+    ...(command ? { command } : {}),
     ...(testPath ? { path: testPath } : {}),
     scope: toImportLinkScope(entry.scope),
     timeout_seconds: toImportLinkedTestTimeout(entry.timeout_seconds, options),

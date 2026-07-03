@@ -460,7 +460,7 @@ export function checkFunctionComplexity(files, maxComplexity) {
 // stale, so the baseline can only shrink; this budget makes growth impossible
 // without a loud, reviewable edit to this gate script. Lower it as the
 // baseline burns down — never raise it.
-export const MAX_ESLINT_SUPPRESSIONS = 176;
+export const MAX_ESLINT_SUPPRESSIONS = 175;
 
 export function countEslintSuppressions(suppressionsPath) {
   let raw;

@@ -295,6 +295,7 @@ const BEADS_DOC_OPTIONS = {
 const BEADS_TEST_OPTIONS = {
   allowScalar: true,
   commandKeys: ["command", "test"],
+  requireCommand: true,
   integerTimeout: true,
   timeoutMinimum: 0,
   timeoutExclusiveMinimum: true,
