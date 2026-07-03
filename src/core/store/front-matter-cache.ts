@@ -153,43 +153,86 @@ function getCollectionsCachePath(pmRoot: string): string {
   return path.join(pmRoot, "runtime", COLLECTIONS_CACHE_FILENAME);
 }
 
-async function loadCache(pmRoot: string): Promise<CacheEnvelope | null> {
+interface MemoizedEnvelope {
+  signature: StatSignature;
+  envelope: CacheEnvelope | BodyCacheEnvelope | CollectionsCacheEnvelope | null;
+}
+
+/**
+ * In-process memo of parsed cache envelopes keyed by cache file path and validated
+ * against the file's stat signature on every load. Commands that scan the corpus more
+ * than once per invocation (`pm next`, `pm context`) and long-lived in-process hosts
+ * (the MCP server) would otherwise re-read and re-parse multi-megabyte JSON on every
+ * scan. Envelopes handed out from the memo are shared, so they must be treated as
+ * read-only — the write path always goes through `mutateItem` on a `structuredClone`d
+ * document parsed fresh from the item file, never through listed cache metadata.
+ */
+const envelopeMemo = new Map<string, MemoizedEnvelope>();
+
+async function loadEnvelopeMemoized<T extends MemoizedEnvelope["envelope"]>(
+  cachePath: string,
+  parse: (raw: string) => T,
+): Promise<T> {
+  let stat;
   try {
-    const raw = await fs.readFile(getCachePath(pmRoot), "utf8");
+    stat = await fs.stat(cachePath);
+  } catch {
+    envelopeMemo.delete(cachePath);
+    return null as T;
+  }
+  const memoized = envelopeMemo.get(cachePath);
+  if (memoized && statMatches(memoized.signature, stat.mtimeMs, stat.ctimeMs, stat.size)) {
+    return memoized.envelope as T;
+  }
+  let envelope: T;
+  try {
+    envelope = parse(await fs.readFile(cachePath, "utf8"));
+  } catch {
+    envelope = null as T;
+  }
+  envelopeMemo.set(cachePath, {
+    signature: { mtime_ms: stat.mtimeMs, ctime_ms: stat.ctimeMs, size: stat.size },
+    envelope,
+  });
+  return envelope;
+}
+
+/**
+ * Drop memoized envelopes. Exposed for tests; production invalidation is stat-driven
+ * plus the explicit delete in {@link persistCache} after a rewrite.
+ */
+export function clearFrontMatterEnvelopeMemo(): void {
+  envelopeMemo.clear();
+}
+
+async function loadCache(pmRoot: string): Promise<CacheEnvelope | null> {
+  return await loadEnvelopeMemoized(getCachePath(pmRoot), (raw) => {
     const parsed = JSON.parse(raw) as CacheEnvelope;
     if (parsed.version !== CACHE_VERSION || typeof parsed.entries !== "object" || parsed.entries === null) {
       return null;
     }
     return parsed;
-  } catch {
-    return null;
-  }
+  });
 }
 
 async function loadBodyCache(pmRoot: string): Promise<BodyCacheEnvelope | null> {
-  try {
-    const raw = await fs.readFile(getBodyCachePath(pmRoot), "utf8");
+  return await loadEnvelopeMemoized(getBodyCachePath(pmRoot), (raw) => {
     const parsed = JSON.parse(raw) as BodyCacheEnvelope;
     if (parsed.version !== CACHE_VERSION || typeof parsed.bodies !== "object" || parsed.bodies === null) {
       return null;
     }
     return parsed;
-  } catch {
-    return null;
-  }
+  });
 }
 
 async function loadCollectionsCache(pmRoot: string): Promise<CollectionsCacheEnvelope | null> {
-  try {
-    const raw = await fs.readFile(getCollectionsCachePath(pmRoot), "utf8");
+  return await loadEnvelopeMemoized(getCollectionsCachePath(pmRoot), (raw) => {
     const parsed = JSON.parse(raw) as CollectionsCacheEnvelope;
     if (parsed.version !== CACHE_VERSION || typeof parsed.collections !== "object" || parsed.collections === null) {
       return null;
     }
     return parsed;
-  } catch {
-    return null;
-  }
+  });
 }
 
 async function persistCache(
@@ -198,6 +241,7 @@ async function persistCache(
 ): Promise<void> {
   await fs.mkdir(path.dirname(cachePath), { recursive: true });
   await writeFileAtomic(cachePath, JSON.stringify(envelope));
+  envelopeMemo.delete(cachePath);
 }
 
 /**

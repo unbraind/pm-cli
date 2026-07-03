@@ -456,6 +456,17 @@ describe("normalizeStatusToken", () => {
     expect(normalizeStatusToken(undefined)).toBe("");
     expect(normalizeStatusToken(42 as unknown)).toBe("");
   });
+
+  it("memoizes normalized tokens and keeps normalizing after the memo size cap", () => {
+    // Repeat lookups must serve the memoized value unchanged.
+    expect(normalizeStatusToken("In-Progress")).toBe("in_progress");
+    expect(normalizeStatusToken("In-Progress")).toBe("in_progress");
+    // Overflow the memo with unique tokens to force the wholesale clear branch.
+    for (let index = 0; index < 2_001; index += 1) {
+      normalizeStatusToken(`Status-${index}`);
+    }
+    expect(normalizeStatusToken("  In Progress ")).toBe("in_progress");
+  });
 });
 
 describe("BUILTIN_STATUS_IDS", () => {

@@ -267,6 +267,21 @@ describe("core/shared/time", () => {
     expect(compareTimestampStrings("2026-02-03T04:05:07Z", "2026-02-03T04:05:06Z")).toBeGreaterThan(0);
     expect(compareTimestampStrings("same", "same")).toBe(0);
     expect(compareTimestampStrings("alpha", "beta")).toBeLessThan(0);
+    // Memoized parses must return identical results on repeat comparisons.
+    expect(compareTimestampStrings("2026-02-03T04:05:07Z", "2026-02-03T04:05:06Z")).toBeGreaterThan(0);
+  });
+
+  it("keeps comparing correctly after the timestamp parse memo hits its size cap", () => {
+    // Overflow the memo with unique parseable timestamps to force the wholesale
+    // clear branch, then verify ordering is still computed correctly.
+    for (let index = 0; index < 10_001; index += 1) {
+      const millis = String(index % 1000).padStart(3, "0");
+      const seconds = String(Math.floor(index / 1000) % 60).padStart(2, "0");
+      const minutes = String(Math.floor(index / 60_000)).padStart(2, "0");
+      compareTimestampStrings(`2026-01-01T00:${minutes}:${seconds}.${millis}Z`, "2026-01-01T00:00:00.000Z");
+    }
+    expect(compareTimestampStrings("2026-02-03T04:05:07Z", "2026-02-03T04:05:06Z")).toBeGreaterThan(0);
+    expect(compareTimestampStrings("2026-02-03T04:05:06Z", "2026-02-03T04:05:07Z")).toBeLessThan(0);
   });
 });
 

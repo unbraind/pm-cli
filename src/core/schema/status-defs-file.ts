@@ -24,6 +24,17 @@ export type { RuntimeStatusDefinition, RuntimeStatusRole } from "../../types/ind
 const RUNTIME_STATUS_ROLE_SET = new Set<string>(RUNTIME_STATUS_ROLE_VALUES);
 
 /**
+ * Memo for {@link normalizeStatusToken}. Status ranking inside sort comparators
+ * normalizes the same handful of status strings O(n log n) times per corpus scan, and
+ * the trim/lowercase/regex pipeline shows up in list/next/context profiles. The cap
+ * bounds memory in long-lived hosts against unbounded arbitrary inputs; clearing
+ * wholesale is fine because entries repopulate on demand. Declared before
+ * BUILTIN_STATUS_IDS, whose module-level initializer already normalizes tokens.
+ */
+const STATUS_TOKEN_MEMO_MAX_ENTRIES = 2_000;
+const statusTokenMemo = new Map<string, string>();
+
+/**
  * The 5 lifecycle status ids that ship as built-in defaults and may never be
  * removed (their normalized ids match DEFAULT_RUNTIME_STATUS_DEFINITIONS:
  * open/in_progress/blocked/closed/canceled). `draft` is also a default but the
@@ -99,7 +110,19 @@ export interface RemoveStatusDefResult {
  * and collapse any run of whitespace/hyphens into a single underscore.
  */
 export function normalizeStatusToken(value: unknown): string {
-  return typeof value === "string" ? value.trim().toLowerCase().replaceAll(/[\s-]+/g, "_") : "";
+  if (typeof value !== "string") {
+    return "";
+  }
+  const memoized = statusTokenMemo.get(value);
+  if (memoized !== undefined) {
+    return memoized;
+  }
+  const normalized = value.trim().toLowerCase().replaceAll(/[\s-]+/g, "_");
+  if (statusTokenMemo.size >= STATUS_TOKEN_MEMO_MAX_ENTRIES) {
+    statusTokenMemo.clear();
+  }
+  statusTokenMemo.set(value, normalized);
+  return normalized;
 }
 
 function dedupeTokens(values: Iterable<string>): string[] {

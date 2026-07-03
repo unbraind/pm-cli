@@ -28,11 +28,34 @@ export function isTimestampLiteral(input: string): boolean {
 }
 
 /**
+ * Memoized `Date.parse` for {@link compareTimestampStrings}. Sort comparators call it
+ * O(n log n) times over a corpus whose timestamp strings repeat heavily, and
+ * `Date.parse` is expensive enough to show up in list/next/context profiles. The cap
+ * bounds memory in long-lived hosts (the MCP server); clearing wholesale is fine
+ * because entries are pure string→number mappings that repopulate on demand.
+ */
+const TIMESTAMP_PARSE_MEMO_MAX_ENTRIES = 10_000;
+const timestampParseMemo = new Map<string, number>();
+
+function parseTimestampMsMemoized(value: string): number {
+  const memoized = timestampParseMemo.get(value);
+  if (memoized !== undefined) {
+    return memoized;
+  }
+  const parsed = Date.parse(value);
+  if (timestampParseMemo.size >= TIMESTAMP_PARSE_MEMO_MAX_ENTRIES) {
+    timestampParseMemo.clear();
+  }
+  timestampParseMemo.set(value, parsed);
+  return parsed;
+}
+
+/**
  * Implements compare timestamp strings for the public runtime surface of this module.
  */
 export function compareTimestampStrings(left: string, right: string): number {
-  const leftMs = Date.parse(left);
-  const rightMs = Date.parse(right);
+  const leftMs = parseTimestampMsMemoized(left);
+  const rightMs = parseTimestampMsMemoized(right);
   if (Number.isFinite(leftMs) && Number.isFinite(rightMs) && leftMs !== rightMs) {
     return leftMs - rightMs;
   }

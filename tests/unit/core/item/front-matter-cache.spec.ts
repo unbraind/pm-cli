@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { serializeItemDocument } from "../../../../src/core/item/item-format.js";
 import {
+  clearFrontMatterEnvelopeMemo,
   listAllDocumentCandidatesCached,
   shouldReplaceCachedDocumentCandidate,
 } from "../../../../src/core/store/front-matter-cache.js";
@@ -41,6 +42,7 @@ afterEach(async () => {
   vi.restoreAllMocks();
   clearActiveExtensionHooks();
   setActiveExtensionRegistrations(null);
+  clearFrontMatterEnvelopeMemo();
   await Promise.all(tempRoots.splice(0).map((tempRoot) => fs.rm(tempRoot, { recursive: true, force: true })));
 });
 
@@ -156,6 +158,78 @@ describe("front matter cache", () => {
       const docs = await listAllDocumentCandidatesCached(pmRoot, "json_markdown", { Task: "tasks" }, warnings, undefined);
       expect(docs).toHaveLength(1);
       expect(warnings).toContain("json_markdown_leading_yaml_frontmatter_ignored");
+    });
+  });
+
+  it("memoizes parsed cache envelopes per process and revalidates them by stat signature", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const tasksDir = path.join(pmRoot, "tasks");
+      await fs.mkdir(tasksDir, { recursive: true });
+      const metadata = makeTaskMetadata({ id: "pm-memo", title: "Memoized envelope task" });
+      await fs.writeFile(
+        path.join(tasksDir, "pm-memo.toon"),
+        serializeItemDocument({ metadata, body: "memo body" }, { format: "toon" }),
+        "utf8",
+      );
+
+      const typeToFolder = { Task: "tasks" };
+      const cachePath = path.join(pmRoot, "runtime", "metadata-cache.json");
+      // First call populates the on-disk cache; second call parses and memoizes it.
+      await listAllDocumentCandidatesCached(pmRoot, "toon", typeToFolder, [], undefined);
+      await listAllDocumentCandidatesCached(pmRoot, "toon", typeToFolder, [], undefined);
+
+      // Third call with unchanged files must serve the memoized envelope without
+      // re-reading any cache file (stats alone revalidate the memo).
+      const readSpy = vi.spyOn(fs, "readFile");
+      const memoized = await listAllDocumentCandidatesCached(pmRoot, "toon", typeToFolder, [], undefined);
+      expect(memoized).toHaveLength(1);
+      expect(memoized[0]?.metadata.id).toBe("pm-memo");
+      expect(readSpy).not.toHaveBeenCalled();
+      readSpy.mockRestore();
+
+      // Externally rewriting the cache file invalidates the memoized envelope by
+      // stat signature; a corrupt envelope memoizes as null and items re-parse.
+      await fs.writeFile(cachePath, "{not json", "utf8");
+      const reparsed = await listAllDocumentCandidatesCached(pmRoot, "toon", typeToFolder, [], undefined);
+      expect(reparsed).toHaveLength(1);
+      expect(reparsed[0]?.metadata.id).toBe("pm-memo");
+
+      // The re-parse persisted a fresh envelope, so subsequent calls stay correct.
+      const afterRecovery = await listAllDocumentCandidatesCached(pmRoot, "toon", typeToFolder, [], undefined);
+      expect(afterRecovery).toHaveLength(1);
+      expect(afterRecovery[0]?.metadata.id).toBe("pm-memo");
+    });
+  });
+
+  it("rejects a version-mismatched metadata envelope and recovers by re-parsing items", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const tasksDir = path.join(pmRoot, "tasks");
+      await fs.mkdir(tasksDir, { recursive: true });
+      const metadata = makeTaskMetadata({ id: "pm-memo-null", title: "Memoized null envelope task" });
+      await fs.writeFile(
+        path.join(tasksDir, "pm-memo-null.toon"),
+        serializeItemDocument({ metadata, body: "body" }, { format: "toon" }),
+        "utf8",
+      );
+
+      // Version-mismatched metadata and body envelopes must parse to null so every
+      // item is re-parsed from disk; the scan then persists fresh valid envelopes
+      // that the second call loads normally.
+      await fs.mkdir(path.join(pmRoot, "runtime"), { recursive: true });
+      const cachePath = path.join(pmRoot, "runtime", "metadata-cache.json");
+      await fs.writeFile(cachePath, JSON.stringify({ version: 1, context_fingerprint: "stale", entries: {} }), "utf8");
+      await fs.writeFile(
+        path.join(pmRoot, "runtime", "metadata-cache-bodies.json"),
+        JSON.stringify({ version: 1, context_fingerprint: "stale", bodies: {} }),
+        "utf8",
+      );
+
+      const typeToFolder = { Task: "tasks" };
+      const first = await listAllDocumentCandidatesCached(pmRoot, "toon", typeToFolder, [], undefined);
+      expect(first).toHaveLength(1);
+      const second = await listAllDocumentCandidatesCached(pmRoot, "toon", typeToFolder, [], undefined);
+      expect(second).toHaveLength(1);
+      expect(second[0]?.metadata.id).toBe("pm-memo-null");
     });
   });
 
