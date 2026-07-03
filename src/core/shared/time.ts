@@ -32,8 +32,8 @@ export function isTimestampLiteral(input: string): boolean {
  * Memoized `Date.parse` for {@link compareTimestampStrings}. Sort comparators call it
  * O(n log n) times over a corpus whose timestamp strings repeat heavily, and
  * `Date.parse` is expensive enough to show up in list/next/context profiles. The cap
- * bounds memory in long-lived hosts (the MCP server); half-eviction of the oldest entries
- * keeps the still-hot half when the cap is hit.
+ * bounds memory in long-lived hosts (the MCP server); half-eviction keeps the
+ * newest-inserted half when the cap is hit.
  */
 const TIMESTAMP_PARSE_MEMO_MAX_ENTRIES = 10_000;
 const timestampParseMemo = new Map<string, number>();

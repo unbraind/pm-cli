@@ -169,11 +169,18 @@ interface MemoizedEnvelope {
  * document parsed fresh from the item file, never through listed cache metadata.
  *
  * The cap bounds memory when one long-lived process serves many project roots
- * (3 envelopes per root); half-eviction of the oldest entries keeps the still-hot
- * roots resident when the cap is hit.
+ * (3 envelopes per root). Hits re-insert their entry so Map insertion order tracks
+ * recency, making the half-eviction drop the least-recently-used roots.
  */
 const ENVELOPE_MEMO_MAX_ENTRIES = 24;
 const envelopeMemo = new Map<string, MemoizedEnvelope>();
+
+function memoizeEnvelope(cachePath: string, entry: MemoizedEnvelope): void {
+  if (envelopeMemo.size >= ENVELOPE_MEMO_MAX_ENTRIES && !envelopeMemo.has(cachePath)) {
+    evictOldestMemoEntries(envelopeMemo);
+  }
+  envelopeMemo.set(cachePath, entry);
+}
 
 async function loadEnvelopeMemoized<T extends MemoizedEnvelope["envelope"]>(
   cachePath: string,
@@ -188,6 +195,9 @@ async function loadEnvelopeMemoized<T extends MemoizedEnvelope["envelope"]>(
   }
   const memoized = envelopeMemo.get(cachePath);
   if (memoized && statMatches(memoized.signature, stat.mtimeMs, stat.ctimeMs, stat.size)) {
+    // Re-insert on hit so insertion order tracks recency for the LRU half-eviction.
+    envelopeMemo.delete(cachePath);
+    envelopeMemo.set(cachePath, memoized);
     return memoized.envelope as T;
   }
   let envelope: T;
@@ -196,10 +206,7 @@ async function loadEnvelopeMemoized<T extends MemoizedEnvelope["envelope"]>(
   } catch {
     envelope = null as T;
   }
-  if (envelopeMemo.size >= ENVELOPE_MEMO_MAX_ENTRIES && !envelopeMemo.has(cachePath)) {
-    evictOldestMemoEntries(envelopeMemo);
-  }
-  envelopeMemo.set(cachePath, {
+  memoizeEnvelope(cachePath, {
     signature: { mtime_ms: stat.mtimeMs, ctime_ms: stat.ctimeMs, size: stat.size },
     envelope,
   });
@@ -250,7 +257,18 @@ async function persistCache(
 ): Promise<void> {
   await fs.mkdir(path.dirname(cachePath), { recursive: true });
   await writeFileAtomic(cachePath, JSON.stringify(envelope));
-  envelopeMemo.delete(cachePath);
+  // Repopulate the memo with the just-written envelope so the next read after a
+  // write skips the cold re-read; fall back to plain invalidation when the fresh
+  // stat signature cannot be captured.
+  try {
+    const stat = await fs.stat(cachePath);
+    memoizeEnvelope(cachePath, {
+      signature: { mtime_ms: stat.mtimeMs, ctime_ms: stat.ctimeMs, size: stat.size },
+      envelope,
+    });
+  } catch {
+    envelopeMemo.delete(cachePath);
+  }
 }
 
 /**

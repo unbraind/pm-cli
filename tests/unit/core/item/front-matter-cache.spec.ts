@@ -174,7 +174,8 @@ describe("front matter cache", () => {
 
       const typeToFolder = { Task: "tasks" };
       const cachePath = path.join(pmRoot, "runtime", "metadata-cache.json");
-      // First call populates the on-disk cache; second call parses and memoizes it.
+      // The first call persists the on-disk caches and repopulates the memo with the
+      // just-written envelopes; the second call revalidates them by stat alone.
       await listAllDocumentCandidatesCached(pmRoot, "toon", typeToFolder, [], undefined);
       await listAllDocumentCandidatesCached(pmRoot, "toon", typeToFolder, [], undefined);
 
@@ -230,6 +231,38 @@ describe("front matter cache", () => {
       const second = await listAllDocumentCandidatesCached(pmRoot, "toon", typeToFolder, [], undefined);
       expect(second).toHaveLength(1);
       expect(second[0]?.metadata.id).toBe("pm-memo-null");
+    });
+  });
+
+  it("falls back to memo invalidation when the post-persist stat cannot be captured", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const tasksDir = path.join(pmRoot, "tasks");
+      await fs.mkdir(tasksDir, { recursive: true });
+      const metadata = makeTaskMetadata({ id: "pm-persist-stat", title: "Persist stat fallback task" });
+      await fs.writeFile(
+        path.join(tasksDir, "pm-persist-stat.toon"),
+        serializeItemDocument({ metadata, body: "body" }, { format: "toon" }),
+        "utf8",
+      );
+
+      // Reject stats for the cache files only: envelope loads then miss (null) and
+      // the post-persist repopulation hits its catch fallback; item-file stats keep
+      // working so the scan itself still succeeds.
+      const realStat = fs.stat;
+      const statSpy = vi.spyOn(fs, "stat").mockImplementation(((target: Parameters<typeof fs.stat>[0], ...rest: unknown[]) =>
+        String(target).includes("metadata-cache")
+          ? Promise.reject(new Error("stat unavailable"))
+          : (realStat as (...args: unknown[]) => Promise<unknown>)(target, ...rest)) as typeof fs.stat);
+
+      const typeToFolder = { Task: "tasks" };
+      const degraded = await listAllDocumentCandidatesCached(pmRoot, "toon", typeToFolder, [], undefined);
+      expect(degraded).toHaveLength(1);
+      expect(degraded[0]?.metadata.id).toBe("pm-persist-stat");
+
+      statSpy.mockRestore();
+      const recovered = await listAllDocumentCandidatesCached(pmRoot, "toon", typeToFolder, [], undefined);
+      expect(recovered).toHaveLength(1);
+      expect(recovered[0]?.metadata.id).toBe("pm-persist-stat");
     });
   });
 

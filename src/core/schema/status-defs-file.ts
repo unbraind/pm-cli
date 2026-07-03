@@ -28,8 +28,8 @@ const RUNTIME_STATUS_ROLE_SET = new Set<string>(RUNTIME_STATUS_ROLE_VALUES);
  * Memo for {@link normalizeStatusToken}. Status ranking inside sort comparators
  * normalizes the same handful of status strings O(n log n) times per corpus scan, and
  * the trim/lowercase/regex pipeline shows up in list/next/context profiles. The cap
- * bounds memory in long-lived hosts against unbounded arbitrary inputs; half-eviction of the
- * oldest entries keeps the still-hot half when the cap is hit. Declared before
+ * bounds memory in long-lived hosts against unbounded arbitrary inputs; half-eviction keeps the
+ * newest-inserted half when the cap is hit. Declared before
  * BUILTIN_STATUS_IDS, whose module-level initializer already normalizes tokens.
  */
 const STATUS_TOKEN_MEMO_MAX_ENTRIES = 2_000;
