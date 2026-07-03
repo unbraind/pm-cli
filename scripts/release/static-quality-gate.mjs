@@ -498,6 +498,7 @@ export function checkEslintSuppressionsBudget(maxSuppressions) {
 // raise them. (Pragma spellings are deliberately paraphrased here so this
 // comment does not count against its own budgets.)
 export const MAX_INLINE_ESLINT_DISABLES = 5;
+export const MAX_BROAD_ESLINT_DISABLES = 0;
 export const MAX_COVERAGE_IGNORE_PRAGMAS = 498;
 export const MAX_JSCPD_IGNORE_PRAGMAS = 0;
 
@@ -532,7 +533,12 @@ export function countPragmaMatches(files, pattern) {
 // fixtures never count their own pattern literals as pragma usage.
 export function checkInlinePragmaBudgets(budgets, files = collectPragmaScanFiles()) {
   const checks = [
-    ["inline_eslint_disables", "eslint-" + "disable", budgets.maxInlineEslintDisables],
+    ["inline_eslint_disables", "eslint-" + "disable-(?:next-line|line)\\b", budgets.maxInlineEslintDisables],
+    [
+      "broad_eslint_disables",
+      "eslint-" + "disable\\b(?!-(?:next-line|line)\\b)",
+      budgets.maxBroadEslintDisables ?? MAX_BROAD_ESLINT_DISABLES,
+    ],
     ["coverage_ignore_pragmas", "(?:v8|c8|istanbul) " + "ignore", budgets.maxCoverageIgnorePragmas],
     ["jscpd_ignore_pragmas", "jscpd:" + "ignore-" + "start", budgets.maxJscpdIgnorePragmas],
   ];
@@ -559,6 +565,7 @@ export function usage() {
     [--min-exported-docstring-coverage 100]
     [--max-eslint-suppressions ${MAX_ESLINT_SUPPRESSIONS}]
     [--max-inline-lint-disables ${MAX_INLINE_ESLINT_DISABLES}]
+    [--max-broad-lint-disables ${MAX_BROAD_ESLINT_DISABLES}]
     [--max-coverage-ignore-pragmas ${MAX_COVERAGE_IGNORE_PRAGMAS}]
     [--max-jscpd-ignore-pragmas ${MAX_JSCPD_IGNORE_PRAGMAS}]
 
@@ -593,6 +600,7 @@ function parseQualityThresholds(flags) {
     minExportedDocstringCoverage: parseNumberFlag(flags, "min-exported-docstring-coverage", 100),
     maxEslintSuppressions: parseNumberFlag(flags, "max-eslint-suppressions", MAX_ESLINT_SUPPRESSIONS),
     maxInlineEslintDisables: parseNumberFlag(flags, "max-inline-lint-disables", MAX_INLINE_ESLINT_DISABLES),
+    maxBroadEslintDisables: parseNumberFlag(flags, "max-broad-lint-disables", MAX_BROAD_ESLINT_DISABLES),
     maxCoverageIgnorePragmas: parseNumberFlag(flags, "max-coverage-ignore-pragmas", MAX_COVERAGE_IGNORE_PRAGMAS),
     maxJscpdIgnorePragmas: parseNumberFlag(flags, "max-jscpd-ignore-pragmas", MAX_JSCPD_IGNORE_PRAGMAS),
   };
@@ -644,6 +652,7 @@ function buildQualityReport(files, duplicateScopeFiles, thresholds) {
       max_duplicate_chunks: thresholds.maxDuplicateChunks,
       max_eslint_suppressions: thresholds.maxEslintSuppressions,
       max_inline_eslint_disables: thresholds.maxInlineEslintDisables,
+      max_broad_eslint_disables: thresholds.maxBroadEslintDisables,
       max_coverage_ignore_pragmas: thresholds.maxCoverageIgnorePragmas,
       max_jscpd_ignore_pragmas: thresholds.maxJscpdIgnorePragmas,
       min_docstring_coverage_percent: thresholds.minDocstringCoverage,

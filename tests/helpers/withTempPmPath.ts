@@ -101,81 +101,122 @@ const CREATE_VALUE_FLAGS = new Set([
   "--metadata_profile",
 ]);
 
+interface LegacyCreateNormalizationState {
+  normalized: string[];
+  unsetCandidates: Set<string>;
+  unsetWithConcreteValue: Set<string>;
+  clearCandidates: Set<string>;
+  clearWithConcreteValue: Set<string>;
+  sawLegacyNone: boolean;
+  hasCreateMode: boolean;
+}
+
+const TEMP_PM_ENV_KEYS = [
+  "PM_PATH",
+  "PM_GLOBAL_PATH",
+  "PM_AUTHOR",
+  "PM_TELEMETRY_DISABLED",
+  "PM_TELEMETRY_OTEL_DISABLED",
+  "PM_TELEMETRY_PROMPT",
+  "PM_DISABLE_OLLAMA_AUTO_DEFAULTS",
+] as const;
+
+type TempPmEnvKey = (typeof TEMP_PM_ENV_KEYS)[number];
+type TempPmEnvSnapshot = Record<TempPmEnvKey, string | undefined>;
+
+function shouldNormalizeLegacyCreateArgs(args: string[], createIndex: number): boolean {
+  return createIndex >= 0 && (createIndex === 0 || args.slice(0, createIndex).every((token) => token.startsWith("-")));
+}
+
+function createLegacyNormalizationState(args: string[], createIndex: number): LegacyCreateNormalizationState {
+  return {
+    normalized: args.slice(0, createIndex + 1),
+    unsetCandidates: new Set<string>(),
+    unsetWithConcreteValue: new Set<string>(),
+    clearCandidates: new Set<string>(),
+    clearWithConcreteValue: new Set<string>(),
+    sawLegacyNone: false,
+    hasCreateMode: false,
+  };
+}
+
+function recordConcreteCreateValue(state: LegacyCreateNormalizationState, unsetField: string | undefined, clearFlag: string | undefined): void {
+  if (unsetField) {
+    state.unsetWithConcreteValue.add(unsetField);
+  }
+  if (clearFlag) {
+    state.clearWithConcreteValue.add(clearFlag);
+  }
+}
+
+function recordLegacyNoneCreateValue(state: LegacyCreateNormalizationState, unsetField: string | undefined, clearFlag: string | undefined): void {
+  state.sawLegacyNone = true;
+  if (unsetField) {
+    state.unsetCandidates.add(unsetField);
+  }
+  if (clearFlag) {
+    state.clearCandidates.add(clearFlag);
+  }
+}
+
+function appendLegacyCreateClearArgs(state: LegacyCreateNormalizationState): void {
+  if (!state.hasCreateMode) {
+    state.normalized.push("--create-mode", "progressive");
+  }
+
+  for (const field of state.unsetCandidates) {
+    if (!state.unsetWithConcreteValue.has(field)) {
+      state.normalized.push("--unset", field);
+    }
+  }
+  for (const clearFlag of state.clearCandidates) {
+    if (!state.clearWithConcreteValue.has(clearFlag)) {
+      state.normalized.push(clearFlag);
+    }
+  }
+}
+
 function normalizeLegacyCreateArgsForTests(args: string[]): string[] {
   const createIndex = args.indexOf("create");
-  if (createIndex < 0) {
-    return args;
-  }
-  if (createIndex > 0 && args.slice(0, createIndex).some((token) => !token.startsWith("-"))) {
+  if (!shouldNormalizeLegacyCreateArgs(args, createIndex)) {
     return args;
   }
 
-  const normalized: string[] = args.slice(0, createIndex + 1);
-  const unsetCandidates = new Set<string>();
-  const unsetWithConcreteValue = new Set<string>();
-  const clearCandidates = new Set<string>();
-  const clearWithConcreteValue = new Set<string>();
-  let sawLegacyNone = false;
-  let hasCreateMode = false;
+  const state = createLegacyNormalizationState(args, createIndex);
 
   for (let index = createIndex + 1; index < args.length; index += 1) {
     const token = args[index];
     if (!CREATE_VALUE_FLAGS.has(token)) {
-      normalized.push(token);
+      state.normalized.push(token);
       continue;
     }
     const next = args[index + 1];
     if (next === undefined) {
-      normalized.push(token);
+      state.normalized.push(token);
       continue;
     }
     const nextNormalized = next.trim().toLowerCase();
     const unsetField = CREATE_VALUE_FLAG_TO_UNSET_FIELD[token];
     const clearFlag = CREATE_REPEATABLE_CLEAR_FLAG[token];
     if (token === "--create-mode" || token === "--create_mode") {
-      hasCreateMode = true;
+      state.hasCreateMode = true;
     }
     if (!LEGACY_NONE_TOKENS.has(nextNormalized)) {
-      normalized.push(token, next);
-      if (unsetField) {
-        unsetWithConcreteValue.add(unsetField);
-      }
-      if (clearFlag) {
-        clearWithConcreteValue.add(clearFlag);
-      }
+      state.normalized.push(token, next);
+      recordConcreteCreateValue(state, unsetField, clearFlag);
       index += 1;
       continue;
     }
-    sawLegacyNone = true;
-    if (unsetField) {
-      unsetCandidates.add(unsetField);
-    }
-    if (clearFlag) {
-      clearCandidates.add(clearFlag);
-    }
+    recordLegacyNoneCreateValue(state, unsetField, clearFlag);
     index += 1;
   }
 
-  if (!sawLegacyNone) {
+  if (!state.sawLegacyNone) {
     return args;
   }
 
-  if (!hasCreateMode) {
-    normalized.push("--create-mode", "progressive");
-  }
-
-  for (const field of unsetCandidates) {
-    if (!unsetWithConcreteValue.has(field)) {
-      normalized.push("--unset", field);
-    }
-  }
-  for (const clearFlag of clearCandidates) {
-    if (!clearWithConcreteValue.has(clearFlag)) {
-      normalized.push(clearFlag);
-    }
-  }
-
-  return normalized;
+  appendLegacyCreateClearArgs(state);
+  return state.normalized;
 }
 
 function runNodeCli(
@@ -223,10 +264,8 @@ async function removeTempRoot(tempRoot: string): Promise<void> {
   throw lastError;
 }
 
-export async function withTempPmPath<T>(callback: (context: TempPmContext) => Promise<T>): Promise<T> {
-  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-cli-test-"));
-  const pmPath = path.join(tempRoot, ".agents", "pm");
-  const env: NodeJS.ProcessEnv = {
+function buildTempPmEnv(tempRoot: string, pmPath: string): NodeJS.ProcessEnv {
+  return {
     ...process.env,
     PM_PATH: pmPath,
     PM_GLOBAL_PATH: path.join(tempRoot, ".pm-cli-global"),
@@ -237,28 +276,45 @@ export async function withTempPmPath<T>(callback: (context: TempPmContext) => Pr
     PM_DISABLE_OLLAMA_AUTO_DEFAULTS: "1",
     FORCE_COLOR: "0",
   };
+}
+
+function snapshotTempPmEnv(): TempPmEnvSnapshot {
+  const snapshot = {} as TempPmEnvSnapshot;
+  for (const key of TEMP_PM_ENV_KEYS) {
+    snapshot[key] = process.env[key];
+  }
+  return snapshot;
+}
+
+function applyTempPmEnv(env: NodeJS.ProcessEnv): void {
+  for (const key of TEMP_PM_ENV_KEYS) {
+    process.env[key] = env[key];
+  }
+}
+
+function restoreTempPmEnv(snapshot: TempPmEnvSnapshot): void {
+  for (const key of TEMP_PM_ENV_KEYS) {
+    const value = snapshot[key];
+    if (value === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = value;
+    }
+  }
+}
+
+export async function withTempPmPath<T>(callback: (context: TempPmContext) => Promise<T>): Promise<T> {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-cli-test-"));
+  const pmPath = path.join(tempRoot, ".agents", "pm");
+  const env = buildTempPmEnv(tempRoot, pmPath);
 
   const runCli = (args: string[], options?: { expectJson?: boolean; cwd?: string; input?: string }): CliRunResult =>
     runNodeCli(env, args, options);
   const runCliInProcess = (args: string[], options?: { expectJson?: boolean; cwd?: string }): Promise<CliRunResult> =>
     runNodeCliInProcess(env, args, options);
 
-  const previousEnv = {
-    PM_PATH: process.env.PM_PATH,
-    PM_GLOBAL_PATH: process.env.PM_GLOBAL_PATH,
-    PM_AUTHOR: process.env.PM_AUTHOR,
-    PM_TELEMETRY_DISABLED: process.env.PM_TELEMETRY_DISABLED,
-    PM_TELEMETRY_OTEL_DISABLED: process.env.PM_TELEMETRY_OTEL_DISABLED,
-    PM_TELEMETRY_PROMPT: process.env.PM_TELEMETRY_PROMPT,
-    PM_DISABLE_OLLAMA_AUTO_DEFAULTS: process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS,
-  };
-  process.env.PM_PATH = env.PM_PATH;
-  process.env.PM_GLOBAL_PATH = env.PM_GLOBAL_PATH;
-  process.env.PM_AUTHOR = env.PM_AUTHOR;
-  process.env.PM_TELEMETRY_DISABLED = env.PM_TELEMETRY_DISABLED;
-  process.env.PM_TELEMETRY_OTEL_DISABLED = env.PM_TELEMETRY_OTEL_DISABLED;
-  process.env.PM_TELEMETRY_PROMPT = env.PM_TELEMETRY_PROMPT;
-  process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS = env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS;
+  const previousEnv = snapshotTempPmEnv();
+  applyTempPmEnv(env);
 
   try {
     const initResult = runCli(["init", "--json"], { expectJson: true });
@@ -274,41 +330,7 @@ export async function withTempPmPath<T>(callback: (context: TempPmContext) => Pr
       runCliInProcess,
     });
   } finally {
-    if (previousEnv.PM_PATH === undefined) {
-      delete process.env.PM_PATH;
-    } else {
-      process.env.PM_PATH = previousEnv.PM_PATH;
-    }
-    if (previousEnv.PM_GLOBAL_PATH === undefined) {
-      delete process.env.PM_GLOBAL_PATH;
-    } else {
-      process.env.PM_GLOBAL_PATH = previousEnv.PM_GLOBAL_PATH;
-    }
-    if (previousEnv.PM_AUTHOR === undefined) {
-      delete process.env.PM_AUTHOR;
-    } else {
-      process.env.PM_AUTHOR = previousEnv.PM_AUTHOR;
-    }
-    if (previousEnv.PM_TELEMETRY_DISABLED === undefined) {
-      delete process.env.PM_TELEMETRY_DISABLED;
-    } else {
-      process.env.PM_TELEMETRY_DISABLED = previousEnv.PM_TELEMETRY_DISABLED;
-    }
-    if (previousEnv.PM_TELEMETRY_OTEL_DISABLED === undefined) {
-      delete process.env.PM_TELEMETRY_OTEL_DISABLED;
-    } else {
-      process.env.PM_TELEMETRY_OTEL_DISABLED = previousEnv.PM_TELEMETRY_OTEL_DISABLED;
-    }
-    if (previousEnv.PM_TELEMETRY_PROMPT === undefined) {
-      delete process.env.PM_TELEMETRY_PROMPT;
-    } else {
-      process.env.PM_TELEMETRY_PROMPT = previousEnv.PM_TELEMETRY_PROMPT;
-    }
-    if (previousEnv.PM_DISABLE_OLLAMA_AUTO_DEFAULTS === undefined) {
-      delete process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS;
-    } else {
-      process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS = previousEnv.PM_DISABLE_OLLAMA_AUTO_DEFAULTS;
-    }
+    restoreTempPmEnv(previousEnv);
     await removeTempRoot(tempRoot);
   }
 }

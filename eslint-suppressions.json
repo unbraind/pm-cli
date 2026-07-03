@@ -212,17 +212,7 @@
       "count": 2
     }
   },
-  "tests/helpers/itemFactory.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "tests/helpers/mcp-context-depth.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
-  "tests/helpers/withTempPmPath.ts": {
     "complexity": {
       "count": 1
     }
@@ -286,11 +276,6 @@
   },
   "tests/unit/commands/init-command.spec.ts": {
     "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "tests/unit/commands/metadata-governance-commands.spec.ts": {
-    "complexity": {
       "count": 1
     }
   },
@@ -388,11 +373,6 @@
   "tests/unit/scripts/release/compatibility-check.spec.ts": {
     "complexity": {
       "count": 1
-    }
-  },
-  "tests/unit/scripts/smoke-npx-from-pack.spec.ts": {
-    "complexity": {
-      "count": 2
     }
   }
 }

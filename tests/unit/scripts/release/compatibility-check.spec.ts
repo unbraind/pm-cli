@@ -1,5 +1,6 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import type * as ReleaseUtils from "../../../../scripts/release/utils.mjs";
 import { describe, expect, it, vi } from "vitest";
 
 import { createScriptHarness } from "../../../helpers/scriptModule";
@@ -19,6 +20,7 @@ interface SeedState {
 }
 
 type RunCommandResult = { status: number; stdout: string; stderr: string };
+type RunCommandOptions = { env?: Record<string, string>; capture?: boolean };
 
 interface ScenarioOverrides {
   npmViewVersion?: string;
@@ -33,6 +35,135 @@ interface ScenarioOverrides {
   keepMarkdown?: boolean;
 }
 
+function jsonResult(payload: unknown): RunCommandResult {
+  return {
+    status: 0,
+    stdout: JSON.stringify(payload),
+    stderr: "",
+  };
+}
+
+function handleNpmViewCommand(command: string, cmdArgs: string[], overrides: ScenarioOverrides): RunCommandResult | null {
+  if ((command !== "npm" && command !== "npm.cmd") || cmdArgs[0] !== "view") {
+    return null;
+  }
+  if (overrides.npmViewEmpty) {
+    return { status: 0, stdout: "\n", stderr: "" };
+  }
+  return { status: 0, stdout: `${overrides.npmViewVersion ?? "2026.6.14"}\n`, stderr: "" };
+}
+
+function legacyNpxPmArgs(command: string, cmdArgs: string[]): string[] | null {
+  if ((command !== "npx" && command !== "npx.cmd") || !cmdArgs.includes("pm")) {
+    return null;
+  }
+  return cmdArgs.slice(cmdArgs.indexOf("pm") + 1).filter((entry) => entry !== "--json");
+}
+
+function runLegacyPmCommand(pmArgs: string[], env: Record<string, string>, state: SeedState, overrides: ScenarioOverrides): RunCommandResult {
+  const cmd = pmArgs[0];
+  const legacyOverride = overrides.legacyOverride?.(cmd, pmArgs, state);
+  if (legacyOverride) {
+    return legacyOverride;
+  }
+  if (cmd === "init") {
+    mkdirSync(path.join(env.PM_PATH ?? "", "tasks"), { recursive: true });
+    return jsonResult({ ok: true });
+  }
+  if (cmd === "create") {
+    const type = pmArgs[pmArgs.indexOf("--type") + 1];
+    return jsonResult({ item: { id: type === "Issue" ? state.issueId : state.taskId } });
+  }
+  if (cmd === "list-all") {
+    return jsonResult({ count: state.itemCount });
+  }
+  if (cmd === "get") {
+    return jsonResult({ item: { id: state.taskId }, body: "legacy seeded body" });
+  }
+  return jsonResult({ ok: true });
+}
+
+function isCurrentDistCommand(command: string, cmdArgs: string[]): boolean {
+  return command === process.execPath && Boolean(cmdArgs[0]?.endsWith(path.join("dist", "cli.js")));
+}
+
+function runCurrentUpdateCommand(pmArgs: string[], env: Record<string, string>, state: SeedState, overrides: ScenarioOverrides): RunCommandResult {
+  const tasksDir = path.join(env.PM_PATH ?? "", "tasks");
+  mkdirSync(tasksDir, { recursive: true });
+  if (!overrides.skipToonMigration) {
+    writeFileSync(path.join(tasksDir, `${state.taskId}.toon`), "migrated toon entry\n", "utf8");
+  }
+  if (!overrides.keepMarkdown) {
+    rmSync(path.join(tasksDir, `${state.taskId}.md`), { force: true });
+  }
+  void pmArgs;
+  return jsonResult({ ok: true });
+}
+
+function runCurrentPmCommand(pmArgs: string[], env: Record<string, string>, state: SeedState, overrides: ScenarioOverrides): RunCommandResult {
+  const cmd = pmArgs[0];
+  const id = pmArgs[1];
+  const override = overrides.currentOverride?.(cmd, id, pmArgs, state);
+  if (override) {
+    return override;
+  }
+
+  if (cmd === "comments" && !pmArgs.includes("--add")) {
+    return jsonResult({ comments: state.comments });
+  }
+  if (cmd === "notes") {
+    return jsonResult({ notes: state.notes });
+  }
+  if (cmd === "learnings") {
+    return jsonResult({ learnings: state.learnings });
+  }
+  if (cmd === "test" && !pmArgs.includes("--run")) {
+    return jsonResult({ tests: state.tests });
+  }
+  if (cmd === "update" && id === state.taskId) {
+    return runCurrentUpdateCommand(pmArgs, env, state, overrides);
+  }
+  if (cmd === "comments" && pmArgs.includes("--add")) {
+    state.comments.push("post migration comment");
+    return jsonResult({ ok: true });
+  }
+  if (cmd === "test" && pmArgs.includes("--run")) {
+    return jsonResult({ ok: true });
+  }
+  if (cmd === "validate") {
+    return jsonResult({ ok: true });
+  }
+  if (cmd === "health") {
+    return jsonResult({ checks: [{ name: "storage", status: "ok" }] });
+  }
+  if (cmd === "list-all") {
+    return jsonResult({ count: state.itemCount });
+  }
+  return jsonResult({ ok: true });
+}
+
+function createRunCommandMock(state: SeedState, overrides: ScenarioOverrides) {
+  return vi.fn((command: string, cmdArgs: string[], options?: RunCommandOptions) => {
+    const env = options?.env ?? {};
+    const npmView = handleNpmViewCommand(command, cmdArgs, overrides);
+    if (npmView) {
+      return npmView;
+    }
+
+    const legacyArgs = legacyNpxPmArgs(command, cmdArgs);
+    if (legacyArgs) {
+      return runLegacyPmCommand(legacyArgs, env, state, overrides);
+    }
+
+    if (isCurrentDistCommand(command, cmdArgs)) {
+      const pmArgs = cmdArgs.slice(1).filter((entry) => entry !== "--json");
+      return runCurrentPmCommand(pmArgs, env, state, overrides);
+    }
+
+    return { status: 0, stdout: "", stderr: "" };
+  });
+}
+
 async function runCompatibilityScenario(args: string[], overrides: ScenarioOverrides = {}) {
   const state: SeedState = {
     taskId: "pm-compat-task",
@@ -44,104 +175,10 @@ async function runCompatibilityScenario(args: string[], overrides: ScenarioOverr
     tests: [{ command: "node --version" }],
   };
 
-  const json = (payload: unknown): RunCommandResult => ({
-    status: 0,
-    stdout: JSON.stringify(payload),
-    stderr: "",
-  });
-
-  const runCommand = vi.fn(
-    (command: string, cmdArgs: string[], options?: { env?: Record<string, string>; capture?: boolean }) => {
-      const env = options?.env ?? {};
-
-      if ((command === "npm" || command === "npm.cmd") && cmdArgs[0] === "view") {
-        if (overrides.npmViewEmpty) {
-          return { status: 0, stdout: "\n", stderr: "" };
-        }
-        return { status: 0, stdout: `${overrides.npmViewVersion ?? "2026.6.14"}\n`, stderr: "" };
-      }
-
-      if ((command === "npx" || command === "npx.cmd") && cmdArgs.includes("pm")) {
-        const pmArgs = cmdArgs.slice(cmdArgs.indexOf("pm") + 1).filter((entry) => entry !== "--json");
-        const cmd = pmArgs[0];
-        const legacyOverride = overrides.legacyOverride?.(cmd, pmArgs, state);
-        if (legacyOverride) {
-          return legacyOverride;
-        }
-        if (cmd === "init") {
-          mkdirSync(path.join(env.PM_PATH ?? "", "tasks"), { recursive: true });
-          return json({ ok: true });
-        }
-        if (cmd === "create") {
-          const type = pmArgs[pmArgs.indexOf("--type") + 1];
-          return json({ item: { id: type === "Issue" ? state.issueId : state.taskId } });
-        }
-        if (cmd === "list-all") {
-          return json({ count: state.itemCount });
-        }
-        if (cmd === "get") {
-          return json({ item: { id: state.taskId }, body: "legacy seeded body" });
-        }
-        return json({ ok: true });
-      }
-
-      if (command === process.execPath && cmdArgs[0].endsWith(path.join("dist", "cli.js"))) {
-        const pmArgs = cmdArgs.slice(1).filter((entry) => entry !== "--json");
-        const cmd = pmArgs[0];
-        const id = pmArgs[1];
-        const override = overrides.currentOverride?.(cmd, id, pmArgs, state);
-        if (override) {
-          return override;
-        }
-
-        if (cmd === "comments" && !pmArgs.includes("--add")) {
-          return json({ comments: state.comments });
-        }
-        if (cmd === "notes") {
-          return json({ notes: state.notes });
-        }
-        if (cmd === "learnings") {
-          return json({ learnings: state.learnings });
-        }
-        if (cmd === "test" && !pmArgs.includes("--run")) {
-          return json({ tests: state.tests });
-        }
-        if (cmd === "update" && id === state.taskId) {
-          const tasksDir = path.join(env.PM_PATH ?? "", "tasks");
-          mkdirSync(tasksDir, { recursive: true });
-          if (!overrides.skipToonMigration) {
-            writeFileSync(path.join(tasksDir, `${state.taskId}.toon`), "migrated toon entry\n", "utf8");
-          }
-          if (!overrides.keepMarkdown) {
-            rmSync(path.join(tasksDir, `${state.taskId}.md`), { force: true });
-          }
-          return json({ ok: true });
-        }
-        if (cmd === "comments" && pmArgs.includes("--add")) {
-          state.comments.push("post migration comment");
-          return json({ ok: true });
-        }
-        if (cmd === "test" && pmArgs.includes("--run")) {
-          return json({ ok: true });
-        }
-        if (cmd === "validate") {
-          return json({ ok: true });
-        }
-        if (cmd === "health") {
-          return json({ checks: [{ name: "storage", status: "ok" }] });
-        }
-        if (cmd === "list-all") {
-          return json({ count: state.itemCount });
-        }
-        return json({ ok: true });
-      }
-
-      return { status: 0, stdout: "", stderr: "" };
-    },
-  );
+  const runCommand = createRunCommandMock(state, overrides);
 
   vi.doMock(UTILS_SPECIFIER, async () => {
-    const actual = await vi.importActual<typeof import("../../../../scripts/release/utils.mjs")>(UTILS_SPECIFIER);
+    const actual = await vi.importActual<typeof ReleaseUtils>(UTILS_SPECIFIER);
     return {
       ...actual,
       runCommand,

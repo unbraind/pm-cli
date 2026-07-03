@@ -28,6 +28,19 @@ const originalTelemetryInlineFlush = process.env.PM_TELEMETRY_INLINE_FLUSH;
 const originalTelemetryFlushChild = process.env.PM_TELEMETRY_FLUSH_CHILD;
 const originalTelemetrySourceContext = process.env.PM_TELEMETRY_SOURCE_CONTEXT;
 const originalTelemetryIngestKey = process.env.PM_TELEMETRY_INGEST_KEY;
+const ORIGINAL_ENV_VALUES = [
+  ["PM_GLOBAL_PATH", originalGlobalPath],
+  ["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", originalOtelTracesEndpoint],
+  ["OTEL_EXPORTER_OTLP_ENDPOINT", originalOtelEndpoint],
+  ["OTEL_SERVICE_NAME", originalOtelServiceName],
+  ["PM_TELEMETRY_DISABLED", originalTelemetryDisabled],
+  ["PM_NO_TELEMETRY", originalNoTelemetry],
+  ["PM_TELEMETRY_OTEL_DISABLED", originalTelemetryOtelDisabled],
+  ["PM_TELEMETRY_INLINE_FLUSH", originalTelemetryInlineFlush],
+  ["PM_TELEMETRY_FLUSH_CHILD", originalTelemetryFlushChild],
+  ["PM_TELEMETRY_SOURCE_CONTEXT", originalTelemetrySourceContext],
+  ["PM_TELEMETRY_INGEST_KEY", originalTelemetryIngestKey],
+] as const;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PRIVATE_TEST_IP = ["192", "168", "42", "17"].join(".");
 const TEST_LOCAL_PATH = ["/home", "example", "private", "path"].join("/");
@@ -63,6 +76,14 @@ function snapshotEnv(keys: readonly string[]): () => void {
       }
     }
   };
+}
+
+function restoreEnvValue(key: string, value: string | undefined): void {
+  if (value === undefined) {
+    delete process.env[key];
+  } else {
+    process.env[key] = value;
+  }
 }
 
 function telemetryQueuePath(globalRoot: string): string {
@@ -128,60 +149,8 @@ async function setTelemetryCaptureLevel(globalRoot: string, level: "minimal" | "
 
 describe("core/telemetry/runtime", () => {
   afterEach(() => {
-    if (originalGlobalPath === undefined) {
-      delete process.env.PM_GLOBAL_PATH;
-    } else {
-      process.env.PM_GLOBAL_PATH = originalGlobalPath;
-    }
-    if (originalOtelTracesEndpoint === undefined) {
-      delete process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT;
-    } else {
-      process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = originalOtelTracesEndpoint;
-    }
-    if (originalOtelEndpoint === undefined) {
-      delete process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
-    } else {
-      process.env.OTEL_EXPORTER_OTLP_ENDPOINT = originalOtelEndpoint;
-    }
-    if (originalOtelServiceName === undefined) {
-      delete process.env.OTEL_SERVICE_NAME;
-    } else {
-      process.env.OTEL_SERVICE_NAME = originalOtelServiceName;
-    }
-    if (originalTelemetryDisabled === undefined) {
-      delete process.env.PM_TELEMETRY_DISABLED;
-    } else {
-      process.env.PM_TELEMETRY_DISABLED = originalTelemetryDisabled;
-    }
-    if (originalNoTelemetry === undefined) {
-      delete process.env.PM_NO_TELEMETRY;
-    } else {
-      process.env.PM_NO_TELEMETRY = originalNoTelemetry;
-    }
-    if (originalTelemetryOtelDisabled === undefined) {
-      delete process.env.PM_TELEMETRY_OTEL_DISABLED;
-    } else {
-      process.env.PM_TELEMETRY_OTEL_DISABLED = originalTelemetryOtelDisabled;
-    }
-    if (originalTelemetryInlineFlush === undefined) {
-      delete process.env.PM_TELEMETRY_INLINE_FLUSH;
-    } else {
-      process.env.PM_TELEMETRY_INLINE_FLUSH = originalTelemetryInlineFlush;
-    }
-    if (originalTelemetryFlushChild === undefined) {
-      delete process.env.PM_TELEMETRY_FLUSH_CHILD;
-    } else {
-      process.env.PM_TELEMETRY_FLUSH_CHILD = originalTelemetryFlushChild;
-    }
-    if (originalTelemetrySourceContext === undefined) {
-      delete process.env.PM_TELEMETRY_SOURCE_CONTEXT;
-    } else {
-      process.env.PM_TELEMETRY_SOURCE_CONTEXT = originalTelemetrySourceContext;
-    }
-    if (originalTelemetryIngestKey === undefined) {
-      delete process.env.PM_TELEMETRY_INGEST_KEY;
-    } else {
-      process.env.PM_TELEMETRY_INGEST_KEY = originalTelemetryIngestKey;
+    for (const [key, value] of ORIGINAL_ENV_VALUES) {
+      restoreEnvValue(key, value);
     }
     globalThis.fetch = originalFetch;
     vi.restoreAllMocks();

@@ -33,60 +33,57 @@ export interface CreatedTestItem {
   item: Record<string, unknown>;
 }
 
+interface TestItemCreateField {
+  flag: string;
+  key: keyof TestItemFactoryOverrides;
+  fallback: (title: string) => string;
+}
+
+const TEST_ITEM_CREATE_FIELDS: readonly TestItemCreateField[] = [
+  { flag: "--description", key: "description", fallback: (title) => `${title} description` },
+  { flag: "--type", key: "type", fallback: () => "Task" },
+  { flag: "--status", key: "status", fallback: () => "open" },
+  { flag: "--priority", key: "priority", fallback: () => "1" },
+  { flag: "--tags", key: "tags", fallback: () => "unit" },
+  { flag: "--body", key: "body", fallback: () => "" },
+  { flag: "--deadline", key: "deadline", fallback: () => "none" },
+  { flag: "--estimate", key: "estimate", fallback: () => "10" },
+  { flag: "--acceptance-criteria", key: "acceptanceCriteria", fallback: (title) => `${title} acceptance` },
+  { flag: "--author", key: "author", fallback: () => "seed-author" },
+  { flag: "--message", key: "message", fallback: (title) => `Create ${title}` },
+  { flag: "--assignee", key: "assignee", fallback: () => "none" },
+  { flag: "--dep", key: "dep", fallback: () => "none" },
+  { flag: "--comment", key: "comment", fallback: () => "none" },
+  { flag: "--note", key: "note", fallback: () => "none" },
+  { flag: "--learning", key: "learning", fallback: () => "none" },
+  { flag: "--file", key: "file", fallback: () => "none" },
+  { flag: "--test", key: "test", fallback: () => "none" },
+  { flag: "--doc", key: "doc", fallback: () => "none" },
+];
+
+function resolveCreateFieldValue(field: TestItemCreateField, overrides: TestItemFactoryOverrides): string {
+  const value = overrides[field.key];
+  return typeof value === "string" ? value : field.fallback(overrides.title);
+}
+
+function appendOptionalCreateArg(args: string[], flag: string, value: string | undefined): void {
+  if (value !== undefined) {
+    args.push(flag, value);
+  }
+}
+
+function buildCreateTestItemArgs(overrides: TestItemFactoryOverrides): string[] {
+  const args = ["create", "--json", "--title", overrides.title];
+  for (const field of TEST_ITEM_CREATE_FIELDS) {
+    args.push(field.flag, resolveCreateFieldValue(field, overrides));
+  }
+  appendOptionalCreateArg(args, "--parent", overrides.parent);
+  appendOptionalCreateArg(args, "--create-mode", overrides.createMode);
+  return args;
+}
+
 export function createTestItem(context: TempPmContext, overrides: TestItemFactoryOverrides): CreatedTestItem {
-  const title = overrides.title;
-  const args = [
-    "create",
-    "--json",
-    "--title",
-    title,
-    "--description",
-    overrides.description ?? `${title} description`,
-    "--type",
-    overrides.type ?? "Task",
-    "--status",
-    overrides.status ?? "open",
-    "--priority",
-    overrides.priority ?? "1",
-    "--tags",
-    overrides.tags ?? "unit",
-    "--body",
-    overrides.body ?? "",
-    "--deadline",
-    overrides.deadline ?? "none",
-    "--estimate",
-    overrides.estimate ?? "10",
-    "--acceptance-criteria",
-    overrides.acceptanceCriteria ?? `${title} acceptance`,
-    "--author",
-    overrides.author ?? "seed-author",
-    "--message",
-    overrides.message ?? `Create ${title}`,
-    "--assignee",
-    overrides.assignee ?? "none",
-    "--dep",
-    overrides.dep ?? "none",
-    "--comment",
-    overrides.comment ?? "none",
-    "--note",
-    overrides.note ?? "none",
-    "--learning",
-    overrides.learning ?? "none",
-    "--file",
-    overrides.file ?? "none",
-    "--test",
-    overrides.test ?? "none",
-    "--doc",
-    overrides.doc ?? "none",
-  ];
-
-  if (overrides.parent !== undefined) {
-    args.push("--parent", overrides.parent);
-  }
-  if (overrides.createMode !== undefined) {
-    args.push("--create-mode", overrides.createMode);
-  }
-
+  const args = buildCreateTestItemArgs(overrides);
   const created = context.runCli(args, { expectJson: true });
   expect(created.code).toBe(0);
   const payload = created.json as { item?: Record<string, unknown> };
