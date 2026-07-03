@@ -102,6 +102,7 @@ import {
   resolveRuntimeUnsetFieldDefinition,
   type CommandUnsetFieldDefinition,
 } from "./shared-unset-fields.js";
+import type { MutationMetadataCommandOptions } from "./mutation-command-options.js";
 import { ensureEnumValue } from "./recurrence-parsers.js";
 import {
   parseEventEntries,
@@ -132,7 +133,7 @@ import {
 /**
  * Documents the create command options payload exchanged by command, SDK, and package integrations.
  */
-export interface CreateCommandOptions {
+export interface CreateCommandOptions extends MutationMetadataCommandOptions {
   title?: string;
   description?: string;
   type?: string;
@@ -141,43 +142,7 @@ export interface CreateCommandOptions {
   tags?: string;
   addTags?: string[];
   body?: string;
-  deadline?: string;
-  estimatedMinutes?: string;
-  acceptanceCriteria?: string;
-  definitionOfReady?: string;
-  order?: string;
-  rank?: string;
-  goal?: string;
-  objective?: string;
-  value?: string;
-  impact?: string;
-  outcome?: string;
-  whyNow?: string;
-  author?: string;
-  message?: string;
-  assignee?: string;
-  parent?: string;
   allowMissingParent?: boolean;
-  reviewer?: string;
-  risk?: string;
-  confidence?: string;
-  sprint?: string;
-  release?: string;
-  blockedBy?: string;
-  blockedReason?: string;
-  unblockNote?: string;
-  reporter?: string;
-  severity?: string;
-  environment?: string;
-  reproSteps?: string;
-  resolution?: string;
-  expectedResult?: string;
-  actualResult?: string;
-  affectedVersion?: string;
-  fixedVersion?: string;
-  component?: string;
-  regression?: string;
-  customerImpact?: string;
   dep?: string[];
   comment?: string[];
   note?: string[];

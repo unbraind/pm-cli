@@ -6,13 +6,13 @@ status: in_progress
 priority: 2
 tags[3]: code-quality,codefactor,tech-debt
 created_at: "2026-06-26T13:29:14.359Z"
-updated_at: "2026-07-02T20:02:51.985Z"
+updated_at: "2026-07-03T07:16:12.023Z"
 assignee: claude-code-agent
 author: claude-code-agent
 acceptance_criteria: "CodeFactor overall repository grade reaches A+ (or the highest attainable) on branch main; CodeFactor reports 0 outstanding issues across Complexity, Maintainability, and Duplication; local lint/quality parity tooling exists so findings can be reproduced and kept at zero (no regressions on new PRs)."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-fmjy,related,"2026-07-02T06:39:46.472Z",null,null
-comments[89]{created_at,author,text}:
+comments[96]{created_at,author,text}:
   "2026-06-26T15:46:30.976Z",codex-gpt5,"Progress update: live CodeFactor for main still reports 255 issues until this branch lands (83 maintainability, 152 complexity, 20 duplication). This branch completes the maintainability groups tracked by pm-xsth, pm-m8yl, and pm-x878/Codecov; complexity pm-arzz and duplication pm-fmjy remain open for dedicated refactor follow-up."
   "2026-06-26T18:50:54.481Z",codex-codefactor-sdk-cli-20260626,"Investigation note: live 2026-06-26 CodeFactor public issues page reports A rating, 601 analyzed files, 172 issues after the merged maintainability branch; PM snapshot still tracks remaining complexity and duplication children. GitHub state: no open PRs, no open Dependabot or code-scanning alerts; issue #374 remains open and externally blocked on missing RELEASE_PAT in release environment; pnpm audit --audit-level moderate reports no known vulnerabilities. Dependency drift from pnpm outdated: @sentry/cli 3.5.1 -> 3.6.0, @sentry/node 10.61.0 -> 10.62.0, @types/node held at Node 22 types despite latest 26.x."
   "2026-06-26T19:05:47.605Z",codex-codefactor-sdk-cli-20260626,"Evidence update: CodeFactor remediation bundle now covers the remaining duplication primitives and generated/test analysis scope. Verification passed: pnpm build; targeted 254-test suite; pnpm contracts:check; pnpm quality:static; pnpm typecheck; pnpm security:scan; full coverage 100/100/100/100 across 5133 tests; manual isolated temp-project smoke with PM_PATH/PM_GLOBAL_PATH passed package install/doctor and shared unset behavior. Remaining release issue #374 is external to code changes: GitHub scheduled Auto Release requires RELEASE_PAT in the release environment."
@@ -102,17 +102,30 @@ comments[89]{created_at,author,text}:
   "2026-07-02T19:18:19.177Z",claude-code-agent,"Review-fix evidence: addressed second pre-push Greptile pass by restoring activity init-check-before-filter-validation error priority and single-sourcing duplicate readOptionString through src/cli/registration-helpers.ts for registration modules. Verification after the fix passed: focused registration/activity/contracts/SDK suite 5 files / 264 tests; pnpm typecheck; pnpm lint with ESLint clean, jscpd 0 clones, static quality passed; full node scripts/run-tests.mjs coverage 262 files / 5277 tests / 100% statements, branches, functions, lines."
   "2026-07-02T19:56:00.696Z",claude-code-agent,"Bot feedback follow-up: addressed PR #419 inline review findings by preserving legacy raw activity op/author filter semantics with an explicit comment, reusing suggestedPaths for unknown-command did-you-mean text, restoring singleton string support for files/docs repeatable option reads, rejecting blank close-many rollback ids before filter fallback, sharing close-many closability logic, and keeping runtime status fallback sorting consistent. Verification: pnpm typecheck; focused command/schema tests (275 passed); pnpm lint (ESLint, jscpd 0 clones, static quality); pnpm contracts:check; node scripts/run-tests.mjs coverage (262 files, 5278 tests, 100% statements/branches/functions/lines); pnpm security:scan; pnpm audit --audit-level moderate; git diff --check."
   "2026-07-02T20:02:51.984Z",claude-code-agent,"Pre-push Greptile evidence for amended head ff7645db: greptile review --branch main --json started review 57add02f-0e1d-45d2-8603-f1732470b000 and was interrupted after the local CLI hung without output; greptile review show 57add02f-0e1d-45d2-8603-f1732470b000 --json then completed with confidence=5, comments=[], and 'No files require special attention.'"
+  "2026-07-03T05:31:52.852Z",claude-code-agent,"Implementation note: live CodeFactor issues page checked on 2026-07-03. It reports 13 active issues on main: 2 complexity (src/core/item/type-registry.ts resolveCommandOptionPolicyState, src/cli/commands/init-agent-guidance.ts runInitAgentGuidance) and 11 duplication issues across extension scaffold, completion, update/create/type-registry/tool-schema, package runtime-loader, and plugin MCP wrapper files. Reusing pm-92if; no duplicate item created."
+  "2026-07-03T06:12:22.162Z",claude-code-agent,"Evidence: resolved the 2026-07-03 live CodeFactor 13-issue set across pm CLI/SDK files. Complexity refactors split src/core/item/type-registry.ts option-policy handling and src/cli/commands/init-agent-guidance.ts mode flow below threshold. Duplication refactors share create/update mutation option metadata, zsh completion script sections, extension scaffold capability test generation, SDK tool-schema option groups, SDK package import adapter coercers, generated package runtime-loader variants, generated plugin MCP wrapper variants, guide-shell payload parsing, and history rewrite rollback persistence. Verification passed: pnpm typecheck; pnpm lint (ESLint, repo jscpd 0 clones across 549 analyzed files, static quality gate); pnpm exec eslint . --rule 'complexity: [\"error\", 17]'; broad source-only jscpd over src/packages/plugins/scripts found 0 clones across 282 files; generator freshness checks passed; pnpm build; git diff --check; focused runtime/package/plugin/scaffold/completion/init/history tests passed; full pnpm test:coverage passed 263 files / 5290 tests with 100% statements, branches, functions, and lines; manual temp-dir lifecycle at /tmp/tmp.Lp53EC64iq passed init/create/list/search/update/close/health with dist/cli.js and healthOk=true."
+  "2026-07-03T06:31:04.701Z",claude-code-agent,"Greptile response evidence: local Greptile review 528775a0-94d3-4a6d-9869-cb3cbcdea5dd reported P1 on todos timeout_seconds=0 and P2 on Codex wrapper depth-limit return. The todos runtime already had timeoutExclusiveMinimum=true in committed head, and I added regression coverage proving zero timeout is omitted. Fixed the generated Codex MCP wrapper by restoring explicit return null after the depth-limited repo search and added a focused plugin wrapper test that exercises that branch. Verification after response passed: node scripts/gen-plugin-mcp-wrappers.mjs --check; focused plugin/todos tests 31 passed; pnpm typecheck; pnpm lint; pnpm build; git diff --check; full pnpm test:coverage 263 files / 5291 tests / 100% statements, branches, functions, and lines."
+  "2026-07-03T06:45:51.458Z",claude-code-agent,"Second Greptile response evidence: amended review 097e49c1-165e-478e-bcde-8e7552c52070 cleared the prior P1/P2 and reported one P2 startup inefficiency: pm-codex wrapper eagerly evaluated repoServerPath even with PM_CLI_MCP_SERVER set. Fixed the generator so the Codex wrapper uses startReadableServer and short-circuits env path before repo discovery, matching the pm-claude behavior. Strengthened tests/unit/plugins/pm-mcp-server.spec.ts to assert explicit-env startup performs only the two expected access checks across both plugin wrappers. Verification after this fix passed: generator write/check; focused plugin/generator tests 9 passed; pnpm typecheck; pnpm lint with 0 clones and static quality passed; pnpm build; git diff --check; full pnpm test:coverage 263 files / 5291 tests / 100% statements, branches, functions, and lines."
+  "2026-07-03T06:59:20.357Z",claude-code-agent,"Greptile response evidence: fixed the zsh completion regression where search/context missing filters were emitted without the required filter- prefix. Focused verification passed: node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts (99 tests), pnpm typecheck, pnpm lint with 0 jscpd clones, pnpm build. Full coverage after the fix passed: 263 files / 5291 tests / 100% statements, branches, functions, and lines. README.md remains an unstaged user edit and is intentionally preserved."
+  "2026-07-03T07:13:45.059Z",claude-code-agent,"Pre-push Greptile evidence on committed source head a2ab3f9b: greptile review --branch main --json started review 594be3e9-ead6-45cd-8822-c1efae0a4209 but the local CLI and review show remained silent until interrupted. A second greptile review --branch main --agent started review 55733b04-fcde-4e64-84c1-99d3421b06cf and reached Reviewing files, then also remained silent until interrupted. No new local Greptile findings were emitted after the zsh completion P1 fix; hosted PR review agents will be triggered on the pushed head. README.md remains an unstaged user edit and is preserved."
+  "2026-07-03T07:16:12.023Z",claude-code-agent,"Post-rebase evidence: branch rebased cleanly onto origin/main after the automated 2026.7.3 release commit 2d01ff0b. Initial changelog check failed because the local v2026.7.3 tag was missing and pm-changelog would have treated the latest bucket as Unreleased; after git fetch --tags origin, pnpm changelog:pm:check passed unchanged with pm-changelog 2026.6.30 and item_count=1396. README.md remains an unstaged user edit and is preserved."
 notes[1]{created_at,author,text}:
   "2026-07-02T08:14:23.356Z",claude-code-agent,"2026-07-02 pm-chxp/PR#415 merged (17798d15): duplication leg complete — pnpm lint:duplicates now 0 clones repo-wide (was 24). Complexity suppressions already 0 (PR#413/#414). Remaining for A+: await CodeFactor re-analysis of main; verify grade at https://www.codefactor.io/repository/github/unbraind/pm-cli — if findings persist they are in generated runtime-loaders (excluded-by-design candidates via .codefactor.yml)."
-files[115]{path,scope,note}:
+files[133]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,pm-changelog package-owned check refreshed managed extension install timestamp
   eslint-suppressions.json,project,Prune resolved complexity suppressions after config/settings refactors
   package.json,project,Align @types/node range to Node 22 supported floor after Dependabot PR #399 review
+  packages/pm-beads/extensions/beads/runtime-loader.ts,project,generated standard package runtime loader
   packages/pm-beads/extensions/beads/runtime.ts,project,split Beads runtime import validation and execution helpers to reduce complexity
   packages/pm-guide-shell/extensions/guide-shell/runtime.ts,project,complexity sweep zero ESLint complexity findings
+  packages/pm-todos/extensions/todos/runtime-loader.ts,project,generated alternate package runtime loader
   packages/pm-todos/extensions/todos/runtime.ts,project,split todos runtime SDK export validation and path resolution helpers
+  plugins/pm-claude/scripts/pm-mcp-server.mjs,project,generated direct plugin MCP wrapper
+  plugins/pm-codex/scripts/pm-mcp-server.mjs,project,generated loop-based plugin MCP wrapper
   pnpm-lock.yaml,project,Lock @types/node 22.20.0 and undici-types 6.21.0 for Node 22 support
   scripts/dogfood-package-first.mjs,project,Update package-first dogfood smoke to expect starter-prefixed reserved scaffold command
+  scripts/gen-package-runtime-loaders.mjs,project,generates distinct runtime-loader templates to avoid package-loader duplication
+  scripts/gen-plugin-mcp-wrappers.mjs,project,generates distinct plugin MCP wrapper templates to avoid wrapper duplication
   scripts/generate-release-notes.mjs,project,complexity sweep zero ESLint complexity findings
   scripts/release/compatibility-check.mjs,project,complexity sweep zero ESLint complexity findings
   scripts/release/docs-skills-gate.mjs,project,complexity sweep zero ESLint complexity findings
@@ -129,6 +142,7 @@ files[115]{path,scope,note}:
   src/cli/commands/close-many.ts,project,complexity sweep zero ESLint complexity findings
   src/cli/commands/close.ts,project,complexity sweep zero ESLint complexity findings
   src/cli/commands/comments-audit.ts,project,complexity sweep zero ESLint complexity findings
+  src/cli/commands/completion.ts,project,deduplicates zsh completion filter and mutation argument script generation
   src/cli/commands/config.ts,project,reuse shared canonical config key type
   src/cli/commands/context.ts,project,split context rendering and section aggregation helpers to reduce complexity
   src/cli/commands/contracts.ts,project,split contracts runtime/schema/action shaping and extension schema branch helpers
@@ -142,10 +156,12 @@ files[115]{path,scope,note}:
   src/cli/commands/history-compact.ts,project,complexity sweep zero ESLint complexity findings
   src/cli/commands/history-redact.ts,project,complexity sweep zero ESLint complexity findings
   src/cli/commands/history-repair.ts,project,complexity sweep zero ESLint complexity findings
+  src/cli/commands/init-agent-guidance.ts,project,splits init agent guidance control flow below CodeFactor complexity threshold
   src/cli/commands/init.ts,project,complexity sweep zero ESLint complexity findings
   src/cli/commands/item-filter-options.ts,project,single-source shared list/search item filter option contracts
   src/cli/commands/legacy-none-tokens.ts,project,share legacy none/null collection normalization across create and update
   src/cli/commands/list.ts,project,reuse shared item filter option contract for list options
+  src/cli/commands/mutation-command-options.ts,project,shared create/update mutation option contract removes duplicated option declarations
   src/cli/commands/next.ts,project,complexity sweep zero ESLint complexity findings
   src/cli/commands/plan.ts,project,split plan dispatch and materialize helpers to reduce complexity
   src/cli/commands/recurrence-parsers.ts,project,complexity sweep zero ESLint complexity findings
@@ -171,6 +187,7 @@ files[115]{path,scope,note}:
   src/core/config/positional-value.ts,project,single-source canonical config key type for command and positional router
   src/core/governance/metadata-coverage.ts,project,complexity sweep zero ESLint complexity findings
   src/core/history/drift-scan.ts,project,complexity sweep zero ESLint complexity findings
+  src/core/history/history-rewrite.ts,project,shares history raw write rollback helper
   src/core/item/item-type-definition.ts,project,complexity sweep zero ESLint complexity findings
   src/core/item/type-registry.ts,project,complexity sweep zero ESLint complexity findings
   src/core/output/mutation-projection.ts,project,complexity sweep zero ESLint complexity findings
@@ -185,12 +202,16 @@ files[115]{path,scope,note}:
   src/core/store/settings.ts,project,Refactor extension policy normalization to reduce settings complexity baseline
   src/core/test/background-runs.ts,project,complexity sweep zero ESLint complexity findings
   src/sdk/cli-contracts/tool-option-contracts.ts,project,deduplicate SDK tool option contract groups while preserving generated contract snapshot
+  src/sdk/cli-contracts/tool-schema.ts,project,deduplicates extension/package managed option schemas
+  src/sdk/package-import-adapters.ts,project,adds shared SDK import coercion primitives for package authors
+  src/sdk/runtime.ts,project,exports SDK import adapter primitives from runtime barrel
   tests/integration/mcp-dynamic-package-actions.spec.ts,project,stabilize long MCP compact-output integration coverage timeout
   tests/integration/release-automation-contract.spec.ts,project,complexity sweep zero ESLint complexity findings
   tests/integration/release-readiness-runtime.spec.ts,project,complexity sweep zero ESLint complexity findings
   tests/unit/cli/cli-main-errors.spec.ts,project,complexity sweep zero ESLint complexity findings
   tests/unit/commands/calendar-command.spec.ts,project,Regression coverage for recurrence bound and cap behavior
   tests/unit/commands/close-command.spec.ts,project,Regression coverage for stale blocked_reason warning behavior
+  tests/unit/commands/completion-command.spec.ts,project,Regression coverage for zsh missing-filter completion prefixes
   tests/unit/commands/config-command.spec.ts,project,regression coverage for governance validation mirror comparison
   tests/unit/commands/contracts-command.spec.ts,project,"regression coverage for extension list flags,array schemas,and alias command selection"
   tests/unit/commands/create-command.spec.ts,project,Review-fix coverage for command-scoped runtime unset registry fixtures
@@ -216,13 +237,19 @@ files[115]{path,scope,note}:
   tests/unit/extensions/extension-command.spec.ts,project,Updates package-root scaffold expectations for SDK harness-based starter tests.
   tests/unit/extensions/extension-scaffold-define-guidance.spec.ts,project,regression coverage for harness-based generated starter tests
   tests/unit/packages/beads-command.spec.ts,project,regression coverage for negative Beads linked-test timeout import
+  tests/unit/packages/package-import-adapters.spec.ts,project,covers new SDK import adapter branch behavior
+  tests/unit/packages/runtime-loaders.spec.ts,project,covers both generated runtime-loader templates
+  tests/unit/packages/todos-extension.spec.ts,project,Greptile response regression coverage for todos zero timeout omission
+  tests/unit/plugins/pm-mcp-server.spec.ts,project,Greptile response coverage for generated Codex wrapper depth-limit null fallback
   tests/unit/scripts/dogfood-package-first.spec.ts,project,Align dogfood script harness with starter-prefixed reserved scaffold command
   tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,regression coverage for missing stderr telemetry command summaries
   tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,complexity sweep zero ESLint complexity findings
   tests/unit/sdk/tool-option-contracts.spec.ts,project,regression coverage for exported SDK option contract object isolation
-tests[47]{command,scope,timeout_seconds}:
+tests[54]{command,scope,timeout_seconds}:
   git diff --check,project,60
+  "manual temp dir lifecycle with dist CLI at /tmp/tmp.Lp53EC64iq: init/create/list/search/update/close/health",project,120
   "manual temp dir smoke: pm init/create/list/activity/close/health in /tmp/tmp.5agjTscYIG",project,120
+  node scripts/gen-package-runtime-loaders.mjs --check && node scripts/gen-plugin-mcp-wrappers.mjs --check,project,120
   node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,project,180
   node scripts/run-tests.mjs coverage,project,900
   "node scripts/run-tests.mjs test -- tests/integration/mcp-dynamic-package-actions.spec.ts -t \"normalizes scalar update log fields and defaults list output to compact\"",project,120
@@ -232,6 +259,7 @@ tests[47]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/unit/extensions/extension-command.spec.ts,project,360
   node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/unit/commands/config-command.spec.ts tests/unit/commands/config-key-aliases-search.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/unit/sdk/sdk-index.spec.ts,project,180
+  node scripts/run-tests.mjs test -- tests/unit/commands/history-repair-command.spec.ts tests/unit/core/history/history-rewrite.spec.ts tests/integration/history-compact-command.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/commands/legacy-none-tokens.spec.ts,project,120
   node scripts/run-tests.mjs test -- tests/unit/commands/list-command.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts,project,300
   node scripts/run-tests.mjs test -- tests/unit/core/sentry/sentry-helpers.spec.ts tests/unit/scripts/release/sentry-telemetry-gate.spec.ts tests/integration/release-automation-contract.spec.ts,project,240
@@ -241,6 +269,8 @@ tests[47]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts,project,240
   "node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts -t \"scaffolds package-root metadata via package init while keeping installable extension resources\"",project,240
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-scaffold-define-guidance.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/plugins/pm-mcp-server.spec.ts tests/unit/packages/todos-extension.spec.ts,project,180
+  node scripts/run-tests.mjs test -- tests/unit/scripts/gen-package-runtime-loaders.spec.ts tests/unit/scripts/gen-plugin-mcp-wrappers.spec.ts tests/unit/packages/runtime-loaders.spec.ts tests/unit/plugins/pm-mcp-server.spec.ts tests/unit/packages/beads-command.spec.ts tests/unit/packages/todos-extension.spec.ts tests/unit/extensions/extension-scaffold-define-guidance.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/commands/init-command.spec.ts tests/unit/sdk/tool-option-contracts.spec.ts,project,360
   node scripts/run-tests.mjs test -- tests/unit/sdk/tool-option-contracts.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts,project,240
   node scripts/smoke-npx-from-pack.mjs,project,240
   pm telemetry stats --json,project,60
@@ -250,6 +280,8 @@ tests[47]{command,scope,timeout_seconds}:
   pnpm build,project,240
   "pnpm changelog:pm:check",project,180
   "pnpm contracts:check",project,180
+  "pnpm exec eslint . --rule 'complexity: [\"error\",17]'",project,180
+  "pnpm exec jscpd --config /tmp/jscpd-empty.json --format typescript,javascript --pattern \"{src/**/*.ts,packages/**/*.ts,plugins/**/*.mjs,scripts/**/*.mjs}\" --ignore \"node_modules/**,dist/**,coverage/**,.agents/**,tests/**\" --min-lines 20 --min-tokens 100 --reporters console-full .",project,180
   pnpm exec vitest run tests/unit/cli/cli-main-errors.spec.ts --coverage.enabled --coverage.reporter=text --coverage.include=src/cli/main.ts,project,180
   pnpm exec vitest run tests/unit/cli/cli-main-errors.spec.ts tests/unit/commands/reindex-command.spec.ts tests/unit/commands/validate-command.spec.ts --coverage.enabled --coverage.reporter=text --coverage.include=src/cli/main.ts --coverage.include=src/cli/commands/reindex.ts --coverage.include=src/cli/commands/validate.ts,project,300
   pnpm exec vitest run tests/unit/commands/calendar-command.spec.ts tests/unit/commands/close-command.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,240

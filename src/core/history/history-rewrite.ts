@@ -3,7 +3,9 @@
  *
  * Implements append-only history and replay behavior for History Rewrite.
  */
+import fs from "node:fs/promises";
 import { readFileIfExists } from "../fs/fs-utils.js";
+import { writeFileAtomic } from "../fs/fs-utils.js";
 import type { ItemTypeRegistry } from "../item/type-registry.js";
 import { acquireLock } from "../lock/lock.js";
 import { EXIT_CODE } from "../shared/constants.js";
@@ -130,6 +132,26 @@ export interface ExecuteHistoryRewriteParams {
   itemDocument: ItemDocument | null;
   applyRewrite: (verified: VerifiedHistoryRewriteState) => Promise<void>;
   applyPostRewrite?: (verified: VerifiedHistoryRewriteState) => Promise<string[]>;
+}
+
+/**
+ * Writes the rewritten history stream and restores the under-lock snapshot on failure.
+ */
+export async function writeHistoryRawWithRollback(params: {
+  historyPath: string;
+  nextHistoryRaw: string;
+  historyRawUnderLock: string | null;
+}): Promise<void> {
+  try {
+    await writeFileAtomic(params.historyPath, params.nextHistoryRaw);
+  } catch (error) {
+    if (params.historyRawUnderLock === null) {
+      await fs.rm(params.historyPath, { force: true });
+    } else {
+      await writeFileAtomic(params.historyPath, params.historyRawUnderLock);
+    }
+    throw error;
+  }
 }
 
 /**

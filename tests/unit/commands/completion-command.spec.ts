@@ -475,6 +475,7 @@ describe("generateBashScript", () => {
       expect(zsh, `zsh should contain --${flag}`).toContain(`--${flag}`);
       expect(fish, `fish should contain -l ${flag}`).toContain(`-l ${flag}`);
     }
+    expect(zsh).not.toContain("--reviewer-missing[");
   });
 
   it("includes deterministic tag suggestions for --tag completion", () => {

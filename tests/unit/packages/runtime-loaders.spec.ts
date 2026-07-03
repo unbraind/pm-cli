@@ -6,10 +6,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * Exhaustive branch coverage for the generated package runtime-loaders
- * (pm-beads / pm-todos). These two files are byte-identical apart from the
- * embedded EXTENSION_NAME/PACKAGE_NAME, so we parametrize over both to drive
- * every candidate-resolution, ERR_MODULE_NOT_FOUND skip, and fallback branch
- * from real imports plus a controlled node:fs.existsSync.
+ * (pm-beads / pm-todos). The generator emits two loader templates, so these
+ * cases parametrize over both to drive every candidate-resolution,
+ * ERR_MODULE_NOT_FOUND skip, and fallback branch from real imports plus a
+ * controlled node:fs.existsSync.
  */
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
@@ -118,6 +118,16 @@ describe.each(LOADERS)("$pkg runtime-loader", ({ pkg, ext }) => {
     process.env[PM_PACKAGE_ROOT_ENV] = root;
     const loader = await importLoader(pkg, ext);
     await expect(loader.loadPackageRuntimeModule()).rejects.toThrow("@missing/runtime-dep");
+  });
+
+  it("preserves non-object thrown values from a discovered runtime", async () => {
+    const root = await createTempRoot(`pm-${ext}-loader-throw-string-`);
+    const runtimeDir = path.join(root, ".agents", "pm", "extensions", ext);
+    await mkdir(runtimeDir, { recursive: true });
+    await writeFile(path.join(runtimeDir, "runtime.ts"), 'throw "runtime-string-boom";\n', "utf8");
+    process.env[PM_PACKAGE_ROOT_ENV] = root;
+    const loader = await importLoader(pkg, ext);
+    await expect(loader.loadPackageRuntimeModule()).rejects.toBe("runtime-string-boom");
   });
 
   it("continues when Node reports the runtime path on a missing runtime error", async () => {

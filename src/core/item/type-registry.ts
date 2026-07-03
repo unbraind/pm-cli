@@ -42,7 +42,7 @@ export type CommandOptionPolicyCommand = "create" | "update";
 
 // Keep aligned with cli/commands/shared-unset-fields.ts. This core registry
 // cannot import CLI unset metadata without creating a core -> CLI dependency.
-const COMMON_MUTATION_COMMAND_OPTION_KEYS = [
+export const COMMON_MUTATION_COMMAND_OPTION_KEYS = [
   "deadline",
   "estimatedMinutes",
   "acceptanceCriteria",
@@ -175,14 +175,7 @@ const UPDATE_COMMAND_OPTION_ALIASES: Record<string, string> = {
   allow_audit_update: "allowAuditUpdate",
 };
 
-const CREATE_COMMAND_OPTION_FLAG_LABELS: Record<string, string> = {
-  title: "--title",
-  description: "--description",
-  type: "--type",
-  status: "--status",
-  priority: "--priority",
-  tags: "--tags",
-  body: "--body",
+const COMMON_MUTATION_COMMAND_OPTION_FLAG_LABELS: Record<(typeof COMMON_MUTATION_COMMAND_OPTION_KEYS)[number], string> = {
   deadline: "--deadline",
   estimatedMinutes: "--estimate/--estimated-minutes",
   acceptanceCriteria: "--acceptance-criteria/--ac",
@@ -194,8 +187,6 @@ const CREATE_COMMAND_OPTION_FLAG_LABELS: Record<string, string> = {
   impact: "--impact",
   outcome: "--outcome",
   whyNow: "--why-now",
-  author: "--author",
-  message: "--message",
   assignee: "--assignee",
   parent: "--parent",
   reviewer: "--reviewer",
@@ -218,6 +209,19 @@ const CREATE_COMMAND_OPTION_FLAG_LABELS: Record<string, string> = {
   component: "--component",
   regression: "--regression",
   customerImpact: "--customer-impact",
+};
+
+const CREATE_COMMAND_OPTION_FLAG_LABELS: Record<string, string> = {
+  title: "--title",
+  description: "--description",
+  type: "--type",
+  status: "--status",
+  priority: "--priority",
+  tags: "--tags",
+  body: "--body",
+  ...COMMON_MUTATION_COMMAND_OPTION_FLAG_LABELS,
+  author: "--author",
+  message: "--message",
   dep: "--dep",
   comment: "--comment",
   note: "--note",
@@ -239,39 +243,7 @@ const UPDATE_COMMAND_OPTION_FLAG_LABELS: Record<string, string> = {
   priority: "--priority",
   type: "--type",
   tags: "--tags",
-  deadline: "--deadline",
-  estimatedMinutes: "--estimate/--estimated-minutes",
-  acceptanceCriteria: "--acceptance-criteria/--ac",
-  definitionOfReady: "--definition-of-ready",
-  order: "--order/--rank",
-  goal: "--goal",
-  objective: "--objective",
-  value: "--value",
-  impact: "--impact",
-  outcome: "--outcome",
-  whyNow: "--why-now",
-  assignee: "--assignee",
-  parent: "--parent",
-  reviewer: "--reviewer",
-  risk: "--risk",
-  confidence: "--confidence",
-  sprint: "--sprint",
-  release: "--release",
-  blockedBy: "--blocked-by",
-  blockedReason: "--blocked-reason",
-  unblockNote: "--unblock-note",
-  reporter: "--reporter",
-  severity: "--severity",
-  environment: "--environment",
-  reproSteps: "--repro-steps",
-  resolution: "--resolution",
-  expectedResult: "--expected-result",
-  actualResult: "--actual-result",
-  affectedVersion: "--affected-version",
-  fixedVersion: "--fixed-version",
-  component: "--component",
-  regression: "--regression",
-  customerImpact: "--customer-impact",
+  ...COMMON_MUTATION_COMMAND_OPTION_FLAG_LABELS,
   comment: "--comment",
   note: "--note",
   learning: "--learning",
@@ -526,6 +498,31 @@ function resolveDefinitionCommandOptionPolicies(
       : [];
 }
 
+function buildResolvedTypeDefinition(
+  normalizedDefinition: ItemTypeDefinition,
+  existing: ResolvedItemTypeDefinition | undefined,
+): ResolvedItemTypeDefinition {
+  const keepName = existing?.name ?? normalizedDefinition.name;
+  const description = normalizedDefinition.description ?? existing?.description;
+  const defaultStatus = normalizedDefinition.default_status ?? existing?.default_status;
+  const resolvedDefinition: ResolvedItemTypeDefinition = {
+    name: keepName,
+    folder: normalizedDefinition.folder ?? existing?.folder ?? toDefaultFolder(keepName),
+    aliases: normalizeItemTypeStringList([...(existing?.aliases ?? []), ...(normalizedDefinition.aliases ?? [])]),
+    required_create_fields: resolveDefinitionRequiredCreateFields(normalizedDefinition, existing),
+    required_create_repeatables: resolveDefinitionRequiredCreateRepeatables(normalizedDefinition, existing),
+    options: resolveDefinitionOptions(normalizedDefinition, existing),
+    command_option_policies: resolveDefinitionCommandOptionPolicies(normalizedDefinition, existing),
+  };
+  if (description) {
+    resolvedDefinition.description = description;
+  }
+  if (defaultStatus) {
+    resolvedDefinition.default_status = defaultStatus;
+  }
+  return resolvedDefinition;
+}
+
 function applyTypeDefinitions(
   source: ItemTypeDefinition[],
   target: Map<string, ResolvedItemTypeDefinition>,
@@ -537,25 +534,7 @@ function applyTypeDefinitions(
     }
     const lowerName = normalizedDefinition.name.toLowerCase();
     const existing = target.get(lowerName);
-    const keepName = existing?.name ?? normalizedDefinition.name;
-    const folder = normalizedDefinition.folder ?? existing?.folder ?? toDefaultFolder(keepName);
-    const aliases = normalizeItemTypeStringList([
-      ...(existing?.aliases ?? []),
-      ...(normalizedDefinition.aliases ?? []),
-    ]);
-    const defaultStatus = normalizedDefinition.default_status ?? existing?.default_status;
-    const description = normalizedDefinition.description ?? existing?.description;
-    target.set(lowerName, {
-      name: keepName,
-      ...(description ? { description } : {}),
-      ...(defaultStatus ? { default_status: defaultStatus } : {}),
-      folder,
-      aliases,
-      required_create_fields: resolveDefinitionRequiredCreateFields(normalizedDefinition, existing),
-      required_create_repeatables: resolveDefinitionRequiredCreateRepeatables(normalizedDefinition, existing),
-      options: resolveDefinitionOptions(normalizedDefinition, existing),
-      command_option_policies: resolveDefinitionCommandOptionPolicies(normalizedDefinition, existing),
-    });
+    target.set(lowerName, buildResolvedTypeDefinition(normalizedDefinition, existing));
   }
 }
 
@@ -648,6 +627,93 @@ export function resolveTypeDefinition(
   return registry.by_type[resolvedName];
 }
 
+function applyBaseRequiredCommandOptions(
+  state: Pick<CommandOptionPolicyState, "errors"> & { required: Set<string> },
+  typeDefinition: ResolvedItemTypeDefinition,
+  command: CommandOptionPolicyCommand,
+  baseRequiredOptions: Iterable<string>,
+): void {
+  for (const rawBase of baseRequiredOptions) {
+    const canonical = canonicalizeCommandOptionKey(command, rawBase);
+    if (canonical) {
+      state.required.add(canonical);
+      continue;
+    }
+    state.errors.push(
+      `Unsupported base required option "${rawBase}" for command "${command}" on type "${typeDefinition.name}"`,
+    );
+  }
+}
+
+function applyBooleanPolicySet(target: Set<string>, option: string, enabled: boolean): void {
+  if (enabled) {
+    target.add(option);
+    return;
+  }
+  target.delete(option);
+}
+
+function applyCommandOptionPolicy(
+  state: Omit<CommandOptionPolicyState, "required" | "hidden" | "disabled"> & {
+    required: Set<string>;
+    hidden: Set<string>;
+    disabled: Set<string>;
+  },
+  typeDefinition: ResolvedItemTypeDefinition,
+  command: CommandOptionPolicyCommand,
+  policy: ItemTypeCommandOptionPolicy,
+): void {
+  const canonical = canonicalizeCommandOptionKey(command, policy.option);
+  if (!canonical) {
+    state.errors.push(
+      `Unsupported command_option_policies option "${policy.option}" for command "${command}" on type "${typeDefinition.name}"`,
+    );
+    return;
+  }
+  if (policy.required !== undefined) {
+    applyBooleanPolicySet(state.required, canonical, policy.required);
+  }
+  if (policy.visible !== undefined) {
+    applyBooleanPolicySet(state.hidden, canonical, !policy.visible);
+  }
+  if (policy.enabled !== undefined) {
+    applyBooleanPolicySet(state.disabled, canonical, !policy.enabled);
+  }
+}
+
+function applyCommandOptionPolicies(
+  state: Omit<CommandOptionPolicyState, "required" | "hidden" | "disabled"> & {
+    required: Set<string>;
+    hidden: Set<string>;
+    disabled: Set<string>;
+  },
+  typeDefinition: ResolvedItemTypeDefinition,
+  command: CommandOptionPolicyCommand,
+): void {
+  for (const policy of typeDefinition.command_option_policies) {
+    if (policy.command === command) {
+      applyCommandOptionPolicy(state, typeDefinition, command, policy);
+    }
+  }
+}
+
+function appendRequiredDisabledPolicyErrors(
+  state: Pick<CommandOptionPolicyState, "errors"> & {
+    required: Set<string>;
+    disabled: Set<string>;
+  },
+  typeDefinition: ResolvedItemTypeDefinition,
+  command: CommandOptionPolicyCommand,
+): void {
+  for (const option of state.required) {
+    if (state.disabled.has(option)) {
+      state.errors.push(
+        `Option "${option}" cannot be both required and disabled for command "${command}" on type "${typeDefinition.name}"`,
+      );
+    }
+  }
+}
+
 /**
  * Implements resolve command option policy state for the public runtime surface of this module.
  */
@@ -660,59 +726,11 @@ export function resolveCommandOptionPolicyState(
   const required = new Set<string>();
   const hidden = new Set<string>();
   const disabled = new Set<string>();
+  const state = { required, hidden, disabled, errors };
 
-  for (const rawBase of baseRequiredOptions) {
-    const canonical = canonicalizeCommandOptionKey(command, rawBase);
-    if (!canonical) {
-      errors.push(
-        `Unsupported base required option "${rawBase}" for command "${command}" on type "${typeDefinition.name}"`,
-      );
-      continue;
-    }
-    required.add(canonical);
-  }
-
-  for (const policy of typeDefinition.command_option_policies) {
-    if (policy.command !== command) {
-      continue;
-    }
-    const canonical = canonicalizeCommandOptionKey(command, policy.option);
-    if (!canonical) {
-      errors.push(
-        `Unsupported command_option_policies option "${policy.option}" for command "${command}" on type "${typeDefinition.name}"`,
-      );
-      continue;
-    }
-    if (policy.required !== undefined) {
-      if (policy.required) {
-        required.add(canonical);
-      } else {
-        required.delete(canonical);
-      }
-    }
-    if (policy.visible !== undefined) {
-      if (policy.visible) {
-        hidden.delete(canonical);
-      } else {
-        hidden.add(canonical);
-      }
-    }
-    if (policy.enabled !== undefined) {
-      if (policy.enabled) {
-        disabled.delete(canonical);
-      } else {
-        disabled.add(canonical);
-      }
-    }
-  }
-
-  for (const option of required) {
-    if (disabled.has(option)) {
-      errors.push(
-        `Option "${option}" cannot be both required and disabled for command "${command}" on type "${typeDefinition.name}"`,
-      );
-    }
-  }
+  applyBaseRequiredCommandOptions(state, typeDefinition, command, baseRequiredOptions);
+  applyCommandOptionPolicies(state, typeDefinition, command);
+  appendRequiredDisabledPolicyErrors(state, typeDefinition, command);
 
   return {
     required: [...required],

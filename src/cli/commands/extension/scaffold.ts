@@ -1003,9 +1003,6 @@ function buildSampleTestSource(
   const preflightEnabled = capability === "preflight";
   const servicesEnabled = capability === "services";
   const capabilitiesLiteral = SAMPLE_TEST_CAPABILITIES_LITERAL[capability];
-  const searchProviderName = `${extensionName}-search`;
-  const vectorAdapterName = `${extensionName}-vector`;
-  const adapterName = `${extensionName.replace(/-/g, " ")} items`;
   const itemTypeName = extensionName;
   const itemTypeFolder = `${extensionName}s`;
   const fieldName = `${extensionName.replace(/-/g, "_")}_note`;
@@ -1052,91 +1049,10 @@ function buildSampleTestSource(
       ]
     : [];
   const searchTestLines = searchEnabled
-    ? [
-        `test(${JSON.stringify(`${extensionName} registers and invokes search primitives`)}, async () => {`,
-        "  const ext = await createExtensionTestHarness(extension, {",
-        `    name: ${JSON.stringify(extensionName)},`,
-        `    capabilities: ${capabilitiesLiteral},`,
-        "  });",
-        "  let deactivated = false;",
-        "  try {",
-        `    ext.assertSearchProvider({ provider: ${JSON.stringify(searchProviderName)}, extensionName: ${JSON.stringify(extensionName)} });`,
-        `    ext.assertVectorStoreAdapter({ adapter: ${JSON.stringify(vectorAdapterName)}, extensionName: ${JSON.stringify(extensionName)} });`,
-        "",
-        "    // The starter provider reads only document title/id, so `settings` is a",
-        "    // minimal typed stub and `documents` carry just the fields it inspects.",
-        "    const query = await ext.runSearchProvider({",
-        `      provider: ${JSON.stringify(searchProviderName)},`,
-        '      operation: "query",',
-        "      context: {",
-        '        query: "sync",',
-        '        mode: "semantic",',
-        '        tokens: ["sync"],',
-        "        options: {},",
-        "        settings: {} as PmSettings,",
-        "        documents: [",
-        '          { metadata: { id: "pm-1", title: "Sync external context" }, body: "" },',
-        '          { metadata: { id: "pm-2", title: "Unrelated task" }, body: "" },',
-        "        ] as ItemDocument[],",
-        "      },",
-        "    });",
-        '    assert.deepEqual(query, { hits: [{ id: "pm-1", score: 1, matched_fields: ["title"] }] });',
-        "",
-        "    const embedding = await ext.runSearchProvider({",
-        `      provider: ${JSON.stringify(searchProviderName)},`,
-        '      operation: "embed",',
-        '      context: { input: "abc", settings: {} as PmSettings, model: "starter-model" },',
-        "    });",
-        "    assert.deepEqual(embedding, [3]);",
-        "",
-        "    const vectorHits = await ext.runVectorStoreAdapter({",
-        `      adapter: ${JSON.stringify(vectorAdapterName)},`,
-        '      operation: "query",',
-        "      context: { vector: [0.1, 0.2], limit: 2, settings: {} as PmSettings },",
-        "    });",
-        '    assert.deepEqual(vectorHits, [{ id: "starter-vector-hit", score: 2 }]);',
-        "    const teardown = await ext.deactivate();",
-        "    assertExtensionDeactivated(teardown);",
-        "    deactivated = true;",
-        ...SAMPLE_HARNESS_FINALLY_LINES,
-        "});",
-        "",
-      ]
+    ? buildDeclarativeCapabilityTestBlock(extensionName, commandName, "search", capabilitiesLiteral)
     : [];
   const importerTestLines = importersEnabled
-    ? [
-        `test(${JSON.stringify(`${extensionName} registers and invokes import/export primitives`)}, async () => {`,
-        "  const ext = await createExtensionTestHarness(extension, {",
-        `    name: ${JSON.stringify(extensionName)},`,
-        `    capabilities: ${capabilitiesLiteral},`,
-        "  });",
-        "  let deactivated = false;",
-        "  try {",
-        `    ext.assertImporter({ importer: ${JSON.stringify(adapterName)}, extensionName: ${JSON.stringify(extensionName)} });`,
-        `    ext.assertExporter({ exporter: ${JSON.stringify(adapterName)}, extensionName: ${JSON.stringify(extensionName)} });`,
-        "",
-        "    const imported = await ext.runImporter({",
-        `      importer: ${JSON.stringify(adapterName)},`,
-        '      options: { source: "tickets" },',
-        '      args: ["batch-1"],',
-        "    });",
-        "    assert.equal(imported.handled, true);",
-        '    assert.deepEqual(imported.result, { imported: 1, source: "tickets", args: ["batch-1"] });',
-        "",
-        "    const exported = await ext.runExporter({",
-        `      exporter: ${JSON.stringify(adapterName)},`,
-        '      options: { destination: "archive" },',
-        '      args: ["done"],',
-        "    });",
-        "    assert.equal(exported.handled, true);",
-        '    assert.deepEqual(exported.result, { exported: true, destination: "archive", args: ["done"] });',
-        "    const teardown = await ext.deactivate();",
-        "    assertExtensionDeactivated(teardown);",
-        "    deactivated = true;",
-        ...SAMPLE_HARNESS_FINALLY_LINES,
-        "});",
-        "",
-      ]
+    ? buildDeclarativeCapabilityTestBlock(extensionName, commandName, "importers", capabilitiesLiteral)
     : [];
   const schemaTestLines = schemaEnabled
     ? [

@@ -5,6 +5,7 @@
  */
 import { pathExists } from "../../core/fs/fs-utils.js";
 import {
+  COMMON_MUTATION_COMMAND_OPTION_KEYS,
   canonicalizeCommandOptionKey,
   commandOptionFlagLabel,
   resolveItemTypeRegistry,
@@ -107,11 +108,12 @@ import {
   resolveRuntimeUnsetFieldDefinition,
   type CommandUnsetFieldDefinition,
 } from "./shared-unset-fields.js";
+import type { MutationMetadataCommandOptions } from "./mutation-command-options.js";
 
 /**
  * Documents the update command options payload exchanged by command, SDK, and package integrations.
  */
-export interface UpdateCommandOptions {
+export interface UpdateCommandOptions extends MutationMetadataCommandOptions {
   title?: string;
   description?: string;
   body?: string;
@@ -122,45 +124,9 @@ export interface UpdateCommandOptions {
   tags?: string;
   addTags?: string[];
   removeTags?: string[];
-  deadline?: string;
-  estimatedMinutes?: string;
-  acceptanceCriteria?: string;
-  definitionOfReady?: string;
-  order?: string;
-  rank?: string;
-  goal?: string;
-  objective?: string;
-  value?: string;
-  impact?: string;
-  outcome?: string;
-  whyNow?: string;
-  author?: string;
-  message?: string;
   force?: boolean;
   allowAuditUpdate?: boolean;
   allowAuditDepUpdate?: boolean;
-  assignee?: string;
-  parent?: string;
-  reviewer?: string;
-  risk?: string;
-  confidence?: string;
-  sprint?: string;
-  release?: string;
-  blockedBy?: string;
-  blockedReason?: string;
-  unblockNote?: string;
-  reporter?: string;
-  severity?: string;
-  environment?: string;
-  reproSteps?: string;
-  resolution?: string;
-  expectedResult?: string;
-  actualResult?: string;
-  affectedVersion?: string;
-  fixedVersion?: string;
-  component?: string;
-  regression?: string;
-  customerImpact?: string;
   dep?: string[];
   depRemove?: string[];
   replaceDeps?: boolean;
@@ -1041,41 +1007,14 @@ interface CloseRouteContext {
   id: string;
 }
 
+const UPDATE_LEGACY_COMMON_SCALAR_OPTION_KEYS = COMMON_MUTATION_COMMAND_OPTION_KEYS.filter(
+  (key) => key !== "order",
+) as readonly (keyof UpdateCommandOptions)[];
+
 const UPDATE_LEGACY_SCALAR_OPTION_KEYS: readonly (keyof UpdateCommandOptions)[] = [
   "tags",
   "closeReason",
-  "deadline",
-  "estimatedMinutes",
-  "acceptanceCriteria",
-  "definitionOfReady",
-  "goal",
-  "objective",
-  "value",
-  "impact",
-  "outcome",
-  "whyNow",
-  "assignee",
-  "parent",
-  "reviewer",
-  "risk",
-  "confidence",
-  "sprint",
-  "release",
-  "blockedBy",
-  "blockedReason",
-  "unblockNote",
-  "reporter",
-  "severity",
-  "environment",
-  "reproSteps",
-  "resolution",
-  "expectedResult",
-  "actualResult",
-  "affectedVersion",
-  "fixedVersion",
-  "component",
-  "regression",
-  "customerImpact",
+  ...UPDATE_LEGACY_COMMON_SCALAR_OPTION_KEYS,
 ];
 
 const UPDATE_SIMPLE_FIELD_FLAG_KEYS: readonly (keyof UpdateCommandOptions)[] = [
@@ -1086,38 +1025,7 @@ const UPDATE_SIMPLE_FIELD_FLAG_KEYS: readonly (keyof UpdateCommandOptions)[] = [
   "closeReason",
   "priority",
   "type",
-  "deadline",
-  "estimatedMinutes",
-  "acceptanceCriteria",
-  "definitionOfReady",
-  "goal",
-  "objective",
-  "value",
-  "impact",
-  "outcome",
-  "whyNow",
-  "assignee",
-  "parent",
-  "reviewer",
-  "risk",
-  "confidence",
-  "sprint",
-  "release",
-  "blockedBy",
-  "blockedReason",
-  "unblockNote",
-  "reporter",
-  "severity",
-  "environment",
-  "reproSteps",
-  "resolution",
-  "expectedResult",
-  "actualResult",
-  "affectedVersion",
-  "fixedVersion",
-  "component",
-  "regression",
-  "customerImpact",
+  ...COMMON_MUTATION_COMMAND_OPTION_KEYS,
   "dep",
   "depRemove",
   "comment",

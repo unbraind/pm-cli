@@ -81,19 +81,21 @@ export function startMcpServer() {
     );
     process.env.PM_CLI_MCP_SERVER = explicitServerPath;
     const spawnMock = vi.fn();
+    const accessMock = vi.fn(async (target: string) => {
+      if (path.resolve(target) === path.resolve(explicitServerPath)) {
+        return;
+      }
+      throw new Error("ENOENT");
+    });
     vi.doMock("node:child_process", () => ({ spawn: spawnMock }));
     vi.doMock("node:fs/promises", () => ({
-      access: vi.fn(async (target: string) => {
-        if (path.resolve(target) === path.resolve(explicitServerPath)) {
-          return;
-        }
-        throw new Error("ENOENT");
-      }),
+      access: accessMock,
     }));
     for (const script of mcpServerScripts) {
       await importScript(script, `explicit-${path.basename(script)}`);
     }
     expect((globalThis as Record<string, unknown>).__PM_MCP_STARTS).toBe(2);
+    expect(accessMock).toHaveBeenCalledTimes(2);
     expect(spawnMock).not.toHaveBeenCalled();
   });
 
@@ -153,6 +155,29 @@ export function startMcpServer() {
       await expect(importScript(script, `fallback-${path.basename(script)}`)).rejects.toThrow("EXIT:0");
     }
     expect(fallbackSpawn).toHaveBeenCalledTimes(2);
+    exit.mockRestore();
+  });
+
+  it("uses the npx fallback when Codex repo discovery reaches the depth limit", async () => {
+    delete process.env.PM_CLI_MCP_SERVER;
+    const fallbackSpawn = spawnReturningExit(0, null);
+    vi.doMock("node:child_process", () => ({ spawn: fallbackSpawn }));
+    vi.doMock("node:fs/promises", () => ({
+      access: vi.fn(async () => {
+        throw new Error("ENOENT");
+      }),
+    }));
+    vi.doMock("node:path", async () => {
+      const actual = await vi.importActual<typeof import("node:path")>("node:path");
+      let depth = 0;
+      const dirname = vi.fn(() => `/virtual-parent-${depth++}`);
+      return { ...actual, default: { ...actual.default, dirname }, dirname };
+    });
+    const exit = mockExit();
+
+    await expect(importScript("plugins/pm-codex/scripts/pm-mcp-server.mjs", "fallback-depth-limit")).rejects.toThrow("EXIT:0");
+
+    expect(fallbackSpawn).toHaveBeenCalledTimes(1);
     exit.mockRestore();
   });
 

@@ -515,6 +515,7 @@ describe("built-in todos extension import/export", () => {
           { command: "   ", path: "   " },
           {
             command: "pnpm lint",
+            timeout_seconds: 0,
             env_set: "not-a-map",
             env_clear: "not-a-list",
             assert_stdout_contains: "not-a-list",

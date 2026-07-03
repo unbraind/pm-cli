@@ -157,6 +157,67 @@ function renderZshRuntimeFieldFlagSpecs(runtimeFlags: string[] | undefined): str
   return `${normalized.map((flag) => `            '${flag}[Runtime schema field flag]:value' \\`).join("\n")}\n`;
 }
 
+function renderZshArgumentSpecs(specs: readonly string[]): string {
+  return `${specs.map((spec) => `            ${spec} \\`).join("\n")}\n`;
+}
+
+function renderZshPresenceFilterSpecs(options: {
+  readonly missingPrefix: "" | "filter-";
+  readonly pairedPrefix: "" | "filter-";
+}): string {
+  const missingSpecs = [
+    "reviewer-missing[Select only items missing reviewer]",
+    "risk-missing[Select only items missing risk]",
+    "confidence-missing[Select only items missing confidence]",
+    "sprint-missing[Select only items missing sprint]",
+    "release-missing[Select only items missing release]",
+  ];
+  const pairedSpecs = [
+    ["has-notes[Select only items that have notes]", "no-notes[Select only items with no notes]"],
+    ["has-learnings[Select only items that have learnings]", "no-learnings[Select only items with no learnings]"],
+    ["has-files[Select only items that have linked files]", "no-files[Select only items with no linked files]"],
+    ["has-docs[Select only items that have linked docs]", "no-docs[Select only items with no linked docs]"],
+    ["has-tests[Select only items that have linked tests]", "no-tests[Select only items with no linked tests]"],
+    ["has-comments[Select only items that have comments]", "no-comments[Select only items with no comments]"],
+    ["has-deps[Select only items that have dependencies]", "no-deps[Select only items with no dependencies]"],
+    ["has-body[Select only items with non-empty body]", "empty-body[Select only items with empty body]"],
+    [
+      "has-linked-command[Select only items that have a linked command]",
+      "no-linked-command[Select only items with no linked command]",
+    ],
+  ];
+  return renderZshArgumentSpecs([
+    ...missingSpecs.map((spec) => `'--${options.missingPrefix}${spec}'`),
+    ...pairedSpecs.flatMap(([positive, negative]) => [
+      `'--${options.pairedPrefix}${positive}'`,
+      `'--${options.pairedPrefix}${negative}'`,
+    ]),
+  ]);
+}
+
+const ZSH_MUTATION_COLLECTION_ARGUMENT_SPECS = [
+  "'--comment[Comment seed author=<value>,created_at=<iso|now>,text=<value>]:comment'",
+  "'--note[Note seed author=<value>,created_at=<iso|now>,text=<value>]:note'",
+  "'--learning[Learning seed author=<value>,created_at=<iso|now>,text=<value>]:learning'",
+  "'--file[Linked file path=<value>,scope=<project|global>,note=<text>]:file'",
+  "'--test[Linked test command=<value>,path=<value>,scope=<project|global>]:test'",
+  "'--doc[Linked doc path=<value>,scope=<project|global>,note=<text>]:doc'",
+  "'--reminder[Reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>]:reminder'",
+  "'--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_*]:event'",
+  "'--type-option[Type option key=value or key=<name>,value=<value>]:type_option'",
+  "'--unset[Clear scalar metadata field by name]:field'",
+  "'--clear-deps[Clear dependency entries]'",
+  "'--clear-comments[Clear comments]'",
+  "'--clear-notes[Clear notes]'",
+  "'--clear-learnings[Clear learnings]'",
+  "'--clear-files[Clear linked files]'",
+  "'--clear-tests[Clear linked tests]'",
+  "'--clear-docs[Clear linked docs]'",
+  "'--clear-reminders[Clear reminders]'",
+  "'--clear-events[Clear events]'",
+  "'--clear-type-options[Clear type options]'",
+];
+
 function renderFishRuntimeFieldFlagSpecs(commands: string[], runtimeFlags: string[] | undefined): string {
   const normalizedFlags = normalizeRuntimeCompletionFlags(runtimeFlags).map((flag) => flag.slice(2));
   if (commands.length === 0 || normalizedFlags.length === 0) {
@@ -537,6 +598,9 @@ export function generateZshScript(
   const zshSearchRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.search);
   const zshCalendarRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.calendar);
   const zshContextRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.context);
+  const zshPresenceFilterFlags = renderZshPresenceFilterSpecs({ missingPrefix: "filter-", pairedPrefix: "" });
+  const zshBulkPresenceFilterFlags = renderZshPresenceFilterSpecs({ missingPrefix: "filter-", pairedPrefix: "filter-" });
+  const zshMutationCollectionFlags = renderZshArgumentSpecs(ZSH_MUTATION_COLLECTION_ARGUMENT_SPECS);
   const dynamicTagResolver = useEagerTagExpansion
     ? ""
     : `
@@ -672,29 +736,7 @@ _pm() {
             '--assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
             '--sprint[Filter by sprint]:sprint' \\
             '--release[Filter by release]:release' \\
-            '--filter-reviewer-missing[Select only items missing reviewer]' \\
-            '--filter-risk-missing[Select only items missing risk]' \\
-            '--filter-confidence-missing[Select only items missing confidence]' \\
-            '--filter-sprint-missing[Select only items missing sprint]' \\
-            '--filter-release-missing[Select only items missing release]' \\
-            '--has-notes[Select only items that have notes]' \\
-            '--no-notes[Select only items with no notes]' \\
-            '--has-learnings[Select only items that have learnings]' \\
-            '--no-learnings[Select only items with no learnings]' \\
-            '--has-files[Select only items that have linked files]' \\
-            '--no-files[Select only items with no linked files]' \\
-            '--has-docs[Select only items that have linked docs]' \\
-            '--no-docs[Select only items with no linked docs]' \\
-            '--has-tests[Select only items that have linked tests]' \\
-            '--no-tests[Select only items with no linked tests]' \\
-            '--has-comments[Select only items that have comments]' \\
-            '--no-comments[Select only items with no comments]' \\
-            '--has-deps[Select only items that have dependencies]' \\
-            '--no-deps[Select only items with no dependencies]' \\
-            '--has-body[Select only items with non-empty body]' \\
-            '--empty-body[Select only items with empty body]' \\
-            '--has-linked-command[Select only items that have a linked command]' \\
-            '--no-linked-command[Select only items with no linked command]' \\
+${zshPresenceFilterFlags}
             '--limit[Limit returned item count]:number' \\
             '--offset[Skip the first n matching rows before limit]:number' \\
             '--no-truncate[Return every matched row, overriding --limit]' \\
@@ -855,26 +897,7 @@ ${zshCreateRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--remove-tags[Remove tags from the existing list]:tags' \\
             '--expected[Short alias for --expected-result]:expected_result' \\
             '--actual[Short alias for --actual-result]:actual_result' \\
-            '--comment[Comment seed author=<value>,created_at=<iso|now>,text=<value>]:comment' \\
-            '--note[Note seed author=<value>,created_at=<iso|now>,text=<value>]:note' \\
-            '--learning[Learning seed author=<value>,created_at=<iso|now>,text=<value>]:learning' \\
-            '--file[Linked file path=<value>,scope=<project|global>,note=<text>]:file' \\
-            '--test[Linked test command=<value>,path=<value>,scope=<project|global>]:test' \\
-            '--doc[Linked doc path=<value>,scope=<project|global>,note=<text>]:doc' \\
-            '--reminder[Reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>]:reminder' \\
-            '--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_*]:event' \\
-            '--type-option[Type option key=value or key=<name>,value=<value>]:type_option' \\
-            '--unset[Clear scalar metadata field by name]:field' \\
-            '--clear-deps[Clear dependency entries]' \\
-            '--clear-comments[Clear comments]' \\
-            '--clear-notes[Clear notes]' \\
-            '--clear-learnings[Clear learnings]' \\
-            '--clear-files[Clear linked files]' \\
-            '--clear-tests[Clear linked tests]' \\
-            '--clear-docs[Clear linked docs]' \\
-            '--clear-reminders[Clear reminders]' \\
-            '--clear-events[Clear events]' \\
-            '--clear-type-options[Clear type options]' \\
+${zshMutationCollectionFlags}
 ${zshUpdateRuntimeFieldFlags}            '--allow-audit-update[Allow non-owner metadata-only audit updates without requiring --force]' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
@@ -903,29 +926,7 @@ ${zshUpdateRuntimeFieldFlags}            '--allow-audit-update[Allow non-owner m
             '--filter-estimates-missing[Select only items missing estimated_minutes]' \\
             '--filter-resolution-missing[Select only terminal items missing resolution]' \\
             '--filter-metadata-missing[Select only items missing any tracked metadata]' \\
-            '--filter-reviewer-missing[Select only items missing reviewer]' \\
-            '--filter-risk-missing[Select only items missing risk]' \\
-            '--filter-confidence-missing[Select only items missing confidence]' \\
-            '--filter-sprint-missing[Select only items missing sprint]' \\
-            '--filter-release-missing[Select only items missing release]' \\
-            '--filter-has-notes[Select only items that have notes]' \\
-            '--filter-no-notes[Select only items with no notes]' \\
-            '--filter-has-learnings[Select only items that have learnings]' \\
-            '--filter-no-learnings[Select only items with no learnings]' \\
-            '--filter-has-files[Select only items that have linked files]' \\
-            '--filter-no-files[Select only items with no linked files]' \\
-            '--filter-has-docs[Select only items that have linked docs]' \\
-            '--filter-no-docs[Select only items with no linked docs]' \\
-            '--filter-has-tests[Select only items that have linked tests]' \\
-            '--filter-no-tests[Select only items with no linked tests]' \\
-            '--filter-has-comments[Select only items that have comments]' \\
-            '--filter-no-comments[Select only items with no comments]' \\
-            '--filter-has-deps[Select only items that have dependencies]' \\
-            '--filter-no-deps[Select only items with no dependencies]' \\
-            '--filter-has-body[Select only items with non-empty body]' \\
-            '--filter-empty-body[Select only items with empty body]' \\
-            '--filter-has-linked-command[Select only items that have a linked command]' \\
-            '--filter-no-linked-command[Select only items with no linked command]' \\
+${zshBulkPresenceFilterFlags}
             '--ids[Explicit comma-separated ID allowlist]:ids' \\
             '--limit[Limit matched item count]:number' \\
             '--offset[Skip first n matched rows]:number' \\
@@ -974,26 +975,7 @@ ${zshUpdateRuntimeFieldFlags}            '--allow-audit-update[Allow non-owner m
             '--dep-remove[Dependency removal selector id=<id>,kind=<kind>,author=<author>,created_at=<timestamp>]:dep_remove' \\
             '--replace-deps[Atomically replace dependencies with provided --dep values]' \\
             '--replace-tests[Atomically replace linked tests with provided --test values]' \\
-            '--comment[Comment seed author=<value>,created_at=<iso|now>,text=<value>]:comment' \\
-            '--note[Note seed author=<value>,created_at=<iso|now>,text=<value>]:note' \\
-            '--learning[Learning seed author=<value>,created_at=<iso|now>,text=<value>]:learning' \\
-            '--file[Linked file path=<value>,scope=<project|global>,note=<text>]:file' \\
-            '--test[Linked test command=<value>,path=<value>,scope=<project|global>]:test' \\
-            '--doc[Linked doc path=<value>,scope=<project|global>,note=<text>]:doc' \\
-            '--reminder[Reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>]:reminder' \\
-            '--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_*]:event' \\
-            '--type-option[Type option key=value or key=<name>,value=<value>]:type_option' \\
-            '--unset[Clear scalar metadata field by name]:field' \\
-            '--clear-deps[Clear dependency entries]' \\
-            '--clear-comments[Clear comments]' \\
-            '--clear-notes[Clear notes]' \\
-            '--clear-learnings[Clear learnings]' \\
-            '--clear-files[Clear linked files]' \\
-            '--clear-tests[Clear linked tests]' \\
-            '--clear-docs[Clear linked docs]' \\
-            '--clear-reminders[Clear reminders]' \\
-            '--clear-events[Clear events]' \\
-            '--clear-type-options[Clear type options]' \\
+${zshMutationCollectionFlags}
 ${zshUpdateManyRuntimeFieldFlags}            '--allow-audit-update[Allow non-owner metadata-only audit updates without requiring --force]' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
@@ -1018,29 +1000,7 @@ ${zshUpdateManyRuntimeFieldFlags}            '--allow-audit-update[Allow non-own
             '--filter-parent[Filter by parent item ID]:parent' \\
             '--filter-sprint[Filter by sprint]:sprint' \\
             '--filter-release[Filter by release]:release' \\
-            '--filter-reviewer-missing[Select only items missing reviewer]' \\
-            '--filter-risk-missing[Select only items missing risk]' \\
-            '--filter-confidence-missing[Select only items missing confidence]' \\
-            '--filter-sprint-missing[Select only items missing sprint]' \\
-            '--filter-release-missing[Select only items missing release]' \\
-            '--filter-has-notes[Select only items that have notes]' \\
-            '--filter-no-notes[Select only items with no notes]' \\
-            '--filter-has-learnings[Select only items that have learnings]' \\
-            '--filter-no-learnings[Select only items with no learnings]' \\
-            '--filter-has-files[Select only items that have linked files]' \\
-            '--filter-no-files[Select only items with no linked files]' \\
-            '--filter-has-docs[Select only items that have linked docs]' \\
-            '--filter-no-docs[Select only items with no linked docs]' \\
-            '--filter-has-tests[Select only items that have linked tests]' \\
-            '--filter-no-tests[Select only items with no linked tests]' \\
-            '--filter-has-comments[Select only items that have comments]' \\
-            '--filter-no-comments[Select only items with no comments]' \\
-            '--filter-has-deps[Select only items that have dependencies]' \\
-            '--filter-no-deps[Select only items with no dependencies]' \\
-            '--filter-has-body[Select only items with non-empty body]' \\
-            '--filter-empty-body[Select only items with empty body]' \\
-            '--filter-has-linked-command[Select only items that have a linked command]' \\
-            '--filter-no-linked-command[Select only items with no linked command]' \\
+${zshBulkPresenceFilterFlags}
             '--ids[Explicit comma-separated ID allowlist]:ids' \\
             '--limit[Limit matched item count]:number' \\
             '--offset[Skip first n matched rows]:number' \\
@@ -1177,29 +1137,7 @@ ${zshContextRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--sprint[Filter by sprint]:value' \\
             '--release[Filter by release]:value' \\
             '--parent[Filter by parent item ID]:value' \\
-            '--filter-reviewer-missing[Select only items missing reviewer]' \\
-            '--filter-risk-missing[Select only items missing risk]' \\
-            '--filter-confidence-missing[Select only items missing confidence]' \\
-            '--filter-sprint-missing[Select only items missing sprint]' \\
-            '--filter-release-missing[Select only items missing release]' \\
-            '--has-notes[Select only items that have notes]' \\
-            '--no-notes[Select only items with no notes]' \\
-            '--has-learnings[Select only items that have learnings]' \\
-            '--no-learnings[Select only items with no learnings]' \\
-            '--has-files[Select only items that have linked files]' \\
-            '--no-files[Select only items with no linked files]' \\
-            '--has-docs[Select only items that have linked docs]' \\
-            '--no-docs[Select only items with no linked docs]' \\
-            '--has-tests[Select only items that have linked tests]' \\
-            '--no-tests[Select only items with no linked tests]' \\
-            '--has-comments[Select only items that have comments]' \\
-            '--no-comments[Select only items with no comments]' \\
-            '--has-deps[Select only items that have dependencies]' \\
-            '--no-deps[Select only items with no dependencies]' \\
-            '--has-body[Select only items with non-empty body]' \\
-            '--empty-body[Select only items with empty body]' \\
-            '--has-linked-command[Select only items that have a linked command]' \\
-            '--no-linked-command[Select only items with no linked command]' \\
+${zshPresenceFilterFlags}
 ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
