@@ -10,11 +10,10 @@ import type {
   ItemMetadata,
   ItemStatus,
   ItemType,
-  LinkedDoc,
-  LinkedFile,
-  LinkedTest,
-  LogNote,
   PmSettings,
+  ToImportLinkedArtifactsOptions,
+  ToImportLinkedTestsOptions,
+  ToImportLogEntriesOptions,
 } from "@unbrained/pm-cli/sdk";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
@@ -142,6 +141,10 @@ interface BeadsSdkModule {
   runActiveOnReadHooks: (context: { path: string; scope: "project" | "global" }) => Promise<string[]>;
   selectImportAuthor: (explicitAuthor: string | undefined, settingsAuthor: string) => string;
   toEstimatedMinutesValue: (value: unknown) => number | undefined;
+  toImportLinkedDocs: (value: unknown, options?: ToImportLinkedArtifactsOptions) => ItemMetadata["docs"];
+  toImportLinkedFiles: (value: unknown, options?: ToImportLinkedArtifactsOptions) => ItemMetadata["files"];
+  toImportLinkedTests: (value: unknown, options?: ToImportLinkedTestsOptions) => ItemMetadata["tests"];
+  toImportLogEntries: (value: unknown, options: ToImportLogEntriesOptions) => ItemMetadata["comments"];
   toImportPriority: (value: unknown) => 0 | 1 | 2 | 3 | 4;
   toImportStatus: (value: unknown) => ItemStatus;
   toImportTags: (value: unknown) => string[];
@@ -173,6 +176,10 @@ const BEADS_SDK_FUNCTION_EXPORTS = [
   "runActiveOnReadHooks",
   "selectImportAuthor",
   "toEstimatedMinutesValue",
+  "toImportLinkedDocs",
+  "toImportLinkedFiles",
+  "toImportLinkedTests",
+  "toImportLogEntries",
   "toImportPriority",
   "toImportStatus",
   "toImportTags",
@@ -241,6 +248,10 @@ const {
   runActiveOnReadHooks,
   selectImportAuthor,
   toEstimatedMinutesValue,
+  toImportLinkedDocs,
+  toImportLinkedFiles,
+  toImportLinkedTests,
+  toImportLogEntries,
   toImportPriority,
   toImportStatus,
   toImportTags,
@@ -254,6 +265,38 @@ const toNonEmptyString = toNonEmptyImportString;
 const toEstimatedMinutes = toEstimatedMinutesValue;
 const toPriority = toImportPriority;
 const toTags = toImportTags;
+
+const BEADS_DEPENDENCY_KIND_ALIASES = new Map<string, Dependency["kind"]>([
+  ["parent-child", "parent_child"],
+  ["child-of", "child_of"],
+  ["related-to", "related_to"],
+  ["relates-to", "related_to"],
+  ["discovered-from", "discovered_from"],
+  ["blocked-by", "blocked_by"],
+  ["incident-from", "incident_from"],
+]);
+
+const BEADS_LOG_ENTRY_OPTIONS = {
+  allowScalar: true,
+  textKeys: ["text", "comment", "note", "learning"],
+  toIsoString,
+} satisfies Partial<ToImportLogEntriesOptions>;
+
+const BEADS_FILE_OPTIONS = {
+  allowScalar: true,
+  pathKeys: ["path", "file"],
+} satisfies ToImportLinkedArtifactsOptions;
+
+const BEADS_DOC_OPTIONS = {
+  allowScalar: true,
+  pathKeys: ["path", "doc"],
+} satisfies ToImportLinkedArtifactsOptions;
+
+const BEADS_TEST_OPTIONS = {
+  allowScalar: true,
+  commandKeys: ["command", "test"],
+  timeoutMinimum: 0,
+} satisfies ToImportLinkedTestsOptions;
 
 function toIsoString(value: unknown): string | undefined {
   const raw = toNonEmptyString(value);
@@ -307,26 +350,15 @@ function toDependencyKind(value: unknown): { kind: Dependency["kind"]; sourceKin
     return preserveIfChanged(normalized as Dependency["kind"]);
   }
 
-  switch (normalized) {
-    case "parent-child":
-      return preserveIfChanged("parent_child");
-    case "child-of":
-      return preserveIfChanged("child_of");
-    case "related-to":
-    case "relates-to":
-      return preserveIfChanged("related_to");
-    case "discovered-from":
-      return preserveIfChanged("discovered_from");
-    case "blocked-by":
-      return preserveIfChanged("blocked_by");
-    case "incident-from":
-      return preserveIfChanged("incident_from");
-    default:
-      return {
-        kind: "related",
-        sourceKind: raw,
-      };
+  const aliasKind = BEADS_DEPENDENCY_KIND_ALIASES.get(normalized);
+  if (aliasKind) {
+    return preserveIfChanged(aliasKind);
   }
+
+  return {
+    kind: "related",
+    sourceKind: raw,
+  };
 }
 
 function normalizeImportedId(id: string, prefix: string, preserveSourceIds: boolean): string {
@@ -345,219 +377,55 @@ function toDependencies(
 
   const dependencies: Dependency[] = [];
   for (const entry of value) {
-    if (typeof entry === "string") {
-      const id = toNonEmptyString(entry);
-      if (!id) {
-        continue;
-      }
-      dependencies.push({
-        id: normalizeImportedId(id, prefix, preserveSourceIds),
-        kind: "related",
-        created_at: fallbackCreatedAt,
-      });
-      continue;
-    }
-    if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
-      continue;
-    }
-    const candidate = entry as Record<string, unknown>;
-    const id = toNonEmptyString(candidate.id) ?? toNonEmptyString(candidate.item_id) ?? toNonEmptyString(candidate.depends_on_id);
-    if (!id) {
-      continue;
-    }
-    const dependencyKind = toDependencyKind(candidate.type ?? candidate.kind);
-    dependencies.push({
-      id: normalizeImportedId(id, prefix, preserveSourceIds),
-      kind: dependencyKind.kind,
-      created_at: toIsoString(candidate.created_at) ?? fallbackCreatedAt,
-      author: toNonEmptyString(candidate.author) ?? toNonEmptyString(candidate.created_by),
-      source_kind: dependencyKind.sourceKind,
-    });
+    const dependency = toDependency(entry, fallbackCreatedAt, prefix, preserveSourceIds);
+    if (dependency) dependencies.push(dependency);
   }
 
   return dependencies.length > 0 ? dependencies : undefined;
 }
 
-function toLogEntries(value: unknown, fallbackCreatedAt: string, fallbackAuthor: string): LogNote[] | undefined {
+function toDependency(
+  value: unknown,
+  fallbackCreatedAt: string,
+  prefix: string,
+  preserveSourceIds: boolean,
+): Dependency | undefined {
   if (typeof value === "string") {
-    const text = toNonEmptyString(value);
-    if (!text) {
-      return undefined;
-    }
-    return [
-      {
-        created_at: fallbackCreatedAt,
-        author: fallbackAuthor,
-        text,
-      },
-    ];
+    return toDependencyFromString(value, fallbackCreatedAt, prefix, preserveSourceIds);
   }
-  if (!Array.isArray(value)) {
-    return undefined;
-  }
-
-  const entries: LogNote[] = [];
-  for (const entry of value) {
-    if (typeof entry === "string") {
-      const text = toNonEmptyString(entry);
-      if (!text) {
-        continue;
-      }
-      entries.push({
-        created_at: fallbackCreatedAt,
-        author: fallbackAuthor,
-        text,
-      });
-      continue;
-    }
-    if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
-      continue;
-    }
-    const candidate = entry as Record<string, unknown>;
-    const text =
-      toNonEmptyString(candidate.text) ??
-      toNonEmptyString(candidate.comment) ??
-      toNonEmptyString(candidate.note) ??
-      toNonEmptyString(candidate.learning);
-    if (!text) {
-      continue;
-    }
-    entries.push({
-      created_at: toIsoString(candidate.created_at) ?? fallbackCreatedAt,
-      author: toNonEmptyString(candidate.author) ?? fallbackAuthor,
-      text,
-    });
-  }
-
-  return entries.length > 0 ? entries : undefined;
-}
-
-function toLinkedFiles(value: unknown): LinkedFile[] | undefined {
-  if (typeof value === "string") {
-    const p = toNonEmptyString(value);
-    if (!p) return undefined;
-    return [{ path: p, scope: "project" }];
-  }
-  if (!Array.isArray(value)) {
-    return undefined;
-  }
-
-  const files: LinkedFile[] = [];
-  for (const entry of value) {
-    if (typeof entry === "string") {
-      const p = toNonEmptyString(entry);
-      if (p) files.push({ path: p, scope: "project" });
-      continue;
-    }
-    if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
-      continue;
-    }
-    const candidate = entry as Record<string, unknown>;
-    const p = toNonEmptyString(candidate.path) ?? toNonEmptyString(candidate.file);
-    if (!p) continue;
-    
-    files.push({
-      path: p,
-      scope: toNonEmptyString(candidate.scope) === "global" ? "global" : "project",
-      note: toNonEmptyString(candidate.note),
-    });
-  }
-
-  return files.length > 0 ? files : undefined;
-}
-
-function toLinkedTests(value: unknown): LinkedTest[] | undefined {
-  if (typeof value === "string") {
-    const c = toNonEmptyString(value);
-    if (!c) return undefined;
-    return [{ command: c, scope: "project" }];
-  }
-  if (!Array.isArray(value)) {
-    return undefined;
-  }
-
-  const tests: LinkedTest[] = [];
-  for (const entry of value) {
-    if (typeof entry === "string") {
-      const c = toNonEmptyString(entry);
-      if (c) tests.push({ command: c, scope: "project" });
-      continue;
-    }
-    const linkedTest = toLinkedTestFromRecord(entry);
-    if (linkedTest) {
-      tests.push(linkedTest);
-    }
-  }
-
-  return tests.length > 0 ? tests : undefined;
-}
-
-function toLinkedTestTimeout(value: unknown): number | undefined {
-  if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
-    return value;
-  }
-  if (typeof value !== "string") {
-    return undefined;
-  }
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return undefined;
-  }
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
-}
-
-function toLinkedTestFromRecord(value: unknown): LinkedTest | undefined {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return undefined;
   }
   const candidate = value as Record<string, unknown>;
-  const command = toNonEmptyString(candidate.command) ?? toNonEmptyString(candidate.test);
-  const p = toNonEmptyString(candidate.path);
-  if (!command && !p) {
+  const id = toNonEmptyString(candidate.id) ?? toNonEmptyString(candidate.item_id) ?? toNonEmptyString(candidate.depends_on_id);
+  if (!id) {
     return undefined;
   }
+  const dependencyKind = toDependencyKind(candidate.type ?? candidate.kind);
   return {
-    command,
-    path: p,
-    scope: toNonEmptyString(candidate.scope) === "global" ? "global" : "project",
-    timeout_seconds: toLinkedTestTimeout(candidate.timeout_seconds),
-    note: toNonEmptyString(candidate.note),
+    id: normalizeImportedId(id, prefix, preserveSourceIds),
+    kind: dependencyKind.kind,
+    created_at: toIsoString(candidate.created_at) ?? fallbackCreatedAt,
+    author: toNonEmptyString(candidate.author) ?? toNonEmptyString(candidate.created_by),
+    source_kind: dependencyKind.sourceKind,
   };
 }
 
-function toLinkedDocs(value: unknown): LinkedDoc[] | undefined {
-  if (typeof value === "string") {
-    const p = toNonEmptyString(value);
-    if (!p) return undefined;
-    return [{ path: p, scope: "project" }];
-  }
-  if (!Array.isArray(value)) {
+function toDependencyFromString(
+  value: string,
+  fallbackCreatedAt: string,
+  prefix: string,
+  preserveSourceIds: boolean,
+): Dependency | undefined {
+  const id = toNonEmptyString(value);
+  if (!id) {
     return undefined;
   }
-
-  const docs: LinkedDoc[] = [];
-  for (const entry of value) {
-    if (typeof entry === "string") {
-      const p = toNonEmptyString(entry);
-      if (p) docs.push({ path: p, scope: "project" });
-      continue;
-    }
-    if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
-      continue;
-    }
-    const candidate = entry as Record<string, unknown>;
-    const p = toNonEmptyString(candidate.path) ?? toNonEmptyString(candidate.doc);
-    if (!p) continue;
-    
-    docs.push({
-      path: p,
-      scope: toNonEmptyString(candidate.scope) === "global" ? "global" : "project",
-      note: toNonEmptyString(candidate.note),
-    });
-  }
-
-  return docs.length > 0 ? docs : undefined;
+  return {
+    id: normalizeImportedId(id, prefix, preserveSourceIds),
+    kind: "related",
+    created_at: fallbackCreatedAt,
+  };
 }
 
 const selectAuthor = selectImportAuthor;
@@ -714,12 +582,24 @@ async function importBeadsRecord(record: BeadsRecord, lineNumber: number, runtim
     external_ref: toNonEmptyString(record.external_ref),
     close_reason: toNonEmptyString(record.close_reason),
     dependencies: toDependencies(record.dependencies, createdAt, runtime.settings.id_prefix, runtime.preserveSourceIds),
-    comments: toLogEntries(record.comments, createdAt, runtime.author),
-    notes: toLogEntries(record.notes, createdAt, runtime.author),
-    learnings: toLogEntries(record.learnings, createdAt, runtime.author),
-    files: toLinkedFiles(record.files),
-    tests: toLinkedTests(record.tests),
-    docs: toLinkedDocs(record.docs),
+    comments: toImportLogEntries(record.comments, {
+      ...BEADS_LOG_ENTRY_OPTIONS,
+      fallbackCreatedAt: createdAt,
+      fallbackAuthor: runtime.author,
+    }),
+    notes: toImportLogEntries(record.notes, {
+      ...BEADS_LOG_ENTRY_OPTIONS,
+      fallbackCreatedAt: createdAt,
+      fallbackAuthor: runtime.author,
+    }),
+    learnings: toImportLogEntries(record.learnings, {
+      ...BEADS_LOG_ENTRY_OPTIONS,
+      fallbackCreatedAt: createdAt,
+      fallbackAuthor: runtime.author,
+    }),
+    files: toImportLinkedFiles(record.files, BEADS_FILE_OPTIONS),
+    tests: toImportLinkedTests(record.tests, BEADS_TEST_OPTIONS),
+    docs: toImportLinkedDocs(record.docs, BEADS_DOC_OPTIONS),
   });
   const afterDocument = runtime.sdk.canonicalDocument({
     metadata: frontMatter,

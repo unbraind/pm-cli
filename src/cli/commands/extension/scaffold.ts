@@ -67,6 +67,49 @@ const SAMPLE_HARNESS_FINALLY_LINES = [
   "  }",
 ] as const;
 
+function indentGeneratedLines(lines: readonly string[], prefix: string): string[] {
+  return lines.map((line) => (line === "" ? line : `${prefix}${line}`));
+}
+
+function buildSchemaCapabilityAssertionLines(options: {
+  readonly extensionName: string;
+  readonly itemTypeName: string;
+  readonly itemTypeFolder: string;
+  readonly fieldName: string;
+  readonly migrationId: string;
+  readonly includeMigrationReplacementHint?: boolean;
+}): string[] {
+  const migrationHint = options.includeMigrationReplacementHint === true ? ["  // as your migration grows."] : [];
+  return [
+    "  // assertItemType/Field/Migration throw unless the registration is present, so",
+    "  // reaching each next line already proves the wiring; assert on the returned",
+    "  // definitions to demonstrate inspecting registered metadata.",
+    `  const itemType = ext.assertItemType({ itemType: ${JSON.stringify(options.itemTypeName)}, extensionName: ${JSON.stringify(options.extensionName)} });`,
+    `  assert.equal(itemType.itemType.folder, ${JSON.stringify(options.itemTypeFolder)});`,
+    `  const itemField = ext.assertItemField({ field: ${JSON.stringify(options.fieldName)}, extensionName: ${JSON.stringify(options.extensionName)} });`,
+    '  assert.equal(itemField.field.type, "string");',
+    `  ext.assertMigration({ migration: ${JSON.stringify(options.migrationId)}, extensionName: ${JSON.stringify(options.extensionName)}, mandatory: false });`,
+    "",
+    "  // runMigration invokes the migration through pm's real runner with a synthetic",
+    "  // context and returns its result.",
+    ...migrationHint,
+    `  const migrated = await ext.runMigration({ migration: ${JSON.stringify(options.migrationId)} });`,
+    `  assert.deepEqual(migrated, { migrated: true, id: ${JSON.stringify(options.migrationId)} });`,
+  ];
+}
+
+function buildProfileCapabilityAssertionLines(extensionName: string): string[] {
+  return [
+    "  // assertProfile throws unless the profile is registered, so reaching the next",
+    "  // line already proves the wiring; assert on the returned definition to inspect",
+    "  // the bundled archetype dimensions.",
+    `  const { profile } = ext.assertProfile({ profile: ${JSON.stringify(extensionName)}, extensionName: ${JSON.stringify(extensionName)} });`,
+    `  assert.equal(profile.title, ${JSON.stringify(`${extensionName} archetype`)});`,
+    "  assert.equal(profile.types.length, 1);",
+    "  assert.equal(profile.workflows.length, 1);",
+  ];
+}
+
 // Strict NodeNext tsconfig emitted into every scaffold (ADR pm-2c28 / pm-m1uz:
 // extensions are authored AND loaded as TypeScript). It is a type-check-only
 // config (`noEmit`): there is no compile step — pm loads the `./index.ts`
@@ -1003,9 +1046,6 @@ function buildSampleTestSource(
   const preflightEnabled = capability === "preflight";
   const servicesEnabled = capability === "services";
   const capabilitiesLiteral = SAMPLE_TEST_CAPABILITIES_LITERAL[capability];
-  const searchProviderName = `${extensionName}-search`;
-  const vectorAdapterName = `${extensionName}-vector`;
-  const adapterName = `${extensionName.replace(/-/g, " ")} items`;
   const itemTypeName = extensionName;
   const itemTypeFolder = `${extensionName}s`;
   const fieldName = `${extensionName.replace(/-/g, "_")}_note`;
@@ -1052,91 +1092,10 @@ function buildSampleTestSource(
       ]
     : [];
   const searchTestLines = searchEnabled
-    ? [
-        `test(${JSON.stringify(`${extensionName} registers and invokes search primitives`)}, async () => {`,
-        "  const ext = await createExtensionTestHarness(extension, {",
-        `    name: ${JSON.stringify(extensionName)},`,
-        `    capabilities: ${capabilitiesLiteral},`,
-        "  });",
-        "  let deactivated = false;",
-        "  try {",
-        `    ext.assertSearchProvider({ provider: ${JSON.stringify(searchProviderName)}, extensionName: ${JSON.stringify(extensionName)} });`,
-        `    ext.assertVectorStoreAdapter({ adapter: ${JSON.stringify(vectorAdapterName)}, extensionName: ${JSON.stringify(extensionName)} });`,
-        "",
-        "    // The starter provider reads only document title/id, so `settings` is a",
-        "    // minimal typed stub and `documents` carry just the fields it inspects.",
-        "    const query = await ext.runSearchProvider({",
-        `      provider: ${JSON.stringify(searchProviderName)},`,
-        '      operation: "query",',
-        "      context: {",
-        '        query: "sync",',
-        '        mode: "semantic",',
-        '        tokens: ["sync"],',
-        "        options: {},",
-        "        settings: {} as PmSettings,",
-        "        documents: [",
-        '          { metadata: { id: "pm-1", title: "Sync external context" }, body: "" },',
-        '          { metadata: { id: "pm-2", title: "Unrelated task" }, body: "" },',
-        "        ] as ItemDocument[],",
-        "      },",
-        "    });",
-        '    assert.deepEqual(query, { hits: [{ id: "pm-1", score: 1, matched_fields: ["title"] }] });',
-        "",
-        "    const embedding = await ext.runSearchProvider({",
-        `      provider: ${JSON.stringify(searchProviderName)},`,
-        '      operation: "embed",',
-        '      context: { input: "abc", settings: {} as PmSettings, model: "starter-model" },',
-        "    });",
-        "    assert.deepEqual(embedding, [3]);",
-        "",
-        "    const vectorHits = await ext.runVectorStoreAdapter({",
-        `      adapter: ${JSON.stringify(vectorAdapterName)},`,
-        '      operation: "query",',
-        "      context: { vector: [0.1, 0.2], limit: 2, settings: {} as PmSettings },",
-        "    });",
-        '    assert.deepEqual(vectorHits, [{ id: "starter-vector-hit", score: 2 }]);',
-        "    const teardown = await ext.deactivate();",
-        "    assertExtensionDeactivated(teardown);",
-        "    deactivated = true;",
-        ...SAMPLE_HARNESS_FINALLY_LINES,
-        "});",
-        "",
-      ]
+    ? buildDeclarativeCapabilityTestBlock(extensionName, commandName, "search", capabilitiesLiteral)
     : [];
   const importerTestLines = importersEnabled
-    ? [
-        `test(${JSON.stringify(`${extensionName} registers and invokes import/export primitives`)}, async () => {`,
-        "  const ext = await createExtensionTestHarness(extension, {",
-        `    name: ${JSON.stringify(extensionName)},`,
-        `    capabilities: ${capabilitiesLiteral},`,
-        "  });",
-        "  let deactivated = false;",
-        "  try {",
-        `    ext.assertImporter({ importer: ${JSON.stringify(adapterName)}, extensionName: ${JSON.stringify(extensionName)} });`,
-        `    ext.assertExporter({ exporter: ${JSON.stringify(adapterName)}, extensionName: ${JSON.stringify(extensionName)} });`,
-        "",
-        "    const imported = await ext.runImporter({",
-        `      importer: ${JSON.stringify(adapterName)},`,
-        '      options: { source: "tickets" },',
-        '      args: ["batch-1"],',
-        "    });",
-        "    assert.equal(imported.handled, true);",
-        '    assert.deepEqual(imported.result, { imported: 1, source: "tickets", args: ["batch-1"] });',
-        "",
-        "    const exported = await ext.runExporter({",
-        `      exporter: ${JSON.stringify(adapterName)},`,
-        '      options: { destination: "archive" },',
-        '      args: ["done"],',
-        "    });",
-        "    assert.equal(exported.handled, true);",
-        '    assert.deepEqual(exported.result, { exported: true, destination: "archive", args: ["done"] });',
-        "    const teardown = await ext.deactivate();",
-        "    assertExtensionDeactivated(teardown);",
-        "    deactivated = true;",
-        ...SAMPLE_HARNESS_FINALLY_LINES,
-        "});",
-        "",
-      ]
+    ? buildDeclarativeCapabilityTestBlock(extensionName, commandName, "importers", capabilitiesLiteral)
     : [];
   const schemaTestLines = schemaEnabled
     ? [
@@ -1147,20 +1106,17 @@ function buildSampleTestSource(
         "  });",
         "  let deactivated = false;",
         "  try {",
-        "    // assertItemType/Field/Migration throw unless the registration is",
-        "    // present, so reaching each next line already proves the wiring; assert on",
-        "    // the returned definitions to demonstrate inspecting registered metadata.",
-        `    const itemType = ext.assertItemType({ itemType: ${JSON.stringify(itemTypeName)}, extensionName: ${JSON.stringify(extensionName)} });`,
-        `    assert.equal(itemType.itemType.folder, ${JSON.stringify(itemTypeFolder)});`,
-        `    const itemField = ext.assertItemField({ field: ${JSON.stringify(fieldName)}, extensionName: ${JSON.stringify(extensionName)} });`,
-        '    assert.equal(itemField.field.type, "string");',
-        `    ext.assertMigration({ migration: ${JSON.stringify(migrationId)}, extensionName: ${JSON.stringify(extensionName)}, mandatory: false });`,
-        "",
-        "    // runMigration invokes the migration through pm's real runner with a",
-        "    // synthetic context and returns its result. Replace the context/assertions",
-        "    // as your migration grows.",
-        `    const migrated = await ext.runMigration({ migration: ${JSON.stringify(migrationId)} });`,
-        `    assert.deepEqual(migrated, { migrated: true, id: ${JSON.stringify(migrationId)} });`,
+        ...indentGeneratedLines(
+          buildSchemaCapabilityAssertionLines({
+            extensionName,
+            itemTypeName,
+            itemTypeFolder,
+            fieldName,
+            migrationId,
+            includeMigrationReplacementHint: true,
+          }),
+          "  ",
+        ),
         "    const teardown = await ext.deactivate();",
         "    assertExtensionDeactivated(teardown);",
         "    deactivated = true;",
@@ -1178,13 +1134,7 @@ function buildSampleTestSource(
         "  });",
         "  let deactivated = false;",
         "  try {",
-        "    // assertProfile throws unless the profile is registered, so reaching the next",
-        "    // line already proves the wiring; assert on the returned definition to inspect",
-        "    // the bundled archetype dimensions.",
-        `    const { profile } = ext.assertProfile({ profile: ${JSON.stringify(extensionName)}, extensionName: ${JSON.stringify(extensionName)} });`,
-        `    assert.equal(profile.title, ${JSON.stringify(`${extensionName} archetype`)});`,
-        "    assert.equal(profile.types.length, 1);",
-        "    assert.equal(profile.workflows.length, 1);",
+        ...indentGeneratedLines(buildProfileCapabilityAssertionLines(extensionName), "  "),
         "    const teardown = await ext.deactivate();",
         "    assertExtensionDeactivated(teardown);",
         "    deactivated = true;",
@@ -2050,36 +2000,22 @@ function buildDeclarativeCapabilityTestBlock(
     case "schema":
       return [
         `test(${JSON.stringify(`${extensionName} registers and runs its custom schema`)}, async () => {`,
-        ...withHarnessCleanup([
-          "  // assertItemType/Field/Migration throw unless the registration is present, so",
-          "  // reaching each next line already proves the wiring; assert on the returned",
-          "  // definitions to demonstrate inspecting registered metadata.",
-          `  const itemType = ext.assertItemType({ itemType: ${JSON.stringify(itemTypeName)}, extensionName: ${JSON.stringify(extensionName)} });`,
-          `  assert.equal(itemType.itemType.folder, ${JSON.stringify(itemTypeFolder)});`,
-          `  const itemField = ext.assertItemField({ field: ${JSON.stringify(fieldName)}, extensionName: ${JSON.stringify(extensionName)} });`,
-          '  assert.equal(itemField.field.type, "string");',
-          `  ext.assertMigration({ migration: ${JSON.stringify(migrationId)}, extensionName: ${JSON.stringify(extensionName)}, mandatory: false });`,
-          "",
-          "  // runMigration invokes the migration through pm's real runner with a synthetic",
-          "  // context and returns its result.",
-          `  const migrated = await ext.runMigration({ migration: ${JSON.stringify(migrationId)} });`,
-          `  assert.deepEqual(migrated, { migrated: true, id: ${JSON.stringify(migrationId)} });`,
-        ]),
+        ...withHarnessCleanup(
+          buildSchemaCapabilityAssertionLines({
+            extensionName,
+            itemTypeName,
+            itemTypeFolder,
+            fieldName,
+            migrationId,
+          }),
+        ),
         "});",
         "",
       ];
     case "profile":
       return [
         `test(${JSON.stringify(`${extensionName} registers its project profile`)}, async () => {`,
-        ...withHarnessCleanup([
-          "  // assertProfile throws unless the profile is registered, so reaching the next",
-          "  // line already proves the wiring; assert on the returned definition to inspect",
-          "  // the bundled archetype dimensions.",
-          `  const { profile } = ext.assertProfile({ profile: ${JSON.stringify(extensionName)}, extensionName: ${JSON.stringify(extensionName)} });`,
-          `  assert.equal(profile.title, ${JSON.stringify(`${extensionName} archetype`)});`,
-          "  assert.equal(profile.types.length, 1);",
-          "  assert.equal(profile.workflows.length, 1);",
-        ]),
+        ...withHarnessCleanup(buildProfileCapabilityAssertionLines(extensionName)),
         "});",
         "",
       ];

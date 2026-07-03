@@ -12,7 +12,7 @@ import {
   type HistoryCompactBulkSkipReason,
   type HistoryCompactScope,
 } from "../../core/history/history-compact-bulk.js";
-import { executeHistoryRewrite } from "../../core/history/history-rewrite.js";
+import { executeHistoryRewrite, writeHistoryRawWithRollback } from "../../core/history/history-rewrite.js";
 import {
   cloneEmptyReplayDocument,
   historyEntriesToRaw,
@@ -27,7 +27,7 @@ import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { lifecycleClassifierFromStatusRegistry } from "../../core/governance/metadata-coverage.js";
 import { resolveRuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { listAllFrontMatterLight } from "../../core/store/item-store.js";
-import { pathExists, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
+import { pathExists, readFileIfExists } from "../../core/fs/fs-utils.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -339,18 +339,12 @@ async function applyHistoryCompactRewrite(params: {
     author: params.author,
     force: params.force,
     itemDocument: params.loadedItem?.document ?? null,
-    applyRewrite: async ({ historyRawUnderLock }) => {
-      try {
-        await writeFileAtomic(params.historyPath, historyEntriesToRaw(params.rewrittenEntries));
-      } catch (error) {
-        if (historyRawUnderLock === null) {
-          await fs.rm(params.historyPath, { force: true });
-        } else {
-          await writeFileAtomic(params.historyPath, historyRawUnderLock);
-        }
-        throw error;
-      }
-    },
+    applyRewrite: async ({ historyRawUnderLock }) =>
+      writeHistoryRawWithRollback({
+        historyPath: params.historyPath,
+        nextHistoryRaw: historyEntriesToRaw(params.rewrittenEntries),
+        historyRawUnderLock,
+      }),
     applyPostRewrite: async () =>
       runActiveOnWriteHooks({
         path: params.historyPath,

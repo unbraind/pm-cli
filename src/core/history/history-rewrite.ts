@@ -3,7 +3,9 @@
  *
  * Implements append-only history and replay behavior for History Rewrite.
  */
+import fs from "node:fs/promises";
 import { readFileIfExists } from "../fs/fs-utils.js";
+import { writeFileAtomic } from "../fs/fs-utils.js";
 import type { ItemTypeRegistry } from "../item/type-registry.js";
 import { acquireLock } from "../lock/lock.js";
 import { EXIT_CODE } from "../shared/constants.js";
@@ -13,6 +15,7 @@ import { resolveGovernanceKnobs } from "../store/settings.js";
 import type { ItemDocument, PmSettings } from "../../types/index.js";
 
 type LoadedItem = Awaited<ReturnType<typeof readLocatedItem>>;
+type HistoryRawWriter = (filePath: string, content: string) => Promise<void>;
 
 /**
  * Documents the history rewrite subject payload exchanged by command, SDK, and package integrations.
@@ -130,6 +133,35 @@ export interface ExecuteHistoryRewriteParams {
   itemDocument: ItemDocument | null;
   applyRewrite: (verified: VerifiedHistoryRewriteState) => Promise<void>;
   applyPostRewrite?: (verified: VerifiedHistoryRewriteState) => Promise<string[]>;
+}
+
+/**
+ * Writes the rewritten history stream and restores the under-lock snapshot on failure.
+ */
+export async function writeHistoryRawWithRollback(params: {
+  historyPath: string;
+  nextHistoryRaw: string;
+  historyRawUnderLock: string | null;
+  writeHistoryRaw?: HistoryRawWriter;
+}): Promise<void> {
+  const writeHistoryRaw = params.writeHistoryRaw ?? writeFileAtomic;
+  try {
+    await writeHistoryRaw(params.historyPath, params.nextHistoryRaw);
+  } catch (error) {
+    try {
+      if (params.historyRawUnderLock === null) {
+        await fs.rm(params.historyPath, { force: true });
+      } else {
+        await writeHistoryRaw(params.historyPath, params.historyRawUnderLock);
+      }
+    } catch (rollbackError) {
+      throw new AggregateError(
+        [error, rollbackError],
+        `History rewrite failed and rollback also failed: ${String(error)}`,
+      );
+    }
+    throw error;
+  }
 }
 
 /**

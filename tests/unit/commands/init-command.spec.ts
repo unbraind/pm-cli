@@ -389,6 +389,30 @@ describe("runInit", () => {
       expect(skipResult.summary.declined).toBe(true);
       expect(skipResult.summary.prompt_completed).toBe(true);
       expect(skipSettings.agent_guidance?.declined_at).toBe(priorDeclinedAt);
+
+      const missingDeclinedAtSettings = {
+        agent_guidance: {
+          prompt_completed: true,
+          declined: true,
+          template_version: 1,
+          last_checked_files: [],
+        },
+      } as unknown as Parameters<typeof runInitAgentGuidance>[0]["settings"];
+      await expect(
+        runInitAgentGuidance({
+          pm_root: tempRoot,
+          cwd: path.dirname(tempRoot),
+          mode: "skip",
+          interactive: false,
+          settings: missingDeclinedAtSettings,
+        }),
+      ).resolves.toMatchObject({
+        summary: {
+          declined: true,
+          prompt_completed: true,
+        },
+      });
+      expect(missingDeclinedAtSettings.agent_guidance?.declined_at).not.toBe("");
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

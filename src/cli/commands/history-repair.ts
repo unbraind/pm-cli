@@ -3,10 +3,9 @@
  *
  * Implements the pm history repair command surface and its agent-facing runtime behavior.
  */
-import fs from "node:fs/promises";
 import jsonPatch from "fast-json-patch";
-import { pathExists, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
-import { executeHistoryRewrite } from "../../core/history/history-rewrite.js";
+import { pathExists, readFileIfExists } from "../../core/fs/fs-utils.js";
+import { executeHistoryRewrite, writeHistoryRawWithRollback } from "../../core/history/history-rewrite.js";
 import {
   historyEntriesToRaw,
   reanchorHistoryEntries,
@@ -191,18 +190,12 @@ async function applyHistoryRepairRewrite(params: {
     author: params.author,
     force: params.force,
     itemDocument: params.loadedItem?.document ?? null,
-    applyRewrite: async ({ historyRawUnderLock }) => {
-      try {
-        await writeFileAtomic(params.historyPath, historyEntriesToRaw(params.rewrittenEntries));
-      } catch (error) {
-        if (historyRawUnderLock === null) {
-          await fs.rm(params.historyPath, { force: true });
-        } else {
-          await writeFileAtomic(params.historyPath, historyRawUnderLock);
-        }
-        throw error;
-      }
-    },
+    applyRewrite: async ({ historyRawUnderLock }) =>
+      writeHistoryRawWithRollback({
+        historyPath: params.historyPath,
+        nextHistoryRaw: historyEntriesToRaw(params.rewrittenEntries),
+        historyRawUnderLock,
+      }),
     applyPostRewrite: async () =>
       runActiveOnWriteHooks({
         path: params.historyPath,

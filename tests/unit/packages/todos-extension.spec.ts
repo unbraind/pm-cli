@@ -515,6 +515,7 @@ describe("built-in todos extension import/export", () => {
           { command: "   ", path: "   " },
           {
             command: "pnpm lint",
+            timeout_seconds: 0,
             env_set: "not-a-map",
             env_clear: "not-a-list",
             assert_stdout_contains: "not-a-list",
@@ -537,11 +538,19 @@ describe("built-in todos extension import/export", () => {
           },
         ],
       });
+      await writeTodoMarkdown(sourceFolder, "scalar-log-entries.md", {
+        id: "scalar-log-entries",
+        title: "Scalar log entries import",
+        created_at: "2026-02-09T00:00:00.000Z",
+        comments: "scalar comment",
+        notes: "scalar note",
+        learnings: "scalar learning",
+      });
 
       const imported = await runTodosImport({ folder: sourceFolder }, {});
-      expect(imported.imported).toBe(2);
+      expect(imported.imported).toBe(3);
       expect(imported.skipped).toBe(0);
-      expect(imported.ids).toEqual(["pm-full-metadata", "pm-invalid-linked-arrays"]);
+      expect(imported.ids).toEqual(["pm-full-metadata", "pm-invalid-linked-arrays", "pm-scalar-log-entries"]);
 
       const result = context.runCli(["get", "pm-full-metadata", "--json", "--full"], { expectJson: true });
       expect(result.code).toBe(0);
@@ -701,6 +710,31 @@ describe("built-in todos extension import/export", () => {
         {
           command: "pnpm lint:empty-normalized",
           scope: "project",
+        },
+      ]);
+
+      const scalarLogs = context.runCli(["get", "pm-scalar-log-entries", "--json", "--full"], { expectJson: true });
+      expect(scalarLogs.code).toBe(0);
+      const scalarLogsItem = (scalarLogs.json as { item: Record<string, unknown> }).item;
+      expect(scalarLogsItem.comments).toEqual([
+        {
+          created_at: "2026-02-09T00:00:00.000Z",
+          author: "test-author",
+          text: "scalar comment",
+        },
+      ]);
+      expect(scalarLogsItem.notes).toEqual([
+        {
+          created_at: "2026-02-09T00:00:00.000Z",
+          author: "test-author",
+          text: "scalar note",
+        },
+      ]);
+      expect(scalarLogsItem.learnings).toEqual([
+        {
+          created_at: "2026-02-09T00:00:00.000Z",
+          author: "test-author",
+          text: "scalar learning",
         },
       ]);
     });

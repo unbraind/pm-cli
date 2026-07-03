@@ -110,6 +110,86 @@ const CLOSE_MUTATION_FLAGS = "--author --message --validate-close --duplicate-of
 const RELEASE_MUTATION_FLAGS =
   "--allow-audit-release --author --message --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
 
+const COMMAND_COMPLETION_DESCRIPTIONS = [
+  ["init", "Initialize pm storage for the current workspace"],
+  ["config", "Read or update pm settings"],
+  ["extension", "Manage extension lifecycle operations"],
+  ["package", "Manage package lifecycle operations"],
+  ["packages", "Alias for package"],
+  ["create", "Create a new project management item"],
+  ["copy", "Copy an existing item to a new ID"],
+  ["focus", "Set/clear/show the session focused parent for new items"],
+  ["list", "List active items with optional filters"],
+  ["list-all", "List all items with optional filters"],
+  ["list-draft", "List draft items with optional filters"],
+  ["list-open", "List open items with optional filters"],
+  ["list-in-progress", "List in-progress items with optional filters"],
+  ["list-blocked", "List blocked items with optional filters"],
+  ["list-closed", "List closed items with optional filters"],
+  ["list-canceled", "List canceled items with optional filters"],
+  ["aggregate", "Aggregate grouped item counts and numeric stats for governance queries"],
+  ["dedupe-audit", "Audit potential duplicate items and emit merge suggestions"],
+  ["guide", "Browse local progressive-disclosure guides"],
+  ["calendar", "Show calendar views for deadlines and reminders"],
+  ["cal", "Alias for calendar"],
+  ["context", "Show a token-efficient project context snapshot"],
+  ["ctx", "Alias for context"],
+  ["get", "Show item details by ID"],
+  ["next", "Recommend the next actionable (unblocked, ready) work item"],
+  ["search", "Search items with keyword, semantic, or hybrid modes"],
+  ["reindex", "Rebuild search artifacts"],
+  ["history", "Show item history entries"],
+  ["history-compact", "Compact history streams into a synthetic baseline + retained tail"],
+  ["history-redact", "Redact sensitive literals/patterns and recompute history hashes"],
+  ["history-repair", "Re-anchor a drifted history chain so pm health/validate report ok"],
+  ["schema", "Manage custom item types and statuses in .agents/pm/schema/*.json"],
+  ["profile", "List, show, apply, and lint project profiles (archetype schema/config/template/package bundles)"],
+  ["plan", "Agent-optimized Plan item workflow (create/show/add-step/update-step/complete-step/link/approve/materialize)"],
+  ["activity", "Show recent activity across items"],
+  ["restore", "Restore an item to an earlier state"],
+  ["update", "Update item fields and metadata"],
+  ["update-many", "Bulk-update matched items with dry-run and rollback checkpoints"],
+  ["normalize", "Normalize lifecycle metadata with dry-run planning or apply mode"],
+  ["close", "Close an item (reason requirement follows governance settings)"],
+  ["close-many", "Bulk-close matched items with an optional shared reason and rollback checkpoint"],
+  ["delete", "Delete an item and record the change"],
+  ["append", "Append text to an item body"],
+  ["comments", "List or add comments for an item"],
+  ["comments-audit", "Audit latest comments or full history across filtered items"],
+  ["notes", "List or add notes for an item"],
+  ["learnings", "List or add learnings for an item"],
+  ["files", "Manage linked files"],
+  ["docs", "Manage linked docs"],
+  ["deps", "Show dependency relationships for an item"],
+  ["test", "Manage linked tests and optionally run them"],
+  ["test-all", "Run linked tests across matching items"],
+  ["test-runs", "Manage background linked-test runs"],
+  ["stats", "Show project tracker statistics"],
+  ["health", "Show project tracker health checks"],
+  ["validate", "Run standalone validation checks"],
+  ["gc", "Clean optional cache artifacts"],
+  ["contracts", "Show machine-readable command and schema contracts"],
+  ["claim", "Claim an item for active work"],
+  ["release", "Release the active claim for an item"],
+  ["start-task", "Lifecycle alias to claim and set in_progress"],
+  ["pause-task", "Lifecycle alias to reopen and release claim"],
+  ["close-task", "Lifecycle alias to close and release claim"],
+  ["meet", "Shortcut to create a Meeting with scheduling defaults"],
+  ["event", "Shortcut to create an Event with scheduling defaults"],
+  ["remind", "Shortcut to create a Reminder from a point in time"],
+  ["templates", "Manage reusable create templates"],
+  ["completion", "Generate shell completion"],
+  ["help", "Display help for a command"],
+] as const;
+
+const FISH_COMMAND_DESCRIPTION_OVERRIDES = new Map<string, string>([
+  ["calendar", "Show deadline/reminder calendar views"],
+  ["schema", "Inspect and manage runtime schema"],
+  ["profile", "List, show, apply, and lint project profiles (archetype bundles)"],
+  ["plan", "Agent-optimized Plan workflow (create/show/add-step/update-step/complete-step/link/approve/materialize)"],
+  ["start-task", "Lifecycle alias to claim and set in-progress"],
+]);
+
 const GLOBAL_FLAGS = GLOBAL_FLAG_CONTRACTS.flatMap((entry) => [entry.short, entry.flag, ...(entry.aliases ?? [])])
   .filter((value): value is string => Boolean(value))
   .join(" ");
@@ -155,6 +235,143 @@ function renderZshRuntimeFieldFlagSpecs(runtimeFlags: string[] | undefined): str
     return "";
   }
   return `${normalized.map((flag) => `            '${flag}[Runtime schema field flag]:value' \\`).join("\n")}\n`;
+}
+
+function renderZshArgumentSpecs(specs: readonly string[], options: { readonly trailingContinuation?: boolean } = {}): string {
+  const trailingContinuation = options.trailingContinuation ?? true;
+  const lastSpecIndex = specs.length - 1;
+  return specs
+    .map((spec, index) => `            ${spec}${trailingContinuation || index !== lastSpecIndex ? " \\" : ""}`)
+    .join("\n");
+}
+
+function renderZshCommandDescriptions(): string {
+  return COMMAND_COMPLETION_DESCRIPTIONS
+    .map(([command, description]) => `    '${command}:${description}'`)
+    .join("\n");
+}
+
+function renderFishCommandDescriptions(): string {
+  return COMMAND_COMPLETION_DESCRIPTIONS
+    .filter(([command]) => command !== "help")
+    .map(([command, description]) => {
+      const fishDescription = FISH_COMMAND_DESCRIPTION_OVERRIDES.get(command) ?? description;
+      return `complete -c pm -n __pm_no_subcommand -a ${command.padEnd(16)} -d '${fishDescription}'`;
+    })
+    .join("\n");
+}
+
+function renderZshPresenceFilterSpecs(options: {
+  readonly missingPrefix: "" | "filter-";
+  readonly pairedPrefix: "" | "filter-";
+  readonly includeContentMissingAliases?: boolean;
+}): string {
+  const missingSpecs = [
+    "reviewer-missing[Select only items missing reviewer]",
+    "risk-missing[Select only items missing risk]",
+    "confidence-missing[Select only items missing confidence]",
+    "sprint-missing[Select only items missing sprint]",
+    "release-missing[Select only items missing release]",
+  ];
+  const contentMissingAliasSpecs = options.includeContentMissingAliases === true
+    ? [
+      "files-missing[Alias for --no-files]",
+      "docs-missing[Alias for --no-docs]",
+    ]
+    : [];
+  const pairedSpecs = [
+    ["has-notes[Select only items that have notes]", "no-notes[Select only items with no notes]"],
+    ["has-learnings[Select only items that have learnings]", "no-learnings[Select only items with no learnings]"],
+    ["has-files[Select only items that have linked files]", "no-files[Select only items with no linked files]"],
+    ["has-docs[Select only items that have linked docs]", "no-docs[Select only items with no linked docs]"],
+    ["has-tests[Select only items that have linked tests]", "no-tests[Select only items with no linked tests]"],
+    ["has-comments[Select only items that have comments]", "no-comments[Select only items with no comments]"],
+    ["has-deps[Select only items that have dependencies]", "no-deps[Select only items with no dependencies]"],
+    ["has-body[Select only items with non-empty body]", "empty-body[Select only items with empty body]"],
+    [
+      "has-linked-command[Select only items that have a linked command]",
+      "no-linked-command[Select only items with no linked command]",
+    ],
+  ];
+  return renderZshArgumentSpecs([
+    ...[...missingSpecs, ...contentMissingAliasSpecs].map((spec) => `'--${options.missingPrefix}${spec}'`),
+    ...pairedSpecs.flatMap(([positive, negative]) => [
+      `'--${options.pairedPrefix}${positive}'`,
+      `'--${options.pairedPrefix}${negative}'`,
+    ]),
+  ]);
+}
+
+const ZSH_MUTATION_COLLECTION_ARGUMENT_SPECS = [
+  "'--comment[Comment seed author=<value>,created_at=<iso|now>,text=<value>]:comment'",
+  "'--note[Note seed author=<value>,created_at=<iso|now>,text=<value>]:note'",
+  "'--learning[Learning seed author=<value>,created_at=<iso|now>,text=<value>]:learning'",
+  "'--file[Linked file path=<value>,scope=<project|global>,note=<text>]:file'",
+  "'--test[Linked test command=<value>,path=<value>,scope=<project|global>]:test'",
+  "'--doc[Linked doc path=<value>,scope=<project|global>,note=<text>]:doc'",
+  "'--reminder[Reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>]:reminder'",
+  "'--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_*]:event'",
+  "'--type-option[Type option key=value or key=<name>,value=<value>]:type_option'",
+  "'--unset[Clear scalar metadata field by name]:field'",
+  "'--clear-deps[Clear dependency entries]'",
+  "'--clear-comments[Clear comments]'",
+  "'--clear-notes[Clear notes]'",
+  "'--clear-learnings[Clear learnings]'",
+  "'--clear-files[Clear linked files]'",
+  "'--clear-tests[Clear linked tests]'",
+  "'--clear-docs[Clear linked docs]'",
+  "'--clear-reminders[Clear reminders]'",
+  "'--clear-events[Clear events]'",
+  "'--clear-type-options[Clear type options]'",
+];
+
+function renderZshScheduleItemSpecs(kind: "reminder" | "event"): string {
+  const leadingSpecs = kind === "reminder"
+    ? [
+        "'--at[Reminder time (default +1d)]:at'",
+        "'--text[Reminder text (defaults to title)]:text'",
+      ]
+    : [
+        "'--start[Start time (ISO, now, or relative)]:start'",
+        "'--duration[Duration from start (default 1h)]:duration'",
+        "'--end[End time (overrides --duration)]:end'",
+        "'--location[Location]:location'",
+        "'--timezone[IANA timezone]:timezone'",
+        "'--all-day[Mark as an all-day event]'",
+      ];
+  return renderZshArgumentSpecs([
+    ...leadingSpecs,
+    "'--parent[Parent item id]:parent'",
+    "'--allow-missing-parent[Permit a parent id that does not exist yet]'",
+    "'--tags[Comma-separated tags]:tags'",
+    "'(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)'",
+    "'(-b --body)'{-b,--body}'[Item body]:body'",
+    "'(-d --description)'{-d,--description}'[Short description]:description'",
+    "'--author[Mutation author]:author'",
+    "'--message[History message]:message'",
+    "'--json[Output JSON]'",
+    "'--quiet[Suppress stdout]'",
+  ], { trailingContinuation: false });
+}
+
+function renderZshBulkSelectionFilterSpecs(action: "applying updates" | "closing", statusChoices: string, typeChoices: string, tagChoices: string): string {
+  return renderZshArgumentSpecs([
+    `'--filter-status[Filter by status before ${action}]:(${statusChoices})'`,
+    `'--filter-type[Filter by type before ${action}]:(${typeChoices})'`,
+    `'--filter-tag[Filter by tag before ${action}]:(${tagChoices})'`,
+    `'--filter-priority[Filter by priority before ${action}]:(0 1 2 3 4)'`,
+    "'--filter-deadline-before[Filter by deadline upper bound]:deadline'",
+    "'--filter-deadline-after[Filter by deadline lower bound]:deadline'",
+    "'--filter-updated-after[Filter by updated_at lower bound (ISO/relative)]:timestamp'",
+    "'--filter-updated-before[Filter by updated_at upper bound (ISO/relative)]:timestamp'",
+    "'--filter-created-after[Filter by created_at lower bound (ISO/relative)]:timestamp'",
+    "'--filter-created-before[Filter by created_at upper bound (ISO/relative)]:timestamp'",
+    `'--filter-assignee[Filter by assignee before ${action}]:assignee'`,
+    "'--filter-assignee-filter[Filter assignee presence]:(assigned unassigned)'",
+    "'--filter-parent[Filter by parent item ID]:parent'",
+    "'--filter-sprint[Filter by sprint]:sprint'",
+    "'--filter-release[Filter by release]:release'",
+  ]);
 }
 
 function renderFishRuntimeFieldFlagSpecs(commands: string[], runtimeFlags: string[] | undefined): string {
@@ -537,6 +754,13 @@ export function generateZshScript(
   const zshSearchRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.search);
   const zshCalendarRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.calendar);
   const zshContextRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.context);
+  const zshPresenceFilterFlags = renderZshPresenceFilterSpecs({
+    missingPrefix: "filter-",
+    pairedPrefix: "",
+    includeContentMissingAliases: true,
+  });
+  const zshBulkPresenceFilterFlags = renderZshPresenceFilterSpecs({ missingPrefix: "filter-", pairedPrefix: "filter-" });
+  const zshMutationCollectionFlags = renderZshArgumentSpecs(ZSH_MUTATION_COLLECTION_ARGUMENT_SPECS);
   const dynamicTagResolver = useEagerTagExpansion
     ? ""
     : `
@@ -561,75 +785,7 @@ _pm_tag_choices() {
 _pm_commands() {
   local -a commands
   commands=(
-    'init:Initialize pm storage for the current workspace'
-    'config:Read or update pm settings'
-    'extension:Manage extension lifecycle operations'
-    'package:Manage package lifecycle operations'
-    'packages:Alias for package'
-    'create:Create a new project management item'
-    'copy:Copy an existing item to a new ID'
-    'focus:Set/clear/show the session focused parent for new items'
-    'list:List active items with optional filters'
-    'list-all:List all items with optional filters'
-    'list-draft:List draft items with optional filters'
-    'list-open:List open items with optional filters'
-    'list-in-progress:List in-progress items with optional filters'
-    'list-blocked:List blocked items with optional filters'
-    'list-closed:List closed items with optional filters'
-    'list-canceled:List canceled items with optional filters'
-    'aggregate:Aggregate grouped item counts and numeric stats for governance queries'
-    'dedupe-audit:Audit potential duplicate items and emit merge suggestions'
-    'guide:Browse local progressive-disclosure guides'
-    'calendar:Show calendar views for deadlines and reminders'
-    'cal:Alias for calendar'
-    'context:Show a token-efficient project context snapshot'
-    'ctx:Alias for context'
-    'get:Show item details by ID'
-    'next:Recommend the next actionable (unblocked, ready) work item'
-    'search:Search items with keyword, semantic, or hybrid modes'
-    'reindex:Rebuild search artifacts'
-    'history:Show item history entries'
-    'history-compact:Compact history streams into a synthetic baseline + retained tail'
-    'history-redact:Redact sensitive literals/patterns and recompute history hashes'
-    'history-repair:Re-anchor a drifted history chain so pm health/validate report ok'
-    'schema:Manage custom item types and statuses in .agents/pm/schema/*.json'
-    'profile:List, show, apply, and lint project profiles (archetype schema/config/template/package bundles)'
-    'plan:Agent-optimized Plan item workflow (create/show/add-step/update-step/complete-step/link/approve/materialize)'
-    'activity:Show recent activity across items'
-    'restore:Restore an item to an earlier state'
-    'update:Update item fields and metadata'
-    'update-many:Bulk-update matched items with dry-run and rollback checkpoints'
-    'normalize:Normalize lifecycle metadata with dry-run planning or apply mode'
-    'close:Close an item (reason requirement follows governance settings)'
-    'close-many:Bulk-close matched items with an optional shared reason and rollback checkpoint'
-    'delete:Delete an item and record the change'
-    'append:Append text to an item body'
-    'comments:List or add comments for an item'
-    'comments-audit:Audit latest comments or full history across filtered items'
-    'notes:List or add notes for an item'
-    'learnings:List or add learnings for an item'
-    'files:Manage linked files'
-    'docs:Manage linked docs'
-    'deps:Show dependency relationships for an item'
-    'test:Manage linked tests and optionally run them'
-    'test-all:Run linked tests across matching items'
-    'test-runs:Manage background linked-test runs'
-    'stats:Show project tracker statistics'
-    'health:Show project tracker health checks'
-    'validate:Run standalone validation checks'
-    'gc:Clean optional cache artifacts'
-    'contracts:Show machine-readable command and schema contracts'
-    'claim:Claim an item for active work'
-    'release:Release the active claim for an item'
-    'start-task:Lifecycle alias to claim and set in_progress'
-    'pause-task:Lifecycle alias to reopen and release claim'
-    'close-task:Lifecycle alias to close and release claim'
-    'meet:Shortcut to create a Meeting with scheduling defaults'
-    'event:Shortcut to create an Event with scheduling defaults'
-    'remind:Shortcut to create a Reminder from a point in time'
-    'templates:Manage reusable create templates'
-    'completion:Generate shell completion'
-    'help:Display help for a command'
+${renderZshCommandDescriptions()}
   )
   _describe 'command' commands
 }
@@ -672,29 +828,7 @@ _pm() {
             '--assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
             '--sprint[Filter by sprint]:sprint' \\
             '--release[Filter by release]:release' \\
-            '--filter-reviewer-missing[Select only items missing reviewer]' \\
-            '--filter-risk-missing[Select only items missing risk]' \\
-            '--filter-confidence-missing[Select only items missing confidence]' \\
-            '--filter-sprint-missing[Select only items missing sprint]' \\
-            '--filter-release-missing[Select only items missing release]' \\
-            '--has-notes[Select only items that have notes]' \\
-            '--no-notes[Select only items with no notes]' \\
-            '--has-learnings[Select only items that have learnings]' \\
-            '--no-learnings[Select only items with no learnings]' \\
-            '--has-files[Select only items that have linked files]' \\
-            '--no-files[Select only items with no linked files]' \\
-            '--has-docs[Select only items that have linked docs]' \\
-            '--no-docs[Select only items with no linked docs]' \\
-            '--has-tests[Select only items that have linked tests]' \\
-            '--no-tests[Select only items with no linked tests]' \\
-            '--has-comments[Select only items that have comments]' \\
-            '--no-comments[Select only items with no comments]' \\
-            '--has-deps[Select only items that have dependencies]' \\
-            '--no-deps[Select only items with no dependencies]' \\
-            '--has-body[Select only items with non-empty body]' \\
-            '--empty-body[Select only items with empty body]' \\
-            '--has-linked-command[Select only items that have a linked command]' \\
-            '--no-linked-command[Select only items with no linked command]' \\
+${zshPresenceFilterFlags}
             '--limit[Limit returned item count]:number' \\
             '--offset[Skip the first n matching rows before limit]:number' \\
             '--no-truncate[Return every matched row, overriding --limit]' \\
@@ -808,37 +942,11 @@ ${zshCreateRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         meet|event)
           _arguments \\
-            '--start[Start time (ISO, now, or relative)]:start' \\
-            '--duration[Duration from start (default 1h)]:duration' \\
-            '--end[End time (overrides --duration)]:end' \\
-            '--location[Location]:location' \\
-            '--timezone[IANA timezone]:timezone' \\
-            '--all-day[Mark as an all-day event]' \\
-            '--parent[Parent item id]:parent' \\
-            '--allow-missing-parent[Permit a parent id that does not exist yet]' \\
-            '--tags[Comma-separated tags]:tags' \\
-            '(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)' \\
-            '(-b --body)'{-b,--body}'[Item body]:body' \\
-            '(-d --description)'{-d,--description}'[Short description]:description' \\
-            '--author[Mutation author]:author' \\
-            '--message[History message]:message' \\
-            '--json[Output JSON]' \\
-            '--quiet[Suppress stdout]'
+${renderZshScheduleItemSpecs("event")}
           ;;
         remind)
           _arguments \\
-            '--at[Reminder time (default +1d)]:at' \\
-            '--text[Reminder text (defaults to title)]:text' \\
-            '--parent[Parent item id]:parent' \\
-            '--allow-missing-parent[Permit a parent id that does not exist yet]' \\
-            '--tags[Comma-separated tags]:tags' \\
-            '(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)' \\
-            '(-b --body)'{-b,--body}'[Item body]:body' \\
-            '(-d --description)'{-d,--description}'[Short description]:description' \\
-            '--author[Mutation author]:author' \\
-            '--message[History message]:message' \\
-            '--json[Output JSON]' \\
-            '--quiet[Suppress stdout]'
+${renderZshScheduleItemSpecs("reminder")}
           ;;
         update)
           _arguments \\
@@ -855,26 +963,7 @@ ${zshCreateRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--remove-tags[Remove tags from the existing list]:tags' \\
             '--expected[Short alias for --expected-result]:expected_result' \\
             '--actual[Short alias for --actual-result]:actual_result' \\
-            '--comment[Comment seed author=<value>,created_at=<iso|now>,text=<value>]:comment' \\
-            '--note[Note seed author=<value>,created_at=<iso|now>,text=<value>]:note' \\
-            '--learning[Learning seed author=<value>,created_at=<iso|now>,text=<value>]:learning' \\
-            '--file[Linked file path=<value>,scope=<project|global>,note=<text>]:file' \\
-            '--test[Linked test command=<value>,path=<value>,scope=<project|global>]:test' \\
-            '--doc[Linked doc path=<value>,scope=<project|global>,note=<text>]:doc' \\
-            '--reminder[Reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>]:reminder' \\
-            '--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_*]:event' \\
-            '--type-option[Type option key=value or key=<name>,value=<value>]:type_option' \\
-            '--unset[Clear scalar metadata field by name]:field' \\
-            '--clear-deps[Clear dependency entries]' \\
-            '--clear-comments[Clear comments]' \\
-            '--clear-notes[Clear notes]' \\
-            '--clear-learnings[Clear learnings]' \\
-            '--clear-files[Clear linked files]' \\
-            '--clear-tests[Clear linked tests]' \\
-            '--clear-docs[Clear linked docs]' \\
-            '--clear-reminders[Clear reminders]' \\
-            '--clear-events[Clear events]' \\
-            '--clear-type-options[Clear type options]' \\
+${zshMutationCollectionFlags}
 ${zshUpdateRuntimeFieldFlags}            '--allow-audit-update[Allow non-owner metadata-only audit updates without requiring --force]' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
@@ -884,48 +973,12 @@ ${zshUpdateRuntimeFieldFlags}            '--allow-audit-update[Allow non-owner m
           ;;
         update-many)
           _arguments \\
-            '--filter-status[Filter by status before applying updates]:(${statusChoices})' \\
-            '--filter-type[Filter by type before applying updates]:(${typeChoices})' \\
-            '--filter-tag[Filter by tag before applying updates]:(${zshTagChoices})' \\
-            '--filter-priority[Filter by priority before applying updates]:(0 1 2 3 4)' \\
-            '--filter-deadline-before[Filter by deadline upper bound]:deadline' \\
-            '--filter-deadline-after[Filter by deadline lower bound]:deadline' \\
-            '--filter-updated-after[Filter by updated_at lower bound (ISO/relative)]:timestamp' \\
-            '--filter-updated-before[Filter by updated_at upper bound (ISO/relative)]:timestamp' \\
-            '--filter-created-after[Filter by created_at lower bound (ISO/relative)]:timestamp' \\
-            '--filter-created-before[Filter by created_at upper bound (ISO/relative)]:timestamp' \\
-            '--filter-assignee[Filter by assignee before applying updates]:assignee' \\
-            '--filter-assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
-            '--filter-parent[Filter by parent item ID]:parent' \\
-            '--filter-sprint[Filter by sprint]:sprint' \\
-            '--filter-release[Filter by release]:release' \\
+${renderZshBulkSelectionFilterSpecs("applying updates", statusChoices, typeChoices, zshTagChoices)}
             '--filter-ac-missing[Select only items missing acceptance_criteria]' \\
             '--filter-estimates-missing[Select only items missing estimated_minutes]' \\
             '--filter-resolution-missing[Select only terminal items missing resolution]' \\
             '--filter-metadata-missing[Select only items missing any tracked metadata]' \\
-            '--filter-reviewer-missing[Select only items missing reviewer]' \\
-            '--filter-risk-missing[Select only items missing risk]' \\
-            '--filter-confidence-missing[Select only items missing confidence]' \\
-            '--filter-sprint-missing[Select only items missing sprint]' \\
-            '--filter-release-missing[Select only items missing release]' \\
-            '--filter-has-notes[Select only items that have notes]' \\
-            '--filter-no-notes[Select only items with no notes]' \\
-            '--filter-has-learnings[Select only items that have learnings]' \\
-            '--filter-no-learnings[Select only items with no learnings]' \\
-            '--filter-has-files[Select only items that have linked files]' \\
-            '--filter-no-files[Select only items with no linked files]' \\
-            '--filter-has-docs[Select only items that have linked docs]' \\
-            '--filter-no-docs[Select only items with no linked docs]' \\
-            '--filter-has-tests[Select only items that have linked tests]' \\
-            '--filter-no-tests[Select only items with no linked tests]' \\
-            '--filter-has-comments[Select only items that have comments]' \\
-            '--filter-no-comments[Select only items with no comments]' \\
-            '--filter-has-deps[Select only items that have dependencies]' \\
-            '--filter-no-deps[Select only items with no dependencies]' \\
-            '--filter-has-body[Select only items with non-empty body]' \\
-            '--filter-empty-body[Select only items with empty body]' \\
-            '--filter-has-linked-command[Select only items that have a linked command]' \\
-            '--filter-no-linked-command[Select only items with no linked command]' \\
+${zshBulkPresenceFilterFlags}
             '--ids[Explicit comma-separated ID allowlist]:ids' \\
             '--limit[Limit matched item count]:number' \\
             '--offset[Skip first n matched rows]:number' \\
@@ -974,26 +1027,7 @@ ${zshUpdateRuntimeFieldFlags}            '--allow-audit-update[Allow non-owner m
             '--dep-remove[Dependency removal selector id=<id>,kind=<kind>,author=<author>,created_at=<timestamp>]:dep_remove' \\
             '--replace-deps[Atomically replace dependencies with provided --dep values]' \\
             '--replace-tests[Atomically replace linked tests with provided --test values]' \\
-            '--comment[Comment seed author=<value>,created_at=<iso|now>,text=<value>]:comment' \\
-            '--note[Note seed author=<value>,created_at=<iso|now>,text=<value>]:note' \\
-            '--learning[Learning seed author=<value>,created_at=<iso|now>,text=<value>]:learning' \\
-            '--file[Linked file path=<value>,scope=<project|global>,note=<text>]:file' \\
-            '--test[Linked test command=<value>,path=<value>,scope=<project|global>]:test' \\
-            '--doc[Linked doc path=<value>,scope=<project|global>,note=<text>]:doc' \\
-            '--reminder[Reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>]:reminder' \\
-            '--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_*]:event' \\
-            '--type-option[Type option key=value or key=<name>,value=<value>]:type_option' \\
-            '--unset[Clear scalar metadata field by name]:field' \\
-            '--clear-deps[Clear dependency entries]' \\
-            '--clear-comments[Clear comments]' \\
-            '--clear-notes[Clear notes]' \\
-            '--clear-learnings[Clear learnings]' \\
-            '--clear-files[Clear linked files]' \\
-            '--clear-tests[Clear linked tests]' \\
-            '--clear-docs[Clear linked docs]' \\
-            '--clear-reminders[Clear reminders]' \\
-            '--clear-events[Clear events]' \\
-            '--clear-type-options[Clear type options]' \\
+${zshMutationCollectionFlags}
 ${zshUpdateManyRuntimeFieldFlags}            '--allow-audit-update[Allow non-owner metadata-only audit updates without requiring --force]' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
@@ -1003,44 +1037,8 @@ ${zshUpdateManyRuntimeFieldFlags}            '--allow-audit-update[Allow non-own
           ;;
         close-many)
           _arguments \\
-            '--filter-status[Filter by status before closing]:(${statusChoices})' \\
-            '--filter-type[Filter by type before closing]:(${typeChoices})' \\
-            '--filter-tag[Filter by tag before closing]:(${zshTagChoices})' \\
-            '--filter-priority[Filter by priority before closing]:(0 1 2 3 4)' \\
-            '--filter-deadline-before[Filter by deadline upper bound]:deadline' \\
-            '--filter-deadline-after[Filter by deadline lower bound]:deadline' \\
-            '--filter-updated-after[Filter by updated_at lower bound (ISO/relative)]:timestamp' \\
-            '--filter-updated-before[Filter by updated_at upper bound (ISO/relative)]:timestamp' \\
-            '--filter-created-after[Filter by created_at lower bound (ISO/relative)]:timestamp' \\
-            '--filter-created-before[Filter by created_at upper bound (ISO/relative)]:timestamp' \\
-            '--filter-assignee[Filter by assignee before closing]:assignee' \\
-            '--filter-assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
-            '--filter-parent[Filter by parent item ID]:parent' \\
-            '--filter-sprint[Filter by sprint]:sprint' \\
-            '--filter-release[Filter by release]:release' \\
-            '--filter-reviewer-missing[Select only items missing reviewer]' \\
-            '--filter-risk-missing[Select only items missing risk]' \\
-            '--filter-confidence-missing[Select only items missing confidence]' \\
-            '--filter-sprint-missing[Select only items missing sprint]' \\
-            '--filter-release-missing[Select only items missing release]' \\
-            '--filter-has-notes[Select only items that have notes]' \\
-            '--filter-no-notes[Select only items with no notes]' \\
-            '--filter-has-learnings[Select only items that have learnings]' \\
-            '--filter-no-learnings[Select only items with no learnings]' \\
-            '--filter-has-files[Select only items that have linked files]' \\
-            '--filter-no-files[Select only items with no linked files]' \\
-            '--filter-has-docs[Select only items that have linked docs]' \\
-            '--filter-no-docs[Select only items with no linked docs]' \\
-            '--filter-has-tests[Select only items that have linked tests]' \\
-            '--filter-no-tests[Select only items with no linked tests]' \\
-            '--filter-has-comments[Select only items that have comments]' \\
-            '--filter-no-comments[Select only items with no comments]' \\
-            '--filter-has-deps[Select only items that have dependencies]' \\
-            '--filter-no-deps[Select only items with no dependencies]' \\
-            '--filter-has-body[Select only items with non-empty body]' \\
-            '--filter-empty-body[Select only items with empty body]' \\
-            '--filter-has-linked-command[Select only items that have a linked command]' \\
-            '--filter-no-linked-command[Select only items with no linked command]' \\
+${renderZshBulkSelectionFilterSpecs("closing", statusChoices, typeChoices, zshTagChoices)}
+${zshBulkPresenceFilterFlags}
             '--ids[Explicit comma-separated ID allowlist]:ids' \\
             '--limit[Limit matched item count]:number' \\
             '--offset[Skip first n matched rows]:number' \\
@@ -1177,29 +1175,7 @@ ${zshContextRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--sprint[Filter by sprint]:value' \\
             '--release[Filter by release]:value' \\
             '--parent[Filter by parent item ID]:value' \\
-            '--filter-reviewer-missing[Select only items missing reviewer]' \\
-            '--filter-risk-missing[Select only items missing risk]' \\
-            '--filter-confidence-missing[Select only items missing confidence]' \\
-            '--filter-sprint-missing[Select only items missing sprint]' \\
-            '--filter-release-missing[Select only items missing release]' \\
-            '--has-notes[Select only items that have notes]' \\
-            '--no-notes[Select only items with no notes]' \\
-            '--has-learnings[Select only items that have learnings]' \\
-            '--no-learnings[Select only items with no learnings]' \\
-            '--has-files[Select only items that have linked files]' \\
-            '--no-files[Select only items with no linked files]' \\
-            '--has-docs[Select only items that have linked docs]' \\
-            '--no-docs[Select only items with no linked docs]' \\
-            '--has-tests[Select only items that have linked tests]' \\
-            '--no-tests[Select only items with no linked tests]' \\
-            '--has-comments[Select only items that have comments]' \\
-            '--no-comments[Select only items with no comments]' \\
-            '--has-deps[Select only items that have dependencies]' \\
-            '--no-deps[Select only items with no dependencies]' \\
-            '--has-body[Select only items with non-empty body]' \\
-            '--empty-body[Select only items with empty body]' \\
-            '--has-linked-command[Select only items that have a linked command]' \\
-            '--no-linked-command[Select only items with no linked command]' \\
+${zshPresenceFilterFlags}
 ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -1482,20 +1458,6 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--tail[Tail number of lines]:number' \\
             '--force[Force stop with SIGKILL]' \\
             '--author[Resume author]:author' \\
-            '--json[Output JSON]' \\
-            '--quiet[Suppress stdout]'
-          ;;
-        init)
-          _arguments \\
-            '--preset[Governance preset for new setups]:preset:(minimal default strict)' \\
-            '--defaults[Use non-interactive setup defaults]' \\
-            '-y[Alias for --defaults]' \\
-            '--yes[Alias for --defaults]' \\
-            '--author[Set the default mutation author for this project]:author' \\
-            '--agent-guidance[Agent guidance mode]:mode:(ask add skip status)' \\
-            '--type-preset[Register domain item types]:type-preset:(agile ops research)' \\
-            '--with-packages[Install bundled first-party packages during initialization]' \\
-            '--verbose[Include the full resolved settings tree in init output]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -1814,74 +1776,7 @@ ${useDynamicTypeExpansion ? renderFishDynamicChoiceResolver("type", "completion-
 ${renderFishDynamicChoiceResolver("status", "completion-statuses", statusFallbackChoices)}
 
 # Subcommands
-complete -c pm -n __pm_no_subcommand -a init          -d 'Initialize pm storage for the current workspace'
-complete -c pm -n __pm_no_subcommand -a config        -d 'Read or update pm settings'
-complete -c pm -n __pm_no_subcommand -a extension     -d 'Manage extension lifecycle operations'
-complete -c pm -n __pm_no_subcommand -a package       -d 'Manage package lifecycle operations'
-complete -c pm -n __pm_no_subcommand -a packages      -d 'Alias for package'
-complete -c pm -n __pm_no_subcommand -a create        -d 'Create a new project management item'
-complete -c pm -n __pm_no_subcommand -a copy          -d 'Copy an existing item to a new ID'
-complete -c pm -n __pm_no_subcommand -a focus         -d 'Set/clear/show the session focused parent for new items'
-complete -c pm -n __pm_no_subcommand -a list          -d 'List active items with optional filters'
-complete -c pm -n __pm_no_subcommand -a list-all      -d 'List all items with optional filters'
-complete -c pm -n __pm_no_subcommand -a list-draft    -d 'List draft items with optional filters'
-complete -c pm -n __pm_no_subcommand -a list-open     -d 'List open items with optional filters'
-complete -c pm -n __pm_no_subcommand -a list-in-progress -d 'List in-progress items with optional filters'
-complete -c pm -n __pm_no_subcommand -a list-blocked  -d 'List blocked items with optional filters'
-complete -c pm -n __pm_no_subcommand -a list-closed   -d 'List closed items with optional filters'
-complete -c pm -n __pm_no_subcommand -a list-canceled -d 'List canceled items with optional filters'
-complete -c pm -n __pm_no_subcommand -a aggregate     -d 'Aggregate grouped item counts and numeric stats for governance queries'
-complete -c pm -n __pm_no_subcommand -a dedupe-audit  -d 'Audit potential duplicate items and emit merge suggestions'
-complete -c pm -n __pm_no_subcommand -a guide         -d 'Browse local progressive-disclosure guides'
-complete -c pm -n __pm_no_subcommand -a calendar      -d 'Show deadline/reminder calendar views'
-complete -c pm -n __pm_no_subcommand -a cal           -d 'Alias for calendar'
-complete -c pm -n __pm_no_subcommand -a context       -d 'Show a token-efficient project context snapshot'
-complete -c pm -n __pm_no_subcommand -a ctx           -d 'Alias for context'
-complete -c pm -n __pm_no_subcommand -a get           -d 'Show item details by ID'
-complete -c pm -n __pm_no_subcommand -a next          -d 'Recommend the next actionable (unblocked, ready) work item'
-complete -c pm -n __pm_no_subcommand -a search        -d 'Search items with keyword, semantic, or hybrid modes'
-complete -c pm -n __pm_no_subcommand -a reindex       -d 'Rebuild search artifacts'
-complete -c pm -n __pm_no_subcommand -a history       -d 'Show item history entries'
-complete -c pm -n __pm_no_subcommand -a history-compact -d 'Compact history streams into a synthetic baseline + retained tail'
-complete -c pm -n __pm_no_subcommand -a history-redact -d 'Redact sensitive literals/patterns and recompute history hashes'
-complete -c pm -n __pm_no_subcommand -a history-repair -d 'Re-anchor a drifted history chain so pm health/validate report ok'
-complete -c pm -n __pm_no_subcommand -a schema        -d 'Inspect and manage runtime schema'
-complete -c pm -n __pm_no_subcommand -a profile       -d 'List, show, apply, and lint project profiles (archetype bundles)'
-complete -c pm -n __pm_no_subcommand -a plan          -d 'Agent-optimized Plan workflow (create/show/add-step/update-step/complete-step/link/approve/materialize)'
-complete -c pm -n __pm_no_subcommand -a activity      -d 'Show recent activity across items'
-complete -c pm -n __pm_no_subcommand -a restore       -d 'Restore an item to an earlier state'
-complete -c pm -n __pm_no_subcommand -a update        -d 'Update item fields and metadata'
-complete -c pm -n __pm_no_subcommand -a update-many   -d 'Bulk-update matched items with dry-run and rollback checkpoints'
-complete -c pm -n __pm_no_subcommand -a normalize     -d 'Normalize lifecycle metadata with dry-run planning or apply mode'
-complete -c pm -n __pm_no_subcommand -a close         -d 'Close an item (reason requirement follows governance settings)'
-complete -c pm -n __pm_no_subcommand -a close-many    -d 'Bulk-close matched items with an optional shared reason and rollback checkpoint'
-complete -c pm -n __pm_no_subcommand -a delete        -d 'Delete an item and record the change'
-complete -c pm -n __pm_no_subcommand -a append        -d 'Append text to an item body'
-complete -c pm -n __pm_no_subcommand -a comments      -d 'List or add comments for an item'
-complete -c pm -n __pm_no_subcommand -a comments-audit -d 'Audit latest comments or full history across filtered items'
-complete -c pm -n __pm_no_subcommand -a notes         -d 'List or add notes for an item'
-complete -c pm -n __pm_no_subcommand -a learnings     -d 'List or add learnings for an item'
-complete -c pm -n __pm_no_subcommand -a files         -d 'Manage linked files'
-complete -c pm -n __pm_no_subcommand -a docs          -d 'Manage linked docs'
-complete -c pm -n __pm_no_subcommand -a deps          -d 'Show dependency relationships for an item'
-complete -c pm -n __pm_no_subcommand -a test          -d 'Manage linked tests and optionally run them'
-complete -c pm -n __pm_no_subcommand -a test-all      -d 'Run linked tests across matching items'
-complete -c pm -n __pm_no_subcommand -a test-runs     -d 'Manage background linked-test runs'
-complete -c pm -n __pm_no_subcommand -a stats         -d 'Show project tracker statistics'
-complete -c pm -n __pm_no_subcommand -a health        -d 'Show project tracker health checks'
-complete -c pm -n __pm_no_subcommand -a validate      -d 'Run standalone validation checks'
-complete -c pm -n __pm_no_subcommand -a gc            -d 'Clean optional cache artifacts'
-complete -c pm -n __pm_no_subcommand -a contracts     -d 'Show machine-readable command and schema contracts'
-complete -c pm -n __pm_no_subcommand -a claim         -d 'Claim an item for active work'
-complete -c pm -n __pm_no_subcommand -a release       -d 'Release the active claim for an item'
-complete -c pm -n __pm_no_subcommand -a start-task    -d 'Lifecycle alias to claim and set in-progress'
-complete -c pm -n __pm_no_subcommand -a pause-task    -d 'Lifecycle alias to reopen and release claim'
-complete -c pm -n __pm_no_subcommand -a close-task    -d 'Lifecycle alias to close and release claim'
-complete -c pm -n __pm_no_subcommand -a meet          -d 'Shortcut to create a Meeting with scheduling defaults'
-complete -c pm -n __pm_no_subcommand -a event         -d 'Shortcut to create an Event with scheduling defaults'
-complete -c pm -n __pm_no_subcommand -a remind        -d 'Shortcut to create a Reminder from a point in time'
-complete -c pm -n __pm_no_subcommand -a templates     -d 'Manage reusable create templates'
-complete -c pm -n __pm_no_subcommand -a completion    -d 'Generate shell completion'
+${renderFishCommandDescriptions()}
 
 # list* flags
 for list_cmd in ${listCmds}
@@ -1922,8 +1817,10 @@ for list_cmd in ${listCmds}
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l no-learnings         -d 'Select only items with no learnings'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l has-files            -d 'Select only items that have linked files'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l no-files             -d 'Select only items with no linked files'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l filter-files-missing -d 'Alias for --no-files'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l has-docs             -d 'Select only items that have linked docs'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l no-docs              -d 'Select only items with no linked docs'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l filter-docs-missing  -d 'Alias for --no-docs'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l has-tests            -d 'Select only items that have linked tests'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l no-tests             -d 'Select only items with no linked tests'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l has-comments         -d 'Select only items that have comments'
@@ -2226,8 +2123,10 @@ complete -c pm -n '__fish_seen_subcommand_from search' -l has-learnings      -d 
 complete -c pm -n '__fish_seen_subcommand_from search' -l no-learnings       -d 'Select only items with no learnings'
 complete -c pm -n '__fish_seen_subcommand_from search' -l has-files          -d 'Select only items that have linked files'
 complete -c pm -n '__fish_seen_subcommand_from search' -l no-files           -d 'Select only items with no linked files'
+complete -c pm -n '__fish_seen_subcommand_from search' -l filter-files-missing -d 'Alias for --no-files'
 complete -c pm -n '__fish_seen_subcommand_from search' -l has-docs           -d 'Select only items that have linked docs'
 complete -c pm -n '__fish_seen_subcommand_from search' -l no-docs            -d 'Select only items with no linked docs'
+complete -c pm -n '__fish_seen_subcommand_from search' -l filter-docs-missing  -d 'Alias for --no-docs'
 complete -c pm -n '__fish_seen_subcommand_from search' -l has-tests          -d 'Select only items that have linked tests'
 complete -c pm -n '__fish_seen_subcommand_from search' -l no-tests           -d 'Select only items with no linked tests'
 complete -c pm -n '__fish_seen_subcommand_from search' -l has-comments       -d 'Select only items that have comments'

@@ -55,6 +55,14 @@ describe("update command helper coverage", () => {
     expect(nonLegacyScalar.tags).toBe("alpha,beta");
   });
 
+  it("keeps rank scoped to order when checking legacy scalar clear compatibility", () => {
+    const normalized = _testOnlyUpdateCommand.normalizeLegacyNoneUpdateOptions({
+      rank: "none",
+    } as UpdateCommandOptions);
+    expect(normalized.unset).toEqual(["order"]);
+    expect(normalized.rank).toBeUndefined();
+  });
+
   it("falls back to the option key when canonical unset lookup is undefined", () => {
     const originalMapGet = Map.prototype.get;
     const mapGetSpy = vi.spyOn(Map.prototype, "get").mockImplementation(function (

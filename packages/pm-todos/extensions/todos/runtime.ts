@@ -11,11 +11,10 @@ import type {
   ItemMetadata,
   ItemStatus,
   ItemType,
-  LinkedDoc,
-  LinkedFile,
-  LinkedTest,
-  LogNote,
   PmSettings,
+  ToImportLinkedArtifactsOptions,
+  ToImportLinkedTestsOptions,
+  ToImportLogEntriesOptions,
 } from "@unbrained/pm-cli/sdk";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
@@ -132,6 +131,14 @@ interface TodosSdkModule {
   selectImportAuthor: (explicitAuthor: string | undefined, settingsAuthor: string) => string;
   splitFrontMatter: (content: string) => { frontMatter: string; body: string };
   toEstimatedMinutesValue: (value: unknown) => number | undefined;
+  toImportBoolean: (value: unknown) => boolean | undefined;
+  toImportConfidence: (value: unknown, allowedTextValues: readonly string[]) => ItemMetadata["confidence"];
+  toImportInteger: (value: unknown) => number | undefined;
+  toImportLinkedDocs: (value: unknown, options?: ToImportLinkedArtifactsOptions) => ItemMetadata["docs"];
+  toImportLinkedFiles: (value: unknown, options?: ToImportLinkedArtifactsOptions) => ItemMetadata["files"];
+  toImportLinkedTests: (value: unknown, options?: ToImportLinkedTestsOptions) => ItemMetadata["tests"];
+  toImportLogEntries: (value: unknown, options: ToImportLogEntriesOptions) => ItemMetadata["comments"];
+  toImportNormalizedEnum: <T extends readonly string[]>(value: unknown, allowed: T) => T[number] | undefined;
   toImportPriority: (value: unknown) => 0 | 1 | 2 | 3 | 4;
   toImportStatus: (value: unknown) => ItemStatus;
   toImportTags: (value: unknown) => string[];
@@ -168,6 +175,14 @@ const TODOS_SDK_FUNCTION_EXPORTS = [
   "selectImportAuthor",
   "splitFrontMatter",
   "toEstimatedMinutesValue",
+  "toImportBoolean",
+  "toImportConfidence",
+  "toImportInteger",
+  "toImportLinkedDocs",
+  "toImportLinkedFiles",
+  "toImportLinkedTests",
+  "toImportLogEntries",
+  "toImportNormalizedEnum",
   "toImportPriority",
   "toImportStatus",
   "toImportTags",
@@ -244,6 +259,14 @@ const {
   selectImportAuthor,
   splitFrontMatter,
   toEstimatedMinutesValue,
+  toImportBoolean,
+  toImportConfidence,
+  toImportInteger,
+  toImportLinkedDocs,
+  toImportLinkedFiles,
+  toImportLinkedTests,
+  toImportLogEntries,
+  toImportNormalizedEnum,
   toImportPriority,
   toImportStatus,
   toImportTags,
@@ -256,6 +279,7 @@ const {
 // confidence/enum coercion) stay local below.
 const toNonEmptyString = toNonEmptyImportString;
 const toEstimatedMinutes = toEstimatedMinutesValue;
+const toInteger = toImportInteger;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -273,122 +297,22 @@ function toIsoString(value: unknown): string | undefined {
   return new Date(timestamp).toISOString();
 }
 
-function toInteger(value: unknown): number | undefined {
-  if (typeof value === "number" && Number.isInteger(value)) {
-    return value;
-  }
-  if (typeof value === "string" && value.trim().length > 0) {
-    const parsed = Number(value);
-    if (Number.isInteger(parsed)) {
-      return parsed;
-    }
-  }
-  return undefined;
-}
-
 const toPriority: (value: unknown) => PriorityValue = toImportPriority;
-
-function toConfidence(value: unknown): ItemMetadata["confidence"] | undefined {
-  if (typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 100) {
-    return value;
-  }
-  if (typeof value !== "string") {
-    return undefined;
-  }
-  const normalized = value.trim().toLowerCase();
-  if (normalized.length === 0) {
-    return undefined;
-  }
-  if (normalized === "med") {
-    return "medium";
-  }
-  if (CONFIDENCE_TEXT_VALUES.includes(normalized as (typeof CONFIDENCE_TEXT_VALUES)[number])) {
-    return normalized as (typeof CONFIDENCE_TEXT_VALUES)[number];
-  }
-  const parsed = Number(normalized);
-  if (Number.isInteger(parsed) && parsed >= 0 && parsed <= 100) {
-    return parsed;
-  }
-  return undefined;
-}
-
-function toNormalizedEnum<T extends readonly string[]>(
-  value: unknown,
-  allowed: T,
-): T[number] | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-  const normalized = value.trim().toLowerCase();
-  if (normalized.length === 0) {
-    return undefined;
-  }
-  const candidate = normalized === "med" ? "medium" : normalized;
-  if (allowed.includes(candidate as T[number])) {
-    return candidate as T[number];
-  }
-  return undefined;
-}
-
-function toBoolean(value: unknown): boolean | undefined {
-  if (typeof value === "boolean") {
-    return value;
-  }
-  if (typeof value === "string") {
-    const normalized = value.trim().toLowerCase();
-    if (normalized === "true" || normalized === "1") {
-      return true;
-    }
-    if (normalized === "false" || normalized === "0") {
-      return false;
-    }
-  }
-  if (typeof value === "number") {
-    if (value === 1) {
-      return true;
-    }
-    if (value === 0) {
-      return false;
-    }
-  }
-  return undefined;
-}
 
 const toTags = toImportTags;
 
-function toLinkScope(value: unknown): "project" | "global" {
-  return toNonEmptyString(value)?.toLowerCase() === "global" ? "global" : "project";
-}
+const TODOS_LOG_ENTRY_OPTIONS = {
+  allowScalar: true,
+  textKeys: ["text"],
+  toIsoString,
+} satisfies Partial<ToImportLogEntriesOptions>;
 
-function toStringList(value: unknown): string[] | undefined {
-  if (!Array.isArray(value)) {
-    return undefined;
-  }
-  const entries = value
-    .map((entry) => toNonEmptyString(entry))
-    .filter((entry): entry is string => entry !== undefined);
-  return entries.length > 0 ? entries : undefined;
-}
-
-function toStringMap(value: unknown): Record<string, string> | undefined {
-  if (!isRecord(value)) {
-    return undefined;
-  }
-  const entries = Object.entries(value)
-    .map(([key, entryValue]) => [key.trim(), toNonEmptyString(entryValue)] as const)
-    .filter((entry): entry is readonly [string, string] => entry[0].length > 0 && entry[1] !== undefined);
-  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
-}
-
-function toNumberMap(value: unknown): Record<string, number> | undefined {
-  if (!isRecord(value)) {
-    return undefined;
-  }
-  const entries = Object.entries(value)
-    .map(([key, entryValue]) => [key.trim(), toInteger(entryValue)] as const)
-    .filter((entry): entry is readonly [string, number] => entry[0].length > 0 && entry[1] !== undefined);
-  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
-}
+const TODOS_TEST_OPTIONS = {
+  includeExtendedAssertions: true,
+  integerTimeout: true,
+  timeoutMinimum: 0,
+  timeoutExclusiveMinimum: true,
+} satisfies ToImportLinkedTestsOptions;
 
 function toDependencyEntries(value: unknown, fallbackCreatedAt: string): ItemMetadata["dependencies"] {
   if (!Array.isArray(value)) {
@@ -417,138 +341,6 @@ function toDependencyEntries(value: unknown, fallbackCreatedAt: string): ItemMet
     });
   }
   return dependencies.length > 0 ? dependencies : undefined;
-}
-
-function toLogEntries(value: unknown, fallbackCreatedAt: string, fallbackAuthor: string): LogNote[] | undefined {
-  if (!Array.isArray(value)) {
-    return undefined;
-  }
-  const entries = value
-    .map((entry) => {
-      if (typeof entry === "string") {
-        const text = toNonEmptyString(entry);
-        return text
-          ? {
-              created_at: fallbackCreatedAt,
-              author: fallbackAuthor,
-              text,
-            }
-          : undefined;
-      }
-      if (!isRecord(entry)) {
-        return undefined;
-      }
-      const text = toNonEmptyString(entry.text);
-      if (!text) {
-        return undefined;
-      }
-      return {
-        created_at: toIsoString(entry.created_at) ?? fallbackCreatedAt,
-        author: toNonEmptyString(entry.author) ?? fallbackAuthor,
-        text,
-      };
-    })
-    .filter((entry): entry is LogNote => entry !== undefined);
-  return entries.length > 0 ? entries : undefined;
-}
-
-function toLinkedFiles(value: unknown): LinkedFile[] | undefined {
-  if (!Array.isArray(value)) {
-    return undefined;
-  }
-  const entries = value
-    .map((entry) => {
-      if (typeof entry === "string") {
-        const filePath = toNonEmptyString(entry);
-        return filePath ? { path: filePath, scope: "project" } : undefined;
-      }
-      if (!isRecord(entry)) {
-        return undefined;
-      }
-      const filePath = toNonEmptyString(entry.path);
-      if (!filePath) {
-        return undefined;
-      }
-      return {
-        path: filePath,
-        scope: toLinkScope(entry.scope),
-        note: toNonEmptyString(entry.note),
-      };
-    })
-    .filter((entry): entry is LinkedFile => entry !== undefined);
-  return entries.length > 0 ? entries : undefined;
-}
-
-function toLinkedDocs(value: unknown): LinkedDoc[] | undefined {
-  if (!Array.isArray(value)) {
-    return undefined;
-  }
-  const entries = value
-    .map((entry) => {
-      if (typeof entry === "string") {
-        const docPath = toNonEmptyString(entry);
-        return docPath ? { path: docPath, scope: "project" } : undefined;
-      }
-      if (!isRecord(entry)) {
-        return undefined;
-      }
-      const docPath = toNonEmptyString(entry.path);
-      if (!docPath) {
-        return undefined;
-      }
-      return {
-        path: docPath,
-        scope: toLinkScope(entry.scope),
-        note: toNonEmptyString(entry.note),
-      };
-    })
-    .filter((entry): entry is LinkedDoc => entry !== undefined);
-  return entries.length > 0 ? entries : undefined;
-}
-
-function toLinkedTests(value: unknown): LinkedTest[] | undefined {
-  if (!Array.isArray(value)) {
-    return undefined;
-  }
-  const entries: LinkedTest[] = [];
-  for (const entry of value) {
-    if (typeof entry === "string") {
-      const command = toNonEmptyString(entry);
-      if (command) {
-        entries.push({ command, scope: "project" });
-      }
-      continue;
-    }
-    if (!isRecord(entry)) {
-      continue;
-    }
-    const command = toNonEmptyString(entry.command);
-    const testPath = toNonEmptyString(entry.path);
-    if (!command && !testPath) {
-      continue;
-    }
-    const timeoutSeconds = toInteger(entry.timeout_seconds);
-    const pmContextMode = toNormalizedEnum(entry.pm_context_mode, ["schema", "tracker", "auto"] as const);
-    entries.push({
-      command,
-      path: testPath,
-      scope: toLinkScope(entry.scope),
-      timeout_seconds: timeoutSeconds !== undefined && timeoutSeconds > 0 ? timeoutSeconds : undefined,
-      pm_context_mode: pmContextMode,
-      env_set: toStringMap(entry.env_set),
-      env_clear: toStringList(entry.env_clear),
-      shared_host_safe: toBoolean(entry.shared_host_safe),
-      assert_stdout_contains: toStringList(entry.assert_stdout_contains),
-      assert_stdout_regex: toStringList(entry.assert_stdout_regex),
-      assert_stderr_contains: toStringList(entry.assert_stderr_contains),
-      assert_stderr_regex: toStringList(entry.assert_stderr_regex),
-      assert_stdout_min_lines: toInteger(entry.assert_stdout_min_lines),
-      assert_json_field_equals: toStringMap(entry.assert_json_field_equals),
-      assert_json_field_gte: toNumberMap(entry.assert_json_field_gte),
-      note: toNonEmptyString(entry.note),
-    });
-  }
-  return entries.length > 0 ? entries : undefined;
 }
 
 function toItemType(value: unknown, typeNames: string[]): ItemType {
@@ -661,7 +453,7 @@ async function importTodoCandidate(candidate: ParsedTodoCandidate, runtime: Todo
       type,
       status: toStatus(candidate.frontMatter.status),
       priority: toPriority(candidate.frontMatter.priority),
-      confidence: toConfidence(candidate.frontMatter.confidence),
+      confidence: toImportConfidence(candidate.frontMatter.confidence, CONFIDENCE_TEXT_VALUES),
       tags: toTags(candidate.frontMatter.tags),
       created_at: createdAt,
       updated_at: updatedAt,
@@ -680,14 +472,14 @@ async function importTodoCandidate(candidate: ParsedTodoCandidate, runtime: Todo
       why_now: toNonEmptyString(candidate.frontMatter.why_now),
       parent: toNonEmptyString(candidate.frontMatter.parent),
       reviewer: toNonEmptyString(candidate.frontMatter.reviewer),
-      risk: toNormalizedEnum(candidate.frontMatter.risk, RISK_VALUES),
+      risk: toImportNormalizedEnum(candidate.frontMatter.risk, RISK_VALUES),
       sprint: toNonEmptyString(candidate.frontMatter.sprint),
       release: toNonEmptyString(candidate.frontMatter.release),
       blocked_by: toNonEmptyString(candidate.frontMatter.blocked_by),
       blocked_reason: toNonEmptyString(candidate.frontMatter.blocked_reason),
       unblock_note: toNonEmptyString(candidate.frontMatter.unblock_note),
       reporter: toNonEmptyString(candidate.frontMatter.reporter),
-      severity: toNormalizedEnum(candidate.frontMatter.severity, ISSUE_SEVERITY_VALUES),
+      severity: toImportNormalizedEnum(candidate.frontMatter.severity, ISSUE_SEVERITY_VALUES),
       environment: toNonEmptyString(candidate.frontMatter.environment),
       repro_steps: toNonEmptyString(candidate.frontMatter.repro_steps),
       resolution: toNonEmptyString(candidate.frontMatter.resolution),
@@ -696,16 +488,28 @@ async function importTodoCandidate(candidate: ParsedTodoCandidate, runtime: Todo
       affected_version: toNonEmptyString(candidate.frontMatter.affected_version),
       fixed_version: toNonEmptyString(candidate.frontMatter.fixed_version),
       component: toNonEmptyString(candidate.frontMatter.component),
-      regression: toBoolean(candidate.frontMatter.regression),
+      regression: toImportBoolean(candidate.frontMatter.regression),
       customer_impact: toNonEmptyString(candidate.frontMatter.customer_impact),
       close_reason: toNonEmptyString(candidate.frontMatter.close_reason),
       dependencies: toDependencyEntries(candidate.frontMatter.dependencies, createdAt),
-      comments: toLogEntries(candidate.frontMatter.comments, createdAt, runtime.author),
-      notes: toLogEntries(candidate.frontMatter.notes, createdAt, runtime.author),
-      learnings: toLogEntries(candidate.frontMatter.learnings, createdAt, runtime.author),
-      files: toLinkedFiles(candidate.frontMatter.files),
-      docs: toLinkedDocs(candidate.frontMatter.docs),
-      tests: toLinkedTests(candidate.frontMatter.tests),
+      comments: toImportLogEntries(candidate.frontMatter.comments, {
+        ...TODOS_LOG_ENTRY_OPTIONS,
+        fallbackCreatedAt: createdAt,
+        fallbackAuthor: runtime.author,
+      }),
+      notes: toImportLogEntries(candidate.frontMatter.notes, {
+        ...TODOS_LOG_ENTRY_OPTIONS,
+        fallbackCreatedAt: createdAt,
+        fallbackAuthor: runtime.author,
+      }),
+      learnings: toImportLogEntries(candidate.frontMatter.learnings, {
+        ...TODOS_LOG_ENTRY_OPTIONS,
+        fallbackCreatedAt: createdAt,
+        fallbackAuthor: runtime.author,
+      }),
+      files: toImportLinkedFiles(candidate.frontMatter.files),
+      docs: toImportLinkedDocs(candidate.frontMatter.docs),
+      tests: toImportLinkedTests(candidate.frontMatter.tests, TODOS_TEST_OPTIONS),
     } as ItemMetadata),
     body: candidate.body,
   });

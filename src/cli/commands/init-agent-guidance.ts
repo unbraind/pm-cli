@@ -37,6 +37,7 @@ const AGENT_GUIDANCE_TEMPLATE_VERSION = 1;
 const AGENT_GUIDANCE_START_MARKER_PREFIX = "<!-- pm-cli:agent-guidance:start:";
 const AGENT_GUIDANCE_START_MARKER = `<!-- pm-cli:agent-guidance:start:v${AGENT_GUIDANCE_TEMPLATE_VERSION} -->`;
 const AGENT_GUIDANCE_END_MARKER = "<!-- pm-cli:agent-guidance:end -->";
+const AGENT_GUIDANCE_ADD_LATER_HINT = "Add workflow guidance later: pm init --agent-guidance add";
 
 export const _testOnly = {
   toPortableRelativePath,
@@ -360,121 +361,206 @@ async function refreshGuidanceScansAfterApply(
   return applied ? await scanGuidanceFiles(projectRoot) : scans;
 }
 
-/**
- * Implements run init agent guidance for the public runtime surface of this module.
- */
-export async function runInitAgentGuidance(options: RunInitAgentGuidanceOptions): Promise<RunInitAgentGuidanceResult> {
-  const warnings: string[] = [];
-  const nextSteps: string[] = [];
-  const projectRoot = resolveProjectRoot(options.pm_root, options.cwd);
-  let scans = await scanGuidanceFiles(projectRoot);
-  const targetPath = resolveTargetGuidancePath(scans, projectRoot);
-  const targetRelativePath = toPortableRelativePath(projectRoot, targetPath);
-  const addLaterHint = "Add workflow guidance later: pm init --agent-guidance add";
-  let prompted = false;
-  let applied = false;
-  let skipped = false;
-  let state = normalizeAgentGuidanceState(options.settings);
-  const checkedFiles = scans.map((entry) => toPortableRelativePath(projectRoot, entry.file_path));
-  const presentBefore = scans.some((entry) => entry.has_guidance);
+interface InitAgentGuidanceFlowState {
+  warnings: string[];
+  nextSteps: string[];
+  prompted: boolean;
+  applied: boolean;
+  skipped: boolean;
+  state: PmSettings["agent_guidance"];
+}
 
-  const markState = (partial: Partial<PmSettings["agent_guidance"]>): void => {
-    state = {
-      ...state,
-      ...partial,
-      template_version: AGENT_GUIDANCE_TEMPLATE_VERSION,
-      last_checked_files: checkedFiles,
-    };
+interface InitAgentGuidanceModeContext {
+  mode: InitAgentGuidanceMode;
+  interactive: boolean;
+  targetPath: string;
+  targetRelativePath: string;
+  checkedFiles: string[];
+  presentBefore: boolean;
+}
+
+function markAgentGuidanceRunState(
+  flow: InitAgentGuidanceFlowState,
+  checkedFiles: string[],
+  partial: Partial<PmSettings["agent_guidance"]>,
+): void {
+  flow.state = {
+    ...flow.state,
+    ...partial,
+    template_version: AGENT_GUIDANCE_TEMPLATE_VERSION,
+    last_checked_files: checkedFiles,
   };
+}
 
-  if (options.mode === "status") {
-    if (!presentBefore) {
-      warnings.push("agent_guidance:missing");
-      pushUnique(nextSteps, addLaterHint);
-    }
-  } else if (options.mode === "skip") {
-    skipped = true;
-    markState({
-      prompt_completed: true,
-      declined: true,
-      declined_at: state.declined_at.length > 0 ? state.declined_at : new Date().toISOString(),
-    });
-    warnings.push("agent_guidance:explicit_skip");
-    pushUnique(nextSteps, addLaterHint);
-  } else if (options.mode === "add") {
-    if (!presentBefore) {
-      const writeResult = await writeGuidanceFile(targetPath);
-      warnings.push(...writeResult.warnings);
-      if (writeResult.changed) {
-        applied = true;
-        warnings.push(`agent_guidance:added:${targetRelativePath}`);
-      }
-    }
-    markState({
+async function addAgentGuidanceBlockIfMissing(
+  flow: InitAgentGuidanceFlowState,
+  context: Pick<InitAgentGuidanceModeContext, "presentBefore" | "targetPath" | "targetRelativePath">,
+): Promise<void> {
+  if (context.presentBefore) {
+    return;
+  }
+  const writeResult = await writeGuidanceFile(context.targetPath);
+  flow.warnings.push(...writeResult.warnings);
+  if (writeResult.changed) {
+    flow.applied = true;
+    flow.warnings.push(`agent_guidance:added:${context.targetRelativePath}`);
+  }
+}
+
+function handleAgentGuidanceStatusMode(flow: InitAgentGuidanceFlowState, presentBefore: boolean): void {
+  if (!presentBefore) {
+    flow.warnings.push("agent_guidance:missing");
+    pushUnique(flow.nextSteps, AGENT_GUIDANCE_ADD_LATER_HINT);
+  }
+}
+
+function handleAgentGuidanceSkipMode(flow: InitAgentGuidanceFlowState, checkedFiles: string[]): void {
+  flow.skipped = true;
+  markAgentGuidanceRunState(flow, checkedFiles, {
+    prompt_completed: true,
+    declined: true,
+    declined_at: flow.state.declined_at || new Date().toISOString(),
+  });
+  flow.warnings.push("agent_guidance:explicit_skip");
+  pushUnique(flow.nextSteps, AGENT_GUIDANCE_ADD_LATER_HINT);
+}
+
+async function handleAgentGuidanceAddMode(
+  flow: InitAgentGuidanceFlowState,
+  context: InitAgentGuidanceModeContext,
+): Promise<void> {
+  await addAgentGuidanceBlockIfMissing(flow, context);
+  markAgentGuidanceRunState(flow, context.checkedFiles, {
+    prompt_completed: true,
+    declined: false,
+    declined_at: "",
+  });
+}
+
+function handlePresentAgentGuidance(flow: InitAgentGuidanceFlowState, checkedFiles: string[]): void {
+  if (flow.state.declined) {
+    markAgentGuidanceRunState(flow, checkedFiles, {
       prompt_completed: true,
       declined: false,
       declined_at: "",
     });
-  } else if (presentBefore) {
-    if (state.declined) {
-      markState({
-        prompt_completed: true,
-        declined: false,
-        declined_at: "",
-      });
-    }
-  } else if (state.prompt_completed && state.declined) {
-    skipped = true;
-    warnings.push("agent_guidance:skipped_declined");
-    pushUnique(nextSteps, addLaterHint);
-  } else if (options.interactive) {
-    prompted = true;
-    const approved = await promptForGuidanceWrite(targetRelativePath);
-    if (approved) {
-      const writeResult = await writeGuidanceFile(targetPath);
-      warnings.push(...writeResult.warnings);
-      if (writeResult.changed) {
-        applied = true;
-        warnings.push(`agent_guidance:added:${targetRelativePath}`);
-      }
-      markState({
-        prompt_completed: true,
-        declined: false,
-        declined_at: "",
-      });
-    } else {
-      skipped = true;
-      markState({
-        prompt_completed: true,
-        declined: true,
-        declined_at: new Date().toISOString(),
-      });
-      warnings.push("agent_guidance:declined");
-      pushUnique(nextSteps, addLaterHint);
-    }
-  } else {
-    warnings.push("agent_guidance:missing_non_interactive");
-    pushUnique(nextSteps, addLaterHint);
   }
+}
 
-  const stateUpdate = applyAgentGuidanceState(options.settings, state);
-  scans = await refreshGuidanceScansAfterApply(applied, scans, projectRoot);
+function handleDeclinedAgentGuidance(flow: InitAgentGuidanceFlowState): void {
+  flow.skipped = true;
+  flow.warnings.push("agent_guidance:skipped_declined");
+  pushUnique(flow.nextSteps, AGENT_GUIDANCE_ADD_LATER_HINT);
+}
+
+async function handleInteractiveAgentGuidancePrompt(
+  flow: InitAgentGuidanceFlowState,
+  context: InitAgentGuidanceModeContext,
+): Promise<void> {
+  flow.prompted = true;
+  const approved = await promptForGuidanceWrite(context.targetRelativePath);
+  if (approved) {
+    await addAgentGuidanceBlockIfMissing(flow, context);
+    markAgentGuidanceRunState(flow, context.checkedFiles, {
+      prompt_completed: true,
+      declined: false,
+      declined_at: "",
+    });
+    return;
+  }
+  flow.skipped = true;
+  markAgentGuidanceRunState(flow, context.checkedFiles, {
+    prompt_completed: true,
+    declined: true,
+    declined_at: new Date().toISOString(),
+  });
+  flow.warnings.push("agent_guidance:declined");
+  pushUnique(flow.nextSteps, AGENT_GUIDANCE_ADD_LATER_HINT);
+}
+
+function handleNonInteractiveMissingAgentGuidance(flow: InitAgentGuidanceFlowState): void {
+  flow.warnings.push("agent_guidance:missing_non_interactive");
+  pushUnique(flow.nextSteps, AGENT_GUIDANCE_ADD_LATER_HINT);
+}
+
+async function applyAgentGuidanceMode(
+  initialState: PmSettings["agent_guidance"],
+  context: InitAgentGuidanceModeContext,
+): Promise<InitAgentGuidanceFlowState> {
+  const flow: InitAgentGuidanceFlowState = {
+    warnings: [],
+    nextSteps: [],
+    prompted: false,
+    applied: false,
+    skipped: false,
+    state: initialState,
+  };
+
+  if (context.mode === "status") {
+    handleAgentGuidanceStatusMode(flow, context.presentBefore);
+    return flow;
+  }
+  if (context.mode === "skip") {
+    handleAgentGuidanceSkipMode(flow, context.checkedFiles);
+    return flow;
+  }
+  if (context.mode === "add") {
+    await handleAgentGuidanceAddMode(flow, context);
+    return flow;
+  }
+  if (context.presentBefore) {
+    handlePresentAgentGuidance(flow, context.checkedFiles);
+    return flow;
+  }
+  if (flow.state.prompt_completed && flow.state.declined) {
+    handleDeclinedAgentGuidance(flow);
+    return flow;
+  }
+  if (context.interactive) {
+    await handleInteractiveAgentGuidancePrompt(flow, context);
+    return flow;
+  }
+  handleNonInteractiveMissingAgentGuidance(flow);
+  return flow;
+}
+
+/**
+ * Implements run init agent guidance for the public runtime surface of this module.
+ */
+export async function runInitAgentGuidance(options: RunInitAgentGuidanceOptions): Promise<RunInitAgentGuidanceResult> {
+  const projectRoot = resolveProjectRoot(options.pm_root, options.cwd);
+  let scans = await scanGuidanceFiles(projectRoot);
+  const targetPath = resolveTargetGuidancePath(scans, projectRoot);
+  const targetRelativePath = toPortableRelativePath(projectRoot, targetPath);
+  const checkedFiles = scans.map((entry) => toPortableRelativePath(projectRoot, entry.file_path));
+  const presentBefore = scans.some((entry) => entry.has_guidance);
+  const flow = await applyAgentGuidanceMode(normalizeAgentGuidanceState(options.settings), {
+    mode: options.mode,
+    interactive: options.interactive,
+    targetPath,
+    targetRelativePath,
+    checkedFiles,
+    presentBefore,
+  });
+
+  const stateUpdate = applyAgentGuidanceState(options.settings, flow.state);
+  scans = await refreshGuidanceScansAfterApply(flow.applied, scans, projectRoot);
 
   const summary = buildInitAgentGuidanceSummary({
     mode: options.mode,
     scans,
     projectRoot,
     targetRelativePath,
-    prompted,
-    applied,
-    skipped,
-    state,
+    prompted: flow.prompted,
+    applied: flow.applied,
+    skipped: flow.skipped,
+    state: flow.state,
   });
 
   return {
     summary,
-    warnings,
-    next_steps: nextSteps,
+    warnings: flow.warnings,
+    next_steps: flow.nextSteps,
     settings_changed: stateUpdate.changed,
   };
 }

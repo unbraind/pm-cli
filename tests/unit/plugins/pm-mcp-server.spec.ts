@@ -81,20 +81,186 @@ export function startMcpServer() {
     );
     process.env.PM_CLI_MCP_SERVER = explicitServerPath;
     const spawnMock = vi.fn();
+    const accessMock = vi.fn(async (target: string) => {
+      if (path.resolve(target) === path.resolve(explicitServerPath)) {
+        return;
+      }
+      throw new Error("ENOENT");
+    });
     vi.doMock("node:child_process", () => ({ spawn: spawnMock }));
     vi.doMock("node:fs/promises", () => ({
-      access: vi.fn(async (target: string) => {
-        if (path.resolve(target) === path.resolve(explicitServerPath)) {
-          return;
-        }
-        throw new Error("ENOENT");
-      }),
+      access: accessMock,
     }));
     for (const script of mcpServerScripts) {
       await importScript(script, `explicit-${path.basename(script)}`);
     }
     expect((globalThis as Record<string, unknown>).__PM_MCP_STARTS).toBe(2);
+    expect(accessMock).toHaveBeenCalledTimes(2);
     expect(spawnMock).not.toHaveBeenCalled();
+  });
+
+  it("resolves relative explicit server paths before importing them", async () => {
+    const root = await createTempRoot("pm-plugin-mcp-relative-explicit-");
+    const explicitServerPath = path.join(root, "relative-explicit-server.mjs");
+    await writeFile(
+      explicitServerPath,
+      `export function startMcpServer() {
+  globalThis.__PM_MCP_STARTS = (globalThis.__PM_MCP_STARTS ?? 0) + 1;
+}
+`,
+      "utf8",
+    );
+    process.env.PM_CLI_MCP_SERVER = path.relative(process.cwd(), explicitServerPath);
+    const spawnMock = vi.fn();
+    const accessMock = vi.fn(async (target: string) => {
+      if (path.resolve(target) === path.resolve(explicitServerPath)) {
+        return;
+      }
+      throw new Error("ENOENT");
+    });
+    vi.doMock("node:child_process", () => ({ spawn: spawnMock }));
+    vi.doMock("node:fs/promises", () => ({ access: accessMock }));
+
+    for (const script of mcpServerScripts) {
+      await importScript(script, `relative-explicit-${path.basename(script)}`);
+    }
+
+    expect((globalThis as Record<string, unknown>).__PM_MCP_STARTS).toBe(2);
+    expect(spawnMock).not.toHaveBeenCalled();
+  });
+
+  it("imports URL-like explicit server specifiers before filesystem probing", async () => {
+    const root = await createTempRoot("pm-plugin-mcp-url-explicit-");
+    const explicitServerPath = path.join(root, "url-explicit-server.mjs");
+    await writeFile(
+      explicitServerPath,
+      `globalThis.__PM_MCP_MODULE_LOADS = (globalThis.__PM_MCP_MODULE_LOADS ?? 0) + 1;
+export function startMcpServer() {
+  globalThis.__PM_MCP_STARTS = (globalThis.__PM_MCP_STARTS ?? 0) + 1;
+}
+`,
+      "utf8",
+    );
+    process.env.PM_CLI_MCP_SERVER = pathToFileURL(explicitServerPath).href;
+    const spawnMock = vi.fn();
+    const accessMock = vi.fn(async () => {
+      throw new Error("ENOENT");
+    });
+    vi.doMock("node:child_process", () => ({ spawn: spawnMock }));
+    vi.doMock("node:fs/promises", () => ({ access: accessMock }));
+
+    for (const script of mcpServerScripts) {
+      await importScript(script, `url-explicit-${path.basename(script)}`);
+    }
+
+    expect((globalThis as Record<string, unknown>).__PM_MCP_MODULE_LOADS).toBe(1);
+    expect((globalThis as Record<string, unknown>).__PM_MCP_STARTS).toBe(2);
+    expect(accessMock).not.toHaveBeenCalled();
+    expect(spawnMock).not.toHaveBeenCalled();
+  });
+
+  it("falls back when a URL-like explicit server points at a missing file", async () => {
+    const root = await createTempRoot("pm-plugin-mcp-missing-url-");
+    process.env.PM_CLI_MCP_SERVER = pathToFileURL(path.join(root, "missing-server.mjs")).href;
+    const fallbackSpawn = spawnReturningExit(0, null);
+    const accessMock = vi.fn(async () => {
+      throw new Error("ENOENT");
+    });
+    vi.doMock("node:child_process", () => ({ spawn: fallbackSpawn }));
+    vi.doMock("node:fs/promises", () => ({ access: accessMock }));
+    const exit = mockExit();
+
+    for (const script of mcpServerScripts) {
+      await expect(importScript(script, `missing-url-${path.basename(script)}`)).rejects.toThrow("EXIT:0");
+    }
+
+    expect(fallbackSpawn).toHaveBeenCalledTimes(2);
+    expect(accessMock).toHaveBeenCalled();
+    exit.mockRestore();
+  });
+
+  it("rethrows non-missing URL import failures without falling back", async () => {
+    process.env.PM_CLI_MCP_SERVER = `data:text/javascript,${encodeURIComponent('throw new Error("broken explicit server")')}`;
+    const fallbackSpawn = spawnReturningExit(0, null);
+    const accessMock = vi.fn(async () => {
+      throw new Error("ENOENT");
+    });
+    vi.doMock("node:child_process", () => ({ spawn: fallbackSpawn }));
+    vi.doMock("node:fs/promises", () => ({ access: accessMock }));
+
+    for (const script of mcpServerScripts) {
+      await expect(importScript(script, `broken-url-${path.basename(script)}`)).rejects.toThrow("broken explicit server");
+    }
+
+    expect(fallbackSpawn).not.toHaveBeenCalled();
+    expect(accessMock).not.toHaveBeenCalled();
+  });
+
+  it("falls back when an explicit local path disappears before import", async () => {
+    const root = await createTempRoot("pm-plugin-mcp-local-race-");
+    process.env.PM_CLI_MCP_SERVER = path.join(root, "vanished-server.mjs");
+    const fallbackSpawn = spawnReturningExit(0, null);
+    const accessMock = vi.fn(async (target: string) => {
+      if (path.resolve(target) === path.resolve(process.env.PM_CLI_MCP_SERVER ?? "")) {
+        return;
+      }
+      throw new Error("ENOENT");
+    });
+    vi.doMock("node:child_process", () => ({ spawn: fallbackSpawn }));
+    vi.doMock("node:fs/promises", () => ({ access: accessMock }));
+    const exit = mockExit();
+
+    for (const script of mcpServerScripts) {
+      await expect(importScript(script, `local-race-${path.basename(script)}`)).rejects.toThrow("EXIT:0");
+    }
+
+    expect(fallbackSpawn).toHaveBeenCalledTimes(2);
+    expect(accessMock).toHaveBeenCalled();
+    exit.mockRestore();
+  });
+
+  it("rethrows startup ERR_MODULE_NOT_FOUND failures without falling back", async () => {
+    process.env.PM_CLI_MCP_SERVER = `data:text/javascript,${encodeURIComponent(`
+export function startMcpServer() {
+  const error = new Error("startup dependency missing");
+  error.code = "ERR_MODULE_NOT_FOUND";
+  throw error;
+}
+`)}`;
+    const fallbackSpawn = spawnReturningExit(0, null);
+    const accessMock = vi.fn(async () => {
+      throw new Error("ENOENT");
+    });
+    vi.doMock("node:child_process", () => ({ spawn: fallbackSpawn }));
+    vi.doMock("node:fs/promises", () => ({ access: accessMock }));
+
+    for (const script of mcpServerScripts) {
+      await expect(importScript(script, `startup-missing-${path.basename(script)}`)).rejects.toThrow(
+        "startup dependency missing",
+      );
+    }
+
+    expect(fallbackSpawn).not.toHaveBeenCalled();
+    expect(accessMock).not.toHaveBeenCalled();
+  });
+
+  it("treats Windows-style explicit server values as paths and falls back when missing", async () => {
+    process.env.PM_CLI_MCP_SERVER = "C:\\missing\\pm-mcp-server.mjs";
+    const fallbackSpawn = spawnReturningExit(0, null);
+    const accessMock = vi.fn(async () => {
+      throw new Error("ENOENT");
+    });
+    vi.doMock("node:child_process", () => ({ spawn: fallbackSpawn }));
+    vi.doMock("node:fs/promises", () => ({ access: accessMock }));
+    const exit = mockExit();
+
+    for (const script of mcpServerScripts) {
+      await expect(importScript(script, `windows-explicit-${path.basename(script)}`)).rejects.toThrow("EXIT:0");
+    }
+
+    expect(fallbackSpawn).toHaveBeenCalledTimes(2);
+    expect(accessMock).toHaveBeenCalled();
+    exit.mockRestore();
   });
 
   it("discovers and starts the repo-checkout server when no explicit path is set", async () => {
@@ -153,6 +319,29 @@ export function startMcpServer() {
       await expect(importScript(script, `fallback-${path.basename(script)}`)).rejects.toThrow("EXIT:0");
     }
     expect(fallbackSpawn).toHaveBeenCalledTimes(2);
+    exit.mockRestore();
+  });
+
+  it("uses the npx fallback when Codex repo discovery reaches the depth limit", async () => {
+    delete process.env.PM_CLI_MCP_SERVER;
+    const fallbackSpawn = spawnReturningExit(0, null);
+    vi.doMock("node:child_process", () => ({ spawn: fallbackSpawn }));
+    vi.doMock("node:fs/promises", () => ({
+      access: vi.fn(async () => {
+        throw new Error("ENOENT");
+      }),
+    }));
+    vi.doMock("node:path", async () => {
+      const actual = await vi.importActual<typeof import("node:path")>("node:path");
+      let depth = 0;
+      const dirname = vi.fn(() => `/virtual-parent-${depth++}`);
+      return { ...actual, default: { ...actual.default, dirname }, dirname };
+    });
+    const exit = mockExit();
+
+    await expect(importScript("plugins/pm-codex/scripts/pm-mcp-server.mjs", "fallback-depth-limit")).rejects.toThrow("EXIT:0");
+
+    expect(fallbackSpawn).toHaveBeenCalledTimes(1);
     exit.mockRestore();
   });
 

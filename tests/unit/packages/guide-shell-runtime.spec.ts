@@ -459,6 +459,13 @@ export function readCsvListOption() { return []; }
       payload: "raw-string-payload",
     } satisfies ServiceOverrideContext);
     expect(stringPayloadRender).toBe("\n");
+
+    const arrayPayloadRender = runtime.renderGuideShellPackageOutput({
+      service: "output_format",
+      command: "completion-tags",
+      payload: [{ result: { tags: ["array-should-not-be-record"] } }],
+    } satisfies ServiceOverrideContext);
+    expect(arrayPayloadRender).toBe("\n");
   });
 
   it("covers guide-shell empty type registry fallbacks (no types, no definitions)", async () => {

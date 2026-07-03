@@ -62,39 +62,41 @@ function isCalendarResult(value: unknown): value is CalendarResult {
   );
 }
 
+function readObjectPayload(payload: unknown): Record<string, unknown> | null {
+  if (typeof payload !== "object" || payload === null || Array.isArray(payload)) {
+    return null;
+  }
+  return payload as Record<string, unknown>;
+}
+
 function readPayloadFormat(payload: unknown): "toon" | "json" {
-  if (typeof payload === "object" && payload !== null) {
-    const format = (payload as { format?: unknown }).format;
-    if (format === "json") {
-      return "json";
-    }
+  const record = readObjectPayload(payload);
+  if (record?.format === "json") {
+    return "json";
   }
   return "toon";
 }
 
 function readPayloadResult(payload: unknown): unknown {
-  if (typeof payload === "object" && payload !== null && "result" in payload) {
-    return (payload as { result?: unknown }).result;
+  const record = readObjectPayload(payload);
+  if (!record || !Object.hasOwn(record, "result")) {
+    return payload;
   }
-  return payload;
+  return record.result;
 }
 
 function readPayloadCommandOptions(payload: unknown): CalendarOptions {
-  if (typeof payload === "object" && payload !== null) {
-    const commandOptions = (payload as { command_options?: unknown }).command_options;
-    if (typeof commandOptions === "object" && commandOptions !== null) {
-      return commandOptions as CalendarOptions;
-    }
+  const commandOptions = readObjectPayload(payload)?.command_options;
+  if (typeof commandOptions === "object" && commandOptions !== null && !Array.isArray(commandOptions)) {
+    return commandOptions as CalendarOptions;
   }
   return {};
 }
 
 function readPayloadGlobalOptions(payload: unknown): GlobalOptions {
-  if (typeof payload === "object" && payload !== null) {
-    const global = (payload as { global?: unknown }).global;
-    if (typeof global === "object" && global !== null) {
-      return global as GlobalOptions;
-    }
+  const global = readObjectPayload(payload)?.global;
+  if (typeof global === "object" && global !== null && !Array.isArray(global)) {
+    return global as GlobalOptions;
   }
   return {};
 }
@@ -137,6 +139,7 @@ export function renderCalendarPackageOutput(context: ServiceOverrideContext): st
  */
 export const _testOnly = {
   readPayloadFormat,
+  readPayloadResult,
   readPayloadCommandOptions,
   readPayloadGlobalOptions,
 };

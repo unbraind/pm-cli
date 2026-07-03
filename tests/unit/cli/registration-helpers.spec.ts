@@ -517,6 +517,8 @@ describe("registration helpers", () => {
       hasLinkedCommand: true,
       notes: false,
       learnings: false,
+      filterFilesMissing: true,
+      filterDocsMissing: true,
       files: false,
       docs: false,
       tests: false,
@@ -543,12 +545,23 @@ describe("registration helpers", () => {
       noNotes: true,
       noLearnings: true,
       noFiles: true,
+      filterFilesMissing: true,
       noDocs: true,
+      filterDocsMissing: true,
       noTests: true,
       noComments: true,
       noDeps: true,
       emptyBody: true,
       noLinkedCommand: true,
+    });
+  });
+
+  it("maps list docs/files missing aliases to the existing absence filters", () => {
+    expect(normalizeListOptions({ filterFilesMissing: true, filterDocsMissing: true })).toMatchObject({
+      noFiles: true,
+      filterFilesMissing: true,
+      noDocs: true,
+      filterDocsMissing: true,
     });
   });
 
@@ -572,7 +585,9 @@ describe("registration helpers", () => {
       "noNotes",
       "noLearnings",
       "noFiles",
+      "filterFilesMissing",
       "noDocs",
+      "filterDocsMissing",
       "noTests",
       "noComments",
       "noDeps",
@@ -601,6 +616,8 @@ describe("registration helpers", () => {
       hasLinkedCommand: true,
       notes: false,
       learnings: false,
+      filterFilesMissing: true,
+      filterDocsMissing: true,
       files: false,
       docs: false,
       tests: false,
@@ -627,12 +644,23 @@ describe("registration helpers", () => {
       noNotes: true,
       noLearnings: true,
       noFiles: true,
+      filterFilesMissing: true,
       noDocs: true,
+      filterDocsMissing: true,
       noTests: true,
       noComments: true,
       noDeps: true,
       emptyBody: true,
       noLinkedCommand: true,
+    });
+  });
+
+  it("maps search docs/files missing aliases to the existing absence filters", () => {
+    expect(normalizeSearchOptions({ filterFilesMissing: true, filterDocsMissing: true })).toMatchObject({
+      noFiles: true,
+      filterFilesMissing: true,
+      noDocs: true,
+      filterDocsMissing: true,
     });
   });
 
@@ -656,7 +684,9 @@ describe("registration helpers", () => {
       "noNotes",
       "noLearnings",
       "noFiles",
+      "filterFilesMissing",
       "noDocs",
+      "filterDocsMissing",
       "noTests",
       "noComments",
       "noDeps",

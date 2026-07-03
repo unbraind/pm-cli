@@ -211,21 +211,19 @@ async function buildCompletionRuntimeConfig(
   };
 }
 
+function payloadRecord(payload: unknown): Record<string, unknown> | undefined {
+  return typeof payload === "object" && payload !== null && !Array.isArray(payload)
+    ? (payload as Record<string, unknown>)
+    : undefined;
+}
+
 function readPayloadFormat(payload: unknown): "toon" | "json" {
-  if (typeof payload === "object" && payload !== null) {
-    const format = (payload as { format?: unknown }).format;
-    if (format === "json") {
-      return "json";
-    }
-  }
-  return "toon";
+  return payloadRecord(payload)?.format === "json" ? "json" : "toon";
 }
 
 function readPayloadResult(payload: unknown): unknown {
-  if (typeof payload === "object" && payload !== null && "result" in payload) {
-    return (payload as { result?: unknown }).result;
-  }
-  return payload;
+  const record = payloadRecord(payload);
+  return record && Object.hasOwn(record, "result") ? record.result : payload;
 }
 
 function collectTagsFromItems(items: Array<{ metadata: { tags?: string[] } }>): string[] {

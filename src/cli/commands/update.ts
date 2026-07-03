@@ -5,6 +5,7 @@
  */
 import { pathExists } from "../../core/fs/fs-utils.js";
 import {
+  COMMON_MUTATION_COMMAND_OPTION_KEYS,
   canonicalizeCommandOptionKey,
   commandOptionFlagLabel,
   resolveItemTypeRegistry,
@@ -104,14 +105,23 @@ import {
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR,
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
   COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON,
+  parseCommandUnsetTargets,
   resolveRuntimeUnsetFieldDefinition,
   type CommandUnsetFieldDefinition,
 } from "./shared-unset-fields.js";
+import type {
+  MutationMetadataCommandOptions,
+  SharedLinkedResourceClearOptions,
+  SharedLinkedResourceOptions,
+} from "./mutation-command-options.js";
 
 /**
  * Documents the update command options payload exchanged by command, SDK, and package integrations.
  */
-export interface UpdateCommandOptions {
+export interface UpdateCommandOptions
+  extends MutationMetadataCommandOptions,
+    SharedLinkedResourceOptions,
+    SharedLinkedResourceClearOptions {
   title?: string;
   description?: string;
   body?: string;
@@ -122,71 +132,13 @@ export interface UpdateCommandOptions {
   tags?: string;
   addTags?: string[];
   removeTags?: string[];
-  deadline?: string;
-  estimatedMinutes?: string;
-  acceptanceCriteria?: string;
-  definitionOfReady?: string;
-  order?: string;
-  rank?: string;
-  goal?: string;
-  objective?: string;
-  value?: string;
-  impact?: string;
-  outcome?: string;
-  whyNow?: string;
-  author?: string;
-  message?: string;
   force?: boolean;
   allowAuditUpdate?: boolean;
   allowAuditDepUpdate?: boolean;
-  assignee?: string;
-  parent?: string;
-  reviewer?: string;
-  risk?: string;
-  confidence?: string;
-  sprint?: string;
-  release?: string;
-  blockedBy?: string;
-  blockedReason?: string;
-  unblockNote?: string;
-  reporter?: string;
-  severity?: string;
-  environment?: string;
-  reproSteps?: string;
-  resolution?: string;
-  expectedResult?: string;
-  actualResult?: string;
-  affectedVersion?: string;
-  fixedVersion?: string;
-  component?: string;
-  regression?: string;
-  customerImpact?: string;
-  dep?: string[];
   depRemove?: string[];
   replaceDeps?: boolean;
   replaceTests?: boolean;
   runtimeFieldCommands?: Array<"update" | "update_many">;
-  comment?: string[];
-  note?: string[];
-  learning?: string[];
-  file?: string[];
-  test?: string[];
-  doc?: string[];
-  reminder?: string[];
-  event?: string[];
-  typeOption?: string[];
-  field?: string[];
-  unset?: string[];
-  clearDeps?: boolean;
-  clearComments?: boolean;
-  clearNotes?: boolean;
-  clearLearnings?: boolean;
-  clearFiles?: boolean;
-  clearTests?: boolean;
-  clearDocs?: boolean;
-  clearReminders?: boolean;
-  clearEvents?: boolean;
-  clearTypeOptions?: boolean;
   [key: string]: unknown;
 }
 
@@ -306,23 +258,10 @@ function parseUpdateUnsetTargets(
   runtimeFieldRegistry?: RuntimeFieldRegistry,
   extensionFieldNames: readonly string[] = [],
 ): { frontMatterKeys: Set<string>; optionKeys: Set<string> } {
-  const frontMatterKeys = new Set<string>();
-  const optionKeys = new Set<string>();
-  if (!raw || raw.length === 0) {
-    return { frontMatterKeys, optionKeys };
-  }
-
-  for (const entry of raw) {
-    const trimmed = entry.trim().toLowerCase();
-    if (!trimmed) {
-      throw new PmCliError("--unset values must not be empty", EXIT_CODE.USAGE);
-    }
-    if (isLegacyNoneToken(trimmed)) {
-      throw new PmCliError(
-        '--unset no longer accepts "none" or "null". Specify concrete field names such as --unset deadline',
-        EXIT_CODE.USAGE,
-      );
-    }
+  return parseCommandUnsetTargets({
+    raw,
+    supportedFields: UPDATE_UNSET_SUPPORTED_CANONICAL_FIELDS,
+    resolveDefinition: (trimmed) => {
     const extensionFieldName = extensionFieldNames.find((fieldName) => {
       const normalizedFieldName = fieldName.toLowerCase();
       return (
@@ -334,17 +273,9 @@ function parseUpdateUnsetTargets(
     const definition = UPDATE_UNSET_ALIAS_MAP.get(trimmed) ??
       resolveRuntimeUnsetFieldDefinition(trimmed, "update", runtimeFieldRegistry) ??
       (extensionFieldName ? { optionKey: "field", frontMatterKey: extensionFieldName } : undefined);
-    if (!definition) {
-      throw new PmCliError(
-        `Unsupported --unset field "${entry}". Supported fields: ${UPDATE_UNSET_SUPPORTED_CANONICAL_FIELDS}`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    frontMatterKeys.add(definition.frontMatterKey);
-    optionKeys.add(definition.optionKey);
-  }
-
-  return { frontMatterKeys, optionKeys };
+    return definition;
+    },
+  });
 }
 
 // Restricted append-style flags have dedicated commands with their own
@@ -1041,41 +972,17 @@ interface CloseRouteContext {
   id: string;
 }
 
+// `rank` is a legacy alias for `order`; keep it out of the scalar loop if the
+// shared mutation key list ever grows to include that alias.
+const UPDATE_LEGACY_COMMON_SCALAR_OPTION_EXCLUSIONS = new Set<string>(["order", "rank"]);
+const UPDATE_LEGACY_COMMON_SCALAR_OPTION_KEYS = COMMON_MUTATION_COMMAND_OPTION_KEYS.filter(
+  (key) => !UPDATE_LEGACY_COMMON_SCALAR_OPTION_EXCLUSIONS.has(key),
+) as readonly (keyof UpdateCommandOptions)[];
+
 const UPDATE_LEGACY_SCALAR_OPTION_KEYS: readonly (keyof UpdateCommandOptions)[] = [
   "tags",
   "closeReason",
-  "deadline",
-  "estimatedMinutes",
-  "acceptanceCriteria",
-  "definitionOfReady",
-  "goal",
-  "objective",
-  "value",
-  "impact",
-  "outcome",
-  "whyNow",
-  "assignee",
-  "parent",
-  "reviewer",
-  "risk",
-  "confidence",
-  "sprint",
-  "release",
-  "blockedBy",
-  "blockedReason",
-  "unblockNote",
-  "reporter",
-  "severity",
-  "environment",
-  "reproSteps",
-  "resolution",
-  "expectedResult",
-  "actualResult",
-  "affectedVersion",
-  "fixedVersion",
-  "component",
-  "regression",
-  "customerImpact",
+  ...UPDATE_LEGACY_COMMON_SCALAR_OPTION_KEYS,
 ];
 
 const UPDATE_SIMPLE_FIELD_FLAG_KEYS: readonly (keyof UpdateCommandOptions)[] = [
@@ -1086,38 +993,7 @@ const UPDATE_SIMPLE_FIELD_FLAG_KEYS: readonly (keyof UpdateCommandOptions)[] = [
   "closeReason",
   "priority",
   "type",
-  "deadline",
-  "estimatedMinutes",
-  "acceptanceCriteria",
-  "definitionOfReady",
-  "goal",
-  "objective",
-  "value",
-  "impact",
-  "outcome",
-  "whyNow",
-  "assignee",
-  "parent",
-  "reviewer",
-  "risk",
-  "confidence",
-  "sprint",
-  "release",
-  "blockedBy",
-  "blockedReason",
-  "unblockNote",
-  "reporter",
-  "severity",
-  "environment",
-  "reproSteps",
-  "resolution",
-  "expectedResult",
-  "actualResult",
-  "affectedVersion",
-  "fixedVersion",
-  "component",
-  "regression",
-  "customerImpact",
+  ...COMMON_MUTATION_COMMAND_OPTION_KEYS,
   "dep",
   "depRemove",
   "comment",

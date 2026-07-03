@@ -145,6 +145,12 @@ describe("generateBashScript", () => {
     expect(bashScript).toContain("--type-preset");
 
     const zshScript = generateZshScript();
+    const zshInitStart = zshScript.indexOf("        init)");
+    const zshInitBlock = zshScript.slice(zshInitStart, zshScript.indexOf("        config)", zshInitStart));
+    expect(zshInitStart).toBeGreaterThan(-1);
+    expect(zshInitBlock).toContain("_arguments");
+    expect(zshInitBlock).toContain("--preset[Governance preset for new setups]");
+    expect(zshInitBlock).toContain("--defaults[Use non-interactive setup defaults]");
     expect(zshScript).toContain("--agent-guidance[Agent guidance mode]");
     expect(zshScript).toContain("--type-preset[Register domain item types]");
     expect(zshScript).toContain("Alias for --defaults");
@@ -461,6 +467,8 @@ describe("generateBashScript", () => {
       "no-linked-command",
       "empty-body",
       "filter-reviewer-missing",
+      "filter-files-missing",
+      "filter-docs-missing",
       "filter-confidence-missing",
       "filter-has-notes",
       "filter-no-deps",
@@ -475,6 +483,19 @@ describe("generateBashScript", () => {
       expect(zsh, `zsh should contain --${flag}`).toContain(`--${flag}`);
       expect(fish, `fish should contain -l ${flag}`).toContain(`-l ${flag}`);
     }
+    const zshListBlockStart = zsh.indexOf("list|list-all|list-draft");
+    const zshListBlock = zsh.slice(zshListBlockStart, zsh.indexOf("aggregate)", zshListBlockStart));
+    expect(zshListBlock).toContain("--has-files[");
+    expect(zshListBlock).toContain("--no-files[");
+    expect(zshListBlock).toContain("--filter-files-missing[");
+    expect(zshListBlock).toContain("--has-docs[");
+    expect(zshListBlock).toContain("--no-docs[");
+    expect(zshListBlock).toContain("--filter-docs-missing[");
+    expect(zshListBlock).not.toContain("--filter-has-files[");
+    expect(zshListBlock).not.toContain("--filter-no-files[");
+    expect(zshListBlock).not.toContain("--filter-has-docs[");
+    expect(zshListBlock).not.toContain("--filter-no-docs[");
+    expect(zsh).not.toContain("--reviewer-missing[");
   });
 
   it("includes deterministic tag suggestions for --tag completion", () => {
@@ -713,6 +734,16 @@ describe("generateZshScript", () => {
   it("includes zsh update close-reason completion", () => {
     const script = generateZshScript();
     expect(script).toContain("--close-reason");
+  });
+
+  it("does not split continued zsh _arguments blocks with blank lines", () => {
+    const script = generateZshScript();
+    for (const command of ["search)", "update)", "update-many)", "context|ctx)"]) {
+      const blockStart = script.indexOf(`        ${command}`);
+      const block = script.slice(blockStart, script.indexOf("          ;;", blockStart));
+      expect(blockStart).toBeGreaterThan(-1);
+      expect(block).not.toMatch(/\\\n\s*\n/u);
+    }
   });
 });
 

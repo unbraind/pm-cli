@@ -19,6 +19,9 @@ import {
   ensureTrackerInitialized,
   selectImportAuthor,
   toEstimatedMinutesValue,
+  toImportLinkedTests,
+  toImportLogEntries,
+  toImportNumberMap,
   toImportPriority,
   toImportStatus,
   toImportTags,
@@ -63,6 +66,73 @@ describe("package import adapter primitives", () => {
       expect(toImportStatus("in_progress")).toBe("in_progress");
       expect(toImportStatus("unknown-status")).toBe("open");
       expect(toImportStatus(undefined)).toBe("open");
+    });
+
+    it("toImportNumberMap preserves finite decimal values", () => {
+      expect(toImportNumberMap({ count: 1, ratio: "1.5", bad: Number.NaN, empty: " " })).toEqual({
+        count: 1,
+        ratio: 1.5,
+      });
+      expect(toImportNumberMap({})).toBeUndefined();
+      expect(toImportNumberMap([])).toBeUndefined();
+    });
+
+    it("coerces log entries and linked tests through option branches", () => {
+      expect(
+        toImportLogEntries(
+          [
+            { text: " record text ", created_at: "raw-created-at", author: " " },
+            { comment: "not selected by default" },
+          ],
+          {
+            fallbackCreatedAt: "2026-01-01T00:00:00.000Z",
+            fallbackAuthor: "agent",
+          },
+        ),
+      ).toEqual([{ created_at: "raw-created-at", author: "agent", text: "record text" }]);
+      expect(
+        toImportLogEntries("not accepted without allowScalar", {
+          fallbackCreatedAt: "2026-01-01T00:00:00.000Z",
+          fallbackAuthor: "agent",
+        }),
+      ).toBeUndefined();
+      expect(
+        toImportLogEntries([{ text: "converted", created_at: "2026-01-02" }, { text: "fallback", created_at: "bad-date" }], {
+          fallbackCreatedAt: "2026-01-01T00:00:00.000Z",
+          fallbackAuthor: "agent",
+          toIsoString: (value) => (value === "2026-01-02" ? "2026-01-02T00:00:00.000Z" : undefined),
+        }),
+      ).toEqual([
+        { created_at: "2026-01-02T00:00:00.000Z", author: "agent", text: "converted" },
+        { created_at: "2026-01-01T00:00:00.000Z", author: "agent", text: "fallback" },
+      ]);
+      expect(
+        toImportLinkedTests(
+          [
+            { command: "pnpm test", timeout_seconds: "1.5" },
+            { command: "pnpm lint", timeout_seconds: 0 },
+            { command: "pnpm build", timeout_seconds: 0 },
+          ],
+          { timeoutMinimum: 1 },
+        ),
+      ).toEqual([
+        { command: "pnpm test", path: undefined, scope: "project", timeout_seconds: 1.5, note: undefined },
+        { command: "pnpm lint", path: undefined, scope: "project", timeout_seconds: undefined, note: undefined },
+        { command: "pnpm build", path: undefined, scope: "project", timeout_seconds: undefined, note: undefined },
+      ]);
+      expect(
+        toImportLinkedTests([{ command: "pnpm test", timeout_seconds: 1 }], {
+          integerTimeout: true,
+          timeoutMinimum: 1,
+          timeoutExclusiveMinimum: true,
+        }),
+      ).toEqual([{ command: "pnpm test", path: undefined, scope: "project", timeout_seconds: undefined, note: undefined }]);
+      expect(toImportLinkedTests([{ command: "pnpm test", timeout_seconds: 0 }])).toEqual([
+        { command: "pnpm test", path: undefined, scope: "project", timeout_seconds: 0, note: undefined },
+      ]);
+      expect(toImportLinkedTests([{ path: "tests/unit/smoke.spec.ts" }])).toEqual([
+        { path: "tests/unit/smoke.spec.ts", scope: "project", timeout_seconds: undefined, note: undefined },
+      ]);
     });
 
     it("selectImportAuthor prefers explicit, then PM_AUTHOR, then settings", () => {

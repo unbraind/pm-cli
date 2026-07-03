@@ -569,9 +569,13 @@ function readListOptionString(options: Record<string, unknown>, target: string):
 // Shared governance-missing (GH-236) + content-field presence/absence (GH-242)
 // selection-filter fields. Presence flags are plain booleans; absence uses
 // commander negation (`--no-notes` stores notes=false) except --empty-body
-// which is its own dest. Spread into normalizeListOptions and
-// normalizeSearchOptions at the same position so key order is preserved.
+// which is its own dest. The docs/files `--filter-*-missing` aliases mirror
+// `--no-*` while keeping the raw alias keys accounted for before passthrough.
+// Spread into normalizeListOptions and normalizeSearchOptions at the same
+// position so key order is preserved.
 function readSelectionFilterOptionFields(options: Record<string, unknown>): Record<string, true | undefined> {
+  const filterFilesMissing = optionTrue(options, "filterFilesMissing");
+  const filterDocsMissing = optionTrue(options, "filterDocsMissing");
   return {
     filterReviewerMissing: optionTrue(options, "filterReviewerMissing"),
     filterRiskMissing: optionTrue(options, "filterRiskMissing"),
@@ -589,8 +593,10 @@ function readSelectionFilterOptionFields(options: Record<string, unknown>): Reco
     hasLinkedCommand: optionTrue(options, "hasLinkedCommand"),
     noNotes: optionFalse(options, "notes"),
     noLearnings: optionFalse(options, "learnings"),
-    noFiles: optionFalse(options, "files"),
-    noDocs: optionFalse(options, "docs"),
+    noFiles: optionFalse(options, "files") ?? filterFilesMissing,
+    filterFilesMissing,
+    noDocs: optionFalse(options, "docs") ?? filterDocsMissing,
+    filterDocsMissing,
     noTests: optionFalse(options, "tests"),
     noComments: optionFalse(options, "comments"),
     noDeps: optionFalse(options, "deps"),

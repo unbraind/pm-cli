@@ -3049,10 +3049,16 @@
           "flag": "--no-files"
         },
         {
+          "flag": "--filter-files-missing"
+        },
+        {
           "flag": "--has-docs"
         },
         {
           "flag": "--no-docs"
+        },
+        {
+          "flag": "--filter-docs-missing"
         },
         {
           "flag": "--has-tests"
@@ -3244,10 +3250,16 @@
           "flag": "--no-files"
         },
         {
+          "flag": "--filter-files-missing"
+        },
+        {
           "flag": "--has-docs"
         },
         {
           "flag": "--no-docs"
+        },
+        {
+          "flag": "--filter-docs-missing"
         },
         {
           "flag": "--has-tests"
@@ -3439,10 +3451,16 @@
           "flag": "--no-files"
         },
         {
+          "flag": "--filter-files-missing"
+        },
+        {
           "flag": "--has-docs"
         },
         {
           "flag": "--no-docs"
+        },
+        {
+          "flag": "--filter-docs-missing"
         },
         {
           "flag": "--has-tests"
@@ -3634,10 +3652,16 @@
           "flag": "--no-files"
         },
         {
+          "flag": "--filter-files-missing"
+        },
+        {
           "flag": "--has-docs"
         },
         {
           "flag": "--no-docs"
+        },
+        {
+          "flag": "--filter-docs-missing"
         },
         {
           "flag": "--has-tests"
@@ -3829,10 +3853,16 @@
           "flag": "--no-files"
         },
         {
+          "flag": "--filter-files-missing"
+        },
+        {
           "flag": "--has-docs"
         },
         {
           "flag": "--no-docs"
+        },
+        {
+          "flag": "--filter-docs-missing"
         },
         {
           "flag": "--has-tests"
@@ -4024,10 +4054,16 @@
           "flag": "--no-files"
         },
         {
+          "flag": "--filter-files-missing"
+        },
+        {
           "flag": "--has-docs"
         },
         {
           "flag": "--no-docs"
+        },
+        {
+          "flag": "--filter-docs-missing"
         },
         {
           "flag": "--has-tests"
@@ -4219,10 +4255,16 @@
           "flag": "--no-files"
         },
         {
+          "flag": "--filter-files-missing"
+        },
+        {
           "flag": "--has-docs"
         },
         {
           "flag": "--no-docs"
+        },
+        {
+          "flag": "--filter-docs-missing"
         },
         {
           "flag": "--has-tests"
@@ -4414,10 +4456,16 @@
           "flag": "--no-files"
         },
         {
+          "flag": "--filter-files-missing"
+        },
+        {
           "flag": "--has-docs"
         },
         {
           "flag": "--no-docs"
+        },
+        {
+          "flag": "--filter-docs-missing"
         },
         {
           "flag": "--has-tests"
@@ -5796,10 +5844,16 @@
           "flag": "--no-files"
         },
         {
+          "flag": "--filter-files-missing"
+        },
+        {
           "flag": "--has-docs"
         },
         {
           "flag": "--no-docs"
+        },
+        {
+          "flag": "--filter-docs-missing"
         },
         {
           "flag": "--has-tests"
