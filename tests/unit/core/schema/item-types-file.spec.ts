@@ -461,7 +461,7 @@ describe("normalizeStatusToken", () => {
     // Repeat lookups must serve the memoized value unchanged.
     expect(normalizeStatusToken("In-Progress")).toBe("in_progress");
     expect(normalizeStatusToken("In-Progress")).toBe("in_progress");
-    // Overflow the memo with unique tokens to force the wholesale clear branch.
+    // Overflow the memo with unique tokens to force the half-eviction branch.
     for (let index = 0; index < 2_001; index += 1) {
       normalizeStatusToken(`Status-${index}`);
     }

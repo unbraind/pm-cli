@@ -272,8 +272,8 @@ describe("core/shared/time", () => {
   });
 
   it("keeps comparing correctly after the timestamp parse memo hits its size cap", () => {
-    // Overflow the memo with unique parseable timestamps to force the wholesale
-    // clear branch, then verify ordering is still computed correctly.
+    // Overflow the memo with unique parseable timestamps to force the half-eviction
+    // branch, then verify ordering is still computed correctly.
     for (let index = 0; index < 10_001; index += 1) {
       const millis = String(index % 1000).padStart(3, "0");
       const seconds = String(Math.floor(index / 1000) % 60).padStart(2, "0");
