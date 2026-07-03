@@ -22,6 +22,9 @@ function isImportUrl(target) {
     return false;
   }
 }
+function isMissingServerModule(error) {
+  return typeof error === "object" && error !== null && error.code === "ERR_MODULE_NOT_FOUND";
+}
 async function findRepoServer() {
   let cursor = here;
   for (let depth = 0; depth < 10; depth += 1) {
@@ -42,7 +45,15 @@ async function startServer(target) {
     return false;
   }
   if (isImportUrl(target)) {
-    const server = await import(target);
+    let server;
+    try {
+      server = await import(target);
+    } catch (error) {
+      if (isMissingServerModule(error)) {
+        return false;
+      }
+      throw error;
+    }
     server.startMcpServer();
     return true;
   }

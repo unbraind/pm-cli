@@ -70,6 +70,9 @@ function isImportUrl(target) {
     return false;
   }
 }
+function isMissingServerModule(error) {
+  return typeof error === "object" && error !== null && error.code === "ERR_MODULE_NOT_FOUND";
+}
 async function findRepoServer() {
   let cursor = here;
   for (let depth = 0; depth < 10; depth += 1) {
@@ -90,7 +93,15 @@ async function startServer(target) {
     return false;
   }
   if (isImportUrl(target)) {
-    const server = await import(target);
+    let server;
+    try {
+      server = await import(target);
+    } catch (error) {
+      if (isMissingServerModule(error)) {
+        return false;
+      }
+      throw error;
+    }
     server.startMcpServer();
     return true;
   }
@@ -124,13 +135,80 @@ import { spawn } from "node:child_process";
 import { access } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-const read = async (target) => { try { await access(target); return true; } catch { return false; } };
-const importable = (target) => !/^[A-Za-z]:[\\\\/]/.test(target) && (() => { try { return new URL(target).protocol.length > 0; } catch { return false; } })();
-const repoServer = async () => { for (let cursor = path.dirname(fileURLToPath(import.meta.url)), depth = 0; depth < 10; depth += 1) { const candidate = path.join(cursor, "dist", "mcp", "server.js"); if (await read(candidate)) { return candidate; } const parent = path.dirname(cursor); if (parent === cursor) { return null; } cursor = parent; } return null; };
-const start = async (target) => { if (!target) { return false; } const server = importable(target) ? await import(target) : await read(target) ? await import(pathToFileURL(path.resolve(target)).href) : undefined; if (!server) { return false; } server.startMcpServer(); return true; };
-if (!(await start(process.env.PM_CLI_MCP_SERVER)) && !(await start(await repoServer()))) {
+
+async function canRead(target) {
+  try {
+    await access(target);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function hasImportProtocol(target) {
+  if (/^[A-Za-z]:[\\\\/]/.test(target)) {
+    return false;
+  }
+  try {
+    return new URL(target).protocol.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+function isMissingLaunchModule(error) {
+  return typeof error === "object" && error !== null && error.code === "ERR_MODULE_NOT_FOUND";
+}
+
+async function locateRepoServer() {
+  let cursor = path.dirname(fileURLToPath(import.meta.url));
+  for (let depth = 0; depth < 10; depth += 1) {
+    const candidate = path.join(cursor, "dist", "mcp", "server.js");
+    if (await canRead(candidate)) {
+      return candidate;
+    }
+    const parent = path.dirname(cursor);
+    if (parent === cursor) {
+      return null;
+    }
+    cursor = parent;
+  }
+  return null;
+}
+
+async function launchServer(target) {
+  if (!target) {
+    return false;
+  }
+  if (hasImportProtocol(target)) {
+    try {
+      const server = await import(target);
+      server.startMcpServer();
+      return true;
+    } catch (error) {
+      if (isMissingLaunchModule(error)) {
+        return false;
+      }
+      throw error;
+    }
+  }
+  if (!(await canRead(target))) {
+    return false;
+  }
+  const server = await import(pathToFileURL(path.resolve(target)).href);
+  server.startMcpServer();
+  return true;
+}
+
+if (!(await launchServer(process.env.PM_CLI_MCP_SERVER)) && !(await launchServer(await locateRepoServer()))) {
   const child = spawn("npx", ["-y", "--package=@unbrained/pm-cli@latest", "pm-mcp"], { stdio: "inherit", env: process.env });
-  child.on("exit", (code, signal) => signal ? process.kill(process.pid, signal) : process.exit(code ?? 1));
+  child.on("exit", (code, signal) => {
+    if (signal) {
+      process.kill(process.pid, signal);
+      return;
+    }
+    process.exit(code ?? 1);
+  });
 }
 `;
 }
