@@ -81,6 +81,12 @@ describe("package import adapter primitives", () => {
         ),
       ).toEqual([{ created_at: "raw-created-at", author: "agent", text: "record text" }]);
       expect(
+        toImportLogEntries("not accepted without allowScalar", {
+          fallbackCreatedAt: "2026-01-01T00:00:00.000Z",
+          fallbackAuthor: "agent",
+        }),
+      ).toBeUndefined();
+      expect(
         toImportLogEntries([{ text: "converted", created_at: "2026-01-02" }, { text: "fallback", created_at: "bad-date" }], {
           fallbackCreatedAt: "2026-01-01T00:00:00.000Z",
           fallbackAuthor: "agent",

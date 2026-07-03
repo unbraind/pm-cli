@@ -302,6 +302,7 @@ const toPriority: (value: unknown) => PriorityValue = toImportPriority;
 const toTags = toImportTags;
 
 const TODOS_LOG_ENTRY_OPTIONS = {
+  allowScalar: true,
   textKeys: ["text"],
   toIsoString,
 } satisfies Partial<ToImportLogEntriesOptions>;
