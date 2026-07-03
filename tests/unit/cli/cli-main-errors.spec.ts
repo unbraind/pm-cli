@@ -28,6 +28,7 @@ import {
   setActiveCommandResult,
   setActiveExtensionCommands,
   setActiveExtensionParsers,
+  runActiveServiceOverrideSync,
   setActiveExtensionRegistrations,
   setActiveExtensionServices,
 } from "../../../src/core/extensions/index.js";
@@ -279,8 +280,32 @@ describe("CLI main error helpers", () => {
   });
 
   it("sets recovered extension services for both null and loaded snapshots", () => {
-    expect(() => _testOnly.setRecoveredExtensionServices(null)).not.toThrow();
-    expect(() => _testOnly.setRecoveredExtensionServices({ services: { overrides: [] } })).not.toThrow();
+    // A loaded snapshot installs its service registry: the recovered override
+    // becomes the active handler for its service.
+    _testOnly.setRecoveredExtensionServices({
+      services: {
+        overrides: [
+          {
+            layer: "project",
+            name: "recovered-help-wrapper",
+            service: "help_format",
+            run: (context) => `recovered:${(context.payload as { command?: string }).command}`,
+          },
+        ],
+      },
+    });
+    expect(runActiveServiceOverrideSync("help_format", { command: "list" })).toEqual({
+      handled: true,
+      result: "recovered:list",
+      warnings: [],
+    });
+
+    // A null snapshot resets to an empty registry: no override handles the
+    // service and the payload passes through unchanged.
+    _testOnly.setRecoveredExtensionServices(null);
+    const passthrough = runActiveServiceOverrideSync("help_format", { command: "list" });
+    expect(passthrough.handled).toBe(false);
+    expect(passthrough.result).toEqual({ command: "list" });
   });
 
   it("makes top-level command registration idempotent so re-entry never throws (pm-zyez / PM-CLI-1R)", () => {
@@ -5127,10 +5152,30 @@ describe("CLI rich help content", () => {
     expect(reminderText).toContain("type options: none");
 
     const program = new Command().name("pm");
-    program.command("create").description("Create item");
+    const createCommand = program.command("create").description("Create item");
+    let renderedCreateHelp = "";
+    createCommand.configureOutput({
+      writeOut: (text) => {
+        renderedCreateHelp += text;
+      },
+    });
+    const renderCreateHelp = (): string => {
+      renderedCreateHelp = "";
+      createCommand.outputHelp();
+      return renderedCreateHelp;
+    };
+
+    // Non-create invocations attach nothing: `list` is not a policy command and
+    // the `update` bootstrap finds no matching child command on this program.
     helpJsonTestOnly.attachCreateUpdatePolicyHelpText(program, registry, ["list", "--help"]);
     helpJsonTestOnly.attachCreateUpdatePolicyHelpText(program, registry, ["update", "--type", "Incident"]);
-    expect(() => helpJsonTestOnly.attachCreateUpdatePolicyHelpText(program, registry, ["create", "--type", "Incident"])).not.toThrow();
+    expect(renderCreateHelp()).not.toContain("Type-aware option policies for Incident");
+
+    // The create-path invocation appends the policy block to `pm create` help.
+    helpJsonTestOnly.attachCreateUpdatePolicyHelpText(program, registry, ["create", "--type", "Incident"]);
+    const attachedHelp = renderCreateHelp();
+    expect(attachedHelp).toContain("Type-aware option policies for Incident");
+    expect(attachedHelp).toContain("aliases: sev");
   });
 
   it("normalizes help command paths and resolves --explain detail mode", () => {

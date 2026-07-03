@@ -1820,10 +1820,16 @@ describe("contracts command runtime", () => {
         (entry) => entry.properties?.action?.const === "migrate-asset",
       );
       expect(migrateBranch).toBeDefined();
-      expect(migrateBranch?.properties?.assetId).toBeDefined();
-      expect(migrateBranch?.properties?.source).toBeDefined();
-      expect(migrateBranch?.properties?.target).toBeDefined();
-      expect(migrateBranch?.properties?.dryRun).toBeDefined();
+      // Positional arguments and string-valued flags both surface as plain
+      // string schema properties carrying the contract description.
+      expect(migrateBranch?.properties?.assetId).toMatchObject({
+        type: "string",
+        description: "Optional asset identifier override.",
+      });
+      expect(migrateBranch?.properties?.target).toMatchObject({
+        type: "string",
+        description: "Destination payload path.",
+      });
       expect(migrateBranch?.properties?.source).toMatchObject({ type: "string" });
       expect(migrateBranch?.properties?.dryRun).toMatchObject({ type: "boolean" });
       expect((migrateBranch as { required?: string[] } | undefined)?.required).toContain("source");

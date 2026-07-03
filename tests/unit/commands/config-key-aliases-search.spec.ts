@@ -79,10 +79,12 @@ describe("config nested-setting aliases (pm-7ilo)", () => {
   });
 
   it("resolves both kebab-case and snake_case forms of each alias", () => {
-    for (const alias of Object.keys(EXPECTED_ALIASES)) {
-      expect(resolveNestedSettingDescriptor(alias)).toBeDefined();
-      // kebab-case is accepted by normalizing "-" → "_" in the resolver.
-      expect(resolveNestedSettingDescriptor(alias.replaceAll("_", "-"))).toBeDefined();
+    for (const [alias, expectedPath] of Object.entries(EXPECTED_ALIASES)) {
+      const descriptor = resolveNestedSettingDescriptor(alias);
+      expect(descriptor).toMatchObject({ key: alias, path: expectedPath });
+      // kebab-case is accepted by normalizing "-" → "_" in the resolver, so it
+      // must resolve to the very same descriptor object as the snake_case form.
+      expect(resolveNestedSettingDescriptor(alias.replaceAll("_", "-"))).toBe(descriptor);
     }
   });
 
@@ -272,9 +274,10 @@ describe("config general-setting aliases (pm-9byd / pm-nnaq)", () => {
   });
 
   it("resolves both kebab-case and snake_case forms of each general alias", () => {
-    for (const alias of Object.keys(EXPECTED_GENERAL_ALIASES)) {
-      expect(resolveNestedSettingDescriptor(alias)).toBeDefined();
-      expect(resolveNestedSettingDescriptor(alias.replaceAll("_", "-"))).toBeDefined();
+    for (const [alias, expectedPath] of Object.entries(EXPECTED_GENERAL_ALIASES)) {
+      const descriptor = resolveNestedSettingDescriptor(alias);
+      expect(descriptor).toMatchObject({ key: alias, path: expectedPath });
+      expect(resolveNestedSettingDescriptor(alias.replaceAll("_", "-"))).toBe(descriptor);
     }
   });
 

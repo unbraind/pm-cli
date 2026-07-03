@@ -1,13 +1,11 @@
+import fs from "node:fs/promises";
+import path from "node:path";
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+import { SEARCH_CACHE_ARTIFACT_PATHS } from "../../../src/core/search/cache.js";
 
-// Stub the search-refresh collaborators so invalidateSearchCachesForMutation can
-// be exercised without touching real cache artifacts or spawning refresh workers.
-const refreshSearchArtifactsForMutation = vi.hoisted(() => vi.fn());
-const shouldRunSearchRefreshInForeground = vi.hoisted(() => vi.fn(() => false));
 const printError = vi.hoisted(() => vi.fn());
 
-vi.mock("../../../src/core/search/cache.js", () => ({ refreshSearchArtifactsForMutation }));
-vi.mock("../../../src/core/search/background-refresh.js", () => ({ shouldRunSearchRefreshInForeground }));
 vi.mock("../../../src/core/output/output.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../../src/core/output/output.js")>();
   return { ...actual, printError };
@@ -15,49 +13,40 @@ vi.mock("../../../src/core/output/output.js", async (importOriginal) => {
 
 import { invalidateSearchCachesForMutation } from "../../../src/cli/registration-helpers.js";
 
+async function writeSearchArtifacts(pmRoot: string): Promise<void> {
+  await fs.mkdir(path.join(pmRoot, "index"), { recursive: true });
+  await fs.mkdir(path.join(pmRoot, "search"), { recursive: true });
+  await fs.writeFile(path.join(pmRoot, "index", "manifest.json"), '{"ok":true}\n', "utf8");
+  await fs.writeFile(path.join(pmRoot, "search", "embeddings.jsonl"), '{"id":"pm-1"}\n', "utf8");
+}
+
 describe("invalidateSearchCachesForMutation", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    shouldRunSearchRefreshInForeground.mockReturnValue(false);
-  });
-
-  it("refreshes in the background when foreground refresh is not requested", async () => {
-    refreshSearchArtifactsForMutation.mockResolvedValue({ warnings: [] });
-    await invalidateSearchCachesForMutation({ quiet: false, profile: false }, { id: "pm-1" });
-    expect(refreshSearchArtifactsForMutation).toHaveBeenCalledWith(
-      expect.any(String),
-      ["pm-1"],
-      { background: true },
-    );
-    expect(printError).not.toHaveBeenCalled();
-  });
-
-  it("refreshes in the foreground when foreground refresh is requested", async () => {
-    shouldRunSearchRefreshInForeground.mockReturnValue(true);
-    refreshSearchArtifactsForMutation.mockResolvedValue({ warnings: [] });
-    await invalidateSearchCachesForMutation({ quiet: false }, undefined);
-    expect(refreshSearchArtifactsForMutation).toHaveBeenCalledWith(
-      expect.any(String),
-      [],
-      { background: false },
-    );
-  });
-
-  it("emits refresh warnings only when profiling is enabled and warnings exist", async () => {
-    refreshSearchArtifactsForMutation.mockResolvedValue({ warnings: ["w1", "w2"] });
-    await invalidateSearchCachesForMutation({ quiet: false, profile: true }, { id: "pm-2" });
-    expect(printError).toHaveBeenCalledWith("profile:search_refresh_warnings=w1,w2");
-
-    // Profiling on but no warnings: nothing is emitted.
     printError.mockClear();
-    refreshSearchArtifactsForMutation.mockResolvedValue({ warnings: [] });
-    await invalidateSearchCachesForMutation({ quiet: false, profile: true }, { id: "pm-3" });
-    expect(printError).not.toHaveBeenCalled();
+  });
 
-    // Warnings present but profiling off: still nothing is emitted.
-    printError.mockClear();
-    refreshSearchArtifactsForMutation.mockResolvedValue({ warnings: ["w"] });
-    await invalidateSearchCachesForMutation({ quiet: false, profile: false }, { id: "pm-4" });
-    expect(printError).not.toHaveBeenCalled();
+  it("invalidates real cache artifacts for mutation results without profiling noise", async () => {
+    await withTempPmPath(async (context) => {
+      await writeSearchArtifacts(context.pmPath);
+
+      await invalidateSearchCachesForMutation({ quiet: false, profile: false, path: context.pmPath }, { id: "pm-1" });
+
+      for (const relativePath of SEARCH_CACHE_ARTIFACT_PATHS) {
+        await expect(fs.access(path.join(context.pmPath, relativePath))).rejects.toMatchObject({ code: "ENOENT" });
+      }
+      expect(printError).not.toHaveBeenCalled();
+    });
+  });
+
+  it("emits real semantic-refresh warnings only when profiling is enabled", async () => {
+    await withTempPmPath(async (context) => {
+      await invalidateSearchCachesForMutation({ quiet: false, profile: false, path: context.pmPath }, { id: "pm-2" });
+      expect(printError).not.toHaveBeenCalled();
+
+      await invalidateSearchCachesForMutation({ quiet: false, profile: true, path: context.pmPath }, { id: "pm-2" });
+      expect(printError).toHaveBeenCalledWith(
+        "profile:search_refresh_warnings=search_semantic_refresh_skipped:provider_unconfigured",
+      );
+    });
   });
 });

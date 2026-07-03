@@ -204,6 +204,11 @@ describe("cli extension loose option parser", () => {
     expect(() =>
       validateLooseCommandOptionsWithFlagDefinitions({}, [{ long: "bad", short: "--oops" } as never], "todos export"),
     ).not.toThrow();
+    // The malformed entry contributes no keys/labels, so validation still runs
+    // and an unknown option is rejected without an "Expected one of" suffix.
+    expect(() =>
+      validateLooseCommandOptionsWithFlagDefinitions({ ghost: true }, [{ long: "bad", short: "--oops" } as never], "todos export"),
+    ).toThrowError(/^Unknown option '--ghost' for extension command 'todos export'\.$/);
 
     const coercedStrings = coerceLooseCommandOptionsWithFlagDefinitions(
       { tag: [1, null, "ok"] },
@@ -227,9 +232,18 @@ describe("cli extension loose option parser", () => {
     expect(() =>
       validateLooseCommandOptionsWithFlagDefinitions({}, [{ long: "invalid", short: 1 as never } as never], "todos export"),
     ).not.toThrow();
+    // A non-string short is dropped entirely: no keys, no labels, no suffix.
+    expect(() =>
+      validateLooseCommandOptionsWithFlagDefinitions({ ghost: true }, [{ long: "invalid", short: 1 as never } as never], "todos export"),
+    ).toThrowError(/^Unknown option '--ghost' for extension command 'todos export'\.$/);
     expect(() =>
       validateLooseCommandOptionsWithFlagDefinitions({}, [{ short: "-__proto__" } as never], "todos export"),
     ).not.toThrow();
+    // The unsafe short key is never allowed as an option key, but its literal
+    // short flag still surfaces as the expected label in the guidance suffix.
+    expect(() =>
+      validateLooseCommandOptionsWithFlagDefinitions({ ghost: true }, [{ short: "-__proto__" } as never], "todos export"),
+    ).toThrowError("Unknown option '--ghost' for extension command 'todos export'. Expected one of: -__proto__.");
     try {
       validateLooseCommandOptionsWithFlagDefinitions(
         { ghost: true },

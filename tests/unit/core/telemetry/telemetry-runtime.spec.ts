@@ -2772,8 +2772,10 @@ describe("core/telemetry/runtime", () => {
 
       await fs.chmod(telemetryDir, 0o500);
       try {
-        await expect(_testOnly.rewriteQueue(globalRoot, [])).rejects.toBeDefined();
-        await expect(_testOnly.rewritePendingOtelSpans(globalRoot, [])).rejects.toBeDefined();
+        // The read-only queue directory denies the atomic temp-file write; the
+        // rewrite retry loop exhausts its delays and rethrows the EACCES error.
+        await expect(_testOnly.rewriteQueue(globalRoot, [])).rejects.toMatchObject({ code: "EACCES" });
+        await expect(_testOnly.rewritePendingOtelSpans(globalRoot, [])).rejects.toMatchObject({ code: "EACCES" });
       } finally {
         await fs.chmod(telemetryDir, 0o700);
       }
@@ -2836,7 +2838,9 @@ describe("core/telemetry/runtime", () => {
       const lockParent = path.dirname(lockPath);
       await fs.mkdir(lockParent, { recursive: true });
       await fs.chmod(lockParent, 0o500);
-      await expect(_testOnly.acquireTelemetryFlushLock(globalRoot)).rejects.toBeDefined();
+      // mkdir(lockPath) in the read-only parent fails with EACCES (not EEXIST),
+      // which the lock acquirer rethrows instead of treating as lock contention.
+      await expect(_testOnly.acquireTelemetryFlushLock(globalRoot)).rejects.toMatchObject({ code: "EACCES" });
       await fs.chmod(lockParent, 0o700);
 
       await fs.writeFile(lockPath, "held", "utf8");

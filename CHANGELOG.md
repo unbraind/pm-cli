@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Security
+
+- Extreme mandatory quality gates: strict ESLint everywhere, jscpd strict/zero-threshold, suppressions budget, Trivy/ShellCheck/PSScriptAnalyzer/actionlint CI, admin-proof branch protection ([pm-7wmq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-7wmq.toon))
+
+### Other
+
+- Test meaningfulness audit: strengthen hollow assertions, de-mock thin specs, convert contract source-mirrors to behavior ([pm-4i73](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-4i73.toon))
+
 ## 2026.7.3 - 2026-07-03
 
 ### Fixed

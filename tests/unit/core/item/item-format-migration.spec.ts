@@ -50,7 +50,7 @@ describe("migrateItemFilesToFormat", () => {
       expect(result.warnings).toContain(
         "item_format_migration_parse_warning:pm-yaml-wrapper:json_markdown_leading_yaml_frontmatter_ignored",
       );
-      await expect(fs.access(markdownPath)).rejects.toBeDefined();
+      await expect(fs.access(markdownPath)).rejects.toMatchObject({ code: "ENOENT" });
 
       const parsed = parseItemDocument(await fs.readFile(toonPath, "utf8"), { format: "toon" });
       expect(parsed.metadata.description).toBe("yaml-wrapped-source");
@@ -85,7 +85,7 @@ describe("migrateItemFilesToFormat", () => {
       expect(result.target_format).toBe("toon");
       expect(result.migrated).toContain("pm-md-only");
       await expect(fs.access(toonPath)).resolves.toBeUndefined();
-      await expect(fs.access(markdownPath)).rejects.toBeDefined();
+      await expect(fs.access(markdownPath)).rejects.toMatchObject({ code: "ENOENT" });
 
       const parsed = parseItemDocument(await fs.readFile(toonPath, "utf8"), { format: "toon" });
       expect(parsed.metadata.description).toBe("markdown-source");
@@ -101,7 +101,7 @@ describe("migrateItemFilesToFormat", () => {
 
       const result = await migrateItemFilesToFormat(pmPath, "toon");
       expect(result.migrated).toContain("pm-dual");
-      await expect(fs.access(markdownPath)).rejects.toBeDefined();
+      await expect(fs.access(markdownPath)).rejects.toMatchObject({ code: "ENOENT" });
       await expect(fs.access(toonPath)).resolves.toBeUndefined();
 
       const parsed = parseItemDocument(await fs.readFile(toonPath, "utf8"), { format: "toon" });
