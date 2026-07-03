@@ -75,6 +75,7 @@ type SqModule = {
 const ESLINT_DISABLE_PRAGMA = "// eslint-" + "disable-next-line complexity";
 const COVERAGE_IGNORE_PRAGMA = "/* v8 " + "ignore next */";
 const JSCPD_IGNORE_PRAGMA = "// jscpd:" + "ignore-start";
+const JSCPD_IGNORE_END_PRAGMA = "// jscpd:" + "ignore-end";
 
 function mockUtils(repoRoot: string): void {
   vi.doMock("../../../../scripts/release/utils.mjs", async () => {
@@ -493,7 +494,8 @@ describe("static-quality-gate", () => {
         "utf8",
       );
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      expect(mod.MAX_ESLINT_SUPPRESSIONS).toBeGreaterThanOrEqual(0);
+      const actualSuppressionCount = mod.countEslintSuppressions(`${process.cwd()}/eslint-suppressions.json`);
+      expect(mod.MAX_ESLINT_SUPPRESSIONS).toBeGreaterThanOrEqual(actualSuppressionCount);
       expect(mod.checkEslintSuppressionsBudget(2)).toEqual({ ok: true, total: 2, max_suppressions: 2 });
       expect(mod.checkEslintSuppressionsBudget(1)).toEqual({ ok: false, total: 2, max_suppressions: 1 });
     });
@@ -520,7 +522,16 @@ describe("static-quality-gate", () => {
       await mkdir(`${root}/src`, { recursive: true });
       await writeFile(
         `${root}/src/pragmas.ts`,
-        [ESLINT_DISABLE_PRAGMA, "export const a = 1;", COVERAGE_IGNORE_PRAGMA, "export const b = 2;", JSCPD_IGNORE_PRAGMA, ""].join("\n"),
+        [
+          ESLINT_DISABLE_PRAGMA,
+          "export const a = 1;",
+          COVERAGE_IGNORE_PRAGMA,
+          "export const b = 2;",
+          JSCPD_IGNORE_PRAGMA,
+          "export const c = 3;",
+          JSCPD_IGNORE_END_PRAGMA,
+          "",
+        ].join("\n"),
         "utf8",
       );
       await writeFile(`${root}/src/clean.ts`, "export const clean = true;\n", "utf8");
@@ -892,6 +903,8 @@ describe("static-quality-gate", () => {
           COVERAGE_IGNORE_PRAGMA,
           "export const q = 2;",
           JSCPD_IGNORE_PRAGMA,
+          "export const r = 3;",
+          JSCPD_IGNORE_END_PRAGMA,
           "",
         ].join("\n"),
         "utf8",

@@ -96,9 +96,14 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       # Lints every workflow (expression typing, runner labels, permissions,
-      # and embedded run: scripts via shellcheck). The download script verifies
-      # the release checksum for the pinned version.
+      # and embedded run: scripts via shellcheck). Download the pinned release
+      # asset directly and verify its SHA-256 before executing it.
       - name: Run actionlint on all workflows
         run: |
-          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
+          version=1.7.12
+          asset="actionlint_${version}_linux_amd64.tar.gz"
+          expected_sha="8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
+          curl -fsSLO "https://github.com/rhysd/actionlint/releases/download/v${version}/${asset}"
+          printf '%s  %s\n' "$expected_sha" "$asset" | sha256sum --check --strict
+          tar -xzf "$asset" actionlint
           ./actionlint -color

@@ -534,7 +534,7 @@ export function checkInlinePragmaBudgets(budgets, files = collectPragmaScanFiles
   const checks = [
     ["inline_eslint_disables", "eslint-" + "disable", budgets.maxInlineEslintDisables],
     ["coverage_ignore_pragmas", "(?:v8|c8|istanbul) " + "ignore", budgets.maxCoverageIgnorePragmas],
-    ["jscpd_ignore_pragmas", "jscpd:" + "ignore", budgets.maxJscpdIgnorePragmas],
+    ["jscpd_ignore_pragmas", "jscpd:" + "ignore-" + "start", budgets.maxJscpdIgnorePragmas],
   ];
   const report = { ok: true, scanned_file_count: files.length, budgets: {} };
   for (const [key, patternSource, max] of checks) {
