@@ -73,6 +73,16 @@ function isImportUrl(target) {
 function isMissingServerModule(error) {
   return typeof error === "object" && error !== null && error.code === "ERR_MODULE_NOT_FOUND";
 }
+async function importServerModule(target) {
+  try {
+    return await import(target);
+  } catch (error) {
+    if (isMissingServerModule(error)) {
+      return null;
+    }
+    throw error;
+  }
+}
 async function findRepoServer() {
   let cursor = here;
   for (let depth = 0; depth < 10; depth += 1) {
@@ -93,14 +103,9 @@ async function startServer(target) {
     return false;
   }
   if (isImportUrl(target)) {
-    let server;
-    try {
-      server = await import(target);
-    } catch (error) {
-      if (isMissingServerModule(error)) {
-        return false;
-      }
-      throw error;
+    const server = await importServerModule(target);
+    if (!server) {
+      return false;
     }
     server.startMcpServer();
     return true;
@@ -108,7 +113,10 @@ async function startServer(target) {
   if (!(await exists(target))) {
     return false;
   }
-  const server = await import(pathToFileURL(path.resolve(target)).href);
+  const server = await importServerModule(pathToFileURL(path.resolve(target)).href);
+  if (!server) {
+    return false;
+  }
   server.startMcpServer();
   return true;
 }
@@ -160,6 +168,17 @@ function isMissingLaunchModule(error) {
   return typeof error === "object" && error !== null && error.code === "ERR_MODULE_NOT_FOUND";
 }
 
+async function importLaunchModule(target) {
+  try {
+    return await import(target);
+  } catch (error) {
+    if (isMissingLaunchModule(error)) {
+      return null;
+    }
+    throw error;
+  }
+}
+
 async function locateRepoServer() {
   let cursor = path.dirname(fileURLToPath(import.meta.url));
   for (let depth = 0; depth < 10; depth += 1) {
@@ -181,21 +200,20 @@ async function launchServer(target) {
     return false;
   }
   if (hasImportProtocol(target)) {
-    try {
-      const server = await import(target);
-      server.startMcpServer();
-      return true;
-    } catch (error) {
-      if (isMissingLaunchModule(error)) {
-        return false;
-      }
-      throw error;
+    const server = await importLaunchModule(target);
+    if (!server) {
+      return false;
     }
+    server.startMcpServer();
+    return true;
   }
   if (!(await canRead(target))) {
     return false;
   }
-  const server = await import(pathToFileURL(path.resolve(target)).href);
+  const server = await importLaunchModule(pathToFileURL(path.resolve(target)).href);
+  if (!server) {
+    return false;
+  }
   server.startMcpServer();
   return true;
 }

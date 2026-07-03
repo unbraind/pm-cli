@@ -196,6 +196,54 @@ export function startMcpServer() {
     expect(accessMock).not.toHaveBeenCalled();
   });
 
+  it("falls back when an explicit local path disappears before import", async () => {
+    const root = await createTempRoot("pm-plugin-mcp-local-race-");
+    process.env.PM_CLI_MCP_SERVER = path.join(root, "vanished-server.mjs");
+    const fallbackSpawn = spawnReturningExit(0, null);
+    const accessMock = vi.fn(async (target: string) => {
+      if (path.resolve(target) === path.resolve(process.env.PM_CLI_MCP_SERVER ?? "")) {
+        return;
+      }
+      throw new Error("ENOENT");
+    });
+    vi.doMock("node:child_process", () => ({ spawn: fallbackSpawn }));
+    vi.doMock("node:fs/promises", () => ({ access: accessMock }));
+    const exit = mockExit();
+
+    for (const script of mcpServerScripts) {
+      await expect(importScript(script, `local-race-${path.basename(script)}`)).rejects.toThrow("EXIT:0");
+    }
+
+    expect(fallbackSpawn).toHaveBeenCalledTimes(2);
+    expect(accessMock).toHaveBeenCalled();
+    exit.mockRestore();
+  });
+
+  it("rethrows startup ERR_MODULE_NOT_FOUND failures without falling back", async () => {
+    process.env.PM_CLI_MCP_SERVER = `data:text/javascript,${encodeURIComponent(`
+export function startMcpServer() {
+  const error = new Error("startup dependency missing");
+  error.code = "ERR_MODULE_NOT_FOUND";
+  throw error;
+}
+`)}`;
+    const fallbackSpawn = spawnReturningExit(0, null);
+    const accessMock = vi.fn(async () => {
+      throw new Error("ENOENT");
+    });
+    vi.doMock("node:child_process", () => ({ spawn: fallbackSpawn }));
+    vi.doMock("node:fs/promises", () => ({ access: accessMock }));
+
+    for (const script of mcpServerScripts) {
+      await expect(importScript(script, `startup-missing-${path.basename(script)}`)).rejects.toThrow(
+        "startup dependency missing",
+      );
+    }
+
+    expect(fallbackSpawn).not.toHaveBeenCalled();
+    expect(accessMock).not.toHaveBeenCalled();
+  });
+
   it("treats Windows-style explicit server values as paths and falls back when missing", async () => {
     process.env.PM_CLI_MCP_SERVER = "C:\\missing\\pm-mcp-server.mjs";
     const fallbackSpawn = spawnReturningExit(0, null);
