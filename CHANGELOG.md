@@ -8,6 +8,7 @@
 
 ### Other
 
+- Perf: pm context / pm next hot path ~700ms on an ~850-item tracker ([pm-z1pv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-z1pv.toon))
 - 2026-07-02 full ecosystem audit & optimization pass (CLI+SDK+packages+docs+CI) ([pm-fpod](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fpod.toon))
 - Lane C: Code quality audit (complexity, dead code, cross-file duplication, long files, type safety, dependencies) ([pm-hfli](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hfli.toon))
 - Lane F: CI/CD best-practice + secret/PII leak scan incl. pm history files ([pm-mo2v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mo2v.toon))
