@@ -145,10 +145,17 @@ export async function writeHistoryRawWithRollback(params: {
   try {
     await writeFileAtomic(params.historyPath, params.nextHistoryRaw);
   } catch (error) {
-    if (params.historyRawUnderLock === null) {
-      await fs.rm(params.historyPath, { force: true });
-    } else {
-      await writeFileAtomic(params.historyPath, params.historyRawUnderLock);
+    try {
+      if (params.historyRawUnderLock === null) {
+        await fs.rm(params.historyPath, { force: true });
+      } else {
+        await writeFileAtomic(params.historyPath, params.historyRawUnderLock);
+      }
+    } catch (rollbackError) {
+      throw new AggregateError(
+        [error, rollbackError],
+        `History rewrite failed and rollback also failed: ${String(error)}`,
+      );
     }
     throw error;
   }

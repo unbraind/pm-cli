@@ -1007,8 +1007,9 @@ interface CloseRouteContext {
   id: string;
 }
 
+const UPDATE_LEGACY_COMMON_SCALAR_OPTION_EXCLUSIONS = new Set<string>(["order", "rank"]);
 const UPDATE_LEGACY_COMMON_SCALAR_OPTION_KEYS = COMMON_MUTATION_COMMAND_OPTION_KEYS.filter(
-  (key) => key !== "order",
+  (key) => !UPDATE_LEGACY_COMMON_SCALAR_OPTION_EXCLUSIONS.has(key),
 ) as readonly (keyof UpdateCommandOptions)[];
 
 const UPDATE_LEGACY_SCALAR_OPTION_KEYS: readonly (keyof UpdateCommandOptions)[] = [

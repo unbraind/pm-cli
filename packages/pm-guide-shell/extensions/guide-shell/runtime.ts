@@ -212,7 +212,9 @@ async function buildCompletionRuntimeConfig(
 }
 
 function payloadRecord(payload: unknown): Record<string, unknown> | undefined {
-  return typeof payload === "object" && payload !== null ? (payload as Record<string, unknown>) : undefined;
+  return typeof payload === "object" && payload !== null && !Array.isArray(payload)
+    ? (payload as Record<string, unknown>)
+    : undefined;
 }
 
 function readPayloadFormat(payload: unknown): "toon" | "json" {

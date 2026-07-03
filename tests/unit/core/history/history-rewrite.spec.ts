@@ -6,6 +6,7 @@ import {
   checkHistoryRewriteOwnership,
   executeHistoryRewrite,
   verifyHistoryRewriteNoDrift,
+  writeHistoryRawWithRollback,
 } from "../../../../src/core/history/history-rewrite.js";
 import { writeFileAtomic } from "../../../../src/core/fs/fs-utils.js";
 import { SETTINGS_DEFAULTS } from "../../../../src/core/shared/constants.js";
@@ -236,6 +237,38 @@ describe("verifyHistoryRewriteNoDrift", () => {
     });
     expect(result.locatedUnderLock).toBeNull();
     expect(result.loadedItemUnderLock).toBeNull();
+  });
+});
+
+describe("writeHistoryRawWithRollback", () => {
+  let tempRoot: string;
+
+  beforeEach(async () => {
+    tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-history-write-rollback-"));
+  });
+
+  afterEach(async () => {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  });
+
+  it("reports the original write failure when rollback also fails", async () => {
+    const historyPath = path.join(tempRoot, "history-as-directory.jsonl");
+    await fs.mkdir(historyPath);
+
+    try {
+      await writeHistoryRawWithRollback({
+        historyPath,
+        nextHistoryRaw: "next\n",
+        historyRawUnderLock: "previous\n",
+      });
+      throw new Error("expected writeHistoryRawWithRollback to reject");
+    } catch (error) {
+      expect(error).toBeInstanceOf(AggregateError);
+      const aggregate = error as AggregateError;
+      expect(aggregate.message).toContain("History rewrite failed");
+      expect(aggregate.errors).toHaveLength(2);
+      expect(String(aggregate.errors[0])).toContain("EISDIR");
+    }
   });
 });
 
