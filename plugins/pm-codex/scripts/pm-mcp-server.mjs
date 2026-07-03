@@ -8,6 +8,16 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 async function canRead(target) {
   try { await access(target); return true; } catch { return false; }
 }
+function isImportUrl(target) {
+  if (/^[A-Za-z]:[\\/]/.test(target)) {
+    return false;
+  }
+  try {
+    return new URL(target).protocol.length > 0;
+  } catch {
+    return false;
+  }
+}
 async function repoServerPath() {
   for (let cursor = scriptDir, depth = 0; depth < 10; depth += 1) {
     const candidate = path.join(cursor, "dist", "mcp", "server.js");
@@ -23,7 +33,15 @@ async function repoServerPath() {
   return null;
 }
 async function startReadableServer(target) {
-  if (!target || !(await canRead(target))) {
+  if (!target) {
+    return false;
+  }
+  if (isImportUrl(target)) {
+    const server = await import(target);
+    server.startMcpServer();
+    return true;
+  }
+  if (!(await canRead(target))) {
     return false;
   }
   const server = await import(pathToFileURL(path.resolve(target)).href);

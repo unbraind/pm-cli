@@ -129,6 +129,55 @@ export function startMcpServer() {
     expect(spawnMock).not.toHaveBeenCalled();
   });
 
+  it("imports URL-like explicit server specifiers before filesystem probing", async () => {
+    const root = await createTempRoot("pm-plugin-mcp-url-explicit-");
+    const explicitServerPath = path.join(root, "url-explicit-server.mjs");
+    await writeFile(
+      explicitServerPath,
+      `globalThis.__PM_MCP_MODULE_LOADS = (globalThis.__PM_MCP_MODULE_LOADS ?? 0) + 1;
+export function startMcpServer() {
+  globalThis.__PM_MCP_STARTS = (globalThis.__PM_MCP_STARTS ?? 0) + 1;
+}
+`,
+      "utf8",
+    );
+    process.env.PM_CLI_MCP_SERVER = pathToFileURL(explicitServerPath).href;
+    const spawnMock = vi.fn();
+    const accessMock = vi.fn(async () => {
+      throw new Error("ENOENT");
+    });
+    vi.doMock("node:child_process", () => ({ spawn: spawnMock }));
+    vi.doMock("node:fs/promises", () => ({ access: accessMock }));
+
+    for (const script of mcpServerScripts) {
+      await importScript(script, `url-explicit-${path.basename(script)}`);
+    }
+
+    expect((globalThis as Record<string, unknown>).__PM_MCP_MODULE_LOADS).toBe(1);
+    expect((globalThis as Record<string, unknown>).__PM_MCP_STARTS).toBe(2);
+    expect(accessMock).not.toHaveBeenCalled();
+    expect(spawnMock).not.toHaveBeenCalled();
+  });
+
+  it("treats Windows-style explicit server values as paths and falls back when missing", async () => {
+    process.env.PM_CLI_MCP_SERVER = "C:\\missing\\pm-mcp-server.mjs";
+    const fallbackSpawn = spawnReturningExit(0, null);
+    const accessMock = vi.fn(async () => {
+      throw new Error("ENOENT");
+    });
+    vi.doMock("node:child_process", () => ({ spawn: fallbackSpawn }));
+    vi.doMock("node:fs/promises", () => ({ access: accessMock }));
+    const exit = mockExit();
+
+    for (const script of mcpServerScripts) {
+      await expect(importScript(script, `windows-explicit-${path.basename(script)}`)).rejects.toThrow("EXIT:0");
+    }
+
+    expect(fallbackSpawn).toHaveBeenCalledTimes(2);
+    expect(accessMock).toHaveBeenCalled();
+    exit.mockRestore();
+  });
+
   it("discovers and starts the repo-checkout server when no explicit path is set", async () => {
     delete process.env.PM_CLI_MCP_SERVER;
     const root = await createTempRoot("pm-plugin-mcp-repo-");
