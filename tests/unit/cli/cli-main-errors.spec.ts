@@ -3548,7 +3548,9 @@ describe("CLI guide topic helpers", () => {
     expect(quickstart).toBeDefined();
     quickstart?.aliases.push("mutated");
     quickstart?.workflows[0]?.commands.push("pm mutated");
-    quickstart?.docs[0] && (quickstart.docs[0].path = "mutated.md");
+    if (quickstart?.docs[0]) {
+      quickstart.docs[0].path = "mutated.md";
+    }
 
     const freshQuickstart = listGuideTopics().find((topic) => topic.id === "quickstart");
     expect(freshQuickstart?.aliases).not.toContain("mutated");

@@ -262,7 +262,7 @@ describe("generate-release-notes", () => {
     {
       label: "non-Error",
       thrown: () => {
-        // eslint-disable-next-line no-throw-literal
+         
         throw "raw pm failure";
       },
       expected: "raw pm failure",
@@ -270,7 +270,6 @@ describe("generate-release-notes", () => {
   ])("surfaces a warning when the pm CLI throws a $label", async ({ thrown, expected }) => {
     const execFileSync = vi.fn((command: string) => {
       if (command === "git") return "";
-      // eslint-disable-next-line @typescript-eslint/no-throw-literal
       throw thrown();
     });
     vi.doMock("node:child_process", () => ({ execFileSync }));

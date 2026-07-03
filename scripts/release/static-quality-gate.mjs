@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import ts from "typescript";
 import { fileURLToPath } from "node:url";
@@ -455,6 +455,97 @@ export function checkFunctionComplexity(files, maxComplexity) {
   return violations.sort((left, right) => right.complexity - left.complexity);
 }
 
+// Hard budget for the grandfathered ESLint bulk-suppressions baseline
+// (`eslint-suppressions.json`). ESLint itself fails when a suppression goes
+// stale, so the baseline can only shrink; this budget makes growth impossible
+// without a loud, reviewable edit to this gate script. Lower it as the
+// baseline burns down — never raise it.
+export const MAX_ESLINT_SUPPRESSIONS = 176;
+
+export function countEslintSuppressions(suppressionsPath) {
+  let raw;
+  try {
+    raw = readFileSync(suppressionsPath, "utf8");
+  } catch {
+    return 0;
+  }
+  const parsed = JSON.parse(raw);
+  let total = 0;
+  for (const rules of Object.values(parsed)) {
+    for (const entry of Object.values(rules)) {
+      total += entry.count;
+    }
+  }
+  return total;
+}
+
+export function checkEslintSuppressionsBudget(maxSuppressions) {
+  const suppressionsPath = path.join(repoRoot, "eslint-suppressions.json");
+  const total = countEslintSuppressions(suppressionsPath);
+  return {
+    ok: total <= maxSuppressions,
+    total,
+    max_suppressions: maxSuppressions,
+  };
+}
+
+// Inline gate-silencing pragmas are the quiet way around the mandatory gates:
+// an ESLint disable comment mutes lint, a v8/c8/istanbul coverage pragma
+// removes lines from the 100% coverage surface, and a jscpd ignore block hides
+// duplication from the clone gate — all without touching any config file a
+// reviewer would watch. Budget them exactly like the bulk-suppressions
+// baseline: hard ceilings enforced here, lowered as usage burns down — never
+// raise them. (Pragma spellings are deliberately paraphrased here so this
+// comment does not count against its own budgets.)
+export const MAX_INLINE_ESLINT_DISABLES = 5;
+export const MAX_COVERAGE_IGNORE_PRAGMAS = 498;
+export const MAX_JSCPD_IGNORE_PRAGMAS = 0;
+
+// Pragma-bearing surfaces: every directory ESLint lints, coverage measures, or
+// jscpd scans. Roots are skipped when absent so sparse fixtures still scan.
+const PRAGMA_SCAN_ROOTS = ["src", "tests", "packages", "scripts", "plugins", "docs/examples"];
+
+export function collectPragmaScanFiles() {
+  const matcher = (absolutePath) =>
+    (absolutePath.endsWith(".ts") && !absolutePath.endsWith(".d.ts")) ||
+    absolutePath.endsWith(".mjs") ||
+    absolutePath.endsWith(".js");
+  const files = PRAGMA_SCAN_ROOTS.map((segment) => path.join(repoRoot, segment))
+    .filter((root) => existsSync(root))
+    .flatMap((root) => walkFiles(root, matcher))
+    .filter((absolutePath) => !relativeToRepo(absolutePath).split("/").includes("node_modules"));
+  return files.sort((left, right) => left.localeCompare(right));
+}
+
+export function countPragmaMatches(files, pattern) {
+  let total = 0;
+  for (const absolutePath of files) {
+    const matches = loadText(absolutePath).match(pattern);
+    if (matches) {
+      total += matches.length;
+    }
+  }
+  return total;
+}
+
+// Pattern sources are assembled from fragments so this gate and its spec
+// fixtures never count their own pattern literals as pragma usage.
+export function checkInlinePragmaBudgets(budgets, files = collectPragmaScanFiles()) {
+  const checks = [
+    ["inline_eslint_disables", "eslint-" + "disable", budgets.maxInlineEslintDisables],
+    ["coverage_ignore_pragmas", "(?:v8|c8|istanbul) " + "ignore", budgets.maxCoverageIgnorePragmas],
+    ["jscpd_ignore_pragmas", "jscpd:" + "ignore", budgets.maxJscpdIgnorePragmas],
+  ];
+  const report = { ok: true, scanned_file_count: files.length, budgets: {} };
+  for (const [key, patternSource, max] of checks) {
+    const total = countPragmaMatches(files, new RegExp(patternSource, "g"));
+    const ok = total <= max;
+    report.ok = report.ok && ok;
+    report.budgets[key] = { ok, total, max };
+  }
+  return report;
+}
+
 export function usage() {
   console.log(`Usage:
   node scripts/release/static-quality-gate.mjs [--json]
@@ -466,9 +557,15 @@ export function usage() {
     [--max-duplicate-chunks 8]
     [--min-docstring-coverage 100]
     [--min-exported-docstring-coverage 100]
+    [--max-eslint-suppressions ${MAX_ESLINT_SUPPRESSIONS}]
+    [--max-inline-lint-disables ${MAX_INLINE_ESLINT_DISABLES}]
+    [--max-coverage-ignore-pragmas ${MAX_COVERAGE_IGNORE_PRAGMAS}]
+    [--max-jscpd-ignore-pragmas ${MAX_JSCPD_IGNORE_PRAGMAS}]
 
 Runs strict static quality checks for dead/orphan modules, duplicate chunks, complexity,
-file-length limits, source-file/exported declaration docstring coverage, and directory organization density.
+file-length limits, source-file/exported declaration docstring coverage, directory organization
+density, the ESLint bulk-suppressions baseline budget, and hard budgets on inline
+gate-silencing pragmas (ESLint disable comments, coverage-ignore pragmas, jscpd ignores).
 `);
 }
 
@@ -494,6 +591,10 @@ function parseQualityThresholds(flags) {
     maxDuplicateChunks: parseNumberFlag(flags, "max-duplicate-chunks", 8),
     minDocstringCoverage: parseNumberFlag(flags, "min-docstring-coverage", 100),
     minExportedDocstringCoverage: parseNumberFlag(flags, "min-exported-docstring-coverage", 100),
+    maxEslintSuppressions: parseNumberFlag(flags, "max-eslint-suppressions", MAX_ESLINT_SUPPRESSIONS),
+    maxInlineEslintDisables: parseNumberFlag(flags, "max-inline-lint-disables", MAX_INLINE_ESLINT_DISABLES),
+    maxCoverageIgnorePragmas: parseNumberFlag(flags, "max-coverage-ignore-pragmas", MAX_COVERAGE_IGNORE_PRAGMAS),
+    maxJscpdIgnorePragmas: parseNumberFlag(flags, "max-jscpd-ignore-pragmas", MAX_JSCPD_IGNORE_PRAGMAS),
   };
   if (thresholds.duplicateWindow < 5) {
     fail("--duplicate-window must be >= 5.");
@@ -514,8 +615,12 @@ function buildQualityReport(files, duplicateScopeFiles, thresholds) {
   const sourceDocstringCoverage = checkSourceDocstringCoverage(files, thresholds.minDocstringCoverage);
   const exportedDocstringCoverage = checkExportedDocstringCoverage(files, thresholds.minExportedDocstringCoverage);
   const boilerplateDocstringViolations = checkDocstringBoilerplate(files);
+  const eslintSuppressionsBudget = checkEslintSuppressionsBudget(thresholds.maxEslintSuppressions);
+  const inlinePragmaBudgets = checkInlinePragmaBudgets(thresholds);
   return {
     ok:
+      eslintSuppressionsBudget.ok &&
+      inlinePragmaBudgets.ok &&
       fileLengthViolations.length === 0 &&
       directoryViolations.length === 0 &&
       duplicateViolations.length <= thresholds.maxDuplicateChunks &&
@@ -537,6 +642,10 @@ function buildQualityReport(files, duplicateScopeFiles, thresholds) {
       max_complexity: thresholds.maxComplexity,
       max_files_per_dir: thresholds.maxFilesPerDirectory,
       max_duplicate_chunks: thresholds.maxDuplicateChunks,
+      max_eslint_suppressions: thresholds.maxEslintSuppressions,
+      max_inline_eslint_disables: thresholds.maxInlineEslintDisables,
+      max_coverage_ignore_pragmas: thresholds.maxCoverageIgnorePragmas,
+      max_jscpd_ignore_pragmas: thresholds.maxJscpdIgnorePragmas,
       min_docstring_coverage_percent: thresholds.minDocstringCoverage,
       min_exported_docstring_coverage_percent: thresholds.minExportedDocstringCoverage,
     },
@@ -552,6 +661,8 @@ function buildQualityReport(files, duplicateScopeFiles, thresholds) {
     },
     source_docstrings: sourceDocstringCoverage,
     exported_docstrings: exportedDocstringCoverage,
+    eslint_suppressions: eslintSuppressionsBudget,
+    inline_pragmas: inlinePragmaBudgets,
   };
 }
 
@@ -586,6 +697,20 @@ function printQualityFailureSummary(report) {
   }
   if (report.violations.boilerplate_docstrings.length > 0) {
     console.error(`- boilerplate_docstring violations: ${report.violations.boilerplate_docstrings.length}`);
+  }
+  if (!report.eslint_suppressions.ok) {
+    console.error(
+      `- eslint_suppressions budget exceeded: ${report.eslint_suppressions.total} ` +
+        `> ${report.eslint_suppressions.max_suppressions} (burn the baseline down, never grow it)`,
+    );
+  }
+  for (const [key, budget] of Object.entries(report.inline_pragmas.budgets)) {
+    if (!budget.ok) {
+      console.error(
+        `- ${key} budget exceeded: ${budget.total} > ${budget.max} ` +
+          `(remove the inline pragma; never raise the budget)`,
+      );
+    }
   }
 }
 

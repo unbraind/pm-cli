@@ -140,7 +140,7 @@ async function expectScaffoldedStrictManifestAndTypedEntry(
       env_write: false,
       process_spawn: false,
     },
-    ...(options.manifestExtras ?? {}),
+    ...options.manifestExtras,
   });
   const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
   expect(entry).not.toContain('import { defineExtension }');

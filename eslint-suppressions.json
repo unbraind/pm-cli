@@ -1,2 +1,398 @@
 {
+  "packages/pm-search-advanced/extensions/search-advanced/runtime.ts": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "scripts/bundle-cli.mjs": {
+    "preserve-caught-error": {
+      "count": 1
+    }
+  },
+  "scripts/contracts-snapshot.mjs": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "preserve-caught-error": {
+      "count": 1
+    }
+  },
+  "scripts/dogfood-package-first.mjs": {
+    "preserve-caught-error": {
+      "count": 1
+    }
+  },
+  "scripts/gen-package-runtime-loaders.mjs": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "scripts/gen-plugin-mcp-wrappers.mjs": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "scripts/release/docs-skills-gate.mjs": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "scripts/smoke-claude-plugin.mjs": {
+    "preserve-caught-error": {
+      "count": 1
+    }
+  },
+  "scripts/smoke-external-packages.mjs": {
+    "preserve-caught-error": {
+      "count": 1
+    }
+  },
+  "scripts/smoke-npx-from-pack.mjs": {
+    "preserve-caught-error": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/completion.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/config.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/context.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/contracts.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/copy.ts": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/create.ts": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/extension.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 2
+    },
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/guide.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/health.ts": {
+    "no-useless-assignment": {
+      "count": 3
+    }
+  },
+  "src/cli/commands/normalize.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/reindex.ts": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/schema.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "src/cli/commands/test.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 6
+    }
+  },
+  "src/cli/commands/validate.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/cli/main.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "src/cli/registration-helpers.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 2
+    }
+  },
+  "src/core/extensions/loader.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 57
+    },
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "src/core/history/history-rewrite.ts": {
+    "preserve-caught-error": {
+      "count": 1
+    }
+  },
+  "src/core/search/cache.ts": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "src/core/search/http-client.ts": {
+    "preserve-caught-error": {
+      "count": 3
+    }
+  },
+  "src/core/search/vector-stores.ts": {
+    "preserve-caught-error": {
+      "count": 4
+    }
+  },
+  "src/core/shared/constants.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/core/store/item-format-migration.ts": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "src/core/store/item-store.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/core/store/settings.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/core/test/background-runs.ts": {
+    "no-useless-assignment": {
+      "count": 2
+    }
+  },
+  "src/mcp/server.ts": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "src/sdk/package-import-adapters.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "tests/helpers/cliRunner.ts": {
+    "no-useless-assignment": {
+      "count": 1
+    },
+    "preserve-caught-error": {
+      "count": 2
+    }
+  },
+  "tests/helpers/itemFactory.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "tests/helpers/mcp-context-depth.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "tests/helpers/withTempPmPath.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "tests/integration/cli.integration.spec.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "tests/integration/mcp-dynamic-package-actions.spec.ts": {
+    "complexity": {
+      "count": 4
+    }
+  },
+  "tests/integration/mcp-handshake.spec.ts": {
+    "complexity": {
+      "count": 2
+    },
+    "no-useless-assignment": {
+      "count": 4
+    }
+  },
+  "tests/integration/profile-command.integration.spec.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "tests/integration/release-automation-contract.spec.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "tests/integration/release-readiness-runtime.spec.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 2
+    },
+    "complexity": {
+      "count": 1
+    }
+  },
+  "tests/unit/cli/cli-main-errors.spec.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "tests/unit/commands/contracts-command.spec.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 5
+    }
+  },
+  "tests/unit/commands/health-command.spec.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 1
+    }
+  },
+  "tests/unit/commands/init-command.spec.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "tests/unit/commands/metadata-governance-commands.spec.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "tests/unit/commands/register-commands.spec.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "no-useless-assignment": {
+      "count": 3
+    }
+  },
+  "tests/unit/commands/stats-command.spec.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "tests/unit/commands/test-all-command.spec.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 1
+    }
+  },
+  "tests/unit/commands/test-command.spec.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "tests/unit/core/history/history-diff.spec.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "tests/unit/core/lock/lock-gc.spec.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "tests/unit/core/schema/runtime-field-values.spec.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "tests/unit/core/schema/runtime-schema-command-flags.spec.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "tests/unit/core/search/search-advanced-runtime.spec.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "tests/unit/core/telemetry/telemetry-runtime.spec.ts": {
+    "complexity": {
+      "count": 4
+    }
+  },
+  "tests/unit/docs-examples/policy-restricted-extension.spec.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "tests/unit/docs-examples/sdk-contract-consumer.spec.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "tests/unit/docs-examples/starter-extension.spec.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "tests/unit/extensions/extension-command.spec.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "tests/unit/extensions/extension-scaffold-define-guidance.spec.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "tests/unit/packages/todos-extension.spec.ts": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "tests/unit/scripts/dogfood-package-first.spec.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "tests/unit/scripts/release/compatibility-check.spec.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "tests/unit/scripts/smoke-npx-from-pack.spec.ts": {
+    "complexity": {
+      "count": 2
+    }
+  }
 }

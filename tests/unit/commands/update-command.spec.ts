@@ -11,12 +11,53 @@ import { setActiveExtensionRegistrations } from "../../../src/core/extensions/in
 import { createEmptyExtensionRegistrationRegistry } from "../../../src/core/extensions/loader.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
+import { writeItemTypeDefinitions } from "../../helpers/pmWorkspace.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
 
 afterEach(() => {
   setActiveExtensionRegistrations(null);
   vi.restoreAllMocks();
 });
+
+// Optional scalar fields shared by the full-update and cancel-and-clear specs'
+// changed_fields assertions.
+const OPTIONAL_UPDATE_CHANGED_FIELDS = [
+  "deadline",
+  "estimated_minutes",
+  "acceptance_criteria",
+  "definition_of_ready",
+  "order",
+  "goal",
+  "objective",
+  "value",
+  "impact",
+  "outcome",
+  "why_now",
+  "assignee",
+  "parent",
+  "reviewer",
+  "risk",
+  "confidence",
+  "sprint",
+  "release",
+  "blocked_by",
+  "blocked_reason",
+  "unblock_note",
+  "reporter",
+  "severity",
+  "environment",
+  "repro_steps",
+  "resolution",
+  "expected_result",
+  "actual_result",
+  "affected_version",
+  "fixed_version",
+  "component",
+  "regression",
+  "customer_impact",
+  "reminders",
+  "events",
+];
 
 describe("update command helper coverage", () => {
   it("normalizes legacy none tokens into explicit clears", () => {
@@ -622,25 +663,18 @@ describe("runUpdate", () => {
 
   it("enforces update command_option_policies required and disabled options", async () => {
     await withTempPmPath(async (context) => {
-      const settingsPath = path.join(context.pmPath, "settings.json");
-      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        item_types?: { definitions?: Array<Record<string, unknown>> };
-      };
-      settings.item_types = {
-        definitions: [
-          {
-            name: "Asset",
-            folder: "assets",
-            required_create_fields: [],
-            required_create_repeatables: [],
-            command_option_policies: [
-              { command: "update", option: "message", required: true },
-              { command: "update", option: "goal", enabled: false },
-            ],
-          },
-        ],
-      };
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeItemTypeDefinitions(context.pmPath, [
+        {
+          name: "Asset",
+          folder: "assets",
+          required_create_fields: [],
+          required_create_repeatables: [],
+          command_option_policies: [
+            { command: "update", option: "message", required: true },
+            { command: "update", option: "goal", enabled: false },
+          ],
+        },
+      ]);
 
       const id = createTask(context, "update-policy-seed");
 
@@ -689,19 +723,12 @@ describe("runUpdate", () => {
 
   it("rejects unsupported update command_option_policies option keys", async () => {
     await withTempPmPath(async (context) => {
-      const settingsPath = path.join(context.pmPath, "settings.json");
-      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        item_types?: { definitions?: Array<Record<string, unknown>> };
-      };
-      settings.item_types = {
-        definitions: [
-          {
-            name: "Task",
-            command_option_policies: [{ command: "update", option: "not_real_option", enabled: false }],
-          },
-        ],
-      };
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeItemTypeDefinitions(context.pmPath, [
+        {
+          name: "Task",
+          command_option_policies: [{ command: "update", option: "not_real_option", enabled: false }],
+        },
+      ]);
 
       const id = createTask(context, "update-policy-invalid-option");
       await expect(
@@ -786,50 +813,7 @@ describe("runUpdate", () => {
       // recorded but the kyd6 reconciler surfaces the unresolved-blocker warning.
       expect(result.warnings).toEqual(["blocked_by_unresolved:pm-blocking-next"]);
       expect(result.changed_fields).toEqual(
-        expect.arrayContaining([
-          "title",
-          "description",
-          "body",
-          "status",
-          "priority",
-          "type",
-          "tags",
-          "deadline",
-          "estimated_minutes",
-          "acceptance_criteria",
-          "definition_of_ready",
-          "order",
-          "goal",
-          "objective",
-          "value",
-          "impact",
-          "outcome",
-          "why_now",
-          "assignee",
-          "parent",
-          "reviewer",
-          "risk",
-          "confidence",
-          "sprint",
-          "release",
-          "blocked_by",
-          "blocked_reason",
-          "unblock_note",
-          "reporter",
-          "severity",
-          "environment",
-          "repro_steps",
-          "resolution",
-          "expected_result",
-          "actual_result",
-          "affected_version",
-          "fixed_version",
-          "component",
-          "regression",
-          "customer_impact",
-          "reminders",
-          "events",
-        ]),
+        expect.arrayContaining(["title", "description", "body", "status", "priority", "type", "tags", ...OPTIONAL_UPDATE_CHANGED_FIELDS]),
       );
 
       const item = result.item as Record<string, unknown>;
@@ -995,45 +979,7 @@ describe("runUpdate", () => {
       );
 
       expect(result.changed_fields).toEqual(
-        expect.arrayContaining([
-          "description",
-          "status",
-          "deadline",
-          "estimated_minutes",
-          "acceptance_criteria",
-          "definition_of_ready",
-          "order",
-          "goal",
-          "objective",
-          "value",
-          "impact",
-          "outcome",
-          "why_now",
-          "assignee",
-          "parent",
-          "reviewer",
-          "risk",
-          "confidence",
-          "sprint",
-          "release",
-          "blocked_by",
-          "blocked_reason",
-          "unblock_note",
-          "reporter",
-          "severity",
-          "environment",
-          "repro_steps",
-          "resolution",
-          "expected_result",
-          "actual_result",
-          "affected_version",
-          "fixed_version",
-          "component",
-          "regression",
-          "customer_impact",
-          "reminders",
-          "events",
-        ]),
+        expect.arrayContaining(["description", "status", ...OPTIONAL_UPDATE_CHANGED_FIELDS]),
       );
 
       const item = result.item as Record<string, unknown>;
@@ -2620,25 +2566,18 @@ describe("runUpdate", () => {
 
   it("accepts colon and markdown formats for update type-option entries", async () => {
     await withTempPmPath(async (context) => {
-      const settingsPath = path.join(context.pmPath, "settings.json");
-      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        item_types?: { definitions?: Array<Record<string, unknown>> };
-      };
-      settings.item_types = {
-        definitions: [
-          {
-            name: "Asset",
-            folder: "assets",
-            required_create_fields: [],
-            required_create_repeatables: [],
-            options: [
-              { key: "category", values: ["feature", "maintenance"] },
-              { key: "workflow", values: ["seeded", "regression"] },
-            ],
-          },
-        ],
-      };
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeItemTypeDefinitions(context.pmPath, [
+        {
+          name: "Asset",
+          folder: "assets",
+          required_create_fields: [],
+          required_create_repeatables: [],
+          options: [
+            { key: "category", values: ["feature", "maintenance"] },
+            { key: "workflow", values: ["seeded", "regression"] },
+          ],
+        },
+      ]);
 
       const id = createTask(context, "update-type-option-colon", { type: "Asset" });
       const colonResult = await runUpdate(
@@ -2669,29 +2608,22 @@ describe("runUpdate", () => {
 
   it("rejects existing type options that are incompatible with a new type", async () => {
     await withTempPmPath(async (context) => {
-      const settingsPath = path.join(context.pmPath, "settings.json");
-      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        item_types?: { definitions?: Array<Record<string, unknown>> };
-      };
-      settings.item_types = {
-        definitions: [
-          {
-            name: "Asset",
-            folder: "assets",
-            required_create_fields: [],
-            required_create_repeatables: [],
-            options: [{ key: "category", values: ["feature"] }],
-          },
-          {
-            name: "Service",
-            folder: "services",
-            required_create_fields: [],
-            required_create_repeatables: [],
-            options: [{ key: "category", values: ["platform"] }],
-          },
-        ],
-      };
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeItemTypeDefinitions(context.pmPath, [
+        {
+          name: "Asset",
+          folder: "assets",
+          required_create_fields: [],
+          required_create_repeatables: [],
+          options: [{ key: "category", values: ["feature"] }],
+        },
+        {
+          name: "Service",
+          folder: "services",
+          required_create_fields: [],
+          required_create_repeatables: [],
+          options: [{ key: "category", values: ["platform"] }],
+        },
+      ]);
 
       const created = await runCreate(
         {
@@ -3078,19 +3010,12 @@ describe("runUpdate", () => {
 
   it("enforces command_option_policies for the extension --field setter on update", async () => {
     await withTempPmPath(async (context) => {
-      const settingsPath = path.join(context.pmPath, "settings.json");
-      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        item_types?: { definitions?: Array<Record<string, unknown>> };
-      };
-      settings.item_types = {
-        definitions: [
-          {
-            name: "Task",
-            command_option_policies: [{ command: "update", option: "field", enabled: false }],
-          },
-        ],
-      };
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeItemTypeDefinitions(context.pmPath, [
+        {
+          name: "Task",
+          command_option_policies: [{ command: "update", option: "field", enabled: false }],
+        },
+      ]);
 
       const registrations = createEmptyExtensionRegistrationRegistry();
       registrations.item_fields.push({

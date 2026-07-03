@@ -145,7 +145,7 @@ jobs:
 
           echo "Waiting for tag-push Release workflow for ${NEW_TAG}."
           RELEASE_RUN_ID=""
-          for attempt in $(seq 1 30); do
+          for _attempt in $(seq 1 30); do
             RELEASE_RUN_ID="$(gh run list --workflow Release --event push --branch "${NEW_TAG}" --limit 20 --json databaseId,status,headBranch,headSha,createdAt \
               | node -e 'const fs=require("fs"); const tag=process.argv[1]; const runs=JSON.parse(fs.readFileSync(0,"utf8")); const run=runs.find((entry)=>entry.headBranch===tag && ["queued","in_progress","waiting"].includes(entry.status)); if (run) console.log(run.databaseId);' "${NEW_TAG}")"
             if [[ -n "${RELEASE_RUN_ID}" ]]; then

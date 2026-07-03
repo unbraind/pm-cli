@@ -17,7 +17,7 @@ if ([string]::IsNullOrWhiteSpace($PackageName)) {
   }
 }
 
-function Require-Command {
+function Assert-CommandAvailable {
   param([string]$Name)
   if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
     throw "Required command not found: $Name"
@@ -54,8 +54,8 @@ function Use-LiteralInstallSpec {
   return $Name.Contains("@")
 }
 
-Require-Command "node"
-Require-Command "npm"
+Assert-CommandAvailable "node"
+Assert-CommandAvailable "npm"
 
 $installSpec = $null
 if (Use-LiteralInstallSpec $PackageName) {
@@ -65,7 +65,7 @@ if (Use-LiteralInstallSpec $PackageName) {
 }
 
 if ($Repair) {
-  Write-Host "Repairing existing global pm install..."
+  Write-Output "Repairing existing global pm install..."
   $repairArgs = @("uninstall", "-g", "@unbrained/pm-cli")
   if ($Prefix -ne "") {
     $repairArgs += @("--prefix", $Prefix)
@@ -73,7 +73,7 @@ if ($Repair) {
   & npm @repairArgs *> $null
 }
 
-Write-Host "Installing or updating $installSpec..."
+Write-Output "Installing or updating $installSpec..."
 # --force keeps repeated installer runs idempotent when pm shim already exists.
 $npmArgs = @("install", "-g", "--force", $installSpec)
 if ($Prefix -ne "") {
@@ -120,5 +120,5 @@ if ($LASTEXITCODE -ne 0) {
   throw "pm --version failed with exit code $LASTEXITCODE"
 }
 
-Write-Host "Installed pm version: $versionOutput"
-Write-Host "Done."
+Write-Output "Installed pm version: $versionOutput"
+Write-Output "Done."
