@@ -23,6 +23,9 @@ function createItem(
       | "Milestone"
       | "Meeting";
     status: "open" | "blocked" | "closed";
+    priority?: string;
+    tags?: string;
+    assignee?: string;
   },
 ): string {
   const create = context.runCli(
@@ -38,9 +41,9 @@ function createItem(
       "--status",
       params.status,
       "--priority",
-      "1",
+      params.priority ?? "1",
       "--tags",
-      "stats,coverage",
+      params.tags ?? "stats,coverage",
       "--body",
       "seed body",
       "--deadline",
@@ -54,7 +57,7 @@ function createItem(
       "--message",
       `Create ${params.title}`,
       "--assignee",
-      "none",
+      params.assignee ?? "none",
       "--dep",
       "none",
       "--comment",
@@ -307,6 +310,14 @@ describe("runStats", () => {
         type: "Task",
         status: "open",
       });
+      createItem(context, {
+        title: "Breakdown Owned Item",
+        type: "Task",
+        status: "open",
+        priority: "2",
+        tags: "stats:x,other:y",
+        assignee: "stats-owner",
+      });
 
       const withoutBreakdowns = await runStats({ path: context.pmPath });
       expect(withoutBreakdowns.breakdowns).toBeUndefined();
@@ -315,10 +326,33 @@ describe("runStats", () => {
         { path: context.pmPath },
         { byAssignee: true, byTag: true, byPriority: true, tagPrefix: "stats" },
       );
-      expect(stats.breakdowns).toBeDefined();
-      expect(stats.breakdowns?.assignee).toBeDefined();
-      expect(stats.breakdowns?.tag).toBeDefined();
-      expect(stats.breakdowns?.priority).toBeDefined();
+      const openOnlyBuckets = { open: 1, in_progress: 0, blocked: 0, draft: 0, closed: 0, canceled: 0, other: 0 };
+      // The prefix filter keeps only "stats"-prefixed tags: "coverage" and
+      // "other:y" must not surface as rows.
+      expect(stats.breakdowns?.tag).toEqual({
+        dimension: "tag",
+        total_items: 2,
+        rows: [
+          { label: "stats", key: "stats", total: 1, buckets: openOnlyBuckets },
+          { label: "stats:x", key: "stats:x", total: 1, buckets: openOnlyBuckets },
+        ],
+      });
+      expect(stats.breakdowns?.assignee).toEqual({
+        dimension: "assignee",
+        total_items: 2,
+        rows: [
+          { label: "stats-owner", key: "stats-owner", total: 1, buckets: openOnlyBuckets },
+          { label: "(unassigned)", key: null, total: 1, buckets: openOnlyBuckets },
+        ],
+      });
+      expect(stats.breakdowns?.priority).toEqual({
+        dimension: "priority",
+        total_items: 2,
+        rows: [
+          { label: "P1", key: "P1", total: 1, buckets: openOnlyBuckets },
+          { label: "P2", key: "P2", total: 1, buckets: openOnlyBuckets },
+        ],
+      });
     });
   });
 
@@ -334,7 +368,19 @@ describe("runStats", () => {
       expect(withoutCoverage.metadata_coverage).toBeUndefined();
 
       const stats = await runStats({ path: context.pmPath }, { metadataCoverage: true });
-      expect(stats.metadata_coverage).toBeDefined();
+      // The seeded open Task has acceptance criteria, an estimate, and tags but
+      // no parent; resolution only applies to terminal items (applicable 0).
+      const expectedCoverage = {
+        acceptance_criteria: { present: 1, applicable: 1, percent: 100 },
+        estimated_minutes: { present: 1, applicable: 1, percent: 100 },
+        resolution: { present: 0, applicable: 0, percent: 100 },
+        tags: { present: 1, applicable: 1, percent: 100 },
+        parent: { present: 0, applicable: 1, percent: 0 },
+      };
+      expect(stats.metadata_coverage).toEqual({
+        overall: expectedCoverage,
+        by_type: { Task: expectedCoverage },
+      });
     });
   });
 

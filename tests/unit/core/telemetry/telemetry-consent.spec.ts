@@ -87,7 +87,7 @@ describe("core/telemetry/consent", () => {
       process.env.PM_GLOBAL_PATH = globalRoot;
       await maybeRunFirstUseTelemetryPrompt("init", baseGlobalOptions);
 
-      await expect(fs.access(path.join(globalRoot, "settings.json"))).rejects.toBeDefined();
+      await expect(fs.access(path.join(globalRoot, "settings.json"))).rejects.toMatchObject({ code: "ENOENT" });
     });
   });
 
@@ -113,7 +113,7 @@ describe("core/telemetry/consent", () => {
         delete process.env.CI;
       });
 
-      await expect(fs.access(path.join(globalRoot, "settings.json"))).rejects.toBeDefined();
+      await expect(fs.access(path.join(globalRoot, "settings.json"))).rejects.toMatchObject({ code: "ENOENT" });
     });
   });
 
@@ -214,7 +214,7 @@ describe("core/telemetry/consent", () => {
         await expect(maybeRunFirstUseTelemetryPrompt("list", baseGlobalOptions)).resolves.toBeUndefined();
       });
 
-      await expect(fs.access(path.join(globalRoot, "settings.json"))).rejects.toBeDefined();
+      await expect(fs.access(path.join(globalRoot, "settings.json"))).rejects.toMatchObject({ code: "ENOENT" });
     });
   });
 });

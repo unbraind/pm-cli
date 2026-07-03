@@ -11,7 +11,7 @@ import {
   type ProjectProfileDefinition,
 } from "../../../../src/core/profile/profile-presets.js";
 import { normalizeAddTypeInput } from "../../../../src/core/schema/item-types-file.js";
-import { normalizeAddStatusInput } from "../../../../src/core/schema/status-defs-file.js";
+import { BUILTIN_STATUS_IDS, normalizeAddStatusInput } from "../../../../src/core/schema/status-defs-file.js";
 import { normalizeAddFieldInput, BUILTIN_FIELD_KEYS } from "../../../../src/core/schema/fields-file.js";
 import { resolveNestedSettingDescriptor, parseNestedSettingValue } from "../../../../src/core/config/nested-settings.js";
 
@@ -63,11 +63,28 @@ describe("BUILTIN_PROFILES definitions", () => {
       expect(profile.name).toBe(name);
       expect(profile.title.length).toBeGreaterThan(0);
       expect(profile.summary.length).toBeGreaterThan(0);
+      const typeNames = new Set<string>();
       for (const type of profile.types) {
-        expect(() => normalizeAddTypeInput(type)).not.toThrow();
+        const normalizedType = normalizeAddTypeInput(type);
+        expect(normalizedType.name.length).toBeGreaterThan(0);
+        expect(typeNames.has(normalizedType.name.toLowerCase())).toBe(false);
+        typeNames.add(normalizedType.name.toLowerCase());
       }
+      const statusIds = new Set<string>();
       for (const status of profile.statuses) {
-        expect(() => normalizeAddStatusInput(status)).not.toThrow();
+        const normalizedStatus = normalizeAddStatusInput(status);
+        expect(normalizedStatus.id.length).toBeGreaterThan(0);
+        expect(statusIds.has(normalizedStatus.id)).toBe(false);
+        statusIds.add(normalizedStatus.id);
+      }
+      // Every workflow transition endpoint must resolve to a built-in status or
+      // a status this profile itself registers, so applying the profile never
+      // declares a transition to a nonexistent status.
+      for (const workflow of profile.workflows) {
+        for (const [from, to] of workflow.allowed_transitions) {
+          expect(statusIds.has(from) || BUILTIN_STATUS_IDS.has(from)).toBe(true);
+          expect(statusIds.has(to) || BUILTIN_STATUS_IDS.has(to)).toBe(true);
+        }
       }
       for (const field of profile.fields) {
         expect(BUILTIN_FIELD_KEYS.has(normalizeAddFieldInput(field).key)).toBe(false);

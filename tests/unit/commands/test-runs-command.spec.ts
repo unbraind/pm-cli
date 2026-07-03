@@ -473,9 +473,10 @@ describe("background test run lifecycle", () => {
       expect(status.health.state).toBe("healthy");
       expect(status.health.worker_alive).toBe(true);
       expect(status.health.child_alive).toBe(true);
-      if (status.run.resource) {
-        expect(status.run.resource.recorded_at).toBeDefined();
-      }
+      // The running record's child pid is this live process, so the status
+      // refresh deterministically samples a resource snapshot.
+      expect(status.run.resource).toBeDefined();
+      expect(Number.isFinite(Date.parse(String(status.run.resource?.recorded_at)))).toBe(true);
     });
   });
 
@@ -867,9 +868,8 @@ describe("background test run lifecycle", () => {
             expect([undefined, 1]).toContain(stopped.progress?.linked_test_total);
             expect([undefined, 15]).toContain(stopped.progress?.elapsed_ms);
             expect(stopped.progress?.current_command).toBeUndefined();
-            if (stopped.resource) {
-              expect(stopped.resource.recorded_at).toBeDefined();
-            }
+            // Resource sampling is time-dependent here: the final snapshot sees a dead child, but the 1ms timer may have recorded one.
+            expect(stopped.resource === undefined || Number.isFinite(Date.parse(String(stopped.resource.recorded_at)))).toBe(true);
             await expect(readFile(getTestRunStderrPath(context.pmPath, started.run.id), "utf8")).resolves.toContain(
               "linked-test 1/1 running",
             );

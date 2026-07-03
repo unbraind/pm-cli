@@ -86,8 +86,8 @@ describe("core/search/cache", () => {
 
       expect(result.invalidated).toEqual([...SEARCH_CACHE_ARTIFACT_PATHS]);
       expect(result.warnings).toEqual([]);
-      await expect(fs.access(path.join(pmRoot, "index", "manifest.json"))).rejects.toBeDefined();
-      await expect(fs.access(path.join(pmRoot, "search", "embeddings.jsonl"))).rejects.toBeDefined();
+      await expect(fs.access(path.join(pmRoot, "index", "manifest.json"))).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(fs.access(path.join(pmRoot, "search", "embeddings.jsonl"))).rejects.toMatchObject({ code: "ENOENT" });
     });
   });
 

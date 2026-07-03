@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import {
   PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS,
@@ -37,6 +38,56 @@ async function collectBundledExtensionDirectories(): Promise<string[]> {
     }
   }
   return extensionDirectories.sort();
+}
+
+function readStringArrayLiteral(expression: ts.Expression): string[] | null {
+  if (!ts.isArrayLiteralExpression(expression)) {
+    return null;
+  }
+  const values: string[] = [];
+  for (const element of expression.elements) {
+    if (!ts.isStringLiteralLike(element)) {
+      return null;
+    }
+    values.push(element.text);
+  }
+  return values;
+}
+
+function readManifestCapabilitiesFromObject(expression: ts.ObjectLiteralExpression): string[] | null {
+  for (const property of expression.properties) {
+    if (!ts.isPropertyAssignment(property)) {
+      continue;
+    }
+    const name = property.name;
+    if (!ts.isIdentifier(name) || name.text !== "capabilities") {
+      continue;
+    }
+    return readStringArrayLiteral(property.initializer);
+  }
+  return null;
+}
+
+function extractModuleManifestCapabilities(modulePath: string, source: string): string[] {
+  const sourceFile = ts.createSourceFile(modulePath, source, ts.ScriptTarget.ESNext, true, ts.ScriptKind.TS);
+  for (const statement of sourceFile.statements) {
+    if (!ts.isVariableStatement(statement)) {
+      continue;
+    }
+    for (const declaration of statement.declarationList.declarations) {
+      if (!ts.isIdentifier(declaration.name) || declaration.name.text !== "manifest") {
+        continue;
+      }
+      const initializer = declaration.initializer;
+      if (initializer && ts.isObjectLiteralExpression(initializer)) {
+        const capabilities = readManifestCapabilitiesFromObject(initializer);
+        if (capabilities !== null) {
+          return capabilities;
+        }
+      }
+    }
+  }
+  throw new Error(`Expected ${modulePath} to export a manifest object with string-literal capabilities.`);
 }
 
 describe("pm package manifest model", () => {
@@ -584,10 +635,7 @@ describe("pm package manifest model", () => {
       const modulePath = path.join(extensionDirectory, "index.ts");
       const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as { capabilities?: unknown };
       const source = await readFile(modulePath, "utf8");
-      const capabilitiesMatch = source.match(/capabilities:\s*(\[[^\]]*\])/);
-      expect(capabilitiesMatch?.[1], modulePath).toBeDefined();
-      const capabilitiesLiteral = capabilitiesMatch?.[1]?.replace(/'/g, "\"").replace(/,\s*\]/g, "]") ?? "[]";
-      const moduleCapabilities = JSON.parse(capabilitiesLiteral) as unknown;
+      const moduleCapabilities = extractModuleManifestCapabilities(modulePath, source);
       expect(moduleCapabilities, modulePath).toEqual(manifest.capabilities);
     }
   });
