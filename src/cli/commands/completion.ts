@@ -164,6 +164,7 @@ function renderZshArgumentSpecs(specs: readonly string[]): string {
 function renderZshPresenceFilterSpecs(options: {
   readonly missingPrefix: "" | "filter-";
   readonly pairedPrefix: "" | "filter-";
+  readonly includeContentMissingAliases?: boolean;
 }): string {
   const missingSpecs = [
     "reviewer-missing[Select only items missing reviewer]",
@@ -172,6 +173,12 @@ function renderZshPresenceFilterSpecs(options: {
     "sprint-missing[Select only items missing sprint]",
     "release-missing[Select only items missing release]",
   ];
+  const contentMissingAliasSpecs = options.includeContentMissingAliases === true
+    ? [
+      "files-missing[Alias for --no-files]",
+      "docs-missing[Alias for --no-docs]",
+    ]
+    : [];
   const pairedSpecs = [
     ["has-notes[Select only items that have notes]", "no-notes[Select only items with no notes]"],
     ["has-learnings[Select only items that have learnings]", "no-learnings[Select only items with no learnings]"],
@@ -187,7 +194,7 @@ function renderZshPresenceFilterSpecs(options: {
     ],
   ];
   return renderZshArgumentSpecs([
-    ...missingSpecs.map((spec) => `'--${options.missingPrefix}${spec}'`),
+    ...[...missingSpecs, ...contentMissingAliasSpecs].map((spec) => `'--${options.missingPrefix}${spec}'`),
     ...pairedSpecs.flatMap(([positive, negative]) => [
       `'--${options.pairedPrefix}${positive}'`,
       `'--${options.pairedPrefix}${negative}'`,
@@ -598,7 +605,11 @@ export function generateZshScript(
   const zshSearchRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.search);
   const zshCalendarRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.calendar);
   const zshContextRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.context);
-  const zshPresenceFilterFlags = renderZshPresenceFilterSpecs({ missingPrefix: "filter-", pairedPrefix: "" });
+  const zshPresenceFilterFlags = renderZshPresenceFilterSpecs({
+    missingPrefix: "filter-",
+    pairedPrefix: "",
+    includeContentMissingAliases: true,
+  });
   const zshBulkPresenceFilterFlags = renderZshPresenceFilterSpecs({ missingPrefix: "filter-", pairedPrefix: "filter-" });
   const zshMutationCollectionFlags = renderZshArgumentSpecs(ZSH_MUTATION_COLLECTION_ARGUMENT_SPECS);
   const dynamicTagResolver = useEagerTagExpansion
@@ -1860,8 +1871,10 @@ for list_cmd in ${listCmds}
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l no-learnings         -d 'Select only items with no learnings'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l has-files            -d 'Select only items that have linked files'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l no-files             -d 'Select only items with no linked files'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l filter-files-missing -d 'Alias for --no-files'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l has-docs             -d 'Select only items that have linked docs'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l no-docs              -d 'Select only items with no linked docs'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l filter-docs-missing  -d 'Alias for --no-docs'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l has-tests            -d 'Select only items that have linked tests'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l no-tests             -d 'Select only items with no linked tests'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l has-comments         -d 'Select only items that have comments'
@@ -2164,8 +2177,10 @@ complete -c pm -n '__fish_seen_subcommand_from search' -l has-learnings      -d 
 complete -c pm -n '__fish_seen_subcommand_from search' -l no-learnings       -d 'Select only items with no learnings'
 complete -c pm -n '__fish_seen_subcommand_from search' -l has-files          -d 'Select only items that have linked files'
 complete -c pm -n '__fish_seen_subcommand_from search' -l no-files           -d 'Select only items with no linked files'
+complete -c pm -n '__fish_seen_subcommand_from search' -l filter-files-missing -d 'Alias for --no-files'
 complete -c pm -n '__fish_seen_subcommand_from search' -l has-docs           -d 'Select only items that have linked docs'
 complete -c pm -n '__fish_seen_subcommand_from search' -l no-docs            -d 'Select only items with no linked docs'
+complete -c pm -n '__fish_seen_subcommand_from search' -l filter-docs-missing  -d 'Alias for --no-docs'
 complete -c pm -n '__fish_seen_subcommand_from search' -l has-tests          -d 'Select only items that have linked tests'
 complete -c pm -n '__fish_seen_subcommand_from search' -l no-tests           -d 'Select only items with no linked tests'
 complete -c pm -n '__fish_seen_subcommand_from search' -l has-comments       -d 'Select only items that have comments'

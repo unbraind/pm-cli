@@ -6,13 +6,13 @@ status: in_progress
 priority: 2
 tags[3]: code-quality,codefactor,tech-debt
 created_at: "2026-06-26T13:29:14.359Z"
-updated_at: "2026-07-03T07:57:12.616Z"
+updated_at: "2026-07-03T08:30:47.878Z"
 assignee: claude-code-agent
 author: claude-code-agent
 acceptance_criteria: "CodeFactor overall repository grade reaches A+ (or the highest attainable) on branch main; CodeFactor reports 0 outstanding issues across Complexity, Maintainability, and Duplication; local lint/quality parity tooling exists so findings can be reproduced and kept at zero (no regressions on new PRs)."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-fmjy,related,"2026-07-02T06:39:46.472Z",null,null
-comments[99]{created_at,author,text}:
+comments[101]{created_at,author,text}:
   "2026-06-26T15:46:30.976Z",codex-gpt5,"Progress update: live CodeFactor for main still reports 255 issues until this branch lands (83 maintainability, 152 complexity, 20 duplication). This branch completes the maintainability groups tracked by pm-xsth, pm-m8yl, and pm-x878/Codecov; complexity pm-arzz and duplication pm-fmjy remain open for dedicated refactor follow-up."
   "2026-06-26T18:50:54.481Z",codex-codefactor-sdk-cli-20260626,"Investigation note: live 2026-06-26 CodeFactor public issues page reports A rating, 601 analyzed files, 172 issues after the merged maintainability branch; PM snapshot still tracks remaining complexity and duplication children. GitHub state: no open PRs, no open Dependabot or code-scanning alerts; issue #374 remains open and externally blocked on missing RELEASE_PAT in release environment; pnpm audit --audit-level moderate reports no known vulnerabilities. Dependency drift from pnpm outdated: @sentry/cli 3.5.1 -> 3.6.0, @sentry/node 10.61.0 -> 10.62.0, @types/node held at Node 22 types despite latest 26.x."
   "2026-06-26T19:05:47.605Z",codex-codefactor-sdk-cli-20260626,"Evidence update: CodeFactor remediation bundle now covers the remaining duplication primitives and generated/test analysis scope. Verification passed: pnpm build; targeted 254-test suite; pnpm contracts:check; pnpm quality:static; pnpm typecheck; pnpm security:scan; full coverage 100/100/100/100 across 5133 tests; manual isolated temp-project smoke with PM_PATH/PM_GLOBAL_PATH passed package install/doctor and shared unset behavior. Remaining release issue #374 is external to code changes: GitHub scheduled Auto Release requires RELEASE_PAT in the release environment."
@@ -112,9 +112,11 @@ comments[99]{created_at,author,text}:
   "2026-07-03T07:32:54.423Z",claude-code-agent,"PR #422 review-fix evidence: addressed current-head Gemini threads by excluding arrays in guide-shell payloadRecord and preserving rank as an order-only legacy clear alias, and addressed current-head Greptile rollback diagnostics by throwing an AggregateError when rollback also fails so the original write failure remains visible. Verification passed: focused guide-shell/update/history-rewrite suite 3 files / 116 tests; pnpm typecheck; pnpm lint with 0 jscpd clones and static quality passed; pnpm build; git diff --check; full pnpm test:coverage 263 files / 5293 tests / 100% statements, branches, functions, and lines. README.md remains an unstaged user edit and is preserved."
   "2026-07-03T07:51:11.171Z",claude-code-agent,"Review follow-up: addressed current-head Gemini feedback after ee8c40de by preserving raw import timestamps without a converter, resolving relative PM_CLI_MCP_SERVER wrapper imports before pathToFileURL, and making init agent-guidance skip tolerate missing declined_at. Focused tests passed: node scripts/run-tests.mjs test -- tests/unit/commands/init-command.spec.ts tests/unit/packages/package-import-adapters.spec.ts tests/unit/plugins/pm-mcp-server.spec.ts (48 tests)."
   "2026-07-03T07:57:12.615Z",claude-code-agent,"Final follow-up evidence before push: generator drift check passed; pnpm typecheck passed; pnpm build passed; pnpm lint passed with ESLint clean, jscpd 0 clones across 549 files, and static quality gate passed; git diff --check passed; full pnpm test:coverage passed 263 files / 5294 tests / 100% statements, branches, functions, and lines; pnpm changelog:pm:check used pm-changelog 2026.6.30 and left CHANGELOG.md unchanged with item_count=1396; pm health summary ok warning_count=0; isolated temp lifecycle smoke with dist/cli.js init/create/list/health passed. README.md remains an unstaged user edit and is preserved."
+  "2026-07-03T08:25:02.211Z",claude-code-agent,"Review follow-up evidence: addressed hosted Greptile P1 on list/search completion filters by making --filter-files-missing and --filter-docs-missing real list/search parser aliases mapped to existing noFiles/noDocs filters, exposing them through CLI flag contracts and SDK tool option contracts, and keeping bulk update/close-many paired --filter-has/--filter-no flags scoped to bulk commands. Verification passed: focused registration/completion tests 134/134; pnpm typecheck; pnpm build; pnpm lint with jscpd 0 clones and static quality gate passed; git diff --check; pm health summary ok warning_count=0; full coverage 263 files / 5296 tests / 100% statements, branches, functions, lines; manual temp dir smoke at /tmp/tmp.rCeuuiQVDG passed init/create/list/search alias checks and health. README.md was intentionally left unstaged/untouched per user request."
+  "2026-07-03T08:30:47.877Z",claude-code-agent,"Pre-push Greptile evidence for head 3c2acec2: timeout 300s greptile review --branch main --json warned that README.md and .agents/pm/extensions/.managed-extensions.json were unstaged and intentionally excluded, then emitted no findings before timing out with exit code 124. Hosted PR review agents will be retriggered on the pushed head."
 notes[1]{created_at,author,text}:
   "2026-07-02T08:14:23.356Z",claude-code-agent,"2026-07-02 pm-chxp/PR#415 merged (17798d15): duplication leg complete — pnpm lint:duplicates now 0 clones repo-wide (was 24). Complexity suppressions already 0 (PR#413/#414). Remaining for A+: await CodeFactor re-analysis of main; verify grade at https://www.codefactor.io/repository/github/unbraind/pm-cli — if findings persist they are in generated runtime-loaders (excluded-by-design candidates via .codefactor.yml)."
-files[135]{path,scope,note}:
+files[138]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,pm-changelog package-owned check refreshed managed extension install timestamp
   eslint-suppressions.json,project,Prune resolved complexity suppressions after config/settings refactors
   package.json,project,Align @types/node range to Node 22 supported floor after Dependabot PR #399 review
@@ -186,6 +188,7 @@ files[135]{path,scope,note}:
   src/cli/register-mutation.ts,project,reduce mutation command registration complexity and duplicate inline action bodies
   src/cli/register-operations.ts,project,complexity sweep zero ESLint complexity findings
   src/cli/register-setup.ts,project,complexity sweep zero ESLint complexity findings
+  src/cli/registration-helpers.ts,project,Normalize docs/files missing aliases to existing absence filters
   src/core/config/nested-settings.ts,project,complexity sweep zero ESLint complexity findings
   src/core/config/positional-value.ts,project,single-source canonical config key type for command and positional router
   src/core/governance/metadata-coverage.ts,project,complexity sweep zero ESLint complexity findings
@@ -204,6 +207,7 @@ files[135]{path,scope,note}:
   src/core/store/paths.ts,project,reuse type-registry default-folder derivation for custom item storage
   src/core/store/settings.ts,project,Refactor extension policy normalization to reduce settings complexity baseline
   src/core/test/background-runs.ts,project,complexity sweep zero ESLint complexity findings
+  src/sdk/cli-contracts/flag-contracts.ts,project,Expose docs/files missing aliases in SDK CLI flag contracts
   src/sdk/cli-contracts/tool-option-contracts.ts,project,deduplicate SDK tool option contract groups while preserving generated contract snapshot
   src/sdk/cli-contracts/tool-schema.ts,project,deduplicates extension/package managed option schemas
   src/sdk/package-import-adapters.ts,project,adds shared SDK import coercion primitives for package authors
@@ -212,6 +216,7 @@ files[135]{path,scope,note}:
   tests/integration/release-automation-contract.spec.ts,project,complexity sweep zero ESLint complexity findings
   tests/integration/release-readiness-runtime.spec.ts,project,complexity sweep zero ESLint complexity findings
   tests/unit/cli/cli-main-errors.spec.ts,project,complexity sweep zero ESLint complexity findings
+  tests/unit/cli/registration-helpers.spec.ts,project,Regression coverage for docs/files missing alias normalization
   tests/unit/commands/calendar-command.spec.ts,project,Regression coverage for recurrence bound and cap behavior
   tests/unit/commands/close-command.spec.ts,project,Regression coverage for stale blocked_reason warning behavior
   tests/unit/commands/completion-command.spec.ts,project,Regression coverage for zsh missing-filter completion prefixes
@@ -250,8 +255,9 @@ files[135]{path,scope,note}:
   tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,regression coverage for missing stderr telemetry command summaries
   tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,complexity sweep zero ESLint complexity findings
   tests/unit/sdk/tool-option-contracts.spec.ts,project,regression coverage for exported SDK option contract object isolation
-tests[54]{command,scope,timeout_seconds}:
+tests[56]{command,scope,timeout_seconds}:
   git diff --check,project,60
+  "manual temp dir alias smoke with dist CLI at /tmp/tmp.rCeuuiQVDG: init/create/list --filter-docs-missing/list --filter-files-missing/search --filter-docs-missing/health",project,120
   "manual temp dir lifecycle with dist CLI at /tmp/tmp.Lp53EC64iq: init/create/list/search/update/close/health",project,120
   "manual temp dir smoke: pm init/create/list/activity/close/health in /tmp/tmp.5agjTscYIG",project,120
   node scripts/gen-package-runtime-loaders.mjs --check && node scripts/gen-plugin-mcp-wrappers.mjs --check,project,120
@@ -259,6 +265,7 @@ tests[54]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs coverage,project,900
   "node scripts/run-tests.mjs test -- tests/integration/mcp-dynamic-package-actions.spec.ts -t \"normalizes scalar update log fields and defaults list output to compact\"",project,120
   node scripts/run-tests.mjs test -- tests/unit/cli/register-list-query.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/commands/history-activity-command.spec.ts tests/unit/commands/close-command.spec.ts tests/unit/commands/close-many-branch.spec.ts tests/unit/core/schema/runtime-schema-command-flags.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/unit/extensions/extension-command.spec.ts,project,180
+  node scripts/run-tests.mjs test -- tests/unit/cli/registration-helpers.spec.ts tests/unit/commands/completion-command.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/commands/config-command.spec.ts && pnpm typecheck,project,300
   node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/unit/commands/plan-command.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/core/search/search-cache.spec.ts,project,300
   node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/unit/extensions/extension-command.spec.ts,project,360

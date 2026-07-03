@@ -51,7 +51,9 @@ export interface SharedContentFieldFilterOptions {
   noNotes?: boolean;
   noLearnings?: boolean;
   noFiles?: boolean;
+  filterFilesMissing?: boolean;
   noDocs?: boolean;
+  filterDocsMissing?: boolean;
   noTests?: boolean;
   noComments?: boolean;
   noDeps?: boolean;

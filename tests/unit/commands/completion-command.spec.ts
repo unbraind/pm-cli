@@ -461,6 +461,8 @@ describe("generateBashScript", () => {
       "no-linked-command",
       "empty-body",
       "filter-reviewer-missing",
+      "filter-files-missing",
+      "filter-docs-missing",
       "filter-confidence-missing",
       "filter-has-notes",
       "filter-no-deps",
@@ -475,6 +477,13 @@ describe("generateBashScript", () => {
       expect(zsh, `zsh should contain --${flag}`).toContain(`--${flag}`);
       expect(fish, `fish should contain -l ${flag}`).toContain(`-l ${flag}`);
     }
+    const zshListBlockStart = zsh.indexOf("list|list-all|list-draft");
+    const zshListBlock = zsh.slice(zshListBlockStart, zsh.indexOf("aggregate)", zshListBlockStart));
+    expect(zshListBlock).toContain("--has-docs[");
+    expect(zshListBlock).toContain("--no-docs[");
+    expect(zshListBlock).toContain("--filter-docs-missing[");
+    expect(zshListBlock).not.toContain("--filter-has-docs[");
+    expect(zshListBlock).not.toContain("--filter-no-docs[");
     expect(zsh).not.toContain("--reviewer-missing[");
   });
 
