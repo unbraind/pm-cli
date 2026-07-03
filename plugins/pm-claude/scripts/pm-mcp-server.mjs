@@ -79,7 +79,7 @@ async function startServer(target) {
 }
 
 if (!(await startServer(process.env.PM_CLI_MCP_SERVER)) && !(await startServer(await findRepoServer()))) {
-  const child = spawn("npx", ["-y", "--package=@unbrained/pm-cli@latest", "pm-mcp"], { stdio: "inherit", env: process.env });
+  const child = spawn("npx", ["-y", "--package=@unbrained/pm-cli@latest", "pm-mcp"], { stdio: "inherit", env: process.env, shell: process.platform === "win32" });
   child.on("exit", (code, signal) => {
     if (signal) {
       process.kill(process.pid, signal);
