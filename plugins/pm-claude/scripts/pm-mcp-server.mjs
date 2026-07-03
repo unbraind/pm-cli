@@ -12,6 +12,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 async function exists(target) {
   try { await access(target); return true; } catch { return false; }
 }
+
 function isImportUrl(target) {
   if (/^[A-Za-z]:[\\/]/.test(target)) {
     return false;
@@ -22,9 +23,11 @@ function isImportUrl(target) {
     return false;
   }
 }
+
 function isMissingServerModule(error) {
   return typeof error === "object" && error !== null && error.code === "ERR_MODULE_NOT_FOUND";
 }
+
 async function importServerModule(target) {
   try {
     return await import(target);
@@ -35,6 +38,7 @@ async function importServerModule(target) {
     throw error;
   }
 }
+
 async function findRepoServer() {
   let cursor = here;
   for (let depth = 0; depth < 10; depth += 1) {
@@ -50,6 +54,7 @@ async function findRepoServer() {
   }
   return null;
 }
+
 async function startServer(target) {
   if (!target) {
     return false;
@@ -72,6 +77,7 @@ async function startServer(target) {
   server.startMcpServer();
   return true;
 }
+
 if (!(await startServer(process.env.PM_CLI_MCP_SERVER)) && !(await startServer(await findRepoServer()))) {
   const child = spawn("npx", ["-y", "--package=@unbrained/pm-cli@latest", "pm-mcp"], { stdio: "inherit", env: process.env });
   child.on("exit", (code, signal) => {
