@@ -441,8 +441,8 @@ function toImportLinkedTest(entry: unknown, options: ToImportLinkedTestsOptions)
     return undefined;
   }
   return {
-    command,
-    path: testPath,
+    ...(command ? { command } : {}),
+    ...(testPath ? { path: testPath } : {}),
     scope: toImportLinkScope(entry.scope),
     timeout_seconds: toImportLinkedTestTimeout(entry.timeout_seconds, options),
     note: toNonEmptyImportString(entry.note),

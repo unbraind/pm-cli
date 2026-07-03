@@ -730,6 +730,16 @@ describe("generateZshScript", () => {
     const script = generateZshScript();
     expect(script).toContain("--close-reason");
   });
+
+  it("does not split continued zsh _arguments blocks with blank lines", () => {
+    const script = generateZshScript();
+    for (const command of ["search)", "update)", "update-many)", "context|ctx)"]) {
+      const blockStart = script.indexOf(`        ${command}`);
+      const block = script.slice(blockStart, script.indexOf("          ;;", blockStart));
+      expect(blockStart).toBeGreaterThan(-1);
+      expect(block).not.toMatch(/\\\n\s*\n/u);
+    }
+  });
 });
 
 describe("generateFishScript", () => {

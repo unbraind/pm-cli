@@ -973,6 +973,8 @@ interface CloseRouteContext {
   id: string;
 }
 
+// `rank` is a legacy alias for `order`; keep it out of the scalar loop if the
+// shared mutation key list ever grows to include that alias.
 const UPDATE_LEGACY_COMMON_SCALAR_OPTION_EXCLUSIONS = new Set<string>(["order", "rank"]);
 const UPDATE_LEGACY_COMMON_SCALAR_OPTION_KEYS = COMMON_MUTATION_COMMAND_OPTION_KEYS.filter(
   (key) => !UPDATE_LEGACY_COMMON_SCALAR_OPTION_EXCLUSIONS.has(key),

@@ -240,9 +240,9 @@ function renderZshRuntimeFieldFlagSpecs(runtimeFlags: string[] | undefined): str
 function renderZshArgumentSpecs(specs: readonly string[], options: { readonly trailingContinuation?: boolean } = {}): string {
   const trailingContinuation = options.trailingContinuation ?? true;
   const lastSpecIndex = specs.length - 1;
-  return `${specs
+  return specs
     .map((spec, index) => `            ${spec}${trailingContinuation || index !== lastSpecIndex ? " \\" : ""}`)
-    .join("\n")}\n`;
+    .join("\n");
 }
 
 function renderZshCommandDescriptions(): string {

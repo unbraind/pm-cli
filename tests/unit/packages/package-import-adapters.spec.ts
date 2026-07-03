@@ -114,6 +114,9 @@ describe("package import adapter primitives", () => {
       expect(toImportLinkedTests([{ command: "pnpm test", timeout_seconds: 0 }])).toEqual([
         { command: "pnpm test", path: undefined, scope: "project", timeout_seconds: 0, note: undefined },
       ]);
+      expect(toImportLinkedTests([{ path: "tests/unit/smoke.spec.ts" }])).toEqual([
+        { path: "tests/unit/smoke.spec.ts", scope: "project", timeout_seconds: undefined, note: undefined },
+      ]);
     });
 
     it("selectImportAuthor prefers explicit, then PM_AUTHOR, then settings", () => {
