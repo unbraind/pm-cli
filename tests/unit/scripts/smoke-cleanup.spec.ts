@@ -50,7 +50,7 @@ describe("smoke-cleanup", () => {
       existsSync: vi.fn(() => true),
       readdirSync: vi.fn(() => []),
       rmSync: vi.fn(() => {
-        // eslint-disable-next-line no-throw-literal
+         
         throw "string failure";
       }),
     }));

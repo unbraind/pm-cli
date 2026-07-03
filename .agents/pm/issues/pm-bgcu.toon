@@ -1,0 +1,11 @@
+id: pm-bgcu
+title: "Workspace singleton files (settings.json, schema, session-state, checkpoints) are lock-free read-modify-write — parallel pm config set demonstrably loses updates"
+description: "`pm config set` and other singleton-file writers do read→modify→writeFileAtomic with NO lock, so concurrent writers last-writer-win and silently drop each other's changes. Empirically demonstrated: looped two parallel `pm config set` on DIFFERENT keys (author_default vs locks_ttl_seconds) → the locks_ttl_seconds write was lost in 3 of 6 rounds (value stuck at stale round's value while the other key advanced). Affected writers (all read-modify-write without acquireLock): src/core/store/settings.ts (~L1313, pm config set / governance preset), src/core/schema/runtime-schema.ts (~L588, pm schema add-type/add-field/add-status), src/core/session/session-state.ts (~L56, pm focus / focus inheritance), src/core/checkpoint/mutation-checkpoint.ts (~L119). Fix: route these through the existing lock infra with reserved workspace-scoped lock ids (e.g. __settings, __schema, __session) held across the read-modify-write window — same TTL/stale-sweep semantics as item locks, and pm gc --scope locks sweeps debris for free. Atomicity of the write itself is fine (temp+rename); the lost-update window is the read→write gap."
+type: Issue
+status: open
+priority: 2
+tags[3]: concurrency,config,robustness
+created_at: "2026-07-03T13:25:22.827Z"
+updated_at: "2026-07-03T13:25:22.827Z"
+author: claude-code-agent
+body: ""

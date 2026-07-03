@@ -1,8 +1,8 @@
-import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { writeTestExtension } from "../helpers/extensions.js";
 import { expectJsonErrorEnvelope, parseJsonErrorEnvelope } from "../helpers/jsonErrorEnvelope.js";
+import { writeItemTypeDefinitions } from "../helpers/pmWorkspace.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 function setGovernancePreset(context: TempPmContext, preset: "minimal" | "default" | "strict"): void {
@@ -883,25 +883,18 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
   it("renders plural guidance when create is missing multiple type-required options", async () => {
     await withTempPmPath(async (context) => {
-      const settingsPath = path.join(context.pmPath, "settings.json");
-      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        item_types?: { definitions?: Array<Record<string, unknown>> };
-      };
-      settings.item_types = {
-        definitions: [
-          {
-            name: "Asset",
-            folder: "assets",
-            required_create_fields: [],
-            required_create_repeatables: [],
-            command_option_policies: [
-              { command: "create", option: "message", required: true },
-              { command: "create", option: "goal", required: true },
-            ],
-          },
-        ],
-      };
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeItemTypeDefinitions(context.pmPath, [
+        {
+          name: "Asset",
+          folder: "assets",
+          required_create_fields: [],
+          required_create_repeatables: [],
+          command_option_policies: [
+            { command: "create", option: "message", required: true },
+            { command: "create", option: "goal", required: true },
+          ],
+        },
+      ]);
 
       const usage = context.runCli(["create", "--title", "Asset title", "--description", "Asset description", "--type", "Asset", "--json"]);
       expect(usage.code).toBe(2);
@@ -1208,30 +1201,23 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
   it("surfaces type-option schema details in create/update type-aware help", async () => {
     await withTempPmPath(async (context) => {
-      const settingsPath = path.join(context.pmPath, "settings.json");
-      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        item_types?: { definitions?: Array<Record<string, unknown>> };
-      };
-      settings.item_types = {
-        definitions: [
-          {
-            name: "Asset",
-            folder: "assets",
-            required_create_fields: [],
-            required_create_repeatables: [],
-            options: [
-              {
-                key: "category",
-                values: ["feature", "maintenance"],
-                required: true,
-                aliases: ["cat"],
-                description: "Asset category selector",
-              },
-            ],
-          },
-        ],
-      };
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeItemTypeDefinitions(context.pmPath, [
+        {
+          name: "Asset",
+          folder: "assets",
+          required_create_fields: [],
+          required_create_repeatables: [],
+          options: [
+            {
+              key: "category",
+              values: ["feature", "maintenance"],
+              required: true,
+              aliases: ["cat"],
+              description: "Asset category selector",
+            },
+          ],
+        },
+      ]);
 
       const createHelp = context.runCli(["create", "--help", "--type", "Asset"]);
       expect(createHelp.code).toBe(0);

@@ -170,7 +170,7 @@ function cleanupPathToken(value: string): string {
 
 function extractRawPathReferences(references: TextReference[]): RawPathReference[] {
   const rawReferences: RawPathReference[] = [];
-  const absolutePattern = /(?:[A-Za-z]:[\\/]|\/)[^\s"'`<>()\[\]{},;]+/gu;
+  const absolutePattern = /(?:[A-Za-z]:[\\/]|\/)[^\s"'`<>()[\]{},;]+/gu;
   const relativePattern =
     /(?:\.{1,2}[\\/])?(?:(?:[A-Za-z0-9_.@-]+[\\/])+[A-Za-z0-9_.@-]+|[A-Za-z0-9_.@-]+\.[A-Za-z0-9][A-Za-z0-9._-]*)/gu;
   for (const reference of references) {

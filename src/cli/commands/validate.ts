@@ -764,9 +764,9 @@ const RESOLUTION_REMEDIATION_PLACEHOLDER_BY_FIELD: Record<ResolutionFieldKey, st
 
 function buildResolutionRemediationCommand(row: { id: string; missing_fields: ResolutionFieldKey[] }): string {
   const fieldArguments = row.missing_fields
-    .map((field) => `${RESOLUTION_REMEDIATION_FLAG_BY_FIELD[field]} \"${RESOLUTION_REMEDIATION_PLACEHOLDER_BY_FIELD[field]}\"`)
+    .map((field) => `${RESOLUTION_REMEDIATION_FLAG_BY_FIELD[field]} "${RESOLUTION_REMEDIATION_PLACEHOLDER_BY_FIELD[field]}"`)
     .join(" ");
-  return `pm update ${row.id} ${fieldArguments} --message \"Backfill resolution metadata\"`;
+  return `pm update ${row.id} ${fieldArguments} --message "Backfill resolution metadata"`;
 }
 
 /**

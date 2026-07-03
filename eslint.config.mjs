@@ -1,15 +1,15 @@
+import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import unicorn from "eslint-plugin-unicorn";
 
 // Cyclomatic-complexity ceiling for the "Complex Method" no-regression gate.
 // Calibrated to CodeFactor's "Complex Method" detector (which flags methods at
 // cyclomatic complexity >= 18): `max: 17` makes ESLint error on any function at
-// CC >= 18, so a newly-introduced complex method fails `pnpm lint` in CI. Every
-// pre-existing violation is grandfathered in `eslint-suppressions.json`
-// (regenerate with `pnpm lint:complexity:baseline`), so the gate blocks net-new
-// per-file complexity debt while the baseline is maintained. It is not a
-// location-aware delta check for already-suppressed functions; pruning the file
-// baseline to empty is the path to a CodeFactor A+ (tracked under epic pm-92if).
+// CC >= 18, so a newly-introduced complex method fails `pnpm lint` in CI.
+// Pre-existing violations are grandfathered in `eslint-suppressions.json`;
+// ESLint fails the run when a suppression goes stale (prune with
+// `pnpm lint:eslint:prune`), so the baseline can only shrink, and the static
+// quality gate enforces a hard budget on its size so it can never grow.
 const CODEFACTOR_MAINTAINABILITY_RULES = {
   complexity: ["error", { max: 17 }],
   "no-unsafe-optional-chaining": "error",
@@ -19,42 +19,46 @@ const CODEFACTOR_MAINTAINABILITY_RULES = {
   "unicorn/no-useless-spread": "error",
 };
 
-const SHARED_IGNORES = [
-  ".agents/**",
-  ".cache/**",
-  ".codex/**",
-  ".gemini/**",
-  ".pnpm-store/**",
-  "coverage/**",
-  "dist/**",
-  "node_modules/**",
-  "tests/**",
-];
+// Node-runtime globals for plain-script linting (no type-aware project service
+// on the hot lint path; `pnpm typecheck` owns full type analysis).
+const NODE_GLOBALS = {
+  process: "readonly", console: "readonly", Buffer: "readonly",
+  setTimeout: "readonly", clearTimeout: "readonly", setInterval: "readonly",
+  clearInterval: "readonly", setImmediate: "readonly", queueMicrotask: "readonly",
+  URL: "readonly", URLSearchParams: "readonly", TextEncoder: "readonly",
+  TextDecoder: "readonly", fetch: "readonly", AbortController: "readonly",
+  AbortSignal: "readonly", performance: "readonly", structuredClone: "readonly",
+  crypto: "readonly", atob: "readonly", btoa: "readonly",
+  __dirname: "readonly", __filename: "readonly", require: "readonly", module: "readonly",
+  globalThis: "readonly", WebSocket: "readonly", Blob: "readonly", FormData: "readonly",
+  Response: "readonly", Request: "readonly", Headers: "readonly",
+};
 
 export default [
   {
-    ignores: SHARED_IGNORES,
+    ignores: [
+      ".agents/**",
+      ".cache/**",
+      ".codex/**",
+      ".gemini/**",
+      ".pnpm-store/**",
+      "coverage/**",
+      "dist/**",
+      "node_modules/**",
+    ],
   },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
   {
-    files: ["**/*.{js,mjs,cjs}"],
-    plugins: {
-      unicorn,
+    languageOptions: { globals: NODE_GLOBALS },
+    linterOptions: { reportUnusedDisableDirectives: "error" },
+    plugins: { unicorn },
+    rules: {
+      ...CODEFACTOR_MAINTAINABILITY_RULES,
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
+      ],
     },
-    rules: CODEFACTOR_MAINTAINABILITY_RULES,
-  },
-  {
-    files: ["**/*.ts"],
-    languageOptions: {
-      parser: tseslint.parser,
-      parserOptions: {
-        ecmaVersion: "latest",
-        sourceType: "module",
-      },
-    },
-    plugins: {
-      "@typescript-eslint": tseslint.plugin,
-      unicorn,
-    },
-    rules: CODEFACTOR_MAINTAINABILITY_RULES,
   },
 ];

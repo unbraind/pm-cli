@@ -1,0 +1,12 @@
+id: pm-8t5x
+title: pm claim silently steals items already assigned to another agent — claim must be atomic test-and-set for multi-agent work distribution
+description: "bypassesAssigneeConflict (src/core/store/item-store.ts) unconditionally exempts op === \"claim\" from the assignee-conflict check, so `pm claim` on an item assigned to a DIFFERENT author silently reassigns it with no warning and no --force. Empirical: 6 parallel `pm claim` on one item → 3 return success each telling a different agent \"you own it\"; final assignee is whoever wrote last (claimer-4 while claimer-1 and claimer-3 also got success payloads). Sequential steal also confirmed: claim by second-agent silently overwrites first-agent. This defeats claim as a work-distribution primitive: two agents proceed believing they own the same task. Fix: make claim test-and-set under the per-item lock — if assignee is set, non-empty, and !== author, fail with structured `already_claimed_by` (exit CONFLICT, include current owner + claimed timestamp) unless `--steal`/`--force`; claiming an item you already own stays idempotent-success. Consider companion `pm claim --next` (atomic pm next recommendation + claim, retry-on-conflict with next candidate) so N parallel agents each get a distinct item instead of all claiming the same `pm next` recommendation."
+type: Issue
+status: open
+priority: 1
+tags[3]: agent-ux,concurrency,governance
+created_at: "2026-07-03T13:25:09.541Z"
+updated_at: "2026-07-03T13:25:09.541Z"
+author: claude-code-agent
+parent: pm-mpbb
+body: ""

@@ -778,7 +778,7 @@ async function resolveSemanticEmbeddingForUpsert(params: {
   semanticSummary: ReindexResult["semantic"];
   progressEnabled: boolean;
 }): Promise<ReindexEmbeddingExecutionResult & { staleDocuments: ItemDocument[]; vectorDimension: number; resetRequired: boolean }> {
-  let embeddingResult = await executeReindexEmbedding(
+  const embeddingResult = await executeReindexEmbedding(
     params.settings,
     params.requestedMode,
     params.activeEmbeddingProvider,

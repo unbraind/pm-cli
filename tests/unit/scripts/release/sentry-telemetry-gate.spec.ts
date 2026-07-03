@@ -611,7 +611,7 @@ describe("scripts/release/sentry-telemetry-gate: sentry fetch fallbacks", () => 
     vi.spyOn(JSON, "parse").mockImplementation(((...parseArgs: Parameters<typeof JSON.parse>) => {
       const [payload] = parseArgs;
       if (typeof payload === "string" && payload.includes("\"PM-98\"")) {
-        // eslint-disable-next-line no-throw-literal
+         
         throw "raw cli parse failure";
       }
       return realParse(...parseArgs);
@@ -689,7 +689,7 @@ describe("scripts/release/sentry-telemetry-gate: sentry fetch fallbacks", () => 
       argv: ["--json", "--telemetry-mode", "off"],
       env: { SENTRY_AUTH_TOKEN: "token-test" },
       fetchImpl: vi.fn(async () => {
-        // eslint-disable-next-line no-throw-literal
+         
         throw "raw fetch boom";
       }) as unknown as typeof fetch,
     });

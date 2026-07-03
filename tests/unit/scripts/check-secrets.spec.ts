@@ -74,7 +74,7 @@ describe("check-secrets", () => {
         if (target === "empty.txt") {
           return Buffer.from("");
         }
-        // eslint-disable-next-line no-throw-literal
+         
         throw Object.assign({ code: "EACCES" }, { toString: () => "raw failure" });
       }),
     }));

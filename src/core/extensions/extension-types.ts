@@ -477,7 +477,7 @@ export interface CommandHandlerContext {
 /**
  * Documents the parser override context payload exchanged by command, SDK, and package integrations.
  */
-export interface ParserOverrideContext extends CommandHandlerContext {}
+export type ParserOverrideContext = CommandHandlerContext;
 
 /**
  * Documents the parser override delta payload exchanged by command, SDK, and package integrations.

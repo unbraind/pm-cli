@@ -401,7 +401,7 @@ function renderBashDynamicChoiceResolver(kind: "status" | "type", command: "comp
     `  ttl="\${${ttlVar}:-120}"`,
     `  cache_ts="\${${cacheTsVar}:-0}"`,
     `  if [[ -n "\${${cacheVar}:-}" && "$now" -ne 0 && $((now - cache_ts)) -lt "$ttl" ]]; then`,
-    `    printf '%s\\n' "\$${cacheVar}"`,
+    `    printf '%s\\n' "$${cacheVar}"`,
     "    return 0",
     "  fi",
     `  resolved="$(pm ${command} 2>/dev/null)"`,
@@ -410,7 +410,7 @@ function renderBashDynamicChoiceResolver(kind: "status" | "type", command: "comp
     "  fi",
     `  ${cacheVar}="$resolved"`,
     `  ${cacheTsVar}="$now"`,
-    `  printf '%s\\n' "\$${cacheVar}"`,
+    `  printf '%s\\n' "$${cacheVar}"`,
     "}",
   ];
 }

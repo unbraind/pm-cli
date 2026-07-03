@@ -85,6 +85,19 @@ export async function setTestResultTracking(pmPath: string, enabled: boolean): P
 }
 
 /**
+ * Replaces `item_types.definitions` in the workspace settings.json so specs
+ * can seed custom item-type definitions without repeating settings plumbing.
+ */
+export async function writeItemTypeDefinitions(pmPath: string, definitions: Array<Record<string, unknown>>): Promise<void> {
+  const settingsPath = path.join(pmPath, "settings.json");
+  const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+    item_types?: { definitions?: Array<Record<string, unknown>> };
+  };
+  settings.item_types = { definitions };
+  await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+}
+
+/**
  * Applies a governance preset to the temp workspace via the real CLI and
  * asserts the command succeeded.
  */
@@ -121,7 +134,7 @@ export async function writeSchemaTypeExtension(pmRoot: string, extensionDirName:
     [
       "export function activate(api) {",
       "  api.registerItemTypes([",
-      `    { name: \"${typeName}\", folder: \"${typeName.toLowerCase()}\" },`,
+      `    { name: "${typeName}", folder: "${typeName.toLowerCase()}" },`,
       "  ]);",
       "}",
       "",

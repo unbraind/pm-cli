@@ -26,6 +26,7 @@ describe("scripts/run-tests.mjs", () => {
       const combinedOutput = `${result.stdout}\n${result.stderr}`;
       expect(result.error, combinedOutput).toBeUndefined();
       expect(result.status, combinedOutput).toBe(0);
+      // eslint-disable-next-line no-control-regex -- strips ANSI color escape sequences from CLI output
       const cleanOutput = combinedOutput.replace(/\x1b\[[0-9;]*m/g, "");
       const normalizedOutput = cleanOutput.replace(/\\/g, "/");
       expect(normalizedOutput).toContain("tests/unit/core/item/status-normalization.spec.ts");

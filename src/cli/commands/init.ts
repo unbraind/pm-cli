@@ -837,7 +837,7 @@ export async function runInit(
   const settingsPath = path.join(pmRoot, "settings.json");
   const settingsExists = await pathExists(settingsPath);
   const normalizedOptions = normalizeInitCommandOptions(options);
-  let settingsResolution = await resolveInitSettings({
+  const settingsResolution = await resolveInitSettings({
     pmRoot,
     settingsPath,
     settingsExists,

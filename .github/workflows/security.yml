@@ -1,0 +1,104 @@
+name: Security and Script Quality
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    # Weekly rescan of main so newly published CVEs surface without a code change.
+    - cron: "17 5 * * 1"
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  trivy:
+    name: Trivy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      # Filesystem scan over the repository: dependency vulnerabilities
+      # (pnpm-lock.yaml), leaked secrets, and IaC/workflow misconfigurations.
+      # exit-code 1 makes every finding a hard failure; this job is a required
+      # branch-protection check, so findings block merges.
+      - name: Trivy repository scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          ignore-unfixed: false
+          skip-dirs: node_modules,dist,coverage,.pnpm-store
+
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      # Strictest severity (style) over every tracked shell script; any finding
+      # fails. xargs -r keeps the gate green if no .sh files are tracked.
+      - name: ShellCheck all tracked shell scripts
+        run: |
+          shellcheck --version
+          git ls-files -z -- '*.sh' | xargs -0 -r shellcheck --severity=style
+
+  psscriptanalyzer:
+    name: PSScriptAnalyzer
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      # Every tracked PowerShell script is analyzed at all severities
+      # (Error, Warning, Information); any finding fails the gate.
+      - name: PSScriptAnalyzer all tracked PowerShell scripts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module PSScriptAnalyzer -RequiredVersion 1.24.0 -Force -Scope CurrentUser
+          Import-Module PSScriptAnalyzer -Force
+          $files = git ls-files -- '*.ps1' '*.psm1' '*.psd1'
+          if (-not $files) { Write-Host 'No PowerShell scripts tracked.'; exit 0 }
+          $findings = @($files | ForEach-Object {
+            Invoke-ScriptAnalyzer -Path $_ -Severity @('Error', 'Warning', 'Information')
+          })
+          if ($findings.Count -gt 0) {
+            $findings | Format-Table RuleName, Severity, ScriptName, Line, Message -AutoSize | Out-String -Width 400 | Write-Host
+            Write-Error "PSScriptAnalyzer reported $($findings.Count) finding(s)."
+            exit 1
+          }
+          Write-Host 'PSScriptAnalyzer: no findings.'
+
+  actionlint:
+    name: actionlint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      # Lints every workflow (expression typing, runner labels, permissions,
+      # and embedded run: scripts via shellcheck). The download script verifies
+      # the release checksum for the pinned version.
+      - name: Run actionlint on all workflows
+        run: |
+          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
+          ./actionlint -color

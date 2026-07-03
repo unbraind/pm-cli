@@ -80,13 +80,17 @@ Every change must *only improve* the codebase — CI blocks any pull request tha
 introduces a new quality issue. Run the lint suite before pushing:
 
 ```bash
-pnpm lint           # eslint (complexity + maintainability) + jscpd duplication + static-quality gate
+pnpm lint           # eslint (recommended + complexity + maintainability) + jscpd duplication + static-quality gate
 ```
 
-**Complex Method no-regression gate.** ESLint enforces a cyclomatic-complexity
-ceiling (`complexity` max 17 — a function at CC ≥ 18 fails), calibrated to
-CodeFactor's "Complex Method" detector. The full set of pre-existing violations is
-grandfathered in `eslint-suppressions.json` (ESLint native bulk suppressions), so:
+**ESLint strict baseline.** The flat config layers `@eslint/js` recommended,
+`typescript-eslint` recommended, and the CodeFactor-calibrated maintainability
+rules over *all* surfaces including tests, with
+`reportUnusedDisableDirectives: "error"` so stale inline disables fail the run.
+It also enforces a cyclomatic-complexity ceiling (`complexity` max 17 — a
+function at CC ≥ 18 fails), calibrated to CodeFactor's "Complex Method"
+detector. The full set of pre-existing violations is grandfathered in
+`eslint-suppressions.json` (ESLint native bulk suppressions), so:
 
 - A **new** complex method (or making an existing one worse) fails `pnpm lint` in
   CI — you must simplify it.
@@ -95,8 +99,33 @@ grandfathered in `eslint-suppressions.json` (ESLint native bulk suppressions), s
   `eslint-suppressions.json` — the baseline only ever shrinks.
 
 Do not regenerate the whole baseline (`pnpm lint:complexity:baseline`) to silence a
-new violation; that defeats the gate. Driving the baseline to empty is the path to a
-CodeFactor **A+** (tracked under epic `pm-92if`).
+new violation; that defeats the gate — and the static quality gate enforces a hard
+budget (`MAX_ESLINT_SUPPRESSIONS` in `scripts/release/static-quality-gate.mjs`) on
+the baseline's total size, so growing it fails CI outright. Lower the budget as the
+baseline burns down. Driving the baseline to empty is the path to a CodeFactor
+**A+** (tracked under epic `pm-92if`).
+
+**jscpd duplication gate.** `jscpd` runs in `strict` mode with `threshold: 0`
+(any clone ≥ 22 lines / 115 tokens across src, packages, plugins, scripts,
+docs/examples, and tests fails). Extract shared helpers instead of loosening
+`.jscpd.json`.
+
+**Inline pragma budgets.** The static quality gate enforces hard ceilings on the
+inline escape hatches that could otherwise silence a gate without touching any
+config file a reviewer would watch: inline `eslint-disable` comments, coverage
+ignore pragmas (`v8 ignore` / `c8 ignore` / `istanbul ignore`), and
+`jscpd:ignore` blocks (budget 0 — never allowed). The ceilings live in
+`scripts/release/static-quality-gate.mjs` (`MAX_INLINE_ESLINT_DISABLES`,
+`MAX_COVERAGE_IGNORE_PRAGMAS`, `MAX_JSCPD_IGNORE_PRAGMAS`); adding a new pragma
+anywhere in the scanned surfaces fails CI. Lower the budgets as usage burns
+down — never raise them.
+
+**Security & script gates (`.github/workflows/security.yml`).** Every PR also
+runs Trivy (dependency vulnerabilities, secrets, misconfigurations — any
+HIGH/CRITICAL finding fails), ShellCheck at `--severity=style` over all tracked
+`*.sh`, PSScriptAnalyzer over all tracked PowerShell at Error/Warning/Information
+severity, and actionlint over the workflows themselves. All four are required
+branch-protection checks.
 
 **Greptile review.** `pnpm review:greptile:gate` runs the Greptile CLI reviewer over
 the current branch and fails on findings. It is wired into `pnpm release:gates`

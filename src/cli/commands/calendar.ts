@@ -180,7 +180,7 @@ function parseIncludeSources(raw: string | undefined): Set<CalendarIncludeKind> 
     return new Set(["deadlines", "reminders", "events"]);
   }
   const values = normalized
-    .split(/[\|,]/)
+    .split(/[|,]/)
     .map((value) => value.trim())
     .filter((value) => value.length > 0);
   if (values.length === 0) {

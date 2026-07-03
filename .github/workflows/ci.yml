@@ -124,6 +124,8 @@ jobs:
           mkdir -p "${runtime_dir}"
           printf 'export const marker: string = "node22-ts-runtime";\n' > "${runtime_dir}/runtime.ts"
           export PM_CLI_PACKAGE_ROOT="${temp_root}"
+          # ${...} inside the single-quoted -e script are JS template literals, not shell expansions.
+          # shellcheck disable=SC2016
           node --input-type=module -e 'const { pathToFileURL } = await import("node:url"); const loader = await import(pathToFileURL(`${process.env.GITHUB_WORKSPACE}/packages/pm-beads/extensions/beads/runtime-loader.ts`).href); const runtime = await loader.loadPackageRuntimeModule(); if (runtime.marker !== "node22-ts-runtime") throw new Error(`unexpected runtime marker: ${String(runtime.marker)}`);'
 
   gates:

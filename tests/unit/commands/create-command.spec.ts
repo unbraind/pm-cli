@@ -14,6 +14,7 @@ import {
 import { createEmptyExtensionRegistrationRegistry, type ExtensionHookRegistry } from "../../../src/core/extensions/loader.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
+import { writeItemTypeDefinitions } from "../../helpers/pmWorkspace.js";
 import type { TempPmContext } from "../../helpers/withTempPmPath.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -2450,26 +2451,19 @@ describe("runCreate", () => {
 
   it("enforces create command_option_policies required and disabled options for custom types", async () => {
     await withTempPmPath(async (context) => {
-      const settingsPath = path.join(context.pmPath, "settings.json");
-      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        item_types?: { definitions?: Array<Record<string, unknown>> };
-      };
-      settings.item_types = {
-        definitions: [
-          {
-            name: "Asset",
-            folder: "assets",
-            required_create_fields: [],
-            required_create_repeatables: [],
-            command_option_policies: [
-              { command: "create", option: "message", required: true },
-              { command: "create", option: "severity", enabled: false },
-              { command: "create", option: "goal", visible: false },
-            ],
-          },
-        ],
-      };
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeItemTypeDefinitions(context.pmPath, [
+        {
+          name: "Asset",
+          folder: "assets",
+          required_create_fields: [],
+          required_create_repeatables: [],
+          command_option_policies: [
+            { command: "create", option: "message", required: true },
+            { command: "create", option: "severity", enabled: false },
+            { command: "create", option: "goal", visible: false },
+          ],
+        },
+      ]);
 
       const missingMessage = baseCreateOptions({
         type: "Asset",
@@ -2508,23 +2502,16 @@ describe("runCreate", () => {
 
   it("lets a default_status satisfy a required create status policy", async () => {
     await withTempPmPath(async (context) => {
-      const settingsPath = path.join(context.pmPath, "settings.json");
-      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        item_types?: { definitions?: Array<Record<string, unknown>> };
-      };
-      settings.item_types = {
-        definitions: [
-          {
-            name: "Asset",
-            folder: "assets",
-            default_status: "in_progress",
-            required_create_fields: [],
-            required_create_repeatables: [],
-            command_option_policies: [{ command: "create", option: "status", required: true }],
-          },
-        ],
-      };
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeItemTypeDefinitions(context.pmPath, [
+        {
+          name: "Asset",
+          folder: "assets",
+          default_status: "in_progress",
+          required_create_fields: [],
+          required_create_repeatables: [],
+          command_option_policies: [{ command: "create", option: "status", required: true }],
+        },
+      ]);
 
       const created = await runCreate(
         baseCreateOptions({
@@ -2541,22 +2528,15 @@ describe("runCreate", () => {
 
   it("counts --add-tags toward a tags command_option_policy (pm-1lws)", async () => {
     await withTempPmPath(async (context) => {
-      const settingsPath = path.join(context.pmPath, "settings.json");
-      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        item_types?: { definitions?: Array<Record<string, unknown>> };
-      };
-      settings.item_types = {
-        definitions: [
-          {
-            name: "Asset",
-            folder: "assets",
-            required_create_fields: [],
-            required_create_repeatables: [],
-            command_option_policies: [{ command: "create", option: "tags", enabled: false }],
-          },
-        ],
-      };
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeItemTypeDefinitions(context.pmPath, [
+        {
+          name: "Asset",
+          folder: "assets",
+          required_create_fields: [],
+          required_create_repeatables: [],
+          command_option_policies: [{ command: "create", option: "tags", enabled: false }],
+        },
+      ]);
 
       // --add-tags must not bypass a policy that disables the tags option.
       await expect(
@@ -2581,25 +2561,18 @@ describe("runCreate", () => {
 
   it("aggregates missing required create options into a deterministic usage error", async () => {
     await withTempPmPath(async (context) => {
-      const settingsPath = path.join(context.pmPath, "settings.json");
-      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        item_types?: { definitions?: Array<Record<string, unknown>> };
-      };
-      settings.item_types = {
-        definitions: [
-          {
-            name: "Asset",
-            folder: "assets",
-            required_create_fields: [],
-            required_create_repeatables: [],
-            command_option_policies: [
-              { command: "create", option: "message", required: true },
-              { command: "create", option: "goal", required: true },
-            ],
-          },
-        ],
-      };
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeItemTypeDefinitions(context.pmPath, [
+        {
+          name: "Asset",
+          folder: "assets",
+          required_create_fields: [],
+          required_create_repeatables: [],
+          command_option_policies: [
+            { command: "create", option: "message", required: true },
+            { command: "create", option: "goal", required: true },
+          ],
+        },
+      ]);
 
       await expect(
         runCreate(
@@ -2630,26 +2603,23 @@ describe("runCreate", () => {
     await withTempPmPath(async (context) => {
       const settingsPath = path.join(context.pmPath, "settings.json");
       const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        item_types?: { definitions?: Array<Record<string, unknown>> };
         governance?: { preset?: string };
       };
       settings.governance = {
         ...settings.governance,
         preset: "strict",
       };
-      settings.item_types = {
-        definitions: [
-          {
-            name: "Asset",
-            folder: "assets",
-            required_create_fields: [],
-            required_create_repeatables: [],
-            command_option_policies: [{ command: "create", option: "message", required: true }],
-            options: [{ key: "category", values: ["feature", "maintenance"], required: true }],
-          },
-        ],
-      };
       await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeItemTypeDefinitions(context.pmPath, [
+        {
+          name: "Asset",
+          folder: "assets",
+          required_create_fields: [],
+          required_create_repeatables: [],
+          command_option_policies: [{ command: "create", option: "message", required: true }],
+          options: [{ key: "category", values: ["feature", "maintenance"], required: true }],
+        },
+      ]);
 
       await expect(
         runCreate(
@@ -2688,23 +2658,16 @@ describe("runCreate", () => {
 
   it("rejects create policies that make an option required and disabled", async () => {
     await withTempPmPath(async (context) => {
-      const settingsPath = path.join(context.pmPath, "settings.json");
-      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        item_types?: { definitions?: Array<Record<string, unknown>> };
-      };
-      settings.item_types = {
-        definitions: [
-          {
-            name: "Asset",
-            required_create_fields: [],
-            required_create_repeatables: [],
-            command_option_policies: [
-              { command: "create", option: "message", required: true, enabled: false },
-            ],
-          },
-        ],
-      };
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeItemTypeDefinitions(context.pmPath, [
+        {
+          name: "Asset",
+          required_create_fields: [],
+          required_create_repeatables: [],
+          command_option_policies: [
+            { command: "create", option: "message", required: true, enabled: false },
+          ],
+        },
+      ]);
 
       await expect(
         runCreate(
@@ -2719,21 +2682,14 @@ describe("runCreate", () => {
 
   it("rejects unsupported create command_option_policies option keys", async () => {
     await withTempPmPath(async (context) => {
-      const settingsPath = path.join(context.pmPath, "settings.json");
-      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        item_types?: { definitions?: Array<Record<string, unknown>> };
-      };
-      settings.item_types = {
-        definitions: [
-          {
-            name: "Asset",
-            required_create_fields: [],
-            required_create_repeatables: [],
-            command_option_policies: [{ command: "create", option: "not_real_option", required: true }],
-          },
-        ],
-      };
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeItemTypeDefinitions(context.pmPath, [
+        {
+          name: "Asset",
+          required_create_fields: [],
+          required_create_repeatables: [],
+          command_option_policies: [{ command: "create", option: "not_real_option", required: true }],
+        },
+      ]);
 
       await expect(
         runCreate(
@@ -2788,25 +2744,18 @@ describe("runCreate", () => {
 
   it("accepts colon and markdown formats for type-option entries", async () => {
     await withTempPmPath(async (context) => {
-      const settingsPath = path.join(context.pmPath, "settings.json");
-      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        item_types?: { definitions?: Array<Record<string, unknown>> };
-      };
-      settings.item_types = {
-        definitions: [
-          {
-            name: "Asset",
-            folder: "assets",
-            required_create_fields: [],
-            required_create_repeatables: [],
-            options: [
-              { key: "category", values: ["feature", "maintenance"] },
-              { key: "workflow", values: ["seeded", "regression"] },
-            ],
-          },
-        ],
-      };
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeItemTypeDefinitions(context.pmPath, [
+        {
+          name: "Asset",
+          folder: "assets",
+          required_create_fields: [],
+          required_create_repeatables: [],
+          options: [
+            { key: "category", values: ["feature", "maintenance"] },
+            { key: "workflow", values: ["seeded", "regression"] },
+          ],
+        },
+      ]);
 
       const colonResult = await runCreate(
         baseCreateOptions({
@@ -3015,22 +2964,15 @@ describe("runCreate", () => {
 
   it("enforces command_option_policies for the extension --field setter on create", async () => {
     await withTempPmPath(async (context) => {
-      const settingsPath = path.join(context.pmPath, "settings.json");
-      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        item_types?: { definitions?: Array<Record<string, unknown>> };
-      };
-      settings.item_types = {
-        definitions: [
-          {
-            name: "Asset",
-            folder: "assets",
-            required_create_fields: [],
-            required_create_repeatables: [],
-            command_option_policies: [{ command: "create", option: "field", required: true }],
-          },
-        ],
-      };
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeItemTypeDefinitions(context.pmPath, [
+        {
+          name: "Asset",
+          folder: "assets",
+          required_create_fields: [],
+          required_create_repeatables: [],
+          command_option_policies: [{ command: "create", option: "field", required: true }],
+        },
+      ]);
 
       const registrations = createEmptyExtensionRegistrationRegistry();
       registrations.item_fields.push({
@@ -3510,23 +3452,16 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
 
   it("rejects strict create when a required option is targeted by --unset", async () => {
     await withTempPmPath(async (context) => {
-      const settingsPath = path.join(context.pmPath, "settings.json");
-      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        item_types?: { definitions?: Array<Record<string, unknown>> };
-      };
-      settings.item_types = {
-        definitions: [
-          {
-            name: "Task",
-            folder: "tasks",
-            command_option_policies: [
-              { command: "create", option: "assignee", required: true },
-              { command: "create", option: "reviewer", required: true },
-            ],
-          },
-        ],
-      };
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeItemTypeDefinitions(context.pmPath, [
+        {
+          name: "Task",
+          folder: "tasks",
+          command_option_policies: [
+            { command: "create", option: "assignee", required: true },
+            { command: "create", option: "reviewer", required: true },
+          ],
+        },
+      ]);
 
       await expect(
         runCreate(

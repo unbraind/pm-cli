@@ -1,11 +1,23 @@
 {
-  "path": ["src", "packages", "plugins", "scripts", "docs/examples", "tests"],
-  "format": ["typescript", "javascript"],
-  "mode": "weak",
-  "minLines": 24,
-  "minTokens": 120,
-  "threshold": 0.35,
-  "reporters": ["console"],
+  "path": [
+    "src",
+    "packages",
+    "plugins",
+    "scripts",
+    "docs/examples",
+    "tests"
+  ],
+  "format": [
+    "typescript",
+    "javascript"
+  ],
+  "mode": "strict",
+  "minLines": 22,
+  "minTokens": 115,
+  "threshold": 0,
+  "reporters": [
+    "console"
+  ],
   "noTips": true,
   "ignore": [
     "**/.agents/**",
