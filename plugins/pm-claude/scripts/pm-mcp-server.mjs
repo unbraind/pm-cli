@@ -60,8 +60,22 @@ async function startServer(target) {
     return false;
   }
   if (isImportUrl(target)) {
-    if (new URL(target).protocol === "file:" && !(await exists(fileURLToPath(target)))) {
+    let url;
+    try {
+      url = new URL(target);
+    } catch {
       return false;
+    }
+    if (url.protocol === "file:") {
+      let filePath;
+      try {
+        filePath = fileURLToPath(url);
+      } catch {
+        return false;
+      }
+      if (!(await exists(filePath))) {
+        return false;
+      }
     }
     const server = await importServerModule(target);
     if (!server) {

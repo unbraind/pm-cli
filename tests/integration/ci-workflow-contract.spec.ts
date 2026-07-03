@@ -445,6 +445,35 @@ describe("GitHub workflow contract", () => {
     expect(autoReleaseWorkflow).not.toContain("token: ${{ secrets.RELEASE_PAT || github.token }}");
   });
 
+  it("keeps security workflow downloads pinned and hash-verified", async () => {
+    const securityPath = path.resolve(repoRoot, ".github/workflows/security.yml");
+    const securityWorkflow = normalizeWorkflow(await readFile(securityPath, "utf8"));
+
+    expectContainsAll(securityWorkflow, [
+      "name: Security and Script Quality",
+      "permissions:",
+      "contents: read",
+      PINNED_ACTIONS.checkout,
+      "persist-credentials: false",
+      "scanners: vuln,secret,misconfig",
+      "trivyignores: .trivyignore",
+      "skip-dirs: node_modules,dist,coverage,.pnpm-store",
+      "shellcheck --version",
+      "shellcheck --severity=style",
+      "$moduleVersion = '1.24.0'",
+      "$expectedSha256 = 'e86c97d44bb1bc8a1de35e753b85ea1d938f6f9f881639a181507e079bca4556'",
+      "Invoke-WebRequest -Uri \"https://www.powershellgallery.com/api/v2/package/$moduleName/$moduleVersion\" -OutFile $packagePath",
+      "Get-FileHash -Path $packagePath -Algorithm SHA256",
+      "Expand-Archive -Path $packagePath -DestinationPath $modulePath -Force",
+      "Import-Module (Join-Path $modulePath 'PSScriptAnalyzer.psd1') -Force",
+      "Invoke-ScriptAnalyzer -Path $_ -Severity @('Error', 'Warning', 'Information')",
+      "expected_sha=\"8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8\"",
+      "sha256sum --check --strict",
+      "./actionlint -color",
+    ]);
+    expectContainsNone(securityWorkflow, ["Install-Module PSScriptAnalyzer", "Set-PSRepository PSGallery"]);
+  });
+
   it("keeps CodeQL actions SHA-pinned for supply-chain safety (pm-ji5c)", async () => {
     const codeqlPath = path.resolve(repoRoot, ".github/workflows/codeql.yml");
     const codeqlWorkflow = normalizeWorkflow(await readFile(codeqlPath, "utf8"));

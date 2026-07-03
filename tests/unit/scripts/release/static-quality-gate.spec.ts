@@ -2,7 +2,7 @@ import type { Stats } from "node:fs";
 import * as fs from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import * as nodePath from "node:path";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createScriptHarness } from "../../../helpers/scriptModule";
 
 const harness = createScriptHarness(["../../../../scripts/release/utils.mjs"]);
@@ -10,8 +10,14 @@ const harness = createScriptHarness(["../../../../scripts/release/utils.mjs"]);
 const SCRIPT = "scripts/release/static-quality-gate.mjs";
 
 type SqModule = {
-  walkFiles: (dir: string, matcher: (p: string) => boolean, out?: string[]) => string[];
+  walkFiles: (
+    dir: string,
+    matcher: (p: string) => boolean,
+    out?: string[],
+    options?: { shouldSkipDirectory?: (p: string) => boolean } | null,
+  ) => string[];
   relativeToRepo: (abs: string) => string;
+  collectTypeScriptFiles: () => string[];
   checkFileLength: (files: string[], maxSrc: number, maxTest: number) => unknown[];
   checkDirectoryLoad: (files: string[], maxPerDir: number) => unknown[];
   normalizeLine: (line: string) => string;
@@ -57,19 +63,21 @@ type SqModule = {
   };
   MAX_ESLINT_SUPPRESSIONS: number;
   collectPragmaScanFiles: () => string[];
-  countPragmaMatches: (files: string[], pattern: RegExp) => number;
+  readPragmaScanTexts: (files: string[]) => Array<{ path: string; text: string }>;
+  countPragmaMatchesInTexts: (scanTexts: Array<{ path: string; text: string }>, pattern: RegExp) => number;
   checkInlinePragmaBudgets: (
-    budgets: {
-      maxInlineEslintDisables: number;
+    budgets?: {
+      maxInlineEslintDisables?: number;
       maxBroadEslintDisables?: number;
-      maxCoverageIgnorePragmas: number;
-      maxJscpdIgnorePragmas: number;
-    },
+      maxCoverageIgnorePragmas?: number;
+      maxJscpdIgnorePragmas?: number;
+    } | null,
     files?: string[],
   ) => {
     ok: boolean;
     scanned_file_count: number;
-    budgets: Record<string, { ok: boolean; total: number; max: number }>;
+    error?: string;
+    budgets: Record<string, { ok: boolean; total: number | null; max: number; error?: string }>;
   };
   MAX_INLINE_ESLINT_DISABLES: number;
   MAX_BROAD_ESLINT_DISABLES: number;
@@ -107,6 +115,10 @@ function mockFs(impl: Partial<typeof fs>): void {
 }
 
 describe("static-quality-gate", () => {
+  afterEach(() => {
+    process.exitCode = undefined;
+  });
+
   describe("pure helpers", () => {
     it("covers usage, normalizeLine, and scalar normalize branches", async () => {
       mockUtils("/repo");
@@ -494,7 +506,15 @@ describe("static-quality-gate", () => {
       await writeFile(`${root}/eslint-suppressions.json`, JSON.stringify({ "src/a.ts": null }), "utf8");
       expect(() => mod.countEslintSuppressions(`${root}/eslint-suppressions.json`)).toThrow(/expected rule objects/);
       await writeFile(`${root}/eslint-suppressions.json`, JSON.stringify({ "src/a.ts": { complexity: {} } }), "utf8");
-      expect(() => mod.countEslintSuppressions(`${root}/eslint-suppressions.json`)).toThrow(/expected numeric counts/);
+      expect(() => mod.countEslintSuppressions(`${root}/eslint-suppressions.json`)).toThrow(
+        /expected non-negative integer counts/,
+      );
+      await writeFile(
+        `${root}/eslint-suppressions.json`,
+        JSON.stringify({ "src/a.ts": { complexity: { count: 1.5 } } }),
+        "utf8",
+      );
+      expect(() => mod.countEslintSuppressions(`${root}/eslint-suppressions.json`)).toThrow(/expected non-negative integer counts/);
       await writeFile(
         `${root}/eslint-suppressions.json`,
         JSON.stringify({
@@ -582,15 +602,43 @@ describe("static-quality-gate", () => {
       await writeFile(`${root}/src/a.d.ts`, "export declare const a: number;\n", "utf8");
       await writeFile(`${root}/src/readme.md`, "not code\n", "utf8");
       await writeFile(`${root}/scripts/b.mjs`, "export const b = 2;\n", "utf8");
+      await writeFile(`${root}/scripts/c.cjs`, "module.exports = 3;\n", "utf8");
       await writeFile(`${root}/plugins/c.js`, "module.exports = 3;\n", "utf8");
       await writeFile(`${root}/plugins/node_modules/dep.js`, "module.exports = 4;\n", "utf8");
       mockUtils(root);
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       const relative = mod.collectPragmaScanFiles().map((p) => p.slice(root.length + 1).replaceAll("\\", "/"));
-      expect(relative).toEqual(["plugins/c.js", "scripts/b.mjs", "src/a.ts"]);
+      expect(relative).toEqual(["plugins/c.js", "scripts/b.mjs", "scripts/c.cjs", "src/a.ts"]);
     });
 
-    it("countPragmaMatches + checkInlinePragmaBudgets: totals, budgets, and defaults", async () => {
+    it("collectTypeScriptFiles: skips package node_modules trees", async () => {
+      const root = await harness.createTempRoot("pm-static-quality-ts-scan-");
+      await mkdir(`${root}/src`, { recursive: true });
+      await mkdir(`${root}/tests`, { recursive: true });
+      await mkdir(`${root}/packages/pkg/src`, { recursive: true });
+      await mkdir(`${root}/packages/pkg/node_modules/dep`, { recursive: true });
+      await writeFile(`${root}/src/a.ts`, "export const a = 1;\n", "utf8");
+      await writeFile(`${root}/src/a.d.ts`, "export declare const a: number;\n", "utf8");
+      await writeFile(`${root}/tests/sample.ts`, "export const sample = true;\n", "utf8");
+      await writeFile(`${root}/packages/pkg/src/index.ts`, "export const pkg = true;\n", "utf8");
+      await writeFile(`${root}/packages/pkg/node_modules/dep/index.ts`, "export const dep = true;\n", "utf8");
+      mockUtils(root);
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const relative = mod.collectTypeScriptFiles().map((p) => p.slice(root.length + 1).replaceAll("\\", "/"));
+      expect(relative).toEqual(["packages/pkg/src/index.ts", "src/a.ts", "tests/sample.ts"]);
+    });
+
+    it("collectTypeScriptFiles: skips missing scan roots", async () => {
+      const root = await harness.createTempRoot("pm-static-quality-ts-missing-roots-");
+      await mkdir(`${root}/src`, { recursive: true });
+      await writeFile(`${root}/src/a.ts`, "export const a = 1;\n", "utf8");
+      mockUtils(root);
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const relative = mod.collectTypeScriptFiles().map((p) => p.slice(root.length + 1).replaceAll("\\", "/"));
+      expect(relative).toEqual(["src/a.ts"]);
+    });
+
+    it("readPragmaScanTexts + checkInlinePragmaBudgets: totals, budgets, and defaults", async () => {
       const root = await harness.createTempRoot("pm-static-quality-pragma-budget-");
       await mkdir(`${root}/src`, { recursive: true });
       await writeFile(
@@ -614,11 +662,20 @@ describe("static-quality-gate", () => {
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
 
       const files = [`${root}/src/pragmas.ts`, `${root}/src/clean.ts`];
-      expect(mod.countPragmaMatches(files, new RegExp("eslint-" + "disable-(?:next-line|line)\\b", "g"))).toBe(1);
-      expect(mod.countPragmaMatches(files, new RegExp("eslint-" + "disable\\b(?!-(?:next-line|line)\\b)", "g"))).toBe(
-        1,
-      );
-      expect(mod.countPragmaMatches(files, new RegExp("never-matches-anything", "g"))).toBe(0);
+      const scanTexts = mod.readPragmaScanTexts(files);
+      expect(
+        mod.countPragmaMatchesInTexts(scanTexts, new RegExp("eslint-" + "disable-(?:next-line|line)\\b", "g")),
+      ).toBe(1);
+      expect(
+        mod.countPragmaMatchesInTexts(
+          [{ path: `${root}/src/repeated.ts`, text: [ESLINT_DISABLE_PRAGMA, ESLINT_DISABLE_PRAGMA].join("\n") }],
+          new RegExp("eslint-" + "disable-(?:next-line|line)\\b"),
+        ),
+      ).toBe(2);
+      expect(
+        mod.countPragmaMatchesInTexts(scanTexts, new RegExp("eslint-" + "disable\\b(?!-(?:next-line|line)\\b)", "g")),
+      ).toBe(1);
+      expect(mod.countPragmaMatchesInTexts(scanTexts, new RegExp("never-matches-anything", "g"))).toBe(0);
 
       const withinBudget = mod.checkInlinePragmaBudgets(
         {
@@ -653,10 +710,121 @@ describe("static-quality-gate", () => {
       );
       expect(defaultBroadBudget.budgets.broad_eslint_disables).toEqual({ ok: false, total: 1, max: 0 });
 
+      const allDefaultBudgets = mod.checkInlinePragmaBudgets({}, files);
+      expect(allDefaultBudgets.budgets.inline_eslint_disables.max).toBe(mod.MAX_INLINE_ESLINT_DISABLES);
+      expect(allDefaultBudgets.budgets.broad_eslint_disables.max).toBe(mod.MAX_BROAD_ESLINT_DISABLES);
+      expect(allDefaultBudgets.budgets.coverage_ignore_pragmas.max).toBe(mod.MAX_COVERAGE_IGNORE_PRAGMAS);
+      expect(allDefaultBudgets.budgets.jscpd_ignore_pragmas.max).toBe(mod.MAX_JSCPD_IGNORE_PRAGMAS);
+
+      const omittedBudgets = mod.checkInlinePragmaBudgets();
+      expect(omittedBudgets.scanned_file_count).toBe(2);
+      expect(omittedBudgets.budgets.inline_eslint_disables.max).toBe(mod.MAX_INLINE_ESLINT_DISABLES);
+      expect(omittedBudgets.budgets.broad_eslint_disables.max).toBe(mod.MAX_BROAD_ESLINT_DISABLES);
+
+      const nullBudgets = mod.checkInlinePragmaBudgets(null, files);
+      expect(nullBudgets.budgets.inline_eslint_disables.max).toBe(mod.MAX_INLINE_ESLINT_DISABLES);
+      expect(nullBudgets.budgets.broad_eslint_disables.max).toBe(mod.MAX_BROAD_ESLINT_DISABLES);
+
       expect(mod.MAX_INLINE_ESLINT_DISABLES).toBeGreaterThanOrEqual(0);
       expect(mod.MAX_BROAD_ESLINT_DISABLES).toBe(0);
       expect(mod.MAX_COVERAGE_IGNORE_PRAGMAS).toBeGreaterThanOrEqual(0);
       expect(mod.MAX_JSCPD_IGNORE_PRAGMAS).toBe(0);
+    });
+
+    it("checkInlinePragmaBudgets reads scan files once and reuses cached text", async () => {
+      mockUtils("/repo");
+      const readFileSync = vi.fn((p: string) => {
+        if (String(p).endsWith("a.ts")) {
+          return [ESLINT_DISABLE_PRAGMA, COVERAGE_IGNORE_PRAGMA, "export const a = 1;"].join("\n");
+        }
+        if (String(p).endsWith("b.ts")) {
+          return [ESLINT_BROAD_DISABLE_PRAGMA, JSCPD_IGNORE_PRAGMA, "export const b = 1;"].join("\n");
+        }
+        return "";
+      });
+      mockFs({ readFileSync: readFileSync as never });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const files = ["/repo/src/a.ts", "/repo/src/b.ts"];
+      const scanTexts = mod.readPragmaScanTexts(files);
+      expect(mod.countPragmaMatchesInTexts(scanTexts, new RegExp("eslint-" + "disable-(?:next-line|line)\\b", "g"))).toBe(
+        1,
+      );
+
+      const report = mod.checkInlinePragmaBudgets(
+        {
+          maxInlineEslintDisables: 1,
+          maxBroadEslintDisables: 1,
+          maxCoverageIgnorePragmas: 1,
+          maxJscpdIgnorePragmas: 1,
+        },
+        files,
+      );
+      expect(report.ok).toBe(true);
+      expect(report.budgets.inline_eslint_disables).toEqual({ ok: true, total: 1, max: 1 });
+      expect(report.budgets.broad_eslint_disables).toEqual({ ok: true, total: 1, max: 1 });
+      expect(report.budgets.coverage_ignore_pragmas).toEqual({ ok: true, total: 1, max: 1 });
+      expect(report.budgets.jscpd_ignore_pragmas).toEqual({ ok: true, total: 1, max: 1 });
+      // 2 explicit readPragmaScanTexts calls above plus 2 internal reads from
+      // checkInlinePragmaBudgets; the budget check itself reuses cached text.
+      expect(readFileSync).toHaveBeenCalledTimes(4);
+      expect(readFileSync.mock.calls.map((call) => String(call[0]))).toEqual([...files, ...files]);
+    });
+
+    it("checkInlinePragmaBudgets: reports unreadable scan files as structured failures", async () => {
+      mockUtils("/repo");
+      mockFs({
+        readFileSync: vi.fn((p: string) => {
+          if (String(p).endsWith("unreadable.ts")) {
+            throw new Error("unreadable pragma fixture");
+          }
+          return "";
+        }) as never,
+      });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const report = mod.checkInlinePragmaBudgets(
+        {
+          maxInlineEslintDisables: 0,
+          maxBroadEslintDisables: 0,
+          maxCoverageIgnorePragmas: 0,
+          maxJscpdIgnorePragmas: 0,
+        },
+        ["/repo/src/unreadable.ts"],
+      );
+      expect(report.ok).toBe(false);
+      expect(report.error).toBe("unreadable pragma fixture");
+      expect(report.budgets.inline_eslint_disables).toEqual({
+        ok: false,
+        total: null,
+        max: 0,
+      });
+      expect(report.budgets.broad_eslint_disables).toEqual({ ok: false, total: null, max: 0 });
+      expect(report.budgets.coverage_ignore_pragmas).toEqual({ ok: false, total: null, max: 0 });
+      expect(report.budgets.jscpd_ignore_pragmas).toEqual({ ok: false, total: null, max: 0 });
+    });
+
+    it("checkInlinePragmaBudgets: stringifies non-Error scan failures", async () => {
+      mockUtils("/repo");
+      mockFs({
+        readFileSync: vi.fn(() => {
+          throw "pragma-read-failed";
+        }) as never,
+      });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const report = mod.checkInlinePragmaBudgets(
+        {
+          maxInlineEslintDisables: 0,
+          maxBroadEslintDisables: 0,
+          maxCoverageIgnorePragmas: 0,
+          maxJscpdIgnorePragmas: 0,
+        },
+        ["/repo/src/unreadable.ts"],
+      );
+      expect(report.budgets.inline_eslint_disables).toMatchObject({
+        ok: false,
+        total: null,
+        max: 0,
+      });
+      expect(report.error).toBe("pragma-read-failed");
     });
 
     it("walkFiles: non-directory short-circuits and nested walk collects matches", async () => {
@@ -686,7 +854,38 @@ describe("static-quality-gate", () => {
       expect(collected).toContain("/root/a.ts");
       expect(collected).toContain("/root/sub/b.ts");
       expect(collected).not.toContain("/root/skip.md");
+      expect(mod.walkFiles("/root", matcher, [], null)).toEqual(["/root/sub/b.ts", "/root/a.ts"]);
       expect(mod.walkFiles("/notdir", matcher)).toEqual([]);
+    });
+
+    it("walkFiles: directory skip predicate avoids descending ignored trees", async () => {
+      mockUtils("/repo");
+      harness.mockPosixPath();
+      const readdirSync = vi.fn((p: string) => {
+        if (String(p) === "/root") {
+          return [
+            { name: "node_modules", isDirectory: () => true, isFile: () => false },
+            { name: "src", isDirectory: () => true, isFile: () => false },
+          ];
+        }
+        if (String(p) === "/root/src") {
+          return [{ name: "a.ts", isDirectory: () => false, isFile: () => true }];
+        }
+        throw new Error(`Unexpected directory read: ${p}`);
+      });
+      mockFs({
+        statSync: vi.fn((p: string) => ({
+          isDirectory: () =>
+            String(p) === "/root" || String(p) === "/root/src" || String(p) === "/root/node_modules",
+        })) as never,
+        readdirSync: readdirSync as never,
+      });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const collected = mod.walkFiles("/root", (p) => p.endsWith(".ts"), [], {
+        shouldSkipDirectory: (p) => p.endsWith("/node_modules"),
+      });
+      expect(collected).toEqual(["/root/src/a.ts"]);
+      expect(readdirSync).not.toHaveBeenCalledWith("/root/node_modules", expect.anything());
     });
   });
 
@@ -1045,6 +1244,31 @@ describe("static-quality-gate", () => {
       expect(emitted.some((line) => line.includes("broad_eslint_disables budget exceeded: 1 > 0"))).toBe(true);
       expect(emitted.some((line) => line.includes("coverage_ignore_pragmas budget exceeded: 1 > 0"))).toBe(true);
       expect(emitted.some((line) => line.includes("jscpd_ignore_pragmas budget exceeded: 1 > 0"))).toBe(true);
+    });
+
+    it("reports inline pragma scan failures in text mode", async () => {
+      const root = await harness.createTempRoot("pm-static-quality-pragma-read-fail-");
+      await seedFixture(root);
+      await mkdir(`${root}/scripts`, { recursive: true });
+      await writeFile(`${root}/scripts/unreadable.mjs`, "export const unreadable = true;\n", "utf8");
+      const realReadFileSync = fs.readFileSync;
+      mockUtils(root);
+      mockFs({
+        readFileSync: vi.fn((p: string, options?: BufferEncoding) => {
+          if (String(p).replaceAll("\\", "/").endsWith("scripts/unreadable.mjs")) {
+            throw new Error("unreadable pragma file");
+          }
+          return realReadFileSync(p, options);
+        }) as never,
+      });
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      process.argv = ["node", "x", "--max-lines", "500", "--max-lines-tests", "500"];
+      mod.main();
+      expect(process.exitCode).toBe(1);
+      const emitted = errorSpy.mock.calls.map((c) => String(c[0]));
+      expect(emitted.some((line) => line.includes("inline_pragmas scan failed"))).toBe(true);
+      expect(emitted.some((line) => line.includes("unreadable pragma file"))).toBe(true);
     });
 
     it("rejects a duplicate-window below the minimum", async () => {

@@ -111,7 +111,7 @@ interface LegacyCreateNormalizationState {
   hasCreateMode: boolean;
 }
 
-const TEMP_PM_ENV_KEYS = [
+export const TEMP_PM_ENV_KEYS = [
   "PM_PATH",
   "PM_GLOBAL_PATH",
   "PM_AUTHOR",
@@ -119,9 +119,11 @@ const TEMP_PM_ENV_KEYS = [
   "PM_TELEMETRY_OTEL_DISABLED",
   "PM_TELEMETRY_PROMPT",
   "PM_DISABLE_OLLAMA_AUTO_DEFAULTS",
+  "FORCE_COLOR",
 ] as const;
 
 type TempPmEnvKey = (typeof TEMP_PM_ENV_KEYS)[number];
+type TempPmEnv = NodeJS.ProcessEnv & Record<TempPmEnvKey, string>;
 type TempPmEnvSnapshot = Record<TempPmEnvKey, string | undefined>;
 
 function shouldNormalizeLegacyCreateArgs(args: string[], createIndex: number): boolean {
@@ -264,7 +266,7 @@ async function removeTempRoot(tempRoot: string): Promise<void> {
   throw lastError;
 }
 
-function buildTempPmEnv(tempRoot: string, pmPath: string): NodeJS.ProcessEnv {
+function buildTempPmEnv(tempRoot: string, pmPath: string): TempPmEnv {
   return {
     ...process.env,
     PM_PATH: pmPath,
@@ -286,9 +288,14 @@ function snapshotTempPmEnv(): TempPmEnvSnapshot {
   return snapshot;
 }
 
-function applyTempPmEnv(env: NodeJS.ProcessEnv): void {
+export function applyTempPmEnv(env: NodeJS.ProcessEnv): void {
   for (const key of TEMP_PM_ENV_KEYS) {
-    process.env[key] = env[key];
+    const value = env[key];
+    if (value === undefined) {
+      delete process.env[key];
+      continue;
+    }
+    process.env[key] = value;
   }
 }
 

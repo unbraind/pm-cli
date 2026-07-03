@@ -3,6 +3,8 @@ import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type * as NodePath from "node:path";
+import type * as NodeUrl from "node:url";
 
 const ORIGINAL_PM_MCP_SERVER = process.env.PM_CLI_MCP_SERVER;
 const tempRoots: string[] = [];
@@ -182,6 +184,80 @@ export function startMcpServer() {
     exit.mockRestore();
   });
 
+  it("falls back when a file URL cannot convert to a local path", async () => {
+    process.env.PM_CLI_MCP_SERVER = "file://remote-host/tmp/pm-mcp-server.mjs";
+    const fallbackSpawn = spawnReturningExit(0, null);
+    const accessMock = vi.fn(async () => {
+      throw new Error("ENOENT");
+    });
+    vi.doMock("node:child_process", () => ({ spawn: fallbackSpawn }));
+    vi.doMock("node:fs/promises", () => ({ access: accessMock }));
+    vi.doMock("node:url", async () => {
+      const actual = await vi.importActual<typeof NodeUrl>("node:url");
+      return {
+        ...actual,
+        fileURLToPath(target: string | URL) {
+          if (target instanceof URL && target.href === process.env.PM_CLI_MCP_SERVER) {
+            throw new TypeError("invalid file URL host");
+          }
+          return actual.fileURLToPath(target);
+        },
+      };
+    });
+    const exit = mockExit();
+
+    for (const script of mcpServerScripts) {
+      await expect(importScript(script, `invalid-file-url-${path.basename(script)}`)).rejects.toThrow("EXIT:0");
+    }
+
+    expect(fallbackSpawn).toHaveBeenCalledTimes(2);
+    expect(accessMock).toHaveBeenCalled();
+    exit.mockRestore();
+  });
+
+  it("falls back when guarded URL reparsing rejects an explicit import URL", async () => {
+    const previousServer = process.env.PM_CLI_MCP_SERVER;
+    process.env.PM_CLI_MCP_SERVER = "pm-test://unstable-target";
+    const fallbackSpawn = spawnReturningExit(0, null);
+    const accessMock = vi.fn(async () => {
+      throw new Error("ENOENT");
+    });
+    vi.doMock("node:child_process", () => ({ spawn: fallbackSpawn }));
+    vi.doMock("node:fs/promises", () => ({ access: accessMock }));
+    const originalURL = globalThis.URL;
+    let urlCalls = 0;
+    const unstableURL = function URL(this: { protocol: string }, ...args: ConstructorParameters<typeof URL>) {
+      if (String(args[0]) === process.env.PM_CLI_MCP_SERVER) {
+        urlCalls += 1;
+        if (urlCalls % 2 === 0) {
+          throw new TypeError("unstable url parse");
+        }
+        this.protocol = "pm-test:";
+        return;
+      }
+      return new originalURL(...args);
+    } as unknown as typeof URL;
+    const exit = mockExit();
+    globalThis.URL = unstableURL;
+    try {
+      for (const script of mcpServerScripts) {
+        await expect(importScript(script, `unstable-url-${path.basename(script)}`)).rejects.toThrow("EXIT:0");
+      }
+    } finally {
+      globalThis.URL = originalURL;
+      exit.mockRestore();
+      if (previousServer === undefined) {
+        delete process.env.PM_CLI_MCP_SERVER;
+      } else {
+        process.env.PM_CLI_MCP_SERVER = previousServer;
+      }
+    }
+
+    expect(fallbackSpawn).toHaveBeenCalledTimes(2);
+    expect(accessMock).toHaveBeenCalled();
+    expect(urlCalls).toBe(4);
+  });
+
   it("falls back when an existing URL-like explicit server cannot import its dependency", async () => {
     const root = await createTempRoot("pm-plugin-mcp-missing-url-dep-");
     const explicitServerPath = path.join(root, "url-missing-dependency-server.mjs");
@@ -313,7 +389,7 @@ export function startMcpServer() {
       }),
     }));
     vi.doMock("node:url", async () => {
-      const actual = await vi.importActual<typeof import("node:url")>("node:url");
+      const actual = await vi.importActual<typeof NodeUrl>("node:url");
       return {
         ...actual,
         pathToFileURL(target: string) {
@@ -360,7 +436,7 @@ export function startMcpServer() {
       }),
     }));
     vi.doMock("node:path", async () => {
-      const actual = await vi.importActual<typeof import("node:path")>("node:path");
+      const actual = await vi.importActual<typeof NodePath>("node:path");
       let depth = 0;
       const dirname = vi.fn(() => `/virtual-parent-${depth++}`);
       return { ...actual, default: { ...actual.default, dirname }, dirname };

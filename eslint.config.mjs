@@ -19,8 +19,8 @@ const CODEFACTOR_MAINTAINABILITY_RULES = {
   "unicorn/no-useless-spread": "error",
 };
 
-// Node-runtime globals for plain-script linting (no type-aware project service
-// on the hot lint path; `pnpm typecheck` owns full type analysis).
+// Node-runtime globals shared by ESM scripts and TypeScript files (no type-aware
+// project service on the hot lint path; `pnpm typecheck` owns full type analysis).
 const NODE_GLOBALS = {
   process: "readonly", console: "readonly", Buffer: "readonly",
   setTimeout: "readonly", clearTimeout: "readonly", setInterval: "readonly",
@@ -29,14 +29,21 @@ const NODE_GLOBALS = {
   TextDecoder: "readonly", fetch: "readonly", AbortController: "readonly",
   AbortSignal: "readonly", performance: "readonly", structuredClone: "readonly",
   crypto: "readonly", atob: "readonly", btoa: "readonly",
-  __dirname: "readonly", __filename: "readonly", require: "readonly", module: "readonly", exports: "readonly",
   global: "readonly", globalThis: "readonly", WebSocket: "readonly", Blob: "readonly", FormData: "readonly",
   Response: "readonly", Request: "readonly", Headers: "readonly",
 };
 
+const COMMONJS_GLOBALS = {
+  __dirname: "readonly", __filename: "readonly", require: "readonly", module: "readonly", exports: "readonly",
+};
+
+const UNUSED_VARS_OPTIONS = { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" };
+
 export default [
   {
     ignores: [
+      // tests/** is intentionally linted; existing test-file violations live
+      // in eslint-suppressions.json and are capped by the static quality gate.
       ".agents/**",
       ".cache/**",
       ".codex/**",
@@ -56,12 +63,20 @@ export default [
     rules: CODEFACTOR_MAINTAINABILITY_RULES,
   },
   {
+    files: ["**/*.cjs"],
+    languageOptions: { globals: COMMONJS_GLOBALS },
+  },
+  {
+    files: ["**/*.{js,mjs,cjs}"],
+    rules: {
+      "no-unused-vars": ["error", UNUSED_VARS_OPTIONS],
+      "@typescript-eslint/no-unused-vars": "off",
+    },
+  },
+  {
     files: ["**/*.ts"],
     rules: {
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
-      ],
+      "@typescript-eslint/no-unused-vars": ["error", UNUSED_VARS_OPTIONS],
     },
   },
 ];

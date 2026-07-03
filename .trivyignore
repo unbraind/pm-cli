@@ -1,0 +1,5 @@
+# Trivy exception file for the required security gate.
+#
+# Keep this file empty by default. Add CVE or advisory IDs only for confirmed
+# false positives or genuinely unfixable findings, and include a short comment
+# with the owner and review/removal date directly above each ignored ID.

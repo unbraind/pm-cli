@@ -69,6 +69,14 @@ function readManifestCapabilitiesFromObject(expression: ts.ObjectLiteralExpressi
   return null;
 }
 
+function unwrapManifestInitializer(expression: ts.Expression): ts.Expression {
+  let current = expression;
+  while (ts.isAsExpression(current) || ts.isParenthesizedExpression(current)) {
+    current = current.expression;
+  }
+  return current;
+}
+
 function extractModuleManifestCapabilities(modulePath: string, source: string): string[] {
   const sourceFile = ts.createSourceFile(modulePath, source, ts.ScriptTarget.ESNext, true, ts.ScriptKind.TS);
   for (const statement of sourceFile.statements) {
@@ -79,8 +87,11 @@ function extractModuleManifestCapabilities(modulePath: string, source: string): 
       if (!ts.isIdentifier(declaration.name) || declaration.name.text !== "manifest") {
         continue;
       }
-      const initializer = declaration.initializer;
-      if (initializer && ts.isObjectLiteralExpression(initializer)) {
+      if (declaration.initializer) {
+        const initializer = unwrapManifestInitializer(declaration.initializer);
+        if (!ts.isObjectLiteralExpression(initializer)) {
+          continue;
+        }
         const capabilities = readManifestCapabilitiesFromObject(initializer);
         if (capabilities !== null) {
           return capabilities;
@@ -92,13 +103,16 @@ function extractModuleManifestCapabilities(modulePath: string, source: string): 
 }
 
 describe("pm package manifest model", () => {
-  it("extracts module manifest capabilities from identifier and string-literal keys", () => {
+  it("extracts module manifest capabilities from common object shapes", () => {
     expect(extractModuleManifestCapabilities("identifier.ts", 'export const manifest = { capabilities: ["commands"] };')).toEqual([
       "commands",
     ]);
     expect(extractModuleManifestCapabilities("quoted.ts", 'export const manifest = { "capabilities": ["schema"] };')).toEqual([
       "schema",
     ]);
+    expect(
+      extractModuleManifestCapabilities("const.ts", 'export const manifest = ({ capabilities: ["search"] } as const);'),
+    ).toEqual(["search"]);
   });
 
   it("publishes stable SDK subpaths used by package authors", async () => {

@@ -100,7 +100,7 @@ if (mode === "update") {
 let current;
 try {
   current = await readFile(snapshotPath, "utf8");
-} catch (error) {
+} catch (_error) {
   console.error(`Missing contracts snapshot at ${snapshotPath}. Run pnpm contracts:update.`);
   process.exit(1);
 }

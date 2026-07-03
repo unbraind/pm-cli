@@ -8,11 +8,11 @@ export interface TestItemFactoryOverrides {
   description?: string;
   type?: string;
   status?: TestItemStatus;
-  priority?: string;
+  priority?: string | number;
   tags?: string;
   body?: string;
   deadline?: string;
-  estimate?: string;
+  estimate?: string | number;
   acceptanceCriteria?: string;
   author?: string;
   message?: string;
@@ -63,7 +63,7 @@ const TEST_ITEM_CREATE_FIELDS: readonly TestItemCreateField[] = [
 
 function resolveCreateFieldValue(field: TestItemCreateField, overrides: TestItemFactoryOverrides): string {
   const value = overrides[field.key];
-  return typeof value === "string" ? value : field.fallback(overrides.title);
+  return value !== undefined ? String(value) : field.fallback(overrides.title);
 }
 
 function appendOptionalCreateArg(args: string[], flag: string, value: string | undefined): void {
