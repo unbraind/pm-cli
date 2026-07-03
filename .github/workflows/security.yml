@@ -27,11 +27,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       # Filesystem scan over the repository: dependency vulnerabilities
       # (pnpm-lock.yaml), leaked secrets, and IaC/workflow misconfigurations.
       # exit-code 1 makes every finding a hard failure; this job is a required
-      # branch-protection check, so findings block merges.
+      # branch-protection check, so findings block merges. Exception handling for
+      # genuinely unfixable false-positive findings must go through .trivyignore
+      # with a short comment and a follow-up owner/date; never edit this workflow
+      # to bypass a finding.
       - name: Trivy repository scan
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -41,6 +46,7 @@ jobs:
           severity: HIGH,CRITICAL
           exit-code: "1"
           ignore-unfixed: false
+          trivyignores: .trivyignore
           skip-dirs: node_modules,dist,coverage,.pnpm-store
 
   shellcheck:
@@ -50,6 +56,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       # Strictest severity (style) over every tracked shell script; any finding
       # fails. xargs -r keeps the gate green if no .sh files are tracked.
@@ -65,6 +73,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       # Every tracked PowerShell script is analyzed at all severities
       # (Error, Warning, Information); any finding fails the gate.
@@ -72,9 +82,21 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          Set-PSRepository PSGallery -InstallationPolicy Trusted
-          Install-Module PSScriptAnalyzer -RequiredVersion 1.24.0 -Force -Scope CurrentUser
-          Import-Module PSScriptAnalyzer -Force
+          $moduleName = 'PSScriptAnalyzer'
+          $moduleVersion = '1.24.0'
+          $packageFile = "$moduleName.$moduleVersion.nupkg"
+          $packagePath = Join-Path $env:RUNNER_TEMP $packageFile
+          $expectedSha256 = 'e86c97d44bb1bc8a1de35e753b85ea1d938f6f9f881639a181507e079bca4556'
+          Invoke-WebRequest -Uri "https://www.powershellgallery.com/api/v2/package/$moduleName/$moduleVersion" -OutFile $packagePath
+          $actualSha256 = (Get-FileHash -Path $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualSha256 -ne $expectedSha256) {
+            throw "PSScriptAnalyzer package hash mismatch: expected $expectedSha256 but got $actualSha256."
+          }
+          $moduleRoot = Join-Path $env:RUNNER_TEMP 'psmodules'
+          $modulePath = Join-Path (Join-Path $moduleRoot $moduleName) $moduleVersion
+          New-Item -ItemType Directory -Force -Path $modulePath | Out-Null
+          Expand-Archive -Path $packagePath -DestinationPath $modulePath -Force
+          Import-Module (Join-Path $modulePath 'PSScriptAnalyzer.psd1') -Force
           $files = git ls-files -- '*.ps1' '*.psm1' '*.psd1'
           if (-not $files) { Write-Host 'No PowerShell scripts tracked.'; exit 0 }
           $findings = @($files | ForEach-Object {
@@ -94,6 +116,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       # Lints every workflow (expression typing, runner labels, permissions,
       # and embedded run: scripts via shellcheck). Download the pinned release

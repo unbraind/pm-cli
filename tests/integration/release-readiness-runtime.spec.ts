@@ -1985,6 +1985,8 @@ describe("release readiness runtime coverage", () => {
     const installPs1 = await readRepoText("scripts/install.ps1");
     expect(installPs1).toContain("$pmExecutable --version");
     expect(installPs1).toContain("Installed pm version:");
+    expect(installPs1).toContain("Write-Information");
+    expect(installPs1).not.toContain("Write-Host");
     expect(installPs1).toContain('@unbrained/pm-cli');
     expect(installPs1).toContain('"--force"');
     expect(installPs1).toContain("[switch]$Repair");

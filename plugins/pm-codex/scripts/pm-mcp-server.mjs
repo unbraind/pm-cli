@@ -64,8 +64,22 @@ async function launchServer(target) {
     return false;
   }
   if (hasImportProtocol(target)) {
-    if (new URL(target).protocol === "file:" && !(await canRead(fileURLToPath(target)))) {
+    let url;
+    try {
+      url = new URL(target);
+    } catch {
       return false;
+    }
+    if (url.protocol === "file:") {
+      let filePath;
+      try {
+        filePath = fileURLToPath(url);
+      } catch {
+        return false;
+      }
+      if (!(await canRead(filePath))) {
+        return false;
+      }
     }
     const server = await importLaunchModule(target);
     if (!server) {

@@ -10,9 +10,6 @@
     }
   },
   "scripts/contracts-snapshot.mjs": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
     "preserve-caught-error": {
       "count": 1
     }
@@ -29,11 +26,6 @@
   },
   "scripts/gen-plugin-mcp-wrappers.mjs": {
     "no-useless-assignment": {
-      "count": 1
-    }
-  },
-  "scripts/release/docs-skills-gate.mjs": {
-    "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
   },

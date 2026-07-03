@@ -6,14 +6,18 @@ import ts from "typescript";
 import { fileURLToPath } from "node:url";
 import { fail, flagBool, flagString, parseFlags, repoRoot } from "./utils.mjs";
 
-export function walkFiles(directory, matcher, out = []) {
+export function walkFiles(directory, matcher, out = [], options = {}) {
+  const opts = options ?? {};
   if (!statSync(directory).isDirectory()) {
     return out;
   }
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const absolute = path.join(directory, entry.name);
     if (entry.isDirectory()) {
-      walkFiles(absolute, matcher, out);
+      if (opts.shouldSkipDirectory?.(absolute) === true) {
+        continue;
+      }
+      walkFiles(absolute, matcher, out, opts);
       continue;
     }
     if (entry.isFile() && matcher(absolute)) {
@@ -34,7 +38,13 @@ export function loadText(absolutePath) {
 export function collectTypeScriptFiles() {
   const roots = ["src", "tests", "packages"].map((segment) => path.join(repoRoot, segment));
   const matchesTs = (absolutePath) => absolutePath.endsWith(".ts") && !absolutePath.endsWith(".d.ts");
-  const files = roots.flatMap((root) => walkFiles(root, matchesTs));
+  const files = roots
+    .filter((root) => existsSync(root))
+    .flatMap((root) =>
+      walkFiles(root, matchesTs, [], {
+        shouldSkipDirectory: (absolutePath) => path.basename(absolutePath) === "node_modules",
+      }),
+    );
   return files.sort((left, right) => left.localeCompare(right));
 }
 
@@ -460,7 +470,7 @@ export function checkFunctionComplexity(files, maxComplexity) {
 // stale, so the baseline can only shrink; this budget makes growth impossible
 // without a loud, reviewable edit to this gate script. Lower it as the
 // baseline burns down — never raise it.
-export const MAX_ESLINT_SUPPRESSIONS = 175;
+export const MAX_ESLINT_SUPPRESSIONS = 168;
 
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -490,8 +500,8 @@ export function countEslintSuppressions(suppressionsPath) {
       throw new Error(`Invalid ESLint suppressions budget file ${suppressionsPath}: expected rule objects.`);
     }
     for (const entry of Object.values(rules)) {
-      if (!isRecord(entry) || typeof entry.count !== "number" || !Number.isFinite(entry.count) || entry.count < 0) {
-        throw new Error(`Invalid ESLint suppressions budget file ${suppressionsPath}: expected numeric counts.`);
+      if (!isRecord(entry) || !Number.isInteger(entry.count) || entry.count < 0) {
+        throw new Error(`Invalid ESLint suppressions budget file ${suppressionsPath}: expected non-negative integer counts.`);
       }
       total += entry.count;
     }
@@ -540,18 +550,27 @@ export function collectPragmaScanFiles() {
   const matcher = (absolutePath) =>
     (absolutePath.endsWith(".ts") && !absolutePath.endsWith(".d.ts")) ||
     absolutePath.endsWith(".mjs") ||
-    absolutePath.endsWith(".js");
+    absolutePath.endsWith(".js") ||
+    absolutePath.endsWith(".cjs");
   const files = PRAGMA_SCAN_ROOTS.map((segment) => path.join(repoRoot, segment))
     .filter((root) => existsSync(root))
-    .flatMap((root) => walkFiles(root, matcher))
-    .filter((absolutePath) => !relativeToRepo(absolutePath).split("/").includes("node_modules"));
+    .flatMap((root) =>
+      walkFiles(root, matcher, [], {
+        shouldSkipDirectory: (absolutePath) => path.basename(absolutePath) === "node_modules",
+      }),
+    );
   return files.sort((left, right) => left.localeCompare(right));
 }
 
-export function countPragmaMatches(files, pattern) {
+export function readPragmaScanTexts(files) {
+  return files.map((absolutePath) => ({ path: absolutePath, text: loadText(absolutePath) }));
+}
+
+export function countPragmaMatchesInTexts(scanTexts, pattern) {
+  const globalPattern = pattern.global ? pattern : new RegExp(pattern.source, `${pattern.flags}g`);
   let total = 0;
-  for (const absolutePath of files) {
-    const matches = loadText(absolutePath).match(pattern);
+  for (const scanText of scanTexts) {
+    const matches = scanText.text.match(globalPattern);
     if (matches) {
       total += matches.length;
     }
@@ -561,20 +580,45 @@ export function countPragmaMatches(files, pattern) {
 
 // Pattern sources are assembled from fragments so this gate and its spec
 // fixtures never count their own pattern literals as pragma usage.
-export function checkInlinePragmaBudgets(budgets, files = collectPragmaScanFiles()) {
+export function checkInlinePragmaBudgets(budgets = {}, files = collectPragmaScanFiles()) {
+  const resolvedBudgets = budgets ?? {};
   const checks = [
-    ["inline_eslint_disables", "eslint-" + "disable-(?:next-line|line)\\b", budgets.maxInlineEslintDisables],
+    [
+      "inline_eslint_disables",
+      "eslint-" + "disable-(?:next-line|line)\\b",
+      resolvedBudgets.maxInlineEslintDisables ?? MAX_INLINE_ESLINT_DISABLES,
+    ],
     [
       "broad_eslint_disables",
       "eslint-" + "disable\\b(?!-(?:next-line|line)\\b)",
-      budgets.maxBroadEslintDisables ?? MAX_BROAD_ESLINT_DISABLES,
+      resolvedBudgets.maxBroadEslintDisables ?? MAX_BROAD_ESLINT_DISABLES,
     ],
-    ["coverage_ignore_pragmas", "(?:v8|c8|istanbul) " + "ignore", budgets.maxCoverageIgnorePragmas],
-    ["jscpd_ignore_pragmas", "jscpd:" + "ignore-" + "start", budgets.maxJscpdIgnorePragmas],
+    [
+      "coverage_ignore_pragmas",
+      "(?:v8|c8|istanbul) " + "ignore",
+      resolvedBudgets.maxCoverageIgnorePragmas ?? MAX_COVERAGE_IGNORE_PRAGMAS,
+    ],
+    [
+      "jscpd_ignore_pragmas",
+      "jscpd:" + "ignore-" + "start",
+      resolvedBudgets.maxJscpdIgnorePragmas ?? MAX_JSCPD_IGNORE_PRAGMAS,
+    ],
   ];
   const report = { ok: true, scanned_file_count: files.length, budgets: {} };
+  let scanTexts;
+  try {
+    scanTexts = readPragmaScanTexts(files);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    report.ok = false;
+    report.error = message;
+    for (const [key, , max] of checks) {
+      report.budgets[key] = { ok: false, total: null, max };
+    }
+    return report;
+  }
   for (const [key, patternSource, max] of checks) {
-    const total = countPragmaMatches(files, new RegExp(patternSource, "g"));
+    const total = countPragmaMatchesInTexts(scanTexts, new RegExp(patternSource, "g"));
     const ok = total <= max;
     report.ok = report.ok && ok;
     report.budgets[key] = { ok, total, max };
@@ -746,6 +790,10 @@ function printQualityFailureSummary(report) {
           `> ${report.eslint_suppressions.max_suppressions} (burn the baseline down, never grow it)`,
       );
     }
+  }
+  if (report.inline_pragmas.error) {
+    console.error(`- inline_pragmas scan failed: ${report.inline_pragmas.error}`);
+    return;
   }
   for (const [key, budget] of Object.entries(report.inline_pragmas.budgets)) {
     if (!budget.ok) {

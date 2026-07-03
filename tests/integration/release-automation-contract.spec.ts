@@ -52,6 +52,49 @@ describe("release automation contract", () => {
     expect(packageJson.scripts?.["changelog:pm:check"]).toContain("--check");
   });
 
+  it("keeps unused underscore conventions aligned across TypeScript and Node script lint surfaces", async () => {
+    const eslintConfig = await readFile(path.join(repoRoot, "eslint.config.mjs"), "utf8");
+    expect(eslintConfig).toContain([
+      '    files: ["**/*.{js,mjs,cjs}"],',
+      "    rules: {",
+      '      "no-unused-vars": ["error", UNUSED_VARS_OPTIONS],',
+      '      "@typescript-eslint/no-unused-vars": "off",',
+      "    },",
+    ].join("\n"));
+    expect(eslintConfig).toContain('files: ["**/*.ts"]');
+    expect(eslintConfig).toContain('"@typescript-eslint/no-unused-vars": ["error", UNUSED_VARS_OPTIONS]');
+    expect(eslintConfig).toContain('argsIgnorePattern: "^_"');
+    expect(eslintConfig).toContain('varsIgnorePattern: "^_"');
+    expect(eslintConfig).toContain('caughtErrorsIgnorePattern: "^_"');
+  });
+
+  it("keeps CommonJS-only globals out of the ESM lint surface", async () => {
+    const eslintConfig = await readFile(path.join(repoRoot, "eslint.config.mjs"), "utf8");
+    const nodeGlobals = eslintConfig.match(/const NODE_GLOBALS = \{(?<body>[\s\S]*?)\n\};/);
+    const commonjsGlobals = eslintConfig.match(/const COMMONJS_GLOBALS = \{(?<body>[\s\S]*?)\n\};/);
+    expect(nodeGlobals?.groups?.body).toBeDefined();
+    expect(commonjsGlobals?.groups?.body).toBeDefined();
+    expect(eslintConfig).toContain('files: ["**/*.cjs"]');
+    for (const commonjsGlobal of ["__dirname", "__filename", "require", "module", "exports"]) {
+      expect(nodeGlobals?.groups?.body).not.toContain(`${commonjsGlobal}:`);
+      expect(commonjsGlobals?.groups?.body).toContain(`${commonjsGlobal}:`);
+    }
+  });
+
+  it("keeps the ESLint suppressions budget pinned to the current baseline", async () => {
+    const staticQualityGate = await readFile(path.join(repoRoot, "scripts/release/static-quality-gate.mjs"), "utf8");
+    const suppressionsRaw = await readFile(path.join(repoRoot, "eslint-suppressions.json"), "utf8");
+    const suppressions = JSON.parse(suppressionsRaw) as Record<string, Record<string, { count?: unknown }>>;
+    let total = 0;
+    for (const rules of Object.values(suppressions)) {
+      for (const entry of Object.values(rules)) {
+        expect(typeof entry.count).toBe("number");
+        total += entry.count as number;
+      }
+    }
+    expect(staticQualityGate).toContain(`export const MAX_ESLINT_SUPPRESSIONS = ${total};`);
+  });
+
   it("keeps bundle rebuilds safe for concurrent local pm invocations", async () => {
     const bundleScript = await readFile(path.join(repoRoot, "scripts/bundle-cli.mjs"), "utf8");
     expect(bundleScript).not.toContain("rm(outputDir");

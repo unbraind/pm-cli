@@ -65,7 +65,7 @@ if (Use-LiteralInstallSpec $PackageName) {
 }
 
 if ($Repair) {
-  Write-Output "Repairing existing global pm install..."
+  Write-Information "Repairing existing global pm install..." -InformationAction Continue
   $repairArgs = @("uninstall", "-g", "@unbrained/pm-cli")
   if ($Prefix -ne "") {
     $repairArgs += @("--prefix", $Prefix)
@@ -73,7 +73,7 @@ if ($Repair) {
   & npm @repairArgs *> $null
 }
 
-Write-Output "Installing or updating $installSpec..."
+Write-Information "Installing or updating $installSpec..." -InformationAction Continue
 # --force keeps repeated installer runs idempotent when pm shim already exists.
 $npmArgs = @("install", "-g", "--force", $installSpec)
 if ($Prefix -ne "") {
@@ -120,5 +120,5 @@ if ($LASTEXITCODE -ne 0) {
   throw "pm --version failed with exit code $LASTEXITCODE"
 }
 
-Write-Output "Installed pm version: $versionOutput"
-Write-Output "Done."
+Write-Information "Installed pm version: $versionOutput" -InformationAction Continue
+Write-Information "Done." -InformationAction Continue
