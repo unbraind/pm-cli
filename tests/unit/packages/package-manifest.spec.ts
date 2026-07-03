@@ -60,7 +60,8 @@ function readManifestCapabilitiesFromObject(expression: ts.ObjectLiteralExpressi
       continue;
     }
     const name = property.name;
-    if (!ts.isIdentifier(name) || name.text !== "capabilities") {
+    const nameText = ts.isIdentifier(name) || ts.isStringLiteral(name) ? name.text : null;
+    if (nameText !== "capabilities") {
       continue;
     }
     return readStringArrayLiteral(property.initializer);
@@ -91,6 +92,15 @@ function extractModuleManifestCapabilities(modulePath: string, source: string): 
 }
 
 describe("pm package manifest model", () => {
+  it("extracts module manifest capabilities from identifier and string-literal keys", () => {
+    expect(extractModuleManifestCapabilities("identifier.ts", 'export const manifest = { capabilities: ["commands"] };')).toEqual([
+      "commands",
+    ]);
+    expect(extractModuleManifestCapabilities("quoted.ts", 'export const manifest = { "capabilities": ["schema"] };')).toEqual([
+      "schema",
+    ]);
+  });
+
   it("publishes stable SDK subpaths used by package authors", async () => {
     const packageJson = JSON.parse(await readFile(path.join(repoRoot, "package.json"), "utf8")) as {
       exports?: Record<string, unknown>;

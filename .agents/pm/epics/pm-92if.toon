@@ -6,13 +6,13 @@ status: in_progress
 priority: 2
 tags[3]: code-quality,codefactor,tech-debt
 created_at: "2026-06-26T13:29:14.359Z"
-updated_at: "2026-07-03T18:06:58.398Z"
+updated_at: "2026-07-03T18:48:41.082Z"
 assignee: claude-code-agent
 author: claude-code-agent
 acceptance_criteria: "CodeFactor overall repository grade reaches A+ (or the highest attainable) on branch main; CodeFactor reports 0 outstanding issues across Complexity, Maintainability, and Duplication; local lint/quality parity tooling exists so findings can be reproduced and kept at zero (no regressions on new PRs)."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-fmjy,related,"2026-07-02T06:39:46.472Z",null,null
-comments[128]{created_at,author,text}:
+comments[130]{created_at,author,text}:
   "2026-06-26T15:46:30.976Z",codex-gpt5,"Progress update: live CodeFactor for main still reports 255 issues until this branch lands (83 maintainability, 152 complexity, 20 duplication). This branch completes the maintainability groups tracked by pm-xsth, pm-m8yl, and pm-x878/Codecov; complexity pm-arzz and duplication pm-fmjy remain open for dedicated refactor follow-up."
   "2026-06-26T18:50:54.481Z",codex-codefactor-sdk-cli-20260626,"Investigation note: live 2026-06-26 CodeFactor public issues page reports A rating, 601 analyzed files, 172 issues after the merged maintainability branch; PM snapshot still tracks remaining complexity and duplication children. GitHub state: no open PRs, no open Dependabot or code-scanning alerts; issue #374 remains open and externally blocked on missing RELEASE_PAT in release environment; pnpm audit --audit-level moderate reports no known vulnerabilities. Dependency drift from pnpm outdated: @sentry/cli 3.5.1 -> 3.6.0, @sentry/node 10.61.0 -> 10.62.0, @types/node held at Node 22 types despite latest 26.x."
   "2026-06-26T19:05:47.605Z",codex-codefactor-sdk-cli-20260626,"Evidence update: CodeFactor remediation bundle now covers the remaining duplication primitives and generated/test analysis scope. Verification passed: pnpm build; targeted 254-test suite; pnpm contracts:check; pnpm quality:static; pnpm typecheck; pnpm security:scan; full coverage 100/100/100/100 across 5133 tests; manual isolated temp-project smoke with PM_PATH/PM_GLOBAL_PATH passed package install/doctor and shared unset behavior. Remaining release issue #374 is external to code changes: GitHub scheduled Auto Release requires RELEASE_PAT in the release environment."
@@ -141,12 +141,15 @@ comments[128]{created_at,author,text}:
   "2026-07-03T17:20:11.887Z",claude-code-agent,"Evidence update: fixed the PR #425 CodeFactor complexity annotations by refactoring test/helper setup into table-driven builders and named command-handler mocks, pruned stale ESLint complexity suppressions, and fixed the Windows regression job path separator assertion in static-quality-gate.spec.ts. Verification passed: targeted CodeFactor suites 5 files / 141 tests; itemFactory helper consumer suites 4 files / 219 tests; local Windows-regression job reproduction 36 files / 679 tests; focused static-quality-gate spec 31 tests; pnpm typecheck; pnpm lint with ESLint clean, jscpd 0 clones across 550 files, and static quality passed; pnpm security:scan; pnpm audit --audit-level moderate; git diff --check; full node scripts/run-tests.mjs coverage 263 files / 5313 tests / 100% statements, branches, functions, and lines."
   "2026-07-03T17:50:52.789Z",claude-code-agent,"Review-fix evidence: pre-push greptile review --branch main --json timed out after 600s with no output, then greptile review --resume --json returned one P2 finding that broad eslint-disable directives were counted the same as single-line disable pragmas. Fixed by splitting static-quality gate budgets into inline_eslint_disables for eslint-disable-next-line/line and broad_eslint_disables with default max 0, plus regression coverage for broad-disable detection and the default budget path. Verification passed after the fix: node scripts/run-tests.mjs test -- tests/unit/scripts/release/static-quality-gate.spec.ts; pnpm typecheck; pnpm lint with ESLint clean, jscpd 0 clones across 550 files, and static quality passed; pnpm security:scan; pnpm audit --audit-level moderate; git diff --check; node scripts/run-tests.mjs coverage = 263 files / 5313 tests / 100% statements, branches, functions, and lines."
   "2026-07-03T18:06:58.398Z",claude-code-agent,"Pre-push Greptile evidence for committed code head 317967f9: timeout 600 greptile review --branch main --json returned no output and exited 124; timeout 300 greptile review --resume --json also returned no output and exited 124. The previous resumed Greptile P2 finding was fixed before this attempt, and deterministic local gates on the committed code passed: focused static-quality spec, pnpm typecheck, pnpm lint/static quality, pnpm security:scan, pnpm audit --audit-level moderate, git diff --check, changelog unchanged, and full coverage 263 files / 5313 tests / 100/100/100/100. Hosted PR review agents will be retriggered after push."
+  "2026-07-03T18:32:21.397Z",claude-code-agent,"Review-response evidence: addressed current PR #425 review threads by preserving existing item_types settings in the test workspace helper, allowing quoted \"capabilities\" keys in package manifest AST assertions, scoping @typescript-eslint/no-unused-vars to TypeScript files, adding missing Node globals, and making the static-quality eslint-suppressions budget fail closed for missing, unreadable, malformed, non-object, or invalid-count files. Also fixed the wrapper so infrastructure failures become gate failures instead of escaping. Verification passed: focused static-quality + package-manifest suite 2 files / 52 tests, static-quality focused rerun 35 tests, pnpm typecheck, git diff --check, pnpm lint (ESLint clean, jscpd 0 clones across 550 files, static quality passed), pnpm security:scan, pnpm audit --audit-level moderate, pnpm changelog:pm:check unchanged with pm-changelog 2026.6.30 and CHANGELOG.md item_count=1398 bytes=226476, full node scripts/run-tests.mjs coverage 263 files / 5318 tests / 100% statements branches functions lines, manual temp dogfood /tmp/tmp.5mJKWN8euK passed init/create/list/search/close/health, Sentry/telemetry gate passed with access_ok=true critical=0 high=0 total=0 telemetry finish_error_rate_pct=0.67 failures_without_error_code_rows=0, local telemetry status had last_successful_flush_at=2026-07-03T18:30:53.390Z and health --check-telemetry summary ok."
+  "2026-07-03T18:48:41.072Z",claude-code-agent,"Pre-push Greptile evidence for review-fix code head 737e166b: timeout 600 greptile review --branch main --json returned no output and exited 124; timeout 300 greptile review --resume --json also returned no output and exited 124. Local deterministic gates remain green: focused static-quality/package-manifest suites, full coverage 263 files / 5318 tests / 100/100/100/100, pnpm typecheck, pnpm lint/static quality, pnpm security:scan, pnpm audit --audit-level moderate, changelog unchanged, manual temp dogfood, and Sentry/telemetry gate ok. Hosted PR review agents will be retriggered after push."
 notes[1]{created_at,author,text}:
   "2026-07-02T08:14:23.356Z",claude-code-agent,"2026-07-02 pm-chxp/PR#415 merged (17798d15): duplication leg complete — pnpm lint:duplicates now 0 clones repo-wide (was 24). Complexity suppressions already 0 (PR#413/#414). Remaining for A+: await CodeFactor re-analysis of main; verify grade at https://www.codefactor.io/repository/github/unbraind/pm-cli — if findings persist they are in generated runtime-loaders (excluded-by-design candidates via .codefactor.yml)."
-files[149]{path,scope,note}:
+files[152]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,pm-changelog package-owned check refreshed managed extension install timestamp
   .github/workflows/security.yml,project,"Greptile P1 fix: checksum-verified actionlint install without remote script execution"
   eslint-suppressions.json,project,Prune resolved complexity suppressions after config/settings refactors
+  eslint.config.mjs,project,"Review fix: Node globals and TS-only no-unused-vars scoping"
   package.json,project,Align @types/node range to Node 22 supported floor after Dependabot PR #399 review
   packages/pm-beads/extensions/beads/runtime-loader.ts,project,generated standard package runtime loader
   packages/pm-beads/extensions/beads/runtime.ts,project,split Beads runtime import validation and execution helpers to reduce complexity
@@ -243,6 +246,7 @@ files[149]{path,scope,note}:
   src/sdk/runtime.ts,project,exports SDK import adapter primitives from runtime barrel
   tests/fixtures/contracts/full.json,project,Generated runtime contract snapshot for docs/files missing aliases
   tests/helpers/itemFactory.ts,project,Table-driven test item seed builder to remove CodeFactor complexity finding
+  tests/helpers/pmWorkspace.ts,project,"Review fix: preserve item_types settings while replacing test definitions"
   tests/helpers/withTempPmPath.ts,project,Split legacy create normalization and env restore helpers to remove CodeFactor complexity findings
   tests/integration/mcp-dynamic-package-actions.spec.ts,project,stabilize long MCP compact-output integration coverage timeout
   tests/integration/release-automation-contract.spec.ts,project,complexity sweep zero ESLint complexity findings
@@ -283,6 +287,7 @@ files[149]{path,scope,note}:
   tests/unit/packages/calendar-runtime.spec.ts,project,"Review fix: calendar payload reader regression coverage"
   tests/unit/packages/guide-shell-runtime.spec.ts,project,Regression coverage for guide-shell array payload rendering
   tests/unit/packages/package-import-adapters.spec.ts,project,covers new SDK import adapter branch behavior
+  tests/unit/packages/package-manifest.spec.ts,project,"Review fix: support quoted capabilities keys in module manifest assertions"
   tests/unit/packages/runtime-loaders.spec.ts,project,covers both generated runtime-loader templates
   tests/unit/packages/todos-extension.spec.ts,project,Greptile response regression coverage for todos zero timeout omission
   tests/unit/plugins/pm-mcp-server.spec.ts,project,Greptile response coverage for generated Codex wrapper depth-limit null fallback
@@ -293,7 +298,7 @@ files[149]{path,scope,note}:
   tests/unit/scripts/release/static-quality-gate.spec.ts,project,Regression coverage for suppression budget calibration and jscpd ignore block counting
   tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,complexity sweep zero ESLint complexity findings
   tests/unit/sdk/tool-option-contracts.spec.ts,project,regression coverage for exported SDK option contract object isolation
-tests[74]:
+tests[77]:
   - command: checksum-verified actionlint v1.7.12 install and lint over .github/workflows/*.yml
     scope: project
     timeout_seconds: 120
@@ -310,6 +315,10 @@ tests[74]:
   - command: "manual temp dir alias smoke with dist CLI at /tmp/tmp.rCeuuiQVDG: init/create/list --filter-docs-missing/list --filter-files-missing/search --filter-docs-missing/health"
     scope: project
     timeout_seconds: 120
+  - command: "manual temp dir dogfood: dist CLI init/create/list/search/close/health in /tmp/tmp.5mJKWN8euK"
+    scope: project
+    timeout_seconds: 120
+    note: Fresh temp workspace manual proof after review fixes
   - command: "manual temp dir lifecycle with dist CLI at /tmp/tmp.Lp53EC64iq: init/create/list/search/update/close/health"
     scope: project
     timeout_seconds: 120
@@ -331,6 +340,10 @@ tests[74]:
   - command: node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort
     scope: project
     timeout_seconds: 180
+  - command: node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort --sentry-project unbrained/pm-cli --sentry-window-days 14 --sentry-limit 200
+    scope: project
+    timeout_seconds: 180
+    note: Sentry and telemetry release gate after review fixes
   - command: node scripts/run-tests.mjs coverage
     scope: project
     timeout_seconds: 900
@@ -422,6 +435,10 @@ tests[74]:
   - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/static-quality-gate.spec.ts tests/integration/ci-workflow-contract.spec.ts
     scope: project
     timeout_seconds: 180
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/static-quality-gate.spec.ts tests/unit/packages/package-manifest.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: Focused PR review regression suite
   - command: node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-npx-from-pack.spec.ts tests/unit/commands/metadata-governance-commands.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/scripts/release/compatibility-check.spec.ts tests/unit/scripts/dogfood-package-first.spec.ts
     scope: project
     timeout_seconds: 300
