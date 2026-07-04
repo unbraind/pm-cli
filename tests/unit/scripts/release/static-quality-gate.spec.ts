@@ -473,12 +473,15 @@ describe("static-quality-gate", () => {
           "/repo/src/a.ts",
           "/repo/packages/pkg/index.ts",
           "/repo/src/b.spec.ts",
+          String.raw`/repo/src\windows.tsx`,
+          String.raw`/repo/packages\pkg\component.test.tsx`,
+          String.raw`/repo/packages\pkg\module.spec.cts`,
           "/repo/packages/pkg/c.test.ts",
           "/repo/tests/unit/d.ts",
           "/repo/scripts/e.ts",
         ])
         .map((p) => mod.relativeToRepo(p));
-      expect(kept).toEqual(["src/a.ts", "packages/pkg/index.ts"]);
+      expect(kept).toEqual(["src/a.ts", "packages/pkg/index.ts", String.raw`src\windows.tsx`]);
     });
 
     it("extractDocstringProse + identifierWords normalize comments and identifiers", async () => {

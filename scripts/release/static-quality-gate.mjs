@@ -192,11 +192,11 @@ export function sourceFilesOnly(files) {
 // documentation bar as the core CLI they extend.
 export function documentedSourceFiles(files) {
   return files.filter((absolutePath) => {
-    const relativePath = relativeToRepo(absolutePath);
+    const relativePath = relativeToRepo(absolutePath).replace(/\\/g, "/");
     if (!relativePath.startsWith("src/") && !relativePath.startsWith("packages/")) {
       return false;
     }
-    return !/\.(?:spec|test)\.ts$/u.test(relativePath);
+    return !/\.(?:spec|test)\.[cm]?tsx?$/u.test(relativePath);
   });
 }
 

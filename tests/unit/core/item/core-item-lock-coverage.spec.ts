@@ -565,6 +565,235 @@ describe("core/lock/lock additional branch coverage", () => {
     });
   });
 
+  it("keeps the observed stale lock when another process owns cleanup", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-busy";
+      const lockPath = getLockPath(pmPath, id);
+      const fallbackLockInfo = {
+        info: { id, pid: 1, owner: "fallback-owner", created_at: STALE_TS, ttl_seconds: 60 },
+        warnings: [],
+      };
+      await fs.mkdir(`${lockPath}.stale-cleanup`);
+
+      try {
+        await expect(
+          lockInternals.removeConfirmedStaleLock({
+            lockPath,
+            id,
+            ttlSeconds: 60,
+            force: true,
+            forceRequiredForStaleLock: false,
+            staleRemovals: 0,
+            waitBudgetMs: 10,
+            fallbackLockInfo,
+          }),
+        ).resolves.toEqual({
+          lockInfo: fallbackLockInfo,
+          shouldRetryCreate: false,
+          staleRemovalCounted: false,
+        });
+      } finally {
+        await fs.rm(`${lockPath}.stale-cleanup`, { recursive: true, force: true });
+      }
+    });
+  });
+
+  it("does not count a stale removal when acquire sees a busy cleanup gate", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-busy-acquire";
+      const lockPath = getLockPath(pmPath, id);
+      await fs.writeFile(
+        lockPath,
+        `${JSON.stringify({ id, pid: 1, owner: "other-owner", created_at: STALE_TS, ttl_seconds: 60 }, null, 2)}\n`,
+        "utf8",
+      );
+      await fs.mkdir(`${lockPath}.stale-cleanup`);
+
+      try {
+        await expect(acquireLock(pmPath, id, 60, "owner-force", true, false, 0)).rejects.toMatchObject({
+          exitCode: EXIT_CODE.CONFLICT,
+          message: expect.stringContaining("owner other-owner"),
+        });
+      } finally {
+        await fs.rm(`${lockPath}.stale-cleanup`, { recursive: true, force: true });
+      }
+    });
+  });
+
+  it("reports a generic failure when stale cleanup gate creation fails", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-gate-failure";
+      const lockPath = getLockPath(pmPath, id);
+      const fallbackLockInfo = {
+        info: { id, pid: 1, owner: "fallback-owner", created_at: STALE_TS, ttl_seconds: 60 },
+        warnings: [],
+      };
+      const realMkdir = fs.mkdir;
+      const mkdirSpy = vi.spyOn(fs, "mkdir").mockImplementation(async (targetPath, options) => {
+        if (String(targetPath) === `${lockPath}.stale-cleanup`) {
+          throw Object.assign(new Error("permission denied"), { code: "EACCES" });
+        }
+        await realMkdir(targetPath, options);
+      });
+
+      try {
+        await expect(
+          lockInternals.removeConfirmedStaleLock({
+            lockPath,
+            id,
+            ttlSeconds: 60,
+            force: true,
+            forceRequiredForStaleLock: false,
+            staleRemovals: 0,
+            waitBudgetMs: 10,
+            fallbackLockInfo,
+          }),
+        ).rejects.toMatchObject({
+          exitCode: EXIT_CODE.GENERIC_FAILURE,
+          message: expect.stringContaining(`Failed to prepare stale lock cleanup for ${id}`),
+        });
+      } finally {
+        mkdirSpy.mockRestore();
+      }
+    });
+  });
+
+  it("retries create when stale cleanup finds the lock already gone", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-gone";
+      const lockPath = getLockPath(pmPath, id);
+      const fallbackLockInfo = {
+        info: { id, pid: 1, owner: "fallback-owner", created_at: STALE_TS, ttl_seconds: 60 },
+        warnings: [],
+      };
+
+      await expect(
+        lockInternals.removeConfirmedStaleLock({
+          lockPath,
+          id,
+          ttlSeconds: 60,
+          force: true,
+          forceRequiredForStaleLock: false,
+          staleRemovals: 0,
+          waitBudgetMs: 10,
+          fallbackLockInfo,
+        }),
+      ).resolves.toEqual({
+        lockInfo: { info: null, warnings: [] },
+        shouldRetryCreate: true,
+        staleRemovalCounted: false,
+      });
+    });
+  });
+
+  it("keeps a refreshed lock discovered during stale cleanup", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-refresh";
+      const lockPath = getLockPath(pmPath, id);
+      const freshLockInfo = { id, pid: process.pid, owner: "fresh-owner", created_at: new Date().toISOString(), ttl_seconds: 60 };
+      await fs.writeFile(lockPath, `${JSON.stringify(freshLockInfo, null, 2)}\n`, "utf8");
+
+      const result = await lockInternals.removeConfirmedStaleLock({
+        lockPath,
+        id,
+        ttlSeconds: 60,
+        force: true,
+        forceRequiredForStaleLock: false,
+        staleRemovals: 0,
+        waitBudgetMs: 10,
+        fallbackLockInfo: {
+          info: { id, pid: 1, owner: "fallback-owner", created_at: STALE_TS, ttl_seconds: 60 },
+          warnings: [],
+        },
+      });
+
+      expect(result).toEqual({
+        lockInfo: { info: freshLockInfo, warnings: [] },
+        shouldRetryCreate: false,
+        staleRemovalCounted: false,
+      });
+    });
+  });
+
+  it("reports a conflict after exhausting stale cleanup retries", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-exhausted";
+      const lockPath = getLockPath(pmPath, id);
+      const fallbackLockInfo = {
+        info: { id, pid: 1, owner: "fallback-owner", created_at: STALE_TS, ttl_seconds: 60 },
+        warnings: [],
+      };
+      await fs.writeFile(lockPath, `${JSON.stringify(fallbackLockInfo.info, null, 2)}\n`, "utf8");
+
+      await expect(
+        lockInternals.removeConfirmedStaleLock({
+          lockPath,
+          id,
+          ttlSeconds: 60,
+          force: true,
+          forceRequiredForStaleLock: false,
+          staleRemovals: 3,
+          waitBudgetMs: 10,
+          fallbackLockInfo,
+        }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.CONFLICT,
+        context: {
+          code: "lock_conflict",
+          recovery: {
+            retry_after_ms: 250,
+          },
+        },
+      });
+    });
+  });
+
+  it("serializes stale cleanup so contenders cannot delete a fresh replacement lock", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-race";
+      const lockPath = getLockPath(pmPath, id);
+      await fs.writeFile(
+        lockPath,
+        `${JSON.stringify({ id, pid: 1, owner: "stale-owner", created_at: STALE_TS, ttl_seconds: 60 }, null, 2)}\n`,
+        "utf8",
+      );
+
+      const realUnlink = fs.unlink;
+      let releaseFirstUnlink = (): void => {};
+      const firstUnlinkStarted = new Promise<void>((resolve) => {
+        const allowFirstUnlink = new Promise<void>((allow) => {
+          releaseFirstUnlink = allow;
+        });
+        const unlinkSpy = vi.spyOn(fs, "unlink").mockImplementation(async (targetPath) => {
+          if (String(targetPath) === lockPath) {
+            unlinkSpy.mockRestore();
+            resolve();
+            await allowFirstUnlink;
+          }
+          await realUnlink(targetPath);
+        });
+      });
+
+      const firstAcquire = acquireLock(pmPath, id, 60, "owner-a", true, false, 100);
+      await firstUnlinkStarted;
+      const secondAcquire = acquireLock(pmPath, id, 60, "owner-b", true, false, 5);
+      releaseFirstUnlink();
+
+      const outcomes = await Promise.allSettled([firstAcquire, secondAcquire]);
+      const fulfilled = outcomes.filter((outcome): outcome is PromiseFulfilledResult<() => Promise<void>> => outcome.status === "fulfilled");
+      const rejected = outcomes.filter((outcome): outcome is PromiseRejectedResult => outcome.status === "rejected");
+      const fulfilledIndex = outcomes.findIndex((outcome) => outcome.status === "fulfilled");
+      const expectedOwner = fulfilledIndex === 0 ? "owner-a" : "owner-b";
+      expect(fulfilled).toHaveLength(1);
+      expect(rejected).toHaveLength(1);
+      expect(rejected[0]?.reason).toMatchObject({ exitCode: EXIT_CODE.CONFLICT });
+
+      const lockInfo = JSON.parse(await fs.readFile(lockPath, "utf8")) as { owner: string };
+      expect(lockInfo.owner).toBe(expectedOwner);
+      await fulfilled[0]?.value();
+    });
+  });
+
   describe("lock_acquire service override", () => {
     it("uses an override that returns a release function and never writes a lock file", async () => {
       await withTempPmPath(async ({ pmPath }) => {

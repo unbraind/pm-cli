@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[3]: agent-ux,concurrency,locking
 created_at: "2026-07-03T13:25:02.684Z"
-updated_at: "2026-07-04T22:54:57.542Z"
+updated_at: "2026-07-04T23:33:13.457Z"
 assignee: maintainer-agent
 author: claude-code-agent
 estimated_minutes: 180
@@ -14,12 +14,13 @@ acceptance_criteria: "acquireLock waits with bounded exponential backoff + jitte
 parent: pm-dj98
 risk: medium
 confidence: high
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-04T19:08:29.543Z",maintainer-agent,"Session handoff (2026-07-04, maintainer-agent): implementation is complete in the local working tree but NOT committed (user hold on commit/push). Body has the full design; the diff spans lock.ts, claim.ts, settings validator/defaults/types, nested-settings, restore, history-rewrite, claim-command.spec. Before PR: run fast suite + coverage gate, add CONFIGURATION.md docs for locks_wait_ms/PM_LOCK_WAIT_MS, contracts:update if needed, record stress evidence via pm test, then close pm-2muu and pm-8t5x together with structured resolution fields."
   "2026-07-04T21:37:18.568Z",claude-code-agent,"Evidence: bounded lock wait and PM_LOCK_WAIT_MS/locks_wait_ms paths verified. Full coverage passed 5371 tests with 100% statements/branches/functions/lines; pnpm lint passed; installed-package temp smoke passed claim conflict, if-available skip, forced takeover, lock wait config, and health."
   "2026-07-04T22:19:12.928Z",claude-code-agent,"Evidence update: addressed hosted review findings by threading settings.locks.wait_ms through create/copy/profile/schema/reindex/background-refresh/package-import locks, accepting dotted config path locks.wait_ms, rejecting negative locks.wait_ms, and tolerating stale lock unlink ENOENT races. Verification passed: focused lock/config/claim tests 87 tests; integration config/CLI tests 77 tests; pnpm lint; node scripts/run-tests.mjs coverage 5379 tests with 100% statements/branches/functions/lines; installed-package temp smoke round-tripped locks.wait_ms=88 and health passed with PM_LOCK_WAIT_MS=1."
   "2026-07-04T22:34:44.958Z",claude-code-agent,"Review response: fixed current-head bot findings by preserving true no-op semantics for pm claim --if-available (skipNoop), requiring strict PM_LOCK_WAIT_MS integer parsing, returning structured lock_conflict recovery when stale-removal retries are exhausted, and rendering retry_after_ms through error guidance. Focused regression passed: node scripts/run-tests.mjs test -- tests/unit/commands/claim-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/scripts/release/static-quality-gate.spec.ts (127 tests)."
   "2026-07-04T22:54:57.541Z",claude-code-agent,"Verification update: final full coverage gate passed after adding missing lock override fallback branch coverage. Command: node scripts/run-tests.mjs coverage. Result: 263 test files, 5380 tests passed, Statements 100% (33118/33118), Branches 100% (23543/23543), Functions 100% (6516/6516), Lines 100% (31828/31828)."
+  "2026-07-04T23:33:13.457Z",claude-code-agent,"Review response evidence: addressed hosted Greptile stale-cleanup race by serializing stale lock removal behind a per-lock cleanup gate, re-reading the lock while the gate is held, preserving refreshed locks, and only counting confirmed removals. Verification passed: focused lock/static suite 87 tests; node scripts/run-tests.mjs coverage passed 263 files / 5387 tests with 100% statements, branches, functions, and lines; pnpm lint passed including ESLint, jscpd 0 clones, and static quality."
 notes[1]{created_at,author,text}:
   "2026-07-04T19:01:03.112Z",maintainer-agent,"In-flight implementation (uncommitted, 2026-07-04): acquireLock gained a bounded jittered wait loop — waits up to locks.wait_ms (default 3000, settings key locks_wait_ms, PM_LOCK_WAIT_MS env override, 0 = pre-existing fail-fast) with exponential backoff 25→200ms + jitter; stale-lock removals capped at 3; lock_conflict error now carries recovery.retry_after_ms=250 hint (new PmCliErrorRecoveryPayload field). wait_ms threaded through restore + history-rewrite acquireLock call sites; settings validator/defaults/types/nested-settings descriptor added. Remaining: docs (CONFIGURATION.md), contracts:update if flag surface changed, parallel-mutation stress evidence per AC."
 files[17]{path,scope,note}:

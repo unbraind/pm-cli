@@ -27,6 +27,12 @@ interface LockReadResult {
   warnings: string[];
 }
 
+interface StaleLockRemovalResult {
+  lockInfo: LockReadResult;
+  shouldRetryCreate: boolean;
+  staleRemovalCounted: boolean;
+}
+
 function parseLockInfo(raw: string): LockReadResult {
   let parsed: unknown;
   try {
@@ -155,6 +161,7 @@ const LOCK_WAIT_INITIAL_DELAY_MS = 25;
 const LOCK_WAIT_MAX_DELAY_MS = 200;
 const LOCK_CONFLICT_RETRY_HINT_MS = 250;
 const MAX_STALE_LOCK_REMOVALS = 3;
+const STALE_CLEANUP_GATE_SUFFIX = ".stale-cleanup";
 
 function parseNonNegativeIntegerWaitMs(value: string | number | undefined): number | undefined {
   if (typeof value === "string") {
@@ -228,6 +235,69 @@ function throwIfStaleLockNeedsForce(id: string, lockInfo: LockReadResult, force:
   }
 }
 
+async function acquireStaleCleanupGate(lockPath: string, id: string): Promise<(() => Promise<void>) | null> {
+  const gatePath = `${lockPath}${STALE_CLEANUP_GATE_SUFFIX}`;
+  try {
+    await fs.mkdir(gatePath);
+  } catch (error: unknown) {
+    if (isErrno(error, "EEXIST")) {
+      return null;
+    }
+    throw new PmCliError(`Failed to prepare stale lock cleanup for ${id}: ${toErrorMessage(error)}`, EXIT_CODE.GENERIC_FAILURE);
+  }
+  return async () => {
+    await fs.rm(gatePath, { recursive: true, force: true });
+  };
+}
+
+async function removeConfirmedStaleLock(params: {
+  lockPath: string;
+  id: string;
+  ttlSeconds: number;
+  force: boolean;
+  forceRequiredForStaleLock: boolean;
+  staleRemovals: number;
+  waitBudgetMs: number;
+  fallbackLockInfo: LockReadResult;
+}): Promise<StaleLockRemovalResult> {
+  const releaseCleanupGate = await acquireStaleCleanupGate(params.lockPath, params.id);
+  if (releaseCleanupGate === null) {
+    return {
+      lockInfo: params.fallbackLockInfo,
+      shouldRetryCreate: false,
+      staleRemovalCounted: false,
+    };
+  }
+  try {
+    const currentLockInfo = await readLockInfo(params.lockPath);
+    if (currentLockInfo.info === null && currentLockInfo.warnings.length === 0) {
+      return {
+        lockInfo: currentLockInfo,
+        shouldRetryCreate: true,
+        staleRemovalCounted: false,
+      };
+    }
+    if (!isStaleLock(currentLockInfo.info, params.ttlSeconds)) {
+      return {
+        lockInfo: currentLockInfo,
+        shouldRetryCreate: false,
+        staleRemovalCounted: false,
+      };
+    }
+    throwIfStaleLockNeedsForce(params.id, currentLockInfo, params.force, params.forceRequiredForStaleLock);
+    if (params.staleRemovals >= MAX_STALE_LOCK_REMOVALS) {
+      throw buildLockConflictError(params.id, currentLockInfo.info, params.waitBudgetMs);
+    }
+    return {
+      lockInfo: currentLockInfo,
+      shouldRetryCreate: await unlinkLockWithHook(params.lockPath, "lock:stale_remove"),
+      staleRemovalCounted: true,
+    };
+  } finally {
+    await releaseCleanupGate();
+  }
+}
+
 export const _testOnly = {
   parseLockInfo,
   readLockInfo,
@@ -236,6 +306,7 @@ export const _testOnly = {
   isStaleLock,
   lockOwnerSuffix,
   resolveLockWaitMs,
+  removeConfirmedStaleLock,
 };
 
 
@@ -294,15 +365,26 @@ export async function acquireLock(
       if (!isErrno(error, "EEXIST")) {
         throw new PmCliError(`Failed to acquire lock for ${id}: ${toErrorMessage(error)}`, EXIT_CODE.GENERIC_FAILURE);
       }
-      const lockInfo = await readLockInfo(lockPath);
+      let lockInfo = await readLockInfo(lockPath);
       if (isStaleLock(lockInfo.info, ttlSeconds)) {
         throwIfStaleLockNeedsForce(id, lockInfo, force, forceRequiredForStaleLock);
-        if (staleRemovals >= MAX_STALE_LOCK_REMOVALS) {
-          throw buildLockConflictError(id, lockInfo.info, waitBudgetMs);
+        const staleRemoval = await removeConfirmedStaleLock({
+          lockPath,
+          id,
+          ttlSeconds,
+          force,
+          forceRequiredForStaleLock,
+          staleRemovals,
+          waitBudgetMs,
+          fallbackLockInfo: lockInfo,
+        });
+        lockInfo = staleRemoval.lockInfo;
+        if (staleRemoval.staleRemovalCounted) {
+          staleRemovals += 1;
         }
-        staleRemovals += 1;
-        await unlinkLockWithHook(lockPath, "lock:stale_remove");
-        continue;
+        if (staleRemoval.shouldRetryCreate) {
+          continue;
+        }
       }
       const elapsedMs = Date.now() - startedAtMs;
       if (waitBudgetMs === 0 || elapsedMs >= waitBudgetMs) {
