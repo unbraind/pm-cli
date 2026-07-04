@@ -2384,7 +2384,15 @@ async function runExtensionDescribeAction(ctx: ExtensionActionContext): Promise<
   const describeResult = buildExtensionDescribeResult(normalizedTarget, loadResult, activationResult);
   if (normalizedTarget !== undefined && describeResult.extensions.length === 0) {
     const noun = options.vocabulary === "package" ? "package" : "extension";
-    const loadedNames = [...new Set(loadResult.loaded.map((entry) => entry.name))].sort((left, right) => left.localeCompare(right));
+    const loadedNames = [
+      ...new Set(
+        loadResult.loaded.map((entry) =>
+          options.vocabulary === "package" && typeof entry.source_package === "string" && entry.source_package.trim().length > 0
+            ? entry.source_package.trim()
+            : entry.name,
+        ),
+      ),
+    ].sort((left, right) => left.localeCompare(right));
     const loadedHint = loadedNames.length > 0 ? ` Loaded ${noun} names: ${loadedNames.join(", ")}.` : "";
     throw new PmCliError(
       `No loaded ${noun} named "${normalizedTarget}" was found in ${scope} scope.${loadedHint} Run pm ${noun} explore to list discovered ${noun}s.`,

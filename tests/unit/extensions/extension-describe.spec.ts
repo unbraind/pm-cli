@@ -1,4 +1,5 @@
 import path from "node:path";
+import { writeFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { buildExtensionDescribeResult, renderExtensionDescribeMarkdown } from "../../../src/cli/commands/extension/describe.js";
 import { runExtension } from "../../../src/cli/commands/extension.js";
@@ -323,6 +324,27 @@ describe("extension describe action", () => {
       await expect(
         runExtension("ghost", { describe: true, project: true, vocabulary: "package" }, { path: context.pmPath }),
       ).rejects.toThrow(/No loaded package named "ghost"/);
+    });
+  });
+
+  it("lists loaded source package names in the package NOT_FOUND error", async () => {
+    await withTempPmPath(async (context) => {
+      await writeTestExtension({
+        root: path.join(context.pmPath, "extensions", "profile-ext"),
+        name: "profile-ext",
+        entrySource: "export default { activate() {} };\n",
+      });
+      await writeFile(
+        path.join(context.pmPath, "extensions", ".managed-extensions.json"),
+        `${JSON.stringify({ entries: [{ name: "profile-ext", source: { package: "@example/pm-profile" } }] }, null, 2)}\n`,
+        "utf8",
+      );
+      await expect(
+        runExtension("ghost", { describe: true, project: true, vocabulary: "package" }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.NOT_FOUND,
+        message: /Loaded package names: @example\/pm-profile/,
+      });
     });
   });
 });

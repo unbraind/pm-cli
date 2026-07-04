@@ -29,7 +29,7 @@ function isMissingRuntimeModuleError(error: unknown, modulePath: string): boolea
     return true;
   }
   const message = typeof error.message === "string" ? error.message : "";
-  const normalizedModulePath = modulePath.replace(/\\/g, "/");
+  const normalizedModulePath = modulePath.split("\\").join("/");
   return (
     message.startsWith(`Cannot find module '${modulePath}'`) ||
     message.startsWith(`Cannot find module '${normalizedModulePath}'`) ||
@@ -49,11 +49,12 @@ function isUnstrippableTypeScriptError(error: unknown, modulePath: string): bool
     return false;
   }
   const moduleUrl = pathToFileURL(modulePath).href;
+  const normalizedModulePath = modulePath.split("\\").join("/");
   return (
     error.url === moduleUrl ||
     (typeof error.path === "string" && path.resolve(error.path) === path.resolve(modulePath)) ||
     message.includes(modulePath) ||
-    message.includes(modulePath.replace(/\\/g, "/")) ||
+    message.includes(normalizedModulePath) ||
     message.includes(moduleUrl)
   );
 }

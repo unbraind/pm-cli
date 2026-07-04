@@ -73,7 +73,7 @@ function isMissingRuntimeModuleError(error: unknown, modulePath: string): boolea
     return true;
   }
   const message = typeof error.message === "string" ? error.message : "";
-  const normalizedModulePath = modulePath.replace(/\\\\/g, "/");
+  const normalizedModulePath = modulePath.split("\\\\").join("/");
   return (
     message.startsWith(\`Cannot find module '\${modulePath}'\`) ||
     message.startsWith(\`Cannot find module '\${normalizedModulePath}'\`) ||
@@ -93,11 +93,12 @@ function isUnstrippableTypeScriptError(error: unknown, modulePath: string): bool
     return false;
   }
   const moduleUrl = pathToFileURL(modulePath).href;
+  const normalizedModulePath = modulePath.split("\\\\").join("/");
   return (
     error.url === moduleUrl ||
     (typeof error.path === "string" && path.resolve(error.path) === path.resolve(modulePath)) ||
     message.includes(modulePath) ||
-    message.includes(modulePath.replace(/\\\\/g, "/")) ||
+    message.includes(normalizedModulePath) ||
     message.includes(moduleUrl)
   );
 }
@@ -191,11 +192,12 @@ const runtimeRecord = (value: unknown): Record<string, unknown> | undefined =>
 const isTargetMissing = (error: unknown, target: string): boolean => {
   const record = runtimeRecord(error);
   const targetUrl = pathToFileURL(target).href;
+  const normalizedTarget = target.split("\\\\").join("/");
   const message = typeof record?.message === "string" ? record.message : "";
   return record?.code === "ERR_MODULE_NOT_FOUND" &&
     (record.url === targetUrl ||
       (typeof record.path === "string" && path.resolve(record.path) === path.resolve(target)) ||
-      [target, target.replace(/\\\\/g, "/"), targetUrl].some((value) => message.startsWith(\`Cannot find module '\${value}'\`)));
+      [target, normalizedTarget, targetUrl].some((value) => message.startsWith(\`Cannot find module '\${value}'\`)));
 };
 
 // Node refuses to type-strip .ts files under node_modules; fall through to the
@@ -207,10 +209,11 @@ const isUnstrippable = (error: unknown, target: string): boolean => {
     return false;
   }
   const targetUrl = pathToFileURL(target).href;
+  const normalizedTarget = target.split("\\\\").join("/");
   return (
     record?.url === targetUrl ||
     (typeof record?.path === "string" && path.resolve(record.path) === path.resolve(target)) ||
-    [target, target.replace(/\\\\/g, "/"), targetUrl].some((value) => message.includes(value))
+    [target, normalizedTarget, targetUrl].some((value) => message.includes(value))
   );
 };
 
