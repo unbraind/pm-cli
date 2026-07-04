@@ -156,6 +156,21 @@ const LOCK_WAIT_MAX_DELAY_MS = 200;
 const LOCK_CONFLICT_RETRY_HINT_MS = 250;
 const MAX_STALE_LOCK_REMOVALS = 3;
 
+function parseNonNegativeIntegerWaitMs(value: string | number | undefined): number | undefined {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!/^\d+$/.test(trimmed)) {
+      return undefined;
+    }
+    const parsed = Number(trimmed);
+    return Number.isSafeInteger(parsed) ? parsed : undefined;
+  }
+  if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
+    return Math.trunc(value);
+  }
+  return undefined;
+}
+
 /**
  * Resolves the effective bounded wait budget for a contended lock: the
  * PM_LOCK_WAIT_MS environment override wins when it parses as a non-negative
@@ -164,14 +179,13 @@ const MAX_STALE_LOCK_REMOVALS = 3;
  */
 function resolveLockWaitMs(waitMs: number | undefined): number {
   const envRaw = process.env.PM_LOCK_WAIT_MS;
-  if (typeof envRaw === "string" && envRaw.trim() !== "") {
-    const envParsed = Number.parseInt(envRaw, 10);
-    if (Number.isFinite(envParsed) && envParsed >= 0) {
-      return envParsed;
-    }
+  const envParsed = parseNonNegativeIntegerWaitMs(envRaw);
+  if (envParsed !== undefined) {
+    return envParsed;
   }
-  if (typeof waitMs === "number" && Number.isFinite(waitMs) && waitMs >= 0) {
-    return Math.trunc(waitMs);
+  const callerParsed = parseNonNegativeIntegerWaitMs(waitMs);
+  if (callerParsed !== undefined) {
+    return callerParsed;
   }
   return 0;
 }
@@ -189,6 +203,19 @@ function buildLockConflictError(id: string, info: LockInfo | null, waitedMs: num
       retry_after_ms: LOCK_CONFLICT_RETRY_HINT_MS,
     },
   });
+}
+
+type LockReleaseOverride = () => Promise<void> | void;
+
+function resolveLockOverrideRelease(result: unknown): LockReleaseOverride | null {
+  if (typeof result === "function") {
+    return result as LockReleaseOverride;
+  }
+  if (typeof result === "object" && result !== null && "release" in result) {
+    const release = (result as { release?: unknown }).release;
+    return typeof release === "function" ? (release as LockReleaseOverride) : null;
+  }
+  return null;
 }
 
 function throwIfStaleLockNeedsForce(id: string, lockInfo: LockReadResult, force: boolean, forceRequired: boolean): void {
@@ -233,15 +260,7 @@ export async function acquireLock(
     force_required_for_stale_lock: forceRequiredForStaleLock,
   });
   if (lockOverride.handled) {
-    const releaseFromFunction = typeof lockOverride.result === "function" ? lockOverride.result : null;
-    const releaseFromObject =
-      typeof lockOverride.result === "object" &&
-      lockOverride.result !== null &&
-      "release" in lockOverride.result &&
-      typeof (lockOverride.result as { release?: unknown }).release === "function"
-        ? ((lockOverride.result as { release: () => Promise<void> | void }).release as () => Promise<void> | void)
-        : null;
-    const release = releaseFromFunction ?? releaseFromObject;
+    const release = resolveLockOverrideRelease(lockOverride.result);
     if (release) {
       return async () => {
         await Promise.resolve(release());
@@ -279,14 +298,14 @@ export async function acquireLock(
       if (isStaleLock(lockInfo.info, ttlSeconds)) {
         throwIfStaleLockNeedsForce(id, lockInfo, force, forceRequiredForStaleLock);
         if (staleRemovals >= MAX_STALE_LOCK_REMOVALS) {
-          throw new PmCliError(`Failed to acquire lock for ${id}`, EXIT_CODE.CONFLICT);
+          throw buildLockConflictError(id, lockInfo.info, waitBudgetMs);
         }
         staleRemovals += 1;
         await unlinkLockWithHook(lockPath, "lock:stale_remove");
         continue;
       }
       const elapsedMs = Date.now() - startedAtMs;
-      if (elapsedMs >= waitBudgetMs) {
+      if (waitBudgetMs === 0 || elapsedMs >= waitBudgetMs) {
         throw buildLockConflictError(id, lockInfo.info, waitBudgetMs);
       }
       await sleepWithJitter(Math.min(backoffMs, waitBudgetMs - elapsedMs));

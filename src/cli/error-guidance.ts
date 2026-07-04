@@ -220,6 +220,9 @@ function normalizeRecoveryPayload(payload: PmCliErrorRecoveryPayload | undefined
   assignRecoveryStringArray(normalized, "missing_required_fields", payload.missing_required_fields);
   assignRecoveryStringArray(normalized, "suggested_flags", payload.suggested_flags);
   assignRecoveryString(normalized, "suggested_retry", payload.suggested_retry);
+  if (typeof payload.retry_after_ms === "number" && Number.isSafeInteger(payload.retry_after_ms) && payload.retry_after_ms >= 0) {
+    normalized.retry_after_ms = payload.retry_after_ms;
+  }
   const fallbackCandidates = normalizeRecoveryCandidates(payload.fallback_candidates);
   if (fallbackCandidates) {
     normalized.fallback_candidates = fallbackCandidates;
@@ -253,6 +256,9 @@ function renderRecoveryBundle(recovery: PmCliErrorRecoveryPayload | undefined): 
   appendRecoveryListLine(lines, "missing_required_fields", normalized.missing_required_fields, ", ");
   appendRecoveryListLine(lines, "suggested_flags", normalized.suggested_flags, ", ");
   appendRecoveryTextLine(lines, "suggested_retry", normalized.suggested_retry);
+  if (typeof normalized.retry_after_ms === "number") {
+    lines.push(`  retry_after_ms: ${normalized.retry_after_ms}`);
+  }
   appendRecoveryTextLine(lines, "next_best_command", normalized.next_best_command);
   if (normalized.fallback_candidates && normalized.fallback_candidates.length > 0) {
     lines.push("  fallback_candidates:");

@@ -82,6 +82,7 @@ export async function runClaim(
     author,
     message: options.message,
     force,
+    skipNoop: true,
     mutate(document) {
       const currentAssignee = document.metadata.assignee;
       const currentAssigneeText = typeof currentAssignee === "string" ? currentAssignee : "";

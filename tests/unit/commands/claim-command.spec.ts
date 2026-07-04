@@ -151,11 +151,21 @@ describe("runClaim/runRelease", () => {
         status: "open",
         assignee: "other-author",
       });
+      const beforeGet = context.runCli(["get", id, "--json"], { expectJson: true });
+      const beforeHistory = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
+      const beforeUpdatedAt = (beforeGet.json as { item: { updated_at: string } }).item.updated_at;
+      const beforeHistoryCount = (beforeHistory.json as { history: unknown[] }).history.length;
+
       const result = await runClaim(id, false, { path: context.pmPath }, { ifAvailable: true });
+
+      const afterGet = context.runCli(["get", id, "--json"], { expectJson: true });
+      const afterHistory = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
       expect(result.skipped).toBe(true);
       expect(result.previous_assignee).toBe("other-author");
       expect(result.item.assignee).toBe("other-author");
       expect(result.warnings).toEqual(expect.arrayContaining(["claim_skipped_held_by:other-author"]));
+      expect((afterGet.json as { item: { updated_at: string } }).item.updated_at).toBe(beforeUpdatedAt);
+      expect((afterHistory.json as { history: unknown[] }).history.length).toBe(beforeHistoryCount);
     });
   });
 

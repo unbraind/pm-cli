@@ -244,6 +244,15 @@ describe("core/lock/lock additional branch coverage", () => {
       process.env.PM_LOCK_WAIT_MS = "invalid";
       expect(lockInternals.resolveLockWaitMs(10.9)).toBe(10);
 
+      process.env.PM_LOCK_WAIT_MS = "75ms";
+      expect(lockInternals.resolveLockWaitMs(10)).toBe(10);
+
+      process.env.PM_LOCK_WAIT_MS = "75.5";
+      expect(lockInternals.resolveLockWaitMs(10)).toBe(10);
+
+      process.env.PM_LOCK_WAIT_MS = "999999999999999999999";
+      expect(lockInternals.resolveLockWaitMs(10)).toBe(10);
+
       process.env.PM_LOCK_WAIT_MS = " ";
       expect(lockInternals.resolveLockWaitMs(3.8)).toBe(3);
 
@@ -542,7 +551,13 @@ describe("core/lock/lock additional branch coverage", () => {
       try {
         await expect(acquireLock(pmPath, id, 60, "owner-force", true)).rejects.toMatchObject({
           exitCode: EXIT_CODE.CONFLICT,
-          message: expect.stringContaining(`Failed to acquire lock for ${id}`),
+          context: {
+            code: "lock_conflict",
+            recovery: {
+              retry_after_ms: 250,
+            },
+          },
+          message: expect.stringContaining(`Item ${id} is locked`),
         });
       } finally {
         unlinkSpy.mockRestore();
@@ -623,15 +638,36 @@ describe("core/lock/lock additional branch coverage", () => {
               layer: "project",
               name: "lock-acquire-noop",
               service: "lock_acquire",
-              // Object without a `release` function → neither release shape matches,
+              // Object without a callable `release` function → neither release shape matches,
               // so acquireLock proceeds to write a real lock file.
-              run: () => ({ note: "handled but no release" }),
+              run: () => ({ release: "not-callable" }),
             },
           ],
         });
 
         const release = await acquireLock(pmPath, id, 60, "owner-override", false);
         // The real file-based lock path ran, so the lock file exists.
+        await expect(fs.access(getLockPath(pmPath, id))).resolves.toBeUndefined();
+        await release();
+        await expect(fs.access(getLockPath(pmPath, id))).rejects.toMatchObject({ code: "ENOENT" });
+      });
+    });
+
+    it("falls back to file-based locking when a handled override returns null", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        const id = "pm-lock-override-null";
+        setActiveExtensionServices({
+          overrides: [
+            {
+              layer: "project",
+              name: "lock-acquire-null",
+              service: "lock_acquire",
+              run: () => null,
+            },
+          ],
+        });
+
+        const release = await acquireLock(pmPath, id, 60, "owner-override", false);
         await expect(fs.access(getLockPath(pmPath, id))).resolves.toBeUndefined();
         await release();
         await expect(fs.access(getLockPath(pmPath, id))).rejects.toMatchObject({ code: "ENOENT" });
