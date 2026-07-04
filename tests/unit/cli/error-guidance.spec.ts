@@ -390,13 +390,30 @@ describe("context item-argument guidance", () => {
     expect(envelope.recovery?.suggested_retry).toBe("pm get pm-a1b2");
   });
 
+  it("uses Commander's offending argument when context flags already contain item ids", () => {
+    const envelope = formatCommanderErrorForJson(
+      "error: too many arguments for 'context'. Expected 0 arguments but got 1: extra-arg.",
+      "context",
+      ALLOWED_TYPES,
+      2,
+      {
+        normalizedInvocationArgs: ["context", "--parent", "pm-a1b2", "extra-arg"],
+      },
+    );
+
+    expect(envelope.code).toBe("context_takes_no_item_argument");
+    expect(envelope.required).toContain("pm get extra-arg");
+    expect(envelope.required).toContain("pm context --parent extra-arg");
+    expect(envelope.recovery?.suggested_retry).toBe("pm get extra-arg");
+  });
+
   it("keeps generic usage guidance when no positional token is present", () => {
-    const flagOnly = formatCommanderErrorForJson(TOO_MANY, "context", ALLOWED_TYPES, 2, {
+    const flagOnly = formatCommanderErrorForJson("error: too many arguments for 'context'. Expected 0 arguments.", "context", ALLOWED_TYPES, 2, {
       normalizedInvocationArgs: ["context", "--parent"],
     });
     expect(flagOnly.code).toBe("invalid_command_usage");
 
-    const noContext = formatCommanderErrorForJson(TOO_MANY, "context", ALLOWED_TYPES, 2);
+    const noContext = formatCommanderErrorForJson("error: too many arguments for 'context'. Expected 0 arguments.", "context", ALLOWED_TYPES, 2);
     expect(noContext.code).toBe("invalid_command_usage");
   });
 

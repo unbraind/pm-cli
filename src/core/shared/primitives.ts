@@ -115,6 +115,18 @@ export function asRecordLoose(value: unknown): Record<string, unknown> | null {
 }
 
 /**
+ * Narrow a value to a property-bearing object or function. Dynamic module
+ * exports can be function/class values with static lifecycle properties, so
+ * activation boundaries need a wider record shape than plain-object parsing.
+ */
+export function asPropertyRecord(value: unknown): Record<string, unknown> | null {
+  if ((typeof value !== "object" && typeof value !== "function") || value === null) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+}
+
+/**
  * Narrow a value to a plain object, returning an empty object for non-objects,
  * `null`, and arrays. Returns a shallow clone of the source object.
  *

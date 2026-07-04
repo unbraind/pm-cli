@@ -10,7 +10,7 @@ import { pathExists } from "../fs/fs-utils.js";
 import { isPathWithinDirectory } from "../fs/path-utils.js";
 import { resolvePmPackageRootFromModule } from "../packages/root.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
-import { asRecordLoose } from "../shared/primitives.js";
+import { asPropertyRecord, asRecordLoose } from "../shared/primitives.js";
 import { flattenFlagListValue, isFlagDefaultValueCoercible, resolveFlagValueKind } from "./flag-value-types.js";
 import { KNOWN_ITEM_FIELD_TYPES, normalizeItemFieldType, suggestKnownItemFieldType } from "./item-field-types.js";
 import {
@@ -1050,7 +1050,7 @@ function toActivatableExtension(source: Record<string, unknown>): ActivatableExt
 }
 
 function resolveActivatableExtension(module: unknown): ActivatableExtension | null {
-  const moduleRecord = asRecordLoose(module);
+  const moduleRecord = asPropertyRecord(module);
   if (!moduleRecord) {
     return null;
   }
@@ -1059,7 +1059,7 @@ function resolveActivatableExtension(module: unknown): ActivatableExtension | nu
     return toActivatableExtension(moduleRecord);
   }
 
-  const defaultExport = asRecordLoose(moduleRecord.default);
+  const defaultExport = asPropertyRecord(moduleRecord.default);
   if (defaultExport && typeof defaultExport.activate === "function") {
     return toActivatableExtension(defaultExport);
   }

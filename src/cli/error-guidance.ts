@@ -1070,7 +1070,8 @@ function buildContextItemArgumentGuidance(
   }
   const argv = context?.normalizedInvocationArgs ?? [];
   const commandIndex = argv.indexOf("context");
-  const positional = argv.slice(commandIndex + 1).find((token) => !token.startsWith("-"));
+  const match = message.match(/got \d+:\s*([^\s.]+)/i);
+  const positional = match ? match[1] : argv.slice(commandIndex + 1).find((token) => !token.startsWith("-"));
   if (!positional) {
     return null;
   }

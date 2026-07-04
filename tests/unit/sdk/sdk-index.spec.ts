@@ -3210,6 +3210,14 @@ describe("createExtensionTestHarness", () => {
     // A default-export-shaped module still activates (loader parity).
     const viaDefault = await createExtensionTestHarness({ default: { activate() {} } }, { name: "default-ext" });
     expect(viaDefault.name).toBe("default-ext");
+    const functionModule = Object.assign(() => undefined, { activate() {} });
+    const viaFunction = await createExtensionTestHarness(functionModule, { name: "function-ext" });
+    expect(viaFunction.name).toBe("function-ext");
+    class DefaultExport {
+      static activate(): void {}
+    }
+    const viaDefaultFunction = await createExtensionTestHarness({ default: DefaultExport }, { name: "default-function-ext" });
+    expect(viaDefaultFunction.name).toBe("default-function-ext");
   });
 
   it("fails fast with a descriptive error when a registration is dropped for a missing capability", async () => {
