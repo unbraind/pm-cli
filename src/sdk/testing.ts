@@ -155,12 +155,6 @@ export type {
   LintExtensionBlueprintOptions,
 };
 
-interface TestExtensionModule {
-  manifest?: Partial<ExtensionManifest>;
-  activate?: unknown;
-  default?: TestExtensionModule;
-}
-
 /**
  * Documents the activate extension for test options payload exchanged by command, SDK, and package integrations.
  */
@@ -717,23 +711,24 @@ function collectFlagLabels(flags: readonly FlagDefinition[]): Set<string> {
 }
 
 function readTestExtensionManifest(module: unknown): Partial<ExtensionManifest> {
-  if (module && typeof module === "object") {
-    const testModule = module as TestExtensionModule;
-    const manifest = testModule.manifest;
-    if (manifest && typeof manifest === "object") {
-      return manifest;
-    }
-    const defaultExport = testModule.default;
-    const defaultManifest = defaultExport?.manifest;
-    if (defaultManifest && typeof defaultManifest === "object") {
-      return defaultManifest;
-    }
-    if (defaultExport && typeof defaultExport === "object" && ("name" in defaultExport || "capabilities" in defaultExport)) {
-      return defaultExport as Partial<ExtensionManifest>;
-    }
-    if ("name" in testModule || "capabilities" in testModule) {
-      return testModule as Partial<ExtensionManifest>;
-    }
+  const moduleRecord = asPropertyRecord(module);
+  if (!moduleRecord) {
+    return {};
+  }
+  const manifest = asPropertyRecord(moduleRecord.manifest);
+  if (manifest) {
+    return manifest as Partial<ExtensionManifest>;
+  }
+  const defaultExport = asPropertyRecord(moduleRecord.default);
+  const defaultManifest = asPropertyRecord(defaultExport?.manifest);
+  if (defaultManifest) {
+    return defaultManifest as Partial<ExtensionManifest>;
+  }
+  if (defaultExport && ("name" in defaultExport || "capabilities" in defaultExport)) {
+    return defaultExport as Partial<ExtensionManifest>;
+  }
+  if ("name" in moduleRecord || "capabilities" in moduleRecord) {
+    return moduleRecord as Partial<ExtensionManifest>;
   }
   return {};
 }

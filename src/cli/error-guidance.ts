@@ -1060,6 +1060,8 @@ function buildLinkedTestValueNotQuotedGuidance(
   });
 }
 
+const CONTEXT_GUIDANCE_VALUE_FLAGS = new Set(["--parent", "--pm-path", "--path"]);
+
 function buildContextItemArgumentGuidance(
   message: string,
   commandName: string | undefined,
@@ -1081,11 +1083,12 @@ function buildContextItemArgumentGuidance(
         skipFlagValue = false;
         continue;
       }
-      if (token === "--parent") {
-        skipFlagValue = true;
+      const flagName = token.split("=", 1).join("");
+      if (CONTEXT_GUIDANCE_VALUE_FLAGS.has(flagName)) {
+        skipFlagValue = !token.includes("=");
         continue;
       }
-      if (token.startsWith("--parent=") || token.startsWith("-")) {
+      if (token.startsWith("-")) {
         continue;
       }
       positional = token;

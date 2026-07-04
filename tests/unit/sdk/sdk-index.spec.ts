@@ -3213,11 +3213,18 @@ describe("createExtensionTestHarness", () => {
     const functionModule = Object.assign(() => undefined, { activate() {} });
     const viaFunction = await createExtensionTestHarness(functionModule, { name: "function-ext" });
     expect(viaFunction.name).toBe("function-ext");
+    const namedFunctionModule = Object.assign(() => undefined, {
+      manifest: { name: "function-manifest-ext" },
+      activate() {},
+    });
+    const viaNamedFunction = await createExtensionTestHarness(namedFunctionModule);
+    expect(viaNamedFunction.name).toBe("function-manifest-ext");
     class DefaultExport {
       static activate(): void {}
     }
-    const viaDefaultFunction = await createExtensionTestHarness({ default: DefaultExport }, { name: "default-function-ext" });
-    expect(viaDefaultFunction.name).toBe("default-function-ext");
+    Object.assign(DefaultExport, { manifest: { name: "default-function-manifest-ext" } });
+    const viaDefaultFunction = await createExtensionTestHarness({ default: DefaultExport });
+    expect(viaDefaultFunction.name).toBe("default-function-manifest-ext");
   });
 
   it("fails fast with a descriptive error when a registration is dropped for a missing capability", async () => {

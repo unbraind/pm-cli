@@ -437,6 +437,21 @@ describe("context item-argument guidance", () => {
     expect(envelope.recovery?.suggested_retry).toBe("pm get extra-arg");
   });
 
+  it("ignores global pm path flag values when falling back to argv positional parsing", () => {
+    const envelope = formatCommanderErrorForJson(
+      "error: too many arguments for 'context'. Expected 0 arguments.",
+      "context",
+      ALLOWED_TYPES,
+      2,
+      {
+        normalizedInvocationArgs: ["context", "--pm-path", "/tmp/project/.agents/pm", "--path=/tmp/legacy", "pm-a1b2"],
+      },
+    );
+
+    expect(envelope.code).toBe("context_takes_no_item_argument");
+    expect(envelope.recovery?.suggested_retry).toBe("pm get pm-a1b2");
+  });
+
   it("skips dash-prefixed context flags before fallback positional arguments", () => {
     const envelope = formatCommanderErrorForJson(
       "error: too many arguments for 'context'. Expected 0 arguments.",

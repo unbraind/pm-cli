@@ -1268,10 +1268,7 @@ function extensionNeedsActivationForProbe(
     return true;
   }
 
-  if (
-    hasAnyCapability(capabilities, GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES) &&
-    !hasAnyCapability(capabilities, CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES)
-  ) {
+  if (hasAnyCapability(capabilities, GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES)) {
     return true;
   }
 
@@ -1279,10 +1276,6 @@ function extensionNeedsActivationForProbe(
   // its command-bearing surfaces cannot satisfy this probe.
   if (commands.length > 0) {
     return false;
-  }
-
-  if (hasAnyCapability(capabilities, GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES)) {
-    return true;
   }
 
   // Without declared activation commands the contributed command names are

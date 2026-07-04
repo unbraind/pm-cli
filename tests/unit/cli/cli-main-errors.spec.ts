@@ -1305,6 +1305,12 @@ describe("CLI main bootstrap helper coverage", () => {
         extension({ activation: { commands: ["maintenance"] }, capabilities: ["commands", "hooks"] }),
         { commandPath: "list" },
       ),
+    ).toBe(true);
+    expect(
+      _testOnly.extensionNeedsActivationForProbe(
+        extension({ activation: { commands: ["maintenance"] }, capabilities: ["commands"] }),
+        { commandPath: "list" },
+      ),
     ).toBe(false);
     expect(
       _testOnly.extensionNeedsActivationForProbe(extension({ capabilities: ["commands", "hooks"] }), {
