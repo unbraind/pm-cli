@@ -317,6 +317,7 @@ describe("runClose", () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "programmatic-message-as-close-reason candidate");
       const result = await runClose(id, undefined, { message: "Programmatic close message" }, { path: context.pmPath });
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["status", "close_reason"]));
       expect(result.item).toMatchObject({
         id,
         status: "closed",

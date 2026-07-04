@@ -6,14 +6,15 @@ status: closed
 priority: 2
 tags[3]: agent-ux,audit-followup,never-block
 created_at: "2026-07-04T10:54:16.932Z"
-updated_at: "2026-07-04T17:40:31.600Z"
+updated_at: "2026-07-04T17:53:02.575Z"
 author: maintainer-agent
 parent: pm-mpbb
 resolution: "pm close now accepts -m/--message as the close_reason fallback when governance requires a close reason and no explicit reason, duplicate target, or resolution text is supplied"
 expected_result: "Agents can close strict-governance items with pm close <id> -m <text> without close_reason_required, while blank messages still fail and stronger close signals keep precedence"
 actual_result: "Implemented resolveEffectiveCloseReasonText fallback precedence in close.ts; close-command spec covers CLI -m, programmatic message, blank message rejection, and existing stronger-signal precedence"
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-04T17:40:17.346Z",claude-code-agent,"Evidence: implemented close-reason fallback precedence for -m/--message in src/cli/commands/close.ts and added CLI/programmatic/blank-message regression coverage in tests/unit/commands/close-command.spec.ts. Verification: linked pm test passed 71/71; full coverage passed 263 files, 5,361 tests, 100% statements/branches/functions/lines; pnpm build, typecheck, lint, contracts:check, security:scan, and pnpm audit passed. Installed CLI temp smoke passed in /tmp/tmp.yQeIRAWY6n with strict governance: pm close pm-pz3h -m stored close_reason=closed from installed CLI -m fallback, and a separate strict metadata close succeeded."
+  "2026-07-04T17:53:02.575Z",claude-code-agent,"Review-fix evidence: addressed cubic P3 on PR #429 by adding a changed_fields assertion to the programmatic -m/--message close-reason fallback test, matching the neighboring close-reason derivation tests. Verification after fix: node scripts/run-tests.mjs test -- tests/unit/commands/close-command.spec.ts passed 71/71; pnpm typecheck passed; pnpm lint passed with 0 clones and static quality gate passed; git diff --check passed."
 files[2]{path,scope,note}:
   src/cli/commands/close.ts,project,Accept --message as close-reason fallback when governance requires a reason
   tests/unit/commands/close-command.spec.ts,project,Regression coverage for pm close -m close-reason fallback
