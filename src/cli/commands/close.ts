@@ -84,11 +84,12 @@ function normalizeCloseReason(reasonText: string | undefined, required: boolean)
       EXIT_CODE.USAGE,
       {
         code: "close_reason_required",
-        required: "Provide a one-line closing summary as the positional text or via --reason.",
+        required: "Provide a one-line closing summary as the positional text, --reason, or --message.",
         why: "governance.require_close_reason is enabled, so every close must record why the item is done.",
         examples: [
           'pm close <id> "Done: <what changed and why>"',
           'pm close <id> --reason "<closing summary>"',
+          'pm close <id> -m "<closing summary>"',
           "pm close <id> --duplicate-of <canonical-id>",
         ],
         nextSteps: [
@@ -103,6 +104,32 @@ function normalizeCloseReason(reasonText: string | undefined, required: boolean)
 }
 
 type ValidateCloseMode = "off" | "warn" | "strict";
+
+interface CloseReasonFallbackInput {
+  closeReasonText: string | undefined;
+  duplicateOf: string | undefined;
+  resolution: string | undefined;
+  message: string | undefined;
+  requireCloseReason: boolean;
+}
+
+function resolveEffectiveCloseReasonText(input: CloseReasonFallbackInput): string | undefined {
+  if ((input.closeReasonText ?? "").trim().length > 0) {
+    return input.closeReasonText;
+  }
+  if (input.duplicateOf !== undefined) {
+    return `Duplicate of ${input.duplicateOf}`;
+  }
+  const trimmedResolution = typeof input.resolution === "string" ? input.resolution.trim() : "";
+  if (trimmedResolution.length > 0) {
+    return trimmedResolution;
+  }
+  const trimmedMessage = typeof input.message === "string" ? input.message.trim() : "";
+  if (input.requireCloseReason && trimmedMessage.length > 0) {
+    return trimmedMessage;
+  }
+  return input.closeReasonText;
+}
 
 const CLOSE_VALIDATION_FIELDS: Array<{ key: keyof Pick<ItemFrontMatter, "resolution" | "expected_result" | "actual_result">; label: string }> = [
   { key: "resolution", label: "resolution" },
@@ -526,21 +553,21 @@ export async function runClose(
   // "Duplicate of <id>" (mirroring the auto-filled closure metadata).
   // Explicit reason text still wins.
   const duplicateOf = await assertDuplicateTargetExists(pmRoot, settings, options.duplicateOf, id);
-  // pm-7x8d / GH-204: when no explicit positional/--reason text is given, derive
+  // pm-7x8d / pm-9hry / GH-204: when no explicit positional/--reason text is given, derive
   // the close reason from the next-best closure signal instead of hard-blocking
   // under governance.require_close_reason. Precedence: explicit reason text >
-  // --duplicate-of ("Duplicate of <id>") > --resolution summary. The resolution
-  // is still written to metadata.resolution below; reusing it as the close
-  // reason just lets a single `pm close <id> --resolution "..."` succeed.
-  const hasExplicitReason = (closeReasonText ?? "").trim().length > 0;
-  const trimmedResolution = typeof options.resolution === "string" ? options.resolution.trim() : "";
-  const effectiveCloseReasonText = hasExplicitReason
-    ? closeReasonText
-    : duplicateOf !== undefined
-      ? `Duplicate of ${duplicateOf}`
-      : trimmedResolution.length > 0
-        ? trimmedResolution
-        : closeReasonText;
+  // --duplicate-of ("Duplicate of <id>") > --resolution summary > --message.
+  // Resolution still writes metadata.resolution below; message still writes the
+  // history entry through mutateItem. Reusing either as the close reason just lets
+  // a single agent-authored close command succeed when it already supplied a
+  // closure summary through another structured option.
+  const effectiveCloseReasonText = resolveEffectiveCloseReasonText({
+    closeReasonText,
+    duplicateOf,
+    resolution: options.resolution,
+    message: options.message,
+    requireCloseReason: settings.governance.require_close_reason,
+  });
   const closeReason = normalizeCloseReason(effectiveCloseReasonText, settings.governance.require_close_reason);
   const validateCloseMode = parseValidateCloseMode(options.validateClose) ?? settings.governance.close_validation_default;
   // C3 (pm-fu5d): scan for active children even under minimal governance so

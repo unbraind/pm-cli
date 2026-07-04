@@ -263,7 +263,6 @@ describe("runClose", () => {
           undefined,
           {
             validateClose: "warn",
-            message: "Close without required reason",
           },
           { path: context.pmPath },
         ),
@@ -296,6 +295,36 @@ describe("runClose", () => {
     });
   });
 
+  it("derives the close reason from -m/--message when no stronger close signal is given (pm-9hry)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "message-as-close-reason candidate");
+      const close = context.runCli(["close", id, "-m", "Closed from git-style message", "--json"], { expectJson: true });
+      expect(close.code).toBe(0);
+      const payload = close.json as {
+        item: { id: string; status: string; close_reason?: string };
+        changed_fields: string[];
+      };
+      expect(payload.changed_fields).toEqual(expect.arrayContaining(["status", "close_reason"]));
+      expect(payload.item).toMatchObject({
+        id,
+        status: "closed",
+        close_reason: "Closed from git-style message",
+      });
+    });
+  });
+
+  it("derives the close reason from programmatic message when no stronger close signal is given", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "programmatic-message-as-close-reason candidate");
+      const result = await runClose(id, undefined, { message: "Programmatic close message" }, { path: context.pmPath });
+      expect(result.item).toMatchObject({
+        id,
+        status: "closed",
+        close_reason: "Programmatic close message",
+      });
+    });
+  });
+
   it("prefers explicit reason text over --resolution and --duplicate-of for the close reason", async () => {
     await withTempPmPath(async (context) => {
       const canonicalId = createTask(context, "resolution-precedence canonical");
@@ -320,10 +349,20 @@ describe("runClose", () => {
     });
   });
 
-  it("still requires a reason when neither --reason, --duplicate-of, nor --resolution is provided", async () => {
+  it("still requires a reason when neither --reason, --duplicate-of, --resolution, nor --message is provided", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "no-reason-source candidate");
-      await expect(runClose(id, undefined, { message: "no reason" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(runClose(id, undefined, {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: expect.objectContaining({ code: "close_reason_required" }),
+      });
+    });
+  });
+
+  it("does not treat a blank --message as a close-reason fallback", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "blank-message-not-close-reason candidate");
+      await expect(runClose(id, undefined, { message: "   " }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
         context: expect.objectContaining({ code: "close_reason_required" }),
       });

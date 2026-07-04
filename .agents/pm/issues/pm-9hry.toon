@@ -2,11 +2,24 @@ id: pm-9hry
 title: "pm close <id> -m 'text' still hard-blocks with close_reason_required: accept --message text as close-reason fallback (like closed pm-7x8d did for --resolution)"
 description: "2026-07-04 sandbox audit #3 (fresh npm-pack CJS project): 'pm close <id> -m done' fails with close_reason_required even though the agent supplied a summary via -m. Agents coming from git idiom use -m for the closing message. pm-7x8d already established the never-block precedent by accepting --resolution as the reason. Fix: when require_close_reason is on and no positional/--reason given, fall back to --message text as the close reason (still recorded as history message too); at minimum the error must acknowledge that -m/--message was provided and point to --reason."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,audit-followup,never-block
 created_at: "2026-07-04T10:54:16.932Z"
-updated_at: "2026-07-04T10:54:16.932Z"
+updated_at: "2026-07-04T17:40:31.600Z"
 author: maintainer-agent
 parent: pm-mpbb
+resolution: "pm close now accepts -m/--message as the close_reason fallback when governance requires a close reason and no explicit reason, duplicate target, or resolution text is supplied"
+expected_result: "Agents can close strict-governance items with pm close <id> -m <text> without close_reason_required, while blank messages still fail and stronger close signals keep precedence"
+actual_result: "Implemented resolveEffectiveCloseReasonText fallback precedence in close.ts; close-command spec covers CLI -m, programmatic message, blank message rejection, and existing stronger-signal precedence"
+comments[1]{created_at,author,text}:
+  "2026-07-04T17:40:17.346Z",claude-code-agent,"Evidence: implemented close-reason fallback precedence for -m/--message in src/cli/commands/close.ts and added CLI/programmatic/blank-message regression coverage in tests/unit/commands/close-command.spec.ts. Verification: linked pm test passed 71/71; full coverage passed 263 files, 5,361 tests, 100% statements/branches/functions/lines; pnpm build, typecheck, lint, contracts:check, security:scan, and pnpm audit passed. Installed CLI temp smoke passed in /tmp/tmp.yQeIRAWY6n with strict governance: pm close pm-pz3h -m stored close_reason=closed from installed CLI -m fallback, and a separate strict metadata close succeeded."
+files[2]{path,scope,note}:
+  src/cli/commands/close.ts,project,Accept --message as close-reason fallback when governance requires a reason
+  tests/unit/commands/close-command.spec.ts,project,Regression coverage for pm close -m close-reason fallback
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/close-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mr6ndjnc-e67znn,test,passed,"2026-07-04T17:38:59.897Z","2026-07-04T17:39:53.400Z","2026-07-04T17:39:53.400Z",1,0,0
+close_reason: Implemented and verified pm close -m close-reason fallback
 body: ""
