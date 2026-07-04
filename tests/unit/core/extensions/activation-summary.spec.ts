@@ -110,6 +110,32 @@ describe("describeExtensionActivation", () => {
     ]);
   });
 
+  it("filters by multiple extension names for package-level surface unions", async () => {
+    const activation = await activate([
+      {
+        name: "alpha",
+        capabilities: ["commands"],
+        activate: (api) => api.registerCommand({ name: "alpha cmd", run: () => ({}) }),
+      },
+      {
+        name: "beta",
+        capabilities: ["hooks"],
+        activate: (api) => api.hooks.onRead(() => undefined),
+      },
+      {
+        name: "gamma",
+        capabilities: ["commands"],
+        activate: (api) => api.registerCommand({ name: "gamma cmd", run: () => ({}) }),
+      },
+    ]);
+
+    const summary = describeExtensionActivation(activation, { extensionNames: [" BETA ", "alpha"] });
+
+    expect(summary.capabilities).toEqual(["commands", "hooks"]);
+    expect(summary.commands).toEqual(["alpha cmd"]);
+    expect(summary.hooks).toEqual(["on_read"]);
+  });
+
   it("normalizes whitespace in stored names so named surfaces and capabilities agree under a filter", async () => {
     // Activation stores extension.name verbatim, so a synthetic name can carry
     // whitespace. The filter must trim both sides (the same normalization the

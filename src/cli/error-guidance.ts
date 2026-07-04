@@ -1069,9 +1069,29 @@ function buildContextItemArgumentGuidance(
     return null;
   }
   const argv = context?.normalizedInvocationArgs ?? [];
-  const commandIndex = argv.indexOf("context");
+  const commandNames = new Set(["context", "ctx"]);
+  const commandIndex = argv.findIndex((token) => commandNames.has(token));
+  const searchIndex = commandIndex === -1 ? 1 : commandIndex + 1;
   const match = message.match(/got \d+:\s*([^\s.]+)/i);
-  const positional = match ? match[1] : argv.slice(commandIndex + 1).find((token) => !token.startsWith("-"));
+  let positional = match ? match[1] : undefined;
+  if (positional === undefined) {
+    let skipFlagValue = false;
+    for (const token of argv.slice(searchIndex)) {
+      if (skipFlagValue) {
+        skipFlagValue = false;
+        continue;
+      }
+      if (token === "--parent") {
+        skipFlagValue = true;
+        continue;
+      }
+      if (token.startsWith("--parent=") || token.startsWith("-")) {
+        continue;
+      }
+      positional = token;
+      break;
+    }
+  }
   if (!positional) {
     return null;
   }

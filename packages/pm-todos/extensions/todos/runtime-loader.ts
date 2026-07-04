@@ -44,10 +44,19 @@ const isTargetMissing = (error: unknown, target: string): boolean => {
 
 // Node refuses to type-strip .ts files under node_modules; fall through to the
 // next candidate (the extension's co-located runtime.ts copy) instead of aborting.
-const isUnstrippable = (error: unknown): boolean =>
-  runtimeRecord(error)?.code === "ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING" ||
-  (typeof runtimeRecord(error)?.message === "string" &&
-    (runtimeRecord(error)?.message as string).includes("Stripping types is currently unsupported"));
+const isUnstrippable = (error: unknown, target: string): boolean => {
+  const record = runtimeRecord(error);
+  const message = typeof record?.message === "string" ? record.message : "";
+  if (record?.code !== "ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING" && !message.includes("Stripping types is currently unsupported")) {
+    return false;
+  }
+  const targetUrl = pathToFileURL(target).href;
+  return (
+    record?.url === targetUrl ||
+    (typeof record?.path === "string" && path.resolve(record.path) === path.resolve(target)) ||
+    [target, target.replace(/\\/g, "/"), targetUrl].some((value) => message.includes(value))
+  );
+};
 
 const loadRuntimeFile = async (target: string, attempted: string[]): Promise<PackageRuntimeModule | undefined> => {
   attempted.push(target);
@@ -57,7 +66,7 @@ const loadRuntimeFile = async (target: string, attempted: string[]): Promise<Pac
   try {
     return await import(pathToFileURL(target).href) as PackageRuntimeModule;
   } catch (error: unknown) {
-    if (isTargetMissing(error, target) || isUnstrippable(error)) {
+    if (isTargetMissing(error, target) || isUnstrippable(error, target)) {
       return undefined;
     }
     throw error;

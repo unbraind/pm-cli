@@ -62,6 +62,12 @@ export interface CollectUsedExtensionCapabilitiesOptions {
    * the activation result.
    */
   extensionName?: string;
+  /**
+   * Restrict the result to a set of extension names. This preserves the
+   * single-name option while allowing package aliases that activate multiple
+   * extensions to summarize their combined capability surface.
+   */
+  extensionNames?: readonly string[];
 }
 
 // `layer` is a closed enum (`"global" | "project"`) that never contains a
@@ -159,10 +165,16 @@ export function collectUsedExtensionCapabilities(
   options: CollectUsedExtensionCapabilitiesOptions = {},
 ): ExtensionCapability[] {
   const usage = attributeCapabilityUsage(activation);
-  const filter = options.extensionName !== undefined ? normalizeExtensionName(options.extensionName) : null;
+  const filters = new Set<string>();
+  if (options.extensionName !== undefined) {
+    filters.add(normalizeExtensionName(options.extensionName));
+  }
+  for (const name of options.extensionNames ?? []) {
+    filters.add(normalizeExtensionName(name));
+  }
   const used = new Set<ExtensionCapability>();
   for (const [key, capabilities] of usage) {
-    if (filter !== null && usageKeyName(key) !== filter) {
+    if (filters.size > 0 && !filters.has(usageKeyName(key))) {
       continue;
     }
     for (const capability of capabilities) {

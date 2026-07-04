@@ -120,6 +120,128 @@ describe.each(LOADERS)("$pkg runtime-loader", ({ pkg, ext }) => {
     await expect(loader.loadPackageRuntimeModule()).rejects.toThrow("@missing/runtime-dep");
   });
 
+  it("continues when Node refuses to type-strip the attempted runtime path", async () => {
+    const root = await createTempRoot(`pm-${ext}-loader-type-strip-`);
+    const agentsRuntimeDir = path.join(root, ".agents", "pm", "extensions", ext);
+    const packageRuntimeDir = path.join(root, "packages", pkg, "extensions", ext);
+    const agentsRuntimePath = path.join(agentsRuntimeDir, "runtime.ts");
+    await mkdir(agentsRuntimeDir, { recursive: true });
+    await mkdir(packageRuntimeDir, { recursive: true });
+    await writeFile(
+      agentsRuntimePath,
+      [
+        "throw {",
+        "  code: 'ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING',",
+        `  message: ${JSON.stringify(`Stripping types is currently unsupported for files under node_modules, "${agentsRuntimePath}"`)},`,
+        "};",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    await writeFile(path.join(packageRuntimeDir, "runtime.ts"), "export const marker = 'type-strip-fallback';\n", "utf8");
+    process.env[PM_PACKAGE_ROOT_ENV] = root;
+    const loader = await importLoader(pkg, ext);
+    const runtime = await loader.loadPackageRuntimeModule();
+    expect(runtime.marker).toBe("type-strip-fallback");
+  });
+
+  it("continues when an unstrippable TypeScript error reports the attempted runtime URL", async () => {
+    const root = await createTempRoot(`pm-${ext}-loader-type-strip-url-`);
+    const agentsRuntimeDir = path.join(root, ".agents", "pm", "extensions", ext);
+    const packageRuntimeDir = path.join(root, "packages", pkg, "extensions", ext);
+    const agentsRuntimePath = path.join(agentsRuntimeDir, "runtime.ts");
+    await mkdir(agentsRuntimeDir, { recursive: true });
+    await mkdir(packageRuntimeDir, { recursive: true });
+    await writeFile(
+      agentsRuntimePath,
+      [
+        "throw {",
+        "  code: 'ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING',",
+        `  url: ${JSON.stringify(pathToFileURL(agentsRuntimePath).href)},`,
+        "};",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    await writeFile(path.join(packageRuntimeDir, "runtime.ts"), "export const marker = 'type-strip-url-fallback';\n", "utf8");
+    process.env[PM_PACKAGE_ROOT_ENV] = root;
+    const loader = await importLoader(pkg, ext);
+    const runtime = await loader.loadPackageRuntimeModule();
+    expect(runtime.marker).toBe("type-strip-url-fallback");
+  });
+
+  it("continues when an unstrippable TypeScript error reports the attempted runtime path field", async () => {
+    const root = await createTempRoot(`pm-${ext}-loader-type-strip-path-`);
+    const agentsRuntimeDir = path.join(root, ".agents", "pm", "extensions", ext);
+    const packageRuntimeDir = path.join(root, "packages", pkg, "extensions", ext);
+    const agentsRuntimePath = path.join(agentsRuntimeDir, "runtime.ts");
+    await mkdir(agentsRuntimeDir, { recursive: true });
+    await mkdir(packageRuntimeDir, { recursive: true });
+    await writeFile(
+      agentsRuntimePath,
+      [
+        "throw {",
+        "  code: 'ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING',",
+        `  path: ${JSON.stringify(agentsRuntimePath)},`,
+        "};",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    await writeFile(path.join(packageRuntimeDir, "runtime.ts"), "export const marker = 'type-strip-path-fallback';\n", "utf8");
+    process.env[PM_PACKAGE_ROOT_ENV] = root;
+    const loader = await importLoader(pkg, ext);
+    const runtime = await loader.loadPackageRuntimeModule();
+    expect(runtime.marker).toBe("type-strip-path-fallback");
+  });
+
+  it("continues when an unstrippable TypeScript error message reports the attempted runtime URL", async () => {
+    const root = await createTempRoot(`pm-${ext}-loader-type-strip-message-url-`);
+    const agentsRuntimeDir = path.join(root, ".agents", "pm", "extensions", ext);
+    const packageRuntimeDir = path.join(root, "packages", pkg, "extensions", ext);
+    const agentsRuntimePath = path.join(agentsRuntimeDir, "runtime.ts");
+    await mkdir(agentsRuntimeDir, { recursive: true });
+    await mkdir(packageRuntimeDir, { recursive: true });
+    await writeFile(
+      agentsRuntimePath,
+      [
+        "throw {",
+        "  code: 'ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING',",
+        `  message: ${JSON.stringify(`Stripping types is currently unsupported for ${pathToFileURL(agentsRuntimePath).href}`)},`,
+        "};",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    await writeFile(path.join(packageRuntimeDir, "runtime.ts"), "export const marker = 'type-strip-message-url-fallback';\n", "utf8");
+    process.env[PM_PACKAGE_ROOT_ENV] = root;
+    const loader = await importLoader(pkg, ext);
+    const runtime = await loader.loadPackageRuntimeModule();
+    expect(runtime.marker).toBe("type-strip-message-url-fallback");
+  });
+
+  it("preserves unstrippable TypeScript errors from nested imports", async () => {
+    const root = await createTempRoot(`pm-${ext}-loader-type-strip-nested-`);
+    const agentsRuntimeDir = path.join(root, ".agents", "pm", "extensions", ext);
+    await mkdir(agentsRuntimeDir, { recursive: true });
+    await writeFile(
+      path.join(agentsRuntimeDir, "runtime.ts"),
+      [
+        "throw {",
+        "  code: 'ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING',",
+        "  message: 'Stripping types is currently unsupported for files under node_modules, \"/tmp/dependency/runtime.ts\"',",
+        "};",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    process.env[PM_PACKAGE_ROOT_ENV] = root;
+    const loader = await importLoader(pkg, ext);
+    await expect(loader.loadPackageRuntimeModule()).rejects.toMatchObject({
+      code: "ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING",
+    });
+  });
+
   it("preserves non-object thrown values from a discovered runtime", async () => {
     const root = await createTempRoot(`pm-${ext}-loader-throw-string-`);
     const runtimeDir = path.join(root, ".agents", "pm", "extensions", ext);

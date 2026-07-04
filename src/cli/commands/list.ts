@@ -151,13 +151,13 @@ interface ListProjectionConfig {
   fields: string[];
 }
 
-const LIST_SORT_FIELDS = ["priority", "deadline", "updated_at", "created_at", "title", "parent"] as const;
+export const LIST_SORT_FIELDS = ["priority", "deadline", "updated_at", "created_at", "title", "parent"] as const;
 /**
  * Restricts list sort field values accepted by command, SDK, and storage contracts.
  */
 export type ListSortField = (typeof LIST_SORT_FIELDS)[number];
 
-const LIST_SORT_ORDER_VALUES = ["asc", "desc"] as const;
+export const LIST_SORT_ORDER_VALUES = ["asc", "desc"] as const;
 /**
  * Restricts list sort order values accepted by command, SDK, and storage contracts.
  */

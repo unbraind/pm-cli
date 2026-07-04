@@ -84,12 +84,22 @@ function isMissingRuntimeModuleError(error: unknown, modulePath: string): boolea
 // Node refuses to type-strip .ts files under node_modules
 // (ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING); fall through to the next
 // candidate (the extension's co-located runtime.ts copy) instead of aborting.
-function isUnstrippableTypeScriptError(error: unknown): boolean {
+function isUnstrippableTypeScriptError(error: unknown, modulePath: string): boolean {
   if (!isRecord(error)) {
     return false;
   }
   const message = typeof error.message === "string" ? error.message : "";
-  return error.code === "ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING" || message.includes("Stripping types is currently unsupported");
+  if (error.code !== "ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING" && !message.includes("Stripping types is currently unsupported")) {
+    return false;
+  }
+  const moduleUrl = pathToFileURL(modulePath).href;
+  return (
+    error.url === moduleUrl ||
+    (typeof error.path === "string" && path.resolve(error.path) === path.resolve(modulePath)) ||
+    message.includes(modulePath) ||
+    message.includes(modulePath.replace(/\\\\/g, "/")) ||
+    message.includes(moduleUrl)
+  );
 }
 
 function resolvePackageRootCandidates(): string[] {
@@ -120,7 +130,7 @@ async function tryRuntime(modulePath: string, attempted: string[]): Promise<Pack
   try {
     return await import(pathToFileURL(modulePath).href) as PackageRuntimeModule;
   } catch (error: unknown) {
-    if (isMissingRuntimeModuleError(error, modulePath) || isUnstrippableTypeScriptError(error)) {
+    if (isMissingRuntimeModuleError(error, modulePath) || isUnstrippableTypeScriptError(error, modulePath)) {
       return undefined;
     }
     throw error;
@@ -190,10 +200,19 @@ const isTargetMissing = (error: unknown, target: string): boolean => {
 
 // Node refuses to type-strip .ts files under node_modules; fall through to the
 // next candidate (the extension's co-located runtime.ts copy) instead of aborting.
-const isUnstrippable = (error: unknown): boolean =>
-  runtimeRecord(error)?.code === "ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING" ||
-  (typeof runtimeRecord(error)?.message === "string" &&
-    (runtimeRecord(error)?.message as string).includes("Stripping types is currently unsupported"));
+const isUnstrippable = (error: unknown, target: string): boolean => {
+  const record = runtimeRecord(error);
+  const message = typeof record?.message === "string" ? record.message : "";
+  if (record?.code !== "ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING" && !message.includes("Stripping types is currently unsupported")) {
+    return false;
+  }
+  const targetUrl = pathToFileURL(target).href;
+  return (
+    record?.url === targetUrl ||
+    (typeof record?.path === "string" && path.resolve(record.path) === path.resolve(target)) ||
+    [target, target.replace(/\\\\/g, "/"), targetUrl].some((value) => message.includes(value))
+  );
+};
 
 const loadRuntimeFile = async (target: string, attempted: string[]): Promise<PackageRuntimeModule | undefined> => {
   attempted.push(target);
@@ -203,7 +222,7 @@ const loadRuntimeFile = async (target: string, attempted: string[]): Promise<Pac
   try {
     return await import(pathToFileURL(target).href) as PackageRuntimeModule;
   } catch (error: unknown) {
-    if (isTargetMissing(error, target) || isUnstrippable(error)) {
+    if (isTargetMissing(error, target) || isUnstrippable(error, target)) {
       return undefined;
     }
     throw error;

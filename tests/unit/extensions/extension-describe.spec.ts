@@ -146,6 +146,30 @@ describe("buildExtensionDescribeResult", () => {
     expect(result.union.commands).toEqual(["kanban cmd"]);
   });
 
+  it("unions all extensions that share a source_package target", async () => {
+    const { loadResult, activationResult } = await buildActivation([
+      {
+        name: "kanban-board",
+        sourcePackage: "@unbrained/pm-kanban",
+        activate: (api) => api.registerCommand({ name: "kanban board", run: () => ({}) }),
+      },
+      {
+        name: "kanban-report",
+        sourcePackage: "@unbrained/pm-kanban",
+        capabilities: ["hooks"],
+        activate: (api) => api.hooks.onIndex(() => undefined),
+      },
+      { name: "other", activate: (api) => api.registerCommand({ name: "other cmd", run: () => ({}) }) },
+    ]);
+
+    const result = buildExtensionDescribeResult("@unbrained/pm-kanban", loadResult, activationResult);
+
+    expect(result.total).toBe(2);
+    expect(result.extensions.map((entry) => entry.name)).toEqual(["kanban-board", "kanban-report"]);
+    expect(result.union.commands).toEqual(["kanban board"]);
+    expect(result.union.hooks).toEqual(["on_index"]);
+  });
+
   it("returns no extensions for a target that matches nothing", async () => {
     const { loadResult, activationResult } = await buildActivation([{ name: "ext-a" }]);
 

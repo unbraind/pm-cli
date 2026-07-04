@@ -118,6 +118,12 @@ export interface DescribeExtensionActivationOptions {
    * union across every extension in the activation result.
    */
   extensionName?: string;
+  /**
+   * Restrict the summary to a set of extension names. This supports package
+   * aliases that resolve to multiple extensions while keeping the historical
+   * single-name option intact.
+   */
+  extensionNames?: readonly string[];
 }
 
 /**
@@ -138,8 +144,14 @@ export function describeExtensionActivation(
   // Match both sides with the same normalizer collectUsedExtensionCapabilities
   // uses for the `capabilities` field below, so a filtered summary's named
   // surfaces and capabilities never disagree for a stored name with whitespace.
-  const filter = options.extensionName !== undefined ? normalizeExtensionName(options.extensionName) : null;
-  const matches = (name: string): boolean => filter === null || normalizeExtensionName(name) === filter;
+  const filters = new Set<string>();
+  if (options.extensionName !== undefined) {
+    filters.add(normalizeExtensionName(options.extensionName));
+  }
+  for (const name of options.extensionNames ?? []) {
+    filters.add(normalizeExtensionName(name));
+  }
+  const matches = (name: string): boolean => filters.size === 0 || filters.has(normalizeExtensionName(name));
   const collect = <TEntry extends { name: string }, TValue extends string>(
     entries: readonly TEntry[],
     identify: (entry: TEntry) => TValue,
