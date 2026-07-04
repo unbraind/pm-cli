@@ -407,10 +407,41 @@ describe("context item-argument guidance", () => {
     expect(envelope.recovery?.suggested_retry).toBe("pm get extra-arg");
   });
 
+  it("preserves dotted offending arguments from Commander messages", () => {
+    const envelope = formatCommanderErrorForJson(
+      "error: too many arguments for 'context'. Expected 0 arguments but got 1: pm-a1b2.toon.",
+      "context",
+      ALLOWED_TYPES,
+      2,
+      {
+        normalizedInvocationArgs: ["context", "pm-a1b2.toon"],
+      },
+    );
+
+    expect(envelope.code).toBe("context_takes_no_item_argument");
+    expect(envelope.required).toContain("pm get pm-a1b2.toon");
+    expect(envelope.recovery?.suggested_retry).toBe("pm get pm-a1b2.toon");
+  });
+
   it("falls back to alias-aware positional parsing for pm ctx", () => {
     const envelope = formatCommanderErrorForJson(
       "error: too many arguments for 'context'. Expected 0 arguments.",
       "context",
+      ALLOWED_TYPES,
+      2,
+      {
+        normalizedInvocationArgs: ["ctx", "pm-a1b2"],
+      },
+    );
+
+    expect(envelope.code).toBe("context_takes_no_item_argument");
+    expect(envelope.recovery?.suggested_retry).toBe("pm get pm-a1b2");
+  });
+
+  it("accepts raw ctx as the command name for context argument guidance", () => {
+    const envelope = formatCommanderErrorForJson(
+      "error: too many arguments for 'context'. Expected 0 arguments.",
+      "ctx",
       ALLOWED_TYPES,
       2,
       {
@@ -475,6 +506,17 @@ describe("context item-argument guidance", () => {
 
     const noContext = formatCommanderErrorForJson("error: too many arguments for 'context'. Expected 0 arguments.", "context", ALLOWED_TYPES, 2);
     expect(noContext.code).toBe("invalid_command_usage");
+
+    const unknownCommandName = formatCommanderErrorForJson(
+      "error: too many arguments for 'context'. Expected 0 arguments.",
+      undefined,
+      ALLOWED_TYPES,
+      2,
+      {
+        normalizedInvocationArgs: ["context", "pm-a1b2"],
+      },
+    );
+    expect(unknownCommandName.code).toBe("invalid_command_usage");
   });
 
   it("keeps generic usage guidance for other commands and other messages", () => {

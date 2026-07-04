@@ -1061,21 +1061,21 @@ function buildLinkedTestValueNotQuotedGuidance(
 }
 
 const CONTEXT_GUIDANCE_VALUE_FLAGS = new Set(["--parent", "--pm-path", "--path"]);
+const CONTEXT_GUIDANCE_COMMAND_NAMES = new Set(["context", "ctx"]);
 
 function buildContextItemArgumentGuidance(
   message: string,
   commandName: string | undefined,
   context: CommanderGuidanceContext | undefined,
 ): GuidanceMessage | null {
-  if (!/too many arguments/i.test(message) || commandName !== "context") {
+  if (!/too many arguments/i.test(message) || !CONTEXT_GUIDANCE_COMMAND_NAMES.has(commandName ?? "")) {
     return null;
   }
   const argv = context?.normalizedInvocationArgs ?? [];
-  const commandNames = new Set(["context", "ctx"]);
-  const commandIndex = argv.findIndex((token) => commandNames.has(token));
+  const commandIndex = argv.findIndex((token) => CONTEXT_GUIDANCE_COMMAND_NAMES.has(token));
   const searchIndex = commandIndex === -1 ? 1 : commandIndex + 1;
-  const match = message.match(/got \d+:\s*([^\s.]+)/i);
-  let positional = match ? match[1] : undefined;
+  const match = message.match(/got \d+:\s*(\S+)/i);
+  let positional = match ? match[1].replace(/\.$/, "") : undefined;
   if (positional === undefined) {
     let skipFlagValue = false;
     for (const token of argv.slice(searchIndex)) {
