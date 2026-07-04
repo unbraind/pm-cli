@@ -122,7 +122,7 @@ import type {
 } from "./compose.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import type { PmPackageManifest, PmPackageResourceKind } from "../core/packages/manifest.js";
-import { asPropertyRecord } from "../core/shared/primitives.js";
+import { asPropertyRecord, resolveActivatablePropertyRecord } from "../core/shared/primitives.js";
 
 // `describeExtensionActivation` is the `describe` (enumerate-all) verb that
 // pairs with the `assert*` (verify-one) and `run*` (invoke-one) helpers below.
@@ -2355,9 +2355,7 @@ export interface ExtensionTestHarness {
  * or on its default export.
  */
 function assertTestModuleHasActivateExport(module: unknown): void {
-  const moduleRecord = asPropertyRecord(module);
-  const defaultExport = asPropertyRecord(moduleRecord?.default);
-  if (typeof moduleRecord?.activate === "function" || typeof defaultExport?.activate === "function") {
+  if (resolveActivatablePropertyRecord(module)) {
     return;
   }
   throw new Error(

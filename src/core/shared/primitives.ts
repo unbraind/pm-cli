@@ -127,6 +127,23 @@ export function asPropertyRecord(value: unknown): Record<string, unknown> | null
 }
 
 /**
+ * Resolve the module or default export record that owns an `activate` lifecycle
+ * function. Accepts object and function/class-shaped exports so runtime loading
+ * and SDK tests share the same extension interop rule.
+ */
+export function resolveActivatablePropertyRecord(value: unknown): Record<string, unknown> | null {
+  const moduleRecord = asPropertyRecord(value);
+  if (!moduleRecord) {
+    return null;
+  }
+  if (typeof moduleRecord.activate === "function") {
+    return moduleRecord;
+  }
+  const defaultExport = asPropertyRecord(moduleRecord.default);
+  return typeof defaultExport?.activate === "function" ? defaultExport : null;
+}
+
+/**
  * Narrow a value to a plain object, returning an empty object for non-objects,
  * `null`, and arrays. Returns a shallow clone of the source object.
  *
