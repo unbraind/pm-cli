@@ -39,7 +39,7 @@ const isTargetMissing = (error: unknown, target: string): boolean => {
   const message = typeof record?.message === "string" ? record.message : "";
   return record?.code === "ERR_MODULE_NOT_FOUND" &&
     (record.url === targetUrl ||
-      (typeof record.path === "string" && path.resolve(record.path) === path.resolve(target)) ||
+      (record && typeof record.path === "string" && path.resolve(record.path) === path.resolve(target)) ||
       [target, normalizedTarget, targetUrl].some((value) => message.startsWith(`Cannot find module '${value}'`)));
 };
 
@@ -55,7 +55,7 @@ const isUnstrippable = (error: unknown, target: string): boolean => {
   const normalizedTarget = target.split("\\").join("/");
   return (
     record?.url === targetUrl ||
-    (typeof record?.path === "string" && path.resolve(record.path) === path.resolve(target)) ||
+    (record && typeof record.path === "string" && path.resolve(record.path) === path.resolve(target)) ||
     [target, normalizedTarget, targetUrl].some((value) => message.includes(value))
   );
 };
