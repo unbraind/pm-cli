@@ -61,6 +61,7 @@ When `settings.json` cannot be loaded, `pm` falls back to built-in defaults and 
 | `item_format` | item storage format (`toon` writes; legacy markdown is read/migrate only) |
 | `output.default_format` | default renderer, usually `toon` |
 | `locks.ttl_seconds` | stale lock threshold |
+| `locks.wait_ms` | bounded jittered wait budget before a contended item mutation returns `lock_conflict` (default `3000`; set `0` to fail fast) |
 | `history.missing_stream` | `auto_create` or `strict_error` |
 | `history.compact_policy.enabled` | enable the compaction advisory: `pm health` warns on over-threshold streams (default `false`); when disabled, `max_entries`/`trigger` are inert |
 | `history.compact_policy.max_entries` | when the policy is enabled, the entry count above which a stream is flagged by `pm health` and the default `pm history-compact --all-over` threshold (default `500`) |
@@ -83,6 +84,7 @@ pm config project set id_prefix task                       # (id_prefix) IDs bec
 pm config project set author_default release-bot           # (author_default) default mutation author
 pm config project set output_default_format json           # (output.default_format) toon | json
 pm config project set locks_ttl_seconds 60                 # (locks.ttl_seconds) integer >= 1
+pm config project set locks_wait_ms 3000                   # (locks.wait_ms) integer >= 0
 pm config project set checkpoints_retention_days 30        # (checkpoints.retention_days) integer >= 1; pm gc --scope checkpoints prunes checkpoints older than this many days
 pm config project set schema_unknown_field_policy reject   # (schema.unknown_field_policy) allow | warn | reject
 ```
@@ -94,6 +96,7 @@ pm config project set schema_unknown_field_policy reject   # (schema.unknown_fie
 | `PM_AUTHOR` | explicit mutation author |
 | `PM_PATH` | override project tracker root for tests or sandboxes |
 | `PM_GLOBAL_PATH` | override global profile root for tests or sandboxes |
+| `PM_LOCK_WAIT_MS` | per-process override for `locks.wait_ms`; non-negative integer milliseconds, with `0` restoring fail-fast lock conflicts |
 | `PM_OLLAMA_MODEL` | choose default Ollama embedding model |
 | `PM_DISABLE_OLLAMA_AUTO_DEFAULTS` | disable implicit Ollama search defaults |
 

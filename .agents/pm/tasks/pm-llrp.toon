@@ -6,8 +6,13 @@ status: open
 priority: 3
 tags[3]: audit-followup,dx,sdk
 created_at: "2026-07-02T21:55:34.594Z"
-updated_at: "2026-07-02T21:55:54.093Z"
+updated_at: "2026-07-04T19:18:10.026Z"
 author: claude-code-agent
+estimated_minutes: 150
+acceptance_criteria: Scaffold tests include a manifest-drift guard; expectation keys named consistently; --capability is repeatable; define* builders accept index signatures without casts.
+parent: pm-ugqx
+risk: low
+confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-fpod,related,"2026-07-02T21:55:54.067Z",null,null
-body: ""
+body: "## Context\nP3 SDK-authoring DX bundle from the 2026-07-02 audit (Lane B, pm-6vy7). Four independent paper-cuts, batched because each is small and they all land in the SDK authoring surface:\n\n1. Scaffolded test should call assertExtensionManifestMatchesBlueprint so manifest.json drift fails the starter suite (author-once guarantee).\n2. Test-expectation key naming drifts across helpers (command vs itemType vs field vs targetCommand vs provider) — align on one convention and alias the old keys.\n3. Repeated --capability flags silently last-win; they should compose (collect) or error (note PR#82 lesson: collect-repeatable flags must NOT be list:true).\n4. [key: string]: unknown index signatures on define* option types defeat excess-property checking — replace with exact optional members so typos fail typecheck.\n\n## Definition of done\nEach sub-fix has a spec; scaffold output includes the manifest-drift assertion; contracts:update run if flag semantics change; SDK docs updated for the expectation-key convention."

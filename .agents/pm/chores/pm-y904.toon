@@ -1,0 +1,22 @@
+id: pm-y904
+title: "2026-07-04 full pm-backlog audit: reconcile pm items with entire ecosystem (code, tests, docs, ideas, decisions)"
+description: "Coordinated multi-agent audit ensuring every feature/functionality/test/doc/idea/goal/decision/issue is tracked as a well-defined pm item per best-practice PM standards. Philosophy: project management = context management. Five specialized lanes run as subagents, each tracking findings via pm notes/learnings on their lane task. Create-only for closed items (changelog invariant)."
+type: Chore
+status: closed
+priority: 2
+tags[3]: audit,meta,project-management
+created_at: "2026-07-04T18:41:08.232Z"
+updated_at: "2026-07-04T18:51:08.943Z"
+author: maintainer-agent
+estimated_minutes: 180
+acceptance_criteria: "Every open item has parent, tags, acceptance criteria and estimate; no orphan non-epic items; in-flight code work is reflected as in_progress items; duplicate issue-code warnings resolved or delegated with rationale; concurrency-audit items grouped under a capability epic; findings recorded via pm notes/learnings on this item."
+parent: pm-doxj
+resolution: Full backlog reconciliation applied in one maintainer session
+expected_result: "Every open item well-defined (parent, tags, AC, estimate), in-flight code reflected as in_progress, concurrency work grouped under an epic, no duplicate or untracked work"
+actual_result: "39 open items normalized: AC+estimate coverage 100 percent on open items (validate warnings for missing AC and estimate both cleared), epic pm-dj98 created with 5 concurrency children, 5 orphans reparented, GH-244 code collision resolved, GH-209 delegated to pm-e9zh, dep pm-zwib->pm-2muu added, 0 untracked ecosystem work found"
+notes[1]{created_at,author,text}:
+  "2026-07-04T18:50:14.483Z",maintainer-agent,"Audit executed inline (single maintainer session, not the originally sketched 5 subagent lanes) to avoid concurrent cross-process pm writes. Findings applied: (1) in-flight working-tree code for pm-2muu (locks.wait_ms bounded jittered retry) and pm-8t5x (atomic claim test-and-set) was untracked as status — both moved to in_progress with AC+estimates; (2) created Epic pm-dj98 Concurrency & multi-agent safety under pm-doxj and reparented pm-2muu/pm-8t5x/pm-khdq/pm-bgcu/pm-zwib from the 2026-07-03 concurrency audit; (3) reparented orphans pm-3wsi,pm-ghf1,pm-llrp to pm-ugqx, pm-gdi7 to pm-mpbb, pm-92if to pm-doxj; (4) backfilled acceptance_criteria+estimated_minutes on every open item incl. all capability epics and the milestone; (5) resolved GH-244 duplicate issue-code by retitling pm-28cf as follow-up and tagging it; GH-209 duplicate (both closed) delegated to pm-e9zh; (6) added dep pm-zwib depends-on pm-2muu (same acquireLock region, retry loop lands first); (7) verified no untracked ecosystem work — 0 source TODOs, only open GH issue #427 already tracked as pm-lt6n, all memory-referenced follow-ups (pm-0n6p, pm-zx13, pm-i84i) verifiably closed."
+learnings[1]{created_at,author,text}:
+  "2026-07-04T18:50:23.435Z",maintainer-agent,"Backlog-audit invariants that held: closed items are untouchable (changelog buckets by updated_at — closed-item metadata debt goes to the dedicated backfill chore pm-e9zh, never fixed inline); duplicate issue-code detection is title-prefix based (ISSUE_CODE_PATTERN in src/core/governance/issue-codes.ts), so a follow-up item dedupes by moving the code out of title-leading position or via reserved duplicate_of metadata; pm update --ac with an empty string CLEARS existing acceptance criteria (recovered pm-92if from its history stream) — never pass empty metadata flags in batch scripts."
+close_reason: completed
+body: ""

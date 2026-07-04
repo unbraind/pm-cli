@@ -6,10 +6,14 @@ status: open
 priority: 1
 tags[5]: "area:config","area:schema",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:13.016Z"
-updated_at: "2026-05-31T19:42:13.016Z"
+updated_at: "2026-07-04T19:15:51.313Z"
 author: maintainer-agent
+estimated_minutes: 720
+acceptance_criteria: "Any project archetype can model its domain end-to-end with schema add/remove type, custom statuses, per-type workflows, and config keys without code changes; plan pm-z5nb completed."
 goal: project management = context management
 objective: "Make pm a universal PM tool: schema list/show/remove, custom statuses, per-type workflows, project archetype presets"
 value: Any project archetype (agile/ops/research) models its domain natively
 parent: pm-doxj
-body: ""
+risk: low
+confidence: high
+body: "## Charter\nLiving capability epic for schema, config, and universal customization — the \"any kind of project\" pillar: custom item types/statuses/fields, per-type workflows, governance presets, project profiles/archetypes, and pm config keys.\n\n## Scope\n- In: pm schema family (add/remove-type, add/remove-status, add-field), per-type allowed-transitions, governance settings, profile apply (pm-kanban exemplar), init type-presets, config set key surface.\n- Out: extension-registered types' runtime loading (pm-ugqx), settings-file write concurrency (pm-bgcu under pm-dj98).\n\n## Status\n23 closed children (schema epic completion plan pm-z5nb largely delivered: remove-type, add-status, per-type workflows, create_default_type; profiles PR#362/364; kanban archetype PR#367). Open children:\n- pm-28cf — search config normalization GH-244 follow-up (empty provider/adapter strings should auto-normalize).\n- pm-z5nb — completion Plan retained open as the epic's verification checklist; close after confirming every referenced child is closed and documented."

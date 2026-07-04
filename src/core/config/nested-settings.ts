@@ -252,6 +252,14 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     summary: "Claim/lock time-to-live in seconds before a stale lock can be reclaimed.",
   },
   {
+    key: "locks_wait_ms",
+    path: "locks.wait_ms",
+    kind: "integer",
+    min: 0,
+    summary:
+      "Bounded jittered wait in milliseconds before a contended item mutation fails with lock_conflict; 0 fails fast. PM_LOCK_WAIT_MS overrides per invocation.",
+  },
+  {
     key: "checkpoints_retention_days",
     path: "checkpoints.retention_days",
     kind: "integer",

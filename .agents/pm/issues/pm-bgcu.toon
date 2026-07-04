@@ -6,6 +6,13 @@ status: open
 priority: 2
 tags[3]: concurrency,config,robustness
 created_at: "2026-07-03T13:25:22.827Z"
-updated_at: "2026-07-03T13:25:22.827Z"
+updated_at: "2026-07-04T19:20:22.292Z"
 author: claude-code-agent
-body: ""
+estimated_minutes: 180
+acceptance_criteria: "settings.json, schema, session-state, and checkpoint writes use singleton-lock discipline; parallel pm config set loses zero updates under stress."
+parent: pm-dj98
+risk: high
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  "pm-2muu:related",related,"2026-07-04T19:20:22.275Z",null,null
+body: "## Context\nFiled by the 2026-07-03 concurrency audit. All workspace singleton files are written read→modify→writeFileAtomic with NO lock, so parallel writers silently last-writer-win.\n\n## Empirical repro\nTwo parallel `pm config set` loops on DIFFERENT keys (author_default vs locks_ttl_seconds): the locks_ttl_seconds write was lost in 3 of 6 rounds — the file kept one writer's view, dropping the other's committed change with exit 0.\n\n## Affected writers (all read-modify-write without acquireLock)\n- src/core/store/settings.ts (~L1313) — pm config set / governance preset\n- src/core/schema/runtime-schema.ts (~L588) — pm schema add-type/add-field/add-status\n- src/core/session/session-state.ts (~L56) — pm focus\n- checkpoints state writers\n\n## Approach\nReuse the existing per-item lock machinery with a reserved singleton lock id per file (e.g. __settings__, __schema__), wrapping read+modify+write. After pm-2muu lands, contended singleton writes get the same bounded-wait self-healing instead of failing. Alternative (compare-and-swap on content hash with one retry) is weaker — still loses under sustained contention.\n\n## Definition of done\nParallel config/schema/focus write stress shows zero lost updates; lock is released on error paths; docs note the singleton lock ids; evidence recorded on this item."

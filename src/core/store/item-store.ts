@@ -311,6 +311,7 @@ async function prepareLockedItem(params: {
     params.author,
     Boolean(params.force),
     params.settings.governance.force_required_for_stale_lock,
+    params.settings.locks.wait_ms,
   );
 
   try {

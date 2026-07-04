@@ -4,12 +4,17 @@
 
 ### Fixed
 
+- Extension activation adds ~200ms to every command when bundled packages are installed ([pm-4oww](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4oww.toon))
 - pm close <id\> -m 'text' still hard-blocks with close_reason_required: accept --message text as close-reason fallback (like closed pm-7x8d did for --resolution) ([pm-9hry](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9hry.toon))
 - Extension installs are dead-on-arrival in CommonJS host projects: installed extension dirs lack package.json type:module ([pm-r0m4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r0m4.toon))
 - beads/todos import-export runtime broken from real npm installs: runtime-loader imports .ts under node_modules (type-strip refused) ([pm-ejy7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ejy7.toon))
 
 ### Other
 
+- 2026-07-04 ecosystem audit \#4: coverage matrix, governance capability epic & relationship modeling ([pm-osea](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-osea.toon))
+- Backfill full-context bodies (and comments/deps/risk) on all active items so context is rebuildable from pm CLI alone ([pm-o043](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-o043.toon))
+- Sandbox audit fixes: package describe accepts npm package name; pm context <id\> routes to pm get ([pm-ayn7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ayn7.toon))
+- 2026-07-04 full pm-backlog audit: reconcile pm items with entire ecosystem (code, tests, docs, ideas, decisions) ([pm-y904](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-y904.toon))
 - GH-426: reduce complex method in compatibility-check.spec runCurrentPmCommand ([pm-24o5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-24o5.toon))
 - SDK testing-helper input validation: runRegisteredCommandForTest positional misuse crashes; createExtensionTestHarness accepts non-extension module silently ([pm-2exf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-2exf.toon))
 

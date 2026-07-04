@@ -149,27 +149,54 @@ function lockOwnerSuffix(info: LockInfo | null): string {
   return info?.owner ? ` (owner ${info.owner})` : "";
 }
 
-async function handleExistingLock(
-  lockPath: string,
-  id: string,
-  ttlSeconds: number,
-  force: boolean,
-  forceRequiredForStaleLock: boolean,
-): Promise<void> {
-  const lockInfo = await readLockInfo(lockPath);
-  if (!isStaleLock(lockInfo.info, ttlSeconds)) {
-    throw new PmCliError(`Item ${id} is locked${lockOwnerSuffix(lockInfo.info)}`, EXIT_CODE.CONFLICT);
-  }
+const LOCK_WAIT_INITIAL_DELAY_MS = 25;
+const LOCK_WAIT_MAX_DELAY_MS = 200;
+const LOCK_CONFLICT_RETRY_HINT_MS = 250;
+const MAX_STALE_LOCK_REMOVALS = 3;
 
-  if (!force && forceRequiredForStaleLock) {
+/**
+ * Resolves the effective bounded wait budget for a contended lock: the
+ * PM_LOCK_WAIT_MS environment override wins when it parses as a non-negative
+ * integer, then the caller-provided budget (settings `locks.wait_ms`), then 0
+ * (fail-fast, the pre-wait behavior).
+ */
+function resolveLockWaitMs(waitMs: number | undefined): number {
+  const envRaw = process.env.PM_LOCK_WAIT_MS;
+  if (typeof envRaw === "string" && envRaw.trim() !== "") {
+    const envParsed = Number.parseInt(envRaw, 10);
+    if (Number.isFinite(envParsed) && envParsed >= 0) {
+      return envParsed;
+    }
+  }
+  if (typeof waitMs === "number" && Number.isFinite(waitMs) && waitMs >= 0) {
+    return Math.trunc(waitMs);
+  }
+  return 0;
+}
+
+function sleepWithJitter(baseDelayMs: number): Promise<void> {
+  const jitteredMs = Math.max(1, Math.round(baseDelayMs * (0.5 + Math.random())));
+  return new Promise((resolve) => setTimeout(resolve, jitteredMs));
+}
+
+function buildLockConflictError(id: string, info: LockInfo | null, waitedMs: number): PmCliError {
+  const waitedSuffix = waitedMs > 0 ? ` after waiting ${waitedMs}ms` : "";
+  return new PmCliError(`Item ${id} is locked${lockOwnerSuffix(info)}${waitedSuffix}`, EXIT_CODE.CONFLICT, {
+    code: "lock_conflict",
+    recovery: {
+      retry_after_ms: LOCK_CONFLICT_RETRY_HINT_MS,
+    },
+  });
+}
+
+function throwIfStaleLockNeedsForce(id: string, lockInfo: LockReadResult, force: boolean, forceRequired: boolean): void {
+  if (!force && forceRequired) {
     const warningSuffix = lockInfo.warnings.length > 0 ? ` (${lockInfo.warnings.join(",")})` : "";
     throw new PmCliError(
       `Item ${id} lock is stale${warningSuffix}; rerun with --force when supported for this command`,
       EXIT_CODE.CONFLICT,
     );
   }
-
-  await unlinkLockWithHook(lockPath, "lock:stale_remove");
 }
 
 export const _testOnly = {
@@ -179,6 +206,7 @@ export const _testOnly = {
   buildLockPayload,
   isStaleLock,
   lockOwnerSuffix,
+  resolveLockWaitMs,
 };
 
 
@@ -192,6 +220,7 @@ export async function acquireLock(
   owner: string,
   force = false,
   forceRequiredForStaleLock = true,
+  waitMs?: number,
 ): Promise<() => Promise<void>> {
   const lockOverride = await runActiveServiceOverride("lock_acquire", {
     pm_root: pmRoot,
@@ -224,8 +253,12 @@ export async function acquireLock(
   }
 
   const lockPath = getLockPath(pmRoot, id);
+  const waitBudgetMs = resolveLockWaitMs(waitMs);
+  const startedAtMs = Date.now();
+  let staleRemovals = 0;
+  let backoffMs = LOCK_WAIT_INITIAL_DELAY_MS;
 
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  for (;;) {
     try {
       await createLockFile(lockPath, id, owner, ttlSeconds);
       return async () => {
@@ -240,9 +273,22 @@ export async function acquireLock(
       if (!isErrno(error, "EEXIST")) {
         throw new PmCliError(`Failed to acquire lock for ${id}: ${toErrorMessage(error)}`, EXIT_CODE.GENERIC_FAILURE);
       }
-      await handleExistingLock(lockPath, id, ttlSeconds, force, forceRequiredForStaleLock);
+      const lockInfo = await readLockInfo(lockPath);
+      if (isStaleLock(lockInfo.info, ttlSeconds)) {
+        throwIfStaleLockNeedsForce(id, lockInfo, force, forceRequiredForStaleLock);
+        if (staleRemovals >= MAX_STALE_LOCK_REMOVALS) {
+          throw new PmCliError(`Failed to acquire lock for ${id}`, EXIT_CODE.CONFLICT);
+        }
+        staleRemovals += 1;
+        await unlinkLockWithHook(lockPath, "lock:stale_remove");
+        continue;
+      }
+      const elapsedMs = Date.now() - startedAtMs;
+      if (elapsedMs >= waitBudgetMs) {
+        throw buildLockConflictError(id, lockInfo.info, waitBudgetMs);
+      }
+      await sleepWithJitter(Math.min(backoffMs, waitBudgetMs - elapsedMs));
+      backoffMs = Math.min(backoffMs * 2, LOCK_WAIT_MAX_DELAY_MS);
     }
   }
-
-  throw new PmCliError(`Failed to acquire lock for ${id}`, EXIT_CODE.CONFLICT);
 }

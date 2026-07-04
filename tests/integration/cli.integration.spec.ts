@@ -5968,7 +5968,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
-  it("allows claim takeover of non-terminal assigned items without force", async () => {
+  it("rejects default claim takeover of non-terminal assigned items and requires force", async () => {
     await withTempPmPath(async (context) => {
       const createResult = context.runCli(
         [
@@ -5993,7 +5993,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "--estimate",
           "20",
           "--acceptance-criteria",
-          "Claim takeover succeeds without force",
+          "Claim takeover is rejected unless force is explicit",
           "--author",
           "integration-test",
           "--message",
@@ -6020,7 +6020,16 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(createResult.code).toBe(0);
       const id = (createResult.json as { item: { id: string } }).item.id;
 
-      const takeover = context.runCli(["claim", id, "--json", "--author", "owner-b"], { expectJson: true });
+      const takeoverConflict = context.runCli(["claim", id, "--json", "--author", "owner-b"]);
+      expect(takeoverConflict.code).toBe(4);
+      const conflictEnvelope = parseJsonErrorEnvelope(takeoverConflict.stderr);
+      expect(conflictEnvelope).toMatchObject({
+        code: "already_claimed_by",
+        exit_code: 4,
+      });
+      expect(conflictEnvelope.detail).toContain("already claimed by owner-a");
+
+      const takeover = context.runCli(["claim", id, "--json", "--author", "owner-b", "--force"], { expectJson: true });
       expect(takeover.code).toBe(0);
       const takeoverJson = takeover.json as {
         item: { assignee?: string; status: string };
@@ -6030,7 +6039,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(takeoverJson.item.status).toBe("open");
       expect(takeoverJson.item.assignee).toBe("owner-b");
       expect(takeoverJson.previous_assignee).toBe("owner-a");
-      expect(takeoverJson.forced).toBe(false);
+      expect(takeoverJson.forced).toBe(true);
     });
   });
 

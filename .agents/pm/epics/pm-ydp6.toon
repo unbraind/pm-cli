@@ -6,10 +6,14 @@ status: open
 priority: 1
 tags[7]: "area:search","area:semantic",backlog,living-map,pm-cli,post-v0.1,roadmap
 created_at: "2026-05-31T19:42:11.422Z"
-updated_at: "2026-05-31T19:42:11.422Z"
+updated_at: "2026-07-04T19:15:50.356Z"
 author: maintainer-agent
+estimated_minutes: 720
+acceptance_criteria: Keyword and semantic search verified against the eval harness golden set; provider and adapter values auto-normalize; inline field-query syntax documented.
 goal: project management = context management
 objective: "Deliver the PRD post-v0.1 search roadmap: advanced relevance tuning, adapter optimization, provider extensibility, eval harness"
 value: "Higher-quality, configurable retrieval for large corpora and agents"
 parent: pm-doxj
-body: ""
+risk: low
+confidence: high
+body: "## Charter\nLiving capability epic for the PRD post-v0.1 search roadmap: keyword + semantic retrieval, relevance tuning, provider extensibility (ollama/BM25-offline/custom via extensions), vector-store adapters, and the pm eval harness.\n\n## Scope\n- In: search ranking (exact-ID rank, field:value inline syntax, --highlight), semantic refresh pipeline, embeddings storage/GC, provider/adapter config normalization, eval datasets.\n- Out: generic storage (pm-o2kc), search-related SDK capability plumbing (pm-ugqx).\n\n## Status\n20 closed children (BM25 offline provider + eval harness PR#314, inline field:value syntax PR#290, exact-ID ranking PR#282, background semantic refresh PR#87). Open as a living backlog — no open children at 2026-07-04. Related open work parked elsewhere by design: pm-28cf (search config normalization) sits under pm-8jdc because the defect is config-layer normalization, not retrieval."

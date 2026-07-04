@@ -859,7 +859,7 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
 }
 
 function orderSerializedSettingsSections(ordered: Record<string, unknown>): void {
-  ordered.locks = orderObject(ordered.locks as Record<string, unknown>, ["ttl_seconds"]);
+  ordered.locks = orderObject(ordered.locks as Record<string, unknown>, ["ttl_seconds", "wait_ms"]);
   ordered.checkpoints = orderObject(ordered.checkpoints as Record<string, unknown>, ["retention_days"]);
   ordered.output = orderObject(ordered.output as Record<string, unknown>, ["default_format"]);
   ordered.history = orderObject(ordered.history as Record<string, unknown>, ["missing_stream", "compact_policy"]);

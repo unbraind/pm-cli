@@ -6,10 +6,14 @@ status: open
 priority: 1
 tags[6]: "area:contracts","area:mcp","area:sdk",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:12.309Z"
-updated_at: "2026-05-31T19:42:12.309Z"
+updated_at: "2026-07-04T19:15:50.776Z"
 author: maintainer-agent
+estimated_minutes: 720
+acceptance_criteria: MCP tool surface stays in lockstep with CLI flags via contracts gates; narrow tools cover all frequent operations; zero action-schema drift findings.
 goal: project management = context management
 objective: "Strengthen the MCP server and machine-readable contracts: tool parity, protocol coverage, contract versioning and drift gates"
 value: "Reliable, drift-free agent integration surface"
 parent: pm-doxj
-body: ""
+risk: low
+confidence: high
+body: "## Charter\nLiving capability epic for the MCP server and machine-readable contract platform: narrow pm_* tools (28 at 2026-07-04), tool/action parity with the CLI, schema contracts, contract versioning, and drift gates.\n\n## Scope\n- In: mcp/server.ts tool surface, PM_TOOL_ACTIONS/SCHEMA_CONTRACTS coherence, MCP envelope semantics, compact defaults, shared enums (scope), contracts --full.\n- Out: CLI flag surface itself (pm-mpbb), SDK authoring APIs (pm-ugqx).\n\n## Invariants this epic guards\n- Every PM_TOOL_ACTIONS entry NEEDS a matching SCHEMA_CONTRACTS entry or contracts --full crashes (PR#357 lesson).\n- Tool count is asserted in 4 places; contracts:update is a separate static gate.\n- MCP param name == camelCase of the full CLI flag; CLI JSON has NO result wrapper (MCP-only envelope).\n\n## Status\n25 closed children (extension-aware built-in actions PR#406, action-scoped name schema, narrow tools pm_schema/config/append PR#199, pm_profile). Open as a living backlog — no open children at 2026-07-04; new MCP/contract work lands here."

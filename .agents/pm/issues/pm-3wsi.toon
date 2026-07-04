@@ -6,10 +6,15 @@ status: open
 priority: 1
 tags[3]: audit-followup,extensions,sdk
 created_at: "2026-07-02T21:55:19.923Z"
-updated_at: "2026-07-04T08:32:11.718Z"
+updated_at: "2026-07-04T19:17:26.347Z"
 author: claude-code-agent
+estimated_minutes: 120
+acceptance_criteria: Declarative extension install reports activation failure accurately and scaffold next_steps work when @unbrained/pm-cli is unresolvable; regression test covers the unresolvable-host path.
+parent: pm-ugqx
+risk: medium
+confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-fpod,related,"2026-07-02T21:55:52.911Z",null,null
 notes[1]{created_at,author,text}:
   "2026-07-04T08:32:11.718Z",maintainer-agent,"2026-07-04 sandbox audit adds evidence: same misreporting class on IMPERATIVE installs — pm extension --install reports ok:true while activation_status:failed; failure surfaces only as raw repeated Node stderr warnings (11 lines per subsequent command) and --list shows contradictory active:true/enabled:true/activation_status:failed. Install should run an activation probe and fail loudly. Root cause of the sandbox failures themselves is tracked separately (pm-r0m4 missing type:module)."
-body: ""
+body: "## Context\nFound in the 2026-07-02 ecosystem audit (Lane B, pm-6vy7). Declarative (composeExtension) package installs into a workspace that cannot resolve @unbrained/pm-cli fail runtime activation with 'Cannot find package', yet the install result claims success.\n\n## Defects\n1. Contradictory report: pm install prints activated:true with runtime_activation_status:failed and failed_count:0 — an agent reading any one field gets a different story.\n2. The failed install-time activation skips item-type folder scaffolding, leaving a lingering pm health warning (overlaps pm-l98s, which covers the scaffolding gap generally).\n3. Scaffold next_steps never warn that the target workspace must be able to resolve the SDK.\n\n## Approach\nMake activation status single-source: activated must be false (or partial) whenever runtime_activation_status is failed, and failed_count must count it. Add an install-time preflight that checks @unbrained/pm-cli resolvability from the workspace and emits an actionable hint (install dep / use bundled catalog). Extend scaffold next_steps with the resolvability requirement.\n\n## Definition of done\nSandbox repro (CJS + no SDK dep) shows coherent failure reporting with a recovery hint; health warning does not linger after a successful retry; spec covers the contradictory-status regression."

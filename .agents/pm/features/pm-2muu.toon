@@ -2,11 +2,32 @@ id: pm-2muu
 title: "Lock contention auto-retry: bounded jittered wait before lock_conflict so parallel agent mutations self-heal"
 description: "Parallel mutations on the SAME item still surface lock_conflict too quickly under burst contention: acquireLock (src/core/lock/lock.ts) already retries EEXIST a few times, but it does not wait with a configurable jittered budget before failing. Empirical: 12 parallel `pm update` on one item -> 5 succeed, 7 lock_conflict, even though each lock is held only for milliseconds. Agents firing parallel tool calls (or multiple agent sessions/programmatic spawns) still need hand-rolled retry loops. Fix: bounded jittered wait inside acquireLock before throwing lock_conflict - e.g. settings `locks.wait_ms` (default ~3000, 0 = today's fail-fast) + `PM_LOCK_WAIT_MS` env override + `--lock-wait-ms` flag; poll with jittered backoff (e.g. 25->50->100->200ms) until acquired or budget exhausted. If the wait budget exhausts, include a `retry_after_ms` hint in the structured lock_conflict payload so callers know when to retry. Integrity is already perfect under contention (no corruption, no lock debris, history consistent) - this is purely availability/UX. Note: a single pm-mcp server already serializes via SerialQueue (pm-3puw), so this mainly hits parallel CLI invocations and multiple concurrent MCP/agent sessions on one workspace."
 type: Feature
-status: open
+status: in_progress
 priority: 1
 tags[3]: agent-ux,concurrency,locking
 created_at: "2026-07-03T13:25:02.684Z"
-updated_at: "2026-07-03T18:51:28.369Z"
+updated_at: "2026-07-04T21:37:18.569Z"
+assignee: maintainer-agent
 author: claude-code-agent
-parent: pm-mpbb
-body: ""
+estimated_minutes: 180
+acceptance_criteria: "acquireLock waits with bounded exponential backoff + jitter up to locks.wait_ms (default 3000ms, PM_LOCK_WAIT_MS override); lock_conflict error carries retry_after_ms recovery hint; parallel-mutation stress shows self-healing without integrity loss; config key locks_wait_ms settable via pm config set and documented; tests cover env override, zero budget fail-fast, and stale-removal cap."
+parent: pm-dj98
+risk: medium
+confidence: high
+comments[2]{created_at,author,text}:
+  "2026-07-04T19:08:29.543Z",maintainer-agent,"Session handoff (2026-07-04, maintainer-agent): implementation is complete in the local working tree but NOT committed (user hold on commit/push). Body has the full design; the diff spans lock.ts, claim.ts, settings validator/defaults/types, nested-settings, restore, history-rewrite, claim-command.spec. Before PR: run fast suite + coverage gate, add CONFIGURATION.md docs for locks_wait_ms/PM_LOCK_WAIT_MS, contracts:update if needed, record stress evidence via pm test, then close pm-2muu and pm-8t5x together with structured resolution fields."
+  "2026-07-04T21:37:18.568Z",claude-code-agent,"Evidence: bounded lock wait and PM_LOCK_WAIT_MS/locks_wait_ms paths verified. Full coverage passed 5371 tests with 100% statements/branches/functions/lines; pnpm lint passed; installed-package temp smoke passed claim conflict, if-available skip, forced takeover, lock wait config, and health."
+notes[1]{created_at,author,text}:
+  "2026-07-04T19:01:03.112Z",maintainer-agent,"In-flight implementation (uncommitted, 2026-07-04): acquireLock gained a bounded jittered wait loop — waits up to locks.wait_ms (default 3000, settings key locks_wait_ms, PM_LOCK_WAIT_MS env override, 0 = pre-existing fail-fast) with exponential backoff 25→200ms + jitter; stale-lock removals capped at 3; lock_conflict error now carries recovery.retry_after_ms=250 hint (new PmCliErrorRecoveryPayload field). wait_ms threaded through restore + history-rewrite acquireLock call sites; settings validator/defaults/types/nested-settings descriptor added. Remaining: docs (CONFIGURATION.md), contracts:update if flag surface changed, parallel-mutation stress evidence per AC."
+files[6]{path,scope,note}:
+  src/core/config/nested-settings.ts,project,locks_wait_ms settings descriptor
+  src/core/lock/lock.ts,project,bounded jittered lock wait + retry_after_ms recovery hint
+  src/core/shared/constants.ts,project,locks.wait_ms default 3000
+  src/core/store/settings-validator.ts,project,locks.wait_ms optional int validation
+  src/types.ts,project,PmSettings locks.wait_ms
+  tests/unit/core/item/core-item-lock-coverage.spec.ts,project,acquireLock wait/backoff coverage
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,600,repo-wide 100 percent coverage gate
+docs[1]{path,scope,note}:
+  docs/CONFIGURATION.md,project,document locks_wait_ms and PM_LOCK_WAIT_MS configuration
+body: "## Context\nFiled by the 2026-07-03 concurrency audit: under parallel multi-agent mutation stress, contended item locks fail immediately with lock_conflict, forcing every agent to implement its own retry loop (or lose work). Data integrity held in all stress runs; the gap is ergonomics/self-healing, not corruption.\n\n## Design (implemented, uncommitted as of 2026-07-04)\n- `acquireLock` gains a bounded wait loop: exponential backoff 25ms → 200ms with full jitter (0.5x–1.5x), waiting up to a budget before surfacing lock_conflict.\n- Budget resolution order: `PM_LOCK_WAIT_MS` env (non-negative int) > `locks.wait_ms` from settings > 0 (fail-fast = exact pre-feature behavior). Default shipped in SETTINGS_DEFAULTS: 3000ms. Config key `locks_wait_ms` (nested-settings descriptor, `pm config set locks_wait_ms <n>`), optional in the settings validator so existing settings.json files stay valid.\n- Stale-lock handling folded into the same loop: stale locks are removed (subject to force_required_for_stale_lock governance) with removals capped at MAX_STALE_LOCK_REMOVALS=3 to prevent livelock between competing waiters.\n- On exhausted budget, lock_conflict error now carries `recovery.retry_after_ms: 250` (new optional field on PmCliErrorRecoveryPayload) so agents/MCP clients can machine-read when to retry; message appends \"after waiting <n>ms\".\n- `waitMs` threaded through acquireLock call sites including restore and history-rewrite.\n\n## Constraints / decisions\n- 0 must remain a valid budget meaning fail-fast (backward compat + tests that assert immediate conflict).\n- Jittered sleep uses Math.random by design (production code path; the no-Date/no-random rule applies to workflow scripts, not src).\n- Interacts with pm-zwib (stale-lock takeover race): the removal cap bounds the blast radius but does NOT fix the two-waiters-both-remove race — pm-zwib stays open and depends on this item.\n\n## Remaining before close (per AC)\n- CONFIGURATION.md docs for locks_wait_ms / PM_LOCK_WAIT_MS.\n- contracts:update if any flag surface changed.\n- Parallel-mutation stress evidence recorded via pm test."

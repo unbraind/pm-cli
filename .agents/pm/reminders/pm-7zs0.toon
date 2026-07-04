@@ -6,12 +6,16 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-07-04T10:39:22.818Z"
+updated_at: "2026-07-04T19:19:35.718Z"
 reminders[1]{at,text}:
   "2026-07-01T10:24:45.889Z",Confirm daily auto-release tagged a new version AND npm latest advanced; else inspect publish + Sentry-gate steps
 assignee: claude-code-agent
 author: maintainer-agent
+estimated_minutes: 15
+acceptance_criteria: "After each merge to main, the next daily release tags vYYYY.M.D and npm latest advances; any discrepancy is triaged the same day."
 parent: pm-u9d0
+risk: low
+confidence: high
 comments[33]{created_at,author,text}:
   "2026-06-10T14:44:30.277Z",maintainer-agent,"2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
   "2026-06-16T11:26:49.976Z",codex-sdk-cli-consolidation-20260616,"Auto-release gate reproduced locally with SENTRY_PERSONAL_ADMIN_TOKEN; failing high issue was PM-CLI-1Q (handled CommandError: all items failed to apply). Added count-agnostic handled pattern 'item(s) failed to apply' and blocking_short_ids/blocking_titles output for diagnostics. Gate now passes in strict mode with max-high=0."
@@ -46,12 +50,13 @@ comments[33]{created_at,author,text}:
   "2026-07-01T16:57:48.167Z",claude-code-agent,"Evidence: 2026-07-01 release-health bundle verified daily Auto Release and telemetry while refreshing @sentry/node to 10.63.0. Live status: scheduled Auto Release run 28499297083 succeeded on b2617dac, GitHub latest release is v2026.7.1, npm latest is @unbrained/pm-cli 2026.7.1, issue #374 is closed, no GitHub PRs/issues/Dependabot/code-scanning/secret-scanning alerts are open, and pnpm audit is clean. Verification passed: sentry telemetry gate best-effort ok with critical=0 high=0 telemetry finish_error_rate_pct=0.77 failures_without_error_code_rows=0; package doctor deep ok with pm-changelog 2026.6.30 active; changelog check unchanged; full coverage 5266 tests at 100/100/100/100; manual packed temp install smoke passed package install, Sentry import, pm init/create/comments/get/health/validate/telemetry, pm-changelog install, and package doctor."
   "2026-07-02T21:26:24.459Z",claude-code-agent,"2026-07-02 release-health verify: GitHub release v2026.7.2 tagged (2026-07-02T06:39Z) and npm latest = 2026.7.2 — auto-release healthy. CI on main green (run 28618676644). Keeping reminder in_progress (recurring)."
   "2026-07-03T04:09:26.639Z",claude-code-agent,"2026-07-03 verify: npm latest=2026.7.2 (published 2026-07-02T06:39Z), dist-tags clean, scheduled Auto Release runs 28569991109 (07-02) and 28499297083 (07-01) both succeeded. Release pipeline healthy; keeping reminder in_progress (recurring)."
-notes[5]{created_at,author,text}:
+notes[6]{created_at,author,text}:
   "2026-07-02T06:41:55.766Z",claude-code-agent,"2026-07-02: Auto Release run 28569991109 success; tag v2026.7.2 created and npm dist-tags.latest=2026.7.2 verified live via npm view. Release-commit CI/Release/CodeQL/Docs all green. Release health verified."
   "2026-07-04T06:16:41.031Z",maintainer-agent,"2026-07-04: Release v2026.7.4 verified — Release workflow 28697208639 succeeded, npm @unbrained/pm-cli@2026.7.4 live, GH release published 06:16Z (not draft). Auto-release healthy."
   "2026-07-04T06:52:55.930Z",maintainer-agent,"2026-07-04 verified: v2026.7.4 tagged and npm latest advanced (published 06:15:46Z). Auto-release healthy."
   "2026-07-04T08:13:20.569Z",maintainer-agent,"2026-07-04 release-health verified: Auto Release run 28697011506 success, tag v2026.7.4 Release workflow success (8m58s), npm latest = 2026.7.4."
   "2026-07-04T10:39:22.817Z",maintainer-agent,"2026-07-04 release-health check: npm view @unbrained/pm-cli version → 2026.7.4 (matches today's date-based cut); Auto Release scheduled run 28697011506 succeeded (17m9s), post-release CI/CodeQL/Docs/Security workflows on the release commit all green. Only red run today is Nightly Validation windows-latest/Node 24 (GH-427, fix in working tree via pm-lt6n)."
+  "2026-07-04T19:01:16.920Z",maintainer-agent,"2026-07-04 release-health verified live: git tag v2026.7.4 exists and npm view @unbrained/pm-cli version = 2026.7.4 (latest advanced). Today's merges to main (PR #428 head + close-message fallback d3e37991) will ride the next daily cut once [Unreleased] is non-empty."
 files[11]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,record project pm-changelog 2026.6.27 managed package metadata
   .agents/pm/extensions/pm-changelog,project,refresh project-managed pm-changelog package files to 2026.6.27
@@ -81,4 +86,4 @@ test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-mqx0kwfz-ola41b,test,passed,"2026-06-27T23:51:22.968Z","2026-06-27T23:51:49.823Z","2026-06-27T23:51:49.823Z",7,0,0
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,document scheduled publish closing blocked auto-release issues
-body: ""
+body: "## Procedure (run after any merge to main)\n1. Next day (or after the daily workflow window), check: `gh run list --workflow=auto-release` → latest run green.\n2. Confirm a new tag vYYYY.M.D exists AND `npm view @unbrained/pm-cli version` advanced to match (both must hold — tagging without publish has happened).\n3. If either failed: inspect the run log; known past failure modes are (a) padded-vs-unpadded month in the changelog-match step silently skipping the release (fixed 2026-05-28), (b) publish/Sentry-gate step failing post-tag (needs SENTRY auth token in release env), (c) missing issues:write permission (fixed PR#364). RELEASE_PAT is configured — auto-release is currently healthy (2026-07-04: v2026.7.4 cut).\n\n## Why a Reminder item\nThe release train fails SILENTLY (empty [Unreleased] or a skipped match just means \"no release\"), so a standing recurring check is the only reliable detection. Keep this item OPEN permanently; log each verification as a note/comment here instead of closing."

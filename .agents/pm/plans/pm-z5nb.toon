@@ -6,9 +6,13 @@ status: open
 priority: 2
 tags[4]: "area:config","area:schema",living-map,pm-cli
 created_at: "2026-06-03T13:47:47.535Z"
-updated_at: "2026-06-26T04:22:12.908Z"
+updated_at: "2026-07-04T19:19:37.071Z"
 author: claude-code-agent
+estimated_minutes: 480
+acceptance_criteria: "All four schema-customization gaps shipped (remove-type, add/remove-status, per-type workflows, create_default_type config); satisfied stories closed; epic pm-8jdc acceptance satisfied."
 parent: pm-8jdc
+risk: low
+confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-8jdc,parent,"2026-06-03T13:47:47.535Z",null,null
 comments[6]{created_at,author,text}:
@@ -19,4 +23,4 @@ comments[6]{created_at,author,text}:
   "2026-06-06T20:08:08.275Z",codex-zw0n,"Reconciliation note during pm-zw0n cycle: pm-z5nb remains intentionally open as a coordination container (already merged work evidence in history/comments) and should stay open unless maintainers want this plan-type tracker item closed; no outstanding schema-customization implementation debt discovered in this cycle."
   "2026-06-26T04:22:12.908Z",claude-code-agent,"Status audit 2026-06-26 (claude-code-agent): every sub-item of this completion Plan is now closed/shipped — pm-k8ik (remove-type), pm-e77a (add-status), pm-f4r1 (per-type workflows), pm-jpwo (config create_default_type), pm-mt7k (schema list/show), pm-vhd9 (init --type-preset). The parent epic pm-8jdc is at 22/24 closed. This Plan is functionally complete and is a candidate for a dedicated governance-close pass (kept open here to avoid mixing a release-changelog regeneration trigger into an unrelated code PR, per pm-j8z6's bundling guidance)."
 plan_mode: draft
-body: ""
+body: "## Plan record\nDelivery plan for completing the schema-customization epic (pm-8jdc), executed 2026-06-03 on branch schema-customization-completion-20260603 via 2 specialized sub-agents, integrated and verified by the orchestrator.\n\nSteps (all shipped):\n1. pm schema remove-type [pm-k8ik — closed]\n2. pm schema add-status / remove-status [pm-e77a — closed]\n3. Per-type workflow allowed-transitions enforced on update [pm-f4r1 — closed]\n4. governance.create_default_type settable via pm config set [pm-jpwo — closed]\n5. Close satisfied stories pm-mt7k (schema list/show), pm-vhd9 (init --type-preset) [closed]\n\n## Why still open / exit criteria\nRetained as the epic's verification checklist. Before closing: re-verify each referenced child is closed with resolution evidence, confirm docs (SCHEMA.md/CONFIGURATION.md) cover all five capabilities, then materialize the outcome into a closing comment on pm-8jdc. The epic itself stays open as a living backlog."

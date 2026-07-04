@@ -6,7 +6,11 @@ status: open
 priority: 2
 tags[2]: "area:quality",refactor
 created_at: "2026-07-04T08:32:10.547Z"
-updated_at: "2026-07-04T08:32:10.547Z"
+updated_at: "2026-07-04T19:18:51.814Z"
 author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: flag-contracts.ts per-command duplication replaced by shared builders with contract output verified byte-identical by the contracts gate.
 parent: pm-92if
-body: ""
+risk: low
+confidence: high
+body: "## Context\n2026-07-04 code-quality sweep: src/sdk/cli-contracts/flag-contracts.ts (1615 LOC) contains 9 internal jscpd clones at --min-tokens 70 (e.g. 683-698 vs 1127-1142, 945-963 vs 1047-1065, 1091-1107 vs 1204-1220) — repetitive per-command flag-table blocks.\n\n## Approach\nExtract a shared per-command flag-block builder (~150 lines saved). The SDK contract surface must stay byte-identical — flag-contracts feeds contracts --full and the MCP schema; run `pnpm contracts:update` and diff to prove no drift. Cross-file clone pairs to fold into the same pass: history-compact.ts:323-352 vs history-repair.ts:174-203 (chain re-anchor), create.ts:283 vs update.ts:226, list.ts:489 vs search.ts:707 (coordinate with pm-jt3b's search split), normalize.ts:427 vs update-many.ts:788, test-all.ts:37 vs test.ts:171, extension.ts:321-334 vs types.ts:821-834. Then ratchet .jscpd.json minTokens 115 → ~90.\n\n## Definition of done\njscpd clean at the ratcheted threshold; contracts output byte-identical; suppression/gate budgets unchanged or lower."

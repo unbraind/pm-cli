@@ -6,19 +6,25 @@ status: in_progress
 priority: 2
 tags[3]: ci,tests,windows
 created_at: "2026-07-04T08:11:35.792Z"
-updated_at: "2026-07-04T11:42:53.435Z"
+updated_at: "2026-07-04T21:37:22.714Z"
 assignee: claude-code-agent
 author: maintainer-agent
+estimated_minutes: 60
+acceptance_criteria: windows-latest Node 24 nightly is green with platform-tolerant error-code assertions; GH-427 closed.
 parent: pm-u9d0
-comments[2]{created_at,author,text}:
+risk: low
+confidence: high
+comments[3]{created_at,author,text}:
   "2026-07-04T11:15:27.740Z",claude-code-agent,"Evidence: focused Windows-tolerant filesystem assertion lane remains linked. Focused test command is linked on the item; local Linux suite accepts EACCES|EPERM and EISDIR|EPERM while preserving POSIX coverage. GH-427 should be confirmed by the next Windows Node 24 nightly after push."
   "2026-07-04T11:42:53.435Z",claude-code-agent,"Evidence update: Windows-tolerant filesystem assertion lane remains covered in the combined branch. Local verification passed: node scripts/run-tests.mjs test -- tests/unit/commands/restore-command.spec.ts tests/unit/core/history/history-rewrite.spec.ts; full coverage 263 files / 5337 tests / 100% statements, branches, functions, lines; pnpm typecheck; pnpm lint. GH-427 still needs confirmation from GitHub Windows Node 24 CI/nightly after push."
-notes[2]{created_at,author,text}:
+  "2026-07-04T21:37:22.713Z",claude-code-agent,"Evidence: local full coverage and lint passed after Windows-tolerant assertions and lock/claim changes. GitHub issue #427 remains open because the latest Nightly Validation run is still the 2026-07-04 failure and no newer nightly has validated the fix yet."
+notes[3]{created_at,author,text}:
   "2026-07-04T08:13:21.922Z",maintainer-agent,"Fix applied (uncommitted): restore-command.spec 3x rejects.toMatchObject code now expect.stringMatching(/^(EACCES|EPERM)$/); history-rewrite.spec EISDIR assertion now toMatch(/EISDIR|EPERM/). Both spec files pass locally (42 tests). Root cause: Windows Node 24 fs raises EPERM where POSIX raises EACCES (read-only append) / EISDIR (write to dir path)."
   "2026-07-04T10:38:37.025Z",maintainer-agent,"2026-07-04 verification: platform-tolerant assertions pass in the full fast suite (5336/5336) on Linux; the EACCES|EPERM / EISDIR|EPERM alternations keep POSIX coverage while accepting Windows Node 24 EPERM. Windows confirmation will come from the next nightly after push (GH-427 stays open until then)."
+  "2026-07-04T18:47:08.092Z",maintainer-agent,"Platform-tolerant assertions (EACCES|EPERM, EISDIR|EPERM) landed on main via PR #428 head. Remaining: confirm next windows-latest Node 24 nightly is green, then close this item and GH-427."
 files[2]{path,scope,note}:
   tests/unit/commands/restore-command.spec.ts,project,Windows Node 24 EPERM-compatible filesystem assertions
   tests/unit/core/history/history-rewrite.spec.ts,project,Windows Node 24 EPERM-compatible directory write assertion
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/restore-command.spec.ts tests/unit/core/history/history-rewrite.spec.ts,project,240
-body: ""
+body: "## Context\nTracks GH-427. Nightly Validation run 28698219516 (2026-07-04, windows-latest / Node 24): 4 failures, all POSIX-only error-code assertions.\n\n- restore-command.spec: expects code EACCES after chmod 0o444 on the history file; Windows Node 24 raises EPERM opening a read-only file for append.\n- history-rewrite.spec: expects EISDIR writing to a directory path; Windows raises EPERM.\n\n## Approach\nPlatform-tolerant assertions: accept EACCES|EPERM and EISDIR|EPERM respectively (match on a set, not equality). Precedent: PR#365 Windows fixes and the 2026-07-04 GH-427 EPERM fix noted in the ecosystem audit — check whether that partial fix already covers some of the 4 and only patch the remainder. The windows-regression CI job is the oracle; nightly re-run green closes GH-427.\n\n## Definition of done\nAll 4 specs pass on windows-latest Node 24 nightly; no weakening on POSIX (still asserts the specific POSIX code there or the set matcher documents why); GH-427 closed with the green run linked."

@@ -6,8 +6,13 @@ status: open
 priority: 2
 tags[3]: audit-followup,schema,sdk
 created_at: "2026-07-02T21:55:23.518Z"
-updated_at: "2026-07-02T21:55:53.563Z"
+updated_at: "2026-07-04T19:17:27.028Z"
 author: claude-code-agent
+estimated_minutes: 120
+acceptance_criteria: "SDK lint, preflight, and test harness each flag reserved item-field name collisions from the shared reserved-key list; a drift test keeps that list in sync with constants."
+parent: pm-ugqx
+risk: medium
+confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-fpod,related,"2026-07-02T21:55:53.536Z",null,null
-body: ""
+body: "## Context\nFound in the 2026-07-02 ecosystem audit (Lane B). An extension can register an item field whose name collides with a reserved front-matter key (e.g. 'severity', 'blocked_reason' — see FRONT_MATTER_KEY_ORDER) and still pass assertExtensionPreflight and createExtensionTestHarness green — but pm create/update rejects the field at runtime. A green package can brick create for its users.\n\n## Approach\nExport RESERVED_ITEM_FIELD_NAMES from the SDK (single source shared with the runtime validator) and validate registered item-field keys in lintExtensionBlueprint, preflightExtension, AND the test harness so the collision fails at authoring time with a rename hint. Known reserved names already bitten in the wild: severity (PR#150), blocked_reason (PR#367).\n\n## Definition of done\nA blueprint registering a reserved field name fails lint/preflight/harness with the same error code; SDK docs list the reserved names; runtime and SDK share one constant (no drift)."

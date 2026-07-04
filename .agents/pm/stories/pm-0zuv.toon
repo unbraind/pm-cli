@@ -1,0 +1,21 @@
+id: pm-0zuv
+title: "As a coding agent bootstrapping any project, I want to define custom item types, statuses, fields, workflows, and profiles via config, so that pm fits the project's domain without code changes"
+description: ""
+type: Story
+status: closed
+priority: 3
+tags[5]: agent-story,"area:schema",capability,living-map,story
+created_at: "2026-07-04T19:59:50.621Z"
+updated_at: "2026-07-04T19:59:51.210Z"
+author: maintainer-agent
+estimated_minutes: 480
+acceptance_criteria: schema add/remove type|status|field works; per-type workflows are enforced; profiles compose types+statuses+fields+workflows+templates+packages; settings are validated and unknown keys stripped; init --type-preset bootstraps archetypes.
+goal: project management = context management
+parent: pm-8jdc
+risk: low
+confidence: high
+resolution: "Delivered and maintained by pm-8jdc: custom types/statuses/fields/workflows, archetype profiles, and validated config; schema-completion tracked by open children."
+expected_result: Any project's domain is modeled in pm through config alone.
+actual_result: Schema customization + profiles + validated config shipped.
+close_reason: "Delivered and maintained by pm-8jdc: custom types/statuses/fields/workflows, archetype profiles, and validated config; schema-completion tracked by open children."
+body: "## Agent need\npm must be a universal PM tool: every project has its own vocabulary, so an agent must reshape types/statuses/fields/workflows through config rather than code.\n\n## Delivered surface (pm-8jdc)\ncore/schema (types, statuses, fields, workflows, presets, inference); core/config nested-settings + positional-value; core/profile presets/plan/describe/lint; pm init --type-preset.\n\n## Verified by\nschema-customization integration and profile-lint tests. Enduring agent-value statement for the customization capability; new work lands in pm-8jdc."

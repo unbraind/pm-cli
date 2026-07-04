@@ -1,0 +1,19 @@
+id: pm-qely
+title: "Docstrings: packages/* (module docs + exported/public surface for all 11 shipped packages)"
+description: "Add module @module headers to the 19 package files lacking them, and TSDoc to every exported declaration/const, exported interface/type member, and public class member across all packages/* extensions. Baseline ~121 missing incl 19 module docs. Docstrings only; keep hand-maintained shipping shape. Verify via gate + typecheck + package typecheck (tsconfig.packages.json)."
+type: Task
+status: in_progress
+priority: 1
+tags[4]: coverage,docs,docstrings,quality
+created_at: "2026-07-04T20:18:53.628Z"
+updated_at: "2026-07-04T20:46:31.426Z"
+assignee: maintainer-agent
+author: maintainer-agent
+estimated_minutes: 180
+acceptance_criteria: Gate reports 0 missing/boilerplate/trivial-stub for packages/*; tsc -p tsconfig.packages.json clean; every package .ts has an @module header.
+parent: pm-4ak1
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-5566,related,"2026-07-04T20:40:49.420Z",null,null
+body: ""

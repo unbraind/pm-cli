@@ -48,6 +48,22 @@ type SqModule = {
     min_coverage_percent: number;
   };
   checkDocstringBoilerplate: (files: string[]) => Array<{ path: string; line: number; reason: string }>;
+  documentedSourceFiles: (files: string[]) => string[];
+  checkExportedMemberDocstringCoverage: (
+    files: string[],
+    minCoveragePercent: number,
+  ) => {
+    ok: boolean;
+    total: number;
+    documented: number;
+    missing: Array<{ path: string; line: number; name: string; reason: string }>;
+    coverage_percent: number;
+    min_coverage_percent: number;
+  };
+  extractDocstringProse: (comment: string) => string;
+  identifierWords: (name: string) => string[];
+  isTrivialDocstring: (comment: string, symbolName: string) => boolean;
+  checkTrivialDocstrings: (files: string[]) => Array<{ path: string; line: number; name: string; reason: string }>;
   checkOrphanSourceModules: (files: string[]) => Array<{ path: string }>;
   complexityContribution: (node: unknown) => number;
   functionLikeName: (node: unknown, sf: unknown) => string;
@@ -360,6 +376,12 @@ describe("static-quality-gate", () => {
         { path: "src/a.ts", line: 10, name: "exported_declaration", reason: "missing_exported_docstring" },
         { path: "src/a.ts", line: 11, name: "missingArrow", reason: "missing_exported_docstring" },
       ]);
+      // No exported declarations in scope → 100% by definition.
+      expect(mod.checkExportedDocstringCoverage([], 100)).toMatchObject({
+        total: 0,
+        coverage_percent: 100,
+        ok: true,
+      });
     });
 
     it("checkExportedDocstringCoverage does not reuse the module docstring for the first export", async () => {
@@ -416,6 +438,184 @@ describe("static-quality-gate", () => {
         { path: "src/a.ts", line: 7, reason: "boilerplate_docstring" },
         { path: "src/b.ts", line: 1, reason: "boilerplate_docstring" },
       ]);
+    });
+
+    it("documentedSourceFiles: keeps src+packages non-spec files, drops tests/specs/others", async () => {
+      mockUtils("/repo");
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const kept = mod
+        .documentedSourceFiles([
+          "/repo/src/a.ts",
+          "/repo/packages/pkg/index.ts",
+          "/repo/src/b.spec.ts",
+          "/repo/packages/pkg/c.test.ts",
+          "/repo/tests/unit/d.ts",
+          "/repo/scripts/e.ts",
+        ])
+        .map((p) => mod.relativeToRepo(p));
+      expect(kept).toEqual(["src/a.ts", "packages/pkg/index.ts"]);
+    });
+
+    it("extractDocstringProse + identifierWords normalize comments and identifiers", async () => {
+      mockUtils("/repo");
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      expect(mod.extractDocstringProse("/** Single line. */")).toBe("Single line.");
+      expect(mod.extractDocstringProse(["/**", " * Multi line", " * @remarks detail here", " */"].join("\n"))).toBe(
+        "Multi line detail here",
+      );
+      expect(mod.extractDocstringProse("/** See {@link Foo} now. */")).toBe("See Foo now.");
+      expect(mod.identifierWords("itemFrontMatter")).toEqual(["item", "front", "matter"]);
+      expect(mod.identifierWords("Owner.snake_case")).toEqual(["owner", "snake", "case"]);
+      expect(mod.identifierWords("")).toEqual([]);
+      expect(mod.identifierWords(undefined as unknown as string)).toEqual([]);
+    });
+
+    it("isTrivialDocstring: empty/name-only trivial, informative prose not", async () => {
+      mockUtils("/repo");
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      expect(mod.isTrivialDocstring("/** */", "foo")).toBe(true);
+      expect(mod.isTrivialDocstring("/** The item id. */", "itemId")).toBe(true);
+      expect(mod.isTrivialDocstring("/** Unique primary key. */", "id")).toBe(false);
+    });
+
+    it("checkExportedMemberDocstringCoverage: interface + type-literal members, skips index sigs and non-owners", async () => {
+      mockUtils("/repo");
+      const membersFixture = [
+        "/** @module members */",
+        "/** Documented widget. */",
+        "export interface Widget {",
+        "  /** The documented id. */",
+        "  id: string;",
+        "  name: string;",
+        '  "weird-key": number;',
+        "  [key: string]: unknown;",
+        "}",
+        "interface Hidden {",
+        "  secret: string;",
+        "}",
+        "/** Documented shape. */",
+        "export type Shape = {",
+        "  /** Documented width. */",
+        "  width: number;",
+        "  height: number;",
+        "};",
+        "/** Plain alias. */",
+        "export type Id = string;",
+        "/** Documented make. */",
+        "export function make() { return 0; }",
+      ].join("\n");
+      mockFs({
+        readFileSync: vi.fn((p: string) => (String(p).endsWith("members.ts") ? membersFixture : "")) as never,
+      });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const report = mod.checkExportedMemberDocstringCoverage(["/repo/src/members.ts"], 100);
+      expect(report.total).toBe(5);
+      expect(report.documented).toBe(2);
+      expect(report.ok).toBe(false);
+      expect(report.missing.map((m) => m.line).sort((a, b) => a - b)).toEqual([6, 7, 17]);
+      expect(report.missing.every((m) => m.reason === "missing_member_docstring")).toBe(true);
+      expect(report.missing.some((m) => m.name.includes("weird-key"))).toBe(true);
+      // Same fixture passes when the minimum is relaxed to 0.
+      expect(mod.checkExportedMemberDocstringCoverage(["/repo/src/members.ts"], 0).ok).toBe(true);
+      // No documentable owners → 100% by definition.
+      expect(mod.checkExportedMemberDocstringCoverage([], 100)).toMatchObject({
+        total: 0,
+        coverage_percent: 100,
+        ok: true,
+      });
+    });
+
+    it("checkExportedMemberDocstringCoverage: class members, accessors, private/static skips, anon owner", async () => {
+      mockUtils("/repo");
+      const klassFixture = [
+        "/** @module klass */",
+        "/** Documented rich. */",
+        "export class Rich {",
+        "  /** Documented ctor. */",
+        "  constructor(input) {}",
+        "  /** Documented value. */",
+        '  value = "";',
+        "  undocProp = 1;",
+        "  /** Documented run. */",
+        "  run() {}",
+        "  undocMethod() {}",
+        "  /** Documented size getter. */",
+        "  get size() { return 0; }",
+        "  set size(v) {}",
+        "  static config = 1;",
+        "  private secret() {}",
+        "  protected helper() {}",
+        "  #hidden() {}",
+        "  [key: string]: unknown;",
+        "}",
+        "/** Documented empty. */",
+        "export class Empty {",
+        "  constructor() {}",
+        "  /** Documented flag. */",
+        "  flag = true;",
+        "}",
+      ].join("\n");
+      const anonFixture = [
+        "/** @module anon */",
+        "/** Documented default class. */",
+        "export default class {",
+        "  /** Documented ping. */",
+        "  ping() {}",
+        "  pong() {}",
+        "}",
+      ].join("\n");
+      mockFs({
+        readFileSync: vi.fn((p: string) =>
+          String(p).endsWith("klass.ts") ? klassFixture : String(p).endsWith("anon.ts") ? anonFixture : "",
+        ) as never,
+      });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const report = mod.checkExportedMemberDocstringCoverage(["/repo/src/klass.ts", "/repo/src/anon.ts"], 100);
+      expect(report.total).toBe(11);
+      expect(report.documented).toBe(6);
+      const klassMissing = report.missing
+        .filter((m) => m.path === "src/klass.ts")
+        .map((m) => m.line)
+        .sort((a, b) => a - b);
+      expect(klassMissing).toEqual([8, 11, 14, 15]);
+      const anonMissing = report.missing.find((m) => m.path === "src/anon.ts");
+      expect(anonMissing?.name).toBe("exported_declaration.pong");
+    });
+
+    it("checkTrivialDocstrings: flags name-only stubs on declarations and members", async () => {
+      mockUtils("/repo");
+      const triviaFixture = [
+        "/** @module trivia */",
+        "/** id */",
+        "export const id = 1;",
+        "/** Computes the widget layout precisely. */",
+        "export function layout() {}",
+        "/** Documented widget. */",
+        "export interface Widget {",
+        "  /** The name. */",
+        "  name: string;",
+        "  /** Canonical unique storage key. */",
+        "  key: string;",
+        "  undoc: string;",
+        "}",
+        "const internalConst = 2;",
+        "/** Documented service. */",
+        "export class Service {",
+        "  /** Builds the service from a name. */",
+        "  constructor(name) {}",
+        "  /** Runs the service loop. */",
+        "  go() {}",
+        "}",
+      ].join("\n");
+      mockFs({
+        readFileSync: vi.fn((p: string) => (String(p).endsWith("trivia.ts") ? triviaFixture : "")) as never,
+      });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const violations = mod.checkTrivialDocstrings(["/repo/src/trivia.ts"]);
+      expect(violations.map((v) => v.line)).toEqual([3, 9]);
+      expect(violations.find((v) => v.line === 3)?.name).toBe("id");
+      expect(violations.find((v) => v.line === 9)?.name).toBe("Widget.name");
+      expect(violations.every((v) => v.reason === "trivial_docstring")).toBe(true);
     });
 
     it("checkOrphanSourceModules: flags multiple orphans (sort), honors allowlist + skip + out-of-set import", async () => {
@@ -902,7 +1102,13 @@ describe("static-quality-gate", () => {
     async function seedFixture(root: string): Promise<void> {
       await seedRoots(root);
       const files = {
-        "src/cli.ts": '/** CLI test fixture. */\nimport "./core/a";\nexport const cli = true;\n',
+        "src/cli.ts": [
+          "/** CLI test fixture. */",
+          'import "./core/a";',
+          "/** Marks the fixture entrypoint as loaded. */",
+          "export const cli = true;",
+          "",
+        ].join("\n"),
         "src/core/a.ts": [
           "/** Core test fixture. */",
           'import "./b";',
@@ -910,9 +1116,21 @@ describe("static-quality-gate", () => {
           "export function run() { return true; }",
           "",
         ].join("\n"),
-        "src/core/b.ts": "/** Leaf test fixture. */\nexport const value = 1;\n",
+        "src/core/b.ts": [
+          "/** Leaf test fixture. */",
+          "/** Fixture leaf sentinel number. */",
+          "export const value = 1;",
+          "",
+        ].join("\n"),
         "tests/unit/sample.ts": "export const sample = true;\n",
-        "packages/pkg/index.ts": "export const pkg = true;\n",
+        // Packages are held to the same documentation bar as src/, so the fixture
+        // package needs both a module header and a per-export docstring to be clean.
+        "packages/pkg/index.ts": [
+          "/** @module pkg */",
+          "/** Fixture package flag. */",
+          "export const pkg = true;",
+          "",
+        ].join("\n"),
       } as const;
       for (const [relativePath, content] of Object.entries(files)) {
         await mkdir(`${root}/${relativePath.split("/").slice(0, -1).join("/")}`, { recursive: true });
@@ -959,16 +1177,62 @@ describe("static-quality-gate", () => {
           file_count: number;
           source_docstring_coverage_percent: number;
           exported_docstring_coverage_percent: number;
+          member_docstring_coverage_percent: number;
         };
         source_docstrings: { coverage_percent: number };
         exported_docstrings: { coverage_percent: number };
+        member_docstrings: { coverage_percent: number };
       };
       expect(payload.ok).toBe(true);
       expect(payload.scanned.file_count).toBeGreaterThan(0);
       expect(payload.scanned.source_docstring_coverage_percent).toBe(100);
       expect(payload.scanned.exported_docstring_coverage_percent).toBe(100);
+      expect(payload.scanned.member_docstring_coverage_percent).toBe(100);
       expect(payload.source_docstrings.coverage_percent).toBe(100);
       expect(payload.exported_docstrings.coverage_percent).toBe(100);
+      expect(payload.member_docstrings.coverage_percent).toBe(100);
+    });
+
+    it("reports member_docstring and trivial_docstring violations in text mode", async () => {
+      const root = await harness.createTempRoot("pm-static-quality-docs-");
+      await seedRoots(root);
+      await mkdir(`${root}/src/core`, { recursive: true });
+      // src/cli.ts is entry-allowlisted (never an orphan) and imports the contract
+      // module so the contract module is not flagged as an orphan either.
+      await writeFile(
+        `${root}/src/cli.ts`,
+        [
+          "/** Entry fixture. */",
+          'import "./core/contract";',
+          "/** Marks the fixture entry as loaded. */",
+          "export const cli = true;",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await writeFile(
+        `${root}/src/core/contract.ts`,
+        [
+          "/** @module contract */",
+          "/** id */", // name-only docstring → trivial_docstring violation
+          "export const id = 1;",
+          "/** Documented contract. */",
+          "export interface Contract {",
+          "  undocumented: string;", // missing member docstring → member coverage < 100
+          "}",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      mockUtils(root);
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      process.argv = ["node", "x", "--max-lines", "500", "--max-lines-tests", "500"];
+      mod.main();
+      expect(process.exitCode).toBe(1);
+      const emitted = errorSpy.mock.calls.map((c) => String(c[0]));
+      expect(emitted.some((line) => line.includes("member_docstring coverage"))).toBe(true);
+      expect(emitted.some((line) => line.includes("trivial_docstring violations"))).toBe(true);
     });
 
     it("full text scan prints success message when clean", async () => {

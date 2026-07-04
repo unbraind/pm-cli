@@ -1,0 +1,19 @@
+id: pm-mswi
+title: "Docstrings: src/core/extensions (extension-types + loader/runtime contracts)"
+description: "Add TSDoc to every in-scope symbol under src/core/extensions/* (heaviest file: extension-types.ts). Exported consts, interface/type members, public class members. Baseline ~501 missing. Docstrings only. Verify via gate + typecheck."
+type: Task
+status: in_progress
+priority: 1
+tags[4]: coverage,docs,docstrings,quality
+created_at: "2026-07-04T20:18:51.411Z"
+updated_at: "2026-07-04T20:46:26.882Z"
+assignee: maintainer-agent
+author: maintainer-agent
+estimated_minutes: 180
+acceptance_criteria: "Gate reports 0 missing/boilerplate/trivial-stub for src/core/extensions; tsc clean; contracts cross-referenced with {@link} where useful."
+parent: pm-4ak1
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-5566,related,"2026-07-04T20:40:46.939Z",null,null
+body: ""

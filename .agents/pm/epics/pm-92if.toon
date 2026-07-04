@@ -6,10 +6,14 @@ status: in_progress
 priority: 2
 tags[3]: code-quality,codefactor,tech-debt
 created_at: "2026-06-26T13:29:14.359Z"
-updated_at: "2026-07-04T17:42:47.708Z"
+updated_at: "2026-07-04T19:16:34.165Z"
 assignee: claude-code-agent
 author: claude-code-agent
+estimated_minutes: 600
 acceptance_criteria: "CodeFactor overall repository grade reaches A+ (or the highest attainable) on branch main; CodeFactor reports 0 outstanding issues across Complexity, Maintainability, and Duplication; local lint/quality parity tooling exists so findings can be reproduced and kept at zero (no regressions on new PRs)."
+parent: pm-doxj
+risk: low
+confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-fmjy,related,"2026-07-02T06:39:46.472Z",null,null
 comments[160]{created_at,author,text}:
@@ -639,4 +643,4 @@ test_runs[20]{run_id,kind,status,started_at,finished_at,recorded_at,passed,faile
   test-local-mqxg9fx9-f462lm,test,passed,"2026-06-28T07:10:39.647Z","2026-06-28T07:10:49.053Z","2026-06-28T07:10:49.053Z",1,0,0
   test-local-mqxi4yd3-niso3y,test,passed,"2026-06-28T08:03:09.795Z","2026-06-28T08:03:18.903Z","2026-06-28T08:03:18.903Z",1,0,0
   test-local-mqxqrvks-yhyeo9,test,passed,"2026-06-28T12:01:34.241Z","2026-06-28T12:05:05.308Z","2026-06-28T12:05:05.308Z",17,0,0
-body: ""
+body: "## Charter\nQuality epic: drive CodeFactor from A to A+ and keep it there. eslint-suppressions.json (max 17/file rule budget) IS the CodeFactor source of truth; suppressions ratcheted 168 -> 109 (2026-07-04). Complexity: `?.` counts toward CC; static complexity cap 260; LOC cap 3400 per file.\n\n## Method\n- Work from the live findings list (see Source links in description), never from memory.\n- Decompose god-functions by extracting phases at the same call position to preserve behavior/order (PR#412 runCreate 172->≤17 precedent).\n- Duplication: jscpd gate (.jscpd.json minTokens 115; ratchet toward ~90 as clones are paid down).\n\n## Open children (2026-07-04)\n- pm-jt3b — split search.ts (3119 LOC, 92% of cap) into rendering/query-parsing/inline-field modules.\n- pm-ueuq — dedupe flag-contracts.ts per-command clone blocks (~150 lines) + cross-file clone pairs.\n- pm-f4yn — prune commands barrel dead re-exports; adopt knip as a dead-export gate.\nAlso related (not a child): pm-0n6p runUpdate/mutate CC follow-up.\n\n## Exit criteria\nCodeFactor overview shows A+ with zero outstanding findings; suppression count stable or falling; all three children closed with gate evidence."

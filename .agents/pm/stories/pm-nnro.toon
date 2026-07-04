@@ -1,0 +1,21 @@
+id: pm-nnro
+title: "As a coding agent, I want keyword, semantic, and hybrid search with inline field filters, so that I can find relevant prior context before creating new work and never duplicate an item"
+description: ""
+type: Story
+status: closed
+priority: 3
+tags[5]: agent-story,"area:search",capability,living-map,story
+created_at: "2026-07-04T19:59:43.404Z"
+updated_at: "2026-07-04T19:59:44.010Z"
+author: maintainer-agent
+estimated_minutes: 420
+acceptance_criteria: "BM25 offline provider plus optional vector/hybrid retrieval; inline field:value query syntax; --status/--type/--tag scoping composes; relevance regressions are caught by a golden-query eval gate (nDCG/MRR)."
+goal: project management = context management
+parent: pm-ydp6
+risk: low
+confidence: high
+resolution: "Delivered and maintained by pm-ydp6: BM25 + vector/hybrid search, inline field filters, background reindex, and a golden-query eval harness."
+expected_result: "An agent finds relevant context before creating work, preventing duplicates."
+actual_result: BM25 offline + vector/hybrid + inline field search + eval harness shipped.
+close_reason: "Delivered and maintained by pm-ydp6: BM25 + vector/hybrid search, inline field filters, background reindex, and a golden-query eval harness."
+body: "## Agent need\nProject management = context management: an agent must retrieve existing context before acting, both to reuse knowledge and to avoid creating duplicate items.\n\n## Delivered surface (pm-ydp6)\nBM25 + corpus; vector-stores + embedding-batches; hybrid relevance; inline-field query parser + --highlight; background-refresh + staleness; pm eval golden-query harness.\n\n## Verified by\nsearch-bm25 tests and the golden-queries eval fixtures. Enduring agent-value statement for the search capability; new work lands in pm-ydp6."

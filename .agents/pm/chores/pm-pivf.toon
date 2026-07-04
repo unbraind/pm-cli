@@ -1,0 +1,16 @@
+id: pm-pivf
+title: Resolve validate duplicate issue-code GH-209 warning without changelog drag
+description: "pm validate metadata warns validate_metadata_duplicate_issue_codes for GH-209 shared by closed items pm-1byt (exit-13 top-level-await fix) and pm-25se (OTLP export follow-up). Both live in shipped release buckets; renaming either title now would move it into [Unreleased] because pm-changelog buckets by updated_at (known trap). Resolve by either (a) teaching issue-code dedupe to exempt explicit 'follow-up' titled items so distinct logical work sharing a GH code is not flagged, or (b) performing the rename in a dedicated tracker-only migration where the changelog is regenerated and reviewed in the same commit."
+type: Chore
+status: open
+priority: 3
+tags[3]: metadata,tracker-governance,validate
+created_at: "2026-07-04T19:01:47.101Z"
+updated_at: "2026-07-04T19:46:30.941Z"
+author: maintainer-agent
+estimated_minutes: 45
+acceptance_criteria: "pm validate reports duplicate_issue_codes_count: 0 (or the GH-209 pair is exempted by an agreed follow-up rule with a spec); changelog:pm:check stays green in the same change; no closed item silently migrates release buckets."
+parent: pm-33cw
+risk: low
+confidence: high
+body: "## Context\n`pm validate` metadata check warns `validate_metadata_duplicate_issue_codes: 1` — issue code GH-209 is shared by two CLOSED items:\n- pm-1byt \"GH-209: successful pm mutations can exit 13 from unsettled top-level await\" (closed 2026-06-12)\n- pm-25se \"GH-209 follow-up: OTEL span export keeps the CLI alive ~10s (and can exit 13) when the traces endpoint is unreachable\" (closed 2026-06-14)\n\nIssue-code extraction is title-prefix based, so the \"GH-209 follow-up:\" prefix collides with the original. Both items are legitimate distinct work; this is arguably a validator false-positive rather than a data error.\n\n## Why this can't be fixed by a simple rename\npm-changelog buckets closed items by `updated_at`. Touching either closed item now would drag it out of its shipped release section (2026.6.x) into `[Unreleased]`, corrupting the historical changelog and failing `changelog:pm:check` review expectations. This is the known changelog-bucket trap that has bitten twice before.\n\n## Options (pick one)\n1. **Validator exemption (preferred):** teach the issue-code dedupe to treat an explicit \"follow-up\" marker (e.g. title starting `GH-NNN follow-up:`) as a distinct logical code, with a spec pinning the exemption. Fixes the class, touches no closed items, zero changelog risk.\n2. **Tracker-only rename migration:** rename pm-25se's title prefix (e.g. `GH-209-FU:`) in a dedicated tracker-only commit where the changelog is regenerated and the bucket move is reviewed/accepted explicitly as part of the same change.\n\n## Evidence\n- `pm validate` remediation_hint: \"Items pm-1byt, pm-25se share issue code \\\"GH-209\\\"; rename or merge so each logical code maps to one item.\"\n- Remediation-registry entry for this warning class already exists (closed pm-sdbo)."

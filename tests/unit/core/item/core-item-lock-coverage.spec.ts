@@ -235,6 +235,31 @@ describe("core/lock/lock additional branch coverage", () => {
     }
   });
 
+  it("resolves lock wait budgets from environment and caller fallbacks", () => {
+    const previousWaitOverride = process.env.PM_LOCK_WAIT_MS;
+    try {
+      process.env.PM_LOCK_WAIT_MS = "75";
+      expect(lockInternals.resolveLockWaitMs(10)).toBe(75);
+
+      process.env.PM_LOCK_WAIT_MS = "invalid";
+      expect(lockInternals.resolveLockWaitMs(10.9)).toBe(10);
+
+      process.env.PM_LOCK_WAIT_MS = " ";
+      expect(lockInternals.resolveLockWaitMs(3.8)).toBe(3);
+
+      delete process.env.PM_LOCK_WAIT_MS;
+      expect(lockInternals.resolveLockWaitMs(undefined)).toBe(0);
+      expect(lockInternals.resolveLockWaitMs(-1)).toBe(0);
+      expect(lockInternals.resolveLockWaitMs(Number.POSITIVE_INFINITY)).toBe(0);
+    } finally {
+      if (previousWaitOverride === undefined) {
+        delete process.env.PM_LOCK_WAIT_MS;
+      } else {
+        process.env.PM_LOCK_WAIT_MS = previousWaitOverride;
+      }
+    }
+  });
+
   it("dispatches extension lock lifecycle hooks for read create and release", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-lock-hook-lifecycle";
@@ -329,6 +354,23 @@ describe("core/lock/lock additional branch coverage", () => {
     });
   });
 
+  it("requires force for valid stale locks without warning suffixes", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-valid-stale-requires-force";
+      const lockPath = getLockPath(pmPath, id);
+      await fs.writeFile(
+        lockPath,
+        `${JSON.stringify({ id, pid: 1, owner: "other-owner", created_at: STALE_TS, ttl_seconds: 60 }, null, 2)}\n`,
+        "utf8",
+      );
+
+      await expect(acquireLock(pmPath, id, 60, "owner-a", false)).rejects.toMatchObject({
+        exitCode: EXIT_CODE.CONFLICT,
+        message: `Item ${id} lock is stale; rerun with --force when supported for this command`,
+      });
+    });
+  });
+
   it("surfaces deterministic warning tokens when lock metadata cannot be read", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-lock-read-failed";
@@ -415,6 +457,34 @@ describe("core/lock/lock additional branch coverage", () => {
         exitCode: EXIT_CODE.CONFLICT,
         message: "Item pm-lock-active-no-owner is locked",
       });
+    });
+  });
+
+  it("waits with bounded jitter before reporting an active lock conflict", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-active-wait";
+      const lockPath = getLockPath(pmPath, id);
+      const activeTs = new Date().toISOString();
+      await fs.writeFile(
+        lockPath,
+        `${JSON.stringify({ id, pid: 1, owner: "other-owner", created_at: activeTs, ttl_seconds: 60 }, null, 2)}\n`,
+        "utf8",
+      );
+      const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.5);
+      try {
+        await expect(acquireLock(pmPath, id, 60, "owner-a", false, true, 2)).rejects.toMatchObject({
+          exitCode: EXIT_CODE.CONFLICT,
+          context: {
+            code: "lock_conflict",
+            recovery: {
+              retry_after_ms: 250,
+            },
+          },
+          message: expect.stringContaining("after waiting 2ms"),
+        });
+      } finally {
+        randomSpy.mockRestore();
+      }
     });
   });
 

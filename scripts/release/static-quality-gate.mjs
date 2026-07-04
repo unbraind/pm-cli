@@ -182,6 +182,23 @@ export function sourceFilesOnly(files) {
   return files.filter((absolutePath) => relativeToRepo(absolutePath).startsWith("src/"));
 }
 
+// Documentation scope for the docstring-coverage gates: every hand-authored,
+// shipped TypeScript module under `src/` and `packages/`. Test files (`*.spec.ts`,
+// `*.test.ts`) are excluded because their describe/it blocks are self-documenting
+// and carry no public API; `.d.ts` files are already filtered upstream. This is
+// deliberately broader than `sourceFilesOnly` (which stays `src/`-only for the
+// orphan-module check) so first-party extension packages are held to the same
+// documentation bar as the core CLI they extend.
+export function documentedSourceFiles(files) {
+  return files.filter((absolutePath) => {
+    const relativePath = relativeToRepo(absolutePath);
+    if (!relativePath.startsWith("src/") && !relativePath.startsWith("packages/")) {
+      return false;
+    }
+    return !/\.(?:spec|test)\.ts$/u.test(relativePath);
+  });
+}
+
 function stripShebang(sourceText) {
   if (!sourceText.startsWith("#!")) {
     return sourceText;
@@ -195,7 +212,7 @@ export function hasModuleDocstring(sourceText) {
 }
 
 export function checkSourceDocstringCoverage(files, minCoveragePercent) {
-  const sourceFiles = sourceFilesOnly(files);
+  const sourceFiles = documentedSourceFiles(files);
   const missing = [];
   for (const absolutePath of sourceFiles) {
     if (!hasModuleDocstring(loadText(absolutePath))) {
@@ -229,15 +246,12 @@ function exportedDocstringTarget(node) {
   ) {
     return node;
   }
+  // Every exported binding is public API — a re-exported constant, a frozen
+  // lookup table, or a configuration object is just as much a documented surface
+  // as an exported function. The previous gate only required docstrings on
+  // exported *function* values; the data-contract tier documents them all.
   if (ts.isVariableStatement(node) && hasExportModifier(node)) {
-    const hasFunctionInitializer = node.declarationList.declarations.some(
-      (declaration) =>
-        declaration.initializer &&
-        (ts.isArrowFunction(declaration.initializer) || ts.isFunctionExpression(declaration.initializer)),
-    );
-    if (hasFunctionInitializer) {
-      return node;
-    }
+    return node;
   }
   return undefined;
 }
@@ -251,26 +265,39 @@ function declarationName(node) {
   return node.name && ts.isIdentifier(node.name) ? node.name.text : "exported_declaration";
 }
 
-function hasNodeDocstring(sourceFile, node) {
+// Returns the declaration's OWN `/** ... */` docstring comment text, or null.
+// The file-level module doc is excluded two ways: by position (a leading comment
+// sitting exactly at the module-doc offset is the module banner, not this node's
+// doc) and by content (any `@module` comment is a module banner). This is what
+// stops the first declaration in a file from silently inheriting the module doc.
+function nodeOwnDocstringComment(sourceFile, node) {
   const fullText = sourceFile.getFullText();
   const strippedText = stripShebang(fullText);
   const moduleDocRelativeStart = strippedText.trimStart().startsWith("/**") ? strippedText.indexOf("/**") : -1;
-  const moduleDocStart = moduleDocRelativeStart === -1 ? -1 : fullText.length - strippedText.length + moduleDocRelativeStart;
+  const moduleDocStart =
+    moduleDocRelativeStart === -1 ? -1 : fullText.length - strippedText.length + moduleDocRelativeStart;
   const ranges = ts.getLeadingCommentRanges(fullText, node.pos) ?? [];
-  return ranges.some((range) => {
+  for (const range of ranges) {
     if (range.pos === moduleDocStart) {
-      return false;
+      continue;
     }
     const comment = fullText.slice(range.pos, range.end);
-    return comment.startsWith("/**") && !comment.includes("@module");
-  });
+    if (comment.startsWith("/**") && !comment.includes("@module")) {
+      return comment;
+    }
+  }
+  return null;
+}
+
+function hasNodeDocstring(sourceFile, node) {
+  return nodeOwnDocstringComment(sourceFile, node) !== null;
 }
 
 export function checkExportedDocstringCoverage(files, minCoveragePercent) {
   const missing = [];
   let total = 0;
   let documented = 0;
-  for (const absolutePath of sourceFilesOnly(files)) {
+  for (const absolutePath of documentedSourceFiles(files)) {
     const sourceText = loadText(absolutePath);
     const sourceFile = ts.createSourceFile(absolutePath, sourceText, ts.ScriptTarget.Latest, true);
     for (const node of sourceFile.statements) {
@@ -311,7 +338,7 @@ const BOILERPLATE_DOCSTRING_PATTERNS = [
 
 export function checkDocstringBoilerplate(files) {
   const violations = [];
-  for (const absolutePath of sourceFilesOnly(files)) {
+  for (const absolutePath of documentedSourceFiles(files)) {
     const sourceText = loadText(absolutePath);
     const sourceFile = ts.createSourceFile(absolutePath, sourceText, ts.ScriptTarget.Latest, true);
     const scanner = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.Standard, sourceText);
@@ -333,6 +360,202 @@ export function checkDocstringBoilerplate(files) {
         }
       }
       token = scanner.scan();
+    }
+  }
+  return violations.sort((left, right) => left.path.localeCompare(right.path) || left.line - right.line);
+}
+
+function ownerDisplayName(node) {
+  return node.name && ts.isIdentifier(node.name) ? node.name.text : "exported_declaration";
+}
+
+function simpleMemberName(sourceFile, member) {
+  if (ts.isConstructorDeclaration(member)) {
+    return "constructor";
+  }
+  // Non-constructor members reach here only after collectExportedMemberTargets
+  // has confirmed they carry a name, so `member.name` is always defined. Plain
+  // identifiers use their text directly; string/numeric/computed member names
+  // fall back to their verbatim source text.
+  return ts.isIdentifier(member.name) ? member.name.text : member.name.getText(sourceFile);
+}
+
+// A class member is out of the public-documentation scope when it is explicitly
+// `private`/`protected` or uses an ECMAScript `#private` name — those are
+// implementation details, not the class's documented contract.
+function isNonPublicClassMember(member) {
+  const hasNonPublicModifier =
+    member.modifiers?.some(
+      (modifier) =>
+        modifier.kind === ts.SyntaxKind.PrivateKeyword || modifier.kind === ts.SyntaxKind.ProtectedKeyword,
+    ) === true;
+  return hasNonPublicModifier || (member.name !== undefined && ts.isPrivateIdentifier(member.name));
+}
+
+// The documented members of an exported declaration: every interface member,
+// every property of an object-literal type alias, and every public
+// method/accessor/property (plus a parameterized constructor) of a class. Members
+// without a name (index/call/construct signatures) carry no documentable symbol
+// and are skipped.
+function collectExportedMemberTargets(node) {
+  if (ts.isInterfaceDeclaration(node)) {
+    return node.members.filter((member) => member.name !== undefined);
+  }
+  if (ts.isTypeAliasDeclaration(node)) {
+    // A type alias always has a `.type`; only object-literal shapes expose
+    // per-field members worth documenting (unions/keywords/mapped types do not).
+    return ts.isTypeLiteralNode(node.type)
+      ? node.type.members.filter((member) => member.name !== undefined)
+      : [];
+  }
+  return node.members.filter((member) => {
+    if (isNonPublicClassMember(member)) {
+      return false;
+    }
+    // Methods, accessors, and properties always carry a name; a parameterized
+    // constructor documents its inputs. Static blocks, index signatures, and
+    // parameterless constructors expose no documentable contract.
+    if (
+      ts.isMethodDeclaration(member) ||
+      ts.isGetAccessorDeclaration(member) ||
+      ts.isSetAccessorDeclaration(member) ||
+      ts.isPropertyDeclaration(member)
+    ) {
+      return true;
+    }
+    return ts.isConstructorDeclaration(member) && member.parameters.length > 0;
+  });
+}
+
+function isDocumentableMemberOwner(node) {
+  return (
+    hasExportModifier(node) &&
+    (ts.isInterfaceDeclaration(node) || ts.isTypeAliasDeclaration(node) || ts.isClassDeclaration(node))
+  );
+}
+
+export function checkExportedMemberDocstringCoverage(files, minCoveragePercent) {
+  const missing = [];
+  let total = 0;
+  let documented = 0;
+  for (const absolutePath of documentedSourceFiles(files)) {
+    const sourceText = loadText(absolutePath);
+    const sourceFile = ts.createSourceFile(absolutePath, sourceText, ts.ScriptTarget.Latest, true);
+    for (const node of sourceFile.statements) {
+      if (!isDocumentableMemberOwner(node)) {
+        continue;
+      }
+      const ownerName = ownerDisplayName(node);
+      for (const member of collectExportedMemberTargets(node)) {
+        total += 1;
+        if (hasNodeDocstring(sourceFile, member)) {
+          documented += 1;
+          continue;
+        }
+        const start = sourceFile.getLineAndCharacterOfPosition(member.getStart(sourceFile));
+        missing.push({
+          path: relativeToRepo(absolutePath),
+          line: start.line + 1,
+          name: `${ownerName}.${simpleMemberName(sourceFile, member)}`,
+          reason: "missing_member_docstring",
+        });
+      }
+    }
+  }
+  const coveragePercent = total === 0 ? 100 : (documented / total) * 100;
+  return {
+    ok: coveragePercent >= minCoveragePercent,
+    total,
+    documented,
+    missing: missing.sort((left, right) => left.path.localeCompare(right.path) || left.line - right.line),
+    coverage_percent: Number(coveragePercent.toFixed(2)),
+    min_coverage_percent: minCoveragePercent,
+  };
+}
+
+// Function words plus a handful of generic nouns that describe "some declaration"
+// rather than THIS declaration. A docstring whose only words are these plus the
+// symbol's own name tokens restates the identifier instead of explaining it. The
+// set is intentionally tiny so the check fires only on genuinely empty prose.
+const DOCSTRING_FILLER_WORDS = new Set([
+  "the", "a", "an", "of", "for", "to", "and", "or", "is", "are", "be", "this", "that",
+  "these", "those", "it", "its", "in", "on", "by", "with", "as", "from", "into",
+  "value", "values",
+]);
+
+// Reduces a docstring comment to its plain prose: drops the `/** */` fences, the
+// per-line leading `*`, and TSDoc tag markers (`@param`, `{@link}`) while keeping
+// the words around them, so a tag-only docstring is still judged on its content.
+export function extractDocstringProse(comment) {
+  const withoutFences = comment.replace(/^\/\*\*/u, "").replace(/\*\/\s*$/u, "");
+  const joined = withoutFences
+    .split(/\r?\n/u)
+    .map((line) => line.replace(/^\s*\*?\s?/u, ""))
+    .join(" ");
+  return joined
+    .replace(/\{?@[a-zA-Z]+\}?|\}/gu, " ")
+    .replace(/\s+/gu, " ")
+    .trim();
+}
+
+// Splits an identifier (camelCase, PascalCase, snake_case, dotted owner.member)
+// into its lowercase word tokens so they can be subtracted from a docstring's
+// prose when judging whether the docstring adds information beyond the name.
+export function identifierWords(name) {
+  return (name ?? "")
+    .replace(/([a-z0-9])([A-Z])/gu, "$1 $2")
+    .replace(/[^A-Za-z0-9]+/gu, " ")
+    .toLowerCase()
+    .split(/\s+/u)
+    .filter(Boolean);
+}
+
+// True when a docstring adds nothing beyond the symbol's own name: after removing
+// filler words and the identifier's tokens, no meaningful word remains. Catches
+// empty (`/** */`) and name-restating (`/** The item id. */` on `itemId`) stubs
+// without penalizing terse-but-informative prose (`/** Unique primary key. */`).
+export function isTrivialDocstring(comment, symbolName) {
+  const nameTokens = new Set(identifierWords(symbolName));
+  const meaningful = extractDocstringProse(comment)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, " ")
+    .split(/\s+/u)
+    .filter(Boolean)
+    .filter((word) => !DOCSTRING_FILLER_WORDS.has(word) && !nameTokens.has(word));
+  return meaningful.length === 0;
+}
+
+export function checkTrivialDocstrings(files) {
+  const violations = [];
+  for (const absolutePath of documentedSourceFiles(files)) {
+    const sourceText = loadText(absolutePath);
+    const sourceFile = ts.createSourceFile(absolutePath, sourceText, ts.ScriptTarget.Latest, true);
+    const inspect = (node, reportName, triviaName) => {
+      const comment = nodeOwnDocstringComment(sourceFile, node);
+      if (comment === null || !isTrivialDocstring(comment, triviaName)) {
+        return;
+      }
+      const start = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+      violations.push({
+        path: relativeToRepo(absolutePath),
+        line: start.line + 1,
+        name: reportName,
+        reason: "trivial_docstring",
+      });
+    };
+    for (const node of sourceFile.statements) {
+      const target = exportedDocstringTarget(node);
+      if (target) {
+        const name = declarationName(target);
+        inspect(target, name, name);
+      }
+      if (isDocumentableMemberOwner(node)) {
+        const ownerName = ownerDisplayName(node);
+        for (const member of collectExportedMemberTargets(node)) {
+          const simple = simpleMemberName(sourceFile, member);
+          inspect(member, `${ownerName}.${simple}`, simple);
+        }
+      }
     }
   }
   return violations.sort((left, right) => left.path.localeCompare(right.path) || left.line - right.line);
@@ -637,6 +860,7 @@ export function usage() {
     [--max-duplicate-chunks 8]
     [--min-docstring-coverage 100]
     [--min-exported-docstring-coverage 100]
+    [--min-member-docstring-coverage 100]
     [--max-eslint-suppressions ${MAX_ESLINT_SUPPRESSIONS}]
     [--max-inline-lint-disables ${MAX_INLINE_ESLINT_DISABLES}]
     [--max-broad-lint-disables ${MAX_BROAD_ESLINT_DISABLES}]
@@ -644,9 +868,11 @@ export function usage() {
     [--max-jscpd-ignore-pragmas ${MAX_JSCPD_IGNORE_PRAGMAS}]
 
 Runs strict static quality checks for dead/orphan modules, duplicate chunks, complexity,
-file-length limits, source-file/exported declaration docstring coverage, directory organization
-density, the ESLint bulk-suppressions baseline budget, and hard budgets on inline
-gate-silencing pragmas (ESLint disable comments, coverage-ignore pragmas, jscpd ignores).
+file-length limits, docstring coverage across src/ and packages/ (module headers, exported
+declarations incl. consts, and members of exported interfaces/type aliases/classes), rejection
+of boilerplate and name-restating docstrings, directory organization density, the ESLint
+bulk-suppressions baseline budget, and hard budgets on inline gate-silencing pragmas
+(ESLint disable comments, coverage-ignore pragmas, jscpd ignores).
 `);
 }
 
@@ -672,6 +898,7 @@ function parseQualityThresholds(flags) {
     maxDuplicateChunks: parseNumberFlag(flags, "max-duplicate-chunks", 8),
     minDocstringCoverage: parseNumberFlag(flags, "min-docstring-coverage", 100),
     minExportedDocstringCoverage: parseNumberFlag(flags, "min-exported-docstring-coverage", 100),
+    minMemberDocstringCoverage: parseNumberFlag(flags, "min-member-docstring-coverage", 100),
     maxEslintSuppressions: parseNumberFlag(flags, "max-eslint-suppressions", MAX_ESLINT_SUPPRESSIONS),
     maxInlineEslintDisables: parseNumberFlag(flags, "max-inline-lint-disables", MAX_INLINE_ESLINT_DISABLES),
     maxBroadEslintDisables: parseNumberFlag(flags, "max-broad-lint-disables", MAX_BROAD_ESLINT_DISABLES),
@@ -696,7 +923,9 @@ function buildQualityReport(files, duplicateScopeFiles, thresholds) {
   const complexityViolations = checkFunctionComplexity(files, thresholds.maxComplexity);
   const sourceDocstringCoverage = checkSourceDocstringCoverage(files, thresholds.minDocstringCoverage);
   const exportedDocstringCoverage = checkExportedDocstringCoverage(files, thresholds.minExportedDocstringCoverage);
+  const memberDocstringCoverage = checkExportedMemberDocstringCoverage(files, thresholds.minMemberDocstringCoverage);
   const boilerplateDocstringViolations = checkDocstringBoilerplate(files);
+  const trivialDocstringViolations = checkTrivialDocstrings(files);
   const eslintSuppressionsBudget = checkEslintSuppressionsBudget(thresholds.maxEslintSuppressions);
   const inlinePragmaBudgets = checkInlinePragmaBudgets(thresholds);
   return {
@@ -710,13 +939,16 @@ function buildQualityReport(files, duplicateScopeFiles, thresholds) {
       complexityViolations.length === 0 &&
       sourceDocstringCoverage.ok &&
       exportedDocstringCoverage.ok &&
-      boilerplateDocstringViolations.length === 0,
+      memberDocstringCoverage.ok &&
+      boilerplateDocstringViolations.length === 0 &&
+      trivialDocstringViolations.length === 0,
     scanned: {
       file_count: files.length,
       duplicate_scope_file_count: duplicateScopeFiles.length,
       duplicate_window_lines: thresholds.duplicateWindow,
       source_docstring_coverage_percent: sourceDocstringCoverage.coverage_percent,
       exported_docstring_coverage_percent: exportedDocstringCoverage.coverage_percent,
+      member_docstring_coverage_percent: memberDocstringCoverage.coverage_percent,
     },
     thresholds: {
       max_src_lines: thresholds.maxSrcLines,
@@ -731,6 +963,7 @@ function buildQualityReport(files, duplicateScopeFiles, thresholds) {
       max_jscpd_ignore_pragmas: thresholds.maxJscpdIgnorePragmas,
       min_docstring_coverage_percent: thresholds.minDocstringCoverage,
       min_exported_docstring_coverage_percent: thresholds.minExportedDocstringCoverage,
+      min_member_docstring_coverage_percent: thresholds.minMemberDocstringCoverage,
     },
     violations: {
       file_length: fileLengthViolations,
@@ -740,10 +973,13 @@ function buildQualityReport(files, duplicateScopeFiles, thresholds) {
       complexity: complexityViolations,
       source_docstrings: sourceDocstringCoverage.missing,
       exported_docstrings: exportedDocstringCoverage.missing,
+      member_docstrings: memberDocstringCoverage.missing,
       boilerplate_docstrings: boilerplateDocstringViolations,
+      trivial_docstrings: trivialDocstringViolations,
     },
     source_docstrings: sourceDocstringCoverage,
     exported_docstrings: exportedDocstringCoverage,
+    member_docstrings: memberDocstringCoverage,
     eslint_suppressions: eslintSuppressionsBudget,
     inline_pragmas: inlinePragmaBudgets,
   };
@@ -778,8 +1014,20 @@ function printQualityFailureSummary(report) {
         `< ${report.exported_docstrings.min_coverage_percent}% (${report.exported_docstrings.missing.length} missing)`,
     );
   }
+  if (!report.member_docstrings.ok) {
+    console.error(
+      `- member_docstring coverage: ${report.member_docstrings.coverage_percent}% ` +
+        `< ${report.member_docstrings.min_coverage_percent}% (${report.member_docstrings.missing.length} missing)`,
+    );
+  }
   if (report.violations.boilerplate_docstrings.length > 0) {
     console.error(`- boilerplate_docstring violations: ${report.violations.boilerplate_docstrings.length}`);
+  }
+  if (report.violations.trivial_docstrings.length > 0) {
+    console.error(
+      `- trivial_docstring violations: ${report.violations.trivial_docstrings.length} ` +
+        `(docstring restates the symbol name; describe purpose/units/invariants instead)`,
+    );
   }
   if (!report.eslint_suppressions.ok) {
     if (report.eslint_suppressions.error) {

@@ -1,0 +1,21 @@
+id: pm-wo7x
+title: "As an MCP-connected agent, I want narrow pm_* tools kept in lockstep with the CLI via machine-readable contracts, so that I get drift-free, discoverable operations over the same primitives"
+description: ""
+type: Story
+status: closed
+priority: 3
+tags[5]: agent-story,"area:mcp",capability,living-map,story
+created_at: "2026-07-04T19:59:51.733Z"
+updated_at: "2026-07-04T19:59:52.381Z"
+author: maintainer-agent
+estimated_minutes: 420
+acceptance_criteria: 28 narrow pm_* tools cover frequent operations; every PM_TOOL_ACTIONS entry has a matching SCHEMA_CONTRACTS entry; tool/flag parity and contract drift are gated in CI; MCP envelope semantics are consistent (CLI JSON has no result wrapper).
+goal: project management = context management
+parent: pm-5k4v
+risk: low
+confidence: high
+resolution: "Delivered and maintained by pm-5k4v: 28 narrow MCP tools, CLI-parity machine-readable contracts, and drift gates."
+expected_result: An agent operates pm over MCP with zero contract drift.
+actual_result: 28 pm_* tools + machine-readable contracts + drift gates shipped.
+close_reason: "Delivered and maintained by pm-5k4v: 28 narrow MCP tools, CLI-parity machine-readable contracts, and drift gates."
+body: "## Agent need\nAgents integrate with pm over MCP; that surface must expose the same primitives as the CLI and never drift, or agent integrations silently break.\n\n## Delivered surface (pm-5k4v)\nsrc/mcp/server + tool-definitions (28 tools); cli-contracts (flag/enum/tool-schema/parameter tables); pm contracts --full; compact MCP defaults; shared scope enum.\n\n## Verified by\nContract gates and tool-count assertions (4 places). Enduring agent-value statement for the MCP/contract capability; new work lands in pm-5k4v."

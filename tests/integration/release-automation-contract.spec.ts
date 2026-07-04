@@ -24,7 +24,9 @@ describe("release automation contract", () => {
     expect(packageJson.scripts?.build).toBe(
       "node scripts/prepare-build-cache.mjs && tsc -p tsconfig.json && node scripts/bundle-cli.mjs && node scripts/finalize-build.mjs",
     );
-    expect(packageJson.scripts?.["quality:static"]).toBe("node scripts/release/static-quality-gate.mjs");
+    expect(packageJson.scripts?.["quality:static"]).toBe(
+      "node scripts/release/static-quality-gate.mjs --min-docstring-coverage 92.93 --min-exported-docstring-coverage 84.41 --min-member-docstring-coverage 13.65",
+    );
     expect(packageJson.scripts?.lint).toBe("pnpm lint:eslint && pnpm lint:duplicates && pnpm lint:codefactor");
     expect(packageJson.scripts?.["lint:codefactor"]).toBe("pnpm quality:static");
     expect(packageJson.scripts?.typecheck).toBe(
