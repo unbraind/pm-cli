@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2026.7.4 - 2026-07-04
 
 ### Security
 
