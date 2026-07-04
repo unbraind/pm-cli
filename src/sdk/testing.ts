@@ -727,7 +727,7 @@ function readTestExtensionManifest(module: unknown): Partial<ExtensionManifest> 
   if (defaultExport && ("name" in defaultExport || "capabilities" in defaultExport)) {
     return defaultExport as Partial<ExtensionManifest>;
   }
-  if ("name" in moduleRecord || "capabilities" in moduleRecord) {
+  if (typeof module !== "function" && ("name" in moduleRecord || "capabilities" in moduleRecord)) {
     return moduleRecord as Partial<ExtensionManifest>;
   }
   return {};

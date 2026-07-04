@@ -483,6 +483,31 @@ describe("context item-argument guidance", () => {
     expect(envelope.recovery?.suggested_retry).toBe("pm get pm-a1b2");
   });
 
+  it("ignores context value flag arguments when falling back to argv positional parsing", () => {
+    const envelope = formatCommanderErrorForJson(
+      "error: too many arguments for 'context'. Expected 0 arguments.",
+      "context",
+      ALLOWED_TYPES,
+      2,
+      {
+        normalizedInvocationArgs: [
+          "context",
+          "--date",
+          "today",
+          "--limit",
+          "5",
+          "--section=focus",
+          "--fields",
+          "id,title",
+          "pm-a1b2",
+        ],
+      },
+    );
+
+    expect(envelope.code).toBe("context_takes_no_item_argument");
+    expect(envelope.recovery?.suggested_retry).toBe("pm get pm-a1b2");
+  });
+
   it("skips dash-prefixed context flags before fallback positional arguments", () => {
     const envelope = formatCommanderErrorForJson(
       "error: too many arguments for 'context'. Expected 0 arguments.",

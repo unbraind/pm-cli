@@ -3213,6 +3213,9 @@ describe("createExtensionTestHarness", () => {
     const functionModule = Object.assign(() => undefined, { activate() {} });
     const viaFunction = await createExtensionTestHarness(functionModule, { name: "function-ext" });
     expect(viaFunction.name).toBe("function-ext");
+    const bareCallableModule = Object.assign(() => undefined, { activate() {} });
+    const viaBareCallable = await createExtensionTestHarness(bareCallableModule, { capabilities: ["commands"] });
+    expect(viaBareCallable.name).toBe("test-extension");
     const namedFunctionModule = Object.assign(() => undefined, {
       manifest: { name: "function-manifest-ext" },
       activate() {},

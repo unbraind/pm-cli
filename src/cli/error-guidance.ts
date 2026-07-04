@@ -1060,7 +1060,28 @@ function buildLinkedTestValueNotQuotedGuidance(
   });
 }
 
-const CONTEXT_GUIDANCE_VALUE_FLAGS = new Set(["--parent", "--pm-path", "--path"]);
+const CONTEXT_GUIDANCE_VALUE_FLAGS = new Set([
+  "--activity-limit",
+  "--assignee",
+  "--assignee-filter",
+  "--date",
+  "--depth",
+  "--fields",
+  "--format",
+  "--from",
+  "--limit",
+  "--parent",
+  "--path",
+  "--pm-path",
+  "--priority",
+  "--release",
+  "--section",
+  "--sprint",
+  "--stale-threshold",
+  "--tag",
+  "--to",
+  "--type",
+]);
 const CONTEXT_GUIDANCE_COMMAND_NAMES = new Set(["context", "ctx"]);
 
 function buildContextItemArgumentGuidance(
@@ -1083,7 +1104,7 @@ function buildContextItemArgumentGuidance(
         skipFlagValue = false;
         continue;
       }
-      const flagName = token.split("=", 1).join("");
+      const flagName = token.split("=")[0];
       if (CONTEXT_GUIDANCE_VALUE_FLAGS.has(flagName)) {
         skipFlagValue = !token.includes("=");
         continue;
