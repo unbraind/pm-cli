@@ -130,6 +130,7 @@ export async function runCopy(sourceId: string, options: CopyOptions, global: Gl
     author,
     false,
     settings.governance.force_required_for_stale_lock,
+    settings.locks.wait_ms,
   );
   const beforeDocument: ItemDocument = {
     metadata: {} as ItemMetadata,

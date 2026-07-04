@@ -83,11 +83,13 @@ export async function runClaim(
     message: options.message,
     force,
     mutate(document) {
-      previousAssignee = document.metadata.assignee ?? null;
+      const currentAssignee = document.metadata.assignee;
+      const currentAssigneeText = typeof currentAssignee === "string" ? currentAssignee : "";
+      previousAssignee = currentAssigneeText.trim().length > 0 ? currentAssigneeText : null;
       if (statusIsTerminal(document.metadata.status, statusRegistry) && !force) {
         throw new PmCliError(`Cannot claim terminal item ${document.metadata.id} without --force`, EXIT_CODE.CONFLICT);
       }
-      const heldByOther = previousAssignee !== null && previousAssignee.trim() !== "" && previousAssignee !== author;
+      const heldByOther = previousAssignee !== null && previousAssignee !== author;
       if (heldByOther && options.ifAvailable === true) {
         skipped = true;
         mutationWarnings.push(`claim_skipped_held_by:${previousAssignee}`);

@@ -285,6 +285,7 @@ export async function runSemanticRefreshWorker(
         process.env.PM_AUTHOR ?? "pm-search-refresh",
         false,
         settings.governance.force_required_for_stale_lock,
+        settings.locks.wait_ms,
       );
     } catch {
       if (attempt < LOCK_ACQUIRE_ATTEMPTS - 1) {

@@ -107,6 +107,20 @@ describe("core/store/settings-validator", () => {
     expect(validateSettings(raw).success).toBe(true);
   });
 
+  it("accepts non-negative lock waits and rejects negative waits", () => {
+    const zeroWait = minimalValidSettings();
+    zeroWait.locks = { ttl_seconds: 900, wait_ms: 0 };
+    expect(validateSettings(zeroWait).success).toBe(true);
+
+    const positiveWait = minimalValidSettings();
+    positiveWait.locks = { ttl_seconds: 900, wait_ms: 3000 };
+    expect(validateSettings(positiveWait).success).toBe(true);
+
+    const negativeWait = minimalValidSettings();
+    negativeWait.locks = { ttl_seconds: 900, wait_ms: -1 };
+    expect(validateSettings(negativeWait).success).toBe(false);
+  });
+
   it("rejects a value outside a literal union", () => {
     const raw = minimalValidSettings();
     (raw.output as Record<string, unknown>).default_format = "yaml";

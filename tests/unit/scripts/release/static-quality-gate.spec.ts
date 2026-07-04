@@ -1,5 +1,6 @@
 import type { Stats } from "node:fs";
 import * as fs from "node:fs";
+import * as childProcess from "node:child_process";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import * as nodePath from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -68,6 +69,19 @@ type SqModule = {
   complexityContribution: (node: unknown) => number;
   functionLikeName: (node: unknown, sf: unknown) => string;
   checkFunctionComplexity: (files: string[], max: number) => Array<{ function_name: string; complexity: number }>;
+  collectCodeFactorParityFiles: (
+    changedPaths?: { ok: true; files: string[] } | { ok: false; files: string[]; error: string },
+  ) => { ok: true; files: string[] } | { ok: false; files: string[]; error: string };
+  checkCodeFactorComplexity: (
+    max: number,
+    changedPaths?: { ok: true; files: string[] } | { ok: false; files: string[]; error: string },
+  ) => {
+    ok: boolean;
+    scanned_file_count: number;
+    max_complexity: number;
+    violations: Array<{ path: string; function_name: string; complexity: number; max_complexity: number }>;
+    error?: string;
+  };
   usage: () => void;
   parseNumberFlag: (flags: Map<string, unknown>, key: string, fallback: number) => number;
   countEslintSuppressions: (suppressionsPath: string) => number;
@@ -126,6 +140,13 @@ function mockUtils(repoRoot: string): void {
 function mockFs(impl: Partial<typeof fs>): void {
   vi.doMock("node:fs", async () => {
     const actual = await vi.importActual<typeof fs>("node:fs");
+    return { ...actual, ...impl };
+  });
+}
+
+function mockChildProcess(impl: Partial<typeof childProcess>): void {
+  vi.doMock("node:child_process", async () => {
+    const actual = await vi.importActual<typeof childProcess>("node:child_process");
     return { ...actual, ...impl };
   });
 }
@@ -688,6 +709,163 @@ describe("static-quality-gate", () => {
       expect(viol.some((v) => v.function_name === "busy")).toBe(true);
       const all = mod.checkFunctionComplexity(["/repo/src/x.ts"], 1);
       expect(all.some((v) => v.function_name.startsWith("<anonymous@"))).toBe(true);
+    });
+
+    it("checkCodeFactorComplexity enforces changed shipped/script files only", async () => {
+      mockUtils("/repo");
+      const complexSource = [
+        "export function changed(a, b) {",
+        "  if (a) return 1;",
+        "  if (b) return 2;",
+        "  return 0;",
+        "}",
+      ].join("\n");
+      mockFs({
+        existsSync: vi.fn((p: string) => String(p).endsWith("changed.ts") || String(p).endsWith("tool.mjs")) as never,
+        statSync: vi.fn(() => ({ isFile: () => true, isDirectory: () => false }) as unknown as Stats) as never,
+        readFileSync: vi.fn((p: string) => (String(p).endsWith("changed.ts") ? complexSource : "export const ok = true;\n")) as never,
+      });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const changedPaths = {
+        ok: true as const,
+        files: [
+          "src/changed.ts",
+          "scripts/tool.mjs",
+          "tests/unit/changed.spec.ts",
+          "docs/readme.md",
+          "src/types/example.d.ts",
+        ],
+      };
+
+      const parityFiles = mod.collectCodeFactorParityFiles(changedPaths);
+      expect(parityFiles.ok).toBe(true);
+      if (parityFiles.ok) {
+        expect(parityFiles.files.map((filePath) => filePath.replace("/repo/", "")).sort()).toEqual([
+          "scripts/tool.mjs",
+          "src/changed.ts",
+        ]);
+      }
+
+      const report = mod.checkCodeFactorComplexity(2, changedPaths);
+      expect(report.ok).toBe(false);
+      expect(report.scanned_file_count).toBe(2);
+      expect(report.violations).toEqual([
+        expect.objectContaining({
+          path: "src/changed.ts",
+          function_name: "changed",
+          complexity: 3,
+          max_complexity: 2,
+        }),
+      ]);
+    });
+
+    it("checkCodeFactorComplexity reports git inspection failures", async () => {
+      mockUtils("/repo");
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const report = mod.checkCodeFactorComplexity(16, {
+        ok: false,
+        files: [],
+        error: "git unavailable",
+      });
+      expect(report).toMatchObject({
+        ok: false,
+        scanned_file_count: 0,
+        max_complexity: 16,
+        error: "git unavailable",
+      });
+    });
+
+    it("checkCodeFactorComplexity reports default git scan failures after missing base refs", async () => {
+      mockUtils("/repo");
+      mockFs({
+        existsSync: vi.fn((p: string) => String(p) === "/repo/.git") as never,
+      });
+      mockChildProcess({
+        execFileSync: vi.fn((cmd: string, args: string[]) => {
+          expect(cmd).toBe("git");
+          if (args[0] === "merge-base") {
+            throw new Error("missing base");
+          }
+          throw new Error("diff unavailable");
+        }) as never,
+      });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const report = mod.checkCodeFactorComplexity(16);
+      expect(report).toMatchObject({
+        ok: false,
+        scanned_file_count: 0,
+        error: "Unable to inspect git changed files for CodeFactor parity.",
+      });
+    });
+
+    it("checkCodeFactorComplexity falls back to worktree diffs when base refs are empty", async () => {
+      mockUtils("/repo");
+      mockFs({
+        existsSync: vi.fn((p: string) => String(p) === "/repo/.git" || String(p) === "/repo/src/changed.ts") as never,
+        statSync: vi.fn((p: string) => {
+          if (String(p) === "/repo/src/changed.ts") {
+            return { isFile: () => true, isDirectory: () => false } as unknown as Stats;
+          }
+          return { isFile: () => false, isDirectory: () => true } as unknown as Stats;
+        }) as never,
+        readFileSync: vi.fn(() => "export function changed(a) {\n  if (a) return 1;\n  return 0;\n}\n") as never,
+      });
+      mockChildProcess({
+        execFileSync: vi.fn((cmd: string, args: string[]) => {
+          expect(cmd).toBe("git");
+          const joined = args.join(" ");
+          if (joined === "merge-base HEAD origin/main" || joined === "merge-base HEAD main") {
+            return "\n";
+          }
+          if (joined === "diff --name-only --diff-filter=ACMR") {
+            return "src/changed.ts\n";
+          }
+          return "";
+        }) as never,
+      });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const report = mod.checkCodeFactorComplexity(1);
+      expect(report.violations[0]).toMatchObject({ path: "src/changed.ts", complexity: 2 });
+    });
+
+    it("checkCodeFactorComplexity inspects git diff, staged, and unstaged paths in a checkout", async () => {
+      mockUtils("/repo");
+      mockFs({
+        existsSync: vi.fn((p: string) => String(p) === "/repo/.git" || String(p) === "/repo/src/changed.ts") as never,
+        statSync: vi.fn((p: string) => {
+          if (String(p) === "/repo/src/changed.ts") {
+            return { isFile: () => true, isDirectory: () => false } as unknown as Stats;
+          }
+          return { isFile: () => false, isDirectory: () => true } as unknown as Stats;
+        }) as never,
+        readFileSync: vi.fn(() => "export function changed(a) {\n  if (a) return 1;\n  return 0;\n}\n") as never,
+      });
+      mockChildProcess({
+        execFileSync: vi.fn((cmd: string, args: string[]) => {
+          expect(cmd).toBe("git");
+          const joined = args.join(" ");
+          if (joined === "merge-base HEAD origin/main") {
+            throw new Error("missing origin");
+          }
+          if (joined === "merge-base HEAD main") {
+            return "base-sha\n";
+          }
+          if (joined === "diff --name-only --diff-filter=ACMR base-sha...HEAD") {
+            return "src/changed.ts\n";
+          }
+          if (joined === "diff --name-only --diff-filter=ACMR") {
+            return "src/changed.ts\n";
+          }
+          if (joined === "diff --cached --name-only --diff-filter=ACMR") {
+            return "tests/unit/ignored.spec.ts\n";
+          }
+          return "";
+        }) as never,
+      });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const report = mod.checkCodeFactorComplexity(1);
+      expect(report.scanned_file_count).toBe(1);
+      expect(report.violations[0]).toMatchObject({ path: "src/changed.ts", complexity: 2 });
     });
 
     it("countEslintSuppressions: rejects unreadable or malformed files and sums valid counts", async () => {
@@ -1533,6 +1711,29 @@ describe("static-quality-gate", () => {
       const emitted = errorSpy.mock.calls.map((c) => String(c[0]));
       expect(emitted.some((line) => line.includes("inline_pragmas scan failed"))).toBe(true);
       expect(emitted.some((line) => line.includes("unreadable pragma file"))).toBe(true);
+    });
+
+    it("reports CodeFactor parity scan failures in text mode", async () => {
+      const root = await harness.createTempRoot("pm-static-quality-codefactor-fail-");
+      await seedFixture(root);
+      await mkdir(`${root}/.git`, { recursive: true });
+      mockUtils(root);
+      mockChildProcess({
+        execFileSync: vi.fn((cmd: string, args: string[]) => {
+          expect(cmd).toBe("git");
+          if (args[0] === "merge-base") {
+            throw new Error("missing base");
+          }
+          throw new Error("diff unavailable");
+        }) as never,
+      });
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      process.argv = ["node", "x", "--max-lines", "500", "--max-lines-tests", "500"];
+      mod.main();
+      expect(process.exitCode).toBe(1);
+      const emitted = errorSpy.mock.calls.map((c) => String(c[0]));
+      expect(emitted.some((line) => line.includes("codefactor_complexity scan failed"))).toBe(true);
     });
 
     it("rejects a duplicate-window below the minimum", async () => {

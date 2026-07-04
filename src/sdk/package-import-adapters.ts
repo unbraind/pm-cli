@@ -543,7 +543,15 @@ export async function commitImportedItem(
   const historyPath = getHistoryPath(pmRoot, id);
   const beforeDocument = emptyImportedDocument();
   try {
-    const releaseLock = await acquireLock(pmRoot, id, settings.locks.ttl_seconds, author);
+    const releaseLock = await acquireLock(
+      pmRoot,
+      id,
+      settings.locks.ttl_seconds,
+      author,
+      false,
+      settings.governance.force_required_for_stale_lock,
+      settings.locks.wait_ms,
+    );
     try {
       await writeFileAtomic(itemPath, serializeItemDocument(document, { format: "toon" }));
       try {

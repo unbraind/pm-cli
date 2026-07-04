@@ -2,6 +2,7 @@
 
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 import ts from "typescript";
 import { fileURLToPath } from "node:url";
 import { fail, flagBool, flagString, parseFlags, repoRoot } from "./utils.mjs";
@@ -688,6 +689,112 @@ export function checkFunctionComplexity(files, maxComplexity) {
   return violations.sort((left, right) => right.complexity - left.complexity);
 }
 
+function gitLines(args) {
+  const output = execFileSync("git", args, {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  });
+  return output
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function firstGitLine(args) {
+  const [line] = gitLines(args);
+  return line ?? null;
+}
+
+function resolveCodeFactorBaseRef() {
+  for (const candidate of ["origin/main", "main"]) {
+    try {
+      const mergeBase = firstGitLine(["merge-base", "HEAD", candidate]);
+      if (mergeBase) {
+        return mergeBase;
+      }
+    } catch {
+      // Try the next locally available base ref.
+    }
+  }
+  return null;
+}
+
+function collectChangedRelativePaths() {
+  const changed = new Set();
+  if (!existsSync(path.join(repoRoot, ".git"))) {
+    return { ok: true, files: [] };
+  }
+  try {
+    const baseRef = resolveCodeFactorBaseRef();
+    if (baseRef) {
+      for (const filePath of gitLines(["diff", "--name-only", "--diff-filter=ACMR", `${baseRef}...HEAD`])) {
+        changed.add(filePath);
+      }
+    }
+    for (const args of [
+      ["diff", "--name-only", "--diff-filter=ACMR"],
+      ["diff", "--cached", "--name-only", "--diff-filter=ACMR"],
+    ]) {
+      for (const filePath of gitLines(args)) {
+        changed.add(filePath);
+      }
+    }
+  } catch {
+    return { ok: false, files: [], error: "Unable to inspect git changed files for CodeFactor parity." };
+  }
+  return { ok: true, files: [...changed].sort((left, right) => left.localeCompare(right)) };
+}
+
+function isCodeFactorParityPath(relativePath) {
+  if (
+    relativePath.startsWith("tests/") ||
+    relativePath.endsWith(".d.ts") ||
+    /\.(?:spec|test)\.[cm]?tsx?$/u.test(relativePath)
+  ) {
+    return false;
+  }
+  if (!/\.(?:[cm]?js|[cm]?ts)$/u.test(relativePath)) {
+    return false;
+  }
+  return (
+    relativePath.startsWith("src/") ||
+    relativePath.startsWith("packages/") ||
+    relativePath.startsWith("scripts/")
+  );
+}
+
+export function collectCodeFactorParityFiles(changedPaths = collectChangedRelativePaths()) {
+  if (!changedPaths.ok) {
+    return changedPaths;
+  }
+  const files = changedPaths.files
+    .filter(isCodeFactorParityPath)
+    .map((relativePath) => path.join(repoRoot, relativePath))
+    .filter((absolutePath) => existsSync(absolutePath) && statSync(absolutePath).isFile());
+  return { ok: true, files };
+}
+
+export function checkCodeFactorComplexity(maxComplexity, changedPaths = collectChangedRelativePaths()) {
+  const parityFiles = collectCodeFactorParityFiles(changedPaths);
+  if (!parityFiles.ok) {
+    return {
+      ok: false,
+      scanned_file_count: 0,
+      max_complexity: maxComplexity,
+      violations: [],
+      error: parityFiles.error,
+    };
+  }
+  const violations = checkFunctionComplexity(parityFiles.files, maxComplexity);
+  return {
+    ok: violations.length === 0,
+    scanned_file_count: parityFiles.files.length,
+    max_complexity: maxComplexity,
+    violations,
+  };
+}
+
 // Hard budget for the grandfathered ESLint bulk-suppressions baseline
 // (`eslint-suppressions.json`). ESLint itself fails when a suppression goes
 // stale, so the baseline can only shrink; this budget makes growth impossible
@@ -855,6 +962,7 @@ export function usage() {
     [--max-lines 3400]
     [--max-lines-tests 7000]
     [--max-complexity 260]
+    [--max-codefactor-complexity 16]
     [--max-files-per-dir 120]
     [--duplicate-window 24]
     [--max-duplicate-chunks 8]
@@ -872,7 +980,8 @@ file-length limits, docstring coverage across src/ and packages/ (module headers
 declarations incl. consts, and members of exported interfaces/type aliases/classes), rejection
 of boilerplate and name-restating docstrings, directory organization density, the ESLint
 bulk-suppressions baseline budget, and hard budgets on inline gate-silencing pragmas
-(ESLint disable comments, coverage-ignore pragmas, jscpd ignores).
+(ESLint disable comments, coverage-ignore pragmas, jscpd ignores). Changed shipped/script files
+also get a CodeFactor-parity complexity check so branch-local issues fail before push.
 `);
 }
 
@@ -893,6 +1002,7 @@ function parseQualityThresholds(flags) {
     maxSrcLines: parseNumberFlag(flags, "max-lines", 3400),
     maxTestLines: parseNumberFlag(flags, "max-lines-tests", 7000),
     maxComplexity: parseNumberFlag(flags, "max-complexity", 260),
+    maxCodeFactorComplexity: parseNumberFlag(flags, "max-codefactor-complexity", 16),
     maxFilesPerDirectory: parseNumberFlag(flags, "max-files-per-dir", 120),
     duplicateWindow: parseNumberFlag(flags, "duplicate-window", 24),
     maxDuplicateChunks: parseNumberFlag(flags, "max-duplicate-chunks", 8),
@@ -928,10 +1038,12 @@ function buildQualityReport(files, duplicateScopeFiles, thresholds) {
   const trivialDocstringViolations = checkTrivialDocstrings(files);
   const eslintSuppressionsBudget = checkEslintSuppressionsBudget(thresholds.maxEslintSuppressions);
   const inlinePragmaBudgets = checkInlinePragmaBudgets(thresholds);
+  const codeFactorComplexity = checkCodeFactorComplexity(thresholds.maxCodeFactorComplexity);
   return {
     ok:
       eslintSuppressionsBudget.ok &&
       inlinePragmaBudgets.ok &&
+      codeFactorComplexity.ok &&
       fileLengthViolations.length === 0 &&
       directoryViolations.length === 0 &&
       duplicateViolations.length <= thresholds.maxDuplicateChunks &&
@@ -954,6 +1066,7 @@ function buildQualityReport(files, duplicateScopeFiles, thresholds) {
       max_src_lines: thresholds.maxSrcLines,
       max_test_lines: thresholds.maxTestLines,
       max_complexity: thresholds.maxComplexity,
+      max_codefactor_complexity: thresholds.maxCodeFactorComplexity,
       max_files_per_dir: thresholds.maxFilesPerDirectory,
       max_duplicate_chunks: thresholds.maxDuplicateChunks,
       max_eslint_suppressions: thresholds.maxEslintSuppressions,
@@ -976,74 +1089,52 @@ function buildQualityReport(files, duplicateScopeFiles, thresholds) {
       member_docstrings: memberDocstringCoverage.missing,
       boilerplate_docstrings: boilerplateDocstringViolations,
       trivial_docstrings: trivialDocstringViolations,
+      codefactor_complexity: codeFactorComplexity.violations,
     },
     source_docstrings: sourceDocstringCoverage,
     exported_docstrings: exportedDocstringCoverage,
     member_docstrings: memberDocstringCoverage,
     eslint_suppressions: eslintSuppressionsBudget,
     inline_pragmas: inlinePragmaBudgets,
+    codefactor_complexity: codeFactorComplexity,
   };
 }
 
-function printQualityFailureSummary(report) {
-  console.error("Static quality gate failed.");
-  if (report.violations.file_length.length > 0) {
-    console.error(`- file_length violations: ${report.violations.file_length.length}`);
+function printViolationCount(label, count) {
+  if (count > 0) {
+    console.error(`- ${label} violations: ${count}`);
   }
-  if (report.violations.directory_load.length > 0) {
-    console.error(`- directory_load violations: ${report.violations.directory_load.length}`);
-  }
-  if (report.violations.duplicate_chunks.length > report.thresholds.max_duplicate_chunks) {
-    console.error(`- duplicate_chunks violations: ${report.violations.duplicate_chunks.length}`);
-  }
-  if (report.violations.orphan_modules.length > 0) {
-    console.error(`- orphan_modules violations: ${report.violations.orphan_modules.length}`);
-  }
-  if (report.violations.complexity.length > 0) {
-    console.error(`- complexity violations: ${report.violations.complexity.length}`);
-  }
-  if (!report.source_docstrings.ok) {
+}
+
+function printDocstringCoverageFailure(label, coverage) {
+  if (!coverage.ok) {
     console.error(
-      `- source_docstring coverage: ${report.source_docstrings.coverage_percent}% ` +
-        `< ${report.source_docstrings.min_coverage_percent}% (${report.source_docstrings.missing.length} missing)`,
+      `- ${label} coverage: ${coverage.coverage_percent}% ` +
+        `< ${coverage.min_coverage_percent}% (${coverage.missing.length} missing)`,
     );
   }
-  if (!report.exported_docstrings.ok) {
-    console.error(
-      `- exported_docstring coverage: ${report.exported_docstrings.coverage_percent}% ` +
-        `< ${report.exported_docstrings.min_coverage_percent}% (${report.exported_docstrings.missing.length} missing)`,
-    );
-  }
-  if (!report.member_docstrings.ok) {
-    console.error(
-      `- member_docstring coverage: ${report.member_docstrings.coverage_percent}% ` +
-        `< ${report.member_docstrings.min_coverage_percent}% (${report.member_docstrings.missing.length} missing)`,
-    );
-  }
-  if (report.violations.boilerplate_docstrings.length > 0) {
-    console.error(`- boilerplate_docstring violations: ${report.violations.boilerplate_docstrings.length}`);
-  }
-  if (report.violations.trivial_docstrings.length > 0) {
-    console.error(
-      `- trivial_docstring violations: ${report.violations.trivial_docstrings.length} ` +
-        `(docstring restates the symbol name; describe purpose/units/invariants instead)`,
-    );
-  }
-  if (!report.eslint_suppressions.ok) {
-    if (report.eslint_suppressions.error) {
-      console.error(`- eslint_suppressions budget failed: ${report.eslint_suppressions.error}`);
-    } else {
-      console.error(
-        `- eslint_suppressions budget exceeded: ${report.eslint_suppressions.total} ` +
-          `> ${report.eslint_suppressions.max_suppressions} (burn the baseline down, never grow it)`,
-      );
-    }
-  }
-  if (report.inline_pragmas.error) {
-    console.error(`- inline_pragmas scan failed: ${report.inline_pragmas.error}`);
+}
+
+function printEslintSuppressionsFailure(eslintSuppressions) {
+  if (eslintSuppressions.ok) {
     return;
   }
-  for (const [key, budget] of Object.entries(report.inline_pragmas.budgets)) {
+  if (eslintSuppressions.error) {
+    console.error(`- eslint_suppressions budget failed: ${eslintSuppressions.error}`);
+    return;
+  }
+  console.error(
+    `- eslint_suppressions budget exceeded: ${eslintSuppressions.total} ` +
+      `> ${eslintSuppressions.max_suppressions} (burn the baseline down, never grow it)`,
+  );
+}
+
+function printInlinePragmaFailures(inlinePragmas) {
+  if (inlinePragmas.error) {
+    console.error(`- inline_pragmas scan failed: ${inlinePragmas.error}`);
+    return;
+  }
+  for (const [key, budget] of Object.entries(inlinePragmas.budgets)) {
     if (!budget.ok) {
       console.error(
         `- ${key} budget exceeded: ${budget.total} > ${budget.max} ` +
@@ -1051,6 +1142,34 @@ function printQualityFailureSummary(report) {
       );
     }
   }
+}
+
+function printQualityFailureSummary(report) {
+  console.error("Static quality gate failed.");
+  printViolationCount("file_length", report.violations.file_length.length);
+  printViolationCount("directory_load", report.violations.directory_load.length);
+  if (report.violations.duplicate_chunks.length > report.thresholds.max_duplicate_chunks) {
+    printViolationCount("duplicate_chunks", report.violations.duplicate_chunks.length);
+  }
+  printViolationCount("orphan_modules", report.violations.orphan_modules.length);
+  printViolationCount("complexity", report.violations.complexity.length);
+  printDocstringCoverageFailure("source_docstring", report.source_docstrings);
+  printDocstringCoverageFailure("exported_docstring", report.exported_docstrings);
+  printDocstringCoverageFailure("member_docstring", report.member_docstrings);
+  printViolationCount("boilerplate_docstring", report.violations.boilerplate_docstrings.length);
+  if (report.violations.trivial_docstrings.length > 0) {
+    console.error(
+      `- trivial_docstring violations: ${report.violations.trivial_docstrings.length} ` +
+        `(docstring restates the symbol name; describe purpose/units/invariants instead)`,
+    );
+  }
+  if (report.codefactor_complexity.error) {
+    console.error(`- codefactor_complexity scan failed: ${report.codefactor_complexity.error}`);
+  } else {
+    printViolationCount("codefactor_complexity", report.violations.codefactor_complexity.length);
+  }
+  printEslintSuppressionsFailure(report.eslint_suppressions);
+  printInlinePragmaFailures(report.inline_pragmas);
 }
 
 function printQualityReport(report, outputJson) {

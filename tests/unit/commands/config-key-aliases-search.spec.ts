@@ -279,6 +279,7 @@ describe("config general-setting aliases (pm-9byd / pm-nnaq)", () => {
       const descriptor = resolveNestedSettingDescriptor(alias);
       expect(descriptor).toMatchObject({ key: alias, path: expectedPath });
       expect(resolveNestedSettingDescriptor(alias.replaceAll("_", "-"))).toBe(descriptor);
+      expect(resolveNestedSettingDescriptor(expectedPath)).toBe(descriptor);
     }
   });
 
@@ -408,6 +409,42 @@ describe("config general-setting aliases (pm-9byd / pm-nnaq)", () => {
       await expect(
         runConfig("project", "set", "locks_ttl_seconds", {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot }, "0"),
       ).rejects.toThrow(/>= 1/);
+    });
+  });
+
+  it("round-trips locks.wait_ms through its dotted settings path", async () => {
+    await withTempRoot("pm-cli-lock-wait-dotted-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      const setResult = await runConfig(
+        "project",
+        "set",
+        "locks.wait_ms",
+        {},
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        "88",
+      );
+      expect(setResult.nested_setting).toEqual({
+        key: "locks_wait_ms",
+        path: "locks.wait_ms",
+        kind: "integer",
+        value: 88,
+      });
+
+      const getResult = await runConfig(
+        "project",
+        "get",
+        "locks.wait_ms",
+        {},
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(getResult.nested_setting).toEqual({
+        key: "locks_wait_ms",
+        path: "locks.wait_ms",
+        kind: "integer",
+        value: 88,
+      });
     });
   });
 

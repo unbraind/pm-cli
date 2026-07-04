@@ -1086,6 +1086,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
       process.env.PM_AUTHOR ?? "pm-reindex",
       false,
       settings.governance.force_required_for_stale_lock,
+      settings.locks.wait_ms,
     );
   } catch (error: unknown) {
     if (error instanceof PmCliError && error.exitCode === EXIT_CODE.CONFLICT) {

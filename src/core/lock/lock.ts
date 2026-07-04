@@ -130,12 +130,14 @@ async function createLockFile(lockPath: string, id: string, owner: string, ttlSe
   await emitLockWriteHook(lockPath, "lock:create");
 }
 
-async function unlinkLockWithHook(lockPath: string, op: "lock:release" | "lock:stale_remove"): Promise<void> {
+async function unlinkLockWithHook(lockPath: string, op: "lock:release" | "lock:stale_remove"): Promise<boolean> {
   try {
     await fs.unlink(lockPath);
     await emitLockWriteHook(lockPath, op);
+    return true;
   } catch {
     // Lock cleanup is best-effort.
+    return false;
   }
 }
 
