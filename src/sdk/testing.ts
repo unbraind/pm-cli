@@ -724,7 +724,11 @@ function readTestExtensionManifest(module: unknown): Partial<ExtensionManifest> 
   if (defaultManifest) {
     return defaultManifest as Partial<ExtensionManifest>;
   }
-  if (defaultExport && ("name" in defaultExport || "capabilities" in defaultExport)) {
+  if (
+    defaultExport &&
+    typeof moduleRecord.default !== "function" &&
+    ("name" in defaultExport || "capabilities" in defaultExport)
+  ) {
     return defaultExport as Partial<ExtensionManifest>;
   }
   if (typeof module !== "function" && ("name" in moduleRecord || "capabilities" in moduleRecord)) {
