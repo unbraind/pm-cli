@@ -480,8 +480,8 @@ describe("static-quality-gate", () => {
           "/repo/tests/unit/d.ts",
           "/repo/scripts/e.ts",
         ])
-        .map((p) => mod.relativeToRepo(p));
-      expect(kept).toEqual(["src/a.ts", "packages/pkg/index.ts", String.raw`src\windows.tsx`]);
+        .map((p) => mod.relativeToRepo(p).replace(/\\/g, "/"));
+      expect(kept).toEqual(["src/a.ts", "packages/pkg/index.ts", "src/windows.tsx"]);
     });
 
     it("extractDocstringProse + identifierWords normalize comments and identifiers", async () => {

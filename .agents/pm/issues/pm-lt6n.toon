@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[3]: ci,tests,windows
 created_at: "2026-07-04T08:11:35.792Z"
-updated_at: "2026-07-04T22:19:12.961Z"
+updated_at: "2026-07-04T23:42:23.646Z"
 assignee: claude-code-agent
 author: maintainer-agent
 estimated_minutes: 60
@@ -14,11 +14,12 @@ acceptance_criteria: windows-latest Node 24 nightly is green with platform-toler
 parent: pm-u9d0
 risk: low
 confidence: high
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-04T11:15:27.740Z",claude-code-agent,"Evidence: focused Windows-tolerant filesystem assertion lane remains linked. Focused test command is linked on the item; local Linux suite accepts EACCES|EPERM and EISDIR|EPERM while preserving POSIX coverage. GH-427 should be confirmed by the next Windows Node 24 nightly after push."
   "2026-07-04T11:42:53.435Z",claude-code-agent,"Evidence update: Windows-tolerant filesystem assertion lane remains covered in the combined branch. Local verification passed: node scripts/run-tests.mjs test -- tests/unit/commands/restore-command.spec.ts tests/unit/core/history/history-rewrite.spec.ts; full coverage 263 files / 5337 tests / 100% statements, branches, functions, lines; pnpm typecheck; pnpm lint. GH-427 still needs confirmation from GitHub Windows Node 24 CI/nightly after push."
   "2026-07-04T21:37:22.713Z",claude-code-agent,"Evidence: local full coverage and lint passed after Windows-tolerant assertions and lock/claim changes. GitHub issue #427 remains open because the latest Nightly Validation run is still the 2026-07-04 failure and no newer nightly has validated the fix yet."
   "2026-07-04T22:19:12.959Z",claude-code-agent,"Evidence update: current branch full coverage and pnpm lint are green after review fixes. GH-427 remains open until the pushed PR head or next nightly confirms windows-latest Node 24; do not close from local Linux evidence alone."
+  "2026-07-04T23:42:23.645Z",claude-code-agent,"PR #430 Windows evidence: current head 71420138 failed the Windows regression job on static-quality-gate.spec path separator expectation, separate from the original GH-427 EPERM filesystem assertions. Fixed the test-side path normalization and verified static-quality spec 55 tests plus focused lock/static suite 87 tests and pnpm lint locally. Awaiting pushed Windows regression rerun before closing GH-427 or this item."
 notes[3]{created_at,author,text}:
   "2026-07-04T08:13:21.922Z",maintainer-agent,"Fix applied (uncommitted): restore-command.spec 3x rejects.toMatchObject code now expect.stringMatching(/^(EACCES|EPERM)$/); history-rewrite.spec EISDIR assertion now toMatch(/EISDIR|EPERM/). Both spec files pass locally (42 tests). Root cause: Windows Node 24 fs raises EPERM where POSIX raises EACCES (read-only append) / EISDIR (write to dir path)."
   "2026-07-04T10:38:37.025Z",maintainer-agent,"2026-07-04 verification: platform-tolerant assertions pass in the full fast suite (5336/5336) on Linux; the EACCES|EPERM / EISDIR|EPERM alternations keep POSIX coverage while accepting Windows Node 24 EPERM. Windows confirmation will come from the next nightly after push (GH-427 stays open until then)."
