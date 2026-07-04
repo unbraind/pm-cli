@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Extension installs are dead-on-arrival in CommonJS host projects: installed extension dirs lack package.json type:module ([pm-r0m4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r0m4.toon))
+- beads/todos import-export runtime broken from real npm installs: runtime-loader imports .ts under node_modules (type-strip refused) ([pm-ejy7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ejy7.toon))
+
+### Other
+
+- SDK testing-helper input validation: runRegisteredCommandForTest positional misuse crashes; createExtensionTestHarness accepts non-extension module silently ([pm-2exf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-2exf.toon))
+- GH-426: reduce complex method in compatibility-check.spec runCurrentPmCommand ([pm-24o5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-24o5.toon))
+
 ## 2026.7.4 - 2026-07-04
 
 ### Security

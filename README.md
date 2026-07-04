@@ -133,11 +133,7 @@ For token-aware local routing, install `guide-shell` with `pm install guide-shel
 - `pm contracts` is the machine-readable command and schema contract surface for agents.
 - `pm guide` is the optional local progressive-disclosure docs and skills index for agents after installing `guide-shell`.
 
-`search.tuning` lexical defaults include `reminders_weight=2` and `events_weight=2` in addition to title/description/tag/status/body/comment/note/learning/dependency/linked-content weights. Keep docs and contracts aligned with runtime defaults when tuning behavior changes.
-
-Hybrid queries can override blend weight per call via `pm search --mode hybrid --semantic-weight <0..1>`, and semantic corpus truncation can be tuned via `pm config project set search_embedding_corpus_max_characters <positive-int>` (provider defaults still apply when unset).
-
-Advanced semantic tuning is opt-in: `search.query_expansion` can expand semantic/hybrid queries before embedding, and `search.rerank` can rerank hybrid top-k candidates (with graceful fallback warnings when providers are unavailable). Vector backends now also support `vector_store.collection_name` for multi-workspace/shared-store isolation.
+Search behavior (lexical `search.tuning` weights, hybrid `--semantic-weight`, query expansion, reranking, and vector-store options) is fully configurable — see [Search Configuration](docs/CONFIGURATION.md#search-configuration).
 
 ## Tracker References
 

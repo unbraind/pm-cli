@@ -1,0 +1,18 @@
+id: pm-2exf
+title: "SDK testing-helper input validation: runRegisteredCommandForTest positional misuse crashes; createExtensionTestHarness accepts non-extension module silently"
+description: "2026-07-04 sandbox audit: (1) runRegisteredCommandForTest(activation, 'name', opts) — positional command instead of {command} — crashes with raw TypeError: Cannot read properties of undefined (reading 'trim') in normalizeSdkCommandName; should throw a guided 'options.command is required' error. (2) createExtensionTestHarness silently accepts a non-extension module (e.g. an options object passed as the module arg) and returns an empty activation summary; should error 'module has no activate export'. Never-block: SDK helpers must guide, not crash."
+type: Task
+status: closed
+priority: 2
+tags[3]: agent-ux,audit-followup,sdk
+created_at: "2026-07-04T08:31:42.224Z"
+updated_at: "2026-07-04T10:57:48.815Z"
+author: maintainer-agent
+parent: pm-ugqx
+resolution: Guided errors in src/sdk/testing.ts for non-string command names and missing activate exports
+expected_result: SDK test helpers fail with actionable guidance instead of crashing
+actual_result: 117 SDK spec tests pass incl. new validation cases
+notes[1]{created_at,author,text}:
+  "2026-07-04T08:46:29.055Z",maintainer-agent,"Fix implemented (uncommitted): normalizeSdkCommandName throws a guided 'pass options.command' error on non-string input (covers positional misuse); createExtensionTestHarness now calls assertTestModuleHasActivateExport (module.activate or default.activate function, loader parity) and rejects with 'no activate export' instead of returning an empty harness. Tests added in sdk-index.spec (positional misuse, non-module object, string, default-export parity). 117 sdk-index tests pass."
+close_reason: "SDK testing-helper input validation shipped: normalizeSdkCommandName guides positional misuse, createExtensionTestHarness asserts activate export with loader parity; sdk-index + testing-runners specs green (117 tests)."
+body: ""

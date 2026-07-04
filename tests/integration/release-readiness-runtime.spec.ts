@@ -1823,9 +1823,9 @@ describe("release readiness runtime coverage", () => {
     const sdkExport = packageExports["./sdk"] as Record<string, unknown>;
     const cliExport = packageExports["./cli"] as Record<string, unknown>;
     expect(rootExport.types).toBe("./dist/sdk/index.d.ts");
-    expect(rootExport.import).toBe("./dist/sdk/index.js");
+    expect(rootExport.import).toBe("./dist/cli-bundle/sdk.js");
     expect(sdkExport.types).toBe("./dist/sdk/index.d.ts");
-    expect(sdkExport.import).toBe("./dist/sdk/index.js");
+    expect(sdkExport.import).toBe("./dist/cli-bundle/sdk.js");
     expect(cliExport.types).toBe("./dist/cli/main.d.ts");
     expect(cliExport.import).toBe("./dist/cli/main.js");
     expect(packageExports["./package.json"]).toBe("./package.json");

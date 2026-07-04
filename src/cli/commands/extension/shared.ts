@@ -9,9 +9,9 @@ import { pathExists } from "../../../core/fs/fs-utils.js";
 import { isPathWithinDirectory } from "../../../core/fs/path-utils.js";
 import { EXIT_CODE } from "../../../core/shared/constants.js";
 import { PmCliError } from "../../../core/shared/errors.js";
-import type { ExtensionManifest } from "../../../core/extensions/loader.js";
+import { DEFAULT_EXTENSION_PRIORITY, isCanonicalPathWithinDirectory, type ExtensionManifest } from "../../../core/extensions/loader.js";
 
-export const DEFAULT_EXTENSION_PRIORITY = 100;
+export { DEFAULT_EXTENSION_PRIORITY, isCanonicalPathWithinDirectory };
 
 /**
  * Documents the validated extension directory payload exchanged by command, SDK, and package integrations.
@@ -107,14 +107,6 @@ export function parseExtensionManifest(raw: unknown): ExtensionManifest | null {
     priority,
     capabilities,
   };
-}
-
-/**
- * Implements check whether canonical path within directory for the public runtime surface of this module.
- */
-export async function isCanonicalPathWithinDirectory(directory: string, targetPath: string): Promise<boolean> {
-  const [resolvedDirectory, resolvedTargetPath] = await Promise.all([fs.realpath(directory), fs.realpath(targetPath)]);
-  return isPathWithinDirectory(resolvedDirectory, resolvedTargetPath);
 }
 
 /**

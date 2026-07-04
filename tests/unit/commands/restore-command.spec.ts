@@ -543,9 +543,12 @@ describe("runRestore", () => {
 
       const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
       await chmod(historyPath, 0o444);
-      // Pin the induced history-append failure (EACCES from opening the
-      // read-only stream) so an unrelated early rejection cannot pass.
-      await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject({ code: "EACCES" });
+      // Pin the induced history-append failure (EACCES on POSIX, EPERM on
+      // Windows, from opening the read-only stream) so an unrelated early
+      // rejection cannot pass.
+      await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject({
+        code: expect.stringMatching(/^(EACCES|EPERM)$/),
+      });
 
       expect(await readFile(spikesPath, "utf8")).toBe(spikeRawBefore);
       await expect(readFile(tasksPath, "utf8")).rejects.toThrow();
@@ -560,9 +563,12 @@ describe("runRestore", () => {
 
       const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
       await chmod(historyPath, 0o444);
-      // Pin the induced history-append failure (EACCES from opening the
-      // read-only stream) so an unrelated early rejection cannot pass.
-      await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject({ code: "EACCES" });
+      // Pin the induced history-append failure (EACCES on POSIX, EPERM on
+      // Windows, from opening the read-only stream) so an unrelated early
+      // rejection cannot pass.
+      await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject({
+        code: expect.stringMatching(/^(EACCES|EPERM)$/),
+      });
       await expect(readFile(itemPath, "utf8")).rejects.toThrow();
     });
   });
@@ -577,9 +583,12 @@ describe("runRestore", () => {
       const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
       await chmod(historyPath, 0o444);
 
-      // Pin the induced history-append failure (EACCES from opening the
-      // read-only stream) so an unrelated early rejection cannot pass.
-      await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject({ code: "EACCES" });
+      // Pin the induced history-append failure (EACCES on POSIX, EPERM on
+      // Windows, from opening the read-only stream) so an unrelated early
+      // rejection cannot pass.
+      await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject({
+        code: expect.stringMatching(/^(EACCES|EPERM)$/),
+      });
 
       const after = context.runCli(["get", id, "--json"], { expectJson: true });
       expect(after.code).toBe(0);

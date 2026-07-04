@@ -667,6 +667,13 @@ function sortedUnique(values: readonly string[]): string[] {
 }
 
 function normalizeSdkCommandName(command: string): string {
+  if (typeof command !== "string") {
+    // Positional misuse like runRegisteredCommandForTest(activation, "name", opts)
+    // reaches here with `undefined` at runtime; guide instead of crashing on .trim().
+    throw new Error(
+      'A command name string is required. Pass it via the options object, e.g. runRegisteredCommandForTest(activation, { command: "my command" }) — positional command arguments are not supported.',
+    );
+  }
   return command
     .trim()
     .toLowerCase()
@@ -2342,6 +2349,24 @@ export interface ExtensionTestHarness {
 }
 
 /**
+ * Reject obviously wrong harness input (e.g. an options object passed as the
+ * module) instead of silently producing an empty activation. Mirrors the
+ * loader's activatable-extension shapes: an `activate` function on the module
+ * or on its default export.
+ */
+function assertTestModuleHasActivateExport(module: unknown): void {
+  const moduleRecord = module && typeof module === "object" ? (module as Record<string, unknown>) : null;
+  const defaultExport =
+    moduleRecord?.default && typeof moduleRecord.default === "object" ? (moduleRecord.default as Record<string, unknown>) : null;
+  if (typeof moduleRecord?.activate === "function" || typeof defaultExport?.activate === "function") {
+    return;
+  }
+  throw new Error(
+    "createExtensionTestHarness received a module with no activate export. Pass the extension module (with an activate(api) function on the module or its default export) as the first argument, and options second.",
+  );
+}
+
+/**
  * Activate one in-memory extension module and return a fluent
  * {@link ExtensionTestHarness} that binds every SDK testing helper to the right
  * sub-registry of the resulting activation.
@@ -2371,6 +2396,7 @@ export async function createExtensionTestHarness(
   module: unknown,
   options: ActivateExtensionForTestOptions = {},
 ): Promise<ExtensionTestHarness> {
+  assertTestModuleHasActivateExport(module);
   const manifest = readTestExtensionManifest(module);
   const name = resolveTestExtensionName(manifest, options.name);
   const layer: ExtensionLayer = options.layer ?? "project";

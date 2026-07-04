@@ -1,0 +1,12 @@
+id: pm-jt3b
+title: "Split search.ts (3119 LOC, 92% of 3400 cap) into rendering / query-parsing / inline-field modules"
+description: "2026-07-04 code-quality sweep: src/cli/commands/search.ts is 3119 LOC vs the 3400 static-gate cap — one feature-add from failing the gate — and contains 4 sub-threshold jscpd clones internally (plus a cross-file clone with list.ts:489). Split along rendering vs query-parsing vs inline field:value syntax boundaries (the two parse layers from PR#290) to pay down both LOC and duplication."
+type: Task
+status: open
+priority: 2
+tags[2]: "area:quality",refactor
+created_at: "2026-07-04T08:32:10.019Z"
+updated_at: "2026-07-04T08:32:10.019Z"
+author: maintainer-agent
+parent: pm-92if
+body: ""

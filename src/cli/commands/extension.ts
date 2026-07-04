@@ -53,6 +53,7 @@ import {
 } from "./extension/install-sources.js";
 import {
   resolveBundledExtensionAliasSource,
+  resolveBundledPackageNpmName,
   isBundledPackageInstallAllTarget,
   listBundledPackageAliases,
   resolveBundledAliasManifestName,
@@ -422,6 +423,22 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+}
+
+/**
+ * Ensure the installed extension directory carries a `package.json` with
+ * `"type": "module"`. Extension entrypoints are ESM TypeScript; without a
+ * nearby package.json Node resolves the module type from the HOST project's
+ * package.json, so installs into `"type": "commonjs"` projects fail activation
+ * with `extension_load_failed` (pm-r0m4). Extensions that ship their own
+ * package.json are left untouched.
+ */
+async function ensureExtensionModuleTypeMarker(destinationDirectory: string): Promise<void> {
+  const markerPath = path.join(destinationDirectory, "package.json");
+  if (await pathExists(markerPath)) {
+    return;
+  }
+  await fs.writeFile(markerPath, `${JSON.stringify({ type: "module" }, null, 2)}\n`, "utf8");
 }
 
 /**
@@ -960,7 +977,7 @@ function summarizeRuntimeCommandPathsForExtension(
 }
 
 function resolveCommandDiscoveryPackageName(extensionName: string, source: ManagedExtensionSource): string {
-  if (source.kind === "npm" && typeof source.package === "string" && source.package.trim().length > 0) {
+  if (typeof source.package === "string" && source.package.trim().length > 0) {
     return source.package.trim();
   }
   if (source.kind === "builtin" && typeof source.name === "string" && source.name.trim().length > 0) {
@@ -1614,6 +1631,7 @@ async function runExtensionCatalogAction(ctx: ExtensionActionContext): Promise<E
  */
 function buildInstallManagedSource(
   bundledAliasName: string | null,
+  bundledPackageName: string | null,
   installSource: ReturnType<typeof parseExtensionInstallSource>,
   resolvedSource: Awaited<ReturnType<typeof resolveInstallSource>>,
 ): ManagedExtensionSource {
@@ -1623,6 +1641,7 @@ function buildInstallManagedSource(
       input: bundledAliasName,
       location: bundledAliasName,
       name: bundledAliasName,
+      ...(bundledPackageName === null ? {} : { package: bundledPackageName }),
     };
   }
   if (installSource.kind === "local") {
@@ -1668,12 +1687,13 @@ async function performExtensionInstallUnderLock(
     validated: Awaited<ReturnType<typeof validateExtensionDirectory>>;
     destinationDirectoryName: string;
     bundledAliasName: string | null;
+    bundledPackageName: string | null;
     installSource: ReturnType<typeof parseExtensionInstallSource>;
     resolvedSource: Awaited<ReturnType<typeof resolveInstallSource>>;
   },
 ): Promise<ExtensionCommandResult> {
   const { scope, resolvedRoots, warnings, global, withResult } = ctx;
-  const { validated, destinationDirectoryName, bundledAliasName, installSource, resolvedSource } = input;
+  const { validated, destinationDirectoryName, bundledAliasName, bundledPackageName, installSource, resolvedSource } = input;
   const settings = await readSettings(resolvedRoots.settings_root);
   const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
   warnings.push(...managedStateRead.warnings);
@@ -1685,8 +1705,9 @@ async function performExtensionInstallUnderLock(
   if (!installInPlace) {
     await copyExtensionDirectoryForInstall(validated.directory, destinationDirectory);
   }
+  await ensureExtensionModuleTypeMarker(destinationDirectory);
 
-  const sourceRecord = buildInstallManagedSource(bundledAliasName, installSource, resolvedSource);
+  const sourceRecord = buildInstallManagedSource(bundledAliasName, bundledPackageName, installSource, resolvedSource);
 
   const now = nowIso();
   const existingManagedEntry = managedStateRead.state.entries.find(
@@ -1817,6 +1838,7 @@ async function runExtensionInstallAction(ctx: ExtensionActionContext): Promise<E
     typeof githubOption === "string" ? null : await resolveBundledExtensionAliasSource(explicitSourceInput);
   /* c8 ignore stop */
   const bundledAliasName = bundledAliasSource === null ? null : explicitSourceInput.trim().toLowerCase();
+  const bundledPackageName = bundledAliasName === null ? null : await resolveBundledPackageNpmName(bundledAliasName);
   const sourceInput = bundledAliasSource ?? explicitSourceInput;
   /* c8 ignore start -- install-source branch combinations are covered in install-sources focused tests */
   const installSource = parseExtensionInstallSource(sourceInput, {
@@ -1833,6 +1855,7 @@ async function runExtensionInstallAction(ctx: ExtensionActionContext): Promise<E
         validated,
         destinationDirectoryName,
         bundledAliasName,
+        bundledPackageName,
         installSource,
         resolvedSource,
       }),
@@ -2361,8 +2384,10 @@ async function runExtensionDescribeAction(ctx: ExtensionActionContext): Promise<
   const describeResult = buildExtensionDescribeResult(normalizedTarget, loadResult, activationResult);
   if (normalizedTarget !== undefined && describeResult.extensions.length === 0) {
     const noun = options.vocabulary === "package" ? "package" : "extension";
+    const loadedNames = [...new Set(loadResult.loaded.map((entry) => entry.name))].sort((left, right) => left.localeCompare(right));
+    const loadedHint = loadedNames.length > 0 ? ` Loaded ${noun} names: ${loadedNames.join(", ")}.` : "";
     throw new PmCliError(
-      `No loaded ${noun} named "${normalizedTarget}" was found in ${scope} scope. Run pm ${noun} explore to list discovered ${noun}s.`,
+      `No loaded ${noun} named "${normalizedTarget}" was found in ${scope} scope.${loadedHint} Run pm ${noun} explore to list discovered ${noun}s.`,
       EXIT_CODE.NOT_FOUND,
     );
   }

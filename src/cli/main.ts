@@ -1120,8 +1120,8 @@ function defaultPreflightDecision(): PreflightRuntimeDecision {
   };
 }
 
-function buildRuntimeExtensionSnapshotCacheKey(pmRoot: string): string {
-  return `pm-root:${pmRoot}`;
+function buildRuntimeExtensionSnapshotCacheKey(pmRoot: string, activationScope = "all"): string {
+  return activationScope === "all" ? `pm-root:${pmRoot}` : `pm-root:${pmRoot}:activation:${activationScope}`;
 }
 
 function bootstrapProfileEnabled(invocationArgv: string[]): boolean {
@@ -1253,10 +1253,6 @@ function extensionNeedsActivationForProbe(
     return true;
   }
 
-  if (hasAnyCapability(capabilities, GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES)) {
-    return true;
-  }
-
   if (commandPathNeedsTemplateExtensions(probe) && extensionProvidesTemplatesRuntime(commands)) {
     return true;
   }
@@ -1272,10 +1268,21 @@ function extensionNeedsActivationForProbe(
     return true;
   }
 
+  if (
+    hasAnyCapability(capabilities, GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES) &&
+    !hasAnyCapability(capabilities, CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES)
+  ) {
+    return true;
+  }
+
   // When the extension fully enumerates its activation commands and none matched,
   // its command-bearing surfaces cannot satisfy this probe.
   if (commands.length > 0) {
     return false;
+  }
+
+  if (hasAnyCapability(capabilities, GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES)) {
+    return true;
   }
 
   // Without declared activation commands the contributed command names are
@@ -1311,6 +1318,28 @@ function discoveryNeedsActivationForProbe(
     });
   }
   return discovery.effective.some((extension) => extensionNeedsActivationForProbe(extension, probe));
+}
+
+function buildRuntimeExtensionActivationScope(probe: RuntimeExtensionActivationProbe): string {
+  const commandPath =
+    collectActivationCommandCandidates(probe)
+      .filter((candidate) => candidate.split(" ").every((part) => !part.startsWith("-")))
+      .sort((left, right) => right.length - left.length)[0] ??
+    normalizeExtensionCommandPath(probe.commandPath ?? "");
+  if (commandPath.length === 0) {
+    return "all";
+  }
+  const args = commandPathNeedsTemplateExtensions(probe) ? "--template" : "";
+  const prefix = probe.allowCommandPrefixMatch === true ? "prefix" : "exact";
+  return `${prefix}:${commandPath}:${args}`;
+}
+
+function buildRuntimeExtensionFilterForProbe(
+  probe: RuntimeExtensionActivationProbe,
+): ((extension: ExtensionDiscoveryResult["effective"][number]) => boolean) | undefined {
+  return buildRuntimeExtensionActivationScope(probe) === "all"
+    ? undefined
+    : (extension) => extensionNeedsActivationForProbe(extension, probe);
 }
 
 function buildBootstrapActivationProbe(invocationArgv: string[]): RuntimeExtensionActivationProbe {
@@ -1433,8 +1462,12 @@ async function loadRuntimeExtensionDiscoverySnapshot(pmRoot: string): Promise<Ru
   }
 }
 
-async function loadRuntimeExtensionSnapshot(pmRoot: string): Promise<RuntimeExtensionSnapshot | null> {
-  const cacheKey = buildRuntimeExtensionSnapshotCacheKey(pmRoot);
+async function loadRuntimeExtensionSnapshot(
+  pmRoot: string,
+  probe?: RuntimeExtensionActivationProbe,
+): Promise<RuntimeExtensionSnapshot | null> {
+  const activationScope = probe ? buildRuntimeExtensionActivationScope(probe) : "all";
+  const cacheKey = buildRuntimeExtensionSnapshotCacheKey(pmRoot, activationScope);
   if (runtimeExtensionSnapshotCache?.key === cacheKey) {
     return runtimeExtensionSnapshotCache.snapshot;
   }
@@ -1446,6 +1479,7 @@ async function loadRuntimeExtensionSnapshot(pmRoot: string): Promise<RuntimeExte
       settings,
       cwd: process.cwd(),
       noExtensions: false,
+      extensionFilter: probe ? buildRuntimeExtensionFilterForProbe(probe) : undefined,
     });
     const activationResult = await activateExtensions({
       ...loadResult,
@@ -1540,7 +1574,7 @@ async function maybeLoadRuntimeExtensions(
     return null;
   }
 
-  const snapshot = await loadRuntimeExtensionSnapshot(pmRoot);
+  const snapshot = await loadRuntimeExtensionSnapshot(pmRoot, probe);
   /* c8 ignore next */
   if (!snapshot) {
     return null;
@@ -1882,7 +1916,7 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
     return;
   }
 
-  const snapshot = await loadRuntimeExtensionSnapshot(pmRoot);
+  const snapshot = await loadRuntimeExtensionSnapshot(pmRoot, probe);
   /* c8 ignore next */
   if (!snapshot) {
     await clearDynamicExtensionCommandState({
@@ -2535,7 +2569,7 @@ async function prepareExtensionServicesForRunPmCliError(params: {
   const bootstrapProbe = buildBootstrapActivationProbe(params.invocationArgv);
   const discoverySnapshot = await loadRuntimeExtensionDiscoverySnapshot(params.bootstrapPmRoot);
   if (discoverySnapshot && discoveryNeedsActivationForProbe(discoverySnapshot.discovery, bootstrapProbe)) {
-    const bootstrapSnapshot = await loadRuntimeExtensionSnapshot(params.bootstrapPmRoot);
+    const bootstrapSnapshot = await loadRuntimeExtensionSnapshot(params.bootstrapPmRoot, bootstrapProbe);
     setRecoveredExtensionServices(bootstrapSnapshot);
     return;
   }
@@ -2899,7 +2933,9 @@ export const _testOnly = {
   buildPostActionTelemetryOutcome,
   buildPmCliRecoveryContext,
   buildRuntimeExtensionDiscoverySnapshotCacheKey,
+  buildRuntimeExtensionActivationScope,
   buildRuntimeExtensionSnapshotCacheKey,
+  buildRuntimeExtensionFilterForProbe,
   addRuntimeFieldOption,
   collectActivationCommandCandidates,
   collectExtensionFlagDefinitionsForCommand,

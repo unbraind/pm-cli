@@ -100,6 +100,29 @@ function runCurrentUpdateCommand(pmArgs: string[], env: Record<string, string>, 
   return jsonResult({ ok: true });
 }
 
+function currentCommandPayload(cmd: string | undefined, pmArgs: string[], state: SeedState): object {
+  switch (cmd) {
+    case "comments":
+      if (pmArgs.includes("--add")) {
+        state.comments.push("post migration comment");
+        return { ok: true };
+      }
+      return { comments: state.comments };
+    case "notes":
+      return { notes: state.notes };
+    case "learnings":
+      return { learnings: state.learnings };
+    case "test":
+      return pmArgs.includes("--run") ? { ok: true } : { tests: state.tests };
+    case "health":
+      return { checks: [{ name: "storage", status: "ok" }] };
+    case "list-all":
+      return { count: state.itemCount };
+    default:
+      return { ok: true };
+  }
+}
+
 function runCurrentPmCommand(pmArgs: string[], env: Record<string, string>, state: SeedState, overrides: ScenarioOverrides): RunCommandResult {
   const cmd = pmArgs[0];
   const id = pmArgs[1];
@@ -107,39 +130,10 @@ function runCurrentPmCommand(pmArgs: string[], env: Record<string, string>, stat
   if (override) {
     return override;
   }
-
-  if (cmd === "comments" && !pmArgs.includes("--add")) {
-    return jsonResult({ comments: state.comments });
-  }
-  if (cmd === "notes") {
-    return jsonResult({ notes: state.notes });
-  }
-  if (cmd === "learnings") {
-    return jsonResult({ learnings: state.learnings });
-  }
-  if (cmd === "test" && !pmArgs.includes("--run")) {
-    return jsonResult({ tests: state.tests });
-  }
   if (cmd === "update" && id === state.taskId) {
     return runCurrentUpdateCommand(pmArgs, env, state, overrides);
   }
-  if (cmd === "comments" && pmArgs.includes("--add")) {
-    state.comments.push("post migration comment");
-    return jsonResult({ ok: true });
-  }
-  if (cmd === "test" && pmArgs.includes("--run")) {
-    return jsonResult({ ok: true });
-  }
-  if (cmd === "validate") {
-    return jsonResult({ ok: true });
-  }
-  if (cmd === "health") {
-    return jsonResult({ checks: [{ name: "storage", status: "ok" }] });
-  }
-  if (cmd === "list-all") {
-    return jsonResult({ count: state.itemCount });
-  }
-  return jsonResult({ ok: true });
+  return jsonResult(currentCommandPayload(cmd, pmArgs, state));
 }
 
 function createRunCommandMock(state: SeedState, overrides: ScenarioOverrides) {

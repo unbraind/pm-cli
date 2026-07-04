@@ -26,13 +26,13 @@ import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter, ItemStatus, ItemType, RecurrenceRule } from "../../types/index.js";
 import { RECURRENCE_WEEKDAY_VALUES, weekdayOrderIndex } from "../../types/index.js";
 
-export const CALENDAR_VIEW_VALUES = ["agenda", "day", "week", "month"] as const;
+const CALENDAR_VIEW_VALUES = ["agenda", "day", "week", "month"] as const;
 /**
  * Restricts calendar view values accepted by command, SDK, and storage contracts.
  */
 export type CalendarView = (typeof CALENDAR_VIEW_VALUES)[number];
 
-export const CALENDAR_OUTPUT_VALUES = ["markdown", "toon", "json"] as const;
+const CALENDAR_OUTPUT_VALUES = ["markdown", "toon", "json"] as const;
 /**
  * Restricts calendar output format values accepted by command, SDK, and storage contracts.
  */

@@ -215,6 +215,28 @@ describe("pm cli error guidance context plumbing", () => {
     expect(calendarEnvelope.examples).toContain("pm install calendar");
   });
 
+  it("covers every optional-package command root with an install hint", () => {
+    const expectations: Array<[command: string, packageName: string, installCommand: string]> = [
+      ["completion", "@unbrained/pm-guide-shell", "pm install guide-shell"],
+      ["completion-statuses", "@unbrained/pm-guide-shell", "pm install guide-shell"],
+      ["completion-tags", "@unbrained/pm-guide-shell", "pm install guide-shell"],
+      ["completion-types", "@unbrained/pm-guide-shell", "pm install guide-shell"],
+      ["shell", "@unbrained/pm-guide-shell", "pm install guide-shell"],
+      ["comments-audit", "@unbrained/pm-governance-audit", "pm install governance-audit"],
+      ["dedupe-audit", "@unbrained/pm-governance-audit", "pm install governance-audit"],
+      ["dedupe-merge", "@unbrained/pm-governance-audit", "pm install governance-audit"],
+      ["normalize", "@unbrained/pm-governance-audit", "pm install governance-audit"],
+      ["reindex", "@unbrained/pm-search-advanced", "pm install search-advanced"],
+      ["search-advanced", "@unbrained/pm-search-advanced", "pm install search-advanced"],
+      ["test-runs", "@unbrained/pm-linked-test-adapters", "pm install linked-test-adapters"],
+    ];
+    for (const [command, packageName, installCommand] of expectations) {
+      const envelope = formatCommanderErrorForJson(`unknown command '${command}'`, "help", "Task|Issue", 2);
+      expect(envelope.detail, command).toContain(packageName);
+      expect(envelope.examples, command).toContain(installCommand);
+    }
+  });
+
   it("does not add a package install hint for genuinely unknown commands", () => {
     const envelope = formatCommanderErrorForJson("unknown command 'frobnicate'", "help", "Task|Issue", 2, {
       unknownCommandExamples: ["pm --help"],
@@ -349,6 +371,45 @@ describe("linked-test value quoting guidance (GH-191)", () => {
     });
     expect(text).toContain("Linked-test --add value must be one argument");
     expect(text).toContain('pm test pm-a1b2 --add "command=npm test -- parser"');
+  });
+});
+
+describe("context item-argument guidance", () => {
+  const ALLOWED_TYPES = "Task|Issue";
+  const TOO_MANY = "error: too many arguments for 'context'. Expected 0 arguments but got 1: pm-a1b2.";
+
+  it("routes pm context <id> to pm get and pm context --parent", () => {
+    const envelope = formatCommanderErrorForJson(TOO_MANY, "context", ALLOWED_TYPES, 2, {
+      normalizedInvocationArgs: ["context", "pm-a1b2"],
+    });
+
+    expect(envelope.code).toBe("context_takes_no_item_argument");
+    expect(envelope.required).toContain("pm get pm-a1b2");
+    expect(envelope.required).toContain("pm context --parent pm-a1b2");
+    expect(envelope.examples).toContain("pm get pm-a1b2");
+    expect(envelope.recovery?.suggested_retry).toBe("pm get pm-a1b2");
+  });
+
+  it("keeps generic usage guidance when no positional token is present", () => {
+    const flagOnly = formatCommanderErrorForJson(TOO_MANY, "context", ALLOWED_TYPES, 2, {
+      normalizedInvocationArgs: ["context", "--parent"],
+    });
+    expect(flagOnly.code).toBe("invalid_command_usage");
+
+    const noContext = formatCommanderErrorForJson(TOO_MANY, "context", ALLOWED_TYPES, 2);
+    expect(noContext.code).toBe("invalid_command_usage");
+  });
+
+  it("keeps generic usage guidance for other commands and other messages", () => {
+    const otherCommand = formatCommanderErrorForJson(TOO_MANY, "focus", ALLOWED_TYPES, 2, {
+      normalizedInvocationArgs: ["focus", "pm-a1b2", "extra"],
+    });
+    expect(otherCommand.code).toBe("invalid_command_usage");
+
+    const otherMessage = formatCommanderErrorForJson("error: something else entirely", "context", ALLOWED_TYPES, 2, {
+      normalizedInvocationArgs: ["context", "pm-a1b2"],
+    });
+    expect(otherMessage.code).toBe("invalid_command_usage");
   });
 });
 

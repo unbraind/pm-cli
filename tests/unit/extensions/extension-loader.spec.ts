@@ -1765,6 +1765,48 @@ describe("extension loader", () => {
     });
   });
 
+  it("keeps discovery complete while filtering imports for command-scoped activation", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.project,
+        "targeted",
+        {
+          name: "targeted-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["commands"],
+          activation: { commands: ["targeted"] },
+        },
+        "export const loadedValue = 'targeted';\n",
+      );
+      await createExtension(
+        roots.project,
+        "skipped",
+        {
+          name: "skipped-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["commands"],
+          activation: { commands: ["skipped"] },
+        },
+        "throw new Error('skipped extension should not import');\n",
+      );
+
+      const settings = await loadSettings(context);
+      const loaded = await loadExtensions({
+        pmRoot: context.pmPath,
+        settings,
+        extensionFilter: (extension) => extension.name === "targeted-ext",
+      });
+
+      expect(loaded.effective.map((entry) => entry.name)).toEqual(["skipped-ext", "targeted-ext"]);
+      expect(loaded.loaded.map((entry) => entry.name)).toEqual(["targeted-ext"]);
+      expect(loaded.failed).toEqual([]);
+      expect(loaded.warnings).toEqual([]);
+    });
+  });
+
   it("cache-busts extension imports with reload tokens and source package name fallback", async () => {
     await withTempPmPath(async (context) => {
       const roots = resolveExtensionRoots(context.pmPath);

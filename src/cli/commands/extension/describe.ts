@@ -80,8 +80,11 @@ function layerNameKey(layer: ExtensionLayer, name: string): string {
  * extension's {@link describeExtensionActivation} summary. When `target` is
  * provided only the case-insensitively matching extensions are described and the
  * `union` is scoped to that name; otherwise every loaded extension contributes.
- * An unmatched `target` yields an empty `extensions` array -- the caller decides
- * whether that is a not-found error.
+ * A target may name either the extension itself or its source npm package
+ * (`source_package`), so agents can reuse the `package_name` values surfaced by
+ * `pm extension list` / install discovery without a second lookup. An unmatched
+ * `target` yields an empty `extensions` array -- the caller decides whether that
+ * is a not-found error.
  */
 export function buildExtensionDescribeResult(
   target: string | undefined,
@@ -109,16 +112,29 @@ export function buildExtensionDescribeResult(
   ].sort((left, right) => left.name.localeCompare(right.name) || left.layer.localeCompare(right.layer));
 
   const normalizedTarget = typeof target === "string" ? normalizeExtensionNameForMatch(target) : null;
-  const extensions =
+  const matchedNames =
     normalizedTarget === null
-      ? candidates
-      : candidates.filter((entry) => normalizeExtensionNameForMatch(entry.name) === normalizedTarget);
+      ? null
+      : new Set(
+          loadResult.loaded
+            .filter(
+              (entry) =>
+                normalizeExtensionNameForMatch(entry.name) === normalizedTarget ||
+                (typeof entry.source_package === "string" &&
+                  normalizeExtensionNameForMatch(entry.source_package) === normalizedTarget),
+            )
+            .map((entry) => normalizeExtensionNameForMatch(entry.name))
+            .concat(normalizedTarget),
+        );
+  const extensions =
+    matchedNames === null ? candidates : candidates.filter((entry) => matchedNames.has(normalizeExtensionNameForMatch(entry.name)));
+  const unionTarget = extensions.length === 1 ? extensions[0]?.name : target;
 
   return {
     target: typeof target === "string" ? target.trim() : null,
     total: extensions.length,
     extensions,
-    union: describeExtensionActivation(activationResult, normalizedTarget === null ? {} : { extensionName: target }),
+    union: describeExtensionActivation(activationResult, normalizedTarget === null ? {} : { extensionName: unionTarget }),
   };
 }
 

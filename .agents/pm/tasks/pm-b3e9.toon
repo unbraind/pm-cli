@@ -1,0 +1,17 @@
+id: pm-b3e9
+title: Pre-install package-owned command names should hint the owning package install command
+description: "2026-07-04 sandbox audit: in a fresh workspace, pm completion/guide/templates fail with generic unknown-command guidance (examples: pm --help, pm activity --help). These names are known package-owned surfaces (pm-guide-shell, pm-templates); unknown-command guidance should map known first-party package command roots to a hint like: install with pm install guide-shell --project. Keeps never-block promise for the pre-install experience."
+type: Task
+status: open
+priority: 3
+tags[3]: agent-ux,audit-followup,extensions
+created_at: "2026-07-04T06:30:00.437Z"
+updated_at: "2026-07-04T07:09:09.326Z"
+author: maintainer-agent
+estimated_minutes: 45
+acceptance_criteria: "Every package-owned command root (completion*, shell, guide, templates, calendar/cal, comments-audit, dedupe-audit, dedupe-merge, normalize, reindex, search-advanced, test-runs) yields an install hint naming the owning package pre-install."
+parent: pm-mpbb
+notes[2]{created_at,author,text}:
+  "2026-07-04T06:44:03.343Z",maintainer-agent,"Fixed same session: KNOWN_PACKAGE_COMMAND_HINTS extended from 4 entries (guide/templates/calendar/cal) to all package-owned command roots — completion + completion-statuses/tags/types + shell (guide-shell), comments-audit/dedupe-audit/dedupe-merge/normalize (governance-audit), reindex/search-advanced (search-advanced), test-runs (linked-test-adapters). Aliases verified against packages/*/package.json pm.aliases."
+  "2026-07-04T07:09:09.322Z",maintainer-agent,"2026-07-04 verified live in fresh workspace: guide/shell/completion/templates/calendar/reindex/test-runs/dedupe-audit/normalize all yield owning-package install hints pre-install. Also deduped the doubled install step (commander-usage generic hint vs specific hint) in buildKnownPackageCommandGuidance."
+body: ""

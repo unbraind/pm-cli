@@ -122,18 +122,18 @@ describe("pm package manifest model", () => {
 
     expect(packageJson.exports?.["./sdk"]).toMatchObject({
       types: "./dist/sdk/index.d.ts",
-      import: "./dist/sdk/index.js",
-      default: "./dist/sdk/index.js",
+      import: "./dist/cli-bundle/sdk.js",
+      default: "./dist/cli-bundle/sdk.js",
     });
     expect(packageJson.exports?.["./sdk/runtime"]).toMatchObject({
       types: "./dist/sdk/runtime.d.ts",
-      import: "./dist/sdk/runtime.js",
-      default: "./dist/sdk/runtime.js",
+      import: "./dist/cli-bundle/sdk-runtime.js",
+      default: "./dist/cli-bundle/sdk-runtime.js",
     });
     expect(packageJson.exports?.["./sdk/testing"]).toMatchObject({
       types: "./dist/sdk/testing.d.ts",
-      import: "./dist/sdk/testing.js",
-      default: "./dist/sdk/testing.js",
+      import: "./dist/cli-bundle/sdk-testing.js",
+      default: "./dist/cli-bundle/sdk-testing.js",
     });
   });
 

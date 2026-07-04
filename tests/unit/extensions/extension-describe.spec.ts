@@ -20,6 +20,7 @@ interface SyntheticLoaded {
   layer?: ExtensionLayer;
   version?: string;
   capabilities?: string[];
+  sourcePackage?: string;
   activate?: (api: ExtensionApi) => void;
 }
 
@@ -29,6 +30,7 @@ function toLoadedExtension(extension: SyntheticLoaded): LoadedExtension {
     directory: "",
     manifest_path: "",
     name: extension.name,
+    ...(extension.sourcePackage === undefined ? {} : { source_package: extension.sourcePackage }),
     version: extension.version ?? "0.0.0",
     entry: "./index.js",
     priority: 0,
@@ -124,6 +126,24 @@ describe("buildExtensionDescribeResult", () => {
     expect(result.total).toBe(1);
     expect(result.extensions[0]?.name).toBe("ext-b");
     expect(result.union.commands).toEqual(["ext-b cmd"]);
+  });
+
+  it("matches a target against source_package so npm package names resolve without a second lookup", async () => {
+    const { loadResult, activationResult } = await buildActivation([
+      {
+        name: "kanban-profile",
+        sourcePackage: "@unbrained/pm-kanban",
+        activate: (api) => api.registerCommand({ name: "kanban cmd", run: () => ({}) }),
+      },
+      { name: "ext-b", activate: (api) => api.registerCommand({ name: "ext-b cmd", run: () => ({}) }) },
+    ]);
+
+    const result = buildExtensionDescribeResult("@unbrained/PM-Kanban", loadResult, activationResult);
+
+    expect(result.total).toBe(1);
+    expect(result.extensions[0]?.name).toBe("kanban-profile");
+    // The union is scoped to the resolved extension, not the package alias.
+    expect(result.union.commands).toEqual(["kanban cmd"]);
   });
 
   it("returns no extensions for a target that matches nothing", async () => {
@@ -252,6 +272,25 @@ describe("extension describe action", () => {
       await expect(
         runExtension("ghost", { describe: true, project: true }, { path: context.pmPath }),
       ).rejects.toMatchObject({ exitCode: EXIT_CODE.NOT_FOUND, message: /No loaded extension named "ghost"/ });
+    });
+  });
+
+  it("lists loaded extension names sorted in the NOT_FOUND error so agents can self-correct", async () => {
+    await withTempPmPath(async (context) => {
+      await writeTestExtension({
+        root: path.join(context.pmPath, "extensions", "zeta-ext"),
+        name: "zeta-ext",
+        entrySource: "export default { activate() {} };\n",
+      });
+      await writeTestExtension({
+        root: path.join(context.pmPath, "extensions", "demo-ext"),
+        name: "demo-ext",
+        entrySource: "export default { activate() {} };\n",
+      });
+      await expect(runExtension("ghost", { describe: true, project: true }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.NOT_FOUND,
+        message: /Loaded extension names: demo-ext, zeta-ext/,
+      });
     });
   });
 

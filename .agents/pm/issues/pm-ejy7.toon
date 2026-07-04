@@ -1,0 +1,20 @@
+id: pm-ejy7
+title: "beads/todos import-export runtime broken from real npm installs: runtime-loader imports .ts under node_modules (type-strip refused)"
+description: "2026-07-04 sandbox audit: pm beads import --file beads.jsonl fails with extension_command_handler_failed:project:builtin-beads-import from any real npm install even after activation is fixed. Their generated runtime-loader.ts resolves packages/pm-<name>/extensions/<name>/runtime.ts inside the installed @unbrained/pm-cli package and Node refuses: 'Stripping types is currently unsupported for files under node_modules'. Tarball ships 55 raw .ts files under packages/. Only beads and todos use the runtime-loader pattern; other 9 packages exercised fine. Fix: ship compiled .js runtimes (or bundle them) for the runtime-loader packages; also dedupe the near-identical runtime glue between pm-beads/pm-todos and pm-guide-shell/pm-linked-test-adapters while touching them."
+type: Issue
+status: closed
+priority: 0
+tags[3]: audit-followup,extensions,packaging
+created_at: "2026-07-04T08:31:41.806Z"
+updated_at: "2026-07-04T10:54:33.325Z"
+author: maintainer-agent
+parent: pm-ugqx
+resolution: gen-package-runtime-loaders.mjs templates (+ regenerated beads/todos runtime-loader.ts) now catch ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING and continue to the next runtime candidate
+expected_result: beads import / todos export work from real npm installs
+actual_result: "Verified 3x from fresh npm pack in CJS sandbox: beads import ok:true imported:1, todos export ok:true exported per-item markdown"
+notes[3]{created_at,author,text}:
+  "2026-07-04T08:42:52.565Z",maintainer-agent,"Fix implemented (uncommitted): both templates in scripts/gen-package-runtime-loaders.mjs now treat Node ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING ('Stripping types is currently unsupported') as fall-through to the next runtime candidate instead of aborting, so the loader reaches the extension's co-located runtime.ts copy (outside node_modules). Regenerated beads+todos runtime-loader.ts. Verified e2e in CJS sandbox from packed tarball: pm beads import imported 1 (was extension_command_handler_failed), pm todos export exported 28. Kept candidate order (env -> argv roots -> local copy) so PM_CLI_PACKAGE_ROOT override and fresh-package preference still win when strippable. Runtime-glue dedupe across packages deferred (see description)."
+  "2026-07-04T10:37:25.406Z",maintainer-agent,"2026-07-04 independent re-verification from a FRESH npm pack in a new CJS sandbox: pm beads import --file beads.jsonl → ok:true imported:1 (item pm-bd-1 visible in pm list); pm todos export --folder ./todos-out → ok:true exported:2 with per-item markdown files. Runtime-loader fall-through works end-to-end from a real npm install."
+  "2026-07-04T10:54:32.847Z",maintainer-agent,"2026-07-04 sandbox audit #3 (third independent verification, fresh npm pack, new CJS project): all 11 bundled packages install via catalog alias and function; pm beads import ok:true imported:1, pm todos export ok:true. Runtime-loader ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING fall-through confirmed working from real npm installs."
+close_reason: "Fixed: runtime-loader templates treat node_modules type-strip refusal as fall-through to the co-located runtime.ts outside node_modules; beads import and todos export verified working 3x from fresh packed tarballs in CJS sandbox projects."
+body: ""

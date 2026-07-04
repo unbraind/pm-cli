@@ -42,6 +42,13 @@ const isTargetMissing = (error: unknown, target: string): boolean => {
       [target, target.replace(/\\/g, "/"), targetUrl].some((value) => message.startsWith(`Cannot find module '${value}'`)));
 };
 
+// Node refuses to type-strip .ts files under node_modules; fall through to the
+// next candidate (the extension's co-located runtime.ts copy) instead of aborting.
+const isUnstrippable = (error: unknown): boolean =>
+  runtimeRecord(error)?.code === "ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING" ||
+  (typeof runtimeRecord(error)?.message === "string" &&
+    (runtimeRecord(error)?.message as string).includes("Stripping types is currently unsupported"));
+
 const loadRuntimeFile = async (target: string, attempted: string[]): Promise<PackageRuntimeModule | undefined> => {
   attempted.push(target);
   if (!existsSync(target)) {
@@ -50,7 +57,7 @@ const loadRuntimeFile = async (target: string, attempted: string[]): Promise<Pac
   try {
     return await import(pathToFileURL(target).href) as PackageRuntimeModule;
   } catch (error: unknown) {
-    if (isTargetMissing(error, target)) {
+    if (isTargetMissing(error, target) || isUnstrippable(error)) {
       return undefined;
     }
     throw error;

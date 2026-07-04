@@ -269,7 +269,8 @@ describe("writeHistoryRawWithRollback", () => {
       const aggregate = error as AggregateError;
       expect(aggregate.message).toContain("History rewrite failed");
       expect(aggregate.errors).toHaveLength(2);
-      expect(String(aggregate.errors[0])).toContain("EISDIR");
+      // Writing to a directory path fails with EISDIR on POSIX and EPERM on Windows.
+      expect(String(aggregate.errors[0])).toMatch(/EISDIR|EPERM/);
     }
   });
 

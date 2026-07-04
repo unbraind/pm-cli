@@ -37,6 +37,17 @@ function isMissingRuntimeModuleError(error: unknown, modulePath: string): boolea
   );
 }
 
+// Node refuses to type-strip .ts files under node_modules
+// (ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING); fall through to the next
+// candidate (the extension's co-located runtime.ts copy) instead of aborting.
+function isUnstrippableTypeScriptError(error: unknown): boolean {
+  if (!isRecord(error)) {
+    return false;
+  }
+  const message = typeof error.message === "string" ? error.message : "";
+  return error.code === "ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING" || message.includes("Stripping types is currently unsupported");
+}
+
 function resolvePackageRootCandidates(): string[] {
   const envRoot = process.env[PM_PACKAGE_ROOT_ENV];
   const candidates = typeof envRoot === "string" && envRoot.trim().length > 0 ? [path.resolve(envRoot.trim())] : [];
@@ -65,7 +76,7 @@ async function tryRuntime(modulePath: string, attempted: string[]): Promise<Pack
   try {
     return await import(pathToFileURL(modulePath).href) as PackageRuntimeModule;
   } catch (error: unknown) {
-    if (isMissingRuntimeModuleError(error, modulePath)) {
+    if (isMissingRuntimeModuleError(error, modulePath) || isUnstrippableTypeScriptError(error)) {
       return undefined;
     }
     throw error;
