@@ -21,6 +21,8 @@ interface SeedState {
 
 type RunCommandResult = { status: number; stdout: string; stderr: string };
 type RunCommandOptions = { env?: Record<string, string>; capture?: boolean };
+type LegacyCommandHandler = (pmArgs: string[], env: Record<string, string>, state: SeedState) => RunCommandResult;
+type CurrentPayloadHandler = (pmArgs: string[], state: SeedState) => object;
 
 interface ScenarioOverrides {
   npmViewVersion?: string;
@@ -43,21 +45,43 @@ function jsonResult(payload: unknown): RunCommandResult {
   };
 }
 
+const NPM_VIEW_COMMANDS = new Set(["npm", "npm.cmd"]);
+const NPX_COMMANDS = new Set(["npx", "npx.cmd"]);
+
 function handleNpmViewCommand(command: string, cmdArgs: string[], overrides: ScenarioOverrides): RunCommandResult | null {
-  if ((command !== "npm" && command !== "npm.cmd") || cmdArgs[0] !== "view") {
+  if (!NPM_VIEW_COMMANDS.has(command) || cmdArgs[0] !== "view") {
     return null;
   }
-  if (overrides.npmViewEmpty) {
-    return { status: 0, stdout: "\n", stderr: "" };
-  }
-  return { status: 0, stdout: `${overrides.npmViewVersion ?? "2026.6.14"}\n`, stderr: "" };
+  const stdout = overrides.npmViewEmpty ? "\n" : `${overrides.npmViewVersion ?? "2026.6.14"}\n`;
+  return { status: 0, stdout, stderr: "" };
 }
 
 function legacyNpxPmArgs(command: string, cmdArgs: string[]): string[] | null {
-  if ((command !== "npx" && command !== "npx.cmd") || !cmdArgs.includes("pm")) {
+  if (!NPX_COMMANDS.has(command) || !cmdArgs.includes("pm")) {
     return null;
   }
   return cmdArgs.slice(cmdArgs.indexOf("pm") + 1).filter((entry) => entry !== "--json");
+}
+
+const LEGACY_PM_COMMAND_HANDLERS: Record<string, LegacyCommandHandler> = {
+  init(_pmArgs, env) {
+    mkdirSync(path.join(env.PM_PATH ?? "", "tasks"), { recursive: true });
+    return jsonResult({ ok: true });
+  },
+  create(pmArgs, _env, state) {
+    const type = pmArgs[pmArgs.indexOf("--type") + 1];
+    return jsonResult({ item: { id: type === "Issue" ? state.issueId : state.taskId } });
+  },
+  "list-all"(_pmArgs, _env, state) {
+    return jsonResult({ count: state.itemCount });
+  },
+  get(_pmArgs, _env, state) {
+    return jsonResult({ item: { id: state.taskId }, body: "legacy seeded body" });
+  },
+};
+
+function defaultLegacyPmCommand(): RunCommandResult {
+  return jsonResult({ ok: true });
 }
 
 function runLegacyPmCommand(pmArgs: string[], env: Record<string, string>, state: SeedState, overrides: ScenarioOverrides): RunCommandResult {
@@ -66,21 +90,11 @@ function runLegacyPmCommand(pmArgs: string[], env: Record<string, string>, state
   if (legacyOverride) {
     return legacyOverride;
   }
-  if (cmd === "init") {
-    mkdirSync(path.join(env.PM_PATH ?? "", "tasks"), { recursive: true });
-    return jsonResult({ ok: true });
+  const handler = LEGACY_PM_COMMAND_HANDLERS[cmd ?? ""];
+  if (handler) {
+    return handler(pmArgs, env, state);
   }
-  if (cmd === "create") {
-    const type = pmArgs[pmArgs.indexOf("--type") + 1];
-    return jsonResult({ item: { id: type === "Issue" ? state.issueId : state.taskId } });
-  }
-  if (cmd === "list-all") {
-    return jsonResult({ count: state.itemCount });
-  }
-  if (cmd === "get") {
-    return jsonResult({ item: { id: state.taskId }, body: "legacy seeded body" });
-  }
-  return jsonResult({ ok: true });
+  return defaultLegacyPmCommand();
 }
 
 function isCurrentDistCommand(command: string, cmdArgs: string[]): boolean {
@@ -100,27 +114,37 @@ function runCurrentUpdateCommand(pmArgs: string[], env: Record<string, string>, 
   return jsonResult({ ok: true });
 }
 
-function currentCommandPayload(cmd: string | undefined, pmArgs: string[], state: SeedState): object {
-  switch (cmd) {
-    case "comments":
-      if (pmArgs.includes("--add")) {
-        state.comments.push("post migration comment");
-        return { ok: true };
-      }
-      return { comments: state.comments };
-    case "notes":
-      return { notes: state.notes };
-    case "learnings":
-      return { learnings: state.learnings };
-    case "test":
-      return pmArgs.includes("--run") ? { ok: true } : { tests: state.tests };
-    case "health":
-      return { checks: [{ name: "storage", status: "ok" }] };
-    case "list-all":
-      return { count: state.itemCount };
-    default:
+const CURRENT_PAYLOAD_HANDLERS: Record<string, CurrentPayloadHandler> = {
+  comments(pmArgs, state) {
+    if (pmArgs.includes("--add")) {
+      state.comments.push("post migration comment");
       return { ok: true };
+    }
+    return { comments: state.comments };
+  },
+  notes(_pmArgs, state) {
+    return { notes: state.notes };
+  },
+  learnings(_pmArgs, state) {
+    return { learnings: state.learnings };
+  },
+  test(pmArgs, state) {
+    return pmArgs.includes("--run") ? { ok: true } : { tests: state.tests };
+  },
+  health() {
+    return { checks: [{ name: "storage", status: "ok" }] };
+  },
+  "list-all"(_pmArgs, state) {
+    return { count: state.itemCount };
+  },
+};
+
+function currentCommandPayload(cmd: string | undefined, pmArgs: string[], state: SeedState): object {
+  const handler = CURRENT_PAYLOAD_HANDLERS[cmd ?? ""];
+  if (handler) {
+    return handler(pmArgs, state);
   }
+  return { ok: true };
 }
 
 function runCurrentPmCommand(pmArgs: string[], env: Record<string, string>, state: SeedState, overrides: ScenarioOverrides): RunCommandResult {
@@ -136,26 +160,29 @@ function runCurrentPmCommand(pmArgs: string[], env: Record<string, string>, stat
   return jsonResult(currentCommandPayload(cmd, pmArgs, state));
 }
 
+function runMockedCommand(command: string, cmdArgs: string[], env: Record<string, string>, state: SeedState, overrides: ScenarioOverrides): RunCommandResult {
+  const npmView = handleNpmViewCommand(command, cmdArgs, overrides);
+  if (npmView) {
+    return npmView;
+  }
+
+  const legacyArgs = legacyNpxPmArgs(command, cmdArgs);
+  if (legacyArgs) {
+    return runLegacyPmCommand(legacyArgs, env, state, overrides);
+  }
+
+  if (isCurrentDistCommand(command, cmdArgs)) {
+    const pmArgs = cmdArgs.slice(1).filter((entry) => entry !== "--json");
+    return runCurrentPmCommand(pmArgs, env, state, overrides);
+  }
+
+  return { status: 0, stdout: "", stderr: "" };
+}
+
 function createRunCommandMock(state: SeedState, overrides: ScenarioOverrides) {
-  return vi.fn((command: string, cmdArgs: string[], options?: RunCommandOptions) => {
-    const env = options?.env ?? {};
-    const npmView = handleNpmViewCommand(command, cmdArgs, overrides);
-    if (npmView) {
-      return npmView;
-    }
-
-    const legacyArgs = legacyNpxPmArgs(command, cmdArgs);
-    if (legacyArgs) {
-      return runLegacyPmCommand(legacyArgs, env, state, overrides);
-    }
-
-    if (isCurrentDistCommand(command, cmdArgs)) {
-      const pmArgs = cmdArgs.slice(1).filter((entry) => entry !== "--json");
-      return runCurrentPmCommand(pmArgs, env, state, overrides);
-    }
-
-    return { status: 0, stdout: "", stderr: "" };
-  });
+  return vi.fn((command: string, cmdArgs: string[], options?: RunCommandOptions) =>
+    runMockedCommand(command, cmdArgs, options?.env ?? {}, state, overrides),
+  );
 }
 
 async function runCompatibilityScenario(args: string[], overrides: ScenarioOverrides = {}) {
