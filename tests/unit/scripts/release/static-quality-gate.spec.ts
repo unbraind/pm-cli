@@ -10,6 +10,10 @@ const harness = createScriptHarness(["../../../../scripts/release/utils.mjs"]);
 
 const SCRIPT = "scripts/release/static-quality-gate.mjs";
 
+function normalizeMockPath(value: unknown): string {
+  return String(value).replaceAll("\\", "/");
+}
+
 type SqModule = {
   walkFiles: (
     dir: string,
@@ -740,7 +744,7 @@ describe("static-quality-gate", () => {
       const parityFiles = mod.collectCodeFactorParityFiles(changedPaths);
       expect(parityFiles.ok).toBe(true);
       if (parityFiles.ok) {
-        expect(parityFiles.files.map((filePath) => filePath.replace("/repo/", "")).sort()).toEqual([
+        expect(parityFiles.files.map((filePath) => normalizeMockPath(filePath).replace("/repo/", "")).sort()).toEqual([
           "scripts/tool.mjs",
           "src/changed.ts",
         ]);
@@ -778,7 +782,7 @@ describe("static-quality-gate", () => {
     it("checkCodeFactorComplexity reports default git scan failures after missing base refs", async () => {
       mockUtils("/repo");
       mockFs({
-        existsSync: vi.fn((p: string) => String(p) === "/repo/.git") as never,
+        existsSync: vi.fn((p: string) => normalizeMockPath(p) === "/repo/.git") as never,
       });
       mockChildProcess({
         execFileSync: vi.fn((cmd: string, args: string[]) => {
@@ -801,9 +805,11 @@ describe("static-quality-gate", () => {
     it("checkCodeFactorComplexity falls back to worktree diffs when base refs are empty", async () => {
       mockUtils("/repo");
       mockFs({
-        existsSync: vi.fn((p: string) => String(p) === "/repo/.git" || String(p) === "/repo/src/changed.ts") as never,
+        existsSync: vi.fn(
+          (p: string) => normalizeMockPath(p) === "/repo/.git" || normalizeMockPath(p) === "/repo/src/changed.ts",
+        ) as never,
         statSync: vi.fn((p: string) => {
-          if (String(p) === "/repo/src/changed.ts") {
+          if (normalizeMockPath(p) === "/repo/src/changed.ts") {
             return { isFile: () => true, isDirectory: () => false } as unknown as Stats;
           }
           return { isFile: () => false, isDirectory: () => true } as unknown as Stats;
@@ -831,9 +837,11 @@ describe("static-quality-gate", () => {
     it("checkCodeFactorComplexity inspects git diff, staged, and unstaged paths in a checkout", async () => {
       mockUtils("/repo");
       mockFs({
-        existsSync: vi.fn((p: string) => String(p) === "/repo/.git" || String(p) === "/repo/src/changed.ts") as never,
+        existsSync: vi.fn(
+          (p: string) => normalizeMockPath(p) === "/repo/.git" || normalizeMockPath(p) === "/repo/src/changed.ts",
+        ) as never,
         statSync: vi.fn((p: string) => {
-          if (String(p) === "/repo/src/changed.ts") {
+          if (normalizeMockPath(p) === "/repo/src/changed.ts") {
             return { isFile: () => true, isDirectory: () => false } as unknown as Stats;
           }
           return { isFile: () => false, isDirectory: () => true } as unknown as Stats;
