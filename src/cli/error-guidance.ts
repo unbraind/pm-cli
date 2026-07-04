@@ -109,11 +109,37 @@ interface PackageCommandHint {
 // a concrete install hint so agents/humans aren't left guessing. The install
 // command uses the bundled alias accepted by `pm install <alias>` (see
 // packages/pm-*/package.json `pm.aliases` and extension.ts install_command).
+const GUIDE_SHELL_HINT: PackageCommandHint = {
+  packageName: "@unbrained/pm-guide-shell",
+  installCommand: "pm install guide-shell",
+};
+const CALENDAR_HINT: PackageCommandHint = { packageName: "@unbrained/pm-calendar", installCommand: "pm install calendar" };
+const GOVERNANCE_AUDIT_HINT: PackageCommandHint = {
+  packageName: "@unbrained/pm-governance-audit",
+  installCommand: "pm install governance-audit",
+};
+const SEARCH_ADVANCED_HINT: PackageCommandHint = {
+  packageName: "@unbrained/pm-search-advanced",
+  installCommand: "pm install search-advanced",
+};
+
 const KNOWN_PACKAGE_COMMAND_HINTS: Readonly<Record<string, PackageCommandHint>> = {
-  guide: { packageName: "@unbrained/pm-guide-shell", installCommand: "pm install guide-shell" },
+  guide: GUIDE_SHELL_HINT,
+  shell: GUIDE_SHELL_HINT,
+  completion: GUIDE_SHELL_HINT,
+  "completion-statuses": GUIDE_SHELL_HINT,
+  "completion-tags": GUIDE_SHELL_HINT,
+  "completion-types": GUIDE_SHELL_HINT,
   templates: { packageName: "@unbrained/pm-templates", installCommand: "pm install templates" },
-  calendar: { packageName: "@unbrained/pm-calendar", installCommand: "pm install calendar" },
-  cal: { packageName: "@unbrained/pm-calendar", installCommand: "pm install calendar" },
+  calendar: CALENDAR_HINT,
+  cal: CALENDAR_HINT,
+  "comments-audit": GOVERNANCE_AUDIT_HINT,
+  "dedupe-audit": GOVERNANCE_AUDIT_HINT,
+  "dedupe-merge": GOVERNANCE_AUDIT_HINT,
+  normalize: GOVERNANCE_AUDIT_HINT,
+  reindex: SEARCH_ADVANCED_HINT,
+  "search-advanced": SEARCH_ADVANCED_HINT,
+  "test-runs": { packageName: "@unbrained/pm-linked-test-adapters", installCommand: "pm install linked-test-adapters" },
 };
 
 function resolveKnownPackageCommandHint(commandToken: string): PackageCommandHint | undefined {
@@ -954,6 +980,9 @@ function buildKnownPackageCommandGuidance(
   context: CommanderGuidanceContext | undefined,
 ): GuidanceMessage {
   const installStep = `"${commandToken}" is provided by the ${packageHint.packageName} package. Install it with: ${packageHint.installCommand}`;
+  // commander-usage may already append its generic "If this command comes from
+  // an optional package…" step for the same alias; keep only the specific one.
+  const nextSteps = baseNextSteps.filter((step) => !step.endsWith(`: ${packageHint.installCommand}`));
   return makeGuidanceMessage({
     code: "unknown_command",
     title: `Unknown command ${commandToken}`,
@@ -961,7 +990,7 @@ function buildKnownPackageCommandGuidance(
     required: `Install the ${packageHint.packageName} package, or use a valid command name or subcommand path.`,
     why: "Command registry includes core commands plus active extension command handlers; package-provided commands appear only after the package is installed.",
     examples: dedupeStrings([packageHint.installCommand, ...baseExamples]),
-    nextSteps: dedupeStrings([installStep, ...baseNextSteps]),
+    nextSteps: dedupeStrings([installStep, ...nextSteps]),
     recovery: buildCommanderRecoveryPayload(context),
   });
 }
@@ -1031,6 +1060,77 @@ function buildLinkedTestValueNotQuotedGuidance(
   });
 }
 
+const CONTEXT_GUIDANCE_VALUE_FLAGS = new Set([
+  "--activity-limit",
+  "--assignee",
+  "--assignee-filter",
+  "--date",
+  "--depth",
+  "--fields",
+  "--format",
+  "--from",
+  "--limit",
+  "--parent",
+  "--path",
+  "--pm-path",
+  "--priority",
+  "--release",
+  "--section",
+  "--sprint",
+  "--stale-threshold",
+  "--tag",
+  "--to",
+  "--type",
+]);
+const CONTEXT_GUIDANCE_COMMAND_NAMES = new Set(["context", "ctx"]);
+
+function buildContextItemArgumentGuidance(
+  message: string,
+  commandName: string | undefined,
+  context: CommanderGuidanceContext | undefined,
+): GuidanceMessage | null {
+  if (!/too many arguments/i.test(message) || !CONTEXT_GUIDANCE_COMMAND_NAMES.has(commandName ?? "")) {
+    return null;
+  }
+  const argv = context?.normalizedInvocationArgs ?? [];
+  const commandIndex = argv.findIndex((token) => CONTEXT_GUIDANCE_COMMAND_NAMES.has(token));
+  const searchIndex = commandIndex === -1 ? 1 : commandIndex + 1;
+  const match = message.match(/got \d+:\s*(\S+)/i);
+  let positional = match ? match[1].replace(/\.$/, "") : undefined;
+  if (positional === undefined) {
+    let skipFlagValue = false;
+    for (const token of argv.slice(searchIndex)) {
+      if (skipFlagValue) {
+        skipFlagValue = false;
+        continue;
+      }
+      const flagName = token.split("=")[0];
+      if (CONTEXT_GUIDANCE_VALUE_FLAGS.has(flagName)) {
+        skipFlagValue = !token.includes("=");
+        continue;
+      }
+      if (token.startsWith("-")) {
+        continue;
+      }
+      positional = token;
+      break;
+    }
+  }
+  if (!positional) {
+    return null;
+  }
+  const getCommand = `pm get ${positional}`;
+  return makeGuidanceMessage({
+    code: "context_takes_no_item_argument",
+    title: "pm context takes no item argument",
+    happened: `pm context renders a workspace-level snapshot and received the positional argument "${positional}".`,
+    required: `Use ${getCommand} for one item's full details, or pm context --parent ${positional} to scope the snapshot to that item's subtree.`,
+    why: "Item-level detail (pm get) and workspace-level context (pm context) are separate projections.",
+    examples: [getCommand, `pm context --parent ${positional}`],
+    recovery: buildCommanderRecoveryPayload(context, { suggested_retry: getCommand }),
+  });
+}
+
 function buildCommanderErrorGuidance(
   rawMessage: string,
   commandName: string | undefined,
@@ -1043,7 +1143,8 @@ function buildCommanderErrorGuidance(
     buildMissingRequiredArgumentGuidance(message, commandName, context) ??
     buildUnknownOptionGuidance(message, commandName, context) ??
     buildUnknownCommandGuidance(message, context) ??
-    buildLinkedTestValueNotQuotedGuidance(message, commandName, allowedTypes, context);
+    buildLinkedTestValueNotQuotedGuidance(message, commandName, allowedTypes, context) ??
+    buildContextItemArgumentGuidance(message, commandName, context);
   if (guidance) {
     return guidance;
   }

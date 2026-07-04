@@ -1,0 +1,12 @@
+id: pm-jqd2
+title: pm extension --install pm-<alias> / @unbrained/pm-<alias> fails with 'Local extension source does not exist' instead of suggesting the bundled catalog alias
+description: "2026-07-04 sandbox audit #3: 'pm extension install pm-beads' falls through to local-path resolution and errors 'Local extension source does not exist: .../pm-beads'. The bundled catalog alias is 'beads' (install_command 'pm install beads --project'). Agents naturally try the package folder name (pm-beads) or npm name (@unbrained/pm-beads). Fix: before local-path fallback, match the target against bundled catalog aliases, package folder names (pm-<alias>) and npm package names (@unbrained/pm-<alias>); on near-miss emit a did-you-mean with the exact install command."
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,audit-followup,extensions,never-block
+created_at: "2026-07-04T10:54:17.266Z"
+updated_at: "2026-07-04T10:54:17.266Z"
+author: maintainer-agent
+parent: pm-ugqx
+body: ""

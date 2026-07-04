@@ -1,0 +1,12 @@
+id: pm-ixoa
+title: "First-party service collision: builtin-calendar and builtin-guide-shell both override the global output_format service"
+description: "2026-07-04 sandbox audit: with all bundled packages installed, pm extension --doctor warns extension_output_service_override_global:output_format for BOTH builtin-calendar and builtin-guide-shell — two shipped first-party packages contending for the same global output service. Decide the owner (or scope one override) so a full first-party install is warning-free."
+type: Issue
+status: open
+priority: 3
+tags[2]: audit-followup,extensions
+created_at: "2026-07-04T08:31:42.675Z"
+updated_at: "2026-07-04T08:31:42.675Z"
+author: maintainer-agent
+parent: pm-ugqx
+body: ""

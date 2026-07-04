@@ -133,14 +133,6 @@
       "count": 2
     }
   },
-  "src/core/extensions/loader.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 57
-    },
-    "no-useless-assignment": {
-      "count": 1
-    }
-  },
   "src/core/history/history-rewrite.ts": {
     "preserve-caught-error": {
       "count": 1
@@ -358,11 +350,6 @@
     }
   },
   "tests/unit/scripts/dogfood-package-first.spec.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
-  "tests/unit/scripts/release/compatibility-check.spec.ts": {
     "complexity": {
       "count": 1
     }

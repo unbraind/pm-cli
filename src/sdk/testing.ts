@@ -122,6 +122,7 @@ import type {
 } from "./compose.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import type { PmPackageManifest, PmPackageResourceKind } from "../core/packages/manifest.js";
+import { asPropertyRecord, resolveActivatablePropertyRecord } from "../core/shared/primitives.js";
 
 // `describeExtensionActivation` is the `describe` (enumerate-all) verb that
 // pairs with the `assert*` (verify-one) and `run*` (invoke-one) helpers below.
@@ -153,12 +154,6 @@ export type {
   ExtensionBlueprintLintSeverity,
   LintExtensionBlueprintOptions,
 };
-
-interface TestExtensionModule {
-  manifest?: Partial<ExtensionManifest>;
-  activate?: unknown;
-  default?: TestExtensionModule;
-}
 
 /**
  * Documents the activate extension for test options payload exchanged by command, SDK, and package integrations.
@@ -667,6 +662,13 @@ function sortedUnique(values: readonly string[]): string[] {
 }
 
 function normalizeSdkCommandName(command: string): string {
+  if (typeof command !== "string") {
+    // Positional misuse like runRegisteredCommandForTest(activation, "name", opts)
+    // reaches here with `undefined` at runtime; guide instead of crashing on .trim().
+    throw new Error(
+      'A command name string is required. Pass it via the options object, e.g. runRegisteredCommandForTest(activation, { command: "my command" }) — positional command arguments are not supported.',
+    );
+  }
   return command
     .trim()
     .toLowerCase()
@@ -709,23 +711,28 @@ function collectFlagLabels(flags: readonly FlagDefinition[]): Set<string> {
 }
 
 function readTestExtensionManifest(module: unknown): Partial<ExtensionManifest> {
-  if (module && typeof module === "object") {
-    const testModule = module as TestExtensionModule;
-    const manifest = testModule.manifest;
-    if (manifest && typeof manifest === "object") {
-      return manifest;
-    }
-    const defaultExport = testModule.default;
-    const defaultManifest = defaultExport?.manifest;
-    if (defaultManifest && typeof defaultManifest === "object") {
-      return defaultManifest;
-    }
-    if (defaultExport && typeof defaultExport === "object" && ("name" in defaultExport || "capabilities" in defaultExport)) {
-      return defaultExport as Partial<ExtensionManifest>;
-    }
-    if ("name" in testModule || "capabilities" in testModule) {
-      return testModule as Partial<ExtensionManifest>;
-    }
+  const moduleRecord = asPropertyRecord(module);
+  if (!moduleRecord) {
+    return {};
+  }
+  const manifest = asPropertyRecord(moduleRecord.manifest);
+  if (manifest) {
+    return manifest as Partial<ExtensionManifest>;
+  }
+  const defaultExport = asPropertyRecord(moduleRecord.default);
+  const defaultManifest = asPropertyRecord(defaultExport?.manifest);
+  if (defaultManifest) {
+    return defaultManifest as Partial<ExtensionManifest>;
+  }
+  if (
+    defaultExport &&
+    typeof moduleRecord.default !== "function" &&
+    ("name" in defaultExport || "capabilities" in defaultExport)
+  ) {
+    return defaultExport as Partial<ExtensionManifest>;
+  }
+  if (typeof module !== "function" && ("name" in moduleRecord || "capabilities" in moduleRecord)) {
+    return moduleRecord as Partial<ExtensionManifest>;
   }
   return {};
 }
@@ -2342,6 +2349,21 @@ export interface ExtensionTestHarness {
 }
 
 /**
+ * Reject obviously wrong harness input (e.g. an options object passed as the
+ * module) instead of silently producing an empty activation. Mirrors the
+ * loader's activatable-extension shapes: an `activate` function on the module
+ * or on its default export.
+ */
+function assertTestModuleHasActivateExport(module: unknown): void {
+  if (resolveActivatablePropertyRecord(module)) {
+    return;
+  }
+  throw new Error(
+    "createExtensionTestHarness received a module with no activate export. Pass the extension module (with an activate(api) function on the module or its default export) as the first argument, and options second.",
+  );
+}
+
+/**
  * Activate one in-memory extension module and return a fluent
  * {@link ExtensionTestHarness} that binds every SDK testing helper to the right
  * sub-registry of the resulting activation.
@@ -2371,6 +2393,7 @@ export async function createExtensionTestHarness(
   module: unknown,
   options: ActivateExtensionForTestOptions = {},
 ): Promise<ExtensionTestHarness> {
+  assertTestModuleHasActivateExport(module);
   const manifest = readTestExtensionManifest(module);
   const name = resolveTestExtensionName(manifest, options.name);
   const layer: ExtensionLayer = options.layer ?? "project";

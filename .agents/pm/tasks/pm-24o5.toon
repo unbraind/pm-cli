@@ -1,0 +1,18 @@
+id: pm-24o5
+title: "GH-426: reduce complex method in compatibility-check.spec runCurrentPmCommand"
+description: "CodeFactor flagged runCurrentPmCommand (tests/unit/scripts/release/compatibility-check.spec.ts:103-143) as Complex Method (~CC15 if-chain). Refactored into currentCommandPayload switch dispatcher + slim runCurrentPmCommand; behavior unchanged, 24 specs pass."
+type: Task
+status: closed
+priority: 2
+tags[2]: "area:quality",codefactor
+created_at: "2026-07-04T06:16:55.327Z"
+updated_at: "2026-07-04T10:56:34.951Z"
+author: maintainer-agent
+estimated_minutes: 30
+acceptance_criteria: CodeFactor no longer reports Complex Method on tests/unit/scripts/release/compatibility-check.spec.ts; all 24 specs pass; GH issue #426 closed on next push.
+parent: pm-92if
+resolution: "Extracted currentCommandPayload(cmd,pmArgs,state) switch from runCurrentPmCommand in compatibility-check.spec.ts"
+expected_result: CodeFactor Complex Method finding resolved
+actual_result: Method body reduced to override check + update dispatch + payload switch; full suite green (5336 tests)
+close_reason: "runCurrentPmCommand decomposed: per-command payloads extracted into currentCommandPayload switch; spec passes; CodeFactor GH-426 will auto-clear on next push scan."
+body: ""

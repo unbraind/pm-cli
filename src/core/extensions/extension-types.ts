@@ -1286,6 +1286,11 @@ export interface DiscoverExtensionsOptions {
   noExtensions?: boolean;
   reload_token?: string;
   cache_bust?: boolean;
+  /**
+   * Optional import-stage filter. Discovery still reports the full effective set,
+   * but `loadExtensions` imports only entries accepted by this predicate.
+   */
+  extensionFilter?: (extension: EffectiveExtension) => boolean;
 }
 
 /**

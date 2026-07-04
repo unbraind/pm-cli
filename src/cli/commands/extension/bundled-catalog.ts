@@ -162,6 +162,20 @@ export async function resolveBundledPackageRoot(alias: string): Promise<string |
 }
 
 /**
+ * Resolve the published npm package name for a bundled alias so install flows
+ * can persist it as managed-source provenance (`source.package`). Returns null
+ * when the alias is unknown or the bundled package manifest lacks a name.
+ */
+export async function resolveBundledPackageNpmName(alias: string): Promise<string | null> {
+  const packageRoot = await resolveBundledPackageRoot(alias);
+  if (!packageRoot) {
+    return null;
+  }
+  const manifest = await readPmPackageManifest(packageRoot);
+  return manifest.package_name ?? null;
+}
+
+/**
  * Implements resolve bundled alias manifest name for the public runtime surface of this module.
  */
 export async function resolveBundledAliasManifestName(input: string): Promise<string | null> {

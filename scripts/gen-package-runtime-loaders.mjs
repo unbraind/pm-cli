@@ -73,11 +73,33 @@ function isMissingRuntimeModuleError(error: unknown, modulePath: string): boolea
     return true;
   }
   const message = typeof error.message === "string" ? error.message : "";
-  const normalizedModulePath = modulePath.replace(/\\\\/g, "/");
+  const normalizedModulePath = modulePath.split("\\\\").join("/");
   return (
     message.startsWith(\`Cannot find module '\${modulePath}'\`) ||
     message.startsWith(\`Cannot find module '\${normalizedModulePath}'\`) ||
     message.startsWith(\`Cannot find module '\${moduleUrl}'\`)
+  );
+}
+
+// Node refuses to type-strip .ts files under node_modules
+// (ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING); fall through to the next
+// candidate (the extension's co-located runtime.ts copy) instead of aborting.
+function isUnstrippableTypeScriptError(error: unknown, modulePath: string): boolean {
+  if (!isRecord(error)) {
+    return false;
+  }
+  const message = typeof error.message === "string" ? error.message : "";
+  if (error.code !== "ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING" && !message.includes("Stripping types is currently unsupported")) {
+    return false;
+  }
+  const moduleUrl = pathToFileURL(modulePath).href;
+  const normalizedModulePath = modulePath.split("\\\\").join("/");
+  return (
+    error.url === moduleUrl ||
+    (typeof error.path === "string" && path.resolve(error.path) === path.resolve(modulePath)) ||
+    message.includes(modulePath) ||
+    message.includes(normalizedModulePath) ||
+    message.includes(moduleUrl)
   );
 }
 
@@ -109,7 +131,7 @@ async function tryRuntime(modulePath: string, attempted: string[]): Promise<Pack
   try {
     return await import(pathToFileURL(modulePath).href) as PackageRuntimeModule;
   } catch (error: unknown) {
-    if (isMissingRuntimeModuleError(error, modulePath)) {
+    if (isMissingRuntimeModuleError(error, modulePath) || isUnstrippableTypeScriptError(error, modulePath)) {
       return undefined;
     }
     throw error;
@@ -170,11 +192,29 @@ const runtimeRecord = (value: unknown): Record<string, unknown> | undefined =>
 const isTargetMissing = (error: unknown, target: string): boolean => {
   const record = runtimeRecord(error);
   const targetUrl = pathToFileURL(target).href;
+  const normalizedTarget = target.split("\\\\").join("/");
   const message = typeof record?.message === "string" ? record.message : "";
   return record?.code === "ERR_MODULE_NOT_FOUND" &&
     (record.url === targetUrl ||
-      (typeof record.path === "string" && path.resolve(record.path) === path.resolve(target)) ||
-      [target, target.replace(/\\\\/g, "/"), targetUrl].some((value) => message.startsWith(\`Cannot find module '\${value}'\`)));
+      (record && typeof record.path === "string" && path.resolve(record.path) === path.resolve(target)) ||
+      [target, normalizedTarget, targetUrl].some((value) => message.startsWith(\`Cannot find module '\${value}'\`)));
+};
+
+// Node refuses to type-strip .ts files under node_modules; fall through to the
+// next candidate (the extension's co-located runtime.ts copy) instead of aborting.
+const isUnstrippable = (error: unknown, target: string): boolean => {
+  const record = runtimeRecord(error);
+  const message = typeof record?.message === "string" ? record.message : "";
+  if (record?.code !== "ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING" && !message.includes("Stripping types is currently unsupported")) {
+    return false;
+  }
+  const targetUrl = pathToFileURL(target).href;
+  const normalizedTarget = target.split("\\\\").join("/");
+  return (
+    record?.url === targetUrl ||
+    (record && typeof record.path === "string" && path.resolve(record.path) === path.resolve(target)) ||
+    [target, normalizedTarget, targetUrl].some((value) => message.includes(value))
+  );
 };
 
 const loadRuntimeFile = async (target: string, attempted: string[]): Promise<PackageRuntimeModule | undefined> => {
@@ -185,7 +225,7 @@ const loadRuntimeFile = async (target: string, attempted: string[]): Promise<Pac
   try {
     return await import(pathToFileURL(target).href) as PackageRuntimeModule;
   } catch (error: unknown) {
-    if (isTargetMissing(error, target)) {
+    if (isTargetMissing(error, target) || isUnstrippable(error, target)) {
       return undefined;
     }
     throw error;

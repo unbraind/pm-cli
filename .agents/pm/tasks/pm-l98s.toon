@@ -1,0 +1,12 @@
+id: pm-l98s
+title: "Extension install should scaffold newly required item-type folders (pm health ok:false after installing pm-kanban until pm init)"
+description: "2026-07-04 sandbox audit: installing pm-kanban registers the Card type whose cards/ folder does not exist yet, so pm health returns top-level ok:false (warn-severity storage check) until the user re-runs pm init. Remediation hint is correct but install should auto-create type dirs (declarative installs already scaffold folders when activation succeeds — see pm-3wsi)."
+type: Task
+status: open
+priority: 3
+tags[3]: agent-ux,audit-followup,extensions
+created_at: "2026-07-04T08:31:43.047Z"
+updated_at: "2026-07-04T08:31:43.047Z"
+author: maintainer-agent
+parent: pm-ugqx
+body: ""

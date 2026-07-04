@@ -1,0 +1,16 @@
+id: pm-qt5d
+title: Project package install with --pm-path can write extensions into the caller workspace
+description: "Manual temp-workspace dogfood on 2026-07-04 found that running node dist/cli.js --pm-path <temp>/.agents/pm install '*' --project from the repository cwd installed bundled extensions into the caller repository tracker .agents/pm/extensions before cleanup, even though the requested tracker path was the temp tracker. This is a path-scoping UX/safety bug for agents testing package installs from a repo checkout. Expected: explicit --pm-path project-scope package installs write only under that pm root or fail with a clear workspace-root guard. Actual: the temp tracker received installed packages, but the caller workspace tracker also got extension files/managed-extension churn."
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,dogfood,extensions,path-safety
+created_at: "2026-07-04T11:25:59.083Z"
+updated_at: "2026-07-04T11:42:53.708Z"
+author: claude-code-agent
+acceptance_criteria: A regression test covers pm install '*' --project with --pm-path pointing at a temp tracker while cwd is another initialized repo; no files are written under the caller repo .agents/pm/extensions and the command output makes the target pm root unambiguous.
+parent: pm-mpbb
+comments[2]{created_at,author,text}:
+  "2026-07-04T11:25:59.083Z",claude-code-agent,"Duplicate check before creation: searched all statuses for 'install pm-path project scope writes cwd tracker', 'package install --pm-path --project', and 'with-packages bundled package install tracker path'. Closest hits were closed pm-r0m4 (CJS type:module activation), closed pm-hosd (init --with-packages), and open pm-b3e9 (pre-install command hints); none track explicit --pm-path project install writing into the caller workspace tracker."
+  "2026-07-04T11:42:53.708Z",claude-code-agent,"Evidence: created as follow-up only after explicit all-status duplicate checks. The current branch cleaned accidental local .agents/pm/extensions output from manual dogfood and does not implement this path-safety fix; acceptance remains open for a targeted regression."
+body: ""

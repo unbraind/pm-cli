@@ -2857,6 +2857,7 @@ export function buildStarterExtensionScaffoldFiles(
     "## Included Files",
     manifestBullet,
     entrypointBullet,
+    '- `package.json`: `{ "type": "module" }` marker so the ESM entrypoint loads even when the host project is CommonJS.',
     TSCONFIG_BULLET,
     "",
     "## Quick Start",
@@ -2891,6 +2892,10 @@ export function buildStarterExtensionScaffoldFiles(
   return {
     "manifest.json": manifest,
     "index.ts": entrypoint,
+    // Module-type marker: pm loads index.ts as ESM, and without a nearby
+    // package.json Node inherits the host project's module type, breaking
+    // installs into "type": "commonjs" projects (pm-r0m4).
+    "package.json": `${JSON.stringify({ type: "module" }, null, 2)}\n`,
     "tsconfig.json": tsconfig,
     "README.md": readme,
   };

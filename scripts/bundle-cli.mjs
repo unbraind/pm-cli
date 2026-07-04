@@ -6,7 +6,17 @@ import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 
 const repoRoot = process.cwd();
-const entryPoint = path.join(repoRoot, "dist", "cli", "main.js");
+// CLI and SDK entrypoints share one esbuild invocation so their common code
+// lands in shared chunks: installed extensions import `@unbrained/pm-cli/sdk`
+// through the package `exports`, and resolving that to the same chunk graph the
+// running CLI already loaded keeps per-command extension activation cheap
+// (pm-4oww) and gives the CLI and extensions a single copy of core state.
+const entryPoints = {
+  main: path.join(repoRoot, "dist", "cli", "main.js"),
+  sdk: path.join(repoRoot, "dist", "sdk", "index.js"),
+  "sdk-runtime": path.join(repoRoot, "dist", "sdk", "runtime.js"),
+  "sdk-testing": path.join(repoRoot, "dist", "sdk", "testing.js"),
+};
 const outputDir = path.join(repoRoot, "dist", "cli-bundle");
 const lockDir = path.join(repoRoot, "dist", ".cli-bundle-build.lock");
 const binPath = path.join(repoRoot, "dist", "cli.js");
@@ -113,7 +123,7 @@ export async function main() {
   const releaseBundleBuildLock = await acquireBundleBuildLock();
   try {
     const buildResult = await build({
-      entryPoints: [entryPoint],
+      entryPoints,
       outdir: outputDir,
       bundle: true,
       splitting: true,

@@ -10,8 +10,7 @@ import { pathExists } from "../fs/fs-utils.js";
 import { isPathWithinDirectory } from "../fs/path-utils.js";
 import { resolvePmPackageRootFromModule } from "../packages/root.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
-import type { GlobalOptions } from "../shared/command-types.js";
-import { asRecordLoose } from "../shared/primitives.js";
+import { asRecordLoose, resolveActivatablePropertyRecord } from "../shared/primitives.js";
 import { flattenFlagListValue, isFlagDefaultValueCoercible, resolveFlagValueKind } from "./flag-value-types.js";
 import { KNOWN_ITEM_FIELD_TYPES, normalizeItemFieldType, suggestKnownItemFieldType } from "./item-field-types.js";
 import {
@@ -21,7 +20,6 @@ import {
   parseComparableVersion,
   type PmVersionBoundEvaluation,
 } from "./version-compat.js";
-import type { PmSettings } from "../../types/index.js";
 import type { ProjectProfileDefinition, ProjectProfileRegistrationInput } from "../profile/profile-presets.js";
 // Cohesive helper groups now live in sibling modules. They are imported for the
 // discovery/activation code that stays here and re-exported below so existing
@@ -31,9 +29,7 @@ import {
   normalizeNames,
   isKnownExtensionCapability,
   collectUnknownExtensionCapabilities,
-  resolveLegacyExtensionCapabilityAlias,
   normalizeManifestCapabilities,
-  suggestKnownExtensionCapability,
   formatUnknownExtensionCapabilityWarning,
   formatLegacyExtensionCapabilityAliasWarning,
 } from "./extension-capability-aliases.js";
@@ -60,8 +56,6 @@ import {
 import {
   normalizeCommandName,
   cloneContextSnapshot,
-  cloneCommandOptionsSnapshot,
-  cloneGlobalOptionsSnapshot,
 } from "./extension-runtime-helpers.js";
 export {
   parseUnknownExtensionCapabilityWarning,
@@ -99,14 +93,11 @@ import {
   type ExtensionDeactivationResult,
   type ExtensionSelfIdentity,
   type ExtensionCapability,
-  type ExtensionPolicyMode,
   type ExtensionPolicySurface,
   type ExtensionSandboxProfile,
   type ExtensionGovernancePolicy,
-  type ExtensionTrustMode,
   type PmMaxVersionExceededMode,
   type ExtensionLayer,
-  type ExtensionStatus,
   type ExtensionManifest,
   type ExtensionManifestEngines,
   type ExtensionDiagnostic,
@@ -115,11 +106,6 @@ import {
   type LoadedExtension,
   type FailedExtensionLoad,
   type ExtensionLoadResult,
-  type BeforeCommandHookContext,
-  type AfterCommandHookContext,
-  type OnWriteHookContext,
-  type OnReadHookContext,
-  type OnIndexHookContext,
   type BeforeCommandHook,
   type AfterCommandHook,
   type OnWriteHook,
@@ -133,48 +119,19 @@ import {
   type PreflightOverride,
   type ServiceOverride,
   type ExtensionHookRegistry,
-  type CommandOverrideContext,
-  type RendererOverrideContext,
-  type CommandHandlerContext,
-  type ParserOverrideContext,
-  type ParserOverrideDelta,
-  type PreflightOverrideContext,
-  type PreflightRuntimeDecision,
-  type PreflightOverrideDelta,
   type ExtensionServiceName,
-  type ServiceOverrideContext,
   type ExtensionCommandArgumentDefinition,
   type CommandDefinition,
-  type FlagValueType,
   type FlagDefinition,
   type SchemaFieldDefinition,
-  type SchemaItemTypeCommandOptionPolicyDefinition,
-  type SchemaItemTypeOptionDefinition,
   type SchemaItemTypeDefinition,
-  type SchemaMigrationRunContext,
-  type SchemaMigrationRunner,
   type SchemaMigrationDefinition,
-  type ImportExportContext,
   type ImportExportRegistrationOptions,
   type Importer,
   type Exporter,
-  type ExtensionSearchMode,
-  type SearchProviderQueryContext,
-  type SearchProviderHit,
-  type SearchProviderQueryResult,
-  type SearchProviderEmbedBatchContext,
-  type SearchProviderEmbedContext,
   type SearchProviderDefinition,
-  type VectorStoreQueryHit,
-  type VectorStoreQueryContext,
-  type VectorStoreUpsertPoint,
-  type VectorStoreUpsertContext,
-  type VectorStoreDeleteContext,
   type VectorStoreAdapterDefinition,
-  type RegisteredExtensionCommandOverride,
-  type RegisteredExtensionCommandHandler,
   type RegisteredExtensionParserOverride,
-  type RegisteredExtensionPreflightOverride,
   type RegisteredExtensionServiceOverride,
   type RegisteredExtensionRendererOverride,
   type ExtensionCommandRegistry,
@@ -182,13 +139,8 @@ import {
   type ExtensionPreflightRegistry,
   type ExtensionServiceRegistry,
   type ExtensionRendererRegistry,
-  type RegisteredExtensionFlagDefinitions,
   type RegisteredExtensionCommandDefinition,
-  type RegisteredExtensionSchemaFieldDefinitions,
-  type RegisteredExtensionSchemaItemTypeDefinitions,
   type RegisteredExtensionSchemaMigrationDefinition,
-  type RegisteredExtensionImporter,
-  type RegisteredExtensionExporter,
   type RegisteredExtensionSearchProvider,
   type RegisteredExtensionVectorStoreAdapter,
   type ExtensionRegistrationRegistry,
@@ -203,18 +155,10 @@ import {
   type LegacyExtensionCapabilityAliasMapping,
   type DiscoverExtensionsOptions,
   type ActivatableExtension,
-  type ServiceOverrideResult,
-  type CommandOverrideResult,
-  type CommandHandlerResult,
-  type ParserOverrideResult,
-  type PreflightOverrideResult,
-  type RendererOverrideResult,
-  type UnknownExtensionCapabilityWarningDetails,
-  type RegisteredExtensionHook,
 } from "./extension-types.js";
 export * from "./extension-types.js";
 
-const DEFAULT_EXTENSION_PRIORITY = 100;
+export const DEFAULT_EXTENSION_PRIORITY = 100;
 let currentPmCliVersionPromise: Promise<string | null> | null = null;
 
 /* Types now in extension-types.ts - re-exported via `export * from "./extension-types.js"` above */
@@ -546,7 +490,8 @@ function shouldEnable(name: string, enabled: Set<string>, disabled: Set<string>)
   return enabled.has(name);
 }
 
-async function isCanonicalPathWithinDirectory(directory: string, targetPath: string): Promise<boolean> {
+/** Resolve symlinks on both paths before the containment check so a link inside the directory cannot escape it. */
+export async function isCanonicalPathWithinDirectory(directory: string, targetPath: string): Promise<boolean> {
   const [resolvedDirectory, resolvedTargetPath] = await Promise.all([fs.realpath(directory), fs.realpath(targetPath)]);
   return isPathWithinDirectory(resolvedDirectory, resolvedTargetPath);
 }
@@ -779,7 +724,7 @@ async function scanExtensionDirectory(
     return buildUnavailableExtensionScan(layer, directory, manifestPath, `extension_manifest_missing:${layer}:${directory}`);
   }
 
-  let manifest: ExtensionManifest | null = null;
+  let manifest: ExtensionManifest | null;
   try {
     const parsed = JSON.parse(await fs.readFile(manifestPath, "utf8")) as unknown;
     manifest = parseManifest(parsed);
@@ -1056,7 +1001,9 @@ export async function loadExtensions(options: DiscoverExtensionsOptions): Promis
     };
   }
 
-  for (const extension of discovery.effective) {
+  const extensionsToLoad =
+    typeof options.extensionFilter === "function" ? discovery.effective.filter(options.extensionFilter) : discovery.effective;
+  for (const extension of extensionsToLoad) {
     try {
       const importHref = await resolveExtensionImportHref(extension, options);
       const module = await import(importHref);
@@ -1083,7 +1030,6 @@ export async function loadExtensions(options: DiscoverExtensionsOptions): Promis
   };
 }
 
-type HookName = keyof ExtensionHookRegistry;
 const DEFAULT_EXTENSION_DEACTIVATE_TIMEOUT_MS = 5_000;
 const MAX_EXTENSION_DEACTIVATE_TIMEOUT_MS = 2_147_483_647;
 
@@ -1104,21 +1050,8 @@ function toActivatableExtension(source: Record<string, unknown>): ActivatableExt
 }
 
 function resolveActivatableExtension(module: unknown): ActivatableExtension | null {
-  const moduleRecord = asRecordLoose(module);
-  if (!moduleRecord) {
-    return null;
-  }
-
-  if (typeof moduleRecord.activate === "function") {
-    return toActivatableExtension(moduleRecord);
-  }
-
-  const defaultExport = asRecordLoose(moduleRecord.default);
-  if (defaultExport && typeof defaultExport.activate === "function") {
-    return toActivatableExtension(defaultExport);
-  }
-
-  return null;
+  const activatableRecord = resolveActivatablePropertyRecord(module);
+  return activatableRecord ? toActivatableExtension(activatableRecord) : null;
 }
 
 /**

@@ -115,6 +115,35 @@ export function asRecordLoose(value: unknown): Record<string, unknown> | null {
 }
 
 /**
+ * Narrow a value to a property-bearing object or function. Dynamic module
+ * exports can be function/class values with static lifecycle properties, so
+ * activation boundaries need a wider record shape than plain-object parsing.
+ */
+export function asPropertyRecord(value: unknown): Record<string, unknown> | null {
+  if ((typeof value !== "object" && typeof value !== "function") || value === null) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+}
+
+/**
+ * Resolve the module or default export record that owns an `activate` lifecycle
+ * function. Accepts object and function/class-shaped exports so runtime loading
+ * and SDK tests share the same extension interop rule.
+ */
+export function resolveActivatablePropertyRecord(value: unknown): Record<string, unknown> | null {
+  const moduleRecord = asPropertyRecord(value);
+  if (!moduleRecord) {
+    return null;
+  }
+  if (typeof moduleRecord.activate === "function") {
+    return moduleRecord;
+  }
+  const defaultExport = asPropertyRecord(moduleRecord.default);
+  return typeof defaultExport?.activate === "function" ? defaultExport : null;
+}
+
+/**
  * Narrow a value to a plain object, returning an empty object for non-objects,
  * `null`, and arrays. Returns a shallow clone of the source object.
  *

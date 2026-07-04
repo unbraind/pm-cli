@@ -66,6 +66,7 @@ import {
   listBundledPackageAliases,
   resolveBundledAliasManifestName,
   resolveBundledExtensionAliasSource,
+  resolveBundledPackageNpmName,
 } from "../../../src/cli/commands/extension/bundled-catalog.js";
 import { normalizeManagedDirectoryName } from "../../../src/cli/commands/extension/shared.js";
 import {
@@ -1771,6 +1772,24 @@ describe("extension command runtime", () => {
 
         await expect(resolveBundledExtensionAliasSource("wave")).resolves.toBe(bundledPackageRoot);
         await expect(resolveBundledAliasManifestName("wave")).resolves.toBe("wave-extension");
+        await expect(resolveBundledPackageNpmName("wave")).resolves.toBe("@example/pm-wave");
+        await expect(resolveBundledPackageNpmName("unknown-alias")).resolves.toBeNull();
+
+        // A bundled package whose package.json lacks a name yields a null npm name.
+        const namelessPackageRoot = path.join(packageRoot, "packages", "pm-ghost");
+        await mkdir(path.join(namelessPackageRoot, "extensions", "ghost"), { recursive: true });
+        await writeFile(
+          path.join(namelessPackageRoot, "package.json"),
+          JSON.stringify({ version: "0.0.1", pm: { aliases: ["ghost"], extensions: ["extensions/ghost"] } }),
+          "utf8",
+        );
+        await writeFile(
+          path.join(namelessPackageRoot, "extensions", "ghost", "manifest.json"),
+          JSON.stringify({ name: "ghost-extension", version: "1.0.0", entry: "./index.js" }),
+          "utf8",
+        );
+        await writeFile(path.join(namelessPackageRoot, "extensions", "ghost", "index.js"), "export function activate() {}\n", "utf8");
+        await expect(resolveBundledPackageNpmName("ghost")).resolves.toBeNull();
 
         const legacyBeadsSource = path.join(packageRoot, "legacy-beads-source");
         await mkdir(legacyBeadsSource, { recursive: true });
@@ -2038,10 +2057,11 @@ describe("extension command runtime", () => {
       expect(readme).toContain("npx tsc");
 
       // The sample test + .gitignore are package-mode only. An extension-only
-      // scaffold has no package.json to `npm install` the peer SDK testing
-      // helpers against, so it emits the typed source + tsconfig but no test.
+      // scaffold's package.json is just the { "type": "module" } marker — no
+      // deps to `npm install` the peer SDK testing helpers against — so it
+      // emits the typed source + tsconfig but no test.
       const scaffoldedFiles = (scaffold.details as { files?: Array<{ path: string }> }).files ?? [];
-      expect(scaffoldedFiles.map((file) => file.path)).toEqual(["manifest.json", "index.ts", "tsconfig.json", "README.md"]);
+      expect(scaffoldedFiles.map((file) => file.path)).toEqual(["manifest.json", "index.ts", "package.json", "tsconfig.json", "README.md"]);
       expect((scaffold.details as { next_steps?: string[] }).next_steps).toContainEqual(
         expect.stringContaining('npm install -D typescript @types/node @unbrained/pm-cli'),
       );
@@ -2656,6 +2676,7 @@ describe("extension command runtime", () => {
       expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
         "manifest.json",
         "index.ts",
+        "package.json",
         "tsconfig.json",
         "README.md",
       ]);
@@ -2691,6 +2712,7 @@ describe("extension command runtime", () => {
       expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
         "manifest.json",
         "index.ts",
+        "package.json",
         "tsconfig.json",
         "README.md",
       ]);
@@ -2728,6 +2750,7 @@ describe("extension command runtime", () => {
       expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
         "manifest.json",
         "index.ts",
+        "package.json",
         "tsconfig.json",
         "README.md",
       ]);
@@ -2765,6 +2788,7 @@ describe("extension command runtime", () => {
       expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
         "manifest.json",
         "index.ts",
+        "package.json",
         "tsconfig.json",
         "README.md",
       ]);
@@ -2806,6 +2830,7 @@ describe("extension command runtime", () => {
       expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
         "manifest.json",
         "index.ts",
+        "package.json",
         "tsconfig.json",
         "README.md",
       ]);
@@ -2930,7 +2955,7 @@ describe("extension command runtime", () => {
         command_paths: expect.arrayContaining(["beads import"]),
         action_paths: expect.arrayContaining(["beads-import"]),
         command_discovery: {
-          package_name: "beads",
+          package_name: "@unbrained/pm-beads",
           extension_name: "builtin-beads-import",
           command_paths: expect.arrayContaining(["beads import"]),
           action_paths: expect.arrayContaining(["beads-import"]),
@@ -3546,7 +3571,7 @@ describe("extension command runtime", () => {
             command_paths: expect.arrayContaining(["beads import"]),
             action_paths: expect.arrayContaining(["beads-import"]),
             command_discovery: {
-              package_name: "beads",
+              package_name: "@unbrained/pm-beads",
               extension_name: "builtin-beads-import",
               command_paths: expect.arrayContaining(["beads import"]),
               action_paths: expect.arrayContaining(["beads-import"]),
@@ -4369,6 +4394,14 @@ describe("extension command runtime", () => {
       const settingsAfterInstall = await readSettings(context.pmPath);
       expect(settingsAfterInstall.extensions.disabled).not.toContain("sample-ext");
 
+      // Installs into CommonJS host projects need a module-type marker next to
+      // the ESM entrypoint (pm-r0m4): install writes one when the source ships
+      // no package.json of its own.
+      const installedMarker = JSON.parse(
+        await readFile(path.join(context.pmPath, "extensions", "sample-ext", "package.json"), "utf8"),
+      ) as Record<string, unknown>;
+      expect(installedMarker).toEqual({ type: "module" });
+
       const explore = await runExtension(undefined, { explore: true, project: true }, { path: context.pmPath });
       const exploreExtensions = (explore.details.extensions as Array<Record<string, unknown>>) ?? [];
       expect(exploreExtensions).toEqual(
@@ -4518,6 +4551,26 @@ describe("extension command runtime", () => {
         ok: true,
         command: "pm-graph export",
       });
+    });
+  });
+
+  it("preserves an extension-shipped package.json instead of overwriting the module-type marker", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "marker-source-ext");
+      await writeTestExtension({
+        root: sourceDir,
+        name: "marker-ext",
+      });
+      const shippedPackageJson = { type: "module", name: "marker-ext-runtime" };
+      await writeFile(path.join(sourceDir, "package.json"), `${JSON.stringify(shippedPackageJson, null, 2)}\n`, "utf8");
+
+      const install = await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
+      expect(install.action).toBe("install");
+
+      const installedMarker = JSON.parse(
+        await readFile(path.join(context.pmPath, "extensions", "marker-ext", "package.json"), "utf8"),
+      ) as Record<string, unknown>;
+      expect(installedMarker).toEqual(shippedPackageJson);
     });
   });
 

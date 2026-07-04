@@ -1156,6 +1156,12 @@ describe("public sdk entrypoint", () => {
       },
     ]);
 
+    // Positional misuse (command passed as a bare second argument instead of
+    // options.command) must produce a guided error, not a raw TypeError.
+    await expect(
+      runRegisteredCommandForTest(activation.commands, "greet hello" as never),
+    ).rejects.toThrow(/command name string is required.*options object/i);
+
     // Defaults: no args/options/global/pmRoot supplied. The command name is
     // normalized (extra whitespace + casing) before matching the handler.
     const defaulted = await runRegisteredCommandForTest(activation.commands, { command: "  Greet   Hello  " });
@@ -3192,6 +3198,41 @@ describe("createExtensionTestHarness", () => {
     // A matching resolved name/layer means the teardown skip-key lines up and the
     // module deactivates cleanly even after the methods were detached.
     expect(assertExtensionDeactivated(await deactivate()).deactivated).toBe(1);
+  });
+
+  it("rejects a module with no activate export instead of returning an empty harness", async () => {
+    // Passing something that is not an extension module (e.g. an options object
+    // as the first argument) used to yield a silently empty activation summary.
+    await expect(createExtensionTestHarness({ name: "not-a-module", capabilities: ["commands"] })).rejects.toThrow(
+      /no activate export/,
+    );
+    await expect(createExtensionTestHarness("nope" as never)).rejects.toThrow(/no activate export/);
+    // A default-export-shaped module still activates (loader parity).
+    const viaDefault = await createExtensionTestHarness({ default: { activate() {} } }, { name: "default-ext" });
+    expect(viaDefault.name).toBe("default-ext");
+    const functionModule = Object.assign(() => undefined, { activate() {} });
+    const viaFunction = await createExtensionTestHarness(functionModule, { name: "function-ext" });
+    expect(viaFunction.name).toBe("function-ext");
+    const bareCallableModule = Object.assign(() => undefined, { activate() {} });
+    const viaBareCallable = await createExtensionTestHarness(bareCallableModule, { capabilities: ["commands"] });
+    expect(viaBareCallable.name).toBe("test-extension");
+    const viaBareDefaultCallable = await createExtensionTestHarness(
+      { default: Object.assign(() => undefined, { activate() {} }) },
+      { capabilities: ["commands"] },
+    );
+    expect(viaBareDefaultCallable.name).toBe("test-extension");
+    const namedFunctionModule = Object.assign(() => undefined, {
+      manifest: { name: "function-manifest-ext" },
+      activate() {},
+    });
+    const viaNamedFunction = await createExtensionTestHarness(namedFunctionModule);
+    expect(viaNamedFunction.name).toBe("function-manifest-ext");
+    class DefaultExport {
+      static activate(): void {}
+    }
+    Object.assign(DefaultExport, { manifest: { name: "default-function-manifest-ext" } });
+    const viaDefaultFunction = await createExtensionTestHarness({ default: DefaultExport });
+    expect(viaDefaultFunction.name).toBe("default-function-manifest-ext");
   });
 
   it("fails fast with a descriptive error when a registration is dropped for a missing capability", async () => {

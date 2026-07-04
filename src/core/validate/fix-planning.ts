@@ -82,7 +82,7 @@ export interface ValidateFixRecord {
 }
 
 /** Default resolution backfilled onto closed items with no derivable source text. */
-export const DEFAULT_RESOLUTION_BACKFILL_VALUE = "completed";
+const DEFAULT_RESOLUTION_BACKFILL_VALUE = "completed";
 
 function quoteForCommand(value: string): string {
   return `"${value.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;

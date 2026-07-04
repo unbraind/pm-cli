@@ -1,0 +1,12 @@
+id: pm-f4yn
+title: Prune src/cli/commands/index.ts barrel dead re-exports and adopt knip as a dead-export gate
+description: "2026-07-04 code-quality sweep: the commands barrel re-exports ~60 runtime symbols + ~80 types that no consumer imports via the barrel (package.json exports never exposes it; only ., ./sdk*, ./cli). knip reports 115 unused exports + 239 unused exported types repo-wide (SDK public surface needs an ignore-list). One-time sweep confirmed+fixed 2026-07-04: 57 dead loader.ts imports, 7 dead export keywords (calendar/list/http-client/fix-planning/doctor). Adopt knip (or ts-prune) with an SDK allowlist as a CI gate so the class stays extinct."
+type: Task
+status: open
+priority: 3
+tags[2]: "area:quality",ci
+created_at: "2026-07-04T08:32:10.926Z"
+updated_at: "2026-07-04T08:32:10.926Z"
+author: maintainer-agent
+parent: pm-92if
+body: ""

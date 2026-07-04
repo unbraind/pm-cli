@@ -170,7 +170,7 @@ const REGISTRATION_COLLISION_WARNING_CODES = new Set([
 /**
  * Implements check whether registration collision warning for the public runtime surface of this module.
  */
-export function isRegistrationCollisionWarning(warning: string): boolean {
+function isRegistrationCollisionWarning(warning: string): boolean {
   return REGISTRATION_COLLISION_WARNING_CODES.has(warningCode(warning));
 }
 

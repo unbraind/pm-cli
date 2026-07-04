@@ -5,7 +5,7 @@
  */
 import { toErrorMessage } from "../shared/primitives.js";
 
-export const DEFAULT_SEARCH_HTTP_TIMEOUT_MS = 30_000;
+const DEFAULT_SEARCH_HTTP_TIMEOUT_MS = 30_000;
 
 /**
  * Documents the search http response payload exchanged by command, SDK, and package integrations.

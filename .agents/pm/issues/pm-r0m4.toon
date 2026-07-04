@@ -1,0 +1,20 @@
+id: pm-r0m4
+title: "Extension installs are dead-on-arrival in CommonJS host projects: installed extension dirs lack package.json type:module"
+description: "2026-07-04 sandbox audit (packed 2026.7.4 tarball, Node 26, fresh npm project with type:commonjs): pm extension --install <local-package-path> reports ok:true for all 11 bundled packages but 10/11 end with activation_status:failed (extension_load_failed:project:*). Root cause: installed entry is index.ts and the copied extension dir has no package.json, so Node type-stripping inherits the HOST project's type:commonjs and refuses ESM syntax. pm-linked-test-adapters ships its own package.json and is the only one that activates. Verified fix: writing {\"type\":\"module\"} into each installed extension dir flips all 11 to ok. Same root cause hard-crashes scaffolded extensions (SyntaxError: Unexpected token 'export') when imported by SDK tests in a CJS project. Dogfooding masks this because .agents/pm sits under the ESM repo root. Fix in three places: (1) extension install writes {\"type\":\"module\"} when the installed dir has no package.json; (2) extension scaffold emits one; (3) bundled packages ship extension-dir package.json like pm-linked-test-adapters."
+type: Issue
+status: closed
+priority: 0
+tags[4]: agent-ux,audit-followup,extensions,packaging
+created_at: "2026-07-04T08:31:41.429Z"
+updated_at: "2026-07-04T10:57:30.023Z"
+author: maintainer-agent
+parent: pm-ugqx
+resolution: "ensureExtensionModuleTypeMarker on install + scaffold/adopt emit package.json {type:module}"
+expected_result: Extensions installed into CJS host projects activate and dispatch
+actual_result: 11/11 bundled packages + scaffolded extension activation ok in CJS sandbox from real npm install
+notes[3]{created_at,author,text}:
+  "2026-07-04T08:42:51.757Z",maintainer-agent,"Fix implemented (uncommitted) in all three places: (1) performExtensionInstallUnderLock now calls ensureExtensionModuleTypeMarker(destinationDirectory) — writes {type:module} package.json when the installed dir ships none, preserves extension-shipped package.json; (2) non-package extension scaffold emits package.json marker + README bullet; (3) all 10 bundled extension dirs now ship package.json (pm-linked-test-adapters already had one). Verified e2e in CJS sandbox: all 11 bundled extensions activation_status:ok after repack+reinstall (was 10/11 failed). Spec updates: extension-command.spec file-list assertions include package.json; two new marker tests (write + preserve)."
+  "2026-07-04T10:37:23.444Z",maintainer-agent,"2026-07-04 independent re-verification from a FRESH npm pack of the working tree: new CJS sandbox (type:commonjs, Node current), pm init, installed all 11 bundled packages via pm install <alias> --project — extension --list shows activation_status ok for all 11. Full gates on the tree: fast suite 5336/5336, typecheck+eslint+jscpd+static-quality+contracts:check green."
+  "2026-07-04T10:57:29.529Z",maintainer-agent,"2026-07-04 audit #3 third verification (fresh npm pack, new CJS sandbox): all 11 bundled packages installed via pm install <alias> --project; extension --list activation ok; beads import / todos export / calendar / templates / guide / dedupe-audit all functional; scaffolded commands-capability extension installs and dispatches (pm my ext ping ok)."
+close_reason: "type:module marker now written in all three places (install-under-lock, non-package scaffold, adopt); CJS-host installs verified functional 3x from fresh packed tarballs."
+body: ""

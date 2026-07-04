@@ -1301,6 +1301,23 @@ describe("CLI main bootstrap helper coverage", () => {
       }),
     ).toBe(true);
     expect(
+      _testOnly.extensionNeedsActivationForProbe(
+        extension({ activation: { commands: ["maintenance"] }, capabilities: ["commands", "hooks"] }),
+        { commandPath: "list" },
+      ),
+    ).toBe(true);
+    expect(
+      _testOnly.extensionNeedsActivationForProbe(
+        extension({ activation: { commands: ["maintenance"] }, capabilities: ["commands"] }),
+        { commandPath: "list" },
+      ),
+    ).toBe(false);
+    expect(
+      _testOnly.extensionNeedsActivationForProbe(extension({ capabilities: ["commands", "hooks"] }), {
+        commandPath: "unrelated",
+      }),
+    ).toBe(true);
+    expect(
       _testOnly.extensionNeedsActivationForProbe(extension({ capabilities: ["commands"] }), {
         commandPath: "unrelated",
       }),
@@ -1313,6 +1330,14 @@ describe("CLI main bootstrap helper coverage", () => {
         {},
       ),
     ).toBe(true);
+    expect(_testOnly.buildRuntimeExtensionActivationScope({})).toBe("all");
+    expect(
+      _testOnly.buildRuntimeExtensionActivationScope({
+        commandPath: "create",
+        commandArgs: ["--template", "bug"],
+      }),
+    ).toBe("exact:create:--template");
+    expect(_testOnly.buildRuntimeExtensionFilterForProbe({})).toBeUndefined();
   });
 
   it("selects extension flag definitions for exact and nested invocations", () => {
@@ -1836,7 +1861,8 @@ export default {
       expect(discovery?.discovery.effective.map((extension) => extension.name)).toContain("snapshot-tools");
       expect(await _testOnly.loadRuntimeExtensionDiscoverySnapshot(context.pmPath)).toBe(discovery);
 
-      const snapshot = await _testOnly.loadRuntimeExtensionSnapshot(context.pmPath);
+      const probe = _testOnly.buildBootstrapActivationProbe(["--pm-path", context.pmPath, "tools", "--help"]);
+      const snapshot = await _testOnly.loadRuntimeExtensionSnapshot(context.pmPath, probe);
       expect(snapshot?.commandHandlers).toEqual(["tools export"]);
       expect(snapshot?.commandDescriptors.get("tools export")).toMatchObject({
         action: "tools-export",
@@ -1845,7 +1871,7 @@ export default {
       });
       expect(snapshot?.commandFlagHelp.get("tools export")).toContain("--format");
       expect(snapshot?.loadedCount).toBe(1);
-      expect(await _testOnly.loadRuntimeExtensionSnapshot(context.pmPath)).toBe(snapshot);
+      expect(await _testOnly.loadRuntimeExtensionSnapshot(context.pmPath, probe)).toBe(snapshot);
 
       const recoveryDescriptors = await _testOnly.loadRuntimeExtensionCommandDescriptorsForRecovery(context.pmPath);
       expect(recoveryDescriptors.get("tools export")?.failure_hints).toEqual(["Choose a supported format"]);
@@ -2193,7 +2219,8 @@ export default {
         "tools",
         "export",
       ]);
-      const snapshot = await _testOnly.loadRuntimeExtensionSnapshot(context.pmPath);
+      const probe = _testOnly.buildBootstrapActivationProbe(["--pm-path", context.pmPath, "tools", "--help"]);
+      const snapshot = await _testOnly.loadRuntimeExtensionSnapshot(context.pmPath, probe);
       setActiveExtensionRegistrations(snapshot?.registrations ?? null);
       setActiveExtensionCommands(snapshot?.commands ?? null);
 
@@ -2272,7 +2299,8 @@ export default {
 `,
       });
 
-      const snapshot = await _testOnly.loadRuntimeExtensionSnapshot(context.pmPath);
+      const probe = _testOnly.buildBootstrapActivationProbe(["--pm-path", context.pmPath, "tools", "--help"]);
+      const snapshot = await _testOnly.loadRuntimeExtensionSnapshot(context.pmPath, probe);
       if (!snapshot) {
         throw new Error("expected runtime extension snapshot");
       }

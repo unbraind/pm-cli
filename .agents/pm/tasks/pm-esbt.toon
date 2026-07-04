@@ -1,0 +1,12 @@
+id: pm-esbt
+title: "docs-skills-gate: validate anchor fragments in relative links"
+description: "2026-07-04 docs audit: scripts/release/docs-skills-gate.mjs splits links on [?#], so FILE.md#heading links only check file existence. All 12 current anchor links verified manually — nothing broken — but future dead anchors are ungated. Extend the gate to slugify headings in the target file and assert the fragment exists. Also break the wall-of-text paragraphs (EXTENSIONS.md line 89 ~4600 chars, line 114; COMMANDS.md lines 612, 627) into bullets while touching docs."
+type: Task
+status: open
+priority: 3
+tags[2]: ci,docs
+created_at: "2026-07-04T08:32:11.333Z"
+updated_at: "2026-07-04T08:32:11.333Z"
+author: maintainer-agent
+parent: pm-u9d0
+body: ""

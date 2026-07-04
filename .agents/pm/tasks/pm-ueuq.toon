@@ -1,0 +1,12 @@
+id: pm-ueuq
+title: "Dedupe flag-contracts.ts repetitive per-command blocks (9 internal clones, ~150 lines)"
+description: "2026-07-04 code-quality sweep: src/sdk/cli-contracts/flag-contracts.ts (1615 LOC) has 9 internal jscpd clones at --min-tokens 70 (e.g. 683-698 vs 1127-1142, 945-963 vs 1047-1065, 1091-1107 vs 1204-1220) — repetitive per-command flag-table blocks. Extract a shared builder to remove ~150 lines, then consider ratcheting .jscpd.json minTokens 115 -> ~90. Cross-file pairs worth folding into the same pass: history-compact.ts:323-352 vs history-repair.ts:174-203 (chain re-anchor logic), create.ts:283 vs update.ts:226, list.ts:489 vs search.ts:707, normalize.ts:427 vs update-many.ts:788, test-all.ts:37 vs test.ts:171, extension.ts:321-334 vs types.ts:821-834."
+type: Task
+status: open
+priority: 2
+tags[2]: "area:quality",refactor
+created_at: "2026-07-04T08:32:10.547Z"
+updated_at: "2026-07-04T08:32:10.547Z"
+author: maintainer-agent
+parent: pm-92if
+body: ""
