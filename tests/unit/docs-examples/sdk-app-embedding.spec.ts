@@ -34,7 +34,7 @@ describe("sdk-app-embedding example", () => {
         stderr: "",
       };
     });
-    vi.doMock("node:child_process", () => ({ spawnSync: successSpawn }));
+    vi.doMock("node:child_process", () => ({ execFile: vi.fn(), spawnSync: successSpawn }));
     await importExampleScript(SCRIPT, "embeddedSuccess");
     expect(successSpawn).toHaveBeenCalledTimes(2);
     expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"action": "extension-reload"');
@@ -49,6 +49,7 @@ describe("sdk-app-embedding example", () => {
       isPmToolAction: () => true,
     }));
     vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
       spawnSync: vi.fn((command: string, args: string[]) => {
         if (command !== "pm") {
           throw new Error("unexpected command");
@@ -80,6 +81,7 @@ describe("sdk-app-embedding example", () => {
       isPmToolAction: () => true,
     }));
     vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
       spawnSync: vi.fn(() => ({
         status: 0,
         stdout: JSON.stringify({
@@ -96,6 +98,7 @@ describe("sdk-app-embedding example", () => {
     vi.doUnmock("@unbrained/pm-cli/sdk");
     process.argv = ["node", "run-embedded-pm.mjs", "contracts"];
     vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
       spawnSync: vi.fn(() => ({
         status: 0,
         stdout: JSON.stringify({
@@ -111,7 +114,7 @@ describe("sdk-app-embedding example", () => {
 
     vi.resetModules();
     process.argv = ["node", "run-embedded-pm.mjs", "not-a-real-action"];
-    vi.doMock("node:child_process", () => ({ spawnSync: vi.fn() }));
+    vi.doMock("node:child_process", () => ({ execFile: vi.fn(), spawnSync: vi.fn() }));
     await expect(importExampleScript(SCRIPT, "embeddedUnsupported")).rejects.toThrow(
       'Unsupported pm action "not-a-real-action".',
     );
@@ -119,6 +122,7 @@ describe("sdk-app-embedding example", () => {
     vi.resetModules();
     process.argv = ["node", "run-embedded-pm.mjs", "extension-reload"];
     vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
       spawnSync: vi.fn(() => ({
         status: 1,
         stdout: "",
@@ -131,6 +135,7 @@ describe("sdk-app-embedding example", () => {
     vi.resetModules();
     process.argv = ["node", "run-embedded-pm.mjs", "extension-reload"];
     vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
       spawnSync: vi.fn(() => ({ status: 7, stdout: null, stderr: null })),
     }));
     await expect(importExampleScript(SCRIPT, "embeddedContractsFailureNoStderr")).rejects.toThrow(
@@ -148,6 +153,7 @@ describe("sdk-app-embedding example", () => {
       isPmToolAction: () => true,
     }));
     vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
       spawnSync: vi.fn((command: string, args: string[]) => {
         if (args[0] === "contracts") {
           return { status: 0, stdout: JSON.stringify({ action_availability: "not-an-array" }), stderr: "" };
@@ -170,6 +176,7 @@ describe("sdk-app-embedding example", () => {
       isPmToolAction: () => true,
     }));
     vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
       spawnSync: vi.fn((command: string, args: string[]) => {
         if (args[0] === "contracts") {
           return {

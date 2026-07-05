@@ -2,15 +2,16 @@ id: pm-muhw
 title: "ADR: the pm SDK is the single public API — CLI and MCP are presentation layers (proposed)"
 description: "Target layering for SDK-first pm: src/core is private, src/sdk is the public programmatic surface, and CLI/MCP should become SDK presentation layers. Current CI enforcement is a baseline ratchet: no new private src/core imports, no computed dynamic imports from boundary sources, and no stale baseline entries while promotion tasks burn down existing edges. Status open = proposed; close = accepted."
 type: Decision
-status: open
+status: closed
 priority: 1
 tags[5]: adr,architecture,"area:cli","area:mcp","area:sdk"
 created_at: "2026-07-05T04:52:19.856Z"
-updated_at: "2026-07-05T06:29:36.871Z"
+updated_at: "2026-07-05T18:26:47.514Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "ADR body records context, target layering rules, current ratchet enforcement, considered alternatives (status quo core-direct imports; publish core as-is; separate npm package for primitives), promotion criteria for a primitive to enter the SDK, semver/stability policy for the SDK surface, and the boundary-gate mechanism; accepted (closed) before promotion tasks under pm-usfg merge"
 parent: pm-m2u1
 risk: low
 confidence: high
+close_reason: "Accepted ADR before SDK primitive promotion: live item body records target layering, rejected alternatives, promotion criteria, semver policy, and boundary-gate ratchet; pm-xzhz now implements the first public execution primitive against that decision."
 body: "## Context\nThe SDK (src/sdk) currently serves extension/package AUTHORS (compose/define/runtime/testing/cli-contracts). The PM primitives themselves — item store, list/query, search, history, governance, schema/config/profile — live in src/core and are still imported directly by parts of src/cli and src/mcp. Integrators who want a custom PM tool must shell out to the CLI; the product goal says the SDK should deliver the universal baseline.\n\n## Decision (proposed)\n1. Target architecture: src/sdk is the public programmatic API; src/core remains private implementation.\n2. Target presentation boundary: src/cli and src/mcp become thin presentation layers over src/sdk primitives as each primitive family is promoted.\n3. Current enforcement is a ratchet, not a completed SDK-only whitelist: CI records the existing src/cli/src/mcp -> src/core edges in scripts/release/sdk-import-boundary-baseline.json and blocks new private core edges, computed dynamic imports from boundary sources, and stale baseline entries.\n4. A primitive enters the SDK with: typed input/result contracts, docstring coverage, linked tests, and reference docs — same bar as existing sdk/testing helpers.\n5. SDK surface is semver-meaningful: breaking changes to promoted primitives require a deprecation cycle.\n6. MCP tools and CLI commands map 1:1 onto SDK primitives wherever a primitive exists (no logic forks in presentation layers).\n\n## Alternatives considered\n- Status quo (CLI imports core): rejected — SDK can never reach feature parity; universality goal unreachable.\n- Export src/core wholesale: rejected — freezes internals, no stability contract, huge accidental API.\n- Separate @unbrained/pm-core package: rejected for now — split repos/version skew; can revisit after boundary is stable.\n\n## Consequences\n+ CLI/MCP/SDK converge on one implementation as the baseline shrinks.\n+ Any project can compose its own PM tool from primitives (universality goal).\n+ The ratchet is enforceable before the migration is complete.\n- Promotion work is a wide mechanical refactor (mitigated by domain-by-domain child tasks under pm-usfg and a zero-behavior-change test bar)."

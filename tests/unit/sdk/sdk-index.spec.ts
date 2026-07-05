@@ -15,6 +15,7 @@ import {
   PM_TOOL_PARAMETERS_SCHEMA,
   PM_TOOL_PARAMETERS_SCHEMA_VERSION,
   STATUS_VALUES,
+  PmClient,
   assertExtensionBlueprint as assertExtensionBlueprintFromBarrel,
   assertExtensionCapabilityUsage as assertExtensionCapabilityUsageFromBarrel,
   assertExtensionDeactivated as assertExtensionDeactivatedFromBarrel,
@@ -79,6 +80,7 @@ import {
   readPmPackageManifest,
   readSettings,
   resolvePmRoot,
+  runAction,
   resolveSubcommandFlagContractsForCommand,
   isPmExtensionCapabilityContract,
   isPmExtensionPolicyModeContract,
@@ -876,6 +878,8 @@ describe("public sdk entrypoint", () => {
   });
 
   it("exposes runtime primitives used by TypeScript pm packages through the sdk barrel", () => {
+    expect(typeof PmClient).toBe("function");
+    expect(typeof runAction).toBe("function");
     expect(typeof pathExists).toBe("function");
     expect(typeof readFileIfExists).toBe("function");
     expect(typeof writeFileAtomic).toBe("function");
@@ -923,6 +927,79 @@ describe("public sdk entrypoint", () => {
         type: "Task",
         item_format: "toon",
       });
+    });
+  });
+
+  it("runs common pm actions through PmClient without spawning the CLI", async () => {
+    expect(new PmClient()).toBeInstanceOf(PmClient);
+
+    await withTempPmPath(async ({ pmPath }) => {
+      const client = new PmClient({
+        pmRoot: pmPath,
+        cwd: path.dirname(pmPath),
+        author: "sdk-client-test",
+        noExtensions: true,
+      });
+      const created = (await client.create({
+        title: "SDK client item",
+        type: "Task",
+        status: "open",
+        createMode: "progressive",
+      })) as { item?: { id?: string; title?: string }; changed_field_count?: number };
+      const itemId = created.item?.id;
+
+      expect(itemId).toMatch(/^pm-/);
+      if (itemId === undefined) {
+        throw new Error("Expected SDK client create to return an item id.");
+      }
+      expect(created.item?.title).toBe("SDK client item");
+      expect(created.changed_field_count).toBeGreaterThan(0);
+
+      const listed = (await client.list({ status: "open", limit: "10" })) as {
+        items?: Array<{ id?: string; title?: string }>;
+        query?: { filters?: Record<string, unknown> };
+      };
+      expect(listed.items?.some((item) => item.id === itemId)).toBe(true);
+
+      const clientContext = (await client.context({ limit: "5" })) as { summary?: { active_items?: number } };
+      expect(typeof clientContext.summary?.active_items).toBe("number");
+
+      const searched = (await client.search("SDK client item", { status: "open", limit: "10" })) as {
+        items?: Array<{ id?: string; title?: string }>;
+      };
+      expect(searched.items?.some((item) => item.id === itemId)).toBe(true);
+
+      const directListed = (await runAction({
+        action: "list",
+        path: pmPath,
+        cwd: path.dirname(pmPath),
+        noExtensions: true,
+        options: { status: "open", limit: "10" },
+      })) as { items?: Array<{ id?: string; status?: string }> };
+      expect(directListed.items?.some((item) => item.id === itemId && item.status === "open")).toBe(true);
+
+      const fetched = (await client.get(itemId, { full: true })) as { item?: { id?: string; status?: string } };
+      expect(fetched.item).toMatchObject({ id: itemId, status: "open" });
+
+      const updated = (await client.update(itemId, { status: "in_progress", message: "SDK client update" })) as {
+        item?: { id?: string; status?: string };
+        changed_field_count?: number;
+      };
+      expect(updated.item).toMatchObject({ id: itemId, status: "in_progress" });
+      expect(updated.changed_field_count).toBeGreaterThan(0);
+
+      const closed = (await client.close(itemId, "SDK client done", { validateClose: "warn" })) as {
+        item?: { id?: string; status?: string; close_reason?: string };
+      };
+      expect(closed.item).toMatchObject({ id: itemId, status: "closed", close_reason: "SDK client done" });
+
+      const context = (await runAction({
+        action: "context",
+        path: pmPath,
+        noExtensions: true,
+        options: { limit: "5" },
+      })) as { summary?: { active_items?: number } };
+      expect(typeof context.summary?.active_items).toBe("number");
     });
   });
 
@@ -1379,6 +1456,7 @@ describe("public sdk entrypoint", () => {
 
   it("includes extension-registered item types in runtime workspace contracts", async () => {
     await withTempPmPath(async ({ pmPath }) => {
+      const lifecycleLogPath = path.join(pmPath, "workspace-contract-ext.log");
       await writeTestExtension({
         root: pmPath,
         placement: "projectRoot",
@@ -1391,8 +1469,13 @@ describe("public sdk entrypoint", () => {
         },
         entryFilename: "index.mjs",
         entrySource: [
+          "import { appendFileSync } from 'node:fs';",
           "export function activate(api) {",
+          `  appendFileSync(${JSON.stringify(lifecycleLogPath)}, 'activate\\n', 'utf8');`,
           "  api.registerItemTypes([{ name: 'ExperimentRun', folder: 'experiment-runs' }]);",
+          "}",
+          "export function deactivate() {",
+          `  appendFileSync(${JSON.stringify(lifecycleLogPath)}, 'deactivate\\n', 'utf8');`,
           "}",
           "",
         ].join("\n"),
@@ -1400,6 +1483,7 @@ describe("public sdk entrypoint", () => {
 
       const workspaceContracts = await getWorkspaceContracts(pmPath);
       expect(workspaceContracts.types).toEqual(expect.arrayContaining(["Task", "ExperimentRun"]));
+      expect(await readFileIfExists(lifecycleLogPath)).toBe("activate\ndeactivate\n");
 
       await writeTestExtension({
         root: pmPath,

@@ -99,6 +99,7 @@ Storage format-version exports (under `@unbrained/pm-cli/sdk/runtime`):
 
 Command/action contract exports:
 
+- `PmClient` / `runAction` (high-level in-process action execution for custom tools, bots, CI, and embedded runtimes)
 - `PM_CORE_COMMAND_NAMES`
 - `PM_TOOL_ACTIONS`
 - `PM_TOOL_PARAMETERS_SCHEMA`
@@ -414,6 +415,33 @@ import { getContracts } from "@unbrained/pm-cli/sdk";
 const contracts = await getContracts("/path/to/project/.agents/pm", {
   runtimeOnly: true,
   flagsOnly: true,
+});
+```
+
+To execute pm from an embedded tool without spawning `pm`, use `PmClient` (or
+the lower-level `runAction`) from `@unbrained/pm-cli/sdk/runtime`. It uses the
+same compact, extension-aware dispatcher as the MCP `pm_run` tool:
+
+```ts
+import { PmClient, runAction } from "@unbrained/pm-cli/sdk/runtime";
+
+const pm = new PmClient({
+  pmRoot: "/path/to/project/.agents/pm",
+  author: "ci-agent",
+});
+
+const created = await pm.create({
+  title: "Investigate release drift",
+  type: "Task",
+  status: "open",
+  createMode: "progressive",
+});
+const open = await pm.list({ status: "open", limit: "20" });
+
+await runAction({
+  action: "context",
+  path: "/path/to/project/.agents/pm",
+  options: { limit: "10" },
 });
 ```
 
