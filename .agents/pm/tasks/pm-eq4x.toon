@@ -1,0 +1,18 @@
+id: pm-eq4x
+title: Fold lifecycle sugar start-task/pause-task/close-task into claim/release/close flags (hidden aliases)
+description: "start-task = pm claim --start (claim + in_progress), pause-task = pm release --pause (open + release claim), close-task = pm close --release-assignment; the three -task commands become alias-table entries. Duplicate check: pm-114v (claim --next) and pm-8t5x (claim atomicity) are claim semantics, not surface; no overlap."
+type: Task
+status: open
+priority: 2
+tags[4]: agent-ux,"area:cli","area:lifecycle",simplification
+created_at: "2026-07-05T04:53:33.295Z"
+updated_at: "2026-07-05T04:55:01.007Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: claim/release/close gain the equivalent flags; start-task/pause-task/close-task alias-shimmed with identical output incl. status transitions and claim records; contracts/MCP/completions/docs regenerated; lifecycle-transition specs pass via aliases
+parent: pm-n7rr
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-0z7n,blocked_by,"2026-07-05T04:55:00.982Z",null,null
+body: ""

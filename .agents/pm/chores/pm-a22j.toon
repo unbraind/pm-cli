@@ -1,0 +1,16 @@
+id: pm-a22j
+title: "Baseline agent token cost of the CLI surface: measure pm --help, per-command help, and contracts payload sizes before consolidation"
+description: "Establish the before numbers the simplification epic is judged against: token/byte size of pm --help, sum of per-command --help, contracts --full, and MCP tool-list payloads, committed as a small measurement script + recorded snapshot. Duplicate check: no existing measurement/baseline item for surface size."
+type: Chore
+status: open
+priority: 1
+tags[4]: agent-ux,"area:cli",measurement,simplification
+created_at: "2026-07-05T04:53:03.897Z"
+updated_at: "2026-07-05T04:53:03.897Z"
+author: maintainer-agent
+estimated_minutes: 60
+acceptance_criteria: "Repeatable script reports byte+approx-token counts for pm --help, all command helps, contracts --full, and MCP tool list; baseline snapshot recorded in the item body/notes; script reusable for the after-comparison"
+parent: pm-n7rr
+risk: low
+confidence: high
+body: ""

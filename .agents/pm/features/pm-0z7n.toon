@@ -1,0 +1,18 @@
+id: pm-0z7n
+title: "Alias shim layer: config-aware hidden aliases with one-line migration hints (foundation for all consolidations)"
+description: "Build the shared mechanism every consolidation cluster uses: a declarative alias table mapping old spellings (e.g. list-open, start-task, history-repair) to new noun-verb invocations, hidden from help, emitting a single config-suppressible migration hint on stderr, with a spelling-parity spec asserting every aliased invocation produces byte-identical output to its canonical form. Duplicate check: no existing alias-shim or deprecation-layer item."
+type: Feature
+status: open
+priority: 1
+tags[4]: agent-ux,"area:cli","area:contracts",simplification
+created_at: "2026-07-05T04:53:04.314Z"
+updated_at: "2026-07-05T04:54:59.327Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: "Declarative alias table drives Commander registration; aliases hidden from default help but resolvable; migration hint printed once per invocation to stderr, suppressible via config key; spelling-parity spec proves alias output identical to canonical; contracts/completions expose canonical forms and mark aliases deprecated"
+parent: pm-n7rr
+risk: medium
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-pbyu,blocked_by,"2026-07-05T04:54:59.312Z",null,null
+body: ""

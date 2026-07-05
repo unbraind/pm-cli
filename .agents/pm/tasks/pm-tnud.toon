@@ -1,0 +1,18 @@
+id: pm-tnud
+title: "Consolidate package lifecycle: extension/package/install/upgrade under a single pm package namespace"
+description: "extension and package (already partial synonyms) plus top-level install and upgrade unify under pm package <verb> (install/upgrade/list/describe/enable/disable/...); extension, install, upgrade become hidden aliases. Duplicate check: pm-jqd2/pm-3wsi/pm-b3e9 are install-behavior bugs/hints, not surface consolidation."
+type: Task
+status: open
+priority: 1
+tags[4]: agent-ux,"area:cli","area:extensions",simplification
+created_at: "2026-07-05T04:53:32.408Z"
+updated_at: "2026-07-05T04:55:00.530Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: pm package covers the full extension/install/upgrade verb set with flag parity; extension/install/upgrade spellings alias-shimmed with identical output; scope semantics (project/global) unchanged; contracts/MCP/completions/docs regenerated; existing extension+install+upgrade specs pass via aliases
+parent: pm-n7rr
+risk: medium
+confidence: medium
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-0z7n,blocked_by,"2026-07-05T04:55:00.508Z",null,null
+body: ""

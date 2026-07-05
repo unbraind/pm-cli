@@ -1,0 +1,25 @@
+id: pm-ds3b
+title: SDK reference documentation for promoted primitives + migration notes for the CLI-on-SDK layering
+description: "Document every promoted primitive domain (lifecycle, query, annotations, governance, schema/config/profile) in the docs/ SDK reference with signatures, examples, and the layering contract from ADR pm-muhw; docs-skills-gate keeps links valid. Duplicate check: existing SDK docs cover extension authoring only."
+type: Task
+status: open
+priority: 2
+tags[2]: "area:docs","area:sdk"
+created_at: "2026-07-05T04:54:31.675Z"
+updated_at: "2026-07-05T06:30:01.597Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: SDK reference covers all promoted primitives with runnable examples; architecture doc explains core/sdk/cli-mcp layering and the boundary gate; docs gates pass; docstring coverage epic (pm-4ak1) conventions followed
+parent: pm-usfg
+risk: low
+confidence: high
+dependencies[8]{id,kind,created_at,author,source_kind}:
+  pm-98cz,blocked_by,"2026-07-05T04:55:10.824Z",null,null
+  pm-rjqr,blocked_by,"2026-07-05T04:55:11.255Z",null,null
+  pm-3mna,blocked_by,"2026-07-05T06:30:01.579Z",null,null
+  pm-4a7m,blocked_by,"2026-07-05T06:30:01.579Z",null,null
+  pm-je50,blocked_by,"2026-07-05T06:30:01.579Z",null,null
+  pm-oslr,blocked_by,"2026-07-05T06:30:01.579Z",null,null
+  pm-oxrw,blocked_by,"2026-07-05T06:30:01.579Z",null,null
+  pm-zwpp,blocked_by,"2026-07-05T06:30:01.579Z",null,null
+body: ""

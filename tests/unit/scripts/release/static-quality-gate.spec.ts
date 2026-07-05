@@ -70,6 +70,27 @@ type SqModule = {
   isTrivialDocstring: (comment: string, symbolName: string) => boolean;
   checkTrivialDocstrings: (files: string[]) => Array<{ path: string; line: number; name: string; reason: string }>;
   checkOrphanSourceModules: (files: string[]) => Array<{ path: string }>;
+  collectSdkBoundarySourceFiles: (files: string[]) => string[];
+  collectPrivateCoreImportEdges: (files: string[]) => Array<{ source: string; import_path: string }>;
+  collectUnsupportedDynamicImportExpressions: (files: string[]) => Array<{
+    source: string;
+    line: number;
+    reason: string;
+  }>;
+  checkSdkImportBoundary: (
+    files?: string[],
+    baselinePath?: string,
+  ) => {
+    ok: boolean;
+    scanned_file_count: number;
+    actual_edge_count: number;
+    baseline_edge_count: number | null;
+    new_private_core_imports: Array<{ source: string; import_path: string }>;
+    stale_baseline_imports: Array<{ source: string; import_path: string }>;
+    unsupported_dynamic_imports: Array<{ source: string; line: number; reason: string }>;
+    error?: string;
+  };
+  SDK_IMPORT_BOUNDARY_BASELINE: string;
   complexityContribution: (node: unknown) => number;
   functionLikeName: (node: unknown, sf: unknown) => string;
   checkFunctionComplexity: (files: string[], max: number) => Array<{ function_name: string; complexity: number }>;
@@ -317,18 +338,20 @@ describe("static-quality-gate", () => {
       expect(dups.length).toBe(1);
     });
 
-    it("resolveRelativeImport: non-relative null, resolves .ts, missing → null", async () => {
+    it("resolveRelativeImport: non-relative null, resolves relative and repo-root src imports, missing → null", async () => {
       mockUtils("/repo");
       harness.mockPosixPath();
       mockFs({
         statSync: vi.fn((p: string) => {
           if (String(p) === "/repo/src/dep.ts") return { isFile: () => true } as unknown as Stats;
+          if (String(p) === "/repo/src/core/rooted.ts") return { isFile: () => true } as unknown as Stats;
           throw Object.assign(new Error("nope"), { code: "ENOENT" });
         }) as never,
       });
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       expect(mod.resolveRelativeImport("/repo/src/main.ts", "node:path")).toBeNull();
       expect(mod.resolveRelativeImport("/repo/src/main.ts", "./dep")).toBe("/repo/src/dep.ts");
+      expect(mod.resolveRelativeImport("/repo/src/main.ts", "src/core/rooted")).toBe("/repo/src/core/rooted.ts");
       expect(mod.resolveRelativeImport("/repo/src/main.ts", "./gone")).toBeNull();
     });
 
@@ -697,6 +720,339 @@ describe("static-quality-gate", () => {
       expect(paths).not.toContain("src/barrel/index.ts");
       expect(paths).not.toContain("src/thing.spec.ts");
       expect(paths).not.toContain("src/used.ts");
+    });
+
+    it("checkSdkImportBoundary compares CLI/MCP private core imports to the ratchet baseline", async () => {
+      const root = await harness.createTempRoot("pm-static-quality-sdk-boundary-");
+      await mkdir(`${root}/src/cli`, { recursive: true });
+      await mkdir(`${root}/src/mcp`, { recursive: true });
+      await mkdir(`${root}/src/core`, { recursive: true });
+      await mkdir(`${root}/src/sdk`, { recursive: true });
+      await mkdir(`${root}/scripts/release`, { recursive: true });
+      await writeFile(
+        `${root}/src/cli/main.ts`,
+        [
+          'import "node:fs";',
+          'import "../core/a";',
+          'import "../core/a";',
+          'import "src/core/aliased";',
+          'import importEqualsCore = require("../core/import-equals");',
+          'const requireCore = require("../core/require-edge");',
+          'import "../sdk/index";',
+          'export async function loadDynamicCore() { return import("../core/dynamic"); }',
+          "export async function loadTemplateCore() { return import(`../core/template`); }",
+          'export async function loadCoreWithAttributes() { return import("../core/attributes", { with: { type: "json" } }); }',
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await writeFile(`${root}/src/mcp/server.ts`, 'export { b } from "../core/b";\n', "utf8");
+      await writeFile(`${root}/src/mcp.ts`, 'import "./core/root-mcp";\nexport const mcpRoot = true;\n', "utf8");
+      await writeFile(`${root}/src/core/a.ts`, "export const a = true;\n", "utf8");
+      await writeFile(`${root}/src/core/aliased.ts`, "export const aliased = true;\n", "utf8");
+      await writeFile(`${root}/src/core/b.ts`, "export const b = true;\n", "utf8");
+      await writeFile(`${root}/src/core/import-equals.ts`, "export const importEquals = true;\n", "utf8");
+      await writeFile(`${root}/src/core/require-edge.ts`, "export const requireEdge = true;\n", "utf8");
+      await writeFile(`${root}/src/core/root-mcp.ts`, "export const rootMcp = true;\n", "utf8");
+      await writeFile(`${root}/src/core/dynamic.ts`, "export const dynamic = true;\n", "utf8");
+      await writeFile(`${root}/src/core/new.ts`, "export const next = true;\n", "utf8");
+      await writeFile(`${root}/src/core/template.ts`, "export const template = true;\n", "utf8");
+      await writeFile(`${root}/src/core/attributes.ts`, "export const attributes = true;\n", "utf8");
+      await writeFile(`${root}/src/sdk/index.ts`, "export const sdk = true;\n", "utf8");
+      await writeFile(`${root}/src/mcp/z-stale.ts`, "export const stale = true;\n", "utf8");
+      mockUtils(root);
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const baselinePath = `${root}/${mod.SDK_IMPORT_BOUNDARY_BASELINE}`;
+      const subsetFiles = [
+        `${root}/src/cli/main.ts`,
+        `${root}/src/mcp.ts`,
+        `${root}/src/mcp/server.ts`,
+        `${root}/src/sdk/index.ts`,
+      ];
+      const files = [...subsetFiles, `${root}/src/mcp/z-stale.ts`];
+      await writeFile(
+        baselinePath,
+        JSON.stringify(
+          {
+            version: 1,
+            allowed_private_core_imports: [
+              {
+                source: "src/cli/main.ts",
+                imports: [
+                  "src/core/a.ts",
+                  "src/core/aliased.ts",
+                  "src/core/attributes.ts",
+                  "src/core/dynamic.ts",
+                  "src/core/import-equals.ts",
+                  "src/core/require-edge.ts",
+                  "src/core/template.ts",
+                ],
+              },
+              { source: "src/mcp.ts", imports: ["src/core/root-mcp.ts"] },
+              { source: "src/mcp/server.ts", imports: ["src/core/b.ts"] },
+              { source: "src/mcp/z-stale.ts", imports: ["src/core/z.ts", "src/core/y.ts"] },
+            ],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+
+      expect(mod.collectSdkBoundarySourceFiles(files).map((file) => file.replace(`${root}/`, ""))).toEqual([
+        "src/cli/main.ts",
+        "src/mcp.ts",
+        "src/mcp/server.ts",
+        "src/mcp/z-stale.ts",
+      ]);
+      expect(mod.collectPrivateCoreImportEdges(files)).toEqual([
+        { source: "src/cli/main.ts", import_path: "src/core/a.ts" },
+        { source: "src/cli/main.ts", import_path: "src/core/aliased.ts" },
+        { source: "src/cli/main.ts", import_path: "src/core/attributes.ts" },
+        { source: "src/cli/main.ts", import_path: "src/core/dynamic.ts" },
+        { source: "src/cli/main.ts", import_path: "src/core/import-equals.ts" },
+        { source: "src/cli/main.ts", import_path: "src/core/require-edge.ts" },
+        { source: "src/cli/main.ts", import_path: "src/core/template.ts" },
+        { source: "src/mcp.ts", import_path: "src/core/root-mcp.ts" },
+        { source: "src/mcp/server.ts", import_path: "src/core/b.ts" },
+      ]);
+      expect(mod.checkSdkImportBoundary(subsetFiles, baselinePath)).toMatchObject({
+        ok: true,
+        scanned_file_count: 3,
+        actual_edge_count: 9,
+        baseline_edge_count: 11,
+        stale_baseline_imports: [],
+      });
+      expect(mod.checkSdkImportBoundary(files, baselinePath)).toMatchObject({
+        ok: false,
+        scanned_file_count: 4,
+        actual_edge_count: 9,
+        baseline_edge_count: 11,
+        stale_baseline_imports: [
+          { source: "src/mcp/z-stale.ts", import_path: "src/core/y.ts" },
+          { source: "src/mcp/z-stale.ts", import_path: "src/core/z.ts" },
+        ],
+      });
+
+      await writeFile(`${root}/src/cli/main.ts`, 'import "node:path";\nimport "../core/a";\nimport "../core/new";\n', "utf8");
+      await writeFile(`${root}/src/mcp/server.ts`, "export const mcp = true;\n", "utf8");
+      expect(mod.checkSdkImportBoundary(files, baselinePath)).toMatchObject({
+        ok: false,
+        new_private_core_imports: [{ source: "src/cli/main.ts", import_path: "src/core/new.ts" }],
+        stale_baseline_imports: [
+          { source: "src/cli/main.ts", import_path: "src/core/aliased.ts" },
+          { source: "src/cli/main.ts", import_path: "src/core/attributes.ts" },
+          { source: "src/cli/main.ts", import_path: "src/core/dynamic.ts" },
+          { source: "src/cli/main.ts", import_path: "src/core/import-equals.ts" },
+          { source: "src/cli/main.ts", import_path: "src/core/require-edge.ts" },
+          { source: "src/cli/main.ts", import_path: "src/core/template.ts" },
+          { source: "src/mcp/server.ts", import_path: "src/core/b.ts" },
+          { source: "src/mcp/z-stale.ts", import_path: "src/core/y.ts" },
+          { source: "src/mcp/z-stale.ts", import_path: "src/core/z.ts" },
+        ],
+      });
+    });
+
+    it("flags stale baseline entries for deleted boundary source files", async () => {
+      const root = await harness.createTempRoot("pm-static-quality-sdk-boundary-deleted-");
+      await mkdir(`${root}/src/cli`, { recursive: true });
+      await mkdir(`${root}/scripts/release`, { recursive: true });
+      await writeFile(`${root}/src/cli/main.ts`, "export const main = true;\n", "utf8");
+      mockUtils(root);
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const baselinePath = `${root}/${mod.SDK_IMPORT_BOUNDARY_BASELINE}`;
+      await writeFile(
+        baselinePath,
+        JSON.stringify(
+          {
+            version: 1,
+            allowed_private_core_imports: [{ source: "src/cli/deleted.ts", imports: ["src/core/deleted.ts"] }],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+
+      expect(mod.checkSdkImportBoundary([`${root}/src/cli/main.ts`], baselinePath)).toMatchObject({
+        ok: false,
+        scanned_file_count: 1,
+        actual_edge_count: 0,
+        baseline_edge_count: 1,
+        stale_baseline_imports: [{ source: "src/cli/deleted.ts", import_path: "src/core/deleted.ts" }],
+      });
+      expect(mod.checkSdkImportBoundary([`${root}/src/cli/main.ts`, `${root}/src/cli/deleted.ts`], baselinePath))
+        .toMatchObject({
+          ok: false,
+          scanned_file_count: 2,
+          actual_edge_count: 0,
+          baseline_edge_count: 1,
+          stale_baseline_imports: [{ source: "src/cli/deleted.ts", import_path: "src/core/deleted.ts" }],
+        });
+    });
+
+    it("checkSdkImportBoundary fails closed on computed dynamic imports and require calls", async () => {
+      const root = await harness.createTempRoot("pm-static-quality-sdk-boundary-computed-import-");
+      await mkdir(`${root}/src/cli`, { recursive: true });
+      await mkdir(`${root}/scripts/release`, { recursive: true });
+      await writeFile(
+        `${root}/src/cli/main.ts`,
+        [
+          "const name = 'a';",
+          "export async function loadComputedCore() {",
+          '  return import("../core/" + name);',
+          "}",
+          "export async function loadComputedCoreAgain() {",
+          '  return import("../core/" + name + "-again");',
+          "}",
+          "export async function loadComputedCoreWithAttributes() {",
+          '  return import("../core/" + name + "-attrs", { with: { type: "json" } });',
+          "}",
+          "export async function loadTooManyArgs() {",
+          '  return import("../core/a", {}, {});',
+          "}",
+          "export function loadComputedRequire() {",
+          '  return require("../core/" + name);',
+          "}",
+          "export function loadVariableRequire() {",
+          '  const target = "../core/b";',
+          "  return require(target);",
+          "}",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await writeFile(
+        `${root}/scripts/release/sdk-import-boundary-baseline.json`,
+        JSON.stringify({ version: 1, allowed_private_core_imports: [] }, null, 2),
+        "utf8",
+      );
+      mockUtils(root);
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const files = [`${root}/src/cli/main.ts`];
+
+      expect(mod.collectPrivateCoreImportEdges(files)).toEqual([]);
+      expect(mod.collectUnsupportedDynamicImportExpressions(files)).toEqual([
+        { source: "src/cli/main.ts", line: 3, reason: "computed_dynamic_import" },
+        { source: "src/cli/main.ts", line: 6, reason: "computed_dynamic_import" },
+        { source: "src/cli/main.ts", line: 9, reason: "computed_dynamic_import" },
+        { source: "src/cli/main.ts", line: 12, reason: "computed_dynamic_import" },
+        { source: "src/cli/main.ts", line: 15, reason: "computed_require" },
+        { source: "src/cli/main.ts", line: 19, reason: "computed_require" },
+      ]);
+      expect(mod.checkSdkImportBoundary(files, `${root}/scripts/release/sdk-import-boundary-baseline.json`)).toMatchObject({
+        ok: false,
+        unsupported_dynamic_imports: [
+          { source: "src/cli/main.ts", line: 3, reason: "computed_dynamic_import" },
+          { source: "src/cli/main.ts", line: 6, reason: "computed_dynamic_import" },
+          { source: "src/cli/main.ts", line: 9, reason: "computed_dynamic_import" },
+          { source: "src/cli/main.ts", line: 12, reason: "computed_dynamic_import" },
+          { source: "src/cli/main.ts", line: 15, reason: "computed_require" },
+          { source: "src/cli/main.ts", line: 19, reason: "computed_require" },
+        ],
+      });
+    });
+
+    it("checkSdkImportBoundary stringifies non-Error baseline scan failures", async () => {
+      const root = await harness.createTempRoot("pm-static-quality-sdk-boundary-string-error-");
+      mockUtils(root);
+      mockFs({
+        readFileSync: vi.fn(() => {
+          throw "raw baseline failure";
+        }) as never,
+      });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+
+      expect(mod.checkSdkImportBoundary([], `${root}/baseline.json`)).toMatchObject({
+        ok: false,
+        scanned_file_count: 0,
+        actual_edge_count: 0,
+        baseline_edge_count: null,
+        new_private_core_imports: [],
+        stale_baseline_imports: [],
+        unsupported_dynamic_imports: [],
+        error: "raw baseline failure",
+      });
+    });
+
+    it("checkSdkImportBoundary reports missing or malformed baselines as scan failures", async () => {
+      const root = await harness.createTempRoot("pm-static-quality-sdk-boundary-invalid-");
+      await mkdir(`${root}/src/cli`, { recursive: true });
+      await mkdir(`${root}/src/core`, { recursive: true });
+      await writeFile(`${root}/src/cli/main.ts`, 'import "../core/a";\n', "utf8");
+      await writeFile(`${root}/src/core/a.ts`, "export const a = true;\n", "utf8");
+      mockUtils(root);
+      harness.mockPosixPath();
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const files = [`${root}/src/cli/main.ts`];
+      expect(mod.checkSdkImportBoundary(files, `${root}/missing.json`)).toMatchObject({
+        ok: false,
+        baseline_edge_count: null,
+        new_private_core_imports: [],
+        stale_baseline_imports: [],
+        unsupported_dynamic_imports: [],
+        error: expect.stringContaining("ENOENT"),
+      });
+      await writeFile(`${root}/baseline.json`, "[]", "utf8");
+      expect(mod.checkSdkImportBoundary(files, `${root}/baseline.json`)).toMatchObject({
+        ok: false,
+        baseline_edge_count: null,
+        error: expect.stringContaining("expected an object"),
+      });
+      await writeFile(`${root}/baseline.json`, JSON.stringify({ version: 2, allowed_private_core_imports: [] }), "utf8");
+      expect(mod.checkSdkImportBoundary(files, `${root}/baseline.json`)).toMatchObject({
+        ok: false,
+        baseline_edge_count: null,
+        error: expect.stringContaining("version must be 1"),
+      });
+      await writeFile(`${root}/baseline.json`, JSON.stringify({ version: 1, allowed_private_core_imports: null }), "utf8");
+      expect(mod.checkSdkImportBoundary(files, `${root}/baseline.json`)).toMatchObject({
+        ok: false,
+        baseline_edge_count: null,
+        error: expect.stringContaining("allowed_private_core_imports must be an array"),
+      });
+      await writeFile(`${root}/baseline.json`, JSON.stringify({ version: 1, allowed_private_core_imports: [{}] }), "utf8");
+      expect(mod.checkSdkImportBoundary(files, `${root}/baseline.json`)).toMatchObject({
+        ok: false,
+        baseline_edge_count: null,
+        error: expect.stringContaining("entries must include source and imports fields"),
+      });
+      await writeFile(
+        `${root}/baseline.json`,
+        JSON.stringify({
+          version: 1,
+          allowed_private_core_imports: [{ source: "src/sdk/index.ts", imports: ["src/core/a.ts"] }],
+        }),
+        "utf8",
+      );
+      expect(mod.checkSdkImportBoundary(files, `${root}/baseline.json`)).toMatchObject({
+        ok: false,
+        baseline_edge_count: null,
+        error: expect.stringContaining('source "src/sdk/index.ts" is not an SDK boundary source'),
+      });
+      await writeFile(
+        `${root}/baseline.json`,
+        JSON.stringify({ version: 1, allowed_private_core_imports: [{ source: "src/cli/main.ts", imports: [false] }] }),
+        "utf8",
+      );
+      expect(mod.checkSdkImportBoundary(files, `${root}/baseline.json`)).toMatchObject({
+        ok: false,
+        baseline_edge_count: null,
+        error: expect.stringContaining("imports must be strings"),
+      });
+      await writeFile(
+        `${root}/baseline.json`,
+        JSON.stringify({
+          version: 1,
+          allowed_private_core_imports: [{ source: "src/cli/main.ts", imports: ["src/sdk/index.ts"] }],
+        }),
+        "utf8",
+      );
+      expect(mod.checkSdkImportBoundary(files, `${root}/baseline.json`)).toMatchObject({
+        ok: false,
+        baseline_edge_count: null,
+        error: expect.stringContaining('import "src/sdk/index.ts" is not a private core import'),
+      });
     });
 
     it("checkFunctionComplexity: flags complex fn, names anon, covers all node kinds", async () => {
@@ -1410,11 +1766,26 @@ describe("static-quality-gate", () => {
       for (const segment of ["src", "tests", "packages"]) {
         await mkdir(`${root}/${segment}`, { recursive: true });
       }
+      await mkdir(`${root}/scripts/release`, { recursive: true });
       await writeFile(`${root}/eslint-suppressions.json`, "{}\n", "utf8");
+    }
+
+    async function writeSdkBoundaryBaseline(
+      root: string,
+      entries: Array<{ source: string; imports: string[] }> = [
+        { source: "src/cli.ts", imports: ["src/core/a.ts"] },
+      ],
+    ): Promise<void> {
+      await writeFile(
+        `${root}/scripts/release/sdk-import-boundary-baseline.json`,
+        JSON.stringify({ version: 1, allowed_private_core_imports: entries }, null, 2),
+        "utf8",
+      );
     }
 
     async function seedFixture(root: string): Promise<void> {
       await seedRoots(root);
+      await writeSdkBoundaryBaseline(root);
       const files = {
         "src/cli.ts": [
           "/** CLI test fixture. */",
@@ -1496,6 +1867,7 @@ describe("static-quality-gate", () => {
         source_docstrings: { coverage_percent: number };
         exported_docstrings: { coverage_percent: number };
         member_docstrings: { coverage_percent: number };
+        sdk_import_boundary: { ok: boolean; actual_edge_count: number; baseline_edge_count: number };
       };
       expect(payload.ok).toBe(true);
       expect(payload.scanned.file_count).toBeGreaterThan(0);
@@ -1505,6 +1877,7 @@ describe("static-quality-gate", () => {
       expect(payload.source_docstrings.coverage_percent).toBe(100);
       expect(payload.exported_docstrings.coverage_percent).toBe(100);
       expect(payload.member_docstrings.coverage_percent).toBe(100);
+      expect(payload.sdk_import_boundary).toMatchObject({ ok: true, actual_edge_count: 1, baseline_edge_count: 1 });
     });
 
     it("reports member_docstring and trivial_docstring violations in text mode", async () => {
@@ -1870,6 +2243,65 @@ describe("static-quality-gate", () => {
       expect(process.exitCode).toBe(1);
       const emitted = errorSpy.mock.calls.map((c) => String(c[0]));
       expect(emitted.some((line) => line.includes("codefactor_complexity scan failed"))).toBe(true);
+    });
+
+    it("reports SDK import-boundary violations in text mode", async () => {
+      const root = await harness.createTempRoot("pm-static-quality-sdk-boundary-text-");
+      await seedFixture(root);
+      await writeFile(
+        `${root}/src/cli.ts`,
+        [
+          "/** CLI test fixture. */",
+          'import "./core/a";',
+          'import "./core/b";',
+          "export async function loadComputedCore(name) { return import(`./core/${name}`); }",
+          "/** Marks the fixture entrypoint as loaded. */",
+          "export const cli = true;",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      mockUtils(root);
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      process.argv = ["node", "x", "--max-lines", "500", "--max-lines-tests", "500"];
+      mod.main();
+      expect(process.exitCode).toBe(1);
+      process.exitCode = undefined;
+      expect(
+        errorSpy.mock.calls.some((call) => String(call[0]).includes("sdk_import_boundary new_private_core_import")),
+      ).toBe(true);
+      expect(
+        errorSpy.mock.calls.some((call) => String(call[0]).includes("sdk_import_boundary unsupported_dynamic_import")),
+      ).toBe(true);
+    });
+
+    it("reports SDK unsupported dynamic imports even when the baseline scan fails", async () => {
+      const root = await harness.createTempRoot("pm-static-quality-sdk-boundary-error-text-");
+      await seedFixture(root);
+      await rm(`${root}/scripts/release/sdk-import-boundary-baseline.json`);
+      await writeFile(
+        `${root}/src/cli.ts`,
+        [
+          "/** CLI test fixture. */",
+          'import "./core/a";',
+          "export async function loadComputedCore(name) { return import(`./core/${name}`); }",
+          "/** Marks the fixture entrypoint as loaded. */",
+          "export const cli = true;",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      mockUtils(root);
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      process.argv = ["node", "x", "--max-lines", "500", "--max-lines-tests", "500"];
+      mod.main();
+      expect(process.exitCode).toBe(1);
+      process.exitCode = undefined;
+      const emitted = errorSpy.mock.calls.map((call) => String(call[0]));
+      expect(emitted.some((line) => line.includes("sdk_import_boundary scan failed"))).toBe(true);
+      expect(emitted.some((line) => line.includes("sdk_import_boundary unsupported_dynamic_import"))).toBe(true);
     });
 
     it("rejects a duplicate-window below the minimum", async () => {

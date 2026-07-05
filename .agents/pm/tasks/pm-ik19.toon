@@ -1,0 +1,18 @@
+id: pm-ik19
+title: "Fold bulk and destructive lifecycle variants into their base nouns: update-many into update, close-many into close, delete/restore placement per ADR"
+description: "update-many and close-many duplicate their base commands as separate top-level entries; delete and restore float top-level. The pm-n7rr target surface maps update (update-many) and close (close-many/delete/restore). NOTE a mapping conflict recorded on ADR pm-pbyu: pm-tqel's history cluster also claims restore (under pm history) — the accepted ADR fixes the single placement and this task implements it. All old spellings remain as hidden aliases via the pm-0z7n shim. Zero feature loss, including update-many dry-run parity (PR#257) and close-many shared-reason/validate-close semantics (pm-i17g). Duplicate check: pm-i17g/pm-wbak/pm-j2ig are closed feature history for the bulk commands themselves; no open consolidation overlap."
+type: Task
+status: open
+priority: 2
+tags[4]: agent-ux,"area:cli","area:lifecycle",simplification
+created_at: "2026-07-05T05:08:46.683Z"
+updated_at: "2026-07-05T05:08:46.683Z"
+author: maintainer-agent
+estimated_minutes: 180
+acceptance_criteria: "update-many and close-many are reachable as facets of update/close with identical semantics including dry-run parity and validate-close; delete and restore live under exactly one noun per the accepted ADR; old spellings alias-dispatch with hints; spelling-parity spec green; contracts, completions, docs, and MCP names regenerated."
+parent: pm-n7rr
+risk: medium
+confidence: medium
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-0z7n,blocked_by,"2026-07-05T05:08:46.683Z",null,null
+body: ""

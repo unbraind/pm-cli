@@ -1,0 +1,19 @@
+id: pm-3mna
+title: "Promote schema, config, profile, and init primitives to the public SDK: full workspace customization programmatically"
+description: "Typed SDK functions for runtime-schema management (types/statuses/fields/presets), settings read/write with validation, profile list/show/apply/lint, and workspace init/scaffold — completing the universal-customization story. Duplicate check: profile-presets/plan are partially exported already; this item completes and stabilizes the domain surface."
+type: Feature
+status: open
+priority: 2
+tags[4]: architecture,"area:config","area:schema","area:sdk"
+created_at: "2026-07-05T04:54:11.971Z"
+updated_at: "2026-07-05T04:55:08.078Z"
+author: maintainer-agent
+estimated_minutes: 360
+acceptance_criteria: SDK exports typed schema/config/profile/init primitives with the same validation + never-block errors as the CLI; corresponding commands consume only these primitives; docstrings + linked tests + SDK reference docs; zero behavior change
+parent: pm-usfg
+risk: medium
+confidence: medium
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-lodl,blocked_by,"2026-07-05T04:55:07.462Z",null,null
+  pm-muhw,blocked_by,"2026-07-05T04:55:08.057Z",null,null
+body: ""

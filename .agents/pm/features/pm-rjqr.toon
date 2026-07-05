@@ -1,0 +1,19 @@
+id: pm-rjqr
+title: "Promote query/read primitives to the public SDK: list, get, search, context, next, aggregate, stats"
+description: "Typed SDK read surface over the item store, search (keyword/semantic/hybrid incl. inline field:value parsing), context snapshots, next-item recommendation, aggregates, and stats. History/activity ownership is pm-4a7m. Duplicate check: no existing query-primitive SDK item."
+type: Feature
+status: open
+priority: 1
+tags[3]: architecture,"area:sdk","area:search"
+created_at: "2026-07-05T04:54:09.542Z"
+updated_at: "2026-07-05T06:29:49.138Z"
+author: maintainer-agent
+estimated_minutes: 480
+acceptance_criteria: SDK exports typed query primitives returning the same data the CLI renders (projection/format concerns stay CLI-side); CLI query commands consume only these primitives; docstrings + linked tests + SDK reference docs; zero behavior change (query/search specs green)
+parent: pm-usfg
+risk: medium
+confidence: medium
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-lodl,blocked_by,"2026-07-05T04:55:04.440Z",null,null
+  pm-muhw,blocked_by,"2026-07-05T04:55:04.919Z",null,null
+body: ""

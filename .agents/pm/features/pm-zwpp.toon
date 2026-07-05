@@ -1,0 +1,23 @@
+id: pm-zwpp
+title: "Promote annotation and link primitives to the public SDK: comments, notes, learnings, files, docs, deps, append metadata"
+description: "Typed SDK functions for item annotation/link facets — comment CRUD, notes/learnings append+list, file/doc link management, dependency edges, and append/body metadata. Linked-test execution is out of scope here and belongs to pm-oslr. Duplicate check: no existing annotation-primitive SDK item."
+type: Feature
+status: open
+priority: 2
+tags[2]: architecture,"area:sdk"
+created_at: "2026-07-05T04:54:09.993Z"
+updated_at: "2026-07-05T08:02:45.520Z"
+author: maintainer-agent
+estimated_minutes: 360
+acceptance_criteria: SDK exports typed facet primitives with identical validation/governance to the CLI; facet commands consume only these primitives; docstrings + SDK reference docs; zero behavior change (facet specs green)
+parent: pm-usfg
+risk: low
+confidence: medium
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-lodl,blocked_by,"2026-07-05T04:55:05.369Z",null,null
+  pm-muhw,blocked_by,"2026-07-05T04:55:05.894Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-05T08:02:33.801Z",codex-sdk-agent,"Scope alignment evidence: PR #431 review caught that linked-test execution belongs to pm-oslr, not this annotation primitive item. Updated acceptance criteria through pm update to keep pm-zwpp focused on SDK facet primitives, docstrings, SDK reference docs, and behavior-parity facet specs."
+notes[1]{created_at,author,text}:
+  "2026-07-05T05:09:50.883Z",maintainer-agent,"Scope note (audit 2026-07-05): this promotion also owns the append (body-append) primitive — it is an annotation-family write like notes/comments. Execution of linked tests is explicitly NOT here; that is pm-oslr."
+body: ""

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-07-04T19:19:35.718Z"
+updated_at: "2026-07-05T05:51:11.906Z"
 reminders[1]{at,text}:
   "2026-07-01T10:24:45.889Z",Confirm daily auto-release tagged a new version AND npm latest advanced; else inspect publish + Sentry-gate steps
 assignee: claude-code-agent
@@ -16,7 +16,7 @@ acceptance_criteria: "After each merge to main, the next daily release tags vYYY
 parent: pm-u9d0
 risk: low
 confidence: high
-comments[33]{created_at,author,text}:
+comments[34]{created_at,author,text}:
   "2026-06-10T14:44:30.277Z",maintainer-agent,"2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
   "2026-06-16T11:26:49.976Z",codex-sdk-cli-consolidation-20260616,"Auto-release gate reproduced locally with SENTRY_PERSONAL_ADMIN_TOKEN; failing high issue was PM-CLI-1Q (handled CommandError: all items failed to apply). Added count-agnostic handled pattern 'item(s) failed to apply' and blocking_short_ids/blocking_titles output for diagnostics. Gate now passes in strict mode with max-high=0."
   "2026-06-16T11:46:33.866Z",codex-sdk-cli-consolidation-20260616,"Release-health verification: sentry-telemetry gate now passes in strict mode (max-critical=0,max-high=0) after expected handled-CommandError classification update; output now includes blocking_short_ids/blocking_titles for actionable diagnostics."
@@ -50,6 +50,7 @@ comments[33]{created_at,author,text}:
   "2026-07-01T16:57:48.167Z",claude-code-agent,"Evidence: 2026-07-01 release-health bundle verified daily Auto Release and telemetry while refreshing @sentry/node to 10.63.0. Live status: scheduled Auto Release run 28499297083 succeeded on b2617dac, GitHub latest release is v2026.7.1, npm latest is @unbrained/pm-cli 2026.7.1, issue #374 is closed, no GitHub PRs/issues/Dependabot/code-scanning/secret-scanning alerts are open, and pnpm audit is clean. Verification passed: sentry telemetry gate best-effort ok with critical=0 high=0 telemetry finish_error_rate_pct=0.77 failures_without_error_code_rows=0; package doctor deep ok with pm-changelog 2026.6.30 active; changelog check unchanged; full coverage 5266 tests at 100/100/100/100; manual packed temp install smoke passed package install, Sentry import, pm init/create/comments/get/health/validate/telemetry, pm-changelog install, and package doctor."
   "2026-07-02T21:26:24.459Z",claude-code-agent,"2026-07-02 release-health verify: GitHub release v2026.7.2 tagged (2026-07-02T06:39Z) and npm latest = 2026.7.2 — auto-release healthy. CI on main green (run 28618676644). Keeping reminder in_progress (recurring)."
   "2026-07-03T04:09:26.639Z",claude-code-agent,"2026-07-03 verify: npm latest=2026.7.2 (published 2026-07-02T06:39Z), dist-tags clean, scheduled Auto Release runs 28569991109 (07-02) and 28499297083 (07-01) both succeeded. Release pipeline healthy; keeping reminder in_progress (recurring)."
+  "2026-07-05T05:51:11.906Z",claude-code-agent,"Release-health observation from pm-lodl/pm-8778 lane: live Sentry issue list still shows unresolved historical handled CommandErrors, but the actual recent-window gate passes: node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort --sentry-window-days 14 --max-critical 0 --max-high 0 returned ok:true with Sentry critical=0 high=0 total=0 and telemetry finish_error_rate_pct=1.05, failures_without_error_code_rows=0. Also filed UX follow-up pm-w86l for a package script alias after duplicate-safe search."
 notes[6]{created_at,author,text}:
   "2026-07-02T06:41:55.766Z",claude-code-agent,"2026-07-02: Auto Release run 28569991109 success; tag v2026.7.2 created and npm dist-tags.latest=2026.7.2 verified live via npm view. Release-commit CI/Release/CodeQL/Docs all green. Release health verified."
   "2026-07-04T06:16:41.031Z",maintainer-agent,"2026-07-04: Release v2026.7.4 verified — Release workflow 28697208639 succeeded, npm @unbrained/pm-cli@2026.7.4 live, GH release published 06:16Z (not draft). Auto-release healthy."

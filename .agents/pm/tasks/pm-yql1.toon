@@ -1,0 +1,18 @@
+id: pm-yql1
+title: "Consolidate item annotation facets: comments/notes/learnings/files/docs/deps/append/test become one facet grammar (old spellings aliased)"
+description: "Eight top-level commands (comments, notes, learnings, files, docs, deps, append, test) are all per-item annotation/link facets with near-identical shape (<id> plus --add/--remove/list). The pm-n7rr target surface names 'item facets' as ONE noun group of the ~15; this task implements it per the grammar ADR pm-pbyu — one shared facet implementation, each facet a verb of a single noun (exact spelling fixed at ADR acceptance), current spellings kept as hidden aliases via the pm-0z7n shim with one-line migration hints. Zero feature loss. Duplicate check: pm-9y8q (closed, internal dedup of the comments/notes/learnings stacks) and pm-zwpp (SDK promotion of the same primitives — complementary: that item is API layering, this one is CLI grammar only); no open overlap."
+type: Task
+status: open
+priority: 2
+tags[3]: agent-ux,"area:cli",simplification
+created_at: "2026-07-05T05:08:35.381Z"
+updated_at: "2026-07-05T05:08:35.381Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: "One facet grammar covers all 8 annotation surfaces with identical flags and payloads; every old spelling dispatches through the alias shim with a migration hint; spelling-parity spec proves identical output old vs new; contracts, completions (bash/zsh/fish), docs, and MCP names regenerate from the contract table; top-level help lists item facets under a single noun entry."
+parent: pm-n7rr
+risk: medium
+confidence: medium
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-0z7n,blocked_by,"2026-07-05T05:08:35.381Z",null,null
+body: ""
