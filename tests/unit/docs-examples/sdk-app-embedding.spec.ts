@@ -146,6 +146,16 @@ describe("sdk-app-embedding example", () => {
     process.argv = ["node", "run-embedded-pm.mjs", "extension-reload"];
     vi.doMock("node:child_process", () => ({
       execFile: vi.fn(),
+      spawnSync: vi.fn(() => ({ error: new Error("spawn pm ENOENT"), status: null, stdout: null, stderr: null })),
+    }));
+    await expect(importExampleScript(SCRIPT, "embeddedSpawnFailure")).rejects.toThrow(
+      "Failed to run pm contracts --json: spawn pm ENOENT",
+    );
+
+    vi.resetModules();
+    process.argv = ["node", "run-embedded-pm.mjs", "extension-reload"];
+    vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
       spawnSync: vi.fn(() => ({
         status: 0,
         stdout: "warning before json\n{",

@@ -42,6 +42,11 @@ import { normalizeListOptions, normalizeUpdateOptions } from "../cli/registratio
 import { UPDATE_COMMANDER_STRING_OPTION_CONTRACTS } from "./cli-contracts/commander-mutation-options.js";
 import type { PmToolAction } from "./cli-contracts/enum-contracts.js";
 import {
+  clearWorkspaceContractsCache,
+  memoizeWorkspaceExtensionRegistrations,
+} from "./workspace-contracts-cache.js";
+export { clearWorkspaceContractsCache } from "./workspace-contracts-cache.js";
+import {
   assertHistoryRepairTarget,
   runActivity,
   runAggregate,
@@ -79,6 +84,7 @@ import {
   runProfileLint,
   runProfileList,
   runProfileShow,
+  runRestore,
   runRelease,
   runSchemaAddField,
   runSchemaAddStatus,
@@ -110,6 +116,7 @@ import {
   type ContractsResult,
 } from "../cli/commands/contracts.js";
 import type { ListOptions } from "../cli/commands/list.js";
+import { resolveStartTaskInProgressStatus } from "../cli/register-operations.js";
 import type { UpdateManyCommandOptions } from "../cli/commands/update-many.js";
 
 export {
@@ -326,6 +333,35 @@ export type PmActionInput = PmActionOptions & {
 };
 
 /**
+ * Per-call arguments accepted by {@link PmClient.run}. The action name is passed
+ * as the first parameter, so an `action` property inside the args bag is rejected
+ * at compile time.
+ */
+export type PmClientRunArgs = Omit<PmActionInput, "action"> & {
+  /**
+   * Return full `changed_fields` arrays for mutation actions instead of the
+   * default compact `changed_field_count` projection.
+   */
+  fullChangedFields?: boolean;
+  /** Return only mutation item ids when supported by the action. */
+  idOnly?: boolean;
+  action?: never;
+};
+
+/**
+ * Command options accepted by PmClient mutation convenience methods.
+ */
+export type PmClientMutationOptions = PmActionOptions & {
+  /**
+   * Return full `changed_fields` arrays for this mutation instead of the compact
+   * SDK default.
+   */
+  fullChangedFields?: boolean;
+  /** Return only mutation item ids when supported by the action. */
+  idOnly?: boolean;
+};
+
+/**
  * Stable defaults applied by {@link PmClient} to every action it runs.
  */
 export interface PmClientOptions {
@@ -339,11 +375,35 @@ export interface PmClientOptions {
   noExtensions?: boolean;
 }
 
+interface PmClientDefaults {
+  path?: string;
+  cwd?: string;
+  author?: string;
+  noExtensions?: boolean;
+}
+
+function splitClientMutationOptions(options: PmClientMutationOptions): PmClientRunArgs {
+  const { fullChangedFields, idOnly, ...runnerOptions } = options;
+  return {
+    ...(fullChangedFields === undefined ? {} : { fullChangedFields }),
+    ...(idOnly === undefined ? {} : { idOnly }),
+    options: runnerOptions,
+  };
+}
+
 /**
  * Programmatic pm client for custom tools, CI jobs, bots, and embedded runtimes.
+ *
+ * Action execution shares the same process-wide extension activation queue used
+ * by MCP. Concurrent calls from one process are serialized across extension
+ * load, activation, dispatch, cleanup, and deactivate so active registries cannot
+ * interleave.
+ *
+ * Convenience methods accept command options only. Use {@link PmClient.run} for
+ * per-call runtime overrides such as `cwd`, `path`, or `noExtensions`.
  */
 export class PmClient {
-  private readonly defaults: Omit<PmActionInput, "action">;
+  private readonly defaults: PmClientDefaults;
 
   /**
    * Create a client with workspace, author, and extension-loading defaults.
@@ -360,7 +420,7 @@ export class PmClient {
   /**
    * Run any native or extension-contributed action through the SDK dispatcher.
    */
-  run(action: PmActionName, args: Omit<PmActionInput, "action"> = {}): Promise<unknown> {
+  run(action: PmActionName, args: PmClientRunArgs = {}): Promise<unknown> {
     return runAction({ ...this.defaults, ...args, action });
   }
 
@@ -395,22 +455,22 @@ export class PmClient {
   /**
    * Create an item using the same mutation path as `pm create`.
    */
-  create(options: PmActionOptions): Promise<unknown> {
-    return this.run("create", { options });
+  create(options: PmClientMutationOptions): Promise<unknown> {
+    return this.run("create", splitClientMutationOptions(options));
   }
 
   /**
    * Update an item using the same mutation path as `pm update`.
    */
-  update(id: string, options: PmActionOptions): Promise<unknown> {
-    return this.run("update", { id, options });
+  update(id: string, options: PmClientMutationOptions): Promise<unknown> {
+    return this.run("update", { id, ...splitClientMutationOptions(options) });
   }
 
   /**
    * Close an item using the same mutation path as `pm close`.
    */
-  close(id: string, reason: string, options: PmActionOptions = {}): Promise<unknown> {
-    return this.run("close", { id, reason, options });
+  close(id: string, reason: string, options: PmClientMutationOptions = {}): Promise<unknown> {
+    return this.run("close", { id, reason, ...splitClientMutationOptions(options) });
   }
 }
 
@@ -428,9 +488,6 @@ export class PmClient {
  * toggling extensions or editing settings. Settings themselves are re-read on
  * every call — only the extension load+activate step is memoized.
  */
-const WORKSPACE_CONTRACTS_CACHE_LIMIT = 50;
-const workspaceExtensionRegistrationsCache = new Map<string, Promise<ExtensionRegistrationRegistry | null>>();
-
 function buildWorkspaceExtensionRegistrationsCacheKey(
   pmRoot: string,
   settings: Awaited<ReturnType<typeof readSettings>>,
@@ -445,32 +502,13 @@ function buildWorkspaceExtensionRegistrationsCacheKey(
   ]);
 }
 
-/**
- * Drop all memoized workspace extension registrations so the next
- * `getWorkspaceContracts` call re-loads and re-activates extensions from disk.
- * Long-lived hosts should call this after any extension or settings mutation.
- */
-export function clearWorkspaceContractsCache(): void {
-  workspaceExtensionRegistrationsCache.clear();
-}
-
 async function resolveWorkspaceExtensionRegistrations(
   pmRoot: string,
   settings: Awaited<ReturnType<typeof readSettings>>,
   cwd?: string,
 ): Promise<ExtensionRegistrationRegistry | null> {
   const cacheKey = buildWorkspaceExtensionRegistrationsCacheKey(pmRoot, settings, cwd);
-  const cached = workspaceExtensionRegistrationsCache.get(cacheKey);
-  if (cached !== undefined) {
-    return cached;
-  }
-  if (workspaceExtensionRegistrationsCache.size >= WORKSPACE_CONTRACTS_CACHE_LIMIT) {
-    const oldestKey = workspaceExtensionRegistrationsCache.keys().next().value!;
-    workspaceExtensionRegistrationsCache.delete(oldestKey);
-  }
-  const registrations = loadWorkspaceExtensionRegistrations(pmRoot, settings, cwd);
-  workspaceExtensionRegistrationsCache.set(cacheKey, registrations);
-  return registrations;
+  return memoizeWorkspaceExtensionRegistrations(cacheKey, () => loadWorkspaceExtensionRegistrations(pmRoot, settings, cwd));
 }
 
 /**
@@ -815,15 +853,11 @@ async function withActiveExtensions<T>(
   // touches process.cwd() (important so concurrent direct callers can't corrupt a shared
   // cwd). Either way activation resolves against resolutionCwd, the entry-time snapshot,
   // so it never depends on a deferred process.cwd() read.
-  return extensionActivationQueue.enqueue(async () => {
-    try {
-      return explicitCwd === undefined
-        ? await withActiveExtensionsExclusively(global, resolutionCwd, run)
-        : await withCwd(explicitCwd, () => withActiveExtensionsExclusively(global, resolutionCwd, run));
-    } finally {
-      clearWorkspaceContractsCache();
-    }
-  });
+  return extensionActivationQueue.enqueue(async () =>
+    explicitCwd === undefined
+      ? await withActiveExtensionsExclusively(global, resolutionCwd, run)
+      : await withCwd(explicitCwd, () => withActiveExtensionsExclusively(global, resolutionCwd, run)),
+  );
 }
 
 /**
@@ -831,9 +865,9 @@ async function withActiveExtensions<T>(
  * (see {@link withActiveExtensions}): it is the exclusive owner of the process-global
  * active extension registries while it runs. Returns early with `run(null)` — still
  * inside the serialized critical section — when extensions are disabled or no workspace
- * exists yet, so those built-in actions also observe a stable (empty) registry. This MCP
- * server reloads + reactivates extensions per request, so each call is a fresh cycle with
- * teardown in a finally to release resources opened during activate() (the
+ * exists yet, so those built-in actions also observe a stable (empty) registry. MCP and
+ * PmClient callers reload + reactivate extensions per request, so each call is a fresh
+ * cycle with teardown in a finally to release resources opened during activate() (the
  * long-running-server reload contract, pm-k1e4). Load/activate failures are swallowed and
  * `run` is invoked with `null`, mirroring the CLI's resilient snapshot loader
  * (loadRuntimeExtensionSnapshot) so a broken extension can never break a built-in action.
@@ -844,10 +878,12 @@ async function withActiveExtensionsExclusively<T>(
   run: (active: ActiveExtensionRuntime | null) => Promise<T>,
 ): Promise<T> {
   if (global.noExtensions) {
+    resetActiveExtensionRegistries();
     return run(null);
   }
   const pmRoot = resolvePmRoot(cwd, global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    resetActiveExtensionRegistries();
     return run(null);
   }
   let active: ActiveExtensionRuntime | null = null;
@@ -874,7 +910,7 @@ async function withActiveExtensionsExclusively<T>(
     // break a built-in action — fall back to running with no active extensions. Surface
     // the cause on stderr so a broken extension is diagnosable instead of being silently
     // indistinguishable from a workspace that simply has no extensions.
-    console.error("[pm-mcp] extension activation failed; continuing without active extensions:", error);
+    console.error("[pm-sdk] extension activation failed; continuing without active extensions:", error);
   }
   try {
     return await run(active);
@@ -1074,12 +1110,101 @@ function updateManyOptionsFromFlat(options: Record<string, unknown>): UpdateMany
   };
 }
 
+const WORKSPACE_CONTRACTS_CACHE_PRESERVING_ACTIONS = new Set([
+  "activity",
+  "aggregate",
+  "context",
+  "contracts",
+  "deps",
+  "files-discover",
+  "get",
+  "health",
+  "history",
+  "list",
+  "next",
+  "search",
+  "stats",
+  "telemetry",
+  "validate",
+]);
+
+interface SdkActionAlias {
+  action: string;
+  options?: Record<string, unknown>;
+}
+
+const LIST_ACTION_ALIASES: Record<string, SdkActionAlias> = {
+  "list-all": { action: "list", options: { excludeTerminal: false } },
+  "list-draft": { action: "list", options: { status: "draft", excludeTerminal: false } },
+  "list-open": { action: "list", options: { status: "open", excludeTerminal: false } },
+  "list-in-progress": { action: "list", options: { status: "in_progress", excludeTerminal: false } },
+  "list-blocked": { action: "list", options: { status: "blocked", excludeTerminal: false } },
+  "list-closed": { action: "list", options: { status: "closed", excludeTerminal: false } },
+  "list-canceled": { action: "list", options: { status: "canceled", excludeTerminal: false } },
+};
+
+const EXTENSION_ACTION_ALIASES: Record<string, SdkActionAlias> = {
+  "extension-init": { action: "extension", options: { init: true } },
+  "extension-install": { action: "extension", options: { install: true } },
+  "extension-uninstall": { action: "extension", options: { uninstall: true } },
+  "extension-explore": { action: "extension", options: { explore: true } },
+  "extension-manage": { action: "extension", options: { manage: true } },
+  "extension-describe": { action: "extension", options: { describe: true } },
+  "extension-reload": { action: "extension", options: { reload: true } },
+  "extension-doctor": { action: "extension", options: { doctor: true } },
+  "extension-catalog": { action: "extension", options: { catalog: true } },
+  "extension-adopt": { action: "extension", options: { adopt: true } },
+  "extension-adopt-all": { action: "extension", options: { adoptAll: true } },
+  "extension-activate": { action: "extension", options: { activate: true } },
+  "extension-deactivate": { action: "extension", options: { deactivate: true } },
+};
+
+const PACKAGE_ACTION_ALIASES: Record<string, SdkActionAlias> = {
+  "package-init": { action: "package", options: { init: true, vocabulary: "package" } },
+  "package-install": { action: "package", options: { install: true, vocabulary: "package" } },
+  "package-uninstall": { action: "package", options: { uninstall: true, vocabulary: "package" } },
+  "package-explore": { action: "package", options: { explore: true, vocabulary: "package" } },
+  "package-manage": { action: "package", options: { manage: true, vocabulary: "package" } },
+  "package-describe": { action: "package", options: { describe: true, vocabulary: "package" } },
+  "package-reload": { action: "package", options: { reload: true, vocabulary: "package" } },
+  "package-doctor": { action: "package", options: { doctor: true, vocabulary: "package" } },
+  "package-catalog": { action: "package", options: { catalog: true, vocabulary: "package" } },
+  "package-adopt": { action: "package", options: { adopt: true, vocabulary: "package" } },
+  "package-adopt-all": { action: "package", options: { adoptAll: true, vocabulary: "package" } },
+  "package-activate": { action: "package", options: { activate: true, vocabulary: "package" } },
+  "package-deactivate": { action: "package", options: { deactivate: true, vocabulary: "package" } },
+};
+
+const SDK_ACTION_ALIASES: Record<string, SdkActionAlias> = {
+  ctx: { action: "context" },
+  ...LIST_ACTION_ALIASES,
+  ...EXTENSION_ACTION_ALIASES,
+  ...PACKAGE_ACTION_ALIASES,
+};
+
+function resolveSdkActionInput(args: PmActionInput): { action: string; args: Record<string, unknown> } {
+  const rawAction = readRequiredString(args, "action");
+  const normalizedAction = normalizeActionName(rawAction);
+  const alias = getOwnHandler(SDK_ACTION_ALIASES, normalizedAction);
+  const action = alias?.action ?? normalizedAction;
+  const resolvedArgs: Record<string, unknown> = { ...args, action };
+  if (alias?.options !== undefined) {
+    resolvedArgs.options = { ...alias.options, ...asRecordClone(args.options) };
+  }
+  return { action, args: resolvedArgs };
+}
+
+function shouldInvalidateWorkspaceContractsCacheAfterAction(action: string): boolean {
+  return !WORKSPACE_CONTRACTS_CACHE_PRESERVING_ACTIONS.has(normalizeActionName(action));
+}
+
 /**
  * Execute one native or extension-contributed pm action in-process.
  */
 export async function runAction(args: PmActionInput): Promise<unknown> {
-  const action = readRequiredString(args, "action");
-  const global = globalOptions(args);
+  const resolved = resolveSdkActionInput(args);
+  const global = globalOptions(resolved.args);
+  const invalidateWorkspaceContractsCache = shouldInvalidateWorkspaceContractsCacheAfterAction(resolved.action);
   // pm-zumn: dispatch every action (built-in and dynamic) inside one extension
   // activation cycle so built-in actions see extension-contributed item types, fields,
   // and profiles, consistent with the CLI. Snapshot the effective resolution cwd HERE,
@@ -1087,9 +1212,17 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
   // queued cycle resolves against the directory the request arrived in rather than a value
   // process.cwd() might hold by the time the task runs. Only an explicit cwd additionally
   // pins process.cwd() (inside the serialized slot) for the built-in handler.
-  const explicitCwd = readString(args, "cwd");
+  const explicitCwd = readString(resolved.args, "cwd");
   const resolutionCwd = explicitCwd ?? process.cwd();
-  return withActiveExtensions(global, explicitCwd, resolutionCwd, (activeExtensions) => dispatchAction(action, args, global, activeExtensions));
+  try {
+    return await withActiveExtensions(global, explicitCwd, resolutionCwd, (activeExtensions) =>
+      dispatchAction(resolved.action, resolved.args, global, activeExtensions),
+    );
+  } finally {
+    if (invalidateWorkspaceContractsCache) {
+      clearWorkspaceContractsCache();
+    }
+  }
 }
 
 interface McpActionDispatchContext {
@@ -1291,11 +1424,10 @@ function parseMcpInteger(value: unknown, label: string): number | undefined {
 
 function parseMcpIntegerPrefix(value: unknown, label: string): number | undefined {
   if (typeof value === "number") {
-    const parsed = Number.parseInt(String(value), 10);
-    if (!Number.isInteger(parsed)) {
+    if (!Number.isFinite(value) || !Number.isInteger(value)) {
       throw new PmCliError(`${label} must be a finite integer.`, 64);
     }
-    return parsed;
+    return value;
   }
   if (typeof value === "string" && value.trim().length > 0) {
     const trimmed = value.trim();
@@ -1312,7 +1444,7 @@ function parseMcpIntegerPrefix(value: unknown, label: string): number | undefine
 }
 
 function runMcpPlanAction(ctx: McpActionDispatchContext): Promise<unknown> {
-  const subcommand = readRequiredString(ctx.options, "subcommand");
+  const subcommand = readString(ctx.args, "subcommand") ?? readRequiredString(ctx.options, "subcommand");
   const planRecord = ctx.options as Record<string, unknown>;
   return runPlan({
     subcommand: subcommand as never,
@@ -1527,6 +1659,42 @@ async function runMcpCloseManyAction(ctx: McpActionDispatchContext): Promise<unk
   return projectMutationResult(await runCloseMany(closeManyOptionsFromFlat(closeManyRunnerOptions), ctx.global), { changedFields });
 }
 
+async function runMcpRestoreAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  return runRestore(requireMcpItemId(ctx), readRequiredString(ctx.options, "target"), ctx.options, ctx.global);
+}
+
+async function runMcpStartTaskAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  const pmRoot = resolvePmRoot(process.cwd(), ctx.global.path);
+  const settings = await readSettings(pmRoot);
+  const inProgressStatus = resolveStartTaskInProgressStatus(resolveRuntimeStatusRegistry(settings.schema));
+  const id = requireMcpItemId(ctx);
+  const claimResult = await runClaim(id, ctx.force, ctx.global, ctx.options);
+  const updateResult = await runUpdate(id, { ...ctx.options, status: inProgressStatus, force: ctx.force }, ctx.global);
+  return { id, action: "start_task", claim: claimResult, update: updateResult };
+}
+
+async function runMcpPauseTaskAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  const pmRoot = resolvePmRoot(process.cwd(), ctx.global.path);
+  const settings = await readSettings(pmRoot);
+  const id = requireMcpItemId(ctx);
+  const openStatus = resolveRuntimeStatusRegistry(settings.schema).open_status;
+  const updateResult = await runUpdate(id, { ...ctx.options, status: openStatus, force: ctx.force }, ctx.global);
+  const releaseResult = await runRelease(id, ctx.force, ctx.global, ctx.options);
+  return { id, action: "pause_task", update: updateResult, release: releaseResult };
+}
+
+async function runMcpCloseTaskAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  const id = requireMcpItemId(ctx);
+  const closeReason =
+    readString(ctx.args, "reason") ??
+    readString(ctx.args, "text") ??
+    readString(ctx.options, "reason") ??
+    readString(ctx.options, "text");
+  const closeResult = await runClose(id, closeReason, { ...ctx.options, force: ctx.force }, ctx.global);
+  const releaseResult = await runRelease(id, ctx.force, ctx.global, ctx.options);
+  return { id, action: "close_task", close: closeResult, release: releaseResult };
+}
+
 const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   init: (ctx) => runInit(readString(ctx.args, "prefix"), ctx.global, ctx.options),
   context: (ctx) => runContext(ctx.options, ctx.global),
@@ -1538,8 +1706,12 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   copy: runMcpCopyAction,
   focus: (ctx) => runFocus(ctx.id, { clear: ctx.options.clear === true || ctx.args.clear === true }, ctx.global),
   update: runMcpUpdateAction,
+  restore: runMcpRestoreAction,
   claim: (ctx) => runClaim(requireMcpItemId(ctx), ctx.force, ctx.global, ctx.options),
   release: (ctx) => runRelease(requireMcpItemId(ctx), ctx.force, ctx.global, ctx.options),
+  "start-task": runMcpStartTaskAction,
+  "pause-task": runMcpPauseTaskAction,
+  "close-task": runMcpCloseTaskAction,
   close: runMcpCloseAction,
   comments: runMcpCommentsAction,
   notes: (ctx) => runNotes(requireMcpItemId(ctx), ctx.options, ctx.global),
@@ -1556,11 +1728,8 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   activity: runMcpActivityAction,
   aggregate: (ctx) => runAggregate(ctx.options, ctx.global),
   extension: (ctx) => runExtension(readMcpTarget(ctx), ctx.options, ctx.global),
-  "extension-reload": (ctx) => runExtension(undefined, { ...ctx.options, reload: true }, ctx.global),
   package: (ctx) => runExtension(readMcpTarget(ctx), ctx.options, ctx.global),
-  "package-install": (ctx) => runExtension(readMcpTarget(ctx), { ...ctx.options, install: true }, ctx.global),
   install: (ctx) => runExtension(readMcpTarget(ctx), { ...ctx.options, install: true }, ctx.global),
-  "package-catalog": (ctx) => runExtension(undefined, { ...ctx.options, catalog: true, vocabulary: "package" }, ctx.global),
   upgrade: (ctx) => runUpgrade(readMcpTarget(ctx), ctx.options, ctx.global),
   delete: (ctx) => runDelete(requireMcpItemId(ctx), ctx.options, ctx.global),
   deps: (ctx) => runDeps(requireMcpItemId(ctx), ctx.options, ctx.global),
@@ -1591,7 +1760,7 @@ async function dispatchAction(
     args,
     options,
     id: readString(args, "id"),
-    force: args.force === true,
+    force: args.force === true || options.force === true,
     global,
     activeExtensions,
   };
@@ -1599,10 +1768,7 @@ async function dispatchAction(
   return handler ? handler(ctx) : dispatchActiveExtensionAction(action, args, options, global, activeExtensions);
 }
 
-/**
- * Test-only hooks for action-runner branch coverage and MCP compatibility tests.
- */
-export const _testOnlyActionRunner = {
+const actionRunnerTestHooks = {
   closeManyOptionsFromFlat,
   extensionOptionsFromArgs,
   globalOptions,
@@ -1616,12 +1782,19 @@ export const _testOnlyActionRunner = {
   readScalarString,
   readScalarStringAllowBlank,
   readStringArray,
-  runAction,
   updateManyOptionsFromFlat,
   withAddNoteOption,
   withFilesDiscoveryOptions,
   withMutationCompaction,
 };
+
+declare global {
+  var __pmCliActionRunnerTestHooks: typeof actionRunnerTestHooks | undefined;
+}
+
+if (process.env.NODE_ENV === "test" || process.env.VITEST !== undefined || process.env.VITEST_WORKER_ID !== undefined) {
+  globalThis.__pmCliActionRunnerTestHooks = actionRunnerTestHooks;
+}
 
 async function loadWorkspaceExtensionRegistrations(
   pmRoot: string,
@@ -1638,7 +1811,11 @@ async function loadWorkspaceExtensionRegistrations(
   try {
     return activationResult.registrations;
   } finally {
-    await deactivateExtensions(loadResult, activationResult);
+    try {
+      await deactivateExtensions(loadResult, activationResult);
+    } catch {
+      // Workspace contract reads should stay best-effort even if teardown itself fails.
+    }
   }
 }
 

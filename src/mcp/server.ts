@@ -13,7 +13,7 @@ import { decodeHtmlEntitiesInOptions } from "../core/shared/html-entity-decode.j
 import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 import { asRecordClone } from "../core/shared/primitives.js";
 import { createSerialQueue } from "../core/shared/serial-queue.js";
-import { _testOnlyActionRunner, readRequiredString, runAction, type PmActionInput } from "../sdk/runtime.js";
+import { readRequiredString, runAction, type PmActionInput } from "../sdk/runtime.js";
 import { TOOLS } from "./tool-definitions.js";
 
 interface JsonRpcRequest {
@@ -317,11 +317,73 @@ export function isInvokedAsMcpMainModule(argvPath: string | undefined, moduleUrl
   }
 }
 
+type RuntimeTestHooks = NonNullable<typeof globalThis.__pmCliActionRunnerTestHooks>;
+type RuntimeTestHookKey = keyof RuntimeTestHooks;
+
+function readRuntimeTestHook<Key extends RuntimeTestHookKey>(key: Key): RuntimeTestHooks[Key] {
+  const runtimeTestHooks = globalThis.__pmCliActionRunnerTestHooks;
+  if (runtimeTestHooks === undefined) {
+    throw new PmCliError(`MCP runtime test hook "${String(key)}" is only available in test environments.`, 64);
+  }
+  return runtimeTestHooks[key];
+}
+
 export const _testOnly = {
+  get closeManyOptionsFromFlat() {
+    return readRuntimeTestHook("closeManyOptionsFromFlat");
+  },
   detectUnexpectedTopLevelKeys,
   errorContent,
+  get extensionOptionsFromArgs() {
+    return readRuntimeTestHook("extensionOptionsFromArgs");
+  },
+  get globalOptions() {
+    return readRuntimeTestHook("globalOptions");
+  },
+  get mutationListOptions() {
+    return readRuntimeTestHook("mutationListOptions");
+  },
   nearestDeclaredKey,
-  ..._testOnlyActionRunner,
+  get normalizeActionName() {
+    return readRuntimeTestHook("normalizeActionName");
+  },
+  get normalizeCommandPath() {
+    return readRuntimeTestHook("normalizeCommandPath");
+  },
+  get normalizeMcpOptionsArrays() {
+    return readRuntimeTestHook("normalizeMcpOptionsArrays");
+  },
+  get normalizeMcpUpdateOptions() {
+    return readRuntimeTestHook("normalizeMcpUpdateOptions");
+  },
+  get optionsWithAuthor() {
+    return readRuntimeTestHook("optionsWithAuthor");
+  },
+  get readRequiredString() {
+    return readRuntimeTestHook("readRequiredString");
+  },
+  get readScalarString() {
+    return readRuntimeTestHook("readScalarString");
+  },
+  get readScalarStringAllowBlank() {
+    return readRuntimeTestHook("readScalarStringAllowBlank");
+  },
+  get readStringArray() {
+    return readRuntimeTestHook("readStringArray");
+  },
+  runAction,
+  get updateManyOptionsFromFlat() {
+    return readRuntimeTestHook("updateManyOptionsFromFlat");
+  },
+  get withAddNoteOption() {
+    return readRuntimeTestHook("withAddNoteOption");
+  },
+  get withFilesDiscoveryOptions() {
+    return readRuntimeTestHook("withFilesDiscoveryOptions");
+  },
+  get withMutationCompaction() {
+    return readRuntimeTestHook("withMutationCompaction");
+  },
   writeError,
 };
 

@@ -2,8 +2,12 @@ import { spawnSync } from "node:child_process";
 import { PM_TOOL_ACTION_PARAMETER_CONTRACTS, isPmToolAction } from "@unbrained/pm-cli/sdk";
 
 function parseContractsJson(stdout) {
+  const trimmed = (stdout ?? "").trim();
+  if (trimmed.length === 0) {
+    return {};
+  }
   try {
-    return JSON.parse(stdout);
+    return JSON.parse(trimmed);
   } catch (error) {
     throw new Error(`Failed to parse JSON from pm contracts: ${error.message}`, { cause: error });
   }
@@ -17,11 +21,14 @@ function runPmContracts() {
       NO_COLOR: "1",
     },
   });
+  if (completed.error) {
+    throw new Error(`Failed to run pm contracts: ${completed.error.message}`, { cause: completed.error });
+  }
   if (completed.status !== 0) {
     const stderr = (completed.stderr ?? "").trim();
     throw new Error(stderr.length > 0 ? stderr : `pm contracts failed with exit code ${completed.status}`);
   }
-  return parseContractsJson(completed.stdout ?? "{}");
+  return parseContractsJson(completed.stdout);
 }
 
 const requestedAction = (process.argv[2] ?? "create").trim().toLowerCase();

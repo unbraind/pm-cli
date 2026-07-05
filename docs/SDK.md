@@ -445,6 +445,24 @@ await runAction({
 });
 ```
 
+Mutation convenience methods default to compact changed-field output for agent
+efficiency. Pass `fullChangedFields: true` alongside the command options when an
+embedded SDK consumer needs the full `changed_fields` array.
+
+`PmClient` and `runAction` share the same process-wide extension activation
+queue as MCP. Calls from one process are serialized across extension load,
+activation, dispatch, cleanup, and deactivate so active extension registries stay
+consistent. Use separate processes when a host needs true parallel pm action
+throughput.
+
+`PmClient` convenience methods (`list`, `create`, `update`, and the rest) accept
+command options only. For per-call runtime overrides such as `cwd`, `path`, or
+`noExtensions`, use `run` or call `runAction` directly:
+
+```ts
+await pm.run("list", { cwd: "/path/to/project", options: { status: "open" } });
+```
+
 For item-type context, use the CLI inspection primitives before issuing custom-domain mutations:
 
 ```bash

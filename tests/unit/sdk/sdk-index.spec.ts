@@ -1,6 +1,10 @@
+import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
+import * as sdkBarrel from "../../../src/sdk/index.js";
 import {
   BUILTIN_ITEM_TYPE_VALUES,
   EXIT_CODE,
@@ -93,6 +97,7 @@ import {
   writeFileAtomic,
 } from "../../../src/sdk/index.js";
 import { _testOnlyCliContracts } from "../../../src/sdk/cli-contracts.js";
+import { memoizeWorkspaceExtensionRegistrations } from "../../../src/sdk/workspace-contracts-cache.js";
 import {
   assertExtensionBlueprint,
   assertExtensionCapabilityUsage,
@@ -891,6 +896,72 @@ describe("public sdk entrypoint", () => {
     expect(typeof locateItem).toBe("function");
     expect(typeof readSettings).toBe("function");
     expect(typeof resolvePmRoot).toBe("function");
+    expect("_testOnlyActionRunner" in sdkBarrel).toBe(false);
+    expect("_testOnlyCliContracts" in sdkBarrel).toBe(false);
+  });
+
+  it("keeps test-only action runner internals out of the public runtime module", async () => {
+    const runtimeModule = await import("../../../src/sdk/runtime.js");
+    expect("_testOnlyActionRunner" in runtimeModule).toBe(false);
+  });
+
+  it("does not register runtime test hooks when the built runtime is imported in production", () => {
+    const childEnv = { ...process.env, NODE_ENV: "production" };
+    delete childEnv.VITEST;
+    delete childEnv.VITEST_WORKER_ID;
+    const runtimeDistPath = path.resolve(process.cwd(), "dist/sdk/runtime.js");
+    expect(existsSync(runtimeDistPath), `Expected built SDK runtime at ${runtimeDistPath}. Run pnpm build first.`).toBe(true);
+    const runtimeDistUrl = pathToFileURL(runtimeDistPath).href;
+
+    const output = execFileSync(
+      process.execPath,
+      [
+        "--input-type=module",
+        "--eval",
+        `import ${JSON.stringify(runtimeDistUrl)}; console.log(globalThis.__pmCliActionRunnerTestHooks === undefined ? 'absent' : 'present');`,
+      ],
+      { cwd: process.cwd(), env: childEnv, encoding: "utf8" },
+    );
+
+    expect(output.trim()).toBe("absent");
+  });
+
+  it("does not register runtime test hooks when the source runtime is imported outside tests", async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    const originalVitest = process.env.VITEST;
+    const originalVitestWorkerId = process.env.VITEST_WORKER_ID;
+    const originalHooks = globalThis.__pmCliActionRunnerTestHooks;
+    process.env.NODE_ENV = "production";
+    delete process.env.VITEST;
+    delete process.env.VITEST_WORKER_ID;
+    delete globalThis.__pmCliActionRunnerTestHooks;
+
+    try {
+      // This cache-busted source import only proves the hook guard; the child-process built-runtime test above proves isolation.
+      await import("../../../src/sdk/runtime.js?production-hook-guard");
+      expect(globalThis.__pmCliActionRunnerTestHooks).toBeUndefined();
+    } finally {
+      if (originalNodeEnv === undefined) {
+        delete process.env.NODE_ENV;
+      } else {
+        process.env.NODE_ENV = originalNodeEnv;
+      }
+      if (originalVitest === undefined) {
+        delete process.env.VITEST;
+      } else {
+        process.env.VITEST = originalVitest;
+      }
+      if (originalVitestWorkerId === undefined) {
+        delete process.env.VITEST_WORKER_ID;
+      } else {
+        process.env.VITEST_WORKER_ID = originalVitestWorkerId;
+      }
+      if (originalHooks === undefined) {
+        delete globalThis.__pmCliActionRunnerTestHooks;
+      } else {
+        globalThis.__pmCliActionRunnerTestHooks = originalHooks;
+      }
+    }
   });
 
   it("locates default-prefixed items from the sdk barrel without explicit idPrefix", async () => {
@@ -955,6 +1026,28 @@ describe("public sdk entrypoint", () => {
       expect(created.item?.title).toBe("SDK client item");
       expect(created.changed_field_count).toBeGreaterThan(0);
 
+      const fullDiffCreated = (await client.create({
+        title: "SDK client full diff item",
+        type: "Task",
+        status: "open",
+        createMode: "progressive",
+        fullChangedFields: true,
+      })) as { item?: { id?: string; title?: string }; changed_fields?: unknown[]; changed_field_count?: number };
+      expect(fullDiffCreated.item?.title).toBe("SDK client full diff item");
+      expect(fullDiffCreated.changed_fields).toEqual(expect.arrayContaining(["title", "status"]));
+      expect(fullDiffCreated.changed_field_count).toBeUndefined();
+
+      const idOnlyCreated = (await client.create({
+        title: "SDK client id-only item",
+        type: "Task",
+        status: "open",
+        createMode: "progressive",
+        idOnly: true,
+      })) as { id?: string; item?: unknown; changed_field_count?: number };
+      expect(idOnlyCreated.id).toMatch(/^pm-/);
+      expect(idOnlyCreated.item).toBeUndefined();
+      expect(idOnlyCreated.changed_field_count).toBeUndefined();
+
       const listed = (await client.list({ status: "open", limit: "10" })) as {
         items?: Array<{ id?: string; title?: string }>;
         query?: { filters?: Record<string, unknown> };
@@ -978,6 +1071,48 @@ describe("public sdk entrypoint", () => {
       })) as { items?: Array<{ id?: string; status?: string }> };
       expect(directListed.items?.some((item) => item.id === itemId && item.status === "open")).toBe(true);
 
+      const aliasListed = (await runAction({
+        action: "list-open",
+        path: pmPath,
+        cwd: path.dirname(pmPath),
+        noExtensions: true,
+        options: { limit: "10" },
+      })) as { items?: Array<{ id?: string; status?: string }>; query?: { filters?: Record<string, unknown> } };
+      expect(aliasListed.items?.some((item) => item.id === itemId && item.status === "open")).toBe(true);
+
+      const aliasContext = (await runAction({
+        action: "ctx",
+        path: pmPath,
+        cwd: path.dirname(pmPath),
+        noExtensions: true,
+        options: { limit: "5" },
+      })) as { summary?: { active_items?: number } };
+      expect(typeof aliasContext.summary?.active_items).toBe("number");
+
+      const started = (await runAction({
+        action: "start_task",
+        id: itemId,
+        path: pmPath,
+        cwd: path.dirname(pmPath),
+        noExtensions: true,
+        author: "sdk-client-test",
+        options: { message: "SDK lifecycle start" },
+      })) as { action?: string; update?: { item?: { id?: string; status?: string } } };
+      expect(started.action).toBe("start_task");
+      expect(started.update?.item).toMatchObject({ id: itemId, status: "in_progress" });
+
+      const paused = (await runAction({
+        action: "pause-task",
+        id: itemId,
+        path: pmPath,
+        cwd: path.dirname(pmPath),
+        noExtensions: true,
+        author: "sdk-client-test",
+        options: { message: "SDK lifecycle pause" },
+      })) as { action?: string; update?: { item?: { id?: string; status?: string } } };
+      expect(paused.action).toBe("pause_task");
+      expect(paused.update?.item).toMatchObject({ id: itemId, status: "open" });
+
       const fetched = (await client.get(itemId, { full: true })) as { item?: { id?: string; status?: string } };
       expect(fetched.item).toMatchObject({ id: itemId, status: "open" });
 
@@ -988,10 +1123,40 @@ describe("public sdk entrypoint", () => {
       expect(updated.item).toMatchObject({ id: itemId, status: "in_progress" });
       expect(updated.changed_field_count).toBeGreaterThan(0);
 
+      const restored = (await runAction({
+        action: "restore",
+        id: itemId,
+        path: pmPath,
+        cwd: path.dirname(pmPath),
+        noExtensions: true,
+        author: "sdk-client-test",
+        options: { target: "1", message: "SDK restore to created version" },
+      })) as { item?: { id?: string; status?: string }; restored_from?: { target?: string } };
+      expect(restored.item).toMatchObject({ id: itemId, status: "open" });
+      expect(restored.restored_from?.target).toBe("1");
+
       const closed = (await client.close(itemId, "SDK client done", { validateClose: "warn" })) as {
         item?: { id?: string; status?: string; close_reason?: string };
       };
       expect(closed.item).toMatchObject({ id: itemId, status: "closed", close_reason: "SDK client done" });
+
+      const aliasClosedListed = (await runAction({
+        action: "list-closed",
+        path: pmPath,
+        cwd: path.dirname(pmPath),
+        noExtensions: true,
+        options: { limit: "10" },
+      })) as { items?: Array<{ id?: string; status?: string }> };
+      expect(aliasClosedListed.items?.some((item) => item.id === itemId && item.status === "closed")).toBe(true);
+
+      const overriddenAliasListed = (await runAction({
+        action: "list-open",
+        path: pmPath,
+        cwd: path.dirname(pmPath),
+        noExtensions: true,
+        options: { status: "closed", excludeTerminal: false, limit: "10" },
+      })) as { items?: Array<{ id?: string; status?: string }> };
+      expect(overriddenAliasListed.items?.some((item) => item.id === itemId && item.status === "closed")).toBe(true);
 
       const context = (await runAction({
         action: "context",
@@ -1000,6 +1165,91 @@ describe("public sdk entrypoint", () => {
         options: { limit: "5" },
       })) as { summary?: { active_items?: number } };
       expect(typeof context.summary?.active_items).toBe("number");
+
+      const packageCatalog = (await runAction({
+        action: "package-catalog",
+        path: pmPath,
+        cwd: path.dirname(pmPath),
+        noExtensions: true,
+        options: { fields: "alias" },
+      })) as { ok?: boolean; action?: string };
+      expect(packageCatalog).toMatchObject({ ok: true, action: "catalog" });
+    });
+  });
+
+  it("accepts close-task close text through the SDK action top-level reason", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const client = new PmClient({
+        pmRoot: pmPath,
+        cwd: path.dirname(pmPath),
+        author: "sdk-client-test",
+        noExtensions: true,
+      });
+      const created = (await client.create({
+        title: "SDK close-task item",
+        type: "Task",
+        status: "open",
+        createMode: "progressive",
+      })) as { item?: { id?: string } };
+      const itemId = created.item?.id;
+      if (itemId === undefined) {
+        throw new Error("Expected SDK close-task fixture to return an item id.");
+      }
+
+      const closed = (await runAction({
+        action: "close-task",
+        id: itemId,
+        reason: "SDK lifecycle close",
+        path: pmPath,
+        cwd: path.dirname(pmPath),
+        noExtensions: true,
+        author: "sdk-client-test",
+        options: { validateClose: "warn" },
+      })) as { action?: string; close?: { item?: { id?: string; status?: string; close_reason?: string } } };
+
+      expect(closed.action).toBe("close_task");
+      expect(closed.close?.item).toMatchObject({
+        id: itemId,
+        status: "closed",
+        close_reason: "SDK lifecycle close",
+      });
+    });
+  });
+
+  it("accepts close-task fallback close text through SDK action options", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const client = new PmClient({
+        pmRoot: pmPath,
+        cwd: path.dirname(pmPath),
+        author: "sdk-client-test",
+        noExtensions: true,
+      });
+      const created = (await client.create({
+        title: "SDK close-task options item",
+        type: "Task",
+        status: "open",
+        createMode: "progressive",
+      })) as { item?: { id?: string } };
+      const itemId = created.item?.id;
+      if (itemId === undefined) {
+        throw new Error("Expected SDK close-task options fixture to return an item id.");
+      }
+
+      const closed = (await runAction({
+        action: "close-task",
+        id: itemId,
+        path: pmPath,
+        cwd: path.dirname(pmPath),
+        noExtensions: true,
+        author: "sdk-client-test",
+        options: { text: "SDK lifecycle close from options", validateClose: "warn" },
+      })) as { close?: { item?: { id?: string; status?: string; close_reason?: string } } };
+
+      expect(closed.close?.item).toMatchObject({
+        id: itemId,
+        status: "closed",
+        close_reason: "SDK lifecycle close from options",
+      });
     });
   });
 
@@ -1510,6 +1760,31 @@ describe("public sdk entrypoint", () => {
       const refreshedContracts = await getWorkspaceContracts(pmPath);
       expect(refreshedContracts.types).toEqual(expect.arrayContaining(["ExperimentRun", "CachedUntilClear"]));
 
+      await writeTestExtension({
+        root: pmPath,
+        placement: "projectRoot",
+        directory: "workspace-contract-read-cache-ext",
+        manifest: {
+          name: "workspace-contract-read-cache-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["schema"],
+        },
+        entryFilename: "index.mjs",
+        entrySource: [
+          "export function activate(api) {",
+          "  api.registerItemTypes([{ name: 'ReadShouldNotClear', folder: 'read-should-not-clear' }]);",
+          "}",
+          "",
+        ].join("\n"),
+      });
+      await runAction({ action: "list", path: pmPath, cwd: path.dirname(pmPath) });
+      const readPreservedCachedContracts = await getWorkspaceContracts(pmPath);
+      expect(readPreservedCachedContracts.types).not.toContain("ReadShouldNotClear");
+      clearWorkspaceContractsCache();
+      const readInvalidatedContracts = await getWorkspaceContracts(pmPath);
+      expect(readInvalidatedContracts.types).toContain("ReadShouldNotClear");
+
       const runtimeContracts = await getContracts(pmPath, {
         runtimeOnly: true,
       });
@@ -1626,6 +1901,77 @@ describe("public sdk entrypoint", () => {
       expect(disabledContracts.types).not.toContain("ToggleVisible");
       clearWorkspaceContractsCache();
     });
+  });
+
+  it("keeps workspace contract registrations when extension deactivation fails", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      clearWorkspaceContractsCache();
+      const lifecycleLogPath = path.join(pmPath, "workspace-contract-deactivate-failure.log");
+      await writeTestExtension({
+        root: pmPath,
+        placement: "projectRoot",
+        directory: "workspace-contract-deactivate-failure-ext",
+        manifest: {
+          name: "workspace-contract-deactivate-failure-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["schema"],
+        },
+        entryFilename: "index.mjs",
+        entrySource: [
+          "import { appendFileSync } from 'node:fs';",
+          "export function activate(api) {",
+          `  appendFileSync(${JSON.stringify(lifecycleLogPath)}, 'activate\\n', 'utf8');`,
+          "  api.registerItemTypes([{ name: 'DeactivateFailureVisible', folder: 'deactivate-failure-visible' }]);",
+          "}",
+          "export function deactivate() {",
+          `  appendFileSync(${JSON.stringify(lifecycleLogPath)}, 'deactivate\\n', 'utf8');`,
+          "  throw new Error('deactivate failed');",
+          "}",
+          "",
+        ].join("\n"),
+      });
+
+      const contracts = await getWorkspaceContracts(pmPath);
+      expect(contracts.types).toContain("DeactivateFailureVisible");
+      expect(await readFileIfExists(lifecycleLogPath)).toBe("activate\ndeactivate\n");
+
+      const cachedContracts = await getWorkspaceContracts(pmPath);
+      expect(cachedContracts.types).toContain("DeactivateFailureVisible");
+      expect(await readFileIfExists(lifecycleLogPath)).toBe("activate\ndeactivate\n");
+      clearWorkspaceContractsCache();
+    });
+  });
+
+  it("evicts rejected workspace contracts cache entries so transient activation failures can recover", async () => {
+    const cacheKey = "test:transient-workspace-contracts-failure";
+
+    clearWorkspaceContractsCache();
+    await expect(
+      memoizeWorkspaceExtensionRegistrations(cacheKey, () => Promise.reject(new Error("transient workspace contracts failure"))),
+    ).rejects.toThrow("transient workspace contracts failure");
+    await expect(memoizeWorkspaceExtensionRegistrations(cacheKey, () => Promise.resolve(null))).resolves.toBeNull();
+    clearWorkspaceContractsCache();
+
+    let rejectStale: ((error: Error) => void) | null = null;
+    const stalePromise = memoizeWorkspaceExtensionRegistrations(
+      cacheKey,
+      () =>
+        new Promise<null>((_resolve, reject) => {
+          rejectStale = reject;
+        }),
+    );
+    clearWorkspaceContractsCache();
+    await expect(memoizeWorkspaceExtensionRegistrations(cacheKey, () => Promise.resolve(null))).resolves.toBeNull();
+    if (rejectStale === null) {
+      throw new Error("Expected stale workspace contracts reject handler to be initialized.");
+    }
+    rejectStale(new Error("stale workspace contracts failure"));
+    await expect(stalePromise).rejects.toThrow("stale workspace contracts failure");
+    await expect(
+      memoizeWorkspaceExtensionRegistrations(cacheKey, () => Promise.reject(new Error("cache entry should have been preserved"))),
+    ).resolves.toBeNull();
+    clearWorkspaceContractsCache();
   });
 });
 

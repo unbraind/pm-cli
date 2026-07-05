@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { PM_TOOL_ACTION_PARAMETER_CONTRACTS, isPmToolAction } from "@unbrained/pm-cli/sdk";
 
 function parsePmJson(stdout, commandLabel) {
-  const trimmed = stdout.trim();
+  const trimmed = (stdout ?? "").trim();
   if (trimmed.length === 0) {
     return {};
   }
@@ -21,12 +21,14 @@ function runPm(args) {
       NO_COLOR: "1",
     },
   });
+  if (completed.error) {
+    throw new Error(`Failed to run pm ${args.join(" ")}: ${completed.error.message}`, { cause: completed.error });
+  }
   if (completed.status !== 0) {
     const stderr = (completed.stderr ?? "").trim();
     throw new Error(stderr.length > 0 ? stderr : `pm ${args.join(" ")} failed with exit code ${completed.status}`);
   }
-  const stdout = (completed.stdout ?? "").trim();
-  return parsePmJson(stdout, `pm ${args.join(" ")}`);
+  return parsePmJson(completed.stdout, `pm ${args.join(" ")}`);
 }
 
 function resolveCommandForAction(action) {
