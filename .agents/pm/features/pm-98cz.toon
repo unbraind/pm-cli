@@ -1,0 +1,19 @@
+id: pm-98cz
+title: "Promote item lifecycle primitives to the public SDK: create, update, close, claim/release, copy, delete, restore, focus"
+description: "Typed, documented SDK functions for the full item mutation lifecycle incl. bulk variants (update-many/close-many), checkpoint/rollback semantics, and governance enforcement — the same code paths the CLI runs. Duplicate check: SDK today only exposes extension-authoring helpers; no lifecycle-primitive item exists."
+type: Feature
+status: open
+priority: 1
+tags[3]: architecture,"area:lifecycle","area:sdk"
+created_at: "2026-07-05T04:54:09.136Z"
+updated_at: "2026-07-05T04:55:03.935Z"
+author: maintainer-agent
+estimated_minutes: 480
+acceptance_criteria: SDK exports typed lifecycle primitives with input/result contracts matching CLI behavior (incl. never-block error payloads); corresponding CLI handlers consume only these primitives; docstrings + linked tests + SDK reference docs; zero CLI behavior change (mutation specs green)
+parent: pm-usfg
+risk: medium
+confidence: medium
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-lodl,blocked_by,"2026-07-05T04:55:03.390Z",null,null
+  pm-muhw,blocked_by,"2026-07-05T04:55:03.911Z",null,null
+body: ""

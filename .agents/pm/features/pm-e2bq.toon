@@ -1,0 +1,19 @@
+id: pm-e2bq
+title: "Tiered contracts-driven help: one-screen core help, full surface via pm help --all, generated from the contract table"
+description: "Default pm --help shows only the ~15 canonical nouns; pm help --all (and --explain) reveals the full surface incl. deprecated aliases; both views plus completions and docs command tables are generated from sdk/cli-contracts so help can never drift from contracts. Duplicate check: pm-5k2w (closed) trimmed help alias bloat once; no generated-tiered-help item exists."
+type: Feature
+status: open
+priority: 1
+tags[4]: agent-ux,"area:cli","area:contracts",simplification
+created_at: "2026-07-05T04:53:35.309Z"
+updated_at: "2026-07-05T04:55:02.878Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: pm --help renders one screen listing canonical nouns only; pm help --all lists everything incl. aliases marked deprecated; help/completions/docs command tables generated from the contract table with a drift gate; after-measurement (pm-a22j script) shows reduced default help + contracts token cost
+parent: pm-n7rr
+risk: medium
+confidence: medium
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-pbyu,blocked_by,"2026-07-05T04:55:02.379Z",null,null
+  pm-a22j,blocked_by,"2026-07-05T04:55:02.856Z",null,null
+body: ""

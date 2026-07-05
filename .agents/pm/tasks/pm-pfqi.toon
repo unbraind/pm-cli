@@ -1,0 +1,18 @@
+id: pm-pfqi
+title: Consolidate the 8 list-* status variants into pm list --status (list-all/open/draft/in-progress/blocked/closed/canceled become hidden aliases)
+description: "list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled collapse to pm list with --status (multi-value) and --all; the 7 variant spellings become alias-table entries. Duplicate check: pm-gdi7 touches list-closed projection verbosity only; no consolidation item exists."
+type: Task
+status: open
+priority: 1
+tags[3]: agent-ux,"area:cli",simplification
+created_at: "2026-07-05T04:53:04.736Z"
+updated_at: "2026-07-05T04:54:59.752Z"
+author: maintainer-agent
+estimated_minutes: 180
+acceptance_criteria: pm list --status <s...> and --all cover every variant behavior incl. per-variant defaults; all 8 old spellings still work via alias shim with identical output; help shows only pm list; contracts/MCP/completions/docs regenerated; existing list-* tests pass unchanged against aliases
+parent: pm-n7rr
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-0z7n,blocked_by,"2026-07-05T04:54:59.730Z",null,null
+body: ""

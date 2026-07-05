@@ -1,0 +1,19 @@
+id: pm-je50
+title: "Promote plan workflow primitives to the public SDK: plan create/steps/dependencies/decisions/discoveries/validation/materialization"
+description: "pm plan implements durable agent planning workflows (Codex/Claude/Cursor-style: steps with status transitions, dependencies, decisions, discoveries, validation results, materialization into tracked items) but its orchestration lives CLI-side and is not covered by any existing promotion item. SDK-first plus the universal-tool story (pm-w89s) require plan primitives to be public typed API so agent harnesses, MCP pm_plan, and custom tools consume the same engine. Duplicate check: pm-v7dj (closed original plan feature), pm-z5nb (open Plan item about the schema epic, unrelated); no open SDK-promotion overlap."
+type: Feature
+status: open
+priority: 2
+tags[3]: architecture,"area:plan","area:sdk"
+created_at: "2026-07-05T05:09:13.638Z"
+updated_at: "2026-07-05T05:09:13.638Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: "SDK exports typed plan primitives covering the full pm plan surface (create with stepTitle, step lifecycle, dependencies, decisions, discoveries, validation, materialize) with identical governance and history semantics; CLI and MCP plan surfaces consume only these primitives; docstrings + linked tests + SDK reference docs; zero behavior change (plan specs green)."
+parent: pm-usfg
+risk: medium
+confidence: medium
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-lodl,blocked_by,"2026-07-05T05:09:13.638Z",null,null
+  pm-muhw,blocked_by,"2026-07-05T05:09:13.638Z",null,null
+body: ""

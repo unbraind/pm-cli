@@ -1,0 +1,18 @@
+id: pm-o3fh
+title: Move meet/event/remind calendar shortcuts from core surface into the builtin-calendar package as create sugar
+description: "The three calendar shortcut commands become builtin-calendar package-owned commands (or pm create --template sugar), removing 3 top-level core entries while keeping every flag; core keeps alias shims while the deprecation cycle runs. Duplicate check: PR#263 shipped the shortcuts; pm-ixoa is a calendar service collision, different concern."
+type: Task
+status: open
+priority: 2
+tags[5]: agent-ux,"area:cli","area:extensions",calendar,simplification
+created_at: "2026-07-05T04:53:33.905Z"
+updated_at: "2026-07-05T04:55:01.479Z"
+author: maintainer-agent
+estimated_minutes: 180
+acceptance_criteria: meet/event/remind live in builtin-calendar (package-owned commands) with full flag parity incl. scheduling presets and relative-time parsing; core alias shims keep old spellings working; uninstalling the package surfaces the owning-package hint (pm-b3e9 pattern); calendar shortcut specs pass via aliases
+parent: pm-n7rr
+risk: medium
+confidence: medium
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-0z7n,blocked_by,"2026-07-05T04:55:01.457Z",null,null
+body: ""

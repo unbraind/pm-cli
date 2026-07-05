@@ -1,0 +1,18 @@
+id: pm-6apl
+title: "Group diagnostics/maintenance under pm ops: stats, health, validate, gc, telemetry, eval"
+description: "Diagnostics and maintenance commands become pm ops <verb> under ADR pm-pbyu: stats, health, validate, gc, telemetry, and eval. Each old spelling is alias-shimmed. Keeps validate/health output contracts byte-identical for CI consumers. Duplicate check: no existing ops/diagnostics-namespace item."
+type: Task
+status: open
+priority: 2
+tags[4]: agent-ux,"area:cli","area:observability",simplification
+created_at: "2026-07-05T04:53:34.685Z"
+updated_at: "2026-07-05T06:30:15.291Z"
+author: maintainer-agent
+estimated_minutes: 180
+acceptance_criteria: pm ops stats/health/validate/gc/telemetry/eval subcommands with flag parity after ADR pm-pbyu acceptance; old spellings alias-shimmed with byte-identical output (CI scripts unaffected); contracts/MCP/completions/docs regenerated; existing specs pass via aliases
+parent: pm-n7rr
+risk: low
+confidence: medium
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-0z7n,blocked_by,"2026-07-05T04:55:01.920Z",null,null
+body: ""

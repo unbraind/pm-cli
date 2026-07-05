@@ -1,0 +1,19 @@
+id: pm-oxrw
+title: "Promote governance, validation, health, and maintenance primitives to the public SDK: validate, health, gc, changelog/reporting hooks"
+description: "Typed SDK access to the governance engine (metadata profiles, resolution checks, lifecycle rules, file-link validation, history-drift), health checks, and gc/maintenance so integrators can enforce the same quality bars programmatically. Duplicate check: no existing governance-primitive SDK item."
+type: Feature
+status: open
+priority: 2
+tags[3]: architecture,"area:governance","area:sdk"
+created_at: "2026-07-05T04:54:11.132Z"
+updated_at: "2026-07-05T04:55:06.842Z"
+author: maintainer-agent
+estimated_minutes: 360
+acceptance_criteria: SDK exports typed validate/health/gc primitives returning the same structured check results the CLI prints; ops commands consume only these primitives; docstrings + linked tests + SDK reference docs; zero behavior change
+parent: pm-usfg
+risk: low
+confidence: medium
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-lodl,blocked_by,"2026-07-05T04:55:06.347Z",null,null
+  pm-muhw,blocked_by,"2026-07-05T04:55:06.819Z",null,null
+body: ""

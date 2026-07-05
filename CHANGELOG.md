@@ -2,8 +2,14 @@
 
 ## Unreleased
 
+### Added
+
+- Architecture boundary ratchet: prevent new CLI/MCP private core imports while SDK promotion shrinks the baseline ([pm-8778](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-8778.toon))
+- Lock contention auto-retry: bounded jittered wait before lock_conflict so parallel agent mutations self-heal ([pm-2muu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-2muu.toon))
+
 ### Fixed
 
+- pm claim silently steals items already assigned to another agent — claim must be atomic test-and-set for multi-agent work distribution ([pm-8t5x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8t5x.toon))
 - Extension activation adds ~200ms to every command when bundled packages are installed ([pm-4oww](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4oww.toon))
 - pm close <id\> -m 'text' still hard-blocks with close_reason_required: accept --message text as close-reason fallback (like closed pm-7x8d did for --resolution) ([pm-9hry](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9hry.toon))
 - Extension installs are dead-on-arrival in CommonJS host projects: installed extension dirs lack package.json type:module ([pm-r0m4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r0m4.toon))
@@ -11,6 +17,7 @@
 
 ### Other
 
+- Inventory the CLI-to-core call graph: map every command to core modules and classify logic for SDK promotion ([pm-lodl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lodl.toon))
 - Sandbox audit fixes: package describe accepts npm package name; pm context <id\> routes to pm get ([pm-ayn7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ayn7.toon))
 - 2026-07-04 ecosystem audit \#4: coverage matrix, governance capability epic & relationship modeling ([pm-osea](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-osea.toon))
 - Backfill full-context bodies (and comments/deps/risk) on all active items so context is rebuildable from pm CLI alone ([pm-o043](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-o043.toon))

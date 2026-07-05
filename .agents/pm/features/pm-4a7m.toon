@@ -1,0 +1,19 @@
+id: pm-4a7m
+title: "Promote history-stream maintenance primitives to the public SDK: history-redact, history-repair, history-compact (audited rewrite, re-anchor, checkpoint/prune)"
+description: "The existing promotion set (pm-98cz lifecycle, pm-rjqr reads, pm-zwpp facets, pm-oxrw governance, pm-3mna workspace config) leaves the history MUTATION family uncovered: history-redact (audited redaction), history-repair (chain re-anchor after drift), history-compact (checkpoint/prune preserving replay integrity), all built on the shared history-rewrite orchestration (dedup'd in closed pm-bzgt). SDK-first requires these as public typed primitives so the consolidated pm history subcommands (pm-tqel) become thin shims and integrators can run stream maintenance programmatically. Duplicate check: pm-tqel is the CLI-grammar counterpart; pm-xk39/pm-bzgt closed history; no open SDK-promotion overlap."
+type: Feature
+status: open
+priority: 2
+tags[3]: architecture,"area:history","area:sdk"
+created_at: "2026-07-05T05:09:03.180Z"
+updated_at: "2026-07-05T05:09:03.180Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: "SDK exports typed redact/repair/compact primitives preserving audited-rewrite guarantees (hash chain continuity, replay integrity, checkpoint markers, redaction audit trail) and returning the same structured results the CLI prints; CLI history maintenance commands consume only these primitives; docstrings + linked tests + SDK reference docs; zero behavior change (history rewrite/compact/redact specs green)."
+parent: pm-usfg
+risk: medium
+confidence: medium
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-lodl,blocked_by,"2026-07-05T05:09:03.180Z",null,null
+  pm-muhw,blocked_by,"2026-07-05T05:09:03.180Z",null,null
+body: ""

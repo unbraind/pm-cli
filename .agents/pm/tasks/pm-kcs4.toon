@@ -1,0 +1,18 @@
+id: pm-kcs4
+title: "Consolidate the navigation trio under the context noun: next and focus become context verbs (context/next/focus = one noun)"
+description: "The pm-n7rr target surface names 'context (next/focus)' as one noun. Today next and focus are separate top-level commands. Fold them as verbs of context (pm context next, pm context focus) while keeping pm next and pm focus working forever as hidden aliases — these are the highest-frequency agent commands, so migration hints must respect the ux.deprecation_hints suppression config from pm-0z7n. pm next actionability semantics (core/item/actionability.ts, PR#357) and pm focus session context (runtime/session.json, PR#257) are unchanged — grammar only. Duplicate check: pm-72xf (closed focus inheritance feature); no open overlap."
+type: Task
+status: open
+priority: 2
+tags[3]: agent-ux,"area:cli",simplification
+created_at: "2026-07-05T05:08:52.089Z"
+updated_at: "2026-07-05T05:08:52.089Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: "context noun exposes next and focus verbs with payloads identical to the standalone commands; pm next / pm focus keep working as aliases with suppressible hints; spelling-parity spec green; contracts, completions, docs, and MCP names regenerated; top-level help shows a single navigation noun."
+parent: pm-n7rr
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-0z7n,blocked_by,"2026-07-05T05:08:52.089Z",null,null
+body: ""

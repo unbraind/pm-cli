@@ -150,11 +150,12 @@ export function checkDuplicateChunks(files, duplicateWindowLines, maxDuplicateCh
 }
 
 export function resolveRelativeImport(fromAbsolute, specifier) {
-  if (!specifier.startsWith(".")) {
+  if (!specifier.startsWith(".") && !specifier.startsWith("src/")) {
     return null;
   }
-  const fromDirectory = path.dirname(fromAbsolute);
-  const candidateBase = path.resolve(fromDirectory, specifier);
+  const candidateBase = specifier.startsWith("src/")
+    ? path.resolve(repoRoot, specifier)
+    : path.resolve(path.dirname(fromAbsolute), specifier);
   const candidateWithoutJs = candidateBase.replace(/\.m?js$/u, "");
   const candidates = [
     candidateBase,
@@ -624,6 +625,241 @@ export function checkOrphanSourceModules(files) {
   return violations.sort((left, right) => left.path.localeCompare(right.path));
 }
 
+export const SDK_IMPORT_BOUNDARY_BASELINE = "scripts/release/sdk-import-boundary-baseline.json";
+
+function isSdkBoundarySource(relativePath) {
+  return (
+    relativePath === "src/cli.ts" ||
+    relativePath.startsWith("src/cli/") ||
+    relativePath === "src/mcp.ts" ||
+    relativePath.startsWith("src/mcp/")
+  );
+}
+
+export function collectSdkBoundarySourceFiles(files) {
+  return files.filter((absolutePath) => isSdkBoundarySource(relativeToRepo(absolutePath)));
+}
+
+function moduleSpecifierText(node) {
+  return ts.isStringLiteralLike(node) ? node.text : null;
+}
+
+function isRequireCallExpression(node) {
+  return ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === "require";
+}
+
+function importModuleSpecifier(node) {
+  if (
+    (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+    node.moduleSpecifier
+  ) {
+    return moduleSpecifierText(node.moduleSpecifier);
+  }
+  if (
+    ts.isImportEqualsDeclaration(node) &&
+    ts.isExternalModuleReference(node.moduleReference) &&
+    node.moduleReference.expression
+  ) {
+    return moduleSpecifierText(node.moduleReference.expression);
+  }
+  if (
+    isRequireCallExpression(node) &&
+    node.arguments.length === 1
+  ) {
+    return moduleSpecifierText(node.arguments[0]);
+  }
+  if (
+    ts.isCallExpression(node) &&
+    node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+    (node.arguments.length === 1 || node.arguments.length === 2)
+  ) {
+    return moduleSpecifierText(node.arguments[0]);
+  }
+  return null;
+}
+
+function isDynamicImportExpression(node) {
+  return ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword;
+}
+
+export function collectUnsupportedDynamicImportExpressions(files) {
+  return collectUnsupportedDynamicImportExpressionsFromBoundaryFiles(collectSdkBoundarySourceFiles(files));
+}
+
+function collectUnsupportedDynamicImportExpressionsFromBoundaryFiles(boundarySourceFiles) {
+  const violations = [];
+  for (const absolutePath of boundarySourceFiles) {
+    if (!existsSync(absolutePath)) {
+      continue;
+    }
+    const relativeSource = relativeToRepo(absolutePath);
+    const sourceText = loadText(absolutePath);
+    const sourceFile = ts.createSourceFile(absolutePath, sourceText, ts.ScriptTarget.Latest, true);
+    const visit = (node) => {
+      if (isDynamicImportExpression(node)) {
+        if (node.arguments.length < 1 || node.arguments.length > 2 || moduleSpecifierText(node.arguments[0]) === null) {
+          const start = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+          violations.push({
+            source: relativeSource,
+            line: start.line + 1,
+            reason: "computed_dynamic_import",
+          });
+        }
+      }
+      if (
+        isRequireCallExpression(node) &&
+        (node.arguments.length !== 1 || moduleSpecifierText(node.arguments[0]) === null)
+      ) {
+        const start = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+        violations.push({
+          source: relativeSource,
+          line: start.line + 1,
+          reason: "computed_require",
+        });
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(sourceFile);
+  }
+  return violations.sort((left, right) => left.source.localeCompare(right.source) || left.line - right.line);
+}
+
+export function collectPrivateCoreImportEdges(files) {
+  return collectPrivateCoreImportEdgesFromBoundaryFiles(collectSdkBoundarySourceFiles(files));
+}
+
+function collectPrivateCoreImportEdgesFromBoundaryFiles(boundarySourceFiles) {
+  const edges = [];
+  const seen = new Set();
+  for (const absolutePath of boundarySourceFiles) {
+    if (!existsSync(absolutePath)) {
+      continue;
+    }
+    const relativeSource = relativeToRepo(absolutePath);
+    const sourceFile = ts.createSourceFile(absolutePath, loadText(absolutePath), ts.ScriptTarget.Latest, true);
+    const visit = (node) => {
+      const specifier = importModuleSpecifier(node);
+      if (specifier === null) {
+        ts.forEachChild(node, visit);
+        return;
+      }
+      const resolved = resolveRelativeImport(absolutePath, specifier);
+      if (!resolved) {
+        ts.forEachChild(node, visit);
+        return;
+      }
+      const relativeImport = relativeToRepo(resolved);
+      if (relativeImport.startsWith("src/core/")) {
+        const edge = { source: relativeSource, import_path: relativeImport };
+        const key = importEdgeKey(edge);
+        if (!seen.has(key)) {
+          seen.add(key);
+          edges.push(edge);
+        }
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(sourceFile);
+  }
+  return edges.sort(
+    (left, right) => left.source.localeCompare(right.source) || left.import_path.localeCompare(right.import_path),
+  );
+}
+
+function baselineImportEdgesFromEntries(entries, baselinePath) {
+  if (!Array.isArray(entries)) {
+    throw new Error(`Invalid SDK import-boundary baseline ${baselinePath}: allowed_private_core_imports must be an array.`);
+  }
+  const edges = [];
+  for (const entry of entries) {
+    if (!isRecord(entry) || typeof entry.source !== "string" || !Array.isArray(entry.imports)) {
+      throw new Error(
+        `Invalid SDK import-boundary baseline ${baselinePath}: entries must include source and imports fields.`,
+      );
+    }
+    if (!isSdkBoundarySource(entry.source)) {
+      throw new Error(
+        `Invalid SDK import-boundary baseline ${baselinePath}: source "${entry.source}" is not an SDK boundary source.`,
+      );
+    }
+    for (const importPath of entry.imports) {
+      if (typeof importPath !== "string") {
+        throw new Error(`Invalid SDK import-boundary baseline ${baselinePath}: imports must be strings.`);
+      }
+      if (!importPath.startsWith("src/core/")) {
+        throw new Error(
+          `Invalid SDK import-boundary baseline ${baselinePath}: import "${importPath}" is not a private core import.`,
+        );
+      }
+      edges.push({ source: entry.source, import_path: importPath });
+    }
+  }
+  return edges;
+}
+
+function readSdkImportBoundaryBaseline(baselinePath) {
+  const parsed = JSON.parse(readFileSync(baselinePath, "utf8"));
+  if (!isRecord(parsed)) {
+    throw new Error(`Invalid SDK import-boundary baseline ${baselinePath}: expected an object.`);
+  }
+  if (parsed.version !== 1) {
+    throw new Error(`Invalid SDK import-boundary baseline ${baselinePath}: version must be 1.`);
+  }
+  return baselineImportEdgesFromEntries(parsed.allowed_private_core_imports, baselinePath);
+}
+
+function importEdgeKey(edge) {
+  return `${edge.source}\u0000${edge.import_path}`;
+}
+
+export function checkSdkImportBoundary(
+  files = collectTypeScriptFiles(),
+  baselinePath = path.join(repoRoot, SDK_IMPORT_BOUNDARY_BASELINE),
+) {
+  const boundarySourceFiles = collectSdkBoundarySourceFiles(files);
+  const actualEdges = collectPrivateCoreImportEdgesFromBoundaryFiles(boundarySourceFiles);
+  const unsupportedDynamicImports = collectUnsupportedDynamicImportExpressionsFromBoundaryFiles(boundarySourceFiles);
+  let baselineEdges;
+  try {
+    baselineEdges = readSdkImportBoundaryBaseline(baselinePath);
+  } catch (error) {
+    return {
+      ok: false,
+      scanned_file_count: boundarySourceFiles.length,
+      actual_edge_count: actualEdges.length,
+      baseline_edge_count: null,
+      new_private_core_imports: [],
+      stale_baseline_imports: [],
+      unsupported_dynamic_imports: unsupportedDynamicImports,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+
+  const actualKeys = new Set(actualEdges.map(importEdgeKey));
+  const baselineKeys = new Set(baselineEdges.map(importEdgeKey));
+  const scannedBoundarySources = new Set(boundarySourceFiles.map(relativeToRepo));
+  const newPrivateCoreImports = actualEdges.filter((edge) => !baselineKeys.has(importEdgeKey(edge)));
+  const staleBaselineImports = baselineEdges
+    .filter(
+      (edge) =>
+        (scannedBoundarySources.has(edge.source) || !existsSync(path.join(repoRoot, edge.source))) &&
+        !actualKeys.has(importEdgeKey(edge)),
+    )
+    .sort((left, right) => left.source.localeCompare(right.source) || left.import_path.localeCompare(right.import_path));
+  return {
+    ok:
+      newPrivateCoreImports.length === 0 &&
+      staleBaselineImports.length === 0 &&
+      unsupportedDynamicImports.length === 0,
+    scanned_file_count: boundarySourceFiles.length,
+    actual_edge_count: actualEdges.length,
+    baseline_edge_count: baselineEdges.length,
+    new_private_core_imports: newPrivateCoreImports,
+    stale_baseline_imports: staleBaselineImports,
+    unsupported_dynamic_imports: unsupportedDynamicImports,
+  };
+}
+
 export function complexityContribution(node) {
   if (ts.isIfStatement(node)) return 1;
   if (ts.isForStatement(node)) return 1;
@@ -1006,7 +1242,10 @@ declarations incl. consts, and members of exported interfaces/type aliases/class
 of boilerplate and name-restating docstrings, directory organization density, the ESLint
 bulk-suppressions baseline budget, and hard budgets on inline gate-silencing pragmas
 (ESLint disable comments, coverage-ignore pragmas, jscpd ignores). Changed shipped/script files
-also get a CodeFactor-parity complexity check so branch-local issues fail before push.
+also get a CodeFactor-parity complexity check so branch-local issues fail before push. The
+SDK import-boundary ratchet compares src/cli + src/mcp private src/core imports against
+${SDK_IMPORT_BOUNDARY_BASELINE}; new private imports, computed dynamic imports, and stale
+baseline entries all fail.
 `);
 }
 
@@ -1064,11 +1303,13 @@ function buildQualityReport(files, duplicateScopeFiles, thresholds) {
   const eslintSuppressionsBudget = checkEslintSuppressionsBudget(thresholds.maxEslintSuppressions);
   const inlinePragmaBudgets = checkInlinePragmaBudgets(thresholds);
   const codeFactorComplexity = checkCodeFactorComplexity(thresholds.maxCodeFactorComplexity);
+  const sdkImportBoundary = checkSdkImportBoundary(files);
   return {
     ok:
       eslintSuppressionsBudget.ok &&
       inlinePragmaBudgets.ok &&
       codeFactorComplexity.ok &&
+      sdkImportBoundary.ok &&
       fileLengthViolations.length === 0 &&
       directoryViolations.length === 0 &&
       duplicateViolations.length <= thresholds.maxDuplicateChunks &&
@@ -1082,6 +1323,7 @@ function buildQualityReport(files, duplicateScopeFiles, thresholds) {
     scanned: {
       file_count: files.length,
       duplicate_scope_file_count: duplicateScopeFiles.length,
+      sdk_boundary_file_count: sdkImportBoundary.scanned_file_count,
       duplicate_window_lines: thresholds.duplicateWindow,
       source_docstring_coverage_percent: sourceDocstringCoverage.coverage_percent,
       exported_docstring_coverage_percent: exportedDocstringCoverage.coverage_percent,
@@ -1115,6 +1357,11 @@ function buildQualityReport(files, duplicateScopeFiles, thresholds) {
       boilerplate_docstrings: boilerplateDocstringViolations,
       trivial_docstrings: trivialDocstringViolations,
       codefactor_complexity: codeFactorComplexity.violations,
+      sdk_import_boundary: {
+        new_private_core_imports: sdkImportBoundary.new_private_core_imports,
+        stale_baseline_imports: sdkImportBoundary.stale_baseline_imports,
+        unsupported_dynamic_imports: sdkImportBoundary.unsupported_dynamic_imports,
+      },
     },
     source_docstrings: sourceDocstringCoverage,
     exported_docstrings: exportedDocstringCoverage,
@@ -1122,6 +1369,7 @@ function buildQualityReport(files, duplicateScopeFiles, thresholds) {
     eslint_suppressions: eslintSuppressionsBudget,
     inline_pragmas: inlinePragmaBudgets,
     codefactor_complexity: codeFactorComplexity,
+    sdk_import_boundary: sdkImportBoundary,
   };
 }
 
@@ -1192,6 +1440,26 @@ function printQualityFailureSummary(report) {
     console.error(`- codefactor_complexity scan failed: ${report.codefactor_complexity.error}`);
   } else {
     printViolationCount("codefactor_complexity", report.violations.codefactor_complexity.length);
+  }
+  if (report.sdk_import_boundary.error) {
+    console.error(`- sdk_import_boundary scan failed: ${report.sdk_import_boundary.error}`);
+    printViolationCount(
+      "sdk_import_boundary unsupported_dynamic_import",
+      report.violations.sdk_import_boundary.unsupported_dynamic_imports.length,
+    );
+  } else {
+    printViolationCount(
+      "sdk_import_boundary new_private_core_import",
+      report.violations.sdk_import_boundary.new_private_core_imports.length,
+    );
+    printViolationCount(
+      "sdk_import_boundary stale_baseline_import",
+      report.violations.sdk_import_boundary.stale_baseline_imports.length,
+    );
+    printViolationCount(
+      "sdk_import_boundary unsupported_dynamic_import",
+      report.violations.sdk_import_boundary.unsupported_dynamic_imports.length,
+    );
   }
   printEslintSuppressionsFailure(report.eslint_suppressions);
   printInlinePragmaFailures(report.inline_pragmas);

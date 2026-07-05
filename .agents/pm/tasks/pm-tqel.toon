@@ -1,0 +1,18 @@
+id: pm-tqel
+title: "Consolidate history commands: history-redact/history-repair/history-compact/activity/restore under pm history subcommands"
+description: "pm history <id> stays the default view; history-redact -> pm history redact, history-repair -> pm history repair, history-compact -> pm history compact, activity -> pm history activity, restore -> pm history restore (old spellings aliased). Duplicate check: no existing history-namespace item; history feature items are all closed deliverables."
+type: Task
+status: open
+priority: 1
+tags[4]: agent-ux,"area:cli","area:history",simplification
+created_at: "2026-07-05T04:53:05.215Z"
+updated_at: "2026-07-05T04:55:00.119Z"
+author: maintainer-agent
+estimated_minutes: 180
+acceptance_criteria: pm history gains redact/repair/compact/activity/restore subcommands with flag parity; old top-level spellings alias-shimmed with identical output; default pm history <id> view unchanged; contracts/MCP/completions/docs regenerated; existing history-* specs pass via aliases
+parent: pm-n7rr
+risk: medium
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-0z7n,blocked_by,"2026-07-05T04:55:00.104Z",null,null
+body: ""

@@ -6,16 +6,17 @@ status: open
 priority: 2
 tags[5]: metadata,normalization,pm-cli,resolution,tracker-governance
 created_at: "2026-06-25T04:57:09.804Z"
-updated_at: "2026-07-04T20:56:40.820Z"
+updated_at: "2026-07-05T05:51:00.468Z"
 author: codex-pm-ecosystem-audit-20260625
 estimated_minutes: 240
 acceptance_criteria: All active item acceptance criteria and estimates remain filled or explicitly waived; terminal items flagged by validate_resolution_missing_fields are reduced or grouped into a residual list with rationale; no placeholder resolution text is added; pm validate --check-resolution --check-history-drift evidence is attached after the pass.
 parent: pm-33cw
 risk: medium
 confidence: medium
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-06-25T04:57:09.804Z",codex-pm-ecosystem-audit-20260625,"Duplicate check: status-all searches for terminal resolution metadata backfill and active planning metadata found closed governance tooling items pm-yq7m, pm-fryg, pm-wbak-class work, and pm-6bz1, but no open execution item for historical backfill."
   "2026-07-04T20:56:40.819Z",codex-agent,"Audit evidence 2026-07-04 continuation: pm validate --check-resolution --check-history-drift --json is ok:true for history_drift across 1506 checked items and warns only validate_resolution_missing_fields:268 across closed historical items. This confirms pm-e9zh remains the canonical open remediation for terminal resolution/expected/actual backfill; no duplicate item created. The earlier list --filter-resolution-missing projection showed 198 closed rows because it counts a narrower filter than validate resolution details. Keep the existing no-placeholder and changelog-drag rules."
+  "2026-07-05T05:51:00.468Z",claude-code-agent,"Live validation handoff from pm-lodl/pm-8778 lane: pm validate --check-resolution --check-history-drift --json on 2026-07-05 returned ok:true with history_drift ok across 1536 checked items and the pre-existing validate_resolution_missing_fields:268 warning. This confirms pm-e9zh remains the canonical open remediation for historical terminal resolution metadata; no duplicate item created from this lane."
 notes[1]{created_at,author,text}:
   "2026-07-04T18:50:14.133Z",maintainer-agent,"Scope addition from 2026-07-04 backlog audit (pm-y904): duplicate issue-code pair GH-209 (pm-1byt canonical, pm-25se follow-up) involves two CLOSED items, so per the changelog updated_at invariant it must be resolved in this careful backfill pass (set duplicate_of on pm-25se or retitle) together with the changelog regen, not in a create-only audit."
 body: "## Context\npm validate reports validate_resolution_missing_fields:268 and validate_metadata_missing_close_reason:18 — historical terminal items closed before the structured-resolution era (resolution/expected_result/actual_result via pm update, close -m/-r/-d from PR#230) lack that evidence.\n\n## Rules of engagement\n- NO placeholders: only backfill where real evidence exists (item history, linked PR/commit, session memory, CHANGELOG entry). An honest empty beats \"done: done\".\n- Changelog drag trap: touching CLOSED items updates updated_at, which pm-changelog uses for release bucketing — a bulk backfill would drag old items into the current [Unreleased]. Do the backfill in a dedicated tracker-only pass where the changelog is regenerated and reviewed in the same commit (same protocol as pm-pivf), or teach pm-changelog to bucket by closed_at first.\n- Work oldest→newest in small batches; record per-batch counts (missing_fields before/after) as comments here.\n\n## Definition of done\nvalidate_resolution_missing_fields reduced to only items with genuinely unrecoverable evidence (documented count); missing_close_reason:18 → 0; no unintended [Unreleased] churn in the same commit's regenerated changelog."

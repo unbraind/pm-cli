@@ -1,0 +1,35 @@
+id: pm-lodl
+title: "Inventory the CLI-to-core call graph: map every command to core modules and classify logic for SDK promotion"
+description: "Produce the definitive map: for each of the ~60 commands, which src/core functions it calls, and which logic currently living in src/cli/commands (parsing aside) is business logic that must move behind the SDK. Output feeds both pm-usfg promotion tasks and pm-n7rr consolidation clusters. Duplicate check: no existing call-graph/inventory item."
+type: Task
+status: closed
+priority: 1
+tags[4]: analysis,architecture,"area:cli","area:sdk"
+created_at: "2026-07-05T04:54:08.709Z"
+updated_at: "2026-07-05T05:51:24.476Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: Checked-in inventory (docs/ or item body) maps every CLI command to core modules + identifies business logic embedded in command handlers; each promotion task (item-lifecycle/query/annotations/governance/schema-config) gets its exact function list; findings recorded as notes on pm-usfg
+parent: pm-usfg
+risk: low
+confidence: high
+resolution: "Added docs/SDK_PRIMITIVE_INVENTORY.md with a checked-in CLI/MCP-to-SDK primitive inventory, current import-boundary baseline, command-family promotion lanes, and ratchet workflow for moving private core access behind SDK primitives."
+expected_result: "Agents have an explicit, low-context inventory for SDK-first promotion work and can choose future primitive lanes without re-discovering the current CLI/MCP core coupling."
+actual_result: Inventory document now maps command families to SDK promotion lanes and records the current 101-file boundary scan / 857-edge private core baseline used by the static ratchet gate.
+comments[2]{created_at,author,text}:
+  "2026-07-05T05:16:12.341Z",claude-code-agent,"Implementation start: live orientation complete. Pairing pm-lodl with pm-8778 in one SDK-first architecture PR because the inventory baseline is the input to the import-boundary ratchet. External checks at start: no open PRs; GH issue #427 remains open for Windows nightly confirmation; Dependabot and CodeQL open alerts are empty; pnpm audit has no known vulnerabilities; pm-changelog latest npm package is pm-changelog@2026.6.30."
+  "2026-07-05T05:51:00.434Z",claude-code-agent,"Evidence: added docs/SDK_PRIMITIVE_INVENTORY.md as the checked-in SDK-first command-family inventory for parent pm-usfg. It records the current boundary baseline, maps command families to SDK promotion lanes (lifecycle, query/read, annotations/links, schema/config/profile/init, governance/maintenance, history, plan, execution/diagnostics), and documents the ratchet workflow for reducing private src/core imports as primitives move into src/sdk. Verification passed: pm linked typecheck, full coverage 263 files / 5411 tests at 100/100/100/100, pnpm lint, docs/skills gate, and isolated temp-project dogfood."
+notes[1]{created_at,author,text}:
+  "2026-07-05T05:10:02.572Z",maintainer-agent,"Audit 2026-07-05 (second pass): promotion partition now has 8 families (pm-98cz lifecycle, pm-rjqr reads, pm-zwpp facets+append, pm-oxrw governance, pm-3mna workspace config, pm-4a7m history maintenance, pm-je50 plan, pm-oslr execution/diagnostics). This inventory's deliverable should confirm every command's core calls land in exactly one family, and flag any remainder as new promotion items."
+files[3]{path,scope,note}:
+  scripts/release/sdk-import-boundary-baseline.json,project,Machine-readable exact module-level CLI/MCP to core import map
+  src/cli/commands/index.ts,project,Command handler barrel — enumeration source for the CLI-to-core call-graph inventory
+  src/sdk/index.ts,project,Current public SDK barrel — the inventory measures the gap between this surface and what src/cli/commands consumes
+tests[1]{command,scope,timeout_seconds}:
+  pnpm typecheck,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mr7de8x6-98vqtt,test,passed,"2026-07-05T05:48:06.498Z","2026-07-05T05:48:16.170Z","2026-07-05T05:48:16.170Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK_PRIMITIVE_INVENTORY.md,project,Public SDK primitive promotion inventory and command family map
+close_reason: Completed SDK-first command-family inventory with current boundary baseline and promotion-lane mapping.
+body: ""
