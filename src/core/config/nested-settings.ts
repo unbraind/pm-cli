@@ -301,7 +301,7 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
 const DESCRIPTOR_BY_KEY: ReadonlyMap<string, NestedSettingDescriptor> = new Map(
   NESTED_SETTING_DESCRIPTORS.flatMap((descriptor) => [
     [descriptor.key, descriptor],
-    [descriptor.path, descriptor],
+    [descriptor.path.toLowerCase().replaceAll("-", "_"), descriptor],
   ]),
 );
 

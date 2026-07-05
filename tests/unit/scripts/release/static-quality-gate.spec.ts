@@ -358,6 +358,7 @@ describe("static-quality-gate", () => {
         { path: "src/also-missing.ts", reason: "missing_module_docstring" },
         { path: "src/missing.ts", reason: "missing_module_docstring" },
       ]);
+      expect(mod.checkSourceDocstringCoverage(Object.keys(fileBodies), 33.333).coverage_percent).toBe(33.3333);
 
       expect(mod.checkSourceDocstringCoverage(["/repo/tests/sample.ts"], 100)).toMatchObject({
         ok: true,
@@ -409,14 +410,23 @@ describe("static-quality-gate", () => {
       });
     });
 
-    it("checkExportedDocstringCoverage does not reuse the module docstring for the first export", async () => {
+    it("checkExportedDocstringCoverage handles module banners and first export docstrings distinctly", async () => {
       mockUtils("/repo");
       const fileBodies: Record<string, string> = {
         "/repo/src/a.ts": [
-          "/** Plain module documentation without an @module tag. */",
+          "/** @module a Plain module documentation. */",
           "export function missingOwnDocstring() { return true; }",
           "/** Runs the documented API. */",
           "export const documentedArrow = () => true;",
+        ].join("\n"),
+        "/repo/src/b.ts": [
+          "/** Plain top banner. */",
+          "/** Runs the first documented API. */",
+          "export function firstWithOwnDocstring() { return true; }",
+        ].join("\n"),
+        "/repo/src/c.ts": [
+          "/** Module docs. */",
+          "export function missingAfterPlainModuleBanner() { return true; }",
         ].join("\n"),
       };
       mockFs({
@@ -425,10 +435,11 @@ describe("static-quality-gate", () => {
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       const report = mod.checkExportedDocstringCoverage(Object.keys(fileBodies), 100);
       expect(report.ok).toBe(false);
-      expect(report.total).toBe(2);
-      expect(report.documented).toBe(1);
+      expect(report.total).toBe(4);
+      expect(report.documented).toBe(2);
       expect(report.missing).toEqual([
         { path: "src/a.ts", line: 2, name: "missingOwnDocstring", reason: "missing_exported_docstring" },
+        { path: "src/c.ts", line: 2, name: "missingAfterPlainModuleBanner", reason: "missing_exported_docstring" },
       ]);
     });
 
@@ -823,7 +834,7 @@ describe("static-quality-gate", () => {
         execFileSync: vi.fn((cmd: string, args: string[]) => {
           expect(cmd).toBe("git");
           const joined = args.join(" ");
-          if (joined === "merge-base HEAD origin/main" || joined === "merge-base HEAD main") {
+          if (args[0] === "merge-base") {
             return "\n";
           }
           if (joined === "diff --name-only --diff-filter=ACMR") {
@@ -846,7 +857,10 @@ describe("static-quality-gate", () => {
         execFileSync: vi.fn((cmd: string, args: string[]) => {
           expect(cmd).toBe("git");
           const joined = args.join(" ");
-          if (joined === "merge-base HEAD origin/main" || joined === "merge-base HEAD main") {
+          if (joined === "symbolic-ref --quiet --short refs/remotes/origin/HEAD") {
+            return "\n";
+          }
+          if (args[0] === "merge-base") {
             return "\n";
           }
           if (joined === "diff --name-only --diff-filter=ACMR" || joined === "diff --cached --name-only --diff-filter=ACMR") {
@@ -860,8 +874,92 @@ describe("static-quality-gate", () => {
       expect(report).toMatchObject({
         ok: false,
         scanned_file_count: 0,
-        error: "Unable to determine committed changed files for CodeFactor parity without origin/main, main, or worktree diffs.",
+        error: "Unable to determine committed changed files for CodeFactor parity without origin default branch, origin/main, main, origin/master, master, origin/develop, develop, or worktree diffs.",
       });
+    });
+
+    it("checkCodeFactorComplexity uses the origin default branch before main fallbacks", async () => {
+      mockUtils("/repo");
+      mockFs({
+        existsSync: vi.fn(
+          (p: string) => normalizeMockPath(p) === "/repo/.git" || normalizeMockPath(p) === "/repo/src/default-branch.ts",
+        ) as never,
+        statSync: vi.fn((p: string) => {
+          if (normalizeMockPath(p) === "/repo/src/default-branch.ts") {
+            return { isFile: () => true, isDirectory: () => false } as unknown as Stats;
+          }
+          return { isFile: () => false, isDirectory: () => true } as unknown as Stats;
+        }) as never,
+        readFileSync: vi.fn(() => "export function changed(a) {\n  if (a) return 1;\n  return 0;\n}\n") as never,
+      });
+      mockChildProcess({
+        execFileSync: vi.fn((cmd: string, args: string[]) => {
+          expect(cmd).toBe("git");
+          const joined = args.join(" ");
+          if (joined === "symbolic-ref --quiet --short refs/remotes/origin/HEAD") {
+            return "origin/master\n";
+          }
+          if (joined === "merge-base HEAD origin/master") {
+            return "master-base\n";
+          }
+          if (joined === "merge-base HEAD origin/main" || joined === "merge-base HEAD main") {
+            throw new Error(`unexpected fallback after default branch: ${joined}`);
+          }
+          if (joined === "diff --name-only --diff-filter=ACMR master-base...HEAD") {
+            return "src/default-branch.ts\n";
+          }
+          if (joined === "diff --name-only --diff-filter=ACMR" || joined === "diff --cached --name-only --diff-filter=ACMR") {
+            return "\n";
+          }
+          throw new Error(`unexpected git args: ${joined}`);
+        }) as never,
+      });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const report = mod.checkCodeFactorComplexity(1);
+      expect(report.scanned_file_count).toBe(1);
+      expect(report.violations[0]).toMatchObject({ path: "src/default-branch.ts", complexity: 2 });
+    });
+
+    it("checkCodeFactorComplexity falls back to origin/master when origin HEAD is unavailable", async () => {
+      mockUtils("/repo");
+      mockFs({
+        existsSync: vi.fn(
+          (p: string) => normalizeMockPath(p) === "/repo/.git" || normalizeMockPath(p) === "/repo/src/master-branch.ts",
+        ) as never,
+        statSync: vi.fn((p: string) => {
+          if (normalizeMockPath(p) === "/repo/src/master-branch.ts") {
+            return { isFile: () => true, isDirectory: () => false } as unknown as Stats;
+          }
+          return { isFile: () => false, isDirectory: () => true } as unknown as Stats;
+        }) as never,
+        readFileSync: vi.fn(() => "export function changed(a) {\n  if (a) return 1;\n  return 0;\n}\n") as never,
+      });
+      mockChildProcess({
+        execFileSync: vi.fn((cmd: string, args: string[]) => {
+          expect(cmd).toBe("git");
+          const joined = args.join(" ");
+          if (joined === "symbolic-ref --quiet --short refs/remotes/origin/HEAD") {
+            return "\n";
+          }
+          if (joined === "merge-base HEAD origin/main" || joined === "merge-base HEAD main") {
+            return "\n";
+          }
+          if (joined === "merge-base HEAD origin/master") {
+            return "master-base\n";
+          }
+          if (joined === "diff --name-only --diff-filter=ACMR master-base...HEAD") {
+            return "src/master-branch.ts\n";
+          }
+          if (joined === "diff --name-only --diff-filter=ACMR" || joined === "diff --cached --name-only --diff-filter=ACMR") {
+            return "\n";
+          }
+          throw new Error(`unexpected git args: ${joined}`);
+        }) as never,
+      });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const report = mod.checkCodeFactorComplexity(1);
+      expect(report.scanned_file_count).toBe(1);
+      expect(report.violations[0]).toMatchObject({ path: "src/master-branch.ts", complexity: 2 });
     });
 
     it("checkCodeFactorComplexity inspects git diff, staged, and unstaged paths in a checkout", async () => {

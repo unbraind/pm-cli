@@ -75,6 +75,12 @@ describe("runCreate", () => {
     expect(_testOnlyCreateCommand.normalizeCreatePolicyOptionKey("acceptance-criteria", "Task", "required_create_fields")).toBe(
       "acceptanceCriteria",
     );
+    expect(
+      _testOnlyCreateCommand.hasCreateOptionValue(
+        { scalarValues: {}, repeatableValues: {}, addTags: undefined },
+        "constructor",
+      ),
+    ).toBe(false);
     expect(() =>
       _testOnlyCreateCommand.normalizeCreatePolicyOptionKey("not-real", "Task", "required_create_fields"),
     ).toThrow(PmCliError);

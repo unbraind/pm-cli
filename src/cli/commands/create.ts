@@ -689,11 +689,11 @@ function hasCreateOptionValue(lookup: CreateOptionValueLookup, optionKey: string
   if (optionKey === "tags") {
     return lookup.scalarValues.tags !== undefined || (Array.isArray(lookup.addTags) && lookup.addTags.length > 0);
   }
-  if (optionKey in lookup.scalarValues) {
+  if (Object.prototype.hasOwnProperty.call(lookup.scalarValues, optionKey)) {
     return lookup.scalarValues[optionKey] !== undefined;
   }
   /* c8 ignore start -- policy probes only pass canonical CREATE_COMMAND_OPTION_KEYS, all of which exist in scalarValues/repeatableValues, so the in-repeatableValues false arm and trailing return are unreachable. */
-  if (optionKey in lookup.repeatableValues) {
+  if (Object.prototype.hasOwnProperty.call(lookup.repeatableValues, optionKey)) {
     const value = lookup.repeatableValues[optionKey];
     return Array.isArray(value) && value.length > 0;
   }
@@ -2112,6 +2112,7 @@ export const _testOnlyCreateCommand = {
   createExampleTokensForFlag,
   filterNonMissingTypeOptionErrors,
   hasTemplatesShowHandler,
+  hasCreateOptionValue,
   loadCreateTemplateOptionsFromRuntime,
   looksLikeStructuredEntry,
   mergeCreateOptionsWithTemplate,

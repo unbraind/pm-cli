@@ -212,6 +212,12 @@ export function hasModuleDocstring(sourceText) {
   return stripShebang(sourceText).trimStart().startsWith("/**");
 }
 
+function formatCoveragePercent(coveragePercent, minCoveragePercent) {
+  const fractionalPart = String(minCoveragePercent).split(".")[1] ?? "";
+  const displayPrecision = Math.max(2, fractionalPart.replace(/0+$/u, "").length + 1);
+  return Number(coveragePercent.toFixed(displayPrecision));
+}
+
 export function checkSourceDocstringCoverage(files, minCoveragePercent) {
   const sourceFiles = documentedSourceFiles(files);
   const missing = [];
@@ -227,7 +233,7 @@ export function checkSourceDocstringCoverage(files, minCoveragePercent) {
     total: sourceFiles.length,
     documented,
     missing: missing.sort((left, right) => left.path.localeCompare(right.path)),
-    coverage_percent: Number(coveragePercent.toFixed(2)),
+    coverage_percent: formatCoveragePercent(coveragePercent, minCoveragePercent),
     min_coverage_percent: minCoveragePercent,
   };
 }
@@ -279,10 +285,10 @@ function nodeOwnDocstringComment(sourceFile, node) {
     moduleDocRelativeStart === -1 ? -1 : fullText.length - strippedText.length + moduleDocRelativeStart;
   const ranges = ts.getLeadingCommentRanges(fullText, node.pos) ?? [];
   for (const range of ranges) {
+    const comment = fullText.slice(range.pos, range.end);
     if (range.pos === moduleDocStart) {
       continue;
     }
-    const comment = fullText.slice(range.pos, range.end);
     if (comment.startsWith("/**") && !comment.includes("@module")) {
       return comment;
     }
@@ -326,7 +332,7 @@ export function checkExportedDocstringCoverage(files, minCoveragePercent) {
     total,
     documented,
     missing: missing.sort((left, right) => left.path.localeCompare(right.path) || left.line - right.line),
-    coverage_percent: Number(coveragePercent.toFixed(2)),
+    coverage_percent: formatCoveragePercent(coveragePercent, minCoveragePercent),
     min_coverage_percent: minCoveragePercent,
   };
 }
@@ -469,7 +475,7 @@ export function checkExportedMemberDocstringCoverage(files, minCoveragePercent) 
     total,
     documented,
     missing: missing.sort((left, right) => left.path.localeCompare(right.path) || left.line - right.line),
-    coverage_percent: Number(coveragePercent.toFixed(2)),
+    coverage_percent: formatCoveragePercent(coveragePercent, minCoveragePercent),
     min_coverage_percent: minCoveragePercent,
   };
 }
@@ -706,8 +712,20 @@ function firstGitLine(args) {
   return line ?? null;
 }
 
+function resolveOriginDefaultBranchRef() {
+  try {
+    const branchRef = firstGitLine(["symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD"]);
+    return branchRef?.startsWith("origin/") ? branchRef : null;
+  } catch {
+    return null;
+  }
+}
+
+const CODEFACTOR_BASE_REF_FALLBACKS = ["origin/main", "main", "origin/master", "master", "origin/develop", "develop"];
+
 function resolveCodeFactorBaseRef() {
-  for (const candidate of ["origin/main", "main"]) {
+  const candidates = new Set([resolveOriginDefaultBranchRef(), ...CODEFACTOR_BASE_REF_FALLBACKS].filter(Boolean));
+  for (const candidate of candidates) {
     try {
       const mergeBase = firstGitLine(["merge-base", "HEAD", candidate]);
       if (mergeBase) {
@@ -744,7 +762,7 @@ function collectChangedRelativePaths() {
       return {
         ok: false,
         files: [],
-        error: "Unable to determine committed changed files for CodeFactor parity without origin/main, main, or worktree diffs.",
+        error: `Unable to determine committed changed files for CodeFactor parity without origin default branch, ${CODEFACTOR_BASE_REF_FALLBACKS.join(", ")}, or worktree diffs.`,
       };
     }
   } catch {

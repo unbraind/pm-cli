@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[5]: agent-story,"area:cli",capability,living-map,story
 created_at: "2026-07-04T19:57:00.440Z"
-updated_at: "2026-07-04T19:57:01.221Z"
+updated_at: "2026-07-05T04:08:11.702Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: Every command usable headless with --help discovery; every error returns a machine-actionable recovery bundle + did-you-mean; outputs available as toon/json/csv/table; lifecycle + bulk + triage (next/focus/context) covered.
@@ -18,5 +18,5 @@ confidence: high
 resolution: "Delivered and continuously maintained by pm-mpbb and its 97 closed children (v0.1 CLI surface: lifecycle, bulk, projections, never-block UX, triage)."
 expected_result: An agent operates the full lifecycle and triage with zero out-of-band context.
 actual_result: "CLI surface shipped and maintained as a living backlog; never-block UX, projections, and triage commands in place."
-close_reason: "Delivered and continuously maintained by pm-mpbb and its 97 closed children (v0.1 CLI surface: lifecycle, bulk, projections, never-block UX, triage)."
+close_reason: Capability story delivered by pm-mpbb; ongoing command-surface work remains tracked by the living backlog.
 body: "## Agent need\npm is agent-first: an agent must run create->claim->update->close plus all query/triage commands headless, discovering flags and recovering from errors with zero human help.\n\n## Delivered surface (pm-mpbb)\nLifecycle primitives, bulk ops (update-many/close-many with dry-run + rollback), query filters, hierarchy views, output projections (toon/json/csv/table), never-block error UX with recovery bundles + did-you-mean, and pm next/focus/context for triage.\n\n## Verified by\nContracts gates (tool/flag parity), never-block routing tests, projection tests. Enduring agent-value statement for the CLI-surface capability; new command-surface work lands in pm-mpbb."

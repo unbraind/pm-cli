@@ -385,7 +385,7 @@ describe("core/lock/lock additional branch coverage", () => {
       const id = "pm-lock-read-failed";
       const lockPath = getLockPath(pmPath, id);
       await fs.writeFile(lockPath, `${JSON.stringify({ id, pid: 1, owner: "other-owner", created_at: STALE_TS, ttl_seconds: 60 })}\n`);
-      const readSpy = vi.spyOn(fs, "readFile").mockRejectedValueOnce(Object.assign(new Error("permission denied"), { code: "EACCES" }));
+      const readSpy = vi.spyOn(fs, "readFile").mockRejectedValue(Object.assign(new Error("permission denied"), { code: "EACCES" }));
       try {
         await expect(acquireLock(pmPath, id, 60, "owner-a", false)).rejects.toMatchObject({
           exitCode: EXIT_CODE.CONFLICT,
@@ -489,7 +489,7 @@ describe("core/lock/lock additional branch coverage", () => {
               retry_after_ms: 250,
             },
           },
-          message: expect.stringContaining("after waiting 2ms"),
+          message: expect.stringMatching(/after waiting \d+ms/),
         });
       } finally {
         randomSpy.mockRestore();
@@ -585,6 +585,7 @@ describe("core/lock/lock additional branch coverage", () => {
             forceRequiredForStaleLock: false,
             staleRemovals: 0,
             waitBudgetMs: 10,
+            startedAtMs: Date.now(),
             fallbackLockInfo,
           }),
         ).resolves.toEqual({
@@ -655,6 +656,25 @@ describe("core/lock/lock additional branch coverage", () => {
 
       await expect(lockInternals.acquireStaleCleanupGate(lockPath, id)).resolves.toBeNull();
       await expect(fs.access(gatePath)).resolves.toBeUndefined();
+    });
+  });
+
+  it("recovers a max-aged stale cleanup gate even when the recorded pid is live", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-live-owner-too-old";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      await fs.mkdir(gatePath);
+      await fs.writeFile(`${gatePath}/owner.json`, `${JSON.stringify({ pid: process.pid, token: "reused-pid-owner" })}\n`, "utf8");
+      const orphanedAt = new Date(Date.now() - 10 * 60_000);
+      await fs.utimes(gatePath, orphanedAt, orphanedAt);
+
+      const release = await lockInternals.acquireStaleCleanupGate(lockPath, id);
+      if (release === null) {
+        throw new Error("expected stale cleanup gate release");
+      }
+      await release();
+      await expect(fs.access(gatePath)).rejects.toMatchObject({ code: "ENOENT" });
     });
   });
 
@@ -769,6 +789,43 @@ describe("core/lock/lock additional branch coverage", () => {
     });
   });
 
+  it("does not release a stale cleanup gate when owner metadata cannot be read", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-release-missing-owner";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      const release = await lockInternals.acquireStaleCleanupGate(lockPath, id);
+      if (release === null) {
+        throw new Error("expected stale cleanup gate release");
+      }
+      await fs.rm(`${gatePath}/owner.json`, { force: true });
+
+      await release();
+
+      await expect(fs.access(gatePath)).resolves.toBeUndefined();
+      await fs.rm(gatePath, { recursive: true, force: true });
+    });
+  });
+
+  it("does not let an old release remove a replacement gate before owner metadata is written", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-release-replacement-window";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      const release = await lockInternals.acquireStaleCleanupGate(lockPath, id);
+      if (release === null) {
+        throw new Error("expected stale cleanup gate release");
+      }
+      await fs.rm(gatePath, { recursive: true, force: true });
+      await fs.mkdir(gatePath);
+
+      await release();
+
+      await expect(fs.access(gatePath)).resolves.toBeUndefined();
+      await fs.rm(gatePath, { recursive: true, force: true });
+    });
+  });
+
   it("treats stale cleanup gate release failures as best-effort cleanup", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-lock-stale-cleanup-release-fail";
@@ -795,7 +852,7 @@ describe("core/lock/lock additional branch coverage", () => {
     });
   });
 
-  it("reports a generic failure and cleans up when stale cleanup owner write fails", async () => {
+  it("keeps stale cleanup busy and cleans up when stale cleanup owner write fails", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-lock-stale-cleanup-owner-write-fail";
       const lockPath = getLockPath(pmPath, id);
@@ -809,10 +866,7 @@ describe("core/lock/lock additional branch coverage", () => {
       });
 
       try {
-        await expect(lockInternals.acquireStaleCleanupGate(lockPath, id)).rejects.toMatchObject({
-          exitCode: EXIT_CODE.GENERIC_FAILURE,
-          message: expect.stringContaining(`Failed to prepare stale lock cleanup for ${id}`),
-        });
+        await expect(lockInternals.acquireStaleCleanupGate(lockPath, id)).resolves.toBeNull();
         await expect(fs.access(gatePath)).rejects.toMatchObject({ code: "ENOENT" });
       } finally {
         writeFileSpy.mockRestore();
@@ -928,7 +982,7 @@ describe("core/lock/lock additional branch coverage", () => {
     });
   });
 
-  it("reports a generic failure when stale cleanup gate creation fails", async () => {
+  it("keeps stale cleanup busy when gate creation fails unexpectedly", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-lock-stale-cleanup-gate-failure";
       const lockPath = getLockPath(pmPath, id);
@@ -954,11 +1008,13 @@ describe("core/lock/lock additional branch coverage", () => {
             forceRequiredForStaleLock: false,
             staleRemovals: 0,
             waitBudgetMs: 10,
+            startedAtMs: Date.now(),
             fallbackLockInfo,
           }),
-        ).rejects.toMatchObject({
-          exitCode: EXIT_CODE.GENERIC_FAILURE,
-          message: expect.stringContaining(`Failed to prepare stale lock cleanup for ${id}`),
+        ).resolves.toEqual({
+          lockInfo: fallbackLockInfo,
+          shouldRetryCreate: false,
+          staleRemovalCounted: false,
         });
       } finally {
         mkdirSpy.mockRestore();
@@ -984,6 +1040,7 @@ describe("core/lock/lock additional branch coverage", () => {
           forceRequiredForStaleLock: false,
           staleRemovals: 0,
           waitBudgetMs: 10,
+          startedAtMs: Date.now(),
           fallbackLockInfo,
         }),
       ).resolves.toEqual({
@@ -1009,6 +1066,7 @@ describe("core/lock/lock additional branch coverage", () => {
         forceRequiredForStaleLock: false,
         staleRemovals: 0,
         waitBudgetMs: 10,
+        startedAtMs: Date.now(),
         fallbackLockInfo: {
           info: { id, pid: 1, owner: "fallback-owner", created_at: STALE_TS, ttl_seconds: 60 },
           warnings: [],
@@ -1042,6 +1100,7 @@ describe("core/lock/lock additional branch coverage", () => {
           forceRequiredForStaleLock: false,
           staleRemovals: 3,
           waitBudgetMs: 10,
+          startedAtMs: Date.now() - 25,
           fallbackLockInfo,
         }),
       ).rejects.toMatchObject({

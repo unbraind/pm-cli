@@ -33,6 +33,10 @@ describe("nested-settings helpers (pm-7ilo)", () => {
       expect(resolveNestedSettingDescriptor("Search-Provider")?.key).toBe("search_provider");
       expect(resolveNestedSettingDescriptor("SEARCH_PROVIDER")?.key).toBe("search_provider");
     });
+
+    it("normalizes dotted setting paths the same way as aliases", () => {
+      expect(resolveNestedSettingDescriptor("SEARCH.QUERY-EXPANSION.ENABLED")?.key).toBe("search_query_expansion_enabled");
+    });
   });
 
   describe("parseNestedSettingValue", () => {

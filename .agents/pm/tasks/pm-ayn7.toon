@@ -6,12 +6,12 @@ status: closed
 priority: 2
 tags[3]: agent-ux,audit-followup,cli
 created_at: "2026-07-04T06:29:58.417Z"
-updated_at: "2026-07-04T19:01:34.057Z"
+updated_at: "2026-07-05T04:08:11.608Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: pm package describe <npm-name> resolves for builtin installs; pm context <id> returns routed guidance with suggested_retry pm get <id>; NOT_FOUND describe errors list loaded names; specs cover source_package matching and guidance branches.
 parent: pm-mpbb
-resolution: "Shipped on main via PR #428 (fdb670f5): pm package describe matches source_package/npm package name for builtin installs, NOT_FOUND lists loaded names, and pm context <id> returns context_takes_no_item_argument guidance with suggested_retry pm get <id>."
+resolution: "Shipped on main via PR #428 (c96bb8f): pm package describe matches source_package/npm package name for builtin installs, NOT_FOUND lists loaded names, and pm context <id> returns context_takes_no_item_argument guidance with suggested_retry pm get <id>."
 expected_result: pm package describe @unbrained/pm-kanban resolves; pm context <id> routes to pm get with suggested_retry; specs cover source_package matching and guidance branches.
 actual_result: "Verified live 2026-07-04 in fresh sandbox from dist build: describe resolves via source_package, NOT_FOUND lists 11 loaded names, context <id> emits routed guidance; main CI green post-merge."
 notes[1]{created_at,author,text}:
