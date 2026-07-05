@@ -39,7 +39,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
         with:
-          version: 10.33.4
+          version: 11.10.0
 
       - name: Setup Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
@@ -152,7 +152,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
         with:
-          version: 10.33.4
+          version: 11.10.0
 
       - name: Setup Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
@@ -285,7 +285,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
         with:
-          version: 10.33.4
+          version: 11.10.0
 
       - name: Setup Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
@@ -327,7 +327,9 @@ jobs:
       #     (GH-348), and
       # (6) background test-run signal handling, whose unit helpers must not
       #     send OS-level signals to the Vitest worker process on Windows
-      #     (GH-376).
+      #     (GH-376), and
+      # (7) stale lock cleanup races, whose owner-path and orphan-gate probes
+      #     must stay portable on Windows Node 24 (GH-427).
       # The two non-scripts guards (cli-main-errors, runtime-schema-path-win32)
       # plus the harness contract test stay pinned; the full tests/unit/scripts/
       # directory now runs so a fresh Windows-only script regression fails this
@@ -335,7 +337,7 @@ jobs:
       - name: Run Windows source-import and script regression tests
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
-        run: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/ tests/unit/packages/runtime-loaders.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/test-runs-command.spec.ts
+        run: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/ tests/unit/packages/runtime-loaders.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts
 
       # The packed-npm-extension install path exercises the Windows `.cmd` npm
       # spawn + tar extraction + hosted-SDK junction class that only the Node 24

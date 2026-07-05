@@ -8,6 +8,8 @@ import { appendHistoryEntry, createHistoryEntry } from "../../core/history/histo
 import { generateItemId, normalizeItemId } from "../../core/item/id.js";
 import { canonicalDocument, normalizeFrontMatter, serializeItemDocument } from "../../core/item/item-format.js";
 import {
+  assertParentReferenceIsNotSelf,
+  isPlaceholderReferenceToken,
   normalizeParentReferenceValue,
   validateMissingParentReference,
 } from "../../core/item/parent-reference-policy.js";
@@ -1225,10 +1227,12 @@ async function validateCreateParentReference(
   pmRoot: string,
   settings: PmSettings,
   typeRegistry: ItemTypeRegistry,
+  itemId: string,
   parent: string,
   policy: Parameters<typeof validateMissingParentReference>[1],
 ): Promise<{ parent: string; warnings: string[] }> {
   const normalized = normalizeParentReferenceValue(parent);
+  assertParentReferenceIsNotSelf(itemId, normalized, settings.id_prefix);
   const parentLocated = await locateItem(pmRoot, normalized, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
   if (parentLocated) {
     return { parent: normalized, warnings: [] };
@@ -1238,6 +1242,7 @@ async function validateCreateParentReference(
 }
 
 async function resolveCreateParentWithWarnings(params: {
+  itemId: string;
   parent: string | undefined;
   pmRoot: string;
   settings: PmSettings;
@@ -1251,10 +1256,33 @@ async function resolveCreateParentWithWarnings(params: {
     params.pmRoot,
     params.settings,
     params.typeRegistry,
+    params.itemId,
     params.parent,
     params.policy,
   );
   return parentValidation;
+}
+
+async function resolveCreateItemId(params: {
+  pmRoot: string;
+  settings: PmSettings;
+  explicitId: unknown;
+}): Promise<string> {
+  if (params.explicitId === undefined) {
+    return generateItemId(params.pmRoot, params.settings.id_prefix);
+  }
+  if (typeof params.explicitId !== "string") {
+    throw new PmCliError("--id must be a string", EXIT_CODE.USAGE);
+  }
+  const trimmedId = params.explicitId.trim();
+  if (trimmedId.length === 0 || isPlaceholderReferenceToken(trimmedId)) {
+    throw new PmCliError("--id must not be empty or use a placeholder token", EXIT_CODE.USAGE);
+  }
+  const normalizedId = normalizeItemId(trimmedId, params.settings.id_prefix);
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(normalizedId)) {
+    throw new PmCliError("--id must contain only letters, numbers, and dashes after normalization", EXIT_CODE.USAGE);
+  }
+  return normalizedId;
 }
 
 /**
@@ -1760,6 +1788,10 @@ async function writeCreatedItem(params: {
   );
   let hookWarnings: string[] = [];
   try {
+    const existing = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
+    if (existing) {
+      throw new PmCliError(`Item "${id}" already exists`, EXIT_CODE.CONFLICT);
+    }
     await writeFileAtomic(
       itemPath,
       serializeItemDocument(afterDocument, { format: settings.item_format, schema: settings.schema, extensionFieldNames }),
@@ -1872,7 +1904,11 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   });
   assertNoInvalidTypeOptions(validatedTypeOptions.errors, type, typeDefinition, statusRegistry);
 
-  const id = await generateItemId(pmRoot, settings.id_prefix);
+  const id = await resolveCreateItemId({
+    pmRoot,
+    settings,
+    explicitId: resolvedOptions.id,
+  });
   let status =
     resolvedOptions.status !== undefined
       ? parseStatusValue(resolvedOptions.status, statusRegistry)
@@ -1917,6 +1953,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const sprintReleasePolicy = settings.validation.sprint_release_format;
   const validationWarnings: string[] = collectCreateScheduleWarnings(type, id, deadline, reminders.values, events.values);
   const parentValidation = await resolveCreateParentWithWarnings({
+    itemId: id,
     parent,
     pmRoot,
     settings,

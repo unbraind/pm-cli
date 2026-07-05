@@ -1280,6 +1280,29 @@ describe("runUpdate", () => {
     });
   });
 
+  it("rejects self-parent references before writing", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-parent-self");
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            parent: id.toUpperCase(),
+            message: "attempt self parent",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("cannot be the same as item"),
+      });
+
+      const after = await runGet(id, {}, { path: context.pmPath });
+      expect(after.item.parent).toBeUndefined();
+    });
+  });
+
   it("rejects missing parent references under strict policy", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-parent-strict");

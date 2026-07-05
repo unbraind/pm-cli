@@ -8,7 +8,7 @@ stages:
 
 before_script:
   - corepack enable
-  - corepack prepare pnpm@10 --activate
+  - corepack prepare pnpm@11.10.0 --activate
   - pnpm install --frozen-lockfile
 
 build:

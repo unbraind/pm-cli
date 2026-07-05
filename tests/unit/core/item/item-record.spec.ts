@@ -4,6 +4,8 @@ import { parseItemDocument, serializeItemDocument, splitFrontMatter } from "../.
 import { normalizeRuntimeSchemaSettings } from "../../../../src/core/schema/runtime-schema.js";
 import { toItemRecord } from "../../../../src/core/item/item-record.js";
 import {
+  assertParentReferenceIsNotSelf,
+  isPlaceholderReferenceToken,
   normalizeParentReferencePolicy,
   normalizeParentReferenceValue,
   validateMissingParentReference,
@@ -60,8 +62,11 @@ describe("item policy helpers", () => {
     expect(() => normalizeParentReferencePolicy(undefined)).toThrow("parent-reference-policy requires --policy");
 
     expect(normalizeParentReferenceValue(" pm-parent ")).toBe("pm-parent");
+    expect(() => normalizeParentReferenceValue(null)).toThrow("--parent must be a string");
     expect(() => normalizeParentReferenceValue(" ")).toThrow("--parent must not be empty");
     expect(() => normalizeParentReferenceValue("none")).toThrow("Use --unset parent");
+    expect(isPlaceholderReferenceToken(" NONE ")).toBe(true);
+    expect(isPlaceholderReferenceToken("pm-none")).toBe(false);
   });
 
   it("validates missing parent references under warn and strict policies", () => {
@@ -70,6 +75,16 @@ describe("item policy helpers", () => {
     });
     expect(() => validateMissingParentReference("pm-parent", "strict_error")).toThrow(
       'Parent item "pm-parent" was not found',
+    );
+  });
+
+  it("rejects self-parent references after id normalization", () => {
+    expect(() => assertParentReferenceIsNotSelf("pm-child", "pm-parent", "pm-")).not.toThrow();
+    expect(() => assertParentReferenceIsNotSelf("pm-self", "pm-self", "pm-")).toThrow(
+      'Parent item "pm-self" cannot be the same as item "pm-self". Use --unset parent to clear this field.',
+    );
+    expect(() => assertParentReferenceIsNotSelf("PM-SELF", "self", "pm-")).toThrow(
+      'Parent item "pm-self" cannot be the same as item "pm-self" (normalized from parent "self" and item "PM-SELF")',
     );
   });
 

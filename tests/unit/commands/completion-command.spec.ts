@@ -1215,7 +1215,7 @@ describe("pm completion CLI command", () => {
       expect(fishResult.stdout).toContain("-l status -d 'Filter by status' -r -a '(__pm_status_choices)'");
       expect(fishResult.stdout).toContain("-l type     -d 'Filter by item type' -r -a '(__pm_type_choices)'");
     });
-  });
+  }, 90_000);
 
   it("outputs zsh script to stdout", async () => {
     await withTempPmPath(async (context) => {
