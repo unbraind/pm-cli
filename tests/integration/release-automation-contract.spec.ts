@@ -52,6 +52,10 @@ describe("release automation contract", () => {
     expect(packageJson.scripts?.["changelog:pm"]).toContain("--item-url-base");
     expect(packageJson.scripts?.["changelog:pm:check"]).toContain("changelog:pm:install");
     expect(packageJson.scripts?.["changelog:pm:check"]).toContain("--check");
+
+    const runGatesSource = await readFile(path.join(repoRoot, "scripts/release/run-gates.mjs"), "utf8");
+    expect(runGatesSource).toContain('runCheckedStep("static-quality-gate", pnpm, ["quality:static"])');
+    expect(runGatesSource).not.toContain('runCheckedStep("static-quality-gate", process.execPath');
   });
 
   it("keeps unused underscore conventions aligned across TypeScript and Node script lint surfaces", async () => {

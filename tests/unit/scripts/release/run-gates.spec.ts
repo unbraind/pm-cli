@@ -72,6 +72,15 @@ describe("scripts/release/run-gates", () => {
     expect(
       spawnSync.mock.calls.some((c) => [c[0], ...(c[1] as string[])].join(" ").includes("greptile-review-gate.mjs")),
     ).toBe(true);
+    expect(spawnSync.mock.calls.some((c) => [c[0], ...(c[1] as string[])].join(" ").includes("quality:static"))).toBe(
+      true,
+    );
+    expect(
+      spawnSync.mock.calls.some((c) => {
+        const joined = [c[0], ...(c[1] as string[])].join(" ");
+        return joined.includes("static-quality-gate.mjs") && !joined.includes("quality:static");
+      }),
+    ).toBe(false);
     expect(
       spawnSync.mock.calls.some(([, args]) => {
         const commandArgs = args as string[];

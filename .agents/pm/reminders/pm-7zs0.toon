@@ -2,11 +2,11 @@ id: pm-7zs0
 title: Verify daily auto-release published to npm (release-health check)
 description: "Recurring release-health verification. The date-based daily auto-release has silently failed before (padded-month changelog match skip; publish/Sentry-gate step failing post-tag). After any merge to main, confirm the next daily release both tagged a new vYYYY.M.D AND advanced npm 'latest'."
 type: Reminder
-status: open
+status: in_progress
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-07-05T05:51:11.906Z"
+updated_at: "2026-07-05T15:20:33.048Z"
 reminders[1]{at,text}:
   "2026-07-01T10:24:45.889Z",Confirm daily auto-release tagged a new version AND npm latest advanced; else inspect publish + Sentry-gate steps
 assignee: claude-code-agent
@@ -16,7 +16,7 @@ acceptance_criteria: "After each merge to main, the next daily release tags vYYY
 parent: pm-u9d0
 risk: low
 confidence: high
-comments[34]{created_at,author,text}:
+comments[37]{created_at,author,text}:
   "2026-06-10T14:44:30.277Z",maintainer-agent,"2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
   "2026-06-16T11:26:49.976Z",codex-sdk-cli-consolidation-20260616,"Auto-release gate reproduced locally with SENTRY_PERSONAL_ADMIN_TOKEN; failing high issue was PM-CLI-1Q (handled CommandError: all items failed to apply). Added count-agnostic handled pattern 'item(s) failed to apply' and blocking_short_ids/blocking_titles output for diagnostics. Gate now passes in strict mode with max-high=0."
   "2026-06-16T11:46:33.866Z",codex-sdk-cli-consolidation-20260616,"Release-health verification: sentry-telemetry gate now passes in strict mode (max-critical=0,max-high=0) after expected handled-CommandError classification update; output now includes blocking_short_ids/blocking_titles for actionable diagnostics."
@@ -51,6 +51,9 @@ comments[34]{created_at,author,text}:
   "2026-07-02T21:26:24.459Z",claude-code-agent,"2026-07-02 release-health verify: GitHub release v2026.7.2 tagged (2026-07-02T06:39Z) and npm latest = 2026.7.2 — auto-release healthy. CI on main green (run 28618676644). Keeping reminder in_progress (recurring)."
   "2026-07-03T04:09:26.639Z",claude-code-agent,"2026-07-03 verify: npm latest=2026.7.2 (published 2026-07-02T06:39Z), dist-tags clean, scheduled Auto Release runs 28569991109 (07-02) and 28499297083 (07-01) both succeeded. Release pipeline healthy; keeping reminder in_progress (recurring)."
   "2026-07-05T05:51:11.906Z",claude-code-agent,"Release-health observation from pm-lodl/pm-8778 lane: live Sentry issue list still shows unresolved historical handled CommandErrors, but the actual recent-window gate passes: node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort --sentry-window-days 14 --max-critical 0 --max-high 0 returned ok:true with Sentry critical=0 high=0 total=0 and telemetry finish_error_rate_pct=1.05, failures_without_error_code_rows=0. Also filed UX follow-up pm-w86l for a package script alias after duplicate-safe search."
+  "2026-07-05T15:01:53.695Z",claude-code-agent,"Evidence: fixed current Auto Release issue #432 root cause where run-gates invoked static-quality-gate defaults at 100% instead of the ratcheted pnpm quality:static lane tracked by pm-5566. Local reproduction now passes node scripts/release/run-gates.mjs --telemetry-mode off --skip-greptile, including static quality, 100/100/100/100 coverage over 264 files and 5423 tests, npx smoke, package-first dogfood in /tmp, compatibility, and telemetry-off gate."
+  "2026-07-05T15:09:13.453Z",claude-code-agent,"Evidence: addressed local Greptile review 9b1c26f0-48e0-4610-93bc-c8f3682638e6 by rejecting normalized explicit create IDs that end in a dash. Duplicate-safe search found closed explicit-id lineage pm-q1ke and no direct open trailing-dash item, so this review fix remains linked to the active release-health branch item pm-7zs0. Focused tests passed: node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/scripts/release/run-gates.spec.ts tests/integration/release-automation-contract.spec.ts (137 tests)."
+  "2026-07-05T15:20:33.047Z",claude-code-agent,"Verification evidence for auto-release static-quality ratchet branch after Greptile fix: node scripts/release/run-gates.mjs --telemetry-mode off --skip-greptile passed on the current commit, including static quality, 264 files / 5423 tests at 100/100/100/100 coverage, npx packed smoke, and package-first dogfood in /tmp/pm-dogfood-dk5kBM with 88 commands. Additional gates passed: pnpm lint, pnpm changelog:pm:check unchanged using pm-changelog 2026.6.30, pnpm audit --audit-level moderate, git diff --check, pm health summary ok, pm validate history_drift ok with only known validate_resolution_missing_fields:268, and GitHub Dependabot/code-scanning/secret-scanning open alert lists empty."
 notes[6]{created_at,author,text}:
   "2026-07-02T06:41:55.766Z",claude-code-agent,"2026-07-02: Auto Release run 28569991109 success; tag v2026.7.2 created and npm dist-tags.latest=2026.7.2 verified live via npm view. Release-commit CI/Release/CodeQL/Docs all green. Release health verified."
   "2026-07-04T06:16:41.031Z",maintainer-agent,"2026-07-04: Release v2026.7.4 verified — Release workflow 28697208639 succeeded, npm @unbrained/pm-cli@2026.7.4 live, GH release published 06:16Z (not draft). Auto-release healthy."
@@ -58,7 +61,7 @@ notes[6]{created_at,author,text}:
   "2026-07-04T08:13:20.569Z",maintainer-agent,"2026-07-04 release-health verified: Auto Release run 28697011506 success, tag v2026.7.4 Release workflow success (8m58s), npm latest = 2026.7.4."
   "2026-07-04T10:39:22.817Z",maintainer-agent,"2026-07-04 release-health check: npm view @unbrained/pm-cli version → 2026.7.4 (matches today's date-based cut); Auto Release scheduled run 28697011506 succeeded (17m9s), post-release CI/CodeQL/Docs/Security workflows on the release commit all green. Only red run today is Nightly Validation windows-latest/Node 24 (GH-427, fix in working tree via pm-lt6n)."
   "2026-07-04T19:01:16.920Z",maintainer-agent,"2026-07-04 release-health verified live: git tag v2026.7.4 exists and npm view @unbrained/pm-cli version = 2026.7.4 (latest advanced). Today's merges to main (PR #428 head + close-message fallback d3e37991) will ride the next daily cut once [Unreleased] is non-empty."
-files[11]{path,scope,note}:
+files[16]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,record project pm-changelog 2026.6.27 managed package metadata
   .agents/pm/extensions/pm-changelog,project,refresh project-managed pm-changelog package files to 2026.6.27
   .github/workflows/auto-release.yml,project,close stale blocked-release issue after successful scheduled publish
@@ -67,19 +70,54 @@ files[11]{path,scope,note}:
   .github/workflows/release.yml,project,Refresh pinned actions/cache to 6.1.0 for publish workflow cache restores
   package.json,project,Release-health bundle includes compatible Sentry runtime dependency refresh
   pnpm-lock.yaml,project,Release-health bundle locks refreshed Sentry runtime dependency tree
+  scripts/release/run-gates.mjs,project,Use project static-quality ratchet in release gates so scheduled auto-release does not invoke the raw 100%-default docstring oracle during active fill work
   scripts/release/sentry-telemetry-gate.mjs,project,Ignore expected handled apply-failure CommandError and expose blocking issue IDs
+  src/cli/commands/create.ts,project,Harden explicit create --id validation after Greptile found trailing-dash IDs were accepted
   tests/integration/ci-workflow-contract.spec.ts,project,assert auto-release issue resolution workflow contract
+  tests/integration/release-automation-contract.spec.ts,project,Contract assertion preventing run-gates from drifting back to raw static-quality defaults
+  tests/unit/commands/create-command.spec.ts,project,Regression coverage rejects prefixed and shorthand explicit IDs ending in a dash
+  tests/unit/scripts/release/run-gates.spec.ts,project,"Regression coverage for release gate invoking pnpm quality:static"
   tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,Regression coverage for updated sentry gate output/classification
-tests[9]{command,scope,timeout_seconds}:
-  node dist/cli.js package doctor --project --detail deep --json,project,180
-  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,project,180
-  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode off --max-critical 0 --max-high 0,project,120
-  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,240
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/scripts/release/sentry-telemetry-gate.spec.ts tests/unit/scripts/release/run-gates.spec.ts,project,240
-  pnpm audit --audit-level moderate,project,180
-  pnpm build,project,240
-  "pnpm quality:docs-links",project,180
-  "pnpm quality:static",project,180
+tests[12]:
+  - command: node dist/cli.js package doctor --project --detail deep --json
+    scope: project
+    timeout_seconds: 180
+  - command: node scripts/release/run-gates.mjs --telemetry-mode off --skip-greptile
+    scope: project
+    timeout_seconds: 900
+    note: Release-gate reproduction for scheduled auto-release static-quality blocker; skips local Greptile sub-gate because greptile review runs separately before push
+  - command: node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort
+    scope: project
+    timeout_seconds: 180
+  - command: node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode off --max-critical 0 --max-high 0
+    scope: project
+    timeout_seconds: 120
+  - command: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/scripts/release/run-gates.spec.ts tests/integration/release-automation-contract.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: Focused release-gate and explicit-id regression coverage
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-gates.spec.ts tests/integration/release-automation-contract.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: Focused regression coverage for release gate static-quality ratchet wiring
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/scripts/release/sentry-telemetry-gate.spec.ts tests/unit/scripts/release/run-gates.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: pnpm audit --audit-level moderate
+    scope: project
+    timeout_seconds: 180
+  - command: pnpm build
+    scope: project
+    timeout_seconds: 240
+  - command: "pnpm quality:docs-links"
+    scope: project
+    timeout_seconds: 180
+  - command: "pnpm quality:static"
+    scope: project
+    timeout_seconds: 180
 test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mqw0pnxi-coga1f,test,passed,"2026-06-27T07:07:41.177Z","2026-06-27T07:07:45.894Z","2026-06-27T07:07:45.894Z",3,0,0
   test-local-mqwzntpx-bck9yj,test,passed,"2026-06-27T23:25:38.329Z","2026-06-27T23:26:06.645Z","2026-06-27T23:26:06.645Z",7,0,0
