@@ -162,6 +162,7 @@ const LOCK_WAIT_MAX_DELAY_MS = 200;
 const LOCK_CONFLICT_RETRY_HINT_MS = 250;
 const MAX_STALE_LOCK_REMOVALS = 3;
 const STALE_CLEANUP_GATE_SUFFIX = ".stale-cleanup";
+const STALE_CLEANUP_GATE_STALE_MS = 10_000;
 
 function parseNonNegativeIntegerWaitMs(value: string | number | undefined): number | undefined {
   if (typeof value === "string") {
@@ -235,15 +236,47 @@ function throwIfStaleLockNeedsForce(id: string, lockInfo: LockReadResult, force:
   }
 }
 
-async function acquireStaleCleanupGate(lockPath: string, id: string): Promise<(() => Promise<void>) | null> {
-  const gatePath = `${lockPath}${STALE_CLEANUP_GATE_SUFFIX}`;
+async function tryCreateStaleCleanupGate(gatePath: string, id: string): Promise<boolean> {
   try {
     await fs.mkdir(gatePath);
+    return true;
   } catch (error: unknown) {
     if (isErrno(error, "EEXIST")) {
-      return null;
+      return false;
     }
     throw new PmCliError(`Failed to prepare stale lock cleanup for ${id}: ${toErrorMessage(error)}`, EXIT_CODE.GENERIC_FAILURE);
+  }
+}
+
+async function removeExpiredStaleCleanupGate(gatePath: string): Promise<boolean> {
+  try {
+    const stats = await fs.stat(gatePath);
+    if (Date.now() - stats.mtimeMs <= STALE_CLEANUP_GATE_STALE_MS) {
+      return false;
+    }
+  } catch (error: unknown) {
+    return isErrno(error, "ENOENT");
+  }
+  try {
+    await fs.rm(gatePath, { recursive: true, force: true });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function acquireStaleCleanupGate(lockPath: string, id: string): Promise<(() => Promise<void>) | null> {
+  const gatePath = `${lockPath}${STALE_CLEANUP_GATE_SUFFIX}`;
+  if (await tryCreateStaleCleanupGate(gatePath, id)) {
+    return async () => {
+      await fs.rm(gatePath, { recursive: true, force: true });
+    };
+  }
+  if (!(await removeExpiredStaleCleanupGate(gatePath))) {
+    return null;
+  }
+  if (!(await tryCreateStaleCleanupGate(gatePath, id))) {
+    return null;
   }
   return async () => {
     await fs.rm(gatePath, { recursive: true, force: true });
@@ -306,6 +339,7 @@ export const _testOnly = {
   isStaleLock,
   lockOwnerSuffix,
   resolveLockWaitMs,
+  acquireStaleCleanupGate,
   removeConfirmedStaleLock,
 };
 

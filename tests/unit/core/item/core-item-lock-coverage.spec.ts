@@ -620,6 +620,137 @@ describe("core/lock/lock additional branch coverage", () => {
     });
   });
 
+  it("recovers an expired stale cleanup gate before removing an abandoned lock", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-orphan";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      await fs.writeFile(
+        lockPath,
+        `${JSON.stringify({ id, pid: 1, owner: "other-owner", created_at: STALE_TS, ttl_seconds: 60 }, null, 2)}\n`,
+        "utf8",
+      );
+      await fs.mkdir(gatePath);
+      const orphanedAt = new Date(Date.now() - 20_000);
+      await fs.utimes(gatePath, orphanedAt, orphanedAt);
+
+      const release = await acquireLock(pmPath, id, 60, "owner-force", true, false, 0);
+
+      const lockInfo = JSON.parse(await fs.readFile(lockPath, "utf8")) as { owner: string };
+      expect(lockInfo.owner).toBe("owner-force");
+      await expect(fs.access(gatePath)).rejects.toMatchObject({ code: "ENOENT" });
+      await release();
+    });
+  });
+
+  it("acquires stale cleanup when a raced gate disappears before stat", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-disappeared";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      const realMkdir = fs.mkdir;
+      let gateMkdirAttempts = 0;
+      const mkdirSpy = vi.spyOn(fs, "mkdir").mockImplementation(async (targetPath, options) => {
+        if (String(targetPath) === gatePath) {
+          gateMkdirAttempts += 1;
+          if (gateMkdirAttempts === 1) {
+            throw Object.assign(new Error("cleanup raced"), { code: "EEXIST" });
+          }
+        }
+        await realMkdir(targetPath, options);
+      });
+      const statSpy = vi.spyOn(fs, "stat").mockRejectedValueOnce(Object.assign(new Error("cleanup gone"), { code: "ENOENT" }));
+
+      try {
+        const release = await lockInternals.acquireStaleCleanupGate(lockPath, id);
+        expect(gateMkdirAttempts).toBe(2);
+        if (release === null) {
+          throw new Error("expected stale cleanup gate release");
+        }
+        await release();
+      } finally {
+        mkdirSpy.mockRestore();
+        statSpy.mockRestore();
+      }
+    });
+  });
+
+  it("keeps stale cleanup busy when gate stat fails unexpectedly", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-stat-fail";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      const realMkdir = fs.mkdir;
+      const mkdirSpy = vi.spyOn(fs, "mkdir").mockImplementation(async (targetPath, options) => {
+        if (String(targetPath) === gatePath) {
+          throw Object.assign(new Error("cleanup busy"), { code: "EEXIST" });
+        }
+        await realMkdir(targetPath, options);
+      });
+      const statSpy = vi.spyOn(fs, "stat").mockRejectedValueOnce(Object.assign(new Error("stat denied"), { code: "EACCES" }));
+
+      try {
+        await expect(lockInternals.acquireStaleCleanupGate(lockPath, id)).resolves.toBeNull();
+      } finally {
+        mkdirSpy.mockRestore();
+        statSpy.mockRestore();
+      }
+    });
+  });
+
+  it("keeps stale cleanup busy when an expired gate cannot be removed", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-remove-fail";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      await fs.mkdir(gatePath);
+      const orphanedAt = new Date(Date.now() - 20_000);
+      await fs.utimes(gatePath, orphanedAt, orphanedAt);
+      const realRm = fs.rm;
+      const rmSpy = vi.spyOn(fs, "rm").mockImplementation(async (targetPath, options) => {
+        if (String(targetPath) === gatePath) {
+          throw Object.assign(new Error("remove denied"), { code: "EPERM" });
+        }
+        await realRm(targetPath, options);
+      });
+
+      try {
+        await expect(lockInternals.acquireStaleCleanupGate(lockPath, id)).resolves.toBeNull();
+      } finally {
+        rmSpy.mockRestore();
+        await fs.rm(gatePath, { recursive: true, force: true });
+      }
+    });
+  });
+
+  it("keeps stale cleanup busy when another process recreates an expired gate first", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-recreated";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      await fs.mkdir(gatePath);
+      const orphanedAt = new Date(Date.now() - 20_000);
+      await fs.utimes(gatePath, orphanedAt, orphanedAt);
+      let gateMkdirAttempts = 0;
+      const realMkdir = fs.mkdir;
+      const mkdirSpy = vi.spyOn(fs, "mkdir").mockImplementation(async (targetPath, options) => {
+        if (String(targetPath) === gatePath) {
+          gateMkdirAttempts += 1;
+          throw Object.assign(new Error("cleanup busy"), { code: "EEXIST" });
+        }
+        await realMkdir(targetPath, options);
+      });
+
+      try {
+        await expect(lockInternals.acquireStaleCleanupGate(lockPath, id)).resolves.toBeNull();
+        expect(gateMkdirAttempts).toBe(2);
+        await expect(fs.access(gatePath)).rejects.toMatchObject({ code: "ENOENT" });
+      } finally {
+        mkdirSpy.mockRestore();
+      }
+    });
+  });
+
   it("reports a generic failure when stale cleanup gate creation fails", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-lock-stale-cleanup-gate-failure";
