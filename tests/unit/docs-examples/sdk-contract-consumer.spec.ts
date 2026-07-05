@@ -108,6 +108,16 @@ describe("sdk-contract-consumer example", () => {
       "pm contracts failed with exit code 4",
     );
 
+    vi.resetModules();
+    process.argv = ["node", "inspect-contracts.mjs", "create"];
+    vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
+      spawnSync: vi.fn(() => ({ status: 0, stdout: "warning before json\n{", stderr: "" })),
+    }));
+    await expect(importExampleScript(SCRIPT, "contractsMalformedJson")).rejects.toThrow(
+      "Failed to parse JSON from pm contracts:",
+    );
+
     // Default action (no argv[2]), non-array actions (the [] fallback) then the
     // not-invocable throw.
     vi.resetModules();

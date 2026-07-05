@@ -690,7 +690,24 @@ function withFilesDiscoveryOptions(options: Record<string, unknown>): Record<str
 }
 
 function normalizeActionName(value: string): string {
-  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const chunks: string[] = [];
+  let lastWasSeparator = true;
+  for (const character of value.trim().toLowerCase()) {
+    const isAlphaNumeric = (character >= "a" && character <= "z") || (character >= "0" && character <= "9");
+    if (isAlphaNumeric) {
+      chunks.push(character);
+      lastWasSeparator = false;
+      continue;
+    }
+    if (!lastWasSeparator) {
+      chunks.push("-");
+      lastWasSeparator = true;
+    }
+  }
+  if (chunks.at(-1) === "-") {
+    chunks.pop();
+  }
+  return chunks.join("");
 }
 
 function normalizeCommandPath(value: string): string {

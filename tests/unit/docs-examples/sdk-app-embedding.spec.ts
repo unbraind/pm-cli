@@ -142,6 +142,20 @@ describe("sdk-app-embedding example", () => {
       "pm contracts --json failed with exit code 7",
     );
 
+    vi.resetModules();
+    process.argv = ["node", "run-embedded-pm.mjs", "extension-reload"];
+    vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
+      spawnSync: vi.fn(() => ({
+        status: 0,
+        stdout: "warning before json\n{",
+        stderr: "",
+      })),
+    }));
+    await expect(importExampleScript(SCRIPT, "embeddedMalformedJson")).rejects.toThrow(
+      "Failed to parse JSON from pm contracts --json:",
+    );
+
     // Default action (no argv[2]) + an action absent from commandMap + null/empty
     // stdout on the command call exercise the remaining nullish/ternary right arms.
     vi.resetModules();

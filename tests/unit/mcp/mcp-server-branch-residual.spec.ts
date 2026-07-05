@@ -146,6 +146,8 @@ describe("mcp server branch residual coverage", () => {
     const server = await importServerWithCommandMocks(commandMocks, mockEmptyExtensionWorkspace);
     const runAction = server._testOnly.runAction;
 
+    expect(server._testOnly.normalizeActionName("---Hello---World___42---")).toBe("hello-world-42");
+
     await runAction({ action: "get", options: { id: "pm-1" } });
     await runAction({
       action: "copy",
