@@ -740,6 +740,13 @@ function collectChangedRelativePaths() {
         changed.add(filePath);
       }
     }
+    if (!baseRef && changed.size === 0) {
+      return {
+        ok: false,
+        files: [],
+        error: "Unable to determine committed changed files for CodeFactor parity without origin/main, main, or worktree diffs.",
+      };
+    }
   } catch {
     return { ok: false, files: [], error: "Unable to inspect git changed files for CodeFactor parity." };
   }

@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[4]: coverage,docs,docstrings,quality
 created_at: "2026-07-04T20:18:50.672Z"
-updated_at: "2026-07-05T00:01:03.077Z"
+updated_at: "2026-07-05T00:27:03.450Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 180
@@ -14,7 +14,7 @@ acceptance_criteria: Gate exposes new pure checkers with 100% spec coverage; run
 parent: pm-4ak1
 risk: low
 confidence: high
-comments[13]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-07-04T20:40:45.207Z",maintainer-agent,"Evidence — extended static-quality-gate with documentedSourceFiles (src+packages scope), exported-const coverage, checkExportedMemberDocstringCoverage, and checkTrivialDocstrings. Gate spec now 49 tests, verified 100% lines/branches/functions/statements on the gate script. Trivial-stub check calibrated to ZERO false positives across the ~2783 existing docstrings. Gate reports 3957 missing across 188 files (19 package module docs, 366 exported incl consts, 3572 members) for the sibling fill tasks."
   "2026-07-04T21:37:22.370Z",claude-code-agent,"Evidence: static gate remains 100% by default while package lint ratchets to current docstring baseline during the fill-work lane. pnpm lint passed; standalone full coverage passed 5371 tests at 100/100/100/100."
   "2026-07-04T22:19:12.933Z",claude-code-agent,"Evidence update: CodeFactor PR annotation on static-quality-gate complexity is fixed and pnpm lint now includes a changed-file CodeFactor parity gate for shipped src/packages/scripts files with max complexity 16. JSON evidence: codefactor_complexity ok=true, scanned_file_count=20, max_complexity=16, violations=0. Verification passed: static-quality spec 55 tests; pnpm lint; full coverage 5379 tests at 100/100/100/100."
@@ -28,6 +28,8 @@ comments[13]{created_at,author,text}:
   "2026-07-04T23:43:01.086Z",claude-code-agent,"Pre-push Greptile evidence after Windows assertion fix head 1b1427b1: greptile review --branch main --agent started review 672089dd-d003-4dbb-b3e8-248f13815d6e but failed before findings with Native workflow expansion for experiment native-rsv11-stndrd4-expansion-v3 requires expansionContext. Hosted PR Greptile will be retriggered after push for current-head review."
   "2026-07-05T00:00:27.836Z",claude-code-agent,"CodeFactor/local gate evidence after stale-cleanup review fix: pnpm lint passed ESLint, jscpd 0 clones, and static quality; explicit static-quality JSON returned ok=true with codefactor_complexity.ok=true, scanned_file_count=21, max_complexity=16, violations=[]. Full coverage also passed 5392 tests at 100/100/100/100."
   "2026-07-05T00:01:03.076Z",claude-code-agent,"Pre-push Greptile evidence after orphan cleanup fix head 581701dc: greptile review --branch main --agent started review 672089dd-d003-4dbb-b3e8-248f13815d6e but failed before findings with Native workflow expansion for experiment native-rsv11-stndrd4-expansion-v3 requires expansionContext. Hosted PR Greptile will be retriggered after push for current-head review."
+  "2026-07-05T00:24:57.541Z",claude-code-agent,"Review response evidence: fixed current-head Greptile CodeFactor parity finding by making the changed-file collector fail closed when no origin/main or main base ref exists and clean worktree/staged diffs would otherwise scan zero files. Static gate regression added for the clean checkout/no-base case. Verification passed: focused static/lock suite 101 tests; pnpm lint; explicit static JSON ok=true with codefactor_complexity.ok=true, scanned_file_count=21, max_complexity=16, violations=[]; full coverage 5401 tests at 100/100/100/100; changelog generate/check unchanged."
+  "2026-07-05T00:27:03.450Z",claude-code-agent,"Pre-push Greptile evidence after owner-gate/parity fix head 6e25ec75efba: greptile review --branch main --agent started review e2dceede-886f-43c6-a287-85aa273c3f49 but failed before findings with Native workflow expansion for experiment native-rsv11-stndrd4-expansion-v3 requires expansionContext. Hosted PR Greptile will be retriggered after push for current-head review."
 learnings[1]{created_at,author,text}:
   "2026-07-04T20:40:45.847Z",maintainer-agent,"The trivial-docstring quality gate must subtract the symbol's own identifier tokens AND a tiny filler-word set from the prose, then flag only when zero meaningful words remain. Calibrated against all existing docstrings first (0 false positives) before enabling; enabling it repo-wide without that calibration would have failed the gate on legitimate terse docs."
 files[4]{path,scope,note}:

@@ -643,6 +643,183 @@ describe("core/lock/lock additional branch coverage", () => {
     });
   });
 
+  it("does not steal an expired stale cleanup gate owned by a live process", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-live-owner";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      await fs.mkdir(gatePath);
+      await fs.writeFile(`${gatePath}/owner.json`, `${JSON.stringify({ pid: process.pid, token: "active-owner" })}\n`, "utf8");
+      const orphanedAt = new Date(Date.now() - 20_000);
+      await fs.utimes(gatePath, orphanedAt, orphanedAt);
+
+      await expect(lockInternals.acquireStaleCleanupGate(lockPath, id)).resolves.toBeNull();
+      await expect(fs.access(gatePath)).resolves.toBeUndefined();
+    });
+  });
+
+  it("treats permission-denied process probes as live stale cleanup owners", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-eperm-owner";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      await fs.mkdir(gatePath);
+      await fs.writeFile(`${gatePath}/owner.json`, `${JSON.stringify({ pid: 1234, token: "protected-owner" })}\n`, "utf8");
+      const orphanedAt = new Date(Date.now() - 20_000);
+      await fs.utimes(gatePath, orphanedAt, orphanedAt);
+      const killSpy = vi.spyOn(process, "kill").mockImplementation(() => {
+        throw Object.assign(new Error("permission denied"), { code: "EPERM" });
+      });
+
+      try {
+        await expect(lockInternals.acquireStaleCleanupGate(lockPath, id)).resolves.toBeNull();
+        await expect(fs.access(gatePath)).resolves.toBeUndefined();
+      } finally {
+        killSpy.mockRestore();
+      }
+    });
+  });
+
+  it("recovers an expired stale cleanup gate owned by a dead process", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-dead-owner";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      await fs.mkdir(gatePath);
+      await fs.writeFile(`${gatePath}/owner.json`, `${JSON.stringify({ pid: 1234, token: "dead-owner" })}\n`, "utf8");
+      const orphanedAt = new Date(Date.now() - 20_000);
+      await fs.utimes(gatePath, orphanedAt, orphanedAt);
+      const killSpy = vi.spyOn(process, "kill").mockImplementation(() => {
+        throw Object.assign(new Error("missing process"), { code: "ESRCH" });
+      });
+
+      try {
+        const release = await lockInternals.acquireStaleCleanupGate(lockPath, id);
+        if (release === null) {
+          throw new Error("expected stale cleanup gate release");
+        }
+        await release();
+        await expect(fs.access(gatePath)).rejects.toMatchObject({ code: "ENOENT" });
+      } finally {
+        killSpy.mockRestore();
+      }
+    });
+  });
+
+  it("ignores invalid owner metadata when recovering an expired stale cleanup gate", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-invalid-owner";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      await fs.mkdir(gatePath);
+      await fs.writeFile(`${gatePath}/owner.json`, "not json\n", "utf8");
+      const orphanedAt = new Date(Date.now() - 20_000);
+      await fs.utimes(gatePath, orphanedAt, orphanedAt);
+
+      const release = await lockInternals.acquireStaleCleanupGate(lockPath, id);
+      if (release === null) {
+        throw new Error("expected stale cleanup gate release");
+      }
+      await release();
+      await expect(fs.access(gatePath)).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  });
+
+  it("ignores malformed owner shapes when recovering expired stale cleanup gates", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const shapeCases = [
+        { id: "pm-lock-stale-cleanup-owner-array", rawOwner: "[]\n" },
+        { id: "pm-lock-stale-cleanup-owner-fields", rawOwner: "{\"pid\":0,\"token\":\"\"}\n" },
+      ];
+      for (const { id, rawOwner } of shapeCases) {
+        const lockPath = getLockPath(pmPath, id);
+        const gatePath = `${lockPath}.stale-cleanup`;
+        await fs.mkdir(gatePath);
+        await fs.writeFile(`${gatePath}/owner.json`, rawOwner, "utf8");
+        const orphanedAt = new Date(Date.now() - 20_000);
+        await fs.utimes(gatePath, orphanedAt, orphanedAt);
+
+        const release = await lockInternals.acquireStaleCleanupGate(lockPath, id);
+        if (release === null) {
+          throw new Error("expected stale cleanup gate release");
+        }
+        await release();
+        await expect(fs.access(gatePath)).rejects.toMatchObject({ code: "ENOENT" });
+      }
+    });
+  });
+
+  it("does not release a stale cleanup gate recreated by another owner", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-release-token";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      const release = await lockInternals.acquireStaleCleanupGate(lockPath, id);
+      if (release === null) {
+        throw new Error("expected stale cleanup gate release");
+      }
+      await fs.rm(gatePath, { recursive: true, force: true });
+      await fs.mkdir(gatePath);
+      await fs.writeFile(`${gatePath}/owner.json`, `${JSON.stringify({ pid: process.pid, token: "new-owner" })}\n`, "utf8");
+
+      await release();
+
+      await expect(fs.access(gatePath)).resolves.toBeUndefined();
+      await fs.rm(gatePath, { recursive: true, force: true });
+    });
+  });
+
+  it("treats stale cleanup gate release failures as best-effort cleanup", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-release-fail";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      const release = await lockInternals.acquireStaleCleanupGate(lockPath, id);
+      if (release === null) {
+        throw new Error("expected stale cleanup gate release");
+      }
+      const realRm = fs.rm;
+      const rmSpy = vi.spyOn(fs, "rm").mockImplementation(async (targetPath, options) => {
+        if (String(targetPath) === gatePath) {
+          throw Object.assign(new Error("release denied"), { code: "EACCES" });
+        }
+        await realRm(targetPath, options);
+      });
+
+      try {
+        await expect(release()).resolves.toBeUndefined();
+      } finally {
+        rmSpy.mockRestore();
+        await fs.rm(gatePath, { recursive: true, force: true });
+      }
+    });
+  });
+
+  it("reports a generic failure and cleans up when stale cleanup owner write fails", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-stale-cleanup-owner-write-fail";
+      const lockPath = getLockPath(pmPath, id);
+      const gatePath = `${lockPath}.stale-cleanup`;
+      const realWriteFile = fs.writeFile;
+      const writeFileSpy = vi.spyOn(fs, "writeFile").mockImplementation(async (targetPath, data, options) => {
+        if (String(targetPath) === `${gatePath}/owner.json`) {
+          throw Object.assign(new Error("owner denied"), { code: "EACCES" });
+        }
+        await realWriteFile(targetPath, data, options);
+      });
+
+      try {
+        await expect(lockInternals.acquireStaleCleanupGate(lockPath, id)).rejects.toMatchObject({
+          exitCode: EXIT_CODE.GENERIC_FAILURE,
+          message: expect.stringContaining(`Failed to prepare stale lock cleanup for ${id}`),
+        });
+        await expect(fs.access(gatePath)).rejects.toMatchObject({ code: "ENOENT" });
+      } finally {
+        writeFileSpy.mockRestore();
+      }
+    });
+  });
+
   it("acquires stale cleanup when a raced gate disappears before stat", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-lock-stale-cleanup-disappeared";

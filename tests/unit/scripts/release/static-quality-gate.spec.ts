@@ -837,6 +837,33 @@ describe("static-quality-gate", () => {
       expect(report.violations[0]).toMatchObject({ path: "src/changed.ts", complexity: 2 });
     });
 
+    it("checkCodeFactorComplexity fails closed when a clean checkout has no base refs", async () => {
+      mockUtils("/repo");
+      mockFs({
+        existsSync: vi.fn((p: string) => normalizeMockPath(p) === "/repo/.git") as never,
+      });
+      mockChildProcess({
+        execFileSync: vi.fn((cmd: string, args: string[]) => {
+          expect(cmd).toBe("git");
+          const joined = args.join(" ");
+          if (joined === "merge-base HEAD origin/main" || joined === "merge-base HEAD main") {
+            return "\n";
+          }
+          if (joined === "diff --name-only --diff-filter=ACMR" || joined === "diff --cached --name-only --diff-filter=ACMR") {
+            return "\n";
+          }
+          throw new Error(`unexpected git args: ${joined}`);
+        }) as never,
+      });
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const report = mod.checkCodeFactorComplexity(16);
+      expect(report).toMatchObject({
+        ok: false,
+        scanned_file_count: 0,
+        error: "Unable to determine committed changed files for CodeFactor parity without origin/main, main, or worktree diffs.",
+      });
+    });
+
     it("checkCodeFactorComplexity inspects git diff, staged, and unstaged paths in a checkout", async () => {
       mockUtils("/repo");
       mockFs({

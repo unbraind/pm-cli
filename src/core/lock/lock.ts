@@ -5,6 +5,7 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { runActiveOnReadHooks, runActiveOnWriteHooks, runActiveServiceOverride } from "../extensions/index.js";
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
@@ -31,6 +32,11 @@ interface StaleLockRemovalResult {
   lockInfo: LockReadResult;
   shouldRetryCreate: boolean;
   staleRemovalCounted: boolean;
+}
+
+interface StaleCleanupGateOwner {
+  pid: number;
+  token: string;
 }
 
 function parseLockInfo(raw: string): LockReadResult {
@@ -162,6 +168,7 @@ const LOCK_WAIT_MAX_DELAY_MS = 200;
 const LOCK_CONFLICT_RETRY_HINT_MS = 250;
 const MAX_STALE_LOCK_REMOVALS = 3;
 const STALE_CLEANUP_GATE_SUFFIX = ".stale-cleanup";
+const STALE_CLEANUP_GATE_OWNER_FILE = "owner.json";
 const STALE_CLEANUP_GATE_STALE_MS = 10_000;
 
 function parseNonNegativeIntegerWaitMs(value: string | number | undefined): number | undefined {
@@ -236,16 +243,79 @@ function throwIfStaleLockNeedsForce(id: string, lockInfo: LockReadResult, force:
   }
 }
 
-async function tryCreateStaleCleanupGate(gatePath: string, id: string): Promise<boolean> {
+function parseStaleCleanupGateOwner(raw: string): StaleCleanupGateOwner | null {
+  let parsed: unknown;
   try {
-    await fs.mkdir(gatePath);
+    parsed = JSON.parse(raw) as unknown;
+  } catch {
+    return null;
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return null;
+  }
+  const candidate = parsed as Record<string, unknown>;
+  const pid = candidate.pid;
+  const token = candidate.token;
+  if (typeof pid !== "number" || !Number.isInteger(pid) || pid <= 0 || typeof token !== "string" || token.length === 0) {
+    return null;
+  }
+  return { pid, token };
+}
+
+async function readStaleCleanupGateOwner(gatePath: string): Promise<StaleCleanupGateOwner | null> {
+  try {
+    return parseStaleCleanupGateOwner(await fs.readFile(path.join(gatePath, STALE_CLEANUP_GATE_OWNER_FILE), "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function isProcessAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
     return true;
   } catch (error: unknown) {
-    if (isErrno(error, "EEXIST")) {
+    if (isErrno(error, "ESRCH")) {
       return false;
+    }
+    return true;
+  }
+}
+
+async function removeStaleCleanupGateDirectory(gatePath: string): Promise<boolean> {
+  try {
+    await fs.rm(gatePath, { recursive: true, force: true });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function releaseStaleCleanupGate(gatePath: string, token: string): Promise<void> {
+  const owner = await readStaleCleanupGateOwner(gatePath);
+  if (owner?.token !== token) {
+    return;
+  }
+  await removeStaleCleanupGateDirectory(gatePath);
+}
+
+async function tryCreateStaleCleanupGate(gatePath: string, id: string): Promise<StaleCleanupGateOwner | null> {
+  try {
+    await fs.mkdir(gatePath);
+  } catch (error: unknown) {
+    if (isErrno(error, "EEXIST")) {
+      return null;
     }
     throw new PmCliError(`Failed to prepare stale lock cleanup for ${id}: ${toErrorMessage(error)}`, EXIT_CODE.GENERIC_FAILURE);
   }
+  const owner = { pid: process.pid, token: randomUUID() };
+  try {
+    await fs.writeFile(path.join(gatePath, STALE_CLEANUP_GATE_OWNER_FILE), `${JSON.stringify(owner)}\n`, "utf8");
+  } catch (error: unknown) {
+    await removeStaleCleanupGateDirectory(gatePath);
+    throw new PmCliError(`Failed to prepare stale lock cleanup for ${id}: ${toErrorMessage(error)}`, EXIT_CODE.GENERIC_FAILURE);
+  }
+  return owner;
 }
 
 async function removeExpiredStaleCleanupGate(gatePath: string): Promise<boolean> {
@@ -257,30 +327,27 @@ async function removeExpiredStaleCleanupGate(gatePath: string): Promise<boolean>
   } catch (error: unknown) {
     return isErrno(error, "ENOENT");
   }
-  try {
-    await fs.rm(gatePath, { recursive: true, force: true });
-    return true;
-  } catch {
+  const owner = await readStaleCleanupGateOwner(gatePath);
+  if (owner !== null && isProcessAlive(owner.pid)) {
     return false;
   }
+  return removeStaleCleanupGateDirectory(gatePath);
 }
 
 async function acquireStaleCleanupGate(lockPath: string, id: string): Promise<(() => Promise<void>) | null> {
   const gatePath = `${lockPath}${STALE_CLEANUP_GATE_SUFFIX}`;
-  if (await tryCreateStaleCleanupGate(gatePath, id)) {
-    return async () => {
-      await fs.rm(gatePath, { recursive: true, force: true });
-    };
+  const owner = await tryCreateStaleCleanupGate(gatePath, id);
+  if (owner !== null) {
+    return async () => releaseStaleCleanupGate(gatePath, owner.token);
   }
   if (!(await removeExpiredStaleCleanupGate(gatePath))) {
     return null;
   }
-  if (!(await tryCreateStaleCleanupGate(gatePath, id))) {
+  const recoveredOwner = await tryCreateStaleCleanupGate(gatePath, id);
+  if (recoveredOwner === null) {
     return null;
   }
-  return async () => {
-    await fs.rm(gatePath, { recursive: true, force: true });
-  };
+  return async () => releaseStaleCleanupGate(gatePath, recoveredOwner.token);
 }
 
 async function removeConfirmedStaleLock(params: {
