@@ -17,6 +17,7 @@
 
 ### Other
 
+- Bundle GH-433 self-parent guard, Windows nightly lock proof, and pnpm 11 bootstrap hardening ([pm-q1ke](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-q1ke.toon))
 - Inventory the CLI-to-core call graph: map every command to core modules and classify logic for SDK promotion ([pm-lodl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lodl.toon))
 - Sandbox audit fixes: package describe accepts npm package name; pm context <id\> routes to pm get ([pm-ayn7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ayn7.toon))
 - 2026-07-04 ecosystem audit \#4: coverage matrix, governance capability epic & relationship modeling ([pm-osea](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-osea.toon))

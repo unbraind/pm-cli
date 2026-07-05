@@ -12,6 +12,7 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
     option: "--title, -t <value>",
     description: "Item title [required] (or pass title as the first positional argument)",
   },
+  { target: "id", keys: ["id"], option: "--id <value>", description: "Explicit item id (normalized with the configured id_prefix)" },
   {
     target: "description",
     keys: ["description"],

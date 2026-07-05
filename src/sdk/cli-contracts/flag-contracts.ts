@@ -914,6 +914,7 @@ export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
 
 export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { short: "-t", flag: "--title" },
+  { flag: "--id" },
   { short: "-d", flag: "--description" },
   { flag: "--type" },
   { flag: "--template" },

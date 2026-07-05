@@ -18,6 +18,7 @@ import { normalizeItemId } from "../../core/item/id.js";
 import { toItemRecord } from "../../core/item/item-record.js";
 import { buildInvalidTypeError } from "../../core/schema/item-types-file.js";
 import {
+  assertParentReferenceIsNotSelf,
   normalizeParentReferenceValue,
   validateMissingParentReference,
 } from "../../core/item/parent-reference-policy.js";
@@ -1336,6 +1337,7 @@ function assertMatchingOrderRank(options: UpdateCommandOptions): void {
 }
 
 async function resolveParentReferenceForUpdate(params: {
+  id: string;
   options: UpdateCommandOptions;
   unsetTargets: { frontMatterKeys: Set<string> };
   pmRoot: string;
@@ -1347,6 +1349,7 @@ async function resolveParentReferenceForUpdate(params: {
     return { resolvedParentValue: undefined, warnings: [] };
   }
   const resolvedParentValue = normalizeParentReferenceValue(params.options.parent);
+  assertParentReferenceIsNotSelf(params.id, resolvedParentValue, params.settings.id_prefix);
   const parentLocated = await locateItem(
     params.pmRoot,
     resolvedParentValue,
@@ -2006,6 +2009,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   const docUpdates = parseDocs(options.doc);
   const workflowTransitionWarnings: string[] = [];
   const parentReference = await resolveParentReferenceForUpdate({
+    id,
     options,
     unsetTargets,
     pmRoot,

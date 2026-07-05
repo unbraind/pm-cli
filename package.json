@@ -3,6 +3,7 @@
   "version": "2026.7.4",
   "description": "Git-native project management CLI for humans and agents.",
   "type": "module",
+  "packageManager": "pnpm@11.10.0",
   "author": "unbrained",
   "homepage": "https://github.com/unbraind/pm-cli#readme",
   "repository": {
@@ -153,19 +154,5 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.62.1",
     "vitest": "^4.1.9"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@sentry/cli",
-      "esbuild"
-    ],
-    "overrides": {
-      "rollup": ">=4.59.0",
-      "brace-expansion": ">=5.0.6",
-      "vite": "7.3.5",
-      "esbuild": "0.28.1",
-      "@opentelemetry/core": ">=2.8.0",
-      "undici": "6.27.0"
-    }
   }
 }

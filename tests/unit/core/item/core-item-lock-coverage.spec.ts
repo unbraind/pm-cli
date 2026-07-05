@@ -857,9 +857,10 @@ describe("core/lock/lock additional branch coverage", () => {
       const id = "pm-lock-stale-cleanup-owner-write-fail";
       const lockPath = getLockPath(pmPath, id);
       const gatePath = `${lockPath}.stale-cleanup`;
+      const ownerPath = path.join(gatePath, "owner.json");
       const realWriteFile = fs.writeFile;
       const writeFileSpy = vi.spyOn(fs, "writeFile").mockImplementation(async (targetPath, data, options) => {
-        if (String(targetPath) === `${gatePath}/owner.json`) {
+        if (String(targetPath) === ownerPath) {
           throw Object.assign(new Error("owner denied"), { code: "EACCES" });
         }
         await realWriteFile(targetPath, data, options);

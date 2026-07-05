@@ -1675,6 +1675,129 @@ describe("runCreate", () => {
     });
   });
 
+  it("rejects self-parent references before writing", async () => {
+    await withTempPmPath(async (context) => {
+      const createAttempt = runCreate(
+        baseCreateOptions({
+          id: "pm-create-self-parent",
+          parent: "PM-CREATE-SELF-PARENT",
+        }),
+        { path: context.pmPath },
+      );
+      await expect(createAttempt).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(createAttempt).rejects.toThrow('Parent item "pm-create-self-parent" cannot be the same as item');
+
+      const taskFiles = await readdir(path.join(context.pmPath, "tasks"));
+      expect(taskFiles.some((fileName) => fileName.includes("pm-create-self-parent"))).toBe(false);
+    });
+  });
+
+  it("rejects CLI self-parent references with explicit create ids before writing", async () => {
+    await withTempPmPath(async (context) => {
+      const result = context.runCli([
+        "create",
+        "--id",
+        "pm-cli-create-self-parent",
+        "--parent",
+        "CLI-CREATE-SELF-PARENT",
+        "--title",
+        "cli create self parent",
+        "--description",
+        "self parent should fail before writes",
+        "--type",
+        "Task",
+        "--create-mode",
+        "progressive",
+      ]);
+      expect(result.code).toBe(EXIT_CODE.USAGE);
+      expect(result.stderr).toContain('Parent item "pm-cli-create-self-parent" cannot be the same as item');
+
+      const taskFiles = await readdir(path.join(context.pmPath, "tasks"));
+      expect(taskFiles.some((fileName) => fileName.includes("pm-cli-create-self-parent"))).toBe(false);
+    });
+  });
+
+  it("supports normalized internal explicit ids", async () => {
+    await withTempPmPath(async (context) => {
+      const created = await runCreate(
+        baseCreateOptions({
+          id: "EXPLICIT-CREATE-ID",
+          parent: undefined,
+        }),
+        { path: context.pmPath },
+      );
+      expect(created.item.id).toBe("pm-explicit-create-id");
+
+      const shorthand = await runCreate(
+        baseCreateOptions({
+          id: "#SAFE-SHORTHAND-ID",
+          parent: undefined,
+          title: "create explicit shorthand id",
+        }),
+        { path: context.pmPath },
+      );
+      expect(shorthand.item.id).toBe("pm-safe-shorthand-id");
+    });
+  });
+
+  it("rejects invalid explicit ids", async () => {
+    await withTempPmPath(async (context) => {
+      const invalidIds: unknown[] = [
+        123,
+        null,
+        " ",
+        "none",
+        "null",
+        "undefined",
+        "../traversal",
+        "invalid/char",
+        "invalid\\char",
+        "invalid:char",
+        ".hidden",
+      ];
+      for (const [index, id] of invalidIds.entries()) {
+        await expect(
+          runCreate(
+            baseCreateOptions({
+              id,
+              parent: undefined,
+              title: `create-invalid-explicit-id-${index}`,
+            }),
+            { path: context.pmPath },
+          ),
+        ).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.USAGE,
+        });
+      }
+    });
+  });
+
+  it("rejects duplicate explicit ids inside the locked create path", async () => {
+    await withTempPmPath(async (context) => {
+      await runCreate(
+        baseCreateOptions({
+          id: "EXPLICIT-CREATE-ID",
+          parent: undefined,
+        }),
+        { path: context.pmPath },
+      );
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            id: "pm-explicit-create-id",
+            parent: undefined,
+            title: "create-duplicate-explicit-id",
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.CONFLICT,
+      });
+    });
+  });
+
   it("allows missing parent references only with the explicit escape hatch", async () => {
     await withTempPmPath(async (context) => {
       const result = await runCreate(

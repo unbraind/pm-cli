@@ -1799,6 +1799,9 @@
           "short": "-t"
         },
         {
+          "flag": "--id"
+        },
+        {
           "flag": "--description",
           "short": "-d"
         },
@@ -7263,6 +7266,12 @@
           "title"
         ],
         "target": "title"
+      },
+      {
+        "keys": [
+          "id"
+        ],
+        "target": "id"
       },
       {
         "keys": [
