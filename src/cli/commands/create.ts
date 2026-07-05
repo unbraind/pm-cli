@@ -1279,7 +1279,7 @@ async function resolveCreateItemId(params: {
     throw new PmCliError("--id must not be empty or use a placeholder token", EXIT_CODE.USAGE);
   }
   const normalizedId = normalizeItemId(trimmedId, params.settings.id_prefix);
-  if (!/^[a-z0-9][a-z0-9-]*$/.test(normalizedId)) {
+  if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(normalizedId)) {
     throw new PmCliError("--id must contain only letters, numbers, and dashes after normalization", EXIT_CODE.USAGE);
   }
   return normalizedId;

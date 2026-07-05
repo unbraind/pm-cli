@@ -77,7 +77,7 @@ function main() {
   runCheckedStep("docs-skills-gate", process.execPath, ["scripts/release/docs-skills-gate.mjs"]);
   checks.push({ name: "docs-skills-gate", ok: true });
 
-  runCheckedStep("static-quality-gate", process.execPath, ["scripts/release/static-quality-gate.mjs"]);
+  runCheckedStep("static-quality-gate", pnpm, ["quality:static"]);
   checks.push({ name: "static-quality-gate", ok: true });
 
   runCheckedStep("coverage", pnpm, ["test:coverage"], { env: { PM_RUN_TESTS_SKIP_BUILD: "1" } });

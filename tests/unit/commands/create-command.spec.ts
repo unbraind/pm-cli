@@ -1756,6 +1756,8 @@ describe("runCreate", () => {
         "invalid\\char",
         "invalid:char",
         ".hidden",
+        "trailing-",
+        "pm-trailing-",
       ];
       for (const [index, id] of invalidIds.entries()) {
         await expect(
