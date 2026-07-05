@@ -3,6 +3,9 @@ name: Auto Release
 on:
   schedule:
     - cron: "35 2 * * *"
+  issues:
+    types:
+      - closed
   workflow_dispatch:
     inputs:
       push:
@@ -41,6 +44,7 @@ concurrency:
 jobs:
   auto-release:
     name: Auto release pipeline
+    if: "${{ github.event_name != 'issues' || (github.actor != 'github-actions[bot]' && github.event.issue.title == 'Auto Release blocked: scheduled run failed' && github.event.issue.user.login == 'github-actions[bot]') }}"
     runs-on: ubuntu-latest
     timeout-minutes: 60
     environment:
@@ -111,8 +115,44 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_PERSONAL_ADMIN_TOKEN: ${{ secrets.SENTRY_PERSONAL_ADMIN_TOKEN }}
+          ISSUE_CREATED_AT: ${{ github.event.issue.created_at || '' }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || '' }}
         run: |
           set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "issues" ]]; then
+            issue_created_day="${ISSUE_CREATED_AT%%T*}"
+            current_day="$(date -u +%F)"
+            if [[ -z "${issue_created_day}" || "${issue_created_day}" != "${current_day}" ]]; then
+              echo "Auto Release retry skipped because blocker issue was not created on the current UTC day."
+              echo "retry_skip_reason=same_day_window_expired" >> "${GITHUB_OUTPUT}"
+              exit 0
+            fi
+            if [[ -z "${ISSUE_NUMBER}" ]]; then
+              echo "Auto Release retry refused because the blocker issue number was unavailable."
+              echo "retry_skip_reason=retry_issue_number_unavailable" >> "${GITHUB_OUTPUT}"
+              exit 0
+            fi
+            retry_marker="<!-- auto-release-retry-attempted:${current_day} -->"
+            if ! trusted_issue_comments="$(gh issue view "${ISSUE_NUMBER}" --json comments --jq '.comments[] | select(.author.login? == "github-actions[bot]") | .body')"; then
+              echo "Could not inspect Auto Release blocker issue #${ISSUE_NUMBER}; refusing untracked production retry."
+              echo "retry_skip_reason=retry_state_unavailable" >> "${GITHUB_OUTPUT}"
+              exit 0
+            fi
+            if grep -Fq "${retry_marker}" <<< "${trusted_issue_comments}"; then
+              echo "Auto Release retry refused because this blocker issue already recorded a current-day retry attempt."
+              echo "retry_skip_reason=retry_already_attempted" >> "${GITHUB_OUTPUT}"
+              exit 0
+            fi
+            retry_body="Auto Release retry attempt recorded for ${current_day} UTC.
+
+            This marker prevents repeated production retries for the same blocker issue if the retry fails and the issue is closed again before UTC midnight.
+
+            ${retry_marker}"
+            if ! gh issue comment "${ISSUE_NUMBER}" --body "${retry_body}"; then
+              echo "Could not record Auto Release retry marker on blocker issue #${ISSUE_NUMBER}; refusing untracked production retry."
+              exit 1
+            fi
+          fi
           if [[ "${INPUT_DRY_RUN}" == "true" && "${INPUT_PUSH}" == "true" ]]; then
             echo "dry_run=true cannot be combined with push=true"
             exit 2
@@ -140,6 +180,7 @@ jobs:
           NEW_TAG="$(git describe --tags --abbrev=0 2>/dev/null || true)"
           if [[ "${INPUT_PUSH}" != "true" || "${INPUT_DRY_RUN}" == "true" || -z "${NEW_TAG}" || "${NEW_TAG}" == "${PREVIOUS_TAG}" ]]; then
             echo "No new pushed release tag detected; publish dispatch skipped."
+            echo "retry_skip_reason=no_new_pushed_release_tag" >> "${GITHUB_OUTPUT}"
             exit 0
           fi
 
@@ -194,13 +235,79 @@ jobs:
             exit 0
           fi
 
-      - name: Alert on blocked scheduled auto-release
-        if: failure() && github.event_name == 'schedule'
+      - name: Record resolved-issue auto-release retry success
+        if: "${{ success() && github.event_name == 'issues' && steps.auto_release.outputs.published_tag }}"
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RELEASE_SHA: ${{ steps.auto_release.outputs.published_sha }}
+          RELEASE_TAG: ${{ steps.auto_release.outputs.published_tag }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+          body="Auto Release retry after blocker resolution succeeded and published \`${RELEASE_TAG}\`.
+
+          Run: ${RUN_URL}
+          Commit: ${RELEASE_SHA}
+
+          The blocker remains closed because the retry pushed a release tag and the downstream Release workflow completed successfully."
+          if ! gh issue comment "${ISSUE_NUMBER}" --body "${body}"; then
+            echo "Could not comment on resolved Auto Release blocker issue #${ISSUE_NUMBER}; leaving retry status successful."
+            exit 0
+          fi
+
+      - name: Record resolved-issue auto-release retry skip
+        if: "${{ success() && github.event_name == 'issues' && !steps.auto_release.outputs.published_tag }}"
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           RELEASE_SHA: ${{ github.sha }}
+          RETRY_SKIP_REASON: ${{ steps.auto_release.outputs.retry_skip_reason || 'no_new_pushed_release_tag' }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+          case "${RETRY_SKIP_REASON}" in
+            same_day_window_expired)
+              detail="The retry was skipped because the blocker issue was not created on the current UTC day."
+              ;;
+            retry_issue_number_unavailable)
+              detail="The retry was skipped because the blocker issue number was unavailable in the issue event payload."
+              ;;
+            retry_state_unavailable)
+              detail="The retry was skipped because existing blocker comments could not be inspected safely."
+              ;;
+            retry_already_attempted)
+              detail="The retry was skipped because this blocker issue already recorded a current-day retry attempt."
+              ;;
+            *)
+              detail="The retry completed but found no new pushed release tag, usually because no publish-eligible changes remained after the latest release tag."
+              ;;
+          esac
+          body="Auto Release retry after blocker resolution completed without publishing a new tag.
+
+          Run: ${RUN_URL}
+          Commit: ${RELEASE_SHA}
+          Retry skip reason: \`${RETRY_SKIP_REASON}\`
+
+          ${detail}
+
+          The blocker remains closed because the retry path did not fail."
+          if ! gh issue comment "${ISSUE_NUMBER}" --body "${body}"; then
+            echo "Could not comment on resolved Auto Release blocker issue #${ISSUE_NUMBER}; leaving retry status successful."
+            exit 0
+          fi
+
+      - name: Alert on blocked scheduled auto-release
+        if: "${{ failure() && (github.event_name == 'schedule' || github.event_name == 'issues') }}"
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RELEASE_SHA: ${{ github.sha }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          CLOSED_ISSUE_NUMBER: ${{ github.event.issue.number || '' }}
           INPUT_PUSH: ${{ github.event_name == 'workflow_dispatch' && (inputs.push && 'true' || 'false') || 'true' }}
           INPUT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && (inputs.dry_run && 'true' || 'false') || 'false' }}
           RELEASE_PAT_CONFIGURED: ${{ secrets.RELEASE_PAT != '' }}
@@ -208,17 +315,42 @@ jobs:
         run: |
           set -euo pipefail
           title="Auto Release blocked: scheduled run failed"
-          existing_issue="$(gh issue list --state open --search "\"${title}\" in:title" --json number --jq '.[0].number // empty')"
+          existing_issue="${CLOSED_ISSUE_NUMBER:-}"
+          if [[ -z "${existing_issue}" ]]; then
+            existing_issue="$(gh issue list --state open --search "\"${title}\" in:title" --json number --jq '.[0].number // empty')"
+          fi
+          if [[ -n "${existing_issue}" && "${GITHUB_EVENT_NAME}" == "schedule" ]]; then
+            existing_created_at="$(gh issue view "${existing_issue}" --json createdAt --jq '.createdAt // ""' 2>/dev/null || true)"
+            existing_created_day="${existing_created_at%%T*}"
+            current_day="$(date -u +%F)"
+            if [[ -n "${existing_created_day}" && "${existing_created_day}" != "${current_day}" ]]; then
+              printf -v superseded_body '%s\n\nRun: %s\nCommit: %s\n\n%s' \
+                "Superseded by a new Auto Release blocker for the current UTC day." \
+                "${RUN_URL}" \
+                "${RELEASE_SHA}" \
+                "Closing this stale blocker so same-day retry detection uses the most recent scheduled failure date."
+              gh issue close "${existing_issue}" --comment "${superseded_body}" || true
+              existing_issue=""
+            fi
+          fi
+          if [[ "${GITHUB_EVENT_NAME}" == "issues" ]]; then
+            failure_intro="The Auto Release retry after blocker resolution failed before publishing, so no release was cut."
+            release_path_description="the blocker-resolution retry"
+          else
+            failure_intro="The scheduled daily Auto Release run failed before publishing, so no release was cut."
+            release_path_description="the scheduled production release"
+          fi
           detected_cause="Inspect the failed workflow logs for the exact failing command."
           if [[ "${INPUT_PUSH}" == "true" && "${INPUT_DRY_RUN}" != "true" && "${RELEASE_PAT_CONFIGURED}" != "true" ]]; then
-            detected_cause="RELEASE_PAT is missing from the release environment; scheduled production releases cannot push the checked version commit/tag to protected main."
+            detected_cause="RELEASE_PAT is missing from the release environment; ${release_path_description} cannot push the checked version commit/tag to protected main."
           elif [[ "${INPUT_PUSH}" == "true" && "${INPUT_DRY_RUN}" != "true" && "${SENTRY_PERSONAL_ADMIN_TOKEN_CONFIGURED}" != "true" ]]; then
-            detected_cause="SENTRY_PERSONAL_ADMIN_TOKEN is missing from the release environment; scheduled production releases cannot run the mandatory reliability gate."
+            detected_cause="SENTRY_PERSONAL_ADMIN_TOKEN is missing from the release environment; ${release_path_description} cannot run the mandatory reliability gate."
           fi
-          body="The scheduled daily Auto Release run failed before publishing, so no release was cut.
+          body="${failure_intro}
 
           Run: ${RUN_URL}
           Commit: ${RELEASE_SHA}
+          Trigger: \`${GITHUB_EVENT_NAME}\`
 
           Detected preflight state:
           - push: \`${INPUT_PUSH}\`
@@ -234,7 +366,14 @@ jobs:
           Configure the release push token or resolve the gate's \`blocking_short_ids\`, then re-run Auto Release. This issue is auto-updated so blocked daily releases are never silently skipped."
 
           if [[ -n "${existing_issue}" ]]; then
-            gh issue comment "${existing_issue}" --body "${body}"
+            if ! gh issue comment "${existing_issue}" --body "${body}"; then
+              echo "Could not comment on blocked Auto Release issue #${existing_issue}; continuing blocker state update."
+            fi
+            if [[ "${GITHUB_EVENT_NAME}" == "issues" ]]; then
+              if ! gh issue reopen "${existing_issue}"; then
+                echo "Could not reopen blocked Auto Release issue #${existing_issue} after retry failure."
+              fi
+            fi
           else
             gh issue create --title "${title}" --body "${body}"
           fi
