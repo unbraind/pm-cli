@@ -6,24 +6,43 @@
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError, type PmCliErrorContext } from "../core/shared/errors.js";
 
+/**
+ * The `Error.name` value carried by every {@link PmCliExpectedError}. The CLI's
+ * top-level handler and the Sentry crash filter recognise expected errors by
+ * matching this exact string rather than by `instanceof`, so an error thrown
+ * from a separately bundled or linked extension is still treated as expected.
+ */
 export const PM_CLI_EXPECTED_ERROR_NAME = "PmCliError";
 
 /**
- * Documents the pm cli expected error payload exchanged by command, SDK, and package integrations.
+ * The public, class-free shape of an "expected" pm CLI error: a user- or
+ * environment-caused failure that should exit with a specific code and be
+ * excluded from crash reporting. Package authors detect it structurally with
+ * {@link isPmCliExpectedError} instead of importing the internal `PmCliError`
+ * class, which keeps the contract stable across bundling boundaries.
  */
 export interface PmCliExpectedError extends Error {
+  /** Discriminant tag; always {@link PM_CLI_EXPECTED_ERROR_NAME}. */
   name: typeof PM_CLI_EXPECTED_ERROR_NAME;
+  /** Positive process exit code the CLI should terminate with for this failure. */
   exitCode: number;
+  /** Structured, secret-free metadata attached for diagnostics and error guidance. */
   context: PmCliErrorContext;
+  /** Optional underlying error that triggered this one, preserved for cause chaining. */
   cause?: unknown;
 }
 
 /**
- * Documents the create pm cli expected error options payload exchanged by command, SDK, and package integrations.
+ * Options accepted by {@link createPmCliExpectedError}. Every field is optional;
+ * omitted values default to the CLI usage exit code, an empty context, and no
+ * `cause`.
  */
 export interface CreatePmCliExpectedErrorOptions {
+  /** Positive exit code to assign; defaults to the usage-error code. Non-finite or non-positive values throw. */
   exitCode?: number;
+  /** Structured, secret-free diagnostic metadata to attach to the error. */
   context?: PmCliErrorContext;
+  /** Underlying error to retain as a non-enumerable `cause` when provided. */
   cause?: unknown;
 }
 

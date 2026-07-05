@@ -114,7 +114,7 @@ describe("runClaim/runRelease", () => {
     });
   });
 
-  it("supports re-claiming already-owned items and taking over foreign non-terminal assignees without force", async () => {
+  it("re-claims already-owned items idempotently and rejects held items unless forced (pm-8t5x)", async () => {
     await withTempPmPath(async (context) => {
       const mine = createTask(context, {
         title: "claim-current-assignee",
@@ -130,9 +130,15 @@ describe("runClaim/runRelease", () => {
         status: "open",
         assignee: "other-author",
       });
-      const takeover = await runClaim(foreign, false, { path: context.pmPath });
+      await expect(runClaim(foreign, false, { path: context.pmPath })).rejects.toMatchObject<Partial<PmCliError>>({
+        exitCode: EXIT_CODE.CONFLICT,
+        message: expect.stringContaining("already claimed by other-author") as unknown as string,
+        context: expect.objectContaining({ code: "already_claimed_by" }) as unknown as PmCliError["context"],
+      });
+
+      const takeover = await runClaim(foreign, true, { path: context.pmPath });
       expect(takeover.previous_assignee).toBe("other-author");
-      expect(takeover.forced).toBe(false);
+      expect(takeover.forced).toBe(true);
       expect(takeover.item.assignee).toBe("test-author");
       expect(takeover.warnings).toEqual(expect.arrayContaining(["claim_takeover:other-author->test-author"]));
     });
@@ -145,11 +151,21 @@ describe("runClaim/runRelease", () => {
         status: "open",
         assignee: "other-author",
       });
+      const beforeGet = context.runCli(["get", id, "--json"], { expectJson: true });
+      const beforeHistory = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
+      const beforeUpdatedAt = (beforeGet.json as { item: { updated_at: string } }).item.updated_at;
+      const beforeHistoryCount = (beforeHistory.json as { history: unknown[] }).history.length;
+
       const result = await runClaim(id, false, { path: context.pmPath }, { ifAvailable: true });
+
+      const afterGet = context.runCli(["get", id, "--json"], { expectJson: true });
+      const afterHistory = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
       expect(result.skipped).toBe(true);
       expect(result.previous_assignee).toBe("other-author");
       expect(result.item.assignee).toBe("other-author");
       expect(result.warnings).toEqual(expect.arrayContaining(["claim_skipped_held_by:other-author"]));
+      expect((afterGet.json as { item: { updated_at: string } }).item.updated_at).toBe(beforeUpdatedAt);
+      expect((afterHistory.json as { history: unknown[] }).history.length).toBe(beforeHistoryCount);
     });
   });
 

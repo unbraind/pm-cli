@@ -6,7 +6,11 @@ status: open
 priority: 2
 tags[2]: "area:quality",refactor
 created_at: "2026-07-04T08:32:10.019Z"
-updated_at: "2026-07-04T08:32:10.019Z"
+updated_at: "2026-07-04T19:18:51.454Z"
 author: maintainer-agent
+estimated_minutes: 180
+acceptance_criteria: "search.ts split into rendering, query-parsing, and inline-field modules each under the LOC cap; coverage stays at 100 and search output byte-identical on golden queries."
 parent: pm-92if
-body: ""
+risk: low
+confidence: high
+body: "## Context\n2026-07-04 code-quality sweep: src/cli/commands/search.ts is 3119 LOC against the 3400 static-gate LOC cap — one feature away from failing the gate — and carries 4 internal jscpd clones plus a cross-file clone with list.ts:489.\n\n## Approach\nSplit along the natural boundaries that already exist in the file: (1) result rendering, (2) query parsing, (3) inline field:value syntax (the second parse layer from PR#290 — keep the two layers' order intact). Follow the established split playbook (PR#396 cli-contracts, 2026-05-25 all-src <2000 LOC pass): extract modules at the same call position, keep the command's public surface byte-identical, and update vitest.config.ts excludes/mirrored test paths if files move.\n\n## Definition of done\nsearch.ts well under the cap (~≤1500 LOC per module); internal clones gone (jscpd clean at current minTokens); search output byte-identical on a golden query set; coverage gate still 100%."

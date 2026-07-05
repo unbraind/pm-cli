@@ -15,6 +15,7 @@ export interface PmCliErrorRecoveryPayload {
   missing_required_fields?: string[];
   suggested_flags?: string[];
   suggested_retry?: string;
+  retry_after_ms?: number;
   fallback_candidates?: Array<{
     source: string;
     command: string;

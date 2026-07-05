@@ -467,7 +467,15 @@ export async function runProfileApply(
   const releasers: Array<() => Promise<void>> = [];
   const acquire = async (lockId: string): Promise<void> => {
     releasers.push(
-      await acquireLock(pmRoot, lockId, settings.locks.ttl_seconds, author, force, governance.force_required_for_stale_lock),
+      await acquireLock(
+        pmRoot,
+        lockId,
+        settings.locks.ttl_seconds,
+        author,
+        force,
+        governance.force_required_for_stale_lock,
+        settings.locks.wait_ms,
+      ),
     );
   };
   let plan: ProfileApplicationPlan;

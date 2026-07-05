@@ -55,6 +55,7 @@ const EXPECTED_GENERAL_ALIASES: Record<string, string> = {
   author_default: "author_default",
   output_default_format: "output.default_format",
   locks_ttl_seconds: "locks.ttl_seconds",
+  locks_wait_ms: "locks.wait_ms",
   checkpoints_retention_days: "checkpoints.retention_days",
   schema_unknown_field_policy: "schema.unknown_field_policy",
   history_compact_policy_enabled: "history.compact_policy.enabled",
@@ -270,7 +271,7 @@ describe("config general-setting aliases (pm-9byd / pm-nnaq)", () => {
       expect(descriptor, `missing nested-setting alias: ${alias}`).toBeDefined();
       expect(descriptor!.path).toBe(expectedPath);
     }
-    expect(Object.keys(EXPECTED_GENERAL_ALIASES)).toHaveLength(9);
+    expect(Object.keys(EXPECTED_GENERAL_ALIASES)).toHaveLength(10);
   });
 
   it("resolves both kebab-case and snake_case forms of each general alias", () => {
@@ -278,6 +279,7 @@ describe("config general-setting aliases (pm-9byd / pm-nnaq)", () => {
       const descriptor = resolveNestedSettingDescriptor(alias);
       expect(descriptor).toMatchObject({ key: alias, path: expectedPath });
       expect(resolveNestedSettingDescriptor(alias.replaceAll("_", "-"))).toBe(descriptor);
+      expect(resolveNestedSettingDescriptor(expectedPath)).toBe(descriptor);
     }
   });
 
@@ -407,6 +409,42 @@ describe("config general-setting aliases (pm-9byd / pm-nnaq)", () => {
       await expect(
         runConfig("project", "set", "locks_ttl_seconds", {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot }, "0"),
       ).rejects.toThrow(/>= 1/);
+    });
+  });
+
+  it("round-trips locks.wait_ms through its dotted settings path", async () => {
+    await withTempRoot("pm-cli-lock-wait-dotted-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      const setResult = await runConfig(
+        "project",
+        "set",
+        "locks.wait_ms",
+        {},
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        "88",
+      );
+      expect(setResult.nested_setting).toEqual({
+        key: "locks_wait_ms",
+        path: "locks.wait_ms",
+        kind: "integer",
+        value: 88,
+      });
+
+      const getResult = await runConfig(
+        "project",
+        "get",
+        "locks.wait_ms",
+        {},
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(getResult.nested_setting).toEqual({
+        key: "locks_wait_ms",
+        path: "locks.wait_ms",
+        kind: "integer",
+        value: 88,
+      });
     });
   });
 

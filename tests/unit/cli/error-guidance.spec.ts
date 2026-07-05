@@ -45,6 +45,7 @@ describe("pm cli error guidance context plumbing", () => {
         recovery_mode: "compact",
         missing_required_fields: [" --message ", 123, null, ""] as unknown as string[],
         suggested_flags: [" --create-mode progressive ", false, "--message"] as unknown as string[],
+        retry_after_ms: 250,
       },
     });
 
@@ -52,6 +53,7 @@ describe("pm cli error guidance context plumbing", () => {
       recovery_mode: "compact",
       missing_required_fields: ["--message"],
       suggested_flags: ["--create-mode progressive", "--message"],
+      retry_after_ms: 250,
     });
   });
 
@@ -61,6 +63,7 @@ describe("pm cli error guidance context plumbing", () => {
       required: "Repair history stream markers before restore replay.",
       why: "Replay requires a clean append-only history stream.",
       nextSteps: ["Run pm history <id> --verify and resolve conflicts."],
+      recovery: { retry_after_ms: 250 },
     });
     expect(text).toContain("Error: History replay failed due to merge conflict markers.");
     expect(text).toContain("What is required:");
@@ -69,6 +72,7 @@ describe("pm cli error guidance context plumbing", () => {
     expect(text).toContain("Replay requires a clean append-only history stream.");
     expect(text).toContain("Next steps:");
     expect(text).toContain("Run pm history <id> --verify and resolve conflicts.");
+    expect(text).toContain("retry_after_ms: 250");
   });
 
   it("returns deterministic item-not-found recovery examples without echoing invalid ids", () => {

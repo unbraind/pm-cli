@@ -6,7 +6,11 @@ status: open
 priority: 2
 tags[3]: adr,"area:meta",audit
 created_at: "2026-06-07T17:05:16.319Z"
-updated_at: "2026-06-07T17:05:16.319Z"
+updated_at: "2026-07-04T19:19:36.740Z"
 author: maintainer-agent
+estimated_minutes: 15
+acceptance_criteria: ADR recorded with all decisions and deferred items linked as pm items; no further action beyond the linked follow-ups.
 parent: pm-m2u1
-body: ""
+risk: low
+confidence: high
+body: "## ADR record\nContext: full manual audit of pm CLI + SDK + ecosystem on 2026-06-07, run with 4 specialized READ-ONLY sub-agents in parallel (code-quality/perf, SDK/extensions/packages, agent-UX/token-efficiency, docs/CI), findings verified in a temp sandbox plus smoke harnesses (dogfood-package-first, smoke:claude-plugin) and the full coverage gate (2559 tests, 100%).\n\nDecision 1 — centralized recording: all agent findings were recorded by the single maintainer session rather than letting sub-agents mutate pm concurrently, to avoid history-drift/reindex races from cross-process writes and to guarantee no duplicate items. This became the standing audit protocol (still used by the 2026-07 audits).\n\nDecision 2 — batched remediation: ship a focused low-risk batch per PR (the first: pm-g799 close-reason never-block, pm-ryik --p alias, MCP/version coherence, docs/CI hardening) instead of one mega-PR.\n\nConsequences: audit sessions are serialized through one writer (slower but race-free); finding→item→PR traceability is 1:1; the protocol is reflected in later audits (2026-07-02 lanes, 2026-07-03 concurrency, 2026-07-04 sweeps).\n\n## Why still open\nKept open while its deferred findings index is verified — close once every finding it indexes is confirmed filed as its own item or shipped (checked during backlog audits; most have landed via PR#406-#428 era work)."

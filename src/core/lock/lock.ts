@@ -5,6 +5,7 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { runActiveOnReadHooks, runActiveOnWriteHooks, runActiveServiceOverride } from "../extensions/index.js";
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
@@ -25,6 +26,17 @@ type LockWriteOp = "lock:create" | "lock:release" | "lock:stale_remove";
 interface LockReadResult {
   info: LockInfo | null;
   warnings: string[];
+}
+
+interface StaleLockRemovalResult {
+  lockInfo: LockReadResult;
+  shouldRetryCreate: boolean;
+  staleRemovalCounted: boolean;
+}
+
+interface StaleCleanupGateOwner {
+  pid: number;
+  token: string;
 }
 
 function parseLockInfo(raw: string): LockReadResult {
@@ -130,12 +142,14 @@ async function createLockFile(lockPath: string, id: string, owner: string, ttlSe
   await emitLockWriteHook(lockPath, "lock:create");
 }
 
-async function unlinkLockWithHook(lockPath: string, op: "lock:release" | "lock:stale_remove"): Promise<void> {
+async function unlinkLockWithHook(lockPath: string, op: "lock:release" | "lock:stale_remove"): Promise<boolean> {
   try {
     await fs.unlink(lockPath);
     await emitLockWriteHook(lockPath, op);
+    return true;
   } catch {
     // Lock cleanup is best-effort.
+    return false;
   }
 }
 
@@ -149,27 +163,244 @@ function lockOwnerSuffix(info: LockInfo | null): string {
   return info?.owner ? ` (owner ${info.owner})` : "";
 }
 
-async function handleExistingLock(
-  lockPath: string,
-  id: string,
-  ttlSeconds: number,
-  force: boolean,
-  forceRequiredForStaleLock: boolean,
-): Promise<void> {
-  const lockInfo = await readLockInfo(lockPath);
-  if (!isStaleLock(lockInfo.info, ttlSeconds)) {
-    throw new PmCliError(`Item ${id} is locked${lockOwnerSuffix(lockInfo.info)}`, EXIT_CODE.CONFLICT);
-  }
+const LOCK_WAIT_INITIAL_DELAY_MS = 25;
+const LOCK_WAIT_MAX_DELAY_MS = 200;
+const LOCK_CONFLICT_RETRY_HINT_MS = 250;
+const MAX_STALE_LOCK_REMOVALS = 3;
+const STALE_CLEANUP_GATE_SUFFIX = ".stale-cleanup";
+const STALE_CLEANUP_GATE_OWNER_FILE = "owner.json";
+const STALE_CLEANUP_GATE_STALE_MS = 10_000;
+// Bounds PID-reuse false positives: a live recycled PID can delay cleanup, but not indefinitely.
+const STALE_CLEANUP_GATE_MAX_ACTIVE_MS = 5 * 60_000;
 
-  if (!force && forceRequiredForStaleLock) {
+function parseNonNegativeIntegerWaitMs(value: string | number | undefined): number | undefined {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!/^\d+$/.test(trimmed)) {
+      return undefined;
+    }
+    const parsed = Number(trimmed);
+    return Number.isSafeInteger(parsed) ? parsed : undefined;
+  }
+  if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
+    return Math.trunc(value);
+  }
+  return undefined;
+}
+
+/**
+ * Resolves the effective bounded wait budget for a contended lock: the
+ * PM_LOCK_WAIT_MS environment override wins when it parses as a non-negative
+ * integer, then the caller-provided budget (settings `locks.wait_ms`), then 0
+ * (fail-fast, the pre-wait behavior).
+ */
+function resolveLockWaitMs(waitMs: number | undefined): number {
+  const envRaw = process.env.PM_LOCK_WAIT_MS;
+  const envParsed = parseNonNegativeIntegerWaitMs(envRaw);
+  if (envParsed !== undefined) {
+    return envParsed;
+  }
+  const callerParsed = parseNonNegativeIntegerWaitMs(waitMs);
+  if (callerParsed !== undefined) {
+    return callerParsed;
+  }
+  return 0;
+}
+
+function sleepWithJitter(baseDelayMs: number): Promise<void> {
+  const jitteredMs = Math.max(1, Math.round(baseDelayMs * (0.5 + Math.random())));
+  return new Promise((resolve) => setTimeout(resolve, jitteredMs));
+}
+
+function buildLockConflictError(id: string, info: LockInfo | null, waitedMs: number): PmCliError {
+  const waitedSuffix = waitedMs > 0 ? ` after waiting ${waitedMs}ms` : "";
+  return new PmCliError(`Item ${id} is locked${lockOwnerSuffix(info)}${waitedSuffix}`, EXIT_CODE.CONFLICT, {
+    code: "lock_conflict",
+    recovery: {
+      retry_after_ms: LOCK_CONFLICT_RETRY_HINT_MS,
+    },
+  });
+}
+
+type LockReleaseOverride = () => Promise<void> | void;
+
+function resolveLockOverrideRelease(result: unknown): LockReleaseOverride | null {
+  if (typeof result === "function") {
+    return result as LockReleaseOverride;
+  }
+  if (typeof result === "object" && result !== null && "release" in result) {
+    const release = (result as { release?: unknown }).release;
+    return typeof release === "function" ? (release as LockReleaseOverride) : null;
+  }
+  return null;
+}
+
+function throwIfStaleLockNeedsForce(id: string, lockInfo: LockReadResult, force: boolean, forceRequired: boolean): void {
+  if (!force && forceRequired) {
     const warningSuffix = lockInfo.warnings.length > 0 ? ` (${lockInfo.warnings.join(",")})` : "";
     throw new PmCliError(
       `Item ${id} lock is stale${warningSuffix}; rerun with --force when supported for this command`,
       EXIT_CODE.CONFLICT,
     );
   }
+}
 
-  await unlinkLockWithHook(lockPath, "lock:stale_remove");
+function parseStaleCleanupGateOwner(raw: string): StaleCleanupGateOwner | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw) as unknown;
+  } catch {
+    return null;
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return null;
+  }
+  const candidate = parsed as Record<string, unknown>;
+  const pid = candidate.pid;
+  const token = candidate.token;
+  if (typeof pid !== "number" || !Number.isInteger(pid) || pid <= 0 || typeof token !== "string" || token.length === 0) {
+    return null;
+  }
+  return { pid, token };
+}
+
+async function readStaleCleanupGateOwner(gatePath: string): Promise<StaleCleanupGateOwner | null> {
+  try {
+    return parseStaleCleanupGateOwner(await fs.readFile(path.join(gatePath, STALE_CLEANUP_GATE_OWNER_FILE), "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function isProcessAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error: unknown) {
+    if (isErrno(error, "ESRCH")) {
+      return false;
+    }
+    return true;
+  }
+}
+
+async function removeStaleCleanupGateDirectory(gatePath: string): Promise<boolean> {
+  try {
+    await fs.rm(gatePath, { recursive: true, force: true });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function releaseStaleCleanupGate(gatePath: string, token: string): Promise<void> {
+  const owner = await readStaleCleanupGateOwner(gatePath);
+  if (owner === null || owner.token !== token) {
+    return;
+  }
+  await removeStaleCleanupGateDirectory(gatePath);
+}
+
+async function tryCreateStaleCleanupGate(gatePath: string): Promise<StaleCleanupGateOwner | null> {
+  try {
+    await fs.mkdir(gatePath);
+  } catch (error: unknown) {
+    if (isErrno(error, "EEXIST")) {
+      return null;
+    }
+    return null;
+  }
+  const owner = { pid: process.pid, token: randomUUID() };
+  try {
+    await fs.writeFile(path.join(gatePath, STALE_CLEANUP_GATE_OWNER_FILE), `${JSON.stringify(owner)}\n`, "utf8");
+  } catch {
+    await removeStaleCleanupGateDirectory(gatePath);
+    return null;
+  }
+  return owner;
+}
+
+async function removeExpiredStaleCleanupGate(gatePath: string): Promise<boolean> {
+  let gateAgeMs: number;
+  try {
+    const stats = await fs.stat(gatePath);
+    gateAgeMs = Date.now() - stats.mtimeMs;
+    if (gateAgeMs <= STALE_CLEANUP_GATE_STALE_MS) {
+      return false;
+    }
+  } catch (error: unknown) {
+    return isErrno(error, "ENOENT");
+  }
+  const owner = await readStaleCleanupGateOwner(gatePath);
+  if (owner !== null && isProcessAlive(owner.pid) && gateAgeMs <= STALE_CLEANUP_GATE_MAX_ACTIVE_MS) {
+    return false;
+  }
+  return removeStaleCleanupGateDirectory(gatePath);
+}
+
+async function acquireStaleCleanupGate(lockPath: string, _id: string): Promise<(() => Promise<void>) | null> {
+  const gatePath = `${lockPath}${STALE_CLEANUP_GATE_SUFFIX}`;
+  const owner = await tryCreateStaleCleanupGate(gatePath);
+  if (owner !== null) {
+    return async () => releaseStaleCleanupGate(gatePath, owner.token);
+  }
+  if (!(await removeExpiredStaleCleanupGate(gatePath))) {
+    return null;
+  }
+  const recoveredOwner = await tryCreateStaleCleanupGate(gatePath);
+  if (recoveredOwner === null) {
+    return null;
+  }
+  return async () => releaseStaleCleanupGate(gatePath, recoveredOwner.token);
+}
+
+async function removeConfirmedStaleLock(params: {
+  lockPath: string;
+  id: string;
+  ttlSeconds: number;
+  force: boolean;
+  forceRequiredForStaleLock: boolean;
+  staleRemovals: number;
+  waitBudgetMs: number;
+  startedAtMs: number;
+  fallbackLockInfo: LockReadResult;
+}): Promise<StaleLockRemovalResult> {
+  const releaseCleanupGate = await acquireStaleCleanupGate(params.lockPath, params.id);
+  if (releaseCleanupGate === null) {
+    return {
+      lockInfo: params.fallbackLockInfo,
+      shouldRetryCreate: false,
+      staleRemovalCounted: false,
+    };
+  }
+  try {
+    const currentLockInfo = await readLockInfo(params.lockPath);
+    if (currentLockInfo.info === null && currentLockInfo.warnings.length === 0) {
+      return {
+        lockInfo: currentLockInfo,
+        shouldRetryCreate: true,
+        staleRemovalCounted: false,
+      };
+    }
+    if (!isStaleLock(currentLockInfo.info, params.ttlSeconds)) {
+      return {
+        lockInfo: currentLockInfo,
+        shouldRetryCreate: false,
+        staleRemovalCounted: false,
+      };
+    }
+    throwIfStaleLockNeedsForce(params.id, currentLockInfo, params.force, params.forceRequiredForStaleLock);
+    if (params.staleRemovals >= MAX_STALE_LOCK_REMOVALS) {
+      throw buildLockConflictError(params.id, currentLockInfo.info, Date.now() - params.startedAtMs);
+    }
+    return {
+      lockInfo: currentLockInfo,
+      shouldRetryCreate: await unlinkLockWithHook(params.lockPath, "lock:stale_remove"),
+      staleRemovalCounted: true,
+    };
+  } finally {
+    await releaseCleanupGate();
+  }
 }
 
 export const _testOnly = {
@@ -179,6 +410,9 @@ export const _testOnly = {
   buildLockPayload,
   isStaleLock,
   lockOwnerSuffix,
+  resolveLockWaitMs,
+  acquireStaleCleanupGate,
+  removeConfirmedStaleLock,
 };
 
 
@@ -192,6 +426,7 @@ export async function acquireLock(
   owner: string,
   force = false,
   forceRequiredForStaleLock = true,
+  waitMs?: number,
 ): Promise<() => Promise<void>> {
   const lockOverride = await runActiveServiceOverride("lock_acquire", {
     pm_root: pmRoot,
@@ -202,15 +437,7 @@ export async function acquireLock(
     force_required_for_stale_lock: forceRequiredForStaleLock,
   });
   if (lockOverride.handled) {
-    const releaseFromFunction = typeof lockOverride.result === "function" ? lockOverride.result : null;
-    const releaseFromObject =
-      typeof lockOverride.result === "object" &&
-      lockOverride.result !== null &&
-      "release" in lockOverride.result &&
-      typeof (lockOverride.result as { release?: unknown }).release === "function"
-        ? ((lockOverride.result as { release: () => Promise<void> | void }).release as () => Promise<void> | void)
-        : null;
-    const release = releaseFromFunction ?? releaseFromObject;
+    const release = resolveLockOverrideRelease(lockOverride.result);
     if (release) {
       return async () => {
         await Promise.resolve(release());
@@ -224,8 +451,12 @@ export async function acquireLock(
   }
 
   const lockPath = getLockPath(pmRoot, id);
+  const waitBudgetMs = resolveLockWaitMs(waitMs);
+  const startedAtMs = Date.now();
+  let staleRemovals = 0;
+  let backoffMs = LOCK_WAIT_INITIAL_DELAY_MS;
 
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  for (;;) {
     try {
       await createLockFile(lockPath, id, owner, ttlSeconds);
       return async () => {
@@ -240,9 +471,33 @@ export async function acquireLock(
       if (!isErrno(error, "EEXIST")) {
         throw new PmCliError(`Failed to acquire lock for ${id}: ${toErrorMessage(error)}`, EXIT_CODE.GENERIC_FAILURE);
       }
-      await handleExistingLock(lockPath, id, ttlSeconds, force, forceRequiredForStaleLock);
+      let lockInfo = await readLockInfo(lockPath);
+      if (isStaleLock(lockInfo.info, ttlSeconds)) {
+        const staleRemoval = await removeConfirmedStaleLock({
+          lockPath,
+          id,
+          ttlSeconds,
+          force,
+          forceRequiredForStaleLock,
+          staleRemovals,
+          waitBudgetMs,
+          startedAtMs,
+          fallbackLockInfo: lockInfo,
+        });
+        lockInfo = staleRemoval.lockInfo;
+        if (staleRemoval.staleRemovalCounted) {
+          staleRemovals += 1;
+        }
+        if (staleRemoval.shouldRetryCreate) {
+          continue;
+        }
+      }
+      const elapsedMs = Date.now() - startedAtMs;
+      if (waitBudgetMs === 0 || elapsedMs >= waitBudgetMs) {
+        throw buildLockConflictError(id, lockInfo.info, waitBudgetMs === 0 ? 0 : elapsedMs);
+      }
+      await sleepWithJitter(Math.min(backoffMs, waitBudgetMs - elapsedMs));
+      backoffMs = Math.min(backoffMs * 2, LOCK_WAIT_MAX_DELAY_MS);
     }
   }
-
-  throw new PmCliError(`Failed to acquire lock for ${id}`, EXIT_CODE.CONFLICT);
 }

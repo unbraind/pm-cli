@@ -1797,7 +1797,9 @@ describe("release readiness runtime coverage", () => {
     );
     expect(packageJson.scripts?.["version:check"]).toBe("node scripts/release-version.mjs check");
     expect(packageJson.scripts?.["version:next"]).toBe("node scripts/release-version.mjs next");
-    expect(packageJson.scripts?.["quality:static"]).toBe("node scripts/release/static-quality-gate.mjs");
+    expect(packageJson.scripts?.["quality:static"]).toBe(
+      "node scripts/release/static-quality-gate.mjs --min-docstring-coverage 92.93 --min-exported-docstring-coverage 84.41 --min-member-docstring-coverage 13.655",
+    );
     expect(packageJson.scripts?.lint).toBe("pnpm lint:eslint && pnpm lint:duplicates && pnpm lint:codefactor");
     expect(packageJson.scripts?.["quality:docs-skills"]).toBe("node scripts/release/docs-skills-gate.mjs");
     expect(packageJson.scripts?.["release:gates"]).toBe("node scripts/release/run-gates.mjs --telemetry-mode best-effort");

@@ -2,17 +2,21 @@ id: pm-ayn7
 title: "Sandbox audit fixes: package describe accepts npm package name; pm context <id> routes to pm get"
 description: "2026-07-04 full-ecosystem sandbox audit findings, all fixed: (1) pm package describe only matched the extension name (builtin-kanban-profile), not the npm package name (@unbrained/pm-kanban) surfaced by pm extension list — describe now also matches source_package, builtin installs persist source.package provenance in .managed-extensions.json (resolveBundledPackageNpmName), command_discovery.package_name now reports the real npm name, and the NOT_FOUND error lists loaded names; (2) pm context <id> failed with a generic too-many-arguments error — new context_takes_no_item_argument guidance routes agents to pm get <id> / pm context --parent <id> with suggested_retry."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,audit-followup,cli
 created_at: "2026-07-04T06:29:58.417Z"
-updated_at: "2026-07-04T07:09:08.631Z"
+updated_at: "2026-07-05T04:08:11.608Z"
 author: maintainer-agent
-estimated_minutes: 120
+estimated_minutes: 90
 acceptance_criteria: pm package describe <npm-name> resolves for builtin installs; pm context <id> returns routed guidance with suggested_retry pm get <id>; NOT_FOUND describe errors list loaded names; specs cover source_package matching and guidance branches.
 parent: pm-mpbb
+resolution: "Shipped on main via PR #428 (c96bb8f): pm package describe matches source_package/npm package name for builtin installs, NOT_FOUND lists loaded names, and pm context <id> returns context_takes_no_item_argument guidance with suggested_retry pm get <id>."
+expected_result: pm package describe @unbrained/pm-kanban resolves; pm context <id> routes to pm get with suggested_retry; specs cover source_package matching and guidance branches.
+actual_result: "Verified live 2026-07-04 in fresh sandbox from dist build: describe resolves via source_package, NOT_FOUND lists 11 loaded names, context <id> emits routed guidance; main CI green post-merge."
 notes[1]{created_at,author,text}:
   "2026-07-04T07:09:08.631Z",maintainer-agent,"2026-07-04 verified live in fresh sandbox (dist build): pm package describe @unbrained/pm-kanban resolves via source_package; NOT_FOUND lists 11 loaded names; pm context <id> returns context_takes_no_item_argument with suggested_retry pm get <id>."
 learnings[1]{created_at,author,text}:
   "2026-07-04T06:43:47.283Z",maintainer-agent,"Builtin installs previously wrote no source.package into .managed-extensions.json, so LoadedExtension.source_package stayed undefined for every bundled package — any feature keying on npm package names must persist provenance at install time, not derive it at read time from the bundled catalog."
+close_reason: "Fixed and shipped on main (PR #428): package describe accepts npm package names via persisted source.package provenance; pm context <id> routes agents to pm get with suggested_retry; verified live in a fresh sandbox from the dist build."
 body: ""

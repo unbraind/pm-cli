@@ -1,0 +1,21 @@
+id: pm-m2kl
+title: "As a third-party author, I want an SDK to compose, validate, test, and ship a pm extension or package, so that pm can be customized and optimized for any project without forking"
+description: ""
+type: Story
+status: closed
+priority: 3
+tags[5]: agent-story,"area:sdk",capability,living-map,story
+created_at: "2026-07-04T19:59:44.579Z"
+updated_at: "2026-07-04T19:59:45.201Z"
+author: maintainer-agent
+estimated_minutes: 600
+acceptance_criteria: define*/compose*/synthesize/lint/preflight builders exist; createExtensionTestHarness + assert*/run*ForTest cover every surface; scaffold emits a runnable extension; capability/policy/trust/sandbox are enforced; installs work in both CJS and ESM host projects.
+goal: project management = context management
+parent: pm-ugqx
+risk: low
+confidence: high
+resolution: "Delivered and maintained by pm-ugqx: SDK define/compose/testing builders, extension runtime, 11 packages, and plugin integrations."
+expected_result: Any project customizes and optimizes pm via the SDK without forking.
+actual_result: SDK builders + test harness + 11 packages + CJS/ESM install support shipped.
+close_reason: "Delivered and maintained by pm-ugqx: SDK define/compose/testing builders, extension runtime, 11 packages, and plugin integrations."
+body: "## Agent need\npm is a universal PM tool that ships primitives via an SDK, so any project can extend it (custom commands, types, search, importers, hooks) without forking the core.\n\n## Delivered surface (pm-ugqx)\nsrc/sdk define/compose/runtime/testing; extension loader + registries; capability-usage least-privilege; 11 first-party packages as exemplars; pm-claude/pm-codex plugins.\n\n## Verified by\nScaffold capability matrix (9/9), sandbox tarball install tests (CJS + ESM). Enduring agent-value statement for the extension/SDK capability; new work lands in pm-ugqx."

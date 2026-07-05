@@ -611,6 +611,153 @@ function normalizeCreatePolicyOptionKey(raw: string, typeName: string, sourceLab
   return canonical;
 }
 
+interface CreateOptionValueLookup {
+  scalarValues: Record<string, unknown>;
+  repeatableValues: Record<string, unknown>;
+  addTags: string[] | undefined;
+}
+
+function buildCreateOptionValueLookup(options: CreateCommandOptions): CreateOptionValueLookup {
+  return {
+    scalarValues: {
+      title: options.title,
+      description: options.description,
+      type: options.type,
+      status: options.status,
+      priority: options.priority,
+      tags: options.tags,
+      body: options.body,
+      deadline: options.deadline,
+      estimatedMinutes: options.estimatedMinutes,
+      acceptanceCriteria: options.acceptanceCriteria,
+      definitionOfReady: options.definitionOfReady,
+      order: options.order ?? options.rank,
+      goal: options.goal,
+      objective: options.objective,
+      value: options.value,
+      impact: options.impact,
+      outcome: options.outcome,
+      whyNow: options.whyNow,
+      author: options.author,
+      message: options.message,
+      assignee: options.assignee,
+      parent: options.parent,
+      reviewer: options.reviewer,
+      risk: options.risk,
+      confidence: options.confidence,
+      sprint: options.sprint,
+      release: options.release,
+      blockedBy: options.blockedBy,
+      blockedReason: options.blockedReason,
+      unblockNote: options.unblockNote,
+      reporter: options.reporter,
+      severity: options.severity,
+      environment: options.environment,
+      reproSteps: options.reproSteps,
+      resolution: options.resolution,
+      expectedResult: options.expectedResult,
+      actualResult: options.actualResult,
+      affectedVersion: options.affectedVersion,
+      fixedVersion: options.fixedVersion,
+      component: options.component,
+      regression: options.regression,
+      customerImpact: options.customerImpact,
+    },
+    repeatableValues: {
+      dep: options.dep,
+      comment: options.comment,
+      note: options.note,
+      learning: options.learning,
+      file: options.file,
+      test: options.test,
+      doc: options.doc,
+      reminder: options.reminder,
+      event: options.event,
+      typeOption: options.typeOption,
+      field: options.field,
+    },
+    addTags: options.addTags,
+  };
+}
+
+function hasCreateOptionValue(lookup: CreateOptionValueLookup, optionKey: string): boolean {
+  // `--add-tags` mutates the same `tags` field as `--tags`, so it must count
+  // toward the `tags` command_option_policy (both the disabled guard and the
+  // required check) — otherwise `--add-tags` would bypass a rule disabling
+  // tags, or fail to satisfy a rule requiring them even though the created
+  // item ends up tagged.
+  if (optionKey === "tags") {
+    return lookup.scalarValues.tags !== undefined || (Array.isArray(lookup.addTags) && lookup.addTags.length > 0);
+  }
+  if (Object.prototype.hasOwnProperty.call(lookup.scalarValues, optionKey)) {
+    return lookup.scalarValues[optionKey] !== undefined;
+  }
+  /* c8 ignore start -- policy probes only pass canonical CREATE_COMMAND_OPTION_KEYS, all of which exist in scalarValues/repeatableValues, so the in-repeatableValues false arm and trailing return are unreachable. */
+  if (Object.prototype.hasOwnProperty.call(lookup.repeatableValues, optionKey)) {
+    const value = lookup.repeatableValues[optionKey];
+    return Array.isArray(value) && value.length > 0;
+  }
+  return false;
+  /* c8 ignore stop */
+}
+
+function buildRequiredCreateOptions(
+  typeDefinition: ResolvedItemTypeDefinition,
+  createMode: CreateMode,
+): Set<string> {
+  const requiredOptions = new Set<string>(["title", "type"]);
+  if (createMode !== "strict") {
+    return requiredOptions;
+  }
+  for (const field of typeDefinition.required_create_fields) {
+    requiredOptions.add(normalizeCreatePolicyOptionKey(field, typeDefinition.name, "required_create_fields"));
+  }
+  for (const field of typeDefinition.required_create_repeatables) {
+    requiredOptions.add(normalizeCreatePolicyOptionKey(field, typeDefinition.name, "required_create_repeatables"));
+  }
+  return requiredOptions;
+}
+
+function assertNoDisabledCreateOptions(
+  disabledOptions: readonly string[],
+  lookup: CreateOptionValueLookup,
+  clearOptionKeys: Set<string>,
+  typeName: string,
+): void {
+  for (const option of disabledOptions) {
+    if (!hasCreateOptionValue(lookup, option) && !clearOptionKeys.has(option)) {
+      continue;
+    }
+    throw new PmCliError(
+      `Option ${commandOptionFlagLabel("create", option)} is disabled for type "${typeName}" by command_option_policies`,
+      EXIT_CODE.USAGE,
+    );
+  }
+}
+
+function assertNoStrictRequiredOptionClears(
+  requiredOptions: readonly string[],
+  createMode: CreateMode,
+  clearOptionKeys: Set<string>,
+): void {
+  if (createMode !== "strict") {
+    return;
+  }
+  const strictRequiredClears = requiredOptions.filter((required) => clearOptionKeys.has(required));
+  if (strictRequiredClears.length === 0) {
+    return;
+  }
+  /* c8 ignore next -- deterministic ordering fallback only matters when required clear list contains locale ties. */
+  const requiredFlags = [...new Set(strictRequiredClears.map((required) => commandOptionFlagLabel("create", required)))].sort(
+    (left, right) => left.localeCompare(right),
+  );
+  /* c8 ignore next -- strict clear conflict envelope is covered by policy integration scenarios. */
+  throw new PmCliError(
+    `Strict create mode requires concrete values for ${requiredFlags.join(", ")}; --unset/--clear-* directives cannot satisfy required options`,
+    EXIT_CODE.USAGE,
+  );
+}
+
 function parseTypeOptions(raw: string[] | undefined): { values: Record<string, string> | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) {
     return { values: undefined, explicitEmpty: false };
@@ -701,125 +848,16 @@ function requireCreateOptionByType(
   clearOptionKeys: Set<string>,
 ): string[] {
   const typeName = typeDefinition.name;
-  const scalarValues: Record<string, unknown> = {
-    title: options.title,
-    description: options.description,
-    type: options.type,
-    status: options.status,
-    priority: options.priority,
-    tags: options.tags,
-    body: options.body,
-    deadline: options.deadline,
-    estimatedMinutes: options.estimatedMinutes,
-    acceptanceCriteria: options.acceptanceCriteria,
-    definitionOfReady: options.definitionOfReady,
-    order: options.order ?? options.rank,
-    goal: options.goal,
-    objective: options.objective,
-    value: options.value,
-    impact: options.impact,
-    outcome: options.outcome,
-    whyNow: options.whyNow,
-    author: options.author,
-    message: options.message,
-    assignee: options.assignee,
-    parent: options.parent,
-    reviewer: options.reviewer,
-    risk: options.risk,
-    confidence: options.confidence,
-    sprint: options.sprint,
-    release: options.release,
-    blockedBy: options.blockedBy,
-    blockedReason: options.blockedReason,
-    unblockNote: options.unblockNote,
-    reporter: options.reporter,
-    severity: options.severity,
-    environment: options.environment,
-    reproSteps: options.reproSteps,
-    resolution: options.resolution,
-    expectedResult: options.expectedResult,
-    actualResult: options.actualResult,
-    affectedVersion: options.affectedVersion,
-    fixedVersion: options.fixedVersion,
-    component: options.component,
-    regression: options.regression,
-    customerImpact: options.customerImpact,
-  };
-  const repeatableValues: Record<string, unknown> = {
-    dep: options.dep,
-    comment: options.comment,
-    note: options.note,
-    learning: options.learning,
-    file: options.file,
-    test: options.test,
-    doc: options.doc,
-    reminder: options.reminder,
-    event: options.event,
-    typeOption: options.typeOption,
-    field: options.field,
-  };
-
-  const hasOptionValue = (optionKey: string): boolean => {
-    // `--add-tags` mutates the same `tags` field as `--tags`, so it must count
-    // toward the `tags` command_option_policy (both the disabled guard and the
-    // required check) — otherwise `--add-tags` would bypass a rule disabling
-    // tags, or fail to satisfy a rule requiring them even though the created
-    // item ends up tagged.
-    if (optionKey === "tags") {
-      return scalarValues.tags !== undefined || (Array.isArray(options.addTags) && options.addTags.length > 0);
-    }
-    if (optionKey in scalarValues) {
-      return scalarValues[optionKey] !== undefined;
-    }
-    /* c8 ignore start -- policy probes only pass canonical CREATE_COMMAND_OPTION_KEYS, all of which exist in scalarValues/repeatableValues, so the in-repeatableValues false arm and trailing return are unreachable. */
-    if (optionKey in repeatableValues) {
-      const value = repeatableValues[optionKey];
-      return Array.isArray(value) && value.length > 0;
-    }
-    return false;
-    /* c8 ignore stop */
-  };
-  /* c8 ignore next -- policy probes only pass normalized option keys in command-level tests. */
-  const hasOptionMutation = (optionKey: string): boolean => hasOptionValue(optionKey) || clearOptionKeys.has(optionKey);
-
-  const baseRequiredOptions = new Set<string>(["title", "type"]);
-  if (createMode === "strict") {
-    for (const field of typeDefinition.required_create_fields) {
-      baseRequiredOptions.add(normalizeCreatePolicyOptionKey(field, typeName, "required_create_fields"));
-    }
-    for (const field of typeDefinition.required_create_repeatables) {
-      baseRequiredOptions.add(normalizeCreatePolicyOptionKey(field, typeName, "required_create_repeatables"));
-    }
-  }
+  const optionLookup = buildCreateOptionValueLookup(options);
+  const baseRequiredOptions = buildRequiredCreateOptions(typeDefinition, createMode);
 
   const policyState = resolveCommandOptionPolicyState(typeDefinition, "create", baseRequiredOptions);
   if (policyState.errors.length > 0) {
     throw new PmCliError(policyState.errors.join("; "), EXIT_CODE.CONFLICT);
   }
 
-  for (const option of policyState.disabled) {
-    if (hasOptionMutation(option)) {
-      throw new PmCliError(
-        `Option ${commandOptionFlagLabel("create", option)} is disabled for type "${typeName}" by command_option_policies`,
-        EXIT_CODE.USAGE,
-      );
-    }
-  }
-
-  if (createMode === "strict") {
-    const strictRequiredClears = policyState.required.filter((required) => clearOptionKeys.has(required));
-    if (strictRequiredClears.length > 0) {
-      /* c8 ignore next -- deterministic ordering fallback only matters when required clear list contains locale ties. */
-      const requiredFlags = [...new Set(strictRequiredClears.map((required) => commandOptionFlagLabel("create", required)))].sort(
-        (left, right) => left.localeCompare(right),
-      );
-      /* c8 ignore next -- strict clear conflict envelope is covered by policy integration scenarios. */
-      throw new PmCliError(
-        `Strict create mode requires concrete values for ${requiredFlags.join(", ")}; --unset/--clear-* directives cannot satisfy required options`,
-        EXIT_CODE.USAGE,
-      );
-    }
-  }
+  assertNoDisabledCreateOptions(policyState.disabled, optionLookup, clearOptionKeys, typeName);
+  assertNoStrictRequiredOptionClears(policyState.required, createMode, clearOptionKeys);
 
   // A configured per-type default_status satisfies a required `status` policy:
   // when --status is omitted, runCreate resolves to that default (or degrades to
@@ -831,7 +869,7 @@ function requireCreateOptionByType(
     if (optionKey === "status" && typeDefinition.default_status !== undefined) {
       return true;
     }
-    return hasOptionValue(optionKey);
+    return hasCreateOptionValue(optionLookup, optionKey);
   };
   const missingRequiredOptions = policyState.required.filter((required) => !satisfiesRequiredOption(required));
   return [...new Set(missingRequiredOptions.map((required) => commandOptionFlagLabel("create", required)))].sort((left, right) =>
@@ -1711,7 +1749,15 @@ async function writeCreatedItem(params: {
   const { pmRoot, type, id, settings, typeRegistry, author, extensionFieldNames, afterDocument, beforeDocument, historyMessage, changedFields, nowValue } = params;
   const itemPath = getItemPath(pmRoot, type, id, settings.item_format, typeRegistry.type_to_folder);
   const historyPath = getHistoryPath(pmRoot, id);
-  const lockRelease = await acquireLock(pmRoot, id, settings.locks.ttl_seconds, author, false, settings.governance.force_required_for_stale_lock);
+  const lockRelease = await acquireLock(
+    pmRoot,
+    id,
+    settings.locks.ttl_seconds,
+    author,
+    false,
+    settings.governance.force_required_for_stale_lock,
+    settings.locks.wait_ms,
+  );
   let hookWarnings: string[] = [];
   try {
     await writeFileAtomic(
@@ -2066,6 +2112,7 @@ export const _testOnlyCreateCommand = {
   createExampleTokensForFlag,
   filterNonMissingTypeOptionErrors,
   hasTemplatesShowHandler,
+  hasCreateOptionValue,
   loadCreateTemplateOptionsFromRuntime,
   looksLikeStructuredEntry,
   mergeCreateOptionsWithTemplate,

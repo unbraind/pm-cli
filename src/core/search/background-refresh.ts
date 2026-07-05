@@ -26,10 +26,6 @@ const PENDING_QUEUE_REL_PATH = "search/pending-refresh.json";
 const PENDING_QUEUE_GATE_REL_PATH = "search/pending-refresh.gate.lock";
 const PENDING_QUEUE_GATE_STALE_MS = 30_000;
 
-// Bounded reindex-lock retry for the background worker (~3.2s worst case).
-const LOCK_ACQUIRE_ATTEMPTS = 8;
-const LOCK_ACQUIRE_BACKOFF_MS = 400;
-
 const SEARCH_REFRESH_INLINE_ENV = "PM_SEARCH_REFRESH_INLINE";
 const SEARCH_REFRESH_CHILD_ENV = "PM_SEARCH_REFRESH_CHILD";
 
@@ -270,27 +266,19 @@ export async function runSemanticRefreshWorker(
     return { processed, rounds: 0, warnings: [`search_background_refresh_settings_read_failed:${toErrorMessage(error)}`] };
   }
 
-  // Retry the reindex lock with backoff rather than exiting on the first
-  // conflict: a sibling refresh worker holds it only briefly (~one embed), so a
-  // few retries pick up the queued ids in this run instead of stranding them
-  // until the next mutation. If a long `pm reindex` keeps it, we give up — that
-  // full pass re-embeds everything anyway and the next dispatch retries.
   let release: (() => Promise<void>) | null = null;
-  for (let attempt = 0; attempt < LOCK_ACQUIRE_ATTEMPTS && !release; attempt += 1) {
-    try {
-      release = await acquireLock(
-        pmRoot,
-        REINDEX_LOCK_ID,
-        settings.locks.ttl_seconds,
-        process.env.PM_AUTHOR ?? "pm-search-refresh",
-        false,
-        settings.governance.force_required_for_stale_lock,
-      );
-    } catch {
-      if (attempt < LOCK_ACQUIRE_ATTEMPTS - 1) {
-        await delay(LOCK_ACQUIRE_BACKOFF_MS);
-      }
-    }
+  try {
+    release = await acquireLock(
+      pmRoot,
+      REINDEX_LOCK_ID,
+      settings.locks.ttl_seconds,
+      process.env.PM_AUTHOR ?? "pm-search-refresh",
+      false,
+      settings.governance.force_required_for_stale_lock,
+      settings.locks.wait_ms,
+    );
+  } catch {
+    // acquireLock owns the bounded wait budget; queued ids remain for the next dispatch.
   }
   if (!release) {
     return { processed, rounds: 0, warnings };

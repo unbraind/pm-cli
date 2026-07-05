@@ -6,7 +6,11 @@ status: open
 priority: 3
 tags[2]: "area:quality",ci
 created_at: "2026-07-04T08:32:10.926Z"
-updated_at: "2026-07-04T08:32:10.926Z"
+updated_at: "2026-07-04T19:18:52.194Z"
 author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: Dead re-exports pruned from the commands barrel; knip runs in static gates with a zero-findings baseline.
 parent: pm-92if
-body: ""
+risk: low
+confidence: medium
+body: "## Context\n2026-07-04 code-quality sweep: src/cli/commands/index.ts re-exports ~60 runtime symbols + ~80 types that nothing imports via the barrel (package.json exports only exposes ., ./sdk*, ./cli). knip reports 115 unused exports + 239 unused exported types repo-wide. A one-time manual sweep on 2026-07-04 already removed 57 dead loader.ts imports and 7 dead export keywords — this item is about keeping the class extinct.\n\n## Approach\n1. Prune the commands barrel to what's actually consumed (grep each symbol; the SDK/public surface is exempt).\n2. Adopt knip (preferred over ts-prune) with an allowlist for the intentional SDK public surface, wired as a CI static gate alongside the existing suppression/LOC gates.\nRisk to watch: the SDK allowlist must be curated, not blanket — otherwise the gate is decorative.\n\n## Definition of done\nBarrel exports only consumed symbols; knip gate green in CI and failing on a seeded dead export; allowlist documented (why each entry is public surface)."

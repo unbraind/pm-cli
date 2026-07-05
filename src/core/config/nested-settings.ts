@@ -252,6 +252,14 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     summary: "Claim/lock time-to-live in seconds before a stale lock can be reclaimed.",
   },
   {
+    key: "locks_wait_ms",
+    path: "locks.wait_ms",
+    kind: "integer",
+    min: 0,
+    summary:
+      "Bounded jittered wait in milliseconds before a contended item mutation fails with lock_conflict; 0 fails fast. PM_LOCK_WAIT_MS overrides per invocation.",
+  },
+  {
     key: "checkpoints_retention_days",
     path: "checkpoints.retention_days",
     kind: "integer",
@@ -291,13 +299,17 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
 ];
 
 const DESCRIPTOR_BY_KEY: ReadonlyMap<string, NestedSettingDescriptor> = new Map(
-  NESTED_SETTING_DESCRIPTORS.map((descriptor) => [descriptor.key, descriptor]),
+  NESTED_SETTING_DESCRIPTORS.flatMap((descriptor) => [
+    [descriptor.key, descriptor],
+    [descriptor.path.toLowerCase().replaceAll("-", "_"), descriptor],
+  ]),
 );
 
 /**
- * Map a raw user-supplied key (kebab or snake case, any casing) onto a known
- * nested-leaf descriptor. Returns `undefined` when the key is not a nested
- * leaf (callers can then fall back to the regular ConfigKey path).
+ * Map a raw user-supplied key (kebab case, snake case, or the dotted settings
+ * path surfaced by `pm config list`) onto a known nested-leaf descriptor.
+ * Returns `undefined` when the key is not a nested leaf, letting callers fall
+ * back to the regular ConfigKey path.
  */
 export function resolveNestedSettingDescriptor(raw: string | undefined): NestedSettingDescriptor | undefined {
   if (typeof raw !== "string") {

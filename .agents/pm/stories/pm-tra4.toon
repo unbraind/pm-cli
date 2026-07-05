@@ -1,0 +1,21 @@
+id: pm-tra4
+title: "As an agent gating on tracker quality, I want pm validate and pm health to surface every data-quality gap with a machine-executable remediation, so that I can keep context trustworthy and rebuild it from pm alone"
+description: ""
+type: Story
+status: closed
+priority: 3
+tags[5]: agent-story,"area:governance",capability,living-map,story
+created_at: "2026-07-04T19:59:45.762Z"
+updated_at: "2026-07-04T19:59:46.575Z"
+author: maintainer-agent
+estimated_minutes: 420
+acceptance_criteria: "Each validate/health warning maps to a remediation hint and an open item; metadata-coverage/issue-code/content-field predicates are accurate (no false positives, no missed real gaps); no placeholder resolution or close_reason evidence is ever written."
+goal: project management = context management
+parent: pm-33cw
+risk: low
+confidence: high
+resolution: "Delivered and maintained by pm-33cw: validate/health checks, metadata-coverage primitives, and a machine-executable remediation registry; hardening tracked by open children."
+expected_result: An agent keeps the tracker trustworthy and rebuilds full context from pm alone.
+actual_result: validate/health + coverage predicates + remediation registry shipped; every warning maps to an open remediation item.
+close_reason: "Delivered and maintained by pm-33cw: validate/health checks, metadata-coverage primitives, and a machine-executable remediation registry; hardening tracked by open children."
+body: "## Agent need\nThe philosophy requires that an agent rebuild full working context from the pm CLI alone, which is only possible if every item's metadata is complete, honest, and machine-checkable.\n\n## Delivered surface (pm-33cw)\ncore/governance (content-fields, issue-codes, metadata-coverage); core/validate checks + fix-planning; the remediation registry surfaced via pm health --json / pm validate --fix-hints.\n\n## Verified by\nmetadata-coverage, issue-codes, and content-fields tests. Distinct from pm-sz6w (the narrow remediation-command story); this is the capability-level statement for pm-33cw."

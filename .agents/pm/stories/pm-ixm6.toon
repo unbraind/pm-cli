@@ -1,0 +1,21 @@
+id: pm-ixm6
+title: "As a new teammate or onboarding agent, I want accurate docs, one-command onboarding, and automated date-based releases, so that I can become productive quickly and ship safely"
+description: ""
+type: Story
+status: closed
+priority: 3
+tags[5]: agent-story,"area:docs",capability,living-map,story
+created_at: "2026-07-04T19:59:54.372Z"
+updated_at: "2026-07-04T19:59:54.936Z"
+author: maintainer-agent
+estimated_minutes: 420
+acceptance_criteria: "docs-skills-gate validates all relative links (and anchor fragments); a single ONBOARDING.md is the path to productivity; the daily auto-release cuts date-based versions when [Unreleased] is non-empty; CHANGELOG is fully auto-generated from closed items (never hand-edited)."
+goal: project management = context management
+parent: pm-u9d0
+risk: low
+confidence: high
+resolution: "Delivered and maintained by pm-u9d0: docs freshness gates, ONBOARDING, date-based auto-release, and auto-generated changelog; anchor-link + Windows-nightly hardening tracked by open children."
+expected_result: A newcomer becomes productive fast and releases ship safely and automatically.
+actual_result: Docs gates + ONBOARDING + date-based auto-release + auto-changelog shipped.
+close_reason: "Delivered and maintained by pm-u9d0: docs freshness gates, ONBOARDING, date-based auto-release, and auto-generated changelog; anchor-link + Windows-nightly hardening tracked by open children."
+body: "## Agent need\nBoth humans and agents must onboard fast and ship without ceremony; docs must stay accurate and releases must be safe and automatic.\n\n## Delivered surface (pm-u9d0)\ndocs/ (14 topics) + docs-skills-gate link validation; ONBOARDING.md; daily auto-release workflow (RELEASE_PAT); pm-changelog auto-generation; scripts/ build harness.\n\n## Verified by\ndocs-accuracy tests and release-readiness specs. Enduring agent-value statement for the docs/release/CI capability; new work lands in pm-u9d0."

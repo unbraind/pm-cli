@@ -1,0 +1,21 @@
+id: pm-miju
+title: "As one of many parallel agents, I want atomic claim and lock semantics with bounded auto-retry, so that we each get distinct work and never corrupt shared tracker state"
+description: ""
+type: Story
+status: closed
+priority: 3
+tags[5]: agent-story,"area:concurrency",capability,living-map,story
+created_at: "2026-07-04T19:59:47.253Z"
+updated_at: "2026-07-04T19:59:47.994Z"
+author: maintainer-agent
+estimated_minutes: 480
+acceptance_criteria: pm claim is an atomic test-and-set (no silent steal); lock contention auto-retries with bounded jitter before lock_conflict; singleton-file writes are lock-safe; id allocation is collision-free under parallel creates.
+goal: project management = context management
+parent: pm-dj98
+risk: low
+confidence: high
+resolution: Baseline delivered under pm-dj98 (lock ownership/gc + claim/release); atomic claim (pm-8t5x) and lock retry (pm-2muu) in flight; race hardening tracked by open children.
+expected_result: Parallel agents each get distinct work and never corrupt shared state.
+actual_result: Lock + claim/release shipped; atomicity and retry hardening tracked by open children.
+close_reason: Baseline delivered under pm-dj98 (lock ownership/gc + claim/release); atomic claim (pm-8t5x) and lock retry (pm-2muu) in flight; race hardening tracked by open children.
+body: "## Agent need\nMulti-agent operation is pm's primary mode: many agents mutate the same git-native tracker at once and must never clobber each other or hand two agents the same work.\n\n## Delivered surface (pm-dj98)\ncore/lock ownership + lock-gc; pm claim/release. In flight: atomic claim (pm-8t5x), lock-contention auto-retry (pm-2muu). Tracked edges: singleton-file races (pm-bgcu), id TOCTOU (pm-khdq), stale-lock takeover (pm-zwib).\n\n## Verified by\nConcurrency stress specs. Enduring agent-value statement for the concurrency capability; hardening lands in pm-dj98."

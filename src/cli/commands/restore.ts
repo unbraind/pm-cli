@@ -519,6 +519,7 @@ export async function runRestore(
     author,
     Boolean(options.force),
     settings.governance.force_required_for_stale_lock,
+    settings.locks.wait_ms,
   );
 
   try {

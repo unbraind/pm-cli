@@ -33,7 +33,7 @@ export interface ParsedSettings {
   id_prefix: string;
   author_default: string;
   item_format?: "toon" | "json_markdown";
-  locks: { ttl_seconds: number };
+  locks: { ttl_seconds: number; wait_ms?: number };
   checkpoints?: { retention_days?: number };
   output: { default_format: "toon" | "json" };
   history?: {
@@ -143,7 +143,7 @@ const FAIL: Outcome<never> = { ok: false };
 const vString: Check<string> = (input) => (typeof input === "string" ? { ok: true, value: input } : FAIL);
 const vBoolean: Check<boolean> = (input) => (typeof input === "boolean" ? { ok: true, value: input } : FAIL);
 
-function vNumber(options: { int?: boolean; positive?: boolean } = {}): Check<number> {
+function vNumber(options: { int?: boolean; positive?: boolean; min?: number } = {}): Check<number> {
   return (input) => {
     // `Number.isFinite` rejects non-numbers, NaN, and ±Infinity in one check.
     if (typeof input !== "number" || !Number.isFinite(input)) {
@@ -153,6 +153,9 @@ function vNumber(options: { int?: boolean; positive?: boolean } = {}): Check<num
       return FAIL;
     }
     if (options.positive && input <= 0) {
+      return FAIL;
+    }
+    if (typeof options.min === "number" && input < options.min) {
       return FAIL;
     }
     return { ok: true, value: input };
@@ -401,7 +404,7 @@ const settingsCheck = vObject({
   id_prefix: vString,
   author_default: vString,
   item_format: vOptional(vLiteral("toon", "json_markdown")),
-  locks: vObject({ ttl_seconds: vNumber({ int: true }) }),
+  locks: vObject({ ttl_seconds: vNumber({ int: true }), wait_ms: vOptional(vNumber({ int: true, min: 0 })) }),
   checkpoints: vOptional(vObject({ retention_days: vOptional(vNumber({ int: true, positive: true })) })),
   output: vObject({ default_format: vLiteral("toon", "json") }),
   history: vOptional(

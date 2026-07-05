@@ -497,6 +497,7 @@ export async function runSchemaAddType(
     author,
     Boolean(options.force),
     governance.force_required_for_stale_lock,
+    settings.locks.wait_ms,
   );
   let upsert;
   try {
@@ -667,6 +668,7 @@ export async function runSchemaRemoveType(
     author,
     Boolean(options.force),
     governance.force_required_for_stale_lock,
+    settings.locks.wait_ms,
   );
   let removal;
   try {
@@ -864,6 +866,7 @@ export async function runSchemaAddStatus(
     author,
     Boolean(options.force),
     governance.force_required_for_stale_lock,
+    settings.locks.wait_ms,
   );
   let upsert;
   try {
@@ -939,6 +942,7 @@ export async function runSchemaRemoveStatus(
     author,
     Boolean(options.force),
     governance.force_required_for_stale_lock,
+    settings.locks.wait_ms,
   );
   let removal;
   try {
@@ -1295,6 +1299,7 @@ export async function runSchemaAddField(
     author,
     Boolean(options.force),
     governance.force_required_for_stale_lock,
+    settings.locks.wait_ms,
   );
   let upsert;
   try {
@@ -1386,6 +1391,7 @@ export async function runSchemaRemoveField(
     author,
     Boolean(options.force),
     governance.force_required_for_stale_lock,
+    settings.locks.wait_ms,
   );
   let removal;
   try {
@@ -1527,6 +1533,7 @@ export async function runSchemaApplyPreset(
     author,
     Boolean(options.force),
     governance.force_required_for_stale_lock,
+    settings.locks.wait_ms,
   );
   try {
     const previousRaw = await readFileIfExists(typesPath);
@@ -1642,6 +1649,7 @@ export async function runSchemaInferTypes(
     author,
     Boolean(options.force),
     governance.force_required_for_stale_lock,
+    settings.locks.wait_ms,
   );
   try {
     const previousRaw = await readFileIfExists(typesPath);

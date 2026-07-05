@@ -239,6 +239,7 @@ export const SETTINGS_DEFAULTS: PmSettings = {
   item_format: "toon",
   locks: {
     ttl_seconds: 1800,
+    wait_ms: 3000,
   },
   checkpoints: {
     retention_days: 14,

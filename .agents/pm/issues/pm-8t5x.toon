@@ -2,11 +2,31 @@ id: pm-8t5x
 title: pm claim silently steals items already assigned to another agent — claim must be atomic test-and-set for multi-agent work distribution
 description: "bypassesAssigneeConflict (src/core/store/item-store.ts) unconditionally exempts op === \"claim\" from the assignee-conflict check, so `pm claim` on an item assigned to a DIFFERENT author silently reassigns it with no warning and no --force. Empirical: 6 parallel `pm claim` on one item → 3 return success each telling a different agent \"you own it\"; final assignee is whoever wrote last (claimer-4 while claimer-1 and claimer-3 also got success payloads). Sequential steal also confirmed: claim by second-agent silently overwrites first-agent. This defeats claim as a work-distribution primitive: two agents proceed believing they own the same task. Fix: make claim test-and-set under the per-item lock — if assignee is set, non-empty, and !== author, fail with structured `already_claimed_by` (exit CONFLICT, include current owner + claimed timestamp) unless `--steal`/`--force`; claiming an item you already own stays idempotent-success. Consider companion `pm claim --next` (atomic pm next recommendation + claim, retry-on-conflict with next candidate) so N parallel agents each get a distinct item instead of all claiming the same `pm next` recommendation."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[3]: agent-ux,concurrency,governance
 created_at: "2026-07-03T13:25:09.541Z"
-updated_at: "2026-07-03T13:25:09.541Z"
+updated_at: "2026-07-04T22:54:57.585Z"
+assignee: maintainer-agent
 author: claude-code-agent
-parent: pm-mpbb
-body: ""
+estimated_minutes: 120
+acceptance_criteria: "pm claim of an item assigned to another agent fails with exit-code CONFLICT and code already_claimed_by unless --force; --if-available still skips as no-op; empty-string assignee treated as unassigned; claim-command spec covers takeover, if-available, and force paths."
+parent: pm-dj98
+risk: medium
+confidence: high
+comments[4]{created_at,author,text}:
+  "2026-07-04T19:08:31.815Z",maintainer-agent,"Session handoff (2026-07-04, maintainer-agent): fix implemented in local working tree alongside pm-2muu (shared uncommitted diff), NOT committed yet. Body documents the full claim semantics matrix. Ships in the same PR as pm-2muu; verify the already_claimed_by conflict path in a two-agent sandbox before closing."
+  "2026-07-04T21:37:20.744Z",claude-code-agent,"Evidence: claim takeover now rejects by default with already_claimed_by, --if-available skips held items, and --force records forced takeover. Verified by focused claim/integration tests, full coverage, and installed-package temp smoke."
+  "2026-07-04T22:19:12.901Z",claude-code-agent,"Evidence update: claim review hardening now normalizes previous assignee only when it is a string, so null/undefined/non-string assignee values cannot throw before conflict handling. Verification passed: claim-focused tests and installed-package temp smoke confirmed owner claim plus foreign --if-available skip."
+  "2026-07-04T22:54:57.584Z",claude-code-agent,"Verification update: current-head review fix makes pm claim --if-available a true no-op when an item is held by another author. Regression now asserts skipped result preserves persisted updated_at and history length; focused claim test passed and full coverage passed 5380 tests at 100/100/100/100."
+notes[1]{created_at,author,text}:
+  "2026-07-04T19:00:53.145Z",maintainer-agent,"In-flight implementation (uncommitted, 2026-07-04): claim heldByOther now treats empty/whitespace assignee as unheld; new already_claimed_by CONFLICT error with why + nextSteps (pm next / --if-available / coordinated --force) so claim is atomic test-and-set instead of silent takeover; silent-steal path now only reachable with explicit --force (warning claim_takeover:prev->new). claim-command.spec updated for the new conflict contract."
+files[3]{path,scope,note}:
+  src/cli/commands/claim.ts,project,atomic test-and-set claim conflict (already_claimed_by)
+  tests/integration/cli.integration.spec.ts,project,default claim takeover rejection integration coverage
+  tests/unit/commands/claim-command.spec.ts,project,claim conflict contract coverage
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/claim-command.spec.ts,project,120,Covers if-available skip preserving item updated_at and history length
+  node scripts/run-tests.mjs test -- tests/unit/commands/claim-command.spec.ts tests/integration/cli.integration.spec.ts,project,240,claim unit and integration behavior
+  "pm installed-package temp smoke: claim owner plus foreign --if-available skip",project,120,manual isolated installed-package claim smoke
+body: "## Context\nFiled by the 2026-07-03 concurrency audit: `pm claim <id>` performed a silent takeover when the item was already assigned to another agent — two parallel agents could both believe they own the same item, breaking multi-agent work distribution. Only a warning (`claim_takeover`) was emitted, which agents don't reliably read.\n\n## Design (implemented, uncommitted as of 2026-07-04)\n- Claim is now an atomic test-and-set: if the item is held by a different author and neither `--force` nor `--if-available` is passed, claim throws a CONFLICT PmCliError with code `already_claimed_by`, naming the current holder.\n- Error carries agent-actionable guidance: why (parallel agents must never proceed believing they co-own an item) and nextSteps — `pm next` to pick different work, `--if-available` for a no-op skip, `--force` only for coordinated takeover.\n- `heldByOther` now treats empty/whitespace-only assignee as unheld (previously an empty-string assignee counted as \"held\", blocking claims on effectively unassigned items).\n- Semantics matrix: unheld → claim succeeds; held + `--if-available` → skip with `claim_skipped_held_by` warning (exit 0); held + `--force` → takeover with `claim_takeover:prev->new` warning; held + neither → CONFLICT `already_claimed_by`.\n- tests/unit/commands/claim-command.spec.ts updated for the new conflict contract.\n\n## Constraints / decisions\n- `--force` keeps the takeover path (needed for reclaiming from dead agents); the fix removes only the SILENT steal default.\n- Terminal-item claim still requires `--force` (pre-existing rule, unchanged).\n- The claim mutation itself runs under the item lock, so with pm-2muu's lock wait this is a true test-and-set (read assignee + write happen atomically w.r.t. other mutators)."

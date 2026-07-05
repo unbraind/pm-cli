@@ -6,10 +6,14 @@ status: open
 priority: 1
 tags[6]: adr,architecture,context-management,decisions,living-map,pm-cli
 created_at: "2026-05-31T19:41:51.126Z"
-updated_at: "2026-05-31T20:15:20.015Z"
+updated_at: "2026-07-04T19:16:34.575Z"
 author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: Every architecturally significant decision has an ADR child recorded in the PR that implements it; ADR log discoverable via pm list scoped to this epic.
 goal: project management = context management
 objective: Make the 'why' behind the architecture discoverable as durable context
 value: Agents and contributors understand prior decisions without re-deriving them from code/memory
 parent: pm-doxj
-body: "ADRs are recorded as closed Decision items parented here. They document decisions ALREADY made (recorded today), so they are closed records, not open work. New decisions append to this log over time."
+risk: low
+confidence: high
+body: "## Charter\nLiving log of Architecture Decision Records. Each ADR is a Decision item under this epic capturing context, the decision, consequences, and evidence for an architectural choice actually made (not aspirational). 38 closed ADRs at 2026-07-04 (e.g. pm-w13j literal all-src coverage gate).\n\n## Conventions\n- ADR titles: \"ADR: <date or topic> — <decision>\".\n- ADRs close when the decision is recorded and its consequences are reflected in code/docs; they are historical records, so closed ADRs are never edited retroactively (append comments instead).\n- One open child: pm-96wm (2026-06-07 deep-audit ADR) stays open as its remediation batches are still being verified; close it once every deferred finding it indexes is filed or shipped."

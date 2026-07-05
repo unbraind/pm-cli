@@ -1,0 +1,19 @@
+id: pm-114v
+title: "pm claim --next: atomically claim the next actionable item so parallel agents each get distinct work"
+description: "Companion to pm-8t5x. pm next + pm claim as separate steps race under parallel agents: all N agents get the same recommendation and N-1 fail their claim. Add an atomic recommend+claim with bounded retry over next-ranked candidates so each parallel agent receives a distinct item. Idea originated in the 2026-07-03 concurrency audit (recorded inside pm-8t5x's fix sketch); promoted to its own tracked Feature by the 2026-07-04 metadata audit."
+type: Feature
+status: open
+priority: 2
+tags[3]: agent-ux,cli,concurrency
+created_at: "2026-07-04T19:20:15.349Z"
+updated_at: "2026-07-05T04:07:28.609Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: "pm claim --next claims a distinct item per parallel agent (stress-verified, zero double-grants); bounded candidate retry on already_claimed_by; output includes pm next rationale; wired across MCP/contracts/completion/docs per new-command checklist"
+parent: pm-dj98
+risk: medium
+confidence: medium
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-2muu,related,"2026-07-05T04:07:28.566Z",claude-code-agent,null
+  pm-8t5x,blocked_by,"2026-07-05T04:07:28.566Z",claude-code-agent,null
+body: "## Context\nSplit out of pm-8t5x (claim test-and-set): once claim correctly CONFLICTs on held items, N parallel agents that each run `pm next` will all be recommended the SAME top item, all try to claim it, and N-1 will bounce. The missing primitive is an atomic \"give me my own item\".\n\n## Design sketch\n`pm claim --next` (or `pm next --claim`): compute the pm next recommendation and claim it in one operation; on already_claimed_by conflict, retry with the next-ranked candidate (bounded, e.g. 10 candidates) until one claim succeeds; return the claimed item with the same rationale payload pm next emits. Honors --if-available semantics naturally (skip held candidates instead of erroring). Requires pm-8t5x semantics (deps: blocked_by) and benefits from pm-2muu's lock wait.\n\n## Definition of done\nN-parallel `pm claim --next` stress: N distinct items claimed, zero double-grants; recommendation rationale preserved in output; MCP action + contracts + completion + docs wired per the new-command checklist (grep replicate every site); spec covers conflict-retry and exhausted-candidates paths."

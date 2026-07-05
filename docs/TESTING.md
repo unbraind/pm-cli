@@ -37,7 +37,11 @@ repo-specific `quality:static` gate. The dedicated `quality:static` gate remains
 authoritative for source/exported docstring coverage, orphan-module checks,
 directory-load caps, and the TypeScript-aware duplicate/complexity checks that
 are tailored to pm's source layout; `pnpm lint` delegates to it instead of
-running a second threshold profile.
+running a second threshold profile. It also includes a changed-file
+CodeFactor-parity complexity scan for shipped source, package, and script files
+so PR-local CodeFactor maintainability annotations fail locally before commit or
+push. Existing legacy high-complexity test fixtures are tracked separately and
+must not be used as precedent for new changed production/script code.
 
 ## Focused Test Runs
 

@@ -6,11 +6,11 @@ status: open
 priority: 2
 tags[3]: audit,context-management,linked-files
 created_at: "2026-06-25T05:01:04.319Z"
-updated_at: "2026-06-25T05:41:12.986Z"
+updated_at: "2026-07-04T19:46:30.148Z"
 author: codex-ecosystem-auditor
-estimated_minutes: 120
+estimated_minutes: 180
 acceptance_criteria: "Historical linked-file ownership debt is reconciled in a dedicated tracker-only migration without polluting a product release changelog; pm validate --check-files residual rows are grouped by deleted, moved, and unowned current paths with owner candidates; no broad historical PM mutations are bundled into unrelated code PRs."
-parent: pm-doxj
+parent: pm-33cw
 risk: medium
 confidence: medium
 comments[5]{created_at,author,text}:
@@ -19,9 +19,9 @@ comments[5]{created_at,author,text}:
   "2026-06-25T05:10:25.858Z",codex-ecosystem-auditor,"Evidence: corrected linked validation test uses pm_context_mode=tracker; pm test pm-j8z6 --run --only-last --progress passed. Final file validator status is ok with zero missing, moved, deleted, or orphaned paths."
   "2026-06-25T05:10:47.642Z",codex-ecosystem-auditor,"Clarification: the linked pm test used tracker context and proved command execution, but the authoritative file-validation evidence is the local real-workspace command: pm validate --check-files --verbose-file-lists --json -> files status ok, missing/moved/deleted/orphaned counts all 0."
   "2026-06-25T05:20:49.117Z",codex-ecosystem-auditor,"Audit correction: broad linked-file reconciliation was tested but intentionally not kept in this release PR because it touched hundreds of historical closed items and made the package-owned changelog mis-bucket old work as current. Current baseline after pruning: pm validate --check-files reports 146 missing linked paths and 162 orphaned source/test paths; this item remains open to handle that as a dedicated tracker migration."
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  pm validate --check-files --verbose-file-lists --json,null,project,120,tracker,null,null,null,null,null,null,null,null,null,null,null
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mqt1mkhm-v3qfvq,test,failed,"2026-06-25T05:10:01.864Z","2026-06-25T05:10:02.554Z","2026-06-25T05:10:02.554Z",null,null,0,1,0,null,null,null
-  test-local-mqt1n279-hbfrtd,test,passed,"2026-06-25T05:10:22.545Z","2026-06-25T05:10:25.509Z","2026-06-25T05:10:25.509Z",null,null,1,0,0,null,null,null
-body: ""
+tests[1]{command,scope,timeout_seconds,pm_context_mode}:
+  pm validate --check-files --verbose-file-lists --json,project,120,tracker
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mqt1mkhm-v3qfvq,test,failed,"2026-06-25T05:10:01.864Z","2026-06-25T05:10:02.554Z","2026-06-25T05:10:02.554Z",0,1,0
+  test-local-mqt1n279-hbfrtd,test,passed,"2026-06-25T05:10:22.545Z","2026-06-25T05:10:25.509Z","2026-06-25T05:10:25.509Z",1,0,0
+body: "## Context\npm validate --check-files currently reports validate_files_missing_linked_paths:146 and validate_files_orphaned_paths:134. Source/test relocations (cli-contracts split PR#396, module-mirrored test reorg 2026-06-16, all-src <2000 LOC splits 2026-05-25, SDK bundle move pm-4oww) moved files out from under their linked-file rows, and newer modules were created without owners.\n\n## Approach\n1. Missing paths (146): for each linked row whose path no longer exists, find the successor file(s) (git log --follow) and re-point the row via pm files commands on the owning item — do NOT hand-edit .toon storage.\n2. Orphaned paths (134): assign each unowned src/tests file to the item that delivered it (git blame → PR → pm id from session memory/CHANGELOG links); files with no traceable owner go to the owning capability epic.\n3. Batch by directory; record before/after warning counts as comments here.\n\n## Definition of done\nBoth validate --check-files counters at (or near) zero with every remaining exception justified in a comment; spot-check that `pm files` on touched items renders valid paths."

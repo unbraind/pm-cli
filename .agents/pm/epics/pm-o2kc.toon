@@ -6,10 +6,14 @@ status: open
 priority: 1
 tags[5]: "area:history","area:storage",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:10.941Z"
-updated_at: "2026-05-31T19:42:10.941Z"
+updated_at: "2026-07-04T19:15:49.994Z"
 author: maintainer-agent
+estimated_minutes: 720
+acceptance_criteria: "History chain integrity gates stay green; gc, compact, redact, and repair flows verified on large workspaces; no open data-loss classes."
 goal: project management = context management
 objective: "Strengthen storage, append-only history, and durability primitives (compaction, integrity, gc, export/import)"
 value: "Trustworthy, portable, bounded-growth git-native storage"
 parent: pm-doxj
-body: ""
+risk: low
+confidence: high
+body: "## Charter\nLiving capability epic for storage, append-only history, and data durability: TOON item files, per-item history streams (hash-chained JSONL), checkpoints, gc, compaction, export/import, and format_version gating.\n\n## Scope\n- In: item-store write paths, history chain integrity (repair/redact/compact), gc scopes (locks/checkpoints/embeddings), backup/restore, format migrations.\n- Out: concurrency/locking semantics (pm-dj98 owns races and atomicity), search index storage (pm-ydp6).\n\n## Invariants this epic guards\n- History is append-only and hash-chained; appendLineAtomic is the only writer (see pm-y2ml docs).\n- Items must survive strict→lenient TOON decode fallback (2026-05-24 recovery precedent).\n- pm health history_drift must stay at 0 across 1400+ items.\n\n## Status\n20 closed children (compact snapshot, history-compact bulk + policy, gc scopes, restore hardening). Open as a living backlog — no open children at 2026-07-04; new durability work lands here."

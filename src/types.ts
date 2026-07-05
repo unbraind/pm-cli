@@ -893,6 +893,12 @@ export interface PmSettings {
   item_format: ItemFormat;
   locks: {
     ttl_seconds: number;
+    /**
+     * Bounded wait budget (milliseconds) for acquiring a contended item lock
+     * before surfacing lock_conflict. 0 disables waiting (fail-fast).
+     * Overridable per invocation via PM_LOCK_WAIT_MS.
+     */
+    wait_ms: number;
   };
   /**
    * Retention policy for bulk-mutation rollback checkpoints written by

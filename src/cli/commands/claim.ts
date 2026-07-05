@@ -82,8 +82,11 @@ export async function runClaim(
     author,
     message: options.message,
     force,
+    skipNoop: true,
     mutate(document) {
-      previousAssignee = document.metadata.assignee ?? null;
+      const currentAssignee = document.metadata.assignee;
+      const currentAssigneeText = typeof currentAssignee === "string" ? currentAssignee : "";
+      previousAssignee = currentAssigneeText.trim().length > 0 ? currentAssigneeText : null;
       if (statusIsTerminal(document.metadata.status, statusRegistry) && !force) {
         throw new PmCliError(`Cannot claim terminal item ${document.metadata.id} without --force`, EXIT_CODE.CONFLICT);
       }
@@ -92,6 +95,21 @@ export async function runClaim(
         skipped = true;
         mutationWarnings.push(`claim_skipped_held_by:${previousAssignee}`);
         return { changedFields: [] };
+      }
+      if (heldByOther && !force) {
+        throw new PmCliError(
+          `Item ${document.metadata.id} is already claimed by ${previousAssignee}. Use --force to take over, or --if-available to skip without failing.`,
+          EXIT_CODE.CONFLICT,
+          {
+            code: "already_claimed_by",
+            why: "Claim is an atomic test-and-set so parallel agents never proceed believing they own the same item.",
+            nextSteps: [
+              "Run pm next to pick a different unclaimed item.",
+              "Re-run with --if-available to treat a held item as a no-op skip.",
+              "Re-run with --force only when taking over the item is coordinated.",
+            ],
+          },
+        );
       }
       if (heldByOther) {
         mutationWarnings.push(`claim_takeover:${previousAssignee}->${author}`);
