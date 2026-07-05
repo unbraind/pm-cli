@@ -64,17 +64,29 @@ describe("scripts/release/run-gates", () => {
     process.argv = ["node", "scripts/release/run-gates.mjs"];
     await harness.importModule("scripts/release/run-gates.mjs", "runGatesFull");
     expect(
-      spawnSync.mock.calls.some((c) => [c[0], ...(c[1] as string[])].join(" ").includes("dogfood:package-first")),
+      spawnSync.mock.calls.some((c) => {
+        const args = (c[1] as string[] | undefined) ?? [];
+        return [c[0], ...args].join(" ").includes("dogfood:package-first");
+      }),
     ).toBe(true);
     expect(
-      spawnSync.mock.calls.some((c) => [c[0], ...(c[1] as string[])].join(" ").includes("sentry-telemetry-gate.mjs")),
+      spawnSync.mock.calls.some((c) => {
+        const args = (c[1] as string[] | undefined) ?? [];
+        return [c[0], ...args].join(" ").includes("sentry-telemetry-gate.mjs");
+      }),
     ).toBe(true);
     expect(
-      spawnSync.mock.calls.some((c) => [c[0], ...(c[1] as string[])].join(" ").includes("greptile-review-gate.mjs")),
+      spawnSync.mock.calls.some((c) => {
+        const args = (c[1] as string[] | undefined) ?? [];
+        return [c[0], ...args].join(" ").includes("greptile-review-gate.mjs");
+      }),
     ).toBe(true);
-    expect(spawnSync.mock.calls.some((c) => [c[0], ...(c[1] as string[])].join(" ").includes("quality:static"))).toBe(
-      true,
-    );
+    expect(
+      spawnSync.mock.calls.some((c) => {
+        const args = (c[1] as string[] | undefined) ?? [];
+        return [c[0], ...args].join(" ").includes("quality:static");
+      }),
+    ).toBe(true);
     expect(
       spawnSync.mock.calls.some((c) => {
         const args = (c[1] as string[] | undefined) ?? [];
