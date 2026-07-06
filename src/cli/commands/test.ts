@@ -393,7 +393,10 @@ function buildPmContextMismatchHint(params: {
     );
   }
   if (executionContext.pm_context_mode === "schema") {
-    return " Use --pm-context tracker to run PM tracker-read commands against seeded tracker data.";
+    return (
+      " Use --auto-pm-context to route PM tracker-read linked commands through seeded tracker data automatically." +
+      " Alternatively, use --pm-context tracker for the whole run."
+    );
   }
   return "";
 }
@@ -945,52 +948,40 @@ async function killProcessTree(pid: number): Promise<void> {
 /* c8 ignore stop */
 
 /* c8 ignore start -- process lifecycle timing/error race branches are covered by cross-platform integration runners */
-async function runLinkedTestCommand(
-  command: string,
-  timeoutMs: number,
-  env: NodeJS.ProcessEnv,
-  progressContext: LinkedTestProgressContext,
-  progressMode: LinkedTestProgressMode,
-): Promise<LinkedTestExecutionResult> {
-  const startedAt = Date.now();
-  const heartbeat = beginLinkedTestProgress(progressContext, progressMode);
-  const child = spawn(command, {
-    cwd: process.cwd(),
-    env,
-    shell: true,
-    windowsHide: true,
-    detached: process.platform !== "win32",
-    stdio: ["pipe", "pipe", "pipe"],
-  });
-  closeLinkedTestStdin(child);
+interface LinkedTestTimerState {
+  heartbeat: NodeJS.Timeout | null;
+  forceKillTimer: NodeJS.Timeout | null;
+  timedOutTimer: NodeJS.Timeout | null;
+}
 
-  let stdout = "";
-  let stderr = "";
-  let stdoutBytes = 0;
-  let stderrBytes = 0;
-  let timedOut = false;
-  let maxBufferExceeded = false;
-  let spawnError: string | undefined;
-  let forceKillTimer: NodeJS.Timeout | null = null;
-  let timedOutTimer: NodeJS.Timeout | null = null;
+interface LinkedTestOutputBufferState {
+  stdout: string;
+  stderr: string;
+  stdoutBytes: number;
+  stderrBytes: number;
+  maxBufferExceeded: boolean;
+}
+
+function clearLinkedTestTimers(timers: LinkedTestTimerState): void {
+  if (timers.heartbeat) {
+    clearInterval(timers.heartbeat);
+  }
+  if (timers.timedOutTimer) {
+    clearTimeout(timers.timedOutTimer);
+    timers.timedOutTimer = null;
+  }
+  if (timers.forceKillTimer) {
+    clearTimeout(timers.forceKillTimer);
+    timers.forceKillTimer = null;
+  }
+}
+
+function createLinkedTestTerminationRequester(
+  child: ReturnType<typeof spawn>,
+  timers: LinkedTestTimerState,
+): () => Promise<void> {
   let terminationRequested = false;
-
-  const clearTimers = (): void => {
-    if (heartbeat) {
-      clearInterval(heartbeat);
-    }
-    if (timedOutTimer) {
-      clearTimeout(timedOutTimer);
-      timedOutTimer = null;
-    }
-    if (forceKillTimer) {
-      clearTimeout(forceKillTimer);
-      forceKillTimer = null;
-    }
-  };
-
-  /* c8 ignore start -- timeout termination branches depend on scheduler/process-group timing. */
-  const requestTermination = async (): Promise<void> => {
+  return async (): Promise<void> => {
     if (terminationRequested) {
       return;
     }
@@ -1019,48 +1010,55 @@ async function runLinkedTestCommand(
       }
     }
     /* c8 ignore next 3 -- exercised only when timeout escalation triggers force-kill fallback. */
-    forceKillTimer = setTimeout(() => {
+    timers.forceKillTimer = setTimeout(() => {
       void killProcessTree(pid);
     }, linkedTestTimeoutForceKillDelayMs());
-    forceKillTimer.unref?.();
+    timers.forceKillTimer.unref?.();
   };
-  /* c8 ignore stop */
+}
 
-  const appendChunk = (chunk: Buffer | string, target: "stdout" | "stderr"): void => {
-    const text = typeof chunk === "string" ? chunk : chunk.toString("utf8");
-    const bytes = Buffer.byteLength(text);
-    if (target === "stdout") {
-      stdoutBytes += bytes;
-      if (stdoutBytes <= TEST_OUTPUT_MAX_BUFFER_BYTES) {
-        stdout += text;
-      }
-    } else {
-      stderrBytes += bytes;
-      if (stderrBytes <= TEST_OUTPUT_MAX_BUFFER_BYTES) {
-        stderr += text;
-      }
-    }
-    if (!maxBufferExceeded && (stdoutBytes > TEST_OUTPUT_MAX_BUFFER_BYTES || stderrBytes > TEST_OUTPUT_MAX_BUFFER_BYTES)) {
-      maxBufferExceeded = true;
-      void requestTermination();
-    }
-  };
+function readLinkedTestOutputChunkText(chunk: Buffer | string, bytes: number, remainingBytes: number): string {
+  if (remainingBytes <= 0) {
+    return "";
+  }
+  if (bytes <= remainingBytes) {
+    return typeof chunk === "string" ? chunk : chunk.toString("utf8");
+  }
+  const buffer = typeof chunk === "string" ? Buffer.from(chunk) : chunk;
+  return buffer.subarray(0, remainingBytes).toString("utf8");
+}
 
-  child.stdout?.on("data", (chunk) => appendChunk(chunk, "stdout"));
-  child.stderr?.on("data", (chunk) => appendChunk(chunk, "stderr"));
-  /* c8 ignore next 5 -- shell spawn error callbacks are non-deterministic across platforms. */
-  child.on("error", (error) => {
-    spawnError = error.message;
-  });
+function appendLinkedTestOutputChunk(
+  state: LinkedTestOutputBufferState,
+  chunk: Buffer | string,
+  target: "stdout" | "stderr",
+): boolean {
+  if (state.maxBufferExceeded) {
+    return false;
+  }
+  const bytes = typeof chunk === "string" ? Buffer.byteLength(chunk) : chunk.byteLength;
+  if (target === "stdout") {
+    const remainingBytes = TEST_OUTPUT_MAX_BUFFER_BYTES - state.stdoutBytes;
+    state.stdout += readLinkedTestOutputChunkText(chunk, bytes, remainingBytes);
+    state.stdoutBytes += bytes;
+  } else {
+    const remainingBytes = TEST_OUTPUT_MAX_BUFFER_BYTES - state.stderrBytes;
+    state.stderr += readLinkedTestOutputChunkText(chunk, bytes, remainingBytes);
+    state.stderrBytes += bytes;
+  }
+  const bufferExceeded =
+    state.stdoutBytes > TEST_OUTPUT_MAX_BUFFER_BYTES || state.stderrBytes > TEST_OUTPUT_MAX_BUFFER_BYTES;
+  if (!state.maxBufferExceeded && bufferExceeded) {
+    state.maxBufferExceeded = true;
+    return true;
+  }
+  return false;
+}
 
-  /* c8 ignore next 4 -- callback scheduling timing is non-deterministic under coverage instrumentation. */
-  timedOutTimer = setTimeout(() => {
-    timedOut = true;
-    void requestTermination();
-  }, timeoutMs);
-  timedOutTimer.unref?.();
-
-  const { code, signal } = await new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve) => {
+function waitForLinkedTestChildClose(
+  child: ReturnType<typeof spawn>,
+): Promise<{ code: number | null; signal: NodeJS.Signals | null }> {
+  return new Promise((resolve) => {
     let settled = false;
     let pipeCloseGraceTimer: NodeJS.Timeout | null = null;
     const settle = (value: { code: number | null; signal: NodeJS.Signals | null }, destroyPipes = false): void => {
@@ -1098,14 +1096,74 @@ async function runLinkedTestCommand(
       });
     });
   });
-  clearTimers();
+}
+
+function createLinkedTestChild(command: string, env: NodeJS.ProcessEnv): ReturnType<typeof spawn> {
+  return spawn(command, {
+    cwd: process.cwd(),
+    env,
+    shell: true,
+    windowsHide: true,
+    detached: process.platform !== "win32",
+    stdio: ["pipe", "pipe", "pipe"],
+  });
+}
+
+async function runLinkedTestCommand(
+  command: string,
+  timeoutMs: number,
+  env: NodeJS.ProcessEnv,
+  progressContext: LinkedTestProgressContext,
+  progressMode: LinkedTestProgressMode,
+): Promise<LinkedTestExecutionResult> {
+  const startedAt = Date.now();
+  const child = createLinkedTestChild(command, env);
+  closeLinkedTestStdin(child);
+  const timers: LinkedTestTimerState = {
+    heartbeat: beginLinkedTestProgress(progressContext, progressMode),
+    forceKillTimer: null,
+    timedOutTimer: null,
+  };
+  const output: LinkedTestOutputBufferState = {
+    stdout: "",
+    stderr: "",
+    stdoutBytes: 0,
+    stderrBytes: 0,
+    maxBufferExceeded: false,
+  };
+  const requestTermination = createLinkedTestTerminationRequester(child, timers);
+  let timedOut = false;
+  let spawnError: string | undefined;
+
+  const appendChunk = (chunk: Buffer | string, target: "stdout" | "stderr"): void => {
+    if (appendLinkedTestOutputChunk(output, chunk, target)) {
+      void requestTermination();
+    }
+  };
+
+  child.stdout?.on("data", (chunk) => appendChunk(chunk, "stdout"));
+  child.stderr?.on("data", (chunk) => appendChunk(chunk, "stderr"));
+  /* c8 ignore next 5 -- shell spawn error callbacks are non-deterministic across platforms. */
+  child.on("error", (error) => {
+    spawnError = error.message;
+  });
+
+  /* c8 ignore next 4 -- callback scheduling timing is non-deterministic under coverage instrumentation. */
+  timers.timedOutTimer = setTimeout(() => {
+    timedOut = true;
+    void requestTermination();
+  }, timeoutMs);
+  timers.timedOutTimer.unref?.();
+
+  const { code, signal } = await waitForLinkedTestChildClose(child);
+  clearLinkedTestTimers(timers);
   const executionResult: LinkedTestExecutionResult = {
-    stdout,
-    stderr,
+    stdout: output.stdout,
+    stderr: output.stderr,
     exitCode: code,
     signal,
     timedOut,
-    maxBufferExceeded,
+    maxBufferExceeded: output.maxBufferExceeded,
     spawnError,
   };
   endLinkedTestProgress(progressContext, executionResult, startedAt, progressMode);
@@ -1991,6 +2049,51 @@ interface ResolvedTestRunOptions {
   testsToRun: LinkedTest[];
 }
 
+async function readLinkedTestItem(params: {
+  id: string;
+  pmRoot: string;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  typeToFolder: Record<string, string>;
+}): Promise<ResolvedTestItem> {
+  const { id, pmRoot, settings, typeToFolder } = params;
+  const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeToFolder);
+  if (!located) {
+    throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
+  }
+  const loaded = await readLocatedItem(located, { schema: settings.schema });
+  return { itemId: located.id, tests: loaded.document.metadata.tests ?? [], changed: false };
+}
+
+function linkedTestsHaveSameIdentity(left: LinkedTest, right: LinkedTest): boolean {
+  return (
+    left.command === right.command &&
+    left.path === right.path &&
+    left.scope === right.scope &&
+    left.pm_context_mode === right.pm_context_mode
+  );
+}
+
+function appendMissingLinkedTests(current: LinkedTest[], additions: LinkedTest[]): LinkedTest[] {
+  const next = [...current];
+  for (const addition of additions) {
+    if (!next.some((entry) => linkedTestsHaveSameIdentity(entry, addition))) {
+      next.push(addition);
+    }
+  }
+  return next;
+}
+
+function removeLinkedTestsBySelector(current: LinkedTest[], removals: string[]): LinkedTest[] {
+  if (removals.length === 0) {
+    return current;
+  }
+  return current.filter((entry) => !removals.includes(entry.path ?? "") && !removals.includes(entry.command ?? ""));
+}
+
+function applyLinkedTestMutations(previous: LinkedTest[], adds: LinkedTest[], removes: string[]): LinkedTest[] {
+  return removeLinkedTestsBySelector(appendMissingLinkedTests(previous, adds), removes);
+}
+
 function hasTestRuntimeDirectiveFlags(options: TestCommandOptions): boolean {
   return (
     (options.envSet?.length ?? 0) > 0 ||
@@ -2031,12 +2134,7 @@ async function resolveLinkedTestItem(params: {
 }): Promise<ResolvedTestItem> {
   const { id, options, pmRoot, settings, typeToFolder, adds, removes } = params;
   if (adds.length === 0 && removes.length === 0) {
-    const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeToFolder);
-    if (!located) {
-      throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
-    }
-    const loaded = await readLocatedItem(located, { schema: settings.schema });
-    return { itemId: located.id, tests: loaded.document.metadata.tests ?? [], changed: false };
+    return readLinkedTestItem({ id, pmRoot, settings, typeToFolder });
   }
   const result = await mutateItem({
     pmRoot,
@@ -2049,27 +2147,7 @@ async function resolveLinkedTestItem(params: {
     skipNoop: true,
     mutate(document) {
       const previous = document.metadata.tests ?? [];
-      const next = [...previous];
-      for (const add of adds) {
-        const exists = next.some(
-          (entry) =>
-            entry.command === add.command &&
-            entry.path === add.path &&
-            entry.scope === add.scope &&
-            entry.pm_context_mode === add.pm_context_mode,
-        );
-        if (!exists) {
-          next.push(add);
-        }
-      }
-      if (removes.length > 0) {
-        for (let i = next.length - 1; i >= 0; i -= 1) {
-          const entry = next[i];
-          if (removes.includes(entry.path ?? "") || removes.includes(entry.command ?? "")) {
-            next.splice(i, 1);
-          }
-        }
-      }
+      const next = applyLinkedTestMutations(previous, adds, removes);
       document.metadata.tests = next;
       return { changedFields: stableValueEquals(previous, next) ? [] : ["tests"] };
     },
@@ -2272,6 +2350,7 @@ export const _testOnlyTestCommand = {
   resolveLinkedTestRequestedContextMode,
   resolveTrackedRunId,
   runLinkedTestCommand,
+  appendLinkedTestOutputChunk,
   seedLinkedTestSandbox,
   seedLinkedTestTrackerData,
   splitJsonPathSegments,

@@ -20,6 +20,7 @@ import {
   PM_TOOL_PARAMETERS_SCHEMA_VERSION,
   STATUS_VALUES,
   PmClient,
+  aggregate as aggregateItems,
   assertExtensionBlueprint as assertExtensionBlueprintFromBarrel,
   assertExtensionCapabilityUsage as assertExtensionCapabilityUsageFromBarrel,
   assertExtensionDeactivated as assertExtensionDeactivatedFromBarrel,
@@ -67,6 +68,7 @@ import {
   createPmCliExpectedError,
   clearWorkspaceContractsCache,
   compactFlagAliasContracts,
+  context as readContext,
   defineExtension,
   type ExtensionApi,
   type ExtensionCapability,
@@ -74,10 +76,13 @@ import {
   type ExtensionRegistrationRegistry,
   type ExtensionServiceName,
   generateItemId,
+  get as getItem,
   getContracts,
   getWorkspaceContracts,
   getItemPath,
+  list as listItems,
   locateItem,
+  next as recommendNext,
   normalizeItemId,
   pathExists,
   readFileIfExists,
@@ -86,6 +91,8 @@ import {
   resolvePmRoot,
   runAction,
   resolveSubcommandFlagContractsForCommand,
+  search as searchItems,
+  stats as readStats,
   isPmExtensionCapabilityContract,
   isPmExtensionPolicyModeContract,
   isPmExtensionPolicySurfaceContract,
@@ -885,6 +892,13 @@ describe("public sdk entrypoint", () => {
   it("exposes runtime primitives used by TypeScript pm packages through the sdk barrel", () => {
     expect(typeof PmClient).toBe("function");
     expect(typeof runAction).toBe("function");
+    expect(typeof aggregateItems).toBe("function");
+    expect(typeof getItem).toBe("function");
+    expect(typeof listItems).toBe("function");
+    expect(typeof readContext).toBe("function");
+    expect(typeof readStats).toBe("function");
+    expect(typeof recommendNext).toBe("function");
+    expect(typeof searchItems).toBe("function");
     expect(typeof pathExists).toBe("function");
     expect(typeof readFileIfExists).toBe("function");
     expect(typeof writeFileAtomic).toBe("function");
@@ -903,6 +917,13 @@ describe("public sdk entrypoint", () => {
   it("keeps test-only action runner internals out of the public runtime module", async () => {
     const runtimeModule = await import("../../../src/sdk/runtime.js");
     expect("_testOnlyActionRunner" in runtimeModule).toBe(false);
+    expect(typeof runtimeModule.aggregate).toBe("function");
+    expect(typeof runtimeModule.context).toBe("function");
+    expect(typeof runtimeModule.get).toBe("function");
+    expect(typeof runtimeModule.list).toBe("function");
+    expect(typeof runtimeModule.next).toBe("function");
+    expect(typeof runtimeModule.search).toBe("function");
+    expect(typeof runtimeModule.stats).toBe("function");
   });
 
   it("does not register runtime test hooks when the built runtime is imported in production", () => {
@@ -924,6 +945,32 @@ describe("public sdk entrypoint", () => {
     );
 
     expect(output.trim()).toBe("absent");
+  });
+
+  it("exports named read primitives from built package entrypoints", () => {
+    const childEnv = { ...process.env, NODE_ENV: "production" };
+    delete childEnv.VITEST;
+    delete childEnv.VITEST_WORKER_ID;
+    const names = ["aggregate", "context", "get", "list", "next", "search", "stats"];
+
+    const output = execFileSync(
+      process.execPath,
+      [
+        "--input-type=module",
+        "--eval",
+        `import * as sdk from '@unbrained/pm-cli/sdk';
+import * as runtime from '@unbrained/pm-cli/sdk/runtime';
+const names = ${JSON.stringify(names)};
+const payload = Object.fromEntries(names.map((name) => [name, { sdk: typeof sdk[name], runtime: typeof runtime[name] }]));
+console.log(JSON.stringify(payload));`,
+      ],
+      { cwd: process.cwd(), env: childEnv, encoding: "utf8" },
+    );
+    const exportsByName = JSON.parse(output) as Record<string, { sdk: string; runtime: string }>;
+
+    for (const name of names) {
+      expect(exportsByName[name]).toEqual({ sdk: "function", runtime: "function" });
+    }
   });
 
   it("does not register runtime test hooks when the source runtime is imported outside tests", async () => {
@@ -1048,19 +1095,51 @@ describe("public sdk entrypoint", () => {
       expect(idOnlyCreated.item).toBeUndefined();
       expect(idOnlyCreated.changed_field_count).toBeUndefined();
 
-      const listed = (await client.list({ status: "open", limit: "10" })) as {
-        items?: Array<{ id?: string; title?: string }>;
-        query?: { filters?: Record<string, unknown> };
-      };
-      expect(listed.items?.some((item) => item.id === itemId)).toBe(true);
+      const listed = await client.list({ status: "open", limit: "10" });
+      expect(listed.items.some((item) => item.id === itemId)).toBe(true);
 
-      const clientContext = (await client.context({ limit: "5" })) as { summary?: { active_items?: number } };
-      expect(typeof clientContext.summary?.active_items).toBe("number");
+      const clientContext = await client.context({ limit: "5" });
+      expect(typeof clientContext.summary.active_items).toBe("number");
 
-      const searched = (await client.search("SDK client item", { status: "open", limit: "10" })) as {
-        items?: Array<{ id?: string; title?: string }>;
+      const searched = await client.search("SDK client item", { status: "open", limit: "10" });
+      expect(searched.items.some((item) => "id" in item && item.id === itemId)).toBe(true);
+
+      const next = await client.next({ limit: "3", readyOnly: true });
+      expect(typeof next.summary.ready).toBe("number");
+
+      const aggregate = await client.aggregate({ groupBy: "status", count: true });
+      expect(aggregate.groups.some((group) => group.group.status === "open")).toBe(true);
+
+      const stats = await client.stats({ metadataCoverage: true });
+      expect(stats.totals.items).toBeGreaterThanOrEqual(3);
+      expect(stats.metadata_coverage).toBeDefined();
+      const wrapperDefaults = {
+        pmRoot: pmPath,
+        cwd: path.dirname(pmPath),
+        author: "sdk-client-test",
+        noExtensions: true,
       };
-      expect(searched.items?.some((item) => item.id === itemId)).toBe(true);
+
+      const wrapperList = await listItems({ status: "open", limit: "10" }, wrapperDefaults);
+      expect(wrapperList.items.some((item) => item.id === itemId)).toBe(true);
+
+      const wrapperContext = await readContext({ limit: "5" }, wrapperDefaults);
+      expect(typeof wrapperContext.summary.active_items).toBe("number");
+
+      const wrapperSearch = await searchItems("SDK client item", { status: "open", limit: "10" }, wrapperDefaults);
+      expect(wrapperSearch.items.some((item) => "id" in item && item.id === itemId)).toBe(true);
+
+      const wrapperGet = await getItem(itemId, { full: true }, wrapperDefaults);
+      expect(wrapperGet.item).toMatchObject({ id: itemId, status: "open" });
+
+      const wrapperNext = await recommendNext({ limit: "3", readyOnly: true }, wrapperDefaults);
+      expect(typeof wrapperNext.summary.ready).toBe("number");
+
+      const wrapperAggregate = await aggregateItems({ groupBy: "status", count: true }, wrapperDefaults);
+      expect(wrapperAggregate.groups.some((group) => group.group.status === "open")).toBe(true);
+
+      const wrapperStats = await readStats({ metadataCoverage: true }, wrapperDefaults);
+      expect(wrapperStats.totals.items).toBeGreaterThanOrEqual(3);
 
       const directListed = (await runAction({
         action: "list",
@@ -1113,7 +1192,7 @@ describe("public sdk entrypoint", () => {
       expect(paused.action).toBe("pause_task");
       expect(paused.update?.item).toMatchObject({ id: itemId, status: "open" });
 
-      const fetched = (await client.get(itemId, { full: true })) as { item?: { id?: string; status?: string } };
+      const fetched = await client.get(itemId, { full: true });
       expect(fetched.item).toMatchObject({ id: itemId, status: "open" });
 
       const updated = (await client.update(itemId, { status: "in_progress", message: "SDK client update" })) as {

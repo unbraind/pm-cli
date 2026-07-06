@@ -151,6 +151,9 @@ a failing package root.
 ## PM Context Modes
 
 Linked PM commands default to schema context: settings and extensions are seeded, but tracker item data stays isolated.
+When a linked command is a PM tracker-read such as `pm validate`, the default mismatch error suggests
+`--auto-pm-context`, which keeps schema isolation for ordinary commands and routes only tracker-read PM commands
+through seeded tracker data.
 
 Use explicit modes when needed:
 

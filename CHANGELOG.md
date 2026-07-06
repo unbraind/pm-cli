@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- GH-463: linked PM tracker-read tests should auto-remediate or suggest --auto-pm-context ([pm-6e1d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6e1d.toon))
 - Relative lancedb vector-store path resolves against process cwd, creating nested .agents/pm/.agents/pm stores ([pm-og1v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-og1v.toon))
 - GH-455: pm health auto-selects an uninstalled Ollama embedding model then fails vector refresh ([pm-aems](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-aems.toon))
 

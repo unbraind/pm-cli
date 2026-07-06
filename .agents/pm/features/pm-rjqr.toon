@@ -2,11 +2,12 @@ id: pm-rjqr
 title: "Promote query/read primitives to the public SDK: list, get, search, context, next, aggregate, stats"
 description: "Typed SDK read surface over the item store, search (keyword/semantic/hybrid incl. inline field:value parsing), context snapshots, next-item recommendation, aggregates, and stats. History/activity ownership is pm-4a7m. Duplicate check: no existing query-primitive SDK item."
 type: Feature
-status: open
+status: in_progress
 priority: 1
 tags[3]: architecture,"area:sdk","area:search"
 created_at: "2026-07-05T04:54:09.542Z"
-updated_at: "2026-07-05T06:29:49.138Z"
+updated_at: "2026-07-06T12:35:42.935Z"
+assignee: codex-agent
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: SDK exports typed query primitives returning the same data the CLI renders (projection/format concerns stay CLI-side); CLI query commands consume only these primitives; docstrings + linked tests + SDK reference docs; zero behavior change (query/search specs green)
@@ -16,4 +17,25 @@ confidence: medium
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-lodl,blocked_by,"2026-07-05T04:55:04.440Z",null,null
   pm-muhw,blocked_by,"2026-07-05T04:55:04.919Z",null,null
+comments[7]{created_at,author,text}:
+  "2026-07-06T10:54:21.169Z",codex-agent,"Evidence: exported typed SDK read primitives on PmClient and SDK barrel for context/list/search/get/next/aggregate/stats; docs/SDK.md documents the read surface. Verification passed: pnpm typecheck; focused SDK + linked-test suites; pnpm lint; node scripts/run-tests.mjs coverage at 100/100/100/100; installed-package temp project exercised @unbrained/pm-cli/sdk PmClient read primitives successfully. Remaining acceptance: migrate CLI query command handlers to consume the public SDK primitives before closing pm-rjqr."
+  "2026-07-06T11:14:35.194Z",codex-agent,"Review loop evidence: addressed Greptile P1 by exporting callable top-level read primitives from both @unbrained/pm-cli/sdk and @unbrained/pm-cli/sdk/runtime, in addition to PmClient methods. Verification after the fix passed: pnpm typecheck; focused SDK test with built package export assertion; installed-package temp dogfood invoking top-level wrappers; pnpm lint; pnpm quality:docs-skills; node scripts/run-tests.mjs coverage at 100/100/100/100."
+  "2026-07-06T11:25:14.374Z",codex-code-agent,"Review-loop evidence: addressed post-PR bot findings on PR #466. Added an early return in appendLinkedTestOutputChunk so max-buffer state skips chunk conversion entirely, exposed the helper to unit tests, consolidated repeated SDK read-method casts behind a private runTyped<Result>() helper, and tightened SDK docs wording from 'first SDK-first' to 'foundational SDK PM primitives'. Verification passed: pnpm typecheck; node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts tests/unit/sdk/sdk-index.spec.ts; pnpm quality:docs-skills; pnpm lint; node scripts/run-tests.mjs coverage (264 files, 5437 tests, 100/100/100/100 coverage)."
+  "2026-07-06T11:47:17.820Z",codex-code-agent,"Review-loop evidence: addressed final Gemini robustness findings on PR #466. The linked-test sandbox symlink coverage now requests a file symlink and tolerates Windows EPERM without using any; the RegExp-constructor failure assertion now runs after global RegExp is restored so Vitest assertion/reporting internals cannot be affected by the stub. Verification passed after the fix: pnpm typecheck; pnpm lint; node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts; node scripts/run-tests.mjs coverage (264 files, 5437 tests, 100/100/100/100 coverage)."
+  "2026-07-06T12:04:29.647Z",codex-code-agent,"Review-loop evidence: addressed latest Gemini findings on PR #466. appendLinkedTestOutputChunk now preserves the remaining allowed output bytes from an oversized chunk before marking maxBufferExceeded, while still ignoring subsequent chunks once exceeded. The Windows symlink test tolerance now accepts both EPERM and EACCES without using any. Verification passed: pnpm typecheck; pnpm lint; node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts; node scripts/run-tests.mjs coverage (264 files, 5437 tests, 100/100/100/100 coverage)."
+  "2026-07-06T12:17:57.186Z",codex-code-agent,"Review-loop evidence: addressed final Gemini RegExp-stub robustness finding on PR #466. The non-Error regex constructor test now stubs RegExp only for the specific will-throw pattern and delegates every other constructor call to the real RegExp, avoiding interference with Vitest internals while preserving the non-Error failure coverage. Verification passed: pnpm typecheck; pnpm lint; node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts; node scripts/run-tests.mjs coverage (264 files, 5437 tests, 100/100/100/100 coverage)."
+  "2026-07-06T12:35:42.931Z",codex-code-agent,"Review-loop evidence: addressed latest Gemini efficiency and RegExp-stub robustness findings on PR #466. readLinkedTestOutputChunkText now uses subarray directly for Buffer chunks instead of Buffer.from(chunk), avoiding a full copy for oversized output chunks. The RegExp constructor stub now preserves the real constructor prototype chain while still throwing only for the will-throw pattern. Verification passed: pnpm typecheck; pnpm lint; node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts; node scripts/run-tests.mjs coverage (264 files, 5437 tests, 100/100/100/100 coverage)."
+files[3]{path,scope,note}:
+  src/sdk/index.ts,project,Public SDK barrel exports read primitive option/result contracts
+  src/sdk/runtime.ts,project,Typed PmClient read primitives for context/list/search/get/next/aggregate/stats
+  tests/unit/sdk/sdk-index.spec.ts,project,In-process temp-tracker coverage for typed PmClient read primitives
+tests[4]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,420
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts,project,240
+  pnpm lint,project,240
+  pnpm typecheck,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mr92mjn4-w1xoyq,test,passed,"2026-07-06T10:21:46.310Z","2026-07-06T10:22:19.888Z","2026-07-06T10:22:19.888Z",2,0,0
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Documents typed PmClient read primitive surface and exported contracts
 body: ""
