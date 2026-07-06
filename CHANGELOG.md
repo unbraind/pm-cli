@@ -14,9 +14,10 @@
 
 ### Other
 
+- 2026-07-06 ecosystem audit \#12: GH-467..474 backlog coverage + code-scanning capability epic ([pm-3rgp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-3rgp.toon))
+- Unblock dependabot PRs: @types/node 26 type error, pnpm release-age cooldown, codeql-action lockstep group ([pm-2czc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-2czc.toon))
 - pm install should accept multiple package targets (help already advertises \[targets...\]) ([pm-hj9h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hj9h.toon))
 - Triage: close stale dogfood reports GH-436 (pm next/focus) and GH-440 (context --fields) with shipped evidence ([pm-7cx8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7cx8.toon))
-- Unblock dependabot PRs: @types/node 26 type error, pnpm release-age cooldown, codeql-action lockstep group ([pm-2czc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-2czc.toon))
 
 ## 2026.7.6 - 2026-07-06
 
