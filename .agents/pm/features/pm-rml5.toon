@@ -1,12 +1,12 @@
 id: pm-rml5
 title: "Extend the existing pm-github package to close the audit loop: adopt GH-<n>-titled items into gh: provenance, evidence-comment close sync, metadata-profile seeding"
-description: ""
+description: "Extend the existing pm-github package so GitHub issue adoption, evidence-comment synchronization, and metadata seeding become repeatable package functionality instead of a manual audit loop."
 type: Feature
 status: open
 priority: 3
 tags[4]: agent-ux,"area:extensions","area:packages",long-term
 created_at: "2026-07-06T22:00:03.248Z"
-updated_at: "2026-07-06T22:09:12.628Z"
+updated_at: "2026-07-06T22:30:36.831Z"
 author: maintainer-agent
 estimated_minutes: 960
 acceptance_criteria: "pm-github (github.com/unbraind/pm-github) is installed in this workspace and its import reconciles the ~26 manually mirrored GH-<n>-title-prefix items by adopting them (adds gh:owner/repo#N provenance tag) instead of duplicating; pm github sync can close a GitHub issue with an evidence comment citing the pm item's close_reason/resolution and maps pm closed->state_reason completed, canceled->not_planned (inverse of its import mapping); import seeds required metadata per the workspace metadata profile so pm validate stays warning-clean after import; all changes land as PRs on unbraind/pm-github with dry-run-first semantics preserved; one audit iteration runs the GH-coverage step via pm github import/sync instead of the manual checklist"

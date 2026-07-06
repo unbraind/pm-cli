@@ -1,12 +1,12 @@
 id: pm-agou
 title: "ADR: v1.0 GA stability contract — CLI grammar freeze, SDK semver surface, storage format_version policy, and scale targets (draft)"
-description: ""
+description: "Draft the v1.0 GA stability contract covering CLI grammar freeze, SDK semver guarantees, storage format_version policy, migration posture, and scale/performance targets after the active ADR prerequisites land."
 type: Decision
 status: open
 priority: 3
 tags[3]: adr,architecture,long-term
 created_at: "2026-07-06T22:00:17.924Z"
-updated_at: "2026-07-06T22:00:29.354Z"
+updated_at: "2026-07-06T22:30:37.892Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "ADR drafted and driven to accepted/rejected: enumerates GA criteria (frozen ~15-noun grammar per pm-pbyu, semver-stable SDK primitive surface per pm-muhw, storage format_version compatibility guarantees, scripting contract pm-psy1 as a tested guarantee, scale targets from pm-9rxu benchmarks) and the deprecation policy that carries pre-1.0 spellings; linked from milestone pm-doxj as horizon 4"

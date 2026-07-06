@@ -1,0 +1,20 @@
+id: pm-kexu
+title: update-many --dry-run should allow filter-only preview for audit and bulk-selection workflows
+description: "During the 2026-07-06/07 all-status ecosystem audit, 'pm update-many --filter-status open --filter-metadata-missing --dry-run --limit 200 --json' failed because no mutation flags were provided. That is defensible for mutation execution, but dry-run is also the natural safe preview for bulk-selection filters. Duplicate check: searched all statuses for update-many dry-run no mutation flags filter-only audit; only closed pm-twtu covers the generic error message, while no open item tracks filter-only dry-run preview support."
+type: Issue
+status: open
+priority: 3
+tags[4]: agent-ux,"area:cli",audit,bulk-ops
+created_at: "2026-07-06T22:29:52.125Z"
+updated_at: "2026-07-06T22:29:52.125Z"
+author: codex-agent
+estimated_minutes: 90
+acceptance_criteria: "update-many --dry-run can return the matched item set/count when only filters are provided, without requiring a dummy mutation flag; output is bounded and scriptable in json/toon; existing mutation-required behavior remains for non-dry-run execution; tests cover no-mutation dry-run, no-mutation real run, and at least one metadata filter."
+goal: project management = context management
+objective: Make bulk-selection filters safely inspectable before mutation
+value: Improves audit workflows and reduces accidental bulk-mutation risk for agents.
+why_now: "Audits and bulk backfill planning need safe, exact previews before mutation; forcing a fake mutation flag is error-prone for agents."
+parent: pm-mpbb
+risk: low
+confidence: high
+body: ""

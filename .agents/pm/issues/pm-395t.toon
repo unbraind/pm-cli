@@ -1,12 +1,12 @@
 id: pm-395t
 title: "SDK client.run() rejects structured payloads for create: raw {type,title} fails with 'Missing required option --title'"
-description: ""
+description: "SDK client.run currently rejects structured create payloads such as raw {type,title}; the fix should accept typed structured inputs or return a precise SDK-facing error instead of CLI flag parsing text."
 type: Issue
 status: open
 priority: 2
 tags[2]: "area:sdk",dx
 created_at: "2026-07-06T21:53:02.655Z"
-updated_at: "2026-07-06T21:53:02.655Z"
+updated_at: "2026-07-06T22:30:35.640Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "client.run('create', ...) either accepts bare title/type keys by mapping them to CLI flags, or the split-args contract is documented in docs/SDK.md with a typed error pointing callers to client.create(); regression test covers both paths"

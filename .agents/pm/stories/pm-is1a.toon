@@ -1,12 +1,12 @@
 id: pm-is1a
 title: "As an organization with many repos and thousands of agents, I can federate multiple pm workspaces: cross-workspace context, dependencies, and aggregation"
-description: ""
+description: "Explore multi-workspace federation for organizations with many repositories and agent fleets: cross-workspace context, dependencies, aggregation, identity, and governance without weakening single-workspace guarantees."
 type: Story
 status: open
 priority: 4
 tags[3]: architecture,"area:storage",long-term
 created_at: "2026-07-06T22:00:10.231Z"
-updated_at: "2026-07-06T22:09:24.466Z"
+updated_at: "2026-07-06T22:30:40.086Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: "Exploration outcome is an ADR under pm-m2u1 covering: monorepo multi-tracker layout (several .agents/pm roots), cross-workspace item references/dependencies, org-level read aggregation (context/list/search across workspaces), and identity/claim semantics across workspaces; explicitly decides what is out of scope; follow-up implementation items filed only after the ADR is accepted"

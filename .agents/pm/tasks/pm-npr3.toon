@@ -1,12 +1,12 @@
 id: pm-npr3
 title: "Map the workspace-customization family (init/config/schema/profile) in the target noun grammar: keep as distinct nouns or merge under one customization noun"
-description: ""
+description: "Resolve how init, config, schema, and profile map into the simplified noun grammar so workspace customization stays discoverable without multiplying top-level commands."
 type: Task
 status: open
 priority: 3
 tags[3]: "area:cli","area:schema",cli-simplification
 created_at: "2026-07-06T21:57:44.898Z"
-updated_at: "2026-07-06T21:57:54.381Z"
+updated_at: "2026-07-06T22:30:38.418Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "ADR pm-pbyu's grammar table gains an explicit mapping for init, config, schema, and profile (kept, merged, or verb-moved) with rationale; overlaps are resolved on paper (schema presets vs profile archetypes vs config keys); if any spelling moves, follow-up wiring items are filed under pm-n7rr with alias shims per pm-0z7n"

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:cli","area:storage",initiative,performance,scale
 created_at: "2026-07-06T21:24:01.069Z"
-updated_at: "2026-07-06T21:24:01.069Z"
+updated_at: "2026-07-06T22:31:28.593Z"
 author: maintainer-agent
 estimated_minutes: 4800
 acceptance_criteria: "Benchmark harness proves: context/next/list/search/get p95 < 1s and default output < 5k tokens on a synthetic 1M-item workspace; 1000-agent parallel claim/update stress runs with zero corruption, zero history drift, bounded retry latency; all changes behind format_version gating with green migration tests; zero feature or behavior regression at small scale"
@@ -17,4 +17,6 @@ why_now: "Read paths are O(workspace) directory scans and outputs are unbounded;
 parent: pm-o2kc
 risk: high
 confidence: medium
+comments[1]{created_at,author,text}:
+  "2026-07-06T22:31:28.593Z",codex-agent,"Long-term planning evidence 2026-07-06/07 codex-agent: the scale-out initiative directly covers the user's 100k-1M item / thousands-agent target. Keep the delivery order measurement-first: pm-mi2x benchmark harness, ADR pm-bl8x, derived read index pm-801d, bounded cursor pagination pm-dfg0, storage fan-out, claim/lock throughput pm-lvyd, history/git growth policy, and then federation story pm-is1a. Implementation should land in SDK primitives first so list/search/context/next/get and CLI/MCP inherit the same bounded-output and concurrency guarantees."
 body: "## Charter\nMake workspace scale (item count x agent count) a measured, budgeted property of pm instead of an accident of the current layout. Initiative epic parented under pm-o2kc (storage owns the data-layout physics); indexed in pm-doxj alongside pm-n7rr and pm-usfg.\n\n## Scope\n- In: read-path indexing, storage fan-out, bounded-output/cursor pagination, claim+lock throughput, history/git growth policy, and the benchmark harness that gates all of it.\n- Out: correctness races at small N (pm-dj98 owns those five open gaps), search relevance/providers (pm-ydp6), token-shape of individual payloads (pm-mpbb lean-output items pm-cfed/pm-g9xk/pm-vxxm — related, not children).\n\n## Delivery order\n1. pm-benchmark harness + published baseline (do first — everything else needs numbers).\n2. ADR pm-bl8x accepted (index format, fan-out scheme, pagination contract, claim scaling, git growth policy).\n3. Persistent read index -> 4. cursor pagination + bounded defaults -> 5. directory fan-out migration -> 6. claim/lock throughput -> 7. history/git growth automation.\n\n## Relationship to the other initiatives\nSDK-first (pm-usfg) means the index/pagination primitives land in the SDK and the CLI inherits them; simplification (pm-n7rr) shrinks the surface these guarantees must cover. Scale work must not fork CLI-only fast paths."

@@ -1,12 +1,12 @@
 id: pm-ugld
 title: "pm release leaves the item in_progress with no owner: offer --status open (or hint) so released work does not linger as phantom WIP"
-description: ""
+description: "pm release can leave an item in_progress with no owner, creating phantom work in context views; add a safe status transition or recovery hint so released-but-unowned work returns to a clear state."
 type: Issue
 status: open
 priority: 3
 tags[3]: agent-ux,"area:concurrency",dogfood
 created_at: "2026-07-06T22:02:04.911Z"
-updated_at: "2026-07-06T22:02:16.819Z"
+updated_at: "2026-07-06T22:30:37.373Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "pm release gains an ergonomic path to also reset status (flag such as --reopen/--status open, or at minimum a one-line hint that the item remains in_progress and unclaimed); pause-task alias behavior is referenced as the existing combined spelling; MCP pm_release mirrors the option; docs + linked tests; default behavior unchanged"

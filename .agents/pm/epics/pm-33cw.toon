@@ -1,12 +1,12 @@
 id: pm-33cw
 title: "Capability: Governance, validation & data quality"
-description: ""
+description: "Living capability epic for governance, validation, lifecycle policy, metadata quality, dependency integrity, close-readiness rules, and data-quality repair workflows across the pm ecosystem."
 type: Epic
 status: open
 priority: 1
 tags[6]: "area:governance","area:health","area:validate",backlog,living-map,pm-cli
 created_at: "2026-07-04T19:46:21.526Z"
-updated_at: "2026-07-04T19:46:21.526Z"
+updated_at: "2026-07-06T22:30:34.481Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: "pm validate/health warnings each map to an open remediation item; metadata-coverage predicates + issue-code + content-field governance stay accurate (no false positives, no missed real gaps); remediation registry keeps every finding machine-executable."

@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: architecture,"area:cli","area:mcp","area:sdk",refactor
 created_at: "2026-07-05T04:51:44.440Z"
-updated_at: "2026-07-06T08:04:56.741Z"
+updated_at: "2026-07-06T22:31:27.764Z"
 author: maintainer-agent
 estimated_minutes: 3600
 acceptance_criteria: "Public SDK exposes item lifecycle, query/read, annotation/link, governance/validation, schema/config/profile, and history primitives with typed results; src/cli.ts, src/cli/**, src/mcp.ts, and src/mcp/** cannot grow private src/core imports beyond the SDK boundary ratchet baseline enforced in CI and must shrink toward SDK-only imports as primitives are promoted; an exemplar consumer builds a minimal custom PM CLI using only @unbrained/pm-cli/sdk; SDK reference docs cover every promoted primitive; zero CLI behavior change (full test suite green)"
@@ -17,8 +17,9 @@ why_now: "Today the SDK covers extension/package authoring (compose/define/runti
 parent: pm-ugqx
 risk: medium
 confidence: medium
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-05T05:51:11.797Z",claude-code-agent,"Progress evidence from child items pm-lodl/pm-8778: SDK-first baseline is now explicit and enforceable. Current private boundary debt is quantified at 857 unique src/core import edges across 91 boundary files (101 scanned) from src/cli.ts, src/cli/**, and src/mcp/**. The static quality gate now prevents growth and stale baseline entries, giving each SDK primitive-promotion lane a measurable ratchet target while preserving the project philosophy 'project management = context management'."
+  "2026-07-06T22:31:27.762Z",codex-agent,"Planning evidence 2026-07-06/07 codex-agent: SDK-first coverage remains canonical here, not a new duplicate epic. Domain promotion items cover query/read (pm-rjqr), lifecycle (pm-98cz), annotations/links (pm-zwpp), schema/config/profile/init (pm-3mna), history maintenance (pm-4a7m), plan workflows (pm-je50), execution/diagnostics (pm-oslr), package/extension lifecycle (pm-x6jf), governance/health (pm-oxrw), docs (pm-ds3b), exemplar CLI (pm-cbwg), and boundary capstone (pm-9x6e). Recommended order: finish typed public primitives before command consolidation flips handlers, then make CLI and MCP pure presentation layers over SDK calls; every primitive needs SDK docs, tests, and behavior parity against existing CLI results."
 notes[3]{created_at,author,text}:
   "2026-07-05T04:55:45.848Z",maintainer-agent,"Gap analysis 2026-07-05 — src/sdk currently exports extension/package-authoring surfaces only (compose, define, runtime, testing, cli-contracts, profile presets/plan). The PM primitives themselves live in src/core (item, store, search, history, governance, schema, config, session, checkpoint, lock) and src/cli/commands imports them directly; ~60 command modules under src/cli/commands also embed business logic beyond parsing/rendering. Consequence; an SDK-only consumer today cannot create, query, or govern items without shelling out to the CLI."
   "2026-07-05T04:55:46.394Z",maintainer-agent,"Promotion strategy — domain-by-domain (lifecycle, query, annotations, governance, schema/config/profile) with a zero-behavior-change bar per domain; boundary gate (pm-8778) starts as an allowlist ratchet at current import state so it can merge before promotions finish and tighten with each one. Exemplar package (pm-cbwg) is the acceptance proof for the universality story pm-w89s."

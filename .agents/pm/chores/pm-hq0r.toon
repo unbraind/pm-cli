@@ -1,12 +1,12 @@
 id: pm-hq0r
 title: "Triage: close GH-455 with shipped evidence once the Ollama embedding auto-default fix releases"
-description: ""
+description: "Close or otherwise reconcile GitHub issue GH-455 once shipped evidence is sufficient, preserving the mapping from the already-fixed pm-aems work to the still-open upstream issue."
 type: Chore
 status: open
 priority: 3
 tags[3]: gh-issue,tracker-governance,triage
 created_at: "2026-07-06T21:54:34.369Z"
-updated_at: "2026-07-06T21:54:34.369Z"
+updated_at: "2026-07-06T22:30:39.544Z"
 author: maintainer-agent
 estimated_minutes: 15
 acceptance_criteria: GH-455 closed on GitHub with a comment citing pm-aems resolution evidence and the release version that ships the fix (first release after 2026.7.6 containing the semantic-defaults change)
