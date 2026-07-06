@@ -224,7 +224,7 @@ export function resolveSettingsWithSemanticRuntimeDefaults(settings: PmSettings)
       ...unchanged,
       auto_ollama_defaults_skipped_reason: "no_installed_embedding_model",
       auto_ollama_defaults_remediation:
-        `Run ollama pull ${RECOMMENDED_OLLAMA_EMBEDDING_MODEL} or configure search.provider/providers.ollama.model/search.embedding_model explicitly.`,
+        `Run ollama pull ${RECOMMENDED_OLLAMA_EMBEDDING_MODEL} or configure providers.ollama.model explicitly (and search.embedding_model if you need an override).`,
     };
   }
   // `readSettings` always normalizes these nested objects, but this function is

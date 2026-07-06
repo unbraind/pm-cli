@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: bug,gh-issue,search,vectorization
 created_at: "2026-07-06T08:03:11.720Z"
-updated_at: "2026-07-06T09:27:07.946Z"
+updated_at: "2026-07-06T09:52:59.536Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: Embedding auto-detection only selects installed models; unavailable-model path skips refresh with exact pull/config remediation; mocked-provider spec covers the 404 path
@@ -16,9 +16,10 @@ confidence: high
 resolution: Ollama semantic auto-defaults now apply only when a configured/env model or installed embedding model is available; health exposes a skipped reason and remediation when none is found.
 expected_result: Embedding auto-detection only selects installed models and unavailable-model health paths skip refresh with exact pull/config remediation.
 actual_result: "semantic-defaults and health regression tests passed; health details include no_installed_embedding_model and ollama pull qwen3-embedding:0.6b remediation; full coverage passed 100/100/100/100."
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-06T09:13:01.693Z",codex-agent,"Implementation start: live duplicate-safe search found pm-aems as canonical GH-455 item related to the current health/vectorization lane. Root cause confirmed in semantic-defaults: auto-discovery falls back to qwen3-embedding when ollama list has no installed embedding model, which can make health refresh attempt a model that is not installed."
   "2026-07-06T09:26:35.423Z",codex-agent,"Evidence: removed implicit fallback to qwen3-embedding when ollama list does not report an installed embedding model; health vectorization details now expose auto_ollama_defaults_skipped_reason=no_installed_embedding_model and remediation 'ollama pull qwen3-embedding:0.6b' or explicit config. Linked test passed; full coverage passed 264 files / 5436 tests / 100% statements branches functions lines; security scan and audit clean."
+  "2026-07-06T09:52:59.534Z",codex-agent,"Review follow-up: applied Cubic/Gemini remediation wording improvement so health tells users to configure providers.ollama.model explicitly, with search.embedding_model framed as an optional override. Focused tests passed after the change: semantic-defaults, search-provider-store-selection, and health-command (93/93), plus pnpm typecheck."
 files[3]{path,scope,note}:
   src/cli/commands/health.ts,project,Surface skipped Ollama auto-default reason and exact remediation in vectorization health details
   src/core/search/semantic-defaults.ts,project,Require installed embedding model discovery before applying Ollama auto-defaults

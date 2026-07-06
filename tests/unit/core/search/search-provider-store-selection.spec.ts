@@ -137,7 +137,7 @@ describe("resolveVectorStores anchors relative lancedb paths to the workspace ro
     const resolution = resolveVectorStores(lancedbOnly, pmRoot);
     expect(resolution.active).toMatchObject({
       name: "lancedb",
-      path: path.join(path.sep, "workspace", "project", ".agents", "pm", "search", "lancedb"),
+      path: path.resolve(pmRoot, "search", "lancedb"),
     });
   });
 
@@ -146,7 +146,7 @@ describe("resolveVectorStores anchors relative lancedb paths to the workspace ro
     const resolution = resolveVectorStores(lancedbOnly, pmRoot);
     expect(resolution.active?.name).toBe("lancedb");
     expect((resolution.active as { path: string }).path).toBe(
-      path.join(path.sep, "sandboxes", "run-1", ".agents", "pm", "search", "lancedb"),
+      path.resolve(pmRoot, ".agents", "pm", "search", "lancedb"),
     );
   });
 
