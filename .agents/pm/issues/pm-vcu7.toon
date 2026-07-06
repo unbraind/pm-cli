@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",data-quality,dogfood
 created_at: "2026-07-06T13:25:17.483Z"
-updated_at: "2026-07-06T17:59:18.348Z"
+updated_at: "2026-07-06T19:57:28.470Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "Annotation/value-taking flags (--add on notes/learnings, comment text sources, --message, etc.) reject or explicitly confirm values that start with '-' unless separated by '=' or preceded by '--' terminator; error names the correct stdin spelling for the command (notes/learnings: --add - ; comments: --stdin); regression tests cover notes --add --stdin, learnings --add --file, comments --add --stdin; contracts/docs updated if flag semantics change"
@@ -19,12 +19,14 @@ actual_result: "Notes/learnings/comments reject flag-like --add values with comm
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-gdi7,related,"2026-07-06T13:25:38.213Z",null,null
   pm-yql1,related,"2026-07-06T13:25:38.213Z",null,null
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-06T16:12:58.701Z",codex-cli-agent,"Evidence: annotation --add values that look like flags now fail with command-specific stdin guidance while text= keeps literal dash-leading content writable. Verified comments, notes, learnings regression specs, full coverage 100/100/100/100, typecheck, lint, audit, and installed-tarball temp dogfood."
   "2026-07-06T16:56:23.808Z",codex-cli-agent,"Review response: accepted Greptile P2 on implicit annotation emptyFlag handling. The flag-like --add guard now treats missing emptyFlag as the same implicit --add default used by the empty-text error path. Verification: focused annotation/register/extension command tests pass."
   "2026-07-06T17:21:56.074Z",codex-cli-agent,"Review response: accepted integrated Greptile P1 on notes/learnings stdin false positives. Notes and learnings now pass rawValue=options.add into the shared annotation guard, so --add - validates the original '-' token while preserving flag-shaped stdin content. Verification: focused annotation/register/extension suite and pnpm typecheck pass."
   "2026-07-06T17:47:49.655Z",codex-cli-agent,"Review response: accepted integrated Greptile P1 on comments --add - raw token. comments now passes rawValue=options.add ?? rawValue so the guard validates the original '-' token while preserving flag-shaped stdin payloads. Verification: node scripts/run-tests.mjs test -- tests/unit/commands/comments-command.spec.ts tests/unit/commands/notes-learnings-command.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/extensions/extension-command.spec.ts passed (254 tests); pnpm typecheck passed."
   "2026-07-06T17:59:18.348Z",codex-cli-agent,"Review response: accepted Greptile P2 on the unused annotation parseText input parameter. The shared parseText callback is back to a one-argument contract while rawValue remains the dedicated guard input. Verification: focused annotation/register/extension suite passed (254 tests); pnpm typecheck passed."
+  "2026-07-06T19:36:47.504Z",codex-cli-agent,"Evidence update: addressed review feedback for annotation add guards. --add now preserves the raw option token for comments, notes, and learnings, rejects flag-like values including --file=notes.txt, and still allows explicit text= literals. Focused comments/notes tests passed; full coverage passed at 100/100/100/100 across 5446 tests; isolated temp dogfood verified text=--file=notes.txt succeeds while bare --file=notes.txt is rejected."
+  "2026-07-06T19:57:28.469Z",codex-cli-agent,"Review response: accepted local Greptile P2 on edit-mode annotation guidance. The flag-like --add guard now emits edit-aware examples using pm comments <id> --edit <index> --stdin and --edit <index> --add text=... when the guard fires during comment editing, avoiding examples that would append a new comment. Verification: focused annotation/register/extension tests passed (256 tests), pnpm typecheck passed, and full coverage passed at 100/100/100/100 across 5446 tests."
 learnings[1]{created_at,author,text}:
   "2026-07-06T13:26:08.726Z",maintainer-agent,"Commander-style value flags consume the next token even when it looks like another flag: pm notes <id> --add --stdin stores literal \"--stdin\" as the note and discards the heredoc, exit 0. Correct stdin spelling differs per facet (notes/learnings use '--add -'; comments has a real --stdin flag) — that asymmetry is what baits the mistake. Recovery today requires manual .toon edit + dropping the tail history entry so the prior after_hash re-anchors (validate history_drift confirms); notes/learnings have no --edit/--delete (pm-a2h3)."
 files[6]{path,scope,note}:

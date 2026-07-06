@@ -6,16 +6,16 @@ status: closed
 priority: 3
 tags[3]: gh-issue,tracker-governance,triage
 created_at: "2026-07-06T08:03:13.359Z"
-updated_at: "2026-07-06T13:41:19.093Z"
+updated_at: "2026-07-06T20:29:33.888Z"
 author: maintainer-agent
 estimated_minutes: 15
-acceptance_criteria: GH-436 and GH-440 closed on GitHub with comments citing PR#357/PR#257/PR#297 and live verification on 2026.7.5; focus->default-parent parity spot-checked first
+acceptance_criteria: "GH-436, GH-440, and GH-455 closed on GitHub with comments citing the shipping PRs and live verification; focus->default-parent parity spot-checked first"
 parent: pm-33cw
 risk: low
 confidence: high
-resolution: "GH-436 and GH-440 closed on GitHub 2026-07-06 with evidence comments after live re-verification on v2026.7.6 in a fresh sandbox (packed tarball, CJS host)."
-expected_result: Both GH issues closed with shipping-PR citations; focus->default-parent parity spot-checked first.
-actual_result: "pm next, pm focus <id> (positional syntax; 'focus set' errors clearly), focus->default-parent inheritance (parent_source: focus), and pm context --fields id,title all verified working. GH-436/GH-440 closed with comments citing PR#357/PR#257/PR#297."
+resolution: "GH-436, GH-440, and GH-455 closed on GitHub 2026-07-06 with evidence comments after live re-verification. GH-455 references pm-aems and PR #464, shipped in release 2026.7.6."
+expected_result: "GH-436, GH-440, and GH-455 closed with shipping-PR citations; focus->default-parent parity spot-checked first."
+actual_result: "pm next, pm focus <id> (positional syntax; 'focus set' errors clearly), focus->default-parent inheritance (parent_source: focus), and pm context --fields id,title all verified working. GH-436/GH-440 closed with comments citing PR#357/PR#257/PR#297. GH-455 closed with evidence that pm-aems shipped via PR #464 in release 2026.7.6."
 comments[1]{created_at,author,text}:
   "2026-07-06T13:13:37.948Z",maintainer-agent,"Audit #10 2026-07-06 scope addition: GH-455 (health auto-selects uninstalled Ollama embedding model) is fixed — pm-aems closed via PR #464, shipped in release 2026.7.6 (npm verified). The GitHub issue is still open; close it with the fix reference in the same triage pass as GH-436/GH-440."
 close_reason: completed

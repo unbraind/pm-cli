@@ -111,6 +111,44 @@ function expectBestEffortCleanup(sampleTest: string): void {
   expect(sampleTest).toContain("await ext.deactivate();");
 }
 
+async function withWidgetPackageRoot(
+  tempPrefix: string,
+  callback: (paths: { packageRoot: string; tempRoot: string }) => Promise<void>,
+): Promise<void> {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), tempPrefix));
+  const previousPackageRoot = process.env[PM_PACKAGE_ROOT_ENV];
+  process.env[PM_PACKAGE_ROOT_ENV] = tempRoot;
+  try {
+    const packageRoot = path.join(tempRoot, "packages", "pm-widget");
+    await mkdir(packageRoot, { recursive: true });
+    await writeFile(
+      path.join(packageRoot, "package.json"),
+      JSON.stringify(
+        {
+          name: "@unbrained/pm-widget",
+          version: "1.0.0",
+          pm: {
+            aliases: ["widget"],
+            extensions: ["extensions/widget"],
+          },
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+    await writeTestExtension({ root: path.join(packageRoot, "extensions", "widget"), name: "widget-ext" });
+    await callback({ packageRoot, tempRoot });
+  } finally {
+    if (previousPackageRoot === undefined) {
+      delete process.env[PM_PACKAGE_ROOT_ENV];
+    } else {
+      process.env[PM_PACKAGE_ROOT_ENV] = previousPackageRoot;
+    }
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+}
+
 /**
  * Asserts the scaffolded manifest.json locked-down policy defaults plus the
  * shared TypeScript entrypoint contract, returning the entry source so callers
@@ -848,65 +886,16 @@ describe("extension command runtime", () => {
   });
 
   it("resolves bundled packages by alias, package directory name, and npm package name", async () => {
-    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-bundled-spellings-"));
-    const previousPackageRoot = process.env[PM_PACKAGE_ROOT_ENV];
-    process.env[PM_PACKAGE_ROOT_ENV] = tempRoot;
-    try {
-      const packageRoot = path.join(tempRoot, "packages", "pm-widget");
-      await mkdir(packageRoot, { recursive: true });
-      await writeFile(
-        path.join(packageRoot, "package.json"),
-        JSON.stringify(
-          {
-            name: "@unbrained/pm-widget",
-            version: "1.0.0",
-            pm: {
-              aliases: ["widget"],
-              extensions: ["extensions/widget"],
-            },
-          },
-          null,
-          2,
-        ),
-        "utf8",
-      );
-      await writeTestExtension({ root: path.join(packageRoot, "extensions", "widget"), name: "widget-ext" });
+    await withWidgetPackageRoot("pm-bundled-spellings-", async ({ packageRoot }) => {
       for (const spelling of ["widget", "pm-widget", "@unbrained/pm-widget", "PM-Widget"]) {
         expect(await resolveBundledExtensionAliasSource(spelling), spelling).toBe(packageRoot);
       }
       expect(await resolveBundledExtensionAliasSource("pm-widget-unknown")).toBeNull();
-    } finally {
-      if (previousPackageRoot === undefined) {
-        delete process.env[PM_PACKAGE_ROOT_ENV];
-      } else {
-        process.env[PM_PACKAGE_ROOT_ENV] = previousPackageRoot;
-      }
-      await rm(tempRoot, { recursive: true, force: true });
-    }
+    });
   });
 
   it("routes bare package-name local-source misses to npm:/bundled-alias recovery", async () => {
-    const tempPackageRoot = await mkdtemp(path.join(os.tmpdir(), "pm-bare-miss-aliases-"));
-    const previousPackageRoot = process.env[PM_PACKAGE_ROOT_ENV];
-    process.env[PM_PACKAGE_ROOT_ENV] = tempPackageRoot;
-    try {
-      const packageRoot = path.join(tempPackageRoot, "packages", "pm-widget");
-      await mkdir(packageRoot, { recursive: true });
-      await writeFile(
-        path.join(packageRoot, "package.json"),
-        JSON.stringify(
-          {
-            name: "@unbrained/pm-widget",
-            version: "1.0.0",
-            pm: { aliases: ["widget"], extensions: ["extensions/widget"] },
-          },
-          null,
-          2,
-        ),
-        "utf8",
-      );
-      await writeTestExtension({ root: path.join(packageRoot, "extensions", "widget"), name: "widget-ext" });
-
+    await withWidgetPackageRoot("pm-bare-miss-aliases-", async () => {
       await expect(resolveInstallSource(parseExtensionInstallSource("pm-surely-not-a-local-dir"))).rejects.toMatchObject({
         exitCode: EXIT_CODE.NOT_FOUND,
         message: expect.stringContaining('install it as "npm:pm-surely-not-a-local-dir"'),
@@ -920,14 +909,13 @@ describe("extension command runtime", () => {
         exitCode: EXIT_CODE.NOT_FOUND,
         context: expect.objectContaining({ code: "local_source_not_found_bare_name" }),
       });
-    } finally {
-      if (previousPackageRoot === undefined) {
-        delete process.env[PM_PACKAGE_ROOT_ENV];
-      } else {
-        process.env[PM_PACKAGE_ROOT_ENV] = previousPackageRoot;
-      }
-      await rm(tempPackageRoot, { recursive: true, force: true });
-    }
+
+      process.env[PM_PACKAGE_ROOT_ENV] = "   ";
+      await expect(resolveInstallSource(parseExtensionInstallSource("pm-blank-env-root-miss"))).rejects.toMatchObject({
+        exitCode: EXIT_CODE.NOT_FOUND,
+        context: expect.objectContaining({ code: "local_source_not_found_bare_name" }),
+      });
+    });
     await expect(resolveInstallSource(parseExtensionInstallSource("./pm-surely-not-a-local-dir"))).rejects.toMatchObject({
       exitCode: EXIT_CODE.NOT_FOUND,
       context: expect.not.objectContaining({ code: "local_source_not_found_bare_name" }),

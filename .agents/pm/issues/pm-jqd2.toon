@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,audit-followup,extensions,never-block
 created_at: "2026-07-04T10:54:17.266Z"
-updated_at: "2026-07-06T18:42:58.413Z"
+updated_at: "2026-07-06T19:36:47.467Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: pm extension --install pm-<alias> and @unbrained/pm-<alias> resolve to the bundled catalog or fail with a suggestion listing catalog aliases; never-block recovery bundle included.
@@ -16,10 +16,11 @@ confidence: high
 resolution: "Bundled-source resolution accepts alias/pm-<alias>/@unbrained/pm-<alias>; unmatched bare names emit npm:-prefixed next_best_command plus bundled alias catalog in a never-block recovery bundle."
 expected_result: All three spellings of every bundled package install or emit the exact catalog command; unknown names still reach the local-path error with targeted recovery.
 actual_result: "Verified end-to-end on fresh temp workspace: pm install pm-kanban + @unbrained/pm-todos install; pm install pm-changelog (npm-only) errors with npm:pm-changelog hint; 116/116 spec tests pass; tsc clean."
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-06T16:56:23.805Z",codex-cli-agent,"Review response: accepted Greptile P2 on bare-name recovery wording. The bundled-alias hint no longer renders misleading 'Known aliases: .' punctuation when no aliases are discovered; focused extension/register/annotation tests pass."
   "2026-07-06T18:33:23.467Z",codex-cli-agent,"Review response: accepted Sourcery feedback on bundled alias discovery cost. Bare local-source miss recovery now caches bundled package aliases after the first lookup, avoiding repeated filesystem/catalog work across multi-target install failures while preserving best-effort fallback behavior. Verification: focused register/extension tests passed (197 tests); pnpm typecheck passed."
   "2026-07-06T18:42:58.412Z",codex-cli-agent,"Review response: accepted Greptile P2 on the bundled-alias cache lifetime. The cache is now keyed by the resolved PM_CLI_PACKAGE_ROOT override, so test/runtime package-root changes refresh alias discovery while repeated misses in one scope still avoid duplicate filesystem scans. Verification: focused register/extension tests passed (197 tests); pnpm typecheck passed."
+  "2026-07-06T19:36:47.467Z",codex-cli-agent,"Evidence update: package-owned changelog verification remains clean after the Semgrep pm import and review-feedback fixes. pnpm changelog:pm:check installed pm-changelog 2026.7.6 and reported CHANGELOG.md unchanged with 1425 closed items."
 notes[1]{created_at,author,text}:
   "2026-07-06T14:01:21.734Z",maintainer-agent,"2026-07-06 audit #12: reproduced live on v2026.7.6 tarball in CJS sandbox (root 'pm install pm-kanban' same dead-end). Fixed: resolveBundledPackageRoot now matches alias + package directory (pm-<alias>) + npm package name (@unbrained/pm-<alias>), case-insensitive; local-path miss on bare package-ish names now raises code local_source_not_found_bare_name with npm:<name> next_best_command and the bundled alias list. Specs added to extension-command.spec.ts (spellings + bare-name recovery + path-miss stays plain)."
 close_reason: fixed

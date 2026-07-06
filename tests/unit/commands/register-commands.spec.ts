@@ -2703,6 +2703,10 @@ describe("setup command actions", () => {
       .mockRejectedValueOnce(
         new PmCliError("registry unavailable", EXIT_CODE.NOT_FOUND, {
           code: "npm_package_not_found",
+          required: "Use an install source that exists.",
+          why: "Registry 404s need deterministic recovery.",
+          examples: ["pm install npm:pkg-c"],
+          nextSteps: ["Check the package name."],
           recovery: { next_best_command: "pm install npm:pkg-c" },
         }),
       )
@@ -2744,7 +2748,16 @@ describe("setup command actions", () => {
         { target: "pkg-a", ok: true, destination_path: "/tmp/pkg-a", warnings: ["warn:a", "warn:shared"] },
         { target: "pkg-b", ok: true, warnings: ["warn:shared"] },
         { target: "pkg-empty", ok: true, warnings: [] },
-        { target: "pkg-soft", ok: false, warnings: [] },
+        {
+          target: "pkg-soft",
+          ok: false,
+          warnings: [],
+          error: {
+            message: "Extension install returned ok=false without throwing an error.",
+            exit_code: EXIT_CODE.GENERIC_FAILURE,
+            code: "extension_install_soft_failed",
+          },
+        },
         {
           target: "pkg-c",
           ok: false,
@@ -2752,6 +2765,10 @@ describe("setup command actions", () => {
             message: "registry unavailable",
             exit_code: EXIT_CODE.NOT_FOUND,
             code: "npm_package_not_found",
+            required: "Use an install source that exists.",
+            why: "Registry 404s need deterministic recovery.",
+            examples: ["pm install npm:pkg-c"],
+            nextSteps: ["Check the package name."],
             recovery: { next_best_command: "pm install npm:pkg-c" },
           },
         },
@@ -2782,6 +2799,25 @@ describe("setup command actions", () => {
       ],
     });
     expect(process.exitCode).toBe(EXIT_CODE.NOT_FOUND);
+  });
+
+  it("rejects multi-target install with forced GitHub sources before dispatch", async () => {
+    vi.mocked(runExtension).mockClear();
+    await expect(runCliRaw("install", "pkg-a", "pkg-b", "--github", "owner/repo")).rejects.toMatchObject<PmCliError>({
+      exitCode: EXIT_CODE.USAGE,
+      context: expect.objectContaining({
+        code: "multi_target_github_install_ambiguous",
+        examples: expect.arrayContaining(["pm install --gh owner/repo"]),
+      }),
+    });
+    await expect(runCliRaw("install", "pkg-a", "pkg-b", "--gh", "owner/repo")).rejects.toMatchObject<PmCliError>({
+      exitCode: EXIT_CODE.USAGE,
+      context: expect.objectContaining({
+        code: "multi_target_github_install_ambiguous",
+        examples: expect.arrayContaining(["pm install --gh owner/repo"]),
+      }),
+    });
+    expect(vi.mocked(runExtension)).not.toHaveBeenCalled();
   });
 
   it("escalates doctor warnings and failed upgrades through exit codes", async () => {

@@ -144,10 +144,14 @@ function assertAnnotationAddValueIsNotFlagLike(raw: string, config: AnnotationCo
     return;
   }
   const trimmed = raw.trim();
-  if (!/^-{1,2}[A-Za-z][\w-]*$/.test(trimmed)) {
+  if (!/^-{1,2}[A-Za-z][\w-]*(?:=.*)?$/.test(trimmed)) {
     return;
   }
   const stdinHint = annotationStdinHint(config.collectionKey);
+  const commandPrefix =
+    config.input.mode === "edit"
+      ? `pm ${config.collectionKey} <id> --edit <index>`
+      : `pm ${config.collectionKey} <id>`;
   throw new PmCliError(
     `--add value "${trimmed}" looks like an option, not annotation text. Use ${stdinHint} to read stdin, or use text=${trimmed} for literal dash-leading text.`,
     EXIT_CODE.USAGE,
@@ -155,8 +159,8 @@ function assertAnnotationAddValueIsNotFlagLike(raw: string, config: AnnotationCo
       code: "annotation_flag_like_value",
       required: `Use ${stdinHint} for stdin input, pass plain text, or use text=${trimmed} when the text really starts with "-".`,
       examples: [
-        `pm ${config.collectionKey} <id> ${stdinHint}`,
-        `pm ${config.collectionKey} <id> --add text=${trimmed}`,
+        `${commandPrefix} ${stdinHint}`,
+        `${commandPrefix} --add text=${trimmed}`,
       ],
     },
   );

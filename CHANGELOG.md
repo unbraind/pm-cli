@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- pm extension --install pm-<alias\> / @unbrained/pm-<alias\> fails with 'Local extension source does not exist' instead of suggesting the bundled catalog alias ([pm-jqd2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jqd2.toon))
 - Annotation --add silently stores flag-like tokens as content: pm notes <id\> --add --stdin records the literal note "--stdin" ([pm-vcu7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vcu7.toon))
+- pm extension --install pm-<alias\> / @unbrained/pm-<alias\> fails with 'Local extension source does not exist' instead of suggesting the bundled catalog alias ([pm-jqd2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jqd2.toon))
 - pm plan create silently ignores the root --id-only flag (prints full plan envelope) ([pm-oz0k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oz0k.toon))
 - Bare extension command group (pm changelog / pm graph) exits 0 with zero output instead of rendering group help ([pm-1k57](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1k57.toon))
 - GH-463: linked PM tracker-read tests should auto-remediate or suggest --auto-pm-context ([pm-6e1d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6e1d.toon))

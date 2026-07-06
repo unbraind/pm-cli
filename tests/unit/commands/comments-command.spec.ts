@@ -857,6 +857,13 @@ describe("runComments edit/delete (GH-243)", () => {
           required: expect.stringContaining("--stdin"),
         }),
       });
+      await expect(runComments(id, { add: "--file=notes.txt" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining('--add value "--file=notes.txt" looks like an option'),
+        context: expect.objectContaining({
+          code: "annotation_flag_like_value",
+        }),
+      });
 
       const literal = await runComments(id, { add: "text=--stdin" }, { path: context.pmPath });
       expect(literal.comments.at(-1)?.text).toBe("--stdin");
@@ -867,6 +874,25 @@ describe("runComments edit/delete (GH-243)", () => {
       vi.spyOn(process, "stdin", "get").mockReturnValue(stdin as unknown as NodeJS.ReadStream);
       const viaStdin = await runComments(id, { stdin: true }, { path: context.pmPath });
       expect(viaStdin.comments.at(-1)?.text).toBe("--stdin from real stdin\n");
+    });
+  });
+
+  it("rejects flag-like edit replacement text from --add", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-flag-like-edit");
+      await runComments(id, { add: "original" }, { path: context.pmPath });
+
+      await expect(runComments(id, { edit: 1, add: "--stdin" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining('--add value "--stdin" looks like an option'),
+        context: expect.objectContaining({
+          code: "annotation_flag_like_value",
+          examples: [
+            "pm comments <id> --edit <index> --stdin",
+            "pm comments <id> --edit <index> --add text=--stdin",
+          ],
+        }),
+      });
     });
   });
 

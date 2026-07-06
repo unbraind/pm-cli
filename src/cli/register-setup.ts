@@ -222,13 +222,10 @@ function extractExtensionInstallDetails(result: ExtensionCommandResult): Record<
 
 function serializeExtensionInstallError(error: unknown): Record<string, unknown> {
   if (error instanceof PmCliError) {
-    const code = typeof error.context.code === "string" ? error.context.code : undefined;
-    const recovery = error.context.recovery && typeof error.context.recovery === "object" ? error.context.recovery : undefined;
     return {
       message: error.message,
       exit_code: error.exitCode,
-      ...(code ? { code } : {}),
-      ...(recovery ? { recovery } : {}),
+      ...error.context,
     };
   }
   return {
@@ -253,10 +250,27 @@ async function executeExtensionInstallCommand(
   const startedAt = Date.now();
   const normalizedOptions = normalizeExtensionOptions(options, "install", vocabulary);
   validateExtensionMarkdownOptions(normalizedOptions, globalOptions, undefined);
+  const hasForcedGithubSource = [normalizedOptions.gh, normalizedOptions.github].some(
+    (value) => typeof value === "string" && value.trim().length > 0,
+  );
+  if (hasForcedGithubSource) {
+    throw new PmCliError(
+      "Multiple install targets cannot be combined with --gh/--github. Install one GitHub source per command, or pass multiple explicit local, bundled, or npm: targets.",
+      EXIT_CODE.USAGE,
+      {
+        code: "multi_target_github_install_ambiguous",
+        required: "Use exactly one positional target with --gh/--github, or omit --gh/--github when installing multiple targets.",
+        examples: [
+          "pm install --gh owner/repo",
+          "pm install npm:pm-guide-shell pm-todos",
+        ],
+      },
+    );
+  }
 
   const rows: Array<Record<string, unknown>> = [];
   const warnings: string[] = [];
-  let failureExitCode: number | undefined;
+  let failureExitCode: number = EXIT_CODE.GENERIC_FAILURE;
   for (const target of normalizedTargets) {
     try {
       const result = await runExtension(target, normalizedOptions, globalOptions);
@@ -264,9 +278,6 @@ async function executeExtensionInstallCommand(
       const targetWarnings = Array.isArray(result.warnings) ? result.warnings : [];
       warnings.push(...targetWarnings);
       const targetOk = result.ok === true;
-      if (!targetOk && failureExitCode === undefined) {
-        failureExitCode = EXIT_CODE.GENERIC_FAILURE;
-      }
       rows.push({
         target,
         ok: targetOk,
@@ -278,13 +289,23 @@ async function executeExtensionInstallCommand(
         command_paths: details.command_paths,
         action_paths: details.action_paths,
         warnings: targetWarnings,
+        ...(targetOk
+          ? {}
+          : {
+              error: {
+                message: "Extension install returned ok=false without throwing an error.",
+                exit_code: EXIT_CODE.GENERIC_FAILURE,
+                code: "extension_install_soft_failed",
+              },
+            }),
       });
     } catch (error: unknown) {
       const serializedError = serializeExtensionInstallError(error);
       const exitCode = serializedError.exit_code;
       if (
         typeof exitCode === "number" &&
-        (failureExitCode === undefined || (failureExitCode === EXIT_CODE.GENERIC_FAILURE && exitCode !== EXIT_CODE.GENERIC_FAILURE))
+        failureExitCode === EXIT_CODE.GENERIC_FAILURE &&
+        exitCode !== EXIT_CODE.GENERIC_FAILURE
       ) {
         failureExitCode = exitCode;
       }
@@ -308,7 +329,7 @@ async function executeExtensionInstallCommand(
   };
   printResult(result, globalOptions);
   if (failedCount > 0) {
-    process.exitCode = failureExitCode ?? EXIT_CODE.GENERIC_FAILURE;
+    process.exitCode = failureExitCode;
   }
   if (globalOptions.profile) {
     printError(`profile:command=extension took_ms=${Date.now() - startedAt}`);
