@@ -2024,8 +2024,11 @@ describe("runTest", () => {
       const realRegExp = globalThis.RegExp;
       let nonErrorRegexFailure: string[] | undefined;
       try {
-        vi.stubGlobal("RegExp", function throwingRegExp() {
-          throw "regex-constructor-failure";
+        vi.stubGlobal("RegExp", function throwingRegExp(pattern?: string | RegExp, flags?: string) {
+          if (pattern === "will-throw") {
+            throw "regex-constructor-failure";
+          }
+          return new realRegExp(pattern, flags);
         } as unknown as RegExpConstructor);
         nonErrorRegexFailure = testInternals.evaluateLinkedTestAssertions(
           { command: "node --version", assert_stdout_regex: ["will-throw"] },
