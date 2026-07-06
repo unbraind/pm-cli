@@ -15,6 +15,7 @@
 
 ### Other
 
+- 2026-07-07 ecosystem audit \#16: all-status review, long-horizon gap items (merge semantics, event stream, policy roles, flow metrics) ([pm-su60](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-su60.toon))
 - 2026-07-06 ecosystem audit \#15: WIP hygiene, GH/commit coverage verification, grammar+SDK domain completions, horizon-4 planning ([pm-pvij](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-pvij.toon))
 - chore: 2026-07-06 ecosystem audit \#14 — WIP status hygiene (docstring family reset) + stale in-progress detection backlog ([pm-6a1g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-6a1g.toon))
 - chore: 2026-07-06 ecosystem audit \#13 — Semgrep-issue metadata backfill, scale-out initiative pm-9rxu, composability contract set ([pm-lgim](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-lgim.toon))

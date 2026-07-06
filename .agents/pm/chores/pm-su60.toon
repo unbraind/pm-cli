@@ -1,0 +1,26 @@
+id: pm-su60
+title: "2026-07-07 ecosystem audit #16: all-status review, long-horizon gap items (merge semantics, event stream, policy roles, flow metrics)"
+description: "Full all-status tracker audit + review per maintainer request: verify GH-issue and validate-warning coverage, re-verify pm-n7rr/pm-usfg brainstorm partitions, dedupe-check long-term themes, file surviving gaps as items, update pm-doxj horizons."
+type: Chore
+status: closed
+priority: 2
+tags[4]: audit,backlog,ecosystem,tracker-governance
+created_at: "2026-07-06T22:54:30.321Z"
+updated_at: "2026-07-06T22:57:49.578Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: All open GH issues map to pm items; every validate warning maps to an open remediation item; new gap items created with dedupe evidence; pm-doxj horizon index updated; changelog regenerated as last step; committed to main
+parent: pm-doxj
+risk: low
+confidence: high
+resolution: "Audit #16 complete: coverage verified (26/26 GH issues, all validate warnings mapped, both strategic-epic partitions complete); 4 dedupe-checked long-horizon items filed (pm-g5sx, pm-e200, pm-xc68, pm-pee5) with deps wired and pm-doxj horizon index updated."
+expected_result: Tracker fully reflects the ecosystem incl. long-term horizons; zero duplicates created; zero unmapped warnings
+actual_result: "4 new items (2 mid, 2 long horizon), 2 dep wirings, 1 milestone-body index update; no closed items touched (create-only protocol held); validate/health unchanged-ok"
+comments[1]{created_at,author,text}:
+  "2026-07-06T22:54:42.886Z",maintainer-agent,"Audit #16 baseline (all verified live this session): 1652 items, 174 open, 0 in_progress/blocked (no phantom WIP), 12 canceled all legitimate archives (8 superseded PRD milestones, 2 superseded duplicates via close... actually canceled, 3 invalid probe items). npm live at 2026.7.6; auto-release healthy. All 26 open GH issues map 1:1 to pm items (474/473/472/471/470/469/468/467/458/457/455/454/453/452/450/449/448/446/445/444/443/442/441/438/437/435 -> pm-alnj/yjim/4bzq/h85e/bfma/sqf7/25d0/6abs/qfte/tu71/hq0r/b9ov/ypha/qd2h/jkjt/kjbh/sjfs/x1g5/ishm/cpja/g9xk/vxxm/qmjx/kipd/nilh/cfed). pm validate warnings all map to open items: 269 missing-resolution + 18 missing close_reason -> pm-e9zh; GH-209 duplicate issue code -> pm-pivf. pm health ok."
+notes[1]{created_at,author,text}:
+  "2026-07-06T22:57:36.264Z",maintainer-agent,"Audit #16 method: baseline (stats/validate/health/GH issues/npm+auto-release live checks) -> recent-commit tracking check (9c909a58 and dc0dc252 both fully tracked; pm-rjqr correctly still open, CLI handlers not yet consuming SDK reads) -> strategic-epic re-review (pm-n7rr 18 open children cover every grammar cluster incl. audit-#15 additions pm-xkgq/pm-npr3; pm-usfg 16 open children cover every SDK promotion domain incl. pm-x6jf) -> long-horizon theme sweep with per-theme dedupe searches. Themes rejected as already-settled: server/daemon mode (contradicts accepted ADR pm-i7i4; scale goes through pm-bl8x indexes), import/export ecosystem (pm-csv/jira/linear/github/beads packages), schedule views (pm-gantt-chart), fleet reporting (pm-ops). Themes filed: pm-g5sx merge semantics, pm-e200 event stream, pm-xc68 policy roles, pm-pee5 flow metrics."
+learnings[1]{created_at,author,text}:
+  "2026-07-06T22:57:36.682Z",maintainer-agent,"1) pm append --body - is the clean primitive for audit-time additions to living epic/milestone bodies (append-style beats update --body which replaces). 2) When sweeping long-horizon themes, check the package ecosystem for CONSUMER prior art, not just item duplicates: pm-slack existing without any core event primitive is what shaped pm-e200 as an SDK producer primitive rather than a notification feature. 3) Candidate ideas must be checked against accepted ADRs before filing — a daemon/server watch mode would have contradicted ADR pm-i7i4 (git-native, no server); the surviving design (cursor over history streams, optional --follow) is what fit the constraint."
+close_reason: completed
+body: ""

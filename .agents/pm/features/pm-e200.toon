@@ -1,0 +1,19 @@
+id: pm-e200
+title: "Mutation event stream primitive: pm events --follow (NDJSON with durable cursor) + SDK subscription API for cross-process agent coordination"
+description: "Read-only, cursor-resumable event feed derived from the append-only history streams so thousands of agents can react to workspace changes without polling: NDJSON CLI surface composable with grep/jq, SDK async-iterator primitive underneath, no daemon required (single-shot --since works for stateless agents). First consumer to migrate: the pm-slack package."
+type: Feature
+status: open
+priority: 3
+tags[5]: agent-ux,"area:sdk",composability,long-term,multi-agent
+created_at: "2026-07-06T22:56:13.669Z"
+updated_at: "2026-07-06T22:56:57.935Z"
+author: maintainer-agent
+estimated_minutes: 600
+acceptance_criteria: pm events emits one JSON object per line with a stable resumable cursor; filterable by type/author/item; single-shot --since and --follow modes both work; SDK subscription primitive documented and used by the CLI shim; catch-up cost is O(new events) at scale-index workspaces; pm-slack migration path noted
+parent: pm-dj98
+risk: medium
+confidence: medium
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-646c,related,"2026-07-06T22:56:57.915Z",null,null
+  pm-801d,related,"2026-07-06T22:56:57.915Z",null,null
+body: "## Context\nExtension hooks (registerHook) fire only in-process during a mutation. Cross-process, the only way another agent learns about workspace changes is polling (pm context / pm list), which at thousands of concurrent agents is both token-expensive and racy. The pm-slack package (lifecycle notifications) exists as prior art for the *consumer* side but has no first-class producer primitive to build on.\n\n## Proposal\nA read-only mutation event stream derived from the append-only history streams (no new write path, no daemon — consistent with ADR pm-i7i4):\n1. CLI: `pm events --follow [--since <cursor>] [--type ...] [--author ...] [--item ...]` emitting one JSON object per line (NDJSON, per the pm-646c convention) so it composes with grep/jq/xargs (pm-m9xv story, pm-psy1 scripting contract).\n2. SDK: a subscription/iterator primitive (async iterable over history events with a durable cursor) — the layer packages like pm-slack, pm-web, and future coordination tooling rebuild on.\n3. Cursor semantics: stable resumable position (per-stream offsets or global logical clock) so an agent can disconnect and catch up without replaying everything; must stay O(new events) at 100k-1M items, which couples this to the pm-9rxu read-index work.\n\n## Non-goals\n- No long-running server/daemon requirement: --follow is an optional convenience over poll-with-cursor; single-shot `pm events --since <cursor>` must work for stateless agents.\n- Not a message bus: events are facts about mutations already committed to history, never commands.\n\n## Relationships\n- Parent pm-dj98 (multi-agent safety): reduces polling contention and enables claim/handoff coordination patterns.\n- pm-646c (NDJSON), pm-psy1 (scripting contract), pm-9rxu/pm-801d (index makes tailing cheap), pm-usfg (SDK primitive first, CLI shim second), pm-slack package (first consumer to migrate).\n- Horizon: mid-to-long — after NDJSON output mode and the persistent read index land.\n\n## Duplicate check (2026-07-07 audit #16)\nSearched \"watch mode event subscription\", \"watch follow tail stream\", \"pm watch subscribe mutations\", \"notification agent coordination\" — no existing item covers a cross-process event/subscription primitive; nearest matches were in-process hook work and the pm-slack package (consumer only)."
