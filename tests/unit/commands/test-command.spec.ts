@@ -1,4 +1,4 @@
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
@@ -798,7 +798,7 @@ describe("runTest", () => {
         runLevelPmContextMode: "schema",
         linkedOverridePmContextMode: undefined,
       }),
-    ).toContain("--pm-context tracker");
+    ).toContain("--auto-pm-context");
     expect(
       testInternals.buildPmContextMismatchHint({
         executionContext: {
@@ -878,6 +878,7 @@ describe("runTest", () => {
       await mkdir(path.join(source, "pm", "tasks"), { recursive: true });
       await writeFile(path.join(source, "pm", "tasks", "pm-a.toon"), "item", "utf8");
       await mkdir(path.join(source, "pm", "tasks", "nested"), { recursive: true });
+      await symlink("tasks/pm-a.toon", path.join(source, "pm", "tasks-link"));
       await mkdir(path.join(source, "pm", "history"), { recursive: true });
       await writeFile(path.join(source, "pm", "history", "pm-a.jsonl"), "history", "utf8");
       const restrictedDir = path.join(source, "pm", "blocked-folder");
@@ -1493,7 +1494,7 @@ describe("runTest", () => {
         id,
         {
           add: [
-            "command=node -e \"process.stdout.write([process.env.RUN_LEVEL||'',process.env.CUSTOM_FLAG||'',process.env.PORT||'',process.env.HOST||'',process.env.PM_SHARED_HOST_SAFE||'',String(process.env.DELETE_ME===undefined)].join('|'))\",scope=project,env_set=RUN_LEVEL=per-test;CUSTOM_FLAG=linked,env_clear=DELETE_ME,shared_host_safe=true",
+            "command=node -e \"process.stdout.write([process.env.RUN_LEVEL||'',process.env.CUSTOM_FLAG||'',process.env.PORT||'',process.env.HOST||'',process.env.PM_SHARED_HOST_SAFE||'',String(process.env.DELETE_ME===undefined),process.env.PW_TEST_HTML_REPORT_OPEN||'',process.env.PLAYWRIGHT_HTML_OPEN||''].join('|'))\",scope=project,env_set=RUN_LEVEL=per-test;CUSTOM_FLAG=linked,env_clear=DELETE_ME,shared_host_safe=true",
           ],
           message: "seed env directive command",
         },
@@ -1505,13 +1506,23 @@ describe("runTest", () => {
         {
           run: true,
           timeout: "20",
-          envSet: ["RUN_LEVEL=run-level", "DELETE_ME=remove-me"],
+          envSet: [
+            "RUN_LEVEL=run-level",
+            "DELETE_ME=remove-me",
+            "PORT=4173",
+            "HOST=localhost",
+            "PM_SHARED_HOST_SAFE=custom",
+            "PW_TEST_HTML_REPORT_OPEN=already-open",
+            "PLAYWRIGHT_HTML_OPEN=keep-open",
+          ],
         },
         { path: context.pmPath },
       );
       expect(run.run_results).toHaveLength(1);
       expect(run.run_results[0]?.status).toBe("passed");
-      expect(run.run_results[0]?.stdout ?? "").toContain("per-test|linked|0|127.0.0.1|1|true");
+      expect(run.run_results[0]?.stdout ?? "").toContain(
+        "per-test|linked|4173|localhost|custom|true|already-open|keep-open",
+      );
     });
   });
 
@@ -1982,6 +1993,21 @@ describe("runTest", () => {
       );
       expect(invalidRegexMetadata.run_results[0]?.status).toBe("failed");
       expect(invalidRegexMetadata.run_results[0]?.error ?? "").toContain("regex assertion is invalid");
+
+      const realRegExp = globalThis.RegExp;
+      try {
+        vi.stubGlobal("RegExp", function throwingRegExp() {
+          throw "regex-constructor-failure";
+        } as unknown as RegExpConstructor);
+        const nonErrorRegexFailure = testInternals.evaluateLinkedTestAssertions(
+          { command: "node --version", assert_stdout_regex: ["will-throw"] },
+          "plain",
+          "",
+        );
+        expect(nonErrorRegexFailure[0]).toContain("regex-constructor-failure");
+      } finally {
+        vi.stubGlobal("RegExp", realRegExp);
+      }
     });
   });
 

@@ -1048,19 +1048,24 @@ describe("public sdk entrypoint", () => {
       expect(idOnlyCreated.item).toBeUndefined();
       expect(idOnlyCreated.changed_field_count).toBeUndefined();
 
-      const listed = (await client.list({ status: "open", limit: "10" })) as {
-        items?: Array<{ id?: string; title?: string }>;
-        query?: { filters?: Record<string, unknown> };
-      };
-      expect(listed.items?.some((item) => item.id === itemId)).toBe(true);
+      const listed = await client.list({ status: "open", limit: "10" });
+      expect(listed.items.some((item) => item.id === itemId)).toBe(true);
 
-      const clientContext = (await client.context({ limit: "5" })) as { summary?: { active_items?: number } };
-      expect(typeof clientContext.summary?.active_items).toBe("number");
+      const clientContext = await client.context({ limit: "5" });
+      expect(typeof clientContext.summary.active_items).toBe("number");
 
-      const searched = (await client.search("SDK client item", { status: "open", limit: "10" })) as {
-        items?: Array<{ id?: string; title?: string }>;
-      };
-      expect(searched.items?.some((item) => item.id === itemId)).toBe(true);
+      const searched = await client.search("SDK client item", { status: "open", limit: "10" });
+      expect(searched.items.some((item) => "id" in item && item.id === itemId)).toBe(true);
+
+      const next = await client.next({ limit: "3", readyOnly: true });
+      expect(typeof next.summary.ready).toBe("number");
+
+      const aggregate = await client.aggregate({ groupBy: "status", count: true });
+      expect(aggregate.groups.some((group) => group.group.status === "open")).toBe(true);
+
+      const stats = await client.stats({ metadataCoverage: true });
+      expect(stats.totals.items).toBeGreaterThanOrEqual(3);
+      expect(stats.metadata_coverage).toBeDefined();
 
       const directListed = (await runAction({
         action: "list",
@@ -1113,7 +1118,7 @@ describe("public sdk entrypoint", () => {
       expect(paused.action).toBe("pause_task");
       expect(paused.update?.item).toMatchObject({ id: itemId, status: "open" });
 
-      const fetched = (await client.get(itemId, { full: true })) as { item?: { id?: string; status?: string } };
+      const fetched = await client.get(itemId, { full: true });
       expect(fetched.item).toMatchObject({ id: itemId, status: "open" });
 
       const updated = (await client.update(itemId, { status: "in_progress", message: "SDK client update" })) as {

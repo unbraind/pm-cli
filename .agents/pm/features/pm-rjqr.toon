@@ -2,11 +2,12 @@ id: pm-rjqr
 title: "Promote query/read primitives to the public SDK: list, get, search, context, next, aggregate, stats"
 description: "Typed SDK read surface over the item store, search (keyword/semantic/hybrid incl. inline field:value parsing), context snapshots, next-item recommendation, aggregates, and stats. History/activity ownership is pm-4a7m. Duplicate check: no existing query-primitive SDK item."
 type: Feature
-status: open
+status: in_progress
 priority: 1
 tags[3]: architecture,"area:sdk","area:search"
 created_at: "2026-07-05T04:54:09.542Z"
-updated_at: "2026-07-05T06:29:49.138Z"
+updated_at: "2026-07-06T10:54:21.169Z"
+assignee: codex-agent
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: SDK exports typed query primitives returning the same data the CLI renders (projection/format concerns stay CLI-side); CLI query commands consume only these primitives; docstrings + linked tests + SDK reference docs; zero behavior change (query/search specs green)
@@ -16,4 +17,19 @@ confidence: medium
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-lodl,blocked_by,"2026-07-05T04:55:04.440Z",null,null
   pm-muhw,blocked_by,"2026-07-05T04:55:04.919Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-06T10:54:21.169Z",codex-agent,"Evidence: exported typed SDK read primitives on PmClient and SDK barrel for context/list/search/get/next/aggregate/stats; docs/SDK.md documents the read surface. Verification passed: pnpm typecheck; focused SDK + linked-test suites; pnpm lint; node scripts/run-tests.mjs coverage at 100/100/100/100; installed-package temp project exercised @unbrained/pm-cli/sdk PmClient read primitives successfully. Remaining acceptance: migrate CLI query command handlers to consume the public SDK primitives before closing pm-rjqr."
+files[3]{path,scope,note}:
+  src/sdk/index.ts,project,Public SDK barrel exports read primitive option/result contracts
+  src/sdk/runtime.ts,project,Typed PmClient read primitives for context/list/search/get/next/aggregate/stats
+  tests/unit/sdk/sdk-index.spec.ts,project,In-process temp-tracker coverage for typed PmClient read primitives
+tests[4]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,420
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts,project,240
+  pnpm lint,project,240
+  pnpm typecheck,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mr92mjn4-w1xoyq,test,passed,"2026-07-06T10:21:46.310Z","2026-07-06T10:22:19.888Z","2026-07-06T10:22:19.888Z",2,0,0
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Documents typed PmClient read primitive surface and exported contracts
 body: ""

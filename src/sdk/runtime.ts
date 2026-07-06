@@ -47,6 +47,8 @@ import {
 } from "./workspace-contracts-cache.js";
 export { clearWorkspaceContractsCache } from "./workspace-contracts-cache.js";
 import {
+  type AggregateOptions,
+  type AggregateResult,
   assertHistoryRepairTarget,
   runActivity,
   runAggregate,
@@ -109,13 +111,18 @@ import {
   runUpgrade,
   runValidate,
 } from "../cli/commands/index.js";
+import type { ContextOptions, ContextResult } from "../cli/commands/context.js";
+import type { GetOptions, GetResult } from "../cli/commands/get.js";
 import type { CloseManyCommandOptions } from "../cli/commands/close-many.js";
 import {
   runContracts,
   type ContractsCommandOptions,
   type ContractsResult,
 } from "../cli/commands/contracts.js";
-import type { ListOptions } from "../cli/commands/list.js";
+import type { ListOptions, ListResult } from "../cli/commands/list.js";
+import type { NextOptions, NextResult } from "../cli/commands/next.js";
+import type { SearchOptions, SearchResult } from "../cli/commands/search.js";
+import type { StatsCommandOptions, StatsResult } from "../cli/commands/stats.js";
 import { resolveStartTaskInProgressStatus } from "../cli/register-operations.js";
 import type { UpdateManyCommandOptions } from "../cli/commands/update-many.js";
 
@@ -193,6 +200,70 @@ export { listAllFrontMatter, locateItem, readLocatedItem } from "../core/store/i
 export { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 export { readSettings } from "../core/store/settings.js";
 export {
+  runAggregate,
+  type AggregateOptions,
+  type AggregateResult,
+  type AggregateRow,
+} from "../cli/commands/aggregate.js";
+export {
+  CONTEXT_OUTPUT_VALUES,
+  runContext,
+  type BlockerEntry,
+  type ContextFocusItem,
+  type ContextOptions,
+  type ContextOutputFormat,
+  type ContextResult,
+  type HierarchyChild,
+  type HierarchyNode,
+  type HotFile,
+  type ProgressEntry,
+  type RecentContextItem,
+  type StaleEntry,
+  type TestHealthSummary,
+  type WorkloadEntry,
+} from "../cli/commands/context.js";
+export {
+  runGet,
+  type GetOptions,
+  type GetResult,
+} from "../cli/commands/get.js";
+export {
+  runList,
+  type ListCompactResult,
+  type ListedItem,
+  type ListOptions,
+  type ListResult,
+  type ListSortField,
+  type ListSortOrder,
+  type ListVerboseResult,
+} from "../cli/commands/list.js";
+export {
+  NEXT_OUTPUT_VALUES,
+  runNext,
+  type NextActionableItem,
+  type NextBlockerRef,
+  type NextOptions,
+  type NextOutputFormat,
+  type NextRecommendation,
+  type NextResult,
+} from "../cli/commands/next.js";
+export {
+  runSearch,
+  type SearchCompactResult,
+  type SearchHit,
+  type SearchHitHighlight,
+  type SearchMatchMode,
+  type SearchOptions,
+  type SearchResult,
+  type SearchResultItem,
+  type SearchVerboseResult,
+} from "../cli/commands/search.js";
+export {
+  runStats,
+  type StatsCommandOptions,
+  type StatsResult,
+} from "../cli/commands/stats.js";
+export {
   renderCalendarMarkdown,
   renderCalendarToon,
   resolveCalendarOutputFormat,
@@ -236,7 +307,6 @@ export {
 } from "../cli/commands/dedupe-merge.js";
 export { runNormalize, type NormalizeCommandOptions, type NormalizeResult } from "../cli/commands/normalize.js";
 export { runReindex, type ReindexOptions, type ReindexResult } from "../cli/commands/reindex.js";
-export { runSearch, type SearchOptions, type SearchResult } from "../cli/commands/search.js";
 export {
   loadCreateTemplateOptions,
   runTemplatesList,
@@ -427,29 +497,50 @@ export class PmClient {
   /**
    * Return the same context snapshot produced by `pm context`.
    */
-  context(options: PmActionOptions = {}): Promise<unknown> {
-    return this.run("context", { options });
+  context(options: ContextOptions = {}): Promise<ContextResult> {
+    return this.run("context", { options }) as Promise<ContextResult>;
   }
 
   /**
    * List items with the MCP/agent compact defaults.
    */
-  list(options: PmActionOptions = {}): Promise<unknown> {
-    return this.run("list", { options });
+  list(options: ListOptions = {}): Promise<ListResult> {
+    return this.run("list", { options }) as Promise<ListResult>;
   }
 
   /**
    * Search items with the MCP/agent compact defaults.
    */
-  search(query: string, options: PmActionOptions = {}): Promise<unknown> {
-    return this.run("search", { query, options });
+  search(query: string, options: SearchOptions = {}): Promise<SearchResult> {
+    return this.run("search", { query, options }) as Promise<SearchResult>;
   }
 
   /**
    * Read one item by id.
    */
-  get(id: string, options: PmActionOptions = {}): Promise<unknown> {
-    return this.run("get", { id, options });
+  get(id: string, options: GetOptions = {}): Promise<GetResult> {
+    return this.run("get", { id, options }) as Promise<GetResult>;
+  }
+
+  /**
+   * Return the ranked next-work recommendation produced by `pm next`.
+   */
+  next(options: NextOptions = {}): Promise<NextResult> {
+    return this.run("next", { options }) as Promise<NextResult>;
+  }
+
+  /**
+   * Group matching items with the same semantics as `pm aggregate`.
+   */
+  aggregate(options: AggregateOptions = {}): Promise<AggregateResult> {
+    return this.run("aggregate", { options }) as Promise<AggregateResult>;
+  }
+
+  /**
+   * Return project tracker statistics with the same sections as `pm stats`.
+   */
+  stats(options: StatsCommandOptions = {}): Promise<StatsResult> {
+    return this.run("stats", { options }) as Promise<StatsResult>;
   }
 
   /**

@@ -100,6 +100,8 @@ Storage format-version exports (under `@unbrained/pm-cli/sdk/runtime`):
 Command/action contract exports:
 
 - `PmClient` / `runAction` (high-level in-process action execution for custom tools, bots, CI, and embedded runtimes)
+- Typed read primitives on `PmClient`: `get`, `list`, `search`, `context`, `next`, `aggregate`, and `stats`
+- Read primitive option/result contracts: `GetOptions` / `GetResult`, `ListOptions` / `ListResult`, `SearchOptions` / `SearchResult`, `ContextOptions` / `ContextResult`, `NextOptions` / `NextResult`, `AggregateOptions` / `AggregateResult`, `StatsCommandOptions` / `StatsResult`
 - `PM_CORE_COMMAND_NAMES`
 - `PM_TOOL_ACTIONS`
 - `PM_TOOL_PARAMETERS_SCHEMA`
@@ -437,6 +439,9 @@ const created = await pm.create({
   createMode: "progressive",
 });
 const open = await pm.list({ status: "open", limit: "20" });
+const recommendation = await pm.next({ readyOnly: true });
+const grouped = await pm.aggregate({ groupBy: "status", count: true });
+const stats = await pm.stats({ metadataCoverage: true });
 
 await runAction({
   action: "context",
@@ -448,6 +453,14 @@ await runAction({
 Mutation convenience methods default to compact changed-field output for agent
 efficiency. Pass `fullChangedFields: true` alongside the command options when an
 embedded SDK consumer needs the full `changed_fields` array.
+
+Read convenience methods are the first SDK-first PM primitives: they return the
+same structured data the CLI/MCP surfaces use, but with stable TypeScript
+contracts exported from `@unbrained/pm-cli/sdk`. Use them instead of spawning
+`pm get`, `pm list`, `pm search`, `pm context`, `pm next`, `pm aggregate`, or
+`pm stats` when building a custom project-management tool, CI integration, or
+agent runtime. Presentation stays outside the SDK primitive: callers choose their
+own rendering while the data shape remains shared with the CLI.
 
 `PmClient` and `runAction` share the same process-wide extension activation
 queue as MCP. Calls from one process are serialized across extension load,

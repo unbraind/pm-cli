@@ -1,0 +1,28 @@
+id: pm-6e1d
+title: "GH-463: linked PM tracker-read tests should auto-remediate or suggest --auto-pm-context"
+description: "GitHub issue #463 reports that pm test --run defaults to schema PM context, so linked tracker-read commands like pm validate fail with a confusing PM context mismatch. Duplicate check: searched all statuses for GH-463/auto-pm-context/tracker-read linked tests and found no exact live tracker item; closest closed context items are historical linked-test context work."
+type: Issue
+status: closed
+priority: 1
+tags[3]: agent-ux,gh-issue,testing
+created_at: "2026-07-06T10:19:54.550Z"
+updated_at: "2026-07-06T10:54:29.474Z"
+author: codex-agent
+parent: pm-oslr
+comments[1]{created_at,author,text}:
+  "2026-07-06T10:54:22.072Z",codex-agent,"Evidence: GH-463 linked tracker-read mismatch hint now recommends --auto-pm-context first; docs/TESTING.md explains auto PM context routing. Verification passed: focused linked-test suites, pnpm typecheck, pnpm lint, node scripts/run-tests.mjs coverage at 100/100/100/100, security scan, npm audit, pm-changelog check, Sentry/telemetry gate, and installed-package temp project confirmed default schema mismatch includes --auto-pm-context while --auto-pm-context runs tracker mode and passes."
+files[2]{path,scope,note}:
+  src/cli/commands/test.ts,project,GH-463 mismatch hint now suggests --auto-pm-context first
+  tests/unit/commands/test-command.spec.ts,project,Regression expectation for auto context mismatch hint
+tests[5]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,420
+  node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts tests/unit/commands/test-all-command.spec.ts,project,240
+  "pnpm changelog:pm:check",project,240
+  pnpm lint,project,240
+  pnpm typecheck,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mr92n4f7-inh6do,test,passed,"2026-07-06T10:21:46.489Z","2026-07-06T10:22:46.819Z","2026-07-06T10:22:46.819Z",2,0,0
+docs[1]{path,scope,note}:
+  docs/TESTING.md,project,Documents --auto-pm-context as the default mismatch recovery hint
+close_reason: "Fixed GH-463 by making linked tracker-read PM context mismatches suggest --auto-pm-context first, documenting the recovery path, and verifying default mismatch plus auto-remediated tracker mode in an installed-package temp project. Gates passed: focused tests, typecheck, lint/static quality, 100/100/100/100 coverage, security scan, npm audit, pm-changelog check, and Sentry/telemetry gate."
+body: ""
