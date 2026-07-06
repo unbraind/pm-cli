@@ -1024,7 +1024,8 @@ function readLinkedTestOutputChunkText(chunk: Buffer | string, bytes: number, re
   if (bytes <= remainingBytes) {
     return typeof chunk === "string" ? chunk : chunk.toString("utf8");
   }
-  return Buffer.from(chunk).subarray(0, remainingBytes).toString("utf8");
+  const buffer = typeof chunk === "string" ? Buffer.from(chunk) : chunk;
+  return buffer.subarray(0, remainingBytes).toString("utf8");
 }
 
 function appendLinkedTestOutputChunk(
