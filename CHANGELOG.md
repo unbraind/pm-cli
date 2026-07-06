@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- GH-427: Windows Node 24 nightly fails — POSIX-only error-code assertions (EACCES/EISDIR) in restore-command and history-rewrite specs ([pm-lt6n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lt6n.toon))
 - Annotation --add silently stores flag-like tokens as content: pm notes <id\> --add --stdin records the literal note "--stdin" ([pm-vcu7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vcu7.toon))
 - pm extension --install pm-<alias\> / @unbrained/pm-<alias\> fails with 'Local extension source does not exist' instead of suggesting the bundled catalog alias ([pm-jqd2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jqd2.toon))
 - pm plan create silently ignores the root --id-only flag (prints full plan envelope) ([pm-oz0k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oz0k.toon))
@@ -14,6 +15,9 @@
 
 ### Other
 
+- 2026-07-06 ecosystem audit \#15: WIP hygiene, GH/commit coverage verification, grammar+SDK domain completions, horizon-4 planning ([pm-pvij](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-pvij.toon))
+- chore: 2026-07-06 ecosystem audit \#14 — WIP status hygiene (docstring family reset) + stale in-progress detection backlog ([pm-6a1g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-6a1g.toon))
+- chore: 2026-07-06 ecosystem audit \#13 — Semgrep-issue metadata backfill, scale-out initiative pm-9rxu, composability contract set ([pm-lgim](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-lgim.toon))
 - 2026-07-06 ecosystem audit \#12: GH-467..474 backlog coverage + code-scanning capability epic ([pm-3rgp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-3rgp.toon))
 - Unblock dependabot PRs: @types/node 26 type error, pnpm release-age cooldown, codeql-action lockstep group ([pm-2czc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-2czc.toon))
 - pm install should accept multiple package targets (help already advertises \[targets...\]) ([pm-hj9h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hj9h.toon))

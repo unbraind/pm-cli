@@ -1,0 +1,16 @@
+id: pm-xtrd
+title: "Beyond-PM SDK exemplar spike: minimal VCS-style changeset workflow as a pm package (custom schema + event-sourced history + hooks)"
+description: "Acceptance vehicle for story pm-8ngt: an SDK-only exemplar package modeling a Changeset domain (draft→proposed→merged/abandoned, domain verbs as extension commands, merge rules as hooks, state via history replay). Produces an itemized SDK gap report. Mirrors the pm-cbwg/pm-kanban archetype pattern."
+type: Feature
+status: open
+priority: 4
+tags[5]: exemplar,extensibility,sdk,spike,universal-tool
+created_at: "2026-07-06T22:18:00.517Z"
+updated_at: "2026-07-06T22:18:00.517Z"
+author: maintainer-agent
+estimated_minutes: 600
+acceptance_criteria: Spike package activates cleanly importing only the public SDK (zero private core imports); create→propose→merge→history-replay round-trip passes a sandbox smoke; gap report exists with each gap filed as a pm item or explicitly waived
+parent: pm-8ngt
+risk: medium
+confidence: medium
+body: "# Spike — minimal VCS-style changeset workflow as a pm package\n\nBuild a small, throwaway-quality but end-to-end **exemplar package** that models a version-control-like domain purely on public pm SDK primitives: a `Changeset` custom type with a domain status graph (draft → proposed → merged/abandoned), `ref`/`branch` modeled as custom fields or link relations, domain verbs (`propose`, `merge`, `abandon`) as extension-registered commands, merge rules enforced by hooks, and domain state derived by replaying the audited history stream.\n\n## Why\nThis is the acceptance vehicle for the beyond-PM platform story (parent epic pm-usfg): the vision claims one could build \"a VCS like Git or a company's business logic\" on the SDK. A spike either demonstrates that with today's primitives or produces a precise, itemized gap list.\n\n## Deliverables\n- Exemplar package (sandbox or packages/ exemplar, mirroring the pm-cbwg / pm-kanban archetype pattern) importing ONLY the public SDK (`src/sdk`), zero private core imports (boundary ratchet pm-8778 applies).\n- A written gap report: every place the spike needed a workaround, filed as individual dedupe-checked SDK items under pm-usfg.\n- Smoke test in a temp workspace proving create → propose → merge → history-replay round-trip.\n\n## Acceptance criteria\nSpike package activates cleanly; the changeset workflow round-trip passes in a sandbox smoke; gap report exists with each gap either filed as a pm item or explicitly waived; no private core imports.\n\n## Sequencing\nDepends on pm-cbwg (PM-domain exemplar first) and pm-3mna (schema/config primitives in the SDK)."

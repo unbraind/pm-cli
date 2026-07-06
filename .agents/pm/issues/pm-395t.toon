@@ -1,0 +1,16 @@
+id: pm-395t
+title: "SDK client.run() rejects structured payloads for create: raw {type,title} fails with 'Missing required option --title'"
+description: ""
+type: Issue
+status: open
+priority: 2
+tags[2]: "area:sdk",dx
+created_at: "2026-07-06T21:53:02.655Z"
+updated_at: "2026-07-06T21:53:02.655Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: "client.run('create', ...) either accepts bare title/type keys by mapping them to CLI flags, or the split-args contract is documented in docs/SDK.md with a typed error pointing callers to client.create(); regression test covers both paths"
+parent: pm-usfg
+risk: low
+confidence: high
+body: "Found during audit #12 external CJS-host verification (note on pm-rjqr): raw client.run('create', {type,title}) fails with 'Missing required option --title' because run() expects pre-split argv-style args, while the typed client.create() works. Agents composing SDK calls dynamically will hit this. Either map structured payload keys onto flags inside run(), or document the contract and emit a helpful error suggesting the typed primitive."

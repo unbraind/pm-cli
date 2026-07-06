@@ -6,8 +6,10 @@ status: open
 priority: 2
 tags[7]: code-scanning,medium,non-literal-regexp,security,semgrep,unspecified,untriaged
 created_at: "2026-07-06T18:56:19.931Z"
-updated_at: "2026-07-06T18:56:19.931Z"
+updated_at: "2026-07-06T21:20:59.068Z"
 author: codex-cli-agent
+estimated_minutes: 25
+acceptance_criteria: "The flagged pattern at src/cli/commands/linked-test-parsers.ts#L333 is remediated with a safe construct (bounded/escaped input, own-property guard, or literal pattern) or suppressed with recorded rationale; a fresh Semgrep scan of this path no longer reports finding 874840479; CI gates stay green."
 parent: pm-oz8u
 risk: medium
 confidence: low

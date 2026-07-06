@@ -1,0 +1,18 @@
+id: pm-npr3
+title: "Map the workspace-customization family (init/config/schema/profile) in the target noun grammar: keep as distinct nouns or merge under one customization noun"
+description: ""
+type: Task
+status: open
+priority: 3
+tags[3]: "area:cli","area:schema",cli-simplification
+created_at: "2026-07-06T21:57:44.898Z"
+updated_at: "2026-07-06T21:57:54.381Z"
+author: maintainer-agent
+estimated_minutes: 180
+acceptance_criteria: "ADR pm-pbyu's grammar table gains an explicit mapping for init, config, schema, and profile (kept, merged, or verb-moved) with rationale; overlaps are resolved on paper (schema presets vs profile archetypes vs config keys); if any spelling moves, follow-up wiring items are filed under pm-n7rr with alias shims per pm-0z7n"
+parent: pm-n7rr
+risk: medium
+confidence: medium
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-pbyu,related,"2026-07-06T21:57:54.360Z",null,null
+body: "The four workspace-customization commands (init, config, schema, profile) are the only remaining top-level family with no consolidation child under pm-n7rr and no explicit entry in the ADR pm-pbyu mapping. They overlap: schema manages types/statuses/fields/presets, profile applies archetype bundles that include schema+config+templates, config manages settings keys, init bootstraps all of it. Decide whether they stay four nouns (each arguably a domain) or consolidate (e.g. schema+profile under one customization noun) toward the ~15-noun target. This is a mapping/decision task: outcome is the grammar-table entry plus any follow-up wiring items, not a rename itself."

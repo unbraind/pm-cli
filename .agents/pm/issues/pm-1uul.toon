@@ -6,8 +6,10 @@ status: open
 priority: 1
 tags[7]: code-scanning,developer-scripts,high,security,semgrep,spawn-shell-true,true-positive
 created_at: "2026-07-06T18:56:15.537Z"
-updated_at: "2026-07-06T18:56:15.537Z"
+updated_at: "2026-07-06T21:20:53.015Z"
 author: codex-cli-agent
+estimated_minutes: 45
+acceptance_criteria: "The flagged shell:true spawn at plugins/pm-codex/scripts/pm-mcp-server.mjs#L86 is remediated (safe argv-array spawn or documented justified suppression); a fresh Semgrep scan of this path no longer reports finding 874962820; full test suite and CI gates stay green."
 parent: pm-oz8u
 risk: high
 confidence: low

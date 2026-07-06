@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: agent-ux,"area:cli","area:lifecycle",simplification
 created_at: "2026-07-05T05:08:46.683Z"
-updated_at: "2026-07-05T05:08:46.683Z"
+updated_at: "2026-07-06T21:57:53.338Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "update-many and close-many are reachable as facets of update/close with identical semantics including dry-run parity and validate-close; delete and restore live under exactly one noun per the accepted ADR; old spellings alias-dispatch with hints; spelling-parity spec green; contracts, completions, docs, and MCP names regenerated."
@@ -15,4 +15,6 @@ risk: medium
 confidence: medium
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-0z7n,blocked_by,"2026-07-05T05:08:46.683Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-06T21:57:53.338Z",maintainer-agent,"Audit #15 scope note: test-all is also a bulk variant of a base noun and belongs in this fold (pm test --all, mirroring update-many->update --many). Include it in the mapping + alias shim so no bulk spelling stays top-level."
 body: ""

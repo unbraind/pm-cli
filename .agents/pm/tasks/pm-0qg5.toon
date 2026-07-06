@@ -1,0 +1,18 @@
+id: pm-0qg5
+title: "Item-directory fan-out: bucketed storage layout behind format_version gating with a lossless migration"
+description: "Filesystem-physics child of pm-9rxu: directories with 100k+ entries degrade badly on most filesystems and in git status. Explicitly blocked on the ADR because the bucket scheme is a one-way door. Duplicate check: pm-ae1u introduced format_version gating (closed) — this builds on it, does not duplicate it."
+type: Task
+status: open
+priority: 3
+tags[3]: "area:storage",migration,scale
+created_at: "2026-07-06T21:24:55.788Z"
+updated_at: "2026-07-06T21:24:55.788Z"
+author: maintainer-agent
+estimated_minutes: 720
+acceptance_criteria: "Storage layout supports bucketed subdirectories per ADR pm-bl8x scheme; migration command converts existing flat layouts losslessly (history chains, files links, extensions intact; validate + health green before/after); old layout keeps working read-only until migrated; format_version gates new layout; git history stays diffable per item"
+parent: pm-9rxu
+risk: high
+confidence: medium
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-bl8x,blocked_by,"2026-07-06T21:24:55.788Z",null,null
+body: ""

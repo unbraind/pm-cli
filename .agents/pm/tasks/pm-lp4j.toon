@@ -1,0 +1,18 @@
+id: pm-lp4j
+title: Hide internal test-runs-worker from default help/contracts and route it under the test execution plumbing
+description: "All-status audit 2026-07-06/07 found the live top-level help and contracts still expose test-runs-worker as a command even though its description says it is an internal background worker command. This bloats the agent-facing surface and should not count as a canonical noun or user command in pm-n7rr. Duplicate check: searched all statuses for test-runs-worker/internal worker/help surface; only closed general help/coverage items and the broad simplification epic matched, no focused item exists."
+type: Task
+status: open
+priority: 2
+tags[4]: agent-ux,"area:cli",internal-command,simplification
+created_at: "2026-07-06T22:23:03.453Z"
+updated_at: "2026-07-06T22:23:28.813Z"
+author: codex
+estimated_minutes: 120
+acceptance_criteria: test-runs-worker is hidden from default pm --help and from default contracts summaries; an explicit internal/plumbing discovery path remains for the worker when needed by test-run orchestration; no user-facing feature is removed; contracts/completions/docs/tests are updated so the worker cannot reappear as a canonical top-level command.
+parent: pm-n7rr
+risk: low
+confidence: high
+comments[1]{created_at,author,text}:
+  "2026-07-06T22:23:28.812Z",codex,"Creation evidence: live pm --help --json lists test-runs-worker as a top-level subcommand with description 'Internal background worker command'; pm contracts --flags-only --json also includes it in the command list. pm search --status all for test-runs-worker/internal worker/help surface found no focused open item; existing hits were broad/closed help or coverage work. This item keeps the worker reachable for orchestration but removes it from the default agent-facing command budget."
+body: ""

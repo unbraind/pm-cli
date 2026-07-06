@@ -1,0 +1,24 @@
+id: pm-pvij
+title: "2026-07-06 ecosystem audit #15: WIP hygiene, GH/commit coverage verification, grammar+SDK domain completions, horizon-4 planning"
+description: ""
+type: Chore
+status: closed
+priority: 3
+tags[4]: audit,backlog,governance,pm-cli
+created_at: "2026-07-06T22:01:13.578Z"
+updated_at: "2026-07-06T22:02:29.009Z"
+author: maintainer-agent
+estimated_minutes: 180
+acceptance_criteria: All in_progress items are genuinely claimed or reset; every open GH issue and post-release commit maps to a pm item; every command family has a grammar-table owner under pm-n7rr and every SDK domain an owner under pm-usfg; long-term horizons extended where genuinely uncovered; zero duplicate items created
+parent: pm-33cw
+risk: low
+confidence: high
+resolution: completed
+expected_result: "Audit finds and fixes all tracker drift; every ecosystem surface (commands, SDK domains, GH issues, commits, long-term goals) has a well-defined pm item owner; zero duplicates"
+actual_result: "3 phantom-WIP items resolved (pm-lt6n closed verified-shipped via green 2026-07-06 nightly + GH-427 completed; pm-rjqr and pm-92if reset to open with rationale); GH coverage 26/26 open issues mapped; commit coverage complete since 2026.7.6 cut; 160 open items all fully-metadata'd, zero orphans, all 17 epics milestone-indexed; 8 new items created (pm-395t, pm-hq0r, pm-xkgq, pm-npr3, pm-x6jf, pm-rml5, pm-is1a, pm-agou, pm-ugld = 9 incl. this finding), 3 learnings recorded"
+learnings[3]{created_at,author,text}:
+  "2026-07-06T22:01:27.073Z",maintainer-agent,"CLI pm search --format json wraps results in an envelope: {query, mode, items[]} — results live under .items (NOT .results). jq '.results[]' silently yields nothing and fakes zero hits, the same failure shape as the --format json|toon trap. Always sanity-check one raw search payload before trusting empty dedupe sweeps."
+  "2026-07-06T22:01:27.516Z",maintainer-agent,"Phantom WIP recurred one audit after #14: claim release does not reset status (pm-rjqr stayed in_progress after its claim was released post-merge), and epics drift into unclaimed in_progress (pm-92if). Until pm-w8q4 ships stale-WIP detection, every audit must sweep: grep -rl \"^status: in_progress\" .agents/pm/ and require a live claim."
+  "2026-07-06T22:01:28.064Z",maintainer-agent,"Coverage-matrix method that found this audit's gaps: enumerate command families from pm --help and require each to have a consolidation owner under pm-n7rr (found: aggregate, init/config/schema/profile) and each domain an SDK-promotion owner under pm-usfg (found: package/extension lifecycle). Family-vs-owner matrices beat re-reading item lists."
+close_reason: "Audit #15 complete. Hygiene: pm-lt6n closed with shipped evidence (PR #430 + green nightly + GH-427 completed); phantom-WIP pm-rjqr/pm-92if reset to open. Coverage verified: 26/26 open GH issues mapped, all post-2026.7.6 commits itemized, 160 open items with full metadata, zero orphans, 17/17 epics indexed on pm-doxj, every validate warning owned by an open item (pm-e9zh, pm-pivf). Gap completions: pm-xkgq + pm-npr3 (grammar families), pm-x6jf (SDK package-lifecycle domain), pm-395t (SDK run() DX), pm-hq0r (GH-455 triage), pm-ugld (release status drift). Long-term: pm-rml5 (pm-github sync package), pm-is1a (federation story), pm-agou (v1.0 GA ADR) + milestone horizon-4 update. Create-only on closed items; no duplicates; not committed."
+body: "Fifteenth ecosystem audit. Scope: full status hygiene sweep (1636 items), validate warning mapping, open-backlog structure (orphans/parents/metadata), GH-issue and commit coverage since audit #14, CLI-simplification and SDK-first gap analysis against ADRs pm-pbyu/pm-muhw, very-long-term planning (federation, GA contract, tracker-sync automation)."

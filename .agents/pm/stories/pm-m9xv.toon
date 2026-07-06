@@ -1,0 +1,16 @@
+id: pm-m9xv
+title: "As a power user or agent, I can compose pm with grep/jq/xargs and shell scripts to build arbitrary queries and bulk operations on the fly"
+description: "Persona story making terminal composability (an explicitly stated product principle: pm must combine with grep/jq/etc for complex on-the-fly queries) a tracked, testable experience bar under pm-mpbb. Duplicate check 2026-07-06: searched composable/pipe/xargs/exit-codes/ndjson — only closed EPIPE polish pm-4emi and single-payload items (pm-kipd stdin JSON, pm-cfed lean JSON) matched; no story or contract item exists."
+type: Story
+status: open
+priority: 2
+tags[3]: agent-story,changelog-exclude,composability
+created_at: "2026-07-06T21:25:25.238Z"
+updated_at: "2026-07-06T21:25:25.238Z"
+author: maintainer-agent
+estimated_minutes: 60
+acceptance_criteria: "A scripted pipeline like 'pm list --format ndjson | jq/grep filter | xargs -I{} pm update {}' works for every read command without output-format surprises; all guarantees needed to write such scripts (stream discipline, exit codes, stable field names, quoting) are documented in one place and enforced by tests"
+parent: pm-mpbb
+risk: low
+confidence: high
+body: ""

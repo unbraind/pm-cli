@@ -2,11 +2,11 @@ id: pm-5566
 title: "Docstring gate: extend static-quality-gate to enforce public-API + data-contract coverage repo-wide"
 description: "Extend scripts/release/static-quality-gate.mjs: (1) module-doc coverage over packages/ too (not just src/); (2) exported-declaration coverage includes exported const/let/var; (3) NEW exported-member coverage for members of exported interfaces, object-literal type aliases, and public members of exported classes; (4) NEW conservative trivial-stub check rejecting name-only/empty docstrings; all repo-wide across src/+packages/, thresholds default 100. Add full regression coverage to tests/unit/scripts/release/static-quality-gate.spec.ts (gate script is under the 100% coverage gate). This task is the enforcement oracle that defines DONE for the sibling fill tasks."
 type: Task
-status: in_progress
+status: open
 priority: 1
 tags[4]: coverage,docs,docstrings,quality
 created_at: "2026-07-04T20:18:50.672Z"
-updated_at: "2026-07-05T03:39:37.650Z"
+updated_at: "2026-07-06T21:41:18.257Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 180

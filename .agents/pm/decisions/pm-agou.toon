@@ -1,0 +1,19 @@
+id: pm-agou
+title: "ADR: v1.0 GA stability contract — CLI grammar freeze, SDK semver surface, storage format_version policy, and scale targets (draft)"
+description: ""
+type: Decision
+status: open
+priority: 3
+tags[3]: adr,architecture,long-term
+created_at: "2026-07-06T22:00:17.924Z"
+updated_at: "2026-07-06T22:00:29.354Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: "ADR drafted and driven to accepted/rejected: enumerates GA criteria (frozen ~15-noun grammar per pm-pbyu, semver-stable SDK primitive surface per pm-muhw, storage format_version compatibility guarantees, scripting contract pm-psy1 as a tested guarantee, scale targets from pm-9rxu benchmarks) and the deprecation policy that carries pre-1.0 spellings; linked from milestone pm-doxj as horizon 4"
+parent: pm-m2u1
+risk: low
+confidence: medium
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-bl8x,related,"2026-07-06T22:00:29.339Z",null,null
+  pm-pbyu,related,"2026-07-06T22:00:29.339Z",null,null
+body: "Releases are date-based and the roadmap has three horizons (simplification+SDK-first, composability+security, scale-out), but nothing defines when pm is 1.0/GA: what surfaces are frozen, what compatibility is promised to script authors, package authors, and SDK integrators, and what scale numbers must hold. Without an explicit stability contract, the zero-spelling-removal alias layer (pm-0z7n) has no defined end state and integrators cannot rely on the SDK surface. This ADR is the capstone that turns the three initiatives' outcomes into a promised contract; it should be drafted after ADRs pm-pbyu and pm-bl8x are accepted."

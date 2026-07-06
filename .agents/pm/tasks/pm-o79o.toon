@@ -1,0 +1,18 @@
+id: pm-o79o
+title: "History and git growth policy automation: compaction cadence, gc scheduling, and archive guidance for million-event repositories"
+description: "Growth-policy child of pm-9rxu: hash-chained JSONL streams and 1M+ .toon files make the git repo itself the long-term bottleneck. Builds on existing history-compact/gc primitives (pm-o2kc closed children) — automation + policy only, no new rewrite semantics."
+type: Task
+status: open
+priority: 3
+tags[4]: "area:storage",git,history,scale
+created_at: "2026-07-06T21:24:57.176Z"
+updated_at: "2026-07-06T21:24:57.176Z"
+author: maintainer-agent
+estimated_minutes: 480
+acceptance_criteria: "Documented + tooled policy for repo growth per ADR pm-bl8x: history-compact/gc thresholds that pm health surfaces as advisories when exceeded; measured git operation cost (status/add/commit) at 1M items with recommendations applied; optional closed-item archive tier decision implemented or explicitly rejected in the ADR; replay integrity preserved (existing history-compact guarantees)"
+parent: pm-9rxu
+risk: medium
+confidence: medium
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-bl8x,blocked_by,"2026-07-06T21:24:57.176Z",null,null
+body: ""

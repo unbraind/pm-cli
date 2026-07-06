@@ -1,0 +1,18 @@
+id: pm-ugld
+title: "pm release leaves the item in_progress with no owner: offer --status open (or hint) so released work does not linger as phantom WIP"
+description: ""
+type: Issue
+status: open
+priority: 3
+tags[3]: agent-ux,"area:concurrency",dogfood
+created_at: "2026-07-06T22:02:04.911Z"
+updated_at: "2026-07-06T22:02:16.819Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: "pm release gains an ergonomic path to also reset status (flag such as --reopen/--status open, or at minimum a one-line hint that the item remains in_progress and unclaimed); pause-task alias behavior is referenced as the existing combined spelling; MCP pm_release mirrors the option; docs + linked tests; default behavior unchanged"
+parent: pm-dj98
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-w8q4,related,"2026-07-06T22:02:16.802Z",null,null
+body: "Observed in audit #15 on pm-rjqr: codex released its claim after PR #466 merged, the item silently stayed in_progress with claimed_by=none, and it surfaced as phantom WIP until a manual audit reset it. pm release only clears the claim; the status transition is a separate manual step that agents forget at end-of-session. Complements pm-w8q4 (after-the-fact detection) by preventing the drift at the moment it happens. pause-task already bundles release+open, but per ADR pm-pbyu it is sugar slated to fold into claim/release flags (pm-eq4x) — this issue is the release-side flag/hint itself."

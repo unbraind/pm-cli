@@ -1,0 +1,20 @@
+id: pm-6a1g
+title: "chore: 2026-07-06 ecosystem audit #14 — WIP status hygiene (docstring family reset) + stale in-progress detection backlog"
+description: "Full-ecosystem audit #14: verified all 1,634 items' structural integrity and reset phantom WIP."
+type: Chore
+status: closed
+priority: 3
+tags[3]: audit,governance,session
+created_at: "2026-07-06T21:41:43.344Z"
+updated_at: "2026-07-06T21:42:19.115Z"
+author: maintainer-agent
+estimated_minutes: 60
+acceptance_criteria: All active items verified parented (only root milestone pm-doxj parentless); every pm validate warning maps to exactly one open item; in_progress list contains only genuinely active work; new findings captured as dedup-checked items; changelog regenerated last
+parent: pm-doxj
+risk: low
+confidence: high
+resolution: "Audit complete: structural integrity verified (zero orphans, all validate warnings mapped, health green, roadmap index current); phantom WIP reset (9 docstring items → open); one new dedup-checked backlog item pm-w8q4."
+expected_result: Every feature/issue/idea tracked in well-defined items; honest statuses; no duplicates created.
+actual_result: "1,634 items audited; 1 status-hygiene gap found and fixed; 1 new item created; validate/health re-verified green after mutations."
+close_reason: "Audit #14 complete: WIP hygiene reset + pm-w8q4 stale-WIP detection item; all invariants verified green"
+body: "## Audit #14 scope & method (2026-07-06)\nFull pass over 1,634 items (147→148 open after new finding, 12→3 in_progress after reset, 1,463 closed, 12 canceled legit archives/probes).\n\n## Verified green\n- Orphans: zero (only root milestone pm-doxj is parentless, by design) — checked via direct .agents/pm TOON grep (unquoted 'status:' format).\n- Every validate warning maps to exactly one open item: 18 close_reason + 269 resolution → pm-e9zh; 146 missing / 134 orphaned linked files → pm-j8z6; GH-209 duplicate issue code → pm-pivf.\n- pm health green: 1,634 vector-ledger entries, 0 stale.\n- Roadmap milestone pm-doxj indexes all 13 capability epics + 3 initiatives (pm-n7rr, pm-usfg, pm-9rxu) with horizon ordering; composability set pm-m9xv/pm-646c/pm-psy1 present.\n- Head commit dc0dc252 fully covered by audit #13 (pm-lgim); no untracked code/feature work found (only open PRs are 3 dependabot bumps).\n\n## Gap found & fixed\nDocstring initiative pm-4ak1 + 8 child tasks were phantom in_progress since 07-04/05: no claim, no branch, no PR, no commits. Reverted family to open (comment on pm-4ak1); remaining in_progress is genuine (pm-rjqr landed partial work in 9c909a58 today; pm-lt6n awaits Windows nightly oracle; pm-92if living epic).\n\n## New backlog item\npm-w8q4 (Feature, under pm-dj98): stale in-progress detection — validate/health warn on unclaimed+inactive in_progress items + advisory on unclaimed status flips. Dedup-checked (stale/abandoned/claim/lease/heartbeat searches)."

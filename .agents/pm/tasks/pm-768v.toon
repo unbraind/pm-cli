@@ -2,11 +2,11 @@ id: pm-768v
 title: "Docstrings: src/core (search, schema, test, history, telemetry, governance, store, item, and remaining core modules)"
 description: "Add TSDoc to every in-scope symbol across the remaining src/core/* subtrees (all except extensions): search, schema, test, history, telemetry, governance, shared, store, item, packages, validate, checkpoint, lock, output, config, session, sentry. Baseline ~749 missing. Docstrings only. Verify via gate + typecheck."
 type: Task
-status: in_progress
+status: open
 priority: 1
 tags[4]: coverage,docs,docstrings,quality
 created_at: "2026-07-04T20:18:52.694Z"
-updated_at: "2026-07-04T20:46:29.870Z"
+updated_at: "2026-07-06T21:41:19.497Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 360

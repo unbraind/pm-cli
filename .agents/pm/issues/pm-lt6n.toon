@@ -2,18 +2,20 @@ id: pm-lt6n
 title: "GH-427: Windows Node 24 nightly fails — POSIX-only error-code assertions (EACCES/EISDIR) in restore-command and history-rewrite specs"
 description: "Nightly Validation run 28698219516 (2026-07-04, windows-latest/Node 24): 4 test failures. restore-command.spec asserts rejects.toMatchObject({code:'EACCES'}) after chmod 0o444 on the history file, but Windows Node 24 raises EPERM when opening a read-only file for append. history-rewrite.spec asserts EISDIR when writing to a directory path; Windows raises EPERM. Fix: platform-tolerant assertions (EACCES|EPERM, EISDIR|EPERM)."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[3]: ci,tests,windows
 created_at: "2026-07-04T08:11:35.792Z"
-updated_at: "2026-07-04T23:42:23.646Z"
-assignee: claude-code-agent
+updated_at: "2026-07-06T21:52:27.334Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: windows-latest Node 24 nightly is green with platform-tolerant error-code assertions; GH-427 closed.
 parent: pm-u9d0
 risk: low
 confidence: high
+resolution: fixed
+expected_result: windows-latest Node 24 nightly passes restore-command and history-rewrite specs
+actual_result: PR #430 merged 2026-07-05; GH-427 closed COMPLETED 2026-07-06; Nightly Validation 2026-07-06 run concluded success
 comments[5]{created_at,author,text}:
   "2026-07-04T11:15:27.740Z",claude-code-agent,"Evidence: focused Windows-tolerant filesystem assertion lane remains linked. Focused test command is linked on the item; local Linux suite accepts EACCES|EPERM and EISDIR|EPERM while preserving POSIX coverage. GH-427 should be confirmed by the next Windows Node 24 nightly after push."
   "2026-07-04T11:42:53.435Z",claude-code-agent,"Evidence update: Windows-tolerant filesystem assertion lane remains covered in the combined branch. Local verification passed: node scripts/run-tests.mjs test -- tests/unit/commands/restore-command.spec.ts tests/unit/core/history/history-rewrite.spec.ts; full coverage 263 files / 5337 tests / 100% statements, branches, functions, lines; pnpm typecheck; pnpm lint. GH-427 still needs confirmation from GitHub Windows Node 24 CI/nightly after push."
@@ -29,4 +31,5 @@ files[2]{path,scope,note}:
   tests/unit/core/history/history-rewrite.spec.ts,project,Windows Node 24 EPERM-compatible directory write assertion
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/restore-command.spec.ts tests/unit/core/history/history-rewrite.spec.ts,project,240
+close_reason: Fixed by PR #430 (Windows-tolerant error-code assertions + lock/claim hardening); verified by green 2026-07-06 Nightly Validation and GH-427 closed as completed.
 body: "## Context\nTracks GH-427. Nightly Validation run 28698219516 (2026-07-04, windows-latest / Node 24): 4 failures, all POSIX-only error-code assertions.\n\n- restore-command.spec: expects code EACCES after chmod 0o444 on the history file; Windows Node 24 raises EPERM opening a read-only file for append.\n- history-rewrite.spec: expects EISDIR writing to a directory path; Windows raises EPERM.\n\n## Approach\nPlatform-tolerant assertions: accept EACCES|EPERM and EISDIR|EPERM respectively (match on a set, not equality). Precedent: PR#365 Windows fixes and the 2026-07-04 GH-427 EPERM fix noted in the ecosystem audit — check whether that partial fix already covers some of the 4 and only patch the remainder. The windows-regression CI job is the oracle; nightly re-run green closes GH-427.\n\n## Definition of done\nAll 4 specs pass on windows-latest Node 24 nightly; no weakening on POSIX (still asserts the specific POSIX code there or the set matcher documents why); GH-427 closed with the green run linked."
