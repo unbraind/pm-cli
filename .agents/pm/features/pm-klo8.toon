@@ -1,0 +1,19 @@
+id: pm-klo8
+title: "Workspace-scoped audit history stream: schema/config/profile/init mutations recorded as append-only hash-chained JSONL"
+description: "Item mutations get per-item history streams, but workspace-level mutations (pm config set, pm schema add/remove-*, pm profile apply, pm init, extension enable/disable) rewrite settings.json/schema files with no audit record — a gap in the full-immutable-proof invariant."
+type: Feature
+status: open
+priority: 2
+tags[5]: "area:config","area:history","area:storage",audit-trail,pm-cli
+created_at: "2026-07-06T23:08:35.037Z"
+updated_at: "2026-07-06T23:10:04.591Z"
+author: maintainer-agent
+estimated_minutes: 300
+acceptance_criteria: "Every workspace-scope mutating command (config set/unset, schema add-type/add-field/add-status/remove-*, profile apply, init re-runs, extension/package enable/disable state changes) appends an entry to an append-only, hash-chained workspace history stream using the existing HistoryEntry format and appendLineAtomic as the only writer; entries carry op, author, ts, and JSON patches of the changed document; pm activity (and the history noun per pm-tqel) can render workspace entries; drift scan / pm validate history checks cover the workspace stream; append is race-safe with respect to the pm-bgcu singleton-file locking fix; behavior documented; unit+integration tests cover each mutating workspace command."
+parent: pm-o2kc
+risk: medium
+confidence: medium
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-bgcu,related,"2026-07-06T23:10:04.566Z",maintainer-agent,null
+  pm-e200,related,"2026-07-06T23:10:04.566Z",maintainer-agent,null
+body: "## Context\nPer-item history streams give items full immutable proof: every item mutation is an append-only, hash-chained JSONL entry, verifiable via pm history --verify and the workspace-wide drift scan, and restorable to any version (shipped: restore-by-timestamp/version pm-9lc, file recovery pm-g6qd). Workspace-level state has none of this: src/cli/commands/schema.ts and config.ts contain zero history integration — a pm schema remove-field or pm config set silently rewrites the document with no permanent record of who changed what, when, from what value.\n\n## Design sketch\n- One workspace stream (e.g. history/_workspace.jsonl) or per-domain streams (settings/schema/profile); decide in implementation — single stream keeps drift-scan integration trivial.\n- Reuse HistoryEntry (op, author, ts, patches, before/after hash chain) and verifyHistoryChain so pm history --verify semantics apply unchanged.\n- Must coordinate with pm-bgcu (lock-free read-modify-write on singleton files): the audit append and the document write should happen under the same lock so the trail cannot diverge from the state.\n- Feeds pm-e200 (mutation event stream): workspace events become emittable for free once they exist in a stream.\n- Later follow-up (not in scope here): restore settings/schema to an earlier version by replay, mirroring item restore.\n\n## Out of scope\n- Item history streams (already complete).\n- Telemetry (separate pipeline).\n- Session-local state (focus/session-state) — ephemeral by design; decide in implementation whether to include or explicitly document as unaudited."
