@@ -1,0 +1,15 @@
+id: pm-tgq6
+title: "Flaky Windows nightly: stale-cleanup lock test intermittently misses the mocked owner-write failure (GH-427)"
+description: "Nightly Validation windows-latest/Node 24 failed 2026-07-05 (run 28733397917) on core-item-lock-coverage.spec.ts 'keeps stale cleanup busy and cleans up when stale cleanup owner write fails': expected [AsyncFunction] to be null, i.e. acquireStaleCleanupGate succeeded because the vi.spyOn(fs.writeFile) interception (String(targetPath) === ownerPath) never fired. Passed on 2026-07-04 and 2026-07-06 nightlies - intermittent, Windows-only. The separate 2026-07-04 nightly failures (EPERM vs EACCES/EISDIR errno assumptions in restore-command and history-rewrite specs) are already fixed on main via stringMatching(/^(EACCES|EPERM)$/)."
+type: Issue
+status: open
+priority: 3
+tags[5]: "area:tests",ci,flaky-test,locks,windows
+created_at: "2026-07-06T08:53:25.086Z"
+updated_at: "2026-07-06T09:06:00.884Z"
+author: maintainer-agent
+estimated_minutes: 45
+acceptance_criteria: stale-cleanup owner-write test mock guards are path-normalized (no strict full-path equality); test passes 50 consecutive Windows nightly runs
+risk: low
+confidence: medium
+body: "Hypotheses to check when reproducing: (1) owner.json written through a different path spelling or a writeFileAtomic temp name so the strict equality path guard misses; (2) leftover gate directory state from a sibling test; (3) race between gate mkdir and owner write cleanup on slower Windows runners.\n\nSuggested hardening: match on path.basename/endsWith instead of strict full-path equality, or normalize both sides with path.resolve; assert gate dir is absent before starting.\n\nEvidence: GH issue #427, failed run https://github.com/unbraind/pm-cli/actions/runs/28733397917 (2026-07-05), green runs 2026-07-04 (this test) and 2026-07-06 (all)."

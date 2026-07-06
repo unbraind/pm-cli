@@ -10,7 +10,7 @@ import { toNonEmptyString } from "../shared/primitives.js";
 const DISABLE_AUTO_DEFAULTS_ENV = "PM_DISABLE_OLLAMA_AUTO_DEFAULTS";
 const OLLAMA_MODEL_ENV = "PM_OLLAMA_MODEL";
 const DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434";
-const DEFAULT_OLLAMA_MODEL = "qwen3-embedding:0.6b";
+const RECOMMENDED_OLLAMA_EMBEDDING_MODEL = "qwen3-embedding:0.6b";
 const DEFAULT_LANCEDB_PATH = ".agents/pm/search/lancedb/";
 const OLLAMA_VERSION_TIMEOUT_MS = 1_500;
 const OLLAMA_LIST_TIMEOUT_MS = 2_500;
@@ -23,6 +23,8 @@ const EMBEDDING_MODEL_PATTERN = /embed|embedding/i;
 export interface SemanticRuntimeDefaultsResolution {
   settings: PmSettings;
   auto_ollama_defaults_applied: boolean;
+  auto_ollama_defaults_skipped_reason?: "no_installed_embedding_model";
+  auto_ollama_defaults_remediation?: string;
 }
 
 const toOptionalNonEmptyString = toNonEmptyString;
@@ -112,7 +114,7 @@ function parseOllamaModelList(output: string): string | null {
   return embeddingModel ?? null;
 }
 
-function resolveAutoOllamaModel(settings: PmSettings): string {
+function resolveAutoOllamaModel(settings: PmSettings): string | null {
   const settingsModel = toOptionalNonEmptyString(settings.providers?.ollama?.model);
   if (settingsModel) {
     return settingsModel;
@@ -131,7 +133,7 @@ function resolveAutoOllamaModel(settings: PmSettings): string {
       return listedModel;
     }
   }
-  return DEFAULT_OLLAMA_MODEL;
+  return null;
 }
 
 interface SemanticDefaultNeeds {
@@ -217,6 +219,14 @@ export function resolveSettingsWithSemanticRuntimeDefaults(settings: PmSettings)
 
   const nextSettings = structuredClone(settings);
   const resolvedModel = resolveAutoOllamaModel(nextSettings);
+  if (!resolvedModel) {
+    return {
+      ...unchanged,
+      auto_ollama_defaults_skipped_reason: "no_installed_embedding_model",
+      auto_ollama_defaults_remediation:
+        `Run ollama pull ${RECOMMENDED_OLLAMA_EMBEDDING_MODEL} or configure search.provider/providers.ollama.model/search.embedding_model explicitly.`,
+    };
+  }
   // `readSettings` always normalizes these nested objects, but this function is
   // exported and runs on the search hot path with caller-supplied settings, so a
   // partial object (e.g. providers/vector_store set but no `search` block) must

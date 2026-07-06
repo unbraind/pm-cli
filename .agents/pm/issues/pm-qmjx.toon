@@ -1,0 +1,16 @@
+id: pm-qmjx
+title: "GH-441: type-aware create help mislabels applicable flags as required (ignores create-mode)"
+description: "Dogfood GH-441: create help lists 19 type-applicable flags as 'required' though a 3-flag create succeeds; help must reflect the active create-mode policy. Duplicate check: searched create help required/type-aware policy — no existing item."
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,"area:cli",bug,gh-issue
+created_at: "2026-07-06T08:03:04.731Z"
+updated_at: "2026-07-06T08:03:04.731Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: pm create --help --type T shows genuinely mandatory fields for the active create-mode with applicable fields labeled separately; spec covers default vs strict rendering
+parent: pm-mpbb
+risk: low
+confidence: high
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/441\n\n## Problem\n`pm create --help --type Task` prints a \"Type-aware option policies\" block listing 19 flags as \"required\", but a 3-flag create succeeds in default mode. The list is actually type-APPLICABLE flags and ignores the active --create-mode. Agents over-provision creates or judge create unusable.\n\n## Proposed fix\nHelp must reflect the real policy: genuinely mandatory fields for the ACTIVE create-mode (default -> --title/--type), with the full set labeled \"applicable\" (or \"required in strict mode\"). Strict mode shows the strict set.\n\n## Definition of done\nType-aware help output matches runtime enforcement per create-mode; spec covers default vs strict rendering; contracts/help snapshots updated."

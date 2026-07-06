@@ -1,0 +1,31 @@
+id: pm-aems
+title: "GH-455: pm health auto-selects an uninstalled Ollama embedding model then fails vector refresh"
+description: "Dogfood GH-455: health auto-detected qwen3-embedding:0.6b without checking installation and the vector refresh failed 404 with a noisy warning. Duplicate check: searched embedding auto-detect — pm-wt0g/pm-xutw (closed) cover migration/reindex, not detection; no open overlap."
+type: Issue
+status: closed
+priority: 2
+tags[4]: bug,gh-issue,search,vectorization
+created_at: "2026-07-06T08:03:11.720Z"
+updated_at: "2026-07-06T09:27:07.946Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: Embedding auto-detection only selects installed models; unavailable-model path skips refresh with exact pull/config remediation; mocked-provider spec covers the 404 path
+parent: pm-ydp6
+risk: low
+confidence: high
+resolution: Ollama semantic auto-defaults now apply only when a configured/env model or installed embedding model is available; health exposes a skipped reason and remediation when none is found.
+expected_result: Embedding auto-detection only selects installed models and unavailable-model health paths skip refresh with exact pull/config remediation.
+actual_result: "semantic-defaults and health regression tests passed; health details include no_installed_embedding_model and ollama pull qwen3-embedding:0.6b remediation; full coverage passed 100/100/100/100."
+comments[2]{created_at,author,text}:
+  "2026-07-06T09:13:01.693Z",codex-agent,"Implementation start: live duplicate-safe search found pm-aems as canonical GH-455 item related to the current health/vectorization lane. Root cause confirmed in semantic-defaults: auto-discovery falls back to qwen3-embedding when ollama list has no installed embedding model, which can make health refresh attempt a model that is not installed."
+  "2026-07-06T09:26:35.423Z",codex-agent,"Evidence: removed implicit fallback to qwen3-embedding when ollama list does not report an installed embedding model; health vectorization details now expose auto_ollama_defaults_skipped_reason=no_installed_embedding_model and remediation 'ollama pull qwen3-embedding:0.6b' or explicit config. Linked test passed; full coverage passed 264 files / 5436 tests / 100% statements branches functions lines; security scan and audit clean."
+files[3]{path,scope,note}:
+  src/cli/commands/health.ts,project,Surface skipped Ollama auto-default reason and exact remediation in vectorization health details
+  src/core/search/semantic-defaults.ts,project,Require installed embedding model discovery before applying Ollama auto-defaults
+  tests/unit/core/search/semantic-defaults.spec.ts,project,Regression coverage for missing/non-embedding/header-only ollama list outputs
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/core/search/semantic-defaults.spec.ts tests/unit/commands/health-command.spec.ts,project,180,Ollama auto-default missing-model and health detail regression coverage
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mr90dkm9-qssxn2,test,passed,"2026-07-06T09:18:14.257Z","2026-07-06T09:19:22.018Z","2026-07-06T09:19:22.018Z",1,0,0
+close_reason: Fixed Ollama auto-default model selection so health does not pick unavailable embedding models
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/455\n\n## Problem\n`pm health` auto-detected Ollama embeddings and selected qwen3-embedding:0.6b without checking it is installed, then attempted a vector refresh that failed (Embedding request failed 404). Health exits ok but emits a noisy, hard-to-action refresh warning.\n\n## Proposed fix\nAuto-detection must only select an INSTALLED embedding model (query ollama tags), otherwise skip vector refresh with a clear remediation (ollama pull <model> / pm config set search keys); health output states which model was chosen and why.\n\n## Definition of done\nHealth never attempts refresh with an unavailable model; remediation hint names the exact pull/config command; spec covers missing-model path with mocked provider."

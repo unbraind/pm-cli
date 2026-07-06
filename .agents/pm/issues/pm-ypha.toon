@@ -1,0 +1,16 @@
+id: pm-ypha
+title: "GH-453: plan materialize --json response omits title/type/parent on materialized entries"
+description: "Dogfood GH-453: materialize response projection returns only id per created item though disk data is complete. Duplicate check: searched materialize projection — no existing item."
+type: Issue
+status: open
+priority: 3
+tags[4]: agent-ux,bug,gh-issue,plan
+created_at: "2026-07-06T08:03:10.608Z"
+updated_at: "2026-07-06T08:03:10.608Z"
+author: maintainer-agent
+estimated_minutes: 45
+acceptance_criteria: "materialize --json materialized[] entries include id/title/type/parent/tags; spec updated; no extra get round-trip needed for confirmation"
+parent: pm-mpbb
+risk: low
+confidence: high
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/453\n\n## Problem\n`pm plan materialize --json` returns materialized[] entries with only `id`; title/type/parent are undefined in the response projection (data on disk is correct). Callers need a pm get round trip per created item to confirm.\n\n## Proposed fix\nInclude { id, title, type, parent, tags } per materialized entry — same compact projection list rows use.\n\n## Definition of done\nmaterialize --json response carries the confirmation fields; spec updated; no extra reads needed to verify materialization."

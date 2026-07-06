@@ -1,0 +1,18 @@
+id: pm-b9ov
+title: "GH-454: schema add-field accepts reserved built-in names silently; collision error names no partner"
+description: "Dogfood GH-454: registering a reserved built-in name (customer_impact) via add-field succeeds silently, then extension collisions produce a partner-less misleading error; in the dogfood the combination broke all Task creates. CLI/config-side twin of pm-ghf1 (SDK lint/preflight side). Duplicate check: pm-ghf1 covers only the SDK surface; no other overlap."
+type: Issue
+status: open
+priority: 2
+tags[3]: bug,gh-issue,schema
+created_at: "2026-07-06T08:03:11.164Z"
+updated_at: "2026-07-06T08:03:11.164Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: add-field fails fast on reserved/built-in names with the reserved list; runtime collision errors name both claimants with rename hint; shared constant with runtime+SDK pinned by drift spec
+parent: pm-8jdc
+risk: medium
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ghf1,related,"2026-07-06T08:03:11.164Z",null,null
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/454\n\n## Problem\n(1) `pm schema add-field` accepts reserved built-in field names (e.g. customer_impact — an existing create flag) with no warning; (2) when an extension later registers the same name, the runtime error \"collides with reserved item metadata\" names neither the reserved-ness nor the collision partner; in the GH-454 dogfood the config-field + extension-field combination broke ALL pm create Task calls.\n\n## Proposed fix\nadd-field validates against the reserved/built-in name list at registration time (error, or --force with warning); collision errors name both claimants (config field vs extension field vs reserved metadata) with a rename hint. Share the same RESERVED_ITEM_FIELD_NAMES source pm-ghf1 exports to the SDK — this is the CLI/config-side twin of that SDK-side item.\n\n## Definition of done\nadd-field on a reserved name fails fast with the reserved list; collision error names both parties; shared constant with runtime + SDK (drift spec); repro from GH-454 covered by spec."

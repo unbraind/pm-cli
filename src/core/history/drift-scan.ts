@@ -3,7 +3,8 @@
  *
  * Implements append-only history and replay behavior for Drift Scan.
  */
-import fs from "fs/promises";
+import type { Stats } from "node:fs";
+import fs from "node:fs/promises";
 import { createHash } from "node:crypto";
 import path from "node:path";
 import { getHistoryPath } from "../store/paths.js";
@@ -133,7 +134,7 @@ async function verifyHistoryStream(historyPath: string): Promise<StreamVerificat
   };
 }
 
-function cacheMetadataMatches(cached: DriftCacheEntry | undefined, stat: Awaited<ReturnType<typeof fs.stat>>): boolean {
+function cacheMetadataMatches(cached: DriftCacheEntry | undefined, stat: Stats): boolean {
   return cached !== undefined && cached.mtime_ms === stat.mtimeMs && cached.ctime_ms === stat.ctimeMs && cached.size === stat.size;
 }
 
@@ -158,7 +159,7 @@ async function loadFreshStreamVerification(
 async function resolveStreamVerification(params: {
   itemId: string;
   historyPath: string;
-  stat: Awaited<ReturnType<typeof fs.stat>>;
+  stat: Stats;
   cached: DriftCacheEntry | undefined;
   verifyCacheHitByContent: boolean;
   accumulator: DriftScanAccumulator;
@@ -234,7 +235,7 @@ export async function scanHistoryDrift(
   for (const item of items) {
     const historyPath = getHistoryPath(pmRoot, item.id);
 
-    let stat: Awaited<ReturnType<typeof fs.stat>>;
+    let stat: Stats;
     try {
       stat = await fs.stat(historyPath);
     } catch (error: unknown) {

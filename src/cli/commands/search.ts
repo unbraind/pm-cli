@@ -2631,7 +2631,7 @@ async function resolveSearchRuntimeContext(
   );
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const providerResolution = resolveEmbeddingProviders(settings);
-  const vectorResolution = resolveVectorStores(settings);
+  const vectorResolution = resolveVectorStores(settings, pmRoot);
   const extensionSearchProvider = resolveExtensionSearchProvider(settings);
   const extensionVectorAdapter = resolveExtensionVectorAdapter(settings);
   const semanticWeightOverride = parseSemanticWeightOverride(prepared.options.semanticWeight);

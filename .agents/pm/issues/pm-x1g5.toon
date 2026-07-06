@@ -1,0 +1,16 @@
+id: pm-x1g5
+title: "GH-446: pm get omits schedule facet (events/start_at/end_at/location) for Meeting/Event/Reminder"
+description: "Dogfood GH-446: the single-item read primitive hides the defining fields of calendar types. Duplicate check: searched get schedule meeting event — pm-uzmf (closed calendar ergonomics) did not cover get projection; no open overlap."
+type: Issue
+status: open
+priority: 2
+tags[4]: "area:cli",bug,calendar,gh-issue
+created_at: "2026-07-06T08:03:07.959Z"
+updated_at: "2026-07-06T08:03:07.959Z"
+author: maintainer-agent
+estimated_minutes: 60
+acceptance_criteria: pm get renders the schedule facet for scheduled types in TOON and JSON at standard depth; --fields can project it; spec + COMMANDS.md updated
+parent: pm-mpbb
+risk: low
+confidence: high
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/446\n\n## Problem\n`pm get` omits the schedule facet (events/start_at/end_at/location) for Meeting/Event/Reminder items — the single-item read primitive cannot show the defining fields of calendar types; agents must fall back to calendar/agenda commands.\n\n## Proposed fix\nInclude the schedule facet in pm get output (standard depth and above; respect --fields), matching where list/agenda expose it.\n\n## Definition of done\npm get shows events/start_at/end_at/location for scheduled types in TOON and JSON; spec added; docs COMMANDS.md get section updated."

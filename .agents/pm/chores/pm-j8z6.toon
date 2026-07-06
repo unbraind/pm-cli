@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: audit,context-management,linked-files
 created_at: "2026-06-25T05:01:04.319Z"
-updated_at: "2026-07-04T19:46:30.148Z"
+updated_at: "2026-07-06T08:22:48.233Z"
 author: codex-ecosystem-auditor
 estimated_minutes: 180
 acceptance_criteria: "Historical linked-file ownership debt is reconciled in a dedicated tracker-only migration without polluting a product release changelog; pm validate --check-files residual rows are grouped by deleted, moved, and unowned current paths with owner candidates; no broad historical PM mutations are bundled into unrelated code PRs."
@@ -19,6 +19,8 @@ comments[5]{created_at,author,text}:
   "2026-06-25T05:10:25.858Z",codex-ecosystem-auditor,"Evidence: corrected linked validation test uses pm_context_mode=tracker; pm test pm-j8z6 --run --only-last --progress passed. Final file validator status is ok with zero missing, moved, deleted, or orphaned paths."
   "2026-06-25T05:10:47.642Z",codex-ecosystem-auditor,"Clarification: the linked pm test used tracker context and proved command execution, but the authoritative file-validation evidence is the local real-workspace command: pm validate --check-files --verbose-file-lists --json -> files status ok, missing/moved/deleted/orphaned counts all 0."
   "2026-06-25T05:20:49.117Z",codex-ecosystem-auditor,"Audit correction: broad linked-file reconciliation was tested but intentionally not kept in this release PR because it touched hundreds of historical closed items and made the package-owned changelog mis-bucket old work as current. Current baseline after pruning: pm validate --check-files reports 146 missing linked paths and 162 orphaned source/test paths; this item remains open to handle that as a dedicated tracker migration."
+notes[1]{created_at,author,text}:
+  "2026-07-06T08:22:48.232Z",maintainer-agent,"2026-07-06 audit #8 recount — pm validate now reports validate_files_missing_linked_paths 146 and validate_files_orphaned_paths 131 (workspace-wide, 2545 linked commands scanned). Counts unchanged in character since filing; still the single tracked owner of both warning classes."
 tests[1]{command,scope,timeout_seconds,pm_context_mode}:
   pm validate --check-files --verbose-file-lists --json,project,120,tracker
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:

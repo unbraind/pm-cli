@@ -5,7 +5,7 @@
  */
 import type { PmSettings } from "../../types/index.js";
 import { mkdir, readFile, stat, unlink } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import {
   executeSearchJsonRequest,
   normalizeSearchHttpTimeoutMs,
@@ -278,7 +278,35 @@ function resolveQdrantStore(settings: VectorSettingsInput): QdrantVectorStoreCon
   };
 }
 
-function resolveLanceDbStore(settings: VectorSettingsInput): LanceDbVectorStoreConfig | null {
+/**
+ * Derive the workspace root a workspace-relative store path is anchored to.
+ * A conventional pm root (`<workspace>/.agents/pm`) maps to `<workspace>`;
+ * an explicit bare root (`--path <dir>`) anchors to the root itself.
+ */
+function resolveWorkspaceRootFromPmRoot(pmRoot: string): string {
+  const resolved = resolve(pmRoot);
+  const parent = dirname(resolved);
+  if (basename(resolved) === "pm" && basename(parent) === ".agents") {
+    return dirname(parent);
+  }
+  return resolved;
+}
+
+/**
+ * Anchor a relative lancedb path (settings store workspace-relative paths such
+ * as the `.agents/pm/search/lancedb/` default) to the pm workspace root instead
+ * of the process cwd. Without this, any pm invocation from a workspace
+ * subdirectory (including detached background refresh children inheriting the
+ * parent cwd) silently creates a second vector store under that subdirectory.
+ */
+function anchorLanceDbStorePath(storePath: string, pmRoot: string | undefined): string {
+  if (!pmRoot || isAbsolute(storePath)) {
+    return storePath;
+  }
+  return resolve(resolveWorkspaceRootFromPmRoot(pmRoot), storePath);
+}
+
+function resolveLanceDbStore(settings: VectorSettingsInput, pmRoot?: string): LanceDbVectorStoreConfig | null {
   const lancedbPath = toNonEmptyString(settings.vector_store?.lancedb?.path);
   if (!lancedbPath) {
     return null;
@@ -286,7 +314,7 @@ function resolveLanceDbStore(settings: VectorSettingsInput): LanceDbVectorStoreC
   const collectionName = toNonEmptyString(settings.vector_store?.collection_name);
   return {
     name: "lancedb",
-    path: lancedbPath,
+    path: anchorLanceDbStorePath(lancedbPath, pmRoot),
     ...(collectionName && collectionName !== DEFAULT_COLLECTION ? { collection_name: collectionName } : {}),
   };
 }
@@ -577,9 +605,9 @@ function cosineSimilarity(left: number[], right: number[]): number {
 /**
  * Implements resolve vector stores for the public runtime surface of this module.
  */
-export function resolveVectorStores(settings: PmSettings | VectorSettingsInput): VectorStoreResolution {
+export function resolveVectorStores(settings: PmSettings | VectorSettingsInput, pmRoot?: string): VectorStoreResolution {
   const qdrant = resolveQdrantStore(settings);
-  const lancedb = resolveLanceDbStore(settings);
+  const lancedb = resolveLanceDbStore(settings, pmRoot);
   const available = [qdrant, lancedb].filter((entry): entry is VectorStoreConfig => entry !== null);
   // Honor `settings.vector_store.adapter` when set: if both built-in stores
   // are configured, the preferred adapter wins; otherwise fall back to the

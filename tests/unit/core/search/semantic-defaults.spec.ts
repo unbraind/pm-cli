@@ -119,9 +119,11 @@ describe("resolveSettingsWithSemanticRuntimeDefaults", () => {
 
     const resolved = resolveSettingsWithSemanticRuntimeDefaults(settings);
 
-    expect(resolved.auto_ollama_defaults_applied).toBe(true);
-    expect(resolved.settings.providers.ollama.model).toBe("qwen3-embedding:0.6b");
-    expect(resolved.settings.search.embedding_model).toBe("qwen3-embedding:0.6b");
+    expect(resolved.auto_ollama_defaults_applied).toBe(false);
+    expect(resolved.auto_ollama_defaults_skipped_reason).toBe("no_installed_embedding_model");
+    expect(resolved.auto_ollama_defaults_remediation).toContain("ollama pull qwen3-embedding:0.6b");
+    expect(resolved.settings.providers.ollama.model).toBe("");
+    expect(resolved.settings.search.embedding_model).toBe("");
   });
 
   it("uses PM_OLLAMA_MODEL override when auto defaults are applied", () => {
@@ -283,7 +285,7 @@ describe("resolveSettingsWithSemanticRuntimeDefaults", () => {
     expect(spawnSyncMock).toHaveBeenCalledTimes(1);
   });
 
-  it("falls back to the default model when `ollama list` yields no models", () => {
+  it("does not auto-apply when `ollama list` yields no installed embedding models", () => {
     const settings = makeSettings();
     spawnSyncMock.mockImplementation((_command: string, args: string[]) => {
       if (args[0] === "--version") {
@@ -297,8 +299,11 @@ describe("resolveSettingsWithSemanticRuntimeDefaults", () => {
     });
 
     const resolved = resolveSettingsWithSemanticRuntimeDefaults(settings);
-    expect(resolved.auto_ollama_defaults_applied).toBe(true);
-    expect(resolved.settings.providers.ollama.model).toBe("qwen3-embedding:0.6b");
+    expect(resolved.auto_ollama_defaults_applied).toBe(false);
+    expect(resolved.auto_ollama_defaults_skipped_reason).toBe("no_installed_embedding_model");
+    expect(resolved.auto_ollama_defaults_remediation).toContain("ollama pull qwen3-embedding:0.6b");
+    expect(resolved.settings.providers.ollama.model).toBe("");
+    expect(resolved.settings.search.embedding_model).toBe("");
   });
 
   it("uses the first listed embedding model when no qwen embedding model exists", () => {
@@ -323,7 +328,7 @@ describe("resolveSettingsWithSemanticRuntimeDefaults", () => {
     expect(resolved.settings.search.embedding_model).toBe("nomic-embed-text:latest");
   });
 
-  it("falls back cleanly when `ollama list` succeeds with non-string stdout", () => {
+  it("does not auto-apply when `ollama list` succeeds with non-string stdout", () => {
     const settings = makeSettings();
     spawnSyncMock.mockImplementation((_command: string, args: string[]) => {
       if (args[0] === "--version") {
@@ -336,11 +341,12 @@ describe("resolveSettingsWithSemanticRuntimeDefaults", () => {
     });
 
     const resolved = resolveSettingsWithSemanticRuntimeDefaults(settings);
-    expect(resolved.auto_ollama_defaults_applied).toBe(true);
-    expect(resolved.settings.providers.ollama.model).toBe("qwen3-embedding:0.6b");
+    expect(resolved.auto_ollama_defaults_applied).toBe(false);
+    expect(resolved.settings.providers.ollama.model).toBe("");
+    expect(resolved.settings.search.embedding_model).toBe("");
   });
 
-  it("falls back to default model when `ollama list` returns an execution error", () => {
+  it("does not auto-apply when `ollama list` returns an execution error", () => {
     const settings = makeSettings();
     spawnSyncMock.mockImplementation((_command: string, args: string[]) => {
       if (args[0] === "--version") {
@@ -353,8 +359,9 @@ describe("resolveSettingsWithSemanticRuntimeDefaults", () => {
     });
 
     const resolved = resolveSettingsWithSemanticRuntimeDefaults(settings);
-    expect(resolved.auto_ollama_defaults_applied).toBe(true);
-    expect(resolved.settings.providers.ollama.model).toBe("qwen3-embedding:0.6b");
+    expect(resolved.auto_ollama_defaults_applied).toBe(false);
+    expect(resolved.settings.providers.ollama.model).toBe("");
+    expect(resolved.settings.search.embedding_model).toBe("");
   });
 
   it("fills only missing base_url when model and embedding model already exist", () => {
@@ -382,7 +389,7 @@ describe("resolveSettingsWithSemanticRuntimeDefaults", () => {
     expect(spawnSyncMock).not.toHaveBeenCalled();
   });
 
-  it("falls back to the default model when `ollama list` shows only the header row", () => {
+  it("does not auto-apply when `ollama list` shows only the header row", () => {
     const settings = makeSettings();
     spawnSyncMock.mockImplementation((_command: string, args: string[]) => {
       if (args[0] === "--version") {
@@ -396,8 +403,9 @@ describe("resolveSettingsWithSemanticRuntimeDefaults", () => {
     });
 
     const resolved = resolveSettingsWithSemanticRuntimeDefaults(settings);
-    expect(resolved.auto_ollama_defaults_applied).toBe(true);
-    expect(resolved.settings.providers.ollama.model).toBe("qwen3-embedding:0.6b");
+    expect(resolved.auto_ollama_defaults_applied).toBe(false);
+    expect(resolved.settings.providers.ollama.model).toBe("");
+    expect(resolved.settings.search.embedding_model).toBe("");
   });
 
   afterEach(() => {

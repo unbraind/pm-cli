@@ -1,0 +1,16 @@
+id: pm-qd2h
+title: "GH-452: plan materialize dead-ends on types with required-on-create custom fields"
+description: "Dogfood GH-452: a --required-on-create custom field on a type breaks pm plan materialize for every step (missing_required_option, no passthrough) — the plan->materialize->task loop dead-ends under governed schemas. Duplicate check: searched materialize required field — no existing item."
+type: Issue
+status: open
+priority: 1
+tags[4]: bug,gh-issue,plan,schema
+created_at: "2026-07-06T08:03:10.077Z"
+updated_at: "2026-07-06T08:03:10.077Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: plan materialize can supply required custom-field values (documented passthrough) and succeeds for governed types; spec covers required-field x materialize interplay; docs updated
+parent: pm-8jdc
+risk: medium
+confidence: high
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/452\n\n## Problem\n`pm plan materialize --materialize-type <T>` dead-ends when type T has a --required-on-create custom field: materialize has no way to pass custom-field values, fails missing_required_option per step. Any governed schema (required acceptance_owner etc.) breaks the plan -> materialize -> task loop; workaround defeats typed materialization.\n\n## Proposed fix\nLet materialize supply custom-field values (--field key=value per step or plan-level defaults), and/or let required-on-create policies exempt system-driven creates with an explicit policy knob. Prefer explicit --field passthrough (keeps governance intact).\n\n## Definition of done\nMaterialize succeeds for types with required-on-create custom fields via documented passthrough; spec covers required-field + materialize interplay; docs plan section updated."

@@ -1,0 +1,18 @@
+id: pm-cfed
+title: "GH-435: lean JSON output mode omitting null/empty fields (~50% token cut for --json)"
+description: "Dogfood GH-435: --json is ~50% larger than TOON because it serializes all-null filters echoes and empty containers; add a lean JSON mode. Duplicate check: searched lean json/omit null/compact output — only MCP compact defaults (closed 2026-05-20) and mutation compactness (GH-437 item) matched; no open overlap."
+type: Feature
+status: open
+priority: 2
+tags[4]: agent-ux,"area:cli",gh-issue,token-efficiency
+created_at: "2026-07-06T08:03:03.161Z"
+updated_at: "2026-07-06T08:03:45.513Z"
+author: maintainer-agent
+estimated_minutes: 180
+acceptance_criteria: Lean JSON mode ships on list/get/context/search; null/empty omission rules pinned by spec; >=40% measured size cut on list+context in this workspace; docs+contracts updated
+parent: pm-mpbb
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-nilh,related,"2026-07-06T08:03:45.495Z",null,null
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/435\n\n## Problem\n`--json` output serializes every field including nulls and empty containers: `pm list --json` always emits a 23-key all-null `filters` echo (+ empty `runtime_filters`); `pm context --json` echoes `order/deadline/assignee/parent: null` per item. Measured: list 2552 B (TOON) vs 3773 B JSON (+48%); context 4582 vs 7034 (+53%). AGENTS.md already warns agents off `--json` for loops — the structured format is too expensive for the agents that need it.\n\n## Proposed fix\nLean JSON mode (`--json --lean`, `PM_JSON_LEAN=1`, or config key) that omits null values, empty arrays/objects, and collapses `filters` to only keys actually set (TOON parity). Verbose form stays as explicit opt-in.\n\n## Definition of done\nLean mode on list/get/context/search JSON paths; measured >=40% size cut on list+context in a tag-heavy tracker; contracts + docs updated; spec pins the null-omission rules."

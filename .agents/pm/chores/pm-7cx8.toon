@@ -1,0 +1,16 @@
+id: pm-7cx8
+title: "Triage: close stale dogfood reports GH-436 (pm next/focus) and GH-440 (context --fields) with shipped evidence"
+description: "Audit #7 verified pm next, pm focus, and pm context --fields all work on 2026.7.5, so GH-436/GH-440 report already-shipped features. Duplicate check: no item references these issue numbers (storage grep 2026-07-06)."
+type: Chore
+status: open
+priority: 3
+tags[3]: gh-issue,tracker-governance,triage
+created_at: "2026-07-06T08:03:13.359Z"
+updated_at: "2026-07-06T08:03:13.359Z"
+author: maintainer-agent
+estimated_minutes: 15
+acceptance_criteria: GH-436 and GH-440 closed on GitHub with comments citing PR#357/PR#257/PR#297 and live verification on 2026.7.5; focus->default-parent parity spot-checked first
+parent: pm-33cw
+risk: low
+confidence: high
+body: "## Context\n2026-07-06 audit #7 verified two open dogfood GH issues against pm 2026.7.5 in this workspace and both report already-shipped features:\n- GH-436 \"Port the MCP-only pm next and pm focus tools to the CLI\" — `pm next` (PR#357, src/core/item/actionability.ts) and `pm focus` (PR#257) are first-class CLI commands and work live.\n- GH-440 \"Add --fields projection to pm context\" — `pm context --fields id,title` works live (shipped PR#297).\n\n## Action\nClose both GH issues with a comment citing the shipping PRs and the verified version (2026.7.5); if the reporter hit an older global install, note the upgrade path. No code change needed unless re-verification finds an edge (e.g. focus-as-default-parent parity claimed by GH-436 — spot-check `pm create` honors focused item as default parent before closing).\n\n## Definition of done\nGH-436 + GH-440 closed with evidence comments; focus->default-parent parity spot-checked; this chore closed with resolution fields."
