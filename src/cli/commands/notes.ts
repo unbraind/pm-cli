@@ -39,7 +39,9 @@ export async function runNotes(id: string, options: NotesCommandOptions, global:
 
   return runAnnotationCommand<"notes", LogNote>(id, options, global, {
     // addInput is defined whenever options.add is defined (see resolveValue), so the cast is safe.
-    input: options.add === undefined ? { mode: "list" } : { mode: "add", value: addInput as string, emptyFlag: "--add" },
+    input: options.add === undefined
+      ? { mode: "list" }
+      : { mode: "add", value: addInput as string, rawValue: options.add, emptyFlag: "--add" },
     collectionKey: "notes",
     op: "note_add",
     parseText: (raw) => parseAnnotationTextInput(raw),

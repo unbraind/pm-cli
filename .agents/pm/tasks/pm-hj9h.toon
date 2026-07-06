@@ -1,0 +1,39 @@
+id: pm-hj9h
+title: "pm install should accept multiple package targets (help already advertises [targets...])"
+description: "2026-07-06 audit #12 sandbox: pm install pm-a pm-b errors 'Install accepts one package source at a time' although help/usage shows install [options] [targets...]. Either loop installs over each target sequentially (preferred agent UX, saves N-1 process spawns) or fix the advertised signature. Wildcard '*' already batch-installs bundled packages, so batch semantics exist."
+type: Task
+status: closed
+priority: 3
+tags[3]: agent-ux,audit-followup,extensions
+created_at: "2026-07-06T14:06:03.255Z"
+updated_at: "2026-07-06T20:35:44.919Z"
+author: maintainer-agent
+estimated_minutes: 60
+acceptance_criteria: "pm install a b c installs all three (per-target result rows, partial-failure reporting) or usage/help no longer advertises variadic targets; spec covers multi-target path."
+parent: pm-ugqx
+risk: low
+confidence: high
+resolution: fixed
+expected_result: pm install accepts multiple explicit targets and reports per-target success or failure without losing wildcard install behavior.
+actual_result: "Multi-target install now runs targets sequentially, emits aggregate JSON rows with installed/failed counts, preserves wildcard collapse, and sets a failure exit code when any target fails."
+comments[10]{created_at,author,text}:
+  "2026-07-06T16:12:55.019Z",codex-cli-agent,"Evidence: implemented sequential multi-target package install aggregation with per-target rows, warning de-duplication, and partial-failure exit code handling. Verified focused specs, full coverage 100/100/100/100, typecheck, lint, audit, and installed-tarball temp dogfood."
+  "2026-07-06T16:24:56.459Z",codex-cli-agent,"Evidence update: release gate found the pruned ESLint suppression baseline needed its static-quality budget lowered; updated MAX_ESLINT_SUPPRESSIONS 108 -> 105 and verified release-automation-contract spec passes."
+  "2026-07-06T16:41:45.520Z",codex-cli-agent,"Review response: accepted Greptile P2 on multi-target install success accounting. Changed targetOk to require result.ok === true so omitted ok is counted as failure, matching aggregate failure detection. Verification: register-commands focused suite and pnpm typecheck pass."
+  "2026-07-06T18:33:23.326Z",codex-cli-agent,"Review response: accepted Sourcery/Gemini feedback on aggregate install robustness. Multi-target install now preserves the first specific failure exit code instead of always using generic failure, and the result path tolerates missing warning arrays without unsafe spreading. Verification: node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/extensions/extension-command.spec.ts passed (197 tests); pnpm typecheck passed."
+  "2026-07-06T18:53:19.564Z",codex-cli-agent,"Review response: accepted Greptile P2 on aggregate install exit-code precedence. A soft ok:false row still contributes a generic failure fallback, but a later specific PmCliError exit code can now replace that generic fallback so exit-code-only consumers get the more actionable code. Verification: focused register/extension tests passed (197 tests); pnpm typecheck passed."
+  "2026-07-06T19:36:47.441Z",codex-cli-agent,"Evidence update: addressed review feedback for multi-target package install. serializeExtensionInstallError now preserves full PmCliError context via flat object spread, and multi-target install rejects --gh/--github before dispatch with code multi_target_github_install_ambiguous. Focused register test passed; full coverage passed at 100/100/100/100 across 5446 tests; isolated temp dogfood verified both --github and --gh guards."
+  "2026-07-06T20:12:36.608Z",codex-cli-agent,"Review response: accepted committed-head Greptile P2 on soft-fail install rows. Multi-target install rows for runExtension results with ok:false now include a minimal error payload with message, exit_code, and code=extension_install_soft_failed, so agent consumers do not receive a silent {target, ok:false} shape. The static-import Greptile note was not applied because repo policy for this task forbids inline/dynamic imports. Verification: focused register/extension tests passed (198 tests), pnpm typecheck passed, and full coverage passed at 100/100/100/100 across 5446 tests."
+  "2026-07-06T20:21:20.125Z",codex-cli-agent,"Review evidence: Greptile review d87bab0e-c4a1-480e-b838-de28b506359e was run after local amend but before pushing the branch. It repeated the soft-fail diagnostics finding, while local committed head 49e9ff84 already adds extension_install_soft_failed rows and focused tests cover the shape. The static-import startup-cost finding remains intentionally rejected for this lane because the repo-wide code-quality rule forbids inline/dynamic imports; rerun Greptile after pushing the amended branch so remote review sees the current head."
+  "2026-07-06T20:29:42.629Z",codex-cli-agent,"Evidence update: after pushing e0798619, Sentry/telemetry gate passed with Sentry project unbrained/pm-cli checked over 14 days, critical=0, high=0, telemetry finish error rate 0.85%, and failures_without_error_code_rows=0. Review follow-up: accepted Cubic tracker metadata finding on pm-7cx8 and updated closed-item resolution/expected_result/actual_result/acceptance_criteria through pm update; Gemini static-import suggestion remains intentionally rejected because this task's repo-wide quality rules forbid inline/dynamic imports."
+  "2026-07-06T20:35:44.917Z",codex-cli-agent,"Review response update: accepted current-head CodeRabbit feedback. Compacted the 41 Semgrep import history streams with pm history-compact --ids ... --min-entries 1 to remove no-op history_redact markers while preserving replay integrity; verified no local Semgrep CSV download path remains in .agents/pm and pm validate --check-resolution --check-history-drift stays ok. Also accepted the low-value extension test fixture dedupe by extracting withWidgetPackageRoot for the two neighboring package-root tests. Verification: focused extension-command spec passed (116 tests), pnpm typecheck passed, pnpm lint passed with jscpd 0 clones/static gate passed, pnpm security:scan passed, git diff --check passed."
+files[3]{path,scope,note}:
+  scripts/release/static-quality-gate.mjs,project,ESLint suppression budget ratchet lowered after lint prune
+  src/cli/register-setup.ts,project,multi-target install aggregation and partial-failure reporting
+  tests/unit/commands/register-commands.spec.ts,project,"multi-target install success,partial failure,wildcard regression coverage"
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,360
+  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,project,180
+  node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/extensions/extension-command.spec.ts,project,240
+close_reason: "Implemented multi-target package install with per-target aggregation, partial-failure reporting, warning de-duplication, focused tests, full 100% coverage, type/lint/audit gates, and installed-tarball dogfood evidence."
+body: ""

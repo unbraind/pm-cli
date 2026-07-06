@@ -1,0 +1,16 @@
+id: pm-bfma
+title: "GH-470: pm list --today and --recent shorthand filters for recently active items"
+description: "Dogfood GH-470: agents wanting recently active items must hand-build --updated-after ISO timestamps; --today / --recent (last 7 days) shorthands cut tokens. Duplicate check: searched list today recent shorthand — no existing item."
+type: Feature
+status: open
+priority: 3
+tags[4]: agent-experience,"area:cli",gh-issue,token-efficiency
+created_at: "2026-07-06T21:08:59.641Z"
+updated_at: "2026-07-06T21:08:59.641Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: "pm list --today filters to items updated today and --recent to the last 7 days; both compose with existing filters, appear in help/contracts/completions, and are covered by specs"
+parent: pm-mpbb
+risk: low
+confidence: high
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/470\n\nShorthand date filters for agent loops: `pm list --today` (updated today) and `pm list --recent` (updated in the last 7 days) as sugar over --updated-after, avoiding ISO-timestamp construction. Wire per the new-flag checklist (contracts, completions, docs, MCP param parity)."

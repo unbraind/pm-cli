@@ -1,0 +1,18 @@
+id: pm-6abs
+title: "GH-467: isolated package/extension diagnostics — project-scoped doctor and smoke tests without global pm state leaking in"
+description: "Dogfood GH-467: pm package doctor --project picks up globally installed extension renderer overrides (e.g. pm-ops output_format), making hermetic package smoke tests machine-dependent; only workaround is undocumented PM_GLOBAL_PATH. Duplicate check: searched isolate global extensions PM_GLOBAL_PATH — pm-qt5d covers the inverse bug (--pm-path writing INTO caller workspace), no item covers isolation UX."
+type: Feature
+status: open
+priority: 2
+tags[5]: agent-ux,diagnostics,extensions,gh-issue,packages
+created_at: "2026-07-06T21:08:26.415Z"
+updated_at: "2026-07-06T21:09:52.945Z"
+author: maintainer-agent
+estimated_minutes: 180
+acceptance_criteria: pm package doctor --project supports an isolation flag (--ignore-global or --isolated) that excludes global-scope registrations; doctor --help --explain documents the PM_GLOBAL_PATH recipe; when global registrations affect project diagnostics the JSON/TOON result carries an actionable isolation hint
+parent: pm-ugqx
+risk: medium
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-qt5d,related,"2026-07-06T21:09:52.929Z",null,null
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/467\n\n## Problem\n`pm package doctor --project --json --detail deep` in a temporary workspace reported global extension renderer overrides from the developer machine (`extension_output_renderer_override_global:json:global:pm-ops`), breaking an otherwise hermetic pm-changelog package smoke test until every pm subprocess set `PM_GLOBAL_PATH` to a temp dir.\n\n## Why it matters\nAgents/CI create temp workspaces to test package installation; global state leaking into project-scoped diagnostics makes tests machine-dependent and expensive to debug. The workaround is discoverable only if the agent already knows PM_GLOBAL_PATH exists.\n\n## Proposed fix\n- `pm package doctor --project --ignore-global` (or `--isolated`) mode.\n- Document the PM_GLOBAL_PATH recipe in `doctor --help --explain`.\n- Emit an isolation hint in diagnostics whenever global-scope registrations are present in project results.\n\nRelated: pm-qt5d (project install with --pm-path writes extensions into caller workspace — same context-boundary family, opposite direction)."

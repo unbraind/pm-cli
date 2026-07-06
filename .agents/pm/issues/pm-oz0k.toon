@@ -1,0 +1,28 @@
+id: pm-oz0k
+title: pm plan create silently ignores the root --id-only flag (prints full plan envelope)
+description: "2026-07-06 audit #12 sandbox: pm plan create <title> --step s1 --id-only prints the full action/plan envelope instead of the id+status minimal shape the root --id-only contract promises for single-item mutations. Inconsistent flag honoring breaks agent scripting loops that rely on --id-only everywhere."
+type: Issue
+status: closed
+priority: 3
+tags[3]: agent-ux,audit-followup,token-efficiency
+created_at: "2026-07-06T14:06:02.827Z"
+updated_at: "2026-07-06T16:14:38.130Z"
+author: maintainer-agent
+estimated_minutes: 30
+acceptance_criteria: pm plan create honors --id-only with the same id+status shape as pm create; spec covers it.
+parent: pm-n7rr
+risk: low
+confidence: high
+resolution: fixed
+expected_result: pm plan create --id-only returns the compact id/status projection used by other single-item mutations.
+actual_result: "Plan create results are recognized by mutation projection, so --id-only emits the plan id/status compact shape."
+comments[1]{created_at,author,text}:
+  "2026-07-06T16:13:01.188Z",codex-cli-agent,"Evidence: mutation projection now treats plan mutation results as id-only subjects, so plan create honors root --id-only. Verified focused projection spec, full coverage 100/100/100/100, typecheck, lint, audit, and installed-tarball temp dogfood."
+files[2]{path,scope,note}:
+  src/core/output/mutation-projection.ts,project,id-only projection recognizes plan mutation subjects
+  tests/unit/core/output/mutation-projection.spec.ts,project,plan create --id-only regression coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,360
+  node scripts/run-tests.mjs test -- tests/unit/core/output/mutation-projection.spec.ts,project,120
+close_reason: "Implemented plan mutation id-only projection so pm plan create honors root --id-only; verified focused projection test, full 100% coverage, type/lint/audit gates, and installed-tarball dogfood evidence."
+body: ""

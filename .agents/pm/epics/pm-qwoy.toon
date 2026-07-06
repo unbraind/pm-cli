@@ -1,0 +1,16 @@
+id: pm-qwoy
+title: "Capability: Security & code scanning"
+description: "Living backlog capability epic for repository security posture: Semgrep Code finding triage, spawn/shell and RegExp injection hardening, dependabot hygiene, CodeQL, secret guardrails. Created in ecosystem audit #12 after the 2026-07-06 Semgrep import (pm-oz8u, 40 findings) and the dependabot chore pm-2czc had no fitting capability epic. Duplicate check: pm search 'security code scanning' / epic list — no existing security epic."
+type: Epic
+status: open
+priority: 2
+tags[5]: capability,code-scanning,dependabot,security,semgrep
+created_at: "2026-07-06T21:07:27.273Z"
+updated_at: "2026-07-06T21:07:27.273Z"
+author: maintainer-agent
+estimated_minutes: 2400
+acceptance_criteria: All code-scanning findings (Semgrep/CodeQL/dependabot/secrets) are tracked as pm issues under this epic with source links and triage state; recurring scanner imports parent their batch tasks here; epic stays OPEN as a living backlog even at 0 open children.
+parent: pm-doxj
+risk: high
+confidence: high
+body: "# Capability: Security & code scanning (living backlog)\n\nOwns repository security posture work that previously had no capability home:\n- Semgrep Code finding triage batches (first import: pm-oz8u, 40 findings from 2026-07-06 CSV — 6 High spawn-shell-true, 34 Medium prototype-pollution/non-literal-RegExp/dependabot-cooldown).\n- Dependabot dependency hygiene (pm-2czc closed the 2026-07-06 unblock: @types/node 26, pnpm cooldown, codeql-action lockstep group).\n- Secret guardrails and history-redact usage policy (see 2026-05-22 history-repair learning: never quote secret-pattern literals into pm text).\n- Future CodeQL / scanner integrations.\n\nConvention: each scanner import creates one batch Task parented here, with one Issue per platform finding (Semgrep ID as issue code) so findings stay individually triageable. Sibling epic pm-92if owns CodeFactor (maintainability) findings; this epic owns security-class findings."

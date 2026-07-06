@@ -1,0 +1,18 @@
+id: pm-alnj
+title: "GH-474: pm search --limit support in hybrid mode"
+description: "Dogfood GH-474: hybrid search can return many results and --limit (available in keyword mode) is not honored/available in hybrid mode, breaking agent token budgets. Duplicate check: searched hybrid search limit — pm-6mn1 (closed, M4) covered limit=0 determinism only; this is general --limit support in hybrid mode."
+type: Feature
+status: open
+priority: 2
+tags[4]: agent-experience,"area:search",gh-issue,token-efficiency
+created_at: "2026-07-06T21:09:28.492Z"
+updated_at: "2026-07-06T21:09:54.729Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: pm search --mode hybrid honors --limit identically to keyword mode (applied after fusion ranking); documented in help/contracts; spec covers limit interaction with hybrid result fusion including limit=0 determinism from pm-6mn1
+parent: pm-ydp6
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-6mn1,related,"2026-07-06T21:09:54.714Z",null,null
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/474\n\nHonor `--limit` in hybrid search mode (parity with keyword mode), applied after hybrid rank fusion so the top-N fused results are returned. Preserve the deterministic limit=0 empty-result semantics established in pm-6mn1."

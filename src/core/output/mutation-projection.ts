@@ -83,11 +83,17 @@ function replaceRows(envelope: Record<string, unknown>, rows: unknown[]): Record
 }
 
 function projectIdOnlyResult(result: unknown): unknown | null {
-  if (!isPlainObject(result) || !isPlainObject(result.item)) {
+  if (!isPlainObject(result)) {
     return null;
   }
-  const id = typeof result.item.id === "string" ? result.item.id : undefined;
-  const status = typeof result.item.status === "string" ? result.item.status : undefined;
+  // Plan mutations wrap the mutated subject under "plan" instead of "item";
+  // both shapes honor the root --id-only contract (id + status).
+  const subject = isPlainObject(result.item) ? result.item : isPlainObject(result.plan) ? result.plan : null;
+  if (subject === null) {
+    return null;
+  }
+  const id = typeof subject.id === "string" ? subject.id : undefined;
+  const status = typeof subject.status === "string" ? subject.status : undefined;
   if (!id) {
     return null;
   }

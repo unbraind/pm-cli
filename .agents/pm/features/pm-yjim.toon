@@ -1,0 +1,18 @@
+id: pm-yjim
+title: "GH-473: pm install prints a post-install verification summary"
+description: "Dogfood GH-473: after pm install <package>, agents must run pm package doctor to confirm the install worked; a brief inline verification summary saves an invocation. Duplicate check: searched post-install verification summary — pm-b3e9 covers PRE-install owning-package hints; no overlap."
+type: Feature
+status: open
+priority: 3
+tags[4]: agent-experience,gh-issue,packages,token-efficiency
+created_at: "2026-07-06T21:09:23.206Z"
+updated_at: "2026-07-06T21:09:54.240Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: "pm install output ends with a verification summary (activation status, registered commands/types, health ok/degraded) equivalent to a light package-doctor pass; failures keep the existing per-target failure rows; covered by specs"
+parent: pm-ugqx
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-b3e9,related,"2026-07-06T21:09:54.218Z",null,null
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/473\n\nFold a light verification pass into `pm install` output (activation status, registered commands/item types, health verdict) so agents skip the follow-up `pm package doctor` in the happy path. Builds on the multi-target install aggregation shipped for pm-hj9h (per-target success/failure rows)."

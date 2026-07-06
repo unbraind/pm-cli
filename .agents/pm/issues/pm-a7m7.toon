@@ -1,0 +1,21 @@
+id: pm-a7m7
+title: "Semgrep 874840488: High spawn shell true in scripts/release/utils.mjs#L38"
+description: Semgrep finding 874840488 (High) for spawn shell true at scripts/release/utils.mjs#L38; autotriage=Untriaged; file risk=Developer Scripts.
+type: Issue
+status: open
+priority: 1
+tags[7]: code-scanning,developer-scripts,high,security,semgrep,spawn-shell-true,untriaged
+created_at: "2026-07-06T18:56:15.896Z"
+updated_at: "2026-07-06T18:56:15.896Z"
+author: codex-cli-agent
+parent: pm-oz8u
+risk: high
+confidence: low
+reporter: semgrep
+severity: high
+environment: unbraind/pm-cli refs/heads/main
+expected_result: "Semgrep finding is triaged as fixed, confirmed false positive, or explicitly accepted with rationale; the source code or CI/security configuration is updated when remediation is required."
+actual_result: "Semgrep currently reports finding 874840488 as Open (High, confidence Low) at scripts/release/utils.mjs#L38."
+affected_version: main@6f511706628f18743a00a1cfe851e8d1f492684e
+component: scripts/release/utils.mjs
+body: "# Semgrep finding import\n\nSemgrep finding id: 874840488\nRule: javascript.lang.security.audit.spawn-shell-true.spawn-shell-true\nProduct: Code\nSeverity: High\nStatus: Open\nConfidence: Low\nCategory: security\nIs Pro Rule: False\nSemgrep autotriage result: Untriaged\nSemgrep file risk tag: Developer Scripts\nRepository: unbraind/pm-cli\nBranch: refs/heads/main\nCreated at: 2026-07-03 12:04:25.346846\nLast opened at: 2026-07-03 12:04:25.328084\n\nLinks:\n- Code: https://github.com/unbraind/pm-cli/blob/6f511706628f18743a00a1cfe851e8d1f492684e/scripts/release/utils.mjs#L38\n- Semgrep: https://semgrep.dev/orgs/unbrained/findings/874840488\n- Repository: https://github.com/unbraind/pm-cli\n\nRule description:\nFound '$SPAWN' with '{shell: shell}'. This is dangerous because this call will spawn the command using a shell process. Doing so propagates current shell settings and variables, which makes it much easier for a malicious actor to execute commands. Use '{shell: false}' instead.\n\nImported from downloaded CSV:\nSemgrep_Code_Combined_Findings_2026_07_06.csv (local download, not committed)"

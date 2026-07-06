@@ -1,0 +1,24 @@
+id: pm-3rgp
+title: "2026-07-06 ecosystem audit #12: GH-467..474 backlog coverage + code-scanning capability epic"
+description: "Full-inventory ecosystem audit (1610 items pre-audit). Gaps found and fixed: 8 open GitHub issues (467-474, filed after audit #11 the same day) had no pm items; Semgrep batch pm-oz8u and dependabot chore pm-2czc were orphaned with no fitting capability epic."
+type: Chore
+status: closed
+priority: 2
+tags[4]: audit,backlog,governance,pm-cli
+created_at: "2026-07-06T21:10:23.139Z"
+updated_at: "2026-07-06T21:13:30.922Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: Every open GitHub issue maps to a pm item; zero unparented items except the root milestone; new capability epic follows the living-backlog + agent-story conventions; validate/health green with all warnings mapped to open items
+parent: pm-doxj
+risk: low
+confidence: high
+resolution: "Audit complete: 8 GH-issue items created (pm-6abs pm-25d0 pm-sqf7 pm-bfma pm-h85e pm-4bzq pm-yjim pm-alnj), security capability epic pm-qwoy + agent story pm-6ixn created, pm-oz8u/pm-2czc reparented; validate/health green, zero open orphans, branch commits fully mapped to closed items"
+expected_result: Every open GitHub issue and all branch work tracked in well-defined pm items; no orphaned open items
+actual_result: GH-467..474 untracked and pm-oz8u/pm-2czc orphaned pre-audit; all gaps closed during audit
+learnings[3]{created_at,author,text}:
+  "2026-07-06T21:10:35.285Z",maintainer-agent,"pm search accepts --format json|toon ONLY (not table, unlike pm list): with stderr suppressed, an invalid-format error looks identical to zero search hits — always validate search plumbing with a known-hit query (e.g. GH-457 -> pm-tu71) before trusting empty dedupe results."
+  "2026-07-06T21:10:35.651Z",maintainer-agent,pm update does not accept -m (that shorthand is pm close only); update history messages need the full --message flag.
+  "2026-07-06T21:13:30.921Z",maintainer-agent,"Changelog bucket classifier (pm-changelog generator.js classifyItem) matches the keywords security/cve/vulnerability across type+tags (strong) AND title (weak fallback): a chore whose TITLE merely mentions a security epic lands in the Security section. Third pm-28cf-family instance. Keep scanner/security words out of non-security item titles, or tag deliberately."
+close_reason: "Audit #12 complete: 8 GH-issue items (pm-6abs pm-25d0 pm-sqf7 pm-bfma pm-h85e pm-4bzq pm-yjim pm-alnj), security capability epic pm-qwoy + story pm-6ixn, pm-oz8u/pm-2czc reparented, 5 related-links; validate/health green, zero open orphans"
+body: "# Ecosystem audit #12 (2026-07-06, evening)\n\nScope: all 1610 items (open/closed/canceled), unmerged branch commits daffd229 + d4ff99c4, open GitHub issues, orphan sweep, validate/health warning mapping.\n\n## Verified clean\n- Branch commits daffd229/d4ff99c4 map 1:1 to closed items pm-hj9h (multi-target install), pm-vcu7 (annotation flag-swallow), pm-jqd2 (bundled alias resolution), pm-oz0k (plan create --id-only), pm-1k57 (bare extension group help), pm-7cx8 (GH-436/440 triage) plus the Semgrep import batch pm-oz8u.\n- pm validate/pm health: ok, 1610 items, zero history drift; every warning class maps to an open item (files: pm-j8z6, duplicate issue code: pm-pivf, resolution/metadata backfill: pm-e9zh; estimates remediable via pm-s3hl-shipped --fix-scope estimates).\n- CLI-simplification (pm-n7rr) and SDK-first (pm-usfg) initiative trees complete; no new gaps.\n\n## Gaps fixed\n- Created capability epic pm-qwoy \"Security & code scanning\" (+ agent story pm-6ixn) — Semgrep/dependabot/CodeQL/secret-guardrail work had no capability home; reparented pm-oz8u and pm-2czc under it.\n- Created GH-issue items: pm-6abs (GH-467 doctor isolation), pm-25d0 (GH-468 SDK package coordinates), pm-sqf7 (GH-469 stale --version), pm-bfma (GH-470 list --today/--recent), pm-h85e (GH-471 context package health), pm-4bzq (GH-472 create required-field errors), pm-yjim (GH-473 install verification summary), pm-alnj (GH-474 hybrid --limit); related-links to pm-qt5d/pm-ds3b/pm-qmjx/pm-b3e9/pm-6mn1."

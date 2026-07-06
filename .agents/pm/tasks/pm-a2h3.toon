@@ -1,0 +1,24 @@
+id: pm-a2h3
+title: "Notes/learnings repair parity: add --edit/--delete (and a real --stdin/--file input source) matching comments, so bad annotation entries are fixable via the CLI"
+description: "Comments support --edit <index>/--delete <index> plus [text]/--add/--stdin/--file input sources; notes and learnings are append-only with only --add (stdin via '--add -'). Audit #11 hit this live: a bogus note ('--stdin', see pm-vcu7) on milestone pm-doxj could not be corrected by any pm command and required manual .toon + history revert — violating the philosophy that agents rebuild and maintain full context via the pm CLI alone. Duplicate check 2026-07-06: pm-yql1 consolidates facet GRAMMAR (zero feature loss, no new verbs); pm-9y8q (closed) deduped internals; no open item adds edit/delete to notes/learnings."
+type: Task
+status: open
+priority: 3
+tags[3]: agent-ux,"area:cli",data-quality
+created_at: "2026-07-06T13:25:37.830Z"
+updated_at: "2026-07-06T13:26:08.289Z"
+author: maintainer-agent
+estimated_minutes: 150
+acceptance_criteria: "pm notes/learnings support --edit <index> and --delete <index> with 1-based indexing, history ops, and ownership/audit-bypass semantics identical to comments; input sources aligned (--stdin/--file or documented '--add -' everywhere consistently); contracts + MCP schema + completion + docs updated per the new-command-wiring checklist; regression tests for edit/delete on both facets"
+parent: pm-mpbb
+risk: low
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-vcu7,related,"2026-07-06T13:26:07.450Z",null,null
+  pm-yql1,related,"2026-07-06T13:26:07.450Z",null,null
+files[4]{path,scope,note}:
+  src/cli/commands/annotation-command.ts,project,shared machinery to make edit/delete facet-generic
+  src/cli/commands/comments.ts,project,"reference implementation: edit/delete + stdin/file input sources"
+  src/cli/commands/learnings.ts,project,needs edit/delete parity
+  src/cli/commands/notes.ts,project,needs edit/delete parity
+body: "## Context\nAnnotation facets share runAnnotationCommand (src/cli/commands/annotation-command.ts) but only comments.ts wires edit/delete and multiple input sources. notes.ts and learnings.ts expose add-only. Any mistaken note/learning (e.g. the pm-vcu7 flag-swallow) is permanent via the CLI; fixing it needs manual storage surgery plus history re-anchor, which no agent should do.\n\n## Approach\nExtend the shared annotation-command machinery so edit/delete are facet-generic (comments' implementation likely already is); wire the options in notes.ts/learnings.ts; align input-source flags. Coordinate with pm-yql1 (facet grammar consolidation) so the unified facet noun exposes the same verbs — implementing this first gives yql1 a uniform surface to consolidate.\n\n## Definition of done\nBad entries on any annotation facet are correctable with pm CLI only, with history recorded."

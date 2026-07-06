@@ -237,6 +237,7 @@ import { runConfig } from "../../../src/cli/commands/config.js";
 import { runExtension } from "../../../src/cli/commands/extension.js";
 import { runUpgrade } from "../../../src/cli/commands/upgrade.js";
 import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
+import { PmCliError } from "../../../src/core/shared/errors.js";
 import { writeSettings } from "../../../src/core/store/settings.js";
 
 let tmpRoot: string;
@@ -2491,8 +2492,8 @@ describe("setup command actions", () => {
     } as never);
     const stdout = vi.spyOn(process.stdout, "write").mockReturnValue(true);
     const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
-    let written = "";
-    let warned = "";
+    let written: string;
+    let warned: string;
     try {
       await runCliRaw("package", "describe", "pm-x", "--markdown");
       // Capture before mockRestore(), which clears the recorded call history.
@@ -2513,7 +2514,7 @@ describe("setup command actions", () => {
 
     // --quiet still resolves to the describe action (no throw) but suppresses stdout.
     const quietStdout = vi.spyOn(process.stdout, "write").mockReturnValue(true);
-    let quietWrites = 0;
+    let quietWrites: number;
     try {
       await runCli("package", "describe", "pm-x", "--markdown");
       quietWrites = quietStdout.mock.calls.length;
@@ -2653,10 +2654,15 @@ describe("setup command actions", () => {
     });
   });
 
-  it("rejects multiple install targets unless they are a shell-expanded wildcard", async () => {
-    await expect(runCli("install", "pkg-a", "pkg-b")).rejects.toThrow(
-      "one package source at a time",
-    );
+  it("installs multiple explicit package targets while preserving shell-expanded wildcard recovery", async () => {
+    await runCli("install", "pkg-a", "pkg-b");
+    expect(vi.mocked(runExtension).mock.calls.map((call) => call[0])).toEqual(["pkg-a", "pkg-b"]);
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1)).toMatchObject({
+      install: true,
+      vocabulary: "package",
+    });
+
+    vi.mocked(runExtension).mockClear();
 
     const wildcardDir = await mkdtemp(path.join(tmpdir(), "pm-register-wildcard-"));
     const previousCwd = process.cwd();
@@ -2670,6 +2676,148 @@ describe("setup command actions", () => {
       process.chdir(previousCwd);
       await rm(wildcardDir, { recursive: true, force: true });
     }
+  });
+
+  it("continues multi-target install after target failures and marks the aggregate failed", async () => {
+    vi.mocked(runExtension)
+      .mockResolvedValueOnce({
+        ok: true,
+        action: "install",
+        details: { extension: { name: "pkg-a" }, destination_path: "/tmp/pkg-a" },
+        warnings: ["warn:a", "warn:shared"],
+      } as never)
+      .mockResolvedValueOnce({
+        ok: true,
+        action: "install",
+        details: { extension: { name: "pkg-b" }, destination_path: "/tmp/pkg-b" },
+        warnings: ["warn:shared"],
+      } as never)
+      .mockResolvedValueOnce({
+        ok: true,
+        action: "install",
+      } as never)
+      .mockResolvedValueOnce({
+        ok: false,
+        action: "install",
+      } as never)
+      .mockRejectedValueOnce(
+        new PmCliError("registry unavailable", EXIT_CODE.NOT_FOUND, {
+          code: "npm_package_not_found",
+          required: "Use an install source that exists.",
+          why: "Registry 404s need deterministic recovery.",
+          examples: ["pm install npm:pkg-c"],
+          nextSteps: ["Check the package name."],
+          recovery: { next_best_command: "pm install npm:pkg-c" },
+        }),
+      )
+      .mockRejectedValueOnce(new PmCliError("local source missing", EXIT_CODE.NOT_FOUND))
+      .mockRejectedValueOnce(new Error("plain error failure"))
+      .mockRejectedValueOnce("string failure");
+
+    const stdout = vi.spyOn(process.stdout, "write").mockReturnValue(true);
+    let written: string;
+    try {
+      await runCliRaw("--json", "install", "pkg-a", "pkg-b", "pkg-empty", "pkg-soft", "pkg-c", "pkg-d", "pkg-e", "pkg-f", "--global");
+      written = stdout.mock.calls.map((call) => String(call[0])).join("");
+    } finally {
+      stdout.mockRestore();
+    }
+    expect(vi.mocked(runExtension).mock.calls.map((call) => call[0])).toEqual([
+      "pkg-a",
+      "pkg-b",
+      "pkg-empty",
+      "pkg-soft",
+      "pkg-c",
+      "pkg-d",
+      "pkg-e",
+      "pkg-f",
+    ]);
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1)).toMatchObject({
+      install: true,
+      global: true,
+      vocabulary: "package",
+    });
+    expect(JSON.parse(written) as unknown).toMatchObject({
+      ok: false,
+      action: "install",
+      scope: "global",
+      installed_count: 3,
+      failed_count: 5,
+      warnings: ["warn:a", "warn:shared"],
+      targets: [
+        { target: "pkg-a", ok: true, destination_path: "/tmp/pkg-a", warnings: ["warn:a", "warn:shared"] },
+        { target: "pkg-b", ok: true, warnings: ["warn:shared"] },
+        { target: "pkg-empty", ok: true, warnings: [] },
+        {
+          target: "pkg-soft",
+          ok: false,
+          warnings: [],
+          error: {
+            message: "Extension install returned ok=false without throwing an error.",
+            exit_code: EXIT_CODE.GENERIC_FAILURE,
+            code: "extension_install_soft_failed",
+          },
+        },
+        {
+          target: "pkg-c",
+          ok: false,
+          error: {
+            message: "registry unavailable",
+            exit_code: EXIT_CODE.NOT_FOUND,
+            code: "npm_package_not_found",
+            required: "Use an install source that exists.",
+            why: "Registry 404s need deterministic recovery.",
+            examples: ["pm install npm:pkg-c"],
+            nextSteps: ["Check the package name."],
+            recovery: { next_best_command: "pm install npm:pkg-c" },
+          },
+        },
+        {
+          target: "pkg-d",
+          ok: false,
+          error: {
+            message: "local source missing",
+            exit_code: EXIT_CODE.NOT_FOUND,
+          },
+        },
+        {
+          target: "pkg-e",
+          ok: false,
+          error: {
+            message: "plain error failure",
+            exit_code: EXIT_CODE.GENERIC_FAILURE,
+          },
+        },
+        {
+          target: "pkg-f",
+          ok: false,
+          error: {
+            message: "string failure",
+            exit_code: EXIT_CODE.GENERIC_FAILURE,
+          },
+        },
+      ],
+    });
+    expect(process.exitCode).toBe(EXIT_CODE.NOT_FOUND);
+  });
+
+  it("rejects multi-target install with forced GitHub sources before dispatch", async () => {
+    vi.mocked(runExtension).mockClear();
+    await expect(runCliRaw("install", "pkg-a", "pkg-b", "--github", "owner/repo")).rejects.toMatchObject<PmCliError>({
+      exitCode: EXIT_CODE.USAGE,
+      context: expect.objectContaining({
+        code: "multi_target_github_install_ambiguous",
+        examples: expect.arrayContaining(["pm install --gh owner/repo"]),
+      }),
+    });
+    await expect(runCliRaw("install", "pkg-a", "pkg-b", "--gh", "owner/repo")).rejects.toMatchObject<PmCliError>({
+      exitCode: EXIT_CODE.USAGE,
+      context: expect.objectContaining({
+        code: "multi_target_github_install_ambiguous",
+        examples: expect.arrayContaining(["pm install --gh owner/repo"]),
+      }),
+    });
+    expect(vi.mocked(runExtension)).not.toHaveBeenCalled();
   });
 
   it("escalates doctor warnings and failed upgrades through exit codes", async () => {

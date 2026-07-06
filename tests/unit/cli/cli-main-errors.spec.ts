@@ -4618,6 +4618,23 @@ describe("CLI extension command help helpers", () => {
     expect(ensureCommandPath(root, ["tools", "export"])?.description()).toBe("Extension-provided command path.");
     expect(findCommandByPath(root, ["tools"])?.description()).toBe("Extension-provided command group.");
 
+    // Bare invocation of an extension-created group must render group help on
+    // stdout instead of exiting silently (the root writeErr channel is a no-op).
+    const helpRoot = new Command().name("pm").exitOverride();
+    let bareGroupHelp = "";
+    helpRoot.configureOutput({
+      writeOut: (str) => {
+        bareGroupHelp += str;
+      },
+      writeErr: () => {},
+    });
+    ensureCommandPath(helpRoot, ["changelog", "generate"]);
+    expect(() => helpRoot.parse(["changelog"], { from: "user" })).toThrowError(
+      expect.objectContaining({ code: "commander.help" }),
+    );
+    expect(bareGroupHelp).toContain("Extension-provided command group.");
+    expect(bareGroupHelp).toContain("generate");
+
     const fallbackAliasCommand = {
       aliases: undefined,
       alias: () => "Legacy",

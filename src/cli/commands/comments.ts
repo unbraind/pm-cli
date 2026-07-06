@@ -142,12 +142,11 @@ export async function runComments(id: string, options: CommentsCommandOptions, g
   const commentInput = await resolveCommentInput(options, stdinResolver);
 
   const shouldParseText = commentInput.mode === "add" || commentInput.mode === "edit";
-  // list/delete carry no text (value undefined → ""); add/edit/stdin/file always
-  // resolve to a string. Normalize once so neither branch below is unreachable.
   const rawValue = commentInput.value ?? "";
   return runAnnotationCommand<"comments", Comment>(id, options, global, {
     input: {
       ...commentInput,
+      rawValue: options.add ?? rawValue,
       value: shouldParseText ? parseAnnotationTextInput(rawValue, { stripPlainTextPrefix: true }) : rawValue,
     },
     collectionKey: "comments",

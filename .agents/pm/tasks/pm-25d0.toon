@@ -1,0 +1,18 @@
+id: pm-25d0
+title: "GH-468: clarify or publish the pm SDK npm package coordinates (@unbrained/pm-sdk is 404)"
+description: "Dogfood GH-468: package-author instructions say 'latest pm CLI and pm SDK' but npm view @unbrained/pm-sdk returns 404 — authors cannot tell whether the SDK is embedded in @unbrained/pm-cli, published elsewhere, or unpublished. Duplicate check: searched publish SDK npm package — pm-ds3b covers SDK reference docs, no item covers the package-coordinates decision."
+type: Task
+status: open
+priority: 2
+tags[4]: docs,gh-issue,packaging,sdk
+created_at: "2026-07-06T21:08:40.224Z"
+updated_at: "2026-07-06T21:09:53.348Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: Canonical SDK import/package coordinates documented in pm contracts/help output and package-author docs; either @unbrained/pm-sdk is published/aliased or docs state explicitly the SDK ships inside @unbrained/pm-cli; a 'latest CLI/SDK package coordinates' section exists for agents
+parent: pm-usfg
+risk: medium
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ds3b,related,"2026-07-06T21:09:53.329Z",null,null
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/468\n\n## Problem\nDuring the 2026-07-06 package dependency sweep, package instructions referenced the pm SDK, but `npm view @unbrained/pm-sdk` returns 404 while the CLI resolves as `@unbrained/pm-cli@2026.7.6`. Agents invent non-existent package coordinates.\n\n## Fix options\n- Document the canonical SDK import path (currently exported from @unbrained/pm-cli) in contracts/help + package-author docs; or\n- publish/alias @unbrained/pm-sdk if that is the intended coordinate; and\n- add a short \"latest CLI/SDK package coordinates\" section for agents.\n\nFeeds the SDK-first epic pm-usfg: the universal-tool story (pm-w89s, pm-cbwg) needs unambiguous SDK coordinates. Related: pm-ds3b (SDK reference documentation)."

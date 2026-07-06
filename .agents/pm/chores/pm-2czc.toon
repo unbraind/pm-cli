@@ -6,10 +6,11 @@ status: closed
 priority: 1
 tags[4]: "area:ci",ci,dependabot,dependencies
 created_at: "2026-07-06T08:45:16.538Z"
-updated_at: "2026-07-06T09:36:21.030Z"
+updated_at: "2026-07-06T21:07:58.246Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: tsc clean under @types/node 22 and 26; dependabot npm bumps wait 3 days before opening PRs; codeql-action init/analyze always bump in one grouped PR; all four blocked dependabot PRs resolved after merge
+parent: pm-qwoy
 risk: low
 confidence: high
 resolution: drift-scan uses explicit Stats typing for @types/node 26 compatibility; Dependabot npm updates now wait three days and GitHub Actions updates are grouped.

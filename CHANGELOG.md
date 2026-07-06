@@ -4,13 +4,20 @@
 
 ### Fixed
 
+- Annotation --add silently stores flag-like tokens as content: pm notes <id\> --add --stdin records the literal note "--stdin" ([pm-vcu7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vcu7.toon))
+- pm extension --install pm-<alias\> / @unbrained/pm-<alias\> fails with 'Local extension source does not exist' instead of suggesting the bundled catalog alias ([pm-jqd2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jqd2.toon))
+- pm plan create silently ignores the root --id-only flag (prints full plan envelope) ([pm-oz0k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oz0k.toon))
+- Bare extension command group (pm changelog / pm graph) exits 0 with zero output instead of rendering group help ([pm-1k57](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1k57.toon))
 - GH-463: linked PM tracker-read tests should auto-remediate or suggest --auto-pm-context ([pm-6e1d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6e1d.toon))
 - Relative lancedb vector-store path resolves against process cwd, creating nested .agents/pm/.agents/pm stores ([pm-og1v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-og1v.toon))
 - GH-455: pm health auto-selects an uninstalled Ollama embedding model then fails vector refresh ([pm-aems](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-aems.toon))
 
 ### Other
 
+- 2026-07-06 ecosystem audit \#12: GH-467..474 backlog coverage + code-scanning capability epic ([pm-3rgp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-3rgp.toon))
 - Unblock dependabot PRs: @types/node 26 type error, pnpm release-age cooldown, codeql-action lockstep group ([pm-2czc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-2czc.toon))
+- pm install should accept multiple package targets (help already advertises \[targets...\]) ([pm-hj9h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hj9h.toon))
+- Triage: close stale dogfood reports GH-436 (pm next/focus) and GH-440 (context --fields) with shipped evidence ([pm-7cx8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7cx8.toon))
 
 ## 2026.7.6 - 2026-07-06
 

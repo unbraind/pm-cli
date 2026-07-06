@@ -164,5 +164,18 @@ describe("projectMutationResult", () => {
       expect(projectMutationResult("text", { idOnly: true })).toBe("text");
       expect(projectMutationResult({ item: "not-an-object" }, { idOnly: true })).toEqual({ item: "not-an-object" });
     });
+
+    it("projects plan mutation envelopes (result.plan) to id + status", () => {
+      expect(
+        projectMutationResult(
+          { action: "create", plan: { id: "pm-p1a2", status: "open", title: "Plan" }, step: { id: "plan-step-001" } },
+          { idOnly: true },
+        ),
+      ).toEqual({ id: "pm-p1a2", status: "open" });
+      // An explicit item subject wins over a plan node in the same envelope.
+      expect(
+        projectMutationResult({ item: { id: "pm-i1a2", status: "open" }, plan: { id: "pm-p1a2", status: "open" } }, { idOnly: true }),
+      ).toEqual({ id: "pm-i1a2", status: "open" });
+    });
   });
 });
