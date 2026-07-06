@@ -1,0 +1,21 @@
+id: pm-dijg
+title: "Schema evolution migrations: lossless, history-recorded bulk migration of existing items when custom types, fields, or statuses are renamed or retired"
+description: ""
+type: Feature
+status: open
+priority: 2
+tags[5]: customization,durability,long-horizon,schema,sdk
+created_at: "2026-07-06T23:35:40.341Z"
+updated_at: "2026-07-06T23:35:40.341Z"
+author: maintainer-agent
+estimated_minutes: 720
+acceptance_criteria: "pm schema gains migration verbs (SDK-first): rename-type, rename-field, remap-status/retire-status with an explicit value mapping; a --dry-run plan enumerates affected items and per-field changes before any write; execution rewrites affected items losslessly (unknown/unmapped values are never silently dropped) and appends a migration history entry to every touched item plus the workspace stream, preserving immutable proof; migration is O(affected) via the derived read index at 100k+ scale (benchmark on pm-mi2x workspaces); interrupted migrations are resumable or atomic per item with a verifiable completion check; docs cover the schema-evolution workflow end to end"
+parent: pm-8jdc
+risk: medium
+confidence: medium
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-0qg5,related,"2026-07-06T23:35:40.341Z",null,null
+  pm-3mna,related,"2026-07-06T23:35:40.341Z",null,null
+  pm-klo8,related,"2026-07-06T23:35:40.341Z",null,null
+  pm-z5nb,related,"2026-07-06T23:35:40.341Z",null,null
+body: "Schema commands today mutate only the schema definition (types.json/fields.json/statuses): after a rename or retirement, existing items silently keep stale type names, field keys, and status values, and nothing re-validates or migrates them. A workspace spanning decades will evolve its custom schema many times, so schema evolution without data migration quietly corrupts the long tail — exactly the data the memory-tier and time-travel features (pm-5qmm, pm-hib1) later depend on.\n\nProposal: schema-evolution migration primitives, SDK-first (extends the pm-3mna schema surface; the CLI verb is presentation):\n- rename-type <old> <new>: moves item files/folders, rewrites type fields, updates workflows/profiles referencing the type.\n- rename-field <old> <new> [--type T]: rewrites the field key across affected items; collision with reserved/built-in names refused (pm-b9ov class).\n- remap-status / retire-status --map old=new: rewrites status values with an explicit total mapping; refuses partial mappings.\n- Every touched item gets a history entry recording before/after (the immutable-proof invariant holds through migrations); the workspace-scoped stream (pm-klo8) records the schema mutation itself.\n- --dry-run prints the full migration plan (affected counts, per-change detail) for review; execution is resumable/atomic-per-item so a crash never leaves an untracked half-migrated state.\n- Scale: candidate selection via the derived read index (pm-801d) so cost is O(affected); format_version gating precedent from pm-0qg5 applies if layout changes.\n\nRelation to existing work: pm-z5nb covers schema CRUD completion (remove-type, add-status, per-type workflows) — this item covers what happens to already-written items when the schema changes underneath them. pm-d1ig scaffolds extension-side migration starters; this is the workspace-side primitive."

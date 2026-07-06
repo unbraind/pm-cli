@@ -1,0 +1,21 @@
+id: pm-z436
+title: "As an agent on a minutes-old scratch project, pm init, quick-capture create, and next are near-zero ceremony and token-cheap at three-item scale"
+description: ""
+type: Story
+status: open
+priority: 2
+tags[4]: agent-ux,onboarding,small-scale,token-efficiency
+created_at: "2026-07-06T23:36:18.776Z"
+updated_at: "2026-07-06T23:36:18.776Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: "A documented scratch/minimal metadata profile lets pm create <type> <title> succeed with no further flags and zero validate warnings; the full init -> create x3 -> next -> close round trip is covered by an e2e test asserting a bounded total token footprint (measured via the pm-a22j corpus method) and bounded wall-clock latency; pm context/next on a sub-10-item workspace produce output whose token cost is proportional to the workspace, with no fixed large envelope; the quickstart doc shows the scratch flow in under ten lines; governance defaults never require ceremony the scratch profile has not opted into"
+parent: pm-mpbb
+risk: low
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-4k6b,related,"2026-07-06T23:36:18.776Z",null,null
+  pm-cu1i,related,"2026-07-06T23:36:18.776Z",null,null
+  pm-g2zz,related,"2026-07-06T23:36:18.776Z",null,null
+  pm-nilh,related,"2026-07-06T23:36:18.776Z",null,null
+body: "The scale spectrum is anchored only at the top: pm-g2zz promises a correct bounded working set at a million items, and pm-4k6b's acceptance already demands small-workspace neutrality of the relevance engine. Nothing anchors the opposite end of the product promise — a project of a few items spanning minutes, where pm is an agent's throwaway working memory for a single session.\n\nAt that scale the costs that matter are ceremony and fixed overhead, not throughput:\n- Quick capture: create with just a type and title must be a complete, valid item under a scratch/minimal metadata profile (the core profile's required author/acceptance-criteria/estimate is the right default for durable repos, but is pure friction for a 5-item scratch pad); the profile family already exists — this story makes the scratch tier a first-class, documented default option on init.\n- Fixed token envelopes: context/next/list output on a 3-item workspace should cost tokens proportional to those 3 items; any constant boilerplate (headers, hints, empty facets) dominates at this scale and is exactly what the lean-output family (pm-nilh, pm-cfed, pm-g9xk) trims — this story adds the small-end assertion to the pm-cu1i budget corpus so it cannot regress.\n- Startup cost is already solved (ADR pm-irp1, esbuild bundle pm-gt82) and stays covered by its shipped budget.\n\nTogether with pm-g2zz this completes the pair of spectrum-ends stories the roadmap optimizes between: same commands, same philosophy, from a seconds-old scratch pad to a decades-old million-item workspace."
