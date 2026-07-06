@@ -141,10 +141,27 @@ describe("mcp server branch residual coverage", () => {
     }
   });
 
+  it("throws clearly when runtime test hooks are accessed outside test environments", async () => {
+    const previousHooks = globalThis.__pmCliActionRunnerTestHooks;
+    globalThis.__pmCliActionRunnerTestHooks = undefined;
+    try {
+      const server = await import("../../../src/mcp/server.js");
+      globalThis.__pmCliActionRunnerTestHooks = undefined;
+      expect(server._testOnly.runAction).toBeTypeOf("function");
+      expect(() => server._testOnly.normalizeActionName).toThrow(
+        'MCP runtime test hook "normalizeActionName" is only available in test environments.',
+      );
+    } finally {
+      globalThis.__pmCliActionRunnerTestHooks = previousHooks;
+    }
+  });
+
   it("covers runAction option-fallback branches with mocked command handlers", async () => {
     const commandMocks = buildCommandMocks();
     const server = await importServerWithCommandMocks(commandMocks, mockEmptyExtensionWorkspace);
     const runAction = server._testOnly.runAction;
+
+    expect(server._testOnly.normalizeActionName("---Hello---World___42---")).toBe("hello-world-42");
 
     await runAction({ action: "get", options: { id: "pm-1" } });
     await runAction({
@@ -169,6 +186,7 @@ describe("mcp server branch residual coverage", () => {
     await runAction({ action: "focus", clear: true });
     await runAction({ action: "update", options: { id: "pm-3", description: "updated" } });
     await runAction({ action: "claim", options: { id: "pm-4" } });
+    await runAction({ action: "claim", options: { id: "pm-4b", force: true } });
     await runAction({ action: "release", options: { id: "pm-5" } });
     await runAction({ action: "close", options: { id: "pm-6", reason: "done" } });
     await runAction({ action: "close", options: { id: "pm-6b" } });
@@ -200,7 +218,7 @@ describe("mcp server branch residual coverage", () => {
     await runAction({ action: "plan", options: { subcommand: "show", id: "pm-16", reorderTo: "7th" } });
     await runAction({ action: "plan", options: { subcommand: "show", id: "pm-16a", reorderTo: 4 } });
     await runAction({ action: "plan", options: { subcommand: "show", id: "pm-16b", stepRef: "step-1" } });
-    await runAction({ action: "plan", options: { subcommand: "show", id: "pm-16c", reorderTo: 1.5 } });
+    await runAction({ action: "plan", subcommand: "show", options: { id: "pm-16h" } });
     await runAction({
       action: "schema",
       subcommand: "add-status",
@@ -249,6 +267,9 @@ describe("mcp server branch residual coverage", () => {
     await expect(runAction({ action: "plan", options: { subcommand: "show", id: "pm-16f", reorderTo: "1.5" } })).rejects.toThrow(
       /finite integer/,
     );
+    await expect(runAction({ action: "plan", options: { subcommand: "show", id: "pm-16c", reorderTo: 1.5 } })).rejects.toThrow(
+      /finite integer/,
+    );
     await expect(
       runAction({ action: "plan", options: { subcommand: "show", id: "pm-16g", reorderTo: "9".repeat(400) } }),
     ).rejects.toThrow(/finite integer/);
@@ -256,7 +277,7 @@ describe("mcp server branch residual coverage", () => {
       runAction({ action: "plan", options: { subcommand: "show", id: "pm-16e", reorderTo: Number.NaN } }),
     ).rejects.toThrow(/finite integer/);
 
-    await expect(runAction({ action: "toString", options: {} })).rejects.toThrow(/Unsupported native pm action: toString/);
+    await expect(runAction({ action: "toString", options: {} })).rejects.toThrow(/Unsupported native pm action: tostring/);
     await expect(runAction({ action: "schema", subcommand: "typo", infer: true, options: {} })).rejects.toThrow(
       /Unknown pm schema subcommand "typo"/,
     );
@@ -311,13 +332,14 @@ describe("mcp server branch residual coverage", () => {
     await server.processRpcLine("{ definitely not json");
     parseSpy.mockRestore();
 
+    expect(commandMocks.runClaim).toHaveBeenCalledWith("pm-4b", true, expect.any(Object), expect.objectContaining({ force: true }));
     expect(commandMocks.runCopy).toHaveBeenCalledTimes(2);
     expect(commandMocks.runComments).toHaveBeenCalledTimes(2);
     expect(commandMocks.runHistoryRepair).toHaveBeenCalledTimes(1);
     expect(commandMocks.runHistoryRepairAll).toHaveBeenCalledTimes(1);
     expect(commandMocks.assertHistoryRepairTarget).toHaveBeenCalledTimes(2);
     expect(commandMocks.runSchemaInferTypes).toHaveBeenCalledTimes(1);
-    expect(commandMocks.runPlan).toHaveBeenCalledWith(expect.objectContaining({ id: "pm-16c", reorderTo: 1 }));
+    expect(commandMocks.runPlan).toHaveBeenCalledWith(expect.objectContaining({ id: "pm-16a", reorderTo: 4 }));
   });
 
   it("covers extension-dispatch fallback branches", async () => {
@@ -407,7 +429,7 @@ describe("mcp server branch residual coverage", () => {
       });
       // The swallowed activation failure is surfaced on stderr for diagnosability.
       expect(errorSpy).toHaveBeenCalledWith(
-        "[pm-mcp] extension activation failed; continuing without active extensions:",
+        "[pm-sdk] extension activation failed; continuing without active extensions:",
         expect.any(Error),
       );
     } finally {

@@ -18,6 +18,7 @@ describe("sdk-contract-consumer example", () => {
 
     process.argv = ["node", "inspect-contracts.mjs", "create"];
     vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
       spawnSync: vi.fn(() => ({
         status: 0,
         stdout: JSON.stringify({
@@ -44,6 +45,7 @@ describe("sdk-contract-consumer example", () => {
       isPmToolAction: () => true,
     }));
     vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
       spawnSync: vi.fn(() => ({
         status: 0,
         stdout: JSON.stringify({
@@ -62,7 +64,7 @@ describe("sdk-contract-consumer example", () => {
     vi.resetModules();
     vi.doUnmock("@unbrained/pm-cli/sdk");
     process.argv = ["node", "inspect-contracts.mjs", "invalid-action"];
-    vi.doMock("node:child_process", () => ({ spawnSync: vi.fn() }));
+    vi.doMock("node:child_process", () => ({ execFile: vi.fn(), spawnSync: vi.fn() }));
     await expect(importExampleScript(SCRIPT, "contractsUnsupported")).rejects.toThrow(
       'Unsupported pm action "invalid-action".',
     );
@@ -70,6 +72,7 @@ describe("sdk-contract-consumer example", () => {
     vi.resetModules();
     process.argv = ["node", "inspect-contracts.mjs", "create"];
     vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
       spawnSync: vi.fn(() => ({
         status: 0,
         stdout: JSON.stringify({
@@ -85,6 +88,7 @@ describe("sdk-contract-consumer example", () => {
     vi.resetModules();
     process.argv = ["node", "inspect-contracts.mjs", "create"];
     vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
       spawnSync: vi.fn(() => ({
         status: 1,
         stdout: "",
@@ -97,10 +101,31 @@ describe("sdk-contract-consumer example", () => {
     vi.resetModules();
     process.argv = ["node", "inspect-contracts.mjs", "create"];
     vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
       spawnSync: vi.fn(() => ({ status: 4, stdout: null, stderr: null })),
     }));
     await expect(importExampleScript(SCRIPT, "contractsFailureNoStderr")).rejects.toThrow(
       "pm contracts failed with exit code 4",
+    );
+
+    vi.resetModules();
+    process.argv = ["node", "inspect-contracts.mjs", "create"];
+    vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
+      spawnSync: vi.fn(() => ({ error: new Error("spawn pm ENOENT"), status: null, stdout: null, stderr: null })),
+    }));
+    await expect(importExampleScript(SCRIPT, "contractsSpawnFailure")).rejects.toThrow(
+      "Failed to run pm contracts: spawn pm ENOENT",
+    );
+
+    vi.resetModules();
+    process.argv = ["node", "inspect-contracts.mjs", "create"];
+    vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
+      spawnSync: vi.fn(() => ({ status: 0, stdout: "warning before json\n{", stderr: "" })),
+    }));
+    await expect(importExampleScript(SCRIPT, "contractsMalformedJson")).rejects.toThrow(
+      "Failed to parse JSON from pm contracts:",
     );
 
     // Default action (no argv[2]), non-array actions (the [] fallback) then the
@@ -110,6 +135,7 @@ describe("sdk-contract-consumer example", () => {
     process.argv = ["node", "inspect-contracts.mjs"];
     let contractsCall = 0;
     vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
       spawnSync: vi.fn(() => {
         contractsCall += 1;
         if (contractsCall === 1) {
@@ -127,6 +153,7 @@ describe("sdk-contract-consumer example", () => {
     vi.resetModules();
     process.argv = ["node", "inspect-contracts.mjs"];
     vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
       spawnSync: vi.fn(() => ({
         status: 0,
         stdout: JSON.stringify({
@@ -143,14 +170,27 @@ describe("sdk-contract-consumer example", () => {
     expect(String(consumerOutputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"policy_state": "enabled"');
     consumerOutputSpy.mockRestore();
 
-    // Null stdout exercises the `completed.stdout ?? "{}"` right arm; the parsed {}
-    // then lacks the requested action, surfacing the not-invocable error.
+    // Null stdout trims to an empty payload and falls back to the empty contracts
+    // object, which then lacks the requested action and surfaces not-invocable.
     vi.resetModules();
     process.argv = ["node", "inspect-contracts.mjs", "create"];
     vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
       spawnSync: vi.fn(() => ({ status: 0, stdout: null, stderr: "" })),
     }));
     await expect(importExampleScript(SCRIPT, "contractsNullStdout")).rejects.toThrow(
+      'Action "create" is not currently invocable in this runtime.',
+    );
+
+    // Empty stdout is the real spawnSync-with-encoding no-output shape; it
+    // should fall back to an empty contracts object just like null stdout.
+    vi.resetModules();
+    process.argv = ["node", "inspect-contracts.mjs", "create"];
+    vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
+      spawnSync: vi.fn(() => ({ status: 0, stdout: "", stderr: "" })),
+    }));
+    await expect(importExampleScript(SCRIPT, "contractsEmptyStdout")).rejects.toThrow(
       'Action "create" is not currently invocable in this runtime.',
     );
 
@@ -159,6 +199,7 @@ describe("sdk-contract-consumer example", () => {
     vi.resetModules();
     process.argv = ["node", "inspect-contracts.mjs", "create"];
     vi.doMock("node:child_process", () => ({
+      execFile: vi.fn(),
       spawnSync: vi.fn(() => ({
         status: 0,
         stdout: JSON.stringify({

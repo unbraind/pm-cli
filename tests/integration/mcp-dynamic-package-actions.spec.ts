@@ -1528,7 +1528,7 @@ describe("MCP dynamic package actions", () => {
         () => undefined,
         (error: unknown) => error,
       );
-      expect((missingPackageInstallTarget as Error).message).toContain("requires extension source input");
+      expect((missingPackageInstallTarget as Error).message).toContain("requires package source input");
 
       const missingInstallTarget = await handleRequest({
         jsonrpc: "2.0",

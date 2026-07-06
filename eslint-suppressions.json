@@ -178,11 +178,6 @@
       "count": 2
     }
   },
-  "src/mcp/server.ts": {
-    "no-useless-assignment": {
-      "count": 1
-    }
-  },
   "src/sdk/package-import-adapters.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1

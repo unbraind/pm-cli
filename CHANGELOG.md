@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Expose SDK runAction and PmClient execution surface for programmatic integrations ([pm-xzhz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-xzhz.toon))
+
+### Other
+
+- ADR: the pm SDK is the single public API — CLI and MCP are presentation layers (proposed) ([pm-muhw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-muhw.toon))
+
 ## 2026.7.5 - 2026-07-05
 
 ### Added
