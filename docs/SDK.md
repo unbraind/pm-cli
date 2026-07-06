@@ -455,9 +455,9 @@ efficiency. Pass `fullChangedFields: true` alongside the command options when an
 embedded SDK consumer needs the full `changed_fields` array.
 
 Read convenience methods and the matching top-level read functions (`get`,
-`list`, `search`, `context`, `next`, `aggregate`, `stats`) are the first
-SDK-first PM primitives: they return the same structured data the CLI/MCP
-surfaces use, but with stable TypeScript contracts exported from
+`list`, `search`, `context`, `next`, `aggregate`, `stats`) are foundational
+SDK PM primitives: they return the same structured data the CLI/MCP surfaces
+use, but with stable TypeScript contracts exported from
 `@unbrained/pm-cli/sdk` and `@unbrained/pm-cli/sdk/runtime`. Use them instead of
 spawning `pm get`, `pm list`, `pm search`, `pm context`, `pm next`,
 `pm aggregate`, or `pm stats` when building a custom project-management tool, CI

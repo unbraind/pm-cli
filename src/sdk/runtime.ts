@@ -494,53 +494,57 @@ export class PmClient {
     return runAction({ ...this.defaults, ...args, action });
   }
 
+  private runTyped<Result>(action: PmActionName, args: PmClientRunArgs = {}): Promise<Result> {
+    return this.run(action, args) as Promise<Result>;
+  }
+
   /**
    * Return the same context snapshot produced by `pm context`.
    */
   context(options: ContextOptions = {}): Promise<ContextResult> {
-    return this.run("context", { options }) as Promise<ContextResult>;
+    return this.runTyped("context", { options });
   }
 
   /**
    * List items with the MCP/agent compact defaults.
    */
   list(options: ListOptions = {}): Promise<ListResult> {
-    return this.run("list", { options }) as Promise<ListResult>;
+    return this.runTyped("list", { options });
   }
 
   /**
    * Search items with the MCP/agent compact defaults.
    */
   search(query: string, options: SearchOptions = {}): Promise<SearchResult> {
-    return this.run("search", { query, options }) as Promise<SearchResult>;
+    return this.runTyped("search", { query, options });
   }
 
   /**
    * Read one item by id.
    */
   get(id: string, options: GetOptions = {}): Promise<GetResult> {
-    return this.run("get", { id, options }) as Promise<GetResult>;
+    return this.runTyped("get", { id, options });
   }
 
   /**
    * Return the ranked next-work recommendation produced by `pm next`.
    */
   next(options: NextOptions = {}): Promise<NextResult> {
-    return this.run("next", { options }) as Promise<NextResult>;
+    return this.runTyped("next", { options });
   }
 
   /**
    * Group matching items with the same semantics as `pm aggregate`.
    */
   aggregate(options: AggregateOptions = {}): Promise<AggregateResult> {
-    return this.run("aggregate", { options }) as Promise<AggregateResult>;
+    return this.runTyped("aggregate", { options });
   }
 
   /**
    * Return project tracker statistics with the same sections as `pm stats`.
    */
   stats(options: StatsCommandOptions = {}): Promise<StatsResult> {
-    return this.run("stats", { options }) as Promise<StatsResult>;
+    return this.runTyped("stats", { options });
   }
 
   /**

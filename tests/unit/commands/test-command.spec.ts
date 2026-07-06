@@ -865,6 +865,15 @@ describe("runTest", () => {
     expect(linkedExecution.exitCode).toBe(0);
     expect(linkedExecution.stdout).toContain("ok");
     expect(linkedExecution.stderr).toContain("warn");
+    const exceededBuffer = {
+      stdout: "",
+      stderr: "",
+      stdoutBytes: 0,
+      stderrBytes: 0,
+      maxBufferExceeded: true,
+    };
+    expect(testInternals.appendLinkedTestOutputChunk(exceededBuffer, Buffer.from("ignored"), "stdout")).toBe(false);
+    expect(exceededBuffer.stdoutBytes).toBe(0);
 
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-test-command-helpers-"));
     try {

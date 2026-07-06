@@ -1022,6 +1022,9 @@ function appendLinkedTestOutputChunk(
   chunk: Buffer | string,
   target: "stdout" | "stderr",
 ): boolean {
+  if (state.maxBufferExceeded) {
+    return false;
+  }
   const text = typeof chunk === "string" ? chunk : chunk.toString("utf8");
   const bytes = Buffer.byteLength(text);
   if (target === "stdout") {
@@ -2339,6 +2342,7 @@ export const _testOnlyTestCommand = {
   resolveLinkedTestRequestedContextMode,
   resolveTrackedRunId,
   runLinkedTestCommand,
+  appendLinkedTestOutputChunk,
   seedLinkedTestSandbox,
   seedLinkedTestTrackerData,
   splitJsonPathSegments,

@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[3]: architecture,"area:sdk","area:search"
 created_at: "2026-07-05T04:54:09.542Z"
-updated_at: "2026-07-06T11:14:35.195Z"
+updated_at: "2026-07-06T11:25:14.377Z"
 assignee: codex-agent
 author: maintainer-agent
 estimated_minutes: 480
@@ -17,9 +17,10 @@ confidence: medium
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-lodl,blocked_by,"2026-07-05T04:55:04.440Z",null,null
   pm-muhw,blocked_by,"2026-07-05T04:55:04.919Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-06T10:54:21.169Z",codex-agent,"Evidence: exported typed SDK read primitives on PmClient and SDK barrel for context/list/search/get/next/aggregate/stats; docs/SDK.md documents the read surface. Verification passed: pnpm typecheck; focused SDK + linked-test suites; pnpm lint; node scripts/run-tests.mjs coverage at 100/100/100/100; installed-package temp project exercised @unbrained/pm-cli/sdk PmClient read primitives successfully. Remaining acceptance: migrate CLI query command handlers to consume the public SDK primitives before closing pm-rjqr."
   "2026-07-06T11:14:35.194Z",codex-agent,"Review loop evidence: addressed Greptile P1 by exporting callable top-level read primitives from both @unbrained/pm-cli/sdk and @unbrained/pm-cli/sdk/runtime, in addition to PmClient methods. Verification after the fix passed: pnpm typecheck; focused SDK test with built package export assertion; installed-package temp dogfood invoking top-level wrappers; pnpm lint; pnpm quality:docs-skills; node scripts/run-tests.mjs coverage at 100/100/100/100."
+  "2026-07-06T11:25:14.374Z",codex-code-agent,"Review-loop evidence: addressed post-PR bot findings on PR #466. Added an early return in appendLinkedTestOutputChunk so max-buffer state skips chunk conversion entirely, exposed the helper to unit tests, consolidated repeated SDK read-method casts behind a private runTyped<Result>() helper, and tightened SDK docs wording from 'first SDK-first' to 'foundational SDK PM primitives'. Verification passed: pnpm typecheck; node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts tests/unit/sdk/sdk-index.spec.ts; pnpm quality:docs-skills; pnpm lint; node scripts/run-tests.mjs coverage (264 files, 5437 tests, 100/100/100/100 coverage)."
 files[3]{path,scope,note}:
   src/sdk/index.ts,project,Public SDK barrel exports read primitive option/result contracts
   src/sdk/runtime.ts,project,Typed PmClient read primitives for context/list/search/get/next/aggregate/stats
