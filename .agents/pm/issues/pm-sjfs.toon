@@ -1,0 +1,16 @@
+id: pm-sjfs
+title: "GH-448: boolean custom field is silently never persisted (data-loss class)"
+description: "Dogfood GH-448: pm schema add-field --type boolean registers fine but values set via the derived flag are silently dropped on create/update — success reported, data lost. Duplicate check: searched boolean custom field — pm-vhbf/pm-qvdj (closed) shipped the field system; no open item covers the boolean coercion bug."
+type: Issue
+status: open
+priority: 1
+tags[4]: bug,data-loss,gh-issue,schema
+created_at: "2026-07-06T08:03:08.451Z"
+updated_at: "2026-07-06T08:03:08.451Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: Boolean custom fields persist via auto-derived flags on create+update; regression spec across all four custom-field types; uncoercible values hard-error instead of silent drop; tarball-sandbox verified
+parent: pm-8jdc
+risk: medium
+confidence: high
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/448\n\n## Problem (data loss class)\nA custom field registered `--type boolean` via `pm schema add-field` is silently never persisted when set through its auto-derived flag (`--customer-impact true` style): create/update succeeds, no warning, field absent from item and changed_fields. Boolean is one of four documented custom-field types; any boolean field (customer_impact, regression, is_blocker...) loses data on every write while reporting success.\n\n## Repro (from GH-448, pm 2026.7.4)\nfresh tracker -> `pm schema add-field customer_impact --type boolean --commands create,update` -> `pm create ... --customer-impact true` -> field missing.\n\n## Definition of done\nBoolean custom fields persist through create/update (coercion fixed); regression spec across all four field types; silent-drop path converted to hard error for unknown/uncoercible custom values; verified in sandbox from packed tarball."

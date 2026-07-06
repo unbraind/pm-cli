@@ -969,6 +969,8 @@ const HEALTH_DETAIL_SUMMARIZERS = {
     semantic_runtime_available: details.semantic_runtime_available,
     compatibility_mode_auto_defaults: details.compatibility_mode_auto_defaults,
     auto_ollama_defaults_applied: details.auto_ollama_defaults_applied,
+    auto_ollama_defaults_skipped_reason: details.auto_ollama_defaults_skipped_reason,
+    auto_ollama_defaults_remediation: details.auto_ollama_defaults_remediation,
     refresh_policy: details.refresh_policy,
     provider_active: details.provider_active,
     vector_store_active: details.vector_store_active,
@@ -1512,10 +1514,10 @@ async function buildHistoryDriftCheck(
   };
 }
 
-function buildVectorizationRuntimeSnapshot(settings: PmSettings): VectorizationRuntimeSnapshot {
+function buildVectorizationRuntimeSnapshot(settings: PmSettings, pmRoot: string): VectorizationRuntimeSnapshot {
   const runtimeDefaults = resolveSettingsWithSemanticRuntimeDefaults(settings);
   const providerResolution = resolveEmbeddingProviders(runtimeDefaults.settings);
-  const vectorStoreResolution = resolveVectorStores(runtimeDefaults.settings);
+  const vectorStoreResolution = resolveVectorStores(runtimeDefaults.settings, pmRoot);
   const runtimeEmbeddingIdentity = providerResolution.active
     ? buildVectorizationEmbeddingIdentity(providerResolution.active.name, providerResolution.active.model)
     : null;
@@ -1649,7 +1651,7 @@ async function buildVectorizationCheck(
   refreshPolicy: VectorRefreshPolicy,
   verboseStaleItems: boolean,
 ): Promise<{ check: HealthCheck; warnings: string[] }> {
-  const snapshot = buildVectorizationRuntimeSnapshot(settings);
+  const snapshot = buildVectorizationRuntimeSnapshot(settings, pmRoot);
   const ledgerBefore = await readVectorizationStatusLedger(pmRoot);
   const staleBefore = snapshot.semanticRuntimeAvailable ? collectStaleVectorizationIds(items, ledgerBefore.entries) : [];
   const refreshResult = await refreshStaleVectorizationItems({ pmRoot, snapshot, refreshPolicy, staleBefore });
@@ -1683,6 +1685,8 @@ async function buildVectorizationCheck(
         semantic_runtime_available: snapshot.semanticRuntimeAvailable,
         compatibility_mode_auto_defaults: snapshot.runtimeDefaults.auto_ollama_defaults_applied,
         auto_ollama_defaults_applied: snapshot.runtimeDefaults.auto_ollama_defaults_applied,
+        auto_ollama_defaults_skipped_reason: snapshot.runtimeDefaults.auto_ollama_defaults_skipped_reason ?? null,
+        auto_ollama_defaults_remediation: snapshot.runtimeDefaults.auto_ollama_defaults_remediation ?? null,
         refresh_policy: buildVectorizationRefreshPolicyDetails(refreshPolicy),
         ...buildVectorizationProviderDetails(settings, snapshot),
         embedding_identity_changed: embeddingIdentityChanged,

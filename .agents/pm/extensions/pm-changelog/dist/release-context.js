@@ -134,9 +134,20 @@ function listReleaseTags(cwd, pattern) {
 function parseTagLine(line) {
     const [name, peeledCommitterDate, directCommitterDate] = line.split("\t");
     const tagName = name?.trim();
-    const timestamp = (peeledCommitterDate || directCommitterDate)?.trim();
-    if (!tagName || !timestamp)
+    const rawTimestamp = (peeledCommitterDate || directCommitterDate)?.trim();
+    if (!tagName || !rawTimestamp)
         return undefined;
+    // Canonicalize the offset of UTC-equivalent timestamps to ISO `Z` form so the
+    // exported `since`/`until` window strings are stable across git versions:
+    // older git emits `...T12:00:00Z` from `%(committerdate:iso-strict)` while
+    // git >= ~2.42 emits `...T12:00:00+00:00`. Only UTC-equivalent offsets (`Z`,
+    // `+00:00`, `-00:00`) are rewritten -- they denote the same instant and the
+    // same UTC date, so the heading date (`formatLocalTimestampDate` reads the
+    // date prefix of this string) is unaffected. Non-zero offsets are preserved
+    // verbatim so a tag's heading keeps reflecting its original (committer-local)
+    // date instead of being shifted to UTC. Downstream `filterItemsByTime` parses
+    // via `Date.parse` (offset-agnostic), so selection is unaffected either way.
+    const timestamp = canonicalizeUtcOffset(rawTimestamp);
     return { name: tagName, timestamp };
 }
 function tryGitCommitTimestamp(cwd, ref) {
@@ -188,5 +199,37 @@ function normalizeTimestamp(value) {
     if (Number.isNaN(date.getTime()))
         return value;
     return date.toISOString();
+}
+// UTC-equivalent offset suffixes emitted by git's `%(committerdate:iso-strict)`
+// (and by `iso8601`/RFC-3339 in general). All denote the same instant; only the
+// textual form differs across git versions, which is the root cause of audit
+// finding F2 (fragile test). Used by `canonicalizeUtcOffset`.
+const UTC_OFFSET_SUFFIXES = ["Z", "+00:00", "+0000", "-00:00", "-0000"];
+// Rewrite a UTC-equivalent timestamp to the canonical ISO `Z` form without
+// altering its instant or UTC date. Non-UTC offsets (and unparseable strings)
+// are returned verbatim so callers that depend on the local date prefix (e.g.
+// `formatLocalTimestampDate`) are unaffected. This is intentionally narrower
+// than `normalizeTimestamp` (which always converts to UTC via `toISOString`).
+function canonicalizeUtcOffset(value) {
+    const trimmed = value.trim();
+    const offset = extractOffset(trimmed);
+    if (offset === null)
+        return value; // no offset / not ISO-strict → leave as-is
+    if (!UTC_OFFSET_SUFFIXES.includes(offset))
+        return value; // non-UTC → preserve local date
+    const withoutOffset = trimmed.slice(0, trimmed.length - offset.length);
+    const parsed = new Date(`${withoutOffset}Z`);
+    if (Number.isNaN(parsed.getTime()))
+        return value;
+    return parsed.toISOString();
+}
+// Extract the trailing timezone offset of an ISO-8601 / RFC-3339 timestamp:
+// `Z`, `±HH:MM`, or `±HHMM`. Returns `null` when no offset is present (the
+// timestamp is "local" or naively formatted) so the caller can avoid guessing.
+function extractOffset(value) {
+    if (value.endsWith("Z"))
+        return "Z";
+    const match = value.match(/[+-]\d{2}:?\d{2}$/);
+    return match ? match[0] : null;
 }
 //# sourceMappingURL=release-context.js.map

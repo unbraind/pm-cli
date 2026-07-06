@@ -304,7 +304,7 @@ async function resolveSemanticRefreshRuntimeContext(
   if (!provider) {
     return buildSkippedSemanticRefreshResult(normalizedItemIds, "search_semantic_refresh_skipped:provider_unconfigured");
   }
-  const vectorStore = resolveVectorStores(effectiveSettings).active;
+  const vectorStore = resolveVectorStores(effectiveSettings, pmRoot).active;
   if (!vectorStore) {
     return buildSkippedSemanticRefreshResult(normalizedItemIds, "search_semantic_refresh_skipped:vector_store_unconfigured");
   }

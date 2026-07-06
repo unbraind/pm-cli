@@ -1,3 +1,4 @@
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { resolveEmbeddingProviders, resolveProviderConfigSource } from "../../../../src/core/search/providers.js";
@@ -121,6 +122,46 @@ describe("resolveVectorStores honors settings.vector_store.adapter", () => {
       });
       expect(resolution.active?.name).toBe("lancedb");
     }
+  });
+});
+
+describe("resolveVectorStores anchors relative lancedb paths to the workspace root (pm-og1v)", () => {
+  const lancedbOnly = {
+    vector_store: {
+      lancedb: { path: ".agents/pm/search/lancedb/" },
+    },
+  };
+
+  it("anchors a workspace-relative path to the workspace root for a conventional pm root", () => {
+    const pmRoot = path.join(path.sep, "workspace", "project", ".agents", "pm");
+    const resolution = resolveVectorStores(lancedbOnly, pmRoot);
+    expect(resolution.active).toMatchObject({
+      name: "lancedb",
+      path: path.resolve(pmRoot, "search", "lancedb"),
+    });
+  });
+
+  it("anchors a relative path to the pm root itself for a bare --path root", () => {
+    const pmRoot = path.join(path.sep, "sandboxes", "run-1");
+    const resolution = resolveVectorStores(lancedbOnly, pmRoot);
+    expect(resolution.active?.name).toBe("lancedb");
+    expect((resolution.active as { path: string }).path).toBe(
+      path.resolve(pmRoot, ".agents", "pm", "search", "lancedb"),
+    );
+  });
+
+  it("leaves absolute lancedb paths untouched", () => {
+    const absolute = path.join(path.sep, "var", "data", "vectors");
+    const resolution = resolveVectorStores(
+      { vector_store: { lancedb: { path: absolute } } },
+      path.join(path.sep, "workspace", ".agents", "pm"),
+    );
+    expect((resolution.active as { path: string }).path).toBe(absolute);
+  });
+
+  it("preserves the raw relative path when no pm root is provided (back-compat)", () => {
+    const resolution = resolveVectorStores(lancedbOnly);
+    expect((resolution.active as { path: string }).path).toBe(".agents/pm/search/lancedb/");
   });
 });
 

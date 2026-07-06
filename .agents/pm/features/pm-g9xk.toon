@@ -1,0 +1,18 @@
+id: pm-g9xk
+title: "GH-443: lean error mode — drop constant required/why boilerplate from structured errors"
+description: "Dogfood GH-443: every structured error carries two constant prose fields (required/why) that never vary by error; keep only actionable fields in lean mode. Duplicate check: pm-gdi7 covers unknown-option suggestions, not envelope size; no other overlap."
+type: Feature
+status: open
+priority: 2
+tags[4]: agent-ux,"area:cli",gh-issue,token-efficiency
+created_at: "2026-07-06T08:03:05.997Z"
+updated_at: "2026-07-06T08:03:05.997Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: JSON errors omit generic constant prose while keeping code/detail/examples/next_steps/recovery; error-envelope spec updated; mode documented for agents
+parent: pm-mpbb
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-gdi7,related,"2026-07-06T08:03:05.997Z",null,null
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/443\n\n## Problem\nThe structured error envelope carries two constant-prose fields on every error (`required`: \"Use values that match documented command constraints.\"; `why`: \"Validation protects data consistency...\"). They never vary by error and carry no actionable signal — pure token overhead in retry loops.\n\n## Proposed fix\nLean error mode (or simply omit constant `why`/`required` under --json unless error-specific): keep `code`, `detail`, `examples`, `next_steps`, `recovery.suggested_retry`. Verbose prose stays for human/TTY.\n\n## Definition of done\nJSON errors drop generic boilerplate (or --lean-errors/PM_LEAN_ERRORS added); error-envelope spec updated; agent docs note the mode. Related: pm-gdi7 covers unknown-option did-you-mean in the same envelope."

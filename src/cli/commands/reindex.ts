@@ -600,6 +600,7 @@ function buildReindexManifest(mode: ReindexMode, generatedAt: string, metadataDo
 
 function assertSemanticRuntimeAvailable(params: {
   requestedMode: ReindexMode;
+  pmRoot: string;
   settings: PmSettings;
   extensionEmbedding: { name: string; embedBatch?: ExtensionEmbedBatch; embed?: ExtensionEmbedOne } | null;
   extensionVectorAdapter: ExtensionVectorAdapter | null;
@@ -617,7 +618,7 @@ function assertSemanticRuntimeAvailable(params: {
       EXIT_CODE.USAGE,
     );
   }
-  const vectorResolution = resolveVectorStores(params.settings);
+  const vectorResolution = resolveVectorStores(params.settings, params.pmRoot);
   if (!vectorResolution.active && !params.extensionVectorAdapter) {
     throw new PmCliError(
       `Reindex mode '${params.requestedMode}' requires a configured vector store in settings.vector_store.qdrant/settings.vector_store.lancedb or an extension adapter selected by settings.vector_store.adapter`,
@@ -1112,6 +1113,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
   const extensionVectorAdapter = resolveExtensionVectorAdapter(settings);
   const semanticRuntime = assertSemanticRuntimeAvailable({
     requestedMode,
+    pmRoot,
     settings,
     extensionEmbedding,
     extensionVectorAdapter,

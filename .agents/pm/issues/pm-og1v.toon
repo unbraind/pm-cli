@@ -1,0 +1,36 @@
+id: pm-og1v
+title: "Relative lancedb vector-store path resolves against process cwd, creating nested .agents/pm/.agents/pm stores"
+description: "Settings store a workspace-relative lancedb path (default .agents/pm/search/lancedb/). getLanceDbSnapshotPath/resolveLanceDbStore resolved it with path.resolve() against process cwd, so any pm invocation from a workspace subdirectory (including detached background-refresh children that inherit the parent cwd) silently created a second vector store under that subdirectory. Observed artifact: .agents/pm/.agents/pm/search/lancedb/.pm-cli-local-vectors/pm_items.json created 2026-07-06T08:22:48Z (matches vectorization-status.json generated_at), i.e. a refresh ran with cwd=<repo>/.agents/pm."
+type: Issue
+status: closed
+priority: 1
+tags[4]: "area:search",bug,paths,vector-store
+created_at: "2026-07-06T08:44:42.249Z"
+updated_at: "2026-07-06T09:52:59.549Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: "pm search/reindex/health run from a workspace subdirectory never create .agents/pm/.agents/**; regression tests cover conventional root, bare --path root, absolute path, and no-root back-compat"
+risk: medium
+confidence: high
+resolution: "Relative LanceDB paths now resolve against the pmRoot-derived workspace root across search, health, reindex, and mutation semantic refresh."
+expected_result: "pm search/reindex/health from workspace subdirectories do not create .agents/pm/.agents vector stores; regression tests cover conventional root, bare root, absolute path, and back-compat."
+actual_result: "Focused linked tests passed, temp-dir subdirectory smoke proved the anchored path and absence of nested .agents/pm/.agents, and full coverage passed 100/100/100/100."
+comments[3]{created_at,author,text}:
+  "2026-07-06T09:11:38.748Z",codex-agent,"Implementation continuation: claimed canonical vector-store path item after all-status duplicate search and live item read. Existing working-tree patch already anchors relative LanceDB paths to pmRoot-derived workspace roots; next step is focused verification, temp-dir dogfood, and PR-ready evidence."
+  "2026-07-06T09:26:35.474Z",codex-agent,"Evidence: implemented and verified relative LanceDB path anchoring through pmRoot-aware resolveVectorStores call sites in search, health, reindex, and semantic refresh. Focused linked test passed; temp-dir smoke from inside project/.agents/pm confirmed active LanceDB path anchored to project/.agents/pm/search/lancedb and no nested .agents/pm/.agents was created. Gates passed: pnpm build, pnpm lint, pnpm contracts:check, pnpm security:scan, pnpm audit --audit-level moderate, pm health --check-only --summary --json ok, pm validate history_drift ok with pre-existing validate_resolution_missing_fields warning, full coverage 264 files / 5436 tests / 100% statements branches functions lines."
+  "2026-07-06T09:52:59.545Z",codex-agent,"Review follow-up: accepted Gemini's platform-independence suggestion by using path.resolve in the LanceDB path anchoring expectations. Focused tests passed after the change: semantic-defaults, search-provider-store-selection, and health-command (93/93), plus pnpm typecheck."
+notes[1]{created_at,author,text}:
+  "2026-07-06T08:51:41.233Z",maintainer-agent,"Fix implemented and verified 2026-07-06 - anchorLanceDbStorePath in vector-stores.ts anchors relative paths to the workspace root (basename-based pm-root derivation, separator-safe); resolveVectorStores(settings, pmRoot?) optional param threaded through search.ts, health.ts (buildVectorizationRuntimeSnapshot), reindex.ts (assertSemanticRuntimeAvailable), cache.ts semantic-refresh context. cache.ts isSemanticRefreshActive left unanchored on purpose (boolean availability check only). 4 regression tests added to search-provider-store-selection.spec.ts (conventional root, bare root, absolute path, no-root back-compat); spec passes 20/20. Stray .agents/pm/.agents/ directory removed from the workspace. tsc clean."
+files[6]{path,scope,note}:
+  src/cli/commands/health.ts,project,Thread pmRoot into health vectorization snapshot and expose auto-default remediation
+  src/cli/commands/reindex.ts,project,Thread pmRoot into reindex vector-store availability checks
+  src/cli/commands/search.ts,project,Thread pmRoot into search runtime vector-store resolution
+  src/core/search/cache.ts,project,Thread pmRoot into semantic refresh vector-store resolution
+  src/core/search/vector-stores.ts,project,Anchor relative LanceDB paths to pmRoot-derived workspace root
+  tests/unit/core/search/search-provider-store-selection.spec.ts,project,"Regression coverage for workspace-root,bare-root,absolute,and back-compat LanceDB paths"
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/core/search/search-provider-store-selection.spec.ts tests/unit/commands/health-command.spec.ts,project,180,Vector-store path and health vectorization regression coverage
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mr90dkd3-o6rk9f,test,passed,"2026-07-06T09:18:14.309Z","2026-07-06T09:19:21.687Z","2026-07-06T09:19:21.687Z",1,0,0
+close_reason: Fixed relative LanceDB vector-store path anchoring and verified no nested workspace store is created
+body: "Root cause: resolveLanceDbStore (src/core/search/vector-stores.ts) returned the raw settings path; consumers call resolve(storePath) which is cwd-dependent. pm-root discovery walks ancestors so item data stays correct, but the vector store forks.\n\nFix (working tree, session 2026-07-06): anchor relative lancedb paths to the workspace root derived from pmRoot (basename-based, separator-safe: <ws>/.agents/pm -> <ws>; bare --path roots anchor to themselves). resolveVectorStores(settings, pmRoot?) gained an optional backward-compatible param; call sites in search.ts, cache.ts (semantic refresh context) updated; health.ts buildVectorizationRuntimeSnapshot still needs pmRoot threading. Also remove the stray nested .agents/pm/.agents/ directory from the workspace.\n\nAcceptance: pm search/reindex/health run from a workspace subdirectory never create .agents/pm/.agents/**; unit test covers anchorLanceDbStorePath for conventional root, bare root, and absolute path."

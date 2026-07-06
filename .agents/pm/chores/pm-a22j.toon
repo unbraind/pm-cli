@@ -6,11 +6,13 @@ status: open
 priority: 1
 tags[4]: agent-ux,"area:cli",measurement,simplification
 created_at: "2026-07-05T04:53:03.897Z"
-updated_at: "2026-07-05T04:53:03.897Z"
+updated_at: "2026-07-06T08:04:52.096Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "Repeatable script reports byte+approx-token counts for pm --help, all command helps, contracts --full, and MCP tool list; baseline snapshot recorded in the item body/notes; script reusable for the after-comparison"
 parent: pm-n7rr
 risk: low
 confidence: high
+notes[1]{created_at,author,text}:
+  "2026-07-06T08:04:52.095Z",maintainer-agent,"Baseline evidence already measured by the 2026-07-05 external dogfood audit (record here so the chore starts from data): pm contracts --json 25,118 B; --availability-only 24,666 B; --action create 63,534 B; --full 520,414 B. Output-shape costs: pm list --limit 20 = 2,552 B TOON vs 3,773 B JSON (+48%); pm context = 4,582 vs 7,034 (+53%); trivial create echo 368 B vs 29 B --id-only (12.7x); tags = 43% of context brief output. Re-measure pm --help/per-command help on this workspace to complete the baseline, then re-run the full set after each pm-n7rr consolidation lands."
 body: ""

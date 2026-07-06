@@ -1,0 +1,18 @@
+id: pm-jkjt
+title: "GH-450: --duration 5m parses as 5 MONTHS — silent wrong data on meet/event/remind"
+description: "Dogfood GH-450: relative-parser maps m=months (PR#263) so a 5-minute standup becomes a 5-month meeting with no warning; minutes exist as 'min' (pm-zoe4). Needs an ambiguity guard or convention flip. Duplicate check: pm-zoe4 (closed) added min granularity only; pm-o3fh moves the shortcuts but not the parser; no open overlap."
+type: Issue
+status: open
+priority: 1
+tags[4]: agent-ux,bug,calendar,gh-issue
+created_at: "2026-07-06T08:03:09.588Z"
+updated_at: "2026-07-06T08:03:09.588Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: "Bare 'm' duration can no longer silently mean months (error-with-hint or convention flip with deprecation window, decision recorded under pm-m2u1); duration units exhaustively documented; parser spec covers m/min/mo"
+parent: pm-mpbb
+risk: medium
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-o3fh,related,"2026-07-06T08:03:09.588Z",null,null
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/450\n\n## Problem (silent wrong data)\n`--duration 5m` on meet/event/remind parses as 5 MONTHS (relative-parser: m=months, PR#263 decision; minutes = `5min`, added by pm-zoe4). Help shows only 1h/2d examples and never warns; a \"5-minute standup\" silently becomes a 5-month meeting with warnings: []. Every mainstream scheduling convention treats m=minutes.\n\n## Proposed fix (needs a small decision)\nOptions: (a) flip `m` to minutes with `mo` for months (breaking but convention-aligned; alias window + warning); (b) make bare `m` ambiguous -> hard error suggesting `min`/`mo`; (c) keep semantics but emit a loud warning + document. Recommend (b) then (a) after a deprecation cycle. Record choice on ADR log (pm-m2u1).\n\n## Definition of done\n`--duration 5m` can no longer silently produce months; help/docs document duration units exhaustively; parser spec covers m/min/mo; migration note in changelog item."
