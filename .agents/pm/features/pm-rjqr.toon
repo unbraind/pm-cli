@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[3]: architecture,"area:sdk","area:search"
 created_at: "2026-07-05T04:54:09.542Z"
-updated_at: "2026-07-06T12:47:55.683Z"
+updated_at: "2026-07-06T14:07:53.915Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: SDK exports typed query primitives returning the same data the CLI renders (projection/format concerns stay CLI-side); CLI query commands consume only these primitives; docstrings + linked tests + SDK reference docs; zero behavior change (query/search specs green)
@@ -24,6 +24,8 @@ comments[7]{created_at,author,text}:
   "2026-07-06T12:04:29.647Z",codex-code-agent,"Review-loop evidence: addressed latest Gemini findings on PR #466. appendLinkedTestOutputChunk now preserves the remaining allowed output bytes from an oversized chunk before marking maxBufferExceeded, while still ignoring subsequent chunks once exceeded. The Windows symlink test tolerance now accepts both EPERM and EACCES without using any. Verification passed: pnpm typecheck; pnpm lint; node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts; node scripts/run-tests.mjs coverage (264 files, 5437 tests, 100/100/100/100 coverage)."
   "2026-07-06T12:17:57.186Z",codex-code-agent,"Review-loop evidence: addressed final Gemini RegExp-stub robustness finding on PR #466. The non-Error regex constructor test now stubs RegExp only for the specific will-throw pattern and delegates every other constructor call to the real RegExp, avoiding interference with Vitest internals while preserving the non-Error failure coverage. Verification passed: pnpm typecheck; pnpm lint; node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts; node scripts/run-tests.mjs coverage (264 files, 5437 tests, 100/100/100/100 coverage)."
   "2026-07-06T12:35:42.931Z",codex-code-agent,"Review-loop evidence: addressed latest Gemini efficiency and RegExp-stub robustness findings on PR #466. readLinkedTestOutputChunkText now uses subarray directly for Buffer chunks instead of Buffer.from(chunk), avoiding a full copy for oversized output chunks. The RegExp constructor stub now preserves the real constructor prototype chain while still throwing only for the will-throw pattern. Verification passed: pnpm typecheck; pnpm lint; node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts; node scripts/run-tests.mjs coverage (264 files, 5437 tests, 100/100/100/100 coverage)."
+notes[1]{created_at,author,text}:
+  "2026-07-06T14:07:53.915Z",maintainer-agent,"2026-07-06 audit #12 external verification: installed the packed 2026.7.6 tarball in a fresh CJS host project and exercised the promoted read primitives via dynamic import of @unbrained/pm-cli/sdk — list/get/search/context/next/stats all returned correct results against a sandbox tracker (get/search take positional id/query + options + clientOptions). PmClient create/update/close round-trip also verified from CJS. One DX note: raw client.run('create', {type,title}) fails 'Missing required option --title' (args must be pre-split); typed client.create() is the working path — consider mapping bare title/type in run() args or documenting the split contract."
 files[3]{path,scope,note}:
   src/sdk/index.ts,project,Public SDK barrel exports read primitive option/result contracts
   src/sdk/runtime.ts,project,Typed PmClient read primitives for context/list/search/get/next/aggregate/stats

@@ -6,10 +6,11 @@ status: open
 priority: 3
 tags[5]: "area:tests",ci,flaky-test,locks,windows
 created_at: "2026-07-06T08:53:25.086Z"
-updated_at: "2026-07-06T09:06:00.884Z"
+updated_at: "2026-07-06T13:13:04.640Z"
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: stale-cleanup owner-write test mock guards are path-normalized (no strict full-path equality); test passes 50 consecutive Windows nightly runs
+parent: pm-u9d0
 risk: low
 confidence: medium
 body: "Hypotheses to check when reproducing: (1) owner.json written through a different path spelling or a writeFileAtomic temp name so the strict equality path guard misses; (2) leftover gate directory state from a sibling test; (3) race between gate mkdir and owner write cleanup on slower Windows runners.\n\nSuggested hardening: match on path.basename/endsWith instead of strict full-path equality, or normalize both sides with path.resolve; assert gate dir is absent before starting.\n\nEvidence: GH issue #427, failed run https://github.com/unbraind/pm-cli/actions/runs/28733397917 (2026-07-05), green runs 2026-07-04 (this test) and 2026-07-06 (all)."

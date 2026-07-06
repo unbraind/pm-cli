@@ -1,0 +1,21 @@
+id: pm-ssi3
+title: "Semgrep 874840484: Medium non-literal RegExp in src/cli/commands/history-redact.ts#L175"
+description: Semgrep finding 874840484 (Medium) for non-literal RegExp at src/cli/commands/history-redact.ts#L175; autotriage=Untriaged; file risk=Unspecified.
+type: Issue
+status: open
+priority: 2
+tags[7]: code-scanning,medium,non-literal-regexp,security,semgrep,unspecified,untriaged
+created_at: "2026-07-06T18:56:17.682Z"
+updated_at: "2026-07-06T18:56:17.682Z"
+author: codex-cli-agent
+parent: pm-oz8u
+risk: medium
+confidence: low
+reporter: semgrep
+severity: medium
+environment: unbraind/pm-cli refs/heads/main
+expected_result: "Semgrep finding is triaged as fixed, confirmed false positive, or explicitly accepted with rationale; the source code or CI/security configuration is updated when remediation is required."
+actual_result: "Semgrep currently reports finding 874840484 as Open (Medium, confidence Low) at src/cli/commands/history-redact.ts#L175."
+affected_version: main@6f511706628f18743a00a1cfe851e8d1f492684e
+component: src/cli/commands/history-redact.ts
+body: "# Semgrep finding import\n\nSemgrep finding id: 874840484\nRule: javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp\nProduct: Code\nSeverity: Medium\nStatus: Open\nConfidence: Low\nCategory: security\nIs Pro Rule: False\nSemgrep autotriage result: Untriaged\nSemgrep file risk tag: Unspecified\nRepository: unbraind/pm-cli\nBranch: refs/heads/main\nCreated at: 2026-07-03 12:04:25.346777\nLast opened at: 2026-07-03 12:04:25.328064\n\nLinks:\n- Code: https://github.com/unbraind/pm-cli/blob/6f511706628f18743a00a1cfe851e8d1f492684e/src/cli/commands/history-redact.ts#L175\n- Semgrep: https://semgrep.dev/orgs/unbrained/findings/874840484\n- Repository: https://github.com/unbraind/pm-cli\n\nRule description:\nRegExp() called with a `spec` function argument, this might allow an attacker to cause a Regular Expression Denial-of-Service (ReDoS) within your application as RegExP blocks the main thread. For this reason, it is recommended to use hardcoded regexes instead. If your regex is run on user-controlled input, consider performing input validation or use a regex checking/sanitization library such as https://www.npmjs.com/package/recheck to verify that the regex does not appear vulnerable to ReDoS.\n\nImported from downloaded CSV:\n/home/steve/Downloads/Semgrep_Code_Combined_Findings_2026_07_06.csv"

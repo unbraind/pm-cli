@@ -16,8 +16,12 @@ import {
   printResult,
   writeStdout,
 } from "./registration-helpers.js";
+import { runExtension, type ExtensionCommandResult } from "./commands/extension.js";
 import { SCAFFOLD_CAPABILITIES } from "./commands/extension/scaffold.js";
 import { renderExtensionDescribeMarkdown, type ExtensionDescribeResult } from "./commands/extension/describe.js";
+import { runConfig } from "./commands/config.js";
+import { runInit, summarizeInitResult } from "./commands/init.js";
+import { runUpgrade } from "./commands/upgrade.js";
 
 
 
@@ -103,7 +107,7 @@ async function looksLikeShellExpandedWildcard(targets: string[]): Promise<boolea
   );
 }
 
-async function normalizeInstallTargets(targets: string[] | undefined): Promise<string | undefined> {
+async function normalizeInstallTargets(targets: string[] | undefined): Promise<string[] | undefined> {
   // Commander variadic `[targets...]` always yields an array (empty when no
   // targets are given), so a single nullish coalesce covers every input.
   /* c8 ignore start -- commander variadic `[targets...]` always passes an array; the `?? []` arm is an unreachable nullish guard */
@@ -112,15 +116,12 @@ async function normalizeInstallTargets(targets: string[] | undefined): Promise<s
     .filter((target) => target.length > 0);
   /* c8 ignore stop */
   if (normalizedTargets.length <= 1) {
-    return normalizedTargets[0];
+    return normalizedTargets.length === 0 ? undefined : normalizedTargets;
   }
   if (await looksLikeShellExpandedWildcard(normalizedTargets)) {
-    return "*";
+    return ["*"];
   }
-  throw new PmCliError(
-    `Install accepts one package source at a time. To install bundled first-party packages, quote the wildcard: pm install '*'`,
-    EXIT_CODE.USAGE,
-  );
+  return normalizedTargets;
 }
 
 function validateExtensionMarkdownOptions(
@@ -203,7 +204,6 @@ async function executeExtensionCommand(
   const outputOption = typeof normalizedOptions.output === "string" ? normalizedOptions.output : undefined;
   const outputPath = outputOption?.trim();
   validateExtensionMarkdownOptions(normalizedOptions, globalOptions, outputPath);
-  const { runExtension } = await import("./commands/extension.js");
   const result = await runExtension(target, normalizedOptions, globalOptions);
   if (normalizedOptions.markdown === true) {
     await emitExtensionMarkdownResult({ result, vocabulary, outputPath, globalOptions });
@@ -211,6 +211,105 @@ async function executeExtensionCommand(
     printResult(result, globalOptions);
   }
   applyExtensionDoctorStrictExit(result, normalizedOptions);
+  if (globalOptions.profile) {
+    printError(`profile:command=extension took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+function extractExtensionInstallDetails(result: ExtensionCommandResult): Record<string, unknown> {
+  return result.details !== null && typeof result.details === "object" ? result.details : {};
+}
+
+function serializeExtensionInstallError(error: unknown): Record<string, unknown> {
+  if (error instanceof PmCliError) {
+    const code = typeof error.context.code === "string" ? error.context.code : undefined;
+    const recovery = error.context.recovery && typeof error.context.recovery === "object" ? error.context.recovery : undefined;
+    return {
+      message: error.message,
+      exit_code: error.exitCode,
+      ...(code ? { code } : {}),
+      ...(recovery ? { recovery } : {}),
+    };
+  }
+  return {
+    message: error instanceof Error ? error.message : String(error),
+    exit_code: EXIT_CODE.GENERIC_FAILURE,
+  };
+}
+
+async function executeExtensionInstallCommand(
+  targets: string[] | undefined,
+  options: Record<string, unknown>,
+  command: Command,
+  vocabulary: LifecycleCommandVocabulary,
+): Promise<void> {
+  const normalizedTargets = await normalizeInstallTargets(targets);
+  if (normalizedTargets === undefined || normalizedTargets.length <= 1) {
+    await executeExtensionCommand(normalizedTargets?.[0], options, command, "install", vocabulary);
+    return;
+  }
+
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const normalizedOptions = normalizeExtensionOptions(options, "install", vocabulary);
+  validateExtensionMarkdownOptions(normalizedOptions, globalOptions, undefined);
+
+  const rows: Array<Record<string, unknown>> = [];
+  const warnings: string[] = [];
+  let failureExitCode: number | undefined;
+  for (const target of normalizedTargets) {
+    try {
+      const result = await runExtension(target, normalizedOptions, globalOptions);
+      const details = extractExtensionInstallDetails(result);
+      const targetWarnings = Array.isArray(result.warnings) ? result.warnings : [];
+      warnings.push(...targetWarnings);
+      const targetOk = result.ok === true;
+      if (!targetOk && failureExitCode === undefined) {
+        failureExitCode = EXIT_CODE.GENERIC_FAILURE;
+      }
+      rows.push({
+        target,
+        ok: targetOk,
+        extension: details.extension,
+        source: details.source,
+        destination_path: details.destination_path,
+        activated: details.activated,
+        settings_changed: details.settings_changed,
+        command_paths: details.command_paths,
+        action_paths: details.action_paths,
+        warnings: targetWarnings,
+      });
+    } catch (error: unknown) {
+      const serializedError = serializeExtensionInstallError(error);
+      const exitCode = serializedError.exit_code;
+      if (
+        typeof exitCode === "number" &&
+        (failureExitCode === undefined || (failureExitCode === EXIT_CODE.GENERIC_FAILURE && exitCode !== EXIT_CODE.GENERIC_FAILURE))
+      ) {
+        failureExitCode = exitCode;
+      }
+      rows.push({
+        target,
+        ok: false,
+        error: serializedError,
+      });
+    }
+  }
+
+  const failedCount = rows.filter((row) => row.ok !== true).length;
+  const result = {
+    ok: failedCount === 0,
+    action: "install",
+    scope: normalizedOptions.global === true ? "global" : "project",
+    installed_count: rows.length - failedCount,
+    failed_count: failedCount,
+    targets: rows,
+    warnings: [...new Set(warnings)].sort((left, right) => left.localeCompare(right)),
+  };
+  printResult(result, globalOptions);
+  if (failedCount > 0) {
+    process.exitCode = failureExitCode ?? EXIT_CODE.GENERIC_FAILURE;
+  }
   if (globalOptions.profile) {
     printError(`profile:command=extension took_ms=${Date.now() - startedAt}`);
   }
@@ -322,8 +421,7 @@ function registerLifecycleCommand(
       .description(`Install ${noun} from local path, bundled alias, npm: source, wildcard, or GitHub source.`),
     vocabulary,
   ).action(async (targets: string[] | undefined, _options: Record<string, unknown>, command) => {
-    const target = await normalizeInstallTargets(targets);
-    await executeExtensionCommand(target, command.optsWithGlobals() as Record<string, unknown>, command, "install", vocabulary);
+    await executeExtensionInstallCommand(targets, command.optsWithGlobals() as Record<string, unknown>, command, vocabulary);
   });
 
   addLifecycleScopeOptions(
@@ -439,7 +537,6 @@ async function runInitCommandAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runInit, summarizeInitResult } = await import("./commands/init.js");
   const result = await runInit(
     prefix,
     globalOptions,
@@ -508,7 +605,6 @@ async function runConfigCommandAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runConfig } = await import("./commands/config.js");
   const { resolvedScope, resolvedAction, resolvedKey, resolvedValue } = resolveConfigPositionals(scope, action, key, value);
   const result = await runConfig(
     resolvedScope,
@@ -600,8 +696,7 @@ export function registerSetupCommands(program: Command): void {
       .option("--ref <ref>", "Git ref/branch/tag for GitHub install sources")
       .description("Install a pm package into the project package scope by default."),
   ).action(async (targets: string[] | undefined, _options: Record<string, unknown>, command) => {
-    const target = await normalizeInstallTargets(targets);
-    await executeExtensionCommand(target, command.optsWithGlobals() as Record<string, unknown>, command, "install", "package");
+    await executeExtensionInstallCommand(targets, command.optsWithGlobals() as Record<string, unknown>, command, "package");
   });
 
   addPackageScopeOptions(
@@ -618,7 +713,6 @@ export function registerSetupCommands(program: Command): void {
   ).action(async (target: string | undefined, _options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
-    const { runUpgrade } = await import("./commands/upgrade.js");
     const result = await runUpgrade(target, command.opts() as Record<string, unknown>, globalOptions);
     printResult(result, globalOptions);
     if (!result.ok) {

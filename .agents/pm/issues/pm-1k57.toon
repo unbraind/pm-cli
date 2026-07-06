@@ -1,0 +1,20 @@
+id: pm-1k57
+title: Bare extension command group (pm changelog / pm graph) exits 0 with zero output instead of rendering group help
+description: "2026-07-06 audit #12 sandbox (v2026.7.6 tarball): running an extension-provided command group with no subcommand (pm changelog, pm graph) prints NOTHING and exits 0. Root cause: root configureOutput writeErr is a no-op (usage errors render in the catch path), so commander's help-on-error output for action-less groups is swallowed, and handleRunPmCliHelpDisplayError then treats commander.help as an already-rendered success parse. Silent success is the worst never-block failure mode: agents get no subcommand discovery and a false success signal."
+type: Issue
+status: closed
+priority: 2
+tags[4]: agent-ux,audit-followup,extensions,never-block
+created_at: "2026-07-06T14:03:25.654Z"
+updated_at: "2026-07-06T14:05:56.110Z"
+author: maintainer-agent
+estimated_minutes: 45
+acceptance_criteria: Bare invocation of an extension command group renders the group help (subcommand list) instead of exiting silently; explicit --help output unchanged; spec covers bare-group invocation.
+parent: pm-ugqx
+risk: low
+confidence: high
+resolution: ensureCommandPath now attaches a help-rendering action to created intermediate groups; bare group invocation prints the subcommand list on stdout (terminal registrations still override the handler).
+expected_result: Bare pm changelog / pm graph render group help instead of silent exit 0.
+actual_result: "Verified on rebuilt dist in temp workspace: bare pm changelog prints usage + export/generate subcommands, exit 0; new spec asserts help text for bare-group parse; tsc + spec green."
+close_reason: fixed
+body: ""

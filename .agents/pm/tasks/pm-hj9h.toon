@@ -1,0 +1,34 @@
+id: pm-hj9h
+title: "pm install should accept multiple package targets (help already advertises [targets...])"
+description: "2026-07-06 audit #12 sandbox: pm install pm-a pm-b errors 'Install accepts one package source at a time' although help/usage shows install [options] [targets...]. Either loop installs over each target sequentially (preferred agent UX, saves N-1 process spawns) or fix the advertised signature. Wildcard '*' already batch-installs bundled packages, so batch semantics exist."
+type: Task
+status: closed
+priority: 3
+tags[3]: agent-ux,audit-followup,extensions
+created_at: "2026-07-06T14:06:03.255Z"
+updated_at: "2026-07-06T18:53:19.564Z"
+author: maintainer-agent
+estimated_minutes: 60
+acceptance_criteria: "pm install a b c installs all three (per-target result rows, partial-failure reporting) or usage/help no longer advertises variadic targets; spec covers multi-target path."
+parent: pm-ugqx
+risk: low
+confidence: high
+resolution: fixed
+expected_result: pm install accepts multiple explicit targets and reports per-target success or failure without losing wildcard install behavior.
+actual_result: "Multi-target install now runs targets sequentially, emits aggregate JSON rows with installed/failed counts, preserves wildcard collapse, and sets a failure exit code when any target fails."
+comments[5]{created_at,author,text}:
+  "2026-07-06T16:12:55.019Z",codex-cli-agent,"Evidence: implemented sequential multi-target package install aggregation with per-target rows, warning de-duplication, and partial-failure exit code handling. Verified focused specs, full coverage 100/100/100/100, typecheck, lint, audit, and installed-tarball temp dogfood."
+  "2026-07-06T16:24:56.459Z",codex-cli-agent,"Evidence update: release gate found the pruned ESLint suppression baseline needed its static-quality budget lowered; updated MAX_ESLINT_SUPPRESSIONS 108 -> 105 and verified release-automation-contract spec passes."
+  "2026-07-06T16:41:45.520Z",codex-cli-agent,"Review response: accepted Greptile P2 on multi-target install success accounting. Changed targetOk to require result.ok === true so omitted ok is counted as failure, matching aggregate failure detection. Verification: register-commands focused suite and pnpm typecheck pass."
+  "2026-07-06T18:33:23.326Z",codex-cli-agent,"Review response: accepted Sourcery/Gemini feedback on aggregate install robustness. Multi-target install now preserves the first specific failure exit code instead of always using generic failure, and the result path tolerates missing warning arrays without unsafe spreading. Verification: node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/extensions/extension-command.spec.ts passed (197 tests); pnpm typecheck passed."
+  "2026-07-06T18:53:19.564Z",codex-cli-agent,"Review response: accepted Greptile P2 on aggregate install exit-code precedence. A soft ok:false row still contributes a generic failure fallback, but a later specific PmCliError exit code can now replace that generic fallback so exit-code-only consumers get the more actionable code. Verification: focused register/extension tests passed (197 tests); pnpm typecheck passed."
+files[3]{path,scope,note}:
+  scripts/release/static-quality-gate.mjs,project,ESLint suppression budget ratchet lowered after lint prune
+  src/cli/register-setup.ts,project,multi-target install aggregation and partial-failure reporting
+  tests/unit/commands/register-commands.spec.ts,project,"multi-target install success,partial failure,wildcard regression coverage"
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,360
+  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,project,180
+  node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/extensions/extension-command.spec.ts,project,240
+close_reason: "Implemented multi-target package install with per-target aggregation, partial-failure reporting, warning de-duplication, focused tests, full 100% coverage, type/lint/audit gates, and installed-tarball dogfood evidence."
+body: ""

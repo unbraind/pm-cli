@@ -1,0 +1,41 @@
+id: pm-vcu7
+title: "Annotation --add silently stores flag-like tokens as content: pm notes <id> --add --stdin records the literal note \"--stdin\""
+description: "Found live during ecosystem audit #11 (2026-07-06): an agent invoked pm notes pm-doxj --add --stdin (copying comments' --stdin flag) and the CLI silently stored the string --stdin as the note text on the roadmap milestone. Option values beginning with -- are almost never intended content for annotation commands. Duplicate check 2026-07-06: pm-gdi7 covers UNKNOWN-option suggestions (different failure: here the option is known and the VALUE is a swallowed flag); pm-yql1 is facet grammar consolidation; pm-jkjt/GH-450 is the analogous silent-wrong-data class for durations; searched 'stdin', 'flag value', annotation issues — no existing item."
+type: Issue
+status: closed
+priority: 2
+tags[4]: agent-ux,"area:cli",data-quality,dogfood
+created_at: "2026-07-06T13:25:17.483Z"
+updated_at: "2026-07-06T17:59:18.348Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: "Annotation/value-taking flags (--add on notes/learnings, comment text sources, --message, etc.) reject or explicitly confirm values that start with '-' unless separated by '=' or preceded by '--' terminator; error names the correct stdin spelling for the command (notes/learnings: --add - ; comments: --stdin); regression tests cover notes --add --stdin, learnings --add --file, comments --add --stdin; contracts/docs updated if flag semantics change"
+parent: pm-mpbb
+risk: medium
+confidence: high
+resolution: fixed
+expected_result: Annotation add paths reject likely swallowed flags while keeping explicit literal dash-leading text writable.
+actual_result: "Notes/learnings/comments reject flag-like --add values with command-specific stdin guidance, while text=--value and real stdin inputs remain accepted."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-gdi7,related,"2026-07-06T13:25:38.213Z",null,null
+  pm-yql1,related,"2026-07-06T13:25:38.213Z",null,null
+comments[5]{created_at,author,text}:
+  "2026-07-06T16:12:58.701Z",codex-cli-agent,"Evidence: annotation --add values that look like flags now fail with command-specific stdin guidance while text= keeps literal dash-leading content writable. Verified comments, notes, learnings regression specs, full coverage 100/100/100/100, typecheck, lint, audit, and installed-tarball temp dogfood."
+  "2026-07-06T16:56:23.808Z",codex-cli-agent,"Review response: accepted Greptile P2 on implicit annotation emptyFlag handling. The flag-like --add guard now treats missing emptyFlag as the same implicit --add default used by the empty-text error path. Verification: focused annotation/register/extension command tests pass."
+  "2026-07-06T17:21:56.074Z",codex-cli-agent,"Review response: accepted integrated Greptile P1 on notes/learnings stdin false positives. Notes and learnings now pass rawValue=options.add into the shared annotation guard, so --add - validates the original '-' token while preserving flag-shaped stdin content. Verification: focused annotation/register/extension suite and pnpm typecheck pass."
+  "2026-07-06T17:47:49.655Z",codex-cli-agent,"Review response: accepted integrated Greptile P1 on comments --add - raw token. comments now passes rawValue=options.add ?? rawValue so the guard validates the original '-' token while preserving flag-shaped stdin payloads. Verification: node scripts/run-tests.mjs test -- tests/unit/commands/comments-command.spec.ts tests/unit/commands/notes-learnings-command.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/extensions/extension-command.spec.ts passed (254 tests); pnpm typecheck passed."
+  "2026-07-06T17:59:18.348Z",codex-cli-agent,"Review response: accepted Greptile P2 on the unused annotation parseText input parameter. The shared parseText callback is back to a one-argument contract while rawValue remains the dedicated guard input. Verification: focused annotation/register/extension suite passed (254 tests); pnpm typecheck passed."
+learnings[1]{created_at,author,text}:
+  "2026-07-06T13:26:08.726Z",maintainer-agent,"Commander-style value flags consume the next token even when it looks like another flag: pm notes <id> --add --stdin stores literal \"--stdin\" as the note and discards the heredoc, exit 0. Correct stdin spelling differs per facet (notes/learnings use '--add -'; comments has a real --stdin flag) — that asymmetry is what baits the mistake. Recovery today requires manual .toon edit + dropping the tail history entry so the prior after_hash re-anchors (validate history_drift confirms); notes/learnings have no --edit/--delete (pm-a2h3)."
+files[6]{path,scope,note}:
+  src/cli/commands/annotation-command.ts,project,shared annotation input parsing — guard belongs here
+  src/cli/commands/comments.ts,project,comment add/edit parsing threads raw value for flag-like guard
+  src/cli/commands/notes.ts,project,add-only options surface; --add value swallows flag-like tokens
+  src/core/item/parse.ts,project,createStdinTokenResolver only special-cases the exact token '-'
+  tests/unit/commands/comments-command.spec.ts,project,comments --add --stdin rejection and stdin/text escape regression
+  tests/unit/commands/notes-learnings-command.spec.ts,project,notes/learnings flag-like --add rejection and text= escape regression
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,360
+  node scripts/run-tests.mjs test -- tests/unit/commands/comments-command.spec.ts tests/unit/commands/notes-learnings-command.spec.ts,project,240
+close_reason: "Implemented shared annotation guard for flag-like --add values with command-specific stdin guidance and text= escape hatch; verified focused tests, full 100% coverage, type/lint/audit gates, and installed-tarball dogfood evidence."
+body: "## Repro (live, 2026.7.6)\nPM_AUTHOR=maintainer-agent pm notes pm-doxj --add --stdin <<'EOF'\nreal note text\nEOF\nResult: note created with text '--stdin'; the heredoc content is discarded. Exit 0, no warning.\n\n## Why it matters\nSilent wrong data in the tracker (same class as GH-450 duration months bug). The agent believes the note was recorded; the actual content is lost. Because notes are append-only (no --edit/--delete, unlike comments), recovery required manual .toon surgery + history-chain revert — see companion parity task filed the same session.\n\n## Cause\ncommander option --add <text> consumes the next token as its value; createStdinTokenResolver only special-cases the exact token '-'. Any other flag-like token ('--stdin', '--file', a typoed flag) becomes content.\n\n## Suggested fix\nIn parseAnnotationTextInput / the shared annotation command path (src/cli/commands/annotation-command.ts, src/core/item/parse.ts), reject values matching ^--?[a-z] with a structured error that (a) shows the swallowed token, (b) lists the command's real input sources incl. the stdin spelling, (c) mentions quoting or 'text=' explicit-key form for genuinely dash-leading content. Keep an escape hatch (text=--stdin explicit key form) so legitimate dash-leading content stays writable."

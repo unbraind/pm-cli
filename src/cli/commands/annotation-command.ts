@@ -35,6 +35,7 @@ interface AnnotationCommandOptions {
 interface AnnotationInput {
   mode: "list" | "add" | "stdin" | "file" | "edit" | "delete";
   value?: string;
+  rawValue?: string;
   emptyFlag?: string;
   index?: number;
 }
@@ -133,6 +134,34 @@ export function wrapOwnershipConflict(error: unknown, guidance: OwnershipConflic
   throw error;
 }
 
+function annotationStdinHint(collectionKey: string): string {
+  return collectionKey === "comments" ? "--stdin" : "--add -";
+}
+
+function assertAnnotationAddValueIsNotFlagLike(raw: string, config: AnnotationCommandConfig<string>): void {
+  const emptyFlag = config.input.emptyFlag ?? "--add";
+  if (emptyFlag !== "--add") {
+    return;
+  }
+  const trimmed = raw.trim();
+  if (!/^-{1,2}[A-Za-z][\w-]*$/.test(trimmed)) {
+    return;
+  }
+  const stdinHint = annotationStdinHint(config.collectionKey);
+  throw new PmCliError(
+    `--add value "${trimmed}" looks like an option, not annotation text. Use ${stdinHint} to read stdin, or use text=${trimmed} for literal dash-leading text.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "annotation_flag_like_value",
+      required: `Use ${stdinHint} for stdin input, pass plain text, or use text=${trimmed} when the text really starts with "-".`,
+      examples: [
+        `pm ${config.collectionKey} <id> ${stdinHint}`,
+        `pm ${config.collectionKey} <id> --add text=${trimmed}`,
+      ],
+    },
+  );
+}
+
 /**
  * Implements run annotation command for the public runtime surface of this module.
  */
@@ -190,6 +219,8 @@ export async function runAnnotationCommand<TKey extends string, TEntry extends A
     return renderAnnotationResult(result.item.id, config.collectionKey, allEntries, limit, options.includeMeta === true);
   }
 
+  const rawText = config.input.rawValue ?? config.input.value ?? "";
+  assertAnnotationAddValueIsNotFlagLike(rawText, config);
   const text = config.parseText(config.input.value ?? "");
   if (!text.trim()) {
     throw new PmCliError(`${config.input.emptyFlag ?? "--add"} text cannot be empty`, EXIT_CODE.USAGE);

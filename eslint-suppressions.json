@@ -261,9 +261,6 @@
   "tests/unit/commands/register-commands.spec.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
-    },
-    "no-useless-assignment": {
-      "count": 3
     }
   },
   "tests/unit/commands/stats-command.spec.ts": {

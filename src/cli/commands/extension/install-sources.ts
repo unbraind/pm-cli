@@ -15,9 +15,11 @@ import { pathExists } from "../../../core/fs/fs-utils.js";
 import { isPathWithinDirectory } from "../../../core/fs/path-utils.js";
 import { EXIT_CODE } from "../../../core/shared/constants.js";
 import { PmCliError, type PmCliErrorContext } from "../../../core/shared/errors.js";
+import { listBundledPackageAliases } from "./bundled-catalog.js";
 
 const execFileAsync = promisify(execFile);
 const PM_CLI_PACKAGE_NAME = "@unbrained/pm-cli";
+let bundledPackageAliasesCache: { key: string; aliases: string[] } | undefined;
 
 interface LocalInstallSource {
   kind: "local";
@@ -89,6 +91,24 @@ function parseGithubPathSpec(pathSpec: string, input: string, refOverride?: stri
   };
 }
 
+function parseNpmInstallSource(normalizedInput: string, forceGithub: boolean, refOverride: string | undefined): InstallSource {
+  const spec = normalizedInput.slice("npm:".length).trim();
+  if (spec.length === 0) {
+    throw new PmCliError('npm package source must include a package spec after "npm:".', EXIT_CODE.USAGE);
+  }
+  if (forceGithub) {
+    throw new PmCliError('Options "--gh/--github" cannot be combined with npm: package sources.', EXIT_CODE.USAGE);
+  }
+  if (refOverride) {
+    throw new PmCliError('Option "--ref" cannot be combined with npm: package sources.', EXIT_CODE.USAGE);
+  }
+  return {
+    kind: "npm",
+    input: normalizedInput,
+    spec,
+  };
+}
+
 /**
  * Implements parse extension install source for the public runtime surface of this module.
  */
@@ -100,21 +120,7 @@ export function parseExtensionInstallSource(input: string, options: { forceGithu
   const refOverride = typeof options.ref === "string" && options.ref.trim().length > 0 ? options.ref.trim() : undefined;
 
   if (normalizedInput.startsWith("npm:")) {
-    const spec = normalizedInput.slice("npm:".length).trim();
-    if (spec.length === 0) {
-      throw new PmCliError('npm package source must include a package spec after "npm:".', EXIT_CODE.USAGE);
-    }
-    if (options.forceGithub) {
-      throw new PmCliError('Options "--gh/--github" cannot be combined with npm: package sources.', EXIT_CODE.USAGE);
-    }
-    if (refOverride) {
-      throw new PmCliError('Option "--ref" cannot be combined with npm: package sources.', EXIT_CODE.USAGE);
-    }
-    return {
-      kind: "npm",
-      input: normalizedInput,
-      spec,
-    };
+    return parseNpmInstallSource(normalizedInput, options.forceGithub === true, refOverride);
   }
 
   const maybeGithubByUrl = (() => {
@@ -675,6 +681,69 @@ async function resolveGithubSourceDirectory(cloneDirectory: string, source: Gith
 }
 
 /**
+ * Bare package-ish names (no path separators, or a single-scope npm name) that
+ * miss local resolution are almost always intended as npm or bundled installs,
+ * so the not-found error must route agents to those sources instead of dead-ending.
+ */
+function looksLikeBarePackageName(input: string): boolean {
+  const trimmed = input.trim();
+  if (trimmed.length === 0 || trimmed.startsWith(".") || trimmed.startsWith("~")) {
+    return false;
+  }
+  if (trimmed.startsWith("@")) {
+    return trimmed.split("/").length === 2;
+  }
+  return !trimmed.includes("/") && !trimmed.includes("\\");
+}
+
+async function buildLocalSourceNotFoundError(source: LocalInstallSource): Promise<PmCliError> {
+  const baseMessage = `Local extension source does not exist: "${source.absolute_path}".`;
+  const input = source.input.trim();
+  if (!looksLikeBarePackageName(input)) {
+    return new PmCliError(baseMessage, EXIT_CODE.NOT_FOUND);
+  }
+  let bundledAliases: string[] = [];
+  try {
+    const envPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
+    const cacheKey = typeof envPackageRoot === "string" && envPackageRoot.trim().length > 0
+      ? path.resolve(envPackageRoot.trim())
+      : "";
+    if (bundledPackageAliasesCache?.key !== cacheKey) {
+      bundledPackageAliasesCache = {
+        key: cacheKey,
+        aliases: await listBundledPackageAliases(),
+      };
+    }
+    bundledAliases = bundledPackageAliasesCache.aliases;
+  } catch {
+    // Alias discovery is best-effort; the npm: hint alone still unblocks agents.
+  }
+  const nextSteps = [
+    `Retry with pm install npm:${input} if the package is published to npm.`,
+    `Or inspect bundled packages with pm package catalog --project --json before installing by alias. Known aliases (blank means none found): ${bundledAliases.join(", ")}`,
+  ];
+  return new PmCliError(
+    `${baseMessage} "${input}" did not match a local directory, bundled package alias, or bundled package name; if you meant an npm package, install it as "npm:${input}".`,
+    EXIT_CODE.NOT_FOUND,
+    {
+      code: "local_source_not_found_bare_name",
+      required: `Use "npm:${input}" for npm registry packages, a bundled catalog alias, or an existing local directory path.`,
+      why: "Bare names resolve as local paths only after bundled aliases, so unmatched names need an explicit npm: source.",
+      examples: [
+        `pm install npm:${input}`,
+        "pm package catalog --project --json",
+      ],
+      nextSteps,
+      recovery: {
+        attempted_command: `pm install ${input}`,
+        normalized_args: ["install", input],
+        next_best_command: `pm install npm:${input}`,
+      },
+    },
+  );
+}
+
+/**
  * Implements resolve install source for the public runtime surface of this module.
  */
 export async function resolveInstallSource(source: InstallSource): Promise<ResolvedInstallSource> {
@@ -683,7 +752,7 @@ export async function resolveInstallSource(source: InstallSource): Promise<Resol
     try {
       localStats = await fs.stat(source.absolute_path);
     } catch {
-      throw new PmCliError(`Local extension source does not exist: "${source.absolute_path}".`, EXIT_CODE.NOT_FOUND);
+      throw await buildLocalSourceNotFoundError(source);
     }
     if (!localStats.isDirectory()) {
       throw new PmCliError(`Local extension source must be a directory: "${source.absolute_path}".`, EXIT_CODE.USAGE);

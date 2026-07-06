@@ -232,6 +232,33 @@ describe.each(TARGETS)("run%s", (target) => {
 
       const result = await target.run(id, { add: "-" }, { path: context.pmPath });
       expect(extractEntries(target, result).at(-1)?.text).toBe("from stdin");
+
+      const flagShapedStdin = new PassThrough();
+      flagShapedStdin.end("--some-option\n");
+      Object.defineProperty(flagShapedStdin, "isTTY", { value: false, configurable: true });
+      vi.spyOn(process, "stdin", "get").mockReturnValue(flagShapedStdin as unknown as NodeJS.ReadStream);
+
+      const flagShapedResult = await target.run(id, { add: "-" }, { path: context.pmPath });
+      expect(extractEntries(target, flagShapedResult).at(-1)?.text).toBe("--some-option");
+    });
+  });
+
+  it("rejects flag-like --add values before they become stored annotation text", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, `${target.name}-flag-like-add`);
+      const badToken = target.name === "notes" ? "--stdin" : "--file";
+
+      await expect(target.run(id, { add: badToken }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining(`--add value "${badToken}" looks like an option`),
+        context: expect.objectContaining({
+          code: "annotation_flag_like_value",
+          required: expect.stringContaining("--add -"),
+        }),
+      });
+
+      const literal = await target.run(id, { add: `text=${badToken}` }, { path: context.pmPath });
+      expect(extractEntries(target, literal).at(-1)?.text).toBe(badToken);
     });
   });
 });

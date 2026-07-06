@@ -586,6 +586,14 @@ export function ensureCommandPath(root: Command, pathParts: string[]): Command |
     const created = current.command(part);
     if (index < pathParts.length - 1) {
       created.description("Extension-provided command group.");
+      // Without a handler, commander routes bare-group help through the error
+      // channel, which the root configureOutput intentionally swallows — the
+      // group would exit 0 in silence. Render help on stdout instead so agents
+      // always get subcommand discovery. A later terminal registration for the
+      // same path replaces this handler via Command.action().
+      created.action(() => {
+        created.help();
+      });
     } else {
       created.description("Extension-provided command path.");
     }

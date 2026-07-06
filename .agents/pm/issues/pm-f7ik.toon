@@ -1,0 +1,21 @@
+id: pm-f7ik
+title: "Semgrep 874962821: High spawn shell true in plugins/pm-claude/scripts/pm-mcp-server.mjs#L82"
+description: Semgrep finding 874962821 (High) for spawn shell true at plugins/pm-claude/scripts/pm-mcp-server.mjs#L82; autotriage=False positive; file risk=Generated Code.
+type: Issue
+status: open
+priority: 1
+tags[7]: code-scanning,false-positive,generated-code,high,security,semgrep,spawn-shell-true
+created_at: "2026-07-06T18:56:15.125Z"
+updated_at: "2026-07-06T18:56:15.125Z"
+author: codex-cli-agent
+parent: pm-oz8u
+risk: high
+confidence: low
+reporter: semgrep
+severity: high
+environment: unbraind/pm-cli refs/heads/main
+expected_result: "Semgrep finding is triaged as fixed, confirmed false positive, or explicitly accepted with rationale; the source code or CI/security configuration is updated when remediation is required."
+actual_result: "Semgrep currently reports finding 874962821 as Open (High, confidence Low) at plugins/pm-claude/scripts/pm-mcp-server.mjs#L82."
+affected_version: main@6f511706628f18743a00a1cfe851e8d1f492684e
+component: plugins/pm-claude/scripts/pm-mcp-server.mjs
+body: "# Semgrep finding import\n\nSemgrep finding id: 874962821\nRule: javascript.lang.security.audit.spawn-shell-true.spawn-shell-true\nProduct: Code\nSeverity: High\nStatus: Open\nConfidence: Low\nCategory: security\nIs Pro Rule: False\nSemgrep autotriage result: False positive\nSemgrep file risk tag: Generated Code\nRepository: unbraind/pm-cli\nBranch: refs/heads/main\nCreated at: 2026-07-03 13:57:47.068416\nLast opened at: 2026-07-03 13:57:47.060764\n\nLinks:\n- Code: https://github.com/unbraind/pm-cli/blob/6f511706628f18743a00a1cfe851e8d1f492684e/plugins/pm-claude/scripts/pm-mcp-server.mjs#L82\n- Semgrep: https://semgrep.dev/orgs/unbrained/findings/874962821\n- Repository: https://github.com/unbraind/pm-cli\n\nRule description:\nFound '$SPAWN' with '{shell: process.platform === \"win32\"}'. This is dangerous because this call will spawn the command using a shell process. Doing so propagates current shell settings and variables, which makes it much easier for a malicious actor to execute commands. Use '{shell: false}' instead.\n\nAutotriage reason:\nThis matched because the rule treats any non-false shell value as dangerous, but here the shell option is only enabled on Windows for a fixed hardcoded command and arguments. There is no user-controlled input flowing into the command, so this is not a meaningful command injection risk in this context.\n\nImported from downloaded CSV:\n/home/steve/Downloads/Semgrep_Code_Combined_Findings_2026_07_06.csv"

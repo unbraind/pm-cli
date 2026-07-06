@@ -35,6 +35,7 @@ interface BundledPackageEntry {
   alias: string;
   package_directory: string;
   package_root: string;
+  package_name: string | null;
 }
 
 function resolvePackageRootCandidates(): string[] {
@@ -87,6 +88,38 @@ function derivePackageAlias(packageDirectory: string): string {
   return packageDirectory.replace(/^pm-/i, "").trim().toLowerCase();
 }
 
+async function collectManifestPackageEntries(
+  packagesRoot: string,
+  entriesByAlias: Map<string, BundledPackageEntry>,
+): Promise<void> {
+  const entries = await fs.readdir(packagesRoot, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isDirectory() || !entry.name.startsWith("pm-")) {
+      continue;
+    }
+    const candidateRoot = path.join(packagesRoot, entry.name);
+    if (!(await pathExists(path.join(candidateRoot, "package.json")))) {
+      continue;
+    }
+    const manifest = await readPmPackageManifest(candidateRoot);
+    const aliases = manifest.aliases && manifest.aliases.length > 0
+      ? manifest.aliases
+      : [derivePackageAlias(entry.name)];
+    for (const alias of aliases) {
+      const normalizedAlias = alias.trim().toLowerCase();
+      if (normalizedAlias.length === 0 || entriesByAlias.has(normalizedAlias)) {
+        continue;
+      }
+      entriesByAlias.set(normalizedAlias, {
+        alias: normalizedAlias,
+        package_directory: entry.name,
+        package_root: candidateRoot,
+        package_name: manifest.package_name ?? null,
+      });
+    }
+  }
+}
+
 async function collectBundledPackageEntries(): Promise<BundledPackageEntry[]> {
   const entriesByAlias = new Map<string, BundledPackageEntry>();
   for (const packageRoot of resolvePackageRootCandidates()) {
@@ -94,31 +127,7 @@ async function collectBundledPackageEntries(): Promise<BundledPackageEntry[]> {
     if (!(await pathExists(packagesRoot))) {
       continue;
     }
-    const entries = await fs.readdir(packagesRoot, { withFileTypes: true });
-    for (const entry of entries) {
-      if (!entry.isDirectory() || !entry.name.startsWith("pm-")) {
-        continue;
-      }
-      const candidateRoot = path.join(packagesRoot, entry.name);
-      if (!(await pathExists(path.join(candidateRoot, "package.json")))) {
-        continue;
-      }
-      const manifest = await readPmPackageManifest(candidateRoot);
-      const aliases = manifest.aliases && manifest.aliases.length > 0
-        ? manifest.aliases
-        : [derivePackageAlias(entry.name)];
-      for (const alias of aliases) {
-        const normalizedAlias = alias.trim().toLowerCase();
-        if (normalizedAlias.length === 0 || entriesByAlias.has(normalizedAlias)) {
-          continue;
-        }
-        entriesByAlias.set(normalizedAlias, {
-          alias: normalizedAlias,
-          package_directory: entry.name,
-          package_root: candidateRoot,
-        });
-      }
-    }
+    await collectManifestPackageEntries(packagesRoot, entriesByAlias);
   }
 
   for (const [alias, legacy] of Object.entries(LEGACY_BUNDLED_PACKAGE_ALIASES)) {
@@ -135,6 +144,7 @@ async function collectBundledPackageEntries(): Promise<BundledPackageEntry[]> {
           alias,
           package_directory: legacy.package_directory,
           package_root: packagePath,
+          package_name: null,
         });
         break;
       }
@@ -154,10 +164,18 @@ export async function listBundledPackageAliases(): Promise<string[]> {
 
 /**
  * Implements resolve bundled package root for the public runtime surface of this module.
+ * Accepts every spelling agents naturally reach for: the catalog alias
+ * ("kanban"), the package directory ("pm-kanban"), and the published npm name
+ * ("@unbrained/pm-kanban").
  */
 export async function resolveBundledPackageRoot(alias: string): Promise<string | null> {
   const normalized = alias.trim().toLowerCase();
-  const entry = (await collectBundledPackageEntries()).find((candidate) => candidate.alias === normalized);
+  const entry = (await collectBundledPackageEntries()).find(
+    (candidate) =>
+      candidate.alias === normalized ||
+      candidate.package_directory.toLowerCase() === normalized ||
+      candidate.package_name?.toLowerCase() === normalized,
+  );
   return entry?.package_root ?? null;
 }
 
