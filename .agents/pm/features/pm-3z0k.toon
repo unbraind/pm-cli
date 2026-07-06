@@ -1,0 +1,20 @@
+id: pm-3z0k
+title: "Portable integrity attestation: export a detached hash-chain proof bundle and verify it standalone, so third parties can confirm the recorded history was never altered"
+description: ""
+type: Feature
+status: open
+priority: 3
+tags[3]: governance,history,immutable-record
+created_at: "2026-07-06T23:19:12.124Z"
+updated_at: "2026-07-06T23:19:12.124Z"
+author: maintainer-agent
+estimated_minutes: 480
+acceptance_criteria: "attest export produces a documented, versioned bundle covering all item and workspace history streams with a workspace rollup digest; verify against a bundle detects any post-export stream rewrite and names the diverged streams; verify runs read-only with no locks and works on a bare clone; compact/redact/repair produce lineage-visible digest transitions (tested); SDK exposes export/verify primitives with reference docs; bundle stays small (KBs, independent of workspace size beyond stream count)"
+parent: pm-o2kc
+risk: low
+confidence: medium
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-9yfo,related,"2026-07-06T23:19:12.124Z",null,null
+  pm-g5sx,related,"2026-07-06T23:19:12.124Z",null,null
+  pm-klo8,related,"2026-07-06T23:19:12.124Z",null,null
+body: "The append-only hash-chained JSONL streams already make tampering detectable from inside the workspace (pm validate checks hash and chain continuity). But the proof is only as trustworthy as the machine running pm: an actor who rewrites a stream can recompute the whole chain, and there is no way to hand an auditor, a counterparty, or a future maintainer a compact artifact proving the record as of a moment in time.\n\nProposal: detached, portable integrity attestation built on the existing chains:\n- pm history attest (grammar per ADR pm-pbyu noun-verb placement) exports a small proof bundle: per-stream chain heads (item + workspace streams), entry counts, checkpoint digests from history-compact, a workspace-level rollup digest, and the generation timestamp.\n- pm history attest --verify <bundle> recomputes chains and reports exactly which streams diverged from a previously exported bundle — standalone, requiring only read access.\n- Rollup digest is stable and documented, so external anchoring (committing the digest to another git repo, a transparency log, or a timestamping service) is possible without pm prescribing any specific service.\n- SDK-first: exportAttestation/verifyAttestation are SDK primitives; the CLI verbs are thin wrappers, and packages can build custom anchoring policies on top (e.g. business-workflow deployments anchoring per release).\n- Interop with maintenance flows: history-compact checkpoints and history-redact/repair audited rewrites must roll forward into new attestations with an explicit lineage note, never silently.\n\nTogether with the mutation-completeness gate (pm-9yfo) and the workspace-scoped stream (pm-klo8), this completes the guarantee: every mutation is recorded, and anyone can independently prove the record was never altered."
