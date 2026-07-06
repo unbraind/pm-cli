@@ -1,0 +1,22 @@
+id: pm-55ra
+title: "Token-budget context packer: diversity-aware selection, projection degradation, and bounded output for pm context/next"
+description: "Turn ranked candidates into the most useful bounded-token context packet, shrinking projections before dropping relevant work."
+type: Task
+status: open
+priority: 1
+tags[4]: context,relevance,scale,token-efficiency
+created_at: "2026-07-06T23:50:39.960Z"
+updated_at: "2026-07-06T23:50:39.960Z"
+author: codex-agent
+estimated_minutes: 360
+acceptance_criteria: "pm context and pm next accept or derive an explicit token budget; packer preserves high-scoring required items, avoids near-duplicate context clusters, degrades projection depth before item omission, and reports budget accounting in json/debug output; behavior is measured by pm-cu1i token corpus and pm-atfm quality judgments; large-workspace output remains bounded by contract."
+parent: pm-4k6b
+risk: medium
+confidence: medium
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-atfm,related,"2026-07-06T23:50:39.960Z",codex-agent,null
+  pm-cu1i,related,"2026-07-06T23:50:39.960Z",codex-agent,null
+  pm-dfg0,blocked_by,"2026-07-06T23:50:39.960Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-07-06T23:50:39.960Z",codex-agent,"Duplicate check: searched all statuses for token budget packer/projection degradation/context ranking; existing items cover token measurement and pagination, but no packer implementation item existed."
+body: ""

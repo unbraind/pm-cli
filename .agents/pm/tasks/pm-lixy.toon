@@ -1,0 +1,22 @@
+id: pm-lixy
+title: "Context judgment corpus: small, real-shaped, scale, and returning-agent continuity scenarios for pm context/next"
+description: Create the graded scenario corpus that defines what good context assembly means across workspace size and time-gap dimensions.
+type: Task
+status: open
+priority: 2
+tags[4]: context,eval,quality-gate,relevance
+created_at: "2026-07-06T23:50:40.432Z"
+updated_at: "2026-07-06T23:50:40.432Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: "Corpus includes a tiny scratch workspace, a real-shaped medium workspace, synthetic pm-mi2x scale fixtures, and continuity cases from pm-bwyw; each scenario records focus/query/claim state, expected item grades, token budget, and rationale; corpus format is documented and reviewable; phase-1 judgments baseline current structural context behavior before pm-4k6b changes ranking."
+parent: pm-atfm
+risk: medium
+confidence: medium
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-bwyw,related,"2026-07-06T23:50:40.432Z",codex-agent,null
+  pm-g2zz,related,"2026-07-06T23:50:40.432Z",codex-agent,null
+  pm-z436,related,"2026-07-06T23:50:40.432Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-07-06T23:50:40.432Z",codex-agent,"Duplicate check: searched all statuses for context eval corpus/golden workspace/continuity judgments; only pm-atfm and closed search-eval work matched."
+body: ""

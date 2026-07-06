@@ -1,0 +1,22 @@
+id: pm-xmp5
+title: "Context evaluation runner and CI gate: rank-aware quality metrics plus token-budget regression checks"
+description: Implement the offline runner that scores pm context/next output against the graded corpus and blocks regressions.
+type: Task
+status: open
+priority: 2
+tags[4]: ci,context,quality-gate,relevance
+created_at: "2026-07-06T23:50:40.860Z"
+updated_at: "2026-07-06T23:50:40.860Z"
+author: codex-agent
+estimated_minutes: 300
+acceptance_criteria: "Runner consumes only public SDK read primitives; reports nDCG/MRR-style ranking quality, required-item recall, continuity-delta coverage, and token-budget adherence; baseline from the current assembler is committed; CI gate has documented thresholds and an intentional-update workflow; output includes per-signal attribution once pm-4k6b exposes explanations."
+parent: pm-atfm
+risk: medium
+confidence: medium
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-cu1i,related,"2026-07-06T23:50:40.860Z",codex-agent,null
+  pm-oslr,related,"2026-07-06T23:50:40.860Z",codex-agent,null
+  pm-rjqr,blocked_by,"2026-07-06T23:50:40.860Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-07-06T23:50:40.860Z",codex-agent,"Duplicate check: searched all statuses for context eval runner/quality gate/rank metrics; existing pm-u8n5 is search-only and pm-atfm was the broad parent, so this runner slice is non-duplicate."
+body: ""

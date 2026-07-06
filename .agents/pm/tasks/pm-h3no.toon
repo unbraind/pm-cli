@@ -1,0 +1,21 @@
+id: pm-h3no
+title: "Context relevance scorer contract: pluggable SDK weighting, deterministic default model, and extension override path"
+description: Define the public SDK scorer interface and default deterministic weighting model for pm context and pm next ranking.
+type: Task
+status: open
+priority: 1
+tags[4]: "area:sdk",context,extension,relevance
+created_at: "2026-07-06T23:50:39.508Z"
+updated_at: "2026-07-06T23:50:39.508Z"
+author: codex-agent
+estimated_minutes: 300
+acceptance_criteria: "SDK exports a documented scoreContextCandidates-style contract; default scorer combines all available signal families with deterministic tie-breaking; extension or package code can replace or wrap the scorer; CLI, MCP, and SDK consume the same scorer; golden tests prove small-workspace ordering stays stable when advanced signals are absent."
+parent: pm-4k6b
+risk: medium
+confidence: medium
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-rjqr,blocked_by,"2026-07-06T23:50:39.508Z",codex-agent,null
+  pm-x6jf,related,"2026-07-06T23:50:39.508Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-07-06T23:50:39.508Z",codex-agent,"Duplicate check: searched all statuses for context relevance scorer/plugin/weighting; no child item existed under pm-4k6b, only the broad parent and closed search relevance items."
+body: ""
