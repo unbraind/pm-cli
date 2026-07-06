@@ -887,7 +887,14 @@ describe("runTest", () => {
       await mkdir(path.join(source, "pm", "tasks"), { recursive: true });
       await writeFile(path.join(source, "pm", "tasks", "pm-a.toon"), "item", "utf8");
       await mkdir(path.join(source, "pm", "tasks", "nested"), { recursive: true });
-      await symlink("tasks/pm-a.toon", path.join(source, "pm", "tasks-link"));
+      try {
+        await symlink("tasks/pm-a.toon", path.join(source, "pm", "tasks-link"), "file");
+      } catch (err) {
+        const code = typeof err === "object" && err !== null && "code" in err ? err.code : undefined;
+        if (process.platform !== "win32" || code !== "EPERM") {
+          throw err;
+        }
+      }
       await mkdir(path.join(source, "pm", "history"), { recursive: true });
       await writeFile(path.join(source, "pm", "history", "pm-a.jsonl"), "history", "utf8");
       const restrictedDir = path.join(source, "pm", "blocked-folder");
@@ -2004,19 +2011,20 @@ describe("runTest", () => {
       expect(invalidRegexMetadata.run_results[0]?.error ?? "").toContain("regex assertion is invalid");
 
       const realRegExp = globalThis.RegExp;
+      let nonErrorRegexFailure: string[] | undefined;
       try {
         vi.stubGlobal("RegExp", function throwingRegExp() {
           throw "regex-constructor-failure";
         } as unknown as RegExpConstructor);
-        const nonErrorRegexFailure = testInternals.evaluateLinkedTestAssertions(
+        nonErrorRegexFailure = testInternals.evaluateLinkedTestAssertions(
           { command: "node --version", assert_stdout_regex: ["will-throw"] },
           "plain",
           "",
         );
-        expect(nonErrorRegexFailure[0]).toContain("regex-constructor-failure");
       } finally {
         vi.stubGlobal("RegExp", realRegExp);
       }
+      expect(nonErrorRegexFailure?.[0]).toContain("regex-constructor-failure");
     });
   });
 
