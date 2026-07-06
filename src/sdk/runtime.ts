@@ -566,6 +566,71 @@ export class PmClient {
 }
 
 /**
+ * Return the same context snapshot produced by `pm context` without constructing
+ * a reusable client.
+ */
+export function context(options: ContextOptions = {}, clientOptions: PmClientOptions = {}): Promise<ContextResult> {
+  return new PmClient(clientOptions).context(options);
+}
+
+/**
+ * List items with the MCP/agent compact defaults without constructing a
+ * reusable client.
+ */
+export function list(options: ListOptions = {}, clientOptions: PmClientOptions = {}): Promise<ListResult> {
+  return new PmClient(clientOptions).list(options);
+}
+
+/**
+ * Search items with the MCP/agent compact defaults without constructing a
+ * reusable client.
+ */
+export function search(
+  query: string,
+  options: SearchOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<SearchResult> {
+  return new PmClient(clientOptions).search(query, options);
+}
+
+/**
+ * Read one item by id without constructing a reusable client.
+ */
+export function get(id: string, options: GetOptions = {}, clientOptions: PmClientOptions = {}): Promise<GetResult> {
+  return new PmClient(clientOptions).get(id, options);
+}
+
+/**
+ * Return the ranked next-work recommendation produced by `pm next` without
+ * constructing a reusable client.
+ */
+export function next(options: NextOptions = {}, clientOptions: PmClientOptions = {}): Promise<NextResult> {
+  return new PmClient(clientOptions).next(options);
+}
+
+/**
+ * Group matching items with the same semantics as `pm aggregate` without
+ * constructing a reusable client.
+ */
+export function aggregate(
+  options: AggregateOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<AggregateResult> {
+  return new PmClient(clientOptions).aggregate(options);
+}
+
+/**
+ * Return project tracker statistics with the same sections as `pm stats`
+ * without constructing a reusable client.
+ */
+export function stats(
+  options: StatsCommandOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<StatsResult> {
+  return new PmClient(clientOptions).stats(options);
+}
+
+/**
  * Process-lifetime memo of activated extension registrations, keyed by resolved
  * pm root + cwd + extension settings. `getWorkspaceContracts` is frequently
  * called by importers and package runtimes that cannot thread a registry
