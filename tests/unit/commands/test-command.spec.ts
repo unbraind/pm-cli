@@ -874,6 +874,17 @@ describe("runTest", () => {
     };
     expect(testInternals.appendLinkedTestOutputChunk(exceededBuffer, Buffer.from("ignored"), "stdout")).toBe(false);
     expect(exceededBuffer.stdoutBytes).toBe(0);
+    const nearlyFullBuffer = {
+      stdout: "",
+      stderr: "",
+      stdoutBytes: 20 * 1024 * 1024 - 2,
+      stderrBytes: 0,
+      maxBufferExceeded: false,
+    };
+    expect(testInternals.appendLinkedTestOutputChunk(nearlyFullBuffer, Buffer.from("abcd"), "stdout")).toBe(true);
+    expect(nearlyFullBuffer.stdout).toBe("ab");
+    expect(nearlyFullBuffer.stdoutBytes).toBe(20 * 1024 * 1024 + 2);
+    expect(nearlyFullBuffer.maxBufferExceeded).toBe(true);
 
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-test-command-helpers-"));
     try {
@@ -891,7 +902,7 @@ describe("runTest", () => {
         await symlink("tasks/pm-a.toon", path.join(source, "pm", "tasks-link"), "file");
       } catch (err) {
         const code = typeof err === "object" && err !== null && "code" in err ? err.code : undefined;
-        if (process.platform !== "win32" || code !== "EPERM") {
+        if (process.platform !== "win32" || (code !== "EPERM" && code !== "EACCES")) {
           throw err;
         }
       }

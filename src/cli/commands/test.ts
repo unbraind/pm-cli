@@ -1017,6 +1017,16 @@ function createLinkedTestTerminationRequester(
   };
 }
 
+function readLinkedTestOutputChunkText(chunk: Buffer | string, bytes: number, remainingBytes: number): string {
+  if (remainingBytes <= 0) {
+    return "";
+  }
+  if (bytes <= remainingBytes) {
+    return typeof chunk === "string" ? chunk : chunk.toString("utf8");
+  }
+  return Buffer.from(chunk).subarray(0, remainingBytes).toString("utf8");
+}
+
 function appendLinkedTestOutputChunk(
   state: LinkedTestOutputBufferState,
   chunk: Buffer | string,
@@ -1025,18 +1035,15 @@ function appendLinkedTestOutputChunk(
   if (state.maxBufferExceeded) {
     return false;
   }
-  const text = typeof chunk === "string" ? chunk : chunk.toString("utf8");
-  const bytes = Buffer.byteLength(text);
+  const bytes = typeof chunk === "string" ? Buffer.byteLength(chunk) : chunk.byteLength;
   if (target === "stdout") {
+    const remainingBytes = TEST_OUTPUT_MAX_BUFFER_BYTES - state.stdoutBytes;
+    state.stdout += readLinkedTestOutputChunkText(chunk, bytes, remainingBytes);
     state.stdoutBytes += bytes;
-    if (state.stdoutBytes <= TEST_OUTPUT_MAX_BUFFER_BYTES) {
-      state.stdout += text;
-    }
   } else {
+    const remainingBytes = TEST_OUTPUT_MAX_BUFFER_BYTES - state.stderrBytes;
+    state.stderr += readLinkedTestOutputChunkText(chunk, bytes, remainingBytes);
     state.stderrBytes += bytes;
-    if (state.stderrBytes <= TEST_OUTPUT_MAX_BUFFER_BYTES) {
-      state.stderr += text;
-    }
   }
   const bufferExceeded =
     state.stdoutBytes > TEST_OUTPUT_MAX_BUFFER_BYTES || state.stderrBytes > TEST_OUTPUT_MAX_BUFFER_BYTES;
