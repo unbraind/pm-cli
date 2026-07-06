@@ -6,9 +6,12 @@ status: closed
 priority: 1
 tags[3]: agent-ux,gh-issue,testing
 created_at: "2026-07-06T10:19:54.550Z"
-updated_at: "2026-07-06T10:54:29.474Z"
+updated_at: "2026-07-06T12:47:55.239Z"
 author: codex-agent
 parent: pm-oslr
+resolution: "Fixed GH-463 by making linked tracker-read PM context mismatches recommend --auto-pm-context first, documenting the recovery path, and proving default mismatch plus auto-routed tracker mode in an installed-package temp project."
+expected_result: Linked tracker-read tests give an actionable --auto-pm-context hint or pass when auto context routing is enabled.
+actual_result: "The mismatch hint prioritizes --auto-pm-context, docs describe auto routing, focused tests and installed-package dogfood cover both default mismatch and auto-routed success, and PR #466 merged to main."
 comments[1]{created_at,author,text}:
   "2026-07-06T10:54:22.072Z",codex-agent,"Evidence: GH-463 linked tracker-read mismatch hint now recommends --auto-pm-context first; docs/TESTING.md explains auto PM context routing. Verification passed: focused linked-test suites, pnpm typecheck, pnpm lint, node scripts/run-tests.mjs coverage at 100/100/100/100, security scan, npm audit, pm-changelog check, Sentry/telemetry gate, and installed-package temp project confirmed default schema mismatch includes --auto-pm-context while --auto-pm-context runs tracker mode and passes."
 files[2]{path,scope,note}:
