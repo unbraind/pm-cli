@@ -1,0 +1,20 @@
+id: pm-4ri6
+title: "Create-time near-duplicate advisory: pm create/copy surface similar existing items before new work is filed"
+description: "Advisory duplicate guard at the moment duplicates are born: pm create (and copy) run a bounded similarity probe over existing items (hybrid search + title/issue-code heuristics) and surface likely duplicates as a non-blocking warning, so thousands of parallel agents stop relying on each agent remembering to search first."
+type: Feature
+status: open
+priority: 2
+tags[4]: data-quality,dedupe,multi-agent,sdk-first
+created_at: "2026-07-07T06:49:49.719Z"
+updated_at: "2026-07-07T06:49:49.719Z"
+author: maintainer-agent
+estimated_minutes: 480
+acceptance_criteria: "SDK exposes a findSimilarItems(candidate, {limit, threshold}) read primitive reusing the shipped search providers (keyword-only fallback when no vector provider); pm create/copy emit an advisory listing top-N similar items (id + title + status) when the score threshold is crossed; behavior is config-gated (governance key) with off/advisory/strict modes where strict requires --allow-duplicate to proceed; probe is O(query) via the search index — no workspace scan — and adds bounded latency on the create path measured against the pm-cu1i token/latency budgets; MCP pm_create envelope carries the same advisory; dedupe-audit and this probe share one similarity implementation; docs + contracts updated per the new-flag checklist"
+parent: pm-33cw
+risk: medium
+confidence: medium
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-4n1a,related,"2026-07-07T06:49:49.719Z",null,null
+  pm-jmld,related,"2026-07-07T06:49:49.719Z",null,null
+  pm-khdq,related,"2026-07-07T06:49:49.719Z",null,null
+body: "Today duplicate prevention is procedural (agents are told to pm search before pm create) and post-hoc (package-owned dedupe-audit pm-4n1a + dedupe-merge pm-jmld find duplicates after they exist). At thousands of concurrent agents the procedural guard fails statistically: two agents filing the same gap in the same minute both searched, found nothing (the other item did not exist yet), and created twins. The cheapest correction point is create time, where the candidate title/description/body are already in hand.\n\nDesign constraints:\n- SDK-first (ADR pm-muhw): the similarity probe is a public SDK read primitive; CLI/MCP present its result. dedupe-audit refactors onto the same primitive so detection logic exists once.\n- Advisory by default: never blocks automation silently; strict mode is an explicit governance opt-in for high-hygiene workspaces. Exit code stays 0 in advisory mode (pm-psy1 scripting contract).\n- Scale: probe cost must be index-bound (pm-ydp6 hybrid search; pm-801d read index later) and correct at 1M items; on tiny workspaces it degrades to a cheap title scan with zero config (pm-z436 spectrum invariance).\n- Race window honesty: two simultaneous creates can still race past each other; the advisory shrinks the window, dedupe-audit remains the backstop, and pm-khdq fixes the ID-level collision class. This item does NOT claim transactional uniqueness.\n\nDuplicate-check evidence: pm search 'dedupe' -> pm-4n1a/pm-jmld (closed, post-hoc only); pm search 'similar items create advisory' + 'duplicate detection create' -> no create-time coverage; pm-khdq is ID allocation, not content similarity."
