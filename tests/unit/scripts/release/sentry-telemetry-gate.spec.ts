@@ -283,7 +283,7 @@ describe("scripts/release/sentry-telemetry-gate: telemetry modes", () => {
     expect(json.sentry.critical).toBe(1);
     expect(json.sentry.high).toBe(1);
     expect(json.sentry.ignored_noise_total).toBe(1);
-    expect(json.sentry.ignored_expected_cli_error_total).toBe(1);
+    expect(json.sentry.ignored_expected_handled_total).toBe(1);
     expect(json.telemetry.checked).toBe(true);
     expect(json.telemetry.ok).toBe(true);
     expect(process.exitCode).toBe(1);
@@ -298,6 +298,35 @@ describe("scripts/release/sentry-telemetry-gate: telemetry modes", () => {
       ]),
     });
     expect(logs.join("\n")).toContain("Sentry/telemetry gate passed");
+  });
+
+  it("ignores handled local ENOSPC capacity failures without hiding unhandled crashes", async () => {
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off", "--max-high", "1"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: buildSentryFetch([
+        {
+          shortId: "PM-ENOSPC-HANDLED",
+          level: "error",
+          logger: "node",
+          isUnhandled: false,
+          title: "Error: ENOSPC: no space left on device, write",
+          metadata: { value: "ENOSPC: no space left on device, write", type: "Error" },
+        },
+        {
+          shortId: "PM-ENOSPC-UNHANDLED",
+          level: "error",
+          logger: "node",
+          isUnhandled: true,
+          title: "Error: ENOSPC: no space left on device, write",
+          metadata: { value: "ENOSPC: no space left on device, write", type: "Error" },
+        },
+      ]),
+    });
+    expect(json.sentry.high).toBe(1);
+    expect(json.sentry.blocking_short_ids).toEqual(["PM-ENOSPC-UNHANDLED"]);
+    expect(json.sentry.ignored_expected_handled_short_ids).toEqual(["PM-ENOSPC-HANDLED"]);
+    expect(json.sentry.threshold_ok).toBe(true);
   });
 
   it("handles malformed issue entries while still tallying high-priority items", async () => {

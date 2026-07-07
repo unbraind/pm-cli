@@ -139,6 +139,12 @@ Minimum coverage:
 
 Use maintainer-only local workflows for reliability checks and incident triage. Keep operational details, infrastructure topology, and raw diagnostics out of tracked release documentation and release notes.
 
+Run the public Sentry/telemetry threshold gate through the package script alias:
+
+```bash
+pnpm sentry:telemetry:gate -- --telemetry-mode best-effort
+```
+
 If private reliability checks identify repeated user friction, either confirm the current release already contains the remediation with regression coverage or fix it before continuing.
 
 4. Run the same release pipeline locally.

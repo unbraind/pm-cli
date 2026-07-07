@@ -106,6 +106,8 @@ Command/action contract exports:
 - `PmClient` / `runAction` (high-level in-process action execution for custom tools, bots, CI, and embedded runtimes)
 - Typed read primitives on `PmClient`: `get`, `list`, `search`, `context`, `next`, `aggregate`, and `stats`
 - Read primitive option/result contracts: `GetOptions` / `GetResult`, `ListOptions` / `ListResult`, `SearchOptions` / `SearchResult`, `ContextOptions` / `ContextResult`, `NextOptions` / `NextResult`, `AggregateOptions` / `AggregateResult`, `StatsCommandOptions` / `StatsResult`
+- Typed package and extension lifecycle primitives on `PmClient`: `extension`, `extensionList`, `extensionActivate`, `extensionDeactivate`, `package`, `packageList`, `packageInstall`, `packageUninstall`, `packageDoctor`, `packageManage`, `packageDescribe`, `packageReload`, `packageCatalog`, `packageActivate`, `packageDeactivate`, and `upgrade`
+- Lifecycle primitive option/result contracts: `ExtensionCommandOptions` / `ExtensionCommandResult`, `UpgradeCommandOptions` / `UpgradeResult`
 - `PM_CORE_COMMAND_NAMES`
 - `PM_TOOL_ACTIONS`
 - `PM_TOOL_PARAMETERS_SCHEMA`
@@ -448,6 +450,9 @@ const open = await pm.list({ status: "open", limit: "20" });
 const recommendation = await pm.next({ readyOnly: true });
 const grouped = await pm.aggregate({ groupBy: "status", count: true });
 const stats = await pm.stats({ metadataCoverage: true });
+const packages = await pm.packageList({ project: true });
+const doctor = await pm.packageDoctor({ project: true, isolated: true });
+const plannedUpgrade = await pm.upgrade(undefined, { dryRun: true, cliOnly: true });
 
 await runAction({
   action: "context",
@@ -476,6 +481,23 @@ Lifecycle convenience methods and the matching top-level functions (`create`,
 `focus`, `startTask`, `pauseTask`, and `closeTask`) use the same mutation paths
 as the CLI and MCP dispatcher. They are the baseline primitives for custom PM
 tools that need to own item state without spawning `pm`.
+
+Package and extension lifecycle convenience methods are the SDK primitive layer
+for custom PM tools that need to manage their own package surface without
+shelling out. Use `pm.packageList`, `pm.packageInstall`,
+`pm.packageUninstall`, `pm.packageDoctor`, `pm.packageManage`,
+`pm.packageDescribe`, `pm.packageReload`, `pm.packageCatalog`,
+`pm.packageActivate`, `pm.packageDeactivate`, and `pm.upgrade` for package-mode
+automation; use `pm.extensionList`, `pm.extensionActivate`, and
+`pm.extensionDeactivate` when the UI vocabulary is explicitly extension-focused.
+The matching top-level helpers (`packageLifecycle`, `packageList`,
+`packageInstall`, `packageUninstall`, `packageDoctor`, `packageManage`,
+`packageDescribe`, `packageReload`, `packageCatalog`, `packageActivate`,
+`packageDeactivate`, `extension`, `extensionList`, `extensionActivate`,
+`extensionDeactivate`, and `upgrade`) construct a short-lived `PmClient` for
+one-off calls. The returned `ExtensionCommandResult` and `UpgradeResult` are the
+same structured payloads rendered by the CLI, so embedded tools can own their
+presentation layer while sharing pm's package/install/doctor semantics.
 
 `PmClient` and `runAction` share the same process-wide extension activation
 queue as MCP. Calls from one process are serialized across extension load,

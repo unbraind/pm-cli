@@ -103,6 +103,7 @@
     "review:greptile:gate": "node scripts/release/greptile-review-gate.mjs",
     "security:scan": "node scripts/check-secrets.mjs",
     "smoke:npx": "node scripts/smoke-npx-from-pack.mjs",
+    "sentry:telemetry:gate": "node scripts/release/sentry-telemetry-gate.mjs",
     "sentry:inject": "sentry-cli sourcemaps inject dist/",
     "sentry:upload": "sentry-cli sourcemaps upload --org unbrained --project pm-cli --release \"pm-cli@$npm_package_version\" --validate dist/",
     "build:sentry": "pnpm build && pnpm sentry:inject && pnpm sentry:upload",

@@ -174,11 +174,14 @@ describe("release automation contract", () => {
     expect(gateSource).toContain('"pm-web exited with code"');
     expect(gateSource).toContain('"github api returned http 422"');
     expect(gateSource).toContain('"drift detected:"');
-    expect(gateSource).toContain("ignored_expected_cli_error_total");
+    expect(gateSource).toContain("KNOWN_EXPECTED_HANDLED_ENVIRONMENT_ISSUE_PATTERNS");
+    expect(gateSource).toContain('"enospc: no space left on device"');
+    expect(gateSource).toContain("ignored_expected_handled_total");
     expect(gateSource).toContain("function buildTelemetryCommandInvocation");
+    expect(gateSource).toContain("function resolveTelemetrySummary");
     expect(gateSource).toContain('commandPath.endsWith(".sh")');
     expect(gateSource).toContain("telemetryInvocation.command");
-    expect(gateSource).toContain('telemetryMode === "required" && !telemetryCommandPath');
+    expect(gateSource).toContain('params.telemetryMode === "required" && !params.telemetryCommandPath');
     expect(gateSource).toContain("telemetry_query_command_missing");
     expect(gateSource).not.toContain('runCommand(\n          "bash",\n          [telemetryCommandPath');
   });
