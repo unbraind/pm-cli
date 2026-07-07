@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[3]: architecture,"area:extensions","area:sdk"
 created_at: "2026-07-06T21:58:30.613Z"
-updated_at: "2026-07-07T18:15:04.459Z"
+updated_at: "2026-07-07T18:36:09.019Z"
 assignee: codex-agent
 author: maintainer-agent
 estimated_minutes: 480
@@ -20,13 +20,14 @@ dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-cbwg,related,"2026-07-07T16:42:50.582Z",null,null
   pm-usfg,related,"2026-07-07T16:42:50.582Z",null,null
   pm-w89s,related,"2026-07-07T16:42:50.582Z",null,null
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-07T08:58:08.753Z",codex-agent,"Progress evidence: active PR bundle includes package/extension doctor isolation as a package-lifecycle primitive slice. Runtime loader options, CLI flags, SDK flag/tool contracts, shell completions, docs, and regression tests are being verified through pm-6abs; this item remains broader than the PR and should not be closed by the isolation slice alone."
   "2026-07-07T09:44:05.584Z",codex-agent,"Package lifecycle primitive update: pm-6abs promotes doctor isolation as a first-class lifecycle primitive across CLI flags, shell completion, help, SDK contract metadata, and action/tool schemas."
   "2026-07-07T16:42:43.496Z",codex-agent,"Implementation start: continuing SDK-first package/extension lifecycle promotion as one PR bundle linked to pm-usfg, pm-w89s, pm-cbwg, and pm-tnud. Live duplicate check used pm search --status all; closed read/lifecycle primitives pm-rjqr/pm-98cz/pm-395t are shipped and not reopened."
   "2026-07-07T17:44:32.221Z",codex-agent,"Evidence: promoted package/extension lifecycle primitives into the public SDK via PmClient and top-level helpers; exported ExtensionCommandResult/Options and UpgradeResult/Options; documented SDK lifecycle usage; added focused SDK package lifecycle tests. Verification passed: pnpm typecheck, pnpm lint, pnpm quality:docs-skills, pnpm test:coverage (5455 tests, 100/100/100/100), pnpm changelog:pm:check (pm-changelog 2026.7.6, CHANGELOG unchanged), pnpm audit --audit-level high (no known vulnerabilities), pm health --check-only --summary (ok), pm validate history drift ok with pre-existing closed-item resolution warnings. Manual temp tarball install passed SDK packageList/package/catalog/doctor/upgrade proof."
   "2026-07-07T18:07:11.472Z",codex-agent,"Review evidence: pre-push Greptile review cb62f157 flagged two SDK/gate polish issues; fixed both by making packageDoctor options-only at the public SDK call site and renaming mixed expected Sentry exemptions to ignored_expected_handled_*. Follow-up Greptile reviews 6ce1e4da and 1a754263 returned no review comments; also enforced package vocabulary after caller options so pm.package(...) cannot be downgraded to extension vocabulary."
   "2026-07-07T18:15:04.459Z",codex-agent,"Final verification evidence before PR: pnpm test:coverage passed 265 files / 5455 tests with 100% statements, branches, functions, and lines; temp tarball install in /tmp verified SDK packageList/package/packageLifecycle/catalog/packageDoctor/upgrade through @unbrained/pm-cli/sdk; pm health ok with warning_count=0; pm validate history drift ok with only pre-existing closed-item resolution warnings."
+  "2026-07-07T18:36:09.019Z",codex-agent,"Review follow-up: Gemini suggested enforcing package vocabulary across all package lifecycle SDK paths. Fixed the SDK alias resolver so package-* action aliases force vocabulary=package after merging caller options, covering lower-level runAction/client.run calls in addition to PmClient.package(...). Added regression coverage with a conflicting vocabulary override on package-describe. Verification passed: focused SDK package lifecycle test, pnpm typecheck, pnpm lint, and pnpm test:coverage 5455 tests with 100/100/100/100."
 files[7]{path,scope,note}:
   package.json,project,Expose Sentry telemetry gate package script alias
   scripts/release/sentry-telemetry-gate.mjs,project,Classify handled ENOSPC Sentry environment issue as expected release-gate signal

@@ -1838,6 +1838,9 @@ function resolveSdkActionInput(args: PmActionInput): { action: string; args: Rec
   const resolvedArgs: Record<string, unknown> = { ...args, action };
   if (alias?.options !== undefined) {
     resolvedArgs.options = { ...alias.options, ...asRecordClone(args.options) };
+    if (alias.action === "package") {
+      resolvedArgs.options = { ...asRecordClone(resolvedArgs.options), vocabulary: "package" };
+    }
   }
   return { action, args: resolvedArgs };
 }
