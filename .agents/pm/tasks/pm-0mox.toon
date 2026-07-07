@@ -1,0 +1,19 @@
+id: pm-0mox
+title: "Alias-usage counters: measure deprecated-spelling hits so grammar-freeze removals are evidence-based"
+description: ""
+type: Task
+status: open
+priority: 3
+tags[3]: agent-ux,cli-simplification,telemetry
+created_at: "2026-07-07T07:01:56.726Z"
+updated_at: "2026-07-07T07:01:56.726Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: "Alias shim records per-alias hit counters (alias, canonical, count, last_seen) in the local telemetry store honoring existing telemetry disable env-vars; canonical spellings incur zero overhead; a diagnostics surface lists alias usage and zero-use aliases; the deprecation ADR documents the zero-use-for-N-releases removal criterion; unit test proves counter increment on alias resolution and absence on canonical invocation"
+parent: pm-n7rr
+risk: low
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-0z7n,blocked_by,"2026-07-07T07:01:56.726Z",null,null
+  pm-agou,related,"2026-07-07T07:01:56.726Z",null,null
+body: "## Context\nThe noun-verb consolidation (pm-n7rr, ADR pm-pbyu) keeps every legacy spelling alive as a hidden alias via the shim layer (pm-0z7n), and the v1.0 GA stability contract (pm-agou) will eventually freeze the grammar and decide which aliases can be retired. Today there is no way to know whether any agent or script still uses a given deprecated spelling — removal decisions would be guesses, and a wrong guess breaks working automations for zero benefit.\n\n## Proposal\nInstrument alias resolution with the existing local telemetry subsystem (counters only, no new infrastructure, same privacy posture — local-only, never in git):\n- The alias shim increments a per-alias counter (alias -> canonical, count, last_seen) whenever a deprecated spelling is resolved.\n- Surface the rollup in the diagnostics noun (ops stats / telemetry stats): aliases still in use, counts over the retention window, and aliases with zero recorded use.\n- Document the removal criterion in the ADR: an alias is removable at a major boundary only after N releases with zero recorded use across reporting workspaces (exact N decided in pm-agou).\n\n## Scope guard\nCounting happens inside the shim resolution path only — canonical spellings cost nothing. No network, no new storage format: reuse the telemetry store and its existing disable env-vars."
