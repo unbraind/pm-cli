@@ -1,0 +1,17 @@
+id: pm-yl6c
+title: pm next recommends another agent's assigned in_progress item as 'resume to finish' — recommendation must be caller-aware
+description: "Coordination defect: pm next run without matching identity recommends an item assigned to a different agent with the reason 'in progress — resume to finish', inviting work-stealing that pm-8t5x/PR#430 claim semantics were built to prevent. Duplicate check: pm-114v (claim --next atomicity), pm-w8q4 (stale-WIP detection), pm-8t5x (claim test-and-set, closed), ADR pm-9x6k (ready-set definition, closed) are adjacent but none makes the RECOMMENDATION side caller-aware; no prior item found."
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,"area:cli",concurrency
+created_at: "2026-07-07T15:25:15.388Z"
+updated_at: "2026-07-07T15:25:27.335Z"
+author: maintainer-agent
+acceptance_criteria: pm next with resolvable caller identity never emits a resume reason for an item assigned to a different agent; foreign-assigned candidates are skipped or listed id-only under held_by_others; unresolvable-identity fallback reason names the assignee and drops the resume imperative; behavior covered by unit tests for self/foreign/unassigned/unresolvable cases across toon and json; SDK and MCP envelopes match
+parent: pm-dj98
+risk: medium
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-114v,related,"2026-07-07T15:25:27.319Z",null,null
+body: "## Evidence (2026-07-07)\nWith four items legitimately in_progress by codex-agent (pm-w89s/pm-x6jf/pm-cbwg under epic pm-usfg, all updated today), pm next invoked by a different caller recommends pm-w89s with reasons including 'in progress — resume to finish' and assignee: codex-agent in the same payload. The envelope tells one agent to resume another agent's active work.\n\n## Why it matters\nClaim-level protection exists (pm-8t5x conflict-on-held, PR#430 ownership semantics) but the recommendation layer routes agents INTO those conflicts: N agents all get told to resume the same foreign WIP, then N-1 bounce at claim time (the exact thundering-herd pm-114v describes) or, worse, mutate without claiming since claims are advisory. At the pm-9rxu scale story (thousands of concurrent agents) recommendation-side ownership awareness is load-bearing, not polish.\n\n## Fix sketch\nResolve caller identity from the same author-resolution chain mutations use (PM_AUTHOR/config author_default; pm-cpja is making this ergonomic). If the recommended candidate has an assignee different from the caller: skip to the next candidate by default, and annotate the skipped one under a new held_by_others section (id + assignee only) so visibility is preserved without a resume instruction. Unassigned or self-assigned WIP keeps today's resume behavior. When caller identity is unresolvable, keep current behavior but replace the reason with 'in progress — assigned to <agent>; coordinate before resuming'. SDK-first: implement in the shared next-ranking primitive so CLI/MCP/SDK agree; relates to pm-114v (claim --next should reuse the same caller-aware ranking)."
