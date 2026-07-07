@@ -858,6 +858,12 @@ describe("context command module", () => {
       expect(result.low_level[0]?.id).toBe(keptId);
       expect(result.filters.limit).toBe("1");
 
+      const cliAlias = context.runCli(["context", "--json", "--max-items", "1"], { expectJson: true });
+      expect(cliAlias.code).toBe(0);
+      const aliasJson = cliAlias.json as { filters: { limit: string }; low_level: unknown[] };
+      expect(aliasJson.filters.limit).toBe("1");
+      expect(aliasJson.low_level).toHaveLength(1);
+
       await expect(runContext({ limit: "-1" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });

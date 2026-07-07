@@ -55,6 +55,7 @@ export interface ContextOptions {
   sprint?: string;
   release?: string;
   limit?: string;
+  maxItems?: string;
   format?: string;
   depth?: string;
   fields?: string;
@@ -1448,7 +1449,7 @@ async function resolveContextRuntime(options: ContextOptions, global: GlobalOpti
     contextSettings,
     statusRegistry,
     depth,
-    limit: parseContextLimit(options.limit, depth),
+    limit: parseContextLimit(options.limit ?? options.maxItems, depth),
     sectionsIncluded: parseContextSections(options.section, depth, contextSettings),
     activityLimit: parseActivityLimit(options.activityLimit, contextSettings),
     staleThresholdDays: parseStaleThresholdDays(options.staleThreshold, contextSettings),
@@ -1722,7 +1723,7 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
       assignee_filter: options.assigneeFilter ?? null,
       sprint: options.sprint ?? null,
       release: options.release ?? null,
-      limit: options.limit ?? null,
+      limit: options.limit ?? options.maxItems ?? null,
       parent: runtime.parentScope ?? null,
       /* c8 ignore next -- listed/calendar runtime filters are always materialized by their command handlers */
       runtime_filters: (corpus.listed.filters.runtime_filters ?? agendaContext.agenda.filters.runtime_filters ?? {}) as Record<string, unknown>,

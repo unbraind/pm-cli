@@ -2324,7 +2324,7 @@ async function applyHybridRerank(
 }
 
 async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promise<SemanticQueryResult> {
-  const semanticLimit = context.limit ?? context.maxResults;
+  const semanticLimit = Math.max(context.limit ?? context.maxResults, context.maxResults);
   const embeddingOptions = context.embeddingTimeoutMs !== undefined ? { timeout_ms: context.embeddingTimeoutMs } : {};
   const vectorQueryOptions = context.vectorQueryTimeoutMs !== undefined ? { timeout_ms: context.vectorQueryTimeoutMs } : {};
   const queryTrimmed = context.query.trim();

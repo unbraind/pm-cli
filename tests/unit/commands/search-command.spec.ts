@@ -3,6 +3,7 @@ import path from "node:path";
 import type { ItemFrontMatter } from "../../../src/types.js";
 import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
 import { serializeItemDocument } from "../../../src/core/item/item-format.js";
+import { runSearch } from "../../../src/cli/commands/search.js";
 import { readJsonFixture } from "../../helpers/fixtures.js";
 
 const {
@@ -1700,6 +1701,74 @@ describe("runSearch", () => {
       const emptyKeywordScores = await runSearch("vectoronly", { mode: "hybrid" }, { path: "/tmp/pm-search" });
       expect(emptyKeywordScores.count).toBe(2);
       expect(emptyKeywordScores.items.every((entry) => entry.matched_fields.includes("semantic"))).toBe(true);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("applies hybrid --limit after fusion without shrinking the vector candidate window", async () => {
+    const semanticOnlyTop = makeFrontMatter({
+      id: "pm-semantic-top",
+      title: "tok",
+      updated_at: "2026-02-18T00:01:00.000Z",
+    });
+    const fusedTop = makeFrontMatter({
+      id: "pm-fused-top",
+      title: "tok tok tok tok",
+      updated_at: "2026-02-18T00:02:00.000Z",
+    });
+    const tail = makeFrontMatter({
+      id: "pm-tail",
+      title: "tok tail",
+      updated_at: "2026-02-18T00:00:00.000Z",
+    });
+    const docs = [semanticOnlyTop, fusedTop, tail];
+    listAllFrontMatterMock.mockResolvedValue(docs);
+    readFileMock.mockImplementation(async (targetPath) => {
+      const match = docs.find((item) => targetPath.endsWith(`${item.id}.md`));
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(match, "hybrid limit body");
+    });
+    readSettingsMock.mockResolvedValue(
+      makeSemanticSearchSettings({
+        search: {
+          max_results: 3,
+          hybrid_semantic_weight: 0.7,
+        },
+      }),
+    );
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+      const target = resolveFetchTarget(url);
+      if (target.endsWith("/v1/embeddings")) {
+        return makeJsonResponse({ data: [{ embedding: [1, 0] }] });
+      }
+      if (target.endsWith("/collections/pm_items/points/search")) {
+        const body = parseJsonBody<{ limit?: number }>(init?.body);
+        expect(body.limit).toBe(3);
+        return makeJsonResponse({
+          result: [
+            { id: "pm-semantic-top", score: 0.99 },
+            { id: "pm-fused-top", score: 0.98 },
+            { id: "pm-tail", score: 0.1 },
+          ].slice(0, body.limit),
+        });
+      }
+      throw new Error(`Unexpected fetch target: ${target}`);
+    }) as typeof globalThis.fetch;
+
+    try {
+      const result = await runSearch("tok", { mode: "hybrid", limit: "1" }, { path: "/tmp/pm-search" });
+      expect(result.mode).toBe("hybrid");
+      expect(result.count).toBe(1);
+      // total is the sortable hybrid hit count before final output truncation:
+      // pm-tail has a vector hit but drops below the mode-aware score threshold.
+      expect(result.total).toBe(2);
+      expect(result.items.map((entry) => entry.item.id)).toEqual(["pm-fused-top"]);
+      expect(result.filters.limit).toBe("1");
     } finally {
       globalThis.fetch = originalFetch;
     }

@@ -507,6 +507,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--stale-threshold <value>", "Staleness cutoff in days (e.g. 7 or 7d; default: settings or 7)");
     // Hidden pure snake_case underscore-duplicate alias (kept parse-functional).
     addHiddenOption(contextCommand, "--assignee_filter <value>", "Alias for --assignee-filter");
+    addHiddenOption(contextCommand, "--max-items <n>", "Alias for --limit");
     contextCommand.action(runContextAction);
   }
 
