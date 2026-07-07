@@ -123,6 +123,9 @@ describe("SDK package and extension lifecycle primitives", () => {
       await expect(
         client.run("package-describe", { target: "missing-package", options: { project: true, vocabulary: "extension" } }),
       ).rejects.toThrow(/No loaded package named/);
+      await expect(
+        client.run("package", { target: "missing-package", options: { project: true, describe: true, vocabulary: "extension" } }),
+      ).rejects.toThrow(/No loaded package named/);
 
       const reloaded = await packageReload({ project: true }, { pmRoot: pmPath, noExtensions: true });
       expect(reloaded).toMatchObject({
