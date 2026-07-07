@@ -2,15 +2,36 @@ id: pm-395t
 title: "SDK client.run() rejects structured payloads for create: raw {type,title} fails with 'Missing required option --title'"
 description: "SDK client.run currently rejects structured create payloads such as raw {type,title}; the fix should accept typed structured inputs or return a precise SDK-facing error instead of CLI flag parsing text."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[2]: "area:sdk",dx
 created_at: "2026-07-06T21:53:02.655Z"
-updated_at: "2026-07-06T22:30:35.640Z"
+updated_at: "2026-07-07T02:53:35.600Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "client.run('create', ...) either accepts bare title/type keys by mapping them to CLI flags, or the split-args contract is documented in docs/SDK.md with a typed error pointing callers to client.create(); regression test covers both paths"
 parent: pm-usfg
 risk: low
 confidence: high
+resolution: "PmClient.run('create', structuredPayload) now hoists top-level create keys into action options and is covered by SDK temp-tracker tests."
+expected_result: Package authors can pass structured create payloads without nesting every field under options.
+actual_result: Structured title/type/status/createMode payloads create items successfully through PmClient.run and full coverage passed.
+comments[9]{created_at,author,text}:
+  "2026-07-06T23:57:34.863Z",claude-code-agent,"Implementation note: duplicate-safe search reused this existing SDK DX issue from the pm-rjqr note. Acceptance path will map structured top-level create keys in PmClient.run('create', { type, title, ... }) to command options and cover it with an SDK regression test plus temp-project dogfood."
+  "2026-07-07T00:22:10.607Z",claude-code-agent,"Implementation bundle update: structured PmClient.run('create', { title, type, status, createMode }) remains covered in the expanded SDK temp-tracker test, now bundled with SDK lifecycle primitives and lifecycle alias UX for one larger PR."
+  "2026-07-07T00:56:15.224Z",codex-sdk-primitives-agent,"Evidence: structured SDK client.run('create', {title,type,status,createMode}) is covered in tests/unit/sdk/sdk-index.spec.ts and full coverage passed 100/100/100/100."
+  "2026-07-07T01:14:53.544Z",codex-sdk-primitives-agent,"Follow-up evidence after pre-push Greptile review: defaulted SDK create/update mutation option parameters, preserved SDK author precedence over lifecycle assignee aliases, and added regression coverage for no-options update plus assignee fallback behavior. Verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm typecheck; pnpm lint; node scripts/run-tests.mjs coverage (Statements 100%, Branches 100%, Functions 100%, Lines 100%; 5448 tests)."
+  "2026-07-07T01:29:24.204Z",codex-sdk-primitives-agent,"Pre-push review follow-up: Greptile review d8627c63-d12f-4c7d-a1d1-2eb565d52de0 reported no review comments. Addressed its summary consistency note by defaulting the standalone SDK create wrapper options to {} as well. Fresh verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm typecheck; pnpm lint; node scripts/run-tests.mjs coverage (5448 tests, Statements/Branches/Functions/Lines all 100%)."
+  "2026-07-07T01:57:11.403Z",codex-sdk-primitives-agent,"PR #477 review-loop evidence: addressed Greptile PR comment on top-level restore target handling. runAction({ action: 'restore', id, target }) now honors the schema-declared top-level target while preserving options.target precedence. Verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm typecheck; node scripts/run-tests.mjs coverage (5448 tests, 100/100/100/100)."
+  "2026-07-07T02:15:39.171Z",codex-sdk-primitives-agent,"PR #477 review-loop evidence: after bundling SDK read primitives, structured create payloads, SDK lifecycle mutations, SDK package-coordinate docs, and lifecycle alias ergonomics into one PR, addressed additional CodeRabbit/Cubic feedback by centralizing hidden Commander option registration, rejecting conflicting lifecycle --author/--assignee inputs, strengthening composite lifecycle alias tests, and adding command-doc tracker references. Verification passed: node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts; pnpm typecheck; pnpm lint; node scripts/run-tests.mjs coverage (5448 tests, 100/100/100/100)."
+  "2026-07-07T02:36:31.581Z",codex-sdk-primitives-agent,"PR #477 Greptile review-loop evidence: fixed SDK/MCP compound start-task and pause-task alias leakage by stripping the lifecycle-only assignee alias before forwarding options to runUpdate, while preserving the alias for claim/release ownership resolution. Added regression coverage for client default author precedence when assignee alias differs. Verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm typecheck; pnpm lint; node scripts/run-tests.mjs coverage (5448 tests, 100/100/100/100)."
+  "2026-07-07T02:53:35.600Z",codex-sdk-primitives-agent,"PR #477 final Greptile follow-up: SDK runtime projection consistency verified after routing restore through shared mutation compaction; structured create payload behavior remains covered in the same SDK focused suite and full coverage gate."
+files[2]{path,scope,note}:
+  src/sdk/runtime.ts,project,Maps structured top-level create fields from PmClient.run into command options
+  tests/unit/sdk/sdk-index.spec.ts,project,Covers PmClient.run structured create payload support
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Documents structured PmClient.run create input support
+close_reason: Fixed structured SDK create payload handling
 body: "Found during audit #12 external CJS-host verification (note on pm-rjqr): raw client.run('create', {type,title}) fails with 'Missing required option --title' because run() expects pre-split argv-style args, while the typed client.create() works. Agents composing SDK calls dynamically will hit this. Either map structured payload keys onto flags inside run(), or document the contract and emit a helpful error suggesting the typed primitive."

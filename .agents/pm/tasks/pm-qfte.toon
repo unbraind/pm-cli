@@ -2,18 +2,63 @@ id: pm-qfte
 title: "GH-458: claim/start-task reject --assignee with an untargeted recovery hint (alias or better hint)"
 description: "Dogfood GH-458: lifecycle ownership commands take --author while update takes --assignee; agents try --assignee first and the recovery message never mentions --author. Duplicate check: 2026-05-28 never-block pass predates this; no open overlap."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",gh-issue
 created_at: "2026-07-06T08:03:12.744Z"
-updated_at: "2026-07-06T08:03:45.059Z"
+updated_at: "2026-07-07T03:41:47.787Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "--assignee on claim/release/start-task/pause-task either aliases --author or yields a recovery hint naming --author and pm update --assignee; spec + contracts + docs updated"
 parent: pm-mpbb
 risk: low
 confidence: high
+resolution: "claim, release, start-task, pause-task, and close-task now accept hidden --assignee as an alias for lifecycle --author, and SDK action contracts expose the alias metadata."
+expected_result: Agents that naturally pass --assignee to lifecycle commands get correct ownership behavior or discover the alias through contracts.
+actual_result: "Alias parsing, contracts, and lifecycle integration coverage pass, while create/update item assignee semantics remain unchanged."
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-gdi7,related,"2026-07-06T08:03:12.744Z",null,null
   pm-cpja,related,"2026-07-06T08:03:45.040Z",null,null
+comments[10]{created_at,author,text}:
+  "2026-07-07T00:22:10.759Z",claude-code-agent,"Implementation note: claim/release/start-task/pause-task/close-task now accept hidden --assignee <agent> as an alias for lifecycle ownership --author; command flag contracts and SDK action parameter contracts expose the alias metadata. Focused parser and SDK contract tests cover the behavior."
+  "2026-07-07T00:56:16.636Z",codex-sdk-primitives-agent,"Evidence: claim/release/start-task/pause-task/close-task accept hidden --assignee alias mapped to lifecycle author while keeping item metadata --assignee semantics on create/update. Covered by command registration tests, integration lifecycle alias tests, and full coverage 100/100/100/100."
+  "2026-07-07T01:14:54.949Z",codex-sdk-primitives-agent,"Follow-up evidence after pre-push Greptile review: defaulted SDK create/update mutation option parameters, preserved SDK author precedence over lifecycle assignee aliases, and added regression coverage for no-options update plus assignee fallback behavior. Verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm typecheck; pnpm lint; node scripts/run-tests.mjs coverage (Statements 100%, Branches 100%, Functions 100%, Lines 100%; 5448 tests)."
+  "2026-07-07T01:29:25.554Z",codex-sdk-primitives-agent,"Pre-push review follow-up: Greptile review d8627c63-d12f-4c7d-a1d1-2eb565d52de0 reported no review comments. Addressed its summary consistency note by defaulting the standalone SDK create wrapper options to {} as well. Fresh verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm typecheck; pnpm lint; node scripts/run-tests.mjs coverage (5448 tests, Statements/Branches/Functions/Lines all 100%)."
+  "2026-07-07T01:57:12.814Z",codex-sdk-primitives-agent,"PR #477 review-loop evidence: addressed Greptile PR comment on top-level restore target handling. runAction({ action: 'restore', id, target }) now honors the schema-declared top-level target while preserving options.target precedence. Verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm typecheck; node scripts/run-tests.mjs coverage (5448 tests, 100/100/100/100)."
+  "2026-07-07T02:15:30.906Z",codex-sdk-primitives-agent,"Evidence: addressed PR #477 CodeRabbit/Cubic lifecycle alias feedback by sharing the hidden Commander option helper, rejecting conflicting --author/--assignee values, strengthening composite alias assertions, and adding docs tracker references. Verification passed: node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts; pnpm typecheck; pnpm lint; node scripts/run-tests.mjs coverage (5448 tests, 100/100/100/100)."
+  "2026-07-07T02:36:33.158Z",codex-sdk-primitives-agent,"PR #477 Greptile review-loop evidence: fixed SDK/MCP compound start-task and pause-task alias leakage by stripping the lifecycle-only assignee alias before forwarding options to runUpdate, while preserving the alias for claim/release ownership resolution. Added regression coverage for client default author precedence when assignee alias differs. Verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm typecheck; pnpm lint; node scripts/run-tests.mjs coverage (5448 tests, 100/100/100/100)."
+  "2026-07-07T02:53:36.472Z",codex-sdk-primitives-agent,"PR #477 final Greptile follow-up: lifecycle alias bundle remains stable after restore projection parity fix; verification passed with SDK focused tests, typecheck, lint, and full coverage 100/100/100/100."
+  "2026-07-07T03:11:41.368Z",codex-sdk-primitives-agent,"CI follow-up evidence: GitHub Gates (static) failed because tests/fixtures/contracts/full.json was stale for the lifecycle --assignee alias contract additions. Regenerated with pnpm contracts:update; diff only adds --assignee aliases to lifecycle command flags and action schemas."
+  "2026-07-07T03:41:47.787Z",codex-sdk-primitives-agent,"PR #477 schema follow-up: regenerated tests/fixtures/contracts/full.json after adding restore fullChangedFields/idOnly action parameters; lifecycle --assignee alias fixture entries remain intact. Verification passed: pnpm contracts:check; node scripts/run-tests.mjs coverage (5448 tests, 100/100/100/100)."
+files[8]{path,scope,note}:
+  src/cli/register-list-query.ts,project,Shared hidden option helper adoption for duplicated helper cleanup
+  src/cli/register-operations.ts,project,Lifecycle --assignee alias parses as mutation author
+  src/cli/registration-helpers.ts,project,Shared hidden Commander option helper for lifecycle/list query registration
+  src/sdk/cli-contracts/flag-contracts.ts,project,Lifecycle flag contracts expose --assignee alias metadata
+  src/sdk/cli-contracts/tool-schema.ts,project,Lifecycle action parameter contracts accept assignee alias
+  src/sdk/start-task-status.ts,project,Lifecycle alias implementation shares in-progress status resolution
+  tests/fixtures/contracts/full.json,project,Contract snapshot updated for lifecycle --assignee alias flags and action schemas
+  tests/unit/commands/register-commands.spec.ts,project,Parser coverage for lifecycle --assignee alias
+tests[5]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 600
+    note: Full coverage gate after PR #477 reviewer fixes
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: Lifecycle alias and command registration regression suite
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/sdk/sdk-index.spec.ts
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/integration/task-lifecycle-aliases.spec.ts
+    scope: project
+    timeout_seconds: 180
+  - command: "pnpm contracts:check"
+    scope: project
+    timeout_seconds: 120
+    note: Contract snapshot gate for lifecycle alias contracts
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,Documents lifecycle --assignee alias semantics
+close_reason: Added lifecycle --assignee ownership alias
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/458\n\n## Problem\n`pm claim`/`pm start-task` reject --assignee (unknown_option) while pm update accepts it; agents naturally model claiming as assigning and try --assignee first. The recovery message lists where --assignee IS valid (create, list, list-all) but never points to --author, the actual claim-identity flag — a failed mutation in the critical path.\n\n## Proposed fix\nEither accept --assignee as an alias for --author on claim/release/start-task/pause-task (documented equivalence), or keep the contract strict and make the recovery message for these commands say: use --author <agent> for claim identity; use pm update --assignee for assignee metadata. Alias preferred per never-block routing precedent (2026-05-28 agent-UX pass).\n\n## Definition of done\n--assignee on lifecycle ownership commands either works or produces a targeted recovery hint naming --author; spec covers both commands; contracts/docs updated. Related: GH-444 item (global author ergonomics), pm-gdi7 (error suggestions)."

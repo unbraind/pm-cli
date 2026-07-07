@@ -3,7 +3,7 @@
  *
  * Provides CLI runtime support for Registration Helpers.
  */
-import type { Command } from "commander";
+import { Option, type Command } from "commander";
 import { pathExists } from "../core/fs/fs-utils.js";
 import { normalizeStatusInput } from "../core/item/status.js";
 import { refreshSearchArtifactsForMutation } from "../core/search/cache.js";
@@ -205,6 +205,13 @@ function optionFalse(options: Record<string, unknown>, key: string): true | unde
  */
 export function readOptionString(options: Record<string, unknown>, key: string): string | undefined {
   return typeof options[key] === "string" ? options[key] : undefined;
+}
+
+/**
+ * Adds a Commander option that remains parseable but hidden from human help.
+ */
+export function addHiddenOption(command: Command, flags: string, description: string): void {
+  command.addOption(new Option(flags, description).hideHelp());
 }
 
 function anyOptionTrue(options: Record<string, unknown>, keys: readonly string[]): true | undefined {

@@ -47,6 +47,7 @@ const PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS: Partial<Record<PmToolAction, reado
   copy: ["fullChangedFields", "idOnly"],
   update: ["fullChangedFields", "idOnly"],
   close: ["fullChangedFields", "idOnly"],
+  restore: ["fullChangedFields", "idOnly"],
   append: ["fullChangedFields"],
   "update-many": ["fullChangedFields"],
   "close-many": ["fullChangedFields"],
@@ -187,6 +188,7 @@ const NEXT_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 ]);
 
 const AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS = ["author", "message", "force"];
+const LIFECYCLE_AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS = ["author", "assignee", "message", "force"];
 
 const MANAGED_EXTENSION_PACKAGE_OPTION_KEYS = [
   "target",
@@ -615,11 +617,11 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   gc: { optional: ["dryRun", "gcScope"] },
   contracts: { optional: ["contractAction", "command", "schemaOnly", "flagsOnly", "availabilityOnly", "runtimeOnly", "activeOnly", "full"] },
   completion: { required: ["shell"], optional: ["eagerTags"] },
-  claim: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
-  release: { required: ["id"], optional: ["allowAuditRelease", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
-  "start-task": { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
-  "pause-task": { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
-  "close-task": { required: ["id"], optional: ["text", "validateClose", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  claim: { required: ["id"], optional: LIFECYCLE_AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
+  release: { required: ["id"], optional: ["allowAuditRelease", ...LIFECYCLE_AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  "start-task": { required: ["id"], optional: LIFECYCLE_AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
+  "pause-task": { required: ["id"], optional: LIFECYCLE_AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
+  "close-task": { required: ["id"], optional: ["text", "validateClose", ...LIFECYCLE_AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
 };
 
 export const PM_TOOL_ACTION_PARAMETER_CONTRACTS: Readonly<Record<PmToolAction, PmActionSchemaContract>> =

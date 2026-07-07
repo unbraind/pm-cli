@@ -2,17 +2,35 @@ id: pm-25d0
 title: "GH-468: clarify or publish the pm SDK npm package coordinates (@unbrained/pm-sdk is 404)"
 description: "Dogfood GH-468: package-author instructions say 'latest pm CLI and pm SDK' but npm view @unbrained/pm-sdk returns 404 — authors cannot tell whether the SDK is embedded in @unbrained/pm-cli, published elsewhere, or unpublished. Duplicate check: searched publish SDK npm package — pm-ds3b covers SDK reference docs, no item covers the package-coordinates decision."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[4]: docs,gh-issue,packaging,sdk
 created_at: "2026-07-06T21:08:40.224Z"
-updated_at: "2026-07-06T21:09:53.348Z"
+updated_at: "2026-07-07T02:53:36.031Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: Canonical SDK import/package coordinates documented in pm contracts/help output and package-author docs; either @unbrained/pm-sdk is published/aliased or docs state explicitly the SDK ships inside @unbrained/pm-cli; a 'latest CLI/SDK package coordinates' section exists for agents
 parent: pm-usfg
 risk: medium
 confidence: high
+resolution: docs/SDK.md now clarifies that the SDK ships with @unbrained/pm-cli and is imported from @unbrained/pm-cli/sdk.
+expected_result: Package authors know the correct npm package and import path for SDK usage.
+actual_result: SDK docs updated and pm-changelog 2026.7.6 check confirmed CHANGELOG.md is unchanged.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-ds3b,related,"2026-07-06T21:09:53.329Z",null,null
+comments[8]{created_at,author,text}:
+  "2026-07-07T00:22:10.695Z",claude-code-agent,"Implementation note: SDK package coordinates documented in docs/SDK.md: the SDK ships inside @unbrained/pm-cli; there is no separate @unbrained/pm-sdk package. This is bundled with the SDK primitive PR so package authors get code and docs together."
+  "2026-07-07T00:56:16.147Z",codex-sdk-primitives-agent,"Evidence: docs/SDK.md now documents that the SDK ships inside @unbrained/pm-cli, with imports from @unbrained/pm-cli/sdk. pnpm changelog:pm:check confirmed CHANGELOG.md is unchanged with pm-changelog 2026.7.6."
+  "2026-07-07T01:14:54.420Z",codex-sdk-primitives-agent,"Follow-up evidence after pre-push Greptile review: defaulted SDK create/update mutation option parameters, preserved SDK author precedence over lifecycle assignee aliases, and added regression coverage for no-options update plus assignee fallback behavior. Verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm typecheck; pnpm lint; node scripts/run-tests.mjs coverage (Statements 100%, Branches 100%, Functions 100%, Lines 100%; 5448 tests)."
+  "2026-07-07T01:29:25.104Z",codex-sdk-primitives-agent,"Pre-push review follow-up: Greptile review d8627c63-d12f-4c7d-a1d1-2eb565d52de0 reported no review comments. Addressed its summary consistency note by defaulting the standalone SDK create wrapper options to {} as well. Fresh verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm typecheck; pnpm lint; node scripts/run-tests.mjs coverage (5448 tests, Statements/Branches/Functions/Lines all 100%)."
+  "2026-07-07T01:57:12.326Z",codex-sdk-primitives-agent,"PR #477 review-loop evidence: addressed Greptile PR comment on top-level restore target handling. runAction({ action: 'restore', id, target }) now honors the schema-declared top-level target while preserving options.target precedence. Verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm typecheck; node scripts/run-tests.mjs coverage (5448 tests, 100/100/100/100)."
+  "2026-07-07T02:15:39.960Z",codex-sdk-primitives-agent,"PR #477 review-loop evidence: after bundling SDK read primitives, structured create payloads, SDK lifecycle mutations, SDK package-coordinate docs, and lifecycle alias ergonomics into one PR, addressed additional CodeRabbit/Cubic feedback by centralizing hidden Commander option registration, rejecting conflicting lifecycle --author/--assignee inputs, strengthening composite lifecycle alias tests, and adding command-doc tracker references. Verification passed: node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts; pnpm typecheck; pnpm lint; node scripts/run-tests.mjs coverage (5448 tests, 100/100/100/100)."
+  "2026-07-07T02:36:32.689Z",codex-sdk-primitives-agent,"PR #477 Greptile review-loop evidence: fixed SDK/MCP compound start-task and pause-task alias leakage by stripping the lifecycle-only assignee alias before forwarding options to runUpdate, while preserving the alias for claim/release ownership resolution. Added regression coverage for client default author precedence when assignee alias differs. Verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm typecheck; pnpm lint; node scripts/run-tests.mjs coverage (5448 tests, 100/100/100/100)."
+  "2026-07-07T02:53:36.030Z",codex-sdk-primitives-agent,"PR #477 final Greptile follow-up: SDK docs/package-coordinate bundle remains current after restore projection parity fix; verification passed with SDK focused tests, typecheck, lint, and full coverage 100/100/100/100."
+tests[2]{command,scope,timeout_seconds}:
+  "pnpm changelog:pm:check",project,120
+  pnpm typecheck,project,240
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Documents canonical SDK package coordinates inside @unbrained/pm-cli
+close_reason: Documented SDK package coordinates
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/468\n\n## Problem\nDuring the 2026-07-06 package dependency sweep, package instructions referenced the pm SDK, but `npm view @unbrained/pm-sdk` returns 404 while the CLI resolves as `@unbrained/pm-cli@2026.7.6`. Agents invent non-existent package coordinates.\n\n## Fix options\n- Document the canonical SDK import path (currently exported from @unbrained/pm-cli) in contracts/help + package-author docs; or\n- publish/alias @unbrained/pm-sdk if that is the intended coordinate; and\n- add a short \"latest CLI/SDK package coordinates\" section for agents.\n\nFeeds the SDK-first epic pm-usfg: the universal-tool story (pm-w89s, pm-cbwg) needs unambiguous SDK coordinates. Related: pm-ds3b (SDK reference documentation)."

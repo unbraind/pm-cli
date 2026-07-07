@@ -67,8 +67,14 @@ import {
   createHistoryEntry,
   createPmCliExpectedError,
   clearWorkspaceContractsCache,
+  claim as claimItem,
+  close as closeItem,
+  closeTask,
   compactFlagAliasContracts,
   context as readContext,
+  copy as copyItem,
+  create as createItem,
+  deleteItem,
   defineExtension,
   type ExtensionApi,
   type ExtensionCapability,
@@ -76,6 +82,7 @@ import {
   type ExtensionRegistrationRegistry,
   type ExtensionServiceName,
   generateItemId,
+  focus,
   get as getItem,
   getContracts,
   getWorkspaceContracts,
@@ -84,15 +91,20 @@ import {
   locateItem,
   next as recommendNext,
   normalizeItemId,
+  pauseTask,
   pathExists,
   readFileIfExists,
   readPmPackageManifest,
+  release,
   readSettings,
+  restore,
   resolvePmRoot,
   runAction,
   resolveSubcommandFlagContractsForCommand,
   search as searchItems,
+  startTask,
   stats as readStats,
+  update as updateItem,
   isPmExtensionCapabilityContract,
   isPmExtensionPolicyModeContract,
   isPmExtensionPolicySurfaceContract,
@@ -757,6 +769,13 @@ describe("public sdk entrypoint", () => {
     };
     expect(claimSchema.properties?.action).toMatchObject({ const: "claim" });
     expect(claimSchema.required).toEqual(expect.arrayContaining(["action", "id"]));
+    const restoreSchema = _testOnlyCliContracts.buildActionScopedToolSchema("restore") as {
+      properties?: Record<string, unknown>;
+    };
+    expect(restoreSchema.properties).toMatchObject({
+      fullChangedFields: { type: "boolean" },
+      idOnly: { type: "boolean" },
+    });
     const docsSchema = _testOnlyCliContracts.buildActionScopedToolSchema("docs") as {
       allOf?: Array<{ then?: { anyOf?: Array<{ required?: string[] }> } }>;
     };
@@ -805,8 +824,8 @@ describe("public sdk entrypoint", () => {
       { flag: "json", aliases: ["json"] },
     ]);
 
-    const flagsFor = (command: string | undefined) =>
-      resolveSubcommandFlagContractsForCommand(command).map((contract) => contract.flag);
+    const contractsFor = (command: string | undefined) => resolveSubcommandFlagContractsForCommand(command);
+    const flagsFor = (command: string | undefined) => contractsFor(command).map((contract) => contract.flag);
     expect(flagsFor(undefined)).toEqual(expect.arrayContaining(["--json", "--pm-path"]));
     expect(flagsFor(" LIST-OPEN ")).toEqual(expect.arrayContaining(["--status", "--ids"]));
     expect(flagsFor("reindex")).not.toContain("--mode");
@@ -866,7 +885,13 @@ describe("public sdk entrypoint", () => {
     expect(flagsFor("stats")).toEqual(expect.arrayContaining(["--storage"]));
     expect(flagsFor("contracts")).toEqual(expect.arrayContaining(["--flags-only"]));
     expect(flagsFor("claim")).toEqual(expect.arrayContaining(["--message"]));
+    expect(contractsFor("claim")).toEqual(
+      expect.arrayContaining([expect.objectContaining({ flag: "--author", aliases: expect.arrayContaining(["--assignee"]) })]),
+    );
     expect(flagsFor("release")).toEqual(expect.arrayContaining(["--message"]));
+    expect(contractsFor("release")).toEqual(
+      expect.arrayContaining([expect.objectContaining({ flag: "--author", aliases: expect.arrayContaining(["--assignee"]) })]),
+    );
     expect(flagsFor("copy")).toEqual(expect.arrayContaining(["--title", "--message"]));
     expect(flagsFor("aggregate")).toEqual(expect.arrayContaining(["--group-by", "--count"]));
     expect(flagsFor("calendar")).toEqual(expect.arrayContaining(["--from", "--to"]));
@@ -884,8 +909,17 @@ describe("public sdk entrypoint", () => {
     expect(flagsFor("update-many")).toEqual(expect.arrayContaining(["--title", "--filter-status"]));
     expect(flagsFor("close")).toEqual(expect.arrayContaining(["--duplicate-of", "--validate-close"]));
     expect(flagsFor("start-task")).toEqual(expect.arrayContaining(["--message"]));
+    expect(contractsFor("start-task")).toEqual(
+      expect.arrayContaining([expect.objectContaining({ flag: "--author", aliases: expect.arrayContaining(["--assignee"]) })]),
+    );
     expect(flagsFor("pause-task")).toEqual(expect.arrayContaining(["--message"]));
+    expect(contractsFor("pause-task")).toEqual(
+      expect.arrayContaining([expect.objectContaining({ flag: "--author", aliases: expect.arrayContaining(["--assignee"]) })]),
+    );
     expect(flagsFor("close-task")).toEqual(expect.arrayContaining(["--message"]));
+    expect(contractsFor("close-task")).toEqual(
+      expect.arrayContaining([expect.objectContaining({ flag: "--author", aliases: expect.arrayContaining(["--assignee"]) })]),
+    );
     expect(flagsFor("unknown-command")).toEqual(expect.arrayContaining(["--json", "--pm-path"]));
   });
 
@@ -1095,6 +1129,15 @@ console.log(JSON.stringify(payload));`,
       expect(idOnlyCreated.item).toBeUndefined();
       expect(idOnlyCreated.changed_field_count).toBeUndefined();
 
+      const runCreated = (await client.run("create", {
+        title: "SDK structured run item",
+        type: "Task",
+        status: "open",
+        createMode: "progressive",
+      })) as { item?: { id?: string; title?: string } };
+      expect(runCreated.item?.id).toMatch(/^pm-/);
+      expect(runCreated.item?.title).toBe("SDK structured run item");
+
       const listed = await client.list({ status: "open", limit: "10" });
       expect(listed.items.some((item) => item.id === itemId)).toBe(true);
 
@@ -1168,27 +1211,17 @@ console.log(JSON.stringify(payload));`,
       })) as { summary?: { active_items?: number } };
       expect(typeof aliasContext.summary?.active_items).toBe("number");
 
-      const started = (await runAction({
-        action: "start_task",
-        id: itemId,
-        path: pmPath,
-        cwd: path.dirname(pmPath),
-        noExtensions: true,
-        author: "sdk-client-test",
-        options: { message: "SDK lifecycle start" },
-      })) as { action?: string; update?: { item?: { id?: string; status?: string } } };
+      const started = (await startTask(itemId, { assignee: "sdk-client-test", message: "SDK lifecycle start" }, wrapperDefaults)) as {
+        action?: string;
+        update?: { item?: { id?: string; status?: string } };
+      };
       expect(started.action).toBe("start_task");
       expect(started.update?.item).toMatchObject({ id: itemId, status: "in_progress" });
 
-      const paused = (await runAction({
-        action: "pause-task",
-        id: itemId,
-        path: pmPath,
-        cwd: path.dirname(pmPath),
-        noExtensions: true,
-        author: "sdk-client-test",
-        options: { message: "SDK lifecycle pause" },
-      })) as { action?: string; update?: { item?: { id?: string; status?: string } } };
+      const paused = (await pauseTask(itemId, { assignee: "sdk-client-test", message: "SDK lifecycle pause" }, wrapperDefaults)) as {
+        action?: string;
+        update?: { item?: { id?: string; status?: string } };
+      };
       expect(paused.action).toBe("pause_task");
       expect(paused.update?.item).toMatchObject({ id: itemId, status: "open" });
 
@@ -1209,7 +1242,8 @@ console.log(JSON.stringify(payload));`,
         cwd: path.dirname(pmPath),
         noExtensions: true,
         author: "sdk-client-test",
-        options: { target: "1", message: "SDK restore to created version" },
+        target: "1",
+        options: { message: "SDK restore to created version" },
       })) as { item?: { id?: string; status?: string }; restored_from?: { target?: string } };
       expect(restored.item).toMatchObject({ id: itemId, status: "open" });
       expect(restored.restored_from?.target).toBe("1");
@@ -1253,6 +1287,204 @@ console.log(JSON.stringify(payload));`,
         options: { fields: "alias" },
       })) as { ok?: boolean; action?: string };
       expect(packageCatalog).toMatchObject({ ok: true, action: "catalog" });
+    });
+  });
+
+  it("runs top-level SDK lifecycle wrappers against real item state", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const wrapperDefaults = {
+        pmRoot: pmPath,
+        cwd: path.dirname(pmPath),
+        author: "sdk-client-test",
+        noExtensions: true,
+      };
+      const created = (await createItem(
+        {
+          title: "SDK top-level lifecycle item",
+          type: "Task",
+          status: "open",
+          createMode: "progressive",
+        },
+        wrapperDefaults,
+      )) as { item?: { id?: string; title?: string } };
+      const itemId = created.item?.id ?? "";
+      expect(itemId).toMatch(/^pm-/);
+
+      const updated = (await updateItem(itemId, { priority: "2", message: "SDK top-level update" }, wrapperDefaults)) as {
+        item?: { id?: string; priority?: number };
+      };
+      expect(updated.item).toMatchObject({ id: itemId, priority: 2 });
+
+      const noOptionUpdate = (await updateItem(itemId, undefined, wrapperDefaults)) as {
+        item?: { id?: string; priority?: number };
+      };
+      expect(noOptionUpdate.item).toMatchObject({ id: itemId, priority: 2 });
+
+      const claimed = (await claimItem(itemId, { assignee: "sdk-alias-agent" }, wrapperDefaults)) as {
+        item?: { id?: string; assignee?: string };
+      };
+      expect(claimed.item).toMatchObject({ id: itemId, assignee: "sdk-client-test" });
+
+      const released = (await release(itemId, { author: "sdk-client-test" }, wrapperDefaults)) as {
+        item?: { id?: string; assignee?: string };
+      };
+      expect(released.item).toMatchObject({ id: itemId });
+      expect(released.item?.assignee).toBeUndefined();
+
+      const copied = (await copyItem(itemId, { title: "SDK top-level copy" }, wrapperDefaults)) as {
+        item?: { id?: string; title?: string };
+      };
+      expect(copied.item?.id).toMatch(/^pm-/);
+      expect(copied.item?.title).toBe("SDK top-level copy");
+
+      const focused = (await focus(itemId, {}, wrapperDefaults)) as {
+        focused_item?: string | null;
+        action?: string;
+      };
+      expect(focused).toMatchObject({ action: "set", focused_item: itemId });
+
+      const currentFocus = (await focus(undefined, {}, wrapperDefaults)) as {
+        focused_item?: string | null;
+      };
+      expect(currentFocus.focused_item).toBe(itemId);
+
+      const restored = (await restore(
+        itemId,
+        "1",
+        { message: "SDK restore wrapper", fullChangedFields: true, idOnly: false },
+        wrapperDefaults,
+      )) as {
+        item?: { id?: string; status?: string };
+        changed_fields?: unknown[];
+      };
+      expect(restored.item).toMatchObject({ id: itemId, status: "open" });
+      expect(restored.changed_fields?.length).toBeGreaterThan(0);
+
+      const restoredWithDefaultProjection = (await restore(
+        itemId,
+        "1",
+        { message: "SDK restore wrapper default projection" },
+        wrapperDefaults,
+      )) as {
+        item?: { id?: string; status?: string };
+        changed_field_count?: number;
+        changed_fields?: unknown[];
+      };
+      expect(restoredWithDefaultProjection.item).toMatchObject({ id: itemId, status: "open" });
+      expect(restoredWithDefaultProjection.changed_field_count).toBe(0);
+      expect(restoredWithDefaultProjection.changed_fields).toBeUndefined();
+
+      const restoredIdOnly = (await restore(itemId, "1", { idOnly: true }, wrapperDefaults)) as {
+        id?: string;
+        status?: string;
+        item?: unknown;
+      };
+      expect(restoredIdOnly).toMatchObject({ id: itemId, status: "open" });
+      expect(restoredIdOnly.item).toBeUndefined();
+
+      const dryRunDeleted = (await deleteItem(itemId, { dryRun: true }, wrapperDefaults)) as {
+        dry_run?: boolean;
+        item?: { id?: string };
+      };
+      expect(dryRunDeleted).toMatchObject({ dry_run: true, item: { id: itemId } });
+
+      const closeCreated = (await createItem(
+        {
+          title: "SDK top-level close wrapper",
+          type: "Task",
+          status: "open",
+          createMode: "progressive",
+        },
+        wrapperDefaults,
+      )) as { item?: { id?: string } };
+      const closeItemId = closeCreated.item?.id ?? "";
+      expect(closeItemId).toMatch(/^pm-/);
+      const closeResult = (await closeItem(closeItemId, "SDK top-level close", { validateClose: "warn" }, wrapperDefaults)) as {
+        item?: { id?: string; close_reason?: string };
+      };
+      expect(closeResult.item).toMatchObject({ id: closeItemId, close_reason: "SDK top-level close" });
+
+      const closeTaskCreated = (await createItem(
+        {
+          title: "SDK top-level close-task wrapper",
+          type: "Task",
+          status: "open",
+          createMode: "progressive",
+        },
+        wrapperDefaults,
+      )) as { item?: { id?: string } };
+      const closeTaskItemId = closeTaskCreated.item?.id ?? "";
+      expect(closeTaskItemId).toMatch(/^pm-/);
+      const closeTaskResult = (await closeTask(
+        closeTaskItemId,
+        "SDK top-level close-task",
+        { validateClose: "warn", assignee: "sdk-client-test" },
+        wrapperDefaults,
+      )) as { action?: string; close?: { item?: { id?: string; status?: string; close_reason?: string } } };
+      expect(closeTaskResult.action).toBe("close_task");
+      expect(closeTaskResult.close?.item).toMatchObject({
+        id: closeTaskItemId,
+        status: "closed",
+        close_reason: "SDK top-level close-task",
+      });
+    });
+  });
+
+  it("uses lifecycle assignee aliases only when no SDK author is available", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const client = new PmClient({
+        pmRoot: pmPath,
+        cwd: path.dirname(pmPath),
+        noExtensions: true,
+      });
+      const created = (await client.create({
+        title: "SDK lifecycle author precedence",
+        type: "Task",
+        status: "open",
+        createMode: "progressive",
+      })) as { item?: { id?: string } };
+      const itemId = created.item?.id ?? "";
+      expect(itemId).toMatch(/^pm-/);
+
+      await expect(client.update(itemId)).resolves.toBeDefined();
+
+      const aliasClaimed = (await client.claim(itemId, { assignee: "sdk-alias-agent" })) as {
+        item?: { id?: string; assignee?: string };
+      };
+      expect(aliasClaimed.item).toMatchObject({ id: itemId, assignee: "sdk-alias-agent" });
+
+      const aliasReleased = (await client.release(itemId, { assignee: "sdk-alias-agent" })) as {
+        item?: { id?: string; assignee?: string };
+      };
+      expect(aliasReleased.item?.assignee).toBeUndefined();
+
+      const defaultAuthorClient = new PmClient({
+        pmRoot: pmPath,
+        cwd: path.dirname(pmPath),
+        author: "sdk-default-author",
+        noExtensions: true,
+      });
+      const defaultAuthorClaimed = (await defaultAuthorClient.claim(itemId, { assignee: "sdk-alias-agent" })) as {
+        item?: { id?: string; assignee?: string };
+      };
+      expect(defaultAuthorClaimed.item).toMatchObject({ id: itemId, assignee: "sdk-default-author" });
+
+      await defaultAuthorClient.release(itemId, { author: "sdk-default-author" });
+
+      const defaultAuthorStarted = (await defaultAuthorClient.startTask(itemId, { assignee: "sdk-alias-agent" })) as {
+        update?: { item?: { id?: string; status?: string; assignee?: string } };
+      };
+      expect(defaultAuthorStarted.update?.item).toMatchObject({
+        id: itemId,
+        status: "in_progress",
+        assignee: "sdk-default-author",
+      });
+
+      const defaultAuthorPaused = (await defaultAuthorClient.pauseTask(itemId, { assignee: "sdk-alias-agent" })) as {
+        release?: { item?: { id?: string; status?: string; assignee?: string } };
+      };
+      expect(defaultAuthorPaused.release?.item).toMatchObject({ id: itemId, status: "open" });
+      expect(defaultAuthorPaused.release?.item?.assignee).toBeUndefined();
     });
   });
 

@@ -4,19 +4,33 @@
  * Provides CLI runtime support for Register Operations.
  */
 import type { Command } from "commander";
-import {
-  normalizeStatusInputWithRegistry,
-  resolveRuntimeStatusRegistry,
-  type RuntimeStatusRegistry,
-} from "../core/schema/runtime-schema.js";
+import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
 import { setActiveCommandResult } from "../core/extensions/index.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
+import { resolveStartTaskInProgressStatus } from "../sdk/start-task-status.js";
+import { runClaim, runRelease } from "./commands/claim.js";
+import { runClose } from "./commands/close.js";
+import { runContracts } from "./commands/contracts.js";
+import { runGc } from "./commands/gc.js";
+import { runHealth } from "./commands/health.js";
+import { runMeet, runEvent, runRemind } from "./commands/scheduling-shortcuts.js";
+import { runStats } from "./commands/stats.js";
+import { runTelemetry } from "./commands/telemetry.js";
+import { runTest } from "./commands/test.js";
+import { runTestAll } from "./commands/test-all.js";
+import {
+  runStartBackgroundRun,
+  runTestRunsWorker,
+} from "./commands/test-runs.js";
+import { runUpdate } from "./commands/update.js";
+import { runValidate } from "./commands/validate.js";
 import {
   buildBackgroundTestAllCommandArgs,
   buildBackgroundTestCommandArgs,
+  addHiddenOption,
   collect,
   getGlobalOptions,
   invalidateSearchCachesForMutation,
@@ -24,16 +38,6 @@ import {
   printResult,
   readOptionString,
 } from "./registration-helpers.js";
-
-/**
- * Resolve the status the `start-task` lifecycle alias should move an item to.
- * Resolves `in_progress` strictly through the workspace registry so a custom
- * workflow that omits in_progress falls back to its open status instead of
- * setting a status the workflow does not define.
- */
-export function resolveStartTaskInProgressStatus(statusRegistry: RuntimeStatusRegistry): string {
-  return normalizeStatusInputWithRegistry("in_progress", statusRegistry) ?? statusRegistry.open_status;
-}
 
 function resolveTelemetrySubcommand(namespaceOrSubcommand: string | undefined, subcommand: string | undefined): string | undefined {
   const normalizedNamespace = namespaceOrSubcommand?.trim().toLowerCase();
@@ -96,7 +100,6 @@ async function runBackgroundLinkedTests(
   globalOptions: ReturnType<typeof getGlobalOptions>,
   values: { addValues: string[]; addJsonValues: string[]; removeValues: string[] },
 ): Promise<void> {
-  const { runStartBackgroundRun } = await import("./commands/test-runs.js");
   const result = await runStartBackgroundRun({
     kind: "test",
     commandArgs: buildBackgroundTestCommandArgs(id, { ...options, add: values.addValues, addJson: values.addJsonValues, remove: values.removeValues }),
@@ -145,7 +148,6 @@ async function runForegroundLinkedTests(
   globalOptions: ReturnType<typeof getGlobalOptions>,
   values: { addValues: string[]; addJsonValues: string[]; removeValues: string[] },
 ): Promise<void> {
-  const { runTest } = await import("./commands/test.js");
   const result = await runTest(id, buildRunTestOptions(options, values), globalOptions);
   if (values.addValues.length > 0 || values.addJsonValues.length > 0 || values.removeValues.length > 0 || options.run === true) {
     await invalidateSearchCachesForMutation(globalOptions, result);
@@ -175,8 +177,24 @@ function buildLifecycleMutationOptions(options: Record<string, unknown>): {
   author: string | undefined;
   message: string | undefined;
 } {
+  const author = readOptionString(options, "author");
+  const assignee = readOptionString(options, "assignee");
+  if (author !== undefined && assignee !== undefined && author !== assignee) {
+    throw new PmCliError(
+      "Lifecycle ownership received conflicting --author and --assignee values; use one actor value for both aliases.",
+      EXIT_CODE.USAGE,
+      {
+        code: "conflicting_lifecycle_owner",
+        examples: [
+          "pm claim pm-123 --author codex-agent",
+          "pm claim pm-123 --assignee codex-agent",
+          "pm start-task pm-123 --author codex-agent",
+        ],
+      },
+    );
+  }
   return {
-    author: readOptionString(options, "author"),
+    author: author ?? assignee,
     message: readOptionString(options, "message"),
   };
 }
@@ -186,7 +204,6 @@ async function runTestAllAction(options: Record<string, unknown>, command: Comma
   const startedAt = Date.now();
   const runInBackground = options.background === true;
   if (runInBackground) {
-    const { runStartBackgroundRun } = await import("./commands/test-runs.js");
     const result = await runStartBackgroundRun({
       kind: "test-all",
       commandArgs: buildBackgroundTestAllCommandArgs(options),
@@ -199,7 +216,6 @@ async function runTestAllAction(options: Record<string, unknown>, command: Comma
     }
     return;
   }
-  const { runTestAll } = await import("./commands/test-all.js");
   const result = await runTestAll({
     status: readOptionString(options, "status"),
     limit: readOptionString(options, "limit"),
@@ -236,7 +252,6 @@ async function runTelemetryAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runTelemetry } = await import("./commands/telemetry.js");
   const result = await runTelemetry(
     {
       subcommand: resolveTelemetrySubcommand(namespaceOrSubcommand, subcommand),
@@ -255,7 +270,6 @@ async function runTelemetryAction(
 async function runStatsAction(options: Record<string, unknown>, command: Command): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runStats } = await import("./commands/stats.js");
   const result = await runStats(globalOptions, {
     storage: options.storage === true,
     metadataCoverage: options.metadataCoverage === true,
@@ -274,7 +288,6 @@ async function runStatsAction(options: Record<string, unknown>, command: Command
 async function runHealthAction(options: Record<string, unknown>, command: Command): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runHealth } = await import("./commands/health.js");
   const result = await runHealth(globalOptions, {
     strictDirectories: Boolean(options.strictDirectories),
     checkOnly: Boolean(options.checkOnly),
@@ -310,7 +323,6 @@ async function runHealthAction(options: Record<string, unknown>, command: Comman
 async function runValidateAction(options: Record<string, unknown>, command: Command): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runValidate } = await import("./commands/validate.js");
   const result = await runValidate({
     checkMetadata: Boolean(options.checkMetadata),
     metadataProfile: readOptionString(options, "metadataProfile"),
@@ -354,7 +366,6 @@ async function runValidateAction(options: Record<string, unknown>, command: Comm
 async function runGcAction(options: Record<string, unknown>, command: Command): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runGc } = await import("./commands/gc.js");
   const result = await runGc(globalOptions, {
     dryRun: options.dryRun === true,
     scope: Array.isArray(options.scope) ? (options.scope as string[]) : [],
@@ -368,7 +379,6 @@ async function runGcAction(options: Record<string, unknown>, command: Command): 
 async function runContractsAction(options: Record<string, unknown>, command: Command): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runContracts } = await import("./commands/contracts.js");
   const result = await runContracts({
     action: readOptionString(options, "action"),
     command: readOptionString(options, "command"),
@@ -387,7 +397,6 @@ async function runContractsAction(options: Record<string, unknown>, command: Com
 async function runClaimAction(id: string, options: Record<string, unknown>, command: Command): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runClaim } = await import("./commands/claim.js");
   const result = await runClaim(id, Boolean(options.force), globalOptions, {
     ...buildLifecycleMutationOptions(options),
     ifAvailable: options.ifAvailable === true,
@@ -402,7 +411,6 @@ async function runClaimAction(id: string, options: Record<string, unknown>, comm
 async function runReleaseAction(id: string, options: Record<string, unknown>, command: Command): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runRelease } = await import("./commands/claim.js");
   const result = await runRelease(id, Boolean(options.force), globalOptions, {
     ...buildLifecycleMutationOptions(options),
     allowAuditRelease: options.allowAuditRelease === true,
@@ -423,10 +431,6 @@ async function runStartTaskAction(id: string, options: Record<string, unknown>, 
   const inProgressStatus = resolveStartTaskInProgressStatus(statusRegistry);
   const force = Boolean(options.force);
   const mutationOptions = buildLifecycleMutationOptions(options);
-  const [{ runClaim }, { runUpdate }] = await Promise.all([
-    import("./commands/claim.js"),
-    import("./commands/update.js"),
-  ]);
   const claimResult = await runClaim(id, force, globalOptions, mutationOptions);
   await invalidateSearchCachesForMutation(globalOptions, claimResult);
   const updateResult = await runUpdate(id, { ...mutationOptions, status: inProgressStatus, force }, globalOptions);
@@ -445,10 +449,6 @@ async function runPauseTaskAction(id: string, options: Record<string, unknown>, 
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const force = Boolean(options.force);
   const mutationOptions = buildLifecycleMutationOptions(options);
-  const [{ runUpdate }, { runRelease }] = await Promise.all([
-    import("./commands/update.js"),
-    import("./commands/claim.js"),
-  ]);
   const updateResult = await runUpdate(id, { ...mutationOptions, status: statusRegistry.open_status, force }, globalOptions);
   await invalidateSearchCachesForMutation(globalOptions, updateResult);
   const releaseResult = await runRelease(id, force, globalOptions, mutationOptions);
@@ -469,10 +469,6 @@ async function runCloseTaskAction(
   const startedAt = Date.now();
   const force = Boolean(options.force);
   const mutationOptions = buildLifecycleMutationOptions(options);
-  const [{ runClose }, { runRelease }] = await Promise.all([
-    import("./commands/close.js"),
-    import("./commands/claim.js"),
-  ]);
   const closeResult = await runClose(id, reason, {
     ...mutationOptions,
     validateClose: readOptionString(options, "validateClose"),
@@ -552,7 +548,6 @@ export function registerOperationCommands(program: Command): void {
     .description("Internal background worker command.")
     .action(async (runId: string, _options: Record<string, unknown>, command: Command) => {
       const globalOptions = getGlobalOptions(command);
-      const { runTestRunsWorker } = await import("./commands/test-runs.js");
       await runTestRunsWorker(runId, globalOptions);
     });
 
@@ -657,7 +652,7 @@ export function registerOperationCommands(program: Command): void {
     )
     .action(runContractsAction);
 
-  program
+  const claimCommand = program
     .command("claim")
     .argument("<id>", "Item id")
     .option("--author <value>", "Mutation author")
@@ -666,8 +661,9 @@ export function registerOperationCommands(program: Command): void {
     .option("--if-available", "Skip silently when the item is already claimed by another author (returns skipped=true)")
     .description("Claim an item for active work.")
     .action(runClaimAction);
+  addHiddenOption(claimCommand, "--assignee <value>", "Alias for --author on lifecycle ownership commands");
 
-  program
+  const releaseCommand = program
     .command("release")
     .argument("<id>", "Item id")
     .option("--author <value>", "Mutation author")
@@ -676,8 +672,9 @@ export function registerOperationCommands(program: Command): void {
     .option("--force", "Force release override")
     .description("Release an item's active claim.")
     .action(runReleaseAction);
+  addHiddenOption(releaseCommand, "--assignee <value>", "Alias for --author on lifecycle ownership commands");
 
-  program
+  const startTaskCommand = program
     .command("start-task")
     .argument("<id>", "Item id")
     .option("--author <value>", "Mutation author")
@@ -685,8 +682,9 @@ export function registerOperationCommands(program: Command): void {
     .option("--force", "Force ownership or terminal override when required")
     .description("Lifecycle alias: claim an item and move it to in_progress.")
     .action(runStartTaskAction);
+  addHiddenOption(startTaskCommand, "--assignee <value>", "Alias for --author on lifecycle ownership commands");
 
-  program
+  const pauseTaskCommand = program
     .command("pause-task")
     .argument("<id>", "Item id")
     .option("--author <value>", "Mutation author")
@@ -694,8 +692,9 @@ export function registerOperationCommands(program: Command): void {
     .option("--force", "Force ownership override when required")
     .description("Lifecycle alias: move an item to open and release its claim.")
     .action(runPauseTaskAction);
+  addHiddenOption(pauseTaskCommand, "--assignee <value>", "Alias for --author on lifecycle ownership commands");
 
-  program
+  const closeTaskCommand = program
     .command("close-task")
     .argument("<id>", "Item id")
     .argument("[reason]", "Close reason text")
@@ -705,6 +704,7 @@ export function registerOperationCommands(program: Command): void {
     .option("--force", "Force ownership or terminal override when required")
     .description("Lifecycle alias: close an item and release assignment metadata.")
     .action(runCloseTaskAction);
+  addHiddenOption(closeTaskCommand, "--assignee <value>", "Alias for --author on lifecycle ownership commands");
 
   registerSchedulingShortcutCommands(program);
 }
@@ -772,7 +772,6 @@ function registerSchedulingShortcutCommands(program: Command): void {
       .action(async (title: string, options: Record<string, unknown>, command) => {
         const globalOptions = getGlobalOptions(command);
         const startedAt = Date.now();
-        const { runMeet, runEvent } = await import("./commands/scheduling-shortcuts.js");
         const run = name === "meet" ? runMeet : runEvent;
         const result = await run(
           title,
@@ -812,7 +811,6 @@ function registerSchedulingShortcutCommands(program: Command): void {
     .action(async (title: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runRemind } = await import("./commands/scheduling-shortcuts.js");
       const result = await runRemind(
         title,
         {

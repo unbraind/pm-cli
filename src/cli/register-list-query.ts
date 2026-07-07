@@ -3,12 +3,30 @@
  *
  * Provides CLI runtime support for Register List Query.
  */
-import { Option, type Command } from "commander";
+import type { Command } from "commander";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { renderRowsAsCsv, renderRowsAsTable } from "../core/output/tabular.js";
+import { runActivity } from "./commands/activity.js";
+import { runAggregate } from "./commands/aggregate.js";
+import {
+  renderContextMarkdown,
+  runContext,
+  resolveContextOutputFormat,
+} from "./commands/context.js";
+import { runEval } from "./commands/eval.js";
+import { runGet } from "./commands/get.js";
+import { runHistory } from "./commands/history.js";
+import { runList } from "./commands/list.js";
+import {
+  renderNextMarkdown,
+  runNext,
+  resolveNextOutputFormat,
+} from "./commands/next.js";
+import { runSearch } from "./commands/search.js";
 import type { ItemStatus } from "../types/index.js";
 import {
+  addHiddenOption,
   getGlobalOptions,
   normalizeAggregateOptions,
   normalizeActivityOptions,
@@ -107,10 +125,6 @@ function applyDefaultBriefListMode(
   }
 }
 
-function addHiddenOption(command: Command, flags: string, description: string): void {
-  command.addOption(new Option(flags, description).hideHelp());
-}
-
 function registerContentAndGovernanceFilters(command: Command): void {
   command
     .option("--has-notes", "Show only items that have notes")
@@ -153,7 +167,6 @@ async function runRegisteredListCommand(params: {
   const listOptions = normalizeListOptions(params.options);
   applyDefaultBriefListMode(listOptions, params.defaultBrief);
   if (params.excludeTerminal) listOptions.excludeTerminal = true;
-  const { runList } = await import("./commands/list.js");
   const result = await runList(params.status, listOptions, globalOptions);
   const streamMode = params.options.stream === true;
   const listFormat = parseListFormat(params.options.format);
@@ -253,7 +266,6 @@ function registerListCommand(program: Command, descriptor: ListCommandDescriptor
 async function runAggregateAction(options: Record<string, unknown>, command: Command): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runAggregate } = await import("./commands/aggregate.js");
   const result = await runAggregate(normalizeAggregateOptions(options), globalOptions);
   printResult(result, globalOptions);
   if (globalOptions.profile) {
@@ -265,12 +277,11 @@ async function runContextAction(options: Record<string, unknown>, actionCommand:
   const globalOptions = getGlobalOptions(actionCommand);
   const startedAt = Date.now();
   const normalized = normalizeContextOptions(options);
-  const commands = await import("./commands/context.js");
-  const result = await commands.runContext(normalized, globalOptions);
-  const outputFormat = commands.resolveContextOutputFormat(normalized, globalOptions);
+  const result = await runContext(normalized, globalOptions);
+  const outputFormat = resolveContextOutputFormat(normalized, globalOptions);
   if (outputFormat === "markdown") {
     if (!globalOptions.quiet) {
-      writeStdout(`${commands.renderContextMarkdown(result)}\n`);
+      writeStdout(`${renderContextMarkdown(result)}\n`);
     }
   } else {
     printResult(result, {
@@ -286,13 +297,12 @@ async function runContextAction(options: Record<string, unknown>, actionCommand:
 async function runNextAction(options: Record<string, unknown>, actionCommand: Command): Promise<void> {
   const globalOptions = getGlobalOptions(actionCommand);
   const startedAt = Date.now();
-  const commands = await import("./commands/next.js");
   const nextOptions = normalizeNextOptions(options);
-  const result = await commands.runNext(nextOptions, globalOptions);
-  const outputFormat = commands.resolveNextOutputFormat(nextOptions, globalOptions);
+  const result = await runNext(nextOptions, globalOptions);
+  const outputFormat = resolveNextOutputFormat(nextOptions, globalOptions);
   if (outputFormat === "markdown") {
     if (!globalOptions.quiet) {
-      writeStdout(`${commands.renderNextMarkdown(result)}\n`);
+      writeStdout(`${renderNextMarkdown(result)}\n`);
     }
   } else {
     printResult(result, { ...globalOptions, json: outputFormat === "json" });
@@ -305,7 +315,6 @@ async function runNextAction(options: Record<string, unknown>, actionCommand: Co
 async function runSearchAction(keywords: string[], options: Record<string, unknown>, command: Command): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runSearch } = await import("./commands/search.js");
   const searchOptions = normalizeSearchOptions(options);
   const result = await runSearch(
     normalizeSearchKeywordsInput(keywords),
@@ -327,7 +336,6 @@ async function runSearchAction(keywords: string[], options: Record<string, unkno
 async function runEvalAction(options: Record<string, unknown>, command: Command): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runEval } = await import("./commands/eval.js");
   const result = await runEval(
     {
       mode: typeof options.mode === "string" ? options.mode : undefined,
@@ -353,7 +361,6 @@ async function runEvalAction(options: Record<string, unknown>, command: Command)
 async function runGetAction(id: string, options: Record<string, unknown>, command: Command): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runGet } = await import("./commands/get.js");
   const result = await runGet(
     id,
     globalOptions,
@@ -383,7 +390,6 @@ async function runHistoryAction(id: string, options: Record<string, unknown>, co
     throw new PmCliError("History projection options are mutually exclusive. Use either --compact or --full.", EXIT_CODE.USAGE);
   }
   const field = typeof options.field === "string" ? options.field : undefined;
-  const { runHistory } = await import("./commands/history.js");
   const result = await runHistory(
     id,
     {
@@ -408,7 +414,6 @@ async function runActivityAction(options: Record<string, unknown>, command: Comm
     throw new PmCliError("Activity projection options are mutually exclusive. Use either --compact or --full.", EXIT_CODE.USAGE);
   }
   const normalized = normalizeActivityOptions(options);
-  const { runActivity } = await import("./commands/activity.js");
   const result = await runActivity(normalized, globalOptions);
   const streamMode = resolveActivityStreamMode(options.stream);
   if (streamMode && !globalOptions.json) {

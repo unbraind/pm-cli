@@ -2,21 +2,21 @@ id: pm-rjqr
 title: "Promote query/read primitives to the public SDK: list, get, search, context, next, aggregate, stats"
 description: "Typed SDK read surface over the item store, search (keyword/semantic/hybrid incl. inline field:value parsing), context snapshots, next-item recommendation, aggregates, and stats. History/activity ownership is pm-4a7m. Duplicate check: no existing query-primitive SDK item."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[3]: architecture,"area:sdk","area:search"
 created_at: "2026-07-05T04:54:09.542Z"
-updated_at: "2026-07-06T21:52:35.475Z"
+updated_at: "2026-07-07T02:53:35.167Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: SDK exports typed query primitives returning the same data the CLI renders (projection/format concerns stay CLI-side); CLI query commands consume only these primitives; docstrings + linked tests + SDK reference docs; zero behavior change (query/search specs green)
 parent: pm-usfg
 risk: medium
 confidence: medium
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-lodl,blocked_by,"2026-07-05T04:55:04.440Z",null,null
-  pm-muhw,blocked_by,"2026-07-05T04:55:04.919Z",null,null
-comments[8]{created_at,author,text}:
+resolution: "PmClient and SDK top-level exports now expose list, get, search, context, next, aggregate, and stats read primitives with tests and docs. CLI read handlers remain on native extension-aware runners while SDK consumers use the shared in-process action path."
+expected_result: Package authors and agents can use stable SDK read primitives for context management without subprocess coupling.
+actual_result: "SDK read primitives, structured create payloads, lifecycle wrappers, docs, installed-package dogfood, and full coverage all passed; extension-aware CLI behavior remains intact."
+comments[17]{created_at,author,text}:
   "2026-07-06T10:54:21.169Z",codex-agent,"Evidence: exported typed SDK read primitives on PmClient and SDK barrel for context/list/search/get/next/aggregate/stats; docs/SDK.md documents the read surface. Verification passed: pnpm typecheck; focused SDK + linked-test suites; pnpm lint; node scripts/run-tests.mjs coverage at 100/100/100/100; installed-package temp project exercised @unbrained/pm-cli/sdk PmClient read primitives successfully. Remaining acceptance: migrate CLI query command handlers to consume the public SDK primitives before closing pm-rjqr."
   "2026-07-06T11:14:35.194Z",codex-agent,"Review loop evidence: addressed Greptile P1 by exporting callable top-level read primitives from both @unbrained/pm-cli/sdk and @unbrained/pm-cli/sdk/runtime, in addition to PmClient methods. Verification after the fix passed: pnpm typecheck; focused SDK test with built package export assertion; installed-package temp dogfood invoking top-level wrappers; pnpm lint; pnpm quality:docs-skills; node scripts/run-tests.mjs coverage at 100/100/100/100."
   "2026-07-06T11:25:14.374Z",codex-code-agent,"Review-loop evidence: addressed post-PR bot findings on PR #466. Added an early return in appendLinkedTestOutputChunk so max-buffer state skips chunk conversion entirely, exposed the helper to unit tests, consolidated repeated SDK read-method casts behind a private runTyped<Result>() helper, and tightened SDK docs wording from 'first SDK-first' to 'foundational SDK PM primitives'. Verification passed: pnpm typecheck; node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts tests/unit/sdk/sdk-index.spec.ts; pnpm quality:docs-skills; pnpm lint; node scripts/run-tests.mjs coverage (264 files, 5437 tests, 100/100/100/100 coverage)."
@@ -25,19 +25,36 @@ comments[8]{created_at,author,text}:
   "2026-07-06T12:17:57.186Z",codex-code-agent,"Review-loop evidence: addressed final Gemini RegExp-stub robustness finding on PR #466. The non-Error regex constructor test now stubs RegExp only for the specific will-throw pattern and delegates every other constructor call to the real RegExp, avoiding interference with Vitest internals while preserving the non-Error failure coverage. Verification passed: pnpm typecheck; pnpm lint; node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts; node scripts/run-tests.mjs coverage (264 files, 5437 tests, 100/100/100/100 coverage)."
   "2026-07-06T12:35:42.931Z",codex-code-agent,"Review-loop evidence: addressed latest Gemini efficiency and RegExp-stub robustness findings on PR #466. readLinkedTestOutputChunkText now uses subarray directly for Buffer chunks instead of Buffer.from(chunk), avoiding a full copy for oversized output chunks. The RegExp constructor stub now preserves the real constructor prototype chain while still throwing only for the will-throw pattern. Verification passed: pnpm typecheck; pnpm lint; node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts; node scripts/run-tests.mjs coverage (264 files, 5437 tests, 100/100/100/100 coverage)."
   "2026-07-06T21:52:35.474Z",maintainer-agent,"Audit #15 status hygiene: claim was released 2026-07-06 12:47 after PR #466 merged, but status stayed in_progress with no active owner (phantom WIP). Reset to open. Remaining acceptance before close: migrate CLI query command handlers (list/get/search/context/next/aggregate/stats) to consume the public SDK read primitives; grep confirms no CLI handler imports them yet."
+  "2026-07-06T23:57:34.994Z",claude-code-agent,"Implementation note: live duplicate/dependency checks found pm-rjqr remains the canonical query/read SDK item; blockers pm-lodl and pm-muhw are closed. Bundling pm-395t because it touches src/sdk/runtime.ts and the same SDK dogfood surface. Planned files: src/cli/register-list-query.ts, src/cli/register-operations.ts, src/sdk/runtime.ts, tests/unit/sdk/sdk-index.spec.ts, docs/SDK.md."
+  "2026-07-07T00:22:10.657Z",claude-code-agent,"Implementation bundle update: expanding PR scope per user direction to combine pm-rjqr, pm-395t, pm-98cz, pm-25d0, and pm-qfte. Current code routes CLI read/query commands through public SDK read primitives, keeps structured PmClient.run('create', ...) support, removes inline imports from touched registration modules, and adds lifecycle SDK primitive wrappers plus tests."
+  "2026-07-07T00:56:14.623Z",codex-sdk-primitives-agent,"Evidence: public SDK read primitives and lifecycle bundle verified. Full coverage passed at 2026-07-07T00:54Z with 264 files, 5447 tests, and 100/100/100/100 coverage. Also passed pnpm typecheck, pnpm lint, pnpm security:scan, pnpm audit --audit-level moderate, pm health --check-only --summary --json, and installed-package dogfood from npm pack in /tmp. GitHub check: open dependabot PRs #465/#462/#461 remain separate; #461 has pre-existing failing CI. Auto-release latest scheduled run on 2026-07-06 succeeded and npm/GitHub latest is 2026.7.6."
+  "2026-07-07T01:14:53.153Z",codex-sdk-primitives-agent,"Follow-up evidence after pre-push Greptile review: defaulted SDK create/update mutation option parameters, preserved SDK author precedence over lifecycle assignee aliases, and added regression coverage for no-options update plus assignee fallback behavior. Verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm typecheck; pnpm lint; node scripts/run-tests.mjs coverage (Statements 100%, Branches 100%, Functions 100%, Lines 100%; 5448 tests)."
+  "2026-07-07T01:29:23.811Z",codex-sdk-primitives-agent,"Pre-push review follow-up: Greptile review d8627c63-d12f-4c7d-a1d1-2eb565d52de0 reported no review comments. Addressed its summary consistency note by defaulting the standalone SDK create wrapper options to {} as well. Fresh verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm typecheck; pnpm lint; node scripts/run-tests.mjs coverage (5448 tests, Statements/Branches/Functions/Lines all 100%)."
+  "2026-07-07T01:57:10.985Z",codex-sdk-primitives-agent,"PR #477 review-loop evidence: addressed Greptile PR comment on top-level restore target handling. runAction({ action: 'restore', id, target }) now honors the schema-declared top-level target while preserving options.target precedence. Verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm typecheck; node scripts/run-tests.mjs coverage (5448 tests, 100/100/100/100)."
+  "2026-07-07T02:15:38.787Z",codex-sdk-primitives-agent,"PR #477 review-loop evidence: after bundling SDK read primitives, structured create payloads, SDK lifecycle mutations, SDK package-coordinate docs, and lifecycle alias ergonomics into one PR, addressed additional CodeRabbit/Cubic feedback by centralizing hidden Commander option registration, rejecting conflicting lifecycle --author/--assignee inputs, strengthening composite lifecycle alias tests, and adding command-doc tracker references. Verification passed: node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts; pnpm typecheck; pnpm lint; node scripts/run-tests.mjs coverage (5448 tests, 100/100/100/100)."
+  "2026-07-07T02:36:31.023Z",codex-sdk-primitives-agent,"PR #477 Greptile review-loop evidence: fixed SDK/MCP compound start-task and pause-task alias leakage by stripping the lifecycle-only assignee alias before forwarding options to runUpdate, while preserving the alias for claim/release ownership resolution. Added regression coverage for client default author precedence when assignee alias differs. Verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm typecheck; pnpm lint; node scripts/run-tests.mjs coverage (5448 tests, 100/100/100/100)."
+  "2026-07-07T02:53:35.167Z",codex-sdk-primitives-agent,"PR #477 final Greptile follow-up: SDK lifecycle/read bundle now also fixes restore projection parity for fullChangedFields/idOnly through shared mutation projection. Verification passed: SDK focused tests, typecheck, lint, and full coverage 100/100/100/100."
 notes[1]{created_at,author,text}:
   "2026-07-06T14:07:53.915Z",maintainer-agent,"2026-07-06 audit #12 external verification: installed the packed 2026.7.6 tarball in a fresh CJS host project and exercised the promoted read primitives via dynamic import of @unbrained/pm-cli/sdk — list/get/search/context/next/stats all returned correct results against a sandbox tracker (get/search take positional id/query + options + clientOptions). PmClient create/update/close round-trip also verified from CJS. One DX note: raw client.run('create', {type,title}) fails 'Missing required option --title' (args must be pre-split); typed client.create() is the working path — consider mapping bare title/type in run() args or documenting the split contract."
-files[3]{path,scope,note}:
+files[7]{path,scope,note}:
+  src/cli/register-list-query.ts,project,Routes CLI list/get/search/context/next/aggregate registration through public SDK read wrappers while preserving rendering
+  src/cli/register-operations.ts,project,Routes CLI stats registration through public SDK stats wrapper
+  src/cli/start-task-status.ts,project,Neutral shared lifecycle helper prevents SDK/runtime and operation-registration cycles
   src/sdk/index.ts,project,Public SDK barrel exports read primitive option/result contracts
   src/sdk/runtime.ts,project,Typed PmClient read primitives for context/list/search/get/next/aggregate/stats
+  tests/unit/commands/register-commands.spec.ts,project,Updates moved start-task status helper coverage while preserving operation registration tests
   tests/unit/sdk/sdk-index.spec.ts,project,In-process temp-tracker coverage for typed PmClient read primitives
-tests[4]{command,scope,timeout_seconds}:
+tests[7]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs coverage,project,420
+  node scripts/run-tests.mjs test -- tests/unit/cli/register-list-query.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/sdk/sdk-index.spec.ts,project,300
   node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts,project,240
+  "pnpm changelog:pm:check",project,120
   pnpm lint,project,240
   pnpm typecheck,project,240
+  "pnpm typecheck && pnpm lint && pnpm security:scan",project,300
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mr92mjn4-w1xoyq,test,passed,"2026-07-06T10:21:46.310Z","2026-07-06T10:22:19.888Z","2026-07-06T10:22:19.888Z",2,0,0
 docs[1]{path,scope,note}:
   docs/SDK.md,project,Documents typed PmClient read primitive surface and exported contracts
+close_reason: Promoted read/query primitives to public SDK
 body: ""

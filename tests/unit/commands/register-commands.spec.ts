@@ -135,10 +135,8 @@ vi.mock("../../../src/cli/commands/extension.js", () => ({ runExtension: vi.fn()
 vi.mock("../../../src/cli/commands/upgrade.js", () => ({ runUpgrade: vi.fn() }));
 
 import { registerListQueryCommands } from "../../../src/cli/register-list-query.js";
-import {
-  registerOperationCommands,
-  resolveStartTaskInProgressStatus,
-} from "../../../src/cli/register-operations.js";
+import { registerOperationCommands } from "../../../src/cli/register-operations.js";
+import { resolveStartTaskInProgressStatus } from "../../../src/sdk/start-task-status.js";
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
 import {
   looksLikeSchemaSubcommandTypo,
@@ -659,6 +657,23 @@ describe("operation command actions", () => {
       ifAvailable: false,
     });
 
+    await runCli("claim", "pm-1", "--assignee", "alias-agent");
+    expect(vi.mocked(runClaim)).toHaveBeenLastCalledWith("pm-1", false, expect.anything(), {
+      author: "alias-agent",
+      message: undefined,
+      ifAvailable: false,
+    });
+
+    await runCli("claim", "pm-1", "--author", "same-agent", "--assignee", "same-agent");
+    expect(vi.mocked(runClaim)).toHaveBeenLastCalledWith("pm-1", false, expect.anything(), {
+      author: "same-agent",
+      message: undefined,
+      ifAvailable: false,
+    });
+    await expect(runCli("claim", "pm-1", "--author", "author-agent", "--assignee", "alias-agent")).rejects.toThrow(
+      "conflicting --author and --assignee",
+    );
+
     await runCli("release", "pm-1", "--author", "agent", "--message", "handoff");
     expect(vi.mocked(runRelease)).toHaveBeenLastCalledWith("pm-1", false, expect.anything(), {
       author: "agent",
@@ -666,11 +681,26 @@ describe("operation command actions", () => {
       allowAuditRelease: false,
     });
 
+    await runCli("release", "pm-1", "--assignee", "release-alias");
+    expect(vi.mocked(runRelease)).toHaveBeenLastCalledWith("pm-1", false, expect.anything(), {
+      author: "release-alias",
+      message: undefined,
+      allowAuditRelease: false,
+    });
+
     await runCli("start-task", "pm-1", "--message", "begin");
     expect(lastCallArg<Record<string, unknown>>(vi.mocked(runUpdate) as never, 1).message).toBe("begin");
 
+    await runCli("start-task", "pm-1", "--assignee", "start-alias");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runClaim) as never, 3).author).toBe("start-alias");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runUpdate) as never, 1).author).toBe("start-alias");
+
     await runCli("pause-task", "pm-1", "--author", "agent", "--message", "pause");
     expect(lastCallArg<Record<string, unknown>>(vi.mocked(runUpdate) as never, 1).author).toBe("agent");
+
+    await runCli("pause-task", "pm-1", "--assignee", "pause-alias");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runUpdate) as never, 1).author).toBe("pause-alias");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runRelease) as never, 3).author).toBe("pause-alias");
 
     await runCli("close-task", "pm-1", "wrapped", "--author", "agent", "--message", "closing");
     expect(vi.mocked(runClose)).toHaveBeenLastCalledWith(
@@ -679,6 +709,15 @@ describe("operation command actions", () => {
       expect.objectContaining({ author: "agent", message: "closing" }),
       expect.anything(),
     );
+
+    await runCli("close-task", "pm-1", "wrapped", "--assignee", "close-alias");
+    expect(vi.mocked(runClose)).toHaveBeenLastCalledWith(
+      "pm-1",
+      "wrapped",
+      expect.objectContaining({ author: "close-alias" }),
+      expect.anything(),
+    );
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runRelease) as never, 3).author).toBe("close-alias");
   });
 
   it("delegates scheduling shortcuts to runMeet/runEvent/runRemind with translated options", async () => {
