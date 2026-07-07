@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: "area:sdk",context,relevance,scale
 created_at: "2026-07-06T23:50:39.057Z"
-updated_at: "2026-07-06T23:50:39.057Z"
+updated_at: "2026-07-07T07:27:25.207Z"
 author: codex-agent
 estimated_minutes: 360
 acceptance_criteria: "SDK exposes stable signal extraction primitives; signals cover recency/activity density, dependency proximity, claim/focus state, priority/risk/deadline pressure, knowledge density, author affinity, and semantic similarity; feature reads are index-backed via pm-801d; signal snapshots are deterministic for a fixed workspace; missing optional indexes degrade gracefully with explicit metadata."
@@ -18,4 +18,6 @@ dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-rjqr,blocked_by,"2026-07-06T23:50:39.057Z",codex-agent,null
 comments[1]{created_at,author,text}:
   "2026-07-06T23:50:39.057Z",codex-agent,"Duplicate check: searched all statuses for context relevance scorer/signal extraction/feature store; only parent pm-4k6b and historical search-ranking work matched, so this is the non-duplicate signal-layer implementation slice."
+notes[1]{created_at,author,text}:
+  "2026-07-07T07:27:25.206Z",maintainer-agent,"Planning pass 2026-07-07: candidate additional derived signal — estimation calibration. estimated_minutes is a required metadata field but nothing compares it against actual duration derived from history streams (claim-to-close spans, cf. pm-pee5 flow metrics). Two uses: (a) ranking — items whose elapsed active time greatly exceeds estimate are aging-WIP risks worth surfacing; (b) planning — a per-author/per-type calibration factor makes future estimates and pm plan step budgeting evidence-based. Derivation belongs in this feature store; presentation belongs in pm-pee5."
 body: ""
