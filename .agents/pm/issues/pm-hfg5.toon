@@ -6,8 +6,9 @@ status: open
 priority: 2
 tags[3]: agent-ux,"area:cli",token-efficiency
 created_at: "2026-07-07T15:24:51.495Z"
-updated_at: "2026-07-07T15:24:51.495Z"
+updated_at: "2026-07-07T15:35:23.404Z"
 author: maintainer-agent
+estimated_minutes: 60
 acceptance_criteria: "pm next (toon and json) no longer contains two full projections of the same item; the ready-list contract (excludes recommended, or id-ref) is documented in command docs and SDK contracts; contract snapshot tests assert non-duplication; MCP pm_next envelope matches"
 parent: pm-mpbb
 risk: low
