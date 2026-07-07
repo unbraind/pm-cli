@@ -1,16 +1,16 @@
 id: pm-l98s
 title: "Extension install should scaffold newly required item-type folders (pm health ok:false after installing pm-kanban until pm init)"
-description: "2026-07-04 sandbox audit: installing pm-kanban registers the Card type whose cards/ folder does not exist yet, so pm health returns top-level ok:false (warn-severity storage check) until the user re-runs pm init. Remediation hint is correct but install should auto-create type dirs (declarative installs already scaffold folders when activation succeeds — see pm-3wsi)."
+description: "2026-07-04 sandbox review: installing pm-kanban registers the Card type whose cards/ folder does not exist yet, so pm health returns top-level ok:false (warn-severity storage check) until the user re-runs pm init. Remediation hint is correct but install should auto-create type dirs (declarative installs already scaffold folders when activation succeeds — see pm-3wsi)."
 type: Task
 status: open
 priority: 3
 tags[3]: agent-ux,audit-followup,extensions
 created_at: "2026-07-04T08:31:43.047Z"
-updated_at: "2026-07-04T19:18:09.635Z"
+updated_at: "2026-07-07T14:17:58.929Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: Installing an extension that requires new item-type folders scaffolds them automatically so pm health stays ok without a manual pm init.
 parent: pm-ugqx
 risk: low
 confidence: high
-body: "## Context\n2026-07-04 sandbox audit: installing pm-kanban registers the Card item type, but its cards/ folder is not created, so pm health returns top-level ok:false (warn-severity storage check) until the user re-runs pm init. The remediation hint is correct but the install should self-heal.\n\n## Approach\nAfter successful package install/activation, scaffold storage folders for every newly registered item type (same code path pm init uses). Declarative installs already do this when activation succeeds — reuse that scaffolding for package installs. Note pm-3wsi covers the adjacent case where FAILED activation skips scaffolding with a misleading report; this item is the success-path gap.\n\n## Definition of done\nFresh sandbox: install pm-kanban → pm health ok:true immediately, cards/ exists; spec asserts type-folder scaffolding for package installs; no regression for extension types with custom directories."
+body: "## Context\n2026-07-04 sandbox review: installing pm-kanban registers the Card item type, but its cards/ folder is not created, so pm health returns top-level ok:false (warn-severity storage check) until the user re-runs pm init. The remediation hint is correct but the install should self-heal.\n\n## Approach\nAfter successful package install/activation, scaffold storage folders for every newly registered item type (same code path pm init uses). Declarative installs already do this when activation succeeds — reuse that scaffolding for package installs. Note pm-3wsi covers the adjacent case where FAILED activation skips scaffolding with a misleading report; this item is the success-path gap.\n\n## Definition of done\nFresh sandbox: install pm-kanban → pm health ok:true immediately, cards/ exists; spec asserts type-folder scaffolding for package installs; no regression for extension types with custom directories."

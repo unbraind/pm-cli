@@ -1,12 +1,12 @@
 id: pm-114v
 title: "pm claim --next: atomically claim the next actionable item so parallel agents each get distinct work"
-description: "Companion to pm-8t5x. pm next + pm claim as separate steps race under parallel agents: all N agents get the same recommendation and N-1 fail their claim. Add an atomic recommend+claim with bounded retry over next-ranked candidates so each parallel agent receives a distinct item. Idea originated in the 2026-07-03 concurrency audit (recorded inside pm-8t5x's fix sketch); promoted to its own tracked Feature by the 2026-07-04 metadata audit."
+description: "Companion to pm-8t5x. pm next + pm claim as separate steps race under parallel agents: all N agents get the same recommendation and N-1 fail their claim. Add an atomic recommend+claim with bounded retry over next-ranked candidates so each parallel agent receives a distinct item. Idea originated in the 2026-07-03 concurrency review (recorded inside pm-8t5x's fix sketch); promoted to its own tracked Feature by the 2026-07-04 metadata review."
 type: Feature
 status: open
 priority: 2
 tags[3]: agent-ux,cli,concurrency
 created_at: "2026-07-04T19:20:15.349Z"
-updated_at: "2026-07-05T04:07:28.609Z"
+updated_at: "2026-07-07T14:17:46.978Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "pm claim --next claims a distinct item per parallel agent (stress-verified, zero double-grants); bounded candidate retry on already_claimed_by; output includes pm next rationale; wired across MCP/contracts/completion/docs per new-command checklist"

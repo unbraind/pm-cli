@@ -9,6 +9,7 @@
 
 ### Other
 
+- ADR: 2026-06-07 deep review + remediation pass (never-block, MCP/version coherence, docs/CI hardening) ([pm-96wm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-96wm.toon))
 - GH-476: pm context rejects --max-items with an untargeted unknown_option (alias or recovery hint) ([pm-5h9g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5h9g.toon))
 
 ## 2026.7.7 - 2026-07-07

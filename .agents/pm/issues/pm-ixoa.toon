@@ -1,16 +1,16 @@
 id: pm-ixoa
 title: "First-party service collision: builtin-calendar and builtin-guide-shell both override the global output_format service"
-description: "2026-07-04 sandbox audit: with all bundled packages installed, pm extension --doctor warns extension_output_service_override_global:output_format for BOTH builtin-calendar and builtin-guide-shell — two shipped first-party packages contending for the same global output service. Decide the owner (or scope one override) so a full first-party install is warning-free."
+description: "2026-07-04 sandbox review: with all bundled packages installed, pm extension --doctor warns extension_output_service_override_global:output_format for BOTH builtin-calendar and builtin-guide-shell — two shipped first-party packages contending for the same global output service. Decide the owner (or scope one override) so a full first-party install is warning-free."
 type: Issue
 status: open
 priority: 3
 tags[2]: audit-followup,extensions
 created_at: "2026-07-04T08:31:42.675Z"
-updated_at: "2026-07-04T19:18:09.229Z"
+updated_at: "2026-07-07T14:17:59.628Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: builtin-calendar and builtin-guide-shell no longer collide on the output_format service; doctor flags first-party service collisions.
 parent: pm-ugqx
 risk: low
 confidence: medium
-body: "## Context\n2026-07-04 sandbox audit: with all bundled packages installed, `pm extension --doctor` warns extension_output_service_override_global:output_format for BOTH builtin-calendar and builtin-guide-shell — two first-party packages contend for the same global output_format service, so a full first-party install is never warning-free and last-activated silently wins.\n\n## Decision needed (then implement)\nPick the owner of the global output_format override (guide-shell is the likelier owner as the interactive surface; calendar probably only needs it for its own command scope) — or scope one override to its owning commands via the action-scoped mechanism from PR#406. Record the choice as a comment here (or an ADR under pm-m2u1 if the service-ownership rule generalizes).\n\n## Definition of done\nFresh sandbox with ALL bundled packages installed shows zero doctor warnings; the ownership/scoping rule is documented in EXTENSIONS.md; regression spec asserts the doctor output stays clean."
+body: "## Context\n2026-07-04 sandbox review: with all bundled packages installed, `pm extension --doctor` warns extension_output_service_override_global:output_format for BOTH builtin-calendar and builtin-guide-shell — two first-party packages contend for the same global output_format service, so a full first-party install is never warning-free and last-activated silently wins.\n\n## Decision needed (then implement)\nPick the owner of the global output_format override (guide-shell is the likelier owner as the interactive surface; calendar probably only needs it for its own command scope) — or scope one override to its owning commands via the action-scoped mechanism from PR#406. Record the choice as a comment here (or an ADR under pm-m2u1 if the service-ownership rule generalizes).\n\n## Definition of done\nFresh sandbox with ALL bundled packages installed shows zero doctor warnings; the ownership/scoping rule is documented in EXTENSIONS.md; regression spec asserts the doctor output stays clean."

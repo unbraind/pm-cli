@@ -1,12 +1,12 @@
 id: pm-psy1
 title: "Scripting contract: documented and test-gated guarantees for exit codes, stdout/stderr stream discipline, and stable machine-readable field names"
-description: "Contract child of the composability story: scripts can only be reliable if the shell-facing behavior is promised, not incidental. Today exit codes and stdout/stderr split are unspecified; audit #11/#12 hit real cases where errors on stderr made failures look like empty results (search --format). Duplicate check: docs items (pm-ds3b SDK reference) cover the programmatic surface, not the shell contract."
+description: "Contract child of the composability story: scripts can only be reliable if the shell-facing behavior is promised, not incidental. Today exit codes and stdout/stderr split are unspecified; review #11/#12 hit real cases where errors on stderr made failures look like empty results (search --format). Duplicate check: docs items (pm-ds3b SDK reference) cover the programmatic surface, not the shell contract."
 type: Task
 status: open
 priority: 2
 tags[4]: agent-ux,"area:cli",composability,docs
 created_at: "2026-07-06T21:25:26.225Z"
-updated_at: "2026-07-06T21:26:30.228Z"
+updated_at: "2026-07-07T14:10:43.727Z"
 author: maintainer-agent
 estimated_minutes: 360
 acceptance_criteria: "docs/ gains a composability/scripting reference: exit-code table (success/not-found/validation/conflict/lock classes), the rule that data goes to stdout and diagnostics to stderr, JSON field-name stability policy, and worked grep/jq/xargs recipes; a gate-style spec asserts the exit codes and stream discipline for representative commands so regressions fail CI; README links the reference"

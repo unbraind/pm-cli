@@ -1,16 +1,16 @@
 id: pm-p5u6
 title: "Bound local temp footprint: prune Node compile cache and guarantee smoke/dogfood sandbox cleanup on failure"
-description: "Ecosystem audit 2026-07-06 hit a full /tmp user quota (tmpfs usrquota, EDQUOT) that broke the local agent shell entirely. Post-mortem inventory: pm-cli-node-compile-cache-1000 had grown to 1.7GB (src/cli.ts enableCompileCache never prunes; every build hash accumulates), plus ~2GB of leaked pm-scaffold-review*-smoke-* dirs and 7 pm-changelog-node-cli-* dirs from Jun 29-30 sessions whose scripts mkdtemp'd but did not clean on failure/interrupt. smoke-cleanup.mjs cleanupTempRoot is only wired into smoke-npx-from-pack.mjs."
+description: "ecosystem review 2026-07-06 hit a full /tmp user quota (tmpfs usrquota, EDQUOT) that broke the local agent shell entirely. Post-mortem inventory: pm-cli-node-compile-cache-1000 had grown to 1.7GB (src/cli.ts enableCompileCache never prunes; every build hash accumulates), plus ~2GB of leaked pm-scaffold-review*-smoke-* dirs and 7 pm-changelog-node-cli-* dirs from Jun 29-30 sessions whose scripts mkdtemp'd but did not clean on failure/interrupt. smoke-cleanup.mjs cleanupTempRoot is only wired into smoke-npx-from-pack.mjs."
 type: Chore
 status: open
 priority: 2
 tags[5]: "area:cli",dx,perf,scripts,tech-debt
 created_at: "2026-07-06T09:04:36.860Z"
-updated_at: "2026-07-06T13:13:04.121Z"
+updated_at: "2026-07-07T14:17:46.063Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: compile-cache dir bounded (stale entries pruned or non-current versions dropped); every mkdtemp-using script cleans its sandbox via try/finally + signal handlers; aborted smoke runs leave no >100MB residue in /tmp
 parent: pm-u9d0
 risk: low
 confidence: high
-body: "Proposed work:\n1. src/cli.ts: prune the compile-cache dir opportunistically (e.g. drop entries older than N days, or cap total size; Node exposes no API so a lightweight best-effort sweep of stale subdirs on startup-idle or via pm gc is fine). Alternatively scope the dir per package version and delete non-current versions.\n2. Wire cleanupTempRoot (scripts/smoke-cleanup.mjs) into every mkdtemp-using script (smoke-external-packages, dogfood-package-first, plugin-mcp-smoke-harness, contracts-snapshot, run-tests) via try/finally + process signal handlers so aborted runs do not leak multi-hundred-MB sandboxes.\n3. Consider a pm gc advisory that reports oversized pm-owned temp artifacts.\n\nEvidence: /tmp inventory during 2026-07-06 audit: 1.7G compile cache, 882M+662M+441M scaffold-review smokes, 7x ~112M changelog sandboxes; total tmpfs 80% full which exhausted the per-user quota and broke tooling."
+body: "Proposed work:\n1. src/cli.ts: prune the compile-cache dir opportunistically (e.g. drop entries older than N days, or cap total size; Node exposes no API so a lightweight best-effort sweep of stale subdirs on startup-idle or via pm gc is fine). Alternatively scope the dir per package version and delete non-current versions.\n2. Wire cleanupTempRoot (scripts/smoke-cleanup.mjs) into every mkdtemp-using script (smoke-external-packages, dogfood-package-first, plugin-mcp-smoke-harness, contracts-snapshot, run-tests) via try/finally + process signal handlers so aborted runs do not leak multi-hundred-MB sandboxes.\n3. Consider a pm gc advisory that reports oversized pm-owned temp artifacts.\n\nEvidence: /tmp inventory during 2026-07-06 review: 1.7G compile cache, 882M+662M+441M scaffold-review smokes, 7x ~112M changelog sandboxes; total tmpfs 80% full which exhausted the per-user quota and broke tooling."

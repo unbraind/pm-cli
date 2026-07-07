@@ -1,12 +1,12 @@
 id: pm-lvyd
 title: "Claim and lock throughput at thousands of concurrent agents: contention stress benchmark + scaling fixes"
-description: "Throughput child of pm-9rxu. Boundary with pm-dj98: that epic owns correctness races at small N (pm-zwib/pm-khdq/pm-bgcu remain its children and are prerequisites for meaningful throughput numbers); this item owns performance at large N. Duplicate check: concurrency audit items measure correctness, not throughput."
+description: "Throughput child of pm-9rxu. Boundary with pm-dj98: that epic owns correctness races at small N (pm-zwib/pm-khdq/pm-bgcu remain its children and are prerequisites for meaningful throughput numbers); this item owns performance at large N. Duplicate check: concurrency review items measure correctness, not throughput."
 type: Task
 status: open
 priority: 3
 tags[4]: "area:storage",concurrency,performance,scale
 created_at: "2026-07-06T21:24:56.660Z"
-updated_at: "2026-07-06T21:24:56.660Z"
+updated_at: "2026-07-07T14:17:53.907Z"
 author: maintainer-agent
 estimated_minutes: 600
 acceptance_criteria: "Stress scenario in the scale harness drives 1000 parallel agents doing claim --next/update/close against one workspace; measures claim success latency distribution and lock contention; any throughput fixes (lock backoff tuning, claim sharding) land with before/after numbers; zero corruption and zero history drift under the stress run"

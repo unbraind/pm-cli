@@ -4,9 +4,9 @@ description: Audit and reconcile stale linked-file rows plus currently unowned s
 type: Chore
 status: open
 priority: 2
-tags[3]: audit,context-management,linked-files
+tags[3]: context-management,linked-files,review
 created_at: "2026-06-25T05:01:04.319Z"
-updated_at: "2026-07-06T08:22:48.233Z"
+updated_at: "2026-07-07T14:10:46.372Z"
 author: codex-ecosystem-auditor
 estimated_minutes: 180
 acceptance_criteria: "Historical linked-file ownership debt is reconciled in a dedicated tracker-only migration without polluting a product release changelog; pm validate --check-files residual rows are grouped by deleted, moved, and unowned current paths with owner candidates; no broad historical PM mutations are bundled into unrelated code PRs."

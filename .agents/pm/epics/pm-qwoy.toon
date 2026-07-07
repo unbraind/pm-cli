@@ -1,12 +1,12 @@
 id: pm-qwoy
 title: "Capability: Security & code scanning"
-description: "Living backlog capability epic for repository security posture: Semgrep Code finding triage, spawn/shell and RegExp injection hardening, dependabot hygiene, CodeQL, secret guardrails. Created in ecosystem audit #12 after the 2026-07-06 Semgrep import (pm-oz8u, 40 findings) and the dependabot chore pm-2czc had no fitting capability epic. Duplicate check: pm search 'security code scanning' / epic list — no existing security epic."
+description: "Living backlog capability epic for repository security posture: Semgrep Code finding triage, spawn/shell and RegExp injection hardening, dependabot hygiene, CodeQL, secret guardrails. Created in ecosystem review #12 after the 2026-07-06 Semgrep import (pm-oz8u, 40 findings) and the dependabot chore pm-2czc had no fitting capability epic. Duplicate check: pm search 'security code scanning' / epic list — no existing security epic."
 type: Epic
 status: open
 priority: 2
 tags[5]: capability,code-scanning,dependabot,security,semgrep
 created_at: "2026-07-06T21:07:27.273Z"
-updated_at: "2026-07-06T21:07:27.273Z"
+updated_at: "2026-07-07T14:10:40.093Z"
 author: maintainer-agent
 estimated_minutes: 2400
 acceptance_criteria: All code-scanning findings (Semgrep/CodeQL/dependabot/secrets) are tracked as pm issues under this epic with source links and triage state; recurring scanner imports parent their batch tasks here; epic stays OPEN as a living backlog even at 0 open children.
