@@ -1,0 +1,37 @@
+id: pm-kffw
+title: Expose package lifecycle primitives through public SDK helpers
+description: "Closed PR slice under pm-x6jf for the implemented package/extension lifecycle helper surface: package-named SDK aliases, package vocabulary enforcement, public exports, SDK docs, and focused regression coverage. Duplicate check: pm search --status all for SDK package lifecycle primitive aliases found the broader open pm-x6jf feature and historical package/SDK work, but no closed slice item for this exact PR deliverable."
+type: Task
+status: closed
+priority: 2
+tags[2]: "area:sdk",package-lifecycle
+created_at: "2026-07-07T18:49:34.713Z"
+updated_at: "2026-07-07T19:07:37.826Z"
+author: codex-agent
+acceptance_criteria: "Public SDK exposes package lifecycle helpers with package-named types, package aliases cannot be downgraded to extension vocabulary, docs describe the contract, and focused plus repo-wide gates pass."
+parent: pm-x6jf
+resolution: "Implemented package lifecycle SDK helper slice with package-named contracts, package vocabulary enforcement, public exports, SDK docs, and focused regression coverage."
+expected_result: SDK consumers can call package lifecycle helpers and import package-specific contracts from @unbrained/pm-cli/sdk without shelling out or using extension vocabulary for package commands.
+actual_result: "PmClient and top-level SDK helpers now expose package lifecycle operations, PackageCommandOptions/PackageCommandResult aliases are exported and documented, package aliases force vocabulary=package after caller options, and regression coverage verifies the behavior."
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-cbwg,related,"2026-07-07T18:49:47.773Z",null,null
+  pm-usfg,related,"2026-07-07T18:49:47.773Z",null,null
+  pm-w89s,related,"2026-07-07T18:49:47.773Z",null,null
+  pm-x6jf,related,"2026-07-07T18:49:47.773Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-07T19:07:37.826Z",codex-agent,"Final verification evidence: package-named SDK contracts and vocabulary guard fixes are covered by focused tests and repo-wide gates. Passed pnpm typecheck, pnpm lint, pnpm audit --audit-level high, pnpm quality:docs-skills, pnpm changelog:pm:check using pm-changelog 2026.7.6, pnpm test:coverage with 5455 tests and 100% statements/branches/functions/lines, pnpm build, pm health, pm validate history drift, Sentry telemetry gate, and an installed-package temp project proof importing @unbrained/pm-cli/sdk."
+files[3]{path,scope,note}:
+  src/sdk/index.ts,project,Public SDK exports for package lifecycle helpers and aliases
+  src/sdk/runtime.ts,project,"PmClient/top-level package lifecycle helpers,package aliases,and vocabulary enforcement"
+  tests/unit/sdk/sdk-package-lifecycle.spec.ts,project,Focused lifecycle helper and vocabulary regression coverage
+tests[4]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-package-lifecycle.spec.ts,project,240
+  pnpm lint,project,120
+  "pnpm test:coverage",project,420
+  pnpm typecheck,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrb0fzpf-9mv5vq,test,passed,"2026-07-07T18:50:04.654Z","2026-07-07T18:56:47.235Z","2026-07-07T18:56:47.235Z",4,0,0
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Documents package lifecycle primitives and package-named contracts
+close_reason: "Package lifecycle SDK slice complete: exported package helper contracts, documented the package lifecycle surface, enforced package vocabulary across package aliases, and verified focused plus repo-wide gates through the linked pm test run."
+body: ""

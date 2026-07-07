@@ -342,6 +342,8 @@ export {
   STATUS_VALUES,
 } from "../types/index.js";
 export type { GlobalOptions } from "../core/shared/command-types.js";
+export type PackageCommandOptions = ExtensionCommandOptions;
+export type PackageCommandResult = ExtensionCommandResult;
 export type {
   Dependency,
   ItemDocument,
@@ -672,7 +674,7 @@ export class PmClient {
   /**
    * Run the package lifecycle surface with package vocabulary preserved.
    */
-  package(target?: string, options: ExtensionCommandOptions = {}): Promise<ExtensionCommandResult> {
+  package(target?: string, options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
     return this.runTyped("package", {
       ...(target === undefined ? {} : { target }),
       options: { ...options, vocabulary: "package" },
@@ -682,70 +684,70 @@ export class PmClient {
   /**
    * List project or global packages through the package lifecycle primitive.
    */
-  packageList(options: ExtensionCommandOptions = {}): Promise<ExtensionCommandResult> {
+  packageList(options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
     return this.package("list", options);
   }
 
   /**
    * Install a package or extension source using the same action as `pm package install`.
    */
-  packageInstall(target: string, options: ExtensionCommandOptions = {}): Promise<ExtensionCommandResult> {
+  packageInstall(target: string, options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
     return this.runTyped("package-install", { target, options });
   }
 
   /**
    * Uninstall a package or extension using the same action as `pm package uninstall`.
    */
-  packageUninstall(target: string, options: ExtensionCommandOptions = {}): Promise<ExtensionCommandResult> {
+  packageUninstall(target: string, options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
     return this.runTyped("package-uninstall", { target, options });
   }
 
   /**
    * Read package lifecycle diagnostics using the same action as `pm package doctor`.
    */
-  packageDoctor(options: ExtensionCommandOptions = {}): Promise<ExtensionCommandResult> {
+  packageDoctor(options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
     return this.runTyped("package-doctor", { options });
   }
 
   /**
    * Inspect managed package state using the same action as `pm package manage`.
    */
-  packageManage(target?: string, options: ExtensionCommandOptions = {}): Promise<ExtensionCommandResult> {
+  packageManage(target?: string, options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
     return this.runTyped("package-manage", { ...(target === undefined ? {} : { target }), options });
   }
 
   /**
    * Describe installed package surfaces using the same action as `pm package describe`.
    */
-  packageDescribe(target?: string, options: ExtensionCommandOptions = {}): Promise<ExtensionCommandResult> {
+  packageDescribe(target?: string, options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
     return this.runTyped("package-describe", { ...(target === undefined ? {} : { target }), options });
   }
 
   /**
    * Reload installed package extensions using the same action as `pm package reload`.
    */
-  packageReload(options: ExtensionCommandOptions = {}): Promise<ExtensionCommandResult> {
+  packageReload(options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
     return this.runTyped("package-reload", { options });
   }
 
   /**
    * Read bundled package catalog metadata using the same action as `pm package catalog`.
    */
-  packageCatalog(options: ExtensionCommandOptions = {}): Promise<ExtensionCommandResult> {
+  packageCatalog(options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
     return this.runTyped("package-catalog", { options });
   }
 
   /**
    * Enable an installed package using the same action as `pm package activate`.
    */
-  packageActivate(target: string, options: ExtensionCommandOptions = {}): Promise<ExtensionCommandResult> {
+  packageActivate(target: string, options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
     return this.runTyped("package-activate", { target, options });
   }
 
   /**
    * Disable an installed package using the same action as `pm package deactivate`.
    */
-  packageDeactivate(target: string, options: ExtensionCommandOptions = {}): Promise<ExtensionCommandResult> {
+  packageDeactivate(target: string, options: PackageCommandOptions = {}): Promise<PackageCommandResult> {
     return this.runTyped("package-deactivate", { target, options });
   }
 
@@ -973,9 +975,9 @@ export function extensionDeactivate(
  */
 export function packageLifecycle(
   target?: string,
-  options: ExtensionCommandOptions = {},
+  options: PackageCommandOptions = {},
   clientOptions: PmClientOptions = {},
-): Promise<ExtensionCommandResult> {
+): Promise<PackageCommandResult> {
   return new PmClient(clientOptions).package(target, options);
 }
 
@@ -983,9 +985,9 @@ export function packageLifecycle(
  * List packages without constructing a reusable client.
  */
 export function packageList(
-  options: ExtensionCommandOptions = {},
+  options: PackageCommandOptions = {},
   clientOptions: PmClientOptions = {},
-): Promise<ExtensionCommandResult> {
+): Promise<PackageCommandResult> {
   return new PmClient(clientOptions).packageList(options);
 }
 
@@ -994,9 +996,9 @@ export function packageList(
  */
 export function packageInstall(
   target: string,
-  options: ExtensionCommandOptions = {},
+  options: PackageCommandOptions = {},
   clientOptions: PmClientOptions = {},
-): Promise<ExtensionCommandResult> {
+): Promise<PackageCommandResult> {
   return new PmClient(clientOptions).packageInstall(target, options);
 }
 
@@ -1005,9 +1007,9 @@ export function packageInstall(
  */
 export function packageUninstall(
   target: string,
-  options: ExtensionCommandOptions = {},
+  options: PackageCommandOptions = {},
   clientOptions: PmClientOptions = {},
-): Promise<ExtensionCommandResult> {
+): Promise<PackageCommandResult> {
   return new PmClient(clientOptions).packageUninstall(target, options);
 }
 
@@ -1015,9 +1017,9 @@ export function packageUninstall(
  * Read package lifecycle diagnostics without constructing a reusable client.
  */
 export function packageDoctor(
-  options: ExtensionCommandOptions = {},
+  options: PackageCommandOptions = {},
   clientOptions: PmClientOptions = {},
-): Promise<ExtensionCommandResult> {
+): Promise<PackageCommandResult> {
   return new PmClient(clientOptions).packageDoctor(options);
 }
 
@@ -1026,9 +1028,9 @@ export function packageDoctor(
  */
 export function packageManage(
   target?: string,
-  options: ExtensionCommandOptions = {},
+  options: PackageCommandOptions = {},
   clientOptions: PmClientOptions = {},
-): Promise<ExtensionCommandResult> {
+): Promise<PackageCommandResult> {
   return new PmClient(clientOptions).packageManage(target, options);
 }
 
@@ -1037,9 +1039,9 @@ export function packageManage(
  */
 export function packageDescribe(
   target?: string,
-  options: ExtensionCommandOptions = {},
+  options: PackageCommandOptions = {},
   clientOptions: PmClientOptions = {},
-): Promise<ExtensionCommandResult> {
+): Promise<PackageCommandResult> {
   return new PmClient(clientOptions).packageDescribe(target, options);
 }
 
@@ -1047,9 +1049,9 @@ export function packageDescribe(
  * Reload package extensions without constructing a reusable client.
  */
 export function packageReload(
-  options: ExtensionCommandOptions = {},
+  options: PackageCommandOptions = {},
   clientOptions: PmClientOptions = {},
-): Promise<ExtensionCommandResult> {
+): Promise<PackageCommandResult> {
   return new PmClient(clientOptions).packageReload(options);
 }
 
@@ -1057,9 +1059,9 @@ export function packageReload(
  * Read bundled package catalog metadata without constructing a reusable client.
  */
 export function packageCatalog(
-  options: ExtensionCommandOptions = {},
+  options: PackageCommandOptions = {},
   clientOptions: PmClientOptions = {},
-): Promise<ExtensionCommandResult> {
+): Promise<PackageCommandResult> {
   return new PmClient(clientOptions).packageCatalog(options);
 }
 
@@ -1068,9 +1070,9 @@ export function packageCatalog(
  */
 export function packageActivate(
   target: string,
-  options: ExtensionCommandOptions = {},
+  options: PackageCommandOptions = {},
   clientOptions: PmClientOptions = {},
-): Promise<ExtensionCommandResult> {
+): Promise<PackageCommandResult> {
   return new PmClient(clientOptions).packageActivate(target, options);
 }
 
@@ -1079,9 +1081,9 @@ export function packageActivate(
  */
 export function packageDeactivate(
   target: string,
-  options: ExtensionCommandOptions = {},
+  options: PackageCommandOptions = {},
   clientOptions: PmClientOptions = {},
-): Promise<ExtensionCommandResult> {
+): Promise<PackageCommandResult> {
   return new PmClient(clientOptions).packageDeactivate(target, options);
 }
 

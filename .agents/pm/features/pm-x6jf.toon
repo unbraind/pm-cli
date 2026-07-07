@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[3]: architecture,"area:extensions","area:sdk"
 created_at: "2026-07-06T21:58:30.613Z"
-updated_at: "2026-07-07T18:36:09.019Z"
+updated_at: "2026-07-07T19:07:37.793Z"
 assignee: codex-agent
 author: maintainer-agent
 estimated_minutes: 480
@@ -20,7 +20,7 @@ dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-cbwg,related,"2026-07-07T16:42:50.582Z",null,null
   pm-usfg,related,"2026-07-07T16:42:50.582Z",null,null
   pm-w89s,related,"2026-07-07T16:42:50.582Z",null,null
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-07-07T08:58:08.753Z",codex-agent,"Progress evidence: active PR bundle includes package/extension doctor isolation as a package-lifecycle primitive slice. Runtime loader options, CLI flags, SDK flag/tool contracts, shell completions, docs, and regression tests are being verified through pm-6abs; this item remains broader than the PR and should not be closed by the isolation slice alone."
   "2026-07-07T09:44:05.584Z",codex-agent,"Package lifecycle primitive update: pm-6abs promotes doctor isolation as a first-class lifecycle primitive across CLI flags, shell completion, help, SDK contract metadata, and action/tool schemas."
   "2026-07-07T16:42:43.496Z",codex-agent,"Implementation start: continuing SDK-first package/extension lifecycle promotion as one PR bundle linked to pm-usfg, pm-w89s, pm-cbwg, and pm-tnud. Live duplicate check used pm search --status all; closed read/lifecycle primitives pm-rjqr/pm-98cz/pm-395t are shipped and not reopened."
@@ -28,13 +28,10 @@ comments[7]{created_at,author,text}:
   "2026-07-07T18:07:11.472Z",codex-agent,"Review evidence: pre-push Greptile review cb62f157 flagged two SDK/gate polish issues; fixed both by making packageDoctor options-only at the public SDK call site and renaming mixed expected Sentry exemptions to ignored_expected_handled_*. Follow-up Greptile reviews 6ce1e4da and 1a754263 returned no review comments; also enforced package vocabulary after caller options so pm.package(...) cannot be downgraded to extension vocabulary."
   "2026-07-07T18:15:04.459Z",codex-agent,"Final verification evidence before PR: pnpm test:coverage passed 265 files / 5455 tests with 100% statements, branches, functions, and lines; temp tarball install in /tmp verified SDK packageList/package/packageLifecycle/catalog/packageDoctor/upgrade through @unbrained/pm-cli/sdk; pm health ok with warning_count=0; pm validate history drift ok with only pre-existing closed-item resolution warnings."
   "2026-07-07T18:36:09.019Z",codex-agent,"Review follow-up: Gemini suggested enforcing package vocabulary across all package lifecycle SDK paths. Fixed the SDK alias resolver so package-* action aliases force vocabulary=package after merging caller options, covering lower-level runAction/client.run calls in addition to PmClient.package(...). Added regression coverage with a conflicting vocabulary override on package-describe. Verification passed: focused SDK package lifecycle test, pnpm typecheck, pnpm lint, and pnpm test:coverage 5455 tests with 100/100/100/100."
-files[7]{path,scope,note}:
-  package.json,project,Expose Sentry telemetry gate package script alias
-  scripts/release/sentry-telemetry-gate.mjs,project,Classify handled ENOSPC Sentry environment issue as expected release-gate signal
+  "2026-07-07T19:07:37.793Z",codex-agent,"Review follow-up evidence: addressed CodeRabbit/Cubic package-contract feedback by exporting PackageCommandOptions/PackageCommandResult and using them across package lifecycle helpers; cleaned pm-x6jf linked evidence so Sentry gate artifacts remain owned by pm-w86l; created/closed/released child slice pm-kffw so pm-changelog includes the implemented SDK feature. Verification after fixes passed: pnpm typecheck, pnpm lint, pnpm audit --audit-level high, pnpm quality:docs-skills, pnpm changelog:pm:check with pm-changelog 2026.7.6, pnpm test:coverage 5455 tests with 100/100/100/100, pnpm build, pm health warning_count=0, pm validate history drift ok with only pre-existing closed-item resolution warnings, pnpm sentry:telemetry:gate best-effort ok, and installed-package temp proof for package list/catalog/doctor/vocabulary guard/upgrade."
+files[3]{path,scope,note}:
   src/sdk/index.ts,project,public SDK barrel exports lifecycle helpers and contracts
   src/sdk/runtime.ts,project,typed package and extension lifecycle PmClient/top-level primitives
-  tests/integration/release-automation-contract.spec.ts,project,Release gate source contract covers Sentry ENOSPC classifier
-  tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,Regression coverage for handled ENOSPC release-gate classifier
   tests/unit/sdk/sdk-package-lifecycle.spec.ts,project,focused lifecycle primitive regression coverage
 tests[7]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-package-lifecycle.spec.ts,project,240
@@ -46,7 +43,6 @@ tests[7]{command,scope,timeout_seconds}:
   pnpm typecheck,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mravtqmq-rnxs0a,test,passed,"2026-07-07T16:47:12.203Z","2026-07-07T16:47:30.578Z","2026-07-07T16:47:30.578Z",2,0,0
-docs[2]{path,scope,note}:
-  docs/RELEASING.md,project,"Document pnpm sentry:telemetry:gate release reliability check alias"
+docs[1]{path,scope,note}:
   docs/SDK.md,project,documents package/extension lifecycle SDK primitives
 body: "Domain-by-domain SDK promotion under pm-usfg covers read (pm-rjqr), lifecycle (pm-98cz), schema/config/profile (pm-3mna), history maintenance (pm-4a7m), plan (pm-je50), governance/health/gc (pm-oxrw), annotations (pm-zwpp), and execution (pm-oslr) — but nobody owns the package/extension platform family. The universal-tool story (pm-w89s, exemplar pm-cbwg) requires an SDK-built PM tool to install and manage packages without shelling to the CLI. Promote the install/upgrade/extension lifecycle logic (multi-target install aggregation, managed-extensions.json state, activation) behind typed SDK primitives, and align with the CLI-side consolidation pm-tnud so the noun rename and the SDK promotion do not conflict."

@@ -374,6 +374,8 @@ export {
   type NextResult,
   type NormalizeCommandOptions,
   type NormalizeResult,
+  type PackageCommandOptions,
+  type PackageCommandResult,
   type PmActionInput,
   type PmActionName,
   type PmActionOptions,

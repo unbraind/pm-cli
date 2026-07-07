@@ -107,7 +107,7 @@ Command/action contract exports:
 - Typed read primitives on `PmClient`: `get`, `list`, `search`, `context`, `next`, `aggregate`, and `stats`
 - Read primitive option/result contracts: `GetOptions` / `GetResult`, `ListOptions` / `ListResult`, `SearchOptions` / `SearchResult`, `ContextOptions` / `ContextResult`, `NextOptions` / `NextResult`, `AggregateOptions` / `AggregateResult`, `StatsCommandOptions` / `StatsResult`
 - Typed package and extension lifecycle primitives on `PmClient`: `extension`, `extensionList`, `extensionActivate`, `extensionDeactivate`, `package`, `packageList`, `packageInstall`, `packageUninstall`, `packageDoctor`, `packageManage`, `packageDescribe`, `packageReload`, `packageCatalog`, `packageActivate`, `packageDeactivate`, and `upgrade`
-- Lifecycle primitive option/result contracts: `ExtensionCommandOptions` / `ExtensionCommandResult`, `UpgradeCommandOptions` / `UpgradeResult`
+- Lifecycle primitive option/result contracts: `ExtensionCommandOptions` / `ExtensionCommandResult`, `PackageCommandOptions` / `PackageCommandResult`, `UpgradeCommandOptions` / `UpgradeResult`
 - `PM_CORE_COMMAND_NAMES`
 - `PM_TOOL_ACTIONS`
 - `PM_TOOL_PARAMETERS_SCHEMA`
@@ -495,8 +495,10 @@ The matching top-level helpers (`packageLifecycle`, `packageList`,
 `packageDescribe`, `packageReload`, `packageCatalog`, `packageActivate`,
 `packageDeactivate`, `extension`, `extensionList`, `extensionActivate`,
 `extensionDeactivate`, and `upgrade`) construct a short-lived `PmClient` for
-one-off calls. The returned `ExtensionCommandResult` and `UpgradeResult` are the
-same structured payloads rendered by the CLI, so embedded tools can own their
+one-off calls. Package helpers return `PackageCommandResult` and extension
+helpers return `ExtensionCommandResult`; both names describe the same lifecycle
+payload shape with vocabulary-appropriate SDK signatures. `UpgradeResult` is the
+same structured payload rendered by the CLI, so embedded tools can own their
 presentation layer while sharing pm's package/install/doctor semantics.
 
 `PmClient` and `runAction` share the same process-wide extension activation

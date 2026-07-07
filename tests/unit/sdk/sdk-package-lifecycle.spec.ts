@@ -19,6 +19,7 @@ import {
   packageUninstall,
   upgrade,
   type ExtensionCommandResult,
+  type PackageCommandResult,
   type UpgradeResult,
 } from "../../../src/sdk/index.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
@@ -194,6 +195,11 @@ describe("SDK package and extension lifecycle primitives", () => {
       action: "catalog",
       scope: "project",
     };
+    const packageResult: Pick<PackageCommandResult, "ok" | "action" | "scope"> = {
+      ok: true,
+      action: "catalog",
+      scope: "project",
+    };
     const upgradeResult: Pick<UpgradeResult, "ok" | "action" | "dry_run"> = {
       ok: true,
       action: "upgrade",
@@ -201,6 +207,7 @@ describe("SDK package and extension lifecycle primitives", () => {
     };
 
     expect(extensionResult.action).toBe("catalog");
+    expect(packageResult.action).toBe("catalog");
     expect(upgradeResult.action).toBe("upgrade");
   });
 });
