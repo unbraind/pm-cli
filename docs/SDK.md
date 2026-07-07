@@ -456,7 +456,7 @@ const open = await pm.list({ status: "open", limit: "20" });
 const recommendation = await pm.next({ readyOnly: true });
 const grouped = await pm.aggregate({ groupBy: "status", count: true });
 const stats = await pm.stats({ metadataCoverage: true });
-await pm.comments(created.item.id, { message: "Investigation context captured." });
+await pm.comments(created.item.id, { add: "Investigation context captured." });
 await pm.files(created.item.id, { add: ["src/index.ts"], note: "entrypoint" });
 await pm.docs(created.item.id, { add: ["docs/SDK.md"], note: "authoring reference" });
 const graph = await pm.deps(created.item.id, { format: "graph" });

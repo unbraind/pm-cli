@@ -671,24 +671,24 @@ describe("runUpdate", () => {
     await withTempPmPath(async (context) => {
       const settings = await readSettings(context.pmPath);
       const changedFields: string[] = [];
-      const document: ItemDocument = {
+      const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+      const missingClosedAtDocument: ItemDocument = {
         metadata: {
-          id: "pm-direct",
-          title: "Direct close mutation stamp",
+          id: "pm-direct-missing",
+          title: "Direct close mutation stamp missing",
           type: "Task",
           status: "open",
           created_at: "2026-01-01T00:00:00.000Z",
           updated_at: "2026-01-01T00:00:00.000Z",
-          closed_at: undefined,
         },
         body: "",
       };
 
       _testOnlyUpdateCommand.applyStatusAndCloseReasonMutations(
-        document,
+        missingClosedAtDocument,
         {
           options: { status: "closed", closeReason: "direct mutation path" },
-          statusRegistry: resolveRuntimeStatusRegistry(settings.schema),
+          statusRegistry,
           clearFrontMatterKeys: new Set(),
           nowIso: "2026-01-02T00:00:00.000Z",
         },
@@ -697,9 +697,38 @@ describe("runUpdate", () => {
       );
 
       expect(changedFields).toEqual(["status", "closed_at", "close_reason"]);
-      expect(document.metadata.status).toBe("closed");
-      expect(document.metadata.close_reason).toBe("direct mutation path");
-      expect(document.metadata.closed_at).toBe("2026-01-02T00:00:00.000Z");
+      expect(missingClosedAtDocument.metadata.closed_at).toBe("2026-01-02T00:00:00.000Z");
+
+      const nullClosedAtDocument: ItemDocument = {
+        metadata: {
+          id: "pm-direct-null",
+          title: "Direct close mutation stamp null",
+          type: "Task",
+          status: "open",
+          created_at: "2026-01-01T00:00:00.000Z",
+          updated_at: "2026-01-01T00:00:00.000Z",
+        },
+        body: "",
+      };
+      nullClosedAtDocument.metadata.closed_at = null as unknown as string;
+      changedFields.length = 0;
+
+      _testOnlyUpdateCommand.applyStatusAndCloseReasonMutations(
+        nullClosedAtDocument,
+        {
+          options: { status: "closed", closeReason: "direct mutation path" },
+          statusRegistry,
+          clearFrontMatterKeys: new Set(),
+          nowIso: "2026-01-02T00:00:00.000Z",
+        },
+        "open",
+        changedFields,
+      );
+
+      expect(changedFields).toEqual(["status", "closed_at", "close_reason"]);
+      expect(nullClosedAtDocument.metadata.status).toBe("closed");
+      expect(nullClosedAtDocument.metadata.close_reason).toBe("direct mutation path");
+      expect(nullClosedAtDocument.metadata.closed_at).toBe("2026-01-02T00:00:00.000Z");
     });
   });
 

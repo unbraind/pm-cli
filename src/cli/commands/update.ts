@@ -1486,6 +1486,10 @@ function applySimpleItemMutations(
   return normalizeStatusInput(document.metadata.status, statusRegistry) ?? document.metadata.status;
 }
 
+function hasClosedAt(metadata: ItemDocument["metadata"]): boolean {
+  return metadata.closed_at !== undefined && metadata.closed_at !== null;
+}
+
 function applyStatusAndCloseReasonMutations(
   document: ItemDocument,
   context: Pick<UpdateMutationContext, "options" | "statusRegistry" | "clearFrontMatterKeys" | "nowIso">,
@@ -1496,13 +1500,13 @@ function applyStatusAndCloseReasonMutations(
     const status = parseStatus(context.options.status, context.statusRegistry);
     document.metadata.status = status;
     changedFields.push("status");
-    if (status === context.statusRegistry.close_status && document.metadata.closed_at === undefined) {
+    if (status === context.statusRegistry.close_status && !hasClosedAt(document.metadata)) {
       document.metadata.closed_at = context.nowIso;
       changedFields.push("closed_at");
     } else if (
       previousStatusNormalized === context.statusRegistry.close_status &&
       status !== context.statusRegistry.close_status &&
-      document.metadata.closed_at !== undefined
+      hasClosedAt(document.metadata)
     ) {
       delete document.metadata.closed_at;
       changedFields.push("closed_at");
