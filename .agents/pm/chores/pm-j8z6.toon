@@ -6,19 +6,20 @@ status: open
 priority: 2
 tags[3]: context-management,linked-files,review
 created_at: "2026-06-25T05:01:04.319Z"
-updated_at: "2026-07-07T14:10:46.372Z"
+updated_at: "2026-07-07T14:41:46.843Z"
 author: codex-ecosystem-auditor
 estimated_minutes: 180
 acceptance_criteria: "Historical linked-file ownership debt is reconciled in a dedicated tracker-only migration without polluting a product release changelog; pm validate --check-files residual rows are grouped by deleted, moved, and unowned current paths with owner candidates; no broad historical PM mutations are bundled into unrelated code PRs."
 parent: pm-33cw
 risk: medium
 confidence: medium
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-06-25T05:01:11.314Z",codex-ecosystem-auditor,"Duplicate check: searched all statuses for linked-file validation, orphaned paths, missing linked paths, and stale linked artifacts. Prior canonical items (for example pm-xz1p and pm-0v2m) are closed; this item tracks the current 2026-06-25 audit finding under pm-57vh."
   "2026-06-25T05:07:39.548Z",codex-ecosystem-auditor,"Evidence: pm validate --check-files initially reported 146 stale linked paths (35 deleted, 111 moved) and 162 orphaned current source/test paths. Reconciled via pm files only: removed 80 deleted owner links, linked 162 current artifacts to validator owner candidates, migrated 972 moved owner links across 400 items, and split pm-hqka's malformed comma-separated path into four real file links. Re-running final file validation now."
   "2026-06-25T05:10:25.858Z",codex-ecosystem-auditor,"Evidence: corrected linked validation test uses pm_context_mode=tracker; pm test pm-j8z6 --run --only-last --progress passed. Final file validator status is ok with zero missing, moved, deleted, or orphaned paths."
   "2026-06-25T05:10:47.642Z",codex-ecosystem-auditor,"Clarification: the linked pm test used tracker context and proved command execution, but the authoritative file-validation evidence is the local real-workspace command: pm validate --check-files --verbose-file-lists --json -> files status ok, missing/moved/deleted/orphaned counts all 0."
   "2026-06-25T05:20:49.117Z",codex-ecosystem-auditor,"Audit correction: broad linked-file reconciliation was tested but intentionally not kept in this release PR because it touched hundreds of historical closed items and made the package-owned changelog mis-bucket old work as current. Current baseline after pruning: pm validate --check-files reports 146 missing linked paths and 162 orphaned source/test paths; this item remains open to handle that as a dedicated tracker migration."
+  "2026-07-07T14:41:46.842Z",maintainer-agent,"2026-07-07 verification: validate now reports missing_linked_paths:147 (was 146) and orphaned_paths:125 (was 134). Orphans trending down from recent linked-file fixes; missing +1 likely from the PR#479 doctor-diagnostics relocation. Class still owned here."
 notes[1]{created_at,author,text}:
   "2026-07-06T08:22:48.232Z",maintainer-agent,"2026-07-06 audit #8 recount — pm validate now reports validate_files_missing_linked_paths 146 and validate_files_orphaned_paths 131 (workspace-wide, 2545 linked commands scanned). Counts unchanged in character since filing; still the single tracked owner of both warning classes."
 tests[1]{command,scope,timeout_seconds,pm_context_mode}:
