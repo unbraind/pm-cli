@@ -445,6 +445,20 @@ export type PmActionName = PmToolAction | (string & {});
 export type PmActionOptions = Record<string, unknown>;
 
 /**
+ * Union returned by the generic schema customization helper.
+ */
+export type SchemaResult =
+  | SchemaInspectResult
+  | SchemaAddTypeResult
+  | SchemaRemoveTypeResult
+  | SchemaAddStatusResult
+  | SchemaRemoveStatusResult
+  | SchemaAddFieldResult
+  | SchemaRemoveFieldResult
+  | SchemaApplyPresetResult
+  | SchemaAddTypeInferResult;
+
+/**
  * Complete high-level action request for {@link runAction}.
  */
 export type PmActionInput = PmActionOptions & {
@@ -678,7 +692,7 @@ export class PmClient {
   /**
    * Run the schema customization surface.
    */
-  schema(subcommand: SchemaSubcommand, options: PmActionOptions = {}): Promise<SchemaInspectResult> {
+  schema(subcommand: SchemaSubcommand, options: PmActionOptions = {}): Promise<SchemaResult> {
     return this.runTyped("schema", { options: { ...options, subcommand } });
   }
 
@@ -692,8 +706,8 @@ export class PmClient {
   /**
    * Show a schema item type definition.
    */
-  schemaShow(name?: string): Promise<SchemaShowResult> {
-    return this.runTyped("schema", { options: { subcommand: "show", ...(name === undefined ? {} : { name }) } });
+  schemaShow(name: string): Promise<SchemaShowResult> {
+    return this.runTyped("schema", { options: { subcommand: "show", name } });
   }
 
   /**
@@ -748,15 +762,15 @@ export class PmClient {
   /**
    * Show one runtime custom field definition.
    */
-  schemaShowField(name?: string): Promise<SchemaShowFieldResult> {
-    return this.runTyped("schema", { options: { subcommand: "show-field", ...(name === undefined ? {} : { name }) } });
+  schemaShowField(name: string): Promise<SchemaShowFieldResult> {
+    return this.runTyped("schema", { options: { subcommand: "show-field", name } });
   }
 
   /**
    * Apply a built-in type preset to the workspace schema.
    */
   schemaApplyPreset(typePreset: string, options: SchemaApplyPresetCommandOptions = {}): Promise<SchemaApplyPresetResult> {
-    return this.runTyped("schema", { typePreset, options: { ...options, subcommand: "apply-preset", typePreset } });
+    return this.runTyped("schema", { typePreset, options: { ...options, subcommand: "apply-preset" } });
   }
 
   /**
@@ -769,8 +783,8 @@ export class PmClient {
   /**
    * Show one runtime status definition.
    */
-  schemaShowStatus(name?: string): Promise<SchemaShowStatusResult> {
-    return this.runTyped("schema", { options: { subcommand: "show-status", ...(name === undefined ? {} : { name }) } });
+  schemaShowStatus(name: string): Promise<SchemaShowStatusResult> {
+    return this.runTyped("schema", { options: { subcommand: "show-status", name } });
   }
 
   /**
@@ -790,8 +804,8 @@ export class PmClient {
   /**
    * Show a project profile.
    */
-  profileShow(name?: string): Promise<ProfileShowResult> {
-    return this.runTyped("profile", { options: { subcommand: "show", ...(name === undefined ? {} : { name }) } });
+  profileShow(name: string): Promise<ProfileShowResult> {
+    return this.runTyped("profile", { options: { subcommand: "show", name } });
   }
 
   /**
@@ -804,8 +818,8 @@ export class PmClient {
   /**
    * Lint a project profile.
    */
-  profileLint(name?: string): Promise<ProfileLintResult> {
-    return this.runTyped("profile", { options: { subcommand: "lint", ...(name === undefined ? {} : { name }) } });
+  profileLint(name: string): Promise<ProfileLintResult> {
+    return this.runTyped("profile", { options: { subcommand: "lint", name } });
   }
 
   /**
@@ -1201,7 +1215,7 @@ export function schema(
   subcommand: SchemaSubcommand,
   options: PmActionOptions = {},
   clientOptions: PmClientOptions = {},
-): Promise<SchemaInspectResult> {
+): Promise<SchemaResult> {
   return new PmClient(clientOptions).schema(subcommand, options);
 }
 
@@ -1215,7 +1229,7 @@ export function schemaList(clientOptions: PmClientOptions = {}): Promise<SchemaL
 /**
  * Show a schema item type without constructing a reusable client.
  */
-export function schemaShow(name?: string, clientOptions: PmClientOptions = {}): Promise<SchemaShowResult> {
+export function schemaShow(name: string, clientOptions: PmClientOptions = {}): Promise<SchemaShowResult> {
   return new PmClient(clientOptions).schemaShow(name);
 }
 
@@ -1295,7 +1309,7 @@ export function schemaListFields(clientOptions: PmClientOptions = {}): Promise<S
 /**
  * Show a custom field without constructing a reusable client.
  */
-export function schemaShowField(name?: string, clientOptions: PmClientOptions = {}): Promise<SchemaShowFieldResult> {
+export function schemaShowField(name: string, clientOptions: PmClientOptions = {}): Promise<SchemaShowFieldResult> {
   return new PmClient(clientOptions).schemaShowField(name);
 }
 
@@ -1323,7 +1337,7 @@ export function schemaInferTypes(
 /**
  * Show a custom status without constructing a reusable client.
  */
-export function schemaShowStatus(name?: string, clientOptions: PmClientOptions = {}): Promise<SchemaShowStatusResult> {
+export function schemaShowStatus(name: string, clientOptions: PmClientOptions = {}): Promise<SchemaShowStatusResult> {
   return new PmClient(clientOptions).schemaShowStatus(name);
 }
 
@@ -1348,7 +1362,7 @@ export function profileList(clientOptions: PmClientOptions = {}): Promise<Profil
 /**
  * Show a profile without constructing a reusable client.
  */
-export function profileShow(name?: string, clientOptions: PmClientOptions = {}): Promise<ProfileShowResult> {
+export function profileShow(name: string, clientOptions: PmClientOptions = {}): Promise<ProfileShowResult> {
   return new PmClient(clientOptions).profileShow(name);
 }
 
@@ -1366,7 +1380,7 @@ export function profileApply(
 /**
  * Lint a profile without constructing a reusable client.
  */
-export function profileLint(name?: string, clientOptions: PmClientOptions = {}): Promise<ProfileLintResult> {
+export function profileLint(name: string, clientOptions: PmClientOptions = {}): Promise<ProfileLintResult> {
   return new PmClient(clientOptions).profileLint(name);
 }
 

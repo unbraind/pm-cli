@@ -9,8 +9,11 @@ import { runGet } from "../../../src/cli/commands/get.js";
 import { runDeps } from "../../../src/cli/commands/deps.js";
 import { setActiveExtensionRegistrations } from "../../../src/core/extensions/index.js";
 import { createEmptyExtensionRegistrationRegistry } from "../../../src/core/extensions/loader.js";
+import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
+import { readSettings } from "../../../src/core/store/settings.js";
+import type { ItemDocument } from "../../../src/types.js";
 import { writeItemTypeDefinitions } from "../../helpers/pmWorkspace.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
 
@@ -661,6 +664,42 @@ describe("runUpdate", () => {
       expect(result.warnings).not.toContain("close_reason_defaulted");
       const item = result.item as { close_reason: string };
       expect(item.close_reason).toBe("shipped in v2");
+    });
+  });
+
+  it("stamps closed_at when the mutation helper applies a closed status directly", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      const changedFields: string[] = [];
+      const document: ItemDocument = {
+        metadata: {
+          id: "pm-direct",
+          title: "Direct close mutation stamp",
+          type: "Task",
+          status: "open",
+          created_at: "2026-01-01T00:00:00.000Z",
+          updated_at: "2026-01-01T00:00:00.000Z",
+          closed_at: undefined,
+        },
+        body: "",
+      };
+
+      _testOnlyUpdateCommand.applyStatusAndCloseReasonMutations(
+        document,
+        {
+          options: { status: "closed", closeReason: "direct mutation path" },
+          statusRegistry: resolveRuntimeStatusRegistry(settings.schema),
+          clearFrontMatterKeys: new Set(),
+          nowIso: "2026-01-02T00:00:00.000Z",
+        },
+        "open",
+        changedFields,
+      );
+
+      expect(changedFields).toEqual(["status", "closed_at", "close_reason"]);
+      expect(document.metadata.status).toBe("closed");
+      expect(document.metadata.close_reason).toBe("direct mutation path");
+      expect(document.metadata.closed_at).toBe("2026-01-02T00:00:00.000Z");
     });
   });
 

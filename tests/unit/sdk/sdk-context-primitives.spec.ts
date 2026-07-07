@@ -40,6 +40,7 @@ import {
   type HealthResult,
   type SchemaAddFieldResult,
   type SchemaAddTypeResult,
+  type SchemaResult,
   type ValidateResult,
 } from "../../../src/sdk/index.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
@@ -107,7 +108,6 @@ describe("SDK context-management primitives", () => {
 
       const schemaViaGeneric = await schema("list", {}, { pmRoot: context.pmPath, noExtensions: true });
       expect(schemaViaGeneric.action).toBe("list");
-      await expect(client.schemaShow()).rejects.toThrow();
       const schemaType = await schemaAddType("SdkRisk", { description: "SDK registered type" }, { pmRoot: context.pmPath, noExtensions: true });
       expect(schemaType.registered).toBe(true);
       const shownSchemaType = await schemaShow("SdkRisk", { pmRoot: context.pmPath, noExtensions: true });
@@ -116,7 +116,6 @@ describe("SDK context-management primitives", () => {
       expect(schemaStatus.registered).toBe(true);
       const shownStatus = await schemaShowStatus("sdk_review", { pmRoot: context.pmPath, noExtensions: true });
       expect(shownStatus.status?.id).toBe("sdk_review");
-      await expect(client.schemaShowStatus()).rejects.toThrow();
       const schemaField = await schemaAddField(
         "risk_score",
         { type: "number", commands: ["create", "update"], description: "risk score" },
@@ -125,7 +124,6 @@ describe("SDK context-management primitives", () => {
       expect(schemaField.field.key).toBe("risk_score");
       const fields = await schemaListFields({ pmRoot: context.pmPath, noExtensions: true });
       expect(fields.fields).toContainEqual(expect.objectContaining({ key: "risk_score" }));
-      await expect(client.schemaShowField()).rejects.toThrow();
       const shownField = await schemaShowField("risk_score", { pmRoot: context.pmPath, noExtensions: true });
       expect(shownField.field?.key).toBe("risk_score");
       const preset = await schemaApplyPreset("agile", { author: "sdk-test" }, { pmRoot: context.pmPath, noExtensions: true });
@@ -142,12 +140,10 @@ describe("SDK context-management primitives", () => {
       expect(genericProfiles.action).toBe("list");
       const profiles = await profileList({ pmRoot: context.pmPath, noExtensions: true });
       expect(profiles.profiles.length).toBeGreaterThan(0);
-      await expect(client.profileShow()).rejects.toThrow();
       const shownProfile = await profileShow("agile", { pmRoot: context.pmPath, noExtensions: true });
       expect(shownProfile.name).toBe("agile");
       const profilePlan = await profileApply("agile", { dryRun: true, author: "sdk-test" }, { pmRoot: context.pmPath, noExtensions: true });
       expect(profilePlan.dry_run).toBe(true);
-      await expect(client.profileLint()).rejects.toThrow();
       const profileReport = await profileLint("agile", { pmRoot: context.pmPath, noExtensions: true });
       expect(profileReport.ok).toBe(true);
 
@@ -163,6 +159,7 @@ describe("SDK context-management primitives", () => {
   it("keeps new primitive result contracts available as public SDK types", () => {
     const appendResult: Pick<AppendResult, "appended" | "changed_fields"> = { appended: "body", changed_fields: ["body"] };
     const commentResult: Pick<CommentsResult, "id" | "count"> = { id: "pm-a", count: 1 };
+    const schemaResult: Pick<SchemaResult, "action"> = { action: "list" };
     const schemaType: Pick<SchemaAddTypeResult, "action" | "registered"> = { action: "add-type", registered: true };
     const schemaField: Pick<SchemaAddFieldResult, "action" | "registered"> = { action: "add-field", registered: true };
     const healthResult: Pick<HealthResult, "ok" | "warnings"> = { ok: true, warnings: [] };
@@ -171,6 +168,7 @@ describe("SDK context-management primitives", () => {
 
     expect(appendResult.changed_fields).toEqual(["body"]);
     expect(commentResult.count).toBe(1);
+    expect(schemaResult.action).toBe("list");
     expect(schemaType.registered).toBe(true);
     expect(schemaField.registered).toBe(true);
     expect(healthResult.ok).toBe(true);

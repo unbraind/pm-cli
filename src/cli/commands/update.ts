@@ -1488,7 +1488,7 @@ function applySimpleItemMutations(
 
 function applyStatusAndCloseReasonMutations(
   document: ItemDocument,
-  context: UpdateMutationContext,
+  context: Pick<UpdateMutationContext, "options" | "statusRegistry" | "clearFrontMatterKeys" | "nowIso">,
   previousStatusNormalized: string,
   changedFields: string[],
 ): void {
@@ -1496,7 +1496,10 @@ function applyStatusAndCloseReasonMutations(
     const status = parseStatus(context.options.status, context.statusRegistry);
     document.metadata.status = status;
     changedFields.push("status");
-    if (
+    if (status === context.statusRegistry.close_status && document.metadata.closed_at === undefined) {
+      document.metadata.closed_at = context.nowIso;
+      changedFields.push("closed_at");
+    } else if (
       previousStatusNormalized === context.statusRegistry.close_status &&
       status !== context.statusRegistry.close_status &&
       document.metadata.closed_at !== undefined
@@ -2125,6 +2128,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
 
 /* c8 ignore stop */
 export const _testOnlyUpdateCommand = {
+  applyStatusAndCloseReasonMutations,
   collectProvidedUpdatePolicyOptions,
   buildAuditScopeRestrictedOptionsError,
   enforceAllowAuditUpdateScope,

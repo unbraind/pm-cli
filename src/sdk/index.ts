@@ -470,6 +470,7 @@ export {
   type SchemaShowFieldResult,
   type SchemaShowResult,
   type SchemaShowStatusResult,
+  type SchemaResult,
   type SchemaSubcommand,
   type SearchCompactResult,
   type SearchHit,
