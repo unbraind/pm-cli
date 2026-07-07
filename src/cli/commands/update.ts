@@ -1496,6 +1496,14 @@ function applyStatusAndCloseReasonMutations(
     const status = parseStatus(context.options.status, context.statusRegistry);
     document.metadata.status = status;
     changedFields.push("status");
+    if (
+      previousStatusNormalized === context.statusRegistry.close_status &&
+      status !== context.statusRegistry.close_status &&
+      document.metadata.closed_at !== undefined
+    ) {
+      delete document.metadata.closed_at;
+      changedFields.push("closed_at");
+    }
   }
   if (context.options.closeReason !== undefined || context.clearFrontMatterKeys.has("close_reason")) {
     if (context.clearFrontMatterKeys.has("close_reason")) {

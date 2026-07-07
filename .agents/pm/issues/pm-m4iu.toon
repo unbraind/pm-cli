@@ -2,15 +2,26 @@ id: pm-m4iu
 title: "pm close never stamps closed_at, so changelog and release-notes bucketing always falls back to updated_at"
 description: Stamp closed_at on close transitions so release bucketing stops keying off updated_at and closed items become safely touchable.
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[4]: changelog,metadata,pm-cli,tracker-governance
 created_at: "2026-07-07T07:16:45.885Z"
-updated_at: "2026-07-07T07:16:45.885Z"
+updated_at: "2026-07-07T21:48:37.589Z"
+assignee: codex-agent
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "Transitions into closed (close, close-many, create-with-closed-status) write closed_at; leaving closed clears it; value survives get/list JSON+TOON and is stripped on copy; SDK/MCP/contracts/docs wired per new-field checklist; regression test proves changelog bucketing uses closed_at over a later updated_at bump"
 parent: pm-33cw
 risk: medium
 confidence: high
+comments[2]{created_at,author,text}:
+  "2026-07-07T20:44:48.619Z",codex-agent,"Implementation start: bundled with SDK primitive work because closed_at is a context-management metadata primitive for changelog/release correctness. Live duplicate/context check found this open canonical issue and closed changelog incidents as related history, not duplicate active fixes."
+  "2026-07-07T21:48:37.589Z",claude-code-agent,"Implementation evidence: closed_at is stamped through pm close, pm close-many, and pm create --status closed; update away from closed clears closed_at. Focused regression node scripts/run-tests.mjs test -- tests/unit/commands/close-command.spec.ts passed 72/72 after adding explicit close-many coverage. Full coverage gate also passed 100/100/100/100."
+files[4]{path,scope,note}:
+  src/cli/commands/close.ts,project,pm close stamps closed_at on terminal transitions
+  src/cli/commands/create.ts,project,create-with-closed-status stamps closed_at
+  src/cli/commands/update.ts,project,leaving closed clears closed_at
+  tests/unit/commands/close-command.spec.ts,project,closed_at regression coverage
+tests[1]{command,scope,timeout_seconds,pm_context_mode}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/close-command.spec.ts,project,120,tracker
 body: "## Defect\n`closed_at` is a first-class schema field but no mutation path ever writes it. Evidence (verified 2026-07-07):\n- Declared: `src/types.ts:615` (`closed_at?: string`), listed in `src/core/shared/constants.ts:129`, parsed/validated in `src/core/item/item-format.ts:513,1212`, stripped on copy in `src/cli/commands/copy.ts:108`.\n- Never assigned anywhere in `src/` — `pm close`, `pm close-many`, closed-at-create, and reopen paths all leave it unset.\n- pm-rjqr (closed 2026-07-07 via `pm close`) reads `closed_at: null`; zero of the 511 closed Task items (and no item of any type) carry the field in frontmatter.\n\n## Impact\npm-changelog buckets releases via `closed_at ?? updated_at ?? created_at` (installed extension `dist/generator.js:1142`) and generate-release-notes uses the same preference (see pm-5baq). With `closed_at` universally absent, both always fall back to `updated_at`. Consequences:\n- Any later metadata touch on a closed item (close_reason/resolution backfill, dep wiring) drags it into `[Unreleased]` and the next daily release — 3 recorded mis-bucket incidents, and the reason review passes must treat closed items as write-frozen.\n- pm-e9zh (close_reason:18 + resolution backfill) and pm-pivf (GH-209 duplicate issue-code) are both blocked on this: their definitions of done require zero `[Unreleased]` churn, which is impossible while bucketing keys off `updated_at`.\n\n## Fix outline\nStamp `closed_at` (ISO timestamp) on every transition into closed status: `pm close`, `pm close-many`, `pm create` with closed status (the same site that writes `close_reason`), and status updates that land on closed via schema-custom terminal statuses if applicable. Clear it when an item leaves closed (reopen). Keep the write inside the normal mutation pipeline so the history stream records it as an ordinary patch (immutability preserved). Surface in SDK types, MCP tool schemas, CLI JSON/TOON output, and docs; follow the full new-field wiring checklist.\n\n## Tests\n- close/close-many/create-closed set `closed_at`; reopen clears it.\n- Round-trip: `pm get --json` exposes the value; copy still strips it.\n- Changelog bucketing regression: item with `closed_at` set is bucketed by it even after a later metadata-only update bumps `updated_at`."

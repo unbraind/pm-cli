@@ -1,0 +1,180 @@
+import path from "node:path";
+import { describe, expect, it } from "vitest";
+import {
+  PmClient,
+  append,
+  config,
+  comments,
+  deps,
+  docs,
+  files,
+  filesDiscover,
+  gc,
+  health,
+  init,
+  learnings,
+  notes,
+  profile,
+  profileApply,
+  profileLint,
+  profileList,
+  profileShow,
+  schema,
+  schemaAddField,
+  schemaAddStatus,
+  schemaAddType,
+  schemaApplyPreset,
+  schemaInferTypes,
+  schemaList,
+  schemaListFields,
+  schemaRemoveField,
+  schemaRemoveStatus,
+  schemaRemoveType,
+  schemaShow,
+  schemaShowField,
+  schemaShowStatus,
+  validate,
+  type AppendResult,
+  type CommentsResult,
+  type GcResult,
+  type HealthResult,
+  type SchemaAddFieldResult,
+  type SchemaAddTypeResult,
+  type ValidateResult,
+} from "../../../src/sdk/index.js";
+import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+
+describe("SDK context-management primitives", () => {
+  it("exposes annotation, link, customization, and governance helpers on PmClient and top-level exports", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(["create", "SDK context primitive", "--type", "Task", "--json"], { expectJson: true });
+      const related = context.runCli(["create", "SDK related primitive", "--type", "Task", "--json"], { expectJson: true });
+      expect(created.code).toBe(0);
+      expect(related.code).toBe(0);
+      const id = (created.json as { item: { id: string } }).item.id;
+      const relatedId = (related.json as { item: { id: string } }).item.id;
+      const client = new PmClient({ pmRoot: context.pmPath, noExtensions: true, author: "sdk-test" });
+
+      const addedComment = await client.comments(id, { add: "SDK comment", author: "sdk-test" });
+      expect(addedComment.comments.at(-1)?.text).toBe("SDK comment");
+      const listedComments = await comments(id, { limit: "5" }, { pmRoot: context.pmPath, noExtensions: true });
+      expect(listedComments.count).toBe(1);
+
+      expect((await notes(id, { add: "SDK note" }, { pmRoot: context.pmPath, noExtensions: true })).notes.at(-1)?.text).toBe(
+        "SDK note",
+      );
+      expect((await learnings(id, { add: "SDK learning" }, { pmRoot: context.pmPath, noExtensions: true })).learnings.at(-1)?.text).toBe(
+        "SDK learning",
+      );
+
+      expect((await files(id, { add: ["src/sdk/runtime.ts"], note: "runtime SDK" }, { pmRoot: context.pmPath, noExtensions: true })).files).toContainEqual(
+        expect.objectContaining({ path: "src/sdk/runtime.ts", note: "runtime SDK" }),
+      );
+      expect((await docs(id, { add: ["docs/SDK.md"], note: "SDK docs" }, { pmRoot: context.pmPath, noExtensions: true })).docs).toContainEqual(
+        expect.objectContaining({ path: "docs/SDK.md", note: "SDK docs" }),
+      );
+      const appended = await append(
+        id,
+        "SDK body context",
+        { author: "sdk-test", fullChangedFields: true },
+        { pmRoot: context.pmPath, noExtensions: true },
+      );
+      expect(appended.appended).toBe("SDK body context");
+      expect(appended.changed_fields).toContain("body");
+      const discoveredFiles = await filesDiscover(id, {}, { pmRoot: context.pmPath, noExtensions: true });
+      expect(discoveredFiles.id).toBe(id);
+
+      await client.update(id, { dep: [`id=${relatedId},kind=related`], author: "sdk-test" });
+      const relationshipGraph = await deps(id, { format: "graph" }, { pmRoot: context.pmPath, noExtensions: true });
+      expect(relationshipGraph.edge_count).toBe(1);
+
+      const initialized = await init("sdkinit", { defaults: true, author: "sdk-test" }, {
+        pmRoot: path.join(context.tempRoot, "nested", ".agents", "pm"),
+        noExtensions: true,
+      });
+      expect(initialized.ok).toBe(true);
+      const initializedWithoutPrefix = await new PmClient({
+        pmRoot: path.join(context.tempRoot, "nested-no-prefix", ".agents", "pm"),
+        noExtensions: true,
+      }).init(undefined, { defaults: true, author: "sdk-test" });
+      expect(initializedWithoutPrefix.ok).toBe(true);
+      const configResult = await config("project", "get", "item-format", undefined, {}, { pmRoot: context.pmPath, noExtensions: true });
+      expect(configResult).toMatchObject({ scope: "project", key: "item_format", changed: false });
+      const configListResult = await client.config("project", "list");
+      expect(configListResult.keys?.length).toBeGreaterThan(0);
+      const configSetResult = await client.config("project", "set", "governance-require-close-reason", "disabled");
+      expect(configSetResult.changed).toBe(true);
+
+      const schemaViaGeneric = await schema("list", {}, { pmRoot: context.pmPath, noExtensions: true });
+      expect(schemaViaGeneric.action).toBe("list");
+      await expect(client.schemaShow()).rejects.toThrow();
+      const schemaType = await schemaAddType("SdkRisk", { description: "SDK registered type" }, { pmRoot: context.pmPath, noExtensions: true });
+      expect(schemaType.registered).toBe(true);
+      const shownSchemaType = await schemaShow("SdkRisk", { pmRoot: context.pmPath, noExtensions: true });
+      expect(shownSchemaType.type?.name).toBe("SdkRisk");
+      const schemaStatus = await schemaAddStatus("sdk_review", { role: ["active"], description: "SDK review" }, { pmRoot: context.pmPath, noExtensions: true });
+      expect(schemaStatus.registered).toBe(true);
+      const shownStatus = await schemaShowStatus("sdk_review", { pmRoot: context.pmPath, noExtensions: true });
+      expect(shownStatus.status?.id).toBe("sdk_review");
+      await expect(client.schemaShowStatus()).rejects.toThrow();
+      const schemaField = await schemaAddField(
+        "risk_score",
+        { type: "number", commands: ["create", "update"], description: "risk score" },
+        { pmRoot: context.pmPath, noExtensions: true },
+      );
+      expect(schemaField.field.key).toBe("risk_score");
+      const fields = await schemaListFields({ pmRoot: context.pmPath, noExtensions: true });
+      expect(fields.fields).toContainEqual(expect.objectContaining({ key: "risk_score" }));
+      await expect(client.schemaShowField()).rejects.toThrow();
+      const shownField = await schemaShowField("risk_score", { pmRoot: context.pmPath, noExtensions: true });
+      expect(shownField.field?.key).toBe("risk_score");
+      const preset = await schemaApplyPreset("agile", { author: "sdk-test" }, { pmRoot: context.pmPath, noExtensions: true });
+      expect(preset.action).toBe("apply-preset");
+      const inferred = await schemaInferTypes({ minCount: 1, apply: false }, { pmRoot: context.pmPath, noExtensions: true });
+      expect(inferred.action).toBe("infer-types");
+      const schemaListResult = await schemaList({ pmRoot: context.pmPath, noExtensions: true });
+      expect(schemaListResult.custom).toContainEqual(expect.objectContaining({ name: "SdkRisk" }));
+      expect((await schemaRemoveField("risk_score", { author: "sdk-test" }, { pmRoot: context.pmPath, noExtensions: true })).removed).toBe(true);
+      expect((await schemaRemoveStatus("sdk_review", { author: "sdk-test" }, { pmRoot: context.pmPath, noExtensions: true })).removed).toBe(true);
+      expect((await schemaRemoveType("SdkRisk", { author: "sdk-test" }, { pmRoot: context.pmPath, noExtensions: true })).removed).toBe(true);
+
+      const genericProfiles = await profile("list", {}, { pmRoot: context.pmPath, noExtensions: true });
+      expect(genericProfiles.action).toBe("list");
+      const profiles = await profileList({ pmRoot: context.pmPath, noExtensions: true });
+      expect(profiles.profiles.length).toBeGreaterThan(0);
+      await expect(client.profileShow()).rejects.toThrow();
+      const shownProfile = await profileShow("agile", { pmRoot: context.pmPath, noExtensions: true });
+      expect(shownProfile.name).toBe("agile");
+      const profilePlan = await profileApply("agile", { dryRun: true, author: "sdk-test" }, { pmRoot: context.pmPath, noExtensions: true });
+      expect(profilePlan.dry_run).toBe(true);
+      await expect(client.profileLint()).rejects.toThrow();
+      const profileReport = await profileLint("agile", { pmRoot: context.pmPath, noExtensions: true });
+      expect(profileReport.ok).toBe(true);
+
+      const checkedHealth = await health({ checkOnly: true, summary: true }, { pmRoot: context.pmPath, noExtensions: true });
+      expect(checkedHealth.ok).toBe(true);
+      const checkedValidate = await validate({ checkResolution: true, checkHistoryDrift: true }, { pmRoot: context.pmPath, noExtensions: true });
+      expect(checkedValidate.ok).toBe(true);
+      const checkedGc = await gc({ dryRun: true, scope: ["locks"] }, { pmRoot: context.pmPath, noExtensions: true });
+      expect(checkedGc.ok).toBe(true);
+    });
+  });
+
+  it("keeps new primitive result contracts available as public SDK types", () => {
+    const appendResult: Pick<AppendResult, "appended" | "changed_fields"> = { appended: "body", changed_fields: ["body"] };
+    const commentResult: Pick<CommentsResult, "id" | "count"> = { id: "pm-a", count: 1 };
+    const schemaType: Pick<SchemaAddTypeResult, "action" | "registered"> = { action: "add-type", registered: true };
+    const schemaField: Pick<SchemaAddFieldResult, "action" | "registered"> = { action: "add-field", registered: true };
+    const healthResult: Pick<HealthResult, "ok" | "warnings"> = { ok: true, warnings: [] };
+    const validateResult: Pick<ValidateResult, "ok" | "checks"> = { ok: true, checks: [] };
+    const gcResult: Pick<GcResult, "ok" | "dry_run"> = { ok: true, dry_run: true };
+
+    expect(appendResult.changed_fields).toEqual(["body"]);
+    expect(commentResult.count).toBe(1);
+    expect(schemaType.registered).toBe(true);
+    expect(schemaField.registered).toBe(true);
+    expect(healthResult.ok).toBe(true);
+    expect(validateResult.checks).toEqual([]);
+    expect(gcResult.dry_run).toBe(true);
+  });
+});

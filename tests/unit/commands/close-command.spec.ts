@@ -179,6 +179,64 @@ describe("runClose", () => {
     });
   });
 
+  it("stamps closed_at on close/create-closed and clears it when leaving closed", async () => {
+    await withTempPmPath(async (context) => {
+      const closedViaClose = createTask(context, "close-at-via-close");
+
+      const closeResult = await runClose(
+        closedViaClose,
+        "Closed with timestamp",
+        { message: "close timestamp" },
+        { path: context.pmPath },
+      );
+      const closedItem = closeResult.item as Record<string, unknown>;
+      expect(closeResult.changed_fields).toEqual(expect.arrayContaining(["status", "closed_at", "close_reason"]));
+      expect(typeof closedItem.closed_at).toBe("string");
+      expect(Number.isFinite(Date.parse(closedItem.closed_at as string))).toBe(true);
+
+      const closedViaCloseMany = createTestItemId(context, { title: "close-at-via-close-many", tags: "close-at-bulk", status: "open" });
+      const closeManyResult = context.runCli(
+        ["close-many", "--filter-tag", "close-at-bulk", "--reason", "bulk closed with timestamp", "--json"],
+        { expectJson: true },
+      );
+      expect(closeManyResult.code).toBe(0);
+      const closeManyPayload = closeManyResult.json as { closed_count: number; ids: string[] };
+      expect(closeManyPayload.closed_count).toBe(1);
+      expect(closeManyPayload.ids).toEqual([closedViaCloseMany]);
+      const bulkClosed = context.runCli(["get", closedViaCloseMany, "--json"], { expectJson: true });
+      expect(bulkClosed.code).toBe(0);
+      const bulkClosedPayload = bulkClosed.json as { item: { closed_at?: string; status: string } };
+      expect(bulkClosedPayload.item.status).toBe("closed");
+      expect(Number.isFinite(Date.parse(bulkClosedPayload.item.closed_at ?? ""))).toBe(true);
+
+      const createdClosed = context.runCli(
+        [
+          "create",
+          "direct closed item",
+          "--type",
+          "Task",
+          "--status",
+          "closed",
+          "--message",
+          "direct closed",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(createdClosed.code).toBe(0);
+      const createdPayload = createdClosed.json as { item: { id: string; closed_at?: string }; changed_fields: string[] };
+      expect(createdPayload.changed_fields).toContain("closed_at");
+      expect(Number.isFinite(Date.parse(createdPayload.item.closed_at ?? ""))).toBe(true);
+
+      const reopened = context.runCli(["update", createdPayload.item.id, "--status", "open", "--json"], { expectJson: true });
+      expect(reopened.code).toBe(0);
+      const reopenedPayload = reopened.json as { item: { closed_at?: string; status: string }; changed_fields: string[] };
+      expect(reopenedPayload.item.status).toBe("open");
+      expect(reopenedPayload.item.closed_at).toBeUndefined();
+      expect(reopenedPayload.changed_fields).toContain("closed_at");
+    });
+  });
+
   it("closes unassigned active items without assignee changed field", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "close-unassigned-item");

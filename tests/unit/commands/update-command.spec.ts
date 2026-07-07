@@ -608,11 +608,12 @@ describe("runUpdate", () => {
         { status: "closed", closeReason: "done via auto-route" },
         { path: context.pmPath },
       );
-      expect(result.changed_fields).toEqual(expect.arrayContaining(["status", "close_reason"]));
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["status", "closed_at", "close_reason"]));
       expect(result.warnings).toContain("auto_routed_from_update_to_close");
-      const item = result.item as { status: string; close_reason: string };
+      const item = result.item as { status: string; close_reason: string; closed_at: string };
       expect(item.status).toBe("closed");
       expect(item.close_reason).toBe("done via auto-route");
+      expect(Number.isFinite(Date.parse(item.closed_at))).toBe(true);
     });
   });
 
@@ -625,11 +626,12 @@ describe("runUpdate", () => {
         { path: context.pmPath },
       );
       expect(result.warnings).toContain("auto_routed_from_update_to_close");
-      expect(result.changed_fields).toEqual(expect.arrayContaining(["title", "status", "close_reason"]));
-      const item = result.item as { status: string; title: string; close_reason: string };
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["title", "status", "closed_at", "close_reason"]));
+      const item = result.item as { status: string; title: string; close_reason: string; closed_at: string };
       expect(item.status).toBe("closed");
       expect(item.title).toBe("new title");
       expect(item.close_reason).toBe("done");
+      expect(Number.isFinite(Date.parse(item.closed_at))).toBe(true);
     });
   });
 
@@ -639,9 +641,10 @@ describe("runUpdate", () => {
       const result = await runUpdate(id, { status: "closed" }, { path: context.pmPath });
       expect(result.warnings).toContain("auto_routed_from_update_to_close");
       expect(result.warnings).toContain("close_reason_defaulted");
-      const item = result.item as { status: string; close_reason: string };
+      const item = result.item as { status: string; close_reason: string; closed_at: string };
       expect(item.status).toBe("closed");
       expect(item.close_reason).toBe("Closed via pm update");
+      expect(Number.isFinite(Date.parse(item.closed_at))).toBe(true);
     });
   });
 
