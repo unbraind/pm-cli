@@ -1,0 +1,18 @@
+id: pm-a9mc
+title: pm validate needs a counts-only projection so agents can read drift numbers without row-array payloads
+description: ""
+type: Feature
+status: open
+priority: 2
+tags[3]: agent-ux,"area:cli",token-efficiency
+created_at: "2026-07-07T15:13:53.449Z"
+updated_at: "2026-07-07T15:15:27.581Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: "pm validate --json supports a counts-only mode (flag or details=summary) keeping every *_count/*_total field and dropping per-item row arrays (missing_resolution_rows, missing_linked_path_rows, orphaned_path_rows, duplicate lists); human-readable output gains the same projection; default behavior unchanged (full row worklists remain default); contracts, MCP pm_validate params, completions, and docs updated per the new-flag wiring checklist"
+parent: pm-mpbb
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-cfed,related,"2026-07-07T15:15:27.561Z",null,null
+body: "## Problem\nMaintainer passes read `pm validate --json` on every session purely for the drift COUNTS (missing resolution, close_reason, linked-file drift). Today that read costs the full row arrays: the resolution check emits all 269 missing_resolution_rows and the files check emits up to file_list_summary_limit (40) entries per list even when the caller only needs missing_linked_paths_count / orphaned_paths_count. For agents this is hundreds of wasted tokens per verification read, on one of the most-run diagnostic commands.\n\n## Proposal\nA counts-only projection for validate output: keep check names, statuses, and every *_count / *_total scalar; drop per-item row arrays and classification lists. Spelling candidates (pick one at implementation): `pm validate --counts`, `--details none`, or reuse the lean-output mode of GH-435 (pm-cfed) if that lands first with array-suppression semantics.\n\n## Non-overlap\n- pm-cfed (GH-435) lean JSON drops null/EMPTY fields — these row arrays are non-empty, so it does not cover this.\n- pm-vxxm (GH-442) is contracts --summary, a different command.\n- pm-edge (closed) trimmed validate required_fields to active profiles; row arrays remained.\n- The row worklists themselves are a feature (exact missing-metadata ID worklists, see ADR-era usage on pm-bl8x) — this adds a cheaper projection, it removes nothing.\n\n## Evidence\nSession 2026-07-07: drift verification needed exactly four scalars (269/18/147/125) and paid for ~300 row entries across two reads; the *_count fields already exist, so the projection is pure output filtering."
