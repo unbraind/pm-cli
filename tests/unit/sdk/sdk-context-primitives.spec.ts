@@ -40,7 +40,12 @@ import {
   type HealthResult,
   type SchemaAddFieldResult,
   type SchemaAddTypeResult,
+  type SchemaListFieldsResult,
+  type SchemaListResult,
   type SchemaResult,
+  type SchemaShowFieldResult,
+  type SchemaShowResult,
+  type SchemaShowStatusResult,
   type ValidateResult,
 } from "../../../src/sdk/index.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
@@ -160,6 +165,11 @@ describe("SDK context-management primitives", () => {
     const appendResult: Pick<AppendResult, "appended" | "changed_fields"> = { appended: "body", changed_fields: ["body"] };
     const commentResult: Pick<CommentsResult, "id" | "count"> = { id: "pm-a", count: 1 };
     const schemaResult: Pick<SchemaResult, "action"> = { action: "list" };
+    const schemaList: Pick<SchemaListResult, "action"> = { action: "list" };
+    const schemaShow: Pick<SchemaShowResult, "action"> = { action: "show" };
+    const schemaShowStatus: Pick<SchemaShowStatusResult, "action"> = { action: "show-status" };
+    const schemaListFields: Pick<SchemaListFieldsResult, "action"> = { action: "list-fields" };
+    const schemaShowField: Pick<SchemaShowFieldResult, "action"> = { action: "show-field" };
     const schemaType: Pick<SchemaAddTypeResult, "action" | "registered"> = { action: "add-type", registered: true };
     const schemaField: Pick<SchemaAddFieldResult, "action" | "registered"> = { action: "add-field", registered: true };
     const healthResult: Pick<HealthResult, "ok" | "warnings"> = { ok: true, warnings: [] };
@@ -169,6 +179,13 @@ describe("SDK context-management primitives", () => {
     expect(appendResult.changed_fields).toEqual(["body"]);
     expect(commentResult.count).toBe(1);
     expect(schemaResult.action).toBe("list");
+    expect([schemaList, schemaShow, schemaShowStatus, schemaListFields, schemaShowField].map((result) => result.action)).toEqual([
+      "list",
+      "show",
+      "show-status",
+      "list-fields",
+      "show-field",
+    ]);
     expect(schemaType.registered).toBe(true);
     expect(schemaField.registered).toBe(true);
     expect(healthResult.ok).toBe(true);

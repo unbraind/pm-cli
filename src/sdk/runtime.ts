@@ -449,6 +449,11 @@ export type PmActionOptions = Record<string, unknown>;
  */
 export type SchemaResult =
   | SchemaInspectResult
+  | SchemaListResult
+  | SchemaShowResult
+  | SchemaShowStatusResult
+  | SchemaListFieldsResult
+  | SchemaShowFieldResult
   | SchemaAddTypeResult
   | SchemaRemoveTypeResult
   | SchemaAddStatusResult
