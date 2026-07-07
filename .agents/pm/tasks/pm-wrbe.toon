@@ -1,0 +1,18 @@
+id: pm-wrbe
+title: Deterministic closed_at backfill for legacy closed items derived from history streams
+description: Backfill closed_at on all legacy terminal items from their history streams so closed items stop bucketing by updated_at.
+type: Task
+status: open
+priority: 2
+tags[4]: metadata,normalization,pm-cli,tracker-governance
+created_at: "2026-07-07T07:17:15.111Z"
+updated_at: "2026-07-07T07:18:57.154Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: "validate emits a fix hint for closed items missing closed_at; auto-fix (new timestamps fix-scope) populates closed_at solely from history-replay evidence and is idempotent; items with unrecoverable history land on a documented residual list with counts; changelog regenerated in the same commit as the bulk pass shows zero unintended [Unreleased] churn"
+parent: pm-33cw
+risk: medium
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-m4iu,blocked_by,"2026-07-07T07:17:15.111Z",null,null
+body: "## Context\nEvery existing closed item (511 closed Tasks alone; effectively 100% of terminal items across types, verified 2026-07-07) predates a working `closed_at` stamp (defect pm-m4iu). Until they carry `closed_at`, any metadata write on them re-buckets the item into `[Unreleased]` via the `updated_at` fallback — which is exactly what blocks pm-e9zh (close_reason:18 + resolution backfill) and pm-pivf (GH-209 duplicate issue-code rename).\n\n## Derivation (deterministic, no placeholders)\nThe hash-chained history streams (`.agents/pm/history/<id>.jsonl`) record every mutation as a timestamped JSON-patch op. For each closed item missing `closed_at`:\n- `closed_at := ts` of the earliest history entry whose patch puts `status` at closed with no later transition away from closed; for items created already-closed (e.g. pm-2lbp, created 2026-05-01 with closed status), that is the `create` op itself.\n- Items whose history is incomplete (pre-history-era or repaired chains) go to a documented residual list instead of receiving a guessed value.\n\n## Delivery\nPrefer extending `pm validate --fix-hints` with a closed_at hint plus a new `--auto-fix --fix-scope timestamps` remediation (matches the existing fix-hint machinery; today's hints cover close_reason/title/resolution only). A `pm run normalize` rule is the fallback home. The backfill write is an ordinary history-recorded mutation, so the immutable-proof chain stays intact; the assigned value must equal what history replay yields.\n\n## Ordering\nRun only after pm-m4iu ships (otherwise newly closed items regress immediately) and regenerate + review the changelog in the same commit as the first bulk pass. Once complete, pm-e9zh and pm-pivf become executable without `[Unreleased]` churn."
