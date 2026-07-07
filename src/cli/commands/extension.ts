@@ -191,6 +191,8 @@ export interface ExtensionCommandOptions {
   watch?: boolean;
   runtimeProbe?: boolean;
   fixManagedState?: boolean;
+  isolated?: boolean;
+  ignoreGlobal?: boolean;
   fields?: string;
   capability?: string;
   declarative?: boolean;
@@ -313,7 +315,78 @@ interface ExtensionUpdateCheckResolution {
  * Restricts extension doctor detail mode values accepted by command, SDK, and storage contracts.
  */
 export type ExtensionDoctorDetailMode = "summary" | "deep";
-function buildExtensionPolicyDetails(policy: PmSettings["extensions"]["policy"]): {
+
+const EXTENSION_POLICY_ROOT_LIST_FIELDS = [
+  "trusted_extensions",
+  "allowed_extensions",
+  "blocked_extensions",
+  "allowed_capabilities",
+  "blocked_capabilities",
+  "allowed_surfaces",
+  "blocked_surfaces",
+  "allowed_commands",
+  "blocked_commands",
+  "allowed_actions",
+  "blocked_actions",
+  "allowed_services",
+  "blocked_services",
+] as const;
+
+const EXTENSION_POLICY_OVERRIDE_LIST_FIELDS = [
+  "allowed_capabilities",
+  "blocked_capabilities",
+  "allowed_surfaces",
+  "blocked_surfaces",
+  "allowed_commands",
+  "blocked_commands",
+  "allowed_actions",
+  "blocked_actions",
+  "allowed_services",
+  "blocked_services",
+] as const;
+const DEFAULT_EXTENSION_POLICY_DETAILS: PmSettings["extensions"]["policy"] = {
+  mode: "off",
+  trust_mode: "off",
+  require_provenance: false,
+  trusted_extensions: [],
+  default_sandbox_profile: "none",
+  allowed_extensions: [],
+  blocked_extensions: [],
+  allowed_capabilities: [],
+  blocked_capabilities: [],
+  allowed_surfaces: [],
+  blocked_surfaces: [],
+  allowed_commands: [],
+  blocked_commands: [],
+  allowed_actions: [],
+  blocked_actions: [],
+  allowed_services: [],
+  blocked_services: [],
+  extension_overrides: [],
+};
+
+type ExtensionPolicyRootListField = (typeof EXTENSION_POLICY_ROOT_LIST_FIELDS)[number];
+type ExtensionPolicyOverrideListField = (typeof EXTENSION_POLICY_OVERRIDE_LIST_FIELDS)[number];
+
+interface ExtensionPolicyOverrideDetails {
+  name: string;
+  disabled?: boolean;
+  require_trusted?: boolean;
+  require_provenance?: boolean;
+  sandbox_profile?: "none" | "restricted" | "strict";
+  allowed_capabilities?: string[];
+  blocked_capabilities?: string[];
+  allowed_surfaces?: string[];
+  blocked_surfaces?: string[];
+  allowed_commands?: string[];
+  blocked_commands?: string[];
+  allowed_actions?: string[];
+  blocked_actions?: string[];
+  allowed_services?: string[];
+  blocked_services?: string[];
+}
+
+interface ExtensionPolicyDetails {
   mode: "off" | "warn" | "enforce";
   trust_mode: "off" | "warn" | "enforce";
   require_provenance: boolean;
@@ -331,79 +404,85 @@ function buildExtensionPolicyDetails(policy: PmSettings["extensions"]["policy"])
   blocked_actions: string[];
   allowed_services: string[];
   blocked_services: string[];
-  extension_overrides: Array<{
-    name: string;
-    disabled?: boolean;
-    require_trusted?: boolean;
-    require_provenance?: boolean;
-    sandbox_profile?: "none" | "restricted" | "strict";
-    allowed_capabilities?: string[];
-    blocked_capabilities?: string[];
-    allowed_surfaces?: string[];
-    blocked_surfaces?: string[];
-    allowed_commands?: string[];
-    blocked_commands?: string[];
-    allowed_actions?: string[];
-    blocked_actions?: string[];
-    allowed_services?: string[];
-    blocked_services?: string[];
-  }>;
-} {
-  const overrides = (policy.extension_overrides ?? [])
-    .map((override) => ({
-      name: override.name.trim(),
-      disabled: override.disabled === true ? true : undefined,
-      require_trusted: override.require_trusted === true ? true : undefined,
-      require_provenance: override.require_provenance === true ? true : undefined,
-      sandbox_profile: override.sandbox_profile,
-      allowed_capabilities: normalizeStringList(override.allowed_capabilities ?? []),
-      blocked_capabilities: normalizeStringList(override.blocked_capabilities ?? []),
-      allowed_surfaces: normalizeStringList(override.allowed_surfaces ?? []),
-      blocked_surfaces: normalizeStringList(override.blocked_surfaces ?? []),
-      allowed_commands: normalizeStringList(override.allowed_commands ?? []),
-      blocked_commands: normalizeStringList(override.blocked_commands ?? []),
-      allowed_actions: normalizeStringList(override.allowed_actions ?? []),
-      blocked_actions: normalizeStringList(override.blocked_actions ?? []),
-      allowed_services: normalizeStringList(override.allowed_services ?? []),
-      blocked_services: normalizeStringList(override.blocked_services ?? []),
-    }))
-    .filter((override) => override.name.length > 0)
+  extension_overrides: ExtensionPolicyOverrideDetails[];
+}
+
+function normalizePolicyRootLists(
+  policy: PmSettings["extensions"]["policy"] | null | undefined,
+): Record<ExtensionPolicyRootListField, string[]> {
+  const safePolicy = policy ?? DEFAULT_EXTENSION_POLICY_DETAILS;
+  const lists = {} as Record<ExtensionPolicyRootListField, string[]>;
+  for (const field of EXTENSION_POLICY_ROOT_LIST_FIELDS) {
+    lists[field] = normalizeStringList(safePolicy[field] ?? []);
+  }
+  return lists;
+}
+
+function appendNonEmptyPolicyLists(
+  target: ExtensionPolicyOverrideDetails,
+  lists: Record<ExtensionPolicyOverrideListField, string[]>,
+): ExtensionPolicyOverrideDetails {
+  for (const field of EXTENSION_POLICY_OVERRIDE_LIST_FIELDS) {
+    if (lists[field].length > 0) {
+      target[field] = lists[field];
+    }
+  }
+  return target;
+}
+
+function buildExtensionPolicyOverrideDetails(
+  override: NonNullable<PmSettings["extensions"]["policy"]["extension_overrides"]>[number],
+): ExtensionPolicyOverrideDetails | null {
+  const name = typeof override.name === "string" ? override.name.trim() : "";
+  if (name.length === 0) {
+    return null;
+  }
+  const details: ExtensionPolicyOverrideDetails = { name };
+  if (override.disabled === true) {
+    details.disabled = true;
+  }
+  if (override.require_trusted === true) {
+    details.require_trusted = true;
+  }
+  if (override.require_provenance === true) {
+    details.require_provenance = true;
+  }
+  if (override.sandbox_profile) {
+    details.sandbox_profile = override.sandbox_profile;
+  }
+  const lists = {} as Record<ExtensionPolicyOverrideListField, string[]>;
+  for (const field of EXTENSION_POLICY_OVERRIDE_LIST_FIELDS) {
+    lists[field] = normalizeStringList(override[field] ?? []);
+  }
+  return appendNonEmptyPolicyLists(details, lists);
+}
+
+function buildExtensionPolicyDetails(policy: PmSettings["extensions"]["policy"] | null | undefined): ExtensionPolicyDetails {
+  const safePolicy = policy ?? DEFAULT_EXTENSION_POLICY_DETAILS;
+  const rootLists = normalizePolicyRootLists(policy);
+  const overrides = (safePolicy.extension_overrides ?? [])
+    .map((override) => buildExtensionPolicyOverrideDetails(override))
+    .filter((override): override is ExtensionPolicyOverrideDetails => override !== null)
     .sort((left, right) => left.name.localeCompare(right.name));
   return {
-    mode: policy.mode,
-    trust_mode: policy.trust_mode,
-    require_provenance: policy.require_provenance === true,
-    trusted_extensions: normalizeStringList(policy.trusted_extensions ?? []),
-    default_sandbox_profile: policy.default_sandbox_profile ?? "none",
-    allowed_extensions: normalizeStringList(policy.allowed_extensions ?? []),
-    blocked_extensions: normalizeStringList(policy.blocked_extensions ?? []),
-    allowed_capabilities: normalizeStringList(policy.allowed_capabilities ?? []),
-    blocked_capabilities: normalizeStringList(policy.blocked_capabilities ?? []),
-    allowed_surfaces: normalizeStringList(policy.allowed_surfaces ?? []),
-    blocked_surfaces: normalizeStringList(policy.blocked_surfaces ?? []),
-    allowed_commands: normalizeStringList(policy.allowed_commands ?? []),
-    blocked_commands: normalizeStringList(policy.blocked_commands ?? []),
-    allowed_actions: normalizeStringList(policy.allowed_actions ?? []),
-    blocked_actions: normalizeStringList(policy.blocked_actions ?? []),
-    allowed_services: normalizeStringList(policy.allowed_services ?? []),
-    blocked_services: normalizeStringList(policy.blocked_services ?? []),
-    extension_overrides: overrides.map((override) => ({
-      name: override.name,
-      ...(override.disabled === true ? { disabled: true } : {}),
-      ...(override.require_trusted === true ? { require_trusted: true } : {}),
-      ...(override.require_provenance === true ? { require_provenance: true } : {}),
-      ...(override.sandbox_profile ? { sandbox_profile: override.sandbox_profile } : {}),
-      ...(override.allowed_capabilities.length > 0 ? { allowed_capabilities: override.allowed_capabilities } : {}),
-      ...(override.blocked_capabilities.length > 0 ? { blocked_capabilities: override.blocked_capabilities } : {}),
-      ...(override.allowed_surfaces.length > 0 ? { allowed_surfaces: override.allowed_surfaces } : {}),
-      ...(override.blocked_surfaces.length > 0 ? { blocked_surfaces: override.blocked_surfaces } : {}),
-      ...(override.allowed_commands.length > 0 ? { allowed_commands: override.allowed_commands } : {}),
-      ...(override.blocked_commands.length > 0 ? { blocked_commands: override.blocked_commands } : {}),
-      ...(override.allowed_actions.length > 0 ? { allowed_actions: override.allowed_actions } : {}),
-      ...(override.blocked_actions.length > 0 ? { blocked_actions: override.blocked_actions } : {}),
-      ...(override.allowed_services.length > 0 ? { allowed_services: override.allowed_services } : {}),
-      ...(override.blocked_services.length > 0 ? { blocked_services: override.blocked_services } : {}),
-    })),
+    mode: safePolicy.mode ?? DEFAULT_EXTENSION_POLICY_DETAILS.mode,
+    trust_mode: safePolicy.trust_mode ?? DEFAULT_EXTENSION_POLICY_DETAILS.trust_mode,
+    require_provenance: safePolicy.require_provenance === true,
+    trusted_extensions: rootLists.trusted_extensions,
+    default_sandbox_profile: safePolicy.default_sandbox_profile ?? "none",
+    allowed_extensions: rootLists.allowed_extensions,
+    blocked_extensions: rootLists.blocked_extensions,
+    allowed_capabilities: rootLists.allowed_capabilities,
+    blocked_capabilities: rootLists.blocked_capabilities,
+    allowed_surfaces: rootLists.allowed_surfaces,
+    blocked_surfaces: rootLists.blocked_surfaces,
+    allowed_commands: rootLists.allowed_commands,
+    blocked_commands: rootLists.blocked_commands,
+    allowed_actions: rootLists.allowed_actions,
+    blocked_actions: rootLists.blocked_actions,
+    allowed_services: rootLists.allowed_services,
+    blocked_services: rootLists.blocked_services,
+    extension_overrides: overrides,
   };
 }
 
@@ -1402,6 +1481,11 @@ function assertExtensionActionOptionScope(action: ExtensionCommandAction, option
       message: "--fix-managed-state is only valid with --manage or --doctor.",
     },
     {
+      triggered: options.isolated === true || options.ignoreGlobal === true,
+      allowed: action === "doctor",
+      message: "--isolated and --ignore-global are only valid with --doctor.",
+    },
+    {
       triggered: options.capability !== undefined,
       allowed: action === "init",
       message: "--capability is only valid with --init/--scaffold.",
@@ -2111,11 +2195,13 @@ function buildDoctorRemediation(
   activationFailureCount: number,
   vocabulary: ExtensionCommandOptions["vocabulary"],
   managedStateFix: AdoptUnmanagedExtensionsResult | null,
+  isolationHint: string | null,
 ): string[] {
   return [
     ...new Set(
       [
         ...baseRemediation,
+        ...(isolationHint === null ? [] : [isolationHint]),
         /* c8 ignore start -- vocabulary-specific remediation branches are copy-only variants */
         ...(loadFailureCount > 0
           ? [
@@ -2140,10 +2226,77 @@ function buildDoctorRemediation(
   ];
 }
 
+function hasGlobalLayerDiagnostics(loadResult: Awaited<ReturnType<typeof loadExtensions>>): boolean {
+  return (
+    loadResult.loaded.some((entry) => entry.layer === "global") ||
+    loadResult.failed.some((entry) => entry.layer === "global") ||
+    loadResult.warnings.some((warning) => warning.includes(":global:"))
+  );
+}
+
+function buildDoctorIsolationHint(
+  scope: ExtensionScope,
+  isolated: boolean,
+  vocabulary: ExtensionCommandOptions["vocabulary"],
+  loadResult: Awaited<ReturnType<typeof loadExtensions>>,
+): string | null {
+  if (scope !== "project" || isolated || !hasGlobalLayerDiagnostics(loadResult)) {
+    return null;
+  }
+  const noun = vocabulary === "package" ? "package" : "extension";
+  return (
+    `Global ${noun} registrations are included in project diagnostics. ` +
+    `For hermetic ${noun} smoke tests, rerun pm ${noun} doctor --project --isolated --detail deep --trace, ` +
+    "or set PM_GLOBAL_PATH to a temporary directory for the whole test process."
+  );
+}
+
+interface DoctorIsolationMetadata {
+  isolated: boolean;
+  global_extensions_included: boolean;
+  global_diagnostics_present: boolean;
+  rerun_command: string | null;
+  pm_global_path_recipe: string | null;
+}
+
+/**
+ * Build the doctor isolation block shared by summary and details output so the
+ * over-the-wire payload stays identical for extension and package vocabulary.
+ */
+function buildDoctorIsolationMetadata(
+  scope: ExtensionScope,
+  isolated: boolean,
+  vocabulary: ExtensionCommandOptions["vocabulary"],
+  loadResult: Awaited<ReturnType<typeof loadExtensions>>,
+): DoctorIsolationMetadata {
+  const noun = vocabulary === "package" ? "package" : "extension";
+  if (scope !== "project") {
+    return {
+      isolated,
+      global_extensions_included: false,
+      global_diagnostics_present: hasGlobalLayerDiagnostics(loadResult),
+      rerun_command: null,
+      pm_global_path_recipe: null,
+    };
+  }
+  const isolatedCommand = `pm ${noun} doctor --project --isolated --detail deep --trace`;
+  return {
+    isolated,
+    global_extensions_included: !isolated,
+    global_diagnostics_present: hasGlobalLayerDiagnostics(loadResult),
+    rerun_command: isolated ? null : isolatedCommand,
+    pm_global_path_recipe: `PM_GLOBAL_PATH=$(mktemp -d) pm ${noun} doctor --project --detail deep --trace`,
+  };
+}
+
 async function runExtensionDoctorAction(ctx: ExtensionActionContext): Promise<ExtensionCommandResult> {
   const { normalizedTarget, scope, resolvedRoots, warnings, options, global, withResult } = ctx;
   if (normalizedTarget && normalizedTarget.trim().length > 0) {
     throw new PmCliError('Action "doctor" does not accept a target argument.', EXIT_CODE.USAGE);
+  }
+  const isolated = options.isolated === true || options.ignoreGlobal === true;
+  if (isolated && scope === "global") {
+    throw new PmCliError("--isolated and --ignore-global are only valid with project-scope doctor diagnostics.", EXIT_CODE.USAGE);
   }
   const detailMode = parseDoctorDetailMode(options.detail);
   const includeTrace = options.trace === true;
@@ -2176,6 +2329,7 @@ async function runExtensionDoctorAction(ctx: ExtensionActionContext): Promise<Ex
     settings,
     cwd: process.cwd(),
     noExtensions: global.noExtensions === true,
+    ignoreGlobalExtensions: isolated,
   });
   const activationResult = await activateExtensions({
     ...loadResult,
@@ -2231,13 +2385,16 @@ async function runExtensionDoctorAction(ctx: ExtensionActionContext): Promise<Ex
   const capabilityGuidance = collectUnknownCapabilityGuidance(normalizedWarnings);
   const capabilityContract = buildCapabilityContractMetadata();
   const warningCodes = triage.warning_codes;
+  const isolationHint = buildDoctorIsolationHint(scope, isolated, options.vocabulary, loadResult);
   const remediation = buildDoctorRemediation(
     triage.remediation,
     loadResult.failed.length,
     activationResult.failed.length,
     options.vocabulary,
     managedStateFix,
+    isolationHint,
   );
+  const isolation = buildDoctorIsolationMetadata(scope, isolated, options.vocabulary, loadResult);
 
   const summary = {
     status: triage.status,
@@ -2270,6 +2427,7 @@ async function runExtensionDoctorAction(ctx: ExtensionActionContext): Promise<Ex
     has_blocking_failures: loadResult.failed.length + activationResult.failed.length > 0,
     consistency_warning_count: doctorConsistency.warnings.length,
     trace_enabled: includeTrace,
+    isolation,
     policy: policySummary,
     remediation,
   };
@@ -2298,6 +2456,7 @@ async function runExtensionDoctorAction(ctx: ExtensionActionContext): Promise<Ex
     capability_contract: capabilityContract,
     capability_guidance: capabilityGuidance,
     managed_state_fix: managedStateFixSummary,
+    isolation,
     policy: loadResult.policy,
   };
   if (detailMode === "deep") {

@@ -2,17 +2,22 @@ id: pm-x6jf
 title: "Promote package & extension lifecycle primitives to the public SDK: install, upgrade, extension list/enable/disable, managed-package state"
 description: "Promote package and extension lifecycle operations into the public SDK so custom PM tools can install, upgrade, activate, deactivate, inspect, and manage packages without shelling out to CLI-only internals."
 type: Feature
-status: open
+status: in_progress
 priority: 2
 tags[3]: architecture,"area:extensions","area:sdk"
 created_at: "2026-07-06T21:58:30.613Z"
-updated_at: "2026-07-06T22:30:35.078Z"
+updated_at: "2026-07-07T09:44:05.585Z"
+assignee: codex-agent
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: "SDK exports typed primitives for package install/upgrade and extension lifecycle (list, enable/disable, managed-extensions state) returning the same structured results the CLI renders; pm install/upgrade/extension/package commands consume only these primitives; docstrings + linked tests + SDK reference docs; zero behavior change (install/extension specs green)"
 parent: pm-usfg
 risk: medium
 confidence: medium
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-tnud,related,"2026-07-06T21:58:39.001Z",null,null
+  pm-6abs,related,"2026-07-07T08:57:29.205Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-07T08:58:08.753Z",codex-agent,"Progress evidence: active PR bundle includes package/extension doctor isolation as a package-lifecycle primitive slice. Runtime loader options, CLI flags, SDK flag/tool contracts, shell completions, docs, and regression tests are being verified through pm-6abs; this item remains broader than the PR and should not be closed by the isolation slice alone."
+  "2026-07-07T09:44:05.584Z",codex-agent,"Package lifecycle primitive update: pm-6abs promotes doctor isolation as a first-class lifecycle primitive across CLI flags, shell completion, help, SDK contract metadata, and action/tool schemas."
 body: "Domain-by-domain SDK promotion under pm-usfg covers read (pm-rjqr), lifecycle (pm-98cz), schema/config/profile (pm-3mna), history maintenance (pm-4a7m), plan (pm-je50), governance/health/gc (pm-oxrw), annotations (pm-zwpp), and execution (pm-oslr) — but nobody owns the package/extension platform family. The universal-tool story (pm-w89s, exemplar pm-cbwg) requires an SDK-built PM tool to install and manage packages without shelling to the CLI. Promote the install/upgrade/extension lifecycle logic (multi-target install aggregation, managed-extensions.json state, activation) behind typed SDK primitives, and align with the CLI-side consolidation pm-tnud so the noun rename and the SDK promotion do not conflict."

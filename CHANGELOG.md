@@ -4,6 +4,7 @@
 
 ### Added
 
+- GH-467: isolated package/extension diagnostics — project-scoped doctor and smoke tests without global pm state leaking in ([pm-6abs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-6abs.toon))
 - GH-474: pm search --limit support in hybrid mode ([pm-alnj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-alnj.toon))
 
 ### Other

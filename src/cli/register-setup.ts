@@ -88,6 +88,8 @@ function normalizeExtensionOptions(
     watch: readBoolean("watch"),
     runtimeProbe: readBoolean("runtimeProbe", "runtime_probe", "runtime-probe"),
     fixManagedState: readBoolean("fixManagedState", "fix_managed_state", "fix-managed-state"),
+    isolated: readBoolean("isolated"),
+    ignoreGlobal: readBoolean("ignoreGlobal", "ignore_global", "ignore-global"),
     strictExit: readBoolean("strictExit", "strict_exit", "strict-exit"),
     failOnWarn: readBoolean("failOnWarn", "fail_on_warn", "fail-on-warn"),
     vocabulary,
@@ -393,6 +395,8 @@ function registerLifecycleCommand(
     .option("--trace", "Include actionable registration traces in doctor deep diagnostics")
     .option("--runtime-probe", "Opt-in runtime activation probe for manage output parity")
     .option("--fix-managed-state", `Adopt unmanaged ${plural} before diagnostics/update checks`)
+    .option("--isolated", `Run doctor against project-scope ${plural} only, ignoring global registrations`)
+    .option("--ignore-global", "Alias for --isolated")
     .option("--strict-exit", "Return non-zero exit when doctor warnings are present (ok=false)")
     .option("--fail-on-warn", "Alias for --strict-exit (doctor)")
     .description(
@@ -497,6 +501,8 @@ function registerLifecycleCommand(
       .option("--detail <mode>", `Detail mode for ${noun} diagnostics (summary|deep)`)
       .option("--trace", "Include actionable registration traces in doctor deep diagnostics")
       .option("--fix-managed-state", `Adopt unmanaged ${plural} before diagnostics/update checks`)
+      .option("--isolated", `Run doctor against project-scope ${plural} only, ignoring global registrations`)
+      .option("--ignore-global", "Alias for --isolated")
       .option("--strict-exit", "Return non-zero exit when doctor warnings are present (ok=false)")
       .option("--fail-on-warn", "Alias for --strict-exit (doctor)")
       .description(`Run consolidated ${noun} diagnostics (summary/deep modes).`),

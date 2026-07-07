@@ -243,6 +243,19 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "Run pm package manage or pm package doctor after installing external packages.",
     ],
   },
+  "package doctor": {
+    why: "Diagnoses package activation, policy, collision, and managed-state health for project or global package scopes.",
+    examples: [
+      "pm package doctor --project --detail summary",
+      "pm package doctor --project --detail deep --trace",
+      "pm package doctor --project --isolated --detail deep --trace",
+    ],
+    tips: [
+      "Use --isolated (alias --ignore-global) for hermetic project smoke tests that must ignore globally installed package registrations.",
+      "Set PM_GLOBAL_PATH for a whole subprocess suite when every pm invocation must avoid machine-local global package state: PM_GLOBAL_PATH=$(mktemp -d) pm package doctor --project --detail deep --trace.",
+      "Non-isolated project diagnostics include global registrations and emit remediation when global package state can affect the result.",
+    ],
+  },
   "package catalog": {
     why: "Lists bundled first-party package catalog metadata and compact field projections.",
     examples: [
@@ -284,6 +297,19 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm extension doctor --project --detail summary",
     ],
     tips: ["Prefer pm install or pm package install for new package-first automation."],
+  },
+  "extension doctor": {
+    why: "Diagnoses compatibility extension activation, policy, collision, and managed-state health for project or global extension scopes.",
+    examples: [
+      "pm extension doctor --project --detail summary",
+      "pm extension doctor --project --detail deep --trace",
+      "pm extension doctor --project --isolated --detail deep --trace",
+    ],
+    tips: [
+      "Use --isolated (alias --ignore-global) for hermetic project smoke tests that must ignore globally installed extension registrations.",
+      "Set PM_GLOBAL_PATH for a whole subprocess suite when every pm invocation must avoid machine-local global extension state: PM_GLOBAL_PATH=$(mktemp -d) pm extension doctor --project --detail deep --trace.",
+      "Prefer pm package doctor in new package-first workflows.",
+    ],
   },
   "extension catalog": {
     why: "Compatibility view of bundled package catalog metadata.",

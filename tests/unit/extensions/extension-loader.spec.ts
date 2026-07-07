@@ -2003,6 +2003,56 @@ describe("extension loader", () => {
     );
   });
 
+  it("enforces schema.flags policy for inline command flag registrations", async () => {
+    const activation = await activateExtensions({
+      disabled_by_flag: false,
+      roots: {
+        global: "/tmp/global",
+        project: "/tmp/project",
+      },
+      configured_enabled: [],
+      configured_disabled: [],
+      discovered: [],
+      effective: [],
+      warnings: [],
+      policy: createTestExtensionPolicy({
+        mode: "enforce",
+        blocked_surfaces: ["schema.flags"],
+      }),
+      loaded: [
+        {
+          layer: "project",
+          directory: "inline-flags-policy-ext",
+          manifest_path: "/tmp/project/inline-flags-policy-ext/manifest.json",
+          name: "inline-flags-policy-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          priority: 10,
+          entry_path: "/tmp/project/inline-flags-policy-ext/index.mjs",
+          capabilities: ["commands", "schema"],
+          module: {
+            activate(api: ExtensionApi) {
+              api.registerCommand({
+                name: "inline flags command",
+                flags: [{ long: "--inline-blocked", value_type: "boolean" }],
+                run: () => ({ ok: true }),
+              });
+            },
+          },
+        },
+      ],
+      failed: [],
+    });
+
+    expect(activation.failed).toEqual([]);
+    expect(activation.command_handler_count).toBe(1);
+    expect(activation.registration_counts.commands).toBe(1);
+    expect(activation.registration_counts.flags).toBe(0);
+    expect(activation.warnings).toEqual([
+      "extension_policy_blocked_registration:project:inline-flags-policy-ext:reason=surface_blocked:capability=schema:method=registercommand_flags:surface=schema.flags",
+    ]);
+  });
+
   it("enforces command/action/service policy maps during activation", async () => {
     const activation = await activateExtensions({
       disabled_by_flag: false,
