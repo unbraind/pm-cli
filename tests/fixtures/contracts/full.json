@@ -1738,6 +1738,9 @@
           "flag": "--parent"
         },
         {
+          "aliases": [
+            "--max-items"
+          ],
           "flag": "--limit"
         },
         {
@@ -2134,6 +2137,9 @@
           "flag": "--parent"
         },
         {
+          "aliases": [
+            "--max-items"
+          ],
           "flag": "--limit"
         },
         {
@@ -7156,7 +7162,9 @@
       },
       {
         "keys": [
-          "limit"
+          "limit",
+          "maxItems",
+          "max_items"
         ],
         "target": "limit"
       },

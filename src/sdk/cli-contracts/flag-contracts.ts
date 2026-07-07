@@ -1313,7 +1313,7 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--sprint" },
   { flag: "--release" },
   { flag: "--parent" },
-  { flag: "--limit" },
+  { flag: "--limit", aliases: ["--max-items"] },
   { flag: "--format" },
   { flag: "--depth" },
   { flag: "--fields", list: true },

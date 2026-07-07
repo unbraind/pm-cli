@@ -1404,6 +1404,7 @@ describe("cli/commands/search", () => {
       });
       const settings = await readSettings(context.pmPath);
       settings.search.provider = "ext-provider";
+      settings.search.max_results = 3;
       settings.search.query_expansion = { enabled: true, provider: "ext-provider" };
       settings.search.rerank = { enabled: true, model: "rerank-model", top_k: 2 };
       settings.providers.openai.base_url = "https://api.example.test/v1";

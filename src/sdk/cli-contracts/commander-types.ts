@@ -106,7 +106,7 @@ export const CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasCont
   { target: "sprint", keys: ["sprint"] },
   { target: "release", keys: ["release"] },
   { target: "parent", keys: ["parent"] },
-  { target: "limit", keys: ["limit"] },
+  { target: "limit", keys: ["limit", "maxItems", "max_items"] },
   { target: "format", keys: ["format"] },
   { target: "depth", keys: ["depth"] },
   { target: "fields", keys: ["fields"] },

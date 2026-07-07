@@ -6,7 +6,8 @@ status: open
 priority: 2
 tags[3]: agent-ux,"area:cli",gh-issue
 created_at: "2026-07-07T06:49:24.311Z"
-updated_at: "2026-07-07T06:49:24.311Z"
+updated_at: "2026-07-07T08:04:32.571Z"
+assignee: claude-code-agent
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "Either --max-items is accepted as a hidden alias for --limit on pm context (contracts/completions/docs wired per the new-flag checklist), or the unknown_option error for --max-items returns a targeted hint naming 'pm context --limit <n>'; regression test covers the chosen behavior; GH-476 closed with shipped evidence"
@@ -15,4 +16,21 @@ risk: low
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-gdi7,related,"2026-07-07T06:49:24.311Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-07T07:30:43.098Z",claude-code-agent,"Implementation start: bundling GH-476 context --max-items alias with GH-474 hybrid search --limit because both reduce agent token/context round-trips. Duplicate checks found pm-gdi7 as the broader unknown-option engine follow-up, but this item has specific GH-476 acceptance criteria."
+  "2026-07-07T08:04:32.571Z",claude-code-agent,"Evidence: implemented hidden pm context --max-items alias as an exact --limit synonym across runtime parsing, option normalization, context flag contracts, and generated contract snapshots. Verification passed: linked focused pm test (288 tests), pnpm build, node scripts/run-tests.mjs test (264 files / 5449 tests), node scripts/run-tests.mjs coverage (100% statements/branches/functions/lines), pnpm typecheck, pnpm lint, pnpm security:scan, pnpm contracts:check. Packed-install dogfood in /tmp/tmp.FlmKN3LY44 confirmed npx pm context --json --max-items 1 returns filters.limit=1 and one low_level row. GitHub refresh found no open Dependabot security alerts; open Dependabot PRs #462/#465 remain separate dependency-update PRs and are behind base."
+files[7]{path,scope,note}:
+  src/cli/commands/context.ts,project,Accept --max-items as a context limit alias
+  src/cli/register-list-query.ts,project,Register hidden --max-items alias for pm context
+  src/sdk/cli-contracts/commander-types.ts,project,Expose context maxItems/max_items alias normalization through SDK contracts
+  src/sdk/cli-contracts/flag-contracts.ts,project,Publish context --max-items alias in flag contracts
+  tests/fixtures/contracts/full.json,project,Regenerate CLI contract snapshot for context alias metadata
+  tests/unit/cli/registration-helpers.spec.ts,project,Cover context maxItems option normalization
+  tests/unit/commands/context-command.spec.ts,project,Cover pm context --max-items CLI alias
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/registration-helpers.spec.ts tests/unit/commands/context-command.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/sdk/sdk-index.spec.ts,project,240
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mraccoxb-95mm84,test,failed,"2026-07-07T07:41:56.319Z","2026-07-07T07:42:22.511Z","2026-07-07T07:42:22.511Z",1,1,0
+  test-local-mracdu9r-wcsrzm,test,failed,"2026-07-07T07:42:50.582Z","2026-07-07T07:43:16.095Z","2026-07-07T07:43:16.095Z",1,1,0
+  test-local-mracf0nu-l9f4nn,test,passed,"2026-07-07T07:43:48.409Z","2026-07-07T07:44:11.034Z","2026-07-07T07:44:11.034Z",1,0,0
 body: "Repro: 'pm context --json --max-items 5' -> unknown_option; examples only suggest pm context --help.\n\nWhy it matters: project management = context management — agents reason in 'max items / top N' terms when bounding token spend, and every failed guess costs a help round-trip. This is the same recovery-hint class as GH-458 (pm-qfte, shipped: lifecycle --assignee alias) and generalizes under pm-gdi7 (unknown-option errors should suggest valid flags). If pm-gdi7's generalized did-you-mean suggestion engine lands first, this item reduces to a targeted test case plus the alias decision.\n\nDuplicate-check evidence: pm search 'GH-476' -> 0 hits; pm search 'context row limit aliases' -> no open coverage; pm-gdi7 covers the generic suggestion engine but not this specific alias/hint."
