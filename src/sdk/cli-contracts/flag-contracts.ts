@@ -718,7 +718,7 @@ export const APPEND_FLAG_CONTRACTS: CliFlagContract[] = [
 ];
 
 export const CLAIM_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--author" },
+  { flag: "--author", aliases: ["--assignee"] },
   { flag: "--message" },
   { flag: "--force" },
 ];
@@ -737,26 +737,26 @@ export const DELETE_FLAG_CONTRACTS: CliFlagContract[] = [
 ];
 
 export const RELEASE_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--author" },
+  { flag: "--author", aliases: ["--assignee"] },
   { flag: "--message" },
   { flag: "--allow-audit-release" },
   { flag: "--force" },
 ];
 
 export const START_TASK_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--author" },
+  { flag: "--author", aliases: ["--assignee"] },
   { flag: "--message" },
   { flag: "--force" },
 ];
 
 export const PAUSE_TASK_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--author" },
+  { flag: "--author", aliases: ["--assignee"] },
   { flag: "--message" },
   { flag: "--force" },
 ];
 
 export const CLOSE_TASK_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--author" },
+  { flag: "--author", aliases: ["--assignee"] },
   { flag: "--message" },
   { flag: "--validate-close" },
   { flag: "--force" },

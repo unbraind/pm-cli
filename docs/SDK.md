@@ -10,6 +10,10 @@ Use it for extension authoring, package authoring, command/action contract disco
 npm install @unbrained/pm-cli
 ```
 
+The SDK ships inside the CLI package. There is no separate
+`@unbrained/pm-sdk` package; package authors should depend on
+`@unbrained/pm-cli` and import the public subpaths below.
+
 ## Import Surfaces
 
 ```ts
@@ -438,6 +442,8 @@ const created = await pm.create({
   status: "open",
   createMode: "progressive",
 });
+await pm.claim(created.item.id, { author: "ci-agent" });
+await pm.update(created.item.id, { status: "in_progress" });
 const open = await pm.list({ status: "open", limit: "20" });
 const recommendation = await pm.next({ readyOnly: true });
 const grouped = await pm.aggregate({ groupBy: "status", count: true });
@@ -465,6 +471,12 @@ integration, or agent runtime. Presentation stays outside the SDK primitive:
 callers choose their own rendering while the data shape remains shared with the
 CLI.
 
+Lifecycle convenience methods and the matching top-level functions (`create`,
+`update`, `close`, `claim`, `release`, `copy`, `deleteItem`, `restore`,
+`focus`, `startTask`, `pauseTask`, and `closeTask`) use the same mutation paths
+as the CLI and MCP dispatcher. They are the baseline primitives for custom PM
+tools that need to own item state without spawning `pm`.
+
 `PmClient` and `runAction` share the same process-wide extension activation
 queue as MCP. Calls from one process are serialized across extension load,
 activation, dispatch, cleanup, and deactivate so active extension registries stay
@@ -477,7 +489,14 @@ command options only. For per-call runtime overrides such as `cwd`, `path`, or
 
 ```ts
 await pm.run("list", { cwd: "/path/to/project", options: { status: "open" } });
+await pm.run("create", { title: "Capture SDK input", type: "Task" });
 ```
+
+For `create`, `PmClient.run` also accepts the common structured top-level item
+keys (`title`, `type`, `status`, `description`, `body`, `priority`, `tags`,
+`parent`, `createMode`, and `allowMissingParent`) and maps them to command
+options. This keeps dynamic SDK callers ergonomic while the typed `pm.create`
+method remains the preferred fully documented path.
 
 For item-type context, use the CLI inspection primitives before issuing custom-domain mutations:
 

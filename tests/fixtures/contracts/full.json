@@ -1351,6 +1351,9 @@
       "command": "claim",
       "flags": [
         {
+          "aliases": [
+            "--assignee"
+          ],
           "flag": "--author"
         },
         {
@@ -1585,6 +1588,9 @@
       "command": "close-task",
       "flags": [
         {
+          "aliases": [
+            "--assignee"
+          ],
           "flag": "--author"
         },
         {
@@ -5352,6 +5358,9 @@
       "command": "pause-task",
       "flags": [
         {
+          "aliases": [
+            "--assignee"
+          ],
           "flag": "--author"
         },
         {
@@ -5618,6 +5627,9 @@
       "command": "release",
       "flags": [
         {
+          "aliases": [
+            "--assignee"
+          ],
           "flag": "--author"
         },
         {
@@ -5895,6 +5907,9 @@
       "command": "start-task",
       "flags": [
         {
+          "aliases": [
+            "--assignee"
+          ],
           "flag": "--author"
         },
         {
@@ -19484,12 +19499,20 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -23654,6 +23677,13 @@
             "const": "claim",
             "description": "Tool action to execute."
           },
+          "assignee": {
+            "description": "Assignee identity.",
+            "examples": [
+              "codex-agent"
+            ],
+            "type": "string"
+          },
           "author": {
             "description": "Mutation author identity.",
             "examples": [
@@ -23734,6 +23764,13 @@
             "description": "Allow non-owner release handoffs that clear assignee metadata without requiring --force.",
             "type": "boolean"
           },
+          "assignee": {
+            "description": "Assignee identity.",
+            "examples": [
+              "codex-agent"
+            ],
+            "type": "string"
+          },
           "author": {
             "description": "Mutation author identity.",
             "examples": [
@@ -23809,6 +23846,13 @@
           "action": {
             "const": "start-task",
             "description": "Tool action to execute."
+          },
+          "assignee": {
+            "description": "Assignee identity.",
+            "examples": [
+              "codex-agent"
+            ],
+            "type": "string"
           },
           "author": {
             "description": "Mutation author identity.",
@@ -23886,6 +23930,13 @@
             "const": "pause-task",
             "description": "Tool action to execute."
           },
+          "assignee": {
+            "description": "Assignee identity.",
+            "examples": [
+              "codex-agent"
+            ],
+            "type": "string"
+          },
           "author": {
             "description": "Mutation author identity.",
             "examples": [
@@ -23961,6 +24012,13 @@
           "action": {
             "const": "close-task",
             "description": "Tool action to execute."
+          },
+          "assignee": {
+            "description": "Assignee identity.",
+            "examples": [
+              "codex-agent"
+            ],
+            "type": "string"
           },
           "author": {
             "description": "Mutation author identity.",

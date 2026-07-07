@@ -462,6 +462,13 @@ pm pause-task <id>             # move to open + release claim
 pm close-task <id> "<reason>"  # close + release assignment
 ```
 
+For lifecycle ownership commands, `--assignee <agent>` is accepted as an alias
+for `--author <agent>` on `claim`, `release`, `start-task`, `pause-task`, and
+`close-task`. Use `pm update --assignee <person>` when changing item metadata
+rather than active work ownership.
+
+Tracker references: [pm-qfte](../.agents/pm/tasks/pm-qfte.toon), [pm-98cz](../.agents/pm/features/pm-98cz.toon).
+
 After `pm create` of a workable item type, the result includes a non-binding `next_transition` hint (`pm start-task <id>` → `in_progress`) when the workflow defines a distinct in-progress status. This nudges agents to move work through `in_progress` instead of jumping straight from `open` to `closed`. Scheduling/reference types (Event, Meeting, Reminder, Milestone, Decision) never receive the hint. (GH-216)
 
 ## Scheduling Shortcuts
@@ -488,7 +495,9 @@ pm release <id>
 pm release <id> --allow-audit-release --author <you>
 ```
 
-`claim` is the normal start signal. Use `--force` only when explicitly overriding terminal-state or lock conflicts.
+`claim` is the normal start signal. `--assignee` is an ownership alias for
+`--author` on claim/release flows, not a metadata update. Use `--force` only when
+explicitly overriding terminal-state or lock conflicts.
 
 ## Logs
 

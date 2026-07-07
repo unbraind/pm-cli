@@ -2,18 +2,54 @@ id: pm-98cz
 title: "Promote item lifecycle primitives to the public SDK: create, update, close, claim/release, copy, delete, restore, focus"
 description: "Typed, documented SDK functions for the full item mutation lifecycle incl. bulk variants (update-many/close-many), checkpoint/rollback semantics, and governance enforcement — the same code paths the CLI runs. Duplicate check: SDK today only exposes extension-authoring helpers; no lifecycle-primitive item exists."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[3]: architecture,"area:lifecycle","area:sdk"
 created_at: "2026-07-05T04:54:09.136Z"
-updated_at: "2026-07-05T04:55:03.935Z"
+updated_at: "2026-07-07T03:41:41.651Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: SDK exports typed lifecycle primitives with input/result contracts matching CLI behavior (incl. never-block error payloads); corresponding CLI handlers consume only these primitives; docstrings + linked tests + SDK reference docs; zero CLI behavior change (mutation specs green)
 parent: pm-usfg
 risk: medium
 confidence: medium
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-lodl,blocked_by,"2026-07-05T04:55:03.390Z",null,null
-  pm-muhw,blocked_by,"2026-07-05T04:55:03.911Z",null,null
+resolution: "Added PmClient methods and top-level SDK wrappers for lifecycle/mutation primitives including claim, release, copy, deleteItem, restore, focus, startTask, pauseTask, and closeTask."
+expected_result: Package authors can build lifecycle automation through typed SDK primitives instead of shelling out manually.
+actual_result: SDK lifecycle wrappers exercised real temp tracker state and installed-package import dogfood; full coverage passed 100/100/100/100.
+comments[9]{created_at,author,text}:
+  "2026-07-07T00:22:10.791Z",claude-code-agent,"Implementation note: lifecycle SDK slice added to the combined SDK-first PR. PmClient and top-level SDK wrappers now cover create/update/close/claim/release/copy/deleteItem/restore/focus/startTask/pauseTask/closeTask over the shared runAction path, with temp-tracker tests exercising real state transitions."
+  "2026-07-07T00:56:15.689Z",codex-sdk-primitives-agent,"Evidence: SDK lifecycle wrappers now cover create/update/close/claim/release/copy/deleteItem/restore/focus/startTask/pauseTask/closeTask through real temp tracker state and installed-package dogfood. Full coverage passed 100/100/100/100."
+  "2026-07-07T01:14:53.965Z",codex-sdk-primitives-agent,"Follow-up evidence after pre-push Greptile review: defaulted SDK create/update mutation option parameters, preserved SDK author precedence over lifecycle assignee aliases, and added regression coverage for no-options update plus assignee fallback behavior. Verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm typecheck; pnpm lint; node scripts/run-tests.mjs coverage (Statements 100%, Branches 100%, Functions 100%, Lines 100%; 5448 tests)."
+  "2026-07-07T01:29:24.715Z",codex-sdk-primitives-agent,"Pre-push review follow-up: Greptile review d8627c63-d12f-4c7d-a1d1-2eb565d52de0 reported no review comments. Addressed its summary consistency note by defaulting the standalone SDK create wrapper options to {} as well. Fresh verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm typecheck; pnpm lint; node scripts/run-tests.mjs coverage (5448 tests, Statements/Branches/Functions/Lines all 100%)."
+  "2026-07-07T01:57:11.879Z",codex-sdk-primitives-agent,"PR #477 review-loop evidence: addressed Greptile PR comment on top-level restore target handling. runAction({ action: 'restore', id, target }) now honors the schema-declared top-level target while preserving options.target precedence. Verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm typecheck; node scripts/run-tests.mjs coverage (5448 tests, 100/100/100/100)."
+  "2026-07-07T02:15:39.584Z",codex-sdk-primitives-agent,"PR #477 review-loop evidence: after bundling SDK read primitives, structured create payloads, SDK lifecycle mutations, SDK package-coordinate docs, and lifecycle alias ergonomics into one PR, addressed additional CodeRabbit/Cubic feedback by centralizing hidden Commander option registration, rejecting conflicting lifecycle --author/--assignee inputs, strengthening composite lifecycle alias tests, and adding command-doc tracker references. Verification passed: node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts; pnpm typecheck; pnpm lint; node scripts/run-tests.mjs coverage (5448 tests, 100/100/100/100)."
+  "2026-07-07T02:36:32.170Z",codex-sdk-primitives-agent,"PR #477 Greptile review-loop evidence: fixed SDK/MCP compound start-task and pause-task alias leakage by stripping the lifecycle-only assignee alias before forwarding options to runUpdate, while preserving the alias for claim/release ownership resolution. Added regression coverage for client default author precedence when assignee alias differs. Verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm typecheck; pnpm lint; node scripts/run-tests.mjs coverage (5448 tests, 100/100/100/100)."
+  "2026-07-07T02:53:34.739Z",codex-sdk-primitives-agent,"PR #477 final Greptile follow-up: restored SDK restore projection parity by routing runMcpRestoreAction through withMutationCompaction/projectMutationResult, so fullChangedFields and idOnly now behave like create/update/close. Added SDK wrapper assertions for default compact restore output and id-only restore output. Verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm typecheck; pnpm lint; node scripts/run-tests.mjs coverage (5448 tests, 100/100/100/100)."
+  "2026-07-07T03:41:41.651Z",codex-sdk-primitives-agent,"PR #477 Greptile app follow-up: strict action-scoped restore schema now exposes fullChangedFields and idOnly, matching the restored runMcpRestoreAction projection behavior. Regenerated contract fixtures and added SDK contract assertions. Verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts; pnpm contracts:check; pnpm typecheck; pnpm lint; pnpm security:scan && pnpm audit --audit-level moderate; node scripts/run-tests.mjs coverage (5448 tests, Statements/Branches/Functions/Lines all 100%)."
+files[6]{path,scope,note}:
+  src/sdk/cli-contracts/tool-schema.ts,project,Restore projection controls included in strict action schema
+  src/sdk/index.ts,project,SDK barrel exports lifecycle primitives
+  src/sdk/runtime.ts,project,Public SDK lifecycle convenience methods and wrapper functions
+  src/sdk/start-task-status.ts,project,Shared lifecycle status resolver used by CLI and SDK wrappers
+  tests/fixtures/contracts/full.json,project,Contract snapshot updated for restore fullChangedFields/idOnly schema
+  tests/unit/sdk/sdk-index.spec.ts,project,Temp-tracker coverage for SDK lifecycle primitives
+tests[4]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 420
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: SDK lifecycle alias precedence regression suite
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts tests/unit/commands/register-commands.spec.ts
+    scope: project
+    timeout_seconds: 300
+  - command: "pnpm contracts:check"
+    scope: project
+    timeout_seconds: 120
+    note: Restore projection schema contract gate
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,Lifecycle alias tracker references added after PR #477 review feedback
+  docs/SDK.md,project,Documents lifecycle SDK primitive helpers
+close_reason: Promoted lifecycle mutation primitives into the public SDK
 body: ""

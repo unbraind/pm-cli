@@ -2,8 +2,14 @@
 
 ## Unreleased
 
+### Added
+
+- Promote item lifecycle primitives to the public SDK: create, update, close, claim/release, copy, delete, restore, focus ([pm-98cz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-98cz.toon))
+- Promote query/read primitives to the public SDK: list, get, search, context, next, aggregate, stats ([pm-rjqr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-rjqr.toon))
+
 ### Fixed
 
+- SDK client.run() rejects structured payloads for create: raw {type,title} fails with 'Missing required option --title' ([pm-395t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-395t.toon))
 - GH-427: Windows Node 24 nightly fails — POSIX-only error-code assertions (EACCES/EISDIR) in restore-command and history-rewrite specs ([pm-lt6n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lt6n.toon))
 - Annotation --add silently stores flag-like tokens as content: pm notes <id\> --add --stdin records the literal note "--stdin" ([pm-vcu7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vcu7.toon))
 - pm extension --install pm-<alias\> / @unbrained/pm-<alias\> fails with 'Local extension source does not exist' instead of suggesting the bundled catalog alias ([pm-jqd2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jqd2.toon))
@@ -15,6 +21,8 @@
 
 ### Other
 
+- GH-458: claim/start-task reject --assignee with an untargeted recovery hint (alias or better hint) ([pm-qfte](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qfte.toon))
+- GH-468: clarify or publish the pm SDK npm package coordinates (@unbrained/pm-sdk is 404) ([pm-25d0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-25d0.toon))
 - 2026-07-07 ecosystem audit \#16: all-status review, long-horizon gap items (merge semantics, event stream, policy roles, flow metrics) ([pm-su60](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-su60.toon))
 - 2026-07-06 ecosystem audit \#15: WIP hygiene, GH/commit coverage verification, grammar+SDK domain completions, horizon-4 planning ([pm-pvij](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-pvij.toon))
 - chore: 2026-07-06 ecosystem audit \#14 — WIP status hygiene (docstring family reset) + stale in-progress detection backlog ([pm-6a1g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-6a1g.toon))
