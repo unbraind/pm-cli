@@ -579,8 +579,14 @@ Some override surfaces are single-winner: command overrides, parser overrides, p
 
 ```bash
 pm package doctor --project --detail deep --trace
+pm package doctor --project --isolated --detail deep --trace
 pm health --check-only --brief
 ```
+
+Use `--isolated` (alias `--ignore-global`) for hermetic package smoke tests:
+project diagnostics skip global registrations and avoid machine-local
+renderer/service overrides. The same isolation can be applied to a whole
+subprocess suite by setting `PM_GLOBAL_PATH` to a temporary directory.
 
 Collision warnings are deterministic and include package names plus deactivation guidance.
 If extension code calls a `register*` API without declaring the matching

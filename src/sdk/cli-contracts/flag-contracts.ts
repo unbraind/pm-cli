@@ -558,6 +558,8 @@ export const EXTENSION_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--trace" },
   { flag: "--runtime-probe" },
   { flag: "--fix-managed-state" },
+  { flag: "--isolated" },
+  { flag: "--ignore-global" },
   { flag: "--strict-exit" },
   { flag: "--fail-on-warn" },
 ];
@@ -617,6 +619,8 @@ export const EXTENSION_DOCTOR_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--detail" },
   { flag: "--trace" },
   { flag: "--fix-managed-state" },
+  { flag: "--isolated" },
+  { flag: "--ignore-global" },
   { flag: "--strict-exit" },
   { flag: "--fail-on-warn" },
 ];

@@ -390,6 +390,7 @@ describe("extension command runtime", () => {
             blocked_services: ["service-blocked"],
           },
           { name: " " },
+          { disabled: true },
         ],
       } as never),
     ).toMatchObject({
@@ -409,6 +410,8 @@ describe("extension command runtime", () => {
         },
       ],
     });
+    expect(extensionCommandTestOnly.buildExtensionPolicyDetails(undefined).extension_overrides).toEqual([]);
+    expect(extensionCommandTestOnly.buildExtensionPolicyDetails(null).trusted_extensions).toEqual([]);
 
     expect(_testOnlyBundledCatalog.parsePackageCatalogFields(undefined)).toBeUndefined();
     expect(_testOnlyBundledCatalog.parsePackageCatalogFields("alias, category,display_name")).toEqual([
@@ -513,6 +516,22 @@ describe("extension command runtime", () => {
         allowed_services: [],
         blocked_services: [],
         extension_overrides: [],
+      });
+      expect(
+        extensionCommandTestOnly.buildExtensionPolicyDetails({
+          mode: "enforce",
+        } as never),
+      ).toMatchObject({
+        mode: "enforce",
+        trust_mode: "off",
+      });
+      expect(
+        extensionCommandTestOnly.buildExtensionPolicyDetails({
+          trust_mode: "warn",
+        } as never),
+      ).toMatchObject({
+        mode: "off",
+        trust_mode: "warn",
       });
       expect(
         extensionCommandTestOnly
@@ -5294,6 +5313,103 @@ describe("extension command runtime", () => {
       );
       expect(summary.remediation.join(" ")).toContain("return context.payload/null/undefined");
       expect(JSON.stringify(doctor)).not.toContain("__pm_native_output");
+    });
+  });
+
+  it("isolates project doctor diagnostics from global extension registrations", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "global-output-footgun-source");
+      await writeTestExtension({
+        root: sourceDir,
+        name: "global-output-footgun-ext",
+        manifestOverrides: {
+          capabilities: ["services", "renderers"],
+        },
+        entrySource: [
+          "export function activate(api) {",
+          "  api.registerService('output_format', () => ({ format: 'toon' }));",
+          "  api.registerRenderer('json', () => JSON.stringify({ rendered_by: 'global-output-footgun-ext' }));",
+          "}",
+          "",
+        ].join("\n"),
+      });
+      await runExtension(sourceDir, { install: true, global: true }, { path: context.pmPath });
+
+      const nonIsolated = await runExtension(undefined, { doctor: true, project: true, detail: "deep" }, { path: context.pmPath });
+      const nonIsolatedSummary = nonIsolated.details.summary as {
+        warning_codes: string[];
+        isolation?: { isolated?: boolean; global_diagnostics_present?: boolean; pm_global_path_recipe?: string };
+        remediation: string[];
+      };
+      expect(nonIsolatedSummary.warning_codes).toEqual(
+        expect.arrayContaining([
+          "extension_output_renderer_override_global",
+          "extension_output_service_override_global",
+        ]),
+      );
+      expect(nonIsolatedSummary.isolation).toMatchObject({
+        isolated: false,
+        global_diagnostics_present: true,
+      });
+      expect(nonIsolatedSummary.remediation.join(" ")).toContain("pm extension doctor --project --isolated");
+      expect(nonIsolatedSummary.remediation.join(" ")).toContain("hermetic extension smoke tests");
+      expect(nonIsolatedSummary.isolation?.pm_global_path_recipe).toBe(
+        "PM_GLOBAL_PATH=$(mktemp -d) pm extension doctor --project --detail deep --trace",
+      );
+
+      const packageDoctor = await runExtension(
+        undefined,
+        { doctor: true, project: true, detail: "deep", vocabulary: "package" },
+        { path: context.pmPath },
+      );
+      const packageDoctorSummary = packageDoctor.details.summary as {
+        isolation?: { rerun_command?: string | null; pm_global_path_recipe?: string };
+        remediation: string[];
+      };
+      expect(packageDoctorSummary.isolation?.rerun_command).toBe(
+        "pm package doctor --project --isolated --detail deep --trace",
+      );
+      expect(packageDoctorSummary.remediation.join(" ")).toContain("pm package doctor --project --isolated");
+      expect(packageDoctorSummary.remediation.join(" ")).toContain("hermetic package smoke tests");
+      expect(packageDoctorSummary.isolation?.pm_global_path_recipe).toBe(
+        "PM_GLOBAL_PATH=$(mktemp -d) pm package doctor --project --detail deep --trace",
+      );
+
+      const globalDoctor = await runExtension(undefined, { doctor: true, global: true, detail: "deep" }, { path: context.pmPath });
+      const globalDoctorSummary = globalDoctor.details.summary as {
+        isolation?: {
+          global_extensions_included?: boolean;
+          rerun_command?: string | null;
+          pm_global_path_recipe?: string | null;
+        };
+      };
+      expect(globalDoctorSummary.isolation?.global_extensions_included).toBe(false);
+      expect(globalDoctorSummary.isolation?.rerun_command).toBeNull();
+      expect(globalDoctorSummary.isolation?.pm_global_path_recipe).toBeNull();
+
+      const isolated = await runExtension(
+        undefined,
+        { doctor: true, project: true, detail: "deep", isolated: true },
+        { path: context.pmPath },
+      );
+      const isolatedSummary = isolated.details.summary as {
+        warning_codes: string[];
+        isolation?: { isolated?: boolean; global_diagnostics_present?: boolean };
+      };
+      const isolatedDeep = isolated.details.deep as { load?: { loaded?: Array<{ layer: string; name: string }> } };
+      expect(isolatedSummary.warning_codes).not.toContain("extension_output_renderer_override_global");
+      expect(isolatedSummary.warning_codes).not.toContain("extension_output_service_override_global");
+      expect(isolatedSummary.isolation).toMatchObject({
+        isolated: true,
+        global_diagnostics_present: false,
+      });
+      expect((isolatedDeep.load?.loaded ?? []).some((entry) => entry.layer === "global")).toBe(false);
+
+      await expect(
+        runExtension(undefined, { doctor: true, global: true, isolated: true }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 

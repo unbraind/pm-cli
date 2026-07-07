@@ -1284,6 +1284,7 @@ export interface DiscoverExtensionsOptions {
   settings: PmSettings;
   cwd?: string;
   noExtensions?: boolean;
+  ignoreGlobalExtensions?: boolean;
   reload_token?: string;
   cache_bust?: boolean;
   /**

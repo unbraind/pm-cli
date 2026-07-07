@@ -2,23 +2,27 @@ id: pm-cbwg
 title: "SDK-only exemplar: minimal custom PM CLI package proving the universal-tool story end-to-end"
 description: "A packages/ exemplar (e.g. pm-minimal) that assembles a working project-specific PM tool importing only @unbrained/pm-cli/sdk — custom types/statuses via schema primitives, custom commands via lifecycle/query primitives — serving as living documentation and the acceptance proof for story pm-w89s. Duplicate check: existing exemplars (pm-kanban etc.) demonstrate extension authoring, not SDK-only tool assembly."
 type: Feature
-status: open
+status: in_progress
 priority: 2
 tags[4]: "area:extensions","area:sdk",docs,exemplar
 created_at: "2026-07-05T04:54:31.164Z"
-updated_at: "2026-07-06T22:11:13.026Z"
+updated_at: "2026-07-07T09:44:05.259Z"
+assignee: codex-agent
 author: maintainer-agent
 estimated_minutes: 300
 acceptance_criteria: "Exemplar package builds+tests using only public SDK imports; exercises lifecycle, query, annotations, governance, schema customization; linked tests run in CI; referenced from SDK docs as the build-your-own-PM-tool guide"
 parent: pm-usfg
 risk: low
 confidence: medium
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-98cz,blocked_by,"2026-07-05T04:55:08.957Z",null,null
   pm-rjqr,blocked_by,"2026-07-05T04:55:09.465Z",null,null
   pm-zwpp,blocked_by,"2026-07-05T04:55:09.910Z",null,null
   pm-3mna,blocked_by,"2026-07-05T04:55:10.407Z",null,null
   pm-oxrw,blocked_by,"2026-07-05T06:30:08.149Z",null,null
-comments[1]{created_at,author,text}:
+  pm-6abs,related,"2026-07-07T08:57:39.012Z",null,null
+comments[3]{created_at,author,text}:
   "2026-07-06T22:11:13.026Z",maintainer-agent,"Prior-art note (audit #15 follow-up): unbraind already ships pm-starter and pm-ts-starter (reference EXTENSIONS covering all capability types). This exemplar is deliberately different — a standalone custom PM tool composed only from public SDK primitives, not an extension scaffold. Reference the starters for structure/CI conventions, do not duplicate them; if the exemplar drifts toward 'reference extension', fold it into pm-ts-starter upstream instead."
+  "2026-07-07T08:58:20.674Z",codex-agent,"Progress evidence: active PR bundle contributes SDK-only exemplar readiness by documenting and manually proving hermetic package doctor flows for package authors. This is evidence for the eventual SDK-only custom PM tool, not full exemplar completion; close remains dependent on the full exemplar package."
+  "2026-07-07T09:44:05.259Z",codex-agent,"Package exemplar update: pm-6abs verifies package doctor isolation and docs now describe hermetic package-author smoke tests, reducing machine-local global extension leakage during package development."
 body: ""

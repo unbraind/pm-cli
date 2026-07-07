@@ -1633,6 +1633,8 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--trace[Include registration traces in doctor deep diagnostics]' \\
             '--runtime-probe[Opt-in runtime activation probe for manage output]' \\
             '--fix-managed-state[Adopt unmanaged extensions before diagnostics/update checks]' \\
+            '--isolated[Run doctor against project-scope extensions only]' \\
+            '--ignore-global[Alias for --isolated]' \\
             '--strict-exit[Return non-zero exit when doctor warnings are present]' \\
             '--fail-on-warn[Alias for --strict-exit (doctor)]' \\
             '--json[Output JSON]' \\
@@ -1671,6 +1673,8 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--trace[Include registration traces in doctor deep diagnostics]' \\
             '--runtime-probe[Opt-in runtime activation probe for manage output]' \\
             '--fix-managed-state[Adopt unmanaged packages before diagnostics/update checks]' \\
+            '--isolated[Run doctor against project-scope packages only]' \\
+            '--ignore-global[Alias for --isolated]' \\
             '--strict-exit[Return non-zero exit when doctor warnings are present]' \\
             '--fail-on-warn[Alias for --strict-exit (doctor)]' \\
             '--json[Output JSON]' \\
@@ -2578,6 +2582,8 @@ complete -c pm -n '__fish_seen_subcommand_from extension' -l detail -d 'Detail m
 complete -c pm -n '__fish_seen_subcommand_from extension' -l trace -d 'Include registration traces in doctor deep diagnostics'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l runtime-probe -d 'Opt-in runtime activation probe for manage output'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l fix-managed-state -d 'Adopt unmanaged extensions before diagnostics/update checks'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l isolated -d 'Run doctor against project-scope extensions only'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l ignore-global -d 'Alias for --isolated'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l strict-exit -d 'Return non-zero exit when doctor warnings are present'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l fail-on-warn -d 'Alias for --strict-exit (doctor)'
 
@@ -2613,6 +2619,8 @@ for package_cmd in package packages
   complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l trace -d 'Include registration traces in doctor deep diagnostics'
   complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l runtime-probe -d 'Opt-in runtime activation probe for manage output'
   complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l fix-managed-state -d 'Adopt unmanaged packages before diagnostics/update checks'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l isolated -d 'Run doctor against project-scope packages only'
+  complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l ignore-global -d 'Alias for --isolated'
   complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l strict-exit -d 'Return non-zero exit when doctor warnings are present'
   complete -c pm -n "__fish_seen_subcommand_from $package_cmd" -l fail-on-warn -d 'Alias for --strict-exit (doctor)'
 end`;

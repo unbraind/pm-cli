@@ -2356,6 +2356,12 @@
           "flag": "--fix-managed-state"
         },
         {
+          "flag": "--isolated"
+        },
+        {
+          "flag": "--ignore-global"
+        },
+        {
           "flag": "--strict-exit"
         },
         {
@@ -2493,6 +2499,12 @@
         },
         {
           "flag": "--fix-managed-state"
+        },
+        {
+          "flag": "--isolated"
+        },
+        {
+          "flag": "--ignore-global"
         },
         {
           "flag": "--strict-exit"
@@ -4741,6 +4753,12 @@
           "flag": "--fix-managed-state"
         },
         {
+          "flag": "--isolated"
+        },
+        {
+          "flag": "--ignore-global"
+        },
+        {
           "flag": "--strict-exit"
         },
         {
@@ -4881,6 +4899,12 @@
         },
         {
           "flag": "--fix-managed-state"
+        },
+        {
+          "flag": "--isolated"
+        },
+        {
+          "flag": "--ignore-global"
         },
         {
           "flag": "--strict-exit"
@@ -5096,6 +5120,12 @@
           "flag": "--fix-managed-state"
         },
         {
+          "flag": "--isolated"
+        },
+        {
+          "flag": "--ignore-global"
+        },
+        {
           "flag": "--strict-exit"
         },
         {
@@ -5236,6 +5266,12 @@
         },
         {
           "flag": "--fix-managed-state"
+        },
+        {
+          "flag": "--isolated"
+        },
+        {
+          "flag": "--ignore-global"
         },
         {
           "flag": "--strict-exit"
@@ -10770,6 +10806,14 @@
             "description": "When true for extension-manage/extension-doctor, adopt unmanaged extensions before diagnostics/update checks.",
             "type": "boolean"
           },
+          "ignoreGlobal": {
+            "description": "Alias for isolated on extension-doctor/package-doctor action payloads.",
+            "type": "boolean"
+          },
+          "isolated": {
+            "description": "When true for extension-doctor/package-doctor, ignore global registrations for hermetic project diagnostics.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -11248,6 +11292,14 @@
               "org/repo/extensions/sample"
             ],
             "type": "string"
+          },
+          "ignoreGlobal": {
+            "description": "Alias for isolated on extension-doctor/package-doctor action payloads.",
+            "type": "boolean"
+          },
+          "isolated": {
+            "description": "When true for extension-doctor/package-doctor, ignore global registrations for hermetic project diagnostics.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -11919,6 +11971,14 @@
             "description": "When true for extension-manage/extension-doctor, adopt unmanaged extensions before diagnostics/update checks.",
             "type": "boolean"
           },
+          "ignoreGlobal": {
+            "description": "Alias for isolated on extension-doctor/package-doctor action payloads.",
+            "type": "boolean"
+          },
+          "isolated": {
+            "description": "When true for extension-doctor/package-doctor, ignore global registrations for hermetic project diagnostics.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -12397,6 +12457,14 @@
               "org/repo/extensions/sample"
             ],
             "type": "string"
+          },
+          "ignoreGlobal": {
+            "description": "Alias for isolated on extension-doctor/package-doctor action payloads.",
+            "type": "boolean"
+          },
+          "isolated": {
+            "description": "When true for extension-doctor/package-doctor, ignore global registrations for hermetic project diagnostics.",
+            "type": "boolean"
           },
           "json": {
             "default": true,

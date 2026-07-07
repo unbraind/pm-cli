@@ -850,7 +850,7 @@ describe("public sdk entrypoint", () => {
     expect(flagsFor("extension manage")).toEqual(expect.arrayContaining(["--runtime-probe", "--fix-managed-state"]));
     expect(flagsFor("extension describe")).toEqual(expect.arrayContaining(["--project", "--global"]));
     expect(flagsFor("extension reload")).toEqual(expect.arrayContaining(["--watch", "--global"]));
-    expect(flagsFor("packages doctor")).toEqual(expect.arrayContaining(["--strict-exit", "--trace"]));
+    expect(flagsFor("packages doctor")).toEqual(expect.arrayContaining(["--strict-exit", "--trace", "--isolated"]));
     expect(flagsFor("extension catalog")).toEqual(expect.arrayContaining(["--fields", "--global"]));
     expect(flagsFor("extension adopt")).toEqual(expect.arrayContaining(["--github", "--ref"]));
     expect(flagsFor("extension adopt-all")).toEqual(expect.arrayContaining(["--project", "--global"]));

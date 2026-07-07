@@ -232,6 +232,8 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   watch: { type: "boolean" },
   runtimeProbe: { type: "boolean" },
   fixManagedState: { type: "boolean" },
+  isolated: { type: "boolean" },
+  ignoreGlobal: { type: "boolean" },
   pmContext: { type: "string", enum: ["schema", "tracker", "auto"] },
   overrideLinkedPmContext: { type: "boolean" },
   failOnContextMismatch: { type: "boolean" },
@@ -524,6 +526,12 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   },
   fixManagedState: {
     description: "When true for extension-manage/extension-doctor, adopt unmanaged extensions before diagnostics/update checks.",
+  },
+  isolated: {
+    description: "When true for extension-doctor/package-doctor, ignore global registrations for hermetic project diagnostics.",
+  },
+  ignoreGlobal: {
+    description: "Alias for isolated on extension-doctor/package-doctor action payloads.",
   },
   target: {
     description: "Positional target argument for the selected action (ID, source, package source, or extension name).",

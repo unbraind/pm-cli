@@ -325,6 +325,23 @@ describe("extension loader internal helpers", () => {
       warnings,
       policy,
     );
+    const apiRecord = api as unknown as Record<string, unknown>;
+    for (const internalField of [
+      "loadedExtension",
+      "extensionRef",
+      "hookRegistry",
+      "commandRegistry",
+      "parserRegistry",
+      "preflightRegistry",
+      "serviceRegistry",
+      "rendererRegistry",
+      "registrationRegistry",
+      "activationWarnings",
+      "policy",
+    ]) {
+      expect(internalField in apiRecord).toBe(false);
+      expect(apiRecord[internalField]).toBeUndefined();
+    }
     api.registerItemTypes([{ name: "Goal", aliases: ["goal"] } as never]);
 
     expect(registrations.item_types).toEqual([

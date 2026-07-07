@@ -644,6 +644,10 @@ async function scanExtensionLayer(
   return { diagnostics, warnings, candidates };
 }
 
+function emptyExtensionLayerScan(): ExtensionLayerScanResult {
+  return { diagnostics: [], warnings: [], candidates: [] };
+}
+
 /**
  * Build the `warn`-status scan result for a directory whose manifest is missing
  * or unparseable, carrying the supplied diagnostic warning and no candidate.
@@ -816,7 +820,9 @@ export async function discoverExtensions(options: DiscoverExtensionsOptions): Pr
 
   const enabled = new Set(configured_enabled);
   const disabled = new Set(configured_disabled);
-  const globalScan = await scanExtensionLayer("global", roots.global, enabled, disabled, policy.pmMaxVersionExceededMode.global);
+  const globalScan = options.ignoreGlobalExtensions === true
+    ? emptyExtensionLayerScan()
+    : await scanExtensionLayer("global", roots.global, enabled, disabled, policy.pmMaxVersionExceededMode.global);
   const projectScan = await scanExtensionLayer("project", roots.project, enabled, disabled, policy.pmMaxVersionExceededMode.project);
   const policyWarnings: string[] = [...policy.warnings];
   const effectiveCandidates = buildEffectiveExtensions(globalScan.candidates, projectScan.candidates);
@@ -1758,19 +1764,8 @@ function assertExtensionCapability(extension: LoadedExtension, capability: Exten
   }
 }
 
-function createExtensionApi(
-  extension: LoadedExtension,
-  hooks: ExtensionHookRegistry,
-  commands: ExtensionCommandRegistry,
-  parsers: ExtensionParserRegistry,
-  preflight: ExtensionPreflightRegistry,
-  services: ExtensionServiceRegistry,
-  renderers: ExtensionRendererRegistry,
-  registrations: ExtensionRegistrationRegistry,
-  activationWarnings: string[],
-  policy: NormalizedExtensionPolicy,
-): ExtensionApi {
-  const selfIdentity: ExtensionSelfIdentity = Object.freeze({
+function buildExtensionSelfIdentity(extension: LoadedExtension): ExtensionSelfIdentity {
+  return Object.freeze({
     name: extension.name,
     layer: extension.layer,
     version: extension.version,
@@ -1783,7 +1778,10 @@ function createExtensionApi(
     pm_max_version: extension.pm_max_version,
     source_package: extension.source_package,
   });
-  const extensionRef: PolicyExtensionRef = {
+}
+
+function buildPolicyExtensionRef(extension: LoadedExtension): PolicyExtensionRef {
+  return {
     layer: extension.layer,
     name: extension.name,
     trusted: extension.trusted === true,
@@ -1801,46 +1799,119 @@ function createExtensionApi(
           }
         : undefined,
   };
-  const pushPolicyWarning = (warning: string | null): void => {
-    if (warning) {
-      activationWarnings.push(warning);
-    }
-  };
-  const allowRegistration = (
+}
+
+interface ExtensionRegistrationPolicyDetails {
+  command?: string;
+  action?: string;
+  service?: string;
+}
+
+class ExtensionApiRegistrar implements ExtensionApi {
+  public readonly extension: ExtensionSelfIdentity;
+  public readonly hooks: ExtensionApi["hooks"];
+  readonly #loadedExtension: LoadedExtension;
+  readonly #extensionRef: PolicyExtensionRef;
+  readonly #hookRegistry: ExtensionHookRegistry;
+  readonly #commandRegistry: ExtensionCommandRegistry;
+  readonly #parserRegistry: ExtensionParserRegistry;
+  readonly #preflightRegistry: ExtensionPreflightRegistry;
+  readonly #serviceRegistry: ExtensionServiceRegistry;
+  readonly #rendererRegistry: ExtensionRendererRegistry;
+  readonly #registrationRegistry: ExtensionRegistrationRegistry;
+  readonly #activationWarnings: string[];
+  readonly #policy: NormalizedExtensionPolicy;
+
+  public constructor(
+    extension: LoadedExtension,
+    hooks: ExtensionHookRegistry,
+    commands: ExtensionCommandRegistry,
+    parsers: ExtensionParserRegistry,
+    preflight: ExtensionPreflightRegistry,
+    services: ExtensionServiceRegistry,
+    renderers: ExtensionRendererRegistry,
+    registrations: ExtensionRegistrationRegistry,
+    activationWarnings: string[],
+    policy: NormalizedExtensionPolicy,
+  ) {
+    this.#loadedExtension = extension;
+    this.extension = buildExtensionSelfIdentity(extension);
+    this.#extensionRef = buildPolicyExtensionRef(extension);
+    this.#hookRegistry = hooks;
+    this.#commandRegistry = commands;
+    this.#parserRegistry = parsers;
+    this.#preflightRegistry = preflight;
+    this.#serviceRegistry = services;
+    this.#rendererRegistry = renderers;
+    this.#registrationRegistry = registrations;
+    this.#activationWarnings = activationWarnings;
+    this.#policy = policy;
+    this.registerCommand = this.registerCommand.bind(this);
+    this.registerParser = this.registerParser.bind(this);
+    this.registerPreflight = this.registerPreflight.bind(this);
+    this.registerService = this.registerService.bind(this);
+    this.registerFlags = this.registerFlags.bind(this);
+    this.registerItemFields = this.registerItemFields.bind(this);
+    this.registerItemTypes = this.registerItemTypes.bind(this);
+    this.registerMigration = this.registerMigration.bind(this);
+    this.registerProfile = this.registerProfile.bind(this);
+    this.registerRenderer = this.registerRenderer.bind(this);
+    this.registerImporter = this.registerImporter.bind(this);
+    this.registerExporter = this.registerExporter.bind(this);
+    this.registerSearchProvider = this.registerSearchProvider.bind(this);
+    this.registerVectorStoreAdapter = this.registerVectorStoreAdapter.bind(this);
+    this.hooks = {
+      beforeCommand: (hook) => this.registerBeforeCommand(hook),
+      afterCommand: (hook) => this.registerAfterCommand(hook),
+      onWrite: (hook) => this.registerOnWrite(hook),
+      onRead: (hook) => this.registerOnRead(hook),
+      onIndex: (hook) => this.registerOnIndex(hook),
+    };
+  }
+
+  private allowRegistration(
     surface: ExtensionPolicySurface,
     method: string,
     capability?: ExtensionCapability,
-    details?: {
-      command?: string;
-      action?: string;
-      service?: string;
-    },
-  ): boolean => {
-    const decision = evaluateExtensionPolicyForRegistration(policy, extensionRef, surface, method, capability, details);
-    pushPolicyWarning(decision.warning);
+    details?: ExtensionRegistrationPolicyDetails,
+  ): boolean {
+    const decision = evaluateExtensionPolicyForRegistration(
+      this.#policy,
+      this.#extensionRef,
+      surface,
+      method,
+      capability,
+      details,
+    );
+    if (decision.warning) {
+      this.#activationWarnings.push(decision.warning);
+    }
     return decision.allowed;
-  };
-  const registerCommandTrace = (
+  }
+
+  private registerCommandTrace(
     mode: "override" | "definition",
     command: string | undefined,
     expectedSchema: string,
     received: unknown,
     hint?: string,
-  ): ExtensionActivationFailureTrace => ({
-    method: "registerCommand",
-    registration_index: mode === "override" ? commands.overrides.length : commands.handlers.length,
-    command,
-    expected_schema: expectedSchema,
-    received: sanitizeRegistrationValue(received),
-    hint,
-  });
+  ): ExtensionActivationFailureTrace {
+    return {
+      method: "registerCommand",
+      registration_index: mode === "override" ? this.#commandRegistry.overrides.length : this.#commandRegistry.handlers.length,
+      command,
+      expected_schema: expectedSchema,
+      received: sanitizeRegistrationValue(received),
+      hint,
+    };
+  }
 
-  const registerCommandOverride = (command: string, override: CommandOverride | undefined): void => {
+  private registerCommandOverride(command: string, override: CommandOverride | undefined): void {
     const normalizedCommand = normalizeCommandName(command);
     if (normalizedCommand.length === 0) {
       throw createRegistrationValidationError(
         "registerCommand requires a non-empty command name",
-        registerCommandTrace(
+        this.registerCommandTrace(
           "override",
           command,
           'registerCommand("<command>", (context) => unknown)',
@@ -1850,11 +1921,11 @@ function createExtensionApi(
       );
     }
     if (typeof override !== "function") {
-      const trace = registerCommandTrace(
+      const trace = this.registerCommandTrace(
         "override",
         normalizedCommand,
         'registerCommand("<command>", (context) => unknown)',
-        { command, override },
+        override,
         "Provide a function as the second registerCommand argument.",
       );
       throw createRegistrationValidationError(
@@ -1862,36 +1933,36 @@ function createExtensionApi(
         trace,
       );
     }
-    if (!allowRegistration("commands.override", "registerCommand", "commands", { command: normalizedCommand })) {
+    if (!this.allowRegistration("commands.override", "registerCommand", "commands", { command: normalizedCommand })) {
       return;
     }
-    commands.overrides.push({
-      layer: extension.layer,
-      name: extension.name,
+    this.#commandRegistry.overrides.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
       command: normalizedCommand,
       run: override,
     });
-  };
+  }
 
-  const resolveCommandDefinitionRunHandler = (
+  private resolveCommandDefinitionRunHandler(
     definition: CommandDefinition,
     normalizedCommand: string,
-  ): CommandHandler | undefined => {
+  ): CommandHandler | undefined {
     const runHandler = typeof definition.run === "function" ? definition.run : undefined;
     const legacyHandler = typeof definition.handler === "function" ? definition.handler : undefined;
     if (!runHandler && legacyHandler) {
-      activationWarnings.push(
-        `extension_command_definition_legacy_handler_alias:${extension.layer}:${extension.name}:${normalizedCommand}`,
+      this.#activationWarnings.push(
+        `extension_command_definition_legacy_handler_alias:${this.#loadedExtension.layer}:${this.#loadedExtension.name}:${normalizedCommand}`,
       );
     }
     return runHandler ?? legacyHandler;
-  };
+  }
 
-  const registerCommandDefinition = (definition: CommandDefinition): void => {
+  private registerCommandDefinition(definition: CommandDefinition): void {
     if (typeof definition !== "object" || definition === null) {
       throw createRegistrationValidationError(
         "registerCommand requires a command definition object",
-        registerCommandTrace(
+        this.registerCommandTrace(
           "definition",
           undefined,
           "{ name: string; run: (context) => unknown; }",
@@ -1903,7 +1974,7 @@ function createExtensionApi(
     if (typeof definition.name !== "string") {
       throw createRegistrationValidationError(
         "registerCommand requires a command definition name",
-        registerCommandTrace(
+        this.registerCommandTrace(
           "definition",
           undefined,
           "{ name: string; run: (context) => unknown; }",
@@ -1917,7 +1988,7 @@ function createExtensionApi(
     if (normalizedCommand.length === 0) {
       throw createRegistrationValidationError(
         "registerCommand requires a non-empty command definition name",
-        registerCommandTrace(
+        this.registerCommandTrace(
           "definition",
           definition.name,
           "{ name: string; run: (context) => unknown; }",
@@ -1926,13 +1997,13 @@ function createExtensionApi(
         ),
       );
     }
-    const resolvedHandler = resolveCommandDefinitionRunHandler(definition, normalizedCommand);
+    const resolvedHandler = this.resolveCommandDefinitionRunHandler(definition, normalizedCommand);
     if (typeof resolvedHandler !== "function") {
-      const trace = registerCommandTrace(
+      const trace = this.registerCommandTrace(
         "definition",
         normalizedCommand,
         "{ name: string; run: (context) => unknown; }",
-        definition,
+        resolvedHandler,
         "Define command definition.run as a function.",
       );
       throw createRegistrationValidationError(
@@ -1945,7 +2016,7 @@ function createExtensionApi(
       assertOptionalStringField("registerCommand definition.description", definition.description);
       assertOptionalStringField("registerCommand definition.intent", definition.intent);
       const action = resolveCommandDefinitionAction(normalizedCommand, definition.action);
-      if (!allowRegistration("commands.handler", "registerCommand", "commands", { command: normalizedCommand, action })) {
+      if (!this.allowRegistration("commands.handler", "registerCommand", "commands", { command: normalizedCommand, action })) {
         return;
       }
       const description = definition.description?.trim();
@@ -1958,20 +2029,22 @@ function createExtensionApi(
       const argumentsDefinition = normalizeCommandDefinitionArguments(definition.arguments);
 
       if (definition.flags !== undefined) {
-        assertExtensionCapability(extension, "schema", "registerCommand flags");
-        validateFlagDefinitions(definition.flags);
-        registrations.flags.push({
-          layer: extension.layer,
-          name: extension.name,
-          target_command: normalizedCommand,
-          flags: normalizeRegistrationRecordList("registerCommand definition.flags", definition.flags),
-        });
+        assertExtensionCapability(this.#loadedExtension, "schema", "registerCommand flags");
+        if (this.allowRegistration("schema.flags", "registerCommand flags", "schema")) {
+          validateFlagDefinitions(definition.flags);
+          this.#registrationRegistry.flags.push({
+            layer: this.#loadedExtension.layer,
+            name: this.#loadedExtension.name,
+            target_command: normalizedCommand,
+            flags: normalizeRegistrationRecordList("registerCommand definition.flags", definition.flags),
+          });
+        }
       }
 
       const registration: RegisteredExtensionCommandDefinition = {
-        layer: extension.layer,
-        name: extension.name,
-        source_package: extension.source_package,
+        layer: this.#loadedExtension.layer,
+        name: this.#loadedExtension.name,
+        source_package: this.#loadedExtension.source_package,
         command: normalizedCommand,
         action,
         examples,
@@ -1984,83 +2057,87 @@ function createExtensionApi(
       if (intent) {
         registration.intent = intent;
       }
-      registrations.commands.push(registration);
+      this.#registrationRegistry.commands.push(registration);
     } catch (error: unknown) {
       const reason = formatUnknownError(error);
-      const trace = registerCommandTrace(
+      const trace = this.registerCommandTrace(
         "definition",
         normalizedCommand,
         "{ name: string; run: (context) => unknown; action?: string; arguments?: object[]; flags?: object[]; }",
         definition,
-        "Use schema-style metadata (action/arguments/flags/examples/intent) with valid values.",
+        reason,
       );
       throw createRegistrationValidationError(
         `registerCommand definition metadata invalid (command="${normalizedCommand}", registration_index=${trace.registration_index}): ${reason}`,
         trace,
       );
     }
-    commands.handlers.push({
-      layer: extension.layer,
-      name: extension.name,
+    this.#commandRegistry.handlers.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
       command: normalizedCommand,
       run: resolvedHandler,
     });
-  };
+  }
 
-  const registerCommand = (commandOrDefinition: string | CommandDefinition, override?: CommandOverride): void => {
-    assertExtensionCapability(extension, "commands", "registerCommand");
+  public registerCommand(commandOrDefinition: string | CommandDefinition, override?: CommandOverride): void {
+    assertExtensionCapability(this.#loadedExtension, "commands", "registerCommand");
     if (typeof commandOrDefinition === "string") {
-      registerCommandOverride(commandOrDefinition, override);
+      this.registerCommandOverride(commandOrDefinition, override);
       return;
     }
-    registerCommandDefinition(commandOrDefinition);
-  };
-  const registerParser = (command: string, override: ParserOverride): void => {
-    assertExtensionCapability(extension, "parser", "registerParser");
-    if (!allowRegistration("parser.override", "registerParser", "parser")) {
+    this.registerCommandDefinition(commandOrDefinition);
+  }
+
+  public registerParser(command: string, override: ParserOverride): void {
+    assertExtensionCapability(this.#loadedExtension, "parser", "registerParser");
+    if (!this.allowRegistration("parser.override", "registerParser", "parser")) {
       return;
     }
     const normalizedCommand = normalizeCommandName(assertNonEmptyString("registerParser command", command));
     assertFunctionHandler("registerParser override", override);
-    parsers.overrides.push({
-      layer: extension.layer,
-      name: extension.name,
+    this.#parserRegistry.overrides.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
       command: normalizedCommand,
       run: override,
     });
-  };
-  const registerPreflight = (override: PreflightOverride): void => {
-    assertExtensionCapability(extension, "preflight", "registerPreflight");
-    if (!allowRegistration("preflight.override", "registerPreflight", "preflight")) {
+  }
+
+  public registerPreflight(override: PreflightOverride): void {
+    assertExtensionCapability(this.#loadedExtension, "preflight", "registerPreflight");
+    if (!this.allowRegistration("preflight.override", "registerPreflight", "preflight")) {
       return;
     }
     assertFunctionHandler("registerPreflight override", override);
-    preflight.overrides.push({
-      layer: extension.layer,
-      name: extension.name,
+    this.#preflightRegistry.overrides.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
       run: override,
     });
-  };
-  const registerService = (service: ExtensionServiceName, override: ServiceOverride): void => {
-    assertExtensionCapability(extension, "services", "registerService");
+  }
+
+  public registerService(service: ExtensionServiceName, override: ServiceOverride): void {
+    assertExtensionCapability(this.#loadedExtension, "services", "registerService");
     const normalizedService = String(service).trim().toLowerCase();
     if (!isExtensionServiceName(normalizedService)) {
       throw new TypeError(`registerService service must be one of: ${KNOWN_EXTENSION_SERVICE_NAMES.join(", ")}`);
     }
-    if (!allowRegistration("services.override", "registerService", "services", { service: normalizedService })) {
+    if (!this.allowRegistration("services.override", "registerService", "services", { service: normalizedService })) {
       return;
     }
     assertFunctionHandler("registerService override", override);
-    services.overrides.push({
-      layer: extension.layer,
-      name: extension.name,
+    this.#serviceRegistry.overrides.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
       service: normalizedService as ExtensionServiceName,
       run: override,
     });
-  };
-  const registerRenderer = (format: OutputRendererFormat, renderer: RendererOverride): void => {
-    assertExtensionCapability(extension, "renderers", "registerRenderer");
-    if (!allowRegistration("renderers.override", "registerRenderer", "renderers")) {
+  }
+
+  public registerRenderer(format: OutputRendererFormat, renderer: RendererOverride): void {
+    assertExtensionCapability(this.#loadedExtension, "renderers", "registerRenderer");
+    if (!this.allowRegistration("renderers.override", "registerRenderer", "renderers")) {
       return;
     }
     if (typeof renderer !== "function") {
@@ -2070,16 +2147,17 @@ function createExtensionApi(
     if (!isOutputRendererFormat(normalizedFormat)) {
       throw new Error(`registerRenderer format must be toon|json, received: ${String(format)}`);
     }
-    renderers.overrides.push({
-      layer: extension.layer,
-      name: extension.name,
+    this.#rendererRegistry.overrides.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
       format: normalizedFormat,
       run: renderer,
     });
-  };
-  const registerFlags = (targetCommand: string, flags: FlagDefinition[]): void => {
-    assertExtensionCapability(extension, "schema", "registerFlags");
-    if (!allowRegistration("schema.flags", "registerFlags", "schema")) {
+  }
+
+  public registerFlags(targetCommand: string, flags: FlagDefinition[]): void {
+    assertExtensionCapability(this.#loadedExtension, "schema", "registerFlags");
+    if (!this.allowRegistration("schema.flags", "registerFlags", "schema")) {
       return;
     }
     const normalizedTargetCommand = normalizeCommandName(assertNonEmptyString("registerFlags targetCommand", targetCommand));
@@ -2088,16 +2166,17 @@ function createExtensionApi(
     if (normalizedFlags.length === 0) {
       throw new TypeError("registerFlags requires at least one flag definition");
     }
-    registrations.flags.push({
-      layer: extension.layer,
-      name: extension.name,
+    this.#registrationRegistry.flags.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
       target_command: normalizedTargetCommand,
       flags: normalizedFlags,
     });
-  };
-  const registerItemFields = (fields: SchemaFieldDefinition[]): void => {
-    assertExtensionCapability(extension, "schema", "registerItemFields");
-    if (!allowRegistration("schema.itemfields", "registerItemFields", "schema")) {
+  }
+
+  public registerItemFields(fields: SchemaFieldDefinition[]): void {
+    assertExtensionCapability(this.#loadedExtension, "schema", "registerItemFields");
+    if (!this.allowRegistration("schema.itemfields", "registerItemFields", "schema")) {
       return;
     }
     validateItemFieldDefinitions(fields);
@@ -2108,15 +2187,16 @@ function createExtensionApi(
     if (normalizedFields.length === 0) {
       throw new TypeError("registerItemFields requires at least one field definition");
     }
-    registrations.item_fields.push({
-      layer: extension.layer,
-      name: extension.name,
+    this.#registrationRegistry.item_fields.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
       fields: normalizedFields,
     });
-  };
-  const registerItemTypes = (types: SchemaItemTypeDefinition[]): void => {
-    assertExtensionCapability(extension, "schema", "registerItemTypes");
-    if (!allowRegistration("schema.itemtypes", "registerItemTypes", "schema")) {
+  }
+
+  public registerItemTypes(types: SchemaItemTypeDefinition[]): void {
+    assertExtensionCapability(this.#loadedExtension, "schema", "registerItemTypes");
+    if (!this.allowRegistration("schema.itemtypes", "registerItemTypes", "schema")) {
       return;
     }
     validateItemTypeDefinitions(types);
@@ -2127,33 +2207,35 @@ function createExtensionApi(
     if (normalizedTypes.length === 0) {
       throw new TypeError("registerItemTypes requires at least one type definition");
     }
-    registrations.item_types.push({
-      layer: extension.layer,
-      name: extension.name,
+    this.#registrationRegistry.item_types.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
       types: normalizedTypes,
     });
-  };
-  const registerMigration = (definition: SchemaMigrationDefinition): void => {
-    assertExtensionCapability(extension, "schema", "registerMigration");
-    if (!allowRegistration("schema.migrations", "registerMigration", "schema")) {
+  }
+
+  public registerMigration(definition: SchemaMigrationDefinition): void {
+    assertExtensionCapability(this.#loadedExtension, "schema", "registerMigration");
+    if (!this.allowRegistration("schema.migrations", "registerMigration", "schema")) {
       return;
     }
     validateMigrationDefinition(definition);
     const runtimeDefinition = normalizeRuntimeRegistrationRecord("registerMigration definition", definition);
-    registrations.migrations.push(
+    this.#registrationRegistry.migrations.push(
       attachRuntimeDefinition(
         {
-          layer: extension.layer,
-          name: extension.name,
+          layer: this.#loadedExtension.layer,
+          name: this.#loadedExtension.name,
           definition: normalizeRegistrationRecord("registerMigration definition", definition),
         },
         runtimeDefinition,
       ) as RegisteredExtensionSchemaMigrationDefinition,
     );
-  };
-  const registerProfile = (profile: ProjectProfileRegistrationInput): void => {
-    assertExtensionCapability(extension, "schema", "registerProfile");
-    if (!allowRegistration("schema.profiles", "registerProfile", "schema")) {
+  }
+
+  public registerProfile(profile: ProjectProfileRegistrationInput): void {
+    assertExtensionCapability(this.#loadedExtension, "schema", "registerProfile");
+    if (!this.allowRegistration("schema.profiles", "registerProfile", "schema")) {
       return;
     }
     // Snapshot first, then validate and default the snapshot: cloning resolves
@@ -2163,17 +2245,18 @@ function createExtensionApi(
     // only after validation, so an invalid type is rejected, not silently coerced.
     const snapshot = cloneRuntimeRegistrationValue(profile);
     validateProjectProfileDefinition(snapshot);
-    registrations.profiles.push({
-      layer: extension.layer,
-      name: extension.name,
+    this.#registrationRegistry.profiles.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
       profile: applyProjectProfileDefaults(snapshot as Record<string, unknown>),
     });
-  };
-  const applyImportExportCommandMetadata = (
+  }
+
+  private applyImportExportCommandMetadata(
     method: "registerImporter" | "registerExporter",
     commandPath: string,
     options: ImportExportRegistrationOptions | undefined,
-  ): void => {
+  ): void {
     if (options === undefined) {
       return;
     }
@@ -2189,14 +2272,14 @@ function createExtensionApi(
     const argumentsDefinition = normalizeCommandDefinitionArguments(options.arguments);
 
     if (options.flags !== undefined) {
-      assertExtensionCapability(extension, "schema", `${method} options.flags`);
+      assertExtensionCapability(this.#loadedExtension, "schema", `${method} options.flags`);
       // Route metadata flags through the same surface-policy gate as registerFlags so
       // enforce-mode policies blocking schema.flags are honored even when importers are allowed.
-      if (allowRegistration("schema.flags", `${method} options.flags`, "schema")) {
+      if (this.allowRegistration("schema.flags", `${method} options.flags`, "schema")) {
         validateFlagDefinitions(options.flags);
-        registrations.flags.push({
-          layer: extension.layer,
-          name: extension.name,
+        this.#registrationRegistry.flags.push({
+          layer: this.#loadedExtension.layer,
+          name: this.#loadedExtension.name,
           target_command: commandPath,
           flags: normalizeRegistrationRecordList(`${method} options.flags`, options.flags),
         });
@@ -2204,9 +2287,9 @@ function createExtensionApi(
     }
 
     const registration: RegisteredExtensionCommandDefinition = {
-      layer: extension.layer,
-      name: extension.name,
-      source_package: extension.source_package,
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
+      source_package: this.#loadedExtension.source_package,
       command: commandPath,
       action,
       examples,
@@ -2221,11 +2304,12 @@ function createExtensionApi(
     if (intent) {
       registration.intent = intent;
     }
-    registrations.commands.push(registration);
-  };
-  const registerImporter = (name: string, importer: Importer, options?: ImportExportRegistrationOptions): void => {
-    assertExtensionCapability(extension, "importers", "registerImporter");
-    if (!allowRegistration("importers.importer", "registerImporter", "importers")) {
+    this.#registrationRegistry.commands.push(registration);
+  }
+
+  public registerImporter(name: string, importer: Importer, options?: ImportExportRegistrationOptions): void {
+    assertExtensionCapability(this.#loadedExtension, "importers", "registerImporter");
+    if (!this.allowRegistration("importers.importer", "registerImporter", "importers")) {
       return;
     }
     const normalizedName = normalizeRegistrationName(assertNonEmptyString("registerImporter name", name));
@@ -2233,15 +2317,15 @@ function createExtensionApi(
     const commandPath = toRegistrationCommandPath(normalizedName, "import");
     // Validate and register optional command metadata before mutating the registry
     // so an invalid options object leaves no partial importer registration.
-    applyImportExportCommandMetadata("registerImporter", commandPath, options);
-    registrations.importers.push({
-      layer: extension.layer,
-      name: extension.name,
+    this.applyImportExportCommandMetadata("registerImporter", commandPath, options);
+    this.#registrationRegistry.importers.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
       importer: normalizedName,
     });
-    commands.handlers.push({
-      layer: extension.layer,
-      name: extension.name,
+    this.#commandRegistry.handlers.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
       command: commandPath,
       run: async (context) =>
         importer({
@@ -2254,10 +2338,11 @@ function createExtensionApi(
           pm_root: context.pm_root,
         }),
     });
-  };
-  const registerExporter = (name: string, exporter: Exporter, options?: ImportExportRegistrationOptions): void => {
-    assertExtensionCapability(extension, "importers", "registerExporter");
-    if (!allowRegistration("importers.exporter", "registerExporter", "importers")) {
+  }
+
+  public registerExporter(name: string, exporter: Exporter, options?: ImportExportRegistrationOptions): void {
+    assertExtensionCapability(this.#loadedExtension, "importers", "registerExporter");
+    if (!this.allowRegistration("importers.exporter", "registerExporter", "importers")) {
       return;
     }
     const normalizedName = normalizeRegistrationName(assertNonEmptyString("registerExporter name", name));
@@ -2265,15 +2350,15 @@ function createExtensionApi(
     const commandPath = toRegistrationCommandPath(normalizedName, "export");
     // Validate and register optional command metadata before mutating the registry
     // so an invalid options object leaves no partial exporter registration.
-    applyImportExportCommandMetadata("registerExporter", commandPath, options);
-    registrations.exporters.push({
-      layer: extension.layer,
-      name: extension.name,
+    this.applyImportExportCommandMetadata("registerExporter", commandPath, options);
+    this.#registrationRegistry.exporters.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
       exporter: normalizedName,
     });
-    commands.handlers.push({
-      layer: extension.layer,
-      name: extension.name,
+    this.#commandRegistry.handlers.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
       command: commandPath,
       run: async (context) =>
         exporter({
@@ -2286,126 +2371,134 @@ function createExtensionApi(
           pm_root: context.pm_root,
         }),
     });
-  };
-  const registerSearchProvider = (provider: SearchProviderDefinition): void => {
-    assertExtensionCapability(extension, "search", "registerSearchProvider");
-    if (!allowRegistration("search.provider", "registerSearchProvider", "search")) {
+  }
+
+  public registerSearchProvider(provider: SearchProviderDefinition): void {
+    assertExtensionCapability(this.#loadedExtension, "search", "registerSearchProvider");
+    if (!this.allowRegistration("search.provider", "registerSearchProvider", "search")) {
       return;
     }
     const runtimeDefinition = normalizeRuntimeRegistrationRecord("registerSearchProvider provider", provider);
-    registrations.search_providers.push(
+    this.#registrationRegistry.search_providers.push(
       attachRuntimeDefinition(
         {
-          layer: extension.layer,
-          name: extension.name,
+          layer: this.#loadedExtension.layer,
+          name: this.#loadedExtension.name,
           definition: normalizeRegistrationRecord("registerSearchProvider provider", provider),
         },
         runtimeDefinition,
       ) as RegisteredExtensionSearchProvider,
     );
-  };
-  const registerVectorStoreAdapter = (adapter: VectorStoreAdapterDefinition): void => {
-    assertExtensionCapability(extension, "search", "registerVectorStoreAdapter");
-    if (!allowRegistration("search.vectorstore", "registerVectorStoreAdapter", "search")) {
+  }
+
+  public registerVectorStoreAdapter(adapter: VectorStoreAdapterDefinition): void {
+    assertExtensionCapability(this.#loadedExtension, "search", "registerVectorStoreAdapter");
+    if (!this.allowRegistration("search.vectorstore", "registerVectorStoreAdapter", "search")) {
       return;
     }
     const runtimeDefinition = normalizeRuntimeRegistrationRecord("registerVectorStoreAdapter adapter", adapter);
-    registrations.vector_store_adapters.push(
+    this.#registrationRegistry.vector_store_adapters.push(
       attachRuntimeDefinition(
         {
-          layer: extension.layer,
-          name: extension.name,
+          layer: this.#loadedExtension.layer,
+          name: this.#loadedExtension.name,
           definition: normalizeRegistrationRecord("registerVectorStoreAdapter adapter", adapter),
         },
         runtimeDefinition,
       ) as RegisteredExtensionVectorStoreAdapter,
     );
-  };
-  const registerBeforeCommand = (hook: BeforeCommandHook): void => {
-    assertExtensionCapability(extension, "hooks", "api.hooks.beforeCommand");
-    if (!allowRegistration("hooks.beforecommand", "api.hooks.beforeCommand", "hooks")) {
+  }
+
+  private registerBeforeCommand(hook: BeforeCommandHook): void {
+    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.beforeCommand");
+    if (!this.allowRegistration("hooks.beforecommand", "api.hooks.beforeCommand", "hooks")) {
       return;
     }
     assertHookHandler("beforeCommand", hook);
-    hooks.beforeCommand.push({
-      layer: extension.layer,
-      name: extension.name,
+    this.#hookRegistry.beforeCommand.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
       run: hook,
     });
-  };
-  const registerAfterCommand = (hook: AfterCommandHook): void => {
-    assertExtensionCapability(extension, "hooks", "api.hooks.afterCommand");
-    if (!allowRegistration("hooks.aftercommand", "api.hooks.afterCommand", "hooks")) {
+  }
+
+  private registerAfterCommand(hook: AfterCommandHook): void {
+    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.afterCommand");
+    if (!this.allowRegistration("hooks.aftercommand", "api.hooks.afterCommand", "hooks")) {
       return;
     }
     assertHookHandler("afterCommand", hook);
-    hooks.afterCommand.push({
-      layer: extension.layer,
-      name: extension.name,
+    this.#hookRegistry.afterCommand.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
       run: hook,
     });
-  };
-  const registerOnWrite = (hook: OnWriteHook): void => {
-    assertExtensionCapability(extension, "hooks", "api.hooks.onWrite");
-    if (!allowRegistration("hooks.onwrite", "api.hooks.onWrite", "hooks")) {
+  }
+
+  private registerOnWrite(hook: OnWriteHook): void {
+    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.onWrite");
+    if (!this.allowRegistration("hooks.onwrite", "api.hooks.onWrite", "hooks")) {
       return;
     }
     assertHookHandler("onWrite", hook);
-    hooks.onWrite.push({
-      layer: extension.layer,
-      name: extension.name,
+    this.#hookRegistry.onWrite.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
       run: hook,
     });
-  };
-  const registerOnRead = (hook: OnReadHook): void => {
-    assertExtensionCapability(extension, "hooks", "api.hooks.onRead");
-    if (!allowRegistration("hooks.onread", "api.hooks.onRead", "hooks")) {
+  }
+
+  private registerOnRead(hook: OnReadHook): void {
+    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.onRead");
+    if (!this.allowRegistration("hooks.onread", "api.hooks.onRead", "hooks")) {
       return;
     }
     assertHookHandler("onRead", hook);
-    hooks.onRead.push({
-      layer: extension.layer,
-      name: extension.name,
+    this.#hookRegistry.onRead.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
       run: hook,
     });
-  };
-  const registerOnIndex = (hook: OnIndexHook): void => {
-    assertExtensionCapability(extension, "hooks", "api.hooks.onIndex");
-    if (!allowRegistration("hooks.onindex", "api.hooks.onIndex", "hooks")) {
+  }
+
+  private registerOnIndex(hook: OnIndexHook): void {
+    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.onIndex");
+    if (!this.allowRegistration("hooks.onindex", "api.hooks.onIndex", "hooks")) {
       return;
     }
     assertHookHandler("onIndex", hook);
-    hooks.onIndex.push({
-      layer: extension.layer,
-      name: extension.name,
+    this.#hookRegistry.onIndex.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
       run: hook,
     });
-  };
+  }
+}
 
-  return {
-    extension: selfIdentity,
-    registerCommand,
-    registerParser,
-    registerPreflight,
-    registerService,
-    registerFlags,
-    registerItemFields,
-    registerItemTypes,
-    registerMigration,
-    registerProfile,
-    registerRenderer,
-    registerImporter,
-    registerExporter,
-    registerSearchProvider,
-    registerVectorStoreAdapter,
-    hooks: {
-      beforeCommand: registerBeforeCommand,
-      afterCommand: registerAfterCommand,
-      onWrite: registerOnWrite,
-      onRead: registerOnRead,
-      onIndex: registerOnIndex,
-    },
-  };
+function createExtensionApi(
+  extension: LoadedExtension,
+  hooks: ExtensionHookRegistry,
+  commands: ExtensionCommandRegistry,
+  parsers: ExtensionParserRegistry,
+  preflight: ExtensionPreflightRegistry,
+  services: ExtensionServiceRegistry,
+  renderers: ExtensionRendererRegistry,
+  registrations: ExtensionRegistrationRegistry,
+  activationWarnings: string[],
+  policy: NormalizedExtensionPolicy,
+): ExtensionApi {
+  return new ExtensionApiRegistrar(
+    extension,
+    hooks,
+    commands,
+    parsers,
+    preflight,
+    services,
+    renderers,
+    registrations,
+    activationWarnings,
+    policy,
+  );
 }
 
 function getRegistrationCounts(registrations: ExtensionRegistrationRegistry): ExtensionRegistrationCounts {

@@ -179,16 +179,9 @@ useful for agents without inflating context or leaking private item content.
 
 ## Extension Manifest
 
-Runnable manifest examples are the source of truth:
+Runnable manifest examples are the source of truth: [starter extension manifest](examples/starter-extension/manifest.json) and [policy-restricted manifest](examples/policy-restricted-extension/manifest.json).
 
-- [starter extension manifest](examples/starter-extension/manifest.json)
-- [policy-restricted manifest](examples/policy-restricted-extension/manifest.json)
-
-Schema:
-
-- Use [extension-manifest.schema.json](schemas/extension-manifest.schema.json) as the
-  `$schema` value for inline editor validation. The loader ignores `$schema` and
-  tolerates future manifest fields, but the schema documents the fields pm reads.
+Use [extension-manifest.schema.json](schemas/extension-manifest.schema.json) as the `$schema` value for inline editor validation. The loader ignores `$schema` and tolerates future manifest fields, but the schema documents the fields pm reads.
 
 Rules:
 
@@ -347,8 +340,11 @@ Run diagnostics:
 ```bash
 pm package doctor --project --detail summary
 pm package doctor --project --detail deep --trace
+pm package doctor --project --isolated --detail deep --trace
 pm package doctor --project --strict-exit
 ```
+
+Use `--isolated` (alias `--ignore-global`) when a package smoke test must inspect only the project install. Non-isolated project diagnostics include global registrations and emit an isolation remediation hint when global package state can affect the result; subprocess-based test suites can also set `PM_GLOBAL_PATH` to a temporary directory for the whole run.
 
 Manage state and update checks:
 
@@ -359,22 +355,12 @@ pm package adopt my-extension --project
 pm package adopt-all --project
 ```
 
-Activate or deactivate:
+Activate, deactivate, uninstall, and reload:
 
 ```bash
 pm package activate my-extension --project
 pm package deactivate my-extension --project
-```
-
-Uninstall:
-
-```bash
 pm package uninstall my-extension --project
-```
-
-Reload local edits:
-
-```bash
 pm package reload --project
 pm package reload --project --watch
 ```
@@ -432,6 +418,7 @@ Prefer `createExtensionTestHarness(module, { capabilities })` in package unit te
 
 - Manifest or entry failure: run `pm package explore --project`.
 - Activation failure: run `pm package doctor --detail deep --trace`.
+- Machine-dependent package diagnostics: run `pm package doctor --project --isolated --detail deep --trace` or set `PM_GLOBAL_PATH` to a temp directory.
 - Policy block: inspect `settings.extensions.policy` and `details.summary.policy`.
 - Runtime drift: compare with `pm --no-extensions <command>`.
 - Managed-state update-check gap: run `pm package manage --fix-managed-state`.

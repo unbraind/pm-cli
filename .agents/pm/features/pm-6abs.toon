@@ -2,17 +2,76 @@ id: pm-6abs
 title: "GH-467: isolated package/extension diagnostics — project-scoped doctor and smoke tests without global pm state leaking in"
 description: "Dogfood GH-467: pm package doctor --project picks up globally installed extension renderer overrides (e.g. pm-ops output_format), making hermetic package smoke tests machine-dependent; only workaround is undocumented PM_GLOBAL_PATH. Duplicate check: searched isolate global extensions PM_GLOBAL_PATH — pm-qt5d covers the inverse bug (--pm-path writing INTO caller workspace), no item covers isolation UX."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,diagnostics,extensions,gh-issue,packages
 created_at: "2026-07-06T21:08:26.415Z"
-updated_at: "2026-07-06T21:09:52.945Z"
+updated_at: "2026-07-07T12:35:06.379Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: pm package doctor --project supports an isolation flag (--ignore-global or --isolated) that excludes global-scope registrations; doctor --help --explain documents the PM_GLOBAL_PATH recipe; when global registrations affect project diagnostics the JSON/TOON result carries an actionable isolation hint
 parent: pm-ugqx
 risk: medium
 confidence: high
-dependencies[1]{id,kind,created_at,author,source_kind}:
+resolution: GH-467 package/extension doctor isolation implemented and verified.
+expected_result: Project-scoped package doctor can run hermetically without machine-local global extension registrations leaking into package smoke tests.
+actual_result: "Fresh temp package doctor --project --isolated --detail deep --trace loaded only project:pm-temp-smoke; non-isolated project diagnostics emit actionable global-state remediation."
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-qt5d,related,"2026-07-06T21:09:52.929Z",null,null
+  pm-cbwg,related,"2026-07-07T08:47:15.764Z",null,null
+  pm-usfg,related,"2026-07-07T08:47:15.764Z",null,null
+  pm-w89s,related,"2026-07-07T08:47:15.764Z",null,null
+  pm-x6jf,related,"2026-07-07T08:47:15.764Z",null,null
+comments[10]{created_at,author,text}:
+  "2026-07-07T09:43:54.082Z",codex-agent,"Evidence: implemented isolated package/extension doctor diagnostics with --isolated/--ignore-global, project doctor global-leak metadata/remediation, help/completion/SDK contract/tool schema updates, and a bound extension API registrar so package activators can destructure API methods. Verification: pnpm build; pm test pm-6abs --run --progress (5/5 passed); node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/sdk/action-schema-parity.spec.ts tests/unit/sdk/tool-option-contracts.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/unit/scripts/release/docs-skills-gate.spec.ts (277 passed); node scripts/run-tests.mjs coverage (5450 passed, 100/100/100/100); temp-dir dogfood package init/install/doctor isolated loaded only project:pm-temp-smoke; pnpm changelog:pm:check unchanged with pm-changelog 2026.7.6 active; pm health --check-only --summary ok; pnpm audit no known vulnerabilities; GitHub Dependabot/code-scanning open alerts none. Static quality: CodeFactor-parity complexity is clear; remaining docstring coverage gate belongs to live open pm-4ak1 backlog."
+  "2026-07-07T10:17:52.488Z",codex-agent,"Evidence update: refreshed tests/fixtures/contracts/full.json after CI Gates (static) reported stale contract snapshot on PR #479. Verified pnpm contracts:check and pnpm build both pass locally before amending the PR branch."
+  "2026-07-07T10:39:34.293Z",codex-agent,"Evidence update: addressed local Greptile review eea35ed9 P1 by making doctor isolation metadata scope-aware: global-scope doctor output no longer advertises project-only --isolated rerun recipes. Added regression coverage in tests/unit/extensions/extension-command.spec.ts. Verified focused extension doctor test, pnpm quality:static, pnpm build, pnpm contracts:check, and full node scripts/run-tests.mjs coverage (5450 passed, 100/100/100/100) on the exact post-fix state."
+  "2026-07-07T10:45:49.286Z",codex-agent,"Evidence update: tightened Greptile P1 follow-up semantics so global-scope doctor output sets global_extensions_included=false, keeps global_diagnostics_present as the live global-diagnostic signal, and returns null rerun recipes. Regression assertion added. Final full coverage on exact state passed: 5450 tests, 100/100/100/100."
+  "2026-07-07T11:22:51.500Z",codex-agent,"Evidence update: addressed fresh PR review feedback before repush. Cubic P1 runtime exposure fixed by moving ExtensionApiRegistrar internals to ECMAScript private fields with regression coverage proving legacy internal field names are not exposed to extension activators. Gemini command-trace feedback addressed by recording invalid override/run-handler values and metadata validation reasons in registerCommand traces. Malformed policy override names now render safely and are covered. Verification: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-loader-internal.spec.ts (4 passed); node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/extensions/extension-loader.spec.ts (224 passed); pnpm quality:static passed; node scripts/run-tests.mjs coverage passed with 5450 tests and 100/100/100/100. Preliminary Greptile review 494e48d7 was clean but excluded uncommitted files, so final Greptile will rerun after amend."
+  "2026-07-07T11:29:19.451Z",codex-agent,"Evidence update: amended and force-pushed PR #479 head 124499495b07f38df32d5ec971d3bd0f94ac4f89 after fresh bot feedback fixes. Final committed-head Greptile review b5c75b05-89c7-4235-b816-240838b9a526 reported confidence 5/5 with no comments. Re-triggered @greptileai, /gemini review, and @coderabbitai full review in PR comment 4903270052; awaiting GitHub checks and bot responses on the new head."
+  "2026-07-07T11:57:32.720Z",codex-agent,"Evidence update: addressed fresh CodeRabbit and Gemini review feedback after head 12449949. Removed public CHANGELOG.md link to internal .agents/pm tracker path in favor of GitHub issue #467, added schema.flags policy enforcement for inline registerCommand definition flags with regression coverage, and made doctor policy detail rendering defensive for null/undefined policy blocks without adding private core imports. Verification: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/extensions/extension-loader.spec.ts (225 passed); pnpm quality:static passed; node scripts/run-tests.mjs coverage passed with 5451 tests and 100/100/100/100."
+  "2026-07-07T12:02:49.551Z",codex-agent,"Evidence update: amended and force-pushed PR #479 head 03700d1d14e07e02cb95d41af68e62960a1bbc02 after CodeRabbit/Gemini follow-up fixes. Final committed-head Greptile review 045f951c-3bae-4bbf-8449-410879b317c6 reported confidence 5/5 with no comments. Re-triggered @greptileai, /gemini review, and @coderabbitai full review in PR comment 4903559615; awaiting GitHub checks and bot responses on the new head."
+  "2026-07-07T12:12:18.165Z",codex-agent,"Evidence update: restored CHANGELOG.md to the package-owned pm-changelog generated item link after CI Gates (static) failed on pnpm changelog:pm:check. Local pnpm changelog:pm:check now passes with pm-changelog 2026.7.6. CodeRabbit's request for a public GitHub issue link is valid UX feedback, but in this repo the generated changelog contract currently derives links from --item-url-base https://github.com/unbraind/pm-cli/blob/main/.agents/pm; changing the generated line inside pm-cli breaks the mandatory package-owned changelog gate. If we want public issue labels/links in generated output, that belongs as an upstream pm-changelog option rather than a hand edit here."
+  "2026-07-07T12:35:06.378Z",codex-agent,"Evidence update: addressed Gemini's partial-policy fallback feedback on PR #479. buildExtensionPolicyDetails now defaults missing mode/trust_mode scalar values when extensions.policy is partial, while preserving configured scalar values and normalized lists. Added regression coverage for mode-only and trust_mode-only partial policy objects. Verification: focused extension helper test passed; full extension command/loader slice passed (225 tests); pnpm quality:static passed; pnpm changelog:pm:check passed with pm-changelog 2026.7.6; full node scripts/run-tests.mjs coverage passed with 5451 tests and 100/100/100/100."
+files[13]{path,scope,note}:
+  src/cli/commands/completion.ts,project,shell completions advertise isolated doctor flags
+  src/cli/commands/extension.ts,project,doctor isolation runtime behavior and isolation metadata
+  src/cli/help-content.ts,project,doctor help explains isolated package smoke-test recipe
+  src/cli/register-setup.ts,project,CLI flag parsing and help registration for isolated doctor
+  src/core/extensions/extension-types.ts,project,loader option contract for isolated global discovery
+  src/core/extensions/loader.ts,project,skip global extension discovery for isolated doctor runs
+  src/sdk/cli-contracts/flag-contracts.ts,project,contracts advertise isolated doctor flags
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,tool parameter docs for isolated doctor mode
+  src/sdk/cli-contracts/tool-schema.ts,project,MCP/action schema exposes isolated doctor parameters
+  tests/unit/extensions/extension-command.spec.ts,project,regression coverage for global leak and isolation behavior
+  tests/unit/extensions/extension-loader-internal.spec.ts,project,runtime-private registrar regression coverage
+  tests/unit/extensions/extension-loader.spec.ts,project,schema.flags inline command policy regression coverage
+  tests/unit/sdk/sdk-index.spec.ts,project,SDK flag contract coverage for isolated doctor
+tests[5]:
+  - command: node dist/cli.js package doctor --help --explain
+    scope: project
+    timeout_seconds: 60
+    assert_stdout_contains[1]: PM_GLOBAL_PATH=$(mktemp -d) pm package doctor --project --detail deep --trace
+  - command: "node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts -t \"doctor|isolates project doctor|global output service\""
+    scope: project
+    timeout_seconds: 240
+  - command: "node scripts/run-tests.mjs test -- tests/unit/sdk/action-schema-parity.spec.ts tests/unit/sdk/tool-option-contracts.spec.ts tests/unit/sdk/sdk-index.spec.ts -t \"exposes command flag contract helpers|schema|tool\""
+    scope: project
+    timeout_seconds: 240
+  - command: "node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts -t \"exposes command flag contract helpers\""
+    scope: project
+    timeout_seconds: 240
+  - command: pnpm build
+    scope: project
+    timeout_seconds: 240
+test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mraf5za7-oqndqh,test,passed,"2026-07-07T09:00:37.959Z","2026-07-07T09:01:08.191Z","2026-07-07T09:01:08.191Z",4,0,0
+  test-local-mrafb34b-43mamf,test,passed,"2026-07-07T09:04:33.909Z","2026-07-07T09:05:06.443Z","2026-07-07T09:05:06.443Z",5,0,0
+  test-local-mrafkg2r-ad2gfc,test,passed,"2026-07-07T09:11:51.377Z","2026-07-07T09:12:23.139Z","2026-07-07T09:12:23.139Z",5,0,0
+  test-local-mragdj1w-x0tah8,test,passed,"2026-07-07T09:34:27.425Z","2026-07-07T09:35:00.020Z","2026-07-07T09:35:00.020Z",5,0,0
+  test-local-mraggqry-e0k4k0,test,passed,"2026-07-07T09:36:53.133Z","2026-07-07T09:37:29.998Z","2026-07-07T09:37:29.998Z",5,0,0
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,package smoke-test isolation guidance
+  docs/SDK.md,project,package author isolated doctor guidance
+close_reason: "Implemented isolated package/extension doctor diagnostics for GH-467: --isolated/--ignore-global skips global registrations, package doctor help documents the PM_GLOBAL_PATH recipe, project diagnostics surface global-leak metadata/remediation, SDK/action/tool contracts and completions advertise the flags, and temp-dir dogfood plus full coverage/health/changelog/security checks passed."
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/467\n\n## Problem\n`pm package doctor --project --json --detail deep` in a temporary workspace reported global extension renderer overrides from the developer machine (`extension_output_renderer_override_global:json:global:pm-ops`), breaking an otherwise hermetic pm-changelog package smoke test until every pm subprocess set `PM_GLOBAL_PATH` to a temp dir.\n\n## Why it matters\nAgents/CI create temp workspaces to test package installation; global state leaking into project-scoped diagnostics makes tests machine-dependent and expensive to debug. The workaround is discoverable only if the agent already knows PM_GLOBAL_PATH exists.\n\n## Proposed fix\n- `pm package doctor --project --ignore-global` (or `--isolated`) mode.\n- Document the PM_GLOBAL_PATH recipe in `doctor --help --explain`.\n- Emit an isolation hint in diagnostics whenever global-scope registrations are present in project results.\n\nRelated: pm-qt5d (project install with --pm-path writes extensions into caller workspace — same context-boundary family, opposite direction)."
