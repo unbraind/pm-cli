@@ -209,8 +209,20 @@ describe("SDK package and extension lifecycle primitives", () => {
       dry_run: true,
     };
 
-    expect(extensionResult.action).toBe("catalog");
-    expect(packageResult.action).toBe("catalog");
-    expect(upgradeResult.action).toBe("upgrade");
+    expect(extensionResult).toEqual({
+      ok: true,
+      action: "catalog",
+      scope: "project",
+    });
+    expect(packageResult).toEqual({
+      ok: true,
+      action: "catalog",
+      scope: "project",
+    });
+    expect(upgradeResult).toEqual({
+      ok: true,
+      action: "upgrade",
+      dry_run: true,
+    });
   });
 });
