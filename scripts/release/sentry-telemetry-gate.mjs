@@ -141,6 +141,12 @@ const KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS = [
   "github api returned http 422",
   "drift detected:",
 ];
+const KNOWN_EXPECTED_HANDLED_ENVIRONMENT_ISSUE_PATTERNS = [
+  // Local disk exhaustion is an operational host-capacity failure surfaced by
+  // Node as Error/ENOSPC, not a pm-cli crash. It remains relevant in telemetry
+  // but should not block releases when the CLI caught and reported it.
+  "enospc: no space left on device",
+];
 
 function issueTextValue(issue) {
   const metadata = issue && typeof issue === "object" ? issue.metadata : null;
@@ -168,6 +174,16 @@ function isExpectedHandledCliIssue(issue) {
   return KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS.some((pattern) => combinedText.includes(pattern));
 }
 
+function isExpectedHandledEnvironmentIssue(issue) {
+  const metadata = issue && typeof issue === "object" ? issue.metadata : null;
+  const type = metadata && typeof metadata.type === "string" ? metadata.type : "";
+  if (type !== "Error" || issue?.isUnhandled === true) {
+    return false;
+  }
+  const combinedText = issueTextValue(issue).toLowerCase();
+  return KNOWN_EXPECTED_HANDLED_ENVIRONMENT_ISSUE_PATTERNS.some((pattern) => combinedText.includes(pattern));
+}
+
 function partitionSentryIssuesForGate(issues) {
   const relevant = [];
   const ignoredNoise = [];
@@ -178,6 +194,10 @@ function partitionSentryIssuesForGate(issues) {
       continue;
     }
     if (isExpectedHandledCliIssue(issue)) {
+      ignoredExpected.push(issue);
+      continue;
+    }
+    if (isExpectedHandledEnvironmentIssue(issue)) {
       ignoredExpected.push(issue);
       continue;
     }
@@ -448,6 +468,21 @@ function runTelemetryGateCommand(telemetryCommandPath, telemetryDays, telemetryM
       };
 }
 
+function resolveTelemetrySummary(params) {
+  if (params.telemetryMode === "off") {
+    return buildInitialTelemetrySummary(params.telemetryMode);
+  }
+  if (params.telemetryMode === "required" && !params.telemetryCommandPath) {
+    fail("telemetry_query_command_missing: set --telemetry-command or PM_TELEMETRY_QUERY_COMMAND to a private/local telemetry query adapter");
+  }
+  return buildTelemetrySummaryFromCommand(
+    runTelemetryGateCommand(params.telemetryCommandPath, params.telemetryDays, params.telemetryMode),
+    params.telemetryMode,
+    params.maxTelemetryErrorRate,
+    params.maxTelemetryMissingRows,
+  );
+}
+
 function buildSentryTelemetryGateResult(params) {
   return {
     ok: params.ok,
@@ -484,8 +519,8 @@ function buildSentryTelemetryGateResult(params) {
         .map((issue) => issue?.shortId)
         .filter((value) => typeof value === "string")
         .slice(0, 25),
-      ignored_expected_cli_error_total: params.sentryPartition.ignoredExpected.length,
-      ignored_expected_cli_error_short_ids: params.sentryPartition.ignoredExpected
+      ignored_expected_handled_total: params.sentryPartition.ignoredExpected.length,
+      ignored_expected_handled_short_ids: params.sentryPartition.ignoredExpected
         .map((issue) => issue?.shortId)
         .filter((value) => typeof value === "string")
         .slice(0, 25),
@@ -505,7 +540,7 @@ function printSentryTelemetryGateResult(result, outputJson, context) {
     `Sentry/telemetry gate ${result.ok ? "passed" : "failed"} ` +
     `(critical=${context.sentrySummary.critical}, high=${context.sentrySummary.high}, ` +
     `sentry_window_days=${context.sentryWindowDays}, ignored_noise=${context.sentryPartition.ignoredNoise.length}, ` +
-    `ignored_expected_cli=${context.sentryPartition.ignoredExpected.length}, telemetry_mode=${context.telemetryMode}).`;
+    `ignored_expected_handled=${context.sentryPartition.ignoredExpected.length}, telemetry_mode=${context.telemetryMode}).`;
   if (result.ok) {
     console.log(message);
   } else {
@@ -566,19 +601,13 @@ async function main() {
   const sentryThresholdOk =
     sentryAccessOk && sentrySummary.critical <= maxCritical && sentrySummary.high <= maxHigh;
 
-  let telemetrySummary = buildInitialTelemetrySummary(telemetryMode);
-
-  if (telemetryMode !== "off") {
-    if (telemetryMode === "required" && !telemetryCommandPath) {
-      fail("telemetry_query_command_missing: set --telemetry-command or PM_TELEMETRY_QUERY_COMMAND to a private/local telemetry query adapter");
-    }
-    telemetrySummary = buildTelemetrySummaryFromCommand(
-      runTelemetryGateCommand(telemetryCommandPath, telemetryDays, telemetryMode),
-      telemetryMode,
-      maxTelemetryErrorRate,
-      maxTelemetryMissingRows,
-    );
-  }
+  const telemetrySummary = resolveTelemetrySummary({
+    telemetryMode,
+    telemetryCommandPath,
+    telemetryDays,
+    maxTelemetryErrorRate,
+    maxTelemetryMissingRows,
+  });
 
   const ok = sentryThresholdOk && telemetrySummary.ok;
   const result = buildSentryTelemetryGateResult({

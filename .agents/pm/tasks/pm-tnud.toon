@@ -6,7 +6,8 @@ status: open
 priority: 1
 tags[4]: agent-ux,"area:cli","area:extensions",simplification
 created_at: "2026-07-05T04:53:32.408Z"
-updated_at: "2026-07-05T04:55:00.530Z"
+updated_at: "2026-07-07T18:07:11.560Z"
+assignee: codex-agent
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: pm package covers the full extension/install/upgrade verb set with flag parity; extension/install/upgrade spellings alias-shimmed with identical output; scope semantics (project/global) unchanged; contracts/MCP/completions/docs regenerated; existing extension+install+upgrade specs pass via aliases
@@ -15,4 +16,7 @@ risk: medium
 confidence: medium
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-0z7n,blocked_by,"2026-07-05T04:55:00.508Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-07T17:45:24.101Z",codex-agent,"Related SDK evidence: this PR does not complete the CLI namespace consolidation, but it preserves package vocabulary in the SDK via PmClient.package and top-level packageLifecycle helpers while exposing package install/uninstall/doctor/manage/describe/reload/catalog/activate/deactivate/upgrade primitives. pm-tnud remains open because hidden alias shims, CLI full verb parity, contracts/MCP/completions regeneration, and install/upgrade alias specs are still outstanding."
+  "2026-07-07T18:07:11.560Z",codex-agent,"Bundle note: SDK package lifecycle helpers now preserve package vocabulary in PmClient.package(...) even if caller options include a conflicting vocabulary value; this supports package namespace consistency while broader CLI namespace consolidation remains open."
 body: ""
