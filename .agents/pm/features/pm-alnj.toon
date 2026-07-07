@@ -2,25 +2,29 @@ id: pm-alnj
 title: "GH-474: pm search --limit support in hybrid mode"
 description: "Dogfood GH-474: hybrid search can return many results and --limit (available in keyword mode) is not honored/available in hybrid mode, breaking agent token budgets. Duplicate check: searched hybrid search limit — pm-6mn1 (closed, M4) covered limit=0 determinism only; this is general --limit support in hybrid mode."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[4]: agent-experience,"area:search",gh-issue,token-efficiency
 created_at: "2026-07-06T21:09:28.492Z"
-updated_at: "2026-07-07T08:18:31.854Z"
-assignee: claude-code-agent
+updated_at: "2026-07-07T08:34:55.312Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: pm search --mode hybrid honors --limit identically to keyword mode (applied after fusion ranking); documented in help/contracts; spec covers limit interaction with hybrid result fusion including limit=0 determinism from pm-6mn1
 parent: pm-ydp6
 risk: low
 confidence: high
+resolution: Implemented hybrid search limit parity by keeping semantic candidates at least max_results wide through fusion and applying the requested --limit only after final ranking/truncation.
+expected_result: pm search --mode hybrid honors --limit like keyword search while preserving pm-6mn1 limit=0 deterministic empty-result behavior.
+actual_result: "Packed-install dogfood confirmed npx pm search alpha --json --limit 1 returns filters.limit=1 and one hit; zero-limit regression remains covered; focused/full tests, coverage, Greptile, and PR checks passed."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-6mn1,related,"2026-07-06T21:09:54.714Z",null,null
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-07T07:30:43.392Z",claude-code-agent,"Implementation start: bundling GH-474 hybrid search --limit with GH-476 context --max-items alias in one token-efficiency PR. Duplicate checks found pm-6mn1 only covered limit=0 determinism, not general hybrid --limit parity."
   "2026-07-07T08:04:41.127Z",claude-code-agent,"Evidence: changed hybrid/semantic vector candidate sizing so a small --limit no longer shrinks the semantic candidate window before hybrid fusion; final output limit is still applied after sorting/fusion. Added regression coverage for --limit 1 with max_results=3 and updated extension fallback fixture to pin max_results explicitly. Verification passed: linked focused pm test (335 tests), pnpm build, node scripts/run-tests.mjs test (264 files / 5449 tests), node scripts/run-tests.mjs coverage (100% statements/branches/functions/lines), pnpm typecheck, pnpm lint, pnpm security:scan, pnpm contracts:check. Packed-install dogfood in /tmp/tmp.FlmKN3LY44 confirmed installed npx pm search alpha --json --limit 1 returns filters.limit=1 and one hit. GitHub refresh found no open Dependabot security alerts; open Dependabot PRs #462/#465 remain separate dependency-update PRs and are behind base."
   "2026-07-07T08:10:58.717Z",claude-code-agent,"Greptile local review 875a3022-9652-4406-8871-7fa89c11038f found one P2 test-clarity issue: result.total=2 needed explanation in the new hybrid --limit regression. Addressed with an inline test comment explaining total is the sortable pre-truncation hybrid hit count and pm-tail falls below the mode-aware score threshold. Focused verification after fix: node scripts/run-tests.mjs test -- tests/unit/commands/search-command.spec.ts (85 tests passed)."
   "2026-07-07T08:18:31.851Z",claude-code-agent,"Greptile rerun 087e07f7-adad-40d1-92b5-eef128cedf41 completed clean after the test-comment fix. Result: confidence 5/5, safe to merge, no review comments."
+  "2026-07-07T08:32:30.144Z",claude-code-agent,"Merge evidence: PR #478 (https://github.com/unbraind/pm-cli/pull/478) merged to main at commit 54f9145d. GitHub checks were green: CI build/runtime/coverage/static/typecheck/compat/smokes/Windows, CodeQL, CodeFactor, Greptile Review, CodeRabbit, Cubic, Codecov patch, Hound, semgrep, ShellCheck, PSScriptAnalyzer, Trivy, actionlint. Bot review threads were answered with code/test references and resolved before merge."
+  "2026-07-07T08:34:55.311Z",claude-code-agent,"Post-merge closeout evidence: pnpm changelog:pm regenerated CHANGELOG.md with pm-changelog 2026.7.6 and pnpm changelog:pm:check passed; pnpm build passed; pm health --check-only --summary --json passed with telemetry/extensions/storage/locks ok; Sentry telemetry gate passed with 0 critical/high issues in the 14-day window and telemetry finish_error_rate_pct=0.58 with no missing error-code rows."
 files[3]{path,scope,note}:
   src/cli/commands/search.ts,project,Keep hybrid semantic candidate window at max_results before final --limit truncation
   tests/unit/commands/search-command.spec.ts,project,Cover hybrid --limit after fusion with a full vector candidate window
@@ -30,4 +34,5 @@ tests[1]{command,scope,timeout_seconds}:
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mracflvb-s4rsbb,test,passed,"2026-07-07T07:44:15.033Z","2026-07-07T07:44:38.519Z","2026-07-07T07:44:38.519Z",1,0,0
   test-local-mracp7fk-4wjxkt,test,passed,"2026-07-07T07:51:29.950Z","2026-07-07T07:52:06.368Z","2026-07-07T07:52:06.368Z",1,0,0
+close_reason: "Shipped in PR #478: hybrid search keeps the semantic candidate window at least max_results wide before rank fusion and applies --limit after fusion, preserving existing limit=0 determinism; focused/full coverage, Greptile local review, packed-install dogfood, and GitHub checks passed."
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/474\n\nHonor `--limit` in hybrid search mode (parity with keyword mode), applied after hybrid rank fusion so the top-N fused results are returned. Preserve the deterministic limit=0 empty-result semantics established in pm-6mn1."

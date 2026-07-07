@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- GH-474: pm search --limit support in hybrid mode ([pm-alnj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-alnj.toon))
+
+### Other
+
+- GH-476: pm context rejects --max-items with an untargeted unknown_option (alias or recovery hint) ([pm-5h9g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5h9g.toon))
+
 ## 2026.7.7 - 2026-07-07
 
 ### Added

@@ -2,23 +2,27 @@ id: pm-5h9g
 title: "GH-476: pm context rejects --max-items with an untargeted unknown_option (alias or recovery hint)"
 description: "Fleet dogfood (GH-476): an agent naturally tried 'pm context --max-items 5' to bound token usage; pm rejects it with a generic unknown_option and no pointer to the supported --limit flag, forcing an extra help round-trip."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",gh-issue
 created_at: "2026-07-07T06:49:24.311Z"
-updated_at: "2026-07-07T08:04:32.571Z"
-assignee: claude-code-agent
+updated_at: "2026-07-07T08:34:54.979Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "Either --max-items is accepted as a hidden alias for --limit on pm context (contracts/completions/docs wired per the new-flag checklist), or the unknown_option error for --max-items returns a targeted hint naming 'pm context --limit <n>'; regression test covers the chosen behavior; GH-476 closed with shipped evidence"
 parent: pm-mpbb
 risk: low
 confidence: high
+resolution: "Implemented hidden --max-items as an exact pm context --limit alias and published it through runtime parsing, option normalization, SDK flag contracts, and generated snapshots."
+expected_result: Agents can bound pm context output with --max-items without an unknown-option round trip; --max-items and --limit produce equivalent filter/output limits.
+actual_result: "Packed-install dogfood confirmed npx pm context --json --max-items 1 returns filters.limit=1 and one low_level row; focused/full tests, coverage, contracts, security, and PR checks passed."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-gdi7,related,"2026-07-07T06:49:24.311Z",null,null
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-07T07:30:43.098Z",claude-code-agent,"Implementation start: bundling GH-476 context --max-items alias with GH-474 hybrid search --limit because both reduce agent token/context round-trips. Duplicate checks found pm-gdi7 as the broader unknown-option engine follow-up, but this item has specific GH-476 acceptance criteria."
   "2026-07-07T08:04:32.571Z",claude-code-agent,"Evidence: implemented hidden pm context --max-items alias as an exact --limit synonym across runtime parsing, option normalization, context flag contracts, and generated contract snapshots. Verification passed: linked focused pm test (288 tests), pnpm build, node scripts/run-tests.mjs test (264 files / 5449 tests), node scripts/run-tests.mjs coverage (100% statements/branches/functions/lines), pnpm typecheck, pnpm lint, pnpm security:scan, pnpm contracts:check. Packed-install dogfood in /tmp/tmp.FlmKN3LY44 confirmed npx pm context --json --max-items 1 returns filters.limit=1 and one low_level row. GitHub refresh found no open Dependabot security alerts; open Dependabot PRs #462/#465 remain separate dependency-update PRs and are behind base."
+  "2026-07-07T08:32:28.220Z",claude-code-agent,"Merge evidence: PR #478 (https://github.com/unbraind/pm-cli/pull/478) merged to main at commit 54f9145d. GitHub checks were green: CI build/runtime/coverage/static/typecheck/compat/smokes/Windows, CodeQL, CodeFactor, Greptile Review, CodeRabbit, Cubic, Codecov patch, Hound, semgrep, ShellCheck, PSScriptAnalyzer, Trivy, actionlint. Bot review threads were answered with code/test references and resolved before merge."
+  "2026-07-07T08:34:54.979Z",claude-code-agent,"Post-merge closeout evidence: pnpm changelog:pm regenerated CHANGELOG.md with pm-changelog 2026.7.6 and pnpm changelog:pm:check passed; pnpm build passed; pm health --check-only --summary --json passed with telemetry/extensions/storage/locks ok; Sentry telemetry gate passed with 0 critical/high issues in the 14-day window and telemetry finish_error_rate_pct=0.58 with no missing error-code rows."
 files[7]{path,scope,note}:
   src/cli/commands/context.ts,project,Accept --max-items as a context limit alias
   src/cli/register-list-query.ts,project,Register hidden --max-items alias for pm context
@@ -33,4 +37,5 @@ test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-mraccoxb-95mm84,test,failed,"2026-07-07T07:41:56.319Z","2026-07-07T07:42:22.511Z","2026-07-07T07:42:22.511Z",1,1,0
   test-local-mracdu9r-wcsrzm,test,failed,"2026-07-07T07:42:50.582Z","2026-07-07T07:43:16.095Z","2026-07-07T07:43:16.095Z",1,1,0
   test-local-mracf0nu-l9f4nn,test,passed,"2026-07-07T07:43:48.409Z","2026-07-07T07:44:11.034Z","2026-07-07T07:44:11.034Z",1,0,0
+close_reason: "Shipped in PR #478: pm context accepts hidden --max-items as an exact --limit alias, SDK/flag contracts and generated snapshots include the alias, focused/full coverage and packed-install dogfood passed, and GitHub checks/review threads were green before merge."
 body: "Repro: 'pm context --json --max-items 5' -> unknown_option; examples only suggest pm context --help.\n\nWhy it matters: project management = context management — agents reason in 'max items / top N' terms when bounding token spend, and every failed guess costs a help round-trip. This is the same recovery-hint class as GH-458 (pm-qfte, shipped: lifecycle --assignee alias) and generalizes under pm-gdi7 (unknown-option errors should suggest valid flags). If pm-gdi7's generalized did-you-mean suggestion engine lands first, this item reduces to a targeted test case plus the alias decision.\n\nDuplicate-check evidence: pm search 'GH-476' -> 0 hits; pm search 'context row limit aliases' -> no open coverage; pm-gdi7 covers the generic suggestion engine but not this specific alias/hint."
