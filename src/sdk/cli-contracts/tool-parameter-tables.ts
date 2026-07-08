@@ -43,6 +43,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   allStreams: { type: "boolean" },
   contractAction: { type: "string" },
   command: { type: "string" },
+  summary: { type: "boolean" },
   schemaOnly: { type: "boolean" },
   flagsOnly: { type: "boolean" },
   availabilityOnly: { type: "boolean" },
@@ -151,6 +152,8 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   tag: { type: "string" },
   deadlineBefore: { type: "string" },
   deadlineAfter: { type: "string" },
+  today: { type: "boolean" },
+  recent: { type: "boolean" },
   updatedAfter: { type: "string" },
   updatedBefore: { type: "string" },
   createdAfter: { type: "string" },
@@ -317,7 +320,6 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   },
   maxDepth: { anyOf: [{ type: "string" }, { type: "number" }] },
   collapse: { type: "string", enum: ["none", "repeated"] },
-  summary: { type: "boolean" },
   shell: { type: "string", enum: ["bash", "zsh", "fish"] },
   stdin: { type: "boolean" },
   file: { type: "string" },
@@ -561,6 +563,12 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   tag: {
     description: "npm version or dist-tag used for CLI and registry package upgrades.",
     examples: ["latest", "next", "2026.5.11"],
+  },
+  today: {
+    description: "When true for list actions, include only items updated since local midnight today.",
+  },
+  recent: {
+    description: "When true for list actions, include only items updated in the last seven days.",
   },
   packageName: {
     description: "Override the pm CLI package name for self-upgrade automation and tests.",
@@ -1199,7 +1207,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     examples: ["none", "repeated"],
   },
   summary: {
-    description: "When true for deps action, return counts only without full tree/graph payloads.",
+    description: "When true, return the command's compact summary projection (deps counts, health rollup, or contracts command intents).",
   },
   threshold: {
     description: "Dedupe-audit fuzzy title similarity threshold between 0 and 1.",

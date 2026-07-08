@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: agent-ux,"area:cli",gh-issue,token-efficiency
 created_at: "2026-07-06T08:03:07.441Z"
-updated_at: "2026-07-06T08:03:07.441Z"
+updated_at: "2026-07-08T17:09:41.052Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: context supports --no-tags; inherited tag sets folded to parent row (or tags_inherited marker); ~40% brief-depth size cut measured here; MCP parity; spec pins folding semantics

@@ -820,6 +820,8 @@ _pm() {
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
             '--deadline-before[Filter by deadline upper bound (ISO/date string or relative)]:date' \\
             '--deadline-after[Filter by deadline lower bound (ISO/date string or relative)]:date' \\
+            '--today[Filter to items updated since local midnight today]' \\
+            '--recent[Filter to items updated in the last 7 days]' \\
             '--updated-after[Filter by updated_at lower bound (ISO/relative)]:timestamp' \\
             '--updated-before[Filter by updated_at upper bound (ISO/relative)]:timestamp' \\
             '--created-after[Filter by created_at lower bound (ISO/relative)]:timestamp' \\
@@ -1322,6 +1324,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           _arguments \\
             '--action[Filter schema by tool action]:action' \\
             '--command[Scope output to one command (narrow-by-default)]:command' \\
+            '--summary[Return compact command intent summary]' \\
             '--schema-only[Return schema-only payload]' \\
             '--flags-only[Return command flag contracts only]' \\
             '--availability-only[Return action availability only]' \\
@@ -1806,6 +1809,8 @@ for list_cmd in ${listCmds}
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l stream -d 'Emit line-delimited JSON rows (requires --json)'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l deadline-before -d 'Filter by deadline upper bound (ISO/date string or relative)' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l deadline-after  -d 'Filter by deadline lower bound (ISO/date string or relative)' -r
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l today -d 'Filter to items updated since local midnight today'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l recent -d 'Filter to items updated in the last 7 days'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l updated-after  -d 'Filter by updated_at lower bound (ISO/relative)' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l updated-before -d 'Filter by updated_at upper bound (ISO/relative)' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l created-after  -d 'Filter by created_at lower bound (ISO/relative)' -r
@@ -2300,6 +2305,7 @@ complete -c pm -n '__fish_seen_subcommand_from activity' -l full -d 'Show full a
 complete -c pm -n '__fish_seen_subcommand_from activity' -l stream -d 'Emit line-delimited JSON rows'
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l action -d 'Filter schema by tool action' -r
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l command -d 'Scope output to one command (narrow-by-default)' -r
+complete -c pm -n '__fish_seen_subcommand_from contracts' -l summary -d 'Return compact command intent summary'
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l schema-only -d 'Return schema-only payload'
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l flags-only -d 'Return command flag contracts only'
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l availability-only -d 'Return action availability only'

@@ -1259,6 +1259,42 @@ describe("runList", () => {
       // The result echoes the RAW input string, not the resolved ISO timestamp.
       expect(recentPayload.filters.updated_after).toBe("-1h");
 
+      const todayResult = context.runCli(["list", "--today", "--json"], { expectJson: true });
+      expect(todayResult.code).toBe(0);
+      const todayPayload = todayResult.json as { count: number; filters: Record<string, unknown> };
+      expect(todayPayload.count).toBeGreaterThan(0);
+      expect(todayPayload.filters.today).toBe(true);
+      expect(todayPayload.filters.updated_after).toBeNull();
+
+      const recentResult = context.runCli(["list", "--recent", "--json"], { expectJson: true });
+      expect(recentResult.code).toBe(0);
+      const recentWindowPayload = recentResult.json as { count: number; filters: Record<string, unknown> };
+      expect(recentWindowPayload.count).toBeGreaterThan(0);
+      expect(recentWindowPayload.filters.recent).toBe(true);
+      expect(recentWindowPayload.filters.updated_after).toBeNull();
+
+      const programmaticToday = await runList(undefined, { today: true }, { path: context.pmPath });
+      expect(programmaticToday.count).toBeGreaterThan(0);
+      expect(programmaticToday.filters.today).toBe(true);
+
+      const programmaticRecent = await runList(undefined, { recent: true }, { path: context.pmPath });
+      expect(programmaticRecent.count).toBeGreaterThan(0);
+      expect(programmaticRecent.filters.recent).toBe(true);
+
+      expect(() =>
+        listInternals.resolveListUpdatedAfter({ today: true, updatedAfter: "-1h" }),
+      ).toThrow("Choose only one updated_at window");
+      expect(listInternals.resolveListUpdatedAfter({ today: true, updatedAfter: null as unknown as string })).toMatch(
+        /^\d{4}-\d{2}-\d{2}T/,
+      );
+      expect(listInternals.resolveListUpdatedAfter({ today: true, updatedAfter: "   " })).toMatch(
+        /^\d{4}-\d{2}-\d{2}T/,
+      );
+
+      const conflictingWindows = context.runCli(["list", "--today", "--updated-after=-1h", "--json"]);
+      expect(conflictingWindows.code).not.toBe(0);
+      expect(`${conflictingWindows.stderr}${conflictingWindows.stdout}`).toContain("Choose only one updated_at window");
+
       // updated-after: a future ISO threshold filters everything out.
       const updatedAfterFuture = context.runCli(["list", "--updated-after", "2030-01-01", "--json"], {
         expectJson: true,

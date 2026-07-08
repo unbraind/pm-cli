@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[4]: agent-experience,gh-issue,packages,token-efficiency
 created_at: "2026-07-06T21:09:23.206Z"
-updated_at: "2026-07-06T21:09:54.240Z"
+updated_at: "2026-07-08T17:09:41.785Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "pm install output ends with a verification summary (activation status, registered commands/types, health ok/degraded) equivalent to a light package-doctor pass; failures keep the existing per-target failure rows; covered by specs"

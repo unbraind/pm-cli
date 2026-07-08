@@ -200,6 +200,8 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--priority" },
   { flag: "--deadline-before" },
   { flag: "--deadline-after" },
+  { flag: "--today" },
+  { flag: "--recent" },
   { flag: "--updated-after" },
   { flag: "--updated-before" },
   { flag: "--created-after" },
@@ -1412,6 +1414,7 @@ export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = [
 export const CONTRACTS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--action" },
   { flag: "--command" },
+  { flag: "--summary" },
   { flag: "--schema-only" },
   { flag: "--flags-only" },
   { flag: "--availability-only" },

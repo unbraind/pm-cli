@@ -627,6 +627,8 @@ export function normalizeListOptions(options: Record<string, unknown>): ListOpti
     updatedBefore: readListOptionString(options, "updatedBefore"),
     createdAfter: readListOptionString(options, "createdAfter"),
     createdBefore: readListOptionString(options, "createdBefore"),
+    today: optionTrue(options, "today"),
+    recent: optionTrue(options, "recent"),
     ids: readListOptionString(options, "ids"),
     assignee: readListOptionString(options, "assignee"),
     assigneeFilter: readListOptionString(options, "assigneeFilter"),

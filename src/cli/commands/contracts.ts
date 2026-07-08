@@ -133,6 +133,7 @@ import {
 export interface ContractsCommandOptions {
   action?: string;
   command?: string;
+  summary?: boolean;
   schemaOnly?: boolean;
   flagsOnly?: boolean;
   availabilityOnly?: boolean;
@@ -164,6 +165,7 @@ export interface ContractsResult {
   selected: {
     action: string | null;
     command: string | null;
+    summary: boolean;
     schema_only: boolean;
     flags_only: boolean;
     availability_only: boolean;
@@ -181,6 +183,7 @@ export interface ContractsResult {
   command_aliases?: CommandAliasSurface[];
   commander_aliases?: Record<string, CommanderOptionAliasContract[]>;
   extension_commands?: ExtensionCommandContract[];
+  command_summaries?: CommandSummarySurface[];
   runtime_schema?: {
     statuses: string[];
     open_status: string;
@@ -261,6 +264,11 @@ interface ExtensionCommandContract {
   flags: CliFlagContract[];
   examples: string[];
   failure_hints: string[];
+}
+
+interface CommandSummarySurface {
+  command: string;
+  intent: string;
 }
 
 const LIST_COMMAND_NAMES = new Set([
@@ -387,6 +395,53 @@ const COMMAND_ALIAS_TO_CANONICAL = new Map(
 
 const COMMAND_NAMESPACE_DISPLAY_LIMIT = 10;
 const COMMAND_NAMESPACE_FALLBACK_LIMIT = 20;
+
+const COMMAND_INTENTS = new Map<string, string>([
+  ["activity", "Read activity."],
+  ["aggregate", "Group counts."],
+  ["append", "Append body."],
+  ["claim", "Claim work."],
+  ["close", "Close work."],
+  ["comments", "Manage comments."],
+  ["completion", "Generate shell completions."],
+  ["config", "Manage settings."],
+  ["context", "Build context."],
+  ["contracts", "Inspect contracts."],
+  ["copy", "Copy work."],
+  ["create", "Create work."],
+  ["delete", "Delete work."],
+  ["deps", "Manage deps."],
+  ["docs", "Link docs."],
+  ["files", "Link files."],
+  ["focus", "Manage focus."],
+  ["gc", "Clean caches."],
+  ["get", "Read item."],
+  ["guide", "Show user guides."],
+  ["health", "Check health."],
+  ["help", "Show help."],
+  ["history", "Inspect history."],
+  ["init", "Initialize workspace."],
+  ["install", "Install packages."],
+  ["learnings", "Manage learnings."],
+  ["list", "List work."],
+  ["next", "Pick next work."],
+  ["notes", "Manage notes."],
+  ["ops", "Run operations."],
+  ["package", "Manage packages."],
+  ["plan", "Manage plans."],
+  ["profile", "Manage profiles."],
+  ["reindex", "Refresh search index."],
+  ["release", "Release claim."],
+  ["restore", "Restore history."],
+  ["schema", "Customize schema."],
+  ["search", "Search work."],
+  ["stats", "Show stats."],
+  ["telemetry", "Manage telemetry."],
+  ["test", "Run linked tests."],
+  ["update", "Update work."],
+  ["upgrade", "Upgrade packages."],
+  ["validate", "Validate data."],
+]);
 
 // Lifecycle subcommand flag contracts for `pm extension`. Only `init` differs
 // between extension and package: `pm package init` / `pm packages init`
@@ -698,19 +753,31 @@ function assignExtensionFlagBoolean(
   }
 }
 
+function normalizeExtensionFlagName(
+  value: unknown,
+  kind: "long" | "short",
+): string | null {
+  if (value == null) {
+    return null;
+  }
+  if (typeof value !== "string") {
+    throw new TypeError("Expected string for extension flag name.");
+  }
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+  if (kind === "long") {
+    return trimmed.startsWith("--") && trimmed.length > 2 ? trimmed : null;
+  }
+  return trimmed.startsWith("-") && !trimmed.startsWith("--") && trimmed.length > 1 ? trimmed : null;
+}
+
 function toExtensionFlagContract(
   definition: Record<string, unknown>,
 ): CliFlagContract | null {
-  const longName = toOptionalTrimmedString(definition.long);
-  const shortName = toOptionalTrimmedString(definition.short);
-  const normalizedLong =
-    longName && longName.startsWith("--") && longName.length > 2
-      ? longName
-      : null;
-  const normalizedShort =
-    shortName && shortName.startsWith("-") && !shortName.startsWith("--")
-      ? shortName
-      : null;
+  const normalizedLong = normalizeExtensionFlagName(definition.long, "long");
+  const normalizedShort = normalizeExtensionFlagName(definition.short, "short");
   const flag = normalizedLong ?? normalizedShort;
   if (!flag) {
     return null;
@@ -1559,6 +1626,7 @@ function attachCreateRequiredOptionContracts(
 interface ContractsSelection {
   selectedAction: string | undefined;
   selectedCommand: string | undefined;
+  summary: boolean;
   schemaOnly: boolean;
   flagsOnly: boolean;
   availabilityOnly: boolean;
@@ -1598,6 +1666,7 @@ interface ContractsSchemaContext {
 }
 
 function resolveContractsSelection(options: ContractsCommandOptions): ContractsSelection {
+  const summary = options.summary === true;
   const schemaOnly = options.schemaOnly === true;
   const flagsOnly = options.flagsOnly === true;
   const availabilityOnly = options.availabilityOnly === true;
@@ -1606,10 +1675,11 @@ function resolveContractsSelection(options: ContractsCommandOptions): ContractsS
   const selectedAction = normalizeToken(options.action);
   const selectedCommand = normalizeToken(options.command);
   const unfilteredDefaultBriefMode =
-    !fullOutput && !schemaOnly && !flagsOnly && !availabilityOnly && !selectedAction && !selectedCommand;
+    !summary && !fullOutput && !schemaOnly && !flagsOnly && !availabilityOnly && !selectedAction && !selectedCommand;
   return {
     selectedAction,
     selectedCommand,
+    summary,
     schemaOnly,
     flagsOnly,
     availabilityOnly,
@@ -1623,13 +1693,14 @@ function resolveContractsSelection(options: ContractsCommandOptions): ContractsS
 
 function assertSingleContractsProjection(selection: ContractsSelection): void {
   const projectionFlagsEnabled = [
+    selection.summary,
     selection.schemaOnly,
     selection.flagsOnly,
     selection.availabilityOnly,
   ].filter((value) => value).length;
   if (projectionFlagsEnabled > 1) {
     throw new PmCliError(
-      "Choose only one projection flag: --schema-only, --flags-only, or --availability-only.",
+      "Choose only one projection flag: --summary, --schema-only, --flags-only, or --availability-only.",
       EXIT_CODE.USAGE,
     );
   }
@@ -1962,6 +2033,40 @@ function resolveOutputCommands(selection: ContractsSelection, commands: string[]
     : commands;
 }
 
+function summarizeCommandIntent(command: string): string {
+  const rootCommand = command.split(" ")[0];
+  return COMMAND_INTENTS.get(command) ??
+    COMMAND_INTENTS.get(rootCommand) ??
+    "Inspect flags.";
+}
+
+function canonicalSummaryCommand(command: string): string {
+  const rootCommand = command.split(" ")[0];
+  if (rootCommand.startsWith("list-")) {
+    return "list";
+  }
+  if (rootCommand.startsWith("history-")) {
+    return "history";
+  }
+  if (rootCommand === "ctx") {
+    return "context";
+  }
+  if (rootCommand === "packages") {
+    return "package";
+  }
+  return COMMAND_ALIAS_TO_CANONICAL.get(rootCommand) ?? rootCommand;
+}
+
+function buildCommandSummarySurface(commands: readonly string[]): CommandSummarySurface[] {
+  const rootCommands = [...new Set(commands.map((command) => canonicalSummaryCommand(command)))]
+    .filter((command) => command.length > 0)
+    .sort((left, right) => left.localeCompare(right));
+  return rootCommands.map((command) => ({
+    command,
+    intent: summarizeCommandIntent(command),
+  }));
+}
+
 function resolveExtensionCommandContracts(
   selection: ContractsSelection,
   runtime: ContractsRuntimeContext,
@@ -2001,14 +2106,15 @@ function createContractsResult(
     selected: {
       action: selection.selectedAction ?? null,
       command: selection.selectedCommand ?? null,
+      summary: selection.summary,
       schema_only: selection.schemaOnly,
       flags_only: selection.flagsOnly,
       availability_only: selection.availabilityOnly,
       runtime_only: selection.runtimeOnly,
       command_scoped: selection.selectedCommand !== undefined,
     },
-    commands: outputCommands,
-    ...(!selection.flagsOnly
+    commands: selection.summary ? [] : outputCommands,
+    ...(!selection.summary && !selection.flagsOnly
       ? {
           actions: actionContext.actions,
           action_availability: actionContext.actionAvailability,
@@ -2117,10 +2223,14 @@ export async function runContracts(
   const schemaContext = resolveContractsSchemaContext(selection, runtime, actionContext);
   const commands = resolveContractsCommands(selection, actionContext);
   const outputCommands = resolveOutputCommands(selection, commands);
-  const commandAliases = buildCommandAliasSurface(commands);
-  const extensionCommandContracts = resolveExtensionCommandContracts(selection, runtime, outputCommands);
   const result = createContractsResult(selection, schemaContext, actionContext, outputCommands);
 
+  if (selection.summary) {
+    result.command_summaries = buildCommandSummarySurface(outputCommands);
+    return result;
+  }
+  const commandAliases = buildCommandAliasSurface(commands);
+  const extensionCommandContracts = resolveExtensionCommandContracts(selection, runtime, outputCommands);
   if (!(selection.flagsOnly && !selection.fullOutput)) {
     attachRuntimeContractsResult(result, runtime);
   }
@@ -2142,6 +2252,7 @@ export const _testOnlyContractsCommand = {
   actionDescriptorMatchesSelectedCommand,
   attachCreateRequiredOptionContracts,
   buildExtensionActionSchemaBranch,
+  buildCommandSummarySurface,
   buildRuntimeFieldFlagContracts,
   collectActionContractDescriptors,
   collectExtensionCommandContracts,
@@ -2152,6 +2263,7 @@ export const _testOnlyContractsCommand = {
   filterSchemaByActions,
   isCoreCommandPath,
   mergeExtensionContractsByAction,
+  normalizeExtensionFlagName,
   normalizeActionNameFromCommand,
   normalizeCommandForRuntimeFieldFlags,
   normalizeCommandPath,

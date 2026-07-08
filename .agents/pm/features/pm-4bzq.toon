@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: agent-experience,"area:cli",errors,gh-issue,schema
 created_at: "2026-07-06T21:09:17.588Z"
-updated_at: "2026-07-06T21:09:53.803Z"
+updated_at: "2026-07-08T17:09:39.905Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: pm create failure for missing required type-specific fields names each missing field (and expected type/format) in the error and recovery examples; consistent across strict and progressive create-mode; covered by specs

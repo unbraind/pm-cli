@@ -20,7 +20,7 @@ const SCHEMA_PARITY_CASES: Array<{
   { action: "files", command: "files", flags: ["--list"] },
   { action: "health", command: "health", flags: ["--brief", "--summary", "--full"] },
   { action: "validate", command: "validate", flags: ["--dependency-cycle-severity", "--parent-cycle-severity"] },
-  { action: "contracts", command: "contracts", flags: ["--action", "--command", "--schema-only", "--flags-only", "--availability-only", "--runtime-only", "--active-only", "--full"] },
+  { action: "contracts", command: "contracts", flags: ["--action", "--command", "--summary", "--schema-only", "--flags-only", "--availability-only", "--runtime-only", "--active-only", "--full"] },
 ];
 
 function camelCaseFlagName(flag: string): string {
@@ -52,6 +52,35 @@ describe("action-scoped MCP schema parity", () => {
 
     expect(schema.properties?.brief?.description).toContain("low-token");
     expect(schema.properties?.brief?.examples).toEqual([true]);
+  });
+
+  it("keeps list-only date-window shorthands out of search tool schemas", () => {
+    const listSchema = _testOnlyCliContracts.buildActionScopedToolSchema("list") as SchemaWithProperties;
+    const searchSchema = _testOnlyCliContracts.buildActionScopedToolSchema("search") as SchemaWithProperties;
+
+    expect(Object.keys(listSchema.properties ?? {})).toEqual(expect.arrayContaining(["today", "recent", "updatedAfter"]));
+    expect(Object.keys(searchSchema.properties ?? {})).toEqual(expect.arrayContaining(["updatedAfter"]));
+    expect(searchSchema.properties).not.toHaveProperty("today");
+    expect(searchSchema.properties).not.toHaveProperty("recent");
+  });
+
+  it("rejects list date-window combinations in action schemas", () => {
+    const schema = _testOnlyCliContracts.buildActionScopedToolSchema("list") as { allOf?: unknown[] };
+
+    expect(JSON.stringify(schema.allOf)).toContain('"today":{"const":true}');
+    expect(JSON.stringify(schema.allOf)).toContain('"recent":{"const":true}');
+    expect(JSON.stringify(schema.allOf)).toContain('"updatedAfter":{"type":"string","pattern":"\\\\S"}');
+  });
+
+  it("documents contracts summary scope and schema projection exclusivity", () => {
+    const schema = _testOnlyCliContracts.buildActionScopedToolSchema("contracts") as {
+      allOf?: unknown[];
+      properties?: { summary?: { description?: string } };
+    };
+
+    expect(schema.properties?.summary?.description).toContain("health rollup");
+    expect(JSON.stringify(schema.allOf)).toContain('"summary":{"const":true}');
+    expect(JSON.stringify(schema.allOf)).toContain('"availabilityOnly":{"const":true}');
   });
 
   it("keeps the package-owned guide contract aligned with its CLI flag table", () => {

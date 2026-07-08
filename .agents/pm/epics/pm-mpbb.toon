@@ -2,11 +2,11 @@ id: pm-mpbb
 title: "Capability: CLI command surface & agent ergonomics"
 description: "Evolve the CLI command surface and lifecycle primitives for agent and human ergonomics (bulk ops, query filters, hierarchy views, history diffs)"
 type: Epic
-status: open
+status: in_progress
 priority: 1
 tags[6]: agent-ux,"area:cli","area:lifecycle",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:10.452Z"
-updated_at: "2026-07-07T14:17:44.189Z"
+updated_at: "2026-07-08T20:07:39.271Z"
 author: maintainer-agent
 estimated_minutes: 960
 acceptance_criteria: Never-block error contract holds across the command surface (recovery bundle with next steps on every failure path); agent-UX review findings closed or waived.
@@ -16,4 +16,24 @@ value: "Faster, safer agent/human workflows over the core item lifecycle"
 parent: pm-doxj
 risk: low
 confidence: high
+comments[9]{created_at,author,text}:
+  "2026-07-08T16:41:52.545Z",claude-code-agent,"Bundle evidence: wide agent-UX PR now covers GH-470 list recency shorthands and GH-442 contracts summary, with shared contract/completion/test updates for agent token efficiency."
+  "2026-07-08T17:07:58.712Z",claude-code-agent,"Verification evidence: full coverage passed at 100/100/100/100 (5462 tests), lint/static/docs/contracts gates passed, and packed-install temp proof passed in /tmp/pm-agent-ux-proof-TYSgf1 for pm list --today, pm list --recent, pm contracts --summary, and SDK runAction({action:'contracts', options:{summary:true}})."
+  "2026-07-08T17:41:48.923Z",claude-code-agent,"Evidence update: CI Gates (static) failed because the committed contract snapshot was generated before rebuilding dist after tool-parameter metadata copy changes. Rebuilt with pnpm build, regenerated with pnpm contracts:update, and reran the full static CI sequence locally: pnpm version:check && pnpm changelog:pm:check && pnpm contracts:check && pnpm security:scan && pnpm lint && npm pack --dry-run. Result: passed."
+  "2026-07-08T18:04:30.103Z",claude-code-agent,"Review evidence: addressed latest bot feedback before repush. Fixed SDK/MCP search contract leakage by keeping list-only --today/--recent out of search schemas, added help to contracts summary intents, treated programmatic updatedAfter:null as unselected, and clarified open-only today docs. Verification passed: focused tests (78 tests), CI-equivalent static sequence, and full coverage 100/100/100/100 (5463 tests)."
+  "2026-07-08T18:23:03.068Z",claude-code-agent,"Review evidence update: addressed the final Gemini normalizer finding by making normalizeExtensionFlagName accept unknown, ignore null/blank values, trim valid strings, and reject non-string values with a deterministic TypeError. Added focused coverage. Verification passed: focused tests (79 tests), CI-equivalent static sequence, and full coverage 100/100/100/100 (5464 tests)."
+  "2026-07-08T18:49:39.068Z",claude-code-agent,"Review evidence update: addressed final Gemini edge cases by ignoring blank updatedAfter values in list window conflict detection and adding more core command intents (guide, ops, reindex, focus, telemetry) to contracts summary output. Verification passed: focused tests (79 tests), CI-equivalent static sequence, and full coverage 100/100/100/100 (5464 tests)."
+  "2026-07-08T19:17:16.127Z",claude-code-agent,"Review evidence update: addressed CodeRabbit schema feedback by expanding the shared summary parameter description to include health rollups and adding contracts action schema mutual-exclusion rules for projection flags. Verification passed: focused tests (80 tests), CI-equivalent static sequence, and full coverage 100/100/100/100 (5465 tests)."
+  "2026-07-08T19:39:00.635Z",claude-code-agent,"Review evidence update: addressed Greptile pushed-review schema/runtime mismatch by adding action-schema mutual-exclusion rules for list today/recent/updatedAfter windows across list variants. Verification passed: focused tests (81 tests), CI-equivalent static sequence, and full coverage 100/100/100/100 (5466 tests)."
+  "2026-07-08T20:07:39.271Z",claude-code-agent,"Review evidence update: addressed final value-sensitive schema feedback by making schema mutual exclusion conditional on selected boolean values, adding completion summary intent, and rejecting bare '-' short extension flags. Verification passed: focused tests (81 tests), CI-equivalent static sequence, and full coverage 100/100/100/100 (5466 tests)."
+files[3]{path,scope,note}:
+  src/cli/commands/contracts.ts,project,contracts summary implementation
+  src/cli/commands/list.ts,project,list shorthand implementation
+  src/sdk/cli-contracts/flag-contracts.ts,project,flag contract updates
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/unit/commands/list-command.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,project,240
+docs[3]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,Adds token-minimal agent retrieval entries for the new primitives
+  docs/COMMANDS.md,project,Documents list recency shorthands and contracts summary retrieval primitive
+  README.md,project,README badge metadata touched during final verification bundle
 body: "## Charter\nLiving capability epic for the CLI command surface and agent ergonomics: lifecycle primitives (create/update/close/claim/next), bulk operations, query filters, hierarchy views, output projections, and never-block error UX. pm is agent-first: every command must be usable by an agent with zero out-of-band context, and every error must carry a machine-actionable recovery path.\n\n## Scope\n- In: command surface additions/refinements, flag ergonomics, output formats (toon/json/csv/table), never-block guidance, did-you-mean suggestions, agent token-efficiency of outputs.\n- Out: MCP tool surface (pm-5k4v), storage/history internals (pm-o2kc), extension-owned commands (pm-ugqx).\n\n## Status\n97 closed children delivered the v0.1 surface (next, focus, plan family, update-many, list projections, close structured fields, shortcuts, aliases). This epic stays OPEN as a living backlog per the capability-epic convention — new command-surface work lands here.\n\n## Open children (2026-07-04)\n- pm-qt5d — --pm-path package install leaks extensions into caller workspace (path-scoping safety).\n- pm-gdi7 — unknown-option flag suggestions, list-closed projection, schema add-field help discoverability.\n- pm-b3e9 — pre-install package-owned command names should hint the owning install command.\n\n## Update 2026-07-05\nNew initiative epic parented here: **pm-n7rr — CLI surface simplification** (noun-verb consolidation, ~60 -> ~15 top-level commands, zero feature loss). Children: pm-a22j token baseline, pm-0z7n alias shim layer, pm-pfqi list-* consolidation, pm-tqel history namespace, pm-tnud package namespace, pm-eq4x lifecycle sugar fold, pm-o3fh calendar sugar to builtin-calendar, pm-6apl ops namespace, pm-e2bq tiered contracts-driven help, pm-1kxs agent story. Grammar ADR: pm-pbyu (under pm-m2u1).\n\n## Update 2026-07-06\nComposability contract set filed here (stated product principle: pm composes with grep/jq/xargs for on-the-fly complex queries): pm-m9xv persona story, pm-646c NDJSON output mode for list/search/context, pm-psy1 test-gated scripting contract (exit codes, stdout/stderr discipline, field-name stability). Related existing items: pm-kipd stdin JSON create/update, pm-cfed lean JSON."

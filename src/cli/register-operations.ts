@@ -382,6 +382,7 @@ async function runContractsAction(options: Record<string, unknown>, command: Com
   const result = await runContracts({
     action: readOptionString(options, "action"),
     command: readOptionString(options, "command"),
+    summary: Boolean(options.summary),
     schemaOnly: Boolean(options.schemaOnly),
     flagsOnly: Boolean(options.flagsOnly),
     availabilityOnly: Boolean(options.availabilityOnly),
@@ -641,6 +642,7 @@ export function registerOperationCommands(program: Command): void {
     .description("Show machine-readable command and schema contracts for agents.")
     .option("--action <value>", "Filter tool schema branches to a specific action")
     .option("--command <value>", "Scope contracts output to one CLI command (narrow-by-default)")
+    .option("--summary", "Return one command+intent row per top-level command for cheap agent bootstrap")
     .option("--schema-only", "Return schema-focused output only")
     .option("--flags-only", "Return command flag contracts only")
     .option("--availability-only", "Return action availability surface only")

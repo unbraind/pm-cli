@@ -7,6 +7,7 @@ Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), 
 ```bash
 pm <command> --help
 pm <command> --help --json
+pm contracts --summary --json
 pm contracts --command <command> --flags-only --json
 ```
 
@@ -15,7 +16,7 @@ pm contracts --command <command> --flags-only --json
 - Prefer `pm context`, `pm search`, and narrow list commands before mutation.
 - Prefer TOON for reading and `--json` for strict parsing.
 - Use the [guide topic map](README.md#guide-topic-map) when optional `pm guide` local docs routing is needed.
-- Use `pm contracts` for machine clients.
+- Use `pm contracts --summary --json` for the cheapest command map, then narrow with command-scoped contracts.
 - Every mutation writes history.
 
 Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
@@ -129,6 +130,10 @@ pm list-all --updated-after 2026-06-04T15:18:32Z --brief
 pm list-open --updated-after=-2h --brief
 pm list-all --created-after=-7d --status open
 
+# Common list windows avoid date math (`list-open` keeps the view open-only).
+pm list-open --today --brief
+pm list-all --recent --brief
+
 # Search scoped to open work only (drops closed-history noise); statuses accept
 # all (no lifecycle restriction), open/closed/canceled aliases, or configured
 # ids, comma-separated, with a did-you-mean hint on typos.
@@ -140,6 +145,8 @@ pm search "reminder validation" --status all --limit 10
 # Full filter parity with list — scope retrieval before ranking.
 pm search "calendar" --type Task --assignee alice --updated-after=-7d --parent pm-abcd
 ```
+
+Use only one updated-at window per list call: `--today`, `--recent`, and `--updated-after` are mutually exclusive. `--today` starts at local midnight; `--recent` is the same as `--updated-after=-7d`.
 
 `pm get`, `pm history`, and `pm search` also accept command-local `--format json|toon`. `--format json` is equivalent to the global `--json` flag for that command, while `--format toon` keeps the default agent-readable output. Do not combine global `--json` with `--format toon`.
 
@@ -858,12 +865,14 @@ Invariants:
 
 ```bash
 pm contracts --json
+pm contracts --summary --json
 pm contracts --command create --flags-only --json
 pm contracts --action create --schema-only --json
 pm help create --json
 ```
 
 Agents should use runtime contracts instead of hard-coding flag lists. Contract output includes extension-provided command surfaces when active.
+Use `pm contracts --summary --json` first when bootstrapping in a tight context window; it emits one command and terse intent per row before the agent requests heavier command-specific flags or schemas.
 
 ## Completion
 
