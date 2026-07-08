@@ -739,6 +739,64 @@ describe("contracts command runtime", () => {
     ).not.toEqual(expect.arrayContaining(["--dep", "--comment", "--doc", "--description"]));
   });
 
+  it("supports summary mode for cheap command bootstrap", async () => {
+    const result = await runContracts({ summary: true }, GLOBAL_OPTIONS);
+    expect(result.selected.summary).toBe(true);
+    expect(result.runtime_schema).toBeUndefined();
+    expect(result.schema).toBeUndefined();
+    expect(result.command_flags).toBeUndefined();
+    expect(result.command_summaries).toEqual(
+      expect.arrayContaining([
+        { command: "contracts", intent: "Inspect contracts." },
+        { command: "list", intent: "List work." },
+      ]),
+    );
+    expect(result.commands).toEqual([]);
+    expect(JSON.stringify(result).length).toBeLessThan(3000);
+  });
+
+  it("summarizes aliased and namespaced commands for compact bootstrap output", () => {
+    expect(
+      _testOnlyContractsCommand.buildCommandSummarySurface([
+        "list-open",
+        "history-compact",
+        "ctx",
+        "completion",
+        "packages",
+        "guide",
+        "ops",
+        "reindex",
+        "mystery command",
+      ]),
+    ).toEqual([
+      { command: "completion", intent: "Generate shell completions." },
+      { command: "context", intent: "Build context." },
+      { command: "guide", intent: "Show user guides." },
+      { command: "history", intent: "Inspect history." },
+      { command: "list", intent: "List work." },
+      { command: "mystery", intent: "Inspect flags." },
+      { command: "ops", intent: "Run operations." },
+      { command: "package", intent: "Manage packages." },
+      { command: "reindex", intent: "Refresh search index." },
+    ]);
+  });
+
+  it("normalizes extension flag names defensively", () => {
+    expect(_testOnlyContractsCommand.normalizeExtensionFlagName(" --package-flag ", "long")).toBe("--package-flag");
+    expect(_testOnlyContractsCommand.normalizeExtensionFlagName(" -p ", "short")).toBe("-p");
+    expect(_testOnlyContractsCommand.normalizeExtensionFlagName("-", "short")).toBeNull();
+    expect(_testOnlyContractsCommand.normalizeExtensionFlagName(null, "long")).toBeNull();
+    expect(() => _testOnlyContractsCommand.normalizeExtensionFlagName(42, "long")).toThrow(
+      "Expected string for extension flag name.",
+    );
+  });
+
+  it("rejects summary combined with another contracts projection", async () => {
+    await expect(runContracts({ summary: true, flagsOnly: true }, GLOBAL_OPTIONS)).rejects.toMatchObject<PmCliError>({
+      exitCode: EXIT_CODE.USAGE,
+    });
+  });
+
   it("publishes strict MCP action contracts for docs list, add notes, and history repair", async () => {
     const schemaResult = await runContracts({ schemaOnly: true, full: true }, GLOBAL_OPTIONS);
     expect(schemaResult.schema?.["x-schema-version"]).toBe(PM_TOOL_PARAMETERS_SCHEMA_VERSION);

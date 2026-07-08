@@ -5,6 +5,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/unbraind/pm-cli/badge)](https://www.codefactor.io/repository/github/unbraind/pm-cli)
 [![npm version](https://img.shields.io/npm/v/%40unbrained%2Fpm-cli)](https://www.npmjs.com/package/%40unbrained%2Fpm-cli)
 [![Node >=22.18](https://img.shields.io/node/v/%40unbrained%2Fpm-cli)](https://nodejs.org)
+![NPM Downloads](https://img.shields.io/npm/d18m/%40unbrained%2Fpm-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 [![pm total](https://pm-cli.unbrained.dev/badges/svg?repo=unbraind/pm-cli&metric=items&style=flat&rt=2)](https://pm-cli.unbrained.dev/badges)

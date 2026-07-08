@@ -2,15 +2,40 @@ id: pm-bfma
 title: "GH-470: pm list --today and --recent shorthand filters for recently active items"
 description: "Dogfood GH-470: agents wanting recently active items must hand-build --updated-after ISO timestamps; --today / --recent (last 7 days) shorthands cut tokens. Duplicate check: searched list today recent shorthand — no existing item."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[4]: agent-experience,"area:cli",gh-issue,token-efficiency
 created_at: "2026-07-06T21:08:59.641Z"
-updated_at: "2026-07-06T21:08:59.641Z"
+updated_at: "2026-07-08T20:07:38.223Z"
+closed_at: "2026-07-08T17:09:36.777Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "pm list --today filters to items updated today and --recent to the last 7 days; both compose with existing filters, appear in help/contracts/completions, and are covered by specs"
 parent: pm-mpbb
 risk: low
 confidence: high
+resolution: Implemented list recency window shorthands for agent retrieval.
+expected_result: "Agents can use pm list --today or --recent instead of hand-building updated-after timestamps, with help/contracts/completions/docs coverage."
+actual_result: "pm list --today and --recent work through CLI and source tests, echo active filters, reject conflicting updated-at windows, and pass packed-install proof."
+comments[9]{created_at,author,text}:
+  "2026-07-08T16:41:51.468Z",claude-code-agent,"Implementation evidence: added pm list --today and --recent shorthands, conflict validation against --updated-after, filter echo metadata, Commander/completion/SDK contract/MCP parameter wiring, and focused list-command coverage."
+  "2026-07-08T17:07:58.019Z",claude-code-agent,"Verification evidence: full coverage passed at 100/100/100/100 (5462 tests), lint/static/docs/contracts gates passed, and packed-install temp proof passed in /tmp/pm-agent-ux-proof-TYSgf1 for pm list --today, pm list --recent, pm contracts --summary, and SDK runAction({action:'contracts', options:{summary:true}})."
+  "2026-07-08T17:41:48.235Z",claude-code-agent,"Evidence update: CI Gates (static) failed because the committed contract snapshot was generated before rebuilding dist after tool-parameter metadata copy changes. Rebuilt with pnpm build, regenerated with pnpm contracts:update, and reran the full static CI sequence locally: pnpm version:check && pnpm changelog:pm:check && pnpm contracts:check && pnpm security:scan && pnpm lint && npm pack --dry-run. Result: passed."
+  "2026-07-08T18:04:29.433Z",claude-code-agent,"Review evidence: addressed latest bot feedback before repush. Fixed SDK/MCP search contract leakage by keeping list-only --today/--recent out of search schemas, added help to contracts summary intents, treated programmatic updatedAfter:null as unselected, and clarified open-only today docs. Verification passed: focused tests (78 tests), CI-equivalent static sequence, and full coverage 100/100/100/100 (5463 tests)."
+  "2026-07-08T18:23:02.338Z",claude-code-agent,"Review evidence update: addressed the final Gemini normalizer finding by making normalizeExtensionFlagName accept unknown, ignore null/blank values, trim valid strings, and reject non-string values with a deterministic TypeError. Added focused coverage. Verification passed: focused tests (79 tests), CI-equivalent static sequence, and full coverage 100/100/100/100 (5464 tests)."
+  "2026-07-08T18:49:37.717Z",claude-code-agent,"Review evidence update: addressed final Gemini edge cases by ignoring blank updatedAfter values in list window conflict detection and adding more core command intents (guide, ops, reindex, focus, telemetry) to contracts summary output. Verification passed: focused tests (79 tests), CI-equivalent static sequence, and full coverage 100/100/100/100 (5464 tests)."
+  "2026-07-08T19:17:14.516Z",claude-code-agent,"Review evidence update: addressed CodeRabbit schema feedback by expanding the shared summary parameter description to include health rollups and adding contracts action schema mutual-exclusion rules for projection flags. Verification passed: focused tests (80 tests), CI-equivalent static sequence, and full coverage 100/100/100/100 (5465 tests)."
+  "2026-07-08T19:38:59.833Z",claude-code-agent,"Review evidence update: addressed Greptile pushed-review schema/runtime mismatch by adding action-schema mutual-exclusion rules for list today/recent/updatedAfter windows across list variants. Verification passed: focused tests (81 tests), CI-equivalent static sequence, and full coverage 100/100/100/100 (5466 tests)."
+  "2026-07-08T20:07:38.223Z",claude-code-agent,"Review evidence update: addressed final value-sensitive schema feedback by making schema mutual exclusion conditional on selected boolean values, adding completion summary intent, and rejecting bare '-' short extension flags. Verification passed: focused tests (81 tests), CI-equivalent static sequence, and full coverage 100/100/100/100 (5466 tests)."
+files[3]{path,scope,note}:
+  src/cli/commands/contracts.ts,project,contracts summary implementation
+  src/cli/commands/list.ts,project,list shorthand implementation
+  src/sdk/cli-contracts/flag-contracts.ts,project,flag contract updates
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/unit/commands/list-command.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,project,240
+docs[3]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,Adds token-minimal agent retrieval entries for the new primitives
+  docs/COMMANDS.md,project,Documents list recency shorthands and contracts summary retrieval primitive
+  README.md,project,README badge metadata touched during final verification bundle
+close_reason: Implemented pm list --today/--recent shorthands with contracts/completion/docs/tests and packed-install proof.
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/470\n\nShorthand date filters for agent loops: `pm list --today` (updated today) and `pm list --recent` (updated in the last 7 days) as sugar over --updated-after, avoiding ISO-timestamp construction. Wire per the new-flag checklist (contracts, completions, docs, MCP param parity)."

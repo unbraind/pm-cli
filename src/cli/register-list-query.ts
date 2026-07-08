@@ -218,6 +218,8 @@ function registerListCommand(program: Command, descriptor: ListCommandDescriptor
     .option("--priority <value>", "Filter by priority")
     .option("--deadline-before <value>", "Filter by deadline upper bound (ISO/date string or relative)")
     .option("--deadline-after <value>", "Filter by deadline lower bound (ISO/date string or relative)")
+    .option("--today", "Filter to items updated since local midnight today")
+    .option("--recent", "Filter to items updated in the last 7 days")
     .option("--updated-after <value>", 'Filter by updated_at lower bound: ISO timestamp or signed relative (e.g. "-2h"/"-7d" for the past). "Changed since my last window" → --updated-after <ISO>')
     .option("--updated-before <value>", "Filter by updated_at upper bound: ISO timestamp or signed relative (-2h/+1d)")
     .option("--created-after <value>", "Filter by created_at lower bound: ISO timestamp or signed relative (-2h/+1d)")

@@ -47,6 +47,8 @@ import type { SharedItemFilterOptions } from "./item-filter-options.js";
 export interface ListOptions extends SharedItemFilterOptions {
   ids?: string;
   assigneeFilter?: string;
+  today?: boolean;
+  recent?: boolean;
   limit?: string;
   offset?: string;
   noTruncate?: boolean;
@@ -360,6 +362,8 @@ const VERBOSE_LIST_BOOLEAN_FILTER_ECHO_ENTRIES: ReadonlyArray<{ key: string; sum
   { key: "filterMetadataMissing", summaryKey: "filter_metadata_missing" },
 ] as const;
 
+const LIST_RECENT_WINDOW = "-7d";
+
 function buildCompactListFilterSummary(params: {
   filtersStatus: string | string[] | null;
   options: ListOptions;
@@ -383,6 +387,7 @@ function buildCompactListFilterSummary(params: {
     filters.status = filtersStatus;
   }
   applyFilterValueEcho(filters, options, COMPACT_LIST_VALUE_FILTER_ECHO_ENTRIES);
+  applyListWindowFilterEcho(filters, options);
   if (options.filterAcMissing === true) {
     filters.filter_ac_missing = true;
   }
@@ -462,6 +467,33 @@ function parseTimestampWindow(raw: unknown, fieldLabel: string): string | undefi
   const value = String(raw).trim();
   if (value.length === 0) return undefined;
   return resolveIsoOrRelative(value, new Date(), fieldLabel);
+}
+
+function resolveListUpdatedAfter(options: ListOptions): string | undefined {
+  const hasUpdatedAfter = options.updatedAfter != null && String(options.updatedAfter).trim().length > 0;
+  const selectedWindows = [options.today === true, options.recent === true, hasUpdatedAfter]
+    .filter((selected) => selected).length;
+  if (selectedWindows > 1) {
+    throw new PmCliError("Choose only one updated_at window: --today, --recent, or --updated-after.", EXIT_CODE.USAGE);
+  }
+  if (options.today === true) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today.toISOString();
+  }
+  if (options.recent === true) {
+    return parseTimestampWindow(LIST_RECENT_WINDOW, "recent");
+  }
+  return parseTimestampWindow(options.updatedAfter, "updated-after");
+}
+
+function applyListWindowFilterEcho(filters: Record<string, unknown>, options: ListOptions): void {
+  if (options.today === true) {
+    filters.today = true;
+  }
+  if (options.recent === true) {
+    filters.recent = true;
+  }
 }
 
 function parseIdsFilter(raw: unknown): Set<string> | undefined {
@@ -697,7 +729,7 @@ function resolveListFilterSet(
     priorityFilter: parsePriority(options.priority),
     deadlineBefore: parseDeadline(options.deadlineBefore, "deadline-before"),
     deadlineAfter: parseDeadline(options.deadlineAfter, "deadline-after"),
-    updatedAfter: parseTimestampWindow(options.updatedAfter, "updated-after"),
+    updatedAfter: resolveListUpdatedAfter(options),
     updatedBefore: parseTimestampWindow(options.updatedBefore, "updated-before"),
     createdAfter: parseTimestampWindow(options.createdAfter, "created-after"),
     createdBefore: parseTimestampWindow(options.createdBefore, "created-before"),
@@ -1132,6 +1164,7 @@ function buildVerboseListFilters(params: {
     }
   }
   Object.assign(filters, buildGovernanceMissingFilterEcho(options), buildContentFilterEcho(options));
+  applyListWindowFilterEcho(filters, options);
   if (noTruncate) {
     filters.no_truncate = true;
   }
@@ -1232,6 +1265,7 @@ export const _testOnly = {
   parseIdsFilter,
   parseOffset,
   parseProjectionConfig,
+  resolveListUpdatedAfter,
   parseSortField,
   parseSortOrder,
   orderItemsAsTree,

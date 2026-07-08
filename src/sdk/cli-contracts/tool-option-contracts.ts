@@ -25,11 +25,17 @@ const TOOL_ITEM_BASE_FILTER_OPTION_CONTRACTS: readonly SharedToolOptionFlagContr
   { param: "deadlineAfter", flag: "--deadline-after" },
 ];
 
-const TOOL_ITEM_WINDOW_FILTER_OPTION_CONTRACTS: readonly SharedToolOptionFlagContract[] = [
+const TOOL_ITEM_DATE_FILTER_OPTION_CONTRACTS: readonly SharedToolOptionFlagContract[] = [
   { param: "updatedAfter", flag: "--updated-after" },
   { param: "updatedBefore", flag: "--updated-before" },
   { param: "createdAfter", flag: "--created-after" },
   { param: "createdBefore", flag: "--created-before" },
+];
+
+const TOOL_LIST_WINDOW_FILTER_OPTION_CONTRACTS: readonly SharedToolOptionFlagContract[] = [
+  { param: "today", flag: "--today", booleanish: true },
+  { param: "recent", flag: "--recent", booleanish: true },
+  ...TOOL_ITEM_DATE_FILTER_OPTION_CONTRACTS,
 ];
 
 const TOOL_ITEM_RELATION_FILTER_OPTION_CONTRACTS: readonly SharedToolOptionFlagContract[] = [
@@ -85,7 +91,7 @@ const TOOL_CONTENT_PRESENCE_OPTION_CONTRACTS: readonly SharedToolOptionFlagContr
 
 export const TOOL_LIST_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   ...cloneOptionContracts(TOOL_ITEM_BASE_FILTER_OPTION_CONTRACTS),
-  ...cloneOptionContracts(TOOL_ITEM_WINDOW_FILTER_OPTION_CONTRACTS),
+  ...cloneOptionContracts(TOOL_LIST_WINDOW_FILTER_OPTION_CONTRACTS),
   { param: "ids", flag: "--ids" },
   ...cloneOptionContracts(TOOL_ITEM_RELATION_FILTER_OPTION_CONTRACTS),
   { param: "filterAcMissing", flag: "--filter-ac-missing" },
@@ -123,7 +129,7 @@ export const TOOL_SEARCH_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "count", flag: "--count", booleanish: true },
   { param: "semanticWeight", flag: "--semantic-weight" },
   ...cloneOptionContracts(TOOL_ITEM_BASE_FILTER_OPTION_CONTRACTS),
-  ...cloneOptionContracts(TOOL_ITEM_WINDOW_FILTER_OPTION_CONTRACTS),
+  ...cloneOptionContracts(TOOL_ITEM_DATE_FILTER_OPTION_CONTRACTS),
   ...cloneOptionContracts(TOOL_SEARCH_RELATION_FILTER_OPTION_CONTRACTS),
   ...cloneOptionContracts(TOOL_GOVERNANCE_MISSING_OPTION_CONTRACTS),
   ...cloneOptionContracts(TOOL_CONTENT_PRESENCE_OPTION_CONTRACTS),

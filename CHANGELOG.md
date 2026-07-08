@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- GH-442: lean pm contracts --summary mode for cheap agent bootstrap (25KB -\> 1-3KB) ([pm-vxxm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-vxxm.toon))
+- GH-470: pm list --today and --recent shorthand filters for recently active items ([pm-bfma](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-bfma.toon))
+
 ## 2026.7.8 - 2026-07-08
 
 ### Added

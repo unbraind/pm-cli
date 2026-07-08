@@ -1775,6 +1775,9 @@
           "flag": "--command"
         },
         {
+          "flag": "--summary"
+        },
+        {
           "flag": "--schema-only"
         },
         {
@@ -2994,6 +2997,12 @@
           "flag": "--deadline-after"
         },
         {
+          "flag": "--today"
+        },
+        {
+          "flag": "--recent"
+        },
+        {
           "flag": "--updated-after"
         },
         {
@@ -3193,6 +3202,12 @@
         },
         {
           "flag": "--deadline-after"
+        },
+        {
+          "flag": "--today"
+        },
+        {
+          "flag": "--recent"
         },
         {
           "flag": "--updated-after"
@@ -3396,6 +3411,12 @@
           "flag": "--deadline-after"
         },
         {
+          "flag": "--today"
+        },
+        {
+          "flag": "--recent"
+        },
+        {
           "flag": "--updated-after"
         },
         {
@@ -3595,6 +3616,12 @@
         },
         {
           "flag": "--deadline-after"
+        },
+        {
+          "flag": "--today"
+        },
+        {
+          "flag": "--recent"
         },
         {
           "flag": "--updated-after"
@@ -3798,6 +3825,12 @@
           "flag": "--deadline-after"
         },
         {
+          "flag": "--today"
+        },
+        {
+          "flag": "--recent"
+        },
+        {
           "flag": "--updated-after"
         },
         {
@@ -3997,6 +4030,12 @@
         },
         {
           "flag": "--deadline-after"
+        },
+        {
+          "flag": "--today"
+        },
+        {
+          "flag": "--recent"
         },
         {
           "flag": "--updated-after"
@@ -4200,6 +4239,12 @@
           "flag": "--deadline-after"
         },
         {
+          "flag": "--today"
+        },
+        {
+          "flag": "--recent"
+        },
+        {
           "flag": "--updated-after"
         },
         {
@@ -4399,6 +4444,12 @@
         },
         {
           "flag": "--deadline-after"
+        },
+        {
+          "flag": "--today"
+        },
+        {
+          "flag": "--recent"
         },
         {
           "flag": "--updated-after"
@@ -14141,6 +14192,88 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "today": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "today"
+                  ]
+                },
+                {
+                  "properties": {
+                    "recent": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "recent"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "today": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "today"
+                  ]
+                },
+                {
+                  "properties": {
+                    "updatedAfter": {
+                      "pattern": "\\S",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "updatedAfter"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "recent": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "recent"
+                  ]
+                },
+                {
+                  "properties": {
+                    "updatedAfter": {
+                      "pattern": "\\S",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "updatedAfter"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
         "properties": {
           "action": {
             "const": "list",
@@ -14425,6 +14558,10 @@
             "description": "Suppress stdout payload output.",
             "type": "boolean"
           },
+          "recent": {
+            "description": "When true for list actions, include only items updated in the last seven days.",
+            "type": "boolean"
+          },
           "release": {
             "description": "Release.",
             "type": "string"
@@ -14477,6 +14614,10 @@
             ],
             "type": "number"
           },
+          "today": {
+            "description": "When true for list actions, include only items updated since local midnight today.",
+            "type": "boolean"
+          },
           "tree": {
             "description": "When true for list/get actions, render recursive parent/child tree ordering.",
             "type": "boolean"
@@ -14522,6 +14663,88 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "today": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "today"
+                  ]
+                },
+                {
+                  "properties": {
+                    "recent": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "recent"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "today": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "today"
+                  ]
+                },
+                {
+                  "properties": {
+                    "updatedAfter": {
+                      "pattern": "\\S",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "updatedAfter"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "recent": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "recent"
+                  ]
+                },
+                {
+                  "properties": {
+                    "updatedAfter": {
+                      "pattern": "\\S",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "updatedAfter"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
         "properties": {
           "action": {
             "const": "list-all",
@@ -14806,6 +15029,10 @@
             "description": "Suppress stdout payload output.",
             "type": "boolean"
           },
+          "recent": {
+            "description": "When true for list actions, include only items updated in the last seven days.",
+            "type": "boolean"
+          },
           "release": {
             "description": "Release.",
             "type": "string"
@@ -14858,6 +15085,10 @@
             ],
             "type": "number"
           },
+          "today": {
+            "description": "When true for list actions, include only items updated since local midnight today.",
+            "type": "boolean"
+          },
           "tree": {
             "description": "When true for list/get actions, render recursive parent/child tree ordering.",
             "type": "boolean"
@@ -14903,6 +15134,88 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "today": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "today"
+                  ]
+                },
+                {
+                  "properties": {
+                    "recent": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "recent"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "today": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "today"
+                  ]
+                },
+                {
+                  "properties": {
+                    "updatedAfter": {
+                      "pattern": "\\S",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "updatedAfter"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "recent": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "recent"
+                  ]
+                },
+                {
+                  "properties": {
+                    "updatedAfter": {
+                      "pattern": "\\S",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "updatedAfter"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
         "properties": {
           "action": {
             "const": "list-draft",
@@ -15187,6 +15500,10 @@
             "description": "Suppress stdout payload output.",
             "type": "boolean"
           },
+          "recent": {
+            "description": "When true for list actions, include only items updated in the last seven days.",
+            "type": "boolean"
+          },
           "release": {
             "description": "Release.",
             "type": "string"
@@ -15239,6 +15556,10 @@
             ],
             "type": "number"
           },
+          "today": {
+            "description": "When true for list actions, include only items updated since local midnight today.",
+            "type": "boolean"
+          },
           "tree": {
             "description": "When true for list/get actions, render recursive parent/child tree ordering.",
             "type": "boolean"
@@ -15284,6 +15605,88 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "today": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "today"
+                  ]
+                },
+                {
+                  "properties": {
+                    "recent": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "recent"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "today": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "today"
+                  ]
+                },
+                {
+                  "properties": {
+                    "updatedAfter": {
+                      "pattern": "\\S",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "updatedAfter"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "recent": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "recent"
+                  ]
+                },
+                {
+                  "properties": {
+                    "updatedAfter": {
+                      "pattern": "\\S",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "updatedAfter"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
         "properties": {
           "action": {
             "const": "list-open",
@@ -15568,6 +15971,10 @@
             "description": "Suppress stdout payload output.",
             "type": "boolean"
           },
+          "recent": {
+            "description": "When true for list actions, include only items updated in the last seven days.",
+            "type": "boolean"
+          },
           "release": {
             "description": "Release.",
             "type": "string"
@@ -15620,6 +16027,10 @@
             ],
             "type": "number"
           },
+          "today": {
+            "description": "When true for list actions, include only items updated since local midnight today.",
+            "type": "boolean"
+          },
           "tree": {
             "description": "When true for list/get actions, render recursive parent/child tree ordering.",
             "type": "boolean"
@@ -15665,6 +16076,88 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "today": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "today"
+                  ]
+                },
+                {
+                  "properties": {
+                    "recent": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "recent"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "today": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "today"
+                  ]
+                },
+                {
+                  "properties": {
+                    "updatedAfter": {
+                      "pattern": "\\S",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "updatedAfter"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "recent": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "recent"
+                  ]
+                },
+                {
+                  "properties": {
+                    "updatedAfter": {
+                      "pattern": "\\S",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "updatedAfter"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
         "properties": {
           "action": {
             "const": "list-in-progress",
@@ -15949,6 +16442,10 @@
             "description": "Suppress stdout payload output.",
             "type": "boolean"
           },
+          "recent": {
+            "description": "When true for list actions, include only items updated in the last seven days.",
+            "type": "boolean"
+          },
           "release": {
             "description": "Release.",
             "type": "string"
@@ -16001,6 +16498,10 @@
             ],
             "type": "number"
           },
+          "today": {
+            "description": "When true for list actions, include only items updated since local midnight today.",
+            "type": "boolean"
+          },
           "tree": {
             "description": "When true for list/get actions, render recursive parent/child tree ordering.",
             "type": "boolean"
@@ -16046,6 +16547,88 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "today": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "today"
+                  ]
+                },
+                {
+                  "properties": {
+                    "recent": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "recent"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "today": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "today"
+                  ]
+                },
+                {
+                  "properties": {
+                    "updatedAfter": {
+                      "pattern": "\\S",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "updatedAfter"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "recent": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "recent"
+                  ]
+                },
+                {
+                  "properties": {
+                    "updatedAfter": {
+                      "pattern": "\\S",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "updatedAfter"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
         "properties": {
           "action": {
             "const": "list-blocked",
@@ -16330,6 +16913,10 @@
             "description": "Suppress stdout payload output.",
             "type": "boolean"
           },
+          "recent": {
+            "description": "When true for list actions, include only items updated in the last seven days.",
+            "type": "boolean"
+          },
           "release": {
             "description": "Release.",
             "type": "string"
@@ -16382,6 +16969,10 @@
             ],
             "type": "number"
           },
+          "today": {
+            "description": "When true for list actions, include only items updated since local midnight today.",
+            "type": "boolean"
+          },
           "tree": {
             "description": "When true for list/get actions, render recursive parent/child tree ordering.",
             "type": "boolean"
@@ -16427,6 +17018,88 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "today": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "today"
+                  ]
+                },
+                {
+                  "properties": {
+                    "recent": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "recent"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "today": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "today"
+                  ]
+                },
+                {
+                  "properties": {
+                    "updatedAfter": {
+                      "pattern": "\\S",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "updatedAfter"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "recent": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "recent"
+                  ]
+                },
+                {
+                  "properties": {
+                    "updatedAfter": {
+                      "pattern": "\\S",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "updatedAfter"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
         "properties": {
           "action": {
             "const": "list-closed",
@@ -16711,6 +17384,10 @@
             "description": "Suppress stdout payload output.",
             "type": "boolean"
           },
+          "recent": {
+            "description": "When true for list actions, include only items updated in the last seven days.",
+            "type": "boolean"
+          },
           "release": {
             "description": "Release.",
             "type": "string"
@@ -16763,6 +17440,10 @@
             ],
             "type": "number"
           },
+          "today": {
+            "description": "When true for list actions, include only items updated since local midnight today.",
+            "type": "boolean"
+          },
           "tree": {
             "description": "When true for list/get actions, render recursive parent/child tree ordering.",
             "type": "boolean"
@@ -16808,6 +17489,88 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "today": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "today"
+                  ]
+                },
+                {
+                  "properties": {
+                    "recent": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "recent"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "today": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "today"
+                  ]
+                },
+                {
+                  "properties": {
+                    "updatedAfter": {
+                      "pattern": "\\S",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "updatedAfter"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "recent": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "recent"
+                  ]
+                },
+                {
+                  "properties": {
+                    "updatedAfter": {
+                      "pattern": "\\S",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "updatedAfter"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
         "properties": {
           "action": {
             "const": "list-canceled",
@@ -17092,6 +17855,10 @@
             "description": "Suppress stdout payload output.",
             "type": "boolean"
           },
+          "recent": {
+            "description": "When true for list actions, include only items updated in the last seven days.",
+            "type": "boolean"
+          },
           "release": {
             "description": "Release.",
             "type": "string"
@@ -17143,6 +17910,10 @@
               120000
             ],
             "type": "number"
+          },
+          "today": {
+            "description": "When true for list actions, include only items updated since local midnight today.",
+            "type": "boolean"
           },
           "tree": {
             "description": "When true for list/get actions, render recursive parent/child tree ordering.",
@@ -22685,7 +23456,7 @@
             "type": "boolean"
           },
           "summary": {
-            "description": "When true for deps action, return counts only without full tree/graph payloads.",
+            "description": "When true, return the command's compact summary projection (deps counts, health rollup, or contracts command intents).",
             "type": "boolean"
           },
           "timeoutMs": {
@@ -23344,7 +24115,7 @@
             "type": "boolean"
           },
           "summary": {
-            "description": "When true for deps action, return counts only without full tree/graph payloads.",
+            "description": "When true, return the command's compact summary projection (deps counts, health rollup, or contracts command intents).",
             "type": "boolean"
           },
           "timeoutMs": {
@@ -23654,6 +24425,164 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "summary": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "summary"
+                  ]
+                },
+                {
+                  "properties": {
+                    "schemaOnly": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "schemaOnly"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "summary": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "summary"
+                  ]
+                },
+                {
+                  "properties": {
+                    "flagsOnly": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "flagsOnly"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "summary": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "summary"
+                  ]
+                },
+                {
+                  "properties": {
+                    "availabilityOnly": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "availabilityOnly"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "schemaOnly": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "schemaOnly"
+                  ]
+                },
+                {
+                  "properties": {
+                    "flagsOnly": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "flagsOnly"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "schemaOnly": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "schemaOnly"
+                  ]
+                },
+                {
+                  "properties": {
+                    "availabilityOnly": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "availabilityOnly"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "flagsOnly": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "flagsOnly"
+                  ]
+                },
+                {
+                  "properties": {
+                    "availabilityOnly": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "availabilityOnly"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
         "properties": {
           "action": {
             "const": "contracts",
@@ -23730,6 +24659,10 @@
           },
           "schemaOnly": {
             "description": "When true, contracts action returns schema-focused payloads (mutually exclusive with flagsOnly/availabilityOnly).",
+            "type": "boolean"
+          },
+          "summary": {
+            "description": "When true, return the command's compact summary projection (deps counts, health rollup, or contracts command intents).",
             "type": "boolean"
           },
           "timeoutMs": {
@@ -24433,6 +25366,7 @@
     "command_scoped": false,
     "flags_only": false,
     "runtime_only": false,
-    "schema_only": false
+    "schema_only": false,
+    "summary": false
   }
 }

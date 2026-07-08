@@ -116,9 +116,12 @@ pm release <item-id>
 | Open work only | `pm search "<keywords>" --status open` (drops closed-history noise; did-you-mean on typos) |
 | Scope search like list | `pm search "<keywords>" --type Task --assignee <name> --parent <id>` (full `pm list` filter parity) |
 | Items changed since last window | `pm list-all --updated-after <prev-run-ISO> --brief` (relative `-2h`/`-7d` also work) |
+| Open items changed today | `pm list-open --today --brief` (local-midnight shorthand; mutually exclusive with `--updated-after`) |
+| Items changed recently | `pm list-all --recent --brief` (last seven days; mutually exclusive with `--updated-after`) |
 | Single item | `pm get <id>` |
 | Full machine payload | `pm get <id> --full --json` |
 | Command flags | `pm <command> --help --json` |
+| Command intent map | `pm contracts --summary --json` (one command plus terse intent per row; use before command-scoped contracts) |
 | Low-noise machine contracts | `pm contracts --command <command> --flags-only --json` |
 | Semantic index refresh | `pm reindex --mode semantic --progress` (stale-first by default; add `--full` to force full rebuild; requires the `search-advanced` package) |
 | Timeline | `pm activity --id <id> --limit 20` |

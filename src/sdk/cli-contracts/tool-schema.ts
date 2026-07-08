@@ -80,6 +80,10 @@ export interface PmActionSchemaContract {
    * (e.g. focus `id` + `clear`), keeping schema and runtime in lock-step.
    */
   mutuallyExclusive?: Array<string[]>;
+  mutuallyExclusiveWhen?: Array<Array<{
+    property: string;
+    schema: Record<string, unknown>;
+  }>>;
 }
 
 function toSchemaKeyList(values: string[]): string[] {
@@ -150,6 +154,46 @@ const LIST_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "brief",
   "full",
 ]);
+const LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS = [
+  [
+    { property: "today", schema: { const: true } },
+    { property: "recent", schema: { const: true } },
+  ],
+  [
+    { property: "today", schema: { const: true } },
+    { property: "updatedAfter", schema: { type: "string", pattern: "\\S" } },
+  ],
+  [
+    { property: "recent", schema: { const: true } },
+    { property: "updatedAfter", schema: { type: "string", pattern: "\\S" } },
+  ],
+];
+const CONTRACTS_PROJECTION_MUTUALLY_EXCLUSIVE_GROUPS = [
+  [
+    { property: "summary", schema: { const: true } },
+    { property: "schemaOnly", schema: { const: true } },
+  ],
+  [
+    { property: "summary", schema: { const: true } },
+    { property: "flagsOnly", schema: { const: true } },
+  ],
+  [
+    { property: "summary", schema: { const: true } },
+    { property: "availabilityOnly", schema: { const: true } },
+  ],
+  [
+    { property: "schemaOnly", schema: { const: true } },
+    { property: "flagsOnly", schema: { const: true } },
+  ],
+  [
+    { property: "schemaOnly", schema: { const: true } },
+    { property: "availabilityOnly", schema: { const: true } },
+  ],
+  [
+    { property: "flagsOnly", schema: { const: true } },
+    { property: "availabilityOnly", schema: { const: true } },
+  ],
+];
 const AGGREGATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...TOOL_AGGREGATE_OPTION_CONTRACTS.map((entry) => entry.param),
   "count",
@@ -268,14 +312,14 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   },
   copy: { required: ["id"], optional: ["title", "author", "message"] },
   focus: { optional: ["id", "clear"], mutuallyExclusive: [["id", "clear"]] },
-  list: { optional: LIST_CONTRACT_PARAMETER_KEYS },
-  "list-all": { optional: LIST_CONTRACT_PARAMETER_KEYS },
-  "list-draft": { optional: LIST_CONTRACT_PARAMETER_KEYS },
-  "list-open": { optional: LIST_CONTRACT_PARAMETER_KEYS },
-  "list-in-progress": { optional: LIST_CONTRACT_PARAMETER_KEYS },
-  "list-blocked": { optional: LIST_CONTRACT_PARAMETER_KEYS },
-  "list-closed": { optional: LIST_CONTRACT_PARAMETER_KEYS },
-  "list-canceled": { optional: LIST_CONTRACT_PARAMETER_KEYS },
+  list: { optional: LIST_CONTRACT_PARAMETER_KEYS, mutuallyExclusiveWhen: LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS },
+  "list-all": { optional: LIST_CONTRACT_PARAMETER_KEYS, mutuallyExclusiveWhen: LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS },
+  "list-draft": { optional: LIST_CONTRACT_PARAMETER_KEYS, mutuallyExclusiveWhen: LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS },
+  "list-open": { optional: LIST_CONTRACT_PARAMETER_KEYS, mutuallyExclusiveWhen: LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS },
+  "list-in-progress": { optional: LIST_CONTRACT_PARAMETER_KEYS, mutuallyExclusiveWhen: LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS },
+  "list-blocked": { optional: LIST_CONTRACT_PARAMETER_KEYS, mutuallyExclusiveWhen: LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS },
+  "list-closed": { optional: LIST_CONTRACT_PARAMETER_KEYS, mutuallyExclusiveWhen: LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS },
+  "list-canceled": { optional: LIST_CONTRACT_PARAMETER_KEYS, mutuallyExclusiveWhen: LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS },
   aggregate: { optional: AGGREGATE_CONTRACT_PARAMETER_KEYS },
   "dedupe-audit": { optional: DEDUPE_AUDIT_CONTRACT_PARAMETER_KEYS },
   guide: { optional: ["list", "format", "depth"] },
@@ -619,7 +663,10 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
     ],
   },
   gc: { optional: ["dryRun", "gcScope"] },
-  contracts: { optional: ["contractAction", "command", "schemaOnly", "flagsOnly", "availabilityOnly", "runtimeOnly", "activeOnly", "full"] },
+  contracts: {
+    optional: ["contractAction", "command", "summary", "schemaOnly", "flagsOnly", "availabilityOnly", "runtimeOnly", "activeOnly", "full"],
+    mutuallyExclusiveWhen: CONTRACTS_PROJECTION_MUTUALLY_EXCLUSIVE_GROUPS,
+  },
   completion: { required: ["shell"], optional: ["eagerTags"] },
   claim: { required: ["id"], optional: LIFECYCLE_AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   release: { required: ["id"], optional: ["allowAuditRelease", ...LIFECYCLE_AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
@@ -778,6 +825,18 @@ function buildActionScopedAllOf(contract: PmActionSchemaContract): Array<Record<
   if (contract.mutuallyExclusive && contract.mutuallyExclusive.length > 0) {
     for (const group of contract.mutuallyExclusive) {
       allOf.push({ not: { required: toSchemaKeyList(group) } });
+    }
+  }
+  if (contract.mutuallyExclusiveWhen && contract.mutuallyExclusiveWhen.length > 0) {
+    for (const group of contract.mutuallyExclusiveWhen) {
+      allOf.push({
+        not: {
+          allOf: group.map((condition) => ({
+            properties: { [condition.property]: condition.schema },
+            required: [condition.property],
+          })),
+        },
+      });
     }
   }
   return allOf;
