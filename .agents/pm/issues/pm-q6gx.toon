@@ -1,0 +1,16 @@
+id: pm-q6gx
+title: "GH-484: pm update --blocked-by silently overwrites prior blockers instead of appending"
+description: ""
+type: Issue
+status: open
+priority: 1
+tags[5]: agent-experience,"area:cli",data-integrity,deps,gh-issue
+created_at: "2026-07-08T22:46:10.625Z"
+updated_at: "2026-07-08T22:46:10.625Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: "Repeated --blocked-by calls accumulate (or the flag rejects a second value with an actionable additive-flag hint); dependencies array and blocked_by field stay consistent; behavior identical via CLI, SDK, and MCP; contracts/docs/completions updated; regression spec covers first-set, append, duplicate, and remove paths for create and update"
+parent: pm-mpbb
+risk: medium
+confidence: high
+body: "Repeated `pm update <id> --blocked-by <other>` calls each REPLACE the stored blocked_by value and the corresponding dependencies edge instead of accumulating, so an agent wiring multiple blockers one call at a time silently loses every blocker except the last. No warning is emitted. Workaround: `--dep \"id=<id>,kind=blocked_by\"` appends correctly; --blocked-by does not. Impact: dependency chains built incrementally (a very common agent planning pattern) silently degrade to a single edge, corrupting scheduling (pm next) and blocked-status semantics. Fix direction (pick one, keep contracts/docs/completions in sync per the new-flag checklist): (a) comma-list + accumulate semantics matching other comma-list flags, (b) append-by-default with an explicit --set-blocked-by override, or (c) additive --add-blocked-by/--remove-blocked-by pair mirroring --add-tags/--remove-tags. Related shipped history: pm-orrl (create --blocked-by stored free text), pm-kyd6 (update --blocked-by created no deps edge) — this is the third distinct defect on the same flag family; consider a regression spec matrix over create+update x first-set/append/remove. Source: https://github.com/unbraind/pm-cli/issues/484"

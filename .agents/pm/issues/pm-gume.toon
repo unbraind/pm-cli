@@ -1,0 +1,16 @@
+id: pm-gume
+title: "GH-482: Node 24 nightly coverage gate flake — readdir-order-dependent branch at front-matter-cache.ts:505"
+description: ""
+type: Issue
+status: open
+priority: 2
+tags[5]: "area:ci",coverage,flake,gh-issue,tests
+created_at: "2026-07-08T22:46:26.131Z"
+updated_at: "2026-07-08T22:46:26.131Z"
+author: maintainer-agent
+estimated_minutes: 45
+acceptance_criteria: "A deterministic spec drives both arms of the existing/replace branch at front-matter-cache.ts:505 regardless of directory enumeration order; nightly Node 24 coverage gate passes repeatedly; GH-482 closed with the run evidence"
+parent: pm-u9d0
+risk: low
+confidence: high
+body: "Nightly Validation (ubuntu-latest, Node 24) on ed7cd5b6 failed with 'Coverage for branches (99.99%) does not meet global threshold (100%)' while ALL tests passed. Sole uncovered branch: src/core/store/front-matter-cache.ts:505 — `if (!existing || shouldReplaceCachedDocumentCandidate(...))`. Whether `existing` is ever truthy during the cache scan depends on directory enumeration order (which duplicate-id document is read first), so the short-circuit's second arm is only exercised when readdir returns entries in a particular order — Node 24 on ubuntu enumerates differently and the branch goes dark. Prior nightlies on Node 24 passed (3605c829, 02b91bac), confirming flake rather than regression; the daily release gate is unaffected (product tests green). Fix direction: add a deterministic unit spec that seeds the cache state with an existing candidate for the same id and asserts both replace and keep outcomes of shouldReplaceCachedDocumentCandidate through this call site, removing the readdir-order dependency from coverage. Run: https://github.com/unbraind/pm-cli/actions/runs/28922530777 Source: https://github.com/unbraind/pm-cli/issues/482"
