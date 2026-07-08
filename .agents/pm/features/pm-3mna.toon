@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[4]: architecture,"area:config","area:schema","area:sdk"
 created_at: "2026-07-05T04:54:11.971Z"
-updated_at: "2026-07-08T00:36:44.011Z"
+updated_at: "2026-07-08T06:06:35.976Z"
 assignee: codex-agent
 author: maintainer-agent
 estimated_minutes: 360
@@ -17,11 +17,12 @@ confidence: medium
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-lodl,blocked_by,"2026-07-05T04:55:07.462Z",null,null
   pm-muhw,blocked_by,"2026-07-05T04:55:08.057Z",null,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-07T20:44:47.549Z",codex-agent,"Implementation start: bundled with pm-zwpp, pm-oxrw, pm-m4iu, pm-cbwg, pm-w89s, and pm-usfg. Live duplicate/context check found no closed schema/config/profile SDK primitive completion; prior read/lifecycle/package primitives remain separate shipped or in-progress domains."
   "2026-07-07T22:45:27.701Z",claude-code-agent,"Evidence: post-review docs/API cleanup keeps package authors on the correct context-management primitive shapes: linked file/doc adds use string arrays and top-level note, while SchemaResult documents the generic schema customization result union. Verified through docs gate, typecheck, focused SDK tests, and packed installed SDK proof."
   "2026-07-07T23:52:21.378Z",claude-code-agent,"Review follow-up evidence: the generic SDK schema() return type now explicitly includes all concrete inspect results as well as schema mutation results, preserving compile-time safety for customization primitive consumers. Focused SDK test and full coverage passed."
   "2026-07-08T00:36:44.011Z",claude-code-agent,"Review follow-up evidence: schemaShow, schemaShowField, schemaShowStatus, profileShow, and profileLint now pass their name positional as a top-level SDK action property, matching the established SDK command wrapper convention used by other positional helpers."
+  "2026-07-08T06:06:35.974Z",codex,"Evidence: context-management SDK primitives remain covered by full coverage and installed-package proof; lifecycle shortcuts now expose typed composed result contracts so agent/package authors can consume claim/update/close/release payloads without unknown casts."
 files[3]{path,scope,note}:
   src/sdk/runtime.ts,project,SDK runtime exposes init/config/schema/profile customization primitives
   src/sdk/index.ts,project,SDK barrel exports customization primitive contracts

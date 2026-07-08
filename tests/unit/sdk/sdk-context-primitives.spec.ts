@@ -35,9 +35,19 @@ import {
   schemaShowStatus,
   validate,
   type AppendResult,
+  type ClaimResult,
+  type CloseResult,
+  type CloseTaskResult,
   type CommentsResult,
+  type CopyResult,
+  type CreateResult,
+  type DeleteResult,
+  type FocusResult,
   type GcResult,
   type HealthResult,
+  type PauseTaskResult,
+  type ReleaseResult,
+  type RestoreResult,
   type SchemaAddFieldResult,
   type SchemaAddTypeResult,
   type SchemaListFieldsResult,
@@ -46,6 +56,8 @@ import {
   type SchemaShowFieldResult,
   type SchemaShowResult,
   type SchemaShowStatusResult,
+  type StartTaskResult,
+  type UpdateResult,
   type ValidateResult,
 } from "../../../src/sdk/index.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
@@ -175,6 +187,33 @@ describe("SDK context-management primitives", () => {
     const healthResult: Pick<HealthResult, "ok" | "warnings"> = { ok: true, warnings: [] };
     const validateResult: Pick<ValidateResult, "ok" | "checks"> = { ok: true, checks: [] };
     const gcResult: Pick<GcResult, "ok" | "dry_run"> = { ok: true, dry_run: true };
+    const createResult: Pick<CreateResult, "changed_fields" | "warnings"> = { changed_fields: ["title"], warnings: [] };
+    const updateResult: Pick<UpdateResult, "changed_fields" | "warnings"> = { changed_fields: ["status"], warnings: [] };
+    const closeResult: Pick<CloseResult, "changed_fields" | "warnings"> = { changed_fields: ["status"], warnings: [] };
+    const claimResult: Pick<ClaimResult, "claimed_by" | "forced"> = { claimed_by: "agent", forced: false };
+    const releaseResult: Pick<ReleaseResult, "released_by" | "forced"> = { released_by: "agent", forced: false };
+    const copyResult: Pick<CopyResult, "source_id" | "changed_fields"> = { source_id: "pm-a", changed_fields: ["title"] };
+    const deleteResult: Pick<DeleteResult, "changed_fields" | "dry_run"> = { changed_fields: ["deleted"], dry_run: false };
+    const restoreResult: Pick<RestoreResult, "changed_fields" | "restored_from"> = {
+      changed_fields: ["title"],
+      restored_from: { kind: "version", target: "1", history_index: 0, entry_ts: "2026-01-01T00:00:00.000Z", entry_op: "create" },
+    };
+    const focusResult: Pick<FocusResult, "action" | "focused_item"> = { action: "set", focused_item: "pm-a" };
+    const startTaskResult: Pick<StartTaskResult, "action" | "claim" | "update"> = {
+      action: "start_task",
+      claim: { item: {}, claimed_by: "agent", previous_assignee: null, forced: false },
+      update: { item: {}, changed_fields: ["status"], warnings: [] },
+    };
+    const pauseTaskResult: Pick<PauseTaskResult, "action" | "update" | "release"> = {
+      action: "pause_task",
+      update: { item: {}, changed_fields: ["status"], warnings: [] },
+      release: { item: {}, released_by: "agent", previous_assignee: null, audit_release: false, forced: false },
+    };
+    const closeTaskResult: Pick<CloseTaskResult, "action" | "close" | "release"> = {
+      action: "close_task",
+      close: { item: {}, changed_fields: ["status"], warnings: [] },
+      release: { item: {}, released_by: "agent", previous_assignee: null, audit_release: false, forced: false },
+    };
 
     expect(appendResult.changed_fields).toEqual(["body"]);
     expect(commentResult.count).toBe(1);
@@ -191,5 +230,17 @@ describe("SDK context-management primitives", () => {
     expect(healthResult.ok).toBe(true);
     expect(validateResult.checks).toEqual([]);
     expect(gcResult.dry_run).toBe(true);
+    expect(createResult.changed_fields).toEqual(["title"]);
+    expect(updateResult.changed_fields).toEqual(["status"]);
+    expect(closeResult.warnings).toEqual([]);
+    expect(claimResult.claimed_by).toBe("agent");
+    expect(releaseResult.released_by).toBe("agent");
+    expect(copyResult.source_id).toBe("pm-a");
+    expect(deleteResult.dry_run).toBe(false);
+    expect(restoreResult.restored_from.kind).toBe("version");
+    expect(focusResult.focused_item).toBe("pm-a");
+    expect(startTaskResult.claim.claimed_by).toBe("agent");
+    expect(pauseTaskResult.release.released_by).toBe("agent");
+    expect(closeTaskResult.close.changed_fields).toEqual(["status"]);
   });
 });

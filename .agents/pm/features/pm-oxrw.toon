@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[3]: architecture,"area:governance","area:sdk"
 created_at: "2026-07-05T04:54:11.132Z"
-updated_at: "2026-07-07T21:11:21.361Z"
+updated_at: "2026-07-08T06:06:37.128Z"
 assignee: codex-agent
 author: maintainer-agent
 estimated_minutes: 360
@@ -17,9 +17,10 @@ confidence: medium
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-lodl,blocked_by,"2026-07-05T04:55:06.347Z",null,null
   pm-muhw,blocked_by,"2026-07-05T04:55:06.819Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-06T21:58:32.680Z",maintainer-agent,"Audit #15 scope note: decide telemetry-queue/runtime primitives here — either promote them with validate/health/gc (they share the ops noun per pm-6apl) or explicitly document them as CLI-only in the SDK reference. The SDK domain matrix should leave no command family unmapped."
   "2026-07-07T20:44:48.118Z",codex-agent,"Implementation start: bundled governance/health/maintenance SDK primitives with adjacent SDK-context work. Live duplicate/context check found this domain still open; telemetry queue/runtime decision will be documented in SDK docs rather than hidden."
+  "2026-07-08T06:06:37.127Z",codex,"Evidence: broad command/runtime coverage remained green after the SDK public-result hardening: node scripts/run-tests.mjs coverage passed 266 files / 5459 tests with 100% statements, branches, functions, and lines."
 files[3]{path,scope,note}:
   src/sdk/runtime.ts,project,SDK runtime exposes validate/health/gc governance primitives
   src/sdk/index.ts,project,SDK barrel exports governance primitive contracts

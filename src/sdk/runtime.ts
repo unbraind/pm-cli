@@ -119,16 +119,24 @@ import type { ContextOptions, ContextResult } from "../cli/commands/context.js";
 import type { GetOptions, GetResult } from "../cli/commands/get.js";
 import type { CloseManyCommandOptions } from "../cli/commands/close-many.js";
 import type { AppendCommandOptions, AppendResult } from "../cli/commands/append.js";
+import type { ClaimResult, ReleaseResult } from "../cli/commands/claim.js";
+import type { CloseResult } from "../cli/commands/close.js";
 import {
   runContracts,
   type ContractsCommandOptions,
   type ContractsResult,
 } from "../cli/commands/contracts.js";
+import type { CopyResult } from "../cli/commands/copy.js";
+import type { CreateResult } from "../cli/commands/create.js";
+import type { DeleteResult } from "../cli/commands/delete.js";
 import type { ListOptions, ListResult } from "../cli/commands/list.js";
 import type { NextOptions, NextResult } from "../cli/commands/next.js";
 import type { SearchOptions, SearchResult } from "../cli/commands/search.js";
 import type { StatsCommandOptions, StatsResult } from "../cli/commands/stats.js";
 import { resolveStartTaskInProgressStatus } from "./start-task-status.js";
+import type { FocusResult } from "../cli/commands/focus.js";
+import type { RestoreResult } from "../cli/commands/restore.js";
+import type { UpdateResult } from "../cli/commands/update.js";
 import type { UpdateManyCommandOptions } from "../cli/commands/update-many.js";
 import type { CommentsCommandOptions, CommentsResult } from "../cli/commands/comments.js";
 import type { ConfigCommandOptions, ConfigResult } from "../cli/commands/config.js";
@@ -462,6 +470,36 @@ export type SchemaResult =
   | SchemaRemoveFieldResult
   | SchemaApplyPresetResult
   | SchemaAddTypeInferResult;
+
+/**
+ * Result returned by the SDK `startTask` lifecycle shortcut.
+ */
+export interface StartTaskResult {
+  id: string;
+  action: "start_task";
+  claim: ClaimResult;
+  update: UpdateResult;
+}
+
+/**
+ * Result returned by the SDK `pauseTask` lifecycle shortcut.
+ */
+export interface PauseTaskResult {
+  id: string;
+  action: "pause_task";
+  update: UpdateResult;
+  release: ReleaseResult;
+}
+
+/**
+ * Result returned by the SDK `closeTask` lifecycle shortcut.
+ */
+export interface CloseTaskResult {
+  id: string;
+  action: "close_task";
+  close: CloseResult;
+  release: ReleaseResult;
+}
 
 /**
  * Complete high-level action request for {@link runAction}.
@@ -851,58 +889,58 @@ export class PmClient {
   /**
    * Create an item using the same mutation path as `pm create`.
    */
-  create(options: PmClientMutationOptions = {}): Promise<unknown> {
-    return this.run("create", splitClientMutationOptions(options));
+  create(options: PmClientMutationOptions = {}): Promise<CreateResult> {
+    return this.runTyped("create", splitClientMutationOptions(options));
   }
 
   /**
    * Update an item using the same mutation path as `pm update`.
    */
-  update(id: string, options: PmClientMutationOptions = {}): Promise<unknown> {
-    return this.run("update", { id, ...splitClientMutationOptions(options) });
+  update(id: string, options: PmClientMutationOptions = {}): Promise<UpdateResult> {
+    return this.runTyped("update", { id, ...splitClientMutationOptions(options) });
   }
 
   /**
    * Close an item using the same mutation path as `pm close`.
    */
-  close(id: string, reason: string, options: PmClientMutationOptions = {}): Promise<unknown> {
-    return this.run("close", { id, reason, ...splitClientMutationOptions(options) });
+  close(id: string, reason: string, options: PmClientMutationOptions = {}): Promise<CloseResult> {
+    return this.runTyped("close", { id, reason, ...splitClientMutationOptions(options) });
   }
 
   /**
    * Claim an item using the same mutation path as `pm claim`.
    */
-  claim(id: string, options: PmClientMutationOptions = {}): Promise<unknown> {
-    return this.run("claim", { id, ...splitClientMutationOptions(options) });
+  claim(id: string, options: PmClientMutationOptions = {}): Promise<ClaimResult> {
+    return this.runTyped("claim", { id, ...splitClientMutationOptions(options) });
   }
 
   /**
    * Release an item's active claim using the same mutation path as `pm release`.
    */
-  release(id: string, options: PmClientMutationOptions = {}): Promise<unknown> {
-    return this.run("release", { id, ...splitClientMutationOptions(options) });
+  release(id: string, options: PmClientMutationOptions = {}): Promise<ReleaseResult> {
+    return this.runTyped("release", { id, ...splitClientMutationOptions(options) });
   }
 
   /**
    * Copy an item using the same mutation path as `pm copy`.
    */
-  copy(id: string, options: PmClientMutationOptions = {}): Promise<unknown> {
-    return this.run("copy", { id, ...splitClientMutationOptions(options) });
+  copy(id: string, options: PmClientMutationOptions = {}): Promise<CopyResult> {
+    return this.runTyped("copy", { id, ...splitClientMutationOptions(options) });
   }
 
   /**
    * Delete an item using the same mutation path as `pm delete`.
    */
-  delete(id: string, options: PmClientMutationOptions = {}): Promise<unknown> {
-    return this.run("delete", { id, ...splitClientMutationOptions(options) });
+  delete(id: string, options: PmClientMutationOptions = {}): Promise<DeleteResult> {
+    return this.runTyped("delete", { id, ...splitClientMutationOptions(options) });
   }
 
   /**
    * Restore an item to a history version or timestamp using `pm restore`.
    */
-  restore(id: string, target: string, options: PmClientMutationOptions = {}): Promise<unknown> {
+  restore(id: string, target: string, options: PmClientMutationOptions = {}): Promise<RestoreResult> {
     const { fullChangedFields, idOnly, ...runnerOptions } = options;
-    return this.run("restore", {
+    return this.runTyped("restore", {
       ...(fullChangedFields === undefined ? {} : { fullChangedFields }),
       ...(idOnly === undefined ? {} : { idOnly }),
       id,
@@ -913,29 +951,29 @@ export class PmClient {
   /**
    * Set, clear, or read workspace focus using the same path as `pm focus`.
    */
-  focus(id?: string, options: PmClientMutationOptions = {}): Promise<unknown> {
-    return this.run("focus", { ...(id === undefined ? {} : { id }), ...splitClientMutationOptions(options) });
+  focus(id?: string, options: PmClientMutationOptions = {}): Promise<FocusResult> {
+    return this.runTyped("focus", { ...(id === undefined ? {} : { id }), ...splitClientMutationOptions(options) });
   }
 
   /**
    * Claim an item and transition it to the workspace in-progress status.
    */
-  startTask(id: string, options: PmClientMutationOptions = {}): Promise<unknown> {
-    return this.run("start-task", { id, ...splitClientMutationOptions(options) });
+  startTask(id: string, options: PmClientMutationOptions = {}): Promise<StartTaskResult> {
+    return this.runTyped("start-task", { id, ...splitClientMutationOptions(options) });
   }
 
   /**
    * Move an item back to the workspace open status and release the claim.
    */
-  pauseTask(id: string, options: PmClientMutationOptions = {}): Promise<unknown> {
-    return this.run("pause-task", { id, ...splitClientMutationOptions(options) });
+  pauseTask(id: string, options: PmClientMutationOptions = {}): Promise<PauseTaskResult> {
+    return this.runTyped("pause-task", { id, ...splitClientMutationOptions(options) });
   }
 
   /**
    * Close an item and release its active assignment.
    */
-  closeTask(id: string, reason: string, options: PmClientMutationOptions = {}): Promise<unknown> {
-    return this.run("close-task", { id, reason, ...splitClientMutationOptions(options) });
+  closeTask(id: string, reason: string, options: PmClientMutationOptions = {}): Promise<CloseTaskResult> {
+    return this.runTyped("close-task", { id, reason, ...splitClientMutationOptions(options) });
   }
 
   /**
@@ -1416,7 +1454,7 @@ export function gc(options: GcCommandOptions = {}, clientOptions: PmClientOption
 /**
  * Create an item without constructing a reusable client.
  */
-export function create(options: PmClientMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<unknown> {
+export function create(options: PmClientMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<CreateResult> {
   return new PmClient(clientOptions).create(options);
 }
 
@@ -1427,7 +1465,7 @@ export function update(
   id: string,
   options: PmClientMutationOptions = {},
   clientOptions: PmClientOptions = {},
-): Promise<unknown> {
+): Promise<UpdateResult> {
   return new PmClient(clientOptions).update(id, options);
 }
 
@@ -1439,35 +1477,35 @@ export function close(
   reason: string,
   options: PmClientMutationOptions = {},
   clientOptions: PmClientOptions = {},
-): Promise<unknown> {
+): Promise<CloseResult> {
   return new PmClient(clientOptions).close(id, reason, options);
 }
 
 /**
  * Claim an item without constructing a reusable client.
  */
-export function claim(id: string, options: PmClientMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<unknown> {
+export function claim(id: string, options: PmClientMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<ClaimResult> {
   return new PmClient(clientOptions).claim(id, options);
 }
 
 /**
  * Release an item's active claim without constructing a reusable client.
  */
-export function release(id: string, options: PmClientMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<unknown> {
+export function release(id: string, options: PmClientMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<ReleaseResult> {
   return new PmClient(clientOptions).release(id, options);
 }
 
 /**
  * Copy an item without constructing a reusable client.
  */
-export function copy(id: string, options: PmClientMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<unknown> {
+export function copy(id: string, options: PmClientMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<CopyResult> {
   return new PmClient(clientOptions).copy(id, options);
 }
 
 /**
  * Delete an item without constructing a reusable client.
  */
-export function deleteItem(id: string, options: PmClientMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<unknown> {
+export function deleteItem(id: string, options: PmClientMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<DeleteResult> {
   return new PmClient(clientOptions).delete(id, options);
 }
 
@@ -1479,28 +1517,28 @@ export function restore(
   target: string,
   options: PmClientMutationOptions = {},
   clientOptions: PmClientOptions = {},
-): Promise<unknown> {
+): Promise<RestoreResult> {
   return new PmClient(clientOptions).restore(id, target, options);
 }
 
 /**
  * Set, clear, or read workspace focus without constructing a reusable client.
  */
-export function focus(id?: string, options: PmClientMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<unknown> {
+export function focus(id?: string, options: PmClientMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<FocusResult> {
   return new PmClient(clientOptions).focus(id, options);
 }
 
 /**
  * Claim an item and transition it to in-progress without constructing a client.
  */
-export function startTask(id: string, options: PmClientMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<unknown> {
+export function startTask(id: string, options: PmClientMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<StartTaskResult> {
   return new PmClient(clientOptions).startTask(id, options);
 }
 
 /**
  * Move an item to open and release it without constructing a client.
  */
-export function pauseTask(id: string, options: PmClientMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<unknown> {
+export function pauseTask(id: string, options: PmClientMutationOptions = {}, clientOptions: PmClientOptions = {}): Promise<PauseTaskResult> {
   return new PmClient(clientOptions).pauseTask(id, options);
 }
 
@@ -1512,7 +1550,7 @@ export function closeTask(
   reason: string,
   options: PmClientMutationOptions = {},
   clientOptions: PmClientOptions = {},
-): Promise<unknown> {
+): Promise<CloseTaskResult> {
   return new PmClient(clientOptions).closeTask(id, reason, options);
 }
 
