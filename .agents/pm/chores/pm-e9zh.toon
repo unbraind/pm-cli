@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: metadata,normalization,pm-cli,resolution,tracker-governance
 created_at: "2026-06-25T04:57:09.804Z"
-updated_at: "2026-07-07T15:15:38.523Z"
+updated_at: "2026-07-08T22:59:13.457Z"
 author: codex-pm-ecosystem-audit-20260625
 estimated_minutes: 240
 acceptance_criteria: All active item acceptance criteria and estimates remain filled or explicitly waived; terminal items flagged by validate_resolution_missing_fields are reduced or grouped into a residual list with rationale; no placeholder resolution text is added; pm validate --check-resolution --check-history-drift evidence is attached after the pass.
