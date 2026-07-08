@@ -184,6 +184,18 @@ import type {
 } from "../cli/commands/schema.js";
 import type { ValidateCommandOptions, ValidateResult } from "../cli/commands/validate.js";
 
+export type {
+  ClaimResult,
+  CloseResult,
+  CopyResult,
+  CreateResult,
+  DeleteResult,
+  FocusResult,
+  ReleaseResult,
+  RestoreResult,
+  UpdateResult,
+};
+
 export {
   getActiveExtensionRegistrations,
   runActiveOnReadHooks,
