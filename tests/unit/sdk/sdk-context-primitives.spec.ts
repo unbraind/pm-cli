@@ -72,6 +72,8 @@ describe("SDK context-management primitives", () => {
       const id = (created.json as { item: { id: string } }).item.id;
       const relatedId = (related.json as { item: { id: string } }).item.id;
       const client = new PmClient({ pmRoot: context.pmPath, noExtensions: true, author: "sdk-test" });
+      const sdkCreated = await client.create({ title: "SDK typed mutation result", type: "Task" });
+      expect(sdkCreated.changed_fields).toContain("title");
 
       const addedComment = await client.comments(id, { add: "SDK comment", author: "sdk-test" });
       expect(addedComment.comments.at(-1)?.text).toBe("SDK comment");
