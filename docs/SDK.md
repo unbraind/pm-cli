@@ -106,6 +106,12 @@ Command/action contract exports:
 - `PmClient` / `runAction` (high-level in-process action execution for custom tools, bots, CI, and embedded runtimes)
 - Typed read primitives on `PmClient`: `get`, `list`, `search`, `context`, `next`, `aggregate`, and `stats`
 - Read primitive option/result contracts: `GetOptions` / `GetResult`, `ListOptions` / `ListResult`, `SearchOptions` / `SearchResult`, `ContextOptions` / `ContextResult`, `NextOptions` / `NextResult`, `AggregateOptions` / `AggregateResult`, `StatsCommandOptions` / `StatsResult`
+- Typed annotation and relationship primitives on `PmClient`: `comments`, `notes`, `learnings`, `files`, `filesDiscover`, `docs`, `deps`, and `append`
+- Annotation and relationship option/result contracts: `CommentsCommandOptions` / `CommentsResult`, `NotesCommandOptions` / `NotesResult`, `LearningsCommandOptions` / `LearningsResult`, `FilesCommandOptions` / `FilesResult`, `FilesDiscoverOptions` / `FilesDiscoverResult`, `DocsCommandOptions` / `DocsResult`, `DepsCommandOptions` / `DepsResult`, `AppendCommandOptions` / `AppendResult`
+- Typed customization primitives on `PmClient`: `init`, `config`, `schema`, `schemaList`, `schemaShow`, `schemaAddType`, `schemaRemoveType`, `schemaAddStatus`, `schemaRemoveStatus`, `schemaAddField`, `schemaRemoveField`, `schemaListFields`, `schemaShowField`, `schemaApplyPreset`, `schemaInferTypes`, `schemaShowStatus`, `profile`, `profileList`, `profileShow`, `profileApply`, and `profileLint`
+- Customization primitive option/result contracts: `InitCommandOptions` / `InitResult`, `ConfigCommandOptions` / `ConfigResult`, `SchemaSubcommand` / `SchemaResult` / `SchemaInspectResult`, `SchemaListResult`, `SchemaShowResult`, `SchemaAddTypeResult`, `SchemaRemoveTypeResult`, `SchemaAddStatusResult`, `SchemaRemoveStatusResult`, `SchemaAddFieldResult`, `SchemaRemoveFieldResult`, `SchemaListFieldsResult`, `SchemaShowFieldResult`, `SchemaApplyPresetResult`, `SchemaAddTypeInferResult`, `SchemaShowStatusResult`, `ProfileSubcommand` / `ProfileResult`, `ProfileListResult`, `ProfileShowResult`, `ProfileApplyResult`, `ProfileLintResult`
+- Typed governance and maintenance primitives on `PmClient`: `validate`, `health`, and `gc`
+- Governance and maintenance option/result contracts: `ValidateCommandOptions` / `ValidateResult`, `RunHealthOptions` / `HealthResult`, `GcCommandOptions` / `GcResult`
 - Typed package and extension lifecycle primitives on `PmClient`: `extension`, `extensionList`, `extensionActivate`, `extensionDeactivate`, `package`, `packageList`, `packageInstall`, `packageUninstall`, `packageDoctor`, `packageManage`, `packageDescribe`, `packageReload`, `packageCatalog`, `packageActivate`, `packageDeactivate`, and `upgrade`
 - Lifecycle primitive option/result contracts: `ExtensionCommandOptions` / `ExtensionCommandResult`, `PackageCommandOptions` / `PackageCommandResult`, `UpgradeCommandOptions` / `UpgradeResult`
 - `PM_CORE_COMMAND_NAMES`
@@ -450,6 +456,14 @@ const open = await pm.list({ status: "open", limit: "20" });
 const recommendation = await pm.next({ readyOnly: true });
 const grouped = await pm.aggregate({ groupBy: "status", count: true });
 const stats = await pm.stats({ metadataCoverage: true });
+await pm.comments(created.item.id, { add: "Investigation context captured." });
+await pm.files(created.item.id, { add: ["src/index.ts"], note: "entrypoint" });
+await pm.docs(created.item.id, { add: ["docs/SDK.md"], note: "authoring reference" });
+const graph = await pm.deps(created.item.id, { format: "graph" });
+const types = await pm.schemaList();
+const profiles = await pm.profileList();
+const validation = await pm.validate({ checkResolution: true });
+const health = await pm.health({ checkOnly: true, summary: true });
 const packages = await pm.packageList({ project: true });
 const doctor = await pm.packageDoctor({ project: true, isolated: true });
 const plannedUpgrade = await pm.upgrade(undefined, { dryRun: true, cliOnly: true });
@@ -500,6 +514,29 @@ helpers return `ExtensionCommandResult`; both names describe the same lifecycle
 payload shape with vocabulary-appropriate SDK signatures. `UpgradeResult` is the
 same structured payload rendered by the CLI, so embedded tools can own their
 presentation layer while sharing pm's package/install/doctor semantics.
+
+Annotation and relationship convenience methods turn "project management =
+context management" into a typed SDK surface. Use `pm.comments`, `pm.notes`,
+`pm.learnings`, `pm.files`, `pm.docs`, `pm.deps`, and `pm.append` when an
+embedded agent, package, or custom UI needs to add durable rationale, link
+changed files/docs/tests, or inspect the item graph. `pm.filesDiscover` exposes
+the same file-candidate discovery used by the CLI, so a custom tool can present
+reviewable link suggestions instead of scraping git output itself.
+
+Customization convenience methods are the SDK baseline for project-specific pm
+tools. `pm.init` stages a tracker, `pm.config` reads/writes settings,
+`pm.schema*` methods manage types/statuses/fields/presets, and `pm.profile*`
+methods list, inspect, apply, and lint project archetypes. These helpers let a
+package or app construct an opinionated project-management experience while
+staying on the same schema/profile primitives the CLI and MCP use.
+
+Governance and maintenance convenience methods expose the operational floor a
+custom PM host should run before it trusts or publishes tracker state.
+`pm.validate` checks resolution/history invariants, `pm.health` performs
+read-only diagnostics, and `pm.gc` runs dry-run or explicit cleanup paths through
+the same bounded maintenance engine as the CLI. Prefer these typed calls over
+shelling out when building CI, editor integrations, or long-running agent
+runtimes.
 
 `PmClient` and `runAction` share the same process-wide extension activation
 queue as MCP. Calls from one process are serialized across extension load,

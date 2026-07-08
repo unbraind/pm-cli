@@ -65,6 +65,7 @@ interface CloseMutationContext {
   validateCloseMode: ValidateCloseMode;
   activeChildIds: string[];
   closeReason: string | undefined;
+  closedAt: string;
 }
 
 function toAuthor(candidate: string | undefined, defaultAuthor: string): string {
@@ -490,8 +491,10 @@ function mutateCloseMetadata(metadata: ItemFrontMatter, context: CloseMutationCo
   const duplicateFallbackFields = applyDuplicateCloseMetadata(metadata, context.duplicateOf);
   const mutationWarnings = collectCloseValidationWarnings(metadata, context.validateCloseMode, context.activeChildIds);
   metadata.status = context.statusRegistry.close_status;
+  metadata.closed_at = context.closedAt;
   const changedFields = [
     "status",
+    "closed_at",
     ...applyCloseReason(metadata, context.closeReason),
     ...inlineChangedFields,
   ];
@@ -592,6 +595,7 @@ export async function runClose(
         validateCloseMode,
         activeChildIds,
         closeReason,
+        closedAt: new Date().toISOString(),
       });
     },
   });

@@ -9,8 +9,11 @@ import { runGet } from "../../../src/cli/commands/get.js";
 import { runDeps } from "../../../src/cli/commands/deps.js";
 import { setActiveExtensionRegistrations } from "../../../src/core/extensions/index.js";
 import { createEmptyExtensionRegistrationRegistry } from "../../../src/core/extensions/loader.js";
+import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
+import { readSettings } from "../../../src/core/store/settings.js";
+import type { ItemDocument } from "../../../src/types.js";
 import { writeItemTypeDefinitions } from "../../helpers/pmWorkspace.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
 
@@ -608,11 +611,12 @@ describe("runUpdate", () => {
         { status: "closed", closeReason: "done via auto-route" },
         { path: context.pmPath },
       );
-      expect(result.changed_fields).toEqual(expect.arrayContaining(["status", "close_reason"]));
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["status", "closed_at", "close_reason"]));
       expect(result.warnings).toContain("auto_routed_from_update_to_close");
-      const item = result.item as { status: string; close_reason: string };
+      const item = result.item as { status: string; close_reason: string; closed_at: string };
       expect(item.status).toBe("closed");
       expect(item.close_reason).toBe("done via auto-route");
+      expect(Number.isFinite(Date.parse(item.closed_at))).toBe(true);
     });
   });
 
@@ -625,11 +629,12 @@ describe("runUpdate", () => {
         { path: context.pmPath },
       );
       expect(result.warnings).toContain("auto_routed_from_update_to_close");
-      expect(result.changed_fields).toEqual(expect.arrayContaining(["title", "status", "close_reason"]));
-      const item = result.item as { status: string; title: string; close_reason: string };
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["title", "status", "closed_at", "close_reason"]));
+      const item = result.item as { status: string; title: string; close_reason: string; closed_at: string };
       expect(item.status).toBe("closed");
       expect(item.title).toBe("new title");
       expect(item.close_reason).toBe("done");
+      expect(Number.isFinite(Date.parse(item.closed_at))).toBe(true);
     });
   });
 
@@ -639,9 +644,10 @@ describe("runUpdate", () => {
       const result = await runUpdate(id, { status: "closed" }, { path: context.pmPath });
       expect(result.warnings).toContain("auto_routed_from_update_to_close");
       expect(result.warnings).toContain("close_reason_defaulted");
-      const item = result.item as { status: string; close_reason: string };
+      const item = result.item as { status: string; close_reason: string; closed_at: string };
       expect(item.status).toBe("closed");
       expect(item.close_reason).toBe("Closed via pm update");
+      expect(Number.isFinite(Date.parse(item.closed_at))).toBe(true);
     });
   });
 
@@ -658,6 +664,101 @@ describe("runUpdate", () => {
       expect(result.warnings).not.toContain("close_reason_defaulted");
       const item = result.item as { close_reason: string };
       expect(item.close_reason).toBe("shipped in v2");
+    });
+  });
+
+  it("stamps closed_at when the mutation helper applies a closed status directly", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      const changedFields: string[] = [];
+      const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+      const missingClosedAtDocument: ItemDocument = {
+        metadata: {
+          id: "pm-direct-missing",
+          title: "Direct close mutation stamp missing",
+          type: "Task",
+          status: "open",
+          created_at: "2026-01-01T00:00:00.000Z",
+          updated_at: "2026-01-01T00:00:00.000Z",
+        },
+        body: "",
+      };
+
+      _testOnlyUpdateCommand.applyStatusAndCloseReasonMutations(
+        missingClosedAtDocument,
+        {
+          options: { status: "closed", closeReason: "direct mutation path" },
+          statusRegistry,
+          clearFrontMatterKeys: new Set(),
+          nowIso: "2026-01-02T00:00:00.000Z",
+        },
+        "open",
+        changedFields,
+      );
+
+      expect(changedFields).toEqual(["status", "closed_at", "close_reason"]);
+      expect(missingClosedAtDocument.metadata.closed_at).toBe("2026-01-02T00:00:00.000Z");
+
+      const nullClosedAtDocument: ItemDocument = {
+        metadata: {
+          id: "pm-direct-null",
+          title: "Direct close mutation stamp null",
+          type: "Task",
+          status: "open",
+          created_at: "2026-01-01T00:00:00.000Z",
+          updated_at: "2026-01-01T00:00:00.000Z",
+        },
+        body: "",
+      };
+      nullClosedAtDocument.metadata.closed_at = null as unknown as string;
+      changedFields.length = 0;
+
+      _testOnlyUpdateCommand.applyStatusAndCloseReasonMutations(
+        nullClosedAtDocument,
+        {
+          options: { status: "closed", closeReason: "direct mutation path" },
+          statusRegistry,
+          clearFrontMatterKeys: new Set(),
+          nowIso: "2026-01-02T00:00:00.000Z",
+        },
+        "open",
+        changedFields,
+      );
+
+      expect(changedFields).toEqual(["status", "closed_at", "close_reason"]);
+      expect(nullClosedAtDocument.metadata.status).toBe("closed");
+      expect(nullClosedAtDocument.metadata.close_reason).toBe("direct mutation path");
+      expect(nullClosedAtDocument.metadata.closed_at).toBe("2026-01-02T00:00:00.000Z");
+
+      const reopenNullClosedAtDocument: ItemDocument = {
+        metadata: {
+          id: "pm-direct-reopen-null",
+          title: "Direct reopen clears null closed_at",
+          type: "Task",
+          status: "closed",
+          created_at: "2026-01-01T00:00:00.000Z",
+          updated_at: "2026-01-01T00:00:00.000Z",
+        },
+        body: "",
+      };
+      reopenNullClosedAtDocument.metadata.closed_at = null as unknown as string;
+      changedFields.length = 0;
+
+      _testOnlyUpdateCommand.applyStatusAndCloseReasonMutations(
+        reopenNullClosedAtDocument,
+        {
+          options: { status: "open" },
+          statusRegistry,
+          clearFrontMatterKeys: new Set(),
+          nowIso: "2026-01-02T00:00:00.000Z",
+        },
+        "closed",
+        changedFields,
+      );
+
+      expect(changedFields).toEqual(["status", "closed_at"]);
+      expect(reopenNullClosedAtDocument.metadata.status).toBe("open");
+      expect(reopenNullClosedAtDocument.metadata.closed_at).toBeUndefined();
     });
   });
 

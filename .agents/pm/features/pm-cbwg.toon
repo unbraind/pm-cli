@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[4]: "area:extensions","area:sdk",docs,exemplar
 created_at: "2026-07-05T04:54:31.164Z"
-updated_at: "2026-07-07T09:44:05.259Z"
+updated_at: "2026-07-08T06:06:38.655Z"
 assignee: codex-agent
 author: maintainer-agent
 estimated_minutes: 300
@@ -21,8 +21,9 @@ dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-3mna,blocked_by,"2026-07-05T04:55:10.407Z",null,null
   pm-oxrw,blocked_by,"2026-07-05T06:30:08.149Z",null,null
   pm-6abs,related,"2026-07-07T08:57:39.012Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-06T22:11:13.026Z",maintainer-agent,"Prior-art note (audit #15 follow-up): unbraind already ships pm-starter and pm-ts-starter (reference EXTENSIONS covering all capability types). This exemplar is deliberately different — a standalone custom PM tool composed only from public SDK primitives, not an extension scaffold. Reference the starters for structure/CI conventions, do not duplicate them; if the exemplar drifts toward 'reference extension', fold it into pm-ts-starter upstream instead."
   "2026-07-07T08:58:20.674Z",codex-agent,"Progress evidence: active PR bundle contributes SDK-only exemplar readiness by documenting and manually proving hermetic package doctor flows for package authors. This is evidence for the eventual SDK-only custom PM tool, not full exemplar completion; close remains dependent on the full exemplar package."
   "2026-07-07T09:44:05.259Z",codex-agent,"Package exemplar update: pm-6abs verifies package doctor isolation and docs now describe hermetic package-author smoke tests, reducing machine-local global extension leakage during package development."
+  "2026-07-08T06:06:38.653Z",codex,"Evidence: agent-facing SDK ergonomics improved by exporting concrete lifecycle result contracts from the public SDK instead of forcing package authors to handle unknown returns for common mutation primitives."
 body: ""

@@ -2008,6 +2008,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   // and `pm update --status closed` (defaults + warns).
   const closeReasonResolution = resolveCreateCloseReason(status, statusRegistry, settings, resolvedOptions, resolution);
   const closeReason = closeReasonResolution.closeReason;
+  const closedAt = status === statusRegistry.close_status ? nowValue : undefined;
   validationWarnings.push(...closeReasonResolution.warnings);
 
   const frontMatter: ItemMetadata = normalizeFrontMatter({
@@ -2017,6 +2018,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     type,
     type_options: validatedTypeOptions.normalized,
     status,
+    closed_at: closedAt,
     close_reason: closeReason,
     priority,
     tags,
