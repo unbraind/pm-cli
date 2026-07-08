@@ -1097,7 +1097,7 @@ console.log(JSON.stringify(payload));`,
         type: "Task",
         status: "open",
         createMode: "progressive",
-      })) as { item?: { id?: string; title?: string }; changed_field_count?: number };
+      })) as { item?: { id?: string; title?: string }; changed_fields?: unknown[]; changed_field_count?: number };
       const itemId = created.item?.id;
 
       expect(itemId).toMatch(/^pm-/);
@@ -1105,7 +1105,8 @@ console.log(JSON.stringify(payload));`,
         throw new Error("Expected SDK client create to return an item id.");
       }
       expect(created.item?.title).toBe("SDK client item");
-      expect(created.changed_field_count).toBeGreaterThan(0);
+      expect(created.changed_fields).toEqual(expect.arrayContaining(["title", "status"]));
+      expect(created.changed_field_count).toBeUndefined();
 
       const fullDiffCreated = (await client.create({
         title: "SDK client full diff item",
@@ -1118,7 +1119,7 @@ console.log(JSON.stringify(payload));`,
       expect(fullDiffCreated.changed_fields).toEqual(expect.arrayContaining(["title", "status"]));
       expect(fullDiffCreated.changed_field_count).toBeUndefined();
 
-      const idOnlyCreated = (await client.create({
+      const idOnlyCreated = (await client.run("create", {
         title: "SDK client id-only item",
         type: "Task",
         status: "open",
@@ -1230,10 +1231,12 @@ console.log(JSON.stringify(payload));`,
 
       const updated = (await client.update(itemId, { status: "in_progress", message: "SDK client update" })) as {
         item?: { id?: string; status?: string };
+        changed_fields?: unknown[];
         changed_field_count?: number;
       };
       expect(updated.item).toMatchObject({ id: itemId, status: "in_progress" });
-      expect(updated.changed_field_count).toBeGreaterThan(0);
+      expect(updated.changed_fields).toEqual(expect.arrayContaining(["status"]));
+      expect(updated.changed_field_count).toBeUndefined();
 
       const restored = (await runAction({
         action: "restore",
@@ -1351,7 +1354,7 @@ console.log(JSON.stringify(payload));`,
       const restored = (await restore(
         itemId,
         "1",
-        { message: "SDK restore wrapper", fullChangedFields: true, idOnly: false },
+        { message: "SDK restore wrapper" },
         wrapperDefaults,
       )) as {
         item?: { id?: string; status?: string };
@@ -1371,10 +1374,19 @@ console.log(JSON.stringify(payload));`,
         changed_fields?: unknown[];
       };
       expect(restoredWithDefaultProjection.item).toMatchObject({ id: itemId, status: "open" });
-      expect(restoredWithDefaultProjection.changed_field_count).toBe(0);
-      expect(restoredWithDefaultProjection.changed_fields).toBeUndefined();
+      expect(restoredWithDefaultProjection.changed_fields).toEqual([]);
+      expect(restoredWithDefaultProjection.changed_field_count).toBeUndefined();
 
-      const restoredIdOnly = (await restore(itemId, "1", { idOnly: true }, wrapperDefaults)) as {
+      const restoredIdOnly = (await runAction({
+        action: "restore",
+        id: itemId,
+        target: "1",
+        path: pmPath,
+        cwd: path.dirname(pmPath),
+        noExtensions: true,
+        author: "sdk-client-test",
+        idOnly: true,
+      })) as {
         id?: string;
         status?: string;
         item?: unknown;
