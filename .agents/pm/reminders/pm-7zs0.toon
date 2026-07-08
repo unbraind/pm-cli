@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-07-07T20:26:56.425Z"
+updated_at: "2026-07-08T04:51:09.539Z"
 reminders[1]{at,text}:
   "2026-07-01T10:24:45.889Z",Confirm daily auto-release tagged a new version AND npm latest advanced; else inspect publish + Sentry-gate steps
 author: maintainer-agent
@@ -15,7 +15,7 @@ acceptance_criteria: "After each merge to main, the next daily release tags vYYY
 parent: pm-u9d0
 risk: low
 confidence: high
-comments[63]{created_at,author,text}:
+comments[64]{created_at,author,text}:
   "2026-06-10T14:44:30.277Z",maintainer-agent,"2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
   "2026-06-16T11:26:49.976Z",codex-sdk-cli-consolidation-20260616,"Auto-release gate reproduced locally with SENTRY_PERSONAL_ADMIN_TOKEN; failing high issue was PM-CLI-1Q (handled CommandError: all items failed to apply). Added count-agnostic handled pattern 'item(s) failed to apply' and blocking_short_ids/blocking_titles output for diagnostics. Gate now passes in strict mode with max-high=0."
   "2026-06-16T11:46:33.866Z",codex-sdk-cli-consolidation-20260616,"Release-health verification: sentry-telemetry gate now passes in strict mode (max-critical=0,max-high=0) after expected handled-CommandError classification update; output now includes blocking_short_ids/blocking_titles for actionable diagnostics."
@@ -79,6 +79,7 @@ comments[63]{created_at,author,text}:
   "2026-07-07T15:26:16.229Z",maintainer-agent,"2026-07-07 release-health verification (planning pass, later same day): npm @unbrained/pm-cli latest is 2026.7.7 (published today), local package.json matches, CHANGELOG [Unreleased] is empty, and the 15:09Z Auto Release run correctly skipped on the empty section. CI at HEAD (c4df9945): Security and Script Quality passed; CI + CodeQL in progress at check time with no failures. Healthy — daily cut landed and the post-cut skip behaved as designed."
   "2026-07-07T15:58:16.538Z",maintainer-agent,"Release-health verification 2026-07-07 (planning pass): npm dist-tag latest for @unbrained/pm-cli = 2026.7.7, matching package.json — today's daily cut published successfully (commit 969cb352 \"chore(release): cut 2026.7.7\"). Post-cut auto-release runs report \"skipped\" (empty [Unreleased]) which is the healthy steady state. CI, CodeQL, and Security/Script Quality all green on the latest main pushes. Validate warning drift unchanged at 147 missing-linked-paths / 125 orphaned-paths / 269 resolution-missing-fields / 18 missing-close-reason; the single duplicate-issue-code warning (GH-209 pair pm-1byt/pm-25se) remains owned by pm-pivf pending the pm-m4iu -> pm-wrbe closed_at chain."
   "2026-07-07T20:26:56.420Z",maintainer-agent,"Release-health evidence 2026-07-07 (evening pass): npm @unbrained/pm-cli serves 2026.7.7 — today's date-based cut is live. The three auto-release runs after the cut all concluded skipped (empty [Unreleased] guard), the healthy post-cut signature. Validate warning drift unchanged at 147 missing-linked-paths / 125 orphaned-paths / 269 resolution-missing-fields / 18 missing-close-reason plus the single pm-pivf-owned duplicate issue-code — steady state, no new comment-worthy movement."
+  "2026-07-08T04:51:09.535Z",maintainer-agent,"Release-health verification 2026-07-08 (planning pass): npm @unbrained/pm-cli latest = 2026.7.7, matching the 2026-07-07 cut; [Unreleased] holds three entries (pm-6abs, pm-alnj, pm-kffw) awaiting today's scheduled daily cut — healthy pending state. Issue-triggered auto-release runs on 07-07 correctly skipped. CI on main green; PR #481 (SDK context primitives lane) open with all checks green, its pm items (pm-usfg/pm-w89s/pm-x6jf/pm-cbwg) correctly in_progress."
 notes[7]{created_at,author,text}:
   "2026-07-02T06:41:55.766Z",claude-code-agent,"2026-07-02: Auto Release run 28569991109 success; tag v2026.7.2 created and npm dist-tags.latest=2026.7.2 verified live via npm view. Release-commit CI/Release/CodeQL/Docs all green. Release health verified."
   "2026-07-04T06:16:41.031Z",maintainer-agent,"2026-07-04: Release v2026.7.4 verified — Release workflow 28697208639 succeeded, npm @unbrained/pm-cli@2026.7.4 live, GH release published 06:16Z (not draft). Auto-release healthy."
