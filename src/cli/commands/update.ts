@@ -1490,6 +1490,10 @@ function hasClosedAt(metadata: ItemDocument["metadata"]): boolean {
   return metadata.closed_at !== undefined && metadata.closed_at !== null;
 }
 
+function hasClosedAtProperty(metadata: ItemDocument["metadata"]): boolean {
+  return metadata.closed_at !== undefined;
+}
+
 function applyStatusAndCloseReasonMutations(
   document: ItemDocument,
   context: Pick<UpdateMutationContext, "options" | "statusRegistry" | "clearFrontMatterKeys" | "nowIso">,
@@ -1506,7 +1510,7 @@ function applyStatusAndCloseReasonMutations(
     } else if (
       previousStatusNormalized === context.statusRegistry.close_status &&
       status !== context.statusRegistry.close_status &&
-      hasClosedAt(document.metadata)
+      hasClosedAtProperty(document.metadata)
     ) {
       delete document.metadata.closed_at;
       changedFields.push("closed_at");

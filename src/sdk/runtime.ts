@@ -712,7 +712,7 @@ export class PmClient {
    * Show a schema item type definition.
    */
   schemaShow(name: string): Promise<SchemaShowResult> {
-    return this.runTyped("schema", { options: { subcommand: "show", name } });
+    return this.runTyped("schema", { name, options: { subcommand: "show" } });
   }
 
   /**
@@ -768,7 +768,7 @@ export class PmClient {
    * Show one runtime custom field definition.
    */
   schemaShowField(name: string): Promise<SchemaShowFieldResult> {
-    return this.runTyped("schema", { options: { subcommand: "show-field", name } });
+    return this.runTyped("schema", { name, options: { subcommand: "show-field" } });
   }
 
   /**
@@ -789,7 +789,7 @@ export class PmClient {
    * Show one runtime status definition.
    */
   schemaShowStatus(name: string): Promise<SchemaShowStatusResult> {
-    return this.runTyped("schema", { options: { subcommand: "show-status", name } });
+    return this.runTyped("schema", { name, options: { subcommand: "show-status" } });
   }
 
   /**
@@ -810,7 +810,7 @@ export class PmClient {
    * Show a project profile.
    */
   profileShow(name: string): Promise<ProfileShowResult> {
-    return this.runTyped("profile", { options: { subcommand: "show", name } });
+    return this.runTyped("profile", { name, options: { subcommand: "show" } });
   }
 
   /**
@@ -824,7 +824,7 @@ export class PmClient {
    * Lint a project profile.
    */
   profileLint(name: string): Promise<ProfileLintResult> {
-    return this.runTyped("profile", { options: { subcommand: "lint", name } });
+    return this.runTyped("profile", { name, options: { subcommand: "lint" } });
   }
 
   /**

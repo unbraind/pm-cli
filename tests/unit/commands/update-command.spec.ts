@@ -729,6 +729,36 @@ describe("runUpdate", () => {
       expect(nullClosedAtDocument.metadata.status).toBe("closed");
       expect(nullClosedAtDocument.metadata.close_reason).toBe("direct mutation path");
       expect(nullClosedAtDocument.metadata.closed_at).toBe("2026-01-02T00:00:00.000Z");
+
+      const reopenNullClosedAtDocument: ItemDocument = {
+        metadata: {
+          id: "pm-direct-reopen-null",
+          title: "Direct reopen clears null closed_at",
+          type: "Task",
+          status: "closed",
+          created_at: "2026-01-01T00:00:00.000Z",
+          updated_at: "2026-01-01T00:00:00.000Z",
+        },
+        body: "",
+      };
+      reopenNullClosedAtDocument.metadata.closed_at = null as unknown as string;
+      changedFields.length = 0;
+
+      _testOnlyUpdateCommand.applyStatusAndCloseReasonMutations(
+        reopenNullClosedAtDocument,
+        {
+          options: { status: "open" },
+          statusRegistry,
+          clearFrontMatterKeys: new Set(),
+          nowIso: "2026-01-02T00:00:00.000Z",
+        },
+        "closed",
+        changedFields,
+      );
+
+      expect(changedFields).toEqual(["status", "closed_at"]);
+      expect(reopenNullClosedAtDocument.metadata.status).toBe("open");
+      expect(reopenNullClosedAtDocument.metadata.closed_at).toBeUndefined();
     });
   });
 
