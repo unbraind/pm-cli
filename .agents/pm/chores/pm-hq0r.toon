@@ -2,15 +2,20 @@ id: pm-hq0r
 title: "Triage: close GH-455 with shipped evidence once the Ollama embedding auto-default fix releases"
 description: "Close or otherwise reconcile GitHub issue GH-455 once shipped evidence is sufficient, preserving the mapping from the already-fixed pm-aems work to the still-open upstream issue."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[3]: gh-issue,tracker-governance,triage
 created_at: "2026-07-06T21:54:34.369Z"
-updated_at: "2026-07-06T22:30:39.544Z"
+updated_at: "2026-07-08T04:50:17.367Z"
+closed_at: "2026-07-08T04:50:17.367Z"
 author: maintainer-agent
 estimated_minutes: 15
 acceptance_criteria: GH-455 closed on GitHub with a comment citing pm-aems resolution evidence and the release version that ships the fix (first release after 2026.7.6 containing the semantic-defaults change)
 parent: pm-33cw
 risk: low
 confidence: high
+resolution: "GH-455 closed on GitHub 2026-07-07T15:09Z with a comment citing the fix (PR #464, commit 9f2b4454, merged 2026-07-06) and the shipping release v2026.7.6; pm-aems holds the underlying resolution evidence (Ollama auto-defaults only when an installed embedding model exists; health reports no_installed_embedding_model + remediation)."
+expected_result: GH-455 closed with a comment citing pm-aems evidence and the shipping release version
+actual_result: GH-455 closed 2026-07-07 with closing comment citing PR #464 and release v2026.7.6; verified via gh issue view 455 (state CLOSED)
+close_reason: "Verified complete: GH-455 closed on GitHub with evidence comment (PR #464, v2026.7.6) satisfying the acceptance criterion; pm-aems evidence chain intact."
 body: "pm-aems is closed with full resolution evidence (Ollama auto-defaults only apply when an installed embedding model exists; health exposes no_installed_embedding_model + remediation), but GitHub issue #455 is still open and no commit references Fixes #455. Close the GH issue after the fix ships in a release, citing pm-aems evidence. Precedent: pm-7cx8."

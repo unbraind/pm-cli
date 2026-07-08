@@ -7,6 +7,10 @@
 - GH-467: isolated package/extension diagnostics — project-scoped doctor and smoke tests without global pm state leaking in ([pm-6abs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-6abs.toon))
 - GH-474: pm search --limit support in hybrid mode ([pm-alnj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-alnj.toon))
 
+### Fixed
+
+- Triage: close GH-455 with shipped evidence once the Ollama embedding auto-default fix releases ([pm-hq0r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-hq0r.toon))
+
 ### Other
 
 - Expose package lifecycle primitives through public SDK helpers ([pm-kffw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kffw.toon))
