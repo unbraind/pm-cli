@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[5]: architecture,"area:cli","area:mcp","area:sdk",refactor
 created_at: "2026-07-05T04:51:44.440Z"
-updated_at: "2026-07-08T07:33:23.817Z"
+updated_at: "2026-07-08T07:46:52.878Z"
 assignee: codex-agent
 author: maintainer-agent
 estimated_minutes: 3600
@@ -20,7 +20,7 @@ risk: medium
 confidence: medium
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-6abs,related,"2026-07-07T08:57:59.887Z",null,null
-comments[18]{created_at,author,text}:
+comments[19]{created_at,author,text}:
   "2026-07-05T05:51:11.797Z",claude-code-agent,"Progress evidence from child items pm-lodl/pm-8778: SDK-first baseline is now explicit and enforceable. Current private boundary debt is quantified at 857 unique src/core import edges across 91 boundary files (101 scanned) from src/cli.ts, src/cli/**, and src/mcp/**. The static quality gate now prevents growth and stale baseline entries, giving each SDK primitive-promotion lane a measurable ratchet target while preserving the project philosophy 'project management = context management'."
   "2026-07-06T22:31:27.762Z",codex-agent,"Planning evidence 2026-07-06/07 codex-agent: SDK-first coverage remains canonical here, not a new duplicate epic. Domain promotion items cover query/read (pm-rjqr), lifecycle (pm-98cz), annotations/links (pm-zwpp), schema/config/profile/init (pm-3mna), history maintenance (pm-4a7m), plan workflows (pm-je50), execution/diagnostics (pm-oslr), package/extension lifecycle (pm-x6jf), governance/health (pm-oxrw), docs (pm-ds3b), exemplar CLI (pm-cbwg), and boundary capstone (pm-9x6e). Recommended order: finish typed public primitives before command consolidation flips handlers, then make CLI and MCP pure presentation layers over SDK calls; every primitive needs SDK docs, tests, and behavior parity against existing CLI results."
   "2026-07-07T06:50:47.652Z",maintainer-agent,"Promotion-partition progress reconciled against shipped work (PR #477, commit f7e2ac21): pm-rjqr query/read primitives and pm-98cz item-lifecycle primitives are CLOSED with evidence — PmClient + top-level SDK exports now cover list/get/search/context/next/aggregate/stats and create/update/close/claim/release/copy/delete/restore/focus/start-task/pause-task/close-task, including structured create payloads (pm-395t) and published SDK package-coordinate docs (pm-25d0). Remaining open promotion domains: pm-zwpp annotations/links, pm-je50 plan workflow, pm-4a7m history-stream maintenance, pm-3mna schema/config/profile/init, pm-oxrw governance/health/maintenance, pm-oslr execution/diagnostics, pm-x6jf package/extension lifecycle — then capstone pm-9x6e (zero the 91-entry import-boundary baseline) and exemplar pm-cbwg."
@@ -39,6 +39,7 @@ comments[18]{created_at,author,text}:
   "2026-07-08T07:27:51.561Z",codex,"Evidence: fixed the PR coverage failure by moving idOnly projection checks to generic runAction/client.run and asserting typed SDK lifecycle helpers return full changed_fields envelopes. Verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts tests/unit/sdk/sdk-context-primitives.spec.ts; pnpm typecheck; pnpm lint."
   "2026-07-08T07:32:57.909Z",codex,"Verification evidence after SDK barrel test correction: node scripts/run-tests.mjs coverage passed with 266 files, 5459 tests, and 100% statements/branches/functions/lines."
   "2026-07-08T07:33:23.817Z",codex,"Changelog evidence: pm-changelog 2026.7.8 reported CHANGELOG.md out of date, then node dist/cli.js changelog generate --output CHANGELOG.md --title Changelog --mode replace --all-release-tags --status closed --item-url-base https://github.com/unbraind/pm-cli/blob/main/.agents/pm regenerated 1443 closed-item entries."
+  "2026-07-08T07:46:52.877Z",codex,"Greptile pre-push evidence: greptile review -b main --agent run 60242867-c775-4400-8e85-979fa1b26948 completed on committed head 97a5f40a with confidence 5/5, safe-to-merge summary, and no review comments."
 notes[3]{created_at,author,text}:
   "2026-07-05T04:55:45.848Z",maintainer-agent,"Gap analysis 2026-07-05 — src/sdk currently exports extension/package-authoring surfaces only (compose, define, runtime, testing, cli-contracts, profile presets/plan). The PM primitives themselves live in src/core (item, store, search, history, governance, schema, config, session, checkpoint, lock) and src/cli/commands imports them directly; ~60 command modules under src/cli/commands also embed business logic beyond parsing/rendering. Consequence; an SDK-only consumer today cannot create, query, or govern items without shelling out to the CLI."
   "2026-07-05T04:55:46.394Z",maintainer-agent,"Promotion strategy — domain-by-domain (lifecycle, query, annotations, governance, schema/config/profile) with a zero-behavior-change bar per domain; boundary gate (pm-8778) starts as an allowlist ratchet at current import state so it can merge before promotions finish and tighten with each one. Exemplar package (pm-cbwg) is the acceptance proof for the universality story pm-w89s."
