@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[2]: architecture,"area:sdk"
 created_at: "2026-07-05T04:54:09.993Z"
-updated_at: "2026-07-07T23:24:54.838Z"
+updated_at: "2026-07-08T00:08:26.352Z"
 assignee: codex-agent
 author: maintainer-agent
 estimated_minutes: 360
@@ -17,11 +17,12 @@ confidence: medium
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-lodl,blocked_by,"2026-07-05T04:55:05.369Z",null,null
   pm-muhw,blocked_by,"2026-07-05T04:55:05.894Z",null,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-05T08:02:33.801Z",codex-sdk-agent,"Scope alignment evidence: PR #431 review caught that linked-test execution belongs to pm-oslr, not this annotation primitive item. Updated acceptance criteria through pm update to keep pm-zwpp focused on SDK facet primitives, docstrings, SDK reference docs, and behavior-parity facet specs."
   "2026-07-07T20:44:47.005Z",codex-agent,"Implementation start: wide SDK/context primitive PR. Live duplicate/context check covered pm search --status all, pm context, in-progress SDK items, and closed read/lifecycle primitive lineage; this item owns annotation/link primitives only and explicitly excludes linked-test execution per existing notes."
   "2026-07-07T22:45:27.684Z",claude-code-agent,"Evidence: SDK review follow-up tightened public helper contracts: schema() now returns the full SchemaResult union, show/lint helpers require names at compile time, and docs examples match FilesCommandOptions/DocsCommandOptions. Focused SDK tests and installed-package SDK proof passed."
   "2026-07-07T23:24:54.837Z",claude-code-agent,"Review follow-up evidence: corrected docs/SDK.md context primitive example to call comments with add=, matching the public SDK comments wrapper contract verified by the SDK primitive test suite and docs quality gate."
+  "2026-07-08T00:08:26.352Z",claude-code-agent,"Scope correction for Cubic review comment 3540214534: the 2026-07-07T22:45 evidence note mentioned SchemaResult and show/lint contracts because those review fixes landed in the same wide PR, but canonical schema/config/profile/init evidence belongs to pm-3mna. For pm-zwpp, the relevant acceptance evidence is the annotation/link SDK surface: comments, notes, learnings, append, files, filesDiscover, docs, deps, flat file/doc add arrays with top-level note, SDK docs examples, and focused SDK primitive coverage."
 notes[1]{created_at,author,text}:
   "2026-07-05T05:09:50.883Z",maintainer-agent,"Scope note (audit 2026-07-05): this promotion also owns the append (body-append) primitive — it is an annotation-family write like notes/comments. Execution of linked tests is explicitly NOT here; that is pm-oslr."
 files[3]{path,scope,note}:
