@@ -25,12 +25,16 @@ import type { ItemFrontMatter, ItemStatus } from "../../types/index.js";
 import { parseIntegerLimit } from "../shared-parsers.js";
 import {
   buildChildrenByParent,
+  buildItemContextRelevanceCandidates,
   collectSubtreeIds,
   compareCriticalItems,
+  toContextRankingSummary,
   toContextFocusItem,
   type ContextFocusItem,
+  type ContextRankingSummary,
 } from "./context.js";
 import { runList, type ListOptions } from "./list.js";
+import { scoreContextCandidatesWithActiveExtensions } from "../../sdk/context-relevance.js";
 
 export const NEXT_OUTPUT_VALUES = ["markdown", "toon", "json"] as const;
 /**
@@ -57,6 +61,7 @@ export interface NextOptions {
   blockedLimit?: string;
   readyOnly?: boolean;
   format?: string;
+  explainRanking?: boolean;
   [key: string]: unknown;
 }
 
@@ -117,6 +122,7 @@ export interface NextResult {
   };
   suggestions?: string[];
   warnings?: string[];
+  ranking?: ContextRankingSummary;
 }
 
 function parseNextOutputFormat(raw: string | undefined): NextOutputFormat | undefined {
@@ -320,6 +326,34 @@ function filterCandidatesByParentScope(
   return candidates.filter((item) => subtree.ids.has(item.id.trim().toLowerCase()));
 }
 
+async function rankReadyEntriesWithRelevance(
+  rankedReady: ActionableEntry[],
+  childrenByParent: Map<string, ItemFrontMatter[]>,
+  statusRegistry: RuntimeStatusRegistry,
+  now: string,
+): Promise<{
+  projectedReady: ActionableEntry[];
+  ranking: Awaited<ReturnType<typeof scoreContextCandidatesWithActiveExtensions<ItemFrontMatter>>>;
+  completedContainer: boolean;
+}> {
+  const concreteReady = rankedReady.filter((entry) => !hasCompletedDescendants(entry.item, childrenByParent));
+  const structuralReady = concreteReady.length > 0 ? concreteReady : rankedReady;
+  const ranking = await scoreContextCandidatesWithActiveExtensions(
+    "next",
+    buildItemContextRelevanceCandidates(
+      structuralReady.map((entry) => entry.item),
+      statusRegistry,
+      now,
+      process.env.PM_AUTHOR,
+    ),
+  );
+  const readyById = new Map(structuralReady.map((entry) => [entry.item.id, entry]));
+  const projectedReady = ranking.ranked
+    .map((entry) => readyById.get(entry.id))
+    .filter((entry): entry is ActionableEntry => entry !== undefined);
+  return { projectedReady, ranking, completedContainer: concreteReady.length === 0 };
+}
+
 /**
  * Implements `pm next`: computes the ranked ready/blocked actionable queues and a
  * single recommended next item with rationale for the public runtime surface.
@@ -350,8 +384,12 @@ export async function runNext(options: NextOptions, global: GlobalOptions): Prom
   const rankedBlocked = [...report.blocked].sort((left, right) =>
     compareCriticalItems(left.item, right.item, statusRegistry),
   );
-  const concreteReady = rankedReady.filter((entry) => !hasCompletedDescendants(entry.item, childrenByParent));
-  const projectedReady = concreteReady.length > 0 ? concreteReady : rankedReady;
+  const { projectedReady, ranking: readyRanking, completedContainer } = await rankReadyEntriesWithRelevance(
+    rankedReady,
+    childrenByParent,
+    statusRegistry,
+    now,
+  );
 
   const readyRows = projectedReady.map((entry) => toNextActionableItem(entry, statusRegistry, childrenByParent));
   const blockedRows = rankedBlocked.map((entry) => toNextActionableItem(entry, statusRegistry, childrenByParent));
@@ -361,7 +399,7 @@ export async function runNext(options: NextOptions, global: GlobalOptions): Prom
     readyRows,
     statusRegistry,
     now,
-    completedContainer: concreteReady.length === 0,
+    completedContainer,
   });
 
   const result: NextResult = {
@@ -393,10 +431,11 @@ export async function runNext(options: NextOptions, global: GlobalOptions): Prom
     },
   };
 
-  const warnings = [...new Set([...(candidatesList.warnings ?? []), ...(corpusList.warnings ?? [])])].sort((a, b) =>
+  const warnings = [...new Set([...(candidatesList.warnings ?? []), ...(corpusList.warnings ?? []), ...(readyRanking.warnings ?? [])])].sort((a, b) =>
     a.localeCompare(b),
   );
   if (warnings.length > 0) result.warnings = warnings;
+  if (options.explainRanking === true) result.ranking = toContextRankingSummary(readyRanking);
 
   result.suggestions = buildNextSuggestions(recommended, blockedRows);
 

@@ -229,6 +229,10 @@ jobs:
           node dist/cli.js install search-advanced --project --json
           node dist/cli.js reindex --mode keyword --eval --eval-fixtures tests/search-eval/golden-queries.json --json
 
+      - name: Run required context relevance evaluation gate
+        if: matrix.gate == 'smokes'
+        run: pnpm quality:context-eval
+
       - name: Upload coverage artifact
         if: always() && matrix.gate == 'coverage'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

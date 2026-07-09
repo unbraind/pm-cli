@@ -2,11 +2,12 @@ id: pm-atfm
 title: "Context relevance evaluation harness: graded golden-workspace judgments for pm context/next quality"
 description: "Evaluation harness for context quality: graded workspaces and continuity scenarios that measure whether pm context/next return the right items under explicit token budgets."
 type: Feature
-status: open
+status: in_progress
 priority: 1
 tags[4]: context,quality-gate,relevance,scale
 created_at: "2026-07-06T23:25:57.317Z"
-updated_at: "2026-07-06T23:52:06.951Z"
+updated_at: "2026-07-09T19:50:43.336Z"
+assignee: codex-root-20260709
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: Golden corpus (one real-shaped and one synthetic pm-mi2x workspace) with graded judgments versioned in-repo; offline runner scores pm context and pm next with rank-aware quality metrics; baseline of the current structural assembler recorded before pm-4k6b lands; CI gate fails on quality regression beyond a documented threshold; harness consumes only public SDK read primitives; documented workflow for adding new judgment cases
@@ -17,6 +18,16 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-4k6b,related,"2026-07-06T23:25:57.317Z",null,null
   pm-mi2x,related,"2026-07-06T23:25:57.317Z",null,null
   pm-oslr,related,"2026-07-06T23:25:57.317Z",null,null
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-06T23:51:08.193Z",codex-agent,"Planning evidence 2026-07-07: pm-atfm remains the canonical quality harness for context/next relevance. Added non-duplicate child slices pm-lixy (graded scenario corpus across scratch, real-shaped, scale, and returning-agent continuity cases) and pm-xmp5 (offline runner + CI gate). Done definition should mirror search-eval rigor but score context assembly: rank-aware quality, required-item recall, continuity-delta coverage, and token-budget adherence. This keeps pm-4k6b weight tuning evidence-driven instead of aesthetic.\n"
+  "2026-07-09T19:10:26.051Z",codex-root-20260709,"Progress evidence: context/next evaluation harness now has public SDK runner contracts, reviewable golden workspaces, committed baseline, required CI gate, and documented intentional-update workflow."
+  "2026-07-09T19:50:43.336Z",codex-root-20260709,"Verification: public SDK evaluation scenario/corpus APIs execute context and next through real PmClient readers with attribution and threshold/baseline regression reporting. Four committed scenarios and installed-package consumer pass; thresholds remain explicit and token budgets measured from compact payloads."
+files[3]{path,scope,note}:
+  scripts/release/context-eval-gate.mjs,project,Offline isolated evaluation runner
+  tests/context-eval/baseline.json,project,Accepted structural and scorer quality baseline
+  tests/context-eval/golden-scenarios.json,project,Golden context/next quality scenarios
+tests[1]{command,scope,timeout_seconds}:
+  "pnpm quality:context-eval",project,240
+docs[1]{path,scope,note}:
+  docs/TESTING.md,project,Context evaluation workflow
 body: "pm eval measures SEARCH ranking quality (nDCG/MRR golden queries, shipped via pm-u8n5/pm-22x2) but nothing measures whether pm context / pm next assemble the RIGHT working set — the core promise of 'project management = context management'. The adaptive relevance engine (pm-4k6b) will change assembly behavior; without a quality harness we cannot prove it is an improvement, tune signal weights, or catch regressions.\n\nProposal: extend the eval pattern from search to context assembly.\n- Golden workspaces: a small real-shaped snapshot plus pm-mi2x synthetic workspaces at 10k/100k scale.\n- Graded judgments: given agent state (focus item, active claim, plan step, query), the ideal context set with per-item relevance grades.\n- Rank-aware scoring (nDCG-style) over the assembled context and next ordering, plus token-budget adherence checks.\n- Phase 1 (now): baseline today's structural assembler — same before/after role pm-a22j plays for token cost.\n- Phase 2 (with pm-4k6b): per-signal attribution in eval output so weight tuning is evidence-driven; gate in CI like the search eval.\n\nSDK-first: the runner consumes only public SDK read primitives (pm-rjqr), so custom scorers from extensions are evaluable with the same harness."

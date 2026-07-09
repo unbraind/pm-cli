@@ -82,6 +82,7 @@
     "lint:codefactor": "pnpm quality:static",
     "quality:static": "pnpm build && node scripts/release/static-quality-gate.mjs --min-docstring-coverage 92.93 --min-exported-docstring-coverage 84.41 --min-member-docstring-coverage 13.655 && node scripts/release/token-budget-gate.mjs",
     "quality:token-budget": "node scripts/release/token-budget-gate.mjs",
+    "quality:context-eval": "node scripts/release/context-eval-gate.mjs",
     "quality:docs-skills": "node scripts/release/docs-skills-gate.mjs",
     "quality:docs-links": "node scripts/release/docs-skills-gate.mjs --links-only",
     "contracts:update": "node scripts/contracts-snapshot.mjs --update",

@@ -2,7 +2,7 @@
 
 This page describes safe local tests, linked tests, coverage, and release-readiness checks.
 
-Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-u42x](../.agents/pm/issues/pm-u42x.toon).
+Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-u42x](../.agents/pm/issues/pm-u42x.toon), [pm-atfm](../.agents/pm/features/pm-atfm.toon), [pm-xmp5](../.agents/pm/tasks/pm-xmp5.toon).
 
 ## Agent Quick Context
 
@@ -108,6 +108,45 @@ Fixture authoring notes:
 - Add new fixtures for regressions before tuning search defaults.
 
 CI currently runs this gate in advisory mode (`continue-on-error: true`), so failures do not block merges by default; treat failing nDCG as a quality signal to investigate, not as a silent ignore.
+
+## Context Quality Evaluation
+
+The required context relevance gate proves that `pm context` and `pm next`
+assemble the right bounded working set, not only that search returns relevant
+documents.
+
+Fixture and baseline sources:
+
+- `tests/context-eval/golden-scenarios.json` — reviewable scratch,
+  real-shaped, synthetic-scale, and returning-agent continuity judgments.
+- `tests/context-eval/baseline.json` — committed aggregate and per-scenario
+  metrics from the accepted structural/scorer behavior.
+
+Run the required gate locally:
+
+```bash
+pnpm build
+pnpm quality:context-eval
+```
+
+The gate creates isolated temporary trackers through `PmClient`, reads them only
+through the public `context()` / `next()` SDK primitives, and reports nDCG,
+reciprocal rank, required-item recall, continuity coverage, token-budget
+adherence, and served-item signal attribution. It fails when an explicit corpus
+threshold is missed or any aggregate metric regresses below the committed
+baseline.
+
+When a deliberate ranking change improves or intentionally redefines the golden
+judgments, review the scenario-level diff first, then refresh the baseline:
+
+```bash
+pnpm quality:context-eval -- --update
+pnpm quality:context-eval
+```
+
+Do not update the baseline merely to make CI green. Change judgments and
+rationales in the corpus when product intent changes, and commit the corpus,
+baseline, scorer tests, and SDK documentation together.
 
 ## Linked Tests
 
