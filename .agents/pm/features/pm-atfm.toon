@@ -6,8 +6,7 @@ status: in_progress
 priority: 1
 tags[4]: context,quality-gate,relevance,scale
 created_at: "2026-07-06T23:25:57.317Z"
-updated_at: "2026-07-09T19:50:43.336Z"
-assignee: codex-root-20260709
+updated_at: "2026-07-09T23:53:31.600Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: Golden corpus (one real-shaped and one synthetic pm-mi2x workspace) with graded judgments versioned in-repo; offline runner scores pm context and pm next with rank-aware quality metrics; baseline of the current structural assembler recorded before pm-4k6b lands; CI gate fails on quality regression beyond a documented threshold; harness consumes only public SDK read primitives; documented workflow for adding new judgment cases
@@ -18,10 +17,11 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-4k6b,related,"2026-07-06T23:25:57.317Z",null,null
   pm-mi2x,related,"2026-07-06T23:25:57.317Z",null,null
   pm-oslr,related,"2026-07-06T23:25:57.317Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-06T23:51:08.193Z",codex-agent,"Planning evidence 2026-07-07: pm-atfm remains the canonical quality harness for context/next relevance. Added non-duplicate child slices pm-lixy (graded scenario corpus across scratch, real-shaped, scale, and returning-agent continuity cases) and pm-xmp5 (offline runner + CI gate). Done definition should mirror search-eval rigor but score context assembly: rank-aware quality, required-item recall, continuity-delta coverage, and token-budget adherence. This keeps pm-4k6b weight tuning evidence-driven instead of aesthetic.\n"
   "2026-07-09T19:10:26.051Z",codex-root-20260709,"Progress evidence: context/next evaluation harness now has public SDK runner contracts, reviewable golden workspaces, committed baseline, required CI gate, and documented intentional-update workflow."
   "2026-07-09T19:50:43.336Z",codex-root-20260709,"Verification: public SDK evaluation scenario/corpus APIs execute context and next through real PmClient readers with attribution and threshold/baseline regression reporting. Four committed scenarios and installed-package consumer pass; thresholds remain explicit and token budgets measured from compact payloads."
+  "2026-07-09T23:53:29.316Z",codex-root-20260709,"Handoff after PR #487: the typed relevance evaluator, scenario-level regression gate, SDK/package exports, CLI explainability, docs, and exact 100% coverage are merged and green on e953bdcb. Item remains in_progress because the explicitly scoped 10k/100k representative corpus and performance study are not yet complete."
 files[3]{path,scope,note}:
   scripts/release/context-eval-gate.mjs,project,Offline isolated evaluation runner
   tests/context-eval/baseline.json,project,Accepted structural and scorer quality baseline

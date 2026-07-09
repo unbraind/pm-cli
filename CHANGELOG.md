@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- GH-482: Node 24 nightly coverage gate flake — readdir-order-dependent branch at front-matter-cache.ts:505 ([pm-gume](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gume.toon))
 - Context evaluation runner and CI gate: rank-aware quality metrics plus token-budget regression checks ([pm-xmp5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xmp5.toon))
 - Token-cost regression gate: CI budget check over a representative command-output corpus ([pm-cu1i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-cu1i.toon))
 - GH-484: pm update --blocked-by silently overwrites prior blockers instead of appending ([pm-q6gx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q6gx.toon))

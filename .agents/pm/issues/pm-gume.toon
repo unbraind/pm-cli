@@ -2,26 +2,31 @@ id: pm-gume
 title: "GH-482: Node 24 nightly coverage gate flake — readdir-order-dependent branch at front-matter-cache.ts:505"
 description: ""
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[5]: "area:ci",coverage,flake,gh-issue,tests
 created_at: "2026-07-08T22:46:26.131Z"
-updated_at: "2026-07-09T20:53:10.337Z"
-assignee: codex-root-20260709
+updated_at: "2026-07-09T23:53:27.992Z"
+closed_at: "2026-07-09T23:53:26.587Z"
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: "A deterministic spec drives both arms of the existing/replace branch at front-matter-cache.ts:505 regardless of directory enumeration order; nightly Node 24 coverage gate passes repeatedly; GH-482 closed with the run evidence"
 parent: pm-u9d0
 risk: low
 confidence: high
-comments[4]{created_at,author,text}:
+resolution: "Replaced readdir-order-dependent branch coverage with explicit unseen, replace, and keep candidate decisions and reduced cache reader complexity."
+expected_result: Both duplicate-id decisions remain covered independent of Node 24 filesystem enumeration; nightly and merged-head gates pass.
+actual_result: "PR #487 merged at e953bdcb; main CI 29058257316, CodeQL 29058257315, and scheduled Nightly Validation 29002197585 passed with exact 100% coverage."
+comments[5]{created_at,author,text}:
   "2026-07-09T19:39:41.080Z",codex-root-20260709,"Implementation start: live GH-482 remains open even though the 2026-07-09 nightly recovered. This bundle will remove readdir-order dependence by exercising both duplicate-id replacement decisions deterministically, then attach 100% coverage and current nightly evidence."
   "2026-07-09T19:44:24.362Z",codex-root-20260709,"Evidence update: extracted the pure shouldRecordCachedDocumentCandidate decision used at the scan call site, with deterministic unseen-id, replace, and keep assertions independent of readdir or Promise completion order. Changed-file CodeFactor parity exposed readCachedDocumentParts complexity 17; collection selection was extracted and the file now passes the <=16 gate. Focused 26-test cache/release contract suite, typecheck, ESLint, and static quality all pass."
   "2026-07-09T19:50:44.252Z",codex-root-20260709,"Final local evidence: deterministic unseen/replace/keep candidate decision is independent of directory enumeration; current 2026-07-09 Node 24 Nightly Validation run 29002197585 passed; full local suite passed 5,501 tests with exact 100/100/100/100 coverage. GH-482 will be closed after merged-head CI evidence."
   "2026-07-09T20:53:10.336Z",codex-root-20260709,"PR #487 cache review follow-up: both cache-hit and cache-miss heavy-metadata selection now share selectHeavyMetadata. Rejected the split?.heavy warning with code-path evidence: !needRead returns before parsing, while every fallthrough path initializes parsed and split before access. Full coverage remains exact 100%."
+  "2026-07-09T23:53:25.348Z",codex-root-20260709,"Merged-head evidence: PR #487 merged as e953bdcba58817ab6abf0aaca2f09d62ce984681. Main CI run 29058257316 passed every job, including exact 100% coverage and Node 24 build/runtime paths; CodeQL run 29058257315 passed. The current 2026-07-09 scheduled Nightly Validation run 29002197585 also passed, and GH-482 is closed."
 files[2]{path,scope,note}:
   src/core/store/front-matter-cache.ts,project,Make duplicate candidate selection and complexity deterministic across filesystem order
   tests/unit/core/item/front-matter-cache.spec.ts,project,"Exercise unseen,replace,and keep decisions deterministically"
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/core/item/front-matter-cache.spec.ts,project,240,Deterministic cache candidate regression
+close_reason: Deterministic duplicate-candidate coverage merged and verified on main
 body: "Nightly Validation (ubuntu-latest, Node 24) on ed7cd5b6 failed with 'Coverage for branches (99.99%) does not meet global threshold (100%)' while ALL tests passed. Sole uncovered branch: src/core/store/front-matter-cache.ts:505 — `if (!existing || shouldReplaceCachedDocumentCandidate(...))`. Whether `existing` is ever truthy during the cache scan depends on directory enumeration order (which duplicate-id document is read first), so the short-circuit's second arm is only exercised when readdir returns entries in a particular order — Node 24 on ubuntu enumerates differently and the branch goes dark. Prior nightlies on Node 24 passed (3605c829, 02b91bac), confirming flake rather than regression; the daily release gate is unaffected (product tests green). Fix direction: add a deterministic unit spec that seeds the cache state with an existing candidate for the same id and asserts both replace and keep outcomes of shouldReplaceCachedDocumentCandidate through this call site, removing the readdir-order dependency from coverage. Run: https://github.com/unbraind/pm-cli/actions/runs/28922530777 Source: https://github.com/unbraind/pm-cli/issues/482"
