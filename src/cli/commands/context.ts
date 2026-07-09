@@ -677,8 +677,9 @@ function normalizedPressure(value: number, maximum: number): number {
 
 function resolveDeadlinePressure(deadline: unknown, now: string): number {
   const deadlineMs = typeof deadline === "string" ? Date.parse(deadline) : Number.NaN;
-  if (!Number.isFinite(deadlineMs)) return 0;
-  const deadlineDays = (deadlineMs - Date.parse(now)) / (24 * 60 * 60 * 1000);
+  const nowMs = Date.parse(now);
+  if (!Number.isFinite(deadlineMs) || !Number.isFinite(nowMs)) return 0;
+  const deadlineDays = (deadlineMs - nowMs) / (24 * 60 * 60 * 1000);
   return deadlineDays <= 0 ? 1 : 1 / (1 + deadlineDays / 30);
 }
 
@@ -711,7 +712,7 @@ function buildItemContextRelevanceCandidate(
       recency: params.itemCount === 1 ? 1 : 1 - (params.recencyRank.get(item.id) as number) / params.recencyDenominator,
       graph_proximity: item.parent ? 0.3 : 0,
       claim_focus: claimFocus,
-      priority_pressure: normalizedPressure(item.priority, 4),
+      priority_pressure: normalizedPressure(typeof item.priority === "number" ? item.priority : 4, 4),
       risk_pressure: riskPressure,
       deadline_pressure: resolveDeadlinePressure(item.deadline, params.now),
       knowledge_density: Math.min(knowledgeEntries / 5, 1),

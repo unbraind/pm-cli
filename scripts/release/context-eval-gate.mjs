@@ -42,6 +42,16 @@ function mapKeys(values, idByKey, label) {
   return mapped;
 }
 
+function optionalArray(value, label) {
+  if (value !== undefined && !Array.isArray(value)) fail(`Context evaluation ${label} must be an array`);
+  return value ?? [];
+}
+
+function requiredKey(value, label) {
+  if (typeof value !== "string" || value.trim().length === 0) fail(`Context evaluation ${label} requires a non-empty key`);
+  return value;
+}
+
 /** Convert corpus keys into one SDK scenario after its workspace is seeded. */
 export function mapScenarioDefinition(definition, idByKey) {
   const options = { ...definition.options };
@@ -68,8 +78,11 @@ async function seedWorkspace(definition, workspaceRoot) {
   const client = new PmClient({ pmRoot, cwd: workspaceRoot, author: "context-eval-agent", noExtensions: true });
   await client.init(undefined, { defaults: true });
   const idByKey = new Map();
-  for (const item of definition.workspace.items ?? []) {
+  const workspace = requiredObject(definition.workspace, `scenario ${definition.id} workspace`);
+  for (const rawItem of optionalArray(workspace.items, `scenario ${definition.id} workspace.items`)) {
+    const item = requiredObject(rawItem, `scenario ${definition.id} workspace item`);
     const { key, parent_key: parentKey, ...options } = item;
+    requiredKey(key, `scenario ${definition.id} workspace item`);
     const parent = parentKey === undefined ? undefined : idByKey.get(parentKey);
     if (parentKey !== undefined && parent === undefined) {
       fail(`Context evaluation item ${key} references unknown parent key: ${parentKey}`);
@@ -77,7 +90,12 @@ async function seedWorkspace(definition, workspaceRoot) {
     const created = await client.create({ ...options, ...(parent === undefined ? {} : { parent }) });
     idByKey.set(key, created.item.id);
   }
-  for (const generator of definition.workspace.generators ?? []) {
+  for (const rawGenerator of optionalArray(workspace.generators, `scenario ${definition.id} workspace.generators`)) {
+    const generator = requiredObject(rawGenerator, `scenario ${definition.id} workspace generator`);
+    requiredKey(generator.key_prefix, `scenario ${definition.id} workspace generator`);
+    if (!Number.isInteger(generator.count) || generator.count < 0) {
+      fail(`Context evaluation scenario ${definition.id} workspace generator count must be a non-negative integer`);
+    }
     for (let index = 1; index <= generator.count; index += 1) {
       const suffix = String(index).padStart(3, "0");
       const key = `${generator.key_prefix}${suffix}`;

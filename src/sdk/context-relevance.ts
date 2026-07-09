@@ -333,7 +333,7 @@ export function evaluateContextRanking(input: ContextRankingEvaluationInput): Co
     throw new TypeError("Context ranking token counts require actual_tokens >= 0 and token_budget > 0");
   }
   const gains = input.ranked_ids.map((id) => Math.max(0, input.judgments[id] ?? 0));
-  const idealGains = Object.values(input.judgments).map((grade) => Math.max(0, grade)).sort((left, right) => right - left).slice(0, gains.length);
+  const idealGains = Object.values(input.judgments).map((grade) => Math.max(0, grade)).sort((left, right) => right - left).slice(0, gains.length || 1);
   const discountedGain = (values: readonly number[]) => values.reduce(
     (total, grade, index) => total + (2 ** grade - 1) / Math.log2(index + 2),
     0,
@@ -365,9 +365,13 @@ function rankingPayloadForScenario(
   surface: ContextRelevanceSurface,
 ): { rankedIds: string[]; attribution: ContextEvaluationAttribution[] } {
   const rankedIds = surface === "context"
-    ? [...(result as ContextResult).high_level, ...(result as ContextResult).low_level, ...(result as ContextResult).blocked_fallback]
+    ? [
+        ...((result as ContextResult).high_level ?? []),
+        ...((result as ContextResult).low_level ?? []),
+        ...((result as ContextResult).blocked_fallback ?? []),
+      ]
         .map((item) => item.id)
-    : (result as NextResult).ready.map((item) => item.id);
+    : ((result as NextResult).ready ?? []).map((item) => item.id);
   const servedIds = new Set(rankedIds);
   const attribution = (result.ranking?.items ?? [])
     .filter((item) => servedIds.has(item.id))

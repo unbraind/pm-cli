@@ -189,6 +189,24 @@ describe("context evaluation gate", () => {
     await writeFile(baselinePath, JSON.stringify({ ...baseline, version: 2 }));
     await expect(gate.main(["--corpus", corpusPath, "--baseline", baselinePath])).rejects.toThrow("EXIT:1");
 
+    const invalidWorkspaces: unknown[] = [
+      null,
+      { items: {} },
+      { items: [null] },
+      { items: [{ key: "" }] },
+      { generators: {} },
+      { generators: [null] },
+      { generators: [{ key_prefix: "", count: 0 }] },
+      { generators: [{ key_prefix: "generated-", count: -1 }] },
+    ];
+    for (const workspace of invalidWorkspaces) {
+      await writeFile(corpusPath, JSON.stringify({
+        ...corpus,
+        scenarios: [{ ...corpus.scenarios[0], workspace }],
+      }));
+      await expect(gate.main(["--corpus", corpusPath, "--baseline", baselinePath])).rejects.toThrow("EXIT:1");
+    }
+
     await writeFile(corpusPath, JSON.stringify({
       ...corpus,
       scenarios: [{

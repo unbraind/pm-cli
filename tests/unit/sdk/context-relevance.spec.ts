@@ -226,6 +226,12 @@ describe("context relevance SDK primitives", () => {
       token_budget_adherence: 0.5,
       within_token_budget: false,
     });
+    expect(evaluateContextRanking({
+      ranked_ids: [],
+      judgments: { "pm-positive": 3 },
+      actual_tokens: 0,
+      token_budget: 100,
+    }).ndcg).toBe(0);
     expect(() => evaluateContextRanking({
       ranked_ids: [],
       judgments: {},
@@ -291,6 +297,28 @@ describe("context relevance SDK primitives", () => {
       next: async () => ({ ready: [] }) as never,
     });
     expect(noAttribution.attribution).toEqual([]);
+    const sparseResult = await runContextEvaluationScenario({
+      id: "sparse-result",
+      surface: "context",
+      judgments: {},
+      token_budget: 100,
+      rationale: "Runtime readers may omit arrays despite their static contract.",
+    }, {
+      context: async () => ({}) as never,
+      next: async () => ({}) as never,
+    });
+    expect(sparseResult.ranked_ids).toEqual([]);
+    const sparseNext = await runContextEvaluationScenario({
+      id: "sparse-next",
+      surface: "next",
+      judgments: {},
+      token_budget: 100,
+      rationale: "Runtime next readers may omit ready arrays.",
+    }, {
+      context: async () => ({}) as never,
+      next: async () => ({}) as never,
+    });
+    expect(sparseNext.ranked_ids).toEqual([]);
   });
 
   it("reports aggregate threshold failures and validates scenario/corpus metadata", async () => {
