@@ -62,6 +62,11 @@ describe("context relevance SDK primitives", () => {
     expect(defaultScoreContextCandidates([
       candidate("pm-a", "explicitly omitted", { recency: undefined }),
     ])).toMatchObject({ available_signals: ["structural"] });
+    expect(defaultScoreContextCandidates([
+      candidate("pm-a", "undefined weight override", { recency: 1 }),
+    ], { weights: { recency: undefined } })).toEqual(defaultScoreContextCandidates([
+      candidate("pm-a", "undefined weight override", { recency: 1 }),
+    ]));
   });
 
   it("combines available signal families with explainable contributions", () => {

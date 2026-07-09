@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: ci,context,quality-gate,relevance
 created_at: "2026-07-06T23:50:40.860Z"
-updated_at: "2026-07-09T20:53:09.579Z"
+updated_at: "2026-07-09T22:33:08.692Z"
 closed_at: "2026-07-09T19:51:48.785Z"
 author: codex-agent
 estimated_minutes: 300
@@ -21,13 +21,16 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-cu1i,related,"2026-07-06T23:50:40.860Z",codex-agent,null
   pm-oslr,related,"2026-07-06T23:50:40.860Z",codex-agent,null
   pm-h3no,related,"2026-07-09T18:46:14.468Z",null,null
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-06T23:50:40.860Z",codex-agent,"Duplicate check: searched all statuses for context eval runner/quality gate/rank metrics; existing pm-u8n5 is search-only and pm-atfm was the broad parent, so this runner slice is non-duplicate."
   "2026-07-09T19:10:25.501Z",codex-root-20260709,"Progress evidence: required isolated SDK-driven evaluation gate seeds temporary trackers, reads via PmClient context/next, records rank/recall/continuity/token metrics plus attribution, compares explicit thresholds and baseline, and is wired into CI."
   "2026-07-09T19:50:42.726Z",codex-root-20260709,"Verification: required context-eval CI smoke, contracts snapshot, executable gate error paths, reduced ESLint suppression budget 105->104, and release-automation contract all pass. Full repo: 270 files / 5,501 tests / exact 100% statements, branches, functions, lines; lint has zero clones and CodeFactor parity <=16."
   "2026-07-09T20:09:12.798Z",codex-root-20260709,"Pre-push Greptile 0460d109 review feedback resolved: baseline comparison now detects removed metrics, measureCorpus restores PM_AUTHOR for present/absent original states, and extension score validation rejects NaN/Infinity at the outer boundary. Focused and full coverage remain 100/100/100/100."
   "2026-07-09T20:35:20.866Z",codex-root-20260709,"PR #487 Gemini round 1 addressed both external-corpus validation threads: workspace is explicitly object-validated, items/generators must be arrays when present, entries must be objects with non-empty keys, and generator counts must be non-negative integers. Failure-path tests and the real isolated gate pass; full coverage remains exact 100%."
   "2026-07-09T20:53:09.579Z",codex-root-20260709,"PR #487 follow-up: external baseline files now validate scenarios/aggregate shapes before comparison; JSON token estimation reuses a module-level TextEncoder; intentionally optional workspace items/generators retain explicit type/entry validation. Full 5,501-test suite remains 100/100/100/100."
+  "2026-07-09T22:33:07.981Z",codex-root-20260709,"Review-closeout evidence for PR #487: per-scenario baseline comparison now rejects missing scenarios, per-metric numeric regressions, true-to-false token-budget regressions, and newly introduced metrics without an accepted baseline. Focused tests pass; the complete repository gate passes 270 files / 5,502 tests at exact 100% statements, branches, functions, and lines. Fresh packed @unbrained/pm-cli SDK consumer verified undefined weight defaults, evaluation metrics, PmClient context reads, and installed CLI explain-ranking in an isolated temporary project."
+learnings[1]{created_at,author,text}:
+  "2026-07-09T22:33:08.692Z",codex-root-20260709,"Quality-gate design: aggregate ranking metrics can hide a regression in one golden scenario behind an improvement in another. Compare every committed scenario id and metric, including boolean invariants, and fail when either side adds or removes an unreviewed scenario/metric."
 files[7]{path,scope,note}:
   .github/workflows/ci.yml,project,Required context relevance evaluation CI gate
   eslint-suppressions.json,project,Remove stale context command suppression

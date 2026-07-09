@@ -120,7 +120,10 @@ function assertCandidates<TItem>(candidates: readonly ContextRelevanceCandidate<
 function resolveWeights(
   overrides: Partial<Record<ContextRelevanceSignalName, number>> | undefined,
 ): Record<ContextRelevanceSignalName, number> {
-  const weights = { ...DEFAULT_CONTEXT_RELEVANCE_WEIGHTS, ...overrides };
+  const weights = { ...DEFAULT_CONTEXT_RELEVANCE_WEIGHTS };
+  for (const [signal, weight] of Object.entries(overrides ?? {})) {
+    if (weight !== undefined) weights[signal as ContextRelevanceSignalName] = weight;
+  }
   for (const [signal, weight] of Object.entries(weights)) {
     if (!Number.isFinite(weight) || weight < 0) {
       throw new TypeError(`Context relevance weight ${signal} must be a finite non-negative number`);

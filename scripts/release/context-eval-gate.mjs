@@ -129,6 +129,23 @@ export function buildContextEvaluationBaseline(report, corpusVersion) {
   };
 }
 
+function appendMetricRegressions(failures, prefix, current, previous) {
+  for (const metric of Object.keys(previous ?? {})) {
+    if (!(metric in current)) failures.push(`${prefix}${metric}:removed_from_report`);
+  }
+  for (const [metric, value] of Object.entries(current)) {
+    const prior = previous?.[metric];
+    if (typeof value === "boolean") {
+      if (typeof prior !== "boolean") failures.push(`${prefix}${metric}:missing_baseline`);
+      else if (prior && !value) failures.push(`${prefix}${metric}:false<baseline:true`);
+    } else if (!Number.isFinite(prior)) {
+      failures.push(`${prefix}${metric}:missing_baseline`);
+    } else if (value + REGRESSION_TOLERANCE < prior) {
+      failures.push(`${prefix}${metric}:${value}<baseline:${prior}`);
+    }
+  }
+}
+
 /** Return actionable metric regressions against the committed baseline. */
 export function compareContextEvaluationBaseline(report, baseline) {
   const failures = [];
@@ -136,16 +153,20 @@ export function compareContextEvaluationBaseline(report, baseline) {
   if (report.scenario_count !== baseline.scenarios?.length) {
     failures.push(`scenario_count:${report.scenario_count}!=${baseline.scenarios?.length ?? 0}`);
   }
-  for (const metric of Object.keys(baseline.aggregate ?? {})) {
-    if (!(metric in report.aggregate)) failures.push(`${metric}:removed_from_report`);
-  }
-  for (const metric of Object.keys(report.aggregate)) {
-    const previous = baseline.aggregate?.[metric];
-    if (!Number.isFinite(previous)) {
-      failures.push(`${metric}:missing_baseline`);
-    } else if (report.aggregate[metric] + REGRESSION_TOLERANCE < previous) {
-      failures.push(`${metric}:${report.aggregate[metric]}<baseline:${previous}`);
+  appendMetricRegressions(failures, "", report.aggregate, baseline.aggregate);
+  const reportScenarios = new Map(report.scenarios.map((scenario) => [scenario.id, scenario.metrics]));
+  const baselineScenarioIds = new Set();
+  for (const scenario of baseline.scenarios ?? []) {
+    baselineScenarioIds.add(scenario.id);
+    const current = reportScenarios.get(scenario.id);
+    if (!current) {
+      failures.push(`scenario:${scenario.id}:missing_from_report`);
+      continue;
     }
+    appendMetricRegressions(failures, `scenario:${scenario.id}:`, current, scenario.metrics);
+  }
+  for (const scenario of report.scenarios) {
+    if (!baselineScenarioIds.has(scenario.id)) failures.push(`scenario:${scenario.id}:missing_baseline`);
   }
   return failures;
 }

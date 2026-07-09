@@ -15,7 +15,7 @@ interface ContextEvalGateModule {
 interface EvaluationReport {
   scenario_count: number;
   aggregate: Record<string, number>;
-  scenarios: Array<{ id: string; metrics: Record<string, number> }>;
+  scenarios: Array<{ id: string; metrics: Record<string, number | boolean> }>;
 }
 
 async function loadGate(): Promise<ContextEvalGateModule> {
@@ -84,11 +84,47 @@ describe("context evaluation gate", () => {
       "removed_metric:removed_from_report",
       "ndcg:missing_baseline",
       "required_recall:missing_baseline",
+      "scenario:case:missing_baseline",
     ]);
     expect(gate.compareContextEvaluationBaseline(report, {
       version: 1,
       scenarios: report.scenarios,
     })).toEqual(["ndcg:missing_baseline", "required_recall:missing_baseline"]);
+
+    const balancedReport: EvaluationReport = {
+      scenario_count: 2,
+      aggregate: { ndcg: 0.9 },
+      scenarios: [
+        { id: "regressed", metrics: { ndcg: 0.8, within_token_budget: false } },
+        { id: "improved", metrics: { ndcg: 1 } },
+      ],
+    };
+    expect(gate.compareContextEvaluationBaseline(balancedReport, {
+      version: 1,
+      aggregate: { ndcg: 0.9 },
+      scenarios: [
+        { id: "regressed", metrics: { ndcg: 0.9, within_token_budget: true } },
+        { id: "improved", metrics: { ndcg: 0.9 } },
+      ],
+    })).toEqual([
+      "scenario:regressed:ndcg:0.8<baseline:0.9",
+      "scenario:regressed:within_token_budget:false<baseline:true",
+    ]);
+    expect(gate.compareContextEvaluationBaseline(
+      { ...balancedReport, scenario_count: 1, scenarios: balancedReport.scenarios.slice(1) },
+      {
+        version: 1,
+        aggregate: { ndcg: 0.9 },
+        scenarios: balancedReport.scenarios,
+      },
+    )).toEqual([
+      "scenario_count:1!=2",
+      "scenario:regressed:missing_from_report",
+    ]);
+    expect(gate.compareContextEvaluationBaseline(
+      { scenario_count: 1, aggregate: {}, scenarios: [{ id: "case", metrics: { within_token_budget: true } }] },
+      { version: 1, aggregate: {}, scenarios: [{ id: "case", metrics: {} }] },
+    )).toEqual(["scenario:case:within_token_budget:missing_baseline"]);
   });
 
   it("executes a real isolated SDK corpus and verifies its committed baseline", async () => {
