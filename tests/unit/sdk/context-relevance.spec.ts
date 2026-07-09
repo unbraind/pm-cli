@@ -59,6 +59,9 @@ describe("context relevance SDK primitives", () => {
     expect(() => defaultScoreContextCandidates([candidate("pm-a", "invalid", { recency: -0.1 })])).toThrow("finite number from 0 to 1");
     expect(() => defaultScoreContextCandidates([candidate("pm-a", "invalid", { recency: 1.1 })])).toThrow("finite number from 0 to 1");
     expect(() => defaultScoreContextCandidates([candidate("pm-a", "invalid")], { weights: { recency: -1 } })).toThrow("finite non-negative number");
+    expect(defaultScoreContextCandidates([
+      candidate("pm-a", "explicitly omitted", { recency: undefined }),
+    ])).toMatchObject({ available_signals: ["structural"] });
   });
 
   it("combines available signal families with explainable contributions", () => {

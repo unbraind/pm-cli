@@ -109,6 +109,7 @@ function assertCandidates<TItem>(candidates: readonly ContextRelevanceCandidate<
       if (signal === "structural" || !CONTEXT_RELEVANCE_SIGNAL_NAMES.includes(signal as ContextRelevanceSignalName)) {
         throw new TypeError(`Unknown context relevance signal: ${signal}`);
       }
+      if (value === undefined) continue;
       if (!Number.isFinite(value) || value < 0 || value > 1) {
         throw new TypeError(`Context relevance signal ${signal} must be a finite number from 0 to 1`);
       }
@@ -141,8 +142,8 @@ export function defaultScoreContextCandidates<TItem>(
   const denominator = Math.max(candidates.length - 1, 1);
   const available = new Set<ContextRelevanceSignalName>(["structural"]);
   for (const candidate of candidates) {
-    for (const signal of Object.keys(candidate.signals ?? {}) as ContextRelevanceSignalName[]) {
-      available.add(signal);
+    for (const [signal, value] of Object.entries(candidate.signals ?? {})) {
+      if (value !== undefined) available.add(signal as ContextRelevanceSignalName);
     }
   }
   const availableSignals = CONTEXT_RELEVANCE_SIGNAL_NAMES.filter((signal) => available.has(signal));
