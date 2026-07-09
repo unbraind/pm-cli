@@ -1,0 +1,140 @@
+{
+  "version": 1,
+  "metric": "utf8_bytes",
+  "token_estimate": "ceil(bytes / 4)",
+  "fixture": "isolated PM_PATH and PM_GLOBAL_PATH with deterministic seeded items",
+  "budgets": [
+    {
+      "id": "root-help",
+      "args": [
+        "--help"
+      ],
+      "max_bytes": 10262,
+      "max_estimated_tokens": 2567
+    },
+    {
+      "id": "search-help",
+      "args": [
+        "search",
+        "--help"
+      ],
+      "max_bytes": 6577,
+      "max_estimated_tokens": 1645
+    },
+    {
+      "id": "create-help",
+      "args": [
+        "create",
+        "--help"
+      ],
+      "max_bytes": 8199,
+      "max_estimated_tokens": 2051
+    },
+    {
+      "id": "update-help",
+      "args": [
+        "update",
+        "--help"
+      ],
+      "max_bytes": 8525,
+      "max_estimated_tokens": 2132
+    },
+    {
+      "id": "contracts-summary-json",
+      "args": [
+        "contracts",
+        "--summary",
+        "--json"
+      ],
+      "max_bytes": 4360,
+      "max_estimated_tokens": 1091
+    },
+    {
+      "id": "contracts-flags-json",
+      "args": [
+        "contracts",
+        "--flags-only",
+        "--json"
+      ],
+      "max_bytes": 112251,
+      "max_estimated_tokens": 28064
+    },
+    {
+      "id": "list-default",
+      "args": [
+        "list"
+      ],
+      "max_bytes": 502,
+      "max_estimated_tokens": 126
+    },
+    {
+      "id": "list-json",
+      "args": [
+        "list",
+        "--json"
+      ],
+      "max_bytes": 1307,
+      "max_estimated_tokens": 327
+    },
+    {
+      "id": "get-default",
+      "args": [
+        "get",
+        "pm-d681"
+      ],
+      "max_bytes": 591,
+      "max_estimated_tokens": 149
+    },
+    {
+      "id": "get-json-compact-fields",
+      "args": [
+        "get",
+        "pm-d681",
+        "--json",
+        "--fields",
+        "id,title,status,type,priority,tags,dependencies"
+      ],
+      "max_bytes": 411,
+      "max_estimated_tokens": 104
+    },
+    {
+      "id": "context-default",
+      "args": [
+        "context",
+        "--limit",
+        "5"
+      ],
+      "max_bytes": 1080,
+      "max_estimated_tokens": 271
+    },
+    {
+      "id": "next-default",
+      "args": [
+        "next",
+        "--limit",
+        "5"
+      ],
+      "max_bytes": 1169,
+      "max_estimated_tokens": 293
+    },
+    {
+      "id": "search-inline-default",
+      "args": [
+        "search",
+        "status:all Alpha"
+      ],
+      "max_bytes": 532,
+      "max_estimated_tokens": 134
+    },
+    {
+      "id": "search-inline-json",
+      "args": [
+        "search",
+        "status:all Alpha",
+        "--json"
+      ],
+      "max_bytes": 716,
+      "max_estimated_tokens": 180
+    }
+  ]
+}

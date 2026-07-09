@@ -837,6 +837,13 @@ function isLinkedTestTwoTokenValuePosition(commandName: string | undefined, emit
   return keys !== undefined && keys.has(key);
 }
 
+function shouldPreserveBareKeyValueToken(
+  commandName: string | undefined,
+  emittedTokens: readonly string[],
+): boolean {
+  return commandName === "search" || isLinkedTestTwoTokenValuePosition(commandName, emittedTokens);
+}
+
 /**
  * Accept the two-token linked-test form `pm test <id> --add command "npm test -- parser"`
  * by merging the bare key token and its single quoted value into the documented
@@ -931,7 +938,7 @@ export function normalizeBootstrapInvocation(argv: string[]): BootstrapInvocatio
     if (
       bareKeyValue &&
       !(typeof previous === "string" && previous.startsWith("-")) &&
-      !isLinkedTestTwoTokenValuePosition(commandName, normalizedArgv)
+      !shouldPreserveBareKeyValueToken(commandName, normalizedArgv)
     ) {
       const resolution = resolveCanonicalFlag(bareKeyValue.key, lookup);
       if (resolution) {

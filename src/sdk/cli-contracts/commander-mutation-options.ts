@@ -105,7 +105,7 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
     target: "blockedBy",
     keys: ["blockedBy", "blocked_by"],
     option: "--blocked-by <value>",
-    description: "Blocked-by item ID or reason",
+    description: "Set latest blocked-by item ID or reason; resolved item IDs append a blocked_by dependency edge",
     aliasOptions: [{ option: "--blocked_by <value>", description: "Alias for --blocked-by" }],
   },
   {
@@ -366,7 +366,7 @@ export const UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
     target: "blockedBy",
     keys: ["blockedBy", "blocked_by"],
     option: "--blocked-by <value>",
-    description: "Set blocked-by item ID or reason",
+    description: "Set latest blocked-by item ID or reason; resolved item IDs append a blocked_by dependency edge",
     aliasOptions: [{ option: "--blocked_by <value>", description: "Alias for --blocked-by" }],
   },
   {

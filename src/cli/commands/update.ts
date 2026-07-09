@@ -665,8 +665,10 @@ function dependencyKey(value: Pick<Dependency, "id" | "kind" | "source_kind">): 
 // pm-kyd6: `--blocked-by` writes the `blocked_by` scalar, but the dependency
 // graph (`pm deps`) is built only from the `dependencies` array. Mirror the
 // behaviour create.ts already has so the metadata and the graph agree: a
-// resolvable blocker also gets a `blocked_by` dependency edge, clearing the
-// scalar removes that edge, and re-pointing it replaces the prior edge.
+// resolvable blocker also gets a `blocked_by` dependency edge. Repeated
+// `--blocked-by` updates preserve prior blocker edges because the graph is the
+// full dependency record; the scalar remains the latest primary blocker for
+// backward compatibility. Clearing the scalar removes all derived blocker edges.
 function reconcileBlockedByDependency(
   current: Dependency[] | undefined,
   nextBlockedById: string | undefined,
@@ -675,12 +677,18 @@ function reconcileBlockedByDependency(
 ): { dependencies: Dependency[] | undefined; changed: boolean } {
   let next = [...(current ?? [])];
   let changed = false;
-  const filtered = next.filter((dep) => dep.kind !== "blocked_by" || dep.id === nextBlockedById);
-  if (filtered.length !== next.length) {
-    next = filtered;
-    changed = true;
+  if (nextBlockedById === undefined) {
+    const filtered = next.filter((dep) => dep.kind !== "blocked_by");
+    if (filtered.length !== next.length) {
+      next = filtered;
+      changed = true;
+    }
+    if (!changed) {
+      return { dependencies: current, changed: false };
+    }
+    return { dependencies: next.length > 0 ? next : undefined, changed: true };
   }
-  if (nextBlockedById && !next.some((dep) => dep.kind === "blocked_by" && dep.id === nextBlockedById)) {
+  if (!next.some((dep) => dep.kind === "blocked_by" && dep.id === nextBlockedById)) {
     next.push({ id: nextBlockedById, kind: "blocked_by", created_at: nowIsoValue, author });
     changed = true;
   }
@@ -1846,13 +1854,15 @@ function applyBlockedByMutation(document: ItemDocument, context: UpdateMutationC
     document.metadata.blocked_by = context.options.blockedBy?.trim() ?? "";
   }
   changedFields.push("blocked_by");
-  applyBlockedByDependencyEdge(
-    document.metadata,
-    context.resolvedBlockedByDependencyId,
-    context.nowIso,
-    context.author,
-    changedFields,
-  );
+  if (context.clearFrontMatterKeys.has("blocked_by") || context.resolvedBlockedByDependencyId !== undefined) {
+    applyBlockedByDependencyEdge(
+      document.metadata,
+      context.resolvedBlockedByDependencyId,
+      context.nowIso,
+      context.author,
+      changedFields,
+    );
+  }
 }
 
 function applyScheduleMutations(document: ItemDocument, context: UpdateMutationContext, changedFields: string[]): void {

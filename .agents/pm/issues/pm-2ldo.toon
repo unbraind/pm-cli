@@ -2,15 +2,28 @@ id: pm-2ldo
 title: "GH-485: pm search rewrites quoted status:all hybrid queries into --status and drops keywords"
 description: "Quoted hybrid queries beginning with an inline status: filter are rewritten into a --status flag whose value swallows the remaining keywords, leaving no positional keywords and failing the command. Reproduced on 2026.7.9."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:search",cli,gh-issue,parser
 created_at: "2026-07-09T10:33:07.477Z"
-updated_at: "2026-07-09T11:36:47.659Z"
+updated_at: "2026-07-09T17:03:11.161Z"
+closed_at: "2026-07-09T17:03:10.538Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "pm search \"status:all scene grounding\" applies the status filter and treats remaining tokens as keywords; regression test covers inline-filter-first quoted queries; if a query is inline-filter-only, the error names the inline-filter syntax rather than a generic missing-keywords message"
 parent: pm-ydp6
 risk: medium
 confidence: high
+comments[3]{created_at,author,text}:
+  "2026-07-09T16:38:00.877Z",claude-code-agent,"Implementation evidence: search bootstrap no longer rewrites inline field:value query tokens for pm search; focused bootstrap regression tests passed."
+  "2026-07-09T16:39:51.847Z",claude-code-agent,"Manual proof: in isolated temp PM_PATH, dist CLI search \"status:all scene grounding\" returned query=\"scene grounding\", filters.status=all, and found the expected item; inline-only \"status:all\" failed with inline-filter guidance."
+  "2026-07-09T17:03:09.910Z",claude-code-agent,"Verification: unquoted search inline filters now stay query input and are parsed by runSearch; focused bootstrap/search tests passed, manual temp PM_PATH proof found the expected item for pm search 'status:all scene grounding --json', full coverage passed 5480 tests at 100/100/100/100, and the CI static sequence passed."
+files[2]{path,scope,note}:
+  src/cli/bootstrap-args.ts,project,Preserve search inline filter tokens for runSearch residual keyword parsing
+  tests/unit/cli/bootstrap-args.spec.ts,project,"Regression coverage for quoted and unquoted status:all search queries"
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,Document search inline filter parsing ownership
+close_reason: "Fixed GH-485 by preserving search field:value tokens for the inline parser while keeping explicit flag precedence and docs/tests current; verified with focused tests, manual temp PM_PATH proof, full coverage, and CI static gates."
 body: "## Reproduction (verified on 2026.7.9, local build)\n\n```bash\npm search \"status:all scene grounding\" --limit 5\n# Error: Missing required argument keywords\n# Recovery bundle shows: attempted_command: pm search --status \"all scene grounding\" --limit 5\n```\n\nThe inline-filter rewriter consumes everything after `status:` into the flag value instead of stopping at the first whitespace token boundary.\n\n## Impact\nBreaks the documented duplicate-check workflow (`pm search \"status:all <keywords>\"` before create) that agents use to avoid re-filing items. Workaround: pass `--status all` explicitly and keep keywords positional.\n\n## Upstream\nhttps://github.com/unbraind/pm-cli/issues/485 (filed 2026-07-08 by unbraind while implementing an all-status duplicate-check workflow).\n\n## Likely surface\nInline query-syntax parser from GH-157 remainder work (pm-ldr1) — the `status:`/`tag:` token rewrite path in search argument normalization."
