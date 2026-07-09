@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Token-cost regression gate: CI budget check over a representative command-output corpus ([pm-cu1i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-cu1i.toon))
+- GH-484: pm update --blocked-by silently overwrites prior blockers instead of appending ([pm-q6gx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q6gx.toon))
+- GH-485: pm search rewrites quoted status:all hybrid queries into --status and drops keywords ([pm-2ldo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2ldo.toon))
+
 ## 2026.7.9 - 2026-07-09
 
 ### Added

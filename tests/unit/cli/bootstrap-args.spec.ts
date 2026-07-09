@@ -323,6 +323,18 @@ describe("normalizeBootstrapInvocation", () => {
     );
   });
 
+  it("preserves search inline filter tokens for the search parser (GH-485)", () => {
+    const normalized = normalizeBootstrapInvocation(["search", "status:all", "scene", "grounding", "--limit", "5"]);
+    expect(normalized.argv).toEqual(["search", "status:all", "scene", "grounding", "--limit", "5"]);
+    expect(normalized.trace.filter((entry) => entry.reason === "bare_key_value")).toHaveLength(0);
+  });
+
+  it("preserves quoted search inline filters with residual keywords (GH-485)", () => {
+    const normalized = normalizeBootstrapInvocation(["search", "status:all scene grounding", "--limit", "5"]);
+    expect(normalized.argv).toEqual(["search", "status:all scene grounding", "--limit", "5"]);
+    expect(normalized.trace.filter((entry) => entry.reason === "bare_key_value")).toHaveLength(0);
+  });
+
   it("keeps truncated plural list flags in the typo path instead of aliasing them", () => {
     const normalized = normalizeBootstrapInvocation(["update", "pm-a1b2", "--statu", "closed"]);
     expect(normalized.argv).toEqual(["update", "pm-a1b2", "--status", "closed"]);

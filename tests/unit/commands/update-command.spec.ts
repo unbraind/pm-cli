@@ -3486,35 +3486,60 @@ describe("runUpdate", () => {
       });
     });
 
-    it("repoints the edge to the new blocker without leaving the stale one", async () => {
+    it("appends a new blocker edge while keeping the latest scalar blocker", async () => {
       await withTempPmPath(async (context) => {
         const firstBlocker = createTask(context, "kyd6-first-blocker");
         const secondBlocker = createTask(context, "kyd6-second-blocker");
-        const blockedId = createTask(context, "kyd6-repoint-blocked");
+        const blockedId = createTask(context, "kyd6-append-blocked");
         await runUpdate(blockedId, { blockedBy: firstBlocker }, { path: context.pmPath });
 
-        const repointed = await runUpdate(
+        const appended = await runUpdate(
           blockedId,
-          { blockedBy: secondBlocker, message: "repoint blocker" },
+          { blockedBy: secondBlocker, message: "append blocker" },
           { path: context.pmPath },
         );
 
-        const item = repointed.item as { dependencies?: { id: string; kind: string }[] };
+        const item = appended.item as { blocked_by?: string; dependencies?: { id: string; kind: string }[] };
+        expect(item.blocked_by).toBe(secondBlocker);
+        const blockedByEdges = (item.dependencies ?? []).filter((dep) => dep.kind === "blocked_by");
+        expect(blockedByEdges).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ id: firstBlocker, kind: "blocked_by" }),
+            expect.objectContaining({ id: secondBlocker, kind: "blocked_by" }),
+          ]),
+        );
+        expect(blockedByEdges).toHaveLength(2);
+      });
+    });
+
+    it("does not duplicate a blocker edge when the same blocker is set repeatedly", async () => {
+      await withTempPmPath(async (context) => {
+        const blocker = createTask(context, "kyd6-repeat-blocker");
+        const blockedId = createTask(context, "kyd6-repeat-blocked");
+        await runUpdate(blockedId, { blockedBy: blocker }, { path: context.pmPath });
+
+        const repeated = await runUpdate(
+          blockedId,
+          { blockedBy: blocker, message: "repeat blocker" },
+          { path: context.pmPath },
+        );
+
+        const item = repeated.item as { dependencies?: { id: string; kind: string }[] };
         const blockedByEdges = (item.dependencies ?? []).filter((dep) => dep.kind === "blocked_by");
         expect(blockedByEdges).toEqual([
-          expect.objectContaining({ id: secondBlocker, kind: "blocked_by" }),
+          expect.objectContaining({ id: blocker, kind: "blocked_by" }),
         ]);
       });
     });
 
-    it("drops manually added stale blocked_by edges when setting a scalar blocker", async () => {
+    it("preserves manually added blocked_by edges when setting a scalar blocker", async () => {
       await withTempPmPath(async (context) => {
-        const staleBlocker = createTask(context, "kyd6-stale-blocker");
+        const manualBlocker = createTask(context, "kyd6-manual-blocker");
         const activeBlocker = createTask(context, "kyd6-active-blocker");
-        const blockedId = createTask(context, "kyd6-stale-edge-blocked");
+        const blockedId = createTask(context, "kyd6-manual-edge-blocked");
         await runUpdate(
           blockedId,
-          { dep: [`id=${staleBlocker},kind=blocked_by`], message: "seed stale blocker edge" },
+          { dep: [`id=${manualBlocker},kind=blocked_by`], message: "seed manual blocker edge" },
           { path: context.pmPath },
         );
 
@@ -3527,9 +3552,13 @@ describe("runUpdate", () => {
         const item = updated.item as { blocked_by?: string; dependencies?: { id: string; kind: string }[] };
         expect(item.blocked_by).toBe(activeBlocker);
         const blockedByEdges = (item.dependencies ?? []).filter((dep) => dep.kind === "blocked_by");
-        expect(blockedByEdges).toEqual([
-          expect.objectContaining({ id: activeBlocker, kind: "blocked_by" }),
-        ]);
+        expect(blockedByEdges).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ id: manualBlocker, kind: "blocked_by" }),
+            expect.objectContaining({ id: activeBlocker, kind: "blocked_by" }),
+          ]),
+        );
+        expect(blockedByEdges).toHaveLength(2);
       });
     });
   });

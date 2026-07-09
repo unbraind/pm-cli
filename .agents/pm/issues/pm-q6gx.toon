@@ -2,15 +2,29 @@ id: pm-q6gx
 title: "GH-484: pm update --blocked-by silently overwrites prior blockers instead of appending"
 description: ""
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-experience,"area:cli",data-integrity,deps,gh-issue
 created_at: "2026-07-08T22:46:10.625Z"
-updated_at: "2026-07-08T22:46:10.625Z"
+updated_at: "2026-07-09T17:03:17.994Z"
+closed_at: "2026-07-09T17:03:17.454Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "Repeated --blocked-by calls accumulate (or the flag rejects a second value with an actionable additive-flag hint); dependencies array and blocked_by field stay consistent; behavior identical via CLI, SDK, and MCP; contracts/docs/completions updated; regression spec covers first-set, append, duplicate, and remove paths for create and update"
 parent: pm-mpbb
 risk: medium
 confidence: high
+comments[3]{created_at,author,text}:
+  "2026-07-09T16:38:01.280Z",claude-code-agent,"Implementation evidence: update --blocked-by now preserves prior resolved blocked_by dependency edges, deduplicates repeated blockers, and clears all blocker edges only on --unset blocked-by; focused update regression tests passed."
+  "2026-07-09T16:39:52.134Z",claude-code-agent,"Manual proof: in isolated temp PM_PATH, dist CLI create --blocked-by first then update --blocked-by second kept scalar blocked_by as the second blocker and produced two blocked_by graph edges in pm deps."
+  "2026-07-09T17:03:16.899Z",claude-code-agent,"Verification: update --blocked-by now preserves existing blocked_by dependency edges while appending resolved new blockers and deduplicating repeats; focused update-command tests passed, manual temp PM_PATH proof showed two blocker edges and latest scalar blocker, full coverage passed 5480 tests at 100/100/100/100, and the CI static sequence passed."
+files[3]{path,scope,note}:
+  src/cli/commands/update.ts,project,Append resolved blocked_by dependency edges instead of replacing prior blockers
+  src/sdk/cli-contracts/commander-mutation-options.ts,project,Expose additive blocked_by edge semantics in SDK command contracts
+  tests/unit/commands/update-command.spec.ts,project,"Regression coverage for append,dedupe,clear blocked_by dependency semantics"
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/update-command.spec.ts,project,300
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,Document latest scalar plus full blocker graph behavior
+close_reason: "Fixed GH-484 by preserving the full blocker dependency graph while keeping blocked_by scalar compatibility; verified with focused tests, manual temp PM_PATH proof, full coverage, and CI static gates."
 body: "Repeated `pm update <id> --blocked-by <other>` calls each REPLACE the stored blocked_by value and the corresponding dependencies edge instead of accumulating, so an agent wiring multiple blockers one call at a time silently loses every blocker except the last. No warning is emitted. Workaround: `--dep \"id=<id>,kind=blocked_by\"` appends correctly; --blocked-by does not. Impact: dependency chains built incrementally (a very common agent planning pattern) silently degrade to a single edge, corrupting scheduling (pm next) and blocked-status semantics. Fix direction (pick one, keep contracts/docs/completions in sync per the new-flag checklist): (a) comma-list + accumulate semantics matching other comma-list flags, (b) append-by-default with an explicit --set-blocked-by override, or (c) additive --add-blocked-by/--remove-blocked-by pair mirroring --add-tags/--remove-tags. Related shipped history: pm-orrl (create --blocked-by stored free text), pm-kyd6 (update --blocked-by created no deps edge) — this is the third distinct defect on the same flag family; consider a regression spec matrix over create+update x first-set/append/remove. Source: https://github.com/unbraind/pm-cli/issues/484"
