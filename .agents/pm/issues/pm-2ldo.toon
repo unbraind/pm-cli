@@ -1,0 +1,15 @@
+id: pm-2ldo
+title: "GH-485: pm search rewrites quoted status:all hybrid queries into --status and drops keywords"
+description: "Quoted hybrid queries beginning with an inline status: filter are rewritten into a --status flag whose value swallows the remaining keywords, leaving no positional keywords and failing the command. Reproduced on 2026.7.9."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,"area:search",cli,gh-issue,parser
+created_at: "2026-07-09T10:33:07.477Z"
+updated_at: "2026-07-09T10:33:22.286Z"
+author: maintainer-agent
+acceptance_criteria: "pm search \"status:all scene grounding\" applies the status filter and treats remaining tokens as keywords; regression test covers inline-filter-first quoted queries; if a query is inline-filter-only, the error names the inline-filter syntax rather than a generic missing-keywords message"
+parent: pm-ydp6
+risk: medium
+confidence: high
+body: "## Reproduction (verified on 2026.7.9, local build)\n\n```bash\npm search \"status:all scene grounding\" --limit 5\n# Error: Missing required argument keywords\n# Recovery bundle shows: attempted_command: pm search --status \"all scene grounding\" --limit 5\n```\n\nThe inline-filter rewriter consumes everything after `status:` into the flag value instead of stopping at the first whitespace token boundary.\n\n## Impact\nBreaks the documented duplicate-check workflow (`pm search \"status:all <keywords>\"` before create) that agents use to avoid re-filing items. Workaround: pass `--status all` explicitly and keep keywords positional.\n\n## Upstream\nhttps://github.com/unbraind/pm-cli/issues/485 (filed 2026-07-08 by unbraind while implementing an all-status duplicate-check workflow).\n\n## Likely surface\nInline query-syntax parser from GH-157 remainder work (pm-ldr1) — the `status:`/`tag:` token rewrite path in search argument normalization."
