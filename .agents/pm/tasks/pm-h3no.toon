@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:sdk",context,extension,relevance
 created_at: "2026-07-06T23:50:39.508Z"
-updated_at: "2026-07-09T21:07:15.375Z"
+updated_at: "2026-07-09T21:14:22.812Z"
 closed_at: "2026-07-09T19:51:46.986Z"
 author: codex-agent
 estimated_minutes: 300
@@ -20,7 +20,7 @@ actual_result: "Public scorer/evaluation exports, context/next integration, exte
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-x6jf,related,"2026-07-06T23:50:39.508Z",codex-agent,null
   pm-atfm,related,"2026-07-09T18:46:11.287Z",null,null
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-07-06T23:50:39.508Z",codex-agent,"Duplicate check: searched all statuses for context relevance scorer/plugin/weighting; no child item existed under pm-4k6b, only the broad parent and closed search relevance items."
   "2026-07-09T18:46:14.935Z",codex-root-20260709,"Implementation bundle: pm-h3no + pm-atfm + pm-lixy + pm-xmp5 share the context-ranking/evaluation write set. Duplicate-safe all-status orientation confirmed these are the canonical scorer, harness, corpus, and runner items; blocked index-store/packer items pm-3hps/pm-55ra remain out of scope until pm-801d/pm-dfg0 land."
   "2026-07-09T19:10:24.231Z",codex-root-20260709,"Progress evidence: public deterministic scorer, governed context_relevance override, shared context/next integration, opt-in per-signal explanations, corrected flag contracts, and SDK evaluation APIs are implemented. Focused tests, typecheck, ESLint, contract snapshot, and static/CodeFactor/token gates pass."
@@ -29,6 +29,7 @@ comments[8]{created_at,author,text}:
   "2026-07-09T20:35:20.442Z",codex-root-20260709,"PR #487 Gemini round 1 addressed all scorer/runtime findings: sparse ContextResult/NextResult arrays now fall back safely, empty returned rankings score NDCG 0 when positive judgments exist, malformed runtime priorities default to no pressure, and invalid current timestamps yield zero deadline pressure. Full suite remains 5,501 tests at exact 100/100/100/100."
   "2026-07-09T20:53:09.045Z",codex-root-20260709,"PR #487 CodeRabbit/Greptile review: protected the structural baseline from runtime signal injection, removed the context-evaluation SDK module's reverse dependency on CLI command types via dedicated public read contracts, made pressure parsing tolerant and batch-parsed time once, and made the public SDK example project-relative. Hot-path verification confirmed active service lookup is an in-memory registry check with no file I/O. Full coverage remains exact 100%."
   "2026-07-09T21:07:15.375Z",codex-gpt5,"Review evidence: implemented Gemini's final metadata-shape hardening on the current PR head. Ranking now accepts deadline values supplied as ISO strings, Date objects, or epoch numbers; normalizes risk labels case-insensitively after trimming; and ignores non-string assignee values safely. Added focused runtime tests, including malformed extension metadata. Verification: focused context-relevance tests, typecheck, ESLint, static quality gate, and full sandboxed repository coverage all pass: 270 files, 5,502 tests, exact 100% statements (34,300/34,300), branches (24,511/24,511), functions (6,873/6,873), and lines (32,967/32,967)."
+  "2026-07-09T21:14:22.811Z",codex-gpt5,"Greptile final-head review evidence: the reported hidden underscore alias defect was not reproducible. Built runtime commands 'pm context --explain_ranking --json' and 'pm next --explain_ranking --json' both exit 0 and emit ranking.model=default-weighted-v1. Added explicit sandboxed CLI regression assertions for both aliases so this supported contract is mechanically proven. Focused test passed (3/3), ESLint passed, static quality and token gates passed; prior full run remains exact 100/100/100/100 and final-head CI will rerun the complete coverage gate."
 files[9]{path,scope,note}:
   src/cli/commands/context.ts,project,Shared context candidate signal derivation and ranking integration
   src/cli/commands/next.ts,project,Shared next ranking integration through the public scorer

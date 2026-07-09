@@ -117,6 +117,8 @@ describe("context relevance command integration", () => {
       const compact = await runContext({}, { path: context.pmPath });
       const explainedContext = await runContext({ explainRanking: true }, { path: context.pmPath });
       const explainedNext = await runNext({ explainRanking: true }, { path: context.pmPath });
+      const contextAlias = context.runCli(["context", "--json", "--explain_ranking"], { expectJson: true });
+      const nextAlias = context.runCli(["next", "--json", "--explain_ranking"], { expectJson: true });
 
       expect(compact.ranking).toBeUndefined();
       expect(explainedContext.ranking?.model).toBe("default-weighted-v1");
@@ -125,6 +127,10 @@ describe("context relevance command integration", () => {
         explainedNext.ready.map((entry) => entry.id),
       );
       expect(explainedNext.ranking?.items[0]?.contributions.priority_pressure).toBeGreaterThan(0);
+      expect(contextAlias.code).toBe(0);
+      expect(contextAlias.json).toMatchObject({ ranking: { model: "default-weighted-v1" } });
+      expect(nextAlias.code).toBe(0);
+      expect(nextAlias.json).toMatchObject({ ranking: { model: "default-weighted-v1" } });
     });
   });
 });
