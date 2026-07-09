@@ -106,6 +106,8 @@ Command/action contract exports:
 - `PmClient` / `runAction` (high-level in-process action execution for custom tools, bots, CI, and embedded runtimes)
 - Typed read primitives on `PmClient`: `get`, `list`, `search`, `context`, `next`, `aggregate`, and `stats`
 - Read primitive option/result contracts: `GetOptions` / `GetResult`, `ListOptions` / `ListResult`, `SearchOptions` / `SearchResult`, `ContextOptions` / `ContextResult`, `NextOptions` / `NextResult`, `AggregateOptions` / `AggregateResult`, `StatsCommandOptions` / `StatsResult`
+- Context relevance primitives: `defaultScoreContextCandidates`, `scoreContextCandidates`, `scoreContextCandidatesWithActiveExtensions`, `evaluateContextRanking`, `runContextEvaluationScenario`, `runContextEvaluationCorpus`, and `summarizeContextEvaluationReports`
+- Context relevance contracts: `ContextRelevanceCandidate`, `ContextRelevanceSignals`, `ContextRelevanceScorer`, `ContextRelevanceReport`, `ContextEvaluationReader`, `ContextEvaluationScenario`, `ContextEvaluationScenarioReport`, `ContextEvaluationThresholds`, and `ContextEvaluationCorpusReport`
 - Typed annotation and relationship primitives on `PmClient`: `comments`, `notes`, `learnings`, `files`, `filesDiscover`, `docs`, `deps`, and `append`
 - Annotation and relationship option/result contracts: `CommentsCommandOptions` / `CommentsResult`, `NotesCommandOptions` / `NotesResult`, `LearningsCommandOptions` / `LearningsResult`, `FilesCommandOptions` / `FilesResult`, `FilesDiscoverOptions` / `FilesDiscoverResult`, `DocsCommandOptions` / `DocsResult`, `DepsCommandOptions` / `DepsResult`, `AppendCommandOptions` / `AppendResult`
 - Typed customization primitives on `PmClient`: `init`, `config`, `schema`, `schemaList`, `schemaShow`, `schemaAddType`, `schemaRemoveType`, `schemaAddStatus`, `schemaRemoveStatus`, `schemaAddField`, `schemaRemoveField`, `schemaListFields`, `schemaShowField`, `schemaApplyPreset`, `schemaInferTypes`, `schemaShowStatus`, `profile`, `profileList`, `profileShow`, `profileApply`, and `profileLint`
@@ -537,6 +539,71 @@ read-only diagnostics, and `pm.gc` runs dry-run or explicit cleanup paths throug
 the same bounded maintenance engine as the CLI. Prefer these typed calls over
 shelling out when building CI, editor integrations, or long-running agent
 runtimes.
+
+### Context relevance and evaluation
+
+Tracked by [pm-4k6b](../.agents/pm/features/pm-4k6b.toon),
+[pm-h3no](../.agents/pm/tasks/pm-h3no.toon), and
+[pm-atfm](../.agents/pm/features/pm-atfm.toon).
+
+`pm context` and `pm next` share the public deterministic relevance model.
+Candidate order is the structural baseline; normalized metadata signals add
+explainable weighted contributions. Package authors can call
+`scoreContextCandidates` with a scorer callback, while installed extensions can
+register the governed `context_relevance` service override. A malformed or
+throwing override degrades to the deterministic default and emits an
+`extension_context_relevance_invalid_result` warning instead of breaking the
+read path.
+
+Use `--explain-ranking --json` on `pm context` or `pm next` to include the model,
+available signals, baseline rank, final rank, score, and per-signal
+contributions. Explanation data is opt-in so default agent output stays bounded.
+
+Custom tools can evaluate the same behavior without shelling out:
+
+```ts
+import {
+  PmClient,
+  runContextEvaluationCorpus,
+  type ContextEvaluationScenario,
+  type ContextEvaluationThresholds,
+} from "@unbrained/pm-cli/sdk";
+
+const pm = new PmClient({
+  pmRoot: "/project/.agents/pm",
+  author: "context-quality-ci",
+});
+
+const scenarios: ContextEvaluationScenario[] = [
+  {
+    id: "returning-agent",
+    surface: "context",
+    options: { limit: "5" },
+    judgments: { "pm-current": 3, "pm-support": 2 },
+    required_ids: ["pm-current"],
+    continuity_ids: ["pm-current", "pm-support"],
+    token_budget: 1200,
+    rationale: "Resume claimed work with its supporting context.",
+  },
+];
+
+const thresholds: ContextEvaluationThresholds = {
+  ndcg: 0.9,
+  reciprocal_rank: 0.9,
+  required_recall: 1,
+  continuity_coverage: 1,
+  token_budget_adherence: 1,
+};
+
+const report = await runContextEvaluationCorpus(scenarios, pm, thresholds);
+if (!report.passed) throw new Error(report.failures.join(", "));
+```
+
+The evaluator calls only the public `context()` / `next()` reader contract. It
+scores nDCG, reciprocal rank, required-item recall, returning-agent continuity,
+and deterministic `ceil(UTF-8 JSON bytes / 4)` token-budget adherence. Reports
+retain attribution only for served items, while token accounting measures the
+normal packet without the opt-in ranking explanation.
 
 `PmClient` and `runAction` share the same process-wide extension activation
 queue as MCP. Calls from one process are serialized across extension load,

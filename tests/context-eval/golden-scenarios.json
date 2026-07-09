@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "description": "Graded golden workspaces for pm context and pm next quality across the supported scale spectrum.",
+  "thresholds": {
+    "ndcg": 0.9,
+    "reciprocal_rank": 0.9,
+    "required_recall": 1,
+    "continuity_coverage": 1,
+    "token_budget_adherence": 1
+  },
+  "scenarios": [
+    {
+      "id": "tiny-scratch-context",
+      "surface": "context",
+      "rationale": "A tiny project should preserve the active implementation anchor while still returning its nearby backlog.",
+      "workspace": {
+        "items": [
+          { "key": "scratch-backlog", "title": "Polish scratch notes", "description": "Low-priority follow-up", "type": "Task", "status": "open", "priority": "3" },
+          { "key": "scratch-support", "title": "Check scratch assumptions", "description": "Supporting task", "type": "Task", "status": "open", "priority": "2" },
+          { "key": "scratch-active", "title": "Implement scratch prototype", "description": "Current implementation anchor", "type": "Task", "status": "in_progress", "priority": "1", "assignee": "context-eval-agent" }
+        ]
+      },
+      "options": { "limit": "3" },
+      "judgments": { "scratch-active": 3, "scratch-support": 1, "scratch-backlog": 0 },
+      "required_keys": ["scratch-active"],
+      "continuity_keys": [],
+      "token_budget": 2000
+    },
+    {
+      "id": "real-shaped-next",
+      "surface": "next",
+      "rationale": "A medium hierarchy should recommend the highest-priority actionable leaf rather than its container or low-value siblings.",
+      "workspace": {
+        "items": [
+          { "key": "release", "title": "Ship context-aware release", "description": "Feature container", "type": "Feature", "status": "open", "priority": "1" },
+          { "key": "docs", "title": "Document release notes", "description": "Low-priority sibling", "type": "Task", "status": "open", "priority": "3", "parent_key": "release" },
+          { "key": "tests", "title": "Prove release behavior", "description": "Primary ready work", "type": "Task", "status": "open", "priority": "0", "parent_key": "release" },
+          { "key": "cleanup", "title": "Clean old fixtures", "description": "Unrelated maintenance", "type": "Chore", "status": "open", "priority": "4" },
+          { "key": "roadmap", "title": "Context roadmap", "description": "High-level planning", "type": "Epic", "status": "open", "priority": "2" },
+          { "key": "followup", "title": "Review telemetry", "description": "Secondary ready task", "type": "Task", "status": "open", "priority": "2", "parent_key": "roadmap" }
+        ]
+      },
+      "options": { "limit": "5", "readyOnly": true },
+      "judgments": { "tests": 3, "followup": 2, "docs": 1, "cleanup": 0 },
+      "required_keys": ["tests"],
+      "continuity_keys": [],
+      "token_budget": 1800
+    },
+    {
+      "id": "synthetic-scale-context",
+      "surface": "context",
+      "rationale": "A scale-shaped corpus should keep a claimed critical anchor inside a bounded packet despite a large low-value tail.",
+      "workspace": {
+        "items": [
+          { "key": "scale-anchor", "title": "Repair million-item context ranking", "description": "Critical claimed scale anchor", "type": "Task", "status": "in_progress", "priority": "0", "assignee": "context-eval-agent" }
+        ],
+        "generators": [
+          { "key_prefix": "scale-filler-", "title_prefix": "Synthetic backlog item", "description": "pm-mi2x-style low-value scale filler", "type": "Task", "status": "open", "priority": "4", "count": 100 }
+        ]
+      },
+      "options": { "limit": "10" },
+      "judgments": { "scale-anchor": 3 },
+      "required_keys": ["scale-anchor"],
+      "continuity_keys": [],
+      "token_budget": 3000
+    },
+    {
+      "id": "returning-agent-continuity",
+      "surface": "context",
+      "rationale": "A returning agent should recover its claimed work and the nearest supporting task before unrelated recent backlog.",
+      "workspace": {
+        "items": [
+          { "key": "unrelated", "title": "Unrelated fresh request", "description": "Recent but unrelated", "type": "Task", "status": "open", "priority": "2" },
+          { "key": "support", "title": "Re-read prior implementation notes", "description": "Continuity support", "type": "Task", "status": "open", "priority": "1", "assignee": "context-eval-agent" },
+          { "key": "returning-anchor", "title": "Resume interrupted SDK work", "description": "Claimed work from the previous session", "type": "Task", "status": "in_progress", "priority": "1", "assignee": "context-eval-agent" }
+        ]
+      },
+      "options": { "limit": "3" },
+      "judgments": { "returning-anchor": 3, "support": 2, "unrelated": 0 },
+      "required_keys": ["returning-anchor"],
+      "continuity_keys": ["returning-anchor", "support"],
+      "token_budget": 2000
+    }
+  ]
+}

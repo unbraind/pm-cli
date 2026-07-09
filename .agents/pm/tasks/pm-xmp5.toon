@@ -2,21 +2,50 @@ id: pm-xmp5
 title: "Context evaluation runner and CI gate: rank-aware quality metrics plus token-budget regression checks"
 description: Implement the offline runner that scores pm context/next output against the graded corpus and blocks regressions.
 type: Task
-status: open
+status: closed
 priority: 2
 tags[4]: ci,context,quality-gate,relevance
 created_at: "2026-07-06T23:50:40.860Z"
-updated_at: "2026-07-06T23:50:40.860Z"
+updated_at: "2026-07-09T20:09:12.798Z"
+closed_at: "2026-07-09T19:51:48.785Z"
 author: codex-agent
 estimated_minutes: 300
 acceptance_criteria: "Runner consumes only public SDK read primitives; reports nDCG/MRR-style ranking quality, required-item recall, continuity-delta coverage, and token-budget adherence; baseline from the current assembler is committed; CI gate has documented thresholds and an intentional-update workflow; output includes per-signal attribution once pm-4k6b exposes explanations."
 parent: pm-atfm
 risk: medium
 confidence: medium
+resolution: "Implemented the SDK-driven context evaluation runner, versioned baseline comparison, and required CI gate"
+expected_result: "CI reports rank quality, recall, continuity, token adherence, and attribution through public SDK readers"
+actual_result: "Four isolated scenarios pass all metrics at 1.0; intentional baseline update, failure paths, contracts, and required CI smoke are tested"
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-cu1i,related,"2026-07-06T23:50:40.860Z",codex-agent,null
   pm-oslr,related,"2026-07-06T23:50:40.860Z",codex-agent,null
-  pm-rjqr,blocked_by,"2026-07-06T23:50:40.860Z",codex-agent,null
-comments[1]{created_at,author,text}:
+  pm-h3no,related,"2026-07-09T18:46:14.468Z",null,null
+comments[4]{created_at,author,text}:
   "2026-07-06T23:50:40.860Z",codex-agent,"Duplicate check: searched all statuses for context eval runner/quality gate/rank metrics; existing pm-u8n5 is search-only and pm-atfm was the broad parent, so this runner slice is non-duplicate."
+  "2026-07-09T19:10:25.501Z",codex-root-20260709,"Progress evidence: required isolated SDK-driven evaluation gate seeds temporary trackers, reads via PmClient context/next, records rank/recall/continuity/token metrics plus attribution, compares explicit thresholds and baseline, and is wired into CI."
+  "2026-07-09T19:50:42.726Z",codex-root-20260709,"Verification: required context-eval CI smoke, contracts snapshot, executable gate error paths, reduced ESLint suppression budget 105->104, and release-automation contract all pass. Full repo: 270 files / 5,501 tests / exact 100% statements, branches, functions, lines; lint has zero clones and CodeFactor parity <=16."
+  "2026-07-09T20:09:12.798Z",codex-root-20260709,"Pre-push Greptile 0460d109 review feedback resolved: baseline comparison now detects removed metrics, measureCorpus restores PM_AUTHOR for present/absent original states, and extension score validation rejects NaN/Infinity at the outer boundary. Focused and full coverage remain 100/100/100/100."
+files[7]{path,scope,note}:
+  .github/workflows/ci.yml,project,Required context relevance evaluation CI gate
+  eslint-suppressions.json,project,Remove stale context command suppression
+  package.json,project,"quality:context-eval package gate"
+  scripts/release/context-eval-gate.mjs,project,Isolated SDK-driven context evaluation runner and regression gate
+  scripts/release/static-quality-gate.mjs,project,Pin reduced ESLint suppressions budget after relevance cleanup
+  tests/fixtures/contracts/full.json,project,Updated public flag-contract snapshot
+  tests/unit/scripts/release/context-eval-gate.spec.ts,project,Gate mapping and baseline regression coverage
+tests[3]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 900
+    note: Repository 100 percent statements branches functions lines gate
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/context-eval-gate.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: "pnpm quality:context-eval"
+    scope: project
+    timeout_seconds: 240
+docs[1]{path,scope,note}:
+  docs/TESTING.md,project,Required CI gate and baseline update workflow
+close_reason: Completed offline evaluation runner and required CI regression gate with full coverage evidence
 body: ""

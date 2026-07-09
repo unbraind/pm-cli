@@ -6,6 +6,7 @@ import { serializeItemDocument } from "../../../../src/core/item/item-format.js"
 import {
   clearFrontMatterEnvelopeMemo,
   listAllDocumentCandidatesCached,
+  shouldRecordCachedDocumentCandidate,
   shouldReplaceCachedDocumentCandidate,
 } from "../../../../src/core/store/front-matter-cache.js";
 import {
@@ -312,6 +313,11 @@ describe("front matter cache", () => {
   });
 
   it("decides cross-format duplicate winners deterministically regardless of read order", () => {
+    // The call-site decision covers an unseen id plus both duplicate outcomes
+    // without depending on readdir order or concurrent read completion.
+    expect(shouldRecordCachedDocumentCandidate(undefined, "toon", undefined)).toBe(true);
+    expect(shouldRecordCachedDocumentCandidate("json_markdown", "toon", undefined)).toBe(true);
+    expect(shouldRecordCachedDocumentCandidate("toon", "json_markdown", undefined)).toBe(false);
     // No preferred format: toon wins over any non-toon format, never the reverse.
     expect(shouldReplaceCachedDocumentCandidate("json_markdown", "toon", undefined)).toBe(true);
     expect(shouldReplaceCachedDocumentCandidate("toon", "json_markdown", undefined)).toBe(false);

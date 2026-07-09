@@ -54,11 +54,6 @@
       "count": 1
     }
   },
-  "src/cli/commands/context.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "src/cli/commands/contracts.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1

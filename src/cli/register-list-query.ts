@@ -506,10 +506,12 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--section <value...>", "Include specific sections (repeatable; overrides --depth)")
       .option("--fields <value>", "Project focus rows to a comma-separated field subset (e.g. id,title,priority)")
       .option("--activity-limit <n>", "Limit recent activity entries (default: settings or 10)")
-      .option("--stale-threshold <value>", "Staleness cutoff in days (e.g. 7 or 7d; default: settings or 7)");
+      .option("--stale-threshold <value>", "Staleness cutoff in days (e.g. 7 or 7d; default: settings or 7)")
+      .option("--explain-ranking", "Include the scorer model, per-signal contributions, and ranked candidate ids");
     // Hidden pure snake_case underscore-duplicate alias (kept parse-functional).
     addHiddenOption(contextCommand, "--assignee_filter <value>", "Alias for --assignee-filter");
     addHiddenOption(contextCommand, "--max-items <n>", "Alias for --limit");
+    addHiddenOption(contextCommand, "--explain_ranking", "Alias for --explain-ranking");
     contextCommand.action(runContextAction);
   }
 
@@ -528,10 +530,12 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--limit <n>", "Limit ready rows (default: 5; non-positive falls back to default)")
       .option("--blocked-limit <n>", "Limit blocked rows (default: same as --limit)")
       .option("--ready-only", "Omit the blocked companion list")
-      .option("--format <value>", "Next output format override: markdown|toon|json");
+      .option("--format <value>", "Next output format override: markdown|toon|json")
+      .option("--explain-ranking", "Include the scorer model, per-signal contributions, and ranked ready ids");
     addHiddenOption(nextCommand, "--assignee_filter <value>", "Alias for --assignee-filter");
     addHiddenOption(nextCommand, "--blocked_limit <n>", "Alias for --blocked-limit");
     addHiddenOption(nextCommand, "--ready_only", "Alias for --ready-only");
+    addHiddenOption(nextCommand, "--explain_ranking", "Alias for --explain-ranking");
     nextCommand.action(runNextAction);
   }
 

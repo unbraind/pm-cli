@@ -168,6 +168,7 @@ export type {
   ToolOptionFlagContract,
 } from "./cli-contracts.js";
 export * from "./compose.js";
+export * from "./context-relevance.js";
 export * from "./define.js";
 export {
   BASELINE_ITEM_FORMAT_VERSION,

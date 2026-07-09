@@ -294,6 +294,22 @@ export function shouldReplaceCachedDocumentCandidate(
   return candidateFormat === "toon" && existingFormat !== "toon";
 }
 
+/**
+ * Decide whether a scanned candidate should be recorded for its item id. An
+ * unseen id is always recorded; duplicate ids delegate to the deterministic
+ * cross-format preference rule. Keeping the short-circuit in this pure helper
+ * makes both outcomes testable without relying on filesystem enumeration or
+ * concurrent read completion order.
+ */
+export function shouldRecordCachedDocumentCandidate(
+  existingFormat: ItemFormat | undefined,
+  candidateFormat: ItemFormat,
+  preferredFormat: ItemFormat | undefined,
+): boolean {
+  return existingFormat === undefined ||
+    shouldReplaceCachedDocumentCandidate(existingFormat, candidateFormat, preferredFormat);
+}
+
 function appendWarning(warnings: string[] | undefined, warning: string): void {
   if (warnings && !warnings.includes(warning)) {
     warnings.push(warning);
@@ -397,6 +413,18 @@ async function dispatchCachedDocumentReadHooks(
   }
 }
 
+function selectHeavyMetadata(
+  includeCollections: boolean,
+  collectionsCached: boolean,
+  cachedCollections: CachedCollections | undefined,
+  parsedCollections: Record<string, unknown>,
+): Record<string, unknown> | undefined {
+  if (!includeCollections) {
+    return undefined;
+  }
+  return collectionsCached && cachedCollections ? cachedCollections.collections : parsedCollections;
+}
+
 async function readCachedDocumentParts(
   filePath: string,
   relativePath: string,
@@ -454,11 +482,7 @@ async function readCachedDocumentParts(
     size,
     itemFormat,
     lightMetadata: metadataCached ? cachedEntry.metadata : split.light,
-    heavyMetadata: context.includeCollections
-      ? collectionsCached
-        ? cachedCollections.collections
-        : split.heavy
-      : undefined,
+    heavyMetadata: selectHeavyMetadata(context.includeCollections, collectionsCached, cachedCollections, split.heavy),
     bodyLength: metadataCached ? cachedEntry.body_length : parsed.body.length,
     body: context.includeBody ? parsed.body : undefined,
   };
@@ -502,7 +526,7 @@ function recordCachedDocumentCandidate(
     item_format: parts.itemFormat,
     item_path: filePath,
   };
-  if (!existing || shouldReplaceCachedDocumentCandidate(existing.itemFormat, parts.itemFormat, context.preferredFormat)) {
+  if (shouldRecordCachedDocumentCandidate(existing?.itemFormat, parts.itemFormat, context.preferredFormat)) {
     context.state.documentsById.set(metadata.id, { candidate, itemFormat: parts.itemFormat });
   }
 }

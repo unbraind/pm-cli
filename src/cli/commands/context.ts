@@ -24,6 +24,13 @@ import { parseIntegerLimit } from "../shared-parsers.js";
 import { runCalendar, type CalendarOptions, type CalendarRow } from "./calendar.js";
 import { runList, type ListOptions } from "./list.js";
 import { runActivity, type CompactActivityEntry } from "./activity.js";
+import {
+  scoreContextCandidatesWithActiveExtensions,
+  type ContextRelevanceCandidate,
+  type ContextRelevanceContributions,
+  type ContextRelevanceReport,
+  type ContextRelevanceSignalName,
+} from "../../sdk/context-relevance.js";
 
 // ---------------------------------------------------------------------------
 // Output format
@@ -63,6 +70,7 @@ export interface ContextOptions {
   activityLimit?: string;
   staleThreshold?: string;
   parent?: string;
+  explainRanking?: boolean;
   [key: string]: unknown;
 }
 
@@ -281,6 +289,20 @@ export interface ContextResult {
   /** Focus-row field subset requested via --fields; null/omitted means full rows. */
   focus_fields?: string[];
   warnings?: string[];
+  ranking?: ContextRankingSummary;
+}
+
+/** Compact explainability envelope shared by context and next JSON results. */
+export interface ContextRankingSummary {
+  model: string;
+  available_signals: ContextRelevanceSignalName[];
+  items: Array<{
+    id: string;
+    rank: number;
+    baseline_rank: number;
+    score: number;
+    contributions: ContextRelevanceContributions;
+  }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -647,6 +669,97 @@ export function compareCriticalItems(left: ItemFrontMatter, right: ItemFrontMatt
   const byUpdated = compareTimestampStrings(sortableTimestamp(right.updated_at), sortableTimestamp(left.updated_at));
   const byId = left.id.localeCompare(right.id);
   return byUpdated !== 0 ? byUpdated : byId;
+}
+
+function normalizedPressure(value: number, maximum: number): number {
+  return 1 - Math.min(Math.max(value, 0), maximum) / maximum;
+}
+
+function resolveDeadlinePressure(deadline: unknown, now: string): number {
+  const deadlineMs = typeof deadline === "string" ? Date.parse(deadline) : Number.NaN;
+  if (!Number.isFinite(deadlineMs)) return 0;
+  const deadlineDays = (deadlineMs - Date.parse(now)) / (24 * 60 * 60 * 1000);
+  return deadlineDays <= 0 ? 1 : 1 / (1 + deadlineDays / 30);
+}
+
+function resolveRiskPressure(risk: ItemFrontMatter["risk"]): number {
+  if (risk === "critical" || risk === "high") return 1;
+  if (risk === "medium") return 0.5;
+  return risk === "low" ? 0.1 : 0;
+}
+
+function buildItemContextRelevanceCandidate(
+  item: ItemFrontMatter,
+  params: {
+    statusRegistry: RuntimeStatusRegistry;
+    now: string;
+    normalizedAuthor: string | undefined;
+    recencyRank: ReadonlyMap<string, number>;
+    recencyDenominator: number;
+    itemCount: number;
+  },
+): ContextRelevanceCandidate<ItemFrontMatter> {
+  const assignedToAuthor =
+    params.normalizedAuthor !== undefined && item.assignee?.trim().toLowerCase() === params.normalizedAuthor;
+  const claimFocus = isInProgressStatus(item.status, params.statusRegistry) ? 1 : assignedToAuthor ? 0.75 : 0;
+  const riskPressure = resolveRiskPressure(item.risk);
+  const knowledgeEntries = (item.comments?.length ?? 0) + (item.notes?.length ?? 0) + (item.learnings?.length ?? 0);
+  return {
+    id: item.id,
+    item,
+    signals: {
+      recency: params.itemCount === 1 ? 1 : 1 - (params.recencyRank.get(item.id) as number) / params.recencyDenominator,
+      graph_proximity: item.parent ? 0.3 : 0,
+      claim_focus: claimFocus,
+      priority_pressure: normalizedPressure(item.priority, 4),
+      risk_pressure: riskPressure,
+      deadline_pressure: resolveDeadlinePressure(item.deadline, params.now),
+      knowledge_density: Math.min(knowledgeEntries / 5, 1),
+      author_affinity: assignedToAuthor ? 1 : 0,
+    },
+  };
+}
+
+/**
+ * Derives the metadata signals currently available on compact item rows. More
+ * expensive history/index/semantic signals can be added by an extension scorer
+ * without changing the public candidate contract.
+ */
+export function buildItemContextRelevanceCandidates(
+  items: readonly ItemFrontMatter[],
+  statusRegistry: RuntimeStatusRegistry,
+  now: string,
+  author: string | undefined,
+): ContextRelevanceCandidate<ItemFrontMatter>[] {
+  const recencyOrder = [...items].sort(
+    (left, right) => compareTimestampStrings(sortableTimestamp(right.updated_at), sortableTimestamp(left.updated_at)) || left.id.localeCompare(right.id),
+  );
+  const recencyRank = new Map(recencyOrder.map((item, index) => [item.id, index]));
+  const recencyDenominator = Math.max(items.length - 1, 1);
+  const normalizedAuthor = author?.trim().toLowerCase();
+  return items.map((item) => buildItemContextRelevanceCandidate(item, {
+    statusRegistry,
+    now,
+    normalizedAuthor,
+    recencyRank,
+    recencyDenominator,
+    itemCount: items.length,
+  }));
+}
+
+/** Project a full scorer report onto the low-token command explanation shape. */
+export function toContextRankingSummary<TItem>(report: ContextRelevanceReport<TItem>): ContextRankingSummary {
+  return {
+    model: report.model,
+    available_signals: report.available_signals,
+    items: report.ranked.map((entry) => ({
+      id: entry.id,
+      rank: entry.rank,
+      baseline_rank: entry.baseline_rank,
+      score: entry.score,
+      contributions: entry.contributions,
+    })),
+  };
 }
 
 function completionPct(closed: number, total: number): number {
@@ -1421,6 +1534,7 @@ interface ContextFocusGroups {
   lowLevel: ContextFocusItem[];
   blockedFallback: ContextFocusItem[];
   blockedFallbackUsed: boolean;
+  ranking: ContextRelevanceReport<ItemFrontMatter>;
 }
 
 interface ContextOptionalSections {
@@ -1515,14 +1629,21 @@ function resolveContextSubtreeIds(parentScope: string | undefined, fullCorpus: I
   return subtree.ids;
 }
 
-function resolveContextFocusGroups(
+async function resolveContextFocusGroups(
   listedFrontMatter: ItemFrontMatter[],
   allItems: ItemFrontMatter[],
   statusRegistry: RuntimeStatusRegistry,
   sectionsIncluded: ContextSectionName[],
   limit: number,
-): ContextFocusGroups {
-  const ranked = [...listedFrontMatter].sort((left, right) => compareCriticalItems(left, right, statusRegistry));
+  now: string,
+  author: string | undefined,
+): Promise<ContextFocusGroups> {
+  const structural = [...listedFrontMatter].sort((left, right) => compareCriticalItems(left, right, statusRegistry));
+  const ranking = await scoreContextCandidatesWithActiveExtensions(
+    "context",
+    buildItemContextRelevanceCandidates(structural, statusRegistry, now, author),
+  );
+  const ranked = ranking.ranked.map((entry) => entry.item);
   const activeStatuses = statusRegistry.active_statuses;
   const activeItems = ranked.filter((item) => activeStatuses.has(normalizeStatusForRegistry(item.status, statusRegistry)));
   const blockedItems = ranked.filter((item) =>
@@ -1548,6 +1669,7 @@ function resolveContextFocusGroups(
       ? blockedItems.slice(0, limit).map((item) => toContextFocusItem(item, statusRegistry, focusChildrenByParent))
       : [],
     blockedFallbackUsed,
+    ranking,
   };
 }
 
@@ -1669,15 +1791,17 @@ function maybeAttachEmptyContextSuggestions(result: ContextResult, activeItems: 
 export async function runContext(options: ContextOptions, global: GlobalOptions): Promise<ContextResult> {
   const runtime = await resolveContextRuntime(options, global);
   const corpus = await loadContextCorpus(options, global, runtime);
-  const focusGroups = resolveContextFocusGroups(
+  const focusGroups = await resolveContextFocusGroups(
     corpus.listedFrontMatter,
     corpus.allItems,
     runtime.statusRegistry,
     runtime.sectionsIncluded,
     runtime.limit,
+    nowIso(),
+    process.env.PM_AUTHOR,
   );
   const agendaContext = await buildContextAgenda(options, global, runtime, corpus.subtreeIds);
-  const warnings = mergeSortedWarnings(corpus.listed.warnings, agendaContext.agenda.warnings);
+  const warnings = mergeSortedWarnings(corpus.listed.warnings, agendaContext.agenda.warnings, focusGroups.ranking.warnings);
   const inProgressCount = countContextStatus(
     focusGroups.activeItems,
     normalizeStatusInput("in_progress", runtime.statusRegistry),
@@ -1749,6 +1873,7 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
   };
 
   attachOptionalContextSections(result, sections);
+  if (options.explainRanking === true) result.ranking = toContextRankingSummary(focusGroups.ranking);
   applyContextFocusProjection(result, runtime.focusFields);
   if (warnings.length > 0) result.warnings = warnings;
   maybeAttachEmptyContextSuggestions(result, focusGroups.activeItems, focusGroups.blockedItems);

@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "corpus_version": 1,
+  "aggregate": {
+    "ndcg": 1,
+    "reciprocal_rank": 1,
+    "required_recall": 1,
+    "continuity_coverage": 1,
+    "token_budget_adherence": 1
+  },
+  "scenarios": [
+    {
+      "id": "tiny-scratch-context",
+      "metrics": {
+        "ndcg": 1,
+        "reciprocal_rank": 1,
+        "required_recall": 1,
+        "continuity_coverage": 1,
+        "token_budget_adherence": 1,
+        "within_token_budget": true
+      }
+    },
+    {
+      "id": "real-shaped-next",
+      "metrics": {
+        "ndcg": 1,
+        "reciprocal_rank": 1,
+        "required_recall": 1,
+        "continuity_coverage": 1,
+        "token_budget_adherence": 1,
+        "within_token_budget": true
+      }
+    },
+    {
+      "id": "synthetic-scale-context",
+      "metrics": {
+        "ndcg": 1,
+        "reciprocal_rank": 1,
+        "required_recall": 1,
+        "continuity_coverage": 1,
+        "token_budget_adherence": 1,
+        "within_token_budget": true
+      }
+    },
+    {
+      "id": "returning-agent-continuity",
+      "metrics": {
+        "ndcg": 1,
+        "reciprocal_rank": 1,
+        "required_recall": 1,
+        "continuity_coverage": 1,
+        "token_budget_adherence": 1,
+        "within_token_budget": true
+      }
+    }
+  ]
+}

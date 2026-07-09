@@ -1326,6 +1326,8 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--section" },
   { flag: "--activity-limit" },
   { flag: "--stale-threshold" },
+  { flag: "--explain-ranking" },
+  { flag: "--explain_ranking" },
 ];
 
 export const GET_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -1375,6 +1377,8 @@ export const NEXT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--ready-only" },
   { flag: "--ready_only" },
   { flag: "--format" },
+  { flag: "--explain-ranking" },
+  { flag: "--explain_ranking" },
 ];
 
 export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = [

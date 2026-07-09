@@ -1761,6 +1761,12 @@
         },
         {
           "flag": "--stale-threshold"
+        },
+        {
+          "aliases": [
+            "--explain_ranking"
+          ],
+          "flag": "--explain-ranking"
         }
       ],
       "provider": "core"
@@ -2163,6 +2169,12 @@
         },
         {
           "flag": "--stale-threshold"
+        },
+        {
+          "aliases": [
+            "--explain_ranking"
+          ],
+          "flag": "--explain-ranking"
         }
       ],
       "provider": "core"
@@ -4679,6 +4691,12 @@
         },
         {
           "flag": "--format"
+        },
+        {
+          "aliases": [
+            "--explain_ranking"
+          ],
+          "flag": "--explain-ranking"
         }
       ],
       "provider": "core"
@@ -8781,7 +8799,8 @@
       "lock_release",
       "history_append",
       "item_store_write",
-      "item_store_delete"
+      "item_store_delete",
+      "context_relevance"
     ],
     "trust_modes": [
       "off",
