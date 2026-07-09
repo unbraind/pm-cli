@@ -6,8 +6,9 @@ status: open
 priority: 2
 tags[5]: agent-ux,"area:search",cli,gh-issue,parser
 created_at: "2026-07-09T10:33:07.477Z"
-updated_at: "2026-07-09T10:33:22.286Z"
+updated_at: "2026-07-09T11:36:47.659Z"
 author: maintainer-agent
+estimated_minutes: 90
 acceptance_criteria: "pm search \"status:all scene grounding\" applies the status filter and treats remaining tokens as keywords; regression test covers inline-filter-first quoted queries; if a query is inline-filter-only, the error names the inline-filter syntax rather than a generic missing-keywords message"
 parent: pm-ydp6
 risk: medium
