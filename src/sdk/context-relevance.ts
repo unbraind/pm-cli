@@ -367,8 +367,9 @@ export function evaluateContextRanking(input: ContextRankingEvaluationInput): Co
   if (!Number.isFinite(input.actual_tokens) || input.actual_tokens < 0 || !Number.isFinite(input.token_budget) || input.token_budget <= 0) {
     throw new TypeError("Context ranking token counts require actual_tokens >= 0 and token_budget > 0");
   }
-  const gains = input.ranked_ids.map((id) => Math.max(0, input.judgments[id] ?? 0));
-  const idealGains = Object.values(input.judgments).map((grade) => Math.max(0, grade)).sort((left, right) => right - left).slice(0, gains.length || 1);
+  const judgments = input.judgments ?? {};
+  const gains = input.ranked_ids.map((id) => Math.max(0, judgments[id] ?? 0));
+  const idealGains = Object.values(judgments).map((grade) => Math.max(0, grade)).sort((left, right) => right - left).slice(0, gains.length || 1);
   const discountedGain = (values: readonly number[]) => values.reduce(
     (total, grade, index) => total + (2 ** grade - 1) / Math.log2(index + 2),
     0,

@@ -238,6 +238,12 @@ describe("context relevance SDK primitives", () => {
       within_token_budget: false,
     });
     expect(evaluateContextRanking({
+      ranked_ids: ["pm-missing"],
+      judgments: undefined as never,
+      actual_tokens: 1,
+      token_budget: 100,
+    })).toMatchObject({ ndcg: 1, reciprocal_rank: 0 });
+    expect(evaluateContextRanking({
       ranked_ids: [],
       judgments: { "pm-positive": 3 },
       actual_tokens: 0,
