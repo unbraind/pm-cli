@@ -97,10 +97,12 @@ function mockRuntime(options: {
   manifestText?: string;
   stdout?: (args: string[]) => string;
 } = {}): {
+  readFileSync: ReturnType<typeof vi.fn>;
   writeFileSync: ReturnType<typeof vi.fn>;
   rmSync: ReturnType<typeof vi.fn>;
   runCommand: ReturnType<typeof vi.fn>;
 } {
+  const readFileSync = vi.fn(() => options.manifestText ?? manifestForBudget(10_000));
   const writeFileSync = vi.fn();
   const rmSync = vi.fn();
   vi.doMock("node:fs", async () => {
@@ -109,7 +111,7 @@ function mockRuntime(options: {
       ...actual,
       existsSync: (targetPath: string) => (options.exists ? options.exists(targetPath) : true),
       mkdtempSync: () => "/tmp/pm-token-budget-test",
-      readFileSync: () => options.manifestText ?? manifestForBudget(10_000),
+      readFileSync,
       rmSync,
       writeFileSync,
     };
@@ -130,7 +132,7 @@ function mockRuntime(options: {
       },
     };
   });
-  return { writeFileSync, rmSync, runCommand };
+  return { readFileSync, writeFileSync, rmSync, runCommand };
 }
 
 describe("scripts/release/token-budget-gate", () => {
@@ -233,15 +235,24 @@ describe("scripts/release/token-budget-gate", () => {
     const scriptPath = path.join(process.cwd(), "scripts/release/token-budget-gate.mjs");
     process.argv = ["node", scriptPath, "--update", "--manifest", "/repo/budgets.json"];
     const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    process.env.PM_TOKEN_BUDGET_SENTINEL = "kept";
 
     await harness.importModule<TokenBudgetGateModule>("scripts/release/token-budget-gate.mjs");
 
     expect(runtime.runCommand).toHaveBeenCalledTimes(19);
+    const runOptions = runtime.runCommand.mock.calls[0]?.[2] as { env?: Record<string, string | undefined> } | undefined;
+    expect(runOptions?.env).toMatchObject({
+      PM_AUTHOR: "token-budget-gate",
+      PM_GLOBAL_PATH: "/tmp/pm-token-budget-test/.global-pm",
+      PM_PATH: "/tmp/pm-token-budget-test/.agents/pm",
+      PM_TOKEN_BUDGET_SENTINEL: "kept",
+    });
     expect(runtime.writeFileSync).toHaveBeenCalledTimes(1);
     const written = JSON.parse(String(runtime.writeFileSync.mock.calls[0]?.[1])) as TokenBudgetManifest;
     expect(written.budgets.map((entry) => entry.id)).toEqual(CORPUS_IDS);
     expect(runtime.rmSync).toHaveBeenCalledWith("/tmp/pm-token-budget-test", { recursive: true, force: true });
     expect(log).toHaveBeenCalledWith("Updated token budget manifest: budgets.json");
+    delete process.env.PM_TOKEN_BUDGET_SENTINEL;
   });
 
   it("passes budget check mode with a checked manifest", async () => {
@@ -252,6 +263,18 @@ describe("scripts/release/token-budget-gate", () => {
 
     mod.main();
 
+    expect(log).toHaveBeenCalledWith("Token budget gate passed (14 surfaces checked).");
+  });
+
+  it("uses the default manifest path for a bare manifest flag", async () => {
+    const runtime = mockRuntime({ manifestText: manifestForBudget(10_000) });
+    process.argv = ["node", "vitest", "--manifest"];
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const mod = await loadModule();
+
+    mod.main();
+
+    expect(runtime.readFileSync.mock.calls[0]?.[0]).toBe("/repo/scripts/release/token-budgets.json");
     expect(log).toHaveBeenCalledWith("Token budget gate passed (14 surfaces checked).");
   });
 
@@ -278,6 +301,14 @@ describe("scripts/release/token-budget-gate", () => {
     mockRuntime({ manifestText: manifestForBudget(1) });
     process.argv = ["node", "vitest", "--manifest", "/repo/budgets.json"];
     await expect(loadModule().then((mod) => mod.main())).rejects.toThrow("Token budget gate failed");
+  });
+
+  it("fails when the token budget manifest shape is malformed", async () => {
+    mockRuntime({ manifestText: "{}" });
+    process.argv = ["node", "vitest", "--manifest", "/repo/budgets.json"];
+    await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
+      "Token budget manifest is malformed: expected a top-level budgets array",
+    );
   });
 
   it("fails when a fixture command expected to be JSON returns malformed output", async () => {

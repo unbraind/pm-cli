@@ -15,6 +15,7 @@ function distCliPath() {
 
 function runCli(cliPath, args, options) {
   const env = {
+    ...process.env,
     PM_AUTHOR: "token-budget-gate",
     PM_PATH: options.pmPath,
     PM_GLOBAL_PATH: options.globalPath,
@@ -91,7 +92,7 @@ function seedFixture(cliPath, options) {
       parentId,
       "--blocked-by",
       blocker.item.id,
-      "--tag",
+      "--tags",
       "agent",
       "--json",
     ],
@@ -190,6 +191,9 @@ export function buildManifest(measurements, multiplier) {
 }
 
 export function compareBudgets(measurements, manifest) {
+  if (!manifest || !Array.isArray(manifest.budgets)) {
+    fail("Token budget manifest is malformed: expected a top-level budgets array");
+  }
   const budgetById = new Map(manifest.budgets.map((budget) => [budget.id, budget]));
   const violations = [];
   for (const measurement of measurements) {
@@ -210,7 +214,9 @@ export function compareBudgets(measurements, manifest) {
 export function main() {
   const { flags } = parseFlags(process.argv.slice(2));
   const update = flags.has("update");
-  const manifestPath = flags.get("manifest") === undefined ? DEFAULT_MANIFEST_PATH : path.resolve(String(flags.get("manifest")));
+  const manifestValue = flags.get("manifest");
+  const manifestPath =
+    manifestValue === undefined || manifestValue === true ? DEFAULT_MANIFEST_PATH : path.resolve(String(manifestValue));
   const multiplierValue = flags.get("headroom");
   const multiplier = multiplierValue === undefined || multiplierValue === true ? 1.1 : Number(multiplierValue);
   if (!Number.isFinite(multiplier) || multiplier < 1) {

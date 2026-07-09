@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-ux,ci,token-efficiency
 created_at: "2026-07-06T23:26:12.453Z"
-updated_at: "2026-07-09T17:41:40.828Z"
+updated_at: "2026-07-09T18:02:16.487Z"
 closed_at: "2026-07-09T17:03:25.687Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -16,7 +16,7 @@ risk: low
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-pbyu,related,"2026-07-06T23:26:12.453Z",null,null
-comments[15]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-07-08T16:41:53.677Z",claude-code-agent,"Measurement evidence: compact runContracts({summary:true}) is test-gated under 3000 bytes; pretty CLI JSON currently reports 4113 bytes due formatter whitespace, with compact API payload used for the regression threshold."
   "2026-07-08T17:07:59.480Z",claude-code-agent,"Verification evidence: full coverage passed at 100/100/100/100 (5462 tests), lint/static/docs/contracts gates passed, and packed-install temp proof passed in /tmp/pm-agent-ux-proof-TYSgf1 for pm list --today, pm list --recent, pm contracts --summary, and SDK runAction({action:'contracts', options:{summary:true}})."
   "2026-07-08T17:41:49.783Z",claude-code-agent,"Evidence update: CI Gates (static) failed because the committed contract snapshot was generated before rebuilding dist after tool-parameter metadata copy changes. Rebuilt with pnpm build, regenerated with pnpm contracts:update, and reran the full static CI sequence locally: pnpm version:check && pnpm changelog:pm:check && pnpm contracts:check && pnpm security:scan && pnpm lint && npm pack --dry-run. Result: passed."
@@ -32,6 +32,7 @@ comments[15]{created_at,author,text}:
   "2026-07-09T17:00:13.056Z",codex-agent,"Verification: pnpm test:coverage passed after the token budget gate implementation: 267 test files, 5480 tests, and 100% statements/branches/functions/lines coverage."
   "2026-07-09T17:03:25.147Z",claude-code-agent,"Verification: token-budget gate is wired into quality:static and standalone quality:token-budget, release automation/readiness contract tests pin the gate, full coverage passed 5480 tests at 100/100/100/100, CI static sequence passed, and manual temp PM_PATH proof measured compact context output at 907 bytes."
   "2026-07-09T17:41:40.827Z",claude-code-agent,"Review-loop evidence: fixed Windows regression in token-budget gate tests by using a path-basename mock for the built CLI check. Gemini subprocess-status feedback was reviewed; token-budget commands already run through scripts/release/utils.mjs runCommand, which fails on non-zero status unless allowFailure is set. Focused tests, lint/static, token-budget gate, and full coverage (5481 tests, 100/100/100/100) passed."
+  "2026-07-09T18:02:16.487Z",codex-root-20260709,"Review-loop follow-up: hardened the token-budget gate by preserving child-process environment variables, rejecting malformed manifest shape, treating bare --manifest as the default path, and making quality:static build dist before measurement. Focused release specs and quality:static passed. The shared release runCommand helper already fails nonzero child exits, so no duplicate status guard is needed."
 files[9]{path,scope,note}:
   package.json,project,"Wire token budget gate into quality:static and expose quality:token-budget"
   scripts/release/token-budget-gate.mjs,project,Deterministic CLI output byte budget gate for agent context surfaces
