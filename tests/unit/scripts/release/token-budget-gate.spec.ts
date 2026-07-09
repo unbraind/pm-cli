@@ -262,7 +262,7 @@ describe("scripts/release/token-budget-gate", () => {
   });
 
   it("fails when the built CLI is missing", async () => {
-    mockRuntime({ exists: (targetPath) => !targetPath.endsWith("dist/cli.js") });
+    mockRuntime({ exists: (targetPath) => path.basename(targetPath) !== "cli.js" });
     process.argv = ["node", "vitest"];
     await expect(loadModule().then((mod) => mod.main())).rejects.toThrow("Built CLI not found");
   });

@@ -3486,6 +3486,29 @@ describe("runUpdate", () => {
       });
     });
 
+    it("preserves existing blocker edges when a new blocked-by value is unresolved", async () => {
+      await withTempPmPath(async (context) => {
+        const blockerId = createTask(context, "kyd6-existing-blocker");
+        const blockedId = createTask(context, "kyd6-unresolved-preserve-blocked");
+        await runUpdate(blockedId, { blockedBy: blockerId }, { path: context.pmPath });
+
+        const updated = await runUpdate(
+          blockedId,
+          { blockedBy: "pm-missing-blocker", message: "record unresolved blocker" },
+          { path: context.pmPath },
+        );
+
+        const item = updated.item as { blocked_by?: string; dependencies?: { id: string; kind: string }[] };
+        expect(item.blocked_by).toBe("pm-missing-blocker");
+        expect(updated.warnings).toContain("blocked_by_unresolved:pm-missing-blocker");
+        expect(updated.changed_fields).toContain("blocked_by");
+        expect(updated.changed_fields).not.toContain("dependencies");
+        expect(item.dependencies).toEqual([
+          expect.objectContaining({ id: blockerId, kind: "blocked_by" }),
+        ]);
+      });
+    });
+
     it("appends a new blocker edge while keeping the latest scalar blocker", async () => {
       await withTempPmPath(async (context) => {
         const firstBlocker = createTask(context, "kyd6-first-blocker");

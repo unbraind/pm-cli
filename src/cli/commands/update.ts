@@ -1854,13 +1854,15 @@ function applyBlockedByMutation(document: ItemDocument, context: UpdateMutationC
     document.metadata.blocked_by = context.options.blockedBy?.trim() ?? "";
   }
   changedFields.push("blocked_by");
-  applyBlockedByDependencyEdge(
-    document.metadata,
-    context.resolvedBlockedByDependencyId,
-    context.nowIso,
-    context.author,
-    changedFields,
-  );
+  if (context.clearFrontMatterKeys.has("blocked_by") || context.resolvedBlockedByDependencyId !== undefined) {
+    applyBlockedByDependencyEdge(
+      document.metadata,
+      context.resolvedBlockedByDependencyId,
+      context.nowIso,
+      context.author,
+      changedFields,
+    );
+  }
 }
 
 function applyScheduleMutations(document: ItemDocument, context: UpdateMutationContext, changedFields: string[]): void {
