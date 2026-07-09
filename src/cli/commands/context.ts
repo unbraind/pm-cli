@@ -671,13 +671,14 @@ export function compareCriticalItems(left: ItemFrontMatter, right: ItemFrontMatt
   return byUpdated !== 0 ? byUpdated : byId;
 }
 
-function normalizedPressure(value: number, maximum: number): number {
-  return 1 - Math.min(Math.max(value, 0), maximum) / maximum;
+function normalizedPressure(value: unknown, maximum: number): number {
+  const parsed = typeof value === "number" ? value : typeof value === "string" ? Number.parseFloat(value) : Number.NaN;
+  if (!Number.isFinite(parsed)) return 0;
+  return 1 - Math.min(Math.max(parsed, 0), maximum) / maximum;
 }
 
-function resolveDeadlinePressure(deadline: unknown, now: string): number {
+function resolveDeadlinePressure(deadline: unknown, nowMs: number): number {
   const deadlineMs = typeof deadline === "string" ? Date.parse(deadline) : Number.NaN;
-  const nowMs = Date.parse(now);
   if (!Number.isFinite(deadlineMs) || !Number.isFinite(nowMs)) return 0;
   const deadlineDays = (deadlineMs - nowMs) / (24 * 60 * 60 * 1000);
   return deadlineDays <= 0 ? 1 : 1 / (1 + deadlineDays / 30);
@@ -693,7 +694,7 @@ function buildItemContextRelevanceCandidate(
   item: ItemFrontMatter,
   params: {
     statusRegistry: RuntimeStatusRegistry;
-    now: string;
+    nowMs: number;
     normalizedAuthor: string | undefined;
     recencyRank: ReadonlyMap<string, number>;
     recencyDenominator: number;
@@ -712,9 +713,9 @@ function buildItemContextRelevanceCandidate(
       recency: params.itemCount === 1 ? 1 : 1 - (params.recencyRank.get(item.id) as number) / params.recencyDenominator,
       graph_proximity: item.parent ? 0.3 : 0,
       claim_focus: claimFocus,
-      priority_pressure: normalizedPressure(typeof item.priority === "number" ? item.priority : 4, 4),
+      priority_pressure: normalizedPressure(item.priority, 4),
       risk_pressure: riskPressure,
-      deadline_pressure: resolveDeadlinePressure(item.deadline, params.now),
+      deadline_pressure: resolveDeadlinePressure(item.deadline, params.nowMs),
       knowledge_density: Math.min(knowledgeEntries / 5, 1),
       author_affinity: assignedToAuthor ? 1 : 0,
     },
@@ -738,9 +739,10 @@ export function buildItemContextRelevanceCandidates(
   const recencyRank = new Map(recencyOrder.map((item, index) => [item.id, index]));
   const recencyDenominator = Math.max(items.length - 1, 1);
   const normalizedAuthor = author?.trim().toLowerCase();
+  const nowMs = Date.parse(now);
   return items.map((item) => buildItemContextRelevanceCandidate(item, {
     statusRegistry,
-    now,
+    nowMs,
     normalizedAuthor,
     recencyRank,
     recencyDenominator,

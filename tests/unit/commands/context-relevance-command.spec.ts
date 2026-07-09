@@ -69,6 +69,9 @@ describe("context relevance command integration", () => {
     expect(buildItemContextRelevanceCandidates([
       relevanceItem("pm-invalid-runtime", { priority: undefined as never, deadline: "2026-08-09" }),
     ], registry, "invalid-now", undefined)[0]?.signals).toMatchObject({ priority_pressure: 0, deadline_pressure: 0 });
+    expect(buildItemContextRelevanceCandidates([
+      relevanceItem("pm-string-priority", { priority: "2" as never }),
+    ], registry, now, undefined)[0]?.signals?.priority_pressure).toBe(0.5);
 
     const tied = buildItemContextRelevanceCandidates([
       relevanceItem("pm-b"),

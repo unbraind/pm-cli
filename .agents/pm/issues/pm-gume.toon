@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[5]: "area:ci",coverage,flake,gh-issue,tests
 created_at: "2026-07-08T22:46:26.131Z"
-updated_at: "2026-07-09T19:50:44.253Z"
+updated_at: "2026-07-09T20:53:10.337Z"
 assignee: codex-root-20260709
 author: maintainer-agent
 estimated_minutes: 45
@@ -14,10 +14,11 @@ acceptance_criteria: "A deterministic spec drives both arms of the existing/repl
 parent: pm-u9d0
 risk: low
 confidence: high
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-09T19:39:41.080Z",codex-root-20260709,"Implementation start: live GH-482 remains open even though the 2026-07-09 nightly recovered. This bundle will remove readdir-order dependence by exercising both duplicate-id replacement decisions deterministically, then attach 100% coverage and current nightly evidence."
   "2026-07-09T19:44:24.362Z",codex-root-20260709,"Evidence update: extracted the pure shouldRecordCachedDocumentCandidate decision used at the scan call site, with deterministic unseen-id, replace, and keep assertions independent of readdir or Promise completion order. Changed-file CodeFactor parity exposed readCachedDocumentParts complexity 17; collection selection was extracted and the file now passes the <=16 gate. Focused 26-test cache/release contract suite, typecheck, ESLint, and static quality all pass."
   "2026-07-09T19:50:44.252Z",codex-root-20260709,"Final local evidence: deterministic unseen/replace/keep candidate decision is independent of directory enumeration; current 2026-07-09 Node 24 Nightly Validation run 29002197585 passed; full local suite passed 5,501 tests with exact 100/100/100/100 coverage. GH-482 will be closed after merged-head CI evidence."
+  "2026-07-09T20:53:10.336Z",codex-root-20260709,"PR #487 cache review follow-up: both cache-hit and cache-miss heavy-metadata selection now share selectHeavyMetadata. Rejected the split?.heavy warning with code-path evidence: !needRead returns before parsing, while every fallthrough path initializes parsed and split before access. Full coverage remains exact 100%."
 files[2]{path,scope,note}:
   src/core/store/front-matter-cache.ts,project,Make duplicate candidate selection and complexity deterministic across filesystem order
   tests/unit/core/item/front-matter-cache.spec.ts,project,"Exercise unseen,replace,and keep decisions deterministically"

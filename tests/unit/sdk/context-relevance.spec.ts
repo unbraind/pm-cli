@@ -52,6 +52,9 @@ describe("context relevance SDK primitives", () => {
     expect(() => defaultScoreContextCandidates([
       { ...candidate("pm-a", "unknown"), signals: { unknown: 1 } as never },
     ])).toThrow("Unknown context relevance signal");
+    expect(() => defaultScoreContextCandidates([
+      { ...candidate("pm-a", "structural override"), signals: { structural: 1 } as never },
+    ])).toThrow("Unknown context relevance signal: structural");
     expect(() => defaultScoreContextCandidates([candidate("pm-a", "invalid", { recency: Number.NaN })])).toThrow("finite number from 0 to 1");
     expect(() => defaultScoreContextCandidates([candidate("pm-a", "invalid", { recency: -0.1 })])).toThrow("finite number from 0 to 1");
     expect(() => defaultScoreContextCandidates([candidate("pm-a", "invalid", { recency: 1.1 })])).toThrow("finite number from 0 to 1");

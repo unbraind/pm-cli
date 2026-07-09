@@ -417,7 +417,7 @@ function selectHeavyMetadata(
   includeCollections: boolean,
   collectionsCached: boolean,
   cachedCollections: CachedCollections | undefined,
-  parsedCollections: Record<string, unknown>,
+  parsedCollections: Record<string, unknown> | undefined,
 ): Record<string, unknown> | undefined {
   if (!includeCollections) {
     return undefined;
@@ -454,7 +454,7 @@ async function readCachedDocumentParts(
       size,
       itemFormat,
       lightMetadata: cachedEntry.metadata,
-      heavyMetadata: context.includeCollections && cachedCollections ? cachedCollections.collections : undefined,
+      heavyMetadata: selectHeavyMetadata(context.includeCollections, collectionsCached, cachedCollections, undefined),
       bodyLength: cachedEntry.body_length,
       body: context.includeBody ? cachedBody.body : undefined,
     };

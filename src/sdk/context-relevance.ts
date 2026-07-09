@@ -6,8 +6,6 @@
  * with core, extension, or project-specific feature stores.
  */
 import { runActiveServiceOverride } from "../core/extensions/index.js";
-import type { ContextOptions, ContextResult } from "../cli/commands/context.js";
-import type { NextOptions, NextResult } from "../cli/commands/next.js";
 
 /** Canonical signal keys understood by the built-in relevance model. */
 export const CONTEXT_RELEVANCE_SIGNAL_NAMES = [
@@ -98,6 +96,7 @@ const DEFAULT_CONTEXT_RELEVANCE_WEIGHTS: Record<ContextRelevanceSignalName, numb
   author_affinity: 0.2,
   semantic_similarity: 0.5,
 };
+const JSON_TOKEN_ENCODER = new TextEncoder();
 
 function assertCandidates<TItem>(candidates: readonly ContextRelevanceCandidate<TItem>[]): void {
   const ids = new Set<string>();
@@ -107,7 +106,7 @@ function assertCandidates<TItem>(candidates: readonly ContextRelevanceCandidate<
     }
     ids.add(candidate.id);
     for (const [signal, value] of Object.entries(candidate.signals ?? {})) {
-      if (!CONTEXT_RELEVANCE_SIGNAL_NAMES.includes(signal as ContextRelevanceSignalName)) {
+      if (signal === "structural" || !CONTEXT_RELEVANCE_SIGNAL_NAMES.includes(signal as ContextRelevanceSignalName)) {
         throw new TypeError(`Unknown context relevance signal: ${signal}`);
       }
       if (!Number.isFinite(value) || value < 0 || value > 1) {
@@ -269,17 +268,49 @@ export interface ContextRankingEvaluation {
   within_token_budget: boolean;
 }
 
+/** Flexible read options accepted by context evaluation scenarios. */
+export interface ContextEvaluationReadOptions {
+  explainRanking?: boolean;
+  [key: string]: unknown;
+}
+
+/** Minimal item identity consumed by the context evaluation runner. */
+export interface ContextEvaluationResultItem {
+  id: string;
+}
+
+/** Optional scorer attribution returned by an evaluated read primitive. */
+export interface ContextEvaluationResultRanking {
+  items?: Array<{ id: string; contributions: ContextRelevanceContributions }>;
+}
+
+/** Structural context result consumed by the evaluation runner. */
+export interface ContextEvaluationContextResult {
+  high_level?: ContextEvaluationResultItem[];
+  low_level?: ContextEvaluationResultItem[];
+  blocked_fallback?: ContextEvaluationResultItem[];
+  ranking?: ContextEvaluationResultRanking;
+  [key: string]: unknown;
+}
+
+/** Structural next result consumed by the evaluation runner. */
+export interface ContextEvaluationNextResult {
+  ready?: ContextEvaluationResultItem[];
+  ranking?: ContextEvaluationResultRanking;
+  [key: string]: unknown;
+}
+
 /** Read-only SDK surface required by the context evaluation runner. */
 export interface ContextEvaluationReader {
-  context(options?: ContextOptions): Promise<ContextResult>;
-  next(options?: NextOptions): Promise<NextResult>;
+  context(options?: ContextEvaluationReadOptions): Promise<ContextEvaluationContextResult>;
+  next(options?: ContextEvaluationReadOptions): Promise<ContextEvaluationNextResult>;
 }
 
 /** One graded context or next scenario evaluated against a real SDK reader. */
 export interface ContextEvaluationScenario {
   id: string;
   surface: ContextRelevanceSurface;
-  options?: ContextOptions | NextOptions;
+  options?: ContextEvaluationReadOptions;
   judgments: Record<string, number>;
   required_ids?: string[];
   continuity_ids?: string[];
@@ -353,7 +384,7 @@ export function evaluateContextRanking(input: ContextRankingEvaluationInput): Co
 }
 
 function estimateJsonTokens(value: unknown): number {
-  return Math.ceil(new TextEncoder().encode(JSON.stringify(value)).byteLength / 4);
+  return Math.ceil(JSON_TOKEN_ENCODER.encode(JSON.stringify(value)).byteLength / 4);
 }
 
 function roundEvaluationMetric(value: number): number {
@@ -361,17 +392,17 @@ function roundEvaluationMetric(value: number): number {
 }
 
 function rankingPayloadForScenario(
-  result: ContextResult | NextResult,
+  result: ContextEvaluationContextResult | ContextEvaluationNextResult,
   surface: ContextRelevanceSurface,
 ): { rankedIds: string[]; attribution: ContextEvaluationAttribution[] } {
   const rankedIds = surface === "context"
     ? [
-        ...((result as ContextResult).high_level ?? []),
-        ...((result as ContextResult).low_level ?? []),
-        ...((result as ContextResult).blocked_fallback ?? []),
+        ...((result as ContextEvaluationContextResult).high_level ?? []),
+        ...((result as ContextEvaluationContextResult).low_level ?? []),
+        ...((result as ContextEvaluationContextResult).blocked_fallback ?? []),
       ]
         .map((item) => item.id)
-    : ((result as NextResult).ready ?? []).map((item) => item.id);
+    : ((result as ContextEvaluationNextResult).ready ?? []).map((item) => item.id);
   const servedIds = new Set(rankedIds);
   const attribution = (result.ranking?.items ?? [])
     .filter((item) => servedIds.has(item.id))
@@ -388,8 +419,8 @@ export async function runContextEvaluationScenario(
     throw new TypeError("Context evaluation scenarios require non-empty id and rationale values");
   }
   const result = scenario.surface === "context"
-    ? await reader.context({ ...(scenario.options as ContextOptions), explainRanking: true })
-    : await reader.next({ ...(scenario.options as NextOptions), explainRanking: true });
+    ? await reader.context({ ...scenario.options, explainRanking: true })
+    : await reader.next({ ...scenario.options, explainRanking: true });
   const { rankedIds, attribution } = rankingPayloadForScenario(result, scenario.surface);
   const packet = { ...result, ranking: undefined };
   const actualTokens = estimateJsonTokens(packet);

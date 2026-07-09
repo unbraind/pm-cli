@@ -570,7 +570,7 @@ import {
 } from "@unbrained/pm-cli/sdk";
 
 const pm = new PmClient({
-  pmRoot: "/project/.agents/pm",
+  pmRoot: ".agents/pm",
   author: "context-quality-ci",
 });
 

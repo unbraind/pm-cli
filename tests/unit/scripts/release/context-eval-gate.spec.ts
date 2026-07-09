@@ -186,6 +186,10 @@ describe("context evaluation gate", () => {
     await expect(gate.main(["--corpus", corpusPath, "--baseline", baselinePath])).rejects.toThrow("EXIT:1");
     await gate.main(["--corpus", corpusPath, "--baseline", baselinePath, "--update"]);
     const baseline = JSON.parse(await readFile(baselinePath, "utf8")) as Record<string, unknown>;
+    await writeFile(baselinePath, JSON.stringify({ version: 1, scenarios: {}, aggregate: {} }));
+    await expect(gate.main(["--corpus", corpusPath, "--baseline", baselinePath])).rejects.toThrow("EXIT:1");
+    await writeFile(baselinePath, JSON.stringify({ version: 1, scenarios: [], aggregate: [] }));
+    await expect(gate.main(["--corpus", corpusPath, "--baseline", baselinePath])).rejects.toThrow("EXIT:1");
     await writeFile(baselinePath, JSON.stringify({ ...baseline, version: 2 }));
     await expect(gate.main(["--corpus", corpusPath, "--baseline", baselinePath])).rejects.toThrow("EXIT:1");
 

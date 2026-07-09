@@ -32,6 +32,13 @@ function readCorpus(corpusPath) {
   return corpus;
 }
 
+function readBaseline(baselinePath) {
+  const baseline = requiredObject(JSON.parse(readFileSync(baselinePath, "utf8")), "baseline");
+  if (!Array.isArray(baseline.scenarios)) fail("Context evaluation baseline.scenarios must be an array");
+  requiredObject(baseline.aggregate, "baseline.aggregate");
+  return baseline;
+}
+
 function mapKeys(values, idByKey, label) {
   const mapped = {};
   for (const [key, value] of Object.entries(values ?? {})) {
@@ -180,7 +187,7 @@ export async function main(argv = process.argv.slice(2)) {
     return report;
   }
   if (!existsSync(baselinePath)) fail(`Context evaluation baseline missing: ${baselinePath}\nRun pnpm quality:context-eval -- --update`);
-  const baseline = requiredObject(JSON.parse(readFileSync(baselinePath, "utf8")), "baseline");
+  const baseline = readBaseline(baselinePath);
   const regressions = compareContextEvaluationBaseline(report, baseline);
   if (!report.passed || regressions.length > 0) {
     fail(`Context evaluation gate failed: ${[...report.failures, ...regressions].join(", ")}`);
