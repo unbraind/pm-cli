@@ -154,9 +154,20 @@ export function compareContextEvaluationBaseline(report, baseline) {
     failures.push(`scenario_count:${report.scenario_count}!=${baseline.scenarios?.length ?? 0}`);
   }
   appendMetricRegressions(failures, "", report.aggregate, baseline.aggregate);
-  const reportScenarios = new Map(report.scenarios.map((scenario) => [scenario.id, scenario.metrics]));
+  const reportScenarios = new Map();
+  for (const scenario of report.scenarios) {
+    if (reportScenarios.has(scenario.id)) {
+      failures.push(`scenario:${scenario.id}:duplicate_in_report`);
+      continue;
+    }
+    reportScenarios.set(scenario.id, scenario.metrics);
+  }
   const baselineScenarioIds = new Set();
   for (const scenario of baseline.scenarios ?? []) {
+    if (baselineScenarioIds.has(scenario.id)) {
+      failures.push(`scenario:${scenario.id}:duplicate_in_baseline`);
+      continue;
+    }
     baselineScenarioIds.add(scenario.id);
     const current = reportScenarios.get(scenario.id);
     if (!current) {
@@ -165,8 +176,8 @@ export function compareContextEvaluationBaseline(report, baseline) {
     }
     appendMetricRegressions(failures, `scenario:${scenario.id}:`, current, scenario.metrics);
   }
-  for (const scenario of report.scenarios) {
-    if (!baselineScenarioIds.has(scenario.id)) failures.push(`scenario:${scenario.id}:missing_baseline`);
+  for (const scenarioId of reportScenarios.keys()) {
+    if (!baselineScenarioIds.has(scenarioId)) failures.push(`scenario:${scenarioId}:missing_baseline`);
   }
   return failures;
 }

@@ -125,6 +125,48 @@ describe("context evaluation gate", () => {
       { scenario_count: 1, aggregate: {}, scenarios: [{ id: "case", metrics: { within_token_budget: true } }] },
       { version: 1, aggregate: {}, scenarios: [{ id: "case", metrics: {} }] },
     )).toEqual(["scenario:case:within_token_budget:missing_baseline"]);
+    expect(gate.compareContextEvaluationBaseline(
+      {
+        scenario_count: 2,
+        aggregate: {},
+        scenarios: [
+          { id: "case", metrics: { ndcg: 0.9 } },
+          { id: "case", metrics: { ndcg: 0.1 } },
+        ],
+      },
+      {
+        version: 1,
+        aggregate: {},
+        scenarios: [
+          { id: "case", metrics: { ndcg: 0.9 } },
+          { id: "other", metrics: { ndcg: 0.9 } },
+        ],
+      },
+    )).toEqual([
+      "scenario:case:duplicate_in_report",
+      "scenario:other:missing_from_report",
+    ]);
+    expect(gate.compareContextEvaluationBaseline(
+      {
+        scenario_count: 2,
+        aggregate: {},
+        scenarios: [
+          { id: "case", metrics: { ndcg: 0.9 } },
+          { id: "other", metrics: { ndcg: 0.9 } },
+        ],
+      },
+      {
+        version: 1,
+        aggregate: {},
+        scenarios: [
+          { id: "case", metrics: { ndcg: 0.9 } },
+          { id: "case", metrics: { ndcg: 0.1 } },
+        ],
+      },
+    )).toEqual([
+      "scenario:case:duplicate_in_baseline",
+      "scenario:other:missing_baseline",
+    ]);
   });
 
   it("executes a real isolated SDK corpus and verifies its committed baseline", async () => {
