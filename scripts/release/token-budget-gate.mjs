@@ -194,7 +194,20 @@ export function compareBudgets(measurements, manifest) {
   if (!manifest || !Array.isArray(manifest.budgets)) {
     fail("Token budget manifest is malformed: expected a top-level budgets array");
   }
-  const budgetById = new Map(manifest.budgets.map((budget) => [budget.id, budget]));
+  const budgetById = new Map();
+  for (const budget of manifest.budgets) {
+    if (
+      typeof budget !== "object" ||
+      budget === null ||
+      typeof budget.id !== "string" ||
+      budget.id.trim().length === 0 ||
+      !Number.isFinite(budget.max_bytes) ||
+      budget.max_bytes < 0
+    ) {
+      fail("Token budget manifest is malformed: each budget entry requires a string id and non-negative max_bytes");
+    }
+    budgetById.set(budget.id, budget);
+  }
   const violations = [];
   for (const measurement of measurements) {
     const budget = budgetById.get(measurement.id);

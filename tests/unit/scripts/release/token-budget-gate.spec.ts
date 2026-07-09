@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
 import path from "node:path";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createScriptHarness } from "../../../helpers/scriptModule";
 
 const harness = createScriptHarness(["../../../../scripts/release/utils.mjs"]);
@@ -136,6 +136,20 @@ function mockRuntime(options: {
 }
 
 describe("scripts/release/token-budget-gate", () => {
+  let originalArgv: string[];
+  let originalExitCode: number | undefined;
+
+  beforeEach(() => {
+    originalArgv = [...process.argv];
+    originalExitCode = process.exitCode;
+  });
+
+  afterEach(() => {
+    process.argv = originalArgv;
+    process.exitCode = originalExitCode;
+    delete process.env.PM_TOKEN_BUDGET_SENTINEL;
+  });
+
   it("measures UTF-8 bytes and conservative token estimates", async () => {
     const mod = await loadModule();
 
@@ -252,7 +266,6 @@ describe("scripts/release/token-budget-gate", () => {
     expect(written.budgets.map((entry) => entry.id)).toEqual(CORPUS_IDS);
     expect(runtime.rmSync).toHaveBeenCalledWith("/tmp/pm-token-budget-test", { recursive: true, force: true });
     expect(log).toHaveBeenCalledWith("Updated token budget manifest: budgets.json");
-    delete process.env.PM_TOKEN_BUDGET_SENTINEL;
   });
 
   it("passes budget check mode with a checked manifest", async () => {
@@ -308,6 +321,14 @@ describe("scripts/release/token-budget-gate", () => {
     process.argv = ["node", "vitest", "--manifest", "/repo/budgets.json"];
     await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
       "Token budget manifest is malformed: expected a top-level budgets array",
+    );
+  });
+
+  it("fails when a token budget entry is malformed", async () => {
+    mockRuntime({ manifestText: JSON.stringify({ budgets: [{ id: "", max_bytes: -1 }] }) });
+    process.argv = ["node", "vitest", "--manifest", "/repo/budgets.json"];
+    await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
+      "Token budget manifest is malformed: each budget entry requires a string id and non-negative max_bytes",
     );
   });
 
