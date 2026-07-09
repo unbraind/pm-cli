@@ -243,8 +243,8 @@ describe("scripts/release/token-budget-gate", () => {
     const runOptions = runtime.runCommand.mock.calls[0]?.[2] as { env?: Record<string, string | undefined> } | undefined;
     expect(runOptions?.env).toMatchObject({
       PM_AUTHOR: "token-budget-gate",
-      PM_GLOBAL_PATH: "/tmp/pm-token-budget-test/.global-pm",
-      PM_PATH: "/tmp/pm-token-budget-test/.agents/pm",
+      PM_GLOBAL_PATH: path.join("/tmp/pm-token-budget-test", ".global-pm"),
+      PM_PATH: path.join("/tmp/pm-token-budget-test", ".agents", "pm"),
       PM_TOKEN_BUDGET_SENTINEL: "kept",
     });
     expect(runtime.writeFileSync).toHaveBeenCalledTimes(1);
@@ -274,7 +274,7 @@ describe("scripts/release/token-budget-gate", () => {
 
     mod.main();
 
-    expect(runtime.readFileSync.mock.calls[0]?.[0]).toBe("/repo/scripts/release/token-budgets.json");
+    expect(runtime.readFileSync.mock.calls[0]?.[0]).toBe(path.join("/repo", "scripts", "release", "token-budgets.json"));
     expect(log).toHaveBeenCalledWith("Token budget gate passed (14 surfaces checked).");
   });
 
