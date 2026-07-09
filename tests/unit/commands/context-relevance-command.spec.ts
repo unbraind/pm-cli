@@ -72,12 +72,23 @@ describe("context relevance command integration", () => {
     expect(buildItemContextRelevanceCandidates([
       relevanceItem("pm-string-priority", { priority: "2" as never }),
     ], registry, now, undefined)[0]?.signals?.priority_pressure).toBe(0.5);
-
     const tied = buildItemContextRelevanceCandidates([
       relevanceItem("pm-b"),
       relevanceItem("pm-a"),
     ], registry, now, undefined);
     expect(tied.find((entry) => entry.id === "pm-a")?.signals?.recency).toBe(1);
+  });
+
+  it("normalizes defensive runtime metadata shapes without invalid signals", () => {
+    const registry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
+    const runtimeShapes = buildItemContextRelevanceCandidates([
+      relevanceItem("pm-date-deadline", { deadline: new Date("2026-07-09T00:00:00.000Z") as never, risk: " High " as never }),
+      relevanceItem("pm-number-deadline", { deadline: Date.parse("2026-08-09T00:00:00.000Z") as never, assignee: 42 as never }),
+    ], registry, "2026-07-10T00:00:00.000Z", "codex-root");
+
+    expect(runtimeShapes[0]?.signals).toMatchObject({ deadline_pressure: 1, risk_pressure: 1 });
+    expect(runtimeShapes[1]?.signals?.deadline_pressure).toBeCloseTo(0.5);
+    expect(runtimeShapes[1]?.signals?.author_affinity).toBe(0);
   });
 
   it("uses one scorer for context and next and emits explanations only on request", async () => {

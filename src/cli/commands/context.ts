@@ -678,16 +678,23 @@ function normalizedPressure(value: unknown, maximum: number): number {
 }
 
 function resolveDeadlinePressure(deadline: unknown, nowMs: number): number {
-  const deadlineMs = typeof deadline === "string" ? Date.parse(deadline) : Number.NaN;
+  const deadlineMs = typeof deadline === "string"
+    ? Date.parse(deadline)
+    : deadline instanceof Date
+      ? deadline.getTime()
+      : typeof deadline === "number"
+        ? deadline
+        : Number.NaN;
   if (!Number.isFinite(deadlineMs) || !Number.isFinite(nowMs)) return 0;
   const deadlineDays = (deadlineMs - nowMs) / (24 * 60 * 60 * 1000);
   return deadlineDays <= 0 ? 1 : 1 / (1 + deadlineDays / 30);
 }
 
 function resolveRiskPressure(risk: ItemFrontMatter["risk"]): number {
-  if (risk === "critical" || risk === "high") return 1;
-  if (risk === "medium") return 0.5;
-  return risk === "low" ? 0.1 : 0;
+  const normalized = typeof risk === "string" ? risk.trim().toLowerCase() : undefined;
+  if (normalized === "critical" || normalized === "high") return 1;
+  if (normalized === "medium") return 0.5;
+  return normalized === "low" ? 0.1 : 0;
 }
 
 function buildItemContextRelevanceCandidate(
@@ -702,7 +709,9 @@ function buildItemContextRelevanceCandidate(
   },
 ): ContextRelevanceCandidate<ItemFrontMatter> {
   const assignedToAuthor =
-    params.normalizedAuthor !== undefined && item.assignee?.trim().toLowerCase() === params.normalizedAuthor;
+    params.normalizedAuthor !== undefined &&
+    typeof item.assignee === "string" &&
+    item.assignee.trim().toLowerCase() === params.normalizedAuthor;
   const claimFocus = isInProgressStatus(item.status, params.statusRegistry) ? 1 : assignedToAuthor ? 0.75 : 0;
   const riskPressure = resolveRiskPressure(item.risk);
   const knowledgeEntries = (item.comments?.length ?? 0) + (item.notes?.length ?? 0) + (item.learnings?.length ?? 0);
