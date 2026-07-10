@@ -260,6 +260,8 @@ describe("registration helpers", () => {
         description: "Description",
         type: "Task",
         acceptanceCriteria: "one criterion",
+        acceptance_criteria: ["second criterion"],
+        ac: ["third criterion"],
         addTags: ["coverage"],
         allowMissingParent: true,
         clearDocs: true,
@@ -271,7 +273,7 @@ describe("registration helpers", () => {
       title: "Title",
       description: "Description",
       type: "Task",
-      acceptanceCriteria: "one criterion",
+      acceptanceCriteria: "one criterion; second criterion; third criterion",
       addTags: ["coverage"],
       allowMissingParent: true,
       clearDocs: true,
@@ -279,7 +281,8 @@ describe("registration helpers", () => {
     });
 
     const update = normalizeUpdateOptions({
-      acceptanceCriteria: ["first", "second"],
+      acceptanceCriteria: ["first"],
+      ac: ["second"],
       addTags: ["tests"],
       depRemove: ["pm-old"],
       allow_audit_update: true,

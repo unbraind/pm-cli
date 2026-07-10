@@ -52,17 +52,22 @@ function readJoinedRepeatedOption(
   options: Record<string, unknown>,
   contract: CommanderOptionAliasContract,
 ): string | undefined {
-  const value = readFirstValueFromCommanderOptions(options, contract);
-  if (typeof value === "string") {
-    return value;
+  const values: string[] = [];
+  for (const key of contract.keys) {
+    if (!Object.hasOwn(options, key)) {
+      continue;
+    }
+    const value = options[key];
+    if (typeof value === "string") {
+      values.push(value);
+      continue;
+    }
+    if (!Array.isArray(value) || !value.every((entry) => typeof entry === "string")) {
+      return undefined;
+    }
+    values.push(...value);
   }
-  if (!Array.isArray(value)) {
-    return undefined;
-  }
-  if (!value.every((entry) => typeof entry === "string")) {
-    return undefined;
-  }
-  return value.join("; ");
+  return values.length > 0 ? values.join("; ") : undefined;
 }
 
 const RESOLVED_GLOBAL_OPTIONS = Symbol("pm.resolvedGlobalOptions");
