@@ -8,6 +8,11 @@ import { PmCliError } from "../core/shared/errors.js";
 import { flattenFlagListValue, resolveFlagValueKind } from "../core/extensions/flag-value-types.js";
 
 const UNSAFE_LOOSE_OPTION_KEYS = new Set(["__proto__", "prototype", "constructor"]);
+const LOOSE_OPTION_OCCURRENCES = Symbol("looseOptionOccurrences");
+
+interface LooseOptionsWithOccurrences extends Record<string, unknown> {
+  [LOOSE_OPTION_OCCURRENCES]?: ParsedLooseOptionToken[];
+}
 
 function toLooseOptionKey(rawKey: string): string {
   const key = rawKey.trim().toLowerCase();
@@ -314,12 +319,27 @@ function applyFlagDefault(
   return kind ? coerceLooseOptionValue(defaultValue, kind) : defaultValue;
 }
 
+/** Preserve parse-time value order for list flags whose long and short aliases are interleaved. */
+function readOrderedLooseListValues(
+  occurrenceSource: Record<string, unknown>,
+  optionKeys: string[],
+  fallback: unknown,
+): unknown {
+  const occurrences = (occurrenceSource as LooseOptionsWithOccurrences)[LOOSE_OPTION_OCCURRENCES];
+  if (!occurrences) {
+    return fallback;
+  }
+  const acceptedKeys = new Set(optionKeys);
+  return occurrences.filter((occurrence) => acceptedKeys.has(occurrence.key)).map((occurrence) => occurrence.value);
+}
+
 /**
  * Implements coerce loose command options with flag definitions for the public runtime surface of this module.
  */
 export function coerceLooseCommandOptionsWithFlagDefinitions(
   options: Record<string, unknown>,
   definitions: Array<Record<string, unknown>>,
+  occurrenceSource: Record<string, unknown> = options,
 ): Record<string, unknown> {
   if (definitions.length === 0) {
     return options;
@@ -334,7 +354,8 @@ export function coerceLooseCommandOptionsWithFlagDefinitions(
       continue;
     }
     const isListFlag = definition.list === true;
-    for (const key of collectLooseOptionKeys(definition)) {
+    const optionKeys = collectLooseOptionKeys(definition);
+    for (const key of optionKeys) {
       if (key === canonical || !Object.hasOwn(coerced, key)) {
         continue;
       }
@@ -364,7 +385,10 @@ export function coerceLooseCommandOptionsWithFlagDefinitions(
       continue;
     }
     if (isListFlag) {
-      coerced[canonical] = splitCommaListValue(coerced[canonical], kind);
+      coerced[canonical] = splitCommaListValue(
+        readOrderedLooseListValues(occurrenceSource, optionKeys, coerced[canonical]),
+        kind,
+      );
       continue;
     }
     if (!kind) {
@@ -379,7 +403,9 @@ export function coerceLooseCommandOptionsWithFlagDefinitions(
  * Implements parse loose command options for the public runtime surface of this module.
  */
 export function parseLooseCommandOptions(args: string[]): Record<string, unknown> {
-  const options = Object.create(null) as Record<string, unknown>;
+  const options = Object.create(null) as LooseOptionsWithOccurrences;
+  const occurrences: ParsedLooseOptionToken[] = [];
+  Object.defineProperty(options, LOOSE_OPTION_OCCURRENCES, { value: occurrences });
   let index = 0;
   while (index < args.length) {
     const parsed = parseLooseOptionToken(args, index);
@@ -394,6 +420,7 @@ export function parseLooseCommandOptions(args: string[]): Record<string, unknown
       continue;
     }
     setLooseOptionValue(options, normalizedKey, parsed.value);
+    occurrences.push({ ...parsed, key: normalizedKey });
     index += parsed.consumed;
   }
   return options;

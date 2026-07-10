@@ -1212,6 +1212,8 @@ describe("extension command runtime", () => {
       "-t=alpha,beta",
       "--tag",
       "gamma",
+      "-t",
+      "delta",
       "--no-enabled",
       "-x",
       "5",
@@ -1224,7 +1226,7 @@ describe("extension command runtime", () => {
     expect(parsed).toMatchObject({
       count: "2",
       tag: "gamma",
-      t: "alpha,beta",
+      t: ["alpha,beta", "delta"],
       enabled: false,
       x: "5",
       label: "positional",
@@ -1236,7 +1238,7 @@ describe("extension command runtime", () => {
       count: 2,
       enabled: false,
       label: "positional",
-      tag: ["gamma", "alpha", "beta"],
+      tag: ["alpha", "beta", "gamma", "delta"],
       x: 5,
     });
 
