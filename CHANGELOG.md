@@ -9,6 +9,7 @@
 
 ### Other
 
+- Untrack vendored pm-changelog extension dist from git (installed npm artifact, restored by changelog:pm:install) ([pm-sod3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-sod3.toon))
 - Refresh CodeQL Actions and reject incompatible Node 26 type-contract bump ([pm-2a9n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-2a9n.toon))
 
 ## 2026.7.10 - 2026-07-10

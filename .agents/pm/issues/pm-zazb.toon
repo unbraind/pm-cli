@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: agent-ux,cli,dependencies,dogfood,validation
 created_at: "2026-07-10T11:10:11.237Z"
-updated_at: "2026-07-10T11:10:11.237Z"
+updated_at: "2026-07-10T11:46:41.974Z"
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: "Malformed --dep values containing '=',':' or ',' but not matching the documented CSV grammar fail fast with the expected id=<id>,kind=<kind> hint; bare-id values that do not resolve to an existing item after prefix normalization warn or error instead of writing a dangling edge; regression tests cover create and update paths"
@@ -15,6 +15,8 @@ confidence: high
 severity: medium
 environment: "@unbrained/pm-cli 2026.7.10, live tracker"
 repro_steps: "pm create issue t --ac a --dep related:pm-x26a --json; pm deps <new-id> shows dependency id pm-related:pm-x26a with missing: true"
+notes[1]{created_at,author,text}:
+  "2026-07-10T11:46:41.973Z",maintainer-agent,"Additional instance found 2026-07-10: transitive graph under pm-ec8s carries a pre-existing dangling related-edge to nonexistent pm-0wm0 (surfaced via pm deps missing_count) - the write-time existence check in this item's AC would have caught it at the source."
 files[2]{path,scope,note}:
   "src/cli/commands/create.ts:dependency flag parsing entry",project,null
   "src/cli/commands/update.ts:dependency flag parsing entry",project,null

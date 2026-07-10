@@ -1,0 +1,20 @@
+id: pm-sod3
+title: "Untrack vendored pm-changelog extension dist from git (installed npm artifact, restored by changelog:pm:install)"
+description: "The installed copy of the external pm-changelog package under .agents/pm/extensions/ was tracked in git, producing ~30-file compiled-dist churn on every upstream release while CI reinstalls from npm on every changelog:pm:check anyway."
+type: Chore
+status: closed
+priority: 2
+tags[4]: changelog,extensions,git-hygiene,repo-policy
+created_at: "2026-07-10T11:45:25.826Z"
+updated_at: "2026-07-10T11:45:40.210Z"
+closed_at: "2026-07-10T11:45:25.826Z"
+author: maintainer-agent
+estimated_minutes: 30
+acceptance_criteria: "Installed extension contents gitignored with .managed-extensions.json kept tracked as the version record; vendored pm-changelog removed from the index; pm list/health verified clean and extension commands verified absent-but-recoverable when the directory is missing; CI changelog:pm:check unaffected (reinstalls first)"
+risk: low
+confidence: high
+resolution: Vendored dist untracked; .agents/pm/extensions/* gitignored with .managed-extensions.json re-included; degradation and CI paths verified
+expected_result: Repo stops carrying compiled npm artifacts; changelog flows keep working via install-first scripts
+actual_result: "git rm --cached applied; pm list/health clean without the directory; changelog:pm:check green locally"
+close_reason: Closed at creation via pm create
+body: "Maintainer decision 2026-07-10 (option: TS-source installs): untrack vendored dist now, and pursue TypeScript-source publishing for pm-changelog as a separate feature so future installs are TS-only end-to-end.\n\n## Evidence\n- Vendored copy is never load-bearing in CI: ci.yml + release.yml run changelog:pm:check which begins with changelog:pm:install (npm reinstall).\n- Fresh-clone behavior verified with the directory moved aside: pm list exit 0, pm health reports no missing warnings, pm changelog commands are simply unregistered until install restores them.\n- First-party packages/pm-* are already TypeScript-only (21 .ts, 0 .js); the vendored dist came from the npm tarball of the external pm-changelog package (files: dist/, docs, manifest), not from this repo's sources.\n- Tests referencing .managed-extensions.json all use temp trackers, not the repo copy."

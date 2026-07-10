@@ -1,0 +1,18 @@
+id: pm-ec8s
+title: Extend pm-changelog to publish TypeScript source so pm install vendors TS-only (native .ts entry loading)
+description: "Extend the existing pm-changelog package (unbraind/pm-changelog) to include .ts source in the npm tarball and register a .ts extension entry, so installs carry readable TypeScript instead of compiled dist + maps."
+type: Feature
+status: open
+priority: 3
+tags[5]: ecosystem,extensions,pm-changelog,sdk,typescript
+created_at: "2026-07-10T11:46:08.582Z"
+updated_at: "2026-07-10T11:46:08.582Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: "pm-changelog npm tarball ships .ts source with manifest entry pointing at a .ts module loadable via the pm CLI native type-stripping loader (pm-2p7a capability); pm install npm:pm-changelog --project vendors TS-only (no dist/, no source maps); changelog:pm and changelog:pm:check pass end-to-end against the TS-entry install; pm_min_version gates installs on a CLI version with .ts entry support; migration note for existing vendored installs"
+risk: medium
+confidence: medium
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-2p7a,related,"2026-07-10T11:46:08.582Z",null,null
+  pm-sod3,related,"2026-07-10T11:46:08.582Z",null,null
+body: "Maintainer decision 2026-07-10 (review #45 follow-up): after untracking the vendored dist (pm-sod3), the end state is TypeScript-source installs — the pm CLI already loads .ts extension entries via Node native type stripping (pm-2p7a), and every first-party packages/pm-* extension is TS-only, so external flagship packages should match.\n\n## Scope (external repo unbraind/pm-changelog + a small verification here)\n1. Publish .ts source in the npm files allowlist; point manifest entry at the .ts module.\n2. Keep or drop the compiled dist during a transition window (decide in the package repo; pm_min_version must gate .ts-only tarballs to CLI versions with the native loader).\n3. In this repo: changelog:pm/check flows re-verified against a TS-entry install; sandbox packed-tarball proof in a CJS host per the P0 install lesson.\n\n## Duplicate evidence\nNo open item owns TS-source publishing for pm-changelog (searches: pm-changelog typescript source publish / vendored extension dist tracked git / managed extensions gitignore install churn). pm-2p7a (closed) shipped the loader capability only; pm-sod3 (closed) removed the vendored dist from git; this item owns the TS-only install end state."

@@ -21,6 +21,11 @@ coverage/
 .agents/pm/runtime/history-drift-cache.json
 .agents/pm/runtime/session.json
 .agents/pm/runtime/telemetry/
+# Installed (vendored) extensions are npm artifacts restored by `pnpm changelog:pm:install`
+# (and CI's changelog:pm:check reinstalls on every run) — only the managed registry that
+# records name/version stays tracked.
+.agents/pm/extensions/*
+!.agents/pm/extensions/.managed-extensions.json
 
 # Local profiling artifacts must not be committed.
 *.cpuprofile
