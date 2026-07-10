@@ -14,6 +14,9 @@ import {
   KNOWN_EXTENSION_TRUST_MODES,
 } from "../core/extensions/loader.js";
 export {
+  RESERVED_ITEM_FIELD_NAMES,
+} from "../core/extensions/item-fields.js";
+export {
   PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS,
   PM_PACKAGE_RESOURCE_KINDS,
   collectPackageExtensionDirectories,

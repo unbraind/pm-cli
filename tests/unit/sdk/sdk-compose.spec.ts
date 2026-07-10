@@ -22,6 +22,7 @@ import {
   deriveExtensionCapabilities as deriveExtensionCapabilitiesFromBarrel,
   describeExtensionBlueprint as describeExtensionBlueprintFromBarrel,
   lintExtensionBlueprint as lintExtensionBlueprintFromBarrel,
+  RESERVED_ITEM_FIELD_NAMES,
   mergeExtensionBlueprints as mergeExtensionBlueprintsFromBarrel,
   preflightExtension as preflightExtensionFromBarrel,
   synthesizeExtensionManifest as synthesizeExtensionManifestFromBarrel,
@@ -603,6 +604,17 @@ describe("sdk lintExtensionBlueprint", () => {
 
   it("emits nothing for a fully empty blueprint", () => {
     expect(lintExtensionBlueprint({})).toEqual({ ok: true, findings: [], used: [], declared: null });
+  });
+
+  it("rejects reserved item-field collisions from the shared runtime list", () => {
+    expect(RESERVED_ITEM_FIELD_NAMES.has("severity")).toBe(true);
+    const result = lintExtensionBlueprint({ itemFields: [{ name: "severity", type: "string" }] });
+    expect(result.ok).toBe(false);
+    expect(result.findings).toContainEqual(expect.objectContaining({
+      code: "reserved_item_field",
+      severity: "error",
+      field: "severity",
+    }));
   });
 
   it("flags a command path declared more than once", () => {

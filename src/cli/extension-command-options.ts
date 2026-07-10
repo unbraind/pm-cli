@@ -187,12 +187,8 @@ export function validateLooseCommandOptionsWithFlagDefinitions(
   const labels: string[] = [];
   for (const definition of definitions) {
     const keys = collectLooseOptionKeys(definition);
-    const label = formatLooseOptionLabel(definition);
-    const fallbackLabel = keys.length > 0 ? `--${keys[0]}` : null;
-    const normalizedLabel = label ?? fallbackLabel;
-    if (normalizedLabel) {
-      labels.push(normalizedLabel);
-    }
+    const normalizedLabel = formatLooseOptionLabel(definition);
+    labels.push(...[normalizedLabel].filter((value): value is string => value !== null));
     for (const key of keys) {
       allowed.add(key);
       if (definition.enabled === false) {
@@ -335,18 +331,27 @@ export function coerceLooseCommandOptionsWithFlagDefinitions(
     if (!canonical) {
       continue;
     }
+    const isListFlag = definition.list === true;
     for (const key of collectLooseOptionKeys(definition)) {
       if (key === canonical || !Object.hasOwn(coerced, key)) {
         continue;
       }
       if (Object.hasOwn(coerced, canonical)) {
+        if (!isListFlag) {
+          continue;
+        }
+        const canonicalValue = coerced[canonical];
+        coerced[canonical] = [
+          ...(Array.isArray(canonicalValue) ? canonicalValue : [canonicalValue]),
+          ...(Array.isArray(coerced[key]) ? coerced[key] : [coerced[key]]),
+        ];
+        delete coerced[key];
         continue;
       }
       coerced[canonical] = coerced[key];
       delete coerced[key];
     }
     const kind = resolveLooseOptionCoercionKind(definition);
-    const isListFlag = definition.list === true;
     if (!Object.hasOwn(coerced, canonical)) {
       // Flag was omitted entirely: apply the declared default when present.
       if (definition.default !== undefined) {

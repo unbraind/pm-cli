@@ -8,7 +8,8 @@ import { normalizeItemFieldType, type KnownItemFieldType } from "./item-field-ty
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 
-const RESERVED_ITEM_FIELD_NAMES = new Set(FRONT_MATTER_KEY_ORDER);
+/** Item metadata keys extension-provided fields may never shadow. */
+export const RESERVED_ITEM_FIELD_NAMES: ReadonlySet<string> = new Set(FRONT_MATTER_KEY_ORDER);
 
 function normalizeFieldName(value: unknown): string | null {
   if (typeof value !== "string") {

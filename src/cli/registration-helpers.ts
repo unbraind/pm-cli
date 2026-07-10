@@ -48,6 +48,23 @@ export {
   writeStdout,
 };
 
+function readJoinedRepeatedOption(
+  options: Record<string, unknown>,
+  contract: CommanderOptionAliasContract,
+): string | undefined {
+  const value = readFirstValueFromCommanderOptions(options, contract);
+  if (typeof value === "string") {
+    return value;
+  }
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+  if (!value.every((entry) => typeof entry === "string")) {
+    return undefined;
+  }
+  return value.join("; ");
+}
+
 const RESOLVED_GLOBAL_OPTIONS = Symbol("pm.resolvedGlobalOptions");
 
 type CommandWithResolvedGlobals = Command & {
@@ -329,7 +346,10 @@ export function normalizeCreateOptions(
     body: readCreateString("body"),
     deadline: readCreateString("deadline"),
     estimatedMinutes: readCreateString("estimatedMinutes"),
-    acceptanceCriteria: readCreateString("acceptanceCriteria"),
+    acceptanceCriteria: readJoinedRepeatedOption(
+      commandOptions,
+      resolveCommanderContract(CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS, "acceptanceCriteria"),
+    ),
     definitionOfReady: readCreateString("definitionOfReady"),
     order: readCreateString("order"),
     rank: readCreateString("rank"),
@@ -419,7 +439,10 @@ export function normalizeUpdateOptions(commandOptions: Record<string, unknown>):
     removeTags: readUpdateList("removeTags"),
     deadline: readUpdateString("deadline"),
     estimatedMinutes: readUpdateString("estimatedMinutes"),
-    acceptanceCriteria: readUpdateString("acceptanceCriteria"),
+    acceptanceCriteria: readJoinedRepeatedOption(
+      commandOptions,
+      resolveCommanderContract(UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS, "acceptanceCriteria"),
+    ),
     definitionOfReady: readUpdateString("definitionOfReady"),
     order: readUpdateString("order"),
     rank: readUpdateString("rank"),

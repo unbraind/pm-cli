@@ -259,6 +259,7 @@ describe("registration helpers", () => {
         title: "Title",
         description: "Description",
         type: "Task",
+        acceptanceCriteria: "one criterion",
         addTags: ["coverage"],
         allowMissingParent: true,
         clearDocs: true,
@@ -270,6 +271,7 @@ describe("registration helpers", () => {
       title: "Title",
       description: "Description",
       type: "Task",
+      acceptanceCriteria: "one criterion",
       addTags: ["coverage"],
       allowMissingParent: true,
       clearDocs: true,
@@ -277,6 +279,7 @@ describe("registration helpers", () => {
     });
 
     const update = normalizeUpdateOptions({
+      acceptanceCriteria: ["first", "second"],
       addTags: ["tests"],
       depRemove: ["pm-old"],
       allow_audit_update: true,
@@ -287,6 +290,7 @@ describe("registration helpers", () => {
     });
     expect(update).toMatchObject({
       addTags: ["tests"],
+      acceptanceCriteria: "first; second",
       depRemove: ["pm-old"],
       allowAuditUpdate: true,
       allowAuditDepUpdate: true,
@@ -294,6 +298,7 @@ describe("registration helpers", () => {
       clearEvents: true,
       extra: "kept",
     });
+    expect(normalizeUpdateOptions({ acceptanceCriteria: ["valid", 1] }).acceptanceCriteria).toBeUndefined();
   });
 
   it("skips unsafe prototype keys while preserving unknown extension options", () => {

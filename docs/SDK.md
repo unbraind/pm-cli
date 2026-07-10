@@ -48,6 +48,7 @@ Common authoring exports:
 - `renderExtensionSurfaceMarkdown` (render a describe summary to a drift-free Markdown reference doc for a package README)
 - `checkExtensionManifestCompatibility` (author-time `pm_min_version`/`pm_max_version` check against a target pm version)
 - `preflightExtension` (one-call capstone: lint + manifest synthesis + version-compat in a single consolidated report)
+- `RESERVED_ITEM_FIELD_NAMES` (the shared runtime/authoring denylist); `lintExtensionBlueprint`, preflight, and the test harness reject blueprint item fields that shadow these metadata keys before publication
 - `EXTENSION_CAPABILITIES`
 - `EXTENSION_CAPABILITY_CONTRACT`
 - `EXTENSION_CAPABILITY_CONTRACT_VERSION`

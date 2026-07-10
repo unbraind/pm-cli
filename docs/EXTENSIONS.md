@@ -1,5 +1,7 @@
 # Packages and Extensions
 
+Extension flags declared with `list: true` accumulate repeated long/short alias occurrences and comma-separated values into one array. Declarative blueprints are also checked for reserved item-field collisions during SDK lint/preflight and harness activation, so a package cannot pass author-time validation and then fail only when users create or update items.
+
 Packages add optional `pm` workflows without changing the core CLI. A package can ship one or more runtime extensions plus metadata such as docs and examples. Prefer the package-first commands in new docs and automation:
 
 ```bash

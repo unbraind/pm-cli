@@ -111,6 +111,7 @@ import type {
   SharedLinkedResourceOptions,
 } from "./mutation-command-options.js";
 import { ensureEnumValue } from "./recurrence-parsers.js";
+import { assertValidBareDependencyFlagValue } from "../../sdk/dependency-flag-validation.js";
 import {
   parseEventEntries,
   parseReminderEntries,
@@ -348,6 +349,7 @@ function parseDependencies(
   const values: Dependency[] = raw.map((entry) => {
     const trimmedEntry = entry.trim();
     const isStructured = looksLikeStructuredEntry(trimmedEntry, DEP_SEED_KEYS);
+    assertValidBareDependencyFlagValue(trimmedEntry, isStructured);
     const kv = isStructured ? parseCsvKv(entry, "--dep") : { id: trimmedEntry, kind: "related" };
     if (isStructured) {
       assertNoUnknownCsvKeys(kv, "--dep", DEP_SEED_KEYS);
@@ -1451,6 +1453,15 @@ async function resolveCreateTypeSelection(
   }
   /* c8 ignore stop */
   const type = typeDefinition.name;
+  const templateTypeOptions = typeDefinition.options
+    .filter((option) => typeof resolvedOptions[option.key] === "string")
+    .map((option) => `${option.key}=${String(resolvedOptions[option.key])}`);
+  if (templateTypeOptions.length > 0) {
+    resolvedOptions.typeOption = [...(resolvedOptions.typeOption ?? []), ...templateTypeOptions];
+    for (const option of typeDefinition.options) {
+      delete resolvedOptions[option.key];
+    }
+  }
   const schedulePreset = resolveScheduleCreatePreset(resolvedOptions.schedulePreset);
   /* c8 ignore next -- schedule preset/type compatibility conflicts are validated in scheduler integration tests. */
   if (schedulePreset !== undefined && !SCHEDULE_CREATE_PRESET_TYPES.has(type)) {
@@ -2157,6 +2168,7 @@ export const _testOnlyCreateCommand = {
   mergeCreateOptionsWithTemplate,
   normalizeCreatePolicyOptionKey,
   normalizeDependencyKindInput,
+  parseDependencies,
   normalizeExtensionCommandPath,
   parseCreateUnsetTargets,
   requireStringOption,

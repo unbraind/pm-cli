@@ -60,6 +60,7 @@ import {
   resolveLegacyExtensionCapabilityAlias,
 } from "../core/extensions/extension-capability-aliases.js";
 import { normalizeCommandName } from "../core/extensions/extension-runtime-helpers.js";
+import { RESERVED_ITEM_FIELD_NAMES } from "../core/extensions/item-fields.js";
 import {
   evaluatePmMaxVersionBound,
   evaluatePmMinVersionBound,
@@ -898,6 +899,7 @@ export type ExtensionBlueprintLintCode =
   | "duplicate_command"
   | "command_override_conflict"
   | "empty_surface"
+  | "reserved_item_field"
   | "manifest_capabilities_absent";
 
 /**
@@ -916,6 +918,17 @@ export interface ExtensionBlueprintLintFinding {
   command?: string;
   /** The blueprint field involved, for `empty_surface` findings. */
   field?: string;
+}
+
+function collectReservedItemFieldFindings(blueprint: ExtensionBlueprint): ExtensionBlueprintLintFinding[] {
+  return (blueprint.itemFields ?? [])
+    .filter((field) => RESERVED_ITEM_FIELD_NAMES.has(field.name.trim()))
+    .map((field) => ({
+      code: "reserved_item_field",
+      severity: "error",
+      message: `Item field "${field.name}" collides with reserved item metadata; rename it with an extension-specific prefix before publishing.`,
+      field: field.name,
+    }));
 }
 
 /**
@@ -1124,6 +1137,7 @@ export function lintExtensionBlueprint(
   const findings: ExtensionBlueprintLintFinding[] = [
     ...collectBlueprintCapabilityFindings(used, declared),
     ...collectBlueprintCommandFindings(blueprint),
+    ...collectReservedItemFieldFindings(blueprint),
     ...collectBlueprintEmptySurfaceFindings(blueprint),
   ];
 

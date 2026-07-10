@@ -83,6 +83,7 @@ import {
   parseReminderEntries,
   parseTypeOptionEntries,
 } from "./repeatable-metadata-parsers.js";
+import { assertValidBareDependencyFlagValue } from "../../sdk/dependency-flag-validation.js";
 import type {
   Comment,
   Dependency,
@@ -594,6 +595,7 @@ function parseDependencyAdditions(raw: string[] | undefined, prefix: string, now
   const additions: Dependency[] = raw.map((entry) => {
     const trimmedEntry = entry.trim();
     const isStructured = looksLikeStructuredDependencyEntry(trimmedEntry);
+    assertValidBareDependencyFlagValue(trimmedEntry, isStructured);
     const kv = isStructured ? parseCsvKv(entry, "--dep") : { id: trimmedEntry, kind: "related" };
     if (isStructured) {
       assertNoUnknownCsvKeys(kv, "--dep", DEP_ADDITION_KEYS);

@@ -1236,7 +1236,7 @@ describe("extension command runtime", () => {
       count: 2,
       enabled: false,
       label: "positional",
-      tag: ["gamma"],
+      tag: ["gamma", "alpha", "beta"],
       x: 5,
     });
 
@@ -1248,6 +1248,10 @@ describe("extension command runtime", () => {
       tag: ["one", "two", "three"],
     });
     expect(Object.hasOwn(defaulted, "t")).toBe(false);
+    expect(coerceLooseCommandOptionsWithFlagDefinitions({ tag: ["one"], t: ["two"] }, definitions).tag).toEqual([
+      "one",
+      "two",
+    ]);
 
     expect(
       stripLooseCommandOptionTokens(
