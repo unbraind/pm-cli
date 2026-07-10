@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: agent-ux,"area:next",cli,gh-issue
 created_at: "2026-07-10T10:32:13.106Z"
-updated_at: "2026-07-10T10:36:32.481Z"
+updated_at: "2026-07-10T16:57:36.687Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: pm next summary.blocked equals the true blocked count in a fresh two-item workspace; blocked companion section lists blocked items with their blockers up to blocked_limit; regression test covers the repro from GH-489; envelope no longer contradicts the unblocks reasons
@@ -15,4 +15,6 @@ confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-hfg5,related,"2026-07-10T10:32:13.106Z",null,null
   pm-yl6c,related,"2026-07-10T10:32:13.106Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-10T16:57:36.687Z",maintainer-agent,"Root-cause narrowing (review 2026-07-10, current main build): the GH-489 repro still fails — fresh workspace with one status=blocked item yields summary.blocked: 0 AND candidates: 1, i.e. the status=blocked item is excluded from the candidate pool entirely, not merely miscounted. Contrast: the real workspace reports blocked: 25 with zero status=blocked items (pm stats), so next's blocked counter is derived from open items with open blockers (graph-blocked). Fix likely needs BOTH paths: include status=blocked items in candidates/summary and populate the companion from the union of status-blocked + graph-blocked. Regression test should assert candidates counts them too."
 body: "## Source\nGitHub issue #489 (dogfood, version 2026.7.9).\n\n## Reproduction\n```bash\npm init uxt --defaults --author probe\npm create task \"First\"                       # -> uxt-A (open)\npm create task \"Second\" --blocked-by uxt-A   # -> uxt-B (status: blocked)\npm next\n```\n`pm next` emits `summary.blocked: 0` and no blocked-companion section, while the same envelope's recommended entry says `unblocks 1 item(s): uxt-B` and `pm list-blocked` correctly shows 1 blocked item. A `blocked_limit: 5` filter is even printed, so the companion surface is advertised but never populated.\n\n## Expected\n`summary.blocked` counts blocked items and the blocked companion lists them with their blockers (as `pm next --help` documents).\n\n## Why it matters for agents\n`pm next` is the primary \"what should I work on\" entrypoint. The envelope contradicts itself (unblocks list vs blocked: 0), so an agent trusting the summary concludes no blocked work exists and skips triage. The data is already computed for the unblocks reasons — only the summary/companion aggregation misses it.\n\n## Scope\nFix the aggregation in the pm next summary + blocked companion; add a regression test covering the blocked-companion path in a fresh workspace. Related output-shape defects: pm-hfg5 (ready[0] duplication), pm-yl6c (cross-agent resume recommendation)."
