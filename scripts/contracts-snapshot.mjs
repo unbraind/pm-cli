@@ -26,7 +26,11 @@ function runContracts() {
   const isolatedGlobalPath = mkdtempSync(resolve(tmpdir(), "pm-cli-contracts-global-"));
   let result;
   try {
-    result = spawnSync(process.execPath, [cliPath, "contracts", "--full", "--json"], {
+    // --no-extensions keeps the snapshot deterministic: it captures only the
+    // baseline CLI/SDK contracts, independent of which npm extensions happen to
+    // be installed in the local tracker (installed extensions are untracked, so
+    // their contributed contracts vary by environment and upstream version).
+    result = spawnSync(process.execPath, [cliPath, "--no-extensions", "contracts", "--full", "--json"], {
       cwd: repoRoot,
       encoding: "utf8",
       env: {

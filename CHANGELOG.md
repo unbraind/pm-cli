@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- contracts-snapshot gate is environment-dependent: fixture baked in installed-extension contracts, failing CI on extension version drift or absence ([pm-zcjy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zcjy.toon))
 - GH-495: extension context pm_root ignores root-layout trackers (falls back to non-existent .agents/pm) ([pm-kvev](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kvev.toon))
 - pm close never stamps closed_at, so changelog and release-notes bucketing always falls back to updated_at ([pm-m4iu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-m4iu.toon))
 

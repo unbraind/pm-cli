@@ -1,0 +1,28 @@
+id: pm-zcjy
+title: "contracts-snapshot gate is environment-dependent: fixture baked in installed-extension contracts, failing CI on extension version drift or absence"
+description: "scripts/contracts-snapshot.mjs ran pm contracts --full against the repo tracker with active extensions, so the checked-in fixture depended on which pm-changelog version happened to be vendored — the 2026.7.10 upstream refresh and the vendored-dist untracking each broke the static gate on main."
+type: Issue
+status: closed
+priority: 1
+tags[4]: ci,contracts,determinism,extensions
+created_at: "2026-07-10T11:59:03.050Z"
+updated_at: "2026-07-10T11:59:16.849Z"
+closed_at: "2026-07-10T11:59:03.050Z"
+author: maintainer-agent
+estimated_minutes: 30
+acceptance_criteria: "Snapshot generation runs pm --no-extensions contracts --full so the fixture captures only baseline CLI/SDK contracts; check passes identically with the extension present, absent, or at any upstream version; fixture regenerated (extension-contributed entries removed); main CI green"
+risk: low
+confidence: high
+severity: high
+environment: "CI Gates (static) on main, commits bac1c4c7 + 21a7d884"
+repro_steps: "pnpm changelog:pm:install upgrading the vendored pm-changelog (or removing it) then node scripts/contracts-snapshot.mjs --check -> stale at line 1324 (upgrade) or line 34 (absent)"
+resolution: Snapshot generation switched to pm --no-extensions contracts --full; fixture regenerated baseline-only
+expected_result: Static gate deterministic regardless of installed extension state or upstream version
+actual_result: check passes byte-identically with pm-changelog present and absent; 32 files / 511 script+integration tests green
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-sod3,related,"2026-07-10T11:59:03.050Z",null,null
+files[2]{path,scope,note}:
+  "scripts/contracts-snapshot.mjs:baseline-only snapshot generation",project,null
+  "tests/fixtures/contracts/full.json:regenerated without extension-contributed entries",project,null
+close_reason: Closed at creation via pm create
+body: "## Defect\nBoth main pushes on 2026-07-10 failed the Gates (static) job at contracts-snapshot --check: bac1c4c7 because changelog:pm:install refreshed vendored pm-changelog 2026.7.8 -> 2026.7.10 (its contributed contracts changed, fixture diff at line 1324), and 21a7d884 because the vendored copy was untracked entirely (diff at line 34). The gate's purpose is catching unintentional contract drift in THIS repo's CLI/SDK; extension-contributed contracts belong to the extension's own repo and vary by environment, so snapshotting them made the gate nondeterministic.\n\n## Fix\nscripts/contracts-snapshot.mjs now invokes pm --no-extensions contracts --full --json; fixture regenerated (-825 lines of extension entries). Verified: --check passes byte-identically with the extension installed and with it absent."
