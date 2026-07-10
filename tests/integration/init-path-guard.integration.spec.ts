@@ -1,6 +1,8 @@
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { runDirectDistCli } from "../helpers/cliRunner.js";
+import { writeTestExtension } from "../helpers/extensions.js";
 import { expectJsonErrorEnvelope } from "../helpers/jsonErrorEnvelope.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
@@ -115,6 +117,62 @@ describe("init tracker-path guardrails", () => {
       const forcedEntries = await readdir(workspaceRoot);
       expect(forcedEntries).toContain("history");
       expect(forcedEntries).toContain("tasks");
+    });
+  });
+
+  it("resolves root-layout trackers for bare invocations and extension pm_root context (GH-495)", async () => {
+    await withTempPmPath(async (context) => {
+      // `pm init <dir>` writes settings.json directly into <dir> (tracker-path mode).
+      const workspaceRoot = path.join(context.tempRoot, "root-layout-ws");
+      const init = context.runCli(["init", workspaceRoot, "--json", "--yes"], { expectJson: true });
+      expect(init.code).toBe(0);
+      expect(init.json).toMatchObject({ target: { mode: "tracker-path", tracker_root: workspaceRoot } });
+
+      // Probe extension echoing the pm_root the runtime hands command handlers.
+      await writeTestExtension({
+        root: path.join(workspaceRoot, "extensions"),
+        directory: "root-probe",
+        manifest: {
+          name: "root-probe",
+          version: "1.0.0",
+          entry: "index.mjs",
+          capabilities: ["commands"],
+          activation: { commands: ["probe root"] },
+        },
+        entryFilename: "index.mjs",
+        entrySource: [
+          "export function activate(api) {",
+          "  api.registerCommand({",
+          '    name: "probe root",',
+          '    description: "Echo the pm_root handed to extension commands.",',
+          "    run: async (context) => ({ ok: true, pm_root: context.pm_root }),",
+          "  });",
+          "}",
+          "export default { activate };",
+          "",
+        ].join("\n"),
+      });
+
+      // Bare invocations (no --pm-path, no PM_PATH) from inside the workspace
+      // must discover the root-layout tracker instead of falling back to a
+      // non-existent <cwd>/.agents/pm.
+      const bareEnv = { ...context.env };
+      delete bareEnv.PM_PATH;
+
+      const bareList = runDirectDistCli(["list", "--json"], { cwd: workspaceRoot, env: bareEnv, expectJson: true });
+      expect(bareList.code).toBe(0);
+
+      const probe = runDirectDistCli(["probe", "root", "--json"], { cwd: workspaceRoot, env: bareEnv, expectJson: true });
+      expect(probe.code).toBe(0);
+      expect(probe.json).toMatchObject({ ok: true, pm_root: workspaceRoot });
+
+      // The documented extension spawn-back pattern: `pm --pm-path <ctx.pm_root> stats`.
+      const spawnBack = runDirectDistCli(["--pm-path", workspaceRoot, "stats", "--json"], {
+        cwd: workspaceRoot,
+        env: bareEnv,
+        expectJson: true,
+      });
+      expect(spawnBack.code).toBe(0);
     });
   });
 });

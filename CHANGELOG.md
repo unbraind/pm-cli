@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixed
+
+- GH-495: extension context pm_root ignores root-layout trackers (falls back to non-existent .agents/pm) ([pm-kvev](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kvev.toon))
+- pm close never stamps closed_at, so changelog and release-notes bucketing always falls back to updated_at ([pm-m4iu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-m4iu.toon))
+
 ### Other
 
 - Refresh CodeQL Actions and reject incompatible Node 26 type-contract bump ([pm-2a9n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-2a9n.toon))

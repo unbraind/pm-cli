@@ -81,6 +81,71 @@ describe("core/store/paths", () => {
     }
   });
 
+  it("resolvePmRoot discovers root-layout trackers by walking ancestors (GH-495)", () => {
+    const tempRoot = mkdtempSync(path.join(os.tmpdir(), "pm-path-discovery-rootlayout-"));
+    try {
+      // `pm init <dir>` writes settings.json directly into <dir>.
+      const trackerRoot = path.join(tempRoot, "workspace");
+      const nestedCwd = path.join(trackerRoot, "src", "feature");
+      mkdirSync(nestedCwd, { recursive: true });
+      writeFileSync(path.join(trackerRoot, "settings.json"), JSON.stringify({ version: 1, id_prefix: "pm-" }), "utf8");
+
+      withEnvVar("PM_PATH", undefined, () => {
+        expect(resolvePmRoot(trackerRoot)).toBe(path.resolve(trackerRoot));
+        expect(resolvePmRoot(nestedCwd)).toBe(path.resolve(trackerRoot));
+      });
+
+      // The item_format marker alone is also sufficient.
+      writeFileSync(path.join(trackerRoot, "settings.json"), JSON.stringify({ version: 1, item_format: "toon" }), "utf8");
+      withEnvVar("PM_PATH", undefined, () => {
+        expect(resolvePmRoot(nestedCwd)).toBe(path.resolve(trackerRoot));
+      });
+    } finally {
+      rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("resolvePmRoot prefers a .agents/pm tracker over a root-layout tracker at the same level", () => {
+    const tempRoot = mkdtempSync(path.join(os.tmpdir(), "pm-path-discovery-precedence-"));
+    try {
+      const projectRoot = path.join(tempRoot, "project");
+      const nestedPmRoot = path.join(projectRoot, ".agents", "pm");
+      mkdirSync(nestedPmRoot, { recursive: true });
+      writeFileSync(path.join(nestedPmRoot, "settings.json"), JSON.stringify({ version: 1, id_prefix: "pm-" }), "utf8");
+      writeFileSync(path.join(projectRoot, "settings.json"), JSON.stringify({ version: 1, id_prefix: "pm-" }), "utf8");
+
+      withEnvVar("PM_PATH", undefined, () => {
+        expect(resolvePmRoot(projectRoot)).toBe(path.resolve(nestedPmRoot));
+      });
+    } finally {
+      rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("resolvePmRoot ignores ancestor settings.json files without pm markers", () => {
+    const tempRoot = mkdtempSync(path.join(os.tmpdir(), "pm-path-discovery-foreign-"));
+    try {
+      // An unrelated tool's settings.json at an ancestor must not hijack
+      // tracker resolution and start receiving pm writes.
+      const foreignRoot = path.join(tempRoot, "app");
+      const nestedCwd = path.join(foreignRoot, "src");
+      mkdirSync(nestedCwd, { recursive: true });
+      writeFileSync(path.join(foreignRoot, "settings.json"), JSON.stringify({ version: 2, theme: "dark" }), "utf8");
+      writeFileSync(path.join(tempRoot, "settings.json"), "not json", "utf8");
+      const arrayRoot = path.join(foreignRoot, "src", "deeper");
+      mkdirSync(arrayRoot, { recursive: true });
+      writeFileSync(path.join(path.join(foreignRoot, "src"), "settings.json"), JSON.stringify(["not", "pm"]), "utf8");
+
+      withEnvVar("PM_PATH", undefined, () => {
+        expect(resolvePmRoot(nestedCwd)).toBe(path.resolve(nestedCwd, ".agents/pm"));
+        // Walks past array-JSON, marker-less, and unparseable candidates alike.
+        expect(resolvePmRoot(arrayRoot)).toBe(path.resolve(arrayRoot, ".agents/pm"));
+      });
+    } finally {
+      rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it("resolvePmRoot ignores ancestor pm directories until initialized", () => {
     const tempRoot = mkdtempSync(path.join(os.tmpdir(), "pm-path-discovery-uninitialized-"));
     try {

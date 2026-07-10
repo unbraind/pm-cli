@@ -1,4 +1,4 @@
-import type { ChangelogDocument, ChangelogSelectionReport, GeneratedChangelog, GenerateChangelogOptions, MergeChangelogOptions, MergeChangelogResult, PmItem, ReadPmItemsOptions, SemverSuggestion, WriteChangelogOptions, WriteChangelogResult } from "./types.js";
+import type { ChangelogDocument, ChangelogSelectionReport, ChangelogSummaryEntry, GeneratedChangelog, GenerateChangelogOptions, MergeChangelogOptions, MergeChangelogResult, PmItem, ReadPmItemsOptions, SemverSuggestion, WriteChangelogOptions, WriteChangelogResult } from "./types.js";
 export declare function generateChangelog(options: GenerateChangelogOptions): string;
 export declare function createChangelog(options: GenerateChangelogOptions): GeneratedChangelog;
 /**
@@ -10,6 +10,28 @@ export declare function createChangelog(options: GenerateChangelogOptions): Gene
  * the two stay in sync, but emits structured data instead of rendered text.
  */
 export declare function buildChangelogDocument(options: GenerateChangelogOptions): ChangelogDocument;
+/**
+ * OPT-IN (`--summary`): build a compact one-line-per-change list for quick
+ * agent scanning. Reuses the same filtering, section building, visibility
+ * narrowing and grouping as the markdown / structured-document paths so the
+ * three stay in sync, but emits flat entries instead of rendered text.
+ *
+ * Each entry carries the release heading, the category or field-group the item
+ * was bucketed under, and the item's id/title/type/status. With the default
+ * `sectionBy: "category"` the `category` field is the keep-a-changelog category
+ * (Added/Changed/Fixed/...); with `sectionBy: "type"` it is the title-cased item
+ * type (Feature/Issue/Task/...); with `sectionBy: "label"` an item may appear
+ * once per tag.
+ */
+export declare function createChangelogSummary(options: GenerateChangelogOptions): ChangelogSummaryEntry[];
+/**
+ * Format a single `--summary` entry as a bracketed text line for quick agent
+ * scanning: `[version] category: title (id)`. The version bracket uses the
+ * normalized version key when available, otherwise the release heading with
+ * its date suffix stripped. Shared by the standalone CLI and the `pm`
+ * extension so both render identical summary lines.
+ */
+export declare function formatSummaryLine(entry: ChangelogSummaryEntry): string;
 export declare function mergeChangelog(existingMarkdown: string | undefined, generatedMarkdown: string, options?: MergeChangelogOptions): MergeChangelogResult;
 export declare function readPmItems(options?: ReadPmItemsOptions): PmItem[];
 export declare function writeChangelog(options: WriteChangelogOptions): WriteChangelogResult;

@@ -1,0 +1,21 @@
+id: pm-zazb
+title: "pm create/update --dep silently normalizes malformed shorthand into dangling dependency ids (related:pm-x26a -> pm-related:pm-x26a)"
+description: "Malformed --dep values that miss the documented id=,kind= CSV form are treated as bare ids and prefix-normalized into nonexistent nodes instead of erroring with the expected syntax."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,cli,dependencies,dogfood,validation
+created_at: "2026-07-10T11:10:11.237Z"
+updated_at: "2026-07-10T11:10:11.237Z"
+author: maintainer-agent
+estimated_minutes: 45
+acceptance_criteria: "Malformed --dep values containing '=',':' or ',' but not matching the documented CSV grammar fail fast with the expected id=<id>,kind=<kind> hint; bare-id values that do not resolve to an existing item after prefix normalization warn or error instead of writing a dangling edge; regression tests cover create and update paths"
+risk: low
+confidence: high
+severity: medium
+environment: "@unbrained/pm-cli 2026.7.10, live tracker"
+repro_steps: "pm create issue t --ac a --dep related:pm-x26a --json; pm deps <new-id> shows dependency id pm-related:pm-x26a with missing: true"
+files[2]{path,scope,note}:
+  "src/cli/commands/create.ts:dependency flag parsing entry",project,null
+  "src/cli/commands/update.ts:dependency flag parsing entry",project,null
+body: "## Defect\nObserved live (2026-07-10) while filing pm-kvev: `--dep \"related:pm-x26a\"` was accepted, prefix-normalized to dependency id `pm-related:pm-x26a`, and stored as a dangling edge (`pm deps` reports missing: true, missing_count: 1). No warning at write time. The documented grammar is `id=<id>,kind=<kind>[,author=...,created_at=...,source_kind=...]`.\n\n## Why this hurts agents\nWrite-time silence violates the never-block-never-corrupt principle: the mutation looks successful, the graph silently degrades, and the defect only surfaces later via pm deps/validate on a different item. Repairing requires knowing the --replace-deps + --dep combination (--clear-deps + --dep is rejected as conflicting).\n\n## Fix outline\nIn the shared dependency-flag parser used by create/update: (1) values containing '=' or ',' that fail CSV parsing -> hard error with the grammar hint; (2) colon-containing bare values -> same error (colon is never legal in an item id); (3) optional existence check on the normalized id emitting a written-with-warning envelope consistent with strict parent validation.\n\n## Duplicate evidence\nSearches (dep syntax invalid id validation / dependency missing node create / dangling dependency dep flag shorthand) return no open owner; pm-dlfq (GH-98, closed) fixed kind parsing not id validation; pm-orrl (closed) covered --blocked-by free text; pm-q6gx owns GH-484 blocked-by scalar overwrite only."

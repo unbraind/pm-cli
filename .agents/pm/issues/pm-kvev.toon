@@ -1,0 +1,34 @@
+id: pm-kvev
+title: "GH-495: extension context pm_root ignores root-layout trackers (falls back to non-existent .agents/pm)"
+description: "Ancestor discovery in resolvePmRoot only recognized .agents/pm layouts, so bare invocations and the pm_root handed to extensions broke in root-layout workspaces."
+type: Issue
+status: closed
+priority: 1
+tags[5]: agent-ux,extensions,gh-issue,path-safety,sdk
+created_at: "2026-07-10T11:07:07.017Z"
+updated_at: "2026-07-10T11:32:37.318Z"
+closed_at: "2026-07-10T11:32:37.317Z"
+author: maintainer-agent
+estimated_minutes: 60
+acceptance_criteria: Bare pm invocations from inside a root-layout workspace resolve the tracker; extension command context pm_root equals the resolved root; pm --pm-path <ctx.pm_root> stats exits 0; unrelated ancestor settings.json without pm markers never hijacks resolution; regression tests cover discovery precedence (.agents/pm wins) and foreign/array/unparseable settings.json
+risk: medium
+confidence: high
+severity: high
+environment: "@unbrained/pm-cli 2026.7.10, root-layout tracker via pm init <dir>"
+repro_steps: pm init <dir>; cd <dir>; pm create task t --ac a (fails tracker_not_initialized); extension command context.pm_root = <dir>/.agents/pm (non-existent)
+resolution: "discoverPmRootFromAncestors now adopts <dir>/settings.json trackers (id_prefix/item_format marker required, .agents/pm precedence per level); explicit --path/PM_PATH semantics unchanged"
+expected_result: Bare invocations and extension context pm_root resolve the tracker root the CLI actually uses in root-layout workspaces
+actual_result: "Sandbox + integration probe: bare pm create/stats work from pm init <dir> workspaces; ctx.pm_root == workspace root; pm --pm-path <ctx.pm_root> stats exits 0; unrelated/array/unparseable ancestor settings.json ignored; fast suite 270/5510 and coverage gate 100/100/100/100 green"
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-x26a,related,"2026-07-10T11:09:08.422Z",null,null
+notes[1]{created_at,author,text}:
+  "2026-07-10T11:18:14.546Z",maintainer-agent,"Verification evidence (2026-07-10): root cause was discoverPmRootFromAncestors probing only <dir>/.agents/pm/settings.json. Fix adds root-layout adoption of <dir>/settings.json guarded by pm markers (id_prefix or item_format) with .agents/pm precedence per level; explicit --path/PM_PATH unchanged. Live sandbox: bare pm create/stats now resolve a pm init <dir> workspace; integration probe extension receives pm_root == workspace root and the documented spawn-back (pm --pm-path <ctx.pm_root> stats) exits 0. Full fast suite 270 files / 5510 tests green. Also confirmed the defect was broader than GH-495 reported: plain pm create failed from the workspace before the fix, so GH-488's --pm-path-scoped follow-ups were masking discovery blindness."
+files[3]{path,scope,note}:
+  "src/core/store/paths.ts:Root-layout ancestor discovery with pm-marker guard",project,null
+  "tests/unit/core/store/store-paths.spec.ts:Discovery, precedence, and hijack-guard unit coverage",project,null
+  "tests/integration/init-path-guard.integration.spec.ts:GH-495 end-to-end regression (bare invocation + extension pm_root + spawn-back)",project,null
+tests[2]{command,scope}:
+  node scripts/run-tests.mjs test -- tests/integration/init-path-guard.integration.spec.ts,project
+  node scripts/run-tests.mjs test -- tests/unit/core/store/store-paths.spec.ts,project
+close_reason: Root-layout ancestor discovery shipped with pm-marker hijack guard; extension pm_root context verified end-to-end
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/495\n\n## Root cause\ndiscoverPmRootFromAncestors (src/core/store/paths.ts) only probed <dir>/.agents/pm/settings.json while walking ancestors. Root-layout trackers (pm init <dir> writes settings.json directly into <dir> — the deliberate tracker-path mode kept by pm-x26a/GH-488) were invisible to implicit discovery. Every resolvePmRoot(cwd) call without --path/PM_PATH — including all extension context construction sites in src/cli/main.ts — fell back to <cwd>/.agents/pm, a non-existent directory. Worse than reported: even plain pm create failed from the workspace; GH-488's --pm-path-scoped follow-up hints were a bandage over this.\n\n## Fix\nAncestor discovery now also adopts <dir>/settings.json as a root-layout tracker, guarded by a pm-marker check (id_prefix or item_format present) so an unrelated tool's settings.json at an ancestor can never hijack resolution and receive pm writes. Per-level precedence keeps .agents/pm first. Explicit --path/PM_PATH behavior unchanged (carries user intent, no marker check).\n\n## Duplicate evidence\nExact all-status searches for GH-495, pm_root, and root-layout extension context returned no owning item; pm-x26a (GH-488, closed) owns init follow-up hint correctness only, not discovery."

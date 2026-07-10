@@ -3,7 +3,7 @@
  *
  * Reads and writes tracker storage with format-aware helpers for Paths.
  */
-import { statSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { PM_DIRNAME, SETTINGS_FILENAME, TYPE_TO_FOLDER } from "../shared/constants.js";
@@ -31,6 +31,23 @@ function pathExists(pathValue: string): boolean {
   }
 }
 
+// Adopting a bare <dir>/settings.json during implicit ancestor discovery must
+// not let an unrelated tool's settings.json hijack tracker resolution (and
+// receive pm writes), so root-layout candidates need a pm-specific marker.
+// `pm init` always writes both markers; explicit --path/PM_PATH targets skip
+// this check because they carry user intent.
+function isPmSettingsFile(settingsPath: string): boolean {
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(settingsPath, "utf8"));
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      return false;
+    }
+    return "id_prefix" in parsed || "item_format" in parsed;
+  } catch {
+    return false;
+  }
+}
+
 function discoverPmRootFromAncestors(cwd: string): string | undefined {
   let current = path.resolve(cwd);
   while (true) {
@@ -38,6 +55,14 @@ function discoverPmRootFromAncestors(cwd: string): string | undefined {
     const candidateSettingsPath = path.join(candidateRoot, SETTINGS_FILENAME);
     if (pathExists(candidateSettingsPath)) {
       return candidateRoot;
+    }
+    // Root-layout trackers (`pm init <dir>` writes settings.json directly into
+    // <dir>) must be discoverable too; otherwise implicit invocations — and the
+    // pm_root handed to extensions — fall back to a non-existent
+    // <cwd>/.agents/pm (GH-495).
+    const rootLayoutSettingsPath = path.join(current, SETTINGS_FILENAME);
+    if (pathExists(rootLayoutSettingsPath) && isPmSettingsFile(rootLayoutSettingsPath)) {
+      return current;
     }
     const parent = path.dirname(current);
     if (parent === current) {

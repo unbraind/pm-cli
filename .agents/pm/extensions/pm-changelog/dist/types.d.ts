@@ -31,6 +31,21 @@ export interface PmItem {
     closed_at?: string;
     due_date?: string;
 }
+/** OPT-IN (`--summary`): a compact one-line-per-change entry for quick agent
+ * scanning. Each entry pairs a release heading with the category/group and the
+ * item title/id, so agents can ingest changes without parsing full markdown. */
+export interface ChangelogSummaryEntry {
+    /** Release heading (e.g. "1.2.0 - 2026-05-17" or "Unreleased - 2026-05-17"). */
+    heading: string;
+    /** Normalized version key (e.g. "1.2.0"), or undefined for Unreleased. */
+    version?: string;
+    /** Category or field-group heading the item falls under (Added/Fixed/Feature/...). */
+    category: string;
+    id?: string;
+    title: string;
+    type?: string;
+    status?: string;
+}
 export type ChangelogGroupBy = "version" | "release" | "milestone";
 /** Within-release grouping selector for the opt-in `--section-by` flag.
  * `"category"` is the default and reproduces the historical

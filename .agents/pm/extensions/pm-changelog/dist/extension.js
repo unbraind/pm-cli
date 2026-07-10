@@ -1,11 +1,11 @@
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { defineExtension, listAllFrontMatter, locateItem, readLocatedItem, readSettings, resolveItemTypeRegistry, EXIT_CODE, PmCliError, } from "@unbrained/pm-cli/sdk";
-import { buildChangelogDocument, createChangelog, explainChangelogSelection, mergeChangelog, suggestSemver, writeChangelog } from "./generator.js";
+import { buildChangelogDocument, createChangelog, createChangelogSummary, explainChangelogSelection, formatSummaryLine, mergeChangelog, suggestSemver, writeChangelog } from "./generator.js";
 import { resolveReleaseContext, resolveReleaseTagWindows } from "./release-context.js";
 export default defineExtension({
     name: "pm-changelog",
-    version: "2026.7.8",
+    version: "2026.7.10",
     activate(api) {
         api.registerCommand({
             name: "changelog generate",
@@ -48,6 +48,8 @@ export default defineExtension({
                 { long: "--include-metadata", description: "Append compact item metadata (type/status/priority/release/milestone) to each entry" },
                 { long: "--changelog-json", description: "Return the full structured changelog document (releases->sections->items)" },
                 { long: "--explain", description: "Return item-selection diagnostics (counts, exclusions, hints)" },
+                { long: "--summary", description: "Return a compact one-line-per-change summary instead of full markdown" },
+                { long: "--format", value_name: "md|json", description: "Output format: md (default) or json for machine-readable output" },
                 { long: "--mode", value_name: "mode", description: "replace or prepend existing changelog (default: replace)" },
                 { long: "--include-empty", description: "Emit an empty release section when no items match" },
                 { long: "--include-links", description: "Include item URLs in generated entries (default: false)" },
@@ -73,6 +75,14 @@ export default defineExtension({
                 if (sectionByOption !== "category" && sectionByOption !== "type" && sectionByOption !== "status" && sectionByOption !== "label") {
                     throw new PmCliError("--section-by must be 'category', 'type', 'status', or 'label'", EXIT_CODE.USAGE);
                 }
+                // Validate --format up front (matching `changelog export`) instead of
+                // silently treating unsupported values as the default markdown output.
+                const formatOption = stringOption(ctx.options, "format", "format");
+                const normalizedFormat = formatOption?.trim().toLowerCase();
+                if (normalizedFormat !== undefined && normalizedFormat !== "md" && normalizedFormat !== "markdown" && normalizedFormat !== "json") {
+                    throw new PmCliError("--format must be 'md' or 'json'", EXIT_CODE.USAGE);
+                }
+                const wantsJsonFormat = normalizedFormat === "json";
                 const limitValue = parseLimitOption(ctx.options);
                 const groupBy = groupByOption;
                 const sectionBy = sectionByOption;
@@ -140,8 +150,34 @@ export default defineExtension({
                 const selectionReport = booleanOption(ctx.options, "explain", "explain")
                     ? explainChangelogSelection(generationOptions)
                     : undefined;
-                // OPT-IN (`--changelog-json`): structured document; never writes a file.
-                if (booleanOption(ctx.options, "changelog-json", "changelogJson")) {
+                // OPT-IN (`--format json` without `--summary`): alias for the structured
+                // --changelog-json document so agents have a single --format flag.
+                const summaryOption = booleanOption(ctx.options, "summary", "summary");
+                // OPT-IN (`--summary`): compact one-line-per-change output for quick
+                // agent scanning. Never writes a file.
+                if (summaryOption) {
+                    const entries = createChangelogSummary(generationOptions);
+                    if (wantsJsonFormat) {
+                        return {
+                            entries,
+                            format: "json",
+                            item_count: entries.length,
+                            ...(selectionReport ? { selection_report: selectionReport } : {}),
+                        };
+                    }
+                    const lines = entries.map((entry) => formatSummaryLine(entry));
+                    return {
+                        summary: lines.join("\n"),
+                        format: "text",
+                        item_count: entries.length,
+                        ...(selectionReport ? { selection_report: selectionReport } : {}),
+                    };
+                }
+                // OPT-IN (`--changelog-json` or `--format json`): structured document;
+                // never writes a file. `--suggest-semver` keeps its dedicated JSON shape
+                // below instead of being aliased to the full document.
+                const suggestSemverOption = booleanOption(ctx.options, "suggest-semver", "suggestSemver");
+                if (booleanOption(ctx.options, "changelog-json", "changelogJson") || (wantsJsonFormat && !suggestSemverOption)) {
                     const document = buildChangelogDocument(generationOptions);
                     return {
                         document,
@@ -152,7 +188,7 @@ export default defineExtension({
                 }
                 // OPT-IN (`--suggest-semver`) standalone: emit only the semver analysis;
                 // never writes a file and never alters default markdown.
-                if (booleanOption(ctx.options, "suggest-semver", "suggestSemver")) {
+                if (suggestSemverOption) {
                     const suggestion = suggestSemver(generationOptions);
                     return {
                         suggested_semver: suggestion,
