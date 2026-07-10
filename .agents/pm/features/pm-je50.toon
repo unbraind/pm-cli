@@ -6,14 +6,19 @@ status: open
 priority: 2
 tags[3]: architecture,"area:plan","area:sdk"
 created_at: "2026-07-05T05:09:13.638Z"
-updated_at: "2026-07-05T05:09:13.638Z"
+updated_at: "2026-07-10T21:31:11.816Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "SDK exports typed plan primitives covering the full pm plan surface (create with stepTitle, step lifecycle, dependencies, decisions, discoveries, validation, materialize) with identical governance and history semantics; CLI and MCP plan surfaces consume only these primitives; docstrings + linked tests + SDK reference docs; zero behavior change (plan specs green)."
 parent: pm-usfg
 risk: medium
 confidence: medium
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-lodl,blocked_by,"2026-07-05T05:09:13.638Z",null,null
   pm-muhw,blocked_by,"2026-07-05T05:09:13.638Z",null,null
+  pm-qd2h,related,"2026-07-10T21:31:11.790Z",null,null
+  pm-ypha,related,"2026-07-10T21:31:11.790Z",null,null
+  pm-zwpp,related,"2026-07-10T21:31:11.790Z",null,null
+notes[1]{created_at,author,text}:
+  "2026-07-10T21:30:53.590Z",maintainer-agent,"Implementation slicing 2026-07-10 (grounded in current src state). Already public — do NOT redo: the pm_plan MCP surface and generic plan action dispatch; profile *planning* (planProfileApplication from core/profile/profile-plan.ts) is a different domain and already exported. The actual gap: the ENTIRE plan workflow lives in src/cli/commands/plan.ts (1,796 lines) — there is no src/core/plan module at all, making this the largest single-module promotion left in the epic besides test.ts. Plan is also the agent-harness surface (Codex/Claude/Cursor-style planning), so primitive-level promotion is what makes SDK-embedded planning harnesses possible without shelling out. Suggested slices: S1 plan document model + step lifecycle primitives (~90m) — create with stepTitle, step transitions, plan read model. S2 plan annotation primitives (~60m) — dependencies/decisions/discoveries; shapes should mirror the pm-zwpp S1 annotation kernel — coordinate so plan does not grow a second annotation engine. S3 validation + materialization primitives (~60m) — materialize creates real items and MUST consume the shipped lifecycle primitives (pm-98cz) rather than private paths; this is the primitive-level fix site for pm-qd2h / GH-452 (materialize dead-ends on required-on-create custom fields) and pm-ypha / GH-453 (materialize --json omits title/type/parent) — coordinate with both, do not duplicate their fixes. S4 typed PmClient facades + SDK reference docs/tests (~30m), result shapes matching runAction oracle. Order: strictly S1 -> S2 -> S3 -> S4 (each layer consumes the previous one)."
 body: ""

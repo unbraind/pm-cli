@@ -1,0 +1,18 @@
+id: pm-2ler
+title: validate dependency_references warns on 101 legacy refs held only by closed/canceled items (98x no-active-blocker sentinel) — split active vs legacy counts
+description: ""
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,legacy-data,validate
+created_at: "2026-07-10T21:27:32.454Z"
+updated_at: "2026-07-10T21:27:32.454Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: active vs legacy(closed/canceled holder) dangling counts reported separately; warning code driven by active count only; no-active-blocker sentinel identified in details; remediation hints never suggest mutating closed items; existing dependency_references tests extended
+risk: low
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-ol5v,related,"2026-07-10T21:27:32.454Z",null,null
+  pm-wrbe,related,"2026-07-10T21:27:32.454Z",null,null
+body: "## Problem\n\nPR#502 (pm-ol5v) shipped the `dependency_references` validate check. On this corpus it now reports a permanent `validate_dangling_dependency_references:101` warning — and every one of the 101 holder items is closed (98) or canceled (3). Zero active items are affected, so the warning carries no actionability signal, yet it will sit in every `pm validate` run forever and drown the case the check was built for: a *live* dangling reference silently unblocking `pm next`.\n\nBreakdown (2026-07-10, 1,709 items):\n- 98 rows are the literal legacy sentinel string `no-active-blocker` stored in scalar `blocked_by` (pre-structured-deps era artifact), e.g. `pm-18p8:no-active-blocker:blocked_by`.\n- 3 real ghost ids on closed/canceled holders: `pm-1p2u:pm-0wm0:related`, `pm-lty:backlog-sequencing:blocked_by`, `pm-zdec:design-review:blocked_by`.\n\n## Why repair-by-mutation is the wrong default\n\nThe generated remediation hints say `pm update <closed-id> --replace-deps ...`. Doing that to 101 closed items bumps `updated_at` and drags them into the current `[Unreleased]` changelog window (established CREATE-ONLY-on-closed invariant). A naive agent following the hints would corrupt the release notes.\n\n## Proposed fix (check-side, zero mutation)\n\nIn `buildDependencyReferencesCheck` (src/cli/commands/validate.ts:1209):\n1. Split counts by holder lifecycle: `active_dangling_reference_count` (gate-able, should be 0 and stay 0) vs `legacy_closed_dangling_reference_count` (informational).\n2. Emit the warning code only for the active count; report the legacy count in details (mirror the missing_close_reason:18 precedent — legacy debt is owned, not alarmed).\n3. Recognize the `no-active-blocker` sentinel explicitly in details so it is not presented as a typo'd id.\n4. Suppress or rephrase remediation hints for closed/canceled holders (never suggest mutating a closed item).\n\nOptionally, a later history-preserving repair (no updated_at bump) can clear the sentinel rows — same primitive family as the pm-wrbe historical closed_at backfill."
