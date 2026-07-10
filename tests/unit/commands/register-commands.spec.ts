@@ -520,6 +520,7 @@ describe("list-query command actions", () => {
 describe("operation command actions", () => {
   it("requires either an explicit claim id or --next", () => {
     expect(() => requireClaimTarget(undefined, false)).toThrow("Specify an item id or pass --next");
+    expect(() => requireClaimTarget("pm-a", true)).toThrow("either an item id or --next");
     expect(requireClaimTarget(undefined, true)).toBeUndefined();
     expect(requireClaimTarget("pm-a", false)).toBeUndefined();
   });

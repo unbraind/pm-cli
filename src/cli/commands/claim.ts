@@ -159,7 +159,7 @@ export async function runClaimNext(
   options: ClaimMutationOptions = {},
   nextOptions: NextOptions = {},
 ): Promise<ClaimNextResult> {
-  const next = await runNext({ ...nextOptions, limit: "10" }, global);
+  const next = await runNext({ ...nextOptions, callerAuthor: options.author, limit: "10" }, global);
   const recommendations = [next.recommended, ...next.ready]
     .filter((entry): entry is NextRecommendation => entry !== null)
     .map((entry) => ({ ...entry, reasons: "reasons" in entry ? entry.reasons : ["ranked ready candidate"] }));
@@ -175,15 +175,19 @@ export async function claimNextFromRecommendations(
   claimRunner: ClaimRunner = runClaim,
 ): Promise<ClaimNextResult> {
   let attempts = 0;
+  let lastSkipped: ClaimNextResult | undefined;
   for (const recommendation of recommendations) {
     attempts += 1;
     try {
-      const claimed = await claimRunner(recommendation.id, force, global, { ...options, ifAvailable: false });
-      return { ...claimed, recommendation, attempts };
+      const claimed = await claimRunner(recommendation.id, force, global, options);
+      const result = { ...claimed, recommendation, attempts };
+      if (claimed.skipped) lastSkipped = result;
+      else return result;
     } catch (error: unknown) {
       if (!isAlreadyClaimedError(error)) throw error;
     }
   }
+  if (lastSkipped) return lastSkipped;
   throw new PmCliError("No actionable item remained available to claim", EXIT_CODE.CONFLICT, {
     code: "no_available_next_item",
     why: "Every ranked candidate was claimed by another agent before this atomic selection completed.",

@@ -970,8 +970,6 @@ ${zshUpdateRuntimeFieldFlags}            '--allow-audit-update[Allow non-owner m
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
-            '--if-available[Skip work held by another author]' \\
-            '--next[Atomically claim the next actionable item]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -1510,6 +1508,8 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
+            '--if-available[Skip work held by another author]' \\
+            '--next[Atomically claim the next actionable item]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;

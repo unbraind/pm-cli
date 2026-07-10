@@ -416,6 +416,7 @@ async function runClaimAction(id: string | undefined, options: Record<string, un
 /** Enforces the claim target XOR selection contract before dispatch. */
 export function requireClaimTarget(id: string | undefined, next: boolean): void {
   if (!next && !id) throw new PmCliError("Specify an item id or pass --next", EXIT_CODE.USAGE);
+  if (next && id) throw new PmCliError("Specify either an item id or --next, not both", EXIT_CODE.USAGE);
 }
 
 async function runReleaseAction(id: string, options: Record<string, unknown>, command: Command): Promise<void> {

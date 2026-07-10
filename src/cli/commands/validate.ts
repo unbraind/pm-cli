@@ -1230,7 +1230,12 @@ function buildDependencyReferencesCheck(
   const diagnosticLimit = verboseDiagnostics ? Number.POSITIVE_INFINITY : DIAGNOSTIC_LIST_SUMMARY_LIMIT;
   const summarizedRows = summarizeList(uniqueRows, diagnosticLimit);
   const hints = summarizeList(
-    uniqueRows.map((row) => `pm update ${row.split(":")[0]} --replace-deps '<correct dependency edges>'`),
+    uniqueRows.map((row) => {
+      const [itemId, , kind] = row.split(":");
+      return kind === "parent"
+        ? `pm update ${itemId} --unset parent`
+        : `pm update ${itemId} --replace-deps '<correct dependency edges>'`;
+    }),
     diagnosticLimit,
   );
   return {

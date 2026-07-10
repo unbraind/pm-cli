@@ -62,6 +62,8 @@ export interface NextOptions {
   readyOnly?: boolean;
   format?: string;
   explainRanking?: boolean;
+  /** Internal caller override used to align claim-next ranking with --author. */
+  callerAuthor?: string;
   [key: string]: unknown;
 }
 
@@ -211,8 +213,9 @@ function buildRecommendationReasons(
 function partitionCallerOwnedReady(
   ready: ActionableEntry[],
   fallbackAuthor: string,
+  explicitAuthor?: string,
 ): { available: ActionableEntry[]; held: Array<{ id: string; assignee: string }> } {
-  const caller = (process.env.PM_AUTHOR ?? fallbackAuthor).trim() || "unknown";
+  const caller = (explicitAuthor ?? process.env.PM_AUTHOR ?? fallbackAuthor).trim() || "unknown";
   const available: ActionableEntry[] = [];
   const held: Array<{ id: string; assignee: string }> = [];
   for (const entry of ready) {
@@ -401,7 +404,7 @@ export async function runNext(options: NextOptions, global: GlobalOptions): Prom
 
   const report = computeActionabilityReport(candidates, corpus, statusRegistry);
   const childrenByParent = buildChildrenByParent(corpus);
-  const callerPartition = partitionCallerOwnedReady(report.ready, settings.author_default);
+  const callerPartition = partitionCallerOwnedReady(report.ready, settings.author_default, options.callerAuthor);
   const rankedReady = rankNextReadyEntries(callerPartition.available, childrenByParent, statusRegistry);
   const rankedBlocked = [...report.blocked].sort((left, right) =>
     compareCriticalItems(left.item, right.item, statusRegistry),

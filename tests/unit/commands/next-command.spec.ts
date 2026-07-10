@@ -86,6 +86,7 @@ describe("runNext", () => {
     try {
       expect(nextInternals.partitionCallerOwnedReady([], "settings-author")).toEqual({ available: [], held: [] });
       expect(nextInternals.partitionCallerOwnedReady([], "   ")).toEqual({ available: [], held: [] });
+      expect(nextInternals.partitionCallerOwnedReady([], "settings-author", "explicit-author")).toEqual({ available: [], held: [] });
     } finally {
       if (previousAuthor === undefined) delete process.env.PM_AUTHOR;
       else process.env.PM_AUTHOR = previousAuthor;

@@ -6,8 +6,8 @@ status: closed
 priority: 2
 tags[3]: agent-ux,cli,concurrency
 created_at: "2026-07-04T19:20:15.349Z"
-updated_at: "2026-07-10T20:32:38.402Z"
-closed_at: "2026-07-10T20:32:37.437Z"
+updated_at: "2026-07-10T21:11:59.596Z"
+closed_at: "2026-07-10T21:11:58.702Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "pm claim --next claims a distinct item per parallel agent (stress-verified, zero double-grants); bounded candidate retry on already_claimed_by; output includes pm next rationale; wired across MCP/contracts/completion/docs per new-command checklist"
@@ -19,10 +19,11 @@ expected_result: Parallel agents can claim distinct recommended work through the
 actual_result: "claim --next ranks actionable candidates, retries ownership conflicts, returns recommendation evidence, and passed concurrency and packed-install acceptance tests."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-2muu,related,"2026-07-05T04:07:28.566Z",claude-code-agent,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-10T16:50:47.379Z",maintainer-agent,"Unblocked as of 2026-07-10 verification: sole blocker pm-8t5x (atomic test-and-set claim) is closed, so the atomic substrate this command needs exists. Actionable now; pairs naturally with the parallel-agent work-distribution story and pm-yl6c/pm-hfg5 pm-next defects when scheduling."
   "2026-07-10T17:51:48.842Z",codex-root,"Implementation start: active in the broad atomic work-selection and agent recovery PR. Live all-status duplicate check, full item metadata, closed prerequisite lineage, GitHub issues, security alerts, dependency audit, release state, and Sentry issue surface were reviewed before claiming. This item shares CLI/SDK contracts, recovery envelopes, and end-to-end verification with the seven sibling items in the bundle."
   "2026-07-10T20:32:29.986Z",codex-wide-pm-sdk,"Verification: pnpm release:gates passed build/typecheck/static/docstring ratchets/docs/context/security, 100/100/100/100 coverage with 5,524 tests, packed npx smoke, and 88-command package dogfood; isolated installed-tarball acceptance created two items, atomically claimed one, accepted comments --body, detected one dangling dependency, and imported PmClient. Live Sentry/telemetry: 0 blocking critical/high, 0.34% finish error rate, zero missing error-code rows. pm health: all 7 checks ok; history drift: 0 across 1,709 items."
+  "2026-07-10T21:11:56.435Z",codex-wide-pm-sdk,"Review evidence: fixed all claim-next findings. --if-available now advances skipped held candidates and returns a non-failing skip only when all are held; explicit --author controls both ranking and mutation; id plus --next is rejected; zsh flags moved from update to claim. Focused suites passed and full coverage is 100/100/100/100 with 5,528 tests."
 files[3]{path,scope,note}:
   src/cli/commands/claim.ts,project,atomic ranked claim composition
   src/cli/commands/next.ts,project,shared agent work-selection envelope
@@ -32,5 +33,5 @@ tests[1]{command,scope,timeout_seconds}:
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,agent-facing command contract
   docs/SDK.md,project,SDK context primitive contract
-close_reason: "Implemented and verified in the atomic work-selection, dependency-integrity, recovery, alias, and telemetry bundle."
+close_reason: "Addressed Greptile and CodeRabbit claim-next contract, author, XOR, and completion findings with full coverage."
 body: "## Context\nSplit out of pm-8t5x (claim test-and-set): once claim correctly CONFLICTs on held items, N parallel agents that each run `pm next` will all be recommended the SAME top item, all try to claim it, and N-1 will bounce. The missing primitive is an atomic \"give me my own item\".\n\n## Design sketch\n`pm claim --next` (or `pm next --claim`): compute the pm next recommendation and claim it in one operation; on already_claimed_by conflict, retry with the next-ranked candidate (bounded, e.g. 10 candidates) until one claim succeeds; return the claimed item with the same rationale payload pm next emits. Honors --if-available semantics naturally (skip held candidates instead of erroring). Requires pm-8t5x semantics (deps: blocked_by) and benefits from pm-2muu's lock wait.\n\n## Definition of done\nN-parallel `pm claim --next` stress: N distinct items claimed, zero double-grants; recommendation rationale preserved in output; MCP action + contracts + completion + docs wired per the new-command checklist (grep replicate every site); spec covers conflict-retry and exhausted-candidates paths."

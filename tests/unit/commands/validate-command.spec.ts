@@ -293,6 +293,10 @@ describe("runValidate", () => {
         "pm-a:pm-missing-a:parent",
         "pm-b:pm-missing-b:parent",
       ]);
+      expect(multiRowCheck.details.remediation_hints).toEqual([
+        "pm update pm-a --unset parent",
+        "pm update pm-b --unset parent",
+      ]);
     });
   });
 
